@@ -1,0 +1,65 @@
+# ==========================================
+# Illacme-plenipes 物理隔离边界 (Git Ignore)
+# ==========================================
+
+# 1. 🛑 绝对机密与本地配置 (Red Zone)
+config.yaml
+.env
+bridge-*.py
+config-*.yaml
+
+# 2. 🧠 状态机与运行时数据 (State & Cache)
+plenipes_metadata.json
+plenipes_metadata.json.tmp
+logs/
+*.log
+
+# 3. 🌐 Node.js & 前端工具链防线 (Cross-Stack Protection)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# 4. 🐍 Python 底层缓存与环境 (Python Core)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+
+# 5. 🍎 宿主机操作系统垃圾 (OS Junk)
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# 6. 💻 编辑器与开发工具链 (IDE & Editor)
+.idea/
+.vscode/
+*.swp
+*.swo
+.python-version
