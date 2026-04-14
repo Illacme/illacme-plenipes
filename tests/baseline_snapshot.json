@@ -1,0 +1,63 @@
+{
+  "docs_hash": {
+    "global_hash": "b33ffa37035c9550bf75796e4124bd74",
+    "file_count": 46,
+    "details": {
+      "./themes/starlight/src/content/docs/.DS_Store": "697825bf0c8325f511cd495bf8d93ead",
+      "./themes/starlight/src/content/docs/about-us.md": "f5af213289e71e596f3cd16424f8db93",
+      "./themes/starlight/src/content/docs/index1.md": "c9fce6ffd0a86dcbd873d5397b157c1a",
+      "./themes/starlight/src/content/docs/index2.md": "8465c8964791217c0271142d3856307c",
+      "./themes/starlight/src/content/docs/index.md": "ce90ab468982686864cbb711efd7fd9e",
+      "./themes/starlight/src/content/docs/plenipes/high-value-iteration-and-optimization-directions.md": "0b93d720825e4611d273c2e0c8b514c4",
+      "./themes/starlight/src/content/docs/guide/.DS_Store": "194577a7e20bdcc7afbb718f502c134c",
+      "./themes/starlight/src/content/docs/guide/index.mdx": "6f370efe5a5a1e96b040abe244acd55e",
+      "./themes/starlight/src/content/docs/docs/.DS_Store": "980c79e7b9eb0a5b31a282a9a473e64e",
+      "./themes/starlight/src/content/docs/docs/npm-directory/npm-install-development-dependencies.md": "123ce95a659358b8d7b9bba2f3f1ecd4",
+      "./themes/starlight/src/content/docs/docs/linux/linux.md": "01a9dbd3be4a9127fd13831757c4d197",
+      "./themes/starlight/src/content/docs/docs/test-directory/test-bi-ji.md": "986bdd6c6f30f410e852e91e57720eb0",
+      "./themes/starlight/src/content/docs/docs/test-directory/test-chang-wen-nei-rong.md": "88a1ff15028858e29930709de1fb8a92",
+      "./themes/starlight/src/content/docs/docs/test-directory/readme.md": "383056b7e748b340986fac6a286ded68",
+      "./themes/starlight/src/content/docs/blog/phone-end-file.md": "92614ce3637a033f1f957a29aa4c06ad",
+      "./themes/starlight/src/content/docs/blog/.DS_Store": "b59a3ceee985528454ff3bf56d8dd85e",
+      "./themes/starlight/src/content/docs/blog/index.mdx": "d1637a476daabd7c4f8c0e2f9decad54",
+      "./themes/starlight/src/content/docs/blog/markdown-common-syntax.md": "7017602420108fb5a9a0e3ae3675c166",
+      "./themes/starlight/src/content/docs/blog/mdx-\u6d4b\u8bd5\u4e00\u4e0b.mdx": "5b524f145f6b2e71717a499d1e90b354",
+      "./themes/starlight/src/content/docs/blog/network/fan-qiang-na-xie-shi-er.md": "dfbeb355b637989860094a152eaa5560",
+      "./themes/starlight/src/content/docs/api/competitor-analysis.md": "d2b8cb600299d4c6e93ea53552e59be8",
+      "./themes/starlight/src/content/docs/api/.DS_Store": "194577a7e20bdcc7afbb718f502c134c",
+      "./themes/starlight/src/content/docs/api/index.mdx": "779b4c15b5f3627fe311caba02e1478c",
+      "./themes/starlight/src/content/docs/obsidian/obsidian-with-astro-markdown-parser-differences.md": "7998abfdd92b033e8c6d3476ca01593d",
+      "./themes/starlight/src/content/docs/obsidian/obsidian-xie-xiu-yong-fa-mian-fei-yun-tong-bu-ai-shou-ji-duan-hai-you-jin-jie-ji-qiao.md": "e8c54987bc00fe4c081d39dca6912b5b",
+      "./themes/starlight/src/content/docs/en/.DS_Store": "5dede6bb723d3204c47d7e22268dba5d",
+      "./themes/starlight/src/content/docs/en/about-us.md": "f6960f2de03f46e4b40aba2caff863bf",
+      "./themes/starlight/src/content/docs/en/index2.md": "732cda3e1bc22c1f50e1cc26887f3c25",
+      "./themes/starlight/src/content/docs/en/index.md": "556f2b93c070d9b647f567f35bcf142b",
+      "./themes/starlight/src/content/docs/en/plenipes/high-value-iteration-and-optimization-directions.md": "ccf9b94dcd005f20db217573d5247924",
+      "./themes/starlight/src/content/docs/en/guide/index.mdx": "3eed118851292ec840854558311bea9f",
+      "./themes/starlight/src/content/docs/en/docs/.DS_Store": "f406826ca41a856714319367b2392aa1",
+      "./themes/starlight/src/content/docs/en/docs/npm-directory/npm-install-development-dependencies.md": "a81521b97dc782a8304bb94f5cea2211",
+      "./themes/starlight/src/content/docs/en/docs/linux/linux.md": "7ce4f41b0665f60d3176b14a6b547042",
+      "./themes/starlight/src/content/docs/en/docs/test-directory/test-bi-ji.md": "63ae29a310e876d7f3c7c63380925628",
+      "./themes/starlight/src/content/docs/en/docs/test-directory/test-chang-wen-nei-rong.md": "6c6927d0ed8f43afb1a9011a6554c13a",
+      "./themes/starlight/src/content/docs/en/docs/test-directory/readme.md": "04fe9ea4041ef8112b61e7bc624f5a4c",
+      "./themes/starlight/src/content/docs/en/blog/phone-end-file.md": "820a982e3ee7aefb386eda395372e0af",
+      "./themes/starlight/src/content/docs/en/blog/.DS_Store": "fcfd155e578924b67487abde2451946a",
+      "./themes/starlight/src/content/docs/en/blog/index.mdx": "240a0c81d4887e30585982e540eeae7e",
+      "./themes/starlight/src/content/docs/en/blog/markdown-common-syntax.md": "f844a8c93fb68c5796aeeb8d2adc9465",
+      "./themes/starlight/src/content/docs/en/blog/network/fan-qiang-na-xie-shi-er.md": "b12f3de024b3cceb9e357fd3202cee3f",
+      "./themes/starlight/src/content/docs/en/api/competitor-analysis.md": "34cec479a266e969958c6fe57f502020",
+      "./themes/starlight/src/content/docs/en/api/index.mdx": "37931a15976d96ac6f218071401ae792",
+      "./themes/starlight/src/content/docs/en/obsidian/obsidian-with-astro-markdown-parser-differences.md": "c77ba0c1781fd3e14f1cf44b8e00e4fd",
+      "./themes/starlight/src/content/docs/en/obsidian/obsidian-xie-xiu-yong-fa-mian-fei-yun-tong-bu-ai-shou-ji-duan-hai-you-jin-jie-ji-qiao.md": "b394ab78e2d47012fa881794cbda76ff"
+    }
+  },
+  "assets_hash": {
+    "global_hash": "c42ff01a743a3cba3c54599713ffff54",
+    "file_count": 3,
+    "details": {
+      "./themes/starlight/public/assets/.DS_Store": "dfbfbbb54ab36f4aea7343e97087da93",
+      "./themes/starlight/public/assets/9d/file-20260326171323534_aeccec.webp": "97a3a45e885712901a6236e83bf72119",
+      "./themes/starlight/public/assets/9a/file-20260330101433695_db97cb.webp": "823f64b5c686e4f4d82bc3abad1151fe"
+    }
+  }
+}

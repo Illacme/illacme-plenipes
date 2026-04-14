@@ -314,31 +314,64 @@ class IllacmeEngine:
             orig = masks[idx]
             if orig.startswith('\\'): return orig 
             
+            # 🛡️ 辅助函数优先定义
             def log_asset(p_name):
                 if node_assets is not None and assets_lock is not None:
                     with assets_lock: node_assets.add(p_name)
                 return p_name
 
-            # --- 🚀 增强处理：Markdown 标准图片图片 ![Alt](Path) ---
-            if orig.startswith('!['):
-                match = re.match(r'\!\[(.*?)\]\((.*?)\)', orig)
-                if match:
-                    alt_text, img_path = match.groups()
-                    
-                    # [专家逻辑]：如果当前是英文版，但 alt_text 包含中文，说明之前的 Masking 屏蔽过重
-                    # 我们在这里执行一次快速的语义转换补偿（如果此时 AI 已经翻译了 body，这里可以尝试推导）
-                    # 💡 更优方案是在 Masking 阶段只屏蔽 (path)，这里我们先保证路径的绝对正确
-                    filename = os.path.basename(urllib.parse.unquote(img_path.strip()).split('?')[0].split('#')[0])
-                    target_asset_path = _get_closest_asset(filename)
-                    
-                    if target_asset_path:
-                        processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                        
-                        # 💡 优化点：如果 alt_text 是中文且处于英文分发阶段，
-                        # 此时 final_body 已经是英文了，AI 应该已经在正文中翻译了 alt 占位符。
-                        # 这里我们优先返回处理后的物理路径。
-                        return f"![{alt_text}]({self.asset_base_url}{processed_name})"
-                return orig
+            # ==========================================
+            # 🚀 V15 架构：纯 URL 资产解蔽 (对接 steps.py)
+            # ==========================================
+            if orig.startswith('URL_ONLY_IMG:'):
+                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_IMG:', '').strip())
+                if clean_path.startswith(('http://', 'https://', '//')): return clean_path
+                filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
+                target_asset_path = _get_closest_asset(filename)
+                if target_asset_path:
+                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
+                    return f"{self.asset_base_url}{processed_name}"
+                return clean_path
+                
+            if orig.startswith('URL_ONLY_LNK:'):
+                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_LNK:', '').strip())
+                if clean_path.startswith(('http://', 'https://', 'mailto:', '#')): return clean_path
+                
+                asset_filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
+                target_asset_path = _get_closest_asset(asset_filename)
+                if target_asset_path:
+                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, asset_filename, is_dry_run))
+                    return f"{self.asset_base_url}{processed_name}"
+                
+                target_rel_path = self.meta.resolve_link(clean_path) or self.meta.resolve_link(os.path.splitext(os.path.basename(clean_path))[0])
+                if target_rel_path:
+                    t_doc_info = self.meta.get_doc_info(target_rel_path)
+                    t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
+                    t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
+                    t_abs = os.path.join(self.paths['vault'], target_rel_path)
+                    t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
+                    if t_sub_dir == '.': t_sub_dir = ""
+                    t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
+                    t_prefix_part = f"/{t_prefix}" if t_prefix else ""
+                    raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
+                    return re.sub(r'/+', '/', raw_url)
+                return clean_path
+
+            # ==========================================
+            # 🛡️ 兜底防线：处理 Obsidian 方言及传统屏蔽产物
+            # ==========================================
+            if orig.startswith('![['):
+                filename = orig[3:-2].split('|')[0].strip()
+                alt_text = orig[3:-2].split('|')[1] if '|' in orig[3:-2] else filename
+                target_asset_path = _get_closest_asset(filename) 
+                if target_asset_path:
+                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
+                    ext = os.path.splitext(processed_name)[1].lower()
+                    return f"![{alt_text}]({self.asset_base_url}{processed_name})" if ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg'] else f"[{alt_text}]({self.asset_base_url}{processed_name})"
+                
+                # 🚀 核心修复 1: 幽灵 Embed 脱敏
+                # 如果文件不存在，将其降级为安全的 Markdown 死链，彻底阻断 Vite 的 Import 尝试
+                return f"[{alt_text}](#broken-link)"
                 
             elif orig.startswith('!['):
                 match = re.match(r'\!\[(.*?)\]\((.*?)\)', orig)
@@ -349,6 +382,10 @@ class IllacmeEngine:
                     if target_asset_path:
                         processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
                         return f"![{alt_text}]({self.asset_base_url}{processed_name})"
+                        
+                    # 🚀 核心修复 2: 常规图片相对死链脱敏
+                    if not img_path.startswith(('http://', 'https://', '/', '#')):
+                        return f"![{alt_text}](/broken-image.png)"
                 return orig
                 
             elif orig.startswith('[['):
@@ -365,17 +402,17 @@ class IllacmeEngine:
                     t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', target_text.replace(' ', '-').lower())).strip('-')
                     t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
                     if not is_dry_run: self.meta.register_document(target_rel_path, target_text, slug=t_slug, route_prefix=t_prefix, route_source=t_source)
-                    
                     t_abs = os.path.join(self.paths['vault'], target_rel_path)
                     t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
                     if t_sub_dir == '.': t_sub_dir = ""
-
                     t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
                     t_prefix_part = f"/{t_prefix}" if t_prefix else ""
                     raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
                     display_text = t_slug.replace('-', ' ').title() if is_target else custom_zh_text
                     return f"[{display_text}]({re.sub(r'/+', '/', raw_url)})"
-                return orig
+                
+                # 🚀 核心修复 3: 幽灵 Wikilink 脱敏
+                return f"[{custom_zh_text}](#broken-link)"
                 
             elif orig.startswith('['):
                 match = re.match(r'\[(.*?)\]\((.*?)\)', orig)
@@ -393,11 +430,9 @@ class IllacmeEngine:
                         t_doc_info = self.meta.get_doc_info(target_rel_path)
                         t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
                         t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
-                        
                         t_abs = os.path.join(self.paths['vault'], target_rel_path)
                         t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
                         if t_sub_dir == '.': t_sub_dir = ""
-
                         t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
                         t_prefix_part = f"/{t_prefix}" if t_prefix else ""
                         raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
@@ -406,8 +441,32 @@ class IllacmeEngine:
                 return orig
             return orig
 
-        final_body = re.sub(r'\[\[STB_MASK_\d+\]\]', unmask_fn, masked_body)
-        
+        # 🚀 循环递归解蔽 (Recursive Unmasking)
+        final_body = masked_body
+        max_depth = 10
+        current_depth = 0
+        while re.search(r'\[\[STB_MASK_\d+\]\]', final_body) and current_depth < max_depth:
+            final_body = re.sub(r'\[\[STB_MASK_\d+\]\]', unmask_fn, final_body)
+            current_depth += 1
+            
+        if current_depth == max_depth:
+            logger.warning(f"⚠️ [防御预警] {rel_path} 解蔽层数达到上限，可能存在死循环屏蔽。")
+
+        # ==========================================
+        # 🛡️ 架构级 MDX 防崩溃装甲 (Astro Strict Mode Safeguard)
+        # ==========================================
+        if rel_path.lower().endswith('.mdx'):
+            # 1. 保障 import/export 语句下方必须存在空行 (防 AST 语法崩溃)
+            # 哪怕 AI 把正文贴在了分号后面，也能被强行回车撕开
+            final_body = re.sub(r'((?:import|export)\s+[\s\S]*?[\'"]\s*;?)\n([^\n])', r'\1\n\n\2', final_body)
+            
+            # 2. 保障 JSX 块级标签与其上方的普通文本存在空行 (防被误判为跨行内联元素)
+            final_body = re.sub(r'([^\n])\n\s*(<[A-Z])', r'\1\n\n\2', final_body)
+            
+            # 3. 保障闭合的 JSX 标签 (</Card> 或 <Card />) 与其下方的普通文本存在空行
+            final_body = re.sub(r'(</[A-Z][a-zA-Z0-9]*>|<[A-Z][^>]*/>)\n\s*([^\n<])', r'\1\n\n\2', final_body)
+        # ==========================================
+
         if self.pub_cfg.get('append_credit', False):
             final_body += f"{self.pub_cfg.get('credit_text', '')}\n"
         

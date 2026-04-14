@@ -1,0 +1,144 @@
+name: Illacme AI Sync & Publish Pipeline
+
+# 触发条件：只有当推送到 main 分支，且修改了笔记库或核心配置时才触发
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'content-vault/**'
+      - 'core/**'
+      - 'config.yaml'
+      - 'plenipes.py'
+      - 'package.json'
+name: 🚀 Illacme-Plenipes 云原生自动发布管线
+
+# =======================================================
+# 🎯 触发器配置 (管线点火条件)
+# =======================================================
+on:
+  # 场景一：单体仓库模式下，当有人向 main 分支推送代码或笔记时触发
+  push:
+    branches:
+      - main
+    # 物理屏蔽：忽略纯说明类文件的修改，避免浪费 GitHub Actions 免费运行额度
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - 'LICENSE'
+      
+  # 场景二：分离式架构下，接收外部独立笔记仓库发送的“跨仓唤醒信号”
+  # 即使你在单体仓库下使用，此预留配置也不会有任何副作用
+  repository_dispatch:
+    types: [trigger-sync-and-build]
+
+# =======================================================
+# 🛡️ 状态机并发管控 (防脑裂装甲)
+# =======================================================
+# 核心机制：如果你在一分钟内连续 Push 了两次，GitHub 会自动强杀前一次正在运行的任务，
+# 永远只执行最新的一次。这从底层物理层面杜绝了两个云端容器互相覆盖 JSON 账本的灾难。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: 🏭 引擎核心调度与构建部署
+    runs-on: ubuntu-latest
+    
+    # 提权指令：必须授予 GITHUB_TOKEN 回写仓库的物理权限，否则 AI 翻译的账本无法 Push 保存
+    permissions:
+      contents: write
+      deployments: write
+
+    steps:
+      # ---------------------------------------------------
+      # 📥 阶段 1：核心资产装载 (代码库与笔记库)
+      # ---------------------------------------------------
+      - name: 📥 1.1 检出引擎主仓库代码
+        uses: actions/checkout@v4
+        with:
+          # 必须获取完整历史 (0)，确保 Git 底层的增量比对与 Hash 校验逻辑正常工作
+          fetch-depth: 0 
+
+      # 【架构预留】如果你采用了“引擎与笔记分离”的双仓库架构，请取消下方注释并填入你的信息
+      # - name: 📥 1.2 跨仓挂载私有笔记库 (Polyrepo 模式专用)
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: '你的GitHub用户名/你的独立私有笔记仓库名'
+      #     token: ${{ secrets.VAULT_SYNC_PAT }}  # 越权凭证：必须使用具备 repo 权限的个人访问令牌
+      #     path: 'content-vault'                 # 空间魔法：将外部仓库强行克隆为当前容器内的文件夹
+      #     fetch-depth: 1                        # 极速浅克隆：只拉取最新状态，抛弃历史包袱，提速 10 倍
+
+      # ---------------------------------------------------
+      # ⚡️ 阶段 2：运行环境与依赖缓存极速装载
+      # ---------------------------------------------------
+      - name: 🟢 2.1 挂载 Node.js 环境 (驱动 Astro 前端编译)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm' # 自动开启 npm 依赖树缓存，秒级唤醒
+
+      - name: 🐍 2.2 挂载 Python 环境 (驱动 Plenipes 后端引擎)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip' # 自动开启 pip 轮子缓存
+
+      - name: 📦 2.3 安装全链路工程依赖
+        run: |
+          npm ci
+          pip install -r requirements.txt
+
+      # ---------------------------------------------------
+      # 🧠 阶段 3：云端引擎点火与大模型算力调度
+      # ---------------------------------------------------
+      - name: 🚀 3.1 唤醒 Illacme-Plenipes 核心同步引擎
+        env:
+          # 🚀 [专属协议注入] 挂载我们引擎高优读取的专属系统变量！
+          # 🚀 [机密防线] 将 GitHub Secrets 物理保险箱中的密文，瞬间挂载到虚拟机的内存环境中
+          # 引擎仅在运行时从内存读取 Gemini API Key，执行完毕即销毁，绝不落盘
+          ILLACME_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # 引擎接收算力注入，执行：全量状态核验 -> AI 多语言切片翻译 -> 幽灵路由抹杀 -> 账本重塑
+          python plenipes.py --sync
+
+      # ---------------------------------------------------
+      # 💾 阶段 4：状态机回写与死循环熔断协议 (GitOps 闭环)
+      # ---------------------------------------------------
+      - name: 🔄 4.1 账本与多语言资产回写 (Commit & Push)
+        run: |
+          # 1. 将 Git 机器人伪装为官方 Action 身份，确保提交记录清晰可溯
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 2. 精准圈定暂存区：仅锁定状态机账本与前端 Markdown 路由区，坚决拒绝提交流水线过程垃圾
+          git add plenipes_metadata.json
+          git add themes/starlight/src/content/docs/
+          
+          # 3. 🚀 [致命死循环拦截] 
+          # 逻辑推演：如果云端运算后内容没变 (git diff --quiet)，管线静默跳过提交。
+          # 如果发生了翻译或状态变动，提交说明中强制追加 "[skip ci]" 魔法指令！
+          # "[skip ci]" 是 GitHub 的底层暗号，它明确命令系统：本次由机器人发起的 Push 绝对禁止再次触发当前 Action！
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(sync): 🤖 引擎自动更新状态账本与多语言路由 [skip ci]"
+          
+          # 4. 将更新后的纯净状态安全推送回主分支
+          git push origin main
+
+      # ---------------------------------------------------
+      # 🏗️ 阶段 5：前端静态资产极速编译与边缘节点分发
+      # ---------------------------------------------------
+      - name: 🏗️ 5.1 编译 Astro 静态页面产物
+        run: npm run build
+
+      - name: 🌐 5.2 部署至 Cloudflare Pages 边缘节点
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: 'your-cloudflare-project-name' # ⚠️ [待办] 请务必替换为你在 CF 上的真实项目名
+          directory: 'themes/starlight/dist'          # 指南针：精准指向 Astro 的最终静态 HTML/CSS 输出目录
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}    # 联动挂载：用于在 GitHub 提交记录旁自动生成绿色的部署预览 Check 标记
+
+      # (可选后续步骤) 触发前端 SSG 构建与部署
+      # 如果你使用 Vercel，它会自动监听到我们刚刚推回前端目录 (themes/starlight/...) 的变更，并自动执行构建上线，无需在此处额外写脚本。

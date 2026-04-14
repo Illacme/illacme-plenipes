@@ -6,8 +6,13 @@
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![Architecture](https://img.shields.io/badge/architecture-Cloud%20Native%20%2F%20High%20Concurrency-success.svg)
 [![Framework Agnostic](https://img.shields.io/badge/SSG-Agnostic-success.svg)](#)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
+
+[![Deploy Status](https://github.com/Illacme/illacme-plenipes/actions/workflows/deploy.yml/badge.svg)](https://github.com/Illacme/illacme-plenipes/actions)
+[![Python Version](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![Astro Version](https://img.shields.io/badge/Astro-4.x-ff5e00.svg)](https://astro.build/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 **Illacme-plenipes** 是一款工业级的 Markdown 同步引擎。它不仅能将本地知识库以高并发形态秒级推送至主流前端框架 (SSG)，更内置了底层 AI 切片调度，实现从单语种笔记到 N 维多语言矩阵的全自动化蜕变。
 
 其命名灵感来源于地球上腿部数量最多的生物 *Illacme plenipes*。正如其名，本引擎搭载了 **OS 级防竞态锁**、**异步脏写状态机** 和 **Token 级 AI 切片引擎**，像一台拥有 750 条腿的重型“V8 引擎”，旨在彻底榨干多核 CPU 与大模型上下文窗口的每一滴算力，实现海量笔记的毫秒级增量编译。
@@ -91,9 +96,9 @@ python core/plenipes.py --sync --force
 
 ```JSON
 "scripts": {
-  "dev": "astro dev",
-  "plenipes": "cd ../illacme-plenipes && python plenipes.py --sync --watch",
-  "dev:i": "concurrently -k -p \"[{name}]\" -n \"Illacme,Astro\" -c \"blue.bold,green.bold\" \"npm run plenipes\" \"npm run dev\""
+  "plenipes:sync": "cd ../.. && python plenipes.py --sync",
+  "plenipes:watch": "cd ../.. && python plenipes.py --watch",
+  "dev:i": "npm run plenipes:sync && concurrently -k -p \"[{name}]\" -n \"Illacme,Astro\" -c \"blue.bold,green.bold\" \"npm run plenipes:watch\" \"npm run dev\""
 }
 ```
 
@@ -127,6 +132,15 @@ ai_sync: false
 ---
 ```
 
-## 📜 许可证 (License)
+## 📜 开源协议 / License
 
-基于 **MIT License** 开源。在保留署名的前提下，允许任何形式的商业化二次封装与分发。
+本项目代码与架构采用 [CC BY-NC 4.0 (知识共享-署名-非商业性使用 4.0 国际)](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议进行许可。
+
+**你可以：**
+- 自由地下载、克隆、修改本项目代码。
+- 将本项目用于搭建个人博客、知识库、学术研究等非营利性场景。
+
+**你不可：**
+- 将本项目（包含引擎逻辑、主题架构）用于任何形式的**商业化盈利项目**（包括但不限于：作为付费 SaaS 服务售卖、接入带有强制商业广告的平台等）。
+
+> 如需商业使用或定制开发授权，请通过 Issue 或邮件与作者取得联系。

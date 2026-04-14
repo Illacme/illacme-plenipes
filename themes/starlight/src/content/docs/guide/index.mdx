@@ -1,0 +1,147 @@
+---
+title: Index
+description: 彻底解构从本地 Obsidian 笔记到全球化多语言 CDN 分发的每一道管线。告别繁琐的构建配置，专注于纯净创作，底层引擎自动处理 SEO、多语言切片和资产压缩。
+keywords: Obsidian, CDN, 多语言分发, 静态网站生成, SEO优化, AI翻译, WebP压缩, 图床替代, 极速初始化, 开发服务器
+author: Eason
+template: splash
+tableOfContents: false
+---
+
+import { Card, CardGrid, LinkCard, Steps, Aside } from '@astrojs/starlight/components';
+
+{/* =========================================================
+     🚀 降维打击：绕过元数据，直接在物理层手捏高定版巨幕，测试一遍通过问题
+     ========================================================= */}
+<div class="custom-mdx-hero">
+  <div class="hero-icon-container">
+    <span class="hero-icon">⚡️</span>
+  </div>
+  <h1 class="hero-title">核心驱动域</h1>
+  <p class="hero-tagline">
+    彻底解构从本地 Obsidian 笔记到全球化多语言 CDN 分发的每一道管线。
+  </p>
+  <div class="hero-actions">
+    <a href="/guide/install/" class="btn-neo primary">
+      启动底层看门狗
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+    </a>
+    <a href="/api/" class="btn-neo secondary">查阅 API 协议</a>
+  </div>
+</div>
+<Aside type="tip" title="架构师寄语">
+  忘掉繁琐的构建配置。你只需要专注于此目录下的纯净创作，底层引擎会默默为你摆平 SEO、多语言切片和资产压缩的一切脏活。
+</Aside>
+## 🧭 快速导航矩阵
+<CardGrid stagger>
+  <Card title="Obsidian 原生桥接" icon="document">
+    了解引擎如何实现 AST 降维，安全解析你的 `[[STB_MASK_0]]` 和 `>[!info] Callouts` 语法。
+  </Card>
+  <Card title="自动化多语言与 SEO" icon="translate">
+    探究大模型切片引擎如何实现毫秒级并发翻译，并强制生成永久规范的英文 URL (Slug)。
+  </Card>
+  <Card title="资产防撞与 GC 清洗" icon="photo">
+    告别图床依赖。掌控本地物理图片的自动 WebP 压缩、哈希分片与全生命周期垃圾回收。
+  </Card>
+  <Card title="军工级算力锁" icon="setting">
+    防撕裂架构与 `ai_sync: false` 静默锁的使用规范，彻底告别 API 账单焦虑。
+  </Card>
+</CardGrid>
+---
+## ⚡️ 极速初始化引擎
+遵循以下工业标准流，在 3 分钟内唤醒你的本地创作中枢。
+<Steps>
+1.  **唤醒底层看门狗**
+    在你的项目根目录执行以下命令，启动本地开发服务器与 AI 嗅探引擎：
+    ```bash
+    npm run dev
+    ```
+2.  **创建你的第一篇双链笔记**
+    在 `src/content/docs/` 中建立任意 `.md` 文件，尽情使用你的编辑器特性。
+3.  **构建生产级静态资产**
+    当创作就绪，执行物理歼灭与全量静态构建：
+    ```bash
+    npm run build
+    ```
+</Steps>
+<style>{`
+
+  /* 隐藏 Starlight 给正文默认生成的 H1 标题，防止出现两个标题 */
+  h1#_top { display: none !important; }
+  /* 自定义巨幕的工业级排版 */
+  .custom-mdx-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 3rem 0 4rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    margin-bottom: 3rem;
+  }
+  .hero-icon-container {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+  [data-theme="light"] .hero-icon-container {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .hero-icon {
+    font-size: 3rem;
+  }
+  .hero-title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem) !important;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--sl-color-white);
+    margin-top: 0 !important;
+    margin-bottom: 1rem !important;
+  }
+  .hero-tagline {
+    font-size: 1.15rem;
+    color: var(--sl-color-gray-3);
+    max-width: 38rem;
+    line-height: 1.6;
+    margin-top: 0 !important;
+    margin-bottom: 2.5rem !important;
+  }
+  /* 按钮系统 (复用首页的前沿按钮样式) */
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-neo {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.8rem 1.8rem; border-radius: 999px; font-size: 1rem; font-weight: 600; 
+    text-decoration: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-neo.primary { 
+    background: var(--sl-color-white); color: var(--sl-color-bg) !important; 
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 8px 24px rgba(255,255,255,0.15); 
+  }
+  [data-theme="light"] .btn-neo.primary { box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  .btn-neo.primary:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 12px 32px rgba(255,255,255,0.25); 
+  }
+  .btn-neo.secondary { 
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); 
+    color: var(--sl-color-white) !important; backdrop-filter: blur(10px); 
+  }
+  [data-theme="light"] .btn-neo.secondary { 
+    background: rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.1); 
+  }
+  .btn-neo.secondary:hover { background: rgba(255, 255, 255, 0.08); }
+  [data-theme="light"] .btn-neo.secondary:hover { background: rgba(0, 0, 0, 0.08); }
+
+`}</style>
+{/* ========================================================= */}

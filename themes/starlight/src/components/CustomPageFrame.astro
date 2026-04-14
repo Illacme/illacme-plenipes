@@ -1,0 +1,39 @@
+---
+import Default from '@astrojs/starlight/components/PageFrame.astro';
+import type { Props } from '@astrojs/starlight/props';
+---
+
+<!-- 1. 原封不动地渲染 Starlight 的全局核心框架，并透传所有插槽 -->
+<Default {...Astro.props}>
+  <slot name="header" slot="header" />
+  <slot name="sidebar" slot="sidebar" />
+  <slot />
+</Default>
+
+<!-- 2. 在整个框架的最外部、最底部，强行注入我们的版权声明 -->
+<div class="custom-global-footer">
+  <p>Powered by <a href="https://github.com/Illacme/illacme-plenipes" target="_blank">Illacme-plenipes</a></p>
+</div>
+
+<style>
+.custom-global-footer {
+  text-align: center;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--sl-color-gray-5);
+  background-color: var(--sl-color-bg);
+  width: 100%;
+}
+.custom-global-footer p {
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-3);
+  margin: 0;
+}
+.custom-global-footer a {
+  color: var(--sl-color-text-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.custom-global-footer a:hover {
+  text-decoration: underline;
+}
+</style>

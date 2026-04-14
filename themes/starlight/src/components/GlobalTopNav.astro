@@ -1,0 +1,108 @@
+---
+import type { Props } from '@astrojs/starlight/props';
+import Default from '@astrojs/starlight/components/SiteTitle.astro';
+
+// 🚀 1. 获取当前真实的物理 URL 路径 (绝对可靠，不受引擎动态生成影响)
+const currentPath = Astro.url.pathname;
+
+// 🚀 2. 物理探测语言环境：判断路径中是否包含 /en/ 
+// 这种写法同时兼容了带 Base 路径的情况 (例如 /mdweb/en/...)
+const isEn = currentPath.includes('/en/') || currentPath.endsWith('/en');
+
+// 3. 动态计算路径前缀
+const langPrefix = isEn ? '/en' : '';
+
+// 4. 多语言文案字典
+const labels = {
+  zh: {
+    guide: '指南',
+    api: 'API 参考',
+    blog: '博客',
+    about: '关于'
+  },
+  en: {
+    guide: 'Guide',
+    api: 'API Reference',
+    blog: 'Blog',
+    about: 'About'
+  }
+};
+
+// 5. 命中对应的字典
+const t = isEn ? labels.en : labels.zh;
+
+// 6. 构造动态导航数组
+const navLinks = [
+  { text: t.guide, href: `${langPrefix}/guide/` },
+  { text: t.api, href: `${langPrefix}/api/` },
+  { text: t.blog, href: `${langPrefix}/blog/` },
+  { text: t.about, href: `${langPrefix}/about/` },
+];
+---
+
+<div class="custom-header-container">
+  <!-- 绝对保留原生的 Logo 和标题渲染逻辑 -->
+  <Default {...Astro.props} />
+  
+  <nav class="global-nav-links">
+    {navLinks.map(link => {
+      // 🚀 精准高亮匹配逻辑
+      // 如果当前 URL 包含该链接的 href，则自动加上 active 类
+      const isActive = currentPath.startsWith(link.href);
+      return (
+        <a 
+          href={link.href} 
+          class:list={[
+            'nav-item', 
+            { 'active': isActive }
+          ]}
+        >
+          {link.text}
+        </a>
+      );
+    })}
+  </nav>
+</div>
+
+<style>
+  /* ---------------------------------------------------------
+     全局横向导航的工业级排版
+     --------------------------------------------------------- */
+  .custom-header-container {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem; /* 控制 Logo 区域与导航链接之间的安全间距 */
+  }
+
+  .global-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2px; /* 视觉微调，使其与左侧文本基线完美对齐 */
+  }
+
+  .nav-item {
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-item:hover,
+  .nav-item:focus {
+    color: var(--sl-color-white);
+  }
+
+  /* 当前激活页面的高亮反馈 */
+  .nav-item.active {
+    color: var(--sl-color-accent);
+  }
+
+  /* 移动端防退化：强制隐藏这套顶部横向导航，交给右侧汉堡抽屉菜单 */
+  @media (max-width: 50rem) {
+    .global-nav-links {
+      display: none;
+    }
+  }
+</style>
