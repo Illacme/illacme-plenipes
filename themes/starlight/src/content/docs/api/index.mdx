@@ -1,0 +1,26 @@
+---
+title: Index
+description: Illacme Plenipes引擎核心协议文档，包含Frontmatter状态管控指令和ai_sync配置说明
+keywords: Illacme Plenipes, 前端开发, Markdown元数据, YAML配置, AI同步控制
+author: Eason
+template: splash
+ai_sync: true
+---
+
+import { Badge, Aside, FileTree } from '@astrojs/starlight/components';
+
+本域提供 `Illacme Plenipes` 引擎在渲染、编译和 AI 调度周期内所需的所有底层接口声明。遵循“契约即代码”的原则，所有规范均具有强制执行效力。
+## 📄 Frontmatter 核心协议
+在每个 `.md` / `.mdx` 文件的顶部，通过 YAML 注入的元数据控制着单篇文档的生命周期。
+### 状态管控指令
+引擎特有的运行时干预指令，享有最高执行优先级。
+#### `ai_sync` <Badge text="boolean" variant="note" /> <Badge text="默认: true" variant="success" />
+大模型算力通信锁。专为极客打造的成本控制中枢。
+<Aside type="danger" title="架构警告">
+  当你处于高频修正错别字，或编写复杂的 HTML/MDX 组件结构时，**必须**将此项设为 `false`。这能彻底斩断看门狗对该文件的大模型并发请求，防止触发 API 风暴或破坏 DOM 结构。
+</Aside>
+```yaml
+---
+title: 我的硬核技术文章
+ai_sync: false
+---

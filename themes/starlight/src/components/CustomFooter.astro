@@ -1,0 +1,27 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+import type { Props } from '@astrojs/starlight/props';
+---
+
+<!-- 先渲染 Starlight 原生的翻页器和编辑链接 -->
+<Default {...Astro.props} />
+
+<!-- 然后追加我们自己极其克制的版权行 -->
+<div class="custom-global-footer">
+	<p>Powered by <a href="https://github.com/Illacme/illacme-plenipes" target="_blank">Illacme-plenipes</a></p>
+</div>
+
+<style>
+.custom-global-footer {
+	margin-top: 2rem;
+	text-align: center;
+}
+.custom-global-footer p {
+	font-size: 0.8rem;
+	color: var(--sl-color-gray-3);
+}
+.custom-global-footer a {
+	color: var(--sl-color-text-accent);
+	text-decoration: none;
+}
+</style>

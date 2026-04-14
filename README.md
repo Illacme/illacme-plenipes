@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![Architecture](https://img.shields.io/badge/architecture-Cloud%20Native%20%2F%20High%20Concurrency-success.svg)
 [![Framework Agnostic](https://img.shields.io/badge/SSG-Agnostic-success.svg)](#)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 **Illacme-plenipes** is an industrial-grade Markdown synchronization engine. It doesn't just push your local knowledge base to mainstream frontend frameworks (SSGs) in milliseconds via high concurrency—it leverages a built-in AI chunking orchestrator to fully automate the transformation from single-language notes into an N-dimensional multi-language matrix.
 
@@ -92,9 +92,9 @@ It is highly recommended to mount the **Illacme-plenipes** daemon directly into 
 
 ```JSON
 "scripts": {
-  "dev": "astro dev",
-  "plenipes": "cd ../illacme-plenipes && python plenipes.py --sync --watch",
-  "dev:i": "concurrently -k -p \"[{name}]\" -n \"Illacme,Astro\" -c \"blue.bold,green.bold\" \"npm run plenipes\" \"npm run dev\""
+  "plenipes:sync": "cd ../.. && python plenipes.py --sync",
+  "plenipes:watch": "cd ../.. && python plenipes.py --watch",
+  "dev:i": "npm run plenipes:sync && concurrently -k -p \"[{name}]\" -n \"Illacme,Astro\" -c \"blue.bold,green.bold\" \"npm run plenipes:watch\" \"npm run dev\""
 }
 ```
 
@@ -116,4 +116,13 @@ _Note: Requires the concurrent executor to be installed beforehand: `npm install
 
 ## 📜 License
 
-Open-sourced under the **MIT License**. Any form of commercial secondary packaging and distribution is permitted, provided that the original attribution is retained.
+The code and architecture of this project are licensed under the [CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)](https://creativecommons.org/licenses/by-nc/4.0/) License.
+
+**You are free to:**
+- Download, clone, and modify the source code of this project.
+- Use this project to build personal blogs, knowledge bases, academic research sites, and other non-profit scenarios.
+
+**You may not:**
+- Use this project (including the engine logic and theme architecture) for any **commercial or profit-making purposes** (including but not limited to: selling it as a paid SaaS service, or integrating it into platforms with mandatory commercial advertisements).
+
+> For commercial use or custom development authorization, please contact the author via GitHub Issues or email.

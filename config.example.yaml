@@ -1,54 +1,65 @@
 # ==========================================
-# Illacme-plenipes (v13.0 旗舰版)
+# Illacme-plenipes (v14.0 框架解耦版)
 # 定位: 专为海量 Markdown 打造的高并发同步与翻译中枢
-# 兼容: Astro(Starlight), VitePress, Hugo, Docusaurus, Hexo
+# 亮点: 极致的主题生态解耦，无限扩展前端皮
 # ==========================================
 
 # ------------------------------------------
-# 1. 本地源与前端目标路径 (核心映射)
+# 1. 本地源路径 (数据层)
 # ------------------------------------------
 # 💡 【路径配置指南】：
 # 强烈建议使用绝对路径（如 /Users/xxx/Documents/Vault）。
 # 若使用相对路径（如 ../content-vault），请务必注意它是相对于你在终端执行启动命令时的“当前所在目录”。
 
-# 本地笔记库的根目录（引擎将从此目录下扫描 Markdown 文件）
-vault_root: "../content-vault" 
-
-# 前端静态博客的项目根目录（引擎会将编译好的文章和图片精准投递到这里）
-frontend_dir: "../omni-site"            
+vault_root: "../content-vault"
 
 # 增量编译数据库路径（请勿随意删除）。
 # 引擎通过这个小文件来记住哪些文章已经翻译过，从而实现“秒级增量同步”并自动清理已失效的旧文章。
-metadata_db: "./plenipes_metadata.json"            
+metadata_db: "./plenipes_metadata.json"
+
+# ------------------------------------------
+# 2. 🎨 主题与路由解耦矩阵 (Theme & Routing)
+# ------------------------------------------
+# 💡 【一键换肤魔法】：引擎不再死绑任何特定前端框架，只负责根据你配置的主题名精准投递数据！
+
+# 当前激活的主题目录名 (引擎会根据这个名字自动找路径)
+active_theme: "starlight" 
+
+# 引擎输出路径映射表 (完全不关心前端是谁，只负责往这里倒数据)
+# 💡 魔法占位符：{theme} 会被引擎自动替换为上面的 active_theme
+output_paths:
+  markdown_dir: "./themes/{theme}/src/content/docs"
+  assets_dir: "./themes/{theme}/public/assets"
 
 # 🚀 动态路由矩阵：将本地笔记的不同子文件夹，灵活映射到前端的不同路由槽位。
 route_matrix:
-  - source: "Blog"       # 本地笔记的相对路径 (映射你的 content-vault/Blog)
+  - source: "Blog"       # 本地笔记库的相对路径 (映射你的 content-vault/Blog)
     prefix: "blog"       # 投递到前端的 /blog 路由下
-  - source: "Docs"       # 只要在源目录里新建了分类文件夹，在这里加一行配置即可全自动化流转
+  - source: "Docs"       # 本地笔记库的相对路径 (映射你的 content-vault/Docs)
     prefix: "docs"       # 投递到前端的 /docs 路由下
 
 # ------------------------------------------
-# 2. 前端框架适配器 (Framework Adapter)
+# 3. 🔌 主题专属语法适配器 (Theme-Specific Adapter)
 # ------------------------------------------
-framework:
-  # 目标框架类型 (可选: starlight, vitepress, docusaurus, hugo, hexo, default)
-  # 引擎会自动将 Obsidian 的特色语法 (如 > [!info] 提示块) 完美转换为目标框架专属的组件样式。
-  engine: "starlight"  
-  
-  # 物理路径分发: 指定 Markdown 和图片在 frontend_dir (前端工程) 下的具体存放位置。
-  content_dir: "src/content/docs"
-  asset_dir: "public/assets"
+# 💡 【高阶换肤指南】：
+# 引擎如何把 Obsidian 的特有语法 (如 Callouts 提示块) 转化为目标主题的代码？就看这里。
+# ⚡️ 智能降级特性：如果你上面的 active_theme 恰好叫 starlight，引擎会自动推断，你甚至可以删掉这段配置！
+# 但如果你把前端皮肤文件夹改名了（比如叫 my-cool-theme），就必须在这里告诉引擎底层用什么方言。
+theme_options:
+  # 当 active_theme 为 starlight 时，读取此配置块
+  starlight:
+    # 指定底层渲染方言 (可选: starlight, vitepress, docusaurus, hugo, hexo, default)
+    syntax_engine: "starlight" 
 
 # ------------------------------------------
-# 3. 系统并发与调度核心 (🔥 性能调优区)
+# 4. 系统并发与调度核心 (🔥 性能调优区)
 # ------------------------------------------
 system:
   # 🚀 [多核 CPU 节流阀] 
   # 决定了引擎同时处理【文件扫描】和【图片压缩】的极速。
   # 💡 建议：由于 V13.0 已将大模型 AI 算力独立隔离，此处可大胆释放电脑性能。
   # M 系列芯片或现代多核 PC 建议直接拉满至 16~32；轻量级服务器建议设为 4~8。
-  max_workers: 16
+  max_workers: 1
   
   # 终端日志输出级别 (可选: DEBUG, INFO, WARNING, ERROR)。日常使用建议保持 INFO。
   log_level: "INFO"    
@@ -98,7 +109,7 @@ system:
 # - ai_sync: false      # [算力锁] 静默微调模式。跳过 AI 翻译与 SEO，仅同步本地排版，用于极速修正错别字。
 
 # ------------------------------------------
-# 4. 全局属性兜底 (Frontmatter Defaults)
+# 5. 全局属性兜底 (Frontmatter Defaults)
 # ------------------------------------------
 frontmatter_defaults:
   # 这里可以配置所有文章默认拥有的基础属性。
@@ -108,7 +119,7 @@ frontmatter_defaults:
   # 注意：不要把 ai_sync: false 写在这里，否则所有文章默认都不会触发翻译！
 
 # ------------------------------------------
-# 5. 文章属性排序规则 (SEO 排版美化)
+# 6. 文章属性排序规则 (SEO 排版美化)
 # ------------------------------------------
 # 决定了最终生成的 Markdown 文件头部 YAML 的字段排列顺序，让代码极其强迫症友好。
 frontmatter_order:
@@ -121,7 +132,7 @@ frontmatter_order:
   - categories
 
 # ------------------------------------------
-# 6. 发布控制与隐私隔离
+# 7. 发布控制与隐私隔离
 # ------------------------------------------
 publish_control:
   exclude_patterns: 
@@ -138,7 +149,7 @@ publish_control:
   credit_text: "\n\n---\n*Powered by [Illacme-plenipes](https://github.com/Illacme/illacme-plenipes)*"
   
 # ------------------------------------------
-# 7. 图片压缩管线 (带宽拯救者)
+# 8. 图片压缩管线 (带宽拯救者)
 # ------------------------------------------
 image_settings:
   # 图像处理总开关。
@@ -155,15 +166,16 @@ image_settings:
   # 压缩质量 (0-100)。80 是画质肉眼无损与体积缩小的完美平衡点。
   quality: 80          
   
-  # 静态图片部署前缀。
-  # 如果你的博客部署在域名子路径 (如 https://domain.com/blog/)，需严格修改为 "/blog/assets/"。
+  # 静态资源部署地址前缀。
+  # 必须与你的 Astro base 路径保持严格一致！
+  # 如果你的网站部署在域名子路径 (如 https://domain.com/blog/)，需严格修改为 "/blog/assets/"。
   base_url: "/assets/" 
 
 # ------------------------------------------
-# 8. AI 大模型驱动中枢 (核心引擎)
+# 9. AI 大模型驱动中枢 (核心引擎)
 # ------------------------------------------
 translation:
-  # 兼容 openai 格式的任何 API (支持 OpenAI, Qwen, DeepSeek, Ollama, LM Studio 等)。
+  # 兼容 openai 格式的任何 API (支持 OpenAI, Gemini，Qwen, DeepSeek, Ollama, LM Studio 等)。
   # 若完全不需要翻译和 SEO 生成功能，可设为 "none"。
   provider: "openai"   
   
@@ -172,17 +184,18 @@ translation:
   # - LM Studio: "http://localhost:1234/v1"
   # - Ollama: "http://localhost:11434/v1"
   # - 商业云端 (如 DeepSeek): "https://api.deepseek.com/v1"
+  # - Google AI Studio：https://generativelanguage.googleapis.com/v1beta/openai
   base_url: "http://localhost:1234/v1"           
   
   # ⚠️ 致命警告：如果你要将本配置文件推送到 Github 公开仓库，严禁填入真实的扣费 Key！
-  api_key: "sk-xxx..." 
+  api_key: "sk-xxx" 
   
-  # 指定触发推理的模型名称
-  model: "Qwen2.5-32B-Instruct"          
+  # 指定触发推理的模型名称]
+  model: "gemini-3-flash-preview"          
 
   # 🚀 [显存保护锁] AI 专属并发控制 (LLM Concurrency Semaphore)
   # 严格控制同一时刻对大模型发起的请求数量。
-  # 💡 建议：若使用本地大模型，强烈建议锁定为 1，确保显存绝对安全；若使用云端商业 API，可调高至 5~10。
+  # 💡 建议：若使用本地大模型或云端免费大模型，强烈建议锁定为 1，防止触发 429 限流或 500 报错；若使用云端商业 API，可调高至 5~10。
   llm_concurrency: 1
   
   # URL 生成模式: "ai" (由大模型翻译出漂亮的纯英文永久链接) 或 "local" (纯本地拼音/URL 编码)
@@ -192,7 +205,7 @@ translation:
   # 💡 警告：本地模型处理长文翻译极慢，建议拉高至 600 以上以防管线被强制切断。
   api_timeout: 600     
   
-  # 遇 429(限流) 或 500(服务端崩溃) 等错误时的自动重试次数。
+  # 遇 429(限流) 或 500(服务端崩溃) 等错误时的自动重试次数。指数退避规则：1s -> 2s -> 4s -> 8s -> 16s -> 32s
   max_retries: 3       
   
   # 防空载保护（字数阈值）。
@@ -221,7 +234,7 @@ translation:
     seo_system: "You are a senior SEO expert. Extract precise descriptions and highly targeted keywords to maximize search engine visibility."
 
 # ------------------------------------------
-# 9. AI 自动化 SEO 提取管线
+# 10. AI 自动化 SEO 提取管线
 # ------------------------------------------
 seo_settings:
   # SEO 核心总闸。
@@ -234,7 +247,7 @@ seo_settings:
   generate_keywords: true     # 自动提取逗号分隔的纯净关键词，填入 keywords 中
 
 # ------------------------------------------
-# 10. 多语言矩阵 (多线程并发翻译阵列)
+# 11. 多语言矩阵 (多线程并发翻译阵列)
 # ------------------------------------------
 i18n_settings:
   # 多语言管线总开关。
