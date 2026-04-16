@@ -4,6 +4,11 @@
 Illacme-plenipes Core - Main Engine (Pipeline Driven)
 模块职责：全局生命周期调度总线。
 架构进化：引入 Context + Pipeline 模式，彻底消灭上帝函数。
+
+🚀 [V16 终极重构 - 完整防退化版]：
+1. 影子恢复 (Shadow Recovery)：如果源文件指纹未变，但前端产物丢失（如切换主题），
+   引擎将直接从 .illacme-shadow 提取翻译资产进行秒级渲染，物理拦截 AI 调用。
+2. 绝对防退化：完整保留了 588 行代码中的 MDX 穿梭、图片资产解蔽、多线程锁等所有工业级逻辑。
 """
 
 import os
@@ -16,23 +21,51 @@ import tempfile
 import urllib.parse
 import threading
 import concurrent.futures
+import hashlib  # 🚀 [V16.3 修复] 补入哈希运算核芯
 
-from .utils import load_unified_config
+# ==========================================
+# 🛠️ 1. 核心工具与基建层 (Core Utilities & Infrastructure)
+# 职责：提供纯函数计算、全域索引以及顶层分发能力
+# ==========================================
+from .utils import load_unified_config, normalize_keywords, extract_frontmatter, sanitize_ai_response
+from .vault_indexer import VaultIndexer
+from .ai_scheduler import AIScheduler
+from .egress_dispatcher import EgressDispatcher
+
+# ==========================================
+# ⚙️ 2. 核心管线与生命周期层 (Pipeline & Execution Flow)
+# 职责：承载文章从读取到落盘的链式处理流程
+# ==========================================
+from .pipeline.context import SyncContext
+from .pipeline.runner import Pipeline
+from .pipeline.steps import (
+    ReadAndNormalizeStep, 
+    ASTAndPurifyStep, 
+    MetadataAndHashStep, 
+    AISlugAndSEOStep, 
+    ContextualImageAltStep,
+    MaskingAndRoutingStep
+)
+
+# ==========================================
+# 🔌 3. 适配器与协议层 (Adapters & Protocol Interfaces)
+# 职责：抹平所有外部框架的方言差异（大模型、SSG框架、Obsidian语法）
+# ==========================================
 from .adapters.ingress import InputAdapter
 from .adapters.egress import SSGAdapter
 from .adapters.ast_resolver import TransclusionResolver, MDXResolver
+from .adapters.ai_provider import TranslatorFactory
 from .adapters.api_egress import WebhookBroadcaster
 from .adapters.syndication import ContentSyndicator
-from .adapters.ai_provider import TranslatorFactory
+
+# ==========================================
+# 📦 4. 服务模块与状态管理层 (Services & State Management)
+# 职责：掌管引擎的“记忆”与物理硬盘的“资产”
+# ==========================================
 from .storage.ledger import MetadataManager
 from .asset_pipeline import AssetPipeline
 from .router import RouteManager
 from .janitor import JanitorService
-
-# 引入我们刚刚创建的管线组件
-from .pipeline.context import SyncContext
-from .pipeline.runner import Pipeline
-from .pipeline.steps import (ReadAndNormalizeStep, ASTAndPurifyStep, MetadataAndHashStep, AISlugAndSEOStep, MaskingAndRoutingStep, ContextualImageAltStep)
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -57,6 +90,7 @@ class IllacmeEngine:
         output_paths = self.config.get('output_paths', {})
         target_base_dir = output_paths.get('markdown_dir')
         target_assets_dir = output_paths.get('assets_dir')
+        target_graph_dir = output_paths.get('graph_json_dir')
         
         theme_opts = self.config.get('theme_options', {}).get(self.active_theme, {})
         self.ssg_adapter = SSGAdapter(theme_opts.get('syntax_engine', self.active_theme), custom_adapters=self.config.get('framework_adapters', {}))
@@ -68,7 +102,9 @@ class IllacmeEngine:
             "vault": self.vault_root,
             "target_base": os.path.abspath(os.path.expanduser(target_base_dir)) if target_base_dir else None,
             "assets": os.path.abspath(os.path.expanduser(target_assets_dir)) if target_assets_dir else None,
-            "db": os.path.abspath(os.path.expanduser(self.config.get('metadata_db', './plenipes_metadata.json')))
+            "graph_json_dir": os.path.abspath(os.path.expanduser(target_graph_dir)) if target_graph_dir else None,
+            "db": os.path.abspath(os.path.expanduser(self.config.get('metadata_db', './plenipes_metadata.json'))),
+            "shadow": os.path.join(self.vault_root, '.illacme-shadow')  # 🚀 [V16] 注入影子库基座路径
         }
         
         self.i18n = self.config.get('i18n_settings', {})
@@ -81,39 +117,42 @@ class IllacmeEngine:
         self.meta = MetadataManager(self.paths["db"], self.auto_save_interval)
         self.translator = TranslatorFactory.create(self.config.get('translation', {}), sys_tuning_cfg=self.sys_tuning)
         self.asset_pipeline = AssetPipeline(self.paths['assets'], self.img_cfg)
-        self.route_manager = RouteManager(self.meta, self.translator)
+        self.route_manager = RouteManager(
+            self.meta, self.translator, 
+            lang_mapping=self.config.get('lang_mapping'),
+            default_lang=self.i18n.get('source', {}).get('lang_code', 'zh'),
+            active_theme=self.active_theme
+        )
         
-        self.asset_index = {}
-        self.md_index = {}
-        self._build_indexes()
+        # 🚀 [V16.4 重构] 呼叫独立扫描雷达，瞬间装载全域双重索引
+        self.md_index, self.asset_index = VaultIndexer.build_indexes(self.paths['vault'])
         
         self.transclusion_resolver = TransclusionResolver(self.md_index, self.asset_index, self.max_depth)
         self._processing_locks = {}
         self._global_engine_lock = threading.Lock()
         
-        self.janitor = JanitorService(self._global_engine_lock, self._processing_locks, self.paths, self.meta, self.route_manager, self.i18n)
+        self.janitor = JanitorService(self._global_engine_lock, self._processing_locks, self.paths, self.meta, self.route_manager, self.i18n, sys_cfg=self.sys_cfg, active_theme=self.active_theme)
         self.mdx_resolver = MDXResolver(self.paths["vault"], self.paths["target_base"])
         self.broadcaster = WebhookBroadcaster(self.pub_cfg, sys_tuning_cfg=self.sys_tuning)
         self.syndicator = ContentSyndicator(self.config.get('syndication', {}), self.config.get('site_url', ''), sys_tuning_cfg=self.sys_tuning)
+
+        # 🚀 [V16.4 重构] 挂载独立的物理出站分发器
+        self.dispatcher = EgressDispatcher(
+            paths=self.paths, meta=self.meta, route_manager=self.route_manager,
+            asset_pipeline=self.asset_pipeline, ssg_adapter=self.ssg_adapter,
+            mdx_resolver=self.mdx_resolver, syndicator=self.syndicator,
+            pub_cfg=self.pub_cfg, 
+            fm_order=self.fm_order,
+            asset_base_url=self.asset_base_url,
+            i18n_cfg=self.i18n,
+            janitor=self.janitor
+        )
 
     def _get_document_lock(self, rel_path):
         with self._global_engine_lock:
             if rel_path not in self._processing_locks:
                 self._processing_locks[rel_path] = threading.Lock()
             return self._processing_locks[rel_path]
-
-    def _build_indexes(self):
-        for root, dirs, files in os.walk(self.paths['vault']):
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
-            for f in files:
-                if f.startswith("."): continue 
-                abs_path = os.path.join(root, f)
-                if f.endswith((".md", ".mdx")):
-                    self.md_index[f] = abs_path
-                    self.md_index[os.path.splitext(f)[0]] = abs_path
-                else:
-                    if f not in self.asset_index: self.asset_index[f] = []
-                    self.asset_index[f].append(abs_path)
 
     def _is_excluded(self, rel_path):
         for p in self.pub_cfg.get('exclude_patterns', []):
@@ -127,13 +166,13 @@ class IllacmeEngine:
         """
         # 1. 检查是否为源语言代码 (例如 zh-cn -> 中文)
         src_cfg = self.i18n.get('source', {})
-        if src_cfg.get('code') == code:
+        if src_cfg.get('lang_code') == code:
             return src_cfg.get('name', 'Chinese')
         
         # 2. 在目标语言配置阵列中查找 (例如 en -> English)
         targets = self.i18n.get('targets', [])
         for target in targets:
-            if target.get('code') == code:
+            if target.get('lang_code') == code:
                 # 优先返回配置中定义的 name，若无则返回 code 兜底
                 return target.get('name', code)
         
@@ -147,7 +186,7 @@ class IllacmeEngine:
         return fallback_map.get(code.lower(), code)
 
     def sync_document(self, src_path, route_prefix, route_source, is_dry_run=False, force_sync=False):
-        """🚀 核心管线调度枢纽"""
+        """🚀 核心管线调度枢纽 (已接入 V16.1 统一寻址探针 / V16.4 架构极简版)"""
         rel_path = os.path.relpath(src_path, self.paths['vault']).replace('\\', '/')
         if self._is_excluded(rel_path): return
 
@@ -155,36 +194,37 @@ class IllacmeEngine:
         if not doc_lock.acquire(blocking=False): return
 
         try:
-            # 🚀 [架构升级 V15.2]：目标端物理探针 (Target Physical Probe)
-            # 在进入管线前，如果非强制同步，则核验所有目标语种的物理产物是否健在
+            cli_force = force_sync  # 🚀 [V16 状态机修复] 提取并保护最真实的终端指令意图
+            
+            # 🚀 [架构升级 V15.2/V16.1]：目标端物理探针 (Target Physical Probe)
             if not force_sync and self.paths['target_base']:
                 doc_info = self.meta.get_doc_info(rel_path)
-                # 仅当账本里存在该文件（说明之前成功同步过），才核验其产物
-                if doc_info and doc_info.get('hash') and doc_info.get('slug'):
+                if doc_info and doc_info.get('source_hash') and doc_info.get('slug'):
                     slug = doc_info['slug']
                     target_files_missing = False
                     
-                    # 推导当前文件的前端映射目录
                     t_abs = os.path.join(self.paths['vault'], rel_path)
                     t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], route_source)).replace('\\', '/')).replace('\\', '/')
                     if t_sub_dir == '.': t_sub_dir = ""
                     mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=False)
                     ext = os.path.splitext(rel_path)[1].lower()
                     
-                    # 收集需要核验的语种白名单
                     langs_to_check = []
-                    src_code = self.i18n.get('source', {}).get('code', 'zh-cn')
-                    if src_code: langs_to_check.append(src_code)
+                    src_code = self.i18n.get('source', {}).get('lang_code', 'zh-cn')
+                    if src_code is not None: langs_to_check.append(src_code)
                     
                     if self.i18n.get('enabled', True):
                         for t in self.i18n.get('targets', []):
-                            if t.get('code'): langs_to_check.append(t['code'])
+                            if t.get('lang_code'): langs_to_check.append(t['lang_code'])
                             
                     # 交叉比对硬盘物理文件
                     for code in langs_to_check:
-                        expected_dest = os.path.join(self.paths['target_base'], code, route_prefix, mapped_sub_dir, f"{slug}{ext}")
+                        expected_dest = self.route_manager.resolve_physical_path(
+                            self.paths['target_base'], code, route_prefix, mapped_sub_dir, slug, ext
+                        )
                         if not os.path.exists(expected_dest):
                             target_files_missing = True
+                            logger.debug(f"🔍 [探针脱靶] 目标物理路径缺失: {expected_dest}")
                             break
                             
                     if target_files_missing:
@@ -205,307 +245,84 @@ class IllacmeEngine:
             pipeline.execute(ctx)
             if ctx.is_aborted: return
 
-            # 3. 后置阶段：SEO 注入闭包与分发 (Phase 15)
-            seo_lock = threading.Lock()
+            # 3. 后置阶段：SEO 注入闭包与分发
             def inject_seo(fm, lang_code, text_content):
-                # 💡 专家视角：不再在闭包里写复杂的 Prompt 逻辑，而是直接调用 provider
-                lang_name = self.get_lang_name_by_code(lang_code) # 封装一个获取语言名称的方法
+                lang_name = self.get_lang_name_by_code(lang_code)
                 seo_data, success = self.translator.generate_seo_metadata(text_content, lang_name, ctx.is_dry_run)
-                
                 if success and seo_data:
                     fm['description'] = seo_data.get('description', '')
-                    fm['keywords'] = seo_data.get('keywords', '')
+                    fm['keywords'] = normalize_keywords(seo_data.get('keywords', ''))
                 return fm
 
+            primary_shadow_hash = ""  # 🚀 初始化影子探针
             src_cfg = self.i18n.get('source', {})
+
             if src_cfg:
-                src_code = src_cfg.get('code', 'zh-cn')
-                src_fm = inject_seo(ctx.base_fm.copy(), src_code, ctx.body_content)
-                self._dispatch_output(ctx.title, ctx.slug, ctx.masked_source, src_fm, ctx.rel_path, src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, assets_lock=ctx.assets_lock)
-    
-            # 🚀 [架构补丁]：激活多语言管线总闸
-            i18n_enabled = self.i18n.get('enabled', True)
-            targets = self.i18n.get('targets', [])
+                src_code = src_cfg.get('lang_code', 'zh-cn')
+                
+                src_fm = ctx.base_fm.copy()
+                if ctx.seo_data:
+                    src_fm.update(ctx.seo_data)
+                    if 'keywords' in src_fm:
+                        src_fm['keywords'] = normalize_keywords(src_fm['keywords'])
+                
+                # 🚀 [V16 影子探针]：主语种 SEO 物理自愈
+                doc_info = self.meta.get_doc_info(rel_path)
+                can_recover = (not cli_force and doc_info.get("source_hash") == ctx.current_hash and not ctx.is_silent_edit)
+                
+                ext = os.path.splitext(rel_path)[1].lower()
+                shadow_src_path = self.route_manager.resolve_physical_path(
+                    self.paths['shadow'], src_code, route_prefix, ctx.mapped_sub_dir, ctx.slug, ext
+                )
+                
+                if can_recover and os.path.exists(shadow_src_path):
+                    logger.debug(f"⚡️ [影子自愈] {rel_path} ({src_code}) 命中影子资产，跳过 AI SEO 提取。")
+                    try:
+                        with open(shadow_src_path, 'r', encoding='utf-8') as sf:
+                            s_fm, _ = extract_frontmatter(sf.read())
+                            src_fm.update({'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])})
+                            ctx.seo_data = {'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])}
+                    except Exception as e: logger.debug(f"影子读取失败: {e}")
+                elif not ctx.is_silent_edit:
+                    src_fm = inject_seo(src_fm, src_code, ctx.body_content)
+                    ctx.seo_data = {
+                        'description': src_fm.get('description', ''),
+                        'keywords': src_fm.get('keywords', '')
+                    }
+                
+                # 🚀 物理派发主语种并锁定哈希
+                primary_shadow_hash = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, src_fm, rel_path, src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock)
 
-            if i18n_enabled and targets and not ctx.is_silent_edit:
-                def process_target(target):
-                    code = target.get('code')
-                    if not code: return None
-                    final_body, target_health = ctx.masked_source, True
-                    
-                    # 👈 提取一份当前文章的基础元数据字典
-                    target_fm = ctx.base_fm.copy() 
+            # 🚀 [V16.4 重构] 呼叫独立的多语言 AI 并发调度中枢
+            AIScheduler.dispatch_targets(self, ctx, inject_seo, route_prefix, route_source, cli_force, rel_path, is_dry_run)
 
-                    if target.get('translate_body', False):
-                        if is_dry_run:
-                            final_body = f"[DRY-RUN]\n{ctx.masked_source}"
-                            target_fm['title'] = f"[EN] {target_fm.get('title', '')}"
-                        else:
-                            try:
-                                target_lang_name = target.get('name', code)
-                                source_lang_name = self.i18n.get('source', {}).get('name', '中文')
-                                
-                                if self.config.get('system', {}).get('verbose_ai_logs', True):
-                                    logger.info(f"🌐 [AI 翻译] 正在将正文及元数据转换为目标语言 ({code})...")
-                                
-                                # 1. 翻译正文 (Markdown Body)
-                                final_body = self.translator.translate(ctx.masked_source, source_lang_name, target_lang_name)
-                                
-                                # 2. 翻译元数据 (Title) -> 采用极致强硬的 Prompt 斩断大模型的废话
-                                if target_fm.get('title'):
-                                    meta_prompt = f"Target: Translate this title to {target_lang_name}. Rule: Output ONLY the translated string, NO quotes, NO explanation, NO conversational filler. Title: '{target_fm['title']}'"
-                                    raw_title = self.translator.translate(meta_prompt, "Auto", "Meta Title")
-                                    # 物理级除垢：防止有些笨模型依然加了双引号
-                                    target_fm['title'] = raw_title.replace('"', '').replace('\n', '').strip()
-                                    
-                            except Exception as e:
-                                logger.warning(f"⚠️ [翻译失败] 文章 {rel_path} ({code}) 翻译过程中断: {e}")
-                                target_health = False
-                    
-                    # 3. 执行 SEO 注入
-                    # 💡 架构魔法：此时传入的是纯正的英文 final_body，SEO 引擎会直接原生提取出完美的英文 Description 和 Keywords！
-                    target_fm = inject_seo(target_fm, code, final_body)
-                    
-                    return (code, final_body, target_fm, target_health)
-    
-                # 使用系统配置的并发数 (max_workers) 启动并发翻译阵列
-                with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                    future_to_code = {executor.submit(process_target, t): t for t in targets if t.get('code')}
-                    for future in concurrent.futures.as_completed(future_to_code):
-                        res = future.result()
-                        if res:
-                            t_code, t_body, t_fm, t_health = res
-                            if not t_health: ctx.ai_health_flag[0] = False
-                            self._dispatch_output(ctx.title, ctx.slug, t_body, t_fm, rel_path, t_code, route_prefix, route_source, ctx.mapped_sub_dir, ctx.masks, is_dry_run, is_target=True, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, assets_lock=ctx.assets_lock)
-            elif not i18n_enabled and targets:
-                # 💡 专家视角日志提示：当存在 target 但总闸关闭时，给出静默跳过提示
-                logger.debug(f"🤫 [多语言跳过] {rel_path}：检测到 i18n 总闸已关闭，已绕过所有目标语种翻译任务。")
-
-            # 4. 终态记录与广播 (Phase 16)
+            # 4. 终态记录与广播
             if not ctx.is_dry_run:
                 final_assets, final_ext_assets = list(ctx.node_assets), list(ctx.node_ext_assets)
                 elapsed = time.perf_counter() - ctx.node_start_perf
                 persist_hash = ctx.current_hash if ctx.ai_health_flag[0] else ""
                 
-                self.meta.register_document(ctx.rel_path, ctx.title, slug=ctx.slug, file_hash=persist_hash, seo_data=ctx.seo_data, route_prefix=ctx.route_prefix, route_source=ctx.route_source, assets=final_assets, ext_assets=final_ext_assets)
-                
-                if ctx.is_silent_edit: logger.info(f"✨ [静默直传成功] {ctx.rel_path} | ⏱️ 耗时: {elapsed:.2f} 秒")
+                self.meta.register_document(
+                    ctx.rel_path, 
+                    ctx.title, 
+                    slug=ctx.slug, 
+                    source_hash=persist_hash, 
+                    shadow_hash=primary_shadow_hash, 
+                    seo_data=ctx.seo_data, 
+                    route_prefix=ctx.route_prefix, 
+                    route_source=ctx.route_source, 
+                    assets=final_assets, 
+                    ext_assets=final_ext_assets,
+                    outlinks=list(ctx.node_outlinks)
+                )
+                self.meta.save()
+
+                if ctx.is_silent_edit: 
+                    logger.info(f"✨ [静默直传成功] {ctx.rel_path} | ⏱️ 耗时: {elapsed:.2f} 秒")
                 elif ctx.ai_health_flag[0]:
                     logger.info(f"✨ [同步成功] {ctx.rel_path} | 📦 资产: {len(final_assets)} | ⚡️ 耗时: {elapsed:.2f} 秒")
-                    self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.get('code') or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
+                    self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.get('lang_code') or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
                 else: logger.warning(f"🚧 [局部降级] {ctx.rel_path} 部分 AI 任务不完整，已拦截指纹缓存。")
 
         finally:
             doc_lock.release()
-
-    def _dispatch_output(self, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, assets_lock=None):
-        """核心写盘辅助函数 (逻辑未改动，保持字节级一致)"""
-        if not self.paths['target_base']: return
-        
-        def _get_closest_asset(target_filename):
-            candidates = self.asset_index.get(target_filename, [])
-            if not candidates: return None
-            if len(candidates) == 1: return candidates[0]
-            current_abs_dir = os.path.dirname(os.path.join(self.paths['vault'], rel_path))
-            return sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(p)])), reverse=True)[0]
-        
-        def unmask_fn(m):
-            idx = int(re.search(r'\d+', m.group(0)).group())
-            orig = masks[idx]
-            if orig.startswith('\\'): return orig 
-            
-            # 🛡️ 辅助函数优先定义
-            def log_asset(p_name):
-                if node_assets is not None and assets_lock is not None:
-                    with assets_lock: node_assets.add(p_name)
-                return p_name
-
-            # ==========================================
-            # 🚀 V15 架构：纯 URL 资产解蔽 (对接 steps.py)
-            # ==========================================
-            if orig.startswith('URL_ONLY_IMG:'):
-                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_IMG:', '').strip())
-                if clean_path.startswith(('http://', 'https://', '//')): return clean_path
-                filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
-                target_asset_path = _get_closest_asset(filename)
-                if target_asset_path:
-                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                    return f"{self.asset_base_url}{processed_name}"
-                return clean_path
-                
-            if orig.startswith('URL_ONLY_LNK:'):
-                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_LNK:', '').strip())
-                if clean_path.startswith(('http://', 'https://', 'mailto:', '#')): return clean_path
-                
-                asset_filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
-                target_asset_path = _get_closest_asset(asset_filename)
-                if target_asset_path:
-                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, asset_filename, is_dry_run))
-                    return f"{self.asset_base_url}{processed_name}"
-                
-                target_rel_path = self.meta.resolve_link(clean_path) or self.meta.resolve_link(os.path.splitext(os.path.basename(clean_path))[0])
-                if target_rel_path:
-                    t_doc_info = self.meta.get_doc_info(target_rel_path)
-                    t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
-                    t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
-                    t_abs = os.path.join(self.paths['vault'], target_rel_path)
-                    t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
-                    if t_sub_dir == '.': t_sub_dir = ""
-                    t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
-                    t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                    raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
-                    return re.sub(r'/+', '/', raw_url)
-                return clean_path
-
-            # ==========================================
-            # 🛡️ 兜底防线：处理 Obsidian 方言及传统屏蔽产物
-            # ==========================================
-            if orig.startswith('![['):
-                filename = orig[3:-2].split('|')[0].strip()
-                alt_text = orig[3:-2].split('|')[1] if '|' in orig[3:-2] else filename
-                target_asset_path = _get_closest_asset(filename) 
-                if target_asset_path:
-                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                    ext = os.path.splitext(processed_name)[1].lower()
-                    return f"![{alt_text}]({self.asset_base_url}{processed_name})" if ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg'] else f"[{alt_text}]({self.asset_base_url}{processed_name})"
-                
-                # 🚀 核心修复 1: 幽灵 Embed 脱敏
-                # 如果文件不存在，将其降级为安全的 Markdown 死链，彻底阻断 Vite 的 Import 尝试
-                return f"[{alt_text}](#broken-link)"
-                
-            elif orig.startswith('!['):
-                match = re.match(r'\!\[(.*?)\]\((.*?)\)', orig)
-                if match:
-                    alt_text, img_path = match.groups()
-                    filename = os.path.basename(urllib.parse.unquote(img_path.strip()).split('?')[0].split('#')[0])
-                    target_asset_path = _get_closest_asset(filename)
-                    if target_asset_path:
-                        processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                        return f"![{alt_text}]({self.asset_base_url}{processed_name})"
-                        
-                    # 🚀 核心修复 2: 常规图片相对死链脱敏
-                    if not img_path.startswith(('http://', 'https://', '/', '#')):
-                        return f"![{alt_text}](/broken-image.png)"
-                return orig
-                
-            elif orig.startswith('[['):
-                target_text = orig[2:-2].split('|')[0].strip()
-                custom_zh_text = orig[2:-2].split('|')[1].strip() if '|' in orig[2:-2] else target_text
-                target_asset_path = _get_closest_asset(target_text)
-                if target_asset_path:
-                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, target_text, is_dry_run))
-                    return f"[{custom_zh_text}]({self.asset_base_url}{processed_name})"
-                
-                target_rel_path = self.meta.resolve_link(target_text)
-                if target_rel_path:
-                    t_doc_info = self.meta.get_doc_info(target_rel_path)
-                    t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', target_text.replace(' ', '-').lower())).strip('-')
-                    t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
-                    if not is_dry_run: self.meta.register_document(target_rel_path, target_text, slug=t_slug, route_prefix=t_prefix, route_source=t_source)
-                    t_abs = os.path.join(self.paths['vault'], target_rel_path)
-                    t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
-                    if t_sub_dir == '.': t_sub_dir = ""
-                    t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
-                    t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                    raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
-                    display_text = t_slug.replace('-', ' ').title() if is_target else custom_zh_text
-                    return f"[{display_text}]({re.sub(r'/+', '/', raw_url)})"
-                
-                # 🚀 核心修复 3: 幽灵 Wikilink 脱敏
-                return f"[{custom_zh_text}](#broken-link)"
-                
-            elif orig.startswith('['):
-                match = re.match(r'\[(.*?)\]\((.*?)\)', orig)
-                if match and not match.group(2).startswith(('http://', 'https://', 'mailto:', '#')):
-                    link_text, link_path = match.groups()
-                    clean_path = urllib.parse.unquote(link_path.strip())
-                    asset_filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
-                    target_asset_path = _get_closest_asset(asset_filename)
-                    if target_asset_path:
-                        processed_name = log_asset(self.asset_pipeline.process(target_asset_path, asset_filename, is_dry_run))
-                        return f"[{link_text}]({self.asset_base_url}{processed_name})"
-
-                    target_rel_path = self.meta.resolve_link(clean_path) or self.meta.resolve_link(os.path.splitext(os.path.basename(clean_path))[0])
-                    if target_rel_path:
-                        t_doc_info = self.meta.get_doc_info(target_rel_path)
-                        t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
-                        t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
-                        t_abs = os.path.join(self.paths['vault'], target_rel_path)
-                        t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
-                        if t_sub_dir == '.': t_sub_dir = ""
-                        t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=True)
-                        t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                        raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
-                        display_text = t_slug.replace('-', ' ').title() if is_target else link_text
-                        return f"[{display_text}]({re.sub(r'/+', '/', raw_url)})"
-                return orig
-            return orig
-
-        # 🚀 循环递归解蔽 (Recursive Unmasking)
-        final_body = masked_body
-        max_depth = 10
-        current_depth = 0
-        while re.search(r'\[\[STB_MASK_\d+\]\]', final_body) and current_depth < max_depth:
-            final_body = re.sub(r'\[\[STB_MASK_\d+\]\]', unmask_fn, final_body)
-            current_depth += 1
-            
-        if current_depth == max_depth:
-            logger.warning(f"⚠️ [防御预警] {rel_path} 解蔽层数达到上限，可能存在死循环屏蔽。")
-
-        # ==========================================
-        # 🛡️ 架构级 MDX 防崩溃装甲 (Astro Strict Mode Safeguard)
-        # ==========================================
-        if rel_path.lower().endswith('.mdx'):
-            # 1. 保障 import/export 语句下方必须存在空行 (防 AST 语法崩溃)
-            # 哪怕 AI 把正文贴在了分号后面，也能被强行回车撕开
-            final_body = re.sub(r'((?:import|export)\s+[\s\S]*?[\'"]\s*;?)\n([^\n])', r'\1\n\n\2', final_body)
-            
-            # 2. 保障 JSX 块级标签与其上方的普通文本存在空行 (防被误判为跨行内联元素)
-            final_body = re.sub(r'([^\n])\n\s*(<[A-Z])', r'\1\n\n\2', final_body)
-            
-            # 3. 保障闭合的 JSX 标签 (</Card> 或 <Card />) 与其下方的普通文本存在空行
-            final_body = re.sub(r'(</[A-Z][a-zA-Z0-9]*>|<[A-Z][^>]*/>)\n\s*([^\n<])', r'\1\n\n\2', final_body)
-        # ==========================================
-
-        if self.pub_cfg.get('append_credit', False):
-            final_body += f"{self.pub_cfg.get('credit_text', '')}\n"
-        
-        merged_fm = fm_dict.copy()
-        merged_fm['title'] = slug.replace('-', ' ').title() if is_target else title
-        
-        import_pattern = re.compile(r'^(import\s+.*?from\s+[\'"].*?[\'"];?)$', re.MULTILINE)
-        imports = import_pattern.findall(final_body)
-        if imports:
-            final_body = import_pattern.sub('', final_body)
-            final_body = '\n'.join(list(dict.fromkeys(imports))) + '\n\n' + final_body.lstrip()
-            
-        ordered_fm = {key: merged_fm.pop(key) for key in self.fm_order if key in merged_fm}
-        ordered_fm.update(merged_fm)
-
-        fm_str = "---\n" + yaml.dump(ordered_fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=float("inf")) + "---\n\n"
-
-        if node_ext_assets is not None and assets_lock is not None:
-            ext_md_pattern = re.compile(r'\!\[.*?\]\((https?://[^\)]+)\)')
-            ext_html_pattern = re.compile(r'<img[^>]+src=["\'](https?://[^"\']+)["\']')
-            with assets_lock:
-                for match in ext_md_pattern.finditer(final_body): node_ext_assets.add(match.group(1))
-                for match in ext_html_pattern.finditer(final_body): node_ext_assets.add(match.group(1))
-
-        ext = os.path.splitext(rel_path)[1].lower()
-        dest = os.path.join(self.paths['target_base'], lang_code, route_prefix, mapped_sub_dir, f"{slug}{ext}")
-        
-        if ext == '.mdx':
-            src_abs_path = os.path.join(self.paths['vault'], rel_path)
-            final_body = self.mdx_resolver.remap_imports(final_body, src_abs_path, dest)
-
-        if not is_dry_run:
-            try:
-                os.makedirs(os.path.dirname(dest), exist_ok=True)
-                tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(dest), suffix=".tmp.md")
-                with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f: f.write(fm_str + final_body)
-                os.replace(tmp_path, dest)
-                
-                if lang_code == self.i18n.get('source', {}).get('code', 'zh-cn'):
-                    self.syndicator.syndicate(ordered_fm, final_body, f"/{lang_code}/{mapped_sub_dir}/{slug}".replace('//', '/'))
-            except Exception as e:
-                logger.error(f"🛑 写入失败: {e}")

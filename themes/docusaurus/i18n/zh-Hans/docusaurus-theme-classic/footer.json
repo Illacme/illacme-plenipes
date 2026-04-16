@@ -1,0 +1,17 @@
+{
+  "link.title.Docs": {
+    "message": "文档"
+  },
+  "link.item.label.Tutorial": {
+    "message": "教程"
+  },
+  "link.title.Community": {
+    "message": "社区"
+  },
+  "link.item.label.Blog": {
+    "message": "博客"
+  },
+  "copyright": {
+    "message": "Copyright © 2026 Illacme Plenipes, Inc. Built with Docusaurus."
+  }
+}

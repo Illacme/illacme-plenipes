@@ -53,9 +53,17 @@ test-vault/
 mock-data/
 
 # 【前端文档输出区】拦截所有被引擎同步到前端的个人笔记
-themes/*/src/content/docs/**/*
-# ⭐️ 白名单：精准放行开源框架自带的各语种起步文件与指南 (规避 Git 父目录忽略陷阱)
+themes/*/src/content/docs/**/*.md*
+themes/*/src/content/blog/**/*.md*
+themes/*/i18n/*/docusaurus-plugin-content-docs/**/*.md*
+themes/*/i18n/*/docusaurus-plugin-content-blog/**/*.md*
+themes/*/i18n/*/docusaurus-plugin-content-pages/**/*.md*
+
+# ⭐️ 白名单：精准放行开源框架自带的各语种起步文件与指南
 !themes/*/src/content/docs/
+!themes/*/i18n/*/docusaurus-plugin-content-docs/
+!themes/*/i18n/*/docusaurus-plugin-content-blog/
+!themes/*/i18n/*/docusaurus-plugin-content-pages/
 !themes/*/src/content/docs/index.md
 !themes/*/src/content/docs/index.mdx
 !themes/*/src/content/docs/getting-started.md
@@ -67,6 +75,7 @@ themes/*/src/content/docs/**/*
 themes/*/public/assets/*
 themes/*/public/images/*
 themes/*/public/media/*
+themes/*/static/assets/*
 # ⭐️ 白名单：强制放行 Astro/Starlight 自带的默认 UI 资源
 !themes/*/public/assets/favicon.ico
 !themes/*/public/assets/favicon.svg

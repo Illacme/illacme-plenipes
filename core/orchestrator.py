@@ -12,6 +12,7 @@ from datetime import datetime
 import traceback
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import sys
 import logging
 from .cli_bootstrap import send_notification
 
@@ -69,7 +70,6 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
         from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
     except ImportError:
         logger.error("❌ 缺失工业级 UI 渲染依赖！请立即在终端执行: pip install rich")
-        import sys
         sys.exit(1)
 
     total_tasks = len(task_queue)
