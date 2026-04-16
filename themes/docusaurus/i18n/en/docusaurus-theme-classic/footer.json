@@ -1,0 +1,20 @@
+{
+  "title.Docs": {
+    "message": "Docs"
+  },
+  "title.Community": {
+    "message": "Community"
+  },
+  "title.More": {
+    "message": "More"
+  },
+  "link.label.Tutorial": {
+    "message": "Tutorial"
+  },
+  "link.label.Blog": {
+    "message": "Blog"
+  },
+  "link.label.GitHub": {
+    "message": "GitHub"
+  }
+}

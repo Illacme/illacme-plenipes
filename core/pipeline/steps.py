@@ -66,18 +66,24 @@ class MetadataAndHashStep(Step):
         defaults = ctx.engine.fm_defaults or {}
         ctx.base_fm = {k: v for k, v in defaults.items() if v is not None and str(v).strip() != ""}
         ctx.base_fm.update(ctx.fm_dict)
-        if 'keywords' in ctx.base_fm:
-            ctx.base_fm['keywords'] = normalize_keywords(ctx.base_fm['keywords'])
+        
+        # 🚀 全域数组字段矩阵化：彻底封堵一切以字符串形式存在的结构
+        # 将原始解析产生的纯文本字段，通过清洗引擎全部投递为 List 数组
+        for array_field in ['keywords', 'tags', 'categories']:
+            if array_field in ctx.base_fm:
+                ctx.base_fm[array_field] = normalize_keywords(ctx.base_fm[array_field])
         
         if 'slug' in ctx.base_fm: del ctx.base_fm['slug']
 
         ctx.current_hash = hashlib.md5((str(ctx.base_fm) + ctx.body_content).encode('utf-8')).hexdigest()
-        ctx.engine.meta.register_document(ctx.rel_path, ctx.title)
+        # 🚀 [V17.5 关键修复] 同步哈希指纹，守护增量编译防线
+        ctx.engine.meta.register_document(ctx.rel_path, ctx.title, source_hash=ctx.current_hash)
         ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
 
         is_toxic_slug = '%' in str(ctx.doc_info.get("slug", ""))
-        if not ctx.force_sync and not is_toxic_slug and ctx.doc_info.get("hash") == ctx.current_hash: 
-            ctx.is_aborted = True 
+        # 🚀 状态机契约对齐：读取升级后的 source_hash 进行防抖拦截
+        if not ctx.force_sync and not is_toxic_slug and ctx.doc_info.get("source_hash") == ctx.current_hash: 
+            ctx.is_aborted = True
 
 class AISlugAndSEOStep(Step):
     """阶段 11-12: Slug 重塑与 SEO 引擎"""
@@ -117,16 +123,23 @@ class AISlugAndSEOStep(Step):
                 
                 # 2. 如果标题全是中文，抹除后变成空字符串了，则触发 Hash 算法生成唯一短链接
                 if not clean_slug:
-                    import hashlib
                     clean_slug = f"doc-{hashlib.md5(ctx.title.encode('utf-8')).hexdigest()[:6]}"
                     
                 slug_raw = clean_slug
                 
         ctx.slug = slug_raw
 
+        # ==========================================
+        # 🚀 核心修复：SEO 缓存保护机制
+        # ==========================================
         ctx.seo_data = ctx.doc_info.get("seo", {})
-        if 'description' in ctx.seo_data or 'keywords' in ctx.seo_data: ctx.seo_data = {}
-
+        
+        # 只有在非静默模式（需要 AI 重新生成时），才主动清空旧的 SEO 数据
+        # 如果处于静默模式 (is_silent_edit)，则死死守住旧数据，以供跨语种共享
+        if not ctx.is_silent_edit:
+            if 'description' in ctx.seo_data or 'keywords' in ctx.seo_data: 
+                ctx.seo_data = {}
+                
 class MaskingAndRoutingStep(Step):
     """阶段 13-14: 物理遮蔽与动态路由推导"""
     def process(self, ctx):
@@ -158,21 +171,21 @@ class MaskingAndRoutingStep(Step):
         mask_pattern = r'\$\$.*?\$\$|\$[^\$]+\$|\!\[\[[^\]]+\]\]|\[\[[^\]]+\]\]|\!\[[^\]]*\]\([^)]+\)|\[[^\]]*\]\([^)]+\)|\\[!"#$%&\'()*+,\-./:;<=>?@[\\\]^_`{|}~]'
         ctx.masked_source = re.sub(mask_pattern, mask_fn, ctx.body_content, flags=re.DOTALL)
 
-        # 🚀 核心修复：彻底删掉下面这段“过度保护”代码！
-        # 让大模型直接“看到”完整的 <Card> 组件，它会遵循 Prompt 乖乖去翻译 title 和内部文本
-        # if ctx.rel_path.lower().endswith('.mdx'):
-        #     logic_blocks = ctx.engine.mdx_resolver.extract_logic_blocks(ctx.masked_source)
-        #     for block in logic_blocks:
-        #         if isinstance(block, tuple): block = "".join(block)
-        #         ctx.masks.append(block)
-        #         ctx.masked_source = ctx.masked_source.replace(block, f"[[STB_MASK_{len(ctx.masks)-1}]]")
-
         abs_src_dir = os.path.join(ctx.engine.paths['vault'], ctx.route_source)
         sub_rel_path = os.path.relpath(ctx.src_path, abs_src_dir).replace('\\', '/')
         sub_dir = os.path.dirname(sub_rel_path).replace('\\', '/')
         if sub_dir == '.': sub_dir = ""
         
         ctx.mapped_sub_dir = ctx.engine.route_manager.get_mapped_sub_dir(sub_dir, is_dry_run=ctx.is_dry_run, allow_ai=not ctx.is_silent_edit)
+        
+        # 🚀 [V17.5 终极加固] 路由画像实时固化：在保洁启动前，必须让账本知道最新的“合法地址”
+        ctx.engine.meta.register_document(
+            ctx.rel_path, 
+            ctx.title, 
+            slug=ctx.slug, 
+            route_prefix=ctx.route_prefix, 
+            route_source=ctx.route_source
+        )
 
 class ContextualImageAltStep(Step):
     """阶段 12.5: 上下文感知的图片 Alt 自动生成引擎"""

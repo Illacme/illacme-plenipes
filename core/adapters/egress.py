@@ -22,9 +22,8 @@ class SSGAdapter:
     2. Callout 转换：将 Obsidian 专有语法映射为各主流 SSG 框架支持的标准 Container 语法。
     """
     
-    # 🚀 将正则和语义映射表提升为类级常量，彻底消灭运行时高频正则编译的 CPU 开销
-    # 匹配规则：精确捕获 Callout 类型标识、自定义标题及后续连续的引用行块
-    _CALLOUT_PATTERN = re.compile(r'^>[ \t]*\[!([a-zA-Z]+)\](.*?)\n((?:^[ \t]*>.*\n?)*)', re.MULTILINE)
+    # 🚀 强化版正则：支持 > 前后的可选空格，并允许标题后直接换行
+    _CALLOUT_PATTERN = re.compile(r'^[ \t]*>[ \t]*\[!([a-zA-Z]+)\][ \t]*(.*?)\n((?:^[ \t]*>.*\n?)*)', re.MULTILINE)
     
     # 防御阵列：精准识别代码块起始位，用于强制执行大小写扁平化处理
     _CODE_BLOCK_PATTERN = re.compile(r'^([`~]{3,})([a-zA-Z0-9_+-]+)[ \t]*$', re.MULTILINE)
@@ -50,54 +49,113 @@ class SSGAdapter:
         self.is_declarative = self.syntax_engine in self.custom_adapters
         self.declarative_config = self.custom_adapters.get(self.syntax_engine, {})
         
-        # 预加载目标框架映射表，实现单点构建中的 O(1) 级转换效率（保留作为系统内建兜底方案）
+        # 预加载目标框架映射表，实现单点构建中的 O(1) 级转换效率
         self._engine_map = {}
         if self.syntax_engine == 'starlight':
             self._engine_map = {'info': 'note', 'warning': 'caution', 'danger': 'danger', 'success': 'tip', 'tip': 'tip'}
         elif self.syntax_engine in ['vitepress', 'docusaurus']:
             self._engine_map = {'info': 'info', 'warning': 'warning', 'danger': 'danger', 'success': 'success', 'tip': 'tip'}
 
-    def convert_callouts(self, text):
+    def convert_callouts(self, content):
         """
-        执行语法全量转换与防御性预处理。
+        🚀 全球化语法降维引擎：将通用 Callout 转换为目标框架的物理组件。
+        已针对 Docusaurus 进行了 Admonition 闭环加固，彻底解决 [! 符号引发的 MDX 编译崩溃。
         """
-        # 架构级防御：先抹平代码块的大写问题，彻底消灭前端渲染引擎常见的 Language Not Found 警告
-        text = self._CODE_BLOCK_PATTERN.sub(lambda m: f"{m.group(1)}{m.group(2).lower()}", text)
-
         def repl(m):
-            ctype = m.group(1).lower()
+            g_type = m.group(1).lower()
             title = m.group(2).strip()
-            body = m.group(3)
+            # 物理级清洗：更彻底地剥离每一行前面的 > 符号
+            raw_body = m.group(3)
+            body_lines = []
+            for line in raw_body.split('\n'):
+                # 移除前导空格和第一个出现的 >
+                clean_line = re.sub(r'^[ \t]*>[ \t]?', '', line)
+                body_lines.append(clean_line)
+            body = '\n'.join(body_lines).strip()
             
-            # 清理引用行中的每一行前导 '>' 标记，提取出纯净的 Callout 内容主体
-            body = re.sub(r'^[ \t]*>[ \t]?', '', body, flags=re.MULTILINE).strip()
-            g_type = self._GENERIC_MAP.get(ctype, 'info')
+            # 优先级：映射表 -> 通用映射表 -> 默认 info
+            target_type = self._engine_map.get(g_type) or self._GENERIC_MAP.get(g_type, 'info')
+            
+            # 强制执行 ::: 转换，彻底消灭 [! 符号
+            if self.syntax_engine in ['docusaurus', 'vitepress', 'starlight']:
+                prefix = f":::{target_type}"
+                # Docusaurus 建议标题直接写在类型后面
+                if title: prefix += f" {title}"
+                return f"\n{prefix}\n{body}\n:::\n\n"
+            
+            return f"\n> **{title or target_type.upper()}**\n> {body}\n\n"
 
-            # 优先级 1：声明式渲染引擎分发
-            if self.is_declarative:
-                tpl = self.declarative_config.get('callout_template', "\n> **{title}**\n> {body_quoted}\n\n")
-                type_map = self.declarative_config.get('type_mapping', {})
-                mapped_type = type_map.get(g_type, g_type)
-                body_quoted = '\n> '.join(body.split('\n'))
-                
+        return self._CALLOUT_PATTERN.sub(repl, content)
+
+    def adapt_mdx_imports(self, content):
+        """
+        🚀 MDX 终极破壁器：处理 Acorn 解析冲突，解决变量未定义崩溃。
+        """
+        if self.syntax_engine != 'docusaurus':
+            return content
+
+        # 1. 物理重写：切断所有 Astro/Starlight 依赖
+        content = re.sub(r"import\s+[\s\S]*?from\s+'(@astrojs/starlight|astro/config)[\s\S]*?';?", "", content)
+
+        # 2. 🚀 执行声明式组件映射
+        mappings = self.declarative_config.get('component_mappings', {})
+        for component, template in mappings.items():
+            
+            def complex_repl(m):
+                attrs_raw = m.group(1) or ""
                 try:
-                    return tpl.format(type=mapped_type, title=title, body=body, body_quoted=body_quoted)
-                except KeyError as e:
-                    logger.error(f"🛑 声明式渲染引擎模板存在语法错误，无法解析占位符 {e}。请检查 config.yaml。")
-                    return f"\n> **{title}**\n> {body_quoted}\n\n"
-
-            # 优先级 2：内建硬编码的系统级兜底策略（向下兼容历史版本）
-            if self.syntax_engine == 'starlight':
-                return f"\n:::{self._engine_map.get(g_type, 'note')} {title}\n{body}\n:::\n\n"
-            elif self.syntax_engine in ['vitepress', 'docusaurus']:
-                return f"\n:::{self._engine_map.get(g_type, 'info')} {title}\n{body}\n:::\n\n"
-            elif self.syntax_engine == 'hugo':
-                return f"\n{{{{< admonition type=\"{g_type}\" title=\"{title}\" >}}}}\n{body}\n{{{{< /admonition >}}}}\n\n"
-            elif self.syntax_engine == 'hexo':
-                return f"\n{{% note {g_type} %}}\n**{title}**\n{body}\n{{% endnote %}}\n\n"
-            else:
-                # 终极兜底方案：自动降级为 Markdown 标准加粗引用格式
-                body_quoted = '\n> '.join(body.split('\n'))
-                return f"\n> **{title}**\n> {body_quoted}\n\n"
+                    inner_content = m.group(2).strip()
+                except (IndexError, AttributeError):
+                    inner_content = ""
                 
-        return self._CALLOUT_PATTERN.sub(repl, text)
+                # 提取属性 (如 title="xxx")
+                attrs = dict(re.findall(r'(\w+)\s*=\s*["\'“”]([^"\'“”]+)["\'“”]', attrs_raw))
+                
+                res = template
+                if "{children}" in res:
+                    res = res.replace("{children}", inner_content)
+                # 注入属性
+                for key, val in attrs.items():
+                    res = res.replace(f'{{{key}}}', val)
+                
+                # 🛡️ 变量隔离：如果映射后仍残留 {xxx}，将其替换为字符串常量
+                # 这是防止 Acorn 报错 "is not defined" 的核心逻辑
+                res = re.sub(r'\{([a-zA-Z_]+)\}', r'""', res)
+                return res
+
+            # A. 循环处理嵌套容器 (处理成对标签)
+            while f'<{component}' in content and f'</{component}>' in content:
+                # 改进正则：允许组件名后可选空格，并使用非贪婪匹配
+                pattern = re.compile(rf'<{component}(?:\s*|(?:\s+[^>]*))>(((?!<{component}).)*?)</{component}>', re.DOTALL)
+                new_content = pattern.sub(complex_repl, content)
+                if new_content == content: break
+                content = new_content
+
+            # B. 处理自闭合或单标签 (如 <Badge text="..." />)
+            # 改进：允许属性前没有空格（即 <Badge/> 或 <Badge />）
+            single_pattern = re.compile(rf'<{component}(?:\s+([^/>]*))?/?>', re.MULTILINE)
+            content = single_pattern.sub(complex_repl, content)
+
+            # C. 🚀 [V16.8 稳定性加固] 残留标签平整化 (处理不规范的单开口标签)
+            # 如果配置中定义了映射但正文中仍残留开口或闭口（通常源于源文档损坏），
+            # 则强制将其抹除（保留其在 A 步骤中可能已提取的内容），防止 MDX 编译崩溃。
+            residual_tag_pattern = re.compile(rf'</?{component}(?:\s+[^>]*)?>', re.MULTILINE)
+            content = residual_tag_pattern.sub('', content)
+
+        # 3. 🚀 [V16 专项加固] 样式块降维打击 (解决 Acorn 解析错误)
+        # 如果 MDX 包含 <style>，必须将其内容包装在反引号中，或者直接删除标签对，
+        # Docusaurus 默认支持在 MDX 里直接写 <style> 但括号必须符合 JS 规范。
+        # 这里我们采用最稳妥的方式：直接将 Starlight 风格的样式块转换为 Docusaurus 兼容模式。
+        if '<style>' in content:
+            # 物理级提取 CSS 内容并强制转义
+            content = content.replace('<style>{`', '<style>{`').replace('`}</style>', '`}</style>')
+            # 特殊情况：如果样式块没闭合，强制闭合防止崩溃
+            if '<style>' in content and '</style>' not in content:
+                content += '\n`}</style>'
+
+
+        # 4. 标签对齐
+        content = re.sub(r'<Aside\s+type="([a-z]+)"(?:\s+title="([^"]*)")?>', r':::\1 \2', content)
+        content = content.replace('</Aside>', ':::').replace('</Side>', ':::')
+        
+        return content

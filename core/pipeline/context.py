@@ -45,6 +45,7 @@ class SyncContext:
         self.assets_lock = threading.Lock()
         self.node_assets = set()
         self.node_ext_assets = set()
+        self.node_outlinks = set()
         self.masks = []
         self.masked_source = ""
 

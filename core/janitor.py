@@ -5,10 +5,11 @@ Illacme-plenipes Core - Janitor Engine (GC & Cleanup)
 模块职责：幽灵清道夫与垃圾回收微内核。
 接管所有的自底向上的物理资产清理、孤儿路由拔除与状态机自愈逻辑。
 架构原则：严格依赖注入 (DI)，挂载全局并发锁，绝对免疫对正在生成中文件的误杀。
-🚀 [V14.6 架构升级]：全面接入状态机快照引擎 (Snapshot)，物理切断数据争用 (Data Race)。
+🚀 [V16.1 架构升级]：全面修复多语言键名脱靶 bug，并注入主引擎同源的物理寻址探针，彻底消灭脑裂误杀。
 """
 
 import os
+import re
 import logging
 
 logger = logging.getLogger("Illacme.plenipes")
@@ -18,18 +19,25 @@ class JanitorService:
     🚀 独立垃圾回收中枢
     在执行任何物理删除前，必须侦测全局引擎锁与处理中互斥锁，确保 I/O 安全。
     """
-    def __init__(self, global_lock, processing_locks, paths, meta_manager, route_manager, i18n_cfg):
+    def __init__(self, global_lock, processing_locks, paths, meta_manager, route_manager, i18n_cfg, sys_cfg=None, active_theme='starlight'):
         self._global_engine_lock = global_lock
         self._processing_locks = processing_locks
         self.paths = paths
         self.meta = meta_manager
         self.route_manager = route_manager
         self.i18n = i18n_cfg
+        self.sys_cfg = sys_cfg or {}
+        self.active_theme = active_theme
+        # 🚀 [V17.6] 物理白名单高速缓存：存储本轮同步中确认为“合法”且“新鲜”的路径
+        self.fresh_paths = set()
+
+    def mark_as_fresh(self, path):
+        """由 Dispatcher 调用，为刚写盘的文件颁发物理豁免牌"""
+        self.fresh_paths.add(os.path.realpath(path).lower())
 
     def _gc_empty_directories(self, target_dir, is_dry_run=False):
         """🚀 幽灵空目录清道夫：自底向上抹除无用文件夹，提升前端编译极速性能"""
         if not os.path.exists(target_dir): return
-        # 自底向上遍历，确保子目录删空后，父目录也能被正确判断为空并删除
         for root, dirs, files in os.walk(target_dir, topdown=False):
             for d in dirs:
                 dir_path = os.path.join(root, d)
@@ -44,10 +52,7 @@ class JanitorService:
                     pass
 
     def gc_assets(self, current_source_files=None, is_dry_run=False):
-        """
-        物理瘦身逻辑：带全局写保护屏障的物理资产清算器。
-        🚀 V14.3 升级：彻底免疫 HTTP 远程图床链接的误杀。
-        """
+        """物理瘦身逻辑：带全局写保护屏障的物理资产清算器"""
         in_flight = any(l.locked() for l in self._processing_locks.values())
         if in_flight:
             logger.warning("🚧 [GC 熔断] 检测到有文章正在处理中，为防止误删生成中的新生资产，已强行熔断本次物理清理泵。")
@@ -57,7 +62,6 @@ class JanitorService:
             logger.info("🧹 启动前端资产目录“大扫除” (gc_assets)...")
             active_assets = set()
             
-            # 🚀 核心防线接管：通过深度拷贝的快照获取数据，免疫 RuntimeError
             docs = self.meta.get_documents_snapshot()
             total_docs = len(docs)
             
@@ -69,7 +73,6 @@ class JanitorService:
                 assets = doc.get("assets", [])
                 if isinstance(assets, list):
                     for a in assets:
-                        # 🚀 终极过滤防线：即使历史脏数据导致 http 链接混入了本地资产账本，在此处也会被强行弹回，绝对不参与物理比对！
                         if not str(a).startswith(('http://', 'https://', 'ftp://', 'data:', '//')):
                             active_assets.add(a)
             
@@ -108,25 +111,21 @@ class JanitorService:
             t_sub_dir = os.path.dirname(t_sub_rel).replace('\\', '/')
             if t_sub_dir == '.': t_sub_dir = ""
 
-            # 🚀 路由引擎调用对齐：禁止此处呼叫 AI，仅提取已有映射
             mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run, allow_ai=False)
-
-            # 🚀 动态继承源文件的真实扩展名，确保精准歼灭
             ext = os.path.splitext(rel_path)[1].lower()
 
-            # 🚀 [架构补丁]：同步总闸感知
             langs = []
-            source_code = self.i18n.get('source', {}).get('code', "")
-            langs.append(source_code)
+            source_code = self.i18n.get('source', {}).get('lang_code', 'zh-cn')
+            if source_code is not None: langs.append(source_code)
             
-            # 只有总闸开启时，才将目标语言路径纳入歼灭清单
             if self.i18n.get('enabled', True):
                 for t in self.i18n.get('targets', []):
-                    if t.get('code') is not None:
-                        langs.append(t['code'])
+                    t_code = t.get('lang_code') 
+                    if t_code is not None: langs.append(t_code)
                     
             for code in langs:
-                dest = os.path.join(self.paths['target_base'], code, prefix, mapped_sub_dir, f"{slug}{ext}")
+                # 🚀 架构升维：直接调用注入的 RouteManager 中枢探针
+                dest = self.route_manager.resolve_physical_path(self.paths['target_base'], code, prefix, mapped_sub_dir, slug, ext)
                 if os.path.exists(dest):
                     if is_dry_run: 
                         logger.info(f"    [Dry-Run 模拟回收] 拟删除文章文件: {dest}")
@@ -138,7 +137,6 @@ class JanitorService:
 
     def gc_orphans(self, current_source_files, is_dry_run=False):
         """级联孤儿回收泵"""
-        # 🚀 核心防线接管：从防撕裂的快照中提取文章主键列表
         docs_snapshot = self.meta.get_documents_snapshot()
         to_delete = [p for p in list(docs_snapshot.keys()) if p not in current_source_files]
         for rel_path in to_delete:
@@ -147,7 +145,6 @@ class JanitorService:
             source = docs_snapshot[rel_path].get("source", "")
             self.gc_node(rel_path, prefix, source, is_dry_run)
         
-        # 🚀 [联动清理] 将全量基线 current_source_files 穿透传递，解锁物理大扫除
         self.gc_assets(current_source_files, is_dry_run)
 
     def gc_ghost_nodes(self, is_dry_run=False):
@@ -160,8 +157,6 @@ class JanitorService:
         with self._global_engine_lock:
             logger.info("🧹 启动前端路由目录“幽灵清洗” (gc_ghost_nodes)...")
             
-            # 🚀 [V14.12 核心防线] 状态机账本自愈 (Ledger Pruning)
-            # 🚀 核心防线接管：从防撕裂的快照中读取，免疫运行时崩溃
             current_docs = self.meta.get_documents_snapshot()
             orphans = []
             for rel_path in current_docs.keys():
@@ -174,20 +169,18 @@ class JanitorService:
                 if not is_dry_run:
                     self.meta.remove_document(orphan)
             
-            # 重新获取脱水后的干净账本快照
             valid_dest_paths = set()
             docs = self.meta.get_documents_snapshot()
             
-            # 🚀 [架构补丁]：同步总闸感知
             langs = []
-            source_code = self.i18n.get('source', {}).get('code', "")
-            langs.append(source_code)
+            # 🚀 修复点 4：纠正语言代码键名
+            source_code = self.i18n.get('source', {}).get('lang_code', 'zh-cn')
+            if source_code is not None: langs.append(source_code)
                 
             if self.i18n.get('enabled', True):
                 for t in self.i18n.get('targets', []):
-                    t_code = t.get('code')
-                    if t_code is not None:
-                        langs.append(t_code)
+                    t_code = t.get('lang_code') # 🚀 修复点 5
+                    if t_code is not None: langs.append(t_code)
             
             for rel_path, doc in docs.items():
                 slug = doc.get("slug")
@@ -202,38 +195,53 @@ class JanitorService:
                 t_sub_dir = os.path.dirname(t_sub_rel).replace('\\', '/')
                 if t_sub_dir == '.': t_sub_dir = ""
                 
-                # 🚀 路由对齐
                 mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=False)
                 ext = os.path.splitext(rel_path)[1].lower()
                 
                 for code in langs:
-                    dest = os.path.abspath(os.path.join(self.paths['target_base'], code, prefix, mapped_sub_dir, f"{slug}{ext}"))
-                    valid_dest_paths.add(dest)
+                    # 🚀 架构升维：直接调用注入的 RouteManager 中枢探针生成白名单字典
+                    dest = self.route_manager.resolve_physical_path(self.paths['target_base'], code, prefix, mapped_sub_dir, slug, ext)
+                    valid_dest_paths.add(os.path.realpath(dest).lower())
                     
-            controlled_roots = [os.path.abspath(os.path.join(self.paths['target_base'], code)) for code in langs]
-            
-            deleted_count = 0
-            for scan_root in controlled_roots:
-                if not os.path.exists(scan_root): continue
+                # 🚀 修复点 7 (终极护城河版)：锁定根目录，但强行熔断系统目录的扫描权限
+                scan_root = os.path.abspath(self.paths['target_base'])
+                deleted_count = 0
+
+                # 🛡️ [V14.3 全域物理防护矩阵]：动态载入排除名单，免疫任何非受管目录
+                janitor_cfg = self.sys_cfg.get('janitor_settings', {})
+                global_exclude = janitor_cfg.get('global_exclude', [".git", "node_modules", "public", ".docusaurus"])
+                theme_exclude = janitor_cfg.get('theme_exclude', {}).get(self.active_theme, [])
+                all_exclude = set(global_exclude + theme_exclude)
                 
-                for root, _, files in os.walk(scan_root):
+                for root, dirs, files in os.walk(scan_root):
+                    # 🛡️ 绝对物理隔离带：由原来的硬编码重构为由 config.yaml 驱动的动态排除逻辑
+                    dirs[:] = [d for d in dirs if not d.startswith('.') and d not in all_exclude]
+                    
+                    # 🛡️ 根文件保护伞：绝对禁止抹除项目根目录下的文件 (如 README.md)
+                    if root == scan_root:
+                        continue 
+                        
                     for f in files:
                         if f.endswith(('.md', '.mdx')):
-                            f_abs = os.path.abspath(os.path.join(root, f))
+                            f_abs_normalized = os.path.realpath(os.path.join(root, f)).lower()
                             
-                            if f_abs not in valid_dest_paths:
+                            # 豁免机制：如果该文件不在 Illacme 的受控白名单中，且没有新鲜豁免权，执行销毁
+                            if f_abs_normalized not in valid_dest_paths and f_abs_normalized not in self.fresh_paths:
                                 if is_dry_run:
-                                    logger.info(f"    [Dry-Run 模拟清洗] 拟删除幽灵路由文件: {f_abs}")
+                                    logger.info(f"    [Dry-Run 模拟清洗] 拟删除幽灵路由文件: {f_abs_normalized}")
                                 else:
                                     try:
-                                        os.remove(f_abs)
-                                        logger.info(f"    [路由清洗] 物理移除未受控的幽灵文章: {f_abs}")
+                                        os.remove(f_abs_normalized)
+                                        logger.info(f"    [路由清洗] 物理移除未受控的幽灵文章: {f_abs_normalized}")
                                         deleted_count += 1
                                     except Exception as e:
-                                        logger.error(f"    [清洗失败] 无法删除幽灵文件 {f_abs}: {e}")
+                                        logger.error(f"    [清洗失败] 无法删除幽灵文件 {f_abs_normalized}: {e}")
 
-            for scan_root in controlled_roots:
-                self._gc_empty_directories(scan_root, is_dry_run)
+            # 同样对空目录清理加上隔离，只清理受控的 i18n, docs 等目录
+            for safe_dir in [d for d in os.listdir(scan_root) if d not in ['.git', 'node_modules', 'src', 'static', 'public']]:
+                safe_abs_dir = os.path.join(scan_root, safe_dir)
+                if os.path.isdir(safe_abs_dir):
+                    self._gc_empty_directories(safe_abs_dir, is_dry_run)
                                         
             if deleted_count > 0:
                 logger.info(f"✨ 幽灵清洗完成，共斩断了 {deleted_count} 个脱离管线的野路由。")

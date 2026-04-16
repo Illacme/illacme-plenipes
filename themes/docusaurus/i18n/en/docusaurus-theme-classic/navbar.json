@@ -1,0 +1,10 @@
+{
+  "item.label.Wiki": {
+    "message": "Wiki",
+    "description": "Navbar label for Wiki/Docs"
+  },
+  "item.label.Blog": {
+    "message": "Blog",
+    "description": "Navbar label for Blog"
+  }
+}

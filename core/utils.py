@@ -214,20 +214,22 @@ def normalize_keywords(kw_data):
     """
     数据降维清洗器：支持中英文逗号、分号的智能识别与标准化。
     用于处理 Frontmatter 中的 tags 或 keywords 字段。
+    🚀 [V15.5 架构级修复] 强制输出纯正的 Python List 结构。
+    彻底解决 Docusaurus 等严苛型 SSG 对 "keywords must be an array" 的基线校验，同时完美向下兼容 Astro。
     """
     if not kw_data:
-        return ""
+        return []
     
     if isinstance(kw_data, list):
-        clean_list = [str(k).strip() for k in kw_data if str(k).strip()]
-        return ", ".join(clean_list)
+        # 剔除空字符串并返回干净的列表
+        return [str(k).strip() for k in kw_data if str(k).strip()]
         
     elif isinstance(kw_data, str):
-        # 🚀 语义平滑：自动切割所有主流的分隔符
-        clean_list = [k.strip() for k in re.split(r'[,，;；]', kw_data) if k.strip()]
-        return ", ".join(clean_list)
+        # 🚀 语义平滑：自动切割所有主流的分隔符，直接返回阵列矩阵
+        return [k.strip() for k in re.split(r'[,，;；]', kw_data) if k.strip()]
         
-    return str(kw_data).strip()
+    # 兜底：对极其罕见的异常结构强行转换为单元素数组
+    return [str(kw_data).strip()] if str(kw_data).strip() else []
 
 def extract_frontmatter(content):
     """
@@ -299,18 +301,59 @@ def load_unified_config(base_config_path):
         if not isinstance(paths, collections.abc.Mapping):
             paths = {}
             config['output_paths'] = paths
+
+    # 🔌 [V14.2+] 允许 theme_options.{theme}.output_paths 覆盖全局路径
+    # 这让 Starlight/Docusaurus/VitePress 可以各自声明自己的目录约定
+    theme_opts = config.get('theme_options', {}).get(theme, {})
+    theme_path_overrides = theme_opts.get('output_paths', {})
+    for key, val in theme_path_overrides.items():
+        paths[key] = val
+            
+    # 🔌 [V16.1+] 提取语种映射关系 (Logical -> Physical Mapping)
+    # 允许不同框架使用不同的语言标签（如 zh-cn vs zh-Hans）
+    config['lang_mapping'] = theme_opts.get('lang_mapping', {})
             
     # 提取原始路径（包含默认推导逻辑）
     raw_md_dir = paths.get('markdown_dir', "./themes/{theme}/src/content/docs")
     raw_assets_dir = paths.get('assets_dir', "./themes/{theme}/public/assets")
+    raw_graph_dir = paths.get('graph_json_dir', "./themes/{theme}/public")
 
     # 🚨 架构级对齐：在此处直接完成 {theme} 魔法占位符的物理替换
     # 确保下游 engine.py 及其子模块拿到的路径永远是最终确定的绝对物理状态！
     paths['markdown_dir'] = raw_md_dir.replace('{theme}', theme)
     paths['assets_dir'] = raw_assets_dir.replace('{theme}', theme)
+    paths['graph_json_dir'] = raw_graph_dir.replace('{theme}', theme)
 
     # 4. 触发强制点火审计
     validator = ConfigValidator(config)
     validator.validate()
 
     return config
+
+def sanitize_ai_response(text):
+    """
+    🚀 AI 内容净化引擎：物理剔除大模型生成的非法“隔离带”标签与对话残留。
+    模块职责：防御 AI 幻觉引发的前端框架渲染崩溃。
+    支持清理：<source_text> 标签、包裹全网的 Markdown 代码块围栏、以及引导性废话。
+    """
+    if not text:
+        return ""
+    
+    # 1. 物理斩断：彻底剔除自定义隔离区标签 (不区分大小写)
+    text = re.sub(r'</?source_text>', '', text, flags=re.IGNORECASE)
+    
+    # 2. 围栏清理：如果 AI 将翻译结果包裹在 ```markdown ... ``` 中，将其扒开
+    text = re.sub(r'^```[a-zA-Z]*\n', '', text)
+    text = re.sub(r'\n```$', '', text)
+    
+    # 3. 碎片清理：移除引导性短语（兼容中英文常见模式）
+    removals = [
+        r'^Here is the translation:?\n',
+        r'^Translation:?\n',
+        r'^翻译结果:?\n',
+        r'^以下是翻译:?\n'
+    ]
+    for pattern in removals:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+        
+    return text.strip()

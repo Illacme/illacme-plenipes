@@ -137,20 +137,7 @@ class ContentSyndicator:
 
         # 🚀 [补丁加载] 静态资产“绝对路径劫持” (Asset URL Resolution)
         if self.site_url:
-            import re
-            def resolve_img_url(match):
-                alt_text = match.group(1)
-                img_src = match.group(2)
-                if img_src.startswith(('http://', 'https://', 'data:image')):
-                    return match.group(0)
-                
-                clean_src = '/' + img_src.lstrip('./') 
-                absolute_url = f"{self.site_url}{clean_src}"
-                
-                logger.debug(f"🔍 [资产劫持] 转化图片路径: {img_src} -> {absolute_url}")
-                return f"![{alt_text}]({absolute_url})"
-
-            final_body = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', resolve_img_url, final_body)
+            final_body = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', self._resolve_img_url, final_body)
 
         # 🚀 [调度层重构] 彻底废弃无序的 Thread.start() 游离线程，全部推入 executor 漏斗池统一排队执行
         
@@ -222,6 +209,7 @@ class ContentSyndicator:
                 "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
             }
             self.executor.submit(self._push_linkedin, li_cfg['access_token'], li_cfg['person_urn'], payload)
+            
 
         # -----------------------------------------------------------
         # 7. 🚀 Universal Webhook (工业级健壮版)
@@ -364,3 +352,18 @@ class ContentSyndicator:
             logger.error(f"   └── ⚠️ [全域推流] 发射中断: {e}")
         finally:
             session.close() # 严格释放系统 Socket 句柄
+
+    def _resolve_img_url(self, match):
+        """
+        🚀 资产 URL 劫持核心逻辑：将相对路径转化为带域名的绝对物理路径。
+        """
+        alt_text = match.group(1)
+        img_src = match.group(2)
+        if img_src.startswith(('http://', 'https://', 'data:image')):
+            return match.group(0)
+        
+        clean_src = '/' + img_src.lstrip('./') 
+        absolute_url = f"{self.site_url}{clean_src}"
+        
+        logger.debug(f"🔍 [资产劫持] 转化图片路径: {img_src} -> {absolute_url}")
+        return f"![{alt_text}]({absolute_url})"

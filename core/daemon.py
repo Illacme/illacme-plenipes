@@ -20,6 +20,7 @@ except ImportError:
     HAS_WATCHDOG = False
 
 from .cli_bootstrap import send_notification
+from .garden_exporter import export_digital_garden
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -74,6 +75,7 @@ def start_watchdog(engine, args, current_source_files):
                 engine.sync_document(file_path, prefix, source, is_dry_run=args.dry_run, force_sync=args.force)
                 if not args.dry_run: 
                     engine.meta.save() 
+                    export_digital_garden(engine)
                     fname = os.path.basename(file_path)
                     send_notification("✨ 文章已更新", f"《{fname}》已完成 AI 同步并上线")
             except Exception as e:
@@ -128,7 +130,9 @@ def start_watchdog(engine, args, current_source_files):
                     logger.info(f"📂 检测到批量目录移除 ({rel_dir})，正在激活级联回收泵...")
                     if engine.sys_cfg.get('enable_asset_audit', True):
                         engine.janitor.gc_orphans(current_source_files, is_dry_run=args.dry_run)
-                    if not args.dry_run: engine.meta.save()
+                    if not args.dry_run: 
+                        engine.meta.save()
+                        export_digital_garden(engine)
                 return
 
             if not event.is_directory:
@@ -141,7 +145,9 @@ def start_watchdog(engine, args, current_source_files):
                             del self._timers[event.src_path]
                     if engine.sys_cfg.get('enable_asset_audit', True):
                         engine.janitor.gc_orphans(current_source_files, is_dry_run=args.dry_run)
-                    if not args.dry_run: engine.meta.save()
+                    if not args.dry_run: 
+                        engine.meta.save()
+                        export_digital_garden(engine)
                 else:
                     self._remove_asset(event.src_path)
 
@@ -172,7 +178,9 @@ def start_watchdog(engine, args, current_source_files):
                     logger.info(f"📂 检测到目录重命名/移动 ({old_rel_dir})，正在激活级联路由更替...")
                     if engine.sys_cfg.get('enable_asset_audit', True):
                         engine.janitor.gc_orphans(current_source_files, is_dry_run=args.dry_run)
-                    if not args.dry_run: engine.meta.save()
+                    if not args.dry_run: 
+                        engine.meta.save()
+                        export_digital_garden(engine)
                 return
 
             if event.src_path.endswith((".md", ".mdx")):
@@ -197,7 +205,9 @@ def start_watchdog(engine, args, current_source_files):
                 else:
                     self._add_asset(event.dest_path)
             
-            if not args.dry_run: engine.meta.save()
+            if not args.dry_run: 
+                engine.meta.save()
+                export_digital_garden(engine)
                     
     observer = Observer()
     observer.schedule(ChangeHandler(), engine.vault_root, recursive=True)

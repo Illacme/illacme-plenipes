@@ -65,6 +65,8 @@ if __name__ == "__main__":
     # 单次全量/增量测绘
     if args.sync or not args.watch:
         execute_full_sync(engine, args, task_queue, current_source_files)
+        from core.garden_exporter import export_digital_garden
+        export_digital_garden(engine)
         
     # 启动看门狗守护
     if args.watch:

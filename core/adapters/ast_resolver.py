@@ -10,6 +10,7 @@ Illacme-plenipes Core - AST Resolver (核心逻辑解析中枢)
 import os
 import re
 import logging
+import shutil
 import threading
 # 注意：由于我们在 adapters 目录下，需要跨级引入 utils
 from ..utils import extract_frontmatter
@@ -108,7 +109,6 @@ class MDXResolver:
                             os.makedirs(os.path.dirname(dest_companion_path), exist_ok=True)
                             
                             if not os.path.exists(dest_companion_path) or os.path.getmtime(actual_source_path) > os.path.getmtime(dest_companion_path):
-                                import shutil 
                                 shutil.copy2(actual_source_path, dest_companion_path)
                                 logger.debug(f"📦 [组件拉升] 成功同步 MDX 伴生资源: {final_raw_path}")
                                 

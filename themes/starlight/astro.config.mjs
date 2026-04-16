@@ -102,9 +102,9 @@ export default defineConfig({
 
 
 			// 2. 配置顶部右侧的社交媒体账户详情
-			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/illacme/illacme-plenipes' }
-			],
+			social: {
+				github: 'https://github.com/illacme/illacme-plenipes'
+			},
 
 			// 3. 多语言配置（这会自动在顶部右侧生成原生语言切换下拉框）
 			// 🚀 指定默认“回退语言”和“搜索索引优先级”，它并不直接决定 URL 是否包含路径前缀。
@@ -158,6 +158,16 @@ export default defineConfig({
 				// 🚀 越级拦截：用定制框架包裹整个网站
 				// 任意选一种：CustomPageFrame、CustomFooter
 				Footer: './src/components/CustomFooter.astro',
+
+				// ==========================================
+				// 🌌 关系图谱挂载点 (二选一)
+				// 选项 A: 挂载在左侧导航栏下
+				// Sidebar: './src/components/CustomSidebar.astro',
+
+				// 选项 B: 挂载在右侧目录栏下（默认）
+				PageSidebar: './src/components/CustomPageSidebar.astro',
+				// ==========================================
+
 				// 我们劫持 SiteTitle 组件，以便在其右侧无缝注入全局导航链接
 				SiteTitle: './src/components/GlobalTopNav.astro',
 			},
