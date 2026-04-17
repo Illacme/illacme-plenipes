@@ -21,13 +21,25 @@ import tempfile
 import urllib.parse
 import threading
 import concurrent.futures
+import os
+import re
+import time
+import yaml
+import fnmatch
+import logging
+import tempfile
+import urllib.parse
+import threading
+import concurrent.futures
 import hashlib  # 🚀 [V16.3 修复] 补入哈希运算核芯
+from datetime import datetime
 
 # ==========================================
 # 🛠️ 1. 核心工具与基建层 (Core Utilities & Infrastructure)
 # 职责：提供纯函数计算、全域索引以及顶层分发能力
 # ==========================================
-from .utils import load_unified_config, normalize_keywords, extract_frontmatter, sanitize_ai_response
+from .config import load_config, Configuration, TranslationSettings, ThemeSettings
+from .utils import normalize_keywords, extract_frontmatter, sanitize_ai_response
 from .vault_indexer import VaultIndexer
 from .ai_scheduler import AIScheduler
 from .egress_dispatcher import EgressDispatcher
@@ -38,6 +50,7 @@ from .egress_dispatcher import EgressDispatcher
 # ==========================================
 from .pipeline.context import SyncContext
 from .pipeline.runner import Pipeline
+from .pipeline.staticizer import StaticizerStep
 from .pipeline.steps import (
     ReadAndNormalizeStep, 
     ASTAndPurifyStep, 
@@ -70,71 +83,92 @@ from .janitor import JanitorService
 logger = logging.getLogger("Illacme.plenipes")
 
 class IllacmeEngine:
-    def __init__(self, config_path):
-        self.config = load_unified_config(config_path)
-        self.sys_tuning = self.config.get('system_tuning', {})
-        self.sys_cfg = self.config.get('system', {})
-        self.fm_defaults = self.config.get('frontmatter_defaults') or {}
-        self.max_workers = self.sys_cfg.get('max_workers', 5)
-        self.auto_save_interval = self.sys_cfg.get('auto_save_interval', 2.0)
-        self.max_depth = self.sys_cfg.get('max_depth', 3)
-        self.fm_order = self.config.get('frontmatter_order', ['title', 'description', 'keywords', 'author', 'date', 'tags', 'categories'])
+    def __init__(self, config_path, no_ai=False):
+        self.no_ai = no_ai
+        # 🚀 [V32] 接入强类型配置枢纽
+        self.config: Configuration = load_config(config_path)
         
-        log_level_str = self.sys_cfg.get('log_level', 'INFO').upper()
+        # 保持对旧逻辑引用的属性兼容
+        self.sys_cfg = self.config.system
+        self.sys_tuning = {
+            "ai_translation": {
+                "temperature": self.config.translation.temperature,
+                "max_tokens": self.config.translation.max_tokens
+            }
+        }
+        self.fm_defaults = self.config.frontmatter_defaults
+        self.fm_order = self.config.frontmatter_order or ['title', 'description', 'keywords', 'author', 'date', 'tags', 'categories']
+        
+        # 🚀 [V32] 对齐系统调优参数
+        self.max_workers = self.config.system.max_workers
+        self.auto_save_interval = self.config.system.auto_save_interval
+        self.max_depth = self.config.system.max_depth
+        
+        log_level_str = self.config.system.log_level.upper()
         logger.setLevel(getattr(logging, log_level_str, logging.INFO))
         
-        self.vault_root = os.path.abspath(os.path.expanduser(self.config.get('vault_root', '')))
-        self.route_matrix = self.config.get('route_matrix', [])
-        self.active_theme = self.config.get('active_theme', 'starlight')
+        self.vault_root = os.path.abspath(os.path.expanduser(self.config.vault_root))
+        self.route_matrix = self.config.route_matrix
+        self.active_theme = self.config.active_theme
         
-        output_paths = self.config.get('output_paths', {})
-        target_base_dir = output_paths.get('markdown_dir')
-        target_assets_dir = output_paths.get('assets_dir')
-        target_graph_dir = output_paths.get('graph_json_dir')
+        paths = self.config.output_paths
+        target_base_dir = paths.get('markdown_dir')
+        target_assets_dir = paths.get('assets_dir')
+        target_graph_dir = paths.get('graph_json_dir')
         
-        theme_opts = self.config.get('theme_options', {}).get(self.active_theme, {})
-        self.ssg_adapter = SSGAdapter(theme_opts.get('syntax_engine', self.active_theme), custom_adapters=self.config.get('framework_adapters', {}))
+        theme_settings = self.config.theme_options.get(self.active_theme, ThemeSettings())
+        self.ssg_adapter = SSGAdapter(theme_settings)
         
-        editor_settings = self.config.get('editor_settings', {})
-        self.input_adapter = InputAdapter(editor_settings.get('active_editor', 'auto'), editor_settings.get('custom_sanitizers', {}))
+        # 🔌 [V31 专家版]：方言处理策略初始化
+        ingress_cfg = self.config.ingress_settings
+        self.input_adapter = InputAdapter(
+            active_dialects=ingress_cfg.active_dialects, 
+            custom_rules=ingress_cfg.custom_sanitizers,
+            hard_line_break=ingress_cfg.hard_line_break
+        )
         
         self.paths = {
             "vault": self.vault_root,
             "target_base": os.path.abspath(os.path.expanduser(target_base_dir)) if target_base_dir else None,
             "assets": os.path.abspath(os.path.expanduser(target_assets_dir)) if target_assets_dir else None,
             "graph_json_dir": os.path.abspath(os.path.expanduser(target_graph_dir)) if target_graph_dir else None,
-            "db": os.path.abspath(os.path.expanduser(self.config.get('metadata_db', './plenipes_metadata.json'))),
-            "shadow": os.path.join(self.vault_root, '.illacme-shadow')  # 🚀 [V16] 注入影子库基座路径
+            "db": os.path.abspath(os.path.expanduser(self.config.metadata_db)),
+            "shadow": os.path.join(self.vault_root, '.illacme-shadow')
         }
         
-        self.i18n = self.config.get('i18n_settings', {})
-        self.seo_cfg = self.config.get('seo_settings', {})
-        self.img_cfg = self.config.get('image_settings', {})
-        self.pub_cfg = self.config.get('publish_control', {})
-        self.asset_base_url = self.img_cfg.get('base_url', '/assets/').rstrip('/') + '/'
+        self.i18n = self.config.i18n_settings
+        self.seo_cfg = self.config.seo_settings
+        self.img_cfg = self.config.image_settings
+        self.pub_cfg = self.config.publish_control
+        self.asset_base_url = self.img_cfg.base_url.rstrip('/') + '/'
         
         # 依赖注入
         self.meta = MetadataManager(self.paths["db"], self.auto_save_interval)
-        self.translator = TranslatorFactory.create(self.config.get('translation', {}), sys_tuning_cfg=self.sys_tuning)
+        self.translator = TranslatorFactory.create(self.config.translation)
         self.asset_pipeline = AssetPipeline(self.paths['assets'], self.img_cfg)
         self.route_manager = RouteManager(
             self.meta, self.translator, 
-            lang_mapping=self.config.get('lang_mapping'),
-            default_lang=self.i18n.get('source', {}).get('lang_code', 'zh'),
+            lang_mapping=self.config.lang_mapping,
+            default_lang=self.i18n.source.get('lang_code', 'zh'),
             active_theme=self.active_theme
         )
         
-        # 🚀 [V16.4 重构] 呼叫独立扫描雷达，瞬间装载全域双重索引
+        # 🚀 [V16.4 重构] 呼叫独立扫描雷达
         self.md_index, self.asset_index = VaultIndexer.build_indexes(self.paths['vault'])
         
         self.transclusion_resolver = TransclusionResolver(self.md_index, self.asset_index, self.max_depth)
         self._processing_locks = {}
         self._global_engine_lock = threading.Lock()
         
-        self.janitor = JanitorService(self._global_engine_lock, self._processing_locks, self.paths, self.meta, self.route_manager, self.i18n, sys_cfg=self.sys_cfg, active_theme=self.active_theme)
+        self.janitor = JanitorService(
+            self._global_engine_lock, self._processing_locks, 
+            self.paths, self.meta, self.route_manager, self.i18n, 
+            sys_cfg=self.config.system, 
+            active_theme=self.active_theme
+        )
         self.mdx_resolver = MDXResolver(self.paths["vault"], self.paths["target_base"])
-        self.broadcaster = WebhookBroadcaster(self.pub_cfg, sys_tuning_cfg=self.sys_tuning)
-        self.syndicator = ContentSyndicator(self.config.get('syndication', {}), self.config.get('site_url', ''), sys_tuning_cfg=self.sys_tuning)
+        self.broadcaster = WebhookBroadcaster(self.pub_cfg, sys_tuning_cfg=self.config.system)
+        self.syndicator = ContentSyndicator(self.config.syndication, self.config.site_url, sys_tuning_cfg=self.config.system)
 
         # 🚀 [V16.4 重构] 挂载独立的物理出站分发器
         self.dispatcher = EgressDispatcher(
@@ -155,7 +189,7 @@ class IllacmeEngine:
             return self._processing_locks[rel_path]
 
     def _is_excluded(self, rel_path):
-        for p in self.pub_cfg.get('exclude_patterns', []):
+        for p in self.pub_cfg.exclude_patterns:
             if fnmatch.fnmatch(rel_path, p) or fnmatch.fnmatch(os.path.basename(rel_path), p): return True
         return False
 
@@ -165,12 +199,12 @@ class IllacmeEngine:
         该方法直接对接 config.yaml 中的 i18n_settings，确保 AI 能够获得准确的翻译目标描述。
         """
         # 1. 检查是否为源语言代码 (例如 zh-cn -> 中文)
-        src_cfg = self.i18n.get('source', {})
+        src_cfg = self.i18n.source
         if src_cfg.get('lang_code') == code:
             return src_cfg.get('name', 'Chinese')
         
         # 2. 在目标语言配置阵列中查找 (例如 en -> English)
-        targets = self.i18n.get('targets', [])
+        targets = self.i18n.targets
         for target in targets:
             if target.get('lang_code') == code:
                 # 优先返回配置中定义的 name，若无则返回 code 兜底
@@ -210,11 +244,11 @@ class IllacmeEngine:
                     ext = os.path.splitext(rel_path)[1].lower()
                     
                     langs_to_check = []
-                    src_code = self.i18n.get('source', {}).get('lang_code', 'zh-cn')
+                    src_code = self.i18n.source.get('lang_code', 'zh-cn')
                     if src_code is not None: langs_to_check.append(src_code)
                     
-                    if self.i18n.get('enabled', True):
-                        for t in self.i18n.get('targets', []):
+                    if self.i18n.enabled:
+                        for t in self.i18n.targets:
                             if t.get('lang_code'): langs_to_check.append(t['lang_code'])
                             
                     # 交叉比对硬盘物理文件
@@ -235,66 +269,94 @@ class IllacmeEngine:
             ctx = SyncContext(self, src_path, route_prefix, route_source, is_dry_run, force_sync)
             pipeline = Pipeline()
             pipeline.add_step(ReadAndNormalizeStep()) \
+                    .add_step(StaticizerStep()) \
                     .add_step(ASTAndPurifyStep()) \
                     .add_step(MetadataAndHashStep()) \
                     .add_step(AISlugAndSEOStep()) \
                     .add_step(ContextualImageAltStep()) \
                     .add_step(MaskingAndRoutingStep())
-            
+
+            # [V31.2] 动态熔断策略：如果全局开启了 --no-ai，强行将文章标记为静默编辑，拦截推理流程
+            if self.no_ai:
+                ctx.is_silent_edit = True
+                ctx.ai_health_flag[0] = False
+
             # 2. 执行管线前置加工
             pipeline.execute(ctx)
-            if ctx.is_aborted: return
+            if ctx.is_aborted: 
+                return "OFFLINE"
 
-            # 3. 后置阶段：SEO 注入闭包与分发
-            def inject_seo(fm, lang_code, text_content):
-                lang_name = self.get_lang_name_by_code(lang_code)
-                seo_data, success = self.translator.generate_seo_metadata(text_content, lang_name, ctx.is_dry_run)
-                if success and seo_data:
-                    fm['description'] = seo_data.get('description', '')
-                    fm['keywords'] = normalize_keywords(seo_data.get('keywords', ''))
-                return fm
+            # [V31.2] 再次加固：如果 --no-ai 开启，跳过多语言分派逻辑
+            if self.no_ai:
+                persistence_date = datetime.now().strftime("%Y-%m-%d")
+                # 即使没有 AI，我们也需要写入主语种文件
+                primary_shadow_hash, persistence_date = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, ctx.base_fm, rel_path, self.i18n.source.get('lang_code', 'zh'), ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, force_persistence_date=persistence_date)
+            else:
+                # 3. 后置阶段：SEO 注入闭包与分发
+                def inject_seo(fm, lang_code, text_content):
+                    seo_opts = self.config.seo_settings
+                    if not seo_opts.enabled:
+                        return fm
+                        
+                    lang_name = self.get_lang_name_by_code(lang_code)
+                    seo_data, success = self.translator.generate_seo_metadata(text_content, lang_name, ctx.is_dry_run)
+                    
+                    if success and seo_data:
+                        if seo_opts.generate_description:
+                            fm['description'] = seo_data.get('description', '')
+                        if seo_opts.generate_keywords:
+                            fm['keywords'] = normalize_keywords(seo_data.get('keywords', ''))
+                    return fm
 
-            primary_shadow_hash = ""  # 🚀 初始化影子探针
-            src_cfg = self.i18n.get('source', {})
+                primary_shadow_hash = ""  # 🚀 初始化影子探针
+                src_cfg = self.i18n.source
 
-            if src_cfg:
-                src_code = src_cfg.get('lang_code', 'zh-cn')
-                
-                src_fm = ctx.base_fm.copy()
-                if ctx.seo_data:
-                    src_fm.update(ctx.seo_data)
-                    if 'keywords' in src_fm:
-                        src_fm['keywords'] = normalize_keywords(src_fm['keywords'])
-                
-                # 🚀 [V16 影子探针]：主语种 SEO 物理自愈
-                doc_info = self.meta.get_doc_info(rel_path)
-                can_recover = (not cli_force and doc_info.get("source_hash") == ctx.current_hash and not ctx.is_silent_edit)
-                
-                ext = os.path.splitext(rel_path)[1].lower()
-                shadow_src_path = self.route_manager.resolve_physical_path(
-                    self.paths['shadow'], src_code, route_prefix, ctx.mapped_sub_dir, ctx.slug, ext
-                )
-                
-                if can_recover and os.path.exists(shadow_src_path):
-                    logger.debug(f"⚡️ [影子自愈] {rel_path} ({src_code}) 命中影子资产，跳过 AI SEO 提取。")
-                    try:
-                        with open(shadow_src_path, 'r', encoding='utf-8') as sf:
-                            s_fm, _ = extract_frontmatter(sf.read())
-                            src_fm.update({'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])})
-                            ctx.seo_data = {'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])}
-                    except Exception as e: logger.debug(f"影子读取失败: {e}")
-                elif not ctx.is_silent_edit:
-                    src_fm = inject_seo(src_fm, src_code, ctx.body_content)
-                    ctx.seo_data = {
-                        'description': src_fm.get('description', ''),
-                        'keywords': src_fm.get('keywords', '')
-                    }
-                
-                # 🚀 物理派发主语种并锁定哈希
-                primary_shadow_hash = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, src_fm, rel_path, src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock)
+                if src_cfg:
+                    src_code = src_cfg.get('lang_code', 'zh-cn')
+                    
+                    src_fm = ctx.base_fm.copy()
+                    if ctx.seo_data:
+                        src_fm.update(ctx.seo_data)
+                        if 'keywords' in src_fm:
+                            src_fm['keywords'] = normalize_keywords(src_fm['keywords'])
+                    
+                    # 🚀 [V16 影子探针]：主语种 SEO 物理自愈
+                    doc_info = self.meta.get_doc_info(rel_path)
+                    can_recover = (not cli_force and doc_info.get("source_hash") == ctx.current_hash and not ctx.is_silent_edit)
+                    
+                    ext = os.path.splitext(rel_path)[1].lower()
+                    shadow_src_path = self.route_manager.resolve_physical_path(
+                        self.paths['shadow'], src_code, route_prefix, ctx.mapped_sub_dir, ctx.slug, ext
+                    )
+                    
+                    if can_recover and os.path.exists(shadow_src_path):
+                        logger.debug(f"⚡️ [影子自愈] {rel_path} ({src_code}) 命中影子资产，跳过 AI SEO 提取。")
+                        try:
+                            with open(shadow_src_path, 'r', encoding='utf-8') as sf:
+                                s_fm, _ = extract_frontmatter(sf.read())
+                                src_fm.update({'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])})
+                                ctx.seo_data = {'description': s_fm.get('description', ''), 'keywords': s_fm.get('keywords', [])}
+                        except Exception as e: logger.debug(f"影子读取失败: {e}")
+                    elif not ctx.is_silent_edit:
+                        src_fm = inject_seo(src_fm, src_code, ctx.body_content)
+                        ctx.seo_data = {
+                            'description': src_fm.get('description', ''),
+                            'keywords': src_fm.get('keywords', '')
+                        }
 
-            # 🚀 [V16.4 重构] 呼叫独立的多语言 AI 并发调度中枢
-            AIScheduler.dispatch_targets(self, ctx, inject_seo, route_prefix, route_source, cli_force, rel_path, is_dry_run)
+                    # --- 🚀 [V18.10 增强] 命中哈希增量逻辑判定 ---
+                    # 如果指纹一致且物理位置在，且没有 cli_force，且影子存在，则判定为 SKIP
+                    if can_recover and os.path.exists(shadow_src_path):
+                        # 如果是强制同步或者是空载恢复，则继续，否则跳过
+                        if not cli_force:
+                            logger.info(f"🔄 [同步跳过] {rel_path} -> {ctx.route_prefix}/{ctx.slug} (已存在且指纹未变)")
+                            return "SKIP"
+                    
+                    # 🚀 物理派发主语种并锁定哈希与生日
+                    primary_shadow_hash, persistence_date = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, src_fm, rel_path, src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock)
+
+                # 🚀 [V16.4 重构] 呼叫独立的多语言 AI 并发调度中枢 (透传 V27 锁定的持久化日期)
+                AIScheduler.dispatch_targets(self, ctx, inject_seo, route_prefix, route_source, cli_force, rel_path, is_dry_run, persistence_date=persistence_date)
 
             # 4. 终态记录与广播
             if not ctx.is_dry_run:
@@ -313,7 +375,8 @@ class IllacmeEngine:
                     route_source=ctx.route_source, 
                     assets=final_assets, 
                     ext_assets=final_ext_assets,
-                    outlinks=list(ctx.node_outlinks)
+                    outlinks=list(ctx.node_outlinks),
+                    persistent_date=persistence_date
                 )
                 self.meta.save()
 
@@ -322,7 +385,14 @@ class IllacmeEngine:
                 elif ctx.ai_health_flag[0]:
                     logger.info(f"✨ [同步成功] {ctx.rel_path} | 📦 资产: {len(final_assets)} | ⚡️ 耗时: {elapsed:.2f} 秒")
                     self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.get('lang_code') or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
-                else: logger.warning(f"🚧 [局部降级] {ctx.rel_path} 部分 AI 任务不完整，已拦截指纹缓存。")
+                else: 
+                    logger.warning(f"🚧 [局部降级] {ctx.rel_path} 部分 AI 任务不完整，已拦截指纹缓存。")
+                    return "DEGRADED"
 
+            return "UPDATED"
+
+        except Exception as e:
+            logger.error(f"❌ 文章处理发生错误 {rel_path}: {e}")
+            return "ERROR"
         finally:
             doc_lock.release()

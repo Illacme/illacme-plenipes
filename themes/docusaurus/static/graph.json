@@ -1,121 +1,54 @@
 {
   "version": "1.0",
   "node_titles": {
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": "手机端文件",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": "mdx 测试一下",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": "手机端文件",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": "mdx 测试一下",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": "测试长文内容",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji": "测试笔记",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": "测试长文内容",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji": "测试笔记",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": "Linux 进程管理命令",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": "另一个文件",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": "Linux 进程管理命令",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": "另一个文件",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-pages/{sub_dir}/api/competitor-analysis": "竞品分析",
-    "/en/i18n/{lang}/docusaurus-plugin-content-pages/{sub_dir}/api/competitor-analysis": "竞品分析"
+    "/docs/test-directory/dry-run-1776417463": "测试长文内容",
+    "/en/docs/test-directory/dry-run-1776417463": "测试长文内容",
+    "/docs/test-directory/test-notes": "测试笔记",
+    "/en/docs/test-directory/test-notes": "测试笔记",
+    "/docs/directory-name-tests/newline-test": "newline_test",
+    "/en/docs/directory-name-tests/newline-test": "newline_test",
+    "/docs/linux/linux-process-management-commands": "Linux 进程管理命令",
+    "/en/docs/linux/linux-process-management-commands": "Linux 进程管理命令",
+    "/docs/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
+    "/en/docs/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
+    "/blog/mdx-test-one": "mdx 测试一下",
+    "/en/blog/mdx-test-one": "mdx 测试一下",
+    "/blog/antigravity-automatic-debugging-execution-process": "Antigravity 自动调试执行命令过程",
+    "/en/blog/antigravity-automatic-debugging-execution-process": "Antigravity 自动调试执行命令过程",
+    "/blog/shou-ji-duan-wen-jian": "手机端文件",
+    "/en/blog/shou-ji-duan-wen-jian": "手机端文件",
+    "/blog/website-directory/1-ora-velocissima-workflow-geek-sito-ufficiale": "1 小时速成官网的极客工作流",
+    "/en/blog/website-directory/1-ora-velocissima-workflow-geek-sito-ufficiale": "1 小时速成官网的极客工作流",
+    "/blog/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
+    "/en/blog/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
+    "/blog/github-directory/another-file": "另一个文件",
+    "/en/blog/github-directory/another-file": "另一个文件",
+    "/en/api/jingpin-fenxi": "竞品分析"
   },
   "all_nodes": {
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": "手机端文件",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": "手机端文件",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": "测试长文内容",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": "测试长文内容",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji": "测试笔记",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji": "测试笔记",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": "Linux 进程管理命令",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": "Linux 进程管理命令",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-pages/{sub_dir}/api/competitor-analysis": "竞品分析",
-    "/en/i18n/{lang}/docusaurus-plugin-content-pages/{sub_dir}/api/competitor-analysis": "竞品分析",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": "mdx 测试一下",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": "mdx 测试一下",
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": "另一个文件",
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": "另一个文件"
+    "/docs/test-directory/dry-run-1776417463": "测试长文内容",
+    "/en/docs/test-directory/dry-run-1776417463": "测试长文内容",
+    "/docs/test-directory/test-notes": "测试笔记",
+    "/en/docs/test-directory/test-notes": "测试笔记",
+    "/docs/directory-name-tests/newline-test": "newline_test",
+    "/en/docs/directory-name-tests/newline-test": "newline_test",
+    "/docs/linux/linux-process-management-commands": "Linux 进程管理命令",
+    "/en/docs/linux/linux-process-management-commands": "Linux 进程管理命令",
+    "/docs/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
+    "/en/docs/npm-directory/npm-install-development-dependencies": "NPM 安装开发依赖",
+    "/blog/mdx-test-one": "mdx 测试一下",
+    "/en/blog/mdx-test-one": "mdx 测试一下",
+    "/blog/antigravity-automatic-debugging-execution-process": "Antigravity 自动调试执行命令过程",
+    "/en/blog/antigravity-automatic-debugging-execution-process": "Antigravity 自动调试执行命令过程",
+    "/blog/shou-ji-duan-wen-jian": "手机端文件",
+    "/en/blog/shou-ji-duan-wen-jian": "手机端文件",
+    "/blog/website-directory/1-ora-velocissima-workflow-geek-sito-ufficiale": "1 小时速成官网的极客工作流",
+    "/en/blog/website-directory/1-ora-velocissima-workflow-geek-sito-ufficiale": "1 小时速成官网的极客工作流",
+    "/blog/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
+    "/en/blog/network/fan-qiang-na-xie-shi-er": "翻墙那些事儿",
+    "/blog/github-directory/another-file": "另一个文件",
+    "/en/blog/github-directory/another-file": "另一个文件",
+    "/en/api/jingpin-fenxi": "竞品分析"
   },
-  "backlinks": {
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": [
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx",
-        "title": "mdx 测试一下"
-      }
-    ],
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file": [
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx",
-        "title": "mdx 测试一下"
-      }
-    ],
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": [
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      }
-    ],
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-chang-wen-nei-rong": [
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      }
-    ],
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": [
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file",
-        "title": "手机端文件"
-      },
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file",
-        "title": "另一个文件"
-      }
-    ],
-    "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/linux/linux": [
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/phone-end-file",
-        "title": "手机端文件"
-      },
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file",
-        "title": "另一个文件"
-      }
-    ],
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": [
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      }
-    ],
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx": [
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      }
-    ],
-    "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": [
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      },
-      {
-        "url": "/zh-Hans/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx",
-        "title": "mdx 测试一下"
-      }
-    ],
-    "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/another-file": [
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}/test-directory/test-bi-ji",
-        "title": "测试笔记"
-      },
-      {
-        "url": "/en/i18n/{lang}/docusaurus-plugin-content-blog/{sub_dir}/mdx",
-        "title": "mdx 测试一下"
-      }
-    ]
-  }
+  "backlinks": {}
 }

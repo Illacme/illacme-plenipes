@@ -10,7 +10,9 @@ import re
 import json
 import yaml
 import logging
+import hashlib
 import orjson
+import tempfile
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -85,17 +87,50 @@ def export_digital_garden(engine):
         def get_physical_url(logical_code):
             # 获取物理方言代码 (如 zh -> zh-Hans)
             physical_code = engine.route_manager.lang_mapping.get(logical_code, logical_code)
-            raw_url = f"/{physical_code}{prefix_part}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"/{physical_code}{prefix_part}/{slug}"
+            
+            # 🚀 [V18.1 修复] 如果 prefix 包含占位符（如 i18n/{lang}），执行实时解析
+            fmt_prefix = prefix
+            if "{" in prefix and "}" in prefix:
+                try:
+                    fmt_prefix = prefix.format(
+                        lang=physical_code,
+                        sub_dir=mapped_sub_dir
+                    )
+                except Exception:
+                    pass
+            
+            # 🚀 [Docusaurus 专修] Docusaurus 的 i18n 物理路径不等于浏览器 URL，需剥离冗余并防止重复目录
+            is_docusaurus = "docusaurus" in engine.active_theme.lower()
+            if is_docusaurus and ("i18n/" in fmt_prefix or "docusaurus-plugin" in fmt_prefix):
+                if "docusaurus-plugin-content-blog" in fmt_prefix:
+                    fmt_prefix = "blog"
+                elif "docusaurus-plugin-content-docs" in fmt_prefix:
+                    fmt_prefix = "docs"
+                elif "docusaurus-plugin-content-pages" in fmt_prefix:
+                    fmt_prefix = "" # Pages usually map to root or prefix
+            
+            prefix_val = f"/{fmt_prefix}" if fmt_prefix else ""
+
+            # 🚀 [V18.2 修复] 如果是 Docusaurus 且为默认语种，URL 不应包含语言前缀
+            src_lang = engine.i18n.source.get('lang_code', 'zh')
+            if is_docusaurus and logical_code == src_lang:
+                raw_url = f"{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"{prefix_val}/{slug}"
+            else:
+                raw_url = f"/{physical_code}{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"/{physical_code}{prefix_val}/{slug}"
+            
             final_url = re.sub(r'/+', '/', raw_url)
+
+
             disk_title = get_title_from_disk(final_url) or doc_info.get("title")
             return { "lang": logical_code, "url": final_url, "title": disk_title }
 
-        src_code = engine.i18n.get('source', {}).get('lang_code', 'zh')
+
+        src_code = engine.i18n.source.get('lang_code', 'zh')
         if src_code is not None:
             urls.append(get_physical_url(src_code))
             
-        if engine.i18n.get('enabled', True):
-            for t in engine.i18n.get('targets', []):
+        if engine.i18n.enabled:
+            for t in engine.i18n.targets:
                 logical_t_code = t.get('lang_code')
                 if logical_t_code is not None:
                     urls.append(get_physical_url(logical_t_code))
@@ -170,11 +205,35 @@ def export_digital_garden(engine):
     # graph.json output path — configurable via output_paths.graph_json_dir in config.yaml
     graph_json_dir = engine.paths.get('graph_json_dir') or os.path.join(engine.paths['target_base'], '../../assets')
     graph_path = os.path.join(graph_json_dir, 'graph.json')
+    # 🚀 [V18.6 V16.2] 幂等性保护：检查内容是否有实质性变化，防止无效热更
+    new_json_bytes = orjson.dumps(final_graph, option=orjson.OPT_INDENT_2)
+    
+    if os.path.exists(graph_path):
+        try:
+            with open(graph_path, 'rb') as f:
+                old_json_bytes = f.read()
+            # 如果内容完全一致（包括 MD5），则直接跳过，保护 Docusaurus 索引不刷新
+            if hashlib.md5(new_json_bytes).hexdigest() == hashlib.md5(old_json_bytes).hexdigest():
+                logger.debug("✨ [数字花园] 拓扑数据无变化，已跳过物理更新。")
+                return
+        except Exception:
+            pass # 读取失败则视为需要更新
+
     try:
         os.makedirs(os.path.dirname(graph_path), exist_ok=True)
-        with open(graph_path, 'w', encoding='utf-8') as f:
-            f.write(orjson.dumps(final_graph, option=orjson.OPT_INDENT_2).decode('utf-8'))
+        # 🚀 [V20.2] 极致原子化输出：引入 fsync 确保 OS 缓冲区物理落盘
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(graph_path), suffix=".json.tmp")
+        try:
+            with os.fdopen(tmp_fd, 'wb') as f:
+                f.write(new_json_bytes)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, graph_path)
+        except Exception:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+            raise
+
         backlink_count = sum(len(v) for v in backlinks_map.values())
-        logger.info(f"🕸️ [数字花园] 全语种拓扑图数据已导出 ({backlink_count} 组反链)")
+        logger.debug(f"🕸️ [数字花园] 全语种拓扑图数据已导出 ({backlink_count} 组反链)")
     except Exception as e:
         logger.error(f"❌ [数字花园] 拓扑图生成失败: {e}")

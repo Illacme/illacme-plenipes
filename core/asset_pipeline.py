@@ -83,7 +83,7 @@ class AssetPipeline:
         image_exts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff']
         
         # 读取去重配置阀门，默认为 false 保持对老版本的向后兼容
-        use_dedup = self.img_cfg.get('deduplication', False)
+        use_dedup = self.img_cfg.deduplication
         
         # 🚀 提取物理指纹，并截断为 [目录分片] 与 [实体防撞后缀]
         # 例如 hash 为 3f8a9b2c，则存入 3f 目录，文件名为 name_8a9b2c.webp
@@ -96,10 +96,10 @@ class AssetPipeline:
         final_dest_dir = os.path.join(self.dest_dir, shard_dir)
         os.makedirs(final_dest_dir, exist_ok=True)
 
-        is_image = ext in image_exts and self.img_cfg.get('enabled', True)
+        is_image = ext in image_exts and self.img_cfg.enabled
         
         if is_image:
-            target_ext = self.img_cfg.get('format', 'webp').lower()
+            target_ext = self.img_cfg.format.lower()
             new_filename = f"{name_base}_{actual_hash}.{target_ext}"
         else:
             new_filename = f"{name_base}_{actual_hash}{ext}"
@@ -133,7 +133,7 @@ class AssetPipeline:
                         if 'exif' in img.info:
                             img = ImageOps.exif_transpose(img)
                             
-                        max_w = self.img_cfg.get('max_width', 1400)
+                        max_w = self.img_cfg.max_width
                         if img.width > max_w: 
                             img.thumbnail((max_w, max_w), Image.Resampling.LANCZOS)
                             
@@ -143,7 +143,7 @@ class AssetPipeline:
                         tmp_fd, tmp_path = tempfile.mkstemp(dir=final_dest_dir, suffix=".tmp")
                         os.close(tmp_fd) # 必须立刻关闭系统级文件描述符，把写入权限全权交给 PIL 引擎
                         
-                        img.save(tmp_path, target_ext.upper(), quality=self.img_cfg.get('quality', 80))
+                        img.save(tmp_path, target_ext.upper(), quality=self.img_cfg.quality)
                         os.replace(tmp_path, final_dest_path) # 原子级指针切换，瞬间完成
                         
                     return f"{shard_dir}/{new_filename}"

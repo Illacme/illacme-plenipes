@@ -21,6 +21,48 @@ import yaml
 import logging
 from logging.handlers import RotatingFileHandler
 
+try:
+    import tiktoken
+    HAS_TIKTOKEN = True
+except ImportError:
+    HAS_TIKTOKEN = False
+
+class TokenCounter:
+    """
+    🚀 工业级 Token 秤
+    职责：基于 OpenAI 的 tiktoken 算法提供高精度的字数测算。
+    内置“软下降”机制，确保在库缺失的情况下提供可接受的估算值。
+    """
+    _encoding = None
+
+    @classmethod
+    def get_encoding(cls):
+        if cls._encoding is None and HAS_TIKTOKEN:
+            try:
+                # 统一使用 cl100k_base 编码，适用于 GPT-4 及后续主流模型
+                cls._encoding = tiktoken.get_encoding("cl100k_base")
+            except Exception:
+                pass
+        return cls._encoding
+
+    @classmethod
+    def count(cls, text: str) -> int:
+        """测算文本的物理 Token 消耗量"""
+        if not text:
+            return 0
+        
+        encoding = cls.get_encoding()
+        if encoding:
+            try:
+                return len(encoding.encode(text, disallowed_special=()))
+            except Exception:
+                # 若编码失败（极罕见），降级到估算
+                pass
+        
+        # 🚀 降级算法：中英混合场景下，1 个 Token 约等于 1.5 ~ 2 个字符
+        # 此处采用偏保守的 1.5 倍系数
+        return int(len(text) / 1.5)
+
 class ColoredFormatter(logging.Formatter):
     """
     🚀 视觉降维：自定义 ANSI 彩色日志格式化器
@@ -49,129 +91,45 @@ class ColoredFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
 
-class ConfigValidator:
-    """
-    🚀 预飞行审计引擎 (Pre-flight Auditor)
-    模块职责：在核心引擎启动前，对合并及推导后的全量配置进行静态语义检查。
-    拦截维度：物理路径存活性、数据类型契约一致性、翻译令牌安全隔离检查。
-    """
-    def __init__(self, config):
-        self.cfg = config
-        self.logger = logging.getLogger("Illacme.plenipes")
-        self.has_error = False
 
-    def _log_error(self, msg):
-        self.logger.error(f"🛑 [配置审计失败] {msg}")
-        self.has_error = True
-
-    def validate(self):
-        """执行全量审计流水线"""
-        self.logger.info("🛡️ 正在执行系统点火前的全量配置审计...")
-        
-        # 1. 物理路径存活性核验 (源头检测)
-        self._check_source_paths()
-        
-        # 2. 核心数据类型契约核验 (物理免疫 'str' object has no attribute 'get' 崩溃)
-        self._check_data_structures()
-        
-        # 3. 翻译引擎与密钥隔离审计 (环境优先原则)
-        self._check_translation_safety()
-        
-        if self.has_error:
-            self.logger.critical("❌ 预飞行审计未通过！为了保护笔记数据与 AI 额度安全，引擎已自动切断点火程序。")
-            self.logger.critical("💡 建议：请根据上方红字提示修正 config.yaml 或 config.local.yaml 后重试。")
-            sys.exit(1)
-        
-        self.logger.info("✨ 预飞行审计完美通过，系统安全屏障已建立。")
-
-    def _check_source_paths(self):
-        """审计物理路径是否存在，解决“找不到映射物理目录”的根源问题"""
-        vault_root = self.cfg.get('vault_root')
-        if not vault_root:
-            self._log_error("配置项 'vault_root' 缺失。引擎无法定位您的笔记库基座。")
-        else:
-            abs_vault = os.path.abspath(os.path.expanduser(vault_root))
-            if not os.path.exists(abs_vault):
-                self._log_error(f"笔记库路径不存在: {abs_vault}\n   └── 💡 诊断：请检查外置硬盘是否挂载，或 config.local.yaml 中的路径书写是否有误。")
-
-    def _check_data_structures(self):
-        """
-        审计数据类型结构。
-        防止用户在 config.local.yaml 中将原本应是字典的对象误写成了字符串。
-        """
-        # 审计重灾区名单：配置项名称 -> 期望的类型契约
-        critical_structs = {
-            'system': collections.abc.Mapping,
-            'translation': collections.abc.Mapping,
-            'image_settings': collections.abc.Mapping,
-            'output_paths': collections.abc.Mapping,
-            'i18n_settings': collections.abc.Mapping
-        }
-        
-        for key, expected_type in critical_structs.items():
-            val = self.cfg.get(key)
-            # 如果配置项存在，则强制校验其类型
-            if val is not None and not isinstance(val, expected_type):
-                self._log_error(
-                    f"配置项 '{key}' 类型违约。期望 {expected_type.__name__}，实际解析为 {type(val).__name__}。\n"
-                    f"   └── 💡 诊断：通常是由于 YAML 缩进不当，导致解析器将其误认为纯文本。请确保冒号后有空格且层级正确。"
-                )
-
-    def _check_translation_safety(self):
-        """
-        审计翻译令牌安全性。
-        贯彻“环境变量最高特权”逻辑：如果环境变量存在，则忽略配置文件的 key 状态。
-        """
-        trans_cfg = self.cfg.get('translation', {})
-        if not isinstance(trans_cfg, collections.abc.Mapping):
-            return # 交给类型核验模块拦截
-            
-        provider = str(trans_cfg.get('provider', 'none')).lower()
-        if provider == 'none':
-            return
-            
-        # 优先级审计：系统环境变量 > 配置文件读取
-        env_key = os.environ.get('ILLACME_API_KEY')
-        cfg_key = trans_cfg.get('api_key')
-        
-        if not env_key:
-            # 若环境变量缺失，则检查配置文件是否填了有效 Key
-            if not cfg_key or cfg_key in ['unused', 'your-key-here', '']:
-                self.logger.warning("🟡 [安全警告] 翻译引擎已激活，但未探测到任何 API 密钥。")
-                self.logger.warning("   └── 💡 建议：请在环境变量中注入 ILLACME_API_KEY，或在配置文件中补齐 api_key 字段。")
 
 def strip_technical_noise(content, options=None):
     """
     🚀 语义提纯引擎：物理剥离 Markdown/MDX 中的工程噪声。
     :param content: 原始 Markdown 内容
-    :param options: 从 config.yaml 下发的过滤开关字典
+    :param options: 从 config.yaml 下发的过滤开关 (支持字典或 PurificationSettings 对象)
     :return: 提纯后的纯文本，用于 AI 摘要、SEO 提取及空载检查
     """
     if not content:
         return ""
     
-    options = options or {}
+    # 支持强类型对象与旧版字典的双向兼容
+    def get_opt(key, default):
+        if options is None: return default
+        if hasattr(options, key): return getattr(options, key)
+        if isinstance(options, dict): return options.get(key, default)
+        return default
     
     # 1. [物理隔离] 剥离 <style> 和 <script> 块 (MDX 渲染重灾区)
-    if options.get('strip_styles', True):
+    if get_opt('strip_styles', True):
         content = re.sub(r'<(style|script).*?>.*?</\1>', '', content, flags=re.DOTALL | re.IGNORECASE)
     
     # 2. [语法剥离] 剥离 MDX 的 import/export 语句
-    if options.get('strip_mdx_imports', True):
+    if get_opt('strip_mdx_imports', True):
         content = re.sub(r'^(import|export)\s+.*?;?$', '', content, flags=re.MULTILINE | re.DOTALL)
     
     # 3. [注释剥离] 移除 HTML 注释
-    if options.get('strip_comments', True):
+    if get_opt('strip_comments', True):
         content = re.sub(r'<!' + r'--(.*?)--' + r'>', '', content, flags=re.DOTALL)
         
     # 4. [代码块剥离] 针对 SEO 场景，代码块通常不贡献核心语义
-    if options.get('strip_code_blocks', True):
+    if get_opt('strip_code_blocks', True):
         content = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
         content = re.sub(r'`.*?`', '', content)
 
     # 5. [组件剥离] 移除特定的 JSX/MDX 标签名，保留内部文字
     # 匹配 <Tag ...> 或 </Tag>，仅保留中间的文本
-    if options.get('strip_jsx_tags', True):
+    if get_opt('strip_jsx_tags', True):
         content = re.sub(r'<[A-Z][A-Za-z0-9_]*[^>]*?>', '', content)
         content = re.sub(r'</[A-Z][A-Za-z0-9_]*>', '', content)
     
@@ -246,90 +204,6 @@ def extract_frontmatter(content):
             pass
     return {}, content
 
-def load_unified_config(base_config_path):
-    """
-    🚀 工业级全局统一配置装载中心 (Single Source of Truth)
-    模块职责：解析 YAML -> 执行级联合并 -> 智能路径推导 -> 强制占位符抹平 -> 强制审计。
-    """
-    def deep_update(d, u):
-        """深度融合引擎：原地修改目标字典，支持无限层级的嵌套覆写。"""
-        if not isinstance(d, collections.abc.Mapping):
-            d = {}
-        if not isinstance(u, collections.abc.Mapping):
-            return d
-
-        for k, v in u.items():
-            if isinstance(v, collections.abc.Mapping):
-                sub_d = d.get(k, {})
-                if not isinstance(sub_d, collections.abc.Mapping):
-                    sub_d = {}
-                d[k] = deep_update(sub_d, v)
-            else:
-                d[k] = v
-        return d
-
-    # 1. 加载云端/默认基线配置
-    abs_base_path = os.path.abspath(os.path.expanduser(base_config_path))
-    try:
-        with open(abs_base_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f) or {}
-    except Exception as e:
-        logging.getLogger("Illacme.plenipes").error(f"🛑 致命错误: 无法读取主配置文件 {abs_base_path}: {e}")
-        sys.exit(1)
-
-    # 2. 挂载本地特权沙盒覆盖 (config.local.yaml)
-    base_dir = os.path.dirname(abs_base_path)
-    local_config_path = os.path.join(base_dir, 'config.local.yaml')
-    
-    if os.path.exists(local_config_path):
-        try:
-            with open(local_config_path, 'r', encoding='utf-8') as f:
-                local_config = yaml.safe_load(f) or {}
-            config = deep_update(config, local_config)
-            logging.getLogger("Illacme.plenipes").info("⚙️ 侦测到本地沙盒配置，已激活【特权覆写】引擎。")
-        except Exception as e:
-            logging.getLogger("Illacme.plenipes").error(f"🛑 解析本地配置失败: {e}。将退回使用基线配置。")
-
-    # 3. 🚀 [核心升级] 智能路径推导与占位符绝对抹平
-    theme = config.get('active_theme', 'starlight')
-    
-    if 'output_paths' not in config or not config['output_paths']:
-        paths = {}
-        config['output_paths'] = paths
-    else:
-        paths = config['output_paths']
-        if not isinstance(paths, collections.abc.Mapping):
-            paths = {}
-            config['output_paths'] = paths
-
-    # 🔌 [V14.2+] 允许 theme_options.{theme}.output_paths 覆盖全局路径
-    # 这让 Starlight/Docusaurus/VitePress 可以各自声明自己的目录约定
-    theme_opts = config.get('theme_options', {}).get(theme, {})
-    theme_path_overrides = theme_opts.get('output_paths', {})
-    for key, val in theme_path_overrides.items():
-        paths[key] = val
-            
-    # 🔌 [V16.1+] 提取语种映射关系 (Logical -> Physical Mapping)
-    # 允许不同框架使用不同的语言标签（如 zh-cn vs zh-Hans）
-    config['lang_mapping'] = theme_opts.get('lang_mapping', {})
-            
-    # 提取原始路径（包含默认推导逻辑）
-    raw_md_dir = paths.get('markdown_dir', "./themes/{theme}/src/content/docs")
-    raw_assets_dir = paths.get('assets_dir', "./themes/{theme}/public/assets")
-    raw_graph_dir = paths.get('graph_json_dir', "./themes/{theme}/public")
-
-    # 🚨 架构级对齐：在此处直接完成 {theme} 魔法占位符的物理替换
-    # 确保下游 engine.py 及其子模块拿到的路径永远是最终确定的绝对物理状态！
-    paths['markdown_dir'] = raw_md_dir.replace('{theme}', theme)
-    paths['assets_dir'] = raw_assets_dir.replace('{theme}', theme)
-    paths['graph_json_dir'] = raw_graph_dir.replace('{theme}', theme)
-
-    # 4. 触发强制点火审计
-    validator = ConfigValidator(config)
-    validator.validate()
-
-    return config
-
 def sanitize_ai_response(text):
     """
     🚀 AI 内容净化引擎：物理剔除大模型生成的非法“隔离带”标签与对话残留。
@@ -346,14 +220,28 @@ def sanitize_ai_response(text):
     text = re.sub(r'^```[a-zA-Z]*\n', '', text)
     text = re.sub(r'\n```$', '', text)
     
-    # 3. 碎片清理：移除引导性短语（兼容中英文常见模式）
-    removals = [
+    # 3. 碎片清理：移除引导性、总结性短语（兼容中英文常见模式）
+    removals_start = [
         r'^Here is the translation:?\n',
         r'^Translation:?\n',
         r'^翻译结果:?\n',
-        r'^以下是翻译:?\n'
+        r'^以下是翻译:?\n',
+        r'^Sure, here is the translated text:?\n',
+        r'^Certainly! Here is the translation:?\n'
     ]
-    for pattern in removals:
+    for pattern in removals_start:
         text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+
+    # 🚀 [V30 加固] 尾部署名/社交辞令清理
+    removals_end = [
+        r'\n\s*Hope this helps!.*$',
+        r'\n\s*Let me know if.*$',
+        r'\n\s*Translation completed\.*$',
+        r'\n\s*希望能帮到你.*$',
+        r'\n\s*翻译完毕.*$',
+        r'\n\s*请核对以上翻译.*$'
+    ]
+    for pattern in removals_end:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.DOTALL)
         
     return text.strip()

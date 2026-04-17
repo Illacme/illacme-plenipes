@@ -32,14 +32,13 @@ logger = logging.getLogger("Illacme.plenipes")
 
 class ContentSyndicator:
     def __init__(self, syndication_cfg, site_url, sys_tuning_cfg=None):
-        self.enabled = syndication_cfg.get('enabled', False)
-        self.platforms = syndication_cfg.get('platforms', {})
+        self.enabled = syndication_cfg.enabled
+        self.platforms = syndication_cfg.platforms
         self.site_url = site_url.rstrip('/') if site_url else ""
-        self.timeout = syndication_cfg.get('timeout', 15.0)
+        self.timeout = syndication_cfg.timeout
         
-        # 🚀 抽取硬编码：动态接管线程池并发上限
-        sys_tuning = sys_tuning_cfg or {}
-        max_workers = sys_tuning.get('max_concurrent_workers', 5)
+        # 🚀 抽取硬编码：直接对齐系统级线程池并发上限
+        max_workers = sys_tuning_cfg.max_workers if sys_tuning_cfg else 5
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
 
     def _push_devto(self, api_key, payload):

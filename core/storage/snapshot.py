@@ -74,10 +74,12 @@ class PersistenceEngine:
                     slot = int(time.time()) % self.backup_slots 
                     shutil.copy2(self.cache_path, os.path.join(backup_dir, f"metadata_snapshot_{slot}.json"))
 
-                # 原子级写盘
+                # 原子级写盘 (注入 fsync 强制落盘协议 V20)
                 tmp_file = self.cache_path + ".tmp"
                 with open(tmp_file, 'wb') as f: 
                     f.write(json_bytes)
+                    f.flush()
+                    os.fsync(f.fileno())
                 os.replace(tmp_file, self.cache_path)
                 return True
             except Exception as e:

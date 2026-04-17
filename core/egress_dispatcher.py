@@ -4,7 +4,7 @@
 Illacme-plenipes Core - Egress Dispatcher
 模块职责：物理出站分发器。
 负责将 AI 处理完毕的纯净文本，进行方言解蔽、双链寻址映射、MDX 隔离与最终的物理落盘。
-🚀 [V16.4 架构重构]：彻底从 engine.py 中剥离，解除 God Class 的 I/O 耦合。
+🚀 [V22 “元数据精炼版”]: 彻底消除 YAML 锚点与冗余时间戳格式。
 """
 
 import os
@@ -14,7 +14,7 @@ import yaml
 import tempfile
 import logging
 import hashlib
-from datetime import datetime, timezone  # 🚀 [补入时空模块]
+from datetime import datetime, timezone
 from .utils import sanitize_ai_response
 
 logger = logging.getLogger("Illacme.plenipes")
@@ -37,9 +37,10 @@ class EgressDispatcher:
         self.i18n = i18n_cfg
         self.janitor = janitor
 
-    # 🚀 完整剥离的核心派发逻辑，绝对不省略任何一行代码
-    def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None):
+    def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None):
         if not self.paths['target_base']: return ""
+        
+        # ... (内部工具函数保持不变)
         
         def _get_closest_asset(target_filename):
             candidates = asset_index.get(target_filename, [])
@@ -61,42 +62,42 @@ class EgressDispatcher:
             def log_outlink(tgt_path):
                 if tgt_path and node_outlinks is not None and assets_lock is not None:
                     with assets_lock: node_outlinks.add(tgt_path)
-
-            if orig.startswith('URL_ONLY_IMG:'):
-                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_IMG:', '').strip())
-                if clean_path.startswith(('http://', 'https://', '//')): return clean_path
-                filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
-                target_asset_path = _get_closest_asset(filename)
-                if target_asset_path:
-                    processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                    return f"{self.asset_base_url}{processed_name}"
-                return clean_path
-                
-            if orig.startswith('URL_ONLY_LNK:'):
-                clean_path = urllib.parse.unquote(orig.replace('URL_ONLY_LNK:', '').strip())
+            
+            # 🚀 [V28 逻辑回归]：处理 URL 专用屏蔽标记（由 MaskingAndRoutingStep 产生）
+            is_url_only_lnk = orig.startswith('URL_ONLY_LNK:')
+            is_url_only_img = orig.startswith('URL_ONLY_IMG:')
+            
+            if is_url_only_lnk or is_url_only_img:
+                clean_path = urllib.parse.unquote(orig.split(':', 1)[1].strip())
                 if clean_path.startswith(('http://', 'https://', 'mailto:', '#')): return clean_path
                 
+                # 1. 尝试匹配物理资产
                 asset_filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
                 target_asset_path = _get_closest_asset(asset_filename)
                 if target_asset_path:
                     processed_name = log_asset(self.asset_pipeline.process(target_asset_path, asset_filename, is_dry_run))
                     return f"{self.asset_base_url}{processed_name}"
                 
+                # 2. 尝试解析逻辑文档链接 (Slug 寻址)
                 target_rel_path = self.meta.resolve_link(clean_path) or self.meta.resolve_link(os.path.splitext(os.path.basename(clean_path))[0])
                 if target_rel_path:
                     log_outlink(target_rel_path)
                     t_doc_info = self.meta.get_doc_info(target_rel_path)
                     t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
                     t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
+                    
+                    # 🚀 召回路由于经理构造 URL
                     t_abs = os.path.join(self.paths['vault'], target_rel_path)
                     t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
                     if t_sub_dir == '.': t_sub_dir = ""
                     t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=False)
-                    t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                    raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
-                    return re.sub(r'/+', '/', raw_url)
+                    
+                    return self.route_manager.resolve_logical_url(lang_code, t_prefix, t_mapped_sub_dir, t_slug)
                 return clean_path
 
+            if orig.startswith('\\'): return orig
+            
+            # 🚀 [V28 灵魂回归]：处理 Obsidian 风格的双链、图片嵌入
             if orig.startswith('![['):
                 filename = orig[3:-2].split('|')[0].strip()
                 alt_text = orig[3:-2].split('|')[1] if '|' in orig[3:-2] else filename
@@ -107,49 +108,42 @@ class EgressDispatcher:
                     return f"![{alt_text}]({self.asset_base_url}{processed_name})" if ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg'] else f"[{alt_text}]({self.asset_base_url}{processed_name})"
                 return f"[{alt_text}](#broken-link)"
                 
-            elif orig.startswith('!['):
-                match = re.match(r'\!\[(.*?)\]\((.*?)\)', orig)
-                if match:
-                    alt_text, img_path = match.groups()
-                    filename = os.path.basename(urllib.parse.unquote(img_path.strip()).split('?')[0].split('#')[0])
-                    target_asset_path = _get_closest_asset(filename)
-                    if target_asset_path:
-                        processed_name = log_asset(self.asset_pipeline.process(target_asset_path, filename, is_dry_run))
-                        return f"![{alt_text}]({self.asset_base_url}{processed_name})"
-                    if not img_path.startswith(('http://', 'https://', '/', '#')):
-                        return f"![{alt_text}](/broken-image.png)"
-                return orig
-                
             elif orig.startswith('[['):
                 target_text = orig[2:-2].split('|')[0].strip()
-                custom_zh_text = orig[2:-2].split('|')[1].strip() if '|' in orig[2:-2] else target_text
+                custom_text = orig[2:-2].split('|')[1].strip() if '|' in orig[2:-2] else target_text
+                
+                # A. 检查是否为物理文件链接（如 PDF）
                 target_asset_path = _get_closest_asset(target_text)
                 if target_asset_path:
                     processed_name = log_asset(self.asset_pipeline.process(target_asset_path, target_text, is_dry_run))
-                    return f"[{custom_zh_text}]({self.asset_base_url}{processed_name})"
+                    return f"[{custom_text}]({self.asset_base_url}{processed_name})"
                 
+                # B. 检查是否为文档双链
                 target_rel_path = self.meta.resolve_link(target_text)
                 if target_rel_path:
                     log_outlink(target_rel_path)
                     t_doc_info = self.meta.get_doc_info(target_rel_path)
                     t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', target_text.replace(' ', '-').lower())).strip('-')
                     t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
-                    if not is_dry_run: self.meta.register_document(target_rel_path, target_text, slug=t_slug, route_prefix=t_prefix, route_source=t_source)
+                    
                     t_abs = os.path.join(self.paths['vault'], target_rel_path)
                     t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
                     if t_sub_dir == '.': t_sub_dir = ""
                     t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=False)
-                    t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                    raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
-                    display_text = t_slug.replace('-', ' ').title() if is_target else custom_zh_text
-                    return f"[{display_text}]({re.sub(r'/+', '/', raw_url)})"
-                return f"[{custom_zh_text}](#broken-link)"
+
+                    url_path = self.route_manager.resolve_logical_url(lang_code, t_prefix, t_mapped_sub_dir, t_slug)
+                    display_text = t_slug.replace('-', ' ').title() if is_target else custom_text
+                    return f"[{display_text}]({url_path})"
+                return orig
                 
             elif orig.startswith('['):
+                # 处理标准 Markdown 链接指向本地文件的情况
                 match = re.match(r'\[(.*?)\]\((.*?)\)', orig)
                 if match and not match.group(2).startswith(('http://', 'https://', 'mailto:', '#')):
                     link_text, link_path = match.groups()
                     clean_path = urllib.parse.unquote(link_path.strip())
+                    
+                    # 优先级：资产 -> 文档
                     asset_filename = os.path.basename(clean_path.split('?')[0].split('#')[0])
                     target_asset_path = _get_closest_asset(asset_filename)
                     if target_asset_path:
@@ -162,14 +156,15 @@ class EgressDispatcher:
                         t_doc_info = self.meta.get_doc_info(target_rel_path)
                         t_slug = t_doc_info.get("slug") or re.sub(r'-+', '-', re.sub(r'[^\w\-]', '', os.path.splitext(os.path.basename(target_rel_path))[0].replace(' ', '-').lower())).strip('-')
                         t_prefix, t_source = t_doc_info.get("prefix", route_prefix), t_doc_info.get("source", route_source)
+                        
                         t_abs = os.path.join(self.paths['vault'], target_rel_path)
                         t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(self.paths['vault'], t_source)).replace('\\', '/')).replace('\\', '/')
                         if t_sub_dir == '.': t_sub_dir = ""
                         t_mapped_sub_dir = self.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=is_dry_run, allow_ai=False)
-                        t_prefix_part = f"/{t_prefix}" if t_prefix else ""
-                        raw_url = f"/{lang_code}{t_prefix_part}/{t_mapped_sub_dir}/{t_slug}" if t_mapped_sub_dir else f"/{lang_code}{t_prefix_part}/{t_slug}"
+
+                        url_path = self.route_manager.resolve_logical_url(lang_code, t_prefix, t_mapped_sub_dir, t_slug)
                         display_text = t_slug.replace('-', ' ').title() if is_target else link_text
-                        return f"[{display_text}]({re.sub(r'/+', '/', raw_url)})"
+                        return f"[{display_text}]({url_path})"
                 return orig
             return orig
 
@@ -184,55 +179,93 @@ class EgressDispatcher:
             logger.warning(f"⚠️ [防御预警] {rel_path} 解蔽层数达到上限，可能存在死循环屏蔽。")
 
         if rel_path.lower().endswith('.mdx'):
-            final_body = re.sub(r'((?:import|export)\s+[\s\S]*?[\'"]\s*;?)\n([^\n])', r'\1\n\n\2', final_body)
+            import_pattern = re.compile(r'^(import\s+.*?from\s+[\'"].*?[\'"];?)$', re.MULTILINE)
+            imports = import_pattern.findall(final_body)
+            if imports:
+                final_body = import_pattern.sub('', final_body)
+                # 🚀 [去重并提升]：保护编译上下文的干净
+                unique_imports = list(dict.fromkeys(imports))
+                hoisted_imports = '\n'.join(unique_imports) + '\n\n'
+                final_body = hoisted_imports + final_body.lstrip()
+
+            # 🚀 [审美间距优化]：为组件与正文之间注入标准空行
             final_body = re.sub(r'([^\n])\n\s*(<[A-Z])', r'\1\n\n\2', final_body)
             final_body = re.sub(r'(</[A-Z][a-zA-Z0-9]*>|<[A-Z][^>]*/>)\n\s*([^\n<])', r'\1\n\n\2', final_body)
 
-        if self.pub_cfg.get('append_credit', False):
-            final_body += f"{self.pub_cfg.get('credit_text', '')}\n"
+        if self.pub_cfg.append_credit:
+            final_body += f"{self.pub_cfg.credit_text}\n"
         
         merged_fm = fm_dict.copy()
         merged_fm['title'] = slug.replace('-', ' ').title() if is_target else title
         
-        # ==========================================
-        # 🚀 [V16.9 物理时间溯源补丁]：跨框架兼容与 OS 底层时空锚定
-        # ==========================================
-        if not merged_fm.get('date'):
-            try:
-                # 1. 探针定位：拼装 Obsidian 源文件的绝对物理路径
-                src_abs_path = os.path.join(self.paths['vault'], rel_path)
-                
-                # 2. 物理提取：从操作系统底层抓取文件的最后修改时间戳 (mtime)
-                mtime = os.path.getmtime(src_abs_path)
-                
-                # 3. 时区转换：将 Unix 时间戳转换为带本地时区的原生 datetime 对象
-                merged_fm['date'] = datetime.fromtimestamp(mtime).astimezone()
-            except Exception as e:
-                # 极端边界防御：如果文件句柄被锁或发生 I/O 错误，降级为当前时间
-                logger.warning(f"⚠️ [时空溯源失败] 无法读取 {rel_path} 的物理时间，降级为当前时间: {e}")
-                merged_fm['date'] = datetime.now(timezone.utc).astimezone()
-            
-        # 4. 物理斩断 Docusaurus Docs 的 Git 探针 (防 1970 纪元陷阱)
-        if not merged_fm.get('last_update'):
-            merged_fm['last_update'] = {
-                'date': merged_fm.get('date'),
-                'author': merged_fm.get('author', 'Illacme Engine')
-            }
+        src_abs_path = os.path.join(self.paths['vault'], rel_path)
+        current_mtime = os.path.getmtime(src_abs_path)
+        current_mtime_dt = datetime.fromtimestamp(current_mtime).astimezone()
+
+        # 🚀 [V25-V27 时空分流协议]：生日溯源逻辑
+        persistence_date_str = None
+        post_date = merged_fm.get('date')
         
-        import_pattern = re.compile(r'^(import\s+.*?from\s+[\'"].*?[\'"];?)$', re.MULTILINE)
-        imports = import_pattern.findall(final_body)
-        if imports:
-            final_body = import_pattern.sub('', final_body)
-            final_body = '\n'.join(list(dict.fromkeys(imports))) + '\n\n' + final_body.lstrip()
+        # [V27 加固]：如果外部调度中心（多语言环境）强行锁定了生日，则无条件服从
+        if force_persistence_date:
+            try:
+                post_date = datetime.fromisoformat(force_persistence_date)
+                persistence_date_str = force_persistence_date
+            except Exception:
+                pass
+
+        if not post_date:
+            # 尝试回溯账本中的“固化生日”
+            doc_info = self.meta.get_doc_info(rel_path)
+            if doc_info and doc_info.get('persistent_date'):
+                try:
+                    hp_date = doc_info['persistent_date']
+                    post_date = datetime.fromisoformat(hp_date)
+                    persistence_date_str = hp_date
+                except Exception:
+                    post_date = current_mtime_dt
+            else:
+                # 新文件：将当前物理时间作为法定生日，并准备持久化
+                post_date = current_mtime_dt
+                persistence_date_str = post_date.isoformat()
+        elif not persistence_date_str:
+            # 若源文件有显式定义，则以源文件为准，并更新/同步到账本
+            if isinstance(post_date, datetime):
+                persistence_date_str = post_date.isoformat()
+        
+        merged_fm['date'] = post_date
             
+        # 🚀 [V27 稳态加固]：注入技术指纹（仅监听模式），需位于语义适配之前以接受规则审查
+        if getattr(self.meta, 'is_watch_mode', False):
+            import random
+            import string
+            merged_fm['_illacme_ver'] = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+
+        # 🚀 [V26 全域语义适配]：由适配器接管全量元数据投影 (含时间、标签、作者映射)
+        merged_fm = self.ssg_adapter.adapt_metadata(
+            merged_fm,
+            current_mtime_dt, 
+            merged_fm.get('author', 'Illacme Engine')
+        )
+        
         ordered_fm = {key: merged_fm.pop(key) for key in self.fm_order if key in merged_fm}
         ordered_fm.update(merged_fm)
 
-        protected_blocks = ordered_fm.pop('__illacme_protected_blocks', None)
-        if protected_blocks:
-            final_body = final_body.rstrip() + f"\n\n{protected_blocks}\n"
+        # 🚀 [审美加固]：强行将技术指纹置于元信息的最后一行，保持排版整洁
+        if '_illacme_ver' in ordered_fm:
+            ver_val = ordered_fm.pop('_illacme_ver')
+            ordered_fm['_illacme_ver'] = ver_val
 
-        fm_str = "---\n" + yaml.dump(ordered_fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=float("inf")) + "---\n\n"
+        # 🚀 [V22 “元数据精炼补丁”]：执行深度清理并调用无别名 Dumper
+        cleaned_fm = _clean_frontmatter_for_yaml(ordered_fm)
+        fm_str = "---\n" + yaml.dump(
+            cleaned_fm, 
+            Dumper=NoAliasDumper,
+            allow_unicode=True, 
+            default_flow_style=False, 
+            sort_keys=False, 
+            width=float("inf")
+        ) + "---\n\n"
 
         if node_ext_assets is not None and assets_lock is not None:
             ext_md_pattern = re.compile(r'\!\[.*?\]\((https?://[^\)]+)\)')
@@ -255,27 +288,51 @@ class EgressDispatcher:
         if not is_dry_run:
             try:
                 os.makedirs(os.path.dirname(shadow_dest), exist_ok=True)
-                with open(shadow_dest, 'w', encoding='utf-8') as f: 
-                    f.write(shadow_body_content)
+                with open(shadow_dest, 'w', encoding='utf-8') as f: f.write(shadow_body_content)
                 
                 rendered_body = self.ssg_adapter.convert_callouts(ssg_final_body)
                 rendered_body = self.ssg_adapter.adapt_mdx_imports(rendered_body)
                 rendered_body = rendered_body.replace('{title}', title)
 
+                i18n_root = os.path.abspath(os.path.join(self.paths['target_base'], "../../"))
+                tmp_sync_dir = os.path.join(i18n_root, ".tmp_sync")
+                os.makedirs(tmp_sync_dir, exist_ok=True)
                 os.makedirs(os.path.dirname(dest), exist_ok=True)
-                tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(dest), suffix=".tmp.md")
-                with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f: 
-                    f.write(fm_str + rendered_body)
                 
-                os.replace(tmp_path, dest)
+                tmp_fd, tmp_path = tempfile.mkstemp(dir=tmp_sync_dir, suffix=".tmp")
+                try:
+                    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f: f.write(fm_str + rendered_body)
+                    os.replace(tmp_path, dest)
+                except Exception:
+                    if os.path.exists(tmp_path): os.remove(tmp_path)
+                    raise
                 
-                if self.janitor:
-                    self.janitor.mark_as_fresh(dest)
-
-                if lang_code == self.i18n.get('source', {}).get('lang_code', 'zh-cn'):
+                if self.janitor: self.janitor.mark_as_fresh(dest)
+                if lang_code == self.i18n.source.get('lang_code', 'zh-cn'):
                     self.syndicator.syndicate(ordered_fm, final_body, f"/{lang_code}/{mapped_sub_dir}/{slug}".replace('//', '/'))
-                    
             except Exception as e:
-                logger.error(f"🛑 物理落盘失败 (Shadow/SSG 写入异常): {e}")
+                logger.error(f"🛑 物理落盘失败: {e}")
             
-        return hashlib.md5(shadow_body_content.encode('utf-8')).hexdigest()
+        return hashlib.md5(shadow_body_content.encode('utf-8')).hexdigest(), persistence_date_str
+
+# ==========================================
+# 🛠 V22 元数据精炼辅助工具 (Module-Level Helpers)
+# ==========================================
+def _clean_frontmatter_for_yaml(data):
+    """递归清理 Frontmatter：消除物理引用关系，保持对象类型"""
+    if isinstance(data, dict):
+        return {k: _clean_frontmatter_for_yaml(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_clean_frontmatter_for_yaml(v) for v in data]
+    return data
+
+class NoAliasDumper(yaml.SafeDumper):
+    """物理层禁用 YAML 别名/锚点的专用 Dumper，并强制 ISO 时间格式"""
+    def ignore_aliases(self, data):
+        return True
+
+def _iso_datetime_representer(dumper, data):
+    """强制输出带 T 的标准化日期 (ISO 8601)"""
+    return dumper.represent_scalar('tag:yaml.org,2002:timestamp', data.isoformat())
+
+NoAliasDumper.add_representer(datetime, _iso_datetime_representer)
