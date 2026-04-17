@@ -36,30 +36,28 @@ class SSGAdapter:
         'success': 'success', 'check': 'success', 'tip': 'tip'
     }
 
-    def __init__(self, syntax_engine, custom_adapters=None):
+    def __init__(self, theme_settings):
         """
         初始化适配器。
-        :param syntax_engine: 目标前端语法方言引擎（如 starlight, vitepress 等或自定义名称）。
-        :param custom_adapters: 从 config.yaml 穿透注入的声明式适配器字典。
+        :param theme_settings: ThemeSettings 强类型配置对象。
         """
-        self.syntax_engine = syntax_engine.lower().strip()
-        self.custom_adapters = custom_adapters or {}
-        
-        # [架构破壁] 预判当前前端引擎是否命中了配置文件中的声明式渲染策略
-        self.is_declarative = self.syntax_engine in self.custom_adapters
-        self.declarative_config = self.custom_adapters.get(self.syntax_engine, {})
+        self.theme = theme_settings
+        self.syntax_engine = self.theme.syntax_engine.lower().strip()
         
         # 预加载目标框架映射表，实现单点构建中的 O(1) 级转换效率
-        self._engine_map = {}
-        if self.syntax_engine == 'starlight':
-            self._engine_map = {'info': 'note', 'warning': 'caution', 'danger': 'danger', 'success': 'tip', 'tip': 'tip'}
-        elif self.syntax_engine in ['vitepress', 'docusaurus']:
-            self._engine_map = {'info': 'info', 'warning': 'warning', 'danger': 'danger', 'success': 'success', 'tip': 'tip'}
+        # 优先级：YAML 配置 > 内部各引擎默认值 > 通用映射表
+        self._engine_map = self.theme.type_mapping or {}
+        
+        # 🧪 [专家回旋] 如果映射表为空，则尝试载入已知框架的生产级预置值
+        if not self._engine_map:
+            if self.syntax_engine == 'starlight':
+                self._engine_map = {'info': 'note', 'warning': 'caution', 'danger': 'danger', 'success': 'tip', 'tip': 'tip'}
+            elif self.syntax_engine in ['vitepress', 'docusaurus']:
+                self._engine_map = {'info': 'info', 'warning': 'warning', 'danger': 'danger', 'success': 'success', 'tip': 'tip'}
 
     def convert_callouts(self, content):
         """
         🚀 全球化语法降维引擎：将通用 Callout 转换为目标框架的物理组件。
-        已针对 Docusaurus 进行了 Admonition 闭环加固，彻底解决 [! 符号引发的 MDX 编译崩溃。
         """
         def repl(m):
             g_type = m.group(1).lower()
@@ -76,10 +74,14 @@ class SSGAdapter:
             # 优先级：映射表 -> 通用映射表 -> 默认 info
             target_type = self._engine_map.get(g_type) or self._GENERIC_MAP.get(g_type, 'info')
             
-            # 强制执行 ::: 转换，彻底消灭 [! 符号
+            # 🚀 [V32] 声明式渲染优先
+            if self.theme.callout_template and self.theme.callout_template != "\n> **{title}**\n> {body_quoted}\n\n":
+                res = self.theme.callout_template.replace('{type}', target_type).replace('{title}', title).replace('{body}', body)
+                return res
+
+            # 兼容性兜底：强制执行 ::: 转换 (Starlight/Docusaurus/VitePress)
             if self.syntax_engine in ['docusaurus', 'vitepress', 'starlight']:
                 prefix = f":::{target_type}"
-                # Docusaurus 建议标题直接写在类型后面
                 if title: prefix += f" {title}"
                 return f"\n{prefix}\n{body}\n:::\n\n"
             
@@ -98,7 +100,7 @@ class SSGAdapter:
         content = re.sub(r"import\s+[\s\S]*?from\s+'(@astrojs/starlight|astro/config)[\s\S]*?';?", "", content)
 
         # 2. 🚀 执行声明式组件映射
-        mappings = self.declarative_config.get('component_mappings', {})
+        mappings = self.theme.component_mappings
         for component, template in mappings.items():
             
             def complex_repl(m):
@@ -119,43 +121,75 @@ class SSGAdapter:
                     res = res.replace(f'{{{key}}}', val)
                 
                 # 🛡️ 变量隔离：如果映射后仍残留 {xxx}，将其替换为字符串常量
-                # 这是防止 Acorn 报错 "is not defined" 的核心逻辑
                 res = re.sub(r'\{([a-zA-Z_]+)\}', r'""', res)
                 return res
 
             # A. 循环处理嵌套容器 (处理成对标签)
             while f'<{component}' in content and f'</{component}>' in content:
-                # 改进正则：允许组件名后可选空格，并使用非贪婪匹配
                 pattern = re.compile(rf'<{component}(?:\s*|(?:\s+[^>]*))>(((?!<{component}).)*?)</{component}>', re.DOTALL)
                 new_content = pattern.sub(complex_repl, content)
                 if new_content == content: break
                 content = new_content
 
-            # B. 处理自闭合或单标签 (如 <Badge text="..." />)
-            # 改进：允许属性前没有空格（即 <Badge/> 或 <Badge />）
+            # B. 处理自闭合或单标签
             single_pattern = re.compile(rf'<{component}(?:\s+([^/>]*))?/?>', re.MULTILINE)
             content = single_pattern.sub(complex_repl, content)
 
-            # C. 🚀 [V16.8 稳定性加固] 残留标签平整化 (处理不规范的单开口标签)
-            # 如果配置中定义了映射但正文中仍残留开口或闭口（通常源于源文档损坏），
-            # 则强制将其抹除（保留其在 A 步骤中可能已提取的内容），防止 MDX 编译崩溃。
+            # C. 🚀 [V16.8 稳定性加固] 残留标签平整化
             residual_tag_pattern = re.compile(rf'</?{component}(?:\s+[^>]*)?>', re.MULTILINE)
             content = residual_tag_pattern.sub('', content)
 
-        # 3. 🚀 [V16 专项加固] 样式块降维打击 (解决 Acorn 解析错误)
-        # 如果 MDX 包含 <style>，必须将其内容包装在反引号中，或者直接删除标签对，
-        # Docusaurus 默认支持在 MDX 里直接写 <style> 但括号必须符合 JS 规范。
-        # 这里我们采用最稳妥的方式：直接将 Starlight 风格的样式块转换为 Docusaurus 兼容模式。
+        # 3. 🚀 [V16 专项加固] 样式块降维打击
         if '<style>' in content:
-            # 物理级提取 CSS 内容并强制转义
             content = content.replace('<style>{`', '<style>{`').replace('`}</style>', '`}</style>')
-            # 特殊情况：如果样式块没闭合，强制闭合防止崩溃
             if '<style>' in content and '</style>' not in content:
                 content += '\n`}</style>'
-
 
         # 4. 标签对齐
         content = re.sub(r'<Aside\s+type="([a-z]+)"(?:\s+title="([^"]*)")?>', r':::\1 \2', content)
         content = content.replace('</Aside>', ':::').replace('</Side>', ':::')
         
         return content
+
+    def adapt_metadata(self, fm_dict, date_obj, author_name):
+        """
+        🚀 语义对齐投影仪：将原始 Frontmatter 根据目标框架进行全量投影适配。
+        """
+        mapping = self.theme.metadata_mapping
+        new_fm = fm_dict.copy()
+        
+        # 1. 🚀 [时空分流] 时间映射 (继承 V24-V25 逻辑)
+        mod_cfg = mapping.get('last_modified', {})
+        if mod_cfg:
+            key = mod_cfg.get('key', 'last_modified')
+            style = mod_cfg.get('style', 'plain')
+            
+            if style == 'object':
+                new_fm[key] = {'date': date_obj, 'author': author_name}
+            else:
+                new_fm[key] = date_obj
+        
+        # 2. 🚀 [语义对齐] 作者映射
+        auth_cfg = mapping.get('author', {})
+        if auth_cfg and 'author' in new_fm:
+            target_key = auth_cfg.get('key', 'author')
+            if target_key != 'author':
+                new_fm[target_key] = new_fm.pop('author')
+                
+        # 3. 🚀 [语义对齐] 关键词/标签重构
+        kw_cfg = mapping.get('keywords', {})
+        if kw_cfg:
+            source_key = 'keywords'
+            target_key = kw_cfg.get('key', 'tags')
+            
+            # 如果源数据中有 keywords 且目标框架期待 tags，则执行物理重映射
+            if source_key in new_fm and target_key != source_key:
+                new_fm[target_key] = new_fm.pop(source_key)
+                
+        # 4. 🚀 [噪音治理] 系统字段可见性控制 (如 _illacme_ver)
+        sys_cfg = mapping.get('system_fields', {})
+        for field, action in sys_cfg.items():
+            if action == 'hidden' and field in new_fm:
+                new_fm.pop(field)
+                
+        return new_fm

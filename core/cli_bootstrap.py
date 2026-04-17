@@ -14,7 +14,7 @@ import shutil
 import platform
 import subprocess
 import logging
-from .utils import load_unified_config
+
 
 logger = logging.getLogger("Illacme.plenipes")
 _SINGLETON_SOCKET = None
@@ -60,6 +60,14 @@ def parse_args_and_lock():
     parser.add_argument('--watch', action='store_true', help="进入 Daemon 模式：启动系统看门狗守护进程，毫秒级监听源库变动")
     parser.add_argument('--dry-run', action='store_true', help="[安全演练模式] 阻断实际 API 扣费请求和物理写盘")
     parser.add_argument('--force', action='store_true', help="[强制重构模式] 强行撕碎 MD5 本地状态防抖指纹，强拉所有引擎模块执行覆盖重编")
+    
+    # 🚀 [V31.3 增强参数]
+    parser.add_argument('--path', '-p', nargs='+', help="[选择性同步] 指定同步的源文件或目录路径 (相对于库根目录，支持多个)")
+    parser.add_argument('--no-ai', action='store_true', help="[离线/节流模式] 禁用所有 AI 任务 (翻译/SEO/Slug)，仅执行本地排版加工")
+    parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
+    parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
+    parser.add_argument('--clean', action='store_true', help="[一键重置] 物理删除所有同步指纹与 AI 影子缓存，重置引擎到初始态")
+    
     args = parser.parse_args()
     
     if not os.path.exists(args.config):
@@ -80,10 +88,17 @@ def parse_args_and_lock():
 
     # 在初始化主引擎和模型加载前，单独解析系统级参数以抢占端口锁
     try:
-        unified_config = load_unified_config(args.config)
-        lock_port = unified_config.get('system', {}).get('singleton_port', 43210)
-    except Exception:
-        lock_port = 43210
+        from .config import load_config
+        cfg = load_config(args.config)
+        lock_port = args.port or cfg.system.singleton_port
+        
+        # 🚀 同步覆盖日志级别
+        if args.log_level:
+            logger.setLevel(getattr(logging, args.log_level))
+            logger.info(f"⚙️ [内核诊断] 日志级别已由命令行覆盖为: {args.log_level}")
+    except Exception as e:
+        logger.debug(f"前置配置加载异常 (可能正在自举): {e}")
+        lock_port = args.port or 43210
         
     acquire_singleton_lock(lock_port)
     return args

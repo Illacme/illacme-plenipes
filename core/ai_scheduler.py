@@ -8,6 +8,7 @@ Illacme-plenipes Core - AI Multilingual Scheduler
 """
 
 import os
+import time
 import logging
 import concurrent.futures
 from .utils import extract_frontmatter, sanitize_ai_response
@@ -16,12 +17,12 @@ logger = logging.getLogger("Illacme.plenipes")
 
 class AIScheduler:
     @staticmethod
-    def dispatch_targets(engine, ctx, inject_seo_fn, route_prefix, route_source, cli_force, rel_path, is_dry_run):
+    def dispatch_targets(engine, ctx, inject_seo_fn, route_prefix, route_source, cli_force, rel_path, is_dry_run, persistence_date=None):
         """
         🚀 静态并发中枢：无情地接管所有目标语种的 AI 翻译任务并向外分发
         """
-        i18n_enabled = engine.i18n.get('enabled', True)
-        targets = engine.i18n.get('targets', [])
+        i18n_enabled = engine.i18n.enabled
+        targets = engine.i18n.targets
 
         if not i18n_enabled and targets:
             logger.debug(f"🤫 [多语言跳过] {rel_path}：检测到 i18n 总闸已关闭，已绕过所有目标语种翻译任务。")
@@ -40,7 +41,8 @@ class AIScheduler:
                         ctx.base_fm.copy(), rel_path, code, route_prefix, route_source,
                         ctx.mapped_sub_dir, ctx.masks, is_dry_run, is_target=True,
                         node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets,
-                        node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock
+                        node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock,
+                        force_persistence_date=persistence_date
                     )
             return
 
@@ -69,7 +71,7 @@ class AIScheduler:
                     return (code, s_body, s_fm, True)
                 except Exception as e:
                     logger.debug(f"读取影子资产失败，降级触发 AI: {e}")
-
+            
             # --- AI 翻译流程 ---
             final_body, target_health = ctx.masked_source, True
             target_fm = ctx.base_fm.copy() 
@@ -81,9 +83,9 @@ class AIScheduler:
                 else:
                     try:
                         target_lang_name = target.get('name', code)
-                        source_lang_name = engine.i18n.get('source', {}).get('name', '中文')
+                        source_lang_name = engine.i18n.source.get('name', '中文')
                         
-                        if engine.config.get('system', {}).get('verbose_ai_logs', True):
+                        if engine.config.system.verbose_ai_logs:
                             logger.info(f"🌐 [AI 翻译] 正在将正文及元数据转换为目标语言 ({code})...")
                         
                         final_body = engine.translator.translate(ctx.masked_source, source_lang_name, target_lang_name)
@@ -97,22 +99,28 @@ class AIScheduler:
                         logger.warning(f"⚠️ [翻译失败] 文章 {rel_path} ({code}) 翻译过程中断: {e}")
                         target_health = False
             
-            target_fm = inject_seo_fn(target_fm, code, final_body)
             return (code, final_body, target_fm, target_health)
 
-        # 🚀 激活线程池火力
-        with concurrent.futures.ThreadPoolExecutor(max_workers=engine.max_workers) as executor:
-            future_to_code = {executor.submit(process_target, t): t for t in targets if t.get('lang_code')}
-            for future in concurrent.futures.as_completed(future_to_code):
+        # 启动线程池进行 AI 调度
+        max_workers = engine.config.translation.llm_concurrency
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(process_target, t) for t in targets]
+            for future in concurrent.futures.as_completed(futures):
                 res = future.result()
                 if res:
                     t_code, t_body, t_fm, t_health = res
                     if not t_health: 
                         ctx.ai_health_flag[0] = False
+                    
+                    # 🚀 [V18.6 V6] 在监控模式下引入 200ms 的分发间隔，防止压跨 Docusaurus 的 JSON 聚合器
+                    is_watch_mode = getattr(engine.meta, 'is_watch_mode', False)
+                    if is_watch_mode and not is_dry_run:
+                        time.sleep(0.2)
+                        
                     engine.dispatcher.dispatch(
                         engine.asset_index, ctx.title, ctx.slug, t_body, t_fm, rel_path,
                         t_code, route_prefix, route_source, ctx.mapped_sub_dir, ctx.masks,
                         is_dry_run, is_target=True, node_assets=ctx.node_assets,
                         node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks,
-                        assets_lock=ctx.assets_lock
+                        assets_lock=ctx.assets_lock, force_persistence_date=persistence_date
                     )

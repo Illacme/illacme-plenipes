@@ -21,13 +21,12 @@ class WebhookBroadcaster:
     🚀 漏斗式安全异步广播矩阵
     """
     def __init__(self, publish_cfg, sys_tuning_cfg=None):
-        self.enabled = publish_cfg.get('webhook_enabled', False)
-        self.endpoints = publish_cfg.get('webhook_urls', [])
-        self.timeout = publish_cfg.get('webhook_timeout', 3.0) 
+        self.enabled = publish_cfg.webhook_enabled
+        self.endpoints = publish_cfg.webhook_urls
+        self.timeout = publish_cfg.webhook_timeout
         
-        # 🚀 抽取硬编码：动态接管线程池并发上限
-        sys_tuning = sys_tuning_cfg or {}
-        max_workers = sys_tuning.get('max_concurrent_workers', 5)
+        # 🚀 抽取硬编码：直接对齐系统级线程池并发上限
+        max_workers = sys_tuning_cfg.max_workers if sys_tuning_cfg else 5
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
 
     def _fire(self, url, payload):

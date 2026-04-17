@@ -87,7 +87,7 @@ class MetadataManager:
         """为数字花园拓扑图等外围组件提供只读快照"""
         with self.lock: return copy.deepcopy(self.data["documents"])
 
-    def register_document(self, rel_path, title, slug=None, source_hash=None, shadow_hash=None, seo_data=None, route_prefix=None, route_source=None, assets=None, ext_assets=None, outlinks=None):
+    def register_document(self, rel_path, title, slug=None, source_hash=None, shadow_hash=None, seo_data=None, route_prefix=None, route_source=None, assets=None, ext_assets=None, outlinks=None, persistent_date=None):
         """
         🚀 核心注册机 (已升维 V16 契约)
         注意：为了兼顾老代码的调用，如果传入旧的 file_hash，将通过逻辑路由分发到 source_hash
@@ -104,6 +104,12 @@ class MetadataManager:
             if seo_data is not None: doc["seo"] = seo_data
             if route_prefix is not None: doc["prefix"] = route_prefix
             if route_source is not None: doc["source"] = route_source
+
+            # 🚀 [V25 时空分流协议]：固化首次发现时间
+            if persistent_date is not None and "persistent_date" not in doc:
+                doc["persistent_date"] = persistent_date
+            
+            # 资产列表与反链列表的按需动态存取（降低 JSON 体积）
             
             # 资产列表与反链列表的按需动态存取（降低 JSON 体积）
             if assets is not None:
@@ -144,6 +150,21 @@ class MetadataManager:
     def get_doc_info(self, rel_path):
         """获取特定文档的元数据拷贝"""
         with self.lock: return self.data["documents"].get(rel_path, {}).copy()
+
+    def find_by_hash(self, source_hash):
+        """
+        🚀 [V18.6] 全局指纹反查：寻找拥有相同内容指纹的现有文档
+        用于实现“零 Token 搬家”：一个文件移动到新位置，直接继承旧位置的 AI 处理结果。
+        """
+        if not source_hash: return None
+        with self.lock:
+            for rel_path, info in self.data["documents"].items():
+                if info.get("source_hash") == source_hash:
+                    # 返回找到的第一个匹配项的拷贝
+                    result = info.copy()
+                    result["_rel_path"] = rel_path
+                    return result
+        return None
 
     def resolve_link(self, link_text):
         """

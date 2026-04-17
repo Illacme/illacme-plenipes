@@ -1,107 +1,151 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Ingress Adapter (输入端防腐层)
-模块职责：输入端方言标准化引擎 (Ingress Sanitization)。
-支持多编辑器混编模式。将各类编辑器的非标语法，统一“洗”成系统标准中间态 (AST)。
-
-🚀 [V16 架构级升维]：
-全面接入 BaseIngressAdapter 契约。彻底规范化输入输出签名，
-为未来解耦拔插 Notion、思源笔记等全新解析器奠定接口基石。
+Illacme-plenipes Core - Ingress Adapter (全景方言解析引擎)
+模块职责：方言标准化中枢 (Dialect Normalization Orchestrator)。
+🚀 [V31 专家重构版]：采用策略模式与插件化架构，解耦不同编辑器的解析逻辑。
 """
 
 import re
 import logging
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, List
 
-# 🚀 引入我们在 Phase 1 定义的绝对契约
 from .base import BaseIngressAdapter
 
 logger = logging.getLogger("Illacme.plenipes")
 
+# ==========================================
+# 🧱 方言基类与注册机制 (Dialect Base & Registry)
+# ==========================================
+
+class BaseDialect:
+    """所有 编辑器方言处理器 的抽象基类"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        return text, fm_dict
+
+class ObsidianDialect(BaseDialect):
+    """💎 Obsidian 方言处理器：处理双链、别名与资产引用"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        # 别名链接归一化：将 [[Link|Alias]] 保持在中间态，等待 egress 阶段处理
+        # 此处主要处理一些 Obsidian 特有的杂音或需要预处理的 metadata
+        return text, fm_dict
+
+class LogseqDialect(BaseDialect):
+    """🌿 Logseq 方言处理器：处理块属性、UUID 引用与缩进降维"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        # 1. UUID 块引用软化: ((uuid)) -> (uuid)
+        text = re.sub(r'\(\(([a-zA-Z0-9_-]+)\)\)', r'(\1)', text)
+        # 2. 剥离 Logseq 特兴属性 (id, heading, collapsed 等)
+        text = re.sub(r'^(id|heading|collapsed|done_at|last_modified_at)::\s+.*$', '', text, flags=re.MULTILINE | re.IGNORECASE)
+        # 3. 处理 Logseq 别名语义 [Alias]([[Link]]) -> [[Link|Alias]] (对齐到标准中间态)
+        text = re.sub(r'\[([^\]]+)\]\(\[\[([^\]]+)\]\]\)', r'[[\2|\1]]', text)
+        return text, fm_dict
+
+class NotionDialect(BaseDialect):
+    """🌀 Notion 方言处理器：处理 UUID 后缀清洗与引用块转换"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        # 1. 链接中的 UUID 物理清洗 (Notion 导出时常在文件名后带 32 位 ID)
+        # 匹配: [Name](Path/Filename%2032char-uuid.md)
+        text = re.sub(r'(\.md|\.png|\.jpg|\.pdf)([a-f0-9]{32})', r'\1', text)
+        # 2. 将 Notion 导出的非标 blockquote 语义对齐为 Callout (根据导出风格可能需要微调)
+        return text, fm_dict
+
+class TyporaDialect(BaseDialect):
+    """✍️ Typora 方言处理器：处理 [TOC] 与 Latex 方言对齐"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        # 1. [TOC] 占位符抹除（或在 Egress 阶段转为 SSG 组件，此处先标准化）
+        text = re.sub(r'^\[TOC\]\s*$', '', text, flags=re.MULTILINE | re.IGNORECASE)
+        # 2. 数学公式对齐：确保 $$ 包围的公式有正确的换行保护
+        return text, fm_dict
+
+class MkDocsDialect(BaseDialect):
+    """🛠️ MkDocs/Material 方言处理器：处理 !!! 缩进语法"""
+    def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        def mkdocs_repl(m):
+            ctype = m.group(1).lower()
+            title = m.group(2) or ctype.capitalize()
+            body = m.group(3)
+            lines = body.split('\n')
+            quoted_lines = []
+            for line in lines:
+                if line.startswith('    '): quoted_lines.append(f"> {line[4:]}")
+                elif line.startswith('\t'): quoted_lines.append(f"> {line[1:]}")
+                elif line.strip() == '': quoted_lines.append(">")
+                else: quoted_lines.append(f"> {line}")
+            return f"> [!{ctype}] {title}\n" + '\n'.join(quoted_lines)
+
+        text = re.sub(r'^!!!\s+([a-zA-Z]+)(?:\s+"([^"]*)")?\n((?:^[ \t]+.*\n?)*)', mkdocs_repl, text, flags=re.MULTILINE)
+        return text, fm_dict
+
+# ==========================================
+# 🏭 门面适配器 (Facade Adapter)
+# ==========================================
+
 class InputAdapter(BaseIngressAdapter):
     """
-    🚀 V16 大一统语法抹平中枢 (Facade)
-    继承自 BaseIngressAdapter 契约。拦截并清洗 Logseq、Roam、MkDocs 等特有方言，
-    确保后续进入 AI 算力管线与 AST 解析的文本绝对纯净。
+    🚀 V31 专家级编排门面
+    负责解析配置参数，并调度具体的 Dialect 插件完成流水线清洗。
     """
-    def __init__(self, active_editors="auto", custom_rules=None):
-        # 🚀 架构升维：支持 auto 模式与多编辑器数组混编
-        self.active_editors = set()
-        
-        if isinstance(active_editors, str):
-            val = active_editors.lower().strip()
-            if val in ['auto', 'all']:
-                # 开启全域感知模式，挂载所有已知方言探针
-                self.active_editors = {'obsidian', 'logseq', 'roam', 'mkdocs', 'typora'}
-            else:
-                self.active_editors.add(val)
-        elif isinstance(active_editors, list):
-            self.active_editors = {str(e).lower().strip() for e in active_editors}
-            
+    def __init__(self, active_dialects="auto", custom_rules=None, hard_line_break=False):
+        self.handlers: List[BaseDialect] = []
         self.custom_rules = custom_rules or {}
+        self.hard_line_break = hard_line_break
+        
+        # 映射矩阵
+        mapping = {
+            'obsidian': ObsidianDialect(),
+            'logseq': LogseqDialect(),
+            'notion': NotionDialect(),
+            'typora': TyporaDialect(),
+            'mkdocs': MkDocsDialect()
+        }
+        
+        # 解析激活的方言
+        editor_list = []
+        if isinstance(active_dialects, str):
+            if active_dialects.lower() in ['auto', 'all']:
+                editor_list = list(mapping.keys())
+            else:
+                editor_list = [active_dialects.lower()]
+        elif isinstance(active_dialects, list):
+            editor_list = [e.lower() for e in active_dialects]
+            
+        for name in editor_list:
+            if name in mapping:
+                self.handlers.append(mapping[name])
+                
+        logger.debug(f"⚙️ [方言引擎] 已挂载处理器链: {[h.__class__.__name__ for h in self.handlers]}")
 
     def get_editor_name(self) -> str:
-        """实现契约要求：返回当前激活的编辑器矩阵标识"""
-        if 'obsidian' in self.active_editors and len(self.active_editors) == 1:
-            return 'obsidian'
+        if len(self.handlers) == 1:
+            return self.handlers[0].__class__.__name__.replace('Dialect', '').lower()
         return 'universal_mixed'
 
     def normalize(self, raw_body: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
-        """
-        实现契约要求：核心清洗协议 (严格保持原有业务逻辑，绝不折叠精简)
-        """
-        # 0. 跨编辑器换行符统一 (必须前置到第一步！)
-        # 为下方所有的正则（包括隔离舱）扫清跨平台障碍，防止 \r 被隔离舱带入带出
+        """执行级联清洗流 (Waterfall Normalization)"""
+        # 1. 物理清洗：跨平台换行符归一
         text = raw_body.replace('\r\n', '\n').replace('\r', '\n')
         
-        # ==========================================
-        # 🚀 [V16.2 架构升级] 代码隔离舱 (Data Submarine)
-        # 将脆弱的 HTML/JSX 标签块物理拔除，存入隐形元数据字典，躲避 AI 算力消耗与截断风险
-        # ==========================================
+        # [V16.5 加固] 物理隔离舱 (Isolation Cabin)：保护对方言正则或换行处理敏感的区块
         protected_blocks = []
         def block_extractor(match):
             protected_blocks.append(match.group(0))
-            return "" # 从送给 AI 的原文中物理抹除
+            return f"\n\n[[__ILLACME_PROTECTED_{len(protected_blocks)-1}]]\n\n"
 
-        # 精准捕获所有 <style> 和 <script> 块 (支持跨行)
+        # 1. 保护 <style>/<script>
         text = re.sub(r'(<(style|script)[^>]*>.*?</\2>)', block_extractor, text, flags=re.DOTALL | re.IGNORECASE)
+        # 2. 保护 Markdown 代码块 (```...```)
+        text = re.sub(r'(```.*?```)', block_extractor, text, flags=re.DOTALL)
+        # 3. 保护 LaTeX 数学块 ($$...$$)
+        text = re.sub(r'(\$\$.*?\$\$)', block_extractor, text, flags=re.DOTALL)
+        # 4. 保护 Markdown 表格 (严格匹配连续的 | 行)
+        text = re.sub(r'((?:^[ \t]*\|.*\n)+)', block_extractor, text, flags=re.MULTILINE)
         
-        if protected_blocks:
-            # 存入引擎内部字典，AI 的管线视界中将彻底失去这些代码
-            fm_dict['__illacme_protected_blocks'] = "\n\n".join(protected_blocks)
-        # ==========================================
-
-        # 1. Logseq / Roam Research 方言剥离 (双括号 block 引用降维)
-        if 'logseq' in self.active_editors or 'roam' in self.active_editors or 'all' in self.active_editors:
-            # 降维策略：将 ((uuid)) 软化为普通的单括号 (uuid) 或直接消除，避免引起 SSG 模板引擎的渲染崩溃
-            text = re.sub(r'\(\(([a-zA-Z0-9_-]+)\)\)', r'(\1)', text)
-            # 处理 Logseq 的 block 属性残留
-            text = re.sub(r'^id::\s+[a-zA-Z0-9_-]+$', '', text, flags=re.MULTILINE)
+        # 3. 级联调用方言处理器
+        for handler in self.handlers:
+            text, fm_dict = handler.normalize(text, fm_dict)
             
-        # 2. MkDocs / Material 方言抹平 (Admonition 降维为标准 Markdown Blockquote)
-        if 'mkdocs' in self.active_editors or 'all' in self.active_editors:
-            def mkdocs_repl(m):
-                ctype = m.group(1).lower()
-                title = m.group(2) or ctype.capitalize()
-                body = m.group(3)
-                lines = body.split('\n')
-                quoted_lines = []
-                for line in lines:
-                    # 抹除 MkDocs 的缩进限制，反向添加标准 Markdown Blockquote 前缀
-                    if line.startswith('    '): quoted_lines.append(f"> {line[4:]}")
-                    elif line.startswith('\t'): quoted_lines.append(f"> {line[1:]}")
-                    elif line.strip() == '': quoted_lines.append(">")
-                    else: quoted_lines.append(f"> {line}")
-                return f"> [!{ctype}] {title}\n" + '\n'.join(quoted_lines)
-            
-            # 匹配: !!! info "标题"
-            text = re.sub(r'^!!!\s+([a-zA-Z]+)(?:\s+"([^"]*)")?\n((?:^[ \t]+.*\n?)*)', mkdocs_repl, text, flags=re.MULTILINE)
-            
-        # 3. 跨编辑器通用杂音剥离 (全域生效，如 Typora 的 [TOC] 目录占位符)
-        text = re.sub(r'^\[TOC\]\s*$', '', text, flags=re.MULTILINE | re.IGNORECASE)
-        
-        # 4. 声明式自定义清洗器拦截 (执行用户在 config.yaml 编写的降维正则)
+        # 4. 执行用户自定义正则规则
         if self.custom_rules:
             for rule_name, rule_cfg in self.custom_rules.items():
                 pattern = rule_cfg.get('pattern')
@@ -110,6 +154,17 @@ class InputAdapter(BaseIngressAdapter):
                     try:
                         text = re.sub(pattern, replace, text, flags=re.MULTILINE)
                     except re.error as e:
-                        logger.error(f"🛑 自定义清洗器 [{rule_name}] 正则编译失败: {e}")
+                        logger.error(f"🛑 自定义清洗器 [{rule_name}] 正则异常: {e}")
+
+        # 🚀 [V31.1] 硬换行处理：在还原隔离舱之前，将非隔离区的单换行符转换为物理硬换行
+        if self.hard_line_break:
+            # 匹配规则：符合 (?<!\n)\n(?!\n) 逻辑的换行符
+            # 动作：替换为 "  \n" (Markdown 标准硬换行)。
+            # 注意：排除已经带空格的行，防止重复叠加
+            text = re.sub(r'(?<!\n)(?<!  )\n(?!\n)', '  \n', text)
                         
+        # 5. 还原“隔离舱”内容
+        for i, block in enumerate(protected_blocks):
+            text = text.replace(f"[[__ILLACME_PROTECTED_{i}]]", block)
+            
         return text, fm_dict

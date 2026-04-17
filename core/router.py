@@ -92,3 +92,34 @@ class RouteManager:
             mapped_parts.append(d_slug)
             
         return '/'.join(mapped_parts)
+
+    def resolve_logical_url(self, lang_code, route_prefix, mapped_sub_dir, slug):
+        """
+        🚀 逻辑 URL 构造器：将各组件组装为最终浏览器可跳转的 URL 路径。
+        逻辑流程：语种标识 -> 路由前缀（带模板解析） -> 映射文件夹 -> Slug
+        """
+        logical_lang = str(lang_code or "").strip("/\\").lower()
+        mapped_sub_dir = str(mapped_sub_dir or "").strip("/\\")
+        slug = str(slug or "")
+
+        # 🚀 [V16.1 对齐] 语种物理化
+        physical_lang = self.lang_mapping.get(logical_lang, logical_lang)
+
+        # 阶段 1：解析路由前缀
+        if "{" in route_prefix and "}" in route_prefix:
+            # 模式 A：模板解析 (如 /docs/{lang})
+            prefix_processed = route_prefix.format(
+                lang=physical_lang, 
+                slug=slug, 
+                sub_dir=mapped_sub_dir
+            ).strip("/")
+        else:
+            # 模式 B：透传
+            prefix_processed = route_prefix.strip("/")
+
+        # 阶段 2：安全组装
+        parts = [p for p in [logical_lang, prefix_processed, mapped_sub_dir, slug] if p]
+        raw_url = "/" + "/".join(parts)
+        
+        # 阶段 3：物理脱敏（去除由于 prefix 本身带斜杠导致的重复斜杠）
+        return re.sub(r'/+', '/', raw_url)

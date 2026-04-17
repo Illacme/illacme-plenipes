@@ -18,10 +18,15 @@ from .cli_bootstrap import send_notification
 
 logger = logging.getLogger("Illacme.plenipes")
 
-def prepare_sync_tasks(engine):
+def prepare_sync_tasks(engine, requested_paths=None):
     """根据路由矩阵，扫描物理目录，建立同步初始化队列"""
     current_source_files = set()
     task_queue = []
+    
+    # [V31.3] 路径列表归一化
+    normalized_requests = []
+    if requested_paths:
+        normalized_requests = [p.replace('\\', '/').rstrip('/') for p in requested_paths]
     
     for route_cfg in engine.route_matrix:
         src_rel = route_cfg.get('source', '')
@@ -37,6 +42,16 @@ def prepare_sync_tasks(engine):
                 if f.endswith((".md", ".mdx")):
                     rel_path = os.path.relpath(os.path.join(root, f), engine.vault_root).replace('\\', '/')
                     
+                    # [V31.3] 多路径/目录前缀混合过滤
+                    if normalized_requests:
+                        match_found = False
+                        for req in normalized_requests:
+                            if rel_path == req or rel_path.startswith(req + '/'):
+                                match_found = True
+                                break
+                        if not match_found:
+                            continue
+
                     if engine._is_excluded(rel_path): 
                         continue
                         
@@ -61,11 +76,19 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
     logger.info(f"🚀 [系统点火] 核心引擎启动 | 启动时间: {start_time_str}")
 
     mode_str = 'Dry-Run 安全模拟' if args.dry_run else f'物理火力: {engine.max_workers} 核同步'
-    logger.info(f"🚀 [全速点火] 引擎就绪 | {mode_str} | 待处理文章: {len(task_queue)} 篇")
+    logger.info(f"🚀 [全速点火] 引擎就绪 | {mode_str} | 目标扫描范围: {len(task_queue)} 篇")
     
     # ---------------------------------------------------------
     # 📊 仪表盘装载层 (UI Loading)
     # ---------------------------------------------------------
+    stats = {
+        "UPDATED": 0,
+        "SKIP": 0,
+        "OFFLINE": 0,
+        "DEGRADED": 0,
+        "ERROR": 0
+    }
+
     try:
         from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
     except ImportError:
@@ -101,12 +124,15 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
                 task_path = future_to_task[future]
                 try: 
                     # 侦听线程内部异常
-                    future.result()
+                    status = future.result()
+                    if status in stats:
+                        stats[status] += 1
                 except Exception as e: 
                     # 🛡️ 架构防线：遇到报错时，不使用传统 logger 破坏进度条，而是通过 progress.console 输出
                     # 这会让报错信息平滑地从进度条上方飘出，彻底免疫屏幕撕裂
                     progress.console.print(f"[bold red]❌ 文章处理遇到意外故障 ({os.path.basename(task_path)}): {e}[/bold red]")
                     logger.error(f"❌ 文章处理遇到意外故障 ({os.path.basename(task_path)}): {traceback.format_exc()}")
+                    stats["ERROR"] += 1
                 finally:
                     # 每当任意一个子线程安全着陆，将主进度条推进一步
                     progress.advance(task_id)
@@ -117,9 +143,17 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
     
     elapsed_seconds = time.perf_counter() - start_perf
     time_display = f"{elapsed_seconds:.2f} 秒" if elapsed_seconds < 60 else f"{int(elapsed_seconds // 60)} 分 {elapsed_seconds % 60:.2f} 秒"
-    logger.info(f"🎉 全部文章同步动作执行完毕 | ⏱️ 阵列总耗时: {time_display}")
+    
+    logger.info("="*50)
+    logger.info(f"🎉 任务执行汇总 | 总耗时: {time_display}")
+    logger.info(f"   ✅ [物理更新/翻译]: {stats['UPDATED']} 篇")
+    logger.info(f"   🔄 [指纹匹配跳过]: {stats['SKIP']} 篇")
+    logger.info(f"   🛑 [拦截下线/隔离]: {stats['OFFLINE']} 篇")
+    if stats['DEGRADED'] > 0: logger.info(f"   🚧 [局部降级运行]: {stats['DEGRADED']} 篇")
+    if stats['ERROR'] > 0: logger.error(f"   ❌ [处理异常中断]: {stats['ERROR']} 篇")
+    logger.info("="*50)
 
-    enable_audit = engine.sys_cfg.get('enable_asset_audit', True)
+    enable_audit = engine.config.system.enable_asset_audit
 
     if enable_audit:
         logger.info("🧹 [资产审计] 启动全量交叉验证基线管控 (双轨模式)...")
@@ -163,15 +197,7 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
             dead_remote_links = []
             
             def ping_remote_asset(doc_path, url):
-                network_cfg = engine.sys_cfg.get('network_settings', {})
-                default_ignored = [
-                    'img.shields.io', 'badgen.net', 'badge.fury.io', 'skillicons.dev',
-                    'github-readme-stats.vercel.app', 'github-readme-streak-stats.herokuapp.com',
-                    'komarev.com', 'wakatime.com',
-                    'visitor-badge.laobi.icu', 'visitor-badge.glitch.me', 
-                    'api.visitorbadge.io', 'hits.seeyoufarm.com', 'count.getloli.com'
-                ]
-                ignored_domains = network_cfg.get('ignored_domains') or default_ignored
+                ignored_domains = engine.config.system.network_settings.ignored_domains
                 if any(domain in url for domain in ignored_domains):
                     return None
                     

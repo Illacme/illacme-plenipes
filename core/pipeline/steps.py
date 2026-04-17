@@ -11,6 +11,7 @@ import time
 import hashlib
 import logging
 import threading
+import shutil
 from ..utils import extract_frontmatter, strip_technical_noise, normalize_keywords
 from .runner import Step
 
@@ -43,13 +44,10 @@ class ASTAndPurifyStep(Step):
         ctx.body_content = ctx.engine.transclusion_resolver.expand(ctx.raw_body)
         ctx.body_content = ctx.engine.ssg_adapter.convert_callouts(ctx.body_content)
 
-        purify_opts = ctx.engine.sys_tuning.get('ai_context_purification', {
-            'strip_styles': True, 'strip_mdx_imports': True, 
-            'strip_comments': True, 'strip_code_blocks': True
-        })
+        purify_opts = ctx.engine.config.system.ai_context_purification
         ctx.ai_pure_body = strip_technical_noise(ctx.body_content, purify_opts)
         
-        substance_threshold = ctx.engine.config.get('empty_content_threshold', ctx.engine.sys_cfg.get('empty_content_threshold', 15))
+        substance_threshold = ctx.engine.config.translation.empty_content_threshold
         is_empty = len(ctx.ai_pure_body.strip()) < substance_threshold
         is_draft = str(ctx.fm_dict.get('draft')).lower() == 'true' or str(ctx.fm_dict.get('publish')).lower() == 'false'
         
@@ -76,13 +74,82 @@ class MetadataAndHashStep(Step):
         if 'slug' in ctx.base_fm: del ctx.base_fm['slug']
 
         ctx.current_hash = hashlib.md5((str(ctx.base_fm) + ctx.body_content).encode('utf-8')).hexdigest()
-        # 🚀 [V17.5 关键修复] 同步哈希指纹，守护增量编译防线
+        
+        # 🚀 [V18.6 关键修复] 同步哈希指纹前先抓取旧快照，用于判定“移动”还是“修改”
+        old_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
         ctx.engine.meta.register_document(ctx.rel_path, ctx.title, source_hash=ctx.current_hash)
         ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
 
+        # 🚀 [V18.6 零 Token 搬家优化 V2：影子资产漫游]
+        # 如果当前路径是新出现的（没有历史 slug），尝试在全站范围内寻找指纹一致的“前世”
+        if not old_info.get("slug"):
+            hit = ctx.engine.meta.find_by_hash(ctx.current_hash)
+            if hit and hit.get("slug"):
+                logger.info(f"🧬 [指纹继承] {ctx.rel_path} 定位到全站相同内容指纹，开始迁移 AI 影子资产...")
+                
+                # 1. 内存指纹继承
+                ctx.engine.meta.register_document(
+                    ctx.rel_path, ctx.title, 
+                    slug=hit.get("slug"), 
+                    seo_data=hit.get("seo"), 
+                    shadow_hash=hit.get("shadow_hash")
+                )
+                
+                # 2. 物理影子漫游：将翻译好的影子产物也“搬”到新家对应的位置
+                try:
+                    ext = os.path.splitext(ctx.rel_path)[1].lower()
+                    targets = ctx.engine.config.i18n_settings.targets
+                    for t in targets:
+                        code = t.get('lang_code')
+                        if not code: continue
+                        
+                        # 构造旧影子路径
+                        # 注意：MaskingAndRoutingStep 之后才会确定 mapped_sub_dir，
+                        # 但这里我们可以根据 hit 的元数据手动推导
+                        old_rel_path = hit.get('_rel_path')
+                        old_route_source = hit.get('source')
+                        old_route_prefix = hit.get('prefix')
+                        
+                        abs_old_src_dir = os.path.join(ctx.engine.paths['vault'], old_route_source)
+                        old_sub_rel_path = os.path.relpath(os.path.join(ctx.engine.paths['vault'], old_rel_path), abs_old_src_dir).replace('\\', '/')
+                        old_sub_dir = os.path.dirname(old_sub_rel_path).replace('\\', '/')
+                        if old_sub_dir == '.': old_sub_dir = ""
+                        
+                        # 模拟路由映射器的旧路径解析
+                        old_mapped_sub_dir = ctx.engine.route_manager.get_mapped_sub_dir(old_sub_dir, is_dry_run=ctx.is_dry_run, allow_ai=False)
+                        
+                        old_shadow_tgt = ctx.engine.route_manager.resolve_physical_path(
+                            ctx.engine.paths['shadow'], code, old_route_prefix, old_mapped_sub_dir, hit.get('slug'), ext
+                        )
+                        
+                        # 如果旧影子存在，执行“影子克隆”
+                        if os.path.exists(old_shadow_tgt):
+                            # 这里我们暂时无法构造“新”影子路径，因为 MaskingAndRoutingStep 还没跑，ctx.mapped_sub_dir 还没定
+                            # 提前运行一部分逻辑：
+                            abs_src_dir = os.path.join(ctx.engine.paths['vault'], ctx.route_source)
+                            sub_rel_path = os.path.relpath(ctx.src_path, abs_src_dir).replace('\\', '/')
+                            sub_dir = os.path.dirname(sub_rel_path).replace('\\', '/')
+                            if sub_dir == '.': sub_dir = ""
+                            new_mapped_sub_dir = ctx.engine.route_manager.get_mapped_sub_dir(sub_dir, is_dry_run=ctx.is_dry_run, allow_ai=False)
+                            
+                            new_shadow_tgt = ctx.engine.route_manager.resolve_physical_path(
+                                ctx.engine.paths['shadow'], code, ctx.route_prefix, new_mapped_sub_dir, hit.get('slug'), ext
+                            )
+                            
+                            if old_shadow_tgt != new_shadow_tgt:
+                                os.makedirs(os.path.dirname(new_shadow_tgt), exist_ok=True)
+                                shutil.copy2(old_shadow_tgt, new_shadow_tgt)
+                                logger.debug(f"   └── ⚡️ [影子资产漫游] 翻译成品已同步对齐: {code}")
+                except Exception as shadow_err:
+                    logger.warning(f"   └── ⚠️ [影子漫游失败] 物理对齐过程中断 (不影响主流程): {shadow_err}")
+
+                # 重新载入注入后的模型数据
+                ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
+
         is_toxic_slug = '%' in str(ctx.doc_info.get("slug", ""))
-        # 🚀 状态机契约对齐：读取升级后的 source_hash 进行防抖拦截
-        if not ctx.force_sync and not is_toxic_slug and ctx.doc_info.get("source_hash") == ctx.current_hash: 
+        # 🚀 [状态机契约修正]：只有当“旧路径”已经存在，且“哈希一致”时才允许 Abort
+        # 如果是新移动过来的路径，old_info["source_hash"] 会是 None，从而强制其至少运行一次以确保写盘。
+        if not ctx.force_sync and not is_toxic_slug and old_info.get("source_hash") == ctx.current_hash: 
             ctx.is_aborted = True
 
 class AISlugAndSEOStep(Step):
@@ -102,8 +169,11 @@ class AISlugAndSEOStep(Step):
             slug_raw = None
         
         if not slug_raw:
-            if not ctx.is_silent_edit:
-                # [AI 翻译模式]
+            # 🚀 [V32 逻辑激活]：根据 slug_mode 决定生成策略
+            slug_mode = ctx.engine.config.translation.slug_mode
+            
+            if slug_mode == 'ai' and not ctx.is_silent_edit:
+                # [AI 模式]
                 if ctx.is_dry_run:
                     slug_raw, slug_success = f"dry-run-{int(time.time())}", True
                 else:
@@ -116,7 +186,7 @@ class AISlugAndSEOStep(Step):
                         slug_success, slug_raw = False, None
                 if not slug_success: ctx.ai_health_flag[0] = False
             else:
-                # 🚀 [核心修复] 静默降级模式下的绝对纯净兜底
+                # [Local 模式] 或 [静默编辑模式]：执行本地绝对纯净兜底
                 # 1. 暴力抹除所有非英文字母和数字
                 english_only = re.sub(r'[^a-z0-9\-]', '', ctx.title.lower().replace(' ', '-'))
                 clean_slug = re.sub(r'-+', '-', english_only).strip('-')

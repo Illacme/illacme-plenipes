@@ -18,7 +18,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from ..utils import sanitize_ai_response
+from ..utils import sanitize_ai_response, TokenCounter
 logger = logging.getLogger("Illacme.plenipes")
 
 # ==========================================
@@ -41,23 +41,31 @@ def build_resilient_session(retries=3, backoff_factor=1.0):
 # 🧱 协议解析基座 (Protocol Adapters)
 # ==========================================
 class BaseTranslator:
-    def __init__(self, cfg, global_timeout, global_retries, ai_tuning, custom_prompts=None):
+    def __init__(self, provider_id, trans_cfg, custom_prompts=None):
         """
-        🚀 基础适配器构造：注入全域配置属性
+        🚀 基础适配器构造：注入全域强类型配置对象
         """
-        self.cfg = cfg or {}
-        self.timeout = global_timeout
-        self.session = build_resilient_session(retries=global_retries, backoff_factor=1.0)
+        self.provider_id = provider_id
+        self.trans_cfg = trans_cfg
+        # 获取当前节点的强类型参数镜像 (API Key, Model, Provider Type 等)
+        self.node_cfg = trans_cfg.providers.get(provider_id)
+        if not self.node_cfg:
+            # 兼容性兜底：构造空的 Provider 容器防止属性访问崩溃
+            from ..config import TranslationProvider
+            self.node_cfg = TranslationProvider()
         
-        # 算力参数注入
-        self.temperature = ai_tuning.get('temperature', 0.2)
-        self.max_tokens = ai_tuning.get('max_tokens', 8192)
+        self.timeout = trans_cfg.api_timeout
+        self.session = build_resilient_session(retries=trans_cfg.max_retries, backoff_factor=1.0)
+        
+        # 算力语义参数注入 (由 ConfigManager 归一化)
+        self.temperature = trans_cfg.temperature
+        self.max_tokens = trans_cfg.max_tokens
         
         # 🚀 [V15.3 关键修复]：确保所有子类策略都能访问此阈值
-        self.empty_threshold = self.cfg.get('empty_content_threshold', 15)
+        self.empty_threshold = trans_cfg.empty_content_threshold
         
         # 🚀 夺回控制权：捕获并挂载提示词矩阵
-        self.prompts = custom_prompts or {}
+        self.prompts = custom_prompts or trans_cfg.custom_prompts
 
     def get_system_prompt(self, source_lang, target_lang):
         """动态生成系统指令 (该方法现主要用于原始 API 调用)"""
@@ -75,43 +83,49 @@ class BaseTranslator:
         if not text or len(text.strip()) < self.empty_threshold:
             return text
 
-        # 🚀 [V16.8 突破] 自动切片逻辑：如果开启了 auto_chunk 且文本过长
-        auto_chunk = self.cfg.get('auto_chunk', True)
-        max_chunk = self.cfg.get('max_chunk_size', 2500)
+        # 🚀 [V32 核心回归] 引入 Token 秤驱动的精准分片逻辑
+        max_chunk = self.trans_cfg.max_chunk_size
+        content_tokens = TokenCounter.count(text)
         
-        if auto_chunk and len(text) > max_chunk:
+        if content_tokens > max_chunk:
+            logger.info(f"      └── 📦 文档超长 ({content_tokens} Tokens)，正在启动【安全切片引擎】精准分块翻译...")
             return self._translate_in_chunks(text, source_lang, target_lang, context_type)
 
         return self._do_translate(text, source_lang, target_lang, context_type)
 
     def _translate_in_chunks(self, text, source_lang, target_lang, context_type):
         """
-        🚀 [V16.9 安全熔断] 物理分段翻译：防止 Context Exceeded 崩溃
+        🚀 [V16.9 安全熔断] 语义级分段翻译：防止 Context Exceeded 崩溃
         """
-        max_chunk = self.cfg.get('max_chunk_size', 2500)
-        chunks = []
-        lines = text.split('\n')
-        current_chunk = ""
+        max_chunk = self.trans_cfg.max_chunk_size
+        paragraphs = text.split('\n\n')
+        chunks, current_chunk, current_tokens = [], [], 0
         
-        for line in lines:
-            if len(current_chunk) + len(line) + 1 > max_chunk:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = line + "\n"
+        for p in paragraphs:
+            # 测算单个段落的 Token 量
+            p_tokens = TokenCounter.count(p)
+            
+            # 🚀 替换动态阈值判定为 Token 容量累加
+            # 补偿系数 2：模拟 \n\n 连接符的 Token 消耗
+            if current_tokens + p_tokens + 2 > max_chunk and current_chunk:
+                chunks.append('\n\n'.join(current_chunk))
+                current_chunk, current_tokens = [p], p_tokens
             else:
-                current_chunk += line + "\n"
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+                current_chunk.append(p)
+                current_tokens += p_tokens + 2
+                
+        if current_chunk: 
+            chunks.append('\n\n'.join(current_chunk))
             
-        logger.info(f"   📦 [分段引擎] 文档超长 ({len(text)} 字)，已自动切分为 {len(chunks)} 个片段进行流水线翻译...")
+        logger.info(f"      └── ⚡️ 语义分块完成，共拆分为 {len(chunks)} 个 Token 级分片。")
         
-        results = []
+        # 串行执行（或未来可并行）
+        translated_results = []
         for i, chunk in enumerate(chunks):
-            # 逐段递归调用单体翻译逻辑
             res = self._do_translate(chunk, source_lang, target_lang, context_type)
-            results.append(res)
+            translated_results.append(res if res else chunk) # 失败回退原文
             
-        return "\n\n".join(results)
+        return '\n\n'.join(translated_results)
 
     def _do_translate(self, text, source_lang, target_lang, context_type="body"):
         """
@@ -234,10 +248,10 @@ class BaseTranslator:
 
 class OllamaTranslator(BaseTranslator):
     """🟢 本地协议"""
-    def __init__(self, cfg, global_timeout, global_retries, ai_tuning, custom_prompts=None):
-        super().__init__(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
-        self.endpoint = cfg.get('url', 'http://localhost:11434/api/generate')
-        self.model = cfg.get('model', 'qwen2.5:7b')
+    def __init__(self, provider_id, trans_cfg, custom_prompts=None):
+        super().__init__(provider_id, trans_cfg, custom_prompts)
+        self.endpoint = self.node_cfg.url or 'http://localhost:11434/api/generate'
+        self.model = self.node_cfg.model or 'qwen2.5:7b'
 
     def ai_call(self, prompt, sys_prompt=None):
         full_prompt = f"{sys_prompt}\n\n{prompt}" if sys_prompt else prompt
@@ -251,11 +265,11 @@ class OllamaTranslator(BaseTranslator):
 
 class OpenAICompatibleTranslator(BaseTranslator):
     """🔵 OpenAI 兼容协议 (支持自动路径纠偏)"""
-    def __init__(self, cfg, global_timeout, global_retries, ai_tuning, custom_prompts=None):
-        super().__init__(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
+    def __init__(self, provider_id, trans_cfg, custom_prompts=None):
+        super().__init__(provider_id, trans_cfg, custom_prompts)
         
         # 🚀 专家级路径纠偏：自动检测并补全缺失的 /v1
-        raw_url = cfg.get('base_url', 'https://api.openai.com/v1').rstrip('/')
+        raw_url = (self.node_cfg.base_url or 'https://api.openai.com/v1').rstrip('/')
         if not raw_url.endswith('/v1') and 'openai.com' not in raw_url:
             # 针对本地网关（如 LM Studio, Ollama 兼容层）自动补全版本号
             raw_url = f"{raw_url}/v1"
@@ -263,8 +277,8 @@ class OpenAICompatibleTranslator(BaseTranslator):
         self.endpoint = f"{raw_url}/chat/completions"
         # 🚀 [V17.2 核心加固] 环境密钥绝对特权
         import os
-        self.api_key = os.environ.get('ILLACME_API_KEY') or cfg.get('api_key')
-        self.model = cfg.get('model', 'gpt-4o')
+        self.api_key = os.environ.get('ILLACME_API_KEY') or self.node_cfg.api_key
+        self.model = self.node_cfg.model or 'gpt-4o'
 
     def ai_call(self, prompt, sys_prompt=None):
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
@@ -298,15 +312,14 @@ class OpenAICompatibleTranslator(BaseTranslator):
             # 捕获网络、SSL 或 JSON 解析异常，交由上层 FallbackStrategy 处理
             logger.warning(f"⚠️ AI 调用链路异常: {e}")
             raise  # 抛给 FallbackStrategy 切换备用节点
-
 class GeminiTranslator(BaseTranslator):
     """☁️ Google 原生协议"""
-    def __init__(self, cfg, global_timeout, global_retries, ai_tuning, custom_prompts=None):
-        super().__init__(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
+    def __init__(self, provider_id, trans_cfg, custom_prompts=None):
+        super().__init__(provider_id, trans_cfg, custom_prompts)
         import os
-        self.api_key = os.environ.get('ILLACME_API_KEY') or cfg.get('api_key')
-        self.model = cfg.get('model', 'gemini-1.5-pro')
-        self.endpoint = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){self.model}:generateContent?key={self.api_key}"
+        self.api_key = os.environ.get('ILLACME_API_KEY') or self.node_cfg.api_key
+        self.model = self.node_cfg.model or 'gemini-1.5-pro'
+        self.endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
 
     def ai_call(self, prompt, sys_prompt=None):
         full_msg = f"{sys_prompt}\n\n{prompt}" if sys_prompt else prompt
@@ -321,11 +334,11 @@ class GeminiTranslator(BaseTranslator):
 
 class AnthropicTranslator(BaseTranslator):
     """🟣 Claude 原生协议"""
-    def __init__(self, cfg, global_timeout, global_retries, ai_tuning, custom_prompts=None):
-        super().__init__(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
-        self.endpoint = "[https://api.anthropic.com/v1/messages](https://api.anthropic.com/v1/messages)"
-        self.api_key = cfg.get('api_key')
-        self.model = cfg.get('model', 'claude-3-5-sonnet-20240620')
+    def __init__(self, provider_id, trans_cfg, custom_prompts=None):
+        super().__init__(provider_id, trans_cfg, custom_prompts)
+        self.endpoint = "https://api.anthropic.com/v1/messages"
+        self.api_key = self.node_cfg.api_key
+        self.model = self.node_cfg.model or 'claude-3-5-sonnet-20240620'
 
     def ai_call(self, prompt, sys_prompt=None):
         headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
@@ -344,13 +357,14 @@ class AnthropicTranslator(BaseTranslator):
 class FallbackStrategy(BaseTranslator):
     def __init__(self, primary_node, fallback_node):
         """
-        🚀 备援策略：从主节点继承物理属性，确保状态一致性
+        🚀 备援策略：包装两个已经实例化的节点
         """
         self.primary = primary_node
         self.fallback = fallback_node
-        # 🚀 [V15.3 修复点]：将子节点的属性同步至包装器，防止 engine.py 调用时发生 AttributeError
+        # 属性物理对齐
         self.empty_threshold = primary_node.empty_threshold
         self.prompts = primary_node.prompts
+        self.trans_cfg = primary_node.trans_cfg
 
     def translate(self, text, source_lang, target_lang, context_type="body"):
         try:
@@ -379,6 +393,7 @@ class SmartRoutingStrategy(BaseTranslator):
         # 🚀 [V15.3 修复点]：属性对齐
         self.empty_threshold = light_node.empty_threshold
         self.prompts = light_node.prompts
+        self.trans_cfg = light_node.trans_cfg
 
     def translate(self, text, source_lang, target_lang, context_type="body"):
         if len(text) < self.threshold:
@@ -400,40 +415,35 @@ class SmartRoutingStrategy(BaseTranslator):
 # ==========================================
 class TranslatorFactory:
     @classmethod
-    def _build_node(cls, node_name, providers_cfg, global_timeout, global_retries, ai_tuning, custom_prompts):
-        cfg = providers_cfg.get(node_name)
-        if not cfg: raise ValueError(f"未找到节点配置: {node_name}")
-        ptype = cfg.get('type')
-        if ptype == 'ollama': return OllamaTranslator(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
-        if ptype == 'openai-compatible': return OpenAICompatibleTranslator(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
-        if ptype == 'gemini': return GeminiTranslator(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
-        if ptype == 'anthropic': return AnthropicTranslator(cfg, global_timeout, global_retries, ai_tuning, custom_prompts)
+    def _build_node(cls, node_name, trans_cfg):
+        node_cfg = trans_cfg.providers.get(node_name)
+        if not node_cfg: raise ValueError(f"未找到节点配置: {node_name}")
+        ptype = node_cfg.type
+        if ptype == 'ollama': return OllamaTranslator(node_name, trans_cfg)
+        if ptype == 'openai-compatible': return OpenAICompatibleTranslator(node_name, trans_cfg)
+        if ptype == 'gemini': return GeminiTranslator(node_name, trans_cfg)
+        if ptype == 'anthropic': return AnthropicTranslator(node_name, trans_cfg)
         raise ValueError(f"不支持的算力协议: {ptype}")
 
     @staticmethod
-    def create(cfg, sys_tuning_cfg=None):
-        providers = cfg.get('providers', {})
-        strategy = cfg.get('strategy', 'single')
-        global_timeout = cfg.get('api_timeout', 600.0)
-        global_retries = cfg.get('max_retries', 3)
-        ai_tuning = (sys_tuning_cfg or {}).get('ai_translation', {})
-        custom_prompts = cfg.get('custom_prompts', {})
+    def create(trans_cfg):
+        strategy = trans_cfg.strategy
         
         try:
-            primary_name = cfg.get('primary_node')
-            fallback_name = cfg.get('fallback_node')
+            primary_name = trans_cfg.primary_node
+            fallback_name = trans_cfg.fallback_node
             if strategy == 'single':
-                return TranslatorFactory._build_node(primary_name, providers, global_timeout, global_retries, ai_tuning, custom_prompts)
+                return TranslatorFactory._build_node(primary_name, trans_cfg)
             elif strategy == 'fallback':
                 return FallbackStrategy(
-                    TranslatorFactory._build_node(primary_name, providers, global_timeout, global_retries, ai_tuning, custom_prompts),
-                    TranslatorFactory._build_node(fallback_name, providers, global_timeout, global_retries, ai_tuning, custom_prompts)
+                    TranslatorFactory._build_node(primary_name, trans_cfg),
+                    TranslatorFactory._build_node(fallback_name, trans_cfg)
                 )
             elif strategy == 'smart_routing':
-                threshold = cfg.get('routing_threshold', 1000)
+                threshold = trans_cfg.routing_threshold
                 return SmartRoutingStrategy(
-                    TranslatorFactory._build_node(primary_name, providers, global_timeout, global_retries, ai_tuning, custom_prompts),
-                    TranslatorFactory._build_node(fallback_name, providers, global_timeout, global_retries, ai_tuning, custom_prompts),
+                    TranslatorFactory._build_node(primary_name, trans_cfg),
+                    TranslatorFactory._build_node(fallback_name, trans_cfg),
                     threshold
                 )
         except Exception as e:

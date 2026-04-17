@@ -9,6 +9,8 @@ import time
 import signal
 import sys
 import logging
+import os
+import shutil
 
 from core.utils import setup_logger
 from core.engine import IllacmeEngine
@@ -56,11 +58,30 @@ if __name__ == "__main__":
     args = parse_args_and_lock()
     
     # 挂载主引擎
-    engine = IllacmeEngine(args.config)
+    engine = IllacmeEngine(args.config, no_ai=args.no_ai)
     global_engine = engine 
-    
-    # 构建任务队列
-    task_queue, current_source_files = prepare_sync_tasks(engine)
+
+    # 🚀 [V31.2] 一键重置（物理清理模式）
+    if args.clean:
+        logger.info("🧹 [系统维护] 正在响应 --clean 指令，物理重置同步状态...")
+        
+        # 1. 清理分身影子库
+        shadow_dir = engine.paths.get('shadow')
+        if shadow_dir and os.path.exists(shadow_dir):
+            import shutil
+            shutil.rmtree(shadow_dir)
+            logger.info(f"   └── ✨ 已清除影子资产目录: {shadow_dir}")
+            
+        # 2. 清理元数据账本
+        db_path = engine.config.metadata_db
+        if os.path.exists(db_path):
+            os.remove(db_path)
+            logger.info(f"   └── ✨ 已清除元数据账本: {db_path}")
+            
+        logger.info("✨ 重置完成！后续将以全量同步模式启动。")
+
+    # 构建任务队列 (接入选择性路径过滤)
+    task_queue, current_source_files = prepare_sync_tasks(engine, requested_paths=args.path)
     
     # 单次全量/增量测绘
     if args.sync or not args.watch:
@@ -70,6 +91,8 @@ if __name__ == "__main__":
         
     # 启动看门狗守护
     if args.watch:
+        # 🚀 [V18.6 V6] 物理保护位：通知引擎目前处于监控模式，激活针对 Docusaurus 的并发写保护逻辑
+        engine.meta.is_watch_mode = True
         global_observer, global_watch_pool = start_watchdog(engine, args, current_source_files)
         while True: 
             time.sleep(1)
