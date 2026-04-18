@@ -308,7 +308,7 @@ class EgressDispatcher:
                     raise
                 
                 if self.janitor: self.janitor.mark_as_fresh(dest)
-                if lang_code == self.i18n.source.get('lang_code', 'zh-cn'):
+                if lang_code == self.i18n.source.lang_code:
                     self.syndicator.syndicate(ordered_fm, final_body, f"/{lang_code}/{mapped_sub_dir}/{slug}".replace('//', '/'))
             except Exception as e:
                 logger.error(f"🛑 物理落盘失败: {e}")

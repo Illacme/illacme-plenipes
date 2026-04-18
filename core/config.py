@@ -3,7 +3,7 @@
 """
 Illacme-plenipes Core - Configuration Manager (强类型配置中枢)
 模块职责：提供统一、强类型、具备自愈能力的配置访问接口。
-🚀 [V32 架构重构]：彻底从 raw dict 转向属性化访问，解决命名歧义与配置遗失问题。
+🚀 [V32.4 工业级复归版]：具备单例缓存、本地覆盖、深度合并与物理核验能力。
 """
 
 import os
@@ -11,10 +11,15 @@ import sys
 import yaml
 import logging
 import collections.abc
+import inspect
 from dataclasses import dataclass, field, fields
 from typing import Dict, List, Any, Optional
+from enum import Enum
 
 logger = logging.getLogger("Illacme.plenipes")
+
+# 🚀 [V32.4] 模块级单例缓存，防止重复点火期间的冗余加载
+_config_cache: Optional['Configuration'] = None
 
 @dataclass
 class WatchdogSettings:
@@ -85,6 +90,8 @@ class TranslationSettings:
     max_chunk_size: int = 2500
     temperature: float = 0.2
     max_tokens: int = 8192
+    max_slug_length: int = 100
+    max_seo_description_length: int = 200
     custom_prompts: Dict[str, str] = field(default_factory=dict)
 
 @dataclass
@@ -101,30 +108,100 @@ class SEOSettings:
     generate_keywords: bool = True
 
 @dataclass
+class DevToConfig:
+    enabled: bool = False
+    api_key: str = ""
+
+@dataclass
+class MediumConfig:
+    enabled: bool = False
+    token: str = ""
+    author_id: str = ""
+
+@dataclass
+class HashnodeConfig:
+    enabled: bool = False
+    token: str = ""
+    publication_id: str = ""
+
+@dataclass
+class WordPressConfig:
+    enabled: bool = False
+    url: str = ""
+    username: str = ""
+    app_password: str = ""
+
+@dataclass
+class LinkedInConfig:
+    enabled: bool = False
+    access_token: str = ""
+    person_urn: str = ""
+
+@dataclass
+class GhostConfig:
+    enabled: bool = False
+    url: str = ""
+    admin_api_key: str = ""
+
+@dataclass
+class UniversalWebhookConfig:
+    enabled: bool = False
+    url: str = ""
+    auth_token: str = ""
+
+@dataclass
 class SyndicationSettings:
     enabled: bool = False
     timeout: float = 15.0
-    platforms: Dict[str, Any] = field(default_factory=dict)
+    devto: DevToConfig = field(default_factory=DevToConfig)
+    medium: MediumConfig = field(default_factory=MediumConfig)
+    hashnode: HashnodeConfig = field(default_factory=HashnodeConfig)
+    wordpress: WordPressConfig = field(default_factory=WordPressConfig)
+    linkedin: LinkedInConfig = field(default_factory=LinkedInConfig)
+    ghost: GhostConfig = field(default_factory=GhostConfig)
+    universal_webhook: UniversalWebhookConfig = field(default_factory=UniversalWebhookConfig)
+
+class SyntaxPreset(Enum):
+    NONE = "none"
+    ADMONITIONS = "admonitions"
+    CONTAINERS = "containers"
+    LEGACY = "legacy"
+
+@dataclass
+class MetadataMapping:
+    key: str = ""
+    style: str = "plain"
+
+@dataclass
+class ThemeSettings:
+    syntax_engine: str = "generic"
+    syntax_preset: SyntaxPreset = SyntaxPreset.ADMONITIONS
+    output_paths: Dict[str, str] = field(default_factory=dict)
+    callout_template: Optional[str] = None
+    type_mapping: Dict[str, str] = field(default_factory=dict)
+    metadata_mapping: Dict[str, MetadataMapping] = field(default_factory=dict)
+    lang_mapping: Dict[str, str] = field(default_factory=dict)
+    component_mappings: Dict[str, str] = field(default_factory=dict)
+
+@dataclass
+class I18nSource:
+    lang_code: str = "zh"
+    name: str = "Chinese"
+    dir: str = "src/content/docs"
+
+@dataclass
+class I18nTarget:
+    lang_code: str = "en"
+    name: str = "English"
+    translate_body: bool = True
+    translate_title: bool = True
+    slug_mode: Optional[str] = None
 
 @dataclass
 class I18nSettings:
     enabled: bool = False
-    source: Dict[str, Any] = field(default_factory=dict)
-    targets: List[Dict[str, Any]] = field(default_factory=list)
-
-@dataclass
-class ThemeSettings:
-    """
-    🎨 SSG 主题专用适配配置
-    支持 Starlight, Docusaurus, VitePress, Nextra, Hugo, Hexo 等全域框架。
-    """
-    syntax_engine: str = "default"
-    output_paths: Dict[str, str] = field(default_factory=dict)
-    lang_mapping: Dict[str, str] = field(default_factory=dict)
-    callout_template: str = "\n> **{title}**\n> {body_quoted}\n\n"
-    type_mapping: Dict[str, str] = field(default_factory=dict)
-    metadata_mapping: Dict[str, Any] = field(default_factory=dict)
-    component_mappings: Dict[str, str] = field(default_factory=dict)
+    source: I18nSource = field(default_factory=I18nSource)
+    targets: List[I18nTarget] = field(default_factory=list)
 
 @dataclass
 class PublishControl:
@@ -169,10 +246,6 @@ class Configuration:
     lang_mapping: Dict[str, str] = field(default_factory=dict)
 
 class ConfigManager:
-    """
-    🚀 工业级配置管理器
-    职责：加载、合并、归一化并校验全量配置。
-    """
     def __init__(self, config_path: str):
         self.config_path = config_path
         self._raw_config = self._load_and_merge()
@@ -180,7 +253,6 @@ class ConfigManager:
         self._post_process()
 
     def _load_and_merge(self) -> Dict[str, Any]:
-        """合并 config.yaml 与 config.local.yaml"""
         def deep_update(d, u):
             for k, v in u.items():
                 if isinstance(v, collections.abc.Mapping):
@@ -190,12 +262,8 @@ class ConfigManager:
             return d
 
         abs_base = os.path.abspath(os.path.expanduser(self.config_path))
-        try:
-            with open(abs_base, 'r', encoding='utf-8') as f:
-                base_cfg = yaml.safe_load(f) or {}
-        except Exception as e:
-            logger.error(f"🛑 无法读取主配置 {abs_base}: {e}")
-            sys.exit(1)
+        with open(abs_base, 'r', encoding='utf-8') as f:
+            base_cfg = yaml.safe_load(f) or {}
 
         local_path = os.path.join(os.path.dirname(abs_base), 'config.local.yaml')
         if os.path.exists(local_path):
@@ -203,14 +271,13 @@ class ConfigManager:
                 with open(local_path, 'r', encoding='utf-8') as f:
                     local_cfg = yaml.safe_load(f) or {}
                 base_cfg = deep_update(base_cfg, local_cfg)
-                logger.info("⚙️ 已激活【本地沙盒覆盖】配置。")
+                print("⚙️ [系统] 已激活【本地沙盒覆盖】配置 (config.local.yaml)")
             except Exception as e:
                 logger.warning(f"⚠️ 加载本地配置失败: {e}")
         
         return base_cfg
 
     def _build_typed_config(self) -> Configuration:
-        """将原始嵌套字典转换为强类型 DataClass 对象"""
         def from_dict(cls, data):
             if not isinstance(data, dict): return data
             field_names = {f.name for f in fields(cls)}
@@ -221,82 +288,69 @@ class ConfigManager:
                     if hasattr(f.type, '__dataclass_fields__'):
                         init_data[name] = from_dict(f.type, val)
                     elif hasattr(f.type, '__origin__') and f.type.__origin__ is list:
-                        # 处理 List[SubDataclass]
                         child_type = f.type.__args__[0]
                         if hasattr(child_type, '__dataclass_fields__'):
                             init_data[name] = [from_dict(child_type, i) for i in val]
                         else:
                             init_data[name] = val
                     elif hasattr(f.type, '__origin__') and f.type.__origin__ is dict:
-                        # 🚀 [V32] 处理 Dict[str, SubDataclass]
                         child_type = f.type.__args__[1]
                         if hasattr(child_type, '__dataclass_fields__'):
                             init_data[name] = {k: from_dict(child_type, v) for k, v in val.items()}
                         else:
                             init_data[name] = val
+                    elif inspect.isclass(f.type) and issubclass(f.type, Enum):
+                        try: init_data[name] = f.type(val)
+                        except (ValueError, TypeError): init_data[name] = list(f.type)[0]
                     else:
                         init_data[name] = val
             return cls(**init_data)
 
-        # 🚀 [语义对齐] 在转换前执行紧急纠偏
-        # 针对审计中发现的命名/位置不一致问题
+        # 🚀 兼容性逻辑复归
         if 'system' in self._raw_config:
             s = self._raw_config['system']
-            # 解决 system_tuning 冗余提取
             if 'system_tuning' in self._raw_config:
                 tuning = self._raw_config['system_tuning']
-                # 合并 max_concurrent_workers 到 max_workers
-                if 'max_concurrent_workers' in tuning:
-                    s['max_workers'] = tuning['max_concurrent_workers']
-                # 合并 max_transclusion_depth 到 max_depth
-                if 'max_transclusion_depth' in tuning:
-                    s['max_depth'] = tuning['max_transclusion_depth']
-
-            # 解决 network_settings 顶级映射到 system 节点
+                if 'max_concurrent_workers' in tuning: s['max_workers'] = tuning['max_concurrent_workers']
             if 'network_settings' in self._raw_config:
                 s['network_settings'] = self._raw_config['network_settings']
-
-        if 'translation' in self._raw_config:
-            t = self._raw_config['translation']
-            if 'system' in self._raw_config and 'ai_concurrency' in self._raw_config['system']:
-                t['llm_concurrency'] = self._raw_config['system']['ai_concurrency']
 
         return from_dict(Configuration, self._raw_config)
 
     def _post_process(self):
-        """物理路径推导与占位符替换"""
         theme = self.config.active_theme
         paths = self.config.output_paths
-        
-        # 1. 默认路径推导
         defaults = {
             'markdown_dir': "./themes/{theme}/src/content/docs",
             'assets_dir': "./themes/{theme}/public/assets",
             'graph_json_dir': "./themes/{theme}/public"
         }
-        
-        # 2. 允许主题覆盖全局路径
         theme_opts = self.config.theme_options.get(theme, ThemeSettings())
         theme_overrides = theme_opts.output_paths
-        
         for k, v in defaults.items():
             raw_v = theme_overrides.get(k) or paths.get(k) or v
             paths[k] = raw_v.replace('{theme}', theme)
-            
-        # 3. 提取语种映射
         self.config.lang_mapping = theme_opts.lang_mapping
-        
-        # 4. 强制物理路径核验
         self._validate_paths()
+        self._audit_ai_services()
 
     def _validate_paths(self):
-        """执行基础存活性核验"""
         abs_vault = os.path.abspath(os.path.expanduser(self.config.vault_root))
         if not os.path.exists(abs_vault):
             logger.error(f"🛑 笔记库路径不存在: {abs_vault}")
             sys.exit(1)
-        logger.info("🛡️ 配置审计完成：核心物理路径已锁定。")
+
+    def _audit_ai_services(self):
+        t = self.config.translation
+        for name, p in t.providers.items():
+            if p.api_key and "HERE" in p.api_key:
+                logger.warning(f"⚠️ [配置风险] AI 节点 '{name}' 的 API_KEY 包含默认占位符。")
 
 def load_config(path: str = "config.yaml") -> Configuration:
+    global _config_cache
+    if _config_cache is not None:
+        return _config_cache
+    
     manager = ConfigManager(path)
-    return manager.config
+    _config_cache = manager.config
+    return _config_cache

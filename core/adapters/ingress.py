@@ -26,8 +26,24 @@ class BaseDialect:
 class ObsidianDialect(BaseDialect):
     """💎 Obsidian 方言处理器：处理双链、别名与资产引用"""
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
-        # 别名链接归一化：将 [[Link|Alias]] 保持在中间态，等待 egress 阶段处理
-        # 此处主要处理一些 Obsidian 特有的杂音或需要预处理的 metadata
+        # 1. 🚀 [元数据合并] 将也可能定义在 YAML 中的 tags 合并至统一数组
+        if 'tags' in fm_dict:
+            tags = fm_dict['tags']
+            if isinstance(tags, str):
+                fm_dict['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+        
+        # 2. 🚀 [别名处理] 保护 Obsidian 的 aliases 字段对齐至各 SSG 标准
+        if 'aliases' in fm_dict:
+            # 某些主题使用 alias: []，某些使用 aliases: []
+            fm_dict['alias'] = fm_dict.get('aliases')
+
+        # 3. 🚀 [块引用平整化] 将 Obsidian 特有的 #^blockid 转化为通用 HTML 锚点
+        # 匹配: [[Filename#^blockid]] 或 [[#^blockid]]
+        text = re.sub(r'\[\[([^\]#]*)\#\^([a-zA-Z0-9-]+)\]\]', r'[[\1#\2]]', text)
+        
+        # 4. 🚀 [物理清洗] 剔除 Obsidian 编辑器专用的注释区块 %%...%%
+        text = re.sub(r'%%.*?%%', '', text, flags=re.DOTALL)
+        
         return text, fm_dict
 
 class LogseqDialect(BaseDialect):

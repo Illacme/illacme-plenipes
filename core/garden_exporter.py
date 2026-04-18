@@ -112,7 +112,7 @@ def export_digital_garden(engine):
             prefix_val = f"/{fmt_prefix}" if fmt_prefix else ""
 
             # 🚀 [V18.2 修复] 如果是 Docusaurus 且为默认语种，URL 不应包含语言前缀
-            src_lang = engine.i18n.source.get('lang_code', 'zh')
+            src_lang = engine.i18n.source.lang_code
             if is_docusaurus and logical_code == src_lang:
                 raw_url = f"{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"{prefix_val}/{slug}"
             else:
@@ -125,13 +125,13 @@ def export_digital_garden(engine):
             return { "lang": logical_code, "url": final_url, "title": disk_title }
 
 
-        src_code = engine.i18n.source.get('lang_code', 'zh')
+        src_code = engine.i18n.source.lang_code
         if src_code is not None:
             urls.append(get_physical_url(src_code))
             
         if engine.i18n.enabled:
             for t in engine.i18n.targets:
-                logical_t_code = t.get('lang_code')
+                logical_t_code = t.lang_code
                 if logical_t_code is not None:
                     urls.append(get_physical_url(logical_t_code))
         return urls

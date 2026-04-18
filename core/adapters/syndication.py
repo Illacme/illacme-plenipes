@@ -33,7 +33,7 @@ logger = logging.getLogger("Illacme.plenipes")
 class ContentSyndicator:
     def __init__(self, syndication_cfg, site_url, sys_tuning_cfg=None):
         self.enabled = syndication_cfg.enabled
-        self.platforms = syndication_cfg.platforms
+        self.config = syndication_cfg  # 🚀 [V32.4] 持有强类型配置引用
         self.site_url = site_url.rstrip('/') if site_url else ""
         self.timeout = syndication_cfg.timeout
         
@@ -124,51 +124,50 @@ class ContentSyndicator:
             logger.error(f"🛑 [LinkedIn 投递失败]: {e}")
 
     def syndicate(self, fm_dict, final_body, url_path):
-        if not self.enabled or not self.platforms: return
+        if not self.enabled: return
 
         title = fm_dict.get('title', 'Untitled')
         desc = fm_dict.get('description', f"✨ 我刚刚发布了一篇关于 {title} 的新文章，点击阅读全文！")
         tags = fm_dict.get('tags', [])
         if isinstance(tags, str): tags = [t.strip() for t in tags.split(',') if t.strip()]
 
-        # 🚀 物理消灭双斜杠，同时保护 http(s):// 协议头不被误杀
+        # 🚀 [V32.4] 物理消灭双斜杠，并将静态资产重排至公网哈希路径
         canonical_url = f"{self.site_url}/{url_path}".replace('//', '/').replace('https:/', 'https://').replace('http:/', 'http://')
+        
+        # 🚀 [补丁] 强制执行资产 URL 劫持映射
+        final_body = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', self._resolve_img_url, final_body)
 
-        # 🚀 [补丁加载] 静态资产“绝对路径劫持” (Asset URL Resolution)
-        if self.site_url:
-            final_body = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', self._resolve_img_url, final_body)
-
-        # 🚀 [调度层重构] 彻底废弃无序的 Thread.start() 游离线程，全部推入 executor 漏斗池统一排队执行
+        # 🚀 [调度层] 全量适配 V32.4 强类型模型
         
         # 1. Dev.to
-        dev_cfg = self.platforms.get('devto', {})
-        if dev_cfg.get('enabled', False) and dev_cfg.get('api_key'):
+        dev_cfg = self.config.devto
+        if dev_cfg.enabled and dev_cfg.api_key:
             payload = {"article": {"title": title, "body_markdown": final_body, "published": False, "tags": tags[:4], "canonical_url": canonical_url}}
-            self.executor.submit(self._push_devto, dev_cfg['api_key'], payload)
-
+            self.executor.submit(self._push_devto, dev_cfg.api_key, payload)
+                                 
         # 2. Medium
-        med_cfg = self.platforms.get('medium', {})
-        if med_cfg.get('enabled', False) and med_cfg.get('token') and med_cfg.get('author_id'):
+        med_cfg = self.config.medium
+        if med_cfg.enabled and med_cfg.token and med_cfg.author_id:
             payload = {"title": title, "contentFormat": "markdown", "content": final_body, "tags": tags[:5], "publishStatus": "draft", "canonicalUrl": canonical_url}
-            self.executor.submit(self._push_medium, med_cfg['token'], med_cfg['author_id'], payload)
+            self.executor.submit(self._push_medium, med_cfg.token, med_cfg.author_id, payload)
 
         # 3. Hashnode
-        hn_cfg = self.platforms.get('hashnode', {})
-        if hn_cfg.get('enabled', False) and hn_cfg.get('token') and hn_cfg.get('publication_id'):
+        hn_cfg = self.config.hashnode
+        if hn_cfg.enabled and hn_cfg.token and hn_cfg.publication_id:
             query = "mutation PublishPost($input: PublishPostInput!) { publishPost(input: $input) { post { url } } }"
-            payload = {"query": query, "variables": {"input": {"title": title, "contentMarkdown": final_body, "publicationId": hn_cfg['publication_id'], "originalArticleUrl": canonical_url}}}
-            self.executor.submit(self._push_hashnode, hn_cfg['token'], payload)
+            payload = {"query": query, "variables": {"input": {"title": title, "contentMarkdown": final_body, "publicationId": hn_cfg.publication_id, "originalArticleUrl": canonical_url}}}
+            self.executor.submit(self._push_hashnode, hn_cfg.token, payload)
 
         # 4. WordPress
-        wp_cfg = self.platforms.get('wordpress', {})
-        if wp_cfg.get('enabled', False) and wp_cfg.get('url') and wp_cfg.get('username') and wp_cfg.get('app_password'):
-            endpoint = f"{wp_cfg['url'].rstrip('/')}/wp-json/wp/v2/posts"
+        wp_cfg = self.config.wordpress
+        if wp_cfg.enabled and wp_cfg.url and wp_cfg.username and wp_cfg.app_password:
+            endpoint = f"{wp_cfg.url.rstrip('/')}/wp-json/wp/v2/posts"
             payload = {"title": title, "content": final_body, "status": "draft", "format": "standard"}
-            self.executor.submit(self._push_wordpress, endpoint, wp_cfg['username'], wp_cfg['app_password'], payload)
+            self.executor.submit(self._push_wordpress, endpoint, wp_cfg.username, wp_cfg.app_password, payload)
 
         # 5. Ghost CMS
-        ghost_cfg = self.platforms.get('ghost', {})
-        if ghost_cfg.get('enabled', False) and ghost_cfg.get('url') and ghost_cfg.get('admin_api_key'):
+        ghost_cfg = self.config.ghost
+        if ghost_cfg.enabled and ghost_cfg.url and ghost_cfg.admin_api_key:
             mobiledoc = json.dumps({
                 "version": "0.3.1",
                 "markups": [], "atoms": [], "sections": [[10, 0]],
@@ -183,13 +182,13 @@ class ContentSyndicator:
                     "canonical_url": canonical_url
                 }]
             }
-            self.executor.submit(self._push_ghost, ghost_cfg['url'], ghost_cfg['admin_api_key'], payload)
+            self.executor.submit(self._push_ghost, ghost_cfg.url, ghost_cfg.admin_api_key, payload)
 
         # 6. LinkedIn 流量引流
-        li_cfg = self.platforms.get('linkedin', {})
-        if li_cfg.get('enabled', False) and li_cfg.get('access_token') and li_cfg.get('person_urn') and canonical_url:
+        li_cfg = self.config.linkedin
+        if li_cfg.enabled and li_cfg.access_token and li_cfg.person_urn and canonical_url:
             payload = {
-                "author": f"urn:li:person:{li_cfg['person_urn']}",
+                "author": f"urn:li:person:{li_cfg.person_urn}",
                 "lifecycleState": "PUBLISHED",
                 "specificContent": {
                     "com.linkedin.ugc.ShareContent": {
@@ -207,41 +206,30 @@ class ContentSyndicator:
                 },
                 "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
             }
-            self.executor.submit(self._push_linkedin, li_cfg['access_token'], li_cfg['person_urn'], payload)
-            
+            self.executor.submit(self._push_linkedin, li_cfg.access_token, li_cfg.person_urn, payload)
 
-        # -----------------------------------------------------------
-        # 7. 🚀 Universal Webhook (工业级健壮版)
-        # -----------------------------------------------------------
-        webhook_cfg = self.platforms.get('universal_webhook', {})
-        if webhook_cfg.get('enabled', False) and webhook_cfg.get('url'):
-            
-            # 1. 生成可直接发微博/朋友圈的纯文本摘要
+        # 7. 🚀 Universal Webhook (强类型版)
+        webhook_cfg = self.config.universal_webhook
+        if webhook_cfg.enabled and webhook_cfg.url:
             safe_excerpt = self._generate_safe_excerpt(final_body, max_length=400)
-            # 2. 生成跨平台兼容的纯正 Markdown 正文
             pure_markdown = self._purify_markdown(final_body)
-            
             content_hash = hashlib.md5(final_body.encode('utf-8')).hexdigest()
-            
             payload = {
-                "event": "illacme.article.published",
+                "event": "article.published",
                 "timestamp": int(time.time()),
                 "idempotency_key": content_hash,
                 "metadata": {
-                    "title": title,
-                    "description": desc,
-                    "tags": tags,
+                    "title": title, "description": desc, "tags": tags,
                     "canonical_url": canonical_url,
-                    "author": fm_dict.get('author', 'Illacme Engine'),
-                    "word_count": len(pure_markdown) # 使用净化后的字数更准确
+                    "author": fm_dict.get('author', 'Illacme Engine')
                 },
                 "content": {
-                    "markdown": pure_markdown,      # 👈 核心修复：这里现在是纯正、干净的 Markdown
-                    "raw_mdx": final_body,       # 附带一个保留源格式的备份，供高级工作流备用
+                    "markdown": pure_markdown,
+                    "raw_mdx": final_body,
                     "safe_excerpt": safe_excerpt 
                 }
             }
-            self.executor.submit(self._push_universal_webhook, webhook_cfg['url'], payload, webhook_cfg.get('auth_token'))
+            self.executor.submit(self._push_universal_webhook, webhook_cfg.url, payload, webhook_cfg.auth_token)
         
     def _generate_safe_excerpt(self, markdown_text, max_length=500):
         """
@@ -354,15 +342,19 @@ class ContentSyndicator:
 
     def _resolve_img_url(self, match):
         """
-        🚀 资产 URL 劫持核心逻辑：将相对路径转化为带域名的绝对物理路径。
+        🚀 资产 URL 劫持核心逻辑 [V32.4 CAS 寻址增强]
+        核心修复：自动处理 V32 架构下的多级哈希物理路径。
         """
         alt_text = match.group(1)
         img_src = match.group(2)
         if img_src.startswith(('http://', 'https://', 'data:image')):
             return match.group(0)
         
-        clean_src = '/' + img_src.lstrip('./') 
-        absolute_url = f"{self.site_url}{clean_src}"
+        # 🚀 [V32.4] 物理寻址修正
+        # 移除前端路径前缀及多余的相对符号，获取核心物理指纹
+        clean_src = img_src.replace(self.site_url, "").lstrip('/')
+        # 如果路径里已经带了 assets/ 关键字，说明它已经被 EgressDispatcher 渲染成了哈希路径
+        # 我们只需确保它被拼接到正确的公网域名下，并避开双斜杠坑
+        final_url = f"{self.site_url}/{clean_src.lstrip('/')}".replace('//', '/').replace('https:/', 'https://').replace('http:/', 'http://')
         
-        logger.debug(f"🔍 [资产劫持] 转化图片路径: {img_src} -> {absolute_url}")
-        return f"![{alt_text}]({absolute_url})"
+        return f"![{alt_text}]({final_url})"
