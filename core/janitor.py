@@ -127,13 +127,13 @@ class JanitorService:
             ext = os.path.splitext(rel_path)[1].lower()
 
             langs = []
-            source_code = self.i18n.source.get('lang_code', 'zh-cn')
-            if source_code is not None: langs.append(source_code)
+            source_code = self.i18n.source.lang_code
+            if source_code: langs.append(source_code)
             
             if self.i18n.enabled:
                 for t in self.i18n.targets:
-                    t_code = t.get('lang_code') 
-                    if t_code is not None: langs.append(t_code)
+                    t_code = t.lang_code
+                    if t_code: langs.append(t_code)
                     
             for code in langs:
                 # 🚀 架构升维：直接调用注入的 RouteManager 中枢探针
@@ -173,9 +173,9 @@ class JanitorService:
         ext = os.path.splitext(rel_path)[1].lower()
 
         # 构造所有语种的物理路径并执行重命名
-        langs = [self.i18n.source.get('lang_code', 'zh-cn')]
+        langs = [self.i18n.source.lang_code]
         if self.i18n.enabled:
-            langs.extend([t.get('lang_code') for t in self.i18n.targets if t.get('lang_code')])
+            langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
 
         for code in langs:
             # 推导子目录映射
@@ -225,10 +225,10 @@ class JanitorService:
             ext = os.path.splitext(old_rel)[1]
             
             # 3. 获取所有语种池 (V29 对齐方案)
-            src_code = self.i18n.source.get('lang_code', 'zh-cn')
+            src_code = self.i18n.source.lang_code
             langs = [src_code]
             if self.i18n.enabled:
-                langs.extend([t.get('lang_code') for t in self.i18n.targets if t.get('lang_code')])
+                langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
             
             # 4. 级联重命名
             for lang in set(langs):
@@ -338,13 +338,13 @@ class JanitorService:
             
             langs = []
             # 🚀 修复点 4：纠正语言代码键名
-            source_code = self.i18n.source.get('lang_code', 'zh-cn')
-            if source_code is not None: langs.append(source_code)
+            source_code = self.i18n.source.lang_code
+            if source_code: langs.append(source_code)
                 
             if self.i18n.enabled:
                 for t in self.i18n.targets:
-                    t_code = t.get('lang_code') # 🚀 修复点 5
-                    if t_code is not None: langs.append(t_code)
+                    t_code = t.lang_code
+                    if t_code: langs.append(t_code)
             
             valid_dest_paths = set()
             for rel_path, doc in docs.items():
@@ -407,8 +407,18 @@ class JanitorService:
                                 except Exception as e:
                                     logger.error(f"    [清洗失败] 无法删除幽灵文件 {f_abs_normalized}: {e}")
 
+            # 🚀 [V32.4 鲁棒性增强] 物理防护：如果扫描根目录尚不存在（如首次运行），则直接跳过清洗
+            if not os.path.exists(scan_root):
+                logger.info(f"✨ 目标目录 {scan_root} 尚未创建，幽灵清洗自动跳过。")
+                return
+
             # 同样对空目录清理加上隔离，只清理受控的 i18n, docs 等目录
-            for safe_dir in [d for d in os.listdir(scan_root) if d not in ['.git', 'node_modules', 'src', 'static', 'public']]:
+            try:
+                sub_dirs = os.listdir(scan_root)
+            except FileNotFoundError:
+                return
+
+            for safe_dir in [d for d in sub_dirs if d not in ['.git', 'node_modules', 'src', 'static', 'public']]:
 
                 safe_abs_dir = os.path.join(scan_root, safe_dir)
                 if os.path.isdir(safe_abs_dir):

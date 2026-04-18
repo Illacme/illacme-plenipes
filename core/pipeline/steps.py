@@ -150,6 +150,8 @@ class MetadataAndHashStep(Step):
         # 🚀 [状态机契约修正]：只有当“旧路径”已经存在，且“哈希一致”时才允许 Abort
         # 如果是新移动过来的路径，old_info["source_hash"] 会是 None，从而强制其至少运行一次以确保写盘。
         if not ctx.force_sync and not is_toxic_slug and old_info.get("source_hash") == ctx.current_hash: 
+            # 🚀 [V34.5 修复] 引入显式跳过信号，防止其被误计入“隔离/下线”统计中
+            ctx.is_skipped = True
             ctx.is_aborted = True
 
 class AISlugAndSEOStep(Step):
@@ -164,8 +166,15 @@ class AISlugAndSEOStep(Step):
 
         slug_raw = ctx.doc_info.get("slug")
         
-        # 🚀 强化排雷：只要历史账本的 slug 里哪怕沾了一个中文字符，强行作废重做
-        if slug_raw and ('%' in slug_raw or bool(re.search(r'[\u4e00-\u9fa5]', slug_raw))):
+        # 🚀 [V33.5] 旗舰级账本排毒：只要 Slug 包含中文字符、长度过载、或包含指令残留词，一律作废重做
+        max_slug_len = ctx.engine.config.translation.max_slug_length
+        if slug_raw and (
+            '%' in slug_raw or 
+            bool(re.search(r'[\u4e00-\u9fa5]', slug_raw)) or
+            len(slug_raw) > max_slug_len or
+            "architectural" in slug_raw.lower()
+        ):
+            logger.warning(f"🩹 [账本排毒] 检测到放射性长 Slug，正在强行作废并触发物理重构...")
             slug_raw = None
         
         if not slug_raw:
@@ -178,10 +187,8 @@ class AISlugAndSEOStep(Step):
                     slug_raw, slug_success = f"dry-run-{int(time.time())}", True
                 else:
                     try:
-                        prompt = f"Translate the following title to a URL slug. ONLY output lowercase english & hyphens: '{ctx.title}'"
-                        raw_slug_res = ctx.engine.translator.translate(prompt, "Auto", "URL Slug")
-                        slug_raw = re.sub(r'[^a-z0-9\-]', '', raw_slug_res.lower().replace(' ', '-').strip('-'))
-                        slug_success = bool(slug_raw)
+                        # 🚀 [V33 专家版回填]：调用全量封测过的工业级 Slug 生成器
+                        slug_raw, slug_success = ctx.engine.translator.generate_slug(ctx.title, is_dry_run=False)
                     except Exception:
                         slug_success, slug_raw = False, None
                 if not slug_success: ctx.ai_health_flag[0] = False

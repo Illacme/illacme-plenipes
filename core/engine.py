@@ -21,16 +21,6 @@ import tempfile
 import urllib.parse
 import threading
 import concurrent.futures
-import os
-import re
-import time
-import yaml
-import fnmatch
-import logging
-import tempfile
-import urllib.parse
-import threading
-import concurrent.futures
 import hashlib  # 🚀 [V16.3 修复] 补入哈希运算核芯
 from datetime import datetime
 
@@ -117,7 +107,7 @@ class IllacmeEngine:
         target_graph_dir = paths.get('graph_json_dir')
         
         theme_settings = self.config.theme_options.get(self.active_theme, ThemeSettings())
-        self.ssg_adapter = SSGAdapter(theme_settings)
+        self.ssg_adapter = SSGAdapter(theme_settings, custom_adapters=self.config.framework_adapters)
         
         # 🔌 [V31 专家版]：方言处理策略初始化
         ingress_cfg = self.config.ingress_settings
@@ -149,7 +139,7 @@ class IllacmeEngine:
         self.route_manager = RouteManager(
             self.meta, self.translator, 
             lang_mapping=self.config.lang_mapping,
-            default_lang=self.i18n.source.get('lang_code', 'zh'),
+            default_lang=self.i18n.source.lang_code,
             active_theme=self.active_theme
         )
         
@@ -200,15 +190,15 @@ class IllacmeEngine:
         """
         # 1. 检查是否为源语言代码 (例如 zh-cn -> 中文)
         src_cfg = self.i18n.source
-        if src_cfg.get('lang_code') == code:
-            return src_cfg.get('name', 'Chinese')
+        if src_cfg.lang_code == code:
+            return src_cfg.name or 'Chinese'
         
         # 2. 在目标语言配置阵列中查找 (例如 en -> English)
         targets = self.i18n.targets
         for target in targets:
-            if target.get('lang_code') == code:
+            if target.lang_code == code:
                 # 优先返回配置中定义的 name，若无则返回 code 兜底
-                return target.get('name', code)
+                return target.name or code
         
         # 3. 物理兜底：针对常见的标准代码进行硬核映射
         fallback_map = {
@@ -244,12 +234,12 @@ class IllacmeEngine:
                     ext = os.path.splitext(rel_path)[1].lower()
                     
                     langs_to_check = []
-                    src_code = self.i18n.source.get('lang_code', 'zh-cn')
-                    if src_code is not None: langs_to_check.append(src_code)
+                    src_code = self.i18n.source.lang_code
+                    if src_code: langs_to_check.append(src_code)
                     
                     if self.i18n.enabled:
                         for t in self.i18n.targets:
-                            if t.get('lang_code'): langs_to_check.append(t['lang_code'])
+                            if t.lang_code: langs_to_check.append(t.lang_code)
                             
                     # 交叉比对硬盘物理文件
                     for code in langs_to_check:
@@ -284,13 +274,16 @@ class IllacmeEngine:
             # 2. 执行管线前置加工
             pipeline.execute(ctx)
             if ctx.is_aborted: 
+                # 🚀 [V34.5 修复] 如果是显式标记的跳过（指纹匹配），返回 SKIP 码，确保统计精确
+                if getattr(ctx, 'is_skipped', False):
+                    return "SKIP"
                 return "OFFLINE"
 
             # [V31.2] 再次加固：如果 --no-ai 开启，跳过多语言分派逻辑
             if self.no_ai:
                 persistence_date = datetime.now().strftime("%Y-%m-%d")
                 # 即使没有 AI，我们也需要写入主语种文件
-                primary_shadow_hash, persistence_date = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, ctx.base_fm, rel_path, self.i18n.source.get('lang_code', 'zh'), ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, force_persistence_date=persistence_date)
+                primary_shadow_hash, persistence_date = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, ctx.base_fm, rel_path, self.i18n.source.lang_code or 'zh', ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, force_persistence_date=persistence_date)
             else:
                 # 3. 后置阶段：SEO 注入闭包与分发
                 def inject_seo(fm, lang_code, text_content):
@@ -312,7 +305,7 @@ class IllacmeEngine:
                 src_cfg = self.i18n.source
 
                 if src_cfg:
-                    src_code = src_cfg.get('lang_code', 'zh-cn')
+                    src_code = src_cfg.lang_code or 'zh-cn'
                     
                     src_fm = ctx.base_fm.copy()
                     if ctx.seo_data:
@@ -348,9 +341,14 @@ class IllacmeEngine:
                     # 如果指纹一致且物理位置在，且没有 cli_force，且影子存在，则判定为 SKIP
                     if can_recover and os.path.exists(shadow_src_path):
                         # 如果是强制同步或者是空载恢复，则继续，否则跳过
-                        if not cli_force:
-                            logger.info(f"🔄 [同步跳过] {rel_path} -> {ctx.route_prefix}/{ctx.slug} (已存在且指纹未变)")
-                            return "SKIP"
+                        # 🚀 [V32.4 增强] 展示真实的目标物理路径，而非占位符
+                        src_code = self.i18n.source.lang_code or 'zh'
+                        display_dest = self.route_manager.resolve_physical_path(
+                            self.paths['target_base'], src_code, route_prefix, ctx.mapped_sub_dir, ctx.slug, ext
+                        )
+                        rel_display_dest = os.path.relpath(display_dest, self.paths['target_base'])
+                        logger.info(f"🔄 [同步跳过] {rel_path} -> {rel_display_dest} (指纹未变)")
+                        return "SKIP"
                     
                     # 🚀 物理派发主语种并锁定哈希与生日
                     primary_shadow_hash, persistence_date = self.dispatcher.dispatch(self.asset_index, ctx.title, ctx.slug, ctx.masked_source, src_fm, rel_path, src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks, ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock)
@@ -384,7 +382,7 @@ class IllacmeEngine:
                     logger.info(f"✨ [静默直传成功] {ctx.rel_path} | ⏱️ 耗时: {elapsed:.2f} 秒")
                 elif ctx.ai_health_flag[0]:
                     logger.info(f"✨ [同步成功] {ctx.rel_path} | 📦 资产: {len(final_assets)} | ⚡️ 耗时: {elapsed:.2f} 秒")
-                    self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.get('lang_code') or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
+                    self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.lang_code or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
                 else: 
                     logger.warning(f"🚧 [局部降级] {ctx.rel_path} 部分 AI 任务不完整，已拦截指纹缓存。")
                     return "DEGRADED"

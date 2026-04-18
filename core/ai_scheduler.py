@@ -34,7 +34,7 @@ class AIScheduler:
         if ctx.is_silent_edit:
             # 💡 静默模式直传
             for t in targets:
-                code = t.get('lang_code')
+                code = t.lang_code
                 if code:
                     engine.dispatcher.dispatch(
                         engine.asset_index, ctx.title, ctx.slug, ctx.masked_source,
@@ -48,7 +48,7 @@ class AIScheduler:
 
         # AI 翻译模式
         def process_target(target):
-            code = target.get('lang_code')
+            code = target.lang_code
             if not code: 
                 return None
             
@@ -76,14 +76,14 @@ class AIScheduler:
             final_body, target_health = ctx.masked_source, True
             target_fm = ctx.base_fm.copy() 
 
-            if target.get('translate_body', False):
+            if target.translate_body:
                 if is_dry_run:
                     final_body = f"[DRY-RUN]\n{ctx.masked_source}"
                     target_fm['title'] = f"[EN] {target_fm.get('title', '')}"
                 else:
                     try:
-                        target_lang_name = target.get('name', code)
-                        source_lang_name = engine.i18n.source.get('name', '中文')
+                        target_lang_name = target.name or code
+                        source_lang_name = engine.i18n.source.name or "中文"
                         
                         if engine.config.system.verbose_ai_logs:
                             logger.info(f"🌐 [AI 翻译] 正在将正文及元数据转换为目标语言 ({code})...")
