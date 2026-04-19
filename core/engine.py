@@ -12,24 +12,18 @@ Illacme-plenipes Core - Main Engine (Pipeline Driven)
 """
 
 import os
-import re
 import time
-import yaml
 import fnmatch
 import logging
-import tempfile
-import urllib.parse
 import threading
-import concurrent.futures
-import hashlib  # 🚀 [V16.3 修复] 补入哈希运算核芯
 from datetime import datetime
 
 # ==========================================
 # 🛠️ 1. 核心工具与基建层 (Core Utilities & Infrastructure)
 # 职责：提供纯函数计算、全域索引以及顶层分发能力
 # ==========================================
-from .config import load_config, Configuration, TranslationSettings, ThemeSettings
-from .utils import normalize_keywords, extract_frontmatter, sanitize_ai_response
+from .config import load_config, Configuration, ThemeSettings
+from .utils import normalize_keywords, extract_frontmatter
 from .vault_indexer import VaultIndexer
 from .ai_scheduler import AIScheduler
 from .egress_dispatcher import EgressDispatcher
@@ -67,6 +61,7 @@ from .adapters.syndication import ContentSyndicator
 # ==========================================
 from .storage.ledger import MetadataManager
 from .storage.timeline import TimelineManager
+from .storage.sentinel import SentinelManager
 from .asset_pipeline import AssetPipeline
 from .router import RouteManager
 from .janitor import JanitorService
@@ -138,6 +133,9 @@ class IllacmeEngine:
         
         # 🚀 [V34.5] 挂载审计时间轴 (Industrial Audit Timeline)
         self.timeline = TimelineManager(self.config)
+        
+        # 🛡️ [V34.6 Sentinel] 挂载健康哨兵 (Guardian Sentinel)
+        self.sentinel = SentinelManager(self.config)
         
         self.translator = TranslatorFactory.create(self.config.translation)
         self.asset_pipeline = AssetPipeline(self.paths['assets'], self.img_cfg)

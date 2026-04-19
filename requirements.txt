@@ -5,3 +5,5 @@ Pillow>=10.0.0
 watchdog>=3.0.0
 orjson>=3.9.0
 rich>=13.0.0
+ruff>=0.1.0    # 🛡️ [哨兵] 极致速度的 Linter & Auto-Fixer
+pytest>=7.4.0  # 🛡️ [哨兵] 自动化测试执行引擎

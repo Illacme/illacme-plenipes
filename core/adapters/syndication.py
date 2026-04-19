@@ -10,7 +10,6 @@ Illacme-plenipes Core - Payload Syndicator (全域内容分发矩阵)
 import json
 import time
 import logging
-import threading
 import re
 import hashlib
 import requests
@@ -98,7 +97,7 @@ class ContentSyndicator:
             
             resp = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
             if resp.status_code == 201:
-                logger.info(f"🚀 [Ghost 分发成功] 文章已落入草稿箱！")
+                logger.info("🚀 [Ghost 分发成功] 文章已落入草稿箱！")
             else:
                 logger.warning(f"⚠️ [Ghost 分发异常] 状态码 {resp.status_code}: {resp.text}")
         except Exception as e:
@@ -117,7 +116,7 @@ class ContentSyndicator:
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
             if resp.status_code == 201:
-                logger.info(f"🚀 [LinkedIn 分发成功] 动态已发布至您的 LinkedIn 时间线！")
+                logger.info("🚀 [LinkedIn 分发成功] 动态已发布至您的 LinkedIn 时间线！")
             else:
                 logger.warning(f"⚠️ [LinkedIn 分发异常] 状态码 {resp.status_code}: {resp.text}")
         except Exception as e:
@@ -334,7 +333,7 @@ class ContentSyndicator:
             resp.raise_for_status() # 拦截 4xx 业务错误
             logger.info("   └── ✨ [全域推流] 信号送达！下游自动化工作流已接管。")
         except requests.exceptions.RetryError:
-            logger.error(f"   └── 🛑 [全域推流] 目标节点持续崩溃 (已耗尽 3 次重试池)。")
+            logger.error("   └── 🛑 [全域推流] 目标节点持续崩溃 (已耗尽 3 次重试池)。")
         except requests.exceptions.RequestException as e:
             logger.error(f"   └── ⚠️ [全域推流] 发射中断: {e}")
         finally:

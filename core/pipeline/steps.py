@@ -10,7 +10,6 @@ import re
 import time
 import hashlib
 import logging
-import threading
 import shutil
 from ..utils import extract_frontmatter, strip_technical_noise, normalize_keywords
 from .runner import Step
@@ -174,7 +173,7 @@ class AISlugAndSEOStep(Step):
             len(slug_raw) > max_slug_len or
             "architectural" in slug_raw.lower()
         ):
-            logger.warning(f"🩹 [账本排毒] 检测到放射性长 Slug，正在强行作废并触发物理重构...")
+            logger.warning("🩹 [账本排毒] 检测到放射性长 Slug，正在强行作废并触发物理重构...")
             slug_raw = None
         
         if not slug_raw:

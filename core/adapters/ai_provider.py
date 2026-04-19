@@ -227,7 +227,7 @@ class BaseTranslator:
             
             # 正文翻译时的原样返回防御
             if context_type == "body" and clean_res == text.strip():
-                raise ValueError(f"AI 原样返回了原文，疑似遭遇提示词劫持，强制熔断！")
+                raise ValueError("AI 原样返回了原文，疑似遭遇提示词劫持，强制熔断！")
             return clean_res
         return text
 
@@ -274,7 +274,7 @@ class BaseTranslator:
         if is_dry_run: return f"dry-run-{hash(text)}", True
             
         try:
-            logger.debug(f"   └── ⏳ 正在呼叫算力网关为您构思英文 URL 链接...")
+            logger.debug("   └── ⏳ 正在呼叫算力网关为您构思英文 URL 链接...")
             # 🚀 [V33.2 瘦身]：逻辑下放至 _do_translate，主方法仅负责后置校验与 Fallback
             raw_res = self.translate(text, "Auto", "URL Slug", context_type="slug")
             

@@ -367,21 +367,6 @@
         "keywords": ""
       },
       "persistent_date": "2026-04-18T21:54:52.912811+08:00"
-    },
-    "Docs/f3.md": {
-      "title": "f3",
-      "prefix": "i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}",
-      "source": "Docs"
-    },
-    "Docs/SyncTest/file1.md": {
-      "title": "file1",
-      "prefix": "i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}",
-      "source": "Docs"
-    },
-    "Docs/SyncTest/file2.md": {
-      "title": "file2",
-      "prefix": "i18n/{lang}/docusaurus-plugin-content-docs/current/{sub_dir}",
-      "source": "Docs"
     }
   },
   "link_index": {

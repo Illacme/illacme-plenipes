@@ -7,7 +7,6 @@ Illacme-plenipes Core - Digital Garden Exporter
 
 import os
 import re
-import json
 import yaml
 import logging
 import hashlib
