@@ -64,15 +64,75 @@ class SentinelManager:
         lint_ok = self._check_and_fix_lint(auto_fix)
         self.status_matrix["lint"] = "PASS" if lint_ok else "HEALED"
         
-        # 2. 执行 Markdown 链路检查 (TBD: 逻辑实现)
-        self.status_matrix["links"] = "PASS"
+        # 2. 🛡️ [AEL-2026-04-19_slsh_healing] 执行语义死链修复
+        if auto_fix:
+            heal_count = self._heal_markdown_links()
+            self.status_matrix["links"] = f"FIXED({heal_count})" if heal_count > 0 else "PASS"
+        else:
+            self.status_matrix["links"] = "PENDING"
         
         # 3. 记录日志
         self.last_check = datetime.now().isoformat()
         self._persist_status()
         
         elapsed = (datetime.now() - start_time).total_seconds()
-        logger.info(f"🛡️ [哨兵] 审计完成 (耗时: {elapsed:.2f}s) | 状态: {self.status_matrix['lint']}")
+        logger.info(f"🛡️ [哨兵] 审计完成 (耗时: {elapsed:.2f}s) | 状态: {self.status_matrix['links']}")
+
+    def _heal_markdown_links(self) -> int:
+        """
+        🚀 [SLSH] 语义死链自愈算法。
+        扫描全量笔记库 -> 建立文件索引 -> 匹配死链 -> 执行重定向修正。
+        """
+        vault_path = self.config.vault_root
+        if not os.path.exists(vault_path):
+            return 0
+            
+        # 1. 建立全量文件索引库 (Filename -> FullPath)
+        file_index = {}
+        for root, _, files in os.walk(vault_path):
+            for f in files:
+                if f.endswith('.md'):
+                    name_no_ext = os.path.splitext(f)[0]
+                    file_index[name_no_ext] = os.path.join(root, f)
+
+        fix_count = 0
+        import re
+        
+        # 2. 正则定义：wikilinks [[target]] 和 markdown [text](path)
+        wiki_pattern = re.compile(r'\[\[(.*?)\]\]')
+        
+        for root, _, files in os.walk(vault_path):
+            for f in files:
+                if not f.endswith('.md'): continue
+                
+                file_path = os.path.join(root, f)
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    content = file.read()
+                
+                # 检查是否存在死链
+                new_content = content
+                matches = wiki_pattern.findall(content)
+                
+                for target in matches:
+                    # 分离别名：[[target|alias]]
+                    clean_target = target.split('|')[0].strip()
+                    # 检查物理文件是否存在 (此处假设简单匹配文件名)
+                    if clean_target not in file_index:
+                        # 尝试模糊修复：比如 target 含有路径，但文件可能已移动
+                        target_name = os.path.basename(clean_target)
+                        if target_name in file_index:
+                            new_target = target_name # 简化修复，指向新文件名
+                            new_content = new_content.replace(f'[[{target}]]', f'[[{new_target}]]')
+                            fix_count += 1
+                            logger.info(f"🛡️ [SLSH] 已修复死链: {target} -> {new_target} (在 {f} 中)")
+
+                if new_content != content:
+                    # 注入溯源标签
+                    final_content = self.inject_trace_label(new_content)
+                    with open(file_path, 'w', encoding='utf-8') as file:
+                        file.write(final_content)
+                        
+        return fix_count
 
     def _check_and_fix_lint(self, auto_fix: bool) -> bool:
         """调用 Ruff 执行静态分析与自动修复"""
