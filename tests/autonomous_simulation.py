@@ -10,6 +10,9 @@ import shutil
 import tempfile
 import sys
 import logging
+
+# 🚀 动态挂载项目根目录，确保影子环境导入不失联
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.engine import IllacmeEngine
 
 logger = logging.getLogger("Illacme.Simulation")
@@ -28,6 +31,9 @@ def run_shadow_simulation():
         shutil.copytree("core", os.path.join(tmpdir, "core"), dirs_exist_ok=True)
         shutil.copy("plenipes.py", os.path.join(tmpdir, "plenipes.py"))
         shutil.copy("config.yaml", os.path.join(tmpdir, "config.yaml"))
+        
+        # 2.5 挂载笔记库（仅创建目录以通过引擎初始化检查，或挂载样本）
+        os.makedirs(os.path.join(tmpdir, "content-vault"), exist_ok=True)
         
         # 3. 挂载仿真引擎
         try:
