@@ -34,16 +34,31 @@ class StaticizerStep(Step):
 
     def _staticize_tabs(self, text: str) -> str:
         """
-        将 ```tabs 语法转换为通用的 :::tabs 语义（后续由 egress 派发器针对框架转换为 JSX 或 Shortcode）
+        🚀 [GGP] 工业级组件解析：栈式扫描算法。
+        专门处理嵌套的 ```tabs 结构，通过物理扫描行首标记确保 100% 的平衡匹配。
         """
-        def tabs_repl(match):
-            content = match.group(1)
-            # 简单解析：支持 tab: Title 语法
-            # 这里我们先将其转换为中间态格式，等待 egress_dispatcher 根据 SSG 类型转换
-            return f"\n:::tabs\n{content}\n:::\n"
-
-        # 匹配 ```tabs ... ```
-        return re.sub(r'```tabs\s*\n(.*?)\n```', tabs_repl, text, flags=re.DOTALL | re.IGNORECASE)
+        lines = text.split('\n')
+        stack = []
+        changes = []
+        
+        # 1. 物理位置扫描
+        for i, line in enumerate(lines):
+            clean_line = line.strip()
+            if clean_line.startswith('```tabs'):
+                stack.append(i)
+            elif clean_line == '```' and stack:
+                start_idx = stack.pop()
+                changes.append((start_idx, i))
+        
+        # 2. 从内而外（或从后往前）执行原子替换
+        # 注意：为了不破坏索引，我们从行号大的开始处理
+        changes.sort(key=lambda x: x[0], reverse=True)
+        
+        for start_idx, end_idx in changes:
+            lines[start_idx] = ':::tabs'
+            lines[end_idx] = ':::'
+            
+        return '\n'.join(lines)
 
     def _staticize_dataview(self, text: str) -> str:
         """

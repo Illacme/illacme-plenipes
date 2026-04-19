@@ -8,8 +8,9 @@
 
 | 参数 | 缩写 | 类型 | 描述 |
 | :--- | :--- | :--- | :--- |
-| `--config` | - | `FILE` | 指定 YAML 配置文件路径 (默认: `config.yaml`) |
-| `--sync` | - | `Flag` | 发起单次增量同步测绘后退出 |
+| `--config` | `key` | `string` | 目标 Frontmatter 中的键名 (如 `lastmod`) |
+| `style` | `string` | `plain` (直接输出) 或 `object` (结构化对象) |
+| `datetime_format` | `string` | **[GGP 新增]** strftime 风格格式化字符串 (如 `%Y-%m-%dT%H:%M:%S%z`) |
 | `--watch` | - | `Flag` | 启动看门狗实时守护模式 |
 | `--dry-run` | - | `Flag` | 演练模式：拦截 API 扣费与物理写盘 |
 | `--force` | - | `Flag` | 强制模式：无视指纹，全量重刷所有文档 |

@@ -67,6 +67,24 @@ class SSGAdapter:
 
         return self._CALLOUT_PATTERN.sub(repl, content)
 
+    def convert_shortcodes(self, content):
+        """
+        🚀 [GGP] 通用短代码转换器
+        使用正则表达式映射表，将 Obsidian 语法或其他方言直接翻译为目标 SSG 的私有语法 (如 Hugo {{< hint >}})。
+        """
+        if not self.theme.shortcode_mappings:
+            return content
+            
+        mappings = self.theme.shortcode_mappings
+        for pattern, replacement in mappings.items():
+            try:
+                # 支持捕获组的动态替换
+                content = re.sub(pattern, replacement, content, flags=re.MULTILINE | re.DOTALL)
+            except Exception as e:
+                logger.warning(f"⚠️ [Egress] 短代码正则替换失败 ({pattern}): {e}")
+                
+        return content
+
     def adapt_mdx_imports(self, content):
         if not self.theme.component_mappings: return content
         mappings = self.theme.component_mappings
@@ -97,8 +115,19 @@ class SSGAdapter:
         if mod_cfg:
             key = mod_cfg.key or 'last_modified'
             style = mod_cfg.style or 'plain'
-            if style == 'object': new_fm[key] = {'date': date_obj, 'author': author_name}
-            else: new_fm[key] = date_obj
+            
+            # 🚀 [GGP] 增强：日期格式化逻辑
+            final_val = date_obj
+            if mod_cfg.datetime_format and hasattr(date_obj, 'strftime'):
+                try:
+                    final_val = date_obj.strftime(mod_cfg.datetime_format)
+                except Exception as e:
+                    logger.warning(f"⚠️ [Egress] 日期格式化失败: {e}")
+
+            if style == 'object': 
+                new_fm[key] = {'date': final_val, 'author': author_name}
+            else: 
+                new_fm[key] = final_val
         auth_cfg = mapping.get('author')
         if auth_cfg and 'author' in new_fm:
             target_key = auth_cfg.key or 'author'

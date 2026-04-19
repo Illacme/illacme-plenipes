@@ -171,6 +171,7 @@ class SyntaxPreset(Enum):
 class MetadataMapping:
     key: str = ""
     style: str = "plain"
+    datetime_format: Optional[str] = None  # 🚀 [GGP] 新增：支持自定义日期输出格式 (如 ISO 8601)
 
 @dataclass
 class ThemeSettings:
@@ -182,6 +183,7 @@ class ThemeSettings:
     metadata_mapping: Dict[str, MetadataMapping] = field(default_factory=dict)
     lang_mapping: Dict[str, str] = field(default_factory=dict)
     component_mappings: Dict[str, str] = field(default_factory=dict)
+    shortcode_mappings: Dict[str, str] = field(default_factory=dict)  # 🚀 [GGP] 新增：通用短代码正则映射表
 
 @dataclass
 class I18nSource:

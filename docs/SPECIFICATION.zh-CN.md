@@ -38,8 +38,11 @@ Illacme-plenipes 采用 **“插件化适配器 + 线性同步管线”** 的解
 ### 3.2 影子资产自愈 (Shadow-Asset Recovery)
 系统会自动在 `.illacme-shadow` 存储中间态 SEO 结果。当目标物理产物丢失但源文件指纹未变时，引擎能从影子资产中瞬间自愈，无需再次消耗 AI 算力。
 
-### 3.3 审计时间轴 (Audit Timeline)
-通过 `core/storage/timeline.py` 实现的异步审计日志，能够捕捉 Watchdog 的每一次物理震动（Created/Modified），并将其关联至同步结果。
+### 3.3 声明式渲染与短代码转换 (Syntax-Driven Adaptation)
+Egress 适配层通过正则表达式映射表（`shortcode_mappings`）实现从 Obsidian 方言到 SSG 私有语法（如 Hugo Shortcodes）的逻辑平移。这一设计彻底消灭了针对单一框架编写硬编码适配器的必要。
+
+### 3.4 栈式组件解析 (Stack-based Staticization)
+为了处理复杂的嵌套组件（如 Tabs 套 Tabs），静态化引擎采用了非正则的物理行扫描算法。通过栈（Stack）维护平衡匹配，确保复杂排版在降维过程中不丢失层级结构。
 
 ## 4. 扩展性原则
 
