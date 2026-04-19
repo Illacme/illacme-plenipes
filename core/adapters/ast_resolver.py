@@ -281,7 +281,7 @@ class TransclusionResolver:
                                 'content': t_body
                             }
                             cached_body = t_body
-                    except Exception as e:
+                    except Exception:
                         logger.warning(f"⚠️ 引用展开失败: 无法读取文件 '{link_target}'。💡 诊断: 文件可能正在被占用，或路径包含非法字符。")
                         return m.group(0)
                 

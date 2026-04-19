@@ -7,7 +7,6 @@ Illacme-plenipes Core - Watchdog Daemon
 """
 
 import os
-import time
 import threading
 import traceback
 import logging
@@ -151,6 +150,9 @@ def start_watchdog(engine, args, current_source_files):
                 def task():
                     try:
                         logger.info("🕸️ [守护进程] 环境已进入静默期，正在执行重型同步任务 (Meta & Garden)...")
+                        # 🛡️ [V34.6 Sentinel] 执行主动健康审计与自愈
+                        engine.sentinel.run_health_check(auto_fix=True)
+                        
                         engine.meta.save()
                         export_digital_garden(engine)
                     except Exception as e:
@@ -169,7 +171,7 @@ def start_watchdog(engine, args, current_source_files):
             """
             def task():
                 try:
-                    logger.info(f"🚚 [迁移协议] 正在执行 Shadow -> SSG 物理平移交接...")
+                    logger.info("🚚 [迁移协议] 正在执行 Shadow -> SSG 物理平移交接...")
                     engine.janitor.physical_handover(old_rel, new_rel, prefix_old, source_old, prefix_new, source_new)
                 except Exception as e:
                     logger.error(f"🛑 [迁移中断]: {e}")
@@ -187,7 +189,7 @@ def start_watchdog(engine, args, current_source_files):
                     self._debounced_heavy_tasks()
                     fname = os.path.basename(file_path)
                     send_notification("✨ 文章已更新", f"《{fname}》已完成 AI 同步并上线")
-            except Exception as e:
+            except Exception:
                 logger.error(f"⚠️ 实时同步过程发生意外崩溃: {traceback.format_exc()}")
 
         def _add_asset(self, abs_path):

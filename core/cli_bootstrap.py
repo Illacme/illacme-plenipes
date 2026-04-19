@@ -77,7 +77,7 @@ def parse_args_and_lock():
             try:
                 shutil.copy2(example_config, args.config)
                 logger.info(f"✨ 欢迎使用！已为您自动生成默认配置文件 '{args.config}'。")
-                logger.info(f"   └── 💡 请打开该文件，填入您的 API Key 或调整文件夹路径后，再次运行本程序。")
+                logger.info("   └── 💡 请打开该文件，填入您的 API Key 或调整文件夹路径后，再次运行本程序。")
                 sys.exit(0)
             except Exception as e:
                 logger.error(f"🛑 自动生成配置文件失败: {e}")

@@ -62,7 +62,7 @@ class SSGAdapter:
                 res = self.effective_tpl.format(type=target_type, title=display_title, body=body, body_quoted=body_quoted).replace('  ', ' ').strip() + "\n\n"
                 # 🍎 [物理证据获取]：故意在此处 print 以便在日志中直接看到产物，绕过 f-string 限制
                 return res
-            except Exception as e:
+            except Exception:
                 return f"\n> **{title or target_type.upper()}**\n> {body_quoted}\n\n"
 
         return self._CALLOUT_PATTERN.sub(repl, content)

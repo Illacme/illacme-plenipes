@@ -9,10 +9,7 @@ Illacme-plenipes Core - Janitor Engine (GC & Cleanup)
 """
 
 import os
-import re
-import uuid
 import logging
-import tempfile
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -60,7 +57,7 @@ class JanitorService:
                         else:
                             os.rmdir(dir_path)
                             logger.info(f"    [空目录清理] 物理移除无用空目录: {dir_path}")
-                except Exception as e:
+                except Exception:
                     pass
 
     def gc_assets(self, current_source_files=None, is_dry_run=False):

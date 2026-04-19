@@ -28,3 +28,8 @@ These project-specific rules extend the Global Integrity Protocols and must be s
 - **基因沉淀 (Genetic Archiving)**：每一个重大功能增量，必须在 `.plenipes/history/` 下建立独立文件夹。同步存放 `plan.md` (实施方案) 与 `task.md` (任务清单)。
 - **里程碑追踪 (Milestone Tracking)**：必须实时维护根目录或 `.plenipes/` 下的 `ROADMAP.md`，使用 Mermaid 逻辑图表征当前工程的物理进度。
 - **验收全透明**：每一轮迭代结束后，必须将最终的 `walkthrough.md` 归档至对应历史目录，确保项目的“思考-执行-验证”链路 100% 可追溯。
+
+## VII. 测试驱动演化 (TDE Protocol)
+- **演化必测 (Test-on-Evolution)**：任何针对核心逻辑（Pipeline/Adapter）的功能增强，必须在迭代文件夹中包含物理测试代码（如 `test_feature.py`）。未经测试的功能严禁归档。
+- **哨兵监护 (Sentinel Guard)**：哨兵 Manager 拥有对全量代码执行 `ruff --fix` 的最高自愈授权。任何被检测到的低级代码坏味道必须被自动抹除。
+- **云端共振**：本地哨兵规则必须与 GitHub Actions 哨兵流水线保持 100% 同步，任何本地无法通过的测试严禁推送至云端。

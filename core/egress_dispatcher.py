@@ -14,7 +14,7 @@ import yaml
 import tempfile
 import logging
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from .utils import sanitize_ai_response
 
 logger = logging.getLogger("Illacme.plenipes")

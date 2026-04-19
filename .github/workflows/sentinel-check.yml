@@ -1,0 +1,57 @@
+name: 🛡️ Project Guardian Sentinel
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'core/**'
+      - 'plenipes.py'
+      - '.plenipes/rules.md'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sentinel-audit:
+    name: 🛡️ 哨兵全量健康审计
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 挂载 Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 📦 安装哨兵套件
+        run: |
+          pip install ruff pytest
+          pip install -r requirements.txt
+
+      - name: 🔍 1. 执行 Ruff Lint 审计与自愈
+        run: |
+          # 运行 ruff check 并尝试修复，如果不符合规范则自动提交修复
+          ruff check . --fix --select E,F --exclude .plenipes
+          
+      - name: 🧪 2. 执行自动化回归测试 (AEL v2)
+        run: |
+          # 运行全量 Sentinel 自动化测试
+          pytest tests/ --maxfail=1 --disable-warnings
+
+      - name: 🔄 3. 云端自愈提交 (GitHub Sentinel Fix)
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 如果 ruff --fix 产生了修改，将其推回仓库
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(sentinel): 🛡️ 哨兵在线修复代码坏味道 [skip ci]"
+          git push origin main || echo "No changes to push"

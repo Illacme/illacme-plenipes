@@ -8,10 +8,8 @@ Illacme-plenipes Core - API Egress Adapter (生态破壁层)
 🚀 [V14.3 架构升级]：剥离游离态 Thread 构建池化调度器，平滑削峰填谷。
 """
 
-import json
 import logging
 import requests
-import threading
 from concurrent.futures import ThreadPoolExecutor # 🚀 新增：导入工业级线程池调度器
 
 logger = logging.getLogger("Illacme.plenipes")

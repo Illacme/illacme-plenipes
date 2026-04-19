@@ -14,9 +14,7 @@ Illacme-plenipes Core - Utility Module (SAAS Infrastructure)
 """
 
 import os
-import sys
 import re
-import collections.abc
 import yaml
 import logging
 from logging.handlers import RotatingFileHandler
