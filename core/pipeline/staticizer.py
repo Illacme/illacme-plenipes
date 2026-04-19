@@ -32,31 +32,26 @@ class StaticizerStep(Step):
         # 2. Dataview 透明化处理 (防止代码块直接暴露在前端)
         ctx.raw_body = self._staticize_dataview(ctx.raw_body)
 
+# 🛡️ [AEL-2026-04-19_hpss_optimization]
     def _staticize_tabs(self, text: str) -> str:
         """
-        🚀 [GGP] 工业级组件解析：栈式扫描算法。
-        专门处理嵌套的 ```tabs 结构，通过物理扫描行首标记确保 100% 的平衡匹配。
+        🚀 [HPSS] 高阶线性静态化算法。
+        采用单次扫描 + 偏移量自动对齐机制，彻底消除原有算法中的多重排序与反向替换开销。
+        针对超大规模文档进行内存优化，确保在 AEL 全自动流程中保持极致的执行效率。
         """
         lines = text.split('\n')
         stack = []
-        changes = []
         
-        # 1. 物理位置扫描
+        # 🛡️ [AEL-2026-04-19_hpss_optimization] 线性单次扫描就地替换
+        # 核心逻辑：利用栈的 LIFO 特性，在发现结束标记时立即回溯替换，无需二次排序。
         for i, line in enumerate(lines):
             clean_line = line.strip()
             if clean_line.startswith('```tabs'):
                 stack.append(i)
+                lines[i] = ':::tabs'
             elif clean_line == '```' and stack:
-                start_idx = stack.pop()
-                changes.append((start_idx, i))
-        
-        # 2. 从内而外（或从后往前）执行原子替换
-        # 注意：为了不破坏索引，我们从行号大的开始处理
-        changes.sort(key=lambda x: x[0], reverse=True)
-        
-        for start_idx, end_idx in changes:
-            lines[start_idx] = ':::tabs'
-            lines[end_idx] = ':::'
+                stack.pop()
+                lines[i] = ':::'
             
         return '\n'.join(lines)
 
