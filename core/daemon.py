@@ -210,6 +210,9 @@ def start_watchdog(engine, args, current_source_files):
             logger.info(f"👀 [监听] 捕捉到新文件 (Created): {os.path.basename(event.src_path)}")
             if event.src_path.lower().endswith((".md", ".mdx")):
                 rel_path = os.path.relpath(event.src_path, engine.vault_root).replace('\\', '/')
+                # 🚀 [V34.5] 记录初次发现
+                engine.timeline.log_event("CREATED", rel_path, "PENDING", "探测到物理新增")
+                
                 current_source_files.add(rel_path)
                 prefix, source = self._find_route_info_for_path(event.src_path)
                 if prefix is not None and source is not None:
@@ -223,6 +226,9 @@ def start_watchdog(engine, args, current_source_files):
             
             if event.src_path.lower().endswith((".md", ".mdx")):
                 rel_path = os.path.relpath(event.src_path, engine.vault_root).replace('\\', '/')
+                # 🚀 [V34.5] 记录修改行为
+                engine.timeline.log_event("MODIFIED", rel_path, "PENDING", "探测到物理内容变化")
+                
                 current_source_files.add(rel_path) 
                 prefix, source = self._find_route_info_for_path(event.src_path)
                 if prefix is not None and source is not None:
@@ -254,6 +260,9 @@ def start_watchdog(engine, args, current_source_files):
                 if event.src_path.lower().endswith((".md", ".mdx")):
                     logger.info(f"🗑️ [监听] 捕捉到文件删除: {os.path.basename(event.src_path)}")
                     rel_path = os.path.relpath(event.src_path, engine.vault_root).replace('\\', '/')
+                    # 🚀 [V34.5] 记录删除行为
+                    engine.timeline.log_event("DELETED", rel_path, "REMOVED", "探测到物理下线")
+                    
                     current_source_files.discard(rel_path)
                     
                     # 🚀 [V18.6 V9] 幽灵协议：立即（0.05s）原地覆盖，释放 Slug 占位，且保持物理不间断
@@ -321,6 +330,11 @@ def start_watchdog(engine, args, current_source_files):
 
             if event.src_path.lower().endswith((".md", ".mdx")):
                 logger.info(f"🚚 [监听] 捕捉到文件移动 (Moved): {os.path.basename(event.src_path)} -> {os.path.basename(event.dest_path)}")
+                old_rel = os.path.relpath(event.src_path, engine.vault_root).replace('\\', '/')
+                new_rel_tmp = os.path.relpath(event.dest_path, engine.vault_root).replace('\\', '/')
+                # 🚀 [V34.5] 记录移动轨迹
+                engine.timeline.log_event("MOVED", old_rel, "MOVED", f"迁移至: {new_rel_tmp}")
+                
                 old_rel = os.path.relpath(event.src_path, engine.vault_root).replace('\\', '/')
                 
                 # 🚀 [V18.6 V7] 深度碰撞检测：如果搬家前后的 Slug 同步到了同一个 SSG 物理位置，严禁立碑

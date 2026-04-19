@@ -1,92 +1,68 @@
-# 🌉 Illacme-plenipes (v13.0)
+# 🌉 Illacme-plenipes (v34.5 Flagship Edition)
 
 🇨🇳 简体中文 | [🇬🇧 English](./README.md)
 
-![Version](https://img.shields.io/badge/version-v13.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![Architecture](https://img.shields.io/badge/architecture-Cloud%20Native%20%2F%20High%20Concurrency-success.svg)
-[![Framework Agnostic](https://img.shields.io/badge/SSG-Agnostic-success.svg)](#)
+![Version](https://img.shields.io/badge/version-v34.5--flagship-blue.svg)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
+![Architecture](https://img.shields.io/badge/architecture-Industrial%20Grade%20/%20Anti--Pruning-success.svg)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
+**Illacme-plenipes** 是一款工业级的 Markdown 知识同步引擎，专为对“代码完整性”和“创作可追溯性”有极致要求的开发者设计。它不仅能实现笔记到 SSG 矩阵的毫秒级同步，更通过内置的**审计时间轴 (Audit Timeline)** 和 **影子自愈引擎 (Shadow Recovery)** 确保每一行笔记的流转都有迹可循。
 
-[![Deploy Status](https://github.com/Illacme/illacme-plenipes/actions/workflows/deploy.yml/badge.svg)](https://github.com/Illacme/illacme-plenipes/actions)
-[![Python Version](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Astro Version](https://img.shields.io/badge/Astro-4.x-ff5e00.svg)](https://astro.build/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
-**Illacme-plenipes** 是一款工业级的 Markdown 同步引擎。它不仅能将本地知识库以高并发形态秒级推送至主流前端框架 (SSG)，更内置了底层 AI 切片调度，实现从单语种笔记到 N 维多语言矩阵的全自动化蜕变。
-
-其命名灵感来源于地球上腿部数量最多的生物 *Illacme plenipes*。正如其名，本引擎搭载了 **OS 级防竞态锁**、**异步脏写状态机** 和 **Token 级 AI 切片引擎**，像一台拥有 750 条腿的重型“V8 引擎”，旨在彻底榨干多核 CPU 与大模型上下文窗口的每一滴算力，实现海量笔记的毫秒级增量编译。
-
-兼容生态：`Astro (Starlight)` | `VitePress` | `Docusaurus` | `Hugo` | `Hexo`
+其命名灵感来源于地球上腿部数量最多的生物 *Illacme plenipes*。正如其名，本引擎搭载了 **OS 级防竞态锁**、**异步脏写状态机** 和 **Token 级 AI 切片引擎**，为您的数字花园提供重型动力。
 
 ---
 
-## 🚀 核心架构与技术特性 (Core Architecture)
+## 🚀 旗舰版核心特性 (Flagship Features)
 
-### 1. 🛡️ 进程级单例防线 (OS-Level Singleton Mutex)
-基于 `socket.bind()` 在操作系统底层抢占高位端口（默认 `43210`），物理免疫双开灾难。进程一旦意外死亡，内核瞬间释放端口，完美保护底层元数据不受并发污染。
+### 1. 📝 创作审计时间轴 (Industrial Audit Timeline)
+这是 V34.5 引入的重量级特性。系统会实时监控本地文件系统的每一个“震动”，并将 `保存 -> 触发 -> 同步 -> 成功/失败` 的全链路过程记录在 `timeline.md` 中，让您的创作轨迹清晰可见。
 
-### 2. ⚡️ 异步状态机与 Write-Behind Cache (原子级落盘)
-- **O(1) 脏写标记**：核心管线只需标记 `self._dirty = True`，瞬间释放锁，吞吐量极高。
-- **后台心跳守护**：独立的 Flusher 线程根据配置的心跳间隔将快照无感静默落盘。
-- **防撕裂机制**：基于 `os.replace` 的事务级写入，即便写入瞬间遭遇物理断电，也能保证 MD5 指纹库 100% 完整。
+### 2. 🛡️ 代码完整性防线 (Anti-Pruning Governance)
+内置 `.antigravityrules` 规则固化引擎，严禁 AI 在自动化开发过程中擅自精简代码、删除注释或篡改防御性逻辑。保持“工业级繁荣”而非“极简主义”。
 
-### 3. 🧠 Token 级长文切片引擎 (High-Precision LLM Orchestration)
-全面接入 OpenAI 工业级 `tiktoken` 库，精准压榨算力。
-- **精准测算**：完美适配 DeepSeek、Qwen、OpenAI 以及 **OpenClaw (小龙虾)** 等模型。
-- **防 OOM 截断**：长文自动根据 `max_chunk_size` (Token 级) 切分为并发子任务，彻底抹平耗时瓶颈。
+### 3. 🩹 影子资产自愈 (Shadow-Asset Recovery)
+创新性引入 `.illacme-shadow` 缓存。在前端物理产物丢失的情况下，引擎能瞬间从影子资产中恢复，无需再次消耗 AI Token 执行推理，实现真正的零成本灾备。
 
-### 4. 🧵 全域高并发线程池 (Thread Pool Dispatcher)
-- **图片压缩管线**：挂载文件级细粒度并发锁，防止多线程处理同一张 8K 巨图击穿显存，支持 WebP 极速转码。
-- **多语言矩阵**：目标语言阵列全部并发执行，翻译耗时由最慢的一个语种决定，而非线性叠加。
-
-### 5. 🕷️ 动态 AST 降维与防死循环嵌套
-- 动态深度受控（`max_depth`）的双链物理展开。
-- 内置双重检查锁定（DCL）内存级缓存，阻断重复磁盘 I/O 踩踏。
-- 零侵入将 Markdown 专有语法自适应降维至目标前端专属组件。
+### 4. 🧠 高精度 AI 切片调度 (Precision LLM Orchestration)
+基于 `tiktoken` 与 AST (抽象语法树) 的语义切片算法。支持对长达万字的 MDX 文档进行智能拆分翻译，严格保护 Markdown 结构与代码块不被 AI 破坏。
 
 ---
 
-## ⚙️ 安装与快速开始 (Installation & Quick Start)
+## 📖 文档中心 (Documentation Hub)
 
-### 1. 安装核心级依赖
+为了提供更专业的开源体验，本项目建立了完整的文档矩阵：
+
+*   **[技术规格书 (SPECIFICATION)](./docs/SPECIFICATION.zh-CN.md)**：深入了解 Pipeline 管线、适配器模式与底层存储架构。
+*   **[用户参考手册 (REFERENCE)](./docs/REFERENCE.zh-CN.md)**：全量 `config.yaml` 参数字典及 CLI 命令行详解。
+*   **[操作指南 (MANUAL)](./docs/MANUAL.zh-CN.md)**：分步式 How-to 教程，涵盖环境配置、监听模式及故障排除。
+*   **[贡献指南 (CONTRIBUTING)](./CONTRIBUTING.zh-CN.md)**：如何为本项目提交代码或反馈 Bug。
+
+---
+
+## ⚙️ 安装与快速开始 (Quick Start)
 
 ```bash
-# 图像处理、YAML解析、网络层与看门狗
-pip install Pillow PyYAML requests watchdog 
+# 1. 克隆并安装依赖
+git clone https://github.com/Illacme/illacme-plenipes.git
+pip install -r requirements.txt
 
-# [强烈推荐] 安装 Token 级高精度切片底座
-pip install tiktoken
+# 2. 初始化配置
+python3 plenipes.py  # 首次运行自动生成 config.yaml
+# 请在 config.yaml 中填入您的 API Key 及同步路径
+
+# 3. 启动全量同步
+python3 plenipes.py --sync
+
+# 4. 进入实时监听模式 (推荐)
+python3 plenipes.py --watch
 ```
 
-2. 配置总控总线
-将项目根目录下的 config.yaml.example 复制为 config.yaml。
-所有的底层魔法数字（并发数、推理温度、心跳间隔、SEO 排版权重）均已 100% 上浮至该配置文件，实现零代码侵入调度。
+---
 
-```YAML
-# 核心路径配置示例
-vault_root: "/Users/YourName/Documents/Obsidian-Vault" 
-frontend_dir: "../my-astro-site"
-```
+## 📜 开源协议 / License
 
-(⚠️ 安全警告：请勿将包含真实 API Key 的 `config.yaml` 提交至公开仓库，务必加入 `.gitignore`！)
-
-3. 驱动引擎 (CLI 调度)
-Illacme-plenipes 提供了四种工业级运行模式：
-
-```Bash
-# 1. 单次增量同步 (Sync Mode) - 结合 MD5 校验，仅编译变动文件
-python core/plenipes.py --sync
-
-# 2. 守护进程模式 (Daemon Watch Mode) - 毫秒级热更监听
-python core/plenipes.py --watch
-
-# 3. 安全演练模式 (Dry-Run Mode) - 仅打印流转测绘日志，阻断物理写盘和 API 扣费
-python core/plenipes.py --sync --dry-run
-
-# 4. 强制重构模式 (Force Mode) - 撕碎 MD5 状态指纹，强拉全库执行覆盖重编
-python core/plenipes.py --sync --force
-```
+本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。仅限个人及非商业性科研场景使用。如需商业授权，请通过 Issue 与作者联系。
 
 ---
 

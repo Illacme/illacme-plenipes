@@ -66,6 +66,7 @@ from .adapters.syndication import ContentSyndicator
 # 职责：掌管引擎的“记忆”与物理硬盘的“资产”
 # ==========================================
 from .storage.ledger import MetadataManager
+from .storage.timeline import TimelineManager
 from .asset_pipeline import AssetPipeline
 from .router import RouteManager
 from .janitor import JanitorService
@@ -134,6 +135,10 @@ class IllacmeEngine:
         
         # 依赖注入
         self.meta = MetadataManager(self.paths["db"], self.auto_save_interval)
+        
+        # 🚀 [V34.5] 挂载审计时间轴 (Industrial Audit Timeline)
+        self.timeline = TimelineManager(self.config)
+        
         self.translator = TranslatorFactory.create(self.config.translation)
         self.asset_pipeline = AssetPipeline(self.paths['assets'], self.img_cfg)
         self.route_manager = RouteManager(
@@ -257,6 +262,10 @@ class IllacmeEngine:
 
             # 1. 组装上下文与管线
             ctx = SyncContext(self, src_path, route_prefix, route_source, is_dry_run, force_sync)
+            
+            # 🚀 [V34.5] 记录审计起点
+            self.timeline.log_event("SYNC", ctx.rel_path, "PENDING", "管线启动")
+
             pipeline = Pipeline()
             pipeline.add_step(ReadAndNormalizeStep()) \
                     .add_step(StaticizerStep()) \
@@ -348,6 +357,8 @@ class IllacmeEngine:
                         )
                         rel_display_dest = os.path.relpath(display_dest, self.paths['target_base'])
                         logger.info(f"🔄 [同步跳过] {rel_path} -> {rel_display_dest} (指纹未变)")
+                        # 🚀 [V34.5] 记录审计终点 (跳过)
+                        self.timeline.update_event_status(rel_path, "SKIP", "内容未变，已拦截")
                         return "SKIP"
                     
                     # 🚀 物理派发主语种并锁定哈希与生日
@@ -380,16 +391,20 @@ class IllacmeEngine:
 
                 if ctx.is_silent_edit: 
                     logger.info(f"✨ [静默直传成功] {ctx.rel_path} | ⏱️ 耗时: {elapsed:.2f} 秒")
+                    self.timeline.update_event_status(ctx.rel_path, "UPDATED", "记录指纹 (静默模式)")
                 elif ctx.ai_health_flag[0]:
                     logger.info(f"✨ [同步成功] {ctx.rel_path} | 📦 资产: {len(final_assets)} | ⚡️ 耗时: {elapsed:.2f} 秒")
+                    self.timeline.update_event_status(ctx.rel_path, "UPDATED", f"资产: {len(final_assets)}")
                     self.broadcaster.broadcast(ctx.title, ctx.rel_path, src_cfg.lang_code or 'zh-cn', ctx.mapped_sub_dir, ctx.slug)
                 else: 
                     logger.warning(f"🚧 [局部降级] {ctx.rel_path} 部分 AI 任务不完整，已拦截指纹缓存。")
+                    self.timeline.update_event_status(ctx.rel_path, "DEGRADED", "部分 AI 任务失败")
                     return "DEGRADED"
 
             return "UPDATED"
 
         except Exception as e:
+            self.timeline.update_event_status(rel_path, "ERROR", str(e))
             logger.error(f"❌ 文章处理发生错误 {rel_path}: {e}")
             return "ERROR"
         finally:
