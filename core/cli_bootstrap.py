@@ -67,6 +67,7 @@ def parse_args_and_lock():
     parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
     parser.add_argument('--clean', action='store_true', help="[一键重置] 物理删除所有同步指纹与 AI 影子缓存，重置引擎到初始态")
+    parser.add_argument('--sentinel', action='store_true', help="🛡️ [哨兵主动管控] 立即唤醒项目哨兵，执行全量健康审计、Lint 修复与算力成本上报")
     
     args = parser.parse_args()
     

@@ -24,8 +24,36 @@ class SentinelManager:
             "lint": "PENDING",
             "links": "PENDING",
             "tests": "PENDING",
+            "token_usage": 0,
+            "token_budget": 50000,
             "last_healed": None
         }
+        self.current_iter_id = self._detect_current_iter()
+
+    def _detect_current_iter(self) -> str:
+        """从历史目录侦测当前活动的迭代 ID"""
+        history_dir = os.path.join(".plenipes", "history")
+        if not os.path.exists(history_dir):
+            return "UNKNOWN"
+        iters = sorted([d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))], reverse=True)
+        return iters[0] if iters else "INIT"
+
+    def track_token_usage(self, estimated_tokens: int):
+        """跟踪算力消耗并执行 TCG 熔断"""
+        self.status_matrix["token_usage"] += estimated_tokens
+        limit = self.status_matrix["token_budget"]
+        if self.status_matrix["token_usage"] > limit:
+            logger.error(f"🚨 [TCG 熔断] 侦测到单次迭代算力消耗已触顶 ({self.status_matrix['token_usage']} > {limit})！")
+            logger.error("🛡️ [哨兵] 根据全球自律协议，任务已强制挂起，请人工注入算力配额。")
+            # 在全自动模式下，此处应引发异常以切断进程
+            raise RuntimeError("TCG_BUDGET_EXCEEDED")
+
+    def inject_trace_label(self, code_block: str) -> str:
+        """为代码块注入溯源 DNA 标签 (Traceable Intent)"""
+        tag = f"🛡️ [AEL-{self.current_iter_id}]"
+        if tag in code_block:
+            return code_block
+        return f"# {tag}\n{code_block}"
 
     def run_health_check(self, auto_fix: bool = True):
         """执行全量健康自检并触发自愈程序"""

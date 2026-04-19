@@ -78,6 +78,11 @@ if __name__ == "__main__":
             
         logger.info("✨ 重置完成！后续将以全量同步模式启动。")
 
+    # 🛡️ [V34.6 Sentinel v2.0] 主动哨兵模式
+    if args.sentinel:
+        engine.sentinel.run_health_check(auto_fix=True)
+        sys.exit(0)
+
     # 构建任务队列 (接入选择性路径过滤)
     task_queue, current_source_files = prepare_sync_tasks(engine, requested_paths=args.path)
     

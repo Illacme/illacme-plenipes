@@ -33,3 +33,8 @@ These project-specific rules extend the Global Integrity Protocols and must be s
 - **演化必测 (Test-on-Evolution)**：任何针对核心逻辑（Pipeline/Adapter）的功能增强，必须在迭代文件夹中包含物理测试代码（如 `test_feature.py`）。未经测试的功能严禁归档。
 - **哨兵监护 (Sentinel Guard)**：哨兵 Manager 拥有对全量代码执行 `ruff --fix` 的最高自愈授权。任何被检测到的低级代码坏味道必须被自动抹除。
 - **云端共振**：本地哨兵规则必须与 GitHub Actions 哨兵流水线保持 100% 同步，任何本地无法通过的测试严禁推送至云端。
+## VIII. 全自动演化矩阵 (Autonomy Matrix - AM)
+- **模拟优先 (Simulation-First)**：凡涉及出站管线（Slug/Route/Assets）的自主重构，必须先在 `tests/autonomous_simulation.py` 中通过 100% 仿真校验，严禁盲目执行物理回写。
+- **算力熔断 (Token/TCG)**：单次自主迭代的估算 Token 消耗不得超过 50k。一旦触线，哨兵将强制挂起任务并提交成本分析，等候人工注资许可。
+- **意图溯源 (Traceable Intent)**：所有 AI 生成或修改的代码块必须包含 `[AEL-Iter-ID]` 标签。禁止产生任何无法溯源至历史归档（`.plenipes/history/`）的“孤儿代码”。
+- **架构复健 (TDR)**：每 4 次业务特性迭代后，必须自动触发 1 次架构解耦迭代。
