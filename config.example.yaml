@@ -17,7 +17,7 @@
 vault_root: "./vault"
 
 # [状态机账本]：存储文章指纹、翻译进度、Slug 与 SEO 缓存的 JSON 数据库
-metadata_db: "./plenipes_metadata.json"
+metadata_db: ".plenipes/ledger.json"
 
 # [路由总闸]：当前激活的主题 Key。引擎将根据此键从 theme_options 中提取特定适配逻辑。
 # 支持: "docusaurus", "starlight", "vitepress", "nextra", "hugo", "hexo"
@@ -322,3 +322,20 @@ frontmatter_defaults:
 # 🌏 全局语种代码映射 (Legacy Fix)
 # ------------------------------------------
 lang_mapping: { "zh": "zh-Hans" }
+
+# ==========================================
+# 13. 创作审计时间轴 (Industrial Audit Timeline)
+# ==========================================
+timeline:
+  # 审计总开关
+  # 设为 true: 引擎会实时记录每一次本地保存、移动与删除行为，并生成历史溯源报表。
+  enabled: true
+  
+  # 原始数据账本路径 (JSON 格式，供程序读取)
+  json_path: ".plenipes/plenipes_timeline.json"
+  
+  # 用户友好的可视化报告路径 (Markdown 格式)
+  markdown_path: ".plenipes/timeline.md"
+  
+  # 最大保留记录条数 (防止日志无限膨胀)
+  max_entries: 1000

@@ -213,6 +213,13 @@ class PublishControl:
     credit_text: str = ""
 
 @dataclass
+class TimelineSettings:
+    enabled: bool = True
+    json_path: str = ".plenipes/plenipes_timeline.json"
+    markdown_path: str = ".plenipes/timeline.md"
+    max_entries: int = 1000
+
+@dataclass
 class ImageSettings:
     base_url: str = "/assets/"
     process_images: bool = True
@@ -226,7 +233,7 @@ class ImageSettings:
 @dataclass
 class Configuration:
     vault_root: str = "./vault"
-    metadata_db: str = "metadata.db"
+    metadata_db: str = ".plenipes/ledger.json"
     active_theme: str = "starlight"
     route_matrix: List[Dict[str, Any]] = field(default_factory=list)
     output_paths: Dict[str, str] = field(default_factory=dict)
@@ -239,6 +246,7 @@ class Configuration:
     syndication: SyndicationSettings = field(default_factory=SyndicationSettings)
     publish_control: PublishControl = field(default_factory=PublishControl)
     image_settings: ImageSettings = field(default_factory=ImageSettings)
+    timeline: TimelineSettings = field(default_factory=TimelineSettings)
     site_url: str = ""
     framework_adapters: Dict[str, Any] = field(default_factory=dict)
     frontmatter_order: List[str] = field(default_factory=list)

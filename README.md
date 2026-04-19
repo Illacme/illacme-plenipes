@@ -1,22 +1,12 @@
-# 🌉 Illacme-plenipes (v13.0)
+# 🌉 Illacme-plenipes (v34.5 Flagship Edition)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
 
-![Version](https://img.shields.io/badge/version-v13.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![Architecture](https://img.shields.io/badge/architecture-Cloud%20Native%20%2F%20High%20Concurrency-success.svg)
-[![Framework Agnostic](https://img.shields.io/badge/SSG-Agnostic-success.svg)](#)
+![Version](https://img.shields.io/badge/version-v34.5--flagship-blue.svg)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
+![Architecture](https://img.shields.io/badge/architecture-Industrial%20Grade%20/%20Anti--Pruning-success.svg)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-**Illacme-plenipes** is an industrial-grade Markdown synchronization engine. It doesn't just push your local knowledge base to mainstream frontend frameworks (SSGs) in milliseconds via high concurrency—it leverages a built-in AI chunking orchestrator to fully automate the transformation from single-language notes into an N-dimensional multi-language matrix.
-
-Its naming is inspired by the creature with the most legs on Earth, *Illacme plenipes*. True to its name, this engine is equipped with **OS-level anti-race-condition locks**, an **asynchronous dirty-write state machine**, and a **Token-level AI chunking engine**. Like a heavy-duty "V8 engine" with 750 legs, it is strictly designed to squeeze every drop of computing power out of multi-core CPUs and LLM context windows, achieving millisecond-level incremental compilation for massive note vaults.
-
-Compatible Ecosystems: `Astro (Starlight)` | `VitePress` | `Docusaurus` | `Hugo` | `Hexo`
-
----
-
-## 🚀 Core Architecture & Tech Features
 
 ### 1. 🛡️ OS-Level Singleton Mutex
 Preempts high-level ports (default `43210`) at the operating system's lowest layer using `socket.bind()`, rendering it physically immune to dual-instance launch disasters. If the process dies unexpectedly, the kernel instantly releases the port, perfectly protecting the underlying metadata from concurrent pollution.
