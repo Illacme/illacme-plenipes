@@ -715,9 +715,22 @@ def check_lesson_signal_acknowledgment(audit):
             audit.ok("踩坑信号", "最近提交含 [NO-LESSON] 豁免标记，确认无需沉淀")
             return
             
+        # 提取已有教训标题，帮助判断当前 fix 是否属于已有教训的覆盖范围
+        existing_lessons = []
+        if os.path.isfile(evo_path):
+            with open(evo_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    m = re.match(r'^### \d+\.\s*\[.*?\]\s*(.*)', line)
+                    if m:
+                        existing_lessons.append(m.group(0).strip()[:60])
+        
+        lessons_hint = ""
+        if existing_lessons:
+            lessons_hint = "\n已有教训供参考（如已覆盖请标 [NO-LESSON]）:\n" + "\n".join(f"   • {l}" for l in existing_lessons[-6:])
+        
         audit.fail("踩坑信号",
                    "最近提交含 fix/hotfix/revert 标记，但 evolution_records.md 今日未更新。"
-                   "请追加教训条目，或在 commit message 中标记 [NO-LESSON] 显式豁免")
+                   f"请追加教训条目，或在 commit message 中标记 [NO-LESSON] 显式豁免{lessons_hint}")
     except subprocess.CalledProcessError:
         audit.ok("踩坑信号", "无法访问 git 历史，跳过检查")
 
