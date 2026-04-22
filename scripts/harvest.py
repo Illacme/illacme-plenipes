@@ -20,16 +20,29 @@ def get_latest_brain_dir():
     latest_dir = max(subdirs, key=os.path.getmtime)
     return latest_dir
 
-def get_next_record_number(records_file):
-    if not os.path.exists(records_file):
-        return 1
-    with open(records_file, 'r', encoding='utf-8') as f:
-        content = f.read()
-        
-    matches = re.findall(r'### (\d+)\.', content)
-    if not matches:
-        return 1
-    return max([int(m) for m in matches]) + 1
+def get_next_iter_number(history_dir):
+    """从 .plenipes/history/ 物理扫描最大 Iter 编号，避免编号冲突"""
+    max_num = 0
+    if os.path.isdir(history_dir):
+        for entry in os.listdir(history_dir):
+            match = re.search(r'Iter[_-](\d+)', entry)
+            if match:
+                num = int(match.group(1))
+                if num > max_num:
+                    max_num = num
+            # 兼容旧版 AEL-Iter-NNN 格式
+            match2 = re.search(r'AEL-Iter-(\d+)', entry)
+            if match2:
+                num = int(match2.group(1))
+                if num > max_num:
+                    max_num = num
+            # 兼容旧版 TDR-Iter-NNN 格式
+            match3 = re.search(r'TDR-Iter-(\d+)', entry)
+            if match3:
+                num = int(match3.group(1))
+                if num > max_num:
+                    max_num = num
+    return max_num + 1
 
 def slugify(text):
     text = text.lower()
@@ -57,9 +70,9 @@ def main():
     # Calculate Iteration
     today = datetime.now().strftime("%Y-%m-%d")
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    records_file = os.path.join(project_root, ".plenipes", "evolution_records.md")
+    history_dir = os.path.join(project_root, ".plenipes", "history")
     
-    next_num = get_next_record_number(records_file)
+    next_num = get_next_iter_number(history_dir)
     iter_str = f"{next_num:03d}"
     
     target_dir_name = f"{today}_Iter_{iter_str}_{task_slug}"
