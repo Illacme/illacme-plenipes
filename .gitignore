@@ -184,3 +184,12 @@ $RECYCLE.BIN/
 *~
 *.old
 *.orig
+
+# ---------------------------------------------------
+# 🚫 7. Illacme-plenipes V34.5+ 本地状态与账本隔离
+# ---------------------------------------------------
+.plenipes/ledger.json
+.plenipes/plenipes_timeline.json
+.plenipes/timeline.md
+.plenipes/sentinel_health.json
+.illacme-shadow/
