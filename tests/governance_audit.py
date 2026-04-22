@@ -784,17 +784,62 @@ def check_tdr_rhythm(audit):
 
 
 def check_audit_self_coverage(audit):
-    """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
-    total_evo_count = 0
+    """[AEL-Iter-017] 元审计 + Guard 绑定校验：验证每条教训都有对应的防护检查函数"""
+    # ── 1. 读取本脚本中的所有 check_ 函数名 ──
+    script_path = os.path.abspath(__file__)
+    with open(script_path, "r", encoding="utf-8") as f:
+        script_content = f.read()
+    check_funcs = set(re.findall(r"^def (check_\w+)\(audit\):", script_content, re.MULTILINE))
 
-    # ── 1. 统计项目进化记录条目 ──
+    # ── 2. 读取项目 evolution_records 的 Guard 绑定 ──
     evo_project = ".plenipes/evolution_records.md"
+    unguarded = []      # 有教训但没有 Guard 标记
+    broken_guards = []  # Guard 标记指向不存在的函数
+    total_lessons = 0
+    guarded_count = 0
+    
     if os.path.isfile(evo_project):
         with open(evo_project, "r", encoding="utf-8") as f:
-            entries = re.findall(r"^### \d+\.", f.read(), re.MULTILINE)
-        total_evo_count += len(entries)
+            content = f.read()
+        
+        # 解析每条教训及其 Guard 绑定
+        lessons = re.findall(r"^### (\d+)\.\s*\[(.*?)\].*$", content, re.MULTILINE)
+        total_lessons = len(lessons)
+        
+        # 查找所有 Guard 行
+        guard_map = {}  # lesson_num -> guard_func
+        for line in content.split("\n"):
+            m = re.match(r"^-\s*\*\*Guard\*\*:\s*`(\w+)`", line)
+            if m:
+                guard_map[len(guard_map) + 1] = m.group(1)
+        
+        # 按序号重映射
+        for i, (num, title) in enumerate(lessons, 1):
+            lesson_id = int(num)
+            if lesson_id in guard_map or i <= len(guard_map):
+                func_name = guard_map.get(i, guard_map.get(lesson_id, ""))
+                if func_name:
+                    guarded_count += 1
+                    if func_name not in check_funcs:
+                        broken_guards.append(f"教训 #{num} [{title[:20]}] → {func_name} (函数不存在!)")
+            else:
+                unguarded.append(f"教训 #{num} [{title[:20]}]")
 
-    # ── 2. 统计全局进化记录条目 ──
+    # ── 3. 汇总判定 ──
+    if broken_guards:
+        audit.fail("元审计 Guard 绑定",
+                   f"发现 {len(broken_guards)} 条教训的 Guard 指向不存在的函数: "
+                   + "; ".join(broken_guards[:3]))
+    elif unguarded:
+        audit.warn("元审计 Guard 绑定",
+                   f"{total_lessons} 条教训中有 {len(unguarded)} 条缺少 Guard 绑定: "
+                   + "; ".join(unguarded[:3]))
+    else:
+        audit.ok("元审计 Guard 绑定",
+                 f"全部 {total_lessons} 条教训均已绑定有效的防护检查函数 ({guarded_count}/{total_lessons})")
+
+    # ── 4. 检查项数量 vs 教训总数（保留原逻辑作为兜底） ──
+    total_evo_count = total_lessons
     evo_global = os.path.expanduser(
         "~/.gemini/antigravity/knowledge/global_integrity/artifacts/evolution_records.md"
     )
@@ -803,13 +848,7 @@ def check_audit_self_coverage(audit):
             entries = re.findall(r"^### \d+\.", f.read(), re.MULTILINE)
         total_evo_count += len(entries)
 
-    # ── 3. 统计本脚本中的 check_ 函数数量 ──
-    script_path = os.path.abspath(__file__)
-    with open(script_path, "r", encoding="utf-8") as f:
-        script_content = f.read()
-    check_funcs = re.findall(r"^def (check_\w+)\(audit\):", script_content, re.MULTILINE)
     check_count = len(check_funcs)
-
     if check_count >= total_evo_count:
         audit.ok("元审计覆盖度",
                  f"审计检查项 ({check_count}) ≥ 进化记录总条目 ({total_evo_count}，项目+全局)")
