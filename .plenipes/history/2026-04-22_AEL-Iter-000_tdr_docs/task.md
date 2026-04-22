@@ -1,0 +1,9 @@
+- [x] 1. Update docs/SPECIFICATION.zh-CN.md
+    - [x] Document `is_skipped` vs `is_aborted` dual-track state machine
+- [x] 2. Update tests/autonomous_simulation.py
+    - [x] Add `verify_docs_sync_hook()` using git porcelain.
+    - [x] Allow an environment variable or flag bypass for local dev flexibility.
+- [x] 3. Verification
+    - [x] Trigger the hook manually via touch `core/config.py` and run tests.
+    - [x] Confirm `AssertionError` behavior is functionally correct.
+- [/] 4. Final Walkthrough Report
