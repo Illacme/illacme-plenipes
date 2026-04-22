@@ -47,3 +47,12 @@
     - **Git 防爆钩子**：`autonomous_simulation.py` 中的 `verify_docs_sync_hook` 强制要求每次代码变更同步更新 `docs/` 或 `CHANGELOG.md`，且在 `.plenipes/history/` 下新增归档。
     - **规则元进化**：`rules.md` 第九章授权 AI 在实战中主动修改规则本身，通过"修宪"实现事前预防而非事后惩罚。
 - **Action**: 每次提交前运行 `autonomous_simulation.py`，确保防爆钩子放行。
+
+## 📅 2026-04-23 进化点
+
+### 7. [流程缺陷] 部分暂存陷阱 (Partial Staging Trap)
+- **故障回顾**：AI 执行 `git add file_a file_b` 手选文件提交时，遗漏了同时修改过的 `file_c`。该文件残留在工作区，而当时 22 项治理检查中无一能在**当次**提交时拦截此行为。仿真沙盒虽然在**下一次**提交时发现了残留，但已经造成了一次"通过了门禁却仍有未纳管代码"的事故。
+- **进化结论**：
+    - **当次拦截**：新增 `check_no_unstaged_leftovers`（第 22 项），在 pre-commit 阶段扫描 `git status --porcelain` 的第二字符位（worktree_char），一旦发现 `M`（已修改但未暂存）立即 `fail`。
+    - **根因认知**：Git 的 staging area 设计允许"部分提交"，这对 AI 高频迭代场景是一个致命陷阱——AI 的注意力模型在长上下文中非常容易遗漏文件名。
+- **Action**: 禁止依赖手动枚举的 `git add file1 file2`，优先使用 `harvest.py` 自动收割后再 `git add` 变更文件。
