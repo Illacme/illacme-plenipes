@@ -1,0 +1,9 @@
+- [x] 归级历史数据 (Normalize Historical Data)
+  - [x] 编写并执行脚本对 `.plenipes/history/` 缺失 `plan.md`/`task.md` 的目录注入溯源占位符。
+- [ ] 升级静态审判官 (Governance Audit)
+  - [ ] 重构 `tests/governance_audit.py` 中的 `check_empty_history_dirs`，变更为三相强制检测 (`plan.md` | `implementation_plan.md`, `task.md`, `walkthrough.md` | `acceptance.md`)。
+- [ ] 升级动态阻截器 (Simulation Sandbox)
+  - [ ] 修改 `tests/autonomous_simulation.py` 的钩子逻辑，通过 `git diff --cached` 拦截那些不包含完整三件套记录的代码提交行为。
+- [ ] 验证并全量演化代码库
+  - [ ] 执行全套自动化测绘。
+  - [ ] 使用 `AEL Protocol` 进行真实 commit 发行。

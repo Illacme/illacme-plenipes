@@ -1,0 +1,1 @@
+- [x] 溯源补全任务 (System Auto-Fill for 2026-04-19_sentinel_guard)
