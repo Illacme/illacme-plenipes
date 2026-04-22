@@ -200,33 +200,41 @@ def check_boot_chain_integrity(audit):
 
 
 def check_audit_self_coverage(audit):
-    """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了进化记录中的所有教训"""
-    # ── 1. 统计项目进化记录中的条目数 ──
-    evo_file = ".plenipes/evolution_records.md"
-    if not os.path.isfile(evo_file):
-        audit.warn("元审计", "项目进化记录不存在，跳过覆盖度检查")
-        return
-    with open(evo_file, "r", encoding="utf-8") as f:
-        evo_content = f.read()
-    evo_entries = re.findall(r"^### \d+\.", evo_content, re.MULTILINE)
+    """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
+    total_evo_count = 0
 
-    # ── 2. 统计本脚本中的 check_ 函数数量 ──
+    # ── 1. 统计项目进化记录条目 ──
+    evo_project = ".plenipes/evolution_records.md"
+    if os.path.isfile(evo_project):
+        with open(evo_project, "r", encoding="utf-8") as f:
+            entries = re.findall(r"^### \d+\.", f.read(), re.MULTILINE)
+        total_evo_count += len(entries)
+
+    # ── 2. 统计全局进化记录条目 ──
+    evo_global = os.path.expanduser(
+        "~/.gemini/antigravity/knowledge/global_integrity/artifacts/evolution_records.md"
+    )
+    if os.path.isfile(evo_global):
+        with open(evo_global, "r", encoding="utf-8") as f:
+            entries = re.findall(r"^### \d+\.", f.read(), re.MULTILINE)
+        total_evo_count += len(entries)
+
+    # ── 3. 统计本脚本中的 check_ 函数数量 ──
     script_path = os.path.abspath(__file__)
     with open(script_path, "r", encoding="utf-8") as f:
         script_content = f.read()
     check_funcs = re.findall(r"^def (check_\w+)\(audit\):", script_content, re.MULTILINE)
-
-    evo_count = len(evo_entries)
     check_count = len(check_funcs)
 
-    if check_count >= evo_count:
+    if check_count >= total_evo_count:
         audit.ok("元审计覆盖度",
-                 f"审计检查项 ({check_count}) ≥ 进化记录条目 ({evo_count})")
+                 f"审计检查项 ({check_count}) ≥ 进化记录总条目 ({total_evo_count}，项目+全局)")
     else:
-        gap = evo_count - check_count
+        gap = total_evo_count - check_count
         audit.warn("元审计覆盖度",
-                   f"进化记录有 {evo_count} 条教训，但审计仅有 {check_count} 项检查，"
-                   f"差 {gap} 项。请为新教训追加对应的 check_ 函数。")
+                   f"进化记录共 {total_evo_count} 条教训（项目+全局），"
+                   f"但审计仅有 {check_count} 项检查，差 {gap} 项。"
+                   f"请为新教训追加对应的 check_ 函数。")
 
 
 # ──────────────────────────────────────────────
