@@ -556,6 +556,34 @@ def check_docs_targeted_binding(audit):
         audit.ok("文档靶向绑定", "非 Git 暂存区上下文，跳过检查")
 
 
+def check_no_unstaged_leftovers(audit):
+    """[AEL-Iter-014] 防遺漏检测：检查工作区是否残留未暂存的修改文件"""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+        )
+        unstaged = []
+        for line in result.stdout.strip().split("\n"):
+            if len(line) < 2:
+                continue
+            # git porcelain: index char + worktree char + space + path
+            # ' M' = modified but not staged; 'MM' = staged AND has additional unstaged edits
+            index_char = line[0]
+            worktree_char = line[1]
+            path = line[3:]
+            # Detect unstaged modifications to tracked files
+            if worktree_char == 'M':
+                unstaged.append(path)
+
+        if unstaged:
+            audit.fail("工作区遺漏检测",
+                       f"发现 {len(unstaged)} 个文件已修改但未纳入暂存区 (git add): {', '.join(unstaged[:5])}")
+        else:
+            audit.ok("工作区遺漏检测", "工作区无残留的未暂存修改")
+    except subprocess.CalledProcessError:
+        audit.warn("工作区遺漏检测", "无法执行 git status")
+
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -599,7 +627,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v4.0 (全域硬约束版)")
+    print("\n🛡️  Illacme-plenipes 治理自审引擎 v4.1 (全域硬约束 + 防遺漏版)")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -609,70 +637,73 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/22] 历史归档完整性...")
+    print("\n📂  [1/23] 历史归档完整性...")
     check_history_artifacts_completeness(audit)
 
-    print("\n🔒  [2/22] Git 状态泄露检测...")
+    print("\n🔒  [2/23] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/22] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/23] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/22] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/23] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/22] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/23] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/22] 项目进化记录新鲜度...")
+    print("\n🧬  [6/23] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/22] Boot Chain 完整性...")
+    print("\n🔗  [7/23] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/22] 零占位符协议...")
+    print("\n🚫  [8/23] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/22] 工业级注释主权...")
+    print("\n📝  [9/23] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/22] 防爆钩子治理...")
+    print("\n⚡  [10/23] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/22] Pre-commit Hook 安装...")
+    print("\n🔧  [11/23] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/22] 运行时产物泄露检测...")
+    print("\n🗑️  [12/23] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n📋  [13/22] 文档更新质量...")
+    print("\n📋  [13/23] 文档更新质量...")
     check_docs_update_quality(audit)
 
-    print("\n🗺️  [14/22] ROADMAP 新鲜度...")
+    print("\n🗺️  [14/23] ROADMAP 新鲜度...")
     check_roadmap_freshness(audit)
 
-    print("\n🧪  [15/22] 仿真测试静态存在性...")
+    print("\n🧪  [15/23] 仿真测试静态存在性...")
     check_simulation_test_coverage(audit)
 
-    print("\n⚔️  [16/22] 仿真引擎物理试运行 (动)...")
+    print("\n⚔️  [16/23] 仿真引擎物理试运行 (动)...")
     check_simulation_execution(audit)
 
-    print("\n🏷️  [17/22] AEL 代码溯源打标...")
+    print("\n🏷️  [17/23] AEL 代码溯源打标...")
     check_iter_id_tagging(audit)
 
-    print("\n🏛️  [18/22] 核心架构指纹保护...")
+    print("\n🏛️  [18/23] 核心架构指纹保护...")
     check_core_architecture_fingerprint(audit)
 
-    print("\n🔐  [19/22] 防御性编程静态拦截...")
+    print("\n🔐  [19/23] 防御性编程静态拦截...")
     check_defensive_coding_patterns(audit)
 
-    print("\n🧠  [20/22] 全局知识反哺新鲜度...")
+    print("\n🧠  [20/23] 全局知识反哺新鲜度...")
     check_global_ki_evolution_freshness(audit)
 
-    print("\n📎  [21/22] 文档靶向精准绑定...")
+    print("\n📎  [21/23] 文档靶向精准绑定...")
     check_docs_targeted_binding(audit)
 
-    print("\n🪞  [22/22] 元审计：自身覆盖度...")
+    print("\n🚨  [22/23] 工作区遺漏检测...")
+    check_no_unstaged_leftovers(audit)
+
+    print("\n🪞  [23/23] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
