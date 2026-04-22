@@ -1,0 +1,22 @@
+- [ ] P1: AEL-Iter-ID 代码溯源打标
+  - [ ] 新增 `check_iter_id_tagging(audit)` 到 `governance_audit.py`
+  - [ ] 注册到 main() 并更新版本号/计数器
+  - [ ] 验证通过
+- [ ] P2: 核心架构结构指纹保护
+  - [ ] 新增 `check_core_architecture_fingerprint(audit)` 到 `governance_audit.py`
+  - [ ] 注册到 main() 并更新计数器
+  - [ ] 验证通过
+- [ ] P3: 防御性编程静态拦截
+  - [ ] 新增 `check_defensive_coding_patterns(audit)` 到 `governance_audit.py`
+  - [ ] 注册到 main() 并更新计数器
+  - [ ] 验证通过
+- [ ] P4: 全局 KI 知识反哺强制
+  - [ ] 新增 `check_global_ki_evolution_freshness(audit)` 到 `governance_audit.py`
+  - [ ] 注册到 main() 并更新计数器
+  - [ ] 验证通过
+- [ ] P5: 文档靶向精准绑定
+  - [ ] 升级 `check_docs_update_quality(audit)` 到精准映射版本
+  - [ ] 验证通过
+- [ ] 最终验证
+  - [ ] governance_audit.py 版本升级至 v4.0 (22项)
+  - [ ] harvest + git commit 通过防爆门禁

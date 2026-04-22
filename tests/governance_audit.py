@@ -57,23 +57,29 @@ class AuditResult:
 # 🔍 审计检查项（智能体可自主追加新检查）
 # ──────────────────────────────────────────────
 
-def check_empty_history_dirs(audit):
-    """[AEL-Iter-006] 检查 .plenipes/history/ 是否存在空目录"""
+def check_history_artifacts_completeness(audit):
+    """[AEL-Iter-012] 检查 .plenipes/history/ 历史迭代的三相基因完备性"""
     history_path = ".plenipes/history"
     if not os.path.isdir(history_path):
         audit.fail("历史归档目录", f"{history_path} 不存在")
         return
-    empty_dirs = []
+    
+    incomplete_dirs = []
     for entry in os.listdir(history_path):
         full = os.path.join(history_path, entry)
-        if os.path.isdir(full) and not any(
-            f for f in os.listdir(full) if not f.startswith('.')
-        ):
-            empty_dirs.append(entry)
-    if empty_dirs:
-        audit.fail("空历史目录", f"发现 {len(empty_dirs)} 个空目录: {', '.join(empty_dirs)}")
+        if os.path.isdir(full) and entry.startswith("2026-"):
+            files = os.listdir(full)
+            has_plan = "plan.md" in files or "implementation_plan.md" in files
+            has_task = "task.md" in files
+            has_walk = "walkthrough.md" in files or "acceptance.md" in files
+            
+            if not (has_plan and has_task and has_walk):
+                incomplete_dirs.append(entry)
+                
+    if incomplete_dirs:
+        audit.fail("历史迭代矩阵不完整", f"发现 {len(incomplete_dirs)} 个迭代目录缺少 plan/task/walkthrough 三相文件: {', '.join(incomplete_dirs[:3])}...")
     else:
-        audit.ok("历史归档完整性", "所有 history/ 子目录均包含归档文件")
+        audit.ok("历史归档完整性", "所有 history/ 迭代目录均已严格沉淀三相规划基因")
 
 
 def check_git_tracked_state_files(audit):
@@ -403,6 +409,153 @@ def check_simulation_execution(audit):
         audit.fail("仿真运行异常", f"无法启动仿真进程：{str(e)}")
 
 
+def check_iter_id_tagging(audit):
+    """[AEL-Iter-013/P1] 代码溯源打标：检查 core/ 下变更的 Python 文件是否包含 [AEL-Iter-] 标记"""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=AM"],
+            capture_output=True, text=True, check=True
+        )
+        changed_py = [
+            f for f in result.stdout.strip().split("\n")
+            if f.startswith("core/") and f.endswith(".py") and f.strip()
+        ]
+        if not changed_py:
+            audit.ok("代码溯源打标", "本次提交无 core/ Python 文件变更，跳过检查")
+            return
+
+        untagged = []
+        for fpath in changed_py:
+            diff_result = subprocess.run(
+                ["git", "diff", "--cached", "-U0", "--", fpath],
+                capture_output=True, text=True, check=True
+            )
+            added_lines = [l for l in diff_result.stdout.split("\n") if l.startswith("+") and not l.startswith("+++")]
+            has_tag = any("[AEL-Iter-" in line or "[Iter-" in line for line in added_lines)
+            if not has_tag and added_lines:
+                untagged.append(os.path.basename(fpath))
+
+        if untagged:
+            audit.fail("代码溯源打标",
+                       f"{len(untagged)} 个 core/ 文件缺少 [AEL-Iter-ID] 溯源标记: {', '.join(untagged[:5])}")
+        else:
+            audit.ok("代码溯源打标", f"全部 {len(changed_py)} 个变更文件均已打标")
+    except subprocess.CalledProcessError:
+        audit.ok("代码溯源打标", "非 Git 暂存区上下文，跳过检查")
+
+
+def check_core_architecture_fingerprint(audit):
+    """[AEL-Iter-013/P2] 核心架构指纹保护：检查关键类/函数是否物理存在于代码中"""
+    sacred_signatures = {
+        "core/engine.py": ["TimelineManager"],
+        "core/pipeline/steps.py": ["MaskingAndRoutingStep", "ContextualImageAltStep"],
+        "core/adapters/ingress.py": ["InputAdapter"],
+        "core/egress_dispatcher.py": ["EgressDispatcher", "unmask_fn"],
+        "core/config.py": ["ConfigManager"],
+    }
+    missing = []
+    for fpath, signatures in sacred_signatures.items():
+        if not os.path.isfile(fpath):
+            missing.append(f"{fpath} (文件缺失)")
+            continue
+        with open(fpath, "r", encoding="utf-8") as f:
+            content = f.read()
+        for sig in signatures:
+            if sig not in content:
+                missing.append(f"{fpath}::{sig}")
+
+    if missing:
+        audit.fail("核心架构指纹",
+                   f"以下神圣签名从代码中消失: {', '.join(missing[:5])}")
+    else:
+        total_sigs = sum(len(v) for v in sacred_signatures.values())
+        audit.ok("核心架构指纹", f"全部 {total_sigs} 个神圣签名均物理存在")
+
+
+def check_defensive_coding_patterns(audit):
+    """[AEL-Iter-013/P3] 防御性编程：检测 core/ 中高危的裸索引访问模式"""
+    dangerous_patterns = [
+        (re.compile(r'config\[["\']'), "config 裸索引"),
+        (re.compile(r'os\.environ\[["\']'), "os.environ 裸索引"),
+    ]
+    safe_marker = "# SAFE-INDEX"
+    violations = []
+    for root, dirs, files in os.walk("core"):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    for i, line in enumerate(f, 1):
+                        if safe_marker in line:
+                            continue
+                        for pat, label in dangerous_patterns:
+                            if pat.search(line):
+                                violations.append(f"{fpath}:{i} ({label})")
+            except Exception:
+                pass
+
+    if violations:
+        audit.warn("防御性编程",
+                   f"发现 {len(violations)} 处高危裸索引 (应使用 .get()): {', '.join(violations[:5])}")
+    else:
+        audit.ok("防御性编程", "core/ 代码未发现高危裸索引访问模式")
+
+
+def check_global_ki_evolution_freshness(audit):
+    """[AEL-Iter-013/P4] 全局知识反哺：检查全局 KI 进化记录是否保持活跃"""
+    import time
+    evo_global = os.path.expanduser(
+        "~/.gemini/antigravity/knowledge/global_integrity/artifacts/evolution_records.md"
+    )
+    if not os.path.isfile(evo_global):
+        audit.warn("全局知识反哺", f"全局进化记录不存在: {evo_global}")
+        return
+    mtime = os.path.getmtime(evo_global)
+    age_days = (time.time() - mtime) / 86400
+    if age_days > 7:
+        audit.warn("全局知识反哺",
+                   f"全局 KI evolution_records.md 已 {int(age_days)} 天未更新，跨项目教训可能正在流失")
+    else:
+        audit.ok("全局知识反哺", f"全局 KI 进化记录在 {int(age_days)} 天内有更新")
+
+
+def check_docs_targeted_binding(audit):
+    """[AEL-Iter-013/P5] 文档靶向绑定：检查代码域变更是否命中对应文档域"""
+    domain_map = {
+        "core/config.py": ["docs/REFERENCE.zh-CN.md", "CHANGELOG.md"],
+        "core/pipeline/": ["docs/SPECIFICATION.zh-CN.md", "CHANGELOG.md"],
+        "plenipes.py": ["docs/MANUAL.zh-CN.md", "CHANGELOG.md"],
+    }
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            capture_output=True, text=True, check=True
+        )
+        changed = set(result.stdout.strip().split("\n"))
+        if not changed or changed == {""}:
+            audit.ok("文档靶向绑定", "无暂存区变更，跳过检查")
+            return
+
+        violations = []
+        for code_domain, doc_targets in domain_map.items():
+            domain_hit = any(f.startswith(code_domain) for f in changed)
+            if domain_hit:
+                doc_hit = any(d in changed for d in doc_targets)
+                if not doc_hit:
+                    violations.append(f"{code_domain} → 应更新 {' 或 '.join(doc_targets)}")
+
+        if violations:
+            audit.warn("文档靶向绑定",
+                       f"代码域变更未命中对应文档: {'; '.join(violations)}")
+        else:
+            audit.ok("文档靶向绑定", "代码域与文档域映射一致")
+    except subprocess.CalledProcessError:
+        audit.ok("文档靶向绑定", "非 Git 暂存区上下文，跳过检查")
+
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -446,7 +599,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v3.0 (动静结合版)")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v4.0 (全域硬约束版)")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -456,55 +609,70 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/17] 历史归档完整性...")
-    check_empty_history_dirs(audit)
+    print("\n📂  [1/22] 历史归档完整性...")
+    check_history_artifacts_completeness(audit)
 
-    print("\n🔒  [2/17] Git 状态泄露检测...")
+    print("\n🔒  [2/22] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/17] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/22] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/17] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/22] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/17] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/22] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/17] 项目进化记录新鲜度...")
+    print("\n🧬  [6/22] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/17] Boot Chain 完整性...")
+    print("\n🔗  [7/22] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/17] 零占位符协议...")
+    print("\n🚫  [8/22] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/17] 工业级注释主权...")
+    print("\n📝  [9/22] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/17] 防爆钩子治理...")
+    print("\n⚡  [10/22] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/17] Pre-commit Hook 安装...")
+    print("\n🔧  [11/22] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/17] 运行时产物泄露检测...")
+    print("\n🗑️  [12/22] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n📋  [13/17] 文档更新质量...")
+    print("\n📋  [13/22] 文档更新质量...")
     check_docs_update_quality(audit)
 
-    print("\n🗺️  [14/17] ROADMAP 新鲜度...")
+    print("\n🗺️  [14/22] ROADMAP 新鲜度...")
     check_roadmap_freshness(audit)
 
-    print("\n🧪  [15/17] 仿真测试静态存在性...")
+    print("\n🧪  [15/22] 仿真测试静态存在性...")
     check_simulation_test_coverage(audit)
 
-    print("\n⚔️  [16/17] 仿真引擎物理试运行 (动)...")
+    print("\n⚔️  [16/22] 仿真引擎物理试运行 (动)...")
     check_simulation_execution(audit)
 
-    print("\n🪞  [17/17] 元审计：自身覆盖度...")
+    print("\n🏷️  [17/22] AEL 代码溯源打标...")
+    check_iter_id_tagging(audit)
+
+    print("\n🏛️  [18/22] 核心架构指纹保护...")
+    check_core_architecture_fingerprint(audit)
+
+    print("\n🔐  [19/22] 防御性编程静态拦截...")
+    check_defensive_coding_patterns(audit)
+
+    print("\n🧠  [20/22] 全局知识反哺新鲜度...")
+    check_global_ki_evolution_freshness(audit)
+
+    print("\n📎  [21/22] 文档靶向精准绑定...")
+    check_docs_targeted_binding(audit)
+
+    print("\n🪞  [22/22] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
