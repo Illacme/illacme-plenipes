@@ -199,6 +199,36 @@ def check_boot_chain_integrity(audit):
             audit.fail(f"Boot Chain: {label}", f".antigravityrules 缺少 '{keyword}' 关键引用")
 
 
+def check_audit_self_coverage(audit):
+    """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了进化记录中的所有教训"""
+    # ── 1. 统计项目进化记录中的条目数 ──
+    evo_file = ".plenipes/evolution_records.md"
+    if not os.path.isfile(evo_file):
+        audit.warn("元审计", "项目进化记录不存在，跳过覆盖度检查")
+        return
+    with open(evo_file, "r", encoding="utf-8") as f:
+        evo_content = f.read()
+    evo_entries = re.findall(r"^### \d+\.", evo_content, re.MULTILINE)
+
+    # ── 2. 统计本脚本中的 check_ 函数数量 ──
+    script_path = os.path.abspath(__file__)
+    with open(script_path, "r", encoding="utf-8") as f:
+        script_content = f.read()
+    check_funcs = re.findall(r"^def (check_\w+)\(audit\):", script_content, re.MULTILINE)
+
+    evo_count = len(evo_entries)
+    check_count = len(check_funcs)
+
+    if check_count >= evo_count:
+        audit.ok("元审计覆盖度",
+                 f"审计检查项 ({check_count}) ≥ 进化记录条目 ({evo_count})")
+    else:
+        gap = evo_count - check_count
+        audit.warn("元审计覆盖度",
+                   f"进化记录有 {evo_count} 条教训，但审计仅有 {check_count} 项检查，"
+                   f"差 {gap} 项。请为新教训追加对应的 check_ 函数。")
+
+
 # ──────────────────────────────────────────────
 # 🚀 主执行入口
 # ──────────────────────────────────────────────
@@ -214,26 +244,29 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂 [1/7] 历史归档完整性...")
+    print("\n📂 [1/8] 历史归档完整性...")
     check_empty_history_dirs(audit)
 
-    print("\n🔒 [2/7] Git 状态泄露检测...")
+    print("\n🔒 [2/8] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄 [3/7] Boot Chain 必要文件存在性...")
+    print("\n📄 [3/8] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐 [4/7] 全局 KI 项目污染检测...")
+    print("\n🌐 [4/8] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️ [5/7] .gitignore 规则覆盖度...")
+    print("\n🛡️ [5/8] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬 [6/7] 项目进化记录新鲜度...")
+    print("\n🧬 [6/8] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗 [7/7] Boot Chain 完整性...")
+    print("\n🔗 [7/8] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
+
+    print("\n🪞 [8/8] 元审计：自身覆盖度...")
+    check_audit_self_coverage(audit)
 
     success = audit.summary()
     sys.exit(0 if success else 1)
@@ -241,3 +274,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
