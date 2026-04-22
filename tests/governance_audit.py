@@ -199,6 +199,71 @@ def check_boot_chain_integrity(audit):
             audit.fail(f"Boot Chain: {label}", f".antigravityrules 缺少 '{keyword}' 关键引用")
 
 
+def check_no_placeholder_patterns(audit):
+    """[全局#1] 零占位符协议：检查核心代码中是否残留占位符标记"""
+    placeholder_patterns = [
+        r"#\s*\.\.\.\s*(existing|skip|rest|remaining)",
+        r"#\s*\.\.\.\s*省略",
+        r"//\s*\.\.\.\s*(existing|skip)",
+    ]
+    violations = []
+    for root, dirs, files in os.walk("core"):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    for i, line in enumerate(f, 1):
+                        for pat in placeholder_patterns:
+                            if re.search(pat, line, re.IGNORECASE):
+                                violations.append(f"{fpath}:{i}")
+            except Exception:
+                pass
+    if violations:
+        audit.fail("零占位符协议", f"发现 {len(violations)} 处占位符: {', '.join(violations[:5])}")
+    else:
+        audit.ok("零占位符协议", "核心代码无占位符标记残留")
+
+
+def check_docstring_coverage(audit):
+    """[全局#2] 工业级注释主权：检查核心 Python 文件是否包含模块级文档"""
+    missing = []
+    for root, dirs, files in os.walk("core"):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for fname in files:
+            if not fname.endswith(".py") or fname == "__init__.py":
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    content = f.read(500)  # 只需读头部
+                if '"""' not in content and "'''" not in content:
+                    missing.append(fpath)
+            except Exception:
+                pass
+    if missing:
+        audit.warn("工业级注释主权", f"{len(missing)} 个核心文件缺少模块文档: {', '.join(missing[:5])}")
+    else:
+        audit.ok("工业级注释主权", "所有核心 Python 文件均包含模块级文档")
+
+
+def check_simulation_hook_exists(audit):
+    """[项目#6] 防爆钩子治理：检查 autonomous_simulation.py 中防爆钩子函数是否存在"""
+    sim_file = "tests/autonomous_simulation.py"
+    if not os.path.isfile(sim_file):
+        audit.fail("防爆钩子", f"{sim_file} 不存在")
+        return
+    with open(sim_file, "r", encoding="utf-8") as f:
+        content = f.read()
+    required_hooks = ["verify_docs_sync_hook"]
+    missing = [h for h in required_hooks if h not in content]
+    if missing:
+        audit.fail("防爆钩子", f"缺少关键钩子函数: {', '.join(missing)}")
+    else:
+        audit.ok("防爆钩子治理", "verify_docs_sync_hook 物理存在且完好")
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -242,7 +307,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v1.0")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v1.1")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -252,28 +317,37 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂 [1/8] 历史归档完整性...")
+    print("\n📂  [1/11] 历史归档完整性...")
     check_empty_history_dirs(audit)
 
-    print("\n🔒 [2/8] Git 状态泄露检测...")
+    print("\n🔒  [2/11] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄 [3/8] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/11] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐 [4/8] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/11] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️ [5/8] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/11] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬 [6/8] 项目进化记录新鲜度...")
+    print("\n🧬  [6/11] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗 [7/8] Boot Chain 完整性...")
+    print("\n🔗  [7/11] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🪞 [8/8] 元审计：自身覆盖度...")
+    print("\n🚫  [8/11] 零占位符协议...")
+    check_no_placeholder_patterns(audit)
+
+    print("\n📝  [9/11] 工业级注释主权...")
+    check_docstring_coverage(audit)
+
+    print("\n⚡  [10/11] 防爆钩子治理...")
+    check_simulation_hook_exists(audit)
+
+    print("\n🪞  [11/11] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
@@ -282,4 +356,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
