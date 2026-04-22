@@ -1,13 +1,14 @@
-# Antigravity Rules Redirect (AI 治理引导指针)
+# 🚨 [CRITICAL AI BOOT SEQUENCE] Illacme-Plenipes 核心架构域
+# =====================================================================
+# ACTION REQUIRED FOR ANY NEW AI AGENT / SESSION TICKET:
+# =====================================================================
 
-# [IMPORTANT]
-# The primary governance protocols and development standards for this project 
-# have been moved to a project-neutral directory to maintain open-source cleanliness.
-#
-# PLEASE LOAD AND FOLLOW THE COMPREHENSIVE RULES FROM THE PATH BELOW:
-# .plenipes/rules.md
+You are operating within the Illacme-plenipes industrial framework.
+
+**YOUR FIRST COMPULSORY ACTION BEFORE PROCESSING ANY USER REQUEST:**
+You MUST immediately invoke the `view_file` (or equivalent read tool) to physically open and load the global architecture rules located at:
+👉 `.plenipes/rules.md`
+
+WARNING: Do NOT assume you "already know" the rules. Do NOT rely on "include" directives to syntactically pass. Your prompt context is historically ephemeral unless physically fetched. Failure to execute `view_file` on `.plenipes/rules.md` inside your FIRST turn is a direct violation of the governance protocol and will result in catastrophic integration failure.
 
 include .plenipes/rules.md
-
-# This file serves as a 'Signpost' for AI agents to ensure continuous alignment 
-# with the Illacme-plenipes industrial standards.
