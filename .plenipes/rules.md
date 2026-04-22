@@ -42,3 +42,7 @@ These project-specific rules extend the Global Integrity Protocols and must be s
 ## IX. 规则元进化 (Meta-Evolution)
 - **动态反哺 (Dynamic Feedback)**：在每次完整的迭代或 BUG 修复中，一旦智能体推导出了能避免未来报错的架构边界、Git 拦截钩子，或是确立了新的防御逻辑，智能体**拥有最高裁量权**自动更新和扩充本规则文件（`.plenipes/rules.md`）！严禁依靠模拟器事后惩罚报错来学习，必须通过“修宪法”来打通事前预防的认知循环。
 - **自主迭代边界拓展**：把 `rules.md` 视作会呼吸的动态记忆器官，所有属于项目维度的共识必须第一时间沉淀入此处，避免 AI 本地沙盒脑暴清空后导致的“工程失忆”。这是实现 Agent 越开发越聪明的唯一合法路径。
+- **进化记录双轨沉淀 (Dual Evolution Deposit)**：每次迭代结束时，智能体必须执行双轨写入：
+    1. **项目层** `.plenipes/evolution_records.md`：沉淀本项目专属的技术踩坑、架构决策与配置边界。
+    2. **全局层** 全局 KI `evolution_records.md`：沉淀跨项目通用的 AI 行为纪律与工具使用教训。
+  未执行双轨沉淀的迭代视为"知识自杀"，其教训将随对话消亡。
