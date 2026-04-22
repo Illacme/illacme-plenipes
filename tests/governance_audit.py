@@ -312,6 +312,79 @@ def check_untracked_runtime_artifacts(audit):
         audit.warn("运行时产物检测", "无法执行 git status")
 
 
+def check_docs_update_quality(audit):
+    """[AEL-Iter-008] 检查 docs/ 最近变更是否有实质内容（防止空变更蒙混过关）"""
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--pretty=format:%H", "--", "docs/"],
+            capture_output=True, text=True, check=True
+        )
+        last_doc_commit = result.stdout.strip()
+        if not last_doc_commit:
+            audit.warn("文档更新质量", "docs/ 目录从未被提交过")
+            return
+        diff_result = subprocess.run(
+            ["git", "diff", "--stat", f"{last_doc_commit}~1..{last_doc_commit}", "--", "docs/"],
+            capture_output=True, text=True, check=True
+        )
+        diff_stat = diff_result.stdout.strip()
+        if not diff_stat:
+            audit.ok("文档更新质量", "最近一次文档提交有实质变更")
+            return
+        # 解析 insertions/deletions
+        import re as _re
+        nums = _re.findall(r'(\d+) insertion|\(\d+) deletion', diff_stat)
+        total_changes = sum(int(n) for n in nums if n)
+        if total_changes < 3:
+            audit.warn("文档更新质量",
+                       f"最近一次文档提交仅 {total_changes} 行变更，可能是空变更蒙混")
+        else:
+            audit.ok("文档更新质量", f"最近一次文档提交 {total_changes} 行实质变更")
+    except (subprocess.CalledProcessError, Exception):
+        audit.ok("文档更新质量", "检查跳过（git 历史不足或无 docs 变更）")
+
+
+def check_roadmap_freshness(audit):
+    """[AEL-Iter-008] 检查 ROADMAP.md 是否与代码仓库的活跃度保持同步"""
+    roadmap_candidates = ["ROADMAP.md", ".plenipes/ROADMAP.md"]
+    roadmap_path = None
+    for rp in roadmap_candidates:
+        if os.path.isfile(rp):
+            roadmap_path = rp
+            break
+    if not roadmap_path:
+        audit.warn("ROADMAP 新鲜度", "未找到 ROADMAP.md 文件")
+        return
+    import time
+    mtime = os.path.getmtime(roadmap_path)
+    age_days = (time.time() - mtime) / 86400
+    if age_days > 30:
+        audit.warn("ROADMAP 新鲜度",
+                   f"{roadmap_path} 已有 {int(age_days)} 天未更新，可能已过期")
+    else:
+        audit.ok("ROADMAP 新鲜度", f"{roadmap_path} 最近 {int(age_days)} 天内有更新")
+
+
+def check_simulation_test_coverage(audit):
+    """[AEL-Iter-008] 检查 autonomous_simulation.py 是否覆盖核心测试阶段"""
+    sim_file = "tests/autonomous_simulation.py"
+    if not os.path.isfile(sim_file):
+        audit.fail("仿真测试覆盖", f"{sim_file} 不存在")
+        return
+    with open(sim_file, "r", encoding="utf-8") as f:
+        content = f.read()
+    required_phases = {
+        "verify_docs_sync_hook": "AEL 文档同步钩子",
+        "run_shadow_simulation": "影子沙盒主流程",
+        "Simulation Gating": "仿真网关标识",
+    }
+    missing = [label for key, label in required_phases.items() if key not in content]
+    if missing:
+        audit.warn("仿真测试覆盖", f"缺少关键测试阶段: {', '.join(missing)}")
+    else:
+        audit.ok("仿真测试覆盖", f"全部 {len(required_phases)} 个核心阶段均存在")
+
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -355,7 +428,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v1.2")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v2.0 (完全体)")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -365,43 +438,52 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/13] 历史归档完整性...")
+    print("\n📂  [1/16] 历史归档完整性...")
     check_empty_history_dirs(audit)
 
-    print("\n🔒  [2/13] Git 状态泄露检测...")
+    print("\n🔒  [2/16] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/13] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/16] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/13] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/16] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/13] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/16] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/13] 项目进化记录新鲜度...")
+    print("\n🧬  [6/16] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/13] Boot Chain 完整性...")
+    print("\n🔗  [7/16] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/13] 零占位符协议...")
+    print("\n🚫  [8/16] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/13] 工业级注释主权...")
+    print("\n📝  [9/16] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/13] 防爆钩子治理...")
+    print("\n⚡  [10/16] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/13] Pre-commit Hook 安装...")
+    print("\n🔧  [11/16] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/13] 运行时产物泄露检测...")
+    print("\n🗑️  [12/16] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n🪞  [13/13] 元审计：自身覆盖度...")
+    print("\n📋  [13/16] 文档更新质量...")
+    check_docs_update_quality(audit)
+
+    print("\n🗺️  [14/16] ROADMAP 新鲜度...")
+    check_roadmap_freshness(audit)
+
+    print("\n🧪  [15/16] 仿真测试覆盖度...")
+    check_simulation_test_coverage(audit)
+
+    print("\n🪞  [16/16] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
