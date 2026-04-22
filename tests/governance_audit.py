@@ -715,9 +715,9 @@ def check_lesson_signal_acknowledgment(audit):
             audit.ok("踩坑信号", "最近提交含 [NO-LESSON] 豁免标记，确认无需沉淀")
             return
             
-        audit.warn("踩坑信号",
+        audit.fail("踩坑信号",
                    "最近提交含 fix/hotfix/revert 标记，但 evolution_records.md 今日未更新。"
-                   "请确认是否需要追加教训，或在 commit message 中标记 [NO-LESSON]")
+                   "请追加教训条目，或在 commit message 中标记 [NO-LESSON] 显式豁免")
     except subprocess.CalledProcessError:
         audit.ok("踩坑信号", "无法访问 git 历史，跳过检查")
 
