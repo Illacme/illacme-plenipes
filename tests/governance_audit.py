@@ -384,6 +384,24 @@ def check_simulation_test_coverage(audit):
     else:
         audit.ok("仿真测试覆盖", f"全部 {len(required_phases)} 个核心阶段均存在")
 
+def check_simulation_execution(audit):
+    """[AEL-Iter-009] 动态运行核心业务的影子沙盒边界测试，拦截由逻辑错误导致代码提交"""
+    try:
+        result = subprocess.run(
+            [sys.executable, "tests/autonomous_simulation.py"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            audit.ok("仿真运行健康", "影子执行全部验证通过，无运行时异常")
+        else:
+            error_lines = result.stderr.strip().split('\n')[-3:]
+            if not any(error_lines):
+                error_lines = result.stdout.strip().split('\n')[-3:]
+            err_msg = " | ".join(error_lines)
+            audit.fail("仿真运行异常", f"测试挂掉 (exit {result.returncode})\n尾部报错: {err_msg}")
+    except Exception as e:
+        audit.fail("仿真运行异常", f"无法启动仿真进程：{str(e)}")
+
 
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
@@ -428,7 +446,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v2.0 (完全体)")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v3.0 (动静结合版)")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -438,52 +456,55 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/16] 历史归档完整性...")
+    print("\n📂  [1/17] 历史归档完整性...")
     check_empty_history_dirs(audit)
 
-    print("\n🔒  [2/16] Git 状态泄露检测...")
+    print("\n🔒  [2/17] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/16] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/17] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/16] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/17] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/16] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/17] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/16] 项目进化记录新鲜度...")
+    print("\n🧬  [6/17] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/16] Boot Chain 完整性...")
+    print("\n🔗  [7/17] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/16] 零占位符协议...")
+    print("\n🚫  [8/17] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/16] 工业级注释主权...")
+    print("\n📝  [9/17] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/16] 防爆钩子治理...")
+    print("\n⚡  [10/17] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/16] Pre-commit Hook 安装...")
+    print("\n🔧  [11/17] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/16] 运行时产物泄露检测...")
+    print("\n🗑️  [12/17] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n📋  [13/16] 文档更新质量...")
+    print("\n📋  [13/17] 文档更新质量...")
     check_docs_update_quality(audit)
 
-    print("\n🗺️  [14/16] ROADMAP 新鲜度...")
+    print("\n🗺️  [14/17] ROADMAP 新鲜度...")
     check_roadmap_freshness(audit)
 
-    print("\n🧪  [15/16] 仿真测试覆盖度...")
+    print("\n🧪  [15/17] 仿真测试静态存在性...")
     check_simulation_test_coverage(audit)
 
-    print("\n🪞  [16/16] 元审计：自身覆盖度...")
+    print("\n⚔️  [16/17] 仿真引擎物理试运行 (动)...")
+    check_simulation_execution(audit)
+
+    print("\n🪞  [17/17] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
