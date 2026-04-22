@@ -677,6 +677,50 @@ def check_comment_retention(audit):
     except subprocess.CalledProcessError:
         audit.ok("注释保护", "非 Git 暂存区上下文，跳过检查")
 
+def check_lesson_signal_acknowledgment(audit):
+    """[AEL-Iter-016] 踩坑教训信号检测：当最近提交含 fix/hotfix/revert 时，确认 evolution_records 已更新或标记 [NO-LESSON]"""
+    try:
+        # 检查最近 5 次提交是否含修复信号
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-5", "--format=%s"],
+            capture_output=True, text=True, check=True
+        )
+        fix_pattern = re.compile(r'\bfix\b|\bhotfix\b|\brevert\b|\bbug\b', re.IGNORECASE)
+        has_fix_signal = any(fix_pattern.search(msg) for msg in result.stdout.strip().split("\n") if msg.strip())
+        
+        if not has_fix_signal:
+            audit.ok("踩坑信号", "最近提交未检测到修复信号，无需强制教训沉淀")
+            return
+            
+        # 检查 evolution_records.md 今天是否有新条目
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        evo_path = ".plenipes/evolution_records.md"
+        evo_updated_today = False
+        if os.path.isfile(evo_path):
+            with open(evo_path, 'r', encoding='utf-8') as f:
+                if today in f.read():
+                    evo_updated_today = True
+        
+        if evo_updated_today:
+            audit.ok("踩坑信号", f"evolution_records.md 在 {today} 已有新条目，教训已沉淀")
+            return
+        
+        # 检查 commit message 是否包含 [NO-LESSON] 豁免标记
+        no_lesson = subprocess.run(
+            ["git", "log", "--oneline", "-3", "--format=%s"],
+            capture_output=True, text=True, check=True
+        )
+        if "[NO-LESSON]" in no_lesson.stdout:
+            audit.ok("踩坑信号", "最近提交含 [NO-LESSON] 豁免标记，确认无需沉淀")
+            return
+            
+        audit.warn("踩坑信号",
+                   "最近提交含 fix/hotfix/revert 标记，但 evolution_records.md 今日未更新。"
+                   "请确认是否需要追加教训，或在 commit message 中标记 [NO-LESSON]")
+    except subprocess.CalledProcessError:
+        audit.ok("踩坑信号", "无法访问 git 历史，跳过检查")
+
 
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
@@ -721,92 +765,94 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("\n🛡️  Illacme-plenipes 治理自审引擎 v4.2 (全域硬约束 + 防裁剪版)")
+    print("\n🛡️  Illacme-plenipes 治理自审引擎 v4.3 (全域硬约束 + 事件驱动教训版)")
     print("=" * 60)
 
-    # 切换到项目根目录（如果从别的位置调用）
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     os.chdir(project_root)
 
     audit = AuditResult()
 
-    print("\n📂  [1/26] 历史归档完整性...")
+    print("\n📂  [1/27] 历史归档完整性...")
     check_history_artifacts_completeness(audit)
 
-    print("\n🔒  [2/26] Git 状态泄露检测...")
+    print("\n🔒  [2/27] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/26] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/27] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/26] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/27] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/26] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/27] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/26] 项目进化记录新鲜度...")
+    print("\n🧬  [6/27] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/26] Boot Chain 完整性...")
+    print("\n🔗  [7/27] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/26] 零占位符协议...")
+    print("\n🚫  [8/27] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/26] 工业级注释主权...")
+    print("\n📝  [9/27] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/26] 防爆钩子治理...")
+    print("\n⚡  [10/27] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/26] Pre-commit Hook 安装...")
+    print("\n🔧  [11/27] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/26] 运行时产物泄露检测...")
+    print("\n🗑️  [12/27] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n📋  [13/26] 文档更新质量...")
+    print("\n📋  [13/27] 文档更新质量...")
     check_docs_update_quality(audit)
 
-    print("\n🗺️  [14/26] ROADMAP 新鲜度...")
+    print("\n🗺️  [14/27] ROADMAP 新鲜度...")
     check_roadmap_freshness(audit)
 
-    print("\n🧪  [15/26] 仿真测试静态存在性...")
+    print("\n🧪  [15/27] 仿真测试静态存在性...")
     check_simulation_test_coverage(audit)
 
-    print("\n⚔️  [16/26] 仿真引擎物理试运行 (动)...")
+    print("\n⚔️  [16/27] 仿真引擎物理试运行 (动)...")
     check_simulation_execution(audit)
 
-    print("\n🏷️  [17/26] AEL 代码溯源打标...")
+    print("\n🏷️  [17/27] AEL 代码溯源打标...")
     check_iter_id_tagging(audit)
 
-    print("\n🏛️  [18/26] 核心架构指纹保护...")
+    print("\n🏛️  [18/27] 核心架构指纹保护...")
     check_core_architecture_fingerprint(audit)
 
-    print("\n🔐  [19/26] 防御性编程静态拦截...")
+    print("\n🔐  [19/27] 防御性编程静态拦截...")
     check_defensive_coding_patterns(audit)
 
-    print("\n🧠  [20/26] 全局知识反哺新鲜度...")
+    print("\n🧠  [20/27] 全局知识反哺新鲜度...")
     check_global_ki_evolution_freshness(audit)
 
-    print("\n📎  [21/26] 文档靶向精准绑定...")
+    print("\n📎  [21/27] 文档靶向精准绑定...")
     check_docs_targeted_binding(audit)
 
-    print("\n🚨  [22/26] 工作区遺漏检测...")
+    print("\n🚨  [22/27] 工作区遺漏检测...")
     check_no_unstaged_leftovers(audit)
 
-    print("\n🧪  [23/26] 演化必测...")
+    print("\n🧪  [23/27] 演化必测...")
     check_test_on_evolution(audit)
 
-    print("\n✂️  [24/26] 代码不可裁剪...")
+    print("\n✂️  [24/27] 代码不可裁剪...")
     check_no_mass_deletion(audit)
 
-    print("\n💬  [25/26] 注释不可删除...")
+    print("\n💬  [25/27] 注释不可删除...")
     check_comment_retention(audit)
 
-    print("\n🪞  [26/26] 元审计：自身覆盖度...")
+    print("\n🧠  [26/27] 踩坑信号检测...")
+    check_lesson_signal_acknowledgment(audit)
+
+    print("\n🪞  [27/27] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
