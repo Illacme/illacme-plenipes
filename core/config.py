@@ -319,14 +319,14 @@ class ConfigManager:
                         init_data[name] = val
             return cls(**init_data)
 
-        # 🚀 兼容性逻辑复归
+        # 🚀 兼容性逻辑复归 [AEL-Iter-013] SAFE-INDEX 豁免标记注入
         if 'system' in self._raw_config:
-            s = self._raw_config['system']
+            s = self._raw_config['system']  # SAFE-INDEX: guarded by 'in' check above
             if 'system_tuning' in self._raw_config:
-                tuning = self._raw_config['system_tuning']
+                tuning = self._raw_config['system_tuning']  # SAFE-INDEX: guarded by 'in' check above
                 if 'max_concurrent_workers' in tuning: s['max_workers'] = tuning['max_concurrent_workers']
             if 'network_settings' in self._raw_config:
-                s['network_settings'] = self._raw_config['network_settings']
+                s['network_settings'] = self._raw_config['network_settings']  # SAFE-INDEX: guarded by 'in' check above
 
         return from_dict(Configuration, self._raw_config)
 

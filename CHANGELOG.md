@@ -2,6 +2,16 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+## [v4.0-Governance] - 2026-04-23
+### Added
+- 治理自审引擎升级至 v4.0（22 项检查），新增 5 项硬约束检查：
+  - [AEL-Iter-013/P1] 代码溯源打标 — 强制 core/ 变更必须包含 `[AEL-Iter-ID]` 标记
+  - [AEL-Iter-013/P2] 核心架构指纹保护 — 7 个神圣签名永久监控
+  - [AEL-Iter-013/P3] 防御性编程静态拦截 — 检测裸索引访问（`config["key"]`）
+  - [AEL-Iter-013/P4] 全局知识反哺新鲜度 — 跨项目 KI 进化记录活跃度监控
+  - [AEL-Iter-013/P5] 文档靶向精准绑定 — 代码域→文档域强制映射
+- `core/config.py` 新增 `# SAFE-INDEX` 豁免标记机制
+
 ## [v34.5-Flagship] - 2026-04-19
 
 ### 🚀 新增 (Added)
