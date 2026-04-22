@@ -46,3 +46,8 @@ These project-specific rules extend the Global Integrity Protocols and must be s
     1. **项目层** `.plenipes/evolution_records.md`：沉淀本项目专属的技术踩坑、架构决策与配置边界。
     2. **全局层** 全局 KI `evolution_records.md`：沉淀跨项目通用的 AI 行为纪律与工具使用教训。
   未执行双轨沉淀的迭代视为"知识自杀"，其教训将随对话消亡。
+
+## X. 治理自审 (Governance Self-Audit)
+- **每轮必审 (Mandatory Post-Iteration Audit)**：每次迭代结束后、`git commit` 前，智能体必须执行 `python3 tests/governance_audit.py`。只有全部检查项通过（0 失败）才允许提交。
+- **自审进化 (Audit Evolution)**：智能体在实战中发现新的反模式时，必须主动向 `tests/governance_audit.py` 追加新的检查函数。自审清单本身也是一个会呼吸的活文档。
+- **人类审计解放**：此机制的终极目标是让 AI 承担 100% 的治理巡检责任，将人类从"手动查阅发现问题"的低效循环中彻底解放。
