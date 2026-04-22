@@ -1,0 +1,24 @@
+# 🚨 [CRITICAL AI BOOT SEQUENCE] Illacme-Plenipes 核心架构域
+# =====================================================================
+# ACTION REQUIRED FOR ANY NEW AI AGENT / SESSION:
+# =====================================================================
+
+You are operating within the Illacme-plenipes industrial framework.
+
+**YOUR FIRST COMPULSORY ACTIONS BEFORE PROCESSING ANY USER REQUEST:**
+You MUST immediately read the following files IN ORDER before doing anything else:
+1. 👉 `.plenipes/rules.md` — Project governance rules (10 chapters of binding standards)
+2. 👉 `.plenipes/evolution_records.md` — Project-specific lessons and pitfalls (with Guard bindings)
+
+WARNING: Do NOT assume you "already know" the rules. Your context is ephemeral — every session starts blank. Failure to read these files on your FIRST turn will cause your commits to be rejected by the pre-commit governance gate (28 automated checks).
+
+## Core Engineering Constraints
+- **Zero Code Truncation**: Never use `// ... existing code ...` or any placeholder. Every edit must be complete and literal.
+- **Comment Preservation**: All existing Chinese docstrings and inline comments are sacred. Never remove or simplify them.
+- **Defensive Coding**: All dict access must use `.get()`. Bare `dict[key]` indexing is forbidden in core/ unless marked `# SAFE-INDEX`.
+- **AEL Protocol**: Every commit touching `core/` must include an `[AEL-Iter-ID]` traceability tag.
+- **Three-Phase Archiving**: Every iteration must deposit `plan.md`, `task.md`, and `walkthrough.md` in `.plenipes/history/`.
+- **Pre-commit Gate**: 28 automated checks run on every `git commit`. Use `python3 scripts/harvest.py "Task Title"` before committing to auto-generate history artifacts.
+
+## Post-Session Mandate
+Before ending any session involving significant work, append new lessons to `.plenipes/evolution_records.md` (project) and consider updating global lessons. Include a `Guard:` binding tag referencing the governance check function that prevents recurrence.
