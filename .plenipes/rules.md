@@ -38,3 +38,7 @@ These project-specific rules extend the Global Integrity Protocols and must be s
 - **算力熔断 (Token/TCG)**：单次自主迭代的估算 Token 消耗不得超过 50k。一旦触线，哨兵将强制挂起任务并提交成本分析，等候人工注资许可。
 - **意图溯源 (Traceable Intent)**：所有 AI 生成或修改的代码块必须包含 `[AEL-Iter-ID]` 标签。禁止产生任何无法溯源至历史归档（`.plenipes/history/`）的“孤儿代码”。
 - **架构复健 (TDR)**：每 4 次业务特性迭代后，必须自动触发 1 次架构解耦迭代。
+
+## IX. 规则元进化 (Meta-Evolution)
+- **动态反哺 (Dynamic Feedback)**：在每次完整的迭代或 BUG 修复中，一旦智能体推导出了能避免未来报错的架构边界、Git 拦截钩子，或是确立了新的防御逻辑，智能体**拥有最高裁量权**自动更新和扩充本规则文件（`.plenipes/rules.md`）！严禁依靠模拟器事后惩罚报错来学习，必须通过“修宪法”来打通事前预防的认知循环。
+- **自主迭代边界拓展**：把 `rules.md` 视作会呼吸的动态记忆器官，所有属于项目维度的共识必须第一时间沉淀入此处，避免 AI 本地沙盒脑暴清空后导致的“工程失忆”。这是实现 Agent 越开发越聪明的唯一合法路径。
