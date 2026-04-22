@@ -264,6 +264,54 @@ def check_simulation_hook_exists(audit):
     else:
         audit.ok("防爆钩子治理", "verify_docs_sync_hook 物理存在且完好")
 
+
+def check_precommit_hook_exists(audit):
+    """[AEL-Iter-007] 检查 Git pre-commit hook 是否已安装"""
+    hook_path = ".git/hooks/pre-commit"
+    if not os.path.isfile(hook_path):
+        audit.fail("Pre-commit Hook",
+                   f"{hook_path} 不存在。请执行 sh scripts/setup-hooks.sh 安装。")
+        return
+    if not os.access(hook_path, os.X_OK):
+        audit.fail("Pre-commit Hook", f"{hook_path} 存在但不可执行（缺少 +x 权限）")
+        return
+    with open(hook_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "governance_audit" in content:
+        audit.ok("Pre-commit Hook", "已安装且指向 governance_audit.py")
+    else:
+        audit.warn("Pre-commit Hook", "hook 存在但未调用 governance_audit.py")
+
+
+def check_untracked_runtime_artifacts(audit):
+    """[AEL-Iter-007] 检测工作区中疑似运行时产物但未被 .gitignore 覆盖的文件"""
+    runtime_extensions = {".json", ".db", ".sqlite", ".log", ".cache", ".tmp"}
+    runtime_names = {"ledger", "timeline", "sentinel", "shadow", "cache"}
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain", "-u"], capture_output=True, text=True, check=True
+        )
+        untracked = [
+            line[3:] for line in result.stdout.strip().split("\n")
+            if line.startswith("??")
+        ]
+        suspects = []
+        for f in untracked:
+            basename = os.path.basename(f).lower()
+            _, ext = os.path.splitext(basename)
+            if ext in runtime_extensions:
+                if any(kw in basename for kw in runtime_names):
+                    suspects.append(f)
+        if suspects:
+            audit.warn("运行时产物泄露",
+                       f"发现 {len(suspects)} 个疑似状态文件未被 .gitignore 覆盖: "
+                       f"{', '.join(suspects[:5])}。请确认是否需要加入 .gitignore。")
+        else:
+            audit.ok("运行时产物检测", "未发现可疑的未追踪运行时文件")
+    except subprocess.CalledProcessError:
+        audit.warn("运行时产物检测", "无法执行 git status")
+
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -307,7 +355,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v1.1")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v1.2")
     print("=" * 60)
 
     # 切换到项目根目录（如果从别的位置调用）
@@ -317,37 +365,43 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/11] 历史归档完整性...")
+    print("\n📂  [1/13] 历史归档完整性...")
     check_empty_history_dirs(audit)
 
-    print("\n🔒  [2/11] Git 状态泄露检测...")
+    print("\n🔒  [2/13] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/11] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/13] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/11] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/13] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/11] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/13] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/11] 项目进化记录新鲜度...")
+    print("\n🧬  [6/13] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/11] Boot Chain 完整性...")
+    print("\n🔗  [7/13] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/11] 零占位符协议...")
+    print("\n🚫  [8/13] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/11] 工业级注释主权...")
+    print("\n📝  [9/13] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/11] 防爆钩子治理...")
+    print("\n⚡  [10/13] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🪞  [11/11] 元审计：自身覆盖度...")
+    print("\n🔧  [11/13] Pre-commit Hook 安装...")
+    check_precommit_hook_exists(audit)
+
+    print("\n🗑️  [12/13] 运行时产物泄露检测...")
+    check_untracked_runtime_artifacts(audit)
+
+    print("\n🪞  [13/13] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
