@@ -2,15 +2,23 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
-## [v4.0-Governance] - 2026-04-23
-### Added
-- 治理自审引擎升级至 v4.0（22 项检查），新增 5 项硬约束检查：
-  - [AEL-Iter-013/P1] 代码溯源打标 — 强制 core/ 变更必须包含 `[AEL-Iter-ID]` 标记
-  - [AEL-Iter-013/P2] 核心架构指纹保护 — 7 个神圣签名永久监控
-  - [AEL-Iter-013/P3] 防御性编程静态拦截 — 检测裸索引访问（`config["key"]`）
-  - [AEL-Iter-013/P4] 全局知识反哺新鲜度 — 跨项目 KI 进化记录活跃度监控
-  - [AEL-Iter-013/P5] 文档靶向精准绑定 — 代码域→文档域强制映射
-- `core/config.py` 新增 `# SAFE-INDEX` 豁免标记机制
+## [v4.4-Governance] - 2026-04-23
+### 🚀 全自动治理框架里程碑 (Major Governance Milestones)
+- **治理引擎升级至 v4.4**：自审清单扩展至 28 项硬约束检查，实现全链路自治。
+- **踩坑自闭环 (Self-Healing Lessons)**：
+  - 新增“信号探测仪”：自动扫描修复模式（fix/bug/error）并强制要求沉淀教训。
+  - **Guard 绑定协议**：物理校验 `evolution_records.md` 中的每一条教训是否都关联了有效的治理检查函数。
+- **架构复健节律 (TDR Rhythm)**：引入业务迭代计数器，强制每 5-8 次特性开发后必须进行一次架构解耦迭代。
+- **全 IDE 基因对齐**：同步发布 `.cursorrules`, `.continuerules`, `.windsurfrules`, `.github/copilot-instructions.md`，实现跨平台 AI 行为一致性。
+
+### 🛡️ 硬约束增强 (Added Checks)
+- **[AEL-Iter-014/v4.2] 物理防裁剪**：新增 `check_no_mass_deletion` 与 `check_comment_retention`，严禁 AI 大规模裁剪代码或删除注释。
+- **[AEL-Iter-014/v4.2] 遗漏探测**：新增 `check_no_unstaged_leftovers`，物理阻断“部分暂存”导致的提交不全。
+- **[AEL-Iter-015/v4.2] 演化必测**：核心逻辑变更强制附带物理测试代码。
+
+### 🔧 基础设施优化 (Fixed)
+- **收割机自愈**：重构 `harvest.py` 为物理编号扫描模式，彻底解决高频迭代下的迭代号（Iter_NNN）冲突。
+- **教训双轨沉淀**：确立全局/项目双层教训存款机制，防止“工程失忆”。
 
 ## [v34.5-Flagship] - 2026-04-19
 
