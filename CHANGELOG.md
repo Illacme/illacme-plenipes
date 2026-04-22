@@ -33,3 +33,4 @@
 - **chore(governance)**: Upgraded .gitignore to fully block V34.5+ local artifacts like ledger and timeline, ensuring a clean git tree.
 - **feat(governance)**: Enacted Rule Meta-Evolution in rules.md. Agent is now explicitly authorized to amend governance rules proactively based on battle lessons to prevent recurrent assertion failures.
 - **feat(governance)**: Injected Boot Sequence Reflex (BSR) into .antigravityrules, .cursorrules, and global KI protocols. AI agents are now forced to physically read rules on first turn.
+- **feat(governance)**: Split evolution_records.md into global (universal) and project-specific (illacme) layers with dual read/write mandates.
