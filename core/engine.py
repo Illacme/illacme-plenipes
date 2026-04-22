@@ -168,6 +168,7 @@ class IllacmeEngine:
             paths=self.paths, meta=self.meta, route_manager=self.route_manager,
             asset_pipeline=self.asset_pipeline, ssg_adapter=self.ssg_adapter,
             mdx_resolver=self.mdx_resolver, syndicator=self.syndicator,
+            broadcaster=self.broadcaster,
             pub_cfg=self.pub_cfg, 
             fm_order=self.fm_order,
             asset_base_url=self.asset_base_url,

@@ -88,7 +88,11 @@ class AIScheduler:
                         if engine.config.system.verbose_ai_logs:
                             logger.info(f"🌐 [AI 翻译] 正在将正文及元数据转换为目标语言 ({code})...")
                         
+                        if engine.config.system.verbose_ai_logs:
+                            logger.info(f"🌐 [AI 翻译] 正在将正文及元数据转换为目标语言 ({code})...")
+                        
                         final_body = engine.translator.translate(ctx.masked_source, source_lang_name, target_lang_name)
+                        print(f"DEBUG: [Scheduler] Translation Success for {code} | Body Length: {len(final_body)}")
                         
                         if target_fm.get('title'):
                             meta_prompt = f"Target: Translate this title to {target_lang_name}. Rule: Output ONLY the translated string, NO quotes, NO explanation, NO conversational filler. Title: '{target_fm['title']}'"
@@ -96,6 +100,7 @@ class AIScheduler:
                             target_fm['title'] = raw_title.replace('"', '').replace('\n', '').strip()
                             
                     except Exception as e:
+                        print(f"DEBUG: [Scheduler] Failed {code}: {e}")
                         logger.warning(f"⚠️ [翻译失败] 文章 {rel_path} ({code}) 翻译过程中断: {e}")
                         target_health = False
             
@@ -107,6 +112,7 @@ class AIScheduler:
             futures = [executor.submit(process_target, t) for t in targets]
             for future in concurrent.futures.as_completed(futures):
                 res = future.result()
+                print(f"DEBUG: [Scheduler] Future Result for {res[0] if res else 'None'} received.")
                 if res:
                     t_code, t_body, t_fm, t_health = res
                     if not t_health: 
@@ -117,6 +123,7 @@ class AIScheduler:
                     if is_watch_mode and not is_dry_run:
                         time.sleep(0.2)
                         
+                    print(f"DEBUG: [Scheduler] Dispatching {t_code}...")
                     engine.dispatcher.dispatch(
                         engine.asset_index, ctx.title, ctx.slug, t_body, t_fm, rel_path,
                         t_code, route_prefix, route_source, ctx.mapped_sub_dir, ctx.masks,

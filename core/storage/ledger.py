@@ -166,6 +166,41 @@ class MetadataManager:
                     return result
         return None
 
+    # ==========================================
+    # 🖼️ [V34.8] 全域资产语义登记逻辑 (Global Asset Registry)
+    # ==========================================
+    def register_asset_metadata(self, asset_hash, alt_text=None, lang="zh", metadata=None):
+        """
+        🚀 资产指纹注册中心：支持多语言语义固化与复用
+        """
+        if not asset_hash: return
+        with self.lock:
+            if "asset_registry" not in self.data:
+                self.data["asset_registry"] = {}
+            
+            if asset_hash not in self.data["asset_registry"]:
+                self.data["asset_registry"][asset_hash] = {"alt_texts": {}}
+            
+            registry = self.data["asset_registry"][asset_hash]
+            if "alt_texts" not in registry: registry["alt_texts"] = {}
+            
+            if alt_text is not None: 
+                registry["alt_texts"][lang] = alt_text
+                # 兼容旧版：保留一个主引用
+                registry["alt_text"] = alt_text
+                
+            if metadata is not None: registry.update(metadata)
+            
+            registry["last_seen"] = int(time.time())
+            self._dirty = True
+
+    def get_asset_metadata(self, asset_hash):
+        """获取特定资产的语义元数据快照"""
+        if not asset_hash: return None
+        with self.lock:
+            registry = self.data.get("asset_registry", {})
+            return registry.get(asset_hash, {}).copy()
+
     def resolve_link(self, link_text):
         """
         🚀 数字花园防断链中枢：根据 Obsidian 双链文本，解析出物理相对路径

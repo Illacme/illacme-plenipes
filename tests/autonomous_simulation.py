@@ -87,6 +87,7 @@ def run_shadow_simulation():
         shutil.copy("config.yaml", os.path.join(tmpdir, "config.yaml"))
         
         os.makedirs(os.path.join(tmpdir, "content-vault"), exist_ok=True)
+        os.makedirs(os.path.join(tmpdir, ".plenipes"), exist_ok=True)
         
         # 3. 挂载仿真引擎
         try:
@@ -196,18 +197,20 @@ def run_shadow_simulation():
             
             if not os.path.exists(en_file_path):
                 # 尝试递归查找以应对不同的 Route Prefix 逻辑
-                logger.debug(f"🔍 [补救尝试] 正在搜索翻译后的影子资产: {actual_shadow_root}")
+                logger.debug(f"🔍 [补救尝试] 正在搜索翻译后的影子资产: {actual_shadow_root}/en")
                 found = False
-                for root, dirs, files in os.walk(actual_shadow_root):
-                    for f in files:
-                        if "vision-test-slug" in f:
-                            en_file_path = os.path.join(root, f)
-                            found = True
-                            break
-                    if found: break
+                en_search_root = os.path.join(actual_shadow_root, "en")
+                if os.path.exists(en_search_root):
+                    for root, dirs, files in os.walk(en_search_root):
+                        for f in files:
+                            if "vision-test-slug" in f:
+                                en_file_path = os.path.join(root, f)
+                                found = True
+                                break
+                        if found: break
                 
                 if not found:
-                    raise Exception(f"未发现翻译后的目标语言影子资产。搜索起点: {actual_shadow_root}")
+                    raise Exception(f"未发现翻译后的目标语言影子资产。搜索起点: {en_search_root}")
                 
             with open(en_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()

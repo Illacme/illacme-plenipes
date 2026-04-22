@@ -25,8 +25,11 @@ logger = logging.getLogger("Illacme.plenipes")
 # ==========================================
 # 🛡️ 工业级网络池基建 (Enterprise Network Session)
 # ==========================================
-def build_resilient_session(retries=3, backoff_factor=1.0):
+def build_resilient_session(retries=3, backoff_factor=1.0, proxies=None):
     session = requests.Session()
+    if proxies:
+        session.proxies.update(proxies)
+        
     retry_strategy = Retry(
         total=retries, read=retries, connect=retries,
         backoff_factor=backoff_factor,
@@ -56,7 +59,18 @@ class BaseTranslator:
             self.node_cfg = TranslationProvider()
         
         self.timeout = trans_cfg.api_timeout
-        self.session = build_resilient_session(retries=trans_cfg.max_retries, backoff_factor=1.0)
+        
+        # 🚀 [V36.0] 智能代理调度：优先节点代理，次之全局代理
+        proxy_url = getattr(self.node_cfg, 'proxy', '') or getattr(trans_cfg, 'global_proxy', '')
+        proxies = None
+        if proxy_url:
+            proxies = {"http": proxy_url, "https": proxy_url}
+            
+        self.session = build_resilient_session(
+            retries=trans_cfg.max_retries, 
+            backoff_factor=1.0, 
+            proxies=proxies
+        )
         
         # 算力语义参数注入 (由 ConfigManager 归一化)
         self.temperature = trans_cfg.temperature
@@ -158,6 +172,13 @@ class BaseTranslator:
             res = self._do_translate(chunk, source_lang, target_lang, context_type)
             translated_chunks.append(res)
         return "\n".join(translated_chunks)
+
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        """
+        🚀 [V36.0] 统一多模态感知接口模板
+        默认实现返回 None，由具体的 AI 适配器进行深度复合。
+        """
+        return None
 
     def _get_task_constraints(self, context_type, source_lang=None, target_lang=None):
         """
@@ -314,6 +335,42 @@ class OllamaTranslator(BaseTranslator):
         resp.raise_for_status()
         return resp.json().get('response', "")
 
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        """
+        🚀 [V36.0] Ollama 本地多模态协议实现 (适配 LLaVA / Qwen-VL)
+        """
+        import base64
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        
+        prompt = (
+            "Analyze this image and its context. Generate a concise SEO alt-text. "
+            f"Context: {context_text[:200]}"
+        )
+        
+        # Ollama 推荐使用 /api/chat 协议进行图文交互
+        chat_endpoint = self.endpoint.replace('/api/generate', '/api/chat')
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt,
+                    "images": [base64_image]
+                }
+            ],
+            "stream": False
+        }
+        
+        try:
+            resp = self.session.post(chat_endpoint, json=payload, timeout=self.timeout)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get('message', {}).get('content', "").strip()
+        except Exception as e:
+            logger.debug(f"Ollama Vision 尝试失败: {e}")
+            
+        return None
+
 class OpenAICompatibleTranslator(BaseTranslator):
     """🔵 OpenAI 兼容协议 (支持自动路径纠偏)"""
     def __init__(self, provider_id, trans_cfg, custom_prompts=None):
@@ -367,6 +424,61 @@ class OpenAICompatibleTranslator(BaseTranslator):
             # 捕获网络、SSL 或 JSON 解析异常，交由上层 FallbackStrategy 处理
             logger.warning(f"⚠️ AI 调用链路异常: {e}")
             raise  # 抛给 FallbackStrategy 切换备用节点
+
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        """
+        🚀 [V34.8 ADMI Pilot] OpenAI 兼容节点的视觉协议实现。
+        如果模型 ID 包含 vision 或 4o，尝试尝试多模态 Payload 投递。
+        """
+        import base64
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        
+        prompt = (
+            "You are an SEO expert. Analyze this image and its surrounding context. "
+            "Generate a concise, accurate, and descriptive image alt-text for SEO. "
+            "Output ONLY the description text, no quotes, no explanations.\n\n"
+            f"Surrounding Context: {context_text[:300]}"
+        )
+        
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}
+                    }
+                ]
+            }
+        ]
+        
+        payload = {"model": self.model, "messages": messages, "max_tokens": 100}
+        
+        try:
+            resp = self.session.post(self.endpoint, json=payload, headers=headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get('choices')[0].get('message', {}).get('content', "").strip()
+        except Exception as e:
+            logger.debug(f"OpenAI Vision 尝试失败: {e}")
+            
+        return None
+
+class DeepSeekR1Translator(OpenAICompatibleTranslator):
+    """🧠 DeepSeek-R1 推理模型专属适配器"""
+    def ai_call(self, prompt, sys_prompt=None):
+        # 1. 调用父类 OpenAI 接口获取原始响应
+        raw_res = super().ai_call(prompt, sys_prompt)
+        if not raw_res: return ""
+        
+        # 2. 🚀 [V36.0 Reasoning Guard] 深度清理内心独白
+        # 剥离所有处于 <think>...</think> 标签内的内容
+        cleaned_res = re.sub(r'<think>.*?</think>', '', raw_res, flags=re.DOTALL)
+        return cleaned_res.strip()
+
 class GeminiTranslator(BaseTranslator):
     """☁️ Google 原生协议"""
     def __init__(self, provider_id, trans_cfg, custom_prompts=None):
@@ -387,6 +499,49 @@ class GeminiTranslator(BaseTranslator):
         candidates = resp.json().get('candidates', [])
         return candidates[0]['content']['parts'][0]['text'] if candidates else ""
 
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        """
+        🚀 [V34.8 ADMI Pilot] Gemini 原生多模态视觉接口实现。
+        """
+        import base64
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        
+        prompt = (
+            "You are an SEO expert. Analyze this image and its surrounding context. "
+            "Generate a concise, accurate, and descriptive image alt-text for SEO. "
+            "Output ONLY the description text, no quotes, no explanations.\n\n"
+            f"Surrounding Context: {context_text[:300]}"
+        )
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": base64_image
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 100}
+        }
+        
+        try:
+            resp = self.session.post(self.endpoint, json=payload, timeout=self.timeout)
+            if resp.status_code == 200:
+                data = resp.json()
+                parts = data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+                if parts:
+                    return parts[0].get('text', "").strip()
+        except Exception as e:
+            logger.debug(f"Gemini Vision 尝试失败: {e}")
+            
+        return None
+
 class AnthropicTranslator(BaseTranslator):
     """🟣 Claude 原生协议"""
     def __init__(self, provider_id, trans_cfg, custom_prompts=None):
@@ -405,6 +560,55 @@ class AnthropicTranslator(BaseTranslator):
         resp = self.session.post(self.endpoint, json=payload, headers=headers, timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()['content'][0]['text']
+
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        """
+        🚀 [V36.0] Anthropic Claude 3.5 原生视觉协议实现
+        """
+        import base64
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        
+        prompt = (
+            "You are an SEO expert. Analyze this image and generate a concise alt-text. "
+            f"Context: {context_text[:200]}"
+        )
+        
+        headers = {
+            "x-api-key": self.api_key, 
+            "anthropic-version": "2023-06-01", 
+            "content-type": "application/json"
+        }
+        
+        payload = {
+            "model": self.model,
+            "max_tokens": 100,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": mime_type,
+                                "data": base64_image
+                            }
+                        },
+                        {"type": "text", "text": prompt}
+                    ]
+                }
+            ]
+        }
+        
+        try:
+            resp = self.session.post(self.endpoint, json=payload, headers=headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get('content', [{}])[0].get('text', "").strip()
+        except Exception as e:
+            logger.debug(f"Claude Vision 尝试失败: {e}")
+            
+        return None
 
 # ==========================================
 # 🧠 战术编排层 (Strategy Orchestrators)
@@ -440,6 +644,18 @@ class FallbackStrategy(BaseTranslator):
         except Exception:
             return self.fallback.generate_slug(text, is_dry_run)
 
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        try:
+            # 优先尝试在主节点执行视觉分析
+            if hasattr(self.primary, 'describe_image'):
+                return self.primary.describe_image(image_bytes, mime_type, context_text)
+            raise AttributeError("Primary node does not support vision.")
+        except Exception as e:
+            logger.warning(f"⚠️ [视觉备援] 主节点视觉分析失败 ({e})，正在切换至备用节点...")
+            if hasattr(self.fallback, 'describe_image'):
+                return self.fallback.describe_image(image_bytes, mime_type, context_text)
+            return None
+
 class SmartRoutingStrategy(BaseTranslator):
     def __init__(self, light_node, heavy_node, threshold=1000):
         self.light_node = light_node
@@ -465,6 +681,14 @@ class SmartRoutingStrategy(BaseTranslator):
             return self.light_node.generate_slug(text, is_dry_run)
         return self.heavy_node.generate_slug(text, is_dry_run)
 
+    def describe_image(self, image_bytes, mime_type, context_text=""):
+        # 视觉任务通常属于“重算力”，优先路由至 heavy_node
+        if hasattr(self.heavy_node, 'describe_image'):
+            return self.heavy_node.describe_image(image_bytes, mime_type, context_text)
+        if hasattr(self.light_node, 'describe_image'):
+            return self.light_node.describe_image(image_bytes, mime_type, context_text)
+        return None
+
 # ==========================================
 # 🏭 工厂与中枢总线 (Gateway Factory)
 # ==========================================
@@ -476,6 +700,7 @@ class TranslatorFactory:
         ptype = node_cfg.type
         if ptype == 'ollama': return OllamaTranslator(node_name, trans_cfg)
         if ptype == 'openai-compatible': return OpenAICompatibleTranslator(node_name, trans_cfg)
+        if ptype == 'deepseek-reasoner': return DeepSeekR1Translator(node_name, trans_cfg)
         if ptype == 'gemini': return GeminiTranslator(node_name, trans_cfg)
         if ptype == 'anthropic': return AnthropicTranslator(node_name, trans_cfg)
         raise ValueError(f"不支持的算力协议: {ptype}")

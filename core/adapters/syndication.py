@@ -122,7 +122,7 @@ class ContentSyndicator:
         except Exception as e:
             logger.error(f"🛑 [LinkedIn 投递失败]: {e}")
 
-    def syndicate(self, fm_dict, final_body, url_path):
+    def syndicate(self, fm_dict, final_body, url_path, ael_iter_id=None):
         if not self.enabled: return
 
         title = fm_dict.get('title', 'Untitled')
@@ -130,6 +130,8 @@ class ContentSyndicator:
         tags = fm_dict.get('tags', [])
         if isinstance(tags, str): tags = [t.strip() for t in tags.split(',') if t.strip()]
 
+        ael_tag = ael_iter_id or "AEL-LIVE-SYNC"
+        
         # 🚀 [V32.4] 物理消灭双斜杠，并将静态资产重排至公网哈希路径
         canonical_url = f"{self.site_url}/{url_path}".replace('//', '/').replace('https:/', 'https://').replace('http:/', 'http://')
         
@@ -217,6 +219,7 @@ class ContentSyndicator:
                 "event": "article.published",
                 "timestamp": int(time.time()),
                 "idempotency_key": content_hash,
+                "ael_iter_id": ael_tag, 
                 "metadata": {
                     "title": title, "description": desc, "tags": tags,
                     "canonical_url": canonical_url,

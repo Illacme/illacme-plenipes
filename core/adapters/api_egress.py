@@ -37,17 +37,16 @@ class WebhookBroadcaster:
         except Exception as e:
             logger.debug(f"⚠️ [生态破壁] 投递失败 (不影响主站运行): {url[:30]}... | 拦截原因: {e}")
 
-    def broadcast(self, title, rel_path, lang_code, mapped_sub_dir, slug):
-        """组装标准 JSON 卡片并异步发射 (多态路由版)"""
+    def broadcast(self, title, rel_path, lang_code, mapped_sub_dir, slug, ael_iter_id=None):
+        """组装标准 JSON 卡片并异步发射 (支持 AEL 溯源标签)"""
         if not self.enabled or not self.endpoints:
             return
 
         url_path = f"/{lang_code}/{mapped_sub_dir}/{slug}".replace('//', '/')
+        ael_tag = ael_iter_id or "AEL-LIVE-SYNC"
         
-        # 定义一个内部工厂，根据 URL 域名生成不同平台的专属卡片格式
         def build_payload(target_url):
             if 'feishu.cn' in target_url:
-                # 🚀 飞书富文本卡片格式
                 return {
                     "msg_type": "post",
                     "content": {
@@ -57,45 +56,42 @@ class WebhookBroadcaster:
                                 "content": [
                                     [{"tag": "text", "text": f"📚 标题: {title}"}],
                                     [{"tag": "text", "text": f"🌐 语种: {lang_code.upper()}"}],
-                                    [{"tag": "text", "text": f"🔗 预测路由: {url_path}"}]
+                                    [{"tag": "text", "text": f"🔗 预测路由: {url_path}"}],
+                                    [{"tag": "text", "text": f"🧬 溯源 ID: {ael_tag}"}]
                                 ]
                             }
                         }
                     }
                 }
             elif 'dingtalk.com' in target_url:
-                # 🚀 钉钉 Markdown 卡片格式
                 return {
                     "msgtype": "markdown",
                     "markdown": {
                         "title": f"Illacme 同步就绪: {title}",
-                        "text": f"### ✨ Illacme 引擎编译就绪\n- **标题**: {title}\n- **语种**: {lang_code.upper()}\n- **路由**: {url_path}\n> ⚡️ 状态: SSG 增量更新已触发。"
+                        "text": f"### ✨ Illacme 引擎编译就绪\n- **标题**: {title}\n- **语种**: {lang_code.upper()}\n- **路由**: {url_path}\n- **溯源 ID**: `{ael_tag}`\n> ⚡️ 状态: SSG 增量更新已触发。"
                     }
                 }
             elif 'qyapi.weixin.qq.com' in target_url:
-                # 🟢 企业微信 (WeCom) Markdown 机器人
                 return {
                     "msgtype": "markdown",
                     "markdown": {
-                        "content": f"### ✨ Illacme 引擎编译就绪\n> **标题**: {title}\n> **语种**: {lang_code.upper()}\n> **路由**: {url_path}\n> ⚡️ 状态: SSG 增量更新已触发。"
+                        "content": f"### ✨ Illacme 引擎编译就绪\n> **标题**: {title}\n> **语种**: {lang_code.upper()}\n> **路由**: {url_path}\n> **溯源 ID**: `{ael_tag}`\n> ⚡️ 状态: SSG 增量更新已触发。"
                     }
                 }
             elif 'api.telegram.org' in target_url:
-                # ✈️ Telegram Bot API
                 return {
-                    "text": f"✨ <b>Illacme 同步就绪</b>\n\n📚 <b>标题</b>: {title}\n🌐 <b>语种</b>: {lang_code.upper()}\n🔗 <b>路由</b>: {url_path}",
-                    "parse_mode": "HTML"  # 使用 HTML 模式最稳定，避免 Markdown 转义导致发送失败
+                    "text": f"✨ <b>Illacme 同步就绪</b>\n\n📚 <b>标题</b>: {title}\n🌐 <b>语种</b>: {lang_code.upper()}\n🔗 <b>路由</b>: {url_path}\n🧬 <b>溯源 ID</b>: <code>{ael_tag}</code>",
+                    "parse_mode": "HTML"
                 }
             else:
-                # 🌐 通用系统格式兜底
                 return {
                     "event": "document_published",
+                    "ael_iter_id": ael_tag,
                     "data": {
                         "title": title, "lang": lang_code, "relative_path": rel_path, "url_path": url_path
                     }
                 }
 
-        # 🚀 [调度层重构] 遍历目标，推入线程池排队执行，取代原有的无限裸线程起爆
         for url in self.endpoints:
             payload = build_payload(url)
             self.executor.submit(self._fire, url, payload)
