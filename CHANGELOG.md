@@ -38,3 +38,4 @@
 # hook test
 - **feat(governance)**: Added setup-hooks.sh for hook portability; 2 new audit checks (hook existence, runtime artifact detection).
 - **feat(governance)**: Governance audit v2.0 complete — 16 checks, zero gaps. All self-evolution mechanisms sealed.
+- **feat(governance)**: Upgrade to v3.0 (Dynamic Engine) with  checks, integrating actual simulation sandbox run directly into commit process.
