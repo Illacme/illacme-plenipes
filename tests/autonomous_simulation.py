@@ -51,9 +51,36 @@ def verify_docs_sync_hook():
             if path.startswith("docs/") or path.startswith("CHANGELOG.md") or path.startswith(".plenipes/ROADMAP.md"):
                 docs_modified = True
                 
-            # Rule 3: AEL History detect
+        # 获取当前所有的历史目录及其包含的文件
+        from collections import defaultdict
+        
+        history_files = set()
+        for line in changes.split('\n'):
+            if len(line) < 4: continue
+            path = line[3:]
             if path.startswith(".plenipes/history/"):
-                history_added = True
+                history_files.add(path)
+                
+        history_added = len(history_files) > 0
+        valid_history_found = False
+        
+        if history_added:
+            history_dirs = defaultdict(set)
+            for f in history_files:
+                parts = f.split('/')
+                if len(parts) >= 4:
+                    history_dirs[parts[2]].add(parts[-1])
+            
+            for d in history_dirs.keys():
+                full_dir = os.path.join(".plenipes/history", d)
+                if os.path.exists(full_dir):
+                    disk_files = os.listdir(full_dir)
+                    has_plan = "plan.md" in disk_files or "implementation_plan.md" in disk_files
+                    has_task = "task.md" in disk_files
+                    has_walk = "walkthrough.md" in disk_files or "acceptance.md" in disk_files
+                    if has_plan and has_task and has_walk:
+                        valid_history_found = True
+                        break
                 
         # Assertion 1: Living Documentation Mandate
         if core_modified and not docs_modified:
@@ -61,9 +88,12 @@ def verify_docs_sync_hook():
                                  "由于违反底层活化文档规范，测试已强行熔断。")
             
         # Assertion 2: Genetic Archiving (AEL) Mandate
-        if any_modified and not history_added:
-            raise AssertionError("[AEL Protocol Mandate] 检测到代码库发生物理变更，但未在 .plenipes/history/ 下沉淀本次迭代的实施方案与任务清单！\n"
-                                 "由于违反全自动演化矩阵基因沉淀规范，测试已强行熔断。")
+        if any_modified:
+            if not history_added:
+                raise AssertionError("[AEL Protocol Mandate] 检测到代码库发生物理变更，但未在 .plenipes/history/ 下沉淀本次迭代的实施方案与任务清单！\n"
+                                     "由于违反全自动演化矩阵基因沉淀规范，测试已强行熔断。")
+            if not valid_history_found:
+                raise AssertionError("[AEL Protocol Mandate] 当前迭代未满足三相强制规范 (缺失 plan/task/walkthrough 之一)，拒绝合并！")
             
         if any_modified:
             logger.info("   └── ✅ [AEL & TDR] 探测到历史归档与业务文档均已触发更新信号，约束已通过。")
