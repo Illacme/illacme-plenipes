@@ -722,6 +722,54 @@ def check_lesson_signal_acknowledgment(audit):
         audit.ok("踩坑信号", "无法访问 git 历史，跳过检查")
 
 
+def check_tdr_rhythm(audit):
+    """[AEL-Iter-016/C] 架构复健节律器：检测自上次 TDR 迭代以来的业务特性迭代次数"""
+    warn_threshold = 5    # 超过 5 次业务迭代未做 TDR → warn
+    fail_threshold = 8    # 超过 8 次 → fail
+    
+    # 治理/基建迭代的排除关键词（这些不计入业务迭代配额）
+    governance_keywords = [
+        'ael', 'governance', 'audit', 'lesson', 'tdr', 'boot',
+        'hygiene', 'evolution', 'hook', 'harvester', 'staging',
+        'leftover', 'detection', 'hardening', 'guard', 'meta',
+    ]
+    
+    history_dir = ".plenipes/history"
+    if not os.path.isdir(history_dir):
+        audit.ok("TDR 节律", "history 目录不存在，跳过检查")
+        return
+    
+    entries = sorted(os.listdir(history_dir))
+    
+    # 找到最后一次 TDR 迭代的位置
+    last_tdr_idx = -1
+    for i, entry in enumerate(entries):
+        if 'TDR' in entry.upper():
+            last_tdr_idx = i
+    
+    # 统计最后一次 TDR 之后的“业务特性”迭代数
+    feature_count = 0
+    feature_list = []
+    for entry in entries[last_tdr_idx + 1:]:
+        entry_lower = entry.lower()
+        is_governance = any(kw in entry_lower for kw in governance_keywords)
+        if not is_governance:
+            feature_count += 1
+            feature_list.append(entry)
+    
+    if feature_count >= fail_threshold:
+        audit.fail("TDR 节律",
+                   f"自上次 TDR 以来已经累计 {feature_count} 次业务迭代（阈值 {fail_threshold}），"
+                   f"必须立即执行一次架构复健！最近业务迭代: {', '.join(f[:30] for f in feature_list[-3:])}")
+    elif feature_count >= warn_threshold:
+        audit.warn("TDR 节律",
+                   f"自上次 TDR 以来已累计 {feature_count} 次业务迭代（阈值 {warn_threshold}），"
+                   f"建议尽快安排架构复健迭代 (TDR-Iter-NNN)")
+    else:
+        remaining = warn_threshold - feature_count
+        audit.ok("TDR 节律", f"距下次强制 TDR 还剩 {remaining} 次业务迭代配额")
+
+
 def check_audit_self_coverage(audit):
     """[AEL-Iter-006] 元审计：检查本脚本的检查项是否覆盖了全部进化记录中的教训"""
     total_evo_count = 0
@@ -765,7 +813,7 @@ def check_audit_self_coverage(audit):
 # ──────────────────────────────────────────────
 
 def main():
-    print("\n🛡️  Illacme-plenipes 治理自审引擎 v4.3 (全域硬约束 + 事件驱动教训版)")
+    print("\n🛡️  Illacme-plenipes 治理自审引擎 v4.4 (全域硬约束 + TDR 节律器版)")
     print("=" * 60)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -774,85 +822,88 @@ def main():
 
     audit = AuditResult()
 
-    print("\n📂  [1/27] 历史归档完整性...")
+    print("\n📂  [1/28] 历史归档完整性...")
     check_history_artifacts_completeness(audit)
 
-    print("\n🔒  [2/27] Git 状态泄露检测...")
+    print("\n🔒  [2/28] Git 状态泄露检测...")
     check_git_tracked_state_files(audit)
 
-    print("\n📄  [3/27] Boot Chain 必要文件存在性...")
+    print("\n📄  [3/28] Boot Chain 必要文件存在性...")
     check_mandatory_files_exist(audit)
 
-    print("\n🌐  [4/27] 全局 KI 项目污染检测...")
+    print("\n🌐  [4/28] 全局 KI 项目污染检测...")
     check_global_ki_no_project_keywords(audit)
 
-    print("\n🛡️  [5/27] .gitignore 规则覆盖度...")
+    print("\n🛡️  [5/28] .gitignore 规则覆盖度...")
     check_gitignore_coverage(audit)
 
-    print("\n🧬  [6/27] 项目进化记录新鲜度...")
+    print("\n🧬  [6/28] 项目进化记录新鲜度...")
     check_evolution_records_freshness(audit)
 
-    print("\n🔗  [7/27] Boot Chain 完整性...")
+    print("\n🔗  [7/28] Boot Chain 完整性...")
     check_boot_chain_integrity(audit)
 
-    print("\n🚫  [8/27] 零占位符协议...")
+    print("\n🚫  [8/28] 零占位符协议...")
     check_no_placeholder_patterns(audit)
 
-    print("\n📝  [9/27] 工业级注释主权...")
+    print("\n📝  [9/28] 工业级注释主权...")
     check_docstring_coverage(audit)
 
-    print("\n⚡  [10/27] 防爆钩子治理...")
+    print("\n⚡  [10/28] 防爆钩子治理...")
     check_simulation_hook_exists(audit)
 
-    print("\n🔧  [11/27] Pre-commit Hook 安装...")
+    print("\n🔧  [11/28] Pre-commit Hook 安装...")
     check_precommit_hook_exists(audit)
 
-    print("\n🗑️  [12/27] 运行时产物泄露检测...")
+    print("\n🗑️  [12/28] 运行时产物泄露检测...")
     check_untracked_runtime_artifacts(audit)
 
-    print("\n📋  [13/27] 文档更新质量...")
+    print("\n📋  [13/28] 文档更新质量...")
     check_docs_update_quality(audit)
 
-    print("\n🗺️  [14/27] ROADMAP 新鲜度...")
+    print("\n🗺️  [14/28] ROADMAP 新鲜度...")
     check_roadmap_freshness(audit)
 
-    print("\n🧪  [15/27] 仿真测试静态存在性...")
+    print("\n🧪  [15/28] 仿真测试静态存在性...")
     check_simulation_test_coverage(audit)
 
-    print("\n⚔️  [16/27] 仿真引擎物理试运行 (动)...")
+    print("\n⚔️  [16/28] 仿真引擎物理试运行 (动)...")
     check_simulation_execution(audit)
 
-    print("\n🏷️  [17/27] AEL 代码溯源打标...")
+    print("\n🏷️  [17/28] AEL 代码溯源打标...")
     check_iter_id_tagging(audit)
 
-    print("\n🏛️  [18/27] 核心架构指纹保护...")
+    print("\n🏛️  [18/28] 核心架构指纹保护...")
     check_core_architecture_fingerprint(audit)
 
-    print("\n🔐  [19/27] 防御性编程静态拦截...")
+    print("\n🔐  [19/28] 防御性编程静态拦截...")
     check_defensive_coding_patterns(audit)
 
-    print("\n🧠  [20/27] 全局知识反哺新鲜度...")
+    print("\n🧠  [20/28] 全局知识反哺新鲜度...")
     check_global_ki_evolution_freshness(audit)
 
-    print("\n📎  [21/27] 文档靶向精准绑定...")
+    print("\n📎  [21/28] 文档靶向精准绑定...")
     check_docs_targeted_binding(audit)
 
-    print("\n🚨  [22/27] 工作区遺漏检测...")
+    print("\n🚨  [22/28] 工作区遺漏检测...")
     check_no_unstaged_leftovers(audit)
 
-    print("\n🧪  [23/27] 演化必测...")
+    print("\n🧪  [23/28] 演化必测...")
     check_test_on_evolution(audit)
 
-    print("\n✂️  [24/27] 代码不可裁剪...")
+    print("\n✂️  [24/28] 代码不可裁剪...")
     check_no_mass_deletion(audit)
 
-    print("\n💬  [25/27] 注释不可删除...")
+    print("\n💬  [25/28] 注释不可删除...")
     check_comment_retention(audit)
 
-    print("\n🧠  [26/27] 踩坑信号检测...")
+    print("\n🧠  [26/28] 踩坑信号检测...")
     check_lesson_signal_acknowledgment(audit)
 
-    print("\n🪞  [27/27] 元审计：自身覆盖度...")
+    print("\n🏗️  [27/28] TDR 架构复健节律器...")
+    check_tdr_rhythm(audit)
+
+    print("\n🪞  [28/28] 元审计：自身覆盖度...")
     check_audit_self_coverage(audit)
 
     success = audit.summary()
