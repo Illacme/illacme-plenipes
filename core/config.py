@@ -74,10 +74,12 @@ class TranslationProvider:
     url: Optional[str] = None
     api_key: Optional[str] = None
     model: str = "gpt-4o"
+    proxy: str = ""  # 🚀 [V36.0] 节点级专属代理
 
 @dataclass
 class TranslationSettings:
     strategy: str = "single"
+    global_proxy: str = ""  # 🚀 [V36.0] 全局算力代理
     primary_node: str = "default"
     fallback_node: Optional[str] = None
     routing_threshold: int = 1000
@@ -226,6 +228,7 @@ class ImageSettings:
     base_url: str = "/assets/"
     process_images: bool = True
     generate_alt: bool = True
+    multilingual_alt: bool = False  # 🚀 [Resonance] 开启后，ADMI 将同步生成多语言描述
     deduplication: bool = False
     enabled: bool = True
     format: str = "webp"

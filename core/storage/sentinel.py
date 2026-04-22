@@ -137,7 +137,8 @@ class SentinelManager:
     def _check_and_fix_lint(self, auto_fix: bool) -> bool:
         """调用 Ruff 执行静态分析与自动修复"""
         try:
-            cmd = ["ruff", "check", ".", "--select", "E,F", "--exclude", ".plenipes"]
+            import sys
+            cmd = [sys.executable, "-m", "ruff", "check", ".", "--select", "E,F", "--exclude", ".plenipes"]
             if auto_fix:
                 cmd.append("--fix")
             
@@ -148,10 +149,14 @@ class SentinelManager:
                 return True
             else:
                 if auto_fix:
-                    logger.info("🛡️ [哨兵] 侦测到代码风格偏离，已执行自动修复 (Healed)。")
+                    logger.info("🛡️ [哨兵] 侦测到代码风格偏离，已尝试执行自动修复 (Healed)。")
                 return False
+        except (FileNotFoundError, ImportError) as e:
+            logger.warning(f"⚠️ [哨兵] Ruff 环境未就绪或未安装，跳过静态分析自愈: {e}")
+            return True
         except Exception as e:
-            logger.error(f"⚠️ [哨兵] Ruff 运行失败: {e}")
+            logger.error(f"⚠️ [哨兵] Ruff 运行异常: {e}")
+            return False
             return False
 
     def _persist_status(self):
