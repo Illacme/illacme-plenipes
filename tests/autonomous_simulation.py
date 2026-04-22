@@ -21,35 +21,53 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(messag
 logger = logging.getLogger("Illacme.Simulation")
 
 def verify_docs_sync_hook():
-    """TDR Protocol: 验证 core/ 与 docs/ 的同步修改约束"""
+    """TDR & AEL Protocol: 验证核心文档与历史归档的同步约束"""
     if os.environ.get("ILLACME_SKIP_DOC_CHECK") == "TRUE":
-        logger.warning("   └── ⚠️ [TDR] 检测到 ILLACME_SKIP_DOC_CHECK=TRUE，已跳过文档同步强校验。")
+        logger.warning("   └── ⚠️ [TDR] 检测到 ILLACME_SKIP_DOC_CHECK=TRUE，已跳过全量文档同步强校验。")
         return
 
     import subprocess
-    logger.info("🧪 [仿真] 挂载 TDR 文档同步强校验钩子...")
+    logger.info("🧪 [仿真] 挂载 AEL & TDR 全矩阵文档约束钩子...")
     try:
-        # 获取工作区与暂存区的修改状态
         result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         changes = result.stdout
         
         core_modified = False
         docs_modified = False
+        history_added = False
+        any_modified = False
         
         for line in changes.split('\n'):
-            if not line:
+            if len(line) < 4:
                 continue
+            any_modified = True
             path = line[3:] # git porcelain format " M path/to/file"
+            
+            # Rule 1: Core modification detect
             if path.startswith("core/") or path.startswith("plenipes.py"):
                 core_modified = True
-            elif path.startswith("docs/"):
+                
+            # Rule 2: Architecture docs detect
+            if path.startswith("docs/") or path.startswith("CHANGELOG.md") or path.startswith(".plenipes/ROADMAP.md"):
                 docs_modified = True
                 
+            # Rule 3: AEL History detect
+            if path.startswith(".plenipes/history/"):
+                history_added = True
+                
+        # Assertion 1: Living Documentation Mandate
         if core_modified and not docs_modified:
-            raise AssertionError("[Living Documentation Mandate] 核心管线代码(core/ 或 plenipes.py)已被修改，但 docs/ 目录未检测到对应的同步更新！\n"
-                                 "请在提交报告前补全 SPECIFICATION 或 REFERENCE，或设置 ILLACME_SKIP_DOC_CHECK=TRUE 暂时绕过。")
-        elif core_modified and docs_modified:
-            logger.info("   └── ✅ [TDR] 探测到 core/ 与 docs/ 同步更新，活化文档约束已通过。")
+            raise AssertionError("[Living Documentation Mandate] 核心管线(core/)已被修改，但未同步更新 docs/、CHANGELOG.md 或 ROADMAP.md！\n"
+                                 "由于违反底层活化文档规范，测试已强行熔断。")
+            
+        # Assertion 2: Genetic Archiving (AEL) Mandate
+        if any_modified and not history_added:
+            raise AssertionError("[AEL Protocol Mandate] 检测到代码库发生物理变更，但未在 .plenipes/history/ 下沉淀本次迭代的实施方案与任务清单！\n"
+                                 "由于违反全自动演化矩阵基因沉淀规范，测试已强行熔断。")
+            
+        if any_modified:
+            logger.info("   └── ✅ [AEL & TDR] 探测到历史归档与业务文档均已触发更新信号，约束已通过。")
+            
     except subprocess.CalledProcessError:
         logger.warning("   └── ⚠️ [TDR] 非 Git 仓库或 Git 执行失败，跳过文档关联校验。")
 
