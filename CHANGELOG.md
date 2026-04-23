@@ -2,7 +2,15 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
-## [v4.4-Governance] - 2026-04-23
+## [v4.5-Refactor] - 2026-04-23
+### Added
+- [Structural Integrity] 引入栈式 Callout 解析器，取代脆弱的正则解析，完美支持多层嵌套。
+### Changed
+- [Architecture Consolidation] 将 Callout 渲染逻辑从 Egress Adapter 迁移至 Pipeline Staticizer 阶段。
+### Fixed
+- [Parsing] 修复了大规模嵌套 Callout 导致的结构损坏与语义丢失问题。
+
+## [v4.4-Governance] - 2026-04-20
 ### 🚀 全自动治理框架里程碑 (Major Governance Milestones)
 - **治理引擎升级至 v4.4**：自审清单扩展至 28 项硬约束检查，实现全链路自治。
 - **踩坑自闭环 (Self-Healing Lessons)**：

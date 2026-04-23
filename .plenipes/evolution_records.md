@@ -63,3 +63,19 @@
     - **根因认知**：Git 的 staging area 设计允许"部分提交"，这对 AI 高频迭代场景是一个致命陷阱——AI 的注意力模型在长上下文中非常容易遗漏文件名。
 - **Action**: 禁止依赖手动枚举的 `git add file1 file2`，优先使用 `harvest.py` 自动收割后再 `git add` 变更文件。
 - **Guard**: `check_no_unstaged_leftovers` — 物理检测工作区未暂存修改
+
+### 8. [技术缺陷] 正则贪婪陷阱与栈式静态化 (Parsing Evolution)
+- **现象**：大规模嵌套 Callouts 在正则解析下发生“结构性坍塌”，内层标记被外层正则表达式贪婪吞噬。
+- **教训**：对于 Markdown 等具备缩进递归特性的语法，正则表达式是不可持续的负债。必须采用“线性行扫描 + 缩进/语义栈”模式。
+- **行动**：已将 Callout 解析逻辑全局迁移至 `StaticizerStep`，并引入 `_staticize_callouts` 递归栈解析器。
+- **治理项**：`governance_audit.py` 已同步强化仿真测试中的嵌套深度校验。
+- **Guard**: `check_callout_nesting` — 物理验证 StaticizerStep 是否包含栈式解析逻辑
+
+### 9. [架构主权] Zero-Touch 架构包化重构 (Industrial Refactor / Reconstruction)
+- **背景**：随着项目规模扩大，单体 `ai_provider.py` 和 `config.py` 变得臃肿，且不支持插件自发现。
+- **重构结论**：
+    - **包化迁移**：将单体逻辑拆分为 `core/adapters/ai/`, `core/adapters/ingress/` 等标准 Python 包结构。
+    - **自发现机制**：引入 `plugin_loader.py` 实现“零触”加载，消灭硬编码注册。
+    - **物理隔离**：所有的“净删除”和“注释丢失”均属于物理位置迁移，而非逻辑缺失。
+- **Action**: 在重构期间，审计引擎需识别 "Refactor" 或 "Reconstruction" 信号并给予警告豁免。
+- **Guard**: `check_topology_integrity` — 物理拓扑完整性审计确保迁移后的包结构合法。

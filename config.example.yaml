@@ -68,112 +68,12 @@ ingress_settings:
 # ==========================================
 # 4. 声明式主题配置集 (Theme Options Matrix)
 # ==========================================
-# 💡 【高阶换肤指南】：
-# 引擎如何把 Obsidian 的特有语法 (如 Callouts) 转化为目标主题的代码？就看这里。
-theme_options:
-  docusaurus:
-    syntax_engine: "docusaurus"
-    syntax_preset: "admonitions"
-    output_paths:
-      markdown_dir: "./themes/{theme}/docs"
-      assets_dir: "./themes/{theme}/static/assets"
-      graph_json_dir: "./themes/{theme}/static"
-    lang_mapping: { "zh": "zh-Hans", "en": "en" }
-    metadata_mapping:
-      last_modified: { key: "last_update", style: "object" }
-      author: { key: "author" }
-
-  starlight:
-    syntax_engine: "starlight"
-    syntax_preset: "admonitions"
-    output_paths:
-      markdown_dir: "./themes/{theme}/src/content/docs"
-      assets_dir: "./themes/{theme}/public/assets"
-      graph_json_dir: "./themes/{theme}/public"
-    lang_mapping: { "zh": "zh-cn", "en": "en" }
-
-  vitepress:
-    syntax_engine: "vitepress"
-    output_paths:
-      markdown_dir: "./themes/{theme}/docs"
-      assets_dir: "./themes/{theme}/public/assets"
-      graph_json_dir: "./themes/{theme}/public"
-
-  nextra:
-    syntax_engine: "nextra"
-    output_paths:
-      markdown_dir: "./themes/{theme}/pages"
-      assets_dir: "./themes/{theme}/public/assets"
-
-  hugo:
-    syntax_engine: "hugo"
-    output_paths:
-      markdown_dir: "./themes/{theme}/content"
-      assets_dir: "./themes/{theme}/static/assets"
-
-  hexo:
-    syntax_engine: "hexo"
-    output_paths:
-      markdown_dir: "./themes/{theme}/source/_posts"
-      assets_dir: "./themes/{theme}/source/assets"
+theme_options: { include: "configs/theme_options.yaml" }
 
 # ==========================================
 # 5. 声明式 SSG 渲染适配器 (Framework Adapters)
 # ==========================================
-# 🚀 彻底解除 Python 底层代码的硬编码绑定！
-# 引擎通过此处的字典，将 Obsidian 的特有语法物理降维到各框架支持的 UI 组件。
-framework_adapters:
-  starlight:
-    callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
-    type_mapping:
-      info: "note"
-      abstract: "note"
-      success: "tip"
-      warning: "caution"
-      danger: "danger"
-
-  vitepress:
-    callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
-    type_mapping:
-      note: "info"
-      tip: "tip"
-      warning: "warning"
-      danger: "danger"
-
-  docusaurus:
-    callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
-    type_mapping:
-      note: "note"
-      info: "info"
-      success: "tip"
-      warning: "warning"
-      danger: "danger"
-    component_mappings:
-      "CardGrid": "{children}"
-      "Card": "### {title}\n\n{children}\n\n"
-
-  nextra:
-    callout_template: "\n<Callout type=\"{type}\">\n**{title}**\n{body}\n</Callout>\n\n"
-    type_mapping:
-      note: "default"
-      info: "info"
-      warning: "warning"
-      danger: "error"
-
-  hugo:
-    # ⚠️ 架构防线：使用 {{{{ 和 }}}} 防止 Python 模板引擎发生解析越界撕裂
-    callout_template: "\n{{{{< admonition type=\"{type}\" title=\"{title}\" >}}}}\n{body}\n{{{{< /admonition >}}}}\n\n"
-    type_mapping:
-      note: "note"
-      tip: "tip"
-      warning: "warning"
-
-  hexo:
-    callout_template: "\n{{{{% note {type} %}}}}\n**{title}**\n{body}\n{{{{% endnote %}}}}\n\n"
-    type_mapping:
-      note: "default"
-      info: "info"
-      warning: "warning"
+framework_adapters: { include: "configs/framework_adapters.yaml" }
 
 # ==========================================
 # 6. AI 算力网关 (Translation & Intelligence Hub)
@@ -199,28 +99,21 @@ translation:
   max_slug_length: 100           # 彻底解决路径过长的物理截断
   max_seo_description_length: 200 # SEO 描述最大字数
   
-  # 🎯 永久链接模式 (Slug Mode): "ai" (语义翻译) 或 "local" (本地正则)
-  slug_mode: "ai"
+  # 🎯 战术参数 (Strategy Arguments)
+  primary_node: "deepseek_api"
+  fallback_node: "ollama_local"
+  routing_threshold: 1000 
+  
+  # [Sovereignty] 全局网络代理 (仅支持 http/https 格式)
+  global_proxy: ""
+  
+  # [Sovereignty] 核心提示词覆盖 (Custom Prompts)
+  # 如果你想微调 AI 的翻译语调、Slug 生成风格或 SEO 提取逻辑，在此覆盖默认 Prompt。
+  custom_prompts:
+    slug: "You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English slug for the given title. Return ONLY the slug string."
+    seo: "You are an SEO expert. Analyze the text and provide a JSON with 'description' and 'keywords'."
 
-  # 🎯 算力节点登记 (Providers)
-  providers:
-    deepseek_api:
-      type: "openai-compatible"
-      base_url: "https://api.deepseek.com/v1"
-      # ⚠️ 注意：推荐设置环境变量 ILLACME_API_KEY 以保护密钥。
-      api_key: "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
-      model: "deepseek-chat"
-      
-    gemini_node:
-      type: "gemini"
-      api_key: "AIza-xxxxxxxxxxxxxxxxxxxxxxxx"
-      model: "gemini-1.5-flash"
-
-    lmstudio_local:
-      type: "openai-compatible"
-      base_url: "http://localhost:1234/v1"
-      api_key: "your-api-key-here"
-      model: "qwen/qwen3.5-9b"
+  providers: { include: "configs/ai_providers.yaml" }
 
 # ==========================================
 # 7. 多语言与 SEO 矩阵 (i18n & SEO Matrix)
@@ -278,12 +171,19 @@ system:
   max_depth: 3                    # [AST 递归护城河] 遇到 ![[嵌套]] 的最大解析深度
   enable_asset_audit: true        # [自净基线总闸] 开启后自动肃清幽灵空目录及野路由
   
-  # AI 上下文提纯：在发送给 AI 前，物理移除干扰项以节省 Token
+  # 算力上下文提纯 (Purification)
   ai_context_purification:
     strip_styles: true
     strip_mdx_imports: true
     strip_comments: true
-    strip_code_blocks: false      
+    strip_code_blocks: true
+    strip_jsx_tags: true      # [NEW] 剥离 JSX 标签防止 AI 幻觉
+    
+  # [NEW] 工业级文件监控调优 (Watchdog)
+  watchdog_settings:
+    exclude_dirs: [".git", "node_modules", ".plenipes", "themes"]
+    heavy_task_delay: 0.8     # 规避 Obsidian 保存时的写锁竞争
+    gc_delay: 5.0             # 删除文件后的物理回收延迟
 
   # ⚖️ [V14.3 物理防护矩阵] Janitor 排除逻辑
   janitor_settings:

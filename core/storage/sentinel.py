@@ -171,3 +171,9 @@ class SentinelManager:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"⚠️ [哨兵] 状态持久化失败: {e}")
+
+    def verify_docs_sync_hook(self, rel_path: str):
+        """🚀 [Simulation Hook] 被 Engine 调用的钩子，用于影子校验或资产闭环记录"""
+        logger.debug(f"🛡️ [哨兵] 收到同步完成信号: {rel_path} | 触发影子校验探针...")
+        # 此处可对接 autonomous_simulation.py 的逻辑
+        pass

@@ -4,15 +4,24 @@
 Illacme-plenipes Core - Sync Context
 模块职责：贯穿整条流水线的上下文状态机 (Data Transfer Object)。
 取代原先在 engine 中到处传递的局部变量，确保线程间的数据绝对隔离与安全。
+🛡️ [AEL-Iter-2026.04.23.SOVEREIGNTY_P1]：引入服务注册表容器。
 """
 
 import os
 import threading
 
+class ServiceRegistry:
+    """🚀 [V5.0] 服务注册中心：解耦工序与核心能力的中间层"""
+    def __init__(self):
+        self.staticizer = None
+        self.translator = None
+        self.meta = None
+
 class SyncContext:
     def __init__(self, engine, src_path, route_prefix, route_source, is_dry_run, force_sync):
         # --- 基础注入 ---
         self.engine = engine
+        self.services = ServiceRegistry()
         self.src_path = src_path
         self.route_prefix = route_prefix
         self.route_source = route_source
@@ -21,7 +30,7 @@ class SyncContext:
 
         # --- 节点元数据 (Phase 1) ---
         self.title = os.path.splitext(os.path.basename(src_path))[0]
-        self.rel_path = os.path.relpath(src_path, engine.paths['vault']).replace('\\', '/')
+        self.rel_path = os.path.relpath(src_path, engine.paths.get('vault', '.')).replace('\\', '/')
 
         # --- 线程锁 (Phase 2) ---
         self.doc_lock = None

@@ -25,8 +25,9 @@ def export_digital_garden(engine):
     
     def get_title_from_disk(url_path):
         clean_url = re.sub(r'^/+', '', url_path)
-        md_path = os.path.join(engine.paths['target_base'], clean_url + ".md")
-        mdx_path = os.path.join(engine.paths['target_base'], clean_url + ".mdx")
+        target_base = engine.paths.get('target_base', '.')
+        md_path = os.path.join(target_base, clean_url + ".md")
+        mdx_path = os.path.join(target_base, clean_url + ".mdx")
         for p in [md_path, mdx_path]:
             if os.path.exists(p):
                 try:
@@ -74,8 +75,9 @@ def export_digital_garden(engine):
         source = doc_info.get("source", "")
         prefix = doc_info.get("prefix", "")
         
-        t_abs = os.path.join(engine.paths['vault'], rel_path)
-        t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(engine.paths['vault'], source)).replace('\\', '/')).replace('\\', '/')
+        vault_path = engine.paths.get('vault', '.')
+        t_abs = os.path.join(vault_path, rel_path)
+        t_sub_dir = os.path.dirname(os.path.relpath(t_abs, os.path.join(vault_path, source)).replace('\\', '/')).replace('\\', '/')
         if t_sub_dir == '.': 
             t_sub_dir = ""
         mapped_sub_dir = engine.route_manager.get_mapped_sub_dir(t_sub_dir, is_dry_run=False, allow_ai=False)
@@ -149,8 +151,8 @@ def export_digital_garden(engine):
         target_urls = get_all_lang_urls(target_path, target_info)
         
         for t_url_info in target_urls:
-            lang = t_url_info["lang"]
-            url_key = t_url_info["url"]
+            lang = t_url_info.get("lang")
+            url_key = t_url_info.get("url")
 
             # Skip non-content pages (index, utility pages, etc.)
             if not is_content_article(url_key):
@@ -164,9 +166,9 @@ def export_digital_garden(engine):
             for inlink_path in inlinks:
                 inlink_info = docs.get(inlink_path, {})
                 inlink_urls = get_all_lang_urls(inlink_path, inlink_info)
-                inlink_dict_same_lang = next((u for u in inlink_urls if u["lang"] == lang), None)
+                inlink_dict_same_lang = next((u for u in inlink_urls if u.get("lang") == lang), None)
                 if inlink_dict_same_lang:
-                    src_url = inlink_dict_same_lang["url"]
+                    src_url = inlink_dict_same_lang.get("url")
                     # Also skip non-content source pages
                     if not is_content_article(src_url):
                         continue
@@ -188,7 +190,7 @@ def export_digital_garden(engine):
     all_nodes: dict = {}
     for path, info in docs.items():
         for url_info in get_all_lang_urls(path, info):
-            url = url_info["url"]
+            url = url_info.get("url")
             if not is_content_article(url):
                 continue
             title = url_info.get("title") or url.split('/')[-1].replace('-', ' ').title()
@@ -202,7 +204,8 @@ def export_digital_garden(engine):
     }
     
     # graph.json output path — configurable via output_paths.graph_json_dir in config.yaml
-    graph_json_dir = engine.paths.get('graph_json_dir') or os.path.join(engine.paths['target_base'], '../../assets')
+    target_base = engine.paths.get('target_base', '.')
+    graph_json_dir = engine.paths.get('graph_json_dir') or os.path.join(target_base, '../../assets')
     graph_path = os.path.join(graph_json_dir, 'graph.json')
     # 🚀 [V18.6 V16.2] 幂等性保护：检查内容是否有实质性变化，防止无效热更
     new_json_bytes = orjson.dumps(final_graph, option=orjson.OPT_INDENT_2)
