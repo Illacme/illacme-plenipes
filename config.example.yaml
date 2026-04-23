@@ -227,15 +227,28 @@ lang_mapping: { "zh": "zh-Hans" }
 # 13. 创作审计时间轴 (Industrial Audit Timeline)
 # ==========================================
 timeline:
-  # 审计总开关
-  # 设为 true: 引擎会实时记录每一次本地保存、移动与删除行为，并生成历史溯源报表。
   enabled: true
-  
-  # 原始数据账本路径 (JSON 格式，供程序读取)
   json_path: ".plenipes/plenipes_timeline.json"
-  
-  # 用户友好的可视化报告路径 (Markdown 格式)
   markdown_path: ".plenipes/timeline.md"
-  
-  # 最大保留记录条数 (防止日志无限膨胀)
   max_entries: 1000
+
+# ==========================================
+# 14. 工业级治理审计 (Governance Audit & Sovereignty)
+# ==========================================
+# [AEL-Iter-v5.4] 核心自审引擎配置
+governance:
+  # 审计强度策略: "strict" (红线拦截), "loose" (仅警告)
+  policy: "strict"
+  
+  # 物理拓扑硬约束：是否强制校验 __init__.py 的存在
+  enforce_topology: true
+  
+  # 代码复杂度红线 (行数)
+  # [Rule 11.1] 强制约束：逻辑文件超过此行数将拦截提交
+  complexity_hard_limit: 300
+  
+  # 逻辑主权保护：禁止子类重写受保护的核心业务方法
+  logic_sovereignty_protection: true
+  
+  # 历史归档深度校验：追溯最近 N 个迭代的文档完整性
+  history_audit_depth: 3
