@@ -33,6 +33,8 @@ Passed all 60/60 checks including the autonomous simulation sandbox.
 ## 🛡️ 安全加固 (Security)
 - Implemented `configs/` template isolation to prevent API Key leakage.
 - 实现了 `configs/` 目录的模板隔离策略，物理隔离了 API Key 泄露风险。
+- **[NEW] Aligned `config.example.yaml` to point to `.example.yaml` sub-configs.**
+- **[新增] 对齐了 `config.example.yaml` 中的子配置文件引用，确保其指向真实的模板文件。**
 
 **Stage V6 is now SEALED and OPERATIONAL.**
 **Stage V6 已封版并投入准生产运行。**

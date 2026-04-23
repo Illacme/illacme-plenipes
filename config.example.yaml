@@ -68,12 +68,12 @@ ingress_settings:
 # ==========================================
 # 4. 声明式主题配置集 (Theme Options Matrix)
 # ==========================================
-theme_options: { include: "configs/theme_options.yaml" }
+theme_options: { include: "configs/theme_options.example.yaml" }
 
 # ==========================================
 # 5. 声明式 SSG 渲染适配器 (Framework Adapters)
 # ==========================================
-framework_adapters: { include: "configs/framework_adapters.yaml" }
+framework_adapters: { include: "configs/framework_adapters.example.yaml" }
 
 # ==========================================
 # 6. AI 算力网关 (Translation & Intelligence Hub)
@@ -113,7 +113,7 @@ translation:
     slug: "You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English slug for the given title. Return ONLY the slug string."
     seo: "You are an SEO expert. Analyze the text and provide a JSON with 'description' and 'keywords'."
 
-  providers: { include: "configs/ai_providers.yaml" }
+  providers: { include: "configs/ai_providers.example.yaml" }
 
 # ==========================================
 # 7. 多语言与 SEO 矩阵 (i18n & SEO Matrix)
