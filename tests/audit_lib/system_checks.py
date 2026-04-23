@@ -2,7 +2,9 @@ import os
 import subprocess
 import re
 import sys
+from .base import galaxy
 
+@galaxy(2)
 def check_git_tracked_state_files(audit):
     """[AEL-Iter-006] 检查是否有本地状态文件被 Git 追踪"""
     forbidden_patterns = [
@@ -25,6 +27,7 @@ def check_git_tracked_state_files(audit):
     except Exception:
         audit.warn("Git 检查", "无法执行 git ls-files")
 
+@galaxy(2)
 def check_mandatory_files_exist(audit):
     """[AEL-Iter-006] 检查 Boot Chain 引用的必要文件是否物理存在"""
     mandatory = [
@@ -39,6 +42,7 @@ def check_mandatory_files_exist(audit):
         else:
             audit.fail(f"文件缺失: {f}", "Boot Chain 引用的文件不存在")
 
+@galaxy(2)
 def check_global_ki_no_project_keywords(audit):
     """[AEL-Iter-006] 检查全局 KI 文件是否包含项目特有关键词"""
     ki_base = os.path.expanduser("~/.gemini/antigravity/knowledge")
@@ -64,6 +68,7 @@ def check_global_ki_no_project_keywords(audit):
     else:
         audit.ok("全局 KI 纯净度", "全局知识库未发现当前项目特定关键词")
 
+@galaxy(2)
 def check_gitignore_coverage(audit):
     """[AEL-Iter-006] 检查 .gitignore 是否覆盖了所有关键状态路径"""
     gitignore = ".gitignore"
@@ -79,6 +84,7 @@ def check_gitignore_coverage(audit):
     else:
         audit.ok(".gitignore 覆盖度", "所有已知状态文件均已被屏蔽")
 
+@galaxy(2)
 def check_boot_chain_integrity(audit):
     """[AEL-Iter-006] 检查 .antigravityrules 的加载完整性"""
     boot_file = ".antigravityrules"
@@ -97,6 +103,7 @@ def check_boot_chain_integrity(audit):
         else:
             audit.fail(f"Boot Chain 损坏: {name}", f"缺失 {pattern}")
 
+@galaxy(2)
 def check_no_placeholder_patterns(audit):
     """[AEL-Iter-006] 检查代码中是否存在待办占位符（如 FIXME, TODO, [ ]）"""
     forbidden = ["TODO", "FIXME", "[ ]"]
@@ -116,6 +123,7 @@ def check_no_placeholder_patterns(audit):
     else:
         audit.ok("零占位符协议", "核心代码无占位符标记残留")
 
+@galaxy(2)
 def check_simulation_hook_exists(audit):
     """[AEL-Iter-006] 检查仿真钩子物理存在性"""
     hook_path = "core/engine.py"
@@ -127,6 +135,7 @@ def check_simulation_hook_exists(audit):
     else:
         audit.fail("防爆钩子缺失", "engine.py 中未发现仿真校验钩子")
 
+@galaxy(2)
 def check_precommit_hook_exists(audit):
     """[AEL-Iter-006] 检查 .git/hooks/pre-commit 是否已安装并指向治理脚本"""
     hook = ".git/hooks/pre-commit"
@@ -140,6 +149,7 @@ def check_precommit_hook_exists(audit):
     else:
         audit.warn("Pre-commit Hook 异常", "已安装但未调用治理审计脚本")
 
+@galaxy(2)
 def check_untracked_runtime_artifacts(audit):
     """[AEL-Iter-006] 检查是否存在未追踪且未被忽略的运行时产物"""
     forbidden_exts = [".pyc", ".log", ".tmp", ".bak"]
@@ -164,6 +174,7 @@ def check_untracked_runtime_artifacts(audit):
     else:
         audit.ok("运行时产物检测", "工作区纯净，无异常产物")
 
+@galaxy(4)
 def check_main_entry_smoke_test(audit):
     """[AEL-Iter-029] 主入口冒烟测试：强制执行 plenipes.py --dry-run 核验点火连通性"""
     entry_script = "plenipes.py"
@@ -188,6 +199,7 @@ def check_main_entry_smoke_test(audit):
     except Exception as e:
         audit.fail("主入口点火异常", f"执行过程崩溃: {e}")
 
+@galaxy(2)
 def check_config_sovereignty(audit):
     """[Rule 12.7] 配置文件主权审计：监控 config.yaml 的规模稳定性，防止盲目修剪"""
     config_file = "config.yaml"

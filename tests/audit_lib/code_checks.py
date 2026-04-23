@@ -2,7 +2,9 @@ import os
 import subprocess
 import re
 import ast
+from .base import galaxy
 
+@galaxy(3)
 def check_docstring_coverage(audit):
     """[AEL-Iter-006] 检查 core/ 目录下所有 Python 文件是否包含模块级文档字符串"""
     core_dir = "core"
@@ -25,6 +27,7 @@ def check_docstring_coverage(audit):
     else:
         audit.ok("注释主权", "所有核心逻辑文件均具备工业级模块注释")
 
+@galaxy(3)
 def check_defensive_coding_patterns(audit):
     """[AEL-Iter-009] 检查代码中是否存在潜在的 NoneType 风险（防御性编程审计）"""
     core_dir = "core"
@@ -47,6 +50,7 @@ def check_defensive_coding_patterns(audit):
     else:
         audit.ok("防御性编程", "核心逻辑具备良好的 NoneType 免疫力")
 
+@galaxy(3)
 def check_comment_retention(audit):
     """[AEL-Iter-015/E] 注释不可删除：检测提交中是否大量删除了注释行"""
     comment_markers = ['# ', '"""', "'''", '// ']
@@ -89,6 +93,7 @@ def _is_refactoring_phase():
                 return True
     return False
 
+@galaxy(3)
 def check_no_mass_deletion(audit):
     """[AEL-Iter-015/D] 代码不可裁剪：检测单文件大规模净删除"""
     deletion_threshold = 30
@@ -118,6 +123,7 @@ def check_no_mass_deletion(audit):
     except Exception:
         audit.ok("代码不可裁剪", "非 Git 暂存区上下文，跳过检查")
 
+@galaxy(3)
 def check_file_complexity(audit):
     """🚀 [Rule 12.10] 工业级复杂度红线：核心逻辑文件严禁超过 300 行"""
     FAIL_THRESHOLD = 300
@@ -138,6 +144,7 @@ def check_file_complexity(audit):
     if not violation_found:
         audit.ok("代码复杂度控制", f"全量核心逻辑文件均控制在 {FAIL_THRESHOLD} 行红线内")
 
+@galaxy(3)
 def check_callout_nesting(audit):
     """[AEL-Iter-v5.1] 嵌套 Callout 校验：AST 语义特征审计"""
     service_path = "core/services/staticizer.py"
@@ -166,6 +173,7 @@ def check_callout_nesting(audit):
         audit.fail("Callout 嵌套校验", f"AST 审计解析异常: {str(e)}")
 
 
+@galaxy(3)
 def check_logic_shadowing(audit):
     """[Rule 12.9] 协议/逻辑隔离审计：确保子类没有重写基类的受保护业务方法"""
     # 🚀 深度审计范围：AI 适配器子包
@@ -199,6 +207,7 @@ def check_logic_shadowing(audit):
     if not violation_found:
         audit.ok("架构主权隔离", "未发现子类对业务层逻辑的非法篡改")
 
+@galaxy(3)
 def check_protocol_completeness(audit):
     """强制校验所有 Translator 必须实现原子协议 _ask_ai"""
     adapter_dir = "core/adapters/ai"

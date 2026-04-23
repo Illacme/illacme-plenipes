@@ -4,6 +4,40 @@ import sys
 import json
 import re
 import ast
+from collections import defaultdict
+
+class GalaxyRegistry:
+    """🚀 [Industrial] 五大星系审计注册中心"""
+    def __init__(self):
+        # 按星系 ID 存储函数列表
+        self.matrix = defaultdict(list)
+        self.galaxy_names = {
+            1: "🏗️ 物理拓扑审计 (Topology)",
+            2: "📂 系统与环境审计 (System)",
+            3: "📝 代码质量与逻辑审计 (Code)",
+            4: "🚀 动态仿真与点火审计 (Execution)",
+            5: "🏛️ 历史与治理审计 (Governance)"
+        }
+
+    def register(self, galaxy_id: int):
+        """装饰器：将审计项注册到指定星系"""
+        def decorator(func):
+            self.matrix[galaxy_id].append(func)
+            return func
+        return decorator
+
+    def run_galaxy(self, galaxy_id: int, audit):
+        """执行特定星系的所有审计项"""
+        name = self.galaxy_names.get(galaxy_id, f"Galaxy {galaxy_id}")
+        print(f"\n{name}...")
+        for check_func in self.matrix[galaxy_id]:
+            try:
+                check_func(audit)
+            except Exception as e:
+                audit.fail(f"审计项执行异常: {check_func.__name__}", str(e))
+
+registry = GalaxyRegistry()
+galaxy = registry.register
 
 class AuditResult:
     def __init__(self, auto_fix=False):

@@ -3,7 +3,9 @@ import subprocess
 import re
 import ast
 import sys
+from .base import galaxy
 
+@galaxy(5)
 def check_core_architecture_fingerprint(audit):
     """[AEL-Iter-011] 核心架构指纹校验：拦截非法的大规模逻辑重构"""
     fingerprints = {
@@ -20,6 +22,7 @@ def check_core_architecture_fingerprint(audit):
         else:
             audit.ok(f"指纹校验: {path}")
 
+@galaxy(4)
 def check_simulation_test_coverage(audit):
     """[AEL-Iter-006] 检查仿真测试文件是否存在"""
     tests = ["tests/autonomous_simulation.py", "tests/governance_audit.py"]
@@ -29,6 +32,7 @@ def check_simulation_test_coverage(audit):
         else:
             audit.fail(f"测试缺失: {t}")
 
+@galaxy(4)
 def check_simulation_execution(audit):
     """[AEL-Iter-006] 物理试运行仿真引擎"""
     sim_script = "tests/autonomous_simulation.py"
@@ -45,6 +49,7 @@ def check_simulation_execution(audit):
     except Exception as e:
         audit.warn("仿真引擎试运行", f"执行超时或异常 (可能非致命): {e}")
 
+@galaxy(5)
 def check_iter_id_tagging(audit):
     """[AEL-Iter-011] AEL 代码溯源打标审计：检测最近提交是否含 Iter-ID"""
     try:
@@ -58,6 +63,7 @@ def check_iter_id_tagging(audit):
     except Exception:
         pass
 
+@galaxy(5)
 def check_global_ki_evolution_freshness(audit):
     """[AEL-Iter-006] 检查全局 KI 演化记录新鲜度"""
     ki_evo = os.path.expanduser("~/.gemini/antigravity/knowledge/global_integrity/artifacts/evolution_records.md")
@@ -71,6 +77,7 @@ def check_global_ki_evolution_freshness(audit):
     else:
         audit.warn("全局知识荒废", f"全局演化记录已有 {int(days)} 天未更新，AI 经验可能过时")
 
+@galaxy(5)
 def check_docs_targeted_binding(audit):
     """[AEL-Iter-013] 文档靶向精准绑定：检测核心变更是否同步了历史归档"""
     try:
@@ -87,6 +94,7 @@ def check_docs_targeted_binding(audit):
     except Exception:
         pass
 
+@galaxy(5)
 def check_no_unstaged_leftovers(audit):
     """[AEL-Iter-014] 防遺漏检测：检查工作区是否残留未暂存的修改文件"""
     try:
@@ -105,6 +113,7 @@ def check_no_unstaged_leftovers(audit):
     except Exception:
         pass
 
+@galaxy(5)
 def check_test_on_evolution(audit):
     """[AEL-Iter-015/A] 演化必测：检查核心管线变更是否伴随测试文件"""
     try:
@@ -121,6 +130,7 @@ def check_test_on_evolution(audit):
     except Exception:
         pass
 
+@galaxy(5)
 def check_tdr_rhythm(audit):
     """[AEL-Iter-017] TDR 架构复健节律器：检测业务迭代与架构迭代的比例"""
     history_dir = ".plenipes/history"
@@ -134,6 +144,7 @@ def check_tdr_rhythm(audit):
     else:
         audit.ok("TDR 节律", f"当前业务/重构比: {biz_iters}/{tdr_iters}")
 
+@galaxy(5)
 def check_audit_self_coverage(audit):
     """[Meta-Audit] 审计自身覆盖度：检查检查项是否覆盖了所有已记录教训"""
     evo_file = ".plenipes/evolution_records.md"
@@ -143,6 +154,7 @@ def check_audit_self_coverage(audit):
     lessons = re.findall(r"^### \d+\.", content, re.MULTILINE)
     audit.ok("元审计覆盖度", f"当前已对齐 {len(lessons)} 条教训")
 
+@galaxy(3)
 def check_orchestrator_purity(audit):
     """[AEL-Iter-028] 调度器纯净度审计：拦截硬编码与过深的分支逻辑"""
     orchestrators = [
@@ -175,6 +187,7 @@ def check_orchestrator_purity(audit):
                          audit.fail("逻辑层级过深", f"在 {path}:{i+1} 嵌套超过 3 层")
 
 
+@galaxy(1)
 def check_topology_integrity(audit):
     """[AEL-Iter-029] 物理拓扑完整性审计：检查包结构、导入连通性与契约对齐"""
     core_dir = "core"
@@ -228,6 +241,7 @@ def _validate_module_path(module_name, source_file, audit):
     if not os.path.exists(potential_file) and not os.path.exists(potential_dir):
         audit.fail("导入路径断裂", f"在 {source_file} 中发现虚假导入: {module_name}")
 
+@galaxy(1)
 def check_contract_alignment(audit):
     """[AEL-Iter-029] 接口契约对齐审计：核验核心方法签名兼容性"""
     # 此处通过静态分析检查特定方法的参数数量

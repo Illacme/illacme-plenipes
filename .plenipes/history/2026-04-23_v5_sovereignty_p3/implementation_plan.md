@@ -29,7 +29,8 @@
 
 ### 3. 治理审计升级 (Governance Upgrade)
 
-#### [MODIFY] [code_checks.py](file:///Volumes/Notebook/omni-hub/illacme-plenipes/tests/audit_lib/code_checks.py)
+#### [MODIFY] [history_checks.py](file:///Volumes/Notebook/omni-hub/illacme-plenipes/tests/audit_lib/history_checks.py)
+- 新增 `check_config_reference_alignment`：自动扫描 `core/config.py` 中的配置字段，并强制校验其在 `docs/REFERENCE.zh-CN.md` 中的描述存在性，防止“隐形配置”导致的维护困难。
 - **[NEW] `check_logic_shadowing`**：使用 AST 检查所有子类。如果发现子类定义了基类中已有的逻辑方法（如 `generate_slug`），则判定为“越权篡改”并报错。
 - **[NEW] `check_protocol_completeness`**：强制检查是否实现了 `_ask_ai`。
 
