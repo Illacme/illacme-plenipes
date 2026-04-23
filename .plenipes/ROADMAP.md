@@ -45,3 +45,23 @@
 1. **先稳后快**: 所有的功能扩展必须在 60/60 审计通过的前提下进行。
 2. **文档同步**: 每一项功能演化必须伴随 REFERENCE 和 MANUAL 的物理更新。
 3. **主权隔离**: 任何新渠道的接入严禁侵入核心业务逻辑。
+
+---
+
+## 🏛️ 历史里程碑 (Historical Milestones)
+
+### [x] Galaxy V1 - V3: 原始生长时代 (The Primitive Era)
+- 实现基础 Markdown 转换逻辑。
+- 初步建立正则驱动的 Slug 生成器。
+- 单向同步至 Docusaurus 目录。
+
+### [x] Galaxy V4: 工业化雏形时代 (The Industrial Era)
+- 引入 `config.yaml` 配置驱动架构。
+- 建立初步的 28 项自动化审计规则。
+- 引入 `Janitor` 机制处理过期资产。
+
+### [x] Galaxy V5: 主权治理时代 (The Sovereign Era - CURRENT)
+- **核心突破**: 实现 **60/60 五大星系动态审计引擎**。
+- **架构硬化**: 确立 `BaseTranslator` 逻辑隔离协议。
+- **基因沉淀**: 实现三相文档 (Plan/Task/Walkthrough) 原子归档。
+- **物理加固**: Pre-commit 钩子强制守门。
