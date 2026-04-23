@@ -231,20 +231,38 @@ def run_shadow_simulation():
             
             if not os.path.exists(en_file_path):
                 # 尝试递归查找以应对不同的 Route Prefix 逻辑
-                logger.debug(f"🔍 [补救尝试] 正在搜索翻译后的影子资产: {actual_shadow_root}/en")
                 found = False
-                en_search_root = os.path.join(actual_shadow_root, "en")
-                if os.path.exists(en_search_root):
-                    for root, dirs, files in os.walk(en_search_root):
+                # 🚀 [V6 适配补丁]：优先在目标语言 (en) 目录下搜索，防止误撞源语言产物
+                en_target_dir = os.path.join(actual_shadow_root, "en")
+                logger.debug(f"🔍 [V6 目标搜索] 正在扫描: {en_target_dir}")
+                
+                if os.path.exists(en_target_dir):
+                    for root, dirs, files in os.walk(en_target_dir):
                         for f in files:
-                            if "vision-test-slug" in f:
+                            if "vision-test-slug" in f and f.endswith(".md"):
+                                en_file_path = os.path.join(root, f)
+                                found = True
+                                logger.info(f"   └── ✨ [V6 发现产物] {f} -> {en_file_path}")
+                                break
+                        if found: break
+                
+                if not found:
+                    # 兜底：全量搜索
+                    logger.debug(f"🔍 [V6 兜底搜索] 正在全量扫描影子根目录: {actual_shadow_root}")
+                    for root, dirs, files in os.walk(actual_shadow_root):
+                        for f in files:
+                            if "vision-test-slug" in f and f.endswith(".md") and "/en/" in root.replace('\\', '/'):
                                 en_file_path = os.path.join(root, f)
                                 found = True
                                 break
                         if found: break
                 
                 if not found:
-                    raise Exception(f"未发现翻译后的目标语言影子资产。搜索起点: {en_search_root}")
+                    # 输出沙盒全量目录树以供诊断
+                    logger.error("❌ [沙盒目录树审计]")
+                    for r, d, fs in os.walk(tmpdir):
+                        logger.error(f"  {r}: {fs}")
+                    raise Exception("未发现翻译后的目标语言影子资产。")
                 
             with open(en_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()

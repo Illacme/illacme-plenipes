@@ -104,6 +104,7 @@ class MetadataManager:
             if seo_data is not None: doc["seo"] = seo_data
             if route_prefix is not None: doc["prefix"] = route_prefix
             if route_source is not None: doc["source"] = route_source
+            if "blocks" not in doc: doc["blocks"] = []
 
             # 🚀 [V25 时空分流协议]：固化首次发现时间
             if persistent_date is not None and "persistent_date" not in doc:
@@ -151,6 +152,19 @@ class MetadataManager:
     def get_doc_info(self, rel_path):
         """获取特定文档的元数据拷贝"""
         with self.lock: return self.data.get("documents", {}).get(rel_path, {}).copy()
+
+    def update_doc_blocks(self, rel_path, block_fingerprints):
+        """🚀 [Stage V6] 物理登记文档的块级指纹序列"""
+        with self.lock:
+            docs = self.data.get("documents", {})
+            if rel_path in docs:
+                docs[rel_path]["blocks"] = block_fingerprints
+                self._dirty = True
+
+    def get_doc_blocks(self, rel_path):
+        """🚀 [Stage V6] 获取文档已知的块级指纹列表"""
+        with self.lock:
+            return self.data.get("documents", {}).get(rel_path, {}).get("blocks", [])
 
     def find_by_hash(self, source_hash):
         """

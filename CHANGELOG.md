@@ -2,6 +2,16 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+## [v6.0.1-Delta] - 2026-04-23
+### 🚀 增量块引擎里程碑 (Delta Block Engine Milestones)
+- **语义分片架构 (Stage V6)**：弃用落后的文件级同步，全面转向基于语义块（Block-Level）的增量管线。引入 `MarkdownBlockParser` 状态机实现 Callouts、Tabs、代码块的高精度切片。
+- **影子块复用 (Zero-Token Reuse)**：建立 `BlockShadowCache` 物理复用层，实现跨文档、跨语种的块级翻译秒级检索，大幅降低 AI 算力成本。
+- **账本指纹升级**：`MetadataManager` 新增块级指纹追踪，支持物理产物的细粒度审计与自愈。
+
+### 🛡️ 安全与治理加固 (Security & Governance)
+- **配置隔离 2.0**：实现 `configs/` 目录的“全量屏蔽 + 模板放行”策略，物理阻断 API Key 泄露风险。
+- **治理监工补丁**：补全核心模块工业级 Docstrings，对齐 AEL 溯源协议。
+
 ## [v5.4.1-Sovereignty] - 2026-04-23
 ### 🚀 架构主权里程碑 (Sovereignty & Governance Milestones)
 - **主权架构硬化**：实现业务逻辑（Base）与协议层（Adapter）的物理隔离。通过 `_ask_ai` 原子协议彻底解耦 AI 适配器。

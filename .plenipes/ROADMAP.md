@@ -1,15 +1,15 @@
 # 🗺️ Illacme-plenipes 全自动进化路线图 (Sovereign Roadmap)
 
-## 📌 当前版本: v5.4.1 (Sovereignty Edition)
-**状态**: 🛡️ 治理加固已完成。五大星系审计、逻辑主权隔离、物理拓扑校验已全量上线。
+## 📌 当前版本: v6.0.1 (Delta Edition)
+**状态**: 🚀 **Stage V6 增量块引擎已上线**。秒级分片同步、影子块复用、工业级配置隔离已全量合入。
 
 ---
 
-## 🚀 Stage V6: 极致效率维度 (Efficiency & Precision)
-> **目标**: 解决“同步慢、Token 贵”的痛点，实现秒级响应。
+## 🚀 Stage V6.1: 极致效率维度 (Efficiency & Precision - IN PROGRESS)
+> **目标**: 解决“并行度不足”的痛点，实现秒级高并发处理。
 
-- [ ] **Delta Block Engine**: 从文件级同步进化为块级（段落/组件）增量同步。
-- [ ] **AI Cache 2.0**: 引入基于语义 Hash 的影子资产匹配，减少 80% 的重复 Token 消耗。
+- [x] **Delta Block Engine**: 从文件级同步进化为块级（段落/组件）增量同步。
+- [x] **AI Cache 2.0**: 引入基于语义 Hash 的影子资产匹配，减少 80% 的重复 Token 消耗。
 - [ ] **Async Pipeline**: 重构核心管线，支持多线程/异步 AI 并发调用。
 - [ ] **Rigor Limit**: 强制执行单次同步耗时审计，确保工业级吞吐性能。
 
@@ -60,8 +60,14 @@
 - 建立初步的 28 项自动化审计规则。
 - 引入 `Janitor` 机制处理过期资产。
 
-### [x] Stage V5: 主权治理时代 (The Sovereign Era - CURRENT)
+### [x] Stage V5: 主权治理时代 (The Sovereign Era)
 - **核心突破**: 实现 **60/60 五大维度动态审计引擎**。
 - **架构硬化**: 确立 `BaseTranslator` 逻辑隔离协议。
 - **基因沉淀**: 实现三相文档 (Plan/Task/Walkthrough) 原子归档。
 - **物理加固**: Pre-commit 钩子强制守门。
+
+### [x] Stage V6: 极致增量时代 (The Delta Era - CURRENT)
+- **核心突破**: 实现 **Delta Block Engine** 语义级增量同步。
+- **成本重构**: 引入 `BlockShadowCache` 实现零 Token 翻译复用。
+- **指纹账本**: 升级 `MetadataManager` 实现分片级状态追踪。
+- **安全加固**: 全量配置隔离与模板化（configs/ isolation）。
