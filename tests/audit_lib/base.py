@@ -7,16 +7,16 @@ import ast
 from collections import defaultdict
 
 class GalaxyRegistry:
-    """🚀 [Industrial] 五大星系审计注册中心"""
+    """🚀 [Industrial] 五大审计维度注册中心"""
     def __init__(self):
-        # 按星系 ID 存储函数列表
+        # 按审计维度 ID 存储函数列表
         self.matrix = defaultdict(list)
         self.galaxy_names = {
-            1: "🏗️ 物理拓扑审计 (Topology)",
-            2: "📂 系统与环境审计 (System)",
-            3: "📝 代码质量与逻辑审计 (Code)",
-            4: "🚀 动态仿真与点火审计 (Execution)",
-            5: "🏛️ 历史与治理审计 (Governance)"
+            1: "🛡️ [维度 1] 物理拓扑 (Topology)",
+            2: "🛡️ [维度 2] 系统环境 (System)",
+            3: "🛡️ [维度 3] 代码逻辑 (Code)",
+            4: "🛡️ [维度 4] 动态仿真 (Execution)",
+            5: "🛡️ [维度 5] 历史归档 (History)"
         }
 
     def register(self, galaxy_id: int):

@@ -7,19 +7,21 @@
 ![Governance](https://img.shields.io/badge/audit-60/60%20Pass-success.svg)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-**Illacme-plenipes** 是一款面向未来的工业级 Markdown 知识治理与 AI 翻译引擎。它不仅能实现海量笔记的跨框架同步，更通过首创的 **“五大星系审计 (5-Galaxy Audit)”** 和 **“逻辑主权隔离 (Logic Sovereignty)”** 架构，确保项目在高度自动化演化的同时，依然拥有固若金汤的物理稳定性与代码主权。
+**Illacme-plenipes** 是一款面向未来的工业级 Markdown 知识治理与 AI 翻译引擎。它不仅能实现海量笔记的跨框架同步，更通过首创的 **“五大维度审计 (5-Dimension Audit)”** 和 **“逻辑主权隔离 (Logic Sovereignty)”** 架构，确保项目在高度自动化演化的同时，依然拥有固若金汤的物理稳定性与代码主权。
 
 ---
 
+[🏛️ 查看架构全景图 (v5.4.1) ➔](docs/ARCHITECTURE.zh-CN.md)
+
 ## 🚀 核心主权特性 (Sovereign Features)
 
-### 1. 🛡️ 五大星系治理审计 (5-Galaxy Audit)
+### 1. 🛡️ 五大维度治理审计 (5-Dimension Audit)
 这是 v5.4 引入的终极治理方案。系统将审计逻辑划分为：
-- **物理拓扑星系**：扫描包结构连通性与导入链。
-- **环境星系**：监控 Git 卫生与全局知识纯净度。
-- **代码质量星系**：强制执行 300 行复杂度红线与主权隔离校验。
-- **动态仿真星系**：主入口点火冒烟测试与影子沙盒仿真。
-- **历史归档星系**：三相文档 (Plan/Task/Walkthrough) 深度校验。
+- **维度 1：物理拓扑**：扫描包结构连通性与导入链。
+- **维度 2：环境与系统**：监控 Git 卫生与全局知识纯净度。
+- **维度 3：代码与逻辑**：强制执行 300 行复杂度红线与主权隔离校验。
+- **维度 4：动态仿真**：主入口点火冒烟测试与影子沙盒仿真。
+- **维度 5：历史与归档**：三相文档 (Plan/Task/Walkthrough) 深度校验。
 
 ### 2. 🧩 逻辑主权隔离架构 (Logic Sovereignty)
 采用“大脑与肢体”分离设计。核心业务逻辑（Slug生成、SEO提取、Prompt组装）被物理锁死在基类中，适配器（OpenAI/Gemini/DeepSeek）仅负责原子级的协议通信。严禁子类“越权篡改”核心逻辑。
