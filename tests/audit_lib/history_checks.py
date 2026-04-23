@@ -1,7 +1,8 @@
 import os
 import re
-from .base import AutoHealer
+from .base import AutoHealer, galaxy
 
+@galaxy(5)
 def check_history_artifacts_completeness(audit):
     """[AEL-Iter-012] 检查 .plenipes/history/ 历史迭代的三相基因完备性"""
     history_path = ".plenipes/history"
@@ -26,6 +27,7 @@ def check_history_artifacts_completeness(audit):
     else:
         audit.ok("历史归档完整性", "所有 history/ 迭代目录均已严格沉淀三相规划基因")
 
+@galaxy(5)
 def check_evolution_records_freshness(audit):
     """[AEL-Iter-006] 检查 evolution_records.md 是否在最近 24 小时内有更新"""
     evo_file = ".plenipes/evolution_records.md"
@@ -42,6 +44,7 @@ def check_evolution_records_freshness(audit):
         else:
             audit.warn("项目进化记录", "今日尚未沉淀演化记录")
 
+@galaxy(5)
 def check_history_language_sovereignty(audit):
     """[AEL-Iter-v5.0] 过程文档语言主权审计：确保 Plan/Task/Walkthrough 使用中文"""
     history_dir = ".plenipes/history"
@@ -70,6 +73,7 @@ def check_history_language_sovereignty(audit):
     else:
         audit.ok("过程文档语言主权", f"迭代目录 {dirs[0]} 已对齐中文语言主权")
 
+@galaxy(5)
 def check_task_completion_status(audit):
     """[AEL-Iter-v5.0] 任务核销闭环审计：检查最近 3 个迭代的任务清单是否已全部核销"""
     history_dir = ".plenipes/history"
@@ -99,6 +103,7 @@ def check_task_completion_status(audit):
             if i == 0:
                 audit.ok("任务核销审计", f"迭代 {dir_name} 任务清单已 100% 核销")
 
+@galaxy(5)
 def check_history_docs_depth(audit):
     """[Sentinel] 迭代文档深度审计：拦截敷衍了事的计划与验收记录。"""
     history_dir = ".plenipes/history"
@@ -145,6 +150,7 @@ def _check_single_doc_depth(target_dir, filenames, label, min_len, audit, dir_na
             if dir_name == sorted(os.listdir(".plenipes/history"), reverse=True)[0]:
                 audit.ok(label, f"迭代 {dir_name} {os.path.basename(found_file)} 深度达标 ({len(content)} 字符)")
 
+@galaxy(5)
 def check_roadmap_freshness(audit):
     """[AEL-Iter-010] 检查 ROADMAP.md 是否在最近 3 天内有更新"""
     roadmap_file = ".plenipes/ROADMAP.md"
@@ -159,3 +165,36 @@ def check_roadmap_freshness(audit):
         audit.ok("ROADMAP 新鲜度", f".plenipes/ROADMAP.md 最近 {int(days_diff)} 天内有更新")
     else:
         audit.warn("ROADMAP 建议更新", f".plenipes/ROADMAP.md 已有 {int(days_diff)} 天未更新")
+
+@galaxy(5)
+def check_config_reference_alignment(audit):
+    """[Industrial] 配置-参考手册对齐审计：确保所有配置项在 REFERENCE.md 中均有定义"""
+    config_file = "core/config.py"
+    ref_file = "docs/REFERENCE.zh-CN.md"
+    
+    if not os.path.exists(config_file) or not os.path.exists(ref_file):
+        return
+
+    # 1. 提取 config.py 中的配置键名 (简单正则匹配，覆盖大部分字段)
+    with open(config_file, 'r', encoding='utf-8') as f:
+        config_content = f.read()
+    
+    # 匹配 self.key = value 风格的定义
+    keys = re.findall(r'self\.([a-z0-9_]+)\s*=', config_content)
+    # 过滤掉一些私有变量
+    keys = [k for k in set(keys) if not k.startswith('_') and len(k) > 3]
+    
+    # 2. 检查 REFERENCE.md
+    with open(ref_file, 'r', encoding='utf-8') as f:
+        ref_content = f.read()
+    
+    missing = [k for k in keys if k not in ref_content]
+    
+    # 排除一些已知的无需文档化的变量
+    ignore_keys = ['config', 'trans_cfg', 'logger', 'timeout']
+    missing = [k for k in missing if k not in ignore_keys]
+    
+    if missing:
+        audit.warn("配置参考对齐", f"以下配置项在 REFERENCE.md 中缺失文档定义: {', '.join(missing)}")
+    else:
+        audit.ok("配置参考对齐", "REFERENCE.md 已覆盖所有核心配置项定义")
