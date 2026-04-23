@@ -197,3 +197,8 @@ $RECYCLE.BIN/
 .plenipes/timeline.md
 .plenipes/sentinel_health.json
 .illacme-shadow/
+
+# 🚀 [Stage V6 安全加固] 
+# 采用“全量屏蔽 + 模板放行”策略，确保本地开发配置永不上云
+configs/*.yaml
+!configs/*.example.yaml

@@ -26,6 +26,8 @@ from .adapters.syndication.syndication import ContentSyndicator
 from .egress_dispatcher import EgressDispatcher
 from .services.janitor import JanitorService
 from .vault_indexer import VaultIndexer
+from .logic.block_parser import MarkdownBlockParser
+from .storage.block_cache import BlockShadowCache
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -130,6 +132,10 @@ class EngineFactory:
             i18n_cfg=engine.i18n,
             janitor=engine.janitor
         )
+
+        # 🚀 [Stage V6] 语义分片与块级缓存引擎
+        engine.block_parser = MarkdownBlockParser()
+        engine.block_cache = BlockShadowCache(engine.paths['shadow'])
         
         # 🚀 [V33] 动态组装处理流水线
         # 未来可根据 config.pipeline_steps 动态过滤
