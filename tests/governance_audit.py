@@ -22,7 +22,7 @@ def load_all_checks():
             importlib.import_module(module_name)
 
 def main():
-    print("🛡️  Illacme-plenipes 治理自审引擎 v5.4.1 (星系动态加载版)")
+    print("🛡️  Illacme-plenipes 治理自审引擎 v5.4.1 (五大维度校验版)")
     print("自愈模式: " + ("开启" if "--fix" in sys.argv else "关闭"))
     print("=" * 60)
 

@@ -1,4 +1,4 @@
-# 架构主权复苏与治理星系重构验收报告 (Sovereignty & Governance Walkthrough)
+# 架构主权复苏与治理维度重构验收报告 (Sovereignty & Governance Walkthrough)
 
 ## 任务背景
 本次迭代的核心目标是解决 Illacme-plenipes 在重构过程中的逻辑丢失与物理结构脆弱问题。通过建立“契约化主权”架构，我们不仅找回了丢失的 AI 逻辑，还构建了一套足以支撑大规模生产环境的自动化治理体系。
@@ -6,15 +6,15 @@
 ## 核心变更点
 
 ### 1. 逻辑与协议物理隔离 (Architectural Isolation)
-- [x] 5-Galaxy 审计分层重构
+- [x] 5-Dimension 审计分层重构
 - [x] 逻辑主权隔离 (BaseTranslator / Hub)
 - [x] 物理拓扑与点火测试
 - [x] 配置项-参考手册全自动对齐审计
 - **BaseTranslator**: Slug 生成、SEO 提取、Prompt 组装等“大脑逻辑”全部收回到基类，防止子类碎片化。
 - **Atomic Protocol**: 定义了 `_ask_ai` 原子方法，使适配器（OpenAI/Gemini）回归纯净的协议实现者身份。
 
-### 2. 治理星系 v5.4 重构 (Governance Reordering)
-- **五大星系调度流**：将审计逻辑重新排列为：
+### 2. 治理维度 v5.4 重构 (Governance Reordering)
+- **五大维度调度流**：将审计逻辑重新排列为：
 - [x] 物理：包结构与 __init__.py 连通性通过。
 - [x] 系统：Git 卫生与 KI 纯净度。
 - [x] 代码：逻辑主权隔离与 300 行行数约束生效。
