@@ -41,3 +41,4 @@
 ### Automated Tests
 - `python3 tests/governance_audit.py`：验证逻辑隔离审计通过。
 - `python3 tests/autonomous_simulation.py`：验证 AI 功能在重构后依然全量可用。
+ 

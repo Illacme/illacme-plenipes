@@ -8,49 +8,33 @@
 
 | 参数 | 缩写 | 类型 | 描述 |
 | :--- | :--- | :--- | :--- |
-| `--config` | `key` | `string` | 目标 Frontmatter 中的键名 (如 `lastmod`) |
-| `style` | `string` | `plain` (直接输出) 或 `object` (结构化对象) |
-| `datetime_format` | `string` | **[GGP 新增]** strftime 风格格式化字符串 (如 `%Y-%m-%dT%H:%M:%S%z`) |
+| `--config` | - | `string` | 指定配置文件路径 (默认 config.yaml) |
 | `--watch` | - | `Flag` | 启动看门狗实时守护模式 |
 | `--dry-run` | - | `Flag` | 演练模式：拦截 API 扣费与物理写盘 |
 | `--force` | - | `Flag` | 强制模式：无视指纹，全量重刷所有文档 |
-| `--path` | `-p` | `List` | **选择性同步**：仅同步指定的文件或目录路径 |
 | `--no-ai` | - | `Flag` | **离线模式**：拦截所有 AI 任务，仅执行本地排版 |
-| `--port` | - | `INT` | 物理覆盖 `singleton_port`，支持多实例运行 |
-| `--log-level` | - | `Enum` | 日志级别：DEBUG, INFO, WARNING, ERROR |
-| `--clean` | - | `Flag` | 重置引擎：物理清空指纹库与影子缓存 |
 
 ## 2. 配置文件详解 (Config Matrix - config.yaml)
 
 ### 2.1 系统层 (System)
-*   **`max_workers`** (int): AI 处理的并发线程数。
-*   **`auto_save_interval`** (int): 账本落盘间隔（秒）。
-*   **`log_level`** (string): 全局日志详尽度。
-*   **`singleton_port`** (int): 互斥锁端口，防止引擎多开冲突。
+*   **`max_workers`** (int): 处理并发线程数。
+*   **`singleton_port`** (int): 互斥锁端口。
+*   **`watchdog_settings`** (dict): [NEW] 包含 `heavy_task_delay` 和 `gc_delay` 调优。
 
-### 2.2 路径层 (Output Paths)
-*   **`markdown_dir`** (path): SSG 框架存放 Markdown 的目标目录。
-*   **`assets_dir`** (path): SSG 存放静态资源（图片/视频）的地址。
-*   **`graph_json_dir`** (path/null): (可选) 导出全量图谱 JSON 的路径。
+### 2.2 翻译与 AI (Translation/AI)
+*   **`custom_prompts`** (dict): [NEW] 外部化提示词覆盖 (slug/seo/translate)。
+*   **`global_proxy`** (string): [NEW] 适配器全局 HTTP 代理。
 
-### 2.3 翻译与 AI (Translation/AI)
-*   **`providers`** (dict): API Key 与 Base URL 的连接阵列。
-*   **`max_chunk_size`** (int): 文档分片时的 Token 长度限制。
-*   **`temperature`** (float): AI 生成的随机性（建议 0.1 以下）。
-*   **`enable_semantic_slice`** (bool): 是否开启基于 AST 的语义切片。
+### 2.3 治理与自审 (Governance)
+*   **`governance.policy`** (enum): `strict` (审计失败阻止提交) 或 `loose`。
+*   **`governance.complexity_hard_limit`** (int): [Rule 11.1] 逻辑文件行数红线 (300)。
+*   **`governance.history_audit_depth`** (int): 迭代归档追溯深度 (3)。
+*   **`governance.logic_sovereignty_protection`** (bool): [Rule 12.9] 逻辑主权隔离开关。
 
-### 2.4 SEO 与元数据 (SEO Settings)
-*   **`generate_description`** (bool): 是否自动生成 150 字以内的摘要。
-*   **`generate_keywords`** (bool): 是否自动生成 5-10 个关键词标签。
-*   **`slug_mode`** (enum): `ai` (语义化美化) 或 `regex` (正则拼音化)。
-
-### 2.5 审计时间轴 (Timeline)
-*   **`enabled`** (bool): 记录“保存-同步”动作序列的开关。
-*   **`max_entries`** (int): 历史记录回溯深度上限。
+### 2.4 审计时间轴 (Timeline)
+*   **`timeline.enabled`** (bool): 记录动作序列的开关。
+*   **`timeline.max_entries`** (int): 历史记录回溯上限。
 
 ## 3. 环境变量 (Environments)
-
-除配置文件外，引擎支持以下环境变量覆盖：
-
-*   **`ILLACME_API_KEY`**: 强制覆盖所有翻译提供者的 API Key。
-*   **`ILLACME_LOG_LEVEL`**: 终端输出的日志详尽度。
+*   **`ILLACME_SKIP_DOC_CHECK`**: 设置为 `TRUE` 可临时跳过仿真引擎的文档强校验。
+*   **`ILLACME_LOG_LEVEL`**: 终端日志详尽度。
