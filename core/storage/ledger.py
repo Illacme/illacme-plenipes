@@ -36,10 +36,9 @@ class MetadataManager:
         # 遍历所有文档，如果存在旧版的 `hash` 字段，则无损转移到 `source_hash`，并补齐 `shadow_hash`
         migrated_count = 0
         if "documents" in self.data:
-            for rel_path, doc_info in self.data["documents"].items():
+            for rel_path, doc_info in self.data.get("documents", {}).items():
                 if "hash" in doc_info:
                     doc_info["source_hash"] = doc_info.pop("hash")
-                    # 初始迁移时，影子库尚未建立，先将其置空，等待 Pipeline A 填充
                     if "shadow_hash" not in doc_info:
                         doc_info["shadow_hash"] = ""
                     migrated_count += 1
@@ -85,7 +84,7 @@ class MetadataManager:
 
     def get_documents_snapshot(self):
         """为数字花园拓扑图等外围组件提供只读快照"""
-        with self.lock: return copy.deepcopy(self.data["documents"])
+        with self.lock: return copy.deepcopy(self.data.get("documents", {}))
 
     def register_document(self, rel_path, title, slug=None, source_hash=None, shadow_hash=None, seo_data=None, route_prefix=None, route_source=None, assets=None, ext_assets=None, outlinks=None, persistent_date=None):
         """
@@ -93,9 +92,10 @@ class MetadataManager:
         注意：为了兼顾老代码的调用，如果传入旧的 file_hash，将通过逻辑路由分发到 source_hash
         """
         with self.lock:
-            if rel_path not in self.data["documents"]:
-                self.data["documents"][rel_path] = {}
-            doc = self.data["documents"][rel_path]
+            docs = self.data.get("documents", {})
+            if rel_path not in docs:
+                docs[rel_path] = {}
+            doc = docs.get(rel_path)
             
             doc["title"] = title
             if slug is not None: doc["slug"] = slug
@@ -123,10 +123,10 @@ class MetadataManager:
                 elif "outlinks" in doc: del doc["outlinks"]
                 
             # 建立多维反查索引
-            if "link_index" not in self.data: self.data["link_index"] = {}
-            self.data["link_index"][title] = rel_path
-            self.data["link_index"][os.path.splitext(rel_path)[0]] = rel_path
-            self.data["link_index"][os.path.basename(rel_path)] = rel_path
+            link_index = self.data.setdefault("link_index", {})
+            link_index[title] = rel_path
+            link_index[os.path.splitext(rel_path)[0]] = rel_path
+            link_index[os.path.basename(rel_path)] = rel_path
             self._dirty = True
 
     def get_dir_slug(self, raw_dir):
@@ -143,13 +143,14 @@ class MetadataManager:
     def remove_document(self, rel_path):
         """清道夫专用的物理销毁接口"""
         with self.lock:
-            if rel_path in self.data["documents"]:
-                del self.data["documents"][rel_path]
+            docs = self.data.get("documents", {})
+            if rel_path in docs:
+                del docs[rel_path]
                 self._dirty = True
 
     def get_doc_info(self, rel_path):
         """获取特定文档的元数据拷贝"""
-        with self.lock: return self.data["documents"].get(rel_path, {}).copy()
+        with self.lock: return self.data.get("documents", {}).get(rel_path, {}).copy()
 
     def find_by_hash(self, source_hash):
         """
@@ -158,7 +159,7 @@ class MetadataManager:
         """
         if not source_hash: return None
         with self.lock:
-            for rel_path, info in self.data["documents"].items():
+            for rel_path, info in self.data.get("documents", {}).items():
                 if info.get("source_hash") == source_hash:
                     # 返回找到的第一个匹配项的拷贝
                     result = info.copy()
@@ -175,17 +176,16 @@ class MetadataManager:
         """
         if not asset_hash: return
         with self.lock:
-            if "asset_registry" not in self.data:
-                self.data["asset_registry"] = {}
+            registry_map = self.data.setdefault("asset_registry", {})
             
-            if asset_hash not in self.data["asset_registry"]:
-                self.data["asset_registry"][asset_hash] = {"alt_texts": {}}
+            if asset_hash not in registry_map:
+                registry_map[asset_hash] = {"alt_texts": {}}
             
-            registry = self.data["asset_registry"][asset_hash]
-            if "alt_texts" not in registry: registry["alt_texts"] = {}
+            registry = registry_map.get(asset_hash)
+            alt_texts = registry.setdefault("alt_texts", {})
             
             if alt_text is not None: 
-                registry["alt_texts"][lang] = alt_text
+                alt_texts[lang] = alt_text
                 # 兼容旧版：保留一个主引用
                 registry["alt_text"] = alt_text
                 

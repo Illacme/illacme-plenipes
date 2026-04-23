@@ -100,6 +100,10 @@ themes/*/node_modules/
 node_modules/
 .pnpm-store/
 
+# 🚀 [v5.3] 治理状态屏蔽
+.plenipes/*.json
+.plenipes/*.log
+
 # 🚀 [新增] Astro 与 Vite 底层编译缓存与类型树
 themes/*/.astro/
 .astro/

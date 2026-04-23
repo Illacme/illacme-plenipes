@@ -170,15 +170,16 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
                 asset_docs_count += 1
                 
             if has_local:
-                for asset_path in doc_info['assets']:
+                for asset_path in doc_info.get('assets', []):
                     if str(asset_path).startswith(('http://', 'https://', '//')):
                         continue
-                    abs_asset_path = os.path.join(engine.paths['assets'], asset_path)
+                    assets_path = engine.paths.get('assets', '.')
+                    abs_asset_path = os.path.join(assets_path, asset_path)
                     if not os.path.exists(abs_asset_path):
                         missing_local_assets.append((rel_path, asset_path))
                         
             if has_remote:
-                for ext_url in doc_info['ext_assets']:
+                for ext_url in doc_info.get('ext_assets', []):
                     remote_assets_to_check.add((rel_path, ext_url))
 
         logger.info(f"📊 [审计简报] 本轮参与对齐文档: {len(current_source_files)} 篇 | 确诊含资产文档: {asset_docs_count} 篇")

@@ -72,7 +72,7 @@ class TimelineManager:
             
         with self.lock:
             for event in self.events:
-                if event["path"] == rel_path and event["status"] == "PENDING":
+                if event.get("path") == rel_path and event.get("status") == "PENDING":
                     event["status"] = status
                     if details:
                         event["details"] = details
@@ -115,8 +115,9 @@ class TimelineManager:
         
         # 只取最近 100 条显示在 Markdown 中
         for ev in events[:100]:
-            status_ico = "✅" if ev['status'] in ['UPDATED', 'SYNCED', 'SKIP'] else "🛑" if ev['status'] == 'ERROR' else "🔄"
-            lines.append(f"| {ev['time']} | `{ev['path']}` | **{ev['type']}** | {status_ico} {ev['status']} | {ev['details']} |")
+            ev_status = ev.get('status', 'UNKNOWN')
+            status_ico = "✅" if ev_status in ['UPDATED', 'SYNCED', 'SKIP'] else "🛑" if ev_status == 'ERROR' else "🔄"
+            lines.append(f"| {ev.get('time', '')} | `{ev.get('path', '')}` | **{ev.get('type', '')}** | {status_ico} {ev_status} | {ev.get('details', '')} |")
             
         with open(self.markdown_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(lines))

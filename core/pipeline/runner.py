@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger("Illacme.plenipes")
 
-class Step:
+class PipelineStep:
     """流水线工序基类"""
     def process(self, context):
         raise NotImplementedError("子类必须实现 process 方法")
@@ -19,9 +19,21 @@ class Pipeline:
     def __init__(self):
         self.steps = []
 
-    def add_step(self, step: Step):
+    def add_step(self, step: PipelineStep):
         self.steps.append(step)
         return self
+
+    @classmethod
+    def build(cls, step_names: list, registry) -> 'Pipeline':
+        """🚀 [V33] 动态构建器：从注册中心按序提取组件"""
+        p = cls()
+        for name in step_names:
+            step_cls = registry.get_step(name)
+            if step_cls:
+                p.add_step(step_cls())
+            else:
+                logger.warning(f"⚠️ [管线装配] 无法找到已注册的步骤: {name}")
+        return p
 
     def execute(self, context):
         for step in self.steps:

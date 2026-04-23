@@ -1,0 +1,30 @@
+# ==========================================
+# AI 算力节点登记 (Providers Hub)
+# ==========================================
+# 🚀 算力资源中心：此处定义了引擎可以调用的所有 AI 推理节点。
+# 💡 安全提示：建议将敏感 API_KEY 注入环境变量 ILLACME_API_KEY，此处仅保留节点定义。
+
+
+deepseek_api:
+  type: "openai-compatible"
+  base_url: "https://api.deepseek.com/v1"
+  # ⚠️ 注意：推荐设置环境变量 ILLACME_API_KEY 以保护密钥。
+  api_key: "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+  model: "deepseek-chat"
+  
+gemini_node:
+  type: "gemini"
+  api_key: "AIzaSyAbd265UH-xHy8yhw93amfrESlvTIIDPys"
+  model: "gemini-1.5-flash"
+
+lmstudio_local:
+  type: "openai-compatible"
+  base_url: "http://localhost:1234/v1"
+  api_key: "not-needed"
+  model: "qwen/qwen3.5-9b"
+
+ollama_local:
+  type: "ollama"
+  base_url: "http://localhost:11434/api"
+  model: "llama3"
+  proxy: ""

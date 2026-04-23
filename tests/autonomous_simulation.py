@@ -119,6 +119,10 @@ def run_shadow_simulation():
         os.makedirs(os.path.join(tmpdir, "content-vault"), exist_ok=True)
         os.makedirs(os.path.join(tmpdir, ".plenipes"), exist_ok=True)
         
+        # 🚀 [Rule 11.5] 兼容分片配置文件：确保影子环境具备完整的配置矩阵
+        if os.path.exists("configs"):
+            shutil.copytree("configs", os.path.join(tmpdir, "configs"), dirs_exist_ok=True)
+        
         # 3. 挂载仿真引擎
         try:
             origin_cwd = os.getcwd()

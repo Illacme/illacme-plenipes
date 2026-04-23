@@ -89,7 +89,7 @@ def parse_args_and_lock():
 
     # 在初始化主引擎和模型加载前，单独解析系统级参数以抢占端口锁
     try:
-        from .config import load_config
+        from .config.config import load_config
         cfg = load_config(args.config)
         lock_port = args.port or cfg.system.singleton_port
         

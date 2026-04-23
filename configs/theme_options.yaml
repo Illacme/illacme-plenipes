@@ -1,0 +1,51 @@
+# ==========================================
+# 4. 声明式主题配置集 (Theme Options Matrix)
+# ==========================================
+# 💡 【高阶换肤指南】：
+# 引擎如何把 Obsidian 的特有语法 (如 Callouts) 转化为目标主题的代码？就看这里。
+
+docusaurus:
+  syntax_engine: "docusaurus"
+  syntax_preset: "admonitions"
+  output_paths:
+    markdown_dir: "./themes/{theme}/docs"
+    assets_dir: "./themes/{theme}/static/assets"
+    graph_json_dir: "./themes/{theme}/static"
+  lang_mapping: { "zh": "zh-Hans", "en": "en" }
+  metadata_mapping:
+    last_modified: { key: "last_update", style: "object" }
+    author: { key: "author" }
+
+starlight:
+  syntax_engine: "starlight"
+  syntax_preset: "admonitions"
+  output_paths:
+    markdown_dir: "./themes/{theme}/src/content/docs"
+    assets_dir: "./themes/{theme}/public/assets"
+    graph_json_dir: "./themes/{theme}/public"
+  lang_mapping: { "zh": "zh-cn", "en": "en" }
+
+vitepress:
+  syntax_engine: "vitepress"
+  output_paths:
+    markdown_dir: "./themes/{theme}/docs"
+    assets_dir: "./themes/{theme}/public/assets"
+    graph_json_dir: "./themes/{theme}/public"
+
+nextra:
+  syntax_engine: "nextra"
+  output_paths:
+    markdown_dir: "./themes/{theme}/pages"
+    assets_dir: "./themes/{theme}/public/assets"
+
+hugo:
+  syntax_engine: "hugo"
+  output_paths:
+    markdown_dir: "./themes/{theme}/content"
+    assets_dir: "./themes/{theme}/static/assets"
+
+hexo:
+  syntax_engine: "hexo"
+  output_paths:
+    markdown_dir: "./themes/{theme}/source/_posts"
+    assets_dir: "./themes/{theme}/source/assets"

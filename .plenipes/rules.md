@@ -51,3 +51,24 @@ These project-specific rules extend the Global Integrity Protocols and must be s
 - **每轮必审 (Mandatory Post-Iteration Audit)**：每次迭代结束后、`git commit` 前，智能体必须执行 `python3 tests/governance_audit.py`。只有全部检查项通过（0 失败）才允许提交。
 - **自审进化 (Audit Evolution)**：智能体在实战中发现新的反模式时，必须主动向 `tests/governance_audit.py` 追加新的检查函数。自审清单本身也是一个会呼吸的活文档。
 - **人类审计解放**：此机制的终极目标是让 AI 承担 100% 的治理巡检责任，将人类从"手动查阅发现问题"的低效循环中彻底解放。
+
+## XI. 工程稳定性与原子化操作 (Engineering Stability)
+- **[Rule 11.1] 复杂度红线与黄线**：
+    - **硬性失败（红线）**：禁止任何逻辑文件（Python）超过 **500 行**。一旦触线，治理审计将强制拦截提交。Markdown/MDX 文件作为内容资产，豁免行数限制。
+    - **健康警告（黄线）**：当 Python 逻辑文件超过 **300 行** 时，Agent 必须发出重构警告，并在下一个 TDR 迭代中优先拆分。
+- **[Rule 11.2] 编辑原子化协议**：禁止单次 `replace_file_content` 超过 100 行或 2KB。大修必须拆分为多个微块执行。
+- **[Rule 11.3] 影子自省校验**：超过 50 行的核心逻辑变更，AI 必须优先在 `.tmp` 副本中进行语法校验（ast.parse）或干跑（Dry-run），验证无误后方可覆盖原件。
+- **[Rule 11.4] 死锁逃逸机制**：若单次编辑导致会话响应超过 60s 或出现逻辑死锁，下一任 Agent 必须强制回滚该文件至最近的审计通过点（Audit Checkpoint）。
+- [Rule 11.5] 配置文件分片协议 (Config Fragmentation Protocol)：鼓励对超过 500 行的配置文件执行“分片拆分”。核心逻辑支持 `include: "sub_config.yaml"` 语法，将大体量配置（如主题适配器、AI 节点集）隔离到独立文件，降低单文件编辑时的 Context 负载与死锁风险。
+
+## [Rule 12] 治理与审计主权 (Governance Sovereignty)
+- **[Rule 12.8] 核心函数主权防护**：严禁在未迁移逻辑的前提下删除核心类方法（如 `translate`, `generate_slug`, `generate_seo_metadata`）。所有适配器类必须通过 AST 逻辑完整性审计。
+
+## XII. 怠工防御与硬核强制协议 (Anti-Slacking & Hard Enforcement)
+- **[Rule 12.1] 强制特征签名校验 (Mandatory Signature Audit)**：凡涉及类构造函数（`__init__`）、核心函数签名的修改，AI 必须**强制**执行全项目 grep 扫描所有调用点并同步更新。严禁在未确认调用链闭环的情况下宣告“完成”。
+- **[Rule 12.2] 审计零红线准则 (Zero-Red Audit Policy)**：在宣布任务结束前，必须运行 `governance_audit.py`。任何 **RED (Failure)** 级别的问题必须当场修复。严禁带着 RED 状态交付。
+- **[Rule 12.3] 三相文档物理落盘硬约束**：Plan、Task、Walkthrough 文档不仅要在会话中生成，必须**物理写入** `.plenipes/history/` 对应的归档目录。未见物理文件，视为“文档违约”。
+- **[Rule 12.4] 配置模型联动校验**：任何针对 `config_models.py` 的修改，必须强制触发一轮 `tests/autonomous_simulation.py` 全量仿真。只有影子校验通过，才允许标记配置变更。
+- **[Rule 12.5] 模块主权头强制令**：所有新建或重构的 Python 文件，必须以标准工业级 docstring 开头（包含模块职责、防护标签 `[AEL-Iter-ID]`）。缺失头部的代码视为“流浪代码”，治理审计将直接拦截。
+- **[Rule 12.6] 清理产物物理销毁**：每次 TDR 迭代结束，必须物理执行 `find . -name "__pycache__" -exec rm -rf {} +`。严禁让编译产物污染物理目录。
+- [Rule 12.7] 配置文件主权保护 (Config Integrity Guard)：严禁在未获得授权的情况下删除 `config.yaml` 或 `config.example.yaml` 中的任何注释块、示例节点或暂存占位符。精简必须通过“架构解耦（如模型化）”实现，而非“物理内容剪裁”。
