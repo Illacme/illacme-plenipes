@@ -2,6 +2,9 @@
 
 本文件详细定义了 Illacme-plenipes 引擎的核心架构、数据管线逻辑以及各项工业级设计准则，旨在为开发者提供深度的技术视图。
 
+> [!TIP]
+> 在深入技术细节前，请务必先阅读 [docs/FEATURES.zh-CN.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/FEATURES.zh-CN.md) 以掌握引擎的核心特性与愿景目标。
+
 ## 1. 核心架构总览 (High-Level Architecture)
 
 Illacme-plenipes 采用 **“插件化适配器 + 线性同步管线”** 的解耦架构，核心组件分布如下：

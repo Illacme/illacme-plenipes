@@ -94,3 +94,21 @@
     - **原子协议**：子类仅允许实现 `_ask_ai` 等原子协议接口，严禁重写（Override）基类的业务流程方法。
 - **Action**: 新增适配器时，必须继承基类模板并对齐 `_ask_ai` 契约，严禁在子类中编写 Prompt 组装逻辑。
 - **Guard**: `check_logic_shadowing` — 通过 AST 静态扫描，物理拦截子类对基类主权方法的非法篡改。
+
+## 📅 2026-04-24 进化点
+
+### 12. [并发进化] 块级并行翻译与线程安全 (Parallel Block Synchronization)
+- **背景 [AEL-Iter-v6.2.1]**：单文件长文同步耗时过长，原有的语种级并行无法解决单文件内的阻塞。
+- **进化结论**：
+    - **两层并行架构**：外层通过 `AIScheduler` 实现语种间并行，内层在 `process_target` 中引入 `ThreadPoolExecutor` 实现 Markdown 语义块（Blocks）间并行。
+    - **资源隔离**：必须复用 `llm_concurrency` 信号量或按比例分配 `block_workers`，防止海量小块瞬时请求击穿本地 AI 节点（如 Ollama）。
+- **Action**: 保持 `block_workers` 的动态计算逻辑，确保在多语种同步时总并发数受控。
+- **Guard**: `check_parallel_concurrency_locks` — 物理验证调度器是否正确处理了并发限制。
+
+### 13. [稳定性] 400 Bad Request 诊断防线 (AI Response Audit)
+- **背景 [AEL-Iter-v6.2.1]**：本地模型在处理特定 Markdown 语法或长 Payload 时频繁返回 400 错误，且无详细日志导致排查困难。
+- **进化结论**：
+    - **深度响应审计**：在适配器层（OpenAI/Ollama）拦截非 200 响应，强制记录完整的 Response Body 到日志中。
+    - **指数退避重试**：在 `BaseTranslator` 中集成统一的重试包装器，有效过滤网络瞬时抖动。
+- **Action**: 所有 AI 适配器必须通过 `ask_ai_with_retry` 原子协议进行调用。
+- **Guard**: `check_ai_retry_implementation` — AST 扫描确认 `_ask_ai` 调用是否被重试包装器覆盖。

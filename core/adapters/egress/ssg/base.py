@@ -16,6 +16,16 @@ class BaseSSGAdapter:
     def render(self, body: str, fm: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         """
         [Contract] 执行特定 SSG 的语法转换与元数据增强。
-        由子类实现。
         """
         return body, fm
+
+    def adapt_metadata(self, fm: dict, date_obj, author_name) -> dict:
+        """[Sovereignty] 物理元数据方言适配"""
+        return fm
+
+    def inject_seo(self, fm: dict, description: str, keywords: list) -> dict:
+        """[SEO] 框架感知的 SEO 字段映射协议"""
+        # 默认回退逻辑：标准的顶层注入
+        if description: fm['description'] = description
+        if keywords: fm['keywords'] = keywords
+        return fm
