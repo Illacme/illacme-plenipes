@@ -1,6 +1,0 @@
-- [x] 1. Update tests/autonomous_simulation.py
-    - [x] Add expansion for Living Documentation to include CHANGELOG and ROADMAP.
-    - [x] Add AEL Protocol history check ensuring `.plenipes/history/` is updated on any change.
-- [x] 2. Verification
-    - [x] Test simulation output locally via sub-process dry-runs or log verification.
-- [/] 3. Walkthrough Report

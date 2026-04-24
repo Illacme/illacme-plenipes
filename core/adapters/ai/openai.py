@@ -17,9 +17,17 @@ class OpenAICompatibleTranslator(BaseTranslator):
     """🚀 [TDR-Iter-021] OpenAI 兼容协议适配器 (Pure Adapter)"""
     PLUGIN_ID = 'openai-compatible'
     
+    def __init__(self, node_name, trans_cfg):
+        super().__init__(node_name, trans_cfg)
+        self._session = requests.Session()
+
     def _ask_ai(self, system_prompt: str, user_content: str) -> str:
         """[Protocol] 实现 OpenAI 兼容协议的原子对话"""
+        logger.info(f"🔗 [AI 调用开始] Node: {self.node_name} | Model: {self.config.model}")
         url = self.config.base_url or self.config.url
+        if not url.endswith("/chat/completions") and not url.endswith("/completions"):
+            url = url.rstrip("/") + "/chat/completions"
+            
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json"
@@ -41,7 +49,15 @@ class OpenAICompatibleTranslator(BaseTranslator):
         }
         
         try:
-            resp = requests.post(url, json=payload, headers=headers, proxies=proxies, timeout=self.timeout)
+            if getattr(self.config, 'debug_payload', False):
+                logger.info(f"📤 [AI Payload]: {payload}")
+            resp = self._session.post(url, json=payload, headers=headers, proxies=proxies, timeout=self.timeout)
+            
+            if resp.status_code != 200:
+                # 🚀 [V6.2.1] 深度诊断：记录完整的错误响应正文
+                logger.error(f"🛑 [AI API 异常响应] Node: {self.node_name} | Status: {resp.status_code}")
+                logger.error(f"   └── Body: {resp.text}")
+                
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"]
         except Exception as e:

@@ -1,5 +1,0 @@
-- [x] 改写 `.antigravityrules`：注入强制 `view_file` 动作指令。
-- [x] 改写 `.cursorrules`：追加 BOOT SEQUENCE 强制段落。
-- [x] 更新全局知识库 `protocols.md`：写入 BSR 协议第十章。
-- [x] 创建 AEL-Iter-004 历史归档三件套。
-- [x] 提交 Git 版本控制。

@@ -12,6 +12,10 @@ from .base import BaseTranslator
 logger = logging.getLogger("Illacme.plenipes")
 
 class OllamaTranslator(BaseTranslator):
+    def __init__(self, node_name, trans_cfg):
+        super().__init__(node_name, trans_cfg)
+        self._session = requests.Session()
+
     def _ask_ai(self, system_prompt: str, user_content: str) -> str:
         url = f"{self.config.base_url}/generate"
         payload = {
@@ -19,5 +23,13 @@ class OllamaTranslator(BaseTranslator):
             "prompt": f"{system_prompt}\n\n{user_content}",
             "stream": False
         }
-        resp = requests.post(url, json=payload, timeout=self.timeout)
-        return resp.json().get("response", "")
+        try:
+            resp = self._session.post(url, json=payload, timeout=self.timeout)
+            if resp.status_code != 200:
+                logger.error(f"🛑 [Ollama API 异常响应] Node: {self.node_name} | Status: {resp.status_code}")
+                logger.error(f"   └── Body: {resp.text}")
+            resp.raise_for_status()
+            return resp.json().get("response", "")
+        except Exception as e:
+            logger.error(f"🛑 [Ollama API Error]: {e}")
+            raise

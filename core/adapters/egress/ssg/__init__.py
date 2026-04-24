@@ -42,6 +42,9 @@ class SSGAdapter:
     def adapt_metadata(self, fm_dict, date_obj, author_name):
         return self.active_renderer.adapt_metadata(fm_dict, date_obj, author_name)
 
+    def inject_seo(self, fm: dict, description: str, keywords: list) -> dict:
+        return self.active_renderer.inject_seo(fm, description, keywords)
+
     def convert_shortcodes(self, content):
         if not self.theme.shortcode_mappings: return content
         mappings = self.theme.shortcode_mappings

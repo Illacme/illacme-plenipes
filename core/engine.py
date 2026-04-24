@@ -40,6 +40,7 @@ class IllacmeEngine:
         
         # 🚀 [TDR-Iter-021] 委托工厂类执行复杂的组件装配与配置映射
         EngineFactory.assemble_components(self, config_path, no_ai)
+        self._old_info_cache = {}
 
     def _get_document_lock(self, rel_path):
         with self._global_engine_lock:
@@ -69,6 +70,10 @@ class IllacmeEngine:
         """🚀 核心管线调度枢纽"""
         vault_path = self.paths.get('vault', '.')
         rel_path = os.path.relpath(src_path, vault_path).replace('\\', '/')
+        
+        # 🚀 [Bugfix] 启动前快照
+        self._old_info_cache[rel_path] = self.meta.get_doc_info(rel_path)
+        
         if self._is_excluded(rel_path): return
 
         doc_lock = self._get_document_lock(rel_path)
@@ -139,20 +144,52 @@ class IllacmeEngine:
                     if not self.seo_cfg.enabled: return fm
                     lang_name = self.get_lang_name_by_code(lang_code)
                     seo_data, success = self.translator.generate_seo_metadata(text_content, lang_name, ctx.is_dry_run)
+                    
                     if success and seo_data:
-                        if self.seo_cfg.generate_description: fm['description'] = seo_data.get('description', '')
-                        if self.seo_cfg.generate_keywords: fm['keywords'] = normalize_keywords(seo_data.get('keywords', ''))
+                        # 🚀 [Stage V6.1.2] 智能 SEO 路由：人工精修优先于 AI 推导
+                        manual_desc = fm.get('description')
+                        manual_kws = fm.get('keywords')
+                        
+                        # 处理描述：如果用户写了，就翻译用户的；没写，就用 AI 生成的
+                        if manual_desc and isinstance(manual_desc, str) and manual_desc.strip():
+                            trans_prompt = (
+                                f"Task: Translate this SEO description to {lang_name}. "
+                                "Rule: Return ONLY the translated text. No quotes, no prefix. "
+                                f"Description: {manual_desc}"
+                            )
+                            desc = self.translator.translate(trans_prompt, "Auto", "Manual SEO Desc")
+                        else:
+                            desc = seo_data.get('description', '') if self.seo_cfg.generate_description else None
+                            
+                        # 处理关键词
+                        if manual_kws and (isinstance(manual_kws, list) or isinstance(manual_kws, str)):
+                            raw_kws = ", ".join(manual_kws) if isinstance(manual_kws, list) else manual_kws
+                            trans_prompt = (
+                                f"Task: Translate these SEO keywords into {lang_name}. "
+                                "Rule: Return ONLY a comma-separated list. No quotes. "
+                                f"Keywords: {raw_kws}"
+                            )
+                            kws_raw = self.translator.translate(trans_prompt, "Auto", "Manual SEO Kws")
+                            kws = normalize_keywords(kws_raw)
+                        else:
+                            kws = normalize_keywords(seo_data.get('keywords', '')) if self.seo_cfg.generate_keywords else None
+
+                        fm = self.ssg_adapter.inject_seo(fm, desc, kws)
                     return fm
 
                 primary_shadow_hash = ""
                 src_code = self.i18n.source.lang_code or 'zh-cn'
                 src_fm = ctx.base_fm.copy()
                 if ctx.seo_data:
-                    src_fm.update(ctx.seo_data)
-                    if 'keywords' in src_fm: src_fm['keywords'] = normalize_keywords(src_fm['keywords'])
+                    src_fm = self.ssg_adapter.inject_seo(
+                        src_fm, 
+                        ctx.seo_data.get('description') if self.seo_cfg.generate_description else None,
+                        normalize_keywords(ctx.seo_data.get('keywords', '')) if self.seo_cfg.generate_keywords else None
+                    )
                 
-                doc_info = self.meta.get_doc_info(rel_path)
-                can_recover = (not cli_force and doc_info.get("source_hash") == ctx.current_hash and not ctx.is_silent_edit)
+                # 🚀 [Bugfix] 必须在管线执行前锁定旧指纹，防止被 MetadataAndHashStep 污染
+                old_info = self._old_info_cache.get(rel_path, {})
+                can_recover = (not cli_force and old_info.get("source_hash") == ctx.current_hash and not ctx.is_silent_edit)
                 ext = os.path.splitext(rel_path)[1].lower()
                 shadow_path = self.paths.get('shadow')
                 if not shadow_path: shadow_src_path = ""

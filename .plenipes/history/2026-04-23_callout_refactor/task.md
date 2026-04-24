@@ -1,6 +1,0 @@
-- [x] Refactor SSGAdapter
-- [x] Implement stack-based parser in StaticizerStep
-- [x] Remove redundant calls in steps.py
-- [x] Remove redundant calls in egress_dispatcher.py
-- [x] Add AEL-Iter-ID to files
-- [/] Run final audit

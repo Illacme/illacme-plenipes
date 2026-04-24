@@ -7,9 +7,10 @@ You are operating within the Illacme-plenipes industrial framework.
 
 **YOUR FIRST COMPULSORY ACTIONS BEFORE PROCESSING ANY USER REQUEST:**
 You MUST immediately invoke `view_file` (or equivalent read tool) to physically open and load the following files IN ORDER:
-1. 👉 `.plenipes/rules.md` — Project governance rules (9 chapters)
-2. 👉 `.plenipes/evolution_records.md` — Project-specific lessons and pitfalls
-3. 👉 `.plenipes/skills/governance_master_skill.md` — Master orchestration skill
+1. 👉 `docs/FEATURES.zh-CN.md` — Project core features charter (The Soul of the Engine)
+2. 👉 `.plenipes/rules.md` — Project governance rules (9 chapters)
+3. 👉 `.plenipes/evolution_records.md` — Project-specific lessons and pitfalls
+4. 👉 `.plenipes/skills/governance_master_skill.md` — Master orchestration skill
 
 WARNING: Do NOT assume you "already know" the rules. Do NOT rely on "include" directives to syntactically pass. Your prompt context is historically ephemeral unless physically fetched. Failure to execute `view_file` on these files inside your FIRST turn is a direct violation of the governance protocol and will result in catastrophic integration failure.
 

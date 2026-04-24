@@ -3,8 +3,8 @@
 """
 Illacme-plenipes Core - AI Multilingual Scheduler
 模块职责：多语言 AI 并发调度中枢。
-负责在主线任务外，使用线程池并行拉起多个目标语种的 AI 翻译、SEO 生成与物理分发。
-🚀 [Stage V6]：引入 Delta Block Engine，支持块级增量翻译与缓存复用。
+负责在主线任务外，使用线程池并行拉起多个目标语种 of AI 翻译、SEO 生成与物理分发。
+🚀 [Stage V6.2.1]：实现块级并行翻译与元数据深度同步。
 """
 
 import os
@@ -68,7 +68,7 @@ class AIScheduler:
                     return (code, sanitize_ai_response(s_body), s_fm, True)
                 except Exception: pass
 
-            # 2. [Stage V6] 启动增量块级翻译 (Delta Block Engine)
+            # 2. [Stage V6.2.1] 启动增量块级并行翻译
             final_body, target_health = "", True
             target_fm = ctx.base_fm.copy() 
             
@@ -78,26 +78,21 @@ class AIScheduler:
                 
                 # 执行语义切片
                 blocks = engine.block_parser.parse(ctx.masked_source)
-                translated_blocks = []
-                new_block_fingerprints = []
                 
                 if is_dry_run:
                     # [DRY-RUN] 模拟分片过程并存入缓存以验证增量逻辑
+                    translated_blocks = []
+                    new_block_fingerprints = []
                     for block in blocks:
                         new_block_fingerprints.append(block.fingerprint)
                         if block.type == "spacer":
                             translated_blocks.append(block.content)
                             continue
                         
-                        # 尝试模拟命中
                         cached = engine.block_cache.get_block(code, block.fingerprint)
                         if cached:
-                            if engine.config.system.verbose_ai_logs:
-                                logger.info(f"⚡️ [DRY-BLOCK-HIT] ({code}) [{block.fingerprint[:8]}]")
                             translated_blocks.append(cached)
                         else:
-                            if engine.config.system.verbose_ai_logs:
-                                logger.info(f"🆕 [DRY-BLOCK-MISS] ({code}) [{block.fingerprint[:8]}]")
                             simulated_content = f"[DRY-BLOCK-{block.type}] {block.content}"
                             translated_blocks.append(simulated_content)
                             engine.block_cache.store_block(code, block.fingerprint, simulated_content)
@@ -107,59 +102,114 @@ class AIScheduler:
                     target_fm['title'] = f"[DRY] {target_fm.get('title', '')}"
                 else:
                     try:
-                        for block in blocks:
-                            new_block_fingerprints.append(block.fingerprint)
-                            
+                        # 🚀 [Stage V6.2.1] 块级并行翻译核心逻辑
+                        def translate_block_task(block):
                             if block.type == "spacer":
-                                translated_blocks.append(block.content)
-                                continue
+                                return block.content, True
                             
-                            cached_content = engine.block_cache.get_block(code, block.fingerprint)
-                            if cached_content is not None:
-                                translated_blocks.append(cached_content)
-                                continue
+                            # 1. 尝试命中缓存
+                            cached = engine.block_cache.get_block(code, block.fingerprint)
+                            if cached is not None:
+                                return cached, True
                             
+                            # 2. 执行 AI 翻译
                             if engine.config.system.verbose_ai_logs:
                                 logger.info(f"🌐 [AI 块级翻译] ({code}) <- {block.type} [{block.fingerprint[:8]}]")
                             
-                            t_block_content = engine.translator.translate(block.content, source_lang, target_lang)
-                            translated_blocks.append(t_block_content)
-                            engine.block_cache.store_block(code, block.fingerprint, t_block_content)
-                        
-                        final_body = "\n".join(translated_blocks)
-                        engine.meta.update_doc_blocks(rel_path, new_block_fingerprints)
+                            try:
+                                t_content = engine.translator.translate(block.content, source_lang, target_lang)
+                                engine.block_cache.store_block(code, block.fingerprint, t_content)
+                                return t_content, True
+                            except Exception as e:
+                                logger.warning(f"⚠️ [块翻译失败] ({code}) [{block.fingerprint[:8]}]: {e}")
+                                return block.content, False # 降级：保留原文
 
-                        # 标题翻译
+                        # 限制块级并发，复用配置中的 llm_concurrency 但给予保护
+                        block_workers = max(1, engine.config.translation.llm_concurrency // len(targets)) if len(targets) > 0 else 1
+                        
+                        results = [None] * len(blocks)
+                        health_results = [True] * len(blocks)
+                        
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=block_workers) as block_executor:
+                            future_to_idx = {block_executor.submit(translate_block_task, b): i for i, b in enumerate(blocks)}
+                            for future in concurrent.futures.as_completed(future_to_idx):
+                                idx = future_to_idx[future]
+                                try:
+                                    content, healthy = future.result()
+                                    results[idx] = content
+                                    health_results[idx] = healthy
+                                except Exception as e:
+                                    logger.error(f"🚨 [线程异常] ({code}) 块 {idx}: {e}")
+                                    results[idx] = blocks[idx].content
+                                    health_results[idx] = False
+                        
+                        final_body = "\n".join(results)
+                        target_health = all(health_results)
+                        
+                        # 同步指纹账本
+                        new_block_fingerprints = [b.fingerprint for b in blocks]
+                        engine.meta.update_doc_blocks(rel_path, new_block_fingerprints)
+ 
+                        # 🚀 [Stage V6.1] 深度元数据对齐 (Title & Tags & Categories)
                         if target_fm.get('title'):
-                            meta_prompt = f"Target: Translate this title to {target_lang}. Rule: Output ONLY the translated string. Title: '{target_fm['title']}'"
-                            target_fm['title'] = engine.translator.translate(meta_prompt, "Auto", "Meta Title").replace('"', '').strip()
+                            try:
+                                meta_prompt = (
+                                    f"Task: Translate the following title to {target_lang}. "
+                                    "Rule: Return ONLY the translated string. No quotes, no prefix like 'Title:', no explanations. "
+                                    f"Title: {target_fm['title']}"
+                                )
+                                target_fm['title'] = engine.translator.translate(meta_prompt, "Auto", "Meta Title").replace('"', '').strip()
+                            except Exception as e:
+                                logger.warning(f"⚠️ [元数据翻译失败] Title ({code}): {e}")
+                        
+                        # 批量处理标签与分类
+                        translatable_fields = ['tags', 'categories']
+                        for field in translatable_fields:
+                            items = target_fm.get(field)
+                            if items and isinstance(items, list) and len(items) > 0:
+                                try:
+                                    raw_items = ", ".join(items)
+                                    tag_prompt = (
+                                        f"Task: Translate these {field} into {target_lang}. "
+                                        "Rule: Keep the same item count. Return ONLY a single comma-separated list. No explanations. "
+                                        "Output format: item1, item2, item3 "
+                                        f"List: {raw_items}"
+                                    )
+                                    translated_raw = engine.translator.translate(tag_prompt, "Auto", f"Meta {field.capitalize()}")
+                                    target_fm[field] = [i.strip() for i in translated_raw.replace('"', '').split(',') if i.strip()]
+                                except Exception as e:
+                                    logger.warning(f"⚠️ [元数据翻译失败] {field} ({code}): {e}")
 
                     except Exception as e:
-                        logger.warning(f"⚠️ [块级翻译失败] {rel_path} ({code}): {e}")
+                        logger.warning(f"⚠️ [核心调度故障] {rel_path} ({code}): {e}")
                         target_health = False
             
             return (code, final_body, target_fm, target_health)
 
-        # 启动线程池进行 AI 调度
+        # 启动线程池进行 AI 调度 (语种级并行)
         max_workers = engine.config.translation.llm_concurrency
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [executor.submit(process_target, t) for t in targets]
             for future in concurrent.futures.as_completed(futures):
-                res = future.result()
-                if res:
-                    t_code, t_body, t_fm, t_health = res
-                    if not t_health: 
-                        ctx.ai_health_flag[0] = False
-                    
-                    # 引入分发间隔，防止压跨前端 Docusaurus 聚合器
-                    is_watch_mode = getattr(engine.meta, 'is_watch_mode', False)
-                    if is_watch_mode and not is_dry_run:
-                        time.sleep(0.2)
+                try:
+                    res = future.result()
+                    if res:
+                        t_code, t_body, t_fm, t_health = res
+                        if not t_health: 
+                            ctx.ai_health_flag[0] = False
                         
-                    engine.dispatcher.dispatch(
-                        engine.asset_index, ctx.title, ctx.slug, t_body, t_fm, rel_path,
-                        t_code, route_prefix, route_source, ctx.mapped_sub_dir, ctx.masks,
-                        is_dry_run, is_target=True, node_assets=ctx.node_assets,
-                        node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks,
-                        assets_lock=ctx.assets_lock, force_persistence_date=persistence_date
-                    )
+                        # 引入分发间隔，防止压跨前端 Docusaurus 聚合器
+                        is_watch_mode = getattr(engine.meta, 'is_watch_mode', False)
+                        if is_watch_mode and not is_dry_run:
+                            time.sleep(0.2)
+                            
+                        engine.dispatcher.dispatch(
+                            engine.asset_index, ctx.title, ctx.slug, t_body, t_fm, rel_path,
+                            t_code, route_prefix, route_source, ctx.mapped_sub_dir, ctx.masks,
+                            is_dry_run, is_target=True, node_assets=ctx.node_assets,
+                            node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks,
+                            assets_lock=ctx.assets_lock, force_persistence_date=persistence_date
+                        )
+                except Exception as e:
+                    logger.error(f"🚨 [语种调度故障] {rel_path}: {e}")
+                    ctx.ai_health_flag[0] = False

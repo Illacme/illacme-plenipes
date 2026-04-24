@@ -1,4 +1,0 @@
-- [x] 更新 `.gitignore` 追加对 `.plenipes/ledger.json`、`timeline` 等周遭敏感状态的物理拦截。
-- [x] 在 `.gitignore` 中追加对 `.illacme-shadow/` 高容量、高频变动算力缓存的屏蔽。
-- [x] 执行 `git rm --cached` 彻底摘除已被 Git 列入跟踪列表的危险与冗余状态文件。
-- [x] 遵守 AEL 宪法：为本次迭代写入历史归档日志。

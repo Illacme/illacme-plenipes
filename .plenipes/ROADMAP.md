@@ -1,17 +1,17 @@
 # 🗺️ Illacme-plenipes 全自动进化路线图 (Sovereign Roadmap)
 
-## 📌 当前版本: v6.0.1 (Delta Edition)
-**状态**: 🚀 **Stage V6 增量块引擎已上线**。秒级分片同步、影子块复用、工业级配置隔离已全量合入。
+## 📌 当前版本: v6.2.1 (Parallel Edition)
+**状态**: 🚀 **Stage V6.1 并行同步引擎已上线**。秒级分片同步、影子块复用、多级并行调度、AI 调用重试已全量合入。
 
 ---
 
-## 🚀 Stage V6.1: 极致效率维度 (Efficiency & Precision - IN PROGRESS)
+## 🚀 Stage V6.1: 极致效率维度 (Efficiency & Precision - COMPLETED)
 > **目标**: 解决“并行度不足”的痛点，实现秒级高并发处理。
 
 - [x] **Delta Block Engine**: 从文件级同步进化为块级（段落/组件）增量同步。
 - [x] **AI Cache 2.0**: 引入基于语义 Hash 的影子资产匹配，减少 80% 的重复 Token 消耗。
-- [ ] **Async Pipeline**: 重构核心管线，支持多线程/异步 AI 并发调用。
-- [ ] **Rigor Limit**: 强制执行单次同步耗时审计，确保工业级吞吐性能。
+- [x] **Async Pipeline**: 重构核心管线，支持多级 (语种+块级) 并发 AI 调用。
+- [x] **Rigor Limit**: 引入指数退避重试与深度响应审计，确保 400 错误可追溯。
 
 ## 📊 Stage V7: 透明治理维度 (Observability)
 > **目标**: 消除“黑盒运行”，提供直观的运行感知力。

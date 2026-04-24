@@ -2,6 +2,13 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+## [v6.2.1-Parallel] - 2026-04-24
+### 🚀 并行同步引擎加固 (Parallel Edition - Stage V6.1)
+- **多级并行调度 [AEL-Iter-v6.2.1]**：引入 `Delta Block Parallelism`。在单文件同步内部启动块级并行翻译，结合语种级并发，实现全链路非阻塞同步。
+- **工业级鲁棒性加固**：在 `BaseTranslator` 中集成指数退避重试机制。有效应对 429 流控与网络抖动。
+- **深度响应审计**：针对 OpenAI/Ollama 适配器实现 400 错误深度日志捕获，强制记录 Response Body 以便排查本地推理格式问题。
+- **元数据深度同步**：实现文章标题、标签（Tags）、分类（Categories）的自动化并行翻译与空值防御，确保多语言 SEO 完整性。
+
 ## [v6.0.1-Delta] - 2026-04-23
 ### 🚀 增量块引擎里程碑 (Delta Block Engine Milestones)
 - **语义分片架构 (Stage V6)**：弃用落后的文件级同步，全面转向基于语义块（Block-Level）的增量管线。引入 `MarkdownBlockParser` 状态机实现 Callouts、Tabs、代码块的高精度切片。

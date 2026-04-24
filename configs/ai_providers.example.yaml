@@ -17,11 +17,11 @@ gemini_node:
 
 lmstudio_local:
   type: "openai-compatible"
-  base_url: "http://localhost:1234/v1"
+  base_url: "http://127.0.0.1:1234/v1"
   api_key: "not-needed"
   model: "qwen/qwen3.5-9b"
 
 ollama_local:
   type: "ollama"
-  base_url: "http://localhost:11434/api"
+  base_url: "http://127.0.0.1:11434/api"
   model: "llama3"

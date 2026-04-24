@@ -24,8 +24,9 @@ class BaseTranslator(abc.ABC):
         if not self.config:
             raise ValueError(f"未找到节点配置: {node_name}")
             
-        self.timeout = getattr(self.config, 'api_timeout', 60.0)
-        self.max_retries = getattr(self.config, 'max_retries', 3)
+        # 🛡️ 自动解析特定节点的配置，并支持全局超时回退
+        self.timeout = getattr(self.config, 'api_timeout', getattr(trans_cfg, 'api_timeout', 60.0))
+        self.max_retries = getattr(self.config, 'max_retries', getattr(trans_cfg, 'max_retries', 3))
         
     def translate(self, text: str, source_lang: str, target_lang: str, context_type: str = "content") -> str:
         """[Sovereignty] 统一翻译逻辑：集成内容净化与原子协议"""
@@ -33,8 +34,39 @@ class BaseTranslator(abc.ABC):
         strip_jsx = getattr(self.trans_cfg, 'ai_context_purification', '') == 'strip_jsx_tags'
         purified_text = AILogicHub.purify_content(text, strip_jsx=strip_jsx)
         
-        system_prompt = f"You are a professional translator. Translate the following text from {source_lang} to {target_lang}. Return only the translation without any explanation."
-        return self._ask_ai(system_prompt, purified_text)
+        system_prompt = (
+            f"You are a professional translator. Translate from {source_lang} to {target_lang}. "
+            "Return ONLY the translated text. No explanations. No reasoning."
+        )
+        return self.ask_ai_with_retry(system_prompt, purified_text)
+
+    def ask_ai_with_retry(self, system_prompt: str, user_content: str) -> str:
+        """🚀 [V6.2.1] 鲁棒性增强：指数退避重试包装器"""
+        import time
+        last_error = None
+        
+        for i in range(self.max_retries + 1):
+            try:
+                return self._ask_ai(system_prompt, user_content)
+            except Exception as e:
+                last_error = e
+                # 识别不可重试的错误 (如 400 Bad Request，除非是网络抖动导致的异常)
+                error_msg = str(e).lower()
+                is_retriable = True
+                if "400" in error_msg and "bad request" in error_msg:
+                    # 400 错误通常是 Payload 问题，重试大概率无用，除非是临时性 API 异常
+                    # 但为了稳健，我们记录详细日志并根据情况决定是否重试
+                    logger.error(f"🛑 [AI 400 错误] Node: {self.node_name} | 请检查 Prompt 或 Payload 是否超限。")
+                    is_retriable = False 
+                
+                if not is_retriable or i == self.max_retries:
+                    break
+                    
+                wait_time = (2 ** i) * 1.5
+                logger.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries}): {e} | {wait_time}s 后重试...")
+                time.sleep(wait_time)
+        
+        raise last_error
 
     def describe_image(self, image_bytes: bytes, mime_type: str, context_text: str = "") -> str:
         """[Resonance] AI 视觉感知接口"""
@@ -44,10 +76,13 @@ class BaseTranslator(abc.ABC):
         """[Sovereignty] 统一逻辑：委托 LogicHub 执行工业级 Slug 清洗"""
         if is_dry_run: return f"dry-run-{title}", True
         prompts = getattr(self.trans_cfg, 'custom_prompts', {})
-        system_prompt = prompts.get("slug", "You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English slug for the given title. Return ONLY the slug string, no quotes, no extra text.")
+        system_prompt = prompts.get("slug", (
+            "You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English slug. "
+            "Return ONLY the slug string. No reasoning."
+        ))
         
         try:
-            raw_slug = self._ask_ai(system_prompt, title)
+            raw_slug = self.ask_ai_with_retry(system_prompt, title)
             # 调用工业级清洗引擎
             clean_slug = AILogicHub.clean_slug(raw_slug)
             return clean_slug, True
@@ -59,10 +94,13 @@ class BaseTranslator(abc.ABC):
         """[Sovereignty] 统一逻辑：委托 LogicHub 执行强力 JSON 修复与提取"""
         if is_dry_run: return {"description": "Dry run SEO", "keywords": "test"}, True
         prompts = getattr(self.trans_cfg, 'custom_prompts', {})
-        system_prompt = prompts.get("seo", f"You are an SEO expert. Analyze the following {lang_name} text and provide a concise description (max 150 chars) and 5-8 relevant keywords. Return ONLY a valid JSON object with 'description' and 'keywords' keys.")
+        system_prompt = prompts.get("seo", (
+            f"You are an SEO expert. Provide a description (max 150 chars) and 5 keywords for {lang_name}. "
+            "Return ONLY a JSON object. No reasoning."
+        ))
         
         try:
-            raw_json = self._ask_ai(system_prompt, text[:2000])
+            raw_json = self.ask_ai_with_retry(system_prompt, text[:2000])
             # 调用强力 JSON 提取引擎
             return AILogicHub.extract_seo_payload(raw_json)
         except Exception as e:
