@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Sync Orchestrator
-模块职责：单次全量/增量同步的并发调度总管。
-负责初始化的队列扫描、高并发 `ThreadPoolExecutor` 任务派发，以及极尽严苛的资产交叉审计雷达。
+Illacme Plenipes - Sovereign Orchestrator
+职责：全域主权编排中枢。负责算力派遣、稿件审计与分发任务的跨线程指挥。
+🛡️ [V35.2]：工业级主权分发指挥部。
 """
 
 import os
@@ -70,7 +70,6 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
     """
     核心任务并发调度派发区 (单次 Sync 逻辑)
     🚀 [架构升级 V14.3]：全面引入 Rich 工业级全息仪表盘。
-    🚀 [V11.0 Headless]：彻底剥离 UI 耦合，改由 EventBus 驱动。
     """
     if not task_queue:
         tlog.warning("⚠️ 没有找到任何 Markdown 笔记！💡 请检查 config.yaml 中的 `route_matrix` 目录配置是否正确。")
@@ -109,13 +108,15 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
     # 🚀 [V11.0] 进度管理委托给 UI 监听器
     bus.emit("UI_PROGRESS_START", total=total_tasks, description="正在并发加工全量文档 (调度算力池)...")
 
+    # 🚀 [V10.0] 提交任务至全局编排执行器
     future_to_task = {}
     for task_path, prefix, src_rel in task_queue:
-        # 🚀 [V24.6] 语义化追踪：使用 [Sync:文件名] 作为 Trace-ID，彻底消除晦涩哈希
         doc_trace_id = f"Sync:{os.path.basename(task_path)[:12]}"
         with Tracer.trace_scope(doc_trace_id):
             future = global_executor.submit(
-                engine.sync_document, task_path, prefix, src_rel, args.dry_run, args.force,
+                engine.sync_document,
+                task_path, prefix, src_rel,
+                args.dry_run, args.force,
                 is_sandbox=getattr(args, 'sandbox', False),
                 priority=TaskPriority.INGRESS,
                 task_name=f"Sync-{os.path.basename(task_path)}"

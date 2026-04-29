@@ -23,10 +23,11 @@ class ASTResolver:
     它不再关心具体的业务逻辑（如 Obsidian 展开或 MDX 映射），而是通过 context 传递上下文。
     """
     
-    def __init__(self, md_index: Dict[str, str] = None, asset_index: Dict[str, str] = None):
+    def __init__(self, md_index: Dict[str, Any] = None, asset_index: Dict[str, Any] = None, source: Any = None):
         self.md_index = md_index or {}
         self.asset_index = asset_index or {}
-
+        self.source = source
+        
     def resolve(self, content: str, src_path: str, dest_path: str) -> str:
         """运行转换流水线"""
         # 构造通用上下文
@@ -34,8 +35,10 @@ class ASTResolver:
             "src_path": src_path,
             "dest_path": dest_path,
             "md_index": self.md_index,
-            "asset_index": self.asset_index
+            "asset_index": self.asset_index,
+            "source": self.source
         }
+
         
         # 从注册表中获取所有 Transformer 并按顺序执行
         transformers = markup_registry.get_transformers()

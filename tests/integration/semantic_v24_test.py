@@ -187,7 +187,7 @@ def run_integration_test():
 
 def main():
     logger.info("="*50)
-    logger.info("Omni-Hub V24.5 Semantic Sovereignty Full-Flow Test")
+    logger.info("Illacme Plenipes V24.5 Semantic Sovereignty Full-Flow Test")
     logger.info("="*50)
     
     try:

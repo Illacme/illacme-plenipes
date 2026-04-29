@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub Plugin System - Base Publisher
+Illacme Plenipes Plugin System - Base Publisher
 定义外部插件的稳定接口，确保核心引擎与外部扩展的解耦。
 """
 

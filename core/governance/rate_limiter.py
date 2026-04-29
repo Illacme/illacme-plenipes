@@ -42,19 +42,20 @@ class GovernanceGuard:
     _lock = threading.Lock()
 
     @classmethod
-    def check_quota(cls, workspace_id: str, cost_unit: int = 1) -> bool:
+    def check_quota(cls, territory_id: str, cost_unit: int = 1) -> bool:
         """检查配额，如果超限则返回 False"""
         with cls._lock:
-            if workspace_id not in cls._limiters:
+            if territory_id not in cls._limiters:
                 # 🚀 [V24.6 性能对齐] 默认 QPS 提升至 10.0，突发提升至 20 (对齐块级并行与多语种并发)
-                cls._limiters[workspace_id] = RateLimiter(qps=10.0, burst=20)
+                cls._limiters[territory_id] = RateLimiter(qps=10.0, burst=20)
             
-            limiter = cls._limiters[workspace_id]
+            limiter = cls._limiters[territory_id]
         
         if not limiter.consume(cost_unit):
-            tlog.warning(f"⚠️ [GovernanceGuard] 工作空间 '{workspace_id}' 算力请求频率超限，已触发主动降级。")
+            tlog.warning(f"⚠️ [GovernanceGuard] 主权疆域 '{territory_id}' 算力请求频率超限，已触发主动降级。")
             return False
         return True
+
 
 # 全局治理守卫
 guard = GovernanceGuard

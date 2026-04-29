@@ -18,15 +18,17 @@ from core.pipeline.egress_unmasker import EgressUnmasker
 from core.utils.tracing import tlog
 
 class EgressDispatcher:
-    def __init__(self, paths, meta, route_manager, asset_pipeline, ssg_adapter, ast_resolver, syndicator, broadcaster, pub_cfg, fm_order, asset_base_url, i18n_cfg, janitor=None, link_resolver=None):
+    def __init__(self, paths, meta, route_manager, asset_pipeline, ssg_adapter, ast_resolver,
+                 deployment_manager=None, pub_cfg=None, fm_order=None,
+                 asset_base_url="", i18n_cfg=None, janitor=None, link_resolver=None):
         self.paths = paths
         self.meta = meta
         self.route_manager = route_manager
         self.asset_pipeline = asset_pipeline
         self.ssg_adapter = ssg_adapter
         self.ast_resolver = ast_resolver
-        self.syndicator = syndicator
-        self.broadcaster = broadcaster
+        self.deployment_manager = deployment_manager
+
         self.pub_cfg = pub_cfg
         self.fm_order = fm_order
         self.asset_base_url = asset_base_url
@@ -35,7 +37,8 @@ class EgressDispatcher:
         self.link_resolver = link_resolver
 
         # 🚀 [TDR-Iter-021] 挂载子模块
-        self.unmasker = EgressUnmasker(self, link_resolver=link_resolver)
+        self.unmasker = EgressUnmasker(self, link_resolver=self.link_resolver)
+
 
     def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None, seo_data=None, is_sandbox=False):
         if not self.paths.get('source_dir') and not self.paths.get('static_dir'):
@@ -113,19 +116,11 @@ class EgressDispatcher:
             )
             persistence_results[mode] = (shadow_hash, persistence_date)
 
-        # 8. 发布通知 (仅由 Source 路触发，防止重复广播)
-        if not is_dry_run and is_target:
-            is_source_lang = (lang_code == self.i18n.source.lang_code)
-            search_url_prefix = "" if is_source_lang else f"/{lang_code}"
-            logical_search_url = f"{search_url_prefix}/{mapped_sub_dir}/{slug}".replace('//', '/')
-
-            if is_source_lang:
-                # 使用最后一次处理的 fm 和 body (通常是最后一个 mode)
-                self.syndicator.syndicate(merged_fm, sanitized_body, logical_search_url, ael_iter_id=current_tid)
-                self.broadcaster.broadcast(title, rel_path, lang_code, mapped_sub_dir, slug, ael_iter_id=current_tid)
-
-        # 返回默认结果 (通常使用 source 模式的结果)
+        # 8. [V35.2] 分发提级：移除了此处的单文件分发逻辑。
+        # 全渠道分发现已提级至同步管线末端的 [LifecycleManager] 阶段，以实现全局事务化与高并发优化。
+        
         return persistence_results.get("source", (None, None))
+
 
     def _prepare_metadata(self, fm_dict, title, slug, rel_path, is_target, force_date, current_lang, route_prefix, route_source, mapped_sub_dir):
         merged_fm = fm_dict.copy()
@@ -205,6 +200,8 @@ class EgressDispatcher:
 
         # 计算最终物理路径
         dest = self.route_manager.resolve_physical_path(target_root, lang, prefix, sub, slug, target_ext, source_type=source_type)
+        tlog.info(f"💾 [物理落盘] ({mode}) -> {dest}")
+
 
         # 保持 cache 镜像以备后研 (统一使用 source 模式镜像)
         if mode == "source":

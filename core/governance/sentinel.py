@@ -19,9 +19,17 @@ class SentinelManager:
     """项目哨兵管家：负责定时执行健康检查、自愈代码并记录日志"""
 
     def __init__(self, config, engine=None):
+
         self.config = config
         self.engine = engine
-        self.health_log_path = os.path.join(".plenipes", "sentinel_health.json")
+        # 🛡️ [V35.2] 主权对正：使用引擎内置的路径解析器
+        if engine:
+            self.health_log_path = engine._resolve_path("metadata/sentinel_health.json")
+            self.current_iter_id = self._detect_current_iter(engine)
+        else:
+            self.health_log_path = os.path.join(".plenipes", "sentinel_health.json")
+            self.current_iter_id = "UNKNOWN"
+
         self.last_check = None
         self.status_matrix = {
             "lint": "PENDING",
@@ -31,7 +39,6 @@ class SentinelManager:
             "token_budget": 50000,
             "last_healed": None
         }
-        self.current_iter_id = self._detect_current_iter()
         
         # 🚀 [V5.0] 启动配置文件热监听
         if engine:
@@ -71,9 +78,10 @@ class SentinelManager:
         t.start()
 
     @staticmethod
-    def _detect_current_iter() -> str:
+    def _detect_current_iter(engine=None) -> str:
         """从历史目录侦测当前活动的迭代 ID"""
-        history_dir = os.path.join(".plenipes", "history")
+        if not engine: return "UNKNOWN"
+        history_dir = engine._resolve_path("metadata/history")
         if not os.path.exists(history_dir):
             return "UNKNOWN"
         iters = sorted([d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))], reverse=True)

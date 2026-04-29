@@ -41,11 +41,12 @@ class PublisherService:
                 else:
                     tlog.warning(f"⚠️ [发布中心] 无法找到发布器插件: {name}")
 
-    def run_syndication(self, bundle_path: str, metadata: Dict[str, Any]):
+    def run_syndication(self, bundle_path: str, metadata: Dict[str, Any], ledger=None):
         """
         🚀 触发广播发布
         :param bundle_path: 待发布的物理路径
         :param metadata: 同步上下文元数据
+        :param ledger: 主权账本实例 (用于状态记录)
         """
         if not self.active_publishers:
             return
@@ -53,15 +54,27 @@ class PublisherService:
         tlog.info(f"🚀 [发布中心] 正在向 {len(self.active_publishers)} 个渠道分发资产...")
 
         results = []
+        rel_path = metadata.get("rel_path") # 如果是单文档发布，提取相对路径
+        
         for pub in self.active_publishers:
+            pub_name = getattr(pub, 'name', pub.__class__.__name__)
             try:
                 res = pub.push(bundle_path, metadata)
                 results.append(res)
+                
+                # 🛡️ [V35.2] 事务反馈：记录成功状态
+                if ledger and rel_path:
+                    ledger.update_egress_status(rel_path, pub_name, "SUCCESS")
             except Exception as e:
-                tlog.error(f"❌ [发布中心] 分发异常: {e}")
+                tlog.error(f"❌ [发布中心] 渠道 {pub_name} 分发异常: {e}")
                 results.append({"status": "error", "message": str(e)})
+                
+                # 🛡️ [V35.2] 事务反馈：记录失败状态
+                if ledger and rel_path:
+                    ledger.update_egress_status(rel_path, pub_name, "FAILED", error=str(e))
 
         return results
+
 
     def bind_to_bus(self, bus):
         """将发布逻辑绑定至系统事件总线"""
@@ -97,8 +110,17 @@ class PublisherService:
                 except Exception as e:
                     tlog.error(f"🛑 [发布服务] 站点地图生成失败: {e}")
 
-                self.run_syndication(output_path, {"ael_iter_id": "v11.0"})
+                self.run_syndication(output_path, {"ael_iter_id": "v11.0"}, ledger=engine.ledger if engine else None)
             else:
                 tlog.warning(f"⚠️ [发布中心] 无法找到待发布目录: {output_path}")
+
+        @bus.on("DOCUMENT_PUBLISHED")
+        def handle_document_published(doc_path=None, engine=None, **kwargs):
+            """🛡️ [V35.2] 支持单文档即时分发事务"""
+            if doc_path and engine:
+                tlog.debug(f"📡 [发布中心] 侦测到单文档发布信号: {doc_path}")
+                # 此处可根据配置决定是否开启“即时分发”
+                # self.run_syndication(doc_path, {"rel_path": doc_path}, ledger=engine.ledger)
+
 
 import os # 为了处理路径

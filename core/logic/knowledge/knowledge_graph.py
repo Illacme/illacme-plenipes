@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub V18 - Knowledge Graph Hub
+Illacme Plenipes V18 - Knowledge Graph Hub
 职责：管理知识节点间的拓扑关系，支持语义链接的持久化与检索。
 """
 

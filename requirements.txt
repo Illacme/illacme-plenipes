@@ -10,4 +10,4 @@ fastapi>=0.100.0  # 🔌 [API] 工业级后端接口网关
 uvicorn>=0.23.0   # 🔌 [API] 高性能异步服务器
 ruff>=0.1.0    # 🛡️ [哨兵] 极致速度的 Linter & Auto-Fixer
 pytest>=7.4.0  # 🛡️ [哨兵] 自动化测试执行引擎
-psutil>=5.9.0  # 🛡️ [守卫] 资源自适应削峰核心驱动
+psutil>=5.9.0  # 🛡️ [守卫] 资源自适应削峰核心驱动cryptography

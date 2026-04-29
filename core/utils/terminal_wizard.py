@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub Terminal Wizard
-负责首次启动时的交互式配置引导。
+Illacme Plenipes Terminal Wizard
+负责首次启动时的交互式主权引导。
 """
 
 import os
@@ -10,9 +10,9 @@ import yaml
 from core.utils.tracing import tlog
 
 def run_onboarding_wizard(config_path: str):
-    """🚀 [V19.0] 交互式引导程序"""
-    print("\n" + "="*60)
-    print("🌌  欢迎来到 Omni-Hub：你的个人知识银河点火中心")
+    """🚀 [V19.0] 交互式主权引导程序"""
+    print("🏛️  欢迎来到 Illacme Plenipes：全球私人出版社")
+    print("     ── 您的主权化全球出版发行中心")
     print("="*60 + "\n")
     print("检测到这是你首次点火。请跟随引导完成基础导航配置：\n")
 

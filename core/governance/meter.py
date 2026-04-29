@@ -82,9 +82,9 @@ class UsageMeter:
             self.stats.get('session')['cost'] += cost
 
             # 🚀 [V23.0] 数据库持久化：将费用记入 usage_ledger 表
-            workspace_id = getattr(self.engine, 'workspace_id', 'default')
+            territory_id = getattr(self.engine, 'territory_id', 'default')
             self.engine.meta.sqlite.insert_usage_record(
-                workspace_id=workspace_id,
+                territory_id=territory_id,
                 event_type="AI_TRANSACTION",
                 description=f"AI 调用: {node_name} ({input_tokens}+{output_tokens})",
                 cost=cost,
@@ -94,6 +94,7 @@ class UsageMeter:
                     "output_tokens": output_tokens
                 }
             )
+
 
             # 3. 检查熔断 (TCG Guard)
             budget = self.engine.config.translation.budget_limit if self.engine and self.engine.config else 0.0
@@ -125,8 +126,8 @@ class UsageMeter:
         with self.lock:
             # 🚀 [V23.0] 深度合并：从数据库获取历史总额
             report = self.stats.get('session').copy()
-            workspace_id = getattr(self.engine, 'workspace_id', 'default')
-            report["total_historical_cost"] = self.engine.meta.sqlite.get_total_cost(workspace_id)
+            territory_id = getattr(self.engine, 'territory_id', 'default')
+            report["total_historical_cost"] = self.engine.meta.sqlite.get_total_cost(territory_id)
             return report
 
     def check_and_block(self, content: str, targets: list, rel_path: str) -> bool:
@@ -135,8 +136,9 @@ class UsageMeter:
         if budget <= 0: return True # 无预算限制
         
         # 1. 汇总当前总消耗 (今日已耗 + 本次 Session 已耗)
-        workspace_id = getattr(self.engine, 'workspace_id', 'default')
-        today_cost = self.engine.meta.sqlite.get_total_cost(workspace_id) # get_total_cost 内部应包含日期筛选逻辑
+        territory_id = getattr(self.engine, 'territory_id', 'default')
+        today_cost = self.engine.meta.sqlite.get_total_cost(territory_id) # get_total_cost 内部应包含日期筛选逻辑
+
         session_cost = self.stats.get('session').get('cost', 0.0)
         total_spent = today_cost + session_cost
         

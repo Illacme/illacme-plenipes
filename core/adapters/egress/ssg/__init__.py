@@ -21,9 +21,11 @@ class SSGAdapter:
     PLUGIN_ID = "generic"
     """🚀 SSG 渲染工厂：基于注册表动态发现渲染主权"""
 
-    def __init__(self, theme_settings, custom_adapters=None):
+    def __init__(self, theme_settings, custom_adapters=None, engine=None):
         self.theme = theme_settings
         self.custom_adapters = custom_adapters or {}
+        self.engine = engine
+
 
         # 🚀 [V33.1] 双轨动态插件扫描矩阵 (实现主权解耦)
         import os
@@ -51,14 +53,14 @@ class SSGAdapter:
             except Exception as e:
                 tlog.warning(f"⚠️ [SSG 引擎] 加载主题适配器失败: {e}")
 
-        # 确定当前渲染插件名称
         # 从注册表获取具体实现 (注册表现在汇总了全局 + 主题的所有适配器)
         renderer_cls = SSGRegistry.get_renderer(theme_name)
         if renderer_cls:
-            self.active_renderer = renderer_cls(theme_settings)
+            self.active_renderer = renderer_cls(theme_settings, engine=self.engine)
         else:
             from .generic import GenericSSGAdapter
-            self.active_renderer = GenericSSGAdapter(theme_settings)
+            self.active_renderer = GenericSSGAdapter(theme_settings, engine=self.engine)
+
 
         tlog.debug(f"🎨 [SSG 引擎] 已激活渲染插件: {self.active_renderer.__class__.__name__}")
 

@@ -78,7 +78,9 @@ class MetadataManager:
                 "sub_dir": kwargs.get("sub_dir") if kwargs.get("sub_dir") is not None else existing.get("sub_dir"),
                 "persistent_date": kwargs.get("persistent_date") if kwargs.get("persistent_date") is not None else existing.get("persistent_date"),
                 "translations": kwargs.get("translations") if kwargs.get("translations") is not None else existing.get("translations", {}),
+                "publish_status": kwargs.get("publish_status") if kwargs.get("publish_status") is not None else existing.get("publish_status", {}),
                 "assets": list(kwargs.get("assets")) if kwargs.get("assets") is not None else existing.get("assets", []),
+
                 "ext_assets": list(kwargs.get("ext_assets")) if kwargs.get("ext_assets") is not None else existing.get("ext_assets", []),
                 "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", [])
             }
@@ -92,6 +94,20 @@ class MetadataManager:
 
     def remove_document(self, rel_path):
         with self.lock: self.sqlite.delete_document(rel_path)
+
+    def update_egress_status(self, rel_path, channel_id, status, error=None):
+        """🚀 [V35.2] 记录特定渠道的分发事务状态"""
+        with self.lock:
+            existing = self.sqlite.get_document(rel_path) or {}
+            status_map = existing.get("publish_status", {})
+            status_map[channel_id] = {
+                "status": status,
+                "timestamp": int(time.time()),
+                "error": error
+            }
+            self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=status_map)
+            tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} | 文档: {rel_path}")
+
 
     def get_doc_info(self, rel_path):
         return self.sqlite.get_document(rel_path) or {}

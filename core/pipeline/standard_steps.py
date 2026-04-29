@@ -156,21 +156,26 @@ class AISlugAndSEOStep(PipelineStep):
             slug_mode = ctx.engine.config.translation.slug_mode
             if slug_mode == 'ai' and not ctx.is_silent_edit:
                 if ctx.is_dry_run:
-                    # 🚀 [V11.8] 修复时间戳碰撞：使用标题指纹
                     slug_raw, slug_success = f"dry-run-{re.sub(r'[^a-z0-9]', '-', ctx.title.lower())[:30]}", True
                 else:
                     try:
-                        slug_raw, slug_success = ctx.engine.translator.generate_slug(ctx.title, is_dry_run=False)
-                        # 🚀 [V24.6] 强制物理合规：AI 返回的 Slug 必须再次经过清洗
-                        from core.logic.ai.ai_logic_hub import AILogicHub
-                        slug_raw = AILogicHub.clean_slug(slug_raw)
+                        # 🛡️ [V35.1] AI 熔断保护
+                        if ctx.engine.translator:
+                            slug_raw, slug_success = ctx.engine.translator.generate_slug(ctx.title, is_dry_run=False)
+                            from core.logic.ai.ai_logic_hub import AILogicHub
+                            slug_raw = AILogicHub.clean_slug(slug_raw)
+                        else: slug_success, slug_raw = False, None
                     except Exception: slug_success, slug_raw = False, None
                 if not slug_success: ctx.ai_health_flag[0] = False
-            else:
-                english_only = re.sub(r'[^a-z0-9\-]', '', ctx.title.lower().replace(' ', '-'))
-                slug_raw = re.sub(r'-+', '-', english_only).strip('-') or f"doc-{hashlib.md5(ctx.title.encode('utf-8')).hexdigest()[:6]}"
 
-        ctx.slug = slug_raw.lower() if slug_raw else "index" if is_homepage else None
+        # 🚀 [V35.1] 物理主权兜底：如果 AI 失败或模式不支持，执行字符清洗
+        if not slug_raw:
+            english_only = re.sub(r'[^a-z0-9\-]', '', ctx.title.lower().replace(' ', '-'))
+            slug_raw = re.sub(r'-+', '-', english_only).strip('-') or f"doc-{hashlib.md5(ctx.title.encode('utf-8')).hexdigest()[:6]}"
+
+        ctx.slug = slug_raw.lower() if slug_raw else "index" if is_homepage else "untitled"
+
+
         if not ctx.seo_data:
             ctx.seo_data = ctx.doc_info.get("seo_data") or ctx.doc_info.get("seo") or {}
 

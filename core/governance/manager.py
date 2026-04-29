@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub Governance Manager
+Illacme Plenipes Governance Manager
 职责：协调所有自主治理组件（哨兵、医生、审计、熔断等）。
 """
 

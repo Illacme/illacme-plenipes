@@ -61,5 +61,21 @@ class SecretManager:
             tlog.error(f"❌ [SecretManager] 解密失败，资产可能已损坏或密钥不匹配: {e}")
             return "DEC_ERROR"
 
+    @classmethod
+    def mask_dict(cls, data: dict) -> dict:
+        """🚀 [V35.2] 递归脱敏：自动识别并加密敏感字段"""
+        sensitive_keys = {'api_key', 'access_key', 'secret_key', 'token', 'password', 'key'}
+        if not isinstance(data, dict): return data
+        
+        for k, v in data.items():
+            if isinstance(v, dict):
+                cls.mask_dict(v)
+            elif isinstance(v, str) and k.lower() in sensitive_keys:
+                if not v.startswith("enc:") and v.strip() and "TODO" not in v:
+                    data[k] = cls.encrypt(v)
+                    tlog.info(f"🛡️ [SecretManager] 发现敏感字段，已执行物理脱敏: {k}")
+        return data
+
+
 # 全局管理器
 secrets = SecretManager

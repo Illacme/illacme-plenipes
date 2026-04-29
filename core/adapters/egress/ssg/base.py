@@ -11,9 +11,11 @@ from typing import Tuple, Dict, Any, List
 class BaseSSGAdapter(abc.ABC):
     PLUGIN_ID = "generic"
     """所有 SSG 渲染插件的抽象基类"""
-    def __init__(self, theme_settings: Any = None):
+    def __init__(self, theme_settings: Any = None, engine=None):
         self.theme_settings = theme_settings
+        self.engine = engine
         self.default_lang = "zh"
+
         # 🚀 [V11.2] 双相出口扩展名定义
         self.output_extensions = {
             "source": None,  # 🚀 [V12.0] None 表示跟随原文件后缀

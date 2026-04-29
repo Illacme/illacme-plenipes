@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foundry Voyage | 铸造出版社主权</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #4b0082;
+            --accent: #00f2ff;
+            --bg: #0a0a12;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 🌌 背景流光 */
+        .bg-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, #1e1e3f 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, #2e1a4a 0%, transparent 40%);
+            z-index: -1;
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* 🧪 玻璃态容器 */
+        .wizard-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            width: 500px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        /* 📋 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+        }
+
+        /* 📡 算力节点探测 */
+        .node-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 25px;
+        }
+
+        .node-list {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .node-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+        }
+
+        .node-item.online {
+            border-color: rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+        }
+
+        .node-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #444;
+        }
+
+        .online .node-dot {
+            background: #00ff7f;
+            box-shadow: 0 0 8px #00ff7f;
+        }
+
+        /* 🚀 按钮 */
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -10px rgba(138, 43, 226, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -10px rgba(138, 43, 226, 0.6);
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            min-height: 1.2rem;
+        }
+
+        .success { color: #00ff7f; }
+        .error { color: #ff4b4b; }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <div class="wizard-card">
+        <div class="header">
+            <h1>Foundry Voyage</h1>
+            <p>主权出版社快速落成向导</p>
+        </div>
+
+        <div class="node-panel">
+            <label style="font-size: 0.75rem; color: #888;">算力探测中心</label>
+            <div id="node-list" class="node-list">
+                <div class="node-item"><span class="node-dot"></span> 正在扫描...</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>出版社标识</label>
+            <input type="text" id="press_name" placeholder="例如: galaxy_daily" value="sovereign_press">
+        </div>
+
+        <div class="form-group">
+            <label>原稿金库路径</label>
+            <input type="text" id="manuscripts_path" placeholder="本地磁盘绝对路径" value="./manuscripts">
+        </div>
+
+        <button id="init-btn" onclick="initialize()">
+            <span id="btn-text">开辟主权空间</span>
+            <div id="spinner" class="loading-spinner"></div>
+        </button>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function probe() {
+            try {
+                const res = await fetch('/api/probe');
+                const data = await res.json();
+                const list = document.getElementById('node-list');
+                list.innerHTML = '';
+                
+                if (!data.nodes || data.nodes.length === 0) {
+                    list.innerHTML = '<div class="node-item">未探测到本地算力</div>';
+                } else {
+                    data.nodes.forEach(node => {
+                        list.innerHTML += `
+                            <div class="node-item online">
+                                <span class="node-dot"></span>
+                                ${node.name}
+                            </div>
+                        `;
+                    });
+                }
+            } catch (e) {
+                console.error("Probe failed", e);
+            }
+        }
+
+        async function initialize() {
+            const btn = document.getElementById('init-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('spinner');
+            const status = document.getElementById('status');
+            
+            const press_name = document.getElementById('press_name').value;
+            const manuscripts_path = document.getElementById('manuscripts_path').value;
+
+            if (!press_name || !manuscripts_path) {
+                status.className = 'error';
+                status.innerText = '⚠️ 请完整填写空间参数';
+                return;
+            }
+
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            status.innerText = '';
+
+            try {
+                const res = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ press_name, manuscripts_path })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    status.className = 'success';
+                    status.innerText = '✅ ' + data.message;
+                } else {
+                    status.className = 'error';
+                    status.innerText = '❌ ' + (data.detail || '初始化失败');
+                }
+            } catch (e) {
+                status.className = 'error';
+                status.innerText = '❌ 网络通讯故障';
+            } finally {
+                btnText.style.display = 'block';
+                spinner.style.display = 'none';
+            }
+        }
+
+        probe();
+        setInterval(probe, 5000);
+    </script>
+</body>
+</html>

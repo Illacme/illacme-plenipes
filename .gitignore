@@ -6,10 +6,18 @@
 .plenipes/*
 !.plenipes/rules.md
 !.plenipes/governance/
-workspace/           # 🔒 主权出版社空间（绝对禁止外泄）
-content-vault/       # 🔒 原始稿件库
-*.db                 # 🔒 物理账本（全量屏蔽）
-**/.master.key       # 🔒 终极密钥（绝对禁止外泄）
+
+# 🔒 主权出版社空间（绝对禁止外泄）
+workspace/
+
+# 🔒 原始稿件库
+content-vault/
+
+# 🔒 物理账本（全量屏蔽）
+*.db
+
+# 🔒 终极密钥（绝对禁止外泄）
+**/.master.key
 *.local.yaml
 *.local.yml
 config.local.yaml
@@ -34,6 +42,7 @@ cache/
 themes/*/dist/
 themes/*/public/assets/
 themes/*/.temp/
+
 # 排除各主题下生成的稿件副本（仅保留模板）
 themes/*/src/content/docs/*
 !themes/*/src/content/docs/index.md
@@ -57,3 +66,6 @@ test_*.md
 temp_*.py
 data/
 
+# 🌌 动态状态与系统生成资产 (Runtime & Generated)
+territories/
+manuscripts/

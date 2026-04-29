@@ -196,6 +196,11 @@ class TracedLogger:
     def info(self, msg, *args, **kwargs):
         emit_tlog(self._wrap_msg(msg), "INFO")
 
+    def success(self, msg, *args, **kwargs):
+        """🚀 [V35.1] 成功状态追踪：INFO 级别但带有视觉成就感"""
+        emit_tlog(self._wrap_msg(msg), "INFO")
+
+
     def debug(self, msg, *args, **kwargs):
         emit_tlog(self._wrap_msg(msg), "DEBUG")
 

@@ -31,8 +31,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
         # 🧪 物理路径对齐
         abs_src_path = os.path.join(engine.paths.get('vault', '.'), rel_path)
 
-        # 🚀 [V11.0] 初始化 SyncContext
-        ctx = SyncContext(engine, rel_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=is_sandbox)
+        # 🚀 [V11.0] 初始化 SyncContext (传入绝对路径以确保物理寻址)
+        ctx = SyncContext(engine, abs_src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=is_sandbox)
 
         # 🛡️ 服务注册表注入
         ctx.services.staticizer = engine.staticizer
@@ -40,11 +40,9 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
         ctx.services.meta = engine.meta
         ctx.asset_index = engine.asset_index
 
-        # 🚀 [V34.9] 路径归一化加固
-        rel_path = os.path.relpath(
-            os.path.abspath(rel_path),
-            os.path.abspath(engine.vault_root)
-        ).replace('\\', '/')
+        # 🚀 [V35.0] 路径指纹对齐：确保 rel_path 始终相对于 vault_root
+        rel_path = ctx.rel_path
+
 
         # 🚀 [V15.5] 优先消费 Batcher 预处理的算力产物
         cached_info = engine._old_info_cache.get(rel_path)
@@ -73,9 +71,11 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             if ctx.is_aborted:
                 if ctx.is_skipped:
                     tlog.info(f"🔄 [同步跳过] 指纹未变: {rel_path}")
+                    engine.janitor.mark_doc_as_fresh(rel_path)
                     success = True
                     return "SKIP"
                 tlog.warning(f"⏭️ [同步中止] 管线拦截: {rel_path}")
+                engine.janitor.mark_doc_as_fresh(rel_path)
                 success = True
                 return "SKIP"
 
@@ -112,8 +112,10 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                 target_base = engine.paths.get('target_base', '.')
                 display_dest = engine.route_manager.resolve_physical_path(target_base, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext)
                 tlog.info(f"🔄 [同步跳过] {rel_path} -> {os.path.relpath(display_dest, target_base)}")
+                engine.janitor.mark_doc_as_fresh(rel_path)
                 success = True
                 return "SKIP"
+
 
             # 🚀 [V10.4] 中间件：Pre-Dispatch 钩子
             for hook in engine._hooks["pre_dispatch"]:
@@ -147,10 +149,11 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             primary_shadow_hash, persistence_date = engine.dispatcher.dispatch(
                 engine.asset_index, ctx.title, ctx.slug, ctx.masked_source, src_fm, rel_path,
                 src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks,
-                ctx.is_dry_run, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets,
+                ctx.is_dry_run, is_target=True, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets,
                 node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock,
                 seo_data=ctx.seo_data, is_sandbox=ctx.is_sandbox
             )
+
 
             # 🚀 [V10.4] 中间件：Post-Dispatch 钩子
             for hook in engine._hooks["post_dispatch"]:
@@ -165,7 +168,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                 engine.timeline.update_event_status(ctx.rel_path, status, f"资产: {len(ctx.node_assets)}")
 
                 if status == "UPDATED" and not ctx.is_silent_edit:
-                    engine.broadcaster.broadcast(ctx.title, ctx.rel_path, src_code, ctx.mapped_sub_dir, ctx.slug)
+                    engine.bus.emit("DOCUMENT_PUBLISHED", title=ctx.title, path=ctx.rel_path, lang=src_code, sub_dir=ctx.mapped_sub_dir, slug=ctx.slug)
+
 
                 if hasattr(engine, 'sentinel'):
                     engine.sentinel.verify_docs_sync_hook(rel_path)

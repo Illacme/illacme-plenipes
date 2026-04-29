@@ -1,5 +1,5 @@
 /**
- * Omni-Hub Dashboard 2.0 - Intelligence Panorama Controller
+ * Illacme Plenipes Dashboard 2.0 - Intelligence Panorama Controller
  * 核心职责：3D 银河渲染、实时数据对齐、交互逻辑管理。
  */
 
