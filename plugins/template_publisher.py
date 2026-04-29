@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub Plugin Template: Sample Publisher
+Illacme Plenipes Plugin Template: Sample Publisher
 模块职责：演示如何编写一个自定义的分发插件。
 开发者只需继承 BasePublisher 并实现 publish 方法即可。
 """

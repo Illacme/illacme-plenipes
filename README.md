@@ -1,58 +1,51 @@
-# 🌌 Omni-Hub: The Self-Sovereign Knowledge Galaxy
+# 🏛️ Illacme Plenipes: 全球私人出版社 (Global Private Press)
+## 您的主权化全球出版发行中心 (Sovereign Global Publishing & Distribution Center)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version: V18.0](https://img.shields.io/badge/Version-V18.0--Galaxy-8b5cf6.svg)]()
+[![Version: V35.2](https://img.shields.io/badge/Version-V35.2--Sovereign-8b5cf6.svg)]()
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Agents-3b82f6.svg)]()
 
-> **知识主权，引力织网。** 将你的碎片化内容转化为交互式的 3D 语义星系。
+> **主权至上，全球出版**：基于物理隔离架构的工业级个人出版操作系统。
 
-Omni-Hub 是一个为个人用户与极客打造的**高维度内容治理引擎**。它能自动同步、提纯、关联并分发你的所有数字资产，同时利用 AI 技术构建一个可感知的 3D 知识拓扑。
+Illacme Plenipes 是一款为高端创作者、机构及极客打造的**高维度主权内容治理引擎**。它遵循“主权隔离架构 (Sovereign Architecture)”，旨在为您提供数据、算力与出版权的绝对尊严，将您的数字资产转化为全球化的品牌力量。
 
 ---
 
 ## ✨ 核心特性 (Key Features)
 
-- **🌌 知识银河 (Knowledge Galaxy)**: 自动提取文档间的语义联系，生成 3D 实时交互拓扑图。
-- **⚖️ 绝对主权 (Data Sovereignty)**: 逻辑、存储、插件三权分立，数据本地持久化，算力自主路由。
-- **🧠 智脑 RAG (AI Brain)**: 基于本地知识库的精准对话，支持 Mistral, OpenAI 等多种算力引擎。
-- **⛓️ 原子化管线 (Atomic Pipeline)**: 经历 *读取 -> 提纯 -> 语义织网 -> SEO 增强 -> 全球分发* 的工业级处理流程。
-- **🔌 零侵入插件 (Zero-Touch Plugins)**: 像搭积木一样通过简单 Python 脚本扩展分发渠道（S3, Webhook, 飞书...）。
+-   **🏛️ 全球私人出版社 (Global Private Press)**: [V35.2] 完整的出版生命周期管理，支持 AI 驱动的多语种转化与 SEO 增强。
+-   **⚖️ 主权化分发中心 (Sovereign Distribution)**: 绝对物理隔离的疆域 (Territory) 协议，确保账本、索引与脉搏数据的主权独立。
+-   **🌌 语义织网 (Semantic Weaving)**: 自动提取文档间的语义联系，生成实时交互的知识图谱。
+-   **🧠 主权智脑 (Sovereign AI)**: 基于私有疆域知识库的精准对话，支持 100% 本地化算力路由。
+-   **⛓️ 原子化管线 (Atomic Pipeline)**: 经历 *读取 -> 提纯 -> 语义织网 -> SEO 增强 -> 全球分发* 的工业级处理流程。
 
-## 🚀 30秒快速点火 (Quick Start)
+## 🚀 快速点火 (Quick Start)
 
 ```bash
 # 1. 克隆并进入
-git clone https://github.com/your-username/omni-hub.git
-cd omni-hub
+git clone https://github.com/your-username/illacme-plenipes.git
+cd illacme-plenipes
 
-# 2. 一键点火（进入交互式引导）
+# 2. 一键点火（进入交互式主权引导）
 python plenipes.py
 ```
 
-## 🛠️ 架构蓝图 (Architecture)
+## 🛠️ 架构蓝图 (Sovereign Architecture)
 
 ```mermaid
 graph TD
-    A[Content Vault] -->|Trigger| B(Omni-Engine)
-    B --> C{Assembly Line}
-    C -->|Semantic Linker| D[Knowledge Galaxy]
-    C -->|AI Refiner| E[Pure Context]
-    E --> F[RAG Brain]
-    E --> G[SSG Publishers]
-    G --> H[S3 / Webhook / Telegram]
+    A[Content Vault] -->|Ingress| B(Illacme Engine)
+    B --> C{Editorial Pipeline}
+    C -->|Theme-Aware Isolation| D[Sovereign Territory]
+    C -->|Semantic Weaving| E[Knowledge Map]
+    C -->|Atomic Egress| F[Global Distribution]
+    F --> G[S3 / Webhook / GitHub / Starlight]
 ```
-
-## 💎 为什么选择 Omni-Hub？
-
-对于**普通用户**，它是你的“数字资产保险箱”和“高维笔记本”；
-对于**开发者**，它是你打造“个人智脑生态”的极致地基。
 
 ---
 
 ## 🤝 贡献与生态
-
-我们欢迎任何形式的贡献！无论是一个新的 `Publisher` 插件，还是对 `3D 银河` 视觉效果的优化建议。
+我们欢迎任何致力于提升个人出版主权的贡献！无论是一个新的 `Publisher` 插件，还是对 `Sovereign_OS` 架构的优化建议。
 
 ---
-
-*Powered by **Antigravity AI Agents** | Omni-Hub 2026*
+*Powered by **Antigravity AI Agents** | Illacme Plenipes 2026*

@@ -15,9 +15,9 @@ class NetworkSettings(BaseModel):
     prober_cooling_delay: float = Field(0.1, ge=0)
 
 class ConcurrencySettings(BaseModel):
-    global_workers: int = Field(4, ge=1, le=64)
-    ai_workers: int = Field(16, ge=1, le=128)
-    min_ai_workers: int = Field(16, ge=1)
+    global_workers: int = Field(2, ge=1, le=64)
+    ai_workers: int = Field(4, ge=1, le=128)
+    min_ai_workers: int = Field(2, ge=1)
     audit_workers: int = Field(10, ge=1)
     io_workers: int = Field(8, ge=1)
 
@@ -72,14 +72,15 @@ class GovernanceSettings(BaseModel):
 class SafetyPolicy(BaseModel):
 
     """🛡️ [V16.8] 系统安全与物理红线政策库"""
-    min_ai_workers: int = Field(16, ge=1)
+    min_ai_workers: int = Field(2, ge=1)
     singleton_port: int = Field(43210, ge=1024, le=65535)
     network_timeout: float = Field(30.0, ge=1)
     config_audit_severity: str = "WARN"
 
 class SystemSettings(BaseModel):
     """🚀 [V24.0] 系统全域配置主权"""
-    data_root: str = ".plenipes"
+    data_root: str = "."
+
     log_level: str = "INFO"
     log_format: LogFormat = LogFormat.RICH
     verbose_ai_logs: bool = True
@@ -90,7 +91,7 @@ class SystemSettings(BaseModel):
     api_port: int = Field(43211, ge=1024, le=65535)
     api_token: str = ""
     
-    max_workers: int = Field(8, ge=1)
+    max_workers: int = Field(4, ge=1)
     auto_save_interval: float = Field(2.0, ge=0.5)
     max_depth: int = Field(3, ge=1)
     enable_asset_audit: bool = True
@@ -104,13 +105,14 @@ class SystemSettings(BaseModel):
     logs_dir: str = "logs"
     sandbox_dir: str = "sandbox"
     data_paths: Dict[str, str] = Field(default_factory=lambda: {
-        "sync_stats": "sync_stats.json",
+        "sync_stats": "sync_stats_{theme}.json",
         "link_graph": "link_graph_{theme}.json",
         "usage_ledger": "usage_ledger_{theme}.json",
         "search_index": "search_index_{theme}.json",
         "health_log": "sentinel_health.json",
-        "timeline_json": "plenipes_timeline.json",
-        "vectors_json": "vectors.json",
+        "timeline_json": "timeline_{theme}.json",
+        "vectors_json": "vectors_{theme}.json",
+        "pulse_json": "pulse_{theme}.json",
         "quotas_json": "quotas.json"
     })
     

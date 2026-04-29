@@ -56,35 +56,36 @@ class GraphExportPlugin(PostSyncTask):
     """关系图谱导出插件"""
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/link_graph.json".replace("{id}", engine.workspace_id))
+        output = engine._resolve_path("data/index/{id}/link_graph.json".replace("{id}", engine.territory_id))
         VaultIndexer.export_graph(engine.link_graph, output)
 
 class SearchIndexPlugin(PostSyncTask):
     """全域搜索索引导出插件"""
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/search_index.json".replace("{id}", engine.workspace_id))
+        output = engine._resolve_path("data/index/{id}/search_index.json".replace("{id}", engine.territory_id))
         VaultIndexer.export_search_index_v2(snapshot, output)
 
 class SyncStatsPlugin(PostSyncTask):
     """同步统计数据保存插件"""
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/sync_stats.json".replace("{id}", engine.workspace_id))
+        output = engine._resolve_path("data/index/{id}/sync_stats.json".replace("{id}", engine.territory_id))
         
         # 🚀 [V7.0] 从审计账本获取权威财务数据
-        historical_cost = engine.ledger.get_total_cost(workspace_id=engine.workspace_id)
+        historical_cost = engine.ledger.get_total_cost(territory_id=engine.territory_id)
         
         sync_data = {
             "total_vault_files": len(snapshot),
             "processed_timestamp": datetime.now().isoformat(),
             "engine_version": "V16.0",
-            "workspace": engine.workspace_id,
+            "territory": engine.territory_id,
             "usage": {
                 "session_cost": round(engine.meter.stats["session"]["cost"], 4),
                 "total_historical_cost": round(historical_cost, 2)
             }
         }
+
         os.makedirs(os.path.dirname(output), exist_ok=True)
         with open(output, 'w', encoding='utf-8') as f:
             json.dump(sync_data, f, indent=2)
@@ -162,6 +163,10 @@ class JanitorPlugin(PostSyncTask):
             tlog.info("🧹 [Lifecycle] 检测到变更，正在启动 Janitor 清洗...")
             engine.janitor.gc_orphans(set(snapshot.keys()), is_dry_run=args.dry_run)
             engine.janitor.gc_ghost_nodes(is_dry_run=args.dry_run)
+            
+            # 🚀 [V35.2] 物理自愈清理：确保分发前 dist 目录绝对纯净
+            engine.janitor.purge_dist(is_dry_run=args.dry_run)
+
 
 class DigitalGardenPlugin(PostSyncTask):
     """数字花园图谱导出插件 (全量语种支持)"""
@@ -175,12 +180,46 @@ class DigitalGardenPlugin(PostSyncTask):
         from core.dispatch.garden_exporter import export_digital_garden
         export_digital_garden(engine, all_docs_snapshot=snapshot)
 
-# 🚀 自动注册内置插件
+class SovereignDeploymentPlugin(PostSyncTask):
+    """🚀 [V35.2] 全渠道主权分发插件：执行最终的出版资产投递"""
+    def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
+        # 1. 只有在非 dry_run 且有实际产出（或强制模式）时执行
+        has_output = stats.get("UPDATED", 0) > 0 or args.force
+        if args.dry_run or not has_output:
+            tlog.info("ℹ️ [Deployment] 无新增产出或处于演练模式，跳过渠道投递。")
+            return
+
+        if not hasattr(engine, 'deployment_manager') or not engine.deployment_manager:
+            tlog.debug("ℹ️ [Deployment] 引擎未挂载分发调度员。")
+            return
+
+        # 2. 获取分发根目录 (通常是 static_dir)
+        bundle_path = engine.paths.get('static_dir') or engine.paths.get('target_base')
+        
+        # 3. 准备全局分发元数据
+        deployment_meta = {
+            "timestamp": datetime.now().isoformat(),
+            "territory_id": engine.territory_id,
+            "stats": stats,
+            "total_files": len(snapshot)
+        }
+
+        # 4. 执行全渠道事务分发
+        results = engine.deployment_manager.deploy_all(bundle_path, deployment_meta)
+        
+        # 5. 记录分发凭证至审计账本 (将结果存入 metadata 避免 details 参数冲突)
+        engine.ledger.log("GLOBAL_DEPLOY", f"全渠道分发完成，状态: {results.get('status')}",
+                          territory_id=engine.territory_id, metadata=results)
+
+
+# 🚀 自动注册内置插件 (注意顺序：Janitor 清理在前，分发在后)
 LifecycleManager.register(GraphExportPlugin())
 LifecycleManager.register(SearchIndexPlugin())
 LifecycleManager.register(SyncStatsPlugin())
 LifecycleManager.register(AssetAuditPlugin())
 LifecycleManager.register(JanitorPlugin())
 LifecycleManager.register(DigitalGardenPlugin())
+LifecycleManager.register(SovereignDeploymentPlugin())
+
 
 import time

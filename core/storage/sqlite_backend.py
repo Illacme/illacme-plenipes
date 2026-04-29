@@ -19,7 +19,11 @@ class SQLiteBackend:
         self.db_path = os.path.abspath(os.path.expanduser(db_path))
         self.engine = engine
         self._local = threading.local()
+        
+        # 🛡️ [V35.2] 物理加固：确保数据库父目录存在
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
+
 
     def _get_conn(self):
         if not hasattr(self._local, "conn"):
@@ -123,18 +127,19 @@ class SQLiteBackend:
         row = self._get_conn().execute("SELECT rel_path FROM documents WHERE source_hash = ?", (source_hash,)).fetchone()
         return self.get_document(row["rel_path"]) if row else None
 
-    def insert_usage_record(self, workspace_id, event_type, description, cost, metadata):
+    def insert_usage_record(self, territory_id, event_type, description, cost, metadata):
         """🚀 [V23.0] 记录计费流水"""
         conn = self._get_conn()
         with conn:
             conn.execute("""
-                INSERT INTO usage_ledger (workspace_id, event_type, description, cost, metadata_json)
+                INSERT INTO usage_ledger (territory_id, event_type, description, cost, metadata_json)
                 VALUES (?, ?, ?, ?, ?)
-            """, (workspace_id, event_type, description, cost, json.dumps(metadata)))
+            """, (territory_id, event_type, description, cost, json.dumps(metadata)))
 
-    def get_total_cost(self, workspace_id):
-        row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE workspace_id = ?", (workspace_id,)).fetchone()
+    def get_total_cost(self, territory_id):
+        row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE territory_id = ?", (territory_id,)).fetchone()
         return row[0] if row and row[0] is not None else 0.0
+
 
     def list_documents_paginated(self, page=1, limit=20):
         offset = (page - 1) * limit

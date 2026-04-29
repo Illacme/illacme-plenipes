@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub Plugin Loader
+Illacme Plenipes Plugin Loader
 负责扫描外部插件目录并动态加载模块。
 """
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub V18 Pipeline Step - Semantic Linker
+Illacme Plenipes V18 Pipeline Step - Semantic Linker
 职责：利用向量检索自动发现当前文档与其他已索引文档间的语义关联。
 """
 

@@ -35,7 +35,8 @@ class KnowledgeService:
     }
     def __init__(self, engine):
         self.engine = engine
-        self.brain_root = os.path.join(".plenipes", "brain")
+        self.brain_root = engine._resolve_path("metadata/brain")
+
         os.makedirs(self.brain_root, exist_ok=True)
         self.lessons_path = os.path.join(self.brain_root, "lessons_learned.json")
         self._load_lessons()

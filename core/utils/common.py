@@ -28,13 +28,14 @@ class ColoredFormatter(logging.Formatter):
         log_fmt = self.LEVEL_MAP.get(record.levelno, self.RESET) + self.FORMAT + self.RESET
         return logging.Formatter(log_fmt, datefmt='%H:%M:%S').format(record)
 
-def setup_logger():
-    """初始化工业级日志管线"""
-    os.makedirs("logs", exist_ok=True)
+def setup_logger(log_dir="logs"):
+    """初始化工业级日志管线 (支持主权路径重定向)"""
+    os.makedirs(log_dir, exist_ok=True)
     from core.utils.tracing import tlog
     if tlog.hasHandlers(): tlog.handlers.clear()
     
-    fh = RotatingFileHandler('logs/plenipes.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')
+    log_file = os.path.join(log_dir, 'plenipes.log')
+    fh = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')
     fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
     tlog.addHandler(fh)
     return tlog

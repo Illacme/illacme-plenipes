@@ -48,7 +48,7 @@ INIT_SCHEMA = [
     """
     CREATE TABLE IF NOT EXISTS usage_ledger (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        workspace_id TEXT,
+        territory_id TEXT,
         event_type TEXT,
         description TEXT,
         cost REAL,
@@ -56,6 +56,7 @@ INIT_SCHEMA = [
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """
+
 ]
 
 UPSERT_DOC = """

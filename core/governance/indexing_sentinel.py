@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub V22 - Indexing Sentinel (异步索引哨兵)
+Illacme Plenipes V22 - Indexing Sentinel (异步索引哨兵)
 职责：利用后台空闲算力对未处理文档进行预索引，消除交互延迟。
 """
 

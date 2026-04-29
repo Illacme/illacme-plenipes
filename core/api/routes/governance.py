@@ -15,7 +15,8 @@ def get_billing_stats():
         "weekly_trend": ledger.get_weekly_stats()
     }
 
-@router.get("/api/workspaces", dependencies=[Depends(verify_token)])
-def list_workspaces():
-    from core.governance.workspace_manager import global_workspace_manager
-    return {"workspaces": global_workspace_manager.list_workspaces(), "active": global_workspace_manager.active_workspace_id}
+@router.get("/api/territories", dependencies=[Depends(verify_token)])
+def list_territories():
+    from core.governance.territory_manager import wm
+    return {"territories": wm.list_territories(), "active": wm.get_active_territory()}
+

@@ -35,10 +35,10 @@ def _dump_stacks(sig, frame):
 signal.signal(signal.SIGUSR1, _dump_stacks)
 
 class IllacmeEngine:
-    def __init__(self, config_path, no_ai=False, config=None, workspace_id: str = "default"):
+    def __init__(self, config_path, no_ai=False, config=None, territory_id: str = "default"):
         """🚀 [V10.3] 引擎初始化：通过工厂进行标准化装配"""
         self.no_ai = no_ai
-        self.workspace_id = workspace_id
+        self.territory_id = territory_id
         self.config = config # 🚀 [V22.1] 显式挂载配置，确保治理组件可读
         
         # 🛡️ [Industrial Grade] 物理并发锁初始化
@@ -47,7 +47,7 @@ class IllacmeEngine:
         self._old_info_cache = {}
         self.bus = bus
 
-        # 🚀 [V15.1] 自主治理系统挂载
+        # 🚀 [V15.1] 自主治理 system 挂载
         from core.governance.manager import GovernanceManager
         self.governance = GovernanceManager(self)
         
@@ -59,20 +59,23 @@ class IllacmeEngine:
         # 挂载状态
         self.is_running = True
 
-        # 🚀 [V7.0] 挂载工作空间与审计账本
-        from core.governance.workspace_manager import wm
+        # 🚀 [V7.0] 挂载疆域与审计账本
+        from core.governance.territory_manager import wm
         from core.governance.audit_ledger import ledger
         self.wm = wm
         self.ledger = ledger
         
-        # 自动注册空间
+        # 🚀 [V35.2] 自动接管主权疆域
         if config and hasattr(config, 'vault_root'):
-            self.wm.register(workspace_id, config.vault_root, name=workspace_id)
-            self.wm.switch(workspace_id)
+            # 如果疆域尚未划定（例如 CLI 首次启动），则执行物理划定
+            self.wm.init_sovereign_territory(territory_id, config.vault_root)
+            self.wm.switch(territory_id)
 
-        self.ledger.log("ENGINE_START", f"引擎已点火，工作空间: {workspace_id}", workspace_id=workspace_id)
 
-        # 🚀 [V10.4] 中间件钩子注册表：实现非侵入式流程干预
+
+        self.ledger.log("ENGINE_START", f"引擎已点火，主权疆域: {territory_id}", territory_id=territory_id)
+
+        # 🚀 [V10.4] 中点件钩子注册表：实现非侵入式流程干预
         self._hooks = {
             "pre_dispatch": [],   # 分发前触发 (参数: ctx)
             "post_dispatch": [],  # 分发后触发 (参数: ctx, results)
@@ -114,7 +117,8 @@ class IllacmeEngine:
         
         # 3. 记录对齐完成
         tlog.info(f"✅ [Engine] 算力池对齐完成: Global({config.system.concurrency.global_workers}) | AI({config.system.concurrency.ai_workers})")
-        self.ledger.log("CONFIG_RELOADED", "配置热重载完成", workspace_id=self.workspace_id)
+        self.ledger.log("CONFIG_RELOADED", "配置热重载完成", territory_id=self.territory_id)
+
 
     def get_lang_name_by_code(self, code):
         if code == self.i18n.source.lang_code: return self.i18n.source.lang_code

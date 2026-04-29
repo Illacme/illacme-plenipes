@@ -21,8 +21,9 @@ class TimelineManager:
     def __init__(self, engine):
         self.engine = engine
         self.cfg = engine.config.timeline
-        self.json_path = os.path.abspath(os.path.expanduser(self.cfg.json_path))
-        self.markdown_path = os.path.abspath(os.path.expanduser(self.cfg.markdown_path))
+        self.json_path = engine._resolve_path(self.cfg.json_path.replace("{theme}", engine.active_theme))
+        self.markdown_path = engine._resolve_path(self.cfg.markdown_path.replace("{theme}", engine.active_theme))
+
         self.max_entries = self.cfg.max_entries
 
         self.lock = threading.Lock()

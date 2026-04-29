@@ -1,1 +1,0 @@
-The slicing should ideally happen at the horizontal rules above.

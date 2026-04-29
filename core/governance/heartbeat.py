@@ -23,9 +23,12 @@ class HeartbeatService:
         self.stop_flag = threading.Event()
         self.thread = None
         
-        # 确定 Pulse 导出路径
+        # 🚀 [V24.0] 引用主权路径协议，防御性探测时序冲突
         theme = getattr(engine, 'active_theme', 'default')
-        self.pulse_path = f"dashboard/public/data/engine_pulse_{theme}.json"
+        self.pulse_path = getattr(engine, 'paths', {}).get('pulse') or engine._resolve_path(f"metadata/pulse_{theme}.json")
+        
+        # 🛡️ [原子化对齐] 确保目录存在且不报 Errno 17
+        os.makedirs(os.path.dirname(self.pulse_path), exist_ok=True)
         
         self.start_time = time.time()
 

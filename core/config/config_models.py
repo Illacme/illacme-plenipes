@@ -58,12 +58,14 @@ class IngressSettings(BaseModel):
 
 class TimelineSettings(BaseModel):
     enabled: bool = True
-    json_path: str = "plenipes_timeline.json"
-    markdown_path: str = "timeline.md"
+    json_path: str = "timeline_{theme}.json"
+    markdown_path: str = "timeline_{theme}.md"
     max_entries: int = 1000
 
 class PublishControl(BaseModel):
+    model_config = ConfigDict(extra='allow')
     exclude_patterns: List[str] = Field(default_factory=list)
+
     webhook_enabled: bool = False
     webhook_urls: List[str] = Field(default_factory=list)
     webhook_timeout: float = Field(10.0, ge=1)
@@ -78,14 +80,14 @@ class SeoSettings(BaseModel):
     autopilot_enabled: bool = True
 
 class Configuration(BaseModel):
-    """💎 [Omni-Hub] 全局配置模型总纲"""
+    """💎 [Illacme Plenipes] 全局配置模型总纲"""
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
     
     version: str = "24.0"
     
     # 核心物理基础设施
     vault_root: str = "./content-vault"
-    metadata_db: str = "metadata"
+    metadata_db: str = "metadata/meta_{theme}.db"
     active_theme: str = "default"
     site_url: str = ""
     lang_mapping: Dict[str, str] = Field(default_factory=dict)

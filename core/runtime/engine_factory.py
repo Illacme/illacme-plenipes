@@ -46,24 +46,57 @@ from core.utils.event_bus import bus
 from core.utils.tracing import tlog
 
 class EngineFactory:
-    """🚀 [TDR-Iter-021] 引擎工厂：负责复杂的组件装配与初始化工作"""
+    # 🛡️ [V35.2] 主权物理布局协议 (唯一真理源)
+    SOVEREIGN_LAYOUT = {
+        "logs": "logs",
+        "metadata": "metadata",
+        "cache": "cache",
+        "themes": "themes"
+    }
+    """🚀 [V35.2] 主权治理引擎工厂：负责全功能治理中枢的装配与依赖注入"""
 
     @staticmethod
-    def create_engine(config, no_ai=False, args=None, workspace_id: str = "default"):
-        """🚀 [V10.0] 工业级引擎工厂：组装全功能主权同步核心"""
+    def create_engine(config, no_ai=False, args=None, territory_id: str = "default"):
+
+        """🚀 [V35.2] 工业级引擎工厂：组装全功能主权治理中枢"""
+
         # 1. 🧬 [补救逻辑] 如果传入的是路径字符串，先加载为配置对象
         if isinstance(config, str):
-            from core.config.config import ConfigManager
-            config = ConfigManager(config).get_config()
+            from core.config.config import load_config
+            config = load_config(config)
+
 
         # 🚀 [V8.0] 激活物理安全底座
         from core.governance.secret_manager import secrets
         secrets.initialize()
+        
+        # 🛡️ [V35.2] 审计账本主权对正 (引用协议)
+        from core.governance.audit_ledger import initialize_ledger
+        audit_path = os.path.join("territories", territory_id, EngineFactory.SOVEREIGN_LAYOUT["metadata"], "audit.db") if territory_id != "default" else ".plenipes/ledger_audit.db"
+        initialize_ledger(audit_path)
+
+        
+        # 🛡️ [V35.2] 主权路径强制对正：确保所有相对路径都锁定在疆域内部
+        if territory_id and territory_id != "default":
+            # 如果是具体疆域，强制将 data_root 指向疆域物理根部
+            territory_path = os.path.join("territories", territory_id)
+            if not config.system:
+                config.system = type('SystemConfig', (), {'data_root': territory_path})()
+            else:
+                config.system.data_root = territory_path
+            tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {territory_path}")
+
 
         # 2. 🚀 [审计逻辑] 此时 config 已经是对象，可以安全审计
         violations = ContractGuard.verify_config(config)
         if violations and any("❌" in v for v in violations):
+            import sys
+            sys.stderr.write("\n🚨 [CONTRACT VIOLATION] 引擎启动契约校验失败：\n")
+            for v in violations:
+                sys.stderr.write(f"  {v}\n")
+            sys.stderr.flush()
             return None
+
 
         # 🚀 [V24.6] 视觉主权：Banner 抢占式渲染 (必须在所有初始化日志前)
         from core.ui.delegate import DisplayDelegate
@@ -71,7 +104,9 @@ class EngineFactory:
         ael_iter_id = SentinelManager._detect_current_iter()
         
         # 🚀 [V24.6] 动态获取最新 Iter-ID
-        history_dir = ".plenipes/history"
+        # 🚀 [V24.6] 使用协议常量定位历史存档
+        history_dir = os.path.join("territories", territory_id, EngineFactory.SOVEREIGN_LAYOUT["metadata"], "history") if territory_id != "default" else ".plenipes/history"
+
         current_iter_id = "V24.0_Default"
         if os.path.exists(history_dir):
             iters = [d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))]
@@ -100,7 +135,8 @@ class EngineFactory:
         IngressManager.initialize(plugin_settings)
 
         # 3. 🔧 [挂载逻辑] 实例化并立即挂载核心属性
-        engine = IllacmeEngine(config, no_ai=no_ai, config=config, workspace_id=workspace_id)
+        engine = IllacmeEngine(config, no_ai=no_ai, config=config, territory_id=territory_id)
+
         engine.config = config
         engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
         engine.route_matrix = config.route_matrix
@@ -140,7 +176,8 @@ class EngineFactory:
 
         theme_settings = engine.config.theme_options.get(engine.active_theme, ThemeSettings())
         theme_settings.name = engine.active_theme
-        engine.ssg_adapter = SSGAdapter(theme_settings, custom_adapters=engine.config.framework_adapters)
+        engine.ssg_adapter = SSGAdapter(theme_settings, custom_adapters=engine.config.framework_adapters, engine=engine)
+
         engine.ssg_adapter.default_lang = engine.config.i18n_settings.source.lang_code or "zh"
         
         # 🚀 [V24.6] 补全系统参数
@@ -179,18 +216,33 @@ class EngineFactory:
             hard_line_break=ingress_cfg.hard_line_break
         )
         
+        # 🚀 [V35.1] 主权路径锚定器：确保所有相对路径都锁定在 data_root 之下
+        data_root = os.path.abspath(os.path.expanduser(engine.config.system.data_root))
+        def anchor(p):
+            if not p: return None
+            p = os.path.expanduser(p)
+            if not os.path.isabs(p):
+                return os.path.join(data_root, p)
+            return os.path.abspath(p)
+
         source_dir = paths_cfg.get('source_dir') or paths_cfg.get('markdown_dir')
         static_dir = paths_cfg.get('static_dir')
+        
         engine.paths = {
             "vault": engine.vault_root,
-            "source_dir": os.path.abspath(os.path.expanduser(source_dir)) if source_dir else None,
-            "static_dir": os.path.abspath(os.path.expanduser(static_dir)) if static_dir else None,
-            "assets": os.path.abspath(os.path.expanduser(paths_cfg.get('assets_dir'))) if paths_cfg.get('assets_dir') else None,
-            "graph_json_dir": os.path.abspath(os.path.expanduser(paths_cfg.get('graph_json_dir').replace("{theme}", engine.active_theme))) if paths_cfg.get('graph_json_dir') else None,
-            "target_base": os.path.abspath(os.path.expanduser((paths_cfg.get('target_base') or paths_cfg.get('graph_json_dir')).replace("{theme}", engine.active_theme))) if (paths_cfg.get('target_base') or paths_cfg.get('graph_json_dir')) else None,
-            "db": os.path.abspath(os.path.expanduser(engine.config.metadata_db)),
-            "cache": os.path.join(engine.config.system.data_root, "cache")
+            "source_dir": anchor(source_dir.replace("{theme}", engine.active_theme) if source_dir else ""),
+            "static_dir": anchor(static_dir.replace("{theme}", engine.active_theme) if static_dir else ""),
+            "assets": anchor(paths_cfg.get('assets_dir', '').replace("{theme}", engine.active_theme)),
+            "graph_json_dir": anchor(paths_cfg.get('graph_json_dir', '').replace("{theme}", engine.active_theme)),
+            "target_base": anchor((paths_cfg.get('target_base') or "").replace("{theme}", engine.active_theme)),
+            "db": anchor(engine.config.metadata_db.format(theme=engine.active_theme) if "{theme}" in engine.config.metadata_db else engine.config.metadata_db.replace(".db", f"_{engine.active_theme}.db")),
+            "cache": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["cache"]),
+            "logs": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["logs"]),
+            "metadata": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["metadata"]),
+            "themes": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["themes"])
         }
+
+
         engine.asset_base_url = engine.config.image_settings.base_url.rstrip('/') + '/'
 
 
@@ -206,8 +258,14 @@ class EngineFactory:
         from core.logic.knowledge.conversational_brain import ConversationalBrain
 
         data_paths = engine.config.system.data_paths
-        v_path = os.path.join(engine.config.system.data_root, data_paths.get("vectors_json", "vectors.json"))
-        g_path = os.path.join(engine.config.system.data_root, data_paths.get("link_graph", "link_graph.json").format(theme=engine.active_theme))
+        v_raw = data_paths.get("vectors_json", "vectors_{theme}.json")
+        v_path = os.path.join(engine.paths["metadata"], v_raw.format(theme=engine.active_theme) if "{theme}" in v_raw else v_raw.replace(".json", f"_{engine.active_theme}.json"))
+        
+        g_raw = data_paths.get("link_graph", "link_graph_{theme}.json")
+        g_path = os.path.join(engine.paths["metadata"], g_raw.format(theme=engine.active_theme) if "{theme}" in g_raw else g_raw.replace(".json", f"_{engine.active_theme}.json"))
+        
+        p_raw = data_paths.get("pulse_json", "pulse_{theme}.json")
+        engine.paths["pulse"] = os.path.join(engine.paths["metadata"], p_raw.format(theme=engine.active_theme) if "{theme}" in p_raw else p_raw.replace(".json", f"_{engine.active_theme}.json"))
         
         engine.embedding_adapter = EmbeddingFactory.create(engine)
         engine.vector_index = engine.governance.vector_index
@@ -224,8 +282,15 @@ class EngineFactory:
     @staticmethod
     def _init_business_hubs(engine):
         """业务调度中枢 (Router, Translator, Dispatcher)"""
+        # 🚀 [V10.5] 算力网关点火 (仅在启用 AI 时实例化重型模型)
+        if not engine.no_ai:
+            from core.logic.ai.ai_factory import TranslatorFactory
+            engine.translator = TranslatorFactory.create(engine.config.translation)
+        else:
+            engine.translator = None
+            tlog.info("🔌 [算力网关] AI 模式已关闭，跳过翻译官初始化。")
+
         engine.meter = engine.governance.meter
-        engine.translator = TranslatorFactory.create(engine.config.translation)
         engine.asset_pipeline = AssetPipeline(engine.paths['assets'], engine.config.image_settings)
         engine.route_manager = RouteManager(
             engine.meta, engine.translator,
@@ -235,28 +300,32 @@ class EngineFactory:
             ssg_adapter=engine.ssg_adapter
         )
         engine.link_resolver = LinkResolver(engine.meta, engine.route_manager, engine.active_theme)
-        # 🚀 [V35.0] 索引器适配：使用抽象 Source 适配器替代物理路径
+        # 🚀 [V35.0] 索引器适配：使用抽象 Source 适配器并注入主权配置
         engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(
-            engine.manuscript_source, allowed_extensions=engine.config.system.allowed_extensions, ledger=engine.meta
+            engine.manuscript_source, config=engine.config, ledger=engine.meta
         )
-        engine.ast_resolver = ASTResolver(engine.md_index, engine.asset_index)
 
-        engine.syndicator = ContentSyndicator(engine.config.syndication, engine.config.site_url, meta=engine.meta)
-        engine.broadcaster = WebhookBroadcaster(engine.config.publish_control, sys_tuning_cfg=engine.config.system)
-        
+        engine.ast_resolver = ASTResolver(engine.md_index, engine.asset_index, source=engine.manuscript_source)
+
+        from core.dispatch.deployment_manager import DeploymentManager
+        engine.deployment_manager = DeploymentManager(engine.config)
+
         engine.janitor = JanitorService(
             engine._global_engine_lock, engine._processing_locks,
             engine.paths, engine.meta, engine.route_manager, engine.config.i18n_settings,
             sys_cfg=engine.config.system, active_theme=engine.active_theme
         )
+        
         engine.dispatcher = EgressDispatcher(
             paths=engine.paths, meta=engine.meta, route_manager=engine.route_manager,
             asset_pipeline=engine.asset_pipeline, ssg_adapter=engine.ssg_adapter,
-            ast_resolver=engine.ast_resolver, syndicator=engine.syndicator,
-            broadcaster=engine.broadcaster,
+            ast_resolver=engine.ast_resolver,
+            deployment_manager=engine.deployment_manager,
             pub_cfg=engine.config.publish_control, fm_order=engine.fm_order,
             asset_base_url=engine.asset_base_url, i18n_cfg=engine.config.i18n_settings, janitor=engine.janitor
         )
+
+
 
     @staticmethod
     def _init_lifecycle_services(engine):

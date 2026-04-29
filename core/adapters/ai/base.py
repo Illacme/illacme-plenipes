@@ -51,12 +51,14 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         """[Sovereignty] 物理算力调度核心：带治理拦截的 AI 请求总闸"""
         from core.runtime.cli_bootstrap import get_global_engine
         engine = get_global_engine()
-        workspace_id = engine.workspace_id if engine else "default"
+        territory_id = engine.territory_id if engine else "default"
         
         if engine and hasattr(engine, 'governance'):
-            from core.governance.rate_limiter import guard
-            if not guard.check_quota(workspace_id):
-                raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {workspace_id}")
+            from core.governance.rate_limiter import GovernanceGuard
+            guard = GovernanceGuard()
+            if not guard.check_quota(territory_id):
+                raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {territory_id}")
+
             breaker = engine.circuit_breakers.get("ai")
             if breaker and not breaker.allow_request():
                 raise RuntimeError(f"AI_CIRCUIT_BREAKER_OPEN: {self.node_name}")

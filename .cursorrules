@@ -33,3 +33,9 @@
 ## 🛡️ 五、专家级 Diff 输出规范
 1. 贯彻“主动预判、直击最优解”的专家视角。不需要被动等待提示，看到潜在的并发锁冲突或内存泄漏风险，请直接提供防御代码。
 2. 提供修改方案时，请提供精准的代码块并标出上下文锚点，确保生成的代码可以直接被 IDE 的 Apply 功能无缝合并。
+
+## 🛡️ 六、Banner UI 主权锁定 (V48.2 Visual Sovereignty Lock)
+1. 文件 `core/ui/handlers/status_handlers.py` 包含 V48.2 极致对称修订版的 ASCII Banner 矩阵与亚像素级物理空格。
+2. 该文件已被标记为 **Read-Only Visual Asset**。
+3. 严禁任何 AI 助手或自动化工具擅自修改该文件的排版、空格或渲染逻辑。哪怕 IDE 或 Ruff 报 W291 (Trailing whitespace) 警告，也**绝对不可修改**。
+4. 除非用户显式通过 `ALLOW_BANNER_EDIT=1` 授权，否则永远不要向该文件提交任何 Diff。

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Omni-Hub S3 Plugin (Modularized)
+Illacme Plenipes S3 Plugin (Modularized)
 🛡️ [V17.0]：从核心库剥离，作为独立插件运行。
 """
 

@@ -57,26 +57,53 @@ class OrchestratedExecutor(concurrent.futures.Executor):
             self.workers.append(t)
         tlog.debug(f"🚀 [OrchestratedExecutor] 初始化完成，并发容量: {max_workers} (最小保护: {min_workers})")
 
+    def ensure_active(self):
+        """🚀 [V35.2] 算力动态对齐：确保活跃工人数量严格符合配置预期"""
+        with self.lock:
+            if self.shutdown_flag:
+                return
+            
+            # 1. 物理清理：剔除已死亡的线程
+            self.workers = [w for w in self.workers if w.is_alive()]
+            
+            # 2. 算力补全：若当前活跃工人不足，则按需增殖
+            if len(self.workers) < self.max_workers:
+                needed = self.max_workers - len(self.workers)
+                # tlog.debug(f"♻️ [Orchestrator] 算力缺口探测：正在增殖 {needed} 个新工人以对齐配置...")
+                for i in range(needed):
+                    idx = len(self.workers)
+                    t = threading.Thread(
+                        target=self._worker_loop,
+                        name=f"OrchestratorWorker-{idx}@{id(self)}",
+                        daemon=True
+                    )
+                    t.start()
+                    self.workers.append(t)
+
+
     def submit(self, func: Callable, *args, **kwargs):
         """标准提交接口 (默认优先级: TRANSLATION)"""
+        self.ensure_active()
         priority = kwargs.pop('priority', TaskPriority.TRANSLATION)
         name = kwargs.pop('task_name', func.__name__)
 
         # 🚀 [V11.5] 核心死锁探测：严禁在当前池子的工人线程中，同步等待该池子的新任务
         current_thread_name = threading.current_thread().name
         if f"@{id(self)}" in current_thread_name:
-            tlog.debug(f"🚨 [死锁风险预警] 池 {id(self)} 的工人在提交嵌套任务 '{name}'。请确保不使用 .result() 同步等待！")
+            tlog.debug(f"🚨 [死锁风险预警] 池 {id(self)} 的工人在提交嵌套任务 '{name}'。")
 
-        # 🚀 [V34.9] 流量削峰优化：大幅放宽队列阈值，防止在 AI 算力受限时反向阻塞调度线程
-        # 允许最多 1000 个任务排队，确保全量文档能一次性推入异步池
+        # 🚀 [V34.9] 流量削峰优化
         with self.lock:
+            # 即使 ensure_active 尝试复苏，如果依然处于 shutdown 状态则报错
             if self.shutdown_flag:
-                raise RuntimeError("Executor already shutdown")
+                raise RuntimeError("Executor is shutdown and cannot be reactivated")
 
             f = concurrent.futures.Future()
             task = OrchestratedTask(func, priority, name, f, *args, **kwargs)
-            # 🚀 [V34.9] 物理审计：打印任务提交目标池的 ID
-            tlog.debug(f"📥 [Orchestrator] 任务 '{name}' 提交至池 {id(self)} | 队列长度: {len(self.queue)}")
+            # 🚀 [V35.2] 强制诊断：使用 print 绕过日志等级过滤
+            print(f"📥 [Orchestrator] 任务 '{name}' 提交至池 {id(self)} | 队列长度: {len(self.queue)}")
+
+
             
             # 🚀 [V11.8 生产就绪] 嵌套死锁自愈：如果检测到嵌套提交，动态激活一个“救援工人”
             if f"@{id(self)}" in current_thread_name:
@@ -86,8 +113,12 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                 t.start()
                 self.workers.append(t)
 
+            import sys
+            sys.stderr.write(f"📥 [DEBUG] 任务 '{name}' 已压栈 | 池: {id(self)} | 队列: {len(self.queue)}\n")
+            sys.stderr.flush()
             # 🚀 [V11.5] 格式统一化：(优先级, 时间戳, 任务对象)
             heapq.heappush(self.queue, (priority, task.timestamp, task))
+
             self.condition.notify_all()
             return f
 
@@ -135,7 +166,13 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                     _, _, task = heapq.heappop(self.queue)
 
             if task:
+                import sys
+                sys.stderr.write(f"🧪 [DEBUG] 工人领取任务: {task.name} | 线程: {threading.get_ident()}\n")
+                sys.stderr.flush()
+                
                 thread_id = threading.get_ident()
+
+
                 try:
                     with self.lock:
                         self.running_tasks[thread_id] = task.name

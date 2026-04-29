@@ -92,10 +92,14 @@ class RouteManager:
 
             # 2. 缓存击穿，触发全新目录创建流程
             if not d_slug:
-                if allow_ai and not is_dry_run:
+                if allow_ai and not is_dry_run and self.translator:
                     tlog.info(f"   └── ⏳ 探测到全新中文目录 '{p}'，正调度 AI 为其生成永久英文 URL 路由...")
-                    # 🚀 [V11.1] 提示词去噪：不再发送 "Directory Name: " 前缀，防止 AI 误解意图产生冗余 Slug
-                    d_slug, _ = self.translator.generate_slug(p, is_dry_run)
+                    try:
+                        d_slug, _ = self.translator.generate_slug(p, is_dry_run)
+                    except Exception as e:
+                        tlog.warning(f"⚠️ [路由 AI 故障] {e}，将回退至物理清洗。")
+                        d_slug = None
+
 
                 # 3. 终极无缝兜底：彻底脱离 AI 和网络环境的防撞设计
                 if not d_slug:

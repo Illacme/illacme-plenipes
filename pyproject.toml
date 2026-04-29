@@ -21,6 +21,7 @@ ignore = [
 # 🛡️ 核心引擎专项审计 (Engine Sovereignty)
 [tool.ruff.lint.per-file-ignores]
 "core/**" = ["F401", "F841"] # 核心库允许部分未使用的导入（用于解耦或工厂注册）
+"core/ui/handlers/status_handlers.py" = ["W291"] # 永久豁免 Banner 物理空格的清理
 
 # 🛡️ 适配器专项审计 (Adapter Flexibility)
 "core/adapters/**" = ["F401"] # 适配器层允许更松散的导入规则

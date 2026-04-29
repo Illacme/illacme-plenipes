@@ -162,36 +162,23 @@ class ConfigManager:
             sys.exit(1)
 
     def _post_process(self):
-        """执行路径挂载、主题隔离与算力网关适配"""
-        root = self.config.system.data_root
+        """执行主题隔离与算力网关适配 (移除过早的路径物理化)"""
         theme = self.config.active_theme
-        os.makedirs(root, exist_ok=True)
         
-        def _resolve(p):
-            if not p: return p
-            if p.startswith("/") or p.startswith("./") or p.startswith("../"):
-                return p
-            return os.path.join(root, p)
-
-        # 1. 挂载系统路径
-        self.config.system.logs_dir = _resolve(self.config.system.logs_dir)
-        self.config.system.sandbox_dir = _resolve(self.config.system.sandbox_dir)
-        
-        # 2. 挂载数据路径 (部分兼容)
-        for k, v in self.config.system.data_paths.items():
-            if k in ["health_log", "timeline_json", "timeline_md"]:
-                self.config.system.data_paths[k] = _resolve(v)
-        
-        # 3. 元数据与时间轴主权隔离
-        self.config.metadata_db = _resolve(self.config.metadata_db)
+        # 1. 元数据与时间轴主权隔离 (保持相对结构，交由引擎运行时锚定)
+        if not self.config.metadata_db or self.config.metadata_db == "metadata":
+            self.config.metadata_db = "metadata/meta.db"
+            
         if self.config.timeline:
-            self.config.timeline.json_path = _resolve(self.config.timeline.json_path)
-            self.config.timeline.markdown_path = _resolve(self.config.timeline.markdown_path)
+            if not self.config.timeline.json_path or self.config.timeline.json_path == "plenipes_timeline.json":
+                self.config.timeline.json_path = "metadata/timeline.json"
+            if not self.config.timeline.markdown_path or self.config.timeline.markdown_path == "timeline.md":
+                self.config.timeline.markdown_path = "metadata/timeline.md"
 
-        # 4. 主题账本动态挂载
-        if not self.config.metadata_db.endswith(".db"):
-            db_dir = self.config.metadata_db
-            self.config.metadata_db = os.path.join(db_dir, f"ledger_{theme}.db")
+
+        # 4. [V35.2] 路径占位符动态对齐 (增强多主题支持)
+        self.config.metadata_db = self.config.metadata_db.replace("{theme}", theme)
+
         
         # 5. 路径映射对齐
         theme_opts = self.config.theme_options.get(theme, ThemeSettings())

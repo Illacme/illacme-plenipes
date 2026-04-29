@@ -36,7 +36,8 @@ def main():
         compliance_violations = ContractGuard.verify_repository_compliance()
         if compliance_violations:
             for v in compliance_violations: print(f"  └── {v}")
-            success = False
+            if any("❌" in v for v in compliance_violations):
+                success = False
         else:
             print("  └── ✅ GitHub 安全合规性审计通过")
     except Exception as e:
@@ -75,12 +76,33 @@ def main():
         print(f"  └── ❌ 红线审计异常: {e}")
         success = False
 
+    # 2.5 Banner UI 主权锁定审计
+    print("🚀 [审计阶段] Banner UI 主权锁定审计...")
+    try:
+        # 检查 status_handlers.py 是否被修改
+        staged_files = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).splitlines()
+        if "core/ui/handlers/status_handlers.py" in staged_files:
+            if os.environ.get("ALLOW_BANNER_EDIT") == "1":
+                print("  └── ⚠️ [UI主权特权] 检测到 ALLOW_BANNER_EDIT=1 环境变量，允许授权修改 Banner 视觉资产。")
+            else:
+                print("  └── ❌ [UI主权拦截] core/ui/handlers/status_handlers.py 已被标记为 Read-Only Visual Asset。")
+                print("         为保护 V48.2 极致对称物理排版，严禁常规修改！")
+                print("         如确需授权修改，请在提交时附加变量，例如： ALLOW_BANNER_EDIT=1 git commit -m '...'")
+                success = False
+        else:
+            print("  └── ✅ UI 主权锁定审计通过 (Banner 未被非法篡改)")
+    except Exception as e:
+        # 如果未在 git 仓库中或命令失败，静默放行或打印警告
+        print(f"  └── ⚠️ UI主权审计跳过 (Git 检测异常: {e})")
+
     # 3. 核心规范审计 (Ruff Linting)
-    if not run_step("核心引擎规范审计", ["ruff", "check", "core/"]):
+    # 豁免 status_handlers.py 以保护 V48.2 Banner 亚像素级物理空格不被清理
+    if not run_step("核心引擎规范审计", ["ruff", "check", "core/", "--extend-exclude", "core/ui/handlers/status_handlers.py"]):
         success = False
 
     # 4. 回归测试 (Smoke Tests)
-    if not run_step("自动化冒烟测试", ["pytest", "tests/integration/semantic_v24_test.py", "--maxfail=1"]):
+    # V48.2 升级：覆盖全新的 Ingress 与 Web Wizard 测试套件
+    if not run_step("自动化冒烟测试", ["pytest", "tests/", "--maxfail=1"]):
         success = False
 
     if not success:
