@@ -7,9 +7,9 @@ Illacme-plenipes Core - Component Staticizer Step (组件静态化工序)
 """
 
 import logging
-from .runner import PipelineStep
+from core.pipeline.runner import PipelineStep
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class StaticizerStep(PipelineStep):
     """
@@ -36,6 +36,6 @@ class StaticizerStep(PipelineStep):
 
         # 委托 Service 处理 Callouts
         ctx.body_content = ctx.services.staticizer.staticize_callouts(
-            ctx.body_content, 
+            ctx.body_content,
             ctx.engine.ssg_adapter
         )

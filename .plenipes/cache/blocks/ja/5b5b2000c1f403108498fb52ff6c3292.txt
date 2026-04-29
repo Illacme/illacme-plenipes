@@ -1,0 +1,9 @@
+```javascript
+const analyzeSlicing = (content) => {
+  const chunks = content.split('\n\n');
+  return chunks.map(c => ({
+    length: c.length,
+    priority: getWeight(c)
+  }));
+};
+```

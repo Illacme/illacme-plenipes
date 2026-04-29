@@ -7,9 +7,9 @@ Illacme-plenipes Core - AI Provider Registry
 """
 
 import logging
-from typing import Dict, Type, Any
+from typing import Dict, Type
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class AIProviderRegistry:
     """🚀 AI 算力协议注册中心"""
@@ -18,7 +18,7 @@ class AIProviderRegistry:
     @classmethod
     def register(cls, ptype: str, provider_class: Type):
         cls._providers[ptype] = provider_class
-        logger.debug(f"🤖 [算力插件] 已注册协议: {ptype}")
+        tlog.debug(f"🤖 [算力插件] 已注册协议: {ptype}")
 
     @classmethod
     def get_provider(cls, ptype: str) -> Type:

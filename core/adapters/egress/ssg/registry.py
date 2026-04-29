@@ -10,7 +10,7 @@ import logging
 from typing import Dict, Type
 from .base import BaseSSGAdapter
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class SSGRegistry:
     """🚀 SSG 渲染插件注册中心"""
@@ -19,7 +19,7 @@ class SSGRegistry:
     @classmethod
     def register(cls, name: str, renderer_class: Type[BaseSSGAdapter]):
         cls._renderers[name] = renderer_class
-        logger.debug(f"🎨 [渲染插件] 已注册 SSG 适配器: {name}")
+        tlog.debug(f"🎨 [渲染插件] 已注册 SSG 适配器: {name}")
 
     @classmethod
     def get_renderer(cls, name: str) -> Type[BaseSSGAdapter]:

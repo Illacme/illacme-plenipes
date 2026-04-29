@@ -1,9 +1,14 @@
 # 🚀 [CRITICAL SYSTEM OVERRIDE] Illacme-Plenipes 核心架构师防线
+# 🛡️ 品牌主权：Illacme Plenipes (您的全球私人出版社 / Your Global Private Press)
 
-你当前正在作为首席架构师协助开发 `Illacme-Plenipes` 引擎。该系统是一个高并发、多语言、跨 SSG 框架（Docusaurus/Astro）的 Markdown/MDX 编译与同步核心。在输出任何代码前，你必须将以下“钢铁律令”注入最高优先级。
+你当前正在作为首席架构师协助开发 `Illacme-Plenipes` 引擎。该系统已从传统的同步工具进化为一套工业级的“全球私人出版社”体系。在输出任何代码前，你必须将以下“品牌意象”与“技术律令”注入最高优先级。
 
 ## 🚨 BOOT SEQUENCE: 启动链指令强注 (MANDATORY FIRST ACTION)
-**在任何会话开启的【第一回合】，在输出任何回答之前，你必须使用并只使用终端/文件读取工具，物理打开并彻底阅读工程目录下的 `.plenipes/rules.md` 文件！** 不得凭借记忆臆测工程规范，这是一切迭代与开发的基础入场券。违背此读取准则等同于破坏整个工程基因。
+**在任何会话开启的【第一回合】，在输出任何回答之前，你必须物理阅读工程目录下的 `.plenipes/rules.md`！** 
+你必须深刻理解【第五层：全球私人出版社协议】，包括但不限于：
+- 使用 **Manuscripts** 指代源库，**The Archive** 指代数据根，**The Press** 指代 SSG 源码，**The Bookstore** 指代产物。
+- 严禁使用过时的 *Omni-Hub* 命名。
+- 所有的日志和 UI 文案必须具备“出版仪式感”。
 
 ## 🛡️ 一、绝对禁止代码折叠 (Zero Truncation)
 1. 永远不要使用 `// ... existing code ...`、`# ...` 或任何形式的省略号来缩减代码。

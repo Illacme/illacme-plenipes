@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni-Hub | Intelligence Panorama</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <!-- 🚀 集成 3D 动力学图谱引擎 -->
+    <script src="https://unpkg.com/3d-force-graph"></script>
+</head>
+<body>
+    <div id="app-container">
+        <!-- 🛰️ Header: 引擎状态与全局操作 -->
+        <header>
+            <div class="logo-section">
+                <img src="logo.png" alt="Omni-Hub Logo">
+                <div class="status-box">
+                    <h1>OMNI-HUB <span style="font-weight: 300; font-size: 0.8rem; color: var(--text-dim);">V24.6</span></h1>
+                    <div class="engine-status">
+                        <div class="status-dot"></div>
+                        <span id="status-text">SEMANTIC_SOVEREIGNTY_ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+            <nav id="top-nav">
+                <!-- 预留控制按钮 -->
+            </nav>
+        </header>
+
+        <!-- 🧪 Left Panel: 引擎脉冲与算力 ROI -->
+        <aside class="glass-panel" id="left-sidebar">
+            <h2>Engine Pulse</h2>
+            <div class="metric-card">
+                <div class="metric-label">Knowledge Density</div>
+                <div class="metric-value" id="density-val">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Active Connections</div>
+                <div class="metric-value" id="conn-count">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Token ROI (24h)</div>
+                <div class="metric-value" id="roi-val">--</div>
+            </div>
+            
+            <div id="system-health" style="margin-top: auto;">
+                <div class="metric-label">Resource Guard</div>
+                <div class="progress-bar" style="height: 4px; background: rgba(255,255,255,0.1); margin-top: 5px;">
+                    <div id="cpu-load" style="width: 30%; height: 100%; background: var(--accent-secondary);"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 🌌 Center Viewport: 3D 知识银河 -->
+        <main id="galaxy-viewport">
+            <!-- 3d-force-graph will render here -->
+            <div id="galaxy-3d"></div>
+            
+            <!-- 浮动信息卡片 -->
+            <div id="node-info-overlay" style="display: none;"></div>
+        </main>
+
+        <!-- 🛡️ Right Panel: 实时审计与诊断 -->
+        <aside class="glass-panel" id="right-sidebar">
+            <h2>Audit Stream</h2>
+            <div id="audit-feed" class="scroll-container">
+                <!-- 审计流项动态注入 -->
+                <div class="audit-item">
+                    <span class="audit-time">10:35:12</span>
+                    <span class="audit-msg">Waiting for pulse...</span>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 20px;">Term Guard</h2>
+            <div id="guard-status" class="metric-card">
+                <div class="metric-label">Context Sovereignty</div>
+                <div class="metric-value" style="color: var(--accent-secondary);">VERIFIED</div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

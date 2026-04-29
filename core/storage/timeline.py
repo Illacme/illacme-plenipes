@@ -14,20 +14,21 @@ import threading
 from datetime import datetime
 from typing import Dict, List, Any
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class TimelineManager:
     """审计时间轴管理器：掌管创作历史的物理留档"""
-    def __init__(self, config):
-        self.cfg = config.timeline
+    def __init__(self, engine):
+        self.engine = engine
+        self.cfg = engine.config.timeline
         self.json_path = os.path.abspath(os.path.expanduser(self.cfg.json_path))
         self.markdown_path = os.path.abspath(os.path.expanduser(self.cfg.markdown_path))
         self.max_entries = self.cfg.max_entries
-        
+
         self.lock = threading.Lock()
         self.events = self._load_events()
         self._dirty = False
-        
+
         if self.cfg.enabled:
             # 开启异步落盘线程
             self._stop_event = threading.Event()
@@ -42,14 +43,14 @@ class TimelineManager:
                     data = json.load(f)
                     return data if isinstance(data, list) else []
             except Exception as e:
-                logger.warning(f"⚠️ 无法加载历史时间轴数据: {e}")
+                tlog.warning(f"⚠️ 无法加载历史时间轴数据: {e}")
         return []
 
     def log_event(self, event_type: str, rel_path: str, status: str = "PENDING", details: str = ""):
         """记录一个新事件"""
         if not self.cfg.enabled:
             return
-            
+
         with self.lock:
             event = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -69,7 +70,7 @@ class TimelineManager:
         """更新最近一次相关路径事件的状态"""
         if not self.cfg.enabled:
             return
-            
+
         with self.lock:
             for event in self.events:
                 if event.get("path") == rel_path and event.get("status") == "PENDING":
@@ -82,7 +83,8 @@ class TimelineManager:
     def _auto_flush_worker(self):
         """异步写盘线程"""
         while not self._stop_event.is_set():
-            time.sleep(5.0)  # 时间轴写入频率稍低，减少 IO
+            # 🚀 [V15.8] 使用配置定义的节流延迟
+            time.sleep(self.engine.config.system.throttle.timeline_write_delay)
             if self._dirty:
                 self.flush()
 
@@ -93,16 +95,16 @@ class TimelineManager:
                 return
             events_copy = list(self.events)
             self._dirty = False
-            
+
         try:
             # 1. 写入 JSON
             with open(self.json_path, 'w', encoding='utf-8') as f:
                 json.dump(events_copy, f, indent=2, ensure_ascii=False)
-            
+
             # 2. 导出 Markdown
             self._export_markdown(events_copy)
         except Exception as e:
-            logger.error(f"🛑 审计时间轴落盘失败: {e}")
+            tlog.error(f"🛑 审计时间轴落盘失败: {e}")
 
     def _export_markdown(self, events: List[Dict[str, Any]]):
         """生成用户友好的 Markdown 时间轴展示"""
@@ -112,13 +114,13 @@ class TimelineManager:
             "\n| 发生时间 | 操作路径 | 事件类型 | 执行状态 | 备注 |",
             "| :--- | :--- | :--- | :--- | :--- |"
         ]
-        
+
         # 只取最近 100 条显示在 Markdown 中
         for ev in events[:100]:
             ev_status = ev.get('status', 'UNKNOWN')
             status_ico = "✅" if ev_status in ['UPDATED', 'SYNCED', 'SKIP'] else "🛑" if ev_status == 'ERROR' else "🔄"
             lines.append(f"| {ev.get('time', '')} | `{ev.get('path', '')}` | **{ev.get('type', '')}** | {status_ico} {ev_status} | {ev.get('details', '')} |")
-            
+
         with open(self.markdown_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(lines))
 

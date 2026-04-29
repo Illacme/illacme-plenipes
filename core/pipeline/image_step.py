@@ -9,9 +9,9 @@ import os
 import re
 import hashlib
 import logging
-from .runner import PipelineStep
+from core.pipeline.runner import PipelineStep
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class ContextualImageAltStep(PipelineStep):
     """阶段 12.5: AI 驱动的媒体智能引擎 (ADMI v2.0)"""
@@ -23,45 +23,45 @@ class ContextualImageAltStep(PipelineStep):
         image_cfg = getattr(ctx.engine.config, 'image_settings', None)
         admi_enabled = getattr(image_cfg, 'generate_alt', False)
         multilingual_enabled = getattr(image_cfg, 'multilingual_alt', False)
-        
+
         if not admi_enabled: return
 
         pattern = re.compile(r'!\[\s*\]\(([^)]+)\)')
         matches = list(pattern.finditer(ctx.body_content))
-        if not matches: return 
+        if not matches: return
 
-        logger.info(f"🔍 [ADMI] 在 {ctx.rel_path} 中侦测到 {len(matches)} 处空白图片标签...")
-        
+        tlog.info(f"🔍 [ADMI] 在 {ctx.rel_path} 中侦测到 {len(matches)} 处空白图片标签...")
+
         offset = 0
         new_content = ctx.body_content
 
         for m in matches:
             img_path = m.group(1)
             img_name = os.path.basename(img_path)
-            
+
             abs_img_path = ""
             if img_path.startswith(('http://', 'https://', 'data:')): continue
-                
+
             potential_paths = [
                 os.path.join(os.path.dirname(ctx.src_path), img_path),
                 os.path.join(ctx.engine.paths.get('vault', '.'), img_path.lstrip('/'))
             ]
-            
+
             for p in potential_paths:
                 if os.path.exists(p):
                     abs_img_path = p
                     break
-            
+
             alt_text = ""
             asset_hash = ""
             source_lang = ctx.engine.i18n.source.lang_code or "zh"
-            
+
             if abs_img_path:
                 try:
                     with open(abs_img_path, 'rb') as f:
                         img_bytes = f.read()
                         asset_hash = hashlib.md5(img_bytes).hexdigest()
-                    
+
                     cached_meta = ctx.engine.meta.get_asset_metadata(asset_hash)
                     if cached_meta and cached_meta.get("alt_texts", {}).get(source_lang):
                         alt_text = cached_meta.get("alt_texts", {}).get(source_lang)
@@ -70,11 +70,11 @@ class ContextualImageAltStep(PipelineStep):
                     else:
                         ext = os.path.splitext(abs_img_path)[1].lower().lstrip('.')
                         mime_type = f"image/{ext}" if ext != 'jpg' else "image/jpeg"
-                        
+
                         start_idx = max(0, m.start() - 300)
                         end_idx = min(len(ctx.body_content), m.end() + 300)
                         surrounding_text = ctx.body_content[start_idx:end_idx]
-                        
+
                         desc = ctx.engine.translator.describe_image(img_bytes, mime_type, context_text=surrounding_text)
                         if desc:
                             alt_text = desc.strip()
@@ -99,7 +99,7 @@ class ContextualImageAltStep(PipelineStep):
                     if t_code == source_lang: continue
                     current_meta = ctx.engine.meta.get_asset_metadata(asset_hash)
                     if t_code in current_meta.get("alt_texts", {}): continue
-                        
+
                     try:
                         if t_code:
                             target_lang_name = ctx.engine.get_lang_name_by_code(t_code)

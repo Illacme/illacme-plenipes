@@ -35,15 +35,10 @@ jobs:
           pip install ruff pytest
           pip install -r requirements.txt
 
-      - name: 🔍 1. 执行 Ruff Lint 审计与自愈
+      - name: 🛡️ 执行主权架构安全审计 (Sovereign Audit)
         run: |
-          # 运行 ruff check 并尝试修复，如果不符合规范则自动提交修复
-          ruff check . --fix --select E,F --exclude .plenipes
-          
-      - name: 🧪 2. 执行自动化回归测试 (AEL v2)
-        run: |
-          # 运行全量 Sentinel 自动化测试
-          pytest tests/ --maxfail=1 --disable-warnings
+          # 运行 V11.0 架构感知的深度审计
+          python3 scripts/sovereign_audit.py
 
       - name: 🔄 3. 云端自愈提交 (GitHub Sentinel Fix)
         if: github.event_name == 'push'

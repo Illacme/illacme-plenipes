@@ -1,0 +1,60 @@
+# 🛡️ Illacme-plenipes 全流程验证配置文件
+# 用于验证架构解耦后的完整管线通路
+
+vault_root: "../content-vault"
+metadata_db: ".plenipes/metadata_verify"
+active_theme: "default"
+
+system:
+  verbose_ai_logs: true
+  max_workers: 4
+  log_level: "DEBUG"
+
+route_matrix:
+  - source: "Blog"
+    prefix: "blog"
+  - source: "Docs"
+    prefix: "docs"
+
+translation:
+  strategy: "single"
+  primary_node: "mock-node"
+  enable_ai: true
+  llm_concurrency: 2
+  providers:
+    mock-node:
+      type: "mock"
+      model: "verifier-v1"
+
+i18n_settings:
+  enable_multilingual: true
+  source:
+    lang_code: "zh-Hans"
+  targets:
+    - lang_code: "en"
+      prompt_lang: "English"
+
+# 🚀 激活解耦后的分发系统
+syndication:
+  enabled: true
+  devto:
+    enabled: true
+    api_key: "verify-key"
+
+# 🚀 激活解耦后的 Webhook 系统
+publish_control:
+  webhook_enabled: true
+  webhook_urls: 
+    - "https://oapi.dingtalk.com/robot/send?access_token=verify"
+    - "https://open.feishu.cn/open-apis/bot/v2/hook/verify"
+  direct_upload:
+    cloudflare_pages:
+      enabled: true
+      project_name: "verify-project"
+
+image_settings:
+  enabled: true
+  base_url: "/assets/"
+
+seo_settings:
+  enabled: true

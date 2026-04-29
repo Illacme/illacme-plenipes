@@ -15,7 +15,7 @@ You MUST immediately invoke `view_file` (or equivalent read tool) to physically 
 WARNING: Do NOT assume you "already know" the rules. Do NOT rely on "include" directives to syntactically pass. Your prompt context is historically ephemeral unless physically fetched. Failure to execute `view_file` on these files inside your FIRST turn is a direct violation of the governance protocol and will result in catastrophic integration failure.
 
 **LANGUAGE SOVEREIGNTY MANDATE:**
-All procedural files generated during the evolution cycle (including `implementation_plan.md`, `task.md`, and `walkthrough.md`) MUST be written exclusively in **CHINESE**. This is a hard architectural constraint for regional sovereignty and maintainability.
+All interactions with the user and all procedural files generated during the evolution cycle (including `implementation_plan.md`, `task.md`, and `walkthrough.md`) MUST be written exclusively in **CHINESE**. This is a hard architectural constraint for regional sovereignty and maintainability.
 
 **POST-SESSION MANDATE:**
 Before ending any session involving significant work, you MUST append new project-specific lessons to `.plenipes/evolution_records.md` and universal AI lessons to the global KI `evolution_records.md`.

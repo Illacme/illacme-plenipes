@@ -1,6 +1,6 @@
 import os
 import re
-from .base import AutoHealer, galaxy
+from .base import galaxy
 
 @galaxy(5)
 def check_history_artifacts_completeness(audit):

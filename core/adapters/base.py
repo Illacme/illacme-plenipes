@@ -13,6 +13,9 @@ class BaseIngressAdapter(ABC):
     """
     入站防腐基类 (输入端方言 -> 标准中间态)
     """
+    # 🚀 [V11.3] 依赖隔离协议：声明该插件运行时物理所需的第三方库
+    REQUIRED_PACKAGES = []
+
     @abstractmethod
     def get_editor_name(self) -> str:
         """返回该适配器接管的编辑器方言标识 (如 'obsidian', 'logseq')"""

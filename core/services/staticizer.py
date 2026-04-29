@@ -8,16 +8,15 @@ Illacme-plenipes Services - Component Staticizer (组件静态化服务)
 
 import re
 import logging
-from typing import List, Optional
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class StaticizerService:
     """
     🚀 工业级组件静态化处理器
     负责将 Markdown 中的动态方言（Tabs, Callouts, Dataview）转换为 SSG 兼容的静态语义。
     """
-    
+
     def __init__(self):
         # 预编译正则以提升性能
         self.callout_header_re = re.compile(r'^[ \t]*>[ \t]*\[!([a-zA-Z]+)\][ \t]*(.*)')
@@ -31,10 +30,10 @@ class StaticizerService:
         """
         if not text:
             return ""
-            
+
         lines = text.split('\n')
         stack = []
-        
+
         for i, line in enumerate(lines):
             clean_line = line.strip()
             if clean_line.startswith('```tabs'):
@@ -43,7 +42,7 @@ class StaticizerService:
             elif clean_line == '```' and stack:
                 stack.pop()
                 lines[i] = ':::'
-            
+
         return '\n'.join(lines)
 
     def staticize_callouts(self, text: str, ssg_adapter) -> str:
@@ -71,10 +70,10 @@ class StaticizerService:
                     body_line = re.sub(r'^[ \t]*>[ \t]?', '', lines[i])
                     body_lines.append(body_line)
                     i += 1
-                
+
                 # 递归处理嵌套主体
                 inner_body = self.staticize_callouts('\n'.join(body_lines), ssg_adapter)
-                
+
                 # 声明式渲染
                 rendered = ssg_adapter.render_single_callout(ctype, title, inner_body)
                 processed_lines.append(rendered)

@@ -1,0 +1,32 @@
+[tool.ruff]
+# 🛡️ [V11.0] 全局治理标准
+line-length = 300 # 遵循 300 行红线与宽行标准
+target-version = "py310"
+exclude = [
+    ".git",
+    ".plenipes",
+    "node_modules",
+    "themes",
+    "dashboard"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501", "E701", # 物理红线与单行多语句
+    "E402", "E741", "E731", "E722", "W293", # 历史遗留风格
+    "F403", "F811"  # 动态导入与重定义警告
+]
+
+# 🛡️ 核心引擎专项审计 (Engine Sovereignty)
+[tool.ruff.lint.per-file-ignores]
+"core/**" = ["F401", "F841"] # 核心库允许部分未使用的导入（用于解耦或工厂注册）
+
+# 🛡️ 适配器专项审计 (Adapter Flexibility)
+"core/adapters/**" = ["F401"] # 适配器层允许更松散的导入规则
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py *_test.py smoke_test.py"
+python_classes = "Test*"
+python_functions = "test_*"

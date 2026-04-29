@@ -1,0 +1,11 @@
+```python
+def stress_test_slicing():
+    # This is a protected zone
+    tokens = 5000
+    if tokens > 2500:
+        print("Slicing required!")
+        for i in range(100):
+            # Simulate high density content
+            print(f"Generating line {i}...")
+    return True
+```

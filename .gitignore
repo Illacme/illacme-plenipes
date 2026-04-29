@@ -1,205 +1,59 @@
-# =======================================================
-# 🛡️ Illacme-Plenipes 工业级开源框架终极安全防火墙
-# =======================================================
+# ============================================================
+# Illacme Plenipes - Global Private Press Governance Rules
+# ============================================================
 
-# ---------------------------------------------------
-# 🛑 1. 绝对机密隔离与本地特权配置 (防 API Key、私有账本与环境变量泄露)
-# ---------------------------------------------------
-# 拦截主配置文件，防止私有部署配置泄露
-config.yaml
-
-# 拦截本地的覆盖补丁配置 (Git 永远看不见它)
+# 🛡️ [V35.0] 物理主权红线 (Physical Sovereignty Boundaries)
+.plenipes/*
+!.plenipes/rules.md
+!.plenipes/governance/
+workspace/           # 🔒 主权出版社空间（绝对禁止外泄）
+content-vault/       # 🔒 原始稿件库
+*.db                 # 🔒 物理账本（全量屏蔽）
+**/.master.key       # 🔒 终极密钥（绝对禁止外泄）
+*.local.yaml
+*.local.yml
 config.local.yaml
 
-# ⭐️ 白名单：强制放行开源框架的示例配置，确保用户克隆后有模板可依
-!config.example.yaml
-!config.template.yaml
-!plenipes_metadata.example.json
-
-# 扩展配置文件与运行时账本
-config-*.yaml
-bridge-*.py
-*-old*.py
-.plenipes_backup/
-*-secret.yaml
-plenipes_metadata.json
-plenipes_metadata.json.tmp
-.plenipes_state.json
-
-# 系统级环境变量与密钥
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-
-# 运行日志
-logs/
-*.log
-sync_log.txt
-
-# ---------------------------------------------------
-# 🙈 2. 核心私有数据隔离 (拦截源库与引擎输出的资产)
-# ---------------------------------------------------
-# 🚀 [V14.15 紧急修复] 拦截原始输入库 (Vault) 
-# 防止小白用户将私密笔记库放在根目录导致全量泄露
-content-vault/
-Vault/
-source-docs/
-raw-notes/
-
-# 【本地测试防呆区】
-test-vault/
-mock-data/
-
-# 【前端文档输出区】拦截所有被引擎同步到前端的个人笔记
-themes/*/src/content/docs/**/*.md*
-themes/*/src/content/blog/**/*.md*
-themes/*/i18n/*/docusaurus-plugin-content-docs/**/*.md*
-themes/*/i18n/*/docusaurus-plugin-content-blog/**/*.md*
-themes/*/i18n/*/docusaurus-plugin-content-pages/**/*.md*
-
-# ⭐️ 白名单：精准放行开源框架自带的各语种起步文件与指南
-!themes/*/src/content/docs/
-!themes/*/i18n/*/docusaurus-plugin-content-docs/
-!themes/*/i18n/*/docusaurus-plugin-content-blog/
-!themes/*/i18n/*/docusaurus-plugin-content-pages/
-!themes/*/src/content/docs/index.md
-!themes/*/src/content/docs/index.mdx
-!themes/*/src/content/docs/getting-started.md
-!themes/*/src/content/docs/*/
-!themes/*/src/content/docs/*/index.md
-!themes/*/src/content/docs/*/index.mdx
-
-# 【静态媒体输出区】拦截引擎处理后输出的私人图片和附件
-themes/*/public/assets/*
-themes/*/public/images/*
-themes/*/public/media/*
-themes/*/static/assets/*
-# ⭐️ 白名单：强制放行 Astro/Starlight 自带的默认 UI 资源
-!themes/*/public/assets/favicon.ico
-!themes/*/public/assets/favicon.svg
-!themes/*/public/assets/logo.svg
-!themes/*/public/assets/logo.png
-!themes/*/public/assets/logo-dark.svg
-!themes/*/public/assets/robots.txt
-
-# 【内部资产源区】彻底拦截引擎同步过来的所有私密图库
-themes/*/src/assets/*
-# ⭐️ 白名单：放行框架自带的默认 Logo 资源
-!themes/*/src/assets/logo.svg
-!themes/*/src/assets/logo.png
-!themes/*/src/assets/logo-dark.svg
-!themes/*/src/assets/favicon.ico
-
-# ---------------------------------------------------
-# 💻 3. 前端工程构建产物 (Node.js, Astro & Vite 缓存)
-# ---------------------------------------------------
-# 依赖包 (保留 package-lock.json / pnpm-lock.yaml 以锁定版本)
-themes/*/node_modules/
+# 📦 依赖与环境
 node_modules/
-.pnpm-store/
-
-# 🚀 [v5.3] 治理状态屏蔽
-.plenipes/*.json
-.plenipes/*.log
-
-# 🚀 [新增] Astro 与 Vite 底层编译缓存与类型树
-themes/*/.astro/
-.astro/
-themes/*/dist/
-dist/
-.vite/
-tsconfig.tsbuildinfo
-
-# 部署平台缓存 (如 Vercel, Netlify)
-.vercel/
-.netlify/
-
-# 拦截前端包管理器的错误日志
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# ---------------------------------------------------
-# 🐍 4. 后端环境与缓存 (Python 引擎层)
-# ---------------------------------------------------
-# 字节码与测试缓存
+.venv/
+venv/
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.pytest_cache/
-.Python
-.tox/
-
-# 虚拟环境隔离 (覆盖所有行业命名标准)
-venv/
-.venv/
-env/
-.env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-
-# ---------------------------------------------------
-# 🖥️ 5. 操作系统与 IDE 隐藏残留
-# ---------------------------------------------------
-# macOS
+.env
 .DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.Spotlight-V100
-.Trashes
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+# 📊 付印产物与影子库 (Production & Shadows)
+dist/
+build/
+.docusaurus/
+.astro/
+cache/
+**/cache/
+themes/*/dist/
+themes/*/public/assets/
+themes/*/.temp/
+# 排除各主题下生成的稿件副本（仅保留模板）
+themes/*/src/content/docs/*
+!themes/*/src/content/docs/index.md
+!themes/*/src/content/docs/readme.md
 
-# IDE 与编辑器缓存
-.idea/
-.vscode/
-*.swp
-*.swo
-*.swn
-.history/
-.python-version
+# 🛡️ 审计与日志
+*.log
+logs/
+.coverage
+htmlcov/
+.pytest_cache/
+scripts/*.tmp
+dashboard/public/data/engine_pulse_*.json
 
-# ---------------------------------------------------
-# 🗑️ 6. 临时文件与原子落盘残留 (Atomic Write Leftovers)
-# ---------------------------------------------------
-# 拦截系统或引擎在执行原子级写入时意外中断留下的临时残骸
-*.tmp
-*.temp
-*.tmp.md
-*.tmp.mdx
+# 🚀 临时资产与自愈脚本
+scratch/
+diagnose_assets.py
+compliance_sentry.py
+banner_*.txt
+test_*.md
+temp_*.py
+data/
 
-# 拦截各类编辑器或自动备份脚本产生的历史备份文件
-*.bak
-*.swp
-*~
-*.old
-*.orig
-
-# ---------------------------------------------------
-# 🚫 7. Illacme-plenipes V34.5+ 本地状态与账本隔离
-# ---------------------------------------------------
-.plenipes/ledger.json
-.plenipes/plenipes_timeline.json
-.plenipes/timeline.md
-.plenipes/sentinel_health.json
-.plenipes/history/
-.illacme-shadow/
-
-# 🚀 [Stage V6 安全加固] 
-# 采用“全量屏蔽 + 模板放行”策略，确保本地开发配置永不上云
-configs/*.yaml
-!configs/*.example.yaml

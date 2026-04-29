@@ -10,4 +10,4 @@ Illacme-plenipes Core - Utils Package
 from .common import *
 
 # 🚀 导出新的插件加载器
-from .plugin_loader import discover_and_register
+from .plugin_loader import PluginLoader

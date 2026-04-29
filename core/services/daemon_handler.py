@@ -9,8 +9,8 @@ import os
 import threading
 import traceback
 import logging
-from core.cli_bootstrap import send_notification
-from core.garden_exporter import export_digital_garden
+from core.runtime.cli_bootstrap import send_notification
+from core.dispatch.garden_exporter import export_digital_garden
 
 try:
     from watchdog.events import FileSystemEventHandler
@@ -18,20 +18,21 @@ try:
 except ImportError:
     HAS_WATCHDOG = False
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class ChangeHandler(FileSystemEventHandler):
     """🚀 [TDR-Iter-021] 守护进程事件处理器：专注 FS 拦截、防抖与分发"""
-    
-    def __init__(self, engine, args, current_source_files, watch_pool):
+
+    def __init__(self, engine, args, current_source_files, watch_pool, dev_server=None):
         super().__init__()
         self.engine = engine
         self.args = args
         self.current_source_files = current_source_files
         self.watch_pool = watch_pool
+        self.dev_server = dev_server
         self._timers = {}
         self._lock = threading.Lock()
-        
+
         watch_cfg = engine.config.system.watchdog_settings
         self._gc_timer = None
         self._heavy_timer = None
@@ -46,7 +47,7 @@ class ChangeHandler(FileSystemEventHandler):
         abs_path = os.path.normcase(os.path.realpath(path))
         parts = abs_path.replace('\\', '/').split('/')
         if any(eb in parts for eb in self.exclude_dirs): return True
-        
+
         silent_zones = [
             self.engine.paths.get('shadow'),
             self.engine.paths.get('target_base'),
@@ -54,7 +55,7 @@ class ChangeHandler(FileSystemEventHandler):
         ]
         for zone in silent_zones:
             if zone and abs_path.startswith(os.path.normcase(os.path.realpath(zone))): return True
-        
+
         fname = os.path.basename(path)
         if any(fname.endswith(p) for p in self.exclude_patterns): return True
         return fname.startswith(('~$', 'tmp_'))
@@ -87,9 +88,12 @@ class ChangeHandler(FileSystemEventHandler):
             if not self.args.dry_run:
                 self._lazy_gc_trigger()
                 self._debounced_heavy_tasks()
+                # 🚀 [V15.9] 触发热加载重载信号
+                if self.dev_server:
+                    self.dev_server.notify_reload()
                 send_notification("✨ 文章已更新", f"《{os.path.basename(file_path)}》已上线")
         except Exception:
-            logger.error(f"⚠️ 实时同步意外崩溃: {traceback.format_exc()}")
+            tlog.error(f"⚠️ 实时同步意外崩溃: {traceback.format_exc()}")
 
     def _lazy_gc_trigger(self):
         with self._lock:
@@ -109,7 +113,10 @@ class ChangeHandler(FileSystemEventHandler):
                     self.engine.sentinel.run_health_check(auto_fix=True)
                     self.engine.meta.save()
                     export_digital_garden(self.engine)
-                except Exception as e: logger.error(f"🛑 [重型延迟任务失败]: {e}")
+                    # 🚀 [V15.9] 重型任务后也触发重载（确保索引更新）
+                    if self.dev_server:
+                        self.dev_server.notify_reload()
+                except Exception as e: tlog.error(f"🛑 [重型延迟任务失败]: {e}")
             self._heavy_timer = threading.Timer(self.heavy_task_delay, task)
             self._heavy_timer.start()
 
@@ -127,7 +134,7 @@ class ChangeHandler(FileSystemEventHandler):
         if event.src_path.lower().endswith((".md", ".mdx")):
             rel_path = os.path.relpath(event.src_path, self.engine.vault_root).replace('\\', '/')
             self.engine.timeline.log_event("MODIFIED", rel_path, "PENDING", "探测到物理内容变化")
-            self.current_source_files.add(rel_path) 
+            self.current_source_files.add(rel_path)
             prefix, source = self._find_route_info(event.src_path)
             if prefix is not None: self._debounced_submit(event.src_path, prefix, source)
 
@@ -153,7 +160,7 @@ class ChangeHandler(FileSystemEventHandler):
                 if prefix: self._debounced_submit(event.dest_path, prefix, source, delay=0.1)
             return
         if self._should_skip(event.src_path) and self._should_skip(event.dest_path): return
-        
+
         if event.is_directory:
             old_rel = os.path.relpath(event.src_path, self.engine.vault_root).replace('\\', '/')
             to_remove = [f for f in self.current_source_files if f.startswith(old_rel + '/')]
@@ -163,9 +170,9 @@ class ChangeHandler(FileSystemEventHandler):
 
         if event.src_path.lower().endswith((".md", ".mdx")):
             old_rel = os.path.relpath(event.src_path, self.engine.vault_root).replace('\\', '/')
-            self.engine.timeline.log_event("MOVED", old_rel, "MOVED", f"迁移轨迹触发")
+            self.engine.timeline.log_event("MOVED", old_rel, "MOVED", "迁移轨迹触发")
             self.current_source_files.discard(old_rel)
-            
+
             prefix_new, source_new = self._find_route_info(event.dest_path)
             if prefix_new is not None:
                 new_rel = os.path.relpath(event.dest_path, self.engine.vault_root).replace('\\', '/')

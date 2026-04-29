@@ -1,0 +1,991 @@
+[
+  {
+    "timestamp": "2026-04-25T22:11:48.382916",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:11:48.383356",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:11:48.485765",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:49:57.400832",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:49:57.403431",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:49:57.434914",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:49:57.472377",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:52:56.114826",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:52:56.118841",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:52:56.154543",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T22:52:56.184494",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:00:02.141161",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:18:06.273702",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "fr"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:18:06.276823",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:18:06.296138",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:18:06.319166",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:18:06.394076",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:19:30.797573",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:19:30.805951",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:19:30.845144",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:19:30.857216",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:22:45.217903",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:22:45.252373",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:22:45.288637",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.173146",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.180393",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.198420",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.266861",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.324184",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:29:59.339380",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:46:51.858210",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:46:51.885084",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:46:51.899882",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:46:51.994477",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:48:00.344809",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:48:00.375748",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:48:00.399548",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:48:00.477001",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:48:00.502250",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.012251",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.050317",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.074354",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Sovereignty_Test.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.129391",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Index/About.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.170368",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/index.md",
+      "lang": "fr"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.178777",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.181142",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/index.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.182649",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.183685",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.202917",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/tech-blog.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.231937",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/index.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-25T23:49:36.235445",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_2]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/illacme-plenipes/content-vault/Docs/Official_Home.md",
+      "lang": "es"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:49:27.234278",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/Index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:51:16.810180",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:51:22.478488",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:55:50.805790",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/Index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:57:22.213585",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T06:58:04.108590",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:05:18.050309",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "fr"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:06:12.918544",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:09:45.583353",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:09:47.708197",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:17:19.588702",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/Index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:17:27.918056",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:20:13.099969",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:20:16.806423",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:33:03.279296",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:33:12.224395",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:38:08.381600",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:38:14.839681",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:39:31.814014",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:39:38.758860",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:43:27.963382",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/About.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:43:33.094721",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:44:41.499145",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:45:06.135452",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:45:44.462661",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:45:45.886878",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/tech-blog.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:46:40.918316",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/index.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:46:42.465101",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/tech-blog.md",
+      "lang": "ja"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:47:44.087663",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/index.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:50:48.532428",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/tech-blog.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:50:53.986058",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:58:28.548237",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/About.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:58:36.890597",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:59:12.681476",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T07:59:16.295989",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:04:01.059355",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "fr"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:04:10.150504",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:04:42.440637",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:04:45.949299",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:06:49.686375",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "fr"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:06:58.340402",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:07:31.511216",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/Future_of_SSG.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:07:35.218540",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:09:29.903007",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:09:38.433484",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_1]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Blog/手机端文件.md",
+      "lang": "de"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T08:11:58.547891",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_0]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Index/Index.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T09:29:26.556444",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-26T10:37:35.217742",
+    "category": "MASK_INTEGRITY",
+    "error": "掩码占位符 [[STB_MASK_3]] 在译文中丢失",
+    "context": {
+      "path": "/Volumes/Notebook/omni-hub/content-vault/Docs/测试目录/测试笔记.md",
+      "lang": "en"
+    },
+    "iter_id": "V11.0"
+  },
+  {
+    "timestamp": "2026-04-29T16:30:48.031533",
+    "category": "MASK_INTEGRITY",
+    "error": "侦测到残留占位符！这通常意味着解蔽逻辑 (unmasking) 发生断裂。",
+    "context": {
+      "path": "Docs/Sovereignty_Test.md"
+    },
+    "iter_id": "V11.0"
+  }
+]
