@@ -1,3 +1,7 @@
+"""
+🔗 MDX 链接处理器 — MDX 格式链接的解析与转换。
+处理 MDX 组件内嵌链接、JSX 属性链接与动态路由引用。
+"""
 import os
 import re
 import shutil

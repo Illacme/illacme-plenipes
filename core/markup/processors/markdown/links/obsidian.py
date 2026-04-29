@@ -1,3 +1,7 @@
+"""
+🔗 Obsidian 链接处理器 — Obsidian 双链语法的解析与转换。
+处理 [[WikiLink]]、![[Embed]] 与别名链接的标准化转换。
+"""
 import os
 import re
 import threading

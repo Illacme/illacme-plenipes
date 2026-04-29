@@ -1,3 +1,7 @@
+"""
+🏗️ 基础设施校验模块 — 运行时依赖与环境健康检查。
+验证 Python 版本、磁盘空间、必要依赖库与文件系统权限。
+"""
 # -*- coding: utf-8 -*-
 import os
 from typing import Dict, Any

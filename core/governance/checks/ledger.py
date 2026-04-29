@@ -1,3 +1,7 @@
+"""
+📒 账本校验模块 — 资产台账与版本记录完整性检查。
+验证同步历史、缓存一致性与发行记录的完整性。
+"""
 # -*- coding: utf-8 -*-
 import os
 from typing import Dict, Any

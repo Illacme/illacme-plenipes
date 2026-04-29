@@ -4,313 +4,645 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Foundry Voyage | 铸造出版社主权</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #8a2be2;
+            --primary-soft: rgba(138, 43, 226, 0.15);
             --secondary: #4b0082;
             --accent: #00f2ff;
-            --bg: #0a0a12;
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-green: #00ff7f;
+            --bg: #08080f;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #e8e8f0;
+            --text-dim: #888;
+            --text-muted: #555;
+            --danger: #ff4b6a;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
-            color: #fff;
-            height: 100vh;
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        /* 🌌 背景流光 */
+        /* 🌌 背景粒子场 */
         .bg-gradient {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, #1e1e3f 0%, transparent 40%),
-                        radial-gradient(circle at 80% 70%, #2e1a4a 0%, transparent 40%);
-            z-index: -1;
-            animation: pulse 10s infinite alternate;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at 15% 25%, rgba(138,43,226,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 75%, rgba(0,242,255,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(75,0,130,0.08) 0%, transparent 60%);
+            z-index: 0;
+            animation: bgShift 20s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.15) rotate(2deg); }
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
+        /* 🧪 主容器 */
+        .wizard-container {
+            position: relative; z-index: 10;
+            width: 560px; max-width: 95vw;
         }
 
-        /* 🧪 玻璃态容器 */
         .wizard-card {
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
-            width: 500px;
             padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            position: relative;
-            z-index: 10;
+            box-shadow: 0 32px 64px -16px rgba(0,0,0,0.6);
+            transition: all 0.4s ease;
         }
 
-        .header {
+        /* 🧭 步骤指示器 */
+        .stepper {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .step-dot {
+            width: 32px; height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.4s ease;
+        }
+        .step-dot.active { background: var(--primary); width: 48px; }
+        .step-dot.done { background: var(--accent-green); }
+
+        /* 📋 步骤内容 */
+        .step { display: none; animation: fadeSlide 0.4s ease; }
+        .step.active { display: block; }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
-
-        .header h1 {
+        .step-header h2 {
             font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 600;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #fff 0%, #bbb 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
-        .header p {
-            color: #888;
-            font-size: 0.9rem;
-            margin-top: 8px;
+        .step-header p {
+            color: var(--text-dim);
+            font-size: 0.82rem;
+            margin-top: 6px;
+            line-height: 1.5;
         }
 
-        /* 📋 表单样式 */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
+        /* 🏷️ 表单 */
+        .form-group { margin-bottom: 18px; }
         .form-group label {
             display: block;
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 8px;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
+            font-weight: 500;
         }
-
-        input {
+        input, select {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.04);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            padding: 14px 16px;
+            padding: 13px 16px;
             color: #fff;
+            font-size: 0.9rem;
             outline: none;
             transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
-
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 20px rgba(138,43,226,0.2);
         }
+        select option { background: #1a1a2e; color: #fff; }
 
-        /* 📡 算力节点探测 */
-        .node-panel {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 25px;
+        /* 🎨 主题 & 语种卡片选择器 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
         }
+        .card-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
 
-        .node-list {
-            display: flex;
-            gap: 12px;
-            margin-top: 10px;
-            flex-wrap: wrap;
+        .selectable-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
         }
-
-        .node-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 10px;
+        .selectable-card:hover {
+            background: var(--glass-hover);
+            border-color: rgba(138,43,226,0.3);
+            transform: translateY(-2px);
+        }
+        .selectable-card.selected {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(138,43,226,0.15);
+        }
+        .selectable-card .card-title {
+            font-weight: 600;
             font-size: 0.85rem;
+            margin-bottom: 3px;
+        }
+        .selectable-card .card-desc {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+        .selectable-card .card-icon {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+        }
+
+        /* 📡 算力探测面板 */
+        .node-panel {
+            background: rgba(0,0,0,0.25);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+        .node-panel label { margin-bottom: 8px; }
+        .node-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+        .node-item {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.04);
+            padding: 7px 12px; border-radius: 10px; font-size: 0.82rem;
             border: 1px solid transparent;
         }
-
-        .node-item.online {
-            border-color: rgba(0, 255, 127, 0.3);
-            color: #00ff7f;
-        }
-
-        .node-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #444;
-        }
-
-        .online .node-dot {
-            background: #00ff7f;
-            box-shadow: 0 0 8px #00ff7f;
-        }
+        .node-item.online { border-color: rgba(0,255,127,0.25); color: var(--accent-green); }
+        .node-dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
+        .online .node-dot { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
 
         /* 🚀 按钮 */
-        button {
-            width: 100%;
+        .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+        .btn {
+            flex: 1;
+            border: none; border-radius: 14px; padding: 14px;
+            font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border: none;
-            border-radius: 14px;
-            padding: 16px;
             color: #fff;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px -10px rgba(138, 43, 226, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            box-shadow: 0 10px 25px -8px rgba(138,43,226,0.5);
         }
-
-        button:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 15px 30px -10px rgba(138, 43, 226, 0.6);
+            box-shadow: 0 16px 32px -8px rgba(138,43,226,0.6);
         }
-
-        #status {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.85rem;
-            min-height: 1.2rem;
+        .btn-ghost {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
         }
-
-        .success { color: #00ff7f; }
-        .error { color: #ff4b4b; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
 
         .loading-spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            display: none; width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 状态消息 */
+        #status {
+            text-align: center; margin-top: 16px;
+            font-size: 0.82rem; min-height: 1.2rem;
+        }
+        .success { color: var(--accent-green); }
+        .error { color: var(--danger); }
+
+        /* ✅ 完成页面 */
+        .completion-panel {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .completion-panel .check-icon {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0,255,127,0.15), rgba(0,242,255,0.1));
+            border: 2px solid rgba(0,255,127,0.3);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.8rem;
+        }
+        .next-steps {
+            text-align: left;
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-top: 20px;
+        }
+        .next-steps h4 {
+            font-size: 0.78rem; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .next-step-item {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 8px 0;
+            font-size: 0.82rem; color: var(--text-dim);
+            line-height: 1.5;
+        }
+        .next-step-item .step-num {
+            background: rgba(138,43,226,0.2);
+            border-radius: 6px; padding: 2px 8px;
+            font-size: 0.7rem; color: var(--primary);
+            font-weight: 600; white-space: nowrap;
+        }
+        .next-step-item code {
+            background: rgba(255,255,255,0.08);
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 0.78rem; color: var(--accent);
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        /* Toggle */
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 0;
         }
+        .toggle-row .toggle-label { font-size: 0.85rem; }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px; cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-switch.on { background: var(--primary); }
+        .toggle-switch::after {
+            content: '';
+            position: absolute; top: 3px; left: 3px;
+            width: 18px; height: 18px;
+            background: #fff; border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-switch.on::after { transform: translateX(20px); }
+
+        .ai-config { margin-top: 12px; }
+        .ai-config.hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="bg-gradient"></div>
 
-    <div class="wizard-card">
-        <div class="header">
-            <h1>Foundry Voyage</h1>
-            <p>主权出版社快速落成向导</p>
-        </div>
+    <div class="wizard-container">
+        <div class="wizard-card">
+            <!-- 步骤指示器 -->
+            <div class="stepper">
+                <div class="step-dot active" data-step="0"></div>
+                <div class="step-dot" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+                <div class="step-dot" data-step="4"></div>
+            </div>
 
-        <div class="node-panel">
-            <label style="font-size: 0.75rem; color: #888;">算力探测中心</label>
-            <div id="node-list" class="node-list">
-                <div class="node-item"><span class="node-dot"></span> 正在扫描...</div>
+            <!-- Step 0: 出版社基础 -->
+            <div class="step active" id="step-0">
+                <div class="step-header">
+                    <h2>🏗️ 铸造主权出版社</h2>
+                    <p>命名您的出版社并指定原稿金库路径</p>
+                </div>
+
+                <div class="node-panel">
+                    <label style="font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:1px;">算力探测中心</label>
+                    <div id="node-list" class="node-list">
+                        <div class="node-item"><span class="node-dot"></span> 扫描中...</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>出版社标识</label>
+                    <input type="text" id="press_name" placeholder="例如: galaxy_daily" value="sovereign_press">
+                </div>
+                <div class="form-group">
+                    <label>原稿金库路径</label>
+                    <input type="text" id="manuscripts_path" placeholder="Markdown 文件所在目录" value="./manuscripts">
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="goStep(1)">继续 →</button>
+                </div>
+            </div>
+
+            <!-- Step 1: 主题选择 -->
+            <div class="step" id="step-1">
+                <div class="step-header">
+                    <h2>🎨 选择装帧主题</h2>
+                    <p>选择一个前端框架来呈现您的出版物</p>
+                </div>
+
+                <div id="theme-grid" class="card-grid"></div>
+
+                <div class="btn-row">
+                    <button class="btn btn-ghost" onclick="goStep(0)">← 返回</button>
+                    <button class="btn btn-primary" onclick="goStep(2)">继续 →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: AI 算力 -->
+            <div class="step" id="step-2">
+                <div class="step-header">
+                    <h2>🧠 配置算力引擎</h2>
+                    <p>连接 AI 翻译引擎，为全球出版赋能</p>
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">启用 AI 翻译引擎</span>
+                    <div class="toggle-switch" id="ai-toggle" onclick="toggleAI()"></div>
+                </div>
+
+                <div class="ai-config hidden" id="ai-config">
+                    <div class="form-group">
+                        <label>算力供应商</label>
+                        <select id="ai_provider" onchange="updateModels()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>模型</label>
+                        <select id="ai_model"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>API 密钥</label>
+                        <input type="password" id="ai_api_key" placeholder="sk-...">
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-ghost" onclick="goStep(1)">← 返回</button>
+                    <button class="btn btn-primary" onclick="goStep(3)">继续 →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: 语种矩阵 -->
+            <div class="step" id="step-3">
+                <div class="step-header">
+                    <h2>🌍 语种分发矩阵</h2>
+                    <p>选择目标语种，系统将自动生成多语种版本</p>
+                </div>
+
+                <div class="form-group">
+                    <label>源语种</label>
+                    <select id="source_lang">
+                        <option value="zh">简体中文 (zh)</option>
+                        <option value="en">English (en)</option>
+                        <option value="ja">日本語 (ja)</option>
+                    </select>
+                </div>
+
+                <label style="font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;">目标语种 (可多选)</label>
+                <div id="lang-grid" class="card-grid three-col"></div>
+
+                <div class="btn-row" style="margin-top: 18px;">
+                    <button class="btn btn-ghost" onclick="goStep(2)">← 返回</button>
+                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
+                        <span id="btn-text">⚡ 开辟主权空间</span>
+                        <div id="spinner" class="loading-spinner"></div>
+                    </button>
+                </div>
+                <div id="status"></div>
+            </div>
+
+            <!-- Step 4: 完成 -->
+            <div class="step" id="step-4">
+                <div class="completion-panel">
+                    <div class="check-icon">✅</div>
+                    <h2 style="font-family:'Outfit';font-size:1.4rem;margin-bottom:6px;" id="complete-title"></h2>
+                    <p style="color:#888;font-size:0.85rem;" id="complete-summary"></p>
+
+                    <div class="next-steps">
+                        <h4>🚀 下一步操作指南</h4>
+                        <div class="next-step-item">
+                            <span class="step-num">01</span>
+                            <span>将 Markdown 文件放入您指定的原稿金库路径中</span>
+                        </div>
+                        <div class="next-step-item">
+                            <span class="step-num">02</span>
+                            <span>运行同步命令：<code>python plenipes.py --sync</code></span>
+                        </div>
+                        <div class="next-step-item">
+                            <span class="step-num">03</span>
+                            <span>启动实时监控：<code>python plenipes.py --watch</code></span>
+                        </div>
+                        <div class="next-step-item">
+                            <span class="step-num">04</span>
+                            <span>查看产出物：在 <code>territories/&lt;name&gt;/dist/</code> 中找到生成的站点文件</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="form-group">
-            <label>出版社标识</label>
-            <input type="text" id="press_name" placeholder="例如: galaxy_daily" value="sovereign_press">
-        </div>
-
-        <div class="form-group">
-            <label>原稿金库路径</label>
-            <input type="text" id="manuscripts_path" placeholder="本地磁盘绝对路径" value="./manuscripts">
-        </div>
-
-        <button id="init-btn" onclick="initialize()">
-            <span id="btn-text">开辟主权空间</span>
-            <div id="spinner" class="loading-spinner"></div>
-        </button>
-
-        <div id="status"></div>
     </div>
 
     <script>
+        let currentStep = 0;
+        let probeData = null;
+        let selectedTheme = 'starlight';
+        let selectedLangs = new Set(['en']);
+        let aiEnabled = false;
+
+        // ==========================================
+        // 步骤导航
+        // ==========================================
+        function goStep(n) {
+            // 校验当前步骤
+            if (n > currentStep) {
+                if (currentStep === 0) {
+                    const name = document.getElementById('press_name').value.trim();
+                    const path = document.getElementById('manuscripts_path').value.trim();
+                    if (!name || !path) { showStatus('⚠️ 请完整填写出版社标识与路径', 'error'); return; }
+                }
+            }
+
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step-${n}`).classList.add('active');
+
+            document.querySelectorAll('.step-dot').forEach((d, i) => {
+                d.classList.remove('active', 'done');
+                if (i < n) d.classList.add('done');
+                if (i === n) d.classList.add('active');
+            });
+
+            currentStep = n;
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.className = type;
+            el.innerText = msg;
+        }
+
+        // ==========================================
+        // 探测
+        // ==========================================
         async function probe() {
             try {
                 const res = await fetch('/api/probe');
-                const data = await res.json();
-                const list = document.getElementById('node-list');
-                list.innerHTML = '';
-                
-                if (!data.nodes || data.nodes.length === 0) {
-                    list.innerHTML = '<div class="node-item">未探测到本地算力</div>';
-                } else {
-                    data.nodes.forEach(node => {
-                        list.innerHTML += `
-                            <div class="node-item online">
-                                <span class="node-dot"></span>
-                                ${node.name}
-                            </div>
-                        `;
-                    });
-                }
-            } catch (e) {
-                console.error("Probe failed", e);
+                probeData = await res.json();
+                renderNodes(probeData.nodes);
+                renderThemes(probeData.available_themes);
+                renderProviders(probeData.available_providers);
+                renderLangs(probeData.available_langs);
+            } catch (e) { console.error("Probe failed", e); }
+        }
+
+        function renderNodes(nodes) {
+            const list = document.getElementById('node-list');
+            if (!nodes || nodes.length === 0) {
+                list.innerHTML = '<div class="node-item"><span class="node-dot"></span> 未探测到本地算力节点</div>';
+            } else {
+                list.innerHTML = nodes.map(n =>
+                    `<div class="node-item online"><span class="node-dot"></span>${n.name}</div>`
+                ).join('');
             }
         }
 
+        function renderThemes(themes) {
+            if (!themes) return;
+            const icons = { starlight: '🌟', docusaurus: '🦖', vitepress: '⚡', nextra: '📘', default: '📄' };
+            document.getElementById('theme-grid').innerHTML = themes.map(t => `
+                <div class="selectable-card ${t.id === selectedTheme ? 'selected' : ''}" onclick="selectTheme('${t.id}')">
+                    <div class="card-icon">${icons[t.id] || '📦'}</div>
+                    <div class="card-title">${t.name}</div>
+                    <div class="card-desc">${t.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTheme(id) {
+            selectedTheme = id;
+            document.querySelectorAll('#theme-grid .selectable-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        function renderProviders(providers) {
+            if (!providers) return;
+            const sel = document.getElementById('ai_provider');
+            sel.innerHTML = providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            window._providerData = providers;
+            updateModels();
+        }
+
+        function updateModels() {
+            const pid = document.getElementById('ai_provider').value;
+            const provider = (window._providerData || []).find(p => p.id === pid);
+            const sel = document.getElementById('ai_model');
+            if (provider) {
+                sel.innerHTML = provider.models.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+        }
+
+        function renderLangs(langs) {
+            if (!langs) return;
+            const flags = { en:'🇺🇸', ja:'🇯🇵', ko:'🇰🇷', de:'🇩🇪', fr:'🇫🇷', es:'🇪🇸', pt:'🇧🇷', ru:'🇷🇺', ar:'🇸🇦' };
+            document.getElementById('lang-grid').innerHTML = langs.map(l => `
+                <div class="selectable-card ${selectedLangs.has(l.code) ? 'selected' : ''}" onclick="toggleLang('${l.code}', this)">
+                    <div class="card-icon">${flags[l.code] || '🌐'}</div>
+                    <div class="card-title">${l.name}</div>
+                    <div class="card-desc">${l.code}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleLang(code, el) {
+            if (selectedLangs.has(code)) { selectedLangs.delete(code); el.classList.remove('selected'); }
+            else { selectedLangs.add(code); el.classList.add('selected'); }
+        }
+
+        function toggleAI() {
+            aiEnabled = !aiEnabled;
+            const toggle = document.getElementById('ai-toggle');
+            const config = document.getElementById('ai-config');
+            toggle.classList.toggle('on', aiEnabled);
+            config.classList.toggle('hidden', !aiEnabled);
+        }
+
+        // ==========================================
+        // 初始化提交
+        // ==========================================
         async function initialize() {
-            const btn = document.getElementById('init-btn');
+            const btn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
             const spinner = document.getElementById('spinner');
-            const status = document.getElementById('status');
-            
-            const press_name = document.getElementById('press_name').value;
-            const manuscripts_path = document.getElementById('manuscripts_path').value;
-
-            if (!press_name || !manuscripts_path) {
-                status.className = 'error';
-                status.innerText = '⚠️ 请完整填写空间参数';
-                return;
-            }
 
             btnText.style.display = 'none';
             spinner.style.display = 'block';
-            status.innerText = '';
+            btn.disabled = true;
+            showStatus('', '');
+
+            const payload = {
+                press_name: document.getElementById('press_name').value.trim(),
+                manuscripts_path: document.getElementById('manuscripts_path').value.trim(),
+                active_theme: selectedTheme,
+                enable_ai: aiEnabled,
+                ai_provider: document.getElementById('ai_provider').value,
+                ai_model: document.getElementById('ai_model').value,
+                ai_api_key: document.getElementById('ai_api_key').value,
+                source_lang: document.getElementById('source_lang').value,
+                target_langs: Array.from(selectedLangs)
+            };
 
             try {
                 const res = await fetch('/api/init', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ press_name, manuscripts_path })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                
+
                 if (res.ok) {
-                    status.className = 'success';
-                    status.innerText = '✅ ' + data.message;
+                    document.getElementById('complete-title').innerText = `出版社 "${payload.press_name}" 已落成！`;
+                    let parts = [`装帧主题: ${selectedTheme}`];
+                    if (aiEnabled) parts.push(`AI: ${payload.ai_provider}/${payload.ai_model}`);
+                    if (selectedLangs.size) parts.push(`语种: ${Array.from(selectedLangs).join(', ')}`);
+                    document.getElementById('complete-summary').innerText = parts.join(' · ');
+                    goStep(4);
                 } else {
-                    status.className = 'error';
-                    status.innerText = '❌ ' + (data.detail || '初始化失败');
+                    showStatus('❌ ' + (data.detail || '初始化失败'), 'error');
                 }
             } catch (e) {
-                status.className = 'error';
-                status.innerText = '❌ 网络通讯故障';
+                showStatus('❌ 网络通讯故障', 'error');
             } finally {
-                btnText.style.display = 'block';
+                btnText.style.display = 'flex';
                 spinner.style.display = 'none';
+                btn.disabled = false;
             }
         }
 
+        // 启动探测
         probe();
-        setInterval(probe, 5000);
+        setInterval(probe, 8000);
     </script>
 </body>
 </html>

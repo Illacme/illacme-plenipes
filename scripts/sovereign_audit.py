@@ -53,7 +53,7 @@ def main():
             "core/ui/handlers/status_handlers.py",
             "core/config/config.py",
             "core/runtime/engine_factory.py",
-            "core/pipeline/asset_pipeline.py"
+            "core/editorial/asset_pipeline.py"
         ]
         
         for root, dirs, files in os.walk('core'):

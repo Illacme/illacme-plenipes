@@ -1,3 +1,7 @@
+"""
+📥 收稿部经理 — 多源内容采集与生命周期管理。
+协调各方言适配器完成稿件的发现、解析、验证与入库流程。
+"""
 import os
 import importlib
 import inspect

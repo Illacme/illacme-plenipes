@@ -1,3 +1,7 @@
+"""
+🤖 AI 校验模块 — 人工智能服务可用性与配额检查。
+验证 AI 翻译/摘要服务的连通性、Token 配额与模型可用性。
+"""
 # -*- coding: utf-8 -*-
 import time
 from typing import Dict, Any

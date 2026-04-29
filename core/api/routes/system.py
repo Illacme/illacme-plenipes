@@ -1,3 +1,7 @@
+"""
+⚙️ 系统路由 — RESTful API 系统健康与运维端点。
+提供引擎状态、版本信息与运行时诊断的 API 接口。
+"""
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends, Header, HTTPException
 from typing import Optional

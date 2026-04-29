@@ -1,3 +1,7 @@
+"""
+🔌 插件校验模块 — 扩展插件健康与兼容性检查。
+验证已加载插件的版本兼容性、依赖完整性与 API 契约合规。
+"""
 # -*- coding: utf-8 -*-
 from typing import Dict, Any, List
 from core.governance.contract_guard import ContractGuard

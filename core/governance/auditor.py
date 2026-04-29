@@ -1,3 +1,7 @@
+"""
+🔍 主权审计师 — 多维度资产完整性校验引擎。
+执行本地资产存在性、远程链接可达性与物理路径合规性的自动化审计。
+"""
 import os
 import shutil
 import difflib
