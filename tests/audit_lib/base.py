@@ -1,9 +1,4 @@
-import subprocess
 import os
-import sys
-import json
-import re
-import ast
 from collections import defaultdict
 
 class GalaxyRegistry:
@@ -74,14 +69,14 @@ class AuditResult:
               f"{len(self.failed)} 失败 | {len(self.warnings)} 警告")
         
         if self.failed:
-            print(f"\n🚨 以下问题必须在提交前修复：")
+            print("\n🚨 以下问题必须在提交前修复：")
             for name, detail in self.failed:
                 has_fix = any(f[0] == name for f in self.fixable)
                 fix_tag = " [可自愈, 请运行 --fix]" if has_fix else ""
                 print(f"   → {name}{fix_tag}: {detail}")
         
         if self.warnings:
-            print(f"\n⚠️  以下问题建议尽快处理：")
+            print("\n⚠️  以下问题建议尽快处理：")
             for name, detail in self.warnings:
                 print(f"   → {name}: {detail}")
         print(f"{'='*60}")

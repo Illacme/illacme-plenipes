@@ -1,0 +1,20 @@
+# 🚀 Illacme-plenipes Orchestration
+version: '3.8'
+
+services:
+  engine:
+    build: .
+    container_name: plenipes-engine
+    ports:
+      - "43210:43210"
+      - "43211:43211"
+      - "43212:43212"
+    volumes:
+      - .:/app
+      - .plenipes:/app/.plenipes
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PLENIPES_SKIP_VENV=1  # 容器内不需要虚拟环境重定向
+    restart: unless-stopped
+    stdin_open: true
+    tty: true

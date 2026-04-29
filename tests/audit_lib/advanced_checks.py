@@ -17,7 +17,7 @@ def check_core_architecture_fingerprint(audit):
         if not os.path.exists(path): continue
         with open(path, "r") as f:
             count = len(f.readlines())
-        if abs(count - expected) > 100: 
+        if abs(count - expected) > 100:
             audit.warn("架构指纹偏差", f"{path} 体积异常 ({count} 行)，请确认是否涉及重大重构")
         else:
             audit.ok(f"指纹校验: {path}")
@@ -163,7 +163,7 @@ def check_orchestrator_purity(audit):
         "core/adapters/syndication/syndication.py",
         "core/adapters/ai_provider.py"
     ]
-    forbidden_terms = ['obsidian', 'logseq', 'notion', 'typora', 'mkdocs', 
+    forbidden_terms = ['obsidian', 'logseq', 'notion', 'typora', 'mkdocs',
                        'devto', 'medium', 'ghost', 'wordpress', 'hashnode', 'linkedin',
                        'starlight', 'docusaurus', 'hugo']
     for path in orchestrators:
@@ -227,7 +227,7 @@ def _verify_import_node(node, source_file, audit):
     elif isinstance(node, ast.ImportFrom):
         if node.level > 0: # 处理相对导入
             # 相对导入校验逻辑较为复杂，此处优先校验绝对导入
-            return 
+            return
         _validate_module_path(node.module, source_file, audit)
 
 def _validate_module_path(module_name, source_file, audit):

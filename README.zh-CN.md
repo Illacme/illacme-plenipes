@@ -1,66 +1,66 @@
-# 🌉 Illacme-plenipes (v5.4.1 Sovereign Edition)
+# 🌌 Illacme-plenipes: 您的私有全能发布官
 
-🇨🇳 简体中文 | [🇬🇧 English](./README.md)
+> **本地创作，全球共振。让您的每一篇笔记，都有属于自己的“数字花园”。**
 
-![Version](https://img.shields.io/badge/version-v5.4.1--sovereign-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
-![Governance](https://img.shields.io/badge/audit-60/60%20Pass-success.svg)
+![品牌视觉 Banner](./illacme_branding_hero_1777097616124.png)
+
+[![Version](https://img.shields.io/badge/version-v11.2--sovereign-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-**Illacme-plenipes** 是一款面向未来的工业级 Markdown 知识治理与 AI 翻译引擎。它不仅能实现海量笔记的跨框架同步，更通过首创的 **“五大维度审计 (5-Dimension Audit)”** 和 **“逻辑主权隔离 (Logic Sovereignty)”** 架构，确保项目在高度自动化演化的同时，依然拥有固若金汤的物理稳定性与代码主权。
+[🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
 
 ---
 
-[🏛️ 查看架构全景图 (v5.4.1) ➔](docs/ARCHITECTURE.zh-CN.md)
+### 🚀 什么是 Illacme-plenipes？
 
-## 🚀 核心主权特性 (Sovereign Features)
-
-### 1. 🛡️ 五大维度治理审计 (5-Dimension Audit)
-这是 v5.4 引入的终极治理方案。系统将审计逻辑划分为：
-- **维度 1：物理拓扑**：扫描包结构连通性与导入链。
-- **维度 2：环境与系统**：监控 Git 卫生与全局知识纯净度。
-- **维度 3：代码与逻辑**：强制执行 300 行复杂度红线与主权隔离校验。
-- **维度 4：动态仿真**：主入口点火冒烟测试与影子沙盒仿真。
-- **维度 5：历史与归档**：三相文档 (Plan/Task/Walkthrough) 深度校验。
-
-### 2. 🧩 逻辑主权隔离架构 (Logic Sovereignty)
-采用“大脑与肢体”分离设计。核心业务逻辑（Slug生成、SEO提取、Prompt组装）被物理锁死在基类中，适配器（OpenAI/Gemini/DeepSeek）仅负责原子级的协议通信。严禁子类“越权篡改”核心逻辑。
-
-### 3. 🩹 影子资产自愈 (Shadow-Asset Recovery)
-创新性引入 `.illacme-shadow` 缓存。在前端物理产物丢失的情况下，引擎能瞬间从影子资产中恢复，无需再次消耗 AI Token。
-
-### 4. 🧠 栈式组件静态化 (Stack-based Staticization)
-针对复杂的嵌套组件（如 Tabs 套 Tabs），静态化引擎采用非正则的物理行扫描算法，通过栈（Stack）维护平衡匹配，确保复杂排版在降维过程中不丢失层级。
+**Illacme-plenipes** 是一款为创作者而生的 **AI 原生个人发布引擎**。它打破了“笔记”与“站点”之间的物理隔阂，让您可以直接在最熟悉的 Obsidian、Logseq 或本地 Markdown 编辑器中创作，并一键将其转化为属于您自己的、跨语种的全球站点。
 
 ---
 
-## 📖 文档中心 (Documentation Hub)
+### ✨ 核心价值 (Core Values)
 
-*   **[技术规格书 (SPECIFICATION)](./docs/SPECIFICATION.zh-CN.md)**：深入了解五大星系审计与主权隔离架构。
-*   **[用户参考手册 (REFERENCE)](./docs/REFERENCE.zh-CN.md)**：全量 `config.yaml` 参数字典及治理红线配置。
-*   **[操作指南 (MANUAL)](./docs/MANUAL.zh-CN.md)**：分步式教程，涵盖环境配置、历史归档及自审流程。
+#### 1. 🛡️ 真正的所有权 (True Ownership)
+告别平台霸权。Illacme 坚持 **“本地优先”** 原则。您的笔记、资产和配置永远留在您的硬盘上，引擎仅负责将它们安全地分发到全球。**您的数字资产，您才是唯一的主人。**
+
+#### 2. 🌍 跨语言的灵魂共振 (Global Resonance)
+内置强大的 AI 翻译矩阵，能够理解您文字中的细微情感与逻辑。一键生成多语种站点，让您的思想跨越语言疆界，在全球读者的屏幕上同步回响。
+
+#### 3. 🪄 3 分钟“魔术向导” (Magic Onboarding)
+发布不再是技术活。通过交互式向导，无需配置 Git 或复杂的开发环境，只需几次简单的对话，即可完成从本地文件夹到全球边缘网络的“直传部署”。
+
+#### 4. ⚖️ 工业级护航 (Industrial-Grade Safety)
+虽然操作极简，但内核依然强大。引擎内置了全自动的审计协议，在每一次保存和同步时，默默为您排除路径断链、资产冲突等风险，确保您的“数字花园”永远稳定在线。
 
 ---
 
-## ⚙️ 快速开始 (Quick Start)
+### 🛠️ 3 分钟开启您的花园 (Quick Start)
 
 ```bash
-# 1. 克隆并安装
+# 1. 准备底座
 git clone https://github.com/Illacme/illacme-plenipes.git
 pip install -r requirements.txt
 
-# 2. 初始化配置 (自动生成 config.yaml)
+# 2. 唤醒发布管家 (交互式对话完成设置)
 python3 plenipes.py 
 
-# 3. 运行治理自审 (确保 60/60 通过)
-python3 tests/governance_audit.py
+# 3. 见证上线 (全自动同步与分发)
+python3 plenipes.py --sync --force
 
-# 4. 启动实时监听
+# 4. 实时监听 (毫秒级响应您的每一次保存)
 python3 plenipes.py --watch
 ```
 
 ---
 
-## 📜 开源协议 / License
-本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。仅限个人及非商业性科研场景使用。
-🛡️ *Illacme-plenipes - 物理主权固若金汤，治理光辉照耀迭代。*
+### 📂 探索更多 (Explore)
+
+*   **[Core Engine](./core/)**：解耦的高性能调度核心，支撑您的海量知识库。
+*   **[Adapter Matrix](./core/adapters/)**：支持 Cloudflare, DeepSeek, Webhook 等全渠道适配。
+*   **[Dashboard](./dashboard/)**：基于 React 的全息可视化看板，洞察您的知识星系。
+
+---
+
+### 📜 开源协议 / License
+本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。
+🛡️ *Illacme-plenipes - 让创作回归本质，让主权照耀迭代。*

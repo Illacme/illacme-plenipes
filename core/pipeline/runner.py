@@ -7,7 +7,7 @@ Illacme-plenipes Core - Pipeline Runner
 
 import logging
 
-logger = logging.getLogger("Illacme.plenipes")
+from core.utils.tracing import tlog
 
 class PipelineStep:
     """流水线工序基类"""
@@ -32,20 +32,28 @@ class Pipeline:
             if step_cls:
                 p.add_step(step_cls())
             else:
-                logger.warning(f"⚠️ [管线装配] 无法找到已注册的步骤: {name}")
+                tlog.warning(f"⚠️ [管线装配] 无法找到已注册的步骤: {name}")
         return p
 
     def execute(self, context):
-        for step in self.steps:
+        total_steps = len(self.steps)
+        for i, step in enumerate(self.steps):
             if context.is_aborted:
                 # 管道已触发熔断，静默跳过后续所有动作
                 break
-            
+
             step_name = step.__class__.__name__
+            progress = (i / total_steps) * 100
+            context.push_status(f"STEP_{step_name.upper()}", msg=f"正在执行工序: {step_name}", progress=progress)
+
             try:
                 # 在此处执行具体工序
                 step.process(context)
             except Exception as e:
-                logger.error(f"❌ 流水线工序 [{step_name}] 发生致命崩溃: {e}")
+                tlog.error(f"❌ 流水线工序 [{step_name}] 发生致命崩溃: {e}")
                 context.is_aborted = True
+                context.push_status("CRASHED", msg=f"工序 {step_name} 崩溃: {e}")
                 raise # 向上抛出，交由 orchestrator 的 ThreadPoolExecutor 捕获并打印堆栈
+        
+        if not context.is_aborted:
+            context.push_status("COMPLETED", msg="文档同步流水线执行完毕", progress=100.0)

@@ -54,7 +54,7 @@ def check_defensive_coding_patterns(audit):
 def check_comment_retention(audit):
     """[AEL-Iter-015/E] 注释不可删除：检测提交中是否大量删除了注释行"""
     comment_markers = ['# ', '"""', "'''", '// ']
-    threshold = 10 
+    threshold = 10
     try:
         result = subprocess.run(
             ["git", "diff", "--cached", "-U0"],

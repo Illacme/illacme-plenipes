@@ -22,6 +22,32 @@
 
 ### 3. [跨框架] 声明式 Egress 适配 (Declarative Egress GGP)
 - **痛点回顾**：不同 SSG 的日期格式、短代码（Shortcode）各不相同，硬编码适配器导致工程臃肿。
+
+---
+
+## 📅 2026-04-26 进化点
+
+### 1. [高并发] 嵌套池化死锁防御 (Nested Pool Deadlock Defense)
+- **背景 (V11 危机)**：在 38 个文档全量并发同步时，系统发生“静默吊死”。经 `SIGUSR1` 物理堆栈追踪发现，调度线程（Global）与任务线程（AI）在同一个池子中发生了“ABBA 嵌套死锁”。
+- **进化结论**：
+    - **物理隔离原则 (Isolation)**：严禁在同一个线程池中提交任务并同步等待（`.result()`）该池子产生的子任务。
+    - **层级化执行器**：
+        - `global_executor`：仅处理非阻塞的管理调度（文件扫描、队列分发）。
+        - `ai_executor`：处理重负载的 AI 逻辑。
+    - **工位冗余化 (Management Overbooking)**：即便 `llm_concurrency` 为 1，`ai_executor` 也必须保持足够的冗余工位（16+），以防“管理流”被“计算流”反向阻塞。
+    - **本地环境降级**：在本地模型环境下，文档内部的内容块翻译必须改为**顺序执行**，彻底杜绝池化嵌套需求。
+- **Action**: 修改 `ai_scheduler.py` 逻辑，将块并行改为串行，并解除 `task_orchestrator.py` 的背压（Backpressure）限制。
+- **Guard**: `SIGUSR1` 堆栈导出功能已固化在 `engine.py` 中，作为系统级的“黑匣子”导出接口。
+
+### 2. [主权健壮性] 四层物理防线加固 (The Quad-Layer Hardening)
+- **背景**：为了防止 AI 在迭代中破坏系统，建立了全自动的防御体系。
+- **进化结论**：
+    - **L1 压测层**：建立 `tests/stability` 体系，通过模拟极端并发探测架构缺陷。
+    - **L2 内核层**：在 `OrchestratedExecutor` 注入线程名自察，实时拦截嵌套死锁。
+    - **L3 契约层**：引入 `@SovereignCore` 装饰器锁定核心 API，配合 `sovereignty_guard.py` 进行 AST 语法审计。
+    - **L4 数据层**：实现 `ShadowManager` 影子演练模式，防止同步过程中的数据坍塌。
+- **Action**: 未来所有核心重构必须首先通过 `sovereignty_guard.py` 审计与 `concurrency_stress.py` 压测。
+- **Guard**: `SIGUSR1` 堆栈导出功能已固化在 `engine.py` 中，作为系统级的“黑匣子”导出接口。
 - **进化结论**：
     - **正则映射表**：引入 `shortcode_mappings` 与 `datetime_format`，将"逻辑适配"下沉至"配置定义"。
     - **栈式静态化**：在处理嵌套 Tabs 时，必须使用平衡栈（Stack）而非正则表达式，以确保 100% 结构保真。

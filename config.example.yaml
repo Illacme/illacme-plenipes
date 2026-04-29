@@ -153,10 +153,17 @@ image_settings:
 syndication:
   enabled: false                  
   timeout: 15.0                   
-  devto: { enabled: false, api_key: "" }
+  devto: { enabled: false, api_key: "YOUR_DEVTO_KEY" }
   medium: { enabled: false, token: "", author_id: "" }
+  deepseek_api:
+    type: "openai-compatible"
+    base_url: "https://api.deepseek.com/v1"
+    api_key: "sk-your-key-here"
+    model: "deepseek-chat"
+  hashnode: { enabled: false, token: "", publication_id: "" }
   wordpress: { enabled: false, url: "", username: "", app_password: "" }
   ghost: { enabled: false, url: "", admin_api_key: "" }
+  linkedin: { enabled: false, token: "", person_urn: "" }
   universal_webhook: { enabled: false, url: "", auth_token: "" }
 
 # ==========================================
@@ -208,6 +215,15 @@ publish_control:
   webhook_urls: []                
   append_credit: false            
   credit_text: "\n\n---\n*Powered by [Illacme-plenipes](https://github.com/Illacme/illacme-plenipes)*"
+
+  # 🚀 [V11.0] 全域直传矩阵 (Zero-Git Deployment)
+  direct_upload:
+    cloudflare_pages:
+      enabled: false              # [小白开关] 开启后，同步完成将自动推向全球边缘网络
+      api_token: "YOUR_TOKEN"     
+      account_id: "YOUR_ACCOUNT"  
+      project_name: "YOUR_PROJECT"
+      branch: "main"
 
 # ==========================================
 # 12. 高阶元数据约束 (Metadata Matrix)

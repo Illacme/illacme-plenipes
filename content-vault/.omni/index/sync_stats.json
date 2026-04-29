@@ -1,0 +1,10 @@
+{
+  "total_vault_files": 10,
+  "processed_timestamp": "2026-04-28T02:22:57.332477",
+  "engine_version": "V16.0",
+  "workspace": "default",
+  "usage": {
+    "session_cost": 0.0,
+    "total_historical_cost": 0.0
+  }
+}

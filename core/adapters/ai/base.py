@@ -3,111 +3,110 @@
 """
 Illacme-plenipes Core - AI Base Adapter
 模块职责：定义 AI 适配器的基类、配置解析与协议契约。
-🛡️ [AEL-Iter-v5.3]：基于 TDR 复健的解耦适配器基座。
+🛡️ [V35.0] 架构轻量化：已将具体出版任务解耦至独立逻辑层。
 """
 
 import abc
-import logging
-from typing import List, Dict, Any, Optional, Tuple
+import threading
+import time
+from typing import Dict, Any
+from core.utils.event_bus import bus
+from core.logic.ai.model_intelligence import ModelIntelligenceHub
+from .payload_manager import PayloadManager
+from .task_mixin import AITaskMixin
+from core.utils.tracing import tlog
 
-from core.logic.ai_logic_hub import AILogicHub
+class BaseTranslator(abc.ABC, AITaskMixin):
+    """🚀 [V10.0] 智能算力网关适配器基类"""
 
-logger = logging.getLogger("Illacme.plenipes")
-
-class BaseTranslator(abc.ABC):
-    """🚀 [TDR-Iter-025] AI 适配器契约化基类 (Logic Orchestrator)"""
     def __init__(self, node_name, trans_cfg):
         self.node_name = node_name
         self.trans_cfg = trans_cfg
-        # 🛡️ 自动解析特定节点的配置
         self.config = trans_cfg.providers.get(node_name)
         if not self.config:
             raise ValueError(f"未找到节点配置: {node_name}")
-            
-        # 🛡️ 自动解析特定节点的配置，并支持全局超时回退
-        self.timeout = getattr(self.config, 'api_timeout', getattr(trans_cfg, 'api_timeout', 60.0))
-        self.max_retries = getattr(self.config, 'max_retries', getattr(trans_cfg, 'max_retries', 3))
-        
-    def translate(self, text: str, source_lang: str, target_lang: str, context_type: str = "content") -> str:
-        """[Sovereignty] 统一翻译逻辑：集成内容净化与原子协议"""
-        # 🛡️ 上下文提纯：根据配置决定是否剥离 JSX 标签
-        strip_jsx = getattr(self.trans_cfg, 'ai_context_purification', '') == 'strip_jsx_tags'
-        purified_text = AILogicHub.purify_content(text, strip_jsx=strip_jsx)
-        
-        system_prompt = (
-            f"You are a professional translator. Translate from {source_lang} to {target_lang}. "
-            "Return ONLY the translated text. No explanations. No reasoning."
-        )
-        return self.ask_ai_with_retry(system_prompt, purified_text)
 
-    def ask_ai_with_retry(self, system_prompt: str, user_content: str) -> str:
-        """🚀 [V6.2.1] 鲁棒性增强：指数退避重试包装器"""
-        import time
-        last_error = None
+        self.semaphore = threading.BoundedSemaphore(self.config.limits.max_concurrency)
+        self.timeout = getattr(self.trans_cfg, 'api_timeout', 60.0)
+        if self.config.limits.timeout != 60.0:
+            self.timeout = self.config.limits.timeout
+
+        self.max_retries = getattr(trans_cfg, 'max_retries', 3)
+        self._intelligence_hub = ModelIntelligenceHub()
+        self._is_cooling = False
+        self._cooling_until = 0.0
+
+    def is_cooling(self) -> bool:
+        if self._is_cooling and time.time() < self._cooling_until:
+            return True
+        self._is_cooling = False
+        return False
+
+    def trigger_cooling(self, duration: int = 60):
+        self._is_cooling = True
+        self._cooling_until = time.time() + duration
+        tlog.warning(f"❄️ [节点冷却] {self.node_name} 预计恢复时间: {duration}s 后")
+
+    def ask_ai_with_retry(self, payload: dict) -> str:
+        """[Sovereignty] 物理算力调度核心：带治理拦截的 AI 请求总闸"""
+        from core.runtime.cli_bootstrap import get_global_engine
+        engine = get_global_engine()
+        workspace_id = engine.workspace_id if engine else "default"
         
+        if engine and hasattr(engine, 'governance'):
+            from core.governance.rate_limiter import guard
+            if not guard.check_quota(workspace_id):
+                raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {workspace_id}")
+            breaker = engine.circuit_breakers.get("ai")
+            if breaker and not breaker.allow_request():
+                raise RuntimeError(f"AI_CIRCUIT_BREAKER_OPEN: {self.node_name}")
+
+        last_error = None
         for i in range(self.max_retries + 1):
             try:
-                return self._ask_ai(system_prompt, user_content)
+                wait_timeout = getattr(self.trans_cfg.resilience, 'ai_semaphore_timeout', 60) if hasattr(self.trans_cfg, 'resilience') else 60
+                if not self.semaphore.acquire(timeout=wait_timeout):
+                    raise RuntimeError(f"AI_SEMAPHORE_TIMEOUT: {self.node_name} after {wait_timeout}s")
+                try:
+                    start_time = time.time()
+                    response = self._ask_ai(payload)
+                    latency = time.time() - start_time
+                    if engine:
+                        engine.health_registry.report_success(self.node_name, latency)
+                        if "ai" in engine.circuit_breakers:
+                            engine.circuit_breakers["ai"].record_success()
+                    result = getattr(response, 'text', response)
+                    usage = getattr(response, 'usage', {})
+                    bus.emit("AI_CALL_COMPLETED", node_name=self.node_name,
+                             input_tokens=usage.get("prompt_tokens", 0),
+                             output_tokens=usage.get("completion_tokens", 0),
+                             provider_config=self.config)
+                    return result
+                finally:
+                    self.semaphore.release()
             except Exception as e:
                 last_error = e
-                # 识别不可重试的错误 (如 400 Bad Request，除非是网络抖动导致的异常)
+                if engine:
+                    engine.health_registry.report_failure(self.node_name)
+                    if "ai" in engine.circuit_breakers:
+                        engine.circuit_breakers["ai"].record_failure()
                 error_msg = str(e).lower()
-                is_retriable = True
-                if "400" in error_msg and "bad request" in error_msg:
-                    # 400 错误通常是 Payload 问题，重试大概率无用，除非是临时性 API 异常
-                    # 但为了稳健，我们记录详细日志并根据情况决定是否重试
-                    logger.error(f"🛑 [AI 400 错误] Node: {self.node_name} | 请检查 Prompt 或 Payload 是否超限。")
-                    is_retriable = False 
-                
-                if not is_retriable or i == self.max_retries:
-                    break
-                    
-                wait_time = (2 ** i) * 1.5
-                logger.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries}): {e} | {wait_time}s 后重试...")
-                time.sleep(wait_time)
-        
-        raise last_error
+                if "400" in error_msg: break
+                if i == self.max_retries: break
 
-    def describe_image(self, image_bytes: bytes, mime_type: str, context_text: str = "") -> str:
-        """[Resonance] AI 视觉感知接口"""
+                wait_time = (2 ** i) * 1.5
+                tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries}): {e}")
+                if "429" in error_msg or "rate limit" in error_msg:
+                    self.trigger_cooling(duration=120)
+                    break
+                time.sleep(wait_time)
+        if last_error: raise last_error
         return ""
 
-    def generate_slug(self, title: str, is_dry_run: bool = False) -> Tuple[str, bool]:
-        """[Sovereignty] 统一逻辑：委托 LogicHub 执行工业级 Slug 清洗"""
-        if is_dry_run: return f"dry-run-{title}", True
-        prompts = getattr(self.trans_cfg, 'custom_prompts', {})
-        system_prompt = prompts.get("slug", (
-            "You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English slug. "
-            "Return ONLY the slug string. No reasoning."
-        ))
-        
-        try:
-            raw_slug = self.ask_ai_with_retry(system_prompt, title)
-            # 调用工业级清洗引擎
-            clean_slug = AILogicHub.clean_slug(raw_slug)
-            return clean_slug, True
-        except Exception as e:
-            logger.error(f"🛑 [Slug Generation Error]: {e}")
-            return None, False
-
-    def generate_seo_metadata(self, text: str, lang_name: str, is_dry_run: bool = False) -> Tuple[dict, bool]:
-        """[Sovereignty] 统一逻辑：委托 LogicHub 执行强力 JSON 修复与提取"""
-        if is_dry_run: return {"description": "Dry run SEO", "keywords": "test"}, True
-        prompts = getattr(self.trans_cfg, 'custom_prompts', {})
-        system_prompt = prompts.get("seo", (
-            f"You are an SEO expert. Provide a description (max 150 chars) and 5 keywords for {lang_name}. "
-            "Return ONLY a JSON object. No reasoning."
-        ))
-        
-        try:
-            raw_json = self.ask_ai_with_retry(system_prompt, text[:2000])
-            # 调用强力 JSON 提取引擎
-            return AILogicHub.extract_seo_payload(raw_json)
-        except Exception as e:
-            logger.error(f"🛑 [SEO Generation Error]: {e}")
-            return {"description": "", "keywords": []}, False
+    def raw_inference(self, user_prompt, system_prompt=None) -> str:
+        payload = PayloadManager.prepare_payload(self, system_prompt or "", user_prompt, is_json=False)
+        return self.ask_ai_with_retry(payload)
 
     @abc.abstractmethod
-    def _ask_ai(self, system_prompt: str, user_content: str) -> str:
-        """[Protocol] 纯净协议原子操作：由各适配器实现具体的网络通讯逻辑"""
+    def _ask_ai(self, payload: Dict[str, Any]) -> str:
         pass

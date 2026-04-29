@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import glob
 import shutil
 import re
 from datetime import datetime
@@ -87,7 +86,8 @@ def main():
             dst_path = os.path.join(target_dir, dst_name)
             shutil.copy2(src_path, dst_path)
             # Add to git
-            os.system(f"git add {dst_path}")
+            import subprocess
+            subprocess.run(["git", "add", dst_path], check=True, capture_output=True)
             print(f"✅ Harvested: {dst_name}")
             files_copied += 1
             
@@ -101,15 +101,15 @@ def main():
     # ── 踩坑信号检测 (Lesson Signal Detection) ──
     lesson_signals = detect_lesson_signals(latest_brain, project_root)
     if lesson_signals:
-        print("\n" + "=" * 50)
-        print("🧠 [踩坑信号检测] 发现以下信号，可能需要沉淀教训：")
+        print("\n" + "━" * 72)
+        print("🧠 [主权记忆预警] 本次迭代检测到关键“踩坑”信号：")
         for sig in lesson_signals:
             print(f"   → {sig}")
-        print("=" * 50)
-        print("📝 请确认是否需要在 evolution_records.md 中追加教训条目。")
-        print("   如果确认无需追加，请在 commit message 中注明 [NO-LESSON]。")
+        print("━" * 72)
+        print("📝 请确保已在 .plenipes/evolution_records.md 中沉淀教训。")
+        print("   工业准则：不沉淀教训的修复是不可持续的伪迭代。")
     else:
-        print("\n✅ [踩坑信号检测] 本次迭代未检测到典型踩坑信号，无需强制更新 evolution_records。")
+        print("\n✅ [主权记忆审计] 本次迭代未检测到新增踩坑信号，记忆对齐完成。")
 
 
 def detect_lesson_signals(brain_dir, project_root):
@@ -127,7 +127,7 @@ def detect_lesson_signals(brain_dir, project_root):
         if hits:
             signals.append(f"walkthrough.md 含修复信号关键词: {', '.join(hits[:5])}")
     
-    # ── 信号 2: 最近 5 次 commit message 是否包含 fix/hotfix/revert ── 
+    # ── 信号 2: 最近 5 次 commit message 是否包含 fix/hotfix/revert ──
     try:
         result = subprocess.run(
             ["git", "log", "--oneline", "-5", "--format=%s"],

@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    {
+      "id": "V12_Test/legacy.markdown",
+      "title": "Legacy MD",
+      "lang": "unknown",
+      "size": 40,
+      "group": "unknown"
+    },
+    {
+      "id": "V12_Test/advanced.mdx",
+      "title": "Advanced MDX",
+      "lang": "unknown",
+      "size": 241,
+      "group": "unknown"
+    },
+    {
+      "id": "V12_Test/std.md",
+      "title": "Std MD",
+      "lang": "unknown",
+      "size": 93,
+      "group": "unknown"
+    },
+    {
+      "id": "Docs/architecture.md",
+      "title": "architecture.md",
+      "lang": "unknown",
+      "size": 73,
+      "group": "unknown"
+    },
+    {
+      "id": "Docs/guide.md",
+      "title": "guide.md",
+      "lang": "unknown",
+      "size": 62,
+      "group": "unknown"
+    },
+    {
+      "id": "Docs/test.md",
+      "title": "test.md",
+      "lang": "unknown",
+      "size": 45,
+      "group": "unknown"
+    },
+    {
+      "id": "Docs/Tutorials/intro.md",
+      "title": "intro.md",
+      "lang": "unknown",
+      "size": 38,
+      "group": "unknown"
+    },
+    {
+      "id": "Tutorials/legacy.markdown",
+      "title": "Legacy Extension",
+      "lang": "unknown",
+      "size": 67,
+      "group": "unknown"
+    },
+    {
+      "id": "Tutorials/standard.md",
+      "title": "Standard Markdown",
+      "lang": "unknown",
+      "size": 67,
+      "group": "unknown"
+    },
+    {
+      "id": "Tutorials/component.mdx",
+      "title": "MDX with JSX",
+      "lang": "unknown",
+      "size": 221,
+      "group": "unknown"
+    }
+  ],
+  "links": [
+    {
+      "source": "Docs/architecture.md",
+      "target": "test.md"
+    },
+    {
+      "source": "Docs/guide.md",
+      "target": "../assets/demo.png"
+    }
+  ]
+}

@@ -1,61 +1,58 @@
-# 🌉 Illacme-plenipes (v5.4.1 Sovereign Edition)
+# 🌌 Omni-Hub: The Self-Sovereign Knowledge Galaxy
 
-[🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Version: V18.0](https://img.shields.io/badge/Version-V18.0--Galaxy-8b5cf6.svg)]()
+[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Agents-3b82f6.svg)]()
 
-![Version](https://img.shields.io/badge/version-v5.4.1--sovereign-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
-![Governance](https://img.shields.io/badge/audit-60/60%20Pass-success.svg)
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+> **知识主权，引力织网。** 将你的碎片化内容转化为交互式的 3D 语义星系。
 
-**Illacme-plenipes** is a next-generation industrial-grade Markdown knowledge governance and AI translation engine. It not only synchronizes massive notes across frameworks but also ensures project stability and code sovereignty through its pioneering **"5-Galaxy Audit"** and **"Logic Sovereignty Isolation"** architecture.
-
----
-
-## 🚀 Core Sovereign Features
-
-### 1. 🛡️ 5-Galaxy Audit System
-Introduced in v5.4, this ultimate governance scheme divides auditing into five tiers:
-- **Topology Galaxy**: Scans package structures and static import chains.
-- **Environment Galaxy**: Monitors Git hygiene and global knowledge purity.
-- **Code Quality Galaxy**: Enforces a 300-line complexity hard-line and logic sovereignty.
-- **Execution Galaxy**: Performs main entry smoke tests and shadow sandbox simulations.
-- **History Galaxy**: Validates the depth of Plan, Task, and Walkthrough records.
-
-### 2. 🧩 Logic Sovereignty Isolation Architecture
-Adopts a "Brain and Body" separation. Core business logic (Slug generation, SEO extraction, Prompt assembly) is locked in base classes, while adapters (OpenAI/Gemini/DeepSeek) remain pure protocol implementers.
-
-### 3. 🩹 Shadow-Asset Recovery
-Introduced the `.illacme-shadow` cache. If physical artifacts are lost, the engine recovers them instantly from shadow assets without consuming additional AI Tokens.
+Omni-Hub 是一个为个人用户与极客打造的**高维度内容治理引擎**。它能自动同步、提纯、关联并分发你的所有数字资产，同时利用 AI 技术构建一个可感知的 3D 知识拓扑。
 
 ---
 
-## 📖 Documentation Hub
+## ✨ 核心特性 (Key Features)
 
-*   **[SPECIFICATION](./docs/SPECIFICATION.zh-CN.md)**: Deep dive into the 5-galaxy audit and logic isolation.
-*   **[REFERENCE](./docs/REFERENCE.zh-CN.md)**: Full `config.yaml` parameter dictionary and governance settings.
-*   **[MANUAL](./docs/MANUAL.zh-CN.md)**: Step-by-step tutorials on configuration, archival, and self-audit.
+- **🌌 知识银河 (Knowledge Galaxy)**: 自动提取文档间的语义联系，生成 3D 实时交互拓扑图。
+- **⚖️ 绝对主权 (Data Sovereignty)**: 逻辑、存储、插件三权分立，数据本地持久化，算力自主路由。
+- **🧠 智脑 RAG (AI Brain)**: 基于本地知识库的精准对话，支持 Mistral, OpenAI 等多种算力引擎。
+- **⛓️ 原子化管线 (Atomic Pipeline)**: 经历 *读取 -> 提纯 -> 语义织网 -> SEO 增强 -> 全球分发* 的工业级处理流程。
+- **🔌 零侵入插件 (Zero-Touch Plugins)**: 像搭积木一样通过简单 Python 脚本扩展分发渠道（S3, Webhook, 飞书...）。
 
----
-
-## ⚙️ Quick Start
+## 🚀 30秒快速点火 (Quick Start)
 
 ```bash
-# 1. Clone and Install
-git clone https://github.com/Illacme/illacme-plenipes.git
-pip install -r requirements.txt
+# 1. 克隆并进入
+git clone https://github.com/your-username/omni-hub.git
+cd omni-hub
 
-# 2. Initialize Config
-python3 plenipes.py 
-
-# 3. Run Self-Audit (Ensure 60/60 Pass)
-python3 tests/governance_audit.py
-
-# 4. Start Watching
-python3 plenipes.py --watch
+# 2. 一键点火（进入交互式引导）
+python plenipes.py
 ```
+
+## 🛠️ 架构蓝图 (Architecture)
+
+```mermaid
+graph TD
+    A[Content Vault] -->|Trigger| B(Omni-Engine)
+    B --> C{Assembly Line}
+    C -->|Semantic Linker| D[Knowledge Galaxy]
+    C -->|AI Refiner| E[Pure Context]
+    E --> F[RAG Brain]
+    E --> G[SSG Publishers]
+    G --> H[S3 / Webhook / Telegram]
+```
+
+## 💎 为什么选择 Omni-Hub？
+
+对于**普通用户**，它是你的“数字资产保险箱”和“高维笔记本”；
+对于**开发者**，它是你打造“个人智脑生态”的极致地基。
 
 ---
 
-## 📜 License
-This project is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
-🛡️ *Illacme-plenipes - Fortified by Physics, Guided by Governance.*
+## 🤝 贡献与生态
+
+我们欢迎任何形式的贡献！无论是一个新的 `Publisher` 插件，还是对 `3D 银河` 视觉效果的优化建议。
+
+---
+
+*Powered by **Antigravity AI Agents** | Omni-Hub 2026*

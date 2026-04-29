@@ -18,7 +18,10 @@ class ServiceRegistry:
         self.meta = None
 
 class SyncContext:
-    def __init__(self, engine, src_path, route_prefix, route_source, is_dry_run, force_sync):
+    def __init__(self, engine, src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=False, ael_iter_id=None):
+        # --- 追踪指纹 ---
+        self.ael_iter_id = ael_iter_id
+
         # --- 基础注入 ---
         self.engine = engine
         self.services = ServiceRegistry()
@@ -27,6 +30,7 @@ class SyncContext:
         self.route_source = route_source
         self.is_dry_run = is_dry_run
         self.force_sync = force_sync
+        self.is_sandbox = is_sandbox
 
         # --- 节点元数据 (Phase 1) ---
         self.title = os.path.splitext(os.path.basename(src_path))[0]
@@ -65,6 +69,29 @@ class SyncContext:
         self.ai_health_flag = [True]
         self.node_start_perf = 0.0
 
+        # --- 语种主权 (Phase 15) ---
+        self.source_lang = ""  # 动态识别出的源语种代码 (如 zh-Hans)
+
         # --- 熔断阀门 ---
         # 若任一 Step 发生拦截 (如空文件、Draft草稿)，将此设为 True，后续 Step 自动跳过
         self.is_aborted = False
+        self.is_skipped = False
+        
+        # --- [V24.0] 实时观测状态流 ---
+        self.status = "PENDING"
+        self.progress = 0.0
+        self.status_msg = ""
+
+    def push_status(self, status, msg="", progress=None):
+        """🚀 [V24.0] 状态推送：通过事件总线将同步进度广播至 UI/Dashboard"""
+        from core.utils.event_bus import bus
+        self.status = status
+        self.status_msg = msg
+        if progress is not None: self.progress = progress
+        
+        bus.emit("SYNC_PROGRESS_UPDATE",
+                 iter_id=self.ael_iter_id,
+                 rel_path=self.rel_path,
+                 status=status,
+                 message=msg,
+                 progress=self.progress)

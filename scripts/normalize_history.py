@@ -25,4 +25,4 @@ for root, dirs, files in os.walk(history_dir):
                         f.write(f"- [x] 溯源补全任务 (System Auto-Fill for {d})\n")
                 if not has_walk:
                     with open(os.path.join(dir_path, "walkthrough.md"), "w") as f:
-                        f.write(f"# 溯源复盘总结\n\n此文件为系统自动回填的总结占位符。\n")
+                        f.write("# 溯源复盘总结\n\n此文件为系统自动回填的总结占位符。\n")

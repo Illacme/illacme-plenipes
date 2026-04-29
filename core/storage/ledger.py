@@ -1,228 +1,153 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Metadata Ledger (In-Memory)
-模块职责：管理内存级增量编译状态、防断链路由寻址表。
-通过深拷贝与异步线程，彻底剥离物理写盘动作对并发扫描的阻塞。
-
-🚀 [V16 架构级升维]：
-1. 双轨状态机 (Dual-Track Ledger)：将单体 `hash` 升维为 `source_hash` (源文件指纹) 
-   与 `shadow_hash` (影子库纯净产物指纹)。为 Pipeline A 与 Pipeline B 的分离彻底打通底层数据结构。
-2. 数据平滑自愈 (Data Migration)：引擎在加载旧版 (V14/V15) JSON 账本时，
-   会自动将旧的 `hash` 迁移至 `source_hash`，确保用户的历史 API 翻译资产绝对不失效！
+Illacme-plenipes Core - Ledger System (主权账本)
+模块职责：负责同步状态的物理持久化、增量审计与任务流水记录。
+🛡️ [V23.0 Pure SQLite]：工业级状态追踪引擎，完全摒弃 JSON 冗余。
 """
-
 import os
 import threading
 import time
 import atexit
-import copy
-import logging
-from .snapshot import PersistenceEngine
-
-logger = logging.getLogger("Illacme.plenipes")
+import shutil
+from .sqlite_backend import SQLiteBackend
+from core.utils.tracing import tlog
 
 class MetadataManager:
-    """状态机：核心保障增量编译的正确性与防断链重组"""
-    def __init__(self, cache_path, auto_save_interval=2.0, backup_slots=5):
+    """🚀 [V23.0] 纯净 SQLite 元数据管理器"""
+    def __init__(self, cache_path, auto_save_interval=2.0, engine=None):
         self.auto_save_interval = auto_save_interval
         self.lock = threading.Lock()
+        self.engine = engine
         
-        # 注入底层持久化引擎
-        self.persistence = PersistenceEngine(cache_path, backup_slots)
-        self.data = self.persistence.load_with_recovery()
-
-        # 🚀 [V16 架构核心] 历史账本平滑迁移机制 (Hot Migration)
-        # 遍历所有文档，如果存在旧版的 `hash` 字段，则无损转移到 `source_hash`，并补齐 `shadow_hash`
-        migrated_count = 0
-        if "documents" in self.data:
-            for rel_path, doc_info in self.data.get("documents", {}).items():
-                if "hash" in doc_info:
-                    doc_info["source_hash"] = doc_info.pop("hash")
-                    if "shadow_hash" not in doc_info:
-                        doc_info["shadow_hash"] = ""
-                    migrated_count += 1
-                    
-        if migrated_count > 0:
-            logger.info(f"🧬 [状态机升维] 已成功将 {migrated_count} 条 V15 历史资产记录无损迁移至 V16 双轨账本。")
-            self._dirty = True  # 标记为脏数据，等待异步线程将其写入磁盘
-        else:
-            self._dirty = False
-
-        self._stop_event = threading.Event()
-        self._flusher_thread = threading.Thread(target=self._auto_flush_worker, daemon=True)
-        self._flusher_thread.start()
+        # 🚀 [V23.0] 强制使用 .db 扩展名，不再关心 .json
+        db_path = cache_path.replace(".json", ".db")
+        if not db_path.endswith(".db"):
+            db_path += ".db"
+            
+        self.sqlite = SQLiteBackend(db_path, engine=engine)
+        
+        # 内存级快速索引 (仅用于 Link Resolution)
+        self.data = {"link_index": {}}
+        self._refresh_memory_index()
+        
         atexit.register(self.force_save)
 
-    def _execute_flush(self):
-        """O(1) 拷贝后丢给底层物理引擎落盘"""
-        with self.lock:
-            if not self._dirty: return
-            data_copy = copy.deepcopy(self.data)
-            self._dirty = False
-            
-        # 调用 snapshot.py 的原子级写盘
-        self.persistence.atomic_flush(data_copy)
-
-    def _auto_flush_worker(self):
-        """游离态心跳线程：定时执行写回，保护主线程并发吞吐量"""
-        while not self._stop_event.is_set():
-            time.sleep(self.auto_save_interval)
-            try:
-                self._execute_flush()
-            except Exception as e:
-                logger.error(f"⚠️ 状态机异步落盘失败: {e}")
-
-    def force_save(self):
-        """暴露给主进程退出前调用的同步强制写回防线"""
-        self._stop_event.set()
-        self._execute_flush()
-
-    def save(self):
-        """声明式标记，由心跳线程接管，不阻塞当前堆栈"""
-        self._dirty = True
-
-    def get_documents_snapshot(self):
-        """为数字花园拓扑图等外围组件提供只读快照"""
-        with self.lock: return copy.deepcopy(self.data.get("documents", {}))
-
-    def register_document(self, rel_path, title, slug=None, source_hash=None, shadow_hash=None, seo_data=None, route_prefix=None, route_source=None, assets=None, ext_assets=None, outlinks=None, persistent_date=None):
-        """
-        🚀 核心注册机 (已升维 V16 契约)
-        注意：为了兼顾老代码的调用，如果传入旧的 file_hash，将通过逻辑路由分发到 source_hash
-        """
-        with self.lock:
-            docs = self.data.get("documents", {})
-            if rel_path not in docs:
-                docs[rel_path] = {}
-            doc = docs.get(rel_path)
-            
-            doc["title"] = title
-            if slug is not None: doc["slug"] = slug
-            if source_hash is not None: doc["source_hash"] = source_hash
-            if shadow_hash is not None: doc["shadow_hash"] = shadow_hash
-            if seo_data is not None: doc["seo"] = seo_data
-            if route_prefix is not None: doc["prefix"] = route_prefix
-            if route_source is not None: doc["source"] = route_source
-            if "blocks" not in doc: doc["blocks"] = []
-
-            # 🚀 [V25 时空分流协议]：固化首次发现时间
-            if persistent_date is not None and "persistent_date" not in doc:
-                doc["persistent_date"] = persistent_date
-            
-            # 资产列表与反链列表的按需动态存取（降低 JSON 体积）
-            
-            # 资产列表与反链列表的按需动态存取（降低 JSON 体积）
-            if assets is not None:
-                if len(assets) > 0: doc["assets"] = list(assets)
-                elif "assets" in doc: del doc["assets"]
-            if ext_assets is not None:
-                if len(ext_assets) > 0: doc["ext_assets"] = list(ext_assets)
-                elif "ext_assets" in doc: del doc["ext_assets"]
-            if outlinks is not None:
-                if len(outlinks) > 0: doc["outlinks"] = list(outlinks)
-                elif "outlinks" in doc: del doc["outlinks"]
-                
-            # 建立多维反查索引
-            link_index = self.data.setdefault("link_index", {})
+    def _refresh_memory_index(self):
+        """从 SQLite 构建内存级链接映射，加速处理流水线"""
+        all_paths = self.sqlite.list_all_documents()
+        link_index = {}
+        for rel_path in all_paths:
+            doc = self.sqlite.get_document(rel_path)
+            if not doc: continue
+            title = doc.get("title", "")
             link_index[title] = rel_path
             link_index[os.path.splitext(rel_path)[0]] = rel_path
             link_index[os.path.basename(rel_path)] = rel_path
-            self._dirty = True
+        self.data["link_index"] = link_index
 
-    def get_dir_slug(self, raw_dir):
-        """获取目录映射 Slug"""
-        with self.lock: return self.data.get("dir_index", {}).get(raw_dir)
+    def force_save(self):
+        """由于使用 SQLite 事务，此处主要负责清理连接或执行最后检查"""
+        tlog.debug("💾 [账本] 正在执行系统熄火前的元数据核验...")
 
-    def register_dir_slug(self, raw_dir, slug):
-        """注册目录映射"""
+    def save(self):
+        """兼容性方法：SQLite 已实现实时持久化"""
+        pass
+
+    def get_documents_snapshot(self):
+        """获取全量文档矩阵快照"""
+        return self.sqlite.get_all_documents()
+
+    def register_document(self, rel_path, title, **kwargs):
+        """
+        核心方法：注册或更新文档元数据
+        支持深度合并，防止属性丢失。
+        """
         with self.lock:
-            if "dir_index" not in self.data: self.data["dir_index"] = {}
-            self.data["dir_index"][raw_dir] = slug
-            self._dirty = True
+            existing = self.sqlite.get_document(rel_path) or {}
+            
+            # 🚀 [V23.0] 智能属性对齐
+            doc_data = {
+                "title": title,
+                "slug": kwargs.get("slug") if kwargs.get("slug") is not None else existing.get("slug"),
+                "source_hash": kwargs.get("source_hash") if kwargs.get("source_hash") is not None else existing.get("source_hash"),
+                "shadow_hash": kwargs.get("shadow_hash") if kwargs.get("shadow_hash") is not None else existing.get("shadow_hash"),
+                "seo_data": kwargs.get("seo_data") if kwargs.get("seo_data") is not None else existing.get("seo_data"),
+                "route_prefix": kwargs.get("route_prefix") or kwargs.get("prefix") or existing.get("route_prefix"),
+                "route_source": kwargs.get("route_source") or kwargs.get("source") or existing.get("route_source"),
+                "sub_dir": kwargs.get("sub_dir") if kwargs.get("sub_dir") is not None else existing.get("sub_dir"),
+                "persistent_date": kwargs.get("persistent_date") if kwargs.get("persistent_date") is not None else existing.get("persistent_date"),
+                "translations": kwargs.get("translations") if kwargs.get("translations") is not None else existing.get("translations", {}),
+                "assets": list(kwargs.get("assets")) if kwargs.get("assets") is not None else existing.get("assets", []),
+                "ext_assets": list(kwargs.get("ext_assets")) if kwargs.get("ext_assets") is not None else existing.get("ext_assets", []),
+                "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", [])
+            }
+            
+            self.sqlite.upsert_document(rel_path, doc_data)
+            
+            # 更新内存索引
+            idx = self.data["link_index"]
+            idx[title] = rel_path
+            idx[os.path.splitext(rel_path)[0]] = rel_path
 
     def remove_document(self, rel_path):
-        """清道夫专用的物理销毁接口"""
-        with self.lock:
-            docs = self.data.get("documents", {})
-            if rel_path in docs:
-                del docs[rel_path]
-                self._dirty = True
+        with self.lock: self.sqlite.delete_document(rel_path)
 
     def get_doc_info(self, rel_path):
-        """获取特定文档的元数据拷贝"""
-        with self.lock: return self.data.get("documents", {}).get(rel_path, {}).copy()
-
-    def update_doc_blocks(self, rel_path, block_fingerprints):
-        """🚀 [Stage V6] 物理登记文档的块级指纹序列"""
-        with self.lock:
-            docs = self.data.get("documents", {})
-            if rel_path in docs:
-                docs[rel_path]["blocks"] = block_fingerprints
-                self._dirty = True
-
-    def get_doc_blocks(self, rel_path):
-        """🚀 [Stage V6] 获取文档已知的块级指纹列表"""
-        with self.lock:
-            return self.data.get("documents", {}).get(rel_path, {}).get("blocks", [])
+        return self.sqlite.get_document(rel_path) or {}
 
     def find_by_hash(self, source_hash):
-        """
-        🚀 [V18.6] 全局指纹反查：寻找拥有相同内容指纹的现有文档
-        用于实现“零 Token 搬家”：一个文件移动到新位置，直接继承旧位置的 AI 处理结果。
-        """
         if not source_hash: return None
-        with self.lock:
-            for rel_path, info in self.data.get("documents", {}).items():
-                if info.get("source_hash") == source_hash:
-                    # 返回找到的第一个匹配项的拷贝
-                    result = info.copy()
-                    result["_rel_path"] = rel_path
-                    return result
-        return None
+        return self.sqlite.find_by_hash(source_hash)
 
-    # ==========================================
-    # 🖼️ [V34.8] 全域资产语义登记逻辑 (Global Asset Registry)
-    # ==========================================
-    def register_asset_metadata(self, asset_hash, alt_text=None, lang="zh", metadata=None):
-        """
-        🚀 资产指纹注册中心：支持多语言语义固化与复用
-        """
+    def get_dir_slug(self, raw_dir):
+        return self.sqlite.get_dir_slugs().get(raw_dir)
+
+    def register_dir_slug(self, raw_dir, slug):
+        with self.lock: self.sqlite.upsert_dir_slug(raw_dir, slug)
+
+    def register_asset_metadata(self, asset_hash, **kwargs):
         if not asset_hash: return
         with self.lock:
-            registry_map = self.data.setdefault("asset_registry", {})
+            registry = self.sqlite.get_asset(asset_hash) or {"alt_texts": {}}
+            if "alt_text" in kwargs:
+                lang = kwargs.get("lang", "zh")
+                registry.setdefault("alt_texts", {})[lang] = kwargs["alt_text"]
             
-            if asset_hash not in registry_map:
-                registry_map[asset_hash] = {"alt_texts": {}}
-            
-            registry = registry_map.get(asset_hash)
-            alt_texts = registry.setdefault("alt_texts", {})
-            
-            if alt_text is not None: 
-                alt_texts[lang] = alt_text
-                # 兼容旧版：保留一个主引用
-                registry["alt_text"] = alt_text
-                
-            if metadata is not None: registry.update(metadata)
-            
-            registry["last_seen"] = int(time.time())
-            self._dirty = True
+            # 合并其他元数据
+            for k, v in kwargs.items():
+                if k not in ["alt_text", "lang"]:
+                    registry[k] = v
+            self.sqlite.upsert_asset(asset_hash, registry)
 
     def get_asset_metadata(self, asset_hash):
-        """获取特定资产的语义元数据快照"""
-        if not asset_hash: return None
-        with self.lock:
-            registry = self.data.get("asset_registry", {})
-            return registry.get(asset_hash, {}).copy()
+        return self.sqlite.get_asset(asset_hash)
 
     def resolve_link(self, link_text):
-        """
-        🚀 数字花园防断链中枢：根据 Obsidian 双链文本，解析出物理相对路径
-        """
+        """解析 Wikilink，支持标题、路径和文件名匹配"""
         clean_link = link_text.split('#')[0].split('^')[0].strip()
-        with self.lock:
-            index = self.data.get("link_index", {})
-            if clean_link in index: return index[clean_link]
-            for title, rel_path in index.items():
-                if title.lower() == clean_link.lower(): return rel_path
+        idx = self.data["link_index"]
+        if clean_link in idx: return idx[clean_link]
+        # 模糊匹配 (忽略大小写)
+        for title, rel_path in idx.items():
+            if title.lower() == clean_link.lower(): return rel_path
         return None
+
+    def create_checkpoint(self, name="emergency"):
+        """创建数据库物理备份"""
+        bak_path = self.sqlite.db_path + f".{name}.bak"
+        try:
+            shutil.copy2(self.sqlite.db_path, bak_path)
+            tlog.info(f"🛡️ [账本] 已锁定物理快照: {name}")
+        except Exception as e:
+            tlog.error(f"❌ [账本] 快照锁定失败: {e}")
+
+    def rollback(self, name="emergency"):
+        """回滚至物理快照"""
+        bak_path = self.sqlite.db_path + f".{name}.bak"
+        if os.path.exists(bak_path):
+            shutil.copy2(bak_path, self.sqlite.db_path)
+            self._refresh_memory_index()
+            tlog.warning(f"⏪ [账本] 系统已回滚至物理快照: {name}")
+            return True
+        return False

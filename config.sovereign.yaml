@@ -1,0 +1,44 @@
+include: "config.local.yaml"
+
+system:
+  # 🚀 [主权验证] 自定义掩码规则：增加了对 [[SECRET_TAG]] 和 {{< ... >}} 的保护
+  # 我们使用了更严谨的捕获组，并增加了对 [[ ... ]] 结构的通用匹配
+  mask_pattern: '\[\[SECRET_TAG\]\]|\{\{<.*?>\}\}|\$\$.*?\$\$|\$[^\$]+\$|\!\[\[[^\]]+\]\]|\[\[[^\]]+\]\]|\!\[[^\]]*\]\([^)]+\)|\[[^\]]*\]\([^)]+\)'
+  
+  # 🚀 [主权验证] 动态编排管线：我们跳过了 staticize 和 image_alt，仅执行核心流程
+  pipeline_steps:
+    - "read_normalize"
+    - "purify"
+    - "metadata_hash"
+    - "ai_slug_seo"
+    - "masking_routing"
+    - "verification"
+
+translation:
+  prompts:
+    # 🚀 [主权验证] 赛博朋克翻译风格模板
+    translate_system: "You are a Cyberpunk translator. CRITICAL: Preserve all [[STB_MASK_n]] exactly. No preamble, no explanation, no headers."
+    translate_user: "Directly translate the following text into {target_lang} using futuristic tone. Do not repeat instructions. Text:\n{text}"
+    
+    # 🚀 [主权验证] 极简 Slug 模板
+    slug_system: "You are a minimalist SEO expert."
+    slug_user: "Generate a 3-word max slug for: {title}"
+
+output_paths:
+  markdown_dir: "themes/default/dist"
+  assets_dir: "themes/default/dist/assets"
+
+i18n_settings:
+  targets:
+    - lang_code: "en"
+      prompt_lang: "English"
+      translate_body: true
+    - lang_code: "ja"
+      prompt_lang: "Japanese"
+      translate_body: true
+    - lang_code: "de"
+      prompt_lang: "German"
+      translate_body: true
+    - lang_code: "fr"
+      prompt_lang: "French"
+      translate_body: true

@@ -1,0 +1,59 @@
+# ==========================================
+# 5. 声明式 SSG 渲染适配器 (Framework Adapters Hub)
+# ==========================================
+# 🚀 渲染中枢：彻底解除 Python 底层代码与前端框架的硬编码绑定！
+# 引擎通过此处的字典，将 Obsidian 的特有语法物理降维到各框架支持的 UI 组件。
+# 🚀 彻底解除 Python 底层代码的硬编码绑定！
+# 引擎通过此处的字典，将 Obsidian 的特有语法物理降维到各框架支持的 UI 组件。
+
+starlight:
+  callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
+  type_mapping:
+    info: "note"
+    abstract: "note"
+    success: "tip"
+    warning: "caution"
+    danger: "danger"
+
+vitepress:
+  callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
+  type_mapping:
+    note: "info"
+    tip: "tip"
+    warning: "warning"
+    danger: "danger"
+
+docusaurus:
+  callout_template: "\n:::{type} {title}\n{body}\n:::\n\n"
+  type_mapping:
+    note: "note"
+    info: "info"
+    success: "tip"
+    warning: "warning"
+    danger: "danger"
+  component_mappings:
+    "CardGrid": "{children}"
+    "Card": "### {title}\n\n{children}\n\n"
+
+nextra:
+  callout_template: "\n<Callout type=\"{type}\">\n**{title}**\n{body}\n</Callout>\n\n"
+  type_mapping:
+    note: "default"
+    info: "info"
+    warning: "warning"
+    danger: "error"
+
+hugo:
+  # ⚠️ 架构防线：使用 {{{{ 和 }}}} 防止 Python 模板引擎发生解析越界撕裂
+  callout_template: "\n{{{{< admonition type=\"{type}\" title=\"{title}\" >}}}}\n{body}\n{{{{< /admonition >}}}}\n\n"
+  type_mapping:
+    note: "note"
+    tip: "tip"
+    warning: "warning"
+
+hexo:
+  callout_template: "\n{{{{% note {type} %}}}}\n**{title}**\n{body}\n{{{{% endnote %}}}}\n\n"
+  type_mapping:
+    note: "default"
+    info: "info"
+    warning: "warning"

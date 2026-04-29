@@ -1,0 +1,90 @@
+# ==========================================
+# Starlight-Bridge-Pro (v10.4 终极封印版)
+# 架构原则: 零代码侵入，100% 行为由配置层接管
+# ==========================================
+
+# ------------------------------------------
+# 1. 物理拓扑与环境自感知
+# ------------------------------------------
+# 源笔记目录 (引擎会自动向上溯源寻找 .obsidian 根库)
+source_blog: "../obsidian-vault/Blog" 
+# Astro 前端项目根目录
+starlight_dir: "../frontend"            
+# 本地关系型数据库 (管理 MD5 增量状态与幽灵回收)
+metadata_db: "./bridge_metadata.json"            
+
+# 🚀 路由隔离前缀：解决 Starlight 侧边栏 autogenerate 根目录冲突
+# 引擎会自动将生成的 Markdown 放入 src/content/docs/zh-cn/planet 目录下
+route_prefix: "planet"
+
+# ------------------------------------------
+# 2. 调度性能与系统控制
+# ------------------------------------------
+system:
+  max_workers: 5       # 多线程并发数。API 限流严重或使用本地大模型(Ollama)时必须设为 1
+  log_level: "INFO"    # 守护进程日志等级 (可选: DEBUG, INFO, WARNING, ERROR)
+
+# ------------------------------------------
+# 3. 全局元数据注入 (Frontmatter Defaults)
+# ------------------------------------------
+frontmatter_defaults:
+  # 🚀 动态兜底注入：若设为空字符串("")或直接删除此行，引擎将不会强制注入作者信息
+  author: "Eason"
+
+# -----------------ßß-------------------------
+# 4. 发布控制与隐私隔离 (防 Token 浪费)
+# ------------------------------------------
+publish_control:
+  exclude_patterns: 
+    - "_drafts/*"      # 物理拦截草稿箱文件夹
+    - "Private-*.md"   # 物理拦截私密文件
+    - "草稿-*"
+  # 注：引擎也会自动识别 Frontmatter 中的 `draft: true` 或 `publish: false` 实施精准拦截与回收。
+
+# ------------------------------------------
+# 5. 图像管线与多环境路由
+# ------------------------------------------
+image_settings:
+  enabled: true
+  format: "webp"       # 统一转码为 webp，提升前端 Lighthouse 性能跑分
+  max_width: 1400      # 限制最大宽度，防爆前端显存与带宽
+  quality: 80          # WebP 压缩质量
+  base_url: "/assets/" # 静态资产路由前缀。若前端部署在子路径 (如 /blog/)，需修改为 "/blog/assets/"
+
+# ------------------------------------------
+# 6. AI 驱动中枢与动态 Prompt (核心引擎)
+# ------------------------------------------
+translation:
+  provider: "openai"   # 兼容 openai 格式的任何 API (如 OpenAI, DeepSeek, Qwen 等)
+  base_url: "http://localhost:1234/v1" # 你的大模型 API 代理地址
+  api_key: "sk-lm-shfiJhOl:Qk5tuQ0hfLIGaUvSYCUP" # 你的 API 密钥
+  model: "qwen3-coder-30b-a3b-instruct"      # 推荐使用 gpt-4o, claude-3.5-sonnet 或 qwen-max
+  slug_mode: "ai"      # URL 生成模式: "ai" (语义翻译生成) 或 "local" (纯本地 URL 编码降级)
+  api_timeout: 120     # 网络超时阈值(秒)。本地大模型建议调高至 600
+  max_retries: 3       # 遇 429/500 等错误时的指数退避最大重试次数
+  
+  # 🚀 提示词热重载：保留了最优预设，确保精准保留术语并最大化 SEO 权重
+  custom_prompts:
+    translate_system: "You are a professional technical translator. Your translation should be fluent, accurate, and perfectly retain the technical terminology."
+    seo_system: "You are a senior SEO expert. Extract precise descriptions and highly targeted keywords to maximize search engine visibility."
+
+# ------------------------------------------
+# 7. AI-Native SEO 管线
+# ------------------------------------------
+seo_settings:
+  enabled: true
+  generate_description: true  # 自动提取 150 字精炼摘要
+  generate_keywords: true     # 自动提取逗号分隔的纯净关键词字符串
+
+# ------------------------------------------
+# 8. N-维多语言矩阵
+# ------------------------------------------
+i18n_settings:
+  enabled: true
+  source:
+    code: "zh-cn"             # 源语言路由 (最终输出到 /zh-cn/planet/)
+    translate_body: false     # 源语言免翻译物理直出，零 API 消耗
+  targets:
+    - code: "en"              # 目标语言路由 (最终输出到 /en/planet/)
+      prompt_lang: "English"  # 告知 AI 目标语言的自然语言描述
+      translate_body: true    # 目标语言触发翻译引擎

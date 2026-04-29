@@ -1,0 +1,40 @@
+{
+  "concept_definition.md": {
+    "title": "Hyper-Gravity Propulsion Guide",
+    "connections": {
+      "usage_report.md": {
+        "strength": 0.7,
+        "type": "SHARED_ENTITY"
+      }
+    },
+    "manual_connections": {},
+    "entities": {
+      "concepts": [
+        "Hyper-Gravity Engine"
+      ],
+      "technologies": [
+        "Interstellar Travel"
+      ]
+    },
+    "gist": "Technical guide for advanced propulsion systems."
+  },
+  "usage_report.md": {
+    "title": "Flight Mission Report",
+    "connections": {
+      "concept_definition.md": {
+        "strength": 0.7,
+        "type": "SHARED_ENTITY"
+      }
+    },
+    "manual_connections": {},
+    "entities": {
+      "concepts": [
+        "Hyper-Gravity Engine"
+      ],
+      "technologies": [
+        "Interstellar Travel"
+      ]
+    },
+    "gist": "Technical guide for advanced propulsion systems."
+  }
+}

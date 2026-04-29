@@ -1,224 +1,131 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Configuration Models
-模块职责：定义全域强类型配置容器与数据校验模型。
-🛡️ [AEL-Iter-v5.3]：核心配置模型分层版本。
+Illacme-plenipes Core - Configuration Models (Facade)
+职责：聚合系统、AI、主题等模块化配置模型，提供统一的数据结构。
+🛡️ [V24.0] Pydantic 严格校验体系：工业级配置审计根模型。
 """
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import List, Dict, Optional, Any
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional
-from enum import Enum
+# 🚀 导入模块化后的子配置
+from .models.base import LogFormat, ProviderType, StrategyType
+from .models.system import SystemSettings, ConcurrencySettings, ResilienceSettings, WatchdogSettings
+from .models.ai import TranslationSettings, TranslationProvider, AIProviderLimits, PromptTemplates
+from .models.theme import ThemeSettings, ImageSettings
+from .models.plugins import PluginSettings
+from .models.governance import GovernanceSettings
 
-class SyntaxPreset(Enum):
-    ADMONITIONS = "admonitions"
-    CONTAINERS = "containers"
-    LEGACY = "legacy"
-    NONE = "none"
+class I18nSource(BaseModel):
+    lang_code: str = "zh"
+    name: str = "简体中文"
+    prompt_lang: str = "Chinese"
 
-@dataclass
-class WatchdogSettings:
-    exclude_dirs: List[str] = field(default_factory=lambda: [".git", "node_modules"])
-    exclude_patterns: List[str] = field(default_factory=lambda: [".lock", ".tmp"])
-    heavy_task_delay: float = 0.8
-    gc_delay: float = 5.0
-    handover_delay: float = 0.05
+class InjectionSettings(BaseModel):
+    replace_placeholders: Dict[str, str] = Field(default_factory=dict)
+    prepend_body: Optional[str] = None
+    append_body: Optional[str] = None
+    imports: List[str] = Field(default_factory=list)
 
-@dataclass
-class JanitorSettings:
-    global_exclude: List[str] = field(default_factory=lambda: [".git", "node_modules"])
-    theme_exclude: Dict[str, List[str]] = field(default_factory=dict)
+class I18nTarget(BaseModel):
+    lang_code: str = "en"
+    name: str = "English"
+    prompt_lang: str = "English"
+    translate_body: bool = True
+    translate_title: bool = True
+    output_sub_dir: Optional[str] = None
 
-@dataclass
-class NetworkSettings:
-    ignored_domains: List[str] = field(default_factory=lambda: [
-        'img.shields.io', 'badgen.net', 'badge.fury.io', 'skillicons.dev',
-        'github-readme-stats.vercel.app', 'github-readme-streak-stats.herokuapp.com',
-        'komarev.com', 'wakatime.com', 'visitor-badge.laobi.icu', 'visitor-badge.glitch.me', 
-        'api.visitorbadge.io', 'hits.seeyoufarm.com', 'count.getloli.com'
-    ])
+class I18nSettings(BaseModel):
+    enable_multilingual: bool = True
+    source: I18nSource = Field(default_factory=I18nSource)
+    targets: List[I18nTarget] = Field(default_factory=list)
+    injection_matrix: Dict[str, InjectionSettings] = Field(default_factory=dict)
 
-@dataclass
-class PurificationSettings:
-    strip_styles: bool = True
-    strip_mdx_imports: bool = True
-    strip_comments: bool = True
-    strip_code_blocks: bool = True
-    strip_jsx_tags: bool = True
-
-@dataclass
-class SystemSettings:
-    max_workers: int = 8
-    log_level: str = "INFO"
-    verbose_ai_logs: bool = True
-    singleton_port: int = 43210
-    auto_save_interval: float = 2.0
-    typing_idle_threshold: float = 5.0
-    max_depth: int = 3
-    enable_asset_audit: bool = True
-    ai_context_purification: PurificationSettings = field(default_factory=PurificationSettings)
-    watchdog_settings: WatchdogSettings = field(default_factory=WatchdogSettings)
-    janitor_settings: JanitorSettings = field(default_factory=JanitorSettings)
-    network_settings: NetworkSettings = field(default_factory=NetworkSettings)
-
-@dataclass
-class TranslationProvider:
-    type: str = "openai-compatible"
-    base_url: Optional[str] = None
-    url: Optional[str] = None
-    api_key: Optional[str] = None
-    model: str = "gpt-4o"
-    proxy: str = ""
-
-@dataclass
-class TranslationSettings:
-    strategy: str = "single"
-    global_proxy: str = ""
-    primary_node: str = "default"
-    fallback_node: Optional[str] = None
-    routing_threshold: int = 1000
-    providers: Dict[str, TranslationProvider] = field(default_factory=dict)
-    llm_concurrency: int = 1
-    slug_mode: str = "ai"
-    api_timeout: float = 600.0
-    max_retries: int = 3
-    empty_content_threshold: int = 15
-    max_chunk_size: int = 2500
-    temperature: float = 0.2
-    max_tokens: int = 8192
-    max_slug_length: int = 100
-    max_seo_description_length: int = 200
-    custom_prompts: Dict[str, str] = field(default_factory=dict)
-
-@dataclass
-class IngressSource:
-    path: str
-    prefix: str = ""
-    type: str = "obsidian"
-
-@dataclass
-class IngressSettings:
-    sources: List[IngressSource] = field(default_factory=list)
-    active_dialects: List[str] = field(default_factory=lambda: ["obsidian"])
-    custom_sanitizers: Dict[str, str] = field(default_factory=dict)
-    staticize_components: List[str] = field(default_factory=list)
+class IngressSettings(BaseModel):
+    source_type: str = "local"
+    source_options: Dict[str, Any] = Field(default_factory=dict)
+    active_dialects: List[str] = Field(default_factory=lambda: ["auto"])
+    staticize_components: bool = True
     hard_line_break: bool = False
+    custom_sanitizers: Dict[str, Any] = Field(default_factory=dict)
 
-@dataclass
-class SEOSettings:
+
+    @field_validator('custom_sanitizers', mode='before')
+    @classmethod
+    def validate_custom_sanitizers(cls, v):
+        """🚀 [V24.0] 容错处理：将 YAML 解析出的 None 自动映射为字典"""
+        return v or {}
+
+class TimelineSettings(BaseModel):
+    enabled: bool = True
+    json_path: str = "plenipes_timeline.json"
+    markdown_path: str = "timeline.md"
+    max_entries: int = 1000
+
+class PublishControl(BaseModel):
+    exclude_patterns: List[str] = Field(default_factory=list)
+    webhook_enabled: bool = False
+    webhook_urls: List[str] = Field(default_factory=list)
+    webhook_timeout: float = Field(10.0, ge=1)
+    append_credit: bool = False
+    credit_text: str = ""
+    direct_upload: Dict[str, Any] = Field(default_factory=dict)
+
+class SeoSettings(BaseModel):
     enabled: bool = True
     generate_description: bool = True
     generate_keywords: bool = True
+    autopilot_enabled: bool = True
 
-@dataclass
-class ThemeSettings:
-    output_paths: Dict[str, str] = field(default_factory=dict)
-    lang_mapping: Dict[str, str] = field(default_factory=dict)
-    syntax_preset: SyntaxPreset = SyntaxPreset.NONE
-    callout_template: Optional[str] = None
-    type_mapping: Dict[str, str] = field(default_factory=dict)
-    shortcode_mappings: Dict[str, str] = field(default_factory=dict)
-    component_mappings: Dict[str, str] = field(default_factory=dict)
-    metadata_mapping: Dict[str, Any] = field(default_factory=dict)
+class Configuration(BaseModel):
+    """💎 [Omni-Hub] 全局配置模型总纲"""
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+    
+    version: str = "24.0"
+    
+    # 核心物理基础设施
+    vault_root: str = "./content-vault"
+    metadata_db: str = "metadata"
+    active_theme: str = "default"
+    site_url: str = ""
+    lang_mapping: Dict[str, str] = Field(default_factory=dict)
+    
+    # 全局出站映射
+    output_paths: Dict[str, str] = Field(default_factory=lambda: {
+        "markdown_dir": "./themes/{theme}/src/content/docs",
+        "assets_dir": "./themes/{theme}/dist/static",
+        "graph_json_dir": "./themes/{theme}/public"
+    })
+    
+    # 路由矩阵
+    route_matrix: List[Dict[str, str]] = Field(default_factory=list)
+    
+    # 子配置组合
+    system: SystemSettings = Field(default_factory=SystemSettings)
+    ingress_settings: IngressSettings = Field(default_factory=IngressSettings)
+    i18n_settings: I18nSettings = Field(default_factory=I18nSettings)
+    translation: TranslationSettings = Field(default_factory=TranslationSettings)
+    theme_options: Dict[str, ThemeSettings] = Field(default_factory=dict)
+    framework_adapters: Dict[str, Any] = Field(default_factory=dict)
+    seo_settings: SeoSettings = Field(default_factory=SeoSettings)
+    image_settings: ImageSettings = Field(default_factory=ImageSettings)
+    publish_control: PublishControl = Field(default_factory=PublishControl)
+    syndication: Dict[str, Any] = Field(default_factory=dict)
+    timeline: TimelineSettings = Field(default_factory=TimelineSettings)
+    plugins: PluginSettings = Field(default_factory=PluginSettings)
+    governance: GovernanceSettings = Field(default_factory=GovernanceSettings)
+    
+    # 🚀 [V24.0] 增强审计字段
+    frontmatter_defaults: Dict[str, Any] = Field(default_factory=dict)
+    frontmatter_order: List[str] = Field(default_factory=lambda: ['title', 'description', 'keywords', 'author', 'date', 'tags', 'categories'])
 
-@dataclass
-class DevToSettings:
-    enabled: bool = False
-    api_key: str = ""
+    model_config = ConfigDict(
+        protected_namespaces=(),
+        extra='ignore'
+    )
 
-@dataclass
-class MediumSettings:
-    enabled: bool = False
-    token: str = ""
-    author_id: str = ""
-
-@dataclass
-class HashnodeSettings:
-    enabled: bool = False
-    token: str = ""
-    publication_id: str = ""
-
-@dataclass
-class WordPressSettings:
-    enabled: bool = False
-    url: str = ""
-    username: str = ""
-    app_password: str = ""
-
-@dataclass
-class GhostSettings:
-    enabled: bool = False
-    url: str = ""
-    admin_api_key: str = ""
-
-@dataclass
-class LinkedInSettings:
-    enabled: bool = False
-    access_token: str = ""
-    person_urn: str = ""
-
-@dataclass
-class UniversalWebhookSettings:
-    enabled: bool = False
-    url: str = ""
-    auth_token: str = ""
-
-@dataclass
-class SyndicationSettings:
-    enabled: bool = False
-    targets: List[Dict[str, Any]] = field(default_factory=list)
-    timeout: float = 10.0
-    devto: DevToSettings = field(default_factory=DevToSettings)
-    medium: MediumSettings = field(default_factory=MediumSettings)
-    hashnode: HashnodeSettings = field(default_factory=HashnodeSettings)
-    wordpress: WordPressSettings = field(default_factory=WordPressSettings)
-    ghost: GhostSettings = field(default_factory=GhostSettings)
-    linkedin: LinkedInSettings = field(default_factory=LinkedInSettings)
-    universal_webhook: UniversalWebhookSettings = field(default_factory=UniversalWebhookSettings)
-
-@dataclass
-class I18nSource:
-    lang_code: str = "zh-cn"
-    name: str = "Chinese"
-
-@dataclass
-class I18nTarget:
-    lang_code: str = ""
-    name: str = ""
-    translate_body: bool = True
-    translate_title: bool = True
-    slug_mode: Optional[str] = None
-
-@dataclass
-class I18nSettings:
-    enabled: bool = False
-    source: I18nSource = field(default_factory=I18nSource)
-    targets: List[I18nTarget] = field(default_factory=list)
-
-@dataclass
-class PublishControl:
-    exclude_patterns: List[str] = field(default_factory=list)
-    webhook_enabled: bool = False
-    webhook_urls: List[str] = field(default_factory=list)
-    webhook_timeout: float = 3.0
-    append_credit: bool = False
-    credit_text: str = ""
-
-@dataclass
-class TimelineSettings:
-    enabled: bool = True
-    json_path: str = ".plenipes/plenipes_timeline.json"
-    markdown_path: str = ".plenipes/timeline.md"
-    max_entries: int = 1000
-
-@dataclass
-class ImageSettings:
-    base_url: str = "/assets/"
-    process_images: bool = True
-    generate_alt: bool = True
-    multilingual_alt: bool = False
-    deduplication: bool = False
-    enabled: bool = True
-    format: str = "webp"
-    max_width: int = 1400
-    quality: int = 80
+    # 兼容性属性映射逻辑 (V24.0 纯化)
+    def model_post_init(self, __context: Any) -> None:
+        # 运行时动态同步
+        if self.translation and self.system:
+            self.translation.resilience = self.system.resilience

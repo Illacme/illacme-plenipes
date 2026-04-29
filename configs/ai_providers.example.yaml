@@ -7,12 +7,12 @@
 deepseek_api:
   type: "openai-compatible"
   base_url: "https://api.deepseek.com/v1"
-  api_key: "sk-YOUR_DEEPSEEK_KEY"
+  api_key: "${DEEPSEEK_API_KEY}"
   model: "deepseek-chat"
   
 gemini_node:
   type: "gemini"
-  api_key: "AIzaSy-YOUR_GEMINI_KEY"
+  api_key: "${GEMINI_API_KEY}"
   model: "gemini-1.5-flash"
 
 lmstudio_local:

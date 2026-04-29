@@ -1,0 +1,91 @@
+# 🌐 Illacme-plenipes 全量算力矩阵 (V10.3 工业级版)
+# 模块职责：定义全球主流 AI 算力节点。
+# 💡 专家提示：本引擎具备【Autopilot】能力，默认关闭思维链以追求极致同步速度。
+
+# 🕹️ 全局算力策略
+global_settings:
+  enable_ai: true
+  timeout: 300.0           # 给本地模型更多时间
+  retry_limit: 3
+
+# ⛓️ 算力节点矩阵 (Inference Matrix)
+nodes:
+  # === 🧪 模拟器系列 (零成本测试) ===
+  mock-node:
+    type: "mock"
+    api_key: "not-needed"
+    model: "sim-v1"
+
+  # === 🟣 DeepSeek 系列 (性价比之王) ===
+  deepseek-reasoner:
+    type: "openai"
+    base_url: "https://api.deepseek.com/v1"
+    api_key: "${DEEPSEEK_API_KEY}"
+    model: "deepseek-reasoner"
+    enable_thinking: false  # 🛡️ [V10.3] 翻译任务建议关闭，若需深度推理请设为 true
+    thinking_budget: 1024   # 只有开启时才生效
+
+  deepseek-chat:
+    type: "openai"
+    base_url: "https://api.deepseek.com/v1"
+    api_key: "${DEEPSEEK_API_KEY}"
+    model: "deepseek-chat"
+    price_per_1m_input: 0.15
+    price_per_1m_output: 0.6
+
+  # === 🟢 OpenAI 系列 (工业标准) ===
+  openai-gpt4o:
+    type: "openai"
+    api_key: "YOUR_OPENAI_KEY"
+    model: "gpt-4o"
+
+  openai-gpt4o-mini:
+    type: "openai"
+    api_key: "YOUR_OPENAI_KEY"
+    model: "gpt-4o-mini"
+    price_per_1m_input: 1.05
+    price_per_1m_output: 4.2
+
+  openai-o3-mini:
+    type: "openai"
+    api_key: "YOUR_OPENAI_KEY"
+    model: "o3-mini"
+
+  # === 🟠 Anthropic 系列 (翻译质量标杆) ===
+  claude-3-7-sonnet:
+    type: "openai" # 许多转发 API 支持 OpenAI 兼容格式
+    model: "claude-3-7-sonnet-20250219"
+    api_key: "${ANTHROPIC_API_KEY}"
+
+  claude-3-5-sonnet:
+    type: "openai"
+    model: "claude-3-5-sonnet-20241022"
+    api_key: "${ANTHROPIC_API_KEY}"
+
+  # === 🔵 Google Gemini 系列 (超长上下文) ===
+  gemini-2-0-flash:
+    type: "gemini"
+    api_key: "YOUR_GEMINI_KEY"
+    model: "gemini-2.0-flash-exp"
+
+  gemini-1-5-pro:
+    type: "gemini"
+    api_key: "YOUR_GEMINI_KEY"
+    model: "gemini-1.5-pro"
+
+  # === 🏠 本地推理节点 (隐私与 0 成本) ===
+  ollama-local:
+    type: "openai" # Ollama 原生支持 OpenAI 协议
+    base_url: "http://localhost:11434/v1"
+    api_key: "ollama"
+    model: "llama3.1"
+
+  lmstudio-local:
+    type: "openai"
+    base_url: "http://127.0.0.1:1234/v1"
+    api_key: "lm-studio"
+    model: "qwen/qwen3.5-9b"
+    enable_thinking: false  # 🏠 本地模型建议关闭以提升响应速度
+    deterministic: true     # 开启确定性推理 (Temp=0, Seed=42)
+
+# 🧠 [Oracle Probe] 已学习特征将在此处持久化 (自动生成)

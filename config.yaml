@@ -1,0 +1,281 @@
+# ==========================================
+# Illacme-plenipes (v34.0 旗舰版 - 工业级全量配置) 
+# ==========================================
+# 欢迎使用本项目！这是一个专为海量 Markdown 构筑的工业级分发与 AI 翻译引擎。
+# 本文件已根据 V32.4 核心代码库及历史稳健版本执行了全量复归，包含所有核心与隐藏节点。
+#
+# 💡 提示：
+#   1. 您可以仅配置感兴趣的部分，未定义的项将自动继承系统默认值 (core/config.py)。
+#   2. 本地调试建议创建 "config.local.yaml"，它会原子级覆盖本文件中的同名配置。
+# ==========================================
+
+# ------------------------------------------
+# 1. 核心物理基础设施 (Core Infrastructure)
+# ------------------------------------------
+
+# [核心基座]：存放您原始 Obsidian/Logseq/Markdown 文件的位置
+vault_root: "./content-vault"
+
+# [状态机账本]：存储文章指纹、翻译进度、Slug 与 SEO 缓存的元数据根目录
+metadata_db: "metadata"
+
+# [路由总闸]：当前激活的主题 Key。引擎将根据此键从 theme_options 中提取特定适配逻辑。
+# 支持: "default", "starlight", "docusaurus", "vitepress", "nextra", "hugo", "hexo"
+active_theme: "default"
+
+# 官网主域名：用于生成完整的 Canonical URL 或分发时的绝对链接
+site_url: "https://your-garden.com"
+
+# ------------------------------------------
+# 2. 全局物理出站映射 (Output Paths)
+# ------------------------------------------
+# 💡 建议直接在 theme_options 中为每个主题单独配置路径，此处仅作为未声明主题的安全回退。
+output_paths:
+  markdown_dir: "./themes/{theme}/src/content/docs"
+  assets_dir: "./themes/{theme}/dist/static"
+  graph_json_dir: "./themes/{theme}/public"
+
+# 🚀 动态路由矩阵：将本地笔记的不同子文件夹，灵活映射到前端的不同路由槽位。
+route_matrix:
+  - source: "Index"      # 对应根目录下的 Index 文件夹 (映射首页)
+    prefix: ""           
+  - source: "Blog"       # 博客文件夹 -> /blog/*
+    prefix: "blog"       
+  - source: "Docs"       # 文档文件夹 -> /docs/*
+    prefix: "docs"       
+  - source: "Tutorials"  # 教程文件夹 -> /tutorials/*
+    prefix: "tutorials"
+
+# ==========================================
+# 3. 入站方言适配 (Ingress Dialect Engine)
+# ==========================================
+ingress_settings:
+  # 方言处理器：auto 会自动激活 Obsidian/Logseq/Notion/Typora/MkDocs 等所有处理逻辑
+  # 您也可以指定列表，如 ["obsidian", "logseq"]
+  active_dialects: ["auto"]
+  
+  # 静态化组件：将特定的动态语法 (如 Tabs/Dataview) 转化为 SSG 兼容的静态 HTML/React 组件
+  staticize_components: true
+  
+  # 硬换行控制：是否将单换行符物理映射为 Markdown 硬换行（空格+回车）
+  hard_line_break: false
+  
+  # [声明式输入清洗器] 允许利用正则将任何未知的非标语法在进入核心管线前强制抹平
+  custom_sanitizers:
+    # 示例：将 Typora 的高亮语法 ==高亮== 转化为 HTML <mark> 标签
+    # highlight_fix:
+    #   pattern: "==([^=]+)=="
+    #   replace: "<mark>\\1</mark>"
+
+# ==========================================
+# 4. 声明式主题配置集 (Theme Options Matrix)
+# ==========================================
+theme_options: { include: "configs/theme_options.yaml" }
+
+# ==========================================
+# 5. 声明式 SSG 渲染适配器 (Framework Adapters)
+# ==========================================
+framework_adapters: { include: "configs/framework_adapters.yaml" }
+
+# ==========================================
+# 6. AI 算力网关 (Translation & Intelligence Hub)
+# ==========================================
+translation:
+  # 🎯 算力调度策略: "single" (测试模式), "fallback" (主备切分), "smart_routing" (长短分流)
+  strategy: "single"
+  
+  primary_node: "mock-node"  
+  fallback_node: "ollama-local"   
+  routing_threshold: 1000        
+
+  # 🎯 物理算力控制阀 (Safety Valves)
+  llm_concurrency: 4             # [V6.2.1 推荐] 充分利用块级并行优势。建议范围: 1 (本地 CPU) - 16 (云端 API)
+  api_timeout: 600.0             # 工业级稳健超时，确保长文翻译不因网络或本地推理慢而中断
+  max_retries: 5                 # 遭遇网络抖动时的自动指数退避重试次数
+  budget_limit: 10.0             # 费用预算上限
+  temperature: 0.2               # 翻译建议 0.1-0.2 保持严谨
+  max_tokens: 8192               # 单次 AI 响应最大 Token 上限
+  
+  # 🎯 物理内容保护规则
+  max_chunk_size: 2500           # 基于 tiktoken 算法对文档段落进行无损切割的最大阈值
+  empty_content_threshold: 15    # 忽略内容过少的残片
+  max_slug_length: 100           # 彻底解决路径过长的物理截断
+  max_seo_description_length: 200 # SEO 描述最大字数
+  
+  # [Sovereignty] 全局网络代理 (仅支持 http/https 格式)
+  global_proxy: ""
+  
+  providers: { include: "configs/ai_providers.yaml" }
+
+# ==========================================
+# 7. 多语言与 SEO 矩阵 (i18n & SEO Matrix)
+# ==========================================
+i18n_settings:
+  enabled: true
+  source:
+    lang_code: "zh"               # 源语言代码 (Docusaurus 为 zh-Hans)
+    name: "简体中文"               
+  targets:
+    - lang_code: "en"            
+      name: "English"
+      translate_body: true        
+      translate_title: true       
+    - lang_code: "ja"            
+      name: "日本語"
+      translate_body: true        
+      translate_title: true       
+    - lang_code: "de"            
+      name: "Deutsch"
+      translate_body: true        
+      translate_title: true       
+    - lang_code: "fr"            
+      name: "Français"
+      translate_body: true        
+      translate_title: true       
+    - lang_code: "es"            
+      name: "Español"
+      translate_body: true        
+      translate_title: true       
+
+seo_settings:
+  enabled: true                  
+  generate_description: true      
+  generate_keywords: true         
+
+# ==========================================
+# 8. 全域资产处理 (Asset & Image Pipeline)
+# ==========================================
+image_settings:
+  enabled: true                   
+  process_images: true            
+  format: "webp"                  
+  quality: 80                     
+  max_width: 1400                 
+  generate_alt: true              
+  multilingual_alt: true          # [Resonance] 开启后，Alt 描述将自动跟随翻译语种生成对应版本
+  deduplication: true             # [CAS]：基于文件内容指纹去重，彻底消灭全站图片冗余
+  base_url: "static/"            
+
+# ==========================================
+# 9. 内容分发矩阵 (Syndication Matrix)
+# ==========================================
+syndication:
+  enabled: true                  
+  timeout: 15.0                   
+  devto: { enabled: false, api_key: "YOUR_DEVTO_KEY" }
+  medium: { enabled: false, token: "", author_id: "" }
+  deepseek_api:
+    type: "openai-compatible"
+    base_url: "https://api.deepseek.com/v1"
+    api_key: "enc:gAAAAABp75XaGOIjwfyOYn9OEeAj_wMR-t8iwYPNOC_JkflQAdaxbCAMwie2sq1q7GRNzgEaltVL8WyHw4gMPak7rqNRa7RP6UHTnW3y506-pNlzHk66ZlE="
+    model: "deepseek-chat"
+  hashnode: { enabled: false, token: "", publication_id: "" }
+  wordpress: { enabled: false, url: "", username: "", app_password: "" }
+  ghost: { enabled: false, url: "", admin_api_key: "" }
+  linkedin: { enabled: false, token: "", person_urn: "" }
+  universal_webhook: { enabled: false, url: "", auth_token: "" }
+
+# ==========================================
+# 10. 系统级专家调优 (System & Performance)
+# ==========================================
+system:
+  data_root: ".plenipes"
+  max_workers: 8                  # [I/O 吞吐极值] 影响扫描、图片压缩与自愈速度
+  log_level: "INFO"               
+  verbose_ai_logs: true           
+  singleton_port: 43210           # [OS 级防线] 防多开安全端口，免疫僵尸进程
+  api_host: "0.0.0.0"             # [API 地址] 0.0.0.0 允许局域网/Docker 访问
+  api_port: 43211                 # [管理层] API 接口与 SSE 事件流端口
+  serve_host: "127.0.0.1"         # [预览地址] 127.0.0.1 仅限本机预览（更安全）
+  serve_port: 43212               # [表现层] SSG 静态产物热加载预览端口
+  api_token: ""                   # [安全令牌] 为空则不校验，商用建议设置长随机字符串
+  auto_save_interval: 2.0         
+  max_depth: 3                    # [AST 递归护城河] 遇到 ![[嵌套]] 的最大解析深度
+  enable_asset_audit: true        # [自净基线总闸] 开启后自动肃清幽灵空目录及野路由
+  
+  # 算力上下文提纯 (Purification)
+  ai_context_purification:
+    strip_styles: true
+    strip_mdx_imports: true
+    strip_comments: true
+    strip_code_blocks: true
+    strip_jsx_tags: true      # [NEW] 剥离 JSX 标签防止 AI 幻觉
+    
+  # [NEW] 工业级文件监控调优 (Watchdog)
+  watchdog_settings:
+    exclude_dirs: [".git", "node_modules", ".plenipes", "themes"]
+    heavy_task_delay: 0.8     # 规避 Obsidian 保存时的写锁竞争
+    gc_delay: 5.0             # 删除文件后的物理回收延迟
+
+  # ⚖️ [V24.6] 自主治理矩阵 (Governance Matrix)
+  # 负责监控物理负载并执行自适应熔断，保护宿主系统稳定性。
+  governance:
+    resource_guard:
+      enabled: true           # 是否开启物理负载守卫
+      cpu_threshold: 90.0     # CPU 触发削峰的百分比阈值 (建议 80-95)
+      ram_threshold: 90.0     # 内存触发削峰的百分比阈值 (建议 80-95)
+      check_interval: 10.0    # 负载巡检频率 (秒)
+
+  # ⚖️ [V14.3 物理防护矩阵] Janitor 排除逻辑
+  janitor_settings:
+    global_exclude: [".git", "node_modules", "dist", ".docusaurus"]
+    theme_exclude:
+      docusaurus: [".docusaurus", "build"]
+      starlight: [".astro", "node_modules"]
+
+  # 🌐 全局网络探针控制
+  network_settings:
+    ignored_domains:
+      - "img.shields.io"
+      - "github-readme-stats.vercel.app"
+      - "wakatime.com"
+
+# ==========================================
+# 11. 发布权限与隐私隔离 (Publish Control)
+# ==========================================
+publish_control:
+  exclude_patterns: ["_drafts/*", ".hidden/*"] 
+  webhook_enabled: false          
+  webhook_urls: []                
+  append_credit: false            
+  credit_text: "\n\n---\n*Powered by [Illacme-plenipes](https://github.com/Illacme/illacme-plenipes)*"
+
+  # 🚀 [V11.0] 全域直传矩阵 (Zero-Git Deployment)
+  direct_upload:
+    cloudflare_pages:
+      enabled: false              # [小白开关] 开启后，同步完成将自动推向全球边缘网络
+      api_token: "YOUR_TOKEN"     
+      account_id: "YOUR_ACCOUNT"  
+      project_name: "YOUR_PROJECT"
+      branch: "main"
+
+# ==========================================
+# 12. 高阶元数据约束 (Metadata Matrix)
+# ==========================================
+# [SEO 排版美化]：决定最终生成的 Markdown 头部 YAML 的字段排列顺序
+frontmatter_order: ["title", "description", "keywords", "author", "date", "tags", "categories"]
+# [默认属性注入]：为缺失 YAML 属性的文章自动补充基础信息
+frontmatter_defaults:
+  author: "Eason"                  
+
+# ------------------------------------------
+# 🌏 全局语种代码映射 (Legacy Fix)
+# ------------------------------------------
+lang_mapping: { "zh": "zh-Hans" }
+
+# ==========================================
+# 13. 创作审计时间轴 (Industrial Audit Timeline)
+# ==========================================
+timeline:
+  # 审计总开关
+  # 设为 true: 引擎会实时记录每一次本地保存、移动与删除行为，并生成历史溯源报表。
+  enabled: true
+  
+  # 原始数据账本路径 (JSON 格式，供程序读取)
+  json_path: ".plenipes/plenipes_timeline.json"
+  
+  # 用户友好的可视化报告路径 (Markdown 格式)
+  markdown_path: ".plenipes/timeline.md"
+  
+  # 最大保留记录条数 (防止日志无限膨胀)
+  max_entries: 1000
