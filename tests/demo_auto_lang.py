@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.config.config import load_config
 from core.utils.language_hub import LanguageHub
-from core.pipeline.vault_indexer import VaultIndexer
+from core.editorial.vault_indexer import VaultIndexer
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)

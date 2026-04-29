@@ -13,7 +13,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
     @SovereignCore
     def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False):
-        from core.pipeline.context import SyncContext
+        from core.editorial.context import SyncContext
         from core.logic.orchestration.concurrency_controller import concurrency_controller
 
         engine = self.engine

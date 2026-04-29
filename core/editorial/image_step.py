@@ -9,7 +9,7 @@ import os
 import re
 import hashlib
 import logging
-from core.pipeline.runner import PipelineStep
+from core.editorial.runner import PipelineStep
 
 from core.utils.tracing import tlog
 

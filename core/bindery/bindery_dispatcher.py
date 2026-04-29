@@ -13,11 +13,11 @@ import logging
 import hashlib
 from datetime import datetime
 from core.utils import sanitize_ai_response
-from core.pipeline.egress_unmasker import EgressUnmasker
+from core.bindery.bindery_unmasker import BinderyUnmasker
 
 from core.utils.tracing import tlog
 
-class EgressDispatcher:
+class BinderyDispatcher:
     def __init__(self, paths, meta, route_manager, asset_pipeline, ssg_adapter, ast_resolver,
                  deployment_manager=None, pub_cfg=None, fm_order=None,
                  asset_base_url="", i18n_cfg=None, janitor=None, link_resolver=None):
@@ -37,7 +37,7 @@ class EgressDispatcher:
         self.link_resolver = link_resolver
 
         # 🚀 [TDR-Iter-021] 挂载子模块
-        self.unmasker = EgressUnmasker(self, link_resolver=self.link_resolver)
+        self.unmasker = BinderyUnmasker(self, link_resolver=self.link_resolver)
 
 
     def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None, seo_data=None, is_sandbox=False):

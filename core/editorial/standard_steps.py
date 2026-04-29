@@ -13,7 +13,7 @@ import hashlib
 import logging
 import shutil
 from ..utils import extract_frontmatter, strip_technical_noise, normalize_keywords
-from core.pipeline.runner import PipelineStep
+from core.editorial.runner import PipelineStep
 
 from core.utils.tracing import tlog
 

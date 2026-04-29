@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
 from core.utils.event_bus import bus
 from core.runtime.cli_bootstrap import send_notification
-from core.pipeline.vault_indexer import VaultIndexer
+from core.editorial.vault_indexer import VaultIndexer
 
 from core.utils.tracing import tlog, Tracer
 from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority

@@ -174,7 +174,7 @@ def run_shadow_simulation():
                 f.write("# Vision Test\n![](./vision_test.jpg)\n")
                 
             # 🚀 [V16.6 核心对齐]：文件创建后，必须强制引擎重载物理索引，否则解蔽器将无法定位资产指纹
-            from core.pipeline.vault_indexer import VaultIndexer
+            from core.editorial.vault_indexer import VaultIndexer
             engine.md_index, engine.asset_index = VaultIndexer.build_indexes(engine.paths['vault'])
             engine.asset_pipeline.asset_index = engine.asset_index
             

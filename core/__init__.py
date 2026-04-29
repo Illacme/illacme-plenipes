@@ -8,14 +8,16 @@ Illacme Plenipes Core - Sovereign Gateway
 
 import sys
 from . import ingress as intake
-from . import dispatch as egress
-from . import storage as archives
+from . import bindery as egress
+from . import archives as archives
+from . import editorial as editorial
 from . import logic as engine
 
 # 🚀 [V35.2] 动态挂载语义别名至 sys.modules，支持 import core.intake 这种写法
 sys.modules['core.intake'] = intake
 sys.modules['core.egress'] = egress
 sys.modules['core.archives'] = archives
+sys.modules['core.editorial'] = editorial
 sys.modules['core.engine'] = engine
 
-__all__ = ['intake', 'egress', 'archives', 'engine']
+__all__ = ['intake', 'egress', 'archives', 'editorial', 'engine']

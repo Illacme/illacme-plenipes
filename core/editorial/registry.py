@@ -8,7 +8,7 @@ Illacme-plenipes Core - Pipeline Step Registry
 
 import logging
 from typing import Dict, Type
-from core.pipeline.runner import PipelineStep
+from core.editorial.runner import PipelineStep
 from core.utils.plugin_loader import discover_and_register
 
 from core.utils.tracing import tlog
@@ -48,10 +48,10 @@ import os
 root_dir = os.path.dirname(__file__)
 base_package = __name__.rsplit('.', 1)[0]
 
-# 1. 扫描当前目录 (core.pipeline)
+# 1. 扫描当前目录 (core.editorial)
 discover_and_register([root_dir], base_package, PipelineStep, StepRegistry.register)
 
-# 2. 扫描 steps 子目录 (core.pipeline.steps)
+# 2. 扫描 steps 子目录 (core.editorial.steps)
 steps_dir = os.path.join(root_dir, "steps")
 if os.path.exists(steps_dir):
     discover_and_register([steps_dir], f"{base_package}.steps", PipelineStep, StepRegistry.register)

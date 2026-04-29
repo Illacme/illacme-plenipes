@@ -10,7 +10,7 @@ import threading
 import traceback
 import logging
 from core.runtime.cli_bootstrap import send_notification
-from core.dispatch.garden_exporter import export_digital_garden
+from core.bindery.garden_exporter import export_digital_garden
 
 try:
     from watchdog.events import FileSystemEventHandler
