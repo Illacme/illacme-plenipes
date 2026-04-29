@@ -50,7 +50,7 @@ class LifecycleManager:
 import os
 import json
 from datetime import datetime
-from core.pipeline.vault_indexer import VaultIndexer
+from core.editorial.vault_indexer import VaultIndexer
 
 class GraphExportPlugin(PostSyncTask):
     """关系图谱导出插件"""
@@ -177,7 +177,7 @@ class DigitalGardenPlugin(PostSyncTask):
             tlog.info("✨ [Plugin] 数字花园数据无变更，跳过导出。")
             return
 
-        from core.dispatch.garden_exporter import export_digital_garden
+        from core.bindery.garden_exporter import export_digital_garden
         export_digital_garden(engine, all_docs_snapshot=snapshot)
 
 class SovereignDeploymentPlugin(PostSyncTask):

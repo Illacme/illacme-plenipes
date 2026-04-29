@@ -8,7 +8,7 @@ Illacme-plenipes - Phase 3 Ingress Verification
 import os
 import shutil
 import pytest
-from core.pipeline.vault_indexer import VaultIndexer
+from core.editorial.vault_indexer import VaultIndexer
 from core.ingress.source.local import LocalFileSource
 from core.governance.license_guard import LicenseGuard
 

@@ -7,9 +7,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.config.config import load_config
-from core.dispatch.egress_dispatcher import EgressDispatcher
-from core.pipeline.router import RouteManager
-from core.storage.ledger import MetadataManager
+from core.bindery.bindery_dispatcher import BinderyDispatcher
+from core.editorial.router import RouteManager
+from core.archives.ledger import MetadataManager
 
 # 模拟类
 class MockSSG:
@@ -24,7 +24,7 @@ def run_final_audit():
     meta = MetadataManager(config.metadata_db)
     
     # 构造 Dispatcher
-    dispatcher = EgressDispatcher(
+    dispatcher = BinderyDispatcher(
         paths={'vault': config.vault_root, 'target_base': './dist-test', 'shadow': './shadow-test'},
         meta=meta,
         route_manager=router,

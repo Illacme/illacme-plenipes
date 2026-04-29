@@ -58,12 +58,12 @@ class TestSovereigntyGuard(unittest.TestCase):
     def test_logic_integrity_audit(self):
         """物理审计：确保核心文件未被 AI 逻辑剪枝 (Logic Pruning Detection)"""
         core_files = [
-            "core/egress_dispatcher.py",
+            "core/bindery_dispatcher.py",
             "core/logic/strategies/fingerprint.py"
         ]
         # 锚点检查：必须存在的关键逻辑字符串
         anchors = {
-            "core/egress_dispatcher.py": ["sanitize_ai_response", "unmasker.unmask", "Tracer.get_id"],
+            "core/bindery_dispatcher.py": ["sanitize_ai_response", "unmasker.unmask", "Tracer.get_id"],
             "core/logic/strategies/fingerprint.py": ["priority = TaskPriority", "AIScheduler.dispatch_targets"]
         }
         
@@ -79,12 +79,12 @@ class TestSovereigntyGuard(unittest.TestCase):
 
     def test_nonetype_resilience_audit(self):
         """验证系统对 NoneType 的免疫力"""
-        from core.dispatch.egress_dispatcher import EgressDispatcher
+        from core.bindery.bindery_dispatcher import BinderyDispatcher
         # 模拟 dispatcher
         try:
             # 即使传入 None，也不会抛出 AttributeError
             from unittest.mock import MagicMock
-            dispatcher = EgressDispatcher({}, {}, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), [], "", MagicMock())
+            dispatcher = BinderyDispatcher({}, {}, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), [], "", MagicMock())
             # 这是一个简单的结构检查，确保逻辑中包含 or "" 或类似保护
             import inspect
             source = inspect.getsource(dispatcher.dispatch)

@@ -5,7 +5,7 @@ Illacme Plenipes V18 Pipeline Step - Semantic Linker
 职责：利用向量检索自动发现当前文档与其他已索引文档间的语义关联。
 """
 
-from core.pipeline.registry import StepRegistry, PipelineStep
+from core.editorial.registry import StepRegistry, PipelineStep
 from core.utils.tracing import tlog
 
 @StepRegistry.register("semantic_linker")

@@ -7,7 +7,7 @@ Illacme-plenipes Core - Component Staticizer Step (组件静态化工序)
 """
 
 import logging
-from core.pipeline.runner import PipelineStep
+from core.editorial.runner import PipelineStep
 
 from core.utils.tracing import tlog
 

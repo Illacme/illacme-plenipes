@@ -9,34 +9,34 @@ import os
 import logging
 from dataclasses import asdict
 from core.config.config import load_config, ThemeSettings
-from core.storage.ledger import MetadataManager
-from core.storage.timeline import TimelineManager
+from core.archives.ledger import MetadataManager
+from core.archives.timeline import TimelineManager
 from core.governance.sentinel import SentinelManager
 from core.services.staticizer import StaticizerService
 from core.logic.ai.ai_factory import TranslatorFactory
 from core.runtime.engine import IllacmeEngine
-from core.pipeline.runner import Pipeline
-from core.pipeline.registry import StepRegistry
-from core.pipeline.asset_pipeline import AssetPipeline
-from core.pipeline.router import RouteManager
+from core.editorial.runner import Pipeline
+from core.editorial.registry import StepRegistry
+from core.editorial.asset_pipeline import AssetPipeline
+from core.editorial.router import RouteManager
 from core.ingress.adapter import InputAdapter
 from core.adapters.egress.ssg import SSGAdapter
 from core.logic.notification_hub import WebhookBroadcaster
-from core.logic.syndication_hub import ContentSyndicator
-from core.dispatch.egress_dispatcher import EgressDispatcher
+from core.syndication.hub import ContentSyndicator
+from core.bindery.bindery_dispatcher import BinderyDispatcher
 from core.governance.auditor import SovereignAuditor
 from core.governance.brain import KnowledgeService
 from core.governance.janitor import JanitorService
 from core.governance.doctor import DoctorService
 from core.services.link_resolver import LinkResolver
-from core.pipeline.vault_indexer import VaultIndexer
+from core.editorial.vault_indexer import VaultIndexer
 from core.logic.block_parser import MarkdownBlockParser
 from core.markup.manager import MarkupManager
 from core.ingress.manager import IngressManager
 from core.logic.ast_resolver import ASTResolver
-from core.storage.block_cache import BlockCache
+from core.archives.block_cache import BlockCache
 from core.governance.meter import UsageMeter
-from core.services.publisher_service import PublisherService
+from core.syndication.publisher import PublisherService
 from core.governance.contract_guard import ContractGuard
 from core.governance.heartbeat import HeartbeatService
 from core.governance.qa_guard import QAGuard
@@ -307,7 +307,7 @@ class EngineFactory:
 
         engine.ast_resolver = ASTResolver(engine.md_index, engine.asset_index, source=engine.manuscript_source)
 
-        from core.dispatch.deployment_manager import DeploymentManager
+        from core.bindery.deployment_manager import DeploymentManager
         engine.deployment_manager = DeploymentManager(engine.config)
 
         engine.janitor = JanitorService(
@@ -316,7 +316,7 @@ class EngineFactory:
             sys_cfg=engine.config.system, active_theme=engine.active_theme
         )
         
-        engine.dispatcher = EgressDispatcher(
+        engine.dispatcher = BinderyDispatcher(
             paths=engine.paths, meta=engine.meta, route_manager=engine.route_manager,
             asset_pipeline=engine.asset_pipeline, ssg_adapter=engine.ssg_adapter,
             ast_resolver=engine.ast_resolver,

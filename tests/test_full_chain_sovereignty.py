@@ -28,7 +28,7 @@ class TestFullChainSovereignty(unittest.TestCase):
         if os.path.exists(self.territory_root):
             shutil.rmtree(self.territory_root)
 
-    @patch('core.dispatch.deployment_manager.PluginLoader.load_plugins')
+    @patch('core.bindery.deployment_manager.PluginLoader.load_plugins')
     def test_end_to_end_publishing_cycle(self, mock_load):
         """🚀 终极演习：验证全链路主权闭环"""
         from plugins.publishers.base import BasePublisher

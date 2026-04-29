@@ -13,7 +13,7 @@ from concurrent.futures import wait
 
 from core.utils.tracing import tlog
 
-class EgressUnmasker:
+class BinderyUnmasker:
     """🚀 [V24.0] 解蔽引擎：支持资产预热与并行解蔽"""
 
     def __init__(self, service, link_resolver=None):
