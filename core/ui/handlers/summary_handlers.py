@@ -1,3 +1,7 @@
+"""
+📊 汇总处理器 — 任务执行汇总与算力看板的终端渲染。
+负责将出版引擎的处理统计（更新/跳过/耗时/Token 支出）以 Rich 面板呈现。
+"""
 # -*- coding: utf-8 -*-
 from rich.console import Console
 from rich.panel import Panel

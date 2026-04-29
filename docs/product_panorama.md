@@ -1,5 +1,5 @@
 # 🏛️ Illacme Plenipes OS 产品全景设计大纲
-## 品牌方案 C 定型版 (V35.2 Final)
+## 品牌方案 C 定型版 (V48.3 Final)
 
 ## 1. 核心品牌主权 (Branding)
 *   **主标题**：**全球私人出版社 (Global Private Press)**
@@ -11,7 +11,7 @@
 ## 2. 五层分层架构 (Layered Architecture)
 
 ### 第 I 层：主权疆域 (Sovereign Territory)
-*   **主题感知隔离**：[V35.2 核心特性] 所有的账本 (`meta.db`)、索引 (`vectors.json`)、时间轴 (`timeline.json`) 与脉搏数据均实现 **“全主题动态物理隔离”**。
+*   **主题感知隔离**：[V48.3 核心特性] 所有的账本 (`meta.db`)、索引 (`vectors.json`)、时间轴 (`timeline.json`) 与脉搏数据均实现 **"全主题动态物理隔离"**。
 *   **物理版图**：`territories/[territory_id]/` 包含该社所有核心资产，支持 `{theme}` 占位符的强制自动渲染。
 
 ### 第 II 层：全息收稿 (Ingress Sentinel)

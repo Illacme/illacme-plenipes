@@ -1,3 +1,7 @@
+"""
+🎛️ 状态处理器 — 品牌 Banner、系统警告与引擎状态的终端渲染。
+负责输出 ILLACME PLENIPES ASCII 品牌视觉与核心红线审计报告看板。
+"""
 # -*- coding: utf-8 -*-
 import os
 from rich.console import Console

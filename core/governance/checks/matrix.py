@@ -1,3 +1,7 @@
+"""
+🧮 矩阵校验模块 — 多领地交叉一致性检查。
+执行跨 Territory 的配置兼容性、资源冲突与版本矩阵校验。
+"""
 # -*- coding: utf-8 -*-
 from typing import Dict, Any
 

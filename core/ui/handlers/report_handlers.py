@@ -1,3 +1,7 @@
+"""
+📋 报告处理器 — 详细运行报告与日志归档的终端渲染。
+负责将引擎运行日志以结构化报表形式输出并归档至历史目录。
+"""
 # -*- coding: utf-8 -*-
 from rich.console import Console
 from rich.table import Table

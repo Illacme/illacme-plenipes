@@ -1,3 +1,7 @@
+"""
+💎 Obsidian 方言适配器 — Obsidian 格式内容的标准化转换。
+将 Obsidian 特有的双链语法、Callout 与嵌入标记转换为统一中间表示。
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import re

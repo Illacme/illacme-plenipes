@@ -1,3 +1,7 @@
+"""
+📝 内容路由 — RESTful API 内容管理端点。
+提供文章/资产的 CRUD 操作接口，服务于 TerritoryWizard 与外部集成。
+"""
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends
 from core.runtime.cli_bootstrap import get_global_engine

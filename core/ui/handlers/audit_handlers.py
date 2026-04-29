@@ -1,3 +1,7 @@
+"""
+🧹 审计处理器 — 资产审计基线报告与诊断简报的终端渲染。
+负责将主权审计引擎的校验结果以 Rich 表格与面板形式呈现给出版社管理员。
+"""
 # -*- coding: utf-8 -*-
 from rich.console import Console
 from rich.table import Table

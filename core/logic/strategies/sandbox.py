@@ -1,3 +1,7 @@
+"""
+🏖️ 沙箱策略 — 安全隔离的实验性处理策略。
+在隔离环境中执行试验性处理流程，不影响生产资产。
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from .fingerprint import FingerprintSyncStrategy

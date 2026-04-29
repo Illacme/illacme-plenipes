@@ -1,3 +1,7 @@
+"""
+📓 Logseq 方言适配器 — Logseq 格式内容的标准化转换。
+将 Logseq 特有的大纲式语法、页面引用与属性标记转换为统一中间表示。
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import re

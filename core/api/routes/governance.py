@@ -1,3 +1,7 @@
+"""
+🛡️ 治理路由 — RESTful API 治理与审计端点。
+提供主权契约校验、许可证状态查询与审计报告的 API 接口。
+"""
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends
 from core.runtime.cli_bootstrap import get_global_engine

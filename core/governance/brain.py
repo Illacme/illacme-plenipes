@@ -1,3 +1,7 @@
+"""
+🧠 治理中枢 — 全域决策大脑与策略协调器。
+汇总各检查模块的校验结果，生成全局治理评分与修复建议。
+"""
 import os
 import json
 import logging

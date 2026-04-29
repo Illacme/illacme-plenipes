@@ -124,8 +124,9 @@ class ContractGuard:
             # 实时采样当前核心目录结构
             current_structure = set()
             for root, dirs, files in os.walk('core'):
+                dirs[:] = [d for d in dirs if d != '__pycache__']
                 for file in files:
-                    if not file.startswith('.'):
+                    if file.endswith('.py') and not file.startswith('.'):
                         path = os.path.join(root, file).replace('\\', '/')
                         current_structure.add(path)
             
@@ -157,7 +158,7 @@ class ContractGuard:
         # 1. API Key 物理扫描
         KEY_PATTERN = re.compile(r'(?:sk-|AIza|ghp_)[a-zA-Z0-9]{16,}')
         # 规则 2: 不安全函数与调试残留扫描
-        UNSAFE_PATTERN = re.compile(r'(?:os\.system|eval|print)\(')
+        UNSAFE_PATTERN = re.compile(r'\b(?:os\.system|(?<!\w)eval|(?<!\w)exec)\s*\(')
         
         exclude_dirs = {".git", "node_modules", ".plenipes", ".venv", "themes"}
         

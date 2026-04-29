@@ -1,3 +1,7 @@
+"""
+✏️ 文本工具集 — 字符串处理与文本规范化的工具函数。
+提供 Unicode 规范化、Markdown 清洗、摘要截断与哈希计算。
+"""
 # -*- coding: utf-8 -*-
 import re
 from typing import Optional
