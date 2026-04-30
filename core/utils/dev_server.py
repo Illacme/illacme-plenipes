@@ -122,7 +122,7 @@ class DevServer:
                 **kwargs
             )
 
-            # 🚀 [V24.6] 工业级并发加固：使用 ThreadingTCPServer 以支持并发请求
+            # 🚀 [V48.3] 工业级并发加固：使用 ThreadingTCPServer 以支持并发请求
             class ThreadingServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 daemon_threads = True
                 allow_reuse_address = True

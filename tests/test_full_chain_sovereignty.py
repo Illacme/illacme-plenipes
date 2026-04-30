@@ -19,7 +19,7 @@ class TestFullChainSovereignty(unittest.TestCase):
     def setUp(self):
         self.test_press = "test_galaxy_press"
         self.territory_root = os.path.abspath("territories")
-        self.workspace_dir = os.path.join(self.territory_root, self.test_press)
+        self.territory_dir = os.path.join(self.territory_root, self.test_press)
         if os.path.exists(self.territory_root):
             shutil.rmtree(self.territory_root)
         os.makedirs(self.territory_root, exist_ok=True)
@@ -57,7 +57,7 @@ class TestFullChainSovereignty(unittest.TestCase):
                 with open(os.path.join(mock_vault, "blog/tech/first-post.md"), 'w') as f:
                     f.write("---\ntitle: Hello Galaxy\n---\nWelcome to the sovereign press.")
                 
-                config_path = os.path.join(self.workspace_dir, "configs", "system.yaml")
+                config_path = os.path.join(self.territory_dir, "configs", "system.yaml")
                 with open(config_path, 'r') as f:
                     cfg = yaml.safe_load(f)
                 
@@ -67,16 +67,16 @@ class TestFullChainSovereignty(unittest.TestCase):
                 cfg['publish_control'] = {'direct_upload': {'mock_pub': {'enabled': True}}}
                 cfg['ingress_settings'] = {'ingress_rules': [{'source': 'blog/tech', 'target': 'posts/technology'}]}
                 cfg['output_paths'] = {
-                    'source_dir': os.path.join(self.workspace_dir, 'dist/source'),
-                    'static_dir': os.path.join(self.workspace_dir, 'dist/static'),
-                    'markdown_dir': os.path.join(self.workspace_dir, 'dist/source'),
-                    'assets_dir': os.path.join(self.workspace_dir, 'dist/assets'),
-                    'graph_json_dir': os.path.join(self.workspace_dir, 'dist/graph')
+                    'source_dir': os.path.join(self.territory_dir, 'dist/source'),
+                    'static_dir': os.path.join(self.territory_dir, 'dist/static'),
+                    'markdown_dir': os.path.join(self.territory_dir, 'dist/source'),
+                    'assets_dir': os.path.join(self.territory_dir, 'dist/assets'),
+                    'graph_json_dir': os.path.join(self.territory_dir, 'dist/graph')
                 }
-                cfg['metadata_db'] = os.path.join(self.workspace_dir, 'metadata/press.db')
+                cfg['metadata_db'] = os.path.join(self.territory_dir, 'metadata/press.db')
                 cfg['i18n_settings'] = {'enable_multilingual': False, 'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 'targets': []}
                 cfg['system'] = {
-                    'data_root': self.workspace_dir, 'allowed_extensions': ['.md'], 'data_paths': {},
+                    'data_root': self.territory_dir, 'allowed_extensions': ['.md'], 'data_paths': {},
                     'log_level': 'INFO', 'max_workers': 1, 'auto_save_interval': 60
                 }
                 cfg['theme_options'] = {'default': {}}

@@ -46,7 +46,7 @@ class GovernanceGuard:
         """检查配额，如果超限则返回 False"""
         with cls._lock:
             if territory_id not in cls._limiters:
-                # 🚀 [V24.6 性能对齐] 默认 QPS 提升至 10.0，突发提升至 20 (对齐块级并行与多语种并发)
+                # 🚀 [V48.3 性能对齐] 默认 QPS 提升至 10.0，突发提升至 20 (对齐块级并行与多语种并发)
                 cls._limiters[territory_id] = RateLimiter(qps=10.0, burst=20)
             
             limiter = cls._limiters[territory_id]

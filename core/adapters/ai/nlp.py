@@ -37,7 +37,7 @@ class NLPAdapter:
             clean_res = res.replace("```json", "").replace("```", "").strip()
             data = json.loads(clean_res)
             
-            # 🚀 [V24.6] 强类型卫士：确保 AI 返回的是结构化字典
+            # 🚀 [V48.3] 强类型卫士：确保 AI 返回的是结构化字典
             if not isinstance(data, dict):
                 tlog.warning(f"⚠️ [NLP] AI 返回了非字典格式 ({type(data).__name__})，正在执行降级对齐。")
                 return {}

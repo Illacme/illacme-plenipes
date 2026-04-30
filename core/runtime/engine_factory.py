@@ -98,13 +98,13 @@ class EngineFactory:
             return None
 
 
-        # 🚀 [V24.6] 视觉主权：Banner 抢占式渲染 (必须在所有初始化日志前)
+        # 🚀 [V48.3] 视觉主权：Banner 抢占式渲染 (必须在所有初始化日志前)
         from core.ui.delegate import DisplayDelegate
         sys_version = DisplayDelegate.get_system_version(config)
         ael_iter_id = SentinelManager._detect_current_iter()
         
-        # 🚀 [V24.6] 动态获取最新 Iter-ID
-        # 🚀 [V24.6] 使用协议常量定位历史存档
+        # 🚀 [V48.3] 动态获取最新 Iter-ID
+        # 🚀 [V48.3] 使用协议常量定位历史存档
         history_dir = os.path.join("territories", territory_id, EngineFactory.SOVEREIGN_LAYOUT["metadata"], "history") if territory_id != "default" else ".plenipes/history"
 
         current_iter_id = "V24.0_Default"
@@ -114,7 +114,7 @@ class EngineFactory:
                 # 获取按名称排序或时间排序最新的迭代文件夹
                 current_iter_id = sorted(iters)[-1]
         
-        # 🛡️ [V24.6] 探测 Sentinel 状态 (双向监听)
+        # 🛡️ [V48.3] 探测 Sentinel 状态 (双向监听)
         config_path = getattr(config, 'config_path', 'config.yaml')
         config_name = os.path.basename(config_path)
         base, ext = os.path.splitext(config_name)
@@ -180,7 +180,7 @@ class EngineFactory:
 
         engine.ssg_adapter.default_lang = engine.config.i18n_settings.source.lang_code or "zh"
         
-        # 🚀 [V24.6] 补全系统参数
+        # 🚀 [V48.3] 补全系统参数
         engine.max_depth = engine.config.system.max_depth
         engine.i18n = engine.config.i18n_settings
         engine.seo_cfg = engine.config.seo_settings
@@ -335,12 +335,12 @@ class EngineFactory:
         engine.qa_guard = engine.governance.qa_guard
         engine.resource_guard = engine.governance.resource_guard
         engine.heartbeat = engine.governance.heartbeat
-        engine.sentinel = engine.governance.health_sentinel # 🛡️ [V24.6] 映射主权健康哨兵
+        engine.sentinel = engine.governance.health_sentinel # 🛡️ [V48.3] 映射主权健康哨兵
         engine.publisher = PublisherService(engine.config.model_dump(), sys_tuning=engine.config.system)
         engine.ai_batcher = AIBatcher(engine)
         engine.brain = KnowledgeService(engine)
         
-        # 🚀 [V24.6] 启动总线绑定 (后台服务已在 GovernanceManager 中启动)
+        # 🚀 [V48.3] 启动总线绑定 (后台服务已在 GovernanceManager 中启动)
         engine.publisher.bind_to_bus(engine.bus)
 
     @staticmethod

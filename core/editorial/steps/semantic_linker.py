@@ -69,7 +69,7 @@ class SemanticLinkerStep(PipelineStep):
                         for other_id, other_node in list(engine.knowledge_graph.nodes.items())[:100]:
                             if other_id == doc_id: continue
                             
-                            # 🚀 [V24.6] 脏数据卫士：如果节点被损坏为非字典类型，安全跳过
+                            # 🚀 [V48.3] 脏数据卫士：如果节点被损坏为非字典类型，安全跳过
                             if not isinstance(other_node, dict): continue
                             
                             other_entities = set()

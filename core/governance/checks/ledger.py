@@ -7,7 +7,7 @@ import os
 from typing import Dict, Any
 
 class LedgerChecker:
-    """🚀 [V24.6] 账本与元数据一致性诊断器"""
+    """🚀 [V48.3] 账本与元数据一致性诊断器"""
     
     @staticmethod
     def check(engine) -> Dict[str, Any]:

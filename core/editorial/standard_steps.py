@@ -136,7 +136,7 @@ class AISlugAndSEOStep(PipelineStep):
     PLUGIN_ID = "ai_slug_seo"
     def process(self, ctx):
         slug_raw = ctx.doc_info.get("slug")
-        # 🛡️ [V24.6] 首页主权防护：强制锁定 Index.md 的 Slug 为 'index'
+        # 🛡️ [V48.3] 首页主权防护：强制锁定 Index.md 的 Slug 为 'index'
         is_homepage = ctx.rel_path.lower().endswith('index.md') or ctx.rel_path.lower().endswith('index.mdx')
         if is_homepage:
             slug_raw = "index"

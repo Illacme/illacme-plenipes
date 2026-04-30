@@ -48,7 +48,7 @@ def run_onboarding_wizard(config_path: str):
                 "model": "mistral-large-latest" if provider == "mistral" else "gpt-4-turbo"
             },
             "system": {
-                "api_token": "omni-secret-token",
+                "api_token": "illacme-secret-token",
                 "api_port": 43211,
                 "serve_port": 43212
             }

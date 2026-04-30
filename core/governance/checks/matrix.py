@@ -6,7 +6,7 @@
 from typing import Dict, Any
 
 class MatrixChecker:
-    """🚀 [V24.6] 语种与可观测性矩阵诊断器"""
+    """🚀 [V48.3] 语种与可观测性矩阵诊断器"""
     
     @staticmethod
     def check_i18n(config) -> Dict[str, Any]:

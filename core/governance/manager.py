@@ -32,13 +32,13 @@ class GovernanceManager:
         self.qa_guard = QAGuard(engine)
         self.health_sentinel = SentinelManager(engine.config, engine=engine)
         
-        # 3. 挂载向量索引 (V24.6 工业单例)
+        # 3. 挂载向量索引 (V48.3 工业单例)
         from core.governance.vector_index import VectorIndex
         data_paths = engine.config.system.data_paths
         v_path = engine._resolve_path(data_paths.get("vectors_json", "vectors.json"))
         self.vector_index = VectorIndex(v_path)
         
-        # 🚀 [V24.6] 启动后台治理服务
+        # 🚀 [V48.3] 启动后台治理服务
         self.indexing_sentinel.start()
         self.resource_guard.start()
         self.heartbeat.start()

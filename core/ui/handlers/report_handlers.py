@@ -10,7 +10,7 @@ from rich.text import Text
 console = Console()
 
 class ReportHandlers:
-    """🚀 [V24.6] 终端系统级报告处理器"""
+    """🚀 [V48.3] 终端系统级报告处理器"""
     
     @staticmethod
     def handle_plugin_report(report):

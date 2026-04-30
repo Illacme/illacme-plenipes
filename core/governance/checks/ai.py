@@ -7,7 +7,7 @@ import time
 from typing import Dict, Any
 
 class AIChecker:
-    """🚀 [V24.6] AI 算力网关诊断器"""
+    """🚀 [V48.3] AI 算力网关诊断器"""
     
     @staticmethod
     def check(engine) -> Dict[str, Any]:

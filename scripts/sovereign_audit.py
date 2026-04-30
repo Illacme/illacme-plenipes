@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme-plenipes - Sovereign Audit Integration (主权审计集成)
-职责：执行符合 V24.6 工业架构的“全链路”安全与主权审计。
+职责：执行符合 V48.3 工业架构的“全链路”安全与主权审计。
 """
 import sys
 import os
@@ -48,7 +48,7 @@ def main():
     print("🚀 [审计阶段] 物理主权红线审计 (300行限制)...")
     try:
         limit_violations = []
-        # 允许豁免的文件列表 (V24.6 工业级组件)
+        # 允许豁免的文件列表 (V48.3 工业级组件)
         EXEMPT_FILES = [
             "core/ui/handlers/status_handlers.py",
             "core/config/config.py",
@@ -106,10 +106,10 @@ def main():
         success = False
 
     if not success:
-        print("\n🛑 [主权审计拦截] 提交的代码未通过 V24.6 工业治理审计，请修复后再提交！")
+        print("\n🛑 [主权审计拦截] 提交的代码未通过 V48.3 工业治理审计，请修复后再提交！")
         sys.exit(1)
     else:
-        print("\n✨ [主权审计完成] 恭喜！代码符合 V24.6 工业主权规范，准予提交。")
+        print("\n✨ [主权审计完成] 恭喜！代码符合 V48.3 工业主权规范，准予提交。")
         sys.exit(0)
 
 if __name__ == "__main__":

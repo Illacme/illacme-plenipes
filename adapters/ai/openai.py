@@ -65,7 +65,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
 
         try:
             # 🚀 [V34.9] 实时可观测性：在发起物理请求前通报 (附带 PID/TID 审计指纹)
-            # 🚀 [V24.6] 工业级去噪：底层不再输出 PID/TID 冗余信息，统一由调度器接管
+            # 🚀 [V48.3] 工业级去噪：底层不再输出 PID/TID 冗余信息，统一由调度器接管
             pass
             
             # 使用基类统一管理的超时

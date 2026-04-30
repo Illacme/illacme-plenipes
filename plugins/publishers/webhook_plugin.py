@@ -25,7 +25,7 @@ class WebhookPublisher(BasePublisher):
         payload = {
             "event": "sync.completed",
             "timestamp": metadata.get("timestamp"),
-            "workspace": metadata.get("workspace_id", "default"),
+            "territory": metadata.get("territory_id", "default"),
             "stats": metadata.get("stats", {}),
             "bundle_path": bundle_path
         }

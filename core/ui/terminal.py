@@ -2,14 +2,14 @@
 """
 Illacme-plenipes Core - Terminal UI (终端交互界面)
 模块职责：事件总线的视觉翻译官，负责调度各类 UI 处理器。
-🛡️ [V24.6 Refactored]：解耦后的轻量化渲染核心。
+🛡️ [V48.3 Refactored]：解耦后的轻量化渲染核心。
 """
 import os
 from rich.console import Console
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
 
-# 🚀 [V24.6] 导入解耦后的处理器
+# 🚀 [V48.3] 导入解耦后的处理器
 from .handlers.status_handlers import StatusHandlers
 from .handlers.audit_handlers import AuditHandlers
 from .handlers.report_handlers import ReportHandlers
@@ -20,7 +20,7 @@ console = Console()
 HEADLESS = False
 
 class TerminalUI:
-    """🚀 [V24.6] 终端交互中枢 (Orchestrator)"""
+    """🚀 [V48.3] 终端交互中枢 (Orchestrator)"""
     _banner_shown = False
     _progress_total = 0
     _progress_count = 0

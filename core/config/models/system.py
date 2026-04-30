@@ -59,14 +59,14 @@ class PurificationSettings(BaseModel):
     custom_patterns: List[str] = Field(default_factory=list)
 
 class ResourceGuardSettings(BaseModel):
-    """🛡️ [V24.6] 物理负载卫士设置集"""
+    """🛡️ [V48.3] 物理负载卫士设置集"""
     enabled: bool = True
     cpu_threshold: float = Field(85.0, ge=10.0, le=100.0)
     ram_threshold: float = Field(85.0, ge=10.0, le=100.0)
     check_interval: float = Field(5.0, ge=1.0)
 
 class GovernanceSettings(BaseModel):
-    """🚀 [V24.6] 全局治理矩阵"""
+    """🚀 [V48.3] 全局治理矩阵"""
     resource_guard: ResourceGuardSettings = Field(default_factory=ResourceGuardSettings)
 
 class SafetyPolicy(BaseModel):

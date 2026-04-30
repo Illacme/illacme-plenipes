@@ -148,7 +148,7 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
             tlog.error(f"❌ 文章处理故障 ({os.path.basename(task_path)}): {traceback.format_exc()}")
             stats["ERROR"] += 1
 
-    # 🚀 [V24.6] 强制同步屏障：等待所有异步 AI/资产 任务完成，确保进度闭环
+    # 🚀 [V48.3] 强制同步屏障：等待所有异步 AI/资产 任务完成，确保进度闭环
     if not engine.no_ai:
         from core.logic.orchestration.task_orchestrator import ai_executor, asset_executor
         bus.emit("UI_PROGRESS_START", total=0, description="正在收割残留 AI/资产 异步任务 (请稍候)...")

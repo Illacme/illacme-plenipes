@@ -74,7 +74,7 @@ class UsageMeter:
             input_price = getattr(provider_config, 'price_per_1m_input', 0.0)
             output_price = getattr(provider_config, 'price_per_1m_output', 0.0)
             
-            # 🛡️ [V24.6] 零值保护：本地节点强制免费，防止计费误报
+            # 🛡️ [V48.3] 零值保护：本地节点强制免费，防止计费误报
             if any(keyword in node_name.lower() for keyword in ["local", "lmstudio", "ollama"]):
                 input_price, output_price = 0.0, 0.0
 
@@ -131,7 +131,7 @@ class UsageMeter:
             return report
 
     def check_and_block(self, content: str, targets: list, rel_path: str) -> bool:
-        """🚀 [V24.6] 预算预检接口 (接管已废弃的 CostGuard)"""
+        """🚀 [V48.3] 预算预检接口 (接管已废弃的 CostGuard)"""
         budget = self.engine.config.translation.budget_limit if self.engine and self.engine.config else 0.0
         if budget <= 0: return True # 无预算限制
         

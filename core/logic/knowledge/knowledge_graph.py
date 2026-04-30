@@ -57,7 +57,7 @@ class KnowledgeGraph:
             else:
                 self.nodes[doc_id]["title"] = title
                 if isinstance(entities, dict):
-                    # 🚀 [V24.6] 强类型合并：确保实体类目与项的结构完整性
+                    # 🚀 [V48.3] 强类型合并：确保实体类目与项的结构完整性
                     current_entities = self.nodes[doc_id].get("entities", {})
                     if not isinstance(current_entities, dict): current_entities = {}
                     
