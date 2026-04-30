@@ -35,7 +35,7 @@ class ISyntaxBlockPlugin(abc.ABC):
 
     @property
     def include_end_line(self) -> bool:
-        """🚀 [V24.6] 决定触发结束的行是否包含在当前块中"""
+        """🚀 [V48.3] 决定触发结束的行是否包含在当前块中"""
         return False
 
 class IContentTransformer(abc.ABC):

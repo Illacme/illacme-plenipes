@@ -25,7 +25,7 @@ class ResourceGuard:
         self.stop_flag = threading.Event()
         self.thread = None
         
-        # 🚀 [V24.6] 阈值控制权回传：优先从配置中心读取，兜底值为 85%
+        # 🚀 [V48.3] 阈值控制权回传：优先从配置中心读取，兜底值为 85%
         governance_cfg = getattr(engine.config.system, 'governance', None)
         rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
         
@@ -74,7 +74,7 @@ class ResourceGuard:
                         "ai": self.engine.config.system.concurrency.ai_workers
                     }
 
-                # 🚀 [V24.6] 引入滞后区间 (Hysteresis) 以防止震荡
+                # 🚀 [V48.3] 引入滞后区间 (Hysteresis) 以防止震荡
                 # 触发阈值后，必须回落 5% 才能恢复，避免临界点反复弹跳
                 upper_cpu = self.cpu_threshold
                 upper_ram = self.ram_threshold
@@ -88,7 +88,7 @@ class ResourceGuard:
                     should_throttle = cpu_usage > lower_cpu and ram_usage > lower_ram
 
                 if should_throttle and not self.is_throttled:
-                    # 🚀 [V24.6] 静默治理：只有在真正有任务在跑时才打印警告
+                    # 🚀 [V48.3] 静默治理：只有在真正有任务在跑时才打印警告
                     from core.logic.orchestration.task_orchestrator import global_executor
                     has_active_tasks = global_executor.get_queue_size() > 0 or global_executor.get_active_count() > 0
                     

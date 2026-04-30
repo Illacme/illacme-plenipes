@@ -31,7 +31,7 @@ class TranslatorFactory:
 
     @staticmethod
     def create(trans_cfg):
-        # 🚀 [V24.6] 工业级指令重载：从外部 YAML 加载全量提示词指令矩阵
+        # 🚀 [V48.3] 工业级指令重载：从外部 YAML 加载全量提示词指令矩阵
         try:
             import os
             import yaml
@@ -60,7 +60,7 @@ class TranslatorFactory:
                             trans_cfg.prompts.metadata_system = p_data['metadata'].get('system', getattr(trans_cfg.prompts, 'metadata_system', ""))
                             trans_cfg.prompts.metadata_user = p_data['metadata'].get('user', getattr(trans_cfg.prompts, 'metadata_user', ""))
 
-            # 🛡️ [V24.6] 应用本地 custom_prompts 覆盖 (最高优先级)
+            # 🛡️ [V48.3] 应用本地 custom_prompts 覆盖 (最高优先级)
             if hasattr(trans_cfg, 'custom_prompts') and trans_cfg.custom_prompts:
                 for k, v in trans_cfg.custom_prompts.items():
                     if hasattr(trans_cfg.prompts, k):

@@ -13,11 +13,12 @@ from core.utils.tracing import tlog
 console = Console()
 
 class StatusHandlers:
-    """🚀 [V24.6] 终端基础状态渲染器"""
+    """🚀 [V48.3] 终端基础状态渲染器"""
     
     @staticmethod
     def handle_banner(version, ael_iter_id, mode, sentinel_status=None):
         """🚀 [V35.0] 品牌化 ASCII Banner：全球私人出版社专属视觉"""
+        console.clear()
         from rich.table import Table
 
         # 🎨 ILLACME PLENIPES 赛博阶梯终极沉浸版 (V48.2)

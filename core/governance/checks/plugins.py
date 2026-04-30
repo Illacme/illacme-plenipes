@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 from core.governance.contract_guard import ContractGuard
 
 class PluginChecker:
-    """🚀 [V24.6] 插件与契约审计诊断器"""
+    """🚀 [V48.3] 插件与契约审计诊断器"""
     
     @staticmethod
     def check_rendering(engine) -> Dict[str, Any]:

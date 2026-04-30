@@ -10,7 +10,7 @@ class DisplayDelegate:
     @staticmethod
     def get_banner_mode(config, args=None) -> str:
         """根据配置运行状态生成模式描述字符串"""
-        # 🚀 [V24.6] 适配 Pydantic 模型与 Engine 对象两种输入
+        # 🚀 [V48.3] 适配 Pydantic 模型与 Engine 对象两种输入
         max_workers = config.system.max_workers if hasattr(config, 'system') else getattr(config, 'max_workers', 8)
         mode_str = f"物理火力: {max_workers} 核同步"
         

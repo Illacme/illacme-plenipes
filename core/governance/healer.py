@@ -8,7 +8,7 @@ import re
 from typing import List
 
 class CodeHealer:
-    """🚀 [V24.6] 物理代码自愈器"""
+    """🚀 [V48.3] 物理代码自愈器"""
     
     @staticmethod
     def auto_heal_loggers() -> List[str]:

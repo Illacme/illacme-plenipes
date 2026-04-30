@@ -7,7 +7,7 @@ import os
 from typing import Dict, Any
 
 class InfraChecker:
-    """🚀 [V24.6] 物理基础设施诊断器"""
+    """🚀 [V48.3] 物理基础设施诊断器"""
     
     @staticmethod
     def check(paths) -> Dict[str, Any]:

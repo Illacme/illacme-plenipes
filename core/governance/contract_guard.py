@@ -76,7 +76,7 @@ class ContractGuard:
 
     @staticmethod
     def verify_config(engine_config) -> List[str]:
-        """🚀 [V24.6] 工业级配置基因审计：全链路契约验证"""
+        """🚀 [V48.3] 工业级配置基因审计：全链路契约验证"""
         import os
         violations = []
 
@@ -109,7 +109,7 @@ class ContractGuard:
 
     @staticmethod
     def verify_structure_integrity() -> List[str]:
-        """🚀 [V24.6] 架构指纹审计：锁定物理目录版图"""
+        """🚀 [V48.3] 架构指纹审计：锁定物理目录版图"""
         import os
         violations = []
         baseline_path = ".plenipes/governance/structure.baseline"
@@ -147,7 +147,7 @@ class ContractGuard:
 
     @staticmethod
     def verify_repository_compliance() -> List[str]:
-        """🚀 [V24.6] 全域合规性哨兵：模拟 GitHub 安全审计行为"""
+        """🚀 [V48.3] 全域合规性哨兵：模拟 GitHub 安全审计行为"""
         import os
         import re
         violations = []

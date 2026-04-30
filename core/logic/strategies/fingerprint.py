@@ -96,7 +96,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             old_info = engine.meta.get_doc_info(rel_path)
             can_recover = (not force_sync and old_info.get("source_hash") == ctx.current_hash)
             
-            # 🚀 [V24.6] 物理一致性防护：不仅校验哈希，还要校验目标物理文件是否真实存在
+            # 🚀 [V48.3] 物理一致性防护：不仅校验哈希，还要校验目标物理文件是否真实存在
             target_base = engine.paths.get('source_dir')
             ext = os.path.splitext(rel_path)[1].lower()
             dest_path = engine.route_manager.resolve_physical_path(target_base, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext)

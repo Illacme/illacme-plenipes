@@ -11,9 +11,9 @@ import pytest
 from core.governance.territory_manager import TerritoryManager
 from core.governance.license_guard import LicenseGuard
 
-def test_workspace_isolation():
+def test_territory_isolation():
     """验证物理空间隔离与目录树生成"""
-    test_root = "test_workspace_root"
+    test_root = "test_territory_root"
     if os.path.exists(test_root):
         shutil.rmtree(test_root)
         

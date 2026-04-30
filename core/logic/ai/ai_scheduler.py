@@ -67,14 +67,14 @@ class AIScheduler:
         if not targets:
             return
 
-        # 🚀 [V24.6] 算力成本预警 (统一通过 UsageMeter 执行)
+        # 🚀 [V48.3] 算力成本预警 (统一通过 UsageMeter 执行)
         if not engine.meter.check_and_block(ctx.masked_source, [t.lang_code for t in targets], rel_path):
             tlog.warning(f"⏭️ [跳过] 文档 {rel_path} 因成本超标已被拦截。")
             ctx.ai_health_flag[0] = False
             return {}
 
         def _audit_translation(body, source_raw):
-            """⚖️ [V24.6] 译后主权审计探针：仅校验持久化标签的生存状态"""
+            """⚖️ [V48.3] 译后主权审计探针：仅校验持久化标签的生存状态"""
             import re
             # 仅提取非掩码类的双括号标签 (如主权标签)
             source_brackets = {b for b in re.findall(r'\[\[.*?\]\]', source_raw) if "MASK" not in b}
@@ -99,7 +99,7 @@ class AIScheduler:
                     # 1. 优先尝试显式图谱链路
                     related = engine.knowledge_graph.get_related(ctx.rel_path, limit=3)
                     
-                    # 2. 🚀 [V24.6 实时性增强] Fallback: 如果没有显式链路，利用元数据关键词进行启发式搜索
+                    # 2. 🚀 [V48.3 实时性增强] Fallback: 如果没有显式链路，利用元数据关键词进行启发式搜索
                     if not related and hasattr(ctx, "base_fm"):
                         keywords = ctx.base_fm.get("keywords", [])
                         if isinstance(keywords, str): keywords = [k.strip() for k in keywords.split(",")]
@@ -128,7 +128,7 @@ class AIScheduler:
                     if knowledge_context:
                         tlog.debug(f"🧠 [TermGuard] 已为 {code} 注入来自 {len(related)} 个关联节点的语义背景 (模式: {'LINK' if 'HEURISTIC' not in str(related) else 'HEURISTIC'})")
 
-                # 🚀 [V24.6] 语义主权回归：对“未屏蔽”的原始正文进行语义切片
+                # 🚀 [V48.3] 语义主权回归：对“未屏蔽”的原始正文进行语义切片
                 # 这样可以确保解析器能识别 Callouts、Headers 等结构，而不受占位符干扰。
                 parser = MarkdownBlockParser()
                 blocks = parser.parse(ctx.body_content)
@@ -163,15 +163,15 @@ class AIScheduler:
                     # 🚀 [V11.0] 动态获取当前最佳算力节点 (支持运行时自动故障转移)
                     active_translator = AIScheduler.get_best_translator(engine)
 
-                    # 🚀 [V24.6] 增强型语义日志：明确任务目标
+                    # 🚀 [V48.3] 增强型语义日志：明确任务目标
                     tlog.info(f"🔗 [AI 调用开始] 🎯 任务: [{priority.name}] | 文档: {rel_path} | 目标: {code} | 节点: {active_translator.node_name}")
                     
                     for idx, block in tasks:
                         try:
-                            # 🚀 [V24.6] 块级防护装甲：临时屏蔽技术实体
+                            # 🚀 [V48.3] 块级防护装甲：临时屏蔽技术实体
                             masked_content, block_masks = AILogicHub.mask_block(block.content)
                             
-                            # 🚀 [V24.6] 极致追踪：在 INFO 级别暴露块的语义定性
+                            # 🚀 [V48.3] 极致追踪：在 INFO 级别暴露块的语义定性
                             block_summary = masked_content[:30].replace('\n', ' ') + "..." if len(masked_content) > 30 else masked_content.replace('\n', ' ')
                             tlog.info(f"🔍 [算力分发] Block {idx} | 类型: {block.type} | 摘要: {block_summary}")
                             
@@ -186,7 +186,7 @@ class AIScheduler:
                                 task_name=f"Block-{idx}-{code}"
                             )
                             
-                            # 🚀 [V24.6] 块级护盾解除：还原被临时屏蔽的技术实体
+                            # 🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体
                             if b_result:
                                 b_result = AILogicHub.unmask_block(b_result, block_masks)
                                 tlog.info(f"✅ [算力收割] Block {idx} ({code}) 翻译成功 | 产物长度: {len(b_result)}")
@@ -204,13 +204,13 @@ class AIScheduler:
                 # 4. 文档重组
                 final_body = "\n".join([str(b) for b in translated_blocks])
 
-                # 🧪 [V24.6] 专家级自愈审计阶段：仅做审计，不再执行破坏性的全量重试
+                # 🧪 [V48.3] 专家级自愈审计阶段：仅做审计，不再执行破坏性的全量重试
                 err_cat, err_msg = _audit_translation(final_body, ctx.raw_content)
 
                 if err_cat and not is_dry_run:
                     tlog.warning(f"⚠️ [审计警告] {rel_path} ({code}) 语义完整性核验未通过: {err_msg}")
                     engine.brain.log_lesson(err_cat, err_msg, {"path": rel_path, "lang": code})
-                    # [V24.6] 彻底禁用全量重试逻辑，以防止中英内容叠加幻觉
+                    # [V48.3] 彻底禁用全量重试逻辑，以防止中英内容叠加幻觉
                     # target_health = False # 可选：标记为亚健康
 
                 # 5. [V10.3] 分语种 SEO 提取 (自动驾驶模式)

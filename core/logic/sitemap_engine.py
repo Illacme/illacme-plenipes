@@ -14,7 +14,7 @@ from core.utils.tracing import tlog
 class SitemapGenerator:
     def __init__(self, engine):
         self.engine = engine
-        # 🚀 [V24.6] 防御性治理：确保 site_url 存在，否则回退至 localhost 以防逻辑崩溃
+        # 🚀 [V48.3] 防御性治理：确保 site_url 存在，否则回退至 localhost 以防逻辑崩溃
         raw_url = getattr(engine.config, 'site_url', 'http://localhost') or 'http://localhost'
         self.site_url = raw_url.rstrip('/')
 

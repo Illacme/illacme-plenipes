@@ -18,7 +18,7 @@ class AuditLedger:
 
     def __init__(self, db_path: str):
         self.db_path = os.path.abspath(os.path.expanduser(db_path))
-        # 🛡️ [V24.6] 确保工业数据目录存在
+        # 🛡️ [V48.3] 确保工业数据目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
 

@@ -202,7 +202,7 @@ class OrchestratedExecutor(concurrent.futures.Executor):
             }
 
     def wait_until_idle(self, timeout: float = None):
-        """🚀 [V24.6] 算力同步屏障：阻塞直至所有任务完成 (不关闭池)"""
+        """🚀 [V48.3] 算力同步屏障：阻塞直至所有任务完成 (不关闭池)"""
         start_time = time.time()
         while True:
             stats = self.get_stats()
@@ -238,7 +238,7 @@ ai_executor = OrchestratedExecutor(max_workers=16, min_workers=16)
 asset_executor = OrchestratedExecutor(max_workers=8, min_workers=4)
 
 def harvest_all_executors():
-    """🚀 [V24.6] 全量算力收割：安全熄灭所有算力池并等待残留任务完成"""
+    """🚀 [V48.3] 全量算力收割：安全熄灭所有算力池并等待残留任务完成"""
     tlog.info("⌛ [Orchestrator] 正在收割残留异步任务 (SemanticMining/Assets)...")
     # 按照依赖顺序关闭：先关高层池，后关基础池
     ai_executor.shutdown(wait=True)

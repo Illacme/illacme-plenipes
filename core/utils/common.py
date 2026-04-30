@@ -2,7 +2,7 @@
 """
 Illacme-plenipes Core - Utility Module
 模块职责：提供全局无状态的工具支持。
-🛡️ [V24.6 Refactored]：解耦后的轻量化工具基座。
+🛡️ [V48.3 Refactored]：解耦后的轻量化工具基座。
 """
 import os
 import re
@@ -10,7 +10,7 @@ import yaml
 import logging
 from logging.handlers import RotatingFileHandler
 
-# 🚀 [V24.6] 导入外挂的工具模块
+# 🚀 [V48.3] 导入外挂的工具模块
 from .text import TokenCounter, sanitize_ai_response, strip_technical_noise
 from .io import atomic_write
 

@@ -11,7 +11,7 @@ from rich.text import Text
 console = Console()
 
 class AuditHandlers:
-    """🚀 [V24.6] 终端审计与诊断结果处理器"""
+    """🚀 [V48.3] 终端审计与诊断结果处理器"""
     
     @staticmethod
     def handle_audit_results(missing_local, dead_remote, total_files):

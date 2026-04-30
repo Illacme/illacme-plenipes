@@ -3,7 +3,7 @@
 """
 Illacme-plenipes Core - API Control Plane
 模块职责：提供 RESTful 接口基座，负责路由分发与安全中枢。
-🛡️ [V24.6 Refactored]：解耦后的轻量化 API 网关。
+🛡️ [V48.3 Refactored]：解耦后的轻量化 API 网关。
 """
 
 import os
@@ -11,10 +11,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-# 🚀 [V24.6] 导入解耦后的路由器
+# 🚀 [V48.3] 导入解耦后的路由器
 from .routes import system, content, governance
 
-app = FastAPI(title="Illacme-plenipes API Gateway", version="V24.6")
+app = FastAPI(title="Illacme-plenipes API Gateway", version="V48.3")
 
 # 🔓 允许跨域
 app.add_middleware(

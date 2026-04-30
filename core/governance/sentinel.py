@@ -45,7 +45,7 @@ class SentinelManager:
             self._start_config_watcher()
 
     def _start_config_watcher(self):
-        """🚀 [V24.6] 双向配置监听：同时监控基础配置与本地覆盖层"""
+        """🚀 [V48.3] 双向配置监听：同时监控基础配置与本地覆盖层"""
         config_path = self.engine.config_manager.config_path if hasattr(self.engine, 'config_manager') else "config.yaml"
         abs_config = os.path.abspath(config_path)
         local_path = os.path.join(os.path.dirname(abs_config), 'config.local.yaml')
@@ -214,12 +214,30 @@ class SentinelManager:
             data = {
                 "last_check": self.last_check,
                 "matrix": self.status_matrix,
+                "ingress_sources": self._collect_ingress_health(),
                 "project": "Illacme-plenipes"
             }
+            os.makedirs(os.path.dirname(self.health_log_path), exist_ok=True)
             with open(self.health_log_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             tlog.error(f"⚠️ [哨兵] 状态持久化失败: {e}")
+
+    def _collect_ingress_health(self) -> list:
+        """🚀 [V48.3] 采集所有已注册收稿源的健康状态"""
+        health_reports = []
+        try:
+            from core.ingress.registry import ingress_registry
+            for name in ingress_registry.list_sources():
+                source_cls = ingress_registry.get_source(name)
+                if source_cls and hasattr(source_cls, 'get_health_status'):
+                    # 注意：此处仅收集类级别信息，实例级别需要引擎传入
+                    health_reports.append({"name": name, "registered": True})
+                else:
+                    health_reports.append({"name": name, "registered": True})
+        except Exception:
+            pass
+        return health_reports
 
     def verify_docs_sync_hook(self, rel_path: str):
         """🚀 [Simulation Hook] 被 Engine 调用的钩子，用于影子校验或资产闭环记录"""

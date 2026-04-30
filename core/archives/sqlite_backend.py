@@ -2,7 +2,7 @@
 """
 Illacme-plenipes Core - SQLite Persistence Backend
 模块职责：提供高性能的物理存储层。
-🛡️ [V24.6 Refactored]：解耦后的轻量化持久化引擎。
+🛡️ [V48.3 Refactored]：解耦后的轻量化持久化引擎。
 """
 import sqlite3
 import json
@@ -13,7 +13,7 @@ from core.utils.tracing import tlog
 from .sql_statements import INIT_SCHEMA, UPSERT_DOC, UPSERT_TRANS
 
 class SQLiteBackend:
-    """🚀 [V24.6] 工业级元数据存储方案"""
+    """🚀 [V48.3] 工业级元数据存储方案"""
     
     def __init__(self, db_path, engine=None):
         self.db_path = os.path.abspath(os.path.expanduser(db_path))

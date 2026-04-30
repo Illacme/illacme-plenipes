@@ -12,7 +12,7 @@ from rich.text import Text
 console = Console()
 
 class SummaryHandlers:
-    """🚀 [V24.6] 任务结束汇总与性能看板处理器"""
+    """🚀 [V48.3] 任务结束汇总与性能看板处理器"""
     
     @staticmethod
     def handle_summary(stats, elapsed_time, usage_stats=None):

@@ -82,7 +82,7 @@ def run_integration_test():
     config.system.data_paths["vectors_json"] = "test_vectors.json"
     
     # 使用工厂创建全功能引擎
-    engine = EngineFactory.create_engine(config, workspace_id="semantic_test")
+    engine = EngineFactory.create_engine(config, territory_id="semantic_test")
     
     if not engine:
         logger.error("❌ 引擎工厂启动失败！请检查 ContractGuard 审计日志。")
@@ -113,7 +113,7 @@ def run_integration_test():
     # ---------------------------------------------------------
     logger.info("📡 [3/5] 正在同步定义文档并触发异步挖掘任务...")
     def_path = os.path.join(TEST_VAULT, "concept_definition.md")
-    # 🚀 [V24.6] 强制隔离审计账本，防止污染真实账本且避开全局配额熔断
+    # 🚀 [V48.3] 强制隔离审计账本，防止污染真实账本且避开全局配额熔断
     from core.governance.audit_ledger import ledger
     ledger.db_path = os.path.join(TEST_VAULT, "test_audit.db")
     ledger._init_db()
@@ -146,7 +146,7 @@ def run_integration_test():
     # ---------------------------------------------------------
     logger.info("📡 [4/5] 正在同步关联文档并验证术语护卫 (Term Guard)...")
     
-    # 🚀 [V24.6] 使用 patch 拦截 get_best_translator，确保始终使用 Mock 实例
+    # 🚀 [V48.3] 使用 patch 拦截 get_best_translator，确保始终使用 Mock 实例
     from unittest.mock import patch
     mock_translator = MagicMock()
     mock_translator.translate = MagicMock(return_value="Mocked Translation")

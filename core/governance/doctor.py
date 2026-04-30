@@ -3,14 +3,14 @@
 """
 Illacme-plenipes Core - Doctor Service
 模块职责：全域主权诊断中心（编排器）。
-🛡️ [V24.6 Refactored]：基于委托模式的轻量化诊断中枢，严格对齐 300 行红线。
+🛡️ [V48.3 Refactored]：基于委托模式的轻量化诊断中枢，严格对齐 300 行红线。
 """
 
 import time
 from typing import Dict, List, Any
 from core.utils.tracing import tlog
 
-# 🚀 [V24.6] 导入模块化后的检查器
+# 🚀 [V48.3] 导入模块化后的检查器
 from .checks.infra import InfraChecker
 from .checks.ledger import LedgerChecker
 from .checks.ai import AIChecker
@@ -19,7 +19,7 @@ from .checks.matrix import MatrixChecker
 from .healer import CodeHealer
 
 class DoctorService:
-    """🚀 [V24.6] 诊断编排器：职责分离，逻辑外挂"""
+    """🚀 [V48.3] 诊断编排器：职责分离，逻辑外挂"""
     
     def __init__(self, engine):
         self.engine = engine

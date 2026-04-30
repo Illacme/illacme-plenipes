@@ -96,7 +96,7 @@ class AILogicHub:
 
     @staticmethod
     def mask_block(text: str) -> Tuple[str, Dict[str, str]]:
-        """🚀 [V24.6] 块级防护装甲：临时屏蔽技术实体，防止 AI 误伤"""
+        """🚀 [V48.3] 块级防护装甲：临时屏蔽技术实体，防止 AI 误伤"""
         if not text: return "", {}
         
         masks = {}
@@ -122,7 +122,7 @@ class AILogicHub:
 
     @staticmethod
     def unmask_block(text: str, masks: Dict[str, str]) -> str:
-        """🚀 [V24.6] 块级护盾解除：还原被临时屏蔽的技术实体"""
+        """🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体"""
         if not text or not masks: return text
         
         final_text = text
