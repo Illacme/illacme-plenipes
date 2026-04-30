@@ -11,7 +11,6 @@ from dataclasses import asdict
 from core.config.config import load_config, ThemeSettings
 from core.archives.ledger import MetadataManager
 from core.archives.timeline import TimelineManager
-from core.governance.sentinel import SentinelManager
 from core.services.staticizer import StaticizerService
 from core.logic.ai.ai_factory import TranslatorFactory
 from core.runtime.engine import IllacmeEngine
@@ -21,8 +20,6 @@ from core.editorial.asset_pipeline import AssetPipeline
 from core.editorial.router import RouteManager
 from core.ingress.adapter import InputAdapter
 from core.adapters.egress.ssg import SSGAdapter
-from core.logic.notification_hub import WebhookBroadcaster
-from core.syndication.hub import ContentSyndicator
 from core.bindery.bindery_dispatcher import BinderyDispatcher
 from core.governance.auditor import SovereignAuditor
 from core.governance.brain import KnowledgeService
@@ -30,29 +27,18 @@ from core.governance.janitor import JanitorService
 from core.governance.doctor import DoctorService
 from core.services.link_resolver import LinkResolver
 from core.editorial.vault_indexer import VaultIndexer
-from core.logic.block_parser import MarkdownBlockParser
-from core.markup.manager import MarkupManager
-from core.ingress.manager import IngressManager
 from core.logic.ast_resolver import ASTResolver
 from core.archives.block_cache import BlockCache
 from core.governance.meter import UsageMeter
 from core.syndication.publisher import PublisherService
-from core.governance.contract_guard import ContractGuard
 from core.governance.heartbeat import HeartbeatService
-from core.governance.qa_guard import QAGuard
 from core.logic.ai.ai_batcher import AIBatcher
 
-from core.utils.event_bus import bus
 from core.utils.tracing import tlog
 
+from core.runtime.engine_preflight import EnginePreflight
+
 class EngineFactory:
-    # 🛡️ [V35.2] 主权物理布局协议 (唯一真理源)
-    SOVEREIGN_LAYOUT = {
-        "logs": "logs",
-        "metadata": "metadata",
-        "cache": "cache",
-        "themes": "themes"
-    }
     """🚀 [V35.2] 主权治理引擎工厂：负责全功能治理中枢的装配与依赖注入"""
 
     @staticmethod
@@ -60,79 +46,10 @@ class EngineFactory:
 
         """🚀 [V35.2] 工业级引擎工厂：组装全功能主权治理中枢"""
 
-        # 1. 🧬 [补救逻辑] 如果传入的是路径字符串，先加载为配置对象
-        if isinstance(config, str):
-            from core.config.config import load_config
-            config = load_config(config)
-
-
-        # 🚀 [V8.0] 激活物理安全底座
-        from core.governance.secret_manager import secrets
-        secrets.initialize()
-        
-        # 🛡️ [V35.2] 审计账本主权对正 (引用协议)
-        from core.governance.audit_ledger import initialize_ledger
-        audit_path = os.path.join("territories", territory_id, EngineFactory.SOVEREIGN_LAYOUT["metadata"], "audit.db") if territory_id != "default" else ".plenipes/ledger_audit.db"
-        initialize_ledger(audit_path)
-
-        
-        # 🛡️ [V35.2] 主权路径强制对正：确保所有相对路径都锁定在疆域内部
-        if territory_id and territory_id != "default":
-            # 如果是具体疆域，强制将 data_root 指向疆域物理根部
-            territory_path = os.path.join("territories", territory_id)
-            if not config.system:
-                config.system = type('SystemConfig', (), {'data_root': territory_path})()
-            else:
-                config.system.data_root = territory_path
-            tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {territory_path}")
-
-
-        # 2. 🚀 [审计逻辑] 此时 config 已经是对象，可以安全审计
-        violations = ContractGuard.verify_config(config)
-        if violations and any("❌" in v for v in violations):
-            import sys
-            sys.stderr.write("\n🚨 [CONTRACT VIOLATION] 引擎启动契约校验失败：\n")
-            for v in violations:
-                sys.stderr.write(f"  {v}\n")
-            sys.stderr.flush()
+        # 🚀 [V48.3] 执行起飞前预检 (环境审计、路径锚定、视觉渲染等)
+        config = EnginePreflight.perform_preflight(config, territory_id, args)
+        if config is None:
             return None
-
-
-        # 🚀 [V48.3] 视觉主权：Banner 抢占式渲染 (必须在所有初始化日志前)
-        from core.ui.delegate import DisplayDelegate
-        sys_version = DisplayDelegate.get_system_version(config)
-        ael_iter_id = SentinelManager._detect_current_iter()
-        
-        # 🚀 [V48.3] 动态获取最新 Iter-ID
-        # 🚀 [V48.3] 使用协议常量定位历史存档
-        history_dir = os.path.join("territories", territory_id, EngineFactory.SOVEREIGN_LAYOUT["metadata"], "history") if territory_id != "default" else ".plenipes/history"
-
-        current_iter_id = "V24.0_Default"
-        if os.path.exists(history_dir):
-            iters = [d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))]
-            if iters:
-                # 获取按名称排序或时间排序最新的迭代文件夹
-                current_iter_id = sorted(iters)[-1]
-        
-        # 🛡️ [V48.3] 探测 Sentinel 状态 (双向监听)
-        config_path = getattr(config, 'config_path', 'config.yaml')
-        config_name = os.path.basename(config_path)
-        base, ext = os.path.splitext(config_name)
-        local_name = f"{base}.local{ext}"
-        
-        local_path = os.path.join(os.path.dirname(os.path.abspath(config_path)), local_name)
-        sentinel_info = f"双向热监听 ({config_name} + {local_name})" if os.path.exists(local_path) else f"标准热监听 ({config_name})"
-        
-        bus.emit("UI_BANNER",
-                 version=sys_version,
-                 ael_iter_id=current_iter_id,
-                 mode=DisplayDelegate.get_banner_mode(config, args),
-                 sentinel_status=sentinel_info)
-
-        # 🚀 [V16.0] 插件化基座点火
-        plugin_settings = getattr(config, 'plugins', None)
-        MarkupManager.initialize(plugin_settings)
-        IngressManager.initialize(plugin_settings)
 
         # 3. 🔧 [挂载逻辑] 实例化并立即挂载核心属性
         engine = IllacmeEngine(config, no_ai=no_ai, config=config, territory_id=territory_id)
@@ -236,10 +153,10 @@ class EngineFactory:
             "graph_json_dir": anchor(paths_cfg.get('graph_json_dir', '').replace("{theme}", engine.active_theme)),
             "target_base": anchor((paths_cfg.get('target_base') or "").replace("{theme}", engine.active_theme)),
             "db": anchor(engine.config.metadata_db.format(theme=engine.active_theme) if "{theme}" in engine.config.metadata_db else engine.config.metadata_db.replace(".db", f"_{engine.active_theme}.db")),
-            "cache": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["cache"]),
-            "logs": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["logs"]),
-            "metadata": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["metadata"]),
-            "themes": os.path.join(data_root, EngineFactory.SOVEREIGN_LAYOUT["themes"])
+            "cache": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["cache"]),
+            "logs": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["logs"]),
+            "metadata": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["metadata"]),
+            "themes": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["themes"])
         }
 
 
