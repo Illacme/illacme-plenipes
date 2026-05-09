@@ -20,5 +20,11 @@ class PluginSettings(BaseModel):
     # 启用的安全屏蔽插件 (如 mdx)
     security_maskers: List[str] = Field(default_factory=lambda: ["mdx"])
     
+    # 🛑 [V52.18] 本地物理停用清单：因本机硬件/环境限制而禁用的插件
+    disabled_plugins: List[str] = Field(default_factory=list)
+    
+    # 🚩 [V53.1] 品牌主权停用清单：品牌出于业务策略考虑自愿禁用的插件
+    imprint_disabled_plugins: List[str] = Field(default_factory=list)
+
     # 插件自定义配置
     plugin_configs: Dict[str, Any] = Field(default_factory=dict)

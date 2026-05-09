@@ -10,9 +10,9 @@
 
 ## 2. 五层分层架构 (Layered Architecture)
 
-### 第 I 层：主权疆域 (Sovereign Territory)
-*   **主题感知隔离**：[V48.3 核心特性] 所有的账本 (`meta.db`)、索引 (`vectors.json`)、时间轴 (`timeline.json`) 与脉搏数据均实现 **"全主题动态物理隔离"**。
-*   **物理版图**：`territories/[territory_id]/` 包含该社所有核心资产，支持 `{theme}` 占位符的强制自动渲染。
+### 第 I 层：出版品牌 (Sovereign Imprint)
+*   **主题感知隔离**：[V50.3 核心特性] 所有的账本 (`meta.db`)、索引 (`vectors.json`)、时间轴 (`timeline.json`) 与脉搏数据均实现 **"全品牌动态物理隔离"**。
+*   **物理版图**：`imprints/[imprint_id]/` 包含该社所有核心资产，支持 `{theme}` 占位符的强制自动渲染。
 
 ### 第 II 层：全息收稿 (Ingress Sentinel)
 *   **多源主权**：支持本地、Git、S3 等多源并发接入。
@@ -23,7 +23,7 @@
 *   **脉搏监控**：通过 `pulse_{theme}.json` 实时反馈算力池负载与处理进度。
 
 ### 第 IV 层：影子资产 (Universal Shadows)
-*   **算力圣洁化**：缓存不带表现标签的“纯净译文”，按 `Hash` 实现跨主题、跨疆域的算力复用。
+*   **算力圣洁化**：缓存不带表现标签的“纯净译文”，按 `Hash` 实现跨主题、跨品牌的算力复用。
 *   **原子化写入**：所有影子文件均采用 `atomic_write` 协议，杜绝数据损坏。
 
 ### 第 V 层：装帧分发 (The Bindery & Egress)

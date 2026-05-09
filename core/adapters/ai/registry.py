@@ -16,9 +16,17 @@ class AIProviderRegistry:
     _providers: Dict[str, Type] = {}
 
     @classmethod
-    def register(cls, ptype: str, provider_class: Type):
+    def register(cls, provider_class: Type):
+        """🚀 [V53.8] 智能注册：支持插件 ID 与 别名矩阵"""
+        ptype = getattr(provider_class, "PLUGIN_ID", provider_class.__name__.lower())
         cls._providers[ptype] = provider_class
-        tlog.debug(f"🤖 [算力插件] 已注册协议: {ptype}")
+        
+        # 注册别名 (例如 openai-compatible -> openai)
+        aliases = getattr(provider_class, "ALIASES", [])
+        for alias in aliases:
+            cls._providers[alias] = provider_class
+            
+        tlog.debug(f"🤖 [算力插件] 已注册协议: {ptype} (别名: {', '.join(aliases)})")
 
     @classmethod
     def get_provider(cls, ptype: str) -> Type:

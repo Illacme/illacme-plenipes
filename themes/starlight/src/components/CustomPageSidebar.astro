@@ -1,0 +1,21 @@
+---
+import Default from '@astrojs/starlight/components/PageSidebar.astro';
+import TopologyCanvas from './TopologyCanvas.astro';
+
+const { ...props } = Astro.props;
+---
+
+<!-- 右侧大纲顶部的拓扑星图 -->
+<div class="topo-top-anchor">
+  <TopologyCanvas />
+</div>
+
+<div class="starlight-page-sidebar-original">
+  <Default {...props} />
+</div>
+
+<style>
+  .topo-top-anchor {
+    /* Remove the canvas's own internal top margin; Starlight's panel padding provides breathing room */
+  }
+</style>

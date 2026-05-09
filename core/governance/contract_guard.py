@@ -6,11 +6,14 @@ Illacme-plenipes Core - Sovereign Contract Guard
 负责在运行时强制审计所有动态加载的插件是否严格遵守其所属类别的【物理协议】。
 🛡️ [AEL-Iter-v5.3]：防止“AI 瞎拆改”的最后一道防线。
 """
+import os
 import re
+import yaml
 import inspect
 import logging
 from typing import Type, List, Dict
 
+from core.config.config import CONFIG_LOCAL_NAME
 from core.utils.tracing import tlog
 
 class ContractGuard:
@@ -81,7 +84,10 @@ class ContractGuard:
         violations = []
 
         # 1. 验证主权基座 (Vault & Ledger)
-        vault_root = os.path.abspath(os.path.expanduser(engine_config.vault_root))
+        # 🚀 [V52.10] 物理主权审计：遵循项目根目录锚定原则
+        raw_vault = engine_config.vault_root
+        vault_root = os.path.abspath(os.path.expanduser(raw_vault))
+
         if not os.path.exists(vault_root):
             violations.append(f"❌ [配置坍塌] 笔记库根目录不存在: {vault_root}")
         
@@ -102,8 +108,12 @@ class ContractGuard:
                 violations.append(f"❌ [算力治理] 未定义的默认算力节点: {primary}")
             else:
                 p_node = translation.providers[primary]
-                if not p_node.api_key or "HERE" in p_node.api_key:
-                    tlog.warning(f"⚠️ [算力警告] 节点 '{primary}' 尚未配置 API_KEY，推理网关处于熔断状态。")
+                # 🚀 [V52.10] 语义化放行：本地算力（lmstudio/ollama）或已明确标记为不需要 Key 的节点不再触发警告
+                is_local = p_node.type in ['lmstudio', 'ollama']
+                has_valid_key = p_node.api_key and "HERE" not in p_node.api_key and "not-needed" not in p_node.api_key.lower()
+                
+                if not is_local and not has_valid_key:
+                    tlog.warning(f"⚠️ [算力警告] 节点 '{primary}' 尚未配置有效 API_KEY，推理网关处于熔断状态。")
 
         return violations
 
@@ -185,7 +195,7 @@ class ContractGuard:
         else:
             with open(gitignore_path, 'r') as f:
                 gi = f.read()
-                if "*.local.yaml" not in gi and "config.local.yaml" not in gi:
+                if "*.local.yaml" not in gi and CONFIG_LOCAL_NAME not in gi:
                     violations.append("❌ [隔离失效] .gitignore 未屏蔽本地配置文件 (*.local.yaml)。")
 
         return violations

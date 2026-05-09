@@ -37,25 +37,37 @@ class RouteManager:
         slug = str(slug or "")
         route_prefix = str(route_prefix or "")
 
-        # 🚀 [V7.12] 零配置路径对齐：如果未指定 prefix，则从适配器获取当前框架的标准模版
-        if not route_prefix and self.ssg_adapter:
-            route_prefix = self.ssg_adapter.get_i18n_path_template(source_type) or ""
+        # 🚀 [V56.0] 意图感知寻址：优先使用 SSG 适配器声明的功能槽路径
+        if self.ssg_adapter:
+            slots = self.ssg_adapter.get_feature_slots()
+            if source_type in slots:
+                slot_cfg = slots[source_type]
+                # 判定是使用单语模版还是多语模版
+                from core.utils.language_hub import LanguageHub
+                iso_logical = LanguageHub.resolve_to_iso(logical_lang)
+                iso_default = LanguageHub.resolve_to_iso(self.default_lang)
+                
+                # 获取模版
+                is_multi = (iso_logical != iso_default)
+                template = slot_cfg.get("multi" if is_multi else "single")
+                
+                if template:
+                    # 解析物理语种前缀 (如果模版中包含 {lang})
+                    physical_lang = LanguageHub.get_physical_path(iso_logical, self.active_theme)
+                    try:
+                        route_prefix = template.format(lang=physical_lang)
+                    except Exception:
+                        route_prefix = template.replace("{lang}", physical_lang)
 
-        # 🚀 [V15.7] 物理主权对齐：默认语种直接霸占根目录 (Docusaurus/Industrial Style)
+        # 🚀 [V15.7] 物理主权对正：计算物理语种标识
         from core.utils.language_hub import LanguageHub
         iso_logical = LanguageHub.resolve_to_iso(logical_lang)
         iso_default = LanguageHub.resolve_to_iso(self.default_lang)
-
-        # 🚀 [V11.1] 路径隔离加固：只有非默认语种才需要物理语言前缀
-        if iso_logical == iso_default:
-            physical_lang = ""
-        else:
-            physical_lang = LanguageHub.get_physical_path(iso_logical, self.active_theme)
+        physical_lang = "" if iso_logical == iso_default else LanguageHub.get_physical_path(iso_logical, self.active_theme)
 
         if route_prefix and "{" in route_prefix and "}" in route_prefix:
-            # 模式 A：声明式模板模式 (Docusaurus i18n 规范)
+            # 模式 A：声明式模板模式 (如 /docs/{lang})
             try:
-                # 🚀 [V11.1] 模板变量保护：确保 lang, slug, sub_dir 均非 None
                 formatted_prefix = route_prefix.format(
                     lang=physical_lang or "",
                     slug=slug or "",
@@ -63,13 +75,13 @@ class RouteManager:
                 )
             except Exception:
                 formatted_prefix = route_prefix
-            # 物理路径组装：base_path / formatted_prefix / slug.ext
             raw_path = os.path.join(base_path, formatted_prefix.strip("/"), f"{slug}{ext}")
         else:
-            # 模式 B：标准阶梯模式 (向下兼容 Starlight/Nextra)
-            # 结构：base_path / physical_lang / route_prefix / mapped_sub_dir / slug.ext
+            # 模式 B：标准阶梯模式 (base / lang / prefix / sub / slug)
             parts = [p for p in [base_path, physical_lang, route_prefix, mapped_sub_dir, f"{slug}{ext}"] if p]
             raw_path = os.path.join(*parts) if parts else ""
+
+        return os.path.normpath(re.sub(r'[/\\]+', os.sep, raw_path))
 
         return os.path.normpath(re.sub(r'[/\\]+', os.sep, raw_path))
 

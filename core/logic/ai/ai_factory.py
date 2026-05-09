@@ -7,6 +7,7 @@ Illacme-plenipes Core - AI Provider Universal Gateway
 """
 
 import logging
+from typing import Any
 from core.adapters.ai.registry import AIProviderRegistry
 # 🚀 导入 ai 包将触发其 __init__.py 中的自发现逻辑
 
@@ -14,6 +15,72 @@ from core.utils.tracing import tlog
 
 class TranslatorFactory:
     """🚀 算力工厂：负责根据配置实例化对应的 AI 转换器"""
+    
+    # 🧠 [V55.26] 提示词模版缓存矩阵：{imprint_id: {style_id: PromptTemplates}}
+    _prompt_cache = {}
+
+    @classmethod
+    def get_prompts_for_style(cls, style_id: str, imprint_id: str, base_prompts: Any) -> Any:
+        """🚀 [V55.26] 动态方言获取：优先从缓存读取，否则从物理磁盘加载"""
+        # 🚀 [V55.26] 授权版主权检查
+        from core.governance.license_guard import LicenseGuard
+        if style_id != "default" and not LicenseGuard.is_licensed():
+            tlog.warning(f"🛡️ [License Guard] 社区版尝试加载非默认方言 [{style_id}]，已强制降级。")
+            return base_prompts
+            
+        cache_key = f"{imprint_id}:{style_id}"
+        if cache_key in cls._prompt_cache:
+            return cls._prompt_cache[cache_key]
+
+        # 1. 准备空模板 (基于传入的 base_prompts 深度复制)
+        from copy import deepcopy
+        style_prompts = deepcopy(base_prompts)
+        
+        # 2. 物理寻址
+        import os
+        import yaml
+        from core.config.config import IMPRINT_DIR, CONFIG_DIR, DIALECTS_DIR, PROMPTS_NAME
+        
+        style_file = f"{style_id}.yaml"
+        prompt_path = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, DIALECTS_DIR, style_file)
+        
+        if not os.path.exists(prompt_path):
+            # 降级寻址：如果是 default 风格且不存在，尝试读取根目录母本
+            if style_id == "default":
+                prompt_path = os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_NAME)
+            else:
+                # 非 default 风格不存在，则直接返回基础模版（不缓存，防止污染）
+                return style_prompts
+
+        # 3. 执行物理加载
+        try:
+            if os.path.exists(prompt_path):
+                with open(prompt_path, 'r', encoding='utf-8') as f:
+                    p_data = yaml.safe_load(f)
+                    if p_data:
+                        # 动态注入
+                        if 'translation' in p_data:
+                            style_prompts.translate_system = p_data['translation'].get('system', style_prompts.translate_system)
+                            style_prompts.translate_user = p_data['translation'].get('user', style_prompts.translate_user)
+                        if 'seo' in p_data:
+                            style_prompts.seo_system = p_data['seo'].get('system', style_prompts.seo_system)
+                            style_prompts.seo_user = p_data['seo'].get('user', style_prompts.seo_user)
+                        if 'slug' in p_data:
+                            style_prompts.slug_system = p_data['slug'].get('system', style_prompts.slug_system)
+                            style_prompts.slug_user = p_data['slug'].get('user', style_prompts.slug_user)
+                        if 'title' in p_data:
+                            style_prompts.title_system = p_data['title'].get('system', getattr(style_prompts, 'title_system', ""))
+                            style_prompts.title_user = p_data['title'].get('user', getattr(style_prompts, 'title_user', ""))
+                        if 'metadata' in p_data:
+                            style_prompts.metadata_system = p_data['metadata'].get('system', getattr(style_prompts, 'metadata_system', ""))
+                            style_prompts.metadata_user = p_data['metadata'].get('user', getattr(style_prompts, 'metadata_user', ""))
+            
+            # 写入缓存
+            cls._prompt_cache[cache_key] = style_prompts
+            return style_prompts
+        except Exception as e:
+            tlog.warning(f"⚠️ [方言加载失败] {prompt_path}: {e}")
+            return style_prompts
 
     @classmethod
     def _build_node(cls, node_name, trans_cfg):
@@ -21,7 +88,12 @@ class TranslatorFactory:
         if not node_cfg:
             raise ValueError(f"❌ [算力网关] 未找到节点配置: {node_name}")
 
-        ptype = node_cfg.type
+        ptype = node_cfg.type.lower()
+        
+        # 🚀 [V52.10] 语义容错：将通用的 openai-compatible 自动对正为标准 openai 协议
+        if ptype == "openai-compatible":
+            ptype = "openai"
+            
         provider_cls = AIProviderRegistry.get_provider(ptype)
 
         if provider_cls:
@@ -35,7 +107,28 @@ class TranslatorFactory:
         try:
             import os
             import yaml
-            prompt_file = os.path.join(os.getcwd(), "configs/prompts.yaml")
+            from core.governance.imprint_manager import im
+            
+            imprint_id = im.get_active_imprint()
+            active_style = getattr(trans_cfg, 'active_style', 'default')
+            from core.config.config import PROMPTS_NAME, DIALECTS_DIR, CONFIG_DIR, IMPRINT_DIR
+            
+            if imprint_id and imprint_id != "default":
+                # 🚀 [V55.25] 动态寻址：优先使用 active_style 对应的方言文件
+                style_file = f"{active_style}.yaml"
+                prompt_file = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, DIALECTS_DIR, style_file)
+                
+                if not os.path.exists(prompt_file):
+                    # 如果特定风格不存在，尝试降级到 default.yaml
+                    from core.config.config import DEFAULT_DIALECT_NAME
+                    prompt_file = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, DIALECTS_DIR, DEFAULT_DIALECT_NAME)
+                    
+                if not os.path.exists(prompt_file):
+                    # 最终降级：读取根目录母本
+                    prompt_file = os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_NAME)
+            else:
+                prompt_file = os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_NAME)
+
             if os.path.exists(prompt_file):
                 with open(prompt_file, 'r', encoding='utf-8') as f:
                     p_data = yaml.safe_load(f)

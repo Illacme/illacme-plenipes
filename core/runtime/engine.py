@@ -35,10 +35,10 @@ def _dump_stacks(sig, frame):
 signal.signal(signal.SIGUSR1, _dump_stacks)
 
 class IllacmeEngine:
-    def __init__(self, config_path, no_ai=False, config=None, territory_id: str = "default"):
-        """🚀 [V10.3] 引擎初始化：通过工厂进行标准化装配"""
+    def __init__(self, config_path, no_ai=False, config=None, imprint_id: str = "default"):
+        """🚀 [V50.3] 引擎初始化：通过工厂进行标准化装配"""
         self.no_ai = no_ai
-        self.territory_id = territory_id
+        self.imprint_id = imprint_id
         self.config = config # 🚀 [V22.1] 显式挂载配置，确保治理组件可读
         
         # 🛡️ [Industrial Grade] 物理并发锁初始化
@@ -58,22 +58,27 @@ class IllacmeEngine:
 
         # 挂载状态
         self.is_running = True
+        self.services = {
+            "engine": {"status": "running", "start_time": time.time(), "pid": os.getpid()},
+            "api": {"status": "stopped", "port": None, "uptime": 0},
+            "preview": {"status": "stopped", "port": None, "uptime": 0}
+        }
 
-        # 🚀 [V7.0] 挂载疆域与审计账本
-        from core.governance.territory_manager import wm
+        # 🚀 [V50.3] 挂载 Imprint 与审计账本
+        from core.governance.imprint_manager import im
         from core.governance.audit_ledger import ledger
-        self.wm = wm
+        self.im = im
         self.ledger = ledger
         
-        # 🚀 [V35.2] 自动接管主权疆域
+        # 🚀 [V50.3] 自动接管主权 Imprint
         if config and hasattr(config, 'vault_root'):
-            # 如果疆域尚未划定（例如 CLI 首次启动），则执行物理划定
-            self.wm.init_sovereign_territory(territory_id, config.vault_root)
-            self.wm.switch(territory_id)
+            # 如果品牌尚未划定（例如 CLI 首次启动），则执行物理划定
+            self.im.init_sovereign_imprint(imprint_id, config.vault_root)
+            self.im.switch(imprint_id)
 
 
 
-        self.ledger.log("ENGINE_START", f"引擎已点火，主权疆域: {territory_id}", territory_id=territory_id)
+        self.ledger.log("ENGINE_START", f"引擎已点火，主权 Imprint: {imprint_id}", imprint_id=imprint_id)
 
         # 🚀 [V10.4] 中点件钩子注册表：实现非侵入式流程干预
         self._hooks = {
@@ -102,22 +107,57 @@ class IllacmeEngine:
         self._last_progress += amount
 
     def _on_config_reloaded(self, config):
-        """⚡ 响应配置变更：重新对齐运行时参数"""
-        tlog.info("⚡ [Engine] 接收到配置变更信号，正在重新对齐算力池...")
+        """⚡ [V55.12] 深度主权对齐：响应配置变更，同步全量运行时参数"""
+        tlog.info("⚡ [Engine] 接收到配置变更信号，正在执行全量参数对齐...")
         self.config = config
         
-        # 1. 重新对齐并发数 (Orchestrator)
+        # 1. 🚀 物理属性全量同步 (Projected Attributes)
+        self.active_theme = config.active_theme
+        self.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
+        self.route_matrix = config.route_matrix
+        self.fm_defaults = config.frontmatter_defaults
+        self.fm_order = config.frontmatter_order
+        self.max_workers = config.system.max_workers
+        self.auto_save_interval = config.system.auto_save_interval
+        self.max_depth = config.system.max_depth
+        
+        # 2. 🛡️ 治理配置实时热挂载
+        self.i18n = config.i18n_settings
+        self.seo_cfg = config.seo_settings
+        self.img_cfg = config.image_settings
+        self.pub_cfg = config.publish_control
+        
+        # 3. 🗺️ 物理路径矩阵重新锚定
+        # 如果 active_theme 发生变更，必须重新计算 engine.paths 以防 IO 错误
+        if hasattr(self, 'paths'):
+            data_root = os.path.abspath(os.path.expanduser(self.config.system.data_root))
+            def anchor(p):
+                if not p: return None
+                p = os.path.expanduser(p)
+                if not os.path.isabs(p): return os.path.join(data_root, p)
+                return os.path.abspath(p)
+            
+            paths_cfg = self.config.output_paths
+            source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
+            
+            # 更新核心物理路径
+            self.paths["vault"] = self.vault_root
+            self.paths["source_dir"] = anchor((source_dir or "").replace("{theme}", self.active_theme))
+            self.paths["static_dir"] = anchor((paths_cfg.get('static_dir') or "").replace("{theme}", self.active_theme))
+            self.paths["assets"] = anchor((paths_cfg.get('assets_dir') or "").replace("{theme}", self.active_theme))
+            self.paths["db"] = anchor(self.config.get_ledger_path())
+
+        # 4. 🧠 算力池与业务中枢重校
         from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         global_executor.update_concurrency(config.system.concurrency.global_workers)
         ai_executor.update_concurrency(config.system.concurrency.ai_workers)
 
-        # 2. 重新对齐超时设置
-        if hasattr(self, 'translator'):
+        if hasattr(self, 'translator') and self.translator:
             self.translator.api_timeout = config.translation.api_timeout
-        
-        # 3. 记录对齐完成
-        tlog.info(f"✅ [Engine] 算力池对齐完成: Global({config.system.concurrency.global_workers}) | AI({config.system.concurrency.ai_workers})")
-        self.ledger.log("CONFIG_RELOADED", "配置热重载完成", territory_id=self.territory_id)
+            
+        # 5. 记录主权对齐日志
+        tlog.info(f"✅ [Engine] 物理参数已全量对齐: Theme={self.active_theme} | Vault={self.vault_root}")
+        self.ledger.log("CONFIG_RELOADED", "主权参数全量原子对齐完成", imprint_id=self.imprint_id)
 
 
     def get_lang_name_by_code(self, code):
@@ -138,7 +178,7 @@ class IllacmeEngine:
         return False
 
     @SovereignCore
-    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False):
+    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
         """🚀 [V11.0] 核心同步入口：委托给具体的同步策略执行"""
         # 🧪 [TDR Protocol] 仿真校验钩子：在进入同步前核验文档与历史的一致性
         self.verify_docs_sync_hook()
@@ -161,7 +201,7 @@ class IllacmeEngine:
         """🚀 [V22.2] 路径归一化解析器：支持 data_root 挂载与 {theme} 占位符"""
         if not p: return p
         
-        # 1. 如果是绝对路径或显式相对路径 (./ 或 ../)，直接返回绝对路径
+        # 1. 如果是绝对路径 or 显式相对路径 (./ or ../)，直接返回绝对路径
         if os.path.isabs(p) or p.startswith("./") or p.startswith("../"):
             return os.path.abspath(os.path.expanduser(p))
         
@@ -170,7 +210,6 @@ class IllacmeEngine:
         resolved = p.replace("{theme}", theme)
         
         # 🚀 [V22.3] 防套娃校验：如果路径本身已经包含了 root 前缀，则不再拼接
-        # 解决 .plenipes/.plenipes/metadata 的历史遗留反直觉设计
         norm_resolved = resolved.replace('\\', '/')
         norm_root = root.replace('\\', '/')
         
@@ -178,4 +217,3 @@ class IllacmeEngine:
             return os.path.abspath(os.path.expanduser(resolved))
             
         return os.path.join(root, resolved)
-

@@ -26,6 +26,8 @@ class ImageSettings(BaseModel):
         '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'
     ])
 
+from core.config.config import DIST_DIR
+
 class ThemeSettings(BaseModel):
     name: str = "default"
     ssg: str = "hugo"
@@ -38,7 +40,7 @@ class ThemeSettings(BaseModel):
     
     path_mappings: Dict[str, str] = Field(default_factory=lambda: {
         'source_dir': "src/content/docs",
-        'static_dir': "dist",
+        'static_dir': DIST_DIR,
         'assets_dir': "public/assets",
         'graph_json_dir': "public"
     })

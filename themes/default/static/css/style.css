@@ -1,0 +1,729 @@
+/* 
+ * Illacme-plenipes Sovereign Theme - Premium Vanilla CSS 
+ * 🛡️ [AEL-Iter-v11.8]：主权视觉系统 - 极致进化版。
+ */
+
+:root {
+    /* 🎨 配色矩阵 (Dark Mode - Default) */
+    --bg-color: #0c0c0e;
+    --card-bg: #1a1a24;
+    --header-bg: rgba(12, 12, 14, 0.75);
+    --text-primary: #f8f8fc;
+    --text-secondary: #a1a1b5;
+    --accent-color: #00f5ff; 
+    --accent-glow: rgba(0, 245, 255, 0.25);
+    --accent-glow: rgba(0, 245, 255, 0.35);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --code-bg: #14141a;
+    --sidebar-width: 300px;
+    --transition-speed: 0.4s;
+    --max-content-width: 900px;
+}
+
+/* 📈 阅读进度条 - 主权律动 */
+#reading-progress {
+    position: fixed;
+    top: 72px; /* 紧贴 header 底部 */
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(to right, var(--accent-color), #bc00ff);
+    z-index: 2100;
+    transition: width 0.1s ease-out;
+}
+
+/* 🌲 动态目录 (Table of Contents) 容器 */
+.toc-pioneer {
+    position: sticky;
+    top: 100px;
+    width: 240px;
+    height: fit-content;
+    padding-left: 2rem;
+    border-left: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.toc-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.toc-list { list-style: none; padding: 0; margin: 0; }
+.toc-item { margin-bottom: 0.75rem; }
+.toc-link { 
+    text-decoration: none; 
+    color: inherit; 
+    transition: all 0.2s;
+    display: block;
+}
+.toc-link:hover, .toc-link.active { 
+    color: var(--accent-color); 
+    transform: translateX(5px);
+}
+
+[data-theme="light"] {
+    /* 📱 响应式主权适配 (Mobile Shield) */
+@media (max-width: 1024px) {
+    .sidebar-pioneer {
+        position: fixed;
+        left: -300px;
+        top: 70px;
+        bottom: 0;
+        z-index: 2000;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--card-bg);
+        border-right: 1px solid var(--border-color);
+        box-shadow: 20px 0 50px rgba(0,0,0,0.3);
+    }
+
+    .sidebar-pioneer.active {
+        left: 0;
+    }
+
+    .content-gate {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .desktop-nav {
+        display: none;
+    }
+
+    .search-hub {
+        width: 40px;
+        overflow: hidden;
+        transition: width 0.3s;
+    }
+
+    .search-hub.expanded {
+        width: 200px;
+        position: absolute;
+        right: 1rem;
+        top: 0.5rem;
+        z-index: 3100;
+    }
+
+    .mobile-only-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-container {
+        padding: 0 1rem;
+    }
+
+    .search-dropdown {
+        width: calc(100vw - 2rem);
+        right: -1rem;
+    }
+}
+
+.mobile-only-btn {
+    display: none;
+}
+    /* 💡 配色矩阵 (Light Mode) */
+    --bg-color: #f9f9fb;
+    --card-bg: #ffffff;
+    --header-bg: rgba(249, 249, 251, 0.8);
+    --text-primary: #1a1a1e;
+    --text-secondary: #5a5a6a;
+    --accent-color: #0071e3;
+    --accent-glow: rgba(0, 113, 227, 0.15);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --code-bg: #f2f2f7;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.7;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+    overflow-x: hidden;
+}
+
+/* ------------------------------------------
+ * 1. 顶部全息导航 (Glassmorphism)
+ * ------------------------------------------ */
+.glass-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background-color: var(--header-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 2000;
+}
+
+.header-container {
+    max-width: 1400px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+}
+
+.logo-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    transition: transform 0.2s;
+}
+
+.logo-group:hover { transform: scale(1.02); }
+
+.logo-icon { font-size: 1.5rem; }
+.logo-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent-color), #bc00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-group {
+    margin-bottom: 0.5rem;
+}
+
+.group-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.group-title:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.group-toggle {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    transition: transform 0.3s;
+}
+
+.nav-group.collapsed .nav-list {
+    display: none;
+}
+
+.desktop-nav {
+    display: flex;
+    gap: 2rem;
+}
+
+.desktop-nav a {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.desktop-nav a:hover { color: var(--accent-color); }
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.action-hub {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+/* 控制按钮与选择器 */
+.control-select, .control-btn {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.control-select:hover, .control-btn:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.control-select {
+    appearance: none;
+    padding-right: 2.2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a1a1b5' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+}
+
+.theme-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 100px;
+    justify-content: center;
+}
+
+/* ------------------------------------------
+ * 2. 布局系统
+ * ------------------------------------------ */
+.main-layout {
+    display: flex;
+    padding-top: 72px;
+    min-height: 100vh;
+}
+
+.content-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.prose-sovereign {
+    flex: 1;
+    max-width: var(--max-content-width);
+    padding: 3rem 0;
+}
+
+/* 🚀 页面形态主权对齐 */
+.layout-page .toc-pioneer, .layout-showcase .toc-pioneer {
+    display: none; /* 首页与案例墙不显示 TOC */
+}
+
+.layout-page .prose-sovereign {
+    max-width: 100%;
+    padding: 0;
+}
+
+.sidebar-pioneer {
+    width: var(--sidebar-width);
+    border-right: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    position: sticky;
+    top: 72px;
+    height: calc(100vh - 72px);
+    overflow-y: auto;
+}
+
+.sidebar-content { padding: 2rem; }
+
+.search-matrix { margin-bottom: 2.5rem; }
+/* 🔍 搜索系统重构 */
+.search-hub {
+    position: relative;
+    width: 280px;
+}
+
+.search-control {
+    width: 100%;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.search-control:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow);
+    outline: none;
+}
+
+.search-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 450px;
+    max-height: 400px;
+    background-color: var(--card-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+    overflow-y: auto;
+    display: none;
+    padding: 0.75rem;
+}
+
+.search-dropdown.active {
+    display: block;
+    animation: dropdownFade 0.2s ease-out;
+}
+
+@keyframes dropdownFade {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.search-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    margin-bottom: 2px;
+}
+
+.search-item:hover, .search-item.selected {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left: 3px solid var(--accent-color);
+}
+
+.search-item-title {
+    font-weight: 700;
+    color: var(--accent-color);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.search-item-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+.search-no-results {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.content-gate {
+    flex: 1;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.prose-sovereign {
+    width: 100%;
+    max-width: var(--max-content-width);
+}
+
+/* ------------------------------------------
+ * 3. 极致排版 (Typography)
+ * ------------------------------------------ */
+h1, h2, h3 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-primary); }
+h1 { font-size: 3rem; margin-bottom: 2rem; letter-spacing: -1.5px; }
+h2 { font-size: 2rem; margin: 3.5rem 0 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; }
+
+p { margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-secondary); }
+
+/* 🔗 链接主权 - 赛博朋克交互对齐 */
+.prose-sovereign a, .audit-footer a {
+    color: var(--accent-color);
+    text-decoration: none;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+}
+
+.prose-sovereign a:hover, .audit-footer a:hover {
+    color: #fff;
+    text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow);
+    border-bottom-color: var(--accent-color);
+    background-color: rgba(0, 245, 255, 0.05);
+}
+
+img {
+    max-width: 100%;
+    border-radius: 16px;
+    margin: 2.5rem 0;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    transition: transform 0.3s;
+}
+img:hover { transform: translateY(-5px); }
+
+/* 呼号容器 (Callouts) */
+.callout {
+    margin: 2.5rem 0;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    border-left: 6px solid var(--accent-color);
+    background-color: var(--card-bg);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.callout-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.callout-icon { font-size: 1.4rem; }
+.callout-title { font-weight: 700; font-size: 1.1rem; }
+
+.callout-tip { border-left-color: #00f5ff; background: linear-gradient(to right, rgba(0, 245, 255, 0.08), transparent); }
+.callout-warning { border-left-color: #ff9500; background: linear-gradient(to right, rgba(255, 149, 0, 0.08), transparent); }
+
+/* ------------------------------------------
+ * 4. 底部审计 (Footer)
+ * ------------------------------------------ */
+.audit-footer {
+    width: 100%;
+    max-width: var(--max-content-width);
+    margin-top: 6rem;
+    padding-bottom: 4rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ------------------------------------------
+ * 5. 案例墙系统 (Showcase Grid System)
+ * ------------------------------------------ */
+.layout-showcase .content-gate {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+}
+
+.layout-showcase .prose-sovereign {
+    max-width: 100%;
+}
+
+/* 🚀 案例网格容器 - 通过 Markdown 中的特定类名触发，或直接针对布局 */
+.layout-showcase article {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2.5rem;
+    padding-top: 2rem;
+}
+
+/* 🎨 案例卡片精修 */
+.layout-showcase .card-pioneer {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.layout-showcase .card-pioneer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, var(--accent-color), #bc00ff);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.layout-showcase .card-pioneer:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-color);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px var(--accent-glow);
+}
+
+.layout-showcase .card-pioneer:hover::before {
+    opacity: 1;
+}
+
+.layout-showcase .card-pioneer h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, #fff, #a1a1b5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.layout-showcase .card-pioneer p {
+    font-size: 0.95rem;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.layout-showcase .card-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 245, 255, 0.1);
+    color: var(--accent-color);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ------------------------------------------
+ * 6. 响应式主权矩阵 (Responsive Design)
+ * ------------------------------------------ */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+    .header-left { gap: 1.5rem; }
+    .search-hub { width: 200px; }
+    .search-dropdown { width: 350px; }
+}
+
+@media (max-width: 768px) {
+    .desktop-nav, .search-hub { display: none; }
+    .mobile-only-btn { display: flex; }
+    
+    .main-layout { flex-direction: column; }
+    
+    .sidebar-pioneer {
+        position: fixed;
+        left: -100%;
+        top: 72px;
+        z-index: 2500;
+        width: 85%;
+        height: calc(100vh - 72px);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--bg-color);
+        box-shadow: 20px 0 50px rgba(0,0,0,0.3);
+    }
+    
+    .sidebar-pioneer.active {
+        left: 0;
+    }
+    
+    .content-gate {
+        padding: 2rem 1.5rem;
+    }
+    
+    .glass-header .header-container {
+        padding: 0 1.25rem;
+    }
+
+    .layout-showcase article {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    /* 移动端搜索唤醒态 */
+    .search-hub.expanded {
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        z-index: 3000;
+        padding: 0 1rem;
+        align-items: center;
+    }
+}
+
+/* 🚀 侧边栏层级加固 */
+.sidebar-pioneer {
+    z-index: 1500; /* 高于正文，低于顶栏 */
+}
+
+/* ------------------------------------------
+ * 7. 博客全息列表 (Blog Matrix)
+ * ------------------------------------------ */
+.blog-list-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 4rem auto;
+    padding: 0 2rem;
+}
+
+.list-hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 4rem;
+    background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -2px;
+}
+
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 3rem;
+}
+
+.blog-card {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card-date {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.card-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.read-more {
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

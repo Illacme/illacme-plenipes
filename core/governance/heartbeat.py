@@ -24,8 +24,7 @@ class HeartbeatService:
         self.thread = None
         
         # 🚀 [V24.0] 引用主权路径协议，防御性探测时序冲突
-        theme = getattr(engine, 'active_theme', 'default')
-        self.pulse_path = getattr(engine, 'paths', {}).get('pulse') or engine._resolve_path(f"metadata/pulse_{theme}.json")
+        self.pulse_path = engine._resolve_path(engine.config.get_pulse_path())
         
         # 🛡️ [原子化对齐] 确保目录存在且不报 Errno 17
         os.makedirs(os.path.dirname(self.pulse_path), exist_ok=True)
@@ -94,7 +93,7 @@ class HeartbeatService:
                 "global": global_stats,
                 "ai": ai_stats,
                 "asset": asset_stats,
-                "total_queue": global_stats["queue_size"] + ai_stats["queue_size"] + asset_stats["queue_size"]
+                "total_queue": (global_stats or {}).get("queue_size", 0) + (ai_stats or {}).get("queue_size", 0) + (asset_stats or {}).get("queue_size", 0)
             },
             "load": load,
             "usage": {

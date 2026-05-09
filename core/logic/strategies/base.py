@@ -15,6 +15,6 @@ class BaseSyncStrategy(abc.ABC):
 
     @abc.abstractmethod
     @SovereignCore
-    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False):
+    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
         """执行同步操作的核心入口"""
         pass

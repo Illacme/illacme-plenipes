@@ -68,7 +68,7 @@ class MetadataManager:
             
             # 🚀 [V23.0] 智能属性对齐
             doc_data = {
-                "title": title,
+                "title": title if title and title.strip() else existing.get("title", title),
                 "slug": kwargs.get("slug") if kwargs.get("slug") is not None else existing.get("slug"),
                 "source_hash": kwargs.get("source_hash") if kwargs.get("source_hash") is not None else existing.get("source_hash"),
                 "shadow_hash": kwargs.get("shadow_hash") if kwargs.get("shadow_hash") is not None else existing.get("shadow_hash"),
@@ -82,7 +82,8 @@ class MetadataManager:
                 "assets": list(kwargs.get("assets")) if kwargs.get("assets") is not None else existing.get("assets", []),
 
                 "ext_assets": list(kwargs.get("ext_assets")) if kwargs.get("ext_assets") is not None else existing.get("ext_assets", []),
-                "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", [])
+                "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", []),
+                "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang")
             }
             
             self.sqlite.upsert_document(rel_path, doc_data)

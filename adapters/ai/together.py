@@ -7,14 +7,13 @@ Illacme-plenipes AI Plugin - Together AI Adapter
 from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
+
+
+
 class TogetherTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] Together AI 专属适配器"""
     PLUGIN_ID = 'together'
-    
-    def __init__(self, node_name, trans_cfg):
-        if not trans_cfg.base_url:
-            trans_cfg.base_url = "https://api.together.xyz/v1"
-        super().__init__(node_name, trans_cfg)
+    DEFAULT_URL = 'https://api.together.xyz/v1'
 
     def get_archetype_params(self) -> Dict[str, Any]:
         return {

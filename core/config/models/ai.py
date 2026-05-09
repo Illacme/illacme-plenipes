@@ -33,6 +33,7 @@ class TranslationProvider(BaseModel):
     model: str = "gpt-4o"
     api_key: str = ""
     base_url: Optional[str] = None
+    enabled: bool = True  # 🚀 [V54.1] 物理激活开关
     limits: AIProviderLimits = Field(default_factory=AIProviderLimits)
     iter_id: str = "v1"
 
@@ -47,6 +48,7 @@ class TranslationSettings(BaseModel):
     strategy: StrategyType = StrategyType.SINGLE
     primary_node: str = "default"
     fallback_node: str = ""
+    active_style: str = "default"  # 🚀 [V55.25] 物理方言锚点：映射至 dialects/{active_style}.yaml
     fallback_config: Optional[FallbackStrategyConfig] = None
     providers: Dict[str, TranslationProvider] = Field(default_factory=dict)
     prompts: PromptTemplates = Field(default_factory=PromptTemplates)

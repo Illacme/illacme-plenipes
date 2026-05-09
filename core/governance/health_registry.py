@@ -85,7 +85,7 @@ class HealthRegistry:
                 "latency": round(metrics.avg_latency, 2),
                 "success_rate": round(metrics.success_count / (metrics.success_count + metrics.failure_count + 1e-6) * 100, 1)
             })
-        return sorted(ranking, key=lambda x: x["score"], reverse=True)
+        return sorted(ranking, key=lambda x: (x or {}).get("score", 0.0), reverse=True)
 
 # 全局单例
 health_registry = HealthRegistry()

@@ -34,8 +34,17 @@ def prepare_sync_tasks(engine, requested_paths=None):
 
     allowed_exts = engine.config.system.allowed_extensions
     for route_cfg in engine.route_matrix:
-        src_rel = route_cfg.get('source', '')
-        prefix = route_cfg.get('prefix', '')
+        src_rel = route_cfg.source
+        # 🚀 [V56.0] 意图感知：优先通过 resolve_output_path 获取物理路径
+        prefix = engine.config.resolve_output_path(route_cfg, engine.ssg_adapter)
+        
+        # 🚀 [V55.26] 语义化主权栅栏：拦截子目录精准收稿与映射
+        from core.governance.license_guard import LicenseGuard
+        if not LicenseGuard.is_pro_feature_allowed("subfolder_ingress"):
+            if src_rel != "" or prefix != "":
+                tlog.warning(f"🛡️ [License Guard] 社区版限制：拦截非标准映射 [Source: {src_rel} | Prefix: {prefix}]，强制执行 1:1 根目录物理对正。")
+                src_rel = ""
+                prefix = ""
         abs_src = os.path.join(engine.vault_root, src_rel)
 
         if not os.path.exists(abs_src):
@@ -60,9 +69,11 @@ def prepare_sync_tasks(engine, requested_paths=None):
                     if engine._is_excluded(rel_path):
                         continue
 
-                    task_queue.append((os.path.join(root, f), prefix, src_rel))
+                    # 🚀 [V56.0] 意图感知：将 target_slot 纳入任务队列，确保后续分发路径能根据槽位动态对正
+                    target_slot = getattr(route_cfg, 'target_slot', 'docs')
+                    task_queue.append((os.path.join(root, f), prefix, src_rel, target_slot))
                     current_source_files.add(rel_path)
-                    engine.meta.register_document(rel_path, os.path.splitext(f)[0], route_prefix=prefix, route_source=src_rel)
+                    engine.meta.register_document(rel_path, os.path.splitext(f)[0], route_prefix=prefix, route_source=src_rel, target_slot=target_slot)
 
     return task_queue, current_source_files
 
@@ -72,7 +83,7 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
     🚀 [架构升级 V14.3]：全面引入 Rich 工业级全息仪表盘。
     """
     if not task_queue:
-        tlog.warning("⚠️ 没有找到任何 Markdown 笔记！💡 请检查 config.yaml 中的 `route_matrix` 目录配置是否正确。")
+        tlog.warning("⚠️ 没有找到任何内容笔记！💡 请检查【品牌设置】中的目录映射配置是否正确。")
         return
 
     start_perf = time.perf_counter()
@@ -110,7 +121,7 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
 
     # 🚀 [V10.0] 提交任务至全局编排执行器
     future_to_task = {}
-    for task_path, prefix, src_rel in task_queue:
+    for task_path, prefix, src_rel, target_slot in task_queue:
         doc_trace_id = f"Sync:{os.path.basename(task_path)[:12]}"
         with Tracer.trace_scope(doc_trace_id):
             future = global_executor.submit(
@@ -119,7 +130,8 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
                 args.dry_run, args.force,
                 is_sandbox=getattr(args, 'sandbox', False),
                 priority=TaskPriority.INGRESS,
-                task_name=f"Sync-{os.path.basename(task_path)}"
+                task_name=f"Sync-{os.path.basename(task_path)}",
+                target_slot=target_slot
             )
             future_to_task[future] = task_path
 
@@ -182,7 +194,7 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
         tlog.info("🧪 [演练结束] Dry-run 模式下未执行物理变更。")
 
     degraded_files = []
-    for task_path, prefix, src_rel in task_queue:
+    for task_path, prefix, src_rel, target_slot in task_queue:
         rel_path = os.path.relpath(task_path, engine.vault_root).replace('\\', '/')
         doc_info = engine.meta.get_doc_info(rel_path)
         if doc_info and doc_info.get("hash") == "":
@@ -190,3 +202,49 @@ def execute_full_sync(engine, args, task_queue, current_source_files):
 
     # 🚀 [V11.0] 诊断中心信号
     bus.emit("UI_DIAGNOSTIC_RESULTS", degraded_files=degraded_files, is_watch_mode=getattr(args, 'watch', False))
+# 🔒 [V52.3] 主权原子锁：防止出版流水线重入与进度条飞涨
+_publish_lock = threading.Lock()
+_is_publishing = False
+
+def start_asynchronous_sync(engine, dry_run=False, force=False, sandbox=False):
+    """
+    🚀 [V51.0] 异步同步触发器：专供 API/Dashboard 调用
+    [V52.3 升级]：加入主权互斥检查，确保全球范围内只有一个出版流在运行。
+    """
+    global _is_publishing
+    
+    if _is_publishing:
+        tlog.warning("⚠️ [主权拦截] 探测到已有出版任务正在运行，本次点火已取消以防止算力碰撞。")
+        return None
+
+    from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
+    
+    # 1. 模拟 CLI 参数
+    class MockArgs:
+        def __init__(self):
+            self.dry_run = dry_run
+            self.force = force
+            self.sandbox = sandbox
+            self.watch = False # 异步触发时不启动看门狗
+            self.path = None
+    
+    args = MockArgs()
+    
+    # 2. 定义后台执行逻辑
+    def _background_job():
+        global _is_publishing
+        with _publish_lock:
+            try:
+                _is_publishing = True
+                tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox})...")
+                task_queue, current_source_files = prepare_sync_tasks(engine)
+                execute_full_sync(engine, args, task_queue, current_source_files)
+                tlog.info("✅ [异步出版] 后台流水线任务已全量闭环。")
+            except Exception as e:
+                tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}")
+            finally:
+                _is_publishing = False
+
+    # 3. 提交至全局执行器 (优先级设为 CRITICAL 以确保立即响应)
+    future = global_executor.submit(_background_job, priority=TaskPriority.CRITICAL, task_name="Async-Full-Publish")
+    return id(future)

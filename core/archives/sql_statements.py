@@ -48,7 +48,7 @@ INIT_SCHEMA = [
     """
     CREATE TABLE IF NOT EXISTS usage_ledger (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        territory_id TEXT,
+        imprint_id TEXT,
         event_type TEXT,
         description TEXT,
         cost REAL,

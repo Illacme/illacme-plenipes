@@ -86,12 +86,31 @@ class PublisherService:
                 return
 
             # [Sovereignty] 默认发布逻辑：根据配置分发至 SSG 目录或影子库
-            output_path = self.config.get("output_paths", {}).get("markdown_dir", "")
-            # 处理路径占位符
-            active_theme = self.config.get("active_theme", "docusaurus")
-            output_path = output_path.replace("{theme}", active_theme)
+            # 🚀 [V56.9] 命名与占位符治理：优先使用 engine 已解析的物理路径
+            engine = kwargs.get("engine")
+            output_path = None
+            
+            if engine and hasattr(engine, 'paths'):
+                output_path = engine.paths.get("source_dir")
+            
+            if not output_path:
+                paths_cfg = self.config.get("output_paths", {})
+                output_path = paths_cfg.get("docs_dir") or paths_cfg.get("markdown_dir", "")
+                
+                # 处理路径占位符
+                active_theme = self.config.get("active_theme", "docusaurus")
+                output_path = output_path.replace("{theme}", active_theme)
+                
+                # 🛡️ [V56.9] 智能路径嗅探：如果路径包含 {lang}，尝试定位主语种目录
+                if "{lang}" in output_path:
+                    # 优先尝试“空前缀”（根语种），这是 Starlight/Docusaurus 的通用惯例
+                    probe_path = output_path.replace("/{lang}", "").replace("{lang}/", "").replace("{lang}", "")
+                    if os.path.exists(probe_path):
+                        output_path = probe_path
+                    else:
+                        tlog.debug(f"🔍 [路径嗅探] 无法静态解析多语言模板: {output_path}")
 
-            if os.path.exists(output_path):
+            if output_path and os.path.exists(output_path):
                 # 🚀 [V10.5] 导出全域站点地图 (Sitemap Sovereignty)
                 try:
                     from core.logic.sitemap_engine import SitemapGenerator

@@ -25,7 +25,8 @@ class DisplayDelegate:
     @staticmethod
     def get_system_version(config) -> str:
         """从配置中提取并格式化版本号"""
-        sys_version = getattr(config, 'version', 'V11.0')
+        from core import __version__
+        sys_version = getattr(config, 'version', f"V{__version__}")
         if not sys_version.startswith('V'):
             sys_version = f"V{sys_version}"
         return sys_version

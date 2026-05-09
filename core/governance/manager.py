@@ -34,8 +34,7 @@ class GovernanceManager:
         
         # 3. 挂载向量索引 (V48.3 工业单例)
         from core.governance.vector_index import VectorIndex
-        data_paths = engine.config.system.data_paths
-        v_path = engine._resolve_path(data_paths.get("vectors_json", "vectors.json"))
+        v_path = engine._resolve_path(engine.config.get_vectors_path())
         self.vector_index = VectorIndex(v_path)
         
         # 🚀 [V48.3] 启动后台治理服务

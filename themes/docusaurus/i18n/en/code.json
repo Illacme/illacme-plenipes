@@ -1,0 +1,32 @@
+{
+  "navbar.item.label.Wiki": {
+    "message": "Wiki",
+    "description": "Navbar label for Wiki/Docs"
+  },
+  "navbar.item.label.Blog": {
+    "message": "Blog",
+    "description": "Navbar label for Blog"
+  },
+  "navbar.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar label for GitHub link"
+  },
+  "footer.title.Docs": {
+    "message": "Docs"
+  },
+  "footer.title.Community": {
+    "message": "Community"
+  },
+  "footer.title.More": {
+    "message": "More"
+  },
+  "footer.link.label.Tutorial": {
+    "message": "Tutorial"
+  },
+  "footer.link.label.Blog": {
+    "message": "Blog"
+  },
+  "footer.link.label.GitHub": {
+    "message": "GitHub"
+  }
+}

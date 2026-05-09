@@ -40,14 +40,29 @@ class MarkupManager:
             markup_registry.register_transformer(MDXTransformer())
             return
 
+        # 0. [V53.1] 双重主权过滤：汇总本地禁用与品牌禁用清单
+        disabled_all = set(getattr(settings, 'disabled_plugins', [])) | \
+                       set(getattr(settings, 'imprint_disabled_plugins', []))
+        
+        def is_active(name):
+            return name not in disabled_all
+
         # 2. 动态注册安全屏蔽插件
         for name in settings.security_maskers:
+            if not is_active(name):
+                from core.utils.tracing import tlog
+                tlog.info(f"🚫 [插件治理] 安全插件 '{name}' 已被主权层禁用。")
+                continue
             masker_cls = MarkupManager._MASKER_MAP.get(name)
             if masker_cls:
                 markup_registry.register_masker(name, masker_cls())
 
         # 3. 动态注册内容转换插件
         for name in settings.markup_transformers:
+            if not is_active(name):
+                from core.utils.tracing import tlog
+                tlog.info(f"🚫 [插件治理] 转换插件 '{name}' 已被主权层禁用。")
+                continue
             transformer_cls = MarkupManager._TRANSFORMER_MAP.get(name)
             if transformer_cls:
                 markup_registry.register_transformer(transformer_cls())

@@ -3,7 +3,7 @@
 """
 Illacme-plenipes - Phase 4 Full Chain Sovereignty Drill (Indentation & Mock Fix)
 职责：验证全链路主权闭环，修复 Mock 属性与缩进故障。
-🛡️ [V35.0]：终极验收脚本。
+🛡️ [V50.3]：终极验收脚本。
 """
 
 import os
@@ -11,22 +11,22 @@ import shutil
 import unittest
 import yaml
 from unittest.mock import MagicMock, patch
-from core.governance.territory_manager import TerritoryManager
+from core.governance.imprint_manager import ImprintManager
 from core.runtime.engine_factory import EngineFactory
 
 class TestFullChainSovereignty(unittest.TestCase):
     
     def setUp(self):
         self.test_press = "test_galaxy_press"
-        self.territory_root = os.path.abspath("territories")
-        self.territory_dir = os.path.join(self.territory_root, self.test_press)
-        if os.path.exists(self.territory_root):
-            shutil.rmtree(self.territory_root)
-        os.makedirs(self.territory_root, exist_ok=True)
+        self.imprint_root = os.path.abspath("imprints")
+        self.imprint_dir = os.path.join(self.imprint_root, self.test_press)
+        if os.path.exists(self.imprint_root):
+            shutil.rmtree(self.imprint_root)
+        os.makedirs(self.imprint_root, exist_ok=True)
 
     def tearDown(self):
-        if os.path.exists(self.territory_root):
-            shutil.rmtree(self.territory_root)
+        if os.path.exists(self.imprint_root):
+            shutil.rmtree(self.imprint_root)
 
     @patch('core.bindery.deployment_manager.PluginLoader.load_plugins')
     def test_end_to_end_publishing_cycle(self, mock_load):
@@ -43,13 +43,13 @@ class TestFullChainSovereignty(unittest.TestCase):
 
         with patch.object(MockPub, 'push', return_value={"status": "success"}) as mock_push:
             # 2. 初始化主权空间
-            wm = TerritoryManager()
+            im = ImprintManager()
             with patch('core.governance.license_guard.LicenseGuard.is_pro_feature_allowed', return_value=True):
                 mock_vault = os.path.abspath("test_mock_vault")
                 if os.path.exists(mock_vault): shutil.rmtree(mock_vault)
                 os.makedirs(mock_vault, exist_ok=True)
                 
-                success = wm.init_sovereign_territory(self.test_press, manuscripts_path=mock_vault)
+                success = im.init_sovereign_imprint(self.test_press, manuscripts_path=mock_vault)
                 self.assertTrue(success)
                 
                 # 3. 投递原稿并配置映射
@@ -57,7 +57,7 @@ class TestFullChainSovereignty(unittest.TestCase):
                 with open(os.path.join(mock_vault, "blog/tech/first-post.md"), 'w') as f:
                     f.write("---\ntitle: Hello Galaxy\n---\nWelcome to the sovereign press.")
                 
-                config_path = os.path.join(self.territory_dir, "configs", "system.yaml")
+                config_path = os.path.join(self.imprint_dir, "configs", "config.imprint.yaml")
                 with open(config_path, 'r') as f:
                     cfg = yaml.safe_load(f)
                 
@@ -67,16 +67,16 @@ class TestFullChainSovereignty(unittest.TestCase):
                 cfg['publish_control'] = {'direct_upload': {'mock_pub': {'enabled': True}}}
                 cfg['ingress_settings'] = {'ingress_rules': [{'source': 'blog/tech', 'target': 'posts/technology'}]}
                 cfg['output_paths'] = {
-                    'source_dir': os.path.join(self.territory_dir, 'dist/source'),
-                    'static_dir': os.path.join(self.territory_dir, 'dist/static'),
-                    'markdown_dir': os.path.join(self.territory_dir, 'dist/source'),
-                    'assets_dir': os.path.join(self.territory_dir, 'dist/assets'),
-                    'graph_json_dir': os.path.join(self.territory_dir, 'dist/graph')
+                    'source_dir': os.path.join(self.imprint_dir, 'dist/source'),
+                    'static_dir': os.path.join(self.imprint_dir, 'dist/static'),
+                    'markdown_dir': os.path.join(self.imprint_dir, 'dist/source'),
+                    'assets_dir': os.path.join(self.imprint_dir, 'dist/assets'),
+                    'graph_json_dir': os.path.join(self.imprint_dir, 'dist/graph')
                 }
-                cfg['metadata_db'] = os.path.join(self.territory_dir, 'metadata/press.db')
+                cfg['metadata_db'] = os.path.join(self.imprint_dir, 'core/press.db')
                 cfg['i18n_settings'] = {'enable_multilingual': False, 'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 'targets': []}
                 cfg['system'] = {
-                    'data_root': self.territory_dir, 'allowed_extensions': ['.md'], 'data_paths': {},
+                    'data_root': self.imprint_dir, 'allowed_extensions': ['.md'], 'data_paths': {},
                     'log_level': 'INFO', 'max_workers': 1, 'auto_save_interval': 60
                 }
                 cfg['theme_options'] = {'default': {}}
@@ -95,7 +95,7 @@ class TestFullChainSovereignty(unittest.TestCase):
                     yaml.dump(cfg, f)
 
                 # 4. 点火引擎执行同步
-                engine = EngineFactory.create_engine(config_path, no_ai=True, territory_id=self.test_press)
+                engine = EngineFactory.create_engine(config_path, no_ai=True, imprint_id=self.test_press)
                 self.assertIsNotNone(engine)
                 
                 # 5. 模拟执行分发
@@ -111,7 +111,7 @@ class TestFullChainSovereignty(unittest.TestCase):
     
                 # 6. 终极验证
                 mock_push.assert_called()
-                print(f"\n✅ [终极演习成功] 出版社 '{self.test_press}' 全链路主权闭环验证通过！")
+                print(f"\n✅ [终极演习成功] 出版品牌 '{self.test_press}' 全链路主权闭环验证通过！")
                 if os.path.exists(mock_vault): shutil.rmtree(mock_vault)
 
 if __name__ == "__main__":

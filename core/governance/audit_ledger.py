@@ -18,46 +18,56 @@ class AuditLedger:
 
     def __init__(self, db_path: str):
         self.db_path = os.path.abspath(os.path.expanduser(db_path))
-        # 🛡️ [V48.3] 确保工业数据目录存在
+        # 🛡️ [V50.3] 确保工业数据目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
 
 
     def _init_db(self):
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS audit_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    territory_id TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    event_type TEXT,
-                    severity TEXT,
-                    actor TEXT,
-                    details TEXT,
-                    metadata TEXT
-                )
-            """)
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_territory ON audit_logs(territory_id)")
+            # 🚀 [V50.3] 自动执行 Schema 物理迁移
+            cursor = conn.execute("PRAGMA table_info(audit_logs)")
+            columns = [row[1] for row in cursor.fetchall()]
+            
+            if not columns:
+                # 初始创建
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS audit_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        imprint_id TEXT,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        event_type TEXT,
+                        severity TEXT,
+                        actor TEXT,
+                        details TEXT,
+                        metadata TEXT
+                    )
+                """)
+            elif "territory_id" in columns and "imprint_id" not in columns:
+                tlog.info("🧬 [AuditLedger] 侦测到旧版主权架构，正在执行物理迁移: territory_id -> imprint_id")
+                conn.execute("ALTER TABLE audit_logs RENAME COLUMN territory_id TO imprint_id")
+            
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_imprint ON audit_logs(imprint_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_event ON audit_logs(event_type)")
 
-    def log(self, event_type: str, details: str, territory_id: str = "global", severity: str = "INFO", actor: str = "System", metadata: dict = None):
+    def log(self, event_type: str, details: str, imprint_id: str = "global", severity: str = "INFO", actor: str = "System", metadata: dict = None):
         """持久化一条审计记录"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute(
-                    "INSERT INTO audit_logs (territory_id, event_type, severity, actor, details, metadata) VALUES (?, ?, ?, ?, ?, ?)",
-                    (territory_id, event_type, severity, actor, details, json.dumps(metadata or {}))
+                    "INSERT INTO audit_logs (imprint_id, event_type, severity, actor, details, metadata) VALUES (?, ?, ?, ?, ?, ?)",
+                    (imprint_id, event_type, severity, actor, details, json.dumps(metadata or {}))
                 )
         except Exception as e:
             tlog.error(f"❌ [AuditLedger] 记录审计失败: {e}")
 
-    def export_report(self, territory_id: str = None) -> list:
+    def export_report(self, imprint_id: str = None) -> list:
         """导出审计报告"""
         query = "SELECT * FROM audit_logs"
         params = []
-        if territory_id:
-            query += " WHERE territory_id = ?"
-            params.append(territory_id)
+        if imprint_id:
+            query += " WHERE imprint_id = ?"
+            params.append(imprint_id)
         
         query += " ORDER BY timestamp DESC"
         
@@ -66,44 +76,44 @@ class AuditLedger:
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_total_cost(self, territory_id: str = None) -> float:
+    def get_total_cost(self, imprint_id: str = None) -> float:
         """从审计流水中聚合累计开销 (财务级数据)"""
         query = "SELECT SUM(CAST(json_extract(metadata, '$.cost') AS REAL)) as total FROM audit_logs WHERE event_type = 'AI_TRANSACTION'"
         params = []
-        if territory_id:
-            query += " AND territory_id = ?"
-            params.append(territory_id)
+        if imprint_id:
+            query += " AND imprint_id = ?"
+            params.append(imprint_id)
             
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(query, params).fetchone()
             return row[0] if row and row[0] else 0.0
 
-    def get_today_cost(self, territory_id: str = "default") -> float:
+    def get_today_cost(self, imprint_id: str = "default") -> float:
         """🚀 [V22.0] 获取今日已消耗总额"""
         query = """
             SELECT SUM(CAST(json_extract(metadata, '$.cost') AS REAL))
             FROM audit_logs
             WHERE event_type = 'AI_TRANSACTION'
-            AND territory_id = ?
+            AND imprint_id = ?
             AND date(timestamp) = date('now')
         """
         with sqlite3.connect(self.db_path) as conn:
-            row = conn.execute(query, (territory_id,)).fetchone()
+            row = conn.execute(query, (imprint_id,)).fetchone()
             return row[0] if row and row[0] else 0.0
 
-    def get_weekly_stats(self, territory_id: str = "default") -> list:
+    def get_weekly_stats(self, imprint_id: str = "default") -> list:
         """🚀 [V22.0] 获取过去 7 天的统计趋势图数据"""
         query = """
             SELECT date(timestamp) as day, SUM(CAST(json_extract(metadata, '$.cost') AS REAL)) as cost
             FROM audit_logs
             WHERE event_type = 'AI_TRANSACTION'
-            AND territory_id = ?
+            AND imprint_id = ?
             AND timestamp >= date('now', '-7 days')
             GROUP BY day
             ORDER BY day ASC
         """
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(query, (territory_id,))
+            cursor = conn.execute(query, (imprint_id,))
             return [{"day": row[0], "cost": row[1] or 0.0} for row in cursor.fetchall()]
 
 
@@ -115,4 +125,3 @@ def initialize_ledger(db_path: str):
     global ledger
     ledger = AuditLedger(db_path)
     return ledger
-

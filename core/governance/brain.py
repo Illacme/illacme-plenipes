@@ -39,10 +39,10 @@ class KnowledgeService:
     }
     def __init__(self, engine):
         self.engine = engine
-        self.brain_root = engine._resolve_path("metadata/brain")
+        # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
+        self.lessons_path = engine._resolve_path(engine.config.get_lessons_learned_path())
 
-        os.makedirs(self.brain_root, exist_ok=True)
-        self.lessons_path = os.path.join(self.brain_root, "lessons_learned.json")
+        os.makedirs(os.path.dirname(self.lessons_path), exist_ok=True)
         self._load_lessons()
 
     def _load_lessons(self):
@@ -66,7 +66,7 @@ class KnowledgeService:
         }
 
         # 简单去重：如果最近有相同的错误，则只更新时间
-        if self.lessons and self.lessons[-1]["error"] == error_msg:
+        if self.lessons and (self.lessons[-1] or {}).get("error") == error_msg:
             self.lessons[-1]["timestamp"] = lesson["timestamp"]
         else:
             self.lessons.append(lesson)
@@ -88,8 +88,8 @@ class KnowledgeService:
         """获取教训汇总，用于仪表盘展示"""
         return {
             "total_lessons": len(self.lessons),
-            "recent_failures": [l["error"] for l in self.lessons[-5:]],
-            "categories": list(set(l["category"] for l in self.lessons))
+            "recent_failures": [(l or {}).get("error") for l in self.lessons[-5:]],
+            "categories": list(set((l or {}).get("category") for l in self.lessons))
         }
 
     def get_remedy(self, category):

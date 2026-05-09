@@ -88,9 +88,10 @@ class ResourceGuard:
                     should_throttle = cpu_usage > lower_cpu and ram_usage > lower_ram
 
                 if should_throttle and not self.is_throttled:
-                    # 🚀 [V48.3] 静默治理：只有在真正有任务在跑时才打印警告
+                    # 🚀 [V51.0] 使用对齐的 get_stats() 获取运行指标
                     from core.logic.orchestration.task_orchestrator import global_executor
-                    has_active_tasks = global_executor.get_queue_size() > 0 or global_executor.get_active_count() > 0
+                    stats = global_executor.get_stats()
+                    has_active_tasks = stats["queue_size"] > 0 or stats["active_workers"] > 0
                     
                     self._apply_throttle(cpu_usage, ram_usage, silent=not has_active_tasks)
                 elif not should_throttle and self.is_throttled:
@@ -125,9 +126,9 @@ class ResourceGuard:
         
         from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         
-        orig = self.original_concurrency
-        global_executor.update_concurrency(orig["global"])
-        ai_executor.update_concurrency(orig["ai"])
+        orig = self.original_concurrency or {}
+        global_executor.update_concurrency(orig.get("global", 1))
+        ai_executor.update_concurrency(orig.get("ai", 4))
         
         self.is_throttled = False
         from core.utils.event_bus import bus

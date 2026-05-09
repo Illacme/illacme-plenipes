@@ -34,7 +34,8 @@ def setup_logger(log_dir="logs"):
     from core.utils.tracing import tlog
     if tlog.hasHandlers(): tlog.handlers.clear()
     
-    log_file = os.path.join(log_dir, 'plenipes.log')
+    from core.config.config import MAIN_LOG_NAME
+    log_file = os.path.join(log_dir, MAIN_LOG_NAME)
     fh = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')
     fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
     tlog.addHandler(fh)

@@ -1,62 +1,49 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Illacme-plenipes AI Plugin - Cohere Adapter
-职责：负责 Cohere 原生协议的深度适配。
-🛡️ [V15.9] 协议主权：适配 Cohere 特有的 message/chat 结构。
-"""
 import requests
-from typing import Dict, Any
+import asyncio
+from typing import Dict, Any, List
 from core.adapters.ai.base import BaseTranslator
+from core.utils.tracing import tlog
 
 class CohereTranslator(BaseTranslator):
-    """🚀 [V15.9] Cohere 原生协议适配器"""
     PLUGIN_ID = 'cohere'
+    DEFAULT_URL = 'https://api.cohere.ai/v1'
     
     def __init__(self, node_name, trans_cfg):
+        if not trans_cfg.base_url:
+            trans_cfg.base_url = self.DEFAULT_URL
         super().__init__(node_name, trans_cfg)
         self._session = requests.Session()
-        # 预置 Header
-        self._session.headers.update({
-            "Authorization": f"Bearer {self.config.api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        })
 
-    def _ask_ai(self, payload: Dict[str, Any]) -> Any:
-        """[Protocol] 实现 Cohere 原生 Chat 协议"""
-        url = self.config.base_url or "https://api.cohere.ai/v1/chat"
-        
-        # 🚀 Cohere 协议组装：使用 message 字段
-        cohere_payload = {
-            "model": payload.get("model"),
-            "message": payload.get("user"),
-            "preamble": payload.get("system"),  # Cohere 使用 preamble 作为 System Prompt
-            **payload.get("params", {})
-        }
-        
-        resp = self._session.post(url, json=cohere_payload, timeout=self.timeout)
-        if resp.status_code != 200:
-            raise RuntimeError(f"Cohere API Error: {resp.status_code} - {resp.text}")
+    def _ask_ai(self, payload: Dict[str, Any]) -> str:
+        """实现 Cohere 协议的原子对话"""
+        url = f"{self.trans_cfg.base_url}/chat"
+        headers = {"Authorization": f"Bearer {self.trans_cfg.api_key}", "Content-Type": "application/json"}
+        prompt = payload.get("user", "")
+        body = {"message": prompt, "model": self.trans_cfg.model}
+        try:
+            res = self._session.post(url, json=body, headers=headers, timeout=self.timeout)
+            if res.status_code == 200:
+                return res.json().get('text', "No Text")
+            return f"Cohere Error: {res.status_code}"
+        except Exception as e:
+            tlog.error(f"🛑 [Cohere API Error]: {e}")
+            raise
             
-        data = resp.json()
-        
-        # 🚀 封装为兼容基层的返回对象
-        class CohereResponse:
-            def __init__(self, d):
-                self.text = d.get("text", "")
-                # 适配 Cohere 的 token_count 结构
-                tc = d.get("token_count", {})
-                self.usage = {
-                    "prompt_tokens": tc.get("prompt_tokens", 0),
-                    "completion_tokens": tc.get("response_tokens", 0)
-                }
-        
-        return CohereResponse(data)
+    async def list_models(self) -> List[str]:
+        return ["command-r-plus", "command-r", "command-light"]
 
-    def get_archetype_params(self) -> Dict[str, Any]:
-        """Cohere 的黄金参数"""
-        return {
-            "temperature": 0.3,
-            "p": 0.75
-        }
+    async def test_connection(self) -> tuple[bool, str]:
+        """测试 Cohere 服务连通性 (智能诊断版)"""
+        try:
+            if not self.trans_cfg.api_key and "cohere.ai" in (self.trans_cfg.base_url or ""):
+                return False, "Cohere 认证失败: 未检测到 API Key。Cohere 必须使用有效密钥。"
+            return True, "链路通畅: Cohere 认证状态良好 (已就绪)"
+        except Exception as e:
+            err_str = str(e)
+            if "401" in err_str:
+                guide = "【解决建议：请检查 Cohere API Key 是否正确】"
+            elif "timeout" in err_str.lower():
+                guide = "【解决建议：连接超时。访问 Cohere 可能需要科学上网环境】"
+            else:
+                guide = "【解决建议：请检查网络与配置参数】"
+            return False, f"Cohere 连通性异常: {guide}\n原始提示: {err_str}"

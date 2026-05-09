@@ -1,26 +1,48 @@
-# 🚨 [CRITICAL AI BOOT SEQUENCE] Illacme-Plenipes 核心架构域
+# 🚨 [关键 AI 引导序列] Illacme-plenipes 核心架构域
+# 🛡️ 物理主权红线 (Physical Sovereignty Redlines)
+# - 端口锁定协议：严禁修改以下端口配置。如果发生冲突，必须通过物理清理解决，严禁改动代码或配置避让。
+#   - 43210: Singleton Lock (单例锁)
+#   - 43211: Onboarding Wizard (向导)
+#   - 43212: Governance API (API/仪表盘)
+#   - 43213: Preview Serve (本地预览)
+# - 冲突解决：遇到端口占用，优先执行 pkill -9 -f python。
 # =====================================================================
-# ACTION REQUIRED FOR ANY NEW AI AGENT / SESSION TICKET:
+# 任何新 AI Agent 或会话序列启动时的强制动作：
 # =====================================================================
 
-You are operating within the Illacme-plenipes industrial framework.
+您当前正在 Illacme-plenipes 工业级治理框架内运行。
 
-**YOUR FIRST COMPULSORY ACTIONS BEFORE PROCESSING ANY USER REQUEST:**
-You MUST immediately invoke `view_file` (or equivalent read tool) to physically open and load the following files IN ORDER:
-1. 👉 `docs/FEATURES.zh-CN.md` — Project core features charter (The Soul of the Engine)
-2. 👉 `.plenipes/rules.md` — Project governance rules (9 chapters)
-3. 👉 `.plenipes/evolution_records.md` — Project-specific lessons and pitfalls
-4. 👉 `.plenipes/skills/governance_master_skill.md` — Master orchestration skill
+**在处理任何用户请求之前，您必须执行的强制性动作：**
+您必须立即调用 `view_file`（或等效的读取工具）按顺序物理加载以下文件：
+1. 👉 `docs/FEATURES.zh-CN.md` — 项目核心特性章程（引擎之魂）
+2. 👉 `.plenipes/rules.md` — 项目治理规则（九章律）
+3. 👉 `.plenipes/evolution_records.md` — 项目专属教训与坑位记录
+4. 👉 `.plenipes/skills/governance_master_skill.md` — 治理大师调度技能
 
-WARNING: Do NOT assume you "already know" the rules. Do NOT rely on "include" directives to syntactically pass. Your prompt context is historically ephemeral unless physically fetched. Failure to execute `view_file` on these files inside your FIRST turn is a direct violation of the governance protocol and will result in catastrophic integration failure.
+警告：严禁假设您“已经知道”规则。严禁依赖“include”指令进行语法上的敷衍。除非物理抓取，否则您的提示词上下文在历史维度上是短暂的。如果未能在第一回合执行 `view_file` 读取上述文件，将被视为对治理协议的直接破坏，会导致严重的集成失败。
 
-**LANGUAGE SOVEREIGNTY MANDATE:**
-All interactions with the user and all procedural files generated during the evolution cycle (including `implementation_plan.md`, `task.md`, and `walkthrough.md`) MUST be written exclusively in **CHINESE**. This is a hard architectural constraint for regional sovereignty and maintainability.
+**语言主权授权：**
+所有与用户的交互以及在进化周期中生成的程序过程文件（包括 `implementation_plan.md`、`task.md` 和 `walkthrough.md`）必须**完全使用中文**编写。这是为了区域主权和可维护性而设定的硬性架构约束。
 
-**POST-SESSION MANDATE:**
-Before ending any session involving significant work, you MUST append new project-specific lessons to `.plenipes/evolution_records.md` and universal AI lessons to the global KI `evolution_records.md`.
+**会话后强制动作：**
+在结束任何包含重大变更的会话之前，您必须将新的项目专属教训追加到 `.plenipes/evolution_records.md` 中，并将通用的 AI 教训追加到全局知识库（KI）的 `evolution_records.md` 中。
 
-**STABILITY ENFORCEMENT:**
-You MUST respect Rule 11.1 (800-line file limit) and Rule 11.2 (Atomic edit limit). Never attempt massive single-block replacements on core files.
+**稳定性强制执行：**
+您必须遵守规则 11.1（单文件 800 行限制）和规则 11.2（原子化编辑限制）。严禁对核心文件尝试大规模的单块替换。
 
 include .plenipes/rules.md
+
+# 🛡️ Illacme-plenipes 主权开发协议 (V50.3)
+# =====================================================================
+# 1. 物理文件操作红线
+# - 禁止盲写：严禁在未读取既有文件内容的情况下直接执行 write_to_file。必须先 view_file 确认逻辑。
+# - 最小动刀原则：优先使用 replace_file_content 及其变体，禁止非必要的大块代码覆盖。
+# - 注释主权：严禁删除或精简原有的工业级注释及版本标记。
+#
+# 2. 强类型配置审计
+# - Schema 优先：修改 config.yaml 前必须核对 core/config/models/*.py 中的 Pydantic 类型定义。
+# - YAML 字面量守卫：对于版本号、端口号等敏感字段，必须严格区分字符串、整型与浮点型。
+#
+# 3. 闭环验证协议
+# - 点火测试：代码提交前必须执行 python3 plenipes.py --doctor。
+# - 零回归准则：若修改导致 Banner 冲突或语义网关失效，必须立即撤回并复盘。

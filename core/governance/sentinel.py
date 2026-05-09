@@ -11,9 +11,13 @@ import logging
 import subprocess
 import threading
 import time
+import re
+import yaml
+import inspect
 from datetime import datetime
-
+from typing import Type, List, Dict
 from core.utils.tracing import tlog
+from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME
 
 class SentinelManager:
     """项目哨兵管家：负责定时执行健康检查、自愈代码并记录日志"""
@@ -24,7 +28,7 @@ class SentinelManager:
         self.engine = engine
         # 🛡️ [V35.2] 主权对正：使用引擎内置的路径解析器
         if engine:
-            self.health_log_path = engine._resolve_path("metadata/sentinel_health.json")
+            self.health_log_path = engine._resolve_path(engine.config.get_health_report_path())
             self.current_iter_id = self._detect_current_iter(engine)
         else:
             self.health_log_path = os.path.join(".plenipes", "sentinel_health.json")
@@ -46,9 +50,9 @@ class SentinelManager:
 
     def _start_config_watcher(self):
         """🚀 [V48.3] 双向配置监听：同时监控基础配置与本地覆盖层"""
-        config_path = self.engine.config_manager.config_path if hasattr(self.engine, 'config_manager') else "config.yaml"
+        config_path = self.engine.config_manager.config_path if hasattr(self.engine, 'config_manager') else CONFIG_NAME
         abs_config = os.path.abspath(config_path)
-        local_path = os.path.join(os.path.dirname(abs_config), 'config.local.yaml')
+        local_path = os.path.join(os.path.dirname(abs_config), CONFIG_LOCAL_NAME)
         
         watch_paths = [abs_config]
         if os.path.exists(local_path):
@@ -81,7 +85,7 @@ class SentinelManager:
     def _detect_current_iter(engine=None) -> str:
         """从历史目录侦测当前活动的迭代 ID"""
         if not engine: return "UNKNOWN"
-        history_dir = engine._resolve_path("metadata/history")
+        history_dir = engine._resolve_path(engine.config.get_history_dir())
         if not os.path.exists(history_dir):
             return "UNKNOWN"
         iters = sorted([d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))], reverse=True)
@@ -89,12 +93,14 @@ class SentinelManager:
 
     def track_token_usage(self, estimated_tokens: int):
         """跟踪算力消耗并执行 TCG 熔断"""
-        self.status_matrix["token_usage"] += estimated_tokens
-        limit = self.status_matrix["token_budget"]
-        if self.status_matrix["token_usage"] > limit:
-            tlog.error(f"🚨 [TCG 熔断] 侦测到单次迭代算力消耗已触顶 ({self.status_matrix['token_usage']} > {limit})！")
+        # 🛡️ [R1.3] 防御性读取：确保状态矩阵访问安全
+        current_usage = self.status_matrix.get("token_usage", 0) + estimated_tokens
+        self.status_matrix.update({"token_usage": current_usage})
+        
+        limit = self.status_matrix.get("token_budget", 50000)
+        if current_usage > limit:
+            tlog.error(f"🚨 [TCG 熔断] 侦测到单次迭代算力消耗已触顶 ({current_usage} > {limit})！")
             tlog.error("🛡️ [哨兵] 根据全球自律协议，任务已强制挂起，请人工注入算力配额。")
-            # 在全自动模式下，此处应引发异常以切断进程
             raise RuntimeError("TCG_BUDGET_EXCEEDED")
 
     def inject_trace_label(self, code_block: str) -> str:
@@ -111,21 +117,21 @@ class SentinelManager:
 
         # 1. 执行 Ruff Lint 检查与自愈
         lint_ok = self._check_and_fix_lint(auto_fix)
-        self.status_matrix["lint"] = "PASS" if lint_ok else "HEALED"
+        self.status_matrix.update({"lint": "PASS" if lint_ok else "HEALED"})
 
         # 2. 🛡️ [AEL-2026-04-19_slsh_healing] 执行语义死链修复
         if auto_fix:
             heal_count = self._heal_markdown_links()
-            self.status_matrix["links"] = f"FIXED({heal_count})" if heal_count > 0 else "PASS"
+            self.status_matrix.update({"links": f"FIXED({heal_count})" if heal_count > 0 else "PASS"})
         else:
-            self.status_matrix["links"] = "PENDING"
+            self.status_matrix.update({"links": "PENDING"})
 
         # 3. 记录日志
         self.last_check = datetime.now().isoformat()
         self._persist_status()
 
         elapsed = (datetime.now() - start_time).total_seconds()
-        tlog.info(f"🛡️ [哨兵] 审计完成 (耗时: {elapsed:.2f}s) | 状态: {self.status_matrix['links']}")
+        tlog.info(f"🛡️ [哨兵] 审计完成 (耗时: {elapsed:.2f}s) | 状态: {self.status_matrix.get('links', 'UNKNOWN')}")
 
     def _heal_markdown_links(self) -> int:
         """

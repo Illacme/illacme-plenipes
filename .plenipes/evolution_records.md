@@ -138,3 +138,27 @@
     - **指数退避重试**：在 `BaseTranslator` 中集成统一的重试包装器，有效过滤网络瞬时抖动。
 - **Action**: 所有 AI 适配器必须通过 `ask_ai_with_retry` 原子协议进行调用。
 - **Guard**: `check_ai_retry_implementation` — AST 扫描确认 `_ask_ai` 调用是否被重试包装器覆盖。
+
+## 📅 2026-05-02 进化点 (UI 重构与版本大一统)
+
+### 14. [UI 架构] UI 中介者解耦 (UI Mediator Decoupling)
+- **背景**：UI 逻辑分散在 `TerminalUI` 和各个 Handler 中，导致 CLI 与 Web 端逻辑重复且难以维护。
+- **进化结论**：
+    - **中心化分发**：引入 `UIMediator` 作为唯一 UI 事件监听与分发中心，自动识别 `PLENIPES_UI_MODE`。
+    - **逻辑与渲染分离**：业务 Service 仅产生数据，`UIMediator` 决定由 Rich（CLI）还是 JSON（Web）进行展示。
+- **Action**: 废弃并物理移除 `core/ui/terminal.py`，所有 UI 调用必须经过 `UIMediator`。
+- **Guard**: `check_ui_mediator_registry` — 物理验证 UI 事件是否在 Mediator 中统一注册。
+
+### 15. [开发陷阱] 物理盲写与包初始化危机 (Blind Overwrite Crisis)
+- **故障回顾**：为了统一版本号，AI 直接使用 `write_to_file` 覆盖了 `core/__init__.py`，导致其承载的“语义网关”黑魔法逻辑（`sys.modules` 注入）被物理抹除，系统面临模块找不到的风险。
+- **进化结论**：
+    - **禁止盲写**：除非新建文件，否则严禁在未读取既有文件内容的情况下进行全量覆盖。
+    - **最小侵入**：优先使用 `replace_file_content` 执行原子化修改。
+- **Action**: 修改 [`.antigravityrules`](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.antigravityrules) 增加物理锁死规则。
+
+### 16. [配置审计] YAML 字面量类型敏感 (YAML Literal Type Sensitivity)
+- **故障回顾**：在 `config.yaml` 中添加 `version: 50.3` 时，YAML 解析器将其识别为 `float`，导致 `Pydantic` 模型校验失败并触发系统级熔断（要求 `str`）。
+- **进化结论**：
+    - **显式字符串**：配置文件中的版本号、ID 等敏感字段必须显式使用引号 `"50.3"` 锁定类型。
+    - **Schema 预审**：修改配置前必须参考 `core/config/models/*.py` 的字段定义。
+- **Action**: 在 `.antigravityrules` 中增加 Schema 审计准则。

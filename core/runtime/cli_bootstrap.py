@@ -11,15 +11,24 @@ import sys
 import argparse
 import socket
 import shutil
+import yaml
 import platform
+import time
 import subprocess
 import logging
-from core.ui.terminal import TerminalUI
-
-
 from core.utils.tracing import tlog
+from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
 _SINGLETON_SOCKET = None
 _GLOBAL_ENGINE = None
+_GLOBAL_OBSERVER = None
+_GLOBAL_ARGS = None
+
+def set_global_args(args):
+    global _GLOBAL_ARGS
+    _GLOBAL_ARGS = args
+
+def get_global_args():
+    return _GLOBAL_ARGS
 
 def get_global_engine():
     """🚀 获取引擎全局单例 (供 SSG 适配器或管线深度组件调用)"""
@@ -34,6 +43,139 @@ def set_global_engine(engine):
             _GLOBAL_ENGINE.sentinel.stop()
         except: pass
     _GLOBAL_ENGINE = engine
+
+def get_global_observer():
+    return _GLOBAL_OBSERVER
+
+def set_global_observer(observer):
+    global _GLOBAL_OBSERVER
+    if _GLOBAL_OBSERVER:
+        try:
+            tlog.debug("🔄 [热重载清理] 正在安全切断旧金库的实时监听...")
+            _GLOBAL_OBSERVER.stop()
+            _GLOBAL_OBSERVER.join(timeout=2.0)
+        except: pass
+    _GLOBAL_OBSERVER = observer
+
+def deep_reload_imprint(imprint_id: str):
+    """🚀 [V52.6] 深度主权迁移：全量重载引擎、配置与监控管线"""
+    global _GLOBAL_ENGINE, _GLOBAL_ARGS
+    
+    if not _GLOBAL_ARGS:
+        tlog.error("🛑 [重载失败] 无法定位原始启动参数，主权迁移中止。")
+        return False
+        
+    tlog.info(f"🛰️ [主权迁移] 正在启动深度重载流水线 (Target Imprint: {imprint_id})...")
+    
+    try:
+        # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 config.local.yaml
+        # 仅保留 active_imprint 指针。这是因为 dashboard 会把全量配置同时写入 local 和 brand 层，
+        # 导致 local 层变成上一个品牌的僵尸缓存，在切换时覆盖新品牌的配置。
+        try:
+            import yaml
+            local_path = CONFIG_LOCAL_NAME
+            existing_local = {}
+            if os.path.exists(local_path):
+                with open(local_path, "r", encoding="utf-8") as f:
+                    existing_local = yaml.safe_load(f) or {}
+            
+            # 🚀 [V55.10] 主权迁移保障：确保在消杀前将关键路径固化到版图层
+            if imprint_id != "default":
+                target_imprint_yaml = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+                if os.path.exists(target_imprint_yaml):
+                    with open(target_imprint_yaml, "r", encoding="utf-8") as f:
+                        target_cfg = yaml.safe_load(f) or {}
+                    
+                    # 如果版图内缺失 vault_root，则从当前 local 补全
+                    if not target_cfg.get("vault_root") and existing_local.get("vault_root"):
+                        target_cfg["vault_root"] = existing_local["vault_root"]
+                        with open(target_imprint_yaml, "w", encoding="utf-8") as f:
+                            yaml.safe_dump(target_cfg, f, allow_unicode=True)
+                        tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
+
+            l_cfg = {"active_imprint": imprint_id}
+            # 💡 [V55.11] 物理保留：如果是默认品牌，保留其本地金库路径，避免 onboarding 循环
+            if imprint_id == "default" and existing_local.get("vault_root"):
+                l_cfg["vault_root"] = existing_local["vault_root"]
+
+            with open(local_path, "w", encoding="utf-8") as f:
+                yaml.safe_dump(l_cfg, f, allow_unicode=True)
+            tlog.debug(f"🛡️ [物理消杀] 已清空陈旧的 Local 缓存并预设活跃版图 '{imprint_id}'。")
+        except Exception as ex:
+            tlog.warning(f"⚠️ [物理消杀失败] {ex}")
+
+        # 1. 加载基础配置 (显式传递目标品牌 ID，防止被陈旧的 local 层劫持)
+        from core.config.config import load_config
+        config_path = _GLOBAL_ARGS.config
+        config = load_config(config_path, imprint_id=imprint_id)
+        
+        # 2. 调用工厂重新组装引擎 (内部会自动处理 Preflight)
+        from core.runtime.engine_factory import EngineFactory
+        new_engine = EngineFactory.create_engine(config, args=_GLOBAL_ARGS, imprint_id=imprint_id)
+        
+        if not new_engine:
+            tlog.error("🛑 [重载失败] 引擎工厂组装失败。")
+            return False
+            
+        # 3. 注册新引擎 (自动清理旧哨兵)
+        set_global_engine(new_engine)
+        
+        # 🚀 [V52.12] 物理主权持久化：同步最终确定的活跃状态至 config.local.yaml
+        try:
+            import yaml
+            local_path = CONFIG_LOCAL_NAME
+            if os.path.exists(local_path):
+                with open(local_path, "r", encoding="utf-8") as f:
+                    local_cfg = yaml.safe_load(f) or {}
+                
+                local_cfg["active_imprint"] = imprint_id
+                local_cfg["imprint_name"] = new_engine.config.imprint_name
+                local_cfg["vault_root"] = new_engine.config.vault_root
+                local_cfg["active_theme"] = new_engine.active_theme
+                
+                # 同步路径锚点
+                if imprint_id != "default":
+                    local_cfg.setdefault("system", {})["data_root"] = os.path.join(IMPRINT_DIR, imprint_id)
+                else:
+                    if "system" in local_cfg and "data_root" in local_cfg["system"]:
+                        local_cfg["system"]["data_root"] = ".plenipes"
+                    # 归位逻辑：强制恢复默认品牌名
+                    local_cfg["imprint_name"] = "Illacme Press"
+                    local_cfg["vault_root"] = "./content-vault"
+                    local_cfg["active_theme"] = "default"
+                
+                with open(local_path, "w", encoding="utf-8") as f:
+                    yaml.safe_dump(local_cfg, f, allow_unicode=True)
+                tlog.debug(f"🛡️ [主权锁定] 活跃版图状态已同步至 {local_path}")
+        except Exception: pass
+
+        # 5. 🚀 [V52.6] 日志管线对正：重定向文件日志至新品牌领土
+        from core.utils import setup_logger
+        setup_logger(new_engine.paths["logs"])
+        
+        # 4. 如果开启了 Watch 模式，重新激活看门狗
+        if _GLOBAL_ARGS.watch:
+            from core.runtime.daemon import start_watchdog
+            from core.runtime.orchestrator import prepare_sync_tasks
+            
+            # 准备新品牌的任务队列
+            _, current_files = prepare_sync_tasks(new_engine, requested_paths=_GLOBAL_ARGS.path)
+            
+            # 🚀 [V52.10] 物理避让：在启动新监听器前，必须先彻底注销并停止旧监听器
+            set_global_observer(None)
+            
+            # 启动新监听器
+            new_observer, _ = start_watchdog(new_engine, _GLOBAL_ARGS, current_files)
+            set_global_observer(new_observer)
+            
+        tlog.success(f"✅ [迁移完成] 出版品牌已成功切换至 '{imprint_id}'，物理主权已全面对正。")
+        return True
+        
+    except Exception as e:
+        tlog.error(f"🛑 [迁移异常] 致命错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 def send_notification(title, message):
     """
@@ -57,26 +199,40 @@ def acquire_singleton_lock(port=43210): # 默认值仅作签名参考，实际�
     """
     进程级单例防线 (OS-Level Singleton Mutex)
     基于配置文件动态分配防撞端口。
+    🚀 [V50.5] 增强：增加 5 秒宽容期，支持主权接力时的平滑过渡。
     """
     global _SINGLETON_SOCKET
-    _SINGLETON_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        _SINGLETON_SOCKET.bind(('127.0.0.1', port))
-    except socket.error:
-        tlog.error(f"\n🛑 [运行冲突] 启动失败：端口 {port} 已被占用，检测到系统已经在后台运行！")
-        tlog.error("   └── 💡 为了保护您的文章数据和电脑内存，本次重复启动已自动拦截。")
-        tlog.error("   └── 请检查是否开了多个终端窗口，或者在 config.yaml 中修改 singleton_port。")
-        sys.exit(1)
+    import time
+    
+    attempts = 0
+    max_attempts = 5
+    while attempts < max_attempts:
+        _SINGLETON_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            _SINGLETON_SOCKET.bind(('127.0.0.1', port))
+            return # 成功夺取主权锁
+        except socket.error:
+            if attempts == 0:
+                tlog.debug(f"⏳ [端口竞争] 正在等待端口 {port} 释放主权 (尝试 {attempts+1}/{max_attempts})...")
+            
+            attempts += 1
+            if attempts < max_attempts:
+                time.sleep(1)
+            else:
+                tlog.error(f"\n🛑 [运行冲突] 启动失败：端口 {port} 已被占用，检测到系统已经在后台运行！")
+                tlog.error("   └── 💡 为了保护您的文章数据和电脑内存，本次重复启动已自动拦截。")
+                tlog.error("   └── 请检查是否开了多个终端窗口，或者在 config.yaml 中修改 singleton_port。")
+                sys.exit(1)
 
 def parse_args_and_lock():
     """解析命令行参数，执行配置文件自检，并激活防抖锁"""
-    parser = argparse.ArgumentParser(description="🛡️ Illacme-plenipes [V35.2]: 全球私人出版社主权操作系统 - 负责从原稿摄取到全量分发的全生命周期治理")
+    parser = argparse.ArgumentParser(description="🛡️ Illacme-plenipes [V50.3]: 全球私人出版社主权操作系统 - 负责从原稿摄取到全量分发的全生命周期治理")
 
-    parser.add_argument('--config', default='config.yaml', help="指定 YAML 配置文件路径 (默认: config.yaml)")
-    parser.add_argument('--sync', action='store_true', help="🚀 [主权分发演习] 发起单次全库阵列资产分发演习")
-    parser.add_argument('--watch', action='store_true', help="🐕 [疆域全时守护] 启动系统看门狗，实时监控原稿变更并触发即时分发")
+    parser.add_argument('--config', '-c', default='config.yaml', help="指定 YAML 配置文件路径 (默认: config.yaml)")
+    parser.add_argument('--sync', '-s', action='store_true', help="🚀 [分发演习] 发起单次全库阵列资产分发演习")
+    parser.add_argument('--watch', '-w', action='store_true', help="🐕 [全时守护] 启动系统看门狗，实时监控原稿变更并触发即时分发")
     parser.add_argument('--dry-run', action='store_true', help="🛡️ [安全仿真模式] 模拟全流程逻辑，阻断一切物理写盘与 API 费用支出")
-    parser.add_argument('--force', action='store_true', help="🔥 [强制重构演习] 强行撕碎指纹防抖，强拉所有引擎模块执行覆盖重编")
+    parser.add_argument('--force', '-f', action='store_true', help="🔥 [强制重构] 强行撕碎指纹防抖，强拉所有引擎模块执行覆盖重编")
     parser.add_argument('--re-slug', action='store_true', help="🧠 [路径重塑] 强制 AI 重新生成文档路径锚点 (警告：会导致现有 URL 失效)")
 
 
@@ -87,9 +243,9 @@ def parse_args_and_lock():
     parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
     parser.add_argument('--clean', action='store_true', help="🧹 [主权重置] 物理删除所有同步指纹与 AI 影子缓存")
-    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除分发疆域内的所有非法或过期资产")
+    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版品牌内的所有非法或过期资产")
     parser.add_argument('--sentinel', action='store_true', help="🛡️ [哨兵审计] 立即唤醒项目哨兵，执行健康审计与算力成本上报")
-    parser.add_argument('--doctor', action='store_true', help="🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验")
+    parser.add_argument('--doctor', '-d', action='store_true', help="🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验")
     parser.add_argument('--heal', action='store_true', help="💊 [物理自愈] 配合 --doctor 使用，自动修复路径缺失与指纹冲突")
 
 
@@ -120,56 +276,68 @@ def parse_args_and_lock():
 
     # 🚀 [V34.6] 进程自杀协议
     parser.add_argument('--shutdown', action='store_true', help="🛑 [远程下线] 向正在运行的实例发送关机指令并安全存档 (需要 API 模式已启动)")
-    # 🚀 [V35.2 主权定型参数]
-    parser.add_argument('--territory', dest='territory', default='default', help="🌐 [主权疆域选择] 指定当前操作的出版疆域 ID (默认: default)")
+    # 🚀 [V50.3 主权定型参数]
+    parser.add_argument('--imprint', '-i', dest='imprint', default='default', help="🌐 [出版品牌选择] 指定当前操作的 Imprint ID (默认: default)")
 
 
-    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前疆域内的所有敏感凭据")
-    parser.add_argument('--audit-report', action='store_true', help="📊 [主权账本报告] 导出当前疆域的商业审计流水账本")
+    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前品牌内的所有敏感凭据")
+    parser.add_argument('--audit-report', action='store_true', help="📊 [账本报告] 导出当前出版品牌的商业审计流水账本")
+
+    # 🚀 [V50.3] 工业级 Imprint 治理体系 (Imprint Governance)
+    parser.add_argument('--imprint-list', action='store_true', help="📜 [品牌清单] 枚举当前系统内所有已划定的出版品牌 (Imprints)")
+    parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [品牌划定] 快速创建一个新的出版品牌 (需配合 --vault-path)")
+    parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [品牌撤销] 物理抹除一个已有的出版品牌及其所有资产")
+    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿金库的物理路径 (用于创建新品牌)")
+    from core import __version__, __edition__
+    parser.add_argument('--wizard', '-W', action='store_true', help="🧙 [引导向导] 启动 Web 端可视化安装与配置向导")
+    parser.add_argument('--version', '-v', action='version', version=f'Illacme-plenipes v{__version__} ({__edition__})')
 
 
     args = parser.parse_args()
     cfg = None
 
-    if not os.path.exists(args.config):
-        # 🚀 零配置自启 (Magic Onboarding)
-        from core.ui.terminal import TerminalUI
+    if not os.path.exists(args.config) or args.wizard or args.imprint_create:
+        # 🚀 零配置自启 (Magic Onboarding) 或 手动管理品牌
+        from core.ui.mediator import UIMediator
         example_config = 'config.example.yaml'
         if os.path.exists(example_config):
-            config_data = TerminalUI.show_wizard()
-
+            # 如果提供了完整的命令行参数，执行非交互式初始化数据准备
+            if args.imprint_create and args.vault_path:
+                tlog.info(f"🏗️ [自动化初始化] 正在准备出版品牌配置: {args.imprint_create}")
+                config_data = {
+                    "press_name": args.imprint_create,
+                    "vault_root": args.vault_path,
+                    "active_theme": "starlight",
+                    "system": {"singleton_port": 43210}
+                }
             # 读取范例配置作为底座
             with open(example_config, 'r', encoding='utf-8') as f:
                 import yaml
                 base_cfg = yaml.safe_load(f) or {}
 
-            # 深度合并向导配置
-            def deep_update(d, u):
-                import collections.abc
-                for k, v in u.items():
-                    if isinstance(v, collections.abc.Mapping):
-                        d[k] = deep_update(d.get(k, {}), v)
-                    else: d[k] = v
-                return d
-
-            final_cfg = deep_update(base_cfg, config_data)
+            # 🚀 [V50.5] 简化自举逻辑：底层不再负责交互式向导
+            # 所有的向导触发与品牌建立逻辑已统一收口至 plenipes.py
+            final_cfg = base_cfg
 
             try:
-                with open(args.config, 'w', encoding='utf-8') as f:
-                    yaml.dump(final_cfg, f, allow_unicode=True, sort_keys=False)
-                tlog.info(f"✨ 配置文件 '{args.config}' 已生成并初始化。")
+                # 仅在文件缺失时初始化基础配置
+                if not os.path.exists(args.config):
+                    with open(args.config, 'w', encoding='utf-8') as f:
+                        yaml.dump(final_cfg, f, allow_unicode=True, sort_keys=False)
+                    tlog.info(f"✨ 基础配置文件 '{args.config}' 已生成。")
             except Exception as e:
                 tlog.error(f"🛑 自动生成配置文件失败: {e}")
                 sys.exit(1)
         else:
-            tlog.error(f"🛑 启动终止: 未发现配置文件 '{args.config}'，且未找到范例文件 '{example_config}'。")
-            sys.exit(1)
+            if not os.path.exists(args.config):
+                tlog.error(f"🛑 启动终止: 未发现配置文件 '{args.config}'，且未找到范例文件 '{example_config}'。")
+                sys.exit(1)
 
     # 在初始化主引擎和模型加载前，单独解析系统级参数以抢占端口锁
     try:
         from core.config.config import load_config
         cfg = load_config(args.config)
-        lock_port = args.port or cfg.system.safety_policy.singleton_port
+        lock_port = args.port or cfg.system.singleton_port
 
         # 🚀 [V34.8] 动态回填配置文件的端口设置
         if args.api_port is None:
@@ -190,15 +358,14 @@ def parse_args_and_lock():
         # 🚀 [V15.8] 回退值也应尽量从模型默认值中获取
         from core.config.models.system import SystemSettings
         default_sys = SystemSettings()
-        lock_port = args.port or default_sys.safety_policy.singleton_port
+        lock_port = args.port or default_sys.singleton_port
 
     # 🚀 处理无头化标记
     if args.headless or args.json_log:
-        from core.ui.terminal import TerminalUI
-        import core.ui.terminal as terminal_mod
-        terminal_mod.HEADLESS = True
+        from core.ui.mediator import UIMediator
+        UIMediator.set_web_mode(True) # 借用 Web 模式来静默 Rich
         if args.json_log:
-            terminal_mod.JSON_LOGGING = True
+            os.environ['PLENIPES_JSON_LOG'] = '1'
 
     if args.shutdown:
         # 🚀 [V34.6] 物理关机逻辑：尝试通过 API 端口发送自杀指令

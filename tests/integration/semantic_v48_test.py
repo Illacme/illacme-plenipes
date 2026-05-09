@@ -82,7 +82,7 @@ def run_integration_test():
     config.system.data_paths["vectors_json"] = "test_vectors.json"
     
     # 使用工厂创建全功能引擎
-    engine = EngineFactory.create_engine(config, territory_id="semantic_test")
+    engine = EngineFactory.create_engine(config, imprint_id="semantic_test")
     
     if not engine:
         logger.error("❌ 引擎工厂启动失败！请检查 ContractGuard 审计日志。")

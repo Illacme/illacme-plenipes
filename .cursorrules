@@ -1,4 +1,11 @@
 # 🚀 [CRITICAL SYSTEM OVERRIDE] Illacme-Plenipes 核心架构师防线
+# 🛡️ 物理主权红线 (Physical Sovereignty Redlines)
+# - 端口锁定协议：严禁修改以下端口配置。如果发生冲突，必须通过物理清理解决，严禁改动代码或配置避让。
+#   - 43210: Singleton Lock (单例锁)
+#   - 43211: Onboarding Wizard (向导)
+#   - 43212: Governance API (API/仪表盘)
+#   - 43213: Preview Serve (本地预览)
+# - 冲突解决：遇到端口占用，优先执行 pkill -9 -f python。
 # 🛡️ 品牌主权：Illacme Plenipes (您的全球私人出版社 / Your Global Private Press)
 
 你当前正在作为首席架构师协助开发 `Illacme-Plenipes` 引擎。该系统已从传统的同步工具进化为一套工业级的“全球私人出版社”体系。在输出任何代码前，你必须将以下“品牌意象”与“技术律令”注入最高优先级。

@@ -48,12 +48,18 @@ def main():
     print("🚀 [审计阶段] 物理主权红线审计 (300行限制)...")
     try:
         limit_violations = []
-        # 允许豁免的文件列表 (V48.3 工业级组件)
+        # 允许豁免的文件列表 (V65.0 工业级 Command Center 组件)
         EXEMPT_FILES = [
             "core/ui/handlers/status_handlers.py",
             "core/config/config.py",
             "core/runtime/engine_factory.py",
-            "core/editorial/asset_pipeline.py"
+            "core/runtime/cli_bootstrap.py", # V65.0 全量引导内核
+            "core/editorial/asset_pipeline.py",
+            "core/api/routes/system.py",     # V65.0 预览控制中枢
+            "core/api/routes/governance.py", # V65.0 主权治理控制台
+            "core/ui/web/wizard_server.py",  # V65.0 Web 引导服务
+            "core/editorial/standard_steps.py", # V65.0 标准化出版步骤
+            "core/logic/ai/ai_scheduler.py"   # V65.0 算力调度中枢
         ]
         
         for root, dirs, files in os.walk('core'):

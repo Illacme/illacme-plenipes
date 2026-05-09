@@ -17,7 +17,7 @@ class LicenseGuard:
     """🚀 [V35.0] 出版准入卫士：执行出版社的“商业宪法”"""
     
     _PRO_FEATURES = {
-        "multi_territory": "无限出版社疆域",
+        "multi_imprint": "无限出版社品牌",
 
         "subfolder_ingress": "子目录精准收稿映射",
         "multi_language": "全语种矩阵翻译",
@@ -40,8 +40,8 @@ class LicenseGuard:
     @classmethod
     def is_licensed(cls) -> bool:
         """判断当前环境是否已激活授权版"""
-        # [V35.2] 生产就绪：物理激活全量授权
-        return True
+        # 🧪 [测试模式] 降级为社区版以验证栅栏逻辑
+        return False
 
     @classmethod
     def is_pro_feature_allowed(cls, feature_name: str) -> bool:

@@ -11,12 +11,7 @@ import logging
 from core.utils.plugin_loader import PluginLoader
 from plugins.publishers.base import BasePublisher
 from core.utils.tracing import Tracer, tlog
-
 class ContentSyndicator:
-    """
-    🚀 内容分发调度中心 (V17.0 模块化版)
-    负责从 plugins/publishers/ 动态加载插件并执行分发。
-    """
     def __init__(self, syndication_cfg, site_url, sys_tuning_cfg=None, meta=None):
         self.cfg = syndication_cfg
         self.site_url = site_url
@@ -24,18 +19,41 @@ class ContentSyndicator:
         self.meta = meta
         self.breaker = None
 
-        # 🚀 [V17.0] 动态加载外部插件
+        # 🚀 [V18.0] 主权复用：支持多账号/多站点动态映射
         self.plugins = []
         plugin_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "plugins", "publishers")
         discovered_classes = PluginLoader.load_plugins(plugin_dir, BasePublisher)
         
-        for p_cls in discovered_classes:
-            plugin_id = getattr(p_cls, "PLUGIN_ID", p_cls.__name__.lower())
-            platform_cfg = getattr(self.cfg, plugin_id, None)
+        # 建立类型映射表
+        class_map = {getattr(cls, "PLUGIN_ID", cls.__name__.lower()): cls for cls in discovered_classes}
+        
+        # 遍历配置字典，支持自定义键名 (如 devto_personal)
+        for entry_id, entry_cfg in self.cfg.items():
+            if not isinstance(entry_cfg, dict) or not entry_cfg.get('enabled', False):
+                continue
             
-            if platform_cfg and getattr(platform_cfg, 'enabled', False):
-                self.plugins.append(p_cls(platform_cfg, sys_tuning_cfg))
-                tlog.info(f"📡 [分发引擎] 已激活外部插件: {plugin_id}")
+            # 推断平台类型：优先使用显式的 platform 字段，否则尝试从 ID 中提取
+            platform_type = entry_cfg.get("platform")
+            if not platform_type:
+                # 模糊匹配：如果 entry_id 包含 wordpress，则推断为 wordpress
+                for pid in class_map.keys():
+                    if pid in entry_id.lower():
+                        platform_type = pid
+                        break
+            
+            p_cls = class_map.get(platform_type or entry_id)
+            if p_cls:
+                try:
+                    # 实例化插件，传入该条目专属配置
+                    instance = p_cls(entry_cfg, self.sys_tuning)
+                    # 强制注入实例 ID (以便在审计时区分)
+                    instance.instance_id = entry_id
+                    self.plugins.append(instance)
+                    tlog.info(f"📡 [分发引擎] 已激活主权节点: {entry_id} (类型: {platform_type or entry_id})")
+                except Exception as e:
+                    tlog.error(f"🛑 [分发引擎] 节点 {entry_id} 初始化失败: {e}")
+            else:
+                tlog.warning(f"⚠️ [分发引擎] 无法识别的节点类型: {entry_id}")
 
     def syndicate(self, title, slug, content, metadata=None, rel_path=None, lang_code=None, is_dry_run=False, **kwargs):
         """

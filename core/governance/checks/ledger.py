@@ -19,7 +19,7 @@ class LedgerChecker:
         # 1. 统计数据
         all_docs = meta.get_documents_snapshot()
         doc_count = len(all_docs)
-        res.get('details').append(f"🧬 当前激活账本: {config.metadata_db}")
+        res.get('details').append(f"🧬 当前激活账本: {config.get_ledger_path()}")
         res.get('details').append(f"📊 当前账本在册文档: {doc_count} 篇")
 
         # 2. 检查 Slug 冲突

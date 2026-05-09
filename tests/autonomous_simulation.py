@@ -15,9 +15,12 @@ import hashlib
 # 🚀 动态挂载项目根目录，确保影子环境导入不失联
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.runtime.engine import IllacmeEngine
+from core.runtime.engine_factory import EngineFactory
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
-logger = logging.getLogger("Illacme.Simulation")
+# logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
+# logger = logging.getLogger("Illacme.Simulation")
+def log_info(msg): print(f"INFO: {msg}", flush=True)
+def log_error(msg): print(f"ERROR: {msg}", flush=True)
 
 def verify_docs_sync_hook():
     """TDR & AEL Protocol: 验证核心文档与历史归档的同步约束"""
@@ -26,7 +29,7 @@ def verify_docs_sync_hook():
         return
 
     import subprocess
-    logger.info("🧪 [仿真] 挂载 AEL & TDR 全矩阵文档约束钩子...")
+    log_info("🧪 [仿真] 挂载 AEL & TDR 全矩阵文档约束钩子...")
     try:
         result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         changes = result.stdout
@@ -95,19 +98,19 @@ def verify_docs_sync_hook():
                 raise AssertionError("[AEL Protocol Mandate] 当前迭代未满足三相强制规范 (缺失 plan/task/walkthrough 之一)，拒绝合并！")
             
         if any_modified:
-            logger.info("   └── ✅ [AEL & TDR] 探测到历史归档与业务文档均已触发更新信号，约束已通过。")
+            log_info("   └── ✅ [AEL & TDR] 探测到历史归档与业务文档均已触发更新信号，约束已通过。")
             
     except subprocess.CalledProcessError:
         logger.warning("   └── ⚠️ [TDR] 非 Git 仓库或 Git 执行失败，跳过文档关联校验。")
 
 def run_shadow_simulation():
     """执行影子执行仿真"""
-    logger.info("🧪 [仿真] 启动影子沙盒校验 (Simulation Gating)...")
+    log_info("🧪 [仿真] 启动影子沙盒校验 (Simulation Gating)...")
     verify_docs_sync_hook()
     
     # 1. 创建临时工作区
     with tempfile.TemporaryDirectory() as tmpdir:
-        logger.info(f"🧪 [仿真] 创建沙盒镜像: {tmpdir}")
+        log_info(f"🧪 [仿真] 创建沙盒镜像: {tmpdir}")
         
         # 2. 导出运行环境
         os.makedirs(os.path.join(tmpdir, "core"), exist_ok=True)
@@ -128,10 +131,21 @@ def run_shadow_simulation():
             os.chdir(tmpdir)
             os.environ["ILLACME_SIMULATION_MODE"] = "TRUE"
             
-            engine = IllacmeEngine("config.yaml")
+            engine = EngineFactory.create_engine("config.yaml")
+            log_info(f"🧪 [仿真调试] 引擎管线步骤: {[s.__class__.__name__ for s in engine.pipeline.steps]}")
+            
+            # 🛡️ [Debug] Verify the file content in the sandbox
+            debug_file = "core/editorial/standard_steps.py"
+            if os.path.exists(debug_file):
+                with open(debug_file, 'r') as df:
+                    lines = df.readlines()
+                    log_info(f"🧪 [仿真调试] {debug_file} 长度: {len(lines)}")
+                    # Search for my added log
+                    has_log = any("🎨 [解蔽调试]" in l for l in lines)
+                    log_info(f"🧪 [仿真调试] 是否包含解蔽调试日志: {has_log}")
             
             # 4. 执行试运行 (Dry Run) 与 SLSH 自愈校验
-            logger.info("🧪 [仿真] 正在试探 Pipeline 完整性与 SLSH 自愈...")
+            log_info("🧪 [仿真] 正在试探 Pipeline 完整性与 SLSH 自愈...")
             
             test_file = os.path.join(tmpdir, "content-vault", "break_link_test.md")
             with open(test_file, 'w', encoding='utf-8') as f:
@@ -144,17 +158,20 @@ def run_shadow_simulation():
             # ==========================================
             # 🚀 [仿真增强] 4. 初始化引擎副本
             # ==========================================
-            engine = IllacmeEngine(os.path.join(tmpdir, "config.yaml"))
+            engine = EngineFactory.create_engine(os.path.join(tmpdir, "config.yaml"))
             
             # 🚀 [V16.6 补丁]：强行对齐引擎物理根，防止相对路径爬升导致的任务偏差
             engine.vault_root = os.path.abspath(os.path.join(tmpdir, "content-vault"))
             engine.paths['vault'] = engine.vault_root
-            engine.paths['shadow'] = os.path.join(engine.vault_root, '.illacme-shadow')
+            # 🚀 [V50.3] 对齐物理主权：影子缓存现在统一定义在 engine.paths['cache']
+            engine.paths['cache'] = os.path.join(tmpdir, ".plenipes", "cache")
+            engine.paths['shadow'] = engine.paths['cache'] # 兼容旧版仿真逻辑
             
             # 🚀 [Resonance 补丁]：显式激活多语言 Alt 描述生成
             if hasattr(engine.config, 'image_settings'):
+                engine.config.image_settings.generate_alt = True
                 engine.config.image_settings.multilingual_alt = True
-                logger.info("🧪 [仿真] 已显式激活 multilingual_alt (Resonance Sovereignty Force-On)")
+                log_info("🧪 [仿真] 已显式激活 ADMI v2.0 (generate_alt & multilingual_alt)")
             
             # 手动执行健康检查自愈
             engine.sentinel.run_health_check(auto_fix=True)
@@ -162,7 +179,7 @@ def run_shadow_simulation():
             # ==========================================
             # 🚀 [仿真增强] 5. ADMI v2.0 视觉感知与多语言校验
             # ==========================================
-            logger.info("🧪 [仿真] 进入 ADMI v2.0 阶段 (视觉感知与多语言同步)...")
+            log_info("🧪 [仿真] 进入 ADMI v2.0 阶段 (视觉感知与多语言同步)...")
             
             # 创建物理图片模拟
             img_path = os.path.join(tmpdir, "content-vault", "vision_test.jpg")
@@ -175,24 +192,25 @@ def run_shadow_simulation():
                 
             # 🚀 [V16.6 核心对齐]：文件创建后，必须强制引擎重载物理索引，否则解蔽器将无法定位资产指纹
             from core.editorial.vault_indexer import VaultIndexer
-            engine.md_index, engine.asset_index = VaultIndexer.build_indexes(engine.paths['vault'])
+            engine.md_index, engine.asset_index, _ = VaultIndexer.build_indexes(engine.manuscript_source, engine.config, ledger=engine.ledger)
             engine.asset_pipeline.asset_index = engine.asset_index
             
             # 模拟 AI 视觉与翻译返回
             from unittest.mock import MagicMock
             
             # 建立坚不可摧的 Mock 阵地
-            def mock_translate_side_effect(text, src, tgt, context_type="body"):
+            def mock_translate_side_effect(text, src, tgt, context_type="body", **kwargs):
                 import re
-                # 🚀 [Resonance 补丁]：对齐 [[STB_MASK_n]] 标准格式
-                masks = re.findall(r'\[\[STB_MASK_(\d+)\]\]', text)
-                mask_str = " ".join([f"[[STB_MASK_{m}]]" for m in masks])
+                # 🚀 [V48.3] 仿真防护增强：同时支持全局与块级掩码
+                masks_stb = re.findall(r'\[\[STB_MASK_(\d+)\]\]', text)
+                masks_b = re.findall(r'__B_MASK_(\d+)__', text)
+                
+                mask_str = " ".join([f"[[STB_MASK_{m}]]" for m in masks_stb] + [f"__B_MASK_{m}__" for m in masks_b])
+                
                 if "机械章鱼" in text:
                     return f"A mechanical octopus wearing sunglasses. {mask_str}"
-                if "Translate this title" in text:
-                    return "Vision Test Translated"
-                if "JSON SEO" in text or "Analyze this article" in text:
-                    return '{"description": "SEO Description", "keywords": "test"}'
+                if context_type == "alt_text":
+                    return "A mechanical octopus wearing sunglasses."
                 return f"Mocked {tgt}: {mask_str}"
 
             engine.translator.describe_image = MagicMock(return_value="一只戴着墨镜的机械章鱼")
@@ -204,20 +222,20 @@ def run_shadow_simulation():
             engine.sync_document(doc_with_img, "docs", "content-vault", is_dry_run=False)
             
             # 校验 1：账本多语言矩阵
-            img_hash = hashlib.md5(b"MOCK_IMAGE_DATA_001").hexdigest()
-            cached_meta = engine.meta.get_asset_metadata(img_hash)
+            img_hash = hashlib.md5(b"MOCK_IMAGE_DATA_001").hexdigest()[:8]
+            cached_meta = engine.meta.get_asset_metadata(img_hash) or {}
             alt_map = cached_meta.get("alt_texts", {})
             
             if "机械章鱼" in alt_map.get("zh", "") and "octopus" in alt_map.get("en", "").lower():
-                logger.info("   └── ✅ [账本校验] 多语言 Alt 描述矩阵已成功建立。")
+                log_info("   └── ✅ [账本校验] 多语言 Alt 描述矩阵已成功建立。")
             else:
-                logger.error(f"账本内容异常: {alt_map}")
+                log_error(f"账本内容异常: {alt_map}")
                 raise Exception("多语言 Alt 矩阵建立失败")
                 
             # ==========================================
             # 🚀 [仿真增强] 6. Syndication & Unmasking 校验
             # ==========================================
-            logger.info("🧪 [仿真] 进入解蔽与分发校验阶段...")
+            log_info("🧪 [仿真] 进入解蔽与分发校验阶段...")
             
             # 检查 en 目录下的产物
             en_prefix = engine.i18n.targets[0].lang_code # en
@@ -231,9 +249,9 @@ def run_shadow_simulation():
             if not os.path.exists(en_file_path):
                 # 尝试递归查找以应对不同的 Route Prefix 逻辑
                 found = False
-                # 🚀 [V6 适配补丁]：优先在目标语言 (en) 目录下搜索，防止误撞源语言产物
+                # 🚀 [V6 适配补丁]：优先在目标语言 (en) 目录下搜索
                 en_target_dir = os.path.join(actual_shadow_root, "en")
-                logger.debug(f"🔍 [V6 目标搜索] 正在扫描: {en_target_dir}")
+                log_info(f"🔍 [V6 目标搜索] 正在扫描影子缓存: {actual_shadow_root}")
                 
                 if os.path.exists(en_target_dir):
                     for root, dirs, files in os.walk(en_target_dir):
@@ -241,7 +259,7 @@ def run_shadow_simulation():
                             if "vision-test-slug" in f and f.endswith(".md"):
                                 en_file_path = os.path.join(root, f)
                                 found = True
-                                logger.info(f"   └── ✨ [V6 发现产物] {f} -> {en_file_path}")
+                                log_info(f"   └── ✨ [V6 发现产物] {f} -> {en_file_path}")
                                 break
                         if found: break
                 
@@ -258,27 +276,27 @@ def run_shadow_simulation():
                 
                 if not found:
                     # 输出沙盒全量目录树以供诊断
-                    logger.error("❌ [沙盒目录树审计]")
+                    log_error("❌ [沙盒目录树审计]")
                     for r, d, fs in os.walk(tmpdir):
-                        logger.error(f"  {r}: {fs}")
+                        log_error(f"  {r}: {fs}")
                     raise Exception("未发现翻译后的目标语言影子资产。")
                 
             with open(en_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 if "mechanical octopus" in content:
-                    logger.info("   └── ✅ [解蔽校验] 目标语言影子产物已成功回填本地化 Alt 描述。")
+                    log_info("   └── ✅ [解蔽校验] 目标语言影子产物已成功回填本地化 Alt 描述。")
                 else:
-                    logger.error(f"产物内容异常: {content}")
+                    log_error(f"产物内容异常: {content}")
                     raise Exception("目标语言 Alt 回填失败")
 
             os.chdir(origin_cwd)
-            logger.info("✅ [仿真] 全量影子门禁校验通过！Project Resonance 准备全量交付。")
+            log_info("✅ [仿真] 全量影子门禁校验通过！Project Resonance 准备全量交付。")
             return True
             
         except Exception as e:
-            logger.error(f"❌ [仿真] 影子执行失败: {e}")
+            log_error(f"❌ [仿真] 影子执行失败: {e}")
             import traceback
-            logger.error(traceback.format_exc())
+            log_error(traceback.format_exc())
             return False
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ class ServiceRegistry:
         self.meta = None
 
 class SyncContext:
-    def __init__(self, engine, src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=False, ael_iter_id=None):
+    def __init__(self, engine, src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=False, ael_iter_id=None, target_slot="docs"):
         # --- 追踪指纹 ---
         self.ael_iter_id = ael_iter_id
 
@@ -31,6 +31,7 @@ class SyncContext:
         self.is_dry_run = is_dry_run
         self.force_sync = force_sync
         self.is_sandbox = is_sandbox
+        self.target_slot = target_slot
 
         # --- 节点元数据 (Phase 1) ---
         self.title = os.path.splitext(os.path.basename(src_path))[0]

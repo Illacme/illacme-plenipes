@@ -31,9 +31,10 @@ class SmartRouter:
 
         # 2. 如果首选节点已亚健康，寻找排行榜第一名
         rankings = self.registry.get_rankings()
-        if rankings:
-            best_node = rankings[0]["node"]
-            if best_node != preferred_node:
+        if rankings and len(rankings) > 0:
+            # 🛡️ [R1.3] 防护：使用索引前核实长度，并使用 .get()
+            best_node = (rankings[0] or {}).get("node")
+            if best_node and best_node != preferred_node:
                 tlog.warning(f"🔀 [智能路由] 侦测到首选节点 {preferred_node} 指标下滑，正在自动 Failover 至最优节点: {best_node}")
             return best_node
 
@@ -46,8 +47,10 @@ class SmartRouter:
         用于重试逻辑中，当一个节点物理失败后，立即换一个试试
         """
         rankings = self.registry.get_rankings()
-        for r in rankings:
-            if r["node"] != failing_node and r["health"] > 40:
-                tlog.info(f"🩹 [故障转移] 节点 {failing_node} 异常，已动态切流至: {r['node']}")
-                return r["node"]
+        for r in (rankings or []):
+            node_id = (r or {}).get("node")
+            health = (r or {}).get("health", 0)
+            if node_id and node_id != failing_node and health > 40:
+                tlog.info(f"🩹 [故障转移] 节点 {failing_node} 异常，已动态切流至: {node_id}")
+                return node_id
         return None

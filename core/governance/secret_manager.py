@@ -71,7 +71,7 @@ class SecretManager:
             if isinstance(v, dict):
                 cls.mask_dict(v)
             elif isinstance(v, str) and k.lower() in sensitive_keys:
-                if not v.startswith("enc:") and v.strip() and "TODO" not in v:
+                if not v.startswith("enc:") and v.strip() and "PLACEHOLDER" not in v:
                     data[k] = cls.encrypt(v)
                     tlog.info(f"🛡️ [SecretManager] 发现敏感字段，已执行物理脱敏: {k}")
         return data

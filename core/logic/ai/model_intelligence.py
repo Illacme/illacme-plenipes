@@ -136,22 +136,22 @@ class ModelIntelligenceHub:
     def record_success(cls, node_name: str, reason: str = "调用成功"):
         """记录节点调用成功，提升健康分"""
         stats = cls._node_health.get(node_name, {"score": 100, "success_count": 0, "fail_count": 0, "reasons": []})
-        stats["success_count"] += 1
-        stats["score"] = min(100, stats["score"] + 1)
-        cls._node_health[node_name] = stats
+        stats.update({"success_count": stats.get("success_count", 0) + 1})
+        stats.update({"score": min(100, stats.get("score", 100) + 1)})
+        cls._node_health.update({node_name: stats})
 
     @classmethod
     def record_failure(cls, node_name: str, reason: str = "未知错误"):
         """记录节点调用失败，降低健康分"""
         stats = cls._node_health.get(node_name, {"score": 100, "success_count": 0, "fail_count": 0, "reasons": []})
-        stats["fail_count"] += 1
-        stats["score"] = max(0, stats["score"] - 20) # 失败惩罚更重
+        stats.update({"fail_count": stats.get("fail_count", 0) + 1})
+        stats.update({"score": max(0, stats.get("score", 100) - 20)}) # 失败惩罚更重
         stats.setdefault("reasons", []).append(reason)
-        cls._node_health[node_name] = stats
+        cls._node_health.update({node_name: stats})
         # 🚀 [V16.8] 性能自律：系统级（system）警告已由 UI Panel 统一展示，此处不再重复打印日志
         from core.utils.tracing import Tracer
         if node_name != "system" and "SelfCheck" not in (Tracer.get_id() or ""):
-            tlog.warning(f"📉 [健康分下降] 节点 {node_name} 当前分数: {stats['score']} | 原因: {reason}")
+            tlog.warning(f"📉 [健康分下降] 节点 {node_name} 当前分数: {stats.get('score')} | 原因: {reason}")
 
     @classmethod
     def get_all_reasons(cls, node_id: str) -> list:
@@ -162,7 +162,7 @@ class ModelIntelligenceHub:
 
     def get_health_score(self, node_name: str) -> int:
         """获取节点当前健康分"""
-        return self.node_health.get(node_name, {"score": 100})["score"]
+        return (self._node_health.get(node_name) or {"score": 100}).get("score", 100)
 
     def _get_protocol_family(self, model_name: str, base_url: str) -> str:
         """🔍 自动探测模型所属的协议家族"""
@@ -188,17 +188,17 @@ class ModelIntelligenceHub:
         family = self._get_protocol_family(model_name, base_url)
 
         # 3. 动态映射：思维链压制/开启
-        thinking_mapper = self.PROTOCOL_NORMALIZER.get('thinking').get(family)
+        thinking_mapper = self.PROTOCOL_NORMALIZER.get('thinking', {}).get(family)
         if thinking_mapper:
             payload.update(thinking_mapper(autopilot.get('enable_thinking'), autopilot.get('thinking_budget')))
 
         # 4. 动态映射：JSON 模式 (增强对本地环境 127.0.0.1 的兼容性)
         is_local = "localhost" in base_url or "127.0.0.1" in base_url
         if (autopilot.get('enable_json_mode') or is_json):
-            json_family = family if family in self.PROTOCOL_NORMALIZER.get('json_mode') else "openai-compatible"
+            json_family = family if family in self.PROTOCOL_NORMALIZER.get('json_mode', {}) else "openai-compatible"
             if "gemini" in model_name.lower(): json_family = "google-gemini"
 
-            json_mapper = self.PROTOCOL_NORMALIZER.get('json_mode').get(json_family)
+            json_mapper = self.PROTOCOL_NORMALIZER.get('json_mode', {}).get(json_family)
             if json_mapper:
                 payload.update(json_mapper(True, None))
 
@@ -220,9 +220,9 @@ class ModelIntelligenceHub:
         # 7. 补充 Oracle 学习到的特性
         model_key = f"{archetype}:{model_name}"
         if model_key in self.learned_features:
-            for feature, mapping in self.learned_features[model_key].items():
+            for feature, mapping in (self.learned_features.get(model_key) or {}).items():
                 if autopilot.get(f"enable_{feature}") or autopilot.get(feature):
-                    payload[mapping.get('param')] = mapping.get('format').replace("{budget}", str(autopilot.get('thinking_budget')))
+                    payload[mapping.get('param')] = (mapping.get('format') or "").replace("{budget}", str(autopilot.get('thinking_budget')))
 
         # 8. 异步触发探测
         if ai_client and model_key not in self.learned_features and autopilot.get('enable_thinking'):

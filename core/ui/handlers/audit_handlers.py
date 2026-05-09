@@ -46,3 +46,28 @@ class AuditHandlers:
 
         status_msg = "👀 [bold cyan]同步结束，正在转入后台实时守护...[/bold cyan]" if is_watch_mode else "🛑 [bold green]任务完成，引擎即将安全下线。[/bold green]"
         console.print(f"\n{status_msg}\n")
+        
+    @staticmethod
+    def handle_doctor_report(report):
+        """🩺 渲染主权体检深度报告"""
+        console.print(f"\n[bold cyan]🩺 Illacme-plenipes 全域体检报告 ({report['timestamp']})[/bold cyan]")
+        
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("检查项目", style="bold")
+        table.add_column("状态", width=10)
+        table.add_column("诊断结论")
+        
+        for check in report.get("checks", []):
+            status = check.get("status", "UNKNOWN")
+            style = {"PASS": "[green]PASS[/green]", "WARN": "[yellow]WARN[/yellow]", "FAIL": "[red]FAIL[/red]"}.get(status, status)
+            table.add_row(check.get("name"), style, check.get("message"))
+            
+        console.print(table)
+        
+        final_status = report.get("status")
+        if final_status == "PASS":
+            console.print("\n[bold green]✅ 结论：您的物理主权基座固若金汤，所有系统指针对齐。[/bold green]")
+        elif final_status == "WARN":
+            console.print("\n[bold yellow]⚠️ 结论：系统存在亚健康状态，建议使用 --heal 执行物理自愈。[/bold yellow]")
+        else:
+            console.print("\n[bold red]❌ 结论：系统发现致命断裂！请立即执行 --heal 或联系技术主权支持。[/bold red]")

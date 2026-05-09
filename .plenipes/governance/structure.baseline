@@ -7,7 +7,6 @@ core/adapters/ai/nlp.py
 core/adapters/ai/payload_manager.py
 core/adapters/ai/registry.py
 core/adapters/ai/strategies.py
-core/adapters/ai/task_mixin.py
 core/adapters/base.py
 core/adapters/egress/__init__.py
 core/adapters/egress/publishers/__init__.py
@@ -24,9 +23,12 @@ core/adapters/syndication/targets/__init__.py
 core/api/__init__.py
 core/api/bridge.py
 core/api/routes/__init__.py
+core/api/routes/compute.py
 core/api/routes/content.py
 core/api/routes/governance.py
 core/api/routes/system.py
+core/api/routes/system_fragment.py
+core/api/routes/ws.py
 core/api/server.py
 core/archives/__init__.py
 core/archives/block_cache.py
@@ -43,6 +45,7 @@ core/config/__init__.py
 core/config/config.py
 core/config/config_models.py
 core/config/env_loader.py
+core/config/governance_map.py
 core/config/models/__init__.py
 core/config/models/ai.py
 core/config/models/base.py
@@ -80,6 +83,7 @@ core/governance/env_sentry.py
 core/governance/healer.py
 core/governance/health_registry.py
 core/governance/heartbeat.py
+core/governance/imprint_manager.py
 core/governance/indexing_sentinel.py
 core/governance/isolator.py
 core/governance/janitor.py
@@ -92,7 +96,6 @@ core/governance/rate_limiter.py
 core/governance/resource_guard.py
 core/governance/secret_manager.py
 core/governance/sentinel.py
-core/governance/territory_manager.py
 core/governance/vector_index.py
 core/ingress/__init__.py
 core/ingress/adapter.py
@@ -113,9 +116,11 @@ core/logic/ai/ai_factory.py
 core/logic/ai/ai_logic_hub.py
 core/logic/ai/ai_scheduler.py
 core/logic/ai/model_intelligence.py
+core/logic/ai/task_mixin.py
 core/logic/ast_resolver.py
 core/logic/block_parser.py
 core/logic/context_compressor.py
+core/logic/diagnostics.py
 core/logic/events.py
 core/logic/hooks.py
 core/logic/knowledge/__init__.py
@@ -125,6 +130,15 @@ core/logic/notification_hub.py
 core/logic/orchestration/__init__.py
 core/logic/orchestration/concurrency_controller.py
 core/logic/orchestration/task_orchestrator.py
+core/logic/seo/__init__.py
+core/logic/seo/ai_alignment.py
+core/logic/seo/ai_authority.py
+core/logic/seo/ai_localized.py
+core/logic/seo/ai_sync.py
+core/logic/seo/base.py
+core/logic/seo/factory.py
+core/logic/seo/heuristic.py
+core/logic/seo/protocol.py
 core/logic/sitemap_engine.py
 core/logic/smart_router.py
 core/logic/strategies/__init__.py
@@ -166,7 +180,7 @@ core/ui/handlers/audit_handlers.py
 core/ui/handlers/report_handlers.py
 core/ui/handlers/status_handlers.py
 core/ui/handlers/summary_handlers.py
-core/ui/terminal.py
+core/ui/mediator.py
 core/ui/web/__init__.py
 core/ui/web/wizard_server.py
 core/ui/wizard.py

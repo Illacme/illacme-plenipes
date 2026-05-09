@@ -40,7 +40,8 @@ class BinderyDispatcher:
         self.unmasker = BinderyUnmasker(self, link_resolver=self.link_resolver)
 
 
-    def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None, seo_data=None, is_sandbox=False):
+    def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None, seo_data=None, is_sandbox=False, target_slot="docs"):
+        tlog.info(f"🚀 [Dispatcher Debug] Dispatching {rel_path} | Lang: {lang_code} | Target: {is_target}")
         if not self.paths.get('source_dir') and not self.paths.get('static_dir'):
              return None, None
 

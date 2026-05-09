@@ -24,10 +24,9 @@ class SQLiteBackend:
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
 
-
     def _get_conn(self):
         if not hasattr(self._local, "conn"):
-            timeout = self.engine.config.system.resilience.db_timeout if self.engine else 30.0
+            timeout = getattr(self.engine.config.system.resilience, 'db_timeout', 30.0) if self.engine else 30.0
             self._local.conn = sqlite3.connect(self.db_path, timeout=timeout, check_same_thread=False)
             self._local.conn.row_factory = sqlite3.Row
             try:
@@ -40,23 +39,34 @@ class SQLiteBackend:
         conn = self._get_conn()
         with conn:
             for sql in INIT_SCHEMA: conn.execute(sql)
+            
+            # 🚀 [V50.3] 自动迁移：确保 usage_ledger 包含 imprint_id
+            try:
+                cursor = conn.execute("PRAGMA table_info(usage_ledger)")
+                columns = [row[1] for row in cursor.fetchall()]
+                if columns and "imprint_id" not in columns:
+                    tlog.warning("🛰️ [SQLite] 检测到旧版账本，正在执行物理迁移 (Add imprint_id)...")
+                    conn.execute("ALTER TABLE usage_ledger ADD COLUMN imprint_id TEXT")
+            except Exception as e:
+                tlog.error(f"❌ [SQLite] 自动迁移失败: {e}")
+                
         tlog.debug(f"🗄️ [SQLite] 后端初始化完成: {self.db_path}")
 
     def upsert_document(self, rel_path, data):
         conn = self._get_conn()
         with conn:
             indexed = ["title", "slug", "source_hash", "shadow_hash", "route_prefix", "route_source", "sub_dir", "persistent_date"]
-            main = {k: data.get(k) for k in indexed}
-            other = {k: v for k, v in data.items() if k not in indexed and k != "translations"}
+            main = {k: (data or {}).get(k) for k in indexed}
+            other = {k: v for k, v in (data or {}).items() if k not in indexed and k != "translations"}
             
             conn.execute(UPSERT_DOC, (
-                rel_path, main["title"], main["slug"], main["source_hash"], main["shadow_hash"],
-                main["route_prefix"], main["route_source"], main["sub_dir"], main["persistent_date"],
+                rel_path, main.get("title"), main.get("slug"), main.get("source_hash"), main.get("shadow_hash"),
+                main.get("route_prefix"), main.get("route_source"), main.get("sub_dir"), main.get("persistent_date"),
                 json.dumps(other)
             ))
             
-            if "translations" in data:
-                for lang, res in data["translations"].items():
+            if "translations" in (data or {}):
+                for lang, res in (data.get("translations") or {}).items():
                     conn.execute(UPSERT_TRANS, (rel_path, lang, "DONE", json.dumps(res)))
 
     def upsert_asset(self, asset_hash, metadata):
@@ -71,7 +81,7 @@ class SQLiteBackend:
 
     def get_asset(self, asset_hash):
         row = self._get_conn().execute("SELECT metadata_json FROM asset_registry WHERE asset_hash = ?", (asset_hash,)).fetchone()
-        return json.loads(row["metadata_json"]) if row else None
+        return json.loads(dict(row).get("metadata_json")) if row else None
 
     def upsert_dir_slug(self, raw_dir, slug):
         conn = self._get_conn()
@@ -84,7 +94,7 @@ class SQLiteBackend:
 
     def get_dir_slugs(self):
         rows = self._get_conn().execute("SELECT * FROM dir_index").fetchall()
-        return {r["raw_dir"]: r["slug"] for r in rows}
+        return {dict(r).get("raw_dir"): dict(r).get("slug") for r in rows}
 
     def get_document(self, rel_path):
         conn = self._get_conn()
@@ -92,25 +102,25 @@ class SQLiteBackend:
         if not row: return None
         data = dict(row)
         extra = json.loads(data.pop("metadata_json") or "{}")
-        # 🚀 [V16.7] 兼容性：如果旧版本存的是 'seo'，映射到新版的 'seo_data'
         if "seo" in extra and "seo_data" not in extra:
             extra["seo_data"] = extra.pop("seo")
         data.update(extra)
         trans = conn.execute("SELECT lang_code, result_json FROM translations WHERE rel_path = ?", (rel_path,)).fetchall()
-        data["translations"] = {r["lang_code"]: json.loads(r["result_json"]) for r in trans}
+        data["translations"] = {dict(r).get("lang_code"): json.loads(dict(r).get("result_json")) for r in trans}
         return data
 
     def get_all_documents(self):
-        """🚀 [V16.8] 工业级性能优化：单次物理查询获取全量文档矩阵"""
         conn = self._get_conn()
         main_rows = conn.execute("SELECT * FROM documents").fetchall()
         trans_rows = conn.execute("SELECT rel_path, lang_code, result_json FROM translations").fetchall()
         trans_map = {}
         for r in trans_rows:
-            trans_map.setdefault(r["rel_path"], {})[r["lang_code"]] = json.loads(r["result_json"])
+            dr = dict(r)
+            trans_map.setdefault(dr.get("rel_path"), {})[dr.get("lang_code")] = json.loads(dr.get("result_json"))
         results = {}
         for row in main_rows:
-            rel_path = row["rel_path"]
+            dr = dict(row)
+            rel_path = dr.get("rel_path")
             data = dict(row)
             extra = json.loads(data.pop("metadata_json") or "{}")
             if "seo" in extra and "seo_data" not in extra: extra["seo_data"] = extra.pop("seo")
@@ -120,30 +130,38 @@ class SQLiteBackend:
         return results
 
     def list_all_documents(self):
-        return [r["rel_path"] for r in self._get_conn().execute("SELECT rel_path FROM documents").fetchall()]
+        return [dict(r).get("rel_path") for r in self._get_conn().execute("SELECT rel_path FROM documents").fetchall()]
 
     def find_by_hash(self, source_hash):
-        """🚀 [V23.0] 工业级哈希反查"""
         row = self._get_conn().execute("SELECT rel_path FROM documents WHERE source_hash = ?", (source_hash,)).fetchone()
-        return self.get_document(row["rel_path"]) if row else None
+        return self.get_document(dict(row).get("rel_path")) if row else None
 
-    def insert_usage_record(self, territory_id, event_type, description, cost, metadata):
-        """🚀 [V23.0] 记录计费流水"""
+    def insert_usage_record(self, imprint_id, event_type, description, cost, metadata):
         conn = self._get_conn()
         with conn:
             conn.execute("""
-                INSERT INTO usage_ledger (territory_id, event_type, description, cost, metadata_json)
+                INSERT INTO usage_ledger (imprint_id, event_type, description, cost, metadata_json)
                 VALUES (?, ?, ?, ?, ?)
-            """, (territory_id, event_type, description, cost, json.dumps(metadata)))
+            """, (imprint_id, event_type, description, cost, json.dumps(metadata)))
 
-    def get_total_cost(self, territory_id):
-        row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE territory_id = ?", (territory_id,)).fetchone()
+    def get_total_cost(self, imprint_id):
+        row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE imprint_id = ?", (imprint_id,)).fetchone()
         return row[0] if row and row[0] is not None else 0.0
 
-
-    def list_documents_paginated(self, page=1, limit=20):
+    def list_documents_paginated(self, page=1, limit=20, query=None):
         offset = (page - 1) * limit
-        rows = self._get_conn().execute("SELECT * FROM documents ORDER BY last_updated DESC LIMIT ? OFFSET ?", (limit, offset)).fetchall()
+        sql = "SELECT * FROM documents"
+        params = []
+        
+        if query:
+            sql += " WHERE title LIKE ? OR rel_path LIKE ? OR slug LIKE ?"
+            p = f"%{query}%"
+            params.extend([p, p, p])
+            
+        sql += " ORDER BY last_updated DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        rows = self._get_conn().execute(sql, params).fetchall()
         results = []
         for row in rows:
             data = dict(row)
@@ -152,8 +170,31 @@ class SQLiteBackend:
             results.append(data)
         return results
 
+    def update_document_metadata(self, rel_path, metadata_updates):
+        """🚀 [V52.0] 局部元数据注入：仅更新 metadata_json 中的特定字段"""
+        conn = self._get_conn()
+        with conn:
+            row = conn.execute("SELECT metadata_json FROM documents WHERE rel_path = ?", (rel_path,)).fetchone()
+            if not row: return False
+            
+            existing_meta = json.loads(dict(row).get("metadata_json") or "{}")
+            existing_meta.update(metadata_updates)
+            
+            # 如果更新中包含 title 或 slug，也同步更新主表字段
+            if "title" in metadata_updates:
+                conn.execute("UPDATE documents SET title = ?, metadata_json = ? WHERE rel_path = ?",
+                           (metadata_updates["title"], json.dumps(existing_meta), rel_path))
+            elif "slug" in metadata_updates:
+                 conn.execute("UPDATE documents SET slug = ?, metadata_json = ? WHERE rel_path = ?",
+                           (metadata_updates["slug"], json.dumps(existing_meta), rel_path))
+            else:
+                conn.execute("UPDATE documents SET metadata_json = ? WHERE rel_path = ?",
+                           (json.dumps(existing_meta), rel_path))
+            return True
+
     def get_total_documents_count(self):
-        return self._get_conn().execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+        res = self._get_conn().execute("SELECT COUNT(*) FROM documents").fetchone()
+        return res[0] if res else 0
 
     def delete_document(self, rel_path):
         conn = self._get_conn()

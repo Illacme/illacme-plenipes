@@ -39,11 +39,22 @@ class ReadAndNormalizeStep(PipelineStep):
         raw_ai_sync = ctx.fm_dict.get('ai_sync')
         ctx.is_silent_edit = (str(raw_ai_sync).lower() == 'false') if raw_ai_sync is not None else False
 
+        # 🚀 [V52.13] 字数统计逻辑：在归一化阶段即刻固化，为治理提供物理指标
+        # 针对中英文混合环境优化：英文按单词计，中文按字符计
+        clean_text = re.sub(r'[\s\n\t]+', ' ', ctx.raw_body)
+        en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
+        zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', ctx.raw_body))
+        ctx.seo_data['word_count'] = en_words + zh_chars
+
         # 🚀 [V7.7] 逐文件语种识别 (Per-Document Granular Detection)
         from core.utils.language_hub import LanguageHub
-        # 优先遵循配置，若配置为 auto 则触发动态探测
+        # [V52.13 优化]：优先级：Frontmatter 显式定义 > 动态识别 (if auto) > 全局配置
+        explicit_lang = ctx.fm_dict.get('lang') or ctx.fm_dict.get('language')
         config_src = ctx.engine.i18n.source.lang_code
-        if config_src == "auto" or not config_src:
+        
+        if explicit_lang:
+            ctx.source_lang = explicit_lang
+        elif config_src == "auto" or not config_src:
             ctx.source_lang = LanguageHub.detect_source_lang(ctx.raw_content, ctx.services.translator)
         else:
             ctx.source_lang = config_src
@@ -88,7 +99,11 @@ class MetadataAndHashStep(PipelineStep):
         ctx.current_hash = hashlib.md5((str(ctx.base_fm) + ctx.body_content).encode('utf-8')).hexdigest()
 
         old_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
-        ctx.engine.meta.register_document(ctx.rel_path, ctx.title, source_hash=ctx.current_hash)
+        ctx.engine.meta.register_document(
+            ctx.rel_path, ctx.title,
+            source_hash=ctx.current_hash,
+            source_lang=getattr(ctx, 'source_lang', None)
+        )
         ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
 
         if not old_info.get("slug"):
@@ -176,14 +191,38 @@ class AISlugAndSEOStep(PipelineStep):
         ctx.slug = slug_raw.lower() if slug_raw else "index" if is_homepage else "untitled"
 
 
+        # 🚀 [V52.13] SEO 载荷合并逻辑：优先保留当前 Context 中已计算的物理指标 (如 word_count)
+        # 仅当 Context 中缺失且账本中有值时，才从账本中同步。
+        ledger_seo = ctx.doc_info.get("seo_data") or ctx.doc_info.get("seo") or {}
         if not ctx.seo_data:
-            ctx.seo_data = ctx.doc_info.get("seo_data") or ctx.doc_info.get("seo") or {}
+            ctx.seo_data = ledger_seo
+        else:
+            # 增量合并：保留 Context 中的物理指标，补全账本中的 SEO 描述
+            for k, v in ledger_seo.items():
+                if k not in ctx.seo_data or not ctx.seo_data[k]:
+                    ctx.seo_data[k] = v
+        
+        # 🚀 [V52.13] 物理指标持久化：确保字数等关键参数不被 AI 覆盖逻辑抹除
+        if hasattr(ctx, 'seo_data') and 'word_count' not in ctx.seo_data:
+             # 如果之前没算，这里补算一次（通常在 read_normalize 已经算过了）
+             clean_text = re.sub(r'[\s\n\t]+', ' ', ctx.raw_body)
+             en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
+             zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', ctx.raw_body))
+             ctx.seo_data['word_count'] = en_words + zh_chars
 
-        # 🛡️ [V15.5] 逻辑纠偏：如果已经是批处理产物，则不再强制清空（保持其补全属性）
-        # [V16.7] 工业化修正：彻底禁用强制清空逻辑，确保增量同步时能正确复用账本中的 SEO 数据。
-        # is_batch_hit = hasattr(ctx, '_is_batch_hit') and ctx._is_batch_hit
-        # if not ctx.is_silent_edit and not is_batch_hit and ctx.seo_data and ('description' in ctx.seo_data or 'keywords' in ctx.seo_data):
-        #     ctx.seo_data = {}
+        # 🚀 [V53.0] 出版模式 SEO 策略分流：根据当前治理蓝图调度对应的处理器
+        try:
+            from core.logic.seo.factory import SeoProcessorFactory
+            gov = ctx.engine.config.governance
+            processor = SeoProcessorFactory.create(gov.publishing_mode, gov.seo_strategy)
+            seo_enhancement = processor.process(ctx)
+            if seo_enhancement:
+                # 增量合并：处理器输出不覆盖已有的物理指标（如 word_count）
+                for k, v in seo_enhancement.items():
+                    if k not in ctx.seo_data or not ctx.seo_data[k]:
+                        ctx.seo_data[k] = v
+        except Exception as e:
+            tlog.warning(f"⚠️ [SEO 策略] 处理器执行异常，已安全降级: {e}")
 
 class MaskingAndRoutingStep(PipelineStep):
     """阶段 13-14: 物理遮蔽与动态路由推导"""
@@ -225,7 +264,14 @@ class MaskingAndRoutingStep(PipelineStep):
         if sub == '.': sub = ""
         ctx.mapped_sub_dir = ctx.engine.route_manager.get_mapped_sub_dir(sub, allow_ai=not ctx.is_silent_edit)
 
-        ctx.engine.meta.register_document(ctx.rel_path, ctx.title, slug=ctx.slug, route_prefix=ctx.route_prefix, route_source=ctx.route_source)
+        ctx.engine.meta.register_document(
+            ctx.rel_path, ctx.title,
+            slug=ctx.slug,
+            route_prefix=ctx.route_prefix,
+            route_source=ctx.route_source,
+            seo_data=ctx.seo_data,
+            source_lang=getattr(ctx, 'source_lang', None)
+        )
 
 class VerificationStep(PipelineStep):
     """阶段 15: 全息主权验证 (Holographic Verification) 🛡️ [AEL-Iter-v11.0]"""

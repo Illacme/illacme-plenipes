@@ -17,8 +17,8 @@ from plugins.publishers.base import BasePublisher
 class DeploymentManager:
     """🚀 [V35.0] 发布编排器：指挥全渠道分发战役"""
     
-    def __init__(self, territory_config: Any):
-        self.config = territory_config
+    def __init__(self, imprint_config: Any):
+        self.config = imprint_config
         self.publishers = []
         self._initialize_publishers()
 
@@ -35,7 +35,7 @@ class DeploymentManager:
             pub_model.model_dump() if hasattr(pub_model, 'model_dump') else pub_model
         )
         
-        # 🚀 [V35.2] 深度递归解密：支持 system.yaml 中的 ENC: 凭据
+        # 🚀 [V35.2] 深度递归解密：支持 config.imprint.yaml 中的 ENC: 凭据
         def deep_decrypt(d):
             if isinstance(d, dict):
                 return {k: deep_decrypt(v) for k, v in d.items()}
@@ -48,7 +48,7 @@ class DeploymentManager:
         pub_cfg = deep_decrypt(pub_cfg_raw)
 
         # 检查商业授权：免费版限制分发渠道数量
-        allowed_channels = 99 if LicenseGuard.is_pro_feature_allowed("multi_territory") else 1
+        allowed_channels = 99 if LicenseGuard.is_pro_feature_allowed("multi_imprint") else 1
         
         active_count = 0
         plugin_dir = os.path.join("plugins", "publishers")
@@ -60,8 +60,14 @@ class DeploymentManager:
             # 获取插件标识 (如 s3, webhook)
             plugin_id = getattr(cls, "PLUGIN_ID", cls.__name__.lower().replace("publisher", "").replace("plugin", ""))
             
-            # 检查该插件是否在配置中启用
-            chan_cfg = pub_cfg.get(plugin_id, {})
+            # 🚀 [V55.25] 深度寻址：优先从 root 读取，否则从 direct_upload 查找
+            chan_cfg = pub_cfg.get(plugin_id)
+            if not chan_cfg and "direct_upload" in pub_cfg:
+                chan_cfg = pub_cfg["direct_upload"].get(plugin_id)
+            
+            if not chan_cfg:
+                chan_cfg = {}
+
             if chan_cfg.get("enabled"):
                 if active_count >= allowed_channels:
                     tlog.warning(f"🛡️ [分发拦截] 免费版限额 ({allowed_channels} 渠道)，已忽略 '{plugin_id}'。")
@@ -71,7 +77,7 @@ class DeploymentManager:
                     # 获取系统配置字典
                     sys_cfg_dict = self.config.system.model_dump() if hasattr(self.config.system, 'model_dump') else asdict(self.config.system)
                     
-                    # 注入该疆域的私有配置 (已解密)
+                    # 注入该品牌的私有配置 (已解密)
                     inst = cls(chan_cfg, sys_config=sys_cfg_dict)
                     self.publishers.append(inst)
 
@@ -83,7 +89,7 @@ class DeploymentManager:
     def deploy_all(self, bundle_path: str, metadata: Dict[str, Any]):
         """执行全渠道同步投递 (事务化汇总)"""
         if not self.publishers:
-            tlog.debug("ℹ️ [分发中心] 当前主权疆域未激活任何外部发布渠道。")
+            tlog.debug("ℹ️ [分发中心] 当前主权品牌未激活任何外部发布渠道。")
             return {"status": "skipped", "reason": "no_active_channels"}
 
 

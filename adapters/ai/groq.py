@@ -7,14 +7,13 @@ Illacme-plenipes AI Plugin - Groq Adapter
 from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
+
+
+
 class GroqTranslator(OpenAICompatibleTranslator):
-    """🚀 [V15.9] Groq 极速适配器"""
+    """🚀 [V15.9] Groq 专属适配器"""
     PLUGIN_ID = 'groq'
-    
-    def __init__(self, node_name, trans_cfg):
-        if not trans_cfg.base_url:
-            trans_cfg.base_url = "https://api.groq.com/openai/v1"
-        super().__init__(node_name, trans_cfg)
+    DEFAULT_URL = 'https://api.groq.com/openai/v1'
 
     def get_archetype_params(self) -> Dict[str, Any]:
         """Groq 追求极致速度，默认参数更偏向稳定性"""

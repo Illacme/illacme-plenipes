@@ -33,25 +33,25 @@ class DoctorService:
         }
 
         # 1. 物理基础设施
-        report["checks"].append(InfraChecker.check(self.engine.paths))
+        report.get("checks").append(InfraChecker.check(self.engine.paths))
 
         # 2. 账本一致性
-        report["checks"].append(LedgerChecker.check(self.engine))
+        report.get("checks").append(LedgerChecker.check(self.engine))
 
         # 3. 渲染矩阵
-        report["checks"].append(PluginChecker.check_rendering(self.engine))
+        report.get("checks").append(PluginChecker.check_rendering(self.engine))
 
         # 4. AI 算力网关
-        report["checks"].append(AIChecker.check(self.engine))
+        report.get("checks").append(AIChecker.check(self.engine))
 
         # 5. 契约守卫审计
-        report["checks"].append(PluginChecker.check_contracts())
+        report.get("checks").append(PluginChecker.check_contracts())
 
         # 6. 多语言与 SEO 矩阵
-        report["checks"].append(MatrixChecker.check_i18n(self.engine.config))
+        report.get("checks").append(MatrixChecker.check_i18n(self.engine.config))
 
         # 7. 可观测性审计
-        report["checks"].append(MatrixChecker.check_observability())
+        report.get("checks").append(MatrixChecker.check_observability())
 
         # 汇总状态判断
         self._summarize_status(report)
@@ -61,9 +61,9 @@ class DoctorService:
         """内部状态汇总逻辑"""
         statuses = [c.get('status') for c in report.get('checks', [])]
         if "FAIL" in statuses:
-            report['status'] = "FAIL"
+            report.update({'status': "FAIL"})
         elif "WARN" in statuses:
-            report['status'] = "WARN"
+            report.update({'status': "WARN"})
 
     def heal(self) -> List[str]:
         """执行自愈手术"""

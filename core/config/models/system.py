@@ -43,8 +43,10 @@ class WatchdogSettings(BaseModel):
     gc_delay: float = Field(5.0, ge=0)
     handover_delay: float = Field(1.5, ge=0)
 
+from core.config.config import DIST_DIR
+
 class JanitorSettings(BaseModel):
-    global_exclude: List[str] = Field(default_factory=lambda: [".git", "node_modules", "dist"])
+    global_exclude: List[str] = Field(default_factory=lambda: [".git", "node_modules", DIST_DIR])
     theme_exclude: Dict[str, List[str]] = Field(default_factory=dict)
 
 class PurificationSettings(BaseModel):
@@ -85,10 +87,10 @@ class SystemSettings(BaseModel):
     log_format: LogFormat = LogFormat.RICH
     verbose_ai_logs: bool = True
     serve_host: str = "127.0.0.1"
-    serve_port: int = Field(43212, ge=1024, le=65535)
+    serve_port: int = Field(43213, ge=1024, le=65535)
     singleton_port: int = Field(43210, ge=1024, le=65535)
     api_host: str = "0.0.0.0"
-    api_port: int = Field(43211, ge=1024, le=65535)
+    api_port: int = Field(43212, ge=1024, le=65535)
     api_token: str = ""
     
     max_workers: int = Field(4, ge=1)
@@ -113,7 +115,10 @@ class SystemSettings(BaseModel):
         "timeline_json": "timeline_{theme}.json",
         "vectors_json": "vectors_{theme}.json",
         "pulse_json": "pulse_{theme}.json",
-        "quotas_json": "quotas.json"
+        "quotas_json": "quotas.json",
+        "audit_db": "audit.db",
+        "lessons_learned": "lessons_learned.json",
+        "ai_features": "features.json"
     })
     
     network_settings: NetworkSettings = Field(default_factory=NetworkSettings)
@@ -131,6 +136,7 @@ class SystemSettings(BaseModel):
         "purify",
         "metadata_hash",
         "ai_slug_seo",
+        "image_alt",
         "semantic_linker",
         "masking_routing",
         "verification"

@@ -8,9 +8,12 @@ Illacme-plenipes AI Plugin - DeepSeek Adapter
 from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
+
+
 class DeepSeekTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] DeepSeek 专属适配器"""
     PLUGIN_ID = 'deepseek'
+    DEFAULT_URL = "https://api.deepseek.com"
     
     def __init__(self, node_name, trans_cfg):
         if not trans_cfg.base_url:

@@ -21,8 +21,9 @@ class TimelineManager:
     def __init__(self, engine):
         self.engine = engine
         self.cfg = engine.config.timeline
-        self.json_path = engine._resolve_path(self.cfg.json_path.replace("{theme}", engine.active_theme))
-        self.markdown_path = engine._resolve_path(self.cfg.markdown_path.replace("{theme}", engine.active_theme))
+        # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
+        self.json_path = engine._resolve_path(engine.config.get_timeline_json_path())
+        self.markdown_path = engine._resolve_path(engine.config.get_timeline_markdown_path())
 
         self.max_entries = self.cfg.max_entries
 

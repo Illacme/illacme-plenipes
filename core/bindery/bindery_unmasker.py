@@ -32,9 +32,19 @@ class BinderyUnmasker:
         def _get_closest_asset(target_filename):
             candidates = asset_index.get(target_filename, [])
             if not candidates: return None
-            if len(candidates) == 1: return candidates[0]
-            current_abs_dir = os.path.dirname(os.path.join(self.paths.get('vault', '.'), ""))
-            return sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(p)])), reverse=True)[0]
+            
+            # 🚀 [V50.3] 路径对正卫士：确保从索引中提取的资产路径相对于金库根部
+            vault_root = self.paths.get('vault', '.')
+            
+            best_rel_path = candidates[0]
+            if len(candidates) > 1:
+                current_abs_dir = os.path.dirname(os.path.join(vault_root, ""))
+                best_rel_path = sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(os.path.abspath(os.path.join(vault_root, p)))])), reverse=True)[0]
+            
+            # 返回物理绝对路径，杜绝 CWD 漂移导致的 [Errno 2]
+            abs_path = os.path.abspath(os.path.join(vault_root, best_rel_path))
+            tlog.debug(f"🔍 [Unmasker Debug] Filename: {target_filename} -> Best Rel: {best_rel_path} -> Abs: {abs_path}")
+            return abs_path
 
         # 扫描所有掩码
         for orig in masks:
@@ -55,7 +65,6 @@ class BinderyUnmasker:
                     futures.append(self.asset_pipeline.process_async(target_asset_path, asset_filename, slug=slug))
         
         if futures:
-            tlog.debug(f"🔥 [资产预热] 已为文档分发 {len(futures)} 个并行加工任务...")
             # 等待所有任务入池完成 (不需要等待执行完，因为后续 process 会 DCL 阻塞)
             # 但为了性能，我们这里可以稍微 wait 一下，或者干脆不 wait
             pass
@@ -73,9 +82,17 @@ class BinderyUnmasker:
         def _get_closest_asset(target_filename):
             candidates = asset_index.get(target_filename, [])
             if not candidates: return None
-            if len(candidates) == 1: return candidates[0]
-            current_abs_dir = os.path.dirname(os.path.join(self.paths.get('vault', '.'), ""))
-            return sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(p)])), reverse=True)[0]
+            
+            # 🚀 [V50.3] 路径对正卫士 (Unmask 副本)
+            vault_root = self.paths.get('vault', '.')
+            
+            best_rel_path = candidates[0]
+            if len(candidates) > 1:
+                current_abs_dir = os.path.dirname(os.path.join(vault_root, ""))
+                best_rel_path = sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(os.path.abspath(os.path.join(vault_root, p)))])), reverse=True)[0]
+            
+            abs_path = os.path.abspath(os.path.join(vault_root, best_rel_path))
+            return abs_path
 
         def unmask_fn(m):
             raw_tag = m.group(0)
@@ -98,6 +115,7 @@ class BinderyUnmasker:
             def log_outlink(tgt_path):
                 if tgt_path and node_outlinks is not None and assets_lock is not None:
                     with assets_lock: node_outlinks.add(tgt_path)
+                return tgt_path
 
             # URL-only unmasking
             if orig.startswith('URL_ONLY_LNK:') or orig.startswith('URL_ONLY_IMG:'):
@@ -144,7 +162,10 @@ class BinderyUnmasker:
                             if meta:
                                 alt_map = meta.get("alt_texts", {})
                                 final_alt = alt_map.get(lang_code) or meta.get("alt_text") or orig_alt
-                        except Exception: pass
+                            else:
+                                tlog.warning(f"⚠️ [Unmasker Debug] No metadata found for hash: {h}")
+                        except Exception as e:
+                            pass
                         
                         processed_name = log_asset(self.asset_pipeline.process(target_asset_path, asset_filename, is_dry_run, slug=slug))
                         final_url = f"{root_path}{self.asset_base_url}{processed_name}".replace('//', '/')

@@ -51,8 +51,9 @@ class ConcurrencyController:
 
     def _evaluate_and_adjust(self):
         """核心评估算法：根据窗口数据决定扩缩容"""
-        success_rate = sum(1 for x in self.history if x['success']) / len(self.history)
-        avg_duration = sum(x['duration'] for x in self.history) / len(self.history)
+        # 🛡️ [R1.3] 防御性读取：确保历史记录中的字典引用安全
+        success_rate = sum(1 for x in self.history if (x or {}).get('success')) / len(self.history)
+        avg_duration = sum((x or {}).get('duration', 0.0) for x in self.history) / len(self.history)
 
         target_workers = self.current_workers
 

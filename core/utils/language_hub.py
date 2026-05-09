@@ -45,11 +45,76 @@ class LanguageHub:
         "pa": "pa", "punjabi": "pa", "旁遮普语": "pa", "ta": "ta", "tamil": "ta", "泰米尔语": "ta",
         "ar": "ar", "arabic": "ar", "阿拉伯语": "ar", "he": "he", "hebrew": "he", "希伯来语": "he",
         "fa": "fa", "persian": "fa", "波斯语": "fa", "ur": "ur", "urdu": "ur", "乌尔都语": "ur",
+        "mr": "mr", "marathi": "mr", "te": "te", "telugu": "te", "kn": "kn", "kannada": "kn",
+        "gu": "gu", "gujarati": "gu", "ml": "ml", "malayalam": "ml", "sd": "sd", "sindhi": "sd",
 
-        # --- 其他及方言 ---
+        # --- 非洲及其他 ---
+        "ha": "ha", "hausa": "ha", "sw": "sw", "swahili": "sw", "斯瓦希里语": "sw",
+        "yo": "yo", "yoruba": "yo", "ig": "ig", "igbo": "ig", "am": "am", "amharic": "am",
+        "om": "om", "oromo": "om", "uz": "uz", "uzbek": "uz", "az": "az", "azerbaijani": "az",
+        "tl": "tl", "tagalog": "tl", "jv": "jv", "javanese": "jv", "su": "su", "sundanese": "su",
+        "my": "my", "burmese": "my", "ps": "ps", "pashto": "ps",
         "la": "la", "latin": "la", "拉丁语": "la", "af": "af", "afrikaans": "af",
-        "sw": "sw", "swahili": "sw", "斯瓦希里语": "sw",
     }
+
+    # 🚀 [V55.4] 官方支持的语种矩阵 (前 50 大语种，带元数据与图标)
+    SUPPORTED_MATRIX = [
+        {"code": "zh", "name": "简体中文", "icon": "🇨🇳"},
+        {"code": "en", "name": "English", "icon": "🇬🇧"},
+        {"code": "hi", "name": "हिन्दी", "icon": "🇮🇳"},
+        {"code": "es", "name": "Español", "icon": "🇪🇸"},
+        {"code": "fr", "name": "Français", "icon": "🇫🇷"},
+        {"code": "ar", "name": "العربية", "icon": "🇸🇦"},
+        {"code": "bn", "name": "বাংলা", "icon": "🇧🇩"},
+        {"code": "pt", "name": "Português", "icon": "🇵🇹"},
+        {"code": "ru", "name": "Русский", "icon": "🇷🇺"},
+        {"code": "ur", "name": "اردو", "icon": "🇵🇰"},
+        {"code": "id", "name": "Bahasa Indonesia", "icon": "🇮🇩"},
+        {"code": "de", "name": "Deutsch", "icon": "🇩🇪"},
+        {"code": "ja", "name": "日本語", "icon": "🇯🇵"},
+        {"code": "mr", "name": "मराठी", "icon": "🇮🇳"},
+        {"code": "te", "name": "తెలుగు", "icon": "🇮🇳"},
+        {"code": "tr", "name": "Türkçe", "icon": "🇹🇷"},
+        {"code": "ta", "name": "தமிழ்", "icon": "🇮🇳"},
+        {"code": "vi", "name": "Tiếng Việt", "icon": "🇻🇳"},
+        {"code": "tl", "name": "Tagalog", "icon": "🇵🇭"},
+        {"code": "ko", "name": "한국어", "icon": "🇰🇷"},
+        {"code": "fa", "name": "فارسی", "icon": "🇮🇷"},
+        {"code": "ha", "name": "Hausa", "icon": "🇳🇬"},
+        {"code": "sw", "name": "Kiswahili", "icon": "🇰🇪"},
+        {"code": "jv", "name": "Javanese", "icon": "🇮🇩"},
+        {"code": "it", "name": "Italiano", "icon": "🇮🇹"},
+        {"code": "pa", "name": "ਪੰਜਾਬੀ", "icon": "🇵🇰"},
+        {"code": "kn", "name": "ಕನ್ನಡ", "icon": "🇮🇳"},
+        {"code": "gu", "name": "ગુજરાતી", "icon": "🇮🇳"},
+        {"code": "th", "name": "ไทย", "icon": "🇹🇭"},
+        {"code": "am", "name": "አማርኛ", "icon": "🇪🇹"},
+        {"code": "yo", "name": "Yorùbá", "icon": "🇳🇬"},
+        {"code": "my", "name": "မြန်မာဘာသာ", "icon": "🇲🇲"},
+        {"code": "om", "name": "Oromoo", "icon": "🇪🇹"},
+        {"code": "ps", "name": "پښتو", "icon": "🇦🇫"},
+        {"code": "uk", "name": "Українська", "icon": "🇺🇦"},
+        {"code": "su", "name": "Basa Sunda", "icon": "🇮🇩"},
+        {"code": "pl", "name": "Polski", "icon": "🇵🇱"},
+        {"code": "uz", "name": "Oʻzbekcha", "icon": "🇺🇿"},
+        {"code": "ro", "name": "Română", "icon": "🇷🇴"},
+        {"code": "az", "name": "Azərbaycanca", "icon": "🇦🇿"},
+        {"code": "ml", "name": "മലയാളം", "icon": "🇮🇳"},
+        {"code": "sd", "name": "سنڌي", "icon": "🇵🇰"},
+        {"code": "ig", "name": "Igbo", "icon": "🇳🇬"},
+        {"code": "hu", "name": "Magyar", "icon": "🇭🇺"},
+        {"code": "el", "name": "Ελληνικά", "icon": "🇬🇷"},
+        {"code": "cs", "name": "Čeština", "icon": "🇨🇿"},
+        {"code": "nl", "name": "Nederlands", "icon": "🇳🇱"},
+        {"code": "sv", "name": "Svenska", "icon": "🇸🇪"},
+        {"code": "fi", "name": "Suomi", "icon": "🇫🇮"},
+        {"code": "no", "name": "Norsk", "icon": "🇳🇴"}
+    ]
+
+    @classmethod
+    def get_supported_matrix(cls):
+        """获取系统当前支持的语种大盘"""
+        return cls.SUPPORTED_MATRIX
 
     @staticmethod
     def resolve_to_name(iso_code: str) -> str:
@@ -67,11 +132,53 @@ class LanguageHub:
             "es": "Spanish",
             "it": "Italian",
             "ko": "Korean",
-            "ru": "Russian"
+            "ru": "Russian",
+            "hi": "Hindi",
+            "ar": "Arabic",
+            "bn": "Bengali",
+            "pt": "Portuguese",
+            "ur": "Urdu",
+            "id": "Indonesian",
+            "tr": "Turkish",
+            "vi": "Vietnamese",
+            "th": "Thai",
+            "pl": "Polish",
+            "uk": "Ukrainian",
+            "nl": "Dutch",
+            "sv": "Swedish",
+            "no": "Norwegian",
+            "fi": "Finnish",
+            "el": "Greek",
+            "cs": "Czech",
+            "hu": "Hungarian",
+            "mr": "Marathi",
+            "te": "Telugu",
+            "ta": "Tamil",
+            "tl": "Tagalog",
+            "fa": "Persian",
+            "ha": "Hausa",
+            "sw": "Swahili",
+            "jv": "Javanese",
+            "pa": "Punjabi",
+            "kn": "Kannada",
+            "gu": "Gujarati",
+            "am": "Amharic",
+            "yo": "Yoruba",
+            "my": "Burmese",
+            "om": "Oromo",
+            "ps": "Pashto",
+            "su": "Sundanese",
+            "uz": "Uzbek",
+            "ro": "Romanian",
+            "az": "Azerbaijani",
+            "ml": "Malayalam",
+            "sd": "Sindhi",
+            "ig": "Igbo"
         }
         code = iso_code.lower().strip()
         # 模糊匹配
-        if "zh-hans" in code or code == "zh-cn": return "Chinese (Simplified)"
+        if code == "auto": return "Auto Detect"
+        if "zh-hans" in code or code == "zh-cn" or code == "zh": return "Chinese (Simplified)"
         if "zh-hant" in code or code == "zh-tw": return "Chinese (Traditional)"
         if "en" in code: return "English"
 
@@ -155,8 +262,16 @@ class LanguageHub:
         return clean_res
 
     @staticmethod
-    def get_physical_path(iso_code: str, theme: str = "generic") -> str:
-        """主题感知的物理路径适配"""
-        if not iso_code: return "en"
+    def get_physical_path(iso_code: str, theme: str = "generic", source_lang: str = "zh", force_prefix: bool = False) -> str:
+        """🚀 [V57.0] 动态主权路径适配：支持原稿路径的灵活挂载"""
+        if not iso_code: return ""
         theme = theme.lower() if theme else "generic"
+        
+        # 🛡️ [Sovereignty Logic]
+        # 如果是原稿语种，且未开启强制前缀，则返回空前缀（即挂载在 SSG 根目录）
+        # 目前主要针对 Starlight 和 Docusaurus 等有 root locale 概念的框架
+        if iso_code.lower() == source_lang.lower() and not force_prefix:
+            if theme in ["starlight", "docusaurus"]:
+                return ""
+            
         return iso_code.lower()

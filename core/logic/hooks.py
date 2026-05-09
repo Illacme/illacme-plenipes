@@ -12,10 +12,12 @@ import logging
 
 from core.utils.tracing import tlog
 
+from core.config.config import THEMES_DIR
+
 class ThemeHookManager:
     def __init__(self, engine):
         self.engine = engine
-        self.theme_path = os.path.join("themes", engine.active_theme)
+        self.theme_path = os.path.join(THEMES_DIR, engine.active_theme)
         self.hooks_file = os.path.join(self.theme_path, "hooks.py")
         self._hook_module = None
 

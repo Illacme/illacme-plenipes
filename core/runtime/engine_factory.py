@@ -6,9 +6,10 @@ Illacme-plenipes Core - Engine Assembly Factory
 🛡️ [AEL-Iter-v5.3]：彻底消灭上帝函数的架构分层枢纽。
 """
 import os
+import time
 import logging
 from dataclasses import asdict
-from core.config.config import load_config, ThemeSettings
+from core.config.config import load_config, ThemeSettings, THEMES_DIR
 from core.archives.ledger import MetadataManager
 from core.archives.timeline import TimelineManager
 from core.services.staticizer import StaticizerService
@@ -33,28 +34,27 @@ from core.governance.meter import UsageMeter
 from core.syndication.publisher import PublisherService
 from core.governance.heartbeat import HeartbeatService
 from core.logic.ai.ai_batcher import AIBatcher
-
 from core.utils.tracing import tlog
-
 from core.runtime.engine_preflight import EnginePreflight
 
 class EngineFactory:
-    """🚀 [V35.2] 主权治理引擎工厂：负责全功能治理中枢的装配与依赖注入"""
+    """🚀 [V50.3] 主权治理引擎工厂：负责全功能治理中枢的装配与依赖注入"""
 
     @staticmethod
-    def create_engine(config, no_ai=False, args=None, territory_id: str = "default"):
+    def create_engine(config, no_ai=False, args=None, imprint_id: str = "default"):
+        """🚀 [V50.3] 工业级引擎工厂：组装全功能主权治理中枢"""
 
-        """🚀 [V35.2] 工业级引擎工厂：组装全功能主权治理中枢"""
-
-        # 🚀 [V48.3] 执行起飞前预检 (环境审计、路径锚定、视觉渲染等)
-        config = EnginePreflight.perform_preflight(config, territory_id, args)
+        # 🚀 [V50.3] 执行起飞前预检 (环境审计、路径锚定、视觉渲染等)
+        config = EnginePreflight.perform_preflight(config, imprint_id, args)
         if config is None:
             return None
 
         # 3. 🔧 [挂载逻辑] 实例化并立即挂载核心属性
-        engine = IllacmeEngine(config, no_ai=no_ai, config=config, territory_id=territory_id)
+        engine = IllacmeEngine(config, no_ai=no_ai, config=config, imprint_id=imprint_id)
 
         engine.config = config
+        
+        # 🚀 [V52.10] 物理路径解析：遵循项目根目录锚定原则
         engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
         engine.route_matrix = config.route_matrix
         engine.active_theme = config.active_theme
@@ -77,6 +77,9 @@ class EngineFactory:
     def _init_basic_settings(engine):
         """基础配置与 SSG 适配器映射"""
         engine.sys_cfg = engine.config.system
+        for name, s in (getattr(engine, "services", {}) or {}).items():
+            if (s or {}).get("start_time"):
+                s["uptime"] = round(time.time() - s.get("start_time"), 1)
         engine.sys_tuning = {
             "ai_translation": {
                 "temperature": engine.config.translation.temperature,
@@ -97,7 +100,7 @@ class EngineFactory:
 
         engine.ssg_adapter.default_lang = engine.config.i18n_settings.source.lang_code or "zh"
         
-        # 🚀 [V48.3] 补全系统参数
+        # 🚀 [V50.3] 补全系统参数
         engine.max_depth = engine.config.system.max_depth
         engine.i18n = engine.config.i18n_settings
         engine.seo_cfg = engine.config.seo_settings
@@ -106,7 +109,7 @@ class EngineFactory:
 
     @staticmethod
     def _init_paths_and_adapters(engine):
-        """🚀 [V35.0] 动态收稿渠道与物理路径矩阵"""
+        """🚀 [V50.3] 动态收稿渠道与物理路径矩阵"""
         from core.ingress.registry import ingress_registry
         paths_cfg = engine.config.output_paths
         ingress_cfg = engine.config.ingress_settings
@@ -133,7 +136,7 @@ class EngineFactory:
             hard_line_break=ingress_cfg.hard_line_break
         )
         
-        # 🚀 [V35.1] 主权路径锚定器：确保所有相对路径都锁定在 data_root 之下
+        # 🚀 [V50.3] 主权路径锚定器：确保所有相对路径都锁定在 data_root 之下
         data_root = os.path.abspath(os.path.expanduser(engine.config.system.data_root))
         def anchor(p):
             if not p: return None
@@ -142,26 +145,24 @@ class EngineFactory:
                 return os.path.join(data_root, p)
             return os.path.abspath(p)
 
-        source_dir = paths_cfg.get('source_dir') or paths_cfg.get('markdown_dir')
+        source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
         static_dir = paths_cfg.get('static_dir')
         
         engine.paths = {
             "vault": engine.vault_root,
-            "source_dir": anchor(source_dir.replace("{theme}", engine.active_theme) if source_dir else ""),
-            "static_dir": anchor(static_dir.replace("{theme}", engine.active_theme) if static_dir else ""),
-            "assets": anchor(paths_cfg.get('assets_dir', '').replace("{theme}", engine.active_theme)),
-            "graph_json_dir": anchor(paths_cfg.get('graph_json_dir', '').replace("{theme}", engine.active_theme)),
+            "source_dir": anchor((source_dir or "").replace("{theme}", engine.active_theme) if source_dir else ""),
+            "static_dir": anchor((static_dir or "").replace("{theme}", engine.active_theme) if static_dir else ""),
+            "assets": anchor((paths_cfg.get('assets_dir') or '').replace("{theme}", engine.active_theme)),
+            "graph_json_dir": anchor((paths_cfg.get('graph_json_dir') or '').replace("{theme}", engine.active_theme)),
             "target_base": anchor((paths_cfg.get('target_base') or "").replace("{theme}", engine.active_theme)),
-            "db": anchor(engine.config.metadata_db.format(theme=engine.active_theme) if "{theme}" in engine.config.metadata_db else engine.config.metadata_db.replace(".db", f"_{engine.active_theme}.db")),
-            "cache": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["cache"]),
-            "logs": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["logs"]),
-            "metadata": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["metadata"]),
-            "themes": os.path.join(data_root, EnginePreflight.SOVEREIGN_LAYOUT["themes"])
+            "db": anchor(engine.config.get_ledger_path()),
+            "cache": engine._resolve_path(engine.config.get_runtime_metadata_dir() + "/cache"),
+            "logs": engine._resolve_path(engine.config.get_runtime_metadata_dir() + "/logs"),
+            "metadata": engine._resolve_path(engine.config.metadata_dir),
+            "themes": engine._resolve_path(THEMES_DIR)
         }
 
-
         engine.asset_base_url = engine.config.image_settings.base_url.rstrip('/') + '/'
-
 
     @staticmethod
     def _init_semantic_and_governance(engine):
@@ -175,14 +176,16 @@ class EngineFactory:
         from core.logic.knowledge.conversational_brain import ConversationalBrain
 
         data_paths = engine.config.system.data_paths
-        v_raw = data_paths.get("vectors_json", "vectors_{theme}.json")
-        v_path = os.path.join(engine.paths["metadata"], v_raw.format(theme=engine.active_theme) if "{theme}" in v_raw else v_raw.replace(".json", f"_{engine.active_theme}.json"))
         
-        g_raw = data_paths.get("link_graph", "link_graph_{theme}.json")
-        g_path = os.path.join(engine.paths["metadata"], g_raw.format(theme=engine.active_theme) if "{theme}" in g_raw else g_raw.replace(".json", f"_{engine.active_theme}.json"))
+        # 🚀 [V55.26] 算力层：向量库对正 ai/ 子目录 (配置驱动)
+        v_path = engine._resolve_path(engine.config.get_vectors_path())
         
-        p_raw = data_paths.get("pulse_json", "pulse_{theme}.json")
-        engine.paths["pulse"] = os.path.join(engine.paths["metadata"], p_raw.format(theme=engine.active_theme) if "{theme}" in p_raw else p_raw.replace(".json", f"_{engine.active_theme}.json"))
+        # 🚀 [V55.26] 视觉层：关系图谱对正 themes/{theme}/ 子目录 (配置驱动)
+        g_path = engine._resolve_path(engine.config.get_sync_stats_path().replace("sync_stats", "link_graph")) # 临时复用逻辑
+        # 优化：未来可以增加 get_link_graph_path()
+        
+        # 🚀 [V55.26] 核心层：心跳数据对正 core/ 子目录 (配置驱动)
+        engine.paths["pulse"] = engine._resolve_path(engine.config.get_pulse_path())
         
         engine.embedding_adapter = EmbeddingFactory.create(engine)
         engine.vector_index = engine.governance.vector_index
@@ -199,7 +202,6 @@ class EngineFactory:
     @staticmethod
     def _init_business_hubs(engine):
         """业务调度中枢 (Router, Translator, Dispatcher)"""
-        # 🚀 [V10.5] 算力网关点火 (仅在启用 AI 时实例化重型模型)
         if not engine.no_ai:
             from core.logic.ai.ai_factory import TranslatorFactory
             engine.translator = TranslatorFactory.create(engine.config.translation)
@@ -208,7 +210,7 @@ class EngineFactory:
             tlog.info("🔌 [算力网关] AI 模式已关闭，跳过翻译官初始化。")
 
         engine.meter = engine.governance.meter
-        engine.asset_pipeline = AssetPipeline(engine.paths['assets'], engine.config.image_settings)
+        engine.asset_pipeline = AssetPipeline(engine.paths.get('assets', ''), engine.config.image_settings)
         engine.route_manager = RouteManager(
             engine.meta, engine.translator,
             lang_mapping=engine.config.lang_mapping,
@@ -217,7 +219,6 @@ class EngineFactory:
             ssg_adapter=engine.ssg_adapter
         )
         engine.link_resolver = LinkResolver(engine.meta, engine.route_manager, engine.active_theme)
-        # 🚀 [V35.0] 索引器适配：使用抽象 Source 适配器并注入主权配置
         engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(
             engine.manuscript_source, config=engine.config, ledger=engine.meta
         )
@@ -242,22 +243,19 @@ class EngineFactory:
             asset_base_url=engine.asset_base_url, i18n_cfg=engine.config.i18n_settings, janitor=engine.janitor
         )
 
-
-
     @staticmethod
     def _init_lifecycle_services(engine):
         """生命周期服务 (Cache, Auditor, Guards)"""
-        engine.block_cache = BlockCache(engine.paths['cache'])
+        engine.block_cache = BlockCache(engine.paths.get('cache', ''))
         engine.auditor = SovereignAuditor(engine)
         engine.qa_guard = engine.governance.qa_guard
         engine.resource_guard = engine.governance.resource_guard
         engine.heartbeat = engine.governance.heartbeat
-        engine.sentinel = engine.governance.health_sentinel # 🛡️ [V48.3] 映射主权健康哨兵
+        engine.sentinel = engine.governance.health_sentinel
         engine.publisher = PublisherService(engine.config.model_dump(), sys_tuning=engine.config.system)
         engine.ai_batcher = AIBatcher(engine)
         engine.brain = KnowledgeService(engine)
         
-        # 🚀 [V48.3] 启动总线绑定 (后台服务已在 GovernanceManager 中启动)
         engine.publisher.bind_to_bus(engine.bus)
 
     @staticmethod
@@ -271,8 +269,9 @@ class EngineFactory:
         engine.sync_strategy = SandboxSyncStrategy(engine) if getattr(args, 'sandbox', False) else FingerprintSyncStrategy(engine)
         
         res = engine.config.system.resilience
-        global_executor.update_concurrency(engine.config.system.concurrency.global_workers)
-        ai_executor.update_concurrency(engine.config.system.concurrency.ai_workers)
+        orig = getattr(engine.config.system, "concurrency", None)
+        global_executor.update_concurrency(getattr(orig, "global_workers", 1) if orig else 1)
+        ai_executor.update_concurrency(getattr(orig, "ai_workers", 4) if orig else 4)
         
         engine.circuit_breakers = {
             "ai": CircuitBreaker("AI-Gateway", failure_threshold=res.cb_failure_threshold, recovery_timeout=res.cb_recovery_timeout),
@@ -290,7 +289,7 @@ class EngineFactory:
             if adapter: DependencyIsolator.check_adapter(adapter)
             
         from core.logic.hooks import ThemeHookManager
-        engine.args = args  # 🚀 [V26.5] 显式挂载运行时参数
+        engine.args = args
         engine.theme_hooks = ThemeHookManager(engine)
 
         engine.theme_hooks.trigger("init")

@@ -24,7 +24,11 @@ _trace_id_ctx = contextvars.ContextVar("ael_iter_id", default=None)
 _trace_metadata_ctx = contextvars.ContextVar("ael_trace_metadata", default={})
 
 logger = logging.getLogger("Illacme.plenipes")
-logger.propagate = False # 🛡️ [V16.6] 防止日志冒泡导致控制台双重打印
+logger.propagate = False
+
+# 🛡️ [V52.9] 默认静音：挂载 NullHandler 封锁所有未对正的输出，确保启动期的纯净
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
 
 def setup_file_logging(log_dir: str, level=logging.INFO):
     """🚀 [V34.9] 工业级日志持久化：配置滚动日志文件"""
@@ -32,7 +36,15 @@ def setup_file_logging(log_dir: str, level=logging.INFO):
     from logging.handlers import RotatingFileHandler
 
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, "plenipes.log")
+    from core.utils.tracing import tlog
+    
+    # 🚀 [V52.7] 强制清空现有 Handler，防止多品牌热重载时的日志堆叠
+    if hasattr(tlog, '_logger'):
+        for h in tlog._logger.handlers[:]:
+            tlog._logger.removeHandler(h)
+
+    from core.config.config import MAIN_LOG_NAME
+    log_file = os.path.join(log_dir, MAIN_LOG_NAME)
 
     # 🛡️ 保持 7 个历史版本，每个文件最大 10MB
     file_handler = RotatingFileHandler(
@@ -88,20 +100,32 @@ def emit_tlog(msg, level="INFO"):
         _LOG_HISTORY[msg] = now
 
     # 🚀 [双轨分流]
-    # 1. UI 轨道：由 Rich 或标准 print 接管，负责视觉反馈
-    if _CONSOLE_OUTPUT:
-        style = "green" if level == "INFO" else "yellow" if level == "WARNING" else "bold red"
-        _CONSOLE_OUTPUT.print(f"[{timestamp_str}] {level}: {msg}", style=style)
-    else:
-        # 🛡️ 备选：非交互模式下直接输出，确保日志可见
-        print(f"[{timestamp_str}] {level}: {msg}")
+    # 1. UI 轨道：负责即时视觉反馈 (注入 IO 容错防止 Errno 5 击穿系统)
+    try:
+        if _CONSOLE_OUTPUT:
+            style = "green" if level == "INFO" else "yellow" if level == "WARNING" else "bold red"
+            _CONSOLE_OUTPUT.print(f"[{timestamp_str}] {level}: {msg}", style=style)
+        else:
+            print(f"[{timestamp_str}] {level}: {msg}")
+    except (IOError, OSError):
+        # 🛡️ [V55.9] 物理静默：如果控制台/管道不可用 (如 Errno 5)，忽略它以保证业务连续性
+        pass
 
-    # 2. 持久化轨道：由标准 logging 接管，负责写入文件
-    # ⚠️ 注意：不要直接调用 tlog.info，否则会引发无限递归！
-    # 直接操作底层的 logger (logging.Logger 实例)
-    if level == "INFO": logger.info(msg)
-    elif level == "WARNING": logger.warning(msg)
-    elif level == "ERROR": logger.error(msg)
+    # 2. 🛡️ [V52.9] 持久化审计：仅当物理管线对正 (有 FileHandler) 时执行投递
+    try:
+        if any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+            if level == "INFO": logger.info(msg)
+            elif level == "WARNING": logger.warning(msg)
+            elif level == "ERROR": logger.error(msg)
+            elif level == "CRITICAL": logger.critical(msg)
+    except Exception:
+        pass
+
+    # 🚀 [V52.0] 实时治理轨道：中转至事件总线，实现 Dashboard 零延迟观测
+    try:
+        from core.utils.event_bus import bus
+        bus.emit("AUDIT_LOG", message=msg, level=level, timestamp=now)
+    except Exception: pass
 
 def SovereignCore(func):
     """

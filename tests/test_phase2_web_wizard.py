@@ -24,7 +24,7 @@ def test_static_access():
     """验证前端静态资源访问"""
     response = client.get("/")
     assert response.status_code == 200
-    assert "Foundry Voyage" in response.text
+    assert "Illacme Plenipes" in response.text
 
 def test_init_validation():
     """验证初始化接口的参数校验"""

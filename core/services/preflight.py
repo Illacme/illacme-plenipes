@@ -21,7 +21,7 @@ class PreflightService:
         if not first_doc:
             return "zh" # 默认回退
 
-        abs_path = os.path.join(engine.paths['vault'], first_doc)
+        abs_path = os.path.join((engine.paths or {}).get('vault', ''), first_doc)
         try:
             # 🚀 [V15.8] 使用政策定义的超时与长度
             with open(abs_path, 'r', encoding='utf-8') as f:

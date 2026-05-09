@@ -7,9 +7,11 @@ Illacme-plenipes AI Plugin - Mistral AI Adapter
 from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
+
 class MistralTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] Mistral 原生适配器"""
     PLUGIN_ID = 'mistral'
+    DEFAULT_URL = "https://api.mistral.ai/v1"
     
     def __init__(self, node_name, trans_cfg):
         if not trans_cfg.base_url:

@@ -13,6 +13,8 @@ from core.editorial.runner import PipelineStep
 
 from core.utils.tracing import tlog
 
+from core.editorial.registry import StepRegistry
+@StepRegistry.register
 class ContextualImageAltStep(PipelineStep):
     """阶段 12.5: AI 驱动的媒体智能引擎 (ADMI v2.0)"""
     PLUGIN_ID = "image_alt"
@@ -24,10 +26,12 @@ class ContextualImageAltStep(PipelineStep):
         admi_enabled = getattr(image_cfg, 'generate_alt', False)
         multilingual_enabled = getattr(image_cfg, 'multilingual_alt', False)
 
+        tlog.info(f"🔍 [ADMI] 正在处理文档 {ctx.rel_path} (Enabled: {admi_enabled}, Multilingual: {multilingual_enabled})")
         if not admi_enabled: return
 
         pattern = re.compile(r'!\[\s*\]\(([^)]+)\)')
         matches = list(pattern.finditer(ctx.body_content))
+        tlog.info(f"🔍 [ADMI] 发现 {len(matches)} 个匹配项")
         if not matches: return
 
         tlog.info(f"🔍 [ADMI] 在 {ctx.rel_path} 中侦测到 {len(matches)} 处空白图片标签...")
@@ -46,10 +50,11 @@ class ContextualImageAltStep(PipelineStep):
                 os.path.join(os.path.dirname(ctx.src_path), img_path),
                 os.path.join(ctx.engine.paths.get('vault', '.'), img_path.lstrip('/'))
             ]
-
+            tlog.info(f"🔍 [ADMI Debug] Path: {img_path} | Potentials: {potential_paths}")
             for p in potential_paths:
                 if os.path.exists(p):
                     abs_img_path = p
+                    tlog.info(f"🔍 [ADMI Debug] Found: {abs_img_path}")
                     break
 
             alt_text = ""
@@ -60,7 +65,8 @@ class ContextualImageAltStep(PipelineStep):
                 try:
                     with open(abs_img_path, 'rb') as f:
                         img_bytes = f.read()
-                        asset_hash = hashlib.md5(img_bytes).hexdigest()
+                        asset_hash = hashlib.md5(img_bytes).hexdigest()[:8]
+                    tlog.info(f"🔍 [ADMI Debug] Hash: {asset_hash}")
 
                     cached_meta = ctx.engine.meta.get_asset_metadata(asset_hash)
                     if cached_meta and cached_meta.get("alt_texts", {}).get(source_lang):
@@ -97,7 +103,7 @@ class ContextualImageAltStep(PipelineStep):
                 for target in ctx.engine.i18n.targets:
                     t_code = target.lang_code
                     if t_code == source_lang: continue
-                    current_meta = ctx.engine.meta.get_asset_metadata(asset_hash)
+                    current_meta = ctx.engine.meta.get_asset_metadata(asset_hash) or {}
                     if t_code in current_meta.get("alt_texts", {}): continue
 
                     try:

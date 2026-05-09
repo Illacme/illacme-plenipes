@@ -6,6 +6,7 @@
 .plenipes/*
 !.plenipes/rules.md
 !.plenipes/governance/
+!.plenipes/history/
 
 # 🔒 主权出版社空间（绝对禁止外泄）
 workspace/
@@ -69,3 +70,13 @@ data/
 # 🌌 动态状态与系统生成资产 (Runtime & Generated)
 territories/
 manuscripts/
+imprints/
+metadata/
+link_graph_*.json
+sync_stats_*.json
+
+# 🛡️ Governance Runtime Patterns
+.plenipes/*.json
+.plenipes/*.log
+.illacme-shadow/
+.antigravity/

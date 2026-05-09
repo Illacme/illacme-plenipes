@@ -48,6 +48,40 @@ class BaseSSGAdapter(abc.ABC):
             schema.append("static")
         return schema
 
+    def get_feature_slots(self) -> Dict[str, Dict[str, str]]:
+        """
+        🚀 [V56.0] 意图感知协议：声明该适配器支持的功能槽及其物理路径映射。
+        返回格式: {
+            "slot_id": {
+                "label": "人类可读名称",
+                "single": "单语言相对路径",
+                "multi": "多语言相对路径(含{lang}占位符)"
+            }
+        }
+        """
+        return {
+            "docs": {
+                "label": "文档中心",
+                "single": "docs",
+                "multi": "i18n/{lang}/docs"
+            },
+            "blog": {
+                "label": "博客文章",
+                "single": "blog",
+                "multi": "i18n/{lang}/blog"
+            },
+            "pages": {
+                "label": "独立页面",
+                "single": "pages",
+                "multi": "i18n/{lang}/pages"
+            },
+            "static": {
+                "label": "静态资产",
+                "single": "static",
+                "multi": "static"
+            }
+        }
+
     def adapt_metadata(self, fm: dict, date_obj, author_name) -> dict:
         """[Sovereignty] 物理元数据方言适配"""
         return fm

@@ -7,13 +7,14 @@ Illacme-plenipes Core - AI Base Adapter
 """
 
 import abc
+import os
 import threading
 import time
 from typing import Dict, Any
 from core.utils.event_bus import bus
 from core.logic.ai.model_intelligence import ModelIntelligenceHub
 from .payload_manager import PayloadManager
-from .task_mixin import AITaskMixin
+from core.logic.ai.task_mixin import AITaskMixin
 from core.utils.tracing import tlog
 
 class BaseTranslator(abc.ABC, AITaskMixin):
@@ -32,9 +33,36 @@ class BaseTranslator(abc.ABC, AITaskMixin):
             self.timeout = self.config.limits.timeout
 
         self.max_retries = getattr(trans_cfg, 'max_retries', 3)
-        self._intelligence_hub = ModelIntelligenceHub()
         self._is_cooling = False
         self._cooling_until = 0.0
+        
+        # 🚀 [V55.26] 主权 ID 绑定：确保算力任务能感知品牌身份以加载正确方言
+        from core.runtime.cli_bootstrap import get_global_engine
+        engine = get_global_engine()
+        self.imprint_id = engine.imprint_id if engine else "default"
+        
+        # 🧠 [V55.26] 算力智感中枢初始化 (强制对正 AI 治理目录)
+        ai_cache_path = engine._resolve_path(engine.config.get_ai_features_path()) if engine else None
+        self._intelligence_hub = ModelIntelligenceHub(ai_cache_path)
+
+    def safe_get_config(self, key: str, default: Any = None) -> Any:
+        """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
+        return getattr(self.config, key, default)
+
+    async def list_models(self) -> list[str]:
+        """🚀 [V48.3] 算力感应接口：子类应实现此方法以支持动态模型发现"""
+        return []
+
+    async def test_connection(self) -> tuple[bool, str]:
+        """🚀 [V55.1] 连通性物理探针：子类可重写以实现更精细的诊断"""
+        try:
+            models = await self.list_models()
+            if models:
+                return True, f"已感应到 {len(models)} 个可用模型资产"
+            return True, "链路已打通，但当前节点未暴露公开模型列表"
+        except Exception as e:
+            return False, str(e)
+
 
     def is_cooling(self) -> bool:
         if self._is_cooling and time.time() < self._cooling_until:
@@ -51,13 +79,13 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         """[Sovereignty] 物理算力调度核心：带治理拦截的 AI 请求总闸"""
         from core.runtime.cli_bootstrap import get_global_engine
         engine = get_global_engine()
-        territory_id = engine.territory_id if engine else "default"
+        imprint_id = engine.imprint_id if engine else "default"
         
         if engine and hasattr(engine, 'governance'):
             from core.governance.rate_limiter import GovernanceGuard
             guard = GovernanceGuard()
-            if not guard.check_quota(territory_id):
-                raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {territory_id}")
+            if not guard.check_quota(imprint_id):
+                raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {imprint_id}")
 
             breaker = engine.circuit_breakers.get("ai")
             if breaker and not breaker.allow_request():

@@ -16,7 +16,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
     """🚀 [V11.0] 指纹同步策略：基于文件哈希与影子自愈的工业级同步实现"""
 
     @SovereignCore
-    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False):
+    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
         from core.editorial.context import SyncContext
         from core.logic.orchestration.concurrency_controller import concurrency_controller
 
@@ -36,7 +36,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
         abs_src_path = os.path.join(engine.paths.get('vault', '.'), rel_path)
 
         # 🚀 [V11.0] 初始化 SyncContext (传入绝对路径以确保物理寻址)
-        ctx = SyncContext(engine, abs_src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=is_sandbox)
+        ctx = SyncContext(engine, abs_src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=is_sandbox, target_slot=target_slot)
 
         # 🛡️ 服务注册表注入
         ctx.services.staticizer = engine.staticizer
@@ -99,7 +99,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             # 🚀 [V48.3] 物理一致性防护：不仅校验哈希，还要校验目标物理文件是否真实存在
             target_base = engine.paths.get('source_dir')
             ext = os.path.splitext(rel_path)[1].lower()
-            dest_path = engine.route_manager.resolve_physical_path(target_base, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext)
+            dest_path = engine.route_manager.resolve_physical_path(target_base, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext, source_type=target_slot)
             
             shadow_path = engine.paths.get('shadow')
             shadow_src_path = engine.route_manager.resolve_physical_path(shadow_path, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext) if shadow_path else ""
@@ -136,7 +136,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             target_results = AIScheduler.dispatch_targets(
                 engine, ctx, None, ctx.route_prefix, ctx.route_source, force_sync,
                 rel_path, ctx.is_dry_run, persistence_date=None,
-                seo_data=ctx.seo_data, priority=priority
+                seo_data=ctx.seo_data, priority=priority, target_slot=target_slot
             )
 
             # 🚀 等待源语种 SEO 结果
@@ -155,7 +155,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                 src_code, ctx.route_prefix, ctx.route_source, ctx.mapped_sub_dir, ctx.masks,
                 ctx.is_dry_run, is_target=True, node_assets=ctx.node_assets, node_ext_assets=ctx.node_ext_assets,
                 node_outlinks=ctx.node_outlinks, assets_lock=ctx.assets_lock,
-                seo_data=ctx.seo_data, is_sandbox=ctx.is_sandbox
+                seo_data=ctx.seo_data, is_sandbox=ctx.is_sandbox, target_slot=target_slot
             )
 
 

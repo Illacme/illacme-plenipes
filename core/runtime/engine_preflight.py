@@ -13,41 +13,101 @@ from core.utils.tracing import tlog
 from core.governance.sentinel import SentinelManager
 from core.governance.contract_guard import ContractGuard
 
+from core.config.config import IMPRINT_DIR, METADATA_DIR, THEMES_DIR
+
 class EnginePreflight:
-    # 🛡️ [V35.2] 主权物理布局协议 (唯一真理源)
+    # 🛡️ [V50.3] 主权物理布局协议 (唯一真理源)
     SOVEREIGN_LAYOUT = {
-        "logs": "logs",
-        "metadata": "metadata",
-        "cache": "cache",
-        "themes": "themes"
+        "metadata": METADATA_DIR,
+        "metadata_core": f"{METADATA_DIR}/core",
+        "metadata_ai": f"{METADATA_DIR}/ai",
+        "metadata_ai_vectors": f"{METADATA_DIR}/ai/vectors",
+        "metadata_ai_brain": f"{METADATA_DIR}/ai/brain",
+        "metadata_themes": f"{METADATA_DIR}/themes",
+        "metadata_runtime": f"{METADATA_DIR}/runtime",
+        "cache": f"{METADATA_DIR}/runtime/cache",
+        "logs": f"{METADATA_DIR}/runtime/logs",
+        "themes": THEMES_DIR
     }
 
     @staticmethod
-    def perform_preflight(config, territory_id: str = "default", args=None):
+    def perform_preflight(config, imprint_id: str = "default", args=None):
         """🚀 执行起飞前全量审计与点火准备"""
         
-        # 1. 🧬 [补救逻辑] 如果传入的是路径字符串，先加载为配置对象
-        if isinstance(config, str):
-            from core.config.config import load_config
-            config = load_config(config)
+        # 1. 🚀 [V53.0] 统一主权对正：使用 ConfigManager 执行 3 层深度合并 (Global < Imprint < Local)
+        from core.config.config import load_config
+        config_path = config if isinstance(config, str) else getattr(config, 'config_path', 'config.yaml')
+        config = load_config(config_path, imprint_id=imprint_id)
 
         # 2. 🚀 [V8.0] 激活物理安全底座
         from core.governance.secret_manager import secrets
         secrets.initialize()
         
-        # 3. 🛡️ [V35.2] 审计账本主权对正
+        # 🛡️ [V50.5] 主权账本物理隔离：强制锚定在品牌领土内
         from core.governance.audit_ledger import initialize_ledger
-        audit_path = os.path.join("territories", territory_id, EnginePreflight.SOVEREIGN_LAYOUT["metadata"], "audit.db") if territory_id != "default" else ".plenipes/ledger_audit.db"
+        imprint_dir = os.path.join(IMPRINT_DIR, imprint_id)
+        if not os.path.exists(imprint_dir): os.makedirs(imprint_dir, exist_ok=True)
+        
+        # 🚀 [V55.26] 建立全量物理布局矩阵
+        for _, rel_path in EnginePreflight.SOVEREIGN_LAYOUT.items():
+            os.makedirs(os.path.join(imprint_dir, rel_path), exist_ok=True)
+
+        audit_rel_path = config.get_audit_db_path()
+        audit_path = os.path.join(imprint_dir, audit_rel_path)
         initialize_ledger(audit_path)
 
-        # 4. 🛡️ [V35.2] 主权路径强制对正
-        if territory_id and territory_id != "default":
-            territory_path = os.path.join("territories", territory_id)
+        # 🛡️ [V53.0] 品牌主权路径与环境对正
+        if imprint_id and imprint_id != "default":
+            imprint_path = os.path.join(IMPRINT_DIR, imprint_id)
+            
+            # 🚀 [V53.0] 出版模式智能推断：根据实际配置自动推导最佳模式
+            gov_cfg = config.governance
+            explicit_mode = gov_cfg.publishing_mode
+            
+            # 检测 AI 就绪性 (基于合并后的配置)
+            ai_ready = False
+            local_types = ["ollama", "lmstudio", "local"]
+            providers = config.translation.providers or {}
+            
+            for node_id, node_cfg in providers.items():
+                node_type = (getattr(node_cfg, "type", "") or getattr(node_cfg, "provider", "") or "").lower()
+                api_key = getattr(node_cfg, "api_key", "") or ""
+                # 本地模型无需 API Key
+                if any(t in node_type for t in local_types):
+                    ai_ready = True
+                    break
+                # 远程模型需有效 API Key
+                if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
+                    ai_ready = True
+                    break
+            
+            # 智能推断逻辑
+            from core.config.models.governance import PublishingMode, SeoStrategy
+            
+            # 如果配置仍为默认/空，或者需要根据算力状态进行安全校验
+            if not ai_ready:
+                if explicit_mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
+                    config.governance.publishing_mode = PublishingMode.BASIC
+                    config.governance.seo_strategy = SeoStrategy.HEURISTIC
+                    tlog.warning("⚠️ [模式降级] 未检测到可用 AI 算力，品牌模式已自动降级至 basic")
+            
+            # 🚀 [V53.0] 模式联动：基础模式自动禁用 AI 算力
+            if config.governance.publishing_mode == PublishingMode.BASIC:
+                config.translation.enable_ai = False
+                tlog.info("📜 [基础模式] AI 算力已自动离线，使用物理规则引擎")
+
+            # 强制 data_root 锚定到品牌目录
             if not config.system:
-                config.system = type('SystemConfig', (), {'data_root': territory_path})()
+                config.system = type('SystemConfig', (), {'data_root': imprint_path})()
             else:
-                config.system.data_root = territory_path
-            tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {territory_path}")
+                config.system.data_root = imprint_path
+            
+            tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {imprint_path}")
+        else:
+            # default 品牌也需要基本的 data_root
+            if config.system:
+                if not config.system.data_root:
+                    config.system.data_root = ".plenipes"
 
         # 5. 🚀 [审计逻辑] 契约校验
         violations = ContractGuard.verify_config(config)
@@ -58,13 +118,14 @@ class EnginePreflight:
             sys.stderr.flush()
             return None
 
-        # 6. 🚀 [V48.3] 视觉主权：Banner 抢占式渲染
+        # 6. 🚀 [V50.3] 视觉主权：Banner 抢占式渲染
         from core.ui.delegate import DisplayDelegate
         sys_version = DisplayDelegate.get_system_version(config)
         
         # 探测最新迭代 ID
-        history_dir = os.path.join("territories", territory_id, EnginePreflight.SOVEREIGN_LAYOUT["metadata"], "history") if territory_id != "default" else ".plenipes/history"
-        current_iter_id = "V24.0_Default"
+        from core import __version__
+        history_dir = os.path.join(imprint_dir, EnginePreflight.SOVEREIGN_LAYOUT["metadata"], "history")
+        current_iter_id = f"V{__version__}_Final"
         if os.path.exists(history_dir):
             iters = [d for d in os.listdir(history_dir) if os.path.isdir(os.path.join(history_dir, d))]
             if iters:
@@ -84,7 +145,25 @@ class EnginePreflight:
                  mode=DisplayDelegate.get_banner_mode(config, args),
                  sentinel_status=sentinel_info)
 
-        # 7. 🚀 [V16.0] 插件化基座点火
+        # 7. 🚀 [V53.1] 算力意志冲突审计：核验品牌节点在本地的感应状态
+        if config.translation.enable_ai:
+            primary = config.translation.primary_node
+            fallback = config.translation.fallback_node
+            providers = config.translation.providers
+            
+            for node_role, node_id in [("主力", primary), ("备用", fallback)]:
+                if not node_id or node_id == "default": continue
+                
+                node_cfg = providers.get(node_id)
+                if not node_cfg:
+                    tlog.warning(f"🛑 [意志冲突] 品牌指定的{node_role}节点 '{node_id}' 在本地物理层中未定义！系统将陷入算力黑洞。")
+                else:
+                    # 检查密钥 (本地模型不需要 key)
+                    is_local = any(kw in (node_cfg.type or '').lower() for kw in ['local', 'ollama', 'lmstudio'])
+                    if not is_local and not node_cfg.api_key:
+                        tlog.warning(f"🛑 [物理缺失] 品牌{node_role}节点 '{node_id}' 缺少本地 API Key，请在算力底座中完成物理挂载。")
+
+        # 8. 🚀 [V16.0] 插件化基座点火
         from core.markup.manager import MarkupManager
         from core.ingress.manager import IngressManager
         plugin_settings = getattr(config, 'plugins', None)

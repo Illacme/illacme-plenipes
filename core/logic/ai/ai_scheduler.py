@@ -15,6 +15,7 @@ from core.markup.base import MarkupBlock
 from core.utils.common import TokenCounter
 from core.utils.event_bus import bus
 from core.utils.tracing import Tracer, tlog, SovereignCore
+from core.utils.language_hub import LanguageHub
 from core.logic.orchestration.task_orchestrator import global_executor, ai_executor, TaskPriority
 
 class AIScheduler:
@@ -52,11 +53,18 @@ class AIScheduler:
 
     @staticmethod
     @SovereignCore
-    def dispatch_targets(engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run, persistence_date=None, seo_data=None, priority=TaskPriority.TRANSLATION):
+    @staticmethod
+    def dispatch_targets(engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run, persistence_date=None, seo_data=None, priority=TaskPriority.TRANSLATION, target_slot="docs"):
         """
         🚀 [V10.3] 多语言分发调度中心
         实现语种级并行，并透传全量 SEO 渲染数据。
         """
+        # 🚀 [V55.26] 语义化主权栅栏：拦截子目录分发映射
+        from core.governance.license_guard import LicenseGuard
+        if not LicenseGuard.is_pro_feature_allowed("subfolder_ingress") and route_prefix != "":
+            tlog.warning(f"🛡️ [License Guard] 社区版限制：拦截分发路由前缀 [{route_prefix}]，强制回归根目录。")
+            route_prefix = ""
+
         enable_multilingual = engine.i18n.enable_multilingual
         targets = engine.i18n.targets
 
@@ -66,6 +74,16 @@ class AIScheduler:
 
         if not targets:
             return
+
+        # 🚀 [V55.0] 智能源语种探测：仅在源设置为 auto 时执行一次
+        source_lang = engine.i18n.source.lang_code
+        if source_lang == "auto":
+            # 获取一部分文本用于探测
+            detect_sample = ctx.masked_source[:1000] if ctx.masked_source else ctx.body_content[:1000]
+            source_lang = LanguageHub.detect_source_lang(detect_sample, engine.translator)
+            tlog.info(f"🔍 [语种智感] 自动探测结果: {source_lang} (Source: Auto)")
+        else:
+            tlog.debug(f"ℹ️ [语种固定] 使用显式源语种: {source_lang}")
 
         # 🚀 [V48.3] 算力成本预警 (统一通过 UsageMeter 执行)
         if not engine.meter.check_and_block(ctx.masked_source, [t.lang_code for t in targets], rel_path):
@@ -86,11 +104,25 @@ class AIScheduler:
                 return "SOVEREIGNTY_SHIELD", f"主权标签 {first_missing} 在译文中丢失"
             return None, None
 
+        # 🚀 [V55.26] 路由感知的方言锚点提取
+        route_style = None
+        from core.governance.license_guard import LicenseGuard
+        if LicenseGuard.is_licensed():
+            for item in engine.config.route_matrix:
+                if getattr(item, 'source', None) == route_source:
+                    route_style = getattr(item, 'style', None)
+                    break
+        else:
+            tlog.debug(f"🛡️ [License Guard] 社区版限制：忽略频道 [{route_source}] 的风格偏移，强制回归全域默认。")
+        
         @Tracer.trace_context(ctx.ael_iter_id)
         def process_target(target):
             code = target.lang_code
             name = target.prompt_lang
             target_health = True
+            
+            # 使用提取到的路由风格，若无则保持 None (由 Mixin 决定是否降级为全局)
+            style = route_style
 
             try:
                 # 🚀 [V24.5] 语义主权：获取图谱上下文 (Term Guard)
@@ -128,10 +160,21 @@ class AIScheduler:
                     if knowledge_context:
                         tlog.debug(f"🧠 [TermGuard] 已为 {code} 注入来自 {len(related)} 个关联节点的语义背景 (模式: {'LINK' if 'HEURISTIC' not in str(related) else 'HEURISTIC'})")
 
-                # 🚀 [V48.3] 语义主权回归：对“未屏蔽”的原始正文进行语义切片
-                # 这样可以确保解析器能识别 Callouts、Headers 等结构，而不受占位符干扰。
                 parser = MarkdownBlockParser()
-                blocks = parser.parse(ctx.body_content)
+                content_to_parse = ctx.masked_source if ctx.masked_source else ctx.body_content
+                
+                # 🚀 [V55.1] 幂等性校验：如果源语种与目标语种一致，则执行“主权透传”
+                # 统一 ISO 代码格式进行对比
+                iso_source = LanguageHub.resolve_to_iso(source_lang)
+                iso_target = LanguageHub.resolve_to_iso(code)
+                
+                if iso_source == iso_target:
+                    tlog.info(f"⚖️ [主权透传] {rel_path} ({code})：源语种与目标语种一致，跳过翻译算力。")
+                    # 直接模拟翻译完成的状态
+                    target_fm = ctx.base_fm.copy()
+                    return (code, content_to_parse, target_fm, {}, True)
+
+                blocks = parser.parse(content_to_parse)
 
                 # 1. 准备翻译任务清单
                 translated_blocks = [None] * len(blocks)
@@ -182,6 +225,7 @@ class AIScheduler:
                                 context_type=block.type,
                                 is_dry_run=is_dry_run,
                                 knowledge_context=knowledge_context, # 🚀 注入语义背景
+                                style=style, # 🚀 [V55.26] 注入频道级风格
                                 priority=TaskPriority.TRANSLATION,
                                 task_name=f"Block-{idx}-{code}"
                             )
@@ -217,24 +261,24 @@ class AIScheduler:
                 t_seo_data = {}
                 if engine.seo_cfg.autopilot_enabled and not is_dry_run:
                     tlog.info(f"🏎️ [SEO Autopilot] 正在提取 {name} 版本的语义 SEO...")
-                    t_seo_data, _ = engine.translator.generate_seo_metadata(final_body, name, is_dry_run)
+                    t_seo_data, _ = engine.translator.generate_seo_metadata(final_body, name, is_dry_run, style=style)
 
                 # 6. [V25.1] 标题与元数据翻译
                 target_fm = ctx.base_fm.copy()
                 if not is_dry_run:
                     source_title = target_fm.get('title', ctx.title)
                     tlog.info(f"✍️ [Title Polish] 正在为 {name} 版本润色标题...")
-                    translated_title = engine.translator.translate_title(source_title, code, is_dry_run)
+                    translated_title = engine.translator.translate_title(source_title, code, is_dry_run, style=style)
                     target_fm['title'] = translated_title
 
                     # 🚀 [V25.5] 全量元数据翻译：Tags & Category
                     if 'tags' in target_fm:
                         tlog.info(f"🏷️ [Meta Polish] 正在为 {name} 版本翻译 Tags...")
-                        target_fm['tags'] = engine.translator.translate_metadata(target_fm['tags'], 'tags', code, is_dry_run)
+                        target_fm['tags'] = engine.translator.translate_metadata(target_fm['tags'], 'tags', code, is_dry_run, style=style)
                     
                     if 'category' in target_fm:
                         tlog.info(f"📁 [Meta Polish] 正在为 {name} 版本翻译 Category...")
-                        target_fm['category'] = engine.translator.translate_metadata(target_fm['category'], 'category', code, is_dry_run)
+                        target_fm['category'] = engine.translator.translate_metadata(target_fm['category'], 'category', code, is_dry_run, style=style)
 
                 return (code, final_body, target_fm, t_seo_data, target_health)
             except Exception as e:

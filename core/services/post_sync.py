@@ -46,42 +46,57 @@ class LifecycleManager:
                 tlog.error(f"🚨 [Plugin Error] {task.name} 发生故障: {e}")
                 tlog.debug(traceback.format_exc())
 
-# 🚀 [V1.0] 内置插件定义
+# 🚀 [V1.0] 内置付印插件定义
+# ============================================================
+# 以下插件构成了 Illacme-Plenipes 的核心自动化交付管线。
+# 每个插件均独立运行，具备异常隔离能力，确保单一环节失败不影响全链路付印。
+# ============================================================
+
 import os
 import json
 from datetime import datetime
 from core.editorial.vault_indexer import VaultIndexer
 
 class GraphExportPlugin(PostSyncTask):
-    """关系图谱导出插件"""
+    """
+    关系图谱导出插件
+    职责：基于 Manuscripts (原稿库) 的双链引用，生成全局关系图谱 JSON。
+    该资产是 Digital Garden 可视化的核心数据源。
+    """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
-        # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/link_graph.json".replace("{id}", engine.territory_id))
+        # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
+        output = engine._resolve_path(engine.config.get_link_graph_path())
         VaultIndexer.export_graph(engine.link_graph, output)
 
 class SearchIndexPlugin(PostSyncTask):
-    """全域搜索索引导出插件"""
+    """
+    全域搜索索引导出插件
+    职责：构建基于正文与元数据的扁平化检索索引，支持全局快速搜索。
+    """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
-        # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/search_index.json".replace("{id}", engine.territory_id))
+        # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
+        output = engine._resolve_path(engine.config.get_search_index_path())
         VaultIndexer.export_search_index_v2(snapshot, output)
 
 class SyncStatsPlugin(PostSyncTask):
-    """同步统计数据保存插件"""
+    """
+    同步统计数据保存插件
+    职责：记录本次付印周期的元数据统计，包括算力消耗、文件总数及时间戳。
+    """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
-        # 🚀 [V22.6] 路径主权：直接使用引擎解析器
-        output = engine._resolve_path("data/index/{id}/sync_stats.json".replace("{id}", engine.territory_id))
+        # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
+        output = engine._resolve_path(engine.config.get_sync_stats_path())
         
-        # 🚀 [V7.0] 从审计账本获取权威财务数据
-        historical_cost = engine.ledger.get_total_cost(territory_id=engine.territory_id)
+        # 🚀 [V7.0] 从注册簿 (The Registry) 获取权威财务数据，确保每一分算力都有据可查
+        historical_cost = engine.ledger.get_total_cost(imprint_id=engine.imprint_id)
         
         sync_data = {
             "total_vault_files": len(snapshot),
             "processed_timestamp": datetime.now().isoformat(),
-            "engine_version": "V16.0",
-            "territory": engine.territory_id,
+            "engine_version": "V50.3",
+            "imprint": engine.imprint_id,
             "usage": {
-                "session_cost": round(engine.meter.stats["session"]["cost"], 4),
+                "session_cost": round((engine.meter.stats.get("session", {}).get("cost", 0.0)), 4),
                 "total_historical_cost": round(historical_cost, 2)
             }
         }
@@ -91,7 +106,10 @@ class SyncStatsPlugin(PostSyncTask):
             json.dump(sync_data, f, indent=2)
 
 class AssetAuditPlugin(PostSyncTask):
-    """物理资产交叉审计插件"""
+    """
+    物理资产交叉审计插件
+    职责：执行“首席校对员”职能，核实原稿库中引用的所有本地及远程资产的可用性。
+    """
     def run(self, engine, stats, snapshot, args):
         if not engine.config.system.enable_asset_audit:
             return
@@ -129,7 +147,7 @@ class AssetAuditPlugin(PostSyncTask):
             
             def ping(doc_path, url):
                 ignored = engine.config.system.network_settings.ignored_domains
-                if any(d in url for d in ignored): return None
+                if any(d in url for d in (ignored or [])): return None
                 
                 domain = urlparse(url).netloc
                 if not hasattr(engine, '_audit_locks'): engine._audit_locks = {}
@@ -156,7 +174,10 @@ class AssetAuditPlugin(PostSyncTask):
         bus.emit("UI_AUDIT_RESULTS", missing_local=missing_local, dead_remote=dead_remote, total_files=len(snapshot))
 
 class JanitorPlugin(PostSyncTask):
-    """清道夫：资产清洗插件"""
+    """
+    清道夫：资产清洗插件
+    职责：物理级别的垃圾回收。清理无效的索引节点、孤立资产以及过期的分发快照。
+    """
     def run(self, engine, stats, snapshot, args):
         no_changes = (stats.get("UPDATED", 0) == 0 and stats.get("ERROR", 0) == 0 and not args.force)
         if not no_changes:
@@ -164,15 +185,18 @@ class JanitorPlugin(PostSyncTask):
             engine.janitor.gc_orphans(set(snapshot.keys()), is_dry_run=args.dry_run)
             engine.janitor.gc_ghost_nodes(is_dry_run=args.dry_run)
             
-            # 🚀 [V35.2] 物理自愈清理：确保分发前 dist 目录绝对纯净
+            # 🚀 [V35.2] 物理自愈清理：确保在最终付印前 dist 目录绝对纯净
             engine.janitor.purge_dist(is_dry_run=args.dry_run)
 
 
 class DigitalGardenPlugin(PostSyncTask):
-    """数字花园图谱导出插件 (全量语种支持)"""
+    """
+    数字花园图谱导出插件 (全量语种支持)
+    职责：为全语种矩阵生成多维关联索引。
+    """
     def run(self, engine, stats, snapshot, args):
         # 🚀 [V34.9] 只有在有变更或非强制模式下才执行昂贵的导出
-        has_changes = not (stats.get("UPDATED", 0) == 0 and stats.get("ERROR", 0) == 0 and not args.force)
+        has_changes = not (stats.get("UPDATED", 0) == 0 and stats.get("ERROR", 0) == 0 and not (args and args.force))
         if not has_changes:
             tlog.info("✨ [Plugin] 数字花园数据无变更，跳过导出。")
             return
@@ -181,11 +205,14 @@ class DigitalGardenPlugin(PostSyncTask):
         export_digital_garden(engine, all_docs_snapshot=snapshot)
 
 class SovereignDeploymentPlugin(PostSyncTask):
-    """🚀 [V35.2] 全渠道主权分发插件：执行最终的出版资产投递"""
+    """
+    🚀 [V35.2] 全渠道主权分发插件
+    职责：执行最终的出版资产投递，将印刷好的印张上架至全球书店 (The Bookstore)。
+    """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 1. 只有在非 dry_run 且有实际产出（或强制模式）时执行
-        has_output = stats.get("UPDATED", 0) > 0 or args.force
-        if args.dry_run or not has_output:
+        has_output = stats.get("UPDATED", 0) > 0 or (args and args.force)
+        if (args and args.dry_run) or not has_output:
             tlog.info("ℹ️ [Deployment] 无新增产出或处于演练模式，跳过渠道投递。")
             return
 
@@ -194,12 +221,12 @@ class SovereignDeploymentPlugin(PostSyncTask):
             return
 
         # 2. 获取分发根目录 (通常是 static_dir)
-        bundle_path = engine.paths.get('static_dir') or engine.paths.get('target_base')
+        bundle_path = (engine.paths or {}).get('static_dir') or (engine.paths or {}).get('target_base')
         
         # 3. 准备全局分发元数据
         deployment_meta = {
             "timestamp": datetime.now().isoformat(),
-            "territory_id": engine.territory_id,
+            "imprint_id": engine.imprint_id,
             "stats": stats,
             "total_files": len(snapshot)
         }
@@ -207,9 +234,9 @@ class SovereignDeploymentPlugin(PostSyncTask):
         # 4. 执行全渠道事务分发
         results = engine.deployment_manager.deploy_all(bundle_path, deployment_meta)
         
-        # 5. 记录分发凭证至审计账本 (将结果存入 metadata 避免 details 参数冲突)
-        engine.ledger.log("GLOBAL_DEPLOY", f"全渠道分发完成，状态: {results.get('status')}",
-                          territory_id=engine.territory_id, metadata=results)
+        # 5. 记录分发凭证至注册簿 (Registry)
+        engine.ledger.log("GLOBAL_DEPLOY", f"全渠道分发完成，状态: {(results or {}).get('status')}",
+                          imprint_id=engine.imprint_id, metadata=results)
 
 
 # 🚀 自动注册内置插件 (注意顺序：Janitor 清理在前，分发在后)

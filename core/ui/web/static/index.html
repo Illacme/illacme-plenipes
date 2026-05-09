@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foundry Voyage | 铸造出版社主权</title>
+    <title>Illacme Plenipes | 全球私人出版品牌开业向导</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -35,7 +35,6 @@
             overflow-x: hidden;
         }
 
-        /* 🌌 背景粒子场 */
         .bg-gradient {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background:
@@ -50,10 +49,9 @@
             100% { transform: scale(1.15) rotate(2deg); }
         }
 
-        /* 🧪 主容器 */
         .wizard-container {
             position: relative; z-index: 10;
-            width: 560px; max-width: 95vw;
+            width: 600px; max-width: 95vw;
         }
 
         .wizard-card {
@@ -67,7 +65,6 @@
             transition: all 0.4s ease;
         }
 
-        /* 🧭 步骤指示器 */
         .stepper {
             display: flex;
             justify-content: center;
@@ -83,7 +80,6 @@
         .step-dot.active { background: var(--primary); width: 48px; }
         .step-dot.done { background: var(--accent-green); }
 
-        /* 📋 步骤内容 */
         .step { display: none; animation: fadeSlide 0.4s ease; }
         .step.active { display: block; }
         @keyframes fadeSlide {
@@ -95,11 +91,18 @@
             text-align: center;
             margin-bottom: 28px;
         }
+        .step-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
         .step-header h2 {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 600;
-            letter-spacing: -0.3px;
             background: linear-gradient(135deg, #fff 0%, #bbb 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -111,8 +114,7 @@
             line-height: 1.5;
         }
 
-        /* 🏷️ 表单 */
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 18px; position: relative; }
         .form-group label {
             display: block;
             font-size: 0.72rem;
@@ -122,6 +124,7 @@
             letter-spacing: 1.2px;
             font-weight: 500;
         }
+        .input-with-btn { display: flex; gap: 8px; }
         input, select {
             width: 100%;
             background: rgba(255,255,255,0.04);
@@ -132,16 +135,52 @@
             font-size: 0.9rem;
             outline: none;
             transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
         }
         input:focus, select:focus {
             border-color: var(--primary);
             background: rgba(255,255,255,0.07);
-            box-shadow: 0 0 20px rgba(138,43,226,0.2);
         }
-        select option { background: #1a1a2e; color: #fff; }
 
-        /* 🎨 主题 & 语种卡片选择器 */
+        .browser-panel {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #12121a;
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            margin-top: 8px;
+            max-height: 280px;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .browser-header {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .browser-current-path {
+            font-size: 0.65rem; color: var(--accent);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 70%;
+        }
+        .browser-content { overflow-y: auto; flex: 1; }
+        .browser-item {
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .browser-item:hover { background: var(--glass-hover); }
+        .browser-item .item-info { display: flex; align-items: center; gap: 8px; flex: 1; }
+        .browser-item .btn-select-item {
+            padding: 4px 8px; font-size: 0.65rem; background: var(--primary-soft);
+            color: var(--primary); border: 1px solid var(--primary); border-radius: 4px;
+        }
+        .browser-item .btn-select-item:hover { background: var(--primary); color: #fff; }
+
         .card-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -149,6 +188,45 @@
             margin-top: 8px;
         }
         .card-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
+
+        /* 🚀 [V48.4] 沉浸式预览布局 */
+        .theme-container {
+            display: flex; gap: 20px; min-height: 380px;
+        }
+        .theme-list {
+            flex: 0 0 200px; display: flex; flex-direction: column; gap: 8px;
+            overflow-y: auto; max-height: 420px; padding-right: 8px;
+        }
+        .theme-list::-webkit-scrollbar { width: 4px; }
+        .theme-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .theme-preview-box {
+            flex: 1; background: rgba(0,0,0,0.2); border-radius: 18px;
+            border: 1px solid var(--glass-border); position: relative;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .theme-preview-img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0; transform: scale(1.05);
+        }
+        .theme-preview-img.active { opacity: 1; transform: scale(1); }
+        
+        .theme-info-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            pointer-events: none;
+        }
+        .theme-info-overlay h3 { font-size: 1rem; margin-bottom: 4px; color: #fff; }
+        .theme-info-overlay p { font-size: 0.75rem; color: var(--text-dim); }
+
+        .selectable-card.mini {
+            padding: 12px; display: flex; align-items: center; gap: 10px;
+            text-align: left;
+        }
+        .selectable-card.mini .icon { font-size: 1.2rem; }
+        .selectable-card.mini .text-box { flex: 1; }
+        .selectable-card.mini h4 { font-size: 0.8rem; margin: 0; }
+        .selectable-card.mini p { font-size: 0.6rem; margin: 0; display: none; }
 
         .selectable-card {
             background: var(--glass);
@@ -158,161 +236,142 @@
             cursor: pointer;
             transition: all 0.25s ease;
             text-align: center;
+            position: relative;
         }
-        .selectable-card:hover {
-            background: var(--glass-hover);
-            border-color: rgba(138,43,226,0.3);
-            transform: translateY(-2px);
-        }
+        .selectable-card:hover { transform: translateY(-2px); border-color: rgba(138,43,226,0.3); }
         .selectable-card.selected {
             background: var(--primary-soft);
             border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(138,43,226,0.15);
         }
-        .selectable-card .card-title {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 3px;
-        }
-        .selectable-card .card-desc {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            line-height: 1.4;
-        }
-        .selectable-card .card-icon {
-            font-size: 1.4rem;
-            margin-bottom: 6px;
+        .official-tag {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 0.6rem; background: var(--accent); color: #000;
+            padding: 1px 4px; border-radius: 4px; font-weight: 700;
         }
 
-        /* 📡 算力探测面板 */
         .node-panel {
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,255,255,0.03);
+            border: 1px solid rgba(0,255,255,0.1);
             border-radius: 14px;
             padding: 14px;
             margin-bottom: 18px;
         }
-        .node-panel label { margin-bottom: 8px; }
         .node-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
         .node-item {
             display: flex; align-items: center; gap: 6px;
             background: rgba(255,255,255,0.04);
-            padding: 7px 12px; border-radius: 10px; font-size: 0.82rem;
-            border: 1px solid transparent;
+            padding: 5px 10px; border-radius: 8px; font-size: 0.75rem;
         }
-        .node-item.online { border-color: rgba(0,255,127,0.25); color: var(--accent-green); }
-        .node-dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
-        .online .node-dot { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .node-item.online { color: var(--accent-green); }
+        .node-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
 
-        /* 🚀 按钮 */
-        .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
         .btn {
-            flex: 1;
-            border: none; border-radius: 14px; padding: 14px;
+            border: none; border-radius: 12px; padding: 14px;
             font-weight: 600; font-size: 0.9rem;
             cursor: pointer; transition: all 0.3s ease;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-            font-family: 'Inter', sans-serif;
+            display: inline-flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-primary {
+            flex: 1;
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: #fff;
-            box-shadow: 0 10px 25px -8px rgba(138,43,226,0.5);
+            box-shadow: 0 8px 20px -6px rgba(138,43,226,0.4);
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 32px -8px rgba(138,43,226,0.6);
-        }
-        .btn-ghost {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-dim);
-            border: 1px solid var(--glass-border);
-        }
-        .btn-ghost:hover { background: rgba(255,255,255,0.08); color: #fff; }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px rgba(138,43,226,0.5); }
+        .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid var(--glass-border); }
+        .btn-small { padding: 8px 12px; font-size: 0.75rem; width: auto; flex: none; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .loading-spinner {
-            display: none; width: 18px; height: 18px;
-            border: 2px solid rgba(255,255,255,0.15);
+            display: none; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
             border-top-color: #fff; border-radius: 50%;
-            animation: spin 0.7s linear infinite;
+            animation: spin 0.6s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 状态消息 */
-        #status {
-            text-align: center; margin-top: 16px;
-            font-size: 0.82rem; min-height: 1.2rem;
-        }
+        #status { text-align: center; margin-top: 12px; font-size: 0.8rem; min-height: 1.2rem; }
         .success { color: var(--accent-green); }
         .error { color: var(--danger); }
-
-        /* ✅ 完成页面 */
-        .completion-panel {
-            text-align: center;
-            padding: 20px 0;
-        }
-        .completion-panel .check-icon {
-            width: 64px; height: 64px; border-radius: 50%;
-            background: linear-gradient(135deg, rgba(0,255,127,0.15), rgba(0,242,255,0.1));
-            border: 2px solid rgba(0,255,127,0.3);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 1.8rem;
-        }
-        .next-steps {
+        .error-banner {
+            background: rgba(255, 71, 87, 0.1);
+            border-left: 3px solid var(--danger);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            color: #ffb8b8;
+            font-size: 0.75rem;
             text-align: left;
-            background: rgba(0,0,0,0.2);
-            border-radius: 14px;
-            padding: 16px 18px;
-            margin-top: 20px;
-        }
-        .next-steps h4 {
-            font-size: 0.78rem; color: var(--accent);
-            text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-        .next-step-item {
-            display: flex; gap: 10px; align-items: flex-start;
-            padding: 8px 0;
-            font-size: 0.82rem; color: var(--text-dim);
-            line-height: 1.5;
-        }
-        .next-step-item .step-num {
-            background: rgba(138,43,226,0.2);
-            border-radius: 6px; padding: 2px 8px;
-            font-size: 0.7rem; color: var(--primary);
-            font-weight: 600; white-space: nowrap;
-        }
-        .next-step-item code {
-            background: rgba(255,255,255,0.08);
-            padding: 2px 6px; border-radius: 4px;
-            font-size: 0.78rem; color: var(--accent);
+            line-height: 1.4;
         }
 
-        /* Toggle */
-        .toggle-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 0;
-        }
-        .toggle-row .toggle-label { font-size: 0.85rem; }
+        .completion-panel { text-align: center; padding: 20px 0; }
+        .check-icon { font-size: 3rem; margin-bottom: 20px; color: var(--accent-green); }
+        
+        .ai-config { margin-top: 12px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 16px; }
+        .ai-config.hidden { display: none; }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
         .toggle-switch {
-            position: relative; width: 44px; height: 24px;
+            position: relative; width: 40px; height: 22px;
             background: rgba(255,255,255,0.1);
-            border-radius: 12px; cursor: pointer;
-            transition: background 0.3s;
+            border-radius: 11px; cursor: pointer;
         }
         .toggle-switch.on { background: var(--primary); }
         .toggle-switch::after {
-            content: '';
-            position: absolute; top: 3px; left: 3px;
-            width: 18px; height: 18px;
-            background: #fff; border-radius: 50%;
-            transition: transform 0.3s;
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; background: #fff; border-radius: 50%;
+            transition: transform 0.2s;
         }
-        .toggle-switch.on::after { transform: translateX(20px); }
+        .toggle-switch.on::after { transform: translateX(18px); }
 
-        .ai-config { margin-top: 12px; }
-        .ai-config.hidden { display: none; }
+        /* 🚀 [V48.3] 概念解释器样式 */
+        .concept-hint {
+            font-size: 0.6rem; color: var(--accent);
+            border-bottom: 1px dashed var(--accent);
+            cursor: help; margin-left: 6px;
+            text-transform: none; letter-spacing: 0;
+            position: relative;
+        }
+        .concept-hint:hover::before {
+            content: attr(data-tip);
+            position: absolute; bottom: 100%; left: 0;
+            width: 200px; padding: 10px;
+            background: #1a1a25; border: 1px solid var(--accent);
+            color: #fff; font-size: 0.75rem; border-radius: 8px;
+            z-index: 2000; line-height: 1.4;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+        .input-desc {
+            font-size: 0.72rem; color: var(--text-muted);
+            margin-top: 6px; line-height: 1.4;
+        }
+        .safety-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(0,255,127,0.08); color: var(--accent-green);
+            padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;
+            margin-top: 4px;
+        }
+        .vault-suggestions { margin-top: 10px; }
+        .vault-badge {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .vault-badge:hover {
+            background: rgba(var(--accent-rgb), 0.1);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -320,7 +379,6 @@
 
     <div class="wizard-container">
         <div class="wizard-card">
-            <!-- 步骤指示器 -->
             <div class="stepper">
                 <div class="step-dot active" data-step="0"></div>
                 <div class="step-dot" data-step="1"></div>
@@ -332,104 +390,162 @@
             <!-- Step 0: 出版社基础 -->
             <div class="step active" id="step-0">
                 <div class="step-header">
-                    <h2>🏗️ 铸造主权出版社</h2>
-                    <p>命名您的出版社并指定原稿金库路径</p>
+                    <h1>Illacme Plenipes</h1>
+                    <h2>🏗️ 划定您的主权出版版图</h2>
+                    <p>您的所有出版资产将受到“主权防御”保护，由底层档案馆系统进行隔离</p>
                 </div>
 
-                <div class="node-panel">
-                    <label style="font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:1px;">算力探测中心</label>
-                    <div id="node-list" class="node-list">
-                        <div class="node-item"><span class="node-dot"></span> 扫描中...</div>
+                <div class="form-group">
+                    <label>
+                        出版品牌名称 (Brand Name)
+                        <span class="concept-hint" data-tip="您的正式出版社名称，将显示在 Dashboard、网站页脚和元数据中。">显示在哪？</span>
+                    </label>
+                    <input type="text" id="imprint_name" placeholder="例如: 极客主权出版社" oninput="syncSlug(this.value)">
+                    <p class="input-desc">正式显示名称，支持中文。</p>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        出版品牌标识 (Imprint ID)
+                        <span class="concept-hint" data-tip="这是您的‘主权标识’。它决定了文件夹的命名，建议使用小写字母和下划线。">为何需要？</span>
+                    </label>
+                    <input type="text" id="imprint_id" placeholder="例如: my_tech_press">
+                    <p class="input-desc">物理标识符，将划定独立的配置空间。</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        原稿档案馆路径 (Manuscript Archive)
+                        <span class="concept-hint" data-tip="您的创作核心区。只需将手稿丢进此目录，出版社就会自动启动流水线。">什么是档案馆？</span>
+                    </label>
+                    <div class="input-with-btn">
+                        <input type="text" id="manuscripts_path" placeholder="手稿 Markdown 所在目录">
+                        <button class="btn btn-ghost btn-small" onclick="browseFs()">浏览</button>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label>出版社标识</label>
-                    <input type="text" id="press_name" placeholder="例如: galaxy_daily" value="sovereign_press">
-                </div>
-                <div class="form-group">
-                    <label>原稿金库路径</label>
-                    <input type="text" id="manuscripts_path" placeholder="Markdown 文件所在目录" value="./manuscripts">
+                    <div id="fs-browser" class="browser-panel"></div>
+                    <div id="vault-suggestions" class="vault-suggestions"></div>
+                    <div class="safety-badge">🛡️ 主权保护：系统仅执行镜像读取，绝不物理修改您的原始稿件。</div>
                 </div>
 
                 <div class="btn-row">
-                    <button class="btn btn-primary" onclick="goStep(1)">继续 →</button>
+                    <button class="btn btn-primary" onclick="goStep(1)">继续步入装帧设计 →</button>
                 </div>
             </div>
 
             <!-- Step 1: 主题选择 -->
             <div class="step" id="step-1">
                 <div class="step-header">
-                    <h2>🎨 选择装帧主题</h2>
-                    <p>选择一个前端框架来呈现您的出版物</p>
+                    <h1>Step 01</h1>
+                    <h2>🎨 确立装帧风格</h2>
+                    <p>选择您的出版商品牌视觉，大师级排版将确保极致的阅读体验</p>
                 </div>
 
-                <div id="theme-grid" class="card-grid"></div>
+                <div class="theme-container">
+                    <div id="theme-grid" class="theme-list"></div>
+                    <div class="theme-preview-box" id="theme-preview-box">
+                        <img id="preview-img" class="theme-preview-img" src="">
+                        <div class="theme-info-overlay">
+                            <h3 id="preview-title">选择装帧风格</h3>
+                            <p id="preview-desc">点击左侧主题查看全真样张</p>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="btn-row">
                     <button class="btn btn-ghost" onclick="goStep(0)">← 返回</button>
-                    <button class="btn btn-primary" onclick="goStep(2)">继续 →</button>
+                    <button class="btn btn-primary" onclick="goStep(2)">继续配置算力中枢 →</button>
                 </div>
             </div>
 
-            <!-- Step 2: AI 算力 -->
+            <!-- Step 2: AI 算力中心 -->
             <div class="step" id="step-2">
                 <div class="step-header">
-                    <h2>🧠 配置算力引擎</h2>
-                    <p>连接 AI 翻译引擎，为全球出版赋能</p>
+                    <h1>Step 02</h1>
+                    <h2>🧠 签约翻译顾问</h2>
+                    <p>连接全球顶级 AI 参谋，为您的私有出版品牌提供跨语种翻译算力</p>
+                </div>
+
+                <div class="node-panel">
+                    <label style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">实时算力探测</label>
+                    <div id="node-list" class="node-list">
+                        <div class="node-item">🔍 正在扫描本机算力节点...</div>
+                    </div>
                 </div>
 
                 <div class="toggle-row">
-                    <span class="toggle-label">启用 AI 翻译引擎</span>
+                    <span style="font-size:0.9rem;">启用全球化翻译支持 (AI)</span>
                     <div class="toggle-switch" id="ai-toggle" onclick="toggleAI()"></div>
                 </div>
 
                 <div class="ai-config hidden" id="ai-config">
                     <div class="form-group">
-                        <label>算力供应商</label>
+                        <label>
+                            算力供应商 (Provider)
+                            <span class="concept-hint" data-tip="选择为您提供 AI 翻译服务的引擎。您可以选择云端 API 或本机运行的开源模型。">供应商是什么？</span>
+                        </label>
                         <select id="ai_provider" onchange="updateModels()"></select>
                     </div>
-                    <div class="form-group">
-                        <label>模型</label>
-                        <select id="ai_model"></select>
+                    
+                    <div class="form-group" id="custom-url-group">
+                        <label>API 基础地址 (Base URL)</label>
+                        <input type="text" id="ai_base_url" placeholder="自动填充，除非需要覆盖" onchange="updateModels()">
                     </div>
-                    <div class="form-group">
-                        <label>API 密钥</label>
-                        <input type="password" id="ai_api_key" placeholder="sk-...">
+
+                    <div class="form-group" id="api-key-group">
+                        <label>API 密钥 / 令牌 (API Key)</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="password" id="ai_api_key" style="flex: 1;" placeholder="请输入密钥" onchange="updateModels()">
+                            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; white-space: nowrap;">
+                                <input type="checkbox" id="ai_key_enable" onchange="toggleKeyInput()">
+                                <label for="ai_key_enable" style="margin: 0; cursor: pointer;">启用</label>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="form-group">
+                        <label>
+                            模型选择 (Model)
+                            <span id="ai-model-error" style="color:var(--danger); font-size:0.7rem; margin-left:10px; font-weight:normal;"></span>
+                            <span class="concept-hint" data-tip="系统将根据您的地址和密钥实时动态刷新，并自动验证连通性。">如何选择模型？</span>
+                        </label>
+                        <select id="ai_model" onchange="validateAi()"></select>
+                    </div>
+
+                    <div id="ai-validate-msg" style="margin-top:10px; font-size:0.75rem; min-height:1rem; text-align:center;"></div>
                 </div>
 
                 <div class="btn-row">
                     <button class="btn btn-ghost" onclick="goStep(1)">← 返回</button>
-                    <button class="btn btn-primary" onclick="goStep(3)">继续 →</button>
+                    <button id="ai-confirm-btn" class="btn btn-primary" onclick="confirmAi()" disabled style="opacity:0.5; cursor:not-allowed;">确立全球联合供稿矩阵 →</button>
+                    <button class="btn btn-ghost btn-small" onclick="skipStep(2, 3)">暂时跳过，稍后配置 →</button>
                 </div>
             </div>
 
             <!-- Step 3: 语种矩阵 -->
             <div class="step" id="step-3">
                 <div class="step-header">
-                    <h2>🌍 语种分发矩阵</h2>
-                    <p>选择目标语种，系统将自动生成多语种版本</p>
+                    <h1>Step 03</h1>
+                    <h2>🌍 联合供稿矩阵</h2>
+                    <p>确定您的分销范围。当前版本仅限开通 1 个目标分销语种。</p>
                 </div>
 
                 <div class="form-group">
-                    <label>源语种</label>
-                    <select id="source_lang">
-                        <option value="zh">简体中文 (zh)</option>
-                        <option value="en">English (en)</option>
-                        <option value="ja">日本語 (ja)</option>
+                    <label>原稿语种 (Source)</label>
+                    <select id="source_lang" onchange="renderLangs(probeData.available_langs)">
+                        <option value="auto">✨ 自动探测 (推荐)</option>
                     </select>
                 </div>
 
-                <label style="font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;">目标语种 (可多选)</label>
+                <label style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;display:block;">目标分发语种 (Target)</label>
                 <div id="lang-grid" class="card-grid three-col"></div>
 
-                <div class="btn-row" style="margin-top: 18px;">
+                <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(2)">← 返回</button>
-                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
-                        <span id="btn-text">⚡ 开辟主权空间</span>
+                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()" disabled style="opacity:0.5; cursor:not-allowed;">
+                        <span id="btn-text">⚡ 完成配置，确立主权</span>
                         <div id="spinner" class="loading-spinner"></div>
                     </button>
+                    <button class="btn btn-ghost btn-small" onclick="initialize()">跳过语种矩阵，直接完成 →</button>
                 </div>
                 <div id="status"></div>
             </div>
@@ -437,27 +553,25 @@
             <!-- Step 4: 完成 -->
             <div class="step" id="step-4">
                 <div class="completion-panel">
-                    <div class="check-icon">✅</div>
-                    <h2 style="font-family:'Outfit';font-size:1.4rem;margin-bottom:6px;" id="complete-title"></h2>
-                    <p style="color:#888;font-size:0.85rem;" id="complete-summary"></p>
+                    <div class="check-icon">🛡️</div>
+                    <h2 style="font-family:'Outfit';font-size:1.6rem;margin-bottom:10px;">出版版图划定成功！</h2>
+                    <p style="color:var(--text-dim);font-size:0.85rem;line-height:1.6;" id="complete-summary"></p>
 
-                    <div class="next-steps">
-                        <h4>🚀 下一步操作指南</h4>
-                        <div class="next-step-item">
-                            <span class="step-num">01</span>
-                            <span>将 Markdown 文件放入您指定的原稿金库路径中</span>
+                    <div style="margin-top: 40px; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 15px;">
+                        <div id="ignition-status" style="font-size: 0.75rem; color: var(--accent); display: flex; align-items: center; gap: 8px;">
+                            <div class="loading-spinner" style="display:block; width:12px; height:12px;"></div>
+                            ⏳ 正在加载新的出版版图...
                         </div>
-                        <div class="next-step-item">
-                            <span class="step-num">02</span>
-                            <span>运行同步命令：<code>python plenipes.py --sync</code></span>
-                        </div>
-                        <div class="next-step-item">
-                            <span class="step-num">03</span>
-                            <span>启动实时监控：<code>python plenipes.py --watch</code></span>
-                        </div>
-                        <div class="next-step-item">
-                            <span class="step-num">04</span>
-                            <span>查看产出物：在 <code>territories/&lt;name&gt;/dist/</code> 中找到生成的站点文件</span>
+                        <button class="btn btn-primary" id="enter-btn" onclick="enterDashboard()" style="display:none; min-width: 240px;">
+                            🚀 进入总编室 Dashboard
+                        </button>
+
+                        <div id="manual-tip" style="margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--glass-border); width: 100%; max-width: 480px; text-align: left;">
+                            <h4 style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">🛡️ 主权维护指令</h4>
+                            <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px;">若未来服务意外中断或需要手动重启，请在终端执行：</p>
+                            <code style="display: block; background: #000; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); border: 1px solid rgba(0,255,255,0.2);">
+                                python3 plenipes.py --api --imprint <span id="cmd-press-name"></span>
+                            </code>
                         </div>
                     </div>
                 </div>
@@ -466,151 +580,550 @@
     </div>
 
     <script>
+        async function enterDashboard() {
+            // 1. 尝试通知向导服务器关闭，以便主进程继续启动 API 服务
+            try {
+                await fetch('/api/shutdown', { method: 'POST' });
+            } catch (e) { /* 忽略错误，可能已经关闭 */ }
+            
+            // 2. 稍微延迟后跳转，等待主进程启动 API Server (43212)
+            showStatus('🚀 正在启动总编室，请稍候...', 'success');
+            setTimeout(() => {
+                window.location.href = 'http://127.0.0.1:43212/dashboard';
+            }, 2000);
+        }
         let currentStep = 0;
         let probeData = null;
-        let selectedTheme = 'starlight';
-        let selectedLangs = new Set(['en']);
+        let selectedTheme = 'default';
+        let selectedLang = null;
         let aiEnabled = false;
+        let storageEnabled = false;
+        let complianceEnabled = false;
 
-        // ==========================================
-        // 步骤导航
-        // ==========================================
         function goStep(n) {
-            // 校验当前步骤
-            if (n > currentStep) {
-                if (currentStep === 0) {
-                    const name = document.getElementById('press_name').value.trim();
-                    const path = document.getElementById('manuscripts_path').value.trim();
-                    if (!name || !path) { showStatus('⚠️ 请完整填写出版社标识与路径', 'error'); return; }
-                }
+            if (n > currentStep && currentStep === 1) {
+                const id = document.getElementById('imprint_id').value.trim();
+                const name = document.getElementById('imprint_name').value.trim();
+                if (!id) { showStatus('⚠️ 请输入出版品牌标识', 'error'); return; }
+                if (!name) { showStatus('⚠️ 请输入出版品牌名称', 'error'); return; }
             }
-
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            document.getElementById(`step-${n}`).classList.add('active');
-
+            const target = document.getElementById(`step-${n}`);
+            if (target) target.classList.add('active');
+            
             document.querySelectorAll('.step-dot').forEach((d, i) => {
                 d.classList.remove('active', 'done');
                 if (i < n) d.classList.add('done');
                 if (i === n) d.classList.add('active');
             });
-
             currentStep = n;
+        }
+
+        function skipStep(current, next) {
+            if (current === 2) aiEnabled = false;
+            goStep(next);
+        }
+
+        function confirmAi() {
+            aiEnabled = true;
+            goStep(3);
         }
 
         function showStatus(msg, type) {
             const el = document.getElementById('status');
-            el.className = type;
+            el.className = type || '';
             el.innerText = msg;
         }
 
-        // ==========================================
-        // 探测
-        // ==========================================
         async function probe() {
             try {
-                const res = await fetch('/api/probe');
+                const res = await fetch('/api/probe?_t=' + Date.now());
                 probeData = await res.json();
-                renderNodes(probeData.nodes);
                 renderThemes(probeData.available_themes);
-                renderProviders(probeData.available_providers);
+                renderProviders(probeData.available_providers, probeData.recommended);
                 renderLangs(probeData.available_langs);
+                renderNodes(probeData.nodes, probeData.recommended);
+                renderVaultSuggestions(probeData.vault_suggestions, probeData.recommended.vault);
+                
+                // 🚀 [V50.0] 智能感应与预填逻辑
+                if (probeData.current_config) {
+                    const cfg = probeData.current_config;
+                    const sensedVault = probeData.recommended.vault;
+                    
+                    const sensedName = probeData.recommended.imprint_name;
+                    // 🚀 [V52.10] 智能预填
+                    document.getElementById('imprint_id').value = sensedName || '';
+                    document.getElementById('imprint_name').value = sensedName ? (sensedName.charAt(0).toUpperCase() + sensedName.slice(1)).replace('_', ' ') : '';
+                    
+                    // 🚀 [V50.0] 极致感应优先：只要感应到金库且不是默认路径，就强制作为首选
+                    if (sensedVault && sensedVault !== './manuscripts') {
+                        document.getElementById('manuscripts_path').value = sensedVault;
+                    } else {
+                        document.getElementById('manuscripts_path').value = cfg.manuscripts_path || sensedVault || '';
+                    }
+                    // 🚀 [V50.0] 极致遵从：装帧风格默认强制选第一个
+                    if (probeData.available_themes && probeData.available_themes.length > 0) {
+                        selectTheme(probeData.available_themes[0].id);
+                    } else if (cfg.active_theme) {
+                        selectTheme(cfg.active_theme);
+                    }
+                    const trans = cfg.translation || {};
+                    if (trans.enable_ai) {
+                        if (!aiEnabled) toggleAI();
+                        const pNode = trans.primary_node || 'wizard';
+                        const pCfg = (trans.providers && trans.providers[pNode]) || {};
+                        if (pCfg.provider) document.getElementById('ai_provider').value = pCfg.provider;
+                        if (pCfg.model) setTimeout(() => { document.getElementById('ai_model').value = pCfg.model; }, 1500);
+                        if (pCfg.api_key) document.getElementById('ai_api_key').value = pCfg.api_key;
+                        if (pCfg.base_url) document.getElementById('ai_base_url').value = pCfg.base_url;
+                    }
+                } else {
+                    // 首次安装，使用推荐值
+                    const recName = probeData.recommended.imprint_name || '';
+                    document.getElementById('imprint_id').value = recName;
+                    document.getElementById('imprint_name').value = recName ? (recName.charAt(0).toUpperCase() + recName.slice(1)).replace('_', ' ') : '';
+                    document.getElementById('manuscripts_path').value = probeData.recommended.vault || '';
+                }
+                
+                setTimeout(() => {
+                    updateModels();
+                }, 1000);
             } catch (e) { console.error("Probe failed", e); }
         }
 
-        function renderNodes(nodes) {
+        function renderVaultSuggestions(suggestions, recommended) {
+            const container = document.getElementById('vault-suggestions');
+            if (!suggestions || suggestions.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            // 自动填充推荐路径并联动标识名
+            if (recommended) {
+                document.getElementById('manuscripts_path').value = recommended;
+            }
+
+            container.innerHTML = `
+                <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:5px;">💡 感应到可能的文档库：</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    ${suggestions.map(s => `
+                        <div class="vault-badge" onclick="confirmPath(event, '${s.path.replace(/\\/g, '/')}')">
+                            ${s.icon || '📦'} ${s.name}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderNodes(nodes, recommended) {
             const list = document.getElementById('node-list');
             if (!nodes || nodes.length === 0) {
-                list.innerHTML = '<div class="node-item"><span class="node-dot"></span> 未探测到本地算力节点</div>';
+                list.innerHTML = '<div class="node-item">未探测到本地算力，将使用云端中转</div>';
             } else {
                 list.innerHTML = nodes.map(n =>
                     `<div class="node-item online"><span class="node-dot"></span>${n.name}</div>`
                 ).join('');
+                
+                // 🚀 [V48.3] 智能感应：探测到 LM Studio 时自动对正
+                const lmNode = nodes.find(n => n.name.toLowerCase().includes("lm studio"));
+                if (lmNode) {
+                    console.log("🤖 [智能感应] 探测到本地 LM Studio 算力，准备自动对正...");
+                    if (!aiEnabled) toggleAI();
+                    const sel = document.getElementById('ai_provider');
+                    if (sel.querySelector('option[value="lmstudio"]')) {
+                        sel.value = "lmstudio";
+                        // 🚀 [修复] 强制触发模型拉取闭环
+                        setTimeout(() => updateModels(), 500);
+                    }
+                }
             }
         }
 
         function renderThemes(themes) {
-            if (!themes) return;
-            const icons = { starlight: '🌟', docusaurus: '🦖', vitepress: '⚡', nextra: '📘', default: '📄' };
-            document.getElementById('theme-grid').innerHTML = themes.map(t => `
-                <div class="selectable-card ${t.id === selectedTheme ? 'selected' : ''}" onclick="selectTheme('${t.id}')">
-                    <div class="card-icon">${icons[t.id] || '📦'}</div>
-                    <div class="card-title">${t.name}</div>
-                    <div class="card-desc">${t.desc}</div>
-                </div>
-            `).join('');
+            const icons = { 'default': '⚙️', 'universal': '📄', 'dark-theme': '🏗️', starlight: '🌟', docusaurus: '🦖', vitepress: '⚡', nextra: '📘' };
+            const previews = {
+                'default': '/static/assets/previews/sovereign.png',
+                'universal': '/static/assets/previews/universal.png',
+                starlight: '/static/assets/previews/starlight.png',
+                'dark-theme': '/static/assets/previews/sovereign.png',
+                docusaurus: '/static/assets/previews/docusaurus.png',
+                vitepress: '/static/assets/previews/vitepress.png',
+                nextra: '/static/assets/previews/nextra.png'
+            };
+            window._theme_metadata = {};
+            
+            document.getElementById('theme-grid').innerHTML = themes.map(t => {
+                window._theme_metadata[t.id] = { ...t, icon: icons[t.id] || '📦', preview: previews[t.id] || '' };
+                return `
+                    <div class="selectable-card mini ${t.id === selectedTheme ? 'selected' : ''}" 
+                         data-id="${t.id}"
+                         onclick="selectTheme('${t.id}')"
+                         onmouseover="previewTheme('${t.id}')">
+                        <div class="icon">${icons[t.id] || '📦'}</div>
+                        <div class="text-box">
+                            <h4>${t.name}</h4>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            
+            // 🚀 [V50.0] 强制选中第一个主题（遵从用户“默认选第一个”的最高指令）
+            if (themes.length > 0) {
+                selectTheme(themes[0].id);
+            }
+        }
+
+        function previewTheme(id) {
+            const meta = window._theme_metadata[id];
+            if (!meta) return;
+            
+            const img = document.getElementById('preview-img');
+            const title = document.getElementById('preview-title');
+            const desc = document.getElementById('preview-desc');
+            
+            if (meta.preview) {
+                img.src = meta.preview;
+                img.classList.add('active');
+            } else {
+                img.classList.remove('active');
+            }
+            
+            title.innerText = meta.name;
+            desc.innerText = meta.desc;
         }
 
         function selectTheme(id) {
             selectedTheme = id;
-            document.querySelectorAll('#theme-grid .selectable-card').forEach(c => c.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
+            document.querySelectorAll('#theme-grid .selectable-card').forEach(c => {
+                c.classList.toggle('selected', c.getAttribute('data-id') === id);
+            });
+            previewTheme(id);
         }
 
-        function renderProviders(providers) {
-            if (!providers) return;
+        // 🚀 [V48.3] 动态配置中心：由引擎元数据驱动
+        window._ai_defaults = {};
+
+        function renderProviders(providers, recommended) {
             const sel = document.getElementById('ai_provider');
-            sel.innerHTML = providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            window._providerData = providers;
-            updateModels();
+            sel.innerHTML = providers.map(p => {
+                // 将引擎返回的默认地址存入全局映射
+                window._ai_defaults[p.id] = p.default_url || "";
+                return `<option value="${p.id}" ${recommended.provider === p.id ? 'selected' : ''}>${p.name}</option>`;
+            }).join('');
         }
 
-        function updateModels() {
+        async function updateModels() {
+            if (window._isUpdating) return;
+            window._isUpdating = true;
+            
             const pid = document.getElementById('ai_provider').value;
-            const provider = (window._providerData || []).find(p => p.id === pid);
+            const inputBase = document.getElementById('ai_base_url');
+            const inputKey = document.getElementById('ai_api_key');
+            const checkKey = document.getElementById('ai_key_enable');
             const sel = document.getElementById('ai_model');
-            if (provider) {
-                sel.innerHTML = provider.models.map(m => `<option value="${m}">${m}</option>`).join('');
+            const msgEl = document.getElementById('ai-validate-msg');
+            
+            if (!pid) {
+                window._isUpdating = false;
+                return;
+            }
+
+            // 🚀 [状态重置] 立即清空旧的验证消息并锁定按钮
+            msgEl.className = ''; 
+            msgEl.innerText = '';
+            const confirmBtn = document.getElementById('ai-confirm-btn');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = "0.5";
+                confirmBtn.style.cursor = "not-allowed";
+            }
+            
+            console.log(`📡 [算力请求] 供应商: ${pid}`);
+
+            const defaults = window._ai_defaults || {};
+            const isLocal = ["ollama", "lmstudio"].includes(pid);
+            
+            // 自动填充地址逻辑：优先使用引擎提供的默认值
+            if (!inputBase.value || Object.values(defaults).includes(inputBase.value)) {
+                inputBase.value = defaults[pid] || '';
+            }
+
+            // 初始化密钥勾选状态
+            if (window._lastPid !== pid) {
+                checkKey.checked = !isLocal;
+                inputKey.disabled = !checkKey.checked;
+                inputKey.style.opacity = checkKey.checked ? "1" : "0.5";
+                window._lastPid = pid;
+            }
+
+            const apiKey = checkKey.checked ? inputKey.value : "";
+            const baseUrl = inputBase.value;
+
+            sel.innerHTML = '<option value="">正在获取可用模型...</option>';
+            sel.disabled = true; // 锁定选择框直到加载完成
+            
+            try {
+                const res = await fetch('/api/ai/models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        provider: pid, 
+                        api_key: apiKey, 
+                        model: '', 
+                        base_url: baseUrl 
+                    })
+                });
+                const data = await res.json();
+                const errSpan = document.getElementById('ai-model-error');
+                if (data.models && data.models.length > 0) {
+                    sel.innerHTML = data.models.map(m => `<option value="${m}">${m}</option>`).join('');
+                    sel.disabled = false;
+                    errSpan.innerText = ''; // 清除标签旁的错误
+                    msgEl.innerHTML = '';   // 清除下方消息
+                    validateAi(); 
+                } else {
+                    console.warn("⚠️ 模型获取结果为空:", data.error || "未知原因");
+                    
+                    // 🚀 [V48.4] 极致引导：如果列表拉取失败，同时在标签旁和下方诊断区报错
+                    if (data.error) {
+                        errSpan.innerText = '⚠️ 列表拉取失败';
+                        msgEl.className = 'error';
+                        msgEl.innerHTML = `❌ ${data.error}`;
+                    }
+
+                    // 🛡️ 按照用户要求：不再使用保底模型，直接显示失败状态
+                    sel.innerHTML = `<option value="" disabled selected>⚠️ 未能获取到模型列表</option>`;
+                    sel.disabled = true;
+                }
+            } catch (e) {
+                console.error("🚨 请求异常:", e);
+                sel.innerHTML = '<option value="">⚠️ 请求异常</option>';
+                sel.disabled = true;
+            } finally {
+                window._isUpdating = false;
+            }
+        }
+
+        function toggleKeyInput() {
+            const inputKey = document.getElementById('ai_api_key');
+            const checkKey = document.getElementById('ai_key_enable');
+            inputKey.disabled = !checkKey.checked;
+            inputKey.style.opacity = checkKey.checked ? "1" : "0.5";
+            if (checkKey.checked) {
+                inputKey.focus();
+            } else {
+                updateModels(); // 取消勾选时立即尝试重新获取模型（针对本地服务）
             }
         }
 
         function renderLangs(langs) {
-            if (!langs) return;
-            const flags = { en:'🇺🇸', ja:'🇯🇵', ko:'🇰🇷', de:'🇩🇪', fr:'🇫🇷', es:'🇪🇸', pt:'🇧🇷', ru:'🇷🇺', ar:'🇸🇦' };
-            document.getElementById('lang-grid').innerHTML = langs.map(l => `
-                <div class="selectable-card ${selectedLangs.has(l.code) ? 'selected' : ''}" onclick="toggleLang('${l.code}', this)">
-                    <div class="card-icon">${flags[l.code] || '🌐'}</div>
-                    <div class="card-title">${l.name}</div>
-                    <div class="card-desc">${l.code}</div>
+            const srcLang = document.getElementById('source_lang').value;
+            
+            // 🚀 [V50.5] 核心联动：切换源语种时，强制清空目标语种选择并锁定提交按钮
+            selectedLang = null; 
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = "0.5";
+                submitBtn.style.cursor = "not-allowed";
+            }
+
+            const filtered = langs.filter(l => l.code !== srcLang);
+            // 🚀 [V55.1] 物理顺序对正：不再使用前端排序，直接遵循后端核心语种库定义的优先级顺序
+            const sorted = filtered;
+            
+            // 更新源语种下拉 (仅在初次加载时执行)
+            const srcSel = document.getElementById('source_lang');
+            if (srcSel.options.length <= 1) {
+                langs.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.code; opt.text = `${l.icon} ${l.name} (${l.code})`;
+                    srcSel.add(opt);
+                });
+            }
+
+            // 为容器增加滚动支持
+            const grid = document.getElementById('lang-grid');
+            grid.style.maxHeight = "300px";
+            grid.style.overflowY = "auto";
+            grid.style.paddingRight = "5px";
+
+            grid.innerHTML = sorted.map(l => `
+                <div class="selectable-card mini ${selectedLang === l.code ? 'selected' : ''}" onclick="selectLang('${l.code}', this)">
+                    <div style="font-size:1.2rem;margin-bottom:2px;">${l.icon || '🌐'}</div>
+                    <div style="font-weight:600;font-size:0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${l.name}</div>
+                    <div style="font-size:0.6rem;color:var(--text-dim);">${l.code.toUpperCase()}</div>
                 </div>
             `).join('');
         }
 
-        function toggleLang(code, el) {
-            if (selectedLangs.has(code)) { selectedLangs.delete(code); el.classList.remove('selected'); }
-            else { selectedLangs.add(code); el.classList.add('selected'); }
+        function selectLang(code, el) {
+            if (selectedLang && selectedLang !== code) {
+                showStatus('🔒 社区版暂不支持多选目标语种，请升级至授权版', 'error');
+                setTimeout(() => showStatus('',''), 3000);
+            }
+            selectedLang = code;
+            document.querySelectorAll('#lang-grid .selectable-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            // 🚀 [准入联动] 选中语种后激活提交按钮
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+                submitBtn.style.cursor = "pointer";
+            }
         }
 
         function toggleAI() {
             aiEnabled = !aiEnabled;
-            const toggle = document.getElementById('ai-toggle');
-            const config = document.getElementById('ai-config');
-            toggle.classList.toggle('on', aiEnabled);
-            config.classList.toggle('hidden', !aiEnabled);
+            document.getElementById('ai-toggle').classList.toggle('on', aiEnabled);
+            document.getElementById('ai-config').classList.toggle('hidden', !aiEnabled);
         }
 
-        // ==========================================
-        // 初始化提交
-        // ==========================================
+        function toggleStorage() {
+            storageEnabled = !storageEnabled;
+            document.getElementById('storage-toggle').classList.toggle('on', storageEnabled);
+            document.getElementById('storage-config').classList.toggle('hidden', !storageEnabled);
+        }
+
+        function toggleCompliance() {
+            complianceEnabled = !complianceEnabled;
+            document.getElementById('compliance-toggle').classList.toggle('on', complianceEnabled);
+            document.getElementById('compliance-config').classList.toggle('hidden', !complianceEnabled);
+        }
+
+        async function validateAi() {
+            const msgEl = document.getElementById('ai-validate-msg');
+            const sel = document.getElementById('ai_model');
+            
+            // 🚀 [V48.4] 极致协同：如果模型选择框处于“未能获取”状态，直接继承该错误
+            if (sel.disabled && sel.value === "") {
+                const errSpan = document.getElementById('ai-model-error');
+                if (errSpan.innerText) {
+                    msgEl.className = 'error';
+                    // 不再重置正在验证，而是直接显示列表错误
+                    return; 
+                }
+            }
+
+            msgEl.className = ''; msgEl.innerText = '📡 正在验证算力链路...';
+            const confirmBtn = document.getElementById('ai-confirm-btn');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = "0.5";
+                confirmBtn.style.cursor = "not-allowed";
+            }
+            try {
+                const res = await fetch('/api/ai/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: document.getElementById('ai_provider').value,
+                        model: document.getElementById('ai_model').value,
+                        api_key: document.getElementById('ai_api_key').value,
+                        base_url: document.getElementById('ai_base_url').value
+                    })
+                });
+                const data = await res.json();
+                const confirmBtn = document.getElementById('ai-confirm-btn');
+                
+                if (data.status === 'success') {
+                    msgEl.className = 'success';
+                    msgEl.innerHTML = `✅ ${data.message}`;
+                    confirmBtn.disabled = false;
+                    confirmBtn.style.opacity = "1";
+                    confirmBtn.style.cursor = "pointer";
+                } else {
+                    msgEl.className = 'error';
+                    msgEl.innerHTML = `❌ ${data.message}`;
+                    confirmBtn.disabled = true;
+                    confirmBtn.style.opacity = "0.5";
+                    confirmBtn.style.cursor = "not-allowed";
+                }
+            } catch (e) { 
+                msgEl.className = 'error';
+                msgEl.innerHTML = '🚨 算力网关失联: 向导服务端响应异常，请检查网络。'; 
+                document.getElementById('ai-confirm-btn').disabled = true;
+            }
+        }
+
+        async function browseFs(path = '.') {
+            const browser = document.getElementById('fs-browser');
+            browser.style.display = 'flex';
+            
+            // 如果路径是相对于当前输入的，尝试解析
+            if (path === '.') {
+                const current = document.getElementById('manuscripts_path').value;
+                if (current && current.startsWith('/')) path = current;
+            }
+
+            try {
+                const res = await fetch('/api/fs/ls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path })
+                });
+                const data = await res.json();
+                
+                let html = `
+                    <div class="browser-header">
+                        <div class="browser-current-path" title="${data.current}">${data.current}</div>
+                        <button class="btn btn-primary btn-small" style="padding: 2px 8px; font-size:0.6rem;" onclick="confirmPath(event, '${data.current.replace(/\\/g, '/')}')">确认选择当前目录</button>
+                    </div>
+                    <div class="browser-content">
+                `;
+
+                if (data.error) {
+                    html += `<div class="browser-item" style="color:var(--danger)">${data.error}</div>`;
+                } else {
+                    html += data.items.map(i => `
+                        <div class="browser-item" onclick="browseFs('${i.path.replace(/\\/g, '/')}')">
+                            <div class="item-info">
+                                ${i.name === '..' ? '⤴️' : '📁'} ${i.name}
+                            </div>
+                            ${i.name !== '..' ? `<button class="btn-select-item" onclick="confirmPath(event, '${i.path.replace(/\\/g, '/')}')">选择</button>` : ''}
+                        </div>
+                    `).join('');
+                }
+                html += `</div><div style="padding:8px; text-align:center;"><button class="btn btn-ghost btn-small" style="width:100%" onclick="closeBrowser()">取消</button></div>`;
+                browser.innerHTML = html;
+            } catch (e) { 
+                browser.innerHTML = '<div class="browser-item">API 离线</div>'; 
+            }
+        }
+
+        function confirmPath(event, path) {
+            if (event) event.stopPropagation();
+            document.getElementById('manuscripts_path').value = path;
+            closeBrowser();
+        }
+
+        function closeBrowser() {
+            document.getElementById('fs-browser').style.display = 'none';
+        }
+
         async function initialize() {
             const btn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
             const spinner = document.getElementById('spinner');
 
-            btnText.style.display = 'none';
-            spinner.style.display = 'block';
+            btnText.style.display = 'none'; spinner.style.display = 'block';
             btn.disabled = true;
-            showStatus('', '');
 
             const payload = {
-                press_name: document.getElementById('press_name').value.trim(),
+                imprint_id: document.getElementById('imprint_id').value.trim(),
+                imprint_name: document.getElementById('imprint_name').value.trim(),
                 manuscripts_path: document.getElementById('manuscripts_path').value.trim(),
-                active_theme: selectedTheme,
-                enable_ai: aiEnabled,
-                ai_provider: document.getElementById('ai_provider').value,
-                ai_model: document.getElementById('ai_model').value,
-                ai_api_key: document.getElementById('ai_api_key').value,
-                source_lang: document.getElementById('source_lang').value,
-                target_langs: Array.from(selectedLangs)
+                active_theme: selectedTheme || 'default',
+                enable_ai: aiEnabled || false,
+                ai_provider: document.getElementById('ai_provider') ? document.getElementById('ai_provider').value : 'openai',
+                ai_model: document.getElementById('ai_model') ? document.getElementById('ai_model').value : 'gpt-4o-mini',
+                ai_api_key: document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value : '',
+                ai_base_url: document.getElementById('ai_base_url') ? document.getElementById('ai_base_url').value : '',
+                source_lang: document.getElementById('source_lang') ? document.getElementById('source_lang').value : 'zh',
+                target_langs: selectedLang ? [selectedLang] : []
             };
 
             try {
@@ -619,30 +1132,90 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
-
                 if (res.ok) {
-                    document.getElementById('complete-title').innerText = `出版社 "${payload.press_name}" 已落成！`;
-                    let parts = [`装帧主题: ${selectedTheme}`];
-                    if (aiEnabled) parts.push(`AI: ${payload.ai_provider}/${payload.ai_model}`);
-                    if (selectedLangs.size) parts.push(`语种: ${Array.from(selectedLangs).join(', ')}`);
-                    document.getElementById('complete-summary').innerText = parts.join(' · ');
+                    const themeName = (window._theme_metadata[payload.active_theme] || {}).name || payload.active_theme;
+                    document.getElementById('cmd-press-name').innerText = payload.imprint_id;
+                    document.getElementById('complete-summary').innerText = 
+                        `出版品牌 "${payload.imprint_name}" (${payload.imprint_id}) 已正式在 ${payload.manuscripts_path} 确立主权地位。已激活主题: ${themeName}。`;
                     goStep(4);
+                    probeDashboard();
                 } else {
+                    const data = await res.json();
                     showStatus('❌ ' + (data.detail || '初始化失败'), 'error');
                 }
-            } catch (e) {
-                showStatus('❌ 网络通讯故障', 'error');
-            } finally {
-                btnText.style.display = 'flex';
-                spinner.style.display = 'none';
-                btn.disabled = false;
-            }
+            } catch (e) { showStatus('❌ 引擎失联', 'error'); }
+            finally { btnText.style.display = 'block'; spinner.style.display = 'none'; btn.disabled = false; }
         }
 
-        // 启动探测
+        async function enterDashboard() {
+            try {
+                await fetch('/api/shutdown', { method: 'POST' });
+            } catch (e) {}
+            setTimeout(() => {
+                window.location.href = 'http://127.0.0.1:43212/dashboard';
+            }, 300);
+        }
+
+        async function probeDashboard() {
+            const statusEl = document.getElementById('ignition-status');
+            const enterBtn = document.getElementById('enter-btn');
+            const targetImprint = document.getElementById('imprint_id').value;
+            let attempts = 0;
+            const maxAttempts = 40;
+            
+            const timer = setInterval(async () => {
+                attempts++;
+                try {
+                    const controller = new AbortController();
+                    const id = setTimeout(() => controller.abort(), 1500);
+                    
+                    // 🚀 [V50.5] 主权指纹校验：不仅探测端口，还校验 Imprint ID
+                    const res = await fetch('http://127.0.0.1:43212/health', { 
+                        signal: controller.signal 
+                    });
+                    
+                    if (res.ok) {
+                        const health = await res.json(); if (health.active_imprint === targetImprint) {
+                            clearInterval(timer);
+                            statusEl.innerHTML = `✅ 总编室点火成功，主权版图 '${targetImprint}' 已在线。`;
+                            enterBtn.style.display = 'block';
+                        } else {
+                            // 探测到了 Dashboard，但不是当前配置的这一个（可能老进程还在）
+                            statusEl.innerHTML = `⏳ 正在加载新的出版版图...`;
+                        }
+                    }
+                } catch (e) {
+                    if (attempts >= maxAttempts) {
+                        clearInterval(timer);
+                        statusEl.innerHTML = '⚠️ 启动耗时较长，请检查终端日志或尝试手动启动。';
+                        enterBtn.style.display = 'block';
+                    }
+                }
+            }, 1000);
+        }
+
+        function syncSlug(name) {
+            const idInput = document.getElementById('imprint_id');
+            // 如果用户已经手动修改过 ID，则不再自动同步（除非 ID 为空）
+            if (idInput._manually_edited && idInput.value !== "") return;
+            
+            // 简单的 slug 转换：转小写，非字母数字替换为下划线，合并连续下划线
+            const slug = name.toLowerCase()
+                .replace(/[^\w\s-]/g, '') // 移除特殊字符（保留空格、连字符、字母数字）
+                .trim()
+                .replace(/[-\s]+/g, '_'); // 替换空格和连字符为下划线
+            
+            idInput.value = slug;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const idInput = document.getElementById('imprint_id');
+            idInput.addEventListener('input', () => {
+                idInput._manually_edited = true;
+            });
+        });
+
         probe();
-        setInterval(probe, 8000);
     </script>
 </body>
 </html>

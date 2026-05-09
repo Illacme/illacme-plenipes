@@ -144,11 +144,9 @@ def export_digital_garden(engine, all_docs_snapshot=None):
         "backlinks": backlinks_map
     }
 
-    # 🚀 [V22.5] 安全路径解析：对齐引擎核心解析器
-    raw_path = engine.config.system.data_paths.get("link_graph", "link_graph_{theme}.json")
-    if not raw_path: raw_path = "link_graph_{theme}.json"
-    
-    graph_path = engine._resolve_path(raw_path)
+    # 🚀 [V55.26] 路径主权对正：确保物理路径锚定在主题元数据领土内
+    theme_meta_dir = engine.config.get_theme_metadata_dir()
+    graph_path = engine._resolve_path(os.path.join(theme_meta_dir, "link_graph.json"))
     new_json_bytes = orjson.dumps(final_graph, option=orjson.OPT_INDENT_2)
 
     if os.path.exists(graph_path):

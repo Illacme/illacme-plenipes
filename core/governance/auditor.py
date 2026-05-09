@@ -44,8 +44,8 @@ class SovereignAuditor:
                 prod_path = os.path.join(self.production, rel_path)
 
                 if not os.path.exists(prod_path):
-                    audit_data["changes"].append({"path": rel_path, "status": "NEW", "detail": "新资产注入"})
-                    audit_data["found"] += 1
+                    audit_data.get("changes").append({"path": rel_path, "status": "NEW", "detail": "新资产注入"})
+                    audit_data.update({"found": audit_data.get("found", 0) + 1})
                 else:
                     with open(sandbox_path, 'r', encoding='utf-8') as sf:
                         s_content = sf.read()
@@ -56,8 +56,8 @@ class SovereignAuditor:
                         diff = list(difflib.unified_diff(p_content.splitlines(), s_content.splitlines()))
                         added = len([l for l in diff if l.startswith('+') and not l.startswith('+++')])
                         removed = len([l for l in diff if l.startswith('-') and not l.startswith('---')])
-                        audit_data["changes"].append({"path": rel_path, "status": "MODIFIED", "detail": f"+{added} / -{removed} 行变动"})
-                        audit_data["found"] += 1
+                        audit_data.get("changes").append({"path": rel_path, "status": "MODIFIED", "detail": f"+{added} / -{removed} 行变动"})
+                        audit_data.update({"found": audit_data.get("found", 0) + 1})
 
         # 🚀 [V11.0] 发布结构化审计结果，由 UI 监听器负责渲染
         bus.emit("AUDIT_DIFF_RESULTS", data=audit_data)

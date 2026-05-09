@@ -27,33 +27,13 @@ class SSGAdapter:
         self.engine = engine
 
 
-        # 🚀 [V33.1] 双轨动态插件扫描矩阵 (实现主权解耦)
-        import os
+        # 🚀 [V33.1] 扁平化重构：解决嵌套过深问题
         theme_name = getattr(theme_settings, 'name', 'generic').lower()
+        self._ensure_path_in_sys("adapters")
+        self._load_global_adapters()
+        self._load_theme_adapters(theme_name)
 
-        # 路径 A：全局 SSG 平台插件库
-        global_adapter_path = os.path.abspath("adapters/ssg")
-        if os.path.exists(global_adapter_path):
-            try:
-                if os.path.abspath("adapters") not in sys.path:
-                    sys.path.append(os.path.abspath("adapters"))
-                discover_and_register([global_adapter_path], "adapters.ssg", BaseSSGAdapter, SSGRegistry.register)
-            except Exception as e:
-                tlog.warning(f"⚠️ [SSG 引擎] 加载全局适配器失败: {e}")
-
-        # 路径 B：主题私有适配器库
-        theme_adapter_path = os.path.abspath(f"themes/{theme_name}/adapters")
-        if os.path.exists(theme_adapter_path):
-            try:
-                theme_root = os.path.abspath("themes")
-                if theme_root not in sys.path:
-                    sys.path.append(theme_root)
-                pkg_name = f"{theme_name}.adapters"
-                discover_and_register([theme_adapter_path], pkg_name, BaseSSGAdapter, SSGRegistry.register)
-            except Exception as e:
-                tlog.warning(f"⚠️ [SSG 引擎] 加载主题适配器失败: {e}")
-
-        # 从注册表获取具体实现 (注册表现在汇总了全局 + 主题的所有适配器)
+        # 从注册表获取具体实现
         renderer_cls = SSGRegistry.get_renderer(theme_name)
         if renderer_cls:
             self.active_renderer = renderer_cls(theme_settings, engine=self.engine)
@@ -63,6 +43,35 @@ class SSGAdapter:
 
 
         tlog.debug(f"🎨 [SSG 引擎] 已激活渲染插件: {self.active_renderer.__class__.__name__}")
+
+    def _ensure_path_in_sys(self, path_rel: str):
+        import os
+        abs_p = os.path.abspath(path_rel)
+        if abs_p not in sys.path:
+            sys.path.append(abs_p)
+
+    def _load_global_adapters(self):
+        import os
+        path = os.path.abspath("adapters/ssg")
+        if not os.path.exists(path): return
+        try:
+            discover_and_register([path], "adapters.ssg", BaseSSGAdapter, SSGRegistry.register)
+        except Exception as e:
+            tlog.warning(f"⚠️ [SSG 引擎] 加载全局适配器失败: {e}")
+
+    def _load_theme_adapters(self, theme_name: str):
+        import os
+        from core.config.config import THEMES_DIR
+        path = os.path.abspath(f"{THEMES_DIR}/{theme_name}/adapters")
+        if not os.path.exists(path): return
+        try:
+            theme_root = os.path.abspath(THEMES_DIR)
+            if theme_root not in sys.path:
+                sys.path.append(theme_root)
+            pkg_name = f"{theme_name}.adapters"
+            discover_and_register([path], pkg_name, BaseSSGAdapter, SSGRegistry.register)
+        except Exception as e:
+            tlog.warning(f"⚠️ [SSG 引擎] 加载主题适配器失败: {e}")
 
     @property
     def output_extension(self):
@@ -78,6 +87,10 @@ class SSGAdapter:
     def get_output_schema(self):
         """🚀 [V11.2] 获取该适配器支持的输出出口列表"""
         return self.active_renderer.get_output_schema()
+
+    def get_feature_slots(self):
+        """🚀 [V56.0] 意图感知：透传底层渲染器的功能槽声明"""
+        return self.active_renderer.get_feature_slots()
 
     def supports_frontmatter(self, ext: str) -> bool:
         """🚀 [V15.6] 判定特定扩展名是否支持元数据头"""
