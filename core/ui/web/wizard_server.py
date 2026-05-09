@@ -75,12 +75,10 @@ async def probe_nodes():
             pass
 
     import random
-    # 🚀 [V50.0] 动态排重：确保建议的出版品牌 ID 不与现有疆域冲突
     existing = im.list_imprints()
     existing_ids = {t["id"].lower() for t in existing}
     
     def gen_id():
-        # 🚀 [V50.4.7] 工业级宏大品牌词库：双词对撞逻辑
         w1 = ["Aether", "Borealis", "Stellar", "Sovereign", "Boundless", "Ethereal", "Vivid", "Noble", "Infinite", "Radiant", "Arcane", "Astral", "Celestial", "Primal", "Zenith", "Apex", "Titan", "Obsidian", "Ivory", "Shadow", "Luminous", "Ancient", "Modern"]
         w2 = ["Voyage", "Legacy", "Horizon", "Nexus", "Echo", "Spirit", "Realm", "Vision", "Foundry", "Vault", "Harbor", "Citadel", "Domain", "Sanctum", "Archive", "Atlas", "Vortex", "Crest", "Drift", "Pulse", "Rift", "Tide", "Warp", "Zephyr"]
         return f"{random.choice(w1).lower()}_{random.choice(w2).lower()}"
@@ -158,15 +156,7 @@ async def get_ai_models(req: AiValidateRequest):
         return {"models": await t.list_models()}
     except Exception as e:
         err_str = str(e)
-        if "timeout" in err_str.lower():
-            guide = "【解决建议：连接超时。请检查您的网络是否可以访问该 AI 官方服务，或尝试配置科学上网代理】"
-        elif "refused" in err_str.lower():
-            guide = "【解决建议：连接被拒绝。如果是本地服务，请确认 Ollama/LM Studio 是否已开启且端口正确】"
-        elif "401" in err_str or "auth" in err_str.lower():
-            guide = "【解决建议：认证失败。请检查 API Key 是否正确填写】"
-        else:
-            guide = "【解决建议：模型发现失败，请根据下方原始提示检查配置】"
-        return {"models": [], "error": f"{guide}<br>原始提示: {err_str}"}
+        return {"models": [], "error": f"原始提示: {err_str}"}
 
 @app.post("/api/ai/validate")
 async def validate_ai(req: AiValidateRequest):
@@ -176,19 +166,16 @@ async def validate_ai(req: AiValidateRequest):
 async def init_press(req: InitRequest):
     m_path = os.path.abspath(os.path.expanduser(req.manuscripts_path))
     
-    # 🛡️ [V55.0] 准入预检：如果许可证受限，直接透传物理阻断原因
     if not LicenseGuard.is_pro_feature_allowed("multi_imprint"):
         if len(im.list_imprints()) >= 1:
-            raise HTTPException(
-                status_code=403,
-                detail="社区版仅限划定 1 个版图。请升级至授权版以解锁多品牌版图管理。"
-            )
+            raise HTTPException(status_code=403, detail="社区版仅限划定 1 个版图。请升级至授权版。")
 
-    # 🚀 [V52.10] 物理主权确立
     if not im.init_sovereign_imprint(req.imprint_id, m_path, imprint_name=req.imprint_name):
-        raise HTTPException(status_code=400, detail="创建失败：物理版图初始化异常，请检查文件夹权限或磁盘空间。")
+        raise HTTPException(status_code=400, detail="创建失败：物理版图初始化异常。")
     
-    from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
+    from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
+    
+    # 1. 注入品牌层配置
     cfg_p = os.path.join(IMPRINT_DIR, req.imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
     if os.path.exists(cfg_p):
         try:
@@ -196,17 +183,6 @@ async def init_press(req: InitRequest):
                 cfg = yaml.safe_load(f) or {}
             cfg["active_theme"] = req.active_theme
             cfg["imprint_name"] = req.imprint_name
-            cfg.setdefault("translation", {})["enable_ai"] = req.enable_ai
-            if req.enable_ai and req.ai_api_key:
-                cfg["translation"]["primary_node"] = "wizard"
-                cfg["translation"]["providers"] = {
-                    "wizard": {
-                        "provider": req.ai_provider,
-                        "model": req.ai_model,
-                        "api_key": req.ai_api_key,
-                        "base_url": req.ai_base_url
-                    }
-                }
             if req.target_langs:
                 ln = {"en":"English","ja":"日本語","ko":"한국어","de":"Deutsch","fr":"Français","es":"Español"}
                 cfg["i18n_settings"] = {"enabled":True, "source":{"lang_code":req.source_lang, "name":"中文"},
@@ -216,52 +192,37 @@ async def init_press(req: InitRequest):
         except Exception as e:
             tlog.warning(f"Config Injection Failed: {e}")
             
-    im.switch(req.imprint_id)
-
-    # 🚀 [V52.10] 物理主权锁定：将当前品牌 ID 写入 config.local.yaml
-    from core.config.config import CONFIG_LOCAL_NAME, CONFIG_NAME
+    # 2. 🚀 [V65.1] 强制物理锁定：直接操作 config.local.yaml 字典
     try:
-        from core.config.config import load_config
-        from core.config.config_models import Configuration
-        
-        # 尝试加载现有配置或创建一个全新的主权配置
         local_path = os.path.join(os.getcwd(), CONFIG_LOCAL_NAME)
-        root_config_path = CONFIG_NAME
-        
-        if os.path.exists(root_config_path):
-            config_obj = load_config(root_config_path)
-        else:
-            # 🛡️ 如果连基础配置都没有，我们手动构造一个最简主权模型
-            config_obj = Configuration()
-            
-        # 合并本地覆盖
+        local_data = {}
         if os.path.exists(local_path):
             try:
                 with open(local_path, 'r', encoding='utf-8') as f:
                     local_data = yaml.safe_load(f) or {}
             except: pass
-
-        # 写入核心主权参数
-        config_obj.active_imprint = req.imprint_id
+            
+        local_data["active_imprint"] = req.imprint_id
+        if "system" not in local_data: local_data["system"] = {}
+        local_data["system"]["data_root"] = f"imprints/{req.imprint_id}"
         
-        # 🚀 [V52.10] 同步 AI 算力配置至全局覆盖层
         if req.enable_ai:
-            from core.config.models.ai import TranslationProvider
-            config_obj.translation.primary_node = "wizard"
-            config_obj.translation.providers["wizard"] = TranslationProvider(
-                type=req.ai_provider,
-                model=req.ai_model,
-                api_key=req.ai_api_key,
-                base_url=req.ai_base_url
-            )
-        
-        # 持久化至本地覆盖层
-        config_obj.dump_to_disk(local_path)
-        tlog.success(f"🛡️ [主权锁定] 品牌 '{req.imprint_id}' 及其 AI 算力配置已同步至 {local_path}。")
+            if "translation" not in local_data: local_data["translation"] = {}
+            local_data["translation"]["primary_node"] = "wizard"
+            if "providers" not in local_data["translation"]: local_data["translation"]["providers"] = {}
+            local_data["translation"]["providers"]["wizard"] = {
+                "type": req.ai_provider, "model": req.ai_model, "api_key": req.ai_api_key, "base_url": req.ai_base_url
+            }
+
+        with open(local_path, 'w', encoding='utf-8') as f:
+            yaml.safe_dump(local_data, f, allow_unicode=True)
+        tlog.success(f"🛡️ [主权锁定] 品牌 '{req.imprint_id}' 指纹已强制写入 {local_path}。")
     except Exception as e:
         tlog.warning(f"Sovereignty Lock Failed: {e}")
 
-    # 🚀 [V50.5] 物理装帧拷贝：将选定主题源文件克隆至品牌主权疆域
+    im.switch(req.imprint_id)
+
+    # 3. 部署主题
     from core.config.config import THEMES_DIR
     try:
         imprint_themes_dir = os.path.join(im.imprint_root, req.imprint_id, THEMES_DIR)
@@ -277,26 +238,16 @@ async def init_press(req: InitRequest):
     except Exception as e:
         tlog.warning(f"Theme Deployment Failed: {e}")
 
-    # 🚀 [V50.5] 工业级原地接力
-    # 既然端口已经分立 (43211 vs 43212)，我们不再需要杀掉进程
-    # 只需要停止当前的向导 Web 服务，让主进程继续向下执行即可
+    # 4. 平滑移交
     try:
-        tlog.info("🔌 [自举激活] 向导配置完成，正在申请平滑切换至总编室 (Dashboard)...")
-        
-        # 🚀 [V50.5] 优雅停机协议：
-        # 我们不再启动新进程，而是设置一个标志位让 uvicorn 退出循环
         def graceful_handoff():
             time.sleep(0.5)
-            tlog.info("🏁 [向导归位] 引导任务圆满完成，正在移交主进程控制权...")
             if 'server_instance' in globals() and server_instance:
                 server_instance.should_exit = True
-            
         threading.Thread(target=graceful_handoff, daemon=True).start()
-        tlog.info("  └── ✅ 信号已发出，主程序即将进入主权总编室模式。")
-    except Exception as e:
-        tlog.warning(f"Dashboard Handoff Failed: {e}")
+    except: pass
 
-    return {"status": "success", "imprint_id": req.imprint_name}
+    return {"status": "success", "imprint_id": req.imprint_id}
 
 @app.post("/api/shutdown")
 async def shutdown_wizard(request: Request):
@@ -304,7 +255,6 @@ async def shutdown_wizard(request: Request):
         server_instance.should_exit = True
     return {"message": "done"}
 
-# 🚀 全局服务器实例，用于实现跨线程停机
 server_instance = None
 
 def start_wizard_server(port: int = 43211):
@@ -314,8 +264,4 @@ def start_wizard_server(port: int = 43211):
     server_instance.run()
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=43211)
-    args = parser.parse_args()
-    start_wizard_server(port=args.port)
+    start_wizard_server()

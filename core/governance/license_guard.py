@@ -40,8 +40,8 @@ class LicenseGuard:
     @classmethod
     def is_licensed(cls) -> bool:
         """判断当前环境是否已激活授权版"""
-        # 🧪 [测试模式] 降级为社区版以验证栅栏逻辑
-        return False
+        # 🚀 [V65.0] 研发授权：解锁专业版功能以进行多版图压力测试
+        return True
 
     @classmethod
     def is_pro_feature_allowed(cls, feature_name: str) -> bool:

@@ -44,9 +44,16 @@ class SentinelManager:
             "last_healed": None
         }
         
+        self._stop_event = threading.Event()
+        
         # 🚀 [V5.0] 启动配置文件热监听
         if engine:
             self._start_config_watcher()
+
+    def stop(self):
+        """停止监听"""
+        self._stop_event.set()
+        tlog.debug("🛡️ [Sentinel] 已注销旧品牌的热监听队列。")
 
     def _start_config_watcher(self):
         """🚀 [V48.3] 双向配置监听：同时监控基础配置与本地覆盖层"""
@@ -60,21 +67,40 @@ class SentinelManager:
         
         def _watch():
             last_mtimes = {p: os.path.getmtime(p) for p in watch_paths}
-            while True:
+            while not self._stop_event.is_set():
                 time.sleep(2.0)
                 try:
-                    # 动态检测 local 文件的出现 (如果之前不存在)
+                    # 动态检测 local 文件的出现
                     if len(watch_paths) == 1 and os.path.exists(local_path):
-                        if os.path.exists(local_path):
-                            watch_paths.append(local_path)
-                            last_mtimes[local_path] = os.path.getmtime(local_path)
-                            tlog.info("🧬 [Sentinel] 检测到本地配置层接入，已加入热监听队列。")
+                        watch_paths.append(local_path)
+                        last_mtimes[local_path] = os.path.getmtime(local_path)
+                        tlog.info("🧬 [Sentinel] 检测到本地配置层接入，已加入热监听队列。")
 
                     for p in watch_paths:
+                        if self._stop_event.is_set(): break
                         current_mtime = os.path.getmtime(p)
                         if current_mtime > last_mtimes[p]:
                             last_mtimes[p] = current_mtime
                             tlog.info(f"🔔 [Sentinel] 检测到物理变动 ({os.path.basename(p)})，正在触发热重载...")
+                            
+                            # 🚀 [V65.5] 主权感知重载：检测品牌是否发生偏移
+                            if p.endswith(CONFIG_LOCAL_NAME):
+                                try:
+                                    with open(p, 'r', encoding='utf-8') as f:
+                                        new_local = yaml.safe_load(f) or {}
+                                    
+                                    new_id = new_local.get("active_imprint")
+                                    current_id = self.engine.config.active_imprint if self.engine else None
+                                    
+                                    if new_id and new_id != current_id:
+                                        tlog.info(f"🔄 [Sentinel] 侦测到主权标识偏移: {current_id} -> {new_id}，正在发起深度重载...")
+                                        from core.runtime.cli_bootstrap import deep_reload_imprint
+                                        deep_reload_imprint(new_id)
+                                        # 注意：deep_reload_imprint 内部会停止当前哨兵，所以这里必须 break
+                                        return
+                                except Exception as e:
+                                    tlog.warning(f"⚠️ [Sentinel] 主权嗅探失败: {e}")
+
                             self.engine.config_manager.reload()
                 except Exception: pass
 

@@ -5,7 +5,7 @@
  */
 
 // 1. 系统设置加载器
-window.loadSettings = async () => {
+window.loadSettings = async (targetCat = 'general') => {
     const formEl = document.getElementById('settings-form');
     if (formEl) formEl.innerHTML = '<div class="loading">正在拉取全量主权配置与治理元数据...</div>';
 
@@ -22,9 +22,13 @@ window.loadSettings = async () => {
     const stats = await apiFetch('/api/imprints/stats');
     window.settingsData._imprint_stats = stats || {};
 
-    renderSettingsCategory('general');
+    renderSettingsCategory(targetCat);
 
     document.querySelectorAll('.s-tab').forEach(tab => {
+        // 🚀 [V55.20] 初始状态对正：确保 targetCat 对应的 Tab 处于激活状态
+        if (tab.dataset.cat === targetCat) tab.classList.add('active');
+        else tab.classList.remove('active');
+
         tab.onclick = () => {
             document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');

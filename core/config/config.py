@@ -112,7 +112,21 @@ class ConfigManager:
 
     def reload(self):
         """⚡ 物理热重载：重新加载文件并刷新内存模型"""
-        tlog.info(f"📈 [Config] 正在热重载配置文件: {self.config_path}")
+        tlog.info("♻️ [配置引擎] 检测到物理变动，正在重新加载指纹...")
+        # 🚀 [V65.7] 主权侦速：在重载前，必须先物理嗅探最新的 active_imprint
+        try:
+            if os.path.exists(self.config_path):
+                base, _ = os.path.splitext(self.config_path)
+                local_p = f"{base}.local.yaml"
+                if os.path.exists(local_p):
+                    with open(local_p, 'r', encoding='utf-8') as f:
+                        l_data = yaml.safe_load(f) or {}
+                        new_id = l_data.get("active_imprint")
+                        if new_id:
+                            self.imprint_id = new_id
+                            tlog.debug(f"🛰️ [配置引擎] 主权指针已在重载中对正: {new_id}")
+        except: pass
+
         try:
             self._raw_config = self._load_and_merge()
             self.config = self._build_typed_config()

@@ -41,7 +41,7 @@ document.addEventListener('click', (e) => {
 });
 
 // 2. 视图编排器
-window.showView = (viewId) => {
+window.showView = (viewId, subId) => {
     window.currentView = viewId;
     const panels = document.querySelectorAll('.view-panel');
     const navItems = document.querySelectorAll('.nav-item');
@@ -62,7 +62,7 @@ window.showView = (viewId) => {
     if (viewId === 'compute' && typeof loadComputeNodes === 'function') loadComputeNodes();
     if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
     if (viewId === 'settings' && typeof loadSettings === 'function') {
-        loadSettings();
+        loadSettings(subId || 'general');
         if (typeof loadPlugins === 'function') loadPlugins(); // 🛰️ [V55.19] 确保进入设置中心时提前预载主题数据
     }
     if (viewId === 'overview' && typeof refreshGalaxy === 'function') refreshGalaxy();

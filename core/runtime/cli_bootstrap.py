@@ -67,6 +67,22 @@ def deep_reload_imprint(imprint_id: str):
         
     tlog.info(f"🛰️ [主权迁移] 正在启动深度重载流水线 (Target Imprint: {imprint_id})...")
     
+    # 🚀 [V65.6] 物理闭环：在重载前，必须先强制注销旧引擎的所有治理守卫 (特别是哨兵)
+    if _GLOBAL_ENGINE and hasattr(_GLOBAL_ENGINE, 'governance'):
+        try:
+            _GLOBAL_ENGINE.governance.shutdown()
+        except: pass
+        
+    # 🚀 [V65.8] 同步注销：销毁全局文件监控器，防止幽灵同步
+    global _GLOBAL_OBSERVER
+    if _GLOBAL_OBSERVER:
+        try:
+            tlog.info("🐕 [主权迁移] 正在注销旧有的同步守护进程...")
+            _GLOBAL_OBSERVER.stop()
+            _GLOBAL_OBSERVER.join(timeout=1.0)
+            _GLOBAL_OBSERVER = None
+        except: pass
+
     try:
         # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 config.local.yaml
         # 仅保留 active_imprint 指针。这是因为 dashboard 会把全量配置同时写入 local 和 brand 层，
@@ -93,14 +109,20 @@ def deep_reload_imprint(imprint_id: str):
                             yaml.safe_dump(target_cfg, f, allow_unicode=True)
                         tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
 
-            l_cfg = {"active_imprint": imprint_id}
-            # 💡 [V55.11] 物理保留：如果是默认品牌，保留其本地金库路径，避免 onboarding 循环
+            # 🚀 [V65.1] 物理主权对正：同步写入 ID 与 数据根目录
+            l_cfg = {
+                "active_imprint": imprint_id,
+                "system": {
+                    "data_root": f"imprints/{imprint_id}"
+                }
+            }
+            # 💡 [V55.11] 物理保留：如果是默认品牌，保留其本地金库路径
             if imprint_id == "default" and existing_local.get("vault_root"):
                 l_cfg["vault_root"] = existing_local["vault_root"]
 
             with open(local_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(l_cfg, f, allow_unicode=True)
-            tlog.debug(f"🛡️ [物理消杀] 已清空陈旧的 Local 缓存并预设活跃版图 '{imprint_id}'。")
+            tlog.debug(f"🛡️ [物理消杀] 已清空陈旧的 Local 缓存并固化版图 '{imprint_id}' 的数据路径。")
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
 
@@ -120,33 +142,9 @@ def deep_reload_imprint(imprint_id: str):
         # 3. 注册新引擎 (自动清理旧哨兵)
         set_global_engine(new_engine)
         
-        # 🚀 [V52.12] 物理主权持久化：同步最终确定的活跃状态至 config.local.yaml
+        # 🚀 [V65.2] 物理主权持久化已在重载前由第一阶段完成，此处不再重复写回以防覆盖漏洞
         try:
-            import yaml
-            local_path = CONFIG_LOCAL_NAME
-            if os.path.exists(local_path):
-                with open(local_path, "r", encoding="utf-8") as f:
-                    local_cfg = yaml.safe_load(f) or {}
-                
-                local_cfg["active_imprint"] = imprint_id
-                local_cfg["imprint_name"] = new_engine.config.imprint_name
-                local_cfg["vault_root"] = new_engine.config.vault_root
-                local_cfg["active_theme"] = new_engine.active_theme
-                
-                # 同步路径锚点
-                if imprint_id != "default":
-                    local_cfg.setdefault("system", {})["data_root"] = os.path.join(IMPRINT_DIR, imprint_id)
-                else:
-                    if "system" in local_cfg and "data_root" in local_cfg["system"]:
-                        local_cfg["system"]["data_root"] = ".plenipes"
-                    # 归位逻辑：强制恢复默认品牌名
-                    local_cfg["imprint_name"] = "Illacme Press"
-                    local_cfg["vault_root"] = "./content-vault"
-                    local_cfg["active_theme"] = "default"
-                
-                with open(local_path, "w", encoding="utf-8") as f:
-                    yaml.safe_dump(local_cfg, f, allow_unicode=True)
-                tlog.debug(f"🛡️ [主权锁定] 活跃版图状态已同步至 {local_path}")
+            pass
         except Exception: pass
 
         # 5. 🚀 [V52.6] 日志管线对正：重定向文件日志至新品牌领土

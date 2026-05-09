@@ -325,8 +325,8 @@
             transition: transform 0.2s;
         }
         .toggle-switch.on::after { transform: translateX(18px); }
-
-        /* 🚀 [V48.3] 概念解释器样式 */
+        
+        /* 🚀 [V65.0] 基础组件样式恢复与微调 */
         .concept-hint {
             font-size: 0.6rem; color: var(--accent);
             border-bottom: 1px dashed var(--accent);
@@ -337,40 +337,100 @@
         .concept-hint:hover::before {
             content: attr(data-tip);
             position: absolute; bottom: 100%; left: 0;
-            width: 200px; padding: 10px;
-            background: #1a1a25; border: 1px solid var(--accent);
-            color: #fff; font-size: 0.75rem; border-radius: 8px;
-            z-index: 2000; line-height: 1.4;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
+            width: 220px; padding: 12px;
+            background: #12121a; border: 1px solid var(--accent);
+            color: #fff; font-size: 0.7rem; border-radius: 10px;
+            z-index: 2000; line-height: 1.5;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            margin-bottom: 12px;
         }
         .input-desc {
-            font-size: 0.72rem; color: var(--text-muted);
-            margin-top: 6px; line-height: 1.4;
+            font-size: 0.68rem; color: var(--text-muted);
+            margin-top: 6px; line-height: 1.5;
+            opacity: 0.8;
         }
         .safety-badge {
             display: inline-flex; align-items: center; gap: 4px;
-            background: rgba(0,255,127,0.08); color: var(--accent-green);
-            padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;
-            margin-top: 4px;
+            background: rgba(0,255,127,0.06); color: var(--accent-green);
+            padding: 3px 8px; border-radius: 6px; font-size: 0.62rem;
+            margin-top: 6px; border: 1px solid rgba(0,255,127,0.1);
         }
-        .vault-suggestions { margin-top: 10px; }
+        .vault-suggestions { margin-top: 12px; }
         .vault-badge {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.7rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.68rem;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; gap: 6px;
         }
         .vault-badge:hover {
-            background: rgba(var(--accent-rgb), 0.1);
-            border-color: var(--accent);
+            background: var(--primary-soft);
+            border-color: var(--primary);
             transform: translateY(-1px);
+        }
+
+        /* 🚀 [V65.0] 成功页专项优化样式 */
+        .success-pulse {
+            width: 80px; height: 80px;
+            background: var(--primary-soft);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.4rem; margin: 0 auto 24px;
+            position: relative;
+            animation: shieldPulse 2s infinite;
+        }
+        @keyframes shieldPulse {
+            0% { box-shadow: 0 0 0 0 rgba(138,43,226, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(138,43,226, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(138,43,226, 0); }
+        }
+        .sovereign-contract {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px; margin: 24px 0;
+            text-align: left; position: relative;
+            overflow: hidden;
+        }
+        .sovereign-contract::before {
+            content: 'CONFIDENTIAL';
+            position: absolute; top: 10px; right: -25px;
+            transform: rotate(45deg);
+            font-size: 0.5rem; font-weight: 900; color: rgba(255,255,255,0.05);
+            letter-spacing: 2px;
+        }
+        .contract-item { margin-bottom: 12px; }
+        .contract-item label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .contract-item span { font-size: 0.85rem; color: var(--text); font-family: 'Outfit', sans-serif; }
+        .contract-item .path-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); }
+
+        .cmd-box {
+            background: #05050a;
+            border: 1px solid rgba(0,242,255,0.2);
+            border-radius: 10px;
+            padding: 12px 16px;
+            position: relative;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 8px;
+        }
+        .cmd-text { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); }
+        .copy-trigger {
+            cursor: pointer; padding: 4px 8px; border-radius: 4px;
+            background: rgba(0,242,255,0.1); color: var(--accent);
+            font-size: 0.65rem; transition: all 0.2s;
+        }
+        .copy-trigger:hover { background: var(--accent); color: #000; }
+        
+        #enter-btn {
+            animation: btnSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes btnSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -550,30 +610,55 @@
                 <div id="status"></div>
             </div>
 
-            <!-- Step 4: 完成 -->
+            <!-- Step 4: 完成 (主权加冕) -->
             <div class="step" id="step-4">
                 <div class="completion-panel">
-                    <div class="check-icon">🛡️</div>
-                    <h2 style="font-family:'Outfit';font-size:1.6rem;margin-bottom:10px;">出版版图划定成功！</h2>
-                    <p style="color:var(--text-dim);font-size:0.85rem;line-height:1.6;" id="complete-summary"></p>
+                    <div class="success-pulse">🛡️</div>
+                    <h2 style="font-family:'Outfit'; font-size:1.8rem; margin-bottom:8px; letter-spacing:-0.5px;">出版版图划定成功！</h2>
+                    <p style="color:var(--text-dim); font-size:0.85rem;">您的出版品牌已正式确立主权地位，物理隔离已生效。</p>
 
-                    <div style="margin-top: 40px; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 15px;">
-                        <div id="ignition-status" style="font-size: 0.75rem; color: var(--accent); display: flex; align-items: center; gap: 8px;">
-                            <div class="loading-spinner" style="display:block; width:12px; height:12px;"></div>
-                            ⏳ 正在加载新的出版版图...
+                    <div class="sovereign-contract">
+                        <div class="contract-item">
+                            <label>出版品牌身份 (Identity)</label>
+                            <span id="final-brand-info"></span>
                         </div>
-                        <button class="btn btn-primary" id="enter-btn" onclick="enterDashboard()" style="display:none; min-width: 240px;">
-                            🚀 进入总编室 Dashboard
-                        </button>
-
-                        <div id="manual-tip" style="margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--glass-border); width: 100%; max-width: 480px; text-align: left;">
-                            <h4 style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">🛡️ 主权维护指令</h4>
-                            <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px;">若未来服务意外中断或需要手动重启，请在终端执行：</p>
-                            <code style="display: block; background: #000; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); border: 1px solid rgba(0,255,255,0.2);">
-                                python3 plenipes.py --api --imprint <span id="cmd-press-name"></span>
-                            </code>
+                        <div class="contract-item">
+                            <label>核心原稿档案馆 (Vault)</label>
+                            <span class="path-tag" id="final-vault-path"></span>
+                        </div>
+                        <div class="contract-item" style="margin-bottom:0;">
+                            <label>当前装帧风格 (Theme)</label>
+                            <span id="final-theme-name"></span>
                         </div>
                     </div>
+
+                        <div id="expansion-actions" style="display:none; flex-direction: column; gap: 12px; width: 100%; align-items: center;">
+                            <button class="btn btn-primary" onclick="switchToNewImprint()" style="min-width: 280px; font-size: 1rem; height: 54px;">
+                                🔄 立即切换至新版图
+                            </button>
+                            <button class="btn btn-ghost" onclick="window.location.href='/dashboard/'" style="min-width: 280px;">
+                                🏠 返回总编室
+                            </button>
+                        </div>
+
+                        <div id="onboarding-actions" style="display:flex; flex-direction: column; gap: 20px; width: 100%; align-items: center;">
+                            <div id="ignition-status" style="font-size: 0.8rem; color: var(--accent); display: flex; align-items: center; gap: 10px; background: rgba(0,242,255,0.05); padding: 8px 16px; border-radius: 20px;">
+                                <div class="loading-spinner" style="display:block; width:14px; height:14px;"></div>
+                                <span>正在激活主权总编室...</span>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="enter-btn" onclick="enterDashboard()" style="display:none; min-width: 280px; font-size: 1rem; height: 54px;">
+                                🚀 立即登入总编室 (Dashboard)
+                            </button>
+
+                            <div id="manual-tip" style="width: 100%; text-align: left;">
+                                <label style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 8px;">🛡️ 后台维护指令</label>
+                                <div class="cmd-box">
+                                    <div class="cmd-text">python3 plenipes.py --api --imprint <span id="cmd-press-name"></span></div>
+                                    <div class="copy-trigger" onclick="copyCmd()">复制指令</div>
+                                </div>
+                            </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -1135,10 +1220,23 @@
                 if (res.ok) {
                     const themeName = (window._theme_metadata[payload.active_theme] || {}).name || payload.active_theme;
                     document.getElementById('cmd-press-name').innerText = payload.imprint_id;
-                    document.getElementById('complete-summary').innerText = 
-                        `出版品牌 "${payload.imprint_name}" (${payload.imprint_id}) 已正式在 ${payload.manuscripts_path} 确立主权地位。已激活主题: ${themeName}。`;
+                    
+                    // 🚀 [V65.0] 契约数据填充
+                    document.getElementById('final-brand-info').innerText = `${payload.imprint_name} (${payload.imprint_id})`;
+                    document.getElementById('final-vault-path').innerText = payload.manuscripts_path;
+                    document.getElementById('final-theme-name').innerText = themeName;
+
                     goStep(4);
-                    probeDashboard();
+                    
+                    // 🚀 [V65.0] 场景感应：判断是在 Dashboard 中扩张还是初始引导
+                    if (window.location.port === '43212' || window.location.pathname.includes('/wizard')) {
+                        document.getElementById('onboarding-actions').style.display = 'none';
+                        document.getElementById('expansion-actions').style.display = 'flex';
+                    } else {
+                        document.getElementById('onboarding-actions').style.display = 'flex';
+                        document.getElementById('expansion-actions').style.display = 'none';
+                        probeDashboard();
+                    }
                 } else {
                     const data = await res.json();
                     showStatus('❌ ' + (data.detail || '初始化失败'), 'error');
@@ -1148,47 +1246,93 @@
         }
 
         async function enterDashboard() {
+            const statusEl = document.getElementById('ignition-status');
+            statusEl.innerHTML = '🚀 正在建立主权链接，请稍候...';
+            
             try {
+                // 尝试通知向导服务关闭
                 await fetch('/api/shutdown', { method: 'POST' });
             } catch (e) {}
+            
+            // 🚀 [V65.1] 物理状态清理：清除可能残留的前端品牌锁
+            try {
+                localStorage.removeItem('active_imprint');
+                localStorage.removeItem('plenipes_last_imprint');
+            } catch (e) {}
+            
+            // 🚀 [V65.1] 强制硬刷新跳转，增加时间戳击穿缓存
             setTimeout(() => {
-                window.location.href = 'http://127.0.0.1:43212/dashboard';
-            }, 300);
+                const ts = new Date().getTime();
+                window.location.href = `http://127.0.0.1:43212/dashboard/?v=${ts}`;
+            }, 800);
         }
 
         async function probeDashboard() {
             const statusEl = document.getElementById('ignition-status');
             const enterBtn = document.getElementById('enter-btn');
-            const targetImprint = document.getElementById('imprint_id').value;
+            const targetImprint = document.getElementById('imprint_id').value.toLowerCase().trim();
             let attempts = 0;
-            const maxAttempts = 40;
+            const maxAttempts = 60;
             
             const timer = setInterval(async () => {
                 attempts++;
                 try {
                     const controller = new AbortController();
-                    const id = setTimeout(() => controller.abort(), 1500);
+                    const id = setTimeout(() => controller.abort(), 1200);
                     
-                    // 🚀 [V50.5] 主权指纹校验：不仅探测端口，还校验 Imprint ID
-                    const res = await fetch('http://127.0.0.1:43212/health', { 
-                        signal: controller.signal 
+                    // 🚀 [V65.2] 强制禁用缓存并开启跨域对正
+                    const res = await fetch('http://127.0.0.1:43212/api/system/health', { 
+                        signal: controller.signal,
+                        cache: 'no-cache',
+                        mode: 'cors'
                     });
                     
                     if (res.ok) {
-                        const health = await res.json(); if (health.active_imprint === targetImprint) {
+                        const health = await res.json();
+                        // 🚀 [V65.1] 关键对正：后端字段名为 'imprint' 而非 'active_imprint'
+                        const activeId = (health.imprint || health.active_imprint || health.id || '').toLowerCase().trim();
+                        
+                        console.log(`📡 [探测中] 目标: ${targetImprint}, 当前发现: ${activeId}`);
+
+                        if (activeId === targetImprint) {
                             clearInterval(timer);
                             statusEl.innerHTML = `✅ 总编室点火成功，主权版图 '${targetImprint}' 已在线。`;
+                            statusEl.style.background = 'rgba(0,255,127,0.1)';
+                            statusEl.style.color = 'var(--accent-green)';
+                            
+                            // 🚀 [V65.1] 成功后自动执行一次缓存清理并立即显示按钮
+                            try {
+                                localStorage.removeItem('active_imprint');
+                                localStorage.setItem('active_imprint', targetImprint);
+                            } catch(e){}
                             enterBtn.style.display = 'block';
+                            
+                            // 💡 成功对齐后，如果用户没点，1.5秒后自动跳转
+                            setTimeout(() => {
+                                if (enterBtn.style.display !== 'none') enterBtn.click();
+                            }, 1500);
                         } else {
-                            // 探测到了 Dashboard，但不是当前配置的这一个（可能老进程还在）
-                            statusEl.innerHTML = `⏳ 正在加载新的出版版图...`;
+                            // 🚀 [V65.2] 静默等待：如果还没拿到 ID，说明引擎还在初始化，不显示“未知”
+                            if (!activeId) {
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在同步物理疆域，请稍候... [${attempts}]`;
+                            } else {
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在对齐主权指纹 (发现: ${activeId})...`;
+                            }
+                            
+                            // 🛡️ 容错逻辑：只有在拿到错误 ID 且尝试次数过多时才显示警告
+                            if (attempts > 15 && activeId !== targetImprint && activeId !== "") {
+                                statusEl.innerHTML = `⚠️ 正在等待后台版图热重载，您可以尝试强制进入。`;
+                                enterBtn.style.display = 'block';
+                            }
                         }
                     }
                 } catch (e) {
                     if (attempts >= maxAttempts) {
                         clearInterval(timer);
-                        statusEl.innerHTML = '⚠️ 启动耗时较长，请检查终端日志或尝试手动启动。';
+                        statusEl.innerHTML = '⚠️ 启动耗时较长，请在终端执行 `python3 plenipes.py` 或尝试手动刷新。';
                         enterBtn.style.display = 'block';
+                    } else {
+                        statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在等待主进程接管主权 (43212)... [${attempts}]`;
                     }
                 }
             }, 1000);
@@ -1214,6 +1358,55 @@
                 idInput._manually_edited = true;
             });
         });
+
+        async function switchToNewImprint() {
+            const id = document.getElementById('cmd-press-name').innerText;
+            const btn = document.querySelector('#expansion-actions .btn-primary');
+            const oldText = btn.innerText;
+            
+            btn.disabled = true;
+            btn.innerText = '🔄 正在切换主权版图...';
+            
+            try {
+                // 🚀 [V65.1] 执行物理切换
+                const res = await fetch(`/api/imprints/switch?id=${id}`, { method: 'POST' });
+                if (res.ok) {
+                    // 🚀 [V65.1] 物理状态清理：强制清除前端品牌缓存锁
+                    try {
+                        localStorage.removeItem('active_imprint');
+                        localStorage.setItem('active_imprint', id); // 预设为新 ID
+                    } catch (e) {}
+
+                    // 给后端热重载留出 1.2s 的物理同步窗口
+                    setTimeout(() => {
+                        const ts = new Date().getTime();
+                        window.location.href = `/dashboard/?v=${ts}&imprint=${id}`;
+                    }, 1200);
+                } else {
+                    const data = await res.json();
+                    alert(`切换失败: ${data.detail || '未知原因'}`);
+                    btn.disabled = false;
+                    btn.innerText = oldText;
+                }
+            } catch (e) {
+                console.error("切换异常:", e);
+                window.location.reload();
+            }
+        }
+
+        function copyCmd() {
+            const cmd = `python3 plenipes.py --api --imprint ${document.getElementById('cmd-press-name').innerText}`;
+            navigator.clipboard.writeText(cmd).then(() => {
+                const trigger = document.querySelector('.copy-trigger');
+                const oldText = trigger.innerText;
+                trigger.innerText = '已复制！';
+                trigger.style.color = 'var(--accent-green)';
+                setTimeout(() => {
+                    trigger.innerText = oldText;
+                    trigger.style.color = '';
+                }, 2000);
+            });
+        }
 
         probe();
     </script>

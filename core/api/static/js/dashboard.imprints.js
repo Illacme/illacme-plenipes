@@ -5,7 +5,7 @@
 
 window.switchImprint = async (id) => {
     if (!id) return;
-    addAudit(`🛰️ 正在申请主权切换: ${id}...`, "info");
+    addAudit(`🛰️ 正在申请出版身份切换: ${id}...`, "info");
 
     const res = await apiFetch('/api/imprints/switch', {
         method: 'POST',
@@ -14,7 +14,7 @@ window.switchImprint = async (id) => {
     });
 
     if (res && res.success) {
-        addAudit(`🔄 [主权对正] 成功切换至身份: ${id}`, "success");
+        addAudit(`🔄 [对正] 成功切换至品牌: ${id}`, "success");
         // 🚀 [V55.9] 物理断路：禁止自动刷新，改为增量同步，彻底切断循环重定向
         if (typeof refreshGovernanceContext === 'function') refreshGovernanceContext();
         if (typeof closeTerminalModal === 'function') closeTerminalModal();
@@ -35,8 +35,8 @@ window.addNewImprint = async () => {
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
                       '您当前处于 <b>社区标准版</b>。<br><br>' +
                       '• 版图限额: 1/1 (已满)<br>' +
-                      '• 治理限制: 无法划定更多主权版图。<br><br>' +
-                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [主权专业版] 以开启无限版图治理。</span>' +
+                      '• 治理限制: 无法添加更多出版版图。<br><br>' +
+                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [专业版] 以开启无限版图管理。</span>' +
                       '</div>',
                 icon: 'warning',
                 confirmButtonText: '了解',
@@ -45,7 +45,7 @@ window.addNewImprint = async () => {
                 confirmButtonColor: 'var(--accent-primary)'
             });
         } else {
-            alert("🛡️ [准入拦截]\n社区版限额 1 个版图，无法继续划定。");
+            alert("🛡️ [准入拦截]\n社区版限额 1 个版图，无法继续添加。");
         }
         return;
     }
@@ -57,7 +57,7 @@ window.addNewImprint = async () => {
     const path = prompt("📂 请输入该品牌关联的内容库 (Vault) 【绝对路径】:", "/Volumes/Notebook/omni-hub/content-vault");
     if (!path) return;
 
-    addAudit(`🏗️ 正在为品牌 [${press_name}] 划定主权疆域...`);
+    addAudit(`🏗️ 正在为品牌 [${press_name}] 创建版图区域...`);
     const res = await apiFetch('/api/imprints/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,10 +65,10 @@ window.addNewImprint = async () => {
     });
 
     if (res && res.success) {
-        addAudit(`✅ [主权划定] 品牌 ${press_name} 已成功加入矩阵。`, "success");
+        addAudit(`✅ [创建成功] 品牌 ${press_name} 已成功加入矩阵。`, "success");
         loadSettings();
     } else {
-        addAudit(`❌ [划定失败] ${res ? res.error : '存在物理命名冲突'}`, "error");
+        addAudit(`❌ [创建失败] ${res ? res.error : '存在物理命名冲突'}`, "error");
     }
 };
 
@@ -120,10 +120,17 @@ window.renderImprintDropdown = () => {
     const dropdown = document.getElementById('imprint-dropdown');
     if (!dropdown) return;
     
-    const imprints = window.settingsData?._imprints || [];
+    const imprints = [...(window.settingsData?._imprints || [])];
     const activeId = window.settingsData?._active_imprint;
 
-    dropdown.innerHTML = `<div class="dropdown-header">Sovereign Territories Map</div>` + imprints.map(im => `
+    // 🚀 [V55.10] 优先级对正：将当前激活的品牌置顶
+    imprints.sort((a, b) => {
+        if (a.id === activeId) return -1;
+        if (b.id === activeId) return 1;
+        return 0;
+    });
+
+    dropdown.innerHTML = `<div class="dropdown-header">出版品牌矩阵 (Brands)</div>` + imprints.map(im => `
         <div class="dropdown-item ${im.id === activeId ? 'active' : ''}" onclick="switchImprint('${im.id}')">
             <div class="imprint-item-header">
                 <span class="imprint-title">${im.name || im.id}</span>
@@ -133,46 +140,56 @@ window.renderImprintDropdown = () => {
             <div class="imprint-path-row">${im.path}</div>
         </div>
     `).join('') + `
-        <div class="dropdown-item add-new" onclick="showView('settings'); document.getElementById('imprint-dropdown').style.display='none';">
-            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 版图主权管理</div>
+        <div class="dropdown-item add-new" onclick="showView('settings', 'imprints'); document.getElementById('imprint-dropdown').style.display='none';">
+            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 版图管理</div>
         </div>
     `;
 };
 
 window.renderImprintsCategory = function() {
+    const imprints = [...(window.settingsData?._imprints || [])];
+    const activeId = window.settingsData?._active_imprint;
+
+    // 🚀 [V55.11] 矩阵对正：激活品牌置顶
+    imprints.sort((a, b) => {
+        if (a.id === activeId) return -1;
+        if (b.id === activeId) return 1;
+        return 0;
+    });
+
     return `
         <div class="full-width">
-            <div class="section-header"><h3>🏗️ SOVEREIGN TERRITORIES MAP</h3></div>
-            <p class="section-desc">Global oversight of your publishing empire. Each territory operates in physical isolation.</p>
+            <div class="section-header"><h3>🏗️ 品牌版图矩阵 (Press Brands)</h3></div>
+            <p class="section-desc">全局掌控您的出版帝国。每个版图代表一个独立的品牌项目，具备独立的运行配置。</p>
             
             <div class="shield-matrix">
-                ${window.settingsData._imprints.map(im => {
+                ${imprints.map(im => {
                     const stat = window.settingsData._imprint_stats[im.id] || { doc_count: 0 };
-                    const isActive = im.id === window.settingsData._active_imprint;
+                    const isActive = im.id === activeId;
                     return `
                         <div class="shield-pod territory-pod ${isActive ? 'primary-active' : ''}">
                             <div class="shield-status">
-                                <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="shield-status-inner">
                                     <span class="status-dot-mini ${stat.healthy !== false ? 'healthy' : 'blocked'}"></span>
                                     <span class="shield-id">ID: ${im.id}</span>
                                 </div>
-                                ${isActive ? '<div class="log-tag info">ACTIVE COMMAND</div>' : ''}
+                                ${isActive ? '<div class="log-tag info">使用中</div>' : ''}
                             </div>
-                            <div class="shield-body" style="flex:1; display:flex; flex-direction:column;">
-                                <h4 contenteditable="true" onblur="handleImprintInlineEdit(this, '${im.id}', 'name')" style="font-size:1.1rem; color:#fff; margin-bottom:5px;">${im.name || im.id}</h4>
-                                <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
-                                    <span class="tiny-label" style="color:var(--accent-primary);">VAULT ASSETS</span>
-                                    <span class="tiny-label mono" style="margin-left:auto; color:#fff;">${stat.doc_count} UNITS</span>
+                            <div class="shield-body">
+                                <h4 contenteditable="true" onblur="handleImprintInlineEdit(this, '${im.id}', 'name')">${im.name || im.id}</h4>
+                                <div class="pod-telemetry">
+                                    <span class="tiny-label">内容资产数量</span>
+                                    <span class="tiny-label mono">${stat.doc_count} 项</span>
                                 </div>
                                 
-                                <div class="path-preview" style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-dim); margin-bottom:15px; background:rgba(0,0,0,0.2); padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.05); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <div class="path-preview">
                                     📂 ${im.path}
                                 </div>
 
-                                <div class="p-control-group" style="display:grid; grid-template-columns: 1fr auto; gap:8px;">
+                                <div class="p-control-group">
                                     ${isActive ? 
-                                        '<button class="action-btn" disabled style="opacity:0.5;">CURRENTLY DEPLOYED</button>' : 
-                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 SWITCH SOVEREIGNTY</button>`}
+                                        '<button class="action-btn" disabled style="opacity:0.5;">使用中</button>' : 
+                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 切换出版身份</button>`}
                                     ${im.id !== 'default' && !isActive ? 
                                         `<button class="action-btn danger" onclick="deleteImprint('${im.id}')">🗑️</button>` : ''}
                                 </div>
@@ -183,7 +200,7 @@ window.renderImprintsCategory = function() {
                 <div class="shield-pod add-card" onclick="addNewImprint()" style="border-style:dashed; cursor:pointer; justify-content:center; align-items:center; display:flex; min-height:220px;">
                     <div style="text-align:center;">
                         <div style="font-size:2rem; margin-bottom:10px; opacity:0.5;">＋</div>
-                        <p class="tiny-label">MAP NEW TERRITORY</p>
+                        <p class="tiny-label">添加新版图</p>
                     </div>
                 </div>
             </div>

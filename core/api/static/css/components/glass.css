@@ -56,9 +56,32 @@
 }
 .shield-pod:hover { border-color: var(--accent-primary); transform: translateY(-3px); background: rgba(163, 76, 255, 0.05); }
 .shield-status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.shield-status-inner { display: flex; align-items: center; gap: 10px; }
 .shield-id { font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-secondary); letter-spacing: 1px; }
-.shield-body h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #fff; }
+.shield-body { flex: 1; display: flex; flex-direction: column; }
+.shield-body h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; color: #fff; }
 .shield-body p { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; }
+
+/* 🏗️ Sovereign Territory Card Components */
+.territory-pod { min-height: 220px; display: flex; flex-direction: column; }
+.territory-pod.primary-active { border-color: var(--accent-secondary); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
+
+.pod-telemetry { 
+    margin-bottom: 15px; padding: 8px 12px; 
+    display: flex; align-items: center; 
+    background: rgba(255, 255, 255, 0.02); 
+    border-radius: 8px;
+}
+.pod-telemetry .tiny-label:first-child { color: var(--accent-primary); }
+.pod-telemetry .tiny-label.mono { margin-left: auto; color: #fff; }
+
+.path-preview {
+    font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim); 
+    margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 8px; 
+    border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); 
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.p-control-group { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 
 /* 🧠 Tactical Pod Containers */
 .tactical-pod {
@@ -82,11 +105,13 @@
     transform: translateY(-50%);
     width: 24px;
     height: 60px;
+    padding: 0; /* 🛡️ [V65.3] Precision Alignment: Reset inherited button padding */
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
+    box-sizing: border-box;
     color: var(--text-dim);
     cursor: pointer;
-    z-index: 5500;
+    z-index: 1000; /* 🛡️ [V65.4] Stacking Context Fix: Keep below header (5000) to allow dropdown coverage */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -102,13 +127,13 @@
 }
 
 .sidebar-toggle.left {
-    left: 280px;
+    left: var(--left-w);
     border-left: none;
     border-radius: 0 10px 10px 0;
 }
 
 .sidebar-toggle.right {
-    right: 280px;
+    right: var(--right-w);
     border-right: none;
     border-radius: 10px 0 0 10px;
 }
@@ -116,11 +141,11 @@
 /* 🛸 Folding Logic - Visual Concealment */
 .left-collapsed #left-sidebar { width: 70px; padding: 25px 15px; }
 .left-collapsed #left-sidebar *:not(.logo-area) { opacity: 0; pointer-events: none; }
-.left-collapsed .sidebar-toggle.left { left: 70px; }
+.left-collapsed .sidebar-toggle.left { left: var(--left-w); }
 
 .right-collapsed #right-sidebar { width: 0; padding: 0; border: none; }
 .right-collapsed #right-sidebar * { opacity: 0; pointer-events: none; }
-.right-collapsed .sidebar-toggle.right { right: 0; }
+.right-collapsed .sidebar-toggle.right { right: var(--right-w); }
 
 /* 🏛️ Main Viewport Area */
 #main-viewport {
@@ -131,7 +156,7 @@
 
 .view-panel {
     position: absolute;
-    top: 30px; left: 30px; right: 30px; bottom: 30px;
+    top: 30px; left: 60px; right: 60px; bottom: 30px; /* 🚀 [V65.1] Premium Clearance for Sovereign Toggles */
     display: none;
     flex-direction: column;
     gap: 25px;
@@ -673,15 +698,31 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* 🧪 [V65.2] Sovereign Scroll-Lock for High-Density Imprint Maps */
+#imprint-dropdown {
+    max-height: 75vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#imprint-dropdown::-webkit-scrollbar { width: 4px; }
+#imprint-dropdown::-webkit-scrollbar-thumb { 
+    background: var(--accent-primary); 
+    border-radius: 10px; 
+}
+
+
 .dropdown-header {
     font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;
     letter-spacing: 3px; font-weight: 800; margin-bottom: 5px; padding-left: 10px;
+    flex-shrink: 0;
 }
 
 .dropdown-item {
     background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s;
     position: relative; overflow: hidden;
+    flex-shrink: 0;
 }
 .dropdown-item::before {
     content: ""; position: absolute; left: 0; top: 0; width: 3px; height: 100%;

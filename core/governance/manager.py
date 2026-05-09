@@ -49,4 +49,6 @@ class GovernanceManager:
         self.indexing_sentinel.stop()
         self.resource_guard.stop()
         self.heartbeat.stop()
+        if hasattr(self, 'health_sentinel'):
+            self.health_sentinel.stop()
         tlog.info("🛡️ [GovernanceManager] 治理资源已安全回收。")
