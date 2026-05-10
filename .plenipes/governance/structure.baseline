@@ -44,6 +44,7 @@ core/bindery/garden_exporter.py
 core/config/__init__.py
 core/config/config.py
 core/config/config_models.py
+core/config/constants.py
 core/config/env_loader.py
 core/config/governance_map.py
 core/config/models/__init__.py

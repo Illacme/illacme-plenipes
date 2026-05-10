@@ -12,8 +12,7 @@ import re
 GOVERNANCE_RULES = {
     # 🔴 本地感应层 (Local: config.local.yaml) - 物理机能、凭据密钥、硬件限制
     "local": [
-        r"^translation\.providers\..*\.api_key$", # AI 节点密钥
-        r"^translation\.providers\..*\.base_url$",# 本地算力物理地址
+        r"^translation\.compute_nodes\..*$", # 物理算力节点全量属性 (ID/URL/Key/Type/Model/Enabled)
         r"^publish_control\.webhook_endpoints\..*$", # Webhook 物理地址与密钥
         r"^publish_control\.direct_upload\..*\.(api_token|api_key|secret)$", # 托管平台密钥
         r"^syndication\..*\.(api_key|token|app_password|secret)$", # 聚合平台密钥
@@ -52,7 +51,6 @@ GOVERNANCE_RULES = {
         r"^translation\.primary_node$",    # 品牌主力算力节点
         r"^translation\.fallback_node$",   # 品牌备用算力节点
         r"^translation\.enable_ai$",       # 品牌是否开启 AI 治理
-        r"^translation\.providers\..*$",   # 品牌自定义算力节点参数
         r"^theme_options\..*$",            # 品牌视觉参数微调
         r"^framework_adapters\..*$",       # 品牌排版框架适配
         r"^frontmatter_.*$",               # 品牌文档标准

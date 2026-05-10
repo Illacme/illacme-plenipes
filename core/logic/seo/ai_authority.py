@@ -27,7 +27,7 @@ Your output MUST be a valid JSON object with these fields:
 - "keywords": An array of 5-8 precise entity-focused keywords
 - "entities": An object with arrays for each entity type found:
   - "people": Names of people mentioned
-  - "organizations": Organizations, companies, brands
+  - "organizations": Organizations, companies, imprints
   - "technologies": Technical terms, frameworks, languages
   - "concepts": Abstract concepts, theories, methodologies
 - "faq": An array of FAQ items (if Q&A patterns detected), each with "question" and "answer" fields

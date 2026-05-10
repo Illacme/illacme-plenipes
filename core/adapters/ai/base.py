@@ -19,13 +19,22 @@ from core.utils.tracing import tlog
 
 class BaseTranslator(abc.ABC, AITaskMixin):
     """🚀 [V10.0] 智能算力网关适配器基类"""
+    PLUGIN_ID: str = "generic"
+    DISPLAY_NAME: str = "Generic AI Provider"
+    PROTOCOL_FAMILY: str = "native"  # 'standard' (OpenAI-compatible) or 'native'
 
     def __init__(self, node_name, trans_cfg):
         self.node_name = node_name
         self.trans_cfg = trans_cfg
-        self.config = trans_cfg.providers.get(node_name)
+        
+        # 🚀 [V66.5] 动态对正优先级：优先读取工厂合成的虚拟镜像
+        if hasattr(trans_cfg, '_synced_providers') and node_name in trans_cfg._synced_providers:
+            self.config = trans_cfg._synced_providers[node_name]
+        else:
+            self.config = trans_cfg.compute_nodes.get(node_name)
+            
         if not self.config:
-            raise ValueError(f"未找到节点配置: {node_name}")
+            raise ValueError(f"❌ [算力网关] 未能对正节点配置: {node_name}")
 
         self.semaphore = threading.BoundedSemaphore(self.config.limits.max_concurrency)
         self.timeout = getattr(self.trans_cfg, 'api_timeout', 60.0)
@@ -106,6 +115,10 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                         if "ai" in engine.circuit_breakers:
                             engine.circuit_breakers["ai"].record_success()
                     result = getattr(response, 'text', response)
+                    
+                    # 🛡️ [V67.0] 自动内容净化 (对齐主权审计标准)
+                    result = self._post_process_response(result, payload)
+                    
                     usage = getattr(response, 'usage', {})
                     bus.emit("AI_CALL_COMPLETED", node_name=self.node_name,
                              input_tokens=usage.get("prompt_tokens", 0),
@@ -132,6 +145,18 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 time.sleep(wait_time)
         if last_error: raise last_error
         return ""
+    def _post_process_response(self, content: str, payload: dict) -> str:
+        """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链标签"""
+        if not content or not isinstance(content, str): return content
+        
+        # 🧠 智能感应：只要模型名称包含 r1 或 reasoner，且内容包含 <think>，则执行净化
+        model_name = (payload.get('model') or getattr(self.config, 'model', '')).lower()
+        if 'r1' in model_name or 'reasoner' in model_name or '<think>' in content:
+            import re
+            # 剥离 <think>...</think>，flags=re.DOTALL 以匹配换行符
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+            
+        return content.strip()
 
     def raw_inference(self, user_prompt, system_prompt=None) -> str:
         payload = PayloadManager.prepare_payload(self, system_prompt or "", user_prompt, is_json=False)

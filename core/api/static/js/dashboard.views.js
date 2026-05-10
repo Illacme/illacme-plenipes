@@ -88,17 +88,7 @@ window.viewTemplates = {
     `,
     compute: `
         <div id="view-compute" class="view-panel">
-            <div class="view-header">
-                <h2>🧠 算力矩阵 (Compute Matrix)</h2>
-                <div class="header-actions">
-                    <button class="mini-btn">刷新节点</button>
-                </div>
-            </div>
-            <div class="view-content">
-                <div id="compute-grid">
-                    <!-- 动态注入 -->
-                </div>
-            </div>
+            <div id="compute-center-root"></div>
         </div>
     `,
     plugins: `
@@ -113,7 +103,6 @@ window.viewTemplates = {
                         <div class="tab-item cap-tab" data-cat="theme"><span class="tab-icon">🎨</span> 视觉装帧</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>
                         <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">🚀</span> 分发渠道</div>
-                        <div class="tab-item cap-tab" data-cat="processor"><span class="tab-icon">🧠</span> 智能加工</div>
                         <div class="tab-item cap-tab" data-cat="editorial"><span class="tab-icon">🧬</span> 流程审计</div>
                     </aside>
                     <section class="tab-content-area scroll-container">
@@ -137,7 +126,6 @@ window.viewTemplates = {
                         <div class="tab-item s-tab" data-cat="imprints"><span class="tab-icon">🏗️</span> 出版版图</div>
                         <div class="tab-item s-tab" data-cat="themes"><span class="tab-icon">🎨</span> 装帧主题</div>
                         <div class="tab-item s-tab" data-cat="modes"><span class="tab-icon">📋</span> 出版模式</div>
-                        <div class="tab-item s-tab" data-cat="compute_strategy"><span class="tab-icon">🧠</span> 算力底座</div>
                         <div class="tab-item s-tab" data-cat="localization"><span class="tab-icon">🌍</span> 翻译阵列</div>
                         <div class="tab-item s-tab" data-cat="translation_style"><span class="tab-icon">🎭</span> 翻译风格</div>
                         <div class="tab-item s-tab" data-cat="guardrails"><span class="tab-icon">🛡️</span> 治理准入</div>

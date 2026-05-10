@@ -29,11 +29,11 @@ def get_system_context():
     ai_cfg = engine.config.translation
     active_node = ai_cfg.primary_node
     active_provider = "Unknown"
-    active_model = "Unknown"
-    if active_node in ai_cfg.providers:
-        node_cfg = ai_cfg.providers[active_node]
-        active_provider = node_cfg.provider
-        active_model = node_cfg.model
+    active_model = ai_cfg.primary_model or "Unknown"
+    
+    if active_node in ai_cfg.compute_nodes:
+        node_cfg = ai_cfg.compute_nodes[active_node]
+        active_provider = (getattr(node_cfg, "type", "") or "Unknown").upper()
 
     # 🚀 [V52.5] 主权解耦：明确区分品牌身份与装帧主题
     from core.governance.imprint_manager import im
@@ -145,7 +145,7 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
     path = CONFIG_NAME
     if level == "local":
         path = CONFIG_LOCAL_NAME
-    elif level == "imprint" or level == "brand":
+    elif level == "imprint":
         # 🚀 [V52.22] 跨主权访问：支持获取指定 Imprint 的配置
         target_id = imprint_id or engine.im.get_active_imprint()
         path = os.path.join(IMPRINT_DIR, target_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
@@ -384,17 +384,35 @@ def list_active_plugins():
                 "platform": p_type
             })
     
-    # 3. 🧠 智能加工 (AI Protocols)
-    active_provider = getattr(engine.config.translation, "provider", "openai")
-    for proto in AIProviderRegistry.get_all_protocols():
-        is_in_use = (proto == active_provider)
-        is_enabled = (proto not in disabled)
+    # 3. 🛰️ 算力驱动 (AI Protocols)
+    seen_providers = set()
+    for p_id in AIProviderRegistry.get_all_protocols():
+        p_cls = AIProviderRegistry.get_provider(p_id)
+        if not p_cls or p_cls in seen_providers:
+            continue
+        seen_providers.add(p_cls)
+        
+        # 🚀 [V67.5] 权威对正：优先使用插件声明的 ID，而非注册别名
+        canonical_id = getattr(p_cls, "PLUGIN_ID", p_id)
+        
+        is_enabled = (canonical_id not in disabled)
+        # 探测当前是否有节点正在使用此协议
+        is_in_use = any(getattr(n, 'type', '').lower() == canonical_id.lower() for n in engine.config.translation.compute_nodes.values())
+        
+        display_name = getattr(p_cls, "DISPLAY_NAME", canonical_id.title())
+        proto_family = getattr(p_cls, "PROTOCOL_FAMILY", "native")
+        default_url = getattr(p_cls, "DEFAULT_URL", "")
+        
         plugins.append({
-            "id": proto, "category": "processor", "category_name": "🧠 智能加工",
+            "id": canonical_id,
+            "name": display_name,
+            "protocol_family": proto_family,
+            "default_url": default_url,
+            "category": "protocol", "category_name": "🛰️ 算力驱动",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
             "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"算力协议插件：驱动 {proto.upper()} 架构的语义对齐引擎。"
+            "description": f"AI 算力协议驱动：内核原生支持通过 {display_name} 协议调度远程或本地算力资源。"
         })
 
     # 4. 📥 输入感应 (Ingress Dialects & Sources)
@@ -931,11 +949,25 @@ def get_imprints_stats():
     stats = {}
     for imp in imprints:
         imp_id = imp["id"]
-        imp_path = imp["path"]
+        # 🚀 [V65.4] 物理路径对正：imp["path"] 是金库(Vault)路径，资产账本位于版图(Imprint)根目录
+        from core.config.config import IMPRINT_DIR
+        actual_imp_path = os.path.join(os.getcwd(), IMPRINT_DIR, imp_id) if imp_id != "default" else os.getcwd()
         
-        # 1. 资产统计 (Metadata DB)
+        # 1. 探测活跃主题 (用于资产统计与审计豁免)
+        active_theme = "default"
+        config_path = os.path.join(actual_imp_path, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+        if os.path.exists(config_path):
+            try:
+                import yaml
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    c = yaml.safe_load(f) or {}
+                    active_theme = c.get("active_theme", "default")
+            except: pass
+
+        # 2. 资产统计 (Metadata DB)
+        # 🚀 [V65.4] 锚定物理根目录进行查找
         from core.config.config import METADATA_DIR
-        meta_db = os.path.join(imp_path, METADATA_DIR, "meta.db")
+        meta_db = os.path.join(actual_imp_path, METADATA_DIR, "themes", active_theme, "ledger.db")
         doc_count = 0
         if os.path.exists(meta_db):
             import sqlite3
@@ -947,8 +979,7 @@ def get_imprints_stats():
                 conn.close()
             except: pass
             
-        # 2. 环境健康审计
-        health = sentry.check_isolation_health(imp_path)
+        health = sentry.check_isolation_health(actual_imp_path, theme=active_theme)
         
         stats[imp_id] = {
             "doc_count": doc_count,
@@ -1028,26 +1059,26 @@ async def probe_plugin(req: dict):
         
     # 3. 🧠 探测智能算力 (Processor / AI)
     from core.adapters.ai.registry import AIProviderRegistry
-    ai_providers = engine.config.translation.providers if hasattr(engine.config, 'translation') else {}
+    ai_nodes = engine.config.translation.compute_nodes if hasattr(engine.config, 'translation') else {}
     
     # 逻辑：如果是协议名 (如 openai)，则探测当前正在使用该协议的节点
-    target_p_cfg = ai_providers.get(plugin_id)
-    if not target_p_cfg:
+    target_node = ai_nodes.get(plugin_id)
+    if not target_node:
         # 尝试协议反向搜索 (如通过 'openai' 找使用 openai 协议的第一个节点)
-        for p_name, p_cfg in ai_providers.items():
-            if p_cfg.type == plugin_id:
-                target_p_cfg = p_cfg
+        for n_id, n_cfg in ai_nodes.items():
+            if n_cfg.type == plugin_id:
+                target_node = n_cfg
                 break
     
-    if target_p_cfg or plugin_id in AIProviderRegistry.get_all_protocols():
-        if target_p_cfg:
-            has_key = target_p_cfg.api_key and len(target_p_cfg.api_key) > 10 and "your" not in target_p_cfg.api_key.lower()
-            if target_p_cfg.type in ["ollama", "lmstudio", "local"]: has_key = True
+    if target_node or plugin_id in AIProviderRegistry.get_all_protocols():
+        if target_node:
+            has_key = target_node.api_key and len(target_node.api_key) > 10 and "your" not in target_node.api_key.lower()
+            if target_node.type in ["ollama", "lmstudio", "local"]: has_key = True
             if not has_key:
                 return {"success": True, "healthy": False, "error": "算力凭据缺失或仍处于占位符状态。"}
             return {"success": True, "healthy": True, "id": plugin_id}
         else:
-            return {"success": True, "healthy": False, "error": "协议未绑定：未在配置中发现任何节点使用该 AI 协议。"}
+            return {"success": True, "healthy": False, "error": "协议未绑定：未在物理底座中发现任何节点使用该 AI 协议。"}
 
     # 4. 📥 输入、加工与审计 (Ingress / Transformer / Masker / Editorial)
     # 动态查询内核注册中心，确保所有内部组件均可探测

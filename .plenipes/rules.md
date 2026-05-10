@@ -98,7 +98,7 @@
 
 ## 第五层：全球私人出版社：品牌与意象 (Global Private Press Protocol)
 
-16. **[R5.1] 品牌主权一致性 (Branding Sovereignty)**：
+16. **[R5.1] 版图主权一致性 (Imprint Sovereignty)**：
     - 官方名称：唯一指定为 **Illacme Plenipes**。严禁在代码注释、日志或文档中使用 *Omni-Hub*。
     - 品牌口号：**Illacme Plenipes: 您的全球私人出版社 (Your Global Private Press)**。
 
@@ -130,5 +130,11 @@
     - **Syndication (播发)**：对应第三方分发，向通讯社和分销商进行联合供稿。
 
 20. **[R5.5] 交互语境防御 (UX Tone)**：
-    - 所有的 CLI 日志和 UI 文案应具备“出版仪式感”。例如：使用“正在打磨样张”代替“正在同步文件”，使用“注册簿已更新”代替“数据库已保存”。
+
+
+21. **[R5.6] 术语绝对净化协议 (Absolute Terminology Purification)**：
+    - **唯一概念**：系统唯一合法的出版实体名词为 **版图 (Imprint)**。
+    - **禁止清单**：严禁在代码、API 路由、数据库字段、UI 文案、日志及注释中使用 **Brand** 或 **品牌**。
+    - **属性归一**：原属于身份识别的内容（如出版社名称、Logo）统一称为 **版图身份元数据 (Imprint Identity Metadata)**。
+    - **认知对正**：AI 在迭代过程中，必须将所有涉及“品牌”的旧逻辑或语料全量重构为“版图”。
 

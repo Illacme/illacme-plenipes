@@ -12,7 +12,7 @@ from typing import List, Dict, Optional, Any
 # 🚀 导入模块化后的子配置
 from .models.base import LogFormat, ProviderType, StrategyType
 from .models.system import SystemSettings, ConcurrencySettings, ResilienceSettings, WatchdogSettings
-from .models.ai import TranslationSettings, TranslationProvider, AIProviderLimits, PromptTemplates
+from .models.ai import TranslationSettings, AIProviderLimits, PromptTemplates
 from .models.theme import ThemeSettings, ImageSettings
 from .models.plugins import PluginSettings
 from .models.governance import GovernanceSettings, PublishingMode, SeoStrategy
@@ -273,11 +273,19 @@ class Configuration(BaseModel):
             self.translation.resilience = self.system.resilience
 
     def dump_to_disk(self, path: str):
-        """🚀 [V50.3] 物理持久化：将当前配置状态回写至磁盘"""
+        """🚀 [V66.5] 主权分流持久化：智能感应物理与策略层级"""
         import yaml
-        # 🚀 [修复] 使用 mode='json' 确保枚举等对象被序列化为纯文本，防止 yaml.safe_dump 报错
+        
+        # 1. 提取全量数据镜像
         data = self.model_dump(exclude_unset=True, mode='json')
-        # 🚀 [V53.0] 治理字段强制持久化：确保运行时修改的出版模式不被 exclude_unset 丢弃
         data['governance'] = self.governance.model_dump(mode='json')
+        
+        # 🛡️ [V66.5] 物理-策略解耦分流
+        filename = os.path.basename(path)
+        if "imprint" in filename:
+            # 品牌主权层：仅保留策略（选哪个节点、用哪个模型），强制剔除物理节点底座
+            if 'translation' in data and 'compute_nodes' in data['translation']:
+                del data['translation']['compute_nodes']
+        
         with open(path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)

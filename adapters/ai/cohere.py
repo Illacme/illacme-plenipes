@@ -5,7 +5,10 @@ from core.adapters.ai.base import BaseTranslator
 from core.utils.tracing import tlog
 
 class CohereTranslator(BaseTranslator):
+    """🚀 [V10.0] Cohere 适配器"""
     PLUGIN_ID = 'cohere'
+    DISPLAY_NAME = 'Cohere'
+    PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = 'https://api.cohere.ai/v1'
     
     def __init__(self, node_name, trans_cfg):
@@ -29,8 +32,17 @@ class CohereTranslator(BaseTranslator):
             tlog.error(f"🛑 [Cohere API Error]: {e}")
             raise
             
-    async def list_models(self) -> List[str]:
-        return ["command-r-plus", "command-r", "command-light"]
+    async def list_models(self) -> list[str]:
+        """🚀 Cohere 实时模型感应"""
+        try:
+            loop = asyncio.get_event_loop()
+            url = f"{self.config.base_url}/models"
+            headers = {"Authorization": f"Bearer {self.config.api_key}"}
+            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+            if resp.status_code == 200:
+                return [m['name'] for m in resp.json().get('models', []) if m.get('endpoints', {}).get('chat')]
+            return ["command-r-plus", "command-r", "command-light"]
+        except: return ["command-r-plus", "command-r"]
 
     async def test_connection(self) -> tuple[bool, str]:
         """测试 Cohere 服务连通性 (智能诊断版)"""

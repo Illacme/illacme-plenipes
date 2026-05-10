@@ -80,7 +80,6 @@ window.loadPlugins = async () => {
     const categories = [
         { id: 'ingress', name: '📥 输入感应' },
         { id: 'transformer', name: '🛠️ 资产加工' },
-        { id: 'processor', name: '🧠 智能加工' },
         { id: 'masker', name: '🛡️ 安全防护' },
         { id: 'theme', name: '🎨 视觉装帧' },
         { id: 'hosting', name: '🌐 全站托管' },
@@ -133,7 +132,7 @@ window.renderPlugins = () => {
     });
 
     let html = '';
-    const categoryOrder = ['ingress', 'transformer', 'processor', 'masker', 'theme', 'hosting', 'publisher', 'editorial'];
+    const categoryOrder = ['ingress', 'transformer', 'masker', 'theme', 'hosting', 'publisher', 'editorial'];
 
     categoryOrder.forEach(catId => {
         const cat = categories[catId];

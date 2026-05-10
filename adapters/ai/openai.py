@@ -17,6 +17,8 @@ from core.utils.tracing import tlog
 class OpenAICompatibleTranslator(BaseTranslator):
     """🚀 [V10.0] OpenAI 协议适配器 (Pure Adapter)"""
     PLUGIN_ID = 'openai'
+    DISPLAY_NAME = 'OpenAI'
+    PROTOCOL_FAMILY = 'standard'
     # 🚀 [V53.8] 显式别名支持，对接 UI 常用术语
     ALIASES = ['openai-compatible', 'v1']
     DEFAULT_URL = "https://api.openai.com/v1"
@@ -171,12 +173,3 @@ class OpenAICompatibleTranslator(BaseTranslator):
             tlog.error(f"🛑 [OpenAI API Error]: {e}")
             raise
 
-class DeepSeekR1Translator(OpenAICompatibleTranslator):
-    """🛡️ 推理卫士：针对 R1 等模型的特殊 _ask_ai 过滤"""
-    def _ask_ai(self, payload: Dict[str, Any]) -> str:
-        raw_content = super()._ask_ai(payload)
-        # 物理剥离推理过程 (如果模型返回了 <think> 标签)
-        if "<think>" in raw_content and "</think>" in raw_content:
-            tlog.debug("🛡️ [Reasoning Guard] 发现推理内容，执行物理剥离。")
-            raw_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL).strip()
-        return raw_content

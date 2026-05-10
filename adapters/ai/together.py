@@ -4,7 +4,9 @@
 Illacme-plenipes AI Plugin - Together AI Adapter
 职责：负责 Together AI 算力平台的协议适配。
 """
-from typing import Dict, Any
+import requests
+import asyncio
+from typing import Dict, Any, List
 from .openai import OpenAICompatibleTranslator
 
 
@@ -13,7 +15,21 @@ from .openai import OpenAICompatibleTranslator
 class TogetherTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] Together AI 专属适配器"""
     PLUGIN_ID = 'together'
+    DISPLAY_NAME = 'Together AI'
+    PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = 'https://api.together.xyz/v1'
+
+    async def list_models(self) -> list[str]:
+        """🚀 Together AI 实时模型感应"""
+        try:
+            loop = asyncio.get_event_loop()
+            url = f"{self.DEFAULT_URL}/models"
+            headers = {"Authorization": f"Bearer {self.config.api_key}"}
+            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+            if resp.status_code == 200:
+                return [m['id'] for m in resp.json()]
+            return []
+        except: return []
 
     def get_archetype_params(self) -> Dict[str, Any]:
         return {

@@ -1,60 +1,73 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes AI Plugin - LM Studio Native Adapter
+Illacme-plenipes AI Plugin - LM Studio Dual-Track Adapter
 职责：负责本地 LM Studio 的原生协议适配与模型发现。
-🛡️ [V48.3]：支持 /v1/models 标准接口的发现逻辑。
-🚀 [V50.2]：工业级非阻塞 Session 管理与发现优化。
+🛡️ [V67.0]：实现 Native/Standard 双轨化，对齐工业治理标准。
 """
 import requests
 import asyncio
-import re
 from typing import Dict, Any, List
 from .openai import OpenAICompatibleTranslator
 from core.utils.tracing import tlog
 
-class LMStudioNativeTranslator(OpenAICompatibleTranslator):
-    """🚀 [V48.3] LM Studio 原生算力适配器"""
-    PLUGIN_ID = 'lmstudio'
+class LMStudioBase(OpenAICompatibleTranslator):
+    """🚀 LM Studio 算力底座基类"""
     DEFAULT_URL = "http://localhost:1234/v1"
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        # 🚀 [V48.3] 强制对正：如果未指定地址，使用 LM Studio 默认地址
         if not self.safe_get_config('base_url'):
             if hasattr(self.config, 'base_url'):
                 self.config.base_url = self.DEFAULT_URL
-        self._is_ready = False
 
-    async def list_models(self) -> List[str]:
-        """动态发现 LM Studio 当前加载的所有大模型 (直接复用 OpenAI 逻辑)"""
-        return await super().list_models()
+    async def list_models(self) -> list[str]:
+        """🚀 [V48.3] 动态感应本地加载的模型资产"""
+        try:
+            url = f"{self.config.base_url}/models"
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(None, lambda: requests.get(url, timeout=5))
+            if resp.status_code == 200:
+                data = resp.json()
+                return [m['id'] for m in data.get('data', [])]
+            return []
+        except Exception as e:
+            tlog.warning(f"⚠️ [LM Studio] 无法感应模型列表: {e}")
+            return []
 
     async def test_connection(self) -> tuple[bool, str]:
-        """验证与 LM Studio 的通讯状态 (带有人文关怀的引导逻辑)"""
+        """验证与 LM Studio 的通讯状态"""
         try:
             models = await self.list_models()
             if models:
-                return True, f"链路通畅: LM Studio 认证成功 (已为您感应到 {len(models)} 个可用模型)"
-            return True, "链路通畅: LM Studio 已就绪 (但当前未加载任何模型，请在 LM Studio 客户端加载模型)"
-            
+                return True, f"✅ 已联通。发现本地加载模型: {', '.join(models)}"
+            return True, "✅ 已联通，但当前 LM Studio 未加载任何模型资产。"
         except Exception as e:
-            err_str = str(e)
-            if "refused" in err_str.lower() or "connection" in err_str.lower():
-                guide = "【解决建议：本地 LM Studio 服务未开启。请确保您已启动 LM Studio 且开启了 Local Server】"
-            elif "timeout" in err_str.lower():
-                guide = "【解决建议：访问超时。请检查本地 1234 端口是否被占用，或 Base URL 是否匹配客户端设置】"
-            else:
-                guide = "【解决建议：无法连接到本地 LM Studio，请检查环境状态】"
-            return False, f"LM Studio 连接失败: {guide}\n(详情: {err_str})"
+            return False, f"❌ 无法连接到 LM Studio: {e}"
 
-    def _ask_ai(self, payload: Dict[str, Any]) -> str:
-        """执行推理（LM Studio 兼容 OpenAI 格式）"""
-        # LM Studio Native v1 依然兼容 OpenAI 格式，但可能需要特殊的健康检查
-        return super()._ask_ai(payload)
-
+class LMStudioNativeTranslator(LMStudioBase):
+    """🚀 [NATIVE] LM Studio 原生驱动 (本地主权优先)"""
+    PLUGIN_ID = 'lmstudio'
+    DISPLAY_NAME = 'LM Studio'
+    PROTOCOL_FAMILY = 'native'
+    
     def get_archetype_params(self) -> Dict[str, Any]:
         return {
-            "temperature": 0.2,
-            "max_tokens": 4096
+            "temperature": 0.1,
+            "max_tokens": 4096,
+            "stream": False
+        }
+
+class LMStudioStandardTranslator(LMStudioBase):
+    """🚀 [STANDARD] LM Studio 兼容驱动 (V1 协议路径)"""
+    PLUGIN_ID = 'lmstudio-v1'
+    DISPLAY_NAME = 'LM Studio'
+    PROTOCOL_FAMILY = 'standard'
+    ALIASES = ['lmstudio-openai']
+    
+    def get_archetype_params(self) -> Dict[str, Any]:
+        return {
+            "temperature": 0.7, # 标准模式遵循云端通用偏好
+            "max_tokens": 4096,
+            "stream": False
         }

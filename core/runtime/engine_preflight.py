@@ -67,10 +67,10 @@ class EnginePreflight:
             # 检测 AI 就绪性 (基于合并后的配置)
             ai_ready = False
             local_types = ["ollama", "lmstudio", "local"]
-            providers = config.translation.providers or {}
+            compute_nodes = config.translation.compute_nodes or {}
             
-            for node_id, node_cfg in providers.items():
-                node_type = (getattr(node_cfg, "type", "") or getattr(node_cfg, "provider", "") or "").lower()
+            for node_id, node_cfg in compute_nodes.items():
+                node_type = (getattr(node_cfg, "type", "") or "").lower()
                 api_key = getattr(node_cfg, "api_key", "") or ""
                 # 本地模型无需 API Key
                 if any(t in node_type for t in local_types):
@@ -145,22 +145,22 @@ class EnginePreflight:
                  mode=DisplayDelegate.get_banner_mode(config, args),
                  sentinel_status=sentinel_info)
 
-        # 7. 🚀 [V53.1] 算力意志冲突审计：核验品牌节点在本地的感应状态
+        # 8. 🚀 [V53.1] 算力意志冲突审计：核验品牌节点在本地的感应状态
         if config.translation.enable_ai:
             primary = config.translation.primary_node
             fallback = config.translation.fallback_node
-            providers = config.translation.providers
+            compute_nodes = config.translation.compute_nodes
             
             for node_role, node_id in [("主力", primary), ("备用", fallback)]:
                 if not node_id or node_id == "default": continue
                 
-                node_cfg = providers.get(node_id)
+                node_cfg = compute_nodes.get(node_id)
                 if not node_cfg:
                     tlog.warning(f"🛑 [意志冲突] 品牌指定的{node_role}节点 '{node_id}' 在本地物理层中未定义！系统将陷入算力黑洞。")
                 else:
                     # 检查密钥 (本地模型不需要 key)
-                    is_local = any(kw in (node_cfg.type or '').lower() for kw in ['local', 'ollama', 'lmstudio'])
-                    if not is_local and not node_cfg.api_key:
+                    is_local = any(kw in (getattr(node_cfg, 'type', '') or '').lower() for kw in ['local', 'ollama', 'lmstudio'])
+                    if not is_local and not getattr(node_cfg, 'api_key', ''):
                         tlog.warning(f"🛑 [物理缺失] 品牌{node_role}节点 '{node_id}' 缺少本地 API Key，请在算力底座中完成物理挂载。")
 
         # 8. 🚀 [V16.0] 插件化基座点火

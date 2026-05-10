@@ -83,10 +83,31 @@ class TranslatorFactory:
             return style_prompts
 
     @classmethod
-    def _build_node(cls, node_name, trans_cfg):
-        node_cfg = trans_cfg.providers.get(node_name)
-        if not node_cfg:
-            raise ValueError(f"❌ [算力网关] 未找到节点配置: {node_name}")
+    def _build_node(cls, node_name, trans_cfg, role='primary'):
+        """🚀 [V66.5] 核心对正逻辑：物理底座与版图策略的动态合成"""
+        
+        # 1. 强制从新版“物理底座 (compute_nodes)”中提取物理参数
+        physical_node = trans_cfg.compute_nodes.get(node_name)
+        
+        if not physical_node:
+            raise ValueError(f"❌ [算力网关] 未能对正物理节点: {node_name}。请先在‘算力底座’中配置。")
+            
+        tlog.info(f"🛰️ [主权对正] 正在将版图策略注入物理底座: {node_name} (Role: {role})")
+        # 动态决定模型（优先使用版图层指定的模型）
+        target_model = getattr(trans_cfg, f"{role}_model", "gpt-4o")
+        
+        # 🚀 工业级 Mock：合成符合 BaseTranslator 预期的配置镜像
+        from types import SimpleNamespace
+        node_cfg = SimpleNamespace(
+            type=physical_node.type,
+            provider=physical_node.type,
+            model=target_model,
+            api_key=physical_node.api_key,
+            base_url=physical_node.base_url,
+            enabled=physical_node.enabled,
+            limits=physical_node.limits,
+            iter_id="v1"
+        )
 
         ptype = node_cfg.type.lower()
         
@@ -99,7 +120,7 @@ class TranslatorFactory:
         if provider_cls:
             return provider_cls(node_name, trans_cfg)
 
-        raise ValueError(f"❌ [算力网关] 不支持的协议类型: {ptype} (可用: {AIProviderRegistry.get_all_protocols()})")
+        raise ValueError(f"❌ [算力网关] 不支持协议类型: {ptype}")
 
     @staticmethod
     def create(trans_cfg):
@@ -169,20 +190,20 @@ class TranslatorFactory:
             fallback = trans_cfg.fallback_node
 
             if strategy == 'single':
-                return TranslatorFactory._build_node(primary, trans_cfg)
+                return TranslatorFactory._build_node(primary, trans_cfg, role='primary')
 
             if strategy == 'fallback':
                 from core.adapters.ai.strategies import FallbackStrategy
                 return FallbackStrategy(
-                    TranslatorFactory._build_node(primary, trans_cfg),
-                    TranslatorFactory._build_node(fallback, trans_cfg)
+                    TranslatorFactory._build_node(primary, trans_cfg, role='primary'),
+                    TranslatorFactory._build_node(fallback, trans_cfg, role='fallback')
                 )
 
             if strategy == 'smart_routing':
                 from core.adapters.ai.strategies import SmartRoutingStrategy
                 return SmartRoutingStrategy(
-                    TranslatorFactory._build_node(primary, trans_cfg),
-                    TranslatorFactory._build_node(fallback, trans_cfg),
+                    TranslatorFactory._build_node(primary, trans_cfg, role='primary'),
+                    TranslatorFactory._build_node(fallback, trans_cfg, role='fallback'),
                     trans_cfg.routing_threshold
                 )
 

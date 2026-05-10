@@ -27,15 +27,14 @@ class PromptTemplates(BaseModel):
     metadata_system: str = "You are a professional editor. Translate and polish the provided metadata into {target_lang}. Output ONLY the result."
     metadata_user: str = "Type: {meta_type}\nValue: {text}"
 
-class TranslationProvider(BaseModel):
+class ComputeNode(BaseModel):
+    """🚀 [V66.5] 物理算力节点 - 承载 API 密钥与物理链路"""
+    id: str = ""
     type: str = ProviderType.OPENAI
-    provider: str = ProviderType.OPENAI
-    model: str = "gpt-4o"
     api_key: str = ""
     base_url: Optional[str] = None
-    enabled: bool = True  # 🚀 [V54.1] 物理激活开关
+    enabled: bool = True
     limits: AIProviderLimits = Field(default_factory=AIProviderLimits)
-    iter_id: str = "v1"
 
 class FallbackStrategyConfig(BaseModel):
     primary: str = ""
@@ -43,14 +42,22 @@ class FallbackStrategyConfig(BaseModel):
     max_retries: int = Field(3, ge=0)
 
 class TranslationSettings(BaseModel):
-    """🚀 [V24.0] 翻译与算力网关配置主权"""
+    """🚀 [V66.5] 翻译与算力网关配置主权 - 物理与策略已完全解耦"""
     enable_ai: bool = True
     strategy: StrategyType = StrategyType.SINGLE
+    
+    # 🎯 品牌策略层：定义选派逻辑
     primary_node: str = "default"
+    primary_model: str = "gpt-4o"
     fallback_node: str = ""
-    active_style: str = "default"  # 🚀 [V55.25] 物理方言锚点：映射至 dialects/{active_style}.yaml
+    fallback_model: str = ""
+    
+    active_style: str = "default"
     fallback_config: Optional[FallbackStrategyConfig] = None
-    providers: Dict[str, TranslationProvider] = Field(default_factory=dict)
+    
+    # 🛰️ 物理底座层：承载物理连接
+    compute_nodes: Dict[str, ComputeNode] = Field(default_factory=dict)
+    
     prompts: PromptTemplates = Field(default_factory=PromptTemplates)
     
     # 🎯 物理算力控制阀

@@ -27,7 +27,7 @@ class KnowledgeService:
 * MANDATE: You MUST preserve all [[STB_MASK_n]] tags exactly as they appear in the source. Do not translate or modify them.
 """,
         "SOVEREIGNTY_SHIELD": """
-### EXPERT GUIDELINE: BRAND SOVEREIGNTY ###
+### EXPERT GUIDELINE: IMPRINT SOVEREIGNTY ###
 * NEGATIVE: Critical sovereignty tags like [[AEL-Iter-ID]] were lost.
 * MANDATE: You MUST include the [[AEL-Iter-ID: {iter_id}]] tag in your response.
 """,

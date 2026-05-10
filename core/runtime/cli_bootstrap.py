@@ -85,8 +85,8 @@ def deep_reload_imprint(imprint_id: str):
 
     try:
         # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 config.local.yaml
-        # 仅保留 active_imprint 指针。这是因为 dashboard 会把全量配置同时写入 local 和 brand 层，
-        # 导致 local 层变成上一个品牌的僵尸缓存，在切换时覆盖新品牌的配置。
+        # 仅保留 active_imprint 指针。这是因为 dashboard 会把全量配置同时写入 local 和 imprint 层，
+        # 导致 local 层变成上一个版图的僵尸缓存，在切换时覆盖新版图的配置。
         try:
             import yaml
             local_path = CONFIG_LOCAL_NAME
@@ -116,7 +116,7 @@ def deep_reload_imprint(imprint_id: str):
                     "data_root": f"imprints/{imprint_id}"
                 }
             }
-            # 💡 [V55.11] 物理保留：如果是默认品牌，保留其本地金库路径
+            # 💡 [V55.11] 物理保留：如果是默认版图，保留其本地金库路径
             if imprint_id == "default" and existing_local.get("vault_root"):
                 l_cfg["vault_root"] = existing_local["vault_root"]
 
@@ -126,7 +126,7 @@ def deep_reload_imprint(imprint_id: str):
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
 
-        # 1. 加载基础配置 (显式传递目标品牌 ID，防止被陈旧的 local 层劫持)
+        # 1. 加载基础配置 (显式传递目标版图 ID，防止被陈旧的 local 层劫持)
         from core.config.config import load_config
         config_path = _GLOBAL_ARGS.config
         config = load_config(config_path, imprint_id=imprint_id)
@@ -147,7 +147,7 @@ def deep_reload_imprint(imprint_id: str):
             pass
         except Exception: pass
 
-        # 5. 🚀 [V52.6] 日志管线对正：重定向文件日志至新品牌领土
+        # 5. 🚀 [V52.6] 日志管线对正：重定向文件日志至新版图领土
         from core.utils import setup_logger
         setup_logger(new_engine.paths["logs"])
         
@@ -156,7 +156,7 @@ def deep_reload_imprint(imprint_id: str):
             from core.runtime.daemon import start_watchdog
             from core.runtime.orchestrator import prepare_sync_tasks
             
-            # 准备新品牌的任务队列
+            # 准备新版图的任务队列
             _, current_files = prepare_sync_tasks(new_engine, requested_paths=_GLOBAL_ARGS.path)
             
             # 🚀 [V52.10] 物理避让：在启动新监听器前，必须先彻底注销并停止旧监听器
@@ -166,7 +166,7 @@ def deep_reload_imprint(imprint_id: str):
             new_observer, _ = start_watchdog(new_engine, _GLOBAL_ARGS, current_files)
             set_global_observer(new_observer)
             
-        tlog.success(f"✅ [迁移完成] 出版品牌已成功切换至 '{imprint_id}'，物理主权已全面对正。")
+        tlog.success(f"✅ [迁移完成] 出版版图已成功切换至 '{imprint_id}'，物理主权已全面对正。")
         return True
         
     except Exception as e:
@@ -241,7 +241,7 @@ def parse_args_and_lock():
     parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
     parser.add_argument('--clean', action='store_true', help="🧹 [主权重置] 物理删除所有同步指纹与 AI 影子缓存")
-    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版品牌内的所有非法或过期资产")
+    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版版图内的所有非法或过期资产")
     parser.add_argument('--sentinel', action='store_true', help="🛡️ [哨兵审计] 立即唤醒项目哨兵，执行健康审计与算力成本上报")
     parser.add_argument('--doctor', '-d', action='store_true', help="🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验")
     parser.add_argument('--heal', action='store_true', help="💊 [物理自愈] 配合 --doctor 使用，自动修复路径缺失与指纹冲突")
@@ -275,17 +275,17 @@ def parse_args_and_lock():
     # 🚀 [V34.6] 进程自杀协议
     parser.add_argument('--shutdown', action='store_true', help="🛑 [远程下线] 向正在运行的实例发送关机指令并安全存档 (需要 API 模式已启动)")
     # 🚀 [V50.3 主权定型参数]
-    parser.add_argument('--imprint', '-i', dest='imprint', default='default', help="🌐 [出版品牌选择] 指定当前操作的 Imprint ID (默认: default)")
+    parser.add_argument('--imprint', '-i', dest='imprint', default='default', help="🌐 [出版版图选择] 指定当前操作的 Imprint ID (默认: default)")
 
 
-    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前品牌内的所有敏感凭据")
-    parser.add_argument('--audit-report', action='store_true', help="📊 [账本报告] 导出当前出版品牌的商业审计流水账本")
+    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前版图内的所有敏感凭据")
+    parser.add_argument('--audit-report', action='store_true', help="📊 [账本报告] 导出当前出版版图的商业审计流水账本")
 
     # 🚀 [V50.3] 工业级 Imprint 治理体系 (Imprint Governance)
-    parser.add_argument('--imprint-list', action='store_true', help="📜 [品牌清单] 枚举当前系统内所有已划定的出版品牌 (Imprints)")
-    parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [品牌划定] 快速创建一个新的出版品牌 (需配合 --vault-path)")
-    parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [品牌撤销] 物理抹除一个已有的出版品牌及其所有资产")
-    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿金库的物理路径 (用于创建新品牌)")
+    parser.add_argument('--imprint-list', action='store_true', help="📜 [版图清单] 枚举当前系统内所有已划定的出版版图 (Imprints)")
+    parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [版图划定] 快速创建一个新的出版版图 (需配合 --vault-path)")
+    parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [版图撤销] 物理抹除一个已有的出版版图及其所有资产")
+    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿金库的物理路径 (用于创建新版图)")
     from core import __version__, __edition__
     parser.add_argument('--wizard', '-W', action='store_true', help="🧙 [引导向导] 启动 Web 端可视化安装与配置向导")
     parser.add_argument('--version', '-v', action='version', version=f'Illacme-plenipes v{__version__} ({__edition__})')
@@ -295,13 +295,13 @@ def parse_args_and_lock():
     cfg = None
 
     if not os.path.exists(args.config) or args.wizard or args.imprint_create:
-        # 🚀 零配置自启 (Magic Onboarding) 或 手动管理品牌
+        # 🚀 零配置自启 (Magic Onboarding) 或 手动管理版图
         from core.ui.mediator import UIMediator
         example_config = 'config.example.yaml'
         if os.path.exists(example_config):
             # 如果提供了完整的命令行参数，执行非交互式初始化数据准备
             if args.imprint_create and args.vault_path:
-                tlog.info(f"🏗️ [自动化初始化] 正在准备出版品牌配置: {args.imprint_create}")
+                tlog.info(f"🏗️ [自动化初始化] 正在准备出版版图配置: {args.imprint_create}")
                 config_data = {
                     "press_name": args.imprint_create,
                     "vault_root": args.vault_path,
@@ -314,7 +314,7 @@ def parse_args_and_lock():
                 base_cfg = yaml.safe_load(f) or {}
 
             # 🚀 [V50.5] 简化自举逻辑：底层不再负责交互式向导
-            # 所有的向导触发与品牌建立逻辑已统一收口至 plenipes.py
+            # 所有的向导触发与版图建立逻辑已统一收口至 plenipes.py
             final_cfg = base_cfg
 
             try:

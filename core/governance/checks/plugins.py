@@ -43,7 +43,7 @@ class PluginChecker:
         try:
             from core.adapters.ai.registry import AIProviderRegistry
             from core.adapters.ai.base import BaseTranslator
-            all_violations.extend(ContractGuard.audit_registry(AIProviderRegistry._providers, BaseTranslator, "AI Providers"))
+            all_violations.extend(ContractGuard.audit_registry(AIProviderRegistry._providers, BaseTranslator, "AI Protocols"))
         except Exception: pass
 
         try:

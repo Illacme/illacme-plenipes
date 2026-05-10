@@ -10,12 +10,14 @@ from core.adapters.ai.base import BaseTranslator
 class MockAIProvider(BaseTranslator):
     """🚀 [V10.0] 模拟算力提供商 (Mock)"""
     PLUGIN_ID = 'mock'
+    DISPLAY_NAME = 'Mock Engine (Sensing)'
+    PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = 'http://localhost:0'
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
 
-    async def list_models(self) -> List[str]:
+    async def list_models(self) -> list[str]:
         return ["sim-v1", "sim-v2", "sim-v3"]
 
     async def test_connection(self) -> tuple[bool, str]:

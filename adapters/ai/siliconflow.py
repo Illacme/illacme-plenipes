@@ -2,25 +2,31 @@
 # -*- coding: utf-8 -*-
 """
 Illacme-plenipes AI Plugin - SiliconFlow Adapter
-职责：负责硅基流动 (SiliconFlow) 算力平台的协议适配。
-🛡️ [V15.9] 极速接入：预置国内主流算力网关地址。
+🛡️ [V67.0]：对正工业级协议感应逻辑。
 """
-from typing import Dict, Any
+import requests
+import asyncio
+from typing import Dict, Any, List
 from .openai import OpenAICompatibleTranslator
-
-
-
+from core.utils.tracing import tlog
 
 class SiliconFlowTranslator(OpenAICompatibleTranslator):
-    """🚀 [V15.9] SiliconFlow 专属适配器"""
+    """🚀 SiliconFlow 专属适配器"""
     PLUGIN_ID = 'siliconflow'
-    DEFAULT_URL = 'https://api.siliconflow.cn/v1'
-
-    def get_archetype_params(self) -> Dict[str, Any]:
-        """针对 DeepSeek/Qwen 等国产模型优化的参数"""
-        return {
-            "temperature": 0.3,
-            "top_p": 0.7,
-            "max_tokens": 4096,
-            "stream": False
-        }
+    DISPLAY_NAME = 'SiliconFlow'
+    PROTOCOL_FAMILY = 'standard'
+    DEFAULT_URL = "https://api.siliconflow.cn/v1"
+    
+    async def list_models(self) -> list[str]:
+        """🚀 SiliconFlow 实时模型感应"""
+        try:
+            loop = asyncio.get_event_loop()
+            url = f"{self.DEFAULT_URL}/models"
+            headers = {"Authorization": f"Bearer {self.config.api_key}"}
+            resp = await loop.run_in_executor(None, lambda: requests.get(url, headers=headers, timeout=5))
+            if resp.status_code == 200:
+                return [m['id'] for m in resp.json().get('data', [])]
+            return ["deepseek-ai/DeepSeek-V3", "deepseek-ai/DeepSeek-R1"]
+        except Exception as e:
+            tlog.warning(f"⚠️ [SiliconFlow] 无法感应模型列表: {e}")
+            return ["deepseek-ai/DeepSeek-V3"]

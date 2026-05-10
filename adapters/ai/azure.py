@@ -9,8 +9,11 @@ from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 class AzureOpenAITranslator(OpenAICompatibleTranslator):
-    """🚀 [V15.9] Azure OpenAI 专属适配器"""
+    """🚀 [V10.0] Azure OpenAI 专属适配器"""
     PLUGIN_ID = 'azure'
+    DISPLAY_NAME = 'Azure OpenAI'
+    PROTOCOL_FAMILY = 'standard'
+    DEFAULT_URL = "https://{resource}.openai.azure.com/openai/deployments/{deployment_name}"
     
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         # 🚀 Azure 特有的鉴权与路径逻辑

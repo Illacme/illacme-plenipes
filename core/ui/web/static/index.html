@@ -457,7 +457,7 @@
 
                 <div class="form-group">
                     <label>
-                        出版品牌名称 (Brand Name)
+                        出版版图名称 (Imprint Name)
                         <span class="concept-hint" data-tip="您的正式出版社名称，将显示在 Dashboard、网站页脚和元数据中。">显示在哪？</span>
                     </label>
                     <input type="text" id="imprint_name" placeholder="例如: 极客主权出版社" oninput="syncSlug(this.value)">
@@ -620,7 +620,7 @@
                     <div class="sovereign-contract">
                         <div class="contract-item">
                             <label>出版品牌身份 (Identity)</label>
-                            <span id="final-brand-info"></span>
+                            <span id="final-imprint-info"></span>
                         </div>
                         <div class="contract-item">
                             <label>核心原稿档案馆 (Vault)</label>
@@ -725,7 +725,7 @@
                 const res = await fetch('/api/probe?_t=' + Date.now());
                 probeData = await res.json();
                 renderThemes(probeData.available_themes);
-                renderProviders(probeData.available_providers, probeData.recommended);
+                renderProviders(probeData.available_protocols, probeData.recommended);
                 renderLangs(probeData.available_langs);
                 renderNodes(probeData.nodes, probeData.recommended);
                 renderVaultSuggestions(probeData.vault_suggestions, probeData.recommended.vault);
@@ -756,11 +756,11 @@
                     if (trans.enable_ai) {
                         if (!aiEnabled) toggleAI();
                         const pNode = trans.primary_node || 'wizard';
-                        const pCfg = (trans.providers && trans.providers[pNode]) || {};
-                        if (pCfg.provider) document.getElementById('ai_provider').value = pCfg.provider;
-                        if (pCfg.model) setTimeout(() => { document.getElementById('ai_model').value = pCfg.model; }, 1500);
-                        if (pCfg.api_key) document.getElementById('ai_api_key').value = pCfg.api_key;
-                        if (pCfg.base_url) document.getElementById('ai_base_url').value = pCfg.base_url;
+                        const nCfg = (trans.compute_nodes && trans.compute_nodes[pNode]) || {};
+                        if (nCfg.type) document.getElementById('ai_provider').value = nCfg.type;
+                        if (trans.primary_model) setTimeout(() => { document.getElementById('ai_model').value = trans.primary_model; }, 1500);
+                        if (nCfg.api_key) document.getElementById('ai_api_key').value = nCfg.api_key;
+                        if (nCfg.base_url) document.getElementById('ai_base_url').value = nCfg.base_url;
                     }
                 } else {
                     // 首次安装，使用推荐值
@@ -1222,7 +1222,7 @@
                     document.getElementById('cmd-press-name').innerText = payload.imprint_id;
                     
                     // 🚀 [V65.0] 契约数据填充
-                    document.getElementById('final-brand-info').innerText = `${payload.imprint_name} (${payload.imprint_id})`;
+                    document.getElementById('final-imprint-info').innerText = `${payload.imprint_name} (${payload.imprint_id})`;
                     document.getElementById('final-vault-path').innerText = payload.manuscripts_path;
                     document.getElementById('final-theme-name').innerText = themeName;
 

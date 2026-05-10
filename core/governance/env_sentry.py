@@ -28,13 +28,15 @@ class EnvironmentSentry:
         return bin_name
 
     @staticmethod
-    def check_isolation_health(territory_path: str) -> dict:
+    def check_isolation_health(territory_path: str, theme: str = "default") -> dict:
         """审计当前疆域的隔离等级"""
+        # 🚀 [V65.1] 豁免名单：内置主题 (如 default) 不需要局部工具链
+        is_native_theme = theme in ["default", "sovereign"]
         has_node_modules = os.path.exists(os.path.join(territory_path, "node_modules"))
         return {
             "isolation_level": "HARD" if has_node_modules else "SHARED",
             "territory_root": territory_path,
-            "has_local_toolchain": has_node_modules
+            "has_local_toolchain": has_node_modules or is_native_theme
         }
 
 

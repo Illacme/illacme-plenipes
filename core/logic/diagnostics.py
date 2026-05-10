@@ -82,7 +82,7 @@ class DiagnosticsService:
             n_cfg = type('N', (), {'base_url': url, 'api_key': api_key, 'model': model, 'type': provider_id,
                                    'limits': type('L', (), {'max_concurrency': 1, 'timeout': 30})()})()
             cfg = type('D', (), {'base_url': url, 'api_key': api_key, 'model': model, 'api_timeout': 30,
-                                 'providers': {'probe': n_cfg}})()
+                                 'compute_nodes': {'probe': n_cfg}})()
             
             instance = p_cls("probe", cfg)
             success, msg = await instance.test_connection()

@@ -14,7 +14,7 @@
 如果系统启动提示端口被占用：
 - 43212: Governance API (API/仪表盘)
 - 43213: Preview Serve (本地预览)
-- **配置分层协议**：必须严格执行 `Local > Brand > Base` 的优先级，严禁将 API Keys、端口号、物理路径写入 `config.yaml`。
+- **配置分层协议**：必须严格执行 `Local > Imprint > Base` 的优先级，严禁将 API Keys、端口号、物理路径写入 `config.yaml`。
 - **冲突解决**：遇到端口占用，优先执行 pkill -9 -f python 清理残留进程，或通过 `lsof -i :PORT` 手动干预。
 
 ## 3. 配置文件保护 (Config Integrity)
@@ -26,10 +26,10 @@
 | 配置层级 | 物理文件 | 职责范围 | 优先级 |
 | :--- | :--- | :--- | :--- |
 | **本地层 (Local)** | `config.local.yaml` | 物理指纹：端口号、API Keys、本地绝对路径、环境开关。 | **1 (Highest)** |
-| **品牌层 (Brand)** | `imprints/*/configs/config.imprint.yaml` | 业务主权：品牌名、语种矩阵、翻译策略、SSG 路径。 | **2** |
+| **版图层 (Imprint)** | `imprints/*/configs/config.imprint.yaml` | 业务主权：版图名、语种矩阵、翻译策略、SSG 路径。 | **2** |
 | **基础层 (Base)** | `config.yaml` | 架构模板：全域默认值、无环境依赖的通用设置。 | **3 (Lowest)** |
 
-**【强制动作】**：严禁在 `config.yaml` 中写入属于“本地层”的私有参数。严禁在“品牌层”硬编码属于“物理层”的端口号。
+**【强制动作】**：严禁在 `config.yaml` 中写入属于“本地层”的私有参数。严禁在“版图层”硬编码属于“物理层”的端口号。
 
 ---
 **Protocol Status: [LOCKED]**

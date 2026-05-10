@@ -10,30 +10,22 @@ import os
 import sys
 import yaml
 import collections.abc
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from pydantic import ValidationError
 
-# 🚀 [V55.22] 物理主权常量：全系统文件寻址的单一真理源
-CONFIG_NAME = "config.yaml"
-CONFIG_LOCAL_NAME = "config.local.yaml"
-CONFIG_IMPRINT_NAME = "config.imprint.yaml"
-CONFIG_DIR = "configs"
-IMPRINT_DIR = "imprints"
-THEMES_DIR = "themes"
-DIST_DIR = "dist"
-METADATA_DIR = "metadata"
-
-# 🔮 [V55.23] 核心资产寻址：提示词、方言与日志标准
-PROMPTS_NAME = "prompts.yaml"
-PROMPTS_TEMPLATES_DIR = "prompts_templates"
-DIALECTS_DIR = "dialects"
-DEFAULT_DIALECT_NAME = "default.yaml"
-LOGS_DIR = "logs"
-MAIN_LOG_NAME = "plenipes.log"
+# 🚀 [V66.0] 基石对正：从单一真理源导入常量
+from .constants import (
+    CONFIG_NAME, CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME,
+    CONFIG_DIR, IMPRINT_DIR, THEMES_DIR, DIST_DIR, METADATA_DIR,
+    PROMPTS_NAME, PROMPTS_TEMPLATES_DIR, DIALECTS_DIR,
+    DEFAULT_DIALECT_NAME, LOGS_DIR, MAIN_LOG_NAME
+)
 
 from core.utils.tracing import tlog
 # 🚀 [V24.0] 统一引用重构后的 Pydantic 模型
 from .config_models import Configuration, ThemeSettings, I18nSource, I18nTarget
+from core.governance.secret_manager import secrets
+from core.governance.imprint_manager import im
 
 class ConfigManager:
     """🚀 [V24.0] 强类型配置管理器"""
@@ -41,21 +33,21 @@ class ConfigManager:
         self.config_path = config_path
         self.imprint_id = imprint_id
         self._raw_config = self._load_and_merge()
-        # 🚀 [V54.0] 插件主权自动对齐：将感应到的适配器同步到物理配置文件中
+        # 🚀 [V66.5] 插件主权自动对齐：将感应到的物理底座同步
         self._auto_sync_ai_adapters()
         self.config = self._build_typed_config()
         self._post_process()
 
     def _auto_sync_ai_adapters(self):
-        """🚀 [V54.0] 自动对正：确保磁盘上的插件在配置文件中有对应席位"""
+        """🚀 [V66.5] 物理对正：确保磁盘上的插件在物理底座中具有席位"""
         try:
             from core.adapters.ai.registry import AIProviderRegistry
-            import core.adapters.ai # 触发 Zero-Touch 扫描
+            import core.adapters.ai
             
             protocols = AIProviderRegistry.get_all_protocols()
             if not protocols: return
             
-            # 1. 加载物理原始文件（不使用合并后的，避免写回污染）
+            # 1. 加载物理原始文件
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 base_cfg = yaml.safe_load(f) or {}
             
@@ -65,50 +57,48 @@ class ConfigManager:
             if os.path.exists(local_path):
                 with open(local_path, 'r', encoding='utf-8') as f:
                     local_cfg = yaml.safe_load(f) or {}
-
-            # 确保层级存在
+    
             def ensure_path(d, path):
                 for p in path:
                     if p not in d: d[p] = {}
                     d = d[p]
                 return d
-
-            base_providers = ensure_path(base_cfg, ['translation', 'providers'])
-            local_providers = ensure_path(local_cfg, ['translation', 'providers'])
+    
+            base_nodes = ensure_path(base_cfg, ['translation', 'compute_nodes'])
+            local_nodes = ensure_path(local_cfg, ['translation', 'compute_nodes'])
             
             changed = False
             for ptype in protocols:
-                # 检查是否已定义该类型的节点
-                exists = any(v.get('type') == ptype for v in base_providers.values() if isinstance(v, dict))
+                # 检查是否已定义该类型的物理节点
+                exists = any(v.get('type') == ptype for v in base_nodes.values() if isinstance(v, dict))
                 if not exists:
                     node_id = f"{ptype}_local" if ptype in ['ollama', 'lmstudio'] else f"{ptype}_node"
-                    tlog.info(f"✨ [插件感应] 发现新算力适配器 '{ptype}'，正在自动对正物理配置...")
+                    tlog.info(f"✨ [插件感应] 发现新物理算力适配器 '{ptype}'，正在自动对齐物理底座...")
                     
-                    # 注入基座配置
-                    base_providers[node_id] = {
+                    # 注入基座 ID 与协议
+                    base_nodes[node_id] = {
+                        "id": node_id,
                         "type": ptype,
-                        "base_url": getattr(AIProviderRegistry.get_provider(ptype), 'DEFAULT_URL', ""),
-                        "model": "gpt-4o-mini"
+                        "base_url": getattr(AIProviderRegistry.get_provider(ptype), 'DEFAULT_URL', "")
                     }
                     
-                    # 注入本地主权开关
-                    local_providers[node_id] = {
-                        "api_key": "PUT_YOUR_KEY_HERE",
-                        "enabled": False # 默认不启用，尊重物理主权
+                    # 注入物理主权密钥
+                    local_nodes[node_id] = {
+                        "api_key": "ENC:PUT_YOUR_KEY_HERE",
+                        "enabled": False
                     }
                     changed = True
-
+    
             if changed:
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     yaml.dump(base_cfg, f, allow_unicode=True, sort_keys=False)
                 with open(local_path, 'w', encoding='utf-8') as f:
                     yaml.dump(local_cfg, f, allow_unicode=True, sort_keys=False)
-                tlog.info("✅ [插件主权对齐] 物理配置文件已同步更新。")
-                # 重新加载内存中的 raw_config 以反映变更
+                tlog.info("✅ [物理底座对齐] 算力节点已同步更新。")
                 self._raw_config = self._load_and_merge()
                 
         except Exception as e:
-            tlog.warning(f"⚠️ [插件对正失败]: {e}")
+            tlog.warning(f"⚠️ [物理底座同步失败]: {e}")
 
     def reload(self):
         """⚡ 物理热重载：重新加载文件并刷新内存模型"""
@@ -181,14 +171,14 @@ class ConfigManager:
                     with open(imprint_path, 'r', encoding='utf-8') as f:
                         imprint_cfg = yaml.safe_load(f) or {}
                     
-                    # 🛡️ [V53.1] 物理主权强制脱敏：禁止品牌层保存任何物理凭据
+                    # 🛡️ [V53.1] 物理主权强制脱敏：禁止版图层保存任何物理凭据
                     def scrub_secrets(d):
                         if not isinstance(d, dict): return d
                         sensitive_patterns = ['api_key', 'api_token', 'secret', 'app_password', 'token']
                         new_dict = {}
                         for k, v in d.items():
                             if any(p in k.lower() for p in sensitive_patterns):
-                                tlog.warning(f"⚠️ [安全治理] 品牌层配置文件中发现敏感字段 '{k}'，已根据物理主权原则强制拦截。")
+                                tlog.warning(f"⚠️ [安全治理] 版图层配置文件中发现敏感字段 '{k}'，已根据物理主权原则强制拦截。")
                                 continue
                             new_dict[k] = scrub_secrets(v)
                         return new_dict
@@ -222,17 +212,34 @@ class ConfigManager:
         if self.imprint_id:
             final_cfg['active_imprint'] = self.imprint_id
             
-            # 💡 [V52.14] 物理对齐：如果品牌层提供了核心元数据，则忽略 Local 中的陈旧覆盖
+            # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
             # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
             if self.imprint_id == "default":
                 # 切换回默认时，强制恢复系统基准名称 (除非 Global Config 另有定义)
                 # 我们通过删除 Local 层可能存在的覆盖来实现
                 pass # 已经在 deep_reload_imprint 中处理了物理层面的更新
+
+        # 🚀 [V65.10] 主权自愈：如果路由矩阵缺失，启动智能探测
+        if not final_cfg.get('route_matrix') and final_cfg.get('vault_root'):
+            try:
+                new_matrix = im._probe_vault_structure(final_cfg['vault_root'])
+                final_cfg['route_matrix'] = new_matrix
+                tlog.info("🩺 [主权自愈] 探测到路由矩阵缺失，已根据金库结构自动生成映射。")
+                
+                # 🚀 [V65.11] 物理持久化回写：确保用户在 YAML 中可见
+                if active_id and active_id != "default":
+                    target_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+                    if os.path.exists(target_path):
+                        # 使用模型进行安全的持久化
+                        temp_model = Configuration(**final_cfg)
+                        temp_model.dump_to_disk(target_path)
+                        tlog.info(f"💾 [主权持久化] 已将自愈后的路由矩阵回写至: {target_path}")
+            except Exception as e:
+                tlog.debug(f"主权自愈持久化跳过: {e}")
             
         return final_cfg
 
     def _resolve_secrets(self, data: Any) -> Any:
-        from core.governance.secret_manager import secrets
         if isinstance(data, str) and data.startswith("enc:"):
             return secrets.decrypt(data)
         elif isinstance(data, dict):
@@ -288,17 +295,6 @@ class ConfigManager:
     def _build_typed_config(self) -> Configuration:
         """🚀 [V24.0] 核心重构：使用 Pydantic 执行工业级配置审计"""
         try:
-            # 🚀 [V24.0] 算力网关解包 (Pre-Validation)：自动打平包含 'nodes' 键的 providers 结构
-            # 确保 configs/ai_providers.yaml 中的层级能正确映射到 Pydantic 模型
-            trans_cfg = self._raw_config.get('translation', {})
-            if isinstance(trans_cfg, dict):
-                providers = trans_cfg.get('providers')
-                if isinstance(providers, dict) and 'nodes' in providers:
-                    tlog.info("🔌 [配置引擎] 正在打平 AI 算力节点 'nodes' 层级...")
-                    nodes = providers.pop('nodes')
-                    if isinstance(nodes, dict):
-                        providers.update(nodes)
-
             # 执行 Pydantic 校验
             return Configuration.model_validate(self._raw_config)
             
@@ -374,10 +370,10 @@ class ConfigManager:
 
     def _audit_ai_services(self):
         t = self.config.translation
-        for name, p in t.providers.items():
-            key = getattr(p, 'api_key', '')
+        for name, node in t.compute_nodes.items():
+            key = getattr(node, 'api_key', '')
             if key and "HERE" in key:
-                tlog.warning(f"⚠️ [配置风险] AI 节点 '{name}' 的 API_KEY 包含默认占位符。")
+                tlog.warning(f"⚠️ [配置风险] 物理算力节点 '{name}' 的 API_KEY 包含默认占位符。")
 
 def load_config(path: str = CONFIG_NAME, imprint_id: str = None) -> Configuration:
     manager = ConfigManager(path, imprint_id=imprint_id)

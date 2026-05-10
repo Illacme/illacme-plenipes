@@ -104,13 +104,13 @@ class ContractGuard:
         translation = engine_config.translation
         if translation.enable_ai:
             primary = translation.primary_node
-            if not primary or primary not in translation.providers:
+            if not primary or primary not in translation.compute_nodes:
                 violations.append(f"❌ [算力治理] 未定义的默认算力节点: {primary}")
             else:
-                p_node = translation.providers[primary]
+                p_node = translation.compute_nodes[primary]
                 # 🚀 [V52.10] 语义化放行：本地算力（lmstudio/ollama）或已明确标记为不需要 Key 的节点不再触发警告
-                is_local = p_node.type in ['lmstudio', 'ollama']
-                has_valid_key = p_node.api_key and "HERE" not in p_node.api_key and "not-needed" not in p_node.api_key.lower()
+                is_local = (getattr(p_node, 'type', '') or '').lower() in ['lmstudio', 'ollama']
+                has_valid_key = getattr(p_node, 'api_key', '') and "HERE" not in p_node.api_key and "not-needed" not in p_node.api_key.lower()
                 
                 if not is_local and not has_valid_key:
                     tlog.warning(f"⚠️ [算力警告] 节点 '{primary}' 尚未配置有效 API_KEY，推理网关处于熔断状态。")

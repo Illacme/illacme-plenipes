@@ -12,7 +12,7 @@ import shutil
 import yaml
 from typing import List, Dict, Optional
 from core.utils.tracing import tlog
-from core.config.config import CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
+from core.config.constants import CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
 from core.governance.license_guard import LicenseGuard
 from core.governance.secret_manager import secrets
 
@@ -35,7 +35,6 @@ class ImprintManager:
         """🚀 [V50.3] 划定一个新的主权出版社品牌 (Imprint)"""
 
         # 1. 准入校验：检查是否有权创建新空间
-        from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
         imprint_path = os.path.join(self.imprint_root, name)
         if os.path.exists(imprint_path):
             tlog.warning(f"⚠️ [品牌存在] (激活现有品牌) 出版品牌 '{name}' 已就绪，跳过物理划定。")
@@ -50,7 +49,7 @@ class ImprintManager:
         tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理版图...")
         
         # 2. 建立物理目录树
-        from core.config.config import CONFIG_DIR, DIALECTS_DIR, LOGS_DIR, THEMES_DIR, METADATA_DIR
+        from core.config.constants import CONFIG_DIR, DIALECTS_DIR, LOGS_DIR, THEMES_DIR, METADATA_DIR
         dirs = [CONFIG_DIR, os.path.join(CONFIG_DIR, DIALECTS_DIR), "cache", METADATA_DIR, THEMES_DIR, LOGS_DIR]
         for d in dirs:
             os.makedirs(os.path.join(imprint_path, d), exist_ok=True)
@@ -86,10 +85,8 @@ class ImprintManager:
 
             "translation": {
                 "enable_ai": False,
-                "primary_node": "default",
-                "providers": {
-                    "default": {"type": "openai", "model": "gpt-4o-mini", "api_key": "REAL_KEY_REQUIRED"}
-                }
+                "primary_node": "openai_node",
+                "primary_model": "gpt-4o-mini"
             },
 
             "output_paths": {
@@ -97,6 +94,8 @@ class ImprintManager:
                 "assets_dir": "./themes/{theme}/public/assets",
                 "graph_json_dir": "./themes/{theme}/public"
             },
+            
+            "route_matrix": self._probe_vault_structure(manuscripts_path),
             
             "target_base": "dist/{theme}",
             
@@ -119,13 +118,13 @@ class ImprintManager:
         secrets.mask_dict(base_config)
 
         # 🚀 [V55.22] 物理主权重建：使用统一的常量定义
-        from core.config.config import CONFIG_IMPRINT_NAME, CONFIG_DIR
+        from core.config.constants import CONFIG_IMPRINT_NAME, CONFIG_DIR
         with open(os.path.join(imprint_path, CONFIG_DIR, CONFIG_IMPRINT_NAME), 'w', encoding='utf-8') as f:
             yaml.safe_dump(base_config, f, allow_unicode=True)
 
 
         # B. 镜像方言母本 (Prompts)
-        from core.config.config import PROMPTS_NAME, DIALECTS_DIR, DEFAULT_DIALECT_NAME, CONFIG_DIR
+        from core.config.constants import PROMPTS_NAME, DIALECTS_DIR, DEFAULT_DIALECT_NAME, CONFIG_DIR
         mother_prompts = os.path.join(self.root_dir, CONFIG_DIR, PROMPTS_NAME)
         if os.path.exists(mother_prompts):
             dialect_target_dir = os.path.join(imprint_path, CONFIG_DIR, DIALECTS_DIR)
@@ -140,7 +139,7 @@ class ImprintManager:
         if not os.path.exists(self.imprint_root):
             return imprints
  
-        from core.config.config import CONFIG_IMPRINT_NAME, CONFIG_DIR, CONFIG_LOCAL_NAME, IMPRINT_DIR
+        from core.config.constants import CONFIG_IMPRINT_NAME, CONFIG_DIR, CONFIG_LOCAL_NAME, IMPRINT_DIR
         active_imprint = self.get_active_imprint()
         path = os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME)
 
@@ -176,9 +175,44 @@ class ImprintManager:
                     })
         return imprints
  
+    def _probe_vault_structure(self, vault_path: str) -> List[Dict[str, str]]:
+        """🚀 [V65.8] 金库主权自感知：根据物理目录结构智能生成路由矩阵"""
+        matrix = []
+        if not os.path.exists(vault_path):
+            return [{"source": "", "prefix": ""}]
+            
+        try:
+            # 1. 扫描一级子目录
+            subdirs = [d for d in os.listdir(vault_path) if os.path.isdir(os.path.join(vault_path, d)) and not d.startswith('.')]
+            
+            # 2. 检查根目录下是否有合规稿件
+            has_root_files = any(f.lower().endswith(('.md', '.mdx')) for f in os.listdir(vault_path) if os.path.isfile(os.path.join(vault_path, f)))
+            
+            # 3. 智能映射映射
+            mapping_rules = {
+                "Index": "",
+                "Blog": "blog",
+                "Docs": "docs",
+                "Pages": "pages"
+            }
+            
+            for folder, prefix in mapping_rules.items():
+                if folder in subdirs:
+                    matrix.append({"source": folder, "prefix": prefix})
+            
+            # 4. 如果有根目录文件，或者没探测到任何已知子目录，则开启根目录全局映射
+            if has_root_files or not matrix:
+                matrix.append({"source": "", "prefix": ""})
+                
+            return matrix
+        except Exception as e:
+            tlog.warning(f"⚠️ [感知失败] 无法探测金库结构: {e}")
+            return [{"source": "", "prefix": ""}]
+
+
     def switch(self, imprint_id: str):
         """激活当前活跃主权 Imprint"""
-        from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
+        from core.config.constants import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
         config_path = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
         if not os.path.exists(config_path):
             tlog.error(f"🛑 [激活失败] 未找到主权 Imprint: {imprint_id}")

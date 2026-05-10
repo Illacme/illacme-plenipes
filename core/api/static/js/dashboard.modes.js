@@ -85,6 +85,6 @@ window.switchSeoStrategy = async (mode, strategy) => {
 };
 
 window.checkAIReadiness = () => {
-    const providers = window.settingsData?.translation?.providers || {};
-    return Object.keys(providers).length > 0;
+    const nodes = window.settingsData?.translation?.compute_nodes || {};
+    return Object.keys(nodes).length > 0;
 };

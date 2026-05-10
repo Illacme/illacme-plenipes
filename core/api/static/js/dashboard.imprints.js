@@ -1,11 +1,11 @@
 /**
- * ⚙️ [V55.0] Illacme Plenipes Imprints Management Module
- * 职责：出版版图增删改查及 UI 渲染。
+ * ⚙️ [V67.0] Illacme Plenipes Imprints Management Module
+ * 职责：出版集团指挥中心、事业部（版图）矩阵渲染、物理主权隔离。
  */
 
 window.switchImprint = async (id) => {
     if (!id) return;
-    addAudit(`🛰️ 正在申请出版身份切换: ${id}...`, "info");
+    addAudit(`🛰️ 正在申请主权事业部切换: ${id}...`, "info");
 
     const res = await apiFetch('/api/imprints/switch', {
         method: 'POST',
@@ -14,9 +14,13 @@ window.switchImprint = async (id) => {
     });
 
     if (res && res.success) {
-        addAudit(`🔄 [对正] 成功切换至品牌: ${id}`, "success");
-        // 🚀 [V55.9] 物理断路：禁止自动刷新，改为增量同步，彻底切断循环重定向
-        if (typeof refreshGovernanceContext === 'function') refreshGovernanceContext();
+        addAudit(`🔄 [对正] 成功切换至事业部: ${id}`, "success");
+        if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
+        
+        if (typeof loadSettings === 'function' && window.currentView === 'settings') {
+            loadSettings('imprints');
+        }
+        if (typeof renderImprintDropdown === 'function') renderImprintDropdown();
         if (typeof closeTerminalModal === 'function') closeTerminalModal();
     } else {
         addAudit(`🚨 切换失败: ${res ? res.error : '物理链路异常'}`, "error");
@@ -24,7 +28,6 @@ window.switchImprint = async (id) => {
 };
 
 window.addNewImprint = async () => {
-    // 🚀 [V55.8] 前端预审计：在用户填写表单前即触发授权栅栏校验
     const isLicensed = window.settingsData?._is_licensed || false;
     const currentCount = window.settingsData?._imprints?.length || 0;
 
@@ -34,9 +37,9 @@ window.addNewImprint = async () => {
                 title: '🛡️ 准入拦截',
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
                       '您当前处于 <b>社区标准版</b>。<br><br>' +
-                      '• 版图限额: 1/1 (已满)<br>' +
+                      '• 事业部限额: 1/1 (已满)<br>' +
                       '• 治理限制: 无法添加更多出版版图。<br><br>' +
-                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [专业版] 以开启无限版图管理。</span>' +
+                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [专业版] 以开启无限事业部管理。</span>' +
                       '</div>',
                 icon: 'warning',
                 confirmButtonText: '了解',
@@ -45,19 +48,19 @@ window.addNewImprint = async () => {
                 confirmButtonColor: 'var(--accent-primary)'
             });
         } else {
-            alert("🛡️ [准入拦截]\n社区版限额 1 个版图，无法继续添加。");
+            alert("🛡️ [准入拦截]\n社区版限额 1 个事业部，无法继续添加。");
         }
         return;
     }
 
-    const id = prompt("🏛️ 请输入新出版品牌的【唯一标识】 (ID, 建议英文/数字):");
+    const id = prompt("🏛️ 请输入新事业部的【物理标识】 (ID, 建议英文/数字):");
     if (!id) return;
-    const press_name = prompt("📝 请输入【出版社/品牌展示名称】:", id);
+    const press_name = prompt("📝 请输入【事业部展示名称】:", id);
     if (!press_name) return;
-    const path = prompt("📂 请输入该品牌关联的内容库 (Vault) 【绝对路径】:", "/Volumes/Notebook/omni-hub/content-vault");
+    const path = prompt("📂 请输入关联的内容库 (Vault) 【绝对路径】:", "/Volumes/Notebook/omni-hub/content-vault");
     if (!path) return;
 
-    addAudit(`🏗️ 正在为品牌 [${press_name}] 创建版图区域...`);
+    addAudit(`🏗️ 正在为事业部 [${press_name}] 创建主权空间...`);
     const res = await apiFetch('/api/imprints/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,15 +68,15 @@ window.addNewImprint = async () => {
     });
 
     if (res && res.success) {
-        addAudit(`✅ [创建成功] 品牌 ${press_name} 已成功加入矩阵。`, "success");
-        loadSettings();
+        addAudit(`✅ [创建成功] 事业部 ${press_name} 已成功加入矩阵。`, "success");
+        loadSettings('imprints');
     } else {
         addAudit(`❌ [创建失败] ${res ? res.error : '存在物理命名冲突'}`, "error");
     }
 };
 
 window.deleteImprint = async (id) => {
-    if (!confirm(`🚨 危险操作！\n确认要物理抹除出版身份 [${id}] 吗？`)) return;
+    if (!confirm(`🚨 危险操作！\n确认要物理抹除出版事业部 [${id}] 吗？`)) return;
 
     const res = await apiFetch('/api/imprints/delete', {
         method: 'POST',
@@ -82,8 +85,8 @@ window.deleteImprint = async (id) => {
     });
 
     if (res && res.success) {
-        addAudit(`🗑️ 出版身份已撤销: ${id}`, "warning");
-        loadSettings();
+        addAudit(`🗑️ 事业部已撤销: ${id}`, "warning");
+        loadSettings('imprints');
     }
 };
 
@@ -95,7 +98,7 @@ window.handleImprintInlineEdit = async (element, id, field) => {
 
     if (newValue === currentValue) return;
 
-    addAudit(`🖊️ 正在原地固化 [${id}] 的 ${field.includes('name') ? '名称' : '简介'}...`, "info");
+    addAudit(`🖊️ 正在原地固化 [${id}] 的标识信息...`, "info");
 
     const payload = {};
     payload[field] = newValue;
@@ -123,14 +126,13 @@ window.renderImprintDropdown = () => {
     const imprints = [...(window.settingsData?._imprints || [])];
     const activeId = window.settingsData?._active_imprint;
 
-    // 🚀 [V55.10] 优先级对正：将当前激活的品牌置顶
     imprints.sort((a, b) => {
         if (a.id === activeId) return -1;
         if (b.id === activeId) return 1;
         return 0;
     });
 
-    dropdown.innerHTML = `<div class="dropdown-header">出版品牌矩阵 (Brands)</div>` + imprints.map(im => `
+    dropdown.innerHTML = `<div class="dropdown-header">出版集团事业部矩阵</div>` + imprints.map(im => `
         <div class="dropdown-item ${im.id === activeId ? 'active' : ''}" onclick="switchImprint('${im.id}')">
             <div class="imprint-item-header">
                 <span class="imprint-title">${im.name || im.id}</span>
@@ -141,7 +143,7 @@ window.renderImprintDropdown = () => {
         </div>
     `).join('') + `
         <div class="dropdown-item add-new" onclick="showView('settings', 'imprints'); document.getElementById('imprint-dropdown').style.display='none';">
-            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 版图管理</div>
+            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 集团指挥部</div>
         </div>
     `;
 };
@@ -150,7 +152,6 @@ window.renderImprintsCategory = function() {
     const imprints = [...(window.settingsData?._imprints || [])];
     const activeId = window.settingsData?._active_imprint;
 
-    // 🚀 [V55.11] 矩阵对正：激活品牌置顶
     imprints.sort((a, b) => {
         if (a.id === activeId) return -1;
         if (b.id === activeId) return 1;
@@ -158,9 +159,22 @@ window.renderImprintsCategory = function() {
     });
 
     return `
-        <div class="full-width">
-            <div class="section-header"><h3>🏗️ 品牌版图矩阵 (Press Brands)</h3></div>
-            <p class="section-desc">全局掌控您的出版帝国。每个版图代表一个独立的品牌项目，具备独立的运行配置。</p>
+        <div class="full-width fade-in">
+            <div class="section-header"><h3>🏢 出版集团指挥中心 (Press Group Command)</h3></div>
+            
+            <!-- 🏛️ Sovereign Memo: Imprint as an Independent Studio -->
+            <div class="sovereign-memo glass-panel" style="margin-bottom: 30px; padding: 25px; border-left: 4px solid var(--accent-primary); background: rgba(163, 76, 255, 0.03);">
+                <h4 style="color: var(--accent-primary); margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">🏛️ 主权识见：将版图视为您的“出版事业部”</h4>
+                <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.7;">
+                    在专业的出版工业中，<b>版图 (Imprint)</b> 是集团旗下的独立运作单元。在 Illacme 中：<br>
+                    • <b>物理独立</b>：每个版图拥有专属的资产仓库（Vault），物理隔离，确保主权安全。<br>
+                    • <b>意志独立</b>：每个事业部可以绑定不同的算力底座，拥有独特的编辑逻辑和指令矩阵。<br>
+                    • <b>分发独立</b>：每个版图可以拥有独立的主题、SEO 策略和全球分发通道。<br>
+                    <span style="color: var(--accent-secondary); font-size: 0.75rem; font-weight: 800;">💡 您可以像管理出版集团一样，在此处调度、切换您的多个出版事业部（版图）。</span>
+                </p>
+            </div>
+
+            <p class="section-desc">全局掌控您的数字出版帝国。在这里，您可以一键在不同的主权事业部（版图）之间切换意志。</p>
             
             <div class="shield-matrix">
                 ${imprints.map(im => {
@@ -170,10 +184,10 @@ window.renderImprintsCategory = function() {
                         <div class="shield-pod territory-pod ${isActive ? 'primary-active' : ''}">
                             <div class="shield-status">
                                 <div class="shield-status-inner">
-                                    <span class="status-dot-mini ${stat.healthy !== false ? 'healthy' : 'blocked'}"></span>
                                     <span class="shield-id">ID: ${im.id}</span>
+                                    <span class="status-dot-mini ${stat.healthy !== false ? 'healthy' : 'blocked'}"></span>
                                 </div>
-                                ${isActive ? '<div class="log-tag info">使用中</div>' : ''}
+                                ${isActive ? '<div class="log-tag info">执行中</div>' : ''}
                             </div>
                             <div class="shield-body">
                                 <h4 contenteditable="true" onblur="handleImprintInlineEdit(this, '${im.id}', 'name')">${im.name || im.id}</h4>
@@ -188,8 +202,8 @@ window.renderImprintsCategory = function() {
 
                                 <div class="p-control-group">
                                     ${isActive ? 
-                                        '<button class="action-btn" disabled style="opacity:0.5;">使用中</button>' : 
-                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 切换出版身份</button>`}
+                                        '<button class="action-btn" disabled style="opacity:0.5;">执行中</button>' : 
+                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 切换事业部</button>`}
                                     ${im.id !== 'default' && !isActive ? 
                                         `<button class="action-btn danger" onclick="deleteImprint('${im.id}')">🗑️</button>` : ''}
                                 </div>
@@ -200,10 +214,10 @@ window.renderImprintsCategory = function() {
                 <div class="shield-pod add-card" onclick="addNewImprint()" style="border-style:dashed; cursor:pointer; justify-content:center; align-items:center; display:flex; min-height:220px;">
                     <div style="text-align:center;">
                         <div style="font-size:2rem; margin-bottom:10px; opacity:0.5;">＋</div>
-                        <p class="tiny-label">添加新版图</p>
+                        <p class="tiny-label">新增出版事业部</p>
                     </div>
                 </div>
             </div>
         </div>
     `;
-}
+};

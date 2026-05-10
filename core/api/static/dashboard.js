@@ -59,7 +59,7 @@ window.showView = (viewId, subId) => {
 
     // 模块联动加载
     if (viewId === 'vault' && typeof loadVault === 'function') loadVault();
-    if (viewId === 'compute' && typeof loadComputeNodes === 'function') loadComputeNodes();
+    if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter();
     if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
     if (viewId === 'settings' && typeof loadSettings === 'function') {
         loadSettings(subId || 'general');

@@ -109,7 +109,7 @@ async def probe_nodes():
             {"id": "docusaurus", "name": "Docusaurus (Project Hub)", "desc": "经典的文档站点架构，适合大规模项目管理", "official": True},
             {"id": "nextra", "name": "Nextra (Next.js Powered)", "desc": "灵动轻盈，基于 Next.js 的高级内容排版", "official": True}
         ],
-        "available_providers": [
+        "available_protocols": [
             {
                 "id": p,
                 "name": {
@@ -151,7 +151,7 @@ async def get_ai_models(req: AiValidateRequest):
         n_cfg = type('N', (), {'base_url': url, 'api_key': req.api_key, 'type': req.provider,
                                'limits': type('L', (), {'max_concurrency': 1, 'timeout': 10})()})()
         cfg = type('D', (), {'base_url': url, 'api_key': req.api_key, 'model': req.model, 'api_timeout': 10,
-                             'providers': {'w': n_cfg}})()
+                             'compute_nodes': {'w': n_cfg}})()
         t = p_cls("w", cfg)
         return {"models": await t.list_models()}
     except Exception as e:
@@ -175,7 +175,7 @@ async def init_press(req: InitRequest):
     
     from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
     
-    # 1. 注入品牌层配置
+    # 1. 注入版图层配置
     cfg_p = os.path.join(IMPRINT_DIR, req.imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
     if os.path.exists(cfg_p):
         try:
@@ -207,16 +207,21 @@ async def init_press(req: InitRequest):
         local_data["system"]["data_root"] = f"imprints/{req.imprint_id}"
         
         if req.enable_ai:
-            if "translation" not in local_data: local_data["translation"] = {}
             local_data["translation"]["primary_node"] = "wizard"
-            if "providers" not in local_data["translation"]: local_data["translation"]["providers"] = {}
-            local_data["translation"]["providers"]["wizard"] = {
-                "type": req.ai_provider, "model": req.ai_model, "api_key": req.ai_api_key, "base_url": req.ai_base_url
+            local_data["translation"]["primary_model"] = req.ai_model
+            
+            if "compute_nodes" not in local_data["translation"]: local_data["translation"]["compute_nodes"] = {}
+            local_data["translation"]["compute_nodes"]["wizard"] = {
+                "id": "wizard",
+                "type": req.ai_provider,
+                "api_key": req.ai_api_key,
+                "base_url": req.ai_base_url,
+                "enabled": True
             }
 
         with open(local_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(local_data, f, allow_unicode=True)
-        tlog.success(f"🛡️ [主权锁定] 品牌 '{req.imprint_id}' 指纹已强制写入 {local_path}。")
+        tlog.success(f"🛡️ [主权锁定] 版图 '{req.imprint_id}' 指纹已强制写入 {local_path}。")
     except Exception as e:
         tlog.warning(f"Sovereignty Lock Failed: {e}")
 
@@ -234,7 +239,7 @@ async def init_press(req: InitRequest):
             if os.path.exists(target_theme_path):
                 shutil.rmtree(target_theme_path)
             shutil.copytree(source_theme_path, target_theme_path)
-            tlog.info(f"🎨 [主题对正] 已将主题 '{req.active_theme}' 部署至品牌疆域。")
+            tlog.info(f"🎨 [主题对正] 已将主题 '{req.active_theme}' 部署至版图疆域。")
     except Exception as e:
         tlog.warning(f"Theme Deployment Failed: {e}")
 
