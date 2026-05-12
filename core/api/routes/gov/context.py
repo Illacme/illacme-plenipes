@@ -244,4 +244,4 @@ def list_active_plugins():
             "description": f"全自动分发插件：支持将出版成品推向 {target_id.upper()} 矩阵。"
         })
 
-    return plugins
+    return {"plugins": plugins}
