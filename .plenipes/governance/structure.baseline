@@ -156,7 +156,9 @@ core/runtime/cli_bootstrap.py
 core/runtime/daemon.py
 core/runtime/engine.py
 core/runtime/engine_factory.py
+core/runtime/engine_lifecycle.py
 core/runtime/engine_preflight.py
+core/runtime/engine_singleton.py
 core/runtime/orchestrator.py
 core/services/__init__.py
 core/services/daemon_handler.py

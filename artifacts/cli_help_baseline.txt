@@ -1,0 +1,63 @@
+usage: plenipes.py [-h] [--config CONFIG] [--sync] [--watch] [--dry-run]
+                   [--force] [--re-slug] [--path PATH [PATH ...]] [--no-ai]
+                   [--port PORT] [--log-level {DEBUG,INFO,WARNING,ERROR}]
+                   [--clean] [--purge] [--sentinel] [--doctor] [--heal]
+                   [--sandbox] [--audit] [--promote] [--brain] [--serve]
+                   [--serve-port SERVE_PORT] [--api] [--api-port API_PORT]
+                   [--headless] [--json-log] [--rollback]
+                   [--rollback-to ROLLBACK_TO] [--list-plugins] [--shutdown]
+                   [--imprint IMPRINT] [--credentials] [--audit-report]
+                   [--imprint-list] [--imprint-create NAME]
+                   [--imprint-delete NAME] [--vault-path PATH] [--wizard]
+                   [--version]
+
+🛡️ Illacme-plenipes [V50.3]: 全球私人出版社主权操作系统 - 负责从原稿摄取到全量分发的全生命周期治理
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG, -c CONFIG
+                        指定 YAML 配置文件路径 (默认: config.yaml)
+  --sync, -s            🚀 [分发演习] 发起单次全库阵列资产分发演习
+  --watch, -w           🐕 [全时守护] 启动系统看门狗，实时监控原稿变更并触发即时分发
+  --dry-run             🛡️ [安全仿真模式] 模拟全流程逻辑，阻断一切物理写盘与 API 费用支出
+  --force, -f           🔥 [强制重构] 强行撕碎指纹防抖，强拉所有引擎模块执行覆盖重编
+  --re-slug             🧠 [路径重塑] 强制 AI 重新生成文档路径锚点 (警告：会导致现有 URL 失效)
+  --path PATH [PATH ...], -p PATH [PATH ...]
+                        [选择性同步] 指定同步的源文件或目录路径 (相对于库根目录，支持多个)
+  --no-ai               [离线/节流模式] 禁用所有 AI 任务 (翻译/SEO/Slug)，仅执行本地排版加工
+  --port PORT           [多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例
+  --log-level {DEBUG,INFO,WARNING,ERROR}
+                        [诊断模式] 手动覆盖配置文件的终端日志级别
+  --clean               🧹 [主权重置] 物理删除所有同步指纹与 AI 影子缓存
+  --purge               🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版版图内的所有非法或过期资产
+  --sentinel            🛡️ [哨兵审计] 立即唤醒项目哨兵，执行健康审计与算力成本上报
+  --doctor, -d          🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验
+  --heal                💊 [物理自愈] 配合 --doctor 使用，自动修复路径缺失与指纹冲突
+  --sandbox             📦 [仿真沙盒模式] 同步任务仅分发至演习场，不触动生产环境
+  --audit               📊 [差异审计] 自动比对沙盒预览与生产环境的差异，生成全息质量简报
+  --promote             🚀 [一键转正] 将已审计的沙盒内容物理推向 SSG 生产目录
+  --brain               🧠 [知识中心] 展示 V11.0 自动化教训累积简报，透视系统进化轨迹
+  --serve               🌐 [内嵌预览] 同步完成后自动启动极简 Web 容器，预览当前主题的 HTML 产物
+  --serve-port SERVE_PORT
+                        [预览端口] 自定义内嵌预览服务器的监听端口
+  --api                 🔌 [API 模式] 启动 FastAPI 后端服务，暴露监控接口与实时事件流
+  --api-port API_PORT   [API 端口] 自定义 API 服务器端口
+  --headless            [无头模式] 彻底剥离 Rich 视觉组件与进度条，仅保留基础日志
+  --json-log            [结构化日志] 强制以 JSON 格式输出日志，便于外部系统采集审计
+  --rollback            ⏪ [时光机回滚] 将账本恢复至上一个紧急检查点 (pre_sync)
+  --rollback-to ROLLBACK_TO
+                        ⏪ [高级回滚] 指定回滚的快照名称
+  --list-plugins        📡 [插件中心] 枚举当前系统中所有已注册的分发插件及其运行时状态
+  --shutdown            🛑 [远程下线] 向正在运行的实例发送关机指令并安全存档 (需要 API 模式已启动)
+  --imprint IMPRINT, -i IMPRINT
+                        🌐 [出版版图选择] 指定当前操作的 Imprint ID (默认: default)
+  --credentials         🔑 [凭据审计] 扫描并脱敏当前版图内的所有敏感凭据
+  --audit-report        📊 [账本报告] 导出当前出版版图的商业审计流水账本
+  --imprint-list        📜 [版图清单] 枚举当前系统内所有已划定的出版版图 (Imprints)
+  --imprint-create NAME
+                        🏗️ [版图划定] 快速创建一个新的出版版图 (需配合 --vault-path)
+  --imprint-delete NAME
+                        🪓 [版图撤销] 物理抹除一个已有的出版版图及其所有资产
+  --vault-path PATH     📂 [物理锚定] 指定原稿金库的物理路径 (用于创建新版图)
+  --wizard, -W          🧙 [引导向导] 启动 Web 端可视化安装与配置向导
+  --version, -v         show program's version number and exit
