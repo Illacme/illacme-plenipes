@@ -75,6 +75,10 @@ if __name__ == "__main__":
     args, config = parse_args_and_lock()
     set_global_args(args)
 
+    # 🚀 [V52.20] 视觉主权优先：在任何探测开始前，物理展示产品 Banner
+    from core.ui.handlers.status_handlers import StatusHandlers
+    StatusHandlers.print_banner()
+
     # 1. 视觉主权：监听器挂载（Banner 将由 EnginePreflight 自动触发）
     from core.ui.mediator import UIMediator
     UIMediator.register_listeners()
@@ -86,10 +90,7 @@ if __name__ == "__main__":
     probe_local_compute()
 
     # 🚀 [V52.10] 主权探测逻辑：优先从配置中获取激活品牌，并校验物理存在性
-    if config:
-        print(f"DEBUG: config.active_imprint = '{config.active_imprint}'")
-    else:
-        print("DEBUG: config is None")
+    # 调试日志已静默处理，不再污染 Banner 下方的工业界面
 
     if config and config.active_imprint:
         # 🛡️ 物理红线校验：检查品牌目录及其核心配置文件是否真实存在
