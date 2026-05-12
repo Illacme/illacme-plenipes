@@ -1,0 +1,1 @@
+{"engine":{"status":"online","label":"核心引擎","health":100},"onboarding":{"status":"standby","label":"版图向导","health":50},"dashboard":{"status":"online","label":"指挥中心","health":100},"preview":{"status":"offline","label":"预览服务","health":0}}

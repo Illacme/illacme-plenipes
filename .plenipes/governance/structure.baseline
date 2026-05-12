@@ -26,6 +26,11 @@ core/api/routes/__init__.py
 core/api/routes/compute.py
 core/api/routes/content.py
 core/api/routes/governance.py
+core/api/routes/gov/__init__.py
+core/api/routes/gov/config.py
+core/api/routes/gov/context.py
+core/api/routes/gov/imprints.py
+core/api/routes/gov/vault.py
 core/api/routes/system.py
 core/api/routes/system_fragment.py
 core/api/routes/ws.py
