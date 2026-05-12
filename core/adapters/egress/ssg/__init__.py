@@ -52,10 +52,10 @@ class SSGAdapter:
 
     def _load_global_adapters(self):
         import os
-        path = os.path.abspath("adapters/ssg")
+        path = os.path.abspath("adapters/egress/ssg")
         if not os.path.exists(path): return
         try:
-            discover_and_register([path], "adapters.ssg", BaseSSGAdapter, SSGRegistry.register)
+            discover_and_register([path], "adapters.egress.ssg", BaseSSGAdapter, SSGRegistry.register)
         except Exception as e:
             tlog.warning(f"⚠️ [SSG 引擎] 加载全局适配器失败: {e}")
 

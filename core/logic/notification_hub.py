@@ -21,11 +21,11 @@ from core.utils.tracing import Tracer
 
 # 🚀 [Zero-Touch] 初始化驱动矩阵
 def _init_drivers():
-    global_path = os.path.abspath("adapters/webhook")
+    global_path = os.path.abspath("adapters/notifications/webhook")
     if os.path.exists(global_path):
         if os.path.abspath("adapters") not in sys.path:
             sys.path.append(os.path.abspath("adapters"))
-        discover_and_register([global_path], "adapters.webhook", BaseWebhookDriver, WebhookRegistry.register)
+        discover_and_register([global_path], "adapters.notifications.webhook", BaseWebhookDriver, WebhookRegistry.register)
 
 _init_drivers()
 

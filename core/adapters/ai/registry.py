@@ -35,3 +35,7 @@ class AIProviderRegistry:
     @classmethod
     def get_all_protocols(cls) -> List[str]:
         return list(cls._protocols.keys())
+
+    @classmethod
+    def list_active(cls) -> List[str]:
+        return cls.get_all_protocols()

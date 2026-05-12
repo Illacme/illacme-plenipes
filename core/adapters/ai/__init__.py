@@ -17,8 +17,8 @@ import sys
 discover_and_register(__path__, __name__, BaseTranslator, AIProviderRegistry.register)
 
 # 🚀 [Zero-Touch] 2. 扫描全局扩展插件
-global_ai_path = os.path.abspath("adapters/ai")
+global_ai_path = os.path.abspath("adapters/compute")
 if os.path.exists(global_ai_path):
     if os.path.abspath("adapters") not in sys.path:
         sys.path.append(os.path.abspath("adapters"))
-    discover_and_register([global_ai_path], "adapters.ai", BaseTranslator, AIProviderRegistry.register)
+    discover_and_register([global_ai_path], "adapters.compute", BaseTranslator, AIProviderRegistry.register)

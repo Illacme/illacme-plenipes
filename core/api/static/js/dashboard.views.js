@@ -61,7 +61,7 @@ window.viewTemplates = {
                 <h2>📂 原稿金库 (Vault)</h2>
                 <div class="header-actions">
                     <div class="search-box">
-                        <input type="text" id="vault-search" placeholder="🔍 搜索标题、路径或 Slug...">
+                        <input type="text" id="vault-search" placeholder="搜索标题、路径或 Slug...">
                     </div>
                 </div>
             </div>
@@ -88,7 +88,30 @@ window.viewTemplates = {
     `,
     compute: `
         <div id="view-compute" class="view-panel">
-            <div id="compute-center-root"></div>
+            <div class="view-header" style="flex-direction: column; align-items: stretch; height: auto;">
+                <!-- 🛰️ 上层矩阵: 品牌与全局检索 -->
+                <div class="header-main-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px 0 0px;">
+                    <div class="header-title-area">
+                        <h2>🧠 算力中心 (Compute)</h2>
+                    </div>
+                    <div class="header-actions" id="compute-header-actions-top" style="gap: 12px;">
+                        <!-- 动态注入: 搜索框 + 策略勋章 -->
+                    </div>
+                </div>
+                
+                <!-- 🛰️ 下层矩阵: 导航切换与即时操作 (固定吸顶) -->
+                <div class="header-nav-row" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px 0 10px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div id="compute-nav-tabs-slot">
+                        <!-- 动态注入: Tactical Tabs -->
+                    </div>
+                    <div id="compute-nav-actions-slot">
+                        <!-- 动态注入: 新增/脉冲/刷新 -->
+                    </div>
+                </div>
+            </div>
+            <div class="view-content" id="compute-center-root">
+                <!-- 动态注入: 只有内容网格 -->
+            </div>
         </div>
     `,
     plugins: `

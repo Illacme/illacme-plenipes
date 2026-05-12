@@ -1,11 +1,11 @@
 /**
- * ⚙️ [V67.0] Illacme Plenipes Imprints Management Module
- * 职责：出版集团指挥中心、事业部（版图）矩阵渲染、物理主权隔离。
+ * ⚙️ [V74.0] Illacme Plenipes Imprints Management Module
+ * 职责：出版集团指挥中心、事业部（版图）矩阵渲染、物理隔离。
  */
 
 window.switchImprint = async (id) => {
     if (!id) return;
-    addAudit(`🛰️ 正在申请主权事业部切换: ${id}...`, "info");
+    addAudit(`🛰️ 正在申请事业部切换: ${id}...`, "info");
 
     const res = await apiFetch('/api/imprints/switch', {
         method: 'POST',
@@ -38,7 +38,7 @@ window.addNewImprint = async () => {
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
                       '您当前处于 <b>社区标准版</b>。<br><br>' +
                       '• 事业部限额: 1/1 (已满)<br>' +
-                      '• 治理限制: 无法添加更多出版版图。<br><br>' +
+                      '• 治理限制: 无法添加更多出版事业部。<br><br>' +
                       '<span style="color:var(--accent-secondary)">💡 建议：升级至 [专业版] 以开启无限事业部管理。</span>' +
                       '</div>',
                 icon: 'warning',
@@ -60,7 +60,7 @@ window.addNewImprint = async () => {
     const path = prompt("📂 请输入关联的内容库 (Vault) 【绝对路径】:", "/Volumes/Notebook/omni-hub/content-vault");
     if (!path) return;
 
-    addAudit(`🏗️ 正在为事业部 [${press_name}] 创建主权空间...`);
+    addAudit(`🏗️ 正在为事业部 [${press_name}] 创建全域空间...`);
     const res = await apiFetch('/api/imprints/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +143,7 @@ window.renderImprintDropdown = () => {
         </div>
     `).join('') + `
         <div class="dropdown-item add-new" onclick="showView('settings', 'imprints'); document.getElementById('imprint-dropdown').style.display='none';">
-            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 集团指挥部</div>
+            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 集团指挥中心</div>
         </div>
     `;
 };
@@ -162,19 +162,19 @@ window.renderImprintsCategory = function() {
         <div class="full-width fade-in">
             <div class="section-header"><h3>🏢 出版集团指挥中心 (Press Group Command)</h3></div>
             
-            <!-- 🏛️ Sovereign Memo: Imprint as an Independent Studio -->
+            <!-- 🏛️ Industrial Memo: Imprint as an Independent Studio -->
             <div class="sovereign-memo glass-panel" style="margin-bottom: 30px; padding: 25px; border-left: 4px solid var(--accent-primary); background: rgba(163, 76, 255, 0.03);">
-                <h4 style="color: var(--accent-primary); margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">🏛️ 主权识见：将版图视为您的“出版事业部”</h4>
+                <h4 style="color: var(--accent-primary); margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">🏢 工业识见：将事业部视为您的“独立出版单元”</h4>
                 <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.7;">
-                    在专业的出版工业中，<b>版图 (Imprint)</b> 是集团旗下的独立运作单元。在 Illacme 中：<br>
-                    • <b>物理独立</b>：每个版图拥有专属的资产仓库（Vault），物理隔离，确保主权安全。<br>
+                    在专业的出版工业中，<b>事业部 (Imprint)</b> 是集团旗下的独立运作单元。在 Illacme 中：<br>
+                    • <b>物理独立</b>：每个事业部拥有专属的资产仓库（Vault），物理隔离，确保全域安全。<br>
                     • <b>意志独立</b>：每个事业部可以绑定不同的算力底座，拥有独特的编辑逻辑和指令矩阵。<br>
-                    • <b>分发独立</b>：每个版图可以拥有独立的主题、SEO 策略和全球分发通道。<br>
+                    • <b>分发独立</b>：每个事业部可以拥有独立的主题、SEO 策略和全球分发通道。<br>
                     <span style="color: var(--accent-secondary); font-size: 0.75rem; font-weight: 800;">💡 您可以像管理出版集团一样，在此处调度、切换您的多个出版事业部（版图）。</span>
                 </p>
             </div>
 
-            <p class="section-desc">全局掌控您的数字出版帝国。在这里，您可以一键在不同的主权事业部（版图）之间切换意志。</p>
+            <p class="section-desc">全局掌控您的数字出版帝国。在这里，您可以一键在不同的事业部（版图）之间切换意志。</p>
             
             <div class="shield-matrix">
                 ${imprints.map(im => {

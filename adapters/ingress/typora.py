@@ -8,10 +8,13 @@ Illacme-plenipes Core - Typora Dialect
 
 import re
 from typing import Tuple, Dict, Any
-from core.adapters.ingress.base import BaseDialect
+from core.ingress.base import BaseDialect
 
 class TyporaDialect(BaseDialect):
     """✍️ Typora 方言处理器"""
+    PLUGIN_ID = "typora"
+    DISPLAY_NAME = "Typora Connector"
+    DESCRIPTION = "优化 Typora 专属的表格缩进、Latex 块对齐与 [TOC] 占位符清理。"
     
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         # 1. [TOC] 占位符抹除

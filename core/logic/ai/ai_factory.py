@@ -192,7 +192,7 @@ class TranslatorFactory:
             if strategy == 'single':
                 return TranslatorFactory._build_node(primary, trans_cfg, role='primary')
 
-            if strategy == 'fallback':
+            if strategy == 'fallback' or strategy == 'concurrent':
                 from core.adapters.ai.strategies import FallbackStrategy
                 return FallbackStrategy(
                     TranslatorFactory._build_node(primary, trans_cfg, role='primary'),

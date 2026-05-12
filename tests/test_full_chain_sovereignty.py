@@ -31,16 +31,16 @@ class TestFullChainSovereignty(unittest.TestCase):
         if os.path.exists(self.test_root):
             shutil.rmtree(self.test_root)
 
-    @patch('core.bindery.deployment_manager.PluginLoader.load_plugins')
+    @patch('core.bindery.deployment_manager.PublisherRegistry.list_active_targets')
     def test_end_to_end_publishing_cycle(self, mock_load):
         """🚀 终极演习：验证全链路主权闭环"""
-        from plugins.publishers.base import BasePublisher
+        from core.adapters.egress.publishers.base import BasePublisher
         class MockPub(BasePublisher):
             PLUGIN_ID = "mock_pub"
             def push(self, bundle_path, metadata):
                 return {"status": "success"}
         
-        mock_load.return_value = [MockPub]
+        mock_load.return_value = ["mock_pub"]
         from core.adapters.egress.publishers.base import PublisherRegistry
         PublisherRegistry.register("mock_pub")(MockPub)
 

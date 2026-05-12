@@ -39,17 +39,31 @@ class PluginChecker:
         res = {"name": "Contract Guard", "status": "PASS", "details": []}
         all_violations = []
 
-        # AI, SSG, Syndication, Ingress 契约审计
+        # 1. AI 算力驱动
         try:
             from core.adapters.ai.registry import AIProviderRegistry
             from core.adapters.ai.base import BaseTranslator
             all_violations.extend(ContractGuard.audit_registry(AIProviderRegistry._providers, BaseTranslator, "AI Protocols"))
         except Exception: pass
 
+        # 2. SSG 适配器
         try:
             from core.adapters.egress.ssg.registry import SSGRegistry
             from core.adapters.egress.ssg.base import BaseSSGAdapter
             all_violations.extend(ContractGuard.audit_registry(SSGRegistry._renderers, BaseSSGAdapter, "SSG Adapters"))
+        except Exception: pass
+
+        # 3. 🚀 [V75.0] 发布器 (Publishers)
+        try:
+            from core.adapters.egress.publishers.base import PublisherRegistry, BasePublisher
+            all_violations.extend(ContractGuard.audit_registry(PublisherRegistry._targets, BasePublisher, "Publishers"))
+        except Exception: pass
+
+        # 4. 🚀 [V75.0] 内容分发 (Syndication)
+        try:
+            from core.adapters.syndication.targets import TARGET_REGISTRY
+            from core.adapters.syndication.base import BaseSyndicator
+            all_violations.extend(ContractGuard.audit_registry(TARGET_REGISTRY, BaseSyndicator, "Syndication"))
         except Exception: pass
 
         if all_violations:
@@ -59,5 +73,5 @@ class PluginChecker:
                 res.get('details').extend(filtered)
 
         if res.get('status') == "PASS":
-            res.get('details').append("🟢 全域插件契约健康，物理协议一致性 100%。")
+            res.get('details').append("🟢 全域适配器契约健康，物理协议一致性 100%。")
         return res

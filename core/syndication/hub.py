@@ -8,8 +8,8 @@ Illacme-plenipes Core - Content Syndicator (分发调度器)
 
 import os
 import logging
-from core.utils.plugin_loader import PluginLoader
-from plugins.publishers.base import BasePublisher
+from core.adapters.egress.publishers.base import BasePublisher
+from core.adapters.syndication.targets import TARGET_REGISTRY
 from core.utils.tracing import Tracer, tlog
 class ContentSyndicator:
     def __init__(self, syndication_cfg, site_url, sys_tuning_cfg=None, meta=None):
@@ -21,11 +21,9 @@ class ContentSyndicator:
 
         # 🚀 [V18.0] 主权复用：支持多账号/多站点动态映射
         self.plugins = []
-        plugin_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "plugins", "publishers")
-        discovered_classes = PluginLoader.load_plugins(plugin_dir, BasePublisher)
         
-        # 建立类型映射表
-        class_map = {getattr(cls, "PLUGIN_ID", cls.__name__.lower()): cls for cls in discovered_classes}
+        # 🚀 [V75.0] 深度架构对齐：直接从全局分发注册中心获取驱动
+        class_map = TARGET_REGISTRY
         
         # 遍历配置字典，支持自定义键名 (如 devto_personal)
         for entry_id, entry_cfg in self.cfg.items():
@@ -111,12 +109,9 @@ class ContentSyndicator:
     def list_all_plugins(self):
         """🚀 [V17.0] 枚举所有已发现的外部插件及其状态"""
         report = []
-        plugin_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "plugins", "publishers")
-        discovered_classes = PluginLoader.load_plugins(plugin_dir, BasePublisher)
-
-        for p_cls in discovered_classes:
-            plugin_id = getattr(p_cls, "PLUGIN_ID", p_cls.__name__.lower())
-            platform_cfg = getattr(self.cfg, plugin_id, None)
+        # 🚀 [V75.0] 对正：从注册中心枚举
+        for p_id, p_cls in TARGET_REGISTRY.items():
+            platform_cfg = getattr(self.cfg, p_id, None)
             is_enabled = platform_cfg and getattr(platform_cfg, 'enabled', False)
 
             # 检查依赖 (V11.3 契约)
@@ -131,7 +126,7 @@ class ContentSyndicator:
             if is_enabled and missing_reqs: status = "DEP_MISSING"
 
             report.append({
-                "id": plugin_id,
+                "id": p_id,
                 "class": p_cls.__name__,
                 "status": status,
                 "missing": missing_reqs

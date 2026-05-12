@@ -11,6 +11,10 @@ from core.utils.tracing import tlog
 
 class PipelineStep:
     """流水线工序基类"""
+    PLUGIN_ID: str = "generic_step"
+    DISPLAY_NAME: str = "Pipeline Step"
+    DESCRIPTION: str = "主权管线审计工序"
+
     def process(self, context):
         raise NotImplementedError("子类必须实现 process 方法")
 

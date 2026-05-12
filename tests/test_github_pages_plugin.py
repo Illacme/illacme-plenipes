@@ -21,7 +21,7 @@ class TestGitHubPagesPublisher:
 
     def test_import_and_instantiate(self):
         """验证 GitHubPagesPublisher 可正常导入和实例化"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={
             "enabled": True,
             "repo_url": "https://github.com/test/test.git",
@@ -34,7 +34,7 @@ class TestGitHubPagesPublisher:
 
     def test_default_config_values(self):
         """验证默认配置值正确"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
         assert pub.repo_url == ""
         assert pub.branch == "gh-pages"
@@ -46,7 +46,7 @@ class TestGitHubPagesPublisher:
 
     def test_push_skips_when_no_repo_url(self):
         """未配置 repo_url 时 push 应直接跳过"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
         result = pub.push("/tmp/fake_bundle", {})
         assert result["status"] == "skipped"
@@ -54,7 +54,7 @@ class TestGitHubPagesPublisher:
 
     def test_push_errors_when_bundle_missing(self):
         """bundle_path 不存在时 push 应返回 error"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={
             "repo_url": "https://github.com/test/test.git"
         })
@@ -64,20 +64,20 @@ class TestGitHubPagesPublisher:
 
     def test_is_healthy_checks_git(self):
         """验证 is_healthy 通过检测 git 命令可用性"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
         # 在大多数开发环境中 git 应该已安装
         assert pub.is_healthy() is True
 
     def test_inherits_base_publisher(self):
         """验证正确继承 BasePublisher"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
-        from plugins.publishers.base import BasePublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        from core.adapters.egress.publishers.base import BasePublisher
         assert issubclass(GitHubPagesPublisher, BasePublisher)
 
     def test_clean_work_dir_preserves_git(self):
         """验证 _clean_work_dir 保留 .git 目录但清除其他文件"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
 
         work_dir = tempfile.mkdtemp()
@@ -103,7 +103,7 @@ class TestGitHubPagesPublisher:
 
     def test_copy_bundle_counts_files(self):
         """验证 _copy_bundle 正确复制文件并返回计数"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
 
         bundle_dir = tempfile.mkdtemp()
@@ -131,7 +131,7 @@ class TestGitHubPagesPublisher:
 
     def test_inject_nojekyll(self):
         """验证 .nojekyll 文件注入"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={"nojekyll": True})
 
         work_dir = tempfile.mkdtemp()
@@ -143,7 +143,7 @@ class TestGitHubPagesPublisher:
 
     def test_inject_cname(self):
         """验证 CNAME 文件注入"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={
             "cname": "docs.example.com"
         })
@@ -160,7 +160,7 @@ class TestGitHubPagesPublisher:
 
     def test_no_cname_when_not_configured(self):
         """未配置 cname 时不应生成 CNAME 文件"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={})
 
         work_dir = tempfile.mkdtemp()
@@ -172,7 +172,7 @@ class TestGitHubPagesPublisher:
 
     def test_no_nojekyll_when_disabled(self):
         """nojekyll=false 时不应生成 .nojekyll 文件"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={"nojekyll": False})
 
         work_dir = tempfile.mkdtemp()
@@ -185,17 +185,23 @@ class TestGitHubPagesPublisher:
     def test_plugin_auto_discovery_by_loader(self):
         """验证 PluginLoader 能自动发现 GitHubPagesPublisher"""
         from core.utils.plugin_loader import PluginLoader
-        from plugins.publishers.base import BasePublisher
+        from core.adapters.egress.publishers.base import BasePublisher
 
-        plugin_dir = os.path.join("plugins", "publishers")
-        classes = PluginLoader.load_plugins(plugin_dir, BasePublisher, package_name="plugins.publishers")
+        # 1. 核心基座扫描 (core/adapters)
+        core_dir = os.path.abspath("core/adapters/egress/publishers")
+        core_classes = PluginLoader.load_plugins(core_dir, BasePublisher, package_name="core.adapters.egress.publishers")
+        
+        # 2. 全局扩展扫描 (adapters/egress)
+        global_dir = os.path.abspath("adapters/egress/publishers")
+        global_classes = PluginLoader.load_plugins(global_dir, BasePublisher, package_name="adapters.egress.publishers")
 
-        plugin_ids = [getattr(cls, "PLUGIN_ID", "") for cls in classes]
+        all_classes = core_classes + global_classes
+        plugin_ids = [getattr(cls, "PLUGIN_ID", "") for cls in all_classes]
         assert "github_pages" in plugin_ids, f"github_pages not found in discovered plugins: {plugin_ids}"
 
     def test_commit_message_template_formatting(self):
         """验证 commit message 模板变量替换"""
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
         pub = GitHubPagesPublisher(config={
             "commit_message": "Deploy {files} files to {branch} at {timestamp}"
         })
@@ -213,7 +219,7 @@ class TestGitHubPagesPublisher:
         模拟完整部署流程（本地 Git 仓库作为 remote）。
         这是一个端到端集成测试，验证 clone → clean → copy → commit → push 全流程。
         """
-        from plugins.publishers.github_pages_plugin import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
 
         # ── 准备：创建一个本地 bare 仓库作为 remote ──
         remote_dir = tempfile.mkdtemp(prefix="plenipes_test_remote_")

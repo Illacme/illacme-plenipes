@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 🏛️ Sovereign Asset Loading (V65.0) -->
-    <link rel="stylesheet" href="css/dashboard.base.css?v=65.0">
-    <link rel="stylesheet" href="css/components/glass.css?v=65.0">
-    <link rel="stylesheet" href="css/components/governance.css?v=66.0">
+    <!-- 🏛️ Asset Loading (V74.0) -->
+    <link rel="stylesheet" href="css/dashboard.base.css?v=74.0">
+    <link rel="stylesheet" href="css/components/glass.css?v=74.0">
+    <link rel="stylesheet" href="css/components/governance.css?v=74.0">
     <!-- 🌌 Galaxy Engine Dependencies -->
     <!-- 🌌 Galaxy Engine Dependencies -->
     <script src="vendor/sweetalert2.all.min.js"></script>
@@ -21,7 +21,7 @@
                 <div class="status-box">
                     <h1>ILLACME <span class="accent">PLENIPES</span></h1>
                         <div class="context-switcher" id="imprint-selector-trigger" onclick="event.stopPropagation(); toggleImprintDropdown()">
-                            <span class="context-label">SOVEREIGNTY:</span>
+                            <span class="context-label">品牌/事业部:</span>
                             <span id="active-imprint-name">LOADING...</span>
                             <span class="dropdown-arrow">▼</span>
                         </div>
@@ -36,7 +36,7 @@
                     <span class="nav-icon">📂</span><span class="nav-text">原稿金库</span>
                 </div>
                 <div class="nav-item" id="nav-compute">
-                    <span class="nav-icon">🧠</span><span class="nav-text">算力底座</span>
+                    <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
                 </div>
                 <div class="nav-item" id="nav-plugins">
                     <span class="nav-icon">🧩</span><span class="nav-text">插件矩阵</span>
@@ -51,12 +51,12 @@
         <button class="sidebar-toggle left" id="toggle-left">◀</button>
         <button class="sidebar-toggle right" id="toggle-right">▶</button>
 
-        <!-- 🧪 Left Sidebar: System Sovereign Control Strip -->
+        <!-- 🧪 Left Sidebar: System Identity Strip -->
         <aside class="glass-panel sidebar" id="left-sidebar">
             <!-- 🛰️ Press Identity & Heartbeat -->
             <div class="sidebar-pod identity-pod">
                 <div class="pod-header">
-                    <span class="pod-title">PRESS SOVEREIGNTY</span>
+                    <span class="pod-title">PRESS IDENTITY</span>
                     <div class="heartbeat-indicator pulsing healthy"></div>
                 </div>
                 <div id="sidebar-imprint-display" class="imprint-badge-glow">LOADING...</div>
@@ -101,7 +101,7 @@
                     <span class="pod-title">OPERATIONS</span>
                 </div>
                 <div class="control-row">
-                    <button class="mini-btn glow-btn full-width" onclick="location.reload()" title="物理重载系统">🔄 刷新主权链路</button>
+                    <button class="mini-btn glow-btn full-width" onclick="location.reload()" title="物理重载系统">🔄 刷新全域链路</button>
                     <button class="mini-btn danger-btn" id="master-shutdown-btn" onclick="shutdownSystem()" title="物理级紧急关机">⏻ 停机</button>
                 </div>
             </div>
@@ -110,7 +110,7 @@
         <!-- 🌌 Main Viewport (Dynamically Injected) -->
         <main id="main-viewport"></main>
 
-        <!-- 🛡️ Right Sidebar: Sovereign Audit Radar -->
+        <!-- 🛡️ Right Sidebar: Audit Radar -->
         <aside class="glass-panel sidebar" id="right-sidebar">
             <!-- 📡 Radar Scanner Pod -->
             <div class="sidebar-pod radar-pod">
@@ -143,7 +143,7 @@
                 </div>
                 <div class="integrity-matrix">
                     <div class="integrity-row">
-                        <span class="label">SOVEREIGN LINK</span>
+                        <span class="label">IDENTITY LINK</span>
                         <div class="mini-progress"><div class="fill" style="width: 95%;"></div></div>
                     </div>
                     <div class="integrity-row">
@@ -199,26 +199,26 @@
                         <span id="ws-status" class="status-val online">CONNECTED</span>
                     </div>
                 </div>
-                <div class="version-tag tiny">V65.0_SOVEREIGN</div>
+                <div class="version-tag tiny">V74.0_STABLE</div>
             </div>
         </footer>
     </div>
 
-    <!-- 🏗️ Modular Sovereignty Control (V57.0) -->
-    <script src="js/dashboard.core.js"></script>
-    <script src="js/dashboard.compute.js"></script>
-    <script src="js/dashboard.views.js"></script>
-    <script src="js/dashboard.ui.js"></script>
-    <script src="js/dashboard.vault.js"></script>
-    <script src="js/dashboard.plugins.js"></script>
-    <script src="js/dashboard.imprints.js"></script>
-    <script src="js/dashboard.themes.js"></script>
-    <script src="js/dashboard.modes.js"></script>
-    <script src="js/dashboard.localization.js"></script>
-    <script src="js/dashboard.guardrails.js"></script>
-    <script src="js/dashboard.health.js"></script>
-    <script src="js/dashboard.system.js"></script>
-    <script src="js/dashboard.socket.js"></script>
-    <script src="dashboard.js?v=65.0"></script>
+    <!-- 🏗️ Modular Identity Control (V57.0) -->
+    <script src="js/dashboard.core.js?v=74.0"></script>
+    <script src="js/dashboard.compute.js?v=74.55"></script>
+    <script src="js/dashboard.views.js?v=74.55"></script>
+    <script src="js/dashboard.ui.js?v=74.55"></script>
+    <script src="js/dashboard.vault.js?v=74.55"></script>
+    <script src="js/dashboard.plugins.js?v=74.55"></script>
+    <script src="js/dashboard.imprints.js?v=74.55"></script>
+    <script src="js/dashboard.themes.js?v=74.55"></script>
+    <script src="js/dashboard.modes.js?v=74.55"></script>
+    <script src="js/dashboard.localization.js?v=74.55"></script>
+    <script src="js/dashboard.guardrails.js?v=74.55"></script>
+    <script src="js/dashboard.health.js?v=74.55"></script>
+    <script src="js/dashboard.system.js?v=74.55"></script>
+    <script src="js/dashboard.socket.js?v=74.55"></script>
+    <script src="dashboard.js?v=74.55"></script>
 </body>
 </html>

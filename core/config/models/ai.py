@@ -33,7 +33,9 @@ class ComputeNode(BaseModel):
     type: str = ProviderType.OPENAI
     api_key: str = ""
     base_url: Optional[str] = None
+    model: Optional[str] = None
     enabled: bool = True
+    last_updated: float = 0
     limits: AIProviderLimits = Field(default_factory=AIProviderLimits)
 
 class FallbackStrategyConfig(BaseModel):

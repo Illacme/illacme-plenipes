@@ -60,7 +60,7 @@ window.addAudit = (message, type = 'info') => {
 
     const summaryText = document.getElementById('audit-summary-text');
     if (summaryText) {
-        summaryText.className = `audit-status-${type}`;
+        summaryText.className = `audit-summary-mini audit-status-${type}`;
         summaryText.innerText = message;
     }
 };

@@ -10,6 +10,9 @@ from typing import List, Dict, Any, Optional, Iterator, Tuple
 
 class BaseSource(abc.ABC):
     """🚀 [V16.0] 物理数据源抽象基类"""
+    PLUGIN_ID: str = "generic_source"
+    DISPLAY_NAME: str = "Generic Source"
+    DESCRIPTION: str = "物理数据源适配器"
     
     @abc.abstractmethod
     def list_files(self) -> Iterator[str]:
@@ -28,6 +31,9 @@ class BaseSource(abc.ABC):
 
 class BaseDialect(abc.ABC):
     """🚀 [V16.0] 语法方言抽象基类 (迁移自旧版)"""
+    PLUGIN_ID: str = "generic_dialect"
+    DISPLAY_NAME: str = "Generic Dialect"
+    DESCRIPTION: str = "语法方言适配器"
 
     @abc.abstractmethod
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:

@@ -11,8 +11,8 @@ from dataclasses import asdict
 from typing import List, Dict, Any
 from core.utils.tracing import tlog
 from core.governance.license_guard import LicenseGuard
-from core.utils.plugin_loader import PluginLoader
-from plugins.publishers.base import BasePublisher
+from core.adapters.egress.publishers.base import BasePublisher, PublisherRegistry
+import core.adapters.egress.publishers # Trigger loading
 
 class DeploymentManager:
     """🚀 [V35.0] 发布编排器：指挥全渠道分发战役"""
@@ -51,12 +51,11 @@ class DeploymentManager:
         allowed_channels = 99 if LicenseGuard.is_pro_feature_allowed("multi_imprint") else 1
         
         active_count = 0
-        plugin_dir = os.path.join("plugins", "publishers")
-        
-        # 批量加载所有继承自 BasePublisher 的插件类
-        publisher_classes = PluginLoader.load_plugins(plugin_dir, BasePublisher, package_name="plugins.publishers")
+        # 🚀 [V75.0] 对正：从中心化注册表获取所有发布器类
+        publisher_classes = [PublisherRegistry.get_publisher(name) for name in PublisherRegistry.list_active_targets()]
         
         for cls in publisher_classes:
+            if not cls: continue
             # 获取插件标识 (如 s3, webhook)
             plugin_id = getattr(cls, "PLUGIN_ID", cls.__name__.lower().replace("publisher", "").replace("plugin", ""))
             

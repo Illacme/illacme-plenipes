@@ -5,39 +5,19 @@ Illacme-plenipes Core - Markup Manager
 职责：负责内容处理层的初始化、插件自动载入与解析调度。
 """
 from .registry import markup_registry
-from .processors.markdown.blocks.standard import HeaderBlockPlugin, CodeBlockPlugin
-from .processors.markdown.blocks.obsidian import CalloutBlockPlugin
-from .processors.markdown.maskers.mdx import MDXMasker
-from .processors.markdown.links.obsidian import ObsidianTransclusionTransformer
-from .processors.markdown.links.mdx import MDXTransformer
 
 class MarkupManager:
-    """🚀 [V16.0] 内容处理层总控中心"""
+    """🚀 [V24.0] 内容处理层总控中心 (Zero-Touch 版)"""
     
-    _TRANSFORMER_MAP = {
-        "obsidian_transclusion": ObsidianTransclusionTransformer,
-        "mdx_transformer": MDXTransformer
-    }
-    
-    _MASKER_MAP = {
-        "mdx": MDXMasker
-    }
-
     @staticmethod
     def initialize(settings=None):
         """
         [Bootstrap] 根据配置初始化并注册插件
         """
-        # 1. 注册基础语法块 (始终加载)
-        markup_registry.register_block(HeaderBlockPlugin())
-        markup_registry.register_block(CodeBlockPlugin())
-        markup_registry.register_block(CalloutBlockPlugin())
+        # 1. 🚀 [Zero-Touch] 触发全域发现
+        markup_registry.discover_all()
         
         if not settings:
-            # 无配置时的默认回退
-            markup_registry.register_masker("mdx", MDXMasker())
-            markup_registry.register_transformer(ObsidianTransclusionTransformer())
-            markup_registry.register_transformer(MDXTransformer())
             return
 
         # 0. [V53.1] 双重主权过滤：汇总本地禁用与品牌禁用清单
@@ -47,25 +27,15 @@ class MarkupManager:
         def is_active(name):
             return name not in disabled_all
 
-        # 2. 动态注册安全屏蔽插件
-        for name in settings.security_maskers:
-            if not is_active(name):
-                from core.utils.tracing import tlog
-                tlog.info(f"🚫 [插件治理] 安全插件 '{name}' 已被主权层禁用。")
-                continue
-            masker_cls = MarkupManager._MASKER_MAP.get(name)
-            if masker_cls:
-                markup_registry.register_masker(name, masker_cls())
-
-        # 3. 动态注册内容转换插件
-        for name in settings.markup_transformers:
-            if not is_active(name):
-                from core.utils.tracing import tlog
-                tlog.info(f"🚫 [插件治理] 转换插件 '{name}' 已被主权层禁用。")
-                continue
-            transformer_cls = MarkupManager._TRANSFORMER_MAP.get(name)
-            if transformer_cls:
-                markup_registry.register_transformer(transformer_cls())
+        # 2. [V75.0] 根据配置过滤已加载的插件
+        # 注意：在 Zero-Touch 架构下，插件已物理加载，此处仅做逻辑开关过滤
+        if hasattr(settings, 'security_maskers'):
+            for name in settings.security_maskers:
+                if not is_active(name):
+                    from core.utils.tracing import tlog
+                    tlog.info(f"🚫 [插件治理] 安全插件 '{name}' 已被主权层禁用。")
+                    if name in markup_registry._maskers:
+                        del markup_registry._maskers[name]
 
     @staticmethod
     def get_processor(processor_type: str = "markdown"):

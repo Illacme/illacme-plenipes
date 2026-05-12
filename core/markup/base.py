@@ -23,6 +23,10 @@ class MarkupBlock:
 
 class ISyntaxBlockPlugin(abc.ABC):
     """[Contract] 语法块插件接口：负责识别特定语法的起始与结束"""
+    PLUGIN_ID: str = "generic_syntax"
+    DISPLAY_NAME: str = "Syntax Block"
+    DESCRIPTION: str = "语法块解析插件"
+
     @property
     @abc.abstractmethod
     def block_type(self) -> str: pass
@@ -40,11 +44,19 @@ class ISyntaxBlockPlugin(abc.ABC):
 
 class IContentTransformer(abc.ABC):
     """[Contract] 内容转换器插件接口：负责行内语法或块内容的后置转换"""
+    PLUGIN_ID: str = "generic_transformer"
+    DISPLAY_NAME: str = "Transformer"
+    DESCRIPTION: str = "内容语义转换插件"
+
     @abc.abstractmethod
     def transform(self, content: str, context: Dict[str, Any]) -> str: pass
 
 class ISecurityMasker(abc.ABC):
     """[Contract] 安全屏蔽器插件接口：负责在 AI 翻译前提取受保护的代码块"""
+    PLUGIN_ID: str = "generic_masker"
+    DISPLAY_NAME: str = "Security Masker"
+    DESCRIPTION: str = "内容脱敏与安全屏蔽插件"
+
     @abc.abstractmethod
     def mask(self, content: str) -> Tuple[str, Dict[str, str]]: pass
 

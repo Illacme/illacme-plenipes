@@ -348,10 +348,25 @@
 }
 
 .node-unit:hover {
-    transform: translateY(-10px) scale(1.02);
+    transform: translateY(-8px);
     border-color: var(--accent-primary);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(163, 76, 255, 0.15);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(163, 76, 255, 0.2);
 }
+
+.role-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 3px 12px;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border-bottom-left-radius: 12px;
+    z-index: 10;
+    box-shadow: -5px 5px 15px rgba(0,0,0,0.3);
+}
+.role-badge.primary { background: var(--accent-primary); color: #000; }
+.role-badge.fallback { background: rgba(255, 255, 255, 0.1); color: #fff; backdrop-filter: blur(5px); }
 
 .node-unit::after {
     content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
@@ -365,9 +380,24 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 20px;
+    width: 100%;
 }
 
-.node-identity { display: flex; gap: 15px; align-items: center; }
+.node-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0; /* 🚀 防止被挤出边框 */
+    margin-left: 15px;
+    padding-top: 2px;
+}
+
+.node-identity { 
+    display: flex; 
+    gap: 15px; 
+    align-items: center; 
+    min-width: 0; /* 🚀 允许子元素按需收缩 */
+    flex: 1;
+}
 .node-icon-vessel {
     width: 54px; height: 54px; border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
@@ -376,11 +406,72 @@
     box-shadow: inset 0 0 15px rgba(255,255,255,0.02);
 }
 
+.node-name-vessel {
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    width: 100%;
+}
+
+.node-name-vessel:hover .node-name {
+    animation: marquee-scroll 8s linear infinite;
+    mask-image: none;
+    text-overflow: clip;
+}
+
 .node-name {
     font-family: var(--font-header);
-    font-size: 1.1rem; font-weight: 900; color: #fff;
+    font-size: 1.15rem; font-weight: 900; color: #fff;
     letter-spacing: 0.5px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block; /* 🚀 必须为 inline-block 才能执行 transform */
 }
+
+.node-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    height: 18px;
+}
+
+.text-marquee-wrapper {
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, #000 80%, transparent 100%);
+    position: relative;
+    cursor: default;
+}
+
+.text-marquee-wrapper:hover .node-type {
+    animation: marquee-scroll 6s linear infinite;
+    mask-image: none;
+}
+
+@keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+.node-type {
+    font-size: 0.65rem; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    display: inline-block;
+}
+
+.protocol-badge {
+    font-size: 0.55rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.protocol-badge.anthropic { color: #ff9f43; border-color: rgba(255, 159, 67, 0.2); }
+.protocol-badge.native { color: #54a0ff; border-color: rgba(84, 160, 255, 0.2); }
 
 .center-header-vessel {
     display: flex;
@@ -413,6 +504,7 @@
     font-size: 1.6rem;
     background: linear-gradient(to right, #fff, var(--text-dim));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -450,10 +542,41 @@
     text-overflow: ellipsis; /* 如果 Endpoint 太长，显示省略号 */
 }
 
-.node-type {
-    font-size: 0.6rem; color: var(--accent-secondary);
-    text-transform: uppercase; letter-spacing: 2px; margin-top: 2px;
+.node-model-line {
+    margin-top: 10px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    min-width: 0; /* 🚀 确保跑马灯容器能正确计算宽度 */
 }
+
+.model-marquee-vessel {
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    width: 100%;
+}
+
+.model-marquee-vessel:hover .node-model-badge {
+    animation: marquee-scroll 8s linear infinite;
+    mask-image: none;
+}
+
+.node-model-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(163, 76, 255, 0.08);
+    border: 1px solid rgba(163, 76, 255, 0.15);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent-primary);
+}
+
+.node-model-badge .brain-icon { font-size: 0.8rem; }
+.node-model-badge .model-name { font-weight: 600; }
 
 /* 📡 Telemetry & Latency */
 .telemetry-row {
@@ -1135,3 +1258,162 @@
     background: rgba(0, 242, 255, 0.2);
     border-radius: 3px;
 }
+
+/* 🛰️ [V74.20] Header Tools & Action Matrix - Industrial Alignment */
+.header-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 30px;
+}
+
+.header-tools .search-box {
+    max-width: 480px;
+    flex: 1;
+    position: relative;
+}
+
+.header-tools .search-box input {
+    height: 42px;
+    padding-left: 45px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-tools .search-box input:focus {
+    background: rgba(163, 76, 255, 0.05);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 20px rgba(163, 76, 255, 0.15);
+}
+
+.header-tools .search-box::before {
+    content: "🔍";
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    opacity: 0.6;
+    z-index: 1;
+}
+
+.action-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.action-group .mini-btn {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s;
+}
+
+.action-group .mini-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.action-group .mini-btn.glow-btn {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(163, 76, 255, 0.2);
+}
+
+.node-unit.hidden {
+    display: none !important;
+}
+
+/* 🎨 Symmetrical Orbit Refinement */
+.deck-branding-row {
+    margin-bottom: 5px;
+}
+
+/* 🛰️ [V74.35] Consolidated Header Actions - Industrial Single-Row Matrix */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.action-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+
+/* 🛰️ [V74.75] Compute Center Visual Tightening - Strategy Matrix Precision */
+#view-compute .view-header {
+    margin-bottom: -15px !important;
+    gap: 6px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#view-compute .view-content {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+#view-compute .compute-viewport {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+#view-compute .header-nav-row {
+    margin-top: 0 !important;
+}
+
+#view-compute .infrastructure-hub {
+    margin-top: 0 !important;
+}
+
+#view-compute .node-grid {
+    margin-top: 0 !important;
+}
+
+#view-compute .strategy-command-deck {
+    margin-top: 5px !important; /* 🚀 极致紧凑 */
+    padding: 25px 30px !important;
+}
+
+#view-compute .deck-header {
+    margin-bottom: 15px !important;
+}
+
+/* 🧪 极致紧凑型标签页 */
+#view-compute .t-tab {
+    padding: 4px 12px !important;
+    font-size: 0.75rem !important;
+    height: 30px !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+
+
+

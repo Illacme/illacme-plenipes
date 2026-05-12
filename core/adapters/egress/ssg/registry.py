@@ -28,3 +28,8 @@ class SSGRegistry:
     @classmethod
     def get_all_names(cls) -> list:
         return list(cls._renderers.keys())
+
+    @classmethod
+    def list_renderers(cls) -> list:
+        """🚀 兼容性别名"""
+        return cls.get_all_names()

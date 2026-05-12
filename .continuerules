@@ -7,8 +7,8 @@ You are operating within the Illacme-plenipes industrial framework.
 
 **YOUR FIRST COMPULSORY ACTIONS BEFORE PROCESSING ANY USER REQUEST:**
 You MUST immediately read the following files IN ORDER before doing anything else:
-1. 👉 `.plenipes/rules.md` — Project governance rules (10 chapters of binding standards)
-2. 👉 `.plenipes/evolution_records.md` — Project-specific lessons and pitfalls (with Guard bindings)
+1. 👉 `.plenipes/SOP/RULES_INDEX.md` — Project governance INDEX (Single Source of Truth)
+2. 👉 `.plenipes/SOP/GENETICS/EVOLUTION_HISTORY.md` — Project-specific lessons and pitfalls
 
 WARNING: Do NOT assume you "already know" the rules. Your context is ephemeral — every session starts blank. Failure to read these files on your FIRST turn will cause your commits to be rejected by the pre-commit governance gate (28 automated checks).
 

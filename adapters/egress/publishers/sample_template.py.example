@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Illacme Plenipes Plugin Template: Sample Publisher
+模块职责：演示如何编写一个自定义的分发插件。
+开发者只需继承 BasePublisher 并实现 push 方法即可。
+"""
+
+from core.adapters.egress.publishers.base import BasePublisher
+from core.utils.tracing import tlog
+from typing import Dict, Any
+
+class SamplePublisher(BasePublisher):
+    """🚀 [Developer Kit] 示例分发插件"""
+    PLUGIN_ID = "sample_publisher"
+    
+    def push(self, bundle_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        处理分发逻辑。
+        :param bundle_path: 待发布的本地资产包路径
+        :param metadata: 完整的元数据矩阵
+        """
+        title = metadata.get("title", "Unknown")
+        tlog.info(f"✨ [Sample Plugin] 正在模拟分发文章: {title}")
+        
+        # 在这里编写你的逻辑，例如：
+        # 1. 发送 Webhook
+        # 2. 上传至特定云存储
+        # 3. 触发外部 API
+        
+        return {"status": "success", "message": "Simulation completed"}

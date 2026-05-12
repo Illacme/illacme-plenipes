@@ -45,6 +45,8 @@ class StepRegistry:
 
 # 🚀 [Zero-Touch] 自动扫描并注册管线步骤
 import os
+import sys
+import importlib
 root_dir = os.path.dirname(__file__)
 base_package = __name__.rsplit('.', 1)[0]
 
@@ -55,3 +57,10 @@ discover_and_register([root_dir], base_package, PipelineStep, StepRegistry.regis
 steps_dir = os.path.join(root_dir, "steps")
 if os.path.exists(steps_dir):
     discover_and_register([steps_dir], f"{base_package}.steps", PipelineStep, StepRegistry.register)
+
+# 🚀 [V75.0] 3. 扫描全局扩展管线步骤 (adapters/editorial)
+global_steps_path = os.path.abspath("adapters/editorial")
+if os.path.exists(global_steps_path):
+    if os.path.abspath("adapters") not in sys.path:
+        sys.path.append(os.path.abspath("adapters"))
+    discover_and_register([global_steps_path], "adapters.editorial", PipelineStep, StepRegistry.register)

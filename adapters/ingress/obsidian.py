@@ -8,10 +8,13 @@ Illacme-plenipes Core - Obsidian Dialect
 
 import re
 from typing import Tuple, Dict, Any
-from core.adapters.ingress.base import BaseDialect
+from core.ingress.base import BaseDialect
 
 class ObsidianDialect(BaseDialect):
     """💎 Obsidian 方言处理器"""
+    PLUGIN_ID = "obsidian"
+    DISPLAY_NAME = "Obsidian Connector"
+    DESCRIPTION = "解析 Obsidian 特有的高亮 (==)、注释 (%%) 与块引用标记。"
     
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         # 1. 🚀 [V10.4] 路由主权：WikiLinks 不再在此处剥离。

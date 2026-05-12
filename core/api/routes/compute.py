@@ -25,8 +25,8 @@ def list_compute_nodes():
     config = engine.config.translation
     nodes = []
     for node_id, node in config.compute_nodes.items():
-        # 动态计算展示模型（品牌策略层指定）
-        display_model = "-"
+        # 🚀 [V74.9] 物理模型感知：优先读取节点自身配置，再根据角色进行策略对齐
+        display_model = getattr(node, "model", "-")
         if node_id == config.primary_node:
             display_model = config.primary_model
         elif node_id == config.fallback_node:
@@ -51,6 +51,7 @@ def list_compute_nodes():
             "enabled": node.enabled,
             "is_primary": node_id == config.primary_node,
             "is_fallback": node_id == config.fallback_node,
+            "last_updated_raw": getattr(node, "last_updated", 0),
             "health": {
                 "score": round(metrics.get_score(), 1),
                 "avg_latency": round(metrics.avg_latency * 1000, 0), # 转换为 ms
@@ -59,10 +60,10 @@ def list_compute_nodes():
             }
         })
     
-    # 🚀 [V52.18] 优先级对正：主算力节点与备选节点物理置顶
-    nodes.sort(key=lambda x: (not x["is_primary"], not x["is_fallback"], x["id"]))
+    # 🚀 [V74.9] 排序平权：按编辑时间倒序排列
+    nodes.sort(key=lambda x: x.get("last_updated_raw", 0), reverse=True)
     
-    return {"nodes": nodes, "primary": config.primary_node}
+    return {"nodes": nodes, "primary": config.primary_node, "fallback": config.fallback_node}
 
 @router.post("/nodes/update", dependencies=[Depends(verify_token)])
 async def update_compute_node(req: dict):

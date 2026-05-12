@@ -22,8 +22,8 @@ import sys
 discover_and_register(__path__, __name__, BaseSyndicator, register_target)
 
 # 🚀 [Zero-Touch] 2. 扫描全局扩展分发插件
-global_syn_path = os.path.abspath("adapters/syndication")
+global_syn_path = os.path.abspath("adapters/egress/syndication")
 if os.path.exists(global_syn_path):
     if os.path.abspath("adapters") not in sys.path:
         sys.path.append(os.path.abspath("adapters"))
-    discover_and_register([global_syn_path], "adapters.syndication", BaseSyndicator, register_target)
+    discover_and_register([global_syn_path], "adapters.egress.syndication", BaseSyndicator, register_target)

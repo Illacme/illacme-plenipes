@@ -102,8 +102,6 @@ core/ingress/__init__.py
 core/ingress/adapter.py
 core/ingress/base.py
 core/ingress/dialect/__init__.py
-core/ingress/dialect/logseq.py
-core/ingress/dialect/obsidian.py
 core/ingress/language_sentinel.py
 core/ingress/manager.py
 core/ingress/registry.py
@@ -150,13 +148,8 @@ core/markup/__init__.py
 core/markup/base.py
 core/markup/manager.py
 core/markup/processors/markdown/blocks/__init__.py
-core/markup/processors/markdown/blocks/obsidian.py
-core/markup/processors/markdown/blocks/standard.py
 core/markup/processors/markdown/links/__init__.py
-core/markup/processors/markdown/links/mdx.py
-core/markup/processors/markdown/links/obsidian.py
 core/markup/processors/markdown/maskers/__init__.py
-core/markup/processors/markdown/maskers/mdx.py
 core/markup/registry.py
 core/runtime/__init__.py
 core/runtime/cli_bootstrap.py

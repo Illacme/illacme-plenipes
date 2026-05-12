@@ -152,7 +152,7 @@ window.renderPlugins = () => {
                             </div>
                             
                             <div class="shield-body" style="flex:1; display:flex; flex-direction:column;">
-                                <h4 style="font-size:1.1rem; color:#fff; margin-bottom:5px;">${p.id.toUpperCase()}</h4>
+                                <h4 style="font-size:1.1rem; color:#fff; margin-bottom:5px;">${(p.name || p.id).toUpperCase()}</h4>
                                 <p style="margin-bottom:15px; flex:1; font-size:0.75rem; color:var(--text-dim);">${p.description || 'Capability syncing...'}</p>
                                 
                                 <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
@@ -206,7 +206,8 @@ window.openPluginConfig = async (id) => {
 
     if (!drawer || !body) return;
 
-    title.innerText = `⚙️ 配置能力: ${id}`;
+    const p = window.allPlugins.find(x => x.id === id);
+    title.innerText = `⚙️ 配置能力: ${p?.name || id}`;
     body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
     drawer.style.display = 'flex';
 
@@ -216,7 +217,7 @@ window.openPluginConfig = async (id) => {
     }
 
     let html = '';
-    const p = window.allPlugins.find(x => x.id === id);
+    // p is already defined at the top of the function
 
     if (p.type === 'container') {
         html = `

@@ -15,8 +15,10 @@ from core.ingress.base import BaseSource
 from core.utils.tracing import tlog
 
 class GitRepositorySource(BaseSource):
-    """🚀 [V48.3] Git 仓库数据源 — 全息远程收稿
+    """🚀 [V48.3] Git 仓库数据源 — 全息远程收稿"""
+    PLUGIN_ID = "git"
 
+    """
     支持从远程 Git 仓库克隆/拉取 Markdown 原稿。采用浅克隆 (shallow clone) 策略
     以降低带宽消耗，支持增量同步 (git pull) 以实现高效的二次收稿。
 

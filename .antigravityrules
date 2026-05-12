@@ -15,9 +15,9 @@
 **在处理任何用户请求之前，您必须执行的强制性动作：**
 您必须立即调用 `view_file`（或等效的读取工具）按顺序物理加载以下文件：
 1. 👉 `docs/FEATURES.zh-CN.md` — 项目核心特性章程（引擎之魂）
-2. 👉 `.plenipes/rules.md` — 项目治理规则（九章律）
-3. 👉 `.plenipes/evolution_records.md` — 项目专属教训与坑位记录
-4. 👉 `.plenipes/skills/governance_master_skill.md` — 治理大师调度技能
+2. 👉 `.plenipes/SOP/RULES_INDEX.md` — 项目治理规则索引（单一真值中心）
+3. 👉 `.plenipes/SOP/GENETICS/EVOLUTION_HISTORY.md` — 项目专属教训与坑位记录
+4. 👉 `.plenipes/SOP/00_COLLABORATION_RULES.md` — 协作与诚信准则
 
 警告：严禁假设您“已经知道”规则。严禁依赖“include”指令进行语法上的敷衍。除非物理抓取，否则您的提示词上下文在历史维度上是短暂的。如果未能在第一回合执行 `view_file` 读取上述文件，将被视为对治理协议的直接破坏，会导致严重的集成失败。
 

@@ -8,7 +8,7 @@ Illacme-plenipes Core - Base Publisher Interface
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Type
 
 from core.utils.tracing import tlog
 
@@ -17,6 +17,10 @@ class BasePublisher(ABC):
     🚀 抽象发布器基座
     所有分发渠道（Cloudflare, Git, S3 等）必须继承此类并实现核心方法。
     """
+    PLUGIN_ID: str = "generic_publisher"
+    DISPLAY_NAME: str = "Publisher"
+    DESCRIPTION: str = "分发适配器插件"
+
     def __init__(self, config: Dict[str, Any], sys_config: Dict[str, Any] = None):
         self.config = config
         self.sys_config = sys_config or {}
@@ -57,3 +61,15 @@ class PublisherRegistry:
     @classmethod
     def list_active_targets(cls) -> List[str]:
         return list(cls._targets.keys())
+
+    @classmethod
+    def list_active(cls) -> List[str]:
+        return cls.list_active_targets()
+
+    @classmethod
+    def get_publisher_class(cls, name: str):
+        return cls._targets.get(name)
+
+    @classmethod
+    def get_all_publishers(cls) -> Dict[str, Type['BasePublisher']]:
+        return cls._targets

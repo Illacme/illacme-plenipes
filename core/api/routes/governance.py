@@ -174,7 +174,7 @@ def list_active_plugins():
     from core.adapters.egress.ssg.registry import SSGRegistry
     from core.adapters.egress.publishers.base import PublisherRegistry
     from core.adapters.ai.registry import AIProviderRegistry
-    from core.markup.manager import MarkupManager
+    from core.adapters.syndication.targets import TARGET_REGISTRY
     
     SYSTEM_TRACK = "V24.0"
     p_cfg = engine.config.plugins
@@ -199,6 +199,8 @@ def list_active_plugins():
     
     # 1. 🎨 装帧主题治理 (Theme Governance)
     from core.config.config import THEMES_DIR
+    from core.adapters.egress.ssg.registry import SSGRegistry
+    
     local_theme_root = os.path.join(engine.config.system.data_root, THEMES_DIR)
     global_theme_root = os.path.join(os.getcwd(), THEMES_DIR)
     
@@ -234,16 +236,20 @@ def list_active_plugins():
                 })
                 theme_ids.add(entry)
 
-    # 1.3 内核原生适配器兜底
-    for adapter in ["docusaurus", "starlight", "sovereign", "vitepress", "nextra"]:
-        if adapter in theme_ids: continue
-        is_active = (active_theme == adapter)
+    # 1.3 动态适配器矩阵 (SSG Registry Discovery)
+    for adapter_id in SSGRegistry.get_all_names():
+        if adapter_id in theme_ids: continue
+        is_active = (active_theme == adapter_id)
+        renderer_cls = SSGRegistry.get_renderer(adapter_id)
+        display_name = getattr(renderer_cls, "DISPLAY_NAME", adapter_id.upper())
+        description = getattr(renderer_cls, "DESCRIPTION", f"内核原生适配器：驱动 {display_name} 工业级排版引擎。")
+        
         plugins.append({
-            "id": adapter, "category": "theme", "category_name": "🎨 装帧主题",
+            "id": adapter_id, "name": display_name, "category": "theme", "category_name": "🎨 装帧主题适配器",
             "status": "In-Use" if is_active else "Native",
-            "is_in_use": is_active, "is_enabled": (adapter not in disabled),
+            "is_in_use": is_active, "is_enabled": (adapter_id not in disabled),
             "origin": "core", "location": "native", "version": SYSTEM_TRACK,
-            "description": f"内核原生适配器：驱动 {adapter.upper()} 工业级排版引擎。"
+            "description": description
         })
         
     # 2. 🚀 发布与托管能力治理 (Egress & Hosting Governance)
@@ -268,46 +274,24 @@ def list_active_plugins():
         })
 
     # 2.2 内核原生分发渠道
-    for name in PublisherRegistry.list_active_targets():
+    for name in PublisherRegistry.list_active():
         if name in hosting_ids: continue # 已由托管分类处理
         if any(p["id"] == name for p in plugins): continue
         is_enabled = (name not in disabled)
+        
+        p_cls = PublisherRegistry.get_publisher_class(name)
+        display_name = getattr(p_cls, "DISPLAY_NAME", name.upper())
+        description = getattr(p_cls, "DESCRIPTION", f"内核发布网关：同步资产至 {display_name} 节点。")
+        
         plugins.append({
-            "id": name, "category": "publisher", "category_name": "🚀 多维分发矩阵",
+            "id": name, "name": display_name, "category": "publisher", "category_name": "🚀 多维分发矩阵",
             "status": "In-Use" if is_enabled else "Disabled",
             "is_in_use": is_enabled, "is_enabled": is_enabled,
             "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"内核发布网关：同步资产至 {name.upper()} 节点。"
+            "description": description
         })
 
-    # 2.3 外部扩展插件 (External Plugins)
-    from core.utils.plugin_loader import PluginLoader
-    from plugins.publishers.base import BasePublisher
-    plugin_pub_dir = os.path.join(os.getcwd(), "plugins", "publishers")
-    if os.path.exists(plugin_pub_dir):
-        discovered = PluginLoader.load_plugins(plugin_pub_dir, BasePublisher)
-        for p_cls in discovered:
-            p_id = getattr(p_cls, "PLUGIN_ID", p_cls.__name__.lower())
-            
-            # 🛑 [物理拦截] Webhook 已升级为聚合网关，不再以原子形式展示
-            if p_id == "webhook": continue
-            
-            if any(p["id"] == p_id for p in plugins): continue
-            
-            # 探测配置状态
-            p_cfg_obj = getattr(engine.config.publish_control, "direct_upload", {})
-            is_in_use = False
-            if isinstance(p_cfg_obj, dict) and p_id in p_cfg_obj:
-                is_in_use = p_cfg_obj[p_id].get("enabled", False)
-            
-            is_enabled = (p_id not in disabled)
-            plugins.append({
-                "id": p_id, "category": "publisher", "category_name": "🚀 分发渠道",
-                "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
-                "is_in_use": is_in_use, "is_enabled": is_enabled,
-                "origin": "user", "version": SYSTEM_TRACK,
-                "description": f"外部发布插件：驱动 {p_id.upper()} 渠道的内容分发。"
-            })
+
 
     # 2.3 🚀 聚合能力容器 (Aggregated Capability Containers)
     # A. Webhook 网关
@@ -336,13 +320,16 @@ def list_active_plugins():
     # 2.3 🚀 [Identity Multiplexing] 多维主权治理
     # 将所有分发节点按物理类型归类，实现“单实例原子化，多实例容器化”
     syndication_groups = {} # platform_type -> list of (id, cfg)
-    known_platforms = ["devto", "medium", "ghost", "wordpress", "hashnode", "linkedin"]
     
+    # 🚀 [V75.0] 预加载所有已注册的平台类型
+    for p_id in TARGET_REGISTRY.keys():
+        syndication_groups[p_id] = []
+
     for s_id, s_cfg in engine.config.syndication.items():
         if not isinstance(s_cfg, dict): continue
         p_type = s_cfg.get("platform")
         if not p_type:
-            for kp in known_platforms:
+            for kp in TARGET_REGISTRY.keys():
                 if kp in s_id.lower():
                     p_type = kp
                     break
@@ -354,33 +341,43 @@ def list_active_plugins():
         # 判定逻辑：WordPress 强制容器化，其他平台仅在多实例时容器化
         should_be_container = (p_type == "wordpress" or p_type == "ghost" or len(instances) > 1)
         
-        if should_be_container:
-            gateway = {
-                "id": f"{p_type}_gateway", "type": "container", "category": "publisher", "category_name": "🚀 多维分发矩阵",
-                "status": "Ready", "is_in_use": False, "is_enabled": True, "origin": "core", "version": "V2.0",
-                "description": f"{p_type.upper()} 矩阵网关：聚合管理多个物理分发节点。",
-                "sub_items": []
-            }
-            for inst_id, inst_cfg in instances:
+        if instances:
+            if should_be_container:
+                gateway = {
+                    "id": f"{p_type}_gateway", "type": "container", "category": "publisher", "category_name": "🚀 多维分发矩阵",
+                    "status": "Ready", "is_in_use": False, "is_enabled": True, "origin": "core", "version": "V2.0",
+                    "description": f"{p_type.upper()} 矩阵网关：聚合管理多个物理分发节点。",
+                    "sub_items": []
+                }
+                for inst_id, inst_cfg in instances:
+                    is_active = inst_cfg.get("enabled", False)
+                    target = inst_cfg.get("url", inst_cfg.get("username", "Account Node"))
+                    gateway["sub_items"].append({
+                        "id": inst_id, "name": inst_id.upper(), "target": target, "is_in_use": is_active,
+                        "status": "In-Use" if is_active else "Ready"
+                    })
+                in_use_count = sum(1 for s in gateway["sub_items"] if s["is_in_use"])
+                gateway["status"] = f"{in_use_count} 节点活跃"
+                gateway["is_in_use"] = in_use_count > 0
+                plugins.append(gateway)
+            else:
+                # 保持原子卡片的极致简洁
+                inst_id, inst_cfg = instances[0]
                 is_active = inst_cfg.get("enabled", False)
-                target = inst_cfg.get("url", inst_cfg.get("username", "Account Node"))
-                gateway["sub_items"].append({
-                    "id": inst_id, "name": inst_id.upper(), "target": target, "is_in_use": is_active,
-                    "status": "In-Use" if is_active else "Ready"
+                plugins.append({
+                    "id": inst_id, "type": "atomic", "category": "publisher", "category_name": "🚀 多维分发矩阵",
+                    "status": "In-Use" if is_active else "Ready",
+                    "is_in_use": is_active, "is_enabled": True, "origin": "core", "version": SYSTEM_TRACK,
+                    "description": f"{p_type.upper()} 直连节点：同步资产至该平台内容生态。",
+                    "platform": p_type
                 })
-            in_use_count = sum(1 for s in gateway["sub_items"] if s["is_in_use"])
-            gateway["status"] = f"{in_use_count} 节点活跃"
-            gateway["is_in_use"] = in_use_count > 0
-            plugins.append(gateway)
         else:
-            # 保持原子卡片的极致简洁
-            inst_id, inst_cfg = instances[0]
-            is_active = inst_cfg.get("enabled", False)
+            # 🚀 [V75.0] 未配置但已安装的平台
             plugins.append({
-                "id": inst_id, "type": "atomic", "category": "publisher", "category_name": "🚀 多维分发矩阵",
-                "status": "In-Use" if is_active else "Ready",
-                "is_in_use": is_active, "is_enabled": True, "origin": "core", "version": SYSTEM_TRACK,
-                "description": f"{p_type.upper()} 直连节点：同步资产至该平台内容生态。",
+                "id": p_type, "type": "atomic", "category": "publisher", "category_name": "🚀 多维分发矩阵",
+                "status": "Inactive",
+                "is_in_use": False, "is_enabled": True, "origin": "core", "version": SYSTEM_TRACK,
+                "description": f"{p_type.upper()} 分发适配器：尚未配置任何物理分发节点。",
                 "platform": p_type
             })
     
@@ -421,12 +418,16 @@ def list_active_plugins():
     for d in ingress_registry.list_dialects():
         is_in_use = (d in p_cfg.ingress_dialects)
         is_enabled = (d not in disabled)
+        d_cls = ingress_registry.get_dialect(d)
+        display_name = getattr(d_cls, "DISPLAY_NAME", d.upper())
+        description = getattr(d_cls, "DESCRIPTION", f"语法方言适配器：内核原生支持感应并解析 {display_name} 格式的原始笔记。")
+        
         plugins.append({
-            "id": d, "category": "ingress", "category_name": "📥 输入感应",
+            "id": d, "name": display_name, "category": "ingress", "category_name": "📥 输入感应",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
             "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"语法方言适配器：内核原生支持感应并解析 {d.upper()} 格式的原始笔记。"
+            "description": description
         })
     
     # 4.2 物理数据源
@@ -434,35 +435,48 @@ def list_active_plugins():
     for s in ingress_registry.list_sources():
         is_in_use = (s == active_source)
         is_enabled = (s not in disabled)
+        s_cls = ingress_registry.get_source(s)
+        display_name = getattr(s_cls, "DISPLAY_NAME", s.upper())
+        description = getattr(s_cls, "DESCRIPTION", f"物理数据源适配器：驱动 {display_name} 节点的原始资产采集。")
+        
         plugins.append({
-            "id": s, "category": "ingress", "category_name": "📥 输入感应",
+            "id": s, "name": display_name, "category": "ingress", "category_name": "📥 输入感应",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
             "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"物理数据源适配器：驱动 {s.upper()} 节点的原始资产采集。"
+            "description": description
         })
 
     # 5. 🛠️ 资产加工 (Transformers)
-    for t_name in MarkupManager._TRANSFORMER_MAP.keys():
-        is_in_use = (t_name in p_cfg.markup_transformers)
-        is_enabled = (t_name not in disabled)
+    from core.markup.registry import markup_registry
+    for transformer in markup_registry.get_transformers():
+        t_cls = transformer.__class__
+        t_id = getattr(t_cls, "PLUGIN_ID", t_cls.__name__.lower())
+        is_in_use = (t_id in p_cfg.markup_transformers)
+        is_enabled = (t_id not in disabled)
+        
+        display_name = getattr(t_cls, "DISPLAY_NAME", t_id.replace('_', ' ').title())
+        description = getattr(t_cls, "DESCRIPTION", f"标记转换网关：内核原生执行 {display_name} 逻辑的语义变换。")
+        
         plugins.append({
-            "id": t_name, "category": "transformer", "category_name": "🛠️ 资产加工",
+            "id": t_id, "name": display_name, "category": "transformer", "category_name": "🛠️ 资产加工",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"标记转换网关：内核原生执行 {t_name.replace('_', ' ').upper()} 逻辑的语义变换。"
+            "origin": "core" if "adapters.markup" not in t_cls.__module__ else "adapter",
+            "version": SYSTEM_TRACK,
+            "description": description
         })
 
     # 6. 🛡️ 安全防护 (Maskers)
-    for m_name in MarkupManager._MASKER_MAP.keys():
+    for m_name, masker in markup_registry._maskers.items():
         is_in_use = (m_name in p_cfg.security_maskers)
         is_enabled = (m_name not in disabled)
         plugins.append({
             "id": m_name, "category": "masker", "category_name": "🛡️ 安全防护",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
-            "origin": "core", "version": SYSTEM_TRACK,
+            "origin": "core" if "adapters.markup" not in masker.__class__.__module__ else "adapter",
+            "version": SYSTEM_TRACK,
             "description": f"内容脱敏卫士：对敏感信息进行 {m_name.upper()} 级别的物理屏蔽。"
         })
 
@@ -471,12 +485,16 @@ def list_active_plugins():
     for s_name in StepRegistry.get_all_names():
         is_in_use = True
         is_enabled = (s_name not in disabled)
+        s_cls = StepRegistry.get_step(s_name)
+        display_name = getattr(s_cls, "DISPLAY_NAME", s_name.replace('_', ' ').title())
+        description = getattr(s_cls, "DESCRIPTION", f"主权管线插件：执行 {display_name} 逻辑的合规性审计。")
+        
         plugins.append({
-            "id": s_name, "category": "editorial", "category_name": "🧬 流程审计",
+            "id": s_name, "name": display_name, "category": "editorial", "category_name": "🧬 流程审计",
             "status": "In-Use" if is_in_use else ("Active" if is_enabled else "Disabled"),
             "is_in_use": is_in_use, "is_enabled": is_enabled,
             "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"主权管线插件：执行 {s_name.replace('_', ' ').upper()} 逻辑的合规性审计。"
+            "description": description
         })
     
     # 🚀 [排序算法]：In-Use 优先 > Enabled 优先 > ID 字母序
@@ -591,63 +609,73 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
         
         # B. 同步更新内存状态 (仅当更新的是当前活跃身份或全局/本地时)
         if not imprint_id or imprint_id == engine.im.get_active_imprint():
+            # B. 同步更新内存状态 (支持 Pydantic 模型与字典混合路径)
             parts = key.split('.')
             target = engine.config
             for part in parts[:-1]:
-                if hasattr(target, part):
+                if isinstance(target, dict):
+                    if part in target:
+                        target = target[part]
+                    else:
+                        target = None
+                        break
+                elif hasattr(target, part):
                     target = getattr(target, part)
                 else:
                     target = None
                     break
             
-            if target and hasattr(target, parts[-1]):
-                # 特殊处理列表类型
-                # 🚀 [修复] 移除过于激进的逗号自动分割逻辑，防止提示词句子被误判为列表
-                # if isinstance(value, str) and ',' in value:
-                #     value = [v.strip() for v in value.split(',')]
-
-                
-                # 🚀 [V55.4] 强制安全转换为 I18n 结构，并执行授权分层校验
-                if key == "i18n_settings.targets" and isinstance(value, list):
-                    from core.governance.license_guard import LicenseGuard
-                    if not LicenseGuard.is_licensed() and len(value) > 1:
-                        return {"status": "error", "error": "🛡️ [主权拦截] 社区版仅支持 1 个目标语种。开启全球矩阵分发请升级至授权版。"}
+            if target:
+                final_key = parts[-1]
+                # 🚀 [V74.9] 物理对正：同时支持对象属性与字典键值的热更新
+                if isinstance(target, dict):
+                    target[final_key] = value
+                    tlog.info(f"✅ [内存同步] (Dict) {key} -> {value}")
+                elif hasattr(target, final_key):
+                    # 🚀 [V55.4] 强制安全转换为 I18n 结构，并执行授权分层校验
+                    if key == "i18n_settings.targets" and isinstance(value, list):
+                        from core.governance.license_guard import LicenseGuard
+                        if not LicenseGuard.is_licensed() and len(value) > 1:
+                            return {"status": "error", "error": "🛡️ [主权拦截] 社区版仅支持 1 个目标语种。开启全球矩阵分发请升级至授权版。"}
+                        
+                        from core.config.config_models import I18nTarget
+                        from core.utils.language_hub import LanguageHub
+                        new_targets = []
+                        for code in value:
+                            if isinstance(code, str):
+                                name = LanguageHub.resolve_to_name(code)
+                                iso = LanguageHub.resolve_to_iso(code)
+                                new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=name))
+                            else:
+                                new_targets.append(code)
+                        value = new_targets
+                        # 🚀 [V55.8] 物理序列化对正：在存入持久化队列前，必须将 Pydantic 模型转换为纯 dict，防止 yaml.safe_dump 崩溃
+                        routing_groups[level][key] = [t.model_dump() if hasattr(t, 'model_dump') else t for t in value]
+                    elif key == "i18n_settings.source.lang_code" and isinstance(value, str):
+                        from core.utils.language_hub import LanguageHub
+                        name = LanguageHub.resolve_to_name(value)
+                        # 🚀 [V55.7] 双向同步：不仅更新内存，也同步到物理持久化堆栈
+                        if hasattr(target, 'name'):
+                            target.name = name
+                            routing_groups[level]["i18n_settings.source.name"] = name
+                        if hasattr(target, 'prompt_lang'):
+                            target.prompt_lang = name
+                            routing_groups[level]["i18n_settings.source.prompt_lang"] = name
                     
-                    from core.config.config_models import I18nTarget
-                    from core.utils.language_hub import LanguageHub
-                    new_targets = []
-                    for code in value:
-                        if isinstance(code, str):
-                            name = LanguageHub.resolve_to_name(code)
-                            iso = LanguageHub.resolve_to_iso(code)
-                            new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=name))
-                        else:
-                            new_targets.append(code)
-                    value = new_targets
-                    # 🚀 [V55.8] 物理序列化对正：在存入持久化队列前，必须将 Pydantic 模型转换为纯 dict，防止 yaml.safe_dump 崩溃
-                    routing_groups[level][key] = [t.model_dump() if hasattr(t, 'model_dump') else t for t in value]
-                elif key == "i18n_settings.source.lang_code" and isinstance(value, str):
-                    from core.utils.language_hub import LanguageHub
-                    name = LanguageHub.resolve_to_name(value)
-                    # 🚀 [V55.7] 双向同步：不仅更新内存，也同步到物理持久化堆栈
-                    if hasattr(target, 'name'):
-                        target.name = name
-                        routing_groups[level]["i18n_settings.source.name"] = name
-                    if hasattr(target, 'prompt_lang'):
-                        target.prompt_lang = name
-                        routing_groups[level]["i18n_settings.source.prompt_lang"] = name
-                
-                # 🚀 [V53.0] 强制安全转换为 Enum，防止 Pydantic 序列化警告
-                if parts[-1] == "publishing_mode":
-                    from core.config.models.governance import PublishingMode
-                    try: value = PublishingMode(value)
-                    except ValueError: pass
-                elif parts[-1] == "seo_strategy":
-                    from core.config.models.governance import SeoStrategy
-                    try: value = SeoStrategy(value)
-                    except ValueError: pass
-                    
-                setattr(target, parts[-1], value)
+                    # 🚀 [V53.0] 强制安全转换为 Enum，防止 Pydantic 序列化警告
+                    if final_key == "publishing_mode":
+                        from core.config.models.governance import PublishingMode
+                        try: value = PublishingMode(value)
+                        except ValueError: pass
+                    elif final_key == "seo_strategy":
+                        from core.config.models.governance import SeoStrategy
+                        try: value = SeoStrategy(value)
+                        except ValueError: pass
+                        
+                    setattr(target, final_key, value)
+                    tlog.info(f"✅ [内存同步] (Object) {key} -> {value}")
+                else:
+                    tlog.warning(f"⚠️ [内存同步] 目标缺失属性: {final_key} ({key})")
 
     # 2. 物理持久化分流
     import yaml
