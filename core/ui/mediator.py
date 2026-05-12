@@ -33,8 +33,7 @@ class UIMediator:
 
     @classmethod
     def register_listeners(cls):
-        """核心注册：挂载所有来自事件总线的 UI 信号"""
-        bus.subscribe("UI_BANNER", cls.handle_banner)
+        """核心注册：挂载所有来自事件总线的 UI 信号 (Banner 已由 plenipes.py 物理接管)"""
         bus.subscribe("UI_PROGRESS_START", cls.handle_progress_start)
         bus.subscribe("UI_PROGRESS_ADVANCE", cls.handle_progress_advance)
         bus.subscribe("UI_PROGRESS_STOP", cls.handle_progress_stop)
