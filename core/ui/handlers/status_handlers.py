@@ -83,3 +83,14 @@ class StatusHandlers:
             warning_text.append(f" • {w}\n", style="yellow")
         panel = Panel(warning_text, title="⚠️ [bold yellow] 核心红线审计报告 [/]", border_style="yellow", padding=(1, 4), width=100)
         console.print(panel)
+
+    @staticmethod
+    def quick_banner():
+        """🚀 [V52.20] 极速 Banner 展示：用于系统自举初期"""
+        # 硬编码或从简易配置文件读取，确保 Banner 优先于任何模块加载
+        StatusHandlers.handle_banner(
+            version="V24.0",
+            ael_iter_id="V50.3_Final",
+            mode="物理火力: 8 核同步",
+            sentinel_status="双向热监听 (config.yaml + config.local.yaml)"
+        )

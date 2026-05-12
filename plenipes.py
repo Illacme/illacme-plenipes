@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # 🚀 [V52.20] 视觉主权优先：在任何探测开始前，物理展示产品 Banner
     from core.ui.handlers.status_handlers import StatusHandlers
-    StatusHandlers.print_banner()
+    StatusHandlers.quick_banner()
 
     # 1. 视觉主权：监听器挂载（Banner 将由 EnginePreflight 自动触发）
     from core.ui.mediator import UIMediator
