@@ -5,7 +5,7 @@
 
 ---
 
-## 1. 品牌与主权占位 (Branding & Sovereignty)
+## 1. 品牌与主权占位 (Imprinting & Sovereignty)
 *   **品牌定位**：全球私人出版社 (Global Private Press)。
 *   **功能定位**：您的主权化全球出版发行中心 (Sovereign Global Publishing & Distribution Center)。
 *   **主权原则**：数据不漂移、算力本地化、物理强隔离、资产可审计。

@@ -46,3 +46,12 @@ include .plenipes/rules.md
 # 3. 闭环验证协议
 # - 点火测试：代码提交前必须执行 python3 plenipes.py --doctor。
 # - 零回归准则：若修改导致 Banner 冲突或语义网关失效，必须立即撤回并复盘。
+
+# 4. 重构治理 (Refactoring Governance - SOP-04)
+# =====================================================================
+# - 单体拆分约束 (Single-Unit Limit)：严禁在单次会话中并行拆分多个大文件。必须逐个击破，单文件验证通过后方可推进。
+# - UI 像素比对协议 (Visual Parity)：凡涉及 dashboard.js 族群的拆分，必须调用 browser_subagent 截取 UI 画面，比对拆分前后的 DOM 结构与功能完整性。
+# - 逻辑指纹审计 (Logic Fingerprinting)：后端路由拆分前必须通过 curl 记录 API 响应指纹，确保拆分后逻辑 100% 对齐。
+# - 物理熔断机制 (Atomic Rollback)：一旦在重构过程中发现任何功能回归（甚至只是 Console 报错），严禁在线 Hotfix，必须立即物理回滚。
+# - GitHub 提交锁定 (Git Push First)：启动拆分前，必须确认本地修改已 100% 提交并推送至远程仓库。
+# - 强制总结存档 (Mandatory Summary)：任务结束时（无论成败），必须强制输出并存档重构复盘报告。

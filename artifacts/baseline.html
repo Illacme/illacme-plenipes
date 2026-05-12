@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 🏛️ Asset Loading (V74.0) -->
+    <link rel="stylesheet" href="css/dashboard.base.css?v=74.0">
+    <link rel="stylesheet" href="css/components/glass.css?v=74.0">
+    <link rel="stylesheet" href="css/components/governance.css?v=74.0">
+    <!-- 🌌 Galaxy Engine Dependencies -->
+    <!-- 🌌 Galaxy Engine Dependencies -->
+    <script src="vendor/sweetalert2.all.min.js"></script>
+    <script src="vendor/3d-force-graph.min.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <!-- 🛰️ Header -->
+        <header>
+            <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;">
+                <img src="logo.png" alt="Logo">
+                <div class="status-box">
+                    <h1>ILLACME <span class="accent">PLENIPES</span></h1>
+                        <div class="context-switcher" id="imprint-selector-trigger" onclick="event.stopPropagation(); toggleImprintDropdown()">
+                            <span class="context-label">品牌/事业部:</span>
+                            <span id="active-imprint-name">LOADING...</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                </div>
+                <div id="imprint-dropdown" class="glass-panel dropdown-menu" style="display: none;"></div>
+            </div>
+            <nav id="top-nav">
+                <div class="nav-item active" id="nav-overview">
+                    <span class="nav-icon">🌌</span><span class="nav-text">指挥中心</span>
+                </div>
+                <div class="nav-item" id="nav-vault">
+                    <span class="nav-icon">📂</span><span class="nav-text">原稿金库</span>
+                </div>
+                <div class="nav-item" id="nav-compute">
+                    <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
+                </div>
+                <div class="nav-item" id="nav-plugins">
+                    <span class="nav-icon">🧩</span><span class="nav-text">插件矩阵</span>
+                </div>
+                <div class="nav-item" id="nav-settings">
+                    <span class="nav-icon">⚙️</span><span class="nav-text">系统治理</span>
+                </div>
+                <button class="primary-btn glow-btn" id="btn-publish">🚀 一键出版</button>
+            </nav>
+        </header>
+
+        <button class="sidebar-toggle left" id="toggle-left">◀</button>
+        <button class="sidebar-toggle right" id="toggle-right">▶</button>
+
+        <!-- 🧪 Left Sidebar: System Identity Strip -->
+        <aside class="glass-panel sidebar" id="left-sidebar">
+            <!-- 🛰️ Press Identity & Heartbeat -->
+            <div class="sidebar-pod identity-pod">
+                <div class="pod-header">
+                    <span class="pod-title">PRESS IDENTITY</span>
+                    <div class="heartbeat-indicator pulsing healthy"></div>
+                </div>
+                <div id="sidebar-imprint-display" class="imprint-badge-glow">LOADING...</div>
+            </div>
+
+            <!-- 🧠 Intelligence Pod: Governance Context -->
+            <div class="sidebar-pod intelligence-pod">
+                <div class="pod-header">
+                    <span class="pod-title">INTELLIGENCE</span>
+                </div>
+                <div id="governance-context" class="context-matrix vertical">
+                    <div class="context-capsule">
+                        <div class="capsule-icon">🧠</div>
+                        <div class="capsule-data">
+                            <div class="capsule-label">COMPUTE CORE</div>
+                            <div class="capsule-value mono" id="ctx-ai">-</div>
+                        </div>
+                    </div>
+                    <div class="context-capsule">
+                        <div class="capsule-icon">🌍</div>
+                        <div class="capsule-data">
+                            <div class="capsule-label">TRANSLATION ARRAY</div>
+                            <div class="capsule-value mono" id="ctx-i18n">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📡 Functional Matrix: Health Monitoring -->
+            <div class="sidebar-pod system-pod">
+                <div class="pod-header">
+                    <span class="pod-title">FUNCTIONALITY MATRIX</span>
+                </div>
+                <div class="health-matrix-grid" id="health-matrix-container">
+                    <!-- Dynamic Status Capsules -->
+                </div>
+            </div>
+
+            <!-- ⚙️ Operational Pod: System Controls -->
+            <div class="sidebar-pod operational-pod">
+                <div class="pod-header">
+                    <span class="pod-title">OPERATIONS</span>
+                </div>
+                <div class="control-row">
+                    <button class="mini-btn glow-btn full-width" onclick="location.reload()" title="物理重载系统">🔄 刷新全域链路</button>
+                    <button class="mini-btn danger-btn" id="master-shutdown-btn" onclick="shutdownSystem()" title="物理级紧急关机">⏻ 停机</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 🌌 Main Viewport (Dynamically Injected) -->
+        <main id="main-viewport"></main>
+
+        <!-- 🛡️ Right Sidebar: Audit Radar -->
+        <aside class="glass-panel sidebar" id="right-sidebar">
+            <!-- 📡 Radar Scanner Pod -->
+            <div class="sidebar-pod radar-pod">
+                <div class="pod-header">
+                    <span class="pod-title">AUDIT RADAR SCANNER</span>
+                    <span class="version-tag tiny">AUTO-SCAN</span>
+                </div>
+                <div class="radar-display">
+                    <div class="radar-circle"></div>
+                    <div class="radar-sweep"></div>
+                    <div class="radar-target" style="top:30%; left:40%;"></div>
+                    <div class="radar-target" style="top:60%; left:70%;"></div>
+                </div>
+            </div>
+
+            <!-- 📑 Intelligence Feed Pod -->
+            <div class="sidebar-pod feed-pod">
+                <div class="pod-header">
+                    <span class="pod-title">SIGNAL INTELLIGENCE</span>
+                </div>
+                <div id="audit-feed" class="scroll-container scanline-overlay">
+                    <!-- Dynamic Audit Entries -->
+                </div>
+            </div>
+
+            <!-- 📊 System Integrity Pod -->
+            <div class="sidebar-pod integrity-pod">
+                <div class="pod-header">
+                    <span class="pod-title">SYSTEM INTEGRITY</span>
+                </div>
+                <div class="integrity-matrix">
+                    <div class="integrity-row">
+                        <span class="label">IDENTITY LINK</span>
+                        <div class="mini-progress"><div class="fill" style="width: 95%;"></div></div>
+                    </div>
+                    <div class="integrity-row">
+                        <span class="label">DATA THROUGHPUT</span>
+                        <div class="mini-progress"><div class="fill" style="width: 40%;"></div></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 🛰️ Operational Status Footer: Sovereign OS Bar -->
+        <footer id="main-footer" class="glass-panel">
+            <div class="footer-left">
+                <div class="heartbeat-container">
+                    <div class="heartbeat-line"></div>
+                </div>
+                <div class="status-indicator">
+                    <span id="system-status-label" class="tiny-label">ENGINE ONLINE</span>
+                </div>
+                <div id="audit-summary-text" class="audit-summary-mini">WAITING FOR COMMAND...</div>
+            </div>
+
+            <div class="footer-center">
+                <div class="telemetry-item">
+                    <span class="t-label">CPU CORE:</span>
+                    <span class="t-value">8-SYNC</span>
+                </div>
+                <div class="telemetry-divider"></div>
+                <div class="telemetry-item">
+                    <span class="t-label">OS LOAD:</span>
+                    <span class="t-value" id="load-val">12%</span>
+                </div>
+                <div class="telemetry-divider"></div>
+                <div class="telemetry-item">
+                    <span class="t-label">PHYSICAL VRAM:</span>
+                    <span class="t-value">1.4GB</span>
+                </div>
+            </div>
+
+            <div class="footer-right">
+                <div class="connectivity-matrix">
+                    <div class="active-seats">
+                        <span class="t-label">SEATS:</span>
+                        <span class="t-value">1/2</span>
+                    </div>
+                    <div class="link-quality">
+                        <div class="signal-bar active"></div>
+                        <div class="signal-bar active"></div>
+                        <div class="signal-bar active"></div>
+                        <div class="signal-bar"></div>
+                    </div>
+                    <div class="ws-status-box">
+                        <span id="ws-status" class="status-val online">CONNECTED</span>
+                    </div>
+                </div>
+                <div class="version-tag tiny">V74.0_STABLE</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 🏗️ Modular Identity Control (V57.0) -->
+    <script src="js/dashboard.core.js?v=74.0"></script>
+    <script src="js/dashboard.compute.js?v=74.55"></script>
+    <script src="js/dashboard.views.js?v=74.55"></script>
+    <script src="js/dashboard.ui.js?v=74.55"></script>
+    <script src="js/dashboard.vault.js?v=74.55"></script>
+    <script src="js/dashboard.plugins.js?v=74.55"></script>
+    <script src="js/dashboard.imprints.js?v=74.55"></script>
+    <script src="js/dashboard.themes.js?v=74.55"></script>
+    <script src="js/dashboard.modes.js?v=74.55"></script>
+    <script src="js/dashboard.localization.js?v=74.55"></script>
+    <script src="js/dashboard.guardrails.js?v=74.55"></script>
+    <script src="js/dashboard.health.js?v=74.55"></script>
+    <script src="js/dashboard.system.js?v=74.55"></script>
+    <script src="js/dashboard.socket.js?v=74.55"></script>
+    <script src="dashboard.js?v=74.55"></script>
+</body>
+</html>

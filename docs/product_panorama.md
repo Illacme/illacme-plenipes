@@ -1,7 +1,7 @@
 # 🏛️ Illacme Plenipes OS 产品全景设计大纲
 ## 品牌方案 C 定型版 (V48.3 Final)
 
-## 1. 核心品牌主权 (Branding)
+## 1. 核心品牌主权 (Imprinting)
 *   **主标题**：**全球私人出版社 (Global Private Press)**
 *   **功能底座**：**您的主权化全球出版发行中心 (Sovereign Global Publishing & Distribution Center)**
 *   **核心理念**：数据主权、算力民主、物理隔离、出版尊严。

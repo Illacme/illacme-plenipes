@@ -1,11 +1,11 @@
-# 🌌 Illacme-plenipes: 您的私有全能发布官
+# 🌌 Illacme-plenipes: 全球私人出版社 (Global Private Press)
 
-> **本地创作，全球共振。让您的每一篇笔记，都有属于自己的“数字花园”。**
+> **您的全球出版发行指挥中心。让灵感在起草室点燃，在文库中沉淀，通过矩阵响彻全球。**
 
-![品牌视觉 Banner](./illacme_branding_hero_1777097616124.png)
+![品牌视觉 Banner](./illacme_imprinting_hero_1777097616124.png)
 
 [![Version](https://img.shields.io/badge/version-v11.2--sovereign-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
@@ -14,53 +14,56 @@
 
 ### 🚀 什么是 Illacme-plenipes？
 
-**Illacme-plenipes** 是一款为创作者而生的 **AI 原生个人发布引擎**。它打破了“笔记”与“站点”之间的物理隔阂，让您可以直接在最熟悉的 Obsidian、Logseq 或本地 Markdown 编辑器中创作，并一键将其转化为属于您自己的、跨语种的全球站点。
+**Illacme-plenipes** 是一款工业级的 **AI 原生全球出版引擎**。它将您的本地文件夹转化为一座 **“全球私人出版社”**。
+
+通过集成的 **指挥中心 (Command Center)**，您可以横跨多个 **品牌 (Imprint)** 划定您的出版版图。从 **创作中心 (Scriptorium)** 的灵感捕捉，到 **算力中心 (Compute)** 的多语种装帧，再到 **发行矩阵 (The Matrix)** 的全网触达，所有的主权都在您的掌控之中。
 
 ---
 
 ### ✨ 核心价值 (Core Values)
 
-#### 1. 🛡️ 真正的所有权 (True Ownership)
-告别平台霸权。Illacme 坚持 **“本地优先”** 原则。您的笔记、资产和配置永远留在您的硬盘上，引擎仅负责将它们安全地分发到全球。**您的数字资产，您才是唯一的主人。**
+#### 1. 🛡️ 品牌主权 (Imprint Sovereignty)
+每一个出版项目都是一个独立的 **品牌 (Imprint)**。拥有物理隔离的配置、主题与渠道。在您的出版版图中，您可以自由扩张，每一寸数字疆域都由您绝对主宰。
 
-#### 2. 🌍 跨语言的灵魂共振 (Global Resonance)
-内置强大的 AI 翻译矩阵，能够理解您文字中的细微情感与逻辑。一键生成多语种站点，让您的思想跨越语言疆界，在全球读者的屏幕上同步回响。
+#### 2. 🌍 灵感即发布 (Ideation to Distribution)
+内置 **创作中心 (Scriptorium)**。AI 不仅仅是翻译工具，更是您的创意学徒。从起草原稿到全球多语种同步发行，全链路自动化，让您的思想跨越语言与平台的疆界。
 
-#### 3. 🪄 3 分钟“魔术向导” (Magic Onboarding)
-发布不再是技术活。通过交互式向导，无需配置 Git 或复杂的开发环境，只需几次简单的对话，即可完成从本地文件夹到全球边缘网络的“直传部署”。
+#### 3. ⚙️ 算力装帧 (Compute & Binding)
+强大的 **算力中心 (Compute)** 负责将 **原稿文库 (Manuscript Vault)** 中的内容进行深度加工。配合多种 **装帧主题**，自动完成 SSG 渲染，确保每一本“数字出版物”都具备商业级的视觉品质。
 
-#### 4. ⚖️ 工业级护航 (Industrial-Grade Safety)
-虽然操作极简，但内核依然强大。引擎内置了全自动的审计协议，在每一次保存和同步时，默默为您排除路径断链、资产冲突等风险，确保您的“数字花园”永远稳定在线。
+#### 4. 🛰️ 发行矩阵 (The Matrix)
+通过高度解耦的 **发行调度 (The Dispatch)**，您的内容将瞬间同步至全球各类 **发行渠道 (The Channels)**。无论是 GitHub、Netlify 还是社交媒体阵列，指挥中心确保全球共振。
 
 ---
 
-### 🛠️ 3 分钟开启您的花园 (Quick Start)
+### 🛠️ 指挥中心启动 (Quick Start)
 
 ```bash
 # 1. 准备底座
 git clone https://github.com/Illacme/illacme-plenipes.git
 pip install -r requirements.txt
 
-# 2. 唤醒发布管家 (交互式对话完成设置)
+# 2. 唤醒指挥中心 (终端 ASCII 交互)
 python3 plenipes.py 
 
-# 3. 见证上线 (全自动同步与分发)
+# 3. 启动算力流水线 (全自动出版与发行)
 python3 plenipes.py --sync --force
 
-# 4. 实时监听 (毫秒级响应您的每一次保存)
+# 4. 实时监护 (哨兵模式毫秒级响应)
 python3 plenipes.py --watch
 ```
 
 ---
 
-### 📂 探索更多 (Explore)
+### 📂 探索版图 (Explore the Empire)
 
-*   **[Core Engine](./core/)**：解耦的高性能调度核心，支撑您的海量知识库。
-*   **[Adapter Matrix](./core/adapters/)**：支持 Cloudflare, DeepSeek, Webhook 等全渠道适配。
-*   **[Dashboard](./dashboard/)**：基于 React 的全息可视化看板，洞察您的知识星系。
+*   **[Manuscript Vault](./core/)**：支撑海量文稿的高性能调度内核。
+*   **[The Matrix](./core/adapters/)**：支持 Cloudflare, DeepSeek, Webhook 等全渠道发行适配。
+*   **[Command Center](./dashboard/)**：全息可视化看板，掌控您的出版疆域。
 
 ---
 
-### 📜 开源协议 / License
+### 📜 治理协议 / License
 本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。
-🛡️ *Illacme-plenipes - 让创作回归本质，让主权照耀迭代。*
+
+🛡️ *Illacme-plenipes - 让主权照耀创作，让版图横跨全球。*
