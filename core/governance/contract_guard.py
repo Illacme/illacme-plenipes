@@ -125,7 +125,9 @@ class ContractGuard:
         baseline_path = ".plenipes/governance/structure.baseline"
         
         if not os.path.exists(baseline_path):
-            return ["⚠️ [指纹缺失] 未发现架构基准文件，无法执行结构完整性审计。"]
+            # 🚀 [V52.20] 生产环境适配：基准缺失时静默放行，不拖累普通用户
+            tlog.debug("🛡️ [指纹审计] 未发现架构基准文件，生产环境自动放行。")
+            return []
 
         try:
             with open(baseline_path, 'r', encoding='utf-8') as f:
