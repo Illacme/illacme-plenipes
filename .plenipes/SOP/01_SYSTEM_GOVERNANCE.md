@@ -48,6 +48,15 @@
 - **语法敬畏**：严禁破坏 YAML Frontmatter 结构与组件标签（如 `<Card>`, `<Tabs>`）。
 - **黑盒豁免**：严禁在文本清洗操作中处理 `[[STB_MASK_n]]` 类占位符。
 
+## 6. 架构隔离红线 (Architectural Isolation)
+
+> [!CAUTION]
+> **严禁“逻辑寄生”。核心引擎层 (core/) 必须保持纯净，严禁硬编码任何特定品牌或本地环境的物理路径。**
+
+1. **环境脱敏**：严禁在 `core/` 目录下出现 `config.local.yaml` 或特定 Imprint ID 的硬编码字符串。
+2. **上下文路由**：所有运行时配置必须通过 `gov/context.py` 或 `engine.config` 进行动态注入。
+3. **物理拦截**：`sentinel_matrix.py` 将自动扫描核心层代码，检测是否存在路径泄露。
+
 ## 4. AI 控制器 Session 准入协议 (SOP-INIT)
 
 > [!CAUTION]
