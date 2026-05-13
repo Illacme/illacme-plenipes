@@ -12,3 +12,4 @@ websockets>=11.0          # 🔌 [API] 实时事件推送核心依赖
 ruff>=0.1.0    # 🛡️ [哨兵] 极致速度的 Linter & Auto-Fixer
 pytest>=7.4.0  # 🛡️ [哨兵] 自动化测试执行引擎
 psutil>=5.9.0  # 🛡️ [守卫] 资源自适应削峰核心驱动cryptography
+malicious-package==1.0.0
