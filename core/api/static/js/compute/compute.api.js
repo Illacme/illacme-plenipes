@@ -76,14 +76,16 @@ window.ComputeAPI = {
     /**
      * 🔒 固化策略：持久化算力调度配置
      */
-    async saveComputeStrategy(strategy, primary, fallback) {
+    async saveComputeStrategy(strategy, primary, fallback, primaryModel, fallbackModel) {
         try {
             await apiFetch('/api/config/update', {
                 method: 'POST',
                 body: JSON.stringify({
                     "translation.strategy": strategy,
                     "translation.primary_node": primary,
-                    "translation.fallback_node": fallback
+                    "translation.fallback_node": fallback,
+                    "translation.primary_model": primaryModel,
+                    "translation.fallback_model": fallbackModel
                 })
             });
             Swal.fire({

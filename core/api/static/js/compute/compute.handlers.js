@@ -40,7 +40,24 @@ window.ComputeHandlers = {
         } else if (tabId === 'strategy') {
             const header = document.getElementById('compute-header-actions-top');
             if (header) header.innerHTML = ''; // 策略页不显示搜索框
+            // 🚀 [修复] 补全策略 Tab 渲染触发
+            if (window.settingsData) {
+                window.ComputeUI.renderStrategyTab(window.settingsData);
+            }
         }
+    },
+
+    /**
+     * 💾 [修复] 固化策略处理函数
+     */
+    async saveStrategy() {
+        const strategy = document.getElementById('compute-strategy-select')?.value;
+        const primary = document.getElementById('primary-node-select')?.value;
+        const fallback = document.getElementById('fallback-node-select')?.value;
+        const primaryModel = document.getElementById('primary-model-input')?.value;
+        const fallbackModel = document.getElementById('fallback-model-input')?.value;
+
+        await window.ComputeAPI.saveComputeStrategy(strategy, primary, fallback, primaryModel, fallbackModel);
     },
 
     /**

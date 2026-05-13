@@ -18,21 +18,41 @@ window.ComputeUI = {
             const isFallback = (id === fallbackId);
             const typeLabel = (node.type || 'Unknown').toUpperCase();
             
+            // 🚀 [恢复] Telemetry 数据维度 (Sovereign Parity)
+            const health = node.health || { score: 100, avg_latency: 0, success_rate: 100 };
+            
             return `
-                <div class="compute-card p-4 border rounded shadow-sm mb-3" data-node-id="${id}" data-endpoint="${node.base_url}">
+                <div class="compute-card p-4 border rounded shadow-sm mb-3 glass-panel" data-node-id="${id}" data-endpoint="${node.base_url}">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="mb-1">${id} <small class="text-muted">[${typeLabel}]</small></h5>
-                            <code class="small text-truncate d-block" style="max-width: 200px;">${node.base_url}</code>
+                            <code class="small text-truncate d-block" style="max-width: 200px; opacity: 0.7;">${node.base_url}</code>
                         </div>
                         <div class="badge-group">
                             ${isPrimary ? '<span class="badge bg-primary">PRIMARY</span>' : ''}
                             ${isFallback ? '<span class="badge bg-secondary">FALLBACK</span>' : ''}
                         </div>
                     </div>
+
+                    <!-- 🚀 [恢复] 物理感应遥测数据 (Telemetry) -->
+                    <div class="node-telemetry d-flex justify-content-between mt-3 py-2 border-top border-bottom" style="font-size: 0.75rem;">
+                        <div class="t-item">
+                            <div class="text-muted small">健康分</div>
+                            <div class="fw-bold ${health.score > 80 ? 'text-success' : 'text-warning'}">${health.score}</div>
+                        </div>
+                        <div class="t-item">
+                            <div class="text-muted small">均时延</div>
+                            <div class="fw-bold">${health.avg_latency}ms</div>
+                        </div>
+                        <div class="t-item">
+                            <div class="text-muted small">成功率</div>
+                            <div class="fw-bold text-info">${health.success_rate}%</div>
+                        </div>
+                    </div>
+
                     <div class="mt-3 d-flex align-items-center justify-content-between">
                         <div id="probe-status-${id}" class="small text-muted">
-                            <span class="dot pulse"></span> 等待探测
+                            <span class="dot pulse"></span> 链路待命...
                         </div>
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-primary" onclick="window.ComputeHandlers.editNode('${id}')">
@@ -52,6 +72,53 @@ window.ComputeUI = {
                 </div>
             `;
         }).join('');
+    },
+
+    /**
+     * 🏗️ [恢复] 渲染调度策略 Tab (Sovereign Parity)
+     */
+    renderStrategyTab(config) {
+        const container = document.getElementById('compute-grid');
+        if (!container) return;
+
+        const t = config.translation || {};
+        const nodes = t.compute_nodes || {};
+
+        container.innerHTML = `
+            <div class="strategy-deck p-4 glass-panel border rounded w-100">
+                <div class="strategy-section mb-4">
+                    <label class="fw-bold mb-2">⚖️ 容灾调度算法</label>
+                    <select id="compute-strategy-select" class="form-select" onchange="window.ComputeUI.syncStrategyBadge()">
+                        <option value="primary" ${t.strategy === 'primary' ? 'selected' : ''}>📍 单点模式 (Primary Only)</option>
+                        <option value="fallback" ${t.strategy === 'fallback' ? 'selected' : ''}>🛡️ 容灾模式 (Auto Fallback)</option>
+                        <option value="concurrent" ${t.strategy === 'concurrent' ? 'selected' : ''}>🚀 竞速模式 (Concurrent)</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">主力执行节点 (PRIMARY)</label>
+                        <select id="primary-node-select" class="form-select mt-1" onchange="window.ComputeUI.syncStrategyBadge()">
+                            ${Object.keys(nodes).map(id => `<option value="${id}" ${id === t.primary_node ? 'selected' : ''}>${id}</option>`).join('')}
+                        </select>
+                        <input type="text" id="primary-model-input" class="form-control form-control-sm mt-2" placeholder="主力模型 ID" value="${t.primary_model || ''}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">容灾守护节点 (FALLBACK)</label>
+                        <select id="fallback-node-select" class="form-select mt-1">
+                            ${Object.keys(nodes).map(id => `<option value="${id}" ${id === t.fallback_node ? 'selected' : ''}>${id}</option>`).join('')}
+                        </select>
+                        <input type="text" id="fallback-model-input" class="form-control form-control-sm mt-2" placeholder="容灾模型 ID" value="${t.fallback_model || ''}">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top text-end">
+                    <button id="save-strategy-btn" class="btn btn-primary px-4" onclick="window.ComputeHandlers.saveStrategy()">
+                        <i class="bi bi-shield-lock me-1"></i> 固化当前策略
+                    </button>
+                </div>
+            </div>
+        `;
     },
 
     /**
