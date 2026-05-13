@@ -211,6 +211,10 @@ class TracedLogger:
     def __init__(self, name: str):
         self._logger = logging.getLogger(name)
 
+    def setLevel(self, level):
+        """🚀 [V74.59] 物理打通日志级别控制，支持动态下沉 DEBUG 视野"""
+        self._logger.setLevel(level)
+
     def __getattr__(self, name):
         return getattr(self._logger, name)
 

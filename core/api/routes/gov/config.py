@@ -76,17 +76,24 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
             target = engine.config
             for part in parts[:-1]:
                 if isinstance(target, dict):
-                    target = target.get(part)
+                    if part not in target: target[part] = {}
+                    target = target[part]
                 elif hasattr(target, part):
-                    target = getattr(target, part)
+                    # 如果是 Pydantic 模型且该属性是 dict 类型，特殊处理
+                    val = getattr(target, part)
+                    if isinstance(val, dict):
+                        target = val
+                    else:
+                        target = val
                 else:
                     target = None
                     break
             
-            if target:
+            if target is not None:
                 final_key = parts[-1]
                 if isinstance(target, dict):
                     target[final_key] = value
+                    tlog.info(f"📝 [内存同步] 已更新 Dict 字段: {key}")
                 elif hasattr(target, final_key):
                     if key == "i18n_settings.targets" and isinstance(value, list):
                         from core.governance.license_guard import LicenseGuard
@@ -116,6 +123,7 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                         try: value = SeoStrategy(value)
                         except: pass
                     setattr(target, final_key, value)
+                    tlog.info(f"📝 [内存同步] 已更新对象属性: {key}")
 
     def make_yaml_safe(data):
         if hasattr(data, 'model_dump'): return data.model_dump()
@@ -165,9 +173,11 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
     for lvl, path in paths.items():
         if not path or lvl not in dirty_levels: continue
         try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            dir_name = os.path.dirname(path)
+            if dir_name: os.makedirs(dir_name, exist_ok=True)
             with open(path, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(make_yaml_safe(file_data[lvl]), f, allow_unicode=True, sort_keys=False)
+            tlog.success(f"💾 [物理固化] 已成功同步至 {lvl} 级别配置: {path}")
         except Exception as e: tlog.error(f"❌ 落盘失败: {path} - {e}")
             
     if not imprint_id or imprint_id == engine.im.get_active_imprint():

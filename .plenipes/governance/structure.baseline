@@ -196,3 +196,4 @@ core/utils/secret_sentinel.py
 core/utils/terminal_wizard.py
 core/utils/text.py
 core/utils/tracing.py
+core/api/routes/gov/plugin_mapper.py

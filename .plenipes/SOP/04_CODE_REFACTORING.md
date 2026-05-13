@@ -31,26 +31,30 @@
 ## 3. 标准化施工流 (Implementation Workflow - Atomic Incremental)
 
 ### 第一阶段：视觉与逻辑存证 (Evidence Capture)
-- **物理截图存证**：`.plenipes/history/refactoring/snapshots/[YYYYMMDD]/` 记录 Baseline。
+- **物理截图存证**：使用 `browser_subagent` 遍历**所有相关子菜单**，截图并存入 `.plenipes/history/refactoring/snapshots/[YYYYMMDD_TASK]/baseline/`。
 - **DOM 指纹备份**：导出关键容器的 `outerHTML` 并保存为 `.html.dump`。
-- **逻辑基准备份**：记录后端路由的 `response_baseline.json`。
+- **API 模式审计 (New)**：
+  - **JSON 存证**：执行 `curl -s http://localhost:43212/api/xxx > api_baseline.json`。
+  - **依赖搜索**：对 `core/api/static/js/` 执行全局 `grep`，识别所有依赖该接口的硬编码字段（ID/Category/Status）。
+- **逻辑分支映射**：在 `implementation_plan.md` 中枚举原代码的所有逻辑分支，建立“逻辑迁移清单”。
 
 ### 第二阶段：微步原子搬迁 (Micro-Atomic Migration)
-- **分步执行**：禁止一次性搬迁全量代码。必须按“逻辑块”或“函数组”执行增量搬迁。
-- **即时点火**：每迁移一个逻辑块，必须立即更新枢纽文件（Hub）并执行一次最小化运行测试。
+- **分步执行**：必须按“逻辑块”执行搬迁。
+- **即时点火**：每迁移一个块，立即更新 Hub 文件并重启服务。
+- **分支勾选**：每完成一个分支，必须在任务清单中勾选标记。
 
 ### 第三阶段：枢纽重建与校验循环 (Hub & Verification Loop)
 - 原文件重构后退化为“路由调度中心”。
-- 每一步搬迁后，必须比对关键指纹。若校验通过，则执行物理 Checkpoint。
+- 每步搬迁后，执行物理 Checkpoint。
 
 ### 第四阶段：量化校验 (Verification & Parity)
-- **视觉像素比对 (Visual Diff)**：
-  - 重构后截图与 Baseline 执行像素级叠图，偏离度必须为 0%。
-  - 重点核对：间距 (Padding/Margin)、颜色值 (HEX/RGBA)、阴影深度。
-- **DOM 指纹对齐 (DOM Alignment)**：
-  - 校验 `document.querySelectorAll('*').length` 变化。
-  - 确认所有交互元素的 ID 与 Class 属性无变动。
-- **功能闭环审计 (Functional Matrix)**：
+- **API Schema 差分 (Mandatory)**：
+  - 执行 `curl` 获取新响应，与 `api_baseline.json` 进行全量 `diff`。
+  - 校验 JSON 嵌套层级与键名是否 100% 对正。
+- **视觉巡检比对 (Visual Parity)**：
+  - 使用 `browser_subagent` 遍历**所有子菜单**截图，存入 `.../current/` 目录。
+  - 必须将 `current` 截图与 `baseline` 截图进行逐一肉眼或像素级比对，确保渲染内容完整性。
+- **功能闭环审计**：
   - **点击-响应测试**：每一个按钮必须触发原有的 API 动作或 UI 状态切换。
   - **异常审计**：控制台 (Console) 严禁出现新的 `ReferenceError` 或 `404`。
 
@@ -130,7 +134,71 @@
 - **要求**：拆分任务结束时，无论成功还是失败（触发回滚），AI 必须强制输出一份详细的总结报告进行存档。
 - **位置**：存放在 `.plenipes/history/refactoring/refactor_summary_[YYYYMMDD].md`。
 
+## 9. 深度复盘经验固化 (V26.0 - 治理 API 与逻辑完整性准则)
+
+> [!IMPORTANT]
+> **基于 V26.0 治理路由拆分导致 API 格式崩溃与逻辑截断的惨痛教训：** 禁止在未对齐前端 Response Schema 的情况下修改后端响应结构。
+
+### I. 响应模式 JSON 级对正 (Response Schema Parity)
+- **要求**：重构 API 接口时，必须强制比对原始接口与新接口的 JSON 结构层级（如：数组 `[]` vs 对象 `{"data": []}`）。
+- **校验**：必须使用 `curl` 导出重构前后的响应报文，执行 `diff` 审计，确保数据包装逻辑 100% 一致。
+
+### II. 前端硬编码依赖审计 (Frontend Hardcoded Dependency Audit)
+- **要求**：在修改任何 API 返回的 `id`、`category` 或 `status` 字段前，必须强制对 `core/api/static/js/` 目录执行全局 `grep`。
+- **目标**：识别前端是否存在针对特定字符串的 `if/else` 逻辑或过滤逻辑（如：`category === 'hosting'`），确保后端返回的 ID 指纹与前端逻辑硬映射。
+
+### III. 逻辑树全路径覆盖校验 (Logic Tree Coverage)
+- **要求**：拆分代码块时，禁止进行“感官式迁移”。必须在 `implementation_plan.md` 中枚举原代码块的所有逻辑分支（如：插件矩阵的 9 大分类）。
+- **动作**：迁移完成后，必须逐一勾选确认：**[x] 逻辑路径已闭环**。严禁出现因忽略长尾逻辑导致的“UI 空白”事故。
+
+### IV. 动态发现与静态注册双重审计 (Discovery & Registry Parity)
+- **要求**：涉及“插件/组件枚举”逻辑时，必须确保新代码不仅涵盖“已激活实例”，还必须涵盖“全局注册表 (Registry)”。
+- **校验**：重构后必须验证 UI 能够正确显示“未启用但可配置”的组件，防止系统配置能力丢失。
+
+## 10. 主权拦截与防偷懒硬红线 (Anti-Pruning & AI Sabotage Interception)
+
+> [!CAUTION]
+> **本章节旨在物理拦截 AI 的“习惯性跳步”与“擅自简化”行为。违反本章任何一条，用户有权立即终止当前会话。**
+
+### I. 证据先行原则 (Evidence-First Approval)
+- **硬拦截**：在启动第二阶段（原子搬迁）之前，AI **必须**在对话框中主动展示第一阶段生成的 `api_baseline.json` 核心片段和 `baseline` 截图路径。
+- **授权点**：必须获得用户明确回复“准予搬迁”后，方可执行物理文件操作。
+
+### II. 逻辑搬迁“总量守恒”定律 (Logic Conservation)
+- **要求**：在 `implementation_plan.md` 中必须明确：`[原函数名] | [原行数] -> [新文件路径]`。
+- **校验**：搬迁后，目标文件的有效逻辑行数必须与原逻辑块 **严格对应**。严禁以“优化”或“清理”为名删减任何一行代码（包括注释）。
+
+### III. 强制二次 Grep 逻辑确认 (Post-Migration Grep)
+- **动作**：迁移完成后，必须再次对原 Hub 文件执行 `grep` 搜索已迁移的关键词。
+- **拦截点**：如果 Hub 文件中仍残留未被委派的旧逻辑，或新文件中丢失了原有的 `🚀 [Vxx.x]` 基因标记，判定为重构失败，强制触发回滚。
+
+### IV. 视觉比对“零容忍”差异报告 (Zero-Tolerance Visual Report)
+- **动作**：在第四阶段，AI 必须生成一份比对表格，列出：`子菜单 | Baseline 截图 ID | Current 截图 ID | 比对结论`。
+- **硬要求**：只要有一个子菜单的 UI 元素位置发生 > 1px 的偏移，或数据内容减少，必须在报告中红字标注，并主动提请用户裁决是否触发回滚。
+
+## 11. 逻辑全貌审计与原子交互链对正 (Logic Map & Interaction Parity - V27.0)
+
+> [!IMPORTANT]
+> **本章节旨在彻底杜绝“功能性逻辑丢失”。任何涉及 JS 拆分的任务，必须强制通过逻辑全貌审计。**
+
+### I. 建立逻辑全貌图谱 (Logic Map Mapping)
+- **要求**：在重构计划阶段，AI 必须深度阅读原文件，并总结出所有的 **“原子交互链 (Interaction Chains)”**。
+- **格式**：在 `implementation_plan.md` 中以表格形式列出：
+  | 交互动作 (Trigger) | 核心处理逻辑 (Handler) | 预期物理效果 (Effect) | 状态 (State) |
+  | :--- | :--- | :--- | :--- |
+  | 选择协议下拉项 | `selectProvider()` | 自动回填 `swal-input-url` | [ ] 已对正 |
+  | 点击“感应”按钮 | `discoverModels()` | 异步填充 `asset-discovery-menu` | [ ] 已对正 |
+
+### II. 原子搬迁“基因不丢失”校验 (No-Loss Gene Check)
+- **硬准则**：在拆分 JS 代码块时，禁止仅仅迁移“看起来有用”的代码。
+- **校验点**：必须对原文件中的 `onclick`, `oninput`, `addEventListener` 等事件绑定点执行 **[物理点名]**。
+- **目标**：确保在重构后的 Hub 文件中，每一个被移除的行，都能在分片文件中找到 **1:1 的逻辑等价物**。
+
+### III. 物理契约对正 (Contract Parity)
+- **要求**：如果后端 API 字段发生了变化（如 ID 命名规范化），必须在重构 JS 时同步更新所有关联的硬编码字符串。
+- **拦截点**：禁止出现“后端改了 ID，前端还在搜旧 ID”导致的逻辑断层。
+
 ---
-*修订日期：2026-05-12*
+*修订日期：2026-05-13*
 *执行负责人：Antigravity (AI Controller)*
-*优先级：S 级 (不可逾越)*
+*核心红线：严禁在未建立逻辑图谱的情况下启动大文件拆分。*

@@ -18,22 +18,22 @@ router = APIRouter()
 def get_system_context():
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
-    
+
     from core.governance.imprint_manager import im
     from core import __version__
     from core.ui.delegate import DisplayDelegate
-    
+
     ai_cfg = engine.config.translation
     active_node = ai_cfg.primary_node
     active_provider = "Unknown"
     active_model = ai_cfg.primary_model or "Unknown"
-    
+
     if active_node in ai_cfg.compute_nodes:
         node_cfg = ai_cfg.compute_nodes[active_node]
         active_provider = (getattr(node_cfg, "type", "") or "Unknown").upper()
 
     active_imprint = im.get_active_imprint()
-    
+
     theme_map = {
         "default": "Sovereign (default)",
         "starlight": "Starlight (official)",
@@ -67,7 +67,8 @@ def get_system_context():
                 t.prompt_lang if hasattr(t, 'prompt_lang') else str(t)
                 for t in engine.config.i18n_settings.targets
             ]
-        }
+        },
+        "plugins": list_active_plugins().get("plugins", []) # 🚀 [V74.58] 物理补全插件指纹，驱动前端联动逻辑
     }
 
 @router.get("/api/governance/lessons", dependencies=[Depends(verify_token)])
@@ -113,16 +114,16 @@ def get_health_report():
 def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
-    
+
     from core.config.governance_map import GOVERNANCE_RULES
     from core.governance.license_guard import LicenseGuard
-    
+
     if level == "merged":
         data = engine.config.model_dump()
         data["_governance_rules"] = GOVERNANCE_RULES
         data["_is_licensed"] = LicenseGuard.is_licensed()
         return data
-    
+
     import yaml
     path = CONFIG_NAME
     if level == "local":
@@ -130,7 +131,7 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
     elif level == "imprint":
         target_id = imprint_id or engine.im.get_active_imprint()
         path = os.path.join(IMPRINT_DIR, target_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-    
+
     data = {}
     if os.path.exists(path):
         try:
@@ -140,7 +141,7 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
             data = {"error": f"Failed to parse {path}"}
     else:
         data = {"error": f"File {path} not found"}
-        
+
     return {
         "config": data,
         "governance_rules": GOVERNANCE_RULES
@@ -148,100 +149,14 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
 
 @router.get("/api/plugins/list", dependencies=[Depends(verify_token)])
 def list_active_plugins():
+    """
+    🚀 [V74.74] 插件矩阵路由枢纽
+    职责：委派逻辑至 plugin_mapper 执行物理感应，保持本路由文件纯净且通过审计。
+    """
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
-    
-    from core.adapters.egress.ssg.registry import SSGRegistry
-    from core.adapters.egress.publishers.base import PublisherRegistry
-    from core.adapters.ai.registry import AIProviderRegistry
-    from core.adapters.syndication.targets import TARGET_REGISTRY
-    
-    SYSTEM_TRACK = "V24.0"
-    p_cfg = engine.config.plugins
-    disabled = p_cfg.disabled_plugins
-    active_theme = engine.config.active_theme
-    
-    plugins = []
-    
-    # 0. Imprint Infrastructure
-    from core.governance.imprint_manager import im
-    active_imprint = im.get_active_imprint()
-    for imp in im.list_imprints():
-        imp_id = imp["id"]
-        is_active = (imp_id == active_imprint)
-        plugins.append({
-            "id": imp_id, "category": "imprint", "category_name": "🏗️ Imprint 设施",
-            "status": "In-Use" if is_active else "Ready",
-            "is_in_use": is_active, "is_enabled": True,
-            "origin": "user", "version": "V1.0",
-            "description": f"主权 Imprint 设施：承载 '{imp_id}' 旗下的全量出版资产与政务规则。"
-        })
-    
-    # 1. Theme Governance
-    from core.config.config import THEMES_DIR
-    local_theme_root = os.path.join(engine.config.system.data_root, THEMES_DIR)
-    global_theme_root = os.path.join(os.getcwd(), THEMES_DIR)
-    
-    theme_ids = set()
-    if os.path.exists(local_theme_root):
-        for entry in os.listdir(local_theme_root):
-            if os.path.isdir(os.path.join(local_theme_root, entry)) and not entry.startswith("."):
-                if entry == "shared": continue
-                is_active = (active_theme == entry)
-                plugins.append({
-                    "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
-                    "status": "In-Use" if is_active else "Local",
-                    "is_in_use": is_active, "is_enabled": True,
-                    "origin": "user", "location": "local", "version": "V1.0",
-                    "description": "版图专属主题：位于当前版图目录下的物理资产。"
-                })
-                theme_ids.add(entry)
 
-    if os.path.exists(global_theme_root):
-        for entry in os.listdir(global_theme_root):
-            if os.path.isdir(os.path.join(global_theme_root, entry)) and not entry.startswith("."):
-                if entry in theme_ids or entry == "shared": continue
-                is_active = (active_theme == entry)
-                plugins.append({
-                    "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
-                    "status": "In-Use" if is_active else "Central",
-                    "is_in_use": is_active, "is_enabled": True,
-                    "origin": "core", "location": "global", "version": SYSTEM_TRACK,
-                    "description": "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。"
-                })
-                theme_ids.add(entry)
-
-    for adapter_id in SSGRegistry.get_all_names():
-        if adapter_id in theme_ids: continue
-        is_active = (active_theme == adapter_id)
-        renderer_cls = SSGRegistry.get_renderer(adapter_id)
-        display_name = getattr(renderer_cls, "DISPLAY_NAME", adapter_id.upper())
-        description = getattr(renderer_cls, "DESCRIPTION", f"内核原生适配器：驱动 {display_name} 工业级排版引擎。")
-        plugins.append({
-            "id": adapter_id, "name": display_name, "category": "theme", "category_name": "🎨 装帧主题适配器",
-            "status": "In-Use" if is_active else "Native",
-            "is_in_use": is_active, "is_enabled": (adapter_id not in disabled),
-            "origin": "core", "version": SYSTEM_TRACK, "description": description
-        })
-
-    # 2. Compute Nodes
-    for node_id, node_cfg in engine.config.translation.compute_nodes.items():
-        is_active = (engine.config.translation.primary_node == node_id)
-        plugins.append({
-            "id": node_id, "category": "compute", "category_name": "⚙️ 算力节点",
-            "status": "In-Use" if is_active else "Standby",
-            "is_in_use": is_active, "is_enabled": True,
-            "origin": "user", "version": "V1.0",
-            "description": f"已划定的算力基座：类型为 {getattr(node_cfg, 'type', 'Unknown')}，负责承担 AI 推理任务。"
-        })
-
-    # 3. Syndication Targets
-    for target_id in TARGET_REGISTRY.keys():
-        plugins.append({
-            "id": target_id, "category": "syndication", "category_name": "🛰️ 发行渠道",
-            "status": "Ready", "is_in_use": False, "is_enabled": (target_id not in disabled),
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"全自动分发插件：支持将出版成品推向 {target_id.upper()} 矩阵。"
-        })
+    from core.api.routes.gov.plugin_mapper import assemble_plugin_matrix
+    plugins = assemble_plugin_matrix()
 
     return {"plugins": plugins}

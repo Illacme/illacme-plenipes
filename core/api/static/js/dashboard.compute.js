@@ -593,10 +593,14 @@ window.editNode = async (id) => {
         const protocols = (pluginRes.plugins || [])
             .filter(p => p.category === 'protocol')
             .sort((a, b) => {
-                if (a.protocol_family !== b.protocol_family) {
-                    return a.protocol_family === 'native' ? -1 : 1;
+                const famA = a.protocol_family || 'native';
+                const famB = b.protocol_family || 'native';
+                if (famA !== famB) {
+                    return famA === 'native' ? -1 : 1;
                 }
-                return a.name.localeCompare(b.name);
+                const nameA = a.name || a.id || "";
+                const nameB = b.name || b.id || "";
+                return nameA.localeCompare(nameB);
             });
 
         const activeProtocol = protocols.find(p => p.id === node.type) || { name: '请选择协议驱动...' };

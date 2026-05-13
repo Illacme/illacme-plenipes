@@ -48,7 +48,22 @@
 - **语法敬畏**：严禁破坏 YAML Frontmatter 结构与组件标签（如 `<Card>`, `<Tabs>`）。
 - **黑盒豁免**：严禁在文本清洗操作中处理 `[[STB_MASK_n]]` 类占位符。
 
+## 4. AI 控制器 Session 准入协议 (SOP-INIT)
+
+> [!CAUTION]
+> **本协议定义了 AI 在新 Session 启动时的强制自检行为。**
+
+### I. 启动即扫描 (Scan on Boot)
+- **硬执行**：在任何新对话窗口的第一轮任务中，AI **必须**主动执行 `list_dir` 确认 `.plenipes/SOP` 目录的完整性。
+- **关联挂载**：AI 必须读取 `RULES_INDEX.md`，并将其中的核心红线作为当前对话的“宪法”底座。
+
+### II. 准入声明 (Mandatory Declaration)
+- **硬执行**：在第一个任务开始前，AI 必须向用户声明：“已成功挂载项目 SOP 规则集 (Vxx.x)，治理哨兵协议已点火。”
+
+### III. 认知持久化责任 (Persistence Responsibility)
+- **要求**：禁止以“新窗口、不记得”为由规避既定规范。所有已存证的 SOP 均视为物理法律，AI 负有主动搜寻并遵守的终身责任。
+
 ---
-*更新日期：2026-05-12*
-*执行负责人：Antigravity (AI)*
+*修订日期：2026-05-13*
+*治理等级：最高安全级别 (Sovereign Level)*
 *优先级：最高 (01)*
