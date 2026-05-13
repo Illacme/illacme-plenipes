@@ -45,4 +45,29 @@
 - `sentinel_matrix.py` 会自动扫描依赖变更。若无对应审计记录，**立即拦截提交**。
 
 ---
-*执行准则：外部引入需谨慎，系统纯净是主权。*
+
+## 3. 工业级视觉审美硬指标 (Industrial Aesthetic Standards)
+
+本章节定义了项目的物理美学边界，AI 助手必须以此作为 UI 优化的最高准则。
+
+### 3.1 物理网格与对齐 (Grid & Alignment)
+1. **8px 步进系统**：所有间距（Gap）、填充（Padding）、边距（Margin）必须是 8 的倍数（特殊细微调整允许 4px）。
+2. **视觉对齐优先**：在处理图标与文字对齐时，优先使用 `Optical Center`（视觉中心）而非简单的 `vertical-align: middle`。
+3. **响应式断点**：强制适配 `375px` (Mobile), `768px` (Tablet), `1280px` (Laptop), `1920px` (Desktop)。
+
+### 3.2 色彩与材质主权 (Color & Material)
+1. **变量锁定**：严禁使用任何硬编码色值。必须使用 `index.css` 中定义的 CSS Variables。
+2. **材质感 (Glassmorphism)**：核心看板组件必须遵循“玻璃拟态”规范：
+   - `backdrop-filter: blur(12px) saturate(180%)`
+   - `background: rgba(var(--bg-rgb), 0.7)`
+   - `border: 1px solid rgba(255, 255, 255, 0.1)`
+3. **层级阴影**：统一使用柔和的扩散阴影，严禁使用高对比度的生硬阴影。
+
+### 3.3 动效语言 (Motion Language)
+1. **高级曲线**：禁止使用默认的 `linear` 或 `ease`。强制使用 `cubic-bezier(0.4, 0, 0.2, 1)` (Swift Out) 或 `cubic-bezier(0, 0, 0.2, 1)` (Deceleration)。
+2. **时长规范**：
+   - 微交互（Hover/Active）：100ms - 150ms。
+   - 页面切换/展开：250ms - 350ms。
+
+---
+*执行准则：代码是骨架，审美是主权。*
