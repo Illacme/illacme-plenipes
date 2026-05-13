@@ -25,6 +25,13 @@ def get_dirty_hash():
 def check_workspace_purity(resume_mode=False):
     print(f"🛡️  [起飞前检查] 正在核实工作区主权状态 (模式: {'继承/接力' if resume_mode else '纯净/常规'})...")
     
+    # 0. 治理工具完整性校验 (V5.1)
+    sentinel_path = ".plenipes/tools/sentinel_matrix.py"
+    if not os.path.exists(sentinel_path):
+        print(f"❌ [治理中断] 未找到治理哨兵工具: {sentinel_path}")
+        print("🚨 [指令] 请先恢复治理基建！")
+        return False
+    
     try:
         # 1. 检查是否有未暂存或未提交的修改
         status = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
