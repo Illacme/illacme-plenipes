@@ -159,7 +159,7 @@ translation:
     seo: You are an SEO expert. Analyze the text and provide a JSON with 'description'
       and 'keywords'.
   resilience: {}
-  include: core/config/compute_nodes.yaml
+  include: configs/compute_nodes.yaml
   compute_nodes:
     moonshot_node:
       id: moonshot_node
@@ -307,7 +307,7 @@ theme_options:
   nextra: {}
   hugo: {}
   hexo: {}
-include: core/config/framework_adapters.yaml
+include: configs/framework_adapters.yaml
 seo_settings:
   enabled: true
   generate_description: true
