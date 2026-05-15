@@ -11,12 +11,12 @@ window.toggleHub = (forceState) => {
     
     // 强制状态或切换
     if (forceState === 'show') {
-        hub.style.display = 'block';
+        hub.style.display = 'flex';
     } else if (forceState === 'hide') {
         hub.style.display = 'none';
     } else {
         const isHidden = window.getComputedStyle(hub).display === 'none';
-        hub.style.display = isHidden ? 'block' : 'none';
+        hub.style.display = isHidden ? 'flex' : 'none';
     }
 };
 

@@ -483,7 +483,7 @@
 
 /* 🌌 HUD & Intelligence Overlay (Overview) */
 .hud-container {
-    position: absolute; display: flex; flex-direction: column; gap: 25px; z-index: 100;
+    position: absolute; display: flex; flex-direction: row; gap: 25px; z-index: 100;
 }
 .hud-container.top-left { top: 40px; left: 40px; }
 .hud-item {

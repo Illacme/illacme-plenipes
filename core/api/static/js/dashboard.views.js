@@ -17,7 +17,7 @@ window.viewTemplates = {
                     <div class="hud-value" id="conn-count">0</div>
                 </div>
             </div>
-            <div class="overview-overlay" id="command-hub-overlay" style="display: block;">
+            <div class="overview-overlay" id="command-hub-overlay" style="display: flex;">
                 <div class="command-hub">
                     <div class="hub-header">
                         <button class="close-btn" style="position: absolute; right: 2rem; top: 2rem;">×</button>
