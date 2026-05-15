@@ -75,21 +75,6 @@ translation:
   fallback_node: ollama_local
   include: configs/compute_nodes.yaml
   llm_concurrency: 1
-  api_timeout: 600.0
-  max_retries: 3
-  temperature: 0.2
-  max_tokens: 8192
-  max_chunk_size: 2500
-  empty_content_threshold: 15
-  max_slug_length: 100
-  max_seo_description_length: 200
-  global_proxy: ''
-  custom_prompts:
-    slug: You are an SEO expert. Generate a URL-safe, lowercase, SEO-friendly English
-      slug for the given title. Return ONLY the slug string.
-    seo: You are an SEO expert. Analyze the text and provide a JSON with 'description'
-      and 'keywords'.
-  resilience: {}
   compute_nodes:
     moonshot_node:
       id: moonshot_node

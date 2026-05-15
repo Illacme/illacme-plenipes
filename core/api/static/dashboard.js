@@ -43,6 +43,12 @@ document.addEventListener('click', (e) => {
 // 2. 视图编排器
 window.showView = (viewId, subId) => {
     window.currentView = viewId;
+    
+    // 🚀 [V74.15] 物理路由对正：同步 Hash 以支持深度链接与后退逻辑
+    if (window.location.hash !== `#/${viewId}`) {
+        window.location.hash = `#/${viewId}`;
+    }
+
     const panels = document.querySelectorAll('.view-panel');
     const navItems = document.querySelectorAll('.nav-item');
 
@@ -338,9 +344,28 @@ const initGlobalTelemetryPulse = () => {
 };
 
 // 🚀 [V74.9] 统一启动入口：确保 initDashboard 在任何 readyState 下都被执行
+// 🚀 [V74.20] 物理路由分发器：确保深链接与 URL 同步
+const handleRouting = () => {
+    const hash = window.location.hash.replace('#/', '');
+    const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings'];
+    
+    if (hash && validViews.includes(hash)) {
+        window.showView(hash);
+        if (hash === 'overview') window.toggleHub('show');
+    } else {
+        // 默认进入指挥中心
+        window.showView('overview');
+        window.toggleHub('show');
+    }
+};
+
+window.addEventListener('hashchange', handleRouting);
+
 const bootDashboard = () => {
-    window.initDashboard();
-    initGlobalTelemetryPulse();
+    window.initDashboard().then(() => {
+        handleRouting();
+        initGlobalTelemetryPulse();
+    });
 };
 
 if (document.readyState === 'loading') {
