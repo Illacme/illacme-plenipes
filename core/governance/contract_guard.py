@@ -201,6 +201,8 @@ class ContractGuard:
                     violations.append("❌ [隔离失效] .gitignore 未屏蔽本地配置文件 (*.local.yaml)。")
                 if ".plenipes/" not in gi:
                     violations.append("❌ [治理风险] .gitignore 必须包含对本地治理目录 .plenipes/ 的全量屏蔽。")
+                if "metadata/" not in gi:
+                    violations.append("❌ [治理风险] .gitignore 必须包含对全局元数据目录 metadata/ 的全量屏蔽。")
 
         # 🚀 [V66.5] 物理主权禁区：强制检查 Git 索引
         import subprocess
