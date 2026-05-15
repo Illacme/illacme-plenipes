@@ -1,0 +1,110 @@
+framework_adapters:
+  starlight:
+    callout_template: '
+
+      :::{type} {title}
+
+      {body}
+
+      :::
+
+
+      '
+    type_mapping:
+      info: note
+      abstract: note
+      success: tip
+      warning: caution
+      danger: danger
+  vitepress:
+    callout_template: '
+
+      :::{type} {title}
+
+      {body}
+
+      :::
+
+
+      '
+    type_mapping:
+      note: info
+      tip: tip
+      warning: warning
+      danger: danger
+  docusaurus:
+    callout_template: '
+
+      :::{type} {title}
+
+      {body}
+
+      :::
+
+
+      '
+    type_mapping:
+      note: note
+      info: info
+      success: tip
+      warning: warning
+      danger: danger
+    component_mappings:
+      CardGrid: '{children}'
+      Card: '### {title}
+
+
+        {children}
+
+
+        '
+  nextra:
+    callout_template: '
+
+      <Callout type="{type}">
+
+      **{title}**
+
+      {body}
+
+      </Callout>
+
+
+      '
+    type_mapping:
+      note: default
+      info: info
+      warning: warning
+      danger: error
+  hugo:
+    callout_template: '
+
+      {{{{< admonition type="{type}" title="{title}" >}}}}
+
+      {body}
+
+      {{{{< /admonition >}}}}
+
+
+      '
+    type_mapping:
+      note: note
+      tip: tip
+      warning: warning
+  hexo:
+    callout_template: '
+
+      {{{{% note {type} %}}}}
+
+      **{title}**
+
+      {body}
+
+      {{{{% endnote %}}}}
+
+
+      '
+    type_mapping:
+      note: default
+      info: info
+      warning: warning

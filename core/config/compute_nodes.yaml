@@ -1,0 +1,141 @@
+compute_nodes:
+  mistral_node:
+    id: mistral_node
+    type: mistral
+    base_url: https://api.mistral.ai/v1
+  openai-compatible_node:
+    id: openai-compatible_node
+    type: openai-compatible
+    base_url: https://api.together.xyz/v1
+  v1_node:
+    id: v1_node
+    type: v1
+    base_url: https://api.together.xyz/v1
+  openai_node:
+    id: openai_node
+    type: openai
+    base_url: https://api.openai.com/v1
+  lmstudio_local:
+    id: lmstudio_local
+    type: lmstudio
+    base_url: http://localhost:1234/v1
+  openrouter_node:
+    id: openrouter_node
+    type: openrouter
+    base_url: https://openrouter.ai/api/v1
+  azure_node:
+    id: azure_node
+    type: azure
+    base_url: https://api.openai.com/v1
+  siliconflow_node:
+    id: siliconflow_node
+    type: siliconflow
+    base_url: https://api.siliconflow.cn/v1
+  google_node:
+    id: google_node
+    type: google
+    base_url: https://generativelanguage.googleapis.com/v1beta
+  groq_node:
+    id: groq_node
+    type: groq
+    base_url: https://api.groq.com/openai/v1
+  deepseek_node:
+    id: deepseek_node
+    type: deepseek
+    base_url: https://api.deepseek.com
+  anthropic_node:
+    id: anthropic_node
+    type: anthropic
+    base_url: https://api.anthropic.com/v1
+  together_node:
+    id: together_node
+    type: together
+    base_url: https://api.together.xyz/v1
+  cohere_node:
+    id: cohere_node
+    type: cohere
+    base_url: https://api.cohere.ai/v1
+  ollama_local:
+    id: ollama_local
+    type: ollama
+    base_url: http://localhost:11434
+  mock_node:
+    id: mock_node
+    type: mock
+    base_url: http://localhost:0
+  google-openai_node:
+    id: google-openai_node
+    type: google-openai
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  mistral-openai_node:
+    id: mistral-openai_node
+    type: mistral-openai
+    base_url: https://api.mistral.ai/v1
+  ollama-openai_node:
+    id: ollama-openai_node
+    type: ollama-openai
+    base_url: http://localhost:11434/v1
+  moonshot_node:
+    id: moonshot_node
+    type: moonshot
+    base_url: https://api.moonshot.cn/v1
+  minimax_node:
+    id: minimax_node
+    type: minimax
+    base_url: https://api.minimax.chat/v1
+  volcengine_node:
+    id: volcengine_node
+    type: volcengine
+    base_url: https://ark.cn-beijing.volces.com/api/v3
+  lmstudio-v1_node:
+    id: lmstudio-v1_node
+    type: lmstudio-v1
+    base_url: https://api.openai.com/v1
+  lmstudio-openai_node:
+    id: lmstudio-openai_node
+    type: lmstudio-openai
+    base_url: https://api.openai.com/v1
+  generic_node:
+    id: generic_node
+    type: generic
+    base_url: ''
+  localai_node:
+    id: localai_node
+    type: localai
+    base_url: http://localhost:8080/v1
+  zhipu_node:
+    id: zhipu_node
+    type: zhipu
+    base_url: https://open.bigmodel.cn/api/paas/v4
+  perplexity_node:
+    id: perplexity_node
+    type: perplexity
+    base_url: https://api.perplexity.ai
+  gemini_node:
+    id: gemini_node
+    type: gemini
+    base_url: ''
+  gemini-v1_node:
+    id: gemini-v1_node
+    type: gemini-v1
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  gemini-openai_node:
+    id: gemini-openai_node
+    type: gemini-openai
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  dashscope_node:
+    id: dashscope_node
+    type: dashscope
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  baichuan_node:
+    id: baichuan_node
+    type: baichuan
+    base_url: https://api.baichuan-ai.com/v1
+  bedrock_node:
+    id: bedrock_node
+    type: bedrock
+    base_url: ''
+  deepseek-r1_node:
+    id: deepseek-r1_node
+    type: deepseek-r1
+    base_url: https://api.deepseek.com

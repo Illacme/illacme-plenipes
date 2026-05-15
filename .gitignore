@@ -6,7 +6,6 @@
 .plenipes/*
 !.plenipes/SOP/
 !.plenipes/governance/
-!.plenipes/history/
 
 # 🔒 主权出版社空间（绝对禁止外泄）
 workspace/
@@ -82,3 +81,6 @@ sync_stats_*.json
 .antigravity/
 
 .plenipes/history/
+.plenipes/history/**/*.png
+.plenipes/history/**/*.jpg
+.plenipes/history/**/*.webp
