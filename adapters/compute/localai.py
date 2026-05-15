@@ -6,7 +6,6 @@ Illacme-plenipes AI Plugin - LocalAI Adapter
 """
 import requests
 import asyncio
-from typing import Dict, Any, List
 from .openai import OpenAICompatibleTranslator
 from core.utils.tracing import tlog
 
@@ -14,6 +13,7 @@ class LocalAITranslator(OpenAICompatibleTranslator):
     """🚀 LocalAI 专属适配器"""
     PLUGIN_ID = 'localai'
     DISPLAY_NAME = 'LocalAI'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 LocalAI 本地开源算力支持，兼容 OpenAI 协议栈，支持在私有硬件上部署多种主流 AI 模型。"
     PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = "http://localhost:8080/v1"

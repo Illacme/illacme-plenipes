@@ -37,7 +37,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             "status": "In-Use" if is_active else "Ready",
             "is_in_use": is_active, "is_enabled": True,
             "origin": "user", "version": "V1.0",
-            "description": f"主权 Imprint 设施：承载 '{imp_id}' 旗下的全量出版资产与政务规则。"
+            "description": f"主权 Imprint 设施：承载 '{imp_id}' 旗下的全量出版资产与政务规则。",
+            "is_manageable": False
         })
 
     # 1. Theme Governance (Local & Central)
@@ -55,7 +56,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
                     "status": "In-Use" if is_active else "Local",
                     "is_in_use": is_active, "is_enabled": True,
                     "origin": "user", "location": "local", "version": "V1.0",
-                    "description": "版图专属主题：位于当前版图目录下的物理资产。"
+                    "description": "版图专属主题：位于当前版图目录下的物理资产。",
+                    "is_manageable": False
                 })
                 theme_ids.add(entry)
 
@@ -69,7 +71,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
                     "status": "In-Use" if is_active else "Central",
                     "is_in_use": is_active, "is_enabled": True,
                     "origin": "core", "location": "global", "version": SYSTEM_TRACK,
-                    "description": "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。"
+                    "description": "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。",
+                    "is_manageable": False
                 })
                 theme_ids.add(entry)
 
@@ -84,21 +87,26 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             "id": adapter_id, "name": display_name, "category": "theme", "category_name": "🎨 装帧主题适配器",
             "status": "In-Use" if is_active else "Native",
             "is_in_use": is_active, "is_enabled": (adapter_id not in disabled),
-            "origin": "core", "version": SYSTEM_TRACK, "description": description
+            "origin": "core", "version": getattr(renderer_cls, "VERSION", SYSTEM_TRACK), "description": description,
+            "is_manageable": True
         })
 
     # 2. 🧱 算力节点 (Compute Nodes)
     for node_id, node_cfg in engine.config.translation.compute_nodes.items():
         is_active = (engine.config.translation.primary_node == node_id)
+        node_type = getattr(node_cfg, "type", "")
+        provider_cls = AIProviderRegistry.get_provider(node_type)
+        display_name = getattr(provider_cls, "DISPLAY_NAME", node_id.upper())
         plugins.append({
-            "id": node_id, "category": "compute", "category_name": "⚙️ 算力节点",
+            "id": node_id, "name": display_name, "category": "compute", "category_name": "⚙️ 算力节点",
             "status": "In-Use" if is_active else "Standby",
             "is_in_use": is_active, "is_enabled": True,
             "origin": "user", "version": "V1.0",
             "base_url": getattr(node_cfg, "base_url", ""),
             "model": getattr(node_cfg, "model", ""),
-            "node_type": getattr(node_cfg, "type", ""),
-            "description": f"已划定的算力基座：类型为 {getattr(node_cfg, 'type', 'Unknown')}，负责承担 AI 推理任务。"
+            "node_type": node_type,
+            "description": f"已划定的算力基座：类型为 {display_name}，负责承担 AI 推理任务。",
+            "is_manageable": True
         })
 
     # 3. 🌐 全站托管能力 (Hosting)
@@ -107,15 +115,22 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         is_active = False
         if hasattr(engine, 'deployment_manager'):
             is_active = any(isinstance(pub, cls) for pub in engine.deployment_manager.publishers)
+        
+        # Webhook 特殊逻辑：检查全局开关
+        if p_id == "webhook_dispatch":
+            is_active = engine.config.publish_control.webhook_enabled
+            
         current_cfg = hosting_root.get(p_id, {}) if isinstance(hosting_root, dict) else {}
-        description = getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {p_id.upper()}。")
+        display_name = getattr(cls, "DISPLAY_NAME", p_id.upper())
+        description = getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {display_name}。")
         plugins.append({
-            "id": p_id, "category": "hosting", "category_name": "🌐 全站托管",
+            "id": p_id, "name": display_name, "category": "hosting", "category_name": "🌐 全站托管",
             "status": "In-Use" if is_active else "Ready",
             "is_in_use": is_active, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
+            "origin": "core", "version": getattr(cls, "VERSION", SYSTEM_TRACK),
             "description": description,
-            "cfg": current_cfg
+            "cfg": current_cfg,
+            "is_manageable": True
         })
 
     # 4. 🚀 分发渠道 (Syndication)
@@ -124,65 +139,126 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         is_in_use = (target_id in synd_cfg.targets) if hasattr(synd_cfg, 'targets') else False
         current_cfg = synd_cfg.targets.get(target_id, {}) if is_in_use else {}
         if hasattr(current_cfg, 'dict'): current_cfg = current_cfg.dict()
+        target_cls = TARGET_REGISTRY.get(target_id)
+        display_name = getattr(target_cls, "DISPLAY_NAME", target_id.upper())
         plugins.append({
-            "id": target_id, "category": "publisher", "category_name": "🚀 分发渠道",
+            "id": target_id, "name": display_name, "category": "publisher", "category_name": "🚀 分发渠道",
             "status": "Active" if is_in_use else "Ready",
             "is_in_use": is_in_use,
             "is_enabled": (target_id not in disabled),
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"全自动分发插件：支持将出版成品推向 {target_id.upper()} 矩阵。",
-            "cfg": current_cfg
+            "origin": "core", "version": getattr(target_cls, "VERSION", SYSTEM_TRACK),
+            "description": f"全自动分发插件：支持将出版成品推向 {display_name} 矩阵。",
+            "cfg": current_cfg,
+            "is_manageable": True
         })
 
     # 5. 🧠 AI 协议 (Protocols)
+    seen_proto_classes = set()
     for proto in AIProviderRegistry.get_all_protocols():
         proto_cls = AIProviderRegistry.get_provider(proto)
+        if not proto_cls or proto_cls in seen_proto_classes:
+            continue
+        seen_proto_classes.add(proto_cls)
         display_name = getattr(proto_cls, "DISPLAY_NAME", proto.upper())
         protocol_family = getattr(proto_cls, "PROTOCOL_FAMILY", "native")
         default_url = getattr(proto_cls, "DEFAULT_URL", "")
+        fallback_desc = f"内核级 AI 通讯协议：支持对接任何符合 {proto.upper()} 标准的算力终端。"
         plugins.append({
             "id": proto, "name": display_name,
             "protocol_family": protocol_family,
             "default_url": default_url,
             "category": "protocol", "category_name": "🧠 AI 协议",
-            "status": "Native", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"内核级 AI 通讯协议：支持对接任何符合 {proto.upper()} 标准的算力终端。"
+            "status": protocol_family.capitalize(), "is_in_use": True, "is_enabled": True,
+            "origin": "core", "version": getattr(proto_cls, "VERSION", SYSTEM_TRACK),
+            "description": getattr(proto_cls, "DESCRIPTION", fallback_desc),
+            "is_manageable": True
         })
 
-    # 6. Ingress / 7. Transformers / 8. Maskers / 9. Pipeline Steps
-    # (省略部分说明，逻辑与原 context.py 保持 1:1)
-    for dialect in ingress_registry.list_dialects():
+    # 6. Ingress (Sources & Dialects) / 7. Transformers / 8. Maskers / 9. Pipeline Steps
+    for source in ingress_registry.list_sources():
+        source_cls = ingress_registry.get_source(source)
+        is_active = (engine.config.ingress_settings.source_type == source)
+        display_name = getattr(source_cls, "DISPLAY_NAME", source.upper())
+        fallback_desc = f"物理数据源适配器：支持从 {display_name} 物理同步原始资产。"
         plugins.append({
-            "id": dialect, "name": dialect.upper(), "category": "ingress", "category_name": "📥 输入方言",
-            "status": "Active", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"稿件输入方言适配：支持物理识别并解析 {dialect.upper()} 格式的原始文档。"
+            "id": source, "name": display_name, "category": "ingress_source", "category_name": "📥 物理接入层",
+            "status": "In-Use" if is_active else "Ready",
+            "is_in_use": is_active, "is_enabled": True,
+            "origin": "core", "version": getattr(source_cls, "VERSION", SYSTEM_TRACK),
+            "description": getattr(source_cls, "DESCRIPTION", fallback_desc),
+            "is_manageable": False
+        })
+
+    active_dialects = engine.config.ingress_settings.active_dialects
+    for dialect in ingress_registry.list_dialects():
+        dialect_cls = ingress_registry.get_dialect(dialect)
+        is_pinned = (dialect in active_dialects)
+        is_auto = ("auto" in active_dialects)
+        
+        display_name = getattr(dialect_cls, "DISPLAY_NAME", dialect.upper()) if dialect_cls else dialect.upper()
+        fallback_desc = f"稿件输入方言适配：支持物理识别并解析 {display_name} 格式的原始文档。"
+        
+        # 优化状态显示
+        if is_pinned:
+            status = "In-Use"
+        elif is_auto:
+            status = "Auto-Sensing"
+        else:
+            status = "Standby"
+            
+        plugins.append({
+            "id": dialect, "name": display_name, "category": "ingress_dialect", "category_name": "🌀 逻辑解析层",
+            "status": status,
+            "is_in_use": is_pinned or is_auto,
+            "is_enabled": True,
+            "origin": "core", "version": getattr(dialect_cls, "VERSION", SYSTEM_TRACK) if dialect_cls else SYSTEM_TRACK,
+            "description": getattr(dialect_cls, "DESCRIPTION", fallback_desc) if dialect_cls else fallback_desc,
+            "is_manageable": False
         })
 
     for trans in markup_registry.get_transformers():
         t_id = getattr(trans, "PLUGIN_ID", trans.__class__.__name__.lower().replace("transformer", ""))
+        display_name = getattr(trans, "DISPLAY_NAME", t_id.upper())
+        fallback_desc = f"物理加工单元：负责对稿件进行 {display_name} 维度的结构化治理与转换。"
         plugins.append({
-            "id": t_id, "name": t_id.upper(), "category": "transformer", "category_name": "🛠️ 资产加工",
+            "id": t_id, "name": display_name, "category": "transformer", "category_name": "🛠️ 资产加工",
             "status": "Active", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"物理加工单元：负责对稿件进行 {t_id.upper()} 维度的结构化治理与转换。"
+            "origin": "core", "version": getattr(trans, "VERSION", SYSTEM_TRACK),
+            "description": getattr(trans, "DESCRIPTION", fallback_desc),
+            "is_manageable": False
         })
 
     for masker_id in markup_registry._maskers.keys():
+        masker = markup_registry.get_masker(masker_id)
+        display_name = getattr(masker, "DISPLAY_NAME", masker_id.upper())
+        fallback_desc = f"隐私脱敏引擎：在出版分发前自动对稿件执行 {display_name} 级安全屏蔽。"
         plugins.append({
-            "id": masker_id, "name": masker_id.upper(), "category": "masker", "category_name": "🛡️ 安全防护",
+            "id": masker_id, "name": display_name, "category": "masker", "category_name": "🛡️ 安全防护",
             "status": "Shielded", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"隐私脱敏引擎：在出版分发前自动对稿件执行 {masker_id.upper()} 级安全屏蔽。"
+            "origin": "core", "version": getattr(masker, "VERSION", SYSTEM_TRACK),
+            "description": getattr(masker, "DESCRIPTION", fallback_desc),
+            "is_manageable": False
         })
 
     for step in StepRegistry.get_all_names():
+        step_cls = StepRegistry.get_step(step)
+        is_active = True
+        
+        # 针对特定步骤检查开关
+        if step == "staticizer":
+            is_active = engine.config.ingress_settings.staticize_components
+        elif step == "seo":
+            is_active = engine.config.seo_settings.enabled
+            
+        display_name = getattr(step_cls, "DISPLAY_NAME", step.upper())
+        fallback_desc = f"出版工序环节：构成主权出版流水线的 '{display_name}' 核心原子步骤。"
         plugins.append({
-            "id": step, "name": step.upper(), "category": "editorial", "category_name": "🧬 流程审计",
-            "status": "Audited", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": SYSTEM_TRACK,
-            "description": f"出版工序环节：构成主权出版流水线的 '{step}' 核心原子步骤。"
+            "id": step, "name": display_name, "category": "editorial", "category_name": "🧬 流程审计",
+            "status": "In-Use" if is_active else "Standby",
+            "is_in_use": is_active, "is_enabled": True,
+            "origin": "core", "version": getattr(step_cls, "VERSION", SYSTEM_TRACK),
+            "description": getattr(step_cls, "DESCRIPTION", fallback_desc),
+            "is_manageable": False
         })
 
     # 🚀 [V74.56] 统一对齐：确保所有插件均具备 name 属性

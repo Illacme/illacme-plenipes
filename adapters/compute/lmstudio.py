@@ -7,7 +7,7 @@ Illacme-plenipes AI Plugin - LM Studio Dual-Track Adapter
 """
 import requests
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 from core.utils.tracing import tlog
 
@@ -49,6 +49,7 @@ class LMStudioNativeTranslator(LMStudioBase):
     """🚀 [NATIVE] LM Studio 原生驱动 (本地主权优先)"""
     PLUGIN_ID = 'lmstudio'
     DISPLAY_NAME = 'LM Studio'
+    VERSION = "V5.3"
     DESCRIPTION = "提供 LM Studio 本地部署支持，将个人电脑转化为具备物理隔离特性的私有 AI 算力中心。"
     PROTOCOL_FAMILY = 'native'
     
@@ -64,6 +65,9 @@ class LMStudioStandardTranslator(LMStudioBase):
     PLUGIN_ID = 'lmstudio-v1'
     DISPLAY_NAME = 'LM Studio'
     PROTOCOL_FAMILY = 'standard'
+    VERSION = "V5.3"
+    DESCRIPTION = "提供 LM Studio 的标准 OpenAI 兼容协议支持，适用于需要 V1 接口对齐的集成场景。"
+    # 🚀 [V53.8] 别名矩阵：支持用户通过 lmstudio-openai 名称以标准 OpenAI 协议视角进行配置
     ALIASES = ['lmstudio-openai']
     
     def get_archetype_params(self) -> Dict[str, Any]:

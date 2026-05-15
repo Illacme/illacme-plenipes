@@ -14,6 +14,7 @@ class S3Publisher(BasePublisher):
     """🚀 [V17.0] S3 发布插件"""
     PLUGIN_ID = "s3"
     DISPLAY_NAME = "AWS S3 / R2"
+    VERSION = "V2.2"
     DESCRIPTION = "将静态资产上传至 S3 存储桶，支持 Cloudflare R2、阿里云 OSS 等兼容协议。"
     
     def push(self, bundle_path: str, metadata: dict) -> dict:

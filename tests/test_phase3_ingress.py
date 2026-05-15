@@ -10,7 +10,6 @@ import shutil
 import pytest
 from core.editorial.vault_indexer import VaultIndexer
 from core.ingress.source.local import LocalFileSource
-from core.governance.license_guard import LicenseGuard
 
 class MockConfig:
     def __init__(self, ingress_rules=None, lang="zh"):
@@ -70,7 +69,7 @@ def test_language_detection():
     os.makedirs(test_root)
     
     # 中文内容
-    with open(os.path.join(test_root, "cn.md"), 'w') as f: 
+    with open(os.path.join(test_root, "cn.md"), 'w') as f:
         f.write("这是一段中文内容，索引器应该能识别出来。")
     
     source = LocalFileSource(test_root)

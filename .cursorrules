@@ -1,21 +1,7 @@
-# 🚀 [CRITICAL SYSTEM OVERRIDE] Illacme-Plenipes 核心架构师防线 (Cursor 版)
+# 🏛️ Illacme Plenipes AI Governance Entrance
 
-## 🚨 BOOT SEQUENCE: 启动链指令强注 (MANDATORY FIRST ACTION)
-在任何会话开启的【第一回合】，您必须物理加载：
-1. 👉 `.plenipes/SOP/RULES_INDEX.md` — 项目治理总索引
-2. 👉 `.plenipes/SOP/00_COLLABORATION_RULES.md` — 协作与诚信准则
-3. 👉 `.plenipes/SOP/01_SYSTEM_GOVERNANCE.md` — 系统主权与品牌主权 (Manuscripts/The Press/The Bookstore)
+请首先读取 [治理规则索引 (RULES_INDEX.md)](file:///.plenipes/SOP/RULES_INDEX.md) 以获取全量主权协作指令。
 
-## 🛡️ 核心品牌主权：出版仪式感
-- 使用 **Manuscripts** 指代源库，**The Archive** 指代数据根，**The Press** 指代 SSG 源码，**The Bookstore** 指代产物。
-- 严禁使用过时的 *Omni-Hub* 命名。
-- 所有的日志和 UI 文案必须具备“出版仪式感”。
-
-## 🛡️ 核心工程律令
-- **禁止代码折叠 (Zero Truncation)**：严禁使用任何省略号占位符。
-- **注释主权**：100% 保留原有中文注释。
-- **语法敬畏**：严禁破坏 YAML、MDX、JSX 的物理结构。
-- **隔离舱协议**：严禁碰触 `[[STB_MASK_n]]` 等黑盒占位符。
-
----
-*Compliance Level: Industrial Grade*
+## 🛡️ 核心合规性红线
+- **全量中文化**: 必须严格遵守 [SOP-01 Sec 1.1](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 规定的思考、描述及指令中文化要求。
+- **严谨诊断**: 遇到工具访问故障，必须执行 [SOP-01 Sec 1.2](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 定义的物理诊断路径。

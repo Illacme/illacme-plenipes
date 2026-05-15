@@ -21,7 +21,7 @@
                 <div class="status-box">
                     <h1>ILLACME <span class="accent">PLENIPES</span></h1>
                         <div class="context-switcher" id="imprint-selector-trigger" onclick="event.stopPropagation(); toggleImprintDropdown()">
-                            <span class="context-label">品牌/事业部:</span>
+                            <span class="context-label">品牌/版图:</span>
                             <span id="active-imprint-name">LOADING...</span>
                             <span class="dropdown-arrow">▼</span>
                         </div>
@@ -33,7 +33,7 @@
                     <span class="nav-icon">🌌</span><span class="nav-text">指挥中心</span>
                 </div>
                 <div class="nav-item" id="nav-vault">
-                    <span class="nav-icon">📂</span><span class="nav-text">原稿金库</span>
+                    <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
                 </div>
                 <div class="nav-item" id="nav-compute">
                     <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
@@ -68,6 +68,20 @@
                     <span class="pod-title">INTELLIGENCE</span>
                 </div>
                 <div id="governance-context" class="context-matrix vertical">
+                    <div class="context-capsule">
+                        <div class="capsule-icon">📂</div>
+                        <div class="capsule-data">
+                            <div class="capsule-label">VAULT PATH</div>
+                            <div class="capsule-value mono" id="ctx-vault" style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left;" title="-">-</div>
+                        </div>
+                    </div>
+                    <div class="context-capsule">
+                        <div class="capsule-icon">✍️</div>
+                        <div class="capsule-data">
+                            <div class="capsule-label">DIALECT</div>
+                            <div class="capsule-value mono" id="ctx-dialect">-</div>
+                        </div>
+                    </div>
                     <div class="context-capsule">
                         <div class="capsule-icon">🧠</div>
                         <div class="capsule-data">
@@ -168,18 +182,23 @@
 
             <div class="footer-center">
                 <div class="telemetry-item">
-                    <span class="t-label">CPU CORE:</span>
-                    <span class="t-value">8-SYNC</span>
+                    <span class="t-label">CPU LOAD:</span>
+                    <span class="t-value" id="footer-cpu-val">--%</span>
                 </div>
                 <div class="telemetry-divider"></div>
                 <div class="telemetry-item">
-                    <span class="t-label">OS LOAD:</span>
-                    <span class="t-value" id="load-val">12%</span>
+                    <span class="t-label">MEMORY:</span>
+                    <span class="t-value" id="footer-mem-val">--%</span>
                 </div>
                 <div class="telemetry-divider"></div>
                 <div class="telemetry-item">
-                    <span class="t-label">PHYSICAL VRAM:</span>
-                    <span class="t-value">1.4GB</span>
+                    <span class="t-label">AI CREDIT:</span>
+                    <span class="t-value" id="footer-ai-cost">$0.0000</span>
+                </div>
+                <div class="telemetry-divider"></div>
+                <div class="telemetry-item">
+                    <span class="t-label">TOKENS:</span>
+                    <span class="t-value" id="footer-ai-tokens">0</span>
                 </div>
             </div>
 
@@ -205,23 +224,27 @@
     </div>
 
     <!-- 🏗️ Modular Identity Control (V57.0) -->
-    <script src="js/dashboard.core.js?v=74.0"></script>
-    <script src="js/compute/compute.api.js?v=74.80"></script>
-    <script src="js/compute/compute.ui.js?v=74.81"></script>
-    <script src="js/compute/compute.handlers.js?v=74.82"></script>
-    <script src="js/dashboard.compute.js?v=74.83"></script>
-    <script src="js/dashboard.views.js?v=74.55"></script>
-    <script src="js/dashboard.ui.js?v=74.55"></script>
-    <script src="js/dashboard.vault.js?v=74.55"></script>
-    <script src="js/dashboard.plugins.js?v=74.55"></script>
-    <script src="js/dashboard.imprints.js?v=74.55"></script>
-    <script src="js/dashboard.themes.js?v=74.55"></script>
-    <script src="js/dashboard.modes.js?v=74.55"></script>
-    <script src="js/dashboard.localization.js?v=74.55"></script>
-    <script src="js/dashboard.guardrails.js?v=74.55"></script>
-    <script src="js/dashboard.health.js?v=74.55"></script>
-    <script src="js/dashboard.system.js?v=74.55"></script>
-    <script src="js/dashboard.socket.js?v=74.55"></script>
-    <script src="dashboard.js?v=74.55"></script>
+    <script src="/dashboard/js/dashboard.core.js"></script>
+    <script src="/dashboard/js/compute/compute.api.js"></script>
+    <script src="/dashboard/js/compute/compute.ui.js"></script>
+    <script src="/dashboard/js/compute/compute.handlers.js"></script>
+    <script src="/dashboard/js/compute/compute.modals.js"></script>
+    <script src="/dashboard/js/compute/compute.diag.js"></script>
+    <script src="/dashboard/js/theme/theme.api.js"></script>
+    <script src="/dashboard/js/theme/theme.ui.js"></script>
+    <script src="/dashboard/js/theme/theme.handlers.js"></script>
+    <script src="/dashboard/js/dashboard.compute.js"></script>
+    <script src="/dashboard/js/dashboard.views.js"></script>
+    <script src="/dashboard/js/dashboard.ui.js"></script>
+    <script src="/dashboard/js/dashboard.vault.js"></script>
+    <script src="/dashboard/js/dashboard.plugins.js"></script>
+    <script src="/dashboard/js/dashboard.imprints.js"></script>
+    <script src="/dashboard/js/dashboard.modes.js"></script>
+    <script src="/dashboard/js/dashboard.localization.js"></script>
+    <script src="/dashboard/js/dashboard.guardrails.js"></script>
+    <script src="/dashboard/js/dashboard.health.js"></script>
+    <script src="/dashboard/js/dashboard.system.js"></script>
+    <script src="/dashboard/js/dashboard.socket.js"></script>
+    <script src="/dashboard/dashboard.js"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ class MDXMasker(ISecurityMasker):
     """🚀 [V16.0] MDX 代码隔离护盾"""
     PLUGIN_ID = "mdx_masker"
     DISPLAY_NAME = "MDX Security Masker"
+    VERSION = "V1.5"
     DESCRIPTION = "深度扫描 MDX 语法树，自动识别并脱敏 JSX 组件属性中的敏感配置与私有端点。"
     
     def __init__(self):

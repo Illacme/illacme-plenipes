@@ -13,6 +13,7 @@ class StarlightAdapter(BaseSSGAdapter):
     """🚀 Starlight 专属渲染引擎"""
     PLUGIN_ID = "starlight"
     DISPLAY_NAME = "Starlight Engine"
+    VERSION = "V2.0"
     DESCRIPTION = "驱动 Astro Starlight 架构的文档渲染，完美支持 Asides 容器语法与物理路径投影。"
     
     _GENERIC_MAP = {
@@ -48,7 +49,6 @@ class StarlightAdapter(BaseSSGAdapter):
     
     def render(self, body: str, fm: Dict[str, Any], seo_data: Dict[str, Any] = None, target_lang: str = "en", sub_path: str = "") -> Tuple[str, Dict[str, Any]]:
         """🚀 [V10.3] Starlight 深度渲染：SEO 注入与元数据对齐"""
-        from typing import Tuple
         new_fm = fm.copy()
         
         # 1. 注入 AI 生成的 SEO 元数据
@@ -86,9 +86,9 @@ class StarlightAdapter(BaseSSGAdapter):
             force_prefix = self.engine.config.i18n_settings.force_source_prefix
             
         return LanguageHub.get_physical_path(
-            iso_code, 
-            theme="starlight", 
-            source_lang=source_lang, 
+            iso_code,
+            theme="starlight",
+            source_lang=source_lang,
             force_prefix=force_prefix
         )
 

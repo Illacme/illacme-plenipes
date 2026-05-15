@@ -78,9 +78,10 @@ window.loadPlugins = async () => {
     window.allPlugins = data.plugins;
 
     const categories = [
-        { id: 'ingress', name: '📥 输入感应' },
-        { id: 'transformer', name: '🛠️ 资产加工' },
+        { id: 'ingress', name: '📥 内容接入' },
+        { id: 'transformer', name: '🛠️ 文稿加工' },
         { id: 'masker', name: '🛡️ 安全防护' },
+        { id: 'protocol', name: '🧠 AI 协议' },
         { id: 'theme', name: '🎨 视觉装帧' },
         { id: 'hosting', name: '🌐 全站托管' },
         { id: 'publisher', name: '🚀 分发渠道' },
@@ -118,7 +119,12 @@ window.renderPlugins = () => {
     const gridEl = document.getElementById('plugins-grid');
     const filtered = window.activePluginCategory === 'all'
         ? window.allPlugins.filter(p => p.category !== 'imprint')
-        : window.allPlugins.filter(p => p.category === window.activePluginCategory && p.category !== 'imprint');
+        : window.allPlugins.filter(p => {
+            if (window.activePluginCategory === 'ingress') {
+                return p.category === 'ingress_source' || p.category === 'ingress_dialect';
+            }
+            return p.category === window.activePluginCategory && p.category !== 'imprint';
+        });
 
     const categories = {};
     filtered.forEach(p => {
@@ -132,7 +138,7 @@ window.renderPlugins = () => {
     });
 
     let html = '';
-    const categoryOrder = ['ingress', 'transformer', 'masker', 'theme', 'hosting', 'publisher', 'editorial'];
+    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'publisher', 'editorial'];
 
     categoryOrder.forEach(catId => {
         const cat = categories[catId];
@@ -141,7 +147,9 @@ window.renderPlugins = () => {
                 <div class="plugins-category-section">
                     <div class="plugins-category-header"><h3>${cat.name}</h3></div>
                     <div class="shield-matrix">
-                    ${cat.items.map(p => `
+                    ${cat.items.map(p => {
+                        const needsProbe = ['protocol', 'publisher', 'hosting'].includes(p.category);
+                        return `
                         <div class="shield-pod plugin-pod ${p.is_in_use ? 'active-duty' : ''}">
                             <div class="shield-status">
                                 <div style="display:flex; align-items:center; gap:10px;">
@@ -152,29 +160,31 @@ window.renderPlugins = () => {
                             </div>
                             
                             <div class="shield-body" style="flex:1; display:flex; flex-direction:column;">
-                                <h4 style="font-size:1.1rem; color:#fff; margin-bottom:5px;">${(p.name || p.id).toUpperCase()}</h4>
+                                <h4 style="font-size:1.1rem; color:#fff; margin-bottom:5px;">${p.name || p.id}</h4>
                                 <p style="margin-bottom:15px; flex:1; font-size:0.75rem; color:var(--text-dim);">${p.description || 'Capability syncing...'}</p>
                                 
                                 <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
                                     <span class="tiny-label" style="color:var(--accent-primary);">${p.origin === 'core' ? '🛡️ CORE ASSET' : '🧩 EXTENSION'}</span>
-                                    ${p.is_in_use ? '<span class="tiny-label" style="margin-left:auto; color:#00ff88;">● ACTIVE DUTY</span>' : ''}
+                                    ${p.is_in_use ? '<span class="tiny-label" style="margin-left:auto; color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>ACTIVE</span>' : ''}
                                 </div>
 
-                                <div class="p-control-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                                <div class="p-control-group" style="display:grid; grid-template-columns: ${needsProbe ? '1fr 1fr' : '1fr'}; gap:8px;">
                                     <button class="action-btn" onclick="openPluginConfig('${p.id}')" ${!p.is_enabled ? 'disabled' : ''}>⚙️ CONFIG</button>
-                                    <button class="action-btn" onclick="probePlugin('${p.id}')">📡 PROBE</button>
+                                    ${needsProbe ? `<button class="action-btn" onclick="probePlugin('${p.id}')">📡 PROBE</button>` : ''}
                                 </div>
                                 
-                                <div style="margin-top:15px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
-                                    <span class="tiny-label">POWER STATE</span>
-                                    <label class="p-switch">
-                                        <input type="checkbox" ${p.is_enabled ? 'checked' : ''} onchange="togglePlugin('${p.id}', this.checked)" ${p.is_in_use ? 'disabled' : ''}>
-                                        <span class="p-slider round"></span>
-                                    </label>
-                                </div>
+                                ${p.is_manageable ? `
+                                 <div style="margin-top:15px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                                     <span class="tiny-label">运行状态 (Power State)</span>
+                                     <label class="p-switch">
+                                         <input type="checkbox" ${p.is_enabled ? 'checked' : ''} onchange="togglePlugin('${p.id}', this.checked)" ${p.is_in_use ? 'disabled' : ''}>
+                                         <span class="p-slider round"></span>
+                                     </label>
+                                 </div>
+                                 ` : ''}
                             </div>
                         </div>
-                    `).join('')}
+                    `;}).join('')}
                     </div>
                 </div>
             `;
@@ -190,7 +200,8 @@ window.getPluginEmoji = (cat) => {
         'hosting': '🌐',
         'publisher': '🚀',
         'processor': '🧠',
-        'ingress': '📥',
+        'ingress_source': '📥',
+        'ingress_dialect': '🌀',
         'transformer': '🛠️',
         'masker': '🛡️',
         'editorial': '🧬'

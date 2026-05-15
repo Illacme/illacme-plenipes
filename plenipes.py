@@ -157,7 +157,6 @@ if __name__ == "__main__":
 
         # 🧪 [V50.3] 凭据审计特权指令
         if args.credentials:
-            from core.governance.secret_manager import secrets
             tlog.info("🔍 [凭据审计] 正在执行全域脱敏扫描...")
             # 逻辑：触发一次配置重载并保存，自动执行 mask_dict
             engine.meta.force_save()
@@ -176,10 +175,10 @@ if __name__ == "__main__":
                 tlog.info("💊 [物理自愈] 正在根据诊断报告执行自动修复手术...")
                 repairs = engine.doctor.heal()
                 for r in repairs:
-                    tlog.success(f"✅ [品牌落成] (出版社已就绪) 出版品牌环境边界已确立。")
+                    tlog.success("✅ [品牌落成] (出版社已就绪) 出版品牌环境边界已确立。")
                 tlog.info("🏁 [修复完成] 系统已尝试恢复至健康基准线。")
                 
-            if not any([args.sync, args.watch, args.serve]): 
+            if not any([args.sync, args.watch, args.serve]):
                 sys.exit(0 if report["status"] != "FAIL" else 1)
 
         # 🚀 [V51.0] 商业级缺省逻辑：如果没有指定任何操作，默认进入“全量主权模式” (API + Watch)

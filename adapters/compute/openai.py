@@ -7,7 +7,6 @@ Illacme-plenipes Core - OpenAI Adapter
 """
 
 import requests
-import re
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 
@@ -18,9 +17,10 @@ class OpenAICompatibleTranslator(BaseTranslator):
     """🚀 [V10.0] OpenAI 协议适配器 (Pure Adapter)"""
     PLUGIN_ID = 'openai'
     DISPLAY_NAME = 'OpenAI'
+    VERSION = "V10.2"
     DESCRIPTION = "提供 OpenAI 官方协议支持，兼容 GPT-4o、GPT-4-Turbo 等顶级算力节点。"
     PROTOCOL_FAMILY = 'standard'
-    # 🚀 [V53.8] 显式别名支持，对接 UI 常用术语
+    # 🚀 [V53.8] 别名矩阵：兼容用户不同的配置习惯 (v1 对应路径规范, openai-compatible 对应通用描述)
     ALIASES = ['openai-compatible', 'v1']
     DEFAULT_URL = "https://api.openai.com/v1"
     

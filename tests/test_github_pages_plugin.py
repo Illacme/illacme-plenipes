@@ -13,7 +13,6 @@ import subprocess
 
 sys.path.insert(0, os.path.abspath('.'))
 
-import pytest
 
 
 class TestGitHubPagesPublisher:

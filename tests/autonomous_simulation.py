@@ -14,7 +14,6 @@ import hashlib
 
 # 🚀 动态挂载项目根目录，确保影子环境导入不失联
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from core.runtime.engine import IllacmeEngine
 from core.runtime.engine_factory import EngineFactory
 
 # logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')

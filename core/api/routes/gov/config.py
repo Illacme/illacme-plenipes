@@ -9,7 +9,7 @@ import os
 import yaml
 from fastapi import APIRouter, Depends, Request
 from typing import Optional
-from core.runtime.cli_bootstrap import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 from core.utils.tracing import tlog
@@ -62,13 +62,15 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
+    tlog.info(f"📥 [配置更新请求] Payload: {req}, Imprint: {imprint_id}")
+    
     from core.config.governance_map import resolve_governance_level
     routing_groups = {"local": {}, "imprint": {}, "global": {}}
     
     for key, value in req.items():
         if key == "_level": continue
         level = resolve_governance_level(key)
-        if imprint_id: level = "imprint"
+        # 🚀 [V74.65] 主权对正：不再盲目委派，严格遵循治理地图的物理归属
         routing_groups[level][key] = value
         
         if not imprint_id or imprint_id == engine.im.get_active_imprint():
@@ -95,35 +97,41 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                     target[final_key] = value
                     tlog.info(f"📝 [内存同步] 已更新 Dict 字段: {key}")
                 elif hasattr(target, final_key):
-                    if key == "i18n_settings.targets" and isinstance(value, list):
-                        from core.governance.license_guard import LicenseGuard
-                        if not LicenseGuard.is_licensed() and len(value) > 1:
-                            return {"status": "error", "error": "🛡️ [主权拦截] 社区版仅支持 1 个目标语种。"}
-                        from core.config.config_models import I18nTarget
-                        from core.utils.language_hub import LanguageHub
-                        new_targets = []
-                        for code in value:
-                            name = LanguageHub.resolve_to_name(code)
-                            iso = LanguageHub.resolve_to_iso(code)
-                            new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=name))
-                        value = new_targets
-                        routing_groups[level][key] = [t.model_dump() for t in value]
-                    elif key == "i18n_settings.source.lang_code" and isinstance(value, str):
-                        from core.utils.language_hub import LanguageHub
-                        name = LanguageHub.resolve_to_name(value)
-                        if hasattr(target, 'name'): target.name = name
-                        routing_groups[level]["i18n_settings.source.name"] = name
-                    
-                    if final_key == "publishing_mode":
-                        from core.config.models.governance import PublishingMode
-                        try: value = PublishingMode(value)
-                        except: pass
-                    elif final_key == "seo_strategy":
-                        from core.config.models.governance import SeoStrategy
-                        try: value = SeoStrategy(value)
-                        except: pass
-                    setattr(target, final_key, value)
-                    tlog.info(f"📝 [内存同步] 已更新对象属性: {key}")
+                    try:
+                        if key == "i18n_settings.targets" and isinstance(value, list):
+                            from core.governance.license_guard import LicenseGuard
+                            if not LicenseGuard.is_licensed() and len(value) > 1:
+                                return {"status": "error", "error": "🛡️ [主权拦截] 社区版仅支持 1 个目标语种。"}
+                            from core.config.config_models import I18nTarget
+                            from core.utils.language_hub import LanguageHub
+                            new_targets = []
+                            for item in value:
+                                code = item.get("lang_code") if isinstance(item, dict) else item
+                                name = LanguageHub.resolve_to_name(code)
+                                iso = LanguageHub.resolve_to_iso(code)
+                                new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=name))
+                            value = new_targets
+                            routing_groups[level][key] = [t.model_dump() for t in value]
+                        elif key == "i18n_settings.source.lang_code" and isinstance(value, str):
+                            from core.utils.language_hub import LanguageHub
+                            name = LanguageHub.resolve_to_name(value)
+                            if hasattr(target, 'name'): target.name = name
+                            routing_groups[level]["i18n_settings.source.name"] = name
+                        
+                        if final_key == "publishing_mode":
+                            from core.config.models.governance import PublishingMode
+                            try: value = PublishingMode(value)
+                            except: pass
+                        elif final_key == "seo_strategy":
+                            from core.config.models.governance import SeoStrategy
+                            try: value = SeoStrategy(value)
+                            except: pass
+                        
+                        setattr(target, final_key, value)
+                        tlog.info(f"📝 [内存同步] 已更新对象属性: {key}")
+                    except Exception as e:
+                        tlog.error(f"❌ [内存同步失败] {key}: {e}")
+                        return {"status": "error", "error": f"内存同步失败: {key} - {e}"}
 
     def make_yaml_safe(data):
         if hasattr(data, 'model_dump'): return data.model_dump()
@@ -175,10 +183,14 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
         try:
             dir_name = os.path.dirname(path)
             if dir_name: os.makedirs(dir_name, exist_ok=True)
+            
+            save_data = make_yaml_safe(file_data[lvl])
+
             with open(path, 'w', encoding='utf-8') as f:
-                yaml.safe_dump(make_yaml_safe(file_data[lvl]), f, allow_unicode=True, sort_keys=False)
+                yaml.safe_dump(save_data, f, allow_unicode=True, sort_keys=False)
             tlog.success(f"💾 [物理固化] 已成功同步至 {lvl} 级别配置: {path}")
-        except Exception as e: tlog.error(f"❌ 落盘失败: {path} - {e}")
+        except Exception as e:
+            tlog.error(f"❌ 落盘失败: {path} - {e}")
             
     if not imprint_id or imprint_id == engine.im.get_active_imprint():
         engine.active_theme = engine.config.active_theme
@@ -204,7 +216,8 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                     engine.config.output_paths[f"{slot_id}_dir"] = os.path.join(THEMES_DIR, theme_id, rel_path)
 
         from core.runtime.engine_factory import EngineFactory
-        EngineFactory._init_paths_and_adapters(engine)
+        EngineFactory._init_basic_settings(engine)
+        EngineFactory._init_ingress(engine, engine.config)
         bus.emit("CONFIG_RELOADED", config=engine.config)
             
     return {"status": "success", "active_config": engine.config.model_dump()}

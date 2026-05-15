@@ -6,9 +6,8 @@ Illacme-plenipes Core - Anthropic Messages Protocol Adapter
 🛡️ [V67.0]：独立协议族基类，处理 System Prompt 隔离与 Top-level 参数。
 """
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
-from core.utils.tracing import tlog
 
 class AnthropicCompatibleTranslator(BaseTranslator):
     """🚀 Anthropic 协议族基类 (Messages API 契约)"""

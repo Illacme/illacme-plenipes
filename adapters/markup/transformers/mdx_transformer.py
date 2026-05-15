@@ -13,6 +13,7 @@ class MDXTransformer(IContentTransformer):
     """🚀 [V16.0] MDX 伴生资源与 ESM 重映射转换器"""
     PLUGIN_ID = "mdx_transformer"
     DISPLAY_NAME = "MDX Asset Transformer"
+    VERSION = "V1.9"
     DESCRIPTION = "自动扫描 MDX 中的 ESM 导入（JSX/TSX），并将其物理同步至渲染流水线。"
     
     def __init__(self):

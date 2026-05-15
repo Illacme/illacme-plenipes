@@ -91,7 +91,7 @@ window.renderUIComponents = () => {
 
         <!-- 📝 Document Editor Modal: Tactical Intelligence Terminal -->
         <div id="editor-modal" class="modal-overlay" style="display: none;">
-            <div class="glass-panel modal-content" style="width: 90%; height: 85%; max-width: 1200px;">
+            <div class="glass-panel modal-content" style="width: 90%; height: 85%; max-width: 1200px; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <div style="display:flex; align-items:center; gap:15px;">
                         <span style="font-size:1.2rem;">📝</span>
@@ -100,7 +100,7 @@ window.renderUIComponents = () => {
                     <button class="close-btn" onclick="closeEditor()">×</button>
                 </div>
                 
-                <div class="editor-matrix">
+                <div class="editor-matrix" style="flex: 1; min-height: 0; overflow: hidden;">
                     <div class="editor-main">
                         <div class="sector-header">PRIMARY MANUSCRIPT CONTENT</div>
                         <textarea id="editor-body" class="tactical-editor" spellcheck="false" placeholder="等待数据载入..."></textarea>

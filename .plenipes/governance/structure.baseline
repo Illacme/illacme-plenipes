@@ -197,3 +197,14 @@ core/utils/terminal_wizard.py
 core/utils/text.py
 core/utils/tracing.py
 core/api/routes/gov/plugin_mapper.py
+core/runtime/infrastructure/path_resolver.py
+core/api/logic/sys_ops.py
+core/api/infrastructure/logging.py
+core/logic/diagnostics/component_monitor.py
+core/runtime/orchestration/scanner.py
+core/runtime/orchestration/sync_worker.py
+core/api/infrastructure/__init__.py
+core/api/infrastructure/middleware.py
+core/api/logic/__init__.py
+core/logic/diagnostics/__init__.py
+core/runtime/assemblers/component_assembler.py

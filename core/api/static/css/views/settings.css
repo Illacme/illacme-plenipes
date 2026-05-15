@@ -187,10 +187,4 @@
 
 /* 🛸 .setting-input 已由 dashboard.base.css 全局管辖 */
 
-.settings-actions {
-    margin-top: 30px;
-    padding: 20px;
-    display: flex;
-    justify-content: flex-end;
-    border-top: 1px solid var(--glass-border);
-}
+

@@ -49,7 +49,13 @@ GOVERNANCE_RULES = {
         r"^plugins\.imprint_disabled_plugins$", # 品牌自愿禁用的插件
         r"^translation\.strategy$",        # 品牌翻译调度逻辑
         r"^translation\.primary_node$",    # 品牌主力算力节点
+        r"^translation\.primary_model$",   # 品牌主力执行模型
         r"^translation\.fallback_node$",   # 品牌备用算力节点
+        r"^translation\.fallback_model$",  # 品牌备用执行模型
+        r"^translation\.llm_concurrency$", # 品牌算力并发控制
+        r"^translation\.api_timeout$",     # 品牌算力超时控制
+        r"^translation\.max_retries$",     # 品牌算力重试机制
+        r"^translation\.max_chunk_size$",  # 品牌算力切片粒度
         r"^translation\.enable_ai$",       # 品牌是否开启 AI 治理
         r"^theme_options\..*$",            # 品牌视觉参数微调
         r"^framework_adapters\..*$",       # 品牌排版框架适配

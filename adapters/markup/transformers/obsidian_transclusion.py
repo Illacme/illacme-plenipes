@@ -2,10 +2,9 @@
 🔗 Obsidian 链接处理器 — Obsidian 双链语法的解析与转换。
 处理 [[WikiLink]]、![[Embed]] 与别名链接的标准化转换。
 """
-import os
 import re
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from core.markup.base import IContentTransformer
 from core.utils.common import extract_frontmatter
 from core.utils.tracing import tlog
@@ -16,6 +15,7 @@ class ObsidianTransclusionTransformer(IContentTransformer):
     """
     PLUGIN_ID = "obsidian_transclusion"
     DISPLAY_NAME = "Obsidian Transclusion"
+    VERSION = "V2.4"
     DESCRIPTION = "解析并展开 Obsidian 特有的 ![[Embed]] 语法，支持跨文件内容嵌套与块引用（Block Ref）自动拉取。"
     
     def __init__(self, max_depth: int = 3):

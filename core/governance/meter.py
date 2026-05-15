@@ -12,7 +12,7 @@ Illacme-plenipes Core - Usage Meter (算力计量器)
 
 [主权隐喻：注册簿 (The Registry)]
 在 Illacme-plenipes 的世界观中，UsageMeter 充当着总编室的“账本管理员”。
-每一份被翻译出的稿件（付印产物）都会在数据库中留下不可磨灭的印记，
+每一份被翻译出的稿件（付印产物）都会在数据库中留下不可磨灭的品牌记录，
 包括消耗的算力字符、汇率转换后的成本以及通过缓存节省的资产价值。
 
 [TCG 熔断机制]
@@ -135,7 +135,7 @@ class UsageMeter:
     def persist(self):
         """
         🚀 [V23.0] 持久化：由于已实现行级实时写入，此处仅负责同步仪表盘指标。
-        确保在档案馆 (The Archive) 中留下不可磨灭的付印痕迹。
+        确保在档案馆 (The Archive) 中留下不可磨灭的品牌付印痕迹。
         """
         self._update_dashboard_stats()
 

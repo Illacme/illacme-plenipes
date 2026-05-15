@@ -1,7 +1,6 @@
 import requests
 import os
 import yaml
-import json
 
 TOKEN = "YOUR_TOKEN"
 API_URL = "http://127.0.0.1:43212/api/config/update"

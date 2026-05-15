@@ -7,7 +7,7 @@
 
 import os
 from fastapi import APIRouter, Depends
-from core.runtime.cli_bootstrap import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_DIR, CONFIG_IMPRINT_NAME
 

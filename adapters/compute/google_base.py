@@ -6,7 +6,7 @@ Illacme-plenipes Core - Google Generative AI Protocol Adapter
 🛡️ [V67.0]：实现 Standard V3 (Google contents/parts) 契约。
 """
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 from core.utils.tracing import tlog
 

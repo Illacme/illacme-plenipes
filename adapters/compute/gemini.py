@@ -4,16 +4,15 @@
 Illacme-plenipes AI Plugin - Google Gemini Adapter
 🛡️ [V67.0]：实现 Native (SDK) 与 Standard V3 (REST) 双轨制。
 """
-import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .google_base import GoogleCompatibleTranslator
 from .openai import OpenAICompatibleTranslator
-from core.utils.tracing import tlog
 
 class GeminiNativeTranslator(GoogleCompatibleTranslator):
     """🚀 [NATIVE] Google Gemini 原生驱动 (Standard V3)"""
     PLUGIN_ID = 'gemini'
     DISPLAY_NAME = 'Google Gemini'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 Google Gemini 官方协议支持，具备超长上下文理解与多模态分析能力。"
     PROTOCOL_FAMILY = 'google'
     
@@ -31,6 +30,8 @@ class GeminiStandardTranslator(OpenAICompatibleTranslator):
     """🚀 [STANDARD] Google Gemini 兼容驱动 (V1 协议路径)"""
     PLUGIN_ID = 'gemini-v1'
     DISPLAY_NAME = 'Google Gemini'
+    VERSION = "V1.0"
+    DESCRIPTION = "提供 Google Gemini 的 OpenAI 兼容接口支持，适配主流分发平台的标准协议路径。"
     PROTOCOL_FAMILY = 'standard'
     ALIASES = ['gemini-openai']
     DEFAULT_URL = "https://generativelanguage.googleapis.com/v1beta/openai"

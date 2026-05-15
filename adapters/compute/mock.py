@@ -4,13 +4,14 @@
 Illacme-plenipes AI Plugin - Mock Adapter
 职责：提供零成本的模拟 AI 算力，用于开发与 CI 测试。
 """
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 
 class MockAIProvider(BaseTranslator):
     """🚀 [V10.0] 模拟算力提供商 (Mock)"""
     PLUGIN_ID = 'mock'
     DISPLAY_NAME = 'Mock Engine (Sensing)'
+    VERSION = "V1.0"
     DESCRIPTION = "提供零成本的模拟 AI 算力，专用于系统集成测试、开发调试以及 UI 离线展示。"
     PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = 'http://localhost:0'

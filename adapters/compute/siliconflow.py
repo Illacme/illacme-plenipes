@@ -6,7 +6,6 @@ Illacme-plenipes AI Plugin - SiliconFlow Adapter
 """
 import requests
 import asyncio
-from typing import Dict, Any, List
 from .openai import OpenAICompatibleTranslator
 from core.utils.tracing import tlog
 
@@ -14,6 +13,7 @@ class SiliconFlowTranslator(OpenAICompatibleTranslator):
     """🚀 SiliconFlow 专属适配器"""
     PLUGIN_ID = 'siliconflow'
     DISPLAY_NAME = 'SiliconFlow'
+    VERSION = "V1.0"
     DESCRIPTION = "提供硅基流动（SiliconFlow）加速平台支持，具备极高并发处理能力的大规模模型分发节点。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "https://api.siliconflow.cn/v1"

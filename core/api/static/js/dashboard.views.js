@@ -38,8 +38,8 @@ window.viewTemplates = {
                         <div class="action-card" onclick="showView('vault')">
                             <div class="action-icon">📦</div>
                             <div class="action-text">
-                                <h4>资产管理</h4>
-                                <p>审计文稿资产与元数据</p>
+                                <h4>文稿管理</h4>
+                                <p>审计文库文稿与元数据</p>
                             </div>
                         </div>
                         <div class="action-card" onclick="showView('settings')">
@@ -58,30 +58,35 @@ window.viewTemplates = {
     vault: `
         <div id="view-vault" class="view-panel">
             <div class="view-header">
-                <h2>📂 原稿金库 (Vault)</h2>
+                <h2>📂 原稿文库 (Vault)</h2>
                 <div class="header-actions">
                     <div class="search-box">
                         <input type="text" id="vault-search" placeholder="搜索标题、路径或 Slug...">
                     </div>
                 </div>
             </div>
-            <div class="view-content">
-                <div class="table-container glass-panel">
-                    <table id="vault-table">
-                        <thead>
+            <div class="view-content" style="display: flex; flex-direction: column; overflow: hidden;">
+                <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
+                    <table id="vault-table" style="min-width: 800px;">
+                        <thead style="position: sticky; top: 0; z-index: 10; background: rgba(13, 14, 28, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(255,255,255,0.1);">
                             <tr>
-                                <th>状态</th>
-                                <th>标题</th>
-                                <th>物理路径</th>
-                                <th>语言组</th>
-                                <th>规模</th>
-                                <th>操作</th>
+                                <th style="width: 25%;">标题</th>
+                                <th style="width: auto;">物理路径</th>
+                                <th style="width: 50px; text-align: center;">字数</th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="vault-list">
                             <!-- 动态注入 -->
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0 10px 0; flex-shrink: 0;">
+                    <span id="vault-page-info" style="font-size: 0.8rem; color: var(--text-dim);">第 1 页</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="vault-prev-btn" class="mini-btn" onclick="window.changeVaultPage(-1)" disabled>◀ 上一页</button>
+                        <button id="vault-next-btn" class="mini-btn" onclick="window.changeVaultPage(1)">下一页 ▶</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -139,10 +144,13 @@ window.viewTemplates = {
     `,
     settings: `
         <div id="view-settings" class="view-panel">
-            <div class="view-header">
+            <div class="view-header" style="margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border);">
                 <h2>⚙️ 治理中心 (Governance)</h2>
+                <div class="header-actions">
+                    <button class="primary-btn" id="btn-save-settings" style="display: none;" disabled>💾 保存配置</button>
+                </div>
             </div>
-            <div class="view-content">
+            <div class="view-content" style="padding-top: 25px;">
                 <div class="side-tabs-container">
                     <aside class="side-tabs">
                         <div class="tab-item s-tab active" data-cat="general"><span class="tab-icon">ℹ️</span> 基础信息</div>
@@ -156,9 +164,6 @@ window.viewTemplates = {
                     <section class="tab-content-area">
                         <div id="settings-form" class="settings-grid">
                             <!-- 动态注入 -->
-                        </div>
-                        <div class="settings-actions">
-                            <button class="primary-btn glow-btn" id="btn-save-settings">💾 保存配置</button>
                         </div>
                     </section>
                 </div>

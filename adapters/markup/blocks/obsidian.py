@@ -4,7 +4,6 @@
 Illacme-plenipes Markup Plugin - Obsidian Specific Blocks
 职责：处理 Obsidian 专属的复杂容器（如 Callouts）。
 """
-import re
 from typing import Dict, Any
 from core.markup.base import ISyntaxBlockPlugin
 
@@ -12,6 +11,7 @@ class CalloutBlockPlugin(ISyntaxBlockPlugin):
     """> [!INFO] Callout 插件"""
     PLUGIN_ID = "obsidian_callout"
     DISPLAY_NAME = "Obsidian Callouts"
+    VERSION = "V5.3"
     DESCRIPTION = "解析 Obsidian 风格的容器语法（> [!TYPE]），支持将其转换为标准 SSG 的提示框（Admonitions）。"
     @property
     def block_type(self) -> str: return "callout"

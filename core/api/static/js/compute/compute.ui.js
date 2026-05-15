@@ -1,207 +1,251 @@
 /**
- * 🎨 Illacme Compute Center - UI Rendering Shard
- * 职责：负责算力中心的视觉渲染、DOM 构造与状态勋章对齐。
+ * 🎨 Illacme Compute Center - UI Rendering Shard (V74.24 GENOME RESTORED)
+ * 职责：物理算力资源管理、视觉对正、能量链路调度。
+ * 还原声明：本文件内容 100% 提取自 83b7900 基准版本，严禁 AI 瞎创造。
  */
 
 window.ComputeUI = {
     /**
-     * 🏗️ 渲染基础架构 Tab
+     * 🧱 物理底座层：工业化动力单元渲染
      */
-    renderInfrastructureTab(nodes, primaryId, fallbackId) {
-        const container = document.getElementById('compute-grid');
-        if (!container) return;
+    async renderInfrastructureTab(container) {
+        // 🚀 [V74.24] 强化感应：始终在切换 Tab 时尝试从服务器拉取最新配置
+        try {
+            const res = await apiFetch('/api/system/config');
+            const config = res.config || res;
+            if (config.translation) {
+                window.settingsData = window.settingsData || {};
+                window.settingsData.translation = config.translation;
+            }
+        } catch (e) {
+            console.warn("Soft sync failed, falling back to memory:", e);
+        }
+        if (typeof window.ComputeHandlers.syncStrategyBadge === 'function') {
+            window.ComputeHandlers.syncStrategyBadge();
+        }
 
+        // 🛡️ [V74.10] 直接从已同步的配置中读取节点数据（避免重复声明 res）
+        const nodes = window.settingsData?.translation?.compute_nodes || {};
         window._activeNodeIds = Object.keys(nodes);
+
+        let html = `
+            <div class="infrastructure-hub" data-version="V74.35_STABLE" style="margin-top: 5px;">
+                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.02);">
+                    <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-secondary); letter-spacing: 2px; margin-bottom: 8px;">全域算力单元 (COMPUTE UNITS)</div>
+                    <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
+                        管理核心的算力供应资源，包括本地大模型、云端 API 等原子生产力单元。在此处定义的单元可被调度策略引用。
+                    </div>
+                </div>
+                <div class="node-grid">
+                    ${Object.entries(nodes)
+                .sort((a, b) => (b[1].last_updated || 0) - (a[1].last_updated || 0))
+                .map(([id, node]) => `
+                        <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative;">
+                            ${node.is_primary ? '<div class="role-badge primary">PRIMARY</div>' : node.is_fallback ? '<div class="role-badge fallback">FALLBACK</div>' : ''}
+                            
+                            <div class="node-header">
+                                <div class="node-identity">
+                                    <div class="node-icon-vessel">
+                                        ${this.getNodeIcon(node.type)}
+                                    </div>
+                                    <div class="node-name-group">
+                                    <div class="node-name-vessel">
+                                        <div class="node-name" title="${id}">${id}</div>
+                                    </div>
+                                        <div class="node-meta-line">
+                                            <div class="text-marquee-wrapper" style="max-width: 120px;">
+                                                <span class="node-type" title="${node.provider_name || node.type?.toUpperCase()}">${node.provider_name || node.type?.toUpperCase()}</span>
+                                            </div>
+                                            <div class="protocol-badge ${node.protocol_family}">
+                                                ${node.protocol_family === 'standard' ? 'V1' : node.protocol_family === 'anthropic' ? 'V2' : 'NATIVE'}
+                                            </div>
+                                        </div>
+                                        <div class="node-model-line">
+                                            <div class="model-marquee-vessel">
+                                                <span class="node-model-badge">
+                                                    <span class="brain-icon">🧠</span>
+                                                    <span class="model-name">${node.model || '未绑定模型'}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="tactical-btn" onclick="window.ComputeHandlers.probeNode('${id}')" title="全域脉冲探测">📡</button>
+                                    <button class="tactical-btn" onclick="window.ComputeHandlers.editNode('${id}')" title="单元参数修正">⚙️</button>
+                                </div>
+                            </div>
+
+                            <!-- 📡 Telemetry Data -->
+                            <div class="node-telemetry">
+                                <div class="t-item">
+                                    <div class="label">健康分</div>
+                                    <div class="value ${node.health?.score > 80 ? 'healthy' : 'warning'}">${node.health?.score || 100}</div>
+                                </div>
+                                <div class="t-item">
+                                    <div class="label">平均延迟</div>
+                                    <div class="value">${node.health?.avg_latency || 0}ms</div>
+                                </div>
+                                <div class="t-item">
+                                    <div class="label">成功率</div>
+                                    <div class="value">${node.health?.success_rate || 100}%</div>
+                                </div>
+                                <div class="t-item">
+                                    <div class="label">物理延迟</div>
+                                    <div class="value" id="latency-${id}">-- ms</div>
+                                </div>
+                            </div>
+
+                            <div class="node-meta-footer" style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 8px; opacity: 0.6; font-family: var(--font-mono);">
+                                <span>最后同步: ${node.last_updated ? new Date(node.last_updated).toLocaleString() : '从未感应'}</span>
+                            </div>
+                            
+                            <div class="node-status-line" id="probe-status-${id}">📡 物理链路待命，准备感应...</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    },
+
+    /**
+     * ⚖️ 调度策略层：战术指挥矩阵渲染
+     */
+    async renderStrategyTab(container, forceData = null) {
+        let trans = forceData;
         
-        container.innerHTML = Object.entries(nodes).map(([id, node]) => {
-            const isPrimary = (id === primaryId);
-            const isFallback = (id === fallbackId);
-            const typeLabel = (node.type || 'Unknown').toUpperCase();
-            
-            // 🚀 [恢复] Telemetry 数据维度 (Sovereign Parity)
-            const health = node.health || { score: 100, avg_latency: 0, success_rate: 100 };
-            
-            return `
-                <div class="compute-card p-4 border rounded shadow-sm mb-3 glass-panel" data-node-id="${id}" data-endpoint="${node.base_url}">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="mb-1">${id} <small class="text-muted">[${typeLabel}]</small></h5>
-                            <code class="small text-truncate d-block" style="max-width: 200px; opacity: 0.7;">${node.base_url}</code>
-                        </div>
-                        <div class="badge-group">
-                            ${isPrimary ? '<span class="badge bg-primary">PRIMARY</span>' : ''}
-                            ${isFallback ? '<span class="badge bg-secondary">FALLBACK</span>' : ''}
+        if (!trans) {
+            const res = await apiFetch('/api/system/config');
+            const config = res.config || res;
+            trans = config.translation || {};
+        }
+
+        window.settingsData = window.settingsData || {};
+        window.settingsData.translation = trans;
+        const nodes = trans.compute_nodes || {};
+
+        if (typeof window.ComputeHandlers.syncStrategyBadge === 'function') {
+            window.ComputeHandlers.syncStrategyBadge(trans.strategy);
+        }
+
+        let html = `
+            <div class="strategy-command-deck-wrap fade-in">
+                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-primary); background: rgba(163, 76, 255, 0.02);">
+                    <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-primary); letter-spacing: 2px; margin-bottom: 8px;">算力分配策略 (ALLOCATION STRATEGY)</div>
+                    <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
+                        配置系统如何分配出版任务。您可以指定主力与备用单元的联动逻辑，确保在任何环境下都能保持高可用输出。
+                    </div>
+                </div>
+
+                <div class="strategy-command-deck" style="margin-top: 0 !important;">
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(0, 242, 255, 0.1);">
+                        <div class="strategy-label">容灾调度算法 (RESILLIENCE ALGORITHM)</div>
+                        <div class="strategy-list">
+                            ${this.renderStrategyItem('single', '📍 单点模式', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
+                            ${this.renderStrategyItem('fallback', '🛡️ 容灾模式', '主力节点故障时，能量自动导向备用节点，确保出版不中断。', trans.strategy)}
+                            ${this.renderStrategyItem('concurrent', '🚀 竞速模式', '主备并联齐发，以毫秒级响应优先者为准，榨取极限性能。', trans.strategy)}
                         </div>
                     </div>
 
-                    <!-- 🚀 [恢复] 物理感应遥测数据 (Telemetry) -->
-                    <div class="node-telemetry d-flex justify-content-between mt-3 py-2 border-top border-bottom" style="font-size: 0.75rem;">
-                        <div class="t-item">
-                            <div class="text-muted small">健康分</div>
-                            <div class="fw-bold ${health.score > 80 ? 'text-success' : 'text-warning'}">${health.score}</div>
+                    <div class="strategy-binding-matrix">
+                        <div class="binding-terminal primary">
+                            <div class="terminal-label">PRIMARY NODE (主力执行)</div>
+                            <div class="selection-vessel">
+                                <select id="select-compute-strategy-primary-node" 
+                                        onchange="window.ComputeHandlers.updateStrategy('primary_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'primary_model')">
+                                    <option value="">选择算力单元</option>
+                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.primary_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}
+                                </select>
+                                <div class="input-vessel">
+                                    <input type="text" id="primary_model_input" value="${trans.primary_model || ''}" 
+                                           placeholder="执行模型标识符" 
+                                           onchange="window.ComputeHandlers.updateStrategy('primary_model', this.value)">
+                                    <div id="primary_model_suggestions" class="discovery-suggestions"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="t-item">
-                            <div class="text-muted small">均时延</div>
-                            <div class="fw-bold">${health.avg_latency}ms</div>
-                        </div>
-                        <div class="t-item">
-                            <div class="text-muted small">成功率</div>
-                            <div class="fw-bold text-info">${health.success_rate}%</div>
-                        </div>
-                    </div>
 
-                    <div class="mt-3 d-flex align-items-center justify-content-between">
-                        <div id="probe-status-${id}" class="small text-muted">
-                            <span class="dot pulse"></span> 链路待命...
+                        <div class="binding-vessel">
+                            <div class="vessel-icon">⚡</div>
+                            <div class="vessel-link-line"></div>
                         </div>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" onclick="window.ComputeHandlers.editNode('${id}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-info dropdown-toggle" type="button" 
-                                        data-bs-toggle="dropdown" onclick="window.ComputeAPI.discoverModels('${id}', '${node.base_url}', '${node.type}')">
-                                    <i class="bi bi-broadcast"></i> 感应
-                                </button>
-                                <ul class="dropdown-menu shadow" id="asset-discovery-menu">
-                                    <li><a class="dropdown-item disabled">正在感应...</a></li>
-                                </ul>
+
+                        <div class="binding-terminal fallback">
+                            <div class="terminal-label">FALLBACK NODE (容灾守护)</div>
+                            <div class="selection-vessel">
+                                <select id="fallback_node_selector"
+                                        onchange="window.ComputeHandlers.updateStrategy('fallback_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'fallback_model')">
+                                    <option value="">选择算力单元</option>
+                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.fallback_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}
+                                </select>
+                                <div class="input-vessel">
+                                    <input type="text" id="fallback_model_input" value="${trans.fallback_model || ''}" 
+                                           placeholder="容灾模型标识符" 
+                                           onchange="window.ComputeHandlers.updateStrategy('fallback_model', this.value)">
+                                    <div id="fallback_model_suggestions" class="discovery-suggestions"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }).join('');
+                    
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(163, 76, 255, 0.1);">
+                        <div class="strategy-label">物理执行参数 (PHYSICAL EXECUTION CONTROL)</div>
+                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 全域并发数</label>
+                                <input type="number" id="input-llm-concurrency" value="${trans.llm_concurrency}" min="1" max="32" 
+                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">API 响应超时 (秒)</label>
+                                <input type="number" id="input-api-timeout" value="${trans.api_timeout}" min="10" 
+                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateStrategy('api_timeout', parseFloat(this.value))">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">最大重试次数</label>
+                                <input type="number" id="input-max-retries" value="${trans.max_retries}" min="0" 
+                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateStrategy('max_retries', parseInt(this.value))">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">分块长度 (Chars)</label>
+                                <input type="number" id="input-max-chunk-size" value="${trans.max_chunk_size}" step="100" 
+                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateStrategy('max_chunk_size', parseInt(this.value))">
+                            </div>
+                        </div>
+                    </div>
+
+
+                    </div>
+            </div>
+        `;
+        container.innerHTML = html;
     },
 
-    /**
-     * 🏗️ [恢复] 渲染调度策略 Tab (Sovereign Parity)
-     */
-    renderStrategyTab(config) {
-        const container = document.getElementById('compute-grid');
-        if (!container) return;
-
-        const t = config.translation || {};
-        const nodes = t.compute_nodes || {};
-
-        container.innerHTML = `
-            <div class="strategy-deck p-4 glass-panel border rounded w-100">
-                <div class="strategy-section mb-4">
-                    <label class="fw-bold mb-2">⚖️ 容灾调度算法</label>
-                    <select id="compute-strategy-select" class="form-select" onchange="window.ComputeUI.syncStrategyBadge()">
-                        <option value="primary" ${t.strategy === 'primary' ? 'selected' : ''}>📍 单点模式 (Primary Only)</option>
-                        <option value="fallback" ${t.strategy === 'fallback' ? 'selected' : ''}>🛡️ 容灾模式 (Auto Fallback)</option>
-                        <option value="concurrent" ${t.strategy === 'concurrent' ? 'selected' : ''}>🚀 竞速模式 (Concurrent)</option>
-                    </select>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="small text-muted">主力执行节点 (PRIMARY)</label>
-                        <select id="primary-node-select" class="form-select mt-1" onchange="window.ComputeUI.syncStrategyBadge()">
-                            ${Object.keys(nodes).map(id => `<option value="${id}" ${id === t.primary_node ? 'selected' : ''}>${id}</option>`).join('')}
-                        </select>
-                        <input type="text" id="primary-model-input" class="form-control form-control-sm mt-2" placeholder="主力模型 ID" value="${t.primary_model || ''}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="small text-muted">容灾守护节点 (FALLBACK)</label>
-                        <select id="fallback-node-select" class="form-select mt-1">
-                            ${Object.keys(nodes).map(id => `<option value="${id}" ${id === t.fallback_node ? 'selected' : ''}>${id}</option>`).join('')}
-                        </select>
-                        <input type="text" id="fallback-model-input" class="form-control form-control-sm mt-2" placeholder="容灾模型 ID" value="${t.fallback_model || ''}">
-                    </div>
-                </div>
-
-                <div class="mt-4 pt-3 border-top text-end">
-                    <button id="save-strategy-btn" class="btn btn-primary px-4" onclick="window.ComputeHandlers.saveStrategy()">
-                        <i class="bi bi-shield-lock me-1"></i> 固化当前策略
-                    </button>
+    renderStrategyItem(id, name, desc, current) {
+        const isActive = (id === (current || 'single'));
+        return `
+            <div class="strategy-item ${isActive ? 'active' : ''}" 
+                 id="strategy-item-${id}"
+                 onclick="window.ComputeHandlers.updateStrategy('strategy', '${id}')">
+                <div class="radio-indicator"><div class="radio-inner"></div></div>
+                <div class="strategy-info">
+                    <div class="strategy-name">${name}</div>
+                    <div class="strategy-desc">${desc}</div>
                 </div>
             </div>
         `;
     },
 
-    /**
-     * 🎖️ 同步策略勋章
-     */
-    syncStrategyBadge() {
-        const badge = document.getElementById('active-strategy-badge');
-        if (!badge) return;
-
-        const strategy = document.getElementById('compute-strategy-select')?.value || 'primary';
-        const primary = document.getElementById('primary-node-select')?.value || 'None';
-        
-        badge.innerHTML = `<i class="bi bi-shield-check me-1"></i> ${strategy.toUpperCase()}: ${primary}`;
-        
-        // 🚀 [V74.81] 视觉反馈：给保存按钮增加抖动提醒
-        const saveBtn = document.getElementById('save-strategy-btn');
-        if (saveBtn) saveBtn.classList.add('pulse-alert');
-    },
-
-    /**
-     * 📥 搜索框动态注入 (L74.83)
-     */
-    injectSearchHeader() {
-        const header = document.getElementById('compute-header-actions-top');
-        if (!header) return;
-
-        header.innerHTML = `
-            <div class="input-group input-group-sm" style="width: 250px;">
-                <span class="input-group-text bg-transparent border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="compute-search" class="form-control border-start-0" 
-                       placeholder="搜索算力单元..." oninput="window.ComputeHandlers.filterNodes(this.value)">
-            </div>
-        `;
-    },
-
-    /**
-     * 弹出新增/编辑节点模态框 (Swal)
-     */
-    async showNodeModal(nodeId = null) {
-        const isEdit = !!nodeId;
-        const config = window.settingsData?.translation?.compute_nodes || {};
-        const node = isEdit ? config[nodeId] : { type: 'openai', base_url: '', api_key: '', model: '' };
-
-        // 获取支持的协议列表
-        const res = await apiFetch('/api/plugins/list');
-        const protocols = res.plugins.filter(p => p.category === 'protocol');
-
-        const { value: formValues } = await Swal.fire({
-            title: isEdit ? '🔧 修正算力参数' : '➕ 划定新算力单元',
-            html: `
-                <div class="text-start">
-                    <label class="small text-muted mb-1">节点标识 (ID)</label>
-                    <input id="swal-input-id" class="swal2-input mt-0" placeholder="e.g. cloudflare-ai" value="${nodeId || ''}" ${isEdit ? 'disabled' : ''}>
-                    
-                    <label class="small text-muted mb-1 mt-3">通信协议</label>
-                    <select id="swal-input-type" class="swal2-select w-100 m-0" onchange="window.ComputeHandlers.selectProvider(this.value)">
-                        ${protocols.map(p => `<option value="${p.id}" ${p.id === node.type ? 'selected' : ''}>${p.name}</option>`).join('')}
-                    </select>
-
-                    <label class="small text-muted mb-1 mt-3">Endpoint (URL)</label>
-                    <input id="swal-input-url" class="swal2-input mt-0" placeholder="https://api..." value="${node.base_url}">
-                    
-                    <label class="small text-muted mb-1 mt-3">API Key</label>
-                    <input id="swal-input-key" type="password" class="swal2-input mt-0" placeholder="密钥已脱敏" value="${node.api_key}">
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: '执行固化',
-            preConfirm: () => {
-                return {
-                    id: document.getElementById('swal-input-id').value,
-                    type: document.getElementById('swal-input-type').value,
-                    base_url: document.getElementById('swal-input-url').value,
-                    api_key: document.getElementById('swal-input-key').value
-                }
-            }
-        });
-
-        if (formValues) {
-            window.ComputeHandlers.saveNode(formValues);
-        }
+    getNodeIcon(type) {
+        const map = {
+            'openai': '🌐', 'ollama': '🦙', 'anthropic': '🎭', 'groq': '⚡',
+            'deepseek': '🐳', 'google': '💎', 'siliconflow': '🌊', 'lmstudio': '🏠'
+        };
+        return map[type?.toLowerCase()] || '🤖';
     }
 };

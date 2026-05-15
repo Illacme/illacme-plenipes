@@ -17,11 +17,18 @@ class AIProviderRegistry:
 
     @classmethod
     def register(cls, provider_class: Type):
-        """🚀 [V53.8] 智能注册：支持插件 ID 与 别名矩阵"""
+        """
+        🚀 [V53.8] 智能注册：支持插件 ID 与 别名矩阵。
+        
+        别名系统 (ALIASES) 的设计初衷：
+        1. 物理兼容性：支持用户在 config.yaml 中使用不同的称呼习惯 (如 v1, openai, openai-compatible)。
+        2. 降低迁移成本：兼容来自其他生态系统 (如 LocalAI, One-API) 的默认命名规范。
+        3. 鲁棒性：防止因微小的配置名称差异导致驱动加载失败。
+        """
         ptype = getattr(provider_class, "PLUGIN_ID", provider_class.__name__.lower())
         cls._protocols[ptype] = provider_class
         
-        # 注册别名 (例如 openai-compatible -> openai)
+        # 注册别名：建立多对一的映射关系，确保无论用户写哪一个 ID 都能命中同一物理驱动
         aliases = getattr(provider_class, "ALIASES", [])
         for alias in aliases:
             cls._protocols[alias] = provider_class

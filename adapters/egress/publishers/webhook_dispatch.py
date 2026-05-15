@@ -16,6 +16,7 @@ class WebhookDispatchPublisher(BasePublisher):
     """🚀 [V17.0] Webhook 分发插件"""
     PLUGIN_ID = "webhook_dispatch"
     DISPLAY_NAME = "Webhook Dispatcher"
+    VERSION = "V1.0"
     DESCRIPTION = "在内容发布后向指定 URL 推送物理分发信号，触发下游 CI/CD 或通知逻辑。"
     
     def push(self, bundle_path: str, metadata: dict) -> dict:

@@ -14,6 +14,7 @@ class LogseqDialect(BaseDialect):
     """🌿 Logseq 方言处理器"""
     PLUGIN_ID = "logseq"
     DISPLAY_NAME = "Logseq Connector"
+    VERSION = "V5.3"
     DESCRIPTION = "处理 Logseq 专属的大纲语法、Properties 属性块与页面引用引用。"
     
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:

@@ -46,7 +46,7 @@ class DiagnosticsService:
 
     @staticmethod
     def get_vault_suggestions() -> List[Dict[str, Any]]:
-        """扫描常见的本地知识库/原稿金库路径锚点"""
+        """扫描常见的本地知识库/原稿文库路径锚点"""
         suggestions = []
         home = os.path.expanduser("~")
         search_targets = [

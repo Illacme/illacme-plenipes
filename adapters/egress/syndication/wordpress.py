@@ -15,6 +15,7 @@ from core.utils.tracing import tlog
 class WordPressSyndicator(BaseSyndicator):
     PLUGIN_ID = "wordpress"
     DISPLAY_NAME = "WordPress"
+    VERSION = "V1.0"
     DESCRIPTION = "通过 WordPress REST API 进行内容同步，支持文章分类、标签映射与 Slug 冲突自愈。"
     
     # 🚀 [V11.3] 声明运行时依赖契约

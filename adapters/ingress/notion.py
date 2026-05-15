@@ -14,6 +14,7 @@ class NotionDialect(BaseDialect):
     """🌀 Notion 方言处理器：处理 UUID 后缀清洗与引用块转换"""
     PLUGIN_ID = "notion"
     DISPLAY_NAME = "Notion Connector"
+    VERSION = "V5.3"
     DESCRIPTION = "处理 Notion 导出时自动生成的 UUID 后缀，并执行链接自愈与资源路径对齐。"
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         # 1. 链接中的 UUID 物理清洗 (Notion 导出时常在文件名后带 32 位 ID)

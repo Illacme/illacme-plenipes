@@ -15,7 +15,10 @@ class StaticizerStep(PipelineStep):
     """
     🚀 阶段 3.5: 组件语义提取与静态化 (Service 包装版)
     """
-    PLUGIN_ID = "staticize"
+    PLUGIN_ID = "staticizer"
+    DISPLAY_NAME = "Markdown Staticizer"
+    VERSION = "V1.0"
+    DESCRIPTION = "将文章元数据与内容固化为标准 Markdown 格式，准备进行 SSG 构建与多渠道同步。"
     def process(self, ctx):
         # 🛡️ 尊重全局开关
         ingress_cfg = ctx.engine.config.ingress_settings

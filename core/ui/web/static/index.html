@@ -432,6 +432,13 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .shake-hint { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
     </style>
 </head>
 <body>
@@ -452,7 +459,7 @@
                 <div class="step-header">
                     <h1>Illacme Plenipes</h1>
                     <h2>🏗️ 划定您的主权出版版图</h2>
-                    <p>您的所有出版资产将受到“主权防御”保护，由底层档案馆系统进行隔离</p>
+                    <p>您的所有出版资产将受到“主权防御”保护，由底层文库系统进行隔离</p>
                 </div>
 
                 <div class="form-group">
@@ -475,8 +482,8 @@
                 
                 <div class="form-group">
                     <label>
-                        原稿档案馆路径 (Manuscript Archive)
-                        <span class="concept-hint" data-tip="您的创作核心区。只需将手稿丢进此目录，出版社就会自动启动流水线。">什么是档案馆？</span>
+                        原稿文库路径 (Manuscript Library)
+                        <span class="concept-hint" data-tip="您的创作核心区。只需将手稿丢进此目录，出版社就会自动启动流水线。">什么是文库？</span>
                     </label>
                     <div class="input-with-btn">
                         <input type="text" id="manuscripts_path" placeholder="手稿 Markdown 所在目录">
@@ -623,7 +630,7 @@
                             <span id="final-imprint-info"></span>
                         </div>
                         <div class="contract-item">
-                            <label>核心原稿档案馆 (Vault)</label>
+                            <label>核心原稿文库 (Vault)</label>
                             <span class="path-tag" id="final-vault-path"></span>
                         </div>
                         <div class="contract-item" style="margin-bottom:0;">
@@ -681,6 +688,7 @@
         let probeData = null;
         let selectedTheme = 'default';
         let selectedLang = null;
+        let selectedDialect = 'auto';
         let aiEnabled = false;
         let storageEnabled = false;
         let complianceEnabled = false;
@@ -730,6 +738,14 @@
                 renderNodes(probeData.nodes, probeData.recommended);
                 renderVaultSuggestions(probeData.vault_suggestions, probeData.recommended.vault);
                 
+                // 🚀 [V74.9] 初始化方言锁定
+                if (probeData.recommended && probeData.recommended.vault) {
+                    const recVault = probeData.vault_suggestions.find(s => s.path === probeData.recommended.vault);
+                    if (recVault && recVault.dialect) {
+                        selectedDialect = recVault.dialect;
+                    }
+                }
+
                 // 🚀 [V50.0] 智能感应与预填逻辑
                 if (probeData.current_config) {
                     const cfg = probeData.current_config;
@@ -740,7 +756,7 @@
                     document.getElementById('imprint_id').value = sensedName || '';
                     document.getElementById('imprint_name').value = sensedName ? (sensedName.charAt(0).toUpperCase() + sensedName.slice(1)).replace('_', ' ') : '';
                     
-                    // 🚀 [V50.0] 极致感应优先：只要感应到金库且不是默认路径，就强制作为首选
+                    // 🚀 [V50.0] 极致感应优先：只要感应到文库且不是默认路径，就强制作为首选
                     if (sensedVault && sensedVault !== './manuscripts') {
                         document.getElementById('manuscripts_path').value = sensedVault;
                     } else {
@@ -792,7 +808,7 @@
                 <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:5px;">💡 感应到可能的文档库：</div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     ${suggestions.map(s => `
-                        <div class="vault-badge" onclick="confirmPath(event, '${s.path.replace(/\\/g, '/')}')">
+                        <div class="vault-badge" onclick="confirmPath(event, '${s.path.replace(/\\/g, '/')}', '${s.dialect || 'auto'}')">
                             ${s.icon || '📦'} ${s.name}
                         </div>
                     `).join('')}
@@ -1179,9 +1195,11 @@
             }
         }
 
-        function confirmPath(event, path) {
+        function confirmPath(event, path, dialect = 'auto') {
             if (event) event.stopPropagation();
             document.getElementById('manuscripts_path').value = path;
+            selectedDialect = dialect;
+            console.log(`🛡️ [主权对正] 已锁定方言协议: ${dialect}`);
             closeBrowser();
         }
 
@@ -1208,7 +1226,8 @@
                 ai_api_key: document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value : '',
                 ai_base_url: document.getElementById('ai_base_url') ? document.getElementById('ai_base_url').value : '',
                 source_lang: document.getElementById('source_lang') ? document.getElementById('source_lang').value : 'zh',
-                target_langs: selectedLang ? [selectedLang] : []
+                target_langs: selectedLang ? [selectedLang] : [],
+                active_dialect: selectedDialect || 'auto'
             };
 
             try {
@@ -1273,6 +1292,7 @@
             const targetImprint = document.getElementById('imprint_id').value.toLowerCase().trim();
             let attempts = 0;
             const maxAttempts = 60;
+            let switchRequested = false;
             
             const timer = setInterval(async () => {
                 attempts++;
@@ -1296,7 +1316,7 @@
 
                         if (activeId === targetImprint) {
                             clearInterval(timer);
-                            statusEl.innerHTML = `✅ 总编室点火成功，主权版图 '${targetImprint}' 已在线。`;
+                            statusEl.innerHTML = `✅ 引擎重载就绪，主权版图 '${targetImprint}' 现已在线。`;
                             statusEl.style.background = 'rgba(0,255,127,0.1)';
                             statusEl.style.color = 'var(--accent-green)';
                             
@@ -1312,16 +1332,29 @@
                                 if (enterBtn.style.display !== 'none') enterBtn.click();
                             }, 1500);
                         } else {
-                            // 🚀 [V65.2] 静默等待：如果还没拿到 ID，说明引擎还在初始化，不显示“未知”
-                            if (!activeId) {
+                            // 🚀 [V74.80] 主动触发深度重载：主进程在线但版图不一致时，
+                            // 主动调用切换 API 通知主进程执行引擎热重载。
+                            if (!switchRequested && activeId) {
+                                switchRequested = true;
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在通知主进程执行版图热重载...`;
+                                console.log(`🔄 [主动切换] 向 43212 发送深度重载指令: ${targetImprint}`);
+                                try {
+                                    await fetch('http://127.0.0.1:43212/api/imprints/switch', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ imprint_id: targetImprint })
+                                    });
+                                } catch (switchErr) {
+                                    console.warn('切换请求发送失败，将继续轮询等待', switchErr);
+                                }
+                            } else if (!activeId) {
                                 statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在同步物理疆域，请稍候... [${attempts}]`;
                             } else {
-                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在对齐主权指纹 (发现: ${activeId})...`;
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在对齐主权指纹 (${activeId} → ${targetImprint})... [${attempts}]`;
                             }
                             
-                            // 🛡️ 容错逻辑：只有在拿到错误 ID 且尝试次数过多时才显示警告
-                            if (attempts > 15 && activeId !== targetImprint && activeId !== "") {
-                                statusEl.innerHTML = `⚠️ 正在等待后台版图热重载，您可以尝试强制进入。`;
+                            if (attempts > 30 && activeId !== targetImprint && activeId !== "") {
+                                statusEl.innerHTML = `⚠️ 版图热重载超时，您可以尝试强制进入后手动切换。`;
                                 enterBtn.style.display = 'block';
                             }
                         }

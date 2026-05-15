@@ -5,7 +5,7 @@ Illacme-plenipes AI Plugin - Groq Adapter
 职责：负责 Groq 极速算力的协议适配。
 """
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 
@@ -15,6 +15,7 @@ class GroqTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] Groq 专属适配器"""
     PLUGIN_ID = 'groq'
     DISPLAY_NAME = 'Groq'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 Groq LPU 加速协议支持，实现极速推理响应（400+ tokens/sec）。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = 'https://api.groq.com/openai/v1'

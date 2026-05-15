@@ -14,6 +14,7 @@ class ObsidianDialect(BaseDialect):
     """💎 Obsidian 方言处理器"""
     PLUGIN_ID = "obsidian"
     DISPLAY_NAME = "Obsidian Connector"
+    VERSION = "V5.3"
     DESCRIPTION = "解析 Obsidian 特有的高亮 (==)、注释 (%%) 与块引用标记。"
     
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:

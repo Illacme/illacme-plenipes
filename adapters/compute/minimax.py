@@ -4,13 +4,14 @@
 Illacme-plenipes AI Plugin - MiniMax Adapter
 🛡️ [V67.0]：对齐工业级模型感应逻辑。
 """
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 class MiniMaxTranslator(OpenAICompatibleTranslator):
     """🚀 MiniMax 专属适配器"""
     PLUGIN_ID = 'minimax'
     DISPLAY_NAME = 'MiniMax (abab)'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 MiniMax 官方协议支持，适配 abab 系列具备强逻辑理解能力的国产大模型算力节点。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "https://api.minimax.chat/v1"

@@ -11,7 +11,6 @@ import shutil
 
 sys.path.insert(0, os.path.abspath('.'))
 
-import pytest
 
 class TestGitIngressSource:
     """Git 数据源核心契约测试"""

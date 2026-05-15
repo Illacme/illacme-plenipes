@@ -1,60 +1,40 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Engine Assembly Factory
-模块职责：负责主引擎的所有核心组件装配、服务挂载与依赖注入。
-🛡️ [AEL-Iter-v5.3]：彻底消灭上帝函数的架构分层枢纽。
+⚙️ Illacme-plenipes Core - Engine Assembly Factory
+模块职责：作为主引擎的流水线枢纽，负责调用各分片装配器。
+🛡️ [V74.8 Decoupled]：逻辑分片架构，装配逻辑已委托至 .assemblers 与 .infrastructure。
 """
+
 import os
 import time
 import logging
-from dataclasses import asdict
-from core.config.config import load_config, ThemeSettings, THEMES_DIR
-from core.archives.ledger import MetadataManager
-from core.archives.timeline import TimelineManager
-from core.services.staticizer import StaticizerService
-from core.logic.ai.ai_factory import TranslatorFactory
+from typing import Any, Optional
+
+from core.config.config import ThemeSettings, THEMES_DIR
 from core.runtime.engine import IllacmeEngine
-from core.editorial.runner import Pipeline
-from core.editorial.registry import StepRegistry
-from core.editorial.asset_pipeline import AssetPipeline
-from core.editorial.router import RouteManager
-from core.ingress.adapter import InputAdapter
 from core.adapters.egress.ssg import SSGAdapter
-from core.bindery.bindery_dispatcher import BinderyDispatcher
-from core.governance.auditor import SovereignAuditor
-from core.governance.brain import KnowledgeService
-from core.governance.janitor import JanitorService
-from core.governance.doctor import DoctorService
-from core.services.link_resolver import LinkResolver
-from core.editorial.vault_indexer import VaultIndexer
-from core.logic.ast_resolver import ASTResolver
-from core.archives.block_cache import BlockCache
-from core.governance.meter import UsageMeter
-from core.syndication.publisher import PublisherService
-from core.governance.heartbeat import HeartbeatService
-from core.logic.ai.ai_batcher import AIBatcher
 from core.utils.tracing import tlog
 from core.runtime.engine_preflight import EnginePreflight
 
+# 🚀 导入分片后的基础设施与组装器
+from .infrastructure.path_resolver import resolve_engine_paths
+from .assemblers.component_assembler import assemble_core_components
+
 class EngineFactory:
-    """🚀 [V50.3] 主权治理引擎工厂：负责全功能治理中枢的装配与依赖注入"""
+    """🚀 [V74.8] 主权治理引擎工厂：流水线式组装枢纽"""
 
     @staticmethod
-    def create_engine(config, no_ai=False, args=None, imprint_id: str = "default"):
+    def create_engine(config: Any, no_ai: bool = False, args: Any = None, imprint_id: str = "default") -> Optional[IllacmeEngine]:
         """🚀 [V50.3] 工业级引擎工厂：组装全功能主权治理中枢"""
 
-        # 🚀 [V50.3] 执行起飞前预检 (环境审计、路径锚定、视觉渲染等)
+        # 1. 执行起飞前预检 (环境审计、路径锚定等)
         config = EnginePreflight.perform_preflight(config, imprint_id, args)
         if config is None:
             return None
 
-        # 3. 🔧 [挂载逻辑] 实例化并立即挂载核心属性
+        # 2. 实例化引擎主体
         engine = IllacmeEngine(config, no_ai=no_ai, config=config, imprint_id=imprint_id)
-
         engine.config = config
-        
-        # 🚀 [V52.10] 物理路径解析：遵循项目根目录锚定原则
         engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
         engine.route_matrix = config.route_matrix
         engine.active_theme = config.active_theme
@@ -63,29 +43,28 @@ class EngineFactory:
             engine.config.translation.enable_ai = False
             tlog.info("🚫 [AI 熔断] 检测到 --no-ai 标志，已强制关闭全局推理网关。")
 
-        # 4. 🔗 分层组装
+        # 3. 🔗 流水线装配
         EngineFactory._init_basic_settings(engine)
-        EngineFactory._init_paths_and_adapters(engine)
-        EngineFactory._init_semantic_and_governance(engine)
-        EngineFactory._init_business_hubs(engine)
-        EngineFactory._init_lifecycle_services(engine)
-        EngineFactory._init_strategies_and_resilience(engine, args)
+        
+        # 委托路径解析
+        engine.paths = resolve_engine_paths(engine, config, THEMES_DIR)
+        engine.asset_base_url = config.image_settings.base_url.rstrip('/') + '/'
+        
+        # 委托收稿渠道初始化
+        EngineFactory._init_ingress(engine, config)
+        
+        # 委托核心组件装配 (语义、治理、业务)
+        assemble_core_components(engine, config)
+        
+        # 生命周期服务与策略
+        EngineFactory._init_lifecycle_and_strategies(engine, config, args)
         
         return EngineFactory._finalize_assembly(engine, args)
 
     @staticmethod
-    def _init_basic_settings(engine):
-        """基础配置与 SSG 适配器映射"""
+    def _init_basic_settings(engine: IllacmeEngine) -> None:
+        """基础参数同步"""
         engine.sys_cfg = engine.config.system
-        for name, s in (getattr(engine, "services", {}) or {}).items():
-            if (s or {}).get("start_time"):
-                s["uptime"] = round(time.time() - s.get("start_time"), 1)
-        engine.sys_tuning = {
-            "ai_translation": {
-                "temperature": engine.config.translation.temperature,
-                "max_tokens": engine.config.translation.max_tokens
-            }
-        }
         engine.fm_defaults = engine.config.frontmatter_defaults
         engine.fm_order = engine.config.frontmatter_order or ['title', 'description', 'keywords', 'author', 'date', 'tags', 'categories']
         engine.max_workers = engine.config.system.max_workers
@@ -97,200 +76,61 @@ class EngineFactory:
         theme_settings = engine.config.theme_options.get(engine.active_theme, ThemeSettings())
         theme_settings.name = engine.active_theme
         engine.ssg_adapter = SSGAdapter(theme_settings, custom_adapters=engine.config.framework_adapters, engine=engine)
-
         engine.ssg_adapter.default_lang = engine.config.i18n_settings.source.lang_code or "zh"
-        
-        # 🚀 [V50.3] 补全系统参数
-        engine.max_depth = engine.config.system.max_depth
-        engine.i18n = engine.config.i18n_settings
-        engine.seo_cfg = engine.config.seo_settings
-        engine.img_cfg = engine.config.image_settings
-        engine.pub_cfg = engine.config.publish_control
 
     @staticmethod
-    def _init_paths_and_adapters(engine):
-        """🚀 [V50.3] 动态收稿渠道与物理路径矩阵"""
+    def _init_ingress(engine: IllacmeEngine, config: Any) -> None:
+        """收稿渠道与输入适配器装配"""
         from core.ingress.registry import ingress_registry
-        paths_cfg = engine.config.output_paths
-        ingress_cfg = engine.config.ingress_settings
+        from core.ingress.adapter import InputAdapter
         
-        # 1. 动态实例化收稿渠道 (Source)
+        ingress_cfg = config.ingress_settings
         source_type = ingress_cfg.source_type or "local"
         source_cls = ingress_registry.get_source(source_type)
+        
         if not source_cls:
-            tlog.error(f"🚨 [Ingress] 无法找到收稿渠道插件: {source_type}，回退至 local")
             from core.ingress.source.local import LocalFileSource
             source_cls = LocalFileSource
             
-        # 根据不同渠道传入参数 (本地渠道需要 vault_root)
         if source_type == "local":
             engine.manuscript_source = source_cls(engine.vault_root)
         else:
-            # 远程渠道使用 source_options
             engine.manuscript_source = source_cls(**ingress_cfg.source_options)
 
-        # 2. 初始化方言适配器 (Dialect)
         engine.input_adapter = InputAdapter(
             active_dialects=ingress_cfg.active_dialects,
             custom_rules=ingress_cfg.custom_sanitizers,
             hard_line_break=ingress_cfg.hard_line_break
         )
-        
-        # 🚀 [V50.3] 主权路径锚定器：确保所有相对路径都锁定在 data_root 之下
-        data_root = os.path.abspath(os.path.expanduser(engine.config.system.data_root))
-        def anchor(p):
-            if not p: return None
-            p = os.path.expanduser(p)
-            if not os.path.isabs(p):
-                return os.path.join(data_root, p)
-            return os.path.abspath(p)
-
-        source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
-        static_dir = paths_cfg.get('static_dir')
-        
-        engine.paths = {
-            "vault": engine.vault_root,
-            "source_dir": anchor((source_dir or "").replace("{theme}", engine.active_theme) if source_dir else ""),
-            "static_dir": anchor((static_dir or "").replace("{theme}", engine.active_theme) if static_dir else ""),
-            "assets": anchor((paths_cfg.get('assets_dir') or '').replace("{theme}", engine.active_theme)),
-            "graph_json_dir": anchor((paths_cfg.get('graph_json_dir') or '').replace("{theme}", engine.active_theme)),
-            "target_base": anchor((paths_cfg.get('target_base') or "").replace("{theme}", engine.active_theme)),
-            "db": anchor(engine.config.get_ledger_path()),
-            "cache": engine._resolve_path(engine.config.get_runtime_metadata_dir() + "/cache"),
-            "logs": engine._resolve_path(engine.config.get_runtime_metadata_dir() + "/logs"),
-            "metadata": engine._resolve_path(engine.config.metadata_dir),
-            "themes": engine._resolve_path(THEMES_DIR)
-        }
-
-        engine.asset_base_url = engine.config.image_settings.base_url.rstrip('/') + '/'
 
     @staticmethod
-    def _init_semantic_and_governance(engine):
-        """语义大脑与治理组件初始化"""
-        from core.adapters.ai.embedding import EmbeddingFactory
-        from core.governance.vector_index import VectorIndex
-        from core.logic.knowledge.knowledge_graph import KnowledgeGraph
-        from core.governance.health_registry import HealthRegistry
-        from core.logic.smart_router import SmartRouter
-        from core.governance.sentinel import SentinelManager
-        from core.logic.knowledge.conversational_brain import ConversationalBrain
-
-        data_paths = engine.config.system.data_paths
+    def _init_lifecycle_and_strategies(engine: IllacmeEngine, config: Any, args: Any) -> None:
+        """生命周期与弹性策略组装"""
+        from core.governance.heartbeat import HeartbeatService
+        from core.syndication.publisher import PublisherService
+        from core.logic.ai.ai_batcher import AIBatcher
+        from core.governance.brain import KnowledgeService
+        from core.logic.strategies.sandbox import SandboxSyncStrategy
+        from core.logic.strategies.fingerprint import FingerprintSyncStrategy
         
-        # 🚀 [V55.26] 算力层：向量库对正 ai/ 子目录 (配置驱动)
-        v_path = engine._resolve_path(engine.config.get_vectors_path())
-        
-        # 🚀 [V55.26] 视觉层：关系图谱对正 themes/{theme}/ 子目录 (配置驱动)
-        g_path = engine._resolve_path(engine.config.get_sync_stats_path().replace("sync_stats", "link_graph")) # 临时复用逻辑
-        # 优化：未来可以增加 get_link_graph_path()
-        
-        # 🚀 [V55.26] 核心层：心跳数据对正 core/ 子目录 (配置驱动)
-        engine.paths["pulse"] = engine._resolve_path(engine.config.get_pulse_path())
-        
-        engine.embedding_adapter = EmbeddingFactory.create(engine)
-        engine.vector_index = engine.governance.vector_index
-        engine.knowledge_graph = KnowledgeGraph(g_path)
-        engine.health_registry = HealthRegistry()
-        engine.smart_router = SmartRouter(engine)
-        engine.meta = MetadataManager(engine.paths["db"], engine.auto_save_interval, engine=engine)
-        engine.timeline = TimelineManager(engine)
-        engine.doctor = DoctorService(engine)
-        engine.health_sentinel = engine.governance.health_sentinel
-        engine.staticizer = StaticizerService()
-        engine.conversational_brain = ConversationalBrain(engine)
-
-    @staticmethod
-    def _init_business_hubs(engine):
-        """业务调度中枢 (Router, Translator, Dispatcher)"""
-        if not engine.no_ai:
-            from core.logic.ai.ai_factory import TranslatorFactory
-            engine.translator = TranslatorFactory.create(engine.config.translation)
-        else:
-            engine.translator = None
-            tlog.info("🔌 [算力网关] AI 模式已关闭，跳过翻译官初始化。")
-
-        engine.meter = engine.governance.meter
-        engine.asset_pipeline = AssetPipeline(engine.paths.get('assets', ''), engine.config.image_settings)
-        engine.route_manager = RouteManager(
-            engine.meta, engine.translator,
-            lang_mapping=engine.config.lang_mapping,
-            default_lang=engine.config.i18n_settings.source.lang_code,
-            active_theme=engine.active_theme,
-            ssg_adapter=engine.ssg_adapter
-        )
-        engine.link_resolver = LinkResolver(engine.meta, engine.route_manager, engine.active_theme)
-        engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(
-            engine.manuscript_source, config=engine.config, ledger=engine.meta
-        )
-
-        engine.ast_resolver = ASTResolver(engine.md_index, engine.asset_index, source=engine.manuscript_source)
-
-        from core.bindery.deployment_manager import DeploymentManager
-        engine.deployment_manager = DeploymentManager(engine.config)
-
-        engine.janitor = JanitorService(
-            engine._global_engine_lock, engine._processing_locks,
-            engine.paths, engine.meta, engine.route_manager, engine.config.i18n_settings,
-            sys_cfg=engine.config.system, active_theme=engine.active_theme
-        )
-        
-        engine.dispatcher = BinderyDispatcher(
-            paths=engine.paths, meta=engine.meta, route_manager=engine.route_manager,
-            asset_pipeline=engine.asset_pipeline, ssg_adapter=engine.ssg_adapter,
-            ast_resolver=engine.ast_resolver,
-            deployment_manager=engine.deployment_manager,
-            pub_cfg=engine.config.publish_control, fm_order=engine.fm_order,
-            asset_base_url=engine.asset_base_url, i18n_cfg=engine.config.i18n_settings, janitor=engine.janitor
-        )
-
-    @staticmethod
-    def _init_lifecycle_services(engine):
-        """生命周期服务 (Cache, Auditor, Guards)"""
-        engine.block_cache = BlockCache(engine.paths.get('cache', ''))
-        engine.auditor = SovereignAuditor(engine)
-        engine.qa_guard = engine.governance.qa_guard
-        engine.resource_guard = engine.governance.resource_guard
         engine.heartbeat = engine.governance.heartbeat
-        engine.sentinel = engine.governance.health_sentinel
-        engine.publisher = PublisherService(engine.config.model_dump(), sys_tuning=engine.config.system)
+        engine.publisher = PublisherService(config.model_dump(), sys_tuning=config.system)
         engine.ai_batcher = AIBatcher(engine)
         engine.brain = KnowledgeService(engine)
-        
         engine.publisher.bind_to_bus(engine.bus)
-
-    @staticmethod
-    def _init_strategies_and_resilience(engine, args):
-        """同步策略与熔断韧性"""
-        from core.logic.strategies.fingerprint import FingerprintSyncStrategy
-        from core.logic.strategies.sandbox import SandboxSyncStrategy
-        from core.governance.circuit_breaker import CircuitBreaker
-        from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         
         engine.sync_strategy = SandboxSyncStrategy(engine) if getattr(args, 'sandbox', False) else FingerprintSyncStrategy(engine)
-        
-        res = engine.config.system.resilience
-        orig = getattr(engine.config.system, "concurrency", None)
-        global_executor.update_concurrency(getattr(orig, "global_workers", 1) if orig else 1)
-        ai_executor.update_concurrency(getattr(orig, "ai_workers", 4) if orig else 4)
-        
-        engine.circuit_breakers = {
-            "ai": CircuitBreaker("AI-Gateway", failure_threshold=res.cb_failure_threshold, recovery_timeout=res.cb_recovery_timeout),
-            "syndication": CircuitBreaker("Syndication-Hub", failure_threshold=3, recovery_timeout=120)
-        }
-        engine.pipeline = Pipeline.build(engine.config.system.pipeline_steps, StepRegistry)
 
     @staticmethod
-    def _finalize_assembly(engine, args):
-        """最终装配审计与 UI 挂载"""
+    def _finalize_assembly(engine: IllacmeEngine, args: Any) -> IllacmeEngine:
+        """最终审计与 UI 挂载"""
         from core.governance.isolator import DependencyIsolator
-        from core.ui.delegate import DisplayDelegate
+        from core.logic.hooks import ThemeHookManager
         
         for adapter in [engine.input_adapter, engine.ssg_adapter]:
             if adapter: DependencyIsolator.check_adapter(adapter)
             
-        from core.logic.hooks import ThemeHookManager
         engine.args = args
         engine.theme_hooks = ThemeHookManager(engine)
-
         engine.theme_hooks.trigger("init")
         return engine

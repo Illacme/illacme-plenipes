@@ -1,29 +1,38 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - API Control Plane
+⚙️ Illacme-plenipes Core - API Control Plane
 模块职责：提供 RESTful 接口基座，负责路由分发与安全中枢。
-🛡️ [V48.3 Refactored]：解耦后的轻量化 API 网关。
+🛡️ [V74.8 Decoupled]：逻辑分片架构，基础设施已委托至 .infrastructure 模块。
 """
 
 import os
+from typing import Dict, Any, Optional
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
-# 🚀 [V48.3] 导入解耦后的路由器
-from .routes import system, content, governance, ws, compute
-
 from fastapi.responses import RedirectResponse
 
+# 🚀 导入分片后的路由器与基础设施
+from .routes import system, content, governance, ws, compute
+from .infrastructure.logging import setup_api_logging
+from .infrastructure.middleware import setup_middleware
+
+# 1. 实例化主引擎 API 门户
 app = FastAPI(title="Illacme-plenipes API Gateway", version="V52.0")
 
+# 2. 注入核心基础设施逻辑 (代理执行)
+setup_middleware(app)
+
+# 3. 挂载路由器
 app.include_router(compute.router)
+app.include_router(system.router, tags=["System"])
+app.include_router(content.router, tags=["Content"])
+app.include_router(governance.router, tags=["Governance"])
+app.include_router(ws.router, tags=["Realtime"])
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> Dict[str, Any]:
     """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘的存活探测"""
-    from core.runtime.cli_bootstrap import get_global_engine
+    from core.runtime.engine_singleton import get_global_engine
     engine = get_global_engine()
     return {
         "status": "ok",
@@ -32,66 +41,43 @@ async def health_check():
     }
 
 @app.get("/")
-async def root_redirect():
+async def root_redirect() -> RedirectResponse:
+    """自动重定向至指挥中心"""
     return RedirectResponse(url="/dashboard/")
 
-# 🚀 [V52.1] 生命周期挂钩：物理链路预热
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
+    """🚀 [V52.1] 生命周期挂钩：物理链路预热"""
     import asyncio
-    from .routes import ws
     ws._main_loop = asyncio.get_running_loop()
 
-# 🔓 允许跨域
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-
-# 🎨 挂载仪表盘静态页面
+# 🎨 挂载仪表盘静态页面 (保持原始物理路径探测)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/dashboard", StaticFiles(directory=static_dir, html=True), name="static")
 
-# 🛰️ 注册模块化路由
-app.include_router(system.router, tags=["System"])
-app.include_router(content.router, tags=["Content"])
-app.include_router(governance.router, tags=["Governance"])
-app.include_router(ws.router, tags=["Realtime"])
-
-def start_api_server(host="0.0.0.0", port=43212, blocking=True):
-    """启动物理服务"""
+def start_api_server(host: str = "0.0.0.0", port: int = 43212, blocking: bool = True) -> None:
+    """启动物理 API 服务"""
     import uvicorn
     import time
-    import logging
+    import threading
     
-    # 🚀 [V50.5] 静默心跳：过滤掉高频的同步请求日志，保持终端整洁
-    class HeartbeatFilter(logging.Filter):
-        def filter(self, record):
-            # 屏蔽 dashboard 的高频数据轮询日志
-            msg = record.getMessage()
-            return "/api/billing/stats" not in msg and "/api/galaxy/graph" not in msg
+    # 🚀 [V50.5] 注入分片后的日志过滤引擎
+    setup_api_logging()
 
-    # 注入过滤器到 uvicorn 的访问日志中
-    logging.getLogger("uvicorn.access").addFilter(HeartbeatFilter())
-
-    # 🚀 [V50.5] 端口接力保障：如果端口被占用（如向导尚未退出），则循环等待
-    def run_with_retry():
+    def run_with_retry() -> None:
+        """端口接力保障：支持自愈式启动"""
         attempts = 0
         while attempts < 10:
             try:
-                # 调低 log_level 进一步减少干扰
                 uvicorn.run(app, host=host, port=port, log_level="info", access_log=True)
                 return
-            except Exception as e:
+            except Exception:
                 attempts += 1
                 time.sleep(1)
         
     if blocking:
         run_with_retry()
     else:
-        import threading
         thread = threading.Thread(target=run_with_retry, daemon=True)
         thread.start()

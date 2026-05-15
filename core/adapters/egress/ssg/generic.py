@@ -10,7 +10,9 @@ from .base import BaseSSGAdapter
 
 class GenericSSGAdapter(BaseSSGAdapter):
     PLUGIN_ID = "generic"
-    """🚀 通用模板渲染引擎"""
+    DISPLAY_NAME = "Generic Markdown"
+    VERSION = "V1.0"
+    DESCRIPTION = "通用模板渲染器，作为兜底或标准 Markdown 转换使用，支持双相分发逻辑。"
     def get_output_schema(self) -> list:
         """🚀 [V11.2] 通用适配器默认开启双相分发 (源码 + 静态渲染)"""
         return ["source", "static"]

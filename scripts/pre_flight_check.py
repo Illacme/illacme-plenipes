@@ -63,7 +63,7 @@ def check_workspace_purity(resume_mode=False):
         remote_hash = subprocess.check_output(["git", "rev-parse", "@{u}"], text=True).strip()
         
         if local_hash != remote_hash:
-            print(f"❌ [拦截] 本地分支与远程 origin/main 不对正！")
+            print("❌ [拦截] 本地分支与远程 origin/main 不对正！")
             return False
             
         print("✅ [准予起飞] 工作区 100% 纯净，可以启动新任务。")

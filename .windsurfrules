@@ -1,12 +1,7 @@
-# 🚨 [CRITICAL AI BOOT SEQUENCE] Illacme-Plenipes 核心架构域 (Windsurf 版)
-# =====================================================================
+# 🏛️ Illacme Plenipes AI Governance Entrance
 
-You are operating within the Illacme-plenipes industrial framework.
+请首先读取 [治理规则索引 (RULES_INDEX.md)](file:///.plenipes/SOP/RULES_INDEX.md) 以获取全量主权协作指令。
 
-**YOUR FIRST COMPULSORY ACTIONS BEFORE PROCESSING ANY USER REQUEST:**
-You MUST immediately read the following files IN ORDER before doing anything else:
-1. 👉 `.plenipes/SOP/RULES_INDEX.md` — Project governance INDEX (Single Source of Truth)
-2. 👉 `.plenipes/SOP/GENETICS/EVOLUTION_HISTORY.md` — Project-specific lessons and pitfalls
-3. 👉 `.plenipes/SOP/00_COLLABORATION_RULES.md` — Collaboration & Integrity
-
-WARNING: Do NOT assume you "already know" the rules. Every session starts blank.
+## 🛡️ 核心合规性红线
+- **全量中文化**: 必须严格遵守 [SOP-01 Sec 1.1](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 规定的思考、描述及指令中文化要求。
+- **严谨诊断**: 遇到工具访问故障，必须执行 [SOP-01 Sec 1.2](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 定义的物理诊断路径。

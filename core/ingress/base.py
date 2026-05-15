@@ -40,7 +40,6 @@ class BaseDialect(abc.ABC):
         """[Contract] 将特定方言（如 Obsidian == ==）转化为标准 Markdown 态"""
         pass
 
-    @abc.abstractmethod
     def staticize(self, text: str) -> str:
-        """[Contract] 执行特定组件的静态化转换"""
-        pass
+        """[Contract] 执行特定组件的静态化转换 (默认不做处理)"""
+        return text

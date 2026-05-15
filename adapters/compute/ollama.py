@@ -7,7 +7,7 @@ Illacme-plenipes Core - Ollama Adapter
 """
 import requests
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 from .openai import OpenAICompatibleTranslator
 from core.utils.tracing import tlog
@@ -16,6 +16,7 @@ class OllamaNativeTranslator(BaseTranslator):
     """🚀 Ollama 原生 API 适配器 (使用 /api/chat)"""
     PLUGIN_ID = 'ollama'
     DISPLAY_NAME = 'Ollama'
+    VERSION = "V1.0"
     DESCRIPTION = "驱动本地算力中心，支持 Llama 3、Mistral 等开源大模型在主权环境下的离线推断。"
     PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = "http://localhost:11434"
@@ -71,6 +72,8 @@ class OllamaOpenAITranslator(OpenAICompatibleTranslator):
     """🚀 Ollama OpenAI 兼容适配器 (使用 /v1)"""
     PLUGIN_ID = 'ollama-openai'
     DISPLAY_NAME = 'Ollama'
+    VERSION = "V1.0"
+    DESCRIPTION = "提供 Ollama 的 OpenAI 兼容接口支持，适配标准协议栈下的本地模型调用。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "http://localhost:11434/v1"
     

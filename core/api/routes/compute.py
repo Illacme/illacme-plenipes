@@ -5,7 +5,7 @@
 🛡️ [Sovereignty]：已完全移除 providers 兼容逻辑，强制对正物理节点架构。
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
-from core.runtime.cli_bootstrap import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 from .system import verify_token
 from core.config.models.ai import ComputeNode
 from core.utils.tracing import tlog

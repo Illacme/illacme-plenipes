@@ -13,6 +13,7 @@ from core.utils.tracing import tlog
 class DevToSyndicator(BaseSyndicator):
     PLUGIN_ID = "devto"
     DISPLAY_NAME = "Dev.to"
+    VERSION = "V1.0"
     DESCRIPTION = "将内容同步分发至全球开发者社区 Dev.to，支持标签映射与原文链接回溯。"
     
     # 🚀 [V11.3] 声明运行时依赖契约

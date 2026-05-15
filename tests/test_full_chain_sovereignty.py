@@ -10,7 +10,7 @@ import os
 import shutil
 import unittest
 import yaml
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from core.governance.imprint_manager import ImprintManager
 from core.runtime.engine_factory import EngineFactory
 

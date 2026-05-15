@@ -5,9 +5,7 @@ Illacme Plenipes - Compute API Verification Script
 模块职责：自动验证算力节点的 CRUD 操作与物理一致性。
 """
 import requests
-import json
 import os
-import time
 
 BASE_URL = "http://127.0.0.1:43212/api/compute"
 HEADERS = {"Content-Type": "application/json"}

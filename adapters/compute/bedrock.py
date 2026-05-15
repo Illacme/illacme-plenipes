@@ -6,7 +6,7 @@ Illacme-plenipes AI Plugin - AWS Bedrock Messages Adapter
 """
 import boto3
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .anthropic_base import AnthropicCompatibleTranslator
 from core.utils.tracing import tlog
 
@@ -14,6 +14,7 @@ class BedrockTranslator(AnthropicCompatibleTranslator):
     """🚀 AWS Bedrock 极致适配器 (Anthropic 协议对正)"""
     PLUGIN_ID = 'bedrock'
     DISPLAY_NAME = 'AWS Bedrock (Claude)'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 AWS Bedrock 云原生大模型服务支持，适配 AWS 基础设施环境下的 Anthropic Claude 系列算力节点。"
     PROTOCOL_FAMILY = 'anthropic'
     

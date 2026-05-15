@@ -4,13 +4,14 @@
 Illacme-plenipes AI Plugin - Anthropic Adapter
 🛡️ [V67.0]：对正 Anthropic 标准协议基类。
 """
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .anthropic_base import AnthropicCompatibleTranslator
 
 class AnthropicTranslator(AnthropicCompatibleTranslator):
     """🚀 Anthropic 官方驱动 (Messages API)"""
     PLUGIN_ID = 'anthropic'
     DISPLAY_NAME = 'Anthropic Claude'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 Anthropic 官方协议支持，兼容 Claude 3.5 Sonnet、Claude 3 Opus 等长文本理解模型。"
     PROTOCOL_FAMILY = 'anthropic'
     DEFAULT_URL = "https://api.anthropic.com/v1"

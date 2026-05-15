@@ -4,14 +4,14 @@
 Illacme-plenipes AI Plugin - Moonshot (Kimi) Adapter
 🛡️ [V67.0]：对齐工业级模型感应逻辑。
 """
-import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 class MoonshotTranslator(OpenAICompatibleTranslator):
     """🚀 Moonshot (Kimi) 专属适配器"""
     PLUGIN_ID = 'moonshot'
     DISPLAY_NAME = 'Moonshot (Kimi)'
+    VERSION = "V1.0"
     DESCRIPTION = "提供月之暗面 Kimi 官方协议支持，具备卓越的长文本分析与中文语境理解能力。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "https://api.moonshot.cn/v1"

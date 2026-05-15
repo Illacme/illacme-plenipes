@@ -17,7 +17,10 @@ from core.editorial.registry import StepRegistry
 @StepRegistry.register
 class ContextualImageAltStep(PipelineStep):
     """阶段 12.5: AI 驱动的媒体智能引擎 (ADMI v2.0)"""
-    PLUGIN_ID = "image_alt"
+    PLUGIN_ID = "image_alt_context"
+    DISPLAY_NAME = "Contextual Image Alt"
+    VERSION = "V5.3"
+    DESCRIPTION = "基于文章语义上下文，通过多模态 AI 自动生成并优化图片的替代文本（Alt Text），增强 SEO 与可访问性。"
     def process(self, ctx):
         if ctx.is_aborted or ctx.is_dry_run or ctx.is_silent_edit:
             return

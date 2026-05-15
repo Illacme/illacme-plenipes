@@ -42,6 +42,7 @@ class GitHubPagesPublisher(BasePublisher):
     """
     PLUGIN_ID = "github_pages"
     DISPLAY_NAME = "GitHub Pages"
+    VERSION = "V3.5"
     DESCRIPTION = "自动将渲染后的静态站点推送至指定 GitHub 仓库的 gh-pages 分支。"
 
     # ==========================================

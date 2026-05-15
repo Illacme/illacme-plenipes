@@ -1,4 +1,4 @@
-from core.runtime.cli_bootstrap import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 import socket
 
 class SystemFragment:

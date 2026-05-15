@@ -17,6 +17,9 @@ from core.utils.tracing import tlog
 class GitRepositorySource(BaseSource):
     """🚀 [V48.3] Git 仓库数据源 — 全息远程收稿"""
     PLUGIN_ID = "git"
+    DISPLAY_NAME = "Git 仓库"
+    VERSION = "V1.5"
+    DESCRIPTION = "支持从远程 Git 仓库（GitHub/GitLab）物理同步原稿，支持增量更新与冲突检测。"
 
     """
     支持从远程 Git 仓库克隆/拉取 Markdown 原稿。采用浅克隆 (shallow clone) 策略

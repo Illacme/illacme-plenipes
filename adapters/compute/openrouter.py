@@ -5,13 +5,14 @@ Illacme-plenipes AI Plugin - OpenRouter Adapter
 🛡️ [V67.0]：对齐工业级模型感应逻辑。
 """
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 class OpenRouterTranslator(OpenAICompatibleTranslator):
     """🚀 OpenRouter 专属适配器"""
     PLUGIN_ID = 'openrouter'
     DISPLAY_NAME = 'OpenRouter'
+    VERSION = "V2.1"
     DESCRIPTION = "提供 OpenRouter 全球统一网关支持，一站式接入 Anthropic、Llama 3、Mistral 等顶级模型算力。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = 'https://openrouter.ai/api/v1'

@@ -9,12 +9,12 @@ output_paths:
   assets_dir: ./themes/{theme}/public/assets
   graph_json_dir: ./themes/{theme}/public
   source_dir: dist/{theme}/src
-  static_dir: themes/docusaurus/static
-  docs_dir: themes/docusaurus/i18n/{lang}/docusaurus-plugin-content-docs/current
-  blog_dir: themes/docusaurus/i18n/{lang}/docusaurus-plugin-content-blog
-  pages_dir: themes/docusaurus/i18n/{lang}/docusaurus-plugin-content-pages
+  static_dir: themes/default/static
+  docs_dir: themes/default/{lang}/docs
+  blog_dir: themes/default/{lang}/blog
+  pages_dir: themes/default/{lang}/pages
 system:
-  data_root: imprints/stellar_harbor
+  data_root: imprints/titan_rift
   log_level: INFO
   verbose_ai_logs: true
   singleton_port: 43210
@@ -70,7 +70,7 @@ i18n_settings:
     translate_body: true
     translate_title: true
 translation:
-  strategy: fallback
+  strategy: single
   primary_node: lmstudio_local
   fallback_node: ollama_local
   providers:

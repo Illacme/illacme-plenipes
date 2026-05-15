@@ -20,6 +20,9 @@ from core.utils.tracing import tlog
 class ReadAndNormalizeStep(PipelineStep):
     """阶段 3-4: 物理读取与编辑器方言抹平"""
     PLUGIN_ID = "read_normalize"
+    DISPLAY_NAME = "物理读取与归一化"
+    VERSION = "V5.3"
+    DESCRIPTION = "从金库读取原始稿件，并执行方言识别与 Frontmatter 归一化。"
     def process(self, ctx):
         try:
             with open(ctx.src_path, 'r', encoding='utf-8') as f:
@@ -62,6 +65,9 @@ class ReadAndNormalizeStep(PipelineStep):
 class ASTAndPurifyStep(PipelineStep):
     """阶段 6-7: AST 降维与语义提纯"""
     PLUGIN_ID = "purify"
+    DISPLAY_NAME = "语义提纯与 AST 解析"
+    VERSION = "V5.3"
+    DESCRIPTION = "对内容执行 AST 转换，移除噪音并为 AI 推理准备纯净语料。"
     def process(self, ctx):
         # 🚀 [V16.0] 切换至全插件化 AST 解析流水线
         ctx.body_content = ctx.engine.ast_resolver.resolve(
@@ -87,6 +93,9 @@ class ASTAndPurifyStep(PipelineStep):
 class MetadataAndHashStep(PipelineStep):
     """阶段 8-9: 元数据注入与指纹核验"""
     PLUGIN_ID = "metadata_hash"
+    DISPLAY_NAME = "元数据注入与指纹核验"
+    VERSION = "V5.3"
+    DESCRIPTION = "执行物理指纹计算，确保增量同步的一致性与元数据对正。"
     def process(self, ctx):
         defaults = ctx.engine.fm_defaults or {}
         ctx.base_fm = {k: v for k, v in defaults.items() if v is not None and str(v).strip() != ""}
@@ -149,6 +158,9 @@ class MetadataAndHashStep(PipelineStep):
 class AISlugAndSEOStep(PipelineStep):
     """阶段 11-12: Slug 重塑与 SEO 引擎"""
     PLUGIN_ID = "ai_slug_seo"
+    DISPLAY_NAME = "AI Slug 与 SEO 治理"
+    VERSION = "V5.3"
+    DESCRIPTION = "利用 AI 自动生成友好的 URL Slug，并注入工业级 SEO 元数据。"
     def process(self, ctx):
         slug_raw = ctx.doc_info.get("slug")
         # 🛡️ [V48.3] 首页主权防护：强制锁定 Index.md 的 Slug 为 'index'
@@ -227,6 +239,9 @@ class AISlugAndSEOStep(PipelineStep):
 class MaskingAndRoutingStep(PipelineStep):
     """阶段 13-14: 物理遮蔽与动态路由推导"""
     PLUGIN_ID = "masking_routing"
+    DISPLAY_NAME = "物理遮蔽与路由推导"
+    VERSION = "V5.3"
+    DESCRIPTION = "执行隐私脱敏，并根据物理路径推导出版物的路由矩阵。"
     def process(self, ctx):
         def mask_fn(m):
             matched = m.group(0)
@@ -274,8 +289,11 @@ class MaskingAndRoutingStep(PipelineStep):
         )
 
 class VerificationStep(PipelineStep):
-    """阶段 15: 全息主权验证 (Holographic Verification) 🛡️ [AEL-Iter-v11.0]"""
+    """阶段 15: 全息主权验证"""
     PLUGIN_ID = "verification"
+    DISPLAY_NAME = "全息主权验证"
+    VERSION = "V5.3"
+    DESCRIPTION = "执行终极物理验证，确保资产完整性与出版主权 100% 对正。"
     def process(self, ctx):
         tlog.info(f"🛡️ [全息审计] 正在验证资产完整性: {ctx.rel_path}")
 

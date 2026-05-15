@@ -6,7 +6,7 @@ Illacme-plenipes AI Plugin - DeepSeek Adapter
 🛡️ [V15.9] 极速接入：预置 DeepSeek 官方基准地址。
 """
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from .openai import OpenAICompatibleTranslator
 
 
@@ -15,6 +15,7 @@ class DeepSeekTranslator(OpenAICompatibleTranslator):
     """🚀 [V15.9] DeepSeek 专属适配器"""
     PLUGIN_ID = 'deepseek'
     DISPLAY_NAME = 'DeepSeek'
+    VERSION = "V1.8"
     DESCRIPTION = "提供 DeepSeek 官方协议支持，具备极高性价比的国产大模型算力节点。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "https://api.deepseek.com"
@@ -43,6 +44,7 @@ class DeepSeekR1Translator(DeepSeekTranslator):
     """🚀 [V67.0] DeepSeek R1 深度适配器 (自动处理推理链)"""
     PLUGIN_ID = 'deepseek-r1'
     DISPLAY_NAME = 'DeepSeek R1 (Sovereign Clean)'
+    VERSION = "V1.8"
     DESCRIPTION = "针对 DeepSeek R1 强化学习模型优化的算力节点，支持推理链自动清洗，确保最终输出的纯净性。"
     PROTOCOL_FAMILY = 'native' # 因为有特殊的后处理逻辑，视为原生增强
     

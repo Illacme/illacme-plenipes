@@ -4,6 +4,7 @@ class CloudflarePagesPublisher(BasePublisher):
     """🚀 [V10.2] Cloudflare Pages 分发插件"""
     PLUGIN_ID = "cloudflare_pages"
     DISPLAY_NAME = "Cloudflare Pages"
+    VERSION = "V1.0"
     DESCRIPTION = "通过 Wrangler 协议将站点资产物理同步至 Cloudflare Edge 网络。"
     def push(self, bundle_path, metadata):
         if not self.enabled: return {}

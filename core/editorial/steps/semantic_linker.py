@@ -11,6 +11,10 @@ from core.utils.tracing import tlog
 @StepRegistry.register("semantic_linker")
 class SemanticLinkerStep(PipelineStep):
     """🚀 [V18.0] 语义关联提取：自动织就知识网"""
+    PLUGIN_ID = "semantic_linker"
+    DISPLAY_NAME = "Semantic Linker"
+    VERSION = "V5.3"
+    DESCRIPTION = "基于文章语义感应相关内容，并自动织入双向链接（Backlinks），构建高维度的知识网络。"
     
     def process(self, ctx):
         engine = ctx.engine

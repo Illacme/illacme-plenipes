@@ -15,13 +15,12 @@ window.switchImprint = async (id) => {
 
     if (res && res.success) {
         addAudit(`🔄 [对正] 成功切换至事业部: ${id}`, "success");
-        if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
-        
-        if (typeof loadSettings === 'function' && window.currentView === 'settings') {
-            loadSettings('imprints');
-        }
         if (typeof renderImprintDropdown === 'function') renderImprintDropdown();
-        if (typeof closeTerminalModal === 'function') closeTerminalModal();
+        
+        // 🚀 [V74.15] 全域主权对正：品牌切换是重量级上下文切换，强制刷新以确保所有视图与后端引擎同步
+        setTimeout(() => {
+            location.reload();
+        }, 800);
     } else {
         addAudit(`🚨 切换失败: ${res ? res.error : '物理链路异常'}`, "error");
     }
@@ -132,18 +131,20 @@ window.renderImprintDropdown = () => {
         return 0;
     });
 
-    dropdown.innerHTML = `<div class="dropdown-header">出版集团事业部矩阵</div>` + imprints.map(im => `
-        <div class="dropdown-item ${im.id === activeId ? 'active' : ''}" onclick="switchImprint('${im.id}')">
+    dropdown.innerHTML = `<div class="dropdown-header">品牌/版图 矩阵</div>` + imprints.map(im => `
+        <div class="dropdown-item imprint-node ${im.id === activeId ? 'active' : ''}" onclick="event.stopPropagation(); switchImprint('${im.id}'); document.getElementById('imprint-dropdown').style.display='none';">
             <div class="imprint-item-header">
                 <span class="imprint-title">${im.name || im.id}</span>
-                <span class="imprint-id-tag">${im.id}</span>
-                ${im.id === activeId ? '<span class="active-dot">●</span>' : ''}
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="imprint-id-tag">${im.id}</span>
+                    ${im.id === activeId ? '<span class="active-badge">ACTIVE</span>' : ''}
+                </div>
             </div>
-            <div class="imprint-path-row">${im.path}</div>
+            <div class="imprint-path-row">📂 ${im.path}</div>
         </div>
     `).join('') + `
-        <div class="dropdown-item add-new" onclick="showView('settings', 'imprints'); document.getElementById('imprint-dropdown').style.display='none';">
-            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 集团指挥中心</div>
+        <div class="dropdown-item imprint-node add-new" onclick="event.stopPropagation(); window.showView('settings', 'imprints'); document.getElementById('imprint-dropdown').style.display='none';">
+            <div class="imprint-title" style="color: var(--accent-primary);">⚙️ 出版版图管理</div>
         </div>
     `;
 };
@@ -160,21 +161,21 @@ window.renderImprintsCategory = function() {
 
     return `
         <div class="full-width fade-in">
-            <div class="section-header"><h3>🏢 出版集团指挥中心 (Press Group Command)</h3></div>
+            <div class="section-header"><h3>🏢 出版版图管理 (Press Imprints Management)</h3></div>
             
             <!-- 🏛️ Industrial Memo: Imprint as an Independent Studio -->
             <div class="sovereign-memo glass-panel" style="margin-bottom: 30px; padding: 25px; border-left: 4px solid var(--accent-primary); background: rgba(163, 76, 255, 0.03);">
-                <h4 style="color: var(--accent-primary); margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">🏢 工业识见：将事业部视为您的“独立出版单元”</h4>
+                <h4 style="color: var(--accent-primary); margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">🏢 工业识见：将版图视为您的“独立出版单元”</h4>
                 <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.7;">
-                    在专业的出版工业中，<b>事业部 (Imprint)</b> 是集团旗下的独立运作单元。在 Illacme 中：<br>
-                    • <b>物理独立</b>：每个事业部拥有专属的资产仓库（Vault），物理隔离，确保全域安全。<br>
-                    • <b>意志独立</b>：每个事业部可以绑定不同的算力底座，拥有独特的编辑逻辑和指令矩阵。<br>
-                    • <b>分发独立</b>：每个事业部可以拥有独立的主题、SEO 策略和全球分发通道。<br>
-                    <span style="color: var(--accent-secondary); font-size: 0.75rem; font-weight: 800;">💡 您可以像管理出版集团一样，在此处调度、切换您的多个出版事业部（版图）。</span>
+                    在专业的出版工业中，<b>版图 (Imprint)</b> 是集团旗下的独立运作单元。在 Illacme 中：<br>
+                    • <b>物理独立</b>：每个版图拥有专属的原稿文库（Vault），物理隔离，确保全域安全。<br>
+                    • <b>意志独立</b>：每个版图可以绑定不同的算力底座，拥有独特的编辑逻辑和指令矩阵。<br>
+                    • <b>分发独立</b>：每个版图可以拥有独立的主题、SEO 策略和全球分发通道。<br>
+                    <span style="color: var(--accent-secondary); font-size: 0.75rem; font-weight: 800;">💡 您可以像管理出版集团一样，在此处调度、切换您的多个出版版图。</span>
                 </p>
             </div>
 
-            <p class="section-desc">全局掌控您的数字出版帝国。在这里，您可以一键在不同的事业部（版图）之间切换意志。</p>
+            <p class="section-desc">全局掌控您的数字出版帝国。在这里，您可以一键在不同的出版版图之间切换意志。</p>
             
             <div class="shield-matrix">
                 ${imprints.map(im => {
@@ -192,7 +193,7 @@ window.renderImprintsCategory = function() {
                             <div class="shield-body">
                                 <h4 contenteditable="true" onblur="handleImprintInlineEdit(this, '${im.id}', 'name')">${im.name || im.id}</h4>
                                 <div class="pod-telemetry">
-                                    <span class="tiny-label">内容资产数量</span>
+                                    <span class="tiny-label">文库文稿数量</span>
                                     <span class="tiny-label mono">${stat.doc_count} 项</span>
                                 </div>
                                 
@@ -203,7 +204,7 @@ window.renderImprintsCategory = function() {
                                 <div class="p-control-group">
                                     ${isActive ? 
                                         '<button class="action-btn" disabled style="opacity:0.5;">执行中</button>' : 
-                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 切换事业部</button>`}
+                                        `<button class="action-btn glow-btn" onclick="switchImprint('${im.id}')">🔄 切换版图</button>`}
                                     ${im.id !== 'default' && !isActive ? 
                                         `<button class="action-btn danger" onclick="deleteImprint('${im.id}')">🗑️</button>` : ''}
                                 </div>

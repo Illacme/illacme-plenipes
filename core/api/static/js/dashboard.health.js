@@ -20,8 +20,47 @@ window.refreshGovernanceContext = async () => {
 
         const aiEl = document.getElementById('ctx-ai');
         const i18nEl = document.getElementById('ctx-i18n');
+        const vaultEl = document.getElementById('ctx-vault');
+        const dialectEl = document.getElementById('ctx-dialect');
+
+        if (vaultEl && data.vault) {
+            vaultEl.innerText = data.vault.root || '-';
+            vaultEl.title = data.vault.root || '';
+        }
+        if (dialectEl && data.vault) {
+            dialectEl.innerText = data.vault.dialect || '-';
+        }
         
-        if (aiEl && data.ai) aiEl.innerText = `${data.ai.provider} / ${data.ai.model}`;
+        if (aiEl && data.ai) {
+            aiEl.innerText = `${data.ai.provider} / ${data.ai.model}`;
+            if (data.ai.status === 'degraded') {
+                aiEl.style.color = 'var(--accent-secondary)';
+                aiEl.style.fontWeight = 'bold';
+                
+                // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
+                if (window.currentView !== 'settings' && !window._ai_warning_shown) {
+                    window._ai_warning_shown = true;
+                    Swal.fire({
+                        title: '🛰️ 算力节点对正失败',
+                        text: data.ai.warning,
+                        icon: 'warning',
+                        background: 'rgba(20, 20, 25, 0.95)',
+                        color: '#fff',
+                        confirmButtonText: '前往配置版图',
+                        confirmButtonColor: 'var(--accent-primary)',
+                        showCancelButton: true,
+                        cancelButtonText: '暂时忽略'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.showView('settings', 'imprints');
+                        }
+                    });
+                }
+            } else {
+                aiEl.style.color = '';
+                aiEl.style.fontWeight = '';
+            }
+        }
         if (i18nEl && data.i18n) {
             const targets = data.i18n.targets || [];
             const targetsStr = targets.length > 0 ? targets.join(', ') : 'NONE';
@@ -189,7 +228,7 @@ window.invokeServiceAction = async (action) => {
 };
 
 window.controlWizard = async (action) => {
-    addAudit(`📡 正在向版图向导下达 [${action === 'start' ? '点火' : '销毁'}] 指令...`, "info");
+    addAudit(`📡 正在向版图向导下达 [${action === 'start' ? '启动' : '停机'}] 指令...`, "info");
     const res = await apiFetch(`/api/system/wizard/${action}`, { method: 'POST' });
     if (res && (res.status === 'started' || res.status === 'stopped' || res.status === 'already_running')) {
         addAudit(`✅ 指令已送达：向导服务已${action === 'start' ? '在线' : '下线'}。`, "success");
@@ -219,7 +258,7 @@ window.shutdownSystem = async () => {
         document.body.innerHTML = `
             <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #ff4d4d; font-family: 'Inter', sans-serif;">
                 <h1 style="font-size: 3rem; margin-bottom: 1rem;">SYSTEM OFFLINE</h1>
-                <p style="color: #666;">主权出版中心已安全关闭。请在终端执行 python3 plenipes.py 重新点火。</p>
+                <p style="color: #666;">主权出版中心已安全关闭。请在终端执行 python3 plenipes.py 重新启动。</p>
                 <div style="margin-top: 2rem; padding: 10px 20px; border: 1px solid #333; border-radius: 5px; cursor: pointer;" onclick="location.reload()">重新连接</div>
             </div>
         `;

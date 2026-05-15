@@ -11,6 +11,9 @@ from core.ingress.base import BaseSource
 class LocalFileSource(BaseSource):
     """🚀 [V16.0] 本地文件系统数据源"""
     PLUGIN_ID = "local"
+    DISPLAY_NAME = "本地文件"
+    VERSION = "V1.2"
+    DESCRIPTION = "直接感应并同步本地文件系统中的稿件，支持实时监听物理变动。"
     
     def __init__(self, root_path: str):
         self.root_path = os.path.abspath(root_path)

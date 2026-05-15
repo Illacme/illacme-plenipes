@@ -6,6 +6,20 @@
 
 // 1. 系统设置加载器
 window.loadSettings = async (targetCat = 'general') => {
+    // 🚀 [V55.21] 物理状态先行：在异步加载前先对正侧边栏标签状态
+    document.querySelectorAll('.s-tab').forEach(tab => {
+        if (tab.dataset.cat === targetCat) tab.classList.add('active');
+        else tab.classList.remove('active');
+        
+        tab.onclick = () => {
+            document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderSettingsCategory(tab.dataset.cat);
+            const container = document.querySelector('.tab-content-area');
+            if (container) container.scrollTop = 0;
+        };
+    });
+
     const formEl = document.getElementById('settings-form');
     if (formEl) formEl.innerHTML = '<div class="loading">正在拉取全量主权配置与治理元数据...</div>';
 
@@ -22,21 +36,15 @@ window.loadSettings = async (targetCat = 'general') => {
     const stats = await apiFetch('/api/imprints/stats');
     window.settingsData._imprint_stats = stats || {};
 
+    // 🚀 [V57.1] 初始化基准状态快照，用于脏检查
+    if (typeof window.getCleanConfig === 'function') {
+        window.initialSettingsState = window.getCleanConfig(window.settingsData);
+        if (typeof window.checkSettingsDirty === 'function') {
+            window.checkSettingsDirty();
+        }
+    }
+
     renderSettingsCategory(targetCat);
-
-    document.querySelectorAll('.s-tab').forEach(tab => {
-        // 🚀 [V55.20] 初始状态对正：确保 targetCat 对应的 Tab 处于激活状态
-        if (tab.dataset.cat === targetCat) tab.classList.add('active');
-        else tab.classList.remove('active');
-
-        tab.onclick = () => {
-            document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            renderSettingsCategory(tab.dataset.cat);
-            const container = document.querySelector('.tab-content-area');
-            if (container) container.scrollTop = 0;
-        };
-    });
 };
 
 window.renderSettingsCategory = (cat) => {
@@ -109,9 +117,22 @@ window.saveAllSettings = async () => {
         addAudit("✅ 全量主权配置已固化至物理磁盘。", 'success');
         if (res.active_config) {
             window.settingsData = { ...window.settingsData, ...res.active_config };
+            
+            // 🚀 [V57.1] 同步新的基准状态并重置按钮
+            if (typeof window.getCleanConfig === 'function') {
+                window.initialSettingsState = window.getCleanConfig(window.settingsData);
+                if (typeof window.checkSettingsDirty === 'function') {
+                    window.checkSettingsDirty();
+                }
+            }
+
             const activeTab = document.querySelector('.s-tab.active');
             if (activeTab && typeof renderSettingsCategory === 'function') {
                 renderSettingsCategory(activeTab.dataset.cat);
+            }
+            // 🚀 [V74.9] 全域对正：即时刷新侧边栏上下文
+            if (typeof refreshGovernanceContext === 'function') {
+                await refreshGovernanceContext();
             }
         }
     } else {
@@ -133,22 +154,44 @@ function renderGeneralCategory() {
                     ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '')}
                     ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '')}
                 </div>
- 
-                <div class="settings-group">
-                    <h4>📡 出版元数据 (Publishing Metadata)</h4>
-                    ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '')}
-                    ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
-                    ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
-                    ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
+            </div>
+
+            <div class="settings-group mt-large">
+                <h4>🌀 文稿方言适配 (Draft Dialect Adaptation)</h4>
+                <div class="settings-grid">
+                    ${renderSettingsItem('首选解析协议', 'ingress_settings.active_dialects', data.ingress_settings?.active_dialects?.[0] || 'auto', 'select', {
+                        items: [
+                            {value: 'auto', text: '✨ 自动感应 (Auto-Sensing)'},
+                            {value: 'obsidian', text: 'Obsidian Connector'},
+                            {value: 'logseq', text: 'Logseq Adapter'},
+                            {value: 'notion', text: 'Notion Sync'},
+                            {value: 'typora', text: 'Typora Dialect'},
+                            {value: 'mkdocs', text: 'MkDocs Standard'}
+                        ],
+                        onchange: `window.updateConfigField('ingress_settings.active_dialects', [this.value])`,
+                        description: '定义系统如何识别原稿格式。选择“自动感应”将根据文件特征物理识别；选择特定协议则执行主权强制解析。'
+                    })}
                 </div>
             </div>
  
             <div class="settings-group mt-large">
-                <h4>🧱 物理拓扑结构 (Physical Topology)</h4>
+                <h4>🧱 文稿存储架构 (Physical Storage Architecture)</h4>
                 <div class="settings-grid">
-                    ${renderSettingsItem('原稿仓库路径', 'vault_root', data.vault_root || '', 'text', {readonly: true})}
-                    ${renderSettingsItem('强制原稿子目录', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox')}
+                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'text', {readonly: true})}
+                    ${renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox', {
+                        description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
+                    })}
                     ${renderSettingsItem('系统底座版本', 'version', data.version || 'V24.0', 'text', {readonly: true})}
+                </div>
+            </div>
+
+            <div class="settings-group mt-large">
+                <h4>📡 出版元数据 (Publishing Metadata)</h4>
+                <div class="settings-grid">
+                    ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '')}
+                    ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
+                    ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
+                    ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
                 </div>
             </div>
         </div>

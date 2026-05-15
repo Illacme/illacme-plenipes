@@ -313,6 +313,13 @@ main {
     margin-bottom: 25px; flex-shrink: 0;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: auto;
+}
+
 .view-header h2 {
     font-size: 1.6rem; font-weight: 300; letter-spacing: -0.5px;
     background: linear-gradient(135deg, #fff 0%, var(--text-dim) 100%);

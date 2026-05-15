@@ -62,8 +62,10 @@ window.showView = (viewId, subId) => {
     if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter();
     if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
     if (viewId === 'settings' && typeof loadSettings === 'function') {
-        loadSettings(subId || 'general');
-        if (typeof loadPlugins === 'function') loadPlugins(); // 🛰️ [V55.19] 确保进入设置中心时提前预载主题数据
+        const target = subId || 'general';
+        console.log(`🛰️ [导航对正] 正在强制定位设置子页面: ${target}`);
+        loadSettings(target);
+        if (typeof loadPlugins === 'function') loadPlugins(); 
     }
     if (viewId === 'overview' && typeof refreshGalaxy === 'function') refreshGalaxy();
 };
@@ -138,17 +140,9 @@ window.triggerSystemPulse = () => {
 
 // 🛰️ [V65.0] Telemetry Dynamics Loop
 const initTelemetryDynamics = () => {
-    const loadVal = document.getElementById('load-val');
     const heartbeat = document.querySelector('.heartbeat-line');
     
     setInterval(() => {
-        // OS Load Oscillation
-        if (loadVal) {
-            const baseLoad = 12;
-            const variance = Math.sin(Date.now() / 2000) * 3;
-            loadVal.textContent = `${(baseLoad + variance).toFixed(1)}%`;
-        }
-        
         // Random Signal Flicker
         const signalBars = document.querySelectorAll('.signal-bar');
         if (signalBars.length > 0) {
@@ -162,27 +156,55 @@ const initTelemetryDynamics = () => {
 
 // Hook into actions with Tactical Transitions
 const originalShowView = window.showView;
-window.showView = (id) => {
+window.showView = (id, subId) => {
     const container = document.querySelector('main');
     if (container) {
         container.classList.add('switching-view');
         window.triggerSystemPulse();
         
         setTimeout(() => {
-            if (originalShowView) originalShowView(id);
+            if (originalShowView) originalShowView(id, subId);
             container.classList.remove('switching-view');
         }, 300);
     } else {
-        if (originalShowView) originalShowView(id);
+        if (originalShowView) originalShowView(id, subId);
     }
 };
 
-window.triggerPublish = () => {
+window.triggerPublish = async () => {
     window.triggerSystemPulse();
     window.addAudit('正在准备物理出版链路...', 'info');
-    setTimeout(() => {
-        window.addAudit('主权发布成功：稿件已同步至全球节点。', 'success');
-    }, 1500);
+
+    // 🚀 [V74.8] 物理点火：连接重构后的编排中枢
+    try {
+        const res = await apiFetch('/api/system/sync/trigger', { method: 'POST' });
+        
+        if (res && res.status === 'started') {
+            window.addAudit(`✅ 后台出版流水线已点火 (FutureID: ${res.future_id})`, 'success');
+            
+            // 使用 SweetAlert2 展示全局进度遮罩 (如果需要)
+            if (window.Swal) {
+                window.Swal.fire({
+                    title: '出版流水线已启动',
+                    text: '正在跨线程调度全球节点，请关注右侧审计雷达。',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+        } else if (res && res.status === 'rejected') {
+            window.addAudit('⚠️ 拦截重入：已有出版任务正在运行中。', 'warning');
+        } else {
+            throw new Error(res ? res.reason : '后端拒绝点火');
+        }
+    } catch (err) {
+        window.addAudit(`❌ 链路溃决: ${err.message}`, 'error');
+        if (window.Swal) {
+            window.Swal.fire('点火失败', err.message, 'error');
+        }
+    }
 };
 
 window.initDashboard = async () => {
@@ -283,9 +305,46 @@ window.initDashboard = async () => {
     }
 };
 
-// 启动入口
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.initDashboard);
-} else {
+// 🚀 [V74.10] 全局遥测脉冲：物理数据推送至底部状态栏 (footer-center)
+const initGlobalTelemetryPulse = () => {
+    setInterval(async () => {
+        try {
+            const stats = await apiFetch('/api/system/stats');
+            if (!stats) return;
+
+            // 1. 同步底部状态栏 CPU LOAD & MEMORY
+            const cpuEl = document.getElementById('footer-cpu-val');
+            const memEl = document.getElementById('footer-mem-val');
+            if (cpuEl && stats.load) cpuEl.innerText = stats.load.cpu + '%';
+            if (memEl && stats.load) memEl.innerText = stats.load.memory + '%';
+
+            // 2. 同步 AI CREDIT & TOKENS
+            const costEl = document.getElementById('footer-ai-cost');
+            const tokensEl = document.getElementById('footer-ai-tokens');
+            if (stats.usage) {
+                if (costEl) costEl.innerText = '$' + (stats.usage.cost || 0).toFixed(4);
+                if (tokensEl) tokensEl.innerText = (stats.usage.input_tokens + stats.usage.output_tokens).toLocaleString();
+            }
+
+            // 3. 如果当前在 Overview 视图，同步总编室指标 (可选扩展)
+            const globalCost = document.getElementById('global-cost-display');
+            if (globalCost && stats.usage) {
+                globalCost.innerText = '$' + (stats.usage.cost || 0).toFixed(4);
+            }
+        } catch (e) {
+            console.warn("Global telemetry pulse dropped:", e);
+        }
+    }, 3000);
+};
+
+// 🚀 [V74.9] 统一启动入口：确保 initDashboard 在任何 readyState 下都被执行
+const bootDashboard = () => {
     window.initDashboard();
+    initGlobalTelemetryPulse();
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootDashboard);
+} else {
+    bootDashboard();
 }

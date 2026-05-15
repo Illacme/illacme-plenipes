@@ -80,3 +80,5 @@ sync_stats_*.json
 .plenipes/*.log
 .illacme-shadow/
 .antigravity/
+
+.plenipes/history/

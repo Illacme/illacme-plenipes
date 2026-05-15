@@ -1,6 +1,6 @@
 import requests
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 from core.utils.tracing import tlog
 
@@ -8,6 +8,7 @@ class CohereTranslator(BaseTranslator):
     """🚀 [V10.0] Cohere 适配器"""
     PLUGIN_ID = 'cohere'
     DISPLAY_NAME = 'Cohere'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 Cohere 官方协议支持，针对 RAG 检索增强生成与长文本对话优化的全球算力节点。"
     PROTOCOL_FAMILY = 'native'
     DEFAULT_URL = 'https://api.cohere.ai/v1'

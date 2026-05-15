@@ -12,6 +12,7 @@ class AzureOpenAITranslator(OpenAICompatibleTranslator):
     """🚀 [V10.0] Azure OpenAI 专属适配器"""
     PLUGIN_ID = 'azure'
     DISPLAY_NAME = 'Azure OpenAI'
+    VERSION = "V1.0"
     DESCRIPTION = "提供 Microsoft Azure 企业级 OpenAI 服务支持，适配私有部署实例与版本化 API 架构。"
     PROTOCOL_FAMILY = 'standard'
     DEFAULT_URL = "https://{resource}.openai.azure.com/openai/deployments/{deployment_name}"

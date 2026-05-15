@@ -13,6 +13,7 @@ class DocusaurusAdapter(BaseSSGAdapter):
     """🚀 Docusaurus 专属渲染引擎"""
     PLUGIN_ID = "docusaurus"
     DISPLAY_NAME = "Docusaurus Engine"
+    VERSION = "V1.8"
     DESCRIPTION = "驱动 Facebook Docusaurus 架构的排版渲染，支持 MDX、Admonitions 与多语言深度对齐。"
     
     _GENERIC_MAP = {
@@ -94,9 +95,9 @@ class DocusaurusAdapter(BaseSSGAdapter):
             force_prefix = self.engine.config.i18n_settings.force_source_prefix
             
         return LanguageHub.get_physical_path(
-            iso_code, 
-            theme="docusaurus", 
-            source_lang=source_lang, 
+            iso_code,
+            theme="docusaurus",
+            source_lang=source_lang,
             force_prefix=force_prefix
         )
 

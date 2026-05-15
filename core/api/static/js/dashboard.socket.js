@@ -35,6 +35,18 @@ window.initWebSocket = () => {
             if (typeof updateHealthUI === 'function') {
                 updateHealthUI(data.payload);
             }
+        } else if (data.type === 'UI_PROGRESS_START') {
+            if (typeof showGlobalProgressBar === 'function') {
+                showGlobalProgressBar(data.payload.total, data.payload.description);
+            }
+        } else if (data.type === 'UI_PROGRESS_ADVANCE') {
+            if (typeof advanceGlobalProgressBar === 'function') {
+                advanceGlobalProgressBar(data.payload.amount);
+            }
+        } else if (data.type === 'UI_PROGRESS_STOP') {
+            if (typeof hideGlobalProgressBar === 'function') {
+                hideGlobalProgressBar();
+            }
         } else if (data.type === 'IMPRINT_CHANGED') {
             // 转发给上下文同步模块
             if (typeof refreshGovernanceContext === 'function') {

@@ -17,7 +17,7 @@ class JanitorService:
         if engine:
             self._global_engine_lock = getattr(engine, '_global_engine_lock', None)
             self._processing_locks = getattr(engine, '_processing_locks', None)
-            self.paths = getattr(engine, 'paths', None)
+            self.paths = getattr(engine, 'paths', {}) or {}
             self.meta = getattr(engine, 'meta', None)
             self.route_manager = getattr(engine, 'route_manager', None)
             self.i18n = getattr(engine, 'i18n', None)

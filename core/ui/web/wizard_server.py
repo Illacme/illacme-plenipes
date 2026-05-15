@@ -36,6 +36,7 @@ class InitRequest(BaseModel):
     ai_base_url: str = ""
     source_lang: str = "zh"
     target_langs: List[str] = []
+    active_dialect: Optional[str] = "auto"
 
 class FsRequest(BaseModel):
     path: str = "."
@@ -187,6 +188,11 @@ async def init_press(req: InitRequest):
                 ln = {"en":"English","ja":"日本語","ko":"한국어","de":"Deutsch","fr":"Français","es":"Español"}
                 cfg["i18n_settings"] = {"enabled":True, "source":{"lang_code":req.source_lang, "name":"中文"},
                     "targets":[{"lang_code":lc, "name":ln.get(lc,lc), "translate_body":True} for lc in req.target_langs]}
+            
+            # 🚀 [V74.9] 感应即锁定：注入方言感应协议
+            if "ingress_settings" not in cfg: cfg["ingress_settings"] = {}
+            cfg["ingress_settings"]["active_dialects"] = [req.active_dialect] if req.active_dialect else ["auto"]
+            
             with open(cfg_p, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(cfg, f, allow_unicode=True)
         except Exception as e:

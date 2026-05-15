@@ -70,7 +70,7 @@ def parse_args_and_lock():
     parser.add_argument('--imprint-list', action='store_true', help="📜 [版图清单] 枚举当前系统内所有已划定的出版版图 (Imprints)")
     parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [版图划定] 快速创建一个新的出版版图 (需配合 --vault-path)")
     parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [版图撤销] 物理抹除一个已有的出版版图及其所有资产")
-    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿金库的物理路径 (用于创建新版图)")
+    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿文库的物理路径 (用于创建新版图)")
     from core import __version__, __edition__
     parser.add_argument('--wizard', '-W', action='store_true', help="🧙 [引导向导] 启动 Web 端可视化安装与配置向导")
     parser.add_argument('--version', '-v', action='version', version=f'Illacme-plenipes v{__version__} ({__edition__})')

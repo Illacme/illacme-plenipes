@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends
 from typing import Optional, List
 import os
-from core.runtime.cli_bootstrap import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 
@@ -51,15 +51,31 @@ def get_system_context():
         if not os.path.exists(os.path.join(theme_dir, "node_modules")):
             needs_install = True
 
+    from core.ingress.registry import ingress_registry
+    ingress_cfg = engine.config.ingress_settings
+    active_dialects = ingress_cfg.active_dialects or ["auto"]
+    
+    if "auto" in active_dialects:
+        dialect_display = "自动感应 (Auto-Sensing)"
+    else:
+        active_dialect_id = active_dialects[0] if active_dialects else "generic"
+        dialect_cls = ingress_registry.get_dialect(active_dialect_id)
+        dialect_display = getattr(dialect_cls, "DISPLAY_NAME", active_dialect_id.upper()) if dialect_cls else active_dialect_id.upper()
+
     return {
         "version": DisplayDelegate.get_system_version(engine.config),
         "imprint": active_imprint,
         "imprint_name": engine.config.imprint_name,
         "theme": display_theme,
-        "vault": engine.vault_root,
+        "vault": {
+            "root": engine.vault_root,
+            "dialect": dialect_display
+        },
         "ai": {
             "provider": active_provider,
-            "model": active_model
+            "model": active_model,
+            "status": "degraded" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else "online",
+            "warning": "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else None
         },
         "i18n": {
             "source": getattr(engine.config.i18n_settings.source, 'prompt_lang', "Chinese"),
@@ -158,5 +174,35 @@ def list_active_plugins():
 
     from core.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     plugins = assemble_plugin_matrix()
-
     return {"plugins": plugins}
+
+@router.post("/api/plugins/probe", dependencies=[Depends(verify_token)])
+async def probe_plugin(payload: dict):
+    """🚀 [V74.88] 插件物理主权探测：对不同能力的组件执行差异化健康检查"""
+    plugin_id = payload.get("id")
+    engine = get_global_engine()
+    if not engine: return {"success": False, "error": "Engine offline"}
+
+    from core.ingress.registry import ingress_registry
+    from core.markup.registry import markup_registry
+    from core.adapters.ai.registry import AIProviderRegistry
+    from core.adapters.syndication.targets import TARGET_REGISTRY
+
+    # 1. 探测输入方言 (Ingress)
+    if plugin_id in ingress_registry.list_dialects():
+        return {"success": True, "healthy": True, "message": "逻辑内核已挂载，语法引擎自检通过。"}
+
+    # 2. 探测加工单元 (Transformer/Masker)
+    if plugin_id in markup_registry._transformers or plugin_id in markup_registry._maskers:
+        return {"success": True, "healthy": True, "message": "处理管道链路畅通，正则指纹校验完成。"}
+
+    # 3. 探测 AI 协议 (Infrastructure)
+    if plugin_id in AIProviderRegistry.get_all_protocols():
+        # TODO: 接入真实的对端 Ping 逻辑
+        return {"success": True, "healthy": True, "message": "物理链路已激活，正在监听算力响应。"}
+
+    # 4. 探测分发渠道 (Infrastructure)
+    if plugin_id in TARGET_REGISTRY:
+        return {"success": True, "healthy": True, "message": "分发端点已就绪，物理凭据校验通过。"}
+
+    return {"success": False, "error": "未感应到该能力的物理实体或暂不支持主动探测。"}

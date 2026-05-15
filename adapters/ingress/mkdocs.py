@@ -14,7 +14,8 @@ class MkDocsDialect(BaseDialect):
     """🛠️ MkDocs/Material 方言处理器：处理 !!! 缩进语法"""
     PLUGIN_ID = "mkdocs"
     DISPLAY_NAME = "MkDocs Material"
-    DESCRIPTION = "解析 MkDocs/Material 专属的 !!! Admonitions 缩进语法，并将其转化为标准容器。"
+    VERSION = "V5.3"
+    DESCRIPTION = "解析 MkDocs/Material 专属的 !!! Admonitions 缩进语法，并将其转化为 standard 容器。"
     def normalize(self, text: str, fm_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         def mkdocs_repl(m):
             ctype = m.group(1).lower()
