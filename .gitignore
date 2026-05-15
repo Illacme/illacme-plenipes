@@ -67,7 +67,6 @@ data/
 territories/
 manuscripts/
 imprints/
-metadata/
 link_graph_*.json
 sync_stats_*.json
 
@@ -79,8 +78,5 @@ sync_stats_*.json
 
 # 🛠️ [治理加固] 物理资产与运行数据隔离 (SOP-07)
 artifacts/
-metadata/runtime/
-metadata/ai/brain/
-metadata/core/*.db
-metadata/core/*.json
 *.log
+metadata/

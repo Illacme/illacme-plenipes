@@ -130,8 +130,9 @@ class Configuration(BaseModel):
     route_matrix: List[RouteItem] = Field(default_factory=list)
 
     def get_theme_metadata_dir(self) -> str:
-        """🎨 获取主题专属元数据目录"""
-        return os.path.join(self.metadata_dir, "themes", self.active_theme)
+        """🎨 获取品牌/主题专属元数据目录 (主权对正)"""
+        brand = self.active_imprint or self.active_theme or "default"
+        return os.path.join("imprints", brand, "metadata")
 
     def get_ledger_path(self) -> str:
         """🚀 [V55.26] 主权账本路径对正：强制执行主题子目录隔离"""
