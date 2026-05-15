@@ -203,18 +203,20 @@ class ContractGuard:
                     violations.append("❌ [治理风险] .gitignore 必须包含对本地治理目录 .plenipes/ 的全量屏蔽。")
                 if "metadata/" not in gi:
                     violations.append("❌ [治理风险] .gitignore 必须包含对全局元数据目录 metadata/ 的全量屏蔽。")
+                if "imprints/" not in gi:
+                    violations.append("❌ [治理风险] .gitignore 必须包含对品牌目录 imprints/ 的全量屏蔽。")
 
         # 🚀 [V66.5] 物理主权禁区：强制检查 Git 索引
         import subprocess
         try:
-            # 探测 Git 索引中是否存在 .plenipes 目录的文件
+            # 探测 Git 索引中是否存在敏感目录的文件
             tracked_files = subprocess.check_output(
-                ["git", "ls-files", ".plenipes/", "metadata/"],
+                ["git", "ls-files", ".plenipes/", "metadata/", "imprints/"],
                 stderr=subprocess.STDOUT,
                 text=True
             ).strip()
             if tracked_files:
-                violations.append("❌ [主权泄露] 检测到 .plenipes/ 或 metadata/ 目录下的文件正在被 Git 追踪！请执行 'git rm -r --cached .plenipes/'。")
+                violations.append("❌ [主权泄露] 检测到 .plenipes/, metadata/ 或 imprints/ 目录下的文件正在被 Git 追踪！请执行 'git rm -r --cached'。")
         except subprocess.CalledProcessError:
             # 如果不是 git 仓库或命令执行失败，在开发环境下暂时放行
             pass

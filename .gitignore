@@ -80,3 +80,4 @@ sync_stats_*.json
 artifacts/
 *.log
 metadata/
+imprints/
