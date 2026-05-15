@@ -199,5 +199,22 @@ class ContractGuard:
                 gi = f.read()
                 if "*.local.yaml" not in gi and CONFIG_LOCAL_NAME not in gi:
                     violations.append("❌ [隔离失效] .gitignore 未屏蔽本地配置文件 (*.local.yaml)。")
+                if ".plenipes/" not in gi:
+                    violations.append("❌ [治理风险] .gitignore 必须包含对本地治理目录 .plenipes/ 的全量屏蔽。")
+
+        # 🚀 [V66.5] 物理主权禁区：强制检查 Git 索引
+        import subprocess
+        try:
+            # 探测 Git 索引中是否存在 .plenipes 目录的文件
+            tracked_files = subprocess.check_output(
+                ["git", "ls-files", ".plenipes/"],
+                stderr=subprocess.STDOUT,
+                text=True
+            ).strip()
+            if tracked_files:
+                violations.append("❌ [主权泄露] 检测到 .plenipes/ 目录下的文件正在被 Git 追踪！请执行 'git rm -r --cached .plenipes/'。")
+        except subprocess.CalledProcessError:
+            # 如果不是 git 仓库或命令执行失败，在开发环境下暂时放行
+            pass
 
         return violations
