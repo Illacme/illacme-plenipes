@@ -3,9 +3,6 @@
 # ============================================================
 
 # 🛡️ [V35.0] 物理主权红线 (Physical Sovereignty Boundaries)
-.plenipes/*
-!.plenipes/SOP/
-!.plenipes/governance/
 
 # 🔒 主权出版社空间（绝对禁止外泄）
 workspace/
@@ -75,12 +72,7 @@ link_graph_*.json
 sync_stats_*.json
 
 # 🛡️ Governance Runtime Patterns
-.plenipes/*.json
-.plenipes/*.log
 .illacme-shadow/
 .antigravity/
 
-.plenipes/history/
-.plenipes/history/**/*.png
-.plenipes/history/**/*.jpg
-.plenipes/history/**/*.webp
+.plenipes/
