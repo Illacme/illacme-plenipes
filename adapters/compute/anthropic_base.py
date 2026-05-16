@@ -33,7 +33,7 @@ class AnthropicCompatibleTranslator(BaseTranslator):
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """执行符合 Anthropic 契约的物理请求"""
         headers = self.get_auth_headers()
-        api_url = self.config.base_url.rstrip('/') + "/messages"
+        api_url = self.safe_get_url("/messages")
         
         # 组装符合 Anthropic 标准的 Payload
         anthropic_payload = self.build_anthropic_payload(

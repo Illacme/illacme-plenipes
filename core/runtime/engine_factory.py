@@ -113,7 +113,12 @@ class EngineFactory:
         from core.logic.strategies.sandbox import SandboxSyncStrategy
         from core.logic.strategies.fingerprint import FingerprintSyncStrategy
         
+        # 🚀 [V15.1] 挂载治理组件别名 (满足同步策略调用需求)
         engine.heartbeat = engine.governance.heartbeat
+        engine.qa_guard = engine.governance.qa_guard
+        engine.vector_index = engine.governance.vector_index
+        engine.sentinel = engine.governance.health_sentinel
+        
         engine.publisher = PublisherService(config.model_dump(), sys_tuning=config.system)
         engine.ai_batcher = AIBatcher(engine)
         engine.brain = KnowledgeService(engine)

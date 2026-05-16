@@ -22,7 +22,7 @@ class LocalAITranslator(OpenAICompatibleTranslator):
         """🚀 LocalAI 实时模型感应"""
         try:
             loop = asyncio.get_event_loop()
-            url = f"{self.config.base_url}/models"
+            url = self.safe_get_url("/models")
             resp = await loop.run_in_executor(None, lambda: requests.get(url, timeout=5))
             if resp.status_code == 200:
                 return [m['id'] for m in resp.json().get('data', [])]

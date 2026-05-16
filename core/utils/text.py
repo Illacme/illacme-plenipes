@@ -4,7 +4,8 @@
 """
 # -*- coding: utf-8 -*-
 import re
-from typing import Optional
+import yaml
+from typing import Optional, Dict, Tuple
 
 try:
     import tiktoken
@@ -61,3 +62,34 @@ def strip_technical_noise(content: str, options=None) -> str:
         content = re.sub(r'`.*?`', '', content)
     
     return content.strip()
+
+def parse_frontmatter(content: str) -> Tuple[Dict, str, bool]:
+    """
+    🚀 将 Markdown 拆分为 metadata 和 pure_content
+    采用严谨的 --- 分隔符审计
+    """
+    pattern = r'^---\s*\n(.*?)\n---\s*\n'
+    match = re.match(pattern, content, re.DOTALL)
+    
+    if match:
+        yaml_content = match.group(1)
+        pure_content = content[match.end():]
+        try:
+            metadata = yaml.safe_load(yaml_content) or {}
+            return metadata, pure_content, True
+        except Exception:
+            return {}, content, False
+    return {}, content, False
+
+def inject_frontmatter(pure_content: str, metadata: dict) -> str:
+    """
+    🛡️ 将元数据重新缝合回 Markdown 头部
+    """
+    if not metadata:
+        return pure_content
+        
+    try:
+        yaml_block = yaml.dump(metadata, allow_unicode=True, sort_keys=False, default_flow_style=False)
+        return f"---\n{yaml_block}---\n{pure_content}"
+    except Exception:
+        return pure_content

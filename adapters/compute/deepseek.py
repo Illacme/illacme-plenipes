@@ -24,7 +24,7 @@ class DeepSeekTranslator(OpenAICompatibleTranslator):
         """🚀 DeepSeek 实时模型感应"""
         try:
             loop = asyncio.get_event_loop()
-            url = f"{self.config.base_url}/models"
+            url = self.safe_get_url("/models")
             headers = {"Authorization": f"Bearer {self.config.api_key}"}
             resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
             if resp.status_code == 200:

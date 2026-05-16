@@ -6,6 +6,7 @@
 from fastapi import APIRouter, Depends
 from core.runtime.engine_singleton import get_global_engine
 from .system import verify_token
+from core.utils.text import parse_frontmatter, inject_frontmatter
 
 router = APIRouter()
 
@@ -35,9 +36,14 @@ def get_document_detail(doc_id: str):
         try:
             with open(abs_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-        except Exception:
-            pass
-    doc["content"] = content
+        except Exception: pass
+
+    # 🌓 [V68.0] 原子化拆解：分离元数据与纯正文
+    metadata, pure_content, has_fm = parse_frontmatter(content)
+    doc["content"] = pure_content
+    doc["frontmatter"] = metadata
+    doc["has_frontmatter"] = has_fm
+    
     return doc
 
 @router.post("/ledger/document/{doc_id:path}/save", dependencies=[Depends(verify_token)])
@@ -45,8 +51,19 @@ async def save_document(doc_id: str, req: dict):
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
-    content = req.get("content")
-    if content is None: return {"error": "Missing content"}
+    content = req.get("content", "")
+    metadata = req.get("frontmatter", {})
+    
+    # 🚀 [V68.0] 主权注入逻辑
+    # 场景 1 & 2 闭环处理：确保物理文件的 YAML 头部与右侧表单对齐
+    title = req.get("title")
+    slug = req.get("slug")
+    
+    if title: metadata["title"] = title
+    if slug: metadata["slug"] = slug
+    
+    # 执行缝合
+    full_content = inject_frontmatter(content, metadata)
 
     import os
     abs_path = os.path.join(engine.vault_root, doc_id)
@@ -55,18 +72,14 @@ async def save_document(doc_id: str, req: dict):
     try:
         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
         with open(abs_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+            f.write(full_content)
     except Exception as e:
         return {"error": f"Failed to write physical file: {e}"}
         
-    # 保存标题和slug等属性
-    title = req.get("title")
-    slug = req.get("slug")
+    # 同步更新索引库
     if title is not None or slug is not None:
-        # 触发 metadata_json 的更新
         engine.meta.register_document(doc_id, title, slug=slug)
     
-    # 🚀 [V51.0] 闭环审计：物理保存与元数据注册已完成
     return {"success": True}
 
 @router.post("/ledger/document/{doc_id:path}/metadata", dependencies=[Depends(verify_token)])

@@ -17,14 +17,12 @@ class LMStudioBase(OpenAICompatibleTranslator):
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        if not self.safe_get_config('base_url'):
-            if hasattr(self.config, 'base_url'):
-                self.config.base_url = self.DEFAULT_URL
+        # 移除手动设置属性的逻辑，交由 safe_get_url 动态处理
 
     async def list_models(self) -> list[str]:
         """🚀 [V48.3] 动态感应本地加载的模型资产"""
         try:
-            url = f"{self.config.base_url}/models"
+            url = self.safe_get_url("/models")
             loop = asyncio.get_event_loop()
             resp = await loop.run_in_executor(None, lambda: requests.get(url, timeout=5))
             if resp.status_code == 200:

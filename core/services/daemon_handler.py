@@ -62,12 +62,12 @@ class ChangeHandler(FileSystemEventHandler):
 
     def _find_route_info(self, abs_path):
         norm_abs = os.path.normcase(os.path.realpath(abs_path))
-        sorted_matrix = sorted(self.engine.route_matrix, key=lambda x: len(x.get('source', '')), reverse=True)
+        sorted_matrix = sorted(self.engine.route_matrix, key=lambda x: len(x.source or ''), reverse=True)
         for route in sorted_matrix:
-            src = route.get('source', '')
+            src = route.source
             route_abs = os.path.normcase(os.path.realpath(os.path.join(self.engine.vault_root, src)))
             route_dir = route_abs if route_abs.endswith(os.sep) else route_abs + os.sep
-            if norm_abs.startswith(route_dir): return route.get('prefix', ''), src
+            if norm_abs.startswith(route_dir): return route.prefix, src
         return None, None
 
     def _debounced_submit(self, file_path, prefix, source, delay=None):

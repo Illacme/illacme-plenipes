@@ -58,6 +58,18 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
         return getattr(self.config, key, default)
 
+    def safe_get_url(self, suffix: str = "") -> str:
+        """🛡️ [V68.0] 物理地址卫士：配置 -> DEFAULT_URL -> 保底空值"""
+        url_raw = self.safe_get_config('base_url') or self.safe_get_config('url')
+        if not url_raw:
+            url_raw = getattr(self, 'DEFAULT_URL', "")
+        
+        url = (url_raw or "").rstrip("/")
+        if suffix:
+            suffix = suffix.lstrip("/")
+            url = f"{url}/{suffix}"
+        return url
+
     async def list_models(self) -> list[str]:
         """🚀 [V48.3] 算力感应接口：子类应实现此方法以支持动态模型发现"""
         return []

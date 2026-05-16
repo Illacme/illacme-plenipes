@@ -156,15 +156,139 @@ window.openEditor = async (docId) => {
     const mSlug = document.getElementById('editor-meta-slug');
 
     title.innerText = "EXTRACTING PHYSICAL ASSET...";
+    const status = document.getElementById('save-status');
+    if (status) status.innerText = ""; // 🚀 状态对齐：清除上一个文档的残留状态
     modal.style.display = 'flex';
 
-    const doc = await apiFetch(`/ledger/document/${docId}`);
+    const doc = await apiFetch(`/ledger/document/${encodeURIComponent(docId)}`);
     if (doc) {
         title.innerText = `EDITOR: ${doc.title || docId}`;
         body.value = doc.content || "";
         if (mTitle) mTitle.value = doc.title || "";
         if (mSlug) mSlug.value = doc.slug || "";
+        
+        // 🚀 [V68.0] 动态元数据注入
+        renderDynamicMetadata(doc.frontmatter || {});
+        
+        // 🌓 [V87.0] 初始化编辑器模式为源码模式，并预渲染预览内容
+        setEditorMode('source');
+        updateEditorPreview();
+        initSyncScroll();
     }
+};
+
+window.renderDynamicMetadata = (metadata) => {
+    const container = document.getElementById('dynamic-metadata-container');
+    if (!container) return;
+    container.innerHTML = "";
+
+    // 过滤掉已经在上方固定显示的 title 和 slug
+    const keys = Object.keys(metadata).filter(k => k !== 'title' && k !== 'slug');
+    
+    if (keys.length === 0) {
+        container.innerHTML = `<div style="font-size:0.7rem; opacity:0.3; text-align:center; padding:10px;">(未发现扩展元数据)</div>`;
+        return;
+    }
+
+    keys.forEach(key => {
+        const val = metadata[key];
+        const item = document.createElement('div');
+        item.className = 'drawer-item';
+        
+        let inputHtml = "";
+        if (typeof val === 'boolean') {
+            inputHtml = `<input type="checkbox" class="metadata-input" data-key="${key}" ${val ? 'checked' : ''} style="width:auto; margin-left:10px;">`;
+        } else if (Array.isArray(val)) {
+            inputHtml = `<input type="text" class="metadata-input setting-input" data-key="${key}" value="${val.join(', ')}" placeholder="逗号分隔列表">`;
+        } else {
+            inputHtml = `<input type="text" class="metadata-input setting-input" data-key="${key}" value="${val || ''}">`;
+        }
+
+        item.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="tiny-label">${key.toUpperCase()}</label>
+                <button class="mini-action-btn" onclick="this.parentElement.parentElement.remove()" title="删除该字段" style="font-size:0.6rem; padding:2px 5px; opacity:0.5;">×</button>
+            </div>
+            ${inputHtml}
+        `;
+        container.appendChild(item);
+    });
+};
+
+window.setEditorMode = (mode) => {
+    const body = document.getElementById('editor-body');
+    const preview = document.getElementById('editor-preview');
+    const btnSource = document.getElementById('mode-source');
+    const btnPreview = document.getElementById('mode-preview');
+    const btnSplit = document.getElementById('mode-split');
+
+    if (!body || !preview) return;
+
+    [btnSource, btnPreview, btnSplit].forEach(b => b?.classList.remove('active'));
+
+    if (mode === 'source') {
+        body.style.display = 'block';
+        preview.style.display = 'none';
+        btnSource?.classList.add('active');
+    } else if (mode === 'preview') {
+        body.style.display = 'none';
+        preview.style.display = 'block';
+        btnPreview?.classList.add('active');
+        updateEditorPreview();
+        initSyncScroll();
+    } else if (mode === 'split') {
+        body.style.display = 'block';
+        preview.style.display = 'block';
+        btnSplit?.classList.add('active');
+        updateEditorPreview();
+        initSyncScroll();
+    }
+};
+
+window.updateEditorPreview = () => {
+    const body = document.getElementById('editor-body');
+    const preview = document.getElementById('editor-preview');
+    if (!body || !preview) return;
+
+    // 🚀 [V87.0] 实时解析 Markdown (依赖 vendor/marked.js)
+    if (typeof marked !== 'undefined') {
+        preview.innerHTML = marked.parse(body.value);
+    } else {
+        preview.innerText = "Markdown 引擎尚未就绪...";
+    }
+};
+
+// 🔄 [V87.1] 同步滚动引擎 (Synchronized Scroll Engine)
+let isSyncingScroll = false;
+window.initSyncScroll = () => {
+    const body = document.getElementById('editor-body');
+    const preview = document.getElementById('editor-preview');
+    if (!body || !preview || body._syncBound) return;
+
+    body._syncBound = true;
+
+    const sync = (source, target) => {
+        if (isSyncingScroll) return;
+        const btnSplit = document.getElementById('mode-split');
+        if (!btnSplit?.classList.contains('active')) return;
+
+        isSyncingScroll = true;
+        const sourceMax = source.scrollHeight - source.clientHeight;
+        const targetMax = target.scrollHeight - target.clientHeight;
+
+        if (sourceMax > 0) {
+            const percentage = source.scrollTop / sourceMax;
+            target.scrollTop = percentage * targetMax;
+        }
+
+        // 使用 requestAnimationFrame 确保平滑度并防止死循环
+        requestAnimationFrame(() => {
+            isSyncingScroll = false;
+        });
+    };
+
+    body.addEventListener('scroll', () => sync(body, preview), { passive: true });
+    preview.addEventListener('scroll', () => sync(preview, body), { passive: true });
 };
 
 window.closeEditor = () => {
@@ -180,11 +304,29 @@ window.saveDocument = async () => {
     const status = document.getElementById('save-status');
     status.innerText = "💾 正在写入磁道...";
 
-    const payload = { content };
+    // 🚀 [V68.0] 收集动态元数据
+    const frontmatter = {};
+    const metaInputs = document.querySelectorAll('.metadata-input');
+    metaInputs.forEach(input => {
+        const key = input.getAttribute('data-key');
+        if (input.type === 'checkbox') {
+            frontmatter[key] = input.checked;
+        } else {
+            const val = input.value;
+            // 简单处理：如果包含逗号，尝试转为数组（对应用户对列表的支持要求）
+            if (val.includes(',')) {
+                frontmatter[key] = val.split(',').map(v => v.trim()).filter(v => v !== "");
+            } else {
+                frontmatter[key] = val;
+            }
+        }
+    });
+
+    const payload = { content, frontmatter };
     if (titleEl) payload.title = titleEl.value;
     if (slugEl) payload.slug = slugEl.value;
 
-    const res = await apiFetch(`/ledger/document/${window.activeDocId}/save`, {
+    const res = await apiFetch(`/ledger/document/${encodeURIComponent(window.activeDocId)}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -177,7 +177,6 @@ class SentinelManager:
                     file_index[name_no_ext] = os.path.join(root, f)
 
         fix_count = 0
-        import re
 
         # 2. 正则定义：wikilinks [[target]] 和 markdown [text](path)
         wiki_pattern = re.compile(r'\[\[(.*?)\]\]')

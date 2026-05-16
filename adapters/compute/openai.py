@@ -37,10 +37,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
 
     async def list_models(self) -> list[str]:
         """🚀 [V48.3] 从 OpenAI 兼容接口动态获取模型列表"""
-        url_raw = self.safe_get_config('base_url') or self.safe_get_config('url')
-        if not url_raw:
-            return []
-        url = url_raw.rstrip("/")
+        url = self.safe_get_url()
         # 移除 chat/completions 后缀以获取基础路径
         url = url.replace("/chat/completions", "").replace("/completions", "")
         if not url.endswith("/models"):
@@ -130,10 +127,9 @@ class OpenAICompatibleTranslator(BaseTranslator):
             # 注意：某些模型可能不支持，基类已通过 is_local 预检
             pass
 
-        url_raw = self.safe_get_config('base_url') or self.safe_get_config('url')
-        url = url_raw or ""
+        url = self.safe_get_url()
         if not url.endswith("/chat/completions") and not url.endswith("/completions"):
-            url = url.rstrip("/") + "/chat/completions"
+            url = f"{url.rstrip('/')}/chat/completions"
             
         # 🛡️ 动态 Header 注入 (支持 OpenRouter 身份标识等)
         headers = {

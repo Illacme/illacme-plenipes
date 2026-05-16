@@ -27,9 +27,8 @@ class OllamaNativeTranslator(BaseTranslator):
 
     async def list_models(self) -> list[str]:
         """获取本地 Ollama 已下载的模型列表"""
-        url_raw = getattr(self.config, 'base_url', None) or self.DEFAULT_URL
         try:
-            url = f"{url_raw.rstrip('/')}/api/tags"
+            url = self.safe_get_url("/api/tags")
             loop = asyncio.get_event_loop()
             res = await loop.run_in_executor(None, lambda: self._session.get(url, timeout=5))
             if res.status_code == 200:
@@ -42,8 +41,7 @@ class OllamaNativeTranslator(BaseTranslator):
 
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """[Protocol] 实现 Ollama 原生 Chat 协议"""
-        base_url = self.config.base_url.rstrip("/")
-        url = f"{base_url}/api/chat"
+        url = self.safe_get_url("/api/chat")
             
         params = payload.get("params", {})
         ollama_payload = {

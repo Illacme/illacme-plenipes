@@ -14,7 +14,7 @@ from core.editorial.runner import PipelineStep
 from core.utils.tracing import tlog
 
 from core.editorial.registry import StepRegistry
-@StepRegistry.register
+@StepRegistry.register("image_alt")
 class ContextualImageAltStep(PipelineStep):
     """阶段 12.5: AI 驱动的媒体智能引擎 (ADMI v2.0)"""
     PLUGIN_ID = "image_alt_context"

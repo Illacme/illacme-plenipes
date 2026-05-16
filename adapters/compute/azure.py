@@ -20,7 +20,7 @@ class AzureOpenAITranslator(OpenAICompatibleTranslator):
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         # 🚀 Azure 特有的鉴权与路径逻辑
         # 预期的 base_url 格式: https://{resource}.openai.azure.com/openai/deployments/{deployment_name}
-        deployment_url = self.config.base_url.rstrip("/")
+        deployment_url = self.safe_get_url()
         api_version = payload.get("params", {}).get("api_version", "2024-02-01")
         
         full_url = f"{deployment_url}/chat/completions?api-version={api_version}"

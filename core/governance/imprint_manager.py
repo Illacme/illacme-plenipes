@@ -12,7 +12,10 @@ import shutil
 import yaml
 from typing import List, Dict, Optional
 from core.utils.tracing import tlog
-from core.config.constants import CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
+from core.config.constants import (
+    CONFIG_LOCAL_NAME, CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR,
+    PROMPTS_NAME, DIALECTS_DIR, DEFAULT_DIALECT_NAME
+)
 from core.governance.license_guard import LicenseGuard
 from core.governance.secret_manager import secrets
 
@@ -49,7 +52,7 @@ class ImprintManager:
         tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理版图...")
         
         # 2. 建立物理目录树
-        from core.config.constants import CONFIG_DIR, DIALECTS_DIR, LOGS_DIR, THEMES_DIR, METADATA_DIR
+        from core.config.constants import DIALECTS_DIR, LOGS_DIR, THEMES_DIR, METADATA_DIR
         dirs = [CONFIG_DIR, os.path.join(CONFIG_DIR, DIALECTS_DIR), "cache", METADATA_DIR, THEMES_DIR, LOGS_DIR]
         for d in dirs:
             os.makedirs(os.path.join(imprint_path, d), exist_ok=True)
@@ -118,13 +121,11 @@ class ImprintManager:
         secrets.mask_dict(base_config)
 
         # 🚀 [V55.22] 物理主权重建：使用统一的常量定义
-        from core.config.constants import CONFIG_IMPRINT_NAME, CONFIG_DIR
         with open(os.path.join(imprint_path, CONFIG_DIR, CONFIG_IMPRINT_NAME), 'w', encoding='utf-8') as f:
             yaml.safe_dump(base_config, f, allow_unicode=True)
 
 
         # B. 镜像方言母本 (Prompts)
-        from core.config.constants import PROMPTS_NAME, DIALECTS_DIR, DEFAULT_DIALECT_NAME, CONFIG_DIR
         mother_prompts = os.path.join(self.root_dir, CONFIG_DIR, PROMPTS_NAME)
         if os.path.exists(mother_prompts):
             dialect_target_dir = os.path.join(imprint_path, CONFIG_DIR, DIALECTS_DIR)
@@ -139,7 +140,6 @@ class ImprintManager:
         if not os.path.exists(self.imprint_root):
             return imprints
  
-        from core.config.constants import CONFIG_IMPRINT_NAME, CONFIG_DIR, CONFIG_LOCAL_NAME, IMPRINT_DIR
         active_imprint = self.get_active_imprint()
         path = os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME)
 
@@ -212,7 +212,6 @@ class ImprintManager:
 
     def switch(self, imprint_id: str):
         """激活当前活跃主权 Imprint"""
-        from core.config.constants import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
         config_path = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
         if not os.path.exists(config_path):
             tlog.error(f"🛑 [激活失败] 未找到主权 Imprint: {imprint_id}")

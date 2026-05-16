@@ -19,6 +19,11 @@ from core.editorial.vault_indexer import VaultIndexer
 from core.logic.ast_resolver import ASTResolver
 from core.governance.janitor import JanitorService
 from core.bindery.deployment_manager import DeploymentManager
+from core.editorial.runner import Pipeline
+from core.editorial.registry import StepRegistry
+from core.governance.circuit_breaker import CircuitBreaker
+from core.archives.block_cache import BlockCache
+from core.adapters.ai.embedding import EmbeddingFactory
 
 def assemble_core_components(engine, config):
     """
@@ -52,6 +57,15 @@ def assemble_core_components(engine, config):
     engine.staticizer = StaticizerService()
     engine.conversational_brain = ConversationalBrain(engine)
 
+    # 🚀 [V15.1] 初始化治理与缓存组件 (修复 AttributeError)
+    engine.circuit_breakers = {"ai": CircuitBreaker("Global-AI")}
+    engine.block_cache = BlockCache(engine.paths["metadata"])
+    
+    if not engine.no_ai:
+        engine.embedding_adapter = EmbeddingFactory.create(engine)
+    else:
+        engine.embedding_adapter = None
+
     # 2. 业务中枢组装
     if not engine.no_ai:
         from core.logic.ai.ai_factory import TranslatorFactory
@@ -61,6 +75,9 @@ def assemble_core_components(engine, config):
         tlog.info("🔌 [算力网关] AI 模式已关闭，跳过翻译官初始化。")
 
     engine.asset_pipeline = AssetPipeline(engine.paths.get('assets', ''), config.image_settings)
+    
+    # 🚀 [V11.0] 初始化文档出版流水线
+    engine.pipeline = Pipeline.build(config.system.pipeline_steps, StepRegistry)
     engine.route_manager = RouteManager(
         engine.meta, engine.translator,
         lang_mapping=config.lang_mapping,

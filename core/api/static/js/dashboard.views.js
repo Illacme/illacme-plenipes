@@ -7,6 +7,7 @@ window.viewTemplates = {
     overview: `
         <div id="view-overview" class="view-panel active">
             <div id="galaxy-3d"></div>
+            <div id="galaxy-labels-layer"></div>
             <div class="hud-container top-left">
                 <div class="hud-item glass-panel tiny">
                     <div class="hud-label">知识关联密度</div>

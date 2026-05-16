@@ -14,15 +14,13 @@ class CohereTranslator(BaseTranslator):
     DEFAULT_URL = 'https://api.cohere.ai/v1'
     
     def __init__(self, node_name, trans_cfg):
-        if not trans_cfg.base_url:
-            trans_cfg.base_url = self.DEFAULT_URL
         super().__init__(node_name, trans_cfg)
         self._session = requests.Session()
 
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """实现 Cohere 协议的原子对话"""
-        url = f"{self.trans_cfg.base_url}/chat"
-        headers = {"Authorization": f"Bearer {self.trans_cfg.api_key}", "Content-Type": "application/json"}
+        url = self.safe_get_url("/chat")
+        headers = {"Authorization": f"Bearer {self.safe_get_config('api_key')}", "Content-Type": "application/json"}
         prompt = payload.get("user", "")
         body = {"message": prompt, "model": self.trans_cfg.model}
         try:
@@ -38,8 +36,8 @@ class CohereTranslator(BaseTranslator):
         """🚀 Cohere 实时模型感应"""
         try:
             loop = asyncio.get_event_loop()
-            url = f"{self.config.base_url}/models"
-            headers = {"Authorization": f"Bearer {self.config.api_key}"}
+            url = self.safe_get_url("/models")
+            headers = {"Authorization": f"Bearer {self.safe_get_config('api_key')}"}
             resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
             if resp.status_code == 200:
                 return [m['name'] for m in resp.json().get('models', []) if m.get('endpoints', {}).get('chat')]
