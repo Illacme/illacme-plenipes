@@ -11,12 +11,12 @@ from core.utils.text import parse_frontmatter, inject_frontmatter
 router = APIRouter()
 
 @router.get("/api/vault/search", dependencies=[Depends(verify_token)])
-def search_vault(q: str = "", page: int = 1, limit: int = 50):
+def search_vault(q: str = "", page: int = 1, limit: int = 50, folder: str = ""):
     """🚀 [V55.0] 联邦检索入口：服务于 Dashboard Vault 视图"""
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     # 🛡️ [V74.10] 物理契约对正：前端 dashboard.vault.js 依赖 res.items 结构
-    docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q)
+    docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q, folder=folder)
     return {"items": docs}
 
 @router.get("/ledger/document/{doc_id:path}", dependencies=[Depends(verify_token)])

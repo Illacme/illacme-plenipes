@@ -10,6 +10,124 @@ window.vaultSearchTimeout = null;
 window.vaultCurrentPage = 1;
 window.vaultCurrentQuery = '';
 window.vaultPageSize = 20;
+window.vaultActiveFolder = '';
+window.vaultTreeInitialized = false;
+
+// 📁 [V87.5] Obsidian 风格目录树解析与渲染算法
+window.initializeVaultTree = async () => {
+    try {
+        const res = await apiFetch('/api/vault/list');
+        if (res && res.manuscripts) {
+            window.renderVaultTree(res.manuscripts);
+            window.vaultTreeInitialized = true;
+        }
+    } catch (e) {
+        console.error("Initialize vault tree error:", e);
+    }
+};
+
+window.renderVaultTree = (manuscripts) => {
+    const treeEl = document.getElementById('vault-tree');
+    if (!treeEl) return;
+
+    const paths = manuscripts.map(m => m.path || m.rel_path);
+    const tree = { name: "Root", path: "", children: {} };
+
+    paths.forEach(p => {
+        if (!p) return;
+        const parts = p.split('/');
+        if (parts.length <= 1) return; // 根目录文件
+        const folders = parts.slice(0, -1);
+        let current = tree;
+        let currentPath = "";
+        folders.forEach(folder => {
+            currentPath = currentPath ? `${currentPath}/${folder}` : folder;
+            if (!current.children[folder]) {
+                current.children[folder] = {
+                    name: folder,
+                    path: currentPath,
+                    children: {}
+                };
+            }
+            current = current.children[folder];
+        });
+    });
+
+    const isAllActive = !window.vaultActiveFolder;
+
+    let html = `
+        <div class="tree-root-item ${isAllActive ? 'active' : ''}" onclick="window.selectVaultFolder('', event)">
+            <span class="tree-icon">🏠</span>
+            <span class="tree-label">全部原稿</span>
+        </div>
+        <div class="tree-divider" style="margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);"></div>
+    `;
+
+    // 递归子节点渲染器
+    function renderNode(node, depth = 0) {
+        const childrenKeys = Object.keys(node.children);
+        let html = '';
+        childrenKeys.sort();
+
+        childrenKeys.forEach(key => {
+            const child = node.children[key];
+            const hasChildren = Object.keys(child.children).length > 0;
+            const indent = depth * 12; // 层级缩进
+            const isActive = window.vaultActiveFolder === child.path;
+
+            html += `
+                <div class="tree-folder" data-path="${child.path}">
+                    <div class="tree-folder-header ${isActive ? 'active' : ''}" style="padding-left: ${indent}px;" onclick="window.selectVaultFolder('${child.path}', event)">
+                        <span class="tree-arrow ${hasChildren ? 'has-children' : 'leaf'} expanded" onclick="window.toggleVaultFolder(this, event)">▶</span>
+                        <span class="tree-icon">📁</span>
+                        <span class="tree-label">${child.name}</span>
+                    </div>
+                    <div class="tree-folder-children" style="display: block;">
+                        ${renderNode(child, depth + 1)}
+                    </div>
+                </div>
+            `;
+        });
+        return html;
+    }
+
+    html += renderNode(tree, 0);
+    treeEl.innerHTML = html;
+};
+
+window.toggleVaultFolder = (element, event) => {
+    if (event) event.stopPropagation();
+    const folderEl = element.closest('.tree-folder');
+    const childrenEl = folderEl.querySelector('.tree-folder-children');
+    const arrowEl = folderEl.querySelector('.tree-arrow');
+    if (childrenEl.style.display === 'none') {
+        childrenEl.style.display = 'block';
+        arrowEl.classList.add('expanded');
+    } else {
+        childrenEl.style.display = 'none';
+        arrowEl.classList.remove('expanded');
+    }
+};
+
+window.selectVaultFolder = (path, event) => {
+    if (event) event.stopPropagation();
+    window.vaultActiveFolder = path;
+    window.vaultCurrentPage = 1; // 切换目录时重置分页
+
+    // 高亮状态同步切换，防止树重新渲染导致折叠状态丢失
+    const headers = document.querySelectorAll('.tree-folder-header, .tree-root-item');
+    headers.forEach(h => h.classList.remove('active'));
+
+    if (path === "") {
+        const rootItem = document.querySelector('.tree-root-item');
+        if (rootItem) rootItem.classList.add('active');
+    } else {
+        const folderEl = document.querySelector(`.tree-folder[data-path="${path}"] > .tree-folder-header`);
+        if (folderEl) folderEl.classList.add('active');
+    }
+
+    window.loadVault();
+};
 
 // 2. 稿件仓库加载器
 window.loadVault = async (query = null, page = null) => {
@@ -18,6 +136,10 @@ window.loadVault = async (query = null, page = null) => {
         if (page === null) window.vaultCurrentPage = 1; // 新搜索默认回到第一页
     }
     if (page !== null) window.vaultCurrentPage = page;
+
+    if (!window.vaultTreeInitialized) {
+        window.initializeVaultTree();
+    }
 
     const listEl = document.getElementById('vault-list');
     if (!listEl) return;
@@ -40,8 +162,8 @@ window.loadVault = async (query = null, page = null) => {
     `).join('');
 
     try {
-        // 🚀 [V74.8] 物理检索：利用后端索引引擎进行全量过滤，带分页参数
-        const res = await apiFetch(`/api/vault/search?q=${encodeURIComponent(window.vaultCurrentQuery)}&limit=${window.vaultPageSize}&page=${window.vaultCurrentPage}`);
+        // 🚀 [V74.8] 物理检索：利用后端索引引擎进行全量过滤，带分页与文件夹过滤参数
+        const res = await apiFetch(`/api/vault/search?q=${encodeURIComponent(window.vaultCurrentQuery)}&limit=${window.vaultPageSize}&page=${window.vaultCurrentPage}&folder=${encodeURIComponent(window.vaultActiveFolder || '')}`);
         
         if (!res || !res.items) {
             listEl.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; opacity:0.5;">⚠️ 仓库扫描失败，请核验物理链路。</td></tr>';
@@ -238,6 +360,7 @@ window.confirmPhysicalDelete = () => {
                     showConfirmButton: false
                 });
                 closeVaultDrawer();
+                window.vaultTreeInitialized = false; // 重置树以进行全量物理同步
                 if (typeof window.loadVault === 'function') {
                     window.loadVault();
                 } else if (typeof loadVault === 'function') {

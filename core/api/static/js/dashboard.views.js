@@ -66,27 +66,38 @@ window.viewTemplates = {
                     </div>
                 </div>
             </div>
-            <div class="view-content" style="display: flex; flex-direction: column; overflow: hidden;">
-                <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
-                    <table id="vault-table" style="min-width: 800px;">
-                        <thead style="position: sticky; top: 0; z-index: 10; background: rgba(13, 14, 28, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(255,255,255,0.1);">
-                            <tr>
-                                <th style="width: 25%;">标题</th>
-                                <th style="width: auto;">物理路径</th>
-                                <th style="width: 50px; text-align: center;">字数</th>
-                                <th style="width: 120px;">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vault-list">
-                            <!-- 动态注入 -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0 10px 0; flex-shrink: 0;">
-                    <span id="vault-page-info" style="font-size: 0.8rem; color: var(--text-dim);">第 1 页</span>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="vault-prev-btn" class="mini-btn" onclick="window.changeVaultPage(-1)" disabled>◀ 上一页</button>
-                        <button id="vault-next-btn" class="mini-btn" onclick="window.changeVaultPage(1)">下一页 ▶</button>
+            <div class="view-content" style="display: flex; flex-direction: row; gap: 20px; overflow: hidden; flex: 1; min-height: 0;">
+                <!-- 📁 左侧目录树浏览器 -->
+                <aside id="vault-tree-sidebar" class="glass-panel" style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; padding: 15px; border-radius: 12px; height: 100%; box-sizing: border-box;">
+                    <div class="sector-header" style="margin-bottom: 12px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-secondary); opacity: 0.8; font-family: 'JetBrains Mono', monospace;">📁 ARCHIVE EXPLORER</div>
+                    <div id="vault-tree" class="scroll-container" style="flex: 1; overflow-y: auto;">
+                        <!-- 目录树动态加载 -->
+                    </div>
+                </aside>
+
+                <!-- 📄 右侧稿件主列表 -->
+                <div id="vault-main-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100%; min-width: 0;">
+                    <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
+                        <table id="vault-table" style="min-width: 600px;">
+                            <thead style="position: sticky; top: 0; z-index: 10; background: rgba(13, 14, 28, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(255,255,255,0.1);">
+                                <tr>
+                                    <th style="width: 35%;">标题</th>
+                                    <th style="width: auto;">物理路径</th>
+                                    <th style="width: 60px; text-align: center;">字数</th>
+                                    <th style="width: 120px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vault-list">
+                                <!-- 动态注入 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0 10px 0; flex-shrink: 0;">
+                        <span id="vault-page-info" style="font-size: 0.8rem; color: var(--text-dim);">第 1 页</span>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="vault-prev-btn" class="mini-btn" onclick="window.changeVaultPage(-1)" disabled>◀ 上一页</button>
+                            <button id="vault-next-btn" class="mini-btn" onclick="window.changeVaultPage(1)">下一页 ▶</button>
+                        </div>
                     </div>
                 </div>
             </div>

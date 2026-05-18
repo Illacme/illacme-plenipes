@@ -148,15 +148,23 @@ class SQLiteBackend:
         row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE imprint_id = ?", (imprint_id,)).fetchone()
         return row[0] if row and row[0] is not None else 0.0
 
-    def list_documents_paginated(self, page=1, limit=20, query=None):
+    def list_documents_paginated(self, page=1, limit=20, query=None, folder=None):
         offset = (page - 1) * limit
         sql = "SELECT * FROM documents"
         params = []
         
+        conditions = []
         if query:
-            sql += " WHERE title LIKE ? OR rel_path LIKE ? OR slug LIKE ?"
+            conditions.append("(title LIKE ? OR rel_path LIKE ? OR slug LIKE ?)")
             p = f"%{query}%"
             params.extend([p, p, p])
+            
+        if folder:
+            conditions.append("rel_path LIKE ?")
+            params.append(f"{folder}/%")
+            
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
             
         sql += " ORDER BY last_updated DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
