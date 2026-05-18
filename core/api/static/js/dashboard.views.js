@@ -61,7 +61,7 @@ window.viewTemplates = {
             <div class="view-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <h2>📂 原稿文库 (Vault)</h2>
-                    <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.3s;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">◀ 隐藏侧栏</button>
+                    <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.3s;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">📑 隐藏侧栏</button>
                 </div>
                 <div class="header-actions">
                     <div class="search-box">
@@ -74,8 +74,9 @@ window.viewTemplates = {
                 <aside id="vault-tree-sidebar" class="glass-panel" style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; padding: 15px; border-radius: 12px; height: 100%; box-sizing: border-box;">
                     <div class="sector-header" style="margin-bottom: 12px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-secondary); opacity: 0.8; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; align-items: center;">
                         <span>📁 ARCHIVE EXPLORER</span>
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
                             <span id="tree-toggle-all-btn" class="tree-header-action" onclick="window.toggleAllVaultFolders()" title="折叠全部目录" style="cursor: pointer; font-size: 0.8rem; filter: grayscale(1); transition: filter 0.2s;">📁</span>
+                            <span class="tree-header-action" onclick="window.toggleVaultSidebar()" title="收起侧边目录树栏" style="cursor: pointer; font-size: 0.8rem; filter: grayscale(1); transition: filter 0.2s;">◀</span>
                         </div>
                     </div>
                     <div id="vault-tree" class="scroll-container" style="flex: 1; overflow-y: auto;">

@@ -143,7 +143,7 @@ window.toggleVaultSidebar = () => {
 
     const isCollapsed = sidebar.classList.toggle('collapsed');
     if (btn) {
-        btn.innerHTML = isCollapsed ? '▶ 展开侧栏' : '◀ 隐藏侧栏';
+        btn.innerHTML = isCollapsed ? '📑 展开侧栏' : '📑 隐藏侧栏';
     }
     localStorage.setItem('vaultSidebarCollapsed', isCollapsed ? 'true' : 'false');
 };
@@ -191,10 +191,10 @@ window.loadVault = async (query = null, page = null) => {
         const wasCollapsed = localStorage.getItem('vaultSidebarCollapsed') === 'true';
         if (wasCollapsed) {
             sidebar.classList.add('collapsed');
-            toggleBtn.innerHTML = '▶ 展开侧栏';
+            toggleBtn.innerHTML = '📑 展开侧栏';
         } else {
             sidebar.classList.remove('collapsed');
-            toggleBtn.innerHTML = '◀ 隐藏侧栏';
+            toggleBtn.innerHTML = '📑 隐藏侧栏';
         }
     }
 
