@@ -75,8 +75,7 @@ window.viewTemplates = {
                     <div class="sector-header" style="margin-bottom: 12px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-secondary); opacity: 0.8; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; align-items: center;">
                         <span>📁 ARCHIVE EXPLORER</span>
                         <div style="display: flex; gap: 8px;">
-                            <span class="tree-header-action" onclick="window.expandAllVaultFolders()" title="展开全部目录" style="cursor: pointer; font-size: 0.8rem; filter: grayscale(1); transition: filter 0.2s;">📂</span>
-                            <span class="tree-header-action" onclick="window.collapseAllVaultFolders()" title="折叠全部目录" style="cursor: pointer; font-size: 0.8rem; filter: grayscale(1); transition: filter 0.2s;">📁</span>
+                            <span id="tree-toggle-all-btn" class="tree-header-action" onclick="window.toggleAllVaultFolders()" title="折叠全部目录" style="cursor: pointer; font-size: 0.8rem; filter: grayscale(1); transition: filter 0.2s;">📁</span>
                         </div>
                     </div>
                     <div id="vault-tree" class="scroll-container" style="flex: 1; overflow-y: auto;">

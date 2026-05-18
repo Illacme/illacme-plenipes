@@ -148,18 +148,32 @@ window.toggleVaultSidebar = () => {
     localStorage.setItem('vaultSidebarCollapsed', isCollapsed ? 'true' : 'false');
 };
 
-window.expandAllVaultFolders = () => {
-    const childrenEls = document.querySelectorAll('.tree-folder-children');
-    const arrowEls = document.querySelectorAll('.tree-arrow.has-children');
-    childrenEls.forEach(el => el.style.display = 'block');
-    arrowEls.forEach(el => el.classList.add('expanded'));
-};
+window.vaultTreeAllExpanded = true; // 默认所有目录树节点为展开状态
 
-window.collapseAllVaultFolders = () => {
+window.toggleAllVaultFolders = () => {
+    const btn = document.getElementById('tree-toggle-all-btn');
     const childrenEls = document.querySelectorAll('.tree-folder-children');
     const arrowEls = document.querySelectorAll('.tree-arrow.has-children');
-    childrenEls.forEach(el => el.style.display = 'none');
-    arrowEls.forEach(el => el.classList.remove('expanded'));
+
+    if (window.vaultTreeAllExpanded) {
+        // 瞬间折叠全部
+        childrenEls.forEach(el => el.style.display = 'none');
+        arrowEls.forEach(el => el.classList.remove('expanded'));
+        window.vaultTreeAllExpanded = false;
+        if (btn) {
+            btn.innerHTML = '📂';
+            btn.title = '展开全部目录';
+        }
+    } else {
+        // 瞬间展开全部
+        childrenEls.forEach(el => el.style.display = 'block');
+        arrowEls.forEach(el => el.classList.add('expanded'));
+        window.vaultTreeAllExpanded = true;
+        if (btn) {
+            btn.innerHTML = '📁';
+            btn.title = '折叠全部目录';
+        }
+    }
 };
 
 // 2. 稿件仓库加载器
