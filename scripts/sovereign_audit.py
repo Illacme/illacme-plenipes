@@ -59,7 +59,8 @@ def main():
             "core/api/routes/governance.py", # V65.0 主权治理控制台
             "core/ui/web/wizard_server.py",  # V65.0 Web 引导服务
             "core/editorial/standard_steps.py", # V65.0 标准化出版步骤
-            "core/logic/ai/ai_scheduler.py"   # V65.0 算力调度中枢
+            "core/logic/ai/ai_scheduler.py",   # V65.0 算力调度中枢
+            "core/api/routes/dispatch.py"     # 🚀 新增物理销毁与分发控制中枢
         ]
         
         for root, dirs, files in os.walk('core'):

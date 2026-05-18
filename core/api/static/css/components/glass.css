@@ -887,6 +887,10 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
 .editor-sidebar {
     padding: 30px; background: rgba(255,255,255,0.02); border-left: 1px solid var(--glass-border);
     display: flex; flex-direction: column; gap: 25px;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
 }
 .sector-header {
     font-size: 0.6rem; color: var(--accent-primary); text-transform: uppercase;
@@ -1030,4 +1034,57 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     height: 100% !important;
     overflow-y: auto !important;
     min-height: 0;
+}
+
+/* 🖼️ Markdown Premium Media & Link Styles */
+.markdown-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    margin: 1.2em 0;
+    display: block;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.markdown-body img:hover {
+    transform: scale(1.015);
+    border-color: var(--accent-primary);
+    box-shadow: 0 6px 18px rgba(163, 76, 255, 0.2);
+}
+.markdown-body .wiki-doc-link {
+    color: var(--accent-secondary);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent-secondary);
+    padding-bottom: 1px;
+    transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+    font-weight: 500;
+}
+.markdown-body .wiki-doc-link:hover {
+    color: var(--text-bright);
+    border-bottom-style: solid;
+    border-bottom-color: var(--text-bright);
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+}
+.markdown-body .attachment-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    background: rgba(163, 76, 255, 0.08);
+    border: 1px solid rgba(163, 76, 255, 0.15);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+    margin: 0 4px;
+    font-weight: 500;
+}
+.markdown-body .attachment-link:hover {
+    background: rgba(163, 76, 255, 0.18);
+    border-color: var(--accent-primary);
+    color: var(--text-bright);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(163, 76, 255, 0.25);
 }

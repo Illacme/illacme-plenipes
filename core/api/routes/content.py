@@ -98,3 +98,49 @@ def get_galaxy_graph():
         return {"nodes": [], "links": []}
     
     return engine.knowledge_graph.get_galaxy_graph()
+
+@router.get("/api/vault-assets/{asset_path:path}", dependencies=[Depends(verify_token)])
+def get_vault_asset(asset_path: str, relative_to: str = None):
+    """
+    🖼️ 物理文库原件资产服务网关
+    支持图片、PDF 等各类本地多媒体附件的安全分发，集成库内平铺检索自愈以支持 Obsidian 缩写链。
+    """
+    from fastapi.responses import FileResponse
+    import os
+    import urllib.parse
+    
+    engine = get_global_engine()
+    if not engine:
+        return {"error": "Engine not initialized"}
+        
+    vault_root_abs = os.path.abspath(engine.vault_root)
+    
+    # 🚀 高能对齐：物理原件名称 Percent-Decoding 并剥离可能存在的 Query/Hash 伪指令
+    decoded_asset_path = urllib.parse.unquote(asset_path).split('?')[0].split('#')[0]
+    decoded_relative_to = urllib.parse.unquote(relative_to) if relative_to else None
+    
+    # 1. 尝试以相对路径计算物理定位
+    full_asset_path = decoded_asset_path
+    if decoded_relative_to:
+        doc_dir = os.path.dirname(decoded_relative_to)
+        full_asset_path = os.path.join(doc_dir, decoded_asset_path)
+        
+    abs_path = os.path.abspath(os.path.join(vault_root_abs, full_asset_path))
+    
+    # 2. 安全合规审计：防止路径穿越 (Directory Traversal Bypass)
+    if not abs_path.startswith(vault_root_abs):
+        return {"error": "Access denied"}
+        
+    # 3. 自愈探测：如果相对寻址落空，在全库（Vault Root）中执行文件名自愈搜索
+    if not os.path.exists(abs_path) or os.path.isdir(abs_path):
+        filename = os.path.basename(decoded_asset_path)
+        found = False
+        for root, _, files in os.walk(vault_root_abs):
+            if filename in files:
+                abs_path = os.path.join(root, filename)
+                found = True
+                break
+        if not found:
+            return {"error": "Asset file not found"}
+            
+    return FileResponse(abs_path)

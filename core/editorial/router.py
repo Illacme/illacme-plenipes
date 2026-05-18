@@ -19,13 +19,14 @@ class RouteManager:
     通过挂载状态机账本与 AI 翻译工厂，专职负责物理路径到安全前端 URL 路由的映射，
     以及全局统一的物理路径推导，彻底消灭探针与写盘器的脑裂问题。
     """
-    def __init__(self, meta_manager, translator_factory, lang_mapping=None, default_lang=None, active_theme=None, ssg_adapter=None):
+    def __init__(self, meta_manager, translator_factory, lang_mapping=None, default_lang=None, active_theme=None, ssg_adapter=None, force_source_prefix=False):
         self.meta = meta_manager
         self.translator = translator_factory
         self.lang_mapping = lang_mapping or {}
         self.default_lang = default_lang
         self.active_theme = (active_theme or "starlight").lower()
         self.ssg_adapter = ssg_adapter
+        self.force_source_prefix = force_source_prefix
 
     def resolve_physical_path(self, base_path, lang_code, route_prefix, mapped_sub_dir, slug, ext, source_type="docs"):
         """
@@ -47,13 +48,18 @@ class RouteManager:
                 iso_logical = LanguageHub.resolve_to_iso(logical_lang)
                 iso_default = LanguageHub.resolve_to_iso(self.default_lang)
                 
-                # 获取模版
-                is_multi = (iso_logical != iso_default)
+                # 获取模版（如果开启了主语言前缀强制化，即使是主语言也需要走多语/带前缀模板）
+                is_multi = (iso_logical != iso_default) or self.force_source_prefix
                 template = slot_cfg.get("multi" if is_multi else "single")
                 
                 if template:
-                    # 解析物理语种前缀 (如果模版中包含 {lang})
-                    physical_lang = LanguageHub.get_physical_path(iso_logical, self.active_theme)
+                    # 解析物理语种前缀
+                    physical_lang = LanguageHub.get_physical_path(
+                        iso_logical,
+                        theme=self.active_theme,
+                        source_lang=self.default_lang,
+                        force_prefix=self.force_source_prefix
+                    )
                     try:
                         route_prefix = template.format(lang=physical_lang)
                     except Exception:
@@ -63,7 +69,17 @@ class RouteManager:
         from core.utils.language_hub import LanguageHub
         iso_logical = LanguageHub.resolve_to_iso(logical_lang)
         iso_default = LanguageHub.resolve_to_iso(self.default_lang)
-        physical_lang = "" if iso_logical == iso_default else LanguageHub.get_physical_path(iso_logical, self.active_theme)
+        
+        # 🛡️ 智能对齐：如果为默认/原稿语言且未强制前缀，则物理语种前缀置空（发布至根目录）
+        if iso_logical == iso_default and not self.force_source_prefix:
+            physical_lang = ""
+        else:
+            physical_lang = LanguageHub.get_physical_path(
+                iso_logical,
+                theme=self.active_theme,
+                source_lang=self.default_lang,
+                force_prefix=self.force_source_prefix
+            )
 
         if route_prefix and "{" in route_prefix and "}" in route_prefix:
             # 模式 A：声明式模板模式 (如 /docs/{lang})

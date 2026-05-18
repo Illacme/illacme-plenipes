@@ -94,7 +94,9 @@ class MetadataManager:
             idx[os.path.splitext(rel_path)[0]] = rel_path
 
     def remove_document(self, rel_path):
-        with self.lock: self.sqlite.delete_document(rel_path)
+        with self.lock:
+            self.sqlite.delete_document(rel_path)
+            self._refresh_memory_index()
 
     def update_egress_status(self, rel_path, channel_id, status, error=None):
         """🚀 [V35.2] 记录特定渠道的分发事务状态"""

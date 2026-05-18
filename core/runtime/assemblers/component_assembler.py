@@ -83,7 +83,8 @@ def assemble_core_components(engine, config):
         lang_mapping=config.lang_mapping,
         default_lang=config.i18n_settings.source.lang_code,
         active_theme=engine.active_theme,
-        ssg_adapter=engine.ssg_adapter
+        ssg_adapter=engine.ssg_adapter,
+        force_source_prefix=config.i18n_settings.force_source_prefix
     )
     engine.link_resolver = LinkResolver(engine.meta, engine.route_manager, engine.active_theme)
     engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(

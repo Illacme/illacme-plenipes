@@ -56,6 +56,17 @@ static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/dashboard", StaticFiles(directory=static_dir, html=True), name="static")
 
+# 🚀 [V68.0] 资产预览代理：挂载物理出版产物目录 (Dispatch Hub Proxy)
+# 🛡️ 物理感应：挂载 imprints 目录以支持多品牌产物预览
+imprints_dir = os.path.abspath(os.path.join(os.getcwd(), "imprints"))
+if os.path.exists(imprints_dir):
+    app.mount("/imprints", StaticFiles(directory=imprints_dir), name="imprints")
+
+dist_dir = os.path.abspath(os.path.join(os.getcwd(), "dist"))
+if not os.path.exists(dist_dir):
+    os.makedirs(dist_dir, exist_ok=True)
+app.mount("/previews", StaticFiles(directory=dist_dir), name="previews")
+
 def start_api_server(host: str = "0.0.0.0", port: int = 43212, blocking: bool = True) -> None:
     """启动物理 API 服务"""
     import uvicorn

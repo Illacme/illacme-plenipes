@@ -87,64 +87,177 @@ window.changeVaultPage = (delta) => {
     window.loadVault(null, newPage);
 };
 
-// 3. 抽屉式元数据编辑器
-window.openVaultDrawer = async (relPath) => {
-    window.currentDocId = relPath;
-    const drawer = document.getElementById('vault-drawer');
-    const doc = await apiFetch(`/ledger/document/${encodeURIComponent(relPath)}`);
-
-    if (!doc) return;
-
-    document.getElementById('drawer-path').innerText = doc.rel_path;
-    document.getElementById('drawer-title').value = doc.title || '';
-    document.getElementById('drawer-slug').value = doc.slug || '';
-    const prefixInput = document.getElementById('drawer-prefix');
-    prefixInput.value = doc.route_prefix || '';
-    if (!window.settingsData._is_licensed) {
-        prefixInput.readOnly = true;
-        prefixInput.style.opacity = '0.5';
-        prefixInput.title = "社区版不支持子目录重映射 (Prefix Mapping)";
-    } else {
-        prefixInput.readOnly = false;
-        prefixInput.style.opacity = '1';
-        prefixInput.title = "";
-    }
-    document.getElementById('drawer-desc').value = (doc.seo_data || {}).description || '';
-
-    drawer.style.display = 'flex';
-};
-
 window.closeVaultDrawer = () => {
     document.getElementById('vault-drawer').style.display = 'none';
 };
 
-window.saveVaultMetadata = async () => {
+// 3. 📡 分发枢纽 (Dispatch Hub) 监控引擎
+window.openVaultDrawer = async (relPath) => {
+    window.currentDocId = relPath;
+    const drawer = document.getElementById('vault-drawer');
+    const hubDocId = document.getElementById('hub-doc-id');
+    const matrixContainer = document.getElementById('hub-sync-matrix');
+
+    if (hubDocId) hubDocId.innerText = relPath.toUpperCase();
+    drawer.style.display = 'flex';
+
+    // 🚀 [V68.0] 请求 Mock 契约接口
+    const data = await apiFetch(`/api/vault/dispatch-status/${encodeURIComponent(relPath)}`);
+    if (!data) return;
+
+    // 渲染分发矩阵
+    if (matrixContainer) {
+        matrixContainer.innerHTML = data.sync_matrix.map(item => `
+            <div class="matrix-item status-${item.status}">
+                <div class="m-info">
+                    <span class="m-locale">${item.locale}</span>
+                    <span class="m-status-text">${item.status.toUpperCase()}</span>
+                </div>
+                <div class="m-meta">
+                    <span class="m-time">${item.last_sync}</span>
+                    ${item.tokens ? `<span class="m-tokens">${item.tokens} tokens</span>` : ''}
+                </div>
+                ${item.status === 'syncing' ? `
+                    <div class="mini-progress"><div class="fill" style="width:${item.progress}%"></div></div>
+                ` : ''}
+                ${item.status === 'published' ? `
+                    <a href="${item.artifact_url}" target="_blank" class="preview-link">👁️ 预览产物</a>
+                ` : ''}
+                ${item.status === 'failed' ? `
+                    <div class="error-msg">${item.reason}</div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    // 填充遥测数据
+    document.getElementById('hub-cost').innerText = data.telemetry.total_cost;
+    document.getElementById('hub-node').innerText = data.telemetry.node;
+    
+    // 🚀 [V68.0] 环境自感应：实验室模式
+    const labBadge = document.getElementById('hub-lab-badge');
+    const labBtn = document.getElementById('btn-toggle-lab');
+    if (data.environment.is_lab_active) {
+        labBadge.innerText = "ACTIVE (LIVE)";
+        labBadge.className = "badge active";
+        labBtn.innerText = "🛑 关闭实时预览引擎";
+        labBtn.className = "engine-btn stop-mode";
+        // 升级所有预览链接为 Live 模式
+        document.querySelectorAll('.preview-link').forEach(link => {
+            link.innerText = "⚡ 实时引擎预览 (LIVE)";
+            link.classList.add('live-pulse');
+        });
+    } else {
+        labBadge.innerText = "OFFLINE";
+        labBadge.className = "badge";
+        labBtn.innerText = "🔌 启动实时预览引擎 (LIVE PREVIEW)";
+        labBtn.className = "engine-btn start-mode";
+    }
+
+    const auditBadge = document.getElementById('hub-audit-status');
+    if (auditBadge) {
+        auditBadge.innerText = `AUDIT: ${data.telemetry.last_audit}`;
+        auditBadge.className = `audit-badge ${data.telemetry.last_audit.toLowerCase()}`;
+    }
+};
+
+window.triggerReDispatch = async (scope) => {
     if (!window.currentDocId) return;
-
-    const payload = {
-        title: document.getElementById('drawer-title').value,
-        slug: document.getElementById('drawer-slug').value,
-        route_prefix: document.getElementById('drawer-prefix').value,
-        seo_data: {
-            description: document.getElementById('drawer-desc').value
-        }
-    };
-
-    const res = await apiFetch(`/ledger/document/${encodeURIComponent(window.currentDocId)}/metadata`, {
+    addAudit(`🚀 [Dispatch] 手动触发重调度请求: ${scope}`, "info");
+    
+    const res = await apiFetch(`/api/vault/re-dispatch/${encodeURIComponent(window.currentDocId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ locales: scope === 'all' ? [] : [scope], force: true })
     });
 
     if (res && res.success) {
-        addAudit(`✅ 资产元数据已固化: ${window.currentDocId}`, "success");
-        closeVaultDrawer();
-        const searchInput = document.getElementById('vault-search');
-        loadVault(searchInput ? searchInput.value : '');
-    } else {
-        addAudit("❌ 元数据固化失败，请检查链路。", "error");
+        console.info(`✅ [Dispatch] 重调度指令已由管线受理: ${window.currentDocId}`);
+        Swal.fire({
+            title: '重调度已受理',
+            text: res.message,
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            showConfirmButton: false
+        });
+        // 刷新状态
+        setTimeout(() => openVaultDrawer(window.currentDocId), 1000);
     }
 };
+
+window.toggleThemeLab = async () => {
+    console.info("🧪 [Engine] 尝试切换预览引擎状态...");
+    addAudit("🧪 [Engine] 正在切换实时预览引擎状态...", "info");
+    const res = await apiFetch('/api/vault/toggle-lab', { method: 'POST' });
+    
+    if (res && res.success) {
+        console.log("✅ 引擎状态切换成功:", res.is_active);
+        Swal.fire({
+            title: res.is_active ? '预览引擎已启动' : '预览引擎已关闭',
+            text: res.is_active ? '已进入实时渲染模式，物理变动将立即生效。' : '已切换回静态快照预览模式。',
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            showConfirmButton: false
+        });
+        // 刷新状态 (延迟 800ms 确保后端状态已持久化)
+        setTimeout(() => openVaultDrawer(window.currentDocId), 800);
+    }
+};
+
+window.confirmPhysicalDelete = () => {
+    Swal.fire({
+        title: '确认撤销该资产吗？',
+        text: "这将物理抹除磁盘上的源文件及其所有出版产物，不可恢复！",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff4d4d',
+        confirmButtonText: '🔥 确认销毁',
+        cancelButtonText: '取消',
+        position: 'top-end',
+        backdrop: false,
+        customClass: {
+            popup: 'swal2-sidebar-confirm'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            addAudit(`🗑️ 正在物理销毁资产 [${window.currentDocId}]...`, "warning");
+            const res = await apiFetch(`/api/vault/destroy/${encodeURIComponent(window.currentDocId)}`, { method: 'DELETE' });
+            
+            if (res && res.success) {
+                Swal.fire({
+                    title: '资产已销毁',
+                    text: res.message,
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                closeVaultDrawer();
+                if (typeof window.loadVault === 'function') {
+                    window.loadVault();
+                } else if (typeof loadVault === 'function') {
+                    loadVault();
+                }
+            } else {
+                Swal.fire({
+                    title: '销毁失败',
+                    text: res ? res.message : '未知错误',
+                    icon: 'error',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+};
+
 
 // 4. 全量物理编辑器 (Modal)
 window.openEditor = async (docId) => {
@@ -156,6 +269,7 @@ window.openEditor = async (docId) => {
     const mSlug = document.getElementById('editor-meta-slug');
 
     title.innerText = "EXTRACTING PHYSICAL ASSET...";
+    if (body) body.placeholder = "等待数据载入...";
     const status = document.getElementById('save-status');
     if (status) status.innerText = ""; // 🚀 状态对齐：清除上一个文档的残留状态
     modal.style.display = 'flex';
@@ -163,7 +277,10 @@ window.openEditor = async (docId) => {
     const doc = await apiFetch(`/ledger/document/${encodeURIComponent(docId)}`);
     if (doc) {
         title.innerText = `EDITOR: ${doc.title || docId}`;
-        body.value = doc.content || "";
+        if (body) {
+            body.placeholder = "在此处输入文稿内容（支持 Markdown 语法）...";
+            body.value = doc.content || "";
+        }
         if (mTitle) mTitle.value = doc.title || "";
         if (mSlug) mSlug.value = doc.slug || "";
         
@@ -195,22 +312,83 @@ window.renderDynamicMetadata = (metadata) => {
         const item = document.createElement('div');
         item.className = 'drawer-item';
         
-        let inputHtml = "";
-        if (typeof val === 'boolean') {
-            inputHtml = `<input type="checkbox" class="metadata-input" data-key="${key}" ${val ? 'checked' : ''} style="width:auto; margin-left:10px;">`;
-        } else if (Array.isArray(val)) {
-            inputHtml = `<input type="text" class="metadata-input setting-input" data-key="${key}" value="${val.join(', ')}" placeholder="逗号分隔列表">`;
-        } else {
-            inputHtml = `<input type="text" class="metadata-input setting-input" data-key="${key}" value="${val || ''}">`;
-        }
-
+        // 渲染项结构标头
         item.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <label class="tiny-label">${key.toUpperCase()}</label>
                 <button class="mini-action-btn" onclick="this.parentElement.parentElement.remove()" title="删除该字段" style="font-size:0.6rem; padding:2px 5px; opacity:0.5;">×</button>
             </div>
-            ${inputHtml}
         `;
+        
+        // 探测是否为日期/时间字段（包含 date, time, created, updated 或符合 ISO 日期时间正则）
+        const isDateField = key.toLowerCase().includes('date') || 
+                            key.toLowerCase().includes('time') || 
+                            key.toLowerCase().includes('created') || 
+                            key.toLowerCase().includes('updated') ||
+                            (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(val));
+
+        // 采用编程式属性注入，完美防范 JSON 字符串单双引号及特殊符号引起的 HTML 解析截断与混淆
+        if (typeof val === 'boolean') {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.className = 'metadata-input';
+            input.setAttribute('data-key', key);
+            input.checked = val;
+            input.style.width = 'auto';
+            input.style.marginLeft = '10px';
+            item.firstElementChild.appendChild(input);
+        } else if (isDateField) {
+            // 🚀 [V87.3] 尊贵日期微端交互：采用 HTML5 本地化日期选择器
+            const input = document.createElement('input');
+            input.type = 'datetime-local';
+            input.className = 'metadata-input setting-input';
+            input.setAttribute('data-key', key);
+            input.setAttribute('data-is-date', 'true');
+            
+            // 将输入值标准化为 YYYY-MM-DDTHH:mm 格式以加载到 datetime-local 控件中
+            let displayVal = "";
+            if (val) {
+                const dateObj = new Date(val);
+                if (!isNaN(dateObj.getTime())) {
+                    const y = dateObj.getFullYear();
+                    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const d = String(dateObj.getDate()).padStart(2, '0');
+                    const hh = String(dateObj.getHours()).padStart(2, '0');
+                    const mm = String(dateObj.getMinutes()).padStart(2, '0');
+                    displayVal = `${y}-${m}-${d}T${hh}:${mm}`;
+                } else {
+                    // 若日期不可解析，则作为普通字符串回退显示
+                    displayVal = val;
+                }
+            }
+            input.value = displayVal;
+            item.appendChild(input);
+        } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'metadata-input setting-input';
+            input.setAttribute('data-key', key);
+            
+            if (Array.isArray(val)) {
+                // 检查数组中是否包含对象类型（复杂结构，如 HREFLANGS）
+                const hasObject = val.some(item => item !== null && typeof item === 'object');
+                if (hasObject) {
+                    input.value = JSON.stringify(val);
+                    input.placeholder = "JSON 数组格式";
+                } else {
+                    input.value = val.join(', ');
+                    input.placeholder = "逗号分隔列表";
+                }
+            } else if (val !== null && typeof val === 'object') {
+                // 复杂键值对结构（如 dict）
+                input.value = JSON.stringify(val);
+                input.placeholder = "JSON 对象格式";
+            } else {
+                input.value = val || '';
+            }
+            item.appendChild(input);
+        }
+        
         container.appendChild(item);
     });
 };
@@ -250,13 +428,130 @@ window.updateEditorPreview = () => {
     const preview = document.getElementById('editor-preview');
     if (!body || !preview) return;
 
+    let mdContent = body.value;
+
+    // 1. 物理资源解析：替换 Obsidian 双链图片 ![[image.png]] 或 ![[image.png|width]]
+    mdContent = mdContent.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
+        const cleanPath = decodeURIComponent(path.trim());
+        const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
+        const alt = cleanPath;
+        if (extra && !isNaN(extra.trim())) {
+            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" />`;
+        }
+        return `![${alt}](${url})`;
+    });
+
+    // 2. 物理资源解析：替换 Obsidian 双链普通附件 [[file.pdf]] 或 [[file.pdf|display]] (排除了带 ! 前缀的情况)
+    mdContent = mdContent.replace(/(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, display) => {
+        const cleanPath = decodeURIComponent(path.trim());
+        const displayName = (display || cleanPath).trim();
+        const extMatch = cleanPath.match(/\.([a-zA-Z0-9]+)$/);
+        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
+            const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
+            return `<a href="${url}" target="_blank" class="attachment-link">📎 ${displayName}</a>`;
+        } else {
+            const cleanDocPath = cleanPath.replace(/\.mdx?$/, '');
+            return `<a href="#" onclick="openEditorFromPreview('${cleanDocPath.replace(/'/g, "\\'")}', event)" class="wiki-doc-link">📄 ${displayName}</a>`;
+        }
+    });
+
+    // 3. 物理资源解析：替换标准 Markdown 图片 ![alt](path)
+    mdContent = mdContent.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+        const cleanUrl = url.trim();
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:')) {
+            return match;
+        }
+        const decodedUrl = decodeURIComponent(cleanUrl);
+        const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
+        return `![${alt}](${resolvedUrl})`;
+    });
+
+    // 4. 物理资源解析：替换标准 Markdown 链接 [text](path) (排除了带 ! 前缀的图片链接，防止二次污染)
+    mdContent = mdContent.replace(/(?<!\!)\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+        const cleanUrl = url.trim();
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:') || cleanUrl.startsWith('#')) {
+            return match;
+        }
+        const decodedUrl = decodeURIComponent(cleanUrl);
+        const extMatch = decodedUrl.match(/\.([a-zA-Z0-9]+)$/);
+        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
+            const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
+            return `<a href="${resolvedUrl}" target="_blank" class="attachment-link">📎 ${text}</a>`;
+        } else {
+            const cleanDocPath = decodedUrl.replace(/\.mdx?$/, '');
+            return `<a href="#" onclick="openEditorFromPreview('${cleanDocPath.replace(/'/g, "\\'")}', event)" class="wiki-doc-link">📄 ${text}</a>`;
+        }
+    });
+
     // 🚀 [V87.0] 实时解析 Markdown (依赖 vendor/marked.js)
     if (typeof marked !== 'undefined') {
-        preview.innerHTML = marked.parse(body.value);
+        preview.innerHTML = marked.parse(mdContent);
     } else {
         preview.innerText = "Markdown 引擎尚未就绪...";
     }
 };
+
+// 📄 相对路径物理对齐与降级解析器 (JavaScript 版 Path.resolve)
+const resolveRelativePath = (basePath, relPath) => {
+    if (!relPath.startsWith('.')) return relPath; // 非相对路径直接返回
+    
+    const baseParts = basePath.split('/');
+    baseParts.pop(); // 移除文件名，保留目录结构
+    
+    const relParts = relPath.split('/');
+    for (const part of relParts) {
+        if (part === '.' || part === '') continue;
+        if (part === '..') {
+            baseParts.pop();
+        } else {
+            baseParts.push(part);
+        }
+    }
+    return baseParts.join('/');
+};
+
+// 📄 [NEW] 双链编辑器联动跳转引擎
+window.openEditorFromPreview = async (wikiName, event) => {
+    if (event) event.preventDefault();
+    try {
+        // 🚀 高能对齐：先进行 URL-decode（将 %20 等符号还原为真实的物理路径空格）
+        const decodedWikiName = decodeURIComponent(wikiName);
+        
+        // 🚀 兼容性护航：分离出 Obsidian 标题锚点（如 [[Doc#Heading]]）或块引用（如 [[Doc#^block]]）
+        let docPathOnly = decodedWikiName;
+        let anchor = "";
+        const hashIndex = decodedWikiName.indexOf('#');
+        if (hashIndex !== -1) {
+            docPathOnly = decodedWikiName.substring(0, hashIndex);
+            anchor = decodedWikiName.substring(hashIndex + 1);
+        }
+        
+        // 再进行相对路径物理对正（支持 ../ 等相对路径）
+        const normalizedName = resolveRelativePath(window.activeDocId, docPathOnly);
+        console.log(`[Wiki Navigation] Original: ${wikiName} -> Decoded: ${decodedWikiName} -> Normalized: ${normalizedName} (Anchor: ${anchor})`);
+
+        // 全量联邦检索定位目标相对路径
+        const res = await apiFetch(`/api/vault/search?q=${encodeURIComponent(normalizedName)}&limit=1`);
+        if (res && res.items && res.items.length > 0) {
+            const doc = res.items[0];
+            // 平滑进入下一份资产编辑，刷新编辑器面板
+            openEditor(doc.rel_path);
+        } else {
+            Swal.fire({
+                title: '未发现该资产',
+                text: `系统在原稿库中未能定位匹配到 "${normalizedName}"。`,
+                icon: 'warning',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        }
+    } catch (e) {
+        console.error("Open editor from preview error:", e);
+    }
+};
+
 
 // 🔄 [V87.1] 同步滚动引擎 (Synchronized Scroll Engine)
 let isSyncingScroll = false;
@@ -312,7 +607,43 @@ window.saveDocument = async () => {
         if (input.type === 'checkbox') {
             frontmatter[key] = input.checked;
         } else {
-            const val = input.value;
+            const val = input.value.trim();
+            
+            // 🚀 [V87.3] 智能日期时区反向对准与重塑
+            if (input.getAttribute('data-is-date') === 'true') {
+                if (!val) {
+                    frontmatter[key] = "";
+                    return;
+                }
+                const dateObj = new Date(val);
+                if (!isNaN(dateObj.getTime())) {
+                    const pad = (n) => String(n).padStart(2, '0');
+                    const offset = -dateObj.getTimezoneOffset();
+                    const sign = offset >= 0 ? '+' : '-';
+                    const tz = sign + pad(Math.floor(Math.abs(offset) / 60)) + ':' + pad(Math.abs(offset) % 60);
+                    
+                    const y = dateObj.getFullYear();
+                    const m = pad(dateObj.getMonth() + 1);
+                    const d = pad(dateObj.getDate());
+                    const hh = pad(dateObj.getHours());
+                    const mm = pad(dateObj.getMinutes());
+                    const ss = pad(dateObj.getSeconds());
+                    
+                    frontmatter[key] = `${y}-${m}-${d}T${hh}:${mm}:${ss}${tz}`;
+                    return;
+                }
+            }
+            
+            // 🚀 [V87.2] 智能解析 JSON 数组与复杂对象，防止结构混淆与二次破坏
+            if ((val.startsWith('{') && val.endsWith('}')) || (val.startsWith('[') && val.endsWith(']'))) {
+                try {
+                    frontmatter[key] = JSON.parse(val);
+                    return; // 成功解析为 JSON，跳过后续 standard 处理
+                } catch (e) {
+                    console.warn(`Failed to parse metadata field "${key}" as JSON, fallback to raw string:`, e);
+                }
+            }
+            
             // 简单处理：如果包含逗号，尝试转为数组（对应用户对列表的支持要求）
             if (val.includes(',')) {
                 frontmatter[key] = val.split(',').map(v => v.trim()).filter(v => v !== "");

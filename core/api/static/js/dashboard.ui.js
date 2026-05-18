@@ -8,37 +8,63 @@ window.renderUIComponents = () => {
     if (!appContainer) return;
 
     const componentsHTML = `
-        <!-- 🏛️ The Vault Drawer (Side Panel) -->
+        <!-- 📡 Dispatch Hub Drawer (V68.0 Evolution) -->
         <div id="vault-drawer" class="drawer-overlay" style="display: none;">
-            <div class="drawer-content glass-panel">
+            <div class="drawer-content glass-panel dispatch-hub-panel">
                 <div class="drawer-header">
-                    <h3>🛠️ 资产元数据管理</h3>
+                    <div style="display:flex; flex-direction:column;">
+                        <h3 style="margin:0;">📡 分发枢纽 / DISPATCH HUB</h3>
+                        <span id="hub-doc-id" class="tiny-label mono" style="opacity:0.5;">PATH/TO/DOC.MD</span>
+                    </div>
                     <button class="close-btn" id="close-drawer" onclick="closeVaultDrawer()">×</button>
                 </div>
-                <div class="drawer-body">
-                    <div class="drawer-item">
-                        <label>物理路径</label>
-                        <code id="drawer-path"></code>
+                
+                <div class="drawer-body" style="padding-top:10px;">
+                    <!-- 🛰️ Section 1: Global Sync Matrix -->
+                    <div class="hub-section">
+                        <div class="sector-header">GLOBAL SYNC MATRIX</div>
+                        <div id="hub-sync-matrix" class="matrix-list">
+                            <!-- Mock 列表将注入此处 -->
+                        </div>
                     </div>
-                    <div class="drawer-item">
-                        <label>显示标题</label>
-                        <input type="text" id="drawer-title">
+
+                    <!-- 📊 Section 2: Asset Telemetry -->
+                    <div class="hub-section">
+                        <div class="sector-header">ASSET TELEMETRY & AUDIT</div>
+                        <div class="telemetry-grid">
+                            <div class="t-pod">
+                                <span class="t-label">ACCUMULATED COST</span>
+                                <span id="hub-cost" class="t-value mono">--</span>
+                            </div>
+                            <div class="t-pod">
+                                <span class="t-label">COMPUTE CORE</span>
+                                <span id="hub-node" class="t-value">--</span>
+                            </div>
+                        </div>
+                        <div id="hub-audit-status" class="audit-badge">WAITING FOR SENSOR...</div>
                     </div>
-                    <div class="drawer-item">
-                        <label>永久链接 (Slug)</label>
-                        <input type="text" id="drawer-slug">
+
+                    <!-- 🛡️ Section 3: Sovereign Actions -->
+                    <div class="hub-section" style="margin-top:auto;">
+                        <div class="sector-header">SOVEREIGN ACTIONS</div>
+                        
+                        <div id="lab-control-panel" class="lab-box">
+                            <div class="lab-status-row">
+                                <span class="t-label">LIVE PREVIEW ENGINE</span>
+                                <span id="hub-lab-badge" class="badge">OFFLINE</span>
+                            </div>
+                            <button id="btn-toggle-lab" class="engine-btn start-mode" onclick="toggleThemeLab()">🔌 启动实时预览引擎 (LIVE PREVIEW)</button>
+                        </div>
+
+                        <div class="sovereign-action-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                            <button class="hub-btn primary-hub-btn" onclick="triggerReDispatch('all')">
+                                <span class="btn-icon">♻️</span> 强制重新发布
+                            </button>
+                            <button class="hub-btn danger-hub-btn" onclick="confirmPhysicalDelete()">
+                                <span class="btn-icon">🗑️</span> 物理销毁
+                            </button>
+                        </div>
                     </div>
-                    <div class="drawer-item">
-                        <label>SSG 路由前缀</label>
-                        <input type="text" id="drawer-prefix">
-                    </div>
-                    <div class="drawer-item">
-                        <label>SEO 描述 (Metadata)</label>
-                        <textarea id="drawer-desc" rows="4"></textarea>
-                    </div>
-                </div>
-                <div class="drawer-footer">
-                    <button class="primary-btn glow-btn" id="btn-save-drawer">💾 保存并应用变更</button>
                 </div>
             </div>
         </div>
@@ -116,21 +142,25 @@ window.renderUIComponents = () => {
                     </div>
                     <div class="editor-sidebar">
                         <div class="sector-header">PHYSICAL METADATA</div>
-                        <div class="drawer-item">
-                            <label class="tiny-label">ASSET TITLE</label>
-                            <input type="text" id="editor-meta-title" class="setting-input">
-                        </div>
-                        <div class="drawer-item">
-                            <label class="tiny-label">PERMALINK SLUG</label>
-                            <input type="text" id="editor-meta-slug" class="setting-input">
-                        </div>
+                        
+                        <!-- 🚀 [NEW] 滚动元数据包装区 (V87.2) -->
+                        <div id="metadata-scroll-wrapper" style="flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+                            <div class="drawer-item" style="flex-shrink: 0;">
+                                <label class="tiny-label">ASSET TITLE</label>
+                                <input type="text" id="editor-meta-title" class="setting-input">
+                            </div>
+                            <div class="drawer-item" style="flex-shrink: 0;">
+                                <label class="tiny-label">PERMALINK SLUG</label>
+                                <input type="text" id="editor-meta-slug" class="setting-input">
+                            </div>
 
-                        <!-- 🚀 [NEW] 动态元数据容器 (V68.0) -->
-                        <div id="dynamic-metadata-container" style="flex: 1; overflow-y: auto; padding-right: 5px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; min-height: 100px;">
-                            <!-- 动态注入项将出现在这里 -->
+                            <!-- 🚀 [NEW] 动态元数据容器 (V68.0) -->
+                            <div id="dynamic-metadata-container" style="display: flex; flex-direction: column; gap: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; margin-top: 5px;">
+                                <!-- 动态注入项将出现在这里 -->
+                            </div>
                         </div>
                         
-                        <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px;">
+                        <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
                             <div id="save-status" style="font-size:0.7rem; color:var(--accent-secondary); font-family:var(--font-mono); text-align:center;"></div>
                             <button class="primary-btn glow-btn" id="btn-save-doc" style="width:100%;">💾 COMMIT CHANGES</button>
                             <button class="secondary-btn" onclick="closeEditor()" style="width:100%;">CANCEL</button>
