@@ -123,10 +123,43 @@ window.selectVaultFolder = (path, event) => {
         if (rootItem) rootItem.classList.add('active');
     } else {
         const folderEl = document.querySelector(`.tree-folder[data-path="${path}"] > .tree-folder-header`);
-        if (folderEl) folderEl.classList.add('active');
+        if (folderEl) {
+            folderEl.classList.add('active');
+            // 🚀 [V87.6] 点击整行高亮时，同时执行折叠/展开的切换，提升在大屏/Pad 上的易用性
+            const arrowEl = folderEl.querySelector('.tree-arrow');
+            if (arrowEl && arrowEl.classList.contains('has-children')) {
+                window.toggleVaultFolder(arrowEl);
+            }
+        }
     }
 
     window.loadVault();
+};
+
+window.toggleVaultSidebar = () => {
+    const sidebar = document.getElementById('vault-tree-sidebar');
+    const btn = document.getElementById('toggle-vault-sidebar-btn');
+    if (!sidebar) return;
+
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    if (btn) {
+        btn.innerHTML = isCollapsed ? '▶ 展开侧栏' : '◀ 隐藏侧栏';
+    }
+    localStorage.setItem('vaultSidebarCollapsed', isCollapsed ? 'true' : 'false');
+};
+
+window.expandAllVaultFolders = () => {
+    const childrenEls = document.querySelectorAll('.tree-folder-children');
+    const arrowEls = document.querySelectorAll('.tree-arrow.has-children');
+    childrenEls.forEach(el => el.style.display = 'block');
+    arrowEls.forEach(el => el.classList.add('expanded'));
+};
+
+window.collapseAllVaultFolders = () => {
+    const childrenEls = document.querySelectorAll('.tree-folder-children');
+    const arrowEls = document.querySelectorAll('.tree-arrow.has-children');
+    childrenEls.forEach(el => el.style.display = 'none');
+    arrowEls.forEach(el => el.classList.remove('expanded'));
 };
 
 // 2. 稿件仓库加载器
@@ -136,6 +169,20 @@ window.loadVault = async (query = null, page = null) => {
         if (page === null) window.vaultCurrentPage = 1; // 新搜索默认回到第一页
     }
     if (page !== null) window.vaultCurrentPage = page;
+
+    // 🚀 [V87.6] 维持侧边栏折叠/展开状态记忆对正
+    const sidebar = document.getElementById('vault-tree-sidebar');
+    const toggleBtn = document.getElementById('toggle-vault-sidebar-btn');
+    if (sidebar && toggleBtn) {
+        const wasCollapsed = localStorage.getItem('vaultSidebarCollapsed') === 'true';
+        if (wasCollapsed) {
+            sidebar.classList.add('collapsed');
+            toggleBtn.innerHTML = '▶ 展开侧栏';
+        } else {
+            sidebar.classList.remove('collapsed');
+            toggleBtn.innerHTML = '◀ 隐藏侧栏';
+        }
+    }
 
     if (!window.vaultTreeInitialized) {
         window.initializeVaultTree();

@@ -1094,6 +1094,22 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     background: rgba(13, 14, 28, 0.45) !important;
     border-right: 1px solid var(--glass-border) !important;
     backdrop-filter: blur(25px) !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
+}
+
+#vault-tree-sidebar.collapsed {
+    width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    opacity: 0 !important;
+    margin-right: -20px !important;
+    pointer-events: none !important;
+    border-color: transparent !important;
+}
+
+.tree-header-action:hover {
+    filter: grayscale(0) !important;
+    opacity: 1 !important;
 }
 
 #vault-tree {
