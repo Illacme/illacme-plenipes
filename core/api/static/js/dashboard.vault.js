@@ -1334,9 +1334,17 @@ window.triggerMoveDocument = async (docId) => {
                         }
                     }
                     
-                    // 🚀 空间对正自愈：根据原稿搬迁后的新路径自动对齐并同步切换至新父文件夹
-                    const newFolder = res.new_path.includes('/') ? res.new_path.substring(0, res.new_path.lastIndexOf('/')) : '';
-                    window.vaultActiveFolder = newFolder;
+                    // 🚀 空间对正自愈：根据原稿搬迁后的新路径自动对齐
+                    const lastSlashOld = docId.lastIndexOf('/');
+                    const oldFolder = lastSlashOld !== -1 ? docId.substring(0, lastSlashOld) : "";
+                    const lastSlashNew = res.new_path.lastIndexOf('/');
+                    const newFolder = lastSlashNew !== -1 ? res.new_path.substring(0, lastSlashNew) : "";
+
+                    // 🛡️ 极客体验维系：如果只是在当前目录下原地重命名，绝对保持当前视图目录一动不动！
+                    // 仅当用户在弹窗中主动将文件搬迁到另一个不同的物理文件夹下时，我们才自动将视图切换至新目录追随展示
+                    if (oldFolder !== newFolder) {
+                        window.vaultActiveFolder = newFolder;
+                    }
                     
                     // 🚀 清空模糊搜索词与重置分页，防止因搜索词残留过滤掉最新修改的原稿
                     window.vaultCurrentQuery = "";
