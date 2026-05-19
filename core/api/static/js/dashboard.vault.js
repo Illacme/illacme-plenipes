@@ -862,3 +862,121 @@ window.saveDocument = async () => {
         if (res && res.error) console.error(res.error);
     }
 };
+
+// 📄 [NEW] 新建原稿物理交互处理器
+window.triggerCreateDocument = async () => {
+    // 智能感知当前选中的文件夹路径
+    let defaultPath = "";
+    if (window.vaultActiveFolder) {
+        defaultPath = window.vaultActiveFolder + "/未命名原稿.md";
+    } else {
+        defaultPath = "未命名原稿.md";
+    }
+
+    Swal.fire({
+        title: '📂 新建物理原稿',
+        html: `
+            <div style="text-align: left; padding: 0 10px;">
+                <div class="drawer-item" style="margin-bottom: 15px;">
+                    <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">原稿标题</label>
+                    <input id="swal-doc-title" class="setting-input" type="text" value="未命名原稿" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+                </div>
+                <div class="drawer-item">
+                    <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">物理保存路径 (相对于文库根目录)</label>
+                    <input id="swal-doc-path" class="setting-input" type="text" value="${defaultPath}" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '⚡ 确认创建',
+        cancelButtonText: '取消',
+        background: 'rgba(13, 14, 28, 0.95)',
+        color: '#fff',
+        backdrop: `rgba(0, 0, 0, 0.6)`,
+        customClass: {
+            popup: 'glass-panel',
+            confirmButton: 'primary-btn glow-btn',
+            cancelButton: 'mini-btn'
+        },
+        preConfirm: () => {
+            const title = document.getElementById('swal-doc-title').value.trim();
+            const path = document.getElementById('swal-doc-path').value.trim();
+            if (!path) {
+                Swal.showValidationMessage('物理保存路径不能为空！');
+                return false;
+            }
+            return { title, doc_id: path };
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed && result.value) {
+            const { title, doc_id } = result.value;
+            
+            if (typeof addAudit === 'function') {
+                addAudit(`📂 正在向磁盘写入新资产 [${doc_id}]...`, "info");
+            }
+            
+            try {
+                const res = await apiFetch('/ledger/document/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, doc_id })
+                });
+                
+                if (res && res.success) {
+                    Swal.fire({
+                        title: '原稿创建成功',
+                        text: `新资产已物理写入: ${res.doc_id}`,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    
+                    if (typeof addAudit === 'function') {
+                        addAudit(`✅ 新资产 ${res.doc_id} 已成功写入磁道并注册入库。`);
+                    }
+                    
+                    // 重置左侧树折叠记忆以进行全量同步
+                    window.vaultTreeInitialized = false;
+                    
+                    // 重新加载文稿列表
+                    if (typeof loadVault === 'function') {
+                        await loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);
+                    }
+                    
+                    // 🌟 交互极致跃升：直接进入新创建文档的物理编辑器中！
+                    if (typeof openEditor === 'function') {
+                        openEditor(res.doc_id);
+                    }
+                } else {
+                    Swal.fire({
+                        title: '创建失败',
+                        text: res ? res.error : '物理写入超时，请核验系统日志',
+                        icon: 'error',
+                        background: 'rgba(13, 14, 28, 0.95)',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'glass-panel',
+                            confirmButton: 'primary-btn glow-btn'
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Create document error:", e);
+                Swal.fire({
+                    title: '系统异常',
+                    text: e.message,
+                    icon: 'error',
+                    background: 'rgba(13, 14, 28, 0.95)',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'glass-panel',
+                        confirmButton: 'primary-btn'
+                    }
+                });
+            }
+        }
+    });
+};

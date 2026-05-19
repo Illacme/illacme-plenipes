@@ -87,7 +87,7 @@ def main():
             shutil.copy2(src_path, dst_path)
             # Add to git
             import subprocess
-            subprocess.run(["git", "add", dst_path], check=True, capture_output=True)
+            subprocess.run(["git", "add", "-f", dst_path], check=True, capture_output=True)
             print(f"✅ Harvested: {dst_name}")
             files_copied += 1
             

@@ -63,7 +63,8 @@ window.viewTemplates = {
                     <h2>📂 原稿文库 (Vault)</h2>
                     <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.3s;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">📑 隐藏侧栏</button>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.85rem;" onclick="window.triggerCreateDocument()">＋ 新建原稿</button>
                     <div class="search-box">
                         <input type="text" id="vault-search" placeholder="搜索标题、路径或 Slug...">
                     </div>

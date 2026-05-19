@@ -82,6 +82,64 @@ async def save_document(doc_id: str, req: dict):
     
     return {"success": True}
 
+@router.post("/ledger/document/create", dependencies=[Depends(verify_token)])
+async def create_document(req: dict):
+    engine = get_global_engine()
+    if not engine: return {"error": "Engine not initialized"}
+    
+    doc_id = req.get("doc_id", "").strip()
+    title = req.get("title", "").strip()
+    
+    if not doc_id:
+        return {"error": "物理路径不能为空"}
+        
+    # 物理防线 L3：路径合规性与穿越审计
+    import os
+    import pathlib
+    import datetime
+    
+    # 强制规范化后缀，只允许 Markdown 格式文件后缀，若无后缀则补齐 .md
+    ext = os.path.splitext(doc_id)[1].lower()
+    if ext not in [".md", ".mdx", ".markdown"]:
+        doc_id += ".md"
+        
+    vault_root_abs = os.path.abspath(engine.vault_root)
+    abs_path = os.path.abspath(os.path.join(vault_root_abs, doc_id))
+    
+    if not abs_path.startswith(vault_root_abs):
+        return {"error": "权限拒绝：检测到非法的物理路径穿越指令"}
+        
+    if os.path.exists(abs_path):
+        return {"error": "创建失败：该物理路径下已存在同名原稿文件"}
+        
+    # 生成默认 slug
+    default_slug = pathlib.Path(doc_id).stem
+    
+    # 🌓 [V87.3] 尊贵本地化时间格式
+    now_str = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S+08:00")
+    
+    metadata = {
+        "title": title or "未命名原稿",
+        "date": now_str,
+        "slug": default_slug
+    }
+    
+    # 初始缝合
+    initial_content = inject_frontmatter(f"# {title or '未命名原稿'}\n\n在此输入原稿内容...", metadata)
+    
+    # 真实创建物理文件
+    try:
+        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+        with open(abs_path, 'w', encoding='utf-8') as f:
+            f.write(initial_content)
+    except Exception as e:
+        return {"error": f"物理磁盘写入失败: {e}"}
+        
+    # 后台元数据索引同步入库
+    engine.meta.register_document(doc_id, title or "未命名原稿", slug=default_slug)
+    
+    return {"success": True, "doc_id": doc_id}
+
 @router.post("/ledger/document/{doc_id:path}/metadata", dependencies=[Depends(verify_token)])
 async def update_document_metadata(doc_id: str, req: dict):
     engine = get_global_engine()

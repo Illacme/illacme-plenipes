@@ -209,13 +209,15 @@ class ContractGuard:
         import subprocess
         try:
             # 探测 Git 索引中是否存在敏感目录的文件
-            tracked_files = subprocess.check_output(
+            raw_tracked = subprocess.check_output(
                 ["git", "ls-files", ".plenipes/", "metadata/", "imprints/"],
                 stderr=subprocess.STDOUT,
                 text=True
-            ).strip()
+            ).strip().splitlines()
+            # 🚀 [V87.6] 豁免历史发展轨迹：允许追踪 .plenipes/history/ 下的迭代归档
+            tracked_files = [f for f in raw_tracked if f and not f.startswith(".plenipes/history/")]
             if tracked_files:
-                violations.append("❌ [主权泄露] 检测到 .plenipes/, metadata/ 或 imprints/ 目录下的文件正在被 Git 追踪！请执行 'git rm -r --cached'。")
+                violations.append(f"❌ [主权泄露] 检测到 .plenipes/, metadata/ 或 imprints/ 目录下的非豁免文件正在被 Git 追踪（如: {tracked_files[0]}）！请执行 'git rm -r --cached'。")
         except subprocess.CalledProcessError:
             # 如果不是 git 仓库或命令执行失败，在开发环境下暂时放行
             pass
