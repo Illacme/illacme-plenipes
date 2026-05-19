@@ -229,7 +229,7 @@ window.loadVault = async (query = null, page = null) => {
     }
 
     if (!window.vaultTreeInitialized) {
-        window.initializeVaultTree();
+        await window.initializeVaultTree();
     }
 
     const listEl = document.getElementById('vault-list');
@@ -1292,6 +1292,10 @@ window.triggerMoveDocument = async (docId) => {
                             headerEl.innerText = `编辑中: ${res.new_path.split('/').pop()}`;
                         }
                     }
+                    
+                    // 🚀 空间对正自愈：根据原稿搬迁后的新路径自动对齐并同步切换至新父文件夹
+                    const newFolder = res.new_path.includes('/') ? res.new_path.substring(0, res.new_path.lastIndexOf('/')) : '';
+                    window.vaultActiveFolder = newFolder;
 
                     // 重置目录树折叠状态记忆以进行全量同步
                     window.vaultTreeInitialized = false;
