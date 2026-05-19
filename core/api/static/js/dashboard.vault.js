@@ -1337,13 +1337,24 @@ window.triggerMoveDocument = async (docId) => {
                     // 🚀 空间对正自愈：根据原稿搬迁后的新路径自动对齐并同步切换至新父文件夹
                     const newFolder = res.new_path.includes('/') ? res.new_path.substring(0, res.new_path.lastIndexOf('/')) : '';
                     window.vaultActiveFolder = newFolder;
+                    
+                    // 🚀 清空模糊搜索词与重置分页，防止因搜索词残留过滤掉最新修改的原稿
+                    window.vaultCurrentQuery = "";
+                    window.vaultCurrentPage = 1;
+                    const searchInput = document.getElementById('vault-search-input');
+                    if (searchInput) {
+                        searchInput.value = "";
+                    }
 
                     // 重置目录树折叠状态记忆以进行全量同步
                     window.vaultTreeInitialized = false;
 
+                    // 🚀 磁盘 I/O 缓冲自愈：延迟 150ms 避开物理磁盘与 SQLite 账本写入微秒级并发滞后
+                    await new Promise(resolve => setTimeout(resolve, 150));
+
                     // 重新加载原稿列表
                     if (typeof loadVault === 'function') {
-                        await loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);
+                        await loadVault("", 1);
                     }
                 } else {
                     Swal.fire({
