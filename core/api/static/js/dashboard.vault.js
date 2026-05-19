@@ -282,6 +282,7 @@ window.loadVault = async (query = null, page = null) => {
                 <td>
                     <div style="display:flex; gap:8px;">
                         <button class="mini-action-btn" title="快速编辑" onclick="openEditor('${m.rel_path}')">📝</button>
+                        <button class="mini-action-btn" title="重命名/移动" onclick="window.triggerMoveDocument('${m.rel_path}')">🔄</button>
                         <button class="mini-action-btn" title="分发详情" onclick="openVaultDrawer('${m.rel_path}')">⚙️</button>
                     </div>
                 </td>
@@ -1209,6 +1210,111 @@ window.triggerDeleteDirectory = async () => {
                 }
             } catch (e) {
                 console.error("Delete directory error:", e);
+                Swal.fire({
+                    title: '系统异常',
+                    text: e.message,
+                    icon: 'error',
+                    background: 'rgba(13, 14, 28, 0.95)',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'glass-panel',
+                        confirmButton: 'primary-btn'
+                    }
+                });
+            }
+        }
+    });
+};
+
+// 🔄 [NEW] 原稿平滑重命名与移动交互控制器
+window.triggerMoveDocument = async (docId) => {
+    if (!docId) return;
+
+    Swal.fire({
+        title: '🔄 重命名 / 移动原稿',
+        text: `当前路径: ${docId}`,
+        input: 'text',
+        inputValue: docId,
+        inputPlaceholder: '请输入新相对路径或新文件名...',
+        showCancelButton: true,
+        confirmButtonText: '保存搬迁',
+        cancelButtonText: '取消',
+        background: 'rgba(13, 14, 28, 0.95)',
+        color: '#fff',
+        inputValidator: (value) => {
+            if (!value || !value.trim()) {
+                return '新路径不能为空';
+            }
+        },
+        customClass: {
+            popup: 'glass-panel',
+            input: 'glass-input',
+            confirmButton: 'primary-btn glow-btn',
+            cancelButton: 'mini-btn'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const newPath = result.value.trim();
+            if (newPath === docId) return; // 路径没有变动，直接返回
+
+            if (typeof addAudit === 'function') {
+                addAudit(`🔄 正在请求搬迁原稿 ${docId} 至新地址 ${newPath}...`, "info");
+            }
+
+            try {
+                const res = await apiFetch('/ledger/document/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ doc_id: docId, new_path: newPath })
+                });
+
+                if (res && res.success) {
+                    Swal.fire({
+                        title: '原稿搬迁成功',
+                        text: `文件已平滑重映射: ${res.new_path}`,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+
+                    if (typeof addAudit === 'function') {
+                        addAudit(`✅ 原稿已成功从 ${res.doc_id} 平滑搬迁至 ${res.new_path}。`);
+                    }
+
+                    // 🚀 心流对正：若当前正处于该文档的编辑态，自愈性更新编辑器的目标 ID 避免脑裂
+                    if (window.currentDocId === docId) {
+                        window.currentDocId = res.new_path;
+                        // 更新一下右侧编辑器标题或面包屑
+                        const headerEl = document.querySelector('.editor-header h3');
+                        if (headerEl) {
+                            headerEl.innerText = `编辑中: ${res.new_path.split('/').pop()}`;
+                        }
+                    }
+
+                    // 重置目录树折叠状态记忆以进行全量同步
+                    window.vaultTreeInitialized = false;
+
+                    // 重新加载原稿列表
+                    if (typeof loadVault === 'function') {
+                        await loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);
+                    }
+                } else {
+                    Swal.fire({
+                        title: '原稿搬迁失败',
+                        text: res ? res.error : '原稿物理重映射超时，请核验系统日志',
+                        icon: 'error',
+                        background: 'rgba(13, 14, 28, 0.95)',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'glass-panel',
+                            confirmButton: 'primary-btn glow-btn'
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Move document error:", e);
                 Swal.fire({
                     title: '系统异常',
                     text: e.message,

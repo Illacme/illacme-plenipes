@@ -45,6 +45,13 @@ class MockMetadataManager:
             **kwargs
         }
 
+    def remove_document(self, rel_path):
+        if rel_path in self.registry:
+            del self.registry[rel_path]
+
+    def get_doc_info(self, rel_path):
+        return self.registry.get(rel_path) or {}
+
 class MockEngine:
     def __init__(self, vault_root):
         self.vault_root = vault_root
@@ -191,6 +198,84 @@ def test_document_creation_flow():
             assert data_del_root.get("success") is not True, "未能在删除文库根目录指令下实施安全拦截"
             assert "不允许删除文库根目录" in data_del_root.get("error"), f"非预期的根目录删除拦截报错: {data_del_root.get('error')}"
             print("  ✅ [测试] 文库物理根目录误删安全防护拦截顺利通过！")
+            
+            # ===== 原稿平滑重命名与搬迁（Safe Rename & Move）单元测试 =====
+            print("🧪 [Test] 启动原稿平滑重命名与物理搬迁安全拦截单元测试...")
+            
+            # 准备一个物理原稿
+            old_doc_rel = "posts/life/cooking/old-recipe.md"
+            old_doc_abs = os.path.join(temp_vault, old_doc_rel)
+            with open(old_doc_abs, 'w', encoding='utf-8') as f:
+                f.write("---\ntitle: 旧食谱\nslug: old-slug\n---\n# 旧正文")
+                
+            # 在 ledger 中注册该文档
+            engine = singleton.get_global_engine()
+            engine.meta.register_document(old_doc_rel, "旧食谱", slug="old-slug")
+            
+            # 1. 正常场景：同目录下文件名纯重命名
+            res_rename = client.post("/ledger/document/move", json={
+                "doc_id": old_doc_rel,
+                "new_path": "new-recipe.md"
+            })
+            assert res_rename.status_code == 200
+            data_rename = res_rename.json()
+            assert data_rename.get("success") is True, f"同目录重命名失败: {data_rename.get('error')}"
+            
+            expected_new_rel = "posts/life/cooking/new-recipe.md"
+            assert not os.path.exists(old_doc_abs), "旧物理文件依旧残留"
+            assert os.path.exists(os.path.join(temp_vault, expected_new_rel)), "新物理文件未写入"
+            
+            # 验证 SQLite 元数据自动平滑迁移
+            old_doc_info = engine.meta.get_doc_info(old_doc_rel)
+            assert not old_doc_info, "旧 SQLite 账本索引没有注销"
+            new_doc_info = engine.meta.get_doc_info(expected_new_rel)
+            assert new_doc_info, "新 SQLite 账本索引未能平滑注册"
+            assert new_doc_info.get("slug") == "old-slug", "元数据属性（如 slug）未能完美继承"
+            print("  ✅ [测试] 正常同目录原稿重命名与账本平滑更新通过！")
+            
+            # 2. 正常场景：跨文件夹平滑移动
+            dest_new_rel = "posts/tech/new-recipe-tech.md"
+            res_move = client.post("/ledger/document/move", json={
+                "doc_id": expected_new_rel,
+                "new_path": dest_new_rel
+            })
+            assert res_move.status_code == 200
+            data_move = res_move.json()
+            assert data_move.get("success") is True, f"跨文件夹平滑移动失败: {data_move.get('error')}"
+            assert not os.path.exists(os.path.join(temp_vault, expected_new_rel)), "移动后旧路径依旧留存"
+            assert os.path.exists(os.path.join(temp_vault, dest_new_rel)), "跨文件夹移动后新路径物理文件不存在"
+            
+            # 验证新位置的元数据继承
+            tech_doc_info = engine.meta.get_doc_info(dest_new_rel)
+            assert tech_doc_info.get("slug") == "old-slug", "跨文件夹移动后元数据属性丢失"
+            print("  ✅ [测试] 正常跨文件夹平滑移动与元数据继承通过！")
+            
+            # 3. 拦截场景：防同名文件覆盖冲突保护
+            collision_file_rel = "posts/tech/collision.md"
+            collision_file_abs = os.path.join(temp_vault, collision_file_rel)
+            with open(collision_file_abs, 'w', encoding='utf-8') as f:
+                f.write("# 冲突文件")
+                
+            res_collision = client.post("/ledger/document/move", json={
+                "doc_id": dest_new_rel,
+                "new_path": collision_file_rel
+            })
+            assert res_collision.status_code == 200
+            data_collision = res_collision.json()
+            assert data_collision.get("success") is not True, "未能成功拦截重名冲突覆盖，数据面临丢失危险！"
+            assert "已有同名物理原稿" in data_collision.get("error"), f"非预期的重名冲突报错: {data_collision.get('error')}"
+            print("  ✅ [测试] 原稿重名覆盖安全冲突拦截顺利通过！")
+            
+            # 4. 拦截场景：安全 L3 路径穿越攻击恶意搬迁拦截
+            res_bypass_move = client.post("/ledger/document/move", json={
+                "doc_id": dest_new_rel,
+                "new_path": "../../../var/log/badfile.md"
+            })
+            assert res_bypass_move.status_code == 200
+            data_bypass_move = res_bypass_move.json()
+            assert data_bypass_move.get("success") is not True, "移动接口未能在路径穿越指令下安全拦截"
+            assert "非法的物理路径穿越" in data_bypass_move.get("error"), f"非预期的路径穿越拦截报错: {data_bypass_move.get('error')}"
+            print("  ✅ [测试] L3 级防路径穿越恶意原稿搬迁拦截完美通过！")
             
         finally:
             # 恢复单例原状，防止干扰其他用例
