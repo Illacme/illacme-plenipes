@@ -169,6 +169,50 @@ async def create_directory(req: dict):
         
     return {"success": True, "dir_id": dir_id}
 
+@router.post("/ledger/directory/delete", dependencies=[Depends(verify_token)])
+async def delete_directory(req: dict):
+    engine = get_global_engine()
+    if not engine: return {"error": "Engine not initialized"}
+    
+    dir_id = req.get("dir_id", "").strip()
+    if not dir_id:
+        return {"error": "物理目录路径不能为空"}
+        
+    # 防止误删根目录或非法的空路径
+    if dir_id in [".", "/", ""]:
+        return {"error": "权限拒绝：不允许删除文库根目录"}
+        
+    # 物理防线 L3：路径合规性与穿越审计
+    import os
+    
+    vault_root_abs = os.path.abspath(engine.vault_root)
+    abs_path = os.path.abspath(os.path.join(vault_root_abs, dir_id))
+    
+    if not abs_path.startswith(vault_root_abs) or abs_path == vault_root_abs:
+        return {"error": "权限拒绝：检测到非法的物理路径穿越指令"}
+        
+    if not os.path.exists(abs_path):
+        return {"error": "删除失败：目标物理目录不存在"}
+        
+    if not os.path.isdir(abs_path):
+        return {"error": "删除失败：目标路径不是一个有效的目录"}
+        
+    # 钢铁非空防御拦截：发现任何子文件/子目录即刻退出
+    try:
+        children = os.listdir(abs_path)
+        if len(children) > 0:
+            return {"error": "删除失败：该目录下包含原稿或子目录，请先清空或转移其中的资产"}
+    except Exception as e:
+        return {"error": f"物理目录读取失败: {e}"}
+        
+    # 真实执行物理销毁
+    try:
+        os.rmdir(abs_path)
+    except Exception as e:
+        return {"error": f"物理磁盘目录删除失败: {e}"}
+        
+    return {"success": True, "dir_id": dir_id}
+
 @router.post("/ledger/document/{doc_id:path}/metadata", dependencies=[Depends(verify_token)])
 async def update_document_metadata(doc_id: str, req: dict):
     engine = get_global_engine()

@@ -150,6 +150,48 @@ def test_document_creation_flow():
             assert not os.path.exists(bad_dir_in_system), "穿越文件夹违规被物理写入"
             print("  ✅ [测试] L3 级防路径穿越创建目录安全拦截顺利通过！")
             
+            # ===== 安全删除目录（Safe Directory Deletion）单元测试 =====
+            print("🧪 [Test] 启动安全删除空目录及非空防线拦截单元测试...")
+            
+            # 1. 正常场景：删除已建好的空目录 posts/life/cooking
+            res_del_ok = client.post("/ledger/directory/delete", json={"dir_id": "posts/life/cooking"})
+            assert res_del_ok.status_code == 200
+            data_del_ok = res_del_ok.json()
+            assert data_del_ok.get("success") is True, f"正常空目录删除失败: {data_del_ok.get('error')}"
+            assert not os.path.exists(physical_dir), "空文件夹未从物理磁盘清除"
+            print("  ✅ [测试] 正常物理空目录安全删除流程顺利通过！")
+            
+            # 2. 拦截场景：目录下存有原稿资产时拒绝删除
+            # 先重新建立 posts/life/cooking 并往里塞一个临时原稿
+            os.makedirs(physical_dir, exist_ok=True)
+            dummy_file = os.path.join(physical_dir, "recipe.md")
+            with open(dummy_file, 'w', encoding='utf-8') as f:
+                f.write("# 食谱\n\n测试非空保护拦截。")
+                
+            res_del_fail = client.post("/ledger/directory/delete", json={"dir_id": "posts/life/cooking"})
+            assert res_del_fail.status_code == 200
+            data_del_fail = res_del_fail.json()
+            assert data_del_fail.get("success") is not True, "未能成功拦截非空文件夹的物理删除！数据面临丢失风险！"
+            assert "包含原稿" in data_del_fail.get("error"), f"非预期的非空保护报错提示: {data_del_fail.get('error')}"
+            assert os.path.exists(dummy_file), "非空保护失效：物理子资产被强行移除！"
+            print("  ✅ [测试] 钢铁级非空防护拦截高分通过！物理原稿资产绝对安全！")
+            
+            # 3. 拦截场景：防止跨盘穿越删除越权攻击
+            res_del_bypass = client.post("/ledger/directory/delete", json={"dir_id": "../../../var/log/baddir"})
+            assert res_del_bypass.status_code == 200
+            data_del_bypass = res_del_bypass.json()
+            assert data_del_bypass.get("success") is not True, "删除接口未能在路径穿越越权指令下进行防御拦截"
+            assert "非法的物理路径穿越" in data_del_bypass.get("error"), f"非预期的安全删除拦截报错: {data_del_bypass.get('error')}"
+            print("  ✅ [测试] L3 级防路径穿越恶意删除安全拦截顺利通过！")
+            
+            # 4. 拦截场景：防止删除文库根目录本身
+            res_del_root = client.post("/ledger/directory/delete", json={"dir_id": "."})
+            assert res_del_root.status_code == 200
+            data_del_root = res_del_root.json()
+            assert data_del_root.get("success") is not True, "未能在删除文库根目录指令下实施安全拦截"
+            assert "不允许删除文库根目录" in data_del_root.get("error"), f"非预期的根目录删除拦截报错: {data_del_root.get('error')}"
+            print("  ✅ [测试] 文库物理根目录误删安全防护拦截顺利通过！")
+            
         finally:
             # 恢复单例原状，防止干扰其他用例
             singleton.set_global_engine(original_engine)

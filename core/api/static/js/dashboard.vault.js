@@ -153,6 +153,16 @@ window.selectVaultFolder = (path, event) => {
         }
     }
 
+    // 🗑️ 上下文自适应目录删除按钮控制
+    const delDirBtn = document.getElementById('btn-delete-directory');
+    if (delDirBtn) {
+        if (path === "") {
+            delDirBtn.style.display = 'none';
+        } else {
+            delDirBtn.style.display = 'inline-block';
+        }
+    }
+
     window.loadVault();
 };
 
@@ -1093,6 +1103,112 @@ window.triggerCreateDirectory = async () => {
                 }
             } catch (e) {
                 console.error("Create directory error:", e);
+                Swal.fire({
+                    title: '系统异常',
+                    text: e.message,
+                    icon: 'error',
+                    background: 'rgba(13, 14, 28, 0.95)',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'glass-panel',
+                        confirmButton: 'primary-btn'
+                    }
+                });
+            }
+        }
+    });
+};
+
+// 🗑️ [NEW] 安全物理删除空目录交互处理器
+window.triggerDeleteDirectory = async () => {
+    const targetDir = window.vaultActiveFolder;
+    if (!targetDir) {
+        Swal.fire({
+            title: '未选中目录',
+            text: '请先在左侧目录树中选择需要删除的空目录',
+            icon: 'warning',
+            background: 'rgba(13, 14, 28, 0.95)',
+            color: '#fff',
+            customClass: {
+                popup: 'glass-panel',
+                confirmButton: 'primary-btn'
+            }
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: '⚠️ 确认物理删除目录吗？',
+        text: `您即将物理销毁选中的空文件夹 [${targetDir}]。此操作无法撤销。`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '🗑️ 确认物理删除',
+        cancelButtonText: '取消',
+        background: 'rgba(13, 14, 28, 0.95)',
+        color: '#fff',
+        backdrop: `rgba(0, 0, 0, 0.6)`,
+        customClass: {
+            popup: 'glass-panel',
+            confirmButton: 'primary-btn',
+            cancelButton: 'mini-btn'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            if (typeof addAudit === 'function') {
+                addAudit(`🗑️ 正在尝试从物理磁盘注销空目录 [${targetDir}]...`, "warning");
+            }
+            
+            try {
+                const res = await apiFetch('/ledger/directory/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dir_id: targetDir })
+                });
+                
+                if (res && res.success) {
+                    Swal.fire({
+                        title: '目录销毁成功',
+                        text: `物理空目录已清理: ${res.dir_id}`,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    
+                    if (typeof addAudit === 'function') {
+                        addAudit(`✅ 空目录 ${res.dir_id} 已物理注销并成功移除。`);
+                    }
+                    
+                    // 重置激活的目录至全部原稿
+                    window.vaultActiveFolder = '';
+                    
+                    // 隐藏删除目录按钮
+                    const delDirBtn = document.getElementById('btn-delete-directory');
+                    if (delDirBtn) delDirBtn.style.display = 'none';
+
+                    // 重置左侧树折叠记忆以进行全量同步
+                    window.vaultTreeInitialized = false;
+                    
+                    // 重新加载文稿列表
+                    if (typeof loadVault === 'function') {
+                        await loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);
+                    }
+                } else {
+                    Swal.fire({
+                        title: '物理销毁失败',
+                        text: res ? res.error : '物理目录销毁超时，请核验系统日志',
+                        icon: 'error',
+                        background: 'rgba(13, 14, 28, 0.95)',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'glass-panel',
+                            confirmButton: 'primary-btn glow-btn'
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Delete directory error:", e);
                 Swal.fire({
                     title: '系统异常',
                     text: e.message,
