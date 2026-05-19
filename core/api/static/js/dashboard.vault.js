@@ -281,9 +281,9 @@ window.loadVault = async (query = null, page = null) => {
                 <td style="text-align: center;"><span class="mono">${wc.toLocaleString()}</span></td>
                 <td>
                     <div style="display:flex; gap:8px;">
-                        <button class="mini-action-btn" title="快速编辑" onclick="openEditor('${m.rel_path}')">📝</button>
-                        <button class="mini-action-btn" title="重命名/移动" onclick="window.triggerMoveDocument('${m.rel_path}')">🔄</button>
-                        <button class="mini-action-btn" title="分发详情" onclick="openVaultDrawer('${m.rel_path}')">⚙️</button>
+                        <button class="mini-action-btn" title="快速编辑原稿 (Edit)" onclick="openEditor('${m.rel_path}')">📝</button>
+                        <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
+                        <button class="mini-action-btn" title="查看分发与元数据详情 (Metadata Details)" onclick="openVaultDrawer('${m.rel_path}')">⚙️</button>
                     </div>
                 </td>
             </tr>

@@ -88,8 +88,8 @@ window.viewTemplates = {
                     <!-- 🛠️ 原稿操作工具栏 (Action Toolbar) -->
                     <div class="vault-toolbar" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-shrink: 0;">
                         <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; transition: all 0.3s; height: 28px; line-height: 14px;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">📑 隐藏侧栏</button>
-                        <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDocument()">＋ 新建原稿</button>
-                        <button class="primary-btn glow-btn" id="btn-create-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDirectory()">＋ 新建目录</button>
+                        <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDocument()" title="物理创建新 Markdown 稿件 (New Document)">＋ 新建原稿</button>
+                        <button class="primary-btn glow-btn" id="btn-create-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDirectory()" title="物理创建新分类文件夹 (New Folder)">＋ 新建目录</button>
                         <button class="mini-btn" id="btn-delete-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px; background: rgba(220,53,69,0.15); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); display: none; cursor: pointer; transition: all 0.3s;" onclick="window.triggerDeleteDirectory()" title="删除当前选中的空目录">🗑️ 删除目录</button>
                     </div>
                     <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
