@@ -116,6 +116,40 @@ def test_document_creation_flow():
             assert not os.path.exists(passwd_file_in_vault), "穿越文件违规被物理写入"
             print("  ✅ [测试] L3 级防路径穿越（Directory Traversal）安全拦截高分通过！")
             
+            # ===== 新建目录（Directory Creation）单元测试 =====
+            print("🧪 [Test] 启动目录新建物理流程及防御单元测试...")
+            
+            # 1. 正常场景：在子目录下新建文件夹
+            res_dir = client.post("/ledger/directory/create", json={"dir_id": "posts/life/cooking"})
+            assert res_dir.status_code == 200
+            data_dir = res_dir.json()
+            assert data_dir.get("success") is True, f"物理目录创建失败: {data_dir.get('error')}"
+            assert data_dir.get("dir_id") == "posts/life/cooking"
+            
+            # 验证物理目录是否在磁盘生成
+            physical_dir = os.path.join(temp_vault, "posts/life/cooking")
+            assert os.path.isdir(physical_dir), "物理文件夹未在磁盘中创建"
+            print("  ✅ [测试] 正常物理目录创建完美通过！")
+            
+            # 2. 冲突场景：重名拦截
+            res_dir_conflict = client.post("/ledger/directory/create", json={"dir_id": "posts/life/cooking"})
+            assert res_dir_conflict.status_code == 200
+            data_dir_conflict = res_dir_conflict.json()
+            assert data_dir_conflict.get("success") is not True, "未能阻止重复同名物理目录的创建"
+            assert "已存在" in data_dir_conflict.get("error"), f"非预期的重名目录拦截提示: {data_dir_conflict.get('error')}"
+            print("  ✅ [测试] 物理目录重复创建冲突校验通过！")
+            
+            # 3. 安全场景：路径穿越恶意阻断 (L3 级防御)
+            res_dir_bypass = client.post("/ledger/directory/create", json={"dir_id": "../../../var/log/baddir"})
+            assert res_dir_bypass.status_code == 200
+            data_dir_bypass = res_dir_bypass.json()
+            assert data_dir_bypass.get("success") is not True, "目录新建接口未能防御路径穿越漏洞"
+            assert "非法的物理路径穿越" in data_dir_bypass.get("error"), f"非预期的安全拦截报错: {data_dir_bypass.get('error')}"
+            
+            bad_dir_in_system = os.path.join(temp_vault, "../../../var/log/baddir")
+            assert not os.path.exists(bad_dir_in_system), "穿越文件夹违规被物理写入"
+            print("  ✅ [测试] L3 级防路径穿越创建目录安全拦截顺利通过！")
+            
         finally:
             # 恢复单例原状，防止干扰其他用例
             singleton.set_global_engine(original_engine)

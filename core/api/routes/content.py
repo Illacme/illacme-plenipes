@@ -140,6 +140,35 @@ async def create_document(req: dict):
     
     return {"success": True, "doc_id": doc_id}
 
+@router.post("/ledger/directory/create", dependencies=[Depends(verify_token)])
+async def create_directory(req: dict):
+    engine = get_global_engine()
+    if not engine: return {"error": "Engine not initialized"}
+    
+    dir_id = req.get("dir_id", "").strip()
+    if not dir_id:
+        return {"error": "物理目录路径不能为空"}
+        
+    # 物理防线 L3：路径合规性与穿越审计
+    import os
+    
+    vault_root_abs = os.path.abspath(engine.vault_root)
+    abs_path = os.path.abspath(os.path.join(vault_root_abs, dir_id))
+    
+    if not abs_path.startswith(vault_root_abs):
+        return {"error": "权限拒绝：检测到非法的物理路径穿越指令"}
+        
+    if os.path.exists(abs_path):
+        return {"error": "创建失败：该物理路径已存在"}
+        
+    # 真实创建物理目录
+    try:
+        os.makedirs(abs_path, exist_ok=True)
+    except Exception as e:
+        return {"error": f"物理磁盘目录创建失败: {e}"}
+        
+    return {"success": True, "dir_id": dir_id}
+
 @router.post("/ledger/document/{doc_id:path}/metadata", dependencies=[Depends(verify_token)])
 async def update_document_metadata(doc_id: str, req: dict):
     engine = get_global_engine()
