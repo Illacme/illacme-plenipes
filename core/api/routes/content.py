@@ -185,11 +185,26 @@ async def move_document(req: dict):
     if not doc_id or not new_path:
         return {"error": "原稿路径与新目标路径均不能为空"}
         
-    if "/" not in new_path and "\\" not in new_path:
+    # 智能相对路径解析：若新路径包含相对上一级等跳转符号 (..)，以当前原稿所属文件夹为基准进行寻址换算
+    is_relative_resolved = False
+    if ".." in new_path:
+        old_dir = os.path.dirname(doc_id)
+        new_path = os.path.normpath(os.path.join(old_dir, new_path))
+        is_relative_resolved = True
+        
+    # 智能对正：如果 new_path 只是一个纯文件名（不含斜杠），默认重命名到旧文件的同级文件夹下
+    if not is_relative_resolved and "/" not in new_path and "\\" not in new_path:
         old_dir = os.path.dirname(doc_id)
         new_path = os.path.join(old_dir, new_path) if old_dir else new_path
         
     new_path = new_path.replace("\\", "/")
+    
+    # 智能目录锚定：若规范化后的 new_path 指向文库中已有的一个物理目录文件夹，则自动附加原文件名作为目标
+    vault_root_abs = os.path.abspath(engine.vault_root)
+    dest_temp_abs = os.path.abspath(os.path.join(vault_root_abs, new_path))
+    if os.path.exists(dest_temp_abs) and os.path.isdir(dest_temp_abs):
+        new_path = os.path.join(new_path, os.path.basename(doc_id)).replace("\\", "/")
+        
     src_abs = resolve_safe_path(engine, doc_id)
     dest_abs = resolve_safe_path(engine, new_path)
     

@@ -250,6 +250,24 @@ def test_document_creation_flow():
             assert tech_doc_info.get("slug") == "old-slug", "跨文件夹移动后元数据属性丢失"
             print("  ✅ [测试] 正常跨文件夹平滑移动与元数据继承通过！")
             
+            # 2b. 场景：智能相对路径上一级（..）平滑搬迁与已有目录锚定验证
+            parent_rel_dir = "posts"
+            res_parent_move = client.post("/ledger/document/move", json={
+                "doc_id": dest_new_rel,
+                "new_path": "../"
+            })
+            assert res_parent_move.status_code == 200
+            data_parent_move = res_parent_move.json()
+            assert data_parent_move.get("success") is True, f"移到上一级目录失败: {data_parent_move.get('error')}"
+            
+            parent_expected_rel = "posts/new-recipe-tech.md"
+            assert not os.path.exists(os.path.join(temp_vault, dest_new_rel)), "移到上一级后旧文件依然残留"
+            assert os.path.exists(os.path.join(temp_vault, parent_expected_rel)), "移到上一级后物理文件不存在"
+            
+            # 更新为当前最新位置以便后续冲突测试使用
+            dest_new_rel = parent_expected_rel
+            print("  ✅ [测试] 智能相对路径上一级移动及目录自锚定通过！")
+            
             # 3. 拦截场景：防同名文件覆盖冲突保护
             collision_file_rel = "posts/tech/collision.md"
             collision_file_abs = os.path.join(temp_vault, collision_file_rel)
