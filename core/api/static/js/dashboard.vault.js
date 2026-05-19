@@ -1230,27 +1230,68 @@ window.triggerDeleteDirectory = async () => {
 window.triggerMoveDocument = async (docId) => {
     if (!docId) return;
 
+    // 1. 获取当前笔记库内的物理文件夹列表以支持一键选择
+    let directories = [];
+    try {
+        const listRes = await apiFetch('/api/vault/list');
+        if (listRes && listRes.directories) {
+            directories = listRes.directories;
+        }
+    } catch (e) {
+        console.error("Fetch directories failed:", e);
+    }
+
+    // 2. 深度拆分当前的“父文件夹路径”与“纯文件名”
+    const lastSlashIndex = docId.lastIndexOf('/');
+    const currentFolder = lastSlashIndex !== -1 ? docId.substring(0, lastSlashIndex) : "";
+    const currentFileName = lastSlashIndex !== -1 ? docId.substring(lastSlashIndex + 1) : docId;
+
+    // 3. 构建高保真下拉菜单，无缝包含 Root (根目录) 
+    const folderList = ["", ...directories.filter(d => d)];
+    const uniqueFolders = Array.from(new Set(folderList));
+    uniqueFolders.sort((a, b) => a.localeCompare(b));
+
+    const optionsHtml = uniqueFolders.map(folder => {
+        const isSelected = folder === currentFolder ? 'selected' : '';
+        const label = folder ? `📁 ${folder}` : '🏠 Root (根目录)';
+        return `<option value="${folder}" ${isSelected} style="background: #111; color: #fff;">${label}</option>`;
+    }).join('');
+
     Swal.fire({
         title: '🔄 重命名 / 移动原稿',
-        text: `当前路径: ${docId}`,
-        input: 'text',
-        inputValue: docId,
-        inputPlaceholder: '请输入新相对路径或新文件名...',
+        html: `
+            <div class="swal-move-container" style="display: flex; gap: 12px; margin-top: 15px; text-align: left; flex-direction: column; font-family: inherit;">
+                <div class="swal-field-group">
+                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: #fff;">📁 目标文件夹</label>
+                    <select id="swal-target-folder" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 0.9rem; cursor: pointer;">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="swal-field-group" style="margin-top: 5px;">
+                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: #fff;">📝 原稿文件名</label>
+                    <input id="swal-target-filename" type="text" value="${currentFileName}" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 0.9rem;">
+                </div>
+            </div>
+        `,
         showCancelButton: true,
         confirmButtonText: '保存搬迁',
         cancelButtonText: '取消',
-        background: 'rgba(13, 14, 28, 0.95)',
+        background: 'rgba(13, 14, 28, 0.96)',
         color: '#fff',
-        inputValidator: (value) => {
-            if (!value || !value.trim()) {
-                return '新路径不能为空';
-            }
-        },
         customClass: {
             popup: 'glass-panel',
-            input: 'glass-input',
             confirmButton: 'primary-btn glow-btn',
             cancelButton: 'mini-btn'
+        },
+        preConfirm: () => {
+            const folder = document.getElementById('swal-target-folder').value;
+            const filename = document.getElementById('swal-target-filename').value.trim();
+            if (!filename) {
+                Swal.showValidationMessage('原稿文件名不能为空');
+                return false;
+            }
+            // 平滑拼接成最终相对路径
+            return folder ? `${folder}/${filename}` : filename;
         }
     }).then(async (result) => {
         if (result.isConfirmed) {
