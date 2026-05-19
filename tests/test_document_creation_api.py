@@ -7,15 +7,12 @@
 import sys
 import os
 import tempfile
-import shutil
-import pytest
 from fastapi.testclient import TestClient
 
 # 将项目根目录加入 python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.api.server import app
-from core.runtime.engine_singleton import get_global_engine
 
 # 构造 Mock 引擎和元数据管理器
 class MockSystemConfig:

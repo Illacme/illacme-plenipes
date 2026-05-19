@@ -4,7 +4,6 @@
 🧪 [V74.9] Onboarding Sovereignty Unit Test
 职责：测试当 vault_root 为空或不存在时，治理层契约守护的降级警告自愈能力，以及主引擎的 Onboarding 状态属性。
 """
-import os
 import tempfile
 import pytest
 

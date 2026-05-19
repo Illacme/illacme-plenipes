@@ -42,7 +42,6 @@ def test_theme_awareness():
 def test_imprint_vault_bootstrapping():
     print("\n🧪 [Test] 版图空文库空间自愈引导（战役二）测试...")
     import tempfile
-    import shutil
     from core.governance.imprint_manager import im
     
     # 建立独立的临时测试文库

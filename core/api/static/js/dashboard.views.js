@@ -61,10 +61,8 @@ window.viewTemplates = {
             <div class="view-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <h2>📂 原稿文库 (Vault)</h2>
-                    <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.3s;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">📑 隐藏侧栏</button>
                 </div>
-                <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
-                    <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.85rem;" onclick="window.triggerCreateDocument()">＋ 新建原稿</button>
+                <div class="header-actions">
                     <div class="search-box">
                         <input type="text" id="vault-search" placeholder="搜索标题、路径或 Slug...">
                     </div>
@@ -87,6 +85,11 @@ window.viewTemplates = {
 
                 <!-- 📄 右侧稿件主列表 -->
                 <div id="vault-main-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100%; min-width: 0;">
+                    <!-- 🛠️ 原稿操作工具栏 (Action Toolbar) -->
+                    <div class="vault-toolbar" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-shrink: 0;">
+                        <button id="toggle-vault-sidebar-btn" class="mini-btn" style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; transition: all 0.3s; height: 28px; line-height: 14px;" onclick="window.toggleVaultSidebar()" title="折叠/展开目录侧边栏">📑 隐藏侧栏</button>
+                        <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDocument()">＋ 新建原稿</button>
+                    </div>
                     <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
                         <table id="vault-table" style="min-width: 600px;">
                             <thead style="position: sticky; top: 0; z-index: 10; background: rgba(13, 14, 28, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(255,255,255,0.1);">

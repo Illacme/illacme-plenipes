@@ -56,7 +56,7 @@ class GoogleCompatibleTranslator(BaseTranslator):
         try:
             models = await self.list_models()
             if models:
-                return True, f"链路通畅: 握手成功 (已就绪)"
+                return True, "链路通畅: 握手成功 (已就绪)"
             return True, "握手成功，但未暴露可用模型。"
         except Exception as e:
             err_str = str(e)
