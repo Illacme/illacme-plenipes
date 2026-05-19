@@ -214,8 +214,8 @@ class ContractGuard:
                 stderr=subprocess.STDOUT,
                 text=True
             ).strip().splitlines()
-            # 🚀 [V87.6] 豁免历史发展轨迹：允许追踪 .plenipes/history/ 下的迭代归档
-            tracked_files = [f for f in raw_tracked if f and not f.startswith(".plenipes/history/")]
+            # 🚀 [V87.6] 豁免历史发展轨迹与踩坑沉淀：允许追踪 .plenipes/history/ 下的迭代归档以及演进教训文件
+            tracked_files = [f for f in raw_tracked if f and not (f.startswith(".plenipes/history/") or f == ".plenipes/evolution_records.md")]
             if tracked_files:
                 violations.append(f"❌ [主权泄露] 检测到 .plenipes/, metadata/ 或 imprints/ 目录下的非豁免文件正在被 Git 追踪（如: {tracked_files[0]}）！请执行 'git rm -r --cached'。")
         except subprocess.CalledProcessError:

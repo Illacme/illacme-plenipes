@@ -18,7 +18,7 @@ window.initializeVaultTree = async () => {
     try {
         const res = await apiFetch('/api/vault/list');
         if (res && res.manuscripts) {
-            window.renderVaultTree(res.manuscripts);
+            window.renderVaultTree(res.manuscripts, res.directories || []);
             window.vaultTreeInitialized = true;
         }
     } catch (e) {
@@ -26,13 +26,33 @@ window.initializeVaultTree = async () => {
     }
 };
 
-window.renderVaultTree = (manuscripts) => {
+window.renderVaultTree = (manuscripts, directories = []) => {
     const treeEl = document.getElementById('vault-tree');
     if (!treeEl) return;
 
     const paths = manuscripts.map(m => m.path || m.rel_path);
     const tree = { name: "Root", path: "", children: {} };
 
+    // 1. 预先填充物理真实子目录结构，支持空目录展示
+    directories.forEach(dirPath => {
+        if (!dirPath) return;
+        const parts = dirPath.split('/');
+        let current = tree;
+        let currentPath = "";
+        parts.forEach(folder => {
+            currentPath = currentPath ? `${currentPath}/${folder}` : folder;
+            if (!current.children[folder]) {
+                current.children[folder] = {
+                    name: folder,
+                    path: currentPath,
+                    children: {}
+                };
+            }
+            current = current.children[folder];
+        });
+    });
+
+    // 2. 根据原稿路径补充推演目录树节点
     paths.forEach(p => {
         if (!p) return;
         const parts = p.split('/');

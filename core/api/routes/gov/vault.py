@@ -40,4 +40,23 @@ async def list_vault_manuscripts():
             "last_updated": max([s.get("timestamp", 0) for s in status_map.values() if s] + [0])
         })
     vault_list.sort(key=lambda x: x["last_updated"], reverse=True)
-    return {"manuscripts": vault_list}
+    
+    # 🚀 [V87.8] 物理扫描仓库根目录下的真实目录列表，支持显示空目录
+    directories = []
+    vault_root = getattr(engine, "vault_root", "")
+    if vault_root and os.path.exists(vault_root):
+        vault_root_abs = os.path.abspath(vault_root)
+        for root, dirs, files in os.walk(vault_root_abs):
+            for d in dirs:
+                # 排除敏感或系统内部文件夹
+                if d in [".git", ".plenipes", "node_modules", ".venv", "themes"]:
+                    continue
+                abs_dir = os.path.join(root, d)
+                rel_dir = os.path.relpath(abs_dir, vault_root_abs).replace("\\", "/")
+                # 确保上层路径中不包含被屏蔽的敏感目录
+                path_parts = rel_dir.split("/")
+                if any(p in [".git", ".plenipes", "node_modules", ".venv", "themes"] for p in path_parts):
+                    continue
+                directories.append(rel_dir)
+                
+    return {"manuscripts": vault_list, "directories": directories}
