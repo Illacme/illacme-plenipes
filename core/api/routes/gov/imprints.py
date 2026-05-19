@@ -72,9 +72,10 @@ async def add_imprint(req: dict):
     name = req.get("name")
     path = req.get("path")
     press_name = req.get("press_name")
+    bootstrap_vault = req.get("bootstrap_vault", False)
     if not name or not path: return {"error": "Missing name or path"}
     
-    success = im.init_sovereign_imprint(name, path, press_name)
+    success = im.init_sovereign_imprint(name, path, press_name, bootstrap_vault)
     return {"success": success}
 
 @router.post("/api/imprints/switch", dependencies=[Depends(verify_token)])

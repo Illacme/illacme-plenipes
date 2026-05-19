@@ -65,7 +65,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(rel_path) DO UPDATE SET
     title=excluded.title, slug=excluded.slug, source_hash=excluded.source_hash,
     shadow_hash=excluded.shadow_hash, route_prefix=excluded.route_prefix,
-    metadata_json=excluded.metadata_json, last_updated=CURRENT_TIMESTAMP
+    route_source=excluded.route_source, sub_dir=excluded.sub_dir,
+    persistent_date=excluded.persistent_date, metadata_json=excluded.metadata_json,
+    last_updated=CURRENT_TIMESTAMP
 """
 
 UPSERT_TRANS = """

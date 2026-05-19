@@ -28,10 +28,21 @@ class LMStudioBase(OpenAICompatibleTranslator):
             if resp.status_code == 200:
                 data = resp.json()
                 return [m['id'] for m in data.get('data', [])]
-            return []
+            raise RuntimeError(f"服务响应异常 (HTTP {resp.status_code})")
         except Exception as e:
+            err_str = str(e)
+            if "refused" in err_str.lower() or "connection refused" in err_str.lower():
+                msg = "服务未启动或端口冲突 (Connection Refused)"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                msg = "服务响应超时 (Timeout)"
+            elif "404" in err_str:
+                msg = "路径不存在 (404 Not Found)"
+            elif "401" in err_str or "unauthorized" in err_str.lower():
+                msg = "认证失败 (API Key 无效)"
+            else:
+                msg = f"连接异常: {err_str[:40]}..." if len(err_str) > 40 else f"连接异常: {err_str}"
             tlog.warning(f"⚠️ [LM Studio] 无法感应模型列表: {e}")
-            return []
+            raise RuntimeError(msg)
 
     async def test_connection(self) -> tuple[bool, str]:
         """验证与 LM Studio 的通讯状态"""

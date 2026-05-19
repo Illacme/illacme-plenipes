@@ -99,6 +99,13 @@ class IllacmeEngine:
 
         self.route_matrix = []  # 🚩 [新增] 强制默认值，确保后续流程不崩溃
 
+    @property
+    def onboarding_required(self) -> bool:
+        """🚀 [V74.9] Onboarding 状态嗅探器：如果文库根路径未配置或物理不存在，则激活降级引导模式"""
+        if not getattr(self, "vault_root", None):
+            return True
+        return not os.path.exists(self.vault_root)
+
     def _on_progress_start(self, total=0, **kwargs):
         self._total_progress = total
         self._last_progress = 0
@@ -109,11 +116,20 @@ class IllacmeEngine:
     def _on_config_reloaded(self, config):
         """⚡ [V55.12] 深度主权对齐：响应配置变更，同步全量运行时参数"""
         tlog.info("⚡ [Engine] 接收到配置变更信号，正在执行全量参数对齐...")
+        
+        # 1. 记录热更前是否处于 Onboarding 状态
+        was_onboarding = self.onboarding_required
+        
         self.config = config
         
-        # 1. 🚀 物理属性全量同步 (Projected Attributes)
+        # 2. 🚀 物理属性全量同步 (Projected Attributes)
         self.active_theme = config.active_theme
-        self.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
+        self.vault_root = os.path.abspath(os.path.expanduser(config.vault_root)) if config.vault_root else ""
+        
+        # 同步更新收稿渠道的数据源路径，确保热重载生效
+        if hasattr(self, 'manuscript_source') and hasattr(self.manuscript_source, 'root_path'):
+            self.manuscript_source.root_path = self.vault_root
+            
         self.route_matrix = config.route_matrix
         self.fm_defaults = config.frontmatter_defaults
         self.fm_order = config.frontmatter_order
@@ -121,13 +137,13 @@ class IllacmeEngine:
         self.auto_save_interval = config.system.auto_save_interval
         self.max_depth = config.system.max_depth
         
-        # 2. 🛡️ 治理配置实时热挂载
+        # 3. 🛡️ 治理配置实时热挂载
         self.i18n = config.i18n_settings
         self.seo_cfg = config.seo_settings
         self.img_cfg = config.image_settings
         self.pub_cfg = config.publish_control
         
-        # 3. 🗺️ 物理路径矩阵重新锚定
+        # 4. 🗺️ 物理路径矩阵重新锚定
         # 如果 active_theme 发生变更，必须重新计算 engine.paths 以防 IO 错误
         if hasattr(self, 'paths'):
             data_root = os.path.abspath(os.path.expanduser(self.config.system.data_root))
@@ -137,7 +153,7 @@ class IllacmeEngine:
                 if not os.path.isabs(p): return os.path.join(data_root, p)
                 return os.path.abspath(p)
             
-            paths_cfg = self.config.output_paths
+            paths_cfg = self.config.output_paths or {}
             source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
             
             # 更新核心物理路径
@@ -147,7 +163,7 @@ class IllacmeEngine:
             self.paths["assets"] = anchor((paths_cfg.get('assets_dir') or "").replace("{theme}", self.active_theme))
             self.paths["db"] = anchor(self.config.get_ledger_path())
 
-        # 4. 🧠 算力池与业务中枢重校
+        # 5. 🧠 算力池与业务中枢重校
         from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         global_executor.update_concurrency(config.system.concurrency.global_workers)
         ai_executor.update_concurrency(config.system.concurrency.ai_workers)
@@ -155,9 +171,36 @@ class IllacmeEngine:
         if hasattr(self, 'translator') and self.translator:
             self.translator.api_timeout = config.translation.api_timeout
             
-        # 5. 记录主权对齐日志
+        # 6. 记录主权对齐日志
         tlog.info(f"✅ [Engine] 物理参数已全量对齐: Theme={self.active_theme} | Vault={self.vault_root}")
         self.ledger.log("CONFIG_RELOADED", "主权参数全量原子对齐完成", imprint_id=self.imprint_id)
+
+        # 🚀 [V74.9] 零重启热自愈：若状态从 Onboarding 状态复苏至就绪状态
+        if was_onboarding and not self.onboarding_required:
+            tlog.info("🚀 [Onboarding 自愈] 检测到文库路径配置已生效！正在启动物理金库首次全量索引扫描...")
+            try:
+                # 重新执行首次全量索引重构，充填内存
+                from core.editorial.vault_indexer import VaultIndexer
+                VaultIndexer.build_indexes(self.manuscript_source, config=self.config, ledger=self.ledger)
+                tlog.info("✅ [Onboarding 自愈] 物理索引热扫描已完成！")
+            except Exception as e:
+                tlog.error(f"❌ [Onboarding 自愈] 物理索引扫描失败: {e}")
+            
+            # 若启动参数包含 --watch，则实时唤醒/点火守护进程
+            if getattr(self, 'args', None) and getattr(self.args, 'watch', False):
+                tlog.info("🐕 [Onboarding 自愈] 正在实时点火 Watchdog 本地热更监听线程...")
+                try:
+                    from core.runtime.daemon import start_watchdog
+                    from core.runtime.engine_singleton import get_global_observer, set_global_observer
+                    # 确保没有旧的监听在运行
+                    if not get_global_observer():
+                        # 获取当前索引的所有源文件相对路径
+                        current_source_files = list(self.manuscript_source.list_files())
+                        new_observer, _ = start_watchdog(self, self.args, current_source_files)
+                        set_global_observer(new_observer)
+                        tlog.info("✅ [Onboarding 自愈] Watchdog 实时热更新探针启动成功！")
+                except Exception as e:
+                    tlog.error(f"❌ [Onboarding 自愈] 实时热更点火失败: {e}")
 
 
     def get_lang_name_by_code(self, code):

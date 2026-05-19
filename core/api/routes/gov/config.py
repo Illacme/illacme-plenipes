@@ -70,7 +70,9 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
     for key, value in req.items():
         if key == "_level": continue
         level = resolve_governance_level(key)
-        # 🚀 [V74.65] 主权对正：不再盲目委派，严格遵循治理地图的物理归属
+        # 🚀 [V74.9] 底座只读防御：如果决议到的层级是 global，为了保护底层 config.yaml 不被篡改，强制重定向至 local 层级覆盖写入！
+        if level == "global":
+            level = "local"
         routing_groups[level][key] = value
         
         if not imprint_id or imprint_id == engine.im.get_active_imprint():
@@ -118,14 +120,17 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                             if hasattr(target, 'name'): target.name = name
                             routing_groups[level]["i18n_settings.source.name"] = name
                         
-                        if final_key == "publishing_mode":
-                            from core.config.models.governance import PublishingMode
-                            try: value = PublishingMode(value)
-                            except: pass
-                        elif final_key == "seo_strategy":
-                            from core.config.models.governance import SeoStrategy
-                            try: value = SeoStrategy(value)
-                            except: pass
+                        # 🚀 [V74.75] TypeAdapter 智能类型强力自愈，防止 Pydantic V2 序列化时报 UnexpectedValue 警告
+                        if hasattr(target, "model_fields") and final_key in target.model_fields:
+                            from pydantic import TypeAdapter
+                            field_info = target.model_fields[final_key]
+                            if field_info.annotation is not None:
+                                try:
+                                    value = TypeAdapter(field_info.annotation).validate_python(value)
+                                    # 将校验规整后的类型同步回 YAML 写入阵列！
+                                    routing_groups[level][key] = value
+                                except Exception as cast_err:
+                                    tlog.warning(f"⚠️ [类型自愈失败] 字段 '{key}' 无法转换至 {field_info.annotation}: {cast_err}")
                         
                         setattr(target, final_key, value)
                         tlog.info(f"📝 [内存同步] 已更新对象属性: {key}")
@@ -134,6 +139,8 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                         return {"status": "error", "error": f"内存同步失败: {key} - {e}"}
 
     def make_yaml_safe(data):
+        from enum import Enum
+        if isinstance(data, Enum): return data.value
         if hasattr(data, 'model_dump'): return data.model_dump()
         if isinstance(data, dict): return {k: make_yaml_safe(v) for k, v in data.items()}
         if isinstance(data, list): return [make_yaml_safe(v) for v in data]
@@ -143,7 +150,6 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
     paths = {
         "local": CONFIG_LOCAL_NAME,
         "imprint": os.path.join(IMPRINT_DIR, target_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME) if target_imprint else None,
-        "global": CONFIG_NAME
     }
     
     file_data = {}
@@ -205,19 +211,21 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
                 import shutil
                 shutil.copytree(global_theme_path, local_theme_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns('node_modules', '.git', '.DS_Store'))
             
-            from core.adapters.egress.ssg import SSGAdapter
-            from core.config.config import ThemeSettings
-            temp_adapter = SSGAdapter(ThemeSettings(name=theme_id), engine=engine)
-            slots = temp_adapter.get_feature_slots()
-            is_i18n = engine.config.i18n_settings.enable_multilingual and len(engine.config.i18n_settings.targets) > 0
-            if hasattr(engine.config, "output_paths"):
-                for slot_id, slot_cfg in slots.items():
-                    rel_path = slot_cfg["multi" if is_i18n else "single"]
-                    engine.config.output_paths[f"{slot_id}_dir"] = os.path.join(THEMES_DIR, theme_id, rel_path)
+
 
         from core.runtime.engine_factory import EngineFactory
         EngineFactory._init_basic_settings(engine)
         EngineFactory._init_ingress(engine, engine.config)
+        
+        # 🚀 [V74.80] 动态算力网络重构：当用户保存翻译或算力配置时，实时在线组装并热加载翻译官组件
+        if not getattr(engine, 'no_ai', False):
+            from core.logic.ai.ai_factory import TranslatorFactory
+            engine.translator = TranslatorFactory.create(engine.config.translation)
+            
+            # 刷新 route_manager 等组件对最新 translator 的引用
+            if hasattr(engine, 'route_manager') and engine.route_manager:
+                engine.route_manager.translator = engine.translator
+                
         bus.emit("CONFIG_RELOADED", config=engine.config)
             
     return {"status": "success", "active_config": engine.config.model_dump()}

@@ -42,11 +42,16 @@ class ContentSyndicator:
             p_cls = class_map.get(platform_type or entry_id)
             if p_cls:
                 try:
+                    # 🚀 [V75.1] 注入 site_url 以确保下游子插件自愈访问
+                    if isinstance(self.sys_tuning, dict):
+                        self.sys_tuning["site_url"] = self.site_url
+                        
                     # 实例化插件，传入该条目专属配置
                     instance = p_cls(entry_cfg, self.sys_tuning)
                     # 强制注入实例 ID (以便在审计时区分)
                     instance.instance_id = entry_id
                     self.plugins.append(instance)
+
                     tlog.info(f"📡 [分发引擎] 已激活主权节点: {entry_id} (类型: {platform_type or entry_id})")
                 except Exception as e:
                     tlog.error(f"🛑 [分发引擎] 节点 {entry_id} 初始化失败: {e}")

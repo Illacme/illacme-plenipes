@@ -50,6 +50,14 @@ async def get_dispatch_status(doc_id: str):
     route_source = doc_info.get("route_source") or "docs"
     sub_dir = doc_info.get("sub_dir") or ""
 
+    # 🚀 动态还原该渠道对应的 target_slot
+    target_slot = "docs"
+    if hasattr(engine, "route_matrix"):
+        for item in engine.route_matrix:
+            if item.source == route_source:
+                target_slot = item.target_slot
+                break
+
     # 动态推导静态输出根目录，优先从 engine.paths 中读取
     static_root = ""
     if hasattr(engine, "paths") and engine.paths.get("static_dir"):
@@ -81,7 +89,7 @@ async def get_dispatch_status(doc_id: str):
     source_lang = i18n.source.lang_code
     if hasattr(engine, "route_manager") and doc_info:
         zh_path = engine.route_manager.resolve_physical_path(
-            static_root, source_lang, route_prefix, sub_dir, slug, ".html", source_type=route_source
+            static_root, source_lang, route_prefix, sub_dir, slug, ".html", source_type=target_slot
         )
     else:
         zh_path = os.path.join(static_root, html_name)
@@ -107,7 +115,7 @@ async def get_dispatch_status(doc_id: str):
         lang_code = target.lang_code
         if hasattr(engine, "route_manager") and doc_info:
             target_path = engine.route_manager.resolve_physical_path(
-                static_root, lang_code, route_prefix, sub_dir, slug, ".html", source_type=route_source
+                static_root, lang_code, route_prefix, sub_dir, slug, ".html", source_type=target_slot
             )
         else:
             target_path = os.path.join(static_root, lang_code, html_name)

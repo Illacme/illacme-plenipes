@@ -113,18 +113,14 @@ class Configuration(BaseModel):
     imprint_name: str = Field(default="Illacme Press", alias="press_name")
     imprint_description: str = Field(default="在此输入品牌介绍/格言...", alias="press_description")
     active_imprint: Optional[str] = None # 🚀 [V52.10] 当前激活的物理品牌 ID
-    vault_root: str = "./content-vault"
+    vault_root: str = ""
     metadata_dir: str = "metadata"
     active_theme: str = "default"
     site_url: str = ""
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
     
-    # 全局出站映射
-    output_paths: Dict[str, str] = Field(default_factory=lambda: {
-        "markdown_dir": "./themes/{theme}/src/content/docs",
-        "assets_dir": "./themes/{theme}/public/assets",
-        "graph_json_dir": "./themes/{theme}/public"
-    })
+    # 全局出站映射 (Optional 零配设计)
+    output_paths: Optional[Dict[str, str]] = None
     
     # 路由矩阵
     route_matrix: List[RouteItem] = Field(default_factory=list)

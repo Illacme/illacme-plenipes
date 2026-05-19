@@ -84,6 +84,7 @@ class SystemSettings(BaseModel):
     data_root: str = "."
 
     log_level: str = "INFO"
+    access_log: bool = True
     log_format: LogFormat = LogFormat.RICH
     verbose_ai_logs: bool = True
     serve_host: str = "127.0.0.1"

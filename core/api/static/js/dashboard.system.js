@@ -177,7 +177,7 @@ function renderGeneralCategory() {
             <div class="settings-group mt-large">
                 <h4>🧱 文稿存储架构 (Physical Storage Architecture)</h4>
                 <div class="settings-grid">
-                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'text', {readonly: true})}
+                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'text', {placeholder: '请输入您本地 Obsidian 稿件文库的物理绝对路径，例如: /Volumes/Notebook/omni-hub/content-vault'})}
                     ${renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox', {
                         description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
                     })}
@@ -192,6 +192,24 @@ function renderGeneralCategory() {
                     ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
                     ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
                     ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
+                </div>
+            </div>
+
+            <div class="settings-group mt-large">
+                <h4>⚙️ 遥测与日志 (Telemetry & Server Logs)</h4>
+                <div class="settings-grid">
+                    ${renderSettingsItem('系统日志级别', 'system.log_level', data.system?.log_level || 'INFO', 'select', {
+                        items: [
+                            {value: 'DEBUG', text: 'DEBUG (全量输出)'},
+                            {value: 'INFO', text: 'INFO (常规运行)'},
+                            {value: 'WARNING', text: 'WARNING (仅告警)'},
+                            {value: 'ERROR', text: 'ERROR (仅异常)'}
+                        ],
+                        description: '控制服务器后端在终端输出的日志详细程度。建议使用 WARNING 级别以保持静音。'
+                    })}
+                    ${renderSettingsItem('启用 HTTP 访问日志', 'system.access_log', data.system?.access_log ?? true, 'checkbox', {
+                        description: '是否记录每一次网页和 API 访问（包含心跳请求）。建议关闭以防终端频繁被 stats 心跳刷屏。'
+                    })}
                 </div>
             </div>
         </div>

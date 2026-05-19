@@ -152,7 +152,7 @@ window.ComputeUI = {
                         <div class="binding-terminal primary">
                             <div class="terminal-label">PRIMARY NODE (主力执行)</div>
                             <div class="selection-vessel">
-                                <select id="select-compute-strategy-primary-node" 
+                                <select id="primary_node_selector" 
                                         onchange="window.ComputeHandlers.updateStrategy('primary_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'primary_model')">
                                     <option value="">选择算力单元</option>
                                     ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.primary_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}

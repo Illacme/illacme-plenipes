@@ -34,10 +34,21 @@ class OllamaNativeTranslator(BaseTranslator):
             if res.status_code == 200:
                 data = res.json()
                 return [m['name'] for m in data.get('models', [])]
-            return []
+            raise RuntimeError(f"服务响应异常 (HTTP {res.status_code})")
         except Exception as e:
-            tlog.warning(f"⚠️ [Ollama Native] 无法获取模型列表: {e}")
-            return []
+            err_str = str(e)
+            if "refused" in err_str.lower() or "connection refused" in err_str.lower():
+                msg = "服务未启动或端口冲突 (Connection Refused)"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                msg = "服务响应超时 (Timeout)"
+            elif "404" in err_str:
+                msg = "路径不存在 (404 Not Found)"
+            elif "401" in err_str or "unauthorized" in err_str.lower():
+                msg = "认证失败 (API Key 无效)"
+            else:
+                msg = f"连接异常: {err_str[:40]}..." if len(err_str) > 40 else f"连接异常: {err_str}"
+            tlog.warning(f"⚠️ [Ollama Native] 获取模型列表失败: {e}")
+            raise RuntimeError(msg)
 
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """[Protocol] 实现 Ollama 原生 Chat 协议"""

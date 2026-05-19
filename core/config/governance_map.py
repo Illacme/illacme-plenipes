@@ -13,9 +13,10 @@ GOVERNANCE_RULES = {
     # 🔴 本地感应层 (Local: config.local.yaml) - 物理机能、凭据密钥、硬件限制
     "local": [
         r"^translation\.compute_nodes\..*$", # 物理算力节点全量属性 (ID/URL/Key/Type/Model/Enabled)
-        r"^publish_control\.webhook_endpoints\..*$", # Webhook 物理地址与密钥
-        r"^publish_control\.direct_upload\..*\.(api_token|api_key|secret)$", # 托管平台密钥
-        r"^syndication\..*\.(api_key|token|app_password|secret)$", # 聚合平台密钥
+        r"^publish_control\.webhook_endpoints\..*\.(?!enabled$).*$", # Webhook 物理配置（除激活状态外）
+        r"^publish_control\.direct_upload\..*\.(?!enabled$).*$", # 托管平台物理配置（除激活状态外，如 URL/Token/Key/Secret 等）
+        r"^syndication\..*\.(?!enabled$).*$", # 聚合平台物理配置（除激活状态外，如 URL/Key/Token/Username/Password 等）
+        r"^ingress_settings\.source_options\..*$", # 物理输入源的凭据、密钥与本地绝对路径（如 Notion/Obsidian 等）
         r"^system\.api_token$",            # 系统 API 授权令牌
         r"^system\.serve_host$",           # 本地监听地址
         r"^system\.serve_port$",           # 本地预览端口

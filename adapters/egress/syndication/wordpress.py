@@ -21,13 +21,13 @@ class WordPressSyndicator(BaseSyndicator):
     # 🚀 [V11.3] 声明运行时依赖契约
     REQUIRED_PACKAGES = ["requests"]
 
-    def __init__(self, config: Any, site_url: str):
-        super().__init__(config)
-        self.site_url = site_url
+    def __init__(self, config: Any, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
         self.api_url = getattr(config, 'api_url', '').rstrip('/')
         self.username = getattr(config, 'username', '')
         self.app_password = getattr(config, 'application_password', '')
         self.status = getattr(config, 'default_status', 'publish')
+
 
     def _get_auth_header(self):
         """生成 WordPress Application Password 认证头"""

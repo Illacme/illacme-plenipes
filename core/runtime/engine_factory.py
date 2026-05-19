@@ -35,7 +35,7 @@ class EngineFactory:
         # 2. 实例化引擎主体
         engine = IllacmeEngine(config, no_ai=no_ai, config=config, imprint_id=imprint_id)
         engine.config = config
-        engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root))
+        engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root)) if config.vault_root else ""
         engine.route_matrix = config.route_matrix
         engine.active_theme = config.active_theme
 

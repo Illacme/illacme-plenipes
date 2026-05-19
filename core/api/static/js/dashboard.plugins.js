@@ -156,7 +156,14 @@ window.renderPlugins = () => {
                                     <span class="status-dot-mini ${p.is_enabled ? 'healthy' : 'blocked'}" id="dot-${p.id}"></span>
                                     <span class="shield-id">RELEASE ${p.version.split(' ')[0]}</span>
                                 </div>
-                                <div class="log-tag info">${p.status.toUpperCase()}</div>
+                                ${p.is_manageable
+                                    ? (p.is_in_use 
+                                        ? `<div class="log-tag success" style="background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 品牌激活</div>` 
+                                        : (p.is_enabled 
+                                            ? `<div class="log-tag info" style="background: rgba(0, 242, 255, 0.08); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 255, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 驱动就绪</div>` 
+                                            : `<div class="log-tag warning" style="background: rgba(255, 77, 77, 0.08); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🚫 全局禁用</div>`))
+                                    : `<div class="log-tag info">${p.status.toUpperCase()}</div>`
+                                }
                             </div>
                             
                             <div class="shield-body" style="flex:1; display:flex; flex-direction:column;">
@@ -165,7 +172,7 @@ window.renderPlugins = () => {
                                 
                                 <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
                                     <span class="tiny-label" style="color:var(--accent-primary);">${p.origin === 'core' ? '🛡️ CORE ASSET' : '🧩 EXTENSION'}</span>
-                                    ${p.is_in_use ? '<span class="tiny-label" style="margin-left:auto; color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>ACTIVE</span>' : ''}
+                                    ${p.is_in_use ? '<span class="tiny-label" style="margin-left:auto; color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>品牌已绑定</span>' : ''}
                                 </div>
 
                                 <div class="p-control-group" style="display:grid; grid-template-columns: ${needsProbe ? '1fr 1fr' : '1fr'}; gap:8px;">
@@ -175,7 +182,7 @@ window.renderPlugins = () => {
                                 
                                 ${p.is_manageable ? `
                                  <div style="margin-top:15px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
-                                     <span class="tiny-label">运行状态 (Power State)</span>
+                                     <span class="tiny-label" style="opacity: 0.85; display: inline-flex; align-items: center; gap: 4px;" title="控制该功能的全局开关状态。如果当前已被激活的品牌绑定使用，滑块将自动锁定以确保发布链路安全。">🔌 全局功能开关 (Global Switch)</span>
                                      <label class="p-switch">
                                          <input type="checkbox" ${p.is_enabled ? 'checked' : ''} onchange="togglePlugin('${p.id}', this.checked)" ${p.is_in_use ? 'disabled' : ''}>
                                          <span class="p-slider round"></span>
@@ -222,9 +229,23 @@ window.openPluginConfig = async (id) => {
     body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
     drawer.style.display = 'flex';
 
-    if (Object.keys(window.settingsData).length === 0) {
+    if (Object.keys(window.settingsData).length === 0 || !window.governanceRules || Object.keys(window.governanceRules).length === 0) {
         const res = await apiFetch('/api/system/config');
-        if (res && res.config) window.settingsData = res.config;
+        if (res) {
+            window.settingsData = res.config || res;
+            window.governanceRules = res.governance_rules || res._governance_rules || {};
+        }
+    }
+
+    // 🚀 控制底部“🧪 沙盘演练”按钮的显示与绑定
+    const dryRunBtn = document.getElementById('btn-dry-run-plugin');
+    if (dryRunBtn) {
+        if (p && (p.category === 'publisher' || p.category === 'hosting') && id !== 'github_pages') {
+            dryRunBtn.style.display = 'block';
+            dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${id}')`);
+        } else {
+            dryRunBtn.style.display = 'none';
+        }
     }
 
     let html = '';
@@ -291,14 +312,65 @@ window.openPluginConfig = async (id) => {
             html = `<div class="settings-grid">${renderSettingsItem('启用 S3 镜像存储', 's3_enabled', window.settingsData.s3_enabled, 'checkbox')}</div>`;
         } else {
             const cfg = window.settingsData.syndication?.[id] || {};
-            html = `
-                <div class="settings-grid">
-                    ${renderSettingsItem('启用该节点', p.category === 'hosting' ? `publish_control.direct_upload.${id}.enabled` : `syndication.${id}.enabled`, cfg.enabled, 'checkbox')}
-                    ${renderSettingsItem('凭据/密钥 (Key/Token)', p.category === 'hosting' ? `publish_control.direct_upload.${id}.api_key` : `syndication.${id}.api_key`, cfg.api_key || cfg.app_password, 'password')}
-                    ${renderSettingsItem('发布目标 (URL/Bucket)', p.category === 'hosting' ? `publish_control.direct_upload.${id}.url` : `syndication.${id}.url`, cfg.url)}
-                    ${renderSettingsItem('账号/ID', p.category === 'hosting' ? `publish_control.direct_upload.${id}.username` : `syndication.${id}.username`, cfg.username)}
-                </div>
-            `;
+            
+            // 🚀 1. WordPress 卡片主配置定制与保姆级参数指导
+            if (id === 'wordpress') {
+                html = `
+                    <div class="settings-grid">
+                        ${renderSettingsItem('通道激活', `syndication.wordpress.enabled`, cfg.enabled, 'checkbox', {description: '激活后，文章出版发布时将自动分发并同步更新至您的 WordPress。'})}
+                        ${renderSettingsItem('平台 REST API 地址', `syndication.wordpress.api_url`, cfg.api_url || cfg.url, 'text', {placeholder: "例如: https://yourdomain.com/wp-json/wp/v2", description: "【如何获取】输入您的 WordPress 站点 API 端点，通常为您的网站地址加上 '/wp-json/wp/v2'"})}
+                        ${renderSettingsItem('管理员用户名', `syndication.wordpress.username`, cfg.username, 'text', {placeholder: "例如: admin", description: "【如何获取】您在 WordPress 中登录后台所使用的用户名"})}
+                        ${renderSettingsItem('应用密码 (Application Password)', `syndication.wordpress.application_password`, cfg.application_password || cfg.api_key, 'password', {placeholder: "请在此输入 24 位的应用密码", description: "【如何获取】在 WordPress 后台 -> 用户 -> 个人资料 -> 应用密码中生成（注意：此处切勿输入您的 WordPress 登录密码！）"})}
+                        ${renderSettingsItem('文章默认发布状态', `syndication.wordpress.default_status`, cfg.default_status || 'publish', 'select', {
+                            items: [
+                                {value: 'publish', text: '🟢 直接公开发布 (publish)'},
+                                {value: 'draft', text: '🟡 存为本地草稿 (draft)'},
+                                {value: 'pending', text: '🟠 等待人工审核 (pending)'}
+                            ],
+                            description: '同步到 WordPress 后的文章默认状态'
+                        })}
+                    </div>
+                `;
+            }
+            // 🚀 2. Medium 卡片主配置定制与保姆级参数指导
+            else if (id === 'medium') {
+                html = `
+                    <div class="settings-grid">
+                        ${renderSettingsItem('通道激活', `syndication.medium.enabled`, cfg.enabled, 'checkbox', {description: '激活后，文章出版发布时将同步分发到 Medium。'})}
+                        ${renderSettingsItem('访问凭据 (Integration Token)', `syndication.medium.integration_token`, cfg.integration_token || cfg.api_key, 'password', {placeholder: "请输入您的 Medium Integration Token", description: "【如何获取】登录 Medium 网页端，点击头像 -> Settings -> Security & Apps -> Integration Tokens 中申请生成"})}
+                    </div>
+                `;
+            }
+            // 🚀 3. Ghost 卡片主配置定制与保姆级参数指导
+            else if (id === 'ghost') {
+                html = `
+                    <div class="settings-grid">
+                        ${renderSettingsItem('通道激活', `syndication.ghost.enabled`, cfg.enabled, 'checkbox', {description: '激活后，文章出版发布时将同步分发到 Ghost 博客。'})}
+                        ${renderSettingsItem('Ghost 平台 URL', `syndication.ghost.url`, cfg.url, 'text', {placeholder: "例如: https://myblog.ghost.io", description: "【如何获取】您 Ghost 站点的基本访问地址"})}
+                        ${renderSettingsItem('Admin API Key', `syndication.ghost.api_key`, cfg.api_key, 'password', {placeholder: "请输入 Admin API Key", description: "【如何获取】登录 Ghost 后台 -> Settings -> Integrations -> 添加 Custom Integration，复制其中的 Admin API Key"})}
+                    </div>
+                `;
+            }
+            // 🚀 4. Hashnode 卡片主配置定制与保姆级参数指导
+            else if (id === 'hashnode') {
+                html = `
+                    <div class="settings-grid">
+                        ${renderSettingsItem('通道激活', `syndication.hashnode.enabled`, cfg.enabled, 'checkbox', {description: '激活后，文章出版发布时将同步分发到 Hashnode。'})}
+                        ${renderSettingsItem('GraphQL API Token', `syndication.hashnode.api_key`, cfg.api_key, 'password', {placeholder: "请输入 Hashnode GraphQL Token", description: "【如何获取】登录 Hashnode 网页端 -> 点击头像 -> Account Settings -> Developer Settings 中生成个人 Token"})}
+                    </div>
+                `;
+            }
+            // 🚀 5. 通用兜底
+            else {
+                html = `
+                    <div class="settings-grid">
+                        ${renderSettingsItem('通道激活', p.category === 'hosting' ? `publish_control.direct_upload.${id}.enabled` : `syndication.${id}.enabled`, cfg.enabled, 'checkbox', {description: '开启后，当前激活的品牌将在执行出版发布任务时向该端点进行物理分发。'})}
+                        ${renderSettingsItem('凭据/密钥 (Key/Token)', p.category === 'hosting' ? `publish_control.direct_upload.${id}.api_key` : `syndication.${id}.api_key`, cfg.api_key || cfg.app_password, 'password', {placeholder: "请输入访问令牌/API密钥"})}
+                        ${renderSettingsItem('发布目标 (URL/Bucket)', p.category === 'hosting' ? `publish_control.direct_upload.${id}.url` : `syndication.${id}.url`, cfg.url, 'text', {placeholder: "请输入目标 URL 或存储桶名称"})}
+                        ${renderSettingsItem('账号/ID', p.category === 'hosting' ? `publish_control.direct_upload.${id}.username` : `syndication.${id}.username`, cfg.username, 'text', {placeholder: "请输入账号名"})}
+                    </div>
+                `;
+            }
         }
     }
 
@@ -315,6 +387,18 @@ window.openPluginConfig = async (id) => {
             <div class="empty-state">
                 <p>该能力目前遵循系统全息配置，暂无独立调节参数。</p>
                 <code style="font-size: 0.7rem; opacity: 0.5;">ID: ${id} | Origin: ${p.origin}</code>
+            </div>
+        `;
+    }
+
+    // 🚀 在 openPluginConfig 底部追加物理沙盒终端 HTML 占位区
+    if (p && (p.category === 'publisher' || p.category === 'hosting') && id !== 'github_pages') {
+        html += `
+            <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
+                <div id="sandbox-console-terminal" style="background: rgba(0,0,0,0.55); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #00ff88; max-height: 180px; overflow-y: auto; line-height: 1.5; box-shadow: inset 0 0 10px rgba(0,0,0,0.7); scrollbar-width: thin;">
+                    <!-- 滚动日志 -->
+                </div>
             </div>
         `;
     }
@@ -352,6 +436,13 @@ window.editSubItem = async (parentId, subId) => {
     const p = window.allPlugins.find(x => x.id === parentId);
     if (!p) return;
 
+    // 🚀 控制底部“🧪 沙盘演练”按钮的显示与绑定
+    const dryRunBtn = document.getElementById('btn-dry-run-plugin');
+    if (dryRunBtn) {
+        dryRunBtn.style.display = 'block';
+        dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${subId}', '${parentId}')`);
+    }
+
     let subHtml = `
         <div class="sub-editor-header" style="margin-bottom: 1.5rem;">
             <button class="p-action-btn secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPluginConfig('${parentId}')">⬅️ 返回通道列表</button>
@@ -362,28 +453,267 @@ window.editSubItem = async (parentId, subId) => {
 
     if (parentId === 'webhook_gateway') {
         const endpoint = window.settingsData.publish_control?.webhook_endpoints?.[subId] || {};
+        
+        // 🚀 根据子渠道类型做描述与占位符优化
+        let urlPlaceholder = "例如: https://hooks.slack.com/services/...";
+        let desc = "开启后，当前激活的品牌将在执行出版发布任务时向该 Webhook 端点推送数据。";
+        let hasSecret = true;
+
+        if (subId === 'feishu') {
+            urlPlaceholder = "例如: https://open.feishu.cn/open-apis/bot/v2/hook/...";
+        } else if (subId === 'dingtalk') {
+            urlPlaceholder = "例如: https://oapi.dingtalk.com/robot/send?access_token=...";
+            hasSecret = false; // 钉钉使用签名称或自定义关键词，无需 secret
+        } else if (subId === 'private_api') {
+            urlPlaceholder = "例如: https://api.yourdomain.com/v1/publish-notify";
+        }
+
         subHtml += `
-            ${renderSettingsItem('通道开关', `publish_control.webhook_endpoints.${subId}.enabled`, endpoint.enabled, 'checkbox')}
-            ${renderSettingsItem('物理端点 (URL)', `publish_control.webhook_endpoints.${subId}.url`, endpoint.url)}
-            ${renderSettingsItem('主权密钥 (Secret)', `publish_control.webhook_endpoints.${subId}.secret`, endpoint.secret, 'password')}
+            ${renderSettingsItem('通道激活', `publish_control.webhook_endpoints.${subId}.enabled`, endpoint.enabled, 'checkbox', {description: desc})}
+            ${renderSettingsItem('物理端点 (URL)', `publish_control.webhook_endpoints.${subId}.url`, endpoint.url, 'text', {placeholder: urlPlaceholder})}
         `;
+        if (hasSecret) {
+            subHtml += `
+                ${renderSettingsItem('主权密钥 (Secret / Sign Key)', `publish_control.webhook_endpoints.${subId}.secret`, endpoint.secret, 'password', {placeholder: "签名验证 Key (可选，防重放)"})}
+            `;
+        }
     } else {
         const cfg = window.settingsData.syndication?.[subId] || {};
-        subHtml += `
-            ${renderSettingsItem('节点开关', `syndication.${subId}.enabled`, cfg.enabled, 'checkbox')}
-            ${renderSettingsItem('平台 URL (可选)', `syndication.${subId}.url`, cfg.url)}
-            ${renderSettingsItem('账号名/用户名', `syndication.${subId}.username`, cfg.username)}
-            ${renderSettingsItem('访问凭据 (Token/Key)', `syndication.${subId}.api_key`, cfg.api_key || cfg.app_password, 'password')}
-        `;
+        
+        // 🚀 1. Medium 专有极简表单（完全剔除无关的 URL 与用户名，对准 integration_token）
+        if (subId === 'medium') {
+            subHtml += `
+                ${renderSettingsItem('通道激活', `syndication.medium.enabled`, cfg.enabled, 'checkbox', {description: '开启后，文章出版发布时将自动分发至 Medium 平台。'})}
+                ${renderSettingsItem('访问凭据 (Integration Token)', `syndication.medium.integration_token`, cfg.integration_token || cfg.api_key, 'password', {placeholder: "请输入在 Medium -> Settings -> Integration Tokens 申请的 Token"})}
+            `;
+        }
+        // 🚀 2. WordPress 专业多字段表单（对准 api_url, username, application_password 与默认状态）
+        else if (subId === 'wordpress') {
+            subHtml += `
+                ${renderSettingsItem('通道激活', `syndication.wordpress.enabled`, cfg.enabled, 'checkbox', {description: '开启后，文章出版发布时将自动同步并原地更新至您的自建 WordPress 网站。'})}
+                ${renderSettingsItem('平台 REST API 地址', `syndication.wordpress.api_url`, cfg.api_url || cfg.url, 'text', {placeholder: "例如: https://yourdomain.com/wp-json/wp/v2"})}
+                ${renderSettingsItem('管理员用户名', `syndication.wordpress.username`, cfg.username, 'text', {placeholder: "输入您在 WordPress 中的登录用户名，例如 admin"})}
+                ${renderSettingsItem('应用密码 (Application Password)', `syndication.wordpress.application_password`, cfg.application_password || cfg.api_key, 'password', {placeholder: "请在 WordPress 用户资料页面生成 24 位应用密码（切勿输入登录密码）"})}
+                ${renderSettingsItem('文章默认发布状态', `syndication.wordpress.default_status`, cfg.default_status || 'publish', 'select', {
+                    items: [
+                        {value: 'publish', text: '🟢 直接公开发布 (publish)'},
+                        {value: 'draft', text: '🟡 存为本地草稿 (draft)'},
+                        {value: 'pending', text: '🟠 等待人工审核 (pending)'}
+                    ],
+                    description: '同步到 WordPress 后的文章默认状态'
+                })}
+            `;
+        }
+        // 🚀 3. Ghost 专有表单
+        else if (subId === 'ghost') {
+            subHtml += `
+                ${renderSettingsItem('通道激活', `syndication.ghost.enabled`, cfg.enabled, 'checkbox', {description: '开启后，文章出版发布时将自动同步至 Ghost 博客。'})}
+                ${renderSettingsItem('Ghost 平台 URL', `syndication.ghost.url`, cfg.url, 'text', {placeholder: "例如: https://myblog.ghost.io"})}
+                ${renderSettingsItem('Admin API Key', `syndication.ghost.api_key`, cfg.api_key, 'password', {placeholder: "请在 Ghost -> Integrations 中创建自定义集成并获取"})}
+            `;
+        }
+        // 🚀 4. Hashnode 专有表单
+        else if (subId === 'hashnode') {
+            subHtml += `
+                ${renderSettingsItem('通道激活', `syndication.hashnode.enabled`, cfg.enabled, 'checkbox', {description: '开启后，文章出版发布时将自动同步至 Hashnode 平台。'})}
+                ${renderSettingsItem('GraphQL API Token', `syndication.hashnode.api_key`, cfg.api_key, 'password', {placeholder: "请在 Hashnode -> Account Settings -> Developer Settings 中生成 Token"})}
+            `;
+        }
+        // 🚀 5. 其他通道通用兜底
+        else {
+            subHtml += `
+                ${renderSettingsItem('通道激活', `syndication.${subId}.enabled`, cfg.enabled, 'checkbox', {description: '开启后，当前激活的品牌将在执行出版发布任务时向该分发端点推送数据。'})}
+                ${renderSettingsItem('平台 URL (可选)', `syndication.${subId}.url`, cfg.url, 'text', {placeholder: "请输入端点 URL"})}
+                ${renderSettingsItem('账号名/用户名', `syndication.${subId}.username`, cfg.username, 'text', {placeholder: "请输入账号名"})}
+                ${renderSettingsItem('访问凭据 (Token/Key)', `syndication.${subId}.api_key`, cfg.api_key || cfg.app_password, 'password', {placeholder: "请输入访问令牌"})}
+            `;
+        }
     }
 
     subHtml += `
         </div>
+        
+        <!-- 🚀 追加子项编辑中的仿真终端组件 -->
+        <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+            <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
+            <div id="sandbox-console-terminal" style="background: rgba(0,0,0,0.55); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #00ff88; max-height: 180px; overflow-y: auto; line-height: 1.5; box-shadow: inset 0 0 10px rgba(0,0,0,0.7); scrollbar-width: thin;">
+                <!-- 滚动日志 -->
+            </div>
+        </div>
+
         <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 1rem;">
-            <button class="primary-btn glow-btn" onclick="saveAllSettings()">💾 保存节点配置</button>
+            <button class="primary-btn glow-btn" onclick="savePluginSettingsAndClose()">💾 保存节点配置</button>
             <p style="font-size: 0.7rem; color: var(--text-dim);">⚠️ 注意：修改将直接同步至物理配置文件，保存后请重启系统生效。</p>
         </div>
     `;
 
     body.innerHTML = subHtml;
+};
+
+// 🚀 物理沙盒干跑前端控制台交互算子（高保真流式淡入动画效果）
+window.triggerPluginDryRun = async (id, parentId = null) => {
+    const terminalWrapper = document.getElementById('sandbox-console-wrapper');
+    const terminal = document.getElementById('sandbox-console-terminal');
+    if (!terminalWrapper || !terminal) return;
+
+    // 展现透明终端，启动脉冲动画
+    terminalWrapper.style.display = 'block';
+    terminal.innerHTML = '<div style="color: var(--accent-secondary); opacity: 0.8; font-style: italic; animation: pulse 1.5s infinite;">📡 物理演练通道点火中，正在抓取并对齐当前表单临时参数...</div>';
+    
+    // 自动滑动定位到演练面板
+    terminalWrapper.scrollIntoView({ behavior: 'smooth' });
+
+    // 抓取当前已修改但未保存的配置（与 updateConfigField 无缝联动）
+    let settings = {};
+    if (parentId === 'webhook_gateway') {
+        settings = window.settingsData.publish_control?.webhook_endpoints?.[id] || {};
+    } else if (parentId) {
+        settings = window.settingsData.syndication?.[id] || {};
+    } else {
+        settings = window.settingsData.syndication?.[id] || window.settingsData.publish_control?.direct_upload?.[id] || {};
+    }
+
+    try {
+        const res = await apiFetch('/api/plugins/dry-run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, parentId, settings })
+        });
+
+        if (!res || !res.logs) {
+            terminal.innerHTML = '<div style="color: #ff4d4d; font-weight: bold;">❌ 物理沙箱干跑路由通信超时，未获得遥测回吐。</div>';
+            return;
+        }
+
+        // 流式高科技模拟淡入，逐行打点
+        terminal.innerHTML = '';
+        let i = 0;
+        const streamInterval = setInterval(() => {
+            if (i >= res.logs.length) {
+                clearInterval(streamInterval);
+                return;
+            }
+            const log = res.logs[i];
+            let color = '#d1d1d1'; // INFO
+            if (log.level === 'WARN') color = '#ffaa00';
+            else if (log.level === 'ERROR') color = '#ff4d4d';
+            else if (log.level === 'SUCCESS') color = '#00ff88';
+
+            const line = document.createElement('div');
+            line.style.color = color;
+            line.style.opacity = '0';
+            line.style.transition = 'opacity 0.25s ease-out';
+            line.style.marginBottom = '4px';
+            line.innerText = `[${log.time}] [${log.level}] ${log.message}`;
+            
+            terminal.appendChild(line);
+            
+            // 触发微淡入并保持终端触底滚动
+            setTimeout(() => { line.style.opacity = '1'; }, 10);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            i++;
+        }, 280); // 精雕细琢的 280ms 节奏，极其逼真的发布沙盘动态推演反馈
+
+    } catch (e) {
+        terminal.innerHTML = `<div style="color: #ff4d4d;">❌ 沙盘物理通信报错: ${e}</div>`;
+    }
+};
+
+// 🚀 [V75.5] 100% 物理自愈：专门针对插件/通道抽屉配置设计的“强力同步保存并关闭”算子
+window.savePluginSettingsAndClose = async () => {
+    if (typeof addAudit === 'function') addAudit("💾 开始抓取当前面板临时参数并准备固化...");
+
+    // 1. 强力抓取抽屉内所有 input 的当前最新状态，写入 window.settingsData
+    const drawerBody = document.getElementById('p-drawer-body');
+    if (drawerBody) {
+        const inputs = drawerBody.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const path = input.getAttribute('data-path');
+            if (path) {
+                let val;
+                if (input.type === 'checkbox') {
+                    val = input.checked;
+                } else if (input.type === 'number') {
+                    val = parseFloat(input.value);
+                } else {
+                    val = input.value;
+                }
+                
+                // 写入 window.settingsData
+                const keys = path.split('.');
+                let current = window.settingsData;
+                for (let i = 0; i < keys.length - 1; i++) {
+                    if (!current[keys[i]]) current[keys[i]] = {};
+                    current = current[keys[i]];
+                }
+                current[keys[keys.length - 1]] = val;
+            }
+        });
+    }
+
+    // 2. 调用后台保存接口落盘
+    const fullConfig = typeof window.flattenObject === 'function' ? window.flattenObject(window.settingsData) : window.settingsData;
+    const payload = {};
+    
+    Object.keys(fullConfig).forEach(key => {
+        if (!key.split('.').some(part => part.startsWith('_'))) {
+            payload[key] = fullConfig[key];
+        }
+    });
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit("✅ 插件配置已成功固化至物理磁盘。", 'success');
+        if (res.active_config) {
+            window.settingsData = { ...window.settingsData, ...res.active_config };
+        }
+
+        // 3. 弹出高保真玻璃磨砂通知，给用户强烈的物理确认视觉反馈！
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '💾 保存成功',
+                text: '插件能力配置已成功固化并写入物理磁盘 config.yaml / config.local.yaml！',
+                icon: 'success',
+                confirmButtonText: '确定',
+                background: 'var(--card-bg)',
+                color: 'var(--text-bright)',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
+        }
+
+        // 4. 自动关闭抽屉
+        if (typeof closePluginDrawer === 'function') {
+            closePluginDrawer();
+        }
+
+        // 5. 重新渲染插件矩阵列表，以刷新状态
+        if (typeof renderPlugins === 'function') {
+            renderPlugins();
+        }
+        
+        // 6. 即时更新左侧身份及状态面板
+        if (typeof refreshGovernanceContext === 'function') {
+            await refreshGovernanceContext();
+        }
+    } else {
+        const errMsg = res ? res.error : '物理链路异常';
+        if (typeof addAudit === 'function') addAudit(`❌ 插件配置保存失败: ${errMsg}`, 'error');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '❌ 保存失败',
+                text: errMsg,
+                icon: 'error',
+                confirmButtonText: '了解',
+                background: 'var(--card-bg)',
+                color: 'var(--text-bright)',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
+        }
+    }
 };

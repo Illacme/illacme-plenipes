@@ -20,7 +20,7 @@ def resolve_engine_paths(engine: Any, config: Any, themes_dir: str) -> Dict[str,
     Returns:
         Dict[str, str]: 锚定后的路径矩阵。
     """
-    paths_cfg = config.output_paths
+    paths_cfg = config.output_paths or {}
     data_root = os.path.abspath(os.path.expanduser(config.system.data_root))
     
     def anchor(p: Optional[str]) -> Optional[str]:

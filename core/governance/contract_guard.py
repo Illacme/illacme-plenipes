@@ -85,10 +85,12 @@ class ContractGuard:
         # 1. 验证主权基座 (Vault & Ledger)
         # 🚀 [V52.10] 物理主权审计：遵循项目根目录锚定原则
         raw_vault = engine_config.vault_root
-        vault_root = os.path.abspath(os.path.expanduser(raw_vault))
-
-        if not os.path.exists(vault_root):
-            violations.append(f"❌ [配置坍塌] 笔记库根目录不存在: {vault_root}")
+        if not raw_vault:
+            violations.append("⚠️ [原稿金库未就绪] 系统目前处于新手引导 (Onboarding) 状态，请在控制台中指定您的 Markdown 金库物理路径以激活全自动出版管线。")
+        else:
+            vault_root = os.path.abspath(os.path.expanduser(raw_vault))
+            if not os.path.exists(vault_root):
+                violations.append(f"⚠️ [原稿金库未就绪] 笔记库根目录不存在: {vault_root}。系统目前处于降级引导状态，请在控制台中重新指定。")
         
         # 2. 验证 Dual-Config 隔离契约
         config_path = getattr(engine_config, 'config_path', 'config.yaml')

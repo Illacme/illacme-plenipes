@@ -45,17 +45,17 @@ class CohereTranslator(BaseTranslator):
         except: return ["command-r-plus", "command-r"]
 
     async def test_connection(self) -> tuple[bool, str]:
-        """测试 Cohere 服务连通性 (智能诊断版)"""
+        """测试 Cohere 服务连通性"""
         try:
             if not self.trans_cfg.api_key and "cohere.ai" in (self.trans_cfg.base_url or ""):
-                return False, "Cohere 认证失败: 未检测到 API Key。Cohere 必须使用有效密钥。"
-            return True, "链路通畅: Cohere 认证状态良好 (已就绪)"
+                return False, "❌ 认证失败，未填写 API Key"
+            return True, "链路通畅: 认证成功 (已就绪)"
         except Exception as e:
             err_str = str(e)
-            if "401" in err_str:
-                guide = "【解决建议：请检查 Cohere API Key 是否正确】"
-            elif "timeout" in err_str.lower():
-                guide = "【解决建议：连接超时。访问 Cohere 可能需要科学上网环境】"
+            if "401" in err_str or "unauthorized" in err_str.lower():
+                guide = "认证失败，请核对 API Key 是否正确"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                guide = "网络响应超时 (Timeout)"
             else:
-                guide = "【解决建议：请检查网络与配置参数】"
-            return False, f"Cohere 连通性异常: {guide}\n原始提示: {err_str}"
+                guide = err_str[:50] + "..." if len(err_str) > 50 else err_str
+            return False, f"❌ {guide}"

@@ -16,6 +16,16 @@ class StarlightAdapter(BaseSSGAdapter):
     VERSION = "V2.0"
     DESCRIPTION = "驱动 Astro Starlight 架构的文档渲染，完美支持 Asides 容器语法与物理路径投影。"
     
+    @classmethod
+    def get_default_path_mappings(cls) -> Dict[str, str]:
+        """🚀 [V76.0] Starlight 推荐的原生默认物理寻址映射"""
+        return {
+            'source_dir': "src/content/docs",
+            'static_dir': "dist",
+            'assets_dir': "public/assets",
+            'graph_json_dir': "public"
+        }
+    
     _GENERIC_MAP = {
         'info': 'note', 'abstract': 'note', 'note': 'note', 'question': 'note',
         'warning': 'caution', 'attention': 'caution',
@@ -57,6 +67,15 @@ class StarlightAdapter(BaseSSGAdapter):
             if seo_data.get('description'):
                 new_fm['description'] = seo_data.get('description')
             
+        # 2. 智能规范化文档排序属性
+        if 'order' in new_fm:
+            order_val = new_fm.pop('order')
+            try:
+                order_val = int(order_val)
+            except (ValueError, TypeError):
+                pass
+            new_fm['sidebar'] = {"order": order_val}
+
         return body, new_fm
 
     def render_callout(self, g_type: str, title: str, body: str) -> str:

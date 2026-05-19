@@ -94,7 +94,7 @@ class PublisherService:
                 output_path = engine.paths.get("source_dir")
             
             if not output_path:
-                paths_cfg = self.config.get("output_paths", {})
+                paths_cfg = self.config.get("output_paths") or {}
                 output_path = paths_cfg.get("docs_dir") or paths_cfg.get("markdown_dir", "")
                 
                 # 处理路径占位符
@@ -130,6 +130,16 @@ class PublisherService:
                     tlog.error(f"🛑 [发布服务] 站点地图生成失败: {e}")
 
                 self.run_syndication(output_path, {"ael_iter_id": "v11.0"}, ledger=engine.ledger if engine else None)
+
+                # 🚀 [V78.0] 一键部署流水线自动生成
+                try:
+                    engine = kwargs.get("engine")
+                    if engine:
+                        from core.syndication.pipeline_generator import DeploymentPipelineGenerator
+                        pipeline_gen = DeploymentPipelineGenerator()
+                        pipeline_gen.generate_pipeline(engine)
+                except Exception as e:
+                    tlog.error(f"🛑 [发布服务] 一键部署流水线生成失败: {e}")
             else:
                 tlog.warning(f"⚠️ [发布中心] 无法找到待发布目录: {output_path}")
 

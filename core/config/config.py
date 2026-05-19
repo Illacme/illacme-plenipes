@@ -39,62 +39,73 @@ class ConfigManager:
         self._post_process()
 
     def _auto_sync_ai_adapters(self):
-        """🚀 [V66.5] 物理对正：确保磁盘上的插件在物理底座中具有席位"""
+        """🚀 [V75.5] 智能物理对正：全局底座零配置，自动探测本地算力服务并写入本地配置层"""
         try:
-            from core.adapters.ai.registry import AIProviderRegistry
-            import core.adapters.ai
+            # 1. 探测本地算力服务端口
+            def check_port(host: str, port: int) -> bool:
+                import socket
+                try:
+                    with socket.create_connection((host, port), timeout=0.15):
+                        return True
+                except:
+                    return False
+
+            lmstudio_active = check_port("127.0.0.1", 1234)
+            ollama_active = check_port("127.0.0.1", 11434)
             
-            protocols = AIProviderRegistry.get_all_protocols()
-            if not protocols: return
-            
-            # 1. 加载物理原始文件
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                base_cfg = yaml.safe_load(f) or {}
-            
+            # 2. 加载本地配置文件 config.local.yaml (所有算力底座完全属于本地)
             base, ext = os.path.splitext(self.config_path)
             local_path = f"{base}.local.yaml"
             local_cfg = {}
             if os.path.exists(local_path):
                 with open(local_path, 'r', encoding='utf-8') as f:
                     local_cfg = yaml.safe_load(f) or {}
-    
+            
             def ensure_path(d, path):
                 for p in path:
                     if p not in d: d[p] = {}
                     d = d[p]
                 return d
-    
-            base_nodes = ensure_path(base_cfg, ['translation', 'compute_nodes'])
-            local_nodes = ensure_path(local_cfg, ['translation', 'compute_nodes'])
             
+            local_nodes = ensure_path(local_cfg, ['translation', 'compute_nodes'])
             changed = False
-            for ptype in protocols:
-                # 检查是否已定义该类型的物理节点
-                exists = any(v.get('type') == ptype for v in base_nodes.values() if isinstance(v, dict))
-                if not exists:
-                    node_id = f"{ptype}_local" if ptype in ['ollama', 'lmstudio'] else f"{ptype}_node"
-                    tlog.info(f"✨ [插件感应] 发现新物理算力适配器 '{ptype}'，正在自动对齐物理底座...")
-                    
-                    # 注入基座 ID 与协议
-                    base_nodes[node_id] = {
-                        "id": node_id,
-                        "type": ptype,
-                        "base_url": getattr(AIProviderRegistry.get_provider(ptype), 'DEFAULT_URL', "")
-                    }
-                    
-                    # 注入物理主权密钥
-                    local_nodes[node_id] = {
-                        "api_key": "ENC:PUT_YOUR_KEY_HERE",
-                        "enabled": False
-                    }
-                    changed = True
-    
+            
+            # LMStudio 本地服务感应
+            if "lmstudio_local" not in local_nodes:
+                tlog.info("✨ [本地算力感应] 发现未声明的 LMStudio 算力槽位，正在本地层初始化配置占位...")
+                local_nodes["lmstudio_local"] = {
+                    "id": "lmstudio_local",
+                    "type": "lmstudio",
+                    "base_url": "http://localhost:1234/v1",
+                    "api_key": "ENC:PUT_YOUR_KEY_HERE",
+                    "enabled": lmstudio_active
+                }
+                changed = True
+            elif lmstudio_active and not local_nodes["lmstudio_local"].get("enabled", False):
+                tlog.success("⚡ [本地算力感应] 感应到 LMStudio 本地大模型服务正在运行！自动在本地层将其激活！")
+                local_nodes["lmstudio_local"]["enabled"] = True
+                changed = True
+                
+            # Ollama 本地服务感应
+            if "ollama_local" not in local_nodes:
+                tlog.info("✨ [本地算力感应] 发现未声明的 Ollama 算力槽位，正在本地层初始化配置占位...")
+                local_nodes["ollama_local"] = {
+                    "id": "ollama_local",
+                    "type": "ollama",
+                    "base_url": "http://localhost:11434",
+                    "api_key": "ENC:PUT_YOUR_KEY_HERE",
+                    "enabled": ollama_active
+                }
+                changed = True
+            elif ollama_active and not local_nodes["ollama_local"].get("enabled", False):
+                tlog.success("⚡ [本地算力感应] 感应到 Ollama 本地大模型服务正在运行！自动在本地层将其激活！")
+                local_nodes["ollama_local"]["enabled"] = True
+                changed = True
+                
             if changed:
-                with open(self.config_path, 'w', encoding='utf-8') as f:
-                    yaml.dump(base_cfg, f, allow_unicode=True, sort_keys=False)
                 with open(local_path, 'w', encoding='utf-8') as f:
                     yaml.dump(local_cfg, f, allow_unicode=True, sort_keys=False)
-                tlog.info("✅ [物理底座对齐] 算力节点已同步更新。")
+                tlog.info("✅ [物理底座对齐] 本地算力自愈更新已固化至 config.local.yaml。")
                 self._raw_config = self._load_and_merge()
                 
         except Exception as e:
@@ -313,13 +324,44 @@ class ConfigManager:
         # 1. 🚀 [V55.26] 资产主权对正：移除过早的路径物理化，统一交由助手方法解析
 
         
-        # 5. 路径映射对齐
+        # 5. 路径映射对齐 (包含零配置物理自愈)
         theme_opts = self.config.theme_options.get(theme, ThemeSettings())
         theme_opts.name = theme
+        
+        # 🚀 [V76.0] SSG 原生路径智能对准：动态委托给注册表中的具体 SSG 适配器类，彻底解决耦合问题
+        ssg_type = (theme_opts.ssg or "").lower()
+        if theme_opts.path_mappings == ThemeSettings().path_mappings:
+            from core.adapters.egress.ssg.registry import SSGRegistry
+            from core.adapters.egress.ssg.base import BaseSSGAdapter
+            import os
+            from core.utils.plugin_loader import discover_and_register
+            
+            # 运行时动态加载全局/自定义适配器，确保注册表完整发现
+            global_adapters_path = os.path.abspath("adapters/egress/ssg")
+            if os.path.exists(global_adapters_path):
+                try:
+                    discover_and_register([global_adapters_path], "adapters.egress.ssg", BaseSSGAdapter, SSGRegistry.register)
+                except Exception:
+                    pass
+            
+            renderer_cls = SSGRegistry.get_renderer(ssg_type)
+            if renderer_cls and hasattr(renderer_cls, 'get_default_path_mappings'):
+                theme_opts.path_mappings = renderer_cls.get_default_path_mappings()
+            else:
+                theme_opts.path_mappings = BaseSSGAdapter.get_default_path_mappings()
+                
+        if self.config.output_paths is None:
+            self.config.output_paths = {}
         paths = self.config.output_paths
+        
+        # 🚀 [V75.0] 物理寻址大一统：如果是多主题工作区模式，自动且动态地补齐 themes/{theme}/ 前缀
         for k, v in theme_opts.path_mappings.items():
             if k not in paths:
-                paths[k] = v.replace('{theme}', theme)
+                val = v
+                # 如果没有显式指定 themes 前缀且不是绝对路径，根据多主题工作区约定自愈补齐
+                if not val.startswith("themes/") and not val.startswith("./themes/"):
+                    val = f"themes/{{theme}}/{val}"
+                paths[k] = val.replace('{theme}', theme)
         
         if 'markdown_dir' in paths and not paths.get('source_dir'):
             paths['source_dir'] = paths['markdown_dir']
@@ -340,7 +382,13 @@ class ConfigManager:
         if isinstance(source_data, str):
             name = source_data
             iso = LanguageHub.resolve_to_iso(name)
-            i18n.source = I18nSource(prompt_lang=name, lang_code=iso)
+            prompt_l = LanguageHub.resolve_to_name(iso)
+            i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
+        elif isinstance(source_data, dict):
+            iso = source_data.get('lang_code', 'auto')
+            name = source_data.get('name', LanguageHub.resolve_to_name(iso))
+            prompt_l = source_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
+            i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
 
         # 目标语种解析
         targets_raw = self._raw_config.get('i18n_settings', {}).get('targets', [])
@@ -349,7 +397,23 @@ class ConfigManager:
             if isinstance(t_data, str):
                 name = t_data
                 iso = LanguageHub.resolve_to_iso(name)
-                new_targets.append(I18nTarget(prompt_lang=name, lang_code=iso))
+                prompt_l = LanguageHub.resolve_to_name(iso)
+                new_targets.append(I18nTarget(prompt_lang=prompt_l, lang_code=iso, name=name))
+            elif isinstance(t_data, dict):
+                iso = t_data.get('lang_code', 'en')
+                name = t_data.get('name', LanguageHub.resolve_to_name(iso))
+                prompt_l = t_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
+                translate_b = t_data.get('translate_body', True)
+                translate_t = t_data.get('translate_title', True)
+                output_dir = t_data.get('output_sub_dir')
+                new_targets.append(I18nTarget(
+                    prompt_lang=prompt_l,
+                    lang_code=iso,
+                    name=name,
+                    translate_body=translate_b,
+                    translate_title=translate_t,
+                    output_sub_dir=output_dir
+                ))
             else:
                 new_targets.append(i18n.targets[i])
         if new_targets:

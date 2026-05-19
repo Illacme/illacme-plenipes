@@ -26,7 +26,7 @@ class ImageSettings(BaseModel):
         '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'
     ])
 
-from core.config.config import DIST_DIR
+from core.config.constants import DIST_DIR
 
 class ThemeSettings(BaseModel):
     name: str = "default"

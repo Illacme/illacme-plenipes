@@ -65,20 +65,18 @@ def deep_reload_imprint(imprint_id: str):
                             yaml.safe_dump(target_cfg, f, allow_unicode=True)
                         tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
 
-            # 🚀 [V65.1] 物理主权对正：同步写入 ID 与 数据根目录
-            l_cfg = {
-                "active_imprint": imprint_id,
-                "system": {
-                    "data_root": f"imprints/{imprint_id}"
-                }
-            }
-            # 💡 [V55.11] 物理保留：如果是默认版图，保留其本地金库路径
-            if imprint_id == "default" and existing_local.get("vault_root"):
-                l_cfg["vault_root"] = existing_local["vault_root"]
+            # 🚀 [V65.1] 物理主权对正：仅安全更新活跃品牌标识 active_imprint。
+            # system.data_root 等特定品牌属性应全部交由品牌层或引擎预检程序动态挂载，无需在本地环境层冗余写入。
+            existing_local["active_imprint"] = imprint_id
+            if "system" in existing_local and isinstance(existing_local["system"], dict):
+                if "data_root" in existing_local["system"]:
+                    del existing_local["system"]["data_root"]
+                if not existing_local["system"]:
+                    del existing_local["system"]
 
             with open(local_path, "w", encoding="utf-8") as f:
-                yaml.safe_dump(l_cfg, f, allow_unicode=True)
-            tlog.debug(f"🛡️ [物理消杀] 已清空陈旧的 Local 缓存并固化版图 '{imprint_id}' 的数据路径。")
+                yaml.safe_dump(existing_local, f, allow_unicode=True)
+            tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活版图为 '{imprint_id}'，保持了环境层的高度精简与纯净。")
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
 

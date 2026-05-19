@@ -54,19 +54,22 @@ class AnthropicCompatibleTranslator(BaseTranslator):
         return {}
 
     async def test_connection(self) -> tuple[bool, str]:
-        """测试 Anthropic 协议连通性 (带有人文诊断)"""
+        """测试 Anthropic 协议连通性"""
         try:
-            # 优先使用模型感应来验证连通性
             models = await self.list_models()
             if models:
-                return True, f"✅ Anthropic 协议握手成功。可用模型: {', '.join(models[:3])}..."
-            return True, "✅ 握手成功，但未能感应到可用模型。"
+                return True, f"链路通畅: 握手成功 (已就绪)"
+            return True, "握手成功，但未暴露可用模型。"
         except Exception as e:
             err_str = str(e)
-            if "401" in err_str:
-                guide = "【解决建议：API Key 认证失败，请检查配置】"
+            if "401" in err_str or "unauthorized" in err_str.lower():
+                guide = "认证失败，请核对 API Key 是否正确"
             elif "404" in err_str:
-                guide = "【解决建议：Endpoint URL 错误，请确认为 Anthropic V1 格式】"
+                guide = "接口地址 (Base URL) 错误 (404)"
+            elif "refused" in err_str.lower() or "connection refused" in err_str.lower():
+                guide = "连接被拒绝，服务未启动或网络受阻"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                guide = "网络响应超时 (Timeout)"
             else:
-                guide = "【解决建议：请检查网络连接或 API 额度】"
-            return False, f"❌ Anthropic 连通性异常: {guide}\n原始提示: {err_str}"
+                guide = err_str[:50] + "..." if len(err_str) > 50 else err_str
+            return False, f"❌ {guide}"

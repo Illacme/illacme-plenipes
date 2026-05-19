@@ -48,11 +48,11 @@ class TranslationSettings(BaseModel):
     enable_ai: bool = True
     strategy: StrategyType = StrategyType.SINGLE
     
-    # 🎯 品牌策略层：定义选派逻辑
-    primary_node: str = "default"
-    primary_model: str = "gpt-4o"
-    fallback_node: str = ""
-    fallback_model: str = ""
+    # 🎯 品牌策略层：定义选派逻辑 (🛡️ 产品发布安全版：默认本地算力优先)
+    primary_node: str = "lmstudio_local"
+    primary_model: str = "qwen/qwen3.5-9b"
+    fallback_node: str = "ollama_local"
+    fallback_model: str = "qwen/qwen3.5-9b"
     
     active_style: str = "default"
     fallback_config: Optional[FallbackStrategyConfig] = None

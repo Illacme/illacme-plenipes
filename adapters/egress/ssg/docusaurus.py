@@ -16,6 +16,16 @@ class DocusaurusAdapter(BaseSSGAdapter):
     VERSION = "V1.8"
     DESCRIPTION = "驱动 Facebook Docusaurus 架构的排版渲染，支持 MDX、Admonitions 与多语言深度对齐。"
     
+    @classmethod
+    def get_default_path_mappings(cls) -> Dict[str, str]:
+        """🚀 [V76.0] Docusaurus 推荐的原生默认物理寻址映射"""
+        return {
+            'source_dir': "docs",
+            'static_dir': "build",
+            'assets_dir': "static/assets",
+            'graph_json_dir': "static"
+        }
+    
     _GENERIC_MAP = {
         'info': 'info', 'note': 'info', 'warning': 'warning',
         'danger': 'danger', 'error': 'danger', 'success': 'success', 'tip': 'tip'
@@ -55,18 +65,30 @@ class DocusaurusAdapter(BaseSSGAdapter):
             new_fm = self.inject_seo(new_fm, seo_data.get('description'), seo_data.get('keywords'))
             
         # 2. 链接自愈 (Link Healing)
-        # 将 [text](V9_Child.md) 转换为语种感知的路径
         import re
         def heal_link(match):
             text, path = match.groups()
             if path.endswith('.md') and not path.startswith('http'):
-                # Docusaurus 内部链接通常保持相对或根据 Slug 转换
-                # 这里我们确保链接格式符合 Starlight/Docusaurus 混编要求
                 return f"[{text}]({path})"
             return match.group(0)
             
         healed_body = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', heal_link, body)
         
+        # 3. 智能兼容落地页模板
+        if new_fm.get('template') == 'splash':
+            new_fm['hide_table_of_contents'] = True
+            new_fm['hide_title'] = True
+            new_fm.pop('template', None)
+
+        # 4. 智能规范化文档排序属性 (Docusaurus 使用 sidebar_position)
+        if 'order' in new_fm:
+            order_val = new_fm.pop('order')
+            try:
+                order_val = int(order_val)
+            except (ValueError, TypeError):
+                pass
+            new_fm['sidebar_position'] = order_val
+
         return healed_body, new_fm
 
     def render_callout(self, g_type: str, title: str, body: str) -> str:

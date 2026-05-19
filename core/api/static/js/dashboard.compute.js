@@ -10,7 +10,7 @@ window._activeNodeIds = [];
 /**
  * 🚀 算力中心主入口 (像素级还原注入逻辑)
  */
-window.loadComputeCenter = async function() {
+window.loadComputeCenter = async function(targetTab) {
     const topActions = document.getElementById('compute-header-actions-top');
     const navTabsSlot = document.getElementById('compute-nav-tabs-slot');
     const navActionsSlot = document.getElementById('compute-nav-actions-slot');
@@ -77,6 +77,7 @@ window.loadComputeCenter = async function() {
         </div>
     `;
 
-    // 默认启动基础架构视图
-    await window.ComputeHandlers.switchComputeTab('infrastructure');
+    // 默认启动指定子选项卡视图，兜底使用基础架构视图
+    const activeTab = targetTab || 'infrastructure';
+    await window.ComputeHandlers.switchComputeTab(activeTab);
 };

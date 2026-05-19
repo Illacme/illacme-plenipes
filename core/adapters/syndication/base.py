@@ -13,9 +13,40 @@ from core.utils.tracing import tlog
 
 class BaseSyndicator(abc.ABC):
     """所有分发平台插件的抽象基类"""
-    def __init__(self, config: Any, timeout: int = 10):
+    def __init__(self, config: Any, *args, **kwargs):
         self.config = config
+        
+        # 🚀 [V75.1] 弹性参数提取：支持多种历史调用格式的自动对准与自愈
+        timeout = 10
+        site_url = ""
+        
+        # 优先提取 kwargs
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+        if "site_url" in kwargs:
+            site_url = kwargs["site_url"]
+            
+        # 如果有 positional arguments
+        if args:
+            second_arg = args[0]
+            if isinstance(second_arg, dict):
+                timeout = second_arg.get("timeout", 10)
+                site_url = second_arg.get("site_url", "")
+            elif isinstance(second_arg, (int, float)):
+                timeout = int(second_arg)
+            elif isinstance(second_arg, str):
+                site_url = second_arg
+                
+            if len(args) > 1:
+                third_arg = args[1]
+                if isinstance(third_arg, str):
+                    site_url = third_arg
+                elif isinstance(third_arg, (int, float)):
+                    timeout = int(third_arg)
+
         self.timeout = timeout
+        self.site_url = site_url
+
 
     def is_enabled(self, rel_path: str = None, lang_code: str = None) -> bool:
         """检查插件是否激活"""

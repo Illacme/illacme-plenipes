@@ -69,44 +69,48 @@ class OpenAICompatibleTranslator(BaseTranslator):
                 if not models:
                     tlog.warning(f"⚠️ [OpenAI] 发现模型列表为空。Raw: {data}")
                 return [m for m in models if m]
-            raise Exception(f"OpenAI 接口返回异常 HTTP {resp.status_code}")
+            raise RuntimeError(f"服务响应异常 (HTTP {resp.status_code})")
         except Exception as e:
             err_str = str(e)
-            if "401" in err_str:
-                msg = "认证失败 (API Key 错误)"
+            if "refused" in err_str.lower() or "connection refused" in err_str.lower():
+                msg = "服务未启动或网络连接被拒绝"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                msg = "网络响应超时 (Timeout)"
+            elif "401" in err_str or "unauthorized" in err_str.lower():
+                msg = "认证失败 (API Key 无效)"
             elif "404" in err_str:
-                msg = "接口地址错误 (404)"
-            elif "refused" in err_str.lower():
-                msg = "连接被拒绝"
-            elif "timeout" in err_str.lower():
-                msg = "连接超时"
+                msg = "接口地址错误 (404 Not Found)"
             else:
-                msg = (err_str[:40] + "...") if len(err_str) > 40 else err_str
-            tlog.warning(f"⚠️ [OpenAI] 获取模型列表失败: {e}")
-            raise Exception(f"OpenAI {msg}")
+                msg = f"连接异常: {err_str[:40]}..." if len(err_str) > 40 else f"连接异常: {err_str}"
+            tlog.warning(f"⚠️ [OpenAI Compatible] 获取模型列表失败: {e}")
+            raise RuntimeError(msg)
 
     async def test_connection(self) -> tuple[bool, str]:
-        """测试 OpenAI 服务连通性 (极致灵活性诊断逻辑)"""
+        """测试服务连通性 (极致灵活性诊断逻辑)"""
         try:
             models = await self.list_models()
             if models:
-                return True, f"链路通畅: OpenAI 认证成功 (已感应到 {len(models)} 个可用模型)"
-            return False, "OpenAI 认证成功，但当前接口返回的模型列表为空。"
+                return True, f"链路通畅: 认证成功 (已感应到 {len(models)} 个可用模型)"
+            return False, "认证成功，但当前接口返回的模型列表为空。"
         except Exception as e:
             err_str = str(e)
-            # 🚀 [智能诊断] 仅在失败时判断是否是因为没填 Key
-            if "401" in err_str or "auth" in err_str.lower() or "403" in err_str:
+            clean_err = err_str.replace("OpenAI ", "")
+            
+            if "401" in clean_err or "auth" in clean_err.lower() or "403" in clean_err:
                 if not self.config.api_key:
-                    guide = "【关键诊断：认证失败，且检测到您未填写 API Key。如果您使用的是官方服务，请务必填写密钥】"
+                    guide = "认证失败，且未填写 API Key"
                 else:
-                    guide = "【解决建议：请检查 API Key 是否填写正确，或该 Key 是否已过期/无权访问】"
-            elif "404" in err_str:
-                guide = "【解决建议：接口地址 (Base URL) 疑似错误。请确认是否漏写了 /v1 后缀】"
-            elif "timeout" in err_str.lower():
-                guide = "【解决建议：连接超时。请检查网络状态或代理配置】"
+                    guide = "认证失败，请核对 API Key 是否正确"
+            elif "404" in clean_err:
+                guide = "接口地址 (Base URL) 错误 (404)"
+            elif "refused" in clean_err.lower() or "connection refused" in clean_err.lower():
+                guide = "连接被拒绝，服务未启动或代理被拦截"
+            elif "timeout" in clean_err.lower() or "timed out" in clean_err.lower():
+                guide = "网络响应超时 (Timeout)"
             else:
-                guide = "【解决建议：请根据原始提示排查配置】"
-            return False, f"OpenAI 连通性异常: {guide}\n原始提示: {err_str}"
+                guide = clean_err
+                
+            return False, f"❌ {guide}"
 
 
     def _ask_ai(self, payload: Dict[str, Any]) -> str:

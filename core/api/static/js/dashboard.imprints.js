@@ -52,25 +52,242 @@ window.addNewImprint = async () => {
         return;
     }
 
-    const id = prompt("🏛️ 请输入新事业部的【物理标识】 (ID, 建议英文/数字):");
-    if (!id) return;
-    const press_name = prompt("📝 请输入【事业部展示名称】:", id);
-    if (!press_name) return;
-    const path = prompt("📂 请输入关联的内容库 (Vault) 【绝对路径】:", "/Volumes/Notebook/omni-hub/content-vault");
-    if (!path) return;
+    if (typeof showImprintWizard === 'function') {
+        showImprintWizard();
+    }
+};
 
-    addAudit(`🏗️ 正在为事业部 [${press_name}] 创建全域空间...`);
-    const res = await apiFetch('/api/imprints/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: id, path: path, press_name: press_name })
-    });
+// 🏛️ [V75.6] 版图配置向导多步骤控制器生命周期管理
+let currentWizStep = 1;
 
-    if (res && res.success) {
-        addAudit(`✅ [创建成功] 事业部 ${press_name} 已成功加入矩阵。`, "success");
-        loadSettings('imprints');
+window.showImprintWizard = () => {
+    currentWizStep = 1;
+    
+    // 重置输入框
+    document.getElementById('wiz-imprint-id').value = '';
+    document.getElementById('wiz-imprint-name').value = '';
+    document.getElementById('wiz-vault-path').value = '';
+    document.getElementById('wiz-bootstrap-vault').checked = true;
+    
+    // 隐藏所有历史行内错误
+    document.getElementById('wiz-error-id').style.display = 'none';
+    document.getElementById('wiz-error-name').style.display = 'none';
+    document.getElementById('wiz-error-path').style.display = 'none';
+    
+    // 显示步骤1，隐藏步骤2, 3
+    document.getElementById('wiz-step-1').style.display = 'block';
+    document.getElementById('wiz-step-2').style.display = 'none';
+    document.getElementById('wiz-step-3').style.display = 'none';
+    
+    // 进度条归零
+    document.getElementById('wiz-progress-line').style.width = '0%';
+    
+    // 更新步骤指示器节点
+    updateStepNodesUI();
+    
+    // 更新页脚按钮
+    document.getElementById('btn-wiz-prev').style.visibility = 'hidden';
+    const nextBtn = document.getElementById('btn-wiz-next');
+    nextBtn.disabled = false;
+    nextBtn.innerText = '下一步';
+    nextBtn.onclick = () => window.navigateWizard(1);
+    
+    // 展现模态框
+    document.getElementById('imprint-wizard-modal').style.display = 'flex';
+};
+
+window.closeImprintWizard = () => {
+    document.getElementById('imprint-wizard-modal').style.display = 'none';
+};
+
+const updateStepNodesUI = () => {
+    for (let i = 1; i <= 3; i++) {
+        const node = document.getElementById(`wiz-node-${i}`);
+        if (!node) continue;
+        const circle = node.querySelector('.circle');
+        const text = node.querySelector('span');
+        
+        if (i < currentWizStep) {
+            // 已完成步骤
+            circle.style.border = '2px solid var(--accent-secondary)';
+            circle.style.background = 'var(--accent-secondary)';
+            circle.style.color = '#000';
+            circle.innerHTML = '✓';
+            text.style.color = 'var(--text-bright)';
+        } else if (i === currentWizStep) {
+            // 当前活跃步骤
+            circle.style.border = '2px solid var(--accent-primary)';
+            circle.style.background = 'var(--card-bg)';
+            circle.style.color = 'var(--text-bright)';
+            circle.innerHTML = i;
+            text.style.color = 'var(--text-bright)';
+        } else {
+            // 未到达步骤
+            circle.style.border = '2px solid rgba(255,255,255,0.1)';
+            circle.style.background = 'var(--card-bg)';
+            circle.style.color = 'var(--text-dim)';
+            circle.innerHTML = i;
+            text.style.color = 'var(--text-dim)';
+        }
+    }
+};
+
+window.navigateWizard = (dir) => {
+    // 隐藏所有行内错误提醒
+    document.getElementById('wiz-error-id').style.display = 'none';
+    document.getElementById('wiz-error-name').style.display = 'none';
+    document.getElementById('wiz-error-path').style.display = 'none';
+
+    // 校验当前步骤输入
+    if (dir === 1) {
+        if (currentWizStep === 1) {
+            const id = document.getElementById('wiz-imprint-id').value.trim();
+            const name = document.getElementById('wiz-imprint-name').value.trim();
+            let hasErr = false;
+
+            if (!id) {
+                const idErr = document.getElementById('wiz-error-id');
+                idErr.innerText = '⚠️ 物理唯一标识符 (ID) 不能为空';
+                idErr.style.display = 'block';
+                hasErr = true;
+            } else {
+                // ID正则校验：只允许英文、数字、中划线、下划线
+                const idRegex = /^[a-zA-Z0-9\-_]+$/;
+                if (!idRegex.test(id)) {
+                    const idErr = document.getElementById('wiz-error-id');
+                    idErr.innerText = '⚠️ 标识符格式错误：只允许英文字母、数字、下划线(_)或中划线(-)';
+                    idErr.style.display = 'block';
+                    hasErr = true;
+                }
+            }
+
+            if (!name) {
+                const nameErr = document.getElementById('wiz-error-name');
+                nameErr.innerText = '⚠️ 版图展示名称不能为空';
+                nameErr.style.display = 'block';
+                hasErr = true;
+            }
+
+            if (hasErr) return;
+        } else if (currentWizStep === 2) {
+            const path = document.getElementById('wiz-vault-path').value.trim();
+            if (!path) {
+                const pathErr = document.getElementById('wiz-error-path');
+                pathErr.innerText = '⚠️ 关联的文库 (Vault) 绝对物理路径不能为空';
+                pathErr.style.display = 'block';
+                return;
+            }
+        }
+    }
+    
+    currentWizStep += dir;
+    if (currentWizStep < 1) currentWizStep = 1;
+    if (currentWizStep > 3) currentWizStep = 3;
+    
+    // 更新内容面板显示
+    document.getElementById('wiz-step-1').style.display = currentWizStep === 1 ? 'block' : 'none';
+    document.getElementById('wiz-step-2').style.display = currentWizStep === 2 ? 'block' : 'none';
+    document.getElementById('wiz-step-3').style.display = currentWizStep === 3 ? 'block' : 'none';
+    
+    // 进度条宽度
+    const progressWidth = ((currentWizStep - 1) / 2) * 100 + '%';
+    document.getElementById('wiz-progress-line').style.width = progressWidth;
+    
+    // 更新节点样式
+    updateStepNodesUI();
+    
+    // 更新上一步按钮可见性
+    document.getElementById('btn-wiz-prev').style.visibility = currentWizStep > 1 ? 'visible' : 'hidden';
+    
+    // 更新下一步/提交按钮
+    const nextBtn = document.getElementById('btn-wiz-next');
+    if (currentWizStep === 3) {
+        // 渲染概要数据
+        document.getElementById('summary-id').innerText = document.getElementById('wiz-imprint-id').value.trim();
+        document.getElementById('summary-name').innerText = document.getElementById('wiz-imprint-name').value.trim();
+        document.getElementById('summary-path').innerText = document.getElementById('wiz-vault-path').value.trim();
+        document.getElementById('summary-bootstrap').innerText = document.getElementById('wiz-bootstrap-vault').checked ? '🌱 自动创建 Obsidian 文库树并生成首篇文章' : '❌ 不进行初始化，使用原有空间目录';
+        
+        nextBtn.innerText = '🚀 激活并诞生';
+        nextBtn.onclick = () => window.submitImprintWizard();
     } else {
-        addAudit(`❌ [创建失败] ${res ? res.error : '存在物理命名冲突'}`, "error");
+        nextBtn.innerText = '下一步';
+        nextBtn.onclick = () => window.navigateWizard(1);
+    }
+};
+
+window.submitImprintWizard = async () => {
+    const id = document.getElementById('wiz-imprint-id').value.trim();
+    const press_name = document.getElementById('wiz-imprint-name').value.trim();
+    const path = document.getElementById('wiz-vault-path').value.trim();
+    const bootstrap_vault = document.getElementById('wiz-bootstrap-vault').checked;
+    
+    addAudit(`🏗️ 正在为事业部 [${press_name}] 创建全域空间并校验主权结构...`);
+    
+    // 禁用发射按钮，防止重入
+    const nextBtn = document.getElementById('btn-wiz-next');
+    nextBtn.disabled = true;
+    nextBtn.innerText = '📡 正在发射...';
+    
+    try {
+        const res = await apiFetch('/api/imprints/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: id,
+                path: path,
+                press_name: press_name,
+                bootstrap_vault: bootstrap_vault
+            })
+        });
+        
+        if (res && res.success) {
+            addAudit(`✅ [创建成功] 新事业部 [${press_name}] 物理主权已落地激活。`, "success");
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '🏛️ 版图诞生成功',
+                    text: `恭喜！您的全新出版事业部 [${press_name}] 已经物理创立，配置、方言模板及文库结构均已完成自愈！`,
+                    icon: 'success',
+                    confirmButtonText: '立即查看',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            }
+            
+            // 关闭模态框
+            closeImprintWizard();
+            
+            // 重新载入列表
+            if (typeof loadSettings === 'function') {
+                loadSettings('imprints');
+            }
+        } else {
+            const errMsg = res ? res.error : '标识物理冲突或路径无写权限';
+            addAudit(`❌ [创建失败] ${errMsg}`, "error");
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '❌ 创建失败',
+                    text: errMsg,
+                    icon: 'error',
+                    confirmButtonText: '修改配置',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            }
+            // 允许重载
+            nextBtn.disabled = false;
+            nextBtn.innerText = '🚀 激活并诞生';
+        }
+    } catch (err) {
+        addAudit(`❌ [连接崩溃] ${err.message}`, "error");
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('❌ 错误', err.message, 'error');
+        }
+        nextBtn.disabled = false;
+        nextBtn.innerText = '🚀 激活并诞生';
     }
 };
 

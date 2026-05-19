@@ -113,7 +113,7 @@ class BinderyDispatcher:
             shadow_hash, persistence_date = self._physical_write(
                 rel_path, lang_code, route_prefix, mapped_sub_dir, slug,
                 fm_str, final_out_body, is_dry_run,
-                is_sandbox=is_sandbox, source_type=route_source, mode=mode
+                is_sandbox=is_sandbox, source_type=target_slot, mode=mode
             )
             persistence_results[mode] = (shadow_hash, persistence_date)
 

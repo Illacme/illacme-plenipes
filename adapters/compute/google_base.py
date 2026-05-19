@@ -56,7 +56,18 @@ class GoogleCompatibleTranslator(BaseTranslator):
         try:
             models = await self.list_models()
             if models:
-                return True, f"✅ Google Gemini 握手成功。可用模型: {', '.join(models[:3])}..."
-            return True, "✅ 握手成功，但未能感应到可用模型。"
+                return True, f"链路通畅: 握手成功 (已就绪)"
+            return True, "握手成功，但未暴露可用模型。"
         except Exception as e:
-            return False, f"❌ Google 连通性异常: {e}"
+            err_str = str(e)
+            if "401" in err_str or "unauthorized" in err_str.lower():
+                guide = "认证失败，请核对 API Key 是否正确"
+            elif "404" in err_str:
+                guide = "接口地址 (Base URL) 错误 (404)"
+            elif "refused" in err_str.lower() or "connection refused" in err_str.lower():
+                guide = "连接被拒绝，服务未启动或网络受阻"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                guide = "网络响应超时 (Timeout)"
+            else:
+                guide = err_str[:50] + "..." if len(err_str) > 50 else err_str
+            return False, f"❌ {guide}"

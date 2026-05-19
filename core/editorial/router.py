@@ -39,6 +39,7 @@ class RouteManager:
         route_prefix = str(route_prefix or "")
 
         # 🚀 [V56.0] 意图感知寻址：优先使用 SSG 适配器声明的功能槽路径
+        slot_formatted = False
         if self.ssg_adapter:
             slots = self.ssg_adapter.get_feature_slots()
             if source_type in slots:
@@ -60,6 +61,8 @@ class RouteManager:
                         source_lang=self.default_lang,
                         force_prefix=self.force_source_prefix
                     )
+                    if "{lang}" in template:
+                        slot_formatted = True
                     try:
                         route_prefix = template.format(lang=physical_lang)
                     except Exception:
@@ -70,8 +73,8 @@ class RouteManager:
         iso_logical = LanguageHub.resolve_to_iso(logical_lang)
         iso_default = LanguageHub.resolve_to_iso(self.default_lang)
         
-        # 🛡️ 智能对齐：如果为默认/原稿语言且未强制前缀，则物理语种前缀置空（发布至根目录）
-        if iso_logical == iso_default and not self.force_source_prefix:
+        # 🛡️ 智能对齐：如果为默认/原稿语言且未强制前缀，或者模板中已经包含了语种占位符，则物理语种前缀置空
+        if (iso_logical == iso_default and not self.force_source_prefix) or slot_formatted:
             physical_lang = ""
         else:
             physical_lang = LanguageHub.get_physical_path(

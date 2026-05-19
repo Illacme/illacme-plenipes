@@ -65,7 +65,7 @@ window.showView = (viewId, subId) => {
 
     // 模块联动加载
     if (viewId === 'vault' && typeof loadVault === 'function') loadVault();
-    if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter();
+    if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter(subId);
     if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
     if (viewId === 'settings' && typeof loadSettings === 'function') {
         const target = subId || 'general';
@@ -286,6 +286,9 @@ const initTelemetryDynamics = () => {
 // Hook into actions with Tactical Transitions
 const originalShowView = window.showView;
 window.showView = (id, subId) => {
+    if (subId) {
+        window.pendingSubView = subId;
+    }
     const container = document.querySelector('main');
     if (container) {
         container.classList.add('switching-view');
@@ -473,7 +476,9 @@ const handleRouting = () => {
     const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings'];
 
     if (hash && validViews.includes(hash)) {
-        window.showView(hash);
+        const subId = window.pendingSubView;
+        window.pendingSubView = null; // consume
+        window.showView(hash, subId);
         if (hash === 'overview') window.toggleHub('show');
     } else {
         // 默认进入指挥中心

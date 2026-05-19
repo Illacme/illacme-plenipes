@@ -93,23 +93,26 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
     const id = `cfg-${path.replace(/\./g, '-')}`;
     const description = options.description || `配置主权链路中的 ${label} 参数。`;
 
+    // 🚀 [V57.2] 降级防呆：若值为 undefined 或 null，自动归一化为空字符串，消除前端文本框中的 "undefined" 字符
+    const safeValue = (value === undefined || value === null) ? '' : value;
+
     if (type === 'select') {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
-        inputHtml = `<select id="${id}" class="setting-input" onchange="${onchange}">
-            ${(options.items || []).map(item => `<option value="${item.value}" ${item.value === value ? 'selected' : ''} title="${item.title || item.text || ''}">${item.text}</option>`).join('')}
+        inputHtml = `<select id="${id}" data-path="${path}" class="setting-input" onchange="${onchange}">
+            ${(options.items || []).map(item => `<option value="${item.value}" ${item.value === safeValue ? 'selected' : ''} title="${item.title || item.text || ''}">${item.text}</option>`).join('')}
         </select>`;
     } else if (type === 'checkbox') {
         const onchange = options.onchange || `updateConfigField('${path}', this.checked)`;
-        inputHtml = `<label class="p-switch"><input type="checkbox" id="${id}" ${value ? 'checked' : ''} onchange="${onchange}"><span class="p-slider"></span></label>`;
+        inputHtml = `<label class="p-switch"><input type="checkbox" id="${id}" data-path="${path}" ${safeValue ? 'checked' : ''} onchange="${onchange}"><span class="p-slider"></span></label>`;
     } else if (type === 'password') {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
-        inputHtml = `<input type="password" id="${id}" class="setting-input" value="${value}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;
+        inputHtml = `<input type="password" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;
     } else if (type === 'number') {
         const onchange = options.onchange || `updateConfigField('${path}', parseFloat(this.value))`;
-        inputHtml = `<input type="number" id="${id}" class="setting-input" value="${value}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;
+        inputHtml = `<input type="number" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;
     } else {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
-        inputHtml = `<input type="text" id="${id}" class="setting-input" value="${value}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${options.readonly ? 'readonly' : ''}>`;
+        inputHtml = `<input type="text" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${options.readonly ? 'readonly' : ''}>`;
     }
 
     return `

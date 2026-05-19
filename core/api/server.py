@@ -76,12 +76,25 @@ def start_api_server(host: str = "0.0.0.0", port: int = 43212, blocking: bool = 
     # 🚀 [V50.5] 注入分片后的日志过滤引擎
     setup_api_logging()
 
+    # 🚀 [V78.0] 动态提取主权治理系统设置
+    from core.runtime.engine_singleton import get_global_engine
+    engine = get_global_engine()
+    
+    uvicorn_log_level = "info"
+    uvicorn_access_log = True
+    
+    if engine and hasattr(engine, 'config') and hasattr(engine.config, 'system'):
+        sys_cfg = engine.config.system
+        # 兼容小写转换以匹配 uvicorn 规范
+        uvicorn_log_level = getattr(sys_cfg, 'log_level', 'INFO').lower()
+        uvicorn_access_log = getattr(sys_cfg, 'access_log', True)
+
     def run_with_retry() -> None:
         """端口接力保障：支持自愈式启动"""
         attempts = 0
         while attempts < 10:
             try:
-                uvicorn.run(app, host=host, port=port, log_level="info", access_log=True)
+                uvicorn.run(app, host=host, port=port, log_level=uvicorn_log_level, access_log=uvicorn_access_log)
                 return
             except Exception:
                 attempts += 1

@@ -209,21 +209,85 @@ async def init_press(req: InitRequest):
             except: pass
             
         local_data["active_imprint"] = req.imprint_id
-        if "system" not in local_data: local_data["system"] = {}
-        local_data["system"]["data_root"] = f"imprints/{req.imprint_id}"
+        if "system" in local_data and isinstance(local_data["system"], dict):
+            if "data_root" in local_data["system"]:
+                del local_data["system"]["data_root"]
+            if not local_data["system"]:
+                del local_data["system"]
         
+        if "translation" not in local_data or not isinstance(local_data["translation"], dict):
+            local_data["translation"] = {}
+
         if req.enable_ai:
-            local_data["translation"]["primary_node"] = "wizard"
-            local_data["translation"]["primary_model"] = req.ai_model
-            
-            if "compute_nodes" not in local_data["translation"]: local_data["translation"]["compute_nodes"] = {}
-            local_data["translation"]["compute_nodes"]["wizard"] = {
-                "id": "wizard",
-                "type": req.ai_provider,
-                "api_key": req.ai_api_key,
-                "base_url": req.ai_base_url,
-                "enabled": True
-            }
+            # 🚀 [算力复用与去重逻辑]
+            def is_url_equal(u1, u2):
+                return (u1 or "").rstrip("/").strip() == (u2 or "").rstrip("/").strip()
+            def is_key_equal(k1, k2):
+                return (k1 or "").strip() == (k2 or "").strip()
+
+            existing_nodes = {}
+            # 1. 载入 config.yaml 基础配置
+            base_path = os.path.join(os.getcwd(), "config.yaml")
+            if os.path.exists(base_path):
+                try:
+                    with open(base_path, 'r', encoding='utf-8') as f:
+                        base_cfg = yaml.safe_load(f) or {}
+                        nodes = base_cfg.get("translation", {}).get("compute_nodes", {})
+                        if isinstance(nodes, dict):
+                            for k, v in nodes.items():
+                                if isinstance(v, dict):
+                                    existing_nodes[k] = v
+                except: pass
+
+            # 2. 载入 config.local.yaml 本地覆盖配置
+            if os.path.exists(local_path):
+                try:
+                    with open(local_path, 'r', encoding='utf-8') as f:
+                        local_cfg = yaml.safe_load(f) or {}
+                        nodes = local_cfg.get("translation", {}).get("compute_nodes", {})
+                        if isinstance(nodes, dict):
+                            for k, v in nodes.items():
+                                if isinstance(v, dict):
+                                    existing_nodes[k] = {**existing_nodes.get(k, {}), **v}
+                except: pass
+
+            matched_node_id = None
+            for node_id, node_data in existing_nodes.items():
+                if not isinstance(node_data, dict): continue
+                t_type = node_data.get("type", "")
+                t_url = node_data.get("base_url", "")
+                t_key = node_data.get("api_key", "")
+                if t_type == req.ai_provider and is_url_equal(t_url, req.ai_base_url) and is_key_equal(t_key, req.ai_api_key):
+                    matched_node_id = node_id
+                    break
+
+            if matched_node_id:
+                local_data["translation"]["primary_node"] = matched_node_id
+                local_data["translation"]["primary_model"] = req.ai_model
+                if "compute_nodes" not in local_data["translation"]:
+                    local_data["translation"]["compute_nodes"] = {}
+                if matched_node_id not in local_data["translation"]["compute_nodes"]:
+                    local_data["translation"]["compute_nodes"][matched_node_id] = {}
+                local_data["translation"]["compute_nodes"][matched_node_id]["enabled"] = True
+                # local_data["translation"]["compute_nodes"][matched_node_id]["model"] = req.ai_model
+                tlog.info(f"✨ [算力复用] 检测到已有完全匹配的算力节点 '{matched_node_id}'，直接复用该节点。")
+            else:
+                local_data["translation"]["primary_node"] = "wizard"
+                local_data["translation"]["primary_model"] = req.ai_model
+                if "compute_nodes" not in local_data["translation"]:
+                    local_data["translation"]["compute_nodes"] = {}
+                local_data["translation"]["compute_nodes"]["wizard"] = {
+                    "id": "wizard",
+                    "type": req.ai_provider,
+                    "api_key": req.ai_api_key,
+                    "base_url": req.ai_base_url,
+                    "model": req.ai_model,
+                    "enabled": True
+                }
+                tlog.info(f"✨ [算力新建] 未检测到匹配的已有算力节点，成功创建新引导节点 'wizard'，且绑定模型为 '{req.ai_model}'。")
+        else:
+            local_data["translation"]["primary_node"] = "lmstudio_local"
+            local_data["translation"]["primary_model"] = "qwen/qwen3.5-9b"
 
         with open(local_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(local_data, f, allow_unicode=True)
