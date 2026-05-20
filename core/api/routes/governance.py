@@ -6,7 +6,7 @@
 """
 
 from fastapi import APIRouter
-from .gov import context, imprints, config, vault
+from .gov import context, imprints, config, vault, actions
 from . import dispatch
 
 router = APIRouter()
@@ -17,3 +17,4 @@ router.include_router(imprints.router)
 router.include_router(config.router)
 router.include_router(vault.router)
 router.include_router(dispatch.router)
+router.include_router(actions.router)

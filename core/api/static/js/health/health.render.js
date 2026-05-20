@@ -1,0 +1,88 @@
+/**
+ * 🩺 [V55.0] Illacme Plenipes Health Rendering Module
+ * 职责：系统健康状态矩阵 HTML 动态渲染装配、页脚状态信息刷新与预览服务指挥终端 Modal 绑定。
+ */
+
+window.refreshHealthMatrix = async () => {
+    const container = document.getElementById('health-matrix-container');
+    if (!container) return;
+
+    const matrix = await apiFetch('/api/system/health/matrix');
+    
+    // 🚀 [V55.0] 增强型防抖与容错：如果接口返回异常，保持上一次的状态而不是清空
+    if (!matrix || Object.keys(matrix).length === 0) {
+        if (container.innerHTML === "" || container.querySelector('.loading')) {
+            container.innerHTML = `<div class="health-node"><div class="node-status">DISCONNECTED</div></div>`;
+        }
+        return;
+    }
+
+    const html = Object.entries(matrix).map(([id, info]) => {
+        let actions = '';
+        if (id === 'preview') {
+            actions = `
+                <div class="node-actions">
+                    <button class="mini-action-btn" title="服务管理" onclick="showServiceManager('preview')">⚙️</button>
+                    <button class="mini-action-btn" title="打开预览" onclick="window.open('http://localhost:' + (window.settingsData.system?.serve_port || 43213), '_blank')">🌐</button>
+                </div>
+            `;
+        } else if (id === 'onboarding') {
+            const isActive = info.status === 'active';
+            actions = `
+                <div class="node-actions">
+                    ${isActive ? 
+                        `<button class="mini-action-btn" title="停止向导" onclick="controlWizard('stop')">⏹️</button>
+                         <button class="mini-action-btn" title="进入向导" onclick="window.open('http://localhost:43211', '_blank')">🚀</button>` : 
+                        `<button class="mini-action-btn" title="版图向导" onclick="controlWizard('start')">▶️</button>`
+                    }
+                </div>
+            `;
+        }
+        return `
+            <div class="health-node">
+                <div class="status-dot-mini status-${info.status || 'offline'} ${id === 'dashboard' ? 'pulsing' : ''}"></div>
+                <div class="node-info">
+                    <div class="node-label">${info.label || id}</div>
+                    <div class="node-status">${info.status || 'offline'}</div>
+                </div>
+                ${actions}
+            </div>
+        `;
+    }).join('');
+    
+    if (container.innerHTML !== html) {
+        container.innerHTML = html;
+    }
+};
+
+window.updateHealthUI = (health) => {
+    if (!health) return;
+    const statusText = document.getElementById('status-text');
+    if (statusText) {
+        statusText.innerText = `健康度: ${health.status?.toUpperCase()} (${health.imprint || 'N/A'})`;
+    }
+};
+
+window.showServiceManager = (service) => {
+    if (service === 'preview') {
+        // 🚀 [V55.9] 物理对正：打开全功能指挥中心
+        const modal = document.getElementById('terminal-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.getElementById('terminal-title').innerText = "🛰️ 预览服务主权指挥中心";
+            const out = document.getElementById('terminal-output');
+            if (out && out.innerHTML.trim() === "") {
+                out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
+            }
+            
+            // 实时同步当前节点状态至终端状态栏
+            const labels = Array.from(document.querySelectorAll('.node-label'));
+            const previewLabel = labels.find(el => el.innerText.includes("预览服务"));
+            const container = previewLabel ? previewLabel.closest('.health-node') : null;
+            const currentStatus = container ? container.querySelector('.node-status').innerText.toUpperCase() : 'OFFLINE';
+            
+            const statusEl = document.getElementById('terminal-status');
+            if (statusEl) statusEl.innerText = currentStatus;
+        }
+    }
+};

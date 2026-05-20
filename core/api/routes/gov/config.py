@@ -7,22 +7,25 @@
 
 import os
 import yaml
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from typing import Optional
 from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
-from pydantic import BaseModel
 
 router = APIRouter()
 
-class StyleRequest(BaseModel):
-    style: str
-
 @router.get("/api/system/config", dependencies=[Depends(verify_token)])
-def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
+def get_full_config(level: str = "merged", imprint_id: Optional[str] = None) -> dict:
+    """
+    获取全局、局部或刻印级别合并后的全量配置及治理规则映射。
+    
+    :param level: 获取配置的级别，可选 "merged", "local", "imprint"。
+    :param imprint_id: 可选的目标刻印 ID。
+    :return: 配置字典。
+    """
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
@@ -58,7 +61,14 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None):
     }
 
 @router.post("/api/config/update", dependencies=[Depends(verify_token)])
-async def update_config(req: dict, imprint_id: Optional[str] = None):
+async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
+    """
+    更新内存及磁盘配置，包含底座只读防御、类型自愈、License 校验以及在线热重构。
+    
+    :param req: 包含键值对更新属性的字典。
+    :param imprint_id: 可选的目标刻印 ID。
+    :return: 更新后的结果与配置镜像。
+    """
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
@@ -168,21 +178,67 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
         for k, v in fields.items():
             k_parts = k.split('.')
             d = dest_data
-            for p in k_parts[:-1]:
-                if p not in d: d[p] = {}
-                d = d[p]
-            d[k_parts[-1]] = make_yaml_safe(v)
+            for i, p in enumerate(k_parts[:-1]):
+                next_p = k_parts[i+1]
+                is_next_p_digit = next_p.isdigit()
+                
+                if p.isdigit():
+                    p_idx = int(p)
+                    while len(d) <= p_idx:
+                        d.append({})
+                    # 如果下一个节点原本不是对象，强制自愈
+                    if is_next_p_digit and not isinstance(d[p_idx], list):
+                        d[p_idx] = []
+                    elif not is_next_p_digit and not isinstance(d[p_idx], dict):
+                        d[p_idx] = {}
+                    d = d[p_idx]
+                else:
+                    if p not in d or d[p] is None:
+                        d[p] = [] if is_next_p_digit else {}
+                    elif is_next_p_digit and not isinstance(d[p], list):
+                        d[p] = []
+                    elif not is_next_p_digit and not isinstance(d[p], dict):
+                        d[p] = {}
+                    d = d[p]
+            
+            final_key = k_parts[-1]
+            if final_key.isdigit():
+                final_idx = int(final_key)
+                while len(d) <= final_idx:
+                    d.append(None)
+                d[final_idx] = make_yaml_safe(v)
+            else:
+                d[final_key] = make_yaml_safe(v)
+                
             dirty_levels.add(lvl)
             if lvl == "imprint" and not imprint_id:
                 ld = file_data["local"]
                 for p in k_parts[:-1]:
-                    if ld and p in ld and isinstance(ld[p], dict): ld = ld[p]
+                    if ld:
+                        if p.isdigit():
+                            p_idx = int(p)
+                            if isinstance(ld, list) and 0 <= p_idx < len(ld):
+                                ld = ld[p_idx]
+                            else:
+                                ld = None
+                                break
+                        elif isinstance(ld, dict) and p in ld:
+                            ld = ld[p]
+                        else:
+                            ld = None
+                            break
                     else:
-                        ld = None
                         break
-                if ld and k_parts[-1] in ld:
-                    del ld[k_parts[-1]]
-                    dirty_levels.add("local")
+                if ld:
+                    final_key = k_parts[-1]
+                    if final_key.isdigit():
+                        final_idx = int(final_key)
+                        if isinstance(ld, list) and 0 <= final_idx < len(ld):
+                            ld[final_idx] = None
+                            dirty_levels.add("local")
+                    elif isinstance(ld, dict) and final_key in ld:
+                        del ld[final_key]
+                        dirty_levels.add("local")
 
     for lvl, path in paths.items():
         if not path or lvl not in dirty_levels: continue
@@ -229,64 +285,3 @@ async def update_config(req: dict, imprint_id: Optional[str] = None):
         bus.emit("CONFIG_RELOADED", config=engine.config)
             
     return {"status": "success", "active_config": engine.config.model_dump()}
-
-@router.post("/api/config/style")
-async def apply_translation_style(req: StyleRequest, request: Request):
-    from core.governance.imprint_manager import im
-    import shutil
-    imprint_id = request.headers.get("Imprint-Id")
-    target_imprint = imprint_id or im.get_active_imprint()
-    if not target_imprint: return {"status": "error", "message": "No active imprint"}
-    from core.config.config import PROMPTS_NAME, DIALECTS_DIR, DEFAULT_DIALECT_NAME, CONFIG_DIR, PROMPTS_TEMPLATES_DIR
-    source_template = os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_TEMPLATES_DIR, f"{req.style}.yaml")
-    if not os.path.exists(source_template): return {"status": "error", "message": f"Template {req.style} not found"}
-    target_dir = os.path.join(im.imprint_root, target_imprint, CONFIG_DIR, DIALECTS_DIR)
-    os.makedirs(target_dir, exist_ok=True)
-    shutil.copy2(source_template, os.path.join(target_dir, f"{req.style}.yaml"))
-    shutil.copy2(source_template, os.path.join(target_dir, DEFAULT_DIALECT_NAME))
-    engine = get_global_engine()
-    if engine:
-        engine.config.translation.active_style = req.style
-        engine.config.dump_to_disk(os.path.join(IMPRINT_DIR, target_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME))
-    shutil.copy2(source_template, os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_NAME))
-    return {"status": "success", "style": req.style}
-
-@router.post("/api/themes/bootstrap", dependencies=[Depends(verify_token)])
-async def bootstrap_theme(req: dict):
-    theme_id = req.get("id")
-    if not theme_id: return {"status": "error", "message": "Missing theme ID"}
-    import subprocess
-    from core.config.config import THEMES_DIR
-    target_path = os.path.join(os.getcwd(), THEMES_DIR, theme_id)
-    if os.path.exists(target_path): return {"status": "error", "message": "Assets exist"}
-    bootstrap_cmds = {
-        "starlight": f"npx -y create-astro@latest {theme_id} --template starlight --no-install --no-git --yes",
-        "docusaurus": f"npx -y create-docusaurus@latest {theme_id} classic --skip-install",
-        "vitepress": f"mkdir -p {theme_id} && cd {theme_id} && npm init -y && npm install -D vitepress",
-        "nextra": f"npx -y create-nextra-app@latest {theme_id} --example docs"
-    }
-    cmd = bootstrap_cmds.get(theme_id)
-    if not cmd: return {"status": "error", "message": "Unsupported engine"}
-    env = os.environ.copy()
-    env["CI"] = "true"
-    process = subprocess.Popen(cmd, shell=True, cwd=os.path.join(os.getcwd(), THEMES_DIR), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
-    for line in process.stdout: bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"  [CLI] {line.strip()}")
-    process.wait()
-    if process.returncode == 0:
-        if theme_id == "docusaurus":
-            os.makedirs(os.path.join(target_path, "docs"), exist_ok=True)
-            with open(os.path.join(target_path, "docs", "intro.md"), "w", encoding="utf-8") as f: f.write("# Welcome")
-        return {"status": "success", "message": "Theme initialized"}
-    return {"status": "error", "message": f"Failed (Code: {process.returncode})"}
-
-@router.post("/api/publish/trigger", dependencies=[Depends(verify_token)])
-async def trigger_publish(req: dict):
-    engine = get_global_engine()
-    if not engine: return {"error": "Engine not initialized"}
-    try:
-        mode = req.get("mode", "static")
-        from core.runtime.orchestrator import start_asynchronous_sync
-        task_id = start_asynchronous_sync(engine, dry_run=(mode == "dry-run"), sandbox=(mode == "sandbox"))
-        if task_id is None: return {"status": "error", "message": "Already running"}
-        return {"status": "task_queued", "task_id": task_id}
-    except Exception as e: return {"status": "error", "message": str(e)}
