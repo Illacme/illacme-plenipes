@@ -24,8 +24,8 @@ window.ComputeUI = {
             window.ComputeHandlers.syncStrategyBadge();
         }
 
-        // 🛡️ [V74.10] 直接从已同步的配置中读取节点数据（避免重复声明 res）
-        const nodes = window.settingsData?.translation?.compute_nodes || {};
+        const trans = window.settingsData?.translation || {};
+        const nodes = trans.compute_nodes || {};
         window._activeNodeIds = Object.keys(nodes);
 
         let html = `
@@ -41,8 +41,7 @@ window.ComputeUI = {
                 .sort((a, b) => (b[1].last_updated || 0) - (a[1].last_updated || 0))
                 .map(([id, node]) => `
                         <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative;">
-                            ${node.is_primary ? '<div class="role-badge primary">PRIMARY</div>' : node.is_fallback ? '<div class="role-badge fallback">FALLBACK</div>' : ''}
-                            
+                            ${id === trans.primary_node ? '<div class="role-badge primary">PRIMARY</div>' : (id === trans.fallback_node && trans.strategy !== 'single') ? '<div class="role-badge fallback">FALLBACK</div>' : ''}
                             <div class="node-header">
                                 <div class="node-identity">
                                     <div class="node-icon-vessel">
@@ -139,15 +138,6 @@ window.ComputeUI = {
                 </div>
 
                 <div class="strategy-command-deck" style="margin-top: 0 !important;">
-                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(0, 242, 255, 0.1);">
-                        <div class="strategy-label">容灾调度算法 (RESILLIENCE ALGORITHM)</div>
-                        <div class="strategy-list">
-                            ${this.renderStrategyItem('single', '📍 单点模式', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
-                            ${this.renderStrategyItem('fallback', '🛡️ 容灾模式', '主力节点故障时，能量自动导向备用节点，确保出版不中断。', trans.strategy)}
-                            ${this.renderStrategyItem('concurrent', '🚀 竞速模式', '主备并联齐发，以毫秒级响应优先者为准，榨取极限性能。', trans.strategy)}
-                        </div>
-                    </div>
-
                     <div class="strategy-binding-matrix">
                         <div class="binding-terminal primary">
                             <div class="terminal-label">PRIMARY NODE (主力执行)</div>
@@ -171,21 +161,32 @@ window.ComputeUI = {
                             <div class="vessel-link-line"></div>
                         </div>
 
-                        <div class="binding-terminal fallback">
+                        <div class="binding-terminal fallback" id="fallback-terminal-pod" style="transition: all 0.3s; ${trans.strategy === 'single' ? 'opacity: 0.3; pointer-events: none;' : ''}">
                             <div class="terminal-label">FALLBACK NODE (容灾守护)</div>
                             <div class="selection-vessel">
                                 <select id="fallback_node_selector"
-                                        onchange="window.ComputeHandlers.updateStrategy('fallback_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'fallback_model')">
+                                        onchange="window.ComputeHandlers.updateStrategy('fallback_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'fallback_model')"
+                                        ${trans.strategy === 'single' ? 'disabled' : ''}>
                                     <option value="">选择算力单元</option>
                                     ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.fallback_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}
                                 </select>
                                 <div class="input-vessel">
                                     <input type="text" id="fallback_model_input" value="${trans.fallback_model || ''}" 
                                            placeholder="容灾模型标识符" 
-                                           onchange="window.ComputeHandlers.updateStrategy('fallback_model', this.value)">
+                                           onchange="window.ComputeHandlers.updateStrategy('fallback_model', this.value)"
+                                           ${trans.strategy === 'single' ? 'disabled' : ''}>
                                     <div id="fallback_model_suggestions" class="discovery-suggestions"></div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(0, 242, 255, 0.1);">
+                        <div class="strategy-label">容灾调度算法 (RESILLIENCE ALGORITHM)</div>
+                        <div class="strategy-list">
+                            ${this.renderStrategyItem('single', '📍 单点模式', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
+                            ${this.renderStrategyItem('fallback', '🛡️ 容灾模式', '主力节点故障时，能量自动导向备用节点，确保出版不中断。', trans.strategy)}
+                            ${this.renderStrategyItem('concurrent', '🚀 竞速模式', '主备并联齐发，以毫秒级响应优先者为准，榨取极限性能。', trans.strategy)}
                         </div>
                     </div>
                     

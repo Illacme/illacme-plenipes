@@ -86,6 +86,8 @@ bus.subscribe("UI_PROGRESS_ADVANCE", bind_event("UI_PROGRESS_ADVANCE"))
 bus.subscribe("UI_PROGRESS_STOP", bind_event("UI_PROGRESS_STOP"))
 bus.subscribe("UI_TERMINAL_DATA", bind_event("UI_TERMINAL_DATA"))
  # 🚀 [V55.9] 关键桥接：将终端日志信号投射至 WS 链路
+bus.subscribe("KNOWLEDGE_BATCH_READY", bind_event("KNOWLEDGE_BATCH_READY"))
+ # 🪐 [混合渐进式] AI 织网分批完成时推送增量星系数据至 Dashboard
 
 @router.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket):

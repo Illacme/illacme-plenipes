@@ -61,7 +61,8 @@ def main():
             "core/editorial/standard_steps.py", # V65.0 标准化出版步骤
             "core/logic/ai/ai_scheduler.py",   # V65.0 算力调度中枢
             "core/api/routes/dispatch.py",     # 🚀 新增物理销毁与分发控制中枢
-            "core/api/routes/gov/context.py"  # 🛰️ 核心诊断与模拟干跑发布路由
+            "core/api/routes/gov/context.py",  # 🛰️ 核心诊断与模拟干跑发布路由
+            "core/api/routes/content.py"       # 📦 内容运营组件
         ]
         
         for root, dirs, files in os.walk('core'):

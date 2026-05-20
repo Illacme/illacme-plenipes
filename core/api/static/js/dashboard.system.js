@@ -177,7 +177,9 @@ function renderGeneralCategory() {
             <div class="settings-group mt-large">
                 <h4>🧱 文稿存储架构 (Physical Storage Architecture)</h4>
                 <div class="settings-grid">
-                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'text', {placeholder: '请输入您本地 Obsidian 稿件文库的物理绝对路径，例如: /Volumes/Notebook/omni-hub/content-vault'})}
+                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'static', {
+                        description: '🔒 物理主权路径在版图确立后不可变。如需迁移资产领土，请新建版图。'
+                    })}
                     ${renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox', {
                         description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
                     })}

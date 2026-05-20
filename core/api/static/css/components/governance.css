@@ -353,21 +353,6 @@
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(163, 76, 255, 0.2);
 }
 
-.role-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 3px 12px;
-    font-size: 0.6rem;
-    font-weight: 900;
-    letter-spacing: 1px;
-    border-bottom-left-radius: 12px;
-    z-index: 10;
-    box-shadow: -5px 5px 15px rgba(0,0,0,0.3);
-}
-.role-badge.primary { background: var(--accent-primary); color: #000; }
-.role-badge.fallback { background: rgba(255, 255, 255, 0.1); color: #fff; backdrop-filter: blur(5px); }
-
 .node-unit::after {
     content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
     background: radial-gradient(circle, rgba(163, 76, 255, 0.03) 0%, transparent 70%);
@@ -386,9 +371,11 @@
 .node-actions {
     display: flex;
     gap: 8px;
-    flex-shrink: 0; /* 🚀 防止被挤出边框 */
+    flex-shrink: 0; 
     margin-left: 15px;
     padding-top: 2px;
+    margin-top: 15px; /* 🚀 避开右上角的角标 */
+    margin-right: 5px;
 }
 
 .node-identity { 
@@ -652,7 +639,13 @@
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 40px;
+    margin-top: 30px;
     margin-bottom: 40px;
+}
+
+.tactical-info-pod:hover {
+    transform: none !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 2px var(--glass-highlight) !important;
 }
 
 .binding-terminal {
@@ -661,6 +654,12 @@
     border-radius: 20px;
     padding: 25px;
     position: relative;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.binding-terminal:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.1);
 }
 
 .binding-terminal.primary { border-left: 4px solid var(--accent-primary); }
@@ -1762,4 +1761,29 @@
     font-size: 0.75rem !important;
     border-radius: 8px !important;
     margin: 0 !important;
+}
+
+/* 📌 主备节点角色标记 */
+.node-unit .role-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 4px 14px;
+    font-size: 0.55rem;
+    font-weight: 800;
+    border-radius: 0 20px 0 20px;
+    letter-spacing: 1px;
+    box-shadow: -2px 2px 10px rgba(0,0,0,0.15);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    pointer-events: none;
+    z-index: 10;
+}
+.node-unit .role-badge.primary {
+    background: linear-gradient(135deg, var(--accent-primary), #ff2a5f);
+    color: white;
+}
+.node-unit .role-badge.fallback {
+    background: linear-gradient(135deg, var(--accent-secondary), #0077ff);
+    color: white;
 }

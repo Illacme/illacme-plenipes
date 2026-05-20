@@ -157,7 +157,7 @@ window.getUIModalsHTML = () => {
                     <div id="wiz-step-1" class="wizard-pane fade-in">
                         <div class="sovereign-memo glass-panel" style="margin-bottom: 20px; padding: 15px; border-left: 3px solid var(--accent-primary); background: rgba(163, 76, 255, 0.03);">
                             <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0; line-height: 1.5;">
-                                <b>版图 (Imprint)</b> 是您在数字帝国中的物理发行单元。我们将为该版图划定独立的内容文库、算力策略和分发链条。首先请确立其 brand 标识：
+                                <b>版图 (Imprint)</b> 是您在数字帝国中的物理发行单元。我们将为该版图划定独立的内容文库、算力策略和分发链条。首先请确立其 Imprint 标识：
                             </p>
                         </div>
                         <div class="settings-grid" style="display: flex; flex-direction: column; gap: 15px;">

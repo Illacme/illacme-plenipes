@@ -91,6 +91,54 @@ def perform_sync(engine, args, task_queue, current_source_files):
 
     bus.emit("UI_PROGRESS_STOP")
 
+    # 🚀 [混合渐进式自愈] 在下游插件和 API 调用前，重新物理扫描并自愈更新内存中的物理双链拓扑
+    from core.editorial.vault_indexer import VaultIndexer
+    try:
+        engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(
+            engine.manuscript_source, config=engine.config, ledger=engine.meta
+        )
+        tlog.info(f"🌌 [混合图谱] 物理双链自愈扫描完成，当前物理节点数: {len(engine.link_graph)}")
+
+        # 🪐 [混合渐进式] 构建增量星系数据并通过 EventBus 推送至 Dashboard
+        batch_nodes = []
+        batch_links = []
+        seen_links = set()
+        for rel_path, data in engine.link_graph.items():
+            meta = data.get("metadata", {})
+            batch_nodes.append({
+                "id": rel_path,
+                "title": meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0],
+                "val": 1.0,
+                "group": "document",
+                "is_skeleton": True
+            })
+            for target in data.get("links", []):
+                target_key = target
+                if target not in engine.link_graph:
+                    for k in engine.link_graph:
+                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                            target_key = k
+                            break
+                link_id = tuple(sorted([rel_path, target_key]))
+                if link_id not in seen_links:
+                    seen_links.add(link_id)
+                    batch_links.append({
+                        "source": rel_path,
+                        "target": target_key,
+                        "strength": 1.0,
+                        "type": "wikilink",
+                        "is_manual": False,
+                        "is_skeleton": True
+                    })
+        bus.emit("KNOWLEDGE_BATCH_READY",
+                 batch_index=1,
+                 total_batches=1,
+                 nodes=batch_nodes,
+                 links=batch_links)
+        tlog.info(f"📡 [混合图谱] 已推送 KNOWLEDGE_BATCH_READY: {len(batch_nodes)} 节点, {len(batch_links)} 连线")
+    except Exception as ex:
+        tlog.error(f"❌ [混合图谱] 物理双链自愈扫描失败: {ex}")
+
     # 7. 性能审计与下游生命周期
     elapsed_seconds = time.perf_counter() - start_perf
     time_display = f"{elapsed_seconds:.2f} 秒" if elapsed_seconds < 60 else f"{int(elapsed_seconds // 60)} 分 {elapsed_seconds % 60:.2f} 秒"

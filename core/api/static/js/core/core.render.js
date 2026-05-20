@@ -45,6 +45,8 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
     } else if (type === 'number') {
         const onchange = options.onchange || `updateConfigField('${path}', parseFloat(this.value))`;
         inputHtml = `<input type="number" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;
+    } else if (type === 'static') {
+        inputHtml = `<div id="${id}" class="setting-static-value" style="padding: 10px 12px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px dashed var(--border-color); color: var(--text-dim); font-family: monospace; word-break: break-all;">${safeValue}</div>`;
     } else {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
         inputHtml = `<input type="text" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${options.readonly ? 'readonly' : ''}>`;

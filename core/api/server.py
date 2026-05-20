@@ -10,14 +10,22 @@ from typing import Dict, Any, Optional
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
 from .routes import system, content, governance, ws, compute
 from .infrastructure.logging import setup_api_logging
 from .infrastructure.middleware import setup_middleware
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """🚀 [V52.1] 生命周期挂钩：物理链路预热"""
+    import asyncio
+    ws._main_loop = asyncio.get_running_loop()
+    yield
+
 # 1. 实例化主引擎 API 门户
-app = FastAPI(title="Illacme-plenipes API Gateway", version="V52.0")
+app = FastAPI(title="Illacme-plenipes API Gateway", version="V52.0", lifespan=lifespan)
 
 # 2. 注入核心基础设施逻辑 (代理执行)
 setup_middleware(app)
@@ -45,11 +53,7 @@ async def root_redirect() -> RedirectResponse:
     """自动重定向至指挥中心"""
     return RedirectResponse(url="/dashboard/")
 
-@app.on_event("startup")
-async def startup_event() -> None:
-    """🚀 [V52.1] 生命周期挂钩：物理链路预热"""
-    import asyncio
-    ws._main_loop = asyncio.get_running_loop()
+# (Lifespan 已经接管了链路预热逻辑)
 
 # 🎨 挂载仪表盘静态页面 (保持原始物理路径探测)
 static_dir = os.path.join(os.path.dirname(__file__), "static")

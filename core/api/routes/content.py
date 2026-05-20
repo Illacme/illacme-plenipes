@@ -239,11 +239,116 @@ async def move_document(req: dict):
     return {"success": True, "doc_id": doc_id, "new_path": new_path}
 
 @router.get("/api/galaxy/graph", dependencies=[Depends(verify_token)])
-def get_galaxy_graph():
+def get_galaxy_graph(mode: str = "full"):
     engine = get_global_engine()
-    if not engine or not hasattr(engine, "knowledge_graph"):
+    if not engine:
         return {"nodes": [], "links": []}
-    return engine.knowledge_graph.get_galaxy_graph()
+    
+    # 🪐 [混合渐进式] 静态骨架模式
+    if mode == "skeleton":
+        nodes_list = []
+        links_list = []
+        seen_links = set()
+        
+        if not hasattr(engine, "link_graph") or not engine.link_graph:
+            return {"nodes": [], "links": []}
+            
+        for rel_path, data in engine.link_graph.items():
+            meta = data.get("metadata", {})
+            nodes_list.append({
+                "id": rel_path,
+                "title": meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0],
+                "val": 1.0,
+                "group": "document",
+                "is_skeleton": True
+            })
+            for target in data.get("links", []):
+                target_key = target
+                if target not in engine.link_graph:
+                    for k in engine.link_graph:
+                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                            target_key = k
+                            break
+                link_id = tuple(sorted([rel_path, target_key]))
+                if link_id not in seen_links:
+                    seen_links.add(link_id)
+                    links_list.append({
+                        "source": rel_path,
+                        "target": target_key,
+                        "strength": 1.0,
+                        "type": "wikilink",
+                        "is_manual": False,
+                        "is_skeleton": True
+                    })
+        return {"nodes": nodes_list, "links": links_list}
+        
+    # 🪐 [混合渐进式] 全量高维图模式 (合并物理 WikiLinks 与 AI 语义/用户手动连线)
+    else:
+        if not hasattr(engine, "knowledge_graph"):
+            return {"nodes": [], "links": []}
+            
+        kg_graph = engine.knowledge_graph.get_galaxy_graph()
+        nodes_map = {n["id"]: n for n in kg_graph.get("nodes", [])}
+        for n in nodes_map.values():
+            n["is_skeleton"] = False
+            n["group"] = "document"
+            
+        # 合并物理节点
+        if hasattr(engine, "link_graph") and engine.link_graph:
+            for rel_path, data in engine.link_graph.items():
+                meta = data.get("metadata", {})
+                title = meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0]
+                if rel_path not in nodes_map:
+                    nodes_map[rel_path] = {
+                        "id": rel_path,
+                        "title": title,
+                        "val": 1.0,
+                        "group": "document",
+                        "is_skeleton": True
+                    }
+                else:
+                    nodes_map[rel_path]["is_skeleton"] = True
+                    
+        # 合并连线
+        links_list = []
+        seen_links = set()
+        
+        for l in kg_graph.get("links", []):
+            src = l["source"]
+            tgt = l["target"]
+            link_id = tuple(sorted([src, tgt]))
+            seen_links.add(link_id)
+            links_list.append({
+                "source": src,
+                "target": tgt,
+                "strength": l.get("strength", 0.5),
+                "type": l.get("type", "semantic"),
+                "is_manual": l.get("is_manual", False),
+                "is_skeleton": False
+            })
+            
+        if hasattr(engine, "link_graph") and engine.link_graph:
+            for rel_path, data in engine.link_graph.items():
+                for target in data.get("links", []):
+                    target_key = target
+                    if target not in engine.link_graph:
+                        for k in engine.link_graph:
+                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                                target_key = k
+                                break
+                    if rel_path in nodes_map and target_key in nodes_map:
+                        link_id = tuple(sorted([rel_path, target_key]))
+                        if link_id not in seen_links:
+                            seen_links.add(link_id)
+                            links_list.append({
+                                "source": rel_path,
+                                "target": target_key,
+                                "strength": 1.0,
+                                "type": "wikilink",
+                                "is_manual": False,
+                                "is_skeleton": True
+                            })
+        return {"nodes": list(nodes_map.values()), "links": links_list}
 
 @router.get("/api/vault-assets/{asset_path:path}", dependencies=[Depends(verify_token)])
 def get_vault_asset(asset_path: str, relative_to: str = None):

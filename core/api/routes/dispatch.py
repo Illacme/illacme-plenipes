@@ -37,7 +37,7 @@ async def get_dispatch_status(doc_id: str):
         raise HTTPException(status_code=503, detail="Engine not initialized")
     
     config = engine.config
-    brand = config.active_imprint or "default"
+    imprint_id = config.active_imprint or "default"
     theme = config.active_theme or "default"
     
     # 1. 基础路径对正（获取数据库中注册的文档元数据，尊重 Slug 别名）
@@ -63,7 +63,7 @@ async def get_dispatch_status(doc_id: str):
     if hasattr(engine, "paths") and engine.paths.get("static_dir"):
         static_root = engine.paths.get("static_dir")
     else:
-        static_root = os.path.join("imprints", brand, "themes", theme, "static")
+        static_root = os.path.join("imprints", imprint_id, "themes", theme, "static")
 
     # 2. 扫描语种矩阵并计算真实算力 Token
     sync_matrix = []
@@ -143,7 +143,7 @@ async def get_dispatch_status(doc_id: str):
     # 动态查询 SQLite 账本获取真实历史总计费
     total_historical_cost = 0.0
     if hasattr(engine, "meta") and hasattr(engine.meta, "sqlite"):
-        total_historical_cost = engine.meta.sqlite.get_total_cost(brand)
+        total_historical_cost = engine.meta.sqlite.get_total_cost(imprint_id)
         
     # 动态获取当前的 AI 算力节点名称
     current_node = "Local Sync"
@@ -197,12 +197,12 @@ async def toggle_lab():
         return {"success": False, "message": "引擎尚未初始化"}
 
     config = engine.config
-    brand = config.active_imprint or "default"
+    imprint_id = config.active_imprint or "default"
     theme = config.active_theme or "default"
     
     preview_dir = engine.paths.get('static_dir') or engine.paths.get('target_base')
     if not preview_dir:
-        preview_dir = os.path.join("imprints", brand, "themes", theme, "dist")
+        preview_dir = os.path.join("imprints", imprint_id, "themes", theme, "dist")
     
     preview_dir = os.path.abspath(preview_dir)
     port = 43213
@@ -306,9 +306,9 @@ async def destroy_artifact(doc_id: str):
 
         # 2. 物理抹除 dist 目录中的多语言出版快照
         config = engine.config
-        brand = config.active_imprint or "default"
+        imprint_id = config.active_imprint or "default"
         theme = config.active_theme or "default"
-        dist_root = os.path.abspath(os.path.join("imprints", brand, "themes", theme, "dist"))
+        dist_root = os.path.abspath(os.path.join("imprints", imprint_id, "themes", theme, "dist"))
         
         rel_path, _ = os.path.splitext(doc_id)
         html_name = f"{rel_path}.html"
