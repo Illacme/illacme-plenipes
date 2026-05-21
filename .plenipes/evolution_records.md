@@ -17,3 +17,11 @@
 *   **防线策略与沉淀**：
     1.  **全局状态共享机制 (State-Share via Global window)**：在维持传统静态引入模式下，所有被拆分的子脚本方法必须一致挂载在全局 `window` 对象上（如 `window.triggerCreateDocument`）。所有模块在交互时，应优先通过 `window` 状态机执行状态读写（如 `window.vaultTreeInitialized`），以此维系通信完全透明守恒。
     2.  **原子自愈与空间对正**：子模块对于状态的变更，必须提供原生的自愈设计（如移动文件后若正处于编辑态则自愈更新编辑器的 target ID，原地重命名时保持左侧目录树视图不被折叠或乱跑），通过精确的毫秒级缓冲规避 SQLite 的 I/O 滞后。
+
+## 📅 2026-05-21: FastAPI 依赖解耦与全链路 API/DOM 精准对齐
+*   **现象描述**：在对复杂的后端路由路由中心（如 `content.py`）执行 SOP-02 物理降维时，极易因复杂的 FastAPI 依赖拦截器与内部业务逻辑混杂，导致无法对重构后的逻辑进行孤立的单元测试或差分校验，甚至引起路由级的循环导入。
+*   **根因剖析**：FastAPI 的 `Depends` 属于声明式的路由层控制，若业务逻辑与依赖注入声明紧密耦合，将导致核心业务逻辑无法脱离 FastAPI 运行环境进行独立验证。同时，大跨度的物理块平移极其容易引入肉眼难察的代码分支偏差。
+*   **防线策略与沉淀**：
+    1.  **FastAPI 依赖注入解耦**：在模块拆分中，坚持“逻辑归逻辑，路由归路由”原则。核心业务逻辑层（`content_ops.py`）仅接收纯 Python 标准结构、强类型参数及全局基础设施单例（如 `engine`），而将 `Depends(verify_token)` 等装饰器严格锁死在路由分发层（`content.py`），切断潜在的编译期循环依赖。
+    2.  **物理与逻辑双轨量化校验 (Paraconic Parity Verification)**：建立全量差分校验范式。重构前必须物理固化 API 模式指纹（`api_baseline.json`）与前端渲染 DOM 树（`vault_view.html.dump`）。重构后启动独立校验脚本（如 `phase4_full_diff.py` 和 `verify_dom_parity.py`），以 limit=10 的精确字段对齐与 outerHTML 的 100% 完美碰撞进行自动化数学验证，以机器理性确保重构零损坏。
+
