@@ -47,16 +47,11 @@ async def list_vault_manuscripts():
     if vault_root and os.path.exists(vault_root):
         vault_root_abs = os.path.abspath(vault_root)
         for root, dirs, files in os.walk(vault_root_abs):
+            # 🚀 [V87.9] 性能自愈优先：在 walk 时原地过滤以点开头的隐藏目录以及系统内嵌敏感目录
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ["node_modules", ".venv", "themes"]]
             for d in dirs:
-                # 排除敏感或系统内部文件夹
-                if d in [".git", ".plenipes", "node_modules", ".venv", "themes"]:
-                    continue
                 abs_dir = os.path.join(root, d)
                 rel_dir = os.path.relpath(abs_dir, vault_root_abs).replace("\\", "/")
-                # 确保上层路径中不包含被屏蔽的敏感目录
-                path_parts = rel_dir.split("/")
-                if any(p in [".git", ".plenipes", "node_modules", ".venv", "themes"] for p in path_parts):
-                    continue
                 directories.append(rel_dir)
                 
     return {"manuscripts": vault_list, "directories": directories}

@@ -27,6 +27,7 @@ window.renderVaultTree = (manuscripts, directories = []) => {
     directories.forEach(dirPath => {
         if (!dirPath) return;
         const parts = dirPath.split('/');
+        if (parts.some(p => p.startsWith('.'))) return;
         let current = tree;
         let currentPath = "";
         parts.forEach(folder => {
@@ -48,6 +49,7 @@ window.renderVaultTree = (manuscripts, directories = []) => {
         const parts = p.split('/');
         if (parts.length <= 1) return; // 根目录文件
         const folders = parts.slice(0, -1);
+        if (folders.some(f => f.startsWith('.'))) return;
         let current = tree;
         let currentPath = "";
         folders.forEach(folder => {
