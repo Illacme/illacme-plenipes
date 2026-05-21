@@ -9,9 +9,9 @@
 // ═══════════════════════════════════════════════════
 const GALAXY_PERF = {
     // LOD 分层阈值 (相机到节点的距离)
-    LOD_NEAR: 120,           // 近景：显示完整标签 + 高精度球体
-    LOD_MID: 350,            // 中景：显示缩小标签
-    LOD_FAR: 600,            // 远景：隐藏标签，仅保留光点
+    LOD_NEAR: 300,           // 近景：显示完整标签 + 高精度球体
+    LOD_MID: 600,            // 中景：显示缩小标签
+    LOD_FAR: 1000,           // 远景：隐藏标签，仅保留光点
     // 视锥裁剪边界 (屏幕坐标超出此像素范围则剪裁)
     FRUSTUM_MARGIN: 80,      // 屏幕外 80px 容差 (防止边缘闪烁)
     // 节流控制
@@ -57,6 +57,12 @@ window.initGalaxy = () => {
             }
         });
 
+    // 🌌 配置 d3 排斥力与连线力，确保节点充分散开
+    const chargeForce = window.galaxyGraph.d3Force('charge');
+    if (chargeForce) chargeForce.strength(-120);
+    const linkForce = window.galaxyGraph.d3Force('link');
+    if (linkForce) linkForce.distance(80).strength(0.4);
+
     // 🌪️ [V86.0] Kinetic Upgrade: Native Auto-Rotate
     window.galaxyGraph.controls().autoRotate = true;
     window.galaxyGraph.controls().autoRotateSpeed = 0.5;
@@ -68,7 +74,7 @@ window.initGalaxy = () => {
         }
     });
 
-    // 🧪 [Phase 3] Neural Pulse: 大规模时自动降频呼吸
+    // 🧪 [Phase 3] Neural Pulse: 大规模时自动降频呼吸 + 标签持续同步
     let angle = 0;
     setInterval(() => {
         if (window.galaxyGraph) {
@@ -78,6 +84,10 @@ window.initGalaxy = () => {
             angle += 0.05;
             const pulse = 4.5 + Math.sin(angle) * 0.8;
             window.galaxyGraph.nodeRelSize(pulse);
+            // 🏷️ 持续同步标签位置 (兜底机制，确保力学引擎停止后标签仍更新)
+            if (typeof window.syncGalaxyLabels === 'function') {
+                window.syncGalaxyLabels();
+            }
         }
     }, 100);
 
@@ -118,25 +128,37 @@ window.refreshGalaxy = async () => {
     if (!window.galaxyGraph || typeof apiFetch !== 'function') return;
 
     // ──── Phase 1: 骨架秒亮 (Skeleton Instant Render) ────
-    // 先拉取轻量物理 WikiLinks 骨架，冷冻力学引擎实现瞬间亮起
+    // 先拉取轻量物理 WikiLinks 骨架，预分配随机坐标后让力学引擎散射
     const skeleton = await apiFetch('/api/galaxy/graph?mode=skeleton');
     if (skeleton && skeleton.nodes && skeleton.nodes.length > 0) {
-        window.galaxyGraph.cooldownTicks(0); // 彻底冷冻力学引擎
+        // 🛡️ 过滤幽灵链路：移除指向不存在节点的连线
+        // ForceGraph3D 会为不存在的 target 创建隐形幽灵节点在原点 (0,0,0)，
+        // 导致连线力把所有真实节点拉向原点，造成全部堆叠为一颗星球
+        const nodeIds = new Set(skeleton.nodes.map(n => n.id));
+        skeleton.links = (skeleton.links || []).filter(l => {
+            const src = l.source?.id || l.source;
+            const tgt = l.target?.id || l.target;
+            return nodeIds.has(src) && nodeIds.has(tgt);
+        });
+
+        // 🌌 预分配随机初始位置，防止所有节点堆叠在原点
+        const spread = Math.max(100, skeleton.nodes.length * 10);
+        skeleton.nodes.forEach(n => {
+            if (n.x === undefined) n.x = (Math.random() - 0.5) * spread;
+            if (n.y === undefined) n.y = (Math.random() - 0.5) * spread;
+            if (n.z === undefined) n.z = (Math.random() - 0.5) * spread;
+        });
+
+        // 允许力学引擎运行足够的模拟周期来散开节点
+        window.galaxyGraph.cooldownTicks(150);
         window.galaxyGraph.graphData(skeleton);
+        window.galaxyGraph.d3Reheat();
+
         // 初始化标签 DOM
         if (typeof window.updateGalaxyLabelElements === 'function') {
             window.updateGalaxyLabelElements(skeleton.nodes);
         }
-        console.log(`🌌 [Phase 1] 骨架秒亮完成: ${skeleton.nodes.length} 节点, ${skeleton.links.length} 连线`);
-
-        // 短暂延迟后温和激活力学引擎，让骨架节点优雅散射
-        setTimeout(() => {
-            if (window.galaxyGraph) {
-                window.galaxyGraph.cooldownTicks(30);
-                window.galaxyGraph.d3Reheat();
-                console.log('🌀 [Phase 1] 骨架力学引擎温和激活 (30 ticks)');
-            }
-        }, 300);
+        console.log(`🌌 [Phase 1] 骨架渲染完成: ${skeleton.nodes.length} 节点, ${skeleton.links.length} 有效连线, 力学引擎运行中`);
     }
 
     // ──── Phase 2: 全量增量合并 (Full Incremental Merge) ────
@@ -183,12 +205,20 @@ window.refreshGalaxy = async () => {
         });
 
         if (hasNewData) {
+            // 🛡️ 过滤幽灵链路 (同 Phase 1 逻辑)
+            const allNodeIds = new Set(Object.keys(mergedNodesMap));
+            const validLinks = Object.values(mergedLinksMap).filter(l => {
+                const src = l.source?.id || l.source;
+                const tgt = l.target?.id || l.target;
+                return allNodeIds.has(src) && allNodeIds.has(tgt);
+            });
+
             const mergedData = {
                 nodes: Object.values(mergedNodesMap),
-                links: Object.values(mergedLinksMap)
+                links: validLinks
             };
             window.galaxyGraph.graphData(mergedData);
-            window.galaxyGraph.cooldownTicks(15);
+            window.galaxyGraph.cooldownTicks(60);
             window.galaxyGraph.d3Reheat();
             window.applyScaleAdaptation(mergedData.nodes.length);
             if (typeof window.updateGalaxyLabelElements === 'function') {
@@ -210,10 +240,7 @@ window._labelPool = new Map(); // id -> DOM element
 window._labelDataMap = new Map(); // id -> { title }
 
 window.updateGalaxyLabelElements = (nodes) => {
-    const container = document.getElementById('galaxy-labels-layer');
-    if (!container) return;
-
-    // 更新数据映射表 (不立即创建 DOM，延迟到 syncGalaxyLabels 按需创建)
+    // 📝 先填充数据映射表 (不依赖 DOM 容器是否就绪)
     const newIds = new Set();
     nodes.forEach(node => {
         const rawTitle = node.title || node.id;
@@ -262,17 +289,7 @@ window.syncGalaxyLabels = () => {
 
     const nodes = graph.graphData().nodes;
     const totalNodes = nodes.length;
-    const camera = graph.camera();
-    const camPos = camera.position;
-
-    // 🛡️ 提取相机前向向量 (Forward Vector)
-    const matrix = camera.matrixWorld.elements;
-    const camDirX = -matrix[8], camDirY = -matrix[9], camDirZ = -matrix[10];
-
-    // 📐 屏幕边界 (含容差)
-    const W = window._galaxyWidth || 800;
-    const H = window._galaxyHeight || 600;
-    const margin = GALAXY_PERF.FRUSTUM_MARGIN;
+    if (totalNodes === 0) return;
 
     // 🎛️ 超大规模时跳过全部标签渲染
     if (totalNodes > GALAXY_PERF.SCALE_THRESHOLD_HUGE) {
@@ -282,17 +299,32 @@ window.syncGalaxyLabels = () => {
         container.style.display = '';
     }
 
+    const camera = graph.camera();
+    const camPos = camera.position;
+
+    // 🛡️ 提取相机前向向量 (Forward Vector) 用于背面裁剪
+    const matrix = camera.matrixWorld.elements;
+    const camDirX = -matrix[8], camDirY = -matrix[9], camDirZ = -matrix[10];
+
+    // 📐 获取标签容器相对于视口的物理偏移，用于精细校准局部坐标
+    const containerRect = container.getBoundingClientRect();
+
+    // 📐 屏幕边界 (含容差)
+    const W = window._galaxyWidth || 800;
+    const H = window._galaxyHeight || 600;
+    const margin = GALAXY_PERF.FRUSTUM_MARGIN;
+
     // 🏎️ 第一遍：快速计算每个节点的距离与可见性 (纯数学，零 DOM 操作)
     const scored = [];
     for (let i = 0; i < totalNodes; i++) {
         const node = nodes[i];
-        if (node.x === undefined) continue; // 力学引擎尚未分配坐标
+        if (node.x === undefined) continue;
 
         const dx = node.x - camPos.x;
         const dy = node.y - camPos.y;
         const dz = node.z - camPos.z;
 
-        // 1) 后方裁剪 (Back-face Culling)
+        // 1) 后方裁剪 (Back-face Culling)，防止背面节点标签穿透
         const dot = dx * camDirX + dy * camDirY + dz * camDirZ;
         if (dot <= 0) continue;
 
@@ -302,57 +334,56 @@ window.syncGalaxyLabels = () => {
         // 3) LOD 远景裁剪
         if (dist > GALAXY_PERF.LOD_FAR) continue;
 
-        // 4) 屏幕坐标投影 + 视锥裁剪 (Frustum Culling)
+        // 4) 屏幕坐标投影
         const pos = graph.graph2ScreenCoords(node.x, node.y, node.z);
         if (!pos) continue;
-        if (pos.x < -margin || pos.x > W + margin || pos.y < -margin || pos.y > H + margin) continue;
 
-        scored.push({ node, dist, pos });
+        // 📐 计算相对于局部容器的精准坐标
+        const relativeX = pos.x - containerRect.left;
+        const relativeY = pos.y - containerRect.top;
+
+        // 5) 视锥裁剪：只剔除完全在容器局部画布外的标签
+        if (relativeX < -margin || relativeX > W + margin || relativeY < -margin || relativeY > H + margin) continue;
+
+        scored.push({ node, dist, relativeX, relativeY });
     }
 
-    // 🏎️ 按距离排序，只取最近的 MAX_VISIBLE_LABELS 个
+    // 🏎️ 按距离排序，只取最近的 MAX_VISIBLE_LABELS 个，保障超大规模下 DOM 性能守恒
     scored.sort((a, b) => a.dist - b.dist);
     const visibleSet = new Set();
     const maxLabels = Math.min(scored.length, GALAXY_PERF.MAX_VISIBLE_LABELS);
 
-    // 🏎️ 第二遍：仅对通过筛选的节点执行 DOM 操作
+    // 🏎️ 第二遍：仅对通过筛选的胜出节点执行 DOM 操作
     for (let i = 0; i < maxLabels; i++) {
-        const { node, dist, pos } = scored[i];
+        const { node, dist, relativeX, relativeY } = scored[i];
         visibleSet.add(node.id);
 
         const el = _getOrCreateLabel(node.id, container);
         if (!el) continue;
 
-        // LOD 分层字号计算
+        // LOD 分层字号与不透明度计算，实现 Obsidian 式极客呼吸渐变
         let fontSize, opacity;
         if (dist < GALAXY_PERF.LOD_NEAR) {
-            // 近景：完整标签
-            fontSize = Math.max(8, 18 - dist / 85);
+            fontSize = Math.max(10, 16 - dist / 100);
             opacity = 1;
         } else if (dist < GALAXY_PERF.LOD_MID) {
-            // 中景：缩小标签 + 半透明
             const t = (dist - GALAXY_PERF.LOD_NEAR) / (GALAXY_PERF.LOD_MID - GALAXY_PERF.LOD_NEAR);
-            fontSize = Math.max(5, 12 - t * 7);
-            opacity = Math.max(0.2, 1 - t * 0.8);
+            fontSize = Math.max(8, 14 - t * 6);
+            opacity = Math.max(0.4, 1 - t * 0.6);
         } else {
-            // 远景边缘：微弱残影
             const t = (dist - GALAXY_PERF.LOD_MID) / (GALAXY_PERF.LOD_FAR - GALAXY_PERF.LOD_MID);
-            fontSize = 5;
-            opacity = Math.max(0, 0.2 - t * 0.2);
+            fontSize = Math.max(6, 8 - t * 2);
+            opacity = Math.max(0.15, 0.4 - t * 0.25);
         }
 
-        if (opacity <= 0.01) {
-            el.style.display = 'none';
-        } else {
-            el.style.display = 'block';
-            el.style.left = `${pos.x}px`;
-            el.style.top = `${pos.y}px`;
-            el.style.fontSize = `${fontSize}px`;
-            el.style.opacity = opacity;
-        }
+        el.style.display = 'block';
+        el.style.left = `${relativeX}px`;
+        el.style.top = `${relativeY}px`;
+        el.style.fontSize = `${fontSize}px`;
+        el.style.opacity = opacity;
     }
 
-    // 🧹 隐藏不在可见集合中的已创建标签 (池化回收)
+    // 🧹 隐藏不可见的标签
     for (const [id, el] of window._labelPool) {
         if (!visibleSet.has(id)) {
             el.style.display = 'none';
