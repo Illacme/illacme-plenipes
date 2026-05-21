@@ -57,6 +57,15 @@ window.initGalaxy = () => {
             }
         });
 
+    // 🏷️ 动态重建被 ForceGraph3D 劫持抹除的标签图层
+    let layer = document.getElementById('galaxy-labels-layer');
+    if (!layer) {
+        layer = document.createElement('div');
+        layer.id = 'galaxy-labels-layer';
+        elem.appendChild(layer);
+        console.log("🌌 [LOD] 动态重建标签图层已挂载至 #galaxy-3d");
+    }
+
     // 🌌 配置 d3 排斥力与连线力，确保节点充分散开
     const chargeForce = window.galaxyGraph.d3Force('charge');
     if (chargeForce) chargeForce.strength(-120);
@@ -152,7 +161,13 @@ window.refreshGalaxy = async () => {
         // 允许力学引擎运行足够的模拟周期来散开节点
         window.galaxyGraph.cooldownTicks(150);
         window.galaxyGraph.graphData(skeleton);
-        window.galaxyGraph.d3Reheat();
+        if (typeof window.galaxyGraph.d3Reheat === 'function') {
+            window.galaxyGraph.d3Reheat();
+        } else if (typeof window.galaxyGraph.d3ReheatLayout === 'function') {
+            window.galaxyGraph.d3ReheatLayout();
+        } else if (typeof window.galaxyGraph.refresh === 'function') {
+            window.galaxyGraph.refresh();
+        }
 
         // 初始化标签 DOM
         if (typeof window.updateGalaxyLabelElements === 'function') {
@@ -219,7 +234,13 @@ window.refreshGalaxy = async () => {
             };
             window.galaxyGraph.graphData(mergedData);
             window.galaxyGraph.cooldownTicks(60);
-            window.galaxyGraph.d3Reheat();
+            if (typeof window.galaxyGraph.d3Reheat === 'function') {
+                window.galaxyGraph.d3Reheat();
+            } else if (typeof window.galaxyGraph.d3ReheatLayout === 'function') {
+                window.galaxyGraph.d3ReheatLayout();
+            } else if (typeof window.galaxyGraph.refresh === 'function') {
+                window.galaxyGraph.refresh();
+            }
             window.applyScaleAdaptation(mergedData.nodes.length);
             if (typeof window.updateGalaxyLabelElements === 'function') {
                 window.updateGalaxyLabelElements(mergedData.nodes);
