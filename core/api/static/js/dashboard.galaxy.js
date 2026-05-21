@@ -76,12 +76,46 @@ window.initGalaxy = () => {
     window.galaxyGraph.controls().autoRotate = true;
     window.galaxyGraph.controls().autoRotateSpeed = 0.5;
 
-    // 🔗 [Phase 3] 相机控制器的 change 事件 → 使用节流同步
-    window.galaxyGraph.controls().addEventListener('change', () => {
-        if (typeof window._throttledSyncLabels === 'function') {
-            window._throttledSyncLabels();
+    // 🏷️ [V86.5] 满帧（60fps）零延时标签同步状态机，解决交互时便签不守星球与画面撕裂感
+    let isDraggingGalaxy = false;
+    let dragFrameId = null;
+
+    const startContinuousSync = () => {
+        if (isDraggingGalaxy) return;
+        isDraggingGalaxy = true;
+        const syncLoop = () => {
+            if (!isDraggingGalaxy) return;
+            if (typeof window.syncGalaxyLabels === 'function') {
+                window.syncGalaxyLabels();
+            }
+            dragFrameId = requestAnimationFrame(syncLoop);
+        };
+        dragFrameId = requestAnimationFrame(syncLoop);
+    };
+
+    const stopContinuousSync = () => {
+        isDraggingGalaxy = false;
+        if (dragFrameId) {
+            cancelAnimationFrame(dragFrameId);
+            dragFrameId = null;
         }
-    });
+        if (typeof window.syncGalaxyLabels === 'function') {
+            window.syncGalaxyLabels();
+        }
+    };
+
+    const controls = window.galaxyGraph.controls();
+    if (controls) {
+        controls.addEventListener('start', startContinuousSync);
+        controls.addEventListener('change', () => {
+            // 在拖拽状态下，让 requestAnimationFrame 循环全速刷新
+            // 如果是非拖拽状态下的变化（例如自动旋转或程序性位置变更），则直接单次对齐更新
+            if (!isDraggingGalaxy && typeof window.syncGalaxyLabels === 'function') {
+                window.syncGalaxyLabels();
+            }
+        });
+        controls.addEventListener('end', stopContinuousSync);
+    }
 
     // 🧪 [Phase 3] Neural Pulse: 大规模时自动降频呼吸 + 标签持续同步
     let angle = 0;
@@ -321,13 +355,17 @@ window.syncGalaxyLabels = () => {
     }
 
     const camera = graph.camera();
+    if (camera) {
+        // 🛡️ [V86.5] 强制在投影计算前更新相机世界矩阵，杜绝交互拖拽时投影坐标滞后漂移
+        camera.updateMatrixWorld();
+    }
     const camPos = camera.position;
 
     // 🛡️ 提取相机前向向量 (Forward Vector) 用于背面裁剪
     const matrix = camera.matrixWorld.elements;
     const camDirX = -matrix[8], camDirY = -matrix[9], camDirZ = -matrix[10];
 
-    // 📐 获取标签容器相对于视口的物理偏移，用于精细校准局部坐标
+    // 📐 [V86.5] 局部容器坐标系已与 Canvas 融合，不再需要 getBoundingClientRect 偏移扣除，为保合规保留引用
     const containerRect = container.getBoundingClientRect();
 
     // 📐 屏幕边界 (含容差)
@@ -359,9 +397,10 @@ window.syncGalaxyLabels = () => {
         const pos = graph.graph2ScreenCoords(node.x, node.y, node.z);
         if (!pos) continue;
 
-        // 📐 计算相对于局部容器的精准坐标
-        const relativeX = pos.x - containerRect.left;
-        const relativeY = pos.y - containerRect.top;
+        // 📐 [V86.5] 终极对正：3d-force-graph 官方 graph2ScreenCoords 返回的本就是相对于 Canvas 容器左上角的局部坐标
+        // 且由于 #galaxy-labels-layer 已成功相对定位嵌套进 #galaxy-3d，两者坐标系重合。严禁再次扣除 containerRect 物理偏移！
+        const relativeX = pos.x;
+        const relativeY = pos.y;
 
         // 5) 视锥裁剪：只剔除完全在容器局部画布外的标签
         if (relativeX < -margin || relativeX > W + margin || relativeY < -margin || relativeY > H + margin) continue;
