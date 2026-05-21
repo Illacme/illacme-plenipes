@@ -31,6 +31,25 @@ window.initGalaxy = () => {
 
     if (window.galaxyGraph) return;
 
+    // 🪐 3D 节点飞入聚焦算法 (Camera Fly-To Focus)
+    const focusNodeIn3D = (node) => {
+        if (!window.galaxyGraph || node.x === undefined) return;
+        const distance = 120; // 黄金聚焦视距
+        const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+        const targetPos = (node.x === 0 && node.y === 0 && node.z === 0)
+            ? { x: 0, y: 0, z: distance }
+            : { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio };
+        
+        window.galaxyGraph.cameraPosition(
+            targetPos, // 新相机位置
+            node,      // 相机旋转中心指向该节点
+            1200       // 1.2 秒柔和过渡
+        );
+    };
+
+    let lastClickTime = 0;
+    let clickTimeout = null;
+
     window.galaxyGraph = ForceGraph3D()(elem)
         .width(elem.clientWidth)
         .height(elem.clientHeight)
@@ -45,9 +64,41 @@ window.initGalaxy = () => {
         .linkDirectionalParticleWidth(1.2)
         .linkDirectionalParticleSpeed(0.006)
         .onNodeClick(node => {
-            if (node.id && typeof openEditor === 'function') {
-                const cleanId = node.id.replace('doc_', '');
-                openEditor(cleanId);
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastClickTime;
+            
+            if (timeDiff < 250) {
+                // 🚀 [双击]：星跃聚焦并立刻打开编辑器
+                if (clickTimeout) {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = null;
+                }
+                if (node.x !== undefined) {
+                    focusNodeIn3D(node);
+                }
+                if (node.id && typeof openEditor === 'function') {
+                    const cleanId = node.id.replace('doc_', '');
+                    openEditor(cleanId);
+                }
+            } else {
+                // 🪐 [单击]：纯视觉星跃聚焦，不打扰 3D 视野，不拉编辑器
+                clickTimeout = setTimeout(() => {
+                    if (node.x !== undefined) {
+                        focusNodeIn3D(node);
+                    }
+                    clickTimeout = null;
+                }, 250);
+            }
+            lastClickTime = currentTime;
+        })
+        .onBackgroundClick(() => {
+            // 🌌 点击背景空白：宇宙视角复位，将旋转中心重置为全局中心 (0,0,0)
+            if (window.galaxyGraph) {
+                window.galaxyGraph.cameraPosition(
+                    { x: 0, y: 0, z: 280 }, // 初始 bird view 高度
+                    { x: 0, y: 0, z: 0 },  // 重置旋转中心为原点
+                    1200                   // 1.2 秒柔和退回
+                );
             }
         })
         .onEngineTick(() => {
@@ -106,6 +157,13 @@ window.initGalaxy = () => {
 
     const controls = window.galaxyGraph.controls();
     if (controls) {
+        // 🪐 [V86.6] 重载 OrbitControls 底层参数，解锁极限拉近与阻尼惯性，解禁平移
+        controls.minDistance = 15;        // 极限贴脸距离
+        controls.maxDistance = 2000;      // 极限拉远距离
+        controls.enablePan = true;        // 允许通过右键平移相机旋转中心
+        controls.enableDamping = true;    // 启用旋转/缩放/平移的太空滑行阻尼感
+        controls.dampingFactor = 0.05;    // 阻尼强度
+
         controls.addEventListener('start', startContinuousSync);
         controls.addEventListener('change', () => {
             // 在拖拽状态下，让 requestAnimationFrame 循环全速刷新
@@ -195,6 +253,10 @@ window.refreshGalaxy = async () => {
         // 允许力学引擎运行足够的模拟周期来散开节点
         window.galaxyGraph.cooldownTicks(150);
         window.galaxyGraph.graphData(skeleton);
+        
+        // 🌌 自动计算视域，将骨架星群以 1.2s 缓动完美框进屏幕
+        window.galaxyGraph.zoomToFit(1200, 60);
+
         if (typeof window.galaxyGraph.d3Reheat === 'function') {
             window.galaxyGraph.d3Reheat();
         } else if (typeof window.galaxyGraph.d3ReheatLayout === 'function') {
@@ -267,6 +329,10 @@ window.refreshGalaxy = async () => {
                 links: validLinks
             };
             window.galaxyGraph.graphData(mergedData);
+            
+            // 🌌 增量加载完成后，全量自适应视场对齐
+            window.galaxyGraph.zoomToFit(1500, 80);
+
             window.galaxyGraph.cooldownTicks(60);
             if (typeof window.galaxyGraph.d3Reheat === 'function') {
                 window.galaxyGraph.d3Reheat();
@@ -456,32 +522,44 @@ window.syncGalaxyLabels = () => {
 // ═══════════════════════════════════════════════════
 window.applyScaleAdaptation = (nodeCount) => {
     if (!window.galaxyGraph) return;
+
+    const chargeForce = window.galaxyGraph.d3Force('charge');
+    const linkForce = window.galaxyGraph.d3Force('link');
+
     if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_HUGE) {
-        // 超大规模 (>5000)：极简模式
+        // 超大规模 (>5000)：极简模式 + 极限引力收敛
         window.galaxyGraph.nodeResolution(6);
         window.galaxyGraph.linkDirectionalParticles(0);
         window.galaxyGraph.linkWidth(0.3);
         window.galaxyGraph.nodeRelSize(2.5);
-        console.log(`🎛️ [LOD] 超大规模降级: ${nodeCount} 节点 → 极简模式`);
+        if (chargeForce) chargeForce.strength(-60);
+        if (linkForce) linkForce.distance(40).strength(0.5);
+        console.log(`🎛️ [LOD] 超大规模降级: ${nodeCount} 节点 → 极简引力收敛模式`);
     } else if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_LARGE) {
-        // 大规模 (>2000)：关闭粒子
+        // 大规模 (>2000)：关闭粒子 + 深度引力收敛
         window.galaxyGraph.nodeResolution(8);
         window.galaxyGraph.linkDirectionalParticles(0);
         window.galaxyGraph.linkWidth(0.5);
         window.galaxyGraph.nodeRelSize(3.5);
-        console.log(`🎛️ [LOD] 大规模降级: ${nodeCount} 节点 → 无粒子模式`);
+        if (chargeForce) chargeForce.strength(-80);
+        if (linkForce) linkForce.distance(50).strength(0.45);
+        console.log(`🎛️ [LOD] 大规模降级: ${nodeCount} 节点 → 无粒子引力收敛模式`);
     } else if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_MED) {
-        // 中等规模 (>500)：降低球体精度
+        // 中等规模 (>500)：降低球体精度 + 中度引力收敛
         window.galaxyGraph.nodeResolution(12);
         window.galaxyGraph.linkDirectionalParticles(1);
         window.galaxyGraph.linkWidth(0.6);
         window.galaxyGraph.nodeRelSize(4);
-        console.log(`🎛️ [LOD] 中等规模降级: ${nodeCount} 节点 → 低精度模式`);
+        if (chargeForce) chargeForce.strength(-100);
+        if (linkForce) linkForce.distance(65).strength(0.4);
+        console.log(`🎛️ [LOD] 中等规模降级: ${nodeCount} 节点 → 低精度引力收敛模式`);
     } else {
-        // 小规模：全品质
+        // 小规模：全品质 + 标准排斥力
         window.galaxyGraph.nodeResolution(24);
         window.galaxyGraph.linkDirectionalParticles(2);
         window.galaxyGraph.linkWidth(0.8);
         window.galaxyGraph.nodeRelSize(5);
+        if (chargeForce) chargeForce.strength(-120);
+        if (linkForce) linkForce.distance(80).strength(0.4);
     }
 };
