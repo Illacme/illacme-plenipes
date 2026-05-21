@@ -80,6 +80,32 @@ async def save_document(doc_id: str, req: dict):
         
     if title is not None or slug is not None:
         engine.meta.register_document(doc_id, title, slug=slug)
+        
+    # 🚀 [V100.0] 双层物理一致性自愈：即时重塑物理索引与语义知识图谱节点，确保 3D 图谱完美同步刷新
+    try:
+        from core.editorial.vault_indexer import VaultIndexer
+        from core.ingress.language_sentinel import LanguageSentinel
+        
+        # 解析最新物理文件索引
+        mtime = os.path.getmtime(abs_path)
+        detected_lang = LanguageSentinel.detect_language(full_content, os.path.basename(doc_id))
+        links = VaultIndexer.extract_links(full_content)
+        meta = VaultIndexer._quick_parse_meta(full_content)
+        meta["size"] = len(full_content)
+        meta["mtime"] = mtime
+        meta["lang"] = detected_lang
+        
+        if hasattr(engine, "link_graph"):
+            engine.link_graph[doc_id] = {"links": links, "metadata": meta}
+            
+        if hasattr(engine, "knowledge_graph"):
+            actual_title = title or meta.get("title") or os.path.splitext(os.path.basename(doc_id))[0]
+            engine.knowledge_graph.upsert_node(doc_id, actual_title)
+            engine.knowledge_graph.save()
+    except Exception as ex:
+        # 避免在异常时中断正常保存流程，只作静默防抖
+        pass
+
     return {"success": True}
 
 @router.post("/ledger/document/create", dependencies=[Depends(verify_token)])
@@ -263,12 +289,16 @@ def get_galaxy_graph(mode: str = "full"):
                 "is_skeleton": True
             })
             for target in data.get("links", []):
-                target_key = target
-                if target not in engine.link_graph:
-                    for k in engine.link_graph:
-                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                            target_key = k
-                            break
+                resolved = engine.meta.resolve_link(target)
+                if resolved:
+                    target_key = resolved
+                else:
+                    target_key = target
+                    if target not in engine.link_graph:
+                        for k in engine.link_graph:
+                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                                target_key = k
+                                break
                 link_id = tuple(sorted([rel_path, target_key]))
                 if link_id not in seen_links:
                     seen_links.add(link_id)
@@ -308,34 +338,27 @@ def get_galaxy_graph(mode: str = "full"):
                     }
                 else:
                     nodes_map[rel_path]["is_skeleton"] = True
+                    # 🚀 [V100.0] 双重对齐保险：强制对齐最新物理 title 属性，打破缓存在 full 模式下的遮蔽缺陷
+                    nodes_map[rel_path]["title"] = title
                     
-        # 合并连线
+        # 合并连线：物理优先 (wikilink 青色优先，避免被 weak semantic 紫色连线遮蔽)
         links_list = []
         seen_links = set()
         
-        for l in kg_graph.get("links", []):
-            src = l["source"]
-            tgt = l["target"]
-            link_id = tuple(sorted([src, tgt]))
-            seen_links.add(link_id)
-            links_list.append({
-                "source": src,
-                "target": tgt,
-                "strength": l.get("strength", 0.5),
-                "type": l.get("type", "semantic"),
-                "is_manual": l.get("is_manual", False),
-                "is_skeleton": False
-            })
-            
+        # 1. 先合并物理 Wikilink 连线
         if hasattr(engine, "link_graph") and engine.link_graph:
             for rel_path, data in engine.link_graph.items():
                 for target in data.get("links", []):
-                    target_key = target
-                    if target not in engine.link_graph:
-                        for k in engine.link_graph:
-                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                                target_key = k
-                                break
+                    resolved = engine.meta.resolve_link(target)
+                    if resolved:
+                        target_key = resolved
+                    else:
+                        target_key = target
+                        if target not in engine.link_graph:
+                            for k in engine.link_graph:
+                                if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                                    target_key = k
+                                    break
                     if rel_path in nodes_map and target_key in nodes_map:
                         link_id = tuple(sorted([rel_path, target_key]))
                         if link_id not in seen_links:
@@ -348,6 +371,22 @@ def get_galaxy_graph(mode: str = "full"):
                                 "is_manual": False,
                                 "is_skeleton": True
                             })
+                            
+        # 2. 再合并语义与用户手动连线 (如果尚未存在物理连线的话)
+        for l in kg_graph.get("links", []):
+            src = l["source"]
+            tgt = l["target"]
+            link_id = tuple(sorted([src, tgt]))
+            if link_id not in seen_links:
+                seen_links.add(link_id)
+                links_list.append({
+                    "source": src,
+                    "target": tgt,
+                    "strength": l.get("strength", 0.5),
+                    "type": l.get("type", "semantic"),
+                    "is_manual": l.get("is_manual", False),
+                    "is_skeleton": False
+                })
         return {"nodes": list(nodes_map.values()), "links": links_list}
 
 @router.get("/api/vault-assets/{asset_path:path}", dependencies=[Depends(verify_token)])

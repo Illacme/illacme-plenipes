@@ -83,8 +83,22 @@ class SemanticLinkerStep(PipelineStep):
                                 for cat_list in o_ent_data.values():
                                     if isinstance(cat_list, list): other_entities.update(cat_list)
                             
-                            common = all_entities.intersection(other_entities)
-                            if common:
+                            # 🚀 [V48.4] 语义精准度控制
+                            # 停用词/泛用词过滤（不参与共享实体关联计算）
+                            STOP_ENTITIES = {
+                                "Illacme Plenipes", "Illacme", "Plenipes",
+                                "主权数字出版底座", "主权出版系统", "系统",
+                                "好未来：数字教育未来趋势白皮书", "数字教育未来趋势白皮书",
+                                "好未来", "数字教育", "未来趋势", "白皮书", "welcome-to-illacme"
+                            }
+                            
+                            # 过滤并提取两个节点的所有实体
+                            filtered_all = {e for e in all_entities if e not in STOP_ENTITIES and len(e) > 1}
+                            filtered_other = {e for e in other_entities if e not in STOP_ENTITIES and len(e) > 1}
+                            
+                            common = filtered_all.intersection(filtered_other)
+                            # 精准计算节点关系：至少共享 2 个及以上的核心实体才产生连线
+                            if len(common) >= 2:
                                 # 共享实体越多，强度越高
                                 strength = min(0.5 + (len(common) * 0.1), 0.95)
                                 engine.knowledge_graph.link(doc_id, other_id, strength=strength, rel_type="SHARED_ENTITY")

@@ -24,6 +24,21 @@ const GALAXY_PERF = {
     MAX_VISIBLE_LABELS: 200, // 同一时刻最多渲染的标签 DOM 数量
 };
 
+// 🌌 动态绑定 HUD 知识关联指标
+window.updateGalaxyHUD = (nodes, links) => {
+    const densityEl = document.getElementById('density-val');
+    const connEl = document.getElementById('conn-count');
+    if (densityEl) {
+        const N = nodes ? nodes.length : 0;
+        const L = links ? links.length : 0;
+        const density = N > 1 ? (2 * L) / (N * (N - 1)) : 0;
+        densityEl.innerText = density.toFixed(2);
+    }
+    if (connEl) {
+        connEl.innerText = links ? links.length : 0;
+    }
+};
+
 // 1. 3D 宇宙引擎 (Sovereign Refinement)
 window.initGalaxy = () => {
     const elem = document.getElementById('galaxy-3d');
@@ -61,40 +76,91 @@ window.initGalaxy = () => {
         .nodeRelSize(5)
         .nodeVal(node => window._hoveredNode && node.id === window._hoveredNode.id ? 2.2 : 1.0)
         .linkColor(link => {
-            if (!window._hoveredNode) return 'rgba(0, 242, 255, 0.15)';
+            const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            
+            if (!window._hoveredNode) {
+                // 静默状态：物理连线亮青色，语义连线暗紫色，拉开主次感
+                return isWikilink ? 'rgba(0, 242, 255, 0.35)' : 'rgba(163, 76, 255, 0.12)';
+            }
+            
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? 'rgba(0, 242, 255, 0.95)' : 'rgba(0, 242, 255, 0.03)';
+            if (isConnected) {
+                // 激活状态下：物理连线极亮，语义连线亮紫以呈现高维交织感
+                return isWikilink ? 'rgba(0, 242, 255, 0.95)' : 'rgba(163, 76, 255, 0.75)';
+            }
+            // 未激活连线：物理和语义均降为极弱半透明，聚焦当前节点网络
+            return isWikilink ? 'rgba(0, 242, 255, 0.02)' : 'rgba(163, 76, 255, 0.01)';
         })
         .linkWidth(link => {
-            if (!window._hoveredNode) return 0.8;
+            const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            
+            const scale = window._galaxyScaleMode || 'small';
+            let baseWidth = isWikilink ? 1.0 : 0.5;
+            if (scale === 'huge') baseWidth *= 0.3;
+            else if (scale === 'large') baseWidth *= 0.5;
+            else if (scale === 'medium') baseWidth *= 0.8;
+            
+            if (!window._hoveredNode) return baseWidth;
+            
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? 2.2 : 0.3;
+            return isConnected ? (isWikilink ? 2.4 : 1.2) : (baseWidth * 0.3);
         })
         .showNavInfo(false)
         .linkDirectionalParticles(link => {
-            if (!window._hoveredNode) return 2;
+            const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            
+            const scale = window._galaxyScaleMode || 'small';
+            // 超大或大规模时，强制关闭粒子以防卡顿
+            if (scale === 'huge' || scale === 'large') return 0;
+            
+            if (!window._hoveredNode) {
+                // 静默时：物理连线带 2 颗粒子做慢速输运，语义连线带 1 颗幽微的粒子保持默认流动
+                return isWikilink ? 2 : 1;
+            }
+            
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? 6 : 0;
+            if (isConnected) {
+                return isWikilink ? 6 : 3;
+            }
+            return 0;
         })
         .linkDirectionalParticleWidth(link => {
-            if (!window._hoveredNode) return 1.2;
+            const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            
+            if (!window._hoveredNode) {
+                // 静默时：物理连线粒子宽度 1.2，语义连线微弱粒子宽度 0.8
+                return isWikilink ? 1.2 : 0.8;
+            }
+            
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? 2.0 : 0.6;
+            if (isConnected) {
+                return isWikilink ? 2.0 : 1.2;
+            }
+            return 0;
         })
         .linkDirectionalParticleSpeed(link => {
-            if (!window._hoveredNode) return 0.006;
+            const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            
+            if (!window._hoveredNode) {
+                // 静默时：物理连线速度 0.008，语义连线慢流速 0.003
+                return isWikilink ? 0.008 : 0.003;
+            }
+            
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? 0.02 : 0.002;
+            if (isConnected) {
+                return isWikilink ? 0.02 : 0.008;
+            }
+            return 0.002;
         })
         .onNodeHover(node => {
             // 🧠 [V86.7] 记录全局 hovered 节点，激活 3D 神经网络高亮并放大 Hit Box
@@ -282,6 +348,18 @@ window.initGalaxy = () => {
 window.refreshGalaxy = async () => {
     if (!window.galaxyGraph || typeof apiFetch !== 'function') return;
 
+    window._filterConnectedOnly = false;
+    const label = document.getElementById('focus-btn-label');
+    const card = document.getElementById('btn-focus-connected');
+    if (label) {
+        label.innerText = '⚡ 隔离孤立星球';
+        label.style.color = '#00f2ff';
+    }
+    if (card) {
+        card.style.background = 'rgba(0, 242, 255, 0.05)';
+        card.style.borderColor = 'rgba(0, 242, 255, 0.2)';
+    }
+
     // ──── Phase 1: 骨架秒亮 (Skeleton Instant Render) ────
     // 先拉取轻量物理 WikiLinks 骨架，预分配随机坐标后让力学引擎散射
     const skeleton = await apiFetch('/api/galaxy/graph?mode=skeleton');
@@ -307,6 +385,12 @@ window.refreshGalaxy = async () => {
         // 允许力学引擎运行足够的模拟周期来散开节点
         window.galaxyGraph.cooldownTicks(150);
         window.galaxyGraph.graphData(skeleton);
+        window._lastGalaxyData = skeleton;
+        
+        // 动态更新 HUD 指标
+        if (typeof window.updateGalaxyHUD === 'function') {
+            window.updateGalaxyHUD(skeleton.nodes, skeleton.links);
+        }
         
         // 🌌 自动计算视域，将骨架星群以 1.2s 缓动完美框进屏幕
         window.galaxyGraph.zoomToFit(1200, 60);
@@ -347,6 +431,9 @@ window.refreshGalaxy = async () => {
         full.nodes.forEach(n => {
             if (!mergedNodesMap[n.id]) {
                 hasNewData = true;
+            } else if (mergedNodesMap[n.id].title !== n.title) {
+                // 🚀 [V100.0] 标题增量侦测：如果节点名称被修改，强行将其视为有增量更新以刷新标签 DOM 缓存
+                hasNewData = true;
             }
             mergedNodesMap[n.id] = { ...mergedNodesMap[n.id], ...n };
         });
@@ -383,6 +470,12 @@ window.refreshGalaxy = async () => {
                 links: validLinks
             };
             window.galaxyGraph.graphData(mergedData);
+            window._lastGalaxyData = mergedData;
+            
+            // 动态更新 HUD 指标
+            if (typeof window.updateGalaxyHUD === 'function') {
+                window.updateGalaxyHUD(mergedData.nodes, mergedData.links);
+            }
             
             // 🌌 增量加载完成后，全量自适应视场对齐
             window.galaxyGraph.zoomToFit(1500, 80);
@@ -402,6 +495,10 @@ window.refreshGalaxy = async () => {
             console.log(`🚀 [Phase 2] 全量增量合并完成: ${mergedData.nodes.length} 节点, ${mergedData.links.length} 连线`);
         } else {
             console.log('✅ [Phase 2] 全量图谱与骨架一致，无需增量合并');
+            window._lastGalaxyData = {
+                nodes: currentData.nodes,
+                links: currentData.links
+            };
         }
     }, 2000);
 };
@@ -520,8 +617,7 @@ window.syncGalaxyLabels = () => {
         const pos = graph.graph2ScreenCoords(node.x, node.y, node.z);
         if (!pos) continue;
 
-        // 📐 [V86.5] 终极对正：3d-force-graph 官方 graph2ScreenCoords 返回的本就是相对于 Canvas 容器左上角的局部坐标
-        // 且由于 #galaxy-labels-layer 已成功相对定位嵌套进 #galaxy-3d，两者坐标系重合。严禁再次扣除 containerRect 物理偏移！
+        // 📐 [V86.5] 终极对正：3d-force-graph 官方 graph2ScreenCoords 返回 of graph 为 canvas space坐标，无需扣除
         const relativeX = pos.x;
         const relativeY = pos.y;
 
@@ -587,40 +683,118 @@ window.applyScaleAdaptation = (nodeCount) => {
     const chargeForce = window.galaxyGraph.d3Force('charge');
     const linkForce = window.galaxyGraph.d3Force('link');
 
+    let scaleMode = 'small';
     if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_HUGE) {
-        // 超大规模 (>5000)：极简模式 + 极限引力收敛
+        scaleMode = 'huge';
         window.galaxyGraph.nodeResolution(6);
-        window.galaxyGraph.linkDirectionalParticles(0);
-        window.galaxyGraph.linkWidth(0.3);
         window.galaxyGraph.nodeRelSize(2.5);
         if (chargeForce) chargeForce.strength(-60);
         if (linkForce) linkForce.distance(40).strength(0.5);
         console.log(`🎛️ [LOD] 超大规模降级: ${nodeCount} 节点 → 极简引力收敛模式`);
     } else if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_LARGE) {
-        // 大规模 (>2000)：关闭粒子 + 深度引力收敛
+        scaleMode = 'large';
         window.galaxyGraph.nodeResolution(8);
-        window.galaxyGraph.linkDirectionalParticles(0);
-        window.galaxyGraph.linkWidth(0.5);
         window.galaxyGraph.nodeRelSize(3.5);
         if (chargeForce) chargeForce.strength(-80);
         if (linkForce) linkForce.distance(50).strength(0.45);
         console.log(`🎛️ [LOD] 大规模降级: ${nodeCount} 节点 → 无粒子引力收敛模式`);
     } else if (nodeCount > GALAXY_PERF.SCALE_THRESHOLD_MED) {
-        // 中等规模 (>500)：降低球体精度 + 中度引力收敛
+        scaleMode = 'medium';
         window.galaxyGraph.nodeResolution(12);
-        window.galaxyGraph.linkDirectionalParticles(1);
-        window.galaxyGraph.linkWidth(0.6);
         window.galaxyGraph.nodeRelSize(4);
         if (chargeForce) chargeForce.strength(-100);
         if (linkForce) linkForce.distance(65).strength(0.4);
         console.log(`🎛️ [LOD] 中等规模降级: ${nodeCount} 节点 → 低精度引力收敛模式`);
     } else {
-        // 小规模：全品质 + 标准排斥力
+        scaleMode = 'small';
         window.galaxyGraph.nodeResolution(24);
-        window.galaxyGraph.linkDirectionalParticles(2);
-        window.galaxyGraph.linkWidth(0.8);
         window.galaxyGraph.nodeRelSize(5);
         if (chargeForce) chargeForce.strength(-120);
         if (linkForce) linkForce.distance(80).strength(0.4);
+        console.log(`🎛️ [LOD] 小规模高品质模式激活: ${nodeCount} 节点`);
+    }
+
+    window._galaxyScaleMode = scaleMode;
+
+    // 🚀 [V100.0] 触发 3D 渲染器快速重绘所有链路样式回调，以应用 scaleMode 所致的变化
+    window.galaxyGraph
+        .linkColor(window.galaxyGraph.linkColor())
+        .linkWidth(window.galaxyGraph.linkWidth())
+        .linkDirectionalParticles(window.galaxyGraph.linkDirectionalParticles())
+        .linkDirectionalParticleWidth(window.galaxyGraph.linkDirectionalParticleWidth())
+        .linkDirectionalParticleSpeed(window.galaxyGraph.linkDirectionalParticleSpeed());
+};
+
+// ⚡ 隔离孤立节点交互逻辑 (Isolate Isolated Planets)
+window._filterConnectedOnly = false;
+window.toggleConnectedNodesOnly = () => {
+    if (!window.galaxyGraph || !window._lastGalaxyData) {
+        console.warn("🌌 [LOD] 图谱数据尚未完全就绪，无法执行隔离");
+        return;
+    }
+    window._filterConnectedOnly = !window._filterConnectedOnly;
+    
+    const label = document.getElementById('focus-btn-label');
+    const card = document.getElementById('btn-focus-connected');
+    
+    if (window._filterConnectedOnly) {
+        // Find connected node IDs
+        const connectedNodeIds = new Set();
+        window._lastGalaxyData.links.forEach(l => {
+            const src = l.source?.id || l.source;
+            const tgt = l.target?.id || l.target;
+            if (src !== undefined && tgt !== undefined) {
+                connectedNodeIds.add(src);
+                connectedNodeIds.add(tgt);
+            }
+        });
+        
+        const filteredNodes = window._lastGalaxyData.nodes.filter(n => connectedNodeIds.has(n.id));
+        const filteredLinks = window._lastGalaxyData.links;
+        
+        window.galaxyGraph.graphData({
+            nodes: filteredNodes,
+            links: filteredLinks
+        });
+        
+        if (label) {
+            label.innerText = '🪐 显示全部星球';
+            label.style.color = '#ff9f43';
+        }
+        if (card) {
+            card.style.background = 'rgba(255, 159, 67, 0.08)';
+            card.style.borderColor = 'rgba(255, 159, 67, 0.3)';
+        }
+        
+        // Let it scatter, then frame it nicely
+        setTimeout(() => {
+            window.galaxyGraph.zoomToFit(1000, 80);
+        }, 150);
+        
+        if (typeof window.updateGalaxyLabelElements === 'function') {
+            window.updateGalaxyLabelElements(filteredNodes);
+        }
+        console.log(`⚡ [HUD] 隔离孤立星球完成，保留 ${filteredNodes.length} / ${window._lastGalaxyData.nodes.length} 个有连接节点`);
+    } else {
+        // Restore full data
+        window.galaxyGraph.graphData(window._lastGalaxyData);
+        
+        if (label) {
+            label.innerText = '⚡ 隔离孤立星球';
+            label.style.color = '#00f2ff';
+        }
+        if (card) {
+            card.style.background = 'rgba(0, 242, 255, 0.05)';
+            card.style.borderColor = 'rgba(0, 242, 255, 0.2)';
+        }
+        
+        setTimeout(() => {
+            window.galaxyGraph.zoomToFit(1000, 80);
+        }, 150);
+        
+        if (typeof window.updateGalaxyLabelElements === 'function') {
+            window.updateGalaxyLabelElements(window._lastGalaxyData.nodes);
+        }
+        console.log(`🪐 [HUD] 还原全量星球，展现 ${window._lastGalaxyData.nodes.length} 个星球`);
     }
 };

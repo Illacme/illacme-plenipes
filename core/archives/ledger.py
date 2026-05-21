@@ -44,6 +44,9 @@ class MetadataManager:
             link_index[title] = rel_path
             link_index[os.path.splitext(rel_path)[0]] = rel_path
             link_index[os.path.basename(rel_path)] = rel_path
+            slug = doc.get("slug")
+            if slug:
+                link_index[slug] = rel_path
         self.data["link_index"] = link_index
 
     def force_save(self):
@@ -92,6 +95,9 @@ class MetadataManager:
             idx = self.data["link_index"]
             idx[title] = rel_path
             idx[os.path.splitext(rel_path)[0]] = rel_path
+            slug = kwargs.get("slug") or doc_data.get("slug")
+            if slug:
+                idx[slug] = rel_path
 
     def remove_document(self, rel_path):
         with self.lock:

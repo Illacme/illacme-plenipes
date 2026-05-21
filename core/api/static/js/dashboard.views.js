@@ -18,6 +18,9 @@ window.viewTemplates = {
                     <div class="hud-label">活跃神经元</div>
                     <div class="hud-value" id="conn-count">0</div>
                 </div>
+                <div class="hud-item glass-panel tiny control-card" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 120px; transition: all 0.3s; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2);">
+                    <div class="hud-label" id="focus-btn-label" style="margin-bottom: 0; color: #00f2ff; letter-spacing: 2px;">⚡ 隔离孤立星球</div>
+                </div>
             </div>
             <div class="overview-overlay" id="command-hub-overlay" style="display: flex;">
                 <div class="command-hub">

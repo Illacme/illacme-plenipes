@@ -248,8 +248,9 @@ window.saveDocument = async () => {
         status.innerText = "✅ 写入成功";
         addAudit(`📄 资产 ${window.activeDocId.substring(0, 8)} 已完成物理变更。`);
         setTimeout(closeEditor, 800);
-        if (typeof currentView !== 'undefined' && window.currentView === 'overview') {
-            if (typeof refreshGalaxy === 'function') refreshGalaxy();
+        // 🚀 [V100.0] 无论当前视图为什么，只要 3D 引擎准备就绪就去主动刷新，免去一切强刷
+        if (typeof refreshGalaxy === 'function') {
+            refreshGalaxy();
         }
         if (typeof loadVault === 'function') {
             loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);

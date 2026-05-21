@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head><title>Label Diagnostic</title>
+<script src="/dashboard/vendor/3d-force-graph.min.js"></script>
+</head>
+<body style="background:#000;color:#0f0;font-family:monospace;padding:20px;">
+<h2>🔬 Label Diagnostic</h2>
+<div id="result">Loading...</div>
+<script>
+async function diagnose() {
+    const el = document.getElementById('result');
+    let html = '';
+    
+    // Check if galaxy-labels-layer exists in the dashboard
+    // We can't check the dashboard DOM from here, so let's simulate
+    
+    // 1. Load the dashboard page via fetch and check the DOM structure
+    html += '<h3>Checking label system...</h3>';
+    
+    // 2. Check if the label container would exist
+    const labelsLayer = document.getElementById('galaxy-labels-layer');
+    html += `<p>galaxy-labels-layer in THIS page: ${labelsLayer ? 'EXISTS' : 'NOT FOUND (expected, this is diagnostic page)'}</p>`;
+    
+    // 3. Let's check what syncGalaxyLabels does by loading the dashboard JS
+    // Actually, let's just check the dashboard DOM directly
+    html += '<h3>Fetching dashboard page...</h3>';
+    const dashRes = await fetch('/dashboard/');
+    const dashHtml = await dashRes.text();
+    
+    // Check if galaxy-labels-layer is in the HTML
+    const hasLabelsInHtml = dashHtml.includes('galaxy-labels-layer');
+    html += `<p>galaxy-labels-layer in dashboard HTML: ${hasLabelsInHtml}</p>`;
+    
+    // Check if it's in viewTemplates (dynamic)
+    const hasInTemplate = dashHtml.includes('dashboard.views.js');
+    html += `<p>dashboard.views.js loaded: ${hasInTemplate}</p>`;
+    
+    // 4. Key check: does the galaxy-3d div have position:relative?
+    html += '<h3>CSS positioning check:</h3>';
+    const cssRes = await fetch('/dashboard/css/components/glass.css');
+    const cssText = await cssRes.text();
+    
+    // Find galaxy-3d CSS
+    const galaxyCssMatch = cssText.match(/#galaxy-3d\s*\{[^}]+\}/);
+    html += `<p>#galaxy-3d CSS: ${galaxyCssMatch ? galaxyCssMatch[0].substring(0, 100) : 'NOT FOUND'}</p>`;
+    
+    // Find galaxy-labels-layer CSS
+    const labelsCssMatch = cssText.match(/#galaxy-labels-layer\s*\{[^}]+\}/);
+    html += `<p>#galaxy-labels-layer CSS: ${labelsCssMatch ? labelsCssMatch[0] : 'NOT FOUND'}</p>`;
+    
+    // Find view-overview CSS
+    const viewCssMatch = cssText.match(/#view-overview\s*\{[^}]+\}/);
+    html += `<p>#view-overview CSS: ${viewCssMatch ? viewCssMatch[0].substring(0, 120) : 'NOT FOUND'}</p>`;
+    
+    // 5. Check tactical-node-label CSS
+    const labelClassMatch = cssText.match(/\.tactical-node-label\s*\{[^}]+\}/);
+    html += `<p>.tactical-node-label CSS: ${labelClassMatch ? labelClassMatch[0] : 'NOT FOUND'}</p>`;
+    
+    // 6. Check view-panel CSS
+    const viewPanelMatch = cssText.match(/\.view-panel\s*\{[^}]+\}/);
+    html += `<p>.view-panel CSS: ${viewPanelMatch ? viewPanelMatch[0].substring(0, 150) : 'NOT FOUND'}</p>`;
+    
+    // 7. Now let's ACTUALLY test: create a galaxy-labels-layer and labels here
+    html += '<h3>Testing label rendering...</h3>';
+    
+    const testContainer = document.createElement('div');
+    testContainer.id = 'test-galaxy-wrapper';
+    testContainer.style.cssText = 'position:relative;width:600px;height:400px;border:1px solid #333;margin-top:10px;';
+    document.body.appendChild(testContainer);
+    
+    const graphDiv = document.createElement('div');
+    graphDiv.id = 'test-galaxy-3d';
+    graphDiv.style.cssText = 'position:relative;width:100%;height:100%;';
+    testContainer.appendChild(graphDiv);
+    
+    const labelsDiv = document.createElement('div');
+    labelsDiv.id = 'test-labels-layer';
+    labelsDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:50;';
+    testContainer.appendChild(labelsDiv);
+    
+    // Create graph with pinned circle layout
+    const res = await fetch('/api/galaxy/graph?mode=skeleton');
+    const data = await res.json();
+    const nodeIds = new Set(data.nodes.map(n => n.id));
+    data.links = data.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    
+    data.nodes.forEach((n, i) => {
+        const angle = (i / data.nodes.length) * Math.PI * 2;
+        const r = 80;
+        n.fx = Math.cos(angle) * r;
+        n.fy = Math.sin(angle) * r;
+        n.fz = 0;
+    });
+    
+    const graph = ForceGraph3D()(graphDiv)
+        .width(600)
+        .height(400)
+        .backgroundColor('#111122')
+        .nodeColor(() => '#00f2ff')
+        .nodeRelSize(5)
+        .cooldownTicks(0)
+        .graphData(data);
+    
+    // Create labels manually
+    setTimeout(() => {
+        const gd = graph.graphData();
+        let labelCount = 0;
+        gd.nodes.forEach(n => {
+            const pos = graph.graph2ScreenCoords(n.x, n.y, n.z);
+            if (!pos) return;
+            
+            const label = document.createElement('div');
+            label.style.cssText = `position:absolute;color:rgba(255,255,255,0.9);font-family:monospace;font-size:11px;font-weight:600;text-shadow:0 0 8px #000;pointer-events:none;transform:translate(-50%,15px);`;
+            label.style.left = pos.x + 'px';
+            label.style.top = pos.y + 'px';
+            const cleanTitle = (n.title || n.id).split('/').pop().replace(/\.[^/.]+$/, '');
+            label.innerText = cleanTitle;
+            labelsDiv.appendChild(label);
+            labelCount++;
+        });
+        el.innerHTML += `<p>✅ Created ${labelCount} labels manually, screen coords used</p>`;
+    }, 1500);
+    
+    el.innerHTML = html;
+}
+diagnose();
+</script>
+</body>
+</html>

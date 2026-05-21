@@ -113,12 +113,16 @@ def perform_sync(engine, args, task_queue, current_source_files):
                 "is_skeleton": True
             })
             for target in data.get("links", []):
-                target_key = target
-                if target not in engine.link_graph:
-                    for k in engine.link_graph:
-                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                            target_key = k
-                            break
+                resolved = engine.meta.resolve_link(target)
+                if resolved:
+                    target_key = resolved
+                else:
+                    target_key = target
+                    if target not in engine.link_graph:
+                        for k in engine.link_graph:
+                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                                target_key = k
+                                break
                 link_id = tuple(sorted([rel_path, target_key]))
                 if link_id not in seen_links:
                     seen_links.add(link_id)

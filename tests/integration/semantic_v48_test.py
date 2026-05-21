@@ -75,7 +75,13 @@ def run_integration_test():
     # 强制注入影子根目录，防止测试污染真实数据
     config.system.data_root = TEST_VAULT
     config.vault_root = TEST_VAULT
-    config.metadata_db = os.path.join(TEST_VAULT, "test_ledger.json")
+    try:
+        config.metadata_db = os.path.join(TEST_VAULT, "test_ledger.json")
+    except Exception:
+        if hasattr(config, "system") and hasattr(config.system, "metadata_db"):
+            config.system.metadata_db = os.path.join(TEST_VAULT, "test_ledger.db")
+        else:
+            object.__setattr__(config, "metadata_db", os.path.join(TEST_VAULT, "test_ledger.json"))
     
     # 强制重定向知识图谱与向量索引路径
     config.system.data_paths["link_graph"] = "test_link_graph.json"
