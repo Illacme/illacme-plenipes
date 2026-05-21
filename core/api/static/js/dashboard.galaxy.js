@@ -50,6 +50,8 @@ window.initGalaxy = () => {
     let lastClickTime = 0;
     let clickTimeout = null;
 
+    window._hoveredNode = null;
+
     window.galaxyGraph = ForceGraph3D()(elem)
         .width(elem.clientWidth)
         .height(elem.clientHeight)
@@ -57,12 +59,64 @@ window.initGalaxy = () => {
         .nodeColor(node => node.group === 'imprint' ? '#a34cff' : '#00f2ff')
         .nodeResolution(24)
         .nodeRelSize(5)
-        .linkColor(() => 'rgba(0, 242, 255, 0.15)')
-        .linkWidth(0.8)
+        .nodeVal(node => window._hoveredNode && node.id === window._hoveredNode.id ? 2.2 : 1.0)
+        .linkColor(link => {
+            if (!window._hoveredNode) return 'rgba(0, 242, 255, 0.15)';
+            const src = link.source?.id || link.source;
+            const tgt = link.target?.id || link.target;
+            const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
+            return isConnected ? 'rgba(0, 242, 255, 0.95)' : 'rgba(0, 242, 255, 0.03)';
+        })
+        .linkWidth(link => {
+            if (!window._hoveredNode) return 0.8;
+            const src = link.source?.id || link.source;
+            const tgt = link.target?.id || link.target;
+            const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
+            return isConnected ? 2.2 : 0.3;
+        })
         .showNavInfo(false)
-        .linkDirectionalParticles(2)
-        .linkDirectionalParticleWidth(1.2)
-        .linkDirectionalParticleSpeed(0.006)
+        .linkDirectionalParticles(link => {
+            if (!window._hoveredNode) return 2;
+            const src = link.source?.id || link.source;
+            const tgt = link.target?.id || link.target;
+            const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
+            return isConnected ? 6 : 0;
+        })
+        .linkDirectionalParticleWidth(link => {
+            if (!window._hoveredNode) return 1.2;
+            const src = link.source?.id || link.source;
+            const tgt = link.target?.id || link.target;
+            const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
+            return isConnected ? 2.0 : 0.6;
+        })
+        .linkDirectionalParticleSpeed(link => {
+            if (!window._hoveredNode) return 0.006;
+            const src = link.source?.id || link.source;
+            const tgt = link.target?.id || link.target;
+            const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
+            return isConnected ? 0.02 : 0.002;
+        })
+        .onNodeHover(node => {
+            // 🧠 [V86.7] 记录全局 hovered 节点，激活 3D 神经网络高亮并放大 Hit Box
+            window._hoveredNode = node;
+            elem.style.cursor = node ? 'pointer' : null;
+            
+            // 触发 3D 渲染器对节点和连线高亮/脉冲属性的快速增量更新评估，保证 WebGL 极速响应
+            if (window.galaxyGraph) {
+                window.galaxyGraph
+                    .nodeVal(window.galaxyGraph.nodeVal())
+                    .linkColor(window.galaxyGraph.linkColor())
+                    .linkWidth(window.galaxyGraph.linkWidth())
+                    .linkDirectionalParticles(window.galaxyGraph.linkDirectionalParticles())
+                    .linkDirectionalParticleWidth(window.galaxyGraph.linkDirectionalParticleWidth())
+                    .linkDirectionalParticleSpeed(window.galaxyGraph.linkDirectionalParticleSpeed());
+            }
+
+            // 🏷️ 瞬间触发标签同步，让“雷达显影特赦标签”能够以 0 毫秒延迟显影
+            if (typeof window.syncGalaxyLabels === 'function') {
+                window.syncGalaxyLabels();
+            }
+        })
         .onNodeClick(node => {
             const currentTime = Date.now();
             const timeDiff = currentTime - lastClickTime;
@@ -456,8 +510,11 @@ window.syncGalaxyLabels = () => {
         // 2) 距离计算
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
+        // 🧠 [V86.7] 特赦判定：被 Hover 的节点即使再远，也强行豁免 LOD 远景裁剪，确保雷达显影
+        const isHovered = window._hoveredNode && node.id === window._hoveredNode.id;
+
         // 3) LOD 远景裁剪
-        if (dist > GALAXY_PERF.LOD_FAR) continue;
+        if (!isHovered && dist > GALAXY_PERF.LOD_FAR) continue;
 
         // 4) 屏幕坐标投影
         const pos = graph.graph2ScreenCoords(node.x, node.y, node.z);
@@ -471,7 +528,7 @@ window.syncGalaxyLabels = () => {
         // 5) 视锥裁剪：只剔除完全在容器局部画布外的标签
         if (relativeX < -margin || relativeX > W + margin || relativeY < -margin || relativeY > H + margin) continue;
 
-        scored.push({ node, dist, relativeX, relativeY });
+        scored.push({ node, dist, relativeX, relativeY, isHovered });
     }
 
     // 🏎️ 按距离排序，只取最近的 MAX_VISIBLE_LABELS 个，保障超大规模下 DOM 性能守恒
@@ -481,7 +538,7 @@ window.syncGalaxyLabels = () => {
 
     // 🏎️ 第二遍：仅对通过筛选的胜出节点执行 DOM 操作
     for (let i = 0; i < maxLabels; i++) {
-        const { node, dist, relativeX, relativeY } = scored[i];
+        const { node, dist, relativeX, relativeY, isHovered } = scored[i];
         visibleSet.add(node.id);
 
         const el = _getOrCreateLabel(node.id, container);
@@ -489,7 +546,11 @@ window.syncGalaxyLabels = () => {
 
         // LOD 分层字号与不透明度计算，实现 Obsidian 式极客呼吸渐变
         let fontSize, opacity;
-        if (dist < GALAXY_PERF.LOD_NEAR) {
+        if (isHovered) {
+            // 🧠 [V86.7] 临时显影的 Hover 节点，强行重载为高清饱满的字号 and 100% 不透明度
+            fontSize = 14;
+            opacity = 1;
+        } else if (dist < GALAXY_PERF.LOD_NEAR) {
             fontSize = Math.max(10, 16 - dist / 100);
             opacity = 1;
         } else if (dist < GALAXY_PERF.LOD_MID) {
