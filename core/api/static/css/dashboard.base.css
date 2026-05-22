@@ -35,6 +35,18 @@
     --neon-amber: #ffaa00;
     --neon-red: #ff4d4d;
     
+    /* 🆕 霓虹青色不同透明度的色彩 Token（消除局部样式硬编码） */
+    --neon-cyan-40: rgba(0, 242, 255, 0.4);
+    --neon-cyan-25: rgba(0, 242, 255, 0.25);
+    --neon-cyan-15: rgba(0, 242, 255, 0.15);
+    --neon-cyan-10: rgba(0, 242, 255, 0.10);
+    --neon-cyan-05: rgba(0, 242, 255, 0.05);
+    
+    /* 🆕 危险状态与红色透明度 Token */
+    --danger-color: var(--neon-red);
+    --danger-border: rgba(255, 77, 77, 0.3);
+    --danger-hover-bg: rgba(255, 77, 77, 0.1);
+    
     /* 🆕 高级微观发光阴影 */
     --shadow-neon-cyan: 0 0 8px var(--neon-cyan);
     --shadow-neon-amber: 0 0 8px var(--neon-amber);

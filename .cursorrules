@@ -1,7 +1,30 @@
-# 🏛️ Illacme Plenipes AI Governance Entrance
+# Illacme Plenipes - Agent Core Development Rules
 
-请首先读取 [治理规则索引 (RULES_INDEX.md)](file:///.plenipes/SOP/RULES_INDEX.md) 以获取全量主权协作指令。
+This file defines the absolute development constraints for all AI Agents and Assistants working in this workspace. These rules are read automatically by the IDE at the start of each session.
 
-## 🛡️ 核心合规性红线
-- **全量中文化**: 必须严格遵守 [SOP-01 Sec 1.1](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 规定的思考、描述及指令中文化要求。
-- **严谨诊断**: 遇到工具访问故障，必须执行 [SOP-01 Sec 1.2](file:///.plenipes/SOP/SOP-01_CORE_ENGINEERING.md) 定义的物理诊断路径。
+---
+
+## 🎨 CSS & Style Sovereignty Rules (样式与视觉主权规范)
+
+For any modifications, optimization, or creation of stylesheets (`.css` files) or UI layouts, you MUST strictly adhere to **SOP-03: UI/UX & Assets Manual**:
+
+1. **Design Token Variables Lock (变量锁定)**
+   * **Absolute Constraint**: NO hardcoded color values (Hex `#`, `rgb()`, `rgba()`, `hsl()`, `hsla()`) are allowed inside components or views stylesheets.
+   * **Single Source of Truth**: All core design system tokens (neon indicator states, box shadows, backdrop filters, transition values) must be defined in the `:root` block of [dashboard.base.css](file:///Volumes/Notebook/omni-hub/illacme-plenipes/core/api/static/css/dashboard.base.css).
+   * **How to use**: Refer to base variables using `var(--neon-...)` or `var(--shadow-neon-...)`.
+
+2. **Component Sharding & Scope Isolation (组件级解耦与作用域隔离)**
+   * **Scope Isolation**: View-specific CSS (e.g. `css/views/compute.css`, `css/views/overview.css`, `css/views/plugins.css`) MUST have all of their rules wrapped under a view-specific root class namespace (e.g. `.compute-center`, `.overview-dashboard`, etc.).
+   * **Global Pollution Prevention**: Never write global selectors or un-prefixed tags (like bare `.card`, `button` tags) inside view stylesheets to avoid cascade contamination.
+   * **Common Base**: The [glass.css](file:///Volumes/Notebook/omni-hub/illacme-plenipes/core/api/static/css/components/glass.css) stylesheet is strictly reserved as the pure Glassmorphism base layout. It should never contain view-specific business logic.
+
+3. **Mandatory Sovereign Audit (强制提交前审计)**
+   * Before delivering or requesting git sync for any CSS or layout code changes, you must run:
+     ```bash
+     python3 scripts/sovereign_audit.py
+     ```
+   * The audit script runs a rigid static linting gate (Stage 2.6) checking for hardcoded styling colors. Any violation will instantly fail the build and block commit generation.
+
+---
+
+*Code is structural, aesthetics are sovereign.*

@@ -29,8 +29,8 @@
 }
 .node-pod.primary-active {
     border-color: var(--accent-secondary);
-    box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
-    background: rgba(0, 242, 255, 0.05);
+    box-shadow: 0 0 20px var(--neon-cyan-10);
+    background: var(--neon-cyan-05);
 }
 .pod-telemetry {
     display: flex; gap: 15px; background: rgba(0,0,0,0.2);
@@ -44,8 +44,8 @@
     background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1);
 }
 .p-control-group .action-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--accent-secondary); }
-.p-control-group .action-btn.danger { border-color: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
-.p-control-group .action-btn.danger:hover { background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; }
+.p-control-group .action-btn.danger { border-color: var(--danger-border); color: var(--danger-color); }
+.p-control-group .action-btn.danger:hover { background: var(--danger-hover-bg); border-color: var(--danger-color); }
 
 /* 🔴 LED Indicator Light Matrix */
 .status-dot-mini { 
@@ -72,3 +72,4 @@
     background: var(--neon-amber); 
     box-shadow: var(--shadow-neon-amber); 
 }
+

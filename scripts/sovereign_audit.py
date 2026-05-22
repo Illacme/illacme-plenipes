@@ -110,6 +110,79 @@ def main():
         # 如果未在 git 仓库中或命令失败，静默放行或打印警告
         print(f"  └── ⚠️ UI主权审计跳过 (Git 检测异常: {e})")
 
+    # 2.6 样式设计系统变量合规性审计 (Stage 2.6)
+    print("🚀 [审计阶段] 样式设计系统变量合规性审计 (Stage 2.6)...")
+    try:
+        import re
+        css_violations = []
+        css_root = "core/api/static/css"
+        
+        # 排除列表：全局变量定义文件与底座文件，以及旧的单体文件
+        EXEMPT_CSS = [
+            "core/api/static/css/dashboard.base.css",
+            "core/api/static/css/components/glass.css",        # 允许底座材质包含固定的 255 半透明色值
+            "core/api/static/css/components/governance.css"     # 允许暂未进行变量抽取重构的旧版大单体样式豁免
+        ]
+        
+        def check_line_for_hardcoded_color(line):
+            if ":" not in line:
+                return None
+            line_clean = re.sub(r'/\*.*?\*/', '', line)
+            parts = line_clean.split(":", 1)
+            value_part = parts[1].strip()
+            
+            # 过滤 url(...)
+            if "url(" not in value_part:
+                hex_match = re.search(r'#[0-9a-fA-F]{3,8}\b', value_part)
+                if hex_match:
+                    h = hex_match.group(0).lower()
+                    # 允许纯黑/纯白/标准灰色等无彩色中性色作为毛玻璃材质混合因子
+                    if h not in ["#fff", "#ffffff", "#000", "#000000", "#666", "#666666"]:
+                        return hex_match.group(0)
+            
+            for func in ["rgb(", "rgba(", "hsl(", "hsla("]:
+                if func in value_part.lower():
+                    if "var(" not in value_part.lower():
+                        func_escaped = re.escape(func)
+                        func_match = re.search(rf'{func_escaped}[^);]+', value_part, re.IGNORECASE)
+                        if func_match:
+                            expr = func_match.group(0).lower()
+                            clean_expr = re.sub(r'\s+', '', expr)
+                            # 允许纯白(255,255,255)与纯黑(0,0,0)的半透明底色因子
+                            if "255,255,255" in clean_expr or "0,0,0" in clean_expr:
+                                continue
+                            return func_match.group(0)
+                        return func
+            return None
+
+        if os.path.exists(css_root):
+            for root, dirs, files in os.walk(css_root):
+                for file in files:
+                    if file.endswith('.css'):
+                        p = os.path.join(root, file).replace('\\', '/')
+                        if p in EXEMPT_CSS:
+                            print(f"  └── ⚠️ [豁免样式] {p}")
+                            continue
+                        
+                        with open(p, 'r', encoding='utf-8') as f:
+                            for idx, line in enumerate(f, 1):
+                                violation = check_line_for_hardcoded_color(line)
+                                if violation:
+                                    css_violations.append(
+                                        f"❌ [样式硬编码] {p}:{idx} 发现硬编码色值 '{violation}'"
+                                    )
+        
+        if css_violations:
+            for v in css_violations:
+                print(f"  └── {v}")
+            print("  └── ❌ 样式合规审计失败！请使用 dashboard.base.css 的 :root 变量重构！")
+            success = False
+        else:
+            print("  └── ✅ 样式设计系统变量合规性审计通过 (零硬编码颜色)")
+    except Exception as e:
+        print(f"  └── ❌ 样式审计执行异常: {e}")
+        success = False
+
     # 3. 核心规范审计 (Ruff Linting)
     # 豁免 status_handlers.py 以保护 V48.2 Banner 亚像素级物理空格不被清理
     if not run_step("核心引擎规范审计", ["ruff", "check", "core/", "--extend-exclude", "core/ui/handlers/status_handlers.py"]):

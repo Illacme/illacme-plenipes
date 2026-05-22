@@ -23,9 +23,9 @@
 .hud-label { font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; font-weight: 800; }
 .hud-value { font-size: 1.35rem; font-weight: 950; color: #fff; font-family: var(--font-mono); text-shadow: 0 0 10px var(--accent-secondary); }
 .hud-item.control-card:hover {
-    background: rgba(0, 242, 255, 0.15) !important;
-    border-color: rgba(0, 242, 255, 0.4) !important;
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.25);
+    background: var(--neon-cyan-15) !important;
+    border-color: var(--neon-cyan-40) !important;
+    box-shadow: 0 0 15px var(--neon-cyan-25);
 }
 
 @keyframes rotate { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
@@ -37,12 +37,12 @@
 /* 🏛️ Command Hub (Overview Overlay) */
 .overview-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at center, rgba(3,3,8,0.7) 0%, rgba(0,0,0,0.95) 100%);
+    background: radial-gradient(circle at center, var(--bg-deep) 0%, rgba(0,0,0,0.95) 100%);
     display: flex; align-items: center; justify-content: center; z-index: 200;
     backdrop-filter: blur(15px);
 }
 .command-hub {
-    width: 850px; max-width: 95%; background: rgba(13, 14, 28, 0.8);
+    width: 850px; max-width: 95%; background: var(--glass-bg);
     border: 1px solid rgba(255,255,255,0.1); border-radius: 50px;
     padding: 70px; backdrop-filter: blur(80px); text-align: center;
     box-shadow: 0 40px 120px rgba(0,0,0,0.9), 0 0 60px rgba(163, 76, 255, 0.2);
