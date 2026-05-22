@@ -1,1 +1,72 @@
-/* Deprecated in V60.0 - Consolidated into glass.css */
+/* 🌌 [V60.5] Illacme Plenipes Overview View Styles - Local Sovereign Unit */
+
+/* 🌌 HUD & Intelligence Overlay (Overview) */
+.hud-container {
+    position: absolute; display: flex; flex-direction: row; gap: 15px; z-index: 100;
+}
+.hud-container.top-left { top: 25px; left: 25px; }
+.hud-item {
+    padding: 20px 35px; min-width: 240px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+    backdrop-filter: blur(30px); position: relative; overflow: hidden;
+    animation: float 4s ease-in-out infinite alternate;
+}
+.hud-item::before {
+    content: ""; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border: 2px solid var(--accent-primary);
+    border-radius: 50%; border-right-color: transparent; border-bottom-color: transparent;
+    animation: rotate 3s linear infinite; opacity: 0.4;
+}
+.hud-item.tiny { padding: 10px 22px; min-width: 150px; border-radius: 12px; }
+.hud-item.tiny::before { width: 30px; height: 30px; left: -8px; }
+.hud-label { font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; font-weight: 800; }
+.hud-value { font-size: 1.35rem; font-weight: 950; color: #fff; font-family: var(--font-mono); text-shadow: 0 0 10px var(--accent-secondary); }
+.hud-item.control-card:hover {
+    background: rgba(0, 242, 255, 0.15) !important;
+    border-color: rgba(0, 242, 255, 0.4) !important;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.25);
+}
+
+@keyframes rotate { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
+@keyframes float {
+    0% { transform: translateY(0) rotate(0.5deg); }
+    100% { transform: translateY(-10px) rotate(-0.5deg); }
+}
+
+/* 🏛️ Command Hub (Overview Overlay) */
+.overview-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, rgba(3,3,8,0.7) 0%, rgba(0,0,0,0.95) 100%);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+    backdrop-filter: blur(15px);
+}
+.command-hub {
+    width: 850px; max-width: 95%; background: rgba(13, 14, 28, 0.8);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 50px;
+    padding: 70px; backdrop-filter: blur(80px); text-align: center;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.9), 0 0 60px rgba(163, 76, 255, 0.2);
+    position: relative;
+}
+.command-hub h2 { font-size: 3rem; font-weight: 950; margin-bottom: 20px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -2px; }
+.quick-actions {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 60px;
+}
+.action-card {
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 30px; padding: 45px 25px; cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative; overflow: hidden;
+}
+.action-card::after {
+    content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
+    background: var(--gradient-primary); transform: scaleX(0); transition: transform 0.5s;
+    box-shadow: 0 0 15px var(--accent-secondary);
+}
+.action-card:hover {
+    background: rgba(255, 255, 255, 0.1); border-color: rgba(255,255,255,0.3);
+    transform: translateY(-15px) rotateX(10deg); box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 20px rgba(0, 242, 255, 0.2);
+}
+.action-card:hover::after { transform: scaleX(1); }
+.action-icon { font-size: 3.5rem; margin-bottom: 25px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.4)); }
+.action-text h4 { font-size: 1.2rem; margin-bottom: 12px; color: #fff; font-weight: 900; }
+.action-text p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }

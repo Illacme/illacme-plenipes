@@ -387,25 +387,6 @@
 /* ⚡ Global Motion Blur Utility */
 .switching-view { filter: blur(5px); transition: filter 0.3s; }
 
-/* 🧬 View Specific Layouts */
-#plugins-grid, #compute-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-}
-
-.plugin-card, .node-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 20px;
-    transition: all 0.3s;
-}
-.plugin-card:hover, .node-card:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--accent-primary);
-    transform: translateY(-4px);
-}
 
 /* 🧪 [V65.0] Sidebar Sovereign Control Strip */
 .sidebar-pod {
@@ -455,11 +436,6 @@
     border-radius: 12px; transition: all 0.2s;
 }
 .health-node:hover { background: rgba(255,255,255,0.03); border-color: var(--accent-primary); }
-.status-dot-mini { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.status-dot-mini.status-active, .status-dot-mini.status-online, .status-dot-mini.healthy { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
-.status-dot-mini.status-offline, .status-dot-mini.blocked { background: #666; }
-.status-dot-mini.blocked { background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
-.status-dot-mini.status-standby { background: #ffaa00; box-shadow: 0 0 8px #ffaa00; }
 .node-info { flex: 1; }
 .node-label { font-size: 0.75rem; font-weight: 600; color: #fff; }
 .node-status { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
@@ -483,76 +459,6 @@
 .audit-status-warning { color: #ffaa00 !important; }
 .audit-status-error { color: #ff4d4d !important; font-weight: 700; }
 
-/* 🌌 HUD & Intelligence Overlay (Overview) */
-.hud-container {
-    position: absolute; display: flex; flex-direction: row; gap: 15px; z-index: 100;
-}
-.hud-container.top-left { top: 25px; left: 25px; }
-.hud-item {
-    padding: 20px 35px; min-width: 240px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
-    backdrop-filter: blur(30px); position: relative; overflow: hidden;
-    animation: float 4s ease-in-out infinite alternate;
-}
-.hud-item::before {
-    content: ""; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
-    width: 40px; height: 40px; border: 2px solid var(--accent-primary);
-    border-radius: 50%; border-right-color: transparent; border-bottom-color: transparent;
-    animation: rotate 3s linear infinite; opacity: 0.4;
-}
-.hud-item.tiny { padding: 10px 22px; min-width: 150px; border-radius: 12px; }
-.hud-item.tiny::before { width: 30px; height: 30px; left: -8px; }
-.hud-label { font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; font-weight: 800; }
-.hud-value { font-size: 1.35rem; font-weight: 950; color: #fff; font-family: var(--font-mono); text-shadow: 0 0 10px var(--accent-secondary); }
-.hud-item.control-card:hover {
-    background: rgba(0, 242, 255, 0.15) !important;
-    border-color: rgba(0, 242, 255, 0.4) !important;
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.25);
-}
-
-@keyframes rotate { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
-@keyframes float {
-    0% { transform: translateY(0) rotate(0.5deg); }
-    100% { transform: translateY(-10px) rotate(-0.5deg); }
-}
-
-/* 🏛️ Command Hub (Overview Overlay) */
-.overview-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at center, rgba(3,3,8,0.7) 0%, rgba(0,0,0,0.95) 100%);
-    display: flex; align-items: center; justify-content: center; z-index: 200;
-    backdrop-filter: blur(15px);
-}
-.command-hub {
-    width: 850px; max-width: 95%; background: rgba(13, 14, 28, 0.8);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 50px;
-    padding: 70px; backdrop-filter: blur(80px); text-align: center;
-    box-shadow: 0 40px 120px rgba(0,0,0,0.9), 0 0 60px rgba(163, 76, 255, 0.2);
-    position: relative;
-}
-.command-hub h2 { font-size: 3rem; font-weight: 950; margin-bottom: 20px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -2px; }
-.quick-actions {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 60px;
-}
-.action-card {
-    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 30px; padding: 45px 25px; cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative; overflow: hidden;
-}
-.action-card::after {
-    content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
-    background: var(--gradient-primary); transform: scaleX(0); transition: transform 0.5s;
-    box-shadow: 0 0 15px var(--accent-secondary);
-}
-.action-card:hover {
-    background: rgba(255, 255, 255, 0.1); border-color: rgba(255,255,255,0.3);
-    transform: translateY(-15px) rotateX(10deg); box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 20px rgba(0, 242, 255, 0.2);
-}
-.action-card:hover::after { transform: scaleX(1); }
-.action-icon { font-size: 3.5rem; margin-bottom: 25px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.4)); }
-.action-text h4 { font-size: 1.2rem; margin-bottom: 12px; color: #fff; font-weight: 900; }
-.action-text p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
 
 /* 📂 View Orchestration (Headers, Search) */
 .view-header {
@@ -588,21 +494,6 @@ td { padding: 18px 25px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,2
 tr:hover td { background: rgba(0, 242, 255, 0.05); color: #fff; }
 tr.active td { background: rgba(163, 76, 255, 0.05); border-left: 3px solid var(--accent-primary); }
 
-/* 🧠 Module Pod Cards (Compute/Plugins) */
-.plugin-card, .node-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-    border: 1px solid var(--glass-border); border-radius: 24px;
-    padding: 30px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative; overflow: hidden;
-}
-.plugin-card::before, .node-card::before {
-    content: ""; position: absolute; top: 0; right: 0; width: 60px; height: 60px;
-    background: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.05) 50%);
-}
-.plugin-card:hover, .node-card:hover {
-    background: rgba(255, 255, 255, 0.08); border-color: var(--accent-secondary);
-    transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 20px rgba(0, 242, 255, 0.1);
-}
 
 /* ⚙️ Governance Form (Settings) */
 .settings-grid { 
@@ -927,29 +818,6 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     background-size: 100% 4px; pointer-events: none; z-index: 11; opacity: 0.3;
 }
 
-/* 🧠 Compute Node Pods (V65.0) */
-.node-pod {
-    display: flex; flex-direction: column; height: 100%;
-}
-.node-pod.primary-active {
-    border-color: var(--accent-secondary);
-    box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
-    background: rgba(0, 242, 255, 0.05);
-}
-.pod-telemetry {
-    display: flex; gap: 15px; background: rgba(0,0,0,0.2);
-    padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
-}
-.telemetry-item { display: flex; flex-direction: column; gap: 2px; }
-.tiny-label { font-size: 0.6rem; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; }
-
-.p-control-group .action-btn {
-    padding: 8px; font-size: 0.7rem; border-radius: 6px;
-    background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1);
-}
-.p-control-group .action-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--accent-secondary); }
-.p-control-group .action-btn.danger { border-color: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
-.p-control-group .action-btn.danger:hover { background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; }
 .dropdown-item.add-new:hover { opacity: 1; border-style: solid; border-color: var(--accent-primary); color: var(--accent-primary); }
 
 /* 🌓 [V87.0] Obsidian-style Editor Enhancements */

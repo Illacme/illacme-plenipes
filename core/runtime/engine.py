@@ -24,8 +24,6 @@ from core.logic.orchestration.task_orchestrator import ai_executor
 
 def _dump_stacks(sig, frame):
     """🛡️ [Debug] SIGUSR1 线程堆栈快照导出 - 强制直接重定向至 stderr"""
-    import sys
-    import traceback
     from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
     sys.stderr.write(f"⚠️ [Signal] 接收到 SIGUSR1 | GlobalPool ID: {id(global_executor)} | AIPool ID: {id(ai_executor)}\n")
     sys.stderr.write("⚠️ [Signal] 开始导出所有线程堆栈到 stderr...\n")
@@ -168,7 +166,7 @@ class IllacmeEngine:
             self.paths["db"] = anchor(self.config.get_ledger_path())
 
         # 5. 🧠 算力池与业务中枢重校
-        from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
+        from core.logic.orchestration.task_orchestrator import global_executor
         global_executor.update_concurrency(config.system.concurrency.global_workers)
         ai_executor.update_concurrency(config.system.concurrency.ai_workers)
 
