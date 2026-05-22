@@ -459,6 +459,7 @@
 .status-dot-mini.status-active, .status-dot-mini.status-online, .status-dot-mini.healthy { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
 .status-dot-mini.status-offline, .status-dot-mini.blocked { background: #666; }
 .status-dot-mini.blocked { background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
+.status-dot-mini.status-standby { background: #ffaa00; box-shadow: 0 0 8px #ffaa00; }
 .node-info { flex: 1; }
 .node-label { font-size: 0.75rem; font-weight: 600; color: #fff; }
 .node-status { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
