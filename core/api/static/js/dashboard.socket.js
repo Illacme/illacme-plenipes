@@ -95,6 +95,11 @@ window.initWebSocket = () => {
             if (typeof window.refreshGalaxy === 'function') {
                 window.refreshGalaxy();
             }
+        } else if (data.type === 'UI_AI_BREAKER_TRIPPED') {
+            console.warn('🚨 [WS] 收到 AI 熔断通知:', data.payload);
+            if (typeof window.handleAiBreakerTripped === 'function') {
+                window.handleAiBreakerTripped(data.payload);
+            }
         }
     };
 

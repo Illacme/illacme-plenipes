@@ -16,10 +16,10 @@ class BreakerState(Enum):
     OPEN = "OPEN"         # 熔断中 (拦截请求)
     HALF_OPEN = "HALF"   # 尝试恢复
 
-class CircuitBreaker:
-    """🚀 [V1.0] AI 算力熔断器"""
-
-    def __init__(self, name: str, failure_threshold: float = 0.5, window_size: int = 20, recovery_timeout: float = 30.0):
+class NodeCircuitBreaker:
+    """🛡️ [V2.0] 独立的单节点熔断状态机"""
+    
+    def __init__(self, name: str, failure_threshold: float, window_size: int, recovery_timeout: float):
         self.name = name
         self.failure_threshold = failure_threshold
         self.window_size = window_size
@@ -30,19 +30,6 @@ class CircuitBreaker:
         self.lock = threading.Lock()
         self.last_failure_time = 0
 
-    def call(self, func, *args, **kwargs):
-        """🚀 [V22.5] 熔断器包装执行：监控异常并保护后端算力"""
-        if not self.allow_request():
-            raise Exception(f"🛡️ [Breaker] {self.name} 处于熔断状态 ({self.state})，请求已被拦截。")
-            
-        try:
-            result = func(*args, **kwargs)
-            self.record_success()
-            return result
-        except Exception as e:
-            self.record_failure()
-            raise e
-
     def allow_request(self) -> bool:
         """准入检查：判断是否允许发起 AI 请求"""
         with self.lock:
@@ -52,13 +39,13 @@ class CircuitBreaker:
             if self.state == BreakerState.OPEN:
                 # 检查冷却时间是否已过
                 if time.time() - self.last_failure_time > self.recovery_timeout:
-                    tlog.info("🛡️ [Breaker] 熔断冷却结束，尝试进入 HALF_OPEN 探测模式...")
+                    tlog.info(f"🛡️ [Breaker] {self.name} 熔断冷却结束，尝试进入 HALF_OPEN 探测模式...")
                     self.state = BreakerState.HALF_OPEN
                     return True
                 return False
                 
             if self.state == BreakerState.HALF_OPEN:
-                # 仅允许一个探测请求 (简单实现)
+                # 仅允许一个探测请求
                 return True
                 
         return False
@@ -67,7 +54,7 @@ class CircuitBreaker:
         with self.lock:
             self._add_to_history(True)
             if self.state == BreakerState.HALF_OPEN:
-                tlog.info("🟢 [Breaker] 探测请求成功，AI 算力网关已恢复 (CLOSED)。")
+                tlog.info(f"🟢 [Breaker] 探测请求成功，{self.name} 算力网关已恢复 (CLOSED)。")
                 self.state = BreakerState.CLOSED
                 self.history = [] # 重置历史
 
@@ -82,10 +69,10 @@ class CircuitBreaker:
                 failure_rate = len(failures) / len(self.history)
                 if failure_rate > self.failure_threshold:
                     if self.state != BreakerState.OPEN:
-                        tlog.error(f"🚨 [Breaker] AI 连续请求异常 (失败率: {failure_rate*100:.1f}%)！触发算力熔断。")
+                        tlog.error(f"🚨 [Breaker] {self.name} 连续请求异常 (失败率: {failure_rate*100:.1f}%)！触发算力熔断。")
                         self.state = BreakerState.OPEN
                         from core.utils.event_bus import bus
-                        bus.emit("UI_AI_BREAKER_TRIPPED", rate=failure_rate)
+                        bus.emit("UI_AI_BREAKER_TRIPPED", rate=failure_rate, node_name=self.name)
 
     def _add_to_history(self, success: bool):
         self.history.append((time.time(), success))
@@ -93,5 +80,63 @@ class CircuitBreaker:
         if len(self.history) > self.window_size:
             self.history.pop(0)
 
+
+class CircuitBreaker:
+    """🚀 [V2.0] 自适应节点隔离型 AI 算力熔断器 (多维度容器)"""
+
+    def __init__(self, name: str, failure_threshold: float = 0.5, window_size: int = 20, recovery_timeout: float = 30.0):
+        self.name = name
+        self.failure_threshold = failure_threshold
+        self.window_size = window_size
+        self.recovery_timeout = recovery_timeout
+        
+        # 默认的全局熔断状态 (兼容旧测试)
+        self.global_breaker = NodeCircuitBreaker(name, failure_threshold, window_size, recovery_timeout)
+        self.node_breakers = {}
+        self.lock = threading.Lock()
+
+    def _get_breaker(self, node_name: str = None) -> NodeCircuitBreaker:
+        if not node_name:
+            return self.global_breaker
+        with self.lock:
+            if node_name not in self.node_breakers:
+                self.node_breakers[node_name] = NodeCircuitBreaker(
+                    node_name,
+                    self.failure_threshold,
+                    self.window_size,
+                    self.recovery_timeout
+                )
+            return self.node_breakers[node_name]
+
+    def call(self, func, *args, node_name: str = None, **kwargs):
+        """🚀 [V2.0] 熔断器包装执行：监控异常并保护后端算力"""
+        # 智能提取 node_name
+        if not node_name:
+            node_name = getattr(func, '__self__', None) and getattr(func.__self__, 'node_name', None)
+            
+        breaker = self._get_breaker(node_name)
+        if not breaker.allow_request():
+            raise Exception(f"🛡️ [Breaker] {breaker.name} 处于熔断状态 ({breaker.state})，请求已被拦截。")
+            
+        try:
+            result = func(*args, **kwargs)
+            breaker.record_success()
+            return result
+        except Exception as e:
+            breaker.record_failure()
+            raise e
+
+    def allow_request(self, node_name: str = None) -> bool:
+        """准入检查：判断是否允许发起 AI 请求"""
+        return self._get_breaker(node_name).allow_request()
+
+    def record_success(self, node_name: str = None):
+        self._get_breaker(node_name).record_success()
+
+    def record_failure(self, node_name: str = None):
+        self._get_breaker(node_name).record_failure()
+
+
 # 🚀 全局 AI 熔断器 (默认回退)
 ai_breaker = CircuitBreaker("Global-AI")
+

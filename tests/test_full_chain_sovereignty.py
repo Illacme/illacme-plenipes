@@ -26,10 +26,17 @@ class TestFullChainSovereignty(unittest.TestCase):
         if os.path.exists(self.test_root):
             shutil.rmtree(self.test_root)
         os.makedirs(self.imprint_root, exist_ok=True)
+        
+        # 🧹 重置全局事件总线回调，彻底切断前置测试干扰导致的挂起
+        from core.utils.event_bus import bus
+        bus.reset()
 
     def tearDown(self):
         if os.path.exists(self.test_root):
             shutil.rmtree(self.test_root)
+        from core.utils.event_bus import bus
+        bus.reset()
+
 
     @patch('core.bindery.deployment_manager.PublisherRegistry.list_active_targets')
     def test_end_to_end_publishing_cycle(self, mock_load):
@@ -45,7 +52,10 @@ class TestFullChainSovereignty(unittest.TestCase):
         PublisherRegistry.register("mock_pub")(MockPub)
 
         # 🚀 [V65.1] 关键：对齐物理路径常量，确保 ConfigManager 能在沙箱中找到品牌配置
-        with patch('core.config.config.IMPRINT_DIR', self.imprint_root):
+        with patch('core.config.config.IMPRINT_DIR', self.imprint_root), \
+             patch('core.runtime.engine_preflight.IMPRINT_DIR', self.imprint_root), \
+             patch('core.governance.imprint_manager.IMPRINT_DIR', self.imprint_root), \
+             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root):
             with patch.object(MockPub, 'push', return_value={"status": "success"}) as mock_push:
                 # 2. 初始化主权空间 (传入沙箱根目录)
                 im = ImprintManager(root_dir=self.test_root)

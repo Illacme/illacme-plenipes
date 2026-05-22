@@ -98,6 +98,7 @@ class BaseTranslator(abc.ABC, AITaskMixin):
 
     def ask_ai_with_retry(self, payload: dict) -> str:
         """[Sovereignty] 物理算力调度核心：带治理拦截的 AI 请求总闸"""
+        import random
         from core.runtime.cli_bootstrap import get_global_engine
         engine = get_global_engine()
         imprint_id = engine.imprint_id if engine else "default"
@@ -109,7 +110,7 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 raise RuntimeError(f"AI_RATE_LIMIT_BLOCKED: {imprint_id}")
 
             breaker = engine.circuit_breakers.get("ai")
-            if breaker and not breaker.allow_request():
+            if breaker and not breaker.allow_request(self.node_name):
                 raise RuntimeError(f"AI_CIRCUIT_BREAKER_OPEN: {self.node_name}")
 
         last_error = None
@@ -124,8 +125,6 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     latency = time.time() - start_time
                     if engine:
                         engine.health_registry.report_success(self.node_name, latency)
-                        if "ai" in engine.circuit_breakers:
-                            engine.circuit_breakers["ai"].record_success()
                     result = getattr(response, 'text', response)
                     
                     # 🛡️ [V67.0] 自动内容净化 (对齐主权审计标准)
@@ -143,20 +142,26 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 last_error = e
                 if engine:
                     engine.health_registry.report_failure(self.node_name)
-                    if "ai" in engine.circuit_breakers:
-                        engine.circuit_breakers["ai"].record_failure()
                 error_msg = str(e).lower()
                 if "400" in error_msg: break
-                if i == self.max_retries: break
-
-                wait_time = (2 ** i) * 1.5
-                tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries}): {e}")
-                if "429" in error_msg or "rate limit" in error_msg:
-                    self.trigger_cooling(duration=120)
+                
+                # 如果是最后一次重试失败，或者遇到了致命错误
+                if i == self.max_retries:
+                    if "429" in error_msg or "rate limit" in error_msg:
+                        # 冷却时间降为 30s，仅在最终抛出 429 报错时冷却
+                        self.trigger_cooling(duration=30)
                     break
-                time.sleep(wait_time)
+
+                # 引入带有随机噪声的 Full Jitter 指数退避 (最大不超过 15s)
+                wait_time = random.uniform(0, min(15.0, (2 ** i) * 1.5))
+                tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries})，将在 {wait_time:.2f}s 后进行 Full Jitter 重试: {e}")
+                
+                self._sleep(wait_time)
         if last_error: raise last_error
         return ""
+    def _sleep(self, seconds: float):
+        """[Sovereignty] 物理休眠通道，支持在测试中被单体/实例级 Mock，以防破坏全局 time.sleep"""
+        time.sleep(seconds)
     def _post_process_response(self, content: str, payload: dict) -> str:
         """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链标签"""
         if not content or not isinstance(content, str): return content

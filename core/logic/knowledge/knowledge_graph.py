@@ -8,6 +8,7 @@ Illacme Plenipes V18 - Knowledge Graph Hub
 import os
 import json
 import threading
+import copy
 from typing import Dict, List, Any
 from core.utils.tracing import tlog
 
@@ -17,7 +18,13 @@ class KnowledgeGraph:
     def __init__(self, graph_path: str):
         self.graph_path = graph_path
         self._lock = threading.RLock()
+        self._timer_lock = threading.Lock()
         self.nodes: Dict[str, Dict[str, Any]] = {}  # doc_id -> {title, connections: {target_id: strength}}
+        
+        # 🚀 [V100.0] 并发治理：初始化防抖计时器与物理写计数器
+        self._debounce_timer = None
+        self.disk_write_count = 0
+        
         self._load()
 
     def _load(self):
@@ -30,18 +37,67 @@ class KnowledgeGraph:
                 tlog.error(f"❌ [KnowledgeGraph] 加载失败: {e}")
                 self.nodes = {}
 
-    def save(self):
-        """原子化持久化图谱"""
+    def _execute_physical_save(self, snapshot: dict):
+        """🚀 [V100.0] 锁外物理写磁盘操作：实现真正的非阻塞 I/O"""
+        try:
+            # 确保父目录存在
+            os.makedirs(os.path.dirname(self.graph_path), exist_ok=True)
+            temp_path = self.graph_path + ".tmp"
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(snapshot, f, ensure_ascii=False, indent=2)
+            os.replace(temp_path, self.graph_path)
+            
+            # 物理落盘计数递增 (互斥安全)
+            with self._timer_lock:
+                self.disk_write_count += 1
+                
+            tlog.debug(f"💾 [KnowledgeGraph] 物理刷盘成功！当前落盘计数: {self.disk_write_count}")
+        except Exception as e:
+            tlog.error(f"❌ [KnowledgeGraph] 锁外物理持久化失败: {e}")
+
+    def save(self, debounce: bool = True):
+        """🚀 [V100.0] 智能持久化：支持线程安全非阻塞快照与异步防抖刷盘"""
+        # 1. 锁内极速进行内存快照拷贝，随即立刻释放锁，避免 I/O 阻塞其他并发线程和 API 读取
         with self._lock:
-            try:
-                # 确保父目录存在
-                os.makedirs(os.path.dirname(self.graph_path), exist_ok=True)
-                temp_path = self.graph_path + ".tmp"
-                with open(temp_path, 'w', encoding='utf-8') as f:
-                    json.dump(self.nodes, f, ensure_ascii=False, indent=2)
-                os.replace(temp_path, self.graph_path)
-            except Exception as e:
-                tlog.error(f"❌ [KnowledgeGraph] 持久化失败: {e}")
+            nodes_snapshot = copy.deepcopy(self.nodes)
+            
+        # 2. 如果不需要防抖 (即刻同步强行落盘)
+        if not debounce:
+            # 同步执行，先物理 cancel 掉任何在悬挂的 Timer
+            self.flush()
+            self._execute_physical_save(nodes_snapshot)
+            return
+
+        # 3. 启用防抖处理 (滑动 Timer)
+        with self._timer_lock:
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                
+            # 延迟 0.5 秒在后台守护线程中执行真实的磁盘 I/O 写入
+            self._debounce_timer = threading.Timer(
+                0.5,
+                self._execute_physical_save,
+                args=(nodes_snapshot,)
+            )
+            self._debounce_timer.daemon = True
+            self._debounce_timer.start()
+
+    def flush(self):
+        """🚀 [V100.0] 强制瞬时落盘：取消当前未执行的 Timer 并同步刷回"""
+        with self._timer_lock:
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
+
+    def shutdown(self):
+        """🚀 [V100.0] 优雅注销：撤销所有可能在悬挂的防抖计时器，防止死锁或死线程"""
+        self.flush()
+
+    def __del__(self):
+        try:
+            self.shutdown()
+        except Exception:
+            pass
 
     def upsert_node(self, doc_id: str, title: str, entities: Dict[str, List[str]] = None, gist: str = None):
         """🚀 [V24.5] 增强型节点更新：支持实体与语义指纹"""

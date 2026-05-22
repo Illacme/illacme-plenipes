@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+🧙‍♂️ probe_ops.py - 环境探测与算力、文件系统金库候选路径建议及主题多语种映射发现
+"""
+
+import os
+import yaml
+import random
+from core.governance.imprint_manager import im
+from core.governance.license_guard import LicenseGuard
+from core.adapters.ai.registry import AIProviderRegistry
+from core.logic.diagnostics import DiagnosticsService
+from core.config.config import CONFIG_IMPRINT_NAME
+from core.utils.language_hub import LanguageHub
+
+def probe_nodes_logic():
+    nodes = DiagnosticsService.probe_local_compute()
+    rec_p = nodes[0]["provider"] if nodes else "openai"
+    rec_m = "llama3.1" if rec_p == "ollama" else ("gpt-4o-mini" if rec_p == "openai" else "default")
+    
+    vault_suggestions = DiagnosticsService.get_vault_suggestions()
+    
+    cfg_p = os.path.join(os.getcwd(), CONFIG_IMPRINT_NAME)
+    current_config = None
+    if os.path.exists(cfg_p):
+        try:
+            with open(cfg_p, 'r', encoding='utf-8') as f:
+                current_config = yaml.safe_load(f)
+        except:
+            pass
+
+    existing = im.list_imprints()
+    existing_ids = {t["id"].lower() for t in existing}
+    
+    def gen_id():
+        w1 = ["Aether", "Borealis", "Stellar", "Sovereign", "Boundless", "Ethereal", "Vivid", "Noble", "Infinite", "Radiant", "Arcane", "Astral", "Celestial", "Primal", "Zenith", "Apex", "Titan", "Obsidian", "Ivory", "Shadow", "Luminous", "Ancient", "Modern"]
+        w2 = ["Voyage", "Legacy", "Horizon", "Nexus", "Echo", "Spirit", "Realm", "Vision", "Foundry", "Vault", "Harbor", "Citadel", "Domain", "Sanctum", "Archive", "Atlas", "Vortex", "Crest", "Drift", "Pulse", "Rift", "Tide", "Warp", "Zephyr"]
+        return f"{random.choice(w1).lower()}_{random.choice(w2).lower()}"
+    
+    random_id = gen_id()
+    attempts = 0
+    while random_id in existing_ids and attempts < 10:
+        random_id = gen_id()
+        attempts += 1
+
+    protocols = [
+        {
+            "id": p,
+            "name": {
+                "openai": "OpenAI", "ollama": "Ollama (Local)", "lmstudio": "LM Studio (Local)",
+                "google": "Google Gemini", "anthropic": "Anthropic Claude", "deepseek": "DeepSeek",
+                "siliconflow": "SiliconFlow", "mistral": "Mistral AI", "groq": "Groq",
+                "together": "Together AI", "openrouter": "OpenRouter", "azure": "Azure OpenAI",
+                "cohere": "Cohere", "mock": "模拟算力 (Mock)"
+            }.get(p, p.capitalize()),
+            "default_url": getattr(AIProviderRegistry.get_provider(p), "DEFAULT_URL", "")
+        }
+        for p in AIProviderRegistry.get_all_protocols()
+    ]
+
+    return {
+        "current_config": current_config,
+        "fingerprint": LicenseGuard.get_machine_fingerprint(),
+        "nodes": nodes,
+        "is_licensed": LicenseGuard.is_licensed(),
+        "recommended": {
+            "imprint_name": random_id,
+            "provider": rec_p,
+            "model": rec_m,
+            "vault": vault_suggestions[0]["path"] if vault_suggestions else "./manuscripts"
+        },
+        "vault_suggestions": vault_suggestions,
+        "available_themes": [
+            {"id": "default", "name": "Sovereign (Default)", "desc": "极致简约的主权底座，回归创作本质", "official": True},
+            {"id": "universal", "name": "Universal (General Markdown)", "desc": "通用 Markdown 排版，完美兼容各类写作场景", "official": True},
+            {"id": "starlight", "name": "Starlight (Modern Docs)", "desc": "工业级审美，专为现代化文档中心打造", "official": True},
+            {"id": "vitepress", "name": "VitePress (Lightning Fast)", "desc": "极速响应，基于 Vite 的现代技术文档风格", "official": True},
+            {"id": "docusaurus", "name": "Docusaurus (Project Hub)", "desc": "经典的文档站点架构，适合大规模项目管理", "official": True},
+            {"id": "nextra", "name": "Nextra (Next.js Powered)", "desc": "灵动轻盈，基于 Next.js 的高级内容排版", "official": True}
+        ],
+        "available_protocols": protocols,
+        "available_providers": protocols,
+        "available_langs": LanguageHub.get_supported_matrix()
+    }

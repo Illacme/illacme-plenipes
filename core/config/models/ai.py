@@ -13,6 +13,8 @@ class AIProviderLimits(BaseModel):
     max_concurrency: int = Field(5, ge=1, le=50)
     timeout: float = Field(60.0, ge=1)
     max_tokens_per_min: int = Field(40000, ge=1000)
+    rate_limit_qps: float = Field(10.0, ge=0.1)
+    rate_limit_burst: int = Field(20, ge=1)
 
 class PromptTemplates(BaseModel):
     translate_system: str = "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Do not add any explanations."

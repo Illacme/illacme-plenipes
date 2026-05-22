@@ -41,19 +41,21 @@ window.getUIModalsHTML = () => {
                     <div style="display:flex; align-items:center; gap:15px;">
                         <span style="font-size:1.2rem;">📝</span>
                         <h2 id="editor-title" style="margin:0;">EDITOR</h2>
-                        <!-- 🌓 [V87.0] 模式切换器 (Obsidian Style) -->
-                        <div class="editor-mode-toggle" style="margin-left: 30px; display: flex; gap: 5px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                            <button class="mode-btn active" id="mode-source" onclick="setEditorMode('source')" title="源码模式">源码</button>
-                            <button class="mode-btn" id="mode-preview" onclick="setEditorMode('preview')" title="阅读视图">阅读</button>
-                            <button class="mode-btn" id="mode-split" onclick="setEditorMode('split')" title="实时预览">分栏</button>
-                        </div>
                     </div>
                     <button class="close-btn" onclick="closeEditor()">×</button>
                 </div>
                 
                 <div class="editor-matrix" style="flex: 1; min-height: 0; overflow: hidden;">
                     <div class="editor-main" id="editor-container-main">
-                        <div class="sector-header">PRIMARY MANUSCRIPT CONTENT</div>
+                        <div class="sector-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
+                            <span>PRIMARY MANUSCRIPT CONTENT</span>
+                            <!-- 🌓 [V87.0] 模式切换器 (Obsidian Style) -->
+                            <div class="editor-mode-toggle" style="display: flex; gap: 5px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-transform: none;">
+                                <button class="mode-btn active" id="mode-source" onclick="setEditorMode('source')" title="源码模式">源码</button>
+                                <button class="mode-btn" id="mode-preview" onclick="setEditorMode('preview')" title="阅读视图">阅读</button>
+                                <button class="mode-btn" id="mode-split" onclick="setEditorMode('split')" title="实时预览">分栏</button>
+                            </div>
+                        </div>
                         <div class="tactical-viewport" style="display: flex; flex: 1; min-height: 0; gap: 20px;">
                             <textarea id="editor-body" class="tactical-editor" spellcheck="false" placeholder="等待数据载入..." oninput="updateEditorPreview()"></textarea>
                             <div id="editor-preview" class="tactical-preview markdown-body" style="display: none;"></div>

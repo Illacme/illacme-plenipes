@@ -2,6 +2,12 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+## [v6.2.2-Refactor] - 2026-05-22
+### 🚀 稿件流转加工流水线模块化物理拆分 (SOP-02 Pipeline Refactor)
+- **步骤物理降解**：对大单体文件 `core/editorial/standard_steps.py` 实施 SOP-02 模块拆分协议，将其中的 6 大 PipelineStep 工序（读取与归一化、AST提纯、元数据指纹、AI SEO、隐私遮蔽、主权验证）原子搬迁到独立的子 Shards 中。
+- **门面Facade中转**：将原 `standard_steps.py` 精简转型为桥接 Facade，物理行数由原本的 324 行极致压缩到 25 行，实现全向零形变无损向下兼容。
+- **全息高保真对齐**：通过高保真逻辑基准 `standard_steps_logic_baseline.json` 物理证明拆分前后状态变换契约 100% 行为等价与零字节漂移。
+
 ## [v6.2.1-Parallel] - 2026-04-24
 ### 🚀 并行同步引擎加固 (Parallel Edition - Stage V6.1)
 - **多级并行调度 [AEL-Iter-v6.2.1]**：引入 `Delta Block Parallelism`。在单文件同步内部启动块级并行翻译，结合语种级并发，实现全链路非阻塞同步。

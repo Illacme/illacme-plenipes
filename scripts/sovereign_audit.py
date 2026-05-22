@@ -13,6 +13,11 @@ sys.path.insert(0, os.getcwd())
 
 def run_step(name, command_list):
     print(f"🚀 [审计阶段] {name}...")
+    if command_list:
+        cmd = command_list[0]
+        venv_cmd = os.path.join(".venv", "bin", cmd)
+        if os.path.exists(venv_cmd):
+            command_list[0] = venv_cmd
     try:
         result = subprocess.run(command_list, check=True, capture_output=True, text=True)
         print(f"  └── ✅ {name} 通过")

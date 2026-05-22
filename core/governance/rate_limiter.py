@@ -36,7 +36,7 @@ class RateLimiter:
             return False
 
 class GovernanceGuard:
-    """🚀 [V1.0] 治理守卫：管理全域限流策略"""
+    """🚀 [V2.0] 治理守卫：管理全域限流策略，支持动态参数自适应热重载"""
     
     _limiters: Dict[str, RateLimiter] = {}
     _lock = threading.Lock()
@@ -45,9 +45,28 @@ class GovernanceGuard:
     def check_quota(cls, imprint_id: str, cost_unit: int = 1) -> bool:
         """检查配额，如果超限则返回 False"""
         with cls._lock:
+            # 1. 尝试自适应热重载配置
+            qps = 10.0
+            burst = 20
+            from core.runtime.cli_bootstrap import get_global_engine
+            engine = get_global_engine()
+            if engine and hasattr(engine, 'config') and hasattr(engine.config, 'translation'):
+                trans_cfg = engine.config.translation
+                primary = getattr(trans_cfg, 'primary_node', None)
+                if primary and primary in trans_cfg.compute_nodes:
+                    limits = trans_cfg.compute_nodes[primary].limits
+                    qps = getattr(limits, 'rate_limit_qps', 10.0)
+                    burst = getattr(limits, 'rate_limit_burst', 20)
+
+            # 2. 如果不存在或者配置改变了，则进行热重载与自愈
             if imprint_id not in cls._limiters:
-                # 🚀 [V48.3 性能对齐] 默认 QPS 提升至 10.0，突发提升至 20 (对齐块级并行与多语种并发)
-                cls._limiters[imprint_id] = RateLimiter(qps=10.0, burst=20)
+                cls._limiters[imprint_id] = RateLimiter(qps=qps, burst=burst)
+            else:
+                limiter = cls._limiters[imprint_id]
+                if limiter.qps != qps or limiter.burst != burst:
+                    tlog.info(f"🔄 [GovernanceGuard] 检测到限流配置发生物理变动，执行热重载自愈：QPS={qps}, Burst={burst}")
+                    limiter.qps = qps
+                    limiter.burst = burst
             
             limiter = cls._limiters[imprint_id]
         

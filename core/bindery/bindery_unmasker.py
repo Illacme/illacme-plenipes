@@ -43,6 +43,10 @@ class BinderyUnmasker:
             
             # 返回物理绝对路径，杜绝 CWD 漂移导致的 [Errno 2]
             abs_path = os.path.abspath(os.path.join(vault_root, best_rel_path))
+            if not os.path.exists(abs_path):
+                alt_abs_path = os.path.abspath(best_rel_path)
+                if os.path.exists(alt_abs_path):
+                    abs_path = alt_abs_path
             tlog.debug(f"🔍 [Unmasker Debug] Filename: {target_filename} -> Best Rel: {best_rel_path} -> Abs: {abs_path}")
             return abs_path
 
@@ -92,6 +96,10 @@ class BinderyUnmasker:
                 best_rel_path = sorted(candidates, key=lambda p: len(os.path.commonprefix([current_abs_dir, os.path.dirname(os.path.abspath(os.path.join(vault_root, p)))])), reverse=True)[0]
             
             abs_path = os.path.abspath(os.path.join(vault_root, best_rel_path))
+            if not os.path.exists(abs_path):
+                alt_abs_path = os.path.abspath(best_rel_path)
+                if os.path.exists(alt_abs_path):
+                    abs_path = alt_abs_path
             return abs_path
 
         def unmask_fn(m):

@@ -216,9 +216,14 @@ def run_shadow_simulation():
             engine.translator.translate = MagicMock(side_effect=mock_translate_side_effect)
             engine.translator.generate_slug = MagicMock(return_value=("vision-test-slug", True))
             engine.translator.generate_seo_metadata = MagicMock(return_value=({"description": "SEO", "keywords": "k1"}, True))
+            engine.translator.translate_title = MagicMock(return_value="Vision Test Slug")
+            engine.translator.translate_metadata = MagicMock(side_effect=lambda val, *args, **kwargs: val)
+            engine.translator.raw_inference = MagicMock(return_value='{"concepts": ["testing"], "technologies": ["pytest"], "people": [], "projects": ["illacme"]}')
+            engine.translator.ask_ai_with_retry = MagicMock(return_value="{}")
+            engine.translator.raw_chat = MagicMock(return_value="Mocked chat response")
             
             # 执行同步
-            engine.sync_document(doc_with_img, "docs", "content-vault", is_dry_run=False)
+            engine.sync_document(os.path.relpath(doc_with_img, engine.vault_root), "docs", "content-vault", is_dry_run=False)
             
             # 校验 1：账本多语言矩阵
             img_hash = hashlib.md5(b"MOCK_IMAGE_DATA_001").hexdigest()[:8]
@@ -264,7 +269,7 @@ def run_shadow_simulation():
                 
                 if not found:
                     # 兜底：全量搜索
-                    logger.debug(f"🔍 [V6 兜底搜索] 正在全量扫描影子根目录: {actual_shadow_root}")
+                    log_info(f"🔍 [V6 兜底搜索] 正在全量扫描影子根目录: {actual_shadow_root}")
                     for root, dirs, files in os.walk(actual_shadow_root):
                         for f in files:
                             if "vision-test-slug" in f and f.endswith(".md") and "/en/" in root.replace('\\', '/'):

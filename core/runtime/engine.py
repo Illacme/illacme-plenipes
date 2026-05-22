@@ -23,14 +23,18 @@ from core.logic.orchestration.task_orchestrator import ai_executor
 
 
 def _dump_stacks(sig, frame):
-    """🛡️ [Debug] SIGUSR1 线程堆栈快照导出 - 强制重定向至 tlog"""
-    from core.logic.orchestration.task_orchestrator import global_executor
-    tlog.error(f"⚠️ [Signal] 接收到 SIGUSR1 | GlobalPool ID: {id(global_executor)} | AIPool ID: {id(ai_executor)}")
-    tlog.error("⚠️ [Signal] 开始导出所有线程堆栈到日志文件...")
+    """🛡️ [Debug] SIGUSR1 线程堆栈快照导出 - 强制直接重定向至 stderr"""
+    import sys
+    import traceback
+    from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
+    sys.stderr.write(f"⚠️ [Signal] 接收到 SIGUSR1 | GlobalPool ID: {id(global_executor)} | AIPool ID: {id(ai_executor)}\n")
+    sys.stderr.write("⚠️ [Signal] 开始导出所有线程堆栈到 stderr...\n")
     for thread_id, stack in sys._current_frames().items():
-        tlog.error(f"\n# ThreadID: {thread_id}")
+        sys.stderr.write(f"\n# ThreadID: {thread_id}\n")
         stack_info = "".join(traceback.format_stack(stack))
-        tlog.error(stack_info)
+        sys.stderr.write(stack_info)
+    sys.stderr.write("=== END STACK TRACE ===\n")
+    sys.stderr.flush()
 
 signal.signal(signal.SIGUSR1, _dump_stacks)
 

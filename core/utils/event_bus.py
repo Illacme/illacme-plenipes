@@ -57,5 +57,12 @@ class EventBus:
             except Exception as e:
                 tlog.error(f"❌ [事件总线] 订阅者 {callback.__name__} 处理事件 {event_type} 失败: {e}")
 
+    def reset(self):
+        """🚀 [V100.0] 主权净化：清空所有订阅者回调，用于测试用例间的完全隔离"""
+        with self._lock:
+            self._subscribers.clear()
+            tlog.debug("🧹 [事件总线] 已成功执行主权自洁重置。")
+
 # 全局访问点
 bus = EventBus()
+

@@ -25,3 +25,10 @@
     1.  **FastAPI 依赖注入解耦**：在模块拆分中，坚持“逻辑归逻辑，路由归路由”原则。核心业务逻辑层（`content_ops.py`）仅接收纯 Python 标准结构、强类型参数及全局基础设施单例（如 `engine`），而将 `Depends(verify_token)` 等装饰器严格锁死在路由分发层（`content.py`），切断潜在的编译期循环依赖。
     2.  **物理与逻辑双轨量化校验 (Paraconic Parity Verification)**：建立全量差分校验范式。重构前必须物理固化 API 模式指纹（`api_baseline.json`）与前端渲染 DOM 树（`vault_view.html.dump`）。重构后启动独立校验脚本（如 `phase4_full_diff.py` 和 `verify_dom_parity.py`），以 limit=10 的精确字段对齐与 outerHTML 的 100% 完美碰撞进行自动化数学验证，以机器理性确保重构零损坏。
 
+## 📅 2026-05-21: 高维知识图谱 Concurrency Bottleneck 并发写冲突与锁外物理刷盘治理
+*   **现象描述**：在高频 AI 语义链发现与织网爆发期，高维知识图谱系统 `[KnowledgeGraph]` 频繁执行磁盘物理写操作，不仅造成严重的磁盘 I/O 竞争，且由于 write I/O 序列化长期占锁，导致其他 `/api/galaxy/graph` 读取或操作请求出现挂起、超时与死锁隐患。
+*   **根因剖析**：传统的锁内同步刷盘逻辑在获取线程安全 `RLock` 后，直接在锁的临界区内调用了 `json.dump` 和 `os.replace` 等昂贵的磁盘 physical write I/O 操作。这使得其他并发线程在尝试获取该 `RLock` 时，必须挂起等待磁盘写入完成，形成了极大的并发性能瓶颈与死锁风险。
+*   **防线策略与沉淀**：
+    1.  **非阻塞锁外极速快照技术 (Non-Blocking Snapshot)**：为了彻底消除磁盘物理 I/O 带来的占锁时延，重构图谱保存机制：在线程安全的 `RLock` 临界区内，仅仅进行极速的内存快照拷贝（`copy.deepcopy(self.nodes)`），并立即释放锁。随后，高开销的 `json.dump` 等磁盘持久化操作在锁范围外的安全上下文中异步执行，使内存读写接口实现毫秒级零延迟。
+    2.  **物理防抖合并与双轨写入机制 (Debounce & Dual-Channel Write)**：引入 `threading.Timer` 守护线程，实现 `0.5s` 的延迟防抖合并写入通道（适用于 AI 语义织网等高频写场景，可削峰 95%+ 的磁盘物理写操作）；同时为用户编辑保存提供即时强行同步刷盘通道（`debounce=False`），并在实例销毁时（`shutdown` 与 `__del__`）优雅清理并回收挂起的守护线程，保证并发性能与数据完整性的 paraconic balance。
+

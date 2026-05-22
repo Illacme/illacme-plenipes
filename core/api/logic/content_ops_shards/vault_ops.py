@@ -95,7 +95,7 @@ def save_document_logic(engine, doc_id: str, req: dict):
         if hasattr(engine, "knowledge_graph"):
             actual_title = title or meta.get("title") or os.path.splitext(os.path.basename(doc_id))[0]
             engine.knowledge_graph.upsert_node(doc_id, actual_title)
-            engine.knowledge_graph.save()
+            engine.knowledge_graph.save(debounce=False)
     except Exception as ex:
         # 避免在异常时中断正常保存流程，只作静默防抖
         pass
