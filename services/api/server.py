@@ -61,16 +61,30 @@ async def favicon() -> FileResponse:
 
 # (Lifespan 已经接管了链路预热逻辑)
 
+class SafeStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        """🛡️ 主权防线：过滤并物理隔离任何对敏感文件、原始稿件或元数据账本的请求"""
+        norm_path = path.replace("\\", "/").lower()
+        parts = norm_path.split("/")
+        
+        # 严禁访问本地配置、全域配置、原稿文库及元数据目录，纵深防卫 403 拦截
+        sensitive_patterns = ["manuscripts", "metadata", "config.yaml", "config.local.yaml", ".git", ".plenipes", ".env"]
+        if any(p in parts for p in sensitive_patterns) or any(p in norm_path for p in sensitive_patterns):
+            from fastapi.responses import Response
+            return Response(status_code=403, content="Access Denied: Sovereign Protection Activated")
+            
+        return await super().get_response(path, scope)
+
 # 🎨 挂载仪表盘静态页面 (绝对路径自愈锚定)
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web", "dashboard"))
 if os.path.exists(static_dir):
     app.mount("/dashboard", StaticFiles(directory=static_dir, html=True), name="static")
 
 # 🚀 [V68.0] 资产预览代理：挂载物理出版产物目录 (Dispatch Hub Proxy)
-# 🛡️ 物理感应：挂载 imprints 目录以支持多品牌产物预览
+# 🛡️ 物理感应：挂载 imprints 目录以支持多品牌产物预览 (经 SafeStaticFiles 安全过滤)
 imprints_dir = os.path.abspath(os.path.join(os.getcwd(), "imprints"))
 if os.path.exists(imprints_dir):
-    app.mount("/imprints", StaticFiles(directory=imprints_dir), name="imprints")
+    app.mount("/imprints", SafeStaticFiles(directory=imprints_dir), name="imprints")
 
 dist_dir = os.path.abspath(os.path.join(os.getcwd(), "dist"))
 if not os.path.exists(dist_dir):
