@@ -2,7 +2,7 @@ import os
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from core.ui.web.wizard_ops import (
@@ -48,6 +48,12 @@ async def get_wizard():
         return "<h1>Assets Missing</h1>"
     with open(index_file, "r", encoding="utf-8") as f:
         return f.read()
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    """提供向导服务的 Favicon 皇家图标"""
+    logo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "api", "static", "logo.png"))
+    return FileResponse(logo_path)
 
 @app.get("/api/probe")
 async def probe_nodes():

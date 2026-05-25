@@ -49,6 +49,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <div id="error-type" class="field-error-hint"></div>
                             
                             <label>端点地址 (Endpoint)</label>
                             <input id="swal-input-url" class="swal2-input" placeholder="e.g. https://api.openai.com/v1">
@@ -93,6 +94,12 @@
                         }
                     },
                     preConfirm: () => {
+                        // 每次提交前先静默清空表单报错
+                        document.querySelectorAll('.field-error-hint').forEach(el => {
+                            el.innerText = '';
+                            el.style.display = 'none';
+                        });
+
                         const nid = document.getElementById('swal-input-id').value;
                         const type = document.getElementById('swal-input-type').value;
 
@@ -186,6 +193,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <div id="error-type" class="field-error-hint"></div>
                             
                             <label>端点地址 (Endpoint)</label>
                             <input id="swal-input-url" class="swal2-input" value="${node.base_url || ''}">
@@ -222,10 +230,22 @@
                     showCancelButton: true,
                     cancelButtonText: '放弃',
                     preConfirm: () => {
+                        // 每次提交前先静默清空表单报错
+                        document.querySelectorAll('.field-error-hint').forEach(el => {
+                            el.innerText = '';
+                            el.style.display = 'none';
+                        });
+
+                        const type = document.getElementById('swal-input-type').value;
+                        if (!type) {
+                            window.ComputeHandlers.showFieldError('type', '请选择协议');
+                            return false;
+                        }
+
                         return {
                             base_url: document.getElementById('swal-input-url').value,
                             api_key: document.getElementById('swal-input-key').value,
-                            type: document.getElementById('swal-input-type').value,
+                            type: type,
                             model: document.getElementById('swal-input-model').value
                         }
                     }

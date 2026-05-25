@@ -9,7 +9,7 @@ import os
 from typing import Dict, Any, Optional
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
@@ -52,6 +52,12 @@ async def health_check() -> Dict[str, Any]:
 async def root_redirect() -> RedirectResponse:
     """自动重定向至指挥中心"""
     return RedirectResponse(url="/dashboard/")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    """提供全景指挥中心 Favicon 皇家图标以消解浏览器 404 吵闹"""
+    icon_path = os.path.join(static_dir, "logo.png")
+    return FileResponse(icon_path)
 
 # (Lifespan 已经接管了链路预热逻辑)
 

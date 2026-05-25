@@ -120,8 +120,7 @@ def main():
         # 排除列表：全局变量定义文件与底座文件，以及旧的单体文件
         EXEMPT_CSS = [
             "core/api/static/css/dashboard.base.css",
-            "core/api/static/css/components/glass.css",        # 允许底座材质包含固定的 255 半透明色值
-            "core/api/static/css/components/governance.css"     # 允许暂未进行变量抽取重构的旧版大单体样式豁免
+            "core/api/static/css/components/glass.css"        # 允许底座材质包含固定的 255 半透明色值
         ]
         
         def check_line_for_hardcoded_color(line):

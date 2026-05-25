@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VitePress Theme Schema",
+  "description": "Schema defining customizable settings for VitePress theme.",
+  "type": "object",
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "default": "VitePress Sovereign Site",
+      "title": "Site Name",
+      "description": "The site name displayed in the navigation and footer.",
+      "group": "基础设置",
+      "order": 1
+    },
+    "logo_path": {
+      "type": "string",
+      "default": "/logo.svg",
+      "title": "Site Logo Path",
+      "description": "Custom site logo image path.",
+      "group": "基础设置",
+      "order": 2
+    },
+    "footer_copyright": {
+      "type": "string",
+      "default": "Released under the MIT License. Copyright © 2026-present VitePress.",
+      "title": "Footer Copyright Info",
+      "description": "Copyright text shown on footer.",
+      "group": "基础设置",
+      "order": 3
+    },
+    "enable_custom_style": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Custom CSS Styles",
+      "description": "Whether to override default theme CSS color and font style (warning: may break original design layout).",
+      "group": "基础设置",
+      "order": 4
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#3eaf7c",
+      "title": "Primary Accent Color",
+      "description": "VitePress theme primary accent styling color.",
+      "group": "视觉样式",
+      "order": 1
+    },
+    "font_family": {
+      "type": "string",
+      "default": "Inter, sans-serif",
+      "title": "Typography Font Family",
+      "description": "The default font-family used across pages.",
+      "group": "视觉样式",
+      "order": 2
+    },
+    "enable_dark_mode": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enable Dark Mode",
+      "description": "Force dark color scheme theme.",
+      "group": "视觉样式",
+      "order": 3
+    },
+    "hero_title": {
+      "type": "string",
+      "default": "VitePress Sovereign Publisher",
+      "title": "Hero Main Title",
+      "description": "Large text heading on front hero page.",
+      "group": "首页 Hero",
+      "order": 1
+    },
+    "hero_subtitle": {
+      "type": "string",
+      "default": "Vite & Vue powered static site generator. Simple, powerful, and fast.",
+      "title": "Hero Subtitle Info",
+      "description": "Sub-heading explanatory text on front page.",
+      "group": "首页 Hero",
+      "order": 2
+    },
+    "github_repo": {
+      "type": "string",
+      "default": "",
+      "title": "GitHub Repository URL",
+      "description": "Provide a link to display a GitHub logo/link on navigation headers.",
+      "group": "外部链接",
+      "order": 1
+    },
+    "last_updated_text": {
+      "type": "string",
+      "default": "最后更新时间",
+      "title": "Last Updated Prefix",
+      "description": "Custom prefix text shown before Git commit update date.",
+      "group": "个性化",
+      "order": 1
+    }
+  }
+}

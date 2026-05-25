@@ -68,14 +68,18 @@ window.getUIDrawersHTML = () => {
         <!-- 🧩 Plugin Config Drawer -->
         <div id="plugin-drawer" class="drawer-overlay" style="display: none;">
             <div class="drawer-content glass-panel">
-                <div class="drawer-header">
-                    <h3 id="p-drawer-title">⚙️ 配置插件能力</h3>
+                <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center;">
+                        <h3 id="p-drawer-title" style="margin: 0;">⚙️ 配置插件能力</h3>
+                        <span id="drawer-dirty-indicator" style="display: none; font-size: 0.65rem; color: #ffb700; margin-left: 10px; font-weight: 700; background: rgba(255, 183, 0, 0.08); border: 1px solid rgba(255, 183, 0, 0.2); padding: 2px 6px; border-radius: 4px; white-space: nowrap;">● 💡 发现未保存更改</span>
+                    </div>
                     <button class="close-btn" id="close-p-drawer" onclick="closePluginDrawer()">×</button>
                 </div>
                 <div class="drawer-body" id="p-drawer-body">
                     <!-- 动态注入插件特定配置 -->
                 </div>
                 <div class="drawer-footer" style="display: flex; gap: 10px; width: 100%;">
+                    <button class="secondary-btn" id="btn-restore-plugin-defaults" style="display: none; flex: 1; border: 1px solid #ff7b00; color: #ff7b00; background: rgba(255, 123, 0, 0.05); font-weight: 600;" onclick="restorePluginDefaults()">🧹 恢复默认</button>
                     <button class="primary-btn glow-btn" id="btn-save-plugin-cfg" style="flex: 1;" onclick="savePluginSettingsAndClose()">💾 保存配置</button>
                     <button class="secondary-btn" id="btn-dry-run-plugin" style="display: none; flex: 1; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); background: rgba(0, 242, 255, 0.05); font-weight: 600;" onclick="triggerPluginDryRun()">🧪 沙盘演练</button>
                 </div>

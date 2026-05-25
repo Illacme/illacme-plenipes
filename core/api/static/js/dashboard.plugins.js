@@ -18,8 +18,13 @@ window.togglePlugin = async (id, enable) => {
         const result = await response.json();
         if (result.status === 'success') {
             addAudit(`🛡️ 能力治理：已${enable ? '激活' : '封锁'}插件 [${id}]`);
-            // 重新加载以更新 UI 状态和排序
-            await loadPlugins();
+            if (typeof loadPlugins === 'function') await loadPlugins();
+            
+            // 🚀 [V80.2] 全域联动重绘：若当前位于系统治理的装帧主题选项卡，智能触发实时渲染以同步呼吸灯和状态条
+            const activeTab = document.querySelector('.s-tab.active');
+            if (activeTab && activeTab.dataset.cat === 'themes' && typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory('themes');
+            }
         } else {
             alert(`操作失败: ${result.error}`);
         }

@@ -29,7 +29,7 @@ window.ComputeHandlers.probeNode = async function(id) {
                 document.getElementById(`node-unit-${id}`)?.classList.add('pulse-glow');
                 return true;
             } else {
-                statusEl.innerHTML = `<span class="offline">❌ 感应丢失: ${res.error || '信号断裂'}</span>`;
+                statusEl.innerHTML = `<span class="offline">${res.error || '❌ 信号断裂'}</span>`;
                 if (latencyEl) latencyEl.innerHTML = `<span class="offline">TIMEOUT</span>`;
                 return false;
             }

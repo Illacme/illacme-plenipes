@@ -1,0 +1,17 @@
+/* 🏗️ Illacme Plenipes Local Fonts - V10.2 */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url('../fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('../fonts/outfit-latin.woff2') format('woff2');
+}

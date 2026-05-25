@@ -18,13 +18,10 @@ class PerplexityTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 Perplexity 常用模型对正"""
-        return [
-            "llama-3.1-sonar-small-128k-online",
-            "llama-3.1-sonar-large-128k-online",
-            "llama-3.1-sonar-huge-128k-online",
-            "llama-3.1-sonar-small-128k-chat",
-            "llama-3.1-sonar-large-128k-chat"
-        ]
+        api_key = self.safe_get_config('api_key')
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+        return await super().list_models()
 
     def get_archetype_params(self) -> Dict[str, Any]:
         return {

@@ -35,7 +35,7 @@ window.renderThemesCategory = () => {
             <div class="card-gallery">
                 ${themes.length > 0 ? themes.map(t => {
                     const isActive = activeTheme === t.id;
-                    const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '🏛️', 'vitepress': '⚡', 'nextra': '📖' };
+                    const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
                     const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
                     
                     let statusLabel = "";
@@ -46,10 +46,13 @@ window.renderThemesCategory = () => {
                         actionButton = '<button class="action-btn active" disabled>已就绪</button>';
                     } else if (t.location === 'native') {
                         statusLabel = '<span class="badge warning">NATIVE</span>';
-                        actionButton = `<button class="action-btn glow-btn" onclick="bootstrapTheme('${t.id}')">🚀 物理初始化</button>`;
+                        actionButton = `<button class="action-btn glow-btn" onclick="bootstrapTheme('${t.id}')">⚡ 下载并切换</button>`;
+                    } else if (t.location === 'global') {
+                        statusLabel = `<span class="badge info">${t.location.toUpperCase()}</span>`;
+                        actionButton = `<button class="action-btn glow-btn" onclick="switchTheme('${t.id}')">🎬 同步并切换</button>`;
                     } else {
                         statusLabel = `<span class="badge info">${t.location.toUpperCase()}</span>`;
-                        actionButton = `<button class="action-btn glow-btn" onclick="switchTheme('${t.id}')">🎬 启用装帧</button>`;
+                        actionButton = `<button class="action-btn glow-btn" onclick="switchTheme('${t.id}')">🎬 切换主题</button>`;
                     }
 
                     return `
@@ -66,7 +69,7 @@ window.renderThemesCategory = () => {
                             </div>
                             <div class="card-footer">
                                 ${actionButton}
-                                <button class="action-btn secondary" onclick="openPluginConfig('${t.id}')" title="主题配置">⚙️</button>
+                                <button class="action-btn secondary" onclick="openPluginConfig('${t.id}')" ${t.location !== 'local' ? 'disabled' : ''} title="${t.location === 'local' ? '主题配置' : '请先部署或切换此主题为当前版图主题，启用后即可配置属性'}">⚙️</button>
                             </div>
                             <div class="card-meta">
                                 <span>ORIGIN: ${t.origin.toUpperCase()}</span>
@@ -87,8 +90,8 @@ window.renderThemesCategory = () => {
                 <div class="settings-group">
                     <h4>🛠️ 主题治理工具</h4>
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                        <button class="secondary-btn" onclick="invokeServiceAction('install')" style="font-size: 0.8rem;">🏗️ 补全主题依赖 (Physical Install)</button>
-                        <button class="secondary-btn" onclick="addAudit('📡 正在触发全量 CSS/JS 重新物理对正...')">🎨 重新生成资产索引</button>
+                        <button class="secondary-btn" onclick="invokeServiceAction('install')" style="font-size: 0.8rem;">🏗️ 自动安装主题依赖</button>
+                        <button class="secondary-btn" onclick="addAudit('📡 正在重新同步并对齐样式与脚本资源索引...')">🎨 重新生成资产索引</button>
                     </div>
                 </div>
             </div>
@@ -110,12 +113,12 @@ window.switchTheme = async (themeId) => {
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
         if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
     } else {
-        if (typeof addAudit === 'function') addAudit(`🚨 切换失败: ${res ? res.error : '物理链路阻塞'}`, "error");
+        if (typeof addAudit === 'function') addAudit(`🚨 切换失败: ${res ? res.error : '网络链路阻塞'}`, "error");
     }
 };
 
 window.bootstrapTheme = async (themeId) => {
-    if (typeof addAudit === 'function') addAudit(`🚀 正在启动主题物理自愈 (Bootstrap): ${themeId.toUpperCase()}...`);
+    if (typeof addAudit === 'function') addAudit(`🚀 正在部署并启用主题: ${themeId.toUpperCase()}...`);
     try {
         const res = await apiFetch('/api/themes/bootstrap', {
             method: 'POST',
@@ -123,11 +126,46 @@ window.bootstrapTheme = async (themeId) => {
             body: JSON.stringify({ 'id': themeId })
         });
         if (res && res.status === 'success') {
-            if (typeof addAudit === 'function') addAudit(`✅ [物理自愈] 主题 '${themeId.toUpperCase()}' 已成功固化。`, "success");
+            if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeId.toUpperCase()}' 已部署成功并启用。`, "success");
             if (typeof loadPlugins === 'function') await loadPlugins();
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
         }
     } catch (e) {
         if (typeof addAudit === 'function') addAudit(`🚨 [网络故障] 无法连接至引导服务器: ${e.message}`, "error");
     }
+};
+
+// ⚙️ [V74.8] 动态载入插件配置编辑器依赖，100% 物理防止配置齿轮按钮失效
+window.openPluginConfig = window.openPluginConfig || async function(id) {
+    if (typeof window.openPluginConfig === 'function' && window.openPluginConfig !== arguments.callee) {
+        return window.openPluginConfig(id);
+    }
+    
+    // 动态拉起脚本依赖
+    const scriptId = 'sovereign-plugin-editor-script';
+    if (!document.getElementById(scriptId)) {
+        await new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = '/dashboard/js/plugins/plugins.editor.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    }
+    
+    // 再次尝试触发
+    if (typeof window.openPluginConfig === 'function' && window.openPluginConfig !== arguments.callee) {
+        return window.openPluginConfig(id);
+    }
+    
+    // 降级兜底 Swal
+    Swal.fire({
+        title: `⚙️ 主题配置: ${id.toUpperCase()}`,
+        text: '请前往 [PLUGINS / 插件中心] 进行完整物理管道参数划定与热重载配置。',
+        icon: 'info',
+        background: 'rgba(10, 15, 25, 0.98)',
+        color: 'var(--text-bright)',
+        confirmButtonText: '确定'
+    });
 };

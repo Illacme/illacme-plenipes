@@ -22,15 +22,19 @@ class TogetherTranslator(OpenAICompatibleTranslator):
 
     async def list_models(self) -> list[str]:
         """🚀 Together AI 实时模型感应"""
-        try:
-            loop = asyncio.get_event_loop()
-            url = f"{self.DEFAULT_URL}/models"
-            headers = {"Authorization": f"Bearer {self.config.api_key}"}
-            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
-            if resp.status_code == 200:
-                return [m['id'] for m in resp.json()]
-            return []
-        except: return []
+        api_key = self.config.api_key
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+            
+        loop = asyncio.get_event_loop()
+        url = self.safe_get_url("/models")
+        headers = {"Authorization": f"Bearer {api_key}"}
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+        if resp.status_code == 200:
+            return [m['id'] for m in resp.json()]
+            
+        resp.raise_for_status()
+        return []
 
     def get_archetype_params(self) -> Dict[str, Any]:
         return {

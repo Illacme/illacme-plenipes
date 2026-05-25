@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Docusaurus Theme Schema",
+  "description": "Schema defining customizable settings for Docusaurus theme.",
+  "type": "object",
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "default": "My Docusaurus Site",
+      "title": "Site Name",
+      "description": "The site name displayed in the navigation and footer.",
+      "group": "基础设置",
+      "order": 1
+    },
+    "logo_path": {
+      "type": "string",
+      "default": "/img/logo.svg",
+      "title": "Site Logo Path",
+      "description": "Custom site logo image path.",
+      "group": "基础设置",
+      "order": 2
+    },
+    "footer_copyright": {
+      "type": "string",
+      "default": "Copyright © 2026 My Project, Inc. Built with Docusaurus.",
+      "title": "Footer Copyright Info",
+      "description": "Copyright text shown on footer.",
+      "group": "基础设置",
+      "order": 3
+    },
+    "enable_custom_style": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Custom CSS Styles",
+      "description": "Whether to override default theme CSS color and font style (warning: may break original design layout).",
+      "group": "基础设置",
+      "order": 4
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#25c2a0",
+      "title": "Primary Accent Color",
+      "description": "Docusaurus theme primary accent styling color.",
+      "group": "视觉样式",
+      "order": 1
+    },
+    "font_family": {
+      "type": "string",
+      "default": "system-ui, sans-serif",
+      "title": "Typography Font Family",
+      "description": "The default font-family used across pages.",
+      "group": "视觉样式",
+      "order": 2
+    },
+    "enable_dark_mode": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enable Dark Mode",
+      "description": "Force dark color scheme theme.",
+      "group": "视觉样式",
+      "order": 3
+    },
+    "hero_title": {
+      "type": "string",
+      "default": "Docusaurus Sovereign Docs",
+      "title": "Hero Main Title",
+      "description": "Large text heading on front hero page.",
+      "group": "首页 Hero",
+      "order": 1
+    },
+    "hero_subtitle": {
+      "type": "string",
+      "default": "Easy to Build and Maintain Decentralized Knowledge Bases.",
+      "title": "Hero Subtitle Info",
+      "description": "Sub-heading explanatory text on front page.",
+      "group": "首页 Hero",
+      "order": 2
+    },
+    "github_repo": {
+      "type": "string",
+      "default": "",
+      "title": "GitHub Repository URL",
+      "description": "Provide a link to display a GitHub logo/link on navigation headers.",
+      "group": "外部链接",
+      "order": 1
+    },
+    "search_placeholder": {
+      "type": "string",
+      "default": "🔍 搜索主权文档...",
+      "title": "Search Bar Placeholder",
+      "description": "Custom placeholder text for local fuzzy search bar.",
+      "group": "个性化",
+      "order": 1
+    }
+  }
+}

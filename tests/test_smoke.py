@@ -22,3 +22,23 @@ def test_branding_integrity():
     # 检查 handle_banner 是否存在
     assert hasattr(StatusHandlers, 'handle_banner')
 
+
+def test_publishing_mode_seo_alignment():
+    """验证出版模式与 SEO 策略自动对正及 Pydantic 严格自愈"""
+    from core.config.models.governance import GovernanceSettings, PublishingMode, SeoStrategy
+    
+    # 1. 验证 Pydantic 模型实例化时的自动纠正
+    cfg = GovernanceSettings(
+        publishing_mode=PublishingMode.GLOBAL,
+        seo_strategy=SeoStrategy.HEURISTIC  # 非法组合
+    )
+    # 应自动纠正为该模式的默认策略
+    assert cfg.seo_strategy == SeoStrategy.AI_SYNC
+
+    cfg2 = GovernanceSettings(
+        publishing_mode=PublishingMode.ENHANCED,
+        seo_strategy=SeoStrategy.PROTOCOL  # 非法组合
+    )
+    assert cfg2.seo_strategy == SeoStrategy.AI_ALIGNMENT
+
+

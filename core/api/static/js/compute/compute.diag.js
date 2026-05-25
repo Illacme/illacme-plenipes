@@ -54,10 +54,31 @@
                         </div>
                     `;
                 } else {
-                    resultsContainer.innerHTML = '<div class="p-3 text-center text-muted">未发现活跃资产</div>';
+                    if (res.error) {
+                        resultsContainer.innerHTML = `
+                            <div class="p-3 text-center" style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+                                <div style="color:var(--neon-red); font-weight:bold; margin-bottom:5px;">📡 算力感应连接失败</div>
+                                <div style="font-size:0.7rem; color:var(--text-bright); margin-bottom:8px;">${res.error}</div>
+                                <div style="font-size:0.65rem; color:var(--text-muted);">排查建议：请仔细核对您的端点地址 (Endpoint) 是否多写/少写了路径，以及 API 密钥与所选协议驱动是否匹配。</div>
+                            </div>
+                        `;
+                    } else {
+                        resultsContainer.innerHTML = `
+                            <div class="p-3 text-center" style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+                                <div style="color:var(--neon-yellow); font-weight:bold; margin-bottom:5px;">⚠️ 未感应到可用模型</div>
+                                <div style="font-size:0.7rem; color:var(--text-bright); margin-bottom:8px;">虽然端点物理握手成功，但该算力节点未暴露或返回任何可用模型。</div>
+                                <div style="font-size:0.65rem; color:var(--text-muted);">排查建议：这通常是由于您的 API 账户余额欠费、未激活、或当前密钥权限限制了可用模型列表，请前往服务商控制台核查。</div>
+                            </div>
+                        `;
+                    }
                 }
             } catch (e) {
-                resultsContainer.innerHTML = '<div class="p-3 text-center text-danger">感应链路中断</div>';
+                resultsContainer.innerHTML = `
+                    <div class="p-3 text-center" style="font-size:0.75rem; color:var(--neon-red);">
+                        <div style="font-weight:bold; margin-bottom:5px;">🛑 感应链路异常中断</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted);">原因：浏览器发起 API 通讯失败，请检查网关服务是否运行正常。</div>
+                    </div>
+                `;
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;

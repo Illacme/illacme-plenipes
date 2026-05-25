@@ -22,15 +22,19 @@ class GroqTranslator(OpenAICompatibleTranslator):
 
     async def list_models(self) -> list[str]:
         """🚀 Groq 实时模型感应"""
-        try:
-            loop = asyncio.get_event_loop()
-            url = f"{self.DEFAULT_URL}/models"
-            headers = {"Authorization": f"Bearer {self.config.api_key}"}
-            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
-            if resp.status_code == 200:
-                return [m['id'] for m in resp.json().get('data', [])]
-            return ["llama3-70b-8192", "mixtral-8x7b-32768"]
-        except: return ["llama3-70b-8192", "mixtral-8x7b-32768"]
+        api_key = self.config.api_key
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+            
+        loop = asyncio.get_event_loop()
+        url = self.safe_get_url("/models")
+        headers = {"Authorization": f"Bearer {api_key}"}
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+        if resp.status_code == 200:
+            return [m['id'] for m in resp.json().get('data', [])]
+            
+        resp.raise_for_status()
+        return ["llama3-70b-8192", "mixtral-8x7b-32768"]
 
     def get_archetype_params(self) -> Dict[str, Any]:
         """Groq 追求极致速度，默认参数更偏向稳定性"""

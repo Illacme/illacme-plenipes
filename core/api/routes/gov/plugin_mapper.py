@@ -2,6 +2,23 @@ import os
 from typing import List, Dict, Any
 from core.api.routes.system import get_global_engine
 
+def _load_schema(theme_root: str, entry: str) -> dict:
+    """🚀 物理探测并加载主题自描述配置，自动处理 IO 异常与缺省，支持全局 fallback"""
+    import json
+    path = os.path.join(theme_root, entry, "theme.schema.json")
+    if not os.path.exists(path):
+        from core.config.config import THEMES_DIR
+        global_root = os.path.join(os.getcwd(), THEMES_DIR)
+        path = os.path.join(global_root, entry, "theme.schema.json")
+
+    if os.path.exists(path):
+        try:
+            with open(path, 'r', encoding='utf-8') as sf:
+                return json.load(sf)
+        except:
+            pass
+    return {}
+
 def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     """
     🧠 [V74.72] 物理插件矩阵组装器
@@ -49,46 +66,54 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     if os.path.exists(local_theme_root):
         for entry in os.listdir(local_theme_root):
             if os.path.isdir(os.path.join(local_theme_root, entry)) and not entry.startswith("."):
-                if entry == "shared": continue
+                if entry in ["shared", "__pycache__", ".DS_Store"]: continue
                 is_active = (active_theme == entry)
+                
                 plugins.append({
                     "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
                     "status": "In-Use" if is_active else "Local",
                     "is_in_use": is_active, "is_enabled": True,
                     "origin": "user", "location": "local", "version": "V1.0",
                     "description": "版图专属主题：位于当前版图目录下的物理资产。",
-                    "is_manageable": False
+                    "is_manageable": True,
+                    "schema": _load_schema(local_theme_root, entry)
                 })
                 theme_ids.add(entry)
 
     if os.path.exists(global_theme_root):
         for entry in os.listdir(global_theme_root):
             if os.path.isdir(os.path.join(global_theme_root, entry)) and not entry.startswith("."):
-                if entry in theme_ids or entry == "shared": continue
+                if entry in theme_ids or entry in ["shared", "__pycache__", ".DS_Store"]: continue
                 is_active = (active_theme == entry)
+                
                 plugins.append({
                     "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
                     "status": "In-Use" if is_active else "Central",
                     "is_in_use": is_active, "is_enabled": True,
                     "origin": "core", "location": "global", "version": SYSTEM_TRACK,
                     "description": "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。",
-                    "is_manageable": False
+                    "is_manageable": True,
+                    "schema": _load_schema(global_theme_root, entry)
                 })
                 theme_ids.add(entry)
 
     # 1b. Native Renderers
     for adapter_id in SSGRegistry.get_all_names():
+        if adapter_id == "generic": continue
+        if adapter_id == "sovereign" and "default" in theme_ids: continue
         if adapter_id in theme_ids: continue
         is_active = (active_theme == adapter_id)
         renderer_cls = SSGRegistry.get_renderer(adapter_id)
         display_name = getattr(renderer_cls, "DISPLAY_NAME", adapter_id.upper())
         description = getattr(renderer_cls, "DESCRIPTION", f"内核原生适配器：驱动 {display_name} 工业级排版引擎。")
+        
         plugins.append({
             "id": adapter_id, "name": display_name, "category": "theme", "category_name": "🎨 装帧主题适配器",
             "status": "In-Use" if is_active else "Native",
             "is_in_use": is_active, "is_enabled": (adapter_id not in disabled),
-            "origin": "core", "version": getattr(renderer_cls, "VERSION", SYSTEM_TRACK), "description": description,
-            "is_manageable": True
+            "origin": "core", "location": "native", "version": getattr(renderer_cls, "VERSION", SYSTEM_TRACK), "description": description,
+            "is_manageable": True,
+            "schema": _load_schema(global_theme_root, adapter_id)
         })
 
     # 2. 🧱 算力节点 (Compute Nodes)
@@ -261,8 +286,12 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             "is_manageable": False
         })
 
-    # 🚀 [V74.56] 统一对齐：确保所有插件均具备 name 属性
+    # 🚀 [V74.56] 统一对齐：同步核心 SSG 驱动的 DISPLAY_NAME 与 DESCRIPTION
     for p in plugins:
+        renderer_cls = SSGRegistry.get_renderer("sovereign" if p["id"] == "default" else ("generic" if p["id"] == "universal" else p["id"])) if p["category"] == "theme" else None
+        if renderer_cls:
+            p["name"] = getattr(renderer_cls, "DISPLAY_NAME", p["id"].upper())
+            p["description"] = getattr(renderer_cls, "DESCRIPTION", p["description"])
         if "name" not in p:
             p["name"] = p["id"].upper()
 

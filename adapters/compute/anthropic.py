@@ -24,6 +24,9 @@ class AnthropicTranslator(AnthropicCompatibleTranslator):
         }
 
     async def list_models(self) -> list[str]:
+        api_key = self.safe_get_config('api_key')
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
         return ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
 
     def get_archetype_params(self) -> Dict[str, Any]:

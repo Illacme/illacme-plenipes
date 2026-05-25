@@ -177,6 +177,13 @@ class IllacmeEngine:
         tlog.info(f"✅ [Engine] 物理参数已全量对齐: Theme={self.active_theme} | Vault={self.vault_root}")
         self.ledger.log("CONFIG_RELOADED", "主权参数全量原子对齐完成", imprint_id=self.imprint_id)
 
+        # ⚡ [V74.96] 主题选项配置变动实时热编译对正
+        if hasattr(self, 'ssg_adapter') and self.ssg_adapter:
+            try:
+                self.ssg_adapter.compile_theme_options()
+            except Exception as compile_err:
+                tlog.warning(f"⚠️ [Engine] 实时对正主题 CSS 变量失败: {compile_err}")
+
         # 🚀 [V74.9] 零重启热自愈：若状态从 Onboarding 状态复苏至就绪状态
         if was_onboarding and not self.onboarding_required:
             tlog.info("🚀 [Onboarding 自愈] 检测到文库路径配置已生效！正在启动物理金库首次全量索引扫描...")

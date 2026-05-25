@@ -117,7 +117,7 @@ window.renderPlugins = () => {
                                 <p style="margin-bottom:15px; flex:1; font-size:0.75rem; color:var(--text-dim);">${p.description || 'Capability syncing...'}</p>
                                 
                                 <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
-                                    <span class="tiny-label" style="color:var(--accent-primary);">${p.origin === 'core' ? '🛡️ CORE ASSET' : '🧩 EXTENSION'}</span>
+                                    <span class="tiny-label" style="color:var(--accent-primary);">${p.origin === 'core' ? '⚙️ 系统内置' : '🔌 外部扩展'}</span>
                                     ${p.is_in_use ? '<span class="tiny-label" style="margin-left:auto; color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>品牌已绑定</span>' : ''}
                                 </div>
 

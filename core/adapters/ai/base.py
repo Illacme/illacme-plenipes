@@ -40,16 +40,13 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         self.timeout = getattr(self.trans_cfg, 'api_timeout', 60.0)
         if self.config.limits.timeout != 60.0:
             self.timeout = self.config.limits.timeout
-
         self.max_retries = getattr(trans_cfg, 'max_retries', 3)
         self._is_cooling = False
         self._cooling_until = 0.0
-        
         # 🚀 [V55.26] 主权 ID 绑定：确保算力任务能感知品牌身份以加载正确方言
         from core.runtime.cli_bootstrap import get_global_engine
         engine = get_global_engine()
         self.imprint_id = engine.imprint_id if engine else "default"
-        
         # 🧠 [V55.26] 算力智感中枢初始化 (强制对正 AI 治理目录)
         ai_cache_path = engine._resolve_path(engine.config.get_ai_features_path()) if engine else None
         self._intelligence_hub = ModelIntelligenceHub(ai_cache_path)
@@ -82,8 +79,12 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 return True, f"已感应到 {len(models)} 个可用模型资产"
             return True, "链路已打通，但当前节点未暴露公开模型列表"
         except Exception as e:
-            return False, str(e)
+            return False, self.diagnose_error(e)
 
+    def diagnose_error(self, exception: Exception) -> str:
+        """🚀 [V74.9] 智能诊断异常，生成对用户极其友好且易懂的排错指南"""
+        from .diagnostics import diagnose_error_impl
+        return diagnose_error_impl(self, exception)
 
     def is_cooling(self) -> bool:
         if self._is_cooling and time.time() < self._cooling_until:
@@ -125,6 +126,10 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     latency = time.time() - start_time
                     if engine:
                         engine.health_registry.report_success(self.node_name, latency)
+                        breaker = engine.circuit_breakers.get("ai")
+                        if breaker and hasattr(breaker, "_thread_local"):
+                            breaker.record_success(self.node_name)
+                            breaker._thread_local.reported = True
                     result = getattr(response, 'text', response)
                     
                     # 🛡️ [V67.0] 自动内容净化 (对齐主权审计标准)
@@ -143,25 +148,135 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 if engine:
                     engine.health_registry.report_failure(self.node_name)
                 error_msg = str(e).lower()
-                if "400" in error_msg: break
                 
-                # 如果是最后一次重试失败，或者遇到了致命错误
-                if i == self.max_retries:
-                    if "429" in error_msg or "rate limit" in error_msg:
-                        # 冷却时间降为 30s，仅在最终抛出 429 报错时冷却
-                        self.trigger_cooling(duration=30)
+                is_fatal = "400" in error_msg
+                is_last_retry = (i == self.max_retries)
+                
+                if is_fatal or is_last_retry:
+                    if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
+                        # 智能从错误信息中提取重试秒数，保底 30s，最大不超过 60s
+                        cool_duration = self._parse_retry_after_from_error(error_msg, error_obj=e)
+                        cool_duration = min(60.0, max(1.0, cool_duration))
+                        self.trigger_cooling(duration=cool_duration)
+                    if engine:
+                        breaker = engine.circuit_breakers.get("ai")
+                        if breaker and hasattr(breaker, "_thread_local"):
+                            breaker.record_failure(self.node_name)
+                            breaker._thread_local.reported = True
                     break
 
-                # 引入带有随机噪声的 Full Jitter 指数退避 (最大不超过 15s)
-                wait_time = random.uniform(0, min(15.0, (2 ** i) * 1.5))
-                tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries})，将在 {wait_time:.2f}s 后进行 Full Jitter 重试: {e}")
+                # 优先提取 API 携带的重试秒数作为重试延迟，并带入微小抖动
+                wait_time = None
+                if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
+                    parsed_wait = self._parse_retry_after_from_error(error_msg, error_obj=e)
+                    if parsed_wait != 30.0:  # 成功捕获到了非保底的重试指示
+                        wait_time = parsed_wait + random.uniform(0.1, 0.5)
+
+                if wait_time is None:
+                    # 引入带有随机噪声的 Full Jitter 指数退避 (最大不超过 15s)
+                    wait_time = random.uniform(0, min(15.0, (2 ** i) * 1.5))
+                    
+                tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries})，将在 {wait_time:.2f}s 后进行重试: {e}")
                 
                 self._sleep(wait_time)
         if last_error: raise last_error
         return ""
+
     def _sleep(self, seconds: float):
         """[Sovereignty] 物理休眠通道，支持在测试中被单体/实例级 Mock，以防破坏全局 time.sleep"""
         time.sleep(seconds)
+    def _parse_retry_after_from_error(self, error_msg: str, error_obj: Exception = None) -> float:
+        """🚀 [V62.0] 智能解析器：提取 429 报错提示的重试时间值（完美兼容 Gemini 等供应商元数据或结构化属性），保底 30.0s"""
+        # 1. 优先尝试从异常对象自身的结构化属性/Metadata 中提取 (针对 Gemini/Google API/gRPC 等供应商)
+        if error_obj is not None:
+            try:
+                # A. 探测 retry_delay 属性 (常见于 Google / Gemini SDK)
+                if hasattr(error_obj, 'retry_delay'):
+                    rd = getattr(error_obj, 'retry_delay')
+                    if isinstance(rd, (int, float)):
+                        return float(rd)
+                    # 探测 pb duration 对象 (google.protobuf.duration_pb2.Duration)
+                    if hasattr(rd, 'seconds'):
+                        seconds = getattr(rd, 'seconds', 0.0)
+                        nanos = getattr(rd, 'nanos', 0.0)
+                        return float(seconds) + float(nanos) / 1e9
+
+                # B. 探测 retry_after 属性 (常见于一些 HTTP client 异常)
+                if hasattr(error_obj, 'retry_after'):
+                    ra = getattr(error_obj, 'retry_after')
+                    if isinstance(ra, (int, float)):
+                        return float(ra)
+
+                # C. 探测 metadata 属性 (常见于 gRPC / Google APICallError)
+                if hasattr(error_obj, 'metadata'):
+                    meta = getattr(error_obj, 'metadata')
+                    # 字典类型探测
+                    if isinstance(meta, dict):
+                        for k, v in meta.items():
+                            k_lower = str(k).lower()
+                            if 'retry' in k_lower or 'delay' in k_lower:
+                                try:
+                                    return float(v)
+                                except (ValueError, TypeError):
+                                    pass
+                    # 序列/元组类型探测
+                    elif isinstance(meta, (list, tuple)):
+                        for item in meta:
+                            if isinstance(item, (list, tuple)) and len(item) >= 2:
+                                k_lower = str(item[0]).lower()
+                                if 'retry' in k_lower or 'delay' in k_lower:
+                                    try:
+                                        return float(item[1])
+                                    except (ValueError, TypeError):
+                                        pass
+            except Exception:
+                pass  # 防御性忽略提取异常，继续走文本匹配逻辑
+
+        import re
+        msg = error_msg.lower()
+        
+        # 2. 文本匹配：匹配类似 "retry_delay { seconds: 15.0 }" 这种 Gemini 标准格式化错误文本
+        match_gemini = re.search(r'retry[-_]?delay\s*\{\s*seconds\s*:\s*([0-9.]+)', msg)
+        if match_gemini:
+            try:
+                return float(match_gemini.group(1))
+            except ValueError:
+                pass
+
+        # 3. 文本匹配：匹配类似 "retry_delay: 15s"、"retryDelay": "15s" 或 "retry_delay = 8" 等形式
+        match_gemini_var = re.search(r'retry[-_]?delay["\']?\s*[:=]\s*["\']?([0-9.]+)\s*s?\b', msg)
+        if match_gemini_var:
+            try:
+                return float(match_gemini_var.group(1))
+            except ValueError:
+                pass
+
+        # 4. 文本匹配：支持 "try again in X seconds"、"retry after X" 或 "retry in X" 等形式
+        match_secs = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:seconds|second|secs|sec|s\b)?', msg)
+        if match_secs:
+            try:
+                return float(match_secs.group(1))
+            except ValueError:
+                pass
+                
+        # 5. 文本匹配：匹配类似 "retry-after: X"、"retry_after: X" 或 "retry-after X" (含引号兼容)
+        match_retry = re.search(r'retry[-_]?after["\']?\s*[:\s]\s*["\']?([0-9.]+)', msg)
+        if match_retry:
+            try:
+                return float(match_retry.group(1))
+            except ValueError:
+                pass
+
+        # 6. 文本匹配：匹配类似 "try again in X minute(s)" 或 "retry after X minutes"
+        match_mins = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:minutes|minute|mins|min|m\b)', msg)
+        if match_mins:
+            try:
+                return float(match_mins.group(1)) * 60.0
+            except ValueError:
+                pass
+
+        # 保底返回 30.0 秒
+        return 30.0
     def _post_process_response(self, content: str, payload: dict) -> str:
         """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链标签"""
         if not content or not isinstance(content, str): return content

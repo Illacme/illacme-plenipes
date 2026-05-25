@@ -34,15 +34,18 @@ class CohereTranslator(BaseTranslator):
             
     async def list_models(self) -> list[str]:
         """🚀 Cohere 实时模型感应"""
-        try:
-            loop = asyncio.get_event_loop()
-            url = self.safe_get_url("/models")
-            headers = {"Authorization": f"Bearer {self.safe_get_config('api_key')}"}
-            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
-            if resp.status_code == 200:
-                return [m['name'] for m in resp.json().get('models', []) if m.get('endpoints', {}).get('chat')]
-            return ["command-r-plus", "command-r", "command-light"]
-        except: return ["command-r-plus", "command-r"]
+        api_key = self.safe_get_config('api_key')
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+            
+        loop = asyncio.get_event_loop()
+        url = self.safe_get_url("/models")
+        headers = {"Authorization": f"Bearer {api_key}"}
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+        if resp.status_code == 200:
+            return [m['name'] for m in resp.json().get('models', []) if m.get('endpoints', {}).get('chat')]
+        resp.raise_for_status()
+        return []
 
     async def test_connection(self) -> tuple[bool, str]:
         """测试 Cohere 服务连通性"""

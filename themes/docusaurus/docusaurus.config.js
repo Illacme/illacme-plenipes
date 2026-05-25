@@ -5,13 +5,14 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
+import themeOptions from './theme.options.js';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Illacme Plenipes',
-  tagline: 'Eason are cool',
+  title: themeOptions.site_name || 'Illacme Plenipes',
+  tagline: themeOptions.hero_subtitle || 'Eason are cool',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -103,10 +104,10 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: 'Illacme Plenipis',
+        title: themeOptions.site_name || 'Illacme Plenipis',
         logo: {
           alt: 'Plenipis',
-          src: 'img/logo.svg',
+          src: themeOptions.logo_path || 'img/logo.svg',
         },
         items: [
           {
@@ -117,7 +118,7 @@ const config = {
           },
           { to: '/blog', label: 'Blog', position: 'left' },
           {
-            href: 'https://github.com/illacme/illacme-plenipes',
+            href: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes',
             label: 'GitHub',
             position: 'right',
           },
@@ -166,12 +167,12 @@ const config = {
               },
               {
                 label: 'GitHub',
-                href: 'https://github.com/illacme/illacme-plenipes',
+                href: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Dipoda, Inc. Built with Illacme.`,
+        copyright: themeOptions.footer_copyright || `Copyright © ${new Date().getFullYear()} Dipoda, Inc. Built with Illacme.`,
       },
       prism: {
         theme: prismThemes.github,

@@ -52,13 +52,15 @@ window.ComputeHandlers = window.ComputeHandlers || {};
             const tEdit = document.getElementById('provider-trigger-edit');
             const urlInput = document.getElementById('swal-input-url');
 
+            const isSwitching = input && input.value !== id;
+
             if (input) input.value = id;
             if (tAdd) tAdd.innerText = name;
             if (tEdit) tEdit.innerText = name;
 
             document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.remove('show'));
 
-            if (urlInput && defaultUrl && urlInput.value === "") {
+            if (urlInput && defaultUrl && (isSwitching || urlInput.value === "")) {
                 urlInput.value = defaultUrl;
             }
         },
@@ -73,7 +75,15 @@ window.ComputeHandlers = window.ComputeHandlers || {};
                 setTimeout(() => input.classList.remove('shake-hint'), 500);
                 input.focus();
             }
-            if (typeof showNotification === 'function') showNotification(message, 'error');
+            // 清理对应字段旧的报错并展现新的
+            const errorContainer = document.getElementById(`error-${fieldId}`);
+            if (errorContainer) {
+                errorContainer.innerText = `⚠️ ${message}`;
+                errorContainer.style.display = 'block';
+            } else {
+                // 兜底使用右上角 Toast
+                if (typeof showNotification === 'function') showNotification(message, 'error');
+            }
         }
     };
 

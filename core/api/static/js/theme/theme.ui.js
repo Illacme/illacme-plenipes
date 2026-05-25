@@ -11,75 +11,93 @@ window.ThemeUI = {
         themes.sort((a, b) => (activeTheme === a.id ? -1 : (activeTheme === b.id ? 1 : 0)));
 
         return `
-            <div class="full-width fade-in">
+            <div class="full-width">
                 <div class="section-header"><h3>🎨 装帧主题 (Binding Themes)</h3></div>
-                <p class="section-desc text-muted mb-4">选择并配置您的数字出版物视觉装帧样式。内核将根据所选主题自动对正物理路径与依赖。</p>
+                <p class="section-desc">选择并配置您的数字出版物视觉装帧样式。内核将根据所选主题自动对正物理路径与依赖。</p>
                 
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                    ${themes.length > 0 ? themes.map(t => this.createThemeCard(t, activeTheme === t.id)).join('') : `
-                        <div class="col-12 text-center p-5 text-muted italic">
-                            <div class="spinner-border spinner-border-sm me-2"></div>正在同步装帧资产库...
+                <div class="card-gallery">
+                    ${themes.length > 0 ? themes.map(t => {
+                        const isActive = activeTheme === t.id;
+                        const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
+                        const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
+                        
+                        let statusLabelPill = "";
+                        let actionButton = "";
+                        const location = t.location || 'native';
+                        
+                        const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前版图库' };
+                        const locationText = locationMap[location] || location.toUpperCase();
+
+                        if (isActive) {
+                            statusLabelPill = `<div class="log-tag success" style="background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
+                            actionButton = '<button class="action-btn active" style="height: 28px; line-height: 18px;" disabled>已就绪</button>';
+                        } else {
+                            statusLabelPill = `<div class="log-tag info" style="background: rgba(0, 242, 255, 0.08); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 255, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 ${locationText}</div>`;
+                            if (location === 'native') {
+                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.bootstrapTheme('${t.id}')">⚡ 下载并切换</button>`;
+                            } else if (location === 'global') {
+                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 同步并切换</button>`;
+                            } else {
+                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 切换主题</button>`;
+                            }
+                        }
+
+                        // 🚀 [V80.2] 全息状态对齐：展示状态指示灯
+                        const dotColor = t.is_enabled ? 'healthy' : 'blocked';
+
+                        return `
+                            <div class="shield-pod plugin-pod ${isActive ? 'active-duty' : ''}" style="display: flex; flex-direction: column; height: 100%;">
+                                <div class="shield-status" style="margin-bottom: 8px;">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span class="status-dot-mini ${dotColor}" id="dot-${t.id}"></span>
+                                        <span class="shield-id">RELEASE ${t.version || 'V1.0'}</span>
+                                    </div>
+                                    ${statusLabelPill}
+                                </div>
+                                <div class="shield-body" style="flex:1; display:flex; flex-direction:column; margin-top: 5px;">
+                                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                        <div class="card-icon" style="font-size: 1.5rem; flex-shrink: 0; margin-top: 2px;">${icon}</div>
+                                        <div style="flex: 1;">
+                                            <h4 style="font-size: 1.1rem; color: #fff; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span>${(t.id || '').toUpperCase()}</span>
+                                                ${t.name ? `<span style="font-size: 0.65rem; font-weight: normal; color: var(--accent-secondary); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.15); padding: 1px 6px; border-radius: 4px;">${t.name}</span>` : ''}
+                                            </h4>
+                                            <p style="margin: 0; font-size: 0.75rem; color: var(--text-dim); line-height: 1.4;">${t.description || '自定义装帧主题'}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pod-telemetry" style="margin: 15px 0; padding: 8px 12px; display: flex; align-items: center; font-size: 0.65rem; height: 32px;">
+                                        ${isActive 
+                                            ? '<span class="tiny-label" style="color:#00ff88; display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>🟢 当前版图已绑定</span>' 
+                                            : (location === 'local' 
+                                                ? '<span class="tiny-label" style="color:var(--accent-secondary); font-weight:700;">🔘 本地就绪：可直接切换</span>' 
+                                                : (location === 'global' 
+                                                    ? '<span class="tiny-label" style="color:#ffb700; font-weight:700;">⚠️ 需同步：请点击同步并切换</span>' 
+                                                    : '<span class="tiny-label" style="color:#ffb700; font-weight:700;">⚠️ 需下载：请点击下载并切换</span>'))}
+                                    </div>
+
+                                    <div class="p-control-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; margin-bottom: 8px;">
+                                        ${actionButton}
+                                        <button class="action-btn secondary" style="height: 28px; line-height: 18px;" onclick="window.openPluginConfig('${t.id}')" ${(!t.is_enabled || location !== 'local') ? 'disabled' : ''} title="${!t.is_enabled ? '主题已被禁用' : (location === 'local' ? '自定义配置此主题的细节属性' : '请先部署或切换此主题为当前版图主题，启用后即可配置属性')}">⚙️ CONFIG</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('') : `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <div class="spinner">📡</div>
+                            <p>正在同步装帧资产库，请稍候...</p>
                         </div>
                     `}
                 </div>
 
-                <div class="mt-5 pt-4 border-top">
-                    <h5 class="mb-3">🛠️ 主题治理工具</h5>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="window.ThemeHandlers.invokeGlobalAction('install')">🏗️ 补全主题依赖</button>
-                        <button class="btn btn-sm btn-outline-info" onclick="addAudit('📡 正在触发全量资产索引重新对正...')">🎨 重新生成资产索引</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-
-    /**
-     * 🃏 构造单个主题卡片
-     */
-    createThemeCard(t, isActive) {
-        const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '🏛️', 'vitepress': '⚡', 'nextra': '📖' };
-        const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
-        
-        let statusBadge = "";
-        let actionBtn = "";
-        
-        if (isActive) {
-            statusBadge = '<span class="badge bg-success">CURRENT</span>';
-            actionBtn = '<button class="btn btn-sm btn-success w-100" disabled>已就绪</button>';
-        } else if (t.location === 'native') {
-            statusBadge = '<span class="badge bg-warning text-dark">NATIVE</span>';
-            actionBtn = `<button class="btn btn-sm btn-primary w-100 glow-btn" onclick="window.ThemeHandlers.bootstrapTheme('${t.id}')">🚀 物理初始化</button>`;
-        } else {
-            const locLabel = (t.location || 'UNKNOWN').toUpperCase();
-            statusBadge = `<span class="badge bg-info text-dark">${locLabel}</span>`;
-            actionBtn = `<button class="btn btn-sm btn-outline-primary w-100" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 启用装帧</button>`;
-        }
-
-        const displayId = (t.id || 'UNKNOWN').toUpperCase();
-
-        return `
-            <div class="col">
-                <div class="card h-100 glass-panel theme-card ${isActive ? 'active-border' : ''}">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="fs-2 me-3">${icon}</div>
-                            <div>
-                                <h6 class="card-title mb-0">${displayId}</h6>
-                                ${statusBadge}
-                            </div>
+                <div class="settings-grid" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
+                    <div class="settings-group">
+                        <h4>🛠️ 主题治理工具</h4>
+                        <div style="display: flex; gap: 10px; margin-top: 1rem;">
+                            <button class="secondary-btn" onclick="window.ThemeHandlers.invokeGlobalAction('install')" style="font-size: 0.8rem;">🏗️ 自动安装主题依赖</button>
+                            <button class="secondary-btn" onclick="addAudit('📡 正在重新同步并对齐样式与脚本资源索引...')">🎨 重新生成资产索引</button>
                         </div>
-                        <p class="card-text small text-muted">${t.description || '自定义装帧主题'}</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 pt-0 pb-3">
-                        <div class="d-flex gap-2">
-                            ${actionBtn}
-                            <button class="btn btn-sm btn-outline-secondary" onclick="openPluginConfig('${t.id}')" title="主题配置">⚙️</button>
-                        </div>
-                    </div>
-                    <div class="card-meta px-3 pb-2" style="font-size: 0.65rem; opacity: 0.5;">
-                        <span>ORIGIN: ${(t.origin || 'CUSTOM').toUpperCase()}</span>
-                        <span class="ms-2">VER: ${t.version || '0.0.1'}</span>
                     </div>
                 </div>
             </div>

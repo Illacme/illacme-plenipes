@@ -114,7 +114,7 @@ window.saveAllSettings = async () => {
     });
 
     if (res && res.status === 'success') {
-        addAudit("✅ 全量主权配置已固化至物理磁盘。", 'success');
+        addAudit("✅ 全局主权配置已成功保存并即刻生效。", 'success');
         if (res.active_config) {
             window.settingsData = { ...window.settingsData, ...res.active_config };
             
@@ -136,7 +136,7 @@ window.saveAllSettings = async () => {
             }
         }
     } else {
-        addAudit(`❌ 配置固化失败: ${res ? res.error : '未知故障'}`, 'error');
+        addAudit(`❌ 配置保存失败: ${res ? res.error : '未知故障'}`, 'error');
     }
 };
 

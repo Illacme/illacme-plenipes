@@ -258,3 +258,174 @@ def test_concurrency_governance_avalanche_prevention():
             break
             
     assert has_circuit_breaker_exception is True, "熔断起爆后，并没有任何并发线程被快速阻断拦截！"
+
+
+def test_adaptive_429_parsing_and_retry_backoff():
+    """🧪 测试五：追加验证 429 报错中 Retry-After/try again 及 Gemini 特有结构化重试属性的智能提取与应用"""
+    engine = MockEngine()
+    set_global_engine(engine)
+
+    sleep_times = []
+    def dummy_sleep(secs):
+        sleep_times.append(secs)
+
+    # 模拟 Gemini / Google Cloud SDK 专有的 ResourceExhausted 异常结构
+    class MockGeminiDuration:
+        def __init__(self, seconds, nanos=0):
+            self.seconds = seconds
+            self.nanos = nanos
+
+    class MockGeminiException(Exception):
+        def __init__(self, message, retry_seconds=None, metadata=None):
+            super().__init__(message)
+            if retry_seconds is not None:
+                self.retry_delay = MockGeminiDuration(retry_seconds)
+            if metadata is not None:
+                self.metadata = metadata
+
+    # 1. 第一次重试：模拟普通 429 文本解析（try again in 8.5 seconds）
+    # 2. 第二次重试：模拟 Gemini 异常对象 metadata 属性解析（retry-after: 9.5）
+    # 3. 彻底失败：模拟 Gemini 异常对象 retry_delay 结构化属性（12.0s）
+    call_count = 0
+    def adaptive_ai_behavior(payload):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise Exception("HTTP 429: Rate Limit. Please try again in 8.5 seconds.")
+        elif call_count == 2:
+            raise MockGeminiException("Quota exceeded", metadata={"retry-after": "9.5"})
+        else:
+            raise MockGeminiException("Quota exceeded", retry_seconds=12.0)
+
+    trans = FakeTranslator("deepseek_api", engine.config.translation, adaptive_ai_behavior)
+
+    with patch.object(BaseTranslator, "_sleep", side_effect=dummy_sleep):
+        with pytest.raises(Exception) as exc_info:
+            trans.ask_ai_with_retry({"prompt": "Hello"})
+            
+        assert "quota exceeded" in str(exc_info.value).lower() or "429" in str(exc_info.value).lower()
+
+    # max_retries = 2，一共调用了 3 次
+    assert call_count == 3
+    # 发生了 2 次重试等待
+    assert len(sleep_times) == 2
+    
+    # 第一次等待：由 "try again in 8.5 seconds" 得到 8.5，加上 Jitter 噪声 [0.1, 0.5] -> [8.6, 9.0]
+    assert 8.6 <= sleep_times[0] <= 9.0
+    # 第二次等待：由 metadata {"retry-after": "9.5"} 得到 9.5，加上 Jitter 噪声 [0.1, 0.5] -> [9.6, 10.0]
+    assert 9.6 <= sleep_times[1] <= 10.0
+
+    # 验证最终彻底失败时，物理冷冻时间根据最后的 retry_delay 属性（12.0s）自适应设置为 12.0s
+    assert trans.is_cooling() is True
+    assert 11.0 <= (trans._cooling_until - time.time()) <= 13.0
+
+
+def test_sentinel_spec_retry_parsing():
+    """🧪 测试六：追加验证来自 Sentinel 脚本与真实 HTTP JSON 响应中的各种特殊 429 重试标识匹配"""
+    engine = MockEngine()
+    set_global_engine(engine)
+    
+    # 物理实例化一个真实的 BaseTranslator 来做单体匹配测试（不需要真正的网络请求）
+    class SimpleTranslator(BaseTranslator):
+        def _ask_ai(self, payload: dict) -> str:
+            return "ok"
+            
+    trans = SimpleTranslator("deepseek_api", engine.config.translation)
+    
+    # 1. 驼峰命名且带双引号格式: "retryDelay": "15s"
+    assert trans._parse_retry_after_from_error("{\"error\": {\"message\": \"Limit exceeded\", \"retryDelay\": \"15s\"}}") == 15.0
+    
+    # 2. 驼峰命名且带双引号数值格式: "retryDelay": "18.5"
+    assert trans._parse_retry_after_from_error("{\"retryDelay\": \"18.5\"}") == 18.5
+
+    # 3. 驼峰命名且无引号格式: retryDelay: 22
+    assert trans._parse_retry_after_from_error("some error text retryDelay: 22") == 22.0
+
+    # 4. 纯 retry in X 格式 (Sentinel 原生): "retry in 7"
+    assert trans._parse_retry_after_from_error("Resource exhausted, please retry in 7 seconds") == 7.0
+    assert trans._parse_retry_after_from_error("retry in 12") == 12.0
+
+    # 5. 驼峰/连字符 retry-after 各种引号组合: "retry-after": "25"
+    assert trans._parse_retry_after_from_error("{\"retry-after\": \"25\"}") == 25.0
+
+
+def test_half_open_micro_flow_single_probe():
+    """🧪 测试七：验证在 HALF_OPEN 状态下并发请求的惊群防御，确保同一时刻仅允许唯一的微流量探路请求"""
+    from core.governance.circuit_breaker import BreakerState, NodeCircuitBreaker
+    
+    # 物理实例化一个 NodeCircuitBreaker，设置极短的冷却时间 0.1s
+    breaker = NodeCircuitBreaker("test_node", failure_threshold=0.3, window_size=5, recovery_timeout=0.1)
+    
+    # 模拟多次失败让其进入 OPEN 状态
+    for _ in range(5):
+        breaker.record_failure()
+    assert breaker.state == BreakerState.OPEN
+    
+    # 等待冷却到期 0.15s
+    time.sleep(0.15)
+    
+    # 此时，我们进行并发的 allow_request() 探测
+    # 第一个 allow_request 应该成功（触发进入 HALF_OPEN，且 probe_in_progress 置为 True）
+    assert breaker.allow_request() is True
+    assert breaker.state == BreakerState.HALF_OPEN
+    assert breaker.probe_in_progress is True
+    
+    # 此时在第一个探测还没返回之前，并发的第二个 allow_request 应当直接被拦截（由于 probe_in_progress == True）
+    assert breaker.allow_request() is False
+    
+    # 当探测请求成功返回并执行 record_success 后，断言状态机恢复为 CLOSED，且 probe_in_progress 重置为 False
+    breaker.record_success()
+    assert breaker.state == BreakerState.CLOSED
+    assert breaker.probe_in_progress is False
+
+
+def test_half_open_failure_elastic_backoff():
+    """🧪 测试八：验证 HALF_OPEN 探测失败时，状态机立即切回 OPEN 并对冷却时间进行弹性乘数倍增"""
+    from core.governance.circuit_breaker import BreakerState, NodeCircuitBreaker
+    
+    # 物理实例化一个 NodeCircuitBreaker，初始冷却时间 0.1s
+    breaker = NodeCircuitBreaker("test_node", failure_threshold=0.3, window_size=5, recovery_timeout=0.1)
+    
+    # 模拟多次失败让其进入 OPEN 状态
+    for _ in range(5):
+        breaker.record_failure()
+    assert breaker.state == BreakerState.OPEN
+    assert breaker.current_recovery_timeout == 0.1
+    
+    # 等待冷却到期 0.12s
+    time.sleep(0.12)
+    
+    # 允许第一个探测请求
+    assert breaker.allow_request() is True
+    assert breaker.state == BreakerState.HALF_OPEN
+    assert breaker.probe_in_progress is True
+    
+    # 模拟探测请求失败
+    breaker.record_failure()
+    
+    # 🚀 断言一：探测失败后应当立即重新切回 OPEN，无需等待任何历史窗口累积
+    assert breaker.state == BreakerState.OPEN
+    assert breaker.probe_in_progress is False
+    
+    # 🚀 断言二：冷却时间弹性翻倍 (0.1 * 2 = 0.2s)
+    assert breaker.current_recovery_timeout == 0.2
+    
+    # 等待 0.15s，此时冷却时间还没到 0.2s，依然被拦截
+    time.sleep(0.15)
+    assert breaker.allow_request() is False
+    
+    # 等待剩余的冷却到期
+    time.sleep(0.08)
+    # 此时已经过了 0.23s，允许再次探测
+    assert breaker.allow_request() is True
+    assert breaker.state == BreakerState.HALF_OPEN
+    
+    # 模拟第二次探测成功
+    breaker.record_success()
+    
+    # 🚀 断言三：探测成功后重回 CLOSED，且 current_recovery_timeout 重置为初始值 0.1s
+    assert breaker.state == BreakerState.CLOSED
+    assert breaker.current_recovery_timeout == 0.1
+
+
+

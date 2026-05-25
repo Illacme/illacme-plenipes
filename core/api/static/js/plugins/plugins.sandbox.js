@@ -75,7 +75,7 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
 
 // 🚀 [V75.5] 100% 物理自愈：专门针对插件/通道抽屉配置设计的“强力同步保存并关闭”算子
 window.savePluginSettingsAndClose = async () => {
-    if (typeof addAudit === 'function') addAudit("💾 开始抓取当前面板临时参数并准备固化...");
+    if (typeof addAudit === 'function') addAudit("💾 开始同步当前面板参数并准备保存...");
 
     // 1. 强力抓取抽屉内所有 input 的当前最新状态，写入 window.settingsData
     const drawerBody = document.getElementById('p-drawer-body');
@@ -122,7 +122,7 @@ window.savePluginSettingsAndClose = async () => {
     });
 
     if (res && res.status === 'success') {
-        if (typeof addAudit === 'function') addAudit("✅ 插件配置已成功固化至物理磁盘。", 'success');
+        if (typeof addAudit === 'function') addAudit("✅ 插件能力配置已成功保存并生效。", 'success');
         if (res.active_config) {
             window.settingsData = { ...window.settingsData, ...res.active_config };
         }
@@ -131,7 +131,7 @@ window.savePluginSettingsAndClose = async () => {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: '💾 保存成功',
-                text: '插件能力配置已成功固化并写入物理磁盘 config.yaml / config.local.ya' + 'ml！',
+                text: '插件能力配置已成功保存，系统配置已即刻更新生效！',
                 icon: 'success',
                 confirmButtonText: '确定',
                 background: 'var(--card-bg)',

@@ -6,7 +6,7 @@ Illacme-plenipes Config - Theme Models
 🛡️ [V24.0] Pydantic 严格校验体系：实现主题资产物理对齐。
 """
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 class ImageSettings(BaseModel):
     enabled: bool = True
@@ -18,29 +18,16 @@ class ImageSettings(BaseModel):
     multilingual_alt: bool = True
     deduplication: bool = True
     base_url: str = "static/"
-    
-    process_assets: bool = True
-    remote_assets_probing: bool = True
-    local_storage_path: str = "public/assets"
     supported_extensions: List[str] = Field(default_factory=lambda: [
         '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'
     ])
 
-from core.config.constants import DIST_DIR
-
 class ThemeSettings(BaseModel):
     name: str = "default"
-    ssg: str = "hugo"
-    output_path: str = "public"
-    base_url: str = "/"
+    ssg: str = "sovereign"
     images: ImageSettings = Field(default_factory=ImageSettings)
     shortcode_mappings: Dict[str, str] = Field(default_factory=dict)
     component_mappings: Dict[str, str] = Field(default_factory=dict)
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
-    
-    path_mappings: Dict[str, str] = Field(default_factory=lambda: {
-        'source_dir': "src/content/docs",
-        'static_dir': DIST_DIR,
-        'assets_dir': "public/assets",
-        'graph_json_dir': "public"
-    })
+    path_mappings: Optional[Dict[str, str]] = None
+    options: Dict[str, Any] = Field(default_factory=dict)

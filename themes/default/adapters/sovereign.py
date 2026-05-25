@@ -20,11 +20,25 @@ class SovereignSSGAdapter(BaseSSGAdapter):
     """
     🚀 默认原生适配器：将 Markdown 直接渲染为具有高级感视觉系统的静态 HTML。
     """
-    PLUGIN_ID = 'default'
+    PLUGIN_ID = 'sovereign'
+    DISPLAY_NAME = 'Sovereign HTML'
+    DESCRIPTION = '主权原生渲染引擎：零外部技术栈依赖，直出具有极致霓虹玻璃拟态美学的高级静态 HTML 知识库。'
+    VERSION = 'V11.6'
+    
+    @classmethod
+    def get_default_path_mappings(cls) -> Dict[str, str]:
+        """🚀 [V76.0] 声明 Sovereign 适配器推荐的原生默认物理寻址映射"""
+        return {
+            'source_dir': "src/content/docs",
+            'static_dir': "dist",
+            'assets_dir': "public/assets",
+            'graph_json_dir': "public"
+        }
     
     def __init__(self, theme_settings: Any = None, engine=None):
         super().__init__(theme_settings, engine=engine)
-        self.template_path = "themes/default/templates/layout.html"
+        theme_name = getattr(theme_settings, 'name', 'default')
+        self.template_path = f"themes/{theme_name}/templates/layout.html"
     def get_feature_slots(self) -> dict:
         """🚀 [V56.0] Sovereign 标准布局声明"""
         return {
@@ -206,22 +220,59 @@ class SovereignSSGAdapter(BaseSSGAdapter):
             ui_i18n = {
                 "zh-Hans": {
                     "nav_home": "门户", "nav_docs": "文档", "nav_blog": "博客", "nav_showcase": "案例", "nav_about": "关于",
-                    "search_placeholder": "搜索主权资产...", "footer_motto": "物理主权数字花园", "footer_slogan": "物理主权，自洽生长。", "toc_title": "目录导航"
+                    "search_placeholder": "搜索主权资产...", "footer_motto": "物理主权数字花园", "footer_slogan": "物理主权，自洽生长〫", "toc_title": "目录导航"
                 },
                 "en": {
                     "nav_home": "Home", "nav_docs": "Docs", "nav_blog": "Blog", "nav_showcase": "Showcase", "nav_about": "About",
                     "search_placeholder": "Search Assets...", "footer_motto": "Physical Sovereignty Digital Garden", "footer_slogan": "Physical Sovereignty, Self-Consistent Growth.", "toc_title": "Table of Contents"
                 },
                 "ja": {
-                    "nav_home": "ホーム", "nav_docs": "ドキュメント", "nav_blog": "ブログ", "nav_showcase": "ショーケース", "nav_about": "アバウト",
-                    "search_placeholder": "資産を検索...", "footer_motto": "物理的主権デジタルガーデン", "footer_slogan": "物理的主権、自己完結型の成長。", "toc_title": "目次"
+                    "nav_home": "\u30db\u30fc\u30e0", "nav_docs": "\u30c9\u30ad\u30e5\u30e1\u30f3\u30c8", "nav_blog": "\u30d6\u30ed\u30b0", "nav_showcase": "\u30b7\u30e7\u30fc\u30b1\u30fc\u30b9", "nav_about": "\u30a2\u30d0\u30a6\u30c8",
+                    "search_placeholder": "\u8cc7\u7523\u3092\u691c\u7d22...", "footer_motto": "\u7269\u7406\u7684\u4e3b\u6a29\u30c7\u30b8\u30bf\u30eb\u30ac\u30fc\u30c7\u30f3", "footer_slogan": "\u7269\u7406\u7684\u4e3b\u6a29\u3001\u81ea\u5df1\u5b8c\u7d50\u578b\u306e\u6210\u9577\u3002", "toc_title": "\u76ee\u6b21"
                 }
             }
             t = ui_i18n.get(lang, ui_i18n["en"])
 
+            options = self.get_custom_options()
+            site_name_val = options.get('site_name', 'Illacme Sovereign')
+            accent_color_val = options.get('accent_color', '#00f5ff')
+            enable_glass = options.get('enable_glassmorphism', True)
+            github_repo_val = options.get('github_repo', '')
+
+            # 智能推导并渲染 CSS 霓虹发光与玻璃拟态降级
+            glow_color = f"{accent_color_val}40" if (accent_color_val.startswith("#") and len(accent_color_val) == 7) else "rgba(0, 245, 255, 0.25)"
+            custom_styles_html = f"""<style>
+        :root {{
+            --accent-color: {accent_color_val};
+            --accent-glow: {glow_color};
+        }}
+    """
+            if not enable_glass:
+                custom_styles_html += """
+        .glass-header {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background-color: var(--bg-color) !important;
+        }
+        .layout-showcase .card-pioneer, .search-dropdown {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        """
+            custom_styles_html += "\n    </style>"
+
+            # 智能渲染 GitHub 社交挂载
+            if github_repo_val:
+                github_html = f"""<a href="{github_repo_val}" class="control-btn theme-btn github-btn" target="_blank" title="GitHub">
+                        <span class="btn-icon">🐙</span>
+                        <span class="btn-label">GitHub</span>
+                    </a>"""
+            else:
+                github_html = ""
+
             replacements = {
                 "{{ title }}": fm.get('title', 'Untitled'),
-                "{{ site_name }}": "Illacme Sovereign",
+                "{{ site_name }}": site_name_val,
                 "{{ description }}": fm.get('description', ''),
                 "{{ keywords }}": ", ".join(fm.get('keywords', [])) if isinstance(fm.get('keywords'), list) else fm.get('keywords', ''),
                 "{{ content }}": content_html,
@@ -231,6 +282,9 @@ class SovereignSSGAdapter(BaseSSGAdapter):
                 "{{ lang_code | default('zh') }}": lang,
                 "{{ layout_class }}": f"layout-{layout_type}",
                 "{{ canonical_url }}": f"/{lang if not is_default else ''}/{prefix}/{fm.get('slug', '')}.html".replace('//', '/'),
+                # 🚀 新增视觉热配置与社交导航注入
+                "{{ custom_theme_styles }}": custom_styles_html,
+                "{{ github_link_container }}": github_html,
                 # 🚀 UI I18n 注入
                 "{{ t_nav_home }}": t["nav_home"],
                 "{{ t_nav_docs }}": t["nav_docs"],
@@ -241,7 +295,7 @@ class SovereignSSGAdapter(BaseSSGAdapter):
                 "{{ t_footer_motto }}": t["footer_motto"],
                 "{{ t_footer_slogan }}": t["footer_slogan"],
                 "{{ t_toc_title }}": t["toc_title"]
-            }
+}
 
             for key, val in replacements.items():
                 template = template.replace(key, str(val))

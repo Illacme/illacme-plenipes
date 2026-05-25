@@ -13,6 +13,7 @@ from core.utils.tracing import tlog
 class GoogleCompatibleTranslator(BaseTranslator):
     """🚀 Google Gemini 协议族基类 (Standard V3)"""
     PROTOCOL_FAMILY = 'google'
+    DEFAULT_URL = "https://generativelanguage.googleapis.com/v1beta"
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
@@ -24,7 +25,8 @@ class GoogleCompatibleTranslator(BaseTranslator):
         model = payload.get('model') or getattr(self.config, 'model', 'gemini-1.5-pro')
         
         # Google 习惯将 API Key 放在 URL 中
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        base_endpoint = self.safe_get_url(f"/models/{model}:generateContent")
+        url = f"{base_endpoint}?key={api_key}"
         
         # 组装 Google 风格的 Payload
         google_payload = {

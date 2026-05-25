@@ -7,7 +7,6 @@ Illacme-plenipes AI Plugin - SiliconFlow Adapter
 import requests
 import asyncio
 from .openai import OpenAICompatibleTranslator
-from core.utils.tracing import tlog
 
 class SiliconFlowTranslator(OpenAICompatibleTranslator):
     """🚀 SiliconFlow 专属适配器"""
@@ -20,14 +19,16 @@ class SiliconFlowTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 SiliconFlow 实时模型感应"""
-        try:
-            loop = asyncio.get_event_loop()
-            url = f"{self.DEFAULT_URL}/models"
-            headers = {"Authorization": f"Bearer {self.config.api_key}"}
-            resp = await loop.run_in_executor(None, lambda: requests.get(url, headers=headers, timeout=5))
-            if resp.status_code == 200:
-                return [m['id'] for m in resp.json().get('data', [])]
-            return ["deepseek-ai/DeepSeek-V3", "deepseek-ai/DeepSeek-R1"]
-        except Exception as e:
-            tlog.warning(f"⚠️ [SiliconFlow] 无法感应模型列表: {e}")
-            return ["deepseek-ai/DeepSeek-V3"]
+        api_key = self.config.api_key
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+            
+        loop = asyncio.get_event_loop()
+        url = self.safe_get_url("/models")
+        headers = {"Authorization": f"Bearer {api_key}"}
+        resp = await loop.run_in_executor(None, lambda: requests.get(url, headers=headers, timeout=5))
+        if resp.status_code == 200:
+            return [m['id'] for m in resp.json().get('data', [])]
+            
+        resp.raise_for_status()
+        return ["deepseek-ai/DeepSeek-V3", "deepseek-ai/DeepSeek-R1"]

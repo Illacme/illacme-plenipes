@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sovereign Theme Schema",
+  "description": "Schema defining customizable settings for Sovereign theme.",
+  "type": "object",
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "default": "Illacme Sovereign",
+      "title": "Site Name",
+      "description": "The site name displayed in the navigation and footer.",
+      "group": "基础设置",
+      "order": 1
+    },
+    "logo_path": {
+      "type": "string",
+      "default": "/static/logo.png",
+      "title": "Site Logo Path",
+      "description": "Custom site logo image path.",
+      "group": "基础设置",
+      "order": 2
+    },
+    "footer_copyright": {
+      "type": "string",
+      "default": "© 2026 Illacme Sovereign. All Rights Reserved.",
+      "title": "Footer Copyright Info",
+      "description": "Copyright text shown on footer.",
+      "group": "基础设置",
+      "order": 3
+    },
+    "enable_custom_style": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Custom CSS Styles",
+      "description": "Whether to override default theme CSS color and font style (warning: may break original design layout).",
+      "group": "基础设置",
+      "order": 4
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#00f5ff",
+      "title": "Accent Glow Color",
+      "description": "Neon glow styling color used for core aesthetic themes.",
+      "group": "视觉样式",
+      "order": 1
+    },
+    "font_family": {
+      "type": "string",
+      "default": "Outfit, sans-serif",
+      "title": "Typography Font Family",
+      "description": "The default font-family used across pages.",
+      "group": "视觉样式",
+      "order": 2
+    },
+    "enable_glassmorphism": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enable Glassmorphism",
+      "description": "Turn on/off backdrop blur filter styling effects for headers and UI cards.",
+      "group": "视觉样式",
+      "order": 3
+    },
+    "enable_dark_mode": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enable Dark Mode",
+      "description": "Force dark neon aesthetic theme.",
+      "group": "视觉样式",
+      "order": 4
+    },
+    "hero_title": {
+      "type": "string",
+      "default": "Illacme Sovereign",
+      "title": "Hero Main Title",
+      "description": "Large text heading on front hero page.",
+      "group": "首页 Hero",
+      "order": 1
+    },
+    "hero_subtitle": {
+      "type": "string",
+      "default": "Premium Decentralized Publishing Base Platform.",
+      "title": "Hero Subtitle Info",
+      "description": "Sub-heading explanatory text on front page.",
+      "group": "首页 Hero",
+      "order": 2
+    },
+    "github_repo": {
+      "type": "string",
+      "default": "",
+      "title": "GitHub Repository URL",
+      "description": "Provide a link to display a GitHub logo/link on navigation headers.",
+      "group": "外部链接",
+      "order": 1
+    }
+  }
+}

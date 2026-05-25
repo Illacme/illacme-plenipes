@@ -1,6 +1,6 @@
 /**
  * 🎨 Illacme Themes - API Logic Shard
- * 职责：封装装帧主题的固化切换与物理自愈 (Bootstrap) 请求逻辑。
+ * 职责：封装装帧主题的固化切换与部署启用 (Bootstrap) 请求逻辑。
  */
 
 window.ThemeAPI = {
@@ -28,7 +28,7 @@ window.ThemeAPI = {
     },
 
     /**
-     * 🚀 物理自愈：执行主题引导固化
+     * 🚀 部署启用：执行主题引导部署
      */
     async bootstrapTheme(themeId) {
         try {

@@ -18,7 +18,10 @@ class ZhipuTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 智谱 GLM 常用模型感应"""
-        return ["glm-4-plus", "glm-4-0520", "glm-4-air", "glm-4-flash", "glm-4-9b"]
+        api_key = self.safe_get_config('api_key')
+        if not api_key:
+            raise ValueError("未填写 API Key 物理密钥")
+        return await super().list_models()
 
     def get_archetype_params(self) -> Dict[str, Any]:
         return {

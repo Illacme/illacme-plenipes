@@ -66,6 +66,49 @@
     --fs-base: 0.95rem;
     --fs-small: 0.8rem;
     --fs-mono: 0.85rem;
+
+    /* 🛡️ 主权 UI 设计系统全局共享色彩变量（审计合规性重构） */
+    --bg-modal-solid-rgb: 13, 14, 28;
+    --bg-dropdown-solid-rgb: 10, 15, 25;
+    --bg-asset-solid-rgb: 15, 20, 30;
+    --bg-sidebar-solid-rgb: 15, 23, 42;
+    --bg-mode-solid-rgb: 10, 10, 20;
+    --bg-compute-card-rgb: 20, 20, 35;
+    --bg-compute-grid-rgb: 30, 30, 45;
+    --text-slate-bright: #f8fafc;
+    --text-light-gray: #cccccc;
+
+    /* 🆕 Stage 2.6 标准化核心 RGB 变量收拢 */
+    --accent-primary-rgb: 163, 76, 255;
+    --accent-secondary-rgb: 0, 242, 255;
+    --neon-green-rgb: 0, 255, 136;
+    --neon-cyan-rgb: 0, 242, 255;
+    --neon-red-rgb: 255, 77, 79;
+    --neon-amber-rgb: 255, 170, 0;
+    --role-primary-end-rgb: 255, 42, 95;
+    --role-fallback-end-rgb: 0, 119, 255;
+
+    /* 🆕 Stage 2.6 标准化半透明色彩 Token 字典 */
+    --white-01: rgba(255, 255, 255, 0.01);
+    --white-02: rgba(255, 255, 255, 0.02);
+    --white-03: rgba(255, 255, 255, 0.03);
+    --white-05: rgba(255, 255, 255, 0.05);
+    --white-08: rgba(255, 255, 255, 0.08);
+    --white-10: rgba(255, 255, 255, 0.10);
+    --white-15: rgba(255, 255, 255, 0.15);
+    --white-20: rgba(255, 255, 255, 0.20);
+    --white-30: rgba(255, 255, 255, 0.30);
+    --white-40: rgba(255, 255, 255, 0.40);
+    --black-05: rgba(0, 0, 0, 0.05);
+    --black-10: rgba(0, 0, 0, 0.10);
+    --black-20: rgba(0, 0, 0, 0.20);
+    --black-30: rgba(0, 0, 0, 0.30);
+    --black-40: rgba(0, 0, 0, 0.40);
+    --black-50: rgba(0, 0, 0, 0.50);
+    --black-60: rgba(0, 0, 0, 0.60);
+    --black-80: rgba(0, 0, 0, 0.80);
+    --black-90: rgba(0, 0, 0, 0.90);
+    --black-95: rgba(0, 0, 0, 0.95);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

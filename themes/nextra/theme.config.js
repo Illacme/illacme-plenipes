@@ -1,12 +1,15 @@
+import themeOptions from './theme.options.js';
+
 export default {
-  github: "https://github.com/dephraiim/create-nextra-app",
+  github: themeOptions.github_repo || "https://github.com/dephraiim/create-nextra-app",
   docsRepositoryBase: "https://github.com/dephraiim/create-nextra-app/blob/master",
   titleSuffix: " – Nextra",
   logo: (
     <>
-      <span className="mr-2 font-extrabold hidden md:inline">Nextra</span>
+      {themeOptions.logo_path && <img src={themeOptions.logo_path} style={{height: '24px', marginRight: '8px', display: 'inline-block', verticalAlign: 'middle'}} alt="Logo" />}
+      <span className="mr-2 font-extrabold hidden md:inline">{themeOptions.site_name}</span>
       <span className="text-gray-600 font-normal hidden md:inline">
-        The Next.js Static Site Generator
+        {themeOptions.hero_subtitle}
       </span>
     </>
   ),
@@ -38,6 +41,6 @@ export default {
   nextLinks: true,
   footer: true,
   footerEditLink: "Edit this page on GitHub",
-  footerText: <>MIT {new Date().getFullYear()} © Create Nextra App.</>,
-  unstable_faviconGlyph: "👋",
+  footerText: <>{themeOptions.footer_copyright}</>,
+  unstable_faviconGlyph: themeOptions.unstable_favicon_glyph || "👑",
 };

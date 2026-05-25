@@ -26,7 +26,6 @@ class BaseSSGAdapter(abc.ABC):
         self.theme_settings = theme_settings
         self.engine = engine
         self.default_lang = "zh"
-
         # 🚀 [V11.2] 双相出口扩展名定义
         self.output_extensions = {
             "source": None,  # 🚀 [V12.0] None 表示跟随原文件后缀
@@ -36,12 +35,38 @@ class BaseSSGAdapter(abc.ABC):
         self.force_default_lang_prefix = False
         # 🚀 [V15.6] 元数据主权：定义哪些输出后缀支持 Frontmatter
         self.frontmatter_extensions = [".md", ".mdx", ".markdown"]
+        # 🚀 [V80.0] 自动物理探测并加载主题自描述 JSON Schema 协议
+        import os
+        import json
+        self.theme_schema = {}
+        if self.theme_settings:
+            theme_name = getattr(self.theme_settings, 'name', 'default')
+            schema_path = os.path.join("themes", theme_name, "theme.schema.json")
+            if os.path.exists(schema_path):
+                try:
+                    with open(schema_path, 'r', encoding='utf-8') as f:
+                        self.theme_schema = json.load(f)
+                except Exception:
+                    pass
+
+    def get_custom_options(self) -> Dict[str, Any]:
+        """
+        🚀 [V80.0] 获取并合并强校验的主题自定义选项映射。
+        自动将用户填写的 theme_settings.options 与主题 schema 默认值进行深层合并，实现自愈降级。
+        """
+        options = {}
+        properties = self.theme_schema.get("properties", {})
+        for key, prop in properties.items():
+            if "default" in prop:
+                options[key] = prop["default"]
+        if self.theme_settings and hasattr(self.theme_settings, 'options') and self.theme_settings.options:
+            for key, val in self.theme_settings.options.items():
+                options[key] = val
+        return options
 
     @abc.abstractmethod
     def render(self, body: str, fm: Dict[str, Any], seo_data: Dict[str, Any] = None, target_lang: str = "en", sub_path: str = "") -> Tuple[str, Dict[str, Any]]:
-        """
-        [Contract] 执行特定 SSG 的语法转换与元数据增强。
-        """
+        """[Contract] 执行特定 SSG 的语法转换与元数据增强。"""
         pass
 
     def supports_frontmatter(self, ext: str) -> bool:
@@ -50,47 +75,19 @@ class BaseSSGAdapter(abc.ABC):
         return ext.lower() in self.frontmatter_extensions
 
     def get_output_schema(self) -> List[str]:
-        """
-        🚀 [V11.2] 获取该适配器支持的输出出口列表。
-        默认为 ['source']，如果支持静态渲染则返回 ['source', 'static']。
-        """
+        """🚀 [V11.2] 获取该适配器支持的输出出口列表。"""
         schema = ["source"]
         if hasattr(self, 'active_renderer') and self.active_renderer:
             schema.append("static")
         return schema
 
     def get_feature_slots(self) -> Dict[str, Dict[str, str]]:
-        """
-        🚀 [V56.0] 意图感知协议：声明该适配器支持的功能槽及其物理路径映射。
-        返回格式: {
-            "slot_id": {
-                "label": "人类可读名称",
-                "single": "单语言相对路径",
-                "multi": "多语言相对路径(含{lang}占位符)"
-            }
-        }
-        """
+        """🚀 [V56.0] 意图感知协议：声明该适配器支持的功能槽及其物理路径映射。"""
         return {
-            "docs": {
-                "label": "文档中心",
-                "single": "docs",
-                "multi": "i18n/{lang}/docs"
-            },
-            "blog": {
-                "label": "博客文章",
-                "single": "blog",
-                "multi": "i18n/{lang}/blog"
-            },
-            "pages": {
-                "label": "独立页面",
-                "single": "pages",
-                "multi": "i18n/{lang}/pages"
-            },
-            "static": {
-                "label": "静态资产",
-                "single": "static",
-                "multi": "static"
-            }
+            "docs": {"label": "文档中心", "single": "docs", "multi": "i18n/{lang}/docs"},
+            "blog": {"label": "博客文章", "single": "blog", "multi": "i18n/{lang}/blog"},
+            "pages": {"label": "独立页面", "single": "pages", "multi": "i18n/{lang}/pages"},
+            "static": {"label": "静态资产", "single": "static", "multi": "static"}
         }
 
     def adapt_metadata(self, fm: dict, date_obj, author_name) -> dict:
@@ -104,12 +101,9 @@ class BaseSSGAdapter(abc.ABC):
         return fm
 
     def get_language_code(self, logic_code: str) -> str:
-        """
-        [Sovereignty] 物理路径语种对齐。
-        """
+        """[Sovereignty] 物理路径语种对齐。"""
         from core.utils.language_hub import LanguageHub
         iso_code = LanguageHub.resolve_to_iso(logic_code)
-        # 🛡️ 如果不强制前缀且为默认语言，返回空字符串以匹配根路径
         if not self.force_default_lang_prefix and iso_code == LanguageHub.resolve_to_iso(self.default_lang):
             return ""
         return LanguageHub.get_physical_path(iso_code, "generic")
@@ -197,3 +191,80 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 """
+
+    def compile_theme_options(self) -> bool:
+        """
+        🎯 [SSG 热对齐] 将用户最新的自定义主题选项编译并输出为物理层样式，
+        使 SSG 引擎或前台预览能免刷新、瞬时热感知。
+        """
+        options = self.get_custom_options()
+        theme_name = getattr(self.theme_settings, 'name', 'default')
+        
+        import os
+        assets_dir = os.path.join("themes", theme_name, "static", "assets")
+        if not os.path.exists(assets_dir):
+            os.makedirs(assets_dir, exist_ok=True)
+            
+        style_path = os.path.join(assets_dir, "theme.options.css")
+        
+        # 🚀 [V88.8] 原厂样式防卫拦截网：在未显式勾选自定义开关时，完全不编译输出任何 CSS 视觉变量，以 100% 保持主题出厂的最佳质感与稳健度！
+        if not options.get('enable_custom_style', False):
+            try:
+                if os.path.exists(style_path):
+                    os.remove(style_path)
+            except Exception:
+                pass
+                
+            # 虽清除/不输出高危 CSS 视觉变量，但保留导出基础 JS/JSON 桥接文件，确保 site_name, logo 等非破坏性工程参数安全生效
+            json_path = os.path.join("themes", theme_name, "theme.options.json")
+            js_path = os.path.join("themes", theme_name, "theme.options.js")
+            try:
+                import json
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(options, f, indent=2, ensure_ascii=False)
+                js_content = "// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n"
+                js_content += f"export const themeOptions = {json.dumps(options, indent=2, ensure_ascii=False)};\n"
+                js_content += "export default themeOptions;\n"
+                with open(js_path, 'w', encoding='utf-8') as f:
+                    f.write(js_content)
+            except Exception:
+                pass
+            return True
+            
+        css_vars = []
+        for k, v in options.items():
+            if isinstance(v, (str, int, float)) and not str(v).startswith("http"):
+                css_key = k.replace("_", "-")
+                css_vars.append(f"  --{css_key}: {v};")
+                
+        css_content = "/* 🚀 [V74.96 Live Hot-Reload] 自动生成的主题运行时变量对齐，请勿手动编辑 */\n"
+        css_content += ":root {\n" + "\n".join(css_vars) + "\n}\n"
+        
+        try:
+            with open(style_path, 'w', encoding='utf-8') as f:
+                f.write(css_content)
+        except Exception:
+            pass
+            
+        # 🚀 [V88.0] 物理 JSON 桥接：将自愈合并后的自定义选项导出至主题根目录，供异构 SSG 编译热加载
+        json_path = os.path.join("themes", theme_name, "theme.options.json")
+        try:
+            import json
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(options, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+            
+        # 🚀 [V88.0] 纯前端 JS 桥接：生成无 Node.js 模块依赖的纯前端 JS 常量文件，彻底绕过 Webpack/Vite 客户端打包时的 fs 模块丢失限制
+        js_path = os.path.join("themes", theme_name, "theme.options.js")
+        try:
+            import json
+            js_content = "// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n"
+            js_content += f"export const themeOptions = {json.dumps(options, indent=2, ensure_ascii=False)};\n"
+            js_content += "export default themeOptions;\n"
+            with open(js_path, 'w', encoding='utf-8') as f:
+                f.write(js_content)
+        except Exception:
+            pass
+            
+        return True

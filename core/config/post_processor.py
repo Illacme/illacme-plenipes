@@ -24,7 +24,7 @@ def post_process(manager) -> None:
     
     # 🚀 [V76.0] SSG 原生路径智能对准：动态委托给注册表中的具体 SSG 适配器类，彻底解决耦合问题
     ssg_type = (theme_opts.ssg or "").lower()
-    if theme_opts.path_mappings == ThemeSettings().path_mappings:
+    if not theme_opts.path_mappings:
         from core.adapters.egress.ssg.registry import SSGRegistry
         from core.adapters.egress.ssg.base import BaseSSGAdapter
         import os

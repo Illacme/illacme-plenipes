@@ -35,6 +35,23 @@ async def bootstrap_theme(req: Dict[str, Any]) -> Dict[str, Any]:
     if os.path.exists(target_path):
         return {"status": "error", "message": "Assets exist"}
         
+    # 📡 [V74.96] 离线预检自愈：若本地 static/vendor/theme-cache 下有高保真离线 Tar 压缩包，自动免网点火！
+    cache_tar: str = os.path.join(os.getcwd(), "core", "api", "static", "vendor", "theme-cache", f"{theme_id}.tar.gz")
+    if os.path.exists(cache_tar):
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"  [📡 离线自愈] 发现本地离线包缓存: {os.path.basename(cache_tar)}，跳过网络，直接本地解压自愈点火...")
+        try:
+            import tarfile
+            os.makedirs(target_path, exist_ok=True)
+            with tarfile.open(cache_tar, "r:gz") as tar:
+                tar.extractall(path=target_path)
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"  [📡 离线自愈] 主题 {theme_id.upper()} 通过本地离线包已完美部署成功！")
+            return {"status": "success", "message": "Theme initialized from local offline cache"}
+        except Exception as e:
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"  [🚨 离线自愈失败] 本地压缩包损坏: {e}")
+            if os.path.exists(target_path):
+                import shutil
+                shutil.rmtree(target_path)
+        
     bootstrap_cmds: Dict[str, str] = {
         "starlight": f"npx -y create-astro@latest {theme_id} --template starlight --no-install --no-git --yes",
         "docusaurus": f"npx -y create-docusaurus@latest {theme_id} classic --skip-install",

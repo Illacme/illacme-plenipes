@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import remarkBreaks from 'remark-breaks'; // 引入换行插件
 import { visit } from 'unist-util-visit'; // 引入遍历工具
+import themeOptions from './theme.options.js';
 
 // =========================================================================
 // 👇 【用户一站式配置区】网站核心参数 (更改部署环境只需改这里)
@@ -87,23 +88,23 @@ export default defineConfig({
 			// title: 'Illacme plenipes',
 			// 🚀 将原先的单语言字符串，升维成多语言映射字典
 			title: {
-				'zh-CN': 'Illacme Plenipes',       // 中文站的标题（对齐你配置的 root 基座）
-				en: 'Illacme Plenipes',     // 英文站的标题
+				'zh-CN': themeOptions.site_name || 'Illacme Plenipes',       // 中文站的标题（对齐你配置的 root 基座）
+				en: themeOptions.site_name || 'Illacme Plenipes',     // 英文站的标题
 			},
 
 			// 1. 配置顶部左侧 Logo
 			logo: {
-				src: './src/assets/logo.svg', // 替换为你的实际 logo 路径
+				src: themeOptions.logo_path || './src/assets/logo.svg', // 替换为你的实际 logo 路径
 				// 如果你需要针对深浅色模式使用不同的 logo：
-				light: './src/assets/logo-light.svg',
-				dark: './src/assets/logo-dark.svg',
+				light: themeOptions.logo_path || './src/assets/logo-light.svg',
+				dark: themeOptions.logo_path || './src/assets/logo-dark.svg',
 				replacesTitle: false, // 设为 true 则隐藏文字标题，只显示 Logo
 			},
 
 
 			// 2. 配置顶部右侧的社交媒体账户详情
 			social: {
-				github: 'https://github.com/illacme/illacme-plenipes'
+				github: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes'
 			},
 
 			// 3. 多语言配置（这会自动在顶部右侧生成原生语言切换下拉框）

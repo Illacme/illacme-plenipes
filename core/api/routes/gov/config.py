@@ -19,13 +19,7 @@ router = APIRouter()
 
 @router.get("/api/system/config", dependencies=[Depends(verify_token)])
 def get_full_config(level: str = "merged", imprint_id: Optional[str] = None) -> dict:
-    """
-    获取全局、局部或刻印级别合并后的全量配置及治理规则映射。
-    
-    :param level: 获取配置的级别，可选 "merged", "local", "imprint"。
-    :param imprint_id: 可选的目标刻印 ID。
-    :return: 配置字典。
-    """
+    """获取全局、局部或刻印合并配置及规则映射。"""
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
@@ -62,21 +56,25 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None) -> 
 
 @router.post("/api/config/update", dependencies=[Depends(verify_token)])
 async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
-    """
-    更新内存及磁盘配置，包含底座只读防御、类型自愈、License 校验以及在线热重构。
-    
-    :param req: 包含键值对更新属性的字典。
-    :param imprint_id: 可选的目标刻印 ID。
-    :return: 更新后的结果与配置镜像。
-    """
+    """更新内存及磁盘配置，包含底座只读防御、类型自愈、License 校验以及在线热重构。"""
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
     tlog.info(f"📥 [配置更新请求] Payload: {req}, Imprint: {imprint_id}")
-    
+    # 🚀 [V74.95] 模式与策略自愈联动：每种出版模式强制配置一种默认的 SEO 增强策略
+    if "governance.publishing_mode" in req:
+        from core.config.models.governance import PublishingMode, get_default_strategy, validate_mode_strategy, SeoStrategy
+        try:
+            m_val = req["governance.publishing_mode"]
+            m_enum = PublishingMode(m_val) if isinstance(m_val, str) else m_val
+            s_val = req.get("governance.seo_strategy")
+            s_enum = SeoStrategy(s_val) if s_val else None
+            if not s_enum or not validate_mode_strategy(m_enum, s_enum):
+                req["governance.seo_strategy"] = get_default_strategy(m_enum).value
+        except Exception as e:
+            tlog.warning(f"⚠️ [模式策略联动自愈失败]: {e}")
     from core.config.governance_map import resolve_governance_level
     routing_groups = {"local": {}, "imprint": {}, "global": {}}
-    
     for key, value in req.items():
         if key == "_level": continue
         level = resolve_governance_level(key)
@@ -147,6 +145,16 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
                     except Exception as e:
                         tlog.error(f"❌ [内存同步失败] {key}: {e}")
                         return {"status": "error", "error": f"内存同步失败: {key} - {e}"}
+
+    # 🚀 [V89.1] 强力规整 theme_options：将 Dict 中的 raw dict 自动强转为 ThemeSettings 实例，彻底消除 Pydantic V2 序列化 UnexpectedValue 警告！
+    if hasattr(engine.config, 'theme_options') and isinstance(engine.config.theme_options, dict):
+        from core.config.models.theme import ThemeSettings
+        for t_key, t_val in list(engine.config.theme_options.items()):
+            if isinstance(t_val, dict):
+                try:
+                    engine.config.theme_options[t_key] = ThemeSettings(**t_val)
+                except Exception as theme_cast_err:
+                    tlog.warning(f"⚠️ [ThemeSettings自愈失败] 键 '{t_key}': {theme_cast_err}")
 
     def make_yaml_safe(data):
         from enum import Enum

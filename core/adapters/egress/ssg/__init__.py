@@ -34,7 +34,8 @@ class SSGAdapter:
         self._load_theme_adapters(theme_name)
 
         # 从注册表获取具体实现
-        renderer_cls = SSGRegistry.get_renderer(theme_name)
+        ssg_type = getattr(theme_settings, 'ssg', 'generic').lower()
+        renderer_cls = SSGRegistry.get_renderer(ssg_type)
         if renderer_cls:
             self.active_renderer = renderer_cls(theme_settings, engine=self.engine)
         else:
@@ -160,3 +161,9 @@ class SSGAdapter:
             res = res.replace(f'{{{key}}}', val)
 
         return res
+
+    def compile_theme_options(self) -> bool:
+        """🚀 [V74.96] 门面透传：委托底层渲染器执行主题自描述配置编译"""
+        if hasattr(self, 'active_renderer') and hasattr(self.active_renderer, 'compile_theme_options'):
+            return self.active_renderer.compile_theme_options()
+        return False

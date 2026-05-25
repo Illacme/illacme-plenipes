@@ -7,6 +7,11 @@ window.renderModesCategory = () => {
     const currentMode = window.settingsData.governance?.publishing_mode || 'basic';
     const currentStrategy = window.settingsData.governance?.seo_strategy || 'heuristic';
 
+    // 🚀 [V74.96] 预热初始化记忆：若配置已加载有效策略，同步记录进本地 localStorage 缓存
+    if (window.settingsData.governance?.seo_strategy) {
+        localStorage.setItem(`illacme_plenipes_last_strategy_for_${currentMode}`, currentStrategy);
+    }
+
     const modeDefinitions = [
         { id: 'global', icon: '🌍', title: '全球矩阵', subtitle: 'Global Matrix', desc: '全量 AI：多语种翻译 + 跨语种 SEO 投喂。', strategies: [{ id: 'ai_sync', name: 'AI 翻译同步', desc: 'SEO 元信息 1:1 精准翻译' }, { id: 'ai_localized', name: 'AI 本地化策略', desc: '按语种搜索习性差异化' }] },
         { id: 'enhanced', icon: '🛰️', title: '智能增强', subtitle: 'Enhanced Publishing', desc: 'AI 参与 SEO 优化但不翻译，专注母语流量增长。', strategies: [{ id: 'ai_alignment', name: 'AI 算法对齐', desc: '优化标题点击率' }, { id: 'ai_authority', name: 'AI 实体增强', desc: '提取知识实体' }] },
@@ -62,12 +67,31 @@ window.switchPublishingMode = async (mode) => {
         if (typeof addAudit === 'function') addAudit(`🛑 无法切换至 ${mode.toUpperCase()} 模式：未配置 AI 算力`, "error");
         return;
     }
+    const defaultStrategies = {
+        'global': 'ai_sync',
+        'enhanced': 'ai_alignment',
+        'basic': 'heuristic'
+    };
+    
+    // 🚀 [V74.96] 记忆机制：优先从 localStorage 提取用户上一次在该模式选定的策略，若无则使用兜底默认
+    const lastStrategyKey = `illacme_plenipes_last_strategy_for_${mode}`;
+    const defaultStrategy = localStorage.getItem(lastStrategyKey) || defaultStrategies[mode] || 'heuristic';
+    
     if (typeof addAudit === 'function') addAudit(`📋 正在切换出版模式至: ${mode.toUpperCase()}...`);
-    const res = await apiFetch('/api/config/update', { method: 'POST', body: JSON.stringify({ 'governance.publishing_mode': mode }) });
+    const res = await apiFetch('/api/config/update', { 
+        method: 'POST', 
+        body: JSON.stringify({ 
+            'governance.publishing_mode': mode,
+            'governance.seo_strategy': defaultStrategy
+        }) 
+    });
     if (res && res.status === 'success') {
-        window.settingsData.governance.publishing_mode = mode;
+        // 智能在本地缓存中再次固化这次的选择
+        localStorage.setItem(lastStrategyKey, defaultStrategy);
+        
+        window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
-        if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${mode.toUpperCase()}]`, "success");
+        if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${mode.toUpperCase()}]，启用 [${defaultStrategy}] 策略`, "success");
     }
 };
 
@@ -78,7 +102,11 @@ window.switchSeoStrategy = async (mode, strategy) => {
         body: JSON.stringify({ 'governance.publishing_mode': mode, 'governance.seo_strategy': strategy }) 
     });
     if (res && res.status === 'success') {
-        window.settingsData.governance.seo_strategy = strategy;
+        // 🚀 [V74.96] 记忆机制：手动切换策略成功后，立刻持久化记录至本地 localStorage 缓存
+        const lastStrategyKey = `illacme_plenipes_last_strategy_for_${mode}`;
+        localStorage.setItem(lastStrategyKey, strategy);
+
+        window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
         if (typeof addAudit === 'function') addAudit(`✅ SEO 策略已切换至 [${strategy}]`, "success");
     }

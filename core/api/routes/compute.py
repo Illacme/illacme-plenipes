@@ -205,7 +205,23 @@ async def get_node_models(node_id: str, provider: str = None, api_key: str = Non
         return {"models": models}
     except Exception as e:
         tlog.warning(f"⚠️ [模型发现失败] 节点 '{node_id}' ({target_provider}): {e}")
-        return {"models": [], "error": str(e)}
+        error_msg = str(e)
+        try:
+            if "translator" in locals() and translator:
+                error_msg = translator.diagnose_error(e)
+            else:
+                from core.adapters.ai.base import BaseTranslator
+                from types import SimpleNamespace
+                class TempTranslator(BaseTranslator):
+                    def _ask_ai(self, payload): return ""
+                temp_node = SimpleNamespace(api_key=target_key)
+                temp_cfg = SimpleNamespace(compute_nodes={node_id: temp_node})
+                temp_trans = TempTranslator(node_id, temp_cfg)
+                error_msg = temp_trans.diagnose_error(e)
+        except Exception as diag_err:
+            tlog.error(f"🛑 [诊断器自身异常] {diag_err}")
+            error_msg = f"连接异常: {str(e)[:80]}..." if len(str(e)) > 80 else f"连接异常: {str(e)}"
+        return {"models": [], "error": error_msg}
 
 @router.post("/primary/switch", dependencies=[Depends(verify_token)])
 async def switch_primary_node(req: dict):

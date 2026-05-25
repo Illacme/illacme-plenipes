@@ -17,6 +17,7 @@ class BedrockTranslator(AnthropicCompatibleTranslator):
     VERSION = "V1.0"
     DESCRIPTION = "提供 AWS Bedrock 云原生大模型服务支持，适配 AWS 基础设施环境下的 Anthropic Claude 系列算力节点。"
     PROTOCOL_FAMILY = 'anthropic'
+    DEFAULT_URL = "https://bedrock-runtime.us-east-1.amazonaws.com"
     
     def __init__(self, node_name, trans_cfg):
         # 绕过 AnthropicCompatibleTranslator 的 __init__，因为 Bedrock 不使用 requests Session
@@ -55,4 +56,7 @@ class BedrockTranslator(AnthropicCompatibleTranslator):
             raise
 
     async def list_models(self) -> list[str]:
+        api_key = self.safe_get_config('api_key')
+        if not api_key:
+            raise ValueError("未填写 AWS 凭证 (格式为 AWS_ACCESS_KEY_ID:AWS_SECRET_ACCESS_KEY)")
         return ["anthropic.claude-3-5-sonnet-20241022-v2:0", "anthropic.claude-3-opus-20240229-v1:0"]

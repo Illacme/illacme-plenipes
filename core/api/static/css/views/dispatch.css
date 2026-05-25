@@ -1,0 +1,298 @@
+/* 📡 [V68.0] Dispatch Hub Premium Styles - Views Sharding */
+
+.dispatch-hub-panel {
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.8) !important;
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    border-left: 1px solid var(--white-10);
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+}
+
+.dispatch-hub-panel .drawer-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding-bottom: 30px !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--white-10) transparent;
+}
+
+/* 🎨 工业级滚动条自愈样式 */
+.dispatch-hub-panel .drawer-body::-webkit-scrollbar {
+    width: 4px;
+}
+.dispatch-hub-panel .drawer-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
+    background: var(--white-05);
+    border-radius: 10px;
+}
+.dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+.dispatch-hub-panel .hub-section {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dispatch-hub-panel .matrix-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dispatch-hub-panel .matrix-item {
+    background: var(--white-02) !important;
+    border: 1px solid var(--white-05) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dispatch-hub-panel .matrix-item:hover {
+    background: var(--white-05) !important;
+    border-color: rgba(var(--accent-primary-rgb), 0.25) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dispatch-hub-panel .matrix-item .m-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.dispatch-hub-panel .m-locale {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: var(--text-bright);
+}
+
+.dispatch-hub-panel .m-status-text {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+/* 状态色值与发光 */
+.dispatch-hub-panel .status-published .m-status-text { background: rgba(var(--neon-green-rgb), 0.15) !important; color: var(--neon-green) !important; }
+.dispatch-hub-panel .status-published { border-left: 3px solid var(--neon-green) !important; }
+
+.dispatch-hub-panel .status-syncing .m-status-text { background: rgba(var(--neon-cyan-rgb), 0.15) !important; color: var(--neon-cyan) !important; }
+.dispatch-hub-panel .status-syncing { border-left: 3px solid var(--neon-cyan) !important; }
+
+.dispatch-hub-panel .status-failed .m-status-text { background: rgba(var(--neon-red-rgb), 0.15) !important; color: var(--neon-red) !important; }
+.dispatch-hub-panel .status-failed { border-left: 3px solid var(--neon-red) !important; }
+
+.dispatch-hub-panel .status-pending .m-status-text { background: rgba(var(--neon-amber-rgb), 0.15) !important; color: var(--neon-amber) !important; }
+.dispatch-hub-panel .status-pending { border-left: 3px solid var(--neon-amber) !important; }
+
+.dispatch-hub-panel .preview-link {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 0.7rem !important;
+    color: var(--neon-cyan) !important;
+    text-decoration: none !important;
+    background: var(--neon-cyan-10) !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--neon-cyan-25) !important;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+.dispatch-hub-panel .preview-link:hover {
+    background: var(--neon-cyan-25) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 8px var(--neon-cyan-40) !important;
+}
+
+.dispatch-hub-panel .telemetry-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+}
+
+.dispatch-hub-panel .t-pod {
+    background: var(--white-01) !important;
+    border: 1px solid var(--white-05) !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    box-shadow: inset 0 0 10px var(--white-01) !important;
+}
+
+.dispatch-hub-panel .t-pod .t-label {
+    font-size: 0.65rem !important;
+    letter-spacing: 0.5px !important;
+    color: var(--white-40) !important;
+    font-weight: 600 !important;
+}
+
+.dispatch-hub-panel .t-pod .t-value {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: var(--text-bright) !important;
+    font-family: var(--font-mono) !important;
+}
+
+.dispatch-hub-panel .audit-badge {
+    text-align: center;
+    font-size: 0.75rem !important;
+    padding: 10px !important;
+    background: var(--white-03) !important;
+    border: 1px solid var(--white-08) !important;
+    border-radius: 10px !important;
+    font-family: var(--font-mono);
+    color: var(--text-dim) !important;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.dispatch-hub-panel .audit-badge.pass {
+    color: var(--neon-green) !important;
+    background: rgba(var(--neon-green-rgb), 0.04) !important;
+    border: 1px solid rgba(var(--neon-green-rgb), 0.18) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-green-rgb), 0.08), inset 0 0 10px rgba(var(--neon-green-rgb), 0.04) !important;
+}
+
+.dispatch-hub-panel .audit-badge.fail {
+    color: var(--neon-red) !important;
+    background: rgba(var(--neon-red-rgb), 0.04) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.18) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.08), inset 0 0 10px rgba(var(--neon-red-rgb), 0.04) !important;
+}
+
+/* 🛸 Sovereign Action Grid and High Fidelity Buttons */
+.dispatch-hub-panel .hub-btn {
+    height: 36px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: 1px solid var(--white-10) !important;
+    outline: none !important;
+    cursor: pointer !important;
+    padding: 0 10px !important;
+    background: var(--white-03) !important;
+    color: var(--text-bright) !important;
+}
+
+.dispatch-hub-panel .primary-hub-btn {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.15) 0%, var(--neon-cyan-10) 100%) !important;
+    border: 1px solid rgba(var(--accent-primary-rgb), 0.3) !important;
+    color: var(--accent-primary) !important;
+}
+.dispatch-hub-panel .primary-hub-btn:hover {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.3) 0%, var(--neon-cyan-20) 100%) !important;
+    border-color: rgba(var(--accent-primary-rgb), 0.6) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.dispatch-hub-panel .danger-hub-btn {
+    background: rgba(var(--neon-red-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.25) !important;
+    color: var(--neon-red) !important;
+}
+.dispatch-hub-panel .danger-hub-btn:hover {
+    background: rgba(var(--neon-red-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.5) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.dispatch-hub-panel .hub-btn .btn-icon {
+    font-size: 0.85rem !important;
+}
+
+/* 🔌 实时引擎启动按钮高级样式 */
+.dispatch-hub-panel .engine-btn {
+    height: 34px !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+.dispatch-hub-panel .engine-btn.start-mode {
+    background: var(--neon-cyan-10) !important;
+    border: 1px solid var(--neon-cyan-25) !important;
+    color: var(--neon-cyan) !important;
+}
+.dispatch-hub-panel .engine-btn.start-mode:hover {
+    background: var(--neon-cyan-25) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 15px var(--neon-cyan-25) !important;
+}
+.dispatch-hub-panel .engine-btn.stop-mode {
+    background: rgba(var(--neon-red-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.25) !important;
+    color: var(--neon-red) !important;
+}
+.dispatch-hub-panel .engine-btn.stop-mode:hover {
+    background: rgba(var(--neon-red-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.5) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
+}
+
+/* 🧪 Live Preview Engine Premium UI */
+.dispatch-hub-panel .lab-box {
+    background: var(--white-03);
+    border: 1px dashed var(--white-10);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.dispatch-hub-panel .lab-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dispatch-hub-panel .live-pulse {
+    color: var(--neon-green) !important;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.5);
+    animation: live-blink 1.5s infinite;
+}
+
+@keyframes live-blink {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.dispatch-hub-panel .full-width {
+    width: 100%;
+}

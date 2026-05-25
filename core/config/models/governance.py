@@ -7,7 +7,7 @@ Illacme-plenipes Config - Governance Models
 🚀 [V53.0] 出版模式矩阵 (Publishing Modes Matrix)：3 级模式 × 2 种 SEO 方式。
 """
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class PublishingMode(str, Enum):
@@ -96,3 +96,10 @@ class GovernanceSettings(BaseModel):
     alert_threshold: float = Field(0.8, ge=0, le=1) # 预算告警阈值 (80%)
     indexing_priority: str = "normal"               # 后台索引优先级 (normal/low)
     auto_heal: bool = True                          # 是否开启自动诊断修复
+
+    @model_validator(mode='after')
+    def validate_mode_and_strategy(self) -> 'GovernanceSettings':
+        """保证模式与策略组合的合法性，若不合法或未指定则自动纠正为该模式下的默认选择"""
+        if not validate_mode_strategy(self.publishing_mode, self.seo_strategy):
+            self.seo_strategy = get_default_strategy(self.publishing_mode)
+        return self

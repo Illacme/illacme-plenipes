@@ -7,10 +7,11 @@
     <meta name="description" content="{{ description }}">
     <meta name="keywords" content="{{ keywords }}">
     
-    <!-- 🏗️ 字体系统注入 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <!-- 🎨 自定义样式与视觉特效热配置注入 -->
+    {{ custom_theme_styles }}
+    
+    <!-- 🏗️ 字体系统本地主权注入 -->
+    <link rel="stylesheet" href="{{ root_path }}static/css/fonts.css">
 
     <!-- 🏗️ 主权视觉系统物理注入 -->
     <link rel="stylesheet" href="{{ root_path }}static/css/style.css?v=15.1">
@@ -49,6 +50,8 @@
             
             <div class="header-right">
                 <div class="action-hub">
+                    <!-- 🐙 GitHub 社交导航挂载 -->
+                    {{ github_link_container }}
                     <!-- 🌓 主题镜像开关 -->
                     <button id="theme-toggle" class="control-btn theme-btn" title="切换模式">
                         <span class="btn-icon">☀️</span>
