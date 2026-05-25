@@ -44,7 +44,7 @@ def run_onboarding_wizard() -> bool:
     
     if wizard_mode == "1":
         import webbrowser
-        from core.ui.web.wizard_server import start_wizard_server
+        from services.wizard.wizard_server import start_wizard_server
         
         # 🚀 [V50.5] 端口矩阵：向导固定使用 43211
         port = 43211

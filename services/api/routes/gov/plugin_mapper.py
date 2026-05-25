@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict, Any
-from core.api.routes.system import get_global_engine
+from core.runtime.engine_singleton import get_global_engine
 
 def _load_schema(theme_root: str, entry: str) -> dict:
     """🚀 物理探测并加载主题自描述配置，自动处理 IO 异常与缺省，支持全局 fallback"""

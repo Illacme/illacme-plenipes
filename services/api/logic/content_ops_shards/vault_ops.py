@@ -11,7 +11,7 @@ import datetime
 import pathlib
 
 from core.utils.text import parse_frontmatter, inject_frontmatter
-from core.api.logic.content_ops_shards.safe_ops import resolve_safe_path
+from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
 
 
 def search_vault_logic(engine, q: str = "", page: int = 1, limit: int = 50, folder: str = ""):
@@ -96,7 +96,7 @@ def save_document_logic(engine, doc_id: str, req: dict):
             actual_title = title or meta.get("title") or os.path.splitext(os.path.basename(doc_id))[0]
             engine.knowledge_graph.upsert_node(doc_id, actual_title)
             engine.knowledge_graph.save(debounce=False)
-    except Exception as ex:
+    except Exception:
         # 避免在异常时中断正常保存流程，只作静默防抖
         pass
 

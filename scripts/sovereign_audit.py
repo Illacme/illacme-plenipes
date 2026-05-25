@@ -60,27 +60,29 @@ def main():
             "core/runtime/engine_factory.py",
             "core/runtime/cli_bootstrap.py", # V65.0 全量引导内核
             "core/editorial/asset_pipeline.py",
-            "core/api/routes/system.py",     # V65.0 预览控制中枢
-            "core/api/routes/governance.py", # V65.0 主权治理控制台
-            "core/ui/web/wizard_server.py",  # V65.0 Web 引导服务
+            "services/api/routes/system.py",     # V65.0 预览控制中枢
+            "services/api/routes/governance.py", # V65.0 主权治理控制台
+            "services/wizard/wizard_server.py",  # V65.0 Web 引导服务
             "core/editorial/standard_steps.py", # V65.0 标准化出版步骤
             "core/logic/ai/ai_scheduler.py",   # V65.0 算力调度中枢
-            "core/api/routes/dispatch.py",     # 🚀 新增物理销毁与分发控制中枢
-            "core/api/routes/gov/context.py",  # 🛰️ 核心诊断与模拟干跑发布路由
-            "core/api/routes/content.py",       # 📦 内容运营组件
-            "core/api/logic/content_ops.py"     # 🚀 降维拆分后解耦的内容运营业务逻辑
+            "services/api/routes/dispatch.py",     # 🚀 新增物理销毁与分发控制中枢
+            "services/api/routes/gov/context.py",  # 🛰️ 核心诊断与模拟干跑发布路由
+            "services/api/routes/content.py",       # 📦 内容运营组件
+            "services/api/logic/content_ops.py"     # 🚀 降维拆分后解耦的内容运营业务逻辑
         ]
         
-        for root, dirs, files in os.walk('core'):
-            for file in files:
-                if file.endswith('.py'):
-                    p = os.path.join(root, file).replace('\\', '/')
-                    with open(p, 'r', encoding='utf-8') as f:
-                        lines = len(f.readlines())
-                    if lines > 300 and p not in EXEMPT_FILES:
-                        limit_violations.append(f"❌ [主权越线] {p} 超过 300 行 (当前: {lines})")
-                    elif lines > 300:
-                        print(f"  └── ⚠️ [豁免组件] {p} (当前: {lines})")
+        for folder in ['core', 'services']:
+            if not os.path.exists(folder): continue
+            for root, dirs, files in os.walk(folder):
+                for file in files:
+                    if file.endswith('.py'):
+                        p = os.path.join(root, file).replace('\\', '/')
+                        with open(p, 'r', encoding='utf-8') as f:
+                            lines = len(f.readlines())
+                        if lines > 300 and p not in EXEMPT_FILES:
+                            limit_violations.append(f"❌ [主权越线] {p} 超过 300 行 (当前: {lines})")
+                        elif lines > 300:
+                            print(f"  └── ⚠️ [豁免组件] {p} (当前: {lines})")
         
         if limit_violations:
             for v in limit_violations: print(f"  └── {v}")
@@ -115,12 +117,12 @@ def main():
     try:
         import re
         css_violations = []
-        css_root = "core/api/static/css"
+        css_root = "web/dashboard/css"
         
-        # 排除列表：全局变量定义文件与底座文件，以及旧的单体文件
+        # 排除列表：全局变量定义文件与底座文件，以及旧 of 单体文件
         EXEMPT_CSS = [
-            "core/api/static/css/dashboard.base.css",
-            "core/api/static/css/components/glass.css"        # 允许底座材质包含固定的 255 半透明色值
+            "web/dashboard/css/dashboard.base.css",
+            "web/dashboard/css/components/glass.css"        # 允许底座材质包含固定的 255 半透明色值
         ]
         
         def check_line_for_hardcoded_color(line):
@@ -184,7 +186,7 @@ def main():
 
     # 3. 核心规范审计 (Ruff Linting)
     # 豁免 status_handlers.py 以保护 V48.2 Banner 亚像素级物理空格不被清理
-    if not run_step("核心引擎规范审计", ["ruff", "check", "core/", "--extend-exclude", "core/ui/handlers/status_handlers.py"]):
+    if not run_step("核心引擎规范审计", ["ruff", "check", "core/", "services/", "--extend-exclude", "core/ui/handlers/status_handlers.py"]):
         success = False
 
     # 4. 回归测试 (Smoke Tests)

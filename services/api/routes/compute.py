@@ -11,7 +11,6 @@ from core.config.models.ai import ComputeNode
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
 import time
-import asyncio
 import os
 
 router = APIRouter(prefix="/api/compute", tags=["Compute"])
@@ -233,7 +232,6 @@ async def switch_primary_node(req: dict):
     if node_id not in engine.config.translation.compute_nodes:
         return {"error": "Target node not found in compute nodes matrix"}
         
-    old_primary = engine.config.translation.primary_node
     engine.config.translation.primary_node = node_id
     
     # 持久化品牌策略
@@ -257,7 +255,6 @@ async def switch_fallback_node(req: dict):
     if node_id and node_id not in engine.config.translation.compute_nodes:
         return {"error": "Target node not found in compute nodes matrix"}
         
-    old_fallback = engine.config.translation.fallback_node
     engine.config.translation.fallback_node = node_id
     
     # 持久化品牌策略

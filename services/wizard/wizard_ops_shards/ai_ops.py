@@ -4,7 +4,6 @@
 🧙‍♂️ ai_ops.py - 远程/本地 LLM 算力供应商模型的动态拉取与高频网络连接的健壮性诊断
 """
 
-import core.adapters.ai
 from core.adapters.ai.registry import AIProviderRegistry
 from core.logic.diagnostics import DiagnosticsService
 

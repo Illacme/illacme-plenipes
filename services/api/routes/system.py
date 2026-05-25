@@ -9,7 +9,6 @@ import os
 import time
 import signal
 import threading
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -19,7 +18,7 @@ from core.logic.orchestration.task_orchestrator import global_executor
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
 from core.logic.diagnostics.component_monitor import ComponentMonitor
-from core.api.logic import sys_ops
+from services.api.logic import sys_ops
 
 router = APIRouter()
 
@@ -209,7 +208,7 @@ async def start_wizard() -> Dict[str, str]:
     """🚀 [V55.0] 远程点火版图向导"""
     if ComponentMonitor.check_port(43211):
         return {"status": "already_running"}
-    from core.ui.web.wizard_server import start_wizard_server
+    from services.wizard.wizard_server import start_wizard_server
     threading.Thread(target=start_wizard_server, kwargs={"port": 43211}, daemon=True).start()
     return {"status": "started"}
 
@@ -219,7 +218,7 @@ async def stop_wizard() -> Dict[str, str]:
     try:
         import urllib.request
         req = urllib.request.Request("http://127.0.0.1:43211/api/shutdown", method="POST")
-        with urllib.request.urlopen(req, timeout=2.0) as response: pass
+        with urllib.request.urlopen(req, timeout=2.0): pass
         return {"status": "stopped"}
     except:
         return {"status": "stopped", "note": "Service may already be down"}

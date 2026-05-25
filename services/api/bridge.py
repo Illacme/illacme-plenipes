@@ -8,7 +8,6 @@ Illacme-plenipes Core - Event Streaming Bridge
 
 import queue
 import json
-import threading
 from core.utils.event_bus import bus
 
 class EventBridge:

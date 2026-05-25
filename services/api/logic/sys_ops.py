@@ -8,12 +8,9 @@
 import os
 import shutil
 import subprocess
-import threading
-import time
-from typing import Dict, Any, List, Optional
+from typing import Any, List
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
-from core.runtime.engine_singleton import get_global_engine
 
 def run_theme_install(engine: Any, theme_dir: str):
     """🚀 [V52.11] 物理安装：执行 npm install 并通过总线同步日志"""

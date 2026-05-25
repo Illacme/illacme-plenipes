@@ -7,10 +7,7 @@
 
 from fastapi import APIRouter, Depends
 from typing import Optional
-import os
-from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
-from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 from .context_shards.context_ops import (
     get_system_context_impl,
     get_lessons_impl,

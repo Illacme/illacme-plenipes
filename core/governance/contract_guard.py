@@ -133,14 +133,16 @@ class ContractGuard:
             with open(baseline_path, 'r', encoding='utf-8') as f:
                 baseline = {line.strip() for line in f if line.strip()}
             
-            # 实时采样当前核心目录结构
+            # 实时采样当前核心与展现服务目录结构
             current_structure = set()
-            for root, dirs, files in os.walk('core'):
-                dirs[:] = [d for d in dirs if d != '__pycache__']
-                for file in files:
-                    if file.endswith('.py') and not file.startswith('.'):
-                        path = os.path.join(root, file).replace('\\', '/')
-                        current_structure.add(path)
+            for folder in ['core', 'services']:
+                if not os.path.exists(folder): continue
+                for root, dirs, files in os.walk(folder):
+                    dirs[:] = [d for d in dirs if d != '__pycache__']
+                    for file in files:
+                        if file.endswith('.py') and not file.startswith('.'):
+                            path = os.path.join(root, file).replace('\\', '/')
+                            current_structure.add(path)
             
             # 1. 检查缺失
             missing = baseline - current_structure

@@ -5,7 +5,6 @@
 """
 
 import os
-from typing import Optional
 from core.runtime.engine_singleton import get_global_engine
 from core.config.config import CONFIG_LOCAL_NAME
 
@@ -16,7 +15,7 @@ def list_active_plugins_impl():
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
 
-    from core.api.routes.gov.plugin_mapper import assemble_plugin_matrix
+    from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     plugins = assemble_plugin_matrix()
     return {"plugins": plugins}
 
@@ -60,7 +59,7 @@ async def toggle_plugin_impl(payload: dict):
     if not plugin_id: return {"status": "error", "error": "Plugin ID is required"}
 
     # 🛡️ 安全验证：如果是正在活跃使用的插件，不能被关闭！
-    from core.api.routes.gov.plugin_mapper import assemble_plugin_matrix
+    from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     matrix = assemble_plugin_matrix()
     target_p = None
     for p in matrix:

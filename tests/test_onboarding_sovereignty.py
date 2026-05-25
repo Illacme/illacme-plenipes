@@ -56,7 +56,7 @@ def test_ingress_sovereignty_routing():
 @pytest.mark.anyio
 async def test_dry_run_backend_engine():
     """🧪 测试物理沙盒出版干跑引擎的验证校验与流日志生成"""
-    from core.api.routes.gov.context import dry_run_plugin
+    from services.api.routes.gov.context import dry_run_plugin
 
     # 1. 测试凭据缺失情况
     payload_no_key = {

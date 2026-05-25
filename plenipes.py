@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
         # 🚀 [V51.0] 商业级启动时序优化：优先启动 API，确保同步过程可被 Dashboard 实时观测
         if args.api:
-            from core.api.server import start_api_server
+            from services.api.server import start_api_server
             active_cfg = config
             api_port = args.api_port or (active_cfg.system.api_port if active_cfg else 43212)
             tlog.info(f"🔌 [API 模式] 正在抢先启动出版 API 服务 (端口: {api_port})...")

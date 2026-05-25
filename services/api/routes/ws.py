@@ -107,7 +107,7 @@ async def websocket_endpoint(websocket: WebSocket):
         
         while True:
             # 保持连接，监听客户端消息（如指令）
-            data = await websocket.receive_text()
+            await websocket.receive_text()
             # 目前仅作为心跳/保持
     except WebSocketDisconnect:
         manager.disconnect(websocket)

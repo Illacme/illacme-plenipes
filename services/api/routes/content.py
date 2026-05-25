@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 from core.runtime.engine_singleton import get_global_engine
 from .system import verify_token
-from core.api.logic.content_ops import (resolve_safe_path, search_vault_logic,
+from services.api.logic.content_ops import (search_vault_logic,
     get_document_detail_logic, update_document_metadata_logic,
     save_document_logic, create_document_logic,
     create_directory_logic, delete_directory_logic,

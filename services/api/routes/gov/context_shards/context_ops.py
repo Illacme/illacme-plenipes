@@ -5,9 +5,7 @@
 """
 
 import os
-from typing import Optional, List
 from core.runtime.engine_singleton import get_global_engine
-from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 
 def get_system_context_impl():
     """
@@ -17,7 +15,6 @@ def get_system_context_impl():
     if not engine: return {"error": "Engine not initialized"}
 
     from core.governance.imprint_manager import im
-    from core import __version__
     from core.ui.delegate import DisplayDelegate
 
     ai_cfg = engine.config.translation
@@ -41,12 +38,6 @@ def get_system_context_impl():
     raw_theme = engine.active_theme
     display_theme = theme_map.get(raw_theme, f"Custom ({raw_theme})")
 
-    needs_install = False
-    from core.config.config import THEMES_DIR
-    theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
-    if os.path.exists(os.path.join(theme_dir, "package.json")):
-        if not os.path.exists(os.path.join(theme_dir, "node_modules")):
-            needs_install = True
 
     from core.ingress.registry import ingress_registry
     ingress_cfg = engine.config.ingress_settings
@@ -60,7 +51,7 @@ def get_system_context_impl():
         dialect_display = getattr(dialect_cls, "DISPLAY_NAME", active_dialect_id.upper()) if dialect_cls else active_dialect_id.upper()
 
     # 🛡️ 优雅解耦：直接从底层的 plugin_mapper 加载插件矩阵，避免循环引用 Hub 文件
-    from core.api.routes.gov.plugin_mapper import assemble_plugin_matrix
+    from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     plugins = assemble_plugin_matrix()
 
     return {

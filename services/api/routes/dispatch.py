@@ -10,7 +10,7 @@ from .system import verify_token
 from core.runtime.engine_singleton import get_global_engine
 
 # 引入中枢逻辑代理层
-from core.api.logic.dispatch_ops import (
+from services.api.logic.dispatch_ops import (
     get_dispatch_status_facade,
     toggle_lab_facade,
     trigger_re_dispatch_facade,
