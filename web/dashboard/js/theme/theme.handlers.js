@@ -8,6 +8,24 @@ window.ThemeHandlers = {
      * 🎬 切换主题
      */
     async switchTheme(themeId) {
+        const result = await Swal.fire({
+            title: '🎨 确认切换装帧主题？',
+            html: `确定要将当前版图的主题切换为 <b style="color:var(--accent-secondary);">${themeId.toUpperCase()}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">系统将自动重新对齐内容路径与编译依赖。</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '确定切换',
+            cancelButtonText: '取消',
+            background: 'rgba(10, 15, 25, 0.98)',
+            color: 'var(--text-bright)',
+            confirmButtonColor: 'var(--accent-secondary)',
+            cancelButtonColor: '#444'
+        });
+        
+        if (!result.isConfirmed) {
+            if (typeof addAudit === 'function') addAudit(`🎬 已取消主题切换。`);
+            return;
+        }
+
         if (typeof addAudit === 'function') addAudit(`🎨 正在执行装帧切换: ${themeId.toUpperCase()}...`);
         const success = await window.ThemeAPI.switchTheme(themeId);
         
@@ -22,6 +40,24 @@ window.ThemeHandlers = {
      * 🚀 引导初始化
      */
     async bootstrapTheme(themeId) {
+        const result = await Swal.fire({
+            title: '🚀 确认下载并初始化主题？',
+            html: `确定要部署并启用主题 <b style="color:var(--accent-secondary);">${themeId.toUpperCase()}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">这可能需要从网络或本地缓存拉取高保真依赖，并自动设置为当前选用主题。</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '开始部署',
+            cancelButtonText: '取消',
+            background: 'rgba(10, 15, 25, 0.98)',
+            color: 'var(--text-bright)',
+            confirmButtonColor: '#ffb700',
+            cancelButtonColor: '#444'
+        });
+        
+        if (!result.isConfirmed) {
+            if (typeof addAudit === 'function') addAudit(`🚀 已取消主题部署初始化。`);
+            return;
+        }
+
         if (typeof addAudit === 'function') addAudit(`🚀 正在部署并启用主题: ${themeId.toUpperCase()}...`);
         const success = await window.ThemeAPI.bootstrapTheme(themeId);
         
