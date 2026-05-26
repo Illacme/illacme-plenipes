@@ -130,6 +130,26 @@ window.switchTheme = async (themeId) => {
         window.settingsData.active_theme = themeId;
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
         if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
+        
+        // 🚀 [V80.3 Premium Scroll-to-Top] 物理容器优雅平滑上滚回顶部，配合重排对齐
+        const container = document.querySelector('.tab-content-area');
+        if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效
+        setTimeout(() => {
+            const activeCard = document.querySelector('.theme-card.active') || document.querySelector('.shield-pod.active-duty');
+            if (activeCard) {
+                activeCard.style.boxShadow = '0 0 35px rgba(0, 242, 255, 0.45)';
+                activeCard.style.borderColor = 'var(--accent-secondary)';
+                activeCard.style.transition = 'all 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                setTimeout(() => {
+                    activeCard.style.boxShadow = '';
+                    activeCard.style.borderColor = '';
+                }, 1500);
+            }
+        }, 400);
     } else {
         if (typeof addAudit === 'function') addAudit(`🚨 切换失败: ${res ? res.error : '网络链路阻塞'}`, "error");
     }
@@ -165,6 +185,26 @@ window.bootstrapTheme = async (themeId) => {
             if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeId.toUpperCase()}' 已部署成功并启用。`, "success");
             if (typeof loadPlugins === 'function') await loadPlugins();
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
+            
+            // 🚀 [V80.3 Premium Scroll-to-Top] 物理容器优雅平滑上滚回顶部，配合重排对齐
+            const container = document.querySelector('.tab-content-area');
+            if (container) {
+                container.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            
+            // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效
+            setTimeout(() => {
+                const activeCard = document.querySelector('.theme-card.active') || document.querySelector('.shield-pod.active-duty');
+                if (activeCard) {
+                    activeCard.style.boxShadow = '0 0 35px rgba(0, 242, 255, 0.45)';
+                    activeCard.style.borderColor = 'var(--accent-secondary)';
+                    activeCard.style.transition = 'all 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                    setTimeout(() => {
+                        activeCard.style.boxShadow = '';
+                        activeCard.style.borderColor = '';
+                    }, 1500);
+                }
+            }, 400);
         }
     } catch (e) {
         if (typeof addAudit === 'function') addAudit(`🚨 [网络故障] 无法连接至引导服务器: ${e.message}`, "error");
