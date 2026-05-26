@@ -59,9 +59,36 @@ class BaseSSGAdapter(abc.ABC):
         for key, prop in properties.items():
             if "default" in prop:
                 options[key] = prop["default"]
+                
+        # 🚀 [Unified Promotion Architecture] 引入全局基础信息继承层 (I&O Engine)
+        # 如果全局配置中定义了通用合规与视觉基础，将其作为基底加载（实现跨主题单一数据源）
+        if hasattr(self, 'engine') and self.engine and hasattr(self.engine, 'config'):
+            cfg = self.engine.config
+            
+            # 自愈逻辑：site_name Fallback 为 imprint_name/press_name; site_description Fallback 为 imprint_description
+            g_site_name = getattr(cfg, "site_name", None) or getattr(cfg, "imprint_name", None)
+            g_site_desc = getattr(cfg, "site_description", None) or getattr(cfg, "imprint_description", None)
+            
+            # 版权声明自愈逻辑：彻底合并为单数据源，直接继承自全域默认版权设置 frontmatter_defaults.copyright
+            fm_defaults = getattr(cfg, "frontmatter_defaults", {}) or {}
+            g_copyright = fm_defaults.get("copyright", None)
+            
+            global_promotions = {
+                "site_name": g_site_name,
+                "site_description": g_site_desc,
+                "favicon_path": getattr(cfg, "favicon_path", None),
+                "logo_path": getattr(cfg, "logo_path", None),
+                "footer_copyright": g_copyright
+            }
+            
+            for g_key, g_val in global_promotions.items():
+                if g_val is not None and str(g_val).strip() != "":
+                    options[g_key] = g_val
+                    
         if self.theme_settings and hasattr(self.theme_settings, 'options') and self.theme_settings.options:
             for key, val in self.theme_settings.options.items():
-                options[key] = val
+                if val is not None and str(val).strip() != "":
+                    options[key] = val
         return options
 
     @abc.abstractmethod

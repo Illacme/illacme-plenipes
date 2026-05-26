@@ -119,6 +119,12 @@ class Configuration(BaseModel):
     site_url: str = ""
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
     
+    # 🎨 Sovereign Global Branding & Compliance (Promoted settings)
+    site_name: Optional[str] = Field(default=None, description="全局网站展示标题 (多主题共享)")
+    site_description: Optional[str] = Field(default=None, description="网站全局描述与 SEO Slogan")
+    favicon_path: Optional[str] = Field(default=None, description="全站 Favicon 图标物理/相对路径")
+    logo_path: Optional[str] = Field(default=None, description="通用品牌视觉 Logo 物理/相对路径")
+    
     # 全局出站映射 (Optional 零配设计)
     output_paths: Optional[Dict[str, str]] = None
     

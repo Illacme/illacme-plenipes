@@ -103,5 +103,51 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         # GitHub 挂载按钮应该不存在
         self.assertNotIn("github-btn", html_out)
 
+    def test_global_config_inherit_and_override(self):
+        """🚀 [Unified Promotion] 验证全局配置提升后的继承、Fallback自愈与局部主题覆盖逻辑"""
+        class MockConfig:
+            def __init__(self):
+                self.site_name = "我的全局主权站点"
+                self.site_description = "全局系统治理与多语种出版"
+                self.favicon_path = "/static/fav.ico"
+                self.logo_path = "/static/unified-logo.png"
+                self.frontmatter_defaults = {
+                    "copyright": "© 2026 Sovereign Creator. All Rights Reserved."
+                }
+                self.i18n_settings = None
+
+        class MockEngine:
+            def __init__(self):
+                self.config = MockConfig()
+
+        mock_engine = MockEngine()
+
+        # 🚀 Case 1: 纯粹继承全局配置 (零局部配置)
+        settings_empty = ThemeSettings(name="default", ssg="sovereign", options={})
+        adapter_empty = SovereignSSGAdapter(theme_settings=settings_empty, engine=mock_engine)
+        opts_empty = adapter_empty.get_custom_options()
+
+        self.assertEqual(opts_empty["site_name"], "我的全局主权站点")
+        self.assertEqual(opts_empty["site_description"], "全局系统治理与多语种出版")
+        self.assertEqual(opts_empty["favicon_path"], "/static/fav.ico")
+        self.assertEqual(opts_empty["logo_path"], "/static/unified-logo.png")
+        # 验证版权自愈回退继承 (from frontmatter_defaults.copyright)
+        self.assertEqual(opts_empty["footer_copyright"], "© 2026 Sovereign Creator. All Rights Reserved.")
+
+        # 🚀 Case 2: 局部配置覆盖全局配置 (主题选项优先级最高)
+        custom_opts = {
+            "site_name": "主题特殊重写标题",
+            "footer_copyright": "© 2026 Theme Specific Copyright"
+        }
+        settings_override = ThemeSettings(name="default", ssg="sovereign", options=custom_opts)
+        adapter_override = SovereignSSGAdapter(theme_settings=settings_override, engine=mock_engine)
+        opts_override = adapter_override.get_custom_options()
+
+        # 被局部选项成功覆盖的字段
+        self.assertEqual(opts_override["site_name"], "主题特殊重写标题")
+        self.assertEqual(opts_override["footer_copyright"], "© 2026 Theme Specific Copyright")
+        # 未被局部选项覆盖、仍继承全局的字段
+        self.assertEqual(opts_override["logo_path"], "/static/unified-logo.png")
+
 if __name__ == "__main__":
     unittest.main()

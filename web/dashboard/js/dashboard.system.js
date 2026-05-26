@@ -148,17 +148,34 @@ function renderGeneralCategory() {
             <div class="section-header"><h3>ℹ️ 基础信息 (General Information)</h3></div>
             <p class="section-desc">管理当前出版版图的核心身份标识与全域元数据。</p>
             
-            <div class="settings-grid">
-                <div class="settings-group">
-                    <h4>🏛️ 版图身份 (Imprint Identity)</h4>
+            <div class="settings-group">
+                <h4>🏷️ 品牌与站点身份 (Brand & Site Identity)</h4>
+                <div class="settings-grid">
                     ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '')}
                     ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '')}
+                    ${renderSettingsItem('全局站点名称', 'site_name', data.site_name || '', 'text', {placeholder: '未填则自愈 fallback 为版图展示名称'})}
+                    ${renderSettingsItem('全局站点描述', 'site_description', data.site_description || '', 'text', {placeholder: '未填则自愈 fallback 为版图描述'})}
+                    ${renderSettingsItem('全局品牌 Logo 路径', 'logo_path', data.logo_path || '', 'text', {placeholder: '例如: /static/logo.png'})}
+                    ${renderSettingsItem('全局 Favicon 图标路径', 'favicon_path', data.favicon_path || '', 'text', {placeholder: '例如: /static/favicon.ico'})}
                 </div>
             </div>
 
             <div class="settings-group mt-large">
-                <h4>🌀 文稿方言适配 (Draft Dialect Adaptation)</h4>
+                <h4>📖 出版合规与元数据 (Publishing Compliance & Metadata)</h4>
                 <div class="settings-grid">
+                    ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '')}
+                    ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
+                    ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
+                    ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
+                </div>
+            </div>
+
+            <div class="settings-group mt-large">
+                <h4>📂 数据存储与原稿适配 (Storage & Dialect Adaptation)</h4>
+                <div class="settings-grid">
+                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'static', {
+                        description: '🔒 物理主权路径在版图确立后不可变。如需迁移资产领土，请新建版图。'
+                    })}
                     ${renderSettingsItem('首选解析协议', 'ingress_settings.active_dialects', data.ingress_settings?.active_dialects?.[0] || 'auto', 'select', {
                         items: [
                             {value: 'auto', text: '✨ 自动感应 (Auto-Sensing)'},
@@ -171,35 +188,16 @@ function renderGeneralCategory() {
                         onchange: `window.updateConfigField('ingress_settings.active_dialects', [this.value])`,
                         description: '定义系统如何识别原稿格式。选择“自动感应”将根据文件特征物理识别；选择特定协议则执行主权强制解析。'
                     })}
-                </div>
-            </div>
- 
-            <div class="settings-group mt-large">
-                <h4>🧱 文稿存储架构 (Physical Storage Architecture)</h4>
-                <div class="settings-grid">
-                    ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'static', {
-                        description: '🔒 物理主权路径在版图确立后不可变。如需迁移资产领土，请新建版图。'
-                    })}
                     ${renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox', {
                         description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
                     })}
+                </div>
+            </div>
+
+            <div class="settings-group mt-large">
+                <h4>⚙️ 系统基座与遥测运维 (Engine Base & Telemetry)</h4>
+                <div class="settings-grid">
                     ${renderSettingsItem('系统底座版本', 'version', data.version || 'V24.0', 'text', {readonly: true})}
-                </div>
-            </div>
-
-            <div class="settings-group mt-large">
-                <h4>📡 出版元数据 (Publishing Metadata)</h4>
-                <div class="settings-grid">
-                    ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '')}
-                    ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
-                    ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
-                    ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
-                </div>
-            </div>
-
-            <div class="settings-group mt-large">
-                <h4>⚙️ 遥测与日志 (Telemetry & Server Logs)</h4>
-                <div class="settings-grid">
                     ${renderSettingsItem('系统日志级别', 'system.log_level', data.system?.log_level || 'INFO', 'select', {
                         items: [
                             {value: 'DEBUG', text: 'DEBUG (全量输出)'},
