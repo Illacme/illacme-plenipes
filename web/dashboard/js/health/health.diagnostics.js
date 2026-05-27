@@ -315,13 +315,46 @@ window.copyVaultPath = async () => {
     const el = document.getElementById('sidebar-vault-display');
     if (!el) return;
     
-    const rawPath = el.title;
+    let rawPath = el.title || el.innerText;
+    if (rawPath.includes('点击') || rawPath.includes('物理文稿')) {
+        rawPath = el.innerText;
+    }
+    
     if (!rawPath || rawPath === 'LOADING...' || rawPath === '-') return;
     
-    try {
-        await navigator.clipboard.writeText(rawPath);
+    let success = false;
+    
+    // 1. 尝试现代安全上下文 Clipboard API
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try {
+            await navigator.clipboard.writeText(rawPath);
+            success = true;
+        } catch (e) {
+            console.warn("Modern clipboard API failed, attempting fallback:", e);
+        }
+    }
+    
+    // 2. 经典 Fallback 兜底复制方案
+    if (!success) {
+        const textArea = document.createElement("textarea");
+        textArea.value = rawPath;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            success = document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy command failed:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    
+    if (success) {
         addAudit("📋 已成功复制物理文库绝对路径到剪贴板！", "success");
-        
         Swal.fire({
             toast: true,
             position: 'top',
@@ -332,8 +365,15 @@ window.copyVaultPath = async () => {
             background: 'rgba(20, 20, 25, 0.95)',
             color: '#fff'
         });
-    } catch (e) {
-        console.error("Failed to copy vault path:", e);
-        addAudit("🛑 复制物理路径失败：" + (e.message || e), "error");
+    } else {
+        addAudit("🛑 复制物理路径失败：受浏览器安全环境限制", "error");
+        Swal.fire({
+            title: '📋 复制未成功',
+            text: `由于当前浏览器安全策略限制，请手动复制文库绝对路径：\n${rawPath}`,
+            icon: 'warning',
+            background: 'rgba(20, 20, 25, 0.95)',
+            color: '#fff',
+            confirmButtonColor: 'var(--accent-primary)'
+        });
     }
 };
