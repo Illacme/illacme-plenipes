@@ -87,6 +87,10 @@ window.hotswapActiveImprint = async (id) => {
         } else if (typeof addAudit === 'function') {
             addAudit(`🔄 正在执行零加载无感热重载至: ${id}...`, 'info');
         }
+
+        // 0. 关闭可能处于打开状态的编辑器与元数据详情抽屉，防范跨版图物理误写
+        if (typeof window.closeEditor === 'function') window.closeEditor();
+        if (typeof window.closeVaultDrawer === 'function') window.closeVaultDrawer();
         
         // 1. 重新拉取全量系统设置与品牌元数据
         if (typeof loadSettings === 'function') {
@@ -98,6 +102,11 @@ window.hotswapActiveImprint = async (id) => {
         
         // 2. 重新加载原稿文库及目录探索树
         if (typeof loadVault === 'function') {
+            // 重置文库上下文状态，防范旧版图“幽灵活跃目录”污染新版图视图
+            window.vaultActiveFolder = '';
+            window.vaultCurrentQuery = '';
+            window.vaultCurrentPage = 1;
+            
             window.vaultTreeInitialized = false; // 强制重构目录树
             await loadVault();
         }
