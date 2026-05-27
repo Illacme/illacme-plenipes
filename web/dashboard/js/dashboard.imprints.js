@@ -17,10 +17,14 @@ window.switchImprint = async (id) => {
         addAudit(`🔄 [对正] 成功切换至事业部: ${id}`, "success");
         if (typeof renderImprintDropdown === 'function') renderImprintDropdown();
         
-        // 🚀 [V74.15] 全域主权对正：品牌切换是重量级上下文切换，强制刷新以确保所有视图与后端引擎同步
-        setTimeout(() => {
-            location.reload();
-        }, 800);
+        // 🚀 [V75.6] 全域事件总线无感热重载 (Zero-Reload Hotswap)
+        if (typeof window.hotswapActiveImprint === 'function') {
+            await window.hotswapActiveImprint(id);
+        } else {
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
     } else {
         addAudit(`🚨 切换失败: ${res ? res.error : '物理链路异常'}`, "error");
     }
@@ -69,5 +73,59 @@ window.deleteImprint = async (id) => {
     if (res && res.success) {
         addAudit(`🗑️ 事业部已撤销: ${id}`, "warning");
         loadSettings('imprints');
+    }
+};
+
+/**
+ * 🚀 [V75.6] 全域事件总线无感热重载 (Zero-Reload Hotswap)
+ * 解决切换事业部全页白屏重载的痛点，毫秒级无缝换脑
+ */
+window.hotswapActiveImprint = async (id) => {
+    try {
+        if (typeof showNotification === 'function') {
+            showNotification(`🔄 正在快速切换至版图事业部: ${id}...`, 'info');
+        } else if (typeof addAudit === 'function') {
+            addAudit(`🔄 正在执行零加载无感热重载至: ${id}...`, 'info');
+        }
+        
+        // 1. 重新拉取全量系统设置与品牌元数据
+        if (typeof loadSettings === 'function') {
+            // 记住当前的设置 Tab
+            const activeTab = document.querySelector('.s-tab.active');
+            const targetTab = activeTab ? activeTab.dataset.cat : 'imprints';
+            await loadSettings(targetTab);
+        }
+        
+        // 2. 重新加载原稿文库及目录探索树
+        if (typeof loadVault === 'function') {
+            window.vaultTreeInitialized = false; // 强制重构目录树
+            await loadVault();
+        }
+        
+        // 3. 刷新全量生命体征与审计上下文
+        if (typeof refreshGovernanceContext === 'function') {
+            await refreshGovernanceContext();
+        }
+        
+        // 4. 重建全息星系宇宙 (如果是 Overview 面板且 3D 库存在)
+        if (window.currentView === 'overview' && typeof refreshGalaxy === 'function') {
+            refreshGalaxy();
+        }
+        
+        // 5. 交互徽章特制霓虹微光脉冲
+        const badge = document.getElementById('active-imprint-name');
+        if (badge) {
+            badge.classList.add('pulse-success');
+            setTimeout(() => badge.classList.remove('pulse-success'), 1500);
+        }
+        
+        if (typeof showNotification === 'function') {
+            showNotification(`✅ 已无缝热重载至事业部: ${id}`, 'success');
+        } else if (typeof addAudit === 'function') {
+            addAudit(`✅ 零加载热重载成功，版图: ${id}`, 'success');
+        }
+    } catch (err) {
+        console.error("Hotswap failed, falling back to reload:", err);
+        location.reload();
     }
 };
