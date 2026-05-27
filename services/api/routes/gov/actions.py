@@ -139,3 +139,21 @@ async def apply_translation_style(req: StyleRequest, request: Request) -> Dict[s
         engine.config.dump_to_disk(os.path.join(IMPRINT_DIR, target_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME))
     shutil.copy2(source_template, os.path.join(os.getcwd(), CONFIG_DIR, PROMPTS_NAME))
     return {"status": "success", "style": req.style}
+
+@router.post("/api/governance/gc", dependencies=[Depends(verify_token)])
+async def trigger_system_gc() -> Dict[str, Any]:
+    """
+    一键物理剪枝 (🧹 物理 GC)：唤醒清道夫回收幽灵路由和冗余 Markdown 资产。
+    """
+    engine = get_global_engine()
+    if not engine:
+        return {"status": "error", "message": "Engine not initialized"}
+    if not hasattr(engine, "janitor") or engine.janitor is None:
+        return {"status": "error", "message": "Janitor engine not initialized"}
+    try:
+        # 执行幽灵节点物理清洗
+        engine.janitor.gc_ghost_nodes(is_dry_run=False)
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data="🧹 [一键物理剪枝] 物理 GC 成功！已物理回收幽灵路由与冗余 Markdown 资产。")
+        return {"status": "success", "message": "GC executed successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

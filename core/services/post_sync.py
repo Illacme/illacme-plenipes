@@ -76,7 +76,7 @@ class SearchIndexPlugin(PostSyncTask):
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 🚀 [V55.26] 路径主权对正：使用配置助手解析物理路径
         output = engine._resolve_path(engine.config.get_search_index_path())
-        VaultIndexer.export_search_index_v2(snapshot, output)
+        VaultIndexer.export_search_index_v2(snapshot, output, engine=engine)
 
 class SyncStatsPlugin(PostSyncTask):
     """
@@ -220,8 +220,8 @@ class SovereignDeploymentPlugin(PostSyncTask):
             tlog.debug("ℹ️ [Deployment] 引擎未挂载分发调度员。")
             return
 
-        # 2. 获取分发根目录 (通常是 static_dir)
-        bundle_path = (engine.paths or {}).get('static_dir') or (engine.paths or {}).get('target_base')
+        # 2. 获取分发根目录 (通常是 site_dir)
+        bundle_path = (engine.paths or {}).get('site_dir') or (engine.paths or {}).get('target_base')
         
         # 3. 准备全局分发元数据
         deployment_meta = {

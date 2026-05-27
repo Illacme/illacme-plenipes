@@ -42,7 +42,7 @@ class BinderyDispatcher:
 
     def dispatch(self, asset_index, title, slug, masked_body, fm_dict, rel_path, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target=False, node_assets=None, node_ext_assets=None, node_outlinks=None, assets_lock=None, force_persistence_date=None, seo_data=None, is_sandbox=False, target_slot="docs"):
         tlog.info(f"🚀 [Dispatcher Debug] Dispatching {rel_path} | Lang: {lang_code} | Target: {is_target}")
-        if not self.paths.get('source_dir') and not self.paths.get('static_dir'):
+        if not self.paths.get('source_dir') and not self.paths.get('site_dir'):
              return None, None
 
         # 1. 🧬 [NoneType 免疫] 内容净化与解蔽
@@ -154,7 +154,11 @@ class BinderyDispatcher:
         merged_fm['slug'] = slug
 
         src_abs = os.path.join(self.paths.get('vault', '.'), rel_path)
-        mtime_dt = datetime.fromtimestamp(os.path.getmtime(src_abs)).astimezone()
+        try:
+            mtime_dt = datetime.fromtimestamp(os.path.getmtime(src_abs)).astimezone()
+        except OSError:
+            # 物理源文件已被移动或删除，回退到当前时间，避免导致全局分发流程直接崩溃
+            mtime_dt = datetime.now().astimezone()
 
         post_date = None
         if force_date:
@@ -193,7 +197,7 @@ class BinderyDispatcher:
         if is_sandbox:
             target_root = self.paths.get('sandbox')
         else:
-            target_root = self.paths.get('static_dir') if mode == 'static' else self.paths.get('source_dir')
+            target_root = self.paths.get('site_dir') if mode == 'static' else self.paths.get('source_dir')
         
         if not target_root:
             tlog.warning(f"⚠️ [分发拦截] 未定义模式 '{mode}' 的根目录，跳过落盘: {rel_path}")

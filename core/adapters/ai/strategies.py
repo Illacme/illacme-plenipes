@@ -21,6 +21,12 @@ class FallbackStrategy:
     @property
     def config(self): return self.primary.config
 
+    @property
+    def plugin_id(self): return getattr(self.primary, 'plugin_id', 'openai')
+
+    @property
+    def _intelligence_hub(self): return self.primary._intelligence_hub
+
     def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
         try:
             return self.primary.translate(text, source_lang, target_lang, context_type, remedy_instruction, is_dry_run, **kwargs)
@@ -91,6 +97,12 @@ class SmartRoutingStrategy:
 
     @property
     def config(self): return self.primary.config
+
+    @property
+    def plugin_id(self): return getattr(self.primary, 'plugin_id', 'openai')
+
+    @property
+    def _intelligence_hub(self): return self.primary._intelligence_hub
 
     def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
         handler = self.primary if len(text) < self.threshold else self.secondary

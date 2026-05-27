@@ -215,7 +215,7 @@ if __name__ == "__main__":
         if args.serve:
             from core.utils.dev_server import DevServer
             # 自动探测预览目录
-            preview_dir = engine.paths.get('static_dir') or engine.paths.get('target_base')
+            preview_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
             if preview_dir:
                 active_cfg = config
                 port = args.serve_port or (active_cfg.system.serve_port if active_cfg else 43213)

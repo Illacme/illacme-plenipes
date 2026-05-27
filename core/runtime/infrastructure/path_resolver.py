@@ -31,14 +31,14 @@ def resolve_engine_paths(engine: Any, config: Any, themes_dir: str) -> Dict[str,
             return os.path.join(data_root, p)
         return os.path.abspath(p)
 
-    source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
-    static_dir = paths_cfg.get('static_dir')
+    source_dir = paths_cfg.get('source_dir')
+    site_dir = paths_cfg.get('site_dir')
     
     # 动态构建主权路径矩阵
     resolved = {
         "vault": engine.vault_root,
         "source_dir": anchor((source_dir or "").replace("{theme}", engine.active_theme) if source_dir else ""),
-        "static_dir": anchor((static_dir or "").replace("{theme}", engine.active_theme) if static_dir else ""),
+        "site_dir": anchor((site_dir or "").replace("{theme}", engine.active_theme) if site_dir else ""),
         "assets": anchor((paths_cfg.get('assets_dir') or '').replace("{theme}", engine.active_theme)),
         "graph_json_dir": anchor((paths_cfg.get('graph_json_dir') or '').replace("{theme}", engine.active_theme)),
         "target_base": anchor((paths_cfg.get('target_base') or "./dist").replace("{theme}", engine.active_theme)),

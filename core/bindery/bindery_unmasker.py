@@ -171,7 +171,7 @@ class BinderyUnmasker:
                                 alt_map = meta.get("alt_texts", {})
                                 final_alt = alt_map.get(lang_code) or meta.get("alt_text") or orig_alt
                             else:
-                                tlog.warning(f"⚠️ [Unmasker Debug] No metadata found for hash: {h}")
+                                tlog.debug(f"⚠️ [Unmasker Debug] No metadata found for hash: {h}")
                         except Exception as e:
                             pass
                         

@@ -56,9 +56,7 @@ def post_process(manager) -> None:
             if not val.startswith("themes/") and not val.startswith("./themes/"):
                 val = f"themes/{{theme}}/{val}"
             paths[k] = val.replace('{theme}', theme)
-    
-    if 'markdown_dir' in paths and not paths.get('source_dir'):
-        paths['source_dir'] = paths['markdown_dir']
+            
 
     smart_normalize_i18n(manager)
     validate_paths(manager)

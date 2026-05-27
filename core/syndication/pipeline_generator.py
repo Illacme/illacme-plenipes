@@ -44,7 +44,7 @@ class DeploymentPipelineGenerator:
             # 3. 提取部署变量值
             build_cmd = adapter_cls.get_build_command()
             path_mappings = adapter_cls.get_default_path_mappings()
-            static_dir = path_mappings.get("static_dir", "dist")
+            site_dir = path_mappings.get("site_dir", "dist")
             
             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
@@ -54,7 +54,7 @@ class DeploymentPipelineGenerator:
                 ssg_type=ssg_type.upper(),
                 datetime=now_str,
                 build_cmd=build_cmd,
-                static_dir=static_dir
+                site_dir=site_dir
             )
             
             deploy_sh_path = os.path.join(theme_root, "deploy.sh")
@@ -75,7 +75,7 @@ class DeploymentPipelineGenerator:
                 ssg_type=ssg_type.upper(),
                 datetime=now_str,
                 build_cmd=build_cmd,
-                static_dir=static_dir
+                site_dir=site_dir
             )
             
             workflow_dir = os.path.join(theme_root, ".github", "workflows")

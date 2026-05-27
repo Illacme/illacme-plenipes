@@ -31,7 +31,7 @@ site_url: "https://your-garden.com"
 # ------------------------------------------
 # 💡 建议直接在 theme_options 中为每个主题单独配置路径，此处仅作为未声明主题的安全回退。
 output_paths:
-  markdown_dir: "./themes/{theme}/src/content/docs"
+  source_dir: "./themes/{theme}/src/content"
   assets_dir: "./themes/{theme}/public/assets"
   graph_json_dir: "./themes/{theme}/public"
 

@@ -28,7 +28,7 @@ class VitepressAdapter(BaseSSGAdapter):
         """🚀 [V76.0] Vitepress 推荐的原生默认物理寻址映射"""
         return {
             'source_dir': "docs",
-            'static_dir': ".vitepress/dist",
+            'site_dir': ".vitepress/dist",
             'assets_dir': "public/assets",
             'graph_json_dir': "public"
         }

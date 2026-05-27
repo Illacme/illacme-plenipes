@@ -17,6 +17,9 @@ class LanguageHub:
     # 🌍 全量语种矩阵 (ISO 639-1)
     # 涵盖全球主要国家、地区及方言的自然语言映射
     ISO_KNOWLEDGE_BASE = {
+        # --- 特殊标志 ---
+        "auto": "auto",
+
         # --- 中文系 ---
         "zh": "zh", "zh-cn": "zh", "简体中文": "zh", "chinese": "zh",
         "zh-hans": "zh", "traditional chinese": "zh-Hant", "繁体中文": "zh-Hant",

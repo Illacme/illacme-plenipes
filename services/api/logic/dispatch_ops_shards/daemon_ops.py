@@ -18,7 +18,7 @@ def toggle_lab_logic(engine) -> dict:
     imprint_id = config.active_imprint or "default"
     theme = config.active_theme or "default"
     
-    preview_dir = engine.paths.get('static_dir') or engine.paths.get('target_base')
+    preview_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
     if not preview_dir:
         preview_dir = os.path.join("imprints", imprint_id, "themes", theme, "dist")
     

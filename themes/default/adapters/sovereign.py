@@ -29,8 +29,8 @@ class SovereignSSGAdapter(BaseSSGAdapter):
     def get_default_path_mappings(cls) -> Dict[str, str]:
         """🚀 [V76.0] 声明 Sovereign 适配器推荐的原生默认物理寻址映射"""
         return {
-            'source_dir': "src/content/docs",
-            'static_dir': "dist",
+            'source_dir': "src/content",
+            'site_dir': "dist",
             'assets_dir': "public/assets",
             'graph_json_dir': "public"
         }
@@ -45,17 +45,17 @@ class SovereignSSGAdapter(BaseSSGAdapter):
             "docs": {
                 "label": "知识库",
                 "single": "docs",
-                "multi": "{lang}/docs"
+                "multi": "docs/{lang}"
             },
             "blog": {
                 "label": "主权简报",
                 "single": "blog",
-                "multi": "{lang}/blog"
+                "multi": "blog/{lang}"
             },
             "pages": {
                 "label": "静态页面",
                 "single": "pages",
-                "multi": "{lang}/pages"
+                "multi": "pages/{lang}"
             },
             "static": {
                 "label": "静态资产",
@@ -138,7 +138,13 @@ class SovereignSSGAdapter(BaseSSGAdapter):
                     import shutil
                     theme_root = os.path.dirname(os.path.dirname(self.template_path))
                     static_src = os.path.join(theme_root, "static")
-                    dist_root = os.path.join(theme_root, "dist")
+                    # 🚀 [V85.0] 支持动态 site_dir 配置，对准真正出盘的目标位置
+                    dist_root = None
+                    if self.engine and hasattr(self.engine, "paths"):
+                        dist_root = self.engine.paths.get("site_dir")
+                    if not dist_root:
+                        dist_root = os.path.join(theme_root, "dist")
+                    
                     static_dest = os.path.join(dist_root, "static")
                     
                     if os.path.exists(static_src):

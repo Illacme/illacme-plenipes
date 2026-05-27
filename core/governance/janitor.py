@@ -73,7 +73,7 @@ class JanitorService:
         for lang in all_langs:
             # 🚀 [V35.2] 物理全量推导：覆盖 source (Markdown) 与 static (渲染产物)
             for mode in ["source", "static"]:
-                root = self.paths.get('static_dir') if mode == 'static' else self.paths.get('source_dir')
+                root = self.paths.get('site_dir') if mode == 'static' else self.paths.get('source_dir')
                 if not root: continue
                 
                 # 推导扩展名：优先使用适配器契约，若无则保留原始后缀
@@ -217,7 +217,7 @@ class JanitorService:
 
     def purge_dist(self, is_dry_run=False):
         """🚀 [V35.2] 物理自愈清理：强力粉碎 dist 目录中过时的影子资产"""
-        target_root = self.paths.get('static_dir') or self.paths.get('target_base')
+        target_root = self.paths.get('site_dir') or self.paths.get('target_base')
         if not target_root or not os.path.exists(target_root):
             return
 

@@ -20,8 +20,8 @@ class DocusaurusAdapter(BaseSSGAdapter):
     def get_default_path_mappings(cls) -> Dict[str, str]:
         """🚀 [V76.0] Docusaurus 推荐的原生默认物理寻址映射"""
         return {
-            'source_dir': "docs",
-            'static_dir': "build",
+            'source_dir': ".",
+            'site_dir': "build",
             'assets_dir': "static/assets",
             'graph_json_dir': "static"
         }

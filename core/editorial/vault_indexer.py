@@ -162,17 +162,27 @@ class VaultIndexer:
             tlog.error(f"❌ [索引器] 导出图谱失败: {e}")
 
     @staticmethod
-    def export_search_index_v2(all_docs_snapshot: Dict[str, Any], output_path: str):
+    def export_search_index_v2(all_docs_snapshot: Dict[str, Any], output_path: str, engine: Any = None):
         """导出搜索索引"""
         search_data = []
         for rel_path, info in all_docs_snapshot.items():
             slug = info.get('slug')
             if not slug: continue
             lang = info.get('language', 'zh')
+            
+            # 🚀 [V85.0] 动态路由解析以保证多语言多集合主权路径一致性
+            if engine and hasattr(engine, 'route_manager'):
+                route_prefix = info.get('route_prefix', '')
+                sub_dir = info.get('sub_dir', '')
+                url = engine.route_manager.resolve_logical_url(lang, route_prefix, sub_dir, slug)
+            else:
+                # 兼容旧逻辑
+                url = f"/{lang}/docs/{slug}.html"
+
             search_data.append({
                 "title": info.get('title', os.path.basename(rel_path)),
                 "description": (info.get('seo_data') or {}).get('description', ''),
-                "url": f"/{lang}/docs/{slug}.html",
+                "url": url,
                 "path": rel_path
             })
         try:

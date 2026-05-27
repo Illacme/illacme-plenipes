@@ -65,7 +65,16 @@
                     <span class="pod-title">PRESS IDENTITY</span>
                     <div class="heartbeat-indicator pulsing healthy"></div>
                 </div>
-                <div id="sidebar-imprint-display" class="imprint-badge-glow">LOADING...</div>
+                <div class="identity-badge-group" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="identity-item" style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.55rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; min-width: 45px;">THEME:</span>
+                        <div id="sidebar-theme-display" class="imprint-badge-glow">LOADING...</div>
+                    </div>
+                    <div class="identity-item" style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                        <span style="font-size: 0.55rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; min-width: 45px;">VAULT:</span>
+                        <div id="sidebar-vault-display" style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="LOADING...">LOADING...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- 🧠 Intelligence Pod: Governance Context -->
@@ -74,32 +83,26 @@
                     <span class="pod-title">INTELLIGENCE</span>
                 </div>
                 <div id="governance-context" class="context-matrix vertical">
-                    <div class="context-capsule">
-                        <div class="capsule-icon">📂</div>
-                        <div class="capsule-data">
-                            <div class="capsule-label">VAULT PATH</div>
-                            <div class="capsule-value mono" id="ctx-vault" style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="-">-</div>
-                        </div>
-                    </div>
-                    <div class="context-capsule">
+
+                    <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')" title="点击一键直达系统治理 - 翻译矩阵配置">
                         <div class="capsule-icon">✍️</div>
                         <div class="capsule-data">
                             <div class="capsule-label">DIALECT</div>
                             <div class="capsule-value mono" id="ctx-dialect">-</div>
                         </div>
                     </div>
-                    <div class="context-capsule">
-                        <div class="capsule-icon">🧠</div>
-                        <div class="capsule-data">
-                            <div class="capsule-label">COMPUTE CORE</div>
-                            <div class="capsule-value mono" id="ctx-ai">-</div>
-                        </div>
-                    </div>
-                    <div class="context-capsule">
+                    <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')" title="点击一键直达系统治理 - 翻译矩阵配置">
                         <div class="capsule-icon">🌍</div>
                         <div class="capsule-data">
                             <div class="capsule-label">TRANSLATION ARRAY</div>
                             <div class="capsule-value mono" id="ctx-i18n">-</div>
+                        </div>
+                    </div>
+                    <div class="context-capsule clickable" onclick="window.showView('compute', 'strategy')" title="点击一键直达算力中心配置">
+                        <div class="capsule-icon">🧠</div>
+                        <div class="capsule-data">
+                            <div class="capsule-label">COMPUTE CORE</div>
+                            <div class="capsule-value mono" id="ctx-ai">-</div>
                         </div>
                     </div>
                 </div>
@@ -120,9 +123,12 @@
                 <div class="pod-header">
                     <span class="pod-title">OPERATIONS</span>
                 </div>
+                <div class="control-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <button class="mini-btn glow-btn" onclick="location.reload()" title="重新加载当前管理面板状态" style="flex: 1;">🔄 刷新面板</button>
+                    <button class="mini-btn glow-btn" id="btn-system-gc" onclick="window.triggerSystemGC()" title="物理清洗底层已失效的幽灵路由与冗余资产" style="flex: 1; background: rgba(0, 242, 255, 0.1); border-color: rgba(0, 242, 255, 0.3);">🧹 清洗路由</button>
+                </div>
                 <div class="control-row">
-                    <button class="mini-btn glow-btn full-width" onclick="location.reload()" title="物理重载系统">🔄 刷新全域链路</button>
-                    <button class="mini-btn danger-btn" id="master-shutdown-btn" onclick="shutdownSystem()" title="物理级紧急关机">⏻ 停机</button>
+                    <button class="mini-btn danger-btn full-width" id="master-shutdown-btn" onclick="shutdownSystem()" title="安全关闭后端的 Illacme Plenipes 引擎服务">⏻ 关闭服务</button>
                 </div>
             </div>
         </aside>

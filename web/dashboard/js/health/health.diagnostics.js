@@ -4,7 +4,31 @@
  */
 
 window.refreshGovernanceContext = async () => {
-    const data = await apiFetch('/api/system/context');
+    const heartbeat = document.querySelector('.heartbeat-indicator');
+    let data;
+    try {
+        data = await apiFetch('/api/system/context');
+    } catch (e) {
+        console.error("Failed to fetch governance context:", e);
+    }
+
+    if (heartbeat) {
+        heartbeat.classList.remove('healthy', 'warning', 'blocked', 'status-offline', 'status-standby');
+        if (!data || data.error) {
+            heartbeat.classList.add('blocked');
+            heartbeat.title = "系统体征：断开或阻塞 (Blocked / Offline)";
+        } else if (data.onboarding_required) {
+            heartbeat.classList.add('warning');
+            heartbeat.title = "系统体征：文库未对正 (Warning: Onboarding Required)";
+        } else if (data.ai && data.ai.status === 'degraded') {
+            heartbeat.classList.add('warning');
+            heartbeat.title = "系统体征：算力降级 (Warning: AI Degraded)";
+        } else {
+            heartbeat.classList.add('healthy');
+            heartbeat.title = "系统体征：健康 (Healthy)";
+        }
+    }
+
     if (data && !data.error) {
         // 🚀 [V74.9] Onboarding 极简自动引导自愈
         if (data.onboarding_required) {
@@ -72,10 +96,19 @@ window.refreshGovernanceContext = async () => {
         }
 
         const badge = document.getElementById('active-imprint-name');
-        if (badge) badge.innerText = (data.imprint_name || data.imprint || 'UNKNOWN').toUpperCase();
+        if (badge) badge.innerText = data.imprint_name || data.imprint || 'UNKNOWN';
 
-        const sidebarBadge = document.getElementById('sidebar-imprint-display');
-        if (sidebarBadge) sidebarBadge.innerText = data.imprint_name || data.imprint || 'DEFAULT';
+        const sidebarTheme = document.getElementById('sidebar-theme-display');
+        if (sidebarTheme && data.theme) {
+            sidebarTheme.innerText = data.theme;
+        }
+
+        const sidebarVault = document.getElementById('sidebar-vault-display');
+        if (sidebarVault && data.vault) {
+            const rawPath = data.vault.root || '-';
+            sidebarVault.innerText = rawPath;
+            sidebarVault.title = rawPath;
+        }
 
         const displayImprint = document.getElementById('display-imprint');
         if (displayImprint) displayImprint.innerText = (data.imprint_name || data.imprint || 'DEFAULT').toUpperCase();
@@ -85,24 +118,9 @@ window.refreshGovernanceContext = async () => {
 
         const aiEl = document.getElementById('ctx-ai');
         const i18nEl = document.getElementById('ctx-i18n');
-        const vaultEl = document.getElementById('ctx-vault');
         const dialectEl = document.getElementById('ctx-dialect');
 
-        if (vaultEl && data.vault) {
-            const rawPath = data.vault.root || '-';
-            vaultEl.title = rawPath;
-            if (rawPath.length > 20) {
-                const sep = rawPath.includes('\\') ? '\\' : '/';
-                const parts = rawPath.split(/[/\\]/);
-                if (parts.length > 2) {
-                    vaultEl.innerText = '...' + sep + parts.slice(-2).join(sep);
-                } else {
-                    vaultEl.innerText = rawPath;
-                }
-            } else {
-                vaultEl.innerText = rawPath;
-            }
-        }
+
         if (dialectEl && data.vault) {
             dialectEl.innerText = data.vault.dialect || '-';
         }
@@ -142,6 +160,7 @@ window.refreshGovernanceContext = async () => {
             const targetsStr = targets.length > 0 ? targets.join(', ') : 'NONE';
             i18nEl.innerText = `${data.i18n.source} ➔ ${targetsStr}`;
         }
+
         
         // 🚀 [V52.11] 依赖安装自动化
         if (data.needs_install && typeof triggerThemeInstall === 'function') {
@@ -229,5 +248,48 @@ window.controlWizard = async (action) => {
         }
     } else {
         addAudit(`🛑 指令执行失败: ${res ? res.message : '未知错误'}`, "error");
+    }
+};
+
+window.triggerSystemGC = async () => {
+    const btn = document.getElementById('btn-system-gc');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "🧹 清洗中...";
+    }
+    
+    addAudit("🧹 正在发起 [清洗路由] 指令，物理回收失效资产...", "info");
+    
+    try {
+        const res = await apiFetch('/api/governance/gc', { method: 'POST' });
+        if (res && res.status === 'success') {
+            addAudit("✅ 清洗路由成功：失效的幽灵路由与冗余文件回收完毕！", "success");
+            Swal.fire({
+                title: '🧹 清洗路由成功',
+                text: '系统已安全唤醒清道夫 Janitor 引擎，彻底回收了出版版图内已失效的幽灵路由、过期页面和冗余垃圾资产。',
+                icon: 'success',
+                background: 'rgba(20, 20, 25, 0.95)',
+                color: '#fff',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
+        } else {
+            const msg = (res && res.message) ? res.message : '未知异常';
+            addAudit(`🛑 清洗路由失败: ${msg}`, "error");
+            Swal.fire({
+                title: '🚨 清洗路由失败',
+                text: `清道夫引擎响应异常: ${msg}`,
+                icon: 'error',
+                background: 'rgba(20, 20, 25, 0.95)',
+                color: '#fff',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
+        }
+    } catch (e) {
+        addAudit(`🛑 清洗路由请求崩溃: ${e.message || e}`, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "🧹 清洗路由";
+        }
     }
 };

@@ -20,8 +20,8 @@ class StarlightAdapter(BaseSSGAdapter):
     def get_default_path_mappings(cls) -> Dict[str, str]:
         """🚀 [V76.0] Starlight 推荐的原生默认物理寻址映射"""
         return {
-            'source_dir': "src/content/docs",
-            'static_dir': "dist",
+            'source_dir': "src/content",
+            'site_dir': "dist",
             'assets_dir': "public/assets",
             'graph_json_dir': "public"
         }
@@ -37,23 +37,23 @@ class StarlightAdapter(BaseSSGAdapter):
         return {
             "docs": {
                 "label": "文档中心",
-                "single": "src/content/docs/docs",
-                "multi": "src/content/docs/{lang}/docs"
+                "single": "docs",
+                "multi": "docs/{lang}"
             },
             "blog": {
                 "label": "博客文章",
-                "single": "src/content/docs/blog",
-                "multi": "src/content/docs/{lang}/blog"
+                "single": "blog",
+                "multi": "blog/{lang}"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "src/pages",
-                "multi": "src/pages/{lang}"
+                "single": "../pages",
+                "multi": "../pages/{lang}"
             },
             "static": {
                 "label": "静态资产",
-                "single": "public",
-                "multi": "public"
+                "single": "../../public",
+                "multi": "../../public"
             }
         }
     

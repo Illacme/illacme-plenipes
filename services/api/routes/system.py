@@ -121,7 +121,7 @@ def restart_preview() -> Dict[str, str]:
                 cmd = "npm run start -- --port {port}"
             engine.preview_server = FrameworkDevServer(directory=theme_dir, command=cmd, port=port)
         else:
-            preview_dir = engine.paths.get('static_dir') or engine.paths.get('target_base')
+            preview_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
             engine.preview_server = DevServer(directory=preview_dir, port=port)
     
     try:

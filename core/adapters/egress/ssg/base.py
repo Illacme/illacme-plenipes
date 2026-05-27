@@ -16,10 +16,10 @@ class BaseSSGAdapter(abc.ABC):
     def get_default_path_mappings(cls) -> Dict[str, str]:
         """🚀 [V76.0] 声明该适配器推荐的原生默认物理寻址映射"""
         return {
-            'source_dir': "content",
-            'static_dir': "public",
-            'assets_dir': "static/assets",
-            'graph_json_dir': "static"
+            'source_dir': "src/content",
+            'site_dir': "dist",
+            'assets_dir': "public/assets",
+            'graph_json_dir': "public"
         }
 
     def __init__(self, theme_settings: Any = None, engine=None):
@@ -212,7 +212,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: {static_dir}
+          path: {site_dir}
           
       - name: Deploy to GitHub Pages
         id: deployment

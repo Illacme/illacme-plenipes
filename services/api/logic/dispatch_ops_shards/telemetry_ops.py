@@ -47,8 +47,8 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
 
     # 动态推导静态输出根目录，优先从 engine.paths 中读取
     static_root = ""
-    if hasattr(engine, "paths") and engine.paths.get("static_dir"):
-        static_root = engine.paths.get("static_dir")
+    if hasattr(engine, "paths") and engine.paths.get("site_dir"):
+        static_root = engine.paths.get("site_dir")
     else:
         static_root = os.path.join("imprints", imprint_id, "themes", theme, "static")
 

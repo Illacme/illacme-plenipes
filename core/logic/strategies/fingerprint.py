@@ -196,6 +196,10 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
             success = True
             return "UPDATED"
+        except FileNotFoundError:
+            tlog.warning(f"⏭️ [同步中止] 源文件在物理上已不存在，可能是在同步过程中被重命名或已被删除: {rel_path}")
+            success = True
+            return "ABORT"
         except Exception as e:
             tlog.error(f"🚨 [同步引擎故障] {rel_path}: {e}")
             if "429" in str(e): error_code = 429

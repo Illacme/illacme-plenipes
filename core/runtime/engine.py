@@ -156,12 +156,13 @@ class IllacmeEngine:
                 return os.path.abspath(p)
             
             paths_cfg = self.config.output_paths or {}
-            source_dir = paths_cfg.get('source_dir') or paths_cfg.get('docs_dir') or paths_cfg.get('markdown_dir')
+            source_dir = paths_cfg.get('source_dir')
+            site_dir = paths_cfg.get('site_dir')
             
             # 更新核心物理路径
             self.paths["vault"] = self.vault_root
             self.paths["source_dir"] = anchor((source_dir or "").replace("{theme}", self.active_theme))
-            self.paths["static_dir"] = anchor((paths_cfg.get('static_dir') or "").replace("{theme}", self.active_theme))
+            self.paths["site_dir"] = anchor((site_dir or "").replace("{theme}", self.active_theme))
             self.paths["assets"] = anchor((paths_cfg.get('assets_dir') or "").replace("{theme}", self.active_theme))
             self.paths["db"] = anchor(self.config.get_ledger_path())
 

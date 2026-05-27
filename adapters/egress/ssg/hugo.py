@@ -28,7 +28,7 @@ class HugoAdapter(BaseSSGAdapter):
         """🚀 [V76.0] Hugo 推荐的原生默认物理寻址映射"""
         return {
             'source_dir': "content",
-            'static_dir': "public",
+            'site_dir': "public",
             'assets_dir': "static/assets",
             'graph_json_dir': "static"
         }
@@ -175,7 +175,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: {static_dir}
+          path: {site_dir}
           
       - name: Deploy to GitHub Pages
         id: deployment

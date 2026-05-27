@@ -21,8 +21,16 @@ class HeartbeatFilter(logging.Filter):
             bool: 是否允许该日志记录通过
         """
         msg = record.getMessage()
-        # 屏蔽仪表盘的高频数据轮询日志，防止污染控制台
-        return "/api/billing/stats" not in msg and "/api/galaxy/graph" not in msg
+        # 屏蔽仪表盘的高频数据轮询与心跳日志，防止污染控制台
+        ignored_endpoints = [
+            "/api/system/stats",
+            "/api/system/health/matrix",
+            "/api/system/context",
+            "/api/imprints",
+            "/api/billing/stats",
+            "/api/galaxy/graph"
+        ]
+        return not any(endpoint in msg for endpoint in ignored_endpoints)
 
 def setup_api_logging(logger_name: str = "uvicorn.access") -> None:
     """

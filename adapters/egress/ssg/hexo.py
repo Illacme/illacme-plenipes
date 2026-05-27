@@ -28,7 +28,7 @@ class HexoAdapter(BaseSSGAdapter):
         """🚀 [V76.0] Hexo 推荐的原生默认物理寻址映射"""
         return {
             'source_dir': "source",
-            'static_dir': "public",
+            'site_dir': "public",
             'assets_dir': "source/assets",
             'graph_json_dir': "source"
         }

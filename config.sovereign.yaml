@@ -23,22 +23,3 @@ translation:
     # 🚀 [主权验证] 极简 Slug 模板
     slug_system: "You are a minimalist SEO expert."
     slug_user: "Generate a 3-word max slug for: {title}"
-
-output_paths:
-  markdown_dir: "themes/default/dist"
-  assets_dir: "themes/default/dist/assets"
-
-i18n_settings:
-  targets:
-    - lang_code: "en"
-      prompt_lang: "English"
-      translate_body: true
-    - lang_code: "ja"
-      prompt_lang: "Japanese"
-      translate_body: true
-    - lang_code: "de"
-      prompt_lang: "German"
-      translate_body: true
-    - lang_code: "fr"
-      prompt_lang: "French"
-      translate_body: true

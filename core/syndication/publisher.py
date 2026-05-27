@@ -95,7 +95,7 @@ class PublisherService:
             
             if not output_path:
                 paths_cfg = self.config.get("output_paths") or {}
-                output_path = paths_cfg.get("docs_dir") or paths_cfg.get("markdown_dir", "")
+                output_path = paths_cfg.get("source_dir", "")
                 
                 # 处理路径占位符
                 active_theme = self.config.get("active_theme", "docusaurus")

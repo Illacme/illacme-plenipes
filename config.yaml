@@ -1,8 +1,6 @@
-metadata_db: .plenipes/ledger.json
 lang_mapping:
   zh: zh-Hans
 system:
-  data_root: imprints/ancient_citadel
   log_level: INFO
   verbose_ai_logs: true
   singleton_port: 43210
@@ -157,14 +155,6 @@ syndication:
     enabled: false
     url: ''
     auth_token: ''
-timeline:
-  enabled: true
-  json_path: .plenipes/plenipes_timeline.json
-  markdown_path: .plenipes/timeline.md
-  max_entries: 1000
-governance: {}
-frontmatter_defaults:
-  author: Your Name
 frontmatter_order:
 - title
 - description
@@ -173,9 +163,3 @@ frontmatter_order:
 - date
 - tags
 - categories
-version: '24.0'
-output_paths:
-  source_dir: themes/default/content
-  static_dir: themes/default/public
-  assets_dir: themes/default/static/assets
-  graph_json_dir: themes/default/static

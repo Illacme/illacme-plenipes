@@ -84,8 +84,7 @@ class TestFullChainSovereignty(unittest.TestCase):
                     cfg['ingress_settings'] = {'ingress_rules': [{'source': 'blog/tech', 'target': 'posts/technology'}]}
                     cfg['output_paths'] = {
                         'source_dir': os.path.join(self.imprint_dir, 'dist/source'),
-                        'static_dir': os.path.join(self.imprint_dir, 'dist/static'),
-                        'markdown_dir': os.path.join(self.imprint_dir, 'dist/source'),
+                        'site_dir': os.path.join(self.imprint_dir, 'dist/static'),
                         'assets_dir': os.path.join(self.imprint_dir, 'dist/assets'),
                         'graph_json_dir': os.path.join(self.imprint_dir, 'dist/graph')
                     }

@@ -28,7 +28,7 @@ class NextraAdapter(BaseSSGAdapter):
         """🚀 [V76.0] Nextra 推荐的原生默认物理寻址映射"""
         return {
             'source_dir': "pages",
-            'static_dir': "out",
+            'site_dir': "out",
             'assets_dir': "public/assets",
             'graph_json_dir': "public"
         }
