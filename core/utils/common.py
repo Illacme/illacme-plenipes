@@ -55,3 +55,20 @@ def normalize_keywords(kw_data):
     if isinstance(kw_data, list): return [str(k).strip() for k in kw_data if str(k).strip()]
     if isinstance(kw_data, str): return [k.strip() for k in re.split(r'[,，;；]', kw_data) if k.strip()]
     return [str(kw_data).strip()] if str(kw_data).strip() else []
+
+def promote_config_keys(data: dict) -> dict:
+    """🚀 [V66.6] “头部键强力提升 (Key Promotion)”协议
+    强制将核心基石字段置顶：version, imprint_name, imprint_description, vault_root, system
+    """
+    if not isinstance(data, dict):
+        return data
+    promoted_keys = ["version", "imprint_name", "imprint_description", "vault_root", "system"]
+    promoted_data = {}
+    for k in promoted_keys:
+        if k in data:
+            promoted_data[k] = data[k]
+    for k, v in data.items():
+        if k not in promoted_keys:
+            promoted_data[k] = v
+    return promoted_data
+

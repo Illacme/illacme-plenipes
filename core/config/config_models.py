@@ -290,5 +290,9 @@ class Configuration(BaseModel):
             if 'translation' in data and 'compute_nodes' in data['translation']:
                 del data['translation']['compute_nodes']
         
+        # 🚀 [V66.6] “头部键强力提升 (Key Promotion)”协议
+        from core.utils.common import promote_config_keys
+        data = promote_config_keys(data)
+
         with open(path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)

@@ -255,6 +255,8 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
             if dir_name: os.makedirs(dir_name, exist_ok=True)
             
             save_data = make_yaml_safe(file_data[lvl])
+            from core.utils.common import promote_config_keys
+            save_data = promote_config_keys(save_data)
 
             with open(path, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(save_data, f, allow_unicode=True, sort_keys=False)

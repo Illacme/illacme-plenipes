@@ -126,7 +126,9 @@ tags: [Illacme, Onboarding]
         # 🧪 [V50.3] 凭据主权加固：执行物理脱敏
         secrets.mask_dict(base_config)
 
-        # 🚀 [V55.22] 物理主权重建：使用统一的常量定义
+        # 🛡️ [V55.22] 物理主权重建：使用统一的常量定义
+        from core.utils.common import promote_config_keys
+        base_config = promote_config_keys(base_config)
         with open(os.path.join(imprint_path, CONFIG_DIR, CONFIG_IMPRINT_NAME), 'w', encoding='utf-8') as f:
             yaml.safe_dump(base_config, f, allow_unicode=True)
 

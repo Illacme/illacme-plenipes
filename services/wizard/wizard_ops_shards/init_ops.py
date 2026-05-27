@@ -48,6 +48,8 @@ def init_press_logic(req, shutdown_cb=None):
             if "ingress_settings" not in cfg: cfg["ingress_settings"] = {}
             cfg["ingress_settings"]["active_dialects"] = [req.active_dialect] if req.active_dialect else ["auto"]
             
+            from core.utils.common import promote_config_keys
+            cfg = promote_config_keys(cfg)
             with open(cfg_p, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(cfg, f, allow_unicode=True)
         except Exception as e:
@@ -144,6 +146,8 @@ def init_press_logic(req, shutdown_cb=None):
             local_data["translation"]["primary_node"] = "lmstudio_local"
             local_data["translation"]["primary_model"] = "qwen/qwen3.5-9b"
 
+        from core.utils.common import promote_config_keys
+        local_data = promote_config_keys(local_data)
         with open(local_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(local_data, f, allow_unicode=True)
         tlog.success(f"🛡️ [主权锁定] 版图 '{imp_id}' 指纹已强制写入 {local_path}。")

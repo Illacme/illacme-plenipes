@@ -61,6 +61,8 @@ def deep_reload_imprint(imprint_id: str):
                     # 如果版图内缺失 vault_root，则从当前 local 补全
                     if not target_cfg.get("vault_root") and existing_local.get("vault_root"):
                         target_cfg["vault_root"] = existing_local["vault_root"]
+                        from core.utils.common import promote_config_keys
+                        target_cfg = promote_config_keys(target_cfg)
                         with open(target_imprint_yaml, "w", encoding="utf-8") as f:
                             yaml.safe_dump(target_cfg, f, allow_unicode=True)
                         tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
@@ -74,6 +76,8 @@ def deep_reload_imprint(imprint_id: str):
                 if not existing_local["system"]:
                     del existing_local["system"]
 
+            from core.utils.common import promote_config_keys
+            existing_local = promote_config_keys(existing_local)
             with open(local_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(existing_local, f, allow_unicode=True)
             tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活版图为 '{imprint_id}'，保持了环境层的高度精简与纯净。")
