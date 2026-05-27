@@ -151,6 +151,39 @@ def load_and_merge(manager) -> Dict[str, Any]:
     if manager.imprint_id:
         final_cfg['active_imprint'] = manager.imprint_id
         
+        # 🚀 [V75.6] 主权防毒与纠偏：对于任何在品牌主权配置文件中显式定义的主权层字段 (Imprint Level)，
+        # 必须确保它们在最终合并后拥有绝对控制权，防止被本地环境层 (config.local.yaml) 的陈旧覆盖所投毒。
+        if active_id and active_id != "default":
+            imprint_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+            if os.path.exists(imprint_path):
+                try:
+                    with open(imprint_path, 'r', encoding='utf-8') as f:
+                        imprint_cfg = yaml.safe_load(f) or {}
+                    
+                    # 仅提取和应用主权层级的配置，进行二次强力对正
+                    from core.config.governance_map import resolve_governance_level
+                    
+                    def reapply_imprint_fields(target_dict, source_dict, prefix=""):
+                        for k, v in source_dict.items():
+                            full_key = f"{prefix}{k}"
+                            if isinstance(v, dict):
+                                level = resolve_governance_level(full_key)
+                                if level == "imprint":
+                                    target_dict[k] = deep_update(target_dict.get(k, {}), v)
+                                else:
+                                    if k not in target_dict or not isinstance(target_dict[k], dict):
+                                        target_dict[k] = {}
+                                    reapply_imprint_fields(target_dict[k], v, f"{full_key}.")
+                            else:
+                                level = resolve_governance_level(full_key)
+                                if level == "imprint":
+                                    target_dict[k] = v
+                                    
+                    reapply_imprint_fields(final_cfg, imprint_cfg)
+                    tlog.debug(f"🛡️ [主权防毒] 已完成对品牌 '{active_id}' 主权配置字段的强力二次对正。")
+                except Exception as err:
+                    tlog.warning(f"⚠️ [主权防毒失败] 无法对正主权字段: {err}")
+
         # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
         # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
         if manager.imprint_id == "default":

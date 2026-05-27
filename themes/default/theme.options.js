@@ -1,8 +1,8 @@
 // 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
 export const themeOptions = {
-  "site_name": "Luminous Sovereign",
+  "site_name": "Borealis realm",
   "logo_path": "/static/logo.png",
-  "footer_copyright": "© 2026 All Rights Reserved",
+  "footer_copyright": "© 2026 Illacme Sovereign. All Rights Reserved.",
   "enable_custom_style": false,
   "accent_color": "#00f5ff",
   "font_family": "Outfit, sans-serif",
