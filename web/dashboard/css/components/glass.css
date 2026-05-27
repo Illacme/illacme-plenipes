@@ -1132,3 +1132,12 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
 .scroll-container::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
+
+#sidebar-vault-display {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#sidebar-vault-display:hover {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 8px var(--neon-cyan);
+}

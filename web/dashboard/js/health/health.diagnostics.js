@@ -60,7 +60,7 @@ window.refreshGovernanceContext = async () => {
                                 input.style.boxShadow = '0 0 15px var(--accent-primary)';
                                 input.style.borderColor = 'var(--accent-primary)';
                                 input.style.transition = 'all 0.5s ease-in-out';
-                                
+
                                 // 创建发光动画
                                 let pulse = true;
                                 const interval = setInterval(() => {
@@ -76,7 +76,7 @@ window.refreshGovernanceContext = async () => {
                                     }
                                     pulse = !pulse;
                                 }, 800);
-                                
+
                                 // 用户一输入或者失焦，立即清除发光效果
                                 const cleanUp = () => {
                                     clearInterval(interval);
@@ -124,11 +124,11 @@ window.refreshGovernanceContext = async () => {
         if (dialectEl && data.vault) {
             dialectEl.innerText = data.vault.dialect || '-';
         }
-        
+
         if (aiEl && data.ai) {
             const isDegraded = data.ai.status === 'degraded';
             aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
-            
+
             // 📡 算力控制塔主备与容灾拓扑对正 (V75.12)
             const aiCapsule = aiEl.closest('.context-capsule');
             if (aiCapsule && data.ai.strategy) {
@@ -136,18 +136,18 @@ window.refreshGovernanceContext = async () => {
                 const pri = data.ai.primary;
                 const fal = data.ai.fallback;
                 const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
-                
+
                 aiCapsule.title = `算力控制塔 ───\n` +
-                                  `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
-                                  `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ STANDBY 🟡\n` +
-                                  `[策略] ${strategy} (自动故障切换)\n\n` +
-                                  `点击一键直达算力中心 - 调度策略`;
+                    `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
+                    `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ 🟡 STANDBY\n` +
+                    `[策略] ${strategy} (自动故障切换)\n\n` +
+                    `点击一键直达算力中心 - 调度策略`;
             }
 
             if (isDegraded) {
                 aiEl.style.color = 'var(--accent-secondary)';
                 aiEl.style.fontWeight = 'bold';
-                
+
                 // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
                 if (window.currentView !== 'settings' && !window._ai_warning_shown) {
                     window._ai_warning_shown = true;
@@ -178,7 +178,7 @@ window.refreshGovernanceContext = async () => {
             i18nEl.innerText = `${data.i18n.source} ➔ ${targetsStr}`;
         }
 
-        
+
         // 🚀 [V52.11] 依赖安装自动化
         if (data.needs_install && typeof triggerThemeInstall === 'function') {
             triggerThemeInstall();
@@ -211,7 +211,7 @@ window.invokeServiceAction = async (action) => {
 
         if (out) out.innerHTML += `<div class="term-line" style="color:var(--accent-primary)">[${new Date().toLocaleTimeString()}] 🚀 正在向底层引擎下达${action === 'install' ? '补全依赖' : '重启服务'}指令...</div>`;
         const res = await apiFetch(`/api/system/preview/${action}`, { method: 'POST' });
-        
+
         if (res && res.status === 'success') {
             addAudit("✅ 预览服务器重启指令已送达。", "success");
         } else {
@@ -274,9 +274,9 @@ window.triggerSystemGC = async () => {
         btn.disabled = true;
         btn.innerText = "🧹 清洗中...";
     }
-    
+
     addAudit("🧹 正在发起 [清洗路由] 指令，物理回收失效资产...", "info");
-    
+
     try {
         const res = await apiFetch('/api/governance/gc', { method: 'POST' });
         if (res && res.status === 'success') {
@@ -308,5 +308,32 @@ window.triggerSystemGC = async () => {
             btn.disabled = false;
             btn.innerText = "🧹 清洗路由";
         }
+    }
+};
+
+window.copyVaultPath = async () => {
+    const el = document.getElementById('sidebar-vault-display');
+    if (!el) return;
+    
+    const rawPath = el.title;
+    if (!rawPath || rawPath === 'LOADING...' || rawPath === '-') return;
+    
+    try {
+        await navigator.clipboard.writeText(rawPath);
+        addAudit("📋 已成功复制物理文库绝对路径到剪贴板！", "success");
+        
+        Swal.fire({
+            toast: true,
+            position: 'top',
+            icon: 'success',
+            title: '绝对路径已复制',
+            showConfirmButton: false,
+            timer: 1500,
+            background: 'rgba(20, 20, 25, 0.95)',
+            color: '#fff'
+        });
+    } catch (e) {
+        console.error("Failed to copy vault path:", e);
+        addAudit("🛑 复制物理路径失败：" + (e.message || e), "error");
     }
 };
