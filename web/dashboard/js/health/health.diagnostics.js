@@ -126,8 +126,25 @@ window.refreshGovernanceContext = async () => {
         }
         
         if (aiEl && data.ai) {
-            aiEl.innerText = `${data.ai.provider} / ${data.ai.model}`;
-            if (data.ai.status === 'degraded') {
+            const isDegraded = data.ai.status === 'degraded';
+            aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
+            
+            // 📡 算力控制塔主备与容灾拓扑对正 (V75.12)
+            const aiCapsule = aiEl.closest('.context-capsule');
+            if (aiCapsule && data.ai.strategy) {
+                const strategy = data.ai.strategy;
+                const pri = data.ai.primary;
+                const fal = data.ai.fallback;
+                const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
+                
+                aiCapsule.title = `算力控制塔 ───\n` +
+                                  `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
+                                  `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ STANDBY 🟡\n` +
+                                  `[策略] ${strategy} (自动故障切换)\n\n` +
+                                  `点击一键直达算力中心 - 调度策略`;
+            }
+
+            if (isDegraded) {
                 aiEl.style.color = 'var(--accent-secondary)';
                 aiEl.style.fontWeight = 'bold';
                 

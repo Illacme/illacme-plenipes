@@ -26,6 +26,22 @@ def get_system_context_impl():
         node_cfg = ai_cfg.compute_nodes[active_node]
         active_provider = (getattr(node_cfg, "type", "") or "Unknown").upper()
 
+    # 📡 物理算力容灾拓扑对正 (V75.12)
+    primary_node = ai_cfg.primary_node or "Unknown"
+    fallback_node = ai_cfg.fallback_node or "Unknown"
+    primary_model = ai_cfg.primary_model or "Unknown"
+    fallback_model = ai_cfg.fallback_model or "Unknown"
+    
+    primary_provider = "UNKNOWN"
+    if primary_node in ai_cfg.compute_nodes:
+        primary_provider = (getattr(ai_cfg.compute_nodes[primary_node], "type", "") or "UNKNOWN").upper()
+        
+    fallback_provider = "UNKNOWN"
+    if fallback_node in ai_cfg.compute_nodes:
+        fallback_provider = (getattr(ai_cfg.compute_nodes[fallback_node], "type", "") or "UNKNOWN").upper()
+
+    strategy_str = ai_cfg.strategy.value if hasattr(ai_cfg.strategy, "value") else str(ai_cfg.strategy)
+
     active_imprint = im.get_active_imprint()
 
     theme_map = {
@@ -68,7 +84,18 @@ def get_system_context_impl():
             "provider": active_provider,
             "model": active_model,
             "status": "degraded" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else "online",
-            "warning": "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else None
+            "warning": "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else None,
+            "strategy": strategy_str.upper(),
+            "primary": {
+                "node": primary_node,
+                "provider": primary_provider,
+                "model": primary_model
+            },
+            "fallback": {
+                "node": fallback_node,
+                "provider": fallback_provider,
+                "model": fallback_model
+            }
         },
         "i18n": {
             "source": getattr(engine.config.i18n_settings.source, 'prompt_lang', "Chinese"),
