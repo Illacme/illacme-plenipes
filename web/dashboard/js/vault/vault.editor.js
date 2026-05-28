@@ -63,21 +63,6 @@ window.openEditor = async (docId) => {
                 console.error("Draft parsing failed:", e);
             }
         }
-        
-        // 💾 绑定防抖自动存盘事件
-        const onInput = () => { window.triggerAutoSave(); };
-        if (body) body.addEventListener('input', onInput);
-        if (mTitle) mTitle.addEventListener('input', onInput);
-        if (mSlug) mSlug.addEventListener('input', onInput);
-        
-        // 为动态生成的元数据区绑定 input 监听
-        setTimeout(() => {
-            const metaInputs = document.querySelectorAll('.metadata-input');
-            metaInputs.forEach(input => {
-                input.addEventListener('input', onInput);
-                input.addEventListener('change', onInput);
-            });
-        }, 300);
     }
 };
 
@@ -382,14 +367,6 @@ window.restoreScratchpadDraft = () => {
         
         updateEditorPreview();
         
-        // 重新绑定防抖存盘事件
-        const onInput = () => { window.triggerAutoSave(); };
-        const metaInputs = document.querySelectorAll('.metadata-input');
-        metaInputs.forEach(input => {
-            input.addEventListener('input', onInput);
-            input.addEventListener('change', onInput);
-        });
-        
         const recoveryBar = document.getElementById('editor-draft-recovery-bar');
         if (recoveryBar) recoveryBar.style.display = 'none';
         
@@ -419,3 +396,23 @@ window.discardScratchpadDraft = () => {
     const recoveryBar = document.getElementById('editor-draft-recovery-bar');
     if (recoveryBar) recoveryBar.style.display = 'none';
 };
+
+// 💾 全局一次性“零泄露事件委托”总线监听
+setTimeout(() => {
+    const modal = document.getElementById('editor-modal');
+    if (modal) {
+        modal.addEventListener('input', (e) => {
+            const id = e.target.id;
+            const isMeta = e.target.classList.contains('metadata-input');
+            if (id === 'editor-body' || id === 'editor-meta-title' || id === 'editor-meta-slug' || isMeta) {
+                window.triggerAutoSave();
+            }
+        });
+        modal.addEventListener('change', (e) => {
+            if (e.target.classList.contains('metadata-input')) {
+                window.triggerAutoSave();
+            }
+        });
+        console.info("💾 [Scratchpad] Zero-Leak Event Delegation registered successfully.");
+    }
+}, 500);
