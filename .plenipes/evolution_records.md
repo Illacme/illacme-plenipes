@@ -32,3 +32,93 @@
     1.  **非阻塞锁外极速快照技术 (Non-Blocking Snapshot)**：为了彻底消除磁盘物理 I/O 带来的占锁时延，重构图谱保存机制：在线程安全的 `RLock` 临界区内，仅仅进行极速的内存快照拷贝（`copy.deepcopy(self.nodes)`），并立即释放锁。随后，高开销的 `json.dump` 等磁盘持久化操作在锁范围外的安全上下文中异步执行，使内存读写接口实现毫秒级零延迟。
     2.  **物理防抖合并与双轨写入机制 (Debounce & Dual-Channel Write)**：引入 `threading.Timer` 守护线程，实现 `0.5s` 的延迟防抖合并写入通道（适用于 AI 语义织网等高频写场景，可削峰 95%+ 的磁盘物理写操作）；同时为用户编辑保存提供即时强行同步刷盘通道（`debounce=False`），并在实例销毁时（`shutdown` 与 `__del__`）优雅清理并回收挂起的守护线程，保证并发性能与数据完整性的 paraconic balance。
 
+## 📅 2026-05-28: CSS 巨石文件物理降解与样式覆写优先级丢失规避 (CSS Sovereign Modularization)
+*   **现象描述**：在对体积庞大的 `compute.css` 巨石文件执行 SOP-02 模块拆分时，将底部的策略层组件样式（含带有 `!important` 覆盖全局视图的紧凑型微调样式）抽出至新文件 `compute.strategy.css` 后，若新文件在 `index.html` 中的引入位置靠前，则会导致原始大文件中的基础选择器重新覆盖新文件，破坏原有视觉优先级。
+*   **根因剖析**：CSS 级联优先级不仅依赖于选择器特异性（Specificity），还强烈依赖于加载顺序。同一特异性下，后加载的样式表胜出。拆分出的策略层文件（包含了针对容器级别的 override 规则）必须物理后置加载，否则这些覆盖性规则会失效，引发意料之外的 UI 层叠倒挂。
+*   **防线策略与沉淀**：
+    1.  **逻辑域解构映射与依赖对齐**：拆分 CSS 文件不仅是按行截断，必须首要提炼全量选择器指纹与功能区块边界（物理存证阶段）。明确识别出属于“基础设施层”（底层骨架）与“策略指挥层”（上层交互与重载）的职责切割。
+    2.  **强制顺位挂载与 HTML 依赖同步**：抽出为高层级的新 CSS 文件（如 `*.strategy.css`），在 `index.html` 的 `<link>` 矩阵中，必须**物理紧随**在基础文件之后注入加载，从加载序列层面固化后发覆盖优先级，规避拆分导致的回退风险。
+
+## [SOP-02] 物理架构拆解与 DOM Parity 存证 (modals.css)
+- **时间**: 2026-05-28 18:20:28
+- **目标**: `modals.css` (639行)
+- **拆解结果**: `modals.base.css`, `modals.forms.css`, `modals.discovery.css`, `modals.alerts.css`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 所有输出文件 <300 行警戒线，已通过 Playwright 无头浏览器验证 DOM Parity 与视觉快照一致性，实现零破损重组。
+
+## [SOP-02] 物理架构拆解与 API/DOM Parity 存证 (plugins.editor.js)
+- **时间**: 2026-05-28 18:31:25
+- **目标**: `plugins.editor.js` (516行, P0级红线违规)
+- **拆解结果**: `plugins.platforms.js`, `plugins.subnodes.js`, `plugins.lifecycle.js`, `plugins.editor.js`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 成功清除了架构内唯一的 P0 级代码体积红线违规。4个生成文件均被压缩至 50-280 行区间。已执行 100% API Parity 验证与 DOM OuterHTML 无损碰撞。
+
+## [SOP-02] 物理架构拆解与 API/DOM Parity 存证 (vault.editor.js)
+- **时间**: 2026-05-28 23:25:19
+- **目标**: `vault.editor.js` (418行, P2级结构违规)
+- **拆解结果**: `vault.metadata.js`, `vault.drafts.js`, `vault.editor.js`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 成功切片了代码金库编辑器。3个生成文件均被压缩至 100-220 行区间。已执行 100% API Parity 验证与 DOM OuterHTML 结构等效碰撞。
+
+## [SOP-02] 物理架构拆解与 API/DOM Parity 存证 (health.diagnostics.js)
+- **时间**: 2026-05-28 23:30:29
+- **目标**: `health.diagnostics.js` (379行, P2级结构违规)
+- **拆解结果**: `health.context.js`, `health.services.js`, `health.diagnostics.js`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 成功切片了系统健康治理模块。3个生成文件均被压缩至 75-195 行区间。已执行 100% API Parity 验证与 DOM InnerHTML 结构等效碰撞。
+
+## [SOP-02] 物理架构拆解与 API/DOM Parity 存证 (governance.css) - 收官之战
+- **时间**: 2026-05-28 23:35:34
+- **目标**: `governance.css` (338行, P2级结构违规)
+- **拆解结果**: `governance.themes.css`, `governance.strategies.css`, `governance.localization.css`, `governance.css`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 成功切片了治理视图样式库，标志着全域 P2 违规文件已全部清零。4个生成文件均被控制在 110 行以内。已执行 100% 选择器特征谱验证与 DOM OuterHTML 结构等效碰撞。
+
+## [SOP-02] 物理架构拆解与全局特征存证 (dashboard.base.css) - 终局清剿
+- **时间**: 2026-05-28 23:41:24
+- **目标**: `dashboard.base.css` (429行, P2级遗留结构违规)
+- **拆解结果**: `dashboard.tokens.css`, `dashboard.components.css`, `dashboard.base.css`
+- **执行协议**: SOP-05 模板一 (深水区重构主权)
+- **合规审计**: 成功切片了最后一块超标的布局底座！3个生成文件均控制在极度健康的 110-180 行水准。已完成 100% Token 签名级差分对比与视觉防护。此举宣告了**系统全域 0 违规**的正式降临！
+
+## [SOP-03] P1 级代码质量违规洗礼：CSS 硬编码色值清剿
+- **时间**: 2026-05-28 23:47:30
+- **范围**: `dashboard.tokens.css`, `glass.widgets.css`, `glass.layout.css`, `glass.sovereign.css`, `governance.themes.css`, `dispatch.css`
+- **合规审计**: 在全局变量字典库中补全了 `--color-white` 与 `--color-black`。成功自动化跨文件清洗 26 处硬编码 ,  及带 Alpha 通道的硬编码。彻底解决系统最后的 P1 级色彩变量引用违规。
+
+## [SOP-04] 钢铁防线：物理主权纪律锁注入 (Git Pre-Commit Hook)
+- **时间**: 2026-05-28 23:55:10
+- **目标**: `.githooks/pre-commit`
+- **执行内容**: 为系统全局建立最高优先级的物理锁。在 Git 提交层面强制拦截 >300 行（物理行数超标）以及含硬编码色彩（#fff 等）的文件提交请求。
+- **合规审计**: 成功部署机器强制审判协议。纪律不以人类意志为转移，架构纯度永久封存！
+
+## [算力矩阵扩容] 百度千帆 (Baidu Qianfan) 原生协议适配器上线
+- **时间**: 2026-05-29 00:06:25
+- **目标**: `adapters/compute/qianfan.py`
+- **执行内容**: 
+  1. 创新性引入了 `API_KEY|SECRET_KEY` 的竖线隔离解包法，使得旧有 Dashboard 在无须升级表单字段的情况下完美支持 OAuth 双密钥认证。
+  2. 实现 Token 的内存级缓存（有效期内免鉴权），大幅优化 TTFB。
+  3. 彻底对齐文心大模型对 `messages` 交替出现的强制格式限制。
+  4. 算力总线动态挂载：系统 `AIProviderRegistry` 现已支持 `qianfan`、`baidu`、`ernie` 别名调取。
+- **合规审计**: 代码物理行数远低于 300 行警戒线，完全满足后端核心的结构要求。
+
+## [算力矩阵扩容] xAI (Grok) 官方协议适配器点亮
+- **时间**: 2026-05-29 00:09:30
+- **目标**: `adapters/compute/xai.py`
+- **执行内容**: 为系统注入马斯克 xAI 阵营的原生支持，设定默认 `https://api.x.ai/v1` 端点，底层全面继承并复用 `OpenAICompatibleTranslator` 稳健的安全与重试路由。
+- **合规审计**: 代码极其轻量化（< 20 行），通过 Pre-Commit Hook 审查。系统现已支持配置 `xai`、`grok` 作为 Provider。
+
+## [算力矩阵扩容] HuggingFace (Serverless Inference) 协议适配器点亮
+- **时间**: 2026-05-29 00:12:49
+- **目标**: `adapters/compute/huggingface.py`
+- **执行内容**: 为系统注入全球最大的开源模型集散地 HuggingFace 的支持。利用 HF 最新推出的 Serverless Messages API 标准，将其直接对接至大一统底座。
+- **合规审计**: 严格继承 `OpenAICompatibleTranslator` 的健壮重试逻辑，代码轻量纯净。
+
+## [主权视觉升华] 科幻视界 (Sci-Fi Vision) 动效部署
+- **时间**: 2026-05-29 00:22:18
+- **目标**: `web/dashboard/css/components/dashboard.animations.css` 及相关基建
+- **执行内容**:
+  1. 利用最新的 View Transitions API 降维打击了原有的 JS `setTimeout` 页面切换逻辑，实现了原生的跨面板模糊缩放溶解 (Cross-fade & Blur Scale) 动效。
+  2. 植入 `@keyframes neonPulse`，为探针与健康雷达赋予了真实的物理呼吸灯反馈。
+  3. 为核心卡片和 `.glow-btn` 引入 45度角玻璃反光 (Glass Glare) 及微重力悬浮交互。
+- **合规审计**: 动效逻辑被严密物理隔离在专属沙盒文件内（未超过 300 行），未污染核心业务组件库。

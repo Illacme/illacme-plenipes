@@ -190,6 +190,7 @@ window.viewTemplates = {
                         <div class="tab-item s-tab" data-cat="modes"><span class="tab-icon">📋</span> 出版模式</div>
                         <div class="tab-item s-tab" data-cat="localization"><span class="tab-icon">🌍</span> 翻译阵列</div>
                         <div class="tab-item s-tab" data-cat="translation_style"><span class="tab-icon">🎭</span> 翻译风格</div>
+                        <div class="tab-item s-tab" data-cat="route_matrix"><span class="tab-icon">🛣️</span> 高级路由</div>
                         <div class="tab-item s-tab" data-cat="guardrails"><span class="tab-icon">🛡️</span> 治理准入</div>
                     </aside>
                     <section class="tab-content-area">
@@ -247,15 +248,29 @@ const originalShowView = window.showView;
 window.showView = (id, subId) => {
     if (subId) window.pendingSubView = subId;
     const container = document.querySelector('main');
-    if (container) {
-        container.classList.add('switching-view');
-        if (typeof window.triggerSystemPulse === 'function') window.triggerSystemPulse();
-        setTimeout(() => {
-            if (originalShowView) originalShowView(id, subId);
-            container.classList.remove('switching-view');
-        }, 300);
-    } else {
+    
+    // 🌌 [V75.0] 物理视口拦截：原生 View Transitions 降维替换
+    const executeViewChange = () => {
         if (originalShowView) originalShowView(id, subId);
+    };
+
+    if (document.startViewTransition) {
+        if (typeof window.triggerSystemPulse === 'function') window.triggerSystemPulse();
+        document.startViewTransition(() => {
+            executeViewChange();
+        });
+    } else {
+        // 兜底降级：对于不支持的浏览器，继续走老的 setTimeout 动画
+        if (container) {
+            container.classList.add('switching-view');
+            if (typeof window.triggerSystemPulse === 'function') window.triggerSystemPulse();
+            setTimeout(() => {
+                executeViewChange();
+                container.classList.remove('switching-view');
+            }, 300);
+        } else {
+            executeViewChange();
+        }
     }
 };
 

@@ -4,12 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 🏛️ Asset Loading (V74.0) -->
+    <link rel="stylesheet" href="css/dashboard.tokens.css">
     <link rel="stylesheet" href="css/dashboard.base.css?v=75.0">
-    <link rel="stylesheet" href="css/components/glass.css?v=75.0">
-    <link rel="stylesheet" href="css/components/modals.css?v=75.0">
+    <link rel="stylesheet" href="css/dashboard.components.css">
+    <link rel="stylesheet" href="css/components/glass.css?v=76.0">
+    <link rel="stylesheet" href="css/components/glass.layout.css?v=76.0">
+    <link rel="stylesheet" href="css/components/glass.widgets.css?v=76.0">
+    <link rel="stylesheet" href="css/components/glass.sovereign.css?v=76.0">
+    <link rel="stylesheet" href="css/components/glass.editor.css?v=76.0">
+    <link rel="stylesheet" href="css/components/dashboard.animations.css">
+    <link rel="stylesheet" href="css/components/modals.base.css?v=75.0">
+    <link rel="stylesheet" href="css/components/modals.forms.css?v=75.0">
+    <link rel="stylesheet" href="css/components/modals.discovery.css?v=75.0">
+    <link rel="stylesheet" href="css/components/modals.alerts.css?v=75.0">
     <link rel="stylesheet" href="css/views/overview.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
+    <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
+    <link rel="stylesheet" href="css/views/compute.header.css?v=75.0">
+    <link rel="stylesheet" href="css/views/compute.strategy.css?v=75.0">
     <link rel="stylesheet" href="css/views/plugins.css?v=75.0">
+    <link rel="stylesheet" href="css/views/governance.themes.css">
+    <link rel="stylesheet" href="css/views/governance.strategies.css">
+    <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
     <link rel="stylesheet" href="css/views/dispatch.css?v=75.0">
     <!-- 🌌 Galaxy Engine Dependencies -->
@@ -260,6 +276,8 @@
     <script src="/dashboard/js/dashboard.ui.js?v=75.1"></script>
     <script src="/dashboard/js/vault/vault.tree.js"></script>
     <script src="/dashboard/js/vault/vault.parser.js"></script>
+    <script src="/dashboard/js/vault/vault.metadata.js"></script>
+    <script src="/dashboard/js/vault/vault.drafts.js"></script>
     <script src="/dashboard/js/vault/vault.editor.js"></script>
     <script src="/dashboard/js/vault/vault.ops.doc.ops.js"></script>
     <script src="/dashboard/js/vault/vault.ops.doc.js"></script>
@@ -267,6 +285,9 @@
     <script src="/dashboard/js/vault/vault.ops.js"></script>
     <script src="/dashboard/js/dashboard.vault.js?v=75.1"></script>
     <script src="/dashboard/js/plugins/plugins.render.js"></script>
+    <script src="/dashboard/js/plugins/plugins.platforms.js?v=80.1"></script>
+    <script src="/dashboard/js/plugins/plugins.subnodes.js?v=80.1"></script>
+    <script src="/dashboard/js/plugins/plugins.lifecycle.js?v=80.1"></script>
     <script src="/dashboard/js/plugins/plugins.editor.js?v=80.1"></script>
     <script src="/dashboard/js/plugins/plugins.sandbox.js"></script>
     <script src="/dashboard/js/dashboard.plugins.js?v=75.1"></script>
@@ -277,8 +298,12 @@
     <script src="/dashboard/js/localization/localization.render.js"></script>
     <script src="/dashboard/js/localization/localization.sync.js"></script>
     <script src="/dashboard/js/dashboard.localization.js"></script>
+    <script src="/dashboard/js/route/route.render.js?v=2"></script>
+    <script src="/dashboard/js/route/route.sync.js?v=2"></script>
     <script src="/dashboard/js/dashboard.guardrails.js"></script>
     <script src="/dashboard/js/health/health.render.js"></script>
+    <script src="/dashboard/js/health/health.context.js"></script>
+    <script src="/dashboard/js/health/health.services.js"></script>
     <script src="/dashboard/js/health/health.diagnostics.js"></script>
     <script src="/dashboard/js/dashboard.health.js"></script>
     <script src="/dashboard/js/dashboard.system.js"></script>

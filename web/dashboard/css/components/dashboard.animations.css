@@ -1,0 +1,119 @@
+/* 🌌 [V75.0] Illacme Plenipes - Sci-Fi Animations & Micro-interactions */
+/* 职责：物理隔离所有动效与视口转换，严守 300 行规范。 */
+
+/* ==========================================
+ * 1. View Transitions 视口全息切换动效
+ * ========================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+}
+
+::view-transition-old(root) {
+    animation-name: fade-out-scale;
+}
+
+::view-transition-new(root) {
+    animation-name: fade-in-scale;
+}
+
+@keyframes fade-out-scale {
+    from { opacity: 1; transform: scale(1); filter: blur(0px); }
+    to { opacity: 0; transform: scale(0.98); filter: blur(4px); }
+}
+
+@keyframes fade-in-scale {
+    from { opacity: 0; transform: scale(1.02); filter: blur(4px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0px); }
+}
+
+/* ==========================================
+ * 2. 霓虹呼吸灯 (Neon Pulse Indicators)
+ * ========================================== */
+@keyframes neonPulseGreen {
+    0% { box-shadow: 0 0 0 0 rgba(var(--neon-green-rgb), 0.4); transform: scale(1); }
+    70% { box-shadow: 0 0 0 6px rgba(var(--neon-green-rgb), 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--neon-green-rgb), 0); transform: scale(1); }
+}
+
+@keyframes neonPulseRed {
+    0% { box-shadow: 0 0 0 0 rgba(var(--neon-red-rgb), 0.4); transform: scale(1); }
+    70% { box-shadow: 0 0 0 6px rgba(var(--neon-red-rgb), 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--neon-red-rgb), 0); transform: scale(1); }
+}
+
+/* 将脉冲应用到探针与健康指示点 */
+.pulsing.healthy {
+    animation: neonPulseGreen 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+.pulsing.critical {
+    animation: neonPulseRed 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+/* ==========================================
+ * 3. 微引力按键与玻璃光晕 (Micro-gravity & Glare)
+ * ========================================== */
+
+/* Glow Button 悬浮引力反馈 */
+.glow-btn {
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.glow-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px var(--neon-cyan-15), 0 0 10px var(--neon-cyan-25);
+}
+
+.glow-btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 4px var(--neon-cyan-10);
+}
+
+/* 玻璃流光闪烁 (Glassmorphism Glare) */
+.glass-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        transparent 0%,
+        var(--white-03) 40%,
+        var(--white-08) 50%,
+        var(--white-03) 60%,
+        transparent 100%
+    );
+    transform: rotate(30deg) translate(-100%, -100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none; /* 防止阻挡交互 */
+    z-index: 1;
+}
+
+.glass-panel:hover::after,
+.action-card:hover::after,
+.context-capsule:hover::after {
+    transform: rotate(30deg) translate(50%, 50%);
+}
+
+/* 为 Action Card 和 Capsule 添加同样的底层隔离 */
+.action-card, .context-capsule {
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition-smooth);
+}
+.action-card:hover, .context-capsule:hover {
+    transform: translateY(-2px);
+    border-color: var(--neon-cyan-25);
+    box-shadow: 0 5px 15px rgba(var(--neon-cyan-rgb), 0.05);
+}
