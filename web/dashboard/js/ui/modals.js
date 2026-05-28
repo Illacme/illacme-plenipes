@@ -45,6 +45,18 @@ window.getUIModalsHTML = () => {
                     <button class="close-btn" onclick="closeEditor()">×</button>
                 </div>
                 
+                <!-- 💾 物理自动草稿自愈与保活挂载条 -->
+                <div id="editor-draft-recovery-bar" class="glass-panel" style="display: none; align-items: center; justify-content: space-between; padding: 8px 15px; margin: 10px 20px 0 20px; border: 1px dashed var(--accent-secondary); background: rgba(0, 242, 255, 0.05); border-radius: 8px; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem;">
+                        <span>💡</span>
+                        <span style="color: var(--text-bright);">检测到您上次有未保存的本地草稿（备份于：<span id="editor-draft-time" style="color: var(--accent-secondary); font-family: var(--font-mono); font-weight: bold;">-</span>）。</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="mini-action-btn glow-btn" onclick="restoreScratchpadDraft()" style="border-color: var(--accent-secondary); color: var(--accent-secondary); font-size: 0.75rem; padding: 3px 10px; cursor: pointer;">💾 立即复苏草稿</button>
+                        <button class="mini-action-btn" onclick="discardScratchpadDraft()" style="border-color: rgba(255,255,255,0.2); color: var(--text-dim); font-size: 0.75rem; padding: 3px 8px; cursor: pointer;">忽略</button>
+                    </div>
+                </div>
+                
                 <div class="editor-matrix" style="flex: 1; min-height: 0; overflow: hidden;">
                     <div class="editor-main" id="editor-container-main">
                         <div class="sector-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
