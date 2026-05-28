@@ -62,6 +62,29 @@ window.addNewImprint = async () => {
 };
 
 window.deleteImprint = async (id) => {
+    // 🛡️ [安全底线拦截] 前端双重保护：严禁删除活动版图与默认版图，防范系统配置丢失雪崩
+    const activeImprint = window.settingsData?._active_imprint || 'default';
+    if (id === 'default' || id === activeImprint) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '🛡️ 安全拦截',
+                html: `<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">` +
+                      `无法删除当前<b>正处于激活状态</b>（或默认）的版图：<b style="color:var(--accent-secondary)">${id}</b>。<br><br>` +
+                      `💡 <b>自愈建议：</b><br>` +
+                      `请先在左上角切换至其他可用版图，然后再对本版图执行注销或物理抹除。` +
+                      `</div>`,
+                icon: 'error',
+                confirmButtonText: '了解',
+                background: 'var(--card-bg)',
+                color: 'var(--text-bright)',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
+        } else {
+            alert(`🛡️ [安全拦截]\n无法删除当前处于激活状态（或默认）的版图 [${id}]！\n请先切换至其他可用版图后再行操作。`);
+        }
+        return;
+    }
+
     if (!confirm(`🚨 危险操作！\n确认要物理抹除出版版图 [${id}] 吗？`)) return;
 
     const res = await apiFetch('/api/imprints/delete', {

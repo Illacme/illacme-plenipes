@@ -234,6 +234,15 @@ tags: [Illacme, Onboarding]
 
     def delete_imprint(self, name: str) -> bool:
         """🚀 [V50.3] 撤销主权 Imprint：物理删除一个出版品牌的所有资产"""
+        # 🛡️ [安全底线拦截] 严禁物理撤销系统默认版图以及当前正处于活动执行中的活跃版图，防止雪崩卡死
+        if name == "default":
+            tlog.error("🛑 [安全拦截] 严禁物理撤销系统默认主权版图 'default'！")
+            return False
+            
+        if name == self.active_imprint:
+            tlog.error(f"🛑 [安全拦截] 严禁物理撤销当前正处于激活状态的版图 '{name}'！请先切换至其他版图后再行操作。")
+            return False
+
         imprint_path = os.path.join(self.imprint_root, name)
         if not os.path.exists(imprint_path):
             tlog.error(f"🛑 [撤销失败] 未找到出版品牌: {name}")
