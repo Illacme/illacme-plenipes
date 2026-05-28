@@ -122,3 +122,24 @@
   2. 植入 `@keyframes neonPulse`，为探针与健康雷达赋予了真实的物理呼吸灯反馈。
   3. 为核心卡片和 `.glow-btn` 引入 45度角玻璃反光 (Glass Glare) 及微重力悬浮交互。
 - **合规审计**: 动效逻辑被严密物理隔离在专属沙盒文件内（未超过 300 行），未污染核心业务组件库。
+
+## [算力网关革命] Tool Use 函数调用大一统协议实现
+- **时间**: 2026-05-29 00:37:57
+- **目标**: `core/adapters/ai/` 与 `adapters/compute/openai.py`
+- **执行内容**:
+  1. 新建了 `core/adapters/ai/tool_protocol.py`，定义了跨平台的 `IllacmeTool` 和 `ToolCallEvent`。
+  2. 升级了 `PayloadManager.prepare_payload`，正式支持大模型的多轮 `messages` 注入和 `tools` 字典组装。
+  3. 彻底重构了 `OpenAICompatibleTranslator._ask_ai`。现在它不仅能发送工具契约给模型，更能精准拦截模型返回的 `tool_calls`，并将其翻译为标准的 Python 对象阵列反馈给系统，成功打破了大模型“只能聊文本”的禁锢。
+- **验证**: 通过物理脱机测试脚本 (`test_tool_use.py`) 验证了序列化流向，结构完美。
+
+## 📅 2026-05-29: CSS 加载顺序导致的高度坍塌与伪元素绝对定位引起的滚动条爆炸
+*   **现象描述**：
+    1. 左侧边栏本应可以上下滚动，却被强行截断无法滚动。
+    2. 下拉菜单和原稿文库的内部文件列表下方，凭空出现了极其巨大的空白可滚动区域（超长滚动条）。
+*   **根因剖析**：
+    1. **层叠优先级与加载顺序倒挂**：我们在拆分出的 `glass.layout.css` 里给 `.sidebar` 赋予了 `overflow-y: auto;`。然而由于之后引入了具有动画特效的 `dashboard.animations.css`，为了防止玻璃光泽溢出，在其中为 `.glass-panel` 加了 `overflow: hidden;`。由于 `.sidebar` 和 `.glass-panel` 的 CSS 特异性完全相同（皆为类选择器，0,1,0），导致后加载的 `overflow: hidden` 赢得了级联冲突，硬生生屏蔽了侧边栏的滚动。
+    2. **伪元素撑爆绝对定位与 Scroll 容器交互漏洞**：`dashboard.animations.css` 中的光泽动画是通过 `::after` 伪元素并设置 `width: 200%; height: 200%; position: absolute;` 实现的。当带有该伪元素的容器（如下拉菜单和文库列表）被强行施加 `overflow-y: auto` 时，原本隐藏的 200% 高度绝对定位元素被浏览器纳入了“可滚动计算范围”，从而导致容器内向下延展出长达本体 1.5 倍的空白滚动幽灵区域。
+*   **防线策略与沉淀**：
+    1. **真实浏览器 DOM / CSS 抓取倒逼验证**：不要仅仅靠“肉眼”和“经验”阅读样式。前端重构必须将 Playwright / Puppeteer 的 Computed Style 提取程序（或人工开发者工具审查）纳入核心验证循环，让机器输出最终应用的实际 `overflow` 状态，而不是凭借脑图臆想。
+    2. **滚动容器与绝对定位伪元素的物理隔离**：绝对禁止在拥有 `overflow-y: auto` 的滚动容器本体上施加超出 100% 尺寸的绝对定位伪元素特效。此类全局特效要么被 `display: none !important;` 针对性剔除，要么将其挂载在只带 `overflow: hidden;` 的独立父级外壳 DOM 上进行物理隔离。
+    3. **提权防卫机制**：针对核心布局骨架（如 Sidebars），在面对多模块 CSS 加载乱序的潜在风险时，应果断通过增设 ID 选择器或 `!important` 建立护城河，防御后期特效库的无意识全局覆盖。
