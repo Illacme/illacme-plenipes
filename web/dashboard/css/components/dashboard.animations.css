@@ -109,6 +109,7 @@
 /* 🚀 [V74.25] 修复: 带有滚动条的玻璃面板必须隐藏流光，否则绝对定位的流光会导致滚动条高度爆炸 */
 .glass-panel.no-glare::after,
 .dropdown-menu::after,
+.sidebar::after,
 .table-container.glass-panel::after {
     display: none !important;
 }
