@@ -106,6 +106,13 @@
     transform: rotate(30deg) translate(50%, 50%);
 }
 
+/* 🚀 [V74.25] 修复: 带有滚动条的玻璃面板必须隐藏流光，否则绝对定位的流光会导致滚动条高度爆炸 */
+.glass-panel.no-glare::after,
+.dropdown-menu::after,
+.table-container.glass-panel::after {
+    display: none !important;
+}
+
 /* 为 Action Card 和 Capsule 添加同样的底层隔离 */
 .action-card, .context-capsule {
     position: relative;
