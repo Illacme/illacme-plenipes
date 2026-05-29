@@ -67,6 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. 显示用户指令
         appendMessage(`> ${command}`, 'user-msg');
 
+        // 放弃当前调用栈的控制权，强制浏览器在发送请求前进行重绘 (Repaint/Reflow)
+        // 这一步对于提升用户体感响应速度至关重要，避免由于事件循环积压导致“输入后页面冻结”。
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         // 3. 发起请求并接收 SSE 流
         try {
             const response = await fetch('/api/agent/task', {
