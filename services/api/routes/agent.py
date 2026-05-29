@@ -4,8 +4,7 @@ from pydantic import BaseModel
 import asyncio
 import json
 
-# Assuming we can get the global adapter and settings from the registry or engine
-from core.runtime.engine_singleton import EngineSingleton
+from core.runtime.engine_singleton import get_global_engine
 from core.adapters.ai.agent_loop import AutonomousAgent
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
@@ -21,7 +20,7 @@ async def execute_agent_task(request: AgentTaskRequest):
     接收用户指令，实例化 AutonomousAgent，并在后台执行任务。
     为了简化实现，这里先采用阻塞转异步或假流式的方式返回最终结果，后续可接入完整的多轮事件流(SSE)。
     """
-    engine = EngineSingleton.get_instance()
+    engine = get_global_engine()
     
     # 尝试获取一个可用的 AI Adapter
     ai_node_id = "default"
