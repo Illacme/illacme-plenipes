@@ -24,7 +24,7 @@
     grid-column: 3;
     border-left: 1px solid var(--glass-border);
     border-right: none;
-    padding: 25px;
+    padding: 0;
 }
 
 /* 🛰️ Sidebar Toggle Buttons - Commercial Grade */
