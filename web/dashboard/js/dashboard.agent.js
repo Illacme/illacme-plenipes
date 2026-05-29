@@ -3,35 +3,29 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
     if (window._dbgLog) window._dbgLog('📦 agent.js DOMContentLoaded fired');
-    const agentInput = document.getElementById('agent-command-input');
-    const agentFeed = document.getElementById('agent-feed');
-    const agentPod = document.querySelector('.agent-pod');
-    const agentStatus = document.getElementById('agent-status-tag');
+    const agentInput = document.getElementById('agent-command-input'), agentFeed = document.getElementById('agent-feed');
+    const agentPod = document.querySelector('.agent-pod'), agentStatus = document.getElementById('agent-status-tag');
     const rightSidebar = document.getElementById('right-sidebar');
 
     if (!agentInput || !agentFeed) return;
 
     // 🧠 思维链 Toggle 与深度选择框的联动
-    const reasoningToggle = document.getElementById('agent-reasoning-toggle');
-    const reasoningDepthContainer = document.getElementById('agent-reasoning-depth-container');
-    if (reasoningToggle && reasoningDepthContainer) {
-        reasoningToggle.addEventListener('change', () => {
-            const isChecked = reasoningToggle.checked;
-            reasoningDepthContainer.style.opacity = isChecked ? '1' : '0.4';
-            reasoningDepthContainer.style.pointerEvents = isChecked ? 'auto' : 'none';
+    const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
+    if (rToggle && rDepthContainer) {
+        rToggle.addEventListener('change', () => {
+            rDepthContainer.style.opacity = rToggle.checked ? '1' : '0.4';
+            rDepthContainer.style.pointerEvents = rToggle.checked ? 'auto' : 'none';
         });
     }
 
     // ⚙️ 思维链面板点击收折切换
-    const settingsToggleBtn = document.getElementById('agent-settings-toggle-btn');
-    const settingsPanel = document.querySelector('.agent-engine-settings');
+    const settingsToggleBtn = document.getElementById('agent-settings-toggle-btn'), settingsPanel = document.querySelector('.agent-engine-settings');
     if (settingsToggleBtn && settingsPanel) {
         settingsToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            settingsPanel.classList.toggle('expanded');
-            const isExpanded = settingsPanel.classList.contains('expanded');
-            settingsToggleBtn.style.color = isExpanded ? 'var(--accent-secondary)' : '';
-            settingsToggleBtn.style.textShadow = isExpanded ? '0 0 8px var(--accent-secondary)' : '';
+            const isExp = settingsPanel.classList.toggle('expanded');
+            settingsToggleBtn.style.color = isExp ? 'var(--accent-secondary)' : '';
+            settingsToggleBtn.style.textShadow = isExp ? '0 0 8px var(--accent-secondary)' : '';
         });
     }
 
@@ -45,22 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await r.json();
             modelNameTag.textContent = data.model_name || 'Unknown';
             const badgeTooltips = {
-                'badge-cot': {
-                    active: '当前模型已点亮原生思维链或深度推理能力 (Reasoning CoT)',
-                    disabled: '当前模型不支持或未开启原生思维链及深度推理'
-                },
-                'badge-tools': {
-                    active: '当前模型已打通本地文件读写、指令执行等工具自治权限',
-                    disabled: '当前算力底座处于模拟状态，或适配器不支持物理工具调用'
-                },
-                'badge-stream': {
-                    active: '当前模型已开启高吞吐、零延迟 SSE 流式极速响应',
-                    disabled: '当前模型不支持流式极速响应'
-                },
-                'badge-vision': {
-                    active: '当前模型已开启图像及多模态输入理解能力 (Vision)',
-                    disabled: '当前模型不支持图像或多模态输入'
-                }
+                'badge-cot': { active: '当前模型已点亮原生思维链或深度推理能力 (Reasoning CoT)', disabled: '当前模型不支持或未开启原生思维链及深度推理' },
+                'badge-tools': { active: '当前模型已打通本地文件读写、指令执行等工具自治权限', disabled: '当前算力底座处于模拟状态，或适配器不支持物理工具调用' },
+                'badge-stream': { active: '当前模型已开启高吞吐、零延迟 SSE 流式极速响应', disabled: '当前模型不支持流式极速响应' },
+                'badge-vision': { active: '当前模型已开启图像及多模态输入理解能力 (Vision)', disabled: '当前模型不支持图像或多模态输入' }
             };
             const updateBadge = (id, active) => {
                 const el = document.getElementById(id);
@@ -100,9 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
-            if (rightSidebar && rightSidebar.classList.contains('collapsed')) {
-                rightSidebar.classList.remove('collapsed');
-            }
+            if (rightSidebar && rightSidebar.classList.contains('collapsed')) rightSidebar.classList.remove('collapsed');
             if (agentInput) agentInput.focus();
             if (agentPod) {
                 agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
@@ -145,17 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         await new Promise(resolve => setTimeout(resolve, 60));
 
-        const rToggle = document.getElementById('agent-reasoning-toggle');
-        const rDepth = document.getElementById('agent-reasoning-depth');
-        const aToggle = document.getElementById('agent-autopilot-toggle');
-        const maxIterSelect = document.getElementById('agent-max-iterations');
+        const rToggleBtn = document.getElementById('agent-reasoning-toggle'), rDepth = document.getElementById('agent-reasoning-depth');
+        const aToggle = document.getElementById('agent-autopilot-toggle'), maxIterSelect = document.getElementById('agent-max-iterations');
 
-        const isReasoningEnabled = rToggle ? rToggle.checked : true;
+        const isReasoningEnabled = rToggleBtn ? rToggleBtn.checked : true;
         const selectedReasoningEffort = rDepth ? rDepth.value : 'medium';
         const isAutopilotEnabled = aToggle ? aToggle.checked : false;
         const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;
 
-        let firstEventReceived = false, activeThinkingDetails = null, activeThinkingContent = null;
+        let firstEventReceived = false, activeThinkingDiv = null, activeThinkingDetails = null, activeThinkingContent = null;
         let activeContentDiv = null, fullContentText = "";
 
         try {
@@ -194,19 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             const data = JSON.parse(chunk.slice(6));
                             if (data.type === 'thinking_chunk') {
                                 if (!activeThinkingDetails) {
-                                    const msgDiv = document.createElement('div');
-                                    msgDiv.className = 'agent-msg thinking-msg';
-                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 分析中...</summary><div class="thinking-content"></div></details>`;
-                                    agentFeed.appendChild(msgDiv);
-                                    activeThinkingDetails = msgDiv.querySelector('details');
-                                    activeThinkingContent = msgDiv.querySelector('.thinking-content');
+                                    activeThinkingDiv = document.createElement('div');
+                                    activeThinkingDiv.className = 'agent-msg thinking-msg streaming';
+                                    activeThinkingDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 (深度分析中...)</summary><div class="thinking-content"></div></details>`;
+                                    agentFeed.appendChild(activeThinkingDiv);
+                                    activeThinkingDetails = activeThinkingDiv.querySelector('details');
+                                    activeThinkingContent = activeThinkingDiv.querySelector('.thinking-content');
                                 }
                                 if (activeThinkingContent) {
-                                    activeThinkingContent.textContent += data.delta;
-                                    activeThinkingContent.scrollTop = activeThinkingContent.scrollHeight;
+                                    const el = activeThinkingContent;
+                                    const isAtBottom = el.scrollHeight - el.clientHeight - el.scrollTop < 24;
+                                    el.textContent += data.delta;
+                                    if (isAtBottom) el.scrollTop = el.scrollHeight;
                                 }
                                 agentFeed.scrollTop = agentFeed.scrollHeight;
                             } else if (data.type === 'content_chunk') {
+                                if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) activeThinkingDiv.classList.remove('streaming');
                                 if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
                                     activeThinkingDetails.removeAttribute('open');
                                     const summary = activeThinkingDetails.querySelector('summary');
@@ -236,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const leftover = document.getElementById(thinkingId);
             if (leftover) leftover.remove();
 
+            if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) activeThinkingDiv.classList.remove('streaming');
             if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
                 activeThinkingDetails.removeAttribute('open');
                 const summary = activeThinkingDetails.querySelector('summary');
