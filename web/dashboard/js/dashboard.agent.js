@@ -67,12 +67,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. 显示用户指令
         appendMessage(`> ${command}`, 'user-msg');
 
+        // 显示过渡期的系统思考状态，防止用户觉得“全空了”
+        const thinkingId = 'agent-thinking-' + Date.now();
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.id = thinkingId;
+        thinkingDiv.className = `agent-msg system-msg`;
+        thinkingDiv.style.opacity = '0.7';
+        thinkingDiv.innerHTML = '🧠 主脑链路已接通，正在解析指令...';
+        agentFeed.appendChild(thinkingDiv);
+        agentFeed.scrollTop = agentFeed.scrollHeight;
+
         // 放弃当前调用栈的控制权，强制浏览器在发送请求前进行重绘 (Repaint/Reflow)
         // 这一步对于提升用户体感响应速度至关重要，避免由于事件循环积压导致“输入后页面冻结”。
         await new Promise(resolve => setTimeout(resolve, 50));
 
         // 3. 发起请求并接收 SSE 流
         try {
+            // 在真正的流式输出开始前移除过渡思考状态
+            const tDiv = document.getElementById(thinkingId);
+            if (tDiv) tDiv.remove();
+            
             const response = await fetch('/api/agent/task', {
                 method: 'POST',
                 headers: {

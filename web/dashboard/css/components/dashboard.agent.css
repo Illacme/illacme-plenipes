@@ -41,8 +41,8 @@
 .agent-msg.user-msg {
     align-self: flex-end;
     background: rgba(0, 242, 255, 0.1);
-    color: var(--accent-blue);
-    border-right: 2px solid var(--accent-blue);
+    color: #00f2ff;
+    border-right: 2px solid #00f2ff;
     text-align: right;
 }
 
@@ -82,7 +82,7 @@
 
 #agent-command-input:focus {
     background: rgba(0, 242, 255, 0.1);
-    border-color: var(--accent-blue);
+    border-color: #00f2ff;
     box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
