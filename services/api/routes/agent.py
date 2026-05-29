@@ -33,15 +33,22 @@ async def get_active_model_info():
             "model_name": "未就绪",
             "capabilities": {"cot": False, "tools": False, "stream": False, "vision": False}
         }
+    
+    # 🕵️ [V76.4] 主权策略层穿透：若采用了 Fallback 或 SmartRouting 等包装策略，则递归穿透至底层物理算力节点
+    actual_adapter = ai_adapter
+    while hasattr(actual_adapter, 'primary') and getattr(actual_adapter, 'primary', None) is not None:
+        actual_adapter = actual_adapter.primary
+        
     model_name = "Unknown"
-    if hasattr(ai_adapter, 'config') and hasattr(ai_adapter.config, 'model'):
-        model_name = ai_adapter.config.model
-    elif hasattr(ai_adapter, 'trans_cfg') and hasattr(ai_adapter.trans_cfg, 'primary_model'):
-        model_name = ai_adapter.trans_cfg.primary_model
+    if hasattr(actual_adapter, 'config') and hasattr(actual_adapter.config, 'model'):
+        model_name = actual_adapter.config.model
+    elif hasattr(actual_adapter, 'trans_cfg') and hasattr(actual_adapter.trans_cfg, 'primary_model'):
+        model_name = actual_adapter.trans_cfg.primary_model
+        
     short_name = model_name.split("/")[-1] if model_name else "Unknown"
     model_lower = model_name.lower() if model_name else ""
     cot_supported = any(kw in model_lower for kw in ["r1", "o1", "o3", "thinking", "reasoning", "qwen3.5", "qwen2.5", "qwen35"])
-    tools_supported = any(c.__name__ == "OpenAICompatibleTranslator" for c in ai_adapter.__class__.__mro__) and ai_adapter.__class__.__name__ != "MockAIProvider"
+    tools_supported = any(c.__name__ == "OpenAICompatibleTranslator" for c in actual_adapter.__class__.__mro__) and actual_adapter.__class__.__name__ != "MockAIProvider"
     vision_supported = any(kw in model_lower for kw in ["vl", "vision", "gpt-4o", "claude-3-5", "qwen3.5", "qwen2.5", "qwen35"])
     return {
         "model_name": short_name,
