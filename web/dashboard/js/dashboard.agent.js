@@ -23,17 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault(); // 阻止浏览器默认行为
             
             // 确保右侧栏是展开的（如果有折叠逻辑的话）
-            if (rightSidebar.classList.contains('collapsed')) {
+            if (rightSidebar && rightSidebar.classList.contains('collapsed')) {
                 rightSidebar.classList.remove('collapsed');
             }
 
-            agentInput.focus();
+            if (agentInput) agentInput.focus();
             
             // 添加闪烁特效提醒
-            agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
-            setTimeout(() => {
-                agentPod.style.boxShadow = '';
-            }, 300);
+            if (agentPod) {
+                agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
+                setTimeout(() => {
+                    agentPod.style.boxShadow = '';
+                }, 300);
+            }
         }
     });
 
@@ -70,9 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         agentInput.value = '';
         agentInput.disabled = true;
         agentInput.placeholder = '主脑运算中...';
-        agentPod.classList.add('processing');
-        agentStatus.textContent = 'EXECUTING';
-        agentStatus.style.color = '#ff9d00';
+        if (agentPod) agentPod.classList.add('processing');
+        if (agentStatus) {
+            agentStatus.textContent = 'EXECUTING';
+            agentStatus.style.color = '#ff9d00';
+        }
 
         // 2. 立即显示用户指令（永久保留在 feed 中）
         appendMessage(`> ${command}`, 'user-msg');
@@ -159,9 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // 6. 恢复就绪状态
             agentInput.disabled = false;
             agentInput.placeholder = 'CMD: 唤醒主脑 (Cmd+K)';
-            agentPod.classList.remove('processing');
-            agentStatus.textContent = 'STANDBY';
-            agentStatus.style.color = '';
+            if (agentPod) agentPod.classList.remove('processing');
+            if (agentStatus) {
+                agentStatus.textContent = 'STANDBY';
+                agentStatus.style.color = '';
+            }
             agentInput.focus();
         }
     }
@@ -181,7 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentHitlId = null;
         };
 
-        hitlCloseBtn.addEventListener('click', closeHitl);
+        if (hitlCloseBtn) {
+            hitlCloseBtn.addEventListener('click', closeHitl);
+        }
 
         const submitHitlDecision = async (decision) => {
             if (!currentHitlId) return;
@@ -200,8 +208,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        hitlApproveBtn.addEventListener('click', () => submitHitlDecision('approve'));
-        hitlRejectBtn.addEventListener('click', () => submitHitlDecision('reject'));
+        if (hitlApproveBtn) {
+            hitlApproveBtn.addEventListener('click', () => submitHitlDecision('approve'));
+        }
+        if (hitlRejectBtn) {
+            hitlRejectBtn.addEventListener('click', () => submitHitlDecision('reject'));
+        }
     }
 
     function renderStreamEvent(data) {
@@ -215,8 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
             appendMessage(data.message, 'system-msg');
             if (hitlDialog) {
                 currentHitlId = data.hitl_id;
-                hitlToolName.textContent = data.tool;
-                hitlToolArgs.textContent = JSON.stringify(data.args, null, 2);
+                if (hitlToolName) hitlToolName.textContent = data.tool;
+                if (hitlToolArgs) hitlToolArgs.textContent = JSON.stringify(data.args, null, 2);
                 hitlDialog.showModal();
             } else {
                 console.warn("HITL required but dialog not found.");

@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 🏛️ Asset Loading (V74.0) -->
     <link rel="stylesheet" href="css/dashboard.tokens.css">
-    <link rel="stylesheet" href="css/dashboard.base.css?v=75.0">
+    <link rel="stylesheet" href="css/dashboard.base.css?v=75.1">
     <link rel="stylesheet" href="css/dashboard.components.css">
     <link rel="stylesheet" href="css/components/glass.css?v=76.0">
     <link rel="stylesheet" href="css/components/glass.layout.css?v=76.2">
-    <link rel="stylesheet" href="css/components/glass.widgets.css?v=76.0">
+    <link rel="stylesheet" href="css/components/glass.widgets.css?v=76.1">
     <link rel="stylesheet" href="css/components/glass.sovereign.css?v=76.1">
     <link rel="stylesheet" href="css/components/glass.editor.css?v=76.0">
     <link rel="stylesheet" href="css/components/dashboard.animations.css?v=76.2">
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/components/modals.forms.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.discovery.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.alerts.css?v=75.0">
-    <link rel="stylesheet" href="css/components/dashboard.agent.css?v=75.0">
+    <link rel="stylesheet" href="css/components/dashboard.agent.css?v=75.1">
     <link rel="stylesheet" href="css/views/overview.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
@@ -36,30 +36,6 @@
     <script src="vendor/3d-force-graph.min.js"></script>
 </head>
 <body>
-    <!-- 🩺 [DIAGNOSTIC] 临时内联调试面板 - 问题修复后移除 -->
-    <script>
-    (function(){
-        // 创建一个肉眼可见的浮动调试面板
-        var dbg = document.createElement('div');
-        dbg.id = 'agent-debug-panel';
-        dbg.style.cssText = 'position:fixed;bottom:0;right:0;width:350px;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.95);color:#0f0;font:11px monospace;padding:8px;z-index:99999;border:2px solid #f00;pointer-events:none;';
-        document.documentElement.appendChild(dbg);
-        window._dbgLog = function(msg) {
-            var d = document.getElementById('agent-debug-panel');
-            if(d) d.innerHTML += '<div style="border-bottom:1px solid #333;padding:2px 0">' + new Date().toLocaleTimeString() + ' ' + msg + '</div>';
-            console.log('[DBG]', msg);
-        };
-        // 捕获所有 JS 错误
-        window.onerror = function(msg, url, line, col, err) {
-            window._dbgLog('<span style="color:#f00">❌ ERROR: ' + msg + ' @ ' + (url||'').split('/').pop() + ':' + line + '</span>');
-            return false;
-        };
-        window.addEventListener('unhandledrejection', function(e) {
-            window._dbgLog('<span style="color:#f00">❌ PROMISE: ' + (e.reason && e.reason.message || e.reason) + '</span>');
-        });
-        window._dbgLog('🩺 诊断面板已启动');
-    })();
-    </script>
     <div id="app-container">
         <!-- 🛰️ Header -->
         <header>
@@ -366,7 +342,7 @@
     <script src="/dashboard/js/dashboard.health.js"></script>
     <script src="/dashboard/js/dashboard.system.js"></script>
     <script src="/dashboard/js/dashboard.socket.js"></script>
-    <script src="/dashboard/js/dashboard.agent.js?v=4"></script>
+    <script src="/dashboard/js/dashboard.agent.js?v=5"></script>
     <!-- 🌌 三维星系图引擎子模块物理分片 (符合 SOP-02 300行复杂度硬约束) -->
     <script src="/dashboard/js/galaxy/galaxy.scale.js?v=100.0"></script>
     <script src="/dashboard/js/galaxy/galaxy.labels.js?v=100.0"></script>

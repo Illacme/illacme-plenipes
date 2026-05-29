@@ -168,7 +168,7 @@ body::after {
     display: grid;
     /* 🚀 变量驱动布局：实现左右状态的物理级解耦与审美对正 */
     --left-w: 280px;
-    --right-w: 240px;
+    --right-w: 280px;
     grid-template-columns: var(--left-w) 1fr var(--right-w);
     grid-template-rows: 70px 1fr 45px;
     height: 100vh; width: 100vw;
