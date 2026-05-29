@@ -4,13 +4,18 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (window._dbgLog) window._dbgLog('📦 agent.js DOMContentLoaded fired');
     const agentInput = document.getElementById('agent-command-input');
     const agentFeed = document.getElementById('agent-feed');
     const agentPod = document.querySelector('.agent-pod');
     const agentStatus = document.getElementById('agent-status-tag');
     const rightSidebar = document.getElementById('right-sidebar');
 
-    if (!agentInput || !agentFeed) return;
+    if (window._dbgLog) window._dbgLog('🔍 agentInput=' + !!agentInput + ' agentFeed=' + !!agentFeed + ' agentPod=' + !!agentPod);
+    if (!agentInput || !agentFeed) {
+        if (window._dbgLog) window._dbgLog('<span style="color:#f00">⛔ agent-input/feed NOT FOUND, aborting!</span>');
+        return;
+    }
 
     // 全局快捷键 Cmd+K / Ctrl+K 唤醒
     document.addEventListener('keydown', (e) => {
@@ -37,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             const command = agentInput.value.trim();
+            if (window._dbgLog) window._dbgLog('⌨️ Enter pressed, command="' + command + '"');
             if (!command) return;
 
             submitAgentTask(command);
@@ -44,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function appendMessage(text, typeClass) {
+        if (window._dbgLog) window._dbgLog('📝 appendMessage: type=' + typeClass + ' len=' + text.length);
         const msgDiv = document.createElement('div');
         msgDiv.className = `agent-msg ${typeClass}`;
         
@@ -51,12 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.innerHTML = text.replace(/\n/g, '<br/>');
         
         agentFeed.appendChild(msgDiv);
+        if (window._dbgLog) window._dbgLog('✅ DOM appended, feed children=' + agentFeed.children.length + ' feedH=' + agentFeed.scrollHeight);
         // 自动滚动到底部
         agentFeed.scrollTop = agentFeed.scrollHeight;
     }
 
     async function submitAgentTask(command) {
-        console.log('[Agent UI] submitAgentTask called with:', command);
+        if (window._dbgLog) window._dbgLog('🚀 submitAgentTask START: "' + command + '"');
 
         // 1. 禁用输入，重置状态
         agentInput.value = '';
