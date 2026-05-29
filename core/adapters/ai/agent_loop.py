@@ -38,7 +38,14 @@ class AutonomousAgent:
             iteration += 1
             logger.info(f"🚀 [Agent Loop] Iteration {iteration}/{self.max_iterations}")
             
-            tools = self.registry.export_all_schemas()
+            # 🚀 [V75.1] 智能极速网关：对简单的日常问候，首轮自动绕过庞大的工具集注入，将 Token 上下文缩减 95%，大幅提升 Local LLM 推理响应速度
+            is_simple_greeting = False
+            if iteration == 1:
+                cleaned_prompt = user_content.strip().lower().replace("!", "").replace("！", "")
+                if cleaned_prompt in ["你好", "hello", "hi", "hey", "你好啊", "在吗", "早上好", "下午好", "晚上好"]:
+                    is_simple_greeting = True
+
+            tools = None if is_simple_greeting else self.registry.export_all_schemas()
             if not tools: tools = None
 
             # 1. 呼叫大模型 (在线程池中运行防阻塞)
