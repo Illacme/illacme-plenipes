@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function submitAgentTask(command) {
         agentInput.value = '';
         agentInput.disabled = true;
-        agentInput.placeholder = '主脑运算中...';
+        agentInput.placeholder = 'AI 助手思考中...';
         if (agentPod) agentPod.classList.add('processing');
         if (agentStatus) {
             agentStatus.textContent = 'EXECUTING';
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         thinkingDiv.id = thinkingId;
         thinkingDiv.className = 'agent-msg system-msg';
         thinkingDiv.style.opacity = '0.7';
-        thinkingDiv.innerHTML = '🧠 主脑链路已接通，正在解析指令...';
+        thinkingDiv.innerHTML = '🧠 AI 协同链路已接通，正在解析指令...';
         agentFeed.appendChild(thinkingDiv);
         agentFeed.scrollTop = agentFeed.scrollHeight;
 
