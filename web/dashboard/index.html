@@ -266,6 +266,25 @@
         </footer>
     </div>
 
+    <!-- 🛡️ Agent HITL Authorization Modal -->
+    <dialog id="agent-hitl-dialog" class="glass-dialog alert-dialog hitl-dialog" style="z-index: 10000; border: 1px solid var(--accent-orange, #ff9d00); padding: 20px; background: rgba(10, 0, 0, 0.9);">
+        <div class="dialog-header critical-header" style="color: var(--accent-orange, #ff9d00); border-bottom: 1px solid var(--accent-orange, #ff9d00); padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin:0;"><span class="icon">⚠️</span> PHYSICAL AUTHORIZATION REQUIRED</h3>
+        </div>
+        <div class="dialog-content" style="color: var(--text-bright);">
+            <p><strong>Sovereign Agent</strong> requests permission to execute a destructive physical operation.</p>
+            <div class="hitl-details" style="background: rgba(255, 157, 0, 0.1); padding: 15px; border-radius: 4px; margin: 15px 0;">
+                <p style="margin:0 0 10px 0;"><strong>Tool:</strong> <span id="hitl-tool-name" style="color: var(--accent-orange, #ff9d00); font-weight: bold;">write_document</span></p>
+                <pre class="hitl-args-box" id="hitl-tool-args" style="background: rgba(0,0,0,0.5); padding: 10px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; margin:0; border-left: 2px solid var(--accent-orange, #ff9d00);"></pre>
+            </div>
+            <p class="warning-text" style="color: var(--text-dim); font-size: 0.9rem;">Are you sure you want to authorize this operation?</p>
+        </div>
+        <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button class="glass-btn btn-danger" id="hitl-reject-btn" style="border-color: var(--accent-orange, #ff9d00); color: var(--accent-orange, #ff9d00);">OVERRIDE (Reject)</button>
+            <button class="glass-btn btn-success" id="hitl-approve-btn" style="border-color: var(--text-bright); color: var(--text-bright);">AUTHORIZE</button>
+        </div>
+    </dialog>
+
     <!-- 🏗️ Modular Identity Control (V57.0) -->
     <script src="/dashboard/js/core/core.render.js"></script>
     <script src="/dashboard/js/core/core.dirty.js"></script>

@@ -126,6 +126,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // HITL Dialog State
+    const hitlDialog = document.getElementById('agent-hitl-dialog');
+    const hitlToolName = document.getElementById('hitl-tool-name');
+    const hitlToolArgs = document.getElementById('hitl-tool-args');
+    const hitlApproveBtn = document.getElementById('hitl-approve-btn');
+    const hitlRejectBtn = document.getElementById('hitl-reject-btn');
+    const hitlCloseBtn = document.getElementById('hitl-close-btn');
+    let currentHitlId = null;
+
+    if (hitlDialog) {
+        const closeHitl = () => {
+            hitlDialog.close();
+            currentHitlId = null;
+        };
+
+        hitlCloseBtn.addEventListener('click', closeHitl);
+
+        const submitHitlDecision = async (decision) => {
+            if (!currentHitlId) return;
+            const hitlId = currentHitlId;
+            closeHitl();
+            appendMessage(`[HITL] Human decision: ${decision.toUpperCase()}`, 'system-msg');
+            try {
+                await fetch('/api/agent/authorize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hitl_id: hitlId, decision: decision })
+                });
+            } catch (err) {
+                console.error("HITL authorization failed", err);
+                appendMessage(`[ERROR] Failed to send HITL decision: ${err.message}`, 'system-msg');
+            }
+        };
+
+        hitlApproveBtn.addEventListener('click', () => submitHitlDecision('approve'));
+        hitlRejectBtn.addEventListener('click', () => submitHitlDecision('reject'));
+    }
+
     function renderStreamEvent(data) {
         if (data.type === 'status') {
             appendMessage(data.message, 'system-msg');
@@ -133,6 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
             appendMessage(data.message, 'tool-msg');
         } else if (data.type === 'final') {
             appendMessage(data.message, 'final-msg');
+        } else if (data.type === 'hitl_required') {
+            appendMessage(data.message, 'system-msg');
+            if (hitlDialog) {
+                currentHitlId = data.hitl_id;
+                hitlToolName.textContent = data.tool;
+                hitlToolArgs.textContent = JSON.stringify(data.args, null, 2);
+                hitlDialog.showModal();
+            } else {
+                console.warn("HITL required but dialog not found.");
+            }
         }
     }
 });
