@@ -148,19 +148,21 @@
     background-color: var(--accent-secondary);
     box-shadow: 0 0 5px var(--accent-secondary);
 }
-#agent-reasoning-depth {
+#agent-reasoning-depth,
+#agent-max-iterations {
     background: rgba(0, 10, 20, 0.8);
     color: var(--accent-secondary);
     border: 1px solid rgba(0, 242, 255, 0.2);
     border-radius: 4px;
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     padding: 2px 6px;
     outline: none;
     cursor: pointer;
     font-family: var(--font-mono);
     transition: all 0.2s ease;
 }
-#agent-reasoning-depth:hover {
+#agent-reasoning-depth:hover,
+#agent-max-iterations:hover {
     border-color: var(--accent-secondary);
     background: rgba(0, 20, 40, 0.9);
 }
