@@ -12,6 +12,13 @@ class CheckHealthTool(IllacmeTool):
     name = "check_system_health"
     description = "Check the server's CPU, memory, and disk usage statistics."
     
+    def __init__(self):
+        super().__init__(
+            name=self.name,
+            description=self.description,
+            parameters=self.get_parameters_schema()
+        )
+    
     @classmethod
     def get_parameters_schema(cls) -> Dict[str, Any]:
         return {
@@ -42,6 +49,13 @@ class GitStatusTool(IllacmeTool):
     """
     name = "get_git_status"
     description = "Run 'git status' and 'git log -1' to get the current state of the repository."
+    
+    def __init__(self):
+        super().__init__(
+            name=self.name,
+            description=self.description,
+            parameters=self.get_parameters_schema()
+        )
     
     @classmethod
     def get_parameters_schema(cls) -> Dict[str, Any]:

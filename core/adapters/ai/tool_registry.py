@@ -18,7 +18,25 @@ class ToolRegistry:
             cls._instance = super(ToolRegistry, cls).__new__(cls)
             cls._instance._tools: Dict[str, Type[IllacmeTool]] = {}
             cls._instance._tool_instances: Dict[str, IllacmeTool] = {}
+            # 🚀 自动加载并注册所有工具类，防止生产环境中注册表默认为空
+            cls._instance._auto_register_tools()
         return cls._instance
+
+    def _auto_register_tools(self):
+        """
+        🚀 自动发现并注册 core/adapters/ai/tools 目录下的所有内置工具
+        """
+        try:
+            from core.adapters.ai.tools.vault_tools import ReadDocumentTool, SearchVaultTool, WriteDocumentTool
+            from core.adapters.ai.tools.system_tools import CheckHealthTool, GitStatusTool
+            
+            self.register(ReadDocumentTool)
+            self.register(SearchVaultTool)
+            self.register(WriteDocumentTool)
+            self.register(CheckHealthTool)
+            self.register(GitStatusTool)
+        except Exception as e:
+            logger.error(f"❌ Failed to auto-register built-in tools: {e}")
 
     def register(self, tool_class: Type[IllacmeTool]):
         """

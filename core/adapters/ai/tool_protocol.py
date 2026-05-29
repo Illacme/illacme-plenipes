@@ -23,6 +23,9 @@ class IllacmeTool:
             "parameters": self.parameters
         }
 
+    def to_openai_schema(self) -> dict:
+        return self.to_dict()
+
 class ToolCallEvent:
     """🚀 模型发出的工具调用事件 (统一捕获载体)"""
     def __init__(self, tool_name: str, arguments: Dict[str, Any], raw_call_id: str = ""):
