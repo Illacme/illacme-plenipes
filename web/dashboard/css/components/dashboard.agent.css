@@ -164,11 +164,16 @@
     cursor: pointer;
     font-family: var(--font-mono);
     transition: all 0.2s ease;
+    width: 72px; /* 🎯 强制统一宽度，确保视觉一致 */
+    text-align-last: center; /* 下拉文字居中，更显精致 */
 }
 #agent-reasoning-depth:hover,
 #agent-max-iterations:hover {
     border-color: var(--accent-secondary);
     background: rgba(0, 20, 40, 0.9);
+}
+.agent-engine-settings .settings-row .setting-item:first-child {
+    flex: 0 0 106px; /* 🎯 强制第一列（开关列）宽度为 106px，实现第二列完美的垂直对齐线 */
 }
 .agent-msg.thinking-msg {
     border-left: 2px solid var(--accent-secondary);
