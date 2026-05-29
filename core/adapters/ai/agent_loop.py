@@ -52,7 +52,7 @@ class AutonomousAgent:
                 "params": {"temperature": 0.2}
             }
             
-            response = await loop.run_in_executor(None, lambda: self.ai_adapter._ask_ai(payload))
+            response = await loop.run_in_executor(None, lambda: self.ai_adapter.ask_ai_with_retry(payload))
             
             # 如果是普通的文本回复，意味着任务结束
             if isinstance(response, str):

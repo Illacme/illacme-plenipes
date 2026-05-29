@@ -25,6 +25,9 @@ class FallbackStrategy:
     def plugin_id(self): return getattr(self.primary, 'plugin_id', 'openai')
 
     @property
+    def trans_cfg(self): return getattr(self.primary, 'trans_cfg', None)
+
+    @property
     def _intelligence_hub(self): return self.primary._intelligence_hub
 
     def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
@@ -102,6 +105,9 @@ class SmartRoutingStrategy:
     def plugin_id(self): return getattr(self.primary, 'plugin_id', 'openai')
 
     @property
+    def trans_cfg(self): return getattr(self.primary, 'trans_cfg', None)
+
+    @property
     def _intelligence_hub(self): return self.primary._intelligence_hub
 
     def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
@@ -128,3 +134,13 @@ class SmartRoutingStrategy:
     def raw_inference(self, user_prompt, system_prompt=None):
         handler = self.primary if len(user_prompt) < self.threshold else self.secondary
         return handler.raw_inference(user_prompt, system_prompt)
+
+    def ask_ai_with_retry(self, payload):
+        """🚀 智能路由推理：根据 user prompt 长度自动分流"""
+        user_prompt = ""
+        if "messages" in payload:
+            for msg in payload["messages"]:
+                if msg.get("role") == "user":
+                    user_prompt += str(msg.get("content", ""))
+        handler = self.primary if len(user_prompt) < self.threshold else self.secondary
+        return handler.ask_ai_with_retry(payload)
