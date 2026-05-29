@@ -112,6 +112,10 @@
     align-items: center;
     gap: 6px;
     color: var(--text-bright);
+    white-space: nowrap; /* 🚫 防止紧凑排版下文字换行 */
+}
+.agent-engine-settings .setting-item span {
+    flex-shrink: 0; /* 🚫 防止标签文字被挤压变形 */
 }
 .switch-container {
     position: relative;
