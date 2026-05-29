@@ -18,6 +18,7 @@ class AutonomousAgent:
         self.ai_adapter = ai_adapter
         self.max_iterations = max_iterations
         self.registry = ToolRegistry()
+        self._repetition_count = 0
 
     async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = True, reasoning_effort: str = "medium", autopilot_enabled: bool = False):
         """
@@ -64,6 +65,9 @@ class AutonomousAgent:
                 
             # 如果是列表且包含 ToolCallEvent，说明模型要求执行工具
             if isinstance(response, list) and len(response) > 0 and isinstance(response[0], ToolCallEvent):
+                # 🚀 [V75.3] 重复动作自哨兵检测
+                current_calls = sorted([(event.name, json.dumps(event.arguments, sort_keys=True, ensure_ascii=False)) for event in response])
+                
                 tool_calls_payload = []
                 for event in response:
                     tool_calls_payload.append({
@@ -72,7 +76,8 @@ class AutonomousAgent:
                     })
                 messages.append({"role": "assistant", "content": None, "tool_calls": tool_calls_payload})
 
-                # 2. 本地执行每个工具
+                # 2. 本地执行每个工具并收集结果
+                current_results = []
                 for event in response:
                     logger.info(f"🛠️ [Agent Loop] Executing Tool: {event.name} with {event.arguments}")
                     yield {"type": "step", "message": f"[🔧 SYSTEM CALL: {event.name}]\n"}
@@ -107,7 +112,24 @@ class AutonomousAgent:
                     
                     logger.debug(f"🛠️ [Agent Loop] Result: {result_str[:100]}...")
                     messages.append({"role": "tool", "tool_call_id": event.id, "name": event.name, "content": result_str})
-                    
+                    current_results.append((event.name, result_str))
+                
+                # 🚀 [V75.3] 熔断机制评估
+                if hasattr(self, '_prev_calls') and hasattr(self, '_prev_results') and self._prev_calls is not None:
+                    if self._prev_calls == current_calls and self._prev_results == current_results:
+                        self._repetition_count += 1
+                        logger.warning(f"🚨 [Agent Loop] Repetitive loop detected ({self._repetition_count}/3). Calls: {current_calls}")
+                        if self._repetition_count >= 3:
+                            yield {"type": "step", "message": "🚨 [Sentinel] 熔断警告：检测到大模型在执行相同操作时陷入死循环且结果无变化。自动熔断以防止 Token 浪费。\n"}
+                            yield {"type": "final", "message": f"🚨 [Sentinel] 已成功熔断大模型无限死循环环路。发生重复的工具为: {', '.join([c[0] for c in current_calls])}。请检查输入指令。"}
+                            return
+                    else:
+                        self._repetition_count = 0
+                else:
+                    self._repetition_count = 0
+                
+                self._prev_calls = current_calls
+                self._prev_results = current_results
                 continue
             
             logger.warning(f"⚠️ [Agent Loop] Unknown response type: {type(response)}")
