@@ -1,0 +1,103 @@
+/* 
+ * 🏢 Illacme Plenipes - Sovereign Copilot Agent CSS
+ * V75.0
+ */
+
+ .agent-pod {
+    display: flex;
+    flex-direction: column;
+    height: 350px; /* 固定高度或弹性的初始高度 */
+    margin-bottom: 15px;
+    border: 1px solid var(--border-glow);
+    background: rgba(0, 15, 30, 0.4);
+    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.05);
+}
+
+.agent-feed-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.agent-msg {
+    padding: 6px 10px;
+    border-radius: 4px;
+    line-height: 1.4;
+    word-break: break-all;
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.agent-msg.system-msg {
+    color: var(--text-dim);
+    font-style: italic;
+    border-left: 2px solid var(--text-dim);
+}
+
+.agent-msg.user-msg {
+    align-self: flex-end;
+    background: rgba(0, 242, 255, 0.1);
+    color: var(--accent-blue);
+    border-right: 2px solid var(--accent-blue);
+    text-align: right;
+}
+
+.agent-msg.tool-msg {
+    color: var(--accent-orange, #ff9d00);
+    background: rgba(255, 157, 0, 0.05);
+    border-left: 2px solid var(--accent-orange, #ff9d00);
+    font-family: var(--font-mono);
+}
+
+.agent-msg.final-msg {
+    color: var(--text-bright);
+    background: color-mix(in srgb, var(--color-white) 5%, transparent);
+    border-left: 2px solid var(--text-bright);
+    font-family: var(--font-main);
+    font-size: 0.8rem;
+}
+
+.agent-input-wrapper {
+    padding: 10px;
+    border-top: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--color-black) 20%, transparent);
+}
+
+#agent-command-input {
+    width: 100%;
+    background: rgba(0, 242, 255, 0.05);
+    border: 1px solid var(--border-glow);
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#agent-command-input:focus {
+    background: rgba(0, 242, 255, 0.1);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
+/* 呼吸发光特效 */
+.agent-pod.processing {
+    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.1), 0 0 15px rgba(0, 242, 255, 0.2);
+    animation: agentPulse 2s infinite alternate;
+}
+
+@keyframes agentPulse {
+    0% { border-color: rgba(0, 242, 255, 0.3); }
+    100% { border-color: rgba(0, 242, 255, 0.8); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

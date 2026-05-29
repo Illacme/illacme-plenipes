@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
 from .routes import system, content, governance, ws, compute
+from .routes import system, content, governance, ws, compute, agent
 from .infrastructure.logging import setup_api_logging
 from .infrastructure.middleware import setup_middleware
 
@@ -36,6 +37,7 @@ app.include_router(system.router, tags=["System"])
 app.include_router(content.router, tags=["Content"])
 app.include_router(governance.router, tags=["Governance"])
 app.include_router(ws.router, tags=["Realtime"])
+app.include_router(agent.router, tags=["Agent"])
 
 @app.get("/health")
 async def health_check() -> Dict[str, Any]:

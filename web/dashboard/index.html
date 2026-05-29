@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/components/modals.forms.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.discovery.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.alerts.css?v=75.0">
+    <link rel="stylesheet" href="css/components/dashboard.agent.css?v=75.0">
     <link rel="stylesheet" href="css/views/overview.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
@@ -154,6 +155,20 @@
 
         <!-- 🛡️ Right Sidebar: Audit Radar -->
         <aside class="glass-panel sidebar" id="right-sidebar">
+            <!-- 🧠 Agent Sovereign Copilot Pod -->
+            <div class="sidebar-pod agent-pod">
+                <div class="pod-header">
+                    <span class="pod-title">SOVEREIGN COPILOT</span>
+                    <span class="version-tag tiny" id="agent-status-tag">STANDBY</span>
+                </div>
+                <div class="agent-feed-container scroll-container scanline-overlay" id="agent-feed">
+                    <div class="agent-msg system-msg">Initialize command override...<br/>Awaiting instructions.</div>
+                </div>
+                <div class="agent-input-wrapper">
+                    <input type="text" id="agent-command-input" placeholder="CMD: 唤醒主脑 (Cmd+K)" autocomplete="off">
+                </div>
+            </div>
+
             <!-- 📡 Radar Scanner Pod -->
             <div class="sidebar-pod radar-pod">
                 <div class="pod-header">
@@ -308,6 +323,7 @@
     <script src="/dashboard/js/dashboard.health.js"></script>
     <script src="/dashboard/js/dashboard.system.js"></script>
     <script src="/dashboard/js/dashboard.socket.js"></script>
+    <script src="/dashboard/js/dashboard.agent.js"></script>
     <!-- 🌌 三维星系图引擎子模块物理分片 (符合 SOP-02 300行复杂度硬约束) -->
     <script src="/dashboard/js/galaxy/galaxy.scale.js?v=100.0"></script>
     <script src="/dashboard/js/galaxy/galaxy.labels.js?v=100.0"></script>
