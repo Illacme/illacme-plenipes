@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 6. 恢复就绪状态
             agentInput.disabled = false;
-            agentInput.placeholder = 'CMD: 唤醒主脑 (Cmd+K)';
+            agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
             if (agentPod) agentPod.classList.remove('processing');
             if (agentStatus) {
                 agentStatus.textContent = 'STANDBY';

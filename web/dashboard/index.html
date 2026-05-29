@@ -165,10 +165,19 @@
                     <span class="version-tag tiny" id="agent-status-tag">STANDBY</span>
                 </div>
                 <div class="agent-feed-container scroll-container scanline-overlay" id="agent-feed">
-                    <div class="agent-msg system-msg">Initialize command override...<br/>Awaiting instructions.</div>
+                    <div class="agent-msg system-msg" style="border-left: 2px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.03); padding: 12px; border-radius: 8px; font-style: normal; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="font-weight: bold; color: var(--accent-secondary); font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">🤖 SOVEREIGN COPILOT 已就绪</div>
+                        <p style="margin: 0; line-height: 1.4; color: var(--text-bright); font-size: 0.75rem;">我是你的主权协同一体化助手，已打通本地算力与工具箱，可以协助你管理这套数字出版系统。</p>
+                        <div style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.5; margin-top: 4px;">
+                            <span style="display: block; margin-bottom: 4px; font-weight: bold; color: var(--neon-amber);">💡 推荐你这样对我说：</span>
+                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">系统状态怎么样？</code> (查看系统负载)<br/>
+                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">在文稿库中搜索 SOP-01</code> (检索文库)<br/>
+                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">在 README 中追加版本说明</code> (带安全拦截的写入)
+                        </div>
+                    </div>
                 </div>
                 <div class="agent-input-wrapper">
-                    <input type="text" id="agent-command-input" placeholder="CMD: 唤醒主脑 (Cmd+K)" autocomplete="off">
+                    <input type="text" id="agent-command-input" placeholder="输入指令，如“系统状态” (Cmd+K)..." autocomplete="off">
                 </div>
             </div>
 
@@ -345,7 +354,7 @@
     <script src="/dashboard/js/dashboard.health.js"></script>
     <script src="/dashboard/js/dashboard.system.js"></script>
     <script src="/dashboard/js/dashboard.socket.js"></script>
-    <script src="/dashboard/js/dashboard.agent.js?v=5"></script>
+    <script src="/dashboard/js/dashboard.agent.js?v=6"></script>
     <!-- 🌌 三维星系图引擎子模块物理分片 (符合 SOP-02 300行复杂度硬约束) -->
     <script src="/dashboard/js/galaxy/galaxy.scale.js?v=100.0"></script>
     <script src="/dashboard/js/galaxy/galaxy.labels.js?v=100.0"></script>
