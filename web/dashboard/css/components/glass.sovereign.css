@@ -75,13 +75,13 @@
 #audit-feed::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 10px; }
 
 /* 🏗️ Sequenced Boot-up System */
-.sidebar-pod { opacity: 0; animation: podSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.sidebar-pod { opacity: 1; animation: podSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .sidebar-pod:nth-child(1) { animation-delay: 0.1s; }
 .sidebar-pod:nth-child(2) { animation-delay: 0.2s; }
 .sidebar-pod:nth-child(3) { animation-delay: 0.3s; }
 .sidebar-pod:nth-child(4) { animation-delay: 0.4s; }
 
-.radar-pod { opacity: 0; animation: podSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform: translateX(20px); }
+.radar-pod { opacity: 1; animation: podSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform: translateX(20px); }
 .radar-pod:nth-child(1) { animation-delay: 0.3s; }
 .radar-pod:nth-child(2) { animation-delay: 0.4s; }
 .radar-pod:nth-child(3) { animation-delay: 0.5s; }
