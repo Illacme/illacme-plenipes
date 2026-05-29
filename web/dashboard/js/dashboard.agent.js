@@ -38,6 +38,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 🆕 动态获取大模型元数据并改变徽章状态 (V76.3)
+    async function refreshModelCapability() {
+        const modelNameTag = document.getElementById('active-model-name');
+        if (!modelNameTag) return;
+        try {
+            const r = await fetch('/api/agent/model_info');
+            if (!r.ok) throw new Error();
+            const data = await r.json();
+            modelNameTag.textContent = data.model_name || 'Unknown';
+            const updateBadge = (id, active) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (active) {
+                    el.classList.remove('disabled'); el.classList.add('active');
+                } else {
+                    el.classList.remove('active'); el.classList.add('disabled');
+                }
+            };
+            updateBadge('badge-cot', data.capabilities.cot);
+            updateBadge('badge-tools', data.capabilities.tools);
+            updateBadge('badge-stream', data.capabilities.stream);
+            updateBadge('badge-vision', data.capabilities.vision);
+        } catch (e) {
+            modelNameTag.textContent = '未就绪';
+        }
+    }
+    refreshModelCapability();
+
     // 点击推荐指令直接填入并聚焦
     if (agentFeed) {
         agentFeed.addEventListener('click', (e) => {
@@ -84,14 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function submitAgentTask(command) {
-        agentInput.value = '';
-        agentInput.disabled = true;
-        agentInput.placeholder = 'AI 助手思考中...';
+        agentInput.value = ''; agentInput.disabled = true; agentInput.placeholder = 'AI 助手思考中...';
         if (agentPod) agentPod.classList.add('processing');
-        if (agentStatus) {
-            agentStatus.textContent = 'EXECUTING';
-            agentStatus.style.color = 'var(--neon-amber)';
-        }
+        if (agentStatus) { agentStatus.textContent = 'EXECUTING'; agentStatus.style.color = 'var(--neon-amber)'; }
 
         appendMessage(`> ${command}`, 'user-msg');
         const thinkingId = 'agent-thinking-' + Date.now();
@@ -159,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!activeThinkingDetails) {
                                     const msgDiv = document.createElement('div');
                                     msgDiv.className = 'agent-msg thinking-msg';
-                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链分析中...</summary><div class="thinking-content"></div></details>`;
+                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 analysis中...</summary><div class="thinking-content"></div></details>`;
                                     agentFeed.appendChild(msgDiv);
                                     activeThinkingDetails = msgDiv.querySelector('details');
                                     activeThinkingContent = msgDiv.querySelector('.thinking-content');
@@ -217,22 +240,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // HITL Dialog 状态控制
-    const hitlDialog = document.getElementById('agent-hitl-dialog');
-    const hitlToolName = document.getElementById('hitl-tool-name');
-    const hitlToolArgs = document.getElementById('hitl-tool-args');
-    const hitlApproveBtn = document.getElementById('hitl-approve-btn');
-    const hitlRejectBtn = document.getElementById('hitl-reject-btn');
-    const hitlCloseBtn = document.getElementById('hitl-close-btn');
+    const hitlDialog = document.getElementById('agent-hitl-dialog'), hitlToolName = document.getElementById('hitl-tool-name'), hitlToolArgs = document.getElementById('hitl-tool-args');
+    const hitlApproveBtn = document.getElementById('hitl-approve-btn'), hitlRejectBtn = document.getElementById('hitl-reject-btn'), hitlCloseBtn = document.getElementById('hitl-close-btn');
     let currentHitlId = null;
-
     if (hitlDialog) {
-        const closeHitl = () => {
-            hitlDialog.close();
-            currentHitlId = null;
-        };
-
+        const closeHitl = () => { hitlDialog.close(); currentHitlId = null; };
         if (hitlCloseBtn) hitlCloseBtn.addEventListener('click', closeHitl);
-
         const submitHitlDecision = async (decision) => {
             if (!currentHitlId) return;
             const hitlId = currentHitlId;
@@ -248,19 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 appendMessage(`[ERROR] Failed to send HITL decision: ${err.message}`, 'system-msg');
             }
         };
-
         if (hitlApproveBtn) hitlApproveBtn.addEventListener('click', () => submitHitlDecision('approve'));
         if (hitlRejectBtn) hitlRejectBtn.addEventListener('click', () => submitHitlDecision('reject'));
     }
 
     function renderStreamEvent(data) {
-        if (data.type === 'status') {
-            appendMessage(data.message, 'system-msg');
-        } else if (data.type === 'step') {
-            appendMessage(data.message, 'tool-msg');
-        } else if (data.type === 'final') {
-            appendMessage(data.message, 'final-msg');
-        } else if (data.type === 'hitl_required') {
+        if (data.type === 'status') appendMessage(data.message, 'system-msg');
+        else if (data.type === 'step') appendMessage(data.message, 'tool-msg');
+        else if (data.type === 'final') appendMessage(data.message, 'final-msg');
+        else if (data.type === 'hitl_required') {
             appendMessage(data.message, 'system-msg');
             if (hitlDialog) {
                 currentHitlId = data.hitl_id;

@@ -21,6 +21,38 @@ class AgentAuthorizeRequest(BaseModel):
     hitl_id: str
     decision: str  # "approve" or "reject"
 
+@router.get("/model_info")
+async def get_active_model_info():
+    """
+    🏢 动态获取当前激活的 AI 模型及其底层能力矩阵 (V76.3)
+    """
+    engine = get_global_engine()
+    ai_adapter = getattr(engine, 'translator', None)
+    if not ai_adapter:
+        return {
+            "model_name": "未就绪",
+            "capabilities": {"cot": False, "tools": False, "stream": False, "vision": False}
+        }
+    model_name = "Unknown"
+    if hasattr(ai_adapter, 'config') and hasattr(ai_adapter.config, 'model'):
+        model_name = ai_adapter.config.model
+    elif hasattr(ai_adapter, 'trans_cfg') and hasattr(ai_adapter.trans_cfg, 'primary_model'):
+        model_name = ai_adapter.trans_cfg.primary_model
+    short_name = model_name.split("/")[-1] if model_name else "Unknown"
+    model_lower = model_name.lower() if model_name else ""
+    cot_supported = any(kw in model_lower for kw in ["r1", "o1", "o3", "thinking", "reasoning"])
+    tools_supported = any(c.__name__ == "OpenAICompatibleTranslator" for c in ai_adapter.__class__.__mro__)
+    vision_supported = any(kw in model_lower for kw in ["vl", "vision", "gpt-4o", "claude-3-5"])
+    return {
+        "model_name": short_name,
+        "capabilities": {
+            "cot": cot_supported,
+            "tools": tools_supported,
+            "stream": True,
+            "vision": vision_supported
+        }
+    }
+
 @router.post("/task")
 async def execute_agent_task(request: AgentTaskRequest):
     """
