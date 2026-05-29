@@ -247,6 +247,7 @@ window.showView = (viewId, subId) => {
 const originalShowView = window.showView;
 window.showView = (id, subId) => {
     if (subId) window.pendingSubView = subId;
+    else window.pendingSubView = null; // Fix for stale subId bleeding
     const container = document.querySelector('main');
     
     // 🌌 [V75.0] 物理视口拦截：原生 View Transitions 降维替换

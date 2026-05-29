@@ -1,0 +1,243 @@
+/* 🕹️ [V75.0] Illacme Plenipes Compute Strategy Deck - Sovereign Shard */
+/* 🔗 拆分自 compute.strategy.css */
+/* 🕹️ Strategy Command Pod */
+#view-compute .strategy-command-deck {
+    padding: 40px;
+    margin-top: 40px;
+    position: relative;
+    background: rgba(var(--bg-modal-solid-rgb), 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    backdrop-filter: blur(30px);
+}
+
+#view-compute .deck-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+#view-compute .deck-title-group h2 { font-size: 1.8rem; font-weight: 900; color: var(--text-bright); margin-bottom: 5px; }
+#view-compute .deck-title-group p { font-size: 0.85rem; color: var(--text-dim); }
+
+#view-compute .strategy-binding-matrix {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 40px;
+    margin-top: 30px;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 100; /* 🚀 [V74.8] 提升主备绑定矩阵层级，彻底阻断下方算法列表遮挡 */
+}
+
+#view-compute .tactical-info-pod:hover {
+    transform: none !important;
+    box-shadow: 0 20px 60px var(--black-50), inset 0 1px 2px var(--glass-highlight) !important;
+}
+
+#view-compute .binding-terminal {
+    background: var(--white-02);
+    border: 1px solid var(--white-05);
+    border-radius: 20px;
+    padding: 25px;
+    position: relative;
+    z-index: 10;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#view-compute .binding-terminal:hover,
+#view-compute .binding-terminal:focus-within {
+    z-index: 50; /* 🚀 [V74.8] 悬浮或聚焦时进一步升舱 z-index，防范任何输入框、下拉框或发现列表被遮蔽 */
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 20px 50px var(--black-40), inset 0 1px 2px var(--white-10);
+}
+
+#view-compute .binding-terminal.primary { border-left: 4px solid var(--accent-primary); }
+#view-compute .binding-terminal.fallback { border-left: 4px solid var(--accent-secondary); }
+
+#view-compute .terminal-label {
+    position: absolute; top: -12px; left: 20px;
+    background: rgb(var(--bg-modal-solid-rgb)); padding: 0 10px;
+    font-size: 0.6rem; font-weight: 900; color: var(--accent-primary);
+    letter-spacing: 2px;
+}
+
+#view-compute .binding-vessel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+#view-compute .vessel-icon { font-size: 2rem; animation: float 3s ease-in-out infinite; }
+
+#view-compute .action-deck {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding-top: 30px;
+    border-top: 1px solid var(--white-05);
+}
+
+
+/* 📌 主备节点角色标记 */
+#view-compute .node-unit .role-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 4px 14px;
+    font-size: 0.55rem;
+    font-weight: 800;
+    border-radius: 0 20px 0 20px;
+    letter-spacing: 1px;
+    box-shadow: -2px 2px 10px var(--black-15);
+    border-left: 1px solid var(--white-10);
+    border-bottom: 1px solid var(--white-10);
+    pointer-events: none;
+    z-index: 10;
+}
+#view-compute .node-unit .role-badge.primary {
+    background: linear-gradient(135deg, var(--accent-primary), rgb(var(--role-primary-end-rgb)));
+    color: var(--text-bright);
+}
+#view-compute .node-unit .role-badge.fallback {
+    background: linear-gradient(135deg, var(--accent-secondary), rgb(var(--role-fallback-end-rgb)));
+    color: var(--text-bright);
+}
+
+/* ⚖️ 调度策略与主备选择自愈 (Stage 2.6 标准化) */
+#view-compute .selection-vessel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    margin-top: 15px;
+}
+
+#view-compute .binding-terminal select,
+#view-compute .binding-terminal input {
+    width: 100%;
+    height: 42px;
+    background: var(--black-30);
+    border: 1px solid var(--white-10);
+    border-radius: 10px;
+    padding: 0 15px;
+    color: var(--text-bright);
+    font-size: 0.85rem;
+    font-family: var(--font-header);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+#view-compute .binding-terminal select:focus,
+#view-compute .binding-terminal input:focus {
+    background: rgba(var(--accent-primary-rgb), 0.05);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.2);
+    outline: none;
+}
+
+#view-compute .binding-terminal.fallback select:focus,
+#view-compute .binding-terminal.fallback input:focus {
+    background: rgba(var(--accent-secondary-rgb), 0.05);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 15px rgba(var(--accent-secondary-rgb), 0.2);
+    outline: none;
+}
+
+#view-compute .input-vessel {
+    position: relative;
+    width: 100%;
+}
+
+#view-compute .strategy-mode-badge.badge.active {
+    background: rgba(var(--neon-green-rgb), 0.1);
+    color: var(--neon-green);
+    border: 1px solid rgba(var(--neon-green-rgb), 0.3);
+    box-shadow: 0 0 15px rgba(var(--neon-green-rgb), 0.1);
+    animation: neon-glow 2s infinite alternate;
+}
+
+#view-compute .strategy-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#view-compute .strategy-label {
+    font-size: 0.6rem;
+    color: var(--accent-primary);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+#view-compute .strategy-item {
+    background: var(--white-02);
+    border: 1px solid var(--white-05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+#view-compute .strategy-item:hover {
+    background: var(--white-05);
+    transform: translateX(5px);
+}
+
+#view-compute .strategy-item.active {
+    background: rgba(var(--accent-primary-rgb), 0.1);
+    border-color: rgba(var(--accent-primary-rgb), 0.3);
+}
+
+#view-compute .radio-indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--white-20);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#view-compute .strategy-item.active .radio-indicator {
+    border-color: var(--accent-primary);
+}
+
+#view-compute .radio-inner {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 0.2s;
+}
+
+#view-compute .strategy-item.active .radio-inner {
+    transform: scale(1);
+    box-shadow: 0 0 10px var(--accent-primary);
+    animation: radio-pulse 1.5s infinite;
+}
+
+#view-compute .strategy-name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 2px;
+    text-align: left;
+}
+
+#view-compute .strategy-desc {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: left;
+}

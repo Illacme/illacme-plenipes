@@ -24,7 +24,7 @@ window.toggleImprintDropdown = (e) => {
     const dropdown = document.getElementById('imprint-dropdown');
     if (!dropdown) return;
     const isHidden = dropdown.style.display === 'none';
-    dropdown.style.display = isHidden ? 'flex' : 'none';
+    dropdown.style.display = isHidden ? 'block' : 'none';
     if (isHidden && typeof renderImprintDropdown === 'function') renderImprintDropdown();
 };
 

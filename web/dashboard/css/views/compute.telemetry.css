@@ -1,0 +1,108 @@
+/* 📡 [V75.0] Illacme Plenipes Compute Telemetry - Sovereign Shard */
+/* 🔗 拆分自 compute.css */
+#view-compute .node-telemetry {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 强制平分空间，防止重叠 */
+    gap: 15px;
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--black-20);
+    border-radius: 16px;
+    border: 1px solid var(--white-03);
+}
+
+#view-compute .t-item { display: flex; flex-direction: column; gap: 5px; overflow: hidden; } /* 增加溢出处理 */
+#view-compute .t-item .label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+#view-compute .t-item .value { 
+    font-family: var(--font-mono); 
+    font-size: 0.85rem; 
+    color: var(--text-bright); 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; /* 如果 Endpoint 太长，显示省略号 */
+}
+
+#view-compute .node-model-line {
+    margin-top: 10px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    min-width: 0; /* 🚀 确保跑马灯容器能正确计算宽度 */
+}
+
+#view-compute .model-marquee-vessel {
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, var(--color-black) 85%, transparent 100%);
+    width: 100%;
+}
+
+#view-compute .model-marquee-vessel:hover .node-model-badge {
+    animation: marquee-scroll 8s linear infinite;
+    mask-image: none;
+}
+
+#view-compute .node-model-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(var(--accent-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-primary-rgb), 0.15);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent-primary);
+}
+
+#view-compute .node-model-badge .brain-icon { font-size: 0.8rem; }
+#view-compute .node-model-badge .model-name { font-weight: 600; }
+
+/* 📡 Telemetry & Latency */
+#view-compute .telemetry-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--black-20);
+    border-radius: 12px;
+    border: 1px solid var(--white-03);
+}
+
+#view-compute .t-stat { flex: 1; }
+#view-compute .t-label { font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+#view-compute .t-value { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-bright); font-weight: 700; }
+#view-compute .t-value.healthy { color: var(--neon-green); text-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.3); }
+
+/* 🧠 Model Matrix Bubble */
+#view-compute .model-matrix-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 15px;
+}
+#view-compute .model-chip {
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--white-03);
+    border: 1px solid var(--white-05);
+    font-size: 0.65rem; color: var(--text-light-gray); font-family: var(--font-mono);
+    transition: all 0.2s;
+}
+#view-compute .model-chip:hover {
+    background: rgba(var(--accent-primary-rgb), 0.1); border-color: rgba(var(--accent-primary-rgb), 0.3); color: var(--text-bright);
+}
+
+#view-compute .node-status-line {
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--black-30);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem; /* 模拟终端微缩字号 */
+    color: var(--text-dim);
+    border: 1px solid var(--white-02);
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+}
+

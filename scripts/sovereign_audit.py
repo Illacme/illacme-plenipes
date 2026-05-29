@@ -126,9 +126,9 @@ def main():
         ]
         
         def check_line_for_hardcoded_color(line):
-            if ":" not in line:
-                return None
             line_clean = re.sub(r'/\*.*?\*/', '', line)
+            if ":" not in line_clean:
+                return None
             parts = line_clean.split(":", 1)
             value_part = parts[1].strip()
             

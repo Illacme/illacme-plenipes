@@ -43,22 +43,22 @@ class SovereignSSGAdapter(BaseSSGAdapter):
         """🚀 [V56.0] Sovereign 标准布局声明"""
         return {
             "docs": {
-                "label": "知识库",
+                "label": "文档中心",
                 "single": "docs",
                 "multi": "docs/{lang}"
             },
             "blog": {
-                "label": "主权简报",
+                "label": "博客文章",
                 "single": "blog",
                 "multi": "blog/{lang}"
             },
             "pages": {
-                "label": "静态页面",
+                "label": "独立页面",
                 "single": "pages",
                 "multi": "pages/{lang}"
             },
             "static": {
-                "label": "静态资产",
+                "label": "静态资源",
                 "single": "static",
                 "multi": "static"
             }

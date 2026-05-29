@@ -12,8 +12,8 @@ class PayloadManager:
     """🚀 [V10.3] 载荷驱动引擎：组装并审计中立意图对象"""
 
     @staticmethod
-    def prepare_payload(adapter, system_prompt: str, user_content: str, is_json: bool = False, payload_max_tokens: int = None) -> Dict[str, Any]:
-        """🚀 [AEL-Iter-v10.3] 组装中立意图对象 (Neutral Intent Object)"""
+    def prepare_payload(adapter, system_prompt: str, user_content: str, is_json: bool = False, payload_max_tokens: int = None, tools: list = None, messages: list = None) -> Dict[str, Any]:
+        """🚀 [AEL-Iter-v75.0] 组装中立意图对象 (新增 tools 和 messages 大一统字段)"""
         # 1. 获取全要素智能特性
         safe_system = system_prompt or ""
         is_probe = "OracleProbe" in safe_system
@@ -30,6 +30,8 @@ class PayloadManager:
             "model": adapter.config.model,
             "system": system_prompt,
             "user": user_content,
+            "messages": messages or [],
+            "tools": tools or [],
             "is_json": is_json,
             "params": {
                 **intelligent_payload,

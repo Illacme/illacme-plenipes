@@ -1,6 +1,6 @@
 /**
  * 🏢 Illacme Plenipes - Sovereign Copilot (Agent) Logic
- * V75.0
+ * V76.0
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +15,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!agentInput || !agentFeed) {
         if (window._dbgLog) window._dbgLog('<span style="color:#f00">⛔ agent-input/feed NOT FOUND, aborting!</span>');
         return;
+    }
+
+    // 🧠 思维链 Toggle 与深度选择框的联动 (V76.0)
+    const reasoningToggle = document.getElementById('agent-reasoning-toggle');
+    const reasoningDepthContainer = document.getElementById('agent-reasoning-depth-container');
+    if (reasoningToggle && reasoningDepthContainer) {
+        reasoningToggle.addEventListener('change', () => {
+            if (reasoningToggle.checked) {
+                reasoningDepthContainer.style.opacity = '1';
+                reasoningDepthContainer.style.pointerEvents = 'auto';
+            } else {
+                reasoningDepthContainer.style.opacity = '0.4';
+                reasoningDepthContainer.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    // ⚙️ 思维链面板点击收折切换 (V76.0)
+    const settingsToggleBtn = document.getElementById('agent-settings-toggle-btn');
+    const settingsPanel = document.querySelector('.agent-engine-settings');
+    if (settingsToggleBtn && settingsPanel) {
+        settingsToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.toggle('expanded');
+            if (settingsPanel.classList.contains('expanded')) {
+                settingsToggleBtn.style.color = '#00f2ff';
+                settingsToggleBtn.style.textShadow = '0 0 8px #00f2ff';
+            } else {
+                settingsToggleBtn.style.color = '';
+                settingsToggleBtn.style.textShadow = '';
+            }
+        });
+    }
+
+    // 点击推荐指令直接填入并聚焦 (V76.0)
+    if (agentFeed) {
+        agentFeed.addEventListener('click', (e) => {
+            const codeEl = e.target.closest('.clickable-suggestion');
+            if (codeEl && agentInput) {
+                agentInput.value = codeEl.textContent.trim();
+                agentInput.focus();
+                // 呼吸闪烁微动效
+                agentInput.style.boxShadow = '0 0 12px rgba(0, 242, 255, 0.4)';
+                setTimeout(() => {
+                    agentInput.style.boxShadow = '';
+                }, 400);
+            }
+        });
     }
 
     // 全局快捷键 Cmd+K / Ctrl+K 唤醒
@@ -96,8 +144,24 @@ document.addEventListener('DOMContentLoaded', () => {
         // 让出事件循环，确保浏览器立即重绘用户指令和思考状态
         await new Promise(resolve => setTimeout(resolve, 60));
 
+        // 获取思维链、自动驾驶与轮数控制状态 (V76.1)
+        const rToggle = document.getElementById('agent-reasoning-toggle');
+        const rDepth = document.getElementById('agent-reasoning-depth');
+        const aToggle = document.getElementById('agent-autopilot-toggle');
+        const maxIterSelect = document.getElementById('agent-max-iterations');
+
+        const isReasoningEnabled = rToggle ? rToggle.checked : true;
+        const selectedReasoningEffort = rDepth ? rDepth.value : 'medium';
+        const isAutopilotEnabled = aToggle ? aToggle.checked : false;
+        const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;
+
         // 4. 发起请求并接收 SSE 流
         let firstEventReceived = false;
+        let activeThinkingDetails = null;
+        let activeThinkingContent = null;
+        let activeContentDiv = null;
+        let fullContentText = "";
+
         try {
             console.log('[Agent UI] Sending fetch to /api/agent/task');
             const response = await fetch('/api/agent/task', {
@@ -107,7 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     user_prompt: command,
-                    max_iterations: 10
+                    max_iterations: maxIterations,
+                    reasoning_enabled: isReasoningEnabled,
+                    reasoning_effort: selectedReasoningEffort,
+                    autopilot_enabled: isAutopilotEnabled
                 })
             });
 
@@ -144,7 +211,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         try {
                             const data = JSON.parse(chunk.slice(6));
-                            renderStreamEvent(data);
+                            
+                            // 🚀 [V76.0] 实时流式思维链与内容捕获
+                            if (data.type === 'thinking_chunk') {
+                                if (!activeThinkingDetails) {
+                                    const msgDiv = document.createElement('div');
+                                    msgDiv.className = 'agent-msg thinking-msg';
+                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链分析中...</summary><div class="thinking-content"></div></details>`;
+                                    agentFeed.appendChild(msgDiv);
+                                    activeThinkingDetails = msgDiv.querySelector('details');
+                                    activeThinkingContent = msgDiv.querySelector('.thinking-content');
+                                }
+                                if (activeThinkingContent) {
+                                    activeThinkingContent.textContent += data.delta;
+                                    activeThinkingContent.scrollTop = activeThinkingContent.scrollHeight;
+                                }
+                                agentFeed.scrollTop = agentFeed.scrollHeight;
+                            } else if (data.type === 'content_chunk') {
+                                // 思考完毕，自动收起思维链并更新标题
+                                if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
+                                    activeThinkingDetails.removeAttribute('open');
+                                    const summary = activeThinkingDetails.querySelector('summary');
+                                    if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
+                                }
+                                
+                                if (!activeContentDiv) {
+                                    activeContentDiv = document.createElement('div');
+                                    activeContentDiv.className = 'agent-msg final-msg';
+                                    agentFeed.appendChild(activeContentDiv);
+                                }
+                                fullContentText += data.delta;
+                                activeContentDiv.innerHTML = fullContentText.replace(/\n/g, '<br/>');
+                                agentFeed.scrollTop = agentFeed.scrollHeight;
+                            } else {
+                                // 其它标准事件（如 status, step, hitl 等）
+                                renderStreamEvent(data);
+                            }
                         } catch (err) {
                             console.warn("[Agent UI] Failed to parse SSE chunk:", chunk);
                         }
@@ -159,6 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // 5. 清理残留思考指示器（如果从未收到流式事件）
             const leftover = document.getElementById(thinkingId);
             if (leftover) leftover.remove();
+
+            // 如果有尚未关闭的思维链，收起它
+            if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
+                activeThinkingDetails.removeAttribute('open');
+                const summary = activeThinkingDetails.querySelector('summary');
+                if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
+            }
 
             // 6. 恢复就绪状态
             agentInput.disabled = false;

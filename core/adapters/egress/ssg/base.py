@@ -8,7 +8,9 @@ Illacme-plenipes Core - SSG Rendering Base
 import abc
 from typing import Tuple, Dict, Any, List
 
-class BaseSSGAdapter(abc.ABC):
+from .mixins import CITemplateMixin
+
+class BaseSSGAdapter(CITemplateMixin, abc.ABC):
     PLUGIN_ID = "generic"
     """所有 SSG 渲染插件的抽象基类"""
     
@@ -109,7 +111,11 @@ class BaseSSGAdapter(abc.ABC):
         return schema
 
     def get_feature_slots(self) -> Dict[str, Dict[str, str]]:
-        """🚀 [V56.0] 意图感知协议：声明该适配器支持的功能槽及其物理路径映射。"""
+        """🚀 [V56.0/V80.0] 意图感知协议：声明该适配器支持的功能槽及其物理路径映射。
+        优先从 theme.schema.json 中动态读取，实现数据驱动的零代码适配。"""
+        if hasattr(self, 'theme_schema') and self.theme_schema and 'slots' in self.theme_schema:
+            return self.theme_schema['slots']
+            
         return {
             "docs": {"label": "文档中心", "single": "docs", "multi": "i18n/{lang}/docs"},
             "blog": {"label": "博客文章", "single": "blog", "multi": "i18n/{lang}/blog"},
@@ -145,79 +151,6 @@ class BaseSSGAdapter(abc.ABC):
     def get_build_command(cls) -> str:
         """🚀 [V78.0] 返回该 SSG 引擎的标准构建命令"""
         return "npm run build"
-
-    @classmethod
-    def get_deploy_script_template(cls) -> str:
-        """🚀 [V78.0] 返回本地一键部署的通用 shell 脚本模板"""
-        return """#!/bin/bash
-# 🚀 Illacme Plenipes Sovereign Local Deployment Script
-# SSG Type: {ssg_type}
-# Generated at: {datetime}
-
-set -e
-
-echo "🟢 1. 正在执行 {ssg_type} 的依赖核验与安装..."
-if [ -f "package.json" ]; then
-    npm install
-fi
-
-echo "📦 2. 开始构建生产环境静态站点..."
-{build_cmd}
-
-echo "🚀 3. 部署资产对正完毕，就绪发布！"
-"""
-
-    @classmethod
-    def get_github_actions_template(cls) -> str:
-        """🚀 [V78.0] 返回 GitHub Actions CI/CD 流水线模板"""
-        return """name: Deploy Sovereign Website
-
-on:
-  push:
-    branches:
-      - main
-      - master
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: 'pages'
-  cancel-in-progress: true
-
-jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          
-      - name: Install Dependencies
-        run: npm ci || npm install
-        
-      - name: Build Site
-        run: {build_cmd}
-        
-      - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: {site_dir}
-          
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-"""
 
     def compile_theme_options(self) -> bool:
         """

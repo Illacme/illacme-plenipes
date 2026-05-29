@@ -11,6 +11,7 @@ from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 
 from core.utils.tracing import tlog
+from core.adapters.ai.tool_protocol import IllacmeTool, ToolCallEvent
 
 
 class OpenAICompatibleTranslator(BaseTranslator):
@@ -117,15 +118,39 @@ class OpenAICompatibleTranslator(BaseTranslator):
         """[Protocol] 实现 OpenAI 兼容协议的原子对话 [AEL-Iter-v10.3]"""
         
         # 🚀 [V10.3] 协议标准化组装：OpenAI 风格
-        payload = {
-            "model": payload.get("model"),
-            "messages": [
+        messages = payload.get("messages", [])
+        if not messages:
+            messages = [
                 {"role": "system", "content": payload.get("system")},
                 {"role": "user", "content": payload.get("user")}
-            ],
+            ]
+
+        openai_payload = {
+            "model": payload.get("model"),
+            "messages": messages,
             **payload.get("params", {})
         }
-        
+
+        # 🚀 [V75.0] 动态工具网关翻译 (Tool Translation Layer)
+        tools = payload.get("tools", [])
+        if tools:
+            openai_tools = []
+            for t in tools:
+                if isinstance(t, IllacmeTool):
+                    openai_tools.append({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.parameters
+                        }
+                    })
+                elif isinstance(t, dict):
+                    # 兼容原生传参
+                    openai_tools.append(t)
+            if openai_tools:
+                openai_payload["tools"] = openai_tools
+
         # 处理 JSON 模式兼容性 (如果在 Intent 中被标记)
         if payload.get("is_json"):
             # 注意：某些模型可能不支持，基类已通过 is_local 预检
@@ -156,7 +181,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
             pass
             
             # 使用基类统一管理的超时
-            resp = self._session.post(url, json=payload, headers=headers, proxies=proxies, timeout=self.timeout)
+            resp = self._session.post(url, json=openai_payload, headers=headers, proxies=proxies, timeout=self.timeout)
             
             if resp.status_code != 200:
                 # 🚀 [V6.2.1] 深度诊断：记录完整的错误响应正文
@@ -169,7 +194,31 @@ class OpenAICompatibleTranslator(BaseTranslator):
             if not choices:
                 tlog.warning(f"⚠️ [AI 响应为空] Node: {self.node_name} 返回了空 choices 列表。")
                 return ""
-            return choices[0]["message"]["content"]
+
+            message = choices[0]["message"]
+            
+            # 🚀 [V75.0] 拦截工具调用请求 (Tool Call Interception)
+            tool_calls = message.get("tool_calls", [])
+            if tool_calls:
+                parsed_events = []
+                for tc in tool_calls:
+                    if tc.get("type") == "function":
+                        func = tc.get("function", {})
+                        try:
+                            import json
+                            args_str = func.get("arguments", "{}")
+                            args = json.loads(args_str) if args_str else {}
+                        except json.JSONDecodeError:
+                            args = {}
+                        parsed_events.append(ToolCallEvent(
+                            tool_name=func.get("name"),
+                            arguments=args,
+                            raw_call_id=tc.get("id", "")
+                        ))
+                if parsed_events:
+                    return parsed_events
+
+            return message.get("content", "")
         except Exception as e:
             tlog.error(f"🛑 [OpenAI API Error]: {e}")
             raise

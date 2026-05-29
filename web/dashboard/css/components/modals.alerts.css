@@ -1,0 +1,110 @@
+/* ⚠️ [V75.0] Illacme Plenipes Modals Alerts - Sovereign Shard */
+/* ⚠️ 警告框深度优化 */
+.error-text-box {
+    margin-top: 10px;
+    background: rgba(var(--neon-red-rgb), 0.05) !important;
+    border: 1px dashed rgba(var(--neon-red-rgb), 0.3) !important;
+    color: var(--neon-red);
+    font-weight: bold;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+/* 📊 [V67.0] Enhanced Telemetry Visuals */
+.node-telemetry {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--white-02);
+    border-radius: 16px;
+    border: 1px solid var(--white-05);
+}
+
+.t-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.t-item .label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.t-item .value {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-bright);
+    font-weight: 700;
+}
+
+.t-item .value.healthy { color: var(--neon-green) !important; text-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.2); }
+.t-item .value.warning { color: var(--neon-amber) !important; text-shadow: 0 0 10px rgba(var(--neon-amber-rgb), 0.2); }
+.t-item .value.error { color: var(--neon-red) !important; text-shadow: 0 0 10px rgba(var(--neon-red-rgb), 0.2); }
+
+/* 🎨 [V69.1] Interaction Refinement */
+.shake-hint {
+    animation: shake-vibration 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    border-color: var(--neon-red) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.2) !important;
+}
+
+/* 🎨 [V72.5] Label Error Aesthetics */
+.label-error {
+    color: var(--neon-red);
+    font-size: 0.75rem;
+    margin-left: 10px;
+    font-weight: normal;
+    opacity: 0;
+    transform: translateX(-5px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.label-error.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+@keyframes shake-vibration {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* ❌ 弹窗内部表单校验自愈 (Stage 2.6 标准化) */
+.field-error-hint {
+    grid-column: span 2;
+    color: var(--neon-red);
+    font-size: 0.72rem;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    padding-left: 5px;
+    display: none;
+    font-family: var(--font-header);
+    text-shadow: 0 0 8px rgba(var(--neon-red-rgb), 0.3);
+    text-align: left;
+    width: 100%;
+}
+
+.shake-hint {
+    animation: shake-hint-kf 0.5s ease-in-out;
+    border-color: var(--neon-red) !important;
+    box-shadow: 0 0 10px rgba(var(--neon-red-rgb), 0.3) !important;
+}
+
+@keyframes shake-hint-kf {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}

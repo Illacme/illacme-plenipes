@@ -5,11 +5,11 @@
 
 window.syncI18nSource = async (val) => {
     if (typeof addAudit === 'function') addAudit(`🌍 正在固化源内容语种: ${val}...`);
-    
-    const res = await apiFetch('/api/config/update', { 
-        method: 'POST', 
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'i18n_settings.source.lang_code': val }) 
+        body: JSON.stringify({ 'i18n_settings.source.lang_code': val })
     });
 
     if (res && res.status === 'success') {
@@ -28,7 +28,7 @@ window.toggleI18nTarget = async (el, code) => {
     const i18n = window.settingsData.i18n_settings || {};
     const currentTargets = (i18n.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
     const isLicensed = window.settingsData._is_licensed || false;
-    
+
     console.log("[I18n Sync] Current Targets:", currentTargets, "Toggling:", code, "Licensed:", isLicensed);
 
     let nextTargets;
@@ -46,16 +46,16 @@ window.toggleI18nTarget = async (el, code) => {
     }
 
     if (typeof addAudit === 'function') addAudit(`🌍 正在同步分发矩阵...`);
-    
-    const res = await apiFetch('/api/config/update', { 
-        method: 'POST', 
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'i18n_settings.targets': nextTargets }) 
+        body: JSON.stringify({ 'i18n_settings.targets': nextTargets })
     });
 
     if (res && res.status === 'success') {
         if (typeof addAudit === 'function') addAudit(`✅ 分发矩阵已同步。`, "success");
-        
+
         // 🚀 [V55.7] 物理拉取最新状态
         const freshConfig = await apiFetch('/api/system/config?level=merged');
         if (freshConfig) {
@@ -75,7 +75,7 @@ window.applyTranslationStyle = async () => {
     const selector = document.getElementById('style-selector');
     if (!selector) return;
     const style = selector.value;
-    
+
     const templates = {
         professional: {
             translate: "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Use formal tone and professional vocabulary. Do not add any explanations.",
@@ -130,25 +130,3 @@ window.applyTranslationStyle = async () => {
     }
 };
 
-window.updateRouteStyle = async (idx, style) => {
-    const route = window.settingsData.route_matrix[idx];
-    if (!route) return;
-    
-    if (typeof addAudit === 'function') addAudit(`🎯 正在为频道 [${route.source}] 指定翻译风格: ${style || 'DEFAULT'}...`, "info");
-    
-    const payload = {};
-    payload[`route_matrix.${idx}.style`] = style || null;
-
-    const res = await apiFetch('/api/config/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    if (res && res.status === 'success') {
-        if (typeof addAudit === 'function') addAudit(`✅ 频道 [${route.source}] 风格已对正。`, "success");
-        window.settingsData.route_matrix[idx].style = style || null;
-    } else {
-        if (typeof addAudit === 'function') addAudit(`🚨 频道风格更新失败: ${res ? res.error : '物理链路冲突'}`, "error");
-    }
-};

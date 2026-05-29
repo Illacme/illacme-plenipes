@@ -1,0 +1,269 @@
+/* 🧪 [V60.0] Illacme Plenipes - Glass Editor & Vault Tree */
+/* 📋 Origin: glass.css Physical Split (SOP-02 V10.2) */
+
+/* 🧬 Tactical Intelligence Terminal (Editor) */
+.editor-matrix {
+    display: grid; grid-template-columns: 1fr 300px; height: 100%; background: var(--black-20);
+    overflow: hidden; /* [V87.1] Merged */
+}
+.editor-main { 
+    padding: 30px; display: flex; flex-direction: column; gap: 20px; min-height: 0; 
+    height: 100%; overflow: hidden; /* [V87.1] Merged */
+}
+.tactical-viewport {
+    flex: 1; display: flex; gap: 20px; min-height: 0; overflow: hidden; height: 100%; /* [V87.1] Merged */
+}
+.editor-sidebar {
+    padding: 30px; background: var(--white-02); border-left: 1px solid var(--glass-border);
+    display: flex; flex-direction: column; gap: 25px;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+}
+.sector-header {
+    font-size: 0.6rem; color: var(--accent-primary); text-transform: uppercase;
+    letter-spacing: 2px; font-weight: 900; margin-bottom: 15px; border-bottom: 1px solid rgba(var(--accent-primary-rgb), 0.2);
+    padding-bottom: 5px;
+}
+.tactical-editor {
+    flex: 1; background: var(--black-40); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 25px; color: var(--accent-secondary);
+    font-family: var(--font-mono); font-size: 0.9rem; line-height: 1.6;
+    resize: none; outline: none; transition: all 0.3s;
+    height: 100% !important; max-height: 100% !important; overflow-y: auto !important; min-height: 0; /* [V87.1] Merged */
+}
+.tactical-editor:focus { border-color: var(--accent-secondary); box-shadow: inset 0 0 20px var(--neon-cyan-05); }
+
+/* 🪐 Cinematic HUD Overlays */
+#galaxy-3d { position: relative; flex: 1; width: 100%; height: 100%; min-height: 0; }
+#galaxy-3d::after {
+    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, transparent 40%, var(--black-40) 100%);
+    pointer-events: none; z-index: 10;
+}
+.scanlines-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(transparent 50%, var(--black-10) 50%);
+    background-size: 100% 4px; pointer-events: none; z-index: 11; opacity: 0.3;
+}
+
+/* 🌓 [V87.0] Obsidian-style Editor Enhancements */
+.editor-mode-toggle .mode-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 6px 12px; font-size: 0.7rem; font-weight: 700;
+    border-radius: 6px; cursor: pointer; transition: all 0.3s;
+    letter-spacing: 1px;
+}
+.editor-mode-toggle .mode-btn:hover { color: var(--text-bright); background: var(--white-05); }
+.editor-mode-toggle .mode-btn.active { 
+    background: var(--accent-primary); color: white; 
+    box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.4);
+}
+
+.tactical-preview {
+    flex: 1; background: var(--black-20); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 25px; color: var(--text-bright);
+    overflow-y: auto; font-family: var(--font-sans); line-height: 1.7;
+    scrollbar-width: thin;
+    height: 100% !important; max-height: 100% !important; min-height: 0; /* [V87.1] Merged */
+}
+
+/* 📄 Premium Markdown Rendering Style */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 { 
+    color: var(--accent-secondary); margin-top: 1.5em; margin-bottom: 0.5em; 
+    border-bottom: 1px solid var(--neon-cyan-10); padding-bottom: 0.3em;
+}
+.markdown-body p { margin-bottom: 1em; opacity: 0.9; }
+.markdown-body code { 
+    background: rgba(163, 76, 255, 0.1); color: var(--accent-primary);
+    padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.9em;
+}
+.markdown-body pre { 
+    background: var(--black-50); border: 1px solid var(--white-05);
+    padding: 15px; border-radius: 8px; margin-bottom: 1em; overflow-x: auto;
+}
+.markdown-body blockquote { 
+    border-left: 4px solid var(--accent-primary); padding-left: 15px;
+    margin: 1.5em 0; color: var(--text-dim); font-style: italic;
+}
+.markdown-body ul, .markdown-body ol { padding-left: 20px; margin-bottom: 1em; }
+.markdown-body li { margin-bottom: 0.5em; }
+
+
+/* 🖼️ Markdown Premium Media & Link Styles */
+.markdown-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--white-10);
+    box-shadow: 0 4px 12px var(--black-30);
+    margin: 1.2em 0;
+    display: block;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.markdown-body img:hover {
+    transform: scale(1.015);
+    border-color: var(--accent-primary);
+    box-shadow: 0 6px 18px rgba(var(--accent-primary-rgb), 0.2);
+}
+.markdown-body .wiki-doc-link {
+    color: var(--accent-secondary);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent-secondary);
+    padding-bottom: 1px;
+    transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+    font-weight: 500;
+}
+.markdown-body .wiki-doc-link:hover {
+    color: var(--text-bright);
+    border-bottom-style: solid;
+    border-bottom-color: var(--text-bright);
+    text-shadow: 0 0 8px rgba(var(--neon-cyan-rgb), 0.3);
+}
+.markdown-body .attachment-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    background: rgba(var(--accent-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-primary-rgb), 0.15);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+    margin: 0 4px;
+    font-weight: 500;
+}
+.markdown-body .attachment-link:hover {
+    background: rgba(var(--accent-primary-rgb), 0.18);
+    border-color: var(--accent-primary);
+    color: var(--text-bright);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(var(--accent-primary-rgb), 0.25);
+}
+
+/* 📁 [V87.5] Obsidian Style Left Directory Tree Sidebar */
+#vault-tree-sidebar {
+    background: rgba(var(--bg-modal-solid-rgb), 0.45) !important;
+    border-right: 1px solid var(--glass-border) !important;
+    backdrop-filter: blur(25px) !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
+}
+
+#vault-tree-sidebar.collapsed {
+    width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    opacity: 0 !important;
+    margin-right: -20px !important;
+    pointer-events: none !important;
+    border-color: transparent !important;
+}
+
+.tree-header-action:hover {
+    filter: grayscale(0) !important;
+    opacity: 1 !important;
+}
+
+#vault-tree {
+    font-size: 0.85rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text-dim);
+    user-select: none;
+    padding-right: 5px;
+}
+
+.tree-root-item, .tree-folder-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    margin: 2px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.tree-root-item:hover, .tree-folder-header:hover {
+    background: var(--white-05);
+    color: var(--text-bright);
+}
+
+.tree-root-item.active, .tree-folder-header.active {
+    background: var(--neon-cyan-10) !important;
+    color: var(--accent-secondary) !important;
+    border-left: 3px solid var(--accent-secondary);
+    box-shadow: 0 0 15px var(--neon-cyan-15);
+    font-weight: 600;
+}
+
+.tree-icon {
+    margin-right: 8px;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.tree-label {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-arrow {
+    font-size: 0.6rem;
+    display: inline-block;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 6px;
+    color: var(--text-dim);
+    opacity: 0.6;
+    flex-shrink: 0;
+    width: 10px;
+}
+
+.tree-arrow:hover {
+    opacity: 1;
+    color: var(--text-bright);
+}
+
+.tree-arrow.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-arrow.leaf {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.tree-folder-children {
+    transition: max-height 0.25s ease-out;
+}
+
+/* Slimmer & Glass-aligned Scrollbars */
+.scroll-container::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+.scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scroll-container::-webkit-scrollbar-thumb {
+    background: var(--white-15);
+    border-radius: 4px;
+}
+.scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--white-30);
+}
+
+#sidebar-vault-display {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#sidebar-vault-display:hover {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 8px var(--neon-cyan);
+}

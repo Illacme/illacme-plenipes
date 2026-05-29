@@ -25,6 +25,8 @@ window.loadSettings = async (targetCat = 'general') => {
 
     const res = await apiFetch('/api/system/config');
     const imprints = await apiFetch('/api/imprints');
+    const slotsRes = await apiFetch('/api/system/theme/slots');
+    const vaultRes = await apiFetch('/api/vault/list');
     if (!res) return;
 
     window.settingsData = res.config || res;
@@ -32,6 +34,8 @@ window.loadSettings = async (targetCat = 'general') => {
     window.settingsData._imprints = imprints ? imprints.imprints : [];
     window.settingsData._active_imprint = imprints ? imprints.active : 'default';
     window.settingsData._is_licensed = res._is_licensed || false;
+    window.settingsData._theme_slots = (slotsRes && slotsRes.slots) ? slotsRes.slots : {};
+    window.settingsData._directories = (vaultRes && vaultRes.directories) ? vaultRes.directories : [];
 
     const stats = await apiFetch('/api/imprints/stats');
     window.settingsData._imprint_stats = stats || {};
@@ -74,6 +78,9 @@ window.renderSettingsCategory = (cat) => {
         case 'translation_style':
             html = typeof renderTranslationStyleCategory === 'function' ? renderTranslationStyleCategory() : '<div class="empty-state">模块加载中...</div>';
             break;
+        case 'route_matrix':
+            html = typeof renderRouteMatrixCategory === 'function' ? renderRouteMatrixCategory() : '<div class="empty-state">模块加载中...</div>';
+            break;
         case 'compute_strategy':
             if (typeof renderComputeStrategy === 'function') {
                 html = renderComputeStrategy(window.settingsData);
@@ -89,7 +96,7 @@ window.renderSettingsCategory = (cat) => {
     // 🚀 [V55.8] 核心能见度治理：统一管理不需要显示“全局保存”按钮的页面
     const saveBtn = document.getElementById('btn-save-settings');
     if (saveBtn) {
-        const noSaveTabs = ['imprints', 'modes', 'translation_style', 'localization', 'guardrails'];
+        const noSaveTabs = ['imprints', 'modes', 'translation_style', 'localization', 'guardrails', 'route_matrix'];
         saveBtn.style.display = noSaveTabs.includes(cat) ? 'none' : 'flex';
     }
 };

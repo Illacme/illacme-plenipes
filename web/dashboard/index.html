@@ -160,19 +160,59 @@
         <aside class="glass-panel sidebar" id="right-sidebar">
             <!-- 🧠 Agent Sovereign Copilot Pod -->
             <div class="sidebar-pod agent-pod">
-                <div class="pod-header">
-                    <span class="pod-title">SOVEREIGN COPILOT</span>
-                    <span class="version-tag tiny" id="agent-status-tag">STANDBY</span>
+                <div class="pod-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px 8px 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="pod-title">SOVEREIGN COPILOT</span>
+                        <span class="version-tag tiny" id="agent-status-tag">STANDBY</span>
+                    </div>
+                    <button id="agent-settings-toggle-btn" class="icon-btn" title="算力思维链配置" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; padding: 0; outline: none; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;">⚙️</button>
+                </div>
+                <!-- 🧠 算力及自治控制面板 (V76.1) -->
+                <div class="agent-engine-settings" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="settings-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
+                        <div class="setting-item">
+                            <span>🧠 思维链 (CoT)</span>
+                            <label class="switch-container">
+                                <input type="checkbox" id="agent-reasoning-toggle" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item" id="agent-reasoning-depth-container">
+                            <span>深度:</span>
+                            <select id="agent-reasoning-depth">
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
+                        <div class="setting-item">
+                            <span title="启用后，Agent 将自动执行 Write/Commit 等写操作，无需人工物理审批">🤖 自动驾驶</span>
+                            <label class="switch-container">
+                                <input type="checkbox" id="agent-autopilot-toggle">
+                                <span class="switch-slider autopilot-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <span>上限:</span>
+                            <select id="agent-max-iterations">
+                                <option value="5">5 轮</option>
+                                <option value="10" selected>10 轮</option>
+                                <option value="15">15 轮</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="agent-feed-container scroll-container scanline-overlay" id="agent-feed">
-                    <div class="agent-msg system-msg" style="border-left: 2px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.03); padding: 12px; border-radius: 8px; font-style: normal; display: flex; flex-direction: column; gap: 6px;">
-                        <div style="font-weight: bold; color: var(--accent-secondary); font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">🤖 SOVEREIGN COPILOT 已就绪</div>
-                        <p style="margin: 0; line-height: 1.4; color: var(--text-bright); font-size: 0.75rem;">我是你的主权协同一体化助手，已打通本地算力与工具箱，可以协助你管理这套数字出版系统。</p>
-                        <div style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.5; margin-top: 4px;">
-                            <span style="display: block; margin-bottom: 4px; font-weight: bold; color: var(--neon-amber);">💡 推荐你这样对我说：</span>
-                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">系统状态怎么样？</code> (查看系统负载)<br/>
-                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">在文稿库中搜索 SOP-01</code> (检索文库)<br/>
-                            • <code style="color: var(--accent-secondary); background: rgba(0,242,255,0.08); padding: 1px 4px; border-radius: 3px;">在 README 中追加版本说明</code> (带安全拦截的写入)
+                    <div class="agent-msg system-msg" style="border-left: 2px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.03); padding: 10px 12px; border-radius: 8px; font-style: normal; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <div style="font-weight: bold; color: var(--accent-secondary); font-size: 0.72rem; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;">🤖 SOVEREIGN COPILOT 已就绪</div>
+                        <p style="margin: 0; line-height: 1.45; color: var(--text-dim); font-size: 0.68rem;">我是你的主权协同一体化助手，已打通本地算力与工具箱，可以协助你管理这套数字出版系统。</p>
+                        <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.5; margin-top: 4px;">
+                            <span style="display: block; margin-bottom: 4px; font-weight: bold; color: var(--neon-amber); font-size: 0.68rem;">💡 点击推荐指令直接交互：</span>
+                            • <code class="clickable-suggestion" style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">系统状态怎么样？</code> (查看系统负载)<br/>
+                            • <code class="clickable-suggestion" style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在文稿库中搜索 SOP-01</code> (检索文库)<br/>
+                            • <code class="clickable-suggestion" style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在 README 中追加版本说明</code> (安全写入测试)
                         </div>
                     </div>
                 </div>

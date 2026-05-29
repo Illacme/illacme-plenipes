@@ -86,7 +86,9 @@ class MetadataManager:
 
                 "ext_assets": list(kwargs.get("ext_assets")) if kwargs.get("ext_assets") is not None else existing.get("ext_assets", []),
                 "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", []),
-                "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang")
+                "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang"),
+                "target_slot": kwargs.get("target_slot") if kwargs.get("target_slot") is not None else existing.get("target_slot", "docs"),
+                "route_style": kwargs.get("route_style") if kwargs.get("route_style") is not None else existing.get("route_style")
             }
             
             self.sqlite.upsert_document(rel_path, doc_data)

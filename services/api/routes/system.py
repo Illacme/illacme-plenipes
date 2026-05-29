@@ -240,3 +240,15 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
         "future_id": future_id,
         "mode": "asynchronous"
     }
+
+@router.get("/api/system/theme/slots", dependencies=[Depends(verify_token)])
+def get_theme_slots() -> Dict[str, Any]:
+    """🚀 [V75.0] 动态探测当前主题/SSG 引擎支持的页面模板槽位"""
+    engine = get_global_engine()
+    if not engine or not hasattr(engine, 'ssg_adapter') or not engine.ssg_adapter:
+        return {"slots": {}}
+    
+    try:
+        return {"slots": engine.ssg_adapter.get_feature_slots()}
+    except Exception:
+        return {"slots": {}}

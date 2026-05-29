@@ -120,8 +120,8 @@ window.setupGalaxyEngine = (elem) => {
                 }
                 if (node.x !== undefined) focusNodeIn3D(node);
                 if (node.id && typeof openEditor === 'function') {
-                    const cleanId = node.id.replace('doc_', '');
-                    openEditor(cleanId);
+                    // node.id 已经是后端的相对路径，不需要错误替换 'doc_' 导致带有 doc_ 的文件名被损坏
+                    openEditor(node.id);
                 }
             } else {
                 // 🪐 [单击]：纯视觉星跃聚焦，不打扰 3D 视野，不拉编辑器

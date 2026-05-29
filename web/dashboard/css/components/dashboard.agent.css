@@ -6,7 +6,7 @@
  .agent-pod {
     display: flex;
     flex-direction: column;
-    height: 350px; /* 固定高度或弹性的初始高度 */
+    height: 420px; /* 固定高度由 350px 扩容至 420px 以增大可视区 */
     margin-bottom: 15px;
     border: 1px solid var(--border-glow);
     background: rgba(0, 15, 30, 0.4);
@@ -105,4 +105,197 @@
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🧠 算力及自治控制面板 (V76.1) */
+.agent-engine-settings {
+    max-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px;
+    background: rgba(0, 242, 255, 0.02);
+    border-bottom: 0px solid transparent;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    gap: 0px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+}
+
+.agent-engine-settings.expanded {
+    max-height: 80px;
+    padding: 8px 15px;
+    border-bottom: 1px solid var(--border-subtle);
+    opacity: 1;
+    gap: 8px;
+}
+
+.agent-engine-settings .setting-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-bright);
+}
+
+/* 物理滑动 Toggle */
+.switch-container {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    margin: 0;
+}
+
+.switch-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 9px;
+    border: 1px solid rgba(0, 242, 255, 0.2);
+}
+
+.switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-dim);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+}
+
+.switch-container input:checked + .switch-slider {
+    background-color: rgba(0, 242, 255, 0.15);
+    border-color: #00f2ff;
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+}
+
+.switch-container input:checked + .switch-slider:before {
+    transform: translateX(14px);
+    background-color: #00f2ff;
+    box-shadow: 0 0 5px #00f2ff;
+}
+
+/* 推理深度选择器 */
+#agent-reasoning-depth {
+    background: rgba(0, 10, 20, 0.8);
+    color: var(--accent-secondary);
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    outline: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.2s ease;
+}
+
+#agent-reasoning-depth:hover {
+    border-color: #00f2ff;
+    background: rgba(0, 20, 40, 0.9);
+}
+
+/* 🧠 脑网思维流分析折叠气泡 */
+.agent-msg.thinking-msg {
+    border-left: 2px solid var(--accent-secondary);
+    background: rgba(0, 242, 255, 0.02);
+    border-radius: 6px;
+    margin: 4px 0;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+
+.agent-msg.thinking-msg details {
+    width: 100%;
+}
+
+.agent-msg.thinking-msg summary {
+    outline: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    user-select: none;
+}
+
+.agent-msg.thinking-msg summary::-webkit-details-marker {
+    display: none;
+}
+
+.agent-msg.thinking-msg summary::after {
+    content: "▼";
+    font-size: 0.6rem;
+    transition: transform 0.2s ease;
+    color: var(--text-dim);
+}
+
+.agent-msg.thinking-msg details[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.agent-msg.thinking-msg .thinking-content {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(0, 242, 255, 0.1);
+    color: var(--text-dim);
+    line-height: 1.5;
+    font-size: 0.7rem;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* 进度波纹/闪烁 */
+.thinking-badge-pulse {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: var(--accent-secondary);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: wavePulse 1.5s infinite alternate;
+}
+
+@keyframes wavePulse {
+    0% { transform: scale(0.8); opacity: 0.4; box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
+    100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 6px 2px rgba(0, 242, 255, 0.8); }
+}
+
+/* 交互推荐指令悬浮高亮 (V76.0) */
+.clickable-suggestion:hover {
+    background: rgba(0, 242, 255, 0.2) !important;
+    border-color: #00f2ff !important;
+    color: #fff !important;
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+}
+
+/* 🤖 自动驾驶滑动 Toggle 警告发光样式 (V76.1) */
+.switch-container input:checked + .autopilot-slider {
+    background-color: rgba(255, 157, 0, 0.15);
+    border-color: var(--accent-orange, #ff9d00);
+    box-shadow: 0 0 8px rgba(255, 157, 0, 0.3);
+}
+
+.switch-container input:checked + .autopilot-slider:before {
+    transform: translateX(14px);
+    background-color: var(--accent-orange, #ff9d00);
+    box-shadow: 0 0 5px var(--accent-orange, #ff9d00);
 }
