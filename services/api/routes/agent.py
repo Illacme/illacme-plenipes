@@ -40,9 +40,9 @@ async def get_active_model_info():
         model_name = ai_adapter.trans_cfg.primary_model
     short_name = model_name.split("/")[-1] if model_name else "Unknown"
     model_lower = model_name.lower() if model_name else ""
-    cot_supported = any(kw in model_lower for kw in ["r1", "o1", "o3", "thinking", "reasoning"])
-    tools_supported = any(c.__name__ == "OpenAICompatibleTranslator" for c in ai_adapter.__class__.__mro__)
-    vision_supported = any(kw in model_lower for kw in ["vl", "vision", "gpt-4o", "claude-3-5"])
+    cot_supported = any(kw in model_lower for kw in ["r1", "o1", "o3", "thinking", "reasoning", "qwen3.5", "qwen2.5", "qwen35"])
+    tools_supported = any(c.__name__ == "OpenAICompatibleTranslator" for c in ai_adapter.__class__.__mro__) and ai_adapter.__class__.__name__ != "MockAIProvider"
+    vision_supported = any(kw in model_lower for kw in ["vl", "vision", "gpt-4o", "claude-3-5", "qwen3.5", "qwen2.5", "qwen35"])
     return {
         "model_name": short_name,
         "capabilities": {
