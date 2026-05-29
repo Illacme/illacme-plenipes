@@ -9,10 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const agentStatus = document.getElementById('agent-status-tag');
     const rightSidebar = document.getElementById('right-sidebar');
 
-    if (!agentInput || !agentFeed) {
-        if (window._dbgLog) window._dbgLog('<span style="color:#f00">⛔ agent-input/feed NOT FOUND</span>');
-        return;
-    }
+    if (!agentInput || !agentFeed) return;
 
     // 🧠 思维链 Toggle 与深度选择框的联动
     const reasoningToggle = document.getElementById('agent-reasoning-toggle');
@@ -38,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🆕 动态获取大模型元数据并改变徽章状态 (V76.3)
+    // 🆕 动态获取大模型元数据并改变徽章状态及悬停提示 (V76.3)
     async function refreshModelCapability() {
         const modelNameTag = document.getElementById('active-model-name');
         if (!modelNameTag) return;
@@ -47,13 +44,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!r.ok) throw new Error();
             const data = await r.json();
             modelNameTag.textContent = data.model_name || 'Unknown';
+            const badgeTooltips = {
+                'badge-cot': {
+                    active: '当前模型已点亮原生思维链或深度推理能力 (Reasoning CoT)',
+                    disabled: '当前模型不支持或未开启原生思维链及深度推理'
+                },
+                'badge-tools': {
+                    active: '当前模型已打通本地文件读写、指令执行等工具自治权限',
+                    disabled: '当前算力底座处于模拟状态，或适配器不支持物理工具调用'
+                },
+                'badge-stream': {
+                    active: '当前模型已开启高吞吐、零延迟 SSE 流式极速响应',
+                    disabled: '当前模型不支持流式极速响应'
+                },
+                'badge-vision': {
+                    active: '当前模型已开启图像及多模态输入理解能力 (Vision)',
+                    disabled: '当前模型不支持图像或多模态输入'
+                }
+            };
             const updateBadge = (id, active) => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 if (active) {
                     el.classList.remove('disabled'); el.classList.add('active');
+                    if (badgeTooltips[id]) el.title = badgeTooltips[id].active;
                 } else {
                     el.classList.remove('active'); el.classList.add('disabled');
+                    if (badgeTooltips[id]) el.title = badgeTooltips[id].disabled;
                 }
             };
             updateBadge('badge-cot', data.capabilities.cot);
@@ -146,16 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_prompt: command,
-                    max_iterations: maxIterations,
-                    reasoning_enabled: isReasoningEnabled,
-                    reasoning_effort: selectedReasoningEffort,
+                    user_prompt: command, max_iterations: maxIterations,
+                    reasoning_enabled: isReasoningEnabled, reasoning_effort: selectedReasoningEffort,
                     autopilot_enabled: isAutopilotEnabled
                 })
             });
 
             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
             let buffer = "";
@@ -182,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!activeThinkingDetails) {
                                     const msgDiv = document.createElement('div');
                                     msgDiv.className = 'agent-msg thinking-msg';
-                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 analysis中...</summary><div class="thinking-content"></div></details>`;
+                                    msgDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 分析中...</summary><div class="thinking-content"></div></details>`;
                                     agentFeed.appendChild(msgDiv);
                                     activeThinkingDetails = msgDiv.querySelector('details');
                                     activeThinkingContent = msgDiv.querySelector('.thinking-content');
@@ -231,10 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             agentInput.disabled = false;
             agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
             if (agentPod) agentPod.classList.remove('processing');
-            if (agentStatus) {
-                agentStatus.textContent = 'STANDBY';
-                agentStatus.style.color = '';
-            }
+            if (agentStatus) { agentStatus.textContent = 'STANDBY'; agentStatus.style.color = ''; }
             agentInput.focus();
         }
     }
