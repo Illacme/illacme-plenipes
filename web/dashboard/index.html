@@ -169,6 +169,19 @@
                 </div>
                 <!-- 🧠 算力及自治控制面板 (V76.1) -->
                 <div class="agent-engine-settings" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 🆕 模型能力标签面板 (V76.2) -->
+                    <div class="model-capability-panel">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.5px;">主脑模型节点:</span>
+                            <span style="font-size: 0.6rem; font-family: var(--font-mono); color: var(--accent-secondary); font-weight: bold; background: var(--neon-cyan-05); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--neon-cyan-15);">Qwen-3.5-9B</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <span class="cap-badge active" title="支持原生思维链逻辑或深度推理 (Reasoning CoT)"><span class="dot"></span>CoT 推理</span>
+                            <span class="cap-badge active" title="已打通本地文件读写、指令执行等工具权限"><span class="dot"></span>工具自治</span>
+                            <span class="cap-badge active" title="支持高吞吐、零延迟 SSE 流式响应"><span class="dot"></span>流式极速</span>
+                            <span class="cap-badge disabled" title="当前模型不支持图像或多模态输入">视觉模态</span>
+                        </div>
+                    </div>
                     <div class="settings-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
                         <div class="setting-item">
                             <span>🧠 思维链 (CoT)</span>

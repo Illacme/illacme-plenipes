@@ -1,23 +1,15 @@
-/* 
- * 🏢 Illacme Plenipes - Sovereign Copilot Agent CSS
- * V75.0
- */
-
- .agent-pod {
+/* 🏢 Illacme Plenipes - Sovereign Copilot Agent CSS (SOP Compliant) */
+.agent-pod {
     display: flex;
     flex-direction: column;
-    height: 420px; /* 固定高度由 350px 扩容至 420px 以增大可视区 */
+    height: 420px;
     margin-bottom: 15px;
     border: 1px solid var(--border-glow);
     background: rgba(0, 15, 30, 0.4);
     box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.05);
-    padding: 0 !important; /* 🚀 消除外部 sidebar-pod 的 padding，使得内部边框贴合 */
+    padding: 0 !important;
 }
-
-.agent-pod .pod-header {
-    padding: 12px 15px 0 15px;
-}
-
+.agent-pod .pod-header { padding: 12px 15px 0 15px; }
 .agent-feed-container {
     flex: 1;
     overflow-y: auto;
@@ -28,7 +20,6 @@
     font-family: var(--font-mono);
     font-size: 0.75rem;
 }
-
 .agent-msg {
     padding: 6px 10px;
     border-radius: 4px;
@@ -36,28 +27,24 @@
     word-break: break-all;
     animation: fadeIn 0.3s ease-out forwards;
 }
-
 .agent-msg.system-msg {
     color: var(--text-dim);
     font-style: italic;
     border-left: 2px solid var(--text-dim);
 }
-
 .agent-msg.user-msg {
     align-self: flex-end;
     background: rgba(0, 242, 255, 0.1);
-    color: #00f2ff;
-    border-right: 2px solid #00f2ff;
+    color: var(--accent-secondary);
+    border-right: 2px solid var(--accent-secondary);
     text-align: right;
 }
-
 .agent-msg.tool-msg {
     color: var(--accent-orange, #ff9d00);
     background: rgba(255, 157, 0, 0.05);
     border-left: 2px solid var(--accent-orange, #ff9d00);
     font-family: var(--font-mono);
 }
-
 .agent-msg.final-msg {
     color: var(--text-bright);
     background: color-mix(in srgb, var(--color-white) 5%, transparent);
@@ -65,13 +52,11 @@
     font-family: var(--font-main);
     font-size: 0.8rem;
 }
-
 .agent-input-wrapper {
     padding: 10px 15px;
     border-top: 1px solid var(--border-subtle);
     background: color-mix(in srgb, var(--color-black) 20%, transparent);
 }
-
 #agent-command-input {
     width: 100%;
     background: rgba(0, 242, 255, 0.05);
@@ -84,30 +69,23 @@
     outline: none;
     transition: all 0.3s ease;
 }
-
 #agent-command-input:focus {
     background: rgba(0, 242, 255, 0.1);
-    border-color: #00f2ff;
+    border-color: var(--accent-secondary);
     box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
-
-/* 呼吸发光特效 */
 .agent-pod.processing {
     box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.1), 0 0 15px rgba(0, 242, 255, 0.2);
     animation: agentPulse 2s infinite alternate;
 }
-
 @keyframes agentPulse {
     0% { border-color: rgba(0, 242, 255, 0.3); }
     100% { border-color: rgba(0, 242, 255, 0.8); }
 }
-
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-/* 🧠 算力及自治控制面板 (V76.1) */
 .agent-engine-settings {
     max-height: 0;
     overflow: hidden;
@@ -122,23 +100,19 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0;
 }
-
 .agent-engine-settings.expanded {
-    max-height: 80px;
+    max-height: 140px; /* 扩容以容纳能力徽章面板 */
     padding: 8px 15px;
     border-bottom: 1px solid var(--border-subtle);
     opacity: 1;
     gap: 8px;
 }
-
 .agent-engine-settings .setting-item {
     display: flex;
     align-items: center;
     gap: 6px;
     color: var(--text-bright);
 }
-
-/* 物理滑动 Toggle */
 .switch-container {
     position: relative;
     display: inline-block;
@@ -146,51 +120,34 @@
     height: 18px;
     margin: 0;
 }
-
-.switch-container input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
+.switch-container input { opacity: 0; width: 0; height: 0; }
 .switch-slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.1);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--white-10);
     transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 9px;
     border: 1px solid rgba(0, 242, 255, 0.2);
 }
-
 .switch-slider:before {
     position: absolute;
     content: "";
-    height: 12px;
-    width: 12px;
-    left: 2px;
-    bottom: 2px;
+    height: 12px; width: 12px; left: 2px; bottom: 2px;
     background-color: var(--text-dim);
     transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
 }
-
 .switch-container input:checked + .switch-slider {
     background-color: rgba(0, 242, 255, 0.15);
-    border-color: #00f2ff;
+    border-color: var(--accent-secondary);
     box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
-
 .switch-container input:checked + .switch-slider:before {
     transform: translateX(14px);
-    background-color: #00f2ff;
-    box-shadow: 0 0 5px #00f2ff;
+    background-color: var(--accent-secondary);
+    box-shadow: 0 0 5px var(--accent-secondary);
 }
-
-/* 推理深度选择器 */
 #agent-reasoning-depth {
     background: rgba(0, 10, 20, 0.8);
     color: var(--accent-secondary);
@@ -203,13 +160,10 @@
     font-family: var(--font-mono);
     transition: all 0.2s ease;
 }
-
 #agent-reasoning-depth:hover {
-    border-color: #00f2ff;
+    border-color: var(--accent-secondary);
     background: rgba(0, 20, 40, 0.9);
 }
-
-/* 🧠 脑网思维流分析折叠气泡 */
 .agent-msg.thinking-msg {
     border-left: 2px solid var(--accent-secondary);
     background: rgba(0, 242, 255, 0.02);
@@ -218,84 +172,91 @@
     padding: 8px 12px;
     transition: all 0.3s ease;
 }
-
-.agent-msg.thinking-msg details {
-    width: 100%;
-}
-
+.agent-msg.thinking-msg details { width: 100%; }
 .agent-msg.thinking-msg summary {
-    outline: none;
-    cursor: pointer;
-    font-weight: bold;
+    outline: none; cursor: pointer; font-weight: bold;
     color: var(--accent-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.72rem;
-    user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.72rem; user-select: none;
 }
-
-.agent-msg.thinking-msg summary::-webkit-details-marker {
-    display: none;
-}
-
+.agent-msg.thinking-msg summary::-webkit-details-marker { display: none; }
 .agent-msg.thinking-msg summary::after {
-    content: "▼";
-    font-size: 0.6rem;
-    transition: transform 0.2s ease;
-    color: var(--text-dim);
+    content: "▼"; font-size: 0.6rem;
+    transition: transform 0.2s ease; color: var(--text-dim);
 }
-
-.agent-msg.thinking-msg details[open] summary::after {
-    transform: rotate(180deg);
-}
-
+.agent-msg.thinking-msg details[open] summary::after { transform: rotate(180deg); }
 .agent-msg.thinking-msg .thinking-content {
-    margin-top: 8px;
-    padding-top: 6px;
+    margin-top: 8px; padding-top: 6px;
     border-top: 1px dashed rgba(0, 242, 255, 0.1);
-    color: var(--text-dim);
-    line-height: 1.5;
-    font-size: 0.7rem;
-    white-space: pre-wrap;
-    font-family: var(--font-mono);
-    max-height: 150px;
-    overflow-y: auto;
+    color: var(--text-dim); line-height: 1.5; font-size: 0.7rem;
+    white-space: pre-wrap; font-family: var(--font-mono);
+    max-height: 150px; overflow-y: auto;
 }
-
-/* 进度波纹/闪烁 */
 .thinking-badge-pulse {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background-color: var(--accent-secondary);
-    border-radius: 50%;
-    margin-right: 6px;
-    animation: wavePulse 1.5s infinite alternate;
+    display: inline-block; width: 6px; height: 6px;
+    background-color: var(--accent-secondary); border-radius: 50%;
+    margin-right: 6px; animation: wavePulse 1.5s infinite alternate;
 }
-
 @keyframes wavePulse {
     0% { transform: scale(0.8); opacity: 0.4; box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
     100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 6px 2px rgba(0, 242, 255, 0.8); }
 }
-
-/* 交互推荐指令悬浮高亮 (V76.0) */
 .clickable-suggestion:hover {
-    background: rgba(0, 242, 255, 0.2) !important;
-    border-color: #00f2ff !important;
-    color: #fff !important;
+    background: var(--neon-cyan-20, rgba(0, 242, 255, 0.2)) !important;
+    border-color: var(--accent-secondary) !important;
+    color: var(--text-bright) !important;
     box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
-
-/* 🤖 自动驾驶滑动 Toggle 警告发光样式 (V76.1) */
 .switch-container input:checked + .autopilot-slider {
     background-color: rgba(255, 157, 0, 0.15);
     border-color: var(--accent-orange, #ff9d00);
     box-shadow: 0 0 8px rgba(255, 157, 0, 0.3);
 }
-
 .switch-container input:checked + .autopilot-slider:before {
     transform: translateX(14px);
     background-color: var(--accent-orange, #ff9d00);
     box-shadow: 0 0 5px var(--accent-orange, #ff9d00);
+}
+
+/* 🆕 模型能力标签样式 (V76.2) */
+.model-capability-panel {
+    border-bottom: 1px solid var(--white-08);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    width: 100%;
+}
+.cap-badge {
+    font-size: 0.58rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--white-03);
+    color: var(--text-dim);
+    border: 1px solid var(--white-05);
+    transition: var(--transition-fast);
+    cursor: help;
+}
+.cap-badge.active {
+    color: var(--accent-secondary);
+    background: var(--neon-cyan-05);
+    border-color: var(--neon-cyan-15);
+    text-shadow: 0 0 4px rgba(0, 242, 255, 0.2);
+}
+.cap-badge.active .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background-color: var(--accent-secondary);
+    box-shadow: 0 0 6px var(--accent-secondary);
+    animation: pulse 2s infinite;
+}
+.cap-badge.disabled {
+    opacity: 0.35;
+    text-decoration: line-through;
+    cursor: not-allowed;
+}
+@keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }
