@@ -27,13 +27,13 @@ async def execute_agent_task(request: AgentTaskRequest):
     engine = get_global_engine()
     
     try:
-        if not engine or not hasattr(engine, 'intelligence_hub'):
-            raise Exception("Intelligence Hub not initialized")
+        if not engine or not hasattr(engine, 'translator'):
+            raise Exception("AI Translator not initialized on engine")
         
         # 获取一个有效的 AI Adapter
-        ai_adapter = engine.intelligence_hub.get_primary_adapter()
+        ai_adapter = getattr(engine, 'translator', None)
         if not ai_adapter:
-            raise Exception("No primary AI adapter available")
+            raise Exception("No primary AI adapter available (engine.translator is None)")
             
         agent = AutonomousAgent(ai_adapter, max_iterations=request.max_iterations)
         
@@ -47,8 +47,9 @@ async def execute_agent_task(request: AgentTaskRequest):
         return StreamingResponse(task_generator(), media_type="text/event-stream")
 
     except Exception as e:
+        error_msg = str(e)
         async def err_gen():
-            yield "data: " + json.dumps({"type": "final", "message": f"🚨 引擎加载失败: {e}"}) + "\n\n"
+            yield "data: " + json.dumps({"type": "final", "message": f"🚨 引擎加载失败: {error_msg}"}) + "\n\n"
         return StreamingResponse(err_gen(), media_type="text/event-stream")
 
 @router.post("/authorize")

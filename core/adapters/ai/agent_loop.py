@@ -44,9 +44,15 @@ class AutonomousAgent:
 
             # 1. 呼叫大模型 (在线程池中运行防阻塞)
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, lambda: self.ai_adapter._ask_ai(
-                system_prompt=None, user_content=None, tools=tools, messages=messages
-            ))
+            
+            payload = {
+                "model": getattr(self.ai_adapter.trans_cfg, 'primary_model', 'gpt-4o') if hasattr(self.ai_adapter, 'trans_cfg') else 'gpt-4o',
+                "messages": messages,
+                "tools": tools,
+                "params": {"temperature": 0.2}
+            }
+            
+            response = await loop.run_in_executor(None, lambda: self.ai_adapter._ask_ai(payload))
             
             # 如果是普通的文本回复，意味着任务结束
             if isinstance(response, str):
