@@ -56,37 +56,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function submitAgentTask(command) {
+        console.log('[Agent UI] submitAgentTask called with:', command);
+
         // 1. 禁用输入，重置状态
         agentInput.value = '';
         agentInput.disabled = true;
         agentInput.placeholder = '主脑运算中...';
         agentPod.classList.add('processing');
         agentStatus.textContent = 'EXECUTING';
-        agentStatus.style.color = 'var(--accent-orange)';
+        agentStatus.style.color = '#ff9d00';
 
-        // 2. 显示用户指令
+        // 2. 立即显示用户指令（永久保留在 feed 中）
         appendMessage(`> ${command}`, 'user-msg');
+        console.log('[Agent UI] User message appended, feed children:', agentFeed.children.length);
 
-        // 显示过渡期的系统思考状态，防止用户觉得“全空了”
+        // 3. 显示过渡期的系统思考状态
         const thinkingId = 'agent-thinking-' + Date.now();
         const thinkingDiv = document.createElement('div');
         thinkingDiv.id = thinkingId;
-        thinkingDiv.className = `agent-msg system-msg`;
+        thinkingDiv.className = 'agent-msg system-msg';
         thinkingDiv.style.opacity = '0.7';
         thinkingDiv.innerHTML = '🧠 主脑链路已接通，正在解析指令...';
         agentFeed.appendChild(thinkingDiv);
         agentFeed.scrollTop = agentFeed.scrollHeight;
+        console.log('[Agent UI] Thinking indicator appended');
 
-        // 放弃当前调用栈的控制权，强制浏览器在发送请求前进行重绘 (Repaint/Reflow)
-        // 这一步对于提升用户体感响应速度至关重要，避免由于事件循环积压导致“输入后页面冻结”。
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // 让出事件循环，确保浏览器立即重绘用户指令和思考状态
+        await new Promise(resolve => setTimeout(resolve, 60));
 
-        // 3. 发起请求并接收 SSE 流
+        // 4. 发起请求并接收 SSE 流
+        let firstEventReceived = false;
         try {
-            // 在真正的流式输出开始前移除过渡思考状态
-            const tDiv = document.getElementById(thinkingId);
-            if (tDiv) tDiv.remove();
-            
+            console.log('[Agent UI] Sending fetch to /api/agent/task');
             const response = await fetch('/api/agent/task', {
                 method: 'POST',
                 headers: {
@@ -101,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status}`);
             }
+
+            console.log('[Agent UI] Response received, reading SSE stream');
 
             // 读取 SSE 流
             const reader = response.body.getReader();
@@ -120,11 +123,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     buffer = buffer.slice(boundary + 2);
 
                     if (chunk.startsWith('data: ')) {
+                        // 首条流式事件到达时，移除"思考中"指示器
+                        if (!firstEventReceived) {
+                            firstEventReceived = true;
+                            const tDiv = document.getElementById(thinkingId);
+                            if (tDiv) tDiv.remove();
+                            console.log('[Agent UI] First SSE event, thinking removed');
+                        }
                         try {
                             const data = JSON.parse(chunk.slice(6));
                             renderStreamEvent(data);
                         } catch (err) {
-                            console.warn("Failed to parse SSE chunk:", chunk);
+                            console.warn("[Agent UI] Failed to parse SSE chunk:", chunk);
                         }
                     }
                     boundary = buffer.indexOf('\n\n');
@@ -132,9 +142,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             appendMessage(`[ERROR] 脑裂链路中断: ${error.message}`, 'system-msg');
-            console.error('Agent execution error:', error);
+            console.error('[Agent UI] Execution error:', error);
         } finally {
-            // 4. 恢复就绪状态
+            // 5. 清理残留思考指示器（如果从未收到流式事件）
+            const leftover = document.getElementById(thinkingId);
+            if (leftover) leftover.remove();
+
+            // 6. 恢复就绪状态
             agentInput.disabled = false;
             agentInput.placeholder = 'CMD: 唤醒主脑 (Cmd+K)';
             agentPod.classList.remove('processing');
