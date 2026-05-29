@@ -53,26 +53,52 @@
     font-size: 0.8rem;
 }
 .agent-input-wrapper {
-    padding: 10px 15px;
-    border-top: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--color-black) 20%, transparent);
+    position: relative;
+    padding: 12px 15px;
+    border-top: 1px solid rgba(0, 242, 255, 0.15);
+    background: rgba(0, 5, 15, 0.6);
+    box-shadow: 0 -4px 15px var(--black-40);
+    display: flex;
+    align-items: center;
+}
+.agent-input-wrapper::before {
+    content: ">_";
+    position: absolute;
+    left: 26px;
+    color: var(--accent-secondary);
+    font-family: var(--font-mono);
+    font-weight: bold;
+    font-size: 0.85rem;
+    pointer-events: none;
+    text-shadow: 0 0 6px var(--accent-secondary);
+    animation: promptBlink 1.2s infinite alternate;
 }
 #agent-command-input {
     width: 100%;
-    background: rgba(0, 242, 255, 0.05);
-    border: 1px solid var(--border-glow);
+    background: rgba(0, 242, 255, 0.03);
+    border: 1px solid rgba(0, 242, 255, 0.25);
     color: var(--text-bright);
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 10px 14px 10px 32px; /* 🎯 给左侧留出空间显示 '>_' 终端光标 */
+    border-radius: 6px;
     outline: none;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 8px rgba(0, 242, 255, 0.05);
+}
+#agent-command-input:hover {
+    border-color: rgba(0, 242, 255, 0.5);
+    background: rgba(0, 242, 255, 0.06);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 12px rgba(0, 242, 255, 0.15);
 }
 #agent-command-input:focus {
-    background: rgba(0, 242, 255, 0.1);
+    background: rgba(0, 242, 255, 0.08);
     border-color: var(--accent-secondary);
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 16px rgba(0, 242, 255, 0.35);
+}
+@keyframes promptBlink {
+    0% { opacity: 0.3; }
+    100% { opacity: 1; text-shadow: 0 0 10px var(--accent-secondary); }
 }
 .agent-pod.processing {
     box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.1), 0 0 15px rgba(0, 242, 255, 0.2);
