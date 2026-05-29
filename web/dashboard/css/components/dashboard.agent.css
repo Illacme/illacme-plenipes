@@ -174,6 +174,7 @@
 }
 .agent-engine-settings .settings-row .setting-item:first-child {
     flex: 0 0 106px; /* 🎯 强制第一列（开关列）宽度为 106px，实现第二列完美的垂直对齐线 */
+    justify-content: space-between; /* 🎯 两端对齐，使“思维链”和“自动驾驶”的 Switch 开关右边缘上下完美垂直对齐 */
 }
 .agent-msg.thinking-msg {
     border-left: 2px solid var(--accent-secondary);
