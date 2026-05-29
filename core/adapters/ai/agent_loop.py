@@ -19,6 +19,12 @@ class AutonomousAgent:
         self.max_iterations = max_iterations
         self.registry = ToolRegistry()
         self._repetition_count = 0
+        # 📁 [V75.6] 物理安全沙箱对正：初始化工作目录为当前活跃版图的原稿文库
+        import os
+        from core.runtime.engine_singleton import get_global_engine
+        engine = get_global_engine()
+        self.working_dir = os.path.abspath(engine.config.vault_root) if engine and hasattr(engine, 'config') and getattr(engine.config, 'vault_root', None) else os.path.abspath("./vault")
+        logger.info(f"📁 [Agent Sandbox] AI module default working directory locked to: {self.working_dir}")
 
     async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = True, reasoning_effort: str = "medium", autopilot_enabled: bool = False):
         """
