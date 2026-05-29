@@ -19,7 +19,7 @@ class ReadDocumentTool(IllacmeTool):
     🏢 [V75.0] 读取原稿库中的文档内容（防越界审计安全沙箱版）
     """
     name = "read_document"
-    description = "Read the full markdown content of a specified document in the vault by its relative path."
+    description = "Read the full markdown content of a specified document in the vault by its relative path. Use this tool immediately when the user asks to read, open, view, print, or get the contents of a specific file."
     
     def __init__(self):
         super().__init__(
@@ -35,7 +35,7 @@ class ReadDocumentTool(IllacmeTool):
             "properties": {
                 "relative_path": {
                     "type": "string",
-                    "description": "The relative path of the markdown file within the vault. Example: 'ProjectX/README.md'"
+                    "description": "The relative path of the markdown file within the vault. Example: 'Index/Showcase.md' or 'Docs/getting-started.md'"
                 }
             },
             "required": ["relative_path"]
@@ -44,7 +44,34 @@ class ReadDocumentTool(IllacmeTool):
     def execute(self, relative_path: str) -> str:
         try:
             vault_path = get_secure_vault_path()
+            
+            # 尝试直接拼接与规范化绝对路径
             full_path = os.path.abspath(os.path.join(vault_path, relative_path))
+            
+            # 🌟 [自愈自适应路径定位]：若直接路径不存在，尝试在文稿库中进行模糊与子目录智能搜索匹配
+            if not os.path.exists(full_path):
+                norm_rel = relative_path.replace("\\", "/").strip("/")
+                filename = os.path.basename(norm_rel)
+                if not filename.endswith('.md') and '.' not in filename:
+                    filename += '.md'
+                
+                candidates = []
+                for root, dirs, files in os.walk(vault_path):
+                    if '.plenipes' in root or '.git' in root:
+                        continue
+                    for file in files:
+                        if file.lower() == filename.lower() or file.lower() == norm_rel.lower():
+                            cand_path = os.path.abspath(os.path.join(root, file))
+                            # 确保候选路径安全地处于沙箱根目录内
+                            if os.path.commonpath([vault_path]) == os.path.commonpath([vault_path, cand_path]):
+                                candidates.append(cand_path)
+                
+                if len(candidates) == 1:
+                    full_path = candidates[0]
+                    relative_path = os.path.relpath(full_path, vault_path)
+                elif len(candidates) > 1:
+                    rel_cands = [os.path.relpath(c, vault_path) for c in candidates]
+                    return f"Error: Multiple matching files found: {', '.join(rel_cands)}. Please specify the exact relative path."
             
             # 🛡️ 安全沙箱锁定检查：使用 os.path.commonpath 防止任何穿越逃逸
             if os.path.commonpath([vault_path]) != os.path.commonpath([vault_path, full_path]):
@@ -64,7 +91,7 @@ class SearchVaultTool(IllacmeTool):
     🏢 [V75.0] 在原稿库中搜索关键字（锁定在安全沙箱内）
     """
     name = "search_vault"
-    description = "Search for a specific keyword across all markdown documents in the vault. Returns a list of matching file paths."
+    description = "Search for a specific keyword across all markdown documents in the vault. Returns a list of matching file paths. Do NOT use this tool if the user explicitly wants to read, view, or open a specific document; use read_document instead."
     
     def __init__(self):
         super().__init__(

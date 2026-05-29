@@ -56,6 +56,13 @@ def test_vault_tools_sandboxing():
     read_ok = read_tool.execute(test_file_path)
     assert read_ok == test_content
     
+    # 5. 验证自愈路径定位功能（模糊/不完整相对路径读取）
+    read_healed_1 = read_tool.execute("sandbox_test_file")
+    assert read_healed_1 == test_content
+    
+    read_healed_2 = read_tool.execute("sandbox_test_file.md")
+    assert read_healed_2 == test_content
+    
     # 清理测试写入的正常文件
     full_test_file = os.path.join(vault_path, test_file_path)
     if os.path.exists(full_test_file):
