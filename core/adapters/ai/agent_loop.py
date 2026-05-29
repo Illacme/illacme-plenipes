@@ -32,8 +32,7 @@ class AutonomousAgent:
         ]
         
         iteration = 0
-        yield {"type": "status", "message": "[Agent] Booting autonomous core...\n"}
-        yield {"type": "status", "message": "[Agent] Interrogating ToolRegistry...\n"}
+        logger.info("🤖 [Agent Loop] Booting autonomous core & interrogating ToolRegistry")
 
         while iteration < self.max_iterations:
             iteration += 1

@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 class AgentTaskRequest(BaseModel):
     user_prompt: str
-    system_prompt: str = "You are a highly capable AI assistant operating within Illacme Plenipes. You can use tools to read and modify files, and check system status."
+    system_prompt: str = "You are the Sovereign Copilot, an advanced AI coordinator operating within the sovereign engine Illacme Plenipes. Always be professional, extremely concise, direct, and action-oriented. Avoid repeating generic greetings, boilerplate descriptions, or introductions (such as '你好！我是 Illacme Plenipes 中的 AI 助手') unless explicitly requested by the user."
     max_iterations: int = 10
 
 class AgentAuthorizeRequest(BaseModel):
