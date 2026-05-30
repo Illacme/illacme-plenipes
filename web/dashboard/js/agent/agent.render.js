@@ -6,7 +6,7 @@
     if (window._dbgLog) window._dbgLog('📦 agent.render.js initializing');
 
     // 🔗 [SOP-02] 解析与寻址辅助逻辑已安全物理拆分至 agent.helper.js，此处配置全局安全代理以防双重污染并缩减行数
-    const formatFileLinks = text => (typeof window.formatFileLinks === 'function' ? window.formatFileLinks(text) : text);
+    const renderMarkdown = text => (typeof window.renderMarkdown === 'function' ? window.renderMarkdown(text) : text);
 
     window.SovereignAgent = window.SovereignAgent || {};
 
@@ -93,7 +93,7 @@
             if (!agentFeed) return;
             const msgDiv = document.createElement('div');
             msgDiv.className = `agent-msg ${typeClass}`;
-            msgDiv.innerHTML = formatFileLinks(text).replace(/\n/g, '<br/>');
+            msgDiv.innerHTML = renderMarkdown(text);
             agentFeed.appendChild(msgDiv);
             agentFeed.scrollTop = agentFeed.scrollHeight;
         },
@@ -148,7 +148,7 @@
                                     const el = activeThinkingContent;
                                     const isAtBottom = el.scrollHeight - el.clientHeight - el.scrollTop < 24;
                                     fullThinkingText += data.delta;
-                                    el.innerHTML = formatFileLinks(fullThinkingText).replace(/\n/g, '<br/>');
+                                    el.innerHTML = renderMarkdown(fullThinkingText);
                                     if (isAtBottom) el.scrollTop = el.scrollHeight;
                                 }
                                 agentFeed.scrollTop = agentFeed.scrollHeight;
@@ -168,13 +168,13 @@
                                         agentFeed.appendChild(activeContentDiv);
                                     }
                                     fullContentText += data.delta;
-                                    activeContentDiv.innerHTML = formatFileLinks(fullContentText).replace(/\n/g, '<br/>');
+                                    activeContentDiv.innerHTML = renderMarkdown(fullContentText);
                                     agentFeed.scrollTop = agentFeed.scrollHeight;
                                 }
                             } else {
                                 // 🌟 物理防御：如果已经通过 content_chunk 实时渲染了回答，则仅更新内容，防止重复添加 final-msg 盒子
                                 if (data.type === 'final' && activeContentDiv) {
-                                    activeContentDiv.innerHTML = formatFileLinks(data.message).replace(/\n/g, '<br/>');
+                                    activeContentDiv.innerHTML = renderMarkdown(data.message);
                                 } else {
                                     if (onStreamEvent) onStreamEvent(data);
                                 }
