@@ -5,9 +5,10 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from core.adapters.ai.tool_protocol import ToolCallEvent
 from core.adapters.ai.tool_registry import ToolRegistry
+from core.adapters.ai.hitl import active_hitl_sessions
+from core.adapters.ai.tool_runner import call_llm_stream
 
 logger = logging.getLogger(__name__)
-active_hitl_sessions = {}
 
 class AutonomousAgent:
     """
@@ -51,6 +52,25 @@ class AutonomousAgent:
 
             tools = None if is_simple_greeting else self.registry.export_all_schemas()
             if not tools: tools = None
+
+            # 🚀 [V75.4] 智能上下文压缩：若估计的 Token 总数超过 2500，对较长的 read_document 工具输出执行无损折叠/摘要压缩，释放宝贵的 Prompt 上下文，防止 4096 溢出截断
+            est_tokens = 0
+            for m in messages:
+                if m.get("content"):
+                    est_tokens += len(m["content"])
+                if m.get("tool_calls"):
+                    est_tokens += len(json.dumps(m["tool_calls"]))
+            est_tokens = est_tokens // 3  # 中英混合估算比例
+            
+            if est_tokens > 2500:
+                logger.warning(f"⚠️ [Agent Loop] Context size estimate ({est_tokens} tokens) is high. Compressing old read_document tool responses...")
+                yield {"type": "step", "message": "⚠️ [Sentinel] 历史上下文逼近 limit 限制，已自动启用微创历史剪枝，为大模型预留生成空间...\n"}
+                for m in messages:
+                    if m.get("role") == "tool" and m.get("name") == "read_document":
+                        orig_content = m.get("content", "")
+                        if len(orig_content) > 500:
+                            # 压缩为精简的概要指纹
+                            m["content"] = f"[Manuscript content of '{m.get('tool_call_id')}' omitted for context pruning (originally {len(orig_content)} characters). File content is already read in previous history. Please use patch_document with exact search_content to incremental modify this file.]"
 
             # 1. 呼叫流式大模型，实时吐出思维链与文本 Chunk
             response = None
@@ -156,144 +176,7 @@ class AutonomousAgent:
 
     async def _call_llm_stream(self, messages: list, tools: list, reasoning_enabled: bool, reasoning_effort: str):
         """
-        [Sovereign Core] 统一的 LLM 物理流式调用器。
+        [Sovereign Core] 算力物理流式转发器，用于防腐与测试隔离。
         """
-        import requests
-        is_openai = any(c.__name__ == "OpenAICompatibleTranslator" for c in self.ai_adapter.__class__.__mro__)
-        if not is_openai:
-            logger.info("⚠️ [Agent Stream] Non-OpenAI adapter detected, falling back to sync path.")
-            payload = {
-                "model": getattr(self.ai_adapter.trans_cfg, 'primary_model', 'gpt-4o') if hasattr(self.ai_adapter, 'trans_cfg') else 'gpt-4o',
-                "messages": messages, "tools": tools, "params": {"temperature": 0.2}
-            }
-            response = self.ai_adapter.ask_ai_with_retry(payload)
-            yield {"type": "final_text", "text": response} if isinstance(response, str) else {"type": "tool_calls", "events": response}
-            return
-
-        model_name = getattr(self.ai_adapter.config, 'model', 'gpt-4o')
-        openai_tools = []
-        if tools:
-            from core.adapters.ai.tool_protocol import IllacmeTool
-            for t in tools:
-                if isinstance(t, IllacmeTool):
-                    openai_tools.append({"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.parameters}})
-                elif isinstance(t, dict):
-                    openai_tools.append(t)
-
-        reasoning_params = self._assemble_reasoning_params(self.ai_adapter, model_name, reasoning_enabled, reasoning_effort)
-        openai_payload = {
-            "model": model_name,
-            "messages": messages,
-            "stream": True,
-            "temperature": 0.2 if reasoning_enabled else 0.1,
-            **reasoning_params
-        }
-        if openai_tools: openai_payload["tools"] = openai_tools
-
-        url = self.ai_adapter.safe_get_url()
-        if not url.endswith("/chat/completions") and not url.endswith("/completions"):
-            url = f"{url.rstrip('/')}/chat/completions"
-
-        headers = {"Content-Type": "application/json"}
-        api_key = self.ai_adapter.safe_get_config('api_key')
-        if api_key and api_key not in ["not-needed", "none", "empty"]:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-        proxies = None
-        proxy_url = self.ai_adapter.safe_get_config('proxy') or getattr(self.ai_adapter.trans_cfg, 'global_proxy', None)
-        if proxy_url: proxies = {"http": proxy_url, "https": proxy_url}
-
-        loop = asyncio.get_event_loop()
-        def run_post():
-            return self.ai_adapter._session.post(url, json=openai_payload, headers=headers, proxies=proxies, timeout=self.ai_adapter.timeout, stream=True)
-
-        try:
-            resp = await loop.run_in_executor(None, run_post)
-            resp.raise_for_status()
-        except Exception as e:
-            logger.error(f"🛑 [Agent Stream] HTTP POST failed: {e}, falling back to sync path.")
-            payload = {"model": model_name, "messages": messages, "tools": tools, "params": {"temperature": 0.2}}
-            response = self.ai_adapter.ask_ai_with_retry(payload)
-            yield {"type": "final_text", "text": response} if isinstance(response, str) else {"type": "tool_calls", "events": response}
-            return
-
-        accumulated_tools = {}
-        accumulated_content = []
-        def line_generator():
-            try:
-                for line in resp.iter_lines():
-                    if line: yield line.decode('utf-8')
-            except Exception as stream_err:
-                logger.error(f"🛑 [Agent Stream] error iterating stream lines: {stream_err}")
-
-        try:
-            for line in line_generator():
-                data_line = line.strip()
-                if data_line.startswith("data: "):
-                    data_str = data_line[6:].strip()
-                    if data_str == "[DONE]": break
-                    try:
-                        chunk = json.loads(data_str)
-                    except Exception:
-                        continue
-                    choices = chunk.get("choices", [])
-                    if not choices: continue
-                    delta = choices[0].get("delta", {})
-                    reasoning_chunk = delta.get("reasoning_content", "")
-                    if reasoning_chunk:
-                        yield {"type": "thinking_chunk", "delta": reasoning_chunk}
-                        continue
-                    content_chunk = delta.get("content", "")
-                    if content_chunk:
-                        accumulated_content.append(content_chunk)
-                        yield {"type": "content_chunk", "delta": content_chunk}
-                        continue
-                    tool_calls_delta = delta.get("tool_calls", [])
-                    for tc in tool_calls_delta:
-                        idx = tc.get("index", 0)
-                        if idx not in accumulated_tools:
-                            accumulated_tools[idx] = {"id": "", "name": "", "arguments": ""}
-                        if tc.get("id"): accumulated_tools[idx]["id"] = tc.get("id")
-                        func = tc.get("function", {})
-                        if func.get("name"): accumulated_tools[idx]["name"] = func.get("name")
-                        if func.get("arguments"): accumulated_tools[idx]["arguments"] += func.get("arguments")
-        except Exception as e:
-            logger.error(f"🛑 [Agent Stream] Error during stream processing: {e}")
-        finally:
-            try: resp.close()
-            except Exception: pass
-
-        if accumulated_tools:
-            from core.adapters.ai.tool_protocol import ToolCallEvent
-            events = []
-            for idx, tc in sorted(accumulated_tools.items()):
-                try: args = json.loads(tc["arguments"]) if tc["arguments"] else {}
-                except Exception: args = {}
-                events.append(ToolCallEvent(tool_name=tc["name"], arguments=args, raw_call_id=tc["id"]))
-            yield {"type": "tool_calls", "events": events}
-        else:
-            yield {"type": "final_text", "text": "".join(accumulated_content)}
-
-    def _assemble_reasoning_params(self, adapter, model_name: str, enabled: bool, effort: str) -> dict:
-        """
-        🏢 智能大模型思维链参数精准对正器 (Sovereignty Precision Alignment)
-        """
-        params = {}
-        model_name_lower = model_name.lower()
-        ac = adapter.__class__.__name__
-        if "OpenRouter" in ac:
-            params["reasoning"] = {"enabled": enabled, "effort": effort}
-        elif "Together" in ac:
-            params["reasoning"] = {"enabled": enabled}
-            if enabled: params["reasoning_effort"] = effort
-        elif "SiliconFlow" in ac:
-            params["thinking_budget"] = 1024 if enabled else 0
-        elif "Ollama" in ac:
-            params["think"] = enabled
-            params["thinking"] = enabled
-        elif "OpenAI" in ac and ("o1" in model_name_lower or "o3" in model_name_lower):
-            if enabled: params["reasoning_effort"] = effort
-        else:
-            params.update({"enable_thinking": enabled, "think": enabled, "thinking_budget": 1024 if enabled else 0})
-            if enabled: params["reasoning_effort"] = effort
-        return params
+        async for chunk in call_llm_stream(self.ai_adapter, messages, tools, reasoning_enabled, reasoning_effort):
+            yield chunk

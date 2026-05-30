@@ -27,12 +27,13 @@ class ToolRegistry:
         🚀 自动发现并注册 core/adapters/ai/tools 目录下的所有内置工具
         """
         try:
-            from core.adapters.ai.tools.vault_tools import ReadDocumentTool, SearchVaultTool, WriteDocumentTool
+            from core.adapters.ai.tools.vault_tools import ReadDocumentTool, SearchVaultTool, WriteDocumentTool, PatchDocumentTool
             from core.adapters.ai.tools.system_tools import CheckHealthTool, GitStatusTool
             
             self.register(ReadDocumentTool)
             self.register(SearchVaultTool)
             self.register(WriteDocumentTool)
+            self.register(PatchDocumentTool)
             self.register(CheckHealthTool)
             self.register(GitStatusTool)
         except Exception as e:

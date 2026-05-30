@@ -67,3 +67,43 @@ def test_vault_tools_sandboxing():
     full_test_file = os.path.join(vault_path, test_file_path)
     if os.path.exists(full_test_file):
         os.remove(full_test_file)
+
+
+def test_vault_service_functions():
+    """
+    🏢 独立校验 vault_service 核心模块的单元健壮性
+    """
+    from core.adapters.ai.tools.vault_service import verify_sandbox_path, fuzzy_match_document, get_secure_vault_path
+    
+    vault_path = get_secure_vault_path()
+    
+    # 1. 验证 verify_sandbox_path
+    assert verify_sandbox_path(vault_path, os.path.join(vault_path, "Docs/test.md")) is True
+    assert verify_sandbox_path(vault_path, "/etc/passwd") is False
+    assert verify_sandbox_path(vault_path, "../etc/passwd") is False
+    
+    # 2. 验证 fuzzy_match_document - 正常匹配和自愈
+    test_sub_dir = os.path.join(vault_path, "SubTest")
+    os.makedirs(test_sub_dir, exist_ok=True)
+    test_file_path = os.path.join(test_sub_dir, "unique_filename_test.md")
+    with open(test_file_path, "w", encoding="utf-8") as f:
+        f.write("hello")
+        
+    try:
+        # A. 直接路径存在时的直通匹配
+        f_path, r_path, err = fuzzy_match_document(vault_path, "SubTest/unique_filename_test.md")
+        assert err is None
+        assert f_path == test_file_path
+        assert r_path == "SubTest/unique_filename_test.md"
+        
+        # B. 路径不存在且只有一个同名文件时的自愈智能路径校正
+        f_path_2, r_path_2, err_2 = fuzzy_match_document(vault_path, "unique_filename_test")
+        assert err_2 is None
+        assert f_path_2 == test_file_path
+        assert r_path_2 == "SubTest/unique_filename_test.md"
+        
+    finally:
+        if os.path.exists(test_file_path):
+            os.remove(test_file_path)
+        if os.path.exists(test_sub_dir):
+            shutil.rmtree(test_sub_dir)

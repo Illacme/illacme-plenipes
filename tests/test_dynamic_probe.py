@@ -4,7 +4,7 @@ import os
 import json
 import pytest
 from unittest.mock import MagicMock
-from services.api.routes.agent import DynamicCapabilityProber
+from core.adapters.ai.prober import DynamicCapabilityProber
 from adapters.compute.openai import OpenAICompatibleTranslator
 
 class DummyTranslator(OpenAICompatibleTranslator):
@@ -112,3 +112,55 @@ async def test_async_probe_tools_rejection():
     assert cached_caps is not None
     assert cached_caps["tools"] is False
     assert cached_caps["cot"] is False
+
+@pytest.mark.anyio
+async def test_async_probe_vision_success():
+    """验证视觉探针成功流程：当视觉探测返回 200 时，vision 被点亮"""
+    adapter = DummyTranslator()
+    adapter.safe_get_url = MagicMock(return_value="http://localhost:1234/v1")
+    adapter.safe_get_config = MagicMock(return_value="not-needed")
+    
+    mock_session = MagicMock()
+    # 模拟三个 post 探测，分别是 Tools(400)，CoT(400)，Vision(200)
+    resp_tools = MockResponse(400, {"error": "no tools"})
+    resp_cot = MockResponse(400, {"error": "no cot"})
+    resp_vision = MockResponse(200, {"choices": [{"message": {"content": "OK"}}]})
+    
+    mock_session.post.side_effect = [resp_tools, resp_cot, resp_vision]
+    adapter._session = mock_session
+    
+    cache_key = "http://localhost:1234/v1:test-vision-model"
+    default_caps = {"cot": False, "tools": False, "stream": True, "vision": False}
+    
+    await DynamicCapabilityProber._async_probe(adapter, "test-vision-model", cache_key, default_caps)
+    
+    cached_caps = DynamicCapabilityProber._cache.get(cache_key)
+    assert cached_caps is not None
+    assert cached_caps["tools"] is False
+    assert cached_caps["cot"] is False
+    assert cached_caps["vision"] is True
+
+@pytest.mark.anyio
+async def test_async_probe_vision_rejection():
+    """验证视觉探针失败流程：当视觉探测返回 400 时，vision 被安全熄灭"""
+    adapter = DummyTranslator()
+    adapter.safe_get_url = MagicMock(return_value="http://localhost:1234/v1")
+    adapter.safe_get_config = MagicMock(return_value="not-needed")
+    
+    mock_session = MagicMock()
+    # 模拟三个 post 探测都返回 400
+    resp_tools = MockResponse(400, {"error": "no tools"})
+    resp_cot = MockResponse(400, {"error": "no cot"})
+    resp_vision = MockResponse(400, {"error": "unsupported format"})
+    
+    mock_session.post.side_effect = [resp_tools, resp_cot, resp_vision]
+    adapter._session = mock_session
+    
+    cache_key = "http://localhost:1234/v1:test-no-vision-model"
+    default_caps = {"cot": False, "tools": False, "stream": True, "vision": True}
+    
+    await DynamicCapabilityProber._async_probe(adapter, "test-no-vision-model", cache_key, default_caps)
+    
+    cached_caps = DynamicCapabilityProber._cache.get(cache_key)
+    assert cached_caps is not None
+    assert cached_caps["vision"] is False
