@@ -65,7 +65,7 @@ class LMStudioNativeTranslator(LMStudioBase):
     def get_archetype_params(self) -> Dict[str, Any]:
         return {
             "temperature": 0.1,
-            "max_tokens": 4096,
+            "max_tokens": 8192,
             "stream": False
         }
 
@@ -82,6 +82,6 @@ class LMStudioStandardTranslator(LMStudioBase):
     def get_archetype_params(self) -> Dict[str, Any]:
         return {
             "temperature": 0.7, # 标准模式遵循云端通用偏好
-            "max_tokens": 4096,
+            "max_tokens": 8192,
             "stream": False
         }

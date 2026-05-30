@@ -33,7 +33,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
         """OpenAI 兼容模型的黄金默认参数"""
         return {
             "temperature": 0.2,
-            "max_tokens": 4096
+            "max_tokens": 8192
         }
 
     async def list_models(self) -> list[str]:

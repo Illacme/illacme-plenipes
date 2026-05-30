@@ -117,7 +117,7 @@ class WriteDocumentTool(IllacmeTool):
     🏢 [V75.0] 覆盖写入原稿库中的文档（防越界审计安全沙箱版）
     """
     name = "write_document"
-    description = "Write or overwrite markdown content to a specific file path in the vault. Will create directories if they don't exist."
+    description = "Write or overwrite markdown content to a specific file path in the vault. WARNING: NEVER use this tool to modify, edit, or append to an existing file that is longer than 30 lines, as it will easily exceed the output token limit and trigger truncation. You MUST use patch_document for modifying existing files instead."
     
     def __init__(self):
         super().__init__(
@@ -164,7 +164,7 @@ class PatchDocumentTool(IllacmeTool):
     🏢 [V75.0] 微创增量修改原稿库中的文档（防越界审计安全沙箱及 Token 节约版）
     """
     name = "patch_document"
-    description = "Apply a search-and-replace patch to a specific document in the vault. Use this tool instead of write_document when making modifications to an existing file to save token space and prevent truncation."
+    description = "Apply a search-and-replace patch to a specific document in the vault. You MUST prioritize using this tool instead of write_document whenever you are modifying, editing, or appending to any existing file, in order to prevent output truncation, preserve token space, and guarantee write safety."
     
     def __init__(self):
         super().__init__(
