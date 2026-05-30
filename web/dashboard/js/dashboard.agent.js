@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // 🌟 引入状态执行锁，防止并发提交与重复执行 (SOP-01 Compliant)
+    let isExecuting = false;
+
     const agentInput = document.getElementById('agent-command-input'), agentFeed = document.getElementById('agent-feed');
     const agentPod = document.querySelector('.agent-pod'), agentStatus = document.getElementById('agent-status-tag');
     const rightSidebar = document.getElementById('right-sidebar');
@@ -77,6 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 提交指令监听
     agentInput.addEventListener('keydown', async (e) => {
+        // 🌟 物理防火墙：过滤中文输入法 (IME) 合成未结束时的回车确认事件，防止发送未完成的脏指令
+        if (e.isComposing || e.keyCode === 229) return;
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             const command = agentInput.value.trim();
@@ -96,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 🚀 主执行流程胶合控制
     async function submitAgentTask(command) {
+        if (isExecuting) return; // 🌟 物理防御：防止因高频敲击或并发流引起执行实例重叠
+        isExecuting = true;
+
         agentInput.value = ''; agentInput.disabled = true; agentInput.placeholder = 'AI 助手思考中...';
         if (agentPod) agentPod.classList.add('processing');
         if (agentStatus) { agentStatus.textContent = 'EXECUTING'; agentStatus.style.color = 'var(--neon-amber)'; }
@@ -147,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (agentPod) agentPod.classList.remove('processing');
             if (agentStatus) { agentStatus.textContent = 'STANDBY'; agentStatus.style.color = ''; }
             agentInput.focus();
+            isExecuting = false; // 🌟 优雅解锁，允许下一次安全提交
         }
     }
 

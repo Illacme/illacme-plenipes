@@ -5,6 +5,9 @@
 (function() {
     if (window._dbgLog) window._dbgLog('📦 agent.render.js initializing');
 
+    // 🔗 [SOP-02] 解析与寻址辅助逻辑已安全物理拆分至 agent.helper.js，此处配置全局安全代理以防双重污染并缩减行数
+    const formatFileLinks = text => (typeof window.formatFileLinks === 'function' ? window.formatFileLinks(text) : text);
+
     window.SovereignAgent = window.SovereignAgent || {};
 
     window.SovereignAgent.render = {
@@ -90,7 +93,7 @@
             if (!agentFeed) return;
             const msgDiv = document.createElement('div');
             msgDiv.className = `agent-msg ${typeClass}`;
-            msgDiv.innerHTML = text.replace(/\n/g, '<br/>');
+            msgDiv.innerHTML = formatFileLinks(text).replace(/\n/g, '<br/>');
             agentFeed.appendChild(msgDiv);
             agentFeed.scrollTop = agentFeed.scrollHeight;
         },
@@ -112,7 +115,7 @@
             let firstEventReceived = false;
 
             let activeThinkingDiv = null, activeThinkingDetails = null, activeThinkingContent = null;
-            let activeContentDiv = null, fullContentText = "";
+            let activeContentDiv = null, fullContentText = "", fullThinkingText = "";
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -144,29 +147,38 @@
                                 if (activeThinkingContent) {
                                     const el = activeThinkingContent;
                                     const isAtBottom = el.scrollHeight - el.clientHeight - el.scrollTop < 24;
-                                    el.textContent += data.delta;
+                                    fullThinkingText += data.delta;
+                                    el.innerHTML = formatFileLinks(fullThinkingText).replace(/\n/g, '<br/>');
                                     if (isAtBottom) el.scrollTop = el.scrollHeight;
                                 }
                                 agentFeed.scrollTop = agentFeed.scrollHeight;
                             } else if (data.type === 'content_chunk') {
-                                if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) {
-                                    activeThinkingDiv.classList.remove('streaming');
+                                // 🌟 物理防御：首个内容块如果只有空行或空白，忽略它，防止大模型前置换行符污染 UI 产生大片空白
+                                if (fullContentText || data.delta.trim()) {
+                                    if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) {
+                                        activeThinkingDiv.classList.remove('streaming');
+                                    }
+                                    if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
+                                        activeThinkingDetails.removeAttribute('open');
+                                        const summary = activeThinkingDetails.querySelector('summary');
+                                        if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
+                                    }
+                                    if (!activeContentDiv) {
+                                        activeContentDiv = document.createElement('div');
+                                        activeContentDiv.className = 'agent-msg final-msg';
+                                        agentFeed.appendChild(activeContentDiv);
+                                    }
+                                    fullContentText += data.delta;
+                                    activeContentDiv.innerHTML = formatFileLinks(fullContentText).replace(/\n/g, '<br/>');
+                                    agentFeed.scrollTop = agentFeed.scrollHeight;
                                 }
-                                if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
-                                    activeThinkingDetails.removeAttribute('open');
-                                    const summary = activeThinkingDetails.querySelector('summary');
-                                    if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
-                                }
-                                if (!activeContentDiv) {
-                                    activeContentDiv = document.createElement('div');
-                                    activeContentDiv.className = 'agent-msg final-msg';
-                                    agentFeed.appendChild(activeContentDiv);
-                                }
-                                fullContentText += data.delta;
-                                activeContentDiv.innerHTML = fullContentText.replace(/\n/g, '<br/>');
-                                agentFeed.scrollTop = agentFeed.scrollHeight;
                             } else {
-                                if (onStreamEvent) onStreamEvent(data);
+                                // 🌟 物理防御：如果已经通过 content_chunk 实时渲染了回答，则仅更新内容，防止重复添加 final-msg 盒子
+                                if (data.type === 'final' && activeContentDiv) {
+                                    activeContentDiv.innerHTML = formatFileLinks(data.message).replace(/\n/g, '<br/>');
+                                } else {
+                                    if (onStreamEvent) onStreamEvent(data);
+                                }
                             }
                         } catch (err) {
                             console.warn("Failed to parse SSE chunk:", chunk);

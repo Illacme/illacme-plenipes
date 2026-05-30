@@ -197,7 +197,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
 
             message = choices[0]["message"]
             
-            # 🚀 [V75.0] 拦截工具调用请求 (Tool Call Interception)
+            # 🚀 [V75.0] 拦截标准工具调用请求 (Tool Call Interception)
             tool_calls = message.get("tool_calls", [])
             if tool_calls:
                 parsed_events = []
@@ -218,7 +218,36 @@ class OpenAICompatibleTranslator(BaseTranslator):
                 if parsed_events:
                     return parsed_events
 
-            return message.get("content", "")
+            # 🚀 [自愈自适应] 处理 Qwen 等本地模型在同步模式下将 XML 伪代码误吐在 reasoning_content 中的问题
+            reasoning = message.get("reasoning_content") or ""
+            content = message.get("content") or ""
+            combined_text = reasoning + "\n" + content
+            
+            from core.adapters.ai.xml_parser import parse_xml_tool_calls
+            xml_events = parse_xml_tool_calls(combined_text)
+            if xml_events:
+                valid_events = []
+                for event in xml_events:
+                    # 校验工具调用的参数完整性
+                    if event.name == "read_document" and "relative_path" not in event.arguments:
+                        continue
+                    if event.name == "write_document" and ("relative_path" not in event.arguments or "content" not in event.arguments):
+                        continue
+                    if event.name == "patch_document" and ("relative_path" not in event.arguments or "search_content" not in event.arguments or "replace_content" not in event.arguments):
+                        continue
+                    if event.name == "search_vault" and "keyword" not in event.arguments:
+                        continue
+                    valid_events.append(event)
+                if valid_events:
+                    tlog.info(f"✨ [OpenAI Sync Healer] 从同步响应中成功自愈解析出 {len(valid_events)} 个 XML 工具调用事件")
+                    return valid_events
+
+            # 若 content 为空但 reasoning_content 不为空，降级为使用 reasoning 作为最终文本
+            if not content.strip() and reasoning.strip():
+                tlog.info("✨ [OpenAI Sync Healer] 降级使用 reasoning_content 作为同步回答文本。")
+                return reasoning.strip()
+
+            return content
         except Exception as e:
             tlog.error(f"🛑 [OpenAI API Error]: {e}")
             raise

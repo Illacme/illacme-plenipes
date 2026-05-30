@@ -53,7 +53,7 @@ class AutonomousAgent:
             tools = None if is_simple_greeting else self.registry.export_all_schemas()
             if not tools: tools = None
 
-            # 🚀 [V75.4] 智能上下文压缩：若估计的 Token 总数超过 2500，对较长的 read_document 工具输出执行无损折叠/摘要压缩，释放宝贵的 Prompt 上下文，防止 4096 溢出截断
+            # 🚀 [V75.4] 智能上下文压缩：若估计的 Token 总数超过 8000，对陈旧的较长 read_document 工具输出执行无损折叠/摘要压缩，释放宝贵的 Prompt 上下文，防止 4096 溢出截断
             est_tokens = 0
             for m in messages:
                 if m.get("content"):
@@ -62,11 +62,14 @@ class AutonomousAgent:
                     est_tokens += len(json.dumps(m["tool_calls"]))
             est_tokens = est_tokens // 3  # 中英混合估算比例
             
-            if est_tokens > 2500:
-                logger.warning(f"⚠️ [Agent Loop] Context size estimate ({est_tokens} tokens) is high. Compressing old read_document tool responses...")
-                yield {"type": "step", "message": "⚠️ [Sentinel] 历史上下文逼近 limit 限制，已自动启用微创历史剪枝，为大模型预留生成空间...\n"}
-                for m in messages:
-                    if m.get("role") == "tool" and m.get("name") == "read_document":
+            if est_tokens > 8000:
+                # 仅折叠历史/陈旧的 read_document 工具响应，强制保留最新一次响应以防死循环
+                read_doc_indices = [i for i, m in enumerate(messages) if m.get("role") == "tool" and m.get("name") == "read_document"]
+                if len(read_doc_indices) > 1:
+                    logger.warning(f"⚠️ [Agent Loop] Context size estimate ({est_tokens} tokens) is high. Compressing old read_document tool responses...")
+                    yield {"type": "step", "message": "⚠️ [Sentinel] 历史上下文逼近 limit 限制，已自动启用微创历史剪枝，为大模型预留生成空间...\n"}
+                    for idx in read_doc_indices[:-1]:
+                        m = messages[idx]
                         orig_content = m.get("content", "")
                         if len(orig_content) > 500:
                             # 压缩为精简的概要指纹
@@ -106,7 +109,7 @@ class AutonomousAgent:
                 current_results = []
                 for event in response:
                     logger.info(f"🛠️ [Agent Loop] Executing Tool: {event.name} with {event.arguments}")
-                    yield {"type": "step", "message": f"[🔧 SYSTEM CALL: {event.name}]\n"}
+                    yield {"type": "step", "message": f"[🔧 CALL: {event.name}]\n"}
                     
                     # HITL 拦截逻辑 (仅当未开启 autopilot 且属于高危工具时拦截)
                     if not autopilot_enabled and event.name in ["write_document", "git_commit"]:
