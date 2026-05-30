@@ -63,9 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (widescreenToggleBtn) {
             widescreenToggleBtn.textContent = '⛶';
-            widescreenToggleBtn.title = '切换宽屏大屏模式';
             widescreenToggleBtn.style.color = '';
             widescreenToggleBtn.style.textShadow = '';
+            setTimeout(() => {
+                if (widescreenToggleBtn && !isWidescreen) {
+                    widescreenToggleBtn.title = '切换宽屏大屏模式';
+                }
+            }, 250);
         }
         
         if (backdropEl) {
@@ -116,9 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (widescreenToggleBtn) {
             widescreenToggleBtn.textContent = '🗗';
-            widescreenToggleBtn.title = '退出大屏模式';
             widescreenToggleBtn.style.color = 'var(--accent-secondary)';
             widescreenToggleBtn.style.textShadow = '0 0 8px var(--accent-secondary)';
+            setTimeout(() => {
+                if (widescreenToggleBtn && isWidescreen) {
+                    widescreenToggleBtn.title = '退出大屏模式';
+                }
+            }, 250);
         }
 
         // 点击遮罩安全退出
@@ -131,6 +139,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (widescreenToggleBtn) {
         widescreenToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            
+            // 🚀 物理消噪：在 DOM 重挂载与状态切换前，主动清空 title 并强行 blur 失去焦点
+            // 这彻底根治了 Chrome/Safari 中由于 DOM 移动或改变导致的浏览器原生 hover 提示条（tooltip）卡死在屏幕上的原生 Bug
+            widescreenToggleBtn.title = '';
+            widescreenToggleBtn.blur();
+            
             if (isWidescreen) {
                 exitWidescreen();
             } else {

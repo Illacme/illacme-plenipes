@@ -159,9 +159,9 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: hsla(210, 30%, 4%, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: hsla(210, 30%, 4%, 0.35);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
     z-index: 999;
     opacity: 0;
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
