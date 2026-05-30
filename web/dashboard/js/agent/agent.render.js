@@ -139,7 +139,7 @@
                                 if (!activeThinkingDetails) {
                                     activeThinkingDiv = document.createElement('div');
                                     activeThinkingDiv.className = 'agent-msg thinking-msg streaming';
-                                    activeThinkingDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 脑网思维链 (深度分析中...)</summary><div class="thinking-content"></div></details>`;
+                                    activeThinkingDiv.innerHTML = `<details open><summary><span class="thinking-badge-pulse"></span>🧠 AI 深度推理链 (深度分析中...)</summary><div class="thinking-content"></div></details>`;
                                     agentFeed.appendChild(activeThinkingDiv);
                                     activeThinkingDetails = activeThinkingDiv.querySelector('details');
                                     activeThinkingContent = activeThinkingDiv.querySelector('.thinking-content');
@@ -160,7 +160,7 @@
                                     }
                                     if (activeThinkingDetails) {
                                         const summary = activeThinkingDetails.querySelector('summary');
-                                        if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
+                                        if (summary) summary.innerHTML = `🧠 AI 深度推理链 (分析完毕)`;
                                     }
                                     if (!activeContentDiv) {
                                         activeContentDiv = document.createElement('div');
@@ -202,7 +202,7 @@
             }
             if (activeThinkingDetails) {
                 const summary = activeThinkingDetails.querySelector('summary');
-                if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
+                if (summary) summary.innerHTML = `🧠 AI 深度推理链 (分析完毕)`;
             }
         }
     };

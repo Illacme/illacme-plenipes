@@ -123,11 +123,11 @@
                     rightCol.id = 'agent-feed-right-col';
                     rightCol.className = 'agent-feed-column right-col';
 
-                    // 📡 注入左侧脑网空状态占位灯
+                    // 📡 注入左侧 AI 深度推理轨空状态占位灯
                     const cotPlaceholder = document.createElement('div');
                     cotPlaceholder.id = 'agent-cot-placeholder';
                     cotPlaceholder.className = 'agent-cot-placeholder-glow';
-                    cotPlaceholder.innerHTML = `<span class="pulse-icon">📡</span> 脑网逻辑链路已建立，等待指令唤醒...`;
+                    cotPlaceholder.innerHTML = `<span class="pulse-icon">📡</span> AI 深度推理轨已准备就绪，等待指令唤醒...`;
 
                     const originalChildren = Array.from(agentFeed.children);
                     let hasCot = false;
