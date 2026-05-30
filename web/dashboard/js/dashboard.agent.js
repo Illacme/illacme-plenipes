@@ -41,6 +41,97 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ⛶ 宽屏/大屏模式切换 (Aurora Full-View Mode)
+    const widescreenToggleBtn = document.getElementById('agent-widescreen-toggle-btn');
+    let isWidescreen = false;
+    let backdropEl = null;
+
+    function exitWidescreen() {
+        if (!isWidescreen) return;
+        isWidescreen = false;
+        
+        if (agentPod) {
+            agentPod.classList.remove('active');
+            setTimeout(() => {
+                agentPod.classList.remove('widescreen-mode');
+            }, 300);
+        }
+        
+        if (widescreenToggleBtn) {
+            widescreenToggleBtn.textContent = '⛶';
+            widescreenToggleBtn.title = '切换宽屏大屏模式';
+            widescreenToggleBtn.style.color = '';
+            widescreenToggleBtn.style.textShadow = '';
+        }
+        
+        if (backdropEl) {
+            backdropEl.classList.remove('active');
+            setTimeout(() => {
+                if (backdropEl && backdropEl.parentNode) {
+                    backdropEl.parentNode.removeChild(backdropEl);
+                }
+                backdropEl = null;
+            }, 300);
+        }
+        
+        // 恢复背景页面滚动条
+        document.body.style.overflow = '';
+    }
+
+    function enterWidescreen() {
+        if (isWidescreen) return;
+        isWidescreen = true;
+
+        // 如果设置面板展开了，先收起以防视觉杂乱
+        if (settingsPanel && settingsPanel.classList.contains('expanded')) {
+            settingsPanel.classList.remove('expanded');
+            if (settingsToggleBtn) {
+                settingsToggleBtn.style.color = '';
+                settingsToggleBtn.style.textShadow = '';
+            }
+        }
+
+        // 创建遮罩
+        backdropEl = document.createElement('div');
+        backdropEl.className = 'agent-widescreen-backdrop';
+        document.body.appendChild(backdropEl);
+        
+        // 触发 reflow 并激活渐入动画
+        backdropEl.getBoundingClientRect();
+        backdropEl.classList.add('active');
+
+        if (agentPod) {
+            agentPod.classList.add('widescreen-mode');
+            // 触发 reflow 并激活渐入动画
+            agentPod.getBoundingClientRect();
+            agentPod.classList.add('active');
+        }
+
+        if (widescreenToggleBtn) {
+            widescreenToggleBtn.textContent = '🗗';
+            widescreenToggleBtn.title = '退出大屏模式';
+            widescreenToggleBtn.style.color = 'var(--accent-secondary)';
+            widescreenToggleBtn.style.textShadow = '0 0 8px var(--accent-secondary)';
+        }
+
+        // 点击遮罩安全退出
+        backdropEl.addEventListener('click', exitWidescreen);
+        
+        // 禁止背景滚动
+        document.body.style.overflow = 'hidden';
+    }
+
+    if (widescreenToggleBtn) {
+        widescreenToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isWidescreen) {
+                exitWidescreen();
+            } else {
+                enterWidescreen();
+            }
+        });
+    }
+
     // 🆕 初始化获取大模型元数据并渲染徽章状态
     async function initModelCapabilities() {
         try {
@@ -65,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 全局快捷键 Cmd+K / Ctrl+K 唤醒
+    // 全局快捷键 Cmd+K / Ctrl+K 唤醒 及 Esc 退出大屏模式
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
@@ -75,6 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
                 setTimeout(() => { agentPod.style.boxShadow = ''; }, 300);
             }
+        } else if (e.key === 'Escape' && isWidescreen) {
+            exitWidescreen();
         }
     });
 

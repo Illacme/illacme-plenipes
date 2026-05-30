@@ -149,3 +149,82 @@
 .agent-table tr:hover {
     background: hsla(180, 100%, 50%, 0.05);
 }
+
+/* 🌌 Sovereign Copilot Widescreen & Aurora Full-View Mode (SOP-03 Compliant) */
+
+/* 1. Backdrop Overlay */
+.agent-widescreen-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: hsla(210, 30%, 4%, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+}
+.agent-widescreen-backdrop.active {
+    opacity: 1;
+}
+
+/* 2. Widescreen Transition & Styling for .agent-pod */
+.agent-pod.widescreen-mode {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) scale(0.95) !important;
+    width: 90vw !important;
+    max-width: 960px !important;
+    height: 85vh !important;
+    z-index: 1000 !important;
+    margin: 0 !important;
+    border: 1px solid hsla(180, 100%, 50%, 0.35) !important;
+    background: hsla(210, 35%, 6%, 0.88) !important;
+    box-shadow: 0 25px 60px hsla(0, 0%, 0%, 0.95), 
+                0 0 35px hsla(180, 100%, 50%, 0.18),
+                inset 0 0 30px hsla(180, 100%, 50%, 0.04) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 12px !important;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    pointer-events: auto !important;
+}
+
+.agent-pod.widescreen-mode.active {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+}
+
+/* 3. Layout Adjustments inside Widescreen Pod */
+.agent-pod.widescreen-mode .agent-feed-container {
+    padding: 20px 25px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+
+.agent-pod.widescreen-mode .agent-msg {
+    max-width: 850px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.agent-pod.widescreen-mode .agent-input-wrapper {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px 25px !important;
+}
+
+.agent-pod.widescreen-mode .agent-input-wrapper::before {
+    left: 36px !important;
+}
+
+.agent-pod.widescreen-mode #agent-command-input {
+    padding: 12px 16px 12px 42px !important;
+    font-size: 0.85rem !important;
+}
