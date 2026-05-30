@@ -23,7 +23,7 @@
         if (!text) return "";
 
         const placeholders = [];
-        let workingText = text;
+        let workingText = text.replace(/\n+$/, "");
 
         // 1. Fenced Code Blocks (流式安全闭合与提取)
         const codeBlockRegex = /```([a-zA-Z0-9_\-+]*)\n([\s\S]*?)(?:```|$)/gi;
@@ -128,17 +128,27 @@
             renderedLines.push(`</${listType}>`);
         }
 
-        // 用 <br/> 拼接普通文本，但对于已经包含块级列表或表格占位符的行不使用 br 污染
+        // 用 <br/> 拼接普通文本，但如果当前行或前一行是块级占位符或列表标签，则使用 \n 拼接，以防多余的空行污染
+        const isBlockLine = (lineText) => {
+            const trimmed = lineText.trim();
+            const isPlaceholder = /^__(?:CODE_BLOCK|TABLE|TOOL_CALL)_PLACEHOLDER_\d+__$/i.test(trimmed) || 
+                                  trimmed === '__STREAMING_TOOL_PLACEHOLDER__';
+            const isList = /^(?:<\/?ul|<\/?ol>|<\/?li)/i.test(trimmed);
+            return isPlaceholder || isList;
+        };
+
         let htmlResult = "";
         for (let i = 0; i < renderedLines.length; i++) {
             const line = renderedLines[i];
-            const isPlaceholderOnly = /^__(?:CODE_BLOCK|TABLE)_PLACEHOLDER_\d+__$/i.test(line.trim());
-            const isListTag = /^(?:<\/?ul|<\/?ol>|<\/?li)/i.test(line.trim());
-
-            if (isPlaceholderOnly || isListTag) {
-                htmlResult += line + "\n";
+            if (i === 0) {
+                htmlResult = line;
             } else {
-                htmlResult += (line.trim() === "" ? "<br/>" : line + "<br/>");
+                const prevLine = renderedLines[i - 1];
+                if (isBlockLine(prevLine) || isBlockLine(line)) {
+                    htmlResult += "\n" + line;
+                } else {
+                    htmlResult += (prevLine.trim() === "" && line.trim() === "" ? "" : "<br/>") + line;
+                }
             }
         }
 
