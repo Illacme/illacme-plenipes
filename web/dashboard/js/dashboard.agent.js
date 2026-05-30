@@ -54,6 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
             agentPod.classList.remove('active');
             setTimeout(() => {
                 agentPod.classList.remove('widescreen-mode');
+                // 🚀 将 agentPod 还原放回 rightSidebar 的顶部，脱离 body
+                if (rightSidebar) {
+                    rightSidebar.insertBefore(agentPod, rightSidebar.firstChild);
+                }
             }, 300);
         }
         
@@ -101,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         backdropEl.classList.add('active');
 
         if (agentPod) {
+            // 🚀 在添加 class 前先将 agentPod 移动到 document.body，彻底脱离 right-sidebar 的隐藏/折叠及动画 context 污染
+            document.body.appendChild(agentPod);
+
             agentPod.classList.add('widescreen-mode');
             // 触发 reflow 并激活渐入动画
             agentPod.getBoundingClientRect();
