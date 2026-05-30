@@ -234,11 +234,7 @@ def assemble_reasoning_params(adapter, model_name: str, enabled: bool, effort: s
         if enabled: params["reasoning_effort"] = effort
     elif is_lmstudio:
         params.update({"enable_thinking": enabled, "think": enabled, "thinking_budget": 1024 if enabled else 0})
-        # LMStudio 对于 qwen 模型仅支持 on/off，其他模型支持 values: none, minimal, low, medium, high, xhigh
-        if "qwen" in model_name_lower:
-            params["reasoning_effort"] = "on" if enabled else "off"
-        else:
-            params["reasoning_effort"] = effort if enabled else "none"
+        params["reasoning_effort"] = effort if enabled else "none"
     else:
         params.update({"enable_thinking": enabled, "think": enabled, "thinking_budget": 1024 if enabled else 0})
         if enabled: params["reasoning_effort"] = effort

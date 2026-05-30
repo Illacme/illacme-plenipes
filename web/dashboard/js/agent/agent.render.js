@@ -158,8 +158,7 @@
                                     if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) {
                                         activeThinkingDiv.classList.remove('streaming');
                                     }
-                                    if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
-                                        activeThinkingDetails.removeAttribute('open');
+                                    if (activeThinkingDetails) {
                                         const summary = activeThinkingDetails.querySelector('summary');
                                         if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
                                     }
@@ -201,8 +200,7 @@
             if (activeThinkingDiv && activeThinkingDiv.classList.contains('streaming')) {
                 activeThinkingDiv.classList.remove('streaming');
             }
-            if (activeThinkingDetails && activeThinkingDetails.hasAttribute('open')) {
-                activeThinkingDetails.removeAttribute('open');
+            if (activeThinkingDetails) {
                 const summary = activeThinkingDetails.querySelector('summary');
                 if (summary) summary.innerHTML = `🧠 脑网思维链 (分析完毕)`;
             }
