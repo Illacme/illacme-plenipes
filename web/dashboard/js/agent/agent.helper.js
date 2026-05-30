@@ -103,7 +103,7 @@
                 const paramName = pMatch[1];
                 let paramVal = pMatch[2].trim();
 
-                const fileRegex = /^([a-zA-Z0-9_\-\/]+\.(?:md|mdx|markdown))$/i;
+                const fileRegex = /^[^\n`""''<>*?|]+\.(?:md|mdx|markdown)$/i;
                 if (fileRegex.test(paramVal)) {
                     paramVal = `<a href="#" onclick="event.preventDefault(); if (typeof window.openEditorSmart === 'function') { window.openEditorSmart('${paramVal.replace(/'/g, "\\'")}') } else if (typeof window.openEditor === 'function') { window.openEditor('${paramVal.replace(/'/g, "\\'")}') } else { console.warn('openEditor not found'); }" class="clickable-vault-link" title="点击打开此文稿编辑器">${paramVal}</a>`;
                 } else {
@@ -154,8 +154,10 @@
         workingText = workingText.replace(unclosedTagRegex, "");
 
         // 4. 对普通文本中的文稿相对路径进行超链接替换
-        const fileRegex = /`?([a-zA-Z0-9_\-\/]+\.(?:md|mdx|markdown))`?/gi;
-        let formattedText = workingText.replace(fileRegex, (match, path) => {
+        // 支持中英文、空格、特殊字符（如括弧、emoji、冒号等）路径
+        const fileRegex = /\`([^\`\n]+\.(?:md|mdx|markdown))\`|([^\s\/\`\"\'<>*?|]+\/[^\n\`\"\'<>*?|]+?\.(?:md|mdx|markdown))|([a-zA-Z0-9_\-\.]+\.(?:md|mdx|markdown))/gi;
+        let formattedText = workingText.replace(fileRegex, (match, g1, g2, g3) => {
+            const path = g1 || g2 || g3;
             if (!path) return match;
             return `<a href="#" onclick="event.preventDefault(); if (typeof window.openEditorSmart === 'function') { window.openEditorSmart('${path.replace(/'/g, "\\'")}') } else if (typeof window.openEditor === 'function') { window.openEditor('${path.replace(/'/g, "\\'")}') } else { console.warn('openEditor not found'); }" class="clickable-vault-link" title="点击打开此文稿编辑器">${path}</a>`;
         });
