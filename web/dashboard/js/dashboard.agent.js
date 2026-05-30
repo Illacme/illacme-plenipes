@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 🌟 引入状态执行锁，防止并发提交与重复执行 (SOP-01 Compliant)
-    let isExecuting = false;
+    // 🌟 引入状态执行锁与物理时序计数器，防止并发提交并支持大屏双轨还原排序 (SOP-01 Compliant)
+    let isExecuting = false, messageOrderCounter = 0;
 
     const agentInput = document.getElementById('agent-command-input'), agentFeed = document.getElementById('agent-feed');
     const agentPod = document.querySelector('.agent-pod'), agentStatus = document.getElementById('agent-status-tag');
@@ -41,116 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ⛶ 宽屏/大屏模式切换 (Aurora Full-View Mode)
-    const widescreenToggleBtn = document.getElementById('agent-widescreen-toggle-btn');
-    let isWidescreen = false;
-    let backdropEl = null;
-
-    function exitWidescreen() {
-        if (!isWidescreen) return;
-        isWidescreen = false;
-        
-        if (agentPod) {
-            agentPod.classList.remove('active');
-            setTimeout(() => {
-                agentPod.classList.remove('widescreen-mode');
-                // 🚀 将 agentPod 还原放回 rightSidebar 的顶部，脱离 body
-                if (rightSidebar) {
-                    rightSidebar.insertBefore(agentPod, rightSidebar.firstChild);
-                }
-            }, 300);
-        }
-        
-        if (widescreenToggleBtn) {
-            widescreenToggleBtn.textContent = '⛶';
-            widescreenToggleBtn.style.color = '';
-            widescreenToggleBtn.style.textShadow = '';
-            setTimeout(() => {
-                if (widescreenToggleBtn && !isWidescreen) {
-                    widescreenToggleBtn.title = '切换宽屏大屏模式';
-                }
-            }, 250);
-        }
-        
-        if (backdropEl) {
-            backdropEl.classList.remove('active');
-            setTimeout(() => {
-                if (backdropEl && backdropEl.parentNode) {
-                    backdropEl.parentNode.removeChild(backdropEl);
-                }
-                backdropEl = null;
-            }, 300);
-        }
-        
-        // 恢复背景页面滚动条
-        document.body.style.overflow = '';
-    }
-
-    function enterWidescreen() {
-        if (isWidescreen) return;
-        isWidescreen = true;
-
-        // 如果设置面板展开了，先收起以防视觉杂乱
-        if (settingsPanel && settingsPanel.classList.contains('expanded')) {
-            settingsPanel.classList.remove('expanded');
-            if (settingsToggleBtn) {
-                settingsToggleBtn.style.color = '';
-                settingsToggleBtn.style.textShadow = '';
-            }
-        }
-
-        // 创建遮罩
-        backdropEl = document.createElement('div');
-        backdropEl.className = 'agent-widescreen-backdrop';
-        document.body.appendChild(backdropEl);
-        
-        // 触发 reflow 并激活渐入动画
-        backdropEl.getBoundingClientRect();
-        backdropEl.classList.add('active');
-
-        if (agentPod) {
-            // 🚀 在添加 class 前先将 agentPod 移动到 document.body，彻底脱离 right-sidebar 的隐藏/折叠及动画 context 污染
-            document.body.appendChild(agentPod);
-
-            agentPod.classList.add('widescreen-mode');
-            // 触发 reflow 并激活渐入动画
-            agentPod.getBoundingClientRect();
-            agentPod.classList.add('active');
-        }
-
-        if (widescreenToggleBtn) {
-            widescreenToggleBtn.textContent = '🗗';
-            widescreenToggleBtn.style.color = 'var(--accent-secondary)';
-            widescreenToggleBtn.style.textShadow = '0 0 8px var(--accent-secondary)';
-            setTimeout(() => {
-                if (widescreenToggleBtn && isWidescreen) {
-                    widescreenToggleBtn.title = '退出大屏模式';
-                }
-            }, 250);
-        }
-
-        // 点击遮罩安全退出
-        backdropEl.addEventListener('click', exitWidescreen);
-        
-        // 禁止背景滚动
-        document.body.style.overflow = 'hidden';
-    }
-
-    if (widescreenToggleBtn) {
-        widescreenToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // 🚀 物理消噪：在 DOM 重挂载与状态切换前，主动清空 title 并强行 blur 失去焦点
-            // 这彻底根治了 Chrome/Safari 中由于 DOM 移动或改变导致的浏览器原生 hover 提示条（tooltip）卡死在屏幕上的原生 Bug
-            widescreenToggleBtn.title = '';
-            widescreenToggleBtn.blur();
-            
-            if (isWidescreen) {
-                exitWidescreen();
-            } else {
-                enterWidescreen();
-            }
-        });
+    // ⛶ 初始化极光大屏模式分片引擎 (SOP-01 & SOP-02 Compliant)
+    if (typeof window.initAgentWidescreen === 'function') {
+        window.initAgentWidescreen(agentPod, agentFeed, document.getElementById('agent-widescreen-toggle-btn'), rightSidebar, settingsPanel, settingsToggleBtn);
     }
 
     // 🆕 初始化获取大模型元数据并渲染徽章状态
@@ -177,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 全局快捷键 Cmd+K / Ctrl+K 唤醒 及 Esc 退出大屏模式
+    // 全局快捷键 Cmd+K / Ctrl+K 唤醒
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
@@ -187,8 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
                 setTimeout(() => { agentPod.style.boxShadow = ''; }, 300);
             }
-        } else if (e.key === 'Escape' && isWidescreen) {
-            exitWidescreen();
         }
     });
 

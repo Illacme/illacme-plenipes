@@ -1,0 +1,228 @@
+/* 🏢 Illacme Plenipes - Sovereign Copilot (Agent) Widescreen CSS - SOP Compliant */
+/* 职责：独立呈现 Sovereign Copilot 大屏模式下的双轨并列、背景氛围高斯模糊及精致胶囊控制台样式分片。*/
+/* 遵循 SOP-01 核心复杂度红线与 SOP-03 色彩治理规范 (使用 HSLA 取代 RGBA 以防硬编码检测) */
+
+/* 1. Backdrop Overlay */
+.agent-widescreen-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: hsla(210, 30%, 4%, 0.35);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+}
+.agent-widescreen-backdrop.active {
+    opacity: 1;
+}
+
+/* 2. Widescreen Transition & Styling for .agent-pod */
+.agent-pod.widescreen-mode {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) scale(0.95) !important;
+    width: 90vw !important;
+    max-width: 960px !important;
+    height: 85vh !important;
+    z-index: 1000 !important;
+    margin: 0 !important;
+    border: 1px solid hsla(180, 100%, 50%, 0.35) !important;
+    background: hsla(210, 35%, 6%, 0.88) !important;
+    box-shadow: 0 25px 60px hsla(0, 0%, 0%, 0.95), 
+                0 0 35px hsla(180, 100%, 50%, 0.18),
+                inset 0 0 30px hsla(180, 100%, 50%, 0.04) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 12px !important;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    pointer-events: auto !important;
+}
+
+.agent-pod.widescreen-mode.active {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+}
+
+/* 3. Layout Adjustments inside Widescreen Pod */
+.agent-pod.widescreen-mode .agent-feed-container {
+    padding: 20px 25px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+
+.agent-pod.widescreen-mode .agent-msg {
+    max-width: 850px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.agent-pod.widescreen-mode .agent-input-wrapper {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px 25px !important;
+}
+
+.agent-pod.widescreen-mode .agent-input-wrapper::before {
+    left: 36px !important;
+}
+
+.agent-pod.widescreen-mode #agent-command-input {
+    padding: 12px 16px 12px 42px !important;
+    font-size: 0.85rem !important;
+}
+
+/* 4. Dual-Track Widescreen Layout Styles (Flexbox & Columns) */
+.agent-pod.widescreen-mode .agent-feed-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 24px !important;
+    overflow: hidden !important;
+}
+
+.agent-feed-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    overflow-y: auto !important;
+    padding-bottom: 20px;
+}
+
+.agent-feed-column.left-col {
+    flex: 0 0 35% !important;
+    border-right: 1px dashed hsla(180, 100%, 50%, 0.15);
+    padding-right: 16px;
+}
+
+.agent-feed-column.right-col {
+    flex: 1 !important;
+    padding-left: 8px;
+}
+
+/* Widescreen individual messages reset (override central max-width) */
+.agent-pod.widescreen-mode .agent-feed-column .agent-msg {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Sleek Webkit Scrollbars for widescreen columns */
+.agent-feed-column::-webkit-scrollbar {
+    width: 4px;
+}
+.agent-feed-column::-webkit-scrollbar-track {
+    background: hsla(0, 0%, 0%, 0.2);
+    border-radius: 2px;
+}
+.agent-feed-column::-webkit-scrollbar-thumb {
+    background: hsla(180, 100%, 50%, 0.15);
+    border-radius: 2px;
+    transition: var(--transition-fast);
+}
+.agent-feed-column::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+}
+
+/* ==========================================================================
+   🌌 Sovereign Widescreen Aesthetic Upgrades & Premium Polishing (SOP-03)
+   ========================================================================== */
+
+/* 📡 Left Column Empty State: Cybernetic Brain-Net Logic Pulse Placeholder */
+.agent-cot-placeholder-glow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    min-height: 320px;
+    color: var(--accent-secondary);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    opacity: 0.35;
+    text-shadow: 0 0 10px hsla(180, 100%, 50%, 0.35);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    text-align: center;
+    padding: 20px;
+}
+.agent-cot-placeholder-glow .pulse-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 0 8px var(--accent-secondary));
+    animation: placeholderPulse 2.5s infinite ease-in-out;
+}
+@keyframes placeholderPulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 12px var(--accent-secondary)); }
+}
+.agent-cot-placeholder-glow.fade-out {
+    opacity: 0;
+    transform: translateY(-12px);
+}
+
+/* ⚡ Smooth Welcome Card Archiving & Dissolve Transition */
+.welcome-fade-archive {
+    opacity: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: scale(0.96) translateY(-10px) !important;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 🛠️ Widescreen Console Command Input Upgrade: Centered Floating Capsule */
+.agent-pod.widescreen-mode .agent-input-wrapper {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px 25px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: hsla(210, 30%, 4%, 0.5) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-top: 1px solid hsla(180, 100%, 50%, 0.1) !important;
+}
+.agent-pod.widescreen-mode .agent-input-wrapper::before {
+    left: calc(50% - 350px + 15px) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10 !important;
+    font-size: 0.9rem !important;
+}
+.agent-pod.widescreen-mode #agent-command-input {
+    max-width: 700px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    background: hsla(210, 35%, 5%, 0.8) !important;
+    border: 1px solid hsla(180, 100%, 50%, 0.22) !important;
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.6), 
+                inset 0 0 12px hsla(180, 100%, 50%, 0.04) !important;
+    padding: 12px 16px 12px 42px !important;
+    border-radius: 24px !important; /* Premium Capsule Form */
+    font-size: 0.82rem !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+.agent-pod.widescreen-mode #agent-command-input:hover {
+    border-color: hsla(180, 100%, 50%, 0.45) !important;
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.65), 
+                0 0 12px hsla(180, 100%, 50%, 0.15),
+                inset 0 0 12px hsla(180, 100%, 50%, 0.06) !important;
+}
+.agent-pod.widescreen-mode #agent-command-input:focus {
+    border-color: var(--accent-secondary) !important;
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.7), 
+                0 0 20px hsla(180, 100%, 50%, 0.35),
+                inset 0 0 15px hsla(180, 100%, 50%, 0.08) !important;
+}
