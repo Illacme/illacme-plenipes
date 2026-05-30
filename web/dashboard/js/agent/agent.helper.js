@@ -73,15 +73,17 @@
 
     /**
      * 📁 自动格式化消息中的文稿路径为可点击的超链接，并美化 <tool_call> 节点结构
+     * 流式状态下全能防护：实时解析未闭合 XML，临时隐藏残缺 HTML，防御任何隐形内容丢失。
      */
     window.formatFileLinks = function(text) {
         if (!text) return "";
 
         const placeholders = [];
-        
-        // 1. 抽取所有 <tool_call> 块并保存为占位符，防止渲染裸露的 XML 节点源码
+        let workingText = text;
+
+        // 1. 抽取所有【已闭合】的 <tool_call> 块并保存为占位符，防止渲染裸露的 XML 节点源码
         const toolCallRegex = /\s*<tool_call>([\s\S]*?)<\/tool_call>/gi;
-        let textWithPlaceholders = text.replace(toolCallRegex, (match, blockContent) => {
+        workingText = workingText.replace(toolCallRegex, (match, blockContent) => {
             const placeholderId = `__TOOL_CALL_PLACEHOLDER_${placeholders.length}__`;
             
             // 解析该 tool_call 块
@@ -120,14 +122,48 @@
             return placeholderId;
         });
 
-        // 2. 对普通文本进行文件路径超链接替换
+        // 2. 抽取并替换当前【未闭合】且仍在流式传输中的不完整 <tool_call> 块
+        const unclosedToolCallRegex = /\s*<tool_call>([\s\S]*)$/i;
+        let isStreamingTool = false;
+        let streamingToolHtml = "";
+        
+        workingText = workingText.replace(unclosedToolCallRegex, (match, blockContent) => {
+            isStreamingTool = true;
+            
+            // 尝试提取已经输出完毕的函数名称
+            let funcName = "Preparing...";
+            const funcMatch = blockContent.match(/<function=([a-zA-Z0-9_\-]+)>/i);
+            if (funcMatch) {
+                funcName = funcMatch[1];
+            } else {
+                const funcTagMatch = blockContent.match(/<function>([\s\S]*)$/i);
+                if (funcTagMatch) {
+                    const temp = funcTagMatch[1].trim();
+                    if (temp) funcName = temp;
+                }
+            }
+
+            streamingToolHtml = `<div class="agent-msg tool-msg" style="margin: 8px 0; padding: 8px 12px; border-radius: 6px; border-left: 3px solid var(--accent-orange, #ff9d00); background: rgba(255, 157, 0, 0.03); font-family: var(--font-mono); text-align: left; word-break: break-all;"><span style="font-weight: bold; color: var(--accent-orange, #ff9d00);"><span class="thinking-badge-pulse"></span>🔧 CALL: ${funcName} (Preparing...)</span></div>`;
+            
+            return "__STREAMING_TOOL_PLACEHOLDER__";
+        });
+
+        // 3. 防御性处理：在流式输出中临时切除尾部不完整的 HTML/XML 残缺标签（例如正在打字输出中的 <t, <to 等）
+        // 这一物理动作彻底避免了浏览器解析 unclosed tag 导致后续正文/思维链发生隐藏不可见的重大 Bug
+        const unclosedTagRegex = /<[a-zA-Z0-9_\-\s=\/'"]*$/;
+        workingText = workingText.replace(unclosedTagRegex, "");
+
+        // 4. 对普通文本中的文稿相对路径进行超链接替换
         const fileRegex = /`?([a-zA-Z0-9_\-\/]+\.(?:md|mdx|markdown))`?/gi;
-        let formattedText = textWithPlaceholders.replace(fileRegex, (match, path) => {
+        let formattedText = workingText.replace(fileRegex, (match, path) => {
             if (!path) return match;
             return `<a href="#" onclick="event.preventDefault(); if (typeof window.openEditorSmart === 'function') { window.openEditorSmart('${path.replace(/'/g, "\\'")}') } else if (typeof window.openEditor === 'function') { window.openEditor('${path.replace(/'/g, "\\'")}') } else { console.warn('openEditor not found'); }" class="clickable-vault-link" title="点击打开此文稿编辑器">${path}</a>`;
         });
 
-        // 3. 还原占位符为格式化后的 HTML
+        // 5. 还原占位符
+        if (isStreamingTool) {
+            formattedText = formattedText.replace("__STREAMING_TOOL_PLACEHOLDER__", streamingToolHtml);
+        }
         for (let i = 0; i < placeholders.length; i++) {
             formattedText = formattedText.replace(`__TOOL_CALL_PLACEHOLDER_${i}__`, placeholders[i]);
         }
