@@ -16,10 +16,10 @@ window.triggerCreateDirectory = async () => {
     Swal.fire({
         title: '📁 新建物理目录',
         html: `
-            <div style="text-align: left; padding: 0 10px;">
+            <div class="swal-drawer-form">
                 <div class="drawer-item">
-                    <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">物理保存路径 (相对于文库根目录)</label>
-                    <input id="swal-dir-path" class="setting-input" type="text" value="${defaultDir}" style="width: 100%; box-sizing: border-box; background: var(--white-05); color: var(--text-bright, #ffffff); border: 1px solid var(--white-10); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
+                    <label class="tiny-label">物理保存路径 (相对于文库根目录)</label>
+                    <input id="swal-dir-path" class="setting-input" type="text" value="${defaultDir}">
                 </div>
             </div>
         `,
