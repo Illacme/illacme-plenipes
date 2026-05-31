@@ -1,7 +1,8 @@
 /**
- * 🏢 Illacme Compute Center - Sovereign Startup Precheck Shard (V77.13)
+ * 🏢 Illacme Compute Center - Sovereign Startup Precheck Shard (V77.14)
  * 职责：负责系统启动时全量自检主备算力通道连通性与模型可用性，
  * 并对异常情况提供极致友好的人性化诊断报告与一键式直达配置操作引导。
+ * 🛡️ [Sovereign Edge Check]：在探测异常时强制隐藏 AI 欢迎与推荐提示模块，禁用输入，只显式保留诊断交互卡片。
  */
 
 (function() {
@@ -10,7 +11,7 @@
     window.ComputePrecheck = {
         /**
          * 🚀 启动全量可用性扫描探针
-         * @param {Function} onSuccess 检测完全通过后的回调（例如正常加载大模型徽章）
+         * @param {Function} onSuccess 检测完全通过后的回调
          */
         async run(onSuccess) {
             try {
@@ -34,7 +35,8 @@
                     // 3. 主算力连通，进一步检查是否能成功感应到活跃模型列表
                     const modelsRes = await apiFetch(`/api/compute/models?node_id=${primaryId}`);
                     if (modelsRes.models && modelsRes.models.length > 0) {
-                        // 主备双轨完全健康，静默完成，执行正常就绪回调
+                        // 主备双轨完全健康，静默恢复/清扫 UI 状态并就绪
+                        this.restoreNormalUI();
                         console.log("✅ [Sovereign Precheck] Primary compute node & models verified online.");
                         if (typeof onSuccess === 'function') onSuccess();
                     } else {
@@ -62,11 +64,58 @@
         },
 
         /**
+         * ⚙️ 探测通过时还原正常的 AI 指令交互界面与提示模块
+         */
+        restoreNormalUI() {
+            const welcomeEl = document.getElementById('agent-default-welcome');
+            const agentInput = document.getElementById('agent-command-input');
+            const diagCard = document.getElementById('agent-compute-diagnostic-card');
+            
+            if (welcomeEl) welcomeEl.style.display = 'flex';
+            if (diagCard) diagCard.remove();
+            
+            if (agentInput) {
+                agentInput.disabled = false;
+                agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
+                agentInput.style.opacity = '1';
+                agentInput.style.pointerEvents = 'auto';
+            }
+        },
+
+        /**
          * 🆕 渲染极富玻璃美学质感的诊断报告与操作引导卡片 (SOP-03 Compliant)
          */
         renderDiagnosticCard(primaryId, fallbackId, rawError, type) {
             const agentFeed = document.getElementById('agent-feed');
+            const welcomeEl = document.getElementById('agent-default-welcome');
+            const agentInput = document.getElementById('agent-command-input');
             if (!agentFeed) return;
+            
+            // 🛡️ [算力离线安全防护] 移除已存在的任何诊断残留
+            const oldCard = document.getElementById('agent-compute-diagnostic-card');
+            if (oldCard) oldCard.remove();
+            
+            // 🚀 若并非轻量级的备用代偿状态，而是真正的连通挂起 (Both Failed / Empty)
+            // 则强制隐藏 AI 提示欢迎大模块，只显示诊断卡片
+            const isFallbackActive = type === "fallback_active";
+            if (welcomeEl) {
+                welcomeEl.style.display = isFallbackActive ? 'flex' : 'none';
+            }
+            
+            // 挂起指令输入功能，防止误报和盲目指令调用
+            if (agentInput) {
+                if (isFallbackActive) {
+                    agentInput.disabled = false;
+                    agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
+                    agentInput.style.opacity = '1';
+                    agentInput.style.pointerEvents = 'auto';
+                } else {
+                    agentInput.disabled = true;
+                    agentInput.placeholder = '❌ 算力中心已挂起，指令功能暂时关闭...';
+                    agentInput.style.opacity = '0.45';
+                    agentInput.style.pointerEvents = 'none';
+                }
+            }
             
             let errorMsg = rawError;
             let guideSteps = "";
@@ -134,6 +183,7 @@
             }
             
             const card = document.createElement('div');
+            card.id = "agent-compute-diagnostic-card";
             card.className = "agent-msg system-msg patch-diff-card";
             card.style.cssText = `border: 1px solid ${borderGlow}; background: ${cardBg}; animation: fadeIn 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);`;
             
