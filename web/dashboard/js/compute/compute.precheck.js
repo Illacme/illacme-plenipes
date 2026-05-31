@@ -15,6 +15,15 @@
          */
         async run(onSuccess) {
             try {
+                // 🚀 [AEL-Iter-v77.14] 自检启动时标为 CHECKING 状态
+                const agentStatus = document.getElementById('agent-status-tag');
+                if (agentStatus) {
+                    agentStatus.textContent = 'CHECKING';
+                    agentStatus.style.color = 'var(--neon-amber, #ffb300)';
+                    agentStatus.style.borderColor = 'rgba(255, 179, 0, 0.4)';
+                    agentStatus.style.textShadow = '0 0 6px rgba(255, 179, 0, 0.4)';
+                }
+
                 // 1. 获取主备节点元数据
                 const nodesRes = await apiFetch('/api/compute/nodes');
                 const primaryId = nodesRes.primary;
@@ -70,6 +79,7 @@
             const welcomeEl = document.getElementById('agent-default-welcome');
             const agentInput = document.getElementById('agent-command-input');
             const diagCard = document.getElementById('agent-compute-diagnostic-card');
+            const agentStatus = document.getElementById('agent-status-tag');
             
             if (welcomeEl) welcomeEl.style.display = 'flex';
             if (diagCard) diagCard.remove();
@@ -79,6 +89,13 @@
                 agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
                 agentInput.style.opacity = '1';
                 agentInput.style.pointerEvents = 'auto';
+            }
+
+            if (agentStatus) {
+                agentStatus.textContent = 'STANDBY';
+                agentStatus.style.color = '';
+                agentStatus.style.borderColor = '';
+                agentStatus.style.textShadow = '';
             }
         },
 
@@ -100,6 +117,22 @@
             const isFallbackActive = type === "fallback_active";
             if (welcomeEl) {
                 welcomeEl.style.display = isFallbackActive ? 'flex' : 'none';
+            }
+            
+            // 联动更新右侧边栏顶部的大副状态标签，呈现极高发光的真实物理状态
+            const agentStatus = document.getElementById('agent-status-tag');
+            if (agentStatus) {
+                if (isFallbackActive) {
+                    agentStatus.textContent = 'FALLBACK';
+                    agentStatus.style.color = '#00f2ff';
+                    agentStatus.style.borderColor = 'rgba(0, 242, 255, 0.4)';
+                    agentStatus.style.textShadow = '0 0 6px rgba(0, 242, 255, 0.4)';
+                } else {
+                    agentStatus.textContent = 'OFFLINE';
+                    agentStatus.style.color = '#ff8080';
+                    agentStatus.style.borderColor = 'rgba(239, 83, 80, 0.4)';
+                    agentStatus.style.textShadow = '0 0 6px rgba(239, 83, 80, 0.4)';
+                }
             }
             
             // 挂起指令输入功能，防止误报和盲目指令调用

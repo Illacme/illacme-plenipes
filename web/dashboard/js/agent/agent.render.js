@@ -41,26 +41,11 @@
             // 🧠 物理联动对齐：当大模型不支持原生思维链时，强制置灰禁用开关和深度，防止误操作
             const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
             if (rToggle && rDepthContainer) {
-                const switchLabel = rToggle.closest('.setting-item');
-                if (data.capabilities.cot) {
-                    rToggle.disabled = false;
-                    rToggle.checked = true;
-                    if (switchLabel) {
-                        switchLabel.style.opacity = '1';
-                        switchLabel.style.pointerEvents = 'auto';
-                    }
-                    rDepthContainer.style.opacity = '1';
-                    rDepthContainer.style.pointerEvents = 'auto';
-                } else {
-                    rToggle.disabled = true;
-                    rToggle.checked = false;
-                    if (switchLabel) {
-                        switchLabel.style.opacity = '0.4';
-                        switchLabel.style.pointerEvents = 'none';
-                    }
-                    rDepthContainer.style.opacity = '0.4';
-                    rDepthContainer.style.pointerEvents = 'none';
-                }
+                const switchLabel = rToggle.closest('.setting-item'), hasCot = !!data.capabilities.cot;
+                rToggle.disabled = !hasCot; rToggle.checked = hasCot;
+                const op = hasCot ? '1' : '0.4', pe = hasCot ? 'auto' : 'none';
+                if (switchLabel) { switchLabel.style.opacity = op; switchLabel.style.pointerEvents = pe; }
+                rDepthContainer.style.opacity = op; rDepthContainer.style.pointerEvents = pe;
             }
         },
 
@@ -68,8 +53,14 @@
          * ⚙️ 显示大模型元数据获取失败的“未就绪”状态
          */
         showNotReadyState() {
-            const el = document.getElementById('active-model-name');
+            const el = document.getElementById('active-model-name'), s = document.getElementById('agent-status-tag');
             if (el) el.textContent = '未就绪';
+            if (s) {
+                s.textContent = 'OFFLINE';
+                s.style.color = '#ff8080';
+                s.style.borderColor = 'rgba(239, 83, 80, 0.4)';
+                s.style.textShadow = '0 0 6px rgba(239, 83, 80, 0.4)';
+            }
         },
 
         /**
