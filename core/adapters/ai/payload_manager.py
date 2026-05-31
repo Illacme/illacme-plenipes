@@ -202,15 +202,15 @@ class PayloadManager:
             params["think"] = reasoning_enabled
             params["thinking"] = reasoning_enabled
         elif is_lmstudio:
+            # 🏢 [LM Studio 极致兼容防线]
+            # 本地思维链模型（如 Qwen, Llama）与外层 LM Studio 顶级网关的 reasoning_effort 存在严重的格式与警告冲突。
+            # 经深度调研与物理对准，最稳妥、百分之百无报错和警告的方案是：
+            # 本地通道完全物理剥离 reasoning_effort 参数，仅保留本地模型原生支持的 enable_thinking / think / thinking_budget。
             params.update({
                 "enable_thinking": reasoning_enabled,
                 "think": reasoning_enabled,
                 "thinking_budget": 1024 if reasoning_enabled else 0
             })
-            if reasoning_enabled:
-                params["reasoning_effort"] = reasoning_effort if reasoning_effort in ["minimal", "low", "medium", "high", "xhigh"] else "medium"
-            else:
-                params["reasoning_effort"] = "none"
         elif is_o_series and is_openai_official:
             if reasoning_enabled:
                 params["reasoning_effort"] = reasoning_effort
@@ -221,8 +221,6 @@ class PayloadManager:
                     "think": reasoning_enabled,
                     "thinking_budget": 1024 if reasoning_enabled else 0
                 })
-                if is_lmstudio:
-                    params["reasoning_effort"] = "on" if reasoning_enabled else "off"
 
         # 5. 回写 params 并进行二次深层校验
         if "params" in cleaned:
