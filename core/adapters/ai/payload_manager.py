@@ -205,9 +205,12 @@ class PayloadManager:
             params.update({
                 "enable_thinking": reasoning_enabled,
                 "think": reasoning_enabled,
-                "thinking_budget": 1024 if reasoning_enabled else 0,
-                "reasoning_effort": "on" if reasoning_enabled else "off"
+                "thinking_budget": 1024 if reasoning_enabled else 0
             })
+            if reasoning_enabled:
+                params["reasoning_effort"] = reasoning_effort if reasoning_effort in ["minimal", "low", "medium", "high", "xhigh"] else "medium"
+            else:
+                params["reasoning_effort"] = "none"
         elif is_o_series and is_openai_official:
             if reasoning_enabled:
                 params["reasoning_effort"] = reasoning_effort

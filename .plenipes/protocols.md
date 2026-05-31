@@ -13,7 +13,7 @@
 | 大模型/托管平台 | reasoning_effort 支持情况 | temperature 约束 | max_tokens 与 max_completion_tokens | system 角色支持情况 |
 | :--- | :--- | :--- | :--- | :--- |
 | **OpenAI o1 / o3-mini** | 支持 `"low"`, `"medium"`, `"high"` | ❌ 不支持 (强制只能为 `1.0` 或不传，传其他值报 400) | ❌ 废弃 `max_tokens`，必须使用 `max_completion_tokens` | 较新模型支持 `developer` 角色；老版本（如 `o1-mini`）完全不支持 system 消息，必须降级为 `user` 角色 |
-| **LM Studio (本地推理)** | ❌ 不支持 OpenAI 专有字符，只能是 `"on"`/`"off"`（对 Qwen 等带思考模型有效，其他模型传入 medium 报 400） | ✅ 正常支持 | ❌ 不支持 `max_completion_tokens`，必须使用 `max_tokens` | ✅ 正常支持 |
+| **LM Studio (本地推理)** | 仅支持 `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`。传入 `"on"`/`"off"` 会直接报 400 Client Error。开启时自动规整为用户分档值或 `"medium"`，关闭时自动规整为 `"none"`。 | ✅ 正常支持 | ❌ 不支持 `max_completion_tokens`，必须使用 `max_tokens` | ✅ 正常支持 |
 | **SiliconFlow (硅基流动)** | ❌ 不支持，思维链使用 `thinking_budget` (整数) | ✅ 正常支持 | ❌ 不支持 `max_completion_tokens` | ✅ 正常支持 |
 | **Together AI / OpenRouter** | 仅支持特殊包装：`"reasoning": {"enabled": bool, "effort": str}` | ✅ 正常支持 | ❌ 不支持 `max_completion_tokens`，必须使用 `max_tokens` | ✅ 正常支持 |
 | **Ollama** | ❌ 不支持，思维链使用 `"think"` / `"thinking"` (布尔值) | ✅ 正常支持 | ❌ 不支持 `max_completion_tokens`，必须使用 `max_tokens` | ✅ 正常支持 |
