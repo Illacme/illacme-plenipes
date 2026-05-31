@@ -29,8 +29,17 @@
                 const primaryId = nodesRes.primary;
                 const fallbackId = nodesRes.fallback;
                 
+                // 查找主节点和备用节点的模型信息
+                let primaryModel = 'Unknown';
+                let fallbackModel = 'Unknown';
+                if (nodesRes.nodes) {
+                    const p = nodesRes.nodes.find(n => n.id === primaryId), f = nodesRes.nodes.find(n => n.id === fallbackId);
+                    if (p) primaryModel = p.model || 'Unknown';
+                    if (f) fallbackModel = f.model || 'Unknown';
+                }
+
                 if (!primaryId) {
-                    this.renderDiagnosticCard('none', fallbackId, '系统配置中未指定任何主算力节点！', 'no_primary');
+                    this.renderDiagnosticCard('none', fallbackId, '系统配置中未指定任何主算力节点！', 'no_primary', primaryModel, fallbackModel);
                     return;
                 }
 
@@ -49,9 +58,9 @@
                         console.log("✅ [Sovereign Precheck] Primary compute node & models verified online.");
                         if (typeof onSuccess === 'function') onSuccess();
                     } else {
-                        // 连通但未装载任何可用模型
+                        // 连通但未装载 any 可用模型
                         const err = modelsRes.error || "未在节点中感应到任何活跃模型资产。";
-                        this.renderDiagnosticCard(primaryId, fallbackId, err, "models_empty");
+                        this.renderDiagnosticCard(primaryId, fallbackId, err, "models_empty", primaryModel, fallbackModel);
                     }
                 } else {
                     // 主算力故障，尝试嗅探备用节点进行接管
@@ -65,7 +74,7 @@
                     }
                     
                     const err = testRes.error || "本地算力服务未响应或网络连接被拒绝 (Connection Refused)";
-                    this.renderDiagnosticCard(primaryId, fallbackId, err, fallbackWorking ? "fallback_active" : "offline");
+                    this.renderDiagnosticCard(primaryId, fallbackId, err, fallbackWorking ? "fallback_active" : "offline", primaryModel, fallbackModel);
                 }
             } catch (err) {
                 console.warn("⚠️ [Sovereign Precheck] Precheck executed with errors:", err);
@@ -102,7 +111,7 @@
         /**
          * 🆕 渲染极富玻璃美学质感的诊断报告与操作引导卡片 (SOP-03 Compliant)
          */
-        renderDiagnosticCard(primaryId, fallbackId, rawError, type) {
+        renderDiagnosticCard(primaryId, fallbackId, rawError, type, primaryModel = 'Unknown', fallbackModel = 'Unknown') {
             const agentFeed = document.getElementById('agent-feed');
             const welcomeEl = document.getElementById('agent-default-welcome');
             const agentInput = document.getElementById('agent-command-input');
@@ -150,36 +159,31 @@
                 }
             }
             
-            let errorMsg = rawError;
-            let guideSteps = "";
-            let borderGlow = "rgba(239, 83, 80, 0.45) !important";
+            let errorMsg = rawError, guideSteps = "";
+            let borderGlow = "rgba(239, 83, 80, 0.45) !important", titleColor = "#ff8080", titleText = "算力底座连通性异常诊断报告";
             let cardBg = "linear-gradient(135deg, rgba(30, 0, 5, 0.7), rgba(60, 10, 15, 0.5)) !important";
-            let titleColor = "#ff8080";
-            let titleText = "算力底座连通性异常诊断报告";
             
-            // 根据具体错误类型精细化提取人性化解决步骤
             const errLower = rawError.toLowerCase();
-            if (type === "no_primary") {
+            if (type === "no_primary" || type === "models_empty") {
                 borderGlow = "rgba(255, 157, 0, 0.45) !important";
                 cardBg = "linear-gradient(135deg, rgba(30, 15, 0, 0.7), rgba(60, 30, 0, 0.5)) !important";
                 titleColor = "var(--accent-orange, #ff9d00)";
-                titleText = "未配置主算力单元警告";
-                guideSteps = `
-                    <li>点击下方 **“配置算力单元”** 按钮。</li>
-                    <li>在弹出的算力单元配置框中划定并固化一个主节点。</li>
-                    <li>划定完成后，点击下方 **“重新检测”** 按钮即可唤醒大副。</li>
-                `;
-            } else if (type === "models_empty") {
-                borderGlow = "rgba(255, 157, 0, 0.45) !important";
-                cardBg = "linear-gradient(135deg, rgba(30, 15, 0, 0.7), rgba(60, 30, 0, 0.5)) !important";
-                titleColor = "var(--accent-orange, #ff9d00)";
-                titleText = "算力就绪但未装载模型警告";
-                errorMsg = "算力通道已物理接通，但该节点当前未加载任何模型资产（Model List 为空）。";
-                guideSteps = `
-                    <li>打开您的本地算力程序（如 LM Studio 或 Ollama）。</li>
-                    <li>在应用内**手动载入或拉取一个可用模型**（例如 <code>qwen/qwen3.5-9b</code> 或 <code>deepseek-r1</code>）。</li>
-                    <li>确认模型加载完成后，点击下方的 **“重新检测”** 按钮即可。</li>
-                `;
+                
+                if (type === "no_primary") {
+                    titleText = "未配置主算力单元警告";
+                    guideSteps = `
+                        <li>点击下方 **“配置算力单元”** 按钮固化一个主节点。</li>
+                        <li>固化后，点击 **“重新检测”** 按钮即可唤醒大副。</li>
+                    `;
+                } else {
+                    titleText = "算力就绪但未装载模型警告";
+                    errorMsg = "算力通道已物理接通，但该节点当前未加载 any 模型资产。";
+                    guideSteps = `
+                        <li>打开本地算力程序（LM Studio 或 Ollama）。</li>
+                        <li>应用内**手动载入或拉取一个可用模型**（例如 <code>${primaryModel}</code>）。</li>
+                        <li>确认加载完成后，点击下方 **“重新检测”**。</li>
+                    `;
+                }
             } else if (type === "fallback_active") {
                 borderGlow = "rgba(0, 242, 255, 0.4) !important";
                 cardBg = "linear-gradient(135deg, rgba(0, 15, 30, 0.7), rgba(0, 30, 60, 0.5)) !important";
@@ -188,11 +192,9 @@
                 errorMsg = `主节点 [${primaryId}] 连通失败：${rawError}。`;
                 guideSteps = `
                     <li>**容灾接管已生效**：大副 Agent 当前已**无缝热切换至备用算力节点 [${fallbackId}]**。</li>
-                    <li>您现在可以照常输入指令进行协同创作，不受此故障影响。</li>
-                    <li>建议您在闲暇时确认本地 [${primaryId}] 算力程序状态是否正常。</li>
+                    <li>您现在可以照常输入指令。建议闲暇时核对本地 [${primaryId}] 状态。</li>
                 `;
             } else {
-                // offline - 主备皆休眠
                 if (errLower.includes("refused") || errLower.includes("connect")) {
                     guideSteps = `
                         <li>确认您的本地算力程序（Ollama / LM Studio）**已打开并正在后台运行**。</li>
@@ -220,15 +222,28 @@
             card.className = "agent-msg system-msg patch-diff-card";
             card.style.cssText = `border: 1px solid ${borderGlow}; background: ${cardBg}; animation: fadeIn 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);`;
             
+            // 算力节点与目标模型区展示
+            let nodeInfoHtml = "";
+            if (isFallbackActive) {
+                nodeInfoHtml = `
+                    <span><strong>故障主节点：</strong> <code style="color: #ff8080; background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()} (${primaryModel})</code></span>
+                    <span style="margin-left: 8px;"><strong>接管备节点：</strong> <code style="color: #00f2ff; background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${fallbackId.toUpperCase()} (${fallbackModel})</code></span>
+                `;
+            } else {
+                nodeInfoHtml = `
+                    <span><strong>算力节点：</strong> <code style="color: var(--accent-secondary); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()}</code></span>
+                    <span style="margin-left: 8px;"><strong>目标模型：</strong> <code style="color: var(--accent-orange, #ff9d00); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryModel}</code></span>
+                `;
+            }
+            
             card.innerHTML = `
                 <div class="patch-diff-header" style="border-bottom: 1px solid hsla(0, 0%, 100%, 0.1); padding-bottom: 6px;">
                     <span class="patch-icon" style="filter: drop-shadow(0 0 4px ${titleColor});">📡</span>
                     <span class="patch-title" style="color: ${titleColor}; font-weight: bold; font-size: 0.74rem;">${titleText}</span>
                 </div>
                 <div style="font-size: 0.7rem; line-height: 1.5; color: var(--text-bright); margin-top: 8px;">
-                    <p style="margin: 0 0 6px 0; opacity: 0.9;">
-                        <strong>算力节点：</strong> 
-                        <code style="color: var(--accent-secondary); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()}</code>
+                    <p style="margin: 0 0 6px 0; opacity: 0.9; display: flex; flex-wrap: wrap; row-gap: 4px;">
+                        ${nodeInfoHtml}
                     </p>
                     <p style="margin: 6px 0 6px 0; opacity: 0.9;"><strong>诊断详情：</strong></p>
                     <p style="margin: 4px 0 8px 0; font-family: var(--font-mono); background: hsla(0, 0%, 0%, 0.35); padding: 8px; border-radius: 6px; border: 1px solid hsla(0, 0%, 100%, 0.05); color: #ffbbbb; word-break: break-all; font-size: 0.66rem;">
