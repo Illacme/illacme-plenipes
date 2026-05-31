@@ -53,8 +53,8 @@ Object.assign(window.VaultDocOps, {
                     title: '创建失败',
                     text: res ? res.error : '物理写入超时，请核验系统日志',
                     icon: 'error',
-                    background: 'rgba(13, 14, 28, 0.95)',
-                    color: '#fff',
+                    background: 'hsla(236, 37%, 8%, 0.95)',
+                    color: 'var(--text-bright, #ffffff)',
                     customClass: {
                         popup: 'glass-panel',
                         confirmButton: 'primary-btn glow-btn'
@@ -67,8 +67,8 @@ Object.assign(window.VaultDocOps, {
                 title: '系统异常',
                 text: e.message,
                 icon: 'error',
-                background: 'rgba(13, 14, 28, 0.95)',
-                color: '#fff',
+                background: 'hsla(236, 37%, 8%, 0.95)',
+                color: 'var(--text-bright, #ffffff)',
                 customClass: {
                     popup: 'glass-panel',
                     confirmButton: 'primary-btn'
@@ -152,8 +152,8 @@ Object.assign(window.VaultDocOps, {
                     title: '原稿搬迁失败',
                     text: res ? res.error : '原稿物理重映射超时，请核验系统日志',
                     icon: 'error',
-                    background: 'rgba(13, 14, 28, 0.95)',
-                    color: '#fff',
+                    background: 'hsla(236, 37%, 8%, 0.95)',
+                    color: 'var(--text-bright, #ffffff)',
                     customClass: {
                         popup: 'glass-panel',
                         confirmButton: 'primary-btn glow-btn'
@@ -166,8 +166,8 @@ Object.assign(window.VaultDocOps, {
                 title: '系统异常',
                 text: e.message,
                 icon: 'error',
-                background: 'rgba(13, 14, 28, 0.95)',
-                color: '#fff',
+                background: 'hsla(236, 37%, 8%, 0.95)',
+                color: 'var(--text-bright, #ffffff)',
                 customClass: {
                     popup: 'glass-panel',
                     confirmButton: 'primary-btn'

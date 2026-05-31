@@ -19,7 +19,7 @@ window.triggerCreateDirectory = async () => {
             <div style="text-align: left; padding: 0 10px;">
                 <div class="drawer-item">
                     <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">物理保存路径 (相对于文库根目录)</label>
-                    <input id="swal-dir-path" class="setting-input" type="text" value="${defaultDir}" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
+                    <input id="swal-dir-path" class="setting-input" type="text" value="${defaultDir}" style="width: 100%; box-sizing: border-box; background: var(--white-05); color: var(--text-bright, #ffffff); border: 1px solid var(--white-10); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
                 </div>
             </div>
         `,
@@ -27,9 +27,9 @@ window.triggerCreateDirectory = async () => {
         showCancelButton: true,
         confirmButtonText: '⚡ 确认创建',
         cancelButtonText: '取消',
-        background: 'rgba(13, 14, 28, 0.95)',
-        color: '#fff',
-        backdrop: `rgba(0, 0, 0, 0.6)`,
+        background: 'hsla(236, 37%, 8%, 0.95)',
+        color: 'var(--text-bright, #ffffff)',
+        backdrop: `var(--black-60)`,
         customClass: {
             popup: 'glass-panel',
             confirmButton: 'primary-btn glow-btn',
@@ -85,8 +85,8 @@ window.triggerCreateDirectory = async () => {
                         title: '创建失败',
                         text: res ? res.error : '物理目录分配超时，请核验系统日志',
                         icon: 'error',
-                        background: 'rgba(13, 14, 28, 0.95)',
-                        color: '#fff',
+                        background: 'hsla(236, 37%, 8%, 0.95)',
+                        color: 'var(--text-bright, #ffffff)',
                         customClass: {
                             popup: 'glass-panel',
                             confirmButton: 'primary-btn glow-btn'
@@ -99,8 +99,8 @@ window.triggerCreateDirectory = async () => {
                     title: '系统异常',
                     text: e.message,
                     icon: 'error',
-                    background: 'rgba(13, 14, 28, 0.95)',
-                    color: '#fff',
+                    background: 'hsla(236, 37%, 8%, 0.95)',
+                    color: 'var(--text-bright, #ffffff)',
                     customClass: {
                         popup: 'glass-panel',
                         confirmButton: 'primary-btn'

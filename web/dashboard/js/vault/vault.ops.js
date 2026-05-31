@@ -30,7 +30,7 @@ window.confirmPhysicalDelete = () => {
         text: "这将物理抹除磁盘上的源文件及其所有出版产物，不可恢复！",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ff4d4d',
+        confirmButtonColor: 'var(--neon-red, #ff4d4d)',
         confirmButtonText: '🔥 确认销毁',
         cancelButtonText: '取消',
         position: 'top-end',
@@ -83,8 +83,8 @@ window.triggerDeleteDirectory = async () => {
             title: '未选中目录',
             text: '请先在左侧目录树中选择需要删除的空目录',
             icon: 'warning',
-            background: 'rgba(13, 14, 28, 0.95)',
-            color: '#fff',
+            background: 'hsla(236, 37%, 8%, 0.95)',
+            color: 'var(--text-bright, #ffffff)',
             customClass: {
                 popup: 'glass-panel',
                 confirmButton: 'primary-btn'
@@ -100,9 +100,9 @@ window.triggerDeleteDirectory = async () => {
         showCancelButton: true,
         confirmButtonText: '🗑️ 确认物理删除',
         cancelButtonText: '取消',
-        background: 'rgba(13, 14, 28, 0.95)',
-        color: '#fff',
-        backdrop: `rgba(0, 0, 0, 0.6)`,
+        background: 'hsla(236, 37%, 8%, 0.95)',
+        color: 'var(--text-bright, #ffffff)',
+        backdrop: `var(--black-60)`,
         customClass: {
             popup: 'glass-panel',
             confirmButton: 'primary-btn',
@@ -155,8 +155,8 @@ window.triggerDeleteDirectory = async () => {
                         title: '物理销毁失败',
                         text: res ? res.error : '物理目录销毁超时，请核验系统日志',
                         icon: 'error',
-                        background: 'rgba(13, 14, 28, 0.95)',
-                        color: '#fff',
+                        background: 'hsla(236, 37%, 8%, 0.95)',
+                        color: 'var(--text-bright, #ffffff)',
                         customClass: {
                             popup: 'glass-panel',
                             confirmButton: 'primary-btn glow-btn'
@@ -169,8 +169,8 @@ window.triggerDeleteDirectory = async () => {
                     title: '系统异常',
                     text: e.message,
                     icon: 'error',
-                    background: 'rgba(13, 14, 28, 0.95)',
-                    color: '#fff',
+                    background: 'hsla(236, 37%, 8%, 0.95)',
+                    color: 'var(--text-bright, #ffffff)',
                     customClass: {
                         popup: 'glass-panel',
                         confirmButton: 'primary-btn'

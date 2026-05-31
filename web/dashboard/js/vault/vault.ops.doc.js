@@ -19,11 +19,11 @@ window.triggerCreateDocument = async () => {
             <div style="text-align: left; padding: 0 10px;">
                 <div class="drawer-item" style="margin-bottom: 15px;">
                     <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">原稿标题</label>
-                    <input id="swal-doc-title" class="setting-input" type="text" value="未命名原稿" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+                    <input id="swal-doc-title" class="setting-input" type="text" value="未命名原稿" style="width: 100%; box-sizing: border-box; background: var(--white-05); color: var(--text-bright, #ffffff); border: 1px solid var(--white-10); padding: 8px; border-radius: 6px;">
                 </div>
                 <div class="drawer-item">
                     <label class="tiny-label" style="display: block; margin-bottom: 5px; color: var(--accent-secondary); font-weight: bold;">物理保存路径 (相对于文库根目录)</label>
-                    <input id="swal-doc-path" class="setting-input" type="text" value="${defaultPath}" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
+                    <input id="swal-doc-path" class="setting-input" type="text" value="${defaultPath}" style="width: 100%; box-sizing: border-box; background: var(--white-05); color: var(--text-bright, #ffffff); border: 1px solid var(--white-10); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
                 </div>
             </div>
         `,
@@ -31,9 +31,9 @@ window.triggerCreateDocument = async () => {
         showCancelButton: true,
         confirmButtonText: '⚡ 确认创建',
         cancelButtonText: '取消',
-        background: 'rgba(13, 14, 28, 0.95)',
-        color: '#fff',
-        backdrop: `rgba(0, 0, 0, 0.6)`,
+        background: 'hsla(236, 37%, 8%, 0.95)',
+        color: 'var(--text-bright, #ffffff)',
+        backdrop: `var(--black-60)`,
         customClass: {
             popup: 'glass-panel',
             confirmButton: 'primary-btn glow-btn',
@@ -87,7 +87,7 @@ window.triggerMoveDocument = async (docId) => {
     const optionsHtml = uniqueFolders.map(folder => {
         const isSelected = folder === currentFolder ? 'selected' : '';
         const label = folder ? `📁 ${folder}` : '🏠 Root (根目录)';
-        return `<option value="${folder}" ${isSelected} style="background: #111; color: #fff;">${label}</option>`;
+        return `<option value="${folder}" ${isSelected} style="background: hsla(240, 10%, 7%, 1); color: var(--text-bright, #ffffff);">${label}</option>`;
     }).join('');
 
     Swal.fire({
@@ -95,22 +95,22 @@ window.triggerMoveDocument = async (docId) => {
         html: `
             <div class="swal-move-container" style="display: flex; gap: 12px; margin-top: 15px; text-align: left; flex-direction: column; font-family: inherit;">
                 <div class="swal-field-group">
-                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: #fff;">📁 目标文件夹</label>
-                    <select id="swal-target-folder" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 0.9rem; cursor: pointer;">
+                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: var(--text-bright, #ffffff);">📁 目标文件夹</label>
+                    <select id="swal-target-folder" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: var(--white-06); color: var(--text-bright, #ffffff); border: 1px solid var(--white-15); outline: none; font-size: 0.9rem; cursor: pointer;">
                         ${optionsHtml}
                     </select>
                 </div>
                 <div class="swal-field-group" style="margin-top: 5px;">
-                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: #fff;">📝 原稿文件名</label>
-                    <input id="swal-target-filename" type="text" value="${currentFileName}" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 0.9rem;">
+                    <label style="display: block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 5px; color: var(--text-bright, #ffffff);">📝 原稿文件名</label>
+                    <input id="swal-target-filename" type="text" value="${currentFileName}" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: var(--white-06); color: var(--text-bright, #ffffff); border: 1px solid var(--white-15); outline: none; font-size: 0.9rem;">
                 </div>
             </div>
         `,
         showCancelButton: true,
         confirmButtonText: '保存搬迁',
         cancelButtonText: '取消',
-        background: 'rgba(13, 14, 28, 0.96)',
-        color: '#fff',
+        background: 'hsla(236, 37%, 8%, 0.96)',
+        color: 'var(--text-bright, #ffffff)',
         customClass: {
             popup: 'glass-panel',
             confirmButton: 'primary-btn glow-btn',

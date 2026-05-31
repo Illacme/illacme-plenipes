@@ -29,10 +29,10 @@ window.ThemeUI = {
                         const locationText = locationMap[location] || location.toUpperCase();
 
                         if (isActive) {
-                            statusLabelPill = `<div class="log-tag success" style="background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
+                            statusLabelPill = `<div class="log-tag success" style="background: hsla(152, 100%, 50%, 0.08); color: var(--neon-green, #00ff88); border: 1px solid hsla(152, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
                             actionButton = '<button class="action-btn active" style="height: 28px; line-height: 18px;" disabled>已就绪</button>';
                         } else {
-                            statusLabelPill = `<div class="log-tag info" style="background: rgba(0, 242, 255, 0.08); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 255, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 ${locationText}</div>`;
+                            statusLabelPill = `<div class="log-tag info" style="background: hsla(183, 100%, 50%, 0.08); color: var(--accent-secondary); border: 1px solid hsla(183, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 ${locationText}</div>`;
                             if (location === 'native') {
                                 actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.bootstrapTheme('${t.id}')">⚡ 下载并切换</button>`;
                             } else if (location === 'global') {
@@ -58,9 +58,9 @@ window.ThemeUI = {
                                     <div style="display: flex; gap: 12px; align-items: flex-start;">
                                         <div class="card-icon" style="font-size: 1.5rem; flex-shrink: 0; margin-top: 2px;">${icon}</div>
                                         <div style="flex: 1;">
-                                            <h4 style="font-size: 1.1rem; color: #fff; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <h4 style="font-size: 1.1rem; color: var(--text-bright, #ffffff); margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                                 <span>${(t.id || '').toUpperCase()}</span>
-                                                ${t.name ? `<span style="font-size: 0.65rem; font-weight: normal; color: var(--accent-secondary); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.15); padding: 1px 6px; border-radius: 4px;">${t.name}</span>` : ''}
+                                                ${t.name ? `<span style="font-size: 0.65rem; font-weight: normal; color: var(--accent-secondary); background: hsla(183, 100%, 50%, 0.08); border: 1px solid hsla(183, 100%, 50%, 0.15); padding: 1px 6px; border-radius: 4px;">${t.name}</span>` : ''}
                                             </h4>
                                             <p style="margin: 0; font-size: 0.75rem; color: var(--text-dim); line-height: 1.4;">${t.description || '自定义装帧主题'}</p>
                                         </div>
@@ -68,12 +68,12 @@ window.ThemeUI = {
                                     
                                     <div class="pod-telemetry" style="margin: 15px 0; padding: 8px 12px; display: flex; align-items: center; font-size: 0.65rem; height: 32px;">
                                         ${isActive 
-                                            ? '<span class="tiny-label" style="color:#00ff88; display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>🟢 当前版图已绑定</span>' 
+                                            ? '<span class="tiny-label" style="color:var(--neon-green, #00ff88); display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green, #00ff88); width:6px; height:6px;"></span>🟢 当前版图已绑定</span>' 
                                             : (location === 'local' 
                                                 ? '<span class="tiny-label" style="color:var(--accent-secondary); font-weight:700;">🔘 本地就绪：可直接切换</span>' 
                                                 : (location === 'global' 
-                                                    ? '<span class="tiny-label" style="color:#ffb700; font-weight:700;">⚠️ 需同步：请点击同步并切换</span>' 
-                                                    : '<span class="tiny-label" style="color:#ffb700; font-weight:700;">⚠️ 需下载：请点击下载并切换</span>'))}
+                                                    ? '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需同步：请点击同步并切换</span>' 
+                                                    : '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需下载：请点击下载并切换</span>'))}
                                     </div>
 
                                     <div class="p-control-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; margin-bottom: 8px;">

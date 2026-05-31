@@ -48,7 +48,7 @@ window.ComputeUI = {
 
         let html = `
             <div class="strategy-command-deck-wrap fade-in">
-                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-primary); background: rgba(163, 76, 255, 0.02);">
+                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-primary); background: hsla(269, 100%, 65%, 0.02);">
                     <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-primary); letter-spacing: 2px; margin-bottom: 8px;">算力分配策略 (ALLOCATION STRATEGY)</div>
                     <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
                         配置系统如何分配出版任务。您可以指定主力与备用单元的联动逻辑，确保在任何环境下都能保持高可用输出。
@@ -99,7 +99,7 @@ window.ComputeUI = {
                         </div>
                     </div>
 
-                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(0, 242, 255, 0.1);">
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid hsla(183, 100%, 50%, 0.1);">
                         <div class="strategy-label">容灾调度算法 (RESILLIENCE ALGORITHM)</div>
                         <div class="strategy-list">
                             ${this.renderStrategyItem('single', '📍 单点模式', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
@@ -108,31 +108,31 @@ window.ComputeUI = {
                         </div>
                     </div>
                     
-                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid rgba(163, 76, 255, 0.1);">
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid hsla(269, 100%, 65%, 0.1);">
                         <div class="strategy-label">物理执行参数 (PHYSICAL EXECUTION CONTROL)</div>
                         <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
                             <div class="setting-item">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 全域并发数</label>
                                 <input type="number" id="input-llm-concurrency" value="${trans.llm_concurrency}" min="1" max="32" 
-                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
                             </div>
                             <div class="setting-item">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">API 响应超时 (秒)</label>
                                 <input type="number" id="input-api-timeout" value="${trans.api_timeout}" min="10" 
-                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('api_timeout', parseFloat(this.value))">
                             </div>
                             <div class="setting-item">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">最大重试次数</label>
                                 <input type="number" id="input-max-retries" value="${trans.max_retries}" min="0" 
-                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('max_retries', parseInt(this.value))">
                             </div>
                             <div class="setting-item">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">分块长度 (Chars)</label>
                                 <input type="number" id="input-max-chunk-size" value="${trans.max_chunk_size}" step="100" 
-                                       style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff; margin-top: 5px;"
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('max_chunk_size', parseInt(this.value))">
                             </div>
                         </div>

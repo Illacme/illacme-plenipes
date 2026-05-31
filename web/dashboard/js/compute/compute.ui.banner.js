@@ -36,12 +36,12 @@ window.handleAiBreakerTripped = function(payload) {
         transform: "translateX(-50%) translateY(-30px)",
         width: "90%",
         maxWidth: "680px",
-        background: "rgba(255, 69, 58, 0.12)",
+        background: "hsla(3, 100%, 61%, 0.12)",
         backdropFilter: "blur(20px)",
         webkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(255, 69, 58, 0.35)",
+        border: "1px solid hsla(3, 100%, 61%, 0.35)",
         borderRadius: "12px",
-        boxShadow: "0 10px 40px rgba(255, 69, 58, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+        boxShadow: "0 10px 40px hsla(3, 100%, 61%, 0.18), inset 0 1px 0 var(--white-10)",
         padding: "16px 20px",
         zIndex: "99999",
         display: "flex",
@@ -50,7 +50,7 @@ window.handleAiBreakerTripped = function(payload) {
         gap: "16px",
         opacity: "0",
         transition: "opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-        color: "#ffffff"
+        color: "var(--text-bright, #ffffff)"
     });
 
     // 内部结构
@@ -58,18 +58,18 @@ window.handleAiBreakerTripped = function(payload) {
         <div style="display: flex; align-items: center; gap: 14px;">
             <div style="font-size: 1.5rem; animation: pulse-warning 2s infinite ease-in-out;">⚠️</div>
             <div>
-                <div style="font-weight: 700; font-size: 0.9rem; color: #ff453a; letter-spacing: 0.5px; margin-bottom: 2px;">
+                <div style="font-weight: 700; font-size: 0.9rem; color: var(--neon-red, #ff4d4d); letter-spacing: 0.5px; margin-bottom: 2px;">
                     算力雪崩治理警报 (Circuit Breaker Tripped)
                 </div>
-                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.85); line-height: 1.4;">
-                    节点 <span style="font-family: monospace; background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; color: #fff; font-weight: 600;">${nodeName}</span> (异常率: ${failureRate}%) 遭遇算力洪峰已被自动熔断隔离。<br>
+                <div style="font-size: 0.8rem; color: hsla(0, 0%, 100%, 0.85); line-height: 1.4;">
+                    节点 <span style="font-family: monospace; background: var(--white-15); padding: 2px 6px; border-radius: 4px; color: var(--text-bright, #ffffff); font-weight: 600;">\${nodeName}</span> (异常率: \${failureRate}%) 遭遇算力洪峰已被自动熔断隔离。<br>
                     系统已动态引流至健康的备用节点，正在排队自愈中...
                 </div>
             </div>
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 80px;">
-            <div style="font-size: 0.6rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px;">自愈冷却</div>
-            <div class="countdown-timer-value" style="font-size: 1.6rem; font-weight: 800; color: #ff9f0a; font-family: monospace;">30s</div>
+            <div style="font-size: 0.6rem; color: hsla(0, 0%, 100%, 0.5); text-transform: uppercase; letter-spacing: 1px;">自愈冷却</div>
+            <div class="countdown-timer-value" style="font-size: 1.6rem; font-weight: 800; color: var(--neon-amber, #ffb300); font-family: monospace;">30s</div>
         </div>
     `;
 
@@ -79,9 +79,9 @@ window.handleAiBreakerTripped = function(payload) {
         style.id = "breaker-keyframes";
         style.textContent = `
             @keyframes pulse-warning {
-                0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255,69,58,0)); }
-                50% { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(255,69,58,0.7)); }
-                100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255,69,58,0)); }
+                0% { transform: scale(1); filter: drop-shadow(0 0 2px hsla(3, 100%, 61%, 0)); }
+                50% { transform: scale(1.1); filter: drop-shadow(0 0 8px hsla(3, 100%, 61%, 0.7)); }
+                100% { transform: scale(1); filter: drop-shadow(0 0 2px hsla(3, 100%, 61%, 0)); }
             }
         `;
         document.head.appendChild(style);

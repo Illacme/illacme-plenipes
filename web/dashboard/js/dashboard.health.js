@@ -18,10 +18,10 @@ window.shutdownSystem = async () => {
         
         // 瞬间切换 UI 状态为离线
         document.body.innerHTML = `
-            <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #ff4d4d; font-family: 'Inter', sans-serif;">
+            <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-solid, #000000); color: var(--neon-red, #ff4d4d); font-family: 'Inter', sans-serif;">
                 <h1 style="font-size: 3rem; margin-bottom: 1rem;">SYSTEM OFFLINE</h1>
-                <p style="color: #666;">主权出版中心已安全关闭。请在终端执行 python3 plenipes.py 重新启动。</p>
-                <div style="margin-top: 2rem; padding: 10px 20px; border: 1px solid #333; border-radius: 5px; cursor: pointer;" onclick="location.reload()">重新连接</div>
+                <p style="color: var(--text-dim, #666666);">主权出版中心已安全关闭。请在终端执行 python3 plenipes.py 重新启动。</p>
+                <div style="margin-top: 2rem; padding: 10px 20px; border: 1px solid var(--white-10, #333333); border-radius: 5px; cursor: pointer;" onclick="location.reload()">重新连接</div>
             </div>
         `;
     } catch (err) {

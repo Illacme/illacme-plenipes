@@ -15,10 +15,10 @@ window.ThemeHandlers = {
             showCancelButton: true,
             confirmButtonText: '确定切换',
             cancelButtonText: '取消',
-            background: 'rgba(10, 15, 25, 0.98)',
+            background: 'hsla(220, 43%, 7%, 0.98)',
             color: 'var(--text-bright)',
             confirmButtonColor: 'var(--accent-secondary)',
-            cancelButtonColor: '#444'
+            cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
         
         if (!result.isConfirmed) {
@@ -44,7 +44,7 @@ window.ThemeHandlers = {
             setTimeout(() => {
                 const activeCard = document.querySelector('.shield-pod.active-duty');
                 if (activeCard) {
-                    activeCard.style.boxShadow = '0 0 35px rgba(0, 242, 255, 0.45)';
+                    activeCard.style.boxShadow = '0 0 35px hsla(183, 100%, 50%, 0.45)';
                     activeCard.style.borderColor = 'var(--accent-secondary)';
                     activeCard.style.transition = 'all 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
                     setTimeout(() => {
@@ -67,10 +67,10 @@ window.ThemeHandlers = {
             showCancelButton: true,
             confirmButtonText: '开始部署',
             cancelButtonText: '取消',
-            background: 'rgba(10, 15, 25, 0.98)',
+            background: 'hsla(220, 43%, 7%, 0.98)',
             color: 'var(--text-bright)',
-            confirmButtonColor: '#ffb700',
-            cancelButtonColor: '#444'
+            confirmButtonColor: 'var(--neon-amber, #ffb300)',
+            cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
         
         if (!result.isConfirmed) {
@@ -96,7 +96,7 @@ window.ThemeHandlers = {
             setTimeout(() => {
                 const activeCard = document.querySelector('.shield-pod.active-duty');
                 if (activeCard) {
-                    activeCard.style.boxShadow = '0 0 35px rgba(0, 242, 255, 0.45)';
+                    activeCard.style.boxShadow = '0 0 35px hsla(183, 100%, 50%, 0.45)';
                     activeCard.style.borderColor = 'var(--accent-secondary)';
                     activeCard.style.transition = 'all 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
                     setTimeout(() => {
@@ -173,7 +173,7 @@ window.openPluginConfig = window.openPluginConfig || async function(id) {
         title: `⚙️ 主题配置: ${id.toUpperCase()}`,
         text: '请前往 [PLUGINS / 插件中心] 进行完整物理管道参数划定与热重载配置。',
         icon: 'info',
-        background: 'rgba(10, 15, 25, 0.98)',
+        background: 'hsla(220, 43%, 7%, 0.98)',
         color: 'var(--text-bright)',
         confirmButtonText: '确定'
     });

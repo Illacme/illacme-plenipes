@@ -16,11 +16,11 @@ window.refreshGalaxy = async () => {
     const card = document.getElementById('btn-focus-connected');
     if (label) {
         label.innerText = '⚡ 隔离孤立星球';
-        label.style.color = '#00f2ff';
+        label.style.color = 'var(--neon-cyan, #00f2ff)';
     }
     if (card) {
-        card.style.background = 'rgba(0, 242, 255, 0.05)';
-        card.style.borderColor = 'rgba(0, 242, 255, 0.2)';
+        card.style.background = 'hsla(183, 100%, 50%, 0.05)';
+        card.style.borderColor = 'hsla(183, 100%, 50%, 0.2)';
     }
 
     // ──── Phase 1: 骨架秒亮 (Skeleton Instant Render) ────

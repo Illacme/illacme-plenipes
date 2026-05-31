@@ -82,8 +82,8 @@
                         window._currentSwalCloseMenu = closeMenu;
                     },
                     focusConfirm: false,
-                    background: 'rgba(10, 15, 25, 0.98)',
-                    backdrop: `rgba(0,0,0,0.4) blur(10px)`,
+                    background: 'hsla(220, 43%, 7%, 0.98)',
+                    backdrop: `var(--black-40) blur(10px)`,
                     color: 'var(--text-bright)',
                     showCancelButton: true,
                     cancelButtonText: '放弃',

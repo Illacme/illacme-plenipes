@@ -53,11 +53,11 @@ window.toggleConnectedNodesOnly = () => {
         
         if (label) {
             label.innerText = '🪐 显示全部星球';
-            label.style.color = '#ff9f43';
+            label.style.color = 'var(--neon-amber, #ffb300)';
         }
         if (card) {
-            card.style.background = 'rgba(255, 159, 67, 0.08)';
-            card.style.borderColor = 'rgba(255, 159, 67, 0.3)';
+            card.style.background = 'hsla(30, 100%, 63%, 0.08)';
+            card.style.borderColor = 'hsla(30, 100%, 63%, 0.3)';
         }
         
         // Let it scatter, then frame it nicely
@@ -77,11 +77,11 @@ window.toggleConnectedNodesOnly = () => {
         
         if (label) {
             label.innerText = '⚡ 隔离孤立星球';
-            label.style.color = '#00f2ff';
+            label.style.color = 'var(--neon-cyan, #00f2ff)';
         }
         if (card) {
-            card.style.background = 'rgba(0, 242, 255, 0.05)';
-            card.style.borderColor = 'rgba(0, 242, 255, 0.2)';
+            card.style.background = 'hsla(183, 100%, 50%, 0.05)';
+            card.style.borderColor = 'hsla(183, 100%, 50%, 0.2)';
         }
         
         setTimeout(() => {

@@ -72,7 +72,7 @@ window.renderVaultTree = (manuscripts, directories = []) => {
             <span class="tree-icon">🏠</span>
             <span class="tree-label">全部原稿</span>
         </div>
-        <div class="tree-divider" style="margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);"></div>
+        <div class="tree-divider" style="margin: 8px 0; border-bottom: 1px solid var(--white-05);"></div>
     `;
 
     // 递归子节点渲染器

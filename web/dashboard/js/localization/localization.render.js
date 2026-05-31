@@ -21,7 +21,7 @@ window.renderLocalizationCategory = function () {
                     <h4>授权等级: ${isLicensed ? '主权专业版' : '社区标准版'}</h4>
                     <p>${isLicensed ? '已解锁无限语种并行分发矩阵。' : '当前限制 1 个目标语种，升级专业版解锁全球全量分发。'}</p>
                 </div>
-                <div class="badge" style="background: var(--accent-secondary); color: #000; font-weight: 800; padding: 4px 12px; border-radius: 20px;">${isLicensed ? 'PRO' : 'LITE'}</div>
+                <div class="badge" style="background: var(--accent-secondary); color: var(--bg-solid, #000000); font-weight: 800; padding: 4px 12px; border-radius: 20px;">${isLicensed ? 'PRO' : 'LITE'}</div>
             </div>
 
             <div class="settings-group">
@@ -48,7 +48,7 @@ window.renderLocalizationCategory = function () {
                                  onclick="window.toggleI18nTarget(this, '${l.code}')">
                                 <span style="font-size: 1.5rem;">${l.icon}</span>
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-size: 0.9rem; font-weight: 600; color: #fff;">${l.name}</span>
+                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright, #ffffff);">${l.name}</span>
                                     <span style="font-size: 0.65rem; color: var(--text-dim);">${l.code.toUpperCase()}</span>
                                 </div>
                             </div>`;
