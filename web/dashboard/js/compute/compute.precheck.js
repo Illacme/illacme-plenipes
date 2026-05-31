@@ -133,14 +133,14 @@
             if (agentStatus) {
                 if (isFallbackActive) {
                     agentStatus.textContent = 'FALLBACK';
-                    agentStatus.style.color = '#00f2ff';
-                    agentStatus.style.borderColor = 'rgba(0, 242, 255, 0.4)';
-                    agentStatus.style.textShadow = '0 0 6px rgba(0, 242, 255, 0.4)';
+                    agentStatus.style.color = 'var(--neon-cyan, #00f2ff)';
+                    agentStatus.style.borderColor = 'rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.4)';
+                    agentStatus.style.textShadow = '0 0 6px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.4)';
                 } else {
                     agentStatus.textContent = 'OFFLINE';
-                    agentStatus.style.color = '#ff8080';
-                    agentStatus.style.borderColor = 'rgba(239, 83, 80, 0.4)';
-                    agentStatus.style.textShadow = '0 0 6px rgba(239, 83, 80, 0.4)';
+                    agentStatus.style.color = 'var(--neon-red, #ff4d4d)';
+                    agentStatus.style.borderColor = 'rgba(var(--neon-red-rgb, 255, 77, 79), 0.4)';
+                    agentStatus.style.textShadow = '0 0 6px rgba(var(--neon-red-rgb, 255, 77, 79), 0.4)';
                 }
             }
             
@@ -160,19 +160,19 @@
             }
             
             let errorMsg = rawError, guideSteps = "";
-            let borderGlow = "rgba(239, 83, 80, 0.45) !important", titleColor = "#ff8080", titleText = "算力底座连通性异常诊断报告";
-            let cardBg = "linear-gradient(135deg, rgba(30, 0, 5, 0.7), rgba(60, 10, 15, 0.5)) !important";
+            let borderGlow = "rgba(var(--neon-red-rgb, 255, 77, 79), 0.4) !important", titleColor = "var(--neon-red, #ff4d4d)", titleText = "算力底座连通性异常诊断报告";
+            let cardBg = "linear-gradient(135deg, rgba(var(--neon-red-rgb, 255, 77, 79), 0.08), rgba(var(--neon-red-rgb, 255, 77, 79), 0.03)) !important";
             
             const errLower = rawError.toLowerCase();
             if (type === "no_primary" || type === "models_empty") {
-                borderGlow = "rgba(255, 157, 0, 0.45) !important";
-                cardBg = "linear-gradient(135deg, rgba(30, 15, 0, 0.7), rgba(60, 30, 0, 0.5)) !important";
-                titleColor = "var(--accent-orange, #ff9d00)";
+                borderGlow = "rgba(var(--neon-amber-rgb, 255, 170, 0), 0.4) !important";
+                cardBg = "linear-gradient(135deg, rgba(var(--neon-amber-rgb, 255, 170, 0), 0.08), rgba(var(--neon-amber-rgb, 255, 170, 0), 0.03)) !important";
+                titleColor = "var(--neon-amber, #ffaa00)";
                 
                 if (type === "no_primary") {
                     titleText = "未配置主算力单元警告";
                     guideSteps = `
-                        <li>点击下方 **“配置算力单元”** 按钮固化一个主节点。</li>
+                        <li>点击下方 **“配置算力单元”** 按钮固化一个主节点.</li>
                         <li>固化后，点击 **“重新检测”** 按钮即可唤醒大副。</li>
                     `;
                 } else {
@@ -185,9 +185,9 @@
                     `;
                 }
             } else if (type === "fallback_active") {
-                borderGlow = "rgba(0, 242, 255, 0.4) !important";
-                cardBg = "linear-gradient(135deg, rgba(0, 15, 30, 0.7), rgba(0, 30, 60, 0.5)) !important";
-                titleColor = "var(--accent-secondary)";
+                borderGlow = "rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.4) !important";
+                cardBg = "linear-gradient(135deg, rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.08), rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.03)) !important";
+                titleColor = "var(--accent-secondary, var(--neon-cyan))";
                 titleText = "主算力故障已无缝热接管";
                 errorMsg = `主节点 [${primaryId}] 连通失败：${rawError}。`;
                 guideSteps = `
@@ -226,13 +226,13 @@
             let nodeInfoHtml = "";
             if (isFallbackActive) {
                 nodeInfoHtml = `
-                    <span><strong>故障主节点：</strong> <code style="color: #ff8080; background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()} (${primaryModel})</code></span>
-                    <span style="margin-left: 8px;"><strong>接管备节点：</strong> <code style="color: #00f2ff; background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${fallbackId.toUpperCase()} (${fallbackModel})</code></span>
+                    <span><strong>故障主节点：</strong> <code style="color: var(--neon-red, #ff4d4d); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()} (${primaryModel})</code></span>
+                    <span style="margin-left: 8px;"><strong>接管备节点：</strong> <code style="color: var(--neon-cyan, #00f2ff); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${fallbackId.toUpperCase()} (${fallbackModel})</code></span>
                 `;
             } else {
                 nodeInfoHtml = `
                     <span><strong>算力节点：</strong> <code style="color: var(--accent-secondary); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()}</code></span>
-                    <span style="margin-left: 8px;"><strong>目标模型：</strong> <code style="color: var(--accent-orange, #ff9d00); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryModel}</code></span>
+                    <span style="margin-left: 8px;"><strong>目标模型：</strong> <code style="color: var(--neon-amber, #ffaa00); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryModel}</code></span>
                 `;
             }
             
@@ -246,7 +246,7 @@
                         ${nodeInfoHtml}
                     </p>
                     <p style="margin: 6px 0 6px 0; opacity: 0.9;"><strong>诊断详情：</strong></p>
-                    <p style="margin: 4px 0 8px 0; font-family: var(--font-mono); background: hsla(0, 0%, 0%, 0.35); padding: 8px; border-radius: 6px; border: 1px solid hsla(0, 0%, 100%, 0.05); color: #ffbbbb; word-break: break-all; font-size: 0.66rem;">
+                    <p style="margin: 4px 0 8px 0; font-family: var(--font-mono); background: hsla(0, 0%, 0%, 0.35); padding: 8px; border-radius: 6px; border: 1px solid hsla(0, 0%, 100%, 0.05); color: var(--danger-color, var(--neon-red)); word-break: break-all; font-size: 0.66rem;">
                         ${errorMsg}
                     </p>
                     <div style="margin-top: 8px;">
@@ -257,10 +257,10 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; border-top: 1px solid hsla(0, 0%, 100%, 0.05); padding-top: 8px;">
-                    <button class="btn-rollback" id="btn-precheck-retry" style="border-color: var(--accent-secondary); color: var(--accent-secondary); background: hsla(180, 100%, 50%, 0.02);">
+                    <button class="btn-rollback" id="btn-precheck-retry" style="border-color: var(--accent-secondary); color: var(--accent-secondary); background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.02);">
                         🔄 重新扫描
                     </button>
-                    <button class="btn-rollback" id="btn-precheck-fix" style="border-color: var(--accent-orange, #ff9d00); color: var(--accent-orange, #ff9d00); background: hsla(37, 100%, 50%, 0.02);">
+                    <button class="btn-rollback" id="btn-precheck-fix" style="border-color: var(--accent-orange, #ff9d00); color: var(--accent-orange, #ff9d00); background: rgba(var(--neon-amber-rgb, 255, 170, 0), 0.02);">
                         ⚙️ 配置算力单元
                     </button>
                 </div>

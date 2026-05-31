@@ -57,9 +57,9 @@
             if (el) el.textContent = '未就绪';
             if (s) {
                 s.textContent = 'OFFLINE';
-                s.style.color = '#ff8080';
-                s.style.borderColor = 'rgba(239, 83, 80, 0.4)';
-                s.style.textShadow = '0 0 6px rgba(239, 83, 80, 0.4)';
+                s.style.color = 'var(--neon-red, #ff4d4d)';
+                s.style.borderColor = 'rgba(var(--neon-red-rgb, 255, 77, 79), 0.4)';
+                s.style.textShadow = '0 0 6px rgba(var(--neon-red-rgb, 255, 77, 79), 0.4)';
             }
         },
 
