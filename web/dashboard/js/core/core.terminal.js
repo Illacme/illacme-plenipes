@@ -23,7 +23,6 @@ window.apiFetch = async (url, options = {}) => {
 
 window.addAudit = (message, type = 'info') => {
     const feed = document.getElementById('audit-feed');
-    if (!feed) return;
     
     const iconMap = {
         'info': '⚡',
@@ -32,20 +31,23 @@ window.addAudit = (message, type = 'info') => {
         'warning': '⚠️'
     };
 
-    const item = document.createElement('div');
-    item.className = `audit-entry ${type}`;
-    const now = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
-    item.innerHTML = `
-        <div class="audit-header">
-            <span class="audit-icon">${iconMap[type] || '📡'}</span>
-            <span class="audit-time">${now}</span>
-        </div>
-        <div class="audit-msg">${message}</div>
-    `;
-    
-    feed.prepend(item);
-    if (feed.children.length > 50) feed.removeChild(feed.lastChild);
+    // 🌟 物理自愈防线：即便 feed 容器被主权裁撤，也安全绕过 DOM 注入，确保向下执行状态栏刷新
+    if (feed) {
+        const item = document.createElement('div');
+        item.className = `audit-entry ${type}`;
+        const now = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        item.innerHTML = `
+            <div class="audit-header">
+                <span class="audit-icon">${iconMap[type] || '📡'}</span>
+                <span class="audit-time">${now}</span>
+            </div>
+            <div class="audit-msg">${message}</div>
+        `;
+        
+        feed.prepend(item);
+        if (feed.children.length > 50) feed.removeChild(feed.lastChild);
+    }
 
     const summaryText = document.getElementById('audit-summary-text');
     if (summaryText) {

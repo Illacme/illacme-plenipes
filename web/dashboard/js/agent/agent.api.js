@@ -48,6 +48,24 @@
             });
             if (!r.ok) throw new Error(`HTTP Error: ${r.status}`);
             return await r.json();
+        },
+
+        /**
+         * 🔄 撤销/回滚指定的微创补丁
+         * @param {string} patchId 补丁ID
+         * @returns {Promise<Object>}
+         */
+        async rollbackPatch(patchId) {
+            const r = await fetch('/api/agent/rollback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ patch_id: patchId })
+            });
+            if (!r.ok) {
+                const errData = await r.json().catch(() => ({}));
+                throw new Error(errData.detail || `HTTP Error: ${r.status}`);
+            }
+            return await r.json();
         }
     };
 })();

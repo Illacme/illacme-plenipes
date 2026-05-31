@@ -46,15 +46,19 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
             elif isinstance(t, dict):
                 openai_tools.append(t)
 
-    reasoning_params = assemble_reasoning_params(actual_adapter, model_name, reasoning_enabled, reasoning_effort)
-    openai_payload = {
+    from core.adapters.ai.payload_manager import PayloadManager
+    raw_payload = {
         "model": model_name,
         "messages": messages,
         "stream": True,
         "temperature": 0.2 if reasoning_enabled else 0.1,
-        **reasoning_params
+        "enable_thinking": reasoning_enabled,
+        "think": reasoning_enabled,
+        "reasoning_effort": reasoning_effort,
+        "max_tokens": getattr(actual_adapter.config, 'max_tokens', 8192)
     }
-    if openai_tools: openai_payload["tools"] = openai_tools
+    if openai_tools: raw_payload["tools"] = openai_tools
+    openai_payload = PayloadManager.align_and_clean_payload(model_name, raw_payload, actual_adapter)
 
     url = actual_adapter.safe_get_url()
     if not url.endswith("/chat/completions") and not url.endswith("/completions"):
@@ -214,28 +218,11 @@ def assemble_reasoning_params(adapter, model_name: str, enabled: bool, effort: s
     """
     🏢 智能大模型思维链参数精准对正器 (Sovereignty Precision Alignment)
     """
-    params = {}
-    model_name_lower = model_name.lower()
-    ac = adapter.__class__.__name__
-    url = getattr(adapter, "safe_get_url", lambda: "")().lower()
-    is_lmstudio = "LMStudio" in ac or "localhost" in url or "127.0.0.1" in url
-
-    if "OpenRouter" in ac:
-        params["reasoning"] = {"enabled": enabled, "effort": effort}
-    elif "Together" in ac:
-        params["reasoning"] = {"enabled": enabled}
-        if enabled: params["reasoning_effort"] = effort
-    elif "SiliconFlow" in ac:
-        params["thinking_budget"] = 1024 if enabled else 0
-    elif "Ollama" in ac:
-        params["think"] = enabled
-        params["thinking"] = enabled
-    elif "OpenAI" in ac and ("o1" in model_name_lower or "o3" in model_name_lower):
-        if enabled: params["reasoning_effort"] = effort
-    elif is_lmstudio:
-        params.update({"enable_thinking": enabled, "think": enabled, "thinking_budget": 1024 if enabled else 0})
-        params["reasoning_effort"] = effort if enabled else "none"
-    else:
-        params.update({"enable_thinking": enabled, "think": enabled, "thinking_budget": 1024 if enabled else 0})
-        if enabled: params["reasoning_effort"] = effort
-    return params
+    from core.adapters.ai.payload_manager import PayloadManager
+    raw = {
+        "enable_thinking": enabled,
+        "think": enabled,
+        "reasoning_effort": effort
+    }
+    cleaned = PayloadManager.align_and_clean_payload(model_name, raw, adapter)
+    return cleaned

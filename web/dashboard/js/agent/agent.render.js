@@ -31,21 +31,12 @@
             const updateBadge = (id, active) => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                if (active) {
-                    el.classList.remove('disabled');
-                    el.classList.add('active');
-                    if (badgeTooltips[id]) el.title = badgeTooltips[id].active;
-                } else {
-                    el.classList.remove('active');
-                    el.classList.add('disabled');
-                    if (badgeTooltips[id]) el.title = badgeTooltips[id].disabled;
-                }
+                el.classList.toggle('active', !!active);
+                el.classList.toggle('disabled', !active);
+                if (badgeTooltips[id]) el.title = active ? badgeTooltips[id].active : badgeTooltips[id].disabled;
             };
 
-            updateBadge('badge-cot', data.capabilities.cot);
-            updateBadge('badge-tools', data.capabilities.tools);
-            updateBadge('badge-stream', data.capabilities.stream);
-            updateBadge('badge-vision', data.capabilities.vision);
+            ['cot', 'tools', 'stream', 'vision'].forEach(k => updateBadge(`badge-${k}`, data.capabilities[k]));
 
             // 🧠 物理联动对齐：当大模型不支持原生思维链时，强制置灰禁用开关和深度，防止误操作
             const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
@@ -77,10 +68,8 @@
          * ⚙️ 显示大模型元数据获取失败的“未就绪”状态
          */
         showNotReadyState() {
-            const modelNameTag = document.getElementById('active-model-name');
-            if (modelNameTag) {
-                modelNameTag.textContent = '未就绪';
-            }
+            const el = document.getElementById('active-model-name');
+            if (el) el.textContent = '未就绪';
         },
 
         /**
@@ -96,6 +85,105 @@
             msgDiv.innerHTML = renderMarkdown(text);
             agentFeed.appendChild(msgDiv);
             agentFeed.scrollTop = agentFeed.scrollHeight;
+        },
+
+        /**
+         * 🛠️ 动态渲染微创补丁 Visual Diff 对照卡片与撤销物理按钮 (V76.8)
+         * @param {Object} data 包含 patch_id, relative_path, search_content, replace_content, message 的数据包
+         */
+        renderPatchDiff(data) {
+            const agentFeed = document.getElementById('agent-feed');
+            if (!agentFeed) return;
+
+            const card = document.createElement('div');
+            card.className = 'agent-msg patch-diff-card glass-panel';
+            card.id = `patch-${data.patch_id}`;
+
+            // 精准计算并折叠展示 diff 行
+            const searchLines = (data.search_content || '').split('\n');
+            const replaceLines = (data.replace_content || '').split('\n');
+
+            let diffHtml = '';
+            searchLines.forEach(line => {
+                diffHtml += `<div class="patch-diff-line deletion"><span class="line-marker">-</span><span class="line-text">${escapeHtml(line)}</span></div>`;
+            });
+            replaceLines.forEach(line => {
+                diffHtml += `<div class="patch-diff-line addition"><span class="line-marker">+</span><span class="line-text">${escapeHtml(line)}</span></div>`;
+            });
+
+            card.innerHTML = `
+                <div class="patch-diff-header">
+                    <span class="patch-icon">🛠️</span>
+                    <span class="patch-title">微创补丁已安全落盘</span>
+                    <span class="patch-file" title="${escapeHtml(data.relative_path)}">${escapeHtml(data.relative_path.split('/').pop())}</span>
+                </div>
+                <div class="patch-diff-body">
+                    ${diffHtml}
+                </div>
+                <div class="patch-diff-actions">
+                    <button class="btn-rollback" id="btn-rollback-${data.patch_id}">
+                        <span class="btn-icon">🔄</span>
+                        <span class="btn-text">一键撤销 / Rollback</span>
+                    </button>
+                </div>
+            `;
+
+            agentFeed.appendChild(card);
+            agentFeed.scrollTop = agentFeed.scrollHeight;
+
+            // 物理按钮防抖绑定
+            const rollbackBtn = document.getElementById(`btn-rollback-${data.patch_id}`);
+            if (rollbackBtn) {
+                rollbackBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (rollbackBtn.disabled) return;
+
+                    rollbackBtn.disabled = true;
+                    rollbackBtn.classList.add('loading');
+                    rollbackBtn.querySelector('.btn-text').textContent = '正在物理回撤...';
+
+                    try {
+                        const result = await window.SovereignAgent.api.rollbackPatch(data.patch_id);
+                        
+                        // 成功回滚：视觉高阶沉降，置为暗淡且禁用状态
+                        rollbackBtn.classList.remove('loading');
+                        rollbackBtn.classList.add('success');
+                        rollbackBtn.querySelector('.btn-icon').textContent = '✅';
+                        rollbackBtn.querySelector('.btn-text').textContent = '已成功物理回滚';
+                        card.classList.add('rolled-back');
+                        
+                        // 在 Feed 中追加系统通知
+                        if (typeof window.SovereignAgent.render.appendMessage === 'function') {
+                            window.SovereignAgent.render.appendMessage(`[SUCCESS] ${result.message}`, 'system-msg');
+                        }
+                    } catch (err) {
+                        // 拦截性失败：展示红字报错，3.5秒后自动恢复可重试状态以自愈
+                        console.error(err);
+                        rollbackBtn.classList.remove('loading');
+                        rollbackBtn.classList.add('failed');
+                        rollbackBtn.querySelector('.btn-icon').textContent = '⚠️';
+                        rollbackBtn.querySelector('.btn-text').textContent = `回滚失败: ${err.message || err}`;
+                        
+                        setTimeout(() => {
+                            rollbackBtn.disabled = false;
+                            rollbackBtn.classList.remove('failed');
+                            rollbackBtn.querySelector('.btn-icon').textContent = '🔄';
+                            rollbackBtn.querySelector('.btn-text').textContent = '一键撤销 / Rollback';
+                        }, 3500);
+                    }
+                });
+            }
+
+            // 极简的安全字符逃逸工具
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
         },
 
         /**

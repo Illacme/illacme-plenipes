@@ -113,3 +113,119 @@ class PayloadManager:
             params['temperature'] = max(0.0, min(1.0, params['temperature']))
 
         return params
+
+    @staticmethod
+    def align_and_clean_payload(model_name: str, payload: Dict[str, Any], adapter=None) -> Dict[str, Any]:
+        """
+        🏢 智能大模型参数清洗与兼容网关 (Sovereign Parameter Cleansing & Alignment Gateway)
+        负责针对不同厂商的大模型 (OpenAI o1/o3-mini, DeepSeek-R1, Local/LMStudio 等)
+        进行入参格式校验、智能降级、物理剔除和格式化对齐，防止服务端抛出 400 Bad Request。
+        """
+        import copy
+        cleaned = copy.deepcopy(payload)
+        model_lower = model_name.lower()
+        
+        # 1. 识别算力节点属性与适配器来源
+        ac_name = ""
+        url = ""
+        if adapter:
+            ac_name = adapter.__class__.__name__
+            url = getattr(adapter, "safe_get_url", lambda: "")().lower()
+        
+        is_lmstudio = "lmstudio" in ac_name.lower() or "localhost" in url or "127.0.0.1" in url
+        is_openai_official = "openai" in ac_name.lower() and not is_lmstudio
+        is_o_series = "o1" in model_lower or "o3" in model_lower
+        
+        # 获取现有的 params
+        params = cleaned.get("params", {}) if "params" in cleaned else cleaned
+        
+        # 2. 针对 OpenAI o1/o3 推理模型进行深度参数对正
+        if is_o_series:
+            # o1/o3 不支持非 1.0 (或不能显式设定 temperature != 1.0)，删除 temperature 最为稳妥
+            if "temperature" in params:
+                del params["temperature"]
+            if "temperature" in cleaned:
+                del cleaned["temperature"]
+                
+            # o1/o3 废弃了 max_tokens，强推 max_completion_tokens
+            if "max_tokens" in params:
+                params["max_completion_tokens"] = params.pop("max_tokens")
+            if "max_tokens" in cleaned:
+                cleaned["max_completion_tokens"] = cleaned.pop("max_tokens")
+                
+            # 整理 system/developer 消息角色兼容性
+            messages = cleaned.get("messages", [])
+            if messages:
+                for idx, msg in enumerate(messages):
+                    if msg.get("role") == "system":
+                        # o1-mini 和 o1-preview 早期版本完全不支持 system / developer 消息，必须改写为 user
+                        if "o1-mini" in model_lower or "o1-preview" in model_lower:
+                            msg["role"] = "user"
+                        else:
+                            # 较新 o1/o3 模型官方支持 developer 角色
+                            msg["role"] = "developer"
+        else:
+            # 3. 非 o1/o3 通用大模型（如 GPT-4o, DeepSeek, Claude, Llama, Qwen 等）
+            # 不支持 max_completion_tokens，必须回退为 max_tokens
+            if "max_completion_tokens" in params:
+                params["max_tokens"] = params.pop("max_completion_tokens")
+            if "max_completion_tokens" in cleaned:
+                cleaned["max_tokens"] = cleaned.pop("max_completion_tokens")
+                
+            # 恢复或确保 system 消息使用常规 system 角色
+            messages = cleaned.get("messages", [])
+            if messages:
+                for msg in messages:
+                    if msg.get("role") == "developer":
+                        msg["role"] = "system"
+
+        # 4. 推理思维链参数精细适配 (整合并升级 assemble_reasoning_params 逻辑)
+        # 获取现有的推理控制设置
+        reasoning_enabled = params.get("enable_thinking") or params.get("think") or False
+        reasoning_effort = params.get("reasoning_effort", "medium")
+        
+        # 彻底清洗掉非标准推理参数，防止普通模型报错
+        for k in ["enable_thinking", "think", "thinking_budget", "reasoning_effort", "reasoning"]:
+            if k in params: del params[k]
+            if k in cleaned: del cleaned[k]
+
+        # 根据不同平台的偏好注入受控参数
+        if "openrouter" in ac_name.lower():
+            params["reasoning"] = {"enabled": reasoning_enabled, "effort": reasoning_effort}
+        elif "together" in ac_name.lower():
+            params["reasoning"] = {"enabled": reasoning_enabled}
+            if reasoning_enabled:
+                params["reasoning_effort"] = reasoning_effort
+        elif "siliconflow" in ac_name.lower() or "silicon" in url:
+            params["thinking_budget"] = 1024 if reasoning_enabled else 0
+        elif "ollama" in ac_name.lower() or "ollama" in url:
+            params["think"] = reasoning_enabled
+            params["thinking"] = reasoning_enabled
+        elif is_lmstudio:
+            params.update({
+                "enable_thinking": reasoning_enabled,
+                "think": reasoning_enabled,
+                "thinking_budget": 1024 if reasoning_enabled else 0,
+                "reasoning_effort": "on" if reasoning_enabled else "off"
+            })
+        elif is_o_series and is_openai_official:
+            if reasoning_enabled:
+                params["reasoning_effort"] = reasoning_effort
+        else:
+            if "r1" in model_lower or "reasoning" in model_lower or reasoning_enabled:
+                params.update({
+                    "enable_thinking": reasoning_enabled,
+                    "think": reasoning_enabled,
+                    "thinking_budget": 1024 if reasoning_enabled else 0
+                })
+                if is_lmstudio:
+                    params["reasoning_effort"] = "on" if reasoning_enabled else "off"
+
+        # 5. 回写 params 并进行二次深层校验
+        if "params" in cleaned:
+            cleaned["params"] = params
+        else:
+            cleaned.update(params)
+            
+        return cleaned
+

@@ -8,6 +8,10 @@ from core.adapters.ai.tool_registry import ToolRegistry
 from core.adapters.ai.hitl import active_hitl_sessions
 from core.adapters.ai.tool_runner import call_llm_stream
 
+# 📁 [V76.5] 内存补丁缓存管理器，用于存放临时执行成功的 patch 内容以便通过 /api/agent/rollback 执行人类治理回滚
+# 格式: { patch_id: { "relative_path": relative_path, "search_content": search_content, "replace_content": replace_content } }
+active_patches = {}
+
 logger = logging.getLogger(__name__)
 
 class AutonomousAgent:
@@ -138,6 +142,30 @@ class AutonomousAgent:
                             result_str = "Error: Execution blocked by human override."
                     else:
                         result_str = self.registry.execute_tool(event.name, event.arguments)
+                    
+                    # 🌟 捕获成功执行的 patch_document 并抛出包含 UUID 的 patch_applied 事件，用于前台可视化 Diff 与一键撤回
+                    if event.name == "patch_document" and result_str and result_str.startswith("Successfully patched"):
+                        patch_id = str(uuid.uuid4())
+                        relative_path = event.arguments.get("relative_path")
+                        search_content = event.arguments.get("search_content")
+                        replace_content = event.arguments.get("replace_content")
+                        
+                        # 写入全局缓存供 API 回退接口调用
+                        active_patches[patch_id] = {
+                            "relative_path": relative_path,
+                            "search_content": search_content,
+                            "replace_content": replace_content
+                        }
+                        
+                        # 特殊 yield 给 SSE 状态机
+                        yield {
+                            "type": "patch_applied",
+                            "patch_id": patch_id,
+                            "relative_path": relative_path,
+                            "search_content": search_content,
+                            "replace_content": replace_content,
+                            "message": result_str
+                        }
                     
                     logger.debug(f"🛠️ [Agent Loop] Result: {result_str[:100]}...")
                     messages.append({"role": "tool", "tool_call_id": event.id, "name": event.name, "content": result_str})

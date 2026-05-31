@@ -114,3 +114,59 @@ async def authorize_agent_task(request: AgentAuthorizeRequest):
     session["event"].set()  # 解锁 asyncio.Event
     
     return {"status": "success", "decision": request.decision}
+
+class AgentRollbackRequest(BaseModel):
+    patch_id: str
+
+@router.post("/rollback")
+async def rollback_agent_patch(request: AgentRollbackRequest):
+    """
+    🏢 物理逆转与一键撤销指定的微创补丁 (Rollback) (V76.6)
+    """
+    from core.adapters.ai.agent_loop import active_patches
+    if request.patch_id not in active_patches:
+        raise HTTPException(status_code=404, detail="找不到对应的补丁记录，或补丁已过期/已被回滚。")
+        
+    patch = active_patches[request.patch_id]
+    rel_path = patch["relative_path"]
+    search_content = patch["search_content"]
+    replace_content = patch["replace_content"]
+    
+    from core.adapters.ai.tools.vault_service import get_secure_vault_path, fuzzy_match_document, verify_sandbox_path
+    import os
+    
+    try:
+        vault_path = get_secure_vault_path()
+        full_path, resolved_rel, err_msg = fuzzy_match_document(vault_path, rel_path)
+        if err_msg or not full_path:
+            raise Exception(err_msg or "无法定位该原稿文件。")
+            
+        # 🛡️ 物理越界校验，防止沙箱穿越逃逸
+        if not verify_sandbox_path(vault_path, full_path):
+            raise Exception("Access denied. Path traversal blocked.")
+            
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # 物理唯一性精准匹配，若被二次修改导致无匹配或多匹配，为防误伤予以拒绝并安全自愈拦截
+        occurrences = content.count(replace_content)
+        if occurrences == 0:
+            raise Exception("文件当前内容已被后续修改，无法精准定位需撤销的补丁块，已物理拦截回滚。")
+        elif occurrences > 1:
+            raise Exception("定位的补丁内容在文件中有多个完全相同的复本，为防误伤已物理拦截回退。")
+            
+        # 物理逆转还原
+        new_content = content.replace(replace_content, search_content, 1)
+        with open(full_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+            
+        # 回撤成功后清理内存缓存，物理保证单次消费
+        del active_patches[request.patch_id]
+        
+        return {
+            "status": "success",
+            "message": f"已成功物理逆转回滚原稿文件 '{resolved_rel}' 的补丁更改！"
+        }
+    except Exception as e:
+        logger.error(f"❌ [Rollback Error] Failed to rollback patch {request.patch_id}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))

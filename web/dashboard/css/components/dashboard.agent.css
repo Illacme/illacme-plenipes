@@ -1,6 +1,6 @@
 /* 🏢 Illacme Plenipes - Sovereign Copilot Agent CSS (SOP Compliant) */
 .agent-pod {
-    display: flex; flex-direction: column; height: 420px; margin-bottom: 15px;
+    display: flex; flex-direction: column; flex: 1 !important; min-height: 380px; margin-bottom: 15px;
     border: 1px solid var(--border-glow); background: rgba(0, 15, 30, 0.4);
     box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.05); padding: 0 !important;
 }
@@ -175,4 +175,6 @@
     color: var(--accent-secondary) !important;
     text-shadow: 0 0 8px var(--accent-secondary);
 }
+
+
 

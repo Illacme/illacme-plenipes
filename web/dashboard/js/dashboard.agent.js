@@ -164,11 +164,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 📡 [V76.9] 物理状态栏联动切换：点击底部状态栏审计日志，动态切换右边栏审计日志模块的显示与隐藏
+    const summaryText = document.getElementById('audit-summary-text');
+    const auditFeedPod = document.getElementById('audit-feed-pod');
+    if (summaryText && auditFeedPod) {
+        // 给状态栏文字追加 pointer 手势与悬浮气泡提示
+        summaryText.style.cursor = 'pointer';
+        summaryText.title = "点击以切换右边栏审计日志模块显示/隐藏";
+        
+        summaryText.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = auditFeedPod.style.display === 'none';
+            if (isHidden) {
+                // 展现审计模块，高度通过 flex 机制优雅折收
+                auditFeedPod.style.display = 'flex';
+                summaryText.style.textShadow = '0 0 10px var(--accent-secondary)';
+                
+                // 滚动到底部以展现最新日志
+                const auditFeed = document.getElementById('audit-feed');
+                if (auditFeed) auditFeed.scrollTop = 0;
+            } else {
+                // 重新收起隐藏，AI 模块独占 100%
+                auditFeedPod.style.display = 'none';
+                summaryText.style.textShadow = '';
+            }
+        });
+    }
+
     // 渲染流式状态机事件
     function renderStreamEvent(data) {
         if (data.type === 'status') sa.render.appendMessage(data.message, 'system-msg');
         else if (data.type === 'step') sa.render.appendMessage(data.message, 'tool-msg');
         else if (data.type === 'final') sa.render.appendMessage(data.message, 'final-msg');
+        else if (data.type === 'patch_applied') {
+            sa.render.renderPatchDiff(data);
+        }
         else if (data.type === 'hitl_required') {
             sa.render.appendMessage(data.message, 'system-msg');
             sa.hitl.showDialog(data);

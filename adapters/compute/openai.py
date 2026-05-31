@@ -131,6 +131,10 @@ class OpenAICompatibleTranslator(BaseTranslator):
             **payload.get("params", {})
         }
 
+        # 🏢 [AEL-Iter-v77.12] 算力洗涤：对同步调用载荷进行强制智能参数对准
+        from core.adapters.ai.payload_manager import PayloadManager
+        openai_payload = PayloadManager.align_and_clean_payload(payload.get("model"), openai_payload, self)
+
         # 🚀 [V75.0] 动态工具网关翻译 (Tool Translation Layer)
         tools = payload.get("tools", [])
         if tools:
