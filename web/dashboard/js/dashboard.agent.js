@@ -46,16 +46,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.initAgentWidescreen(agentPod, agentFeed, document.getElementById('agent-widescreen-toggle-btn'), rightSidebar, settingsPanel, settingsToggleBtn);
     }
 
-    // 🆕 初始化获取大模型元数据并渲染徽章状态
-    async function initModelCapabilities() {
+    // 🆕 初始化获取大模型元数据并渲染徽章状态，挂载至全局总线以供重扫使用
+    window.SovereignAgent.initModelCapabilities = async function() {
         try {
             const data = await sa.api.fetchModelInfo();
             sa.render.updateCapabilities(data);
         } catch (e) {
             sa.render.showNotReadyState();
         }
-    }
-    initModelCapabilities();
+        // 🚀 [AEL-Iter-v77.13] 启动可用性扫描与诊断引导自愈探针
+        if (window.ComputePrecheck && typeof window.ComputePrecheck.run === 'function') {
+            window.ComputePrecheck.run(null);
+        }
+    };
+    window.SovereignAgent.initModelCapabilities();
 
     // 点击推荐指令直接填入并聚焦
     if (agentFeed) {
