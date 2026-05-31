@@ -224,10 +224,13 @@
                 <div class="patch-diff-header" style="border-bottom: 1px solid hsla(0, 0%, 100%, 0.1); padding-bottom: 6px;">
                     <span class="patch-icon" style="filter: drop-shadow(0 0 4px ${titleColor});">📡</span>
                     <span class="patch-title" style="color: ${titleColor}; font-weight: bold; font-size: 0.74rem;">${titleText}</span>
-                    <span class="patch-file" style="color: ${titleColor}; background: hsla(0, 0%, 100%, 0.05); border-color: hsla(0, 0%, 100%, 0.15);">${primaryId.toUpperCase()}</span>
                 </div>
                 <div style="font-size: 0.7rem; line-height: 1.5; color: var(--text-bright); margin-top: 8px;">
-                    <p style="margin: 0 0 6px 0; opacity: 0.9;"><strong>诊断详情：</strong></p>
+                    <p style="margin: 0 0 6px 0; opacity: 0.9;">
+                        <strong>算力节点：</strong> 
+                        <code style="color: var(--accent-secondary); background: hsla(0, 0%, 100%, 0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid hsla(0, 0%, 100%, 0.1); font-family: var(--font-mono); font-size: 0.64rem;">${primaryId.toUpperCase()}</code>
+                    </p>
+                    <p style="margin: 6px 0 6px 0; opacity: 0.9;"><strong>诊断详情：</strong></p>
                     <p style="margin: 4px 0 8px 0; font-family: var(--font-mono); background: hsla(0, 0%, 0%, 0.35); padding: 8px; border-radius: 6px; border: 1px solid hsla(0, 0%, 100%, 0.05); color: #ffbbbb; word-break: break-all; font-size: 0.66rem;">
                         ${errorMsg}
                     </p>
