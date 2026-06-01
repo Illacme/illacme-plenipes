@@ -17,38 +17,93 @@
 }
 
 :root {
-    --bg-deep: #030308;
-    --accent-primary: #a34cff;
-    --accent-secondary: #00f2ff;
+    --bg-deep: hsl(240, 43%, 2%);
+    --accent-primary: hsl(267, 100%, 65%);
+    --accent-secondary: hsl(181, 100%, 50%);
     --text-bright: #ffffff;
     --color-white: #ffffff;
     --color-black: #000000;
-    --text-dim: #94a3b8;
-    --glass-bg: rgba(13, 14, 28, 0.7);
+    --text-dim: hsl(215, 20%, 65%);
+    --glass-bg: rgba(0, 0, 0, 0.7);
     --glass-border: rgba(255, 255, 255, 0.15);
     --glass-highlight: rgba(255, 255, 255, 0.1);
-    --shadow-glow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(163, 76, 255, 0.2);
-    --gradient-primary: linear-gradient(135deg, #a34cff, #00e5ff);
-    --neon-purple: #a34cff;
-    --neon-cyan: #00f2ff;
+    --shadow-glow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px hsla(267, 100%, 65%, 0.2);
+    --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    --neon-purple: hsl(267, 100%, 65%);
+    --neon-cyan: hsl(181, 100%, 50%);
     
     /* 🆕 补充扩充的指示灯颜色与高饱和霓虹色 */
-    --neon-green: #00ff88;
-    --neon-amber: #ffaa00;
-    --neon-red: #ff4d4d;
+    --neon-green: hsl(152, 100%, 50%);
+    --neon-amber: hsl(40, 100%, 50%);
+    --neon-red: hsl(0, 100%, 65%);
     
     /* 🆕 霓虹青色不同透明度的色彩 Token（消除局部样式硬编码） */
-    --neon-cyan-40: rgba(0, 242, 255, 0.4);
-    --neon-cyan-25: rgba(0, 242, 255, 0.25);
-    --neon-cyan-15: rgba(0, 242, 255, 0.15);
-    --neon-cyan-10: rgba(0, 242, 255, 0.10);
-    --neon-cyan-05: rgba(0, 242, 255, 0.05);
+    --neon-cyan-40: hsla(181, 100%, 50%, 0.4);
+    --neon-cyan-25: hsla(181, 100%, 50%, 0.25);
+    --neon-cyan-15: hsla(181, 100%, 50%, 0.15);
+    --neon-cyan-10: hsla(181, 100%, 50%, 0.10);
+    --neon-cyan-05: hsla(181, 100%, 50%, 0.05);
     
     /* 🆕 危险状态与红色透明度 Token */
     --danger-color: var(--neon-red);
-    --danger-border: rgba(255, 77, 77, 0.3);
-    --danger-hover-bg: rgba(255, 77, 77, 0.1);
-    
+    --danger-border: hsla(0, 100%, 65%, 0.3);
+    --danger-hover-bg: hsla(0, 100%, 65%, 0.1);
+
+    /* 🆕 琥珀/橙色 Token (Autopilot / Loading 状态) */
+    --accent-orange: hsl(37, 100%, 50%);
+    --accent-orange-05: hsla(37, 100%, 50%, 0.05);
+    --accent-orange-15: hsla(37, 100%, 50%, 0.15);
+    --accent-orange-30: hsla(37, 100%, 50%, 0.30);
+
+    /* 🆕 主色系透明度 Token (accent-primary alpha 梯度) */
+    --accent-primary-05: hsla(267, 100%, 65%, 0.05);
+    --accent-primary-10: hsla(267, 100%, 65%, 0.1);
+    --accent-primary-20: hsla(267, 100%, 65%, 0.2);
+
+    /* 🆕 霓虹青色扩展透明度梯度 */
+    --neon-cyan-02: hsla(181, 100%, 50%, 0.02);
+    --neon-cyan-03: hsla(181, 100%, 50%, 0.03);
+    --neon-cyan-04: hsla(181, 100%, 50%, 0.04);
+    --neon-cyan-06: hsla(181, 100%, 50%, 0.06);
+    --neon-cyan-08: hsla(181, 100%, 50%, 0.08);
+    --neon-cyan-12: hsla(181, 100%, 50%, 0.12);
+    --neon-cyan-18: hsla(181, 100%, 50%, 0.18);
+    --neon-cyan-20: hsla(181, 100%, 50%, 0.20);
+    --neon-cyan-22: hsla(181, 100%, 50%, 0.22);
+    --neon-cyan-28: hsla(181, 100%, 50%, 0.28);
+    --neon-cyan-30: hsla(181, 100%, 50%, 0.30);
+    --neon-cyan-35: hsla(181, 100%, 50%, 0.35);
+    --neon-cyan-45: hsla(181, 100%, 50%, 0.45);
+    --neon-cyan-50: hsla(181, 100%, 50%, 0.50);
+    --neon-cyan-65: hsla(181, 100%, 50%, 0.65);
+    --neon-cyan-80: hsla(181, 100%, 50%, 0.80);
+
+    /* 🆕 深色底色 Token (Agent UI 背景混合) */
+    --bg-agent-dark: hsla(210, 100%, 6%, 0.4);
+    --bg-agent-input: hsla(210, 100%, 3%, 0.6);
+    --bg-agent-deep: hsla(210, 100%, 4%, 0.8);
+    --bg-agent-hover: hsla(210, 100%, 8%, 0.9);
+    --bg-agent-thinking: hsla(200, 100%, 8%, 0.45);
+
+    /* 🆕 Diff 视觉色彩 Token (Patch 卡片用) */
+    --diff-card-bg-start: hsla(210, 100%, 6%, 0.65);
+    --diff-card-bg-end: hsla(210, 100%, 12%, 0.45);
+    --diff-body-bg: hsla(210, 100%, 2%, 0.85);
+    --diff-del-bg: hsla(4, 82%, 63%, 0.12);
+    --diff-del-color: hsla(0, 100%, 70%, 0.95);
+    --diff-del-marker: hsl(0, 100%, 70%);
+    --diff-success-bg: hsla(122, 39%, 49%, 0.06);
+    --diff-success-border: hsla(122, 39%, 49%, 0.4);
+    --diff-success-color: hsla(91, 54%, 53%, 0.95);
+    --diff-success-glow: hsla(122, 39%, 49%, 0.1);
+    --diff-fail-bg: hsla(4, 82%, 63%, 0.06);
+    --diff-fail-border: hsla(4, 82%, 63%, 0.5);
+    --diff-fail-color: hsla(0, 100%, 70%, 0.95);
+    --diff-fail-glow: hsla(4, 82%, 63%, 0.2);
+
+    /* 🆕 Agent 代码块色彩 Token */
+    --code-text: hsl(215, 28%, 91%);
+
     /* 🆕 高级微观发光阴影 */
     --shadow-neon-cyan: 0 0 8px var(--neon-cyan);
     --shadow-neon-amber: 0 0 8px var(--neon-amber);
@@ -77,8 +132,8 @@
     --bg-mode-solid-rgb: 10, 10, 20;
     --bg-compute-card-rgb: 20, 20, 35;
     --bg-compute-grid-rgb: 30, 30, 45;
-    --text-slate-bright: #f8fafc;
-    --text-light-gray: #cccccc;
+    --text-slate-bright: hsl(210, 40%, 98%);
+    --text-light-gray: hsl(0, 0%, 80%);
 
     /* 🆕 Stage 2.6 标准化核心 RGB 变量收拢 */
     --accent-primary-rgb: 163, 76, 255;

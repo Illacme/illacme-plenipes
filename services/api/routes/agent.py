@@ -1,7 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import asyncio
 import json
 
 from core.runtime.engine_singleton import get_global_engine
@@ -133,7 +132,6 @@ async def rollback_agent_patch(request: AgentRollbackRequest):
     replace_content = patch["replace_content"]
     
     from core.adapters.ai.tools.vault_service import get_secure_vault_path, fuzzy_match_document, verify_sandbox_path
-    import os
     
     try:
         vault_path = get_secure_vault_path()

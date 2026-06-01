@@ -122,6 +122,7 @@ def main():
         # 排除列表：全局变量定义文件与底座文件，以及旧 of 单体文件
         EXEMPT_CSS = [
             "web/dashboard/css/dashboard.base.css",
+            "web/dashboard/css/dashboard.tokens.css",   # 🏗️ Token 定义源文件，必须包含字面色值
             "web/dashboard/css/components/glass.css"        # 允许底座材质包含固定的 255 半透明色值
         ]
         

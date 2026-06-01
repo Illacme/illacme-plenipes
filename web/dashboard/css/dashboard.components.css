@@ -38,7 +38,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
 }
 .primary-btn:hover:not(:disabled) { filter: brightness(1.1); background: var(--accent-primary); }
 
-.secondary-btn { background: rgba(163, 76, 255, 0.1); border-color: rgba(163, 76, 255, 0.2); color: var(--accent-primary); }
+.secondary-btn { background: var(--accent-primary-10); border-color: var(--accent-primary-20); color: var(--accent-primary); }
 .action-btn { padding: 6px 12px; font-size: 0.75rem; background: var(--white-03); }
 .action-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); }
 .mini-btn { padding: 4px 8px; font-size: 0.65rem; border-radius: 4px; }
@@ -59,8 +59,8 @@ input[type="text"], input[type="password"], input[type="number"], select, textar
 
 input:focus, select:focus, textarea:focus {
     border-color: var(--accent-primary);
-    background: rgba(163, 76, 255, 0.05);
-    box-shadow: 0 0 0 3px rgba(163, 76, 255, 0.1);
+    background: var(--accent-primary-05);
+    box-shadow: 0 0 0 3px var(--accent-primary-10);
 }
 
 /* 3. 搜索框规范 (Search Box) */

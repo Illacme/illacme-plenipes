@@ -1,6 +1,6 @@
 /* 🏢 Illacme Plenipes - Sovereign Copilot (Agent) Widescreen CSS - SOP Compliant */
 /* 职责：独立呈现 Sovereign Copilot 大屏模式下的双轨并列、背景氛围高斯模糊及精致胶囊控制台样式分片。*/
-/* 遵循 SOP-01 核心复杂度红线与 SOP-03 色彩治理规范 (使用 HSLA 取代 RGBA 以防硬编码检测) */
+/* 遵循 SOP-01 核心复杂度红线与 SOP-03 色彩治理规范 (全部使用 :root Token 变量) */
 
 /* 1. Backdrop Overlay */
 .agent-widescreen-backdrop {
@@ -9,7 +9,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: hsla(210, 30%, 4%, 0.35);
+    background: var(--bg-agent-dark);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     z-index: 999;
@@ -32,11 +32,11 @@
     height: 85vh !important;
     z-index: 1000 !important;
     margin: 0 !important;
-    border: 1px solid hsla(180, 100%, 50%, 0.35) !important;
-    background: hsla(210, 35%, 6%, 0.88) !important;
-    box-shadow: 0 25px 60px hsla(0, 0%, 0%, 0.95), 
-                0 0 35px hsla(180, 100%, 50%, 0.18),
-                inset 0 0 30px hsla(180, 100%, 50%, 0.04) !important;
+    border: 1px solid var(--neon-cyan-35) !important;
+    background: var(--bg-agent-dark) !important;
+    box-shadow: 0 25px 60px var(--black-95), 
+                0 0 35px var(--neon-cyan-18),
+                inset 0 0 30px var(--neon-cyan-04) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     border-radius: 12px !important;
@@ -98,7 +98,7 @@
 
 .agent-feed-column.left-col {
     flex: 0 0 35% !important;
-    border-right: 1px dashed hsla(180, 100%, 50%, 0.15);
+    border-right: 1px dashed var(--neon-cyan-15);
     padding-right: 16px;
 }
 
@@ -119,11 +119,11 @@
     width: 4px;
 }
 .agent-feed-column::-webkit-scrollbar-track {
-    background: hsla(0, 0%, 0%, 0.2);
+    background: var(--black-20);
     border-radius: 2px;
 }
 .agent-feed-column::-webkit-scrollbar-thumb {
-    background: hsla(180, 100%, 50%, 0.15);
+    background: var(--neon-cyan-15);
     border-radius: 2px;
     transition: var(--transition-fast);
 }
@@ -148,7 +148,7 @@
     font-size: 0.72rem;
     font-family: var(--font-mono);
     opacity: 0.35;
-    text-shadow: 0 0 10px hsla(180, 100%, 50%, 0.35);
+    text-shadow: 0 0 10px var(--neon-cyan-35);
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     text-align: center;
@@ -189,10 +189,10 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: hsla(210, 30%, 4%, 0.5) !important;
+    background: var(--bg-agent-dark) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
-    border-top: 1px solid hsla(180, 100%, 50%, 0.1) !important;
+    border-top: 1px solid var(--neon-cyan-10) !important;
 }
 .agent-pod.widescreen-mode .agent-input-wrapper::before {
     left: calc(50% - 350px + 15px) !important;
@@ -205,24 +205,24 @@
     max-width: 700px !important;
     width: 100% !important;
     margin: 0 auto !important;
-    background: hsla(210, 35%, 5%, 0.8) !important;
-    border: 1px solid hsla(180, 100%, 50%, 0.22) !important;
-    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.6), 
-                inset 0 0 12px hsla(180, 100%, 50%, 0.04) !important;
+    background: var(--bg-agent-deep) !important;
+    border: 1px solid var(--neon-cyan-22) !important;
+    box-shadow: 0 8px 32px var(--black-60), 
+                inset 0 0 12px var(--neon-cyan-04) !important;
     padding: 12px 16px 12px 42px !important;
     border-radius: 24px !important; /* Premium Capsule Form */
     font-size: 0.82rem !important;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 .agent-pod.widescreen-mode #agent-command-input:hover {
-    border-color: hsla(180, 100%, 50%, 0.45) !important;
-    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.65), 
-                0 0 12px hsla(180, 100%, 50%, 0.15),
-                inset 0 0 12px hsla(180, 100%, 50%, 0.06) !important;
+    border-color: var(--neon-cyan-45) !important;
+    box-shadow: 0 8px 32px var(--black-60), 
+                0 0 12px var(--neon-cyan-15),
+                inset 0 0 12px var(--neon-cyan-06) !important;
 }
 .agent-pod.widescreen-mode #agent-command-input:focus {
     border-color: var(--accent-secondary) !important;
-    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.7), 
-                0 0 20px hsla(180, 100%, 50%, 0.35),
-                inset 0 0 15px hsla(180, 100%, 50%, 0.08) !important;
+    box-shadow: 0 8px 32px var(--black-80), 
+                0 0 20px var(--neon-cyan-35),
+                inset 0 0 15px var(--neon-cyan-08) !important;
 }

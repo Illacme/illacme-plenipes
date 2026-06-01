@@ -1,10 +1,10 @@
 /* 🛠️ [V76.8] 微创补丁可视化 Diff 对照与交互撤销面板 (Visual Diff Box) CSS 规范 */
 .patch-diff-card {
-    border: 1px solid rgba(0, 242, 255, 0.2) !important;
-    background: linear-gradient(135deg, rgba(0, 15, 30, 0.65), rgba(0, 30, 60, 0.45)) !important;
-    box-shadow: 0 8px 32px 0 hsla(0, 0%, 0%, 0.37), 
-                inset 0 0 16px rgba(0, 242, 255, 0.05),
-                0 0 15px rgba(0, 242, 255, 0.08) !important;
+    border: 1px solid var(--neon-cyan-20) !important;
+    background: linear-gradient(135deg, var(--diff-card-bg-start), var(--diff-card-bg-end)) !important;
+    box-shadow: 0 8px 32px 0 var(--black-40), 
+                inset 0 0 16px var(--neon-cyan-05),
+                0 0 15px var(--neon-cyan-08) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border-radius: 8px !important;
@@ -19,10 +19,10 @@
 }
 
 .patch-diff-card:hover {
-    border-color: rgba(0, 242, 255, 0.4) !important;
-    box-shadow: 0 12px 40px 0 hsla(0, 0%, 0%, 0.45), 
-                inset 0 0 20px rgba(0, 242, 255, 0.08),
-                0 0 25px rgba(0, 242, 255, 0.18) !important;
+    border-color: var(--neon-cyan-40) !important;
+    box-shadow: 0 12px 40px 0 var(--black-40), 
+                inset 0 0 20px var(--neon-cyan-08),
+                0 0 25px var(--neon-cyan-18) !important;
     transform: translateY(-2px);
 }
 
@@ -33,7 +33,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-bright);
-    border-bottom: 1px solid rgba(0, 242, 255, 0.15);
+    border-bottom: 1px solid var(--neon-cyan-15);
     padding-bottom: 8px;
 }
 
@@ -44,16 +44,16 @@
 
 .patch-title {
     flex-grow: 1;
-    text-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
+    text-shadow: 0 0 8px var(--neon-cyan-20);
 }
 
 .patch-file {
     font-family: var(--font-mono);
     color: var(--accent-secondary);
-    background: rgba(0, 242, 255, 0.1);
+    background: var(--neon-cyan-10);
     padding: 2px 6px;
     border-radius: 4px;
-    border: 1px solid rgba(0, 242, 255, 0.2);
+    border: 1px solid var(--neon-cyan-20);
     font-size: 0.68rem;
     max-width: 140px;
     overflow: hidden;
@@ -62,8 +62,8 @@
 }
 
 .patch-diff-body {
-    background: rgba(0, 5, 10, 0.85);
-    border: 1px solid hsla(0, 0%, 100%, 0.05);
+    background: var(--diff-body-bg);
+    border: 1px solid var(--white-05);
     border-radius: 6px;
     overflow: hidden;
     display: flex;
@@ -71,7 +71,7 @@
     font-family: var(--font-mono) !important;
     font-size: 0.72rem;
     line-height: 1.5;
-    box-shadow: inset 0 2px 6px hsla(0, 0%, 0%, 0.5);
+    box-shadow: inset 0 2px 6px var(--black-50);
     min-height: 48px !important; /* 物理防御：锁定最小高度，确保极端挤压下依然至少完整展露两行代码 */
     max-height: 110px !important; /* 窄屏边栏模式高度优化，防止过度侵占信息流视口 */
     overflow-y: auto;
@@ -83,7 +83,7 @@
     padding: 4px 10px;
     white-space: pre-wrap;
     word-break: break-all;
-    border-bottom: 1px solid hsla(0, 0%, 100%, 0.02);
+    border-bottom: 1px solid var(--white-02);
 }
 
 .patch-diff-line:last-child {
@@ -103,16 +103,16 @@
 
 /* 红色删除行样式 */
 .patch-diff-line.deletion {
-    background: rgba(239, 83, 80, 0.12) !important;
-    color: rgba(255, 100, 100, 0.95) !important;
+    background: var(--diff-del-bg) !important;
+    color: var(--diff-del-color) !important;
 }
 .patch-diff-line.deletion .line-marker {
-    color: rgba(255, 80, 80, 1);
+    color: var(--diff-del-marker);
 }
 
 /* 绿色新增行样式 */
 .patch-diff-line.addition {
-    background: rgba(0, 242, 255, 0.08) !important; /* 使用系统既有的青色来代表新增，与主色彩对齐 */
+    background: var(--neon-cyan-08) !important; /* 使用系统既有的青色来代表新增，与主色彩对齐 */
     color: var(--accent-secondary) !important;
 }
 .patch-diff-line.addition .line-marker {
@@ -128,8 +128,8 @@
 
 /* 回滚交互按钮样式 */
 .btn-rollback {
-    background: rgba(0, 242, 255, 0.04);
-    border: 1px solid rgba(0, 242, 255, 0.3);
+    background: var(--neon-cyan-04);
+    border: 1px solid var(--neon-cyan-30);
     border-radius: 4px;
     color: var(--accent-secondary);
     font-family: var(--font-mono);
@@ -142,13 +142,13 @@
     gap: 6px;
     outline: none;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 0 8px rgba(0, 242, 255, 0.05);
+    box-shadow: 0 0 8px var(--neon-cyan-05);
 }
 
 .btn-rollback:hover:not(:disabled) {
-    background: rgba(0, 242, 255, 0.12);
+    background: var(--neon-cyan-12);
     border-color: var(--accent-secondary);
-    box-shadow: 0 0 16px rgba(0, 242, 255, 0.25);
+    box-shadow: 0 0 16px var(--neon-cyan-25);
     transform: scale(1.02);
 }
 
@@ -163,10 +163,10 @@
 
 /* 正在加载状态 */
 .btn-rollback.loading {
-    border-color: var(--accent-orange, #ff9d00) !important;
-    color: var(--accent-orange, #ff9d00) !important;
-    background: rgba(255, 157, 0, 0.05) !important;
-    box-shadow: 0 0 12px rgba(255, 157, 0, 0.15) !important;
+    border-color: var(--accent-orange) !important;
+    color: var(--accent-orange) !important;
+    background: var(--accent-orange-05) !important;
+    box-shadow: 0 0 12px var(--accent-orange-15) !important;
 }
 .btn-rollback.loading .btn-icon {
     animation: rotateLoading 1.2s infinite linear;
@@ -179,8 +179,8 @@
 
 /* 物理逆转成功后的整体褪色与删除线视觉效果 */
 .patch-diff-card.rolled-back {
-    border-color: hsla(0, 0%, 100%, 0.08) !important;
-    box-shadow: 0 4px 16px hsla(0, 0%, 0%, 0.2) !important;
+    border-color: var(--white-08) !important;
+    box-shadow: 0 4px 16px var(--black-20) !important;
     opacity: 0.65;
 }
 
@@ -191,18 +191,18 @@
 }
 
 .btn-rollback.success {
-    background: rgba(76, 175, 80, 0.06) !important;
-    border-color: rgba(76, 175, 80, 0.4) !important;
-    color: rgba(139, 195, 74, 0.95) !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.1) !important;
+    background: var(--diff-success-bg) !important;
+    border-color: var(--diff-success-border) !important;
+    color: var(--diff-success-color) !important;
+    box-shadow: 0 0 10px var(--diff-success-glow) !important;
 }
 
 /* 回滚失败的瞬时自愈红警状态 */
 .btn-rollback.failed {
-    background: rgba(239, 83, 80, 0.06) !important;
-    border-color: rgba(239, 83, 80, 0.5) !important;
-    color: rgba(255, 100, 100, 0.95) !important;
-    box-shadow: 0 0 12px rgba(239, 83, 80, 0.2) !important;
+    background: var(--diff-fail-bg) !important;
+    border-color: var(--diff-fail-border) !important;
+    color: var(--diff-fail-color) !important;
+    box-shadow: 0 0 12px var(--diff-fail-glow) !important;
 }
 
 /* ⛶ 大屏极光模式下的微创补丁 Diff 视口上限拓宽，防止大屏滚动受限 */
@@ -219,5 +219,5 @@ body.widescreen .patch-diff-body {
 
 #audit-summary-text:hover {
     color: var(--accent-secondary) !important;
-    text-shadow: 0 0 8px var(--accent-secondary), 0 0 15px rgba(0, 242, 255, 0.4) !important;
+    text-shadow: 0 0 8px var(--accent-secondary), 0 0 15px var(--neon-cyan-40) !important;
 }

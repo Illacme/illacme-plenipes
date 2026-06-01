@@ -1,8 +1,8 @@
 /* 🏢 Illacme Plenipes - Sovereign Copilot Agent CSS (SOP Compliant) */
 .agent-pod {
     display: flex; flex-direction: column; flex: 1 !important; min-height: 380px; margin-bottom: 15px;
-    border: 1px solid var(--border-glow); background: rgba(0, 15, 30, 0.4);
-    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.05); padding: 0 !important;
+    border: 1px solid var(--border-glow); background: var(--bg-agent-dark);
+    box-shadow: inset 0 0 20px var(--neon-cyan-05); padding: 0 !important;
 }
 .agent-pod .pod-header { padding: 12px 15px 0 15px; }
 .agent-feed-container {
@@ -16,20 +16,20 @@
 }
 .agent-msg.system-msg { color: var(--text-dim); font-style: italic; border-left: 2px solid var(--text-dim); }
 .agent-msg.user-msg {
-    align-self: flex-end; background: rgba(0, 242, 255, 0.1);
+    align-self: flex-end; background: var(--neon-cyan-10);
     color: var(--accent-secondary); border-right: 2px solid var(--accent-secondary); text-align: right;
 }
 .agent-msg.tool-msg {
-    color: var(--accent-orange, #ff9d00); background: rgba(255, 157, 0, 0.05);
-    border-left: 2px solid var(--accent-orange, #ff9d00); font-family: var(--font-mono);
+    color: var(--accent-orange); background: var(--accent-orange-05);
+    border-left: 2px solid var(--accent-orange); font-family: var(--font-mono);
 }
 .agent-msg.final-msg {
     color: var(--text-bright); background: color-mix(in srgb, var(--color-white) 5%, transparent);
     border-left: 2px solid var(--text-bright); font-family: var(--font-main); font-size: 0.8rem;
 }
 .agent-input-wrapper {
-    position: relative; padding: 12px 15px; border-top: 1px solid rgba(0, 242, 255, 0.15);
-    background: rgba(0, 5, 15, 0.6); box-shadow: 0 -4px 15px var(--black-40); display: flex; align-items: center;
+    position: relative; padding: 12px 15px; border-top: 1px solid var(--neon-cyan-15);
+    background: var(--bg-agent-input); box-shadow: 0 -4px 15px var(--black-40); display: flex; align-items: center;
 }
 .agent-input-wrapper::before {
     content: ">_"; position: absolute; left: 26px; color: var(--accent-secondary);
@@ -37,27 +37,27 @@
     text-shadow: 0 0 6px var(--accent-secondary); animation: promptBlink 1.2s infinite alternate;
 }
 #agent-command-input {
-    width: 100%; background: rgba(0, 242, 255, 0.03); border: 1px solid rgba(0, 242, 255, 0.25);
+    width: 100%; background: var(--neon-cyan-03); border: 1px solid var(--neon-cyan-25);
     color: var(--text-bright); font-family: var(--font-mono); font-size: 0.8rem;
     padding: 10px 14px 10px 32px; border-radius: 6px; outline: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset 0 1px 3px var(--black-80), 0 0 8px rgba(0, 242, 255, 0.05);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 8px var(--neon-cyan-05);
 }
 #agent-command-input:hover {
-    border-color: rgba(0, 242, 255, 0.5); background: rgba(0, 242, 255, 0.06);
-    box-shadow: inset 0 1px 3px var(--black-80), 0 0 12px rgba(0, 242, 255, 0.15);
+    border-color: var(--neon-cyan-50); background: var(--neon-cyan-06);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 12px var(--neon-cyan-15);
 }
 #agent-command-input:focus {
-    background: rgba(0, 242, 255, 0.08); border-color: var(--accent-secondary);
-    box-shadow: inset 0 1px 3px var(--black-80), 0 0 16px rgba(0, 242, 255, 0.35);
+    background: var(--neon-cyan-08); border-color: var(--accent-secondary);
+    box-shadow: inset 0 1px 3px var(--black-80), 0 0 16px var(--neon-cyan-35);
 }
 .agent-pod.processing {
-    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.1), 0 0 15px rgba(0, 242, 255, 0.2);
+    box-shadow: inset 0 0 20px var(--neon-cyan-10), 0 0 15px var(--neon-cyan-20);
     animation: agentPulse 2s infinite alternate;
 }
 .agent-engine-settings {
     max-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 0 15px;
-    background: rgba(0, 242, 255, 0.02); border-bottom: 0px solid transparent;
+    background: var(--neon-cyan-02); border-bottom: 0px solid transparent;
     font-family: var(--font-mono); font-size: 0.68rem; gap: 0px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0;
 }
@@ -71,41 +71,41 @@
 .switch-slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
     background-color: var(--white-10); transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 9px; border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 9px; border: 1px solid var(--neon-cyan-20);
 }
 .switch-slider:before {
     position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px;
     background-color: var(--text-dim); transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%;
 }
 .switch-container input:checked + .switch-slider {
-    background-color: rgba(0, 242, 255, 0.15); border-color: var(--accent-secondary); box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+    background-color: var(--neon-cyan-15); border-color: var(--accent-secondary); box-shadow: 0 0 8px var(--neon-cyan-30);
 }
 .switch-container input:checked + .switch-slider:before {
     transform: translateX(14px); background-color: var(--accent-secondary); box-shadow: 0 0 5px var(--accent-secondary);
 }
 #agent-reasoning-depth,
 #agent-max-iterations {
-    background: rgba(0, 10, 20, 0.8); color: var(--accent-secondary);
-    border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 4px;
+    background: var(--bg-agent-deep); color: var(--accent-secondary);
+    border: 1px solid var(--neon-cyan-20); border-radius: 4px;
     font-size: 0.68rem; padding: 2px 6px; outline: none; cursor: pointer;
     font-family: var(--font-mono); transition: all 0.2s ease;
     width: 72px; text-align-last: center;
 }
 #agent-reasoning-depth:hover,
-#agent-max-iterations:hover { border-color: var(--accent-secondary); background: rgba(0, 20, 40, 0.9); }
+#agent-max-iterations:hover { border-color: var(--accent-secondary); background: var(--bg-agent-hover); }
 .agent-engine-settings .settings-row .setting-item:first-child { flex: 0 0 106px; justify-content: space-between; }
 .agent-msg.thinking-msg {
-    border: 1px solid rgba(0, 242, 255, 0.12); border-left: 3px solid var(--accent-secondary);
-    background: rgba(0, 20, 40, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--neon-cyan-12); border-left: 3px solid var(--accent-secondary);
+    background: var(--bg-agent-thinking); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border-radius: 6px; margin: 6px 0; padding: 8px 12px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .agent-msg.thinking-msg.streaming {
-    border-color: rgba(0, 242, 255, 0.4); box-shadow: 0 0 12px rgba(0, 242, 255, 0.15), inset 0 0 8px rgba(0, 242, 255, 0.05);
+    border-color: var(--neon-cyan-40); box-shadow: 0 0 12px var(--neon-cyan-15), inset 0 0 8px var(--neon-cyan-05);
     animation: thinkingBorderFlow 2s infinite alternate;
 }
 @keyframes thinkingBorderFlow {
-    0% { border-color: rgba(0, 242, 255, 0.2); box-shadow: 0 0 8px rgba(0, 242, 255, 0.08); }
-    100% { border-color: rgba(0, 242, 255, 0.65); box-shadow: 0 0 16px rgba(0, 242, 255, 0.28); }
+    0% { border-color: var(--neon-cyan-20); box-shadow: 0 0 8px var(--neon-cyan-08); }
+    100% { border-color: var(--neon-cyan-65); box-shadow: 0 0 16px var(--neon-cyan-28); }
 }
 .agent-msg.thinking-msg details { width: 100%; }
 .agent-msg.thinking-msg summary {
@@ -116,27 +116,27 @@
 .agent-msg.thinking-msg summary::after { content: "▼"; font-size: 0.6rem; transition: transform 0.2s ease; color: var(--text-dim); }
 .agent-msg.thinking-msg details[open] summary::after { transform: rotate(180deg); }
 .agent-msg.thinking-msg .thinking-content {
-    margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(0, 242, 255, 0.15);
+    margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--neon-cyan-15);
     color: var(--text-dim); opacity: 0.85; line-height: 1.5; font-size: 0.7rem;
     white-space: pre-wrap; font-family: var(--font-mono); max-height: 150px; overflow-y: auto;
 }
 .agent-msg.thinking-msg .thinking-content::-webkit-scrollbar { width: 4px; }
 .agent-msg.thinking-msg .thinking-content::-webkit-scrollbar-track { background: var(--black-20); border-radius: 2px; }
-.agent-msg.thinking-msg .thinking-content::-webkit-scrollbar-thumb { background: rgba(0, 242, 255, 0.2); border-radius: 2px; }
+.agent-msg.thinking-msg .thinking-content::-webkit-scrollbar-thumb { background: var(--neon-cyan-20); border-radius: 2px; }
 .agent-msg.thinking-msg .thinking-content::-webkit-scrollbar-thumb:hover { background: var(--accent-secondary); }
 .thinking-badge-pulse {
     display: inline-block; width: 6px; height: 6px; background-color: var(--accent-secondary); border-radius: 50%;
     margin-right: 6px; animation: wavePulse 1.5s infinite alternate;
 }
 .clickable-suggestion:hover {
-    background: var(--neon-cyan-20, rgba(0, 242, 255, 0.2)) !important; border-color: var(--accent-secondary) !important;
-    color: var(--text-bright) !important; box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+    background: var(--neon-cyan-20) !important; border-color: var(--accent-secondary) !important;
+    color: var(--text-bright) !important; box-shadow: 0 0 8px var(--neon-cyan-30);
 }
 .switch-container input:checked + .autopilot-slider {
-    background-color: rgba(255, 157, 0, 0.15); border-color: var(--accent-orange, #ff9d00); box-shadow: 0 0 8px rgba(255, 157, 0, 0.3);
+    background-color: var(--accent-orange-15); border-color: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange-30);
 }
 .switch-container input:checked + .autopilot-slider:before {
-    transform: translateX(14px); background-color: var(--accent-orange, #ff9d00); box-shadow: 0 0 5px var(--accent-orange, #ff9d00);
+    transform: translateX(14px); background-color: var(--accent-orange); box-shadow: 0 0 5px var(--accent-orange);
 }
 .model-capability-panel { border-bottom: 1px solid var(--white-08); padding-bottom: 6px; margin-bottom: 4px; width: 100%; }
 .cap-badge {
@@ -144,7 +144,7 @@
     background: var(--white-03); color: var(--text-dim); border: 1px solid var(--white-05); transition: var(--transition-fast); cursor: help;
 }
 .cap-badge.active {
-    color: var(--accent-secondary); background: var(--neon-cyan-05); border-color: var(--neon-cyan-15); text-shadow: 0 0 4px rgba(0, 242, 255, 0.2);
+    color: var(--accent-secondary); background: var(--neon-cyan-05); border-color: var(--neon-cyan-15); text-shadow: 0 0 4px var(--neon-cyan-20);
 }
 .cap-badge.active .dot {
     width: 4px; height: 4px; border-radius: 50%; background-color: var(--accent-secondary);
@@ -154,11 +154,11 @@
 
 /* 🚀 Animations Keyframes */
 @keyframes promptBlink { 0% { opacity: 0.3; } 100% { opacity: 1; text-shadow: 0 0 10px var(--accent-secondary); } }
-@keyframes agentPulse { 0% { border-color: rgba(0, 242, 255, 0.3); } 100% { border-color: rgba(0, 242, 255, 0.8); } }
+@keyframes agentPulse { 0% { border-color: var(--neon-cyan-30); } 100% { border-color: var(--neon-cyan-80); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes wavePulse {
-    0% { transform: scale(0.8); opacity: 0.4; box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
-    100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 6px 2px rgba(0, 242, 255, 0.8); }
+    0% { transform: scale(0.8); opacity: 0.4; box-shadow: 0 0 0 0 var(--neon-cyan-40); }
+    100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 6px 2px var(--neon-cyan-80); }
 }
 @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
 
