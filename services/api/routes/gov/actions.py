@@ -95,6 +95,14 @@ async def trigger_publish(req: Dict[str, Any]) -> Dict[str, Any]:
     engine = get_global_engine()
     if not engine:
         return {"error": "Engine not initialized"}
+    
+    # 🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁 (同步拦截)
+    try:
+        from core.governance.checks.ai import check_ai_availability_or_raise
+        check_ai_availability_or_raise(engine)
+    except RuntimeError as e:
+        return {"status": "error", "message": str(e)}
+
     try:
         mode: str = req.get("mode", "static")
         from core.runtime.orchestrator import start_asynchronous_sync

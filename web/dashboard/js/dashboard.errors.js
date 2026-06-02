@@ -1,0 +1,86 @@
+/**
+ * 🛡️ [V1.0] Illacme Plenipes Global Error Boundary
+ * Catch all unhandled exceptions and render an elegant diagnostic overlay.
+ */
+
+(function () {
+    const ErrorBoundary = {
+        init() {
+            window.addEventListener('error', (event) => {
+                this.handleError(event.error || new Error(event.message || 'Unknown Execution Error'));
+            });
+
+            window.addEventListener('unhandledrejection', (event) => {
+                let error = event.reason;
+                if (!(error instanceof Error)) {
+                    error = new Error(typeof error === 'string' ? error : JSON.stringify(error));
+                }
+                this.handleError(error, 'Unhandled Promise Rejection');
+            });
+            
+            // Expose manual trigger for subsystems like WebGL context lost
+            window.showSystemError = (title, message, stack) => {
+                const err = new Error(message);
+                err.name = title;
+                err.stack = stack || '';
+                this.handleError(err, title);
+            };
+        },
+
+        handleError(error, customTitle) {
+            console.error('[Plenipes Sovereign Guard] Intercepted Error:', error);
+            const title = customTitle || error.name || 'Fatal Error';
+            const message = error.message || 'A critical subsystem encountered an unexpected fault.';
+            const stack = error.stack || 'No stack trace available.';
+
+            this.renderOverlay(title, message, stack);
+        },
+
+        renderOverlay(title, message, stack) {
+            let overlay = document.getElementById('global-error-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'global-error-overlay';
+                overlay.className = 'global-error-overlay';
+                document.body.appendChild(overlay);
+            }
+
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const reloadHint = isMac ? 'Cmd + R' : 'Ctrl + R';
+
+            overlay.innerHTML = `
+                <div class="error-modal-glass">
+                    <div class="error-modal-header">
+                        <span class="error-icon">⚠️</span>
+                        <h2>SYSTEM DEGRADED / 核心子系统异常</h2>
+                    </div>
+                    <div class="error-modal-body">
+                        <div class="error-summary">
+                            <span class="error-badge">${title}</span>
+                            <span class="error-message">${message}</span>
+                        </div>
+                        <div class="error-terminal">
+                            <div class="terminal-header">
+                                <span>DIAGNOSTICS_TRACE.LOG</span>
+                                <button class="mini-btn copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('err-stack').innerText).then(()=>this.innerText='Copied!')">Copy</button>
+                            </div>
+                            <pre id="err-stack"><code>${stack}</code></pre>
+                        </div>
+                    </div>
+                    <div class="error-modal-footer">
+                        <p class="hint">The system has halted faulty operations to prevent data corruption.</p>
+                        <div class="error-actions">
+                            <button class="btn secondary-btn" onclick="document.getElementById('global-error-overlay').style.display='none'">Dismiss Warning</button>
+                            <button class="btn primary-btn error-btn" onclick="window.location.reload()">Reload Subsystem (${reloadHint})</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            overlay.style.display = 'flex';
+        }
+    };
+
+    // Auto-initialize as early as possible
+    ErrorBoundary.init();
+})();

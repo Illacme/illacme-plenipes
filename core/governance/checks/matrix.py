@@ -13,7 +13,7 @@ class MatrixChecker:
         """多语言与 SEO 矩阵审计"""
         res = {"name": "i18n & SEO Matrix", "status": "PASS", "details": []}
         i18n = config.i18n_settings
-        if not i18n.enable_multilingual:
+        if not i18n.enabled:
             res.get('details').append("ℹ️ 多语言引擎未启用。")
             return res
         res.get('details').append(f"🌐 源语种: {i18n.source.lang_code}")

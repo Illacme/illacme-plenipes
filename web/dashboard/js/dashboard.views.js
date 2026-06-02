@@ -36,7 +36,7 @@ window.viewTemplates = {
                         <div class="action-card" onclick="triggerPublish()">
                             <div class="action-icon">🚀</div>
                             <div class="action-text">
-                                <h4>一键出版</h4>
+                                <h4>全域发布</h4>
                                 <p>启动流水线并分发内容</p>
                             </div>
                         </div>

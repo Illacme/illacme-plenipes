@@ -89,7 +89,7 @@ class TestFullChainSovereignty(unittest.TestCase):
                         'graph_json_dir': os.path.join(self.imprint_dir, 'dist/graph')
                     }
                     cfg['metadata_db'] = os.path.join(self.imprint_dir, 'core/press.db')
-                    cfg['i18n_settings'] = {'enable_multilingual': False, 'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 'targets': []}
+                    cfg['i18n_settings'] = {'enabled': False, 'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 'targets': []}
                     cfg['system'] = {
                         'data_root': self.imprint_dir, 'allowed_extensions': ['.md'], 'data_paths': {},
                         'log_level': 'INFO', 'max_workers': 1, 'auto_save_interval': 60

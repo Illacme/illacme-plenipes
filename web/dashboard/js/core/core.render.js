@@ -33,7 +33,8 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
 
     if (type === 'select') {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
-        inputHtml = `<select id="${id}" data-path="${path}" class="setting-input" onchange="${onchange}">
+        const disabledAttr = options.disabled ? 'disabled' : '';
+        inputHtml = `<select id="${id}" data-path="${path}" class="setting-input" onchange="${onchange}" ${disabledAttr}>
             ${(options.items || []).map(item => `<option value="${item.value}" ${item.value === safeValue ? 'selected' : ''} title="${item.title || item.text || ''}">${item.text}</option>`).join('')}
         </select>`;
     } else if (type === 'checkbox') {

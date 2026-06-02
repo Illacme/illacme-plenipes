@@ -88,7 +88,7 @@ def export_digital_garden(engine, all_docs_snapshot=None):
         if src_code is not None:
             urls.append(get_physical_url(src_code))
 
-        if engine.i18n.enable_multilingual:
+        if engine.i18n.enabled:
             for t in engine.i18n.targets:
                 if t.lang_code: urls.append(get_physical_url(t.lang_code))
         

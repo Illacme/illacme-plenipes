@@ -67,7 +67,7 @@ def smart_normalize_i18n(manager) -> None:
     """智能语种归一化逻辑"""
     from core.utils.language_hub import LanguageHub
     i18n = manager.config.i18n_settings
-    if not i18n or not i18n.enable_multilingual: return
+    if not i18n or not i18n.enabled: return
 
     # 源语种解析
     source_data = manager._raw_config.get('i18n_settings', {}).get('source')

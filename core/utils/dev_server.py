@@ -229,8 +229,13 @@ class DevServer:
             return False
 
         try:
-            handler = SovereignHandler
-            self.httpd = socketserver.TCPServer(("", self.port), handler, bind_and_activate=False)
+            # 🛡️ [V76.5] 闭包锁定：动态注入目标物理目录以对抗 SimpleHTTPRequestHandler 初始化回退
+            target_dir = self.directory
+            class BoundHandler(SovereignHandler):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, directory=target_dir, **kwargs)
+            
+            self.httpd = socketserver.TCPServer(("", self.port), BoundHandler, bind_and_activate=False)
             self.httpd.allow_reuse_address = True
             self.httpd.server_bind()
             self.httpd.server_activate()

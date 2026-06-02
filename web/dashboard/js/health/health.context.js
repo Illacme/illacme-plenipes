@@ -172,9 +172,20 @@ window.refreshGovernanceContext = async () => {
             }
         }
         if (i18nEl && data.i18n) {
-            const targets = data.i18n.targets || [];
-            const targetsStr = targets.length > 0 ? targets.join(', ') : 'NONE';
-            i18nEl.innerText = `${data.i18n.source} ➔ ${targetsStr}`;
+            const isEnabled = data.i18n.enabled !== false;
+            if (isEnabled) {
+                const targets = data.i18n.targets || [];
+                const targetsStr = targets.length > 0 ? targets.join(', ') : 'NONE';
+                i18nEl.innerText = `${data.i18n.source} ➔ ${targetsStr}`;
+                i18nEl.style.color = '';
+                i18nEl.style.textDecoration = '';
+                i18nEl.style.opacity = '';
+            } else {
+                i18nEl.innerText = '已禁用 (Disabled)';
+                i18nEl.style.color = 'var(--text-dim)';
+                i18nEl.style.textDecoration = 'line-through';
+                i18nEl.style.opacity = '0.6';
+            }
         }
 
 

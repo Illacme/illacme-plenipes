@@ -1,4 +1,4 @@
-/* 🏗️ [V60.5] Illacme Plenipes Base & Layout Styles - Tokens Shard */
+/* 🏗️ [V60.6] Illacme Plenipes Base & Layout Styles - Unified Tokens Shard (SSOT) */
 
 @font-face {
     font-family: 'Outfit';
@@ -17,104 +17,57 @@
 }
 
 :root {
-    --bg-deep: hsl(240, 43%, 2%);
+    /* 🎨 Core Background & Deep Theme */
+    --bg-deep: hsl(240, 30%, 4%); /* 提亮至极深沉的星空蓝黑以支持玻璃质感 */
+    --bg-modal-solid-rgb: 13, 14, 28;
+    --bg-dropdown-solid-rgb: 10, 15, 25;
+    --bg-asset-solid-rgb: 15, 20, 30;
+    --bg-sidebar-solid-rgb: 15, 23, 42;
+    --bg-mode-solid-rgb: 10, 10, 20;
+    --bg-compute-card-rgb: 20, 20, 35;
+    --bg-compute-grid-rgb: 30, 30, 45;
+
+    /* 🎨 Core Accent Colors (HSL & RGB Channels for JS/WebGL) */
     --accent-primary: hsl(267, 100%, 65%);
+    --accent-primary-rgb: 163, 76, 255;
     --accent-secondary: hsl(181, 100%, 50%);
-    --text-bright: #ffffff;
-    --color-white: #ffffff;
-    --color-black: #000000;
-    --text-dim: hsl(215, 20%, 65%);
-    --glass-bg: rgba(0, 0, 0, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.15);
-    --glass-highlight: rgba(255, 255, 255, 0.1);
-    --shadow-glow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px hsla(267, 100%, 65%, 0.2);
-    --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    --accent-secondary-rgb: 0, 242, 255;
+
+    /* 🎨 Neon/Alert Colors */
     --neon-purple: hsl(267, 100%, 65%);
     --neon-cyan: hsl(181, 100%, 50%);
-    
-    /* 🆕 补充扩充的指示灯颜色与高饱和霓虹色 */
+    --neon-cyan-rgb: 0, 242, 255;
     --neon-green: hsl(152, 100%, 50%);
+    --neon-green-rgb: 0, 255, 136;
     --neon-amber: hsl(40, 100%, 50%);
+    --neon-amber-rgb: 255, 170, 0;
     --neon-red: hsl(0, 100%, 65%);
-    
-    /* 🆕 霓虹青色不同透明度的色彩 Token（消除局部样式硬编码） */
-    --neon-cyan-40: hsla(181, 100%, 50%, 0.4);
-    --neon-cyan-25: hsla(181, 100%, 50%, 0.25);
-    --neon-cyan-15: hsla(181, 100%, 50%, 0.15);
-    --neon-cyan-10: hsla(181, 100%, 50%, 0.10);
-    --neon-cyan-05: hsla(181, 100%, 50%, 0.05);
-    
-    /* 🆕 危险状态与红色透明度 Token */
+    --neon-red-rgb: 255, 77, 79;
     --danger-color: var(--neon-red);
-    --danger-border: hsla(0, 100%, 65%, 0.3);
-    --danger-hover-bg: hsla(0, 100%, 65%, 0.1);
 
-    /* 🆕 琥珀/橙色 Token (Autopilot / Loading 状态) */
-    --accent-orange: hsl(37, 100%, 50%);
-    --accent-orange-05: hsla(37, 100%, 50%, 0.05);
-    --accent-orange-15: hsla(37, 100%, 50%, 0.15);
-    --accent-orange-30: hsla(37, 100%, 50%, 0.30);
+    /* 🎨 Typography Colors */
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --text-bright: #ffffff;
+    --text-dim: hsl(215, 20%, 65%);
+    --text-slate-bright: #f8fafc;
+    --text-light-gray: #cccccc;
+    --text-muted: hsl(215, 15%, 50%);
 
-    /* 🆕 主色系透明度 Token (accent-primary alpha 梯度) */
-    --accent-primary-05: hsla(267, 100%, 65%, 0.05);
-    --accent-primary-10: hsla(267, 100%, 65%, 0.1);
-    --accent-primary-20: hsla(267, 100%, 65%, 0.2);
-
-    /* 🆕 霓虹青色扩展透明度梯度 */
-    --neon-cyan-02: hsla(181, 100%, 50%, 0.02);
-    --neon-cyan-03: hsla(181, 100%, 50%, 0.03);
-    --neon-cyan-04: hsla(181, 100%, 50%, 0.04);
-    --neon-cyan-06: hsla(181, 100%, 50%, 0.06);
-    --neon-cyan-08: hsla(181, 100%, 50%, 0.08);
-    --neon-cyan-12: hsla(181, 100%, 50%, 0.12);
-    --neon-cyan-18: hsla(181, 100%, 50%, 0.18);
-    --neon-cyan-20: hsla(181, 100%, 50%, 0.20);
-    --neon-cyan-22: hsla(181, 100%, 50%, 0.22);
-    --neon-cyan-28: hsla(181, 100%, 50%, 0.28);
-    --neon-cyan-30: hsla(181, 100%, 50%, 0.30);
-    --neon-cyan-35: hsla(181, 100%, 50%, 0.35);
-    --neon-cyan-45: hsla(181, 100%, 50%, 0.45);
-    --neon-cyan-50: hsla(181, 100%, 50%, 0.50);
-    --neon-cyan-65: hsla(181, 100%, 50%, 0.65);
-    --neon-cyan-80: hsla(181, 100%, 50%, 0.80);
-
-    /* 🆕 深色底色 Token (Agent UI 背景混合) */
-    --bg-agent-dark: hsla(210, 100%, 6%, 0.4);
-    --bg-agent-input: hsla(210, 100%, 3%, 0.6);
-    --bg-agent-deep: hsla(210, 100%, 4%, 0.8);
-    --bg-agent-hover: hsla(210, 100%, 8%, 0.9);
-    --bg-agent-thinking: hsla(200, 100%, 8%, 0.45);
-
-    /* 🆕 Diff 视觉色彩 Token (Patch 卡片用) */
-    --diff-card-bg-start: hsla(210, 100%, 6%, 0.65);
-    --diff-card-bg-end: hsla(210, 100%, 12%, 0.45);
-    --diff-body-bg: hsla(210, 100%, 2%, 0.85);
-    --diff-del-bg: hsla(4, 82%, 63%, 0.12);
-    --diff-del-color: hsla(0, 100%, 70%, 0.95);
-    --diff-del-marker: hsl(0, 100%, 70%);
-    --diff-success-bg: hsla(122, 39%, 49%, 0.06);
-    --diff-success-border: hsla(122, 39%, 49%, 0.4);
-    --diff-success-color: hsla(91, 54%, 53%, 0.95);
-    --diff-success-glow: hsla(122, 39%, 49%, 0.1);
-    --diff-fail-bg: hsla(4, 82%, 63%, 0.06);
-    --diff-fail-border: hsla(4, 82%, 63%, 0.5);
-    --diff-fail-color: hsla(0, 100%, 70%, 0.95);
-    --diff-fail-glow: hsla(4, 82%, 63%, 0.2);
-
-    /* 🆕 Agent 代码块色彩 Token */
-    --code-text: hsl(215, 28%, 91%);
-
-    /* 🆕 高级微观发光阴影 */
+    /* 🪟 Glassmorphism Base & Borders */
+    --glass-bg: rgba(13, 14, 28, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
+    
+    /* ✨ Glows and Shadows */
+    --shadow-glow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px hsla(267, 100%, 65%, 0.2);
     --shadow-neon-cyan: 0 0 8px var(--neon-cyan);
     --shadow-neon-amber: 0 0 8px var(--neon-amber);
     --shadow-neon-red: 0 0 8px var(--neon-red);
     --shadow-neon-green: 0 0 8px var(--neon-green);
-    
-    /* 🆕 过渡与动效信标 */
-    --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --transition-fast: all 0.2s ease;
-    
-    /* 📏 商业化字阶与字体对正 */
+    --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+
+    /* 📐 Typography Hierarchy */
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --fs-h1: 2rem;
@@ -124,28 +77,44 @@
     --fs-small: 0.8rem;
     --fs-mono: 0.85rem;
 
-    /* 🛡️ 主权 UI 设计系统全局共享色彩变量（审计合规性重构） */
-    --bg-modal-solid-rgb: 13, 14, 28;
-    --bg-dropdown-solid-rgb: 10, 15, 25;
-    --bg-asset-solid-rgb: 15, 20, 30;
-    --bg-sidebar-solid-rgb: 15, 23, 42;
-    --bg-mode-solid-rgb: 10, 10, 20;
-    --bg-compute-card-rgb: 20, 20, 35;
-    --bg-compute-grid-rgb: 30, 30, 45;
-    --text-slate-bright: hsl(210, 40%, 98%);
-    --text-light-gray: hsl(0, 0%, 80%);
+    /* ⏱️ Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-fast: all 0.2s ease;
 
-    /* 🆕 Stage 2.6 标准化核心 RGB 变量收拢 */
-    --accent-primary-rgb: 163, 76, 255;
-    --accent-secondary-rgb: 0, 242, 255;
-    --neon-green-rgb: 0, 255, 136;
-    --neon-cyan-rgb: 0, 242, 255;
-    --neon-red-rgb: 255, 77, 79;
-    --neon-amber-rgb: 255, 170, 0;
-    --role-primary-end-rgb: 255, 42, 95;
-    --role-fallback-end-rgb: 0, 119, 255;
+    /* 🆕 Neon Alpha Scale */
+    --neon-cyan-02: hsla(181, 100%, 50%, 0.02);
+    --neon-cyan-03: hsla(181, 100%, 50%, 0.03);
+    --neon-cyan-04: hsla(181, 100%, 50%, 0.04);
+    --neon-cyan-05: hsla(181, 100%, 50%, 0.05);
+    --neon-cyan-06: hsla(181, 100%, 50%, 0.06);
+    --neon-cyan-08: hsla(181, 100%, 50%, 0.08);
+    --neon-cyan-10: hsla(181, 100%, 50%, 0.10);
+    --neon-cyan-12: hsla(181, 100%, 50%, 0.12);
+    --neon-cyan-15: hsla(181, 100%, 50%, 0.15);
+    --neon-cyan-18: hsla(181, 100%, 50%, 0.18);
+    --neon-cyan-20: hsla(181, 100%, 50%, 0.20);
+    --neon-cyan-22: hsla(181, 100%, 50%, 0.22);
+    --neon-cyan-25: hsla(181, 100%, 50%, 0.25);
+    --neon-cyan-28: hsla(181, 100%, 50%, 0.28);
+    --neon-cyan-30: hsla(181, 100%, 50%, 0.30);
+    --neon-cyan-35: hsla(181, 100%, 50%, 0.35);
+    --neon-cyan-40: hsla(181, 100%, 50%, 0.40);
+    --neon-cyan-45: hsla(181, 100%, 50%, 0.45);
+    --neon-cyan-50: hsla(181, 100%, 50%, 0.50);
+    --neon-cyan-65: hsla(181, 100%, 50%, 0.65);
+    --neon-cyan-80: hsla(181, 100%, 50%, 0.80);
 
-    /* 🆕 Stage 2.6 标准化半透明色彩 Token 字典 */
+    /* 🆕 Accent Alpha Scale */
+    --accent-primary-05: hsla(267, 100%, 65%, 0.05);
+    --accent-primary-10: hsla(267, 100%, 65%, 0.1);
+    --accent-primary-20: hsla(267, 100%, 65%, 0.2);
+
+    --accent-orange: hsl(37, 100%, 50%);
+    --accent-orange-05: hsla(37, 100%, 50%, 0.05);
+    --accent-orange-15: hsla(37, 100%, 50%, 0.15);
+    --accent-orange-30: hsla(37, 100%, 50%, 0.30);
+
+    /* 🆕 White/Black Alpha Scale */
     --white-01: rgba(255, 255, 255, 0.01);
     --white-02: rgba(255, 255, 255, 0.02);
     --white-03: rgba(255, 255, 255, 0.03);
@@ -166,4 +135,32 @@
     --black-80: rgba(0, 0, 0, 0.80);
     --black-90: rgba(0, 0, 0, 0.90);
     --black-95: rgba(0, 0, 0, 0.95);
+
+    /* 🆕 Agent / Diff Colors */
+    --bg-agent-dark: hsla(210, 100%, 6%, 0.4);
+    --bg-agent-input: hsla(210, 100%, 3%, 0.6);
+    --bg-agent-deep: hsla(210, 100%, 4%, 0.8);
+    --bg-agent-hover: hsla(210, 100%, 8%, 0.9);
+    --bg-agent-thinking: hsla(200, 100%, 8%, 0.45);
+    
+    --danger-border: hsla(0, 100%, 65%, 0.3);
+    --danger-hover-bg: hsla(0, 100%, 65%, 0.1);
+    
+    --diff-card-bg-start: hsla(210, 100%, 6%, 0.65);
+    --diff-card-bg-end: hsla(210, 100%, 12%, 0.45);
+    --diff-body-bg: hsla(210, 100%, 2%, 0.85);
+    --diff-del-bg: hsla(4, 82%, 63%, 0.12);
+    --diff-del-color: hsla(0, 100%, 70%, 0.95);
+    --diff-del-marker: hsl(0, 100%, 70%);
+    --diff-success-bg: hsla(122, 39%, 49%, 0.06);
+    --diff-success-border: hsla(122, 39%, 49%, 0.4);
+    --diff-success-color: hsla(91, 54%, 53%, 0.95);
+    --diff-success-glow: hsla(122, 39%, 49%, 0.1);
+    --diff-fail-bg: hsla(4, 82%, 63%, 0.06);
+    --diff-fail-border: hsla(4, 82%, 63%, 0.5);
+    
+    /* Agent Status Colors */
+    --status-online: hsla(152, 100%, 50%, 0.9);
+    --status-offline: hsla(0, 100%, 65%, 0.9);
+    --status-standby: hsla(40, 100%, 50%, 0.9);
 }

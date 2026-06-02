@@ -48,7 +48,31 @@ window.loadSettings = async (targetCat = 'general') => {
         }
     }
 
+    // 🚀 [V57.3] 动态同步刷新侧边栏子项多语言指示器与锁定锁
+    if (typeof window.updateSettingsTabsStatus === 'function') {
+        window.updateSettingsTabsStatus();
+    }
+
     renderSettingsCategory(targetCat);
+};
+
+// 🚀 [V57.3] 动态更新设置选项卡的多语言状态信标与锁标识
+window.updateSettingsTabsStatus = () => {
+    const i18n = window.settingsData?.i18n_settings || {};
+    const isEnabled = i18n.enabled !== false;
+    
+    document.querySelectorAll('.s-tab').forEach(tab => {
+        if (tab.dataset.cat === 'localization') {
+            tab.innerHTML = isEnabled 
+                ? '<span class="tab-icon">🌍</span> 翻译阵列' 
+                : '<span class="tab-icon" style="opacity: 0.5;">🌍</span> <span style="opacity: 0.7;">翻译阵列 (已关闭)</span>';
+        }
+        if (tab.dataset.cat === 'translation_style') {
+            tab.innerHTML = isEnabled 
+                ? '<span class="tab-icon">🎭</span> 翻译风格' 
+                : '<span class="tab-icon" style="opacity: 0.5;">🔒</span> <span style="color: var(--text-dim); text-decoration: line-through; opacity: 0.65;">翻译风格</span>';
+        }
+    });
 };
 
 window.renderSettingsCategory = (cat) => {
@@ -194,9 +218,6 @@ function renderGeneralCategory() {
                         ],
                         onchange: `window.updateConfigField('ingress_settings.active_dialects', [this.value])`,
                         description: '定义系统如何识别原稿格式。选择“自动感应”将根据文件特征物理识别；选择特定协议则执行主权强制解析。'
-                    })}
-                    ${renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', data.i18n_settings?.force_source_prefix || false, 'checkbox', {
-                        description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
                     })}
                 </div>
             </div>

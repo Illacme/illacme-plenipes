@@ -130,3 +130,70 @@ window.applyTranslationStyle = async () => {
     }
 };
 
+// 🚀 [V57.2] 物理多语言总闸即时同步落盘
+window.syncI18nEnabled = async (val) => {
+    if (typeof addAudit === 'function') addAudit(`🌍 正在${val ? '开启' : '关闭'}多语言翻译矩阵...`);
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'i18n_settings.enabled': val })
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit(`✅ 多语言状态已物理固化为: ${val ? '已启用' : '已禁用'}.`, "success");
+        // 物理拉取最新状态进行对正
+        const freshConfig = await apiFetch('/api/system/config?level=merged');
+        if (freshConfig) {
+            window.settingsData = freshConfig;
+            if (typeof window.updateSettingsTabsStatus === 'function') {
+                window.updateSettingsTabsStatus();
+            }
+            if (typeof window.refreshGovernanceContext === 'function') {
+                window.refreshGovernanceContext();
+            }
+            if (typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory('localization');
+            }
+            // 🚀 [V57.5] 开启多语言翻译矩阵时，平滑滚动使“多语言翻译矩阵开关模块”对准视口上方露出
+            if (val) {
+                setTimeout(() => {
+                    const targetEl = document.getElementById('i18n-enable-control-group');
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+            }
+        }
+    } else {
+        const errMsg = res ? (res.error || res.message) : '物理链路超时';
+        if (typeof addAudit === 'function') addAudit(`❌ 更新失败: ${errMsg}`, "error");
+    }
+};
+
+// 🚀 [V57.3] 主语言路径前缀强制化即时同步落盘
+window.syncI18nForcePrefix = async (val) => {
+    if (typeof addAudit === 'function') addAudit(`🌍 正在${val ? '开启' : '关闭'}主出版语种路径前缀强制化...`);
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'i18n_settings.force_source_prefix': val })
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit(`✅ 主语种路径前缀强制化状态已同步。`, "success");
+        // 物理拉取最新状态进行对正
+        const freshConfig = await apiFetch('/api/system/config?level=merged');
+        if (freshConfig) {
+            window.settingsData = freshConfig;
+            if (typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory('localization');
+            }
+        }
+    } else {
+        const errMsg = res ? (res.error || res.message) : '物理链路超时';
+        if (typeof addAudit === 'function') addAudit(`❌ 更新失败: ${errMsg}`, "error");
+    }
+};
+

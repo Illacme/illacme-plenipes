@@ -24,6 +24,22 @@ def perform_sync(engine, args, task_queue, current_source_files):
         tlog.warning("⚠️ 没有找到任何内容笔记！💡 请检查【品牌设置】中的目录映射配置是否正确。")
         return
 
+    # 🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁
+    i18n = engine.config.i18n_settings
+    if i18n and i18n.enabled and i18n.targets:
+        if engine.no_ai:
+            tlog.error("🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data="🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
+            raise RuntimeError("翻译矩阵已开启，但系统处于 NO-AI 模式，发布已强力拦截。")
+        
+        from core.governance.checks.ai import AIChecker
+        ai_report = AIChecker.check(engine)
+        if ai_report.get("status") == "FAIL":
+            err_msg = "、".join(ai_report.get("details", []))
+            tlog.error(f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力不可用，发布已物理熔断！故障详情: {err_msg}")
+            raise RuntimeError(f"翻译矩阵已开启，但 AI 算力不可用。诊断详情: {err_msg}")
+
     start_perf = time.perf_counter()
 
     # 1. 触发同步前元数据快照锁定 (Checkpoint)

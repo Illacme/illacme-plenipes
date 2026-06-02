@@ -98,6 +98,7 @@ def get_system_context_impl():
             }
         },
         "i18n": {
+            "enabled": engine.config.i18n_settings.enabled,
             "source": getattr(engine.config.i18n_settings.source, 'prompt_lang', "Chinese"),
             "targets": [
                 t.prompt_lang if hasattr(t, 'prompt_lang') else str(t)

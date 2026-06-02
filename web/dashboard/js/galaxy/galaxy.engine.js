@@ -21,11 +21,19 @@ window.setupGalaxyEngine = (elem) => {
     let lastClickTime = 0, clickTimeout = null;
     window._hoveredNode = null;
 
+    // 🚀 [V86.8] 色彩治理适配：从 CSS 变量读取 RGB 原始通道值以兼容 WebGL / Three.js 渲染器，杜绝 HSL/var 导致的黑屏故障
+    const style = getComputedStyle(document.documentElement);
+    const purpleRgb = (style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim();
+    const cyanRgb = (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim();
+
+    const neonPurple = `rgb(${purpleRgb})`;
+    const neonCyan = `rgb(${cyanRgb})`;
+
     const graph = ForceGraph3D()(elem)
-        .width(elem.clientWidth)
-        .height(elem.clientHeight)
-        .backgroundColor('transparent')
-        .nodeColor(node => node.group === 'imprint' ? 'var(--neon-purple, #a34cff)' : 'var(--neon-cyan, #00f2ff)')
+        .width(elem.clientWidth || window.innerWidth || 1200)
+        .height(elem.clientHeight || window.innerHeight || 800)
+        .backgroundColor('rgba(0,0,0,0)')
+        .nodeColor(node => node.group === 'imprint' ? neonPurple : neonCyan)
         .nodeResolution(24)
         .nodeRelSize(5)
         .nodeVal(node => window._hoveredNode && node.id === window._hoveredNode.id ? 2.2 : 1.0)
@@ -35,15 +43,15 @@ window.setupGalaxyEngine = (elem) => {
             const tgt = link.target?.id || link.target;
             if (!window._hoveredNode) {
                 // 静默状态：物理连线亮青色，语义连线暗紫色，拉开主次感
-                return isWikilink ? 'hsla(183, 100%, 50%, 0.35)' : 'hsla(269, 100%, 65%, 0.12)';
+                return isWikilink ? `rgba(${cyanRgb}, 0.35)` : `rgba(${purpleRgb}, 0.12)`;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
             if (isConnected) {
                 // 激活状态下：物理连线极亮，语义连线亮紫以呈现高维交织感
-                return isWikilink ? 'hsla(183, 100%, 50%, 0.95)' : 'hsla(269, 100%, 65%, 0.75)';
+                return isWikilink ? `rgba(${cyanRgb}, 0.95)` : `rgba(${purpleRgb}, 0.75)`;
             }
             // 未激活连线：物理和语义均降为极弱半透明，聚焦当前节点网络
-            return isWikilink ? 'hsla(183, 100%, 50%, 0.02)' : 'hsla(269, 100%, 65%, 0.01)';
+            return isWikilink ? `rgba(${cyanRgb}, 0.02)` : `rgba(${purpleRgb}, 0.01)`;
         })
         .linkWidth(link => {
             const isWikilink = link.type === 'wikilink';

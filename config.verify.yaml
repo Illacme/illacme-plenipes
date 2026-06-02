@@ -27,7 +27,7 @@ translation:
       model: "verifier-v1"
 
 i18n_settings:
-  enable_multilingual: true
+  enabled: true
   source:
     lang_code: "zh-Hans"
   targets:

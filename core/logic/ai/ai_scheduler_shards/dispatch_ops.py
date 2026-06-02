@@ -29,9 +29,9 @@ class AISchedulerDispatchOps:
         if not LicenseGuard.is_pro_feature_allowed("subfolder_ingress") and route_prefix != "":
             tlog.warning(f"🛡️ [License Guard] 社区版限制：拦截分发路由前缀 [{route_prefix}]，强制回归根目录。")
             route_prefix = ""
-        enable_multilingual = engine.i18n.enable_multilingual
+        enabled = engine.i18n.enabled
         targets = engine.i18n.targets
-        if not enable_multilingual and targets:
+        if not enabled and targets:
             tlog.debug(f"🤫 [多语言跳过] {rel_path}：检测到 i18n 总闸已关闭。")
             return
         if not targets:

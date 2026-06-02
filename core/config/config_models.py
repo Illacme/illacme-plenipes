@@ -6,7 +6,7 @@ Illacme-plenipes Core - Configuration Models (Facade)
 🛡️ [V24.0] Pydantic 严格校验体系：工业级配置审计根模型。
 """
 import os
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from typing import List, Dict, Optional, Any
 
 # 🚀 导入模块化后的子配置
@@ -37,7 +37,7 @@ class I18nTarget(BaseModel):
     output_sub_dir: Optional[str] = None
 
 class I18nSettings(BaseModel):
-    enable_multilingual: bool = True
+    enabled: bool = True
     force_source_prefix: bool = False  # 🚀 [V57.0] 强制原稿使用语言前缀 (默认 false，即发布至 SSG 根目录)
     source: I18nSource = Field(default_factory=I18nSource)
     targets: List[I18nTarget] = Field(default_factory=list)
@@ -225,7 +225,7 @@ class Configuration(BaseModel):
         
         if item.target_slot in slots:
             slot = slots[item.target_slot]
-            is_multi = self.i18n_settings.enable_multilingual
+            is_multi = self.i18n_settings.enabled
             
             # 根据多语言状态选择模版
             path_tmpl = slot.get("multi" if is_multi else "single", "")

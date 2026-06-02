@@ -38,7 +38,7 @@ class RouteJanitor:
             ext = os.path.splitext(rel_path)[1].lower()
 
             langs = [self.i18n.source.lang_code] if self.i18n.source.lang_code else []
-            if self.i18n.enable_multilingual:
+            if self.i18n.enabled:
                 langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
 
             for code in langs:
@@ -102,7 +102,7 @@ class RouteJanitor:
             ext = os.path.splitext(old_rel)[1]
 
             langs = [self.i18n.source.lang_code]
-            if self.i18n.enable_multilingual:
+            if self.i18n.enabled:
                 langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
 
             for lang in set(langs):
@@ -147,7 +147,7 @@ class RouteJanitor:
             docs = self.meta.get_documents_snapshot()
 
             langs = [self.i18n.source.lang_code] if self.i18n.source.lang_code else []
-            if self.i18n.enable_multilingual:
+            if self.i18n.enabled:
                 langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
 
             target_base = self.paths.get('target_base', '.')

@@ -14,12 +14,35 @@ window.initGalaxy = () => {
 
     // 🪐 1. 调用 3D 核心分片进行底座配置
     if (typeof window.setupGalaxyEngine === 'function') {
-        const graph = window.setupGalaxyEngine(elem);
-        window.galaxyGraph = graph;
+        try {
+            elem.innerHTML = ''; // 清空可能干扰 ForceGraph 的子元素
+            const graph = window.setupGalaxyEngine(elem);
+            window.galaxyGraph = graph;
 
-        // 🪐 2. 调用手势 controls 及太空阻尼重载
-        if (typeof window.setupGalaxyEngineControls === 'function') {
-            window.setupGalaxyEngineControls(graph);
+            // 🪐 2. 调用手势 controls 及太空阻尼重载
+            if (typeof window.setupGalaxyEngineControls === 'function') {
+                window.setupGalaxyEngineControls(graph);
+            }
+        } catch (error) {
+            console.error("❌ [Hub] 3D 星系引擎核心崩溃，已触发降级保护:", error);
+            if (typeof window.addAudit === 'function') {
+                window.addAudit(`⛔ [SYS FALLBACK] 3D 星系引擎崩溃: ${error.message}`);
+            }
+            // 优雅降级 UI
+            elem.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); background: radial-gradient(circle, rgba(20,10,20,0.8) 0%, transparent 100%);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">🛰️</div>
+                    <h3 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">3D 引擎初始化受阻</h3>
+                    <p style="font-family: var(--font-mono); font-size: 0.8rem; max-width: 400px; text-align: center; opacity: 0.7; margin-bottom: 1.5rem;">
+                        检测到底层 WebGL 或数据链路解析发生严重错误，已切断渲染以保护主线程。<br/>
+                        <span style="color: #ff4c4c; display: block; margin-top: 5px;">${error.message}</span>
+                    </p>
+                    <button class="action-btn" onclick="window.galaxyGraph=null; window.initGalaxy();" style="border: 1px solid var(--glass-border); background: var(--white-05); padding: 8px 20px; border-radius: 6px; cursor: pointer; color: var(--text-bright); transition: all 0.3s;">
+                        尝试重新唤醒引擎
+                    </button>
+                </div>
+            `;
+            return; // 终止后续操作
         }
     } else {
         console.error("❌ [Hub] 3D 星系引擎核心 setupGalaxyEngine 未装载！");

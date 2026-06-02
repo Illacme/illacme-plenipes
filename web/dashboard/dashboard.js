@@ -4,6 +4,47 @@
  * 职责：顶级就绪主引导、快捷键捕捉及模块协同。
  */
 
+// 0. 全局异常感知与防御体系 (Global Error Boundaries)
+window.addEventListener('error', (event) => {
+    console.error("🔥 [Global Boundary] 捕获到未处理异常:", event.error || event.message);
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'error',
+            title: '系统运行异常',
+            text: event.message || '发生了未知的渲染或逻辑报错',
+            showConfirmButton: false,
+            timer: 5000,
+            background: 'rgba(20, 10, 20, 0.95)',
+            color: '#ff4c4c'
+        });
+    }
+    if (typeof window.addAudit === 'function') {
+        window.addAudit(`❌ [SYS FAULT] 运行时抛错: ${event.message}`);
+    }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error("🔥 [Global Boundary] 捕获到未处理的 Promise 拒绝:", event.reason);
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'warning',
+            title: '异步链路中断',
+            text: event.reason?.message || '网络或数据流通道发生异常',
+            showConfirmButton: false,
+            timer: 5000,
+            background: 'rgba(20, 15, 10, 0.95)',
+            color: '#ffb34c'
+        });
+    }
+    if (typeof window.addAudit === 'function') {
+        window.addAudit(`⚠️ [NET FAULT] 异步链路受阻: ${event.reason?.message || 'Unknown Reason'}`);
+    }
+});
+
 // 1. 全局交互逻辑 (Sidebar)
 window.toggleSidebar = (side) => {
     const app = document.getElementById('app-container');

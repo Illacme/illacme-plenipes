@@ -13,6 +13,13 @@ def trigger_re_dispatch_logic(engine, doc_id: str, req: dict) -> dict:
     """
     ♻️ 主权调度中心：强制推入出版管线
     """
+    # 🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁 (同步拦截)
+    try:
+        from core.governance.checks.ai import check_ai_availability_or_raise
+        check_ai_availability_or_raise(engine)
+    except RuntimeError as e:
+        return {"success": False, "message": str(e)}
+
     try:
         # 🚀 物理对正与调度准备：通过扫描模块自动感应本文件的物理信道属性与槽位
         from core.runtime.orchestration.scanner import build_task_queue

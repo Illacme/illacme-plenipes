@@ -206,5 +206,15 @@ window.triggerReDispatch = async (scope) => {
         });
         // 刷新状态
         setTimeout(() => openVaultDrawer(window.currentDocId), 1000);
+    } else {
+        const errorMsg = res ? (res.message || res.reason || "未知异常") : "网络连接或系统异常";
+        addAudit(`❌ 重调度失败: ${errorMsg}`, "error");
+        if (window.Swal) {
+            Swal.fire({
+                title: '重调度失败',
+                text: errorMsg,
+                icon: 'error'
+            });
+        }
     }
 };

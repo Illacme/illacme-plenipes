@@ -229,6 +229,13 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
     if not engine:
         raise HTTPException(status_code=503, detail="Engine not ready")
     
+    # 🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁 (同步拦截)
+    try:
+        from core.governance.checks.ai import check_ai_availability_or_raise
+        check_ai_availability_or_raise(engine)
+    except RuntimeError as e:
+        return {"status": "error", "reason": str(e)}
+
     from core.runtime.orchestrator import start_asynchronous_sync
     future_id = start_asynchronous_sync(engine, dry_run=dry_run, force=force, sandbox=sandbox)
     
