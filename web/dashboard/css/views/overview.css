@@ -191,7 +191,7 @@
 #galaxy-hud-column {
     display: flex !important;
     flex-direction: row !important;
-    gap: 12px !important;
+    gap: 0 !important;
     width: auto !important;
     box-sizing: border-box;
 }
@@ -199,6 +199,33 @@
     width: 160px !important;
     min-width: 160px !important;
     box-sizing: border-box;
+}
+
+/* 📐 Physics Controls Horizontal Slide-Out */
+#galaxy-physics-controls {
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                padding 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                margin 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease,
+                border-color 0.3s ease;
+}
+#galaxy-physics-controls.horizontal-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+#galaxy-physics-controls.horizontal-expanded {
+    width: 160px !important;
+    min-width: 160px !important;
+    padding: 10px 14px !important;
+    margin-left: 12px !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 /* 📦 Collapsible Widgets Styling */

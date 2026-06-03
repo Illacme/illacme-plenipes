@@ -82,18 +82,18 @@ function injectGalaxyInteractiveDOM() {
         setupSearchListeners();
     }
 
-    // 3. 注入数据指标组 (Stats Unified Card) 至左侧列，支持折叠
+    // 3. 注入数据指标组 (Stats Unified Card) 至左侧列
     if (!document.getElementById('galaxy-telemetry-container')) {
         const telDiv = document.createElement('div');
         telDiv.id = 'galaxy-telemetry-container';
         telDiv.className = 'hud-item glass-panel';
         telDiv.style.cssText = 'padding: 10px 14px; width: 100%; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
         telDiv.innerHTML = `
-            <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+            <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; user-select: none;">
                 <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📊 实时指标</span>
-                <span id="telemetry-collapse-arrow" style="font-size: 0.52rem; color: var(--text-dim); transition: transform 0.2s;">▼</span>
+                <span id="telemetry-expand-btn" style="font-size: 0.65rem; color: var(--text-dim); transition: transform 0.3s ease; cursor: pointer; margin-right: -2px;" title="动力学参数调节">⚙️</span>
             </div>
-            <div id="telemetry-controls-body" class="hud-collapsible-body expanded" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 2px;">
                     <div style="flex: 1; text-align: center;">
                         <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">关联密度</div>
@@ -111,39 +111,37 @@ function injectGalaxyInteractiveDOM() {
         `;
         leftColumn.appendChild(telDiv);
 
-        // 绑定折叠点击 (默认展开)
-        const tTitle = document.getElementById('telemetry-title-bar');
-        const tBody = document.getElementById('telemetry-controls-body');
-        const tArrow = document.getElementById('telemetry-collapse-arrow');
-        if (tTitle && tBody && tArrow) {
-            tTitle.onclick = () => {
-                const isCollapsed = tBody.classList.contains('collapsed');
-                if (isCollapsed) {
-                    tBody.classList.remove('collapsed');
-                    tBody.classList.add('expanded');
-                    tArrow.style.transform = 'rotate(0deg)';
-                } else {
-                    tBody.classList.remove('expanded');
-                    tBody.classList.add('collapsed');
-                    tArrow.style.transform = 'rotate(-90deg)';
+        // 绑定齿轮点击展开右侧物理面板
+        const expandBtn = document.getElementById('telemetry-expand-btn');
+        if (expandBtn) {
+            expandBtn.onclick = (e) => {
+                e.stopPropagation();
+                const physCtrl = document.getElementById('galaxy-physics-controls');
+                if (physCtrl) {
+                    const isCollapsed = physCtrl.classList.contains('horizontal-collapsed');
+                    if (isCollapsed) {
+                        physCtrl.classList.remove('horizontal-collapsed');
+                        physCtrl.classList.add('horizontal-expanded');
+                        expandBtn.style.transform = 'rotate(90deg)';
+                    } else {
+                        physCtrl.classList.remove('horizontal-expanded');
+                        physCtrl.classList.add('horizontal-collapsed');
+                        expandBtn.style.transform = 'rotate(0deg)';
+                    }
                 }
             };
         }
     }
 
-    // 4. 注入动力学调节器至左侧列 (支持折叠)
+    // 4. 注入动力学调节器至左侧列 (支持横向拉伸)
     if (!document.getElementById('galaxy-physics-controls')) {
         const ctrlDiv = document.createElement('div');
         ctrlDiv.id = 'galaxy-physics-controls';
-        ctrlDiv.className = 'hud-item glass-panel';
-        ctrlDiv.style.cssText = 'padding: 10px 14px; width: 100%; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
+        ctrlDiv.className = 'hud-item glass-panel horizontal-collapsed';
+        ctrlDiv.style.cssText = 'animation: none;';
         ctrlDiv.innerHTML = `
-            <div id="physics-title-bar" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
-                <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📐 物理控制</span>
-                <span id="physics-collapse-arrow" style="font-size: 0.52rem; color: var(--text-dim); transition: transform 0.2s;">▼</span>
-            </div>
-            <div id="physics-controls-body" class="hud-collapsible-body collapsed" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span>引力:</span>
                     <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
                 </div>
@@ -151,7 +149,7 @@ function injectGalaxyInteractiveDOM() {
                     <span>排斥:</span>
                     <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: space-between; font-size: 0.55rem;">
+                <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
                     <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
                         <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary);" /> 物理
                     </label>
@@ -162,26 +160,6 @@ function injectGalaxyInteractiveDOM() {
             </div>
         `;
         leftColumn.appendChild(ctrlDiv);
-
-        // 绑定折叠点击 (默认折叠)
-        const pTitle = document.getElementById('physics-title-bar');
-        const pBody = document.getElementById('physics-controls-body');
-        const pArrow = document.getElementById('physics-collapse-arrow');
-        if (pTitle && pBody && pArrow) {
-            pArrow.style.transform = 'rotate(-90deg)';
-            pTitle.onclick = () => {
-                const isCollapsed = pBody.classList.contains('collapsed');
-                if (isCollapsed) {
-                    pBody.classList.remove('collapsed');
-                    pBody.classList.add('expanded');
-                    pArrow.style.transform = 'rotate(0deg)';
-                } else {
-                    pBody.classList.remove('expanded');
-                    pBody.classList.add('collapsed');
-                    pArrow.style.transform = 'rotate(-90deg)';
-                }
-            };
-        }
         setupPhysicsListeners();
     }
 }

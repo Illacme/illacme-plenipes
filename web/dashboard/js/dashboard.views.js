@@ -10,7 +10,7 @@ window.viewTemplates = {
                 <div id="galaxy-labels-layer"></div>
             </div>
             <!-- 左控制与指标列 -->
-            <div class="hud-container top-left" id="galaxy-hud-column" style="position: absolute; top: 25px; left: 25px; z-index: 100; display: flex; flex-direction: row; gap: 12px; width: auto;">
+            <div class="hud-container top-left" id="galaxy-hud-column" style="position: absolute; top: 25px; left: 25px; z-index: 100; display: flex; flex-direction: row; gap: 0; width: auto;">
                 <!-- 动态仪表盘由 galaxy.hud.js 负责统一注入与局部刷新 -->
             </div>
             <!-- 右检索与属性仪列 -->
