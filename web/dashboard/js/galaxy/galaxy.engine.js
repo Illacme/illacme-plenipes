@@ -44,6 +44,8 @@ window.setupGalaxyEngine = (elem) => {
         .nodeVal(node => window._hoveredNode && node.id === window._hoveredNode.id ? 2.2 : 1.0)
         .linkColor(link => {
             const isWikilink = link.type === 'wikilink';
+            if (isWikilink && window._showWikilinks === false) return 'rgba(0,0,0,0)';
+            if (!isWikilink && window._showSemanticLinks === false) return 'rgba(0,0,0,0)';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
             if (!window._hoveredNode) {
@@ -60,6 +62,8 @@ window.setupGalaxyEngine = (elem) => {
         })
         .linkWidth(link => {
             const isWikilink = link.type === 'wikilink';
+            if (isWikilink && window._showWikilinks === false) return 0;
+            if (!isWikilink && window._showSemanticLinks === false) return 0;
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             const scale = window._galaxyScaleMode || 'small';
             let baseWidth = isWikilink ? 1.0 : 0.5;
@@ -73,6 +77,8 @@ window.setupGalaxyEngine = (elem) => {
         .showNavInfo(false)
         .linkDirectionalParticles(link => {
             const isWikilink = link.type === 'wikilink';
+            if (isWikilink && window._showWikilinks === false) return 0;
+            if (!isWikilink && window._showSemanticLinks === false) return 0;
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             const scale = window._galaxyScaleMode || 'small';
             if (scale === 'huge' || scale === 'large') return 0; // 超大或大规模时，强制关闭粒子以防卡顿
@@ -133,13 +139,21 @@ window.setupGalaxyEngine = (elem) => {
                 }
                 if (node.x !== undefined) focusNodeIn3D(node);
                 if (node.id && typeof openEditor === 'function') {
-                    // node.id 已经是后端的相对路径，不需要错误替换 'doc_' 导致带有 doc_ 的文件名被损坏
                     openEditor(node.id);
                 }
             } else {
-                // 🪐 [单击]：纯视觉星跃聚焦，不打扰 3D 视野，不拉编辑器
+                // 🪐 [单击]：纯视觉星跃聚焦，并在连接模式或普通模式下做处理
                 clickTimeout = setTimeout(() => {
                     if (node.x !== undefined) focusNodeIn3D(node);
+                    if (window._galaxyConnectionSourceNode) {
+                        if (typeof window.confirmManualConnection === 'function') {
+                            window.confirmManualConnection(node);
+                        }
+                    } else {
+                        if (typeof window.showNodeDirector === 'function') {
+                            window.showNodeDirector(node);
+                        }
+                    }
                     clickTimeout = null;
                 }, 250);
             }

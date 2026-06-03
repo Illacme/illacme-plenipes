@@ -27,7 +27,7 @@ def execute_full_sync(engine: Any, args: Any, task_queue: List[Any], current_sou
 _publish_lock = threading.Lock()
 _is_publishing = False
 
-def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False) -> int:
+def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None) -> int:
     """
     🚀 [V51.0] 异步同步触发器：专供 API/Dashboard 调用
     [V52.3 升级]：加入主权互斥检查，确保全球范围内只有一个出版流在运行。
@@ -45,7 +45,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             self.force = force
             self.sandbox = sandbox
             self.watch = False
-            self.path = None
+            self.path = requested_paths
     
     args = MockArgs()
     
@@ -55,8 +55,8 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
         with _publish_lock:
             try:
                 _is_publishing = True
-                tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox})...")
-                task_queue, current_source_files = build_task_queue(engine)
+                tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox}, Paths: {requested_paths})...")
+                task_queue, current_source_files = build_task_queue(engine, requested_paths)
                 perform_sync(engine, args, task_queue, current_source_files)
                 tlog.info("✅ [异步出版] 后台流水线任务已全量闭环。")
             except Exception as e:
@@ -72,3 +72,4 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     # 3. 提交至全局执行器 (优先级设为 CRITICAL 以确保立即响应)
     future = global_executor.submit(_background_job, priority=TaskPriority.CRITICAL, task_name="Async-Full-Publish")
     return id(future)
+

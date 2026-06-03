@@ -260,5 +260,5 @@
     box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.4) !important;
 }
 .error-btn:hover {
-    background: hsl(0, 100%, 71%) !important;
+    filter: brightness(1.1) !important;
 }

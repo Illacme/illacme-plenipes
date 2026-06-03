@@ -200,6 +200,20 @@ class KnowledgeGraph:
             self.save()
             tlog.info(f"🔗 [KnowledgeGraph] 手动链路已固化: {src_id} <-> {target_id}")
 
+    def remove_link(self, src_id: str, target_id: str):
+        """🚀 [V20.3] 物理断开语义或手动链接"""
+        with self._lock:
+            for parent, child in [(src_id, target_id), (target_id, src_id)]:
+                if parent in self.nodes:
+                    node = self.nodes[parent]
+                    if "connections" in node and isinstance(node["connections"], dict) and child in node["connections"]:
+                        del node["connections"][child]
+                    if "manual_connections" in node and isinstance(node["manual_connections"], dict) and child in node["manual_connections"]:
+                        del node["manual_connections"][child]
+            self.save()
+            tlog.info(f"✂️ [KnowledgeGraph] 链路已物理断开: {src_id} <-> {target_id}")
+
+
     def get_galaxy_graph(self) -> Dict[str, Any]:
         """🚀 [V20.2] 导出 3D 银河标准格式数据"""
         with self._lock:

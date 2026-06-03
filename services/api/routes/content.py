@@ -13,7 +13,7 @@ from services.api.logic.content_ops import (search_vault_logic,
     save_document_logic, create_document_logic,
     create_directory_logic, delete_directory_logic,
     move_document_logic, get_galaxy_graph_logic, get_vault_asset_logic,
-    upload_asset_logic)
+    upload_asset_logic, rebuild_node_semantics_logic)
 
 router = APIRouter()
 
@@ -83,3 +83,51 @@ def get_vault_asset(asset_path: str, relative_to: str = None):
     if isinstance(result, dict):
         return result
     return FileResponse(result)
+
+
+@router.post("/api/galaxy/link", dependencies=[Depends(verify_token)])
+async def add_manual_link_route(req: dict):
+    engine = get_global_engine()
+    src = req.get("src")
+    target = req.get("target")
+    if not src or not target:
+        return {"status": "error", "message": "Missing src or target"}
+    if not hasattr(engine, "knowledge_graph"):
+        return {"status": "error", "message": "Knowledge graph not initialized"}
+    engine.knowledge_graph.add_manual_link(src, target)
+    return {"status": "success"}
+
+
+@router.post("/api/galaxy/unlink", dependencies=[Depends(verify_token)])
+async def remove_manual_link_route(req: dict):
+    engine = get_global_engine()
+    src = req.get("src")
+    target = req.get("target")
+    if not src or not target:
+        return {"status": "error", "message": "Missing src or target"}
+    if not hasattr(engine, "knowledge_graph"):
+        return {"status": "error", "message": "Knowledge graph not initialized"}
+    
+    if hasattr(engine.knowledge_graph, "remove_link"):
+        engine.knowledge_graph.remove_link(src, target)
+    else:
+        with engine.knowledge_graph._lock:
+            for p, c in [(src, target), (target, src)]:
+                if p in engine.knowledge_graph.nodes:
+                    node = engine.knowledge_graph.nodes[p]
+                    if "connections" in node and c in node["connections"]:
+                        del node["connections"][c]
+                    if "manual_connections" in node and c in node["manual_connections"]:
+                        del node["manual_connections"][c]
+            engine.knowledge_graph.save()
+    return {"status": "success"}
+
+
+@router.post("/api/galaxy/rebuild-node", dependencies=[Depends(verify_token)])
+async def rebuild_node_semantics_route(req: dict):
+    engine = get_global_engine()
+    doc_id = req.get("doc_id")
+    if not doc_id:
+        return {"status": "error", "message": "Missing doc_id"}
+    return rebuild_node_semantics_logic(engine, doc_id)
+

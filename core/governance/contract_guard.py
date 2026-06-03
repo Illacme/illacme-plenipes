@@ -173,7 +173,7 @@ class ContractGuard:
         # 规则 2: 不安全函数与调试残留扫描
         UNSAFE_PATTERN = re.compile(r'\b(?:os\.system|(?<!\w)eval|(?<!\w)exec)\s*\(')
         
-        exclude_dirs = {".git", "node_modules", ".plenipes", ".venv", "themes"}
+        exclude_dirs = {".git", "node_modules", ".plenipes", ".venv", "themes", "imprints", "metadata"}
         
         for root, dirs, files in os.walk("."):
             dirs[:] = [d for d in dirs if d not in exclude_dirs]

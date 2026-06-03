@@ -9,18 +9,13 @@ window.viewTemplates = {
             <div id="galaxy-3d">
                 <div id="galaxy-labels-layer"></div>
             </div>
-            <div class="hud-container top-left">
-                <div class="hud-item glass-panel tiny">
-                    <div class="hud-label">知识关联密度</div>
-                    <div class="hud-value" id="density-val">0.00</div>
-                </div>
-                <div class="hud-item glass-panel tiny">
-                    <div class="hud-label">活跃神经元</div>
-                    <div class="hud-value" id="conn-count">0</div>
-                </div>
-                <div class="hud-item glass-panel tiny control-card" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 120px; transition: all 0.3s; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2);">
-                    <div class="hud-label" id="focus-btn-label" style="margin-bottom: 0; color: #00f2ff; letter-spacing: 2px;">⚡ 隔离孤立星球</div>
-                </div>
+            <!-- 左控制与指标列 -->
+            <div class="hud-container top-left" id="galaxy-hud-column" style="position: absolute; top: 25px; left: 25px; z-index: 100; display: flex; flex-direction: row; gap: 12px; width: auto;">
+                <!-- 动态仪表盘由 galaxy.hud.js 负责统一注入与局部刷新 -->
+            </div>
+            <!-- 右检索与属性仪列 -->
+            <div id="galaxy-right-column" style="position: absolute; top: 25px; right: 25px; z-index: 101; display: flex; flex-direction: column; gap: 12px; width: 260px;">
+                <!-- 动态检索框与星球控制仪由 galaxy.hud.js 注入 -->
             </div>
             <div class="overview-overlay" id="command-hub-overlay" style="display: flex;">
                 <div class="command-hub">

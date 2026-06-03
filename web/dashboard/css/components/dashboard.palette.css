@@ -92,9 +92,9 @@
 }
 
 .palette-item.selected {
-    border-color: rgba(0, 255, 200, 0.4);
-    box-shadow: 0 0 10px rgba(0, 255, 200, 0.1) inset;
-    background: rgba(0, 255, 200, 0.05);
+    border-color: var(--neon-cyan-40);
+    box-shadow: 0 0 10px var(--neon-cyan-10) inset;
+    background: var(--neon-cyan-05);
 }
 
 .palette-item-icon {

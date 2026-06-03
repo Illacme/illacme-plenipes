@@ -10,7 +10,8 @@ from services.api.logic.content_ops_shards.safe_ops import (
     get_vault_asset_logic as get_vault_asset_logic
 )
 from services.api.logic.content_ops_shards.galaxy_ops import (
-    get_galaxy_graph_logic as get_galaxy_graph_logic
+    get_galaxy_graph_logic as get_galaxy_graph_logic,
+    rebuild_node_semantics_logic as rebuild_node_semantics_logic
 )
 from services.api.logic.content_ops_shards.vault_ops import (
     search_vault_logic as search_vault_logic,

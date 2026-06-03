@@ -105,17 +105,20 @@ async def trigger_publish(req: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         mode: str = req.get("mode", "static")
+        paths = req.get("paths", None)
         from core.runtime.orchestrator import start_asynchronous_sync
         task_id = start_asynchronous_sync(
             engine,
             dry_run=(mode == "dry-run"),
-            sandbox=(mode == "sandbox")
+            sandbox=(mode == "sandbox"),
+            requested_paths=paths
         )
         if task_id is None:
             return {"status": "error", "message": "Already running"}
         return {"status": "task_queued", "task_id": task_id}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 @router.post("/api/config/style")
 async def apply_translation_style(req: StyleRequest, request: Request) -> Dict[str, Any]:

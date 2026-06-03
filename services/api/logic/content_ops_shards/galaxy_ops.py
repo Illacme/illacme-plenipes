@@ -131,3 +131,95 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
                     "is_skeleton": False
                 })
         return {"nodes": list(nodes_map.values()), "links": links_list}
+
+
+def rebuild_node_semantics_logic(engine, doc_id: str):
+    """
+    针对单篇文档执行增量重构与语义链接分析。
+    """
+    if not engine:
+        return {"error": "Engine not initialized"}
+
+    from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
+    abs_path = resolve_safe_path(engine, doc_id)
+    if not abs_path or not os.path.exists(abs_path):
+        return {"error": f"Document path invalid or not found: {doc_id}"}
+
+    try:
+        with open(abs_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}
+
+    from core.utils.text import parse_frontmatter
+    metadata, pure_content, _ = parse_frontmatter(content)
+    title = metadata.get("title") or os.path.splitext(os.path.basename(doc_id))[0]
+
+    if not hasattr(engine, "nlp_adapter"):
+        from core.adapters.ai.nlp import NLPAdapter
+        engine.nlp_adapter = NLPAdapter(engine)
+
+    # 1. 提取实体与摘要
+    try:
+        entities = engine.nlp_adapter.extract_entities(pure_content)
+        gist = engine.nlp_adapter.generate_gist(pure_content)
+    except Exception as e:
+        return {"error": f"NLP processing failed: {e}"}
+
+    # 2. 更新图谱节点
+    engine.knowledge_graph.upsert_node(doc_id, title, entities=entities, gist=gist)
+
+    # 3. 语义向量关联
+    discovery_count = 0
+    if engine.embedding_adapter and hasattr(engine, "vector_index"):
+        try:
+            embedding = engine.embedding_adapter.embed_text(pure_content)
+            if embedding:
+                hits = engine.vector_index.search(embedding, top_k=6)
+                for target_id, score in hits:
+                    if target_id != doc_id and score > 0.75:
+                        engine.knowledge_graph.link(doc_id, target_id, strength=score, rel_type="SEMANTIC_SIMILARITY")
+                        discovery_count += 1
+        except Exception as e:
+            print(f"[rebuild_node] Embedding similarity mapping ignored: {e}")
+
+    # 4. 基于共享实体关联
+    if isinstance(entities, dict):
+        all_entities = set()
+        for cat_list in entities.values():
+            if isinstance(cat_list, list):
+                all_entities.update(cat_list)
+
+        if all_entities:
+            STOP_ENTITIES = {
+                "Illacme Plenipes", "Illacme", "Plenipes",
+                "主权数字出版底座", "主权出版系统", "系统",
+                "好未来：数字教育未来趋势白皮书", "数字教育未来趋势白皮书",
+                "好未来", "数字教育", "未来趋势", "白皮书", "welcome-to-illacme"
+            }
+            filtered_all = {e for e in all_entities if e not in STOP_ENTITIES and len(e) > 1}
+
+            for other_id, other_node in engine.knowledge_graph.nodes.items():
+                if other_id == doc_id or not isinstance(other_node, dict):
+                    continue
+                other_entities = set()
+                o_ent_data = other_node.get("entities", {})
+                if isinstance(o_ent_data, dict):
+                    for cat_list in o_ent_data.values():
+                        if isinstance(cat_list, list):
+                            other_entities.update(cat_list)
+                filtered_other = {e for e in other_entities if e not in STOP_ENTITIES and len(e) > 1}
+                common = filtered_all.intersection(filtered_other)
+                if len(common) >= 2:
+                    strength = min(0.5 + (len(common) * 0.1), 0.95)
+                    engine.knowledge_graph.link(doc_id, other_id, strength=strength, rel_type="SHARED_ENTITY")
+                    discovery_count += 1
+
+    engine.knowledge_graph.save(debounce=False)
+    return {
+        "success": True,
+        "message": f"Successfully analyzed document and discovered {discovery_count} links.",
+        "entities": entities,
+        "gist": gist
+    }
+
