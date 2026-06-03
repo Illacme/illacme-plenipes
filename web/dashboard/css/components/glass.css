@@ -36,8 +36,8 @@
 }
 
 .modal-content {
-    background: rgba(10, 10, 20, 0.9); border: 1px solid var(--glass-border);
-    border-radius: 32px; box-shadow: 0 40px 100px var(--black-80);
+    background: rgba(var(--bg-modal-solid-rgb), 0.95); border: 1px solid var(--glass-border);
+    border-radius: 32px; box-shadow: 0 40px 100px var(--black-50);
     padding: 0; max-width: 95vw; max-height: 90vh; overflow: hidden;
     position: relative; backdrop-filter: blur(50px);
 }
@@ -53,7 +53,7 @@
     padding: 20px 30px;
     border-top: 1px solid var(--glass-border);
     display: flex; justify-content: flex-end; gap: 15px;
-    background: var(--black-20);
+    background: var(--white-05);
 }
 
 /* 📥 Drawer Specifics */

@@ -7,6 +7,7 @@ orjson>=3.9.0
 rich>=13.0.0
 markdown>=3.4.0   # 🎨 [渲染] 主权原生主题核心解析器
 fastapi>=0.100.0  # 🔌 [API] 工业级后端接口网关
+python-multipart  # 📦 [API] 接收文件上传和表单数据依赖
 uvicorn[standard]>=0.23.0   # 🔌 [API] 高性能异步服务器 (含 WebSocket 支持)
 websockets>=11.0          # 🔌 [API] 实时事件推送核心依赖
 ruff>=0.1.0    # 🛡️ [哨兵] 极致速度的 Linter & Auto-Fixer

@@ -27,6 +27,19 @@ window.initWebSocket = () => {
             if (typeof handleTerminalData === 'function') {
                 handleTerminalData(data.payload);
             }
+        } else if (data.type === 'AUDIT_LOG') {
+            // 🚀 [V78.7] 白盒化进度流：拦截后端 tlog 投递至终端
+            const modal = document.getElementById('terminal-modal');
+            if (modal && modal.style.display !== 'none') {
+                if (typeof window.appendTerminalLog === 'function') {
+                    const msg = data.payload.message || '';
+                    const level = data.payload.level || 'INFO';
+                    let color = null;
+                    if (level === 'ERROR' || level === 'CRITICAL') color = '#ff4d4d';
+                    else if (level === 'WARNING') color = '#ffaa00';
+                    window.appendTerminalLog(`[${level}] ${msg}`, color);
+                }
+            }
         } else if (data.type === 'SYSTEM_HEALTH') {
             // 转发给健康矩阵模块
             if (typeof refreshHealthMatrix === 'function') {
@@ -77,23 +90,58 @@ window.initWebSocket = () => {
                     linkMap[[src, tgt].sort().join('⇄')] = { source: src, target: tgt, ...l };
                 });
 
+                // 🛡️ 过滤幽灵链路：防止 WebSocket 增量批次中存在指向未知节点的幽灵边（如 STB_MASK_TRAP）
+                const validNodeIds = new Set(Object.keys(nodeMap));
+                const validLinks = Object.values(linkMap).filter(l => {
+                    const src = l.source?.id || l.source;
+                    const tgt = l.target?.id || l.target;
+                    return validNodeIds.has(src) && validNodeIds.has(tgt);
+                });
+
                 const merged = {
                     nodes: Object.values(nodeMap),
-                    links: Object.values(linkMap)
+                    links: validLinks
                 };
                 window.galaxyGraph.graphData(merged);
                 window.galaxyGraph.cooldownTicks(15);
-                window.galaxyGraph.d3Reheat();
+                if (typeof window.galaxyGraph.d3Reheat === 'function') {
+                    window.galaxyGraph.d3Reheat();
+                } else if (typeof window.galaxyGraph.d3ReheatLayout === 'function') {
+                    window.galaxyGraph.d3ReheatLayout();
+                } else if (typeof window.galaxyGraph.refresh === 'function') {
+                    window.galaxyGraph.refresh();
+                }
                 if (typeof window.updateGalaxyLabelElements === 'function') {
                     window.updateGalaxyLabelElements(merged.nodes);
                 }
                 console.log(`🚀 [WS] 增量合并完成: ${merged.nodes.length} 节点, ${merged.links.length} 连线`);
             }
+        } else if (data.type === 'FILE_SYNCED') {
+            if (typeof window.showBreathingToast === 'function' && data.payload && data.payload.file_name) {
+                window.showBreathingToast(`✨ 《${data.payload.file_name}》已物理备份`);
+            }
         } else if (data.type === 'SYNC_COMPLETED') {
             // 🪐 [混合渐进式] 同步完成 — 拉取最终全量图谱确保一致性
             console.log('✅ [WS] 同步完成，拉取最终全量图谱...');
+            if (typeof window.addAudit === 'function') {
+                window.addAudit('网站发布流程已全部完成！', 'success');
+            }
             if (typeof window.refreshGalaxy === 'function') {
                 window.refreshGalaxy();
+            }
+            // 🚀 [V78.7] 白盒化进度流：显示流水线完成并点亮确认按钮
+            const modal = document.getElementById('terminal-modal');
+            if (modal && modal.style.display !== 'none') {
+                if (typeof window.appendTerminalLog === 'function') {
+                    window.appendTerminalLog('✅ 同步流水线执行完毕，资产已全量生成！', '#00ff88');
+                }
+                const okBtn = document.getElementById('btn-terminal-ok');
+                if (okBtn) okBtn.style.display = 'block';
+                const statusEl = document.getElementById('terminal-status');
+                if (statusEl) {
+                    statusEl.innerText = 'COMPLETED';
+                    statusEl.className = 'online';
+                }
             }
         } else if (data.type === 'UI_AI_BREAKER_TRIPPED') {
             console.warn('🚨 [WS] 收到 AI 熔断通知:', data.payload);

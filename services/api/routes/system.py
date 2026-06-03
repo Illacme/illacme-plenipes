@@ -222,6 +222,33 @@ async def stop_wizard() -> Dict[str, str]:
         return {"status": "stopped"}
     except:
         return {"status": "stopped", "note": "Service may already be down"}
+
+@router.post("/api/system/sync/precheck", dependencies=[Depends(verify_token)])
+async def precheck_sync() -> Dict[str, Any]:
+    """🚀 [V78.5] 毫秒级双段式预检接口：用于提供给 UI 拦截"""
+    engine = get_global_engine()
+    if not engine:
+        raise HTTPException(status_code=503, detail="Engine not ready")
+    return sys_ops.run_precheck_logic(engine)
+
+@router.post("/api/system/watchdog/suspend", dependencies=[Depends(verify_token)])
+async def suspend_watchdog() -> Dict[str, str]:
+    """🚀 [V78.6] 挂起监控狗：阻止自动同步触发 (UI 独占模式)"""
+    engine = get_global_engine()
+    if engine:
+        engine.is_watchdog_suspended = True
+        tlog.info("🤫 [UI] 已发出静默指令：监控狗进入休眠状态。")
+    return {"status": "suspended"}
+
+@router.post("/api/system/watchdog/resume", dependencies=[Depends(verify_token)])
+async def resume_watchdog() -> Dict[str, str]:
+    """🚀 [V78.6] 唤醒监控狗：恢复自动同步"""
+    engine = get_global_engine()
+    if engine:
+        engine.is_watchdog_suspended = False
+        tlog.info("🐕 [UI] 已发出唤醒指令：监控狗重新开始巡视。")
+    return {"status": "resumed"}
+
 @router.post("/api/system/sync/trigger", dependencies=[Depends(verify_token)])
 async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool = False) -> Dict[str, Any]:
     """🚀 [V51.0] 全球同步点火接口：驱动编排中枢执行全量同步"""

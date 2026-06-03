@@ -18,8 +18,8 @@ class DeploymentPipelineGenerator:
         try:
             # 1. 确定当前激活的 SSG 物理渲染适配器
             adapter = None
-            if hasattr(engine, 'egress') and hasattr(engine.egress, 'active_renderer'):
-                adapter = engine.egress.active_renderer
+            if hasattr(engine, 'ssg_adapter') and hasattr(engine.ssg_adapter, 'active_renderer'):
+                adapter = engine.ssg_adapter.active_renderer
             
             if not adapter:
                 tlog.warning("⚠️ [流水线生成器] 未找到激活的 SSG 物理渲染适配器，跳过生成。")

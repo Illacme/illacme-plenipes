@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
 from .routes import system, content, governance, ws, compute
-from .routes import system, content, governance, ws, compute, agent
+from .routes import agent
 from .infrastructure.logging import setup_api_logging
 from .infrastructure.middleware import setup_middleware
 

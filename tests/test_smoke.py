@@ -109,7 +109,6 @@ def test_ai_checker_connectivity_failure():
     """验证当 AI 节点全部连接拒绝时 AIChecker 返回 FAIL"""
     from core.governance.checks.ai import AIChecker
     from unittest.mock import MagicMock
-    import sys
 
     mock_engine = MagicMock()
     mock_engine.no_ai = False

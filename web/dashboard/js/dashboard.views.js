@@ -98,7 +98,7 @@ window.viewTemplates = {
                     </div>
                     <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
                         <table id="vault-table" style="min-width: 600px;">
-                            <thead style="position: sticky; top: 0; z-index: 10; background: rgba(13, 14, 28, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(255,255,255,0.1);">
+                            <thead style="position: sticky; top: 0; z-index: 10; background: rgba(var(--bg-modal-solid-rgb), 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--glass-border);">
                                 <tr>
                                     <th style="width: 35%;">标题</th>
                                     <th style="width: auto;">物理路径</th>
@@ -279,6 +279,7 @@ window.handleRouting = () => {
     const hash = window.location.hash.replace('#/', '');
     const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings'];
     if (hash && validViews.includes(hash)) {
+        if (window.currentView === hash) return; // Prevent duplicate execution from programmatic hash changes
         const subId = window.pendingSubView;
         window.pendingSubView = null;
         window.showView(hash, subId);

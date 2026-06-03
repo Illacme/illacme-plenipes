@@ -7,10 +7,8 @@ Illacme-plenipes Core - Baidu Qianfan (文心一言) Protocol Adapter
 """
 import time
 import requests
-import json
 from typing import Dict, Any, Tuple
 from core.adapters.ai.base import BaseTranslator
-from core.utils.tracing import tlog
 from core.adapters.ai.registry import AIProviderRegistry
 
 class BaiduQianfanTranslator(BaseTranslator):

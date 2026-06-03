@@ -20,5 +20,6 @@ from services.api.logic.content_ops_shards.vault_ops import (
     create_document_logic as create_document_logic,
     create_directory_logic as create_directory_logic,
     delete_directory_logic as delete_directory_logic,
-    move_document_logic as move_document_logic
+    move_document_logic as move_document_logic,
+    upload_asset_logic as upload_asset_logic
 )

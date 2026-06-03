@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import pytest
-import json
 from core.adapters.ai.agent_loop import AutonomousAgent
 from core.adapters.ai.tool_protocol import ToolCallEvent
 from core.adapters.ai.base import BaseTranslator

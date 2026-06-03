@@ -18,7 +18,7 @@ window.initializeCustomTooltip = () => {
                 font-family: inherit;
                 font-weight: 500;
                 color: #ffffff;
-                background: rgba(13, 14, 28, 0.92);
+                background: rgba(var(--bg-modal-solid-rgb), 0.92);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.15);

@@ -35,6 +35,14 @@ class NLPAdapter:
             
             # 简单清洗 Markdown 装饰
             clean_res = res.replace("```json", "").replace("```", "").strip()
+            
+            # 🚀 [V50.3] 剥离深度思考模型 (如 DeepSeek-R1) 附带的 CoT (Thinking Process) 逻辑
+            # 采用寻找大括号的方法提取最外层 JSON 字典
+            start_idx = clean_res.find('{')
+            end_idx = clean_res.rfind('}')
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                clean_res = clean_res[start_idx:end_idx+1]
+                
             data = json.loads(clean_res)
             
             # 🚀 [V48.3] 强类型卫士：确保 AI 返回的是结构化字典

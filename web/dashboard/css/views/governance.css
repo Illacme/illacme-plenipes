@@ -41,7 +41,7 @@
 
 /* 🛡️ License Banner - Sovereign Certificate */
 #view-settings .license-banner {
-    background: linear-gradient(90deg, rgba(var(--accent-primary-rgb), 0.1) 0%, rgba(13, 14, 28, 0.5) 100%);
+    background: linear-gradient(90deg, rgba(var(--accent-primary-rgb), 0.1) 0%, rgba(var(--bg-modal-solid-rgb), 0.5) 100%);
     border: 1px solid rgba(var(--accent-primary-rgb), 0.2);
     border-radius: 16px;
     padding: 20px 25px;

@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         agentInput.value = ''; agentInput.disabled = true; agentInput.placeholder = 'AI 助手思考中...';
         if (agentPod) agentPod.classList.add('processing');
-        if (agentStatus) { agentStatus.textContent = 'EXECUTING'; agentStatus.style.color = 'var(--neon-amber)'; }
+        if (agentStatus) { agentStatus.textContent = '⚡ 运算中'; agentStatus.style.color = 'var(--neon-amber)'; }
 
         sa.render.appendMessage(`> ${command}`, 'user-msg');
         
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         thinkingDiv.id = thinkingId;
         thinkingDiv.className = 'agent-msg system-msg';
         thinkingDiv.style.opacity = '0.7';
-        thinkingDiv.innerHTML = '🧠 AI 协同链路已接通，正在解析指令...';
+        thinkingDiv.innerHTML = '🧠 AI 协同链路已接通，正在解析指令<span class="animated-dots"></span>';
         agentFeed.appendChild(thinkingDiv);
         agentFeed.scrollTop = agentFeed.scrollHeight;
 
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             agentInput.disabled = false;
             agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
             if (agentPod) agentPod.classList.remove('processing');
-            if (agentStatus) { agentStatus.textContent = 'STANDBY'; agentStatus.style.color = ''; }
+            if (agentStatus) { agentStatus.textContent = '🟢 待命'; agentStatus.style.color = ''; }
             agentInput.focus();
             isExecuting = false; // 🌟 优雅解锁，允许下一次安全提交
         }

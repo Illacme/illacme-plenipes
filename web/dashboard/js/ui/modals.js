@@ -111,22 +111,22 @@ window.getUIModalsHTML = () => {
                     <button class="close-btn" onclick="closeTerminalModal()" style="position: static; margin-left: auto;">×</button>
                 </div>
                 <div class="modal-body" style="padding: 0.5rem 1rem 0 1rem; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                    <div class="terminal-container" style="flex: 1; background: #0c0c0c; border-radius: 8px; border: 1px solid #333; overflow: hidden; display: flex; flex-direction: column;">
-                        <div class="terminal-header" style="background: #1a1a1a; padding: 0.5rem 1rem; font-size: 0.7rem; color: #888; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
+                    <div class="terminal-container" style="flex: 1; background: var(--black-10); border-radius: 8px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; flex-direction: column;">
+                        <div class="terminal-header" style="background: var(--black-20); padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-dim); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between;">
                             <span>COMMAND CENTER / DIAGNOSTICS</span>
                             <span id="terminal-status">STANDBY</span>
                         </div>
-                        <div id="terminal-toolbar" style="padding: 10px 1rem; background: rgba(0,0,0,0.3); border-bottom: 1px solid #333; display: flex; align-items: center; flex-wrap: nowrap !important;">
+                        <div id="terminal-toolbar" style="padding: 10px 1rem; background: var(--white-05); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; flex-wrap: nowrap !important;">
                             <button class="mini-action-btn" id="btn-modal-restart" onclick="invokeServiceAction('restart')" style="margin-right: 8px;"><span>🔄</span> 重启服务</button>
                             <button class="mini-action-btn" id="btn-modal-open" onclick="window.open('http://localhost:43213', '_blank')" style="border-color: #00ff88; color: #00ff88; margin-right: 12px;"><span>🌐</span> 打开预览</button>
-                            <div style="width: 1px; height: 18px; background: #444; margin: 0 12px;"></div>
+                            <div style="width: 1px; height: 18px; background: var(--glass-border); margin: 0 12px;"></div>
                             <button class="mini-action-btn" id="btn-modal-reinstall" onclick="invokeServiceAction('install')" style="border-color: #ffaa00; color: #ffaa00; margin-right: 8px;"><span>🏗️</span> 补全依赖</button>
                             <button class="mini-action-btn" id="btn-modal-upgrade" onclick="invokeServiceAction('upgrade')" style="border-color: var(--neon-cyan); color: var(--neon-cyan); margin-right: 8px;"><span>🆙</span> 升级版本</button>
                             <button class="mini-action-btn" id="btn-modal-rollback" onclick="invokeServiceAction('rollback')" style="border-color: #ff4d4d; color: #ff4d4d;"><span>⏪</span> 环境复原</button>
                             <div style="flex: 1;"></div>
                             <button class="mini-action-btn" onclick="document.getElementById('terminal-output').innerHTML = ''"><span>🗑️</span> 清空屏幕</button>
                         </div>
-                        <div id="terminal-output" style="flex: 1; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #d1d1d1; overflow-y: auto; line-height: 1.4;"></div>
+                        <div id="terminal-output" style="flex: 1; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-bright); overflow-y: auto; line-height: 1.4; background: var(--black-10);"></div>
                     </div>
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: center; width: 100%; padding: 0.4rem 0 1rem 0; gap: 1rem;">

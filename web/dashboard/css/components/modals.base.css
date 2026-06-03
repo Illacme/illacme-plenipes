@@ -10,16 +10,25 @@
 
 /* 🧪 High Contrast Modal Overrides */
 .swal2-popup {
-    background: rgba(var(--bg-modal-solid-rgb), 0.98) !important; /* 几乎实色，彻底阻断 background 干扰 */
-    border: 1px solid var(--white-15) !important;
-    box-shadow: 0 0 50px var(--black-80), 0 0 20px rgba(var(--accent-primary-rgb), 0.2) !important;
+    background: rgba(var(--bg-modal-solid-rgb), 0.98) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.4), 0 0 20px rgba(var(--accent-primary-rgb), 0.2) !important;
     border-radius: 32px !important;
     backdrop-filter: blur(20px) !important;
+    color: var(--text-bright) !important;
+}
+
+.swal2-title {
+    color: var(--text-bright) !important;
+}
+
+.swal2-html-container {
+    color: var(--text-dim) !important;
 }
 
 .swal2-backdrop {
-    background: var(--black-60) !important; /* 加深背景遮罩 */
-    backdrop-filter: blur(4px) !important; /* 让背景内容变模糊 */
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
 }
 
 /* 🚀 物理破壁：确保 Swal 内部不剪裁绝对定位元素 */
@@ -39,8 +48,8 @@
 .swal2-sidebar-confirm {
     background: rgba(var(--bg-sidebar-solid-rgb), 0.85) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid var(--white-10) !important;
-    box-shadow: 0 20px 40px var(--black-50) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
     color: var(--text-slate-bright) !important;
     font-family: inherit !important;
     border-radius: 16px !important;

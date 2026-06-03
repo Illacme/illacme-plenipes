@@ -212,6 +212,10 @@ select {
     background-position: right 14px center;
     padding-right: 40px;
 }
+select option {
+    background-color: var(--bg-deep);
+    color: var(--text-bright);
+}
 
 /* 5. 滑块与快速调节 (Sliders & Quick Adjust) */
 input[type="range"] {

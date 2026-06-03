@@ -4,7 +4,7 @@
 🔗 [SOP-02] 业务逻辑已物理降解至 core.api.logic.content_ops，本文件仅保留路由映射与依赖注入。
 """
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from core.runtime.engine_singleton import get_global_engine
 from .system import verify_token
@@ -12,7 +12,8 @@ from services.api.logic.content_ops import (search_vault_logic,
     get_document_detail_logic, update_document_metadata_logic,
     save_document_logic, create_document_logic,
     create_directory_logic, delete_directory_logic,
-    move_document_logic, get_galaxy_graph_logic, get_vault_asset_logic)
+    move_document_logic, get_galaxy_graph_logic, get_vault_asset_logic,
+    upload_asset_logic)
 
 router = APIRouter()
 
@@ -59,6 +60,12 @@ async def update_document_metadata(doc_id: str, req: dict):
 async def move_document(req: dict):
     engine = get_global_engine()
     return move_document_logic(engine, req)
+
+@router.post("/ledger/assets/upload", dependencies=[Depends(verify_token)])
+async def upload_asset(doc_id: str = Form(""), file: UploadFile = File(...)):
+    engine = get_global_engine()
+    file_bytes = await file.read()
+    return upload_asset_logic(engine, doc_id, file_bytes, file.filename)
 
 @router.get("/api/galaxy/graph", dependencies=[Depends(verify_token)])
 def get_galaxy_graph(mode: str = "full"):

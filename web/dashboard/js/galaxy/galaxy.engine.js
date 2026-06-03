@@ -12,7 +12,7 @@ function focusNodeIn3D(node) {
     const targetPos = (node.x === 0 && node.y === 0 && node.z === 0)
         ? { x: 0, y: 0, z: distance }
         : { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio };
-    
+
     window.galaxyGraph.cameraPosition(targetPos, node, 1200); // 1.2 秒柔和过渡
 }
 
@@ -22,12 +22,17 @@ window.setupGalaxyEngine = (elem) => {
     window._hoveredNode = null;
 
     // 🚀 [V86.8] 色彩治理适配：从 CSS 变量读取 RGB 原始通道值以兼容 WebGL / Three.js 渲染器，杜绝 HSL/var 导致的黑屏故障
-    const style = getComputedStyle(document.documentElement);
-    const purpleRgb = (style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim();
-    const cyanRgb = (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim();
-
-    const neonPurple = `rgb(${purpleRgb})`;
-    const neonCyan = `rgb(${cyanRgb})`;
+    const getColors = () => {
+        const style = getComputedStyle(document.documentElement);
+        return {
+            purpleRgb: (style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim(),
+            cyanRgb: (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim()
+        };
+    };
+    
+    let { purpleRgb, cyanRgb } = getColors();
+    let neonPurple = `rgb(${purpleRgb})`;
+    let neonCyan = `rgb(${cyanRgb})`;
 
     const graph = ForceGraph3D()(elem)
         .width(elem.clientWidth || window.innerWidth || 1200)
@@ -171,6 +176,19 @@ window.setupGalaxyEngine = (elem) => {
     if (chargeForce) chargeForce.strength(-120);
     const linkForce = graph.d3Force('link');
     if (linkForce) linkForce.distance(80).strength(0.4);
+
+    // 🌗 [Theme] 昼夜模式深度联动：实时响应光影切换
+    window.addEventListener('themeModeChanged', () => {
+        const newColors = getColors();
+        purpleRgb = newColors.purpleRgb;
+        cyanRgb = newColors.cyanRgb;
+        neonPurple = `rgb(${purpleRgb})`;
+        neonCyan = `rgb(${cyanRgb})`;
+        
+        // 强制引擎基于新闭包变量重绘色彩
+        graph.nodeColor(graph.nodeColor());
+        graph.linkColor(graph.linkColor());
+    });
 
     return graph;
 };

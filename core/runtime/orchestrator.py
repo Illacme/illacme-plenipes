@@ -64,6 +64,10 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}\n{traceback.format_exc()}")
             finally:
                 _is_publishing = False
+                # 🚀 [V78.6] 安全兜底：流水线跑完后，强制唤醒可能被挂起的监控狗
+                if hasattr(engine, 'is_watchdog_suspended') and engine.is_watchdog_suspended:
+                    engine.is_watchdog_suspended = False
+                    tlog.info("🐕 [后台闭环] 已强行唤醒处于休眠状态的监控狗。")
 
     # 3. 提交至全局执行器 (优先级设为 CRITICAL 以确保立即响应)
     future = global_executor.submit(_background_job, priority=TaskPriority.CRITICAL, task_name="Async-Full-Publish")

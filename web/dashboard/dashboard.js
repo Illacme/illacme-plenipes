@@ -70,6 +70,11 @@ window.initDashboard = async () => {
             window.initTelemetryDynamics();
         }
         if (typeof renderUIComponents === 'function') renderUIComponents();
+        
+        // 🌓 初始化昼夜主题引擎
+        if (typeof window.ThemeModeManager !== 'undefined') {
+            window.ThemeModeManager.init();
+        }
 
         if (typeof addAudit === 'function') addAudit("🚀 正在初始化主权治理控制台...");
 
@@ -135,7 +140,7 @@ window.initDashboard = async () => {
 
         const btnPublish = document.getElementById('btn-publish');
         if (btnPublish && typeof window.triggerPublish === 'function') {
-            btnPublish.onclick = window.triggerPublish;
+            btnPublish.onclick = () => window.triggerPublish(false);
         }
 
         const btnSaveDoc = document.getElementById('btn-save-doc');

@@ -70,8 +70,13 @@ window.showServiceManager = (service) => {
         if (modal) {
             modal.style.display = 'flex';
             document.getElementById('terminal-title').innerText = "🛰️ 预览服务主权指挥中心";
+            const toolbar = document.getElementById('terminal-toolbar');
+            if (toolbar) toolbar.style.display = 'flex';
             const out = document.getElementById('terminal-output');
-            if (out && out.innerHTML.trim() === "") {
+            if (out && modal.dataset.context !== 'preview') {
+                out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
+                modal.dataset.context = 'preview';
+            } else if (out && out.innerHTML.trim() === "") {
                 out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
             }
             

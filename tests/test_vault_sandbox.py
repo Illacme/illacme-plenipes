@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
-import pytest
-from core.adapters.ai.tools.vault_tools import ReadDocumentTool, WriteDocumentTool, SearchVaultTool, get_secure_vault_path
+from core.adapters.ai.tools.vault_tools import ReadDocumentTool, WriteDocumentTool, get_secure_vault_path
 
 def test_get_secure_vault_path():
     """验证安全文库工作路径的动态获取与自愈兜底"""

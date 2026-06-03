@@ -111,7 +111,7 @@ def main():
         result = adapter.ask_ai_with_retry(payload)
         print("\n✅ [拦截器截获结果]:")
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], ToolCallEvent):
-            print(f"🎯 成功捕获 ToolCallEvent 数组! ")
+            print("🎯 成功捕获 ToolCallEvent 数组! ")
             for evt in result:
                 print(f"   -> 动作: {evt.tool_name}")
                 print(f"   -> 参数: {evt.arguments}")

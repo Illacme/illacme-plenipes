@@ -17,6 +17,7 @@
 }
 
 :root {
+    color-scheme: dark;
     /* 🎨 Core Background & Deep Theme */
     --bg-deep: hsl(240, 30%, 4%); /* 提亮至极深沉的星空蓝黑以支持玻璃质感 */
     --bg-modal-solid-rgb: 13, 14, 28;
@@ -81,38 +82,39 @@
     --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-fast: all 0.2s ease;
 
-    /* 🆕 Neon Alpha Scale */
-    --neon-cyan-02: hsla(181, 100%, 50%, 0.02);
-    --neon-cyan-03: hsla(181, 100%, 50%, 0.03);
-    --neon-cyan-04: hsla(181, 100%, 50%, 0.04);
-    --neon-cyan-05: hsla(181, 100%, 50%, 0.05);
-    --neon-cyan-06: hsla(181, 100%, 50%, 0.06);
-    --neon-cyan-08: hsla(181, 100%, 50%, 0.08);
-    --neon-cyan-10: hsla(181, 100%, 50%, 0.10);
-    --neon-cyan-12: hsla(181, 100%, 50%, 0.12);
-    --neon-cyan-15: hsla(181, 100%, 50%, 0.15);
-    --neon-cyan-18: hsla(181, 100%, 50%, 0.18);
-    --neon-cyan-20: hsla(181, 100%, 50%, 0.20);
-    --neon-cyan-22: hsla(181, 100%, 50%, 0.22);
-    --neon-cyan-25: hsla(181, 100%, 50%, 0.25);
-    --neon-cyan-28: hsla(181, 100%, 50%, 0.28);
-    --neon-cyan-30: hsla(181, 100%, 50%, 0.30);
-    --neon-cyan-35: hsla(181, 100%, 50%, 0.35);
-    --neon-cyan-40: hsla(181, 100%, 50%, 0.40);
-    --neon-cyan-45: hsla(181, 100%, 50%, 0.45);
-    --neon-cyan-50: hsla(181, 100%, 50%, 0.50);
-    --neon-cyan-65: hsla(181, 100%, 50%, 0.65);
-    --neon-cyan-80: hsla(181, 100%, 50%, 0.80);
+    /* 🆕 Neon Alpha Scale (Dynamic based on RGB) */
+    --neon-cyan-02: rgba(var(--neon-cyan-rgb), 0.02);
+    --neon-cyan-03: rgba(var(--neon-cyan-rgb), 0.03);
+    --neon-cyan-04: rgba(var(--neon-cyan-rgb), 0.04);
+    --neon-cyan-05: rgba(var(--neon-cyan-rgb), 0.05);
+    --neon-cyan-06: rgba(var(--neon-cyan-rgb), 0.06);
+    --neon-cyan-08: rgba(var(--neon-cyan-rgb), 0.08);
+    --neon-cyan-10: rgba(var(--neon-cyan-rgb), 0.10);
+    --neon-cyan-12: rgba(var(--neon-cyan-rgb), 0.12);
+    --neon-cyan-15: rgba(var(--neon-cyan-rgb), 0.15);
+    --neon-cyan-18: rgba(var(--neon-cyan-rgb), 0.18);
+    --neon-cyan-20: rgba(var(--neon-cyan-rgb), 0.20);
+    --neon-cyan-22: rgba(var(--neon-cyan-rgb), 0.22);
+    --neon-cyan-25: rgba(var(--neon-cyan-rgb), 0.25);
+    --neon-cyan-28: rgba(var(--neon-cyan-rgb), 0.28);
+    --neon-cyan-30: rgba(var(--neon-cyan-rgb), 0.30);
+    --neon-cyan-35: rgba(var(--neon-cyan-rgb), 0.35);
+    --neon-cyan-40: rgba(var(--neon-cyan-rgb), 0.40);
+    --neon-cyan-45: rgba(var(--neon-cyan-rgb), 0.45);
+    --neon-cyan-50: rgba(var(--neon-cyan-rgb), 0.50);
+    --neon-cyan-65: rgba(var(--neon-cyan-rgb), 0.65);
+    --neon-cyan-80: rgba(var(--neon-cyan-rgb), 0.80);
 
-    /* 🆕 Accent Alpha Scale */
-    --accent-primary-05: hsla(267, 100%, 65%, 0.05);
-    --accent-primary-10: hsla(267, 100%, 65%, 0.1);
-    --accent-primary-20: hsla(267, 100%, 65%, 0.2);
+    /* 🆕 Accent Alpha Scale (Dynamic) */
+    --accent-primary-05: rgba(var(--accent-primary-rgb), 0.05);
+    --accent-primary-10: rgba(var(--accent-primary-rgb), 0.10);
+    --accent-primary-20: rgba(var(--accent-primary-rgb), 0.20);
 
     --accent-orange: hsl(37, 100%, 50%);
-    --accent-orange-05: hsla(37, 100%, 50%, 0.05);
-    --accent-orange-15: hsla(37, 100%, 50%, 0.15);
-    --accent-orange-30: hsla(37, 100%, 50%, 0.30);
+    --accent-orange-rgb: 255, 153, 0;
+    --accent-orange-05: rgba(var(--accent-orange-rgb), 0.05);
+    --accent-orange-15: rgba(var(--accent-orange-rgb), 0.15);
+    --accent-orange-30: rgba(var(--accent-orange-rgb), 0.30);
 
     /* 🆕 White/Black Alpha Scale */
     --white-01: rgba(255, 255, 255, 0.01);
@@ -163,4 +165,102 @@
     --status-online: hsla(152, 100%, 50%, 0.9);
     --status-offline: hsla(0, 100%, 65%, 0.9);
     --status-standby: hsla(40, 100%, 50%, 0.9);
+}
+
+/* 🌞 Light Mode (Morandi) Overrides */
+[data-theme="light"] {
+    color-scheme: light;
+    --bg-deep: #f8fafc; /* Premium Light Gray/White */
+    --bg-modal-solid-rgb: 255, 255, 255;
+    --bg-dropdown-solid-rgb: 255, 255, 255;
+    --bg-asset-solid-rgb: 248, 250, 252;
+    --bg-sidebar-solid-rgb: 241, 245, 249;
+    --bg-mode-solid-rgb: 255, 255, 255;
+    --bg-compute-card-rgb: 255, 255, 255;
+    --bg-compute-grid-rgb: 248, 250, 252;
+
+    --color-white: #000000;
+    --color-black: #ffffff;
+    --text-bright: #0f172a;
+    --text-dim: #334155;
+    --text-slate-bright: #1e293b;
+    --text-light-gray: #475569;
+    --text-muted: #64748b;
+
+    /* Deep Blue instead of Neon Cyan for contrast */
+    --accent-secondary: hsl(200, 95%, 40%);
+    --accent-secondary-rgb: 5, 105, 199;
+    
+    --neon-cyan: hsl(200, 95%, 40%);
+    --neon-cyan-rgb: 5, 105, 199;
+    
+    --accent-primary: hsl(260, 60%, 50%);
+    --accent-primary-rgb: 104, 51, 204;
+    
+    --neon-purple: hsl(260, 60%, 50%);
+    --neon-green: hsl(150, 70%, 35%);
+    --neon-green-rgb: 27, 153, 76;
+    --neon-amber: hsl(35, 90%, 45%);
+    --neon-amber-rgb: 219, 114, 11;
+    --neon-red: hsl(0, 80%, 45%);
+    --neon-red-rgb: 207, 23, 23;
+    --danger-color: var(--neon-red);
+
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.05);
+    --glass-highlight: rgba(255, 255, 255, 0.9);
+
+    --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    --shadow-neon-cyan: 0 0 5px rgba(5, 105, 199, 0.2);
+
+    --white-01: rgba(0, 0, 0, 0.01);
+    --white-02: rgba(0, 0, 0, 0.02);
+    --white-03: rgba(0, 0, 0, 0.03);
+    --white-05: rgba(0, 0, 0, 0.05);
+    --white-08: rgba(0, 0, 0, 0.08);
+    --white-10: rgba(0, 0, 0, 0.10);
+    --white-15: rgba(0, 0, 0, 0.15);
+    --white-20: rgba(0, 0, 0, 0.20);
+    --white-30: rgba(0, 0, 0, 0.30);
+    --white-40: rgba(0, 0, 0, 0.40);
+    --black-05: rgba(255, 255, 255, 0.05);
+    --black-10: rgba(255, 255, 255, 0.10);
+    --black-20: rgba(255, 255, 255, 0.20);
+    --black-30: rgba(255, 255, 255, 0.30);
+    --black-40: rgba(255, 255, 255, 0.40);
+    --black-50: rgba(255, 255, 255, 0.50);
+    --black-60: rgba(255, 255, 255, 0.60);
+    --black-80: rgba(255, 255, 255, 0.80);
+    --black-90: rgba(255, 255, 255, 0.90);
+    --black-95: rgba(255, 255, 255, 0.95);
+    
+    --bg-agent-dark: rgba(241, 245, 249, 0.8);
+    --bg-agent-input: rgba(255, 255, 255, 0.9);
+    --bg-agent-deep: rgba(226, 232, 240, 0.5);
+    --bg-agent-hover: rgba(226, 232, 240, 0.9);
+    --bg-agent-thinking: rgba(248, 250, 252, 0.9);
+
+    --diff-card-bg-start: rgba(255, 255, 255, 0.9);
+    --diff-card-bg-end: rgba(248, 250, 252, 0.9);
+    --diff-body-bg: rgba(241, 245, 249, 0.8);
+}
+/* 🙈 Disable scanline and textures in light mode */
+[data-theme="light"] .scanline-overlay::before,
+[data-theme="light"] .scanline-overlay::after,
+[data-theme="light"] .scanlines-overlay::before,
+[data-theme="light"] .scanlines-overlay::after,
+[data-theme="light"] body::after {
+    display: none !important;
+    background: none !important;
+}
+
+/* 🏔️ Header and Footer Light Mode Coordination */
+[data-theme="light"] header {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+}
+
+[data-theme="light"] #main-footer {
+    background: rgba(248, 250, 252, 0.9) !important;
+    border-top: 1px solid var(--glass-border) !important;
 }

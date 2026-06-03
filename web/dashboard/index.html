@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/components/modals.discovery.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.alerts.css?v=75.0">
     <link rel="stylesheet" href="css/components/dashboard.agent.css?v=75.1">
+    <link rel="stylesheet" href="css/components/glass.toast.css">
     <link rel="stylesheet" href="css/components/dashboard.agent.patch.css?v=76.8">
     <link rel="stylesheet" href="css/components/dashboard.agent.markdown.css?v=75.1">
     <link rel="stylesheet" href="css/components/dashboard.agent.widescreen.css?v=76.0">
@@ -36,6 +37,7 @@
     <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
     <link rel="stylesheet" href="css/views/dispatch.css?v=75.0">
+    <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js"></script>
     
@@ -184,7 +186,7 @@
                     style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px 8px 15px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="pod-title">SOVEREIGN COPILOT</span>
-                        <span class="version-tag tiny" id="agent-status-tag">STANDBY</span>
+                        <span class="version-tag tiny" id="agent-status-tag">🟢 待命</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <button id="agent-settings-toggle-btn" class="icon-btn" title="算力思维链配置"
@@ -253,7 +255,7 @@
                 </div>
                 <div class="agent-feed-container scroll-container scanline-overlay" id="agent-feed">
                     <div class="agent-msg system-msg" id="agent-default-welcome"
-                        style="border-left: 2px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.03); padding: 10px 12px; border-radius: 8px; font-style: normal; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        style="border-left: 2px solid var(--accent-secondary); background: var(--neon-cyan-03); padding: 10px 12px; border-radius: 8px; font-style: normal; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-glow);">
                         <div
                             style="font-weight: bold; color: var(--accent-secondary); font-size: 0.72rem; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;">
                             🤖 SOVEREIGN COPILOT 已就绪</div>
@@ -270,10 +272,10 @@
                                     style="display: block; font-weight: 700; color: var(--text-bright); margin-bottom: 2px;">🔍
                                     智能文库检索与分析：</span>
                                 • <code class="clickable-suggestion"
-                                    style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在文稿库中搜索“大宪章”</code>
+                                    style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在文稿库中搜索“大宪章”</code>
                                 (全局搜索)<br />
                                 • <code class="clickable-suggestion"
-                                    style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">阅读 README.md</code>
+                                    style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">阅读 README.md</code>
                                 (直接读取首页)
                             </div>
 
@@ -282,7 +284,7 @@
                                     style="display: block; font-weight: 700; color: var(--text-bright); margin-bottom: 2px;">🛠️
                                     高效增量修改 (安全避开 4096 截断)：</span>
                                 • <code class="clickable-suggestion"
-                                    style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在 README.md 的物理主权演进存证里追加一条 v31.2 迭代记录</code>
+                                    style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">在 README.md 的物理主权演进存证里追加一条 v31.2 迭代记录</code>
                                 (触发 patch_document 局部微创修补，体验一键撤销)
                             </div>
 
@@ -291,10 +293,10 @@
                                     style="display: block; font-weight: 700; color: var(--text-bright); margin-bottom: 2px;">🎭
                                     治理大宪章 SOP-05 协作模板：</span>
                                 • <code class="clickable-suggestion"
-                                    style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">使用【模板三：UI样式调整】优化 dashboard.agent.css 中的微型 diff 卡片间隙</code>
+                                    style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">使用【模板三：UI样式调整】优化 dashboard.agent.css 中的微型 diff 卡片间隙</code>
                                 (像素级对齐)<br />
                                 • <code class="clickable-suggestion"
-                                    style="color: var(--accent-secondary); background: rgba(0,242,255,0.06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,242,255,0.12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">系统启动报错，请启动【模板四：系统重启】进行故障诊断</code>
+                                    style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">系统启动报错，请启动【模板四：系统重启】进行故障诊断</code>
                                 (自动检测与自愈)
                             </div>
 
@@ -378,6 +380,11 @@
                     </div>
                 </div>
                 <div class="version-tag tiny">V74.0_STABLE</div>
+                <select id="theme-mode-select" style="margin-left: 10px; font-size: 0.65rem; padding: 2px 24px 2px 8px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--white-05); color: var(--text-bright); outline: none; cursor: pointer; transition: all 0.3s;" onchange="if(window.ThemeModeManager) ThemeModeManager.applySetting(this.value)" title="Theme Mode">
+                    <option value="dark">🌙 Dark Mode</option>
+                    <option value="light">☀️ Light Mode</option>
+                    <option value="auto">⏳ Auto Mode</option>
+                </select>
             </div>
         </footer>
     </div>
@@ -425,6 +432,7 @@
     <script src="/dashboard/js/compute/compute.modals.js"></script>
     <script src="/dashboard/js/compute/compute.diag.js"></script>
     <script src="/dashboard/js/compute/compute.precheck.js?v=77.13"></script>
+    <script src="/dashboard/js/theme/theme.mode.js?v=80.1"></script>
     <script src="/dashboard/js/theme/theme.api.js?v=80.1"></script>
     <script src="/dashboard/js/theme/theme.ui.js?v=80.1"></script>
     <script src="/dashboard/js/theme/theme.handlers.js?v=80.1"></script>
@@ -433,6 +441,7 @@
     <script src="/dashboard/js/ui/drawers.js"></script>
     <script src="/dashboard/js/ui/modals.js"></script>
     <script src="/dashboard/js/ui/tooltip.js"></script>
+    <script src="/dashboard/js/ui/toast.js"></script>
     <script src="/dashboard/js/dashboard.ui.js?v=75.1"></script>
     <script src="/dashboard/js/vault/vault.tree.js"></script>
     <script src="/dashboard/js/vault/vault.parser.js"></script>
@@ -484,6 +493,7 @@
     <script src="/dashboard/js/dashboard.galaxy.js?v=100.0"></script>
     <script src="/dashboard/js/dashboard.telemetry.js"></script>
     <script src="/dashboard/dashboard.js"></script>
+    <script src="/dashboard/js/dashboard.palette.js?v=1.2"></script>
 </body>
 
 </html>

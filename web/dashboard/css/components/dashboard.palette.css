@@ -1,0 +1,118 @@
+/* ⌨️ [V80.1] Cmd+P Command Palette (Glassmorphism Cyberpunk Style) */
+#command-palette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--black-60);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 99999; /* Highest priority */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 15vh;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#command-palette-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#command-palette {
+    width: 600px;
+    max-width: 90vw;
+    background: rgba(var(--bg-modal-solid-rgb), 0.7);
+    border: 1px solid var(--white-10);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px var(--black-50), 0 0 0 1px var(--white-05) inset;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(-20px) scale(0.98);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#command-palette-overlay.active #command-palette {
+    transform: translateY(0) scale(1);
+}
+
+#command-palette-input {
+    width: 100%;
+    padding: 20px 24px;
+    font-size: 1.2rem;
+    color: var(--text-bright);
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 1px solid var(--white-08);
+    font-family: var(--font-mono, monospace);
+}
+
+#command-palette-input::placeholder {
+    color: var(--text-muted);
+}
+
+#command-palette-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+    margin: 0;
+    list-style: none;
+}
+
+#command-palette-list::-webkit-scrollbar {
+    width: 6px;
+}
+#command-palette-list::-webkit-scrollbar-thumb {
+    background: var(--white-20);
+    border-radius: 3px;
+}
+
+.palette-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-family: var(--font-base, sans-serif);
+    transition: all 0.1s ease;
+    border: 1px solid transparent;
+}
+
+.palette-item:hover,
+.palette-item.selected {
+    background: var(--white-05);
+    color: var(--text-bright);
+}
+
+.palette-item.selected {
+    border-color: rgba(0, 255, 200, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.1) inset;
+    background: rgba(0, 255, 200, 0.05);
+}
+
+.palette-item-icon {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    opacity: 0.8;
+}
+
+.palette-item-title {
+    flex: 1;
+    font-weight: 500;
+}
+
+.palette-item-shortcut {
+    font-size: 0.8rem;
+    color: var(--white-40);
+    background: var(--white-10);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+}

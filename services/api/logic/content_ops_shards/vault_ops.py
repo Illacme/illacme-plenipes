@@ -9,6 +9,7 @@ import os
 import shutil
 import datetime
 import pathlib
+import uuid
 
 from core.utils.text import parse_frontmatter, inject_frontmatter
 from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
@@ -250,3 +251,27 @@ def move_document_logic(engine, req: dict):
         return {"success": True, "doc_id": doc_id, "new_path": new_path, "warning": f"SQLite 元数据平滑继承时出现细微抖动: {e}"}
 
     return {"success": True, "doc_id": doc_id, "new_path": new_path}
+
+def upload_asset_logic(engine, doc_id: str, file_bytes: bytes, filename: str):
+    """编辑器物理附件自动归档机制"""
+    if not engine: return {"error": "Engine not initialized"}
+    
+    doc_dir = os.path.dirname(doc_id) if doc_id else ""
+    assets_dir = os.path.join(doc_dir, "assets")
+    
+    base, ext = os.path.splitext(filename)
+    unique_filename = f"{base}_{uuid.uuid4().hex[:6]}{ext}"
+    rel_path = os.path.join(assets_dir, unique_filename).replace("\\", "/")
+    
+    abs_path = resolve_safe_path(engine, rel_path)
+    if not abs_path:
+        return {"error": "权限拒绝：非法的物理存放路径"}
+        
+    try:
+        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+        with open(abs_path, 'wb') as f:
+            f.write(file_bytes)
+    except Exception as e:
+        return {"error": f"物理磁盘资产写入失败: {e}"}
+        
+    return {"success": True, "asset_path": rel_path}

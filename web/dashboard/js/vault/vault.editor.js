@@ -6,11 +6,8 @@
 // 4. 全量物理编辑器 (Modal)
 window.openEditor = async (docId) => {
     window.activeDocId = docId;
-    const modal = document.getElementById('editor-modal');
-    const body = document.getElementById('editor-body');
-    const title = document.getElementById('editor-title');
-    const mTitle = document.getElementById('editor-meta-title');
-    const mSlug = document.getElementById('editor-meta-slug');
+    const modal = document.getElementById('editor-modal'), body = document.getElementById('editor-body');
+    const title = document.getElementById('editor-title'), mTitle = document.getElementById('editor-meta-title'), mSlug = document.getElementById('editor-meta-slug');
     
     // 💾 初始化隐藏草稿恢复提示挂载条
     const recoveryBar = document.getElementById('editor-draft-recovery-bar');
@@ -69,9 +66,7 @@ window.openEditor = async (docId) => {
 window.setEditorMode = (mode) => {
     const body = document.getElementById('editor-body');
     const preview = document.getElementById('editor-preview');
-    const btnSource = document.getElementById('mode-source');
-    const btnPreview = document.getElementById('mode-preview');
-    const btnSplit = document.getElementById('mode-split');
+    const btnSource = document.getElementById('mode-source'), btnPreview = document.getElementById('mode-preview'), btnSplit = document.getElementById('mode-split');
 
     if (!body || !preview) return;
 
@@ -103,10 +98,8 @@ window.closeEditor = () => {
 };
 
 window.saveDocument = async () => {
-    const content = document.getElementById('editor-body').value;
-    const titleEl = document.getElementById('editor-meta-title');
-    const slugEl = document.getElementById('editor-meta-slug');
-    const status = document.getElementById('save-status');
+    const content = document.getElementById('editor-body').value, titleEl = document.getElementById('editor-meta-title');
+    const slugEl = document.getElementById('editor-meta-slug'), status = document.getElementById('save-status');
     status.innerText = "💾 正在写入磁道...";
 
     // 🚀 [V68.0] 收集动态元数据
@@ -132,12 +125,8 @@ window.saveDocument = async () => {
                     const sign = offset >= 0 ? '+' : '-';
                     const tz = sign + pad(Math.floor(Math.abs(offset) / 60)) + ':' + pad(Math.abs(offset) % 60);
                     
-                    const y = dateObj.getFullYear();
-                    const m = pad(dateObj.getMonth() + 1);
-                    const d = pad(dateObj.getDate());
-                    const hh = pad(dateObj.getHours());
-                    const mm = pad(dateObj.getMinutes());
-                    const ss = pad(dateObj.getSeconds());
+                    const y = dateObj.getFullYear(), m = pad(dateObj.getMonth() + 1), d = pad(dateObj.getDate());
+                    const hh = pad(dateObj.getHours()), mm = pad(dateObj.getMinutes()), ss = pad(dateObj.getSeconds());
                     
                     frontmatter[key] = `${y}-${m}-${d}T${hh}:${mm}:${ss}${tz}`;
                     return;
@@ -175,7 +164,6 @@ window.saveDocument = async () => {
 
     if (res && res.success) {
         status.innerText = "✅ 写入成功";
-        addAudit(`📄 资产 ${window.activeDocId.substring(0, 8)} 已完成物理变更。`);
         
         // 💾 物理存盘生命周期闭环：成功写入后物理销毁该文档的本地草稿缓存
         localStorage.removeItem(`illacme_draft_${window.activeDocId}`);
@@ -212,6 +200,98 @@ setTimeout(() => {
                 window.triggerAutoSave();
             }
         });
+        
+        // 🚀 [V88.0] 物理图像无缝上传拦截
+        modal.addEventListener('paste', async (e) => {
+            if (e.target.id === 'editor-body') {
+                await window.handleEditorAssetUpload(e, 'paste');
+            }
+        });
+        modal.addEventListener('drop', async (e) => {
+            if (e.target.id === 'editor-body') {
+                await window.handleEditorAssetUpload(e, 'drop');
+            }
+        });
+        modal.addEventListener('dragover', (e) => {
+            if (e.target.id === 'editor-body') {
+                e.preventDefault();
+            }
+        });
+        
         console.info("💾 [Scratchpad] Zero-Leak Event Delegation registered successfully.");
     }
 }, 500);
+
+window.handleEditorAssetUpload = async (e, mode) => {
+    let file = null;
+    if (mode === 'paste') {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+            if (item.type.indexOf('image/') === 0) {
+                file = item.getAsFile();
+                break;
+            }
+        }
+    } else if (mode === 'drop') {
+        const items = e.dataTransfer.items;
+        if (items) {
+            for (let item of items) {
+                if (item.kind === 'file' && item.type.indexOf('image/') === 0) {
+                    file = item.getAsFile();
+                    break;
+                }
+            }
+        } else if (e.dataTransfer.files) {
+            for (let f of e.dataTransfer.files) {
+                if (f.type.indexOf('image/') === 0) {
+                    file = f;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!file) return;
+
+    e.preventDefault();
+    if (typeof addAudit === 'function') addAudit(`🖼️ 正在极速物理直传图片 [${file.name || 'image.png'}]...`, 'info');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('doc_id', window.activeDocId || "");
+
+    try {
+        const res = await window.apiFetch('/ledger/assets/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {} // 阻止 apiFetch 自动挂载 application/json
+        });
+
+        if (res && res.success) {
+            if (typeof addAudit === 'function') addAudit(`✅ 图片已写入磁道: ${res.asset_path}`, 'success');
+            
+            const textarea = document.getElementById('editor-body');
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            const fallbackName = file.name ? file.name.split('.')[0] : 'image';
+            // 使用 Obsidian 兼容的相对根路径 /assets/... 或者直接用相对路径
+            const textToInsert = `![${fallbackName}](${res.asset_path})`;
+            
+            textarea.value = textarea.value.substring(0, startPos) + textToInsert + textarea.value.substring(endPos, textarea.value.length);
+            textarea.selectionStart = startPos + textToInsert.length;
+            textarea.selectionEnd = startPos + textToInsert.length;
+            
+            window.triggerAutoSave();
+            if (typeof setEditorMode === 'function') {
+                const btnSplit = document.getElementById('mode-split');
+                if (btnSplit && btnSplit.classList.contains('active')) {
+                    if (typeof updateEditorPreview === 'function') updateEditorPreview();
+                }
+            }
+        } else {
+            if (typeof addAudit === 'function') addAudit(`❌ 图片直传失败: ${res ? res.error : '未知错误'}`, 'error');
+        }
+    } catch (err) {
+        if (typeof addAudit === 'function') addAudit(`❌ 上传链路异常: ${err.message}`, 'error');
+    }
+};

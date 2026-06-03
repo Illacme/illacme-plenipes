@@ -130,7 +130,7 @@
 .error-modal-glass {
     width: 650px;
     max-width: 90vw;
-    background: rgba(13, 14, 28, 0.9);
+    background: rgba(var(--bg-modal-solid-rgb), 0.9);
     border: 1px solid var(--danger-border);
     border-top: 3px solid var(--neon-red);
     border-radius: 12px;

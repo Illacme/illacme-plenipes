@@ -159,6 +159,7 @@ window.openVaultDrawer = async (relPath) => {
     // 🚀 [V68.0] 环境自感应：实验室模式
     const labBadge = document.getElementById('hub-lab-badge');
     const labBtn = document.getElementById('btn-toggle-lab');
+    window.isLivePreviewActive = data.environment.is_lab_active;
     if (data.environment.is_lab_active) {
         labBadge.innerText = "ACTIVE (LIVE)";
         labBadge.className = "badge active";

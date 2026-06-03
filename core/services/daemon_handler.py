@@ -7,6 +7,7 @@ Illacme-plenipes Core - Daemon Event Handler
 """
 import os
 import threading
+import time
 import traceback
 import logging
 from core.runtime.cli_bootstrap import send_notification
@@ -19,6 +20,7 @@ except ImportError:
     HAS_WATCHDOG = False
 
 from core.utils.tracing import tlog
+from core.utils.event_bus import bus
 
 class ChangeHandler(FileSystemEventHandler):
     """🚀 [TDR-Iter-021] 守护进程事件处理器：专注 FS 拦截、防抖与分发"""
@@ -32,6 +34,8 @@ class ChangeHandler(FileSystemEventHandler):
         self.dev_server = dev_server
         self._timers = {}
         self._lock = threading.Lock()
+        self._first_events = {}
+        self.max_wait = 300  # 🚀 [V79.1] 5分钟无差别物理兜底存盘
 
         watch_cfg = engine.config.system.watchdog_settings
         self._gc_timer = None
@@ -44,6 +48,10 @@ class ChangeHandler(FileSystemEventHandler):
         self.handover_delay = watch_cfg.handover_delay
 
     def _should_skip(self, path):
+        # 🚀 [V78.6] 支持系统级监控狗挂起指令（UI 主动静默）
+        if getattr(self.engine, 'is_watchdog_suspended', False):
+            return True
+            
         abs_path = os.path.normcase(os.path.realpath(path))
         parts = abs_path.replace('\\', '/').split('/')
         if any(eb in parts for eb in self.exclude_dirs): return True
@@ -72,12 +80,28 @@ class ChangeHandler(FileSystemEventHandler):
 
     def _debounced_submit(self, file_path, prefix, source, delay=None):
         with self._lock:
+            now = time.time()
+            if file_path not in self._first_events:
+                self._first_events[file_path] = now
+                
+            # 🚀 [V79.1] 检查是否超过最大兜底时长
+            if now - self._first_events[file_path] >= self.max_wait:
+                if file_path in self._timers:
+                    self._timers[file_path].cancel()
+                    del self._timers[file_path]
+                del self._first_events[file_path]
+                
+                # 直接强行提交异步池，绕过本次 debounce
+                self.watch_pool.submit(self._dispatch_task, file_path, prefix, source)
+                return
+
             if file_path in self._timers: self._timers[file_path].cancel()
             def task_wrapper():
                 try: self.watch_pool.submit(self._dispatch_task, file_path, prefix, source)
                 finally:
                     with self._lock:
                         if file_path in self._timers: del self._timers[file_path]
+                        if file_path in self._first_events: del self._first_events[file_path]
             timer = threading.Timer(delay or self.debounce_delay, task_wrapper)
             self._timers[file_path] = timer
             timer.start()
@@ -92,6 +116,7 @@ class ChangeHandler(FileSystemEventHandler):
                 if self.dev_server:
                     self.dev_server.notify_reload()
                 send_notification("✨ 文章已更新", f"《{os.path.basename(file_path)}》已上线")
+                bus.emit("FILE_SYNCED", file_name=os.path.basename(file_path))
         except Exception:
             tlog.error(f"⚠️ 实时同步意外崩溃: {traceback.format_exc()}")
 

@@ -1,0 +1,29 @@
+/*
+ * 🍞 Breathing Toast Capsule CSS
+ * 职责：实现极简、无打扰的玻璃态呼吸通知，集成在底部状态栏。
+ */
+
+.toast-breathe-active {
+    background: rgba(10, 20, 15, 0.9) !important;
+    border: 1px solid rgba(0, 255, 136, 0.6) !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    color: var(--text-bright) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    transition: all 0.3s ease !important;
+    
+    /* 动画：呼吸光效 */
+    animation: toast-breathe 1.5s ease-in-out infinite alternate !important;
+}
+
+@keyframes toast-breathe {
+    0% {
+        box-shadow: 0 0 5px rgba(0, 255, 136, 0.1), inset 0 0 5px rgba(0, 255, 136, 0.1);
+        border-color: rgba(0, 255, 136, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.5), inset 0 0 10px rgba(0, 255, 136, 0.3);
+        border-color: rgba(0, 255, 136, 0.8);
+    }
+}

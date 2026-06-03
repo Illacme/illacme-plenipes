@@ -10,6 +10,7 @@ window.toggleThemeLab = async () => {
     
     if (res && res.success) {
         console.log("✅ 引擎状态切换成功:", res.is_active);
+        window.isLivePreviewActive = res.is_active;
         Swal.fire({
             title: res.is_active ? '预览引擎已启动' : '预览引擎已关闭',
             text: res.is_active ? '已进入实时渲染模式，物理变动将立即生效。' : '已切换回静态快照预览模式。',
@@ -20,7 +21,13 @@ window.toggleThemeLab = async () => {
             showConfirmButton: false
         });
         // 刷新状态 (延迟 800ms 确保后端状态已持久化)
-        setTimeout(() => openVaultDrawer(window.currentDocId), 800);
+        setTimeout(() => {
+            if (window.currentDocId) {
+                if (typeof openVaultDrawer === 'function') openVaultDrawer(window.currentDocId);
+            } else if (typeof window.loadVault === 'function') {
+                window.loadVault(); // fallback if in vault view
+            }
+        }, 800);
     }
 };
 

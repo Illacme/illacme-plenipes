@@ -80,6 +80,7 @@ def bind_event(name):
 bus.subscribe("AUDIT_LOG", bind_event("AUDIT_LOG"))
 bus.subscribe("SYNC_STARTED", bind_event("SYNC_STARTED"))
 bus.subscribe("SYNC_COMPLETED", bind_event("SYNC_COMPLETED"))
+bus.subscribe("FILE_SYNCED", bind_event("FILE_SYNCED"))
 bus.subscribe("HEALTH_UPDATE", bind_event("HEALTH_UPDATE"))
 bus.subscribe("UI_PROGRESS_START", bind_event("UI_PROGRESS_START"))
 bus.subscribe("UI_PROGRESS_ADVANCE", bind_event("UI_PROGRESS_ADVANCE"))

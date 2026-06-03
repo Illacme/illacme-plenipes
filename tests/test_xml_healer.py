@@ -87,7 +87,7 @@ async def test_call_llm_stream_heals_xml():
     能够完美自愈并 yield 正确的 tool_calls 事件。
     """
     from core.adapters.ai.tool_runner import call_llm_stream
-    from unittest.mock import AsyncMock, MagicMock, patch
+    from unittest.mock import MagicMock
 
     # 1. 构造一个符合 OpenAICompatibleTranslator MRO 要求的 Mock Adapter
     class MockTranslator:

@@ -18,7 +18,7 @@
                 // 🚀 [AEL-Iter-v77.14] 自检启动时标为 CHECKING 状态
                 const agentStatus = document.getElementById('agent-status-tag');
                 if (agentStatus) {
-                    agentStatus.textContent = 'CHECKING';
+                    agentStatus.textContent = '🔍 自检中';
                     agentStatus.style.color = 'var(--neon-amber, #ffb300)';
                     agentStatus.style.borderColor = 'rgba(255, 179, 0, 0.4)';
                     agentStatus.style.textShadow = '0 0 6px rgba(255, 179, 0, 0.4)';
@@ -101,7 +101,7 @@
             }
 
             if (agentStatus) {
-                agentStatus.textContent = 'STANDBY';
+                agentStatus.textContent = '🟢 待命';
                 agentStatus.style.color = '';
                 agentStatus.style.borderColor = '';
                 agentStatus.style.textShadow = '';
@@ -132,12 +132,12 @@
             const agentStatus = document.getElementById('agent-status-tag');
             if (agentStatus) {
                 if (isFallbackActive) {
-                    agentStatus.textContent = 'FALLBACK';
+                    agentStatus.textContent = '🟠 备用接管';
                     agentStatus.style.color = 'var(--neon-cyan, #00f2ff)';
                     agentStatus.style.borderColor = 'hsla(180, 100%, 50%, 0.4)';
                     agentStatus.style.textShadow = '0 0 6px hsla(180, 100%, 50%, 0.4)';
                 } else {
-                    agentStatus.textContent = 'OFFLINE';
+                    agentStatus.textContent = '🔴 离线';
                     agentStatus.style.color = 'var(--neon-red, #ff4d4d)';
                     agentStatus.style.borderColor = 'hsla(0, 100%, 65%, 0.4)';
                     agentStatus.style.textShadow = '0 0 6px hsla(0, 100%, 65%, 0.4)';

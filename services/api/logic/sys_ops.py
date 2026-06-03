@@ -8,7 +8,9 @@
 import os
 import shutil
 import subprocess
-from typing import Any, List
+import time
+import re
+from typing import Any, List, Dict
 from core.utils.tracing import tlog
 from core.utils.event_bus import bus
 
@@ -119,5 +121,111 @@ def rollback_config(engine: Any, theme_dir: str) -> List[str]:
         target_path = os.path.join(theme_dir, f)
         if os.path.exists(bak_path):
             shutil.copy2(bak_path, target_path)
-            restored.append(f)
     return restored
+
+def run_precheck_logic(engine: Any) -> Dict[str, List[Any]]:
+    """🚀 [V78.5] 毫秒级双段式预检逻辑：执行快速静态审计以供 UI 拦截"""
+    result = {
+        "critical_errors": [],
+        "warnings": []
+    }
+    
+    if not engine:
+        result["critical_errors"].append("物理底层 Engine 实例未就绪。")
+        return result
+
+    # 1. 强阻断维度 (Critical): 主题包环境验证
+    from core.config.config import THEMES_DIR
+    theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
+    vault_assets_root = os.path.join(engine.vault_root, "assets") if engine.vault_root else ""
+    
+    if not os.path.exists(theme_dir):
+        result["critical_errors"].append(f"主题环境丢失：未找到激活的主题 '{engine.active_theme}' 对应的物理目录。")
+    elif engine.active_theme not in ['default'] and not os.path.exists(os.path.join(theme_dir, "package.json")):
+        result["critical_errors"].append(f"核心清单丢失：在主题 '{engine.active_theme}' 下未找到 package.json 文件。")
+
+    # 2. 从本地 SQLite 数据库中提取所有已解析资产并执行存在性审计 (Physical Existence)
+    try:
+        # 宽容模式：如果 SQLite 尚未建表或不存在，安全退化
+        if hasattr(engine, 'meta') and hasattr(engine.meta, 'sqlite'):
+            docs_res = engine.meta.sqlite.list_documents_paginated(1, 10000)
+            docs = docs_res.get("data", []) if isinstance(docs_res, dict) else docs_res
+            
+            for doc in docs:
+                assets = doc.get("assets", [])
+                rel_path = doc.get("id", "Unknown")
+                for asset in assets:
+                    # 跳过外部链接
+                    if str(asset).startswith(('http://', 'https://', '//')): continue
+                    
+                    normalized_asset = os.path.normpath(asset)
+                    abs_asset = os.path.join(vault_assets_root, normalized_asset)
+                    
+                    if not os.path.exists(abs_asset):
+                        result["warnings"].append({
+                            "doc_id": rel_path,
+                            "asset": asset,
+                            "reason": "物理资产文件已丢失"
+                        })
+    except Exception as e:
+        tlog.error(f"🚨 [预检异常] 提取物理资产清单时发生抖动: {e}")
+        # 宽容模式：资产审计崩溃时不阻断流程
+        
+    # 3. 深度补偿维度: 扫描近期变动但尚未入库的脏文件 (Dirty Files)
+    try:
+        vault_root = engine.vault_root
+        if vault_root and os.path.exists(vault_root):
+            asset_pattern = re.compile(r'!\[.*?\]\((.*?)\)')
+            img_pattern = re.compile(r'<img[^>]+src="([^">]+)"')
+            
+            tlog.info(f"🔎 [预检嗅探] 正在启动脏文件深度扫描... (vault_root: {vault_root})")
+            scanned_files = 0
+            found_missing_count = 0
+            
+            for root, _, files in os.walk(vault_root):
+                for f in files:
+                    if f.endswith(('.md', '.mdx')):
+                        file_path = os.path.join(root, f)
+                        # 为了性能，仅深度扫描最近 2 小时内被修改过的文件
+                        if os.path.getmtime(file_path) > time.time() - 7200:
+                            scanned_files += 1
+                            rel_path = os.path.relpath(file_path, vault_root)
+                            with open(file_path, 'r', encoding='utf-8') as mf:
+                                content = mf.read()
+                                # 提取图片链接
+                                found_assets = asset_pattern.findall(content) + img_pattern.findall(content)
+                                if found_assets:
+                                    tlog.info(f"🔎 [预检嗅探] 在 '{rel_path}' 提取到潜在资产: {found_assets}")
+                                for asset in found_assets:
+                                    if asset.startswith(('http://', 'https://', '//', 'data:', '#', '{')): continue
+                                    # 剥离可能存在的 title 属性，例如: path/to/img.png "title"
+                                    clean_asset = asset.split(' ')[0].strip().strip('\'"')
+                                    if not clean_asset: continue
+                                    
+                                    normalized_asset = os.path.normpath(clean_asset)
+                                    
+                                    # 尝试 3 种可能的物理路径解析方式：
+                                    # 1. 如果路径中自带了 assets/ (比如相对于库根目录)
+                                    path_from_vault = os.path.join(engine.vault_root, normalized_asset.lstrip('/\\'))
+                                    # 2. 如果是纯文件名或相对 assets 根的路径
+                                    path_from_assets = os.path.join(vault_assets_root, normalized_asset)
+                                    # 3. 如果是相对于当前 Markdown 文件的路径
+                                    path_from_doc = os.path.join(os.path.dirname(file_path), normalized_asset)
+                                    
+                                    if not (os.path.exists(path_from_vault) or os.path.exists(path_from_assets) or os.path.exists(path_from_doc)):
+                                        found_missing_count += 1
+                                        tlog.warning(f"🚨 [预检拦截] 命中丢失资产: {clean_asset} (Abs: {path_from_vault} / {path_from_assets} / {path_from_doc})")
+                                        # 避免与 SQLite 查出的历史记录重复警告
+                                        is_duplicate = any(w.get("asset") == clean_asset and (w.get("doc_id") == rel_path or w.get("doc_id").endswith(rel_path)) for w in result["warnings"])
+                                        if not is_duplicate:
+                                            result["warnings"].append({
+                                                "doc_id": f"*{rel_path}",
+                                                "asset": clean_asset,
+                                                "reason": "物理资产文件已丢失 (未同步的本地改动)"
+                                            })
+                                            
+            tlog.info(f"🔎 [预检嗅探] 脏文件扫描完成！受检变动文件数: {scanned_files}, 新增拦截项: {found_missing_count}")
+    except Exception as e:
+        tlog.error(f"🚨 [预检异常] 深度扫描脏文件时发生抖动: {e}")
+    
+    return result

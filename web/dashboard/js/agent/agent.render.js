@@ -56,7 +56,7 @@
             const el = document.getElementById('active-model-name'), s = document.getElementById('agent-status-tag');
             if (el) el.textContent = '未就绪';
             if (s) {
-                s.textContent = 'OFFLINE';
+                s.textContent = '🔴 离线';
                 s.style.color = 'var(--neon-red, #ff4d4d)';
                 s.style.borderColor = 'hsla(0, 100%, 65%, 0.4)';
                 s.style.textShadow = '0 0 6px hsla(0, 100%, 65%, 0.4)';
@@ -243,7 +243,7 @@
                                     }
                                     if (!activeContentDiv) {
                                         activeContentDiv = document.createElement('div');
-                                        activeContentDiv.className = 'agent-msg final-msg';
+                                        activeContentDiv.className = 'agent-msg final-msg streaming';
                                         agentFeed.appendChild(activeContentDiv);
                                     }
                                     fullContentText += data.delta;
@@ -264,6 +264,10 @@
                     }
                     boundary = buffer.indexOf('\n\n');
                 }
+            }
+
+            if (activeContentDiv && activeContentDiv.classList.contains('streaming')) {
+                activeContentDiv.classList.remove('streaming');
             }
 
             return { activeThinkingDiv, activeThinkingDetails };

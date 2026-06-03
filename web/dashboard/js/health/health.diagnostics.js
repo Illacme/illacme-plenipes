@@ -20,8 +20,6 @@ window.triggerSystemGC = async () => {
                 title: '🧹 清洗路由成功',
                 text: '系统已安全唤醒清道夫 Janitor 引擎，彻底回收了出版版图内已失效的幽灵路由、过期页面和冗余垃圾资产。',
                 icon: 'success',
-                background: 'rgba(20, 20, 25, 0.95)',
-                color: '#fff',
                 confirmButtonColor: 'var(--accent-primary)'
             });
         } else {
@@ -31,8 +29,6 @@ window.triggerSystemGC = async () => {
                 title: '🚨 清洗路由失败',
                 text: `清道夫引擎响应异常: ${msg}`,
                 icon: 'error',
-                background: 'rgba(20, 20, 25, 0.95)',
-                color: '#fff',
                 confirmButtonColor: 'var(--accent-primary)'
             });
         }
@@ -96,9 +92,7 @@ window.copyVaultPath = async () => {
             icon: 'success',
             title: '绝对路径已复制',
             showConfirmButton: false,
-            timer: 1500,
-            background: 'rgba(20, 20, 25, 0.95)',
-            color: '#fff'
+            timer: 1500
         });
     } else {
         addAudit("🛑 复制物理路径失败：受浏览器安全环境限制", "error");
@@ -106,8 +100,6 @@ window.copyVaultPath = async () => {
             title: '📋 复制未成功',
             text: `由于当前浏览器安全策略限制，请手动复制文库绝对路径：\n${rawPath}`,
             icon: 'warning',
-            background: 'rgba(20, 20, 25, 0.95)',
-            color: '#fff',
             confirmButtonColor: 'var(--accent-primary)'
         });
     }
