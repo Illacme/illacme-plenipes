@@ -203,18 +203,22 @@
 
 /* 📐 Physics Controls Horizontal Slide-Out */
 #galaxy-physics-controls {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                padding 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                margin 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.2s ease,
-                border-color 0.3s ease;
+                padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                border-left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease;
 }
 #galaxy-physics-controls.horizontal-collapsed {
     width: 0 !important;
     min-width: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
-    border: none !important;
+    border-left: 0px solid transparent !important;
     opacity: 0 !important;
     pointer-events: none !important;
     overflow: hidden !important;
@@ -222,8 +226,9 @@
 #galaxy-physics-controls.horizontal-expanded {
     width: 160px !important;
     min-width: 160px !important;
-    padding: 10px 14px !important;
+    padding-left: 12px !important;
     margin-left: 12px !important;
+    border-left: 1px solid var(--glass-border) !important;
     opacity: 1 !important;
     pointer-events: auto !important;
 }

@@ -82,31 +82,55 @@ function injectGalaxyInteractiveDOM() {
         setupSearchListeners();
     }
 
-    // 3. 注入数据指标组 (Stats Unified Card) 至左侧列
+    // 3. 注入数据指标组 (Stats Unified Card，内嵌横向扩展物理参数) 至左侧列
     if (!document.getElementById('galaxy-telemetry-container')) {
         const telDiv = document.createElement('div');
         telDiv.id = 'galaxy-telemetry-container';
         telDiv.className = 'hud-item glass-panel';
-        telDiv.style.cssText = 'padding: 10px 14px; width: 100%; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
+        telDiv.style.cssText = 'padding: 10px 14px; width: auto; border-radius: 12px; display: flex; flex-direction: row; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
         telDiv.innerHTML = `
-            <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; user-select: none;">
-                <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📊 实时指标</span>
-                <span id="telemetry-expand-btn" style="font-size: 0.65rem; color: var(--text-dim); transition: transform 0.3s ease; cursor: pointer; margin-right: -2px;" title="动力学参数调节">⚙️</span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 2px;">
-                    <div style="flex: 1; text-align: center;">
-                        <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">关联密度</div>
-                        <div class="hud-value" id="density-val" style="font-size: 0.85rem; line-height: 1;">0.00</div>
+            <!-- 指标主区域 -->
+            <div id="telemetry-main-section" style="display: flex; flex-direction: column; gap: 8px; width: 130px; flex-shrink: 0; box-sizing: border-box;">
+                <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                    <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📊 实时指标</span>
+                    <span id="telemetry-expand-btn" style="font-size: 0.65rem; color: var(--text-dim); transition: transform 0.3s ease; cursor: pointer; margin-right: -2px;" title="动力学参数调节">⚙️</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 2px;">
+                        <div style="flex: 1; text-align: center;">
+                            <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">关联密度</div>
+                            <div class="hud-value" id="density-val" style="font-size: 0.85rem; line-height: 1;">0.00</div>
+                        </div>
+                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 6px;">
+                            <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
+                            <div class="hud-value" id="conn-count" style="font-size: 0.85rem; line-height: 1;">0</div>
+                        </div>
                     </div>
-                    <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 6px;">
-                        <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
-                        <div class="hud-value" id="conn-count" style="font-size: 0.85rem; line-height: 1;">0</div>
+                    <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;">
+                        <span id="focus-btn-label" style="color: var(--neon-cyan); letter-spacing: 0.5px; font-size: 0.55rem;">⚡ 隔离星球</span>
+                    </button>
+                </div>
+            </div>
+            <!-- 物理调节子区域 (内嵌于同一个卡片中) -->
+            <div id="galaxy-physics-controls" class="horizontal-collapsed">
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim); width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>引力:</span>
+                        <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>排斥:</span>
+                        <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
+                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary);" /> 物理
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
+                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary);" /> 语义
+                        </label>
                     </div>
                 </div>
-                <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;">
-                    <span id="focus-btn-label" style="color: var(--neon-cyan); letter-spacing: 0.5px; font-size: 0.55rem;">⚡ 隔离星球</span>
-                </button>
             </div>
         `;
         leftColumn.appendChild(telDiv);
@@ -131,37 +155,9 @@ function injectGalaxyInteractiveDOM() {
                 }
             };
         }
-    }
-
-    // 4. 注入动力学调节器至左侧列 (支持横向拉伸)
-    if (!document.getElementById('galaxy-physics-controls')) {
-        const ctrlDiv = document.createElement('div');
-        ctrlDiv.id = 'galaxy-physics-controls';
-        ctrlDiv.className = 'hud-item glass-panel horizontal-collapsed';
-        ctrlDiv.style.cssText = 'animation: none;';
-        ctrlDiv.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>引力:</span>
-                    <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>排斥:</span>
-                    <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="width: 75px; height: 2px; accent-color: var(--accent-secondary);" />
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
-                    <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
-                        <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary);" /> 物理
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
-                        <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary);" /> 语义
-                    </label>
-                </div>
-            </div>
-        `;
-        leftColumn.appendChild(ctrlDiv);
         setupPhysicsListeners();
     }
+
 }
 
 function setupSearchListeners() {
