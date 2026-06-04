@@ -100,6 +100,7 @@ header {
 
 .logo-section { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
 .logo-section img { height: 32px !important; width: auto !important; object-fit: contain; }
+[data-theme="light"] .logo-section img { content: url("../logo-light.png") !important; }
 h1 { font-size: 1.2rem; letter-spacing: 1px; font-weight: 300; white-space: nowrap; }
 .accent { color: hsl(267, 80%, 75%); font-weight: 600; text-shadow: 0 0 10px rgba(163, 76, 255, 0.3); } /* 降噪处理，减轻视觉疲劳 */
 

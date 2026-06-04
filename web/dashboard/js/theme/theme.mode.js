@@ -84,6 +84,11 @@ window.ThemeModeManager = {
             document.documentElement.removeAttribute('data-theme'); // dark 是默认 fallback
         }
 
+        const logoImg = document.querySelector('.logo-section img');
+        if (logoImg) {
+            logoImg.src = mode === 'light' ? 'logo-light.png' : 'logo.png';
+        }
+
         // 📡 广播模式变更信号给所有引擎（例如 Galaxy Engine）
         window.dispatchEvent(new CustomEvent('themeModeChanged', { detail: { mode: mode } }));
     },
