@@ -2,7 +2,7 @@ import requests
 import os
 import yaml
 
-TOKEN = "YOUR_TOKEN"
+TOKEN = ""
 API_URL = "http://127.0.0.1:43212/api/config/update"
 NODES_URL = "http://127.0.0.1:43212/api/compute/nodes"
 IMPRINT_CFG = "imprints/stellar_harbor/configs/config.imprint.yaml"
@@ -10,6 +10,12 @@ LOCAL_CFG = "config.local.yaml"
 
 def final_audit():
     print("🎯 [终极全链路验证]")
+    
+    # Read active imprint dynamically from local config
+    with open(LOCAL_CFG, 'r') as f:
+        loc_data = yaml.safe_load(f)
+    active_imp = loc_data.get('active_imprint', 'stellar_harbor')
+    imprint_cfg_path = f"imprints/{active_imp}/configs/config.imprint.yaml"
     
     # 1. 识别目标
     p_node = "lmstudio_local"
@@ -23,7 +29,7 @@ def final_audit():
     requests.post(API_URL, headers={"X-Token": TOKEN}, json=payload)
     
     # 3. 物理层校验 (磁盘)
-    with open(IMPRINT_CFG, 'r') as f:
+    with open(imprint_cfg_path, 'r') as f:
         imp = yaml.safe_load(f)
     with open(LOCAL_CFG, 'r') as f:
         loc = yaml.safe_load(f)
