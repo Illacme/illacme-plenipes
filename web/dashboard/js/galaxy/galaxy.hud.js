@@ -97,16 +97,16 @@ function injectGalaxyInteractiveDOM() {
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 2px;">
-                        <div style="flex: 1; text-align: center;">
+                        <div style="flex: 1; text-align: center; cursor: help;" title="星图内星球之间连线的密集程度。数值越高，说明文献之间的交叉关联越紧密。">
                             <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">关联密度</div>
                             <div class="hud-value" id="density-val" style="font-size: 0.85rem; line-height: 1;">0.00</div>
                         </div>
-                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 6px;">
+                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 6px; cursor: help;" title="当前星图中所包含的活跃知识星球（已加载的笔记节点）总数。">
                             <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
                             <div class="hud-value" id="conn-count" style="font-size: 0.85rem; line-height: 1;">0</div>
                         </div>
                     </div>
-                    <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;">
+                    <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;" title="一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。">
                         <span id="focus-btn-label" style="color: var(--neon-cyan); letter-spacing: 0.5px; font-size: 0.55rem;">⚡ 隔离星球</span>
                     </button>
                 </div>
@@ -114,20 +114,20 @@ function injectGalaxyInteractiveDOM() {
             <!-- 物理调节子区域 (内嵌于同一个卡片中) -->
             <div id="galaxy-physics-controls" class="horizontal-collapsed">
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim); width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px; width: 100%; cursor: help;" title="调节星球间连线的默认物理长度。数值越大，星球间距越宽；数值越小，星图越紧凑。">
                         <span style="flex-shrink: 0; min-width: 30px;">引力:</span>
                         <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px; width: 100%; cursor: help;" title="调节星球之间的排斥力强度。排斥力越强，星团越发散，便于看清密集区域；越弱则越聚拢。">
                         <span style="flex-shrink: 0; min-width: 30px;">排斥:</span>
                         <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
                     <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
-                        <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
-                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary);" /> 物理
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: help;" title="显示或隐藏笔记中由您手动书写的显式百科双链（WikiLinks）连线关系。">
+                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 物理
                         </label>
-                        <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
-                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary);" /> 语义
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: help;" title="显示或隐藏系统根据 AI 语义理解自动匹配推荐的概念关联（隐式概念关联）连线关系。">
+                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 语义
                         </label>
                     </div>
                 </div>
