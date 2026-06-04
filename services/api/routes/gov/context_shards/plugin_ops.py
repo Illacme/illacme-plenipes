@@ -40,8 +40,65 @@ async def probe_plugin_impl(payload: dict):
 
     # 3. 探测 AI 协议 (Infrastructure)
     if plugin_id in AIProviderRegistry.get_all_protocols():
-        # TODO: 接入真实的对端 Ping 逻辑
-        return {"success": True, "healthy": True, "message": "物理链路已激活，正在监听算力响应。"}
+        provider_class = AIProviderRegistry.get_provider(plugin_id)
+        # Find all nodes of this type in config
+        compute_nodes = getattr(engine.config.translation, "compute_nodes", {})
+        matched_nodes = []
+        for node in compute_nodes.values():
+            node_class = AIProviderRegistry.get_provider(node.type)
+            if node_class == provider_class:
+                matched_nodes.append(node)
+
+        if not matched_nodes:
+            return {
+                "success": True,
+                "healthy": False,
+                "message": f"当前版图尚未配置或启用任何基于 {plugin_id} 协议的算力单元，请先在[算力中心]页面添加并配置节点。"
+            }
+
+        from core.logic.diagnostics.component_monitor import ComponentMonitor
+        from core.utils.secret_sentinel import sentinel
+
+        success_nodes = []
+        failed_nodes = []
+
+        for node in matched_nodes:
+            if not node.enabled:
+                continue
+
+            # Decrypt API key if encrypted
+            api_key = sentinel.decrypt(node.api_key or "")
+
+            # Perform network connectivity check
+            res = await ComponentMonitor.validate_ai_connectivity(
+                provider=node.type,
+                model=node.model or "",
+                api_key=api_key,
+                base_url=node.base_url
+            )
+
+            if res.get("status") == "success":
+                success_nodes.append(f"🟢 {node.id or node.type} ({res.get('message', '')})")
+            else:
+                failed_nodes.append(f"🔴 {node.id or node.type} (错误: {res.get('message', '未知错误')})")
+
+        # Determine health status based on probe outcomes
+        if success_nodes:
+            # At least one configured node is healthy
+            msg = "已成功连接并激活 AI 算力。探测成功的节点：\n" + "\n".join(success_nodes)
+            if failed_nodes:
+                msg += "\n\n注意：部分配置的节点连接失败：\n" + "\n".join(failed_nodes)
+            return {"success": True, "healthy": True, "message": msg}
+        else:
+            # All enabled nodes failed or all are disabled
+            if not failed_nodes:
+                return {
+                    "success": True,
+                    "healthy": False,
+                    "message": f"当前版图配置的 {plugin_id} 算力单元均处于禁用状态，请在[算力中心]启用它们。"
+                }
+            msg = "所有配置的算力单元连接失败：\n" + "\n".join(failed_nodes)
+            return {"success": True, "healthy": False, "message": msg}
 
     # 4. 探测分发渠道 (Infrastructure)
     if plugin_id in TARGET_REGISTRY:
