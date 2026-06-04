@@ -183,22 +183,21 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         proto_cls = AIProviderRegistry.get_provider(proto)
         if not proto_cls or proto_cls in seen_proto_classes:
             continue
-        seen_proto_classes.add(proto_cls)
         display_name = getattr(proto_cls, "DISPLAY_NAME", proto.upper())
+        if proto == 'lmstudio':
+            display_name = "LM Studio (本地原生)"
+        elif proto == 'lmstudio-v1':
+            display_name = "LM Studio (标准 v1 兼容)"
         protocol_family = getattr(proto_cls, "PROTOCOL_FAMILY", "native")
         default_url = getattr(proto_cls, "DEFAULT_URL", "")
         fallback_desc = f"内核级 AI 通讯协议：支持对接任何符合 {proto.upper()} 标准的算力终端。"
         plugins.append({
-            "id": proto, "name": display_name,
-            "protocol_family": protocol_family,
-            "default_url": default_url,
+            "id": proto, "name": display_name, "protocol_family": protocol_family, "default_url": default_url,
             "category": "protocol", "category_name": "🧠 AI 协议",
             "status": protocol_family.capitalize(), "is_in_use": True, "is_enabled": True,
             "origin": "core", "version": getattr(proto_cls, "VERSION", SYSTEM_TRACK),
-            "description": getattr(proto_cls, "DESCRIPTION", fallback_desc),
-            "is_manageable": True
+            "description": getattr(proto_cls, "DESCRIPTION", fallback_desc), "is_manageable": True
         })
-
     # 6. Ingress (Sources & Dialects) / 7. Transformers / 8. Maskers / 9. Pipeline Steps
     for source in ingress_registry.list_sources():
         source_cls = ingress_registry.get_source(source)

@@ -51,7 +51,7 @@ window.probePlugin = async (id) => {
                 dot.classList.add('healthy');
             }
         } else {
-            addAudit(`❌ [${id}] 链路阻塞：物理连接失败或凭据无效。`, "error");
+            addAudit(`❌ [${id}] 链路阻塞：${res.message || '物理连接失败或凭据无效。'}`, "error");
             if (dot) {
                 dot.classList.remove('healthy');
                 dot.classList.add('blocked');
