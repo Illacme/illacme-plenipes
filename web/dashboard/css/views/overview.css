@@ -252,4 +252,29 @@
     margin-top: 4px !important;
 }
 
+/* 🌌 Make the 3D Galaxy Overview Full Screen and bleed to viewport edges */
+#view-overview {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+}
+
+#view-overview .viewport-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 102;
+    pointer-events: none;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    background: rgba(var(--bg-modal-solid-rgb), 0.4);
+    padding: 4px 10px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--glass-border);
+}
+
 
