@@ -265,6 +265,7 @@
 
 /* 📶 Connectivity Matrix */
 .connectivity-matrix { display: flex; align-items: center; gap: 15px; }
+.active-seats { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .link-quality { display: flex; gap: 3px; align-items: flex-end; height: 10px; }
 .signal-bar { width: 3px; height: 40%; background: var(--white-10); border-radius: 1px; }
 .signal-bar.active { background: var(--neon-cyan); box-shadow: 0 0 5px var(--neon-cyan); }
