@@ -39,6 +39,23 @@ window.toggleConnectedNodesOnly = () => {
     const label = document.getElementById('focus-btn-label');
     const card = document.getElementById('btn-focus-connected');
     
+    const newTitle = window._filterConnectedOnly
+        ? '一键恢复显示所有星球，包含无任何连线的孤立知识点。'
+        : '一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。';
+
+    if (card) {
+        if (card.hasAttribute('data-tooltip')) {
+            card.setAttribute('data-tooltip', newTitle);
+        } else {
+            card.setAttribute('title', newTitle);
+        }
+    }
+
+    const activeTooltip = document.querySelector('.custom-glass-tooltip');
+    if (activeTooltip) {
+        activeTooltip.innerText = newTitle;
+    }
+    
     if (window._filterConnectedOnly) {
         const connIds = new Set();
         window._lastGalaxyData.links.forEach(l => {

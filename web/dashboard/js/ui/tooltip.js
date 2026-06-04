@@ -17,13 +17,13 @@ window.initializeCustomTooltip = () => {
                 font-size: 0.75rem;
                 font-family: inherit;
                 font-weight: 500;
-                color: #ffffff;
+                color: var(--text-bright);
                 background: rgba(var(--bg-modal-solid-rgb), 0.92);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.15);
+                border: 1px solid var(--glass-border);
                 border-radius: 6px;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 4px 15px var(--black-50);
                 pointer-events: none;
                 opacity: 0;
                 transform: translateY(2px);
