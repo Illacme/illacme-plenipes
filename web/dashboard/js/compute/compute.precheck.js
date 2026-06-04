@@ -153,7 +153,7 @@
                     agentInput.style.pointerEvents = 'auto';
                 } else {
                     agentInput.disabled = true;
-                    agentInput.placeholder = '❌ 算力中心已挂起，指令功能暂时关闭...';
+                    agentInput.placeholder = '❌ 算力已离线，指令已禁用...';
                     agentInput.style.opacity = '0.45';
                     agentInput.style.pointerEvents = 'none';
                 }
