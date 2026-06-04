@@ -62,7 +62,7 @@ window.handleAiBreakerTripped = function(payload) {
                     算力雪崩治理警报 (Circuit Breaker Tripped)
                 </div>
                 <div style="font-size: 0.8rem; color: hsla(0, 0%, 100%, 0.85); line-height: 1.4;">
-                    节点 <span style="font-family: monospace; background: var(--white-15); padding: 2px 6px; border-radius: 4px; color: var(--text-bright, #ffffff); font-weight: 600;">\${nodeName}</span> (异常率: \${failureRate}%) 遭遇算力洪峰已被自动熔断隔离。<br>
+                    节点 <span style="font-family: monospace; background: var(--white-15); padding: 2px 6px; border-radius: 4px; color: var(--text-bright, #ffffff); font-weight: 600;">${nodeName}</span> (异常率: ${failureRate}%) 遭遇算力洪峰已被自动熔断隔离。<br>
                     系统已动态引流至健康的备用节点，正在排队自愈中...
                 </div>
             </div>
