@@ -42,8 +42,10 @@
 
                     allMsgs.forEach(msg => {
                         if (msg.classList.contains('system-msg')) {
-                            msg.classList.remove('welcome-fade-archive');
-                            msg.style.display = '';
+                            if (msg.classList.contains('welcome-fade-archive')) {
+                                msg.classList.remove('welcome-fade-archive');
+                                msg.style.display = '';
+                            }
                         }
                         agentFeed.appendChild(msg);
                     });
