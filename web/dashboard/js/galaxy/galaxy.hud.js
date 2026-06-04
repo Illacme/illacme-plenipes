@@ -116,11 +116,11 @@ function injectGalaxyInteractiveDOM() {
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim); width: 100%; box-sizing: border-box;">
                     <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <span style="flex-shrink: 0; min-width: 30px;">引力:</span>
-                        <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="flex: 1; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
+                        <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <span style="flex-shrink: 0; min-width: 30px;">排斥:</span>
-                        <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="flex: 1; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
+                        <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
                     <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
                         <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;">
