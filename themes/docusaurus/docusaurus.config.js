@@ -107,10 +107,7 @@ const config = {
         title: themeOptions.site_name || 'Illacme Plenipis',
         logo: {
           alt: 'Plenipis',
-          // 🚀 核心自愈：若为本地绝对路径（以 / 开头且非 url 协议），去掉首斜杠转为相对 static 目录的路径，从而让 Docusaurus 自动拼装 baseUrl
-          src: (themeOptions.logo_path && themeOptions.logo_path.startsWith('/') && !themeOptions.logo_path.startsWith('//'))
-            ? themeOptions.logo_path.substring(1)
-            : (themeOptions.logo_path || 'img/logo.svg'),
+          src: themeOptions.logo_path || 'img/logo.svg',
         },
         items: [
           {

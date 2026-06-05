@@ -160,6 +160,12 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
         options = self.get_custom_options()
         theme_name = getattr(self.theme_settings, 'name', 'default')
         
+        # 🚀 [Docusaurus 适配自愈] 针对 Docusaurus navbar logo 路径在子目录/多语言下需为相对路径以正确水合的特性，在写入物理桥接前自动剥离首斜杠
+        if theme_name == "docusaurus" and "logo_path" in options:
+            l_path = options["logo_path"]
+            if l_path and l_path.startswith("/") and not l_path.startswith("//"):
+                options["logo_path"] = l_path.lstrip("/")
+        
         import os
         assets_dir = os.path.join("themes", theme_name, "static", "assets")
         if not os.path.exists(assets_dir):
