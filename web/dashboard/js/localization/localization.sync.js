@@ -71,38 +71,113 @@ window.toggleI18nTarget = async (el, code) => {
     }
 };
 
-window.applyTranslationStyle = async () => {
-    const selector = document.getElementById('style-selector');
-    if (!selector) return;
-    const style = selector.value;
+window.updateStylePreview = (styleKey) => {
+    const style = window.translationStyles?.[styleKey];
+    
+    const pTranslate = document.getElementById('prompt-preview-translate');
+    const pTitle = document.getElementById('prompt-preview-title');
+    const pMeta = document.getElementById('prompt-preview-meta');
 
-    const templates = {
-        professional: {
-            translate: "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Use formal tone and professional vocabulary. Do not add any explanations.",
-            title: "You are a professional editor. Translate and polish the following title into {target_lang}. Keep it concise, formal, and professional. Output ONLY the title.",
-            meta: "You are a professional editor. Translate and polish the provided metadata into {target_lang} using formal terminology. Output ONLY the result."
-        },
-        casual: {
-            translate: "You are a friendly translator. Translate the following Markdown content from {source_lang} to {target_lang} in a natural, conversational tone. Keep all Markdown syntax and frontmatter intact. Do not add any explanations.",
-            title: "You are a creative editor. Translate the following title into {target_lang} in a catchy, natural, and conversational way. Output ONLY the title.",
-            meta: "You are a creative editor. Translate the provided metadata into {target_lang} using natural, modern language. Output ONLY the result."
-        },
-        literal: {
-            translate: "You are a precise translator. Translate the following Markdown content from {source_lang} to {target_lang} literally, preserving the original structure and word choice as much as possible. Keep all Markdown syntax intact. Do not add any explanations.",
-            title: "You are a precise translator. Translate the following title into {target_lang} as literally as possible. Output ONLY the title.",
-            meta: "You are a precise translator. Translate the provided metadata into {target_lang} literally. Output ONLY the result."
+    if (!style) {
+        // 自定义 Prompt 处理
+        const descEl = document.getElementById('style-description-box');
+        if (descEl) {
+            descEl.innerHTML = `<span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #000); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">自定义</span> <p style="margin: 0; font-weight: 500;">正在使用专属于该品牌的个性化翻译 Prompt 模板。</p>`;
         }
-    };
+        const prompts = window.settingsData.translation?.prompts || {};
+        if (pTranslate) pTranslate.value = prompts.translate_system || '';
+        if (pTitle) pTitle.value = prompts.title_system || '';
+        if (pMeta) pMeta.value = prompts.metadata_system || '';
 
-    const tpl = templates[style];
-    if (!tpl) return;
+        // 移出只读限制，展现可编辑样式
+        [pTranslate, pTitle, pMeta].forEach(ta => {
+            if (!ta) return;
+            ta.removeAttribute('readonly');
+            ta.style.background = 'var(--bg-agent-input)';
+            ta.style.borderColor = 'rgba(var(--accent-primary-rgb), 0.25)';
+            ta.style.cursor = 'text';
+        });
+        return;
+    }
+    
+    // 更新描述卡片并触发平滑发光淡入动画
+    const descEl = document.getElementById('style-description-box');
+    if (descEl) {
+        descEl.innerHTML = `
+            <span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #000); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">${style.badge}</span>
+            <p style="margin: 0; font-weight: 500;">${style.desc}</p>
+        `;
+    }
+    
+    // 动态回填三个 Prompt 预览文本框，并设置为只读且淡化样式
+    if (pTranslate) {
+        pTranslate.value = style.translate;
+        pTranslate.setAttribute('readonly', 'true');
+        pTranslate.style.background = 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)';
+        pTranslate.style.borderColor = 'var(--glass-border)';
+        pTranslate.style.cursor = 'default';
+    }
+    if (pTitle) {
+        pTitle.value = style.title;
+        pTitle.setAttribute('readonly', 'true');
+        pTitle.style.background = 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)';
+        pTitle.style.borderColor = 'var(--glass-border)';
+        pTitle.style.cursor = 'default';
+    }
+    if (pMeta) {
+        pMeta.value = style.meta;
+        pMeta.setAttribute('readonly', 'true');
+        pMeta.style.background = 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)';
+        pMeta.style.borderColor = 'var(--glass-border)';
+        pMeta.style.cursor = 'default';
+    }
+};
 
-    if (typeof addAudit === 'function') addAudit(`🎭 正在向全域（正文+标题+元数据）应用 [${style.toUpperCase()}] 风格...`, "info");
+window.checkStyleMatch = () => {
+    const selector = document.getElementById('style-selector');
+    if (selector) {
+        let hasCustomOpt = Array.from(selector.options).some(opt => opt.value === 'custom');
+        if (!hasCustomOpt) {
+            const opt = document.createElement('option');
+            opt.value = 'custom';
+            opt.text = '✍️ 自定义风格 (Custom Prompt)';
+            selector.appendChild(opt);
+        }
+        selector.value = 'custom';
+    }
+
+    // 更新描述区为自定义
+    const descEl = document.getElementById('style-description-box');
+    if (descEl) {
+        descEl.innerHTML = `
+            <span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #000); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">自定义</span>
+            <p style="margin: 0; font-weight: 500;">正在使用专属于该品牌的个性化翻译 Prompt 模板。</p>
+        `;
+    }
+};
+
+window.applyTranslationStyle = async () => {
+    const pTranslate = document.getElementById('prompt-preview-translate');
+    const pTitle = document.getElementById('prompt-preview-title');
+    const pMeta = document.getElementById('prompt-preview-meta');
+    
+    if (!pTranslate || !pTitle || !pMeta) return;
+
+    const translatePrompt = pTranslate.value;
+    const titlePrompt = pTitle.value;
+    const metaPrompt = pMeta.value;
+
+    const selector = document.getElementById('style-selector');
+    const style = selector ? selector.value : 'custom';
+
+    if (typeof addAudit === 'function') {
+        addAudit(`🎭 正在向全域（正文+标题+元数据）固化应用所选翻译 Prompt...`, "info");
+    }
 
     const payload = {
-        'translation.prompts.translate_system': tpl.translate,
-        'translation.prompts.title_system': tpl.title,
-        'translation.prompts.metadata_system': tpl.meta
+        'translation.prompts.translate_system': translatePrompt,
+        'translation.prompts.title_system': titlePrompt,
+        'translation.prompts.metadata_system': metaPrompt
     };
 
     const res = await apiFetch('/api/config/update', {
@@ -112,21 +187,19 @@ window.applyTranslationStyle = async () => {
     });
 
     if (res && res.status === 'success') {
-        if (typeof addAudit === 'function') addAudit(`✅ 全域翻译风格已固化: ${style.toUpperCase()}`, "success");
+        if (typeof addAudit === 'function') {
+            addAudit(`✅ 全域翻译风格已固化应用，当前显示为: ${style.toUpperCase()}`, "success");
+        }
         if (window.settingsData && window.settingsData.translation) {
             if (!window.settingsData.translation.prompts) window.settingsData.translation.prompts = {};
-            window.settingsData.translation.prompts.translate_system = tpl.translate;
-            window.settingsData.translation.prompts.title_system = tpl.title;
-            window.settingsData.translation.prompts.metadata_system = tpl.meta;
+            window.settingsData.translation.prompts.translate_system = translatePrompt;
+            window.settingsData.translation.prompts.title_system = titlePrompt;
+            window.settingsData.translation.prompts.metadata_system = metaPrompt;
         }
-        const pTranslate = document.getElementById('prompt-preview-translate');
-        const pTitle = document.getElementById('prompt-preview-title');
-        const pMeta = document.getElementById('prompt-preview-meta');
-        if (pTranslate) pTranslate.innerText = tpl.translate;
-        if (pTitle) pTitle.innerText = tpl.title;
-        if (pMeta) pMeta.innerText = tpl.meta;
     } else {
-        if (typeof addAudit === 'function') addAudit(`❌ 风格应用失败: ${res ? res.error : '物理链路冲突'}`, "error");
+        if (typeof addAudit === 'function') {
+            addAudit(`❌ 风格应用失败: ${res ? (res.error || res.message) : '物理链路冲突'}`, "error");
+        }
     }
 };
 

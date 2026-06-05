@@ -72,7 +72,7 @@ window.addRouteMatrixRow = () => {
     tbody.insertAdjacentHTML('beforeend', rowHtml);
     
     // Smooth scroll to bottom
-    const container = document.querySelector('.tab-content-area');
+    const container = document.querySelector('.view-panel.active .tab-content-area');
     if (container) {
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }

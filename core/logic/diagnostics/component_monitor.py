@@ -196,8 +196,11 @@ class ComponentMonitor:
         # 1. 核心状态感知 (优先从内存读取，无需物理探测)
         engine_status = "online" if engine else "starting"
         preview_port = 43213
-        if engine and hasattr(engine.config.system, 'serve_port'):
-            preview_port = engine.config.system.serve_port
+        if engine:
+            if hasattr(engine, 'preview_server') and engine.preview_server and hasattr(engine.preview_server, 'port'):
+                preview_port = engine.preview_server.port
+            elif hasattr(engine.config.system, 'serve_port'):
+                preview_port = engine.config.system.serve_port
         
         # 2. 并发探测 (消除串行 Timeout 累积延迟)
         with ThreadPoolExecutor(max_workers=3) as executor:

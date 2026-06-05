@@ -43,7 +43,8 @@ def deep_reload_imprint(imprint_id: str):
         except: pass
 
     try:
-        # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 config.local.yaml
+        # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 CONFIG_LOCAL_NAME
+
         try:
             local_path = CONFIG_LOCAL_NAME
             existing_local = {}
@@ -85,13 +86,17 @@ def deep_reload_imprint(imprint_id: str):
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
 
         # 1. 加载基础配置
-        from core.config.config import load_config
+        # 1. 加载基础配置
+        from core.config.config import ConfigManager
         config_path = _GLOBAL_ARGS.config
-        config = load_config(config_path, imprint_id=imprint_id)
+        manager = ConfigManager(config_path, imprint_id=imprint_id)
+        config = manager.config
         
         # 2. 调用工厂重新组装引擎
         from core.runtime.engine_factory import EngineFactory
         new_engine = EngineFactory.create_engine(config, args=_GLOBAL_ARGS, imprint_id=imprint_id)
+        new_engine.config_manager = manager
+
         
         if not new_engine:
             tlog.error("🛑 [重载失败] 引擎工厂组装失败。")

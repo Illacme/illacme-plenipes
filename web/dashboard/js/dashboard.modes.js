@@ -17,6 +17,13 @@ window.renderModesCategory = () => {
         { id: 'enhanced', icon: '🛰️', title: '智能增强', subtitle: 'Enhanced Publishing', desc: 'AI 参与 SEO 优化但不翻译，专注母语流量增长。', strategies: [{ id: 'ai_alignment', name: 'AI 算法对齐', desc: '优化标题点击率' }, { id: 'ai_authority', name: 'AI 实体增强', desc: '提取知识实体' }] },
         { id: 'basic', icon: '📜', title: '基础出版', subtitle: 'Basic Publishing', desc: '无 AI 介入，纯物理规则引擎。适合离线创作、私密写作。', strategies: [{ id: 'heuristic', name: '结构化提取', desc: '从 H1 和首段物理抓取 SEO' }, { id: 'protocol', name: '全维协议工程', desc: '生成 JSON-LD / Open Graph' }] }
     ];
+    
+    // 🚀 [V74.96] 置顶机制：将当前激活的出版模式移动到模式列表最顶部显示
+    const activeIndex = modeDefinitions.findIndex(m => m.id === currentMode);
+    if (activeIndex > 0) {
+        const [activeMode] = modeDefinitions.splice(activeIndex, 1);
+        modeDefinitions.unshift(activeMode);
+    }
 
     return `
         <div class="full-width">
@@ -91,6 +98,13 @@ window.switchPublishingMode = async (mode) => {
         
         window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
+        
+        // 🚀 交互自愈：切换模式后自动平滑滚动置顶，确保列表首个可见
+        const container = document.querySelector('.view-panel.active .tab-content-area');
+        if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
         if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${mode.toUpperCase()}]，启用 [${defaultStrategy}] 策略`, "success");
     }
 };
@@ -108,6 +122,13 @@ window.switchSeoStrategy = async (mode, strategy) => {
 
         window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
+        
+        // 🚀 交互自愈：切换策略后自动平滑滚动置顶
+        const container = document.querySelector('.view-panel.active .tab-content-area');
+        if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
         if (typeof addAudit === 'function') addAudit(`✅ SEO 策略已切换至 [${strategy}]`, "success");
     }
 };

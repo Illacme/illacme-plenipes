@@ -13,4 +13,20 @@ window.renderUIComponents = () => {
 
     // 注入到 app-container 末尾
     appContainer.insertAdjacentHTML('beforeend', componentsHTML);
+
+    // 🚀 [V80.5 Premium Status Guardian] 注册终端状态监听，自动管理“停止服务”按钮的禁用与视觉状态
+    const statusEl = document.getElementById('terminal-status');
+    const stopBtn = document.getElementById('btn-modal-stop');
+    if (statusEl && stopBtn) {
+        const updateStopBtnState = () => {
+            const isOffline = statusEl.innerText.trim().toUpperCase() === 'OFFLINE';
+            stopBtn.disabled = isOffline;
+            stopBtn.style.opacity = isOffline ? '0.4' : '1';
+            stopBtn.style.pointerEvents = isOffline ? 'none' : 'auto';
+            stopBtn.style.cursor = isOffline ? 'not-allowed' : 'pointer';
+        };
+        updateStopBtnState();
+        const observer = new MutationObserver(updateStopBtnState);
+        observer.observe(statusEl, { childList: true, characterData: true, subtree: true });
+    }
 };

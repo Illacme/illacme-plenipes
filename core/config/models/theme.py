@@ -24,7 +24,7 @@ class ImageSettings(BaseModel):
 
 class ThemeSettings(BaseModel):
     name: str = "default"
-    ssg: str = "sovereign"
+    renderer: Optional[str] = None
     images: ImageSettings = Field(default_factory=ImageSettings)
     shortcode_mappings: Dict[str, str] = Field(default_factory=dict)
     component_mappings: Dict[str, str] = Field(default_factory=dict)

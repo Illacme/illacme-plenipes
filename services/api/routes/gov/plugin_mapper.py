@@ -181,13 +181,16 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     seen_proto_classes = set()
     for proto in AIProviderRegistry.get_all_protocols():
         proto_cls = AIProviderRegistry.get_provider(proto)
-        if not proto_cls or proto_cls in seen_proto_classes:
+        if not proto_cls:
             continue
+        # 别名过滤：若当前键名与对应类定义的主 PLUGIN_ID 不一致，说明它是别名，直接跳过以防重复
+        main_plugin_id = getattr(proto_cls, "PLUGIN_ID", None)
+        if main_plugin_id and proto != main_plugin_id:
+            continue
+        if proto_cls in seen_proto_classes:
+            continue
+        seen_proto_classes.add(proto_cls)
         display_name = getattr(proto_cls, "DISPLAY_NAME", proto.upper())
-        if proto == 'lmstudio':
-            display_name = "LM Studio (本地原生)"
-        elif proto == 'lmstudio-v1':
-            display_name = "LM Studio (标准 v1 兼容)"
         protocol_family = getattr(proto_cls, "PROTOCOL_FAMILY", "native")
         default_url = getattr(proto_cls, "DEFAULT_URL", "")
         fallback_desc = f"内核级 AI 通讯协议：支持对接任何符合 {proto.upper()} 标准的算力终端。"
@@ -284,14 +287,11 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             "description": getattr(step_cls, "DESCRIPTION", fallback_desc),
             "is_manageable": False
         })
-
     # 🚀 [V74.56] 统一对齐：同步核心 SSG 驱动的 DISPLAY_NAME 与 DESCRIPTION
     for p in plugins:
         renderer_cls = SSGRegistry.get_renderer("sovereign" if p["id"] == "default" else ("generic" if p["id"] == "universal" else p["id"])) if p["category"] == "theme" else None
         if renderer_cls:
             p["name"] = getattr(renderer_cls, "DISPLAY_NAME", p["id"].upper())
             p["description"] = getattr(renderer_cls, "DESCRIPTION", p["description"])
-        if "name" not in p:
-            p["name"] = p["id"].upper()
-
+        if "name" not in p: p["name"] = p["id"].upper()
     return plugins

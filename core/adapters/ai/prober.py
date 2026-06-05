@@ -123,6 +123,11 @@ class DynamicCapabilityProber:
         try:
             resp = await loop.run_in_executor(None, send_tools_probe) if run_async else send_tools_probe()
             probed_caps["tools"] = (resp.status_code == 200)
+        except RuntimeError as e:
+            if "cannot schedule new futures" in str(e) or "event loop is closed" in str(e):
+                logger.debug(f"ℹ️ [Dynamic Probe] Active probe interrupted due to event loop shutdown: {e}")
+                return
+            logger.warning(f"⚠️ [Dynamic Probe] Tools active probe failed: {e}")
         except Exception as e:
             logger.warning(f"⚠️ [Dynamic Probe] Tools active probe failed: {e}")
 
@@ -141,6 +146,11 @@ class DynamicCapabilityProber:
                     probed_caps["cot"] = False
             else:
                 probed_caps["cot"] = False
+        except RuntimeError as e:
+            if "cannot schedule new futures" in str(e) or "event loop is closed" in str(e):
+                logger.debug(f"ℹ️ [Dynamic Probe] Active probe interrupted due to event loop shutdown: {e}")
+                return
+            logger.warning(f"⚠️ [Dynamic Probe] CoT active probe failed: {e}")
         except Exception as e:
             logger.warning(f"⚠️ [Dynamic Probe] CoT active probe failed: {e}")
 
@@ -151,6 +161,11 @@ class DynamicCapabilityProber:
         try:
             resp = await loop.run_in_executor(None, send_vision_probe) if run_async else send_vision_probe()
             probed_caps["vision"] = (resp.status_code == 200)
+        except RuntimeError as e:
+            if "cannot schedule new futures" in str(e) or "event loop is closed" in str(e):
+                logger.debug(f"ℹ️ [Dynamic Probe] Active probe interrupted due to event loop shutdown: {e}")
+                return
+            logger.warning(f"⚠️ [Dynamic Probe] Vision active probe failed: {e}")
         except Exception as e:
             logger.warning(f"⚠️ [Dynamic Probe] Vision active probe failed: {e}")
 

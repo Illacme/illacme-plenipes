@@ -37,9 +37,8 @@
         if (!searchInput || !resultsContainer) return;
 
         // 🚀 [V15.0] 静态相对路径深度自适应回归
-        const pathParts = window.location.pathname.split('/').filter(p => p);
-        const depth = pathParts.length;
-        const rootPrefix = depth > 1 ? '../'.repeat(depth - 1) : './';
+        // 🚀 [V15.0] 读取由后端注入的物理根路径，杜绝绝对子路径部署 404
+        const rootPrefix = document.body.getAttribute('data-root-path') || './';
         const indexPath = `${rootPrefix}static/search_index.json`;
 
         // 聚焦即触发异步惰性加载

@@ -55,7 +55,7 @@ async def bootstrap_theme(req: Dict[str, Any]) -> Dict[str, Any]:
     bootstrap_cmds: Dict[str, str] = {
         "starlight": f"npx -y create-astro@latest {theme_id} --template starlight --no-install --no-git --yes",
         "docusaurus": f"npx -y create-docusaurus@latest {theme_id} classic --skip-install",
-        "vitepress": f"mkdir -p {theme_id} && cd {theme_id} && npm init -y && npm install -D vitepress",
+        "vitepress": f"mkdir -p {theme_id} && cd {theme_id} && npm init -y && node -e \"const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); p.scripts={{dev:'vitepress dev',start:'vitepress dev',build:'vitepress build',preview:'vitepress preview'}}; fs.writeFileSync('package.json',JSON.stringify(p,null,2));\" && npm install -D vitepress",
         "nextra": f"npx -y create-nextra-app@latest {theme_id} --example docs"
     }
     cmd: str = bootstrap_cmds.get(theme_id, "")

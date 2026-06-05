@@ -42,17 +42,14 @@ from core.ui.handlers.status_handlers import StatusHandlers
 logger = None
 global_engine = None
 global_observer = None
+should_exit = False
 
 def graceful_shutdown(signum, frame):
-    """拦截操作系统级的中断信号，执行防内存撕裂的终极快照固化"""
-    if (logger): logger.warning("\n⚠️ 收到停止指令！正在尝试安全导出系统快照并关闭数字出版中心...")
-    if global_observer: global_observer.stop()
-    if global_engine and hasattr(global_engine, 'meta'):
-        try:
-            global_engine.meta.force_save()
-            if logger: logger.info("  └── 🏁 出版进度已 100% 安全存档。")
-        except: pass
-    os._exit(0)
+    """拦截信号并防死锁优雅退出"""
+    global should_exit
+    if should_exit or not getattr(sys, '_plenipes_in_loop', False):
+        os._exit(0)
+    should_exit = True
 
 signal.signal(signal.SIGINT, graceful_shutdown)
 signal.signal(signal.SIGTERM, graceful_shutdown)
@@ -135,6 +132,9 @@ if __name__ == "__main__":
         # 6. 实例化主引擎 (内部会自动划定品牌疆域)
         from core.runtime.engine_factory import EngineFactory
         engine = EngineFactory.create_engine(config or args.config, no_ai=args.no_ai, args=args, imprint_id=args.imprint)
+        from core.config.config import ConfigManager
+        engine.config_manager = ConfigManager(args.config, imprint_id=args.imprint)
+
         
         # 🧪 [V50.3] 日志主权对正：在引擎划定品牌后，重定向日志管线
         logger = setup_logger(engine.paths["logs"])
@@ -237,12 +237,33 @@ if __name__ == "__main__":
                 
                 tlog.info(f"🌐 [内嵌预览] 正在启动预览容器 (端口: {port})...")
                 dev_server.start(blocking=not args.watch)
+                # 🚀 [V80.0] 端口自愈后回填，确保系统注册的端口与实际运行端口一致
+                engine.services["preview"].update({
+                    "port": dev_server.port
+                })
             else:
                 tlog.warning("⚠️ [预览失败] 无法在配置中定位输出目录，请检查 output_paths。")
 
         # 🚀 [V51.0] 修正：如果是持续运行模式，保持主线程存活
         if args.watch or args.api or args.serve:
-            while True: time.sleep(1)
+            setattr(sys, '_plenipes_in_loop', True)
+            try:
+                while not should_exit:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+            finally:
+                setattr(sys, '_plenipes_in_loop', False)
+            
+            # 脱离信号上下文的安全退出流程，物理级避免 Lock 锁死
+            if (logger): logger.warning("\n⚠️ 收到停止指令！正在尝试安全导出系统快照并关闭数字出版中心...")
+            if global_observer: global_observer.stop()
+            if global_engine and hasattr(global_engine, 'meta'):
+                try:
+                    global_engine.meta.force_save()
+                    if logger: logger.info("  └── 🏁 出版进度已 100% 安全存档。")
+                except: pass
+            os._exit(0)
         else:
             tlog.info("🏁 [出版完成] (单次任务模式) 出版任务已全量闭环，出版品牌归位。")
             sys.exit(0)

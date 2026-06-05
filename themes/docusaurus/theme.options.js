@@ -1,8 +1,10 @@
-// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
+/**
+ * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
+ */
 export const themeOptions = {
-  "site_name": "Luminous Sovereign",
-  "logo_path": "/static/logo.png",
-  "footer_copyright": "© 2026 All Rights Reserved",
+  "site_name": "My Docusaurus Site",
+  "logo_path": "/img/logo.svg",
+  "footer_copyright": "Copyright © 2026 My Project, Inc. Built with Docusaurus.",
   "enable_custom_style": false,
   "accent_color": "#25c2a0",
   "font_family": "system-ui, sans-serif",

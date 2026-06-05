@@ -182,7 +182,7 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
                 import json
                 with open(json_path, 'w', encoding='utf-8') as f:
                     json.dump(options, f, indent=2, ensure_ascii=False)
-                js_content = "// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n"
+                js_content = "/**\n * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n */\n"
                 js_content += f"export const themeOptions = {json.dumps(options, indent=2, ensure_ascii=False)};\n"
                 js_content += "export default themeOptions;\n"
                 with open(js_path, 'w', encoding='utf-8') as f:
@@ -219,7 +219,7 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
         js_path = os.path.join("themes", theme_name, "theme.options.js")
         try:
             import json
-            js_content = "// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n"
+            js_content = "/**\n * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n */\n"
             js_content += f"export const themeOptions = {json.dumps(options, indent=2, ensure_ascii=False)};\n"
             js_content += "export default themeOptions;\n"
             with open(js_path, 'w', encoding='utf-8') as f:

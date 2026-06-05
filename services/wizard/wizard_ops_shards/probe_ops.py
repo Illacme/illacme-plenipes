@@ -44,20 +44,26 @@ def probe_nodes_logic():
         random_id = gen_id()
         attempts += 1
 
-    protocols = [
-        {
+    protocols = []
+    seen_proto_classes = set()
+    for p in AIProviderRegistry.get_all_protocols():
+        p_cls = AIProviderRegistry.get_provider(p)
+        if not p_cls:
+            continue
+        # 别名过滤：若当前键名与对应类定义的主 PLUGIN_ID 不一致，说明它是别名，直接跳过以防重复
+        main_plugin_id = getattr(p_cls, "PLUGIN_ID", None)
+        if main_plugin_id and p != main_plugin_id:
+            continue
+        if p_cls in seen_proto_classes:
+            continue
+        seen_proto_classes.add(p_cls)
+        
+        display_name = getattr(p_cls, "DISPLAY_NAME", p.upper())
+        protocols.append({
             "id": p,
-            "name": {
-                "openai": "OpenAI", "ollama": "Ollama (Local)", "lmstudio": "LM Studio (Local)",
-                "google": "Google Gemini", "anthropic": "Anthropic Claude", "deepseek": "DeepSeek",
-                "siliconflow": "SiliconFlow", "mistral": "Mistral AI", "groq": "Groq",
-                "together": "Together AI", "openrouter": "OpenRouter", "azure": "Azure OpenAI",
-                "cohere": "Cohere", "mock": "模拟算力 (Mock)"
-            }.get(p, p.capitalize()),
-            "default_url": getattr(AIProviderRegistry.get_provider(p), "DEFAULT_URL", "")
-        }
-        for p in AIProviderRegistry.get_all_protocols()
-    ]
+            "name": display_name,
+            "default_url": getattr(p_cls, "DEFAULT_URL", "")
+        })
 
     return {
         "current_config": current_config,

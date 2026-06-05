@@ -148,23 +148,10 @@ class IllacmeEngine:
         # 4. 🗺️ 物理路径矩阵重新锚定
         # 如果 active_theme 发生变更，必须重新计算 engine.paths 以防 IO 错误
         if hasattr(self, 'paths'):
-            data_root = os.path.abspath(os.path.expanduser(self.config.system.data_root))
-            def anchor(p):
-                if not p: return None
-                p = os.path.expanduser(p)
-                if not os.path.isabs(p): return os.path.join(data_root, p)
-                return os.path.abspath(p)
-            
-            paths_cfg = self.config.output_paths or {}
-            source_dir = paths_cfg.get('source_dir')
-            site_dir = paths_cfg.get('site_dir')
-            
-            # 更新核心物理路径
-            self.paths["vault"] = self.vault_root
-            self.paths["source_dir"] = anchor((source_dir or "").replace("{theme}", self.active_theme))
-            self.paths["site_dir"] = anchor((site_dir or "").replace("{theme}", self.active_theme))
-            self.paths["assets"] = anchor((paths_cfg.get('assets_dir') or "").replace("{theme}", self.active_theme))
-            self.paths["db"] = anchor(self.config.get_ledger_path())
+            from core.runtime.infrastructure.path_resolver import resolve_engine_paths
+            from core.config.config import THEMES_DIR
+            self.paths = resolve_engine_paths(self, self.config, THEMES_DIR)
+
 
         # 5. 🧠 算力池与业务中枢重校
         from core.logic.orchestration.task_orchestrator import global_executor

@@ -20,25 +20,15 @@ window.ThemeHandlers = {
             confirmButtonColor: 'var(--accent-secondary)',
             cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
-        
-        if (!result.isConfirmed) {
-            if (typeof addAudit === 'function') addAudit(`🎬 已取消主题切换。`);
-            return;
-        }
-
+        if (!result.isConfirmed) { if (typeof addAudit === 'function') addAudit(`🎬 已取消主题切换。`); return; }
         if (typeof addAudit === 'function') addAudit(`🎨 正在执行装帧切换: ${themeId.toUpperCase()}...`);
         const success = await window.ThemeAPI.switchTheme(themeId);
         
         if (success) {
             // 重新渲染当前分类以更新 UI 状态
+            window._shouldScrollToTopAfterThemeSwitch = true;
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
-            
-            // 🚀 [V80.3 Premium Scroll-to-Top] 物理容器优雅平滑上滚回顶部，配合重排对齐
-            const container = document.querySelector('.tab-content-area');
-            if (container) {
-                container.scrollTo({ top: 0, behavior: 'smooth' });
-            }
             
             // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效
             setTimeout(() => {
@@ -72,25 +62,15 @@ window.ThemeHandlers = {
             confirmButtonColor: 'var(--neon-amber, #ffb300)',
             cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
-        
-        if (!result.isConfirmed) {
-            if (typeof addAudit === 'function') addAudit(`🚀 已取消主题部署初始化。`);
-            return;
-        }
-
+        if (!result.isConfirmed) { if (typeof addAudit === 'function') addAudit(`🚀 已取消主题部署初始化。`); return; }
         if (typeof addAudit === 'function') addAudit(`🚀 正在部署并启用主题: ${themeId.toUpperCase()}...`);
         const success = await window.ThemeAPI.bootstrapTheme(themeId);
         
         if (success) {
             if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeId.toUpperCase()}' 已部署成功并启用。`, "success");
             if (typeof loadPlugins === 'function') await loadPlugins();
+            window._shouldScrollToTopAfterThemeSwitch = true;
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
-            
-            // 🚀 [V80.3 Premium Scroll-to-Top] 物理容器优雅平滑上滚回顶部，配合重排对齐
-            const container = document.querySelector('.tab-content-area');
-            if (container) {
-                container.scrollTo({ top: 0, behavior: 'smooth' });
-            }
             
             // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效
             setTimeout(() => {
@@ -129,6 +109,16 @@ window.renderThemesCategory = () => {
                     const activeItem = document.querySelector('.s-tab.active');
                     if (activeItem && activeItem.dataset.cat === 'themes') {
                         renderSettingsCategory('themes');
+                        if (window._shouldScrollToTopAfterThemeSwitch) {
+                            window._shouldScrollToTopAfterThemeSwitch = false;
+                            setTimeout(() => {
+                                const c = document.querySelector('.view-panel.active .tab-content-area');
+                                if (c) { c.scrollTop = 0; c.scrollTo({ top: 0, behavior: 'smooth' }); }
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                document.documentElement.scrollTop = 0;
+                                document.body.scrollTop = 0;
+                            }, 100);
+                        }
                     }
                 }
             } finally {
@@ -178,3 +168,10 @@ window.openPluginConfig = window.openPluginConfig || async function(id) {
         confirmButtonText: '确定'
     });
 };
+
+
+
+
+
+
+

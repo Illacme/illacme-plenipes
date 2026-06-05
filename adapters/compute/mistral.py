@@ -12,7 +12,7 @@ from .openai import OpenAICompatibleTranslator
 class MistralNativeTranslator(OpenAICompatibleTranslator):
     """🚀 Mistral 官方原生协议适配器 (基于 La Plateforme 特性优化)"""
     PLUGIN_ID = 'mistral'
-    DISPLAY_NAME = 'Mistral AI'
+    DISPLAY_NAME = 'Mistral AI (本地原生)'
     VERSION = "V1.0"
     DESCRIPTION = "提供 Mistral AI 官方协议支持，针对欧洲顶尖开源基座模型优化的算力节点。"
     PROTOCOL_FAMILY = 'native'
@@ -30,7 +30,7 @@ class MistralNativeTranslator(OpenAICompatibleTranslator):
 class MistralStandardTranslator(OpenAICompatibleTranslator):
     """🚀 Mistral 标准 OpenAI 兼容适配器"""
     PLUGIN_ID = 'mistral-openai'
-    DISPLAY_NAME = 'Mistral AI'
+    DISPLAY_NAME = 'Mistral AI (标准 v1 兼容)'
     VERSION = "V1.0"
     DESCRIPTION = "提供 Mistral AI 的 OpenAI 兼容接口支持，适配官方及第三方分发平台的标准协议路径。"
     PROTOCOL_FAMILY = 'standard'

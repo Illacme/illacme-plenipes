@@ -14,7 +14,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
 
     def test_schema_loading_integrity(self):
         """🚀 验证 BaseSSGAdapter 能够正确从 themes/default 物理探测并加载 theme.schema.json 契约"""
-        settings = ThemeSettings(name="default", ssg="sovereign")
+        settings = ThemeSettings(name="default", renderer="sovereign")
         adapter = SovereignSSGAdapter(theme_settings=settings)
         
         self.assertIsNotNone(adapter.theme_schema)
@@ -35,7 +35,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
     def test_options_merge_and_healing(self):
         """🚀 验证 get_custom_options() 的自愈深度合并引擎"""
         # 情况 1：未提供任何自定义 options，自动回退使用 schema 默认值
-        settings_empty = ThemeSettings(name="default", ssg="sovereign", options={})
+        settings_empty = ThemeSettings(name="default", renderer="sovereign", options={})
         adapter_empty = SovereignSSGAdapter(theme_settings=settings_empty)
         opts_empty = adapter_empty.get_custom_options()
         
@@ -50,7 +50,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
             "accent_color": "#ff007f",
             "github_repo": "https://github.com/command/garden"
         }
-        settings_partial = ThemeSettings(name="default", ssg="sovereign", options=custom_opts)
+        settings_partial = ThemeSettings(name="default", renderer="sovereign", options=custom_opts)
         adapter_partial = SovereignSSGAdapter(theme_settings=settings_partial)
         opts_partial = adapter_partial.get_custom_options()
         
@@ -67,7 +67,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
             "enable_glassmorphism": False,
             "github_repo": "https://github.com/illacme/plenipes"
         }
-        settings = ThemeSettings(name="default", ssg="sovereign", options=custom_opts)
+        settings = ThemeSettings(name="default", renderer="sovereign", options=custom_opts)
         adapter = SovereignSSGAdapter(theme_settings=settings)
         
         body = "# 标题\n这是正文内容。"
@@ -92,7 +92,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
 
     def test_rendering_without_github_repo(self):
         """🚀 验证未配置 GitHub 仓库时，社交导航挂载占位符被静默清空"""
-        settings = ThemeSettings(name="default", ssg="sovereign", options={})
+        settings = ThemeSettings(name="default", renderer="sovereign", options={})
         adapter = SovereignSSGAdapter(theme_settings=settings)
         
         body = "# 测试"
@@ -123,7 +123,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         mock_engine = MockEngine()
 
         # 🚀 Case 1: 纯粹继承全局配置 (零局部配置)
-        settings_empty = ThemeSettings(name="default", ssg="sovereign", options={})
+        settings_empty = ThemeSettings(name="default", renderer="sovereign", options={})
         adapter_empty = SovereignSSGAdapter(theme_settings=settings_empty, engine=mock_engine)
         opts_empty = adapter_empty.get_custom_options()
 
@@ -139,7 +139,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
             "site_name": "主题特殊重写标题",
             "footer_copyright": "© 2026 Theme Specific Copyright"
         }
-        settings_override = ThemeSettings(name="default", ssg="sovereign", options=custom_opts)
+        settings_override = ThemeSettings(name="default", renderer="sovereign", options=custom_opts)
         adapter_override = SovereignSSGAdapter(theme_settings=settings_override, engine=mock_engine)
         opts_override = adapter_override.get_custom_options()
 

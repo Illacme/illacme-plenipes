@@ -1,7 +1,4 @@
-/**
- * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
- */
-export const themeOptions = {
+{
   "site_name": "Borealis realm",
   "logo_path": "/logo.svg",
   "footer_copyright": "Released under the MIT License. Copyright © 2026-present VitePress.",
@@ -14,5 +11,4 @@ export const themeOptions = {
   "github_repo": "",
   "last_updated_text": "最后更新时间",
   "site_description": "这是一个主权出版版图节点。"
-};
-export default themeOptions;
+}

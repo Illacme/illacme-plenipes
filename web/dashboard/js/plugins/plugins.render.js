@@ -53,7 +53,7 @@ window.loadPlugins = async () => {
             tab.classList.add('active');
             window.activePluginCategory = tab.dataset.cat;
             renderPlugins();
-            const container = document.querySelector('.tab-content-area');
+            const container = document.querySelector('.view-panel.active .tab-content-area');
             if (container) container.scrollTop = 0;
         };
     });

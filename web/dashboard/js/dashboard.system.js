@@ -8,15 +8,13 @@
 window.loadSettings = async (targetCat = 'general') => {
     // 🚀 [V55.21] 物理状态先行：在异步加载前先对正侧边栏标签状态
     document.querySelectorAll('.s-tab').forEach(tab => {
-        if (tab.dataset.cat === targetCat) tab.classList.add('active');
-        else tab.classList.remove('active');
-        
+        tab.classList.toggle('active', tab.dataset.cat === targetCat);
         tab.onclick = () => {
             document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             renderSettingsCategory(tab.dataset.cat);
-            const container = document.querySelector('.tab-content-area');
-            if (container) container.scrollTop = 0;
+            const c = document.querySelector('.view-panel.active .tab-content-area');
+            if (c) c.scrollTop = 0;
         };
     });
 
@@ -58,19 +56,13 @@ window.loadSettings = async (targetCat = 'general') => {
 
 // 🚀 [V57.3] 动态更新设置选项卡的多语言状态信标与锁标识
 window.updateSettingsTabsStatus = () => {
-    const i18n = window.settingsData?.i18n_settings || {};
-    const isEnabled = i18n.enabled !== false;
-    
+    const isEnabled = window.settingsData?.i18n_settings?.enabled !== false;
     document.querySelectorAll('.s-tab').forEach(tab => {
         if (tab.dataset.cat === 'localization') {
-            tab.innerHTML = isEnabled 
-                ? '<span class="tab-icon">🌍</span> 翻译阵列' 
-                : '<span class="tab-icon" style="opacity: 0.5;">🌍</span> <span style="opacity: 0.7;">翻译阵列 (已关闭)</span>';
+            tab.innerHTML = isEnabled ? '<span class="tab-icon">🌍</span> 翻译阵列' : '<span class="tab-icon" style="opacity: 0.5;">🌍</span> <span style="opacity: 0.7;">翻译阵列 (已关闭)</span>';
         }
         if (tab.dataset.cat === 'translation_style') {
-            tab.innerHTML = isEnabled 
-                ? '<span class="tab-icon">🎭</span> 翻译风格' 
-                : '<span class="tab-icon" style="opacity: 0.5;">🔒</span> <span style="color: var(--text-dim); text-decoration: line-through; opacity: 0.65;">翻译风格</span>';
+            tab.innerHTML = isEnabled ? '<span class="tab-icon">🎭</span> 翻译风格' : '<span class="tab-icon" style="opacity: 0.5;">🔒</span> <span style="color: var(--text-dim); text-decoration: line-through; opacity: 0.65;">翻译风格</span>';
         }
     });
 };
@@ -116,6 +108,20 @@ window.renderSettingsCategory = (cat) => {
     }
 
     formEl.innerHTML = html;
+
+    if (window._shouldScrollToTopAfterThemeSwitch) {
+        window._shouldScrollToTopAfterThemeSwitch = false;
+        setTimeout(() => {
+            const container = document.querySelector('.view-panel.active .tab-content-area');
+            if (container) {
+                container.scrollTop = 0;
+                container.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+        }, 80);
+    }
     
     // 🚀 [V55.8] 核心能见度治理：统一管理不需要显示“全局保存”按钮的页面
     const saveBtn = document.getElementById('btn-save-settings');
@@ -128,16 +134,10 @@ window.renderSettingsCategory = (cat) => {
 // 2. 配置保存
 window.saveAllSettings = async () => {
     addAudit("💾 正在打包全量主权配置快照...");
-    
-    const fullConfig = window.flattenObject(window.settingsData);
-    const payload = {};
-    
-    Object.keys(fullConfig).forEach(key => {
-        if (!key.split('.').some(part => part.startsWith('_'))) {
-            payload[key] = fullConfig[key];
-        }
+    const full = window.flattenObject(window.settingsData), payload = {};
+    Object.keys(full).forEach(k => {
+        if (!k.split('.').some(p => p.startsWith('_'))) payload[k] = full[k];
     });
-
     const res = await apiFetch('/api/config/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

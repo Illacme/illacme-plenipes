@@ -1,7 +1,4 @@
-/**
- * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
- */
-export const themeOptions = {
+{
   "site_name": "Borealis realm",
   "logo_path": "/src/assets/logo.svg",
   "footer_copyright": "Built with Starlight. © 2026 Astro sovereign.",
@@ -14,5 +11,4 @@ export const themeOptions = {
   "github_repo": "",
   "sidebar_collapse_all": true,
   "site_description": "这是一个主权出版版图节点。"
-};
-export default themeOptions;
+}

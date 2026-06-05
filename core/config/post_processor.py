@@ -22,8 +22,32 @@ def post_process(manager) -> None:
     theme_opts = manager.config.theme_options.get(theme, ThemeSettings())
     theme_opts.name = theme
     
+    # 🛡️ 适配器语义对齐：支持基于主题同名自动映射，若为空或为 generic 则智能检测
+    ssg_type = (theme_opts.renderer or "").lower() if theme_opts.renderer else ""
+    if not ssg_type or ssg_type == "generic":
+        resolved_type = "sovereign" if theme.lower() in ("default", "sovereign") else theme
+        
+        # 运行时动态加载全局/自定义适配器，确保注册表完整发现
+        from core.adapters.egress.ssg.registry import SSGRegistry
+        from core.adapters.egress.ssg.base import BaseSSGAdapter
+        import os
+        from core.utils.plugin_loader import discover_and_register
+        
+        global_adapters_path = os.path.abspath("adapters/egress/ssg")
+        if os.path.exists(global_adapters_path):
+            try:
+                discover_and_register([global_adapters_path], "adapters.egress.ssg", BaseSSGAdapter, SSGRegistry.register)
+            except Exception:
+                pass
+                
+        if SSGRegistry.get_renderer(resolved_type):
+            theme_opts.renderer = resolved_type
+            ssg_type = resolved_type
+        else:
+            theme_opts.renderer = "generic"
+            ssg_type = "generic"
+
     # 🚀 [V76.0] SSG 原生路径智能对准：动态委托给注册表中的具体 SSG 适配器类，彻底解决耦合问题
-    ssg_type = (theme_opts.ssg or "").lower()
     if not theme_opts.path_mappings:
         from core.adapters.egress.ssg.registry import SSGRegistry
         from core.adapters.egress.ssg.base import BaseSSGAdapter
@@ -44,18 +68,28 @@ def post_process(manager) -> None:
         else:
             theme_opts.path_mappings = BaseSSGAdapter.get_default_path_mappings()
             
+    raw_paths = manager._raw_config.get('output_paths') or {}
     if manager.config.output_paths is None:
         manager.config.output_paths = {}
     paths = manager.config.output_paths
     
     # 🚀 [V75.0] 物理寻址大一统：如果是多主题工作区模式，自动且动态地补齐 themes/{theme}/ 前缀
     for k, v in theme_opts.path_mappings.items():
-        if k not in paths:
+        is_stale_theme_path = False
+        if k in raw_paths:
+            raw_val = raw_paths[k]
+            if isinstance(raw_val, str) and raw_val.startswith("themes/") and not raw_val.startswith(f"themes/{theme}/") and not raw_val.startswith("themes/{theme}/"):
+                is_stale_theme_path = True
+                
+        if k not in raw_paths or is_stale_theme_path:
             val = v
             # 如果没有显式指定 themes 前缀且不是绝对路径，根据多主题工作区约定自愈补齐
             if not val.startswith("themes/") and not val.startswith("./themes/"):
                 val = f"themes/{{theme}}/{val}"
-            paths[k] = val.replace('{theme}', theme)
+            # 🚀 [V75.1] 保持模板属性：在 paths 里保留 {theme} 占位符，由运行时 path_resolver 动态解析
+            paths[k] = val
+
+
             
 
     smart_normalize_i18n(manager)

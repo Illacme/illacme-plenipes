@@ -28,6 +28,30 @@ window.invokeServiceAction = async (action) => {
                 appendTerminalLog(`\n❌ [系统错误] 重启失败: ${errorMsg}`, "#ff4d4d");
             }
         }
+    } else if (action === 'stop') {
+        const statusEl = document.getElementById('terminal-status');
+        if (statusEl && statusEl.innerText.trim().toUpperCase() === 'OFFLINE') return;
+        if (statusEl) {
+            statusEl.innerText = 'STOPPING...';
+            statusEl.className = 'busy';
+        }
+        if (out) out.innerHTML += `<div class="term-line" style="color:#ff4d4d">[${new Date().toLocaleTimeString()}] ⏹️ 正在向底层引擎下达停止服务指令...</div>`;
+        const res = await apiFetch('/api/system/preview/stop', { method: 'POST' });
+        if (res && res.status === 'success') {
+            addAudit("✅ 预览服务器已成功停止。", "success");
+            if (statusEl) {
+                statusEl.innerText = 'OFFLINE';
+                statusEl.className = 'error';
+            }
+            if (typeof refreshHealthMatrix === 'function') {
+                setTimeout(refreshHealthMatrix, 500);
+            }
+        } else {
+            const errorMsg = (res && res.detail) ? res.detail : '未知冲突';
+            if (typeof appendTerminalLog === 'function') {
+                appendTerminalLog(`\n❌ [系统错误] 停止失败: ${errorMsg}`, "#ff4d4d");
+            }
+        }
     } else if (action === 'install') {
         if (out) out.innerHTML += `<div class="term-line" style="color:var(--accent-secondary)">[${new Date().toLocaleTimeString()}] 🏗️ 正在启动物理依赖补全管线 (npm install)...</div>`;
         const res = await apiFetch('/api/system/theme/install', { method: 'POST' });

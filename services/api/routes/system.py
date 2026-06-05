@@ -34,14 +34,8 @@ def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None
 def health_check() -> Dict[str, str]:
     """基础健康检查"""
     engine = get_global_engine()
-    if not engine:
-        return {"status": "starting", "engine": "Illacme-plenipes"}
-    return {
-        "status": "online",
-        "engine": "Illacme-plenipes",
-        "imprint": engine.imprint_id,
-        "services": str(engine.services)
-    }
+    if not engine: return {"status": "starting", "engine": "Illacme-plenipes"}
+    return {"status": "online", "engine": "Illacme-plenipes", "imprint": engine.imprint_id, "services": str(engine.services)}
 
 @router.get("/api/system/status", dependencies=[Depends(verify_token)])
 def get_system_status() -> Dict[str, Any]:
@@ -73,24 +67,17 @@ def get_stats() -> Dict[str, Any]:
     engine = get_global_engine()
     if not engine:
         return {"error": "Engine not initialized"}
-    
-    # 获取物理负载 (带防御保护)
-    cpu_usage = 0.0
-    memory_usage = 0.0
+    cpu, mem = 0.0, 0.0
     try:
         import psutil
-        cpu_usage = psutil.cpu_percent(interval=None)
-        memory_usage = psutil.virtual_memory().percent
+        cpu = psutil.cpu_percent(interval=None)
+        mem = psutil.virtual_memory().percent
     except ImportError:
         pass
-        
+    workers = len([t for t in global_executor.workers if t.is_alive()]) if hasattr(global_executor, 'workers') else 0
     return {
         "usage": engine.meter.get_summary_report(),
-        "load": {
-            "cpu": cpu_usage,
-            "memory": memory_usage,
-            "workers": len([t for t in global_executor.workers if t.is_alive()]) if hasattr(global_executor, 'workers') else 0
-        },
+        "load": {"cpu": cpu, "memory": mem, "workers": workers},
         "timestamp": time.time()
     }
 
@@ -111,18 +98,20 @@ def restart_preview() -> Dict[str, str]:
     theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
     is_framework = os.path.exists(os.path.join(theme_dir, "package.json"))
     
-    # 如果预览服务器实例不存在，尝试根据配置动态创建
-    if not hasattr(engine, 'preview_server') or engine.preview_server is None:
-        from core.utils.dev_server import DevServer, FrameworkDevServer
+    from core.utils.dev_server import DevServer, FrameworkDevServer
+    srv = getattr(engine, 'preview_server', None)
+    p_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
+    is_diff = srv and (not isinstance(srv, FrameworkDevServer if is_framework else DevServer) or srv.directory != (theme_dir if is_framework else p_dir))
+    if is_diff:
+        try:
+            engine.preview_server.stop()
+            time.sleep(0.5)
+        except: pass
+        engine.preview_server = None
+    if not srv or is_diff:
         port = getattr(engine.config.system, 'serve_port', 43213)
-        if is_framework:
-            cmd = "npm run dev -- --port {port}"
-            if os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")):
-                cmd = "npm run start -- --port {port}"
-            engine.preview_server = FrameworkDevServer(directory=theme_dir, command=cmd, port=port)
-        else:
-            preview_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
-            engine.preview_server = DevServer(directory=preview_dir, port=port)
+        cmd = "npm run start -- --port {port}" if os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) else "npm run dev -- --port {port}"
+        engine.preview_server = FrameworkDevServer(directory=theme_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
     
     try:
         if engine.preview_server:
@@ -139,6 +128,10 @@ def restart_preview() -> Dict[str, str]:
             success = engine.preview_server.start_with_callback(callback=terminal_broadcaster)
         else:
             success = engine.preview_server.start(blocking=False)
+            if success:
+                bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器点火中...")
+                bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"📂 [静态预览] 物理映射目录: {engine.preview_server.directory}")
+                bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🟢 [静态预览] Local: http://localhost:{engine.preview_server.port}")
             
         if success:
             engine.services["preview"].update({
@@ -151,7 +144,25 @@ def restart_preview() -> Dict[str, str]:
         else:
             raise HTTPException(status_code=500, detail="Failed to start preview server")
     except Exception as e:
+        import traceback
+        f = open("/Volumes/Notebook/omni-hub/illacme-plenipes/scratch/restart_error.log", "w")
+        traceback.print_exc(file=f)
+        f.close()
         raise HTTPException(status_code=500, detail=f"Restart failed: {str(e)}")
+
+
+@router.post("/api/system/preview/stop", dependencies=[Depends(verify_token)])
+def stop_preview() -> Dict[str, str]:
+    """⏹️ 安全停机"""
+    engine = get_global_engine()
+    if not engine: raise HTTPException(status_code=400, detail="Engine not initialized")
+    try:
+        if getattr(engine, 'preview_server', None):
+            engine.preview_server.stop()
+            engine.services["preview"].update({"status": "offline", "port": engine.preview_server.port, "start_time": 0.0})
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data="⏹️ [系统感知] 预览服务器已物理停机，端口已释放。")
+        return {"status": "success", "message": "Preview server stopped."}
+    except Exception as e: raise HTTPException(status_code=500, detail=f"Stop failed: {str(e)}")
 
 @router.get("/api/system/health/matrix", dependencies=[Depends(verify_token)])
 def get_health_matrix() -> Dict[str, Dict[str, Any]]:

@@ -91,6 +91,57 @@ window.renderLocalizationCategory = function () {
     `;
 };
 
+window.translationStyles = {
+    professional: {
+        name: "💼 商务专业 (Professional)",
+        badge: "商用",
+        desc: "正式、严谨，采用严密的行业术语，适用于商业报告、官方规范与业务文档。",
+        translate: "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Use formal tone and professional vocabulary. Do not add any explanations.",
+        title: "You are a professional editor. Translate and polish the following title into {target_lang}. Keep it concise, formal, and professional. Output ONLY the title.",
+        meta: "You are a professional editor. Translate and polish the provided metadata into {target_lang} using formal terminology. Output ONLY the result."
+    },
+    casual: {
+        name: "💬 活泼随性 (Casual)",
+        badge: "日常",
+        desc: "口语化、自然亲切，注重本地读者的日常表达，适用于个人随笔、博客分享与社媒文案。",
+        translate: "You are a friendly translator. Translate the following Markdown content from {source_lang} to {target_lang} in a natural, conversational tone. Keep all Markdown syntax and frontmatter intact. Do not add any explanations.",
+        title: "You are a creative editor. Translate the following title into {target_lang} in a catchy, natural, and conversational way. Output ONLY the title.",
+        meta: "You are a creative editor. Translate the provided metadata into {target_lang} using natural, modern language. Output ONLY the result."
+    },
+    literal: {
+        name: "🔍 精准直译 (Literal)",
+        badge: "直译",
+        desc: "结构对称、忠于原文，尽可能保留句型与字面对应，适用于学术条约及比对校验场景。",
+        translate: "You are a precise translator. Translate the following Markdown content from {source_lang} to {target_lang} literally, preserving the original structure and word choice as much as possible. Keep all Markdown syntax intact. Do not add any explanations.",
+        title: "You are a precise translator. Translate the following title into {target_lang} as literally as possible. Output ONLY the title.",
+        meta: "You are a precise translator. Translate the provided metadata into {target_lang} literally. Output ONLY the result."
+    },
+    academic: {
+        name: "🎓 学术客观 (Academic)",
+        badge: "学术",
+        desc: "客观严谨、使用被动语态与书面学术用词，完美保留 LaTeX 复杂公式与文献脚注。",
+        translate: "You are an academic translator. Translate the following Markdown research paper from {source_lang} to {target_lang}. Use formal academic style, precise terminology, and objective tone. Maintain all LaTeX mathematical environments, footnotes, citations, and Markdown markup intact. Do not alter the formatting.",
+        title: "You are a scholarly editor. Translate the following paper title into {target_lang} with high academic accuracy. Output ONLY the title.",
+        meta: "You are a scholarly editor. Translate the following metadata into {target_lang} using academic terminology. Output ONLY the result."
+    },
+    technical: {
+        name: "💻 技术极客 (Technical)",
+        badge: "技术",
+        desc: "面向开发者与工程师，保留通用技术名词不予硬译，完美对齐行内代码与代码块结构。",
+        translate: "You are a technical translator specializing in computer science. Translate the following developer documentation from {source_lang} to {target_lang}. Keep industry standard terms (e.g., 'API', 'Docker', 'GIL') in English. Keep all code blocks, inline code, and formatting strictly unchanged.",
+        title: "You are a technical writer. Translate the following technical article title into {target_lang}, retaining essential technical terms in English. Output ONLY the title.",
+        meta: "You are a technical writer. Translate the following metadata into {target_lang}, preserving standard technology terms. Output ONLY the result."
+    },
+    literary: {
+        name: "🎭 文学唯美 (Literary)",
+        badge: "信达雅",
+        desc: "意境重于字词、行文优雅且追求文学感官，适用于散文随笔、故事创作与诗歌小说。",
+        translate: "You are a literary translator. Translate the following prose from {source_lang} to {target_lang} with an emphasis on tone, style, and flow. Capture the emotional resonance and elegance of the original text. Maintain all Markdown formatting. Avoid literal translation where a more elegant expression exists.",
+        title: "You are a literary editor. Translate the following title into {target_lang} with poetic beauty. Output ONLY the title.",
+        meta: "You are a literary editor. Translate the following metadata into {target_lang} with high literary elegance. Output ONLY the result."
+    }
+};
+
 window.renderTranslationStyleCategory = () => {
     const i18n = window.settingsData.i18n_settings || {};
     const isEnabled = i18n.enabled !== false; // 默认为 true
@@ -112,6 +163,27 @@ window.renderTranslationStyleCategory = () => {
     }
 
     const prompts = window.settingsData.translation?.prompts || {};
+    const ts = prompts.translate_system || '';
+
+    // 智能反向推导当前属于哪个风格预设
+    let activeStyleKey = 'custom';
+    for (const [key, tpl] of Object.entries(window.translationStyles)) {
+        if (tpl.translate === ts) {
+            activeStyleKey = key;
+            break;
+        }
+    }
+    if (!ts && !prompts.title_system && !prompts.metadata_system) {
+        activeStyleKey = 'professional'; // 默认值
+    }
+
+    const currentStyle = window.translationStyles[activeStyleKey] || {
+        badge: "自定义",
+        desc: "正在使用专属于该品牌的个性化翻译 Prompt 模板。",
+        translate: ts,
+        title: prompts.title_system || '',
+        meta: prompts.metadata_system || ''
+    };
 
     return `
         <div class="full-width">
@@ -121,26 +193,72 @@ window.renderTranslationStyleCategory = () => {
             <div class="settings-grid">
                 <div class="settings-group">
                     <h4>🌐 风格预设 (Preset Templates)</h4>
-                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
-                        <select id="style-selector" class="setting-input">
-                            <option value="professional">商务专业 (Professional) - 正式、严谨</option>
-                            <option value="casual">活泼随性 (Casual) - 自然、口语</option>
-                            <option value="literal">精准直译 (Literal) - 忠实、结构</option>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+                        <select id="style-selector" class="setting-input" onchange="window.updateStylePreview(this.value)" style="flex: 1; min-height: 38px;">
+                            ${Object.entries(window.translationStyles).map(([key, tpl]) => `
+                                <option value="${key}" ${key === activeStyleKey ? 'selected' : ''}>${tpl.name}</option>
+                            `).join('')}
+                            <option value="custom" ${activeStyleKey === 'custom' ? 'selected' : ''}>✍️ 自定义风格 (Custom Prompt)</option>
                         </select>
-                        <button class="primary-btn" onclick="applyTranslationStyle()" style="white-space: nowrap;">⚡ 应用</button>
+                        <button class="primary-btn" onclick="applyTranslationStyle()" style="white-space: nowrap; min-height: 38px; display: flex; align-items: center; gap: 6px;">
+                            <span>⚡</span> 应用此风格
+                        </button>
                     </div>
                     
-                    <div class="prompt-container">
-                        <div class="prompt-box" id="prompt-preview-translate">
-                            ${prompts.translate_system || '正在提取物理 Prompt...'}
+                    <!-- 风格详情卡片描述区 -->
+                    <div id="style-description-box" style="padding: 12px 16px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; background: rgba(var(--bg-rgb), 0.2); font-size: 0.8rem; line-height: 1.5; color: var(--text-normal); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease;">
+                        <span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #000); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">${currentStyle.badge}</span>
+                        <p style="margin: 0; font-weight: 500;">${currentStyle.desc}</p>
+                    </div>
+
+                    <!-- Prompt 编辑与展示区 (等宽字体、高对比底色与外框，上下依次垂直排列：标题 -> 正文 -> 元数据) -->
+                    <div class="prompt-wrapper" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <!-- 1. 标题翻译 Prompt -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-bright, #ffffff); opacity: 0.85; display: flex; align-items: center; gap: 6px;">
+                                📌 标题翻译 Prompt 模板 (Title)
+                            </span>
+                            <textarea id="prompt-preview-title" oninput="window.checkStyleMatch()" 
+                                      onfocus="if(!this.hasAttribute('readonly')) { this.style.borderColor='var(--accent-primary)'; this.style.boxShadow='0 0 10px rgba(var(--accent-primary-rgb), 0.3)'; }" 
+                                      onblur="if(!this.hasAttribute('readonly')) { this.style.borderColor='rgba(var(--accent-primary-rgb), 0.25)'; this.style.boxShadow='none'; } else { this.style.borderColor='var(--glass-border)'; }"
+                                      ${activeStyleKey !== 'custom' ? 'readonly' : ''}
+                                      style="width: 100%; box-sizing: border-box; font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 0.72rem; padding: 12px 16px; 
+                                             background: ${activeStyleKey === 'custom' ? 'var(--bg-agent-input)' : 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)'}; 
+                                             border: ${activeStyleKey === 'custom' ? '1.5px solid rgba(var(--accent-primary-rgb), 0.25)' : '1px solid var(--glass-border)'}; 
+                                             border-radius: 8px; color: var(--text-bright, #ffffff); min-height: 60px; resize: vertical; line-height: 1.5; outline: none; transition: all 0.2s ease;
+                                             cursor: ${activeStyleKey === 'custom' ? 'text' : 'default'};">${currentStyle.title || ''}</textarea>
                         </div>
-                        <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="prompt-box" id="prompt-preview-title">
-                                标题: ${prompts.title_system || 'Default'}
-                            </div>
-                            <div class="prompt-box" id="prompt-preview-meta">
-                                元数据: ${prompts.metadata_system || 'Default'}
-                            </div>
+
+                        <!-- 2. 正文翻译 Prompt -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-bright, #ffffff); opacity: 0.85; display: flex; align-items: center; gap: 6px;">
+                                📄 正文翻译 Prompt 模板 (Markdown Content)
+                            </span>
+                            <textarea id="prompt-preview-translate" oninput="window.checkStyleMatch()" 
+                                      onfocus="if(!this.hasAttribute('readonly')) { this.style.borderColor='var(--accent-primary)'; this.style.boxShadow='0 0 10px rgba(var(--accent-primary-rgb), 0.3)'; }" 
+                                      onblur="if(!this.hasAttribute('readonly')) { this.style.borderColor='rgba(var(--accent-primary-rgb), 0.25)'; this.style.boxShadow='none'; } else { this.style.borderColor='var(--glass-border)'; }"
+                                      ${activeStyleKey !== 'custom' ? 'readonly' : ''}
+                                      style="width: 100%; box-sizing: border-box; font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 0.72rem; padding: 12px 16px; 
+                                             background: ${activeStyleKey === 'custom' ? 'var(--bg-agent-input)' : 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)'}; 
+                                             border: ${activeStyleKey === 'custom' ? '1.5px solid rgba(var(--accent-primary-rgb), 0.25)' : '1px solid var(--glass-border)'}; 
+                                             border-radius: 8px; color: var(--text-bright, #ffffff); min-height: 80px; resize: vertical; line-height: 1.5; outline: none; transition: all 0.2s ease;
+                                             cursor: ${activeStyleKey === 'custom' ? 'text' : 'default'};">${currentStyle.translate || ''}</textarea>
+                        </div>
+
+                        <!-- 3. 网页元数据 Prompt -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-bright, #ffffff); opacity: 0.85; display: flex; align-items: center; gap: 6px;">
+                                🏷️ 网页元数据 Prompt 模板 (Metadata)
+                            </span>
+                            <textarea id="prompt-preview-meta" oninput="window.checkStyleMatch()" 
+                                      onfocus="if(!this.hasAttribute('readonly')) { this.style.borderColor='var(--accent-primary)'; this.style.boxShadow='0 0 10px rgba(var(--accent-primary-rgb), 0.3)'; }" 
+                                      onblur="if(!this.hasAttribute('readonly')) { this.style.borderColor='rgba(var(--accent-primary-rgb), 0.25)'; this.style.boxShadow='none'; } else { this.style.borderColor='var(--glass-border)'; }"
+                                      ${activeStyleKey !== 'custom' ? 'readonly' : ''}
+                                      style="width: 100%; box-sizing: border-box; font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 0.72rem; padding: 12px 16px; 
+                                             background: ${activeStyleKey === 'custom' ? 'var(--bg-agent-input)' : 'rgba(var(--bg-modal-solid-rgb, 13, 14, 28), 0.5)'}; 
+                                             border: ${activeStyleKey === 'custom' ? '1.5px solid rgba(var(--accent-primary-rgb), 0.25)' : '1px solid var(--glass-border)'}; 
+                                             border-radius: 8px; color: var(--text-bright, #ffffff); min-height: 60px; resize: vertical; line-height: 1.5; outline: none; transition: all 0.2s ease;
+                                             cursor: ${activeStyleKey === 'custom' ? 'text' : 'default'};">${currentStyle.meta || ''}</textarea>
                         </div>
                     </div>
                 </div>

@@ -33,8 +33,17 @@ class SSGAdapter:
         self._load_global_adapters()
         self._load_theme_adapters(theme_name)
 
-        # 从注册表获取具体实现
-        ssg_type = getattr(theme_settings, 'ssg', 'generic').lower()
+        # 从注册表获取具体实现 (支持基于主题同名自动映射，若为空或为 generic 则智能检测)
+        ssg_type = getattr(theme_settings, 'renderer', None)
+        if ssg_type:
+            ssg_type = ssg_type.lower()
+        else:
+            resolved_type = "sovereign" if theme_name in ("default", "sovereign") else theme_name
+            if SSGRegistry.get_renderer(resolved_type):
+                ssg_type = resolved_type
+            else:
+                ssg_type = "generic"
+
         renderer_cls = SSGRegistry.get_renderer(ssg_type)
         if renderer_cls:
             self.active_renderer = renderer_cls(theme_settings, engine=self.engine)

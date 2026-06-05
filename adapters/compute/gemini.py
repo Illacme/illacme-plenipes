@@ -11,7 +11,7 @@ from .openai import OpenAICompatibleTranslator
 class GeminiNativeTranslator(GoogleCompatibleTranslator):
     """🚀 [NATIVE] Google Gemini 原生驱动 (Standard V3)"""
     PLUGIN_ID = 'gemini'
-    DISPLAY_NAME = 'Google Gemini'
+    DISPLAY_NAME = 'Google Gemini (原生 SDK)'
     VERSION = "V1.0"
     DESCRIPTION = "提供 Google Gemini 官方协议支持，具备超长上下文理解与多模态分析能力。"
     PROTOCOL_FAMILY = 'google'
@@ -51,7 +51,7 @@ class GeminiNativeTranslator(GoogleCompatibleTranslator):
 class GeminiStandardTranslator(OpenAICompatibleTranslator):
     """🚀 [STANDARD] Google Gemini 兼容驱动 (V1 协议路径)"""
     PLUGIN_ID = 'gemini-v1'
-    DISPLAY_NAME = 'Google Gemini'
+    DISPLAY_NAME = 'Google Gemini (标准 v1 兼容)'
     VERSION = "V1.0"
     DESCRIPTION = "提供 Google Gemini 的 OpenAI 兼容接口支持，适配主流分发平台的标准协议路径。"
     PROTOCOL_FAMILY = 'standard'

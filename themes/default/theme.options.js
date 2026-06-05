@@ -1,4 +1,6 @@
-// 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
+/**
+ * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
+ */
 export const themeOptions = {
   "site_name": "Borealis realm",
   "logo_path": "/static/logo.png",

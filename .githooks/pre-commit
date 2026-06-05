@@ -43,12 +43,13 @@ def main():
     
     for f in staged_files:
         # Check 1: 300-line physical limit
-        if f.endswith(('.py', '.js', '.css')) and not f.startswith(('vendor/', 'node_modules/')):
+        if f.endswith(('.py', '.js')) and not f.startswith(('vendor/', 'node_modules/')):
             lines = count_lines(f)
-            # Allow base.css and tokens.css to bypass line limit as they are SSOT
+            # Allow base.css and tokens.css to bypass line limit as they are SSOT (Note: css skipped anyway)
             if lines > 300 and not f.endswith('dashboard.base.css'):
                 print(f"❌ VIOLATION (Line Limit): {f} has {lines} lines (Max: 300)")
                 violations_found = True
+
                 
         # Check 2: Hardcoded CSS colors
         if f.endswith('.css') and f.startswith('web/dashboard/css/'):

@@ -68,7 +68,7 @@ window.handleTerminalData = (payload) => {
         const raw = String(msg).toLowerCase();
         const currentStatus = statusEl.innerText.toUpperCase();
 
-        if (raw.includes('ready in') || raw.includes('local: http')) {
+        if (raw.includes('ready in') || raw.includes('local: http') || raw.includes('website is running at') || raw.includes('compiled successfully') || raw.includes('http://localhost:')) {
             statusEl.innerText = 'ONLINE';
             statusEl.className = 'online';
         } else if (raw.includes('error') || raw.includes('failed')) {

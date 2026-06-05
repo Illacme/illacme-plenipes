@@ -11,7 +11,6 @@
     --text-primary: #f8f8fc;
     --text-secondary: #a1a1b5;
     --accent-color: #00f5ff; 
-    --accent-glow: rgba(0, 245, 255, 0.25);
     --accent-glow: rgba(0, 245, 255, 0.35);
     --border-color: rgba(255, 255, 255, 0.08);
     --code-bg: #14141a;
@@ -66,7 +65,19 @@
 }
 
 [data-theme="light"] {
-    /* 📱 响应式主权适配 (Mobile Shield) */
+    /* 💡 配色矩阵 (Light Mode) */
+    --bg-color: #f9f9fb;
+    --card-bg: #ffffff;
+    --header-bg: rgba(249, 249, 251, 0.8);
+    --text-primary: #1a1a1e;
+    --text-secondary: #5a5a6a;
+    --accent-color: #0071e3;
+    --accent-glow: rgba(0, 113, 227, 0.15);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --code-bg: #f2f2f7;
+}
+
+/* 📱 响应式主权适配 (Mobile Shield) - 全局生效 */
 @media (max-width: 1024px) {
     .sidebar-pioneer {
         position: fixed;
@@ -126,17 +137,6 @@
 
 .mobile-only-btn {
     display: none;
-}
-    /* 💡 配色矩阵 (Light Mode) */
-    --bg-color: #f9f9fb;
-    --card-bg: #ffffff;
-    --header-bg: rgba(249, 249, 251, 0.8);
-    --text-primary: #1a1a1e;
-    --text-secondary: #5a5a6a;
-    --accent-color: #0071e3;
-    --accent-glow: rgba(0, 113, 227, 0.15);
-    --border-color: rgba(0, 0, 0, 0.08);
-    --code-bg: #f2f2f7;
 }
 
 html {
@@ -202,6 +202,7 @@ body {
     letter-spacing: -0.5px;
     background: linear-gradient(135deg, var(--accent-color), #bc00ff);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -421,6 +422,7 @@ body {
     color: var(--text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
@@ -576,6 +578,7 @@ img:hover { transform: translateY(-5px); }
     font-size: 1.4rem;
     background: linear-gradient(135deg, #fff, #a1a1b5);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -681,6 +684,7 @@ img:hover { transform: translateY(-5px); }
     margin-bottom: 4rem;
     background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-color));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -2px;
 }

@@ -57,7 +57,7 @@ class LMStudioBase(OpenAICompatibleTranslator):
 class LMStudioNativeTranslator(LMStudioBase):
     """🚀 [NATIVE] LM Studio 原生驱动 (本地主权优先)"""
     PLUGIN_ID = 'lmstudio'
-    DISPLAY_NAME = 'LM Studio'
+    DISPLAY_NAME = 'LM Studio (本地原生)'
     VERSION = "V5.3"
     DESCRIPTION = "提供 LM Studio 本地部署支持，将个人电脑转化为具备物理隔离特性的私有 AI 算力中心。"
     PROTOCOL_FAMILY = 'native'
@@ -72,7 +72,7 @@ class LMStudioNativeTranslator(LMStudioBase):
 class LMStudioStandardTranslator(LMStudioBase):
     """🚀 [STANDARD] LM Studio 兼容驱动 (V1 协议路径)"""
     PLUGIN_ID = 'lmstudio-v1'
-    DISPLAY_NAME = 'LM Studio'
+    DISPLAY_NAME = 'LM Studio (标准 v1 兼容)'
     PROTOCOL_FAMILY = 'standard'
     VERSION = "V5.3"
     DESCRIPTION = "提供 LM Studio 的标准 OpenAI 兼容协议支持，适用于需要 V1 接口对齐的集成场景。"

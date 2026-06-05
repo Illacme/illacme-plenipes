@@ -265,9 +265,6 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
             tlog.error(f"❌ 落盘失败: {path} - {e}")
             
     if not imprint_id or imprint_id == engine.im.get_active_imprint():
-        engine.active_theme = engine.config.active_theme
-        engine.vault_root = engine.config.vault_root
-        
         if "active_theme" in req:
             theme_id = req["active_theme"]
             from core.config.config import THEMES_DIR
@@ -277,21 +274,23 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
                 import shutil
                 shutil.copytree(global_theme_path, local_theme_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns('node_modules', '.git', '.DS_Store'))
             
+        if hasattr(engine, 'config_manager'):
+            engine.config_manager.reload()
+        else:
+            # 兼容性备用方案：在缺少 config_manager 的极少数情况下退回就地重载
+            engine.active_theme = engine.config.active_theme
+            engine.vault_root = engine.config.vault_root
+            from core.runtime.engine_factory import EngineFactory
+            EngineFactory._init_basic_settings(engine)
+            EngineFactory._init_ingress(engine, engine.config)
+            # 🚀 [V74.80] 动态算力网络重构：当用户保存翻译或算力配置时，实时在线组装并热加载翻译官组件
+            if not getattr(engine, 'no_ai', False):
+                from core.logic.ai.ai_factory import TranslatorFactory
+                engine.translator = TranslatorFactory.create(engine.config.translation)
+                if hasattr(engine, 'route_manager') and engine.route_manager:
+                    engine.route_manager.translator = engine.translator
+            bus.emit("CONFIG_RELOADED", config=engine.config)
 
 
-        from core.runtime.engine_factory import EngineFactory
-        EngineFactory._init_basic_settings(engine)
-        EngineFactory._init_ingress(engine, engine.config)
-        
-        # 🚀 [V74.80] 动态算力网络重构：当用户保存翻译或算力配置时，实时在线组装并热加载翻译官组件
-        if not getattr(engine, 'no_ai', False):
-            from core.logic.ai.ai_factory import TranslatorFactory
-            engine.translator = TranslatorFactory.create(engine.config.translation)
-            
-            # 刷新 route_manager 等组件对最新 translator 的引用
-            if hasattr(engine, 'route_manager') and engine.route_manager:
-                engine.route_manager.translator = engine.translator
-                
-        bus.emit("CONFIG_RELOADED", config=engine.config)
             
     return {"status": "success", "active_config": engine.config.model_dump()}

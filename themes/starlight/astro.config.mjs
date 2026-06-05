@@ -103,9 +103,9 @@ export default defineConfig({
 
 
 			// 2. 配置顶部右侧的社交媒体账户详情
-			social: {
-				github: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes'
-			},
+			social: [
+				{ icon: 'github', label: 'GitHub', href: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes' }
+			],
 
 			// 3. 多语言配置（这会自动在顶部右侧生成原生语言切换下拉框）
 			// 🚀 指定默认“回退语言”和“搜索索引优先级”，它并不直接决定 URL 是否包含路径前缀。
@@ -131,24 +131,18 @@ export default defineConfig({
 			sidebar: [
 				{
 					label: '博客',
-					translations: {
-						'en': 'Blog',
-					},
-					autogenerate: { directory: 'blog' },
+					translations: { 'en': 'Blog' },
+					items: [{ autogenerate: { directory: 'blog' } }],
 				},
 				{
 					label: '知识库',
-					translations: {
-						'en': 'Documents',
-					},
-					autogenerate: { directory: 'docs' },
+					translations: { 'en': 'Documents' },
+					items: [{ autogenerate: { directory: 'docs' } }],
 				},
 				{
 					label: '混沌测试',
-					translations: {
-						'en': 'Chaos',
-					},
-					autogenerate: { directory: 'chaos' },
+					translations: { 'en': 'Chaos' },
+					items: [{ autogenerate: { directory: 'chaos' } }],
 				},
 			],
 

@@ -23,30 +23,34 @@ def toggle_lab_logic(engine) -> dict:
         preview_dir = os.path.join("imprints", imprint_id, "themes", theme, "dist")
     
     preview_dir = os.path.abspath(preview_dir)
-    port = 43213
+    port = getattr(config.system, 'serve_port', 43213)
 
     from core.utils.dev_server import DevServer
     
     if not hasattr(engine, 'preview_server') or engine.preview_server is None:
         engine.preview_server = DevServer(directory=preview_dir, port=port)
 
-    is_running = check_port(port)
+    # 🚀 使用预览服务器当前的物理端口进行占用检测，以应对端口自愈带来的端口偏移
+    current_port = engine.preview_server.port
+    is_running = check_port(current_port)
 
     if is_running:
         engine.preview_server.stop()
         time.sleep(0.2)
-        is_active = check_port(port)
+        is_active = check_port(current_port)
         message = "实时预览引擎已关闭"
     else:
         os.makedirs(preview_dir, exist_ok=True)
         success = engine.preview_server.start(blocking=False)
         time.sleep(0.3)
-        is_active = check_port(port)
+        # 🚀 启动后可能发生端口自愈，必须重新获取自愈后的真实端口检测存活
+        actual_port = engine.preview_server.port
+        is_active = check_port(actual_port)
         if success and is_active:
-            message = "实时预览引擎已物理点火启动"
+            message = f"实时预览引擎已物理点火启动 (端口: {actual_port})"
         else:
             is_active = False
-            message = "实时预览引擎启动失败，可能 43213 端口被占用"
+            message = f"实时预览引擎启动失败，可能 {actual_port} 端口被占用"
 
     return {
         "success": True,
