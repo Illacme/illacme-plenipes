@@ -16,5 +16,5 @@ class BaseSyncStrategy(abc.ABC):
     @abc.abstractmethod
     @SovereignCore
     def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
-        """执行同步操作的核心入口"""
+        """执行同步操作的核心入口，所有具体策略类必须重写此方法以实现特定的同步逻辑。"""
         pass

@@ -20,8 +20,8 @@ def inject_seo_helper(fm: dict, desc_or_data: Any, keywords: list = None) -> dic
         data = desc_or_data
         # 1. 基础层 & OG/Twitter 层
         fields = [
-            "description", "keywords", "og_title", "og_description", 
-            "og_type", "og_locale", "twitter_card", "twitter_title", 
+            "description", "keywords", "og_title", "og_description",
+            "og_type", "og_locale", "twitter_card", "twitter_title",
             "twitter_description", "canonical_url"
         ]
         for key in fields:

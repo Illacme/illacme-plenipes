@@ -3,7 +3,11 @@
 Illacme Plenipes Core - Incremental Build Manager
 🛡️ [SOP-01/SOP-02 Compliant]：行数限制在 300 行以下。
 """
-import os, shutil, hashlib, json, subprocess
+import os
+import shutil
+import hashlib
+import json
+import subprocess
 from core.utils.tracing import tlog
 from core.utils.text import parse_frontmatter, inject_frontmatter
 
@@ -120,15 +124,17 @@ class IncrementalBuildManager:
 
         if not modified and not deleted:
             tlog.info("✨ [增量编译] 侦测到内容指纹无变化，直接命中缓存，无需重新渲染！")
-            shutil.rmtree(self.site_dir, ignore_errors=True)
-            shutil.copytree(self.full_output_dir, self.site_dir)
+            self._incremental_copy_tree(self.full_output_dir, self.site_dir)
             return True
 
         tlog.info(f"⚡ [增量编译] 变更：修改/新增 {len(modified)}，删除 {len(deleted)}，未变 {len(unmodified)}")
-        shutil.rmtree(self.site_dir, ignore_errors=True)
-        shutil.copytree(self.full_output_dir, self.site_dir)
+        self._incremental_copy_tree(self.full_output_dir, self.site_dir)
         disguised_backup = {}
+        disguised_assets = {}
         try:
+            # 🚀 [懒加载编译] 掏空未修改的大媒体资产
+            disguised_assets = self._disguise_assets()
+
             for file_rel in unmodified:
                 abs_path = os.path.join(self.theme_root, file_rel)
                 if os.path.exists(abs_path):
@@ -158,25 +164,108 @@ class IncrementalBuildManager:
                         os.makedirs(os.path.dirname(dst_h), exist_ok=True)
                         shutil.copy2(src_h, dst_h)
 
+            # 🚀 [懒加载编译] 先还原大文件资产并回填到 site_dir
+            static_in_dir = os.path.join(self.theme_root, "static")
+            if not os.path.exists(static_in_dir):
+                static_in_dir = os.path.join(self.theme_root, "public")
+            
+            for orig_path, (bak_path, abs_out_path) in disguised_assets.items():
+                if os.path.exists(bak_path):
+                    shutil.move(bak_path, orig_path)
+                if os.path.exists(static_in_dir):
+                    rel_out = os.path.relpath(orig_path, static_in_dir)
+                    dst_in_site = os.path.join(self.site_dir, rel_out)
+                    if not os.path.exists(dst_in_site):
+                        os.makedirs(os.path.dirname(dst_in_site), exist_ok=True)
+                        shutil.copy2(orig_path, dst_in_site)
+
             for item in os.listdir(self.site_dir):
                 if item in ("assets", "img", "static"):
                     src_i = os.path.join(self.site_dir, item)
                     dst_i = os.path.join(self.full_output_dir, item)
                     if os.path.isdir(src_i):
-                        shutil.rmtree(dst_i, ignore_errors=True)
-                        shutil.copytree(src_i, dst_i)
+                        self._incremental_copy_tree(src_i, dst_i)
         finally:
-            tlog.info("⏪ [增量编译] 正在物理复原原地掏空的文档内容...")
+            tlog.info("⏪ [增量编译] 正在物理复原原地掏空的文档内容与大媒体...")
             for abs_p, orig in disguised_backup.items():
                 try:
                     with open(abs_p, 'w', encoding='utf-8') as f: f.write(orig)
                 except Exception as ex:
                     tlog.error(f"🚨 [增量编译] 还原文档失败: {abs_p} - {ex}")
+            # 还原可能遗留的 disguised 大文件（防止编译中途出错崩溃）
+            for orig_path, (bak_path, abs_out_path) in disguised_assets.items():
+                if os.path.exists(bak_path):
+                    try: shutil.move(bak_path, orig_path)
+                    except: pass
 
         history["source_fingerprints"] = current_fps
         with open(self.history_file, 'w', encoding='utf-8') as f:
             json.dump(history, f, indent=2, ensure_ascii=False)
-        shutil.rmtree(self.site_dir, ignore_errors=True)
-        shutil.copytree(self.full_output_dir, self.site_dir)
+        self._incremental_copy_tree(self.full_output_dir, self.site_dir)
         tlog.success("✅ [增量编译] 增量静态装帧已完美闭环！")
         return True
+
+    def _disguise_assets(self) -> dict:
+        """在编译前隐藏未修改的大媒体资产，避免 SSG 冗余拷贝 I/O"""
+        disguised = {}
+        static_in_dir = os.path.join(self.theme_root, "static")
+        if not os.path.exists(static_in_dir):
+            static_in_dir = os.path.join(self.theme_root, "public")
+        if not os.path.exists(static_in_dir):
+            return disguised
+
+        for root, _, files in os.walk(static_in_dir):
+            for file in files:
+                if file.endswith(".bak_disguise"):
+                    continue
+                abs_in_path = os.path.join(root, file)
+                try:
+                    size = os.path.getsize(abs_in_path)
+                    # 设定超大文件阈值为 5MB
+                    if size > 5 * 1024 * 1024:
+                        rel = os.path.relpath(abs_in_path, static_in_dir)
+                        abs_out_path = os.path.join(self.full_output_dir, rel)
+                        if os.path.exists(abs_out_path) and os.path.getsize(abs_out_path) == size:
+                            if os.path.getmtime(abs_in_path) <= os.path.getmtime(abs_out_path):
+                                bak_path = abs_in_path + ".bak_disguise"
+                                shutil.move(abs_in_path, bak_path)
+                                disguised[abs_in_path] = (bak_path, abs_out_path)
+                                tlog.info(f"🔇 [懒加载资产] 掏空未修改的大媒体: {rel} ({size // (1024 * 1024)}MB)")
+                except Exception as e:
+                    tlog.warning(f"⚠️ 检查大资产 {file} 失败: {e}")
+        return disguised
+
+    def _incremental_copy_tree(self, src: str, dst: str):
+        """智能增量差分合并目录"""
+        if not os.path.exists(dst):
+            os.makedirs(dst, exist_ok=True)
+        src_files = set()
+        for root, _, files in os.walk(src):
+            for file in files:
+                src_file = os.path.join(root, file)
+                rel = os.path.relpath(src_file, src)
+                dst_file = os.path.join(dst, rel)
+                src_files.add(rel)
+                
+                need_copy = True
+                if os.path.exists(dst_file):
+                    if os.path.getsize(src_file) == os.path.getsize(dst_file):
+                        if os.path.getmtime(src_file) <= os.path.getmtime(dst_file):
+                            need_copy = False
+                if need_copy:
+                    os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+                    shutil.copy2(src_file, dst_file)
+
+        # 差分清除孤儿文件
+        for root, dirs, files in os.walk(dst, topdown=False):
+            for file in files:
+                dst_file = os.path.join(root, file)
+                rel = os.path.relpath(dst_file, dst)
+                if rel not in src_files:
+                    try: os.remove(dst_file)
+                    except: pass
+            for d in dirs:
+                abs_d = os.path.join(root, d)
+                if not os.listdir(abs_d):
+                    try: os.rmdir(abs_d)
+                    except: pass

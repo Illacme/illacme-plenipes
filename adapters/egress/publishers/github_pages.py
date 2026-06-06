@@ -2,26 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes — GitHub Pages Publisher Plugin
-🚀 [V48.3]：全球分发中心首个真实渠道实装。
-
-功能：
-  1. 将本地构建产物推送至目标 Git 仓库的 gh-pages 分支
-  2. 支持孤儿分支初始化 (orphan branch)
-  3. 支持自定义 CNAME 域名注入
-  4. 支持 .nojekyll 标记自动生成
-  5. 支持增量部署 (仅推送 diff) 或全量覆盖
-
-配置示例 (config.yaml):
-  github_pages:
-    enabled: true
-    repo_url: "https://github.com/user/repo.git"
-    branch: "gh-pages"
-    cname: "docs.example.com"      # 可选
-    commit_message: "deploy: {timestamp}"
-    force_push: false               # 危险操作，默认关闭
-    nojekyll: true                  # 自动生成 .nojekyll
-    git_user_name: "Plenipes Bot"
-    git_user_email: "bot@plenipes.press"
+🚀 [V48.3]：将静态站点产物推送至 gh-pages 分支，支持懒卸载与增量对齐。
 """
 
 import os
@@ -99,8 +80,8 @@ class GitHubPagesPublisher(BasePublisher):
                 # 分支不存在：创建孤儿分支
                 self._init_orphan_branch(work_dir)
 
-            # ── 4. 清空工作区 (保留 .git) ────────────────
-            self._clean_work_dir(work_dir)
+            # ── 4. 清空工作区 (保留 .git 及对应一致资产) ────────
+            self._clean_work_dir(work_dir, bundle_path)
 
             # ── 5. 拷贝构建产物 ──────────────────────────
             file_count = self._copy_bundle(bundle_path, work_dir)
@@ -208,37 +189,57 @@ class GitHubPagesPublisher(BasePublisher):
         self._run_git(work_dir, ["config", "user.name", self.git_user_name])
         self._run_git(work_dir, ["config", "user.email", self.git_user_email])
 
-    def _clean_work_dir(self, work_dir: str):
-        """清空工作区内容，保留 .git 目录"""
-        for item in os.listdir(work_dir):
-            if item == ".git":
-                continue
-            item_path = os.path.join(work_dir, item)
-            if os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-            else:
-                os.remove(item_path)
+    def _clean_work_dir(self, work_dir: str, bundle_path: str = None):
+        """清空工作区内容，保留 .git 目录及与 bundle_path 对应一致的文件"""
+        if not bundle_path:
+            for item in os.listdir(work_dir):
+                if item == ".git": continue
+                item_path = os.path.join(work_dir, item)
+                if os.path.isdir(item_path): shutil.rmtree(item_path)
+                else: os.remove(item_path)
+            return
+
+        for root, dirs, files in os.walk(work_dir, topdown=False):
+            if ".git" in root.split(os.sep): continue
+            for file in files:
+                abs_work = os.path.join(root, file)
+                rel = os.path.relpath(abs_work, work_dir)
+                abs_bundle = os.path.join(bundle_path, rel)
+                
+                keep = False
+                if os.path.exists(abs_bundle) and os.path.isfile(abs_bundle):
+                    if os.path.getsize(abs_bundle) == os.path.getsize(abs_work):
+                        if os.path.getmtime(abs_bundle) <= os.path.getmtime(abs_work):
+                            keep = True
+                if not keep:
+                    try: os.remove(abs_work)
+                    except: pass
+            for d in dirs:
+                abs_dir = os.path.join(root, d)
+                if not os.listdir(abs_dir):
+                    try: os.rmdir(abs_dir)
+                    except: pass
 
     def _copy_bundle(self, bundle_path: str, work_dir: str) -> int:
-        """
-        将构建产物从 bundle_path 复制到工作区。
-        :return: 复制的文件总数
-        """
+        """将构建产物从 bundle_path 差分复制到工作区"""
         file_count = 0
         for root, dirs, files in os.walk(bundle_path):
-            # 跳过隐藏目录
             dirs[:] = [d for d in dirs if not d.startswith('.')]
-
             for file in files:
-                if file.startswith('.'):
-                    continue
+                if file.startswith('.'): continue
                 src = os.path.join(root, file)
                 rel_path = os.path.relpath(src, bundle_path)
                 dst = os.path.join(work_dir, rel_path)
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                shutil.copy2(src, dst)
+                
+                need_copy = True
+                if os.path.exists(dst):
+                    if os.path.getsize(src) == os.path.getsize(dst):
+                        if os.path.getmtime(src) <= os.path.getmtime(dst):
+                            need_copy = False
+                if need_copy:
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    shutil.copy2(src, dst)
                 file_count += 1
-
         return file_count
 
     def _inject_meta_files(self, work_dir: str):

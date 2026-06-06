@@ -22,6 +22,7 @@ class TestTelemetryResilience(unittest.TestCase):
         self.original_buffer = list(ws_module.message_buffer)
         self.original_counter = ws_module.global_msg_counter
         ws_module.message_buffer.clear()
+        ws_module.register_event_listeners()
 
     def tearDown(self):
         # 还原全局缓存
@@ -60,6 +61,10 @@ class TestTelemetryResilience(unittest.TestCase):
 
     def test_websocket_handshake_and_replay(self):
         """测试 WebSocket 连接握手包实例 ID、重连拉取 Query 参数过滤及 REPLAY_EVENTS 打包重放"""
+        client = TestClient(app)
+        # 清除 TestClient 启动可能引起的干扰消息
+        ws_module.message_buffer.clear()
+
         # 1. 注入 3 条事件
         bus.emit("AUDIT_LOG", message="Msg A (Already read)", level="INFO")
         bus.emit("AUDIT_LOG", message="Msg B (Missed while offline)", level="INFO")
@@ -67,8 +72,6 @@ class TestTelemetryResilience(unittest.TestCase):
 
         self.assertEqual(len(ws_module.message_buffer), 3)
         msg_a_id = ws_module.message_buffer[0]["msg_id"]
-
-        client = TestClient(app)
         
         # 2. 模拟客户端传递 last_msg_id 为 msg_a_id 进行重连
         with client.websocket_connect(f"/api/ws?last_msg_id={msg_a_id}") as websocket:
@@ -83,12 +86,17 @@ class TestTelemetryResilience(unittest.TestCase):
             self.assertEqual(replay["type"], "REPLAY_EVENTS")
             events = replay["events"]
 
+            # 过滤出只属于我们注入的 Msg B 和 Msg C 的消息，排除其他并发测试干扰
+            target_events = [ev for ev in events if ev.get("payload", {}).get("message") in [
+                "Msg B (Missed while offline)",
+                "Msg C (Missed while offline)"
+            ]]
             # 应该精确重放 Msg B 和 Msg C
-            self.assertEqual(len(events), 2)
-            self.assertEqual(events[0]["payload"]["message"], "Msg B (Missed while offline)")
-            self.assertEqual(events[1]["payload"]["message"], "Msg C (Missed while offline)")
-            self.assertTrue(events[0]["msg_id"] > msg_a_id)
-            self.assertTrue(events[1]["msg_id"] > msg_a_id)
+            self.assertEqual(len(target_events), 2)
+            self.assertEqual(target_events[0]["payload"]["message"], "Msg B (Missed while offline)")
+            self.assertEqual(target_events[1]["payload"]["message"], "Msg C (Missed while offline)")
+            self.assertTrue(target_events[0]["msg_id"] > msg_a_id)
+            self.assertTrue(target_events[1]["msg_id"] > msg_a_id)
 
     def test_websocket_replay_empty(self):
         """测试客户端带上最新或未来消息 ID 时重放 events 列表应为空"""

@@ -17,6 +17,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
     @SovereignCore
     def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
+        """🚀 根据内容指纹判定是否跳过，并在管线执行后注册同步终态元数据。"""
         from core.editorial.context import SyncContext
         from core.logic.orchestration.concurrency_controller import concurrency_controller
 

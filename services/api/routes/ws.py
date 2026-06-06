@@ -86,23 +86,30 @@ def handle_bus_event(event_name, **kwargs):
         )
 
 # 🚀 [V55.9] 动态订阅引擎：确保每个信号都带着自己的身份标识
-def bind_event(name):
-    return lambda **kwargs: handle_bus_event(name, **kwargs)
+_event_handlers = {}
 
-# 订阅关键事件
-bus.subscribe("AUDIT_LOG", bind_event("AUDIT_LOG"))
-bus.subscribe("SYNC_STARTED", bind_event("SYNC_STARTED"))
-bus.subscribe("SYNC_COMPLETED", bind_event("SYNC_COMPLETED"))
-bus.subscribe("FILE_SYNCED", bind_event("FILE_SYNCED"))
-bus.subscribe("HEALTH_UPDATE", bind_event("HEALTH_UPDATE"))
-bus.subscribe("UI_PROGRESS_START", bind_event("UI_PROGRESS_START"))
-bus.subscribe("UI_PROGRESS_ADVANCE", bind_event("UI_PROGRESS_ADVANCE"))
-bus.subscribe("UI_PROGRESS_STOP", bind_event("UI_PROGRESS_STOP"))
-bus.subscribe("UI_TERMINAL_DATA", bind_event("UI_TERMINAL_DATA"))
- # 🚀 [V55.9] 关键桥接：将终端日志信号投射至 WS 链路
-bus.subscribe("KNOWLEDGE_BATCH_READY", bind_event("KNOWLEDGE_BATCH_READY"))
- # 🪐 [混合渐进式] AI 织网分批完成时推送增量星系数据至 Dashboard
-bus.subscribe("UI_AI_BREAKER_TRIPPED", bind_event("UI_AI_BREAKER_TRIPPED"))
+def get_event_handler(name):
+    if name not in _event_handlers:
+        _event_handlers[name] = lambda **kwargs: handle_bus_event(name, **kwargs)
+    return _event_handlers[name]
+
+def register_event_listeners():
+    # 订阅关键事件
+    bus.subscribe("AUDIT_LOG", get_event_handler("AUDIT_LOG"))
+    bus.subscribe("SYNC_STARTED", get_event_handler("SYNC_STARTED"))
+    bus.subscribe("SYNC_COMPLETED", get_event_handler("SYNC_COMPLETED"))
+    bus.subscribe("FILE_SYNCED", get_event_handler("FILE_SYNCED"))
+    bus.subscribe("HEALTH_UPDATE", get_event_handler("HEALTH_UPDATE"))
+    bus.subscribe("UI_PROGRESS_START", get_event_handler("UI_PROGRESS_START"))
+    bus.subscribe("UI_PROGRESS_ADVANCE", get_event_handler("UI_PROGRESS_ADVANCE"))
+    bus.subscribe("UI_PROGRESS_STOP", get_event_handler("UI_PROGRESS_STOP"))
+    bus.subscribe("UI_TERMINAL_DATA", get_event_handler("UI_TERMINAL_DATA"))
+     # 🚀 [V55.9] 关键桥接：将终端日志信号投射至 WS 链路
+    bus.subscribe("KNOWLEDGE_BATCH_READY", get_event_handler("KNOWLEDGE_BATCH_READY"))
+     # 🪐 [混合渐进式] AI 织网分批完成时推送增量星系数据至 Dashboard
+    bus.subscribe("UI_AI_BREAKER_TRIPPED", get_event_handler("UI_AI_BREAKER_TRIPPED"))
+
+register_event_listeners()
 
 
 @router.websocket("/api/ws")
