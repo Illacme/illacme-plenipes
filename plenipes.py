@@ -166,10 +166,19 @@ if __name__ == "__main__":
 
         # 🧪 [V50.3] 凭据审计特权指令
         if args.credentials:
-            tlog.info("🔍 [凭据审计] 正在执行全域脱敏扫描...")
-            # 逻辑：触发一次配置重载并保存，自动执行 mask_dict
-            engine.meta.force_save()
-            tlog.info("🏁 [审计完成] 所有敏感凭据已受主权 Sentinel 保护。")
+            tlog.info("🔍 [凭据审计] 正在启动交互式脱敏与加密向导...")
+            from core.governance.credential_wizard import run_credentials_wizard
+            run_credentials_wizard(args.config)
+            
+            # 加密结束后，重新加载配置以验证是否通过 ContractGuard 审计
+            if hasattr(engine, 'config_manager') and engine.config_manager:
+                engine.config_manager.reload()
+                from core.governance.contract_guard import ContractGuard
+                violations = ContractGuard.verify_config(engine.config_manager.config)
+                if any("安全红线" in v for v in violations):
+                    tlog.error("🛑 [安全审计未通过] 依然存在未加密的明文密钥，请核对配置文件！")
+                else:
+                    tlog.success("🎉 [安全审计通过] 所有敏感凭据均已加密，安全红线状态已解除。")
             if not any([args.sync, args.watch, args.serve]): sys.exit(0)
             
         # 🧪 [V50.3] 主权体检特权指令
