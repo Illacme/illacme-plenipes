@@ -6,10 +6,12 @@ import re
 from datetime import datetime
 
 def get_latest_brain_dir():
-    brain_root = os.path.expanduser("~/.gemini/antigravity/brain")
+    brain_root = os.path.expanduser("~/.gemini/antigravity-ide/brain")
     if not os.path.exists(brain_root):
-        print(f"Error: Could not find Antigravity brain dir at {brain_root}")
-        sys.exit(1)
+        brain_root = os.path.expanduser("~/.gemini/antigravity/brain")
+        if not os.path.exists(brain_root):
+            print(f"Error: Could not find Antigravity brain dir")
+            sys.exit(1)
     
     subdirs = [os.path.join(brain_root, d) for d in os.listdir(brain_root) if os.path.isdir(os.path.join(brain_root, d))]
     if not subdirs:
