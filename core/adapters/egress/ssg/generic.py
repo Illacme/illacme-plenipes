@@ -20,7 +20,7 @@ class GenericSSGAdapter(BaseSSGAdapter):
     def render(self, body: str, fm: dict, seo_data: dict = None, target_lang: str = "en", sub_path: str = "") -> tuple:
         """通用渲染逻辑：直接透传内容并应用 SEO 注入"""
         if seo_data:
-            fm = self.inject_seo(fm, seo_data.get('description'), seo_data.get('keywords'))
+            fm = self.inject_seo(fm, seo_data)
         return body, fm
 
     def render_callout(self, g_type: str, title: str, body: str) -> str:

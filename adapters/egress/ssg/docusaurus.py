@@ -116,6 +116,19 @@ class DocusaurusAdapter(BaseSSGAdapter):
             source_lang = self.engine.config.i18n_settings.source.lang_code
             force_prefix = self.engine.config.i18n_settings.force_source_prefix
             
+        # 🚀 [Docusaurus 规范化自愈] 
+        # Docusaurus 要求其默认语言一律不加 i18n 物理路径前缀（即直接落盘于主 docs/ 目录）
+        source_iso = LanguageHub.resolve_to_iso(source_lang)
+        if source_iso == "auto":
+            source_iso = "zh"
+            
+        current_iso = iso_code
+        if current_iso == "auto":
+            current_iso = "zh"
+            
+        if current_iso == source_iso:
+            return ""
+            
         return LanguageHub.get_physical_path(
             iso_code,
             theme="docusaurus",

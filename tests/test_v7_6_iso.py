@@ -81,7 +81,89 @@ def test_imprint_vault_bootstrapping():
             # 清理 imprint 配置与缓存
             im.delete_imprint(imprint_name)
 
+def test_force_source_prefix_route_resolution():
+    print("\n🧪 [Test] 主语言路径前缀强制化 (force_source_prefix) 路由解析测试...")
+    from core.editorial.router import RouteManager
+    
+    class MockSSG:
+        def get_feature_slots(self):
+            return {
+                "docs": {
+                    "single": "docs/{sub_dir}",
+                    "multi": "{lang}/docs/{sub_dir}"
+                }
+            }
+        def get_language_code(self, code):
+            return code
+
+    ssg = MockSSG()
+    
+    # 场景 A: 启用强制主语言路径前缀
+    router_forced = RouteManager(
+        meta_manager=None,
+        translator_factory=None,
+        lang_mapping={},
+        default_lang="zh",
+        active_theme="starlight",
+        ssg_adapter=ssg,
+        force_source_prefix=True
+    )
+    
+    phys_path_forced = router_forced.resolve_physical_path(
+        base_path="/dist",
+        lang_code="zh",
+        route_prefix="",
+        mapped_sub_dir="",
+        slug="hello",
+        ext=".md",
+        source_type="docs"
+    )
+    logical_url_forced = router_forced.resolve_logical_url(
+        lang_code="zh",
+        route_prefix="docs",
+        mapped_sub_dir="",
+        slug="hello"
+    )
+    
+    # 场景 B: 禁用强制主语言路径前缀（默认行为）
+    router_default = RouteManager(
+        meta_manager=None,
+        translator_factory=None,
+        lang_mapping={},
+        default_lang="zh",
+        active_theme="starlight",
+        ssg_adapter=ssg,
+        force_source_prefix=False
+    )
+    
+    phys_path_default = router_default.resolve_physical_path(
+        base_path="/dist",
+        lang_code="zh",
+        route_prefix="",
+        mapped_sub_dir="",
+        slug="hello",
+        ext=".md",
+        source_type="docs"
+    )
+    logical_url_default = router_default.resolve_logical_url(
+        lang_code="zh",
+        route_prefix="docs",
+        mapped_sub_dir="",
+        slug="hello"
+    )
+    
+    # 验证强制前缀场景下的物理与逻辑路径对正 (带前缀)
+    assert "zh/docs/hello" in phys_path_forced.replace("\\", "/")
+    assert logical_url_forced == "/zh/docs/hello"
+    
+    # 验证默认场景下的物理与逻辑路径对正 (不带前缀)
+    assert "zh" not in phys_path_default.replace("\\", "/")
+    assert logical_url_default == "/docs/hello"
+    
+    print("  ✅ [前缀对齐测试] 强制主语言路径前缀功能物理与逻辑路径 100% 对齐一致！")
+
 if __name__ == "__main__":
     test_language_hub()
     test_theme_awareness()
     test_imprint_vault_bootstrapping()
+    test_force_source_prefix_route_resolution()

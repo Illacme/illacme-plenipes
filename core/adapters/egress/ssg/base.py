@@ -43,7 +43,13 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
         self.theme_schema = {}
         if self.theme_settings:
             theme_name = getattr(self.theme_settings, 'name', 'default')
-            schema_path = os.path.join("themes", theme_name, "theme.schema.json")
+            if self.engine and hasattr(self.engine, 'paths') and self.engine.paths:
+                themes_root = self.engine.paths.get("themes", "themes")
+            elif self.engine and hasattr(self.engine, '_resolve_path'):
+                themes_root = self.engine._resolve_path("themes")
+            else:
+                themes_root = "themes"
+            schema_path = os.path.join(themes_root, theme_name, "theme.schema.json")
             if os.path.exists(schema_path):
                 try:
                     with open(schema_path, 'r', encoding='utf-8') as f:
@@ -127,11 +133,10 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
         """[Sovereignty] 物理元数据方言适配"""
         return fm
 
-    def inject_seo(self, fm: dict, description: str, keywords: list) -> dict:
+    def inject_seo(self, fm: dict, desc_or_data: Any, keywords: list = None) -> dict:
         """[SEO] 框架感知的 SEO 字段映射协议"""
-        if description: fm['description'] = description
-        if keywords: fm['keywords'] = keywords
-        return fm
+        from .seo_helper import inject_seo_helper
+        return inject_seo_helper(fm, desc_or_data, keywords)
 
     def get_language_code(self, logic_code: str) -> str:
         """[Sovereignty] 物理路径语种对齐。"""
@@ -160,14 +165,70 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
         options = self.get_custom_options()
         theme_name = getattr(self.theme_settings, 'name', 'default')
         
-        # 🚀 [Docusaurus 适配自愈] 针对 Docusaurus navbar logo 路径在子目录/多语言下需为相对路径以正确水合的特性，在写入物理桥接前自动剥离首斜杠
-        if theme_name == "docusaurus" and "logo_path" in options:
-            l_path = options["logo_path"]
-            if l_path and l_path.startswith("/") and not l_path.startswith("//"):
-                options["logo_path"] = l_path.lstrip("/")
+        # 🚀 [Docusaurus 适配自愈] 针对 Docusaurus navbar logo 路径在子目录/多语言下需为相对路径以正确水合的特性，在写入物理桥接前自动剥离首斜杠及冗余的 static/ 前缀
+        if theme_name == "docusaurus":
+            if "logo_path" in options:
+                l_path = options["logo_path"]
+                if l_path and not l_path.startswith("http") and not l_path.startswith("//"):
+                    if l_path.startswith("/"):
+                        l_path = l_path[1:]
+                    if l_path.startswith("static/"):
+                        l_path = l_path[len("static/"):]
+                    options["logo_path"] = l_path
+            
+            # 🚀 [Docusaurus i18n 与路径动态自愈] 对齐多语种配置与 docs 默认路径
+            if self.engine and hasattr(self.engine, 'config') and self.engine.config.i18n_settings:
+                i18n_cfg = self.engine.config.i18n_settings
+                
+                source_logic = i18n_cfg.source.lang_code or "zh"
+                default_locale = self.get_language_code(source_logic)
+                if not default_locale:
+                    default_locale = "zh-Hans" if "zh" in source_logic.lower() else source_logic.lower()
+                
+                locales = [default_locale]
+                
+                from core.utils.language_hub import LanguageHub
+                default_label = i18n_cfg.source.name or LanguageHub.resolve_to_name(default_locale)
+                locale_configs = {
+                    default_locale: {
+                        "label": default_label,
+                        "direction": "ltr"
+                    }
+                }
+                
+                if i18n_cfg.enabled and i18n_cfg.targets:
+                    for target in i18n_cfg.targets:
+                        target_logic = target.lang_code
+                        target_locale = self.get_language_code(target_logic)
+                        if not target_locale:
+                            target_locale = target_logic.lower()
+                        if target_locale not in locales:
+                            locales.append(target_locale)
+                            locale_configs[target_locale] = {
+                                "label": target.name or LanguageHub.resolve_to_name(target_locale),
+                                "direction": "ltr"
+                            }
+                
+                options["i18n"] = {
+                    "defaultLocale": default_locale,
+                    "locales": locales,
+                    "localeConfigs": locale_configs
+                }
+                
+                options["default_docs_path"] = "docs"
+                options["default_blog_path"] = "blog"
+                options["default_pages_path"] = "src/pages"
         
         import os
-        assets_dir = os.path.join("themes", theme_name, "static", "assets")
+        if self.engine and hasattr(self.engine, 'paths') and self.engine.paths:
+            themes_root = self.engine.paths.get("themes", "themes")
+        elif self.engine and hasattr(self.engine, '_resolve_path'):
+            themes_root = self.engine._resolve_path("themes")
+        else:
+            themes_root = "themes"
+            
+        theme_dir = os.path.join(themes_root, theme_name)
+        assets_dir = os.path.join(theme_dir, "static", "assets")
         if not os.path.exists(assets_dir):
             os.makedirs(assets_dir, exist_ok=True)
             
@@ -182,8 +243,8 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
                 pass
                 
             # 虽清除/不输出高危 CSS 视觉变量，但保留导出基础 JS/JSON 桥接文件，确保 site_name, logo 等非破坏性工程参数安全生效
-            json_path = os.path.join("themes", theme_name, "theme.options.json")
-            js_path = os.path.join("themes", theme_name, "theme.options.js")
+            json_path = os.path.join(theme_dir, "theme.options.json")
+            js_path = os.path.join(theme_dir, "theme.options.js")
             try:
                 import json
                 with open(json_path, 'w', encoding='utf-8') as f:
@@ -213,7 +274,7 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
             pass
             
         # 🚀 [V88.0] 物理 JSON 桥接：将自愈合并后的自定义选项导出至主题根目录，供异构 SSG 编译热加载
-        json_path = os.path.join("themes", theme_name, "theme.options.json")
+        json_path = os.path.join(theme_dir, "theme.options.json")
         try:
             import json
             with open(json_path, 'w', encoding='utf-8') as f:
@@ -222,7 +283,7 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
             pass
             
         # 🚀 [V88.0] 纯前端 JS 桥接：生成无 Node.js 模块依赖的纯前端 JS 常量文件，彻底绕过 Webpack/Vite 客户端打包时的 fs 模块丢失限制
-        js_path = os.path.join("themes", theme_name, "theme.options.js")
+        js_path = os.path.join(theme_dir, "theme.options.js")
         try:
             import json
             js_content = "/**\n * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑\n */\n"

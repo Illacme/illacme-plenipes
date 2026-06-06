@@ -2,6 +2,22 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+## [v6.4.0-Tower] - 2026-06-05
+### 🚀 总编室控制塔可视化面板（阶段四）
+- **实时指标 REST API 封装**：在 `services/api/routes/gov` 中实现了 `/api/governance/pulse` REST 端点及底层安全加载逻辑，强制进行了 API Token 验证与主权数据隔离。
+- **前端可视化面板与导航实装**：在 dashboard 侧边导航实装“控制塔”选项卡，通过 Glassmorphism 样式与 CSS 发光投影呈现系统负载卡片及线程池队列进度。
+- **高级 SVG 负载仪表盘**：重构了 CPU 和内存负载监测器，利用 CSS 过渡动画与 SVG 物理百分比圆环（stroke-dashoffset），实现顺滑的实时负载渲染。
+- **进度条零值与卡顿自愈**：在 `HeartbeatService._gather_pulse` 中实现智能进度估算算法，将异步算力池（AI 推理池与资产处理池）的活跃和排队任务动态融入大盘进度计算中，彻底解决了单文档热更新在翻译阶段进度显示为 0，以及全量发布在 AI 收割阶段进度卡顿与置零的体验问题。
+- **防御性生命周期管理**：在前端 `dashboard.tower.js` 控制器中增加了防泄漏逻辑，检测到离开当前视图或 DOM 不可见时自动销毁轮询，保障系统长时间运行无内存泄露。
+- **测试套件覆盖**：新增 `tests/test_tower_visualization.py` API 集成测试，对路由连通性、身份验证过滤和 Pulse JSON schema 指标完整度做到了 100% 覆盖。
+
+## [v6.3.0-SEO] - 2026-06-05
+### 🚀 高阶 AI SEO 策略分流（出版模式优化）
+- **SSG inject_seo 契约增强**：升级 `BaseSSGAdapter.inject_seo` 签名与功能，使其接收完整的 `seo_data` 字典并增量合并 OG 标签、Twitter Cards、Canonical 网址及 JSON-LD 等结构化数据至 Frontmatter 字段。
+- **i18n_seo 交叉注入**：在 `BinderyDispatcher` 分发目标语种时，自动合并 `i18n_seo` 多语言翻译矩阵中的语言特定 SEO 属性，实现跨语言 SEO 差异化配置。
+- **解耦优化**：将 SEO 注入细节委托给 `seo_helper.py` 处理，成功将 `base.py` 行数控制在 300 行红线内，完全符合 SOP 代码复杂度约束。
+- **测试覆盖**：编写 `tests/test_seo_pipeline.py` 测试套件，100% 覆盖新签名向后兼容性与交叉合并注入逻辑。
+
 ## [v6.2.2-Refactor] - 2026-05-22
 ### 🚀 稿件流转加工流水线模块化物理拆分 (SOP-02 Pipeline Refactor)
 - **步骤物理降解**：对大单体文件 `core/editorial/standard_steps.py` 实施 SOP-02 模块拆分协议，将其中的 6 大 PipelineStep 工序（读取与归一化、AST提纯、元数据指纹、AI SEO、隐私遮蔽、主权验证）原子搬迁到独立的子 Shards 中。

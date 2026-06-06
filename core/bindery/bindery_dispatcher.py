@@ -103,8 +103,13 @@ class BinderyDispatcher:
             final_out_body = final_body
             final_out_fm = merged_fm
             if is_static:
+                actual_seo = seo_data
+                if is_target and seo_data and "i18n_seo" in seo_data and isinstance(seo_data["i18n_seo"], dict):
+                    lang_seo = seo_data["i18n_seo"].get(lang_code)
+                    if lang_seo and isinstance(lang_seo, dict):
+                        actual_seo = {**seo_data, **lang_seo}
                 sub_path = os.path.join(route_prefix, mapped_sub_dir) if route_prefix or mapped_sub_dir else ""
-                final_out_body, final_out_fm = self.ssg_adapter.render(final_body, merged_fm, seo_data=seo_data, target_lang=lang_code, sub_path=sub_path)
+                final_out_body, final_out_fm = self.ssg_adapter.render(final_body, merged_fm, seo_data=actual_seo, target_lang=lang_code, sub_path=sub_path)
             
             # 6. 元数据序列化
             fm_str = self._serialize_frontmatter(final_out_fm)

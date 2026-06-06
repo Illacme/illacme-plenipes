@@ -30,6 +30,10 @@ class HeartbeatService:
         os.makedirs(os.path.dirname(self.pulse_path), exist_ok=True)
         
         self.start_time = time.time()
+        
+        # 🚀 [新增] 动态算力池待处理任务最大值记录，用于平滑进度计算
+        self._max_pending_ai = 0
+        self._max_pending_asset = 0
 
     def start(self):
         """点火心跳线程"""
@@ -64,20 +68,64 @@ class HeartbeatService:
         global_stats = global_executor.get_stats()
         ai_stats = ai_executor.get_stats()
         asset_stats = asset_executor.get_stats()
+        
+        pending_ai = (ai_stats or {}).get("queue_size", 0) + (ai_stats or {}).get("active_workers", 0)
+        pending_asset = (asset_stats or {}).get("queue_size", 0) + (asset_stats or {}).get("active_workers", 0)
+        pending_global = (global_stats or {}).get("queue_size", 0) + (global_stats or {}).get("active_workers", 0)
             
         # 2. 采集负载指标
         load = {}
-        if hasattr(self.engine, 'resource_guard'):
-            rg = self.engine.resource_guard
+        gov = getattr(self.engine, 'governance', None)
+        if gov and hasattr(gov, 'resource_guard'):
+            rg = gov.resource_guard
             load = {
-                "cpu_percent": getattr(rg, 'cpu_percent', 0),
-                "memory_percent": getattr(rg, 'memory_percent', 0)
+                "cpu_percent": getattr(rg, 'cpu_usage', 0),
+                "memory_percent": getattr(rg, 'ram_usage', 0)
             }
         
         # 3. 采集进度
         current = getattr(self.engine, '_last_progress', 0)
         total = getattr(self.engine, '_total_progress', 0)
-        percentage = round((current / total * 100), 2) if total > 0 else 0
+        
+        # 🚀 [主权自愈进度计算]：智能引入异步算力池的排队待处理任务，实现进度无缝平滑过渡
+        if total > 0:
+            if pending_ai > self._max_pending_ai:
+                self._max_pending_ai = pending_ai
+            if pending_asset > self._max_pending_asset:
+                self._max_pending_asset = pending_asset
+                
+            adjusted_total = total + self._max_pending_ai + self._max_pending_asset
+            adjusted_current = current + (self._max_pending_ai - pending_ai) + (self._max_pending_asset - pending_asset)
+            
+            # 防御性边界修剪
+            adjusted_current = max(0, min(adjusted_current, adjusted_total))
+            percentage = round((adjusted_current / adjusted_total * 100), 2) if adjusted_total > 0 else 0
+            
+            current = adjusted_current
+            total = adjusted_total
+        elif pending_ai > 0 or pending_asset > 0:
+            # 大盘进度未设置，但算力池中确实存在活跃任务（如单文件热更新，或收割残留期）
+            if pending_ai > self._max_pending_ai:
+                self._max_pending_ai = pending_ai
+            if pending_asset > self._max_pending_asset:
+                self._max_pending_asset = pending_asset
+            
+            # 至少以 1 个文档或待处理总任务作为大盘分母
+            temp_max = max(1, self._max_pending_ai + self._max_pending_asset)
+            adjusted_total = temp_max
+            adjusted_current = max(0, temp_max - (pending_ai + pending_asset))
+            
+            # 防御性边界修剪
+            adjusted_current = max(0, min(adjusted_current, adjusted_total))
+            percentage = round((adjusted_current / adjusted_total * 100), 2) if adjusted_total > 0 else 0
+            
+            current = adjusted_current
+            total = adjusted_total
+        else:
+            # 任务全部完成，重置算力池最大跟踪值
+            self._max_pending_ai = 0
+            self._max_pending_asset = 0
+            percentage = 0
         
         return {
             "version": "V24.0",
@@ -93,11 +141,11 @@ class HeartbeatService:
                 "global": global_stats,
                 "ai": ai_stats,
                 "asset": asset_stats,
-                "total_queue": (global_stats or {}).get("queue_size", 0) + (ai_stats or {}).get("queue_size", 0) + (asset_stats or {}).get("queue_size", 0)
+                "total_queue": pending_global + pending_ai + pending_asset
             },
             "load": load,
             "usage": {
-                "tokens": getattr(self.engine.meter, 'total_usage', 0) if hasattr(self.engine, 'meter') else 0,
-                "cost": getattr(self.engine.meter, 'total_cost', 0) if hasattr(self.engine, 'meter') else 0
+                "tokens": getattr(gov.meter, 'total_usage', 0) if gov and hasattr(gov, 'meter') else 0,
+                "cost": getattr(gov.meter, 'total_cost', 0) if gov and hasattr(gov, 'meter') else 0
             }
         }

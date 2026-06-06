@@ -152,3 +152,18 @@ def get_health_report_impl():
                 return json.load(f)
         except: pass
     return {}
+
+def get_pulse_impl():
+    """
+    承载系统实时脉搏与调度指标加载的原子逻辑实现。
+    """
+    engine = get_global_engine()
+    if not engine: return {}
+    path = engine._resolve_path(engine.config.get_pulse_path())
+    if os.path.exists(path):
+        import json
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except: pass
+    return {}

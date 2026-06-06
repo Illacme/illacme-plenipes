@@ -40,6 +40,20 @@ class BasePublisher(ABC):
         """检查发布通道连通性"""
         return True
 
+    def validate_config(self) -> List[str]:
+        """
+        🛡️ 校验配置完整性。
+        子类可覆写此方法，返回错误信息列表。空列表表示配置合法。
+        """
+        return []
+
+    def get_deploy_url(self):
+        """
+        🔗 返回预期的部署 URL。
+        子类可覆写此方法，基于当前配置推导出站点 URL。
+        """
+        return None
+
 class PublisherRegistry:
     """
     🏗️ 发布器注册中心

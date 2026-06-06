@@ -108,7 +108,10 @@ class ChangeHandler(FileSystemEventHandler):
 
     def _dispatch_task(self, file_path, prefix, source):
         try:
+            # 🚀 [UI 进度对准] 触发事件以更新遥测面板中的实时进度百分比
+            bus.emit("UI_PROGRESS_START", total=1, description=f"正在热更新: {os.path.basename(file_path)}")
             self.engine.sync_document(file_path, prefix, source, is_dry_run=self.args.dry_run, force_sync=self.args.force)
+            bus.emit("UI_PROGRESS_ADVANCE", amount=1)
             if not self.args.dry_run:
                 self._lazy_gc_trigger()
                 self._debounced_heavy_tasks()

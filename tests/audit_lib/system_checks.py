@@ -184,7 +184,7 @@ def check_main_entry_smoke_test(audit):
     try:
         # 执行 dry-run，限制运行时间并捕获输出
         result = subprocess.run(
-            [sys.executable, entry_script, "--dry-run"],
+            [sys.executable, entry_script, "--dry-run", "--sync", "--port", "43219"],
             capture_output=True, text=True, timeout=20
         )
         if result.returncode == 0:

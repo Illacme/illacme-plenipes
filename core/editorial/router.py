@@ -148,7 +148,7 @@ class RouteManager:
 
         return '/'.join(mapped_parts)
 
-    def resolve_logical_url(self, lang_code, route_prefix, mapped_sub_dir, slug):
+    def resolve_logical_url(self, lang_code: str, route_prefix: str, mapped_sub_dir: str, slug: str) -> str:
         """
         🚀 逻辑 URL 构造器：将各组件组装为最终浏览器可跳转的 URL 路径。
         逻辑流程：语种标识 -> 路由前缀（带模板解析） -> 映射文件夹 -> Slug
@@ -161,7 +161,12 @@ class RouteManager:
         # 🚀 [V7.6] 智能语种物理化
         from core.utils.language_hub import LanguageHub
         iso_code = LanguageHub.resolve_to_iso(logical_lang)
-        physical_lang = LanguageHub.get_physical_path(iso_code, self.active_theme)
+        physical_lang = LanguageHub.get_physical_path(
+            iso_code,
+            theme=self.active_theme,
+            source_lang=self.default_lang,
+            force_prefix=self.force_source_prefix
+        )
 
         # 阶段 1：解析路由前缀
         if "{" in route_prefix and "}" in route_prefix:
@@ -179,8 +184,8 @@ class RouteManager:
             prefix_processed = route_prefix.strip("/")
 
         # 阶段 2：安全组装
-        # 🚀 [V15.7] 物理主权对齐：默认语种 URL 不带前缀
-        url_lang = "" if logical_lang == self.default_lang else logical_lang
+        # 🚀 [V15.7] 物理主权对齐：默认语种 URL 不带前缀 (但需尊重强制前缀配置)
+        url_lang = "" if (logical_lang == self.default_lang and not self.force_source_prefix) else logical_lang
         parts = [p for p in [url_lang, prefix_processed, mapped_sub_dir, slug] if p]
         raw_url = "/" + "/".join(parts)
 

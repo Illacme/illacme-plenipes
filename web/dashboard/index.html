@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
     <link rel="stylesheet" href="css/views/dispatch.css?v=75.0">
+    <link rel="stylesheet" href="css/views/tower.css">
     <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js"></script>
@@ -78,7 +79,10 @@
                     <span class="nav-icon">🧩</span><span class="nav-text">插件矩阵</span>
                 </div>
                 <div class="nav-item" id="nav-settings">
-                    <span class="nav-icon">⚙️</span><span class="nav-text">系统治理</span>
+                    <span class="nav-icon">⚙️</span><span class="nav-text">治理中心</span>
+                </div>
+                <div class="nav-item" id="nav-tower">
+                    <span class="nav-icon">🗼</span><span class="nav-text">系统遥测</span>
                 </div>
                 <button class="primary-btn glow-btn" id="btn-publish">🚀 全域发布</button>
             </nav>
@@ -119,7 +123,7 @@
                 <div id="governance-context" class="context-matrix vertical">
 
                     <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')"
-                        title="点击一键直达系统治理 - 翻译矩阵配置">
+                        title="点击一键直达治理中心 - 翻译矩阵配置">
                         <div class="capsule-icon">✍️</div>
                         <div class="capsule-data">
                             <div class="capsule-label">DIALECT</div>
@@ -127,7 +131,7 @@
                         </div>
                     </div>
                     <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')"
-                        title="点击一键直达系统治理 - 翻译矩阵配置">
+                        title="点击一键直达治理中心 - 翻译矩阵配置">
                         <div class="capsule-icon">🌍</div>
                         <div class="capsule-data">
                             <div class="capsule-label">TRANSLATION ARRAY</div>
@@ -437,6 +441,7 @@
     <script src="/dashboard/js/theme/theme.ui.js?v=80.1"></script>
     <script src="/dashboard/js/theme/theme.handlers.js?v=80.1"></script>
     <script src="/dashboard/js/dashboard.compute.js?v=75.1"></script>
+    <script src="/dashboard/js/dashboard.templates.js"></script>
     <script src="/dashboard/js/dashboard.views.js?v=75.2"></script>
     <script src="/dashboard/js/ui/drawers.js"></script>
     <script src="/dashboard/js/ui/modals.js"></script>
@@ -493,6 +498,7 @@
     <script src="/dashboard/js/galaxy/galaxy.engine.js?v=100.0"></script>
     <script src="/dashboard/js/dashboard.galaxy.js?v=100.0"></script>
     <script src="/dashboard/js/dashboard.telemetry.js"></script>
+    <script src="/dashboard/js/dashboard.tower.js"></script>
     <script src="/dashboard/dashboard.js"></script>
     <script src="/dashboard/js/dashboard.palette.js?v=1.2"></script>
 </body>

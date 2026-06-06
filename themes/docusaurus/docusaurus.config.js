@@ -36,7 +36,7 @@ const config = {
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
-  i18n: {
+  i18n: themeOptions.i18n || {
     // 1. 设置默认语言（必须与你配置中的 source.lang_code 一致）
     defaultLocale: 'zh-Hans',
 
@@ -74,19 +74,19 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: 'i18n/zh-Hans/docusaurus-plugin-content-docs/current', // 核心对齐：告诉 Docusaurus 默认中文文档在引擎生成的那个 zh-Hans 目录下
+          path: themeOptions.default_docs_path || 'i18n/zh-Hans/docusaurus-plugin-content-docs/current', // 核心对齐：告诉 Docusaurus 默认中文文档在引擎生成的那个 zh-Hans 目录下
           // plenipes 引擎管理内容，自动生成侧边栏
           sidebarPath: './sidebars.js',
         },
         blog: {
-          path: 'i18n/zh-Hans/docusaurus-plugin-content-blog', // 👈 关键：手动指定默认语种的博客存放路径
+          path: themeOptions.default_blog_path || 'i18n/zh-Hans/docusaurus-plugin-content-blog', // 👈 关键：手动指定默认语种的博客存放路径
           showReadingTime: true,
           // 🚀 注入以下两行静默指令，彻底屏蔽自动化管线带来的警告噪音
           onInlineAuthors: 'ignore',
           onUntruncatedBlogPosts: 'ignore',
         },
         pages: {
-          path: 'i18n/zh-Hans/docusaurus-plugin-content-pages', // 👈 关键：手动指定默认语种的博客存放路径
+          path: themeOptions.default_pages_path || 'i18n/zh-Hans/docusaurus-plugin-content-pages', // 👈 关键：手动指定默认语种的博客存放路径
         },
         theme: {
           customCss: './src/css/custom.css',

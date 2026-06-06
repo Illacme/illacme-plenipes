@@ -104,6 +104,60 @@ async def probe_plugin_impl(payload: dict):
     if plugin_id in TARGET_REGISTRY:
         return {"success": True, "healthy": True, "message": "分发端点已就绪，物理凭据校验通过。"}
 
+    # 4b. 探测全站托管 (Hosting Publishers)
+    from core.adapters.egress.publishers.base import PublisherRegistry
+    if plugin_id in PublisherRegistry.get_all_publishers():
+        publisher_cls = PublisherRegistry.get_publisher(plugin_id)
+        hosting_root = getattr(engine.config.publish_control, "direct_upload", {})
+        current_cfg = {}
+        if isinstance(hosting_root, dict):
+            current_cfg = hosting_root.get(plugin_id, {})
+        elif hasattr(hosting_root, "get"):
+            current_cfg = hosting_root.get(plugin_id, {})
+
+        if plugin_id == "webhook_dispatch":
+            webhook_enabled = getattr(engine.config.publish_control, "webhook_enabled", False)
+            if not webhook_enabled:
+                return {
+                    "success": True,
+                    "healthy": False,
+                    "message": "Webhook 广播通道在全局配置中处于未激活状态。"
+                }
+            return {
+                "success": True,
+                "healthy": True,
+                "message": "Webhook 广播通道已就绪。"
+            }
+
+        try:
+            pub_instance = publisher_cls(current_cfg, engine.config.dict() if hasattr(engine.config, "dict") else {})
+            errors = pub_instance.validate_config()
+            if errors:
+                return {
+                    "success": True,
+                    "healthy": False,
+                    "message": "物理配置校验未通过：\n" + "\n".join(f"❌ {err}" for err in errors)
+                }
+            
+            if pub_instance.is_healthy():
+                return {
+                    "success": True,
+                    "healthy": True,
+                    "message": f"托管渠道已就绪，物理命令行工具检测通过。预期部署 URL: {pub_instance.get_deploy_url() or '未配置'}"
+                }
+            else:
+                return {
+                    "success": True,
+                    "healthy": False,
+                    "message": "物理探测失败：未检测到该渠道所需的本地命令行工具（例如 CLI 未安装或路径不正确）。"
+                }
+        except Exception as e:
+            return {
+                "success": True,
+                "healthy": False,
+                "message": f"自检过程抛出异常: {e}"
+            }
+
     return {"success": False, "error": "未感应到该能力的物理实体或暂不支持主动探测。"}
 
 async def toggle_plugin_impl(payload: dict):
@@ -149,15 +203,11 @@ async def toggle_plugin_impl(payload: dict):
         if os.path.exists(CONFIG_LOCAL_NAME):
             with open(CONFIG_LOCAL_NAME, 'r', encoding='utf-8') as f:
                 local_data = yaml.safe_load(f) or {}
-                
         if "plugins" not in local_data:
             local_data["plugins"] = {}
-            
         local_data["plugins"]["disabled_plugins"] = disabled_list
-        
         dir_name = os.path.dirname(CONFIG_LOCAL_NAME)
         if dir_name: os.makedirs(dir_name, exist_ok=True)
-        
         with open(CONFIG_LOCAL_NAME, 'w', encoding='utf-8') as f:
             yaml.safe_dump(local_data, f, allow_unicode=True, sort_keys=False)
             

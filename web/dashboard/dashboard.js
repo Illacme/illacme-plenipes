@@ -97,7 +97,7 @@ window.initDashboard = async () => {
         };
 
         // 导航绑定
-        const navs = ['overview', 'vault', 'compute', 'plugins', 'settings'];
+        const navs = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower'];
         navs.forEach(id => {
             const el = document.getElementById(`nav-${id}`);
             if (el) {

@@ -135,6 +135,13 @@ class EngineFactory:
         for adapter in [engine.input_adapter, engine.ssg_adapter]:
             if adapter: DependencyIsolator.check_adapter(adapter)
             
+        # 🚀 [SSG 物理对齐] 在引擎组装的最终阶段，必须强制物理热编译一次主题选项，确保桥接常数和视觉 CSS 安全对齐！
+        if hasattr(engine, 'ssg_adapter') and engine.ssg_adapter:
+            try:
+                engine.ssg_adapter.compile_theme_options()
+            except Exception as e:
+                tlog.warning(f"⚠️ [EngineFactory] 初始化热编译主题选项失败: {e}")
+            
         engine.args = args
         engine.theme_hooks = ThemeHookManager(engine)
         engine.theme_hooks.trigger("init")

@@ -12,7 +12,8 @@ from .context_shards.context_ops import (
     get_system_context_impl,
     get_lessons_impl,
     get_sync_stats_impl,
-    get_health_report_impl
+    get_health_report_impl,
+    get_pulse_impl
 )
 from .context_shards.config_ops import get_full_config_impl
 from .context_shards.plugin_ops import (
@@ -59,4 +60,8 @@ async def toggle_plugin(payload: dict):
 @router.post("/api/plugins/dry-run", dependencies=[Depends(verify_token)])
 async def dry_run_plugin(payload: dict):
     return await dry_run_plugin_impl(payload)
+
+@router.get("/api/governance/pulse", dependencies=[Depends(verify_token)])
+def get_pulse():
+    return get_pulse_impl()
 

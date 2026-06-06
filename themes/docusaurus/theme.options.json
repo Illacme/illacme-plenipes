@@ -1,6 +1,6 @@
 {
   "site_name": "My Docusaurus Site",
-  "logo_path": "/img/logo.svg",
+  "logo_path": "img/logo.svg",
   "footer_copyright": "Copyright © 2026 My Project, Inc. Built with Docusaurus.",
   "enable_custom_style": false,
   "accent_color": "#25c2a0",

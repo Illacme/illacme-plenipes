@@ -1,0 +1,54 @@
+/* 🗼 [V1.0] 控制塔视图样式 - 总编室控制塔可视化面板 */
+
+/* 控制塔卡片统一样式 */
+#view-tower .tower-card {
+    background: var(--white-01);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+#view-tower .tower-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--black-20);
+    border-color: rgba(var(--accent-primary-rgb), 0.3);
+}
+
+#view-tower .card-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#view-tower .card-val {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+}
+
+/* 进度条与状态微调 */
+#view-tower .pool-item {
+    background: var(--white-02);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--white-03);
+}
+
+/* SVG 圆环负载仪表盘阴影与微光效果 */
+#view-tower .gauge-wrapper {
+    margin: 0 auto;
+    filter: drop-shadow(0 0 8px rgba(var(--accent-primary-rgb), 0.15));
+}
+
+#view-tower .gauge-wrapper:has(#gauge-mem-ring) {
+    filter: drop-shadow(0 0 8px rgba(var(--accent-secondary-rgb), 0.15));
+}
