@@ -73,6 +73,7 @@ sync_stats_*.json
 # 🛡️ Governance Runtime Patterns
 .illacme-shadow/
 .antigravity/
+.antigravitycli/
 
 .plenipes/
 
