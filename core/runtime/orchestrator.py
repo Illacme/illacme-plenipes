@@ -36,6 +36,8 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     if _is_publishing:
         tlog.warning("⚠️ [主权拦截] 探测到已有出版任务正在运行，本次点火已取消以防止算力碰撞。")
+        from core.logic.notification_hub import send_sync_lifecycle_notification
+        send_sync_lifecycle_notification(engine, "BLOCKED", "出版点火被拦截", "已有出版任务正在后台运行，本次启动已取消。")
         return 0
 
     # 1. 模拟 CLI 参数
@@ -62,6 +64,8 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             except Exception as e:
                 import traceback
                 tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}\n{traceback.format_exc()}")
+                from core.logic.notification_hub import send_sync_lifecycle_notification
+                send_sync_lifecycle_notification(engine, "FAIL", "异步出版流水线异常崩溃", str(e))
             finally:
                 _is_publishing = False
                 # 🚀 [V78.6] 安全兜底：流水线跑完后，强制唤醒可能被挂起的监控狗

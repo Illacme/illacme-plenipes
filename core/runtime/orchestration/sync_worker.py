@@ -13,7 +13,7 @@ from concurrent.futures import as_completed
 
 from core.utils.event_bus import bus
 from core.utils.tracing import tlog, Tracer
-from core.runtime.cli_bootstrap import send_notification
+from core.logic.notification_hub import send_sync_lifecycle_notification
 from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
 
 def perform_sync(engine, args, task_queue, current_source_files):
@@ -24,12 +24,16 @@ def perform_sync(engine, args, task_queue, current_source_files):
         tlog.warning("⚠️ 没有找到任何内容笔记！💡 请检查【品牌设置】中的目录映射配置是否正确。")
         return
 
+    # 🚀 广播启动通知
+    send_sync_lifecycle_notification(engine, "START", "开始全量发布任务", f"同步队列中包含 {len(task_queue)} 篇文档。")
+
     # 🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁
     i18n = engine.config.i18n_settings
     if i18n and i18n.enabled and i18n.targets:
         if engine.no_ai:
             tlog.error("🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
             bus.emit("UI_TERMINAL_DATA", type="LOG", data="🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
+            send_sync_lifecycle_notification(engine, "FAIL", "发布物理熔断", "翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
             raise RuntimeError("翻译矩阵已开启，但系统处于 NO-AI 模式，发布已强力拦截。")
         
         from core.governance.checks.ai import AIChecker
@@ -38,6 +42,7 @@ def perform_sync(engine, args, task_queue, current_source_files):
             err_msg = "、".join(ai_report.get("details", []))
             tlog.error(f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
             bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力不可用，发布已物理熔断！故障详情: {err_msg}")
+            send_sync_lifecycle_notification(engine, "FAIL", "发布物理熔断", f"翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
             raise RuntimeError(f"翻译矩阵已开启，但 AI 算力不可用。诊断详情: {err_msg}")
 
     start_perf = time.perf_counter()
@@ -171,7 +176,7 @@ def perform_sync(engine, args, task_queue, current_source_files):
         engine.meta.save()
         engine.meter.persist()
         bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot)
-        send_notification("Illacme 同步完成", f"已成功同步 {len(task_queue)} 篇文章，总耗时 {time_display}")
+        send_sync_lifecycle_notification(engine, "SUCCESS", "同步任务完成", f"已成功同步 {len(task_queue)} 篇文章，总耗时 {time_display}")
     else:
         tlog.info("🧪 [演练结束] Dry-run 模式下未执行物理变更。")
 

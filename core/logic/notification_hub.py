@@ -70,3 +70,86 @@ class WebhookBroadcaster:
             if payload:
                 # 🚀 利用装饰器确保 Trace-ID 穿透至异步线程
                 self.executor.submit(Tracer.trace_context(ael_tag)(self._fire), url, payload)
+
+
+import threading
+
+def build_universal_text_payload(url: str, text: str) -> dict:
+    """自适应判定 Webhook 平台并生成相应的文本消息 payload"""
+    if 'feishu.cn' in url:
+        return {
+            "msg_type": "post",
+            "content": {
+                "post": {
+                    "zh_cn": {
+                        "title": "📢 Plenipes 出版系统通知",
+                        "content": [[{"tag": "text", "text": text}]]
+                    }
+                }
+            }
+        }
+    elif 'dingtalk.com' in url or 'qyapi.weixin.qq.com' in url:
+        return {
+            "msg_type": "text",
+            "text": {
+                "content": text
+            }
+        }
+    else:
+        # Slack, Telegram 或其他通用 Webhook
+        return {
+            "text": text
+        }
+
+
+def send_sync_lifecycle_notification(engine, status: str, message: str, detail: str = ""):
+    """
+    🚀 广播全量同步生命周期通知
+    将消息通过桌面系统通知弹窗与活跃 Webhook 渠道异步投递出去。
+    """
+    from core.runtime.engine_singleton import send_notification
+    
+    # 1. 组装桌面通知
+    title_map = {
+        "START": "🚀 Plenipes 发布启动",
+        "SUCCESS": "✅ Plenipes 发布成功",
+        "FAIL": "❌ Plenipes 发布失败",
+        "BLOCKED": "🔒 Plenipes 发布被拦截"
+    }
+    title = title_map.get(status, "📢 Plenipes 通知")
+    msg_body = f"{message}。{detail}" if detail else message
+    
+    # 启动异步线程发送桌面通知，绝不阻塞主构建过程
+    threading.Thread(target=send_notification, args=(title, msg_body), daemon=True).start()
+    
+    # 2. 依据配置的三层治理矩阵安全提取 Webhook urls
+    urls = []
+    pub_ctrl = getattr(engine.config, "publish_control", None) if engine else None
+    if pub_ctrl and getattr(pub_ctrl, "webhook_enabled", False):
+        # 兼容传统直链配置
+        if hasattr(pub_ctrl, "webhook_urls") and pub_ctrl.webhook_urls:
+            urls.extend(pub_ctrl.webhook_urls)
+            
+        # 提取活跃的端点列表
+        active_ids = getattr(pub_ctrl, "active_webhook_ids", [])
+        endpoints = getattr(pub_ctrl, "webhook_endpoints", {})
+        for wid in active_ids:
+            if wid in endpoints:
+                ep = endpoints[wid]
+                url = getattr(ep, "url", None) or (ep.get("url") if isinstance(ep, dict) else None)
+                if url:
+                    urls.append(url)
+                    
+    # 3. 异步发射 Webhook
+    if urls:
+        full_text = f"【Plenipes 自动出版系统】\n通知类型: {title}\n摘要: {message}\n详情: {detail}"
+        def _fire():
+            for url in urls:
+                try:
+                    payload = build_universal_text_payload(url, full_text)
+                    requests.post(url, json=payload, timeout=10.0)
+                except Exception as e:
+                    tlog.debug(f"⚠️ [通知中心] 投递失败 {url[:30]}... | 原因: {e}")
+                    
+        threading.Thread(target=_fire, daemon=True).start()
+
