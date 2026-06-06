@@ -10,8 +10,9 @@ workspace/
 # 🔒 原始稿件库
 content-vault/
 
-# 🔒 物理账本（全量屏蔽）
+# 🔒 物理账本与锁文件（全量屏蔽）
 *.db
+*.pid
 
 # 🔒 终极密钥（绝对禁止外泄）
 **/.master.key
@@ -47,6 +48,7 @@ themes/*/src/content/docs/*
 
 # 🛡️ 审计与日志
 *.log
+api_current_audit.json
 logs/
 .coverage
 htmlcov/
