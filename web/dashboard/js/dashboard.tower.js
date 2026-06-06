@@ -1,10 +1,13 @@
 /**
- * 🗼 [V1.0] 控制塔数据调度器 - 总编室控制塔可视化面板
- * 职责：异步轮询系统脉搏接口 `/api/governance/pulse`，渲染服务器负载与算力线程池动态走势。
+ * 🗼 [V1.1] 控制塔数据调度器 - 总编室控制塔可视化面板
+ * 职责：支持自适应动态调频（活跃状态 2s / 空闲状态 10s），并绘制 CPU/内存 15点历史负载走势 SVG Sparkline。
  */
 
 (function() {
-    window.towerIntervalId = null;
+    window.towerTimeoutId = null;
+    let cpuHistory = [];
+    let memHistory = [];
+    const MAX_HISTORY_POINTS = 15;
 
     // 格式化运行时间
     function formatUptime(seconds) {
@@ -15,17 +18,33 @@
         return `${hrs}h ${mins}m ${secs}s`;
     }
 
+    // 生成 SVG 折线与面积路径
+    function generateSvgPaths(history) {
+        if (history.length === 0) return { line: '', area: '' };
+        const points = history.map((val, i) => {
+            const x = history.length > 1 ? (i / (history.length - 1)) * 500 : 250;
+            const y = 115 - (val / 100) * 110; // 留出上下各 5px 的安全间距，y轴反转
+            return { x, y };
+        });
+
+        const linePath = 'M ' + points.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ');
+        const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} 120 L ${points[0].x.toFixed(1)} 120 Z`;
+        return { line: linePath, area: areaPath };
+    }
+
     // 刷新控制塔数据
     window.refreshTowerTelemetry = async () => {
         const el = document.getElementById('view-tower');
-        // 防御性生命周期检查：如果视图不存在或已被隐藏，自动清理定时器并退出
+        // 生命节点防御性检查
         if (!el || el.style.display === 'none' || window.location.hash !== '#/tower') {
-            if (window.towerIntervalId) {
-                clearInterval(window.towerIntervalId);
-                window.towerIntervalId = null;
+            if (window.towerTimeoutId) {
+                clearTimeout(window.towerTimeoutId);
+                window.towerTimeoutId = null;
             }
             return;
         }
+
+        let nextInterval = 10000; // 默认空闲轮询频率：10 秒
 
         try {
             if (typeof apiFetch !== 'function') return;
@@ -48,6 +67,8 @@
                 uptimeEl.innerText = formatUptime(stats.uptime);
             }
 
+            // 出版进度指标检测
+            let hasActiveSync = false;
             const progressEl = document.getElementById('tower-progress');
             if (progressEl && stats.progress) {
                 const current = stats.progress.current || 0;
@@ -57,6 +78,9 @@
                     progressEl.innerHTML = `100% <span style="font-size:0.8rem; color:var(--text-dim);">(已对准)</span>`;
                 } else {
                     progressEl.innerHTML = `${pct}% <span style="font-size:0.8rem; color:var(--text-dim);">(${current}/${total})</span>`;
+                    if (current < total) {
+                        hasActiveSync = true; // 存在未完成的出版任务
+                    }
                 }
             }
 
@@ -67,50 +91,46 @@
                 costEl.innerHTML = `$${cost.toFixed(4)} <span style="font-size:0.8rem; color:var(--text-dim);">(${tokens.toLocaleString()} tkn)</span>`;
             }
 
-            // 2. 刷新线程池监控
+            // 2. 刷新线程池监控，并检测是否有活动队列任务
+            let hasPoolActivity = false;
             if (stats.pools) {
-                // 全局同步线程池
-                const gPool = stats.pools.global || {};
-                const gActive = gPool.active_workers || 0;
-                const gMax = gPool.max_workers || 1;
-                const gQueue = gPool.queue_size || 0;
-                const gPct = Math.min(100, Math.round((gActive / gMax) * 100));
-                
-                const gText = document.getElementById('pool-global-text');
-                const gBar = document.getElementById('pool-global-bar');
-                if (gText) gText.innerText = `${gActive} / ${gMax} (队列: ${gQueue})`;
-                if (gBar) gBar.style.width = `${gPct}%`;
+                const poolsConfig = [
+                    { id: 'pool-global', data: stats.pools.global || {} },
+                    { id: 'pool-ai', data: stats.pools.ai || {} },
+                    { id: 'pool-asset', data: stats.pools.asset || {} }
+                ];
 
-                // AI 翻译推理池
-                const aiPool = stats.pools.ai || {};
-                const aiActive = aiPool.active_workers || 0;
-                const aiMax = aiPool.max_workers || 1;
-                const aiQueue = aiPool.queue_size || 0;
-                const aiPct = Math.min(100, Math.round((aiActive / aiMax) * 100));
-                
-                const aiText = document.getElementById('pool-ai-text');
-                const aiBar = document.getElementById('pool-ai-bar');
-                if (aiText) aiText.innerText = `${aiActive} / ${aiMax} (队列: ${aiQueue})`;
-                if (aiBar) aiBar.style.width = `${aiPct}%`;
+                poolsConfig.forEach(pool => {
+                    const active = pool.data.active_workers || 0;
+                    const max = pool.data.max_workers || 1;
+                    const queue = pool.data.queue_size || 0;
+                    const pct = Math.min(100, Math.round((active / max) * 100));
 
-                // 资源处理池
-                const assetPool = stats.pools.asset || {};
-                const assetActive = assetPool.active_workers || 0;
-                const assetMax = assetPool.max_workers || 1;
-                const assetQueue = assetPool.queue_size || 0;
-                const assetPct = Math.min(100, Math.round((assetActive / assetMax) * 100));
-                
-                const assetText = document.getElementById('pool-asset-text');
-                const assetBar = document.getElementById('pool-asset-bar');
-                if (assetText) assetText.innerText = `${assetActive} / ${assetMax} (队列: ${assetQueue})`;
-                if (assetBar) assetBar.style.width = `${assetPct}%`;
+                    const textEl = document.getElementById(`${pool.id}-text`);
+                    const barEl = document.getElementById(`${pool.id}-bar`);
+                    if (textEl) textEl.innerText = `${active} / ${max} (队列: ${queue})`;
+                    if (barEl) barEl.style.width = `${pct}%`;
+
+                    if (active > 0 || queue > 0) {
+                        hasPoolActivity = true; // 线程池有活动任务
+                    }
+                });
             }
 
-            // 3. 刷新物理服务器负载仪表盘 (SVG 动态周长 C = 263.89)
+            // 3. 刷新物理服务器负载仪表盘，并记录历史走势
             if (stats.load) {
                 const cpuPct = stats.load.cpu_percent || 0;
                 const memPct = stats.load.memory_percent || 0;
 
+                // 压入历史数据
+                cpuHistory.push(cpuPct);
+                memHistory.push(memPct);
+                if (cpuHistory.length > MAX_HISTORY_POINTS) {
+                    cpuHistory.shift();
+                    memHistory.shift();
+                }
+
+                // 更新圆环仪表盘
                 const cpuText = document.getElementById('gauge-cpu');
                 const cpuRing = document.getElementById('gauge-cpu-ring');
                 if (cpuText) cpuText.innerText = `${cpuPct.toFixed(1)}%`;
@@ -126,21 +146,49 @@
                     const offset = 263.89 - (memPct / 100) * 263.89;
                     memRing.style.strokeDashoffset = offset;
                 }
+
+                // 绘制 SVG 趋势图
+                const cpuPaths = generateSvgPaths(cpuHistory);
+                const memPaths = generateSvgPaths(memHistory);
+
+                const cpuLineEl = document.getElementById('trend-cpu-line');
+                const cpuAreaEl = document.getElementById('trend-cpu-area');
+                if (cpuLineEl) cpuLineEl.setAttribute('d', cpuPaths.line);
+                if (cpuAreaEl) cpuAreaEl.setAttribute('d', cpuPaths.area);
+
+                const memLineEl = document.getElementById('trend-mem-line');
+                const memAreaEl = document.getElementById('trend-mem-area');
+                if (memLineEl) memLineEl.setAttribute('d', memPaths.line);
+                if (memAreaEl) memAreaEl.setAttribute('d', memPaths.area);
             }
+
+            // 4. 自适应决策轮询周期：有活动同步或线程池繁忙时提频为 2 秒，否则空闲为 10 秒
+            if (hasActiveSync || hasPoolActivity) {
+                nextInterval = 2000;
+            }
+
         } catch (error) {
             console.error("🗼 [Tower] 遥测数据拉取失败:", error);
         }
+
+        // 递归调度下一次轮询，保证线程间不冲突且轮询独立
+        if (window.towerTimeoutId) {
+            clearTimeout(window.towerTimeoutId);
+        }
+        window.towerTimeoutId = setTimeout(window.refreshTowerTelemetry, nextInterval);
     };
 
     // 初始化控制塔
     window.loadTowerCenter = () => {
-        // 立即拉取一次
-        window.refreshTowerTelemetry();
+        // 重置走势数据，防止上一次的观测点被继承
+        cpuHistory = [];
+        memHistory = [];
 
-        // 重置轮询
-        if (window.towerIntervalId) {
-            clearInterval(window.towerIntervalId);
+        // 重置定时器并立即拉取
+        if (window.towerTimeoutId) {
+            clearTimeout(window.towerTimeoutId);
+            window.towerTimeoutId = null;
         }
-        window.towerIntervalId = setInterval(window.refreshTowerTelemetry, 3000);
+        window.refreshTowerTelemetry();
     };
 })();

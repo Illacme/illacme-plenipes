@@ -23,32 +23,13 @@ window.viewTemplates = {
                         <button class="close-btn" style="position: absolute; right: 2rem; top: 2rem;">×</button>
                         <h2 id="hub-title" style="font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: -1px; font-weight: 900;">主权指挥中心</h2>
                         <div class="hub-meta-row" style="display: flex; gap: 1.5rem; font-size: 0.8rem; opacity: 0.7; justify-content: center; font-family: 'JetBrains Mono', monospace;">
-                            <div><span style="color: var(--accent-secondary);">IMPRINT:</span> <span id="display-imprint">...</span></div>
-                            <div><span style="color: var(--accent-secondary);">THEME:</span> <span id="display-theme">...</span></div>
+                            <div><span style="color: var(--accent-secondary);">IMPRINT:</span> <span id="display-imprint">...</span></div><div><span style="color: var(--accent-secondary);">THEME:</span> <span id="display-theme">...</span></div>
                         </div>
                     </div>
                     <div class="quick-actions">
-                        <div class="action-card" onclick="triggerPublish()">
-                            <div class="action-icon">🚀</div>
-                            <div class="action-text">
-                                <h4>全域发布</h4>
-                                <p>启动流水线并分发内容</p>
-                            </div>
-                        </div>
-                        <div class="action-card" onclick="showView('vault')">
-                            <div class="action-icon">📦</div>
-                            <div class="action-text">
-                                <h4>文稿管理</h4>
-                                <p>审计文库文稿与元数据</p>
-                            </div>
-                        </div>
-                        <div class="action-card" onclick="showView('settings')">
-                            <div class="action-icon">⚙️</div>
-                            <div class="action-text">
-                                <h4>系统设置</h4>
-                                <p>管理出版社核心参数与翻译风格</p>
-                            </div>
-                        </div>
+                        <div class="action-card" onclick="triggerPublish()"><div class="action-icon">🚀</div><div class="action-text"><h4>全域发布</h4><p>启动流水线并分发内容</p></div></div>
+                        <div class="action-card" onclick="showView('vault')"><div class="action-icon">📦</div><div class="action-text"><h4>文稿管理</h4><p>审计文库文稿与元数据</p></div></div>
+                        <div class="action-card" onclick="showView('settings')"><div class="action-icon">⚙️</div><div class="action-text"><h4>系统设置</h4><p>管理出版社核心参数与翻译风格</p></div></div>
                     </div>
                 </div>
             </div>
@@ -287,6 +268,26 @@ window.viewTemplates = {
                                     <div class="gauge-text" id="gauge-mem" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:1.1rem; font-family:var(--font-mono); font-weight:bold; color:var(--text-bright);">--%</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 第三行：历史负载走势图 -->
+                <div class="tower-history-row" style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
+                    <div class="glass-panel chart-container" style="display: flex; flex-direction: column; padding: 15px; min-height: 180px;">
+                        <div class="sector-header" style="font-weight: 800; font-size: 0.8rem; color: var(--accent-secondary); margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span>📈 负载历史演进趋势 (CPU & Memory Sparkline)</span>
+                            <div style="display: flex; gap: 15px; font-size: 0.75rem; font-family: var(--font-mono);"><span style="color: var(--accent-primary);">● CPU</span><span style="color: var(--accent-secondary);">● MEM</span></div>
+                        </div>
+                        <div style="flex: 1; position: relative; width: 100%; height: 120px;">
+                            <svg id="tower-trend-svg" width="100%" height="100%" viewBox="0 0 500 120" preserveAspectRatio="none" style="overflow: visible;">
+                                <defs>
+                                    <linearGradient id="cpu-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0"/></linearGradient>
+                                    <linearGradient id="mem-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-secondary)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-secondary)" stop-opacity="0"/></linearGradient>
+                                </defs>
+                                <path id="trend-cpu-area" fill="url(#cpu-grad)" d=""/><path id="trend-cpu-line" fill="none" stroke="var(--accent-primary)" stroke-width="2" d=""/>
+                                <path id="trend-mem-area" fill="url(#mem-grad)" d=""/><path id="trend-mem-line" fill="none" stroke="var(--accent-secondary)" stroke-width="2" d=""/>
+                            </svg>
                         </div>
                     </div>
                 </div>
