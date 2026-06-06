@@ -50,10 +50,11 @@ class DeploymentPipelineGenerator:
             
             # 4. 生成本地一键发布脚本 deploy.sh
             deploy_sh_tpl = adapter_cls.get_deploy_script_template()
+            local_build_cmd = 'if [ -f "../../plenipes.py" ]; then python3 ../../plenipes.py --build; else ' + build_cmd + '; fi'
             deploy_sh_content = deploy_sh_tpl.format(
                 ssg_type=ssg_type.upper(),
                 datetime=now_str,
-                build_cmd=build_cmd,
+                build_cmd=local_build_cmd,
                 site_dir=site_dir
             )
             

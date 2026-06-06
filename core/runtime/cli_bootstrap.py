@@ -56,6 +56,7 @@ def parse_args_and_lock():
     parser.add_argument('--brain', action='store_true', help="🧠 [知识中心] 展示 V11.0 自动化教训累积简报，透视系统进化轨迹")
     parser.add_argument('--serve', action='store_true', help="🌐 [内嵌预览] 同步完成后自动启动极简 Web 容器，预览当前主题的 HTML 产物")
     parser.add_argument('--serve-port', type=int, help="[预览端口] 自定义内嵌预览服务器的监听端口")
+    parser.add_argument('--build', '-b', action='store_true', help="📦 [增量装帧] 立即执行下游静态网站的增量打包与装帧")
     parser.add_argument('--api', action='store_true', help="🔌 [API 模式] 启动 FastAPI 后端服务，暴露监控接口与实时事件流")
     parser.add_argument('--api-port', type=int, help="[API 端口] 自定义 API 服务器端口")
     parser.add_argument('--headless', action='store_true', help="[无头模式] 彻底剥离 Rich 视觉组件与进度条，仅保留基础日志")

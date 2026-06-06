@@ -154,6 +154,15 @@ if __name__ == "__main__":
             tlog.info("🏁 [净化完成] 出版品牌已恢复纯净状态。")
             if not any([args.sync, args.watch, args.serve]): sys.exit(0)
 
+        # 📦 [增量装帧] 增量静态装帧编译指令
+        if args.build:
+            from core.syndication.incremental_builder import IncrementalBuildManager
+            manager = IncrementalBuildManager(engine)
+            if not manager.build():
+                sys.exit(1)
+            if not any([args.sync, args.watch, args.serve]):
+                sys.exit(0)
+
 
         # 🧪 [V50.3] 凭据审计特权指令
         if args.credentials:
