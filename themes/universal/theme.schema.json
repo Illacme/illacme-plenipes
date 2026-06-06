@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Universal Theme Schema",
+  "description": "Schema defining customizable settings for Universal Markdown theme.",
+  "type": "object",
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "default": "My Universal Document",
+      "title": "Site Name",
+      "description": "The publication or document collection title.",
+      "group": "基础设置",
+      "order": 1
+    },
+    "footer_copyright": {
+      "type": "string",
+      "default": "© 2026 Sovereign Writer. All Rights Reserved.",
+      "title": "Footer Copyright Info",
+      "description": "Global copyright text shown on document footer.",
+      "group": "基础设置",
+      "order": 2
+    },
+    "author": {
+      "type": "string",
+      "default": "Sovereign Writer",
+      "title": "Default Author Name",
+      "description": "Default author name to prepend on generated markdown frontmatters.",
+      "group": "基础设置",
+      "order": 3
+    }
+  }
+}
