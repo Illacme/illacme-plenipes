@@ -179,23 +179,24 @@ if __name__ == "__main__":
                     tlog.error("🛑 [安全审计未通过] 依然存在未加密的明文密钥，请核对配置文件！")
                 else:
                     tlog.success("🎉 [安全审计通过] 所有敏感凭据均已加密，安全红线状态已解除。")
-            if not any([args.sync, args.watch, args.serve]): sys.exit(0)
-            
         # 🧪 [V50.3] 主权体检特权指令
         if args.doctor:
             tlog.info("🩺 [主权体检] 正在启动全链路深度诊断中心...")
             report = engine.doctor.run_full_check()
-            
             from core.ui.mediator import UIMediator
             UIMediator.show_doctor_report(report)
-            
+            try:
+                from core.config.auditor import audit_config_layers, print_cli_audit_report
+                audit_data = audit_config_layers(engine.config_manager, imprint_id=args.imprint)
+                print_cli_audit_report(audit_data)
+            except Exception as ae:
+                tlog.warning(f"⚠️ [配置审计失败]: {ae}")
             if args.heal:
                 tlog.info("💊 [物理自愈] 正在根据诊断报告执行自动修复手术...")
                 repairs = engine.doctor.heal()
                 for r in repairs:
                     tlog.success("✅ [品牌落成] (出版社已就绪) 出版品牌环境边界已确立。")
                 tlog.info("🏁 [修复完成] 系统已尝试恢复至健康基准线。")
-                
             if not any([args.sync, args.watch, args.serve]):
                 sys.exit(0 if report["status"] != "FAIL" else 1)
 

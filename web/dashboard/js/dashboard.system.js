@@ -250,6 +250,12 @@ function renderSecurityCategory() {
     const gov = window.settingsData?.governance || {};
     const rg = gov.resource_guard || { cpu_threshold: 85 };
     
+    setTimeout(() => {
+        if (typeof window.loadAndRenderConfigAudit === 'function') {
+            window.loadAndRenderConfigAudit();
+        }
+    }, 50);
+
     return `
         <div class="full-width">
             <div class="section-header"><h3>🛡️ 安全审计 (Security & Compliance)</h3></div>
@@ -268,6 +274,8 @@ function renderSecurityCategory() {
                 ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox')}
                 ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold, 'number')}
             </div>
+
+            <div id="config-audit-topology-container" class="mt-large"></div>
         </div>
     `;
 }
