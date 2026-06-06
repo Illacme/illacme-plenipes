@@ -5,22 +5,25 @@
  */
 
 window.initWebSocket = () => {
+    window.lastMsgId = window.lastMsgId || 0;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/api/ws?last_msg_id=${window.lastMsgId}`;
     
     console.log(`🔌 [WS] 正在连接主权链路: ${wsUrl}`);
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
         console.log('✅ [WS] 主权链路已激活');
-        if (typeof addAudit === 'function') {
-            addAudit("🛰️ 治理链路已建立实时连接。", "success");
-        }
     };
 
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
+    const routeMessage = (data) => {
+        if (!data || !data.type) return;
+
+        // 提升客户端消息序号
+        if (data.msg_id && data.msg_id > window.lastMsgId) {
+            window.lastMsgId = data.msg_id;
+        }
+
         // 🚀 [V55.9] 信号路由分发
         if (data.type === 'UI_TERMINAL_DATA') {
             // 转发给核心终端处理器
@@ -148,6 +151,31 @@ window.initWebSocket = () => {
             if (typeof window.handleAiBreakerTripped === 'function') {
                 window.handleAiBreakerTripped(data.payload);
             }
+        }
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'SYSTEM_CONNECTED') {
+            const oldInstanceId = localStorage.getItem('ws_server_instance_id');
+            if (oldInstanceId && data.server_instance_id && String(oldInstanceId) !== String(data.server_instance_id)) {
+                console.log('🔄 [WS] 检测到后端实例变更，重置 lastMsgId 为 0');
+                window.lastMsgId = 0;
+            }
+            if (data.server_instance_id) {
+                localStorage.setItem('ws_server_instance_id', data.server_instance_id);
+            }
+            if (typeof addAudit === 'function') {
+                addAudit("🛰️ 治理链路已建立实时连接。", "success");
+            }
+        } else if (data.type === 'REPLAY_EVENTS') {
+            console.log(`🔄 [WS] 收到离线重放事件包，共 ${data.events.length} 条事件`);
+            (data.events || []).forEach(evt => {
+                routeMessage(evt);
+            });
+        } else {
+            routeMessage(data);
         }
     };
 

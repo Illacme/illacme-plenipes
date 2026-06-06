@@ -7,11 +7,17 @@ Illacme-plenipes Core - WebSocket Control Plane
 """
 
 import asyncio
+import threading
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from core.utils.event_bus import bus
 from core.utils.tracing import tlog
 import json
 import time
+
+buffer_lock = threading.Lock()
+message_buffer = [] # 最大容量 1000
+global_msg_counter = 0
+server_start_time = time.time()
 
 router = APIRouter()
 
@@ -53,7 +59,7 @@ _main_loop = None
 
 def handle_bus_event(event_name, **kwargs):
     """EventBus 回调，通过线程安全方式中转至 WS 广播"""
-    global _main_loop
+    global _main_loop, global_msg_counter
     
     # 🚀 [V55.9] 物理脱敏：过滤掉无法序列化的复杂对象 (如 engine)
     safe_payload = {}
@@ -61,12 +67,19 @@ def handle_bus_event(event_name, **kwargs):
         if isinstance(v, (str, int, float, bool, list, dict, type(None))):
             safe_payload[k] = v
             
-    payload = {
-        "type": event_name, # 🛡️ 强制使用正确的事件名称作为 WS 类型
-        "timestamp": time.time(),
-        "payload": safe_payload
-    }
-    
+    with buffer_lock:
+        global_msg_counter += 1
+        msg_id = global_msg_counter
+        payload = {
+            "msg_id": msg_id,
+            "type": event_name, # 🛡️ 强制使用正确的事件名称作为 WS 类型
+            "timestamp": time.time(),
+            "payload": safe_payload
+        }
+        message_buffer.append(payload)
+        if len(message_buffer) > 1000:
+            message_buffer.pop(0)
+            
     if _main_loop and _main_loop.is_running():
         _main_loop.call_soon_threadsafe(
             lambda: asyncio.create_task(manager.broadcast(payload))
@@ -97,14 +110,35 @@ async def websocket_endpoint(websocket: WebSocket):
     global _main_loop
     _main_loop = asyncio.get_running_loop()
     
+    # 解析 last_msg_id query 参数
+    query_params = websocket.query_params
+    last_msg_id_str = query_params.get("last_msg_id")
+    
     await manager.connect(websocket)
     try:
         # 初始握手包
         await websocket.send_json({
             "type": "SYSTEM_CONNECTED",
             "message": "主权实时链路已建立",
-            "timestamp": time.time()
+            "timestamp": time.time(),
+            "server_instance_id": server_start_time
         })
+        
+        # 执行离线消息重放
+        if last_msg_id_str:
+            try:
+                last_id = int(last_msg_id_str)
+                with buffer_lock:
+                    replay_msgs = [msg for msg in message_buffer if msg["msg_id"] > last_id]
+                if replay_msgs:
+                    tlog.info(f"🔄 [WS] 正在为重连链路重放 {len(replay_msgs)} 条离线消息...")
+                    await websocket.send_json({
+                        "type": "REPLAY_EVENTS",
+                        "events": replay_msgs,
+                        "timestamp": time.time()
+                    })
+            except ValueError:
+                pass
         
         while True:
             # 保持连接，监听客户端消息（如指令）
