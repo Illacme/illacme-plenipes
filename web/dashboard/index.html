@@ -585,6 +585,25 @@
             color:var(--text-dim); }
         .review-para-text { margin:0; font-family:inherit; white-space:pre-wrap;
             word-break:break-word; }
+        .linked-hover {
+            background: rgba(var(--accent-primary-rgb,100,220,255),0.08) !important;
+            border-left-color: var(--accent-primary) !important;
+        }
+        .preview-para-item {
+            margin-bottom: 1.2rem;
+            color: var(--text-bright);
+            line-height: 1.7;
+            font-size: 0.92rem;
+            word-break: break-word;
+            border-left: 3px solid transparent;
+            padding-left: 0;
+            transition: all 0.15s ease;
+        }
+        .preview-para-item.linked-hover {
+            background: rgba(var(--accent-primary-rgb,100,220,255),0.08) !important;
+            border-left-color: var(--accent-primary) !important;
+            padding-left: 8px !important;
+        }
         .edited-mark { font-size:0.65rem; color:var(--accent-primary);
             position:absolute; top:4px; right:8px; }
         .review-actions { display:flex; gap:10px; justify-content:flex-end;

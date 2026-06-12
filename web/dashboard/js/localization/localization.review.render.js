@@ -81,9 +81,8 @@ function _reviewRenderBody() {
     // 2. 构建预览分栏 (Preview Column)
     let previewHtml = '';
     if (!isMissing) {
-        const renderPreviewTitle = edit.title ? markdownParser(`# ${edit.title}`) : '<span style="color:var(--text-dim); font-style:italic;">无标题</span>';
-        const renderPreviewDesc = edit.desc ? markdownParser(edit.desc) : '<span style="color:var(--text-dim); font-style:italic;">无描述</span>';
-        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="review-field"><label>📌 预览标题 (Preview Title)</label><div class="preview-markdown-box" style="line-height:1.5; color:var(--text-bright);">${renderPreviewTitle}</div></div><div class="review-field"><label>🏷️ 预览描述 (Preview Description)</label><div class="preview-markdown-box" style="line-height:1.5; color:var(--text-bright);">${renderPreviewDesc}</div></div><div class="review-field"><label>📄 预览正文 (Preview Body)</label><div id="preview-paras-container" style="display:flex; flex-direction:column; gap:4px;">${targetParas.map(p => `<div id="preview-para-${p.index}" style="margin-bottom:1.2rem; color:var(--text-bright); line-height:1.7; font-size:0.92rem; word-break:break-word;">${markdownParser(p.text || '')}</div>`).join('')}</div></div></div>`;
+        const renderPreviewTitle = edit.title ? markdownParser(`# ${edit.title}`) : '';
+        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="preview-markdown-content" style="color:var(--text-bright);"><div class="preview-title" style="margin-bottom:20px;">${renderPreviewTitle}</div><div id="preview-paras-container">${targetParas.map(p => `<div id="preview-para-${p.index}" class="preview-para-item">${markdownParser(p.text || '')}</div>`).join('')}</div></div></div>`;
     }
 
     // 3. 构建原文参考分栏 (Source Column)
@@ -122,6 +121,29 @@ function _reviewRenderBody() {
         colTarget.addEventListener('scroll', onScrollHandler);
         colPreview.addEventListener('scroll', onScrollHandler);
         colSource.addEventListener('scroll', onScrollHandler);
+
+        // 🚀 绑定段落鼠标划过联动高亮效果
+        const targetBlocks = colTarget.querySelectorAll('.review-para-block');
+        targetBlocks.forEach(block => {
+            block.addEventListener('mouseenter', () => {
+                const idAttr = block.id;
+                if (!idAttr) return;
+                const idx = idAttr.replace('review-para-', '');
+                const srcBlock = document.getElementById(`source-para-${idx}`);
+                if (srcBlock) srcBlock.classList.add('linked-hover');
+                const prevBlock = document.getElementById(`preview-para-${idx}`);
+                if (prevBlock) prevBlock.classList.add('linked-hover');
+            });
+            block.addEventListener('mouseleave', () => {
+                const idAttr = block.id;
+                if (!idAttr) return;
+                const idx = idAttr.replace('review-para-', '');
+                const srcBlock = document.getElementById(`source-para-${idx}`);
+                if (srcBlock) srcBlock.classList.remove('linked-hover');
+                const prevBlock = document.getElementById(`preview-para-${idx}`);
+                if (prevBlock) prevBlock.classList.remove('linked-hover');
+            });
+        });
     }
 }
 
