@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Illacme-plenipes Core - SQLite Persistence Backend
-模块职责：提供高性能的物理存储层。
-🛡️ [V48.3 Refactored]：解耦后的轻量化持久化引擎。
-"""
+"""Illacme-plenipes Core - SQLite Persistence Backend
+🛡️ [V48.3 Refactored]"""
 import sqlite3
 import json
 import threading
@@ -11,8 +8,9 @@ import os
 import time
 from core.utils.tracing import tlog
 from .sql_statements import INIT_SCHEMA, UPSERT_DOC, UPSERT_TRANS
+from .sqlite_review import SQLiteReviewMixin
 
-class SQLiteBackend:
+class SQLiteBackend(SQLiteReviewMixin):
     """🚀 [V48.3] 工业级元数据存储方案"""
     
     def __init__(self, db_path, engine=None):
@@ -23,7 +21,6 @@ class SQLiteBackend:
         # 🛡️ [V35.2] 物理加固：确保数据库父目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
-
     def _get_conn(self):
         if not hasattr(self._local, "conn"):
             timeout = getattr(self.engine.config.system.resilience, 'db_timeout', 30.0) if self.engine else 30.0
@@ -147,7 +144,6 @@ class SQLiteBackend:
     def get_total_cost(self, imprint_id):
         row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE imprint_id = ?", (imprint_id,)).fetchone()
         return row[0] if row and row[0] is not None else 0.0
-
     def list_documents_paginated(self, page=1, limit=20, query=None, folder=None):
         offset = (page - 1) * limit
         sql = "SELECT * FROM documents"
@@ -170,11 +166,40 @@ class SQLiteBackend:
         params.extend([limit, offset])
         
         rows = self._get_conn().execute(sql, params).fetchall()
+        
+        # 批量获取 translations 和 translation_reviews (Q6=B)
+        t_map = {}
+        if rows:
+            paths = [row["rel_path"] for row in rows]
+            placeholders = ",".join(["?"] * len(paths))
+            
+            # 1. 翻译状态
+            t_rows = self._get_conn().execute(
+                f"SELECT rel_path, lang_code, status FROM translations WHERE rel_path IN ({placeholders})", paths
+            ).fetchall()
+            for tr in t_rows:
+                rp, lc, st = tr["rel_path"], tr["lang_code"], tr["status"]
+                if rp not in t_map: t_map[rp] = {}
+                t_map[rp][lc] = {"status": st, "human_approved": False, "review_is_stale": False}
+                
+            # 2. 人工校对锁
+            r_rows = self._get_conn().execute(
+                f"SELECT doc_id, lang_code, is_stale FROM translation_reviews WHERE doc_id IN ({placeholders})", paths
+            ).fetchall()
+            for rr in r_rows:
+                rp, lc, stale = rr["doc_id"], rr["lang_code"], rr["is_stale"]
+                if rp not in t_map: t_map[rp] = {}
+                if lc not in t_map[rp]: t_map[rp][lc] = {"status": "DONE"}
+                t_map[rp][lc]["human_approved"] = True
+                t_map[rp][lc]["review_is_stale"] = bool(stale)
+
         results = []
         for row in rows:
             data = dict(row)
             extra = json.loads(data.pop("metadata_json") or "{}")
             data.update(extra)
+            # 注入 translations 字段供前端 Vault 判断
+            data["translations"] = t_map.get(data["rel_path"], {})
             results.append(data)
         return results
 
@@ -184,10 +209,24 @@ class SQLiteBackend:
         with conn:
             row = conn.execute("SELECT metadata_json FROM documents WHERE rel_path = ?", (rel_path,)).fetchone()
             if not row: return False
-            
+
+            # 🛡️ [Slug 唯一性守卫] 如果本次更新包含 slug，先做全库冲突检测。
+            # slug 是路由层面的唯一标识符（直接映射为 URL 路径），
+            # 两个不同物理路径的文档若共享同一 slug，会导致静态站点路由冲突、
+            # SEO 索引混乱，以及译文缓存命中错误文档等严重问题。
+            if "slug" in metadata_updates:
+                new_slug = metadata_updates["slug"]
+                conflict_row = conn.execute(
+                    "SELECT rel_path FROM documents WHERE slug = ? AND rel_path != ?",
+                    (new_slug, rel_path)
+                ).fetchone()
+                if conflict_row:
+                    conflict_path = dict(conflict_row).get("rel_path", "?")
+                    return {"conflict": True, "slug": new_slug, "occupied_by": conflict_path}
+
             existing_meta = json.loads(dict(row).get("metadata_json") or "{}")
             existing_meta.update(metadata_updates)
-            
+
             # 如果更新中包含 title 或 slug，也同步更新主表字段
             if "title" in metadata_updates:
                 conn.execute("UPDATE documents SET title = ?, metadata_json = ? WHERE rel_path = ?",
@@ -200,12 +239,48 @@ class SQLiteBackend:
                            (json.dumps(existing_meta), rel_path))
             return True
 
+
     def get_total_documents_count(self):
         res = self._get_conn().execute("SELECT COUNT(*) FROM documents").fetchone()
         return res[0] if res else 0
 
     def delete_document(self, rel_path):
-        conn = self._get_conn()
-        with conn:
+        with self._get_conn() as conn:
             conn.execute("DELETE FROM documents WHERE rel_path = ?", (rel_path,))
             conn.execute("DELETE FROM translations WHERE rel_path = ?", (rel_path,))
+
+    # 🆕 多渠道分发异步重试队列数据库操作
+    def upsert_syndication_queue(self, rel_path, target_id, title, slug, content, metadata_json, lang_code, error_msg):
+        with self._get_conn() as conn:
+            conn.execute("""
+                INSERT INTO syndication_queue (
+                    rel_path, target_id, title, slug, content, metadata_json, lang_code, last_error, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
+                ON CONFLICT(rel_path, target_id) DO UPDATE SET
+                    title=excluded.title, slug=excluded.slug, content=excluded.content,
+                    metadata_json=excluded.metadata_json, lang_code=excluded.lang_code,
+                    last_error=excluded.last_error, status='PENDING'
+            """, (rel_path, target_id, title, slug, content, json.dumps(metadata_json or {}), lang_code, error_msg))
+
+    def get_pending_syndication_tasks(self):
+        now = int(time.time())
+        rows = self._get_conn().execute("""
+            SELECT * FROM syndication_queue
+            WHERE status = 'PENDING' AND next_retry_time <= ? AND retry_count < max_retries
+        """, (now,)).fetchall()
+        return [{**dict(r), "metadata": json.loads(dict(r).get("metadata_json") or "{}")} for r in rows]
+
+    def mark_syndication_success(self, rel_path, target_id):
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM syndication_queue WHERE rel_path = ? AND target_id = ?", (rel_path, target_id))
+
+    def mark_syndication_failure(self, rel_path, target_id, error_msg, backoff_seconds):
+        now = int(time.time())
+        next_retry = now + backoff_seconds
+        with self._get_conn() as conn:
+            conn.execute("""
+                UPDATE syndication_queue
+                SET retry_count = retry_count + 1, last_error = ?, next_retry_time = ?,
+                    status = CASE WHEN retry_count + 1 >= max_retries THEN 'FAILED' ELSE 'PENDING' END
+                WHERE rel_path = ? AND target_id = ?
+            """, (error_msg, next_retry, rel_path, target_id))

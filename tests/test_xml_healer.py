@@ -144,3 +144,78 @@ async def test_call_llm_stream_heals_xml():
     assert events_list[0].name == "read_document"
     assert events_list[0].arguments == {"relative_path": "Private/Plenipes/README.md"}
 
+
+def test_openai_healer_refuses_reasoning_content_for_translation():
+    """
+    验证 OpenAI 兼容适配器在 content 为空但 reasoning_content 不为空时，
+    若 payload 包含 is_translation=True，则拒绝降级使用 reasoning_content，
+    而当 is_translation=False 时允许降级，is_json=True 时同样拒绝降级。
+    """
+    from adapters.compute.openai import OpenAICompatibleTranslator
+    from unittest.mock import MagicMock
+    import requests
+
+    # 1. 实例化一个 Mock 风格 of OpenAI 适配器
+    trans_cfg = MagicMock()
+    trans_cfg.api_key = "test-key"
+    trans_cfg.base_url = "http://localhost:1234/v1"
+    trans_cfg.model = "qwen3.5"
+    trans_cfg.temperature = 0.2
+    trans_cfg.max_tokens = 2048
+    trans_cfg.params = {}
+    
+    mock_config = MagicMock()
+    mock_config.limits.max_concurrency = 2
+    mock_config.limits.timeout = 60.0
+    trans_cfg.compute_nodes.get.return_value = mock_config
+
+    translator = OpenAICompatibleTranslator("test_node", trans_cfg)
+    translator.timeout = 10
+
+    # 2. 模拟 requests.Session.post 返回空的 content 却有 reasoning_content
+    mock_resp = MagicMock(spec=requests.Response)
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "reasoning_content": "Analyze the Request: 1. Translate Chinese to English..."
+                }
+            }
+        ]
+    }
+    translator._session.post = MagicMock(return_value=mock_resp)
+
+    # 3.1 测试正常文本（is_translation=False），应自愈降级
+    payload_normal = {
+        "model": "qwen3.5",
+        "messages": [{"role": "user", "content": "hello"}],
+        "is_json": False,
+        "is_translation": False
+    }
+    res_normal = translator._ask_ai(payload_normal)
+    assert res_normal == "Analyze the Request: 1. Translate Chinese to English..."
+
+    # 3.2 测试翻译请求（is_translation=True），应拒绝降级
+    payload_trans = {
+        "model": "qwen3.5",
+        "messages": [{"role": "user", "content": "hello"}],
+        "is_json": False,
+        "is_translation": True
+    }
+    res_trans = translator._ask_ai(payload_trans)
+    assert res_trans == ""
+
+    # 3.3 测试 JSON 请求（is_json=True），应拒绝降级
+    payload_json = {
+        "model": "qwen3.5",
+        "messages": [{"role": "user", "content": "hello"}],
+        "is_json": True,
+        "is_translation": False
+    }
+    res_json = translator._ask_ai(payload_json)
+    assert res_json == ""
+
+

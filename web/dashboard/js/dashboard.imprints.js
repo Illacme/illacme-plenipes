@@ -5,6 +5,19 @@
 
 window.switchImprint = async (id) => {
     if (!id) return;
+
+    if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
+        const proceed = await window.checkSettingsDirtyAndConfirm();
+        if (!proceed) {
+            if (typeof renderSettingsCategory === 'function') renderSettingsCategory('imprints');
+            const selectEl = document.getElementById('imprint-select');
+            if (selectEl) {
+                selectEl.value = window.settingsData._active_imprint || 'default';
+            }
+            return;
+        }
+    }
+
     addAudit(`🛰️ 正在申请版图切换: ${id}...`, "info");
 
     const res = await apiFetch('/api/imprints/switch', {
@@ -31,6 +44,11 @@ window.switchImprint = async (id) => {
 };
 
 window.addNewImprint = async () => {
+    if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
+        const proceed = await window.checkSettingsDirtyAndConfirm();
+        if (!proceed) return;
+    }
+
     const isLicensed = window.settingsData?._is_licensed || false;
     const currentCount = window.settingsData?._imprints?.length || 0;
 
@@ -83,6 +101,11 @@ window.deleteImprint = async (id) => {
             alert(`🛡️ [安全拦截]\n无法删除当前处于激活状态（或默认）的版图 [${id}]！\n请先切换至其他可用版图后再行操作。`);
         }
         return;
+    }
+
+    if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
+        const proceed = await window.checkSettingsDirtyAndConfirm();
+        if (!proceed) return;
     }
 
     if (!confirm(`🚨 危险操作！\n确认要物理抹除出版版图 [${id}] 吗？`)) return;

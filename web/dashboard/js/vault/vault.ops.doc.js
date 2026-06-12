@@ -39,6 +39,43 @@ window.triggerCreateDocument = async () => {
             confirmButton: 'primary-btn glow-btn',
             cancelButton: 'mini-btn'
         },
+        didOpen: () => {
+            const titleEl = document.getElementById('swal-doc-title');
+            const pathEl = document.getElementById('swal-doc-path');
+            if (!titleEl || !pathEl) return;
+            
+            let pathUserEdited = false;
+            let debounceTimer = null;
+            
+            pathEl.addEventListener('input', () => {
+                pathUserEdited = true;
+            });
+            
+            titleEl.addEventListener('input', () => {
+                const titleVal = titleEl.value;
+                if (pathUserEdited) return;
+                
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(async () => {
+                    if (pathUserEdited || !titleVal.trim()) return;
+                    
+                    try {
+                        const res = await window.apiFetch('/api/vault/generate-slug', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: titleVal })
+                        });
+                        
+                        if (res && res.success && res.slug && !pathUserEdited) {
+                            const folder = window.vaultActiveFolder ? window.vaultActiveFolder + "/" : "";
+                            pathEl.value = `${folder}${res.slug}.md`;
+                        }
+                    } catch (err) {
+                        console.error("Failed to sync path from title:", err);
+                    }
+                }, 500);
+            });
+        },
         preConfirm: () => {
             const title = document.getElementById('swal-doc-title').value.trim();
             const path = document.getElementById('swal-doc-path').value.trim();

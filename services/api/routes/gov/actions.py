@@ -106,12 +106,16 @@ async def trigger_publish(req: Dict[str, Any]) -> Dict[str, Any]:
     try:
         mode: str = req.get("mode", "static")
         paths = req.get("paths", None)
+        force: bool = req.get("force", False)
+        target_langs = req.get("target_langs", None)
         from core.runtime.orchestrator import start_asynchronous_sync
         task_id = start_asynchronous_sync(
             engine,
             dry_run=(mode == "dry-run"),
+            force=force,
             sandbox=(mode == "sandbox"),
-            requested_paths=paths
+            requested_paths=paths,
+            target_langs=target_langs
         )
         if task_id is None:
             return {"status": "error", "message": "Already running"}
@@ -125,10 +129,16 @@ async def apply_translation_style(req: StyleRequest, request: Request) -> Dict[s
     """
     应用翻译风格与方言模板。
     
-    :param req: 包含风格名称的请求模型。
+    :param req: 包含风格名称的请求模型.
     :param request: 包含 Imprint-Id 请求头的请求对象。
     :return: 状态及当前风格。
     """
+    engine = get_global_engine()
+    if engine:
+        enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
+        if not enable_ai:
+            return {"status": "error", "message": "🛡️ [主权拦截] AI 算力当前处于关闭状态，无法应用翻译风格"}
+
     from core.governance.imprint_manager import im
     from core.config.config import IMPRINT_DIR, CONFIG_IMPRINT_NAME
     import shutil
@@ -144,7 +154,6 @@ async def apply_translation_style(req: StyleRequest, request: Request) -> Dict[s
     os.makedirs(target_dir, exist_ok=True)
     shutil.copy2(source_template, os.path.join(target_dir, f"{req.style}.yaml"))
     shutil.copy2(source_template, os.path.join(target_dir, DEFAULT_DIALECT_NAME))
-    engine = get_global_engine()
     if engine:
         engine.config.translation.active_style = req.style
         engine.config.dump_to_disk(os.path.join(IMPRINT_DIR, target_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME))
@@ -166,5 +175,62 @@ async def trigger_system_gc() -> Dict[str, Any]:
         engine.janitor.gc_ghost_nodes(is_dry_run=False)
         bus.emit("UI_TERMINAL_DATA", type="LOG", data="🧹 [一键物理剪枝] 物理 GC 成功！已物理回收幽灵路由与冗余 Markdown 资产。")
         return {"status": "success", "message": "GC executed successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/api/system/cache/stats", dependencies=[Depends(verify_token)])
+async def get_cache_stats() -> Dict[str, Any]:
+    """🛡️ [段落缓存治理] 获取缓存状态接口"""
+    engine = get_global_engine()
+    if not engine or not hasattr(engine, 'block_cache') or not engine.block_cache:
+        return {"file_count": 0, "size_bytes": 0, "root": ""}
+    
+    root = engine.block_cache.root
+    file_count = 0
+    size_bytes = 0
+    if os.path.exists(root):
+        for dirpath, _, filenames in os.walk(root):
+            for filename in filenames:
+                if filename.endswith(".txt"):
+                    file_count += 1
+                    try:
+                        size_bytes += os.path.getsize(os.path.join(dirpath, filename))
+                    except Exception:
+                        pass
+    return {
+        "file_count": file_count,
+        "size_bytes": size_bytes,
+        "root": root
+    }
+
+@router.post("/api/governance/cache/clear", dependencies=[Depends(verify_token)])
+async def clear_block_cache() -> Dict[str, Any]:
+    """🗑️ [段落缓存治理] 一键物理清除全量缓存接口"""
+    engine = get_global_engine()
+    if not engine or not hasattr(engine, 'block_cache') or not engine.block_cache:
+        return {"status": "error", "message": "Block cache not initialized"}
+    try:
+        success = engine.block_cache.clear_all_cache()
+        if success:
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data="🗑️ [一键缓存清空] 全量段落翻译缓存已被安全物理移除。")
+            return {"status": "success", "message": "Block cache cleared successfully"}
+        return {"status": "error", "message": "Failed to clear block cache"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/api/governance/cache/migrate", dependencies=[Depends(verify_token)])
+async def trigger_cache_migration(req: Dict[str, Any]) -> Dict[str, Any]:
+    """🚚 [段落缓存治理] 手动触发物理迁移接口"""
+    engine = get_global_engine()
+    if not engine or not hasattr(engine, 'block_cache') or not engine.block_cache:
+        return {"status": "error", "message": "Block cache not initialized"}
+    try:
+        old_levels = req.get("old_levels", 1)
+        new_levels = req.get("new_levels", 1)
+        old_dir = req.get("old_dir", None)
+        new_dir = req.get("new_dir", None)
+        
+        engine.block_cache.migrate_cache(old_dir, new_dir, old_levels, new_levels)
+        return {"status": "success", "message": "Cache migrated successfully"}
     except Exception as e:
         return {"status": "error", "message": str(e)}

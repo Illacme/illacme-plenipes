@@ -81,19 +81,26 @@ class ContentSyndicator:
                 task_name=f"Syndicate-{plugin.__class__.__name__}-{slug}"
             )
 
+        if not is_dry_run:
+            global_executor.submit(
+                self.process_pending_retries,
+                priority=TaskPriority.SYNDICATION,
+                task_name="Syndicate-Retry-Queue"
+            )
+
     def _dispatch_to_plugin(self, plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run):
         """🛡️ 扁平化重构：原子化执行单平台分发"""
+        target_id = plugin.__class__.__name__
         try:
             if not plugin.is_enabled(rel_path, lang_code):
                 return
 
             # 🚀 [V11.1] 接入分发账本，实现断点续传与增量同步
-            target_id = plugin.__class__.__name__
             source_hash = metadata.get('source_hash', '') if metadata else ''
 
             if not is_dry_run and self.meta and rel_path:
                 prev = self.meta.get_syndication_status(rel_path, target_id)
-                if prev and prev.get('hash') == source_hash and prev.get('status') == "DONE":
+                if prev and prev.get('status') == "DONE" and prev.get('hash') == source_hash:
                     tlog.debug(f"⏭️ [分发跳过] {target_id} 对 {rel_path} 的同步已是最新。")
                     return
 
@@ -109,7 +116,77 @@ class ContentSyndicator:
                 self.meta.register_syndication(rel_path, target_id, source_hash)
 
         except Exception as e:
-            tlog.error(f"❌ [分发失败] {plugin.__class__.__name__}: {e}")
+            tlog.error(f"❌ [分发失败] {target_id}: {e}")
+            if not is_dry_run and self.meta and rel_path:
+                self.meta.enqueue_syndication_retry(
+                    rel_path=rel_path,
+                    target_id=target_id,
+                    title=title,
+                    slug=slug,
+                    content=content,
+                    metadata=metadata,
+                    lang_code=lang_code,
+                    error_msg=str(e)
+                )
+
+    def process_pending_retries(self):
+        """🚀 扫描持久化重试队列，取出待执行 of 重试任务并调度执行"""
+        if not self.meta:
+            return
+
+        from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
+
+        pending_tasks = self.meta.get_pending_syndication_tasks()
+        if not pending_tasks:
+            return
+
+        tlog.info(f"🔄 [分发引擎] 发现 {len(pending_tasks)} 个待重试的持久化分发任务，正在拉起重试...")
+
+        for task in pending_tasks:
+            target_id = task.get("target_id")
+            plugin = next((p for p in self.plugins if p.__class__.__name__ == target_id), None)
+            if not plugin:
+                tlog.warning(f"⚠️ [分发重试] 无法重试：对应的分发插件未激活或不存在: {target_id}")
+                continue
+
+            call_fn = self.breaker.call if self.breaker else lambda f, *a, **k: f(*a, **k)
+            global_executor.submit(
+                call_fn,
+                self._dispatch_retry_task,
+                plugin, task,
+                priority=TaskPriority.SYNDICATION,
+                task_name=f"Retry-Syndicate-{target_id}-{task.get('slug')}"
+            )
+
+    def _dispatch_retry_task(self, plugin, task):
+        """🛡️ 执行单个重试任务"""
+        rel_path = task.get("rel_path")
+        target_id = task.get("target_id")
+        title = task.get("title")
+        slug = task.get("slug")
+        content = task.get("content")
+        metadata = task.get("metadata")
+        lang_code = task.get("lang_code")
+
+        try:
+            if not plugin.is_enabled(rel_path, lang_code):
+                self.meta.mark_syndication_success(rel_path, target_id)
+                return
+
+            payload = plugin.format_payload(title, slug, content, metadata)
+            plugin.push(payload)
+
+            if self.meta and rel_path:
+                source_hash = metadata.get('source_hash', '') if metadata else ''
+                self.meta.register_syndication(rel_path, target_id, source_hash)
+                self.meta.mark_syndication_success(rel_path, target_id)
+                tlog.info(f"✅ [重试成功] {target_id} 对 {rel_path} 的分发已成功重试并移出队列。")
+
+        except Exception as e:
+            tlog.error(f"❌ [重试失败] {target_id} -> {title}: {e}")
+            retry_count = task.get("retry_count", 0) + 1
+            backoff_seconds = (2 ** retry_count) * 10
+            self.meta.mark_syndication_failure(rel_path, target_id, str(e), backoff_seconds)
 
     def list_all_plugins(self):
         """🚀 [V17.0] 枚举所有已发现的外部插件及其状态"""

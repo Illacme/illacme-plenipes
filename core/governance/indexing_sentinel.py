@@ -39,7 +39,7 @@ class IndexingSentinel:
     def _worker_loop(self):
         """后台轮询循环：当前仅用于维持线程生命周期，实际任务已委托至 Orchestrator"""
         while not self._stop_event.is_set():
-            time.sleep(1.0)
+            self._stop_event.wait(1.0)
 
     def submit(self, rel_path: str):
         """🚀 [V24.0] 接入全量编排：提交至全局执行器低优先级队列"""

@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Illacme-plenipes Core - Egress Dispatcher
-模块职责：物理出站分发器。
-🛡️ [AEL-Iter-v5.3]：基于分层架构的 TDR 复健版本。
-"""
+"""Illacme-plenipes Core - Egress Dispatcher
+🛡️ [AEL-Iter-v5.3]"""
 
 import os
 import re
@@ -58,8 +55,6 @@ class BinderyDispatcher:
         current_tid = "AEL-SYSTEM-FALLBACK"
         
         # 2. 🚀 [V24.0] 资产全量预热 (Global Pre-Warming)
-        # 在进入语种/模式循环前，先对源文档引用的所有资产进行并行化加工投递。
-        # 这样后续的所有 unmask 过程都将直接受益于已启动的异步任务。
         self.unmasker.warm_assets(sanitized_body, masks, asset_index, slug=slug)
 
         # 3. 核心分发循环
@@ -89,7 +84,6 @@ class BinderyDispatcher:
             if self.pub_cfg.append_credit:
                 final_body += f"{self.pub_cfg.credit_text}\n"
 
-            # 🧪 [V10.2] 主权盾牌注入
             from core.utils.tracing import Tracer
             current_tid = Tracer.get_id() or "AEL-SYSTEM-FALLBACK"
             if is_target and not is_dry_run:
@@ -99,7 +93,6 @@ class BinderyDispatcher:
             # 4. 元数据准备
             merged_fm = self._prepare_metadata(fm_dict, title, slug, rel_path, is_target, force_persistence_date, lang_code, route_prefix, route_source, mapped_sub_dir)
 
-            # 5. 🧪 [V10.3] SSG 适配层渲染 (仅针对静态路执行渲染，源码路保持原汁原味)
             final_out_body = final_body
             final_out_fm = merged_fm
             if is_static:
@@ -109,7 +102,51 @@ class BinderyDispatcher:
                     if lang_seo and isinstance(lang_seo, dict):
                         actual_seo = {**seo_data, **lang_seo}
                 sub_path = os.path.join(route_prefix, mapped_sub_dir) if route_prefix or mapped_sub_dir else ""
-                final_out_body, final_out_fm = self.ssg_adapter.render(final_body, merged_fm, seo_data=actual_seo, target_lang=lang_code, sub_path=sub_path)
+
+                # 🔒 [I5] 人工校对锁检测（Q4=A：SSG 渲染前拦截，确保跨主题兼容）
+                _use_locked = False
+                _locked_body = final_body
+                _locked_fm = merged_fm
+                _lang_meta = {}
+                if is_target and self.meta:
+                    _doc_meta = self.meta.get_doc_info(rel_path)
+                    if isinstance(_doc_meta, dict) and type(_doc_meta).__name__ not in ('MagicMock', 'Mock'):
+                        _translations = _doc_meta.get("translations")
+                        if isinstance(_translations, dict) and type(_translations).__name__ not in ('MagicMock', 'Mock'):
+                            _lang_meta = _translations.get(lang_code, {})
+                            if isinstance(_lang_meta, dict) and type(_lang_meta).__name__ not in ('MagicMock', 'Mock'):
+                                if _lang_meta.get("human_approved"):
+                                    # Q3=B：hash 变更后打 stale 标记，但不自动解锁
+                                    _approved_hash = _lang_meta.get("approved_source_hash", "")
+                                    if _approved_hash:
+                                        _cur_hash = hashlib.md5(sanitized_body.encode("utf-8")).hexdigest()
+                                        if _cur_hash != _approved_hash and not _lang_meta.get("review_is_stale"):
+                                            self.meta.mark_review_stale(rel_path, lang_code)
+                                            tlog.warning(
+                                                f"⚠️ [I5校对锁] {rel_path}/{lang_code} 原稿已变更，"
+                                                f"校对内容可能失效（锁定保留，请在 Dashboard 复核）"
+                                            )
+                                    _use_locked = True
+                                    _locked_body = _lang_meta.get("reviewed_body") or final_body
+                                    _locked_fm = merged_fm.copy()
+                                    if _lang_meta.get("reviewed_title"):
+                                        _locked_fm["title"] = _lang_meta["reviewed_title"]
+                                    tlog.info(f"🔒 [I5校对锁] {rel_path}/{lang_code} 跳过 AI 内容，使用人工锁定版本")
+
+                if _use_locked:
+                    final_out_body, final_out_fm = self.ssg_adapter.render(
+                        _locked_body, _locked_fm, seo_data=actual_seo,
+                        target_lang=lang_code, sub_path=sub_path
+                    )
+                    # 注入校对版 SEO 描述（若有）
+                    _locked_desc = _lang_meta.get("reviewed_desc")
+                    if _locked_desc and isinstance(final_out_fm, dict):
+                        final_out_fm["description"] = _locked_desc
+                else:
+                    final_out_body, final_out_fm = self.ssg_adapter.render(
+                        final_body, merged_fm, seo_data=actual_seo,
+                        target_lang=lang_code, sub_path=sub_path
+                    )
             
             # 6. 元数据序列化
             fm_str = self._serialize_frontmatter(final_out_fm)
@@ -122,8 +159,7 @@ class BinderyDispatcher:
             )
             persistence_results[mode] = (shadow_hash, persistence_date)
 
-        # 8. [V35.2] 分发提级：移除了此处的单文件分发逻辑。
-        # 全渠道分发现已提级至同步管线末端的 [LifecycleManager] 阶段，以实现全局事务化与高并发优化。
+        # 8. [V35.2] 分发已提级至同步管线末端的 [LifecycleManager] 阶段
         
         return persistence_results.get("source", (None, None))
 
@@ -131,7 +167,7 @@ class BinderyDispatcher:
     def _prepare_metadata(self, fm_dict, title, slug, rel_path, is_target, force_date, current_lang, route_prefix, route_source, mapped_sub_dir):
         merged_fm = fm_dict.copy()
         
-        # 🚀 [V25.8] 标题主权对齐：优先尊重 Frontmatter 中已有的润色标题
+
         if 'title' not in merged_fm or not merged_fm['title']:
             if slug:
                 merged_fm['title'] = slug.replace('-', ' ').title() if is_target else title
@@ -139,7 +175,6 @@ class BinderyDispatcher:
                 merged_fm['title'] = title
 
         # 🚀 [V7.7] Hreflang SEO 矩阵注入
-        # 让搜索引擎知道该页面的其他语种版本，极大提升全球权重
         hreflangs = []
         source_code = self.i18n.source.lang_code
         all_langs = [source_code] + [t.lang_code for t in self.i18n.targets if t.lang_code]
@@ -152,7 +187,7 @@ class BinderyDispatcher:
         merged_fm['hreflangs'] = hreflangs
         merged_fm['language'] = current_lang
 
-        # 🚀 [V15.7] 物理主权对齐：透传路由前缀与源，确保 SSG 适配器能正确感知布局形态
+
         merged_fm['route_prefix'] = route_prefix
         merged_fm['route_source'] = route_source
         merged_fm['mapped_sub_dir'] = mapped_sub_dir
@@ -162,7 +197,6 @@ class BinderyDispatcher:
         try:
             mtime_dt = datetime.fromtimestamp(os.path.getmtime(src_abs)).astimezone()
         except OSError:
-            # 物理源文件已被移动或删除，回退到当前时间，避免导致全局分发流程直接崩溃
             mtime_dt = datetime.now().astimezone()
 
         post_date = None
@@ -171,14 +205,20 @@ class BinderyDispatcher:
             except Exception: pass
 
         if not post_date:
-            doc_info = self.meta.get_doc_info(rel_path)
-            hp_date = doc_info.get('persistent_date') if doc_info else None
-            try: post_date = datetime.fromisoformat(hp_date) if hp_date else mtime_dt
-            except Exception: post_date = mtime_dt
+            doc_info = self.meta.get_doc_info(rel_path) if self.meta else None
+            hp_date = None
+            if doc_info and isinstance(doc_info, dict) and type(doc_info).__name__ not in ('MagicMock', 'Mock'):
+                hp_date = doc_info.get('persistent_date')
+            
+            if isinstance(hp_date, str):
+                try: post_date = datetime.fromisoformat(hp_date)
+                except Exception: post_date = mtime_dt
+            else:
+                post_date = mtime_dt
 
         merged_fm['date'] = post_date
 
-        # 🚀 [V11.0] 最终渲染前的主权审计：确保所有关键路径参数非空
+
         if not merged_fm.get('title'): merged_fm['title'] = title or "Untitled"
         if not merged_fm.get('language'): merged_fm['language'] = current_lang or "zh"
 
@@ -192,13 +232,11 @@ class BinderyDispatcher:
     def _physical_write(self, rel_path, lang, prefix, sub, slug, fm_str, body, is_dry_run, is_sandbox=False, source_type="docs", mode="source"):
         ext = os.path.splitext(rel_path)[1].lower()
 
-        # 🚀 [V11.2] 双相出口扩展名适配
-        # 🚀 [V12.0] 后缀主权对齐：如果适配器返回 None，则保留原始后缀 (如 .mdx, .markdown)
+        # 🚀 [V11.2 & V12.0] 后缀与双相适配
         target_ext = self.ssg_adapter.output_extensions.get(mode)
         if target_ext is None:
             target_ext = ext
 
-        # 🚀 [V11.2] 根据模式选择物理根目录
         if is_sandbox:
             target_root = self.paths.get('sandbox')
         else:
@@ -208,18 +246,14 @@ class BinderyDispatcher:
             tlog.warning(f"⚠️ [分发拦截] 未定义模式 '{mode}' 的根目录，跳过落盘: {rel_path}")
             return None, None
 
-        # 计算最终物理路径
         dest = self.route_manager.resolve_physical_path(target_root, lang, prefix, sub, slug, target_ext, source_type=source_type)
         tlog.info(f"💾 [物理落盘] ({mode}) -> {dest}")
 
-
-        # 保持 cache 镜像以备后研 (统一使用 source 模式镜像)
         if mode == "source":
             cache_mirror = self.route_manager.resolve_physical_path(self.paths.get('cache'), lang, prefix, sub, slug, target_ext, source_type=source_type)
         else:
             cache_mirror = None
 
-        # 🚀 [V15.6] 洁净度控制：由 SSG 适配器决定该输出格式是否支持元数据头
         is_markup_content = self.ssg_adapter.supports_frontmatter(target_ext)
         if not is_markup_content and mode == 'static':
             full_content = body

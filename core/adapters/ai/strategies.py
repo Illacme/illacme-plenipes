@@ -44,12 +44,7 @@ class FallbackStrategy:
             tlog.warning(f"⚠️ [AI 主节点故障] 正在切换备份节点生成 Slug: {e}")
             return self.secondary.generate_slug(title, is_dry_run, **kwargs)
 
-    def generate_seo_metadata(self, text, lang_name, is_dry_run=False, **kwargs):
-        try:
-            return self.primary.generate_seo_metadata(text, lang_name, is_dry_run, **kwargs)
-        except Exception as e:
-            tlog.warning(f"⚠️ [AI 主节点故障] 正在切换备份节点生成 SEO: {e}")
-            return self.secondary.generate_seo_metadata(text, lang_name, is_dry_run, **kwargs)
+
 
     def translate_title(self, title, target_lang, is_dry_run=False, **kwargs):
         try:
@@ -117,8 +112,7 @@ class SmartRoutingStrategy:
     def generate_slug(self, title, is_dry_run=False, **kwargs):
         return self.primary.generate_slug(title, is_dry_run, **kwargs)
 
-    def generate_seo_metadata(self, text, lang_name, is_dry_run=False, **kwargs):
-        return self.primary.generate_seo_metadata(text, lang_name, is_dry_run, **kwargs)
+
 
     def translate_title(self, title, target_lang, is_dry_run=False, **kwargs):
         return self.primary.translate_title(title, target_lang, is_dry_run, **kwargs)
@@ -144,3 +138,65 @@ class SmartRoutingStrategy:
                     user_prompt += str(msg.get("content", ""))
         handler = self.primary if len(user_prompt) < self.threshold else self.secondary
         return handler.ask_ai_with_retry(payload)
+
+class GlobalSmartRoutingStrategy:
+    """🧠 全局智能调度策略：完全接管全局请求，每次通过 SmartRouter 动态派发至全域最健康的物理节点"""
+    def __init__(self, trans_cfg):
+        self.trans_cfg = trans_cfg
+        self._handlers = {}
+
+    def _get_best_handler(self):
+        from core.runtime.cli_bootstrap import get_global_engine
+        engine = get_global_engine()
+        
+        preferred_node = getattr(self.trans_cfg, 'primary_node', None)
+        
+        if engine and hasattr(engine, 'smart_router'):
+            best_node_name = engine.smart_router.get_best_node(preferred_node)
+        else:
+            best_node_name = preferred_node
+            
+        if best_node_name not in self._handlers:
+            from core.logic.ai.ai_factory import TranslatorFactory
+            self._handlers[best_node_name] = TranslatorFactory._build_node(best_node_name, self.trans_cfg)
+            
+        return self._handlers[best_node_name]
+
+    @property
+    def node_name(self): return self._get_best_handler().node_name
+
+    @property
+    def config(self): return self._get_best_handler().config
+
+    @property
+    def plugin_id(self): return getattr(self._get_best_handler(), 'plugin_id', 'openai')
+
+    @property
+    def trans_cfg_prop(self): return getattr(self._get_best_handler(), 'trans_cfg', None)
+
+    @property
+    def _intelligence_hub(self): return self._get_best_handler()._intelligence_hub
+
+    def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
+        return self._get_best_handler().translate(text, source_lang, target_lang, context_type, remedy_instruction, is_dry_run, **kwargs)
+
+    def generate_slug(self, title, is_dry_run=False, **kwargs):
+        return self._get_best_handler().generate_slug(title, is_dry_run, **kwargs)
+
+
+
+    def translate_title(self, title, target_lang, is_dry_run=False, **kwargs):
+        return self._get_best_handler().translate_title(title, target_lang, is_dry_run, **kwargs)
+
+    def translate_metadata(self, text, meta_type, target_lang, is_dry_run=False, **kwargs):
+        return self._get_best_handler().translate_metadata(text, meta_type, target_lang, is_dry_run, **kwargs)
+
+    def translate_document(self, text, target_lang_name, rel_path, is_dry_run=False, source_lang="zh-cn", remedy_instruction=None, **kwargs):
+        return self._get_best_handler().translate_document(text, target_lang_name, rel_path, is_dry_run, source_lang, remedy_instruction, **kwargs)
+
+    def raw_inference(self, user_prompt, system_prompt=None):
+        return self._get_best_handler().raw_inference(user_prompt, system_prompt)
+
+    def ask_ai_with_retry(self, payload):
+        return self._get_best_handler().ask_ai_with_retry(payload)
+

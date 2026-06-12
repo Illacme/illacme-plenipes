@@ -12,7 +12,7 @@ class PayloadManager:
     """🚀 [V10.3] 载荷驱动引擎：组装并审计中立意图对象"""
 
     @staticmethod
-    def prepare_payload(adapter, system_prompt: str, user_content: str, is_json: bool = False, payload_max_tokens: int = None, tools: list = None, messages: list = None) -> Dict[str, Any]:
+    def prepare_payload(adapter, system_prompt: str, user_content: str, is_json: bool = False, payload_max_tokens: int = None, tools: list = None, messages: list = None, **kwargs) -> Dict[str, Any]:
         """🚀 [AEL-Iter-v75.0] 组装中立意图对象 (新增 tools 和 messages 大一统字段)"""
         # 1. 获取全要素智能特性
         safe_system = system_prompt or ""
@@ -35,10 +35,11 @@ class PayloadManager:
             "is_json": is_json,
             "params": {
                 **intelligent_payload,
-                "temperature": getattr(adapter.config, 'temperature', 0.2),
-                "max_tokens": payload_max_tokens or getattr(adapter.config, 'max_tokens', 4096),
+                "temperature": getattr(adapter.config, 'temperature', None) or getattr(adapter.trans_cfg, 'temperature', 0.2),
+                "max_tokens": payload_max_tokens or getattr(adapter.config, 'max_tokens', None) or getattr(adapter.trans_cfg, 'max_tokens', 4096),
                 **getattr(adapter.config, 'params', {}),
-            }
+            },
+            **kwargs
         }
 
         # 3. 物理审计
@@ -59,16 +60,18 @@ class PayloadManager:
             audit_path.append("⚠️ [语义不一致] 开启了 JSON 模式但提示词中未显式要求 JSON")
 
         # 2. 算力预算审计
+        base_url = getattr(config, 'base_url', '')
+        safe_url = base_url.lower() if base_url else ""
+        is_local = "localhost" in safe_url or "127.0.0.1" in safe_url
+        
         max_tokens = params.get("max_tokens", 4096)
         safe_system = system_prompt.lower() if system_prompt else ""
-        if max_tokens > 2000 and "translate" in safe_system:
+        if max_tokens > 4096 and "translate" in safe_system:
             audit_path.append("💡 [算力建议] 翻译任务建议压减 max_tokens 以节省开销")
 
         # 3. 本地环境优化审计
-        base_url = getattr(config, 'base_url', '')
-        safe_url = base_url.lower() if base_url else ""
-        if "localhost" in safe_url or "127.0.0.1" in safe_url:
-            if max_tokens > 2000:
+        if is_local:
+            if max_tokens > 4096:
                 audit_path.append("🔋 [负载建议] 本地模型建议适当减小 max_tokens 以降低推理时延")
 
         # 4. 输出审计结论
@@ -97,7 +100,7 @@ class PayloadManager:
         # 2. 全局通用默认值 (如 temperature, max_tokens)
         global_map = {
             'temperature': getattr(adapter.trans_cfg, 'temperature', 0.2),
-            'max_tokens': getattr(adapter.trans_cfg, 'max_tokens', 8192)
+            'max_tokens': getattr(adapter.trans_cfg, 'max_tokens', 4096)
         }
         params.update({k: v for k, v in global_map.items() if v is not None})
 
@@ -205,11 +208,13 @@ class PayloadManager:
             # 🏢 [LM Studio 极致兼容防线]
             # 本地思维链模型（如 Qwen, Llama）与外层 LM Studio 顶级网关的 reasoning_effort 存在严重的格式与警告冲突。
             # 经深度调研与物理对准，最稳妥、百分之百无报错和警告的方案是：
-            # 本地通道完全物理剥离 reasoning_effort 参数，仅保留本地模型原生支持的 enable_thinking / think / thinking_budget。
+            # 当关闭思维链时，必须传递标准 "none" 值，开启时传递正确的努力程度，并且保留原生支持的 enable_thinking / think / thinking_budget。
             params.update({
                 "enable_thinking": reasoning_enabled,
                 "think": reasoning_enabled,
-                "thinking_budget": 1024 if reasoning_enabled else 0
+                "thinking_budget": 1024 if reasoning_enabled else 0,
+                "reasoning": reasoning_enabled,
+                "reasoning_effort": reasoning_effort if reasoning_enabled else "none"
             })
         elif is_o_series and is_openai_official:
             if reasoning_enabled:
@@ -221,6 +226,15 @@ class PayloadManager:
                     "think": reasoning_enabled,
                     "thinking_budget": 1024 if reasoning_enabled else 0
                 })
+
+        # 4.5. 针对本地 LM Studio 推理思维链模型的 token 预算扩容
+        if is_lmstudio:
+            # 本地推理模型由于思维链生成非常多，如果 max_tokens 过小会导致推理被截断，content 为空
+            # 确保 max_tokens 至少为 4096，使其有足够的预算完成思考和输出
+            if "max_tokens" in params and isinstance(params["max_tokens"], (int, float)) and params["max_tokens"] < 4096:
+                params["max_tokens"] = 4096
+            if "max_tokens" in cleaned and isinstance(cleaned["max_tokens"], (int, float)) and cleaned["max_tokens"] < 4096:
+                cleaned["max_tokens"] = 4096
 
         # 5. 回写 params 并进行二次深层校验
         if "params" in cleaned:

@@ -62,3 +62,30 @@ window.flattenObject = (obj, prefix = '') => {
     }
     return result;
 };
+
+window.checkSettingsDirtyAndConfirm = async () => {
+    const saveBtn = document.getElementById('btn-save-settings');
+    if (saveBtn && !saveBtn.disabled) {
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title: '⚠️ 检测到未保存的配置',
+                text: '您当前已修改了路由、翻译风格或 Slug 等配置，尚未保存。如果继续当前点选操作，这些修改将被覆盖丢失。是否继续？',
+                icon: 'warning',
+                showCancelButton: true,
+                background: 'hsla(236, 37%, 8%, 0.95)',
+                color: 'var(--text-bright, #ffffff)',
+                confirmButtonText: '丢弃并继续',
+                cancelButtonText: '先去保存',
+                customClass: {
+                    popup: 'glass-panel',
+                    confirmButton: 'danger-btn glow-btn',
+                    cancelButton: 'primary-btn'
+                }
+            });
+            return result.isConfirmed;
+        } else {
+            return confirm("⚠️ 检测到有未保存的配置改动。继续此操作将丢失改动。是否继续？");
+        }
+    }
+    return true;
+};

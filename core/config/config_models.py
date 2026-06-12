@@ -95,7 +95,6 @@ class SeoSettings(BaseModel):
     enabled: bool = True
     generate_description: bool = True
     generate_keywords: bool = True
-    autopilot_enabled: bool = True
 
 class RouteItem(BaseModel):
     """🚀 [V55.26] 路由矩阵项：支持频道级的方言与风格绑定"""
@@ -118,6 +117,8 @@ class Configuration(BaseModel):
     active_theme: str = "default"
     site_url: str = ""
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
+    block_cache_dir: Optional[str] = None # 🚀 [V100.4] 自定义段落缓存物理路径，默认为项目根目录下的 .plenipes/blocks
+    block_cache_shard_levels: int = Field(default=1, ge=0, le=3, description="🚀 [V100.4] 段落缓存哈希路径分级层数，0为不分级，1为取前两位（如 ab/），2为取前四位（如 ab/cd/），3为取前六位（如 ab/cd/ef/）")
     
     # 🎨 Sovereign Global Branding & Compliance (Promoted settings)
     site_name: Optional[str] = Field(default=None, description="全局网站展示标题 (多主题共享)")
@@ -275,6 +276,58 @@ class Configuration(BaseModel):
         if self.translation and self.system:
             self.translation.resilience = self.system.resilience
 
+    @model_validator(mode='after')
+    def validate_publishing_mode_and_ai(self) -> 'Configuration':
+        """🚀 [V74.96] 出版模式自动降级与自愈保护机制"""
+        # 1. 检查 AI 算力可用性
+        local_types = ["ollama", "lmstudio", "local"]
+        ai_available = False
+        if self.translation and self.translation.enable_ai:
+            for node in self.translation.compute_nodes.values():
+                if not node.enabled:
+                    continue
+                node_type = (node.type or "").lower()
+                api_key = node.api_key or ""
+                if any(t in node_type for t in local_types):
+                    ai_available = True
+                    break
+                if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
+                    ai_available = True
+                    break
+
+        # 2. 获取当前出版模式和多语言矩阵状态
+        if not self.governance:
+            return self
+        mode = self.governance.publishing_mode
+        i18n_enabled = self.i18n_settings.enabled if self.i18n_settings else False
+
+        # 3. 校验并自动降级
+        # 3.1 算力关闭或无可用节点 -> 出版模式不能选择智能增强(enhanced)或全球分发(global)
+        if not ai_available:
+            if mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
+                from core.utils.tracing import tlog
+                tlog.warning(f"⚠️ [自动降级] 算力关闭或无可用节点，出版模式从 {mode.value} 降级为 {PublishingMode.BASIC.value}")
+                self.governance.publishing_mode = PublishingMode.BASIC
+                if self.translation:
+                    self.translation.enable_ai = False  # 物理降级对正：基础模式下 AI 算力自动关闭
+        # 3.2 算力可用，但多语言翻译矩阵关闭 -> 出版模式不能选择全球多语言分发(global)
+        elif not i18n_enabled:
+            if mode == PublishingMode.GLOBAL:
+                from core.utils.tracing import tlog
+                tlog.warning(f"⚠️ [自动降级] 多语言翻译矩阵已关闭，出版模式从 {PublishingMode.GLOBAL.value} 降级为 {PublishingMode.ENHANCED.value}")
+                self.governance.publishing_mode = PublishingMode.ENHANCED
+
+        # 4. 降级后，自动对齐重置 SEO 策略
+        from .models.governance import validate_mode_strategy, get_default_strategy
+        new_mode = self.governance.publishing_mode
+        if not validate_mode_strategy(new_mode, self.governance.seo_strategy):
+            old_strategy = self.governance.seo_strategy
+            self.governance.seo_strategy = get_default_strategy(new_mode)
+            from core.utils.tracing import tlog
+            tlog.info(f"⚖️ [策略自愈对正] 出版模式变更为 {new_mode.value}，SEO策略从 {old_strategy.value} 自动对齐重置为默认值 {self.governance.seo_strategy.value}")
+
+        return self
+
     def dump_to_disk(self, path: str):
         """🚀 [V66.5] 主权分流持久化：智能感应物理与策略层级"""
         import yaml
@@ -283,6 +336,10 @@ class Configuration(BaseModel):
         data = self.model_dump(exclude_unset=True, mode='json')
         data['governance'] = self.governance.model_dump(mode='json')
         
+        # 🛡️ 架构纯化：剔除冗余的 translation.resilience，强行规定使用全局 system.resilience
+        if 'translation' in data and 'resilience' in data['translation']:
+            del data['translation']['resilience']
+            
         # 🛡️ [V66.5] 物理-策略解耦分流
         filename = os.path.basename(path)
         if "imprint" in filename:

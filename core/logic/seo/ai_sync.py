@@ -92,7 +92,7 @@ class AISyncProcessor(BaseSeoProcessor):
                 )
                 if "params" not in payload:
                     payload["params"] = {}
-                payload["params"]["max_tokens"] = 256
+                payload["params"]["max_tokens"] = 1024
 
                 raw = translator.ask_ai_with_retry(payload)
                 repaired = AILogicHub.repair_json(raw)

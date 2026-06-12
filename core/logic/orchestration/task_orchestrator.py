@@ -43,7 +43,6 @@ class OrchestratedExecutor(concurrent.futures.Executor):
     """🚀 [V10.1] 工业级权重感知执行器"""
     def __init__(self, max_workers: int = 4, min_workers: int = 1):
         self.max_workers = max_workers
-        self.min_workers = min_workers
         self.queue = []
         self.lock = threading.Lock()
         self.condition = threading.Condition(self.lock)
@@ -107,11 +106,15 @@ class OrchestratedExecutor(concurrent.futures.Executor):
             
             # 🚀 [V11.8 生产就绪] 嵌套死锁自愈：如果检测到嵌套提交，动态激活一个“救援工人”
             if f"@{id(self)}" in current_thread_name:
-                tlog.info(f"🆘 [Rescue] 探测到嵌套提交 '{name}'，正在动态扩容救援线程以对冲死锁风险。")
-                # 临时扩容
-                t = threading.Thread(target=self._worker_loop, name=f"OrchestratorRescue-{len(self.workers)}@{id(self)}", daemon=True)
-                t.start()
-                self.workers.append(t)
+                rescue_count = sum(1 for w in self.workers if w.name.startswith("OrchestratorRescue-"))
+                max_rescue_limit = max(4, self.max_workers // 2)
+                if rescue_count < max_rescue_limit:
+                    tlog.info(f"🆘 [Rescue] 探测到嵌套提交 '{name}'，正在动态扩容救援线程以对冲死锁风险 (当前救援数: {rescue_count}/{max_rescue_limit})。")
+                    t = threading.Thread(target=self._worker_loop, name=f"OrchestratorRescue-{len(self.workers)}@{id(self)}", daemon=True)
+                    t.start()
+                    self.workers.append(t)
+                else:
+                    tlog.warning(f"⚠️ [Rescue Blocked] 嵌套提交 '{name}' 探测到救援线程数已达物理上限 ({rescue_count}/{max_rescue_limit})，已拦截增殖。")
 
             import sys
             sys.stderr.write(f"📥 [DEBUG] 任务 '{name}' 已压栈 | 池: {id(self)} | 队列: {len(self.queue)}\n")
@@ -229,8 +232,8 @@ global_executor = OrchestratedExecutor(max_workers=4, min_workers=1)
 
 # 🧠 [V16.5] 专职 AI 算力池 (Isolated Compute Pool)
 # 用于执行具体的 AI 翻译、SEO 提取等耗时任务，实现与流程调度池的物理隔离，彻底封堵嵌套并发死锁。
-# 🚀 [V34.9] 主权防御：强制最小并发为 16，严禁被配置文件设置突破红线。
-ai_executor = OrchestratedExecutor(max_workers=16, min_workers=16)
+# 🚀 [V34.9] 主权防御：强制最小并发为 1，支持本地单核平滑对齐。
+ai_executor = OrchestratedExecutor(max_workers=16, min_workers=1)
 
 # 🖼️ [V24.0] 专职资产处理池 (Isolated I/O & CPU Pool)
 # 用于执行 WebP 转换、图片缩放与物理去重计算。

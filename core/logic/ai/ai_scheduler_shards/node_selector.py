@@ -9,21 +9,7 @@ from core.utils.tracing import tlog
 class AISchedulerNodeSelector:
     @staticmethod
     def get_best_translator(engine, preferred_node: str = None):
-        """🚀 [V11.0] 智能节点选择：利用 SmartRouter 决定最优算力去向"""
-        if not hasattr(engine, 'smart_router'):
-            from core.logic.smart_router import SmartRouter
-            engine.smart_router = SmartRouter(engine)
-        
-        # 如果未指定首选节点，则从当前翻译器获取
-        if not preferred_node:
-            preferred_node = engine.translator.node_name
-
-        best_node_name = engine.smart_router.get_best_node(preferred_node)
-        
-        # 如果路由器建议了不同节点，则通过工厂创建/获取
-        if best_node_name != engine.translator.node_name:
-            from core.logic.ai.ai_factory import TranslatorFactory
-            # 注意：此处需要访问 trans_cfg，通常在 engine.config.translation
-            return TranslatorFactory.create_node(best_node_name, engine.config.translation)
-        
+        """🚀 [V11.1] 调度收敛：全局绝对服从配置的翻译策略 (不再越权智能路由)"""
+        # 如果当前策略是 global_smart，引擎加载的 translator 是 GlobalSmartRoutingStrategy，每次会内部动态决选。
+        # 如果是 single 或 fallback，则绝对尊重用户的物理控制。
         return engine.translator

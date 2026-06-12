@@ -1,6 +1,6 @@
 /**
  * 🛣️ [V75.0] Advanced Channel Routing - Sync & Action Module
- * 职责：处理路由矩阵的前端交互表单与后端接口同步。
+ * 职责：处理路由矩阵的前端交互表单数据同步与事件绑定。
  */
 
 window.addRouteMatrixRow = () => {
@@ -24,7 +24,7 @@ window.addRouteMatrixRow = () => {
                     const hasDirs = directories.length > 0;
                     let html = '';
                     if (hasDirs) {
-                        html += `<select class="setting-input source-select" style="width: 100%;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; }">`;
+                        html += `<select class="setting-input source-select" style="width: 100%;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
                         html += `<option value="" selected>-- 选择文库目录 --</option>`;
                         directories.forEach(d => {
                             if(d) html += `<option value="${d}">📁 ${d}</option>`;
@@ -32,18 +32,18 @@ window.addRouteMatrixRow = () => {
                         html += `<option value="_custom">✏️ 自定义输入...</option>`;
                         html += `</select>`;
                     }
-                    html += `<input type="text" class="setting-input source-input" value="" placeholder="例如: journal" style="width: 100%; display: ${!hasDirs ? 'block' : 'none'};">`;
+                    html += `<input type="text" class="setting-input source-input" value="" placeholder="例如: journal" style="width: 100%; display: ${!hasDirs ? 'block' : 'none'};" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
                     return html;
                 })()}
             </div>
             <div>
-                <input type="text" class="setting-input prefix-input" value="" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace;">
+                <input type="text" class="setting-input prefix-input" value="" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace;" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
             </div>
             <div>
                 ${(() => {
                     let html = '';
                     if (hasSlots) {
-                        html += `<select class="setting-input slot-select" style="width: 100%;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; }">`;
+                        html += `<select class="setting-input slot-select" style="width: 100%;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
                         html += `<option value="" selected>-- 选择网页模板 --</option>`;
                         Object.entries(themeSlots).forEach(([k, v]) => {
                             html += `<option value="${k}">${v.label || k}</option>`;
@@ -51,12 +51,12 @@ window.addRouteMatrixRow = () => {
                         html += `<option value="_custom">✏️ 自定义输入...</option>`;
                         html += `</select>`;
                     }
-                    html += `<input type="text" class="setting-input slot-input" value="" placeholder="例如: custom_template" style="width: 100%; display: ${!hasSlots ? 'block' : 'none'};">`;
+                    html += `<input type="text" class="setting-input slot-input" value="" placeholder="例如: custom_template" style="width: 100%; display: ${!hasSlots ? 'block' : 'none'};" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
                     return html;
                 })()}
             </div>
             <div>
-                <select class="setting-input style-input" style="width: 100%;">
+                <select class="setting-input style-input" style="width: 100%;" onchange="syncRouteMatrixToSettings()">
                     <option value="">继承全局默认</option>
                     <option value="professional">💼 商务严谨</option>
                     <option value="casual">☕ 随性自然</option>
@@ -76,6 +76,9 @@ window.addRouteMatrixRow = () => {
     if (container) {
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
+
+    // 新增行后同步内存
+    syncRouteMatrixToSettings();
 };
 
 window.removeRouteMatrixRow = (btn) => {
@@ -97,32 +100,29 @@ window.removeRouteMatrixRow = (btn) => {
                     </div>
                 `;
             }
+            // 删除行后同步内存
+            syncRouteMatrixToSettings();
         }, 200);
     }
 };
 
-window.saveRouteMatrix = async () => {
+window.syncRouteMatrixToSettings = () => {
     const isLicensed = window.settingsData._is_licensed || false;
     if (!isLicensed) return;
-
-    if (typeof window.addAudit === 'function') {
-        window.addAudit("🛣️ 正在打包聚合全新路由策略...");
-    }
-
-    const btn = document.getElementById('btn-save-route-matrix');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = '💾 保存中...';
-    }
 
     const routeItems = document.querySelectorAll('.route-item');
     const newRouteMatrix = [];
 
     routeItems.forEach(item => {
-        const source = item.querySelector('.source-input').value.trim();
-        const prefix = item.querySelector('.prefix-input').value.trim();
-        const target_slot = item.querySelector('.slot-input').value.trim();
-        const style = item.querySelector('.style-input').value;
+        const sourceInput = item.querySelector('.source-input');
+        const prefixInput = item.querySelector('.prefix-input');
+        const slotInput = item.querySelector('.slot-input');
+        const styleInput = item.querySelector('.style-input');
+
+        const source = sourceInput ? sourceInput.value.trim() : "";
+        const prefix = prefixInput ? prefixInput.value.trim() : "";
+        const target_slot = slotInput ? slotInput.value.trim() : "";
+        const style = styleInput ? styleInput.value : "";
 
         // Skip empty sources
         if (!source) return;
@@ -135,34 +135,9 @@ window.saveRouteMatrix = async () => {
         });
     });
 
-    const payload = {
-        'route_matrix': newRouteMatrix
-    };
+    window.settingsData.route_matrix = newRouteMatrix;
 
-    const res = await window.apiFetch('/api/config/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    if (res && res.status === 'success') {
-        if (typeof window.addAudit === 'function') {
-            window.addAudit("✅ 高级路由矩阵固化完成。", "success");
-        }
-        window.settingsData.route_matrix = newRouteMatrix;
-        
-        // Ensure to redraw the view so the internal dataset index bindings stay clean
-        if (typeof window.renderSettingsCategory === 'function') {
-            window.renderSettingsCategory('route_matrix');
-        }
-    } else {
-        if (typeof window.addAudit === 'function') {
-            window.addAudit(`❌ 路由规则保存失败: ${res ? res.error : '未知链路错误'}`, "error");
-        }
-    }
-
-    if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '💾 保存全量路由';
+    if (typeof window.checkSettingsDirty === 'function') {
+        window.checkSettingsDirty();
     }
 };

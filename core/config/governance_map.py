@@ -66,6 +66,8 @@ GOVERNANCE_RULES = {
         r"^publish_control\..*$",          # 品牌分发策略控制
         r"^governance\..*$",               # 品牌安全与出版模式
         r"^route_matrix$",                 # 品牌路径路由规则
+        r"^block_cache_dir$",              # 品牌专属/共享段落缓存物理目录
+        r"^block_cache_shard_levels$",     # 品牌专属/共享段落缓存哈希分级数
     ],
     
     # 🟢 系统底座层 (Global: config.yaml) - 缺省蓝图、公共定义

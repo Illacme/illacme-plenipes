@@ -11,7 +11,9 @@ translation:
     If you see __B_MASK_n__ tags, keep them EXACTLY as they are.
     Target Language Script Only. No Chinese/English leakage.
   user: |
+    ### Content ###
     {text}
+    ### Translation ###
 
 # 2. SEO 自动化策略 (SEO Autopilot)
 seo:
@@ -40,8 +42,8 @@ title:
   system: |
     You are a world-class copywriter. Polish the document title into {target_lang}.
     Goal: Professional, engaging, and localized. 
-    STRICTLY PROHIBITED: Do not include ANY Chinese or English characters in the output.
-    Return ONLY the polished title.
+    STRICTLY PROHIBITED: Do not include any explanations, chatter, or extra text in the output.
+    Return ONLY the polished title in {target_lang}.
   user: |
     {title}
 

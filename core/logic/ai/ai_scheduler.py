@@ -19,11 +19,7 @@ from core.utils.language_hub import LanguageHub
 from core.logic.orchestration.task_orchestrator import global_executor, ai_executor, TaskPriority
 
 class AIScheduler:
-    @staticmethod
-    def generate_source_seo(engine, ctx, lang_name, is_dry_run, priority=TaskPriority.SEO):
-        """🚀 [V34.9] 异步 SEO 生成：将源语种 SEO 任务推入 AI 算力池"""
-        from core.logic.ai.ai_scheduler_shards.seo_scheduler import AISchedulerSeoScheduler
-        return AISchedulerSeoScheduler.generate_source_seo(engine, ctx, lang_name, is_dry_run, priority)
+
 
     @staticmethod
     def get_best_translator(engine, preferred_node: str = None):
@@ -34,7 +30,7 @@ class AIScheduler:
     @staticmethod
     @SovereignCore
     @staticmethod
-    def dispatch_targets(engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run, persistence_date=None, seo_data=None, priority=TaskPriority.TRANSLATION, target_slot="docs"):
+    def dispatch_targets(engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run, persistence_date=None, seo_data=None, priority=TaskPriority.TRANSLATION, target_slot="docs", target_langs=None):
         """
         🚀 [V10.3] 多语言分发调度中心
         实现语种级并行，并透传全量 SEO 渲染数据。
@@ -42,5 +38,6 @@ class AIScheduler:
         from core.logic.ai.ai_scheduler_shards.dispatch_ops import AISchedulerDispatchOps
         return AISchedulerDispatchOps.dispatch_targets(
             engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run,
-            persistence_date=persistence_date, seo_data=seo_data, priority=priority, target_slot=target_slot
+            persistence_date=persistence_date, seo_data=seo_data, priority=priority, target_slot=target_slot,
+            target_langs=target_langs
         )

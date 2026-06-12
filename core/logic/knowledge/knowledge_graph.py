@@ -20,12 +20,26 @@ class KnowledgeGraph:
         self._lock = threading.RLock()
         self._timer_lock = threading.Lock()
         self.nodes: Dict[str, Dict[str, Any]] = {}  # doc_id -> {title, connections: {target_id: strength}}
+        self.entity_inverted_index: Dict[str, set] = {}  # 🚀 [V100.1] 实体逆向索引表 (实体名 -> 关联文档 ID 集合)
         
         # 🚀 [V100.0] 并发治理：初始化防抖计时器与物理写计数器
         self._debounce_timer = None
         self.disk_write_count = 0
         
         self._load()
+
+    def _rebuild_inverted_index(self):
+        """🚀 [V100.1] 重构内存中的实体逆向索引"""
+        self.entity_inverted_index = {}
+        for doc_id, data in self.nodes.items():
+            if not isinstance(data, dict): continue
+            entities = data.get("entities", {})
+            if isinstance(entities, dict):
+                for cat_list in entities.values():
+                    if isinstance(cat_list, list):
+                        for item in cat_list:
+                            if isinstance(item, str):
+                                self.entity_inverted_index.setdefault(item, set()).add(doc_id)
 
     def _load(self):
         """物理加载图谱数据"""
@@ -36,6 +50,7 @@ class KnowledgeGraph:
             except Exception as e:
                 tlog.error(f"❌ [KnowledgeGraph] 加载失败: {e}")
                 self.nodes = {}
+        self._rebuild_inverted_index()
 
     def _execute_physical_save(self, snapshot: dict):
         """🚀 [V100.0] 锁外物理写磁盘操作：实现真正的非阻塞 I/O"""
@@ -99,16 +114,29 @@ class KnowledgeGraph:
         except Exception:
             pass
 
-    def upsert_node(self, doc_id: str, title: str, entities: Dict[str, List[str]] = None, gist: str = None):
+    def upsert_node(self, doc_id: str, title: str, entities: Dict[str, List[str]] = None, gist: str = None, source_hash: str = None):
         """🚀 [V24.5] 增强型节点更新：支持实体与语义指纹"""
         with self._lock:
+            # 1. 清理旧实体的反向索引
+            if doc_id in self.nodes:
+                old_entities = self.nodes[doc_id].get("entities", {})
+                if isinstance(old_entities, dict):
+                    for cat_list in old_entities.values():
+                        if isinstance(cat_list, list):
+                            for item in cat_list:
+                                if item in self.entity_inverted_index and doc_id in self.entity_inverted_index[item]:
+                                    self.entity_inverted_index[item].remove(doc_id)
+                                    if not self.entity_inverted_index[item]:
+                                        del self.entity_inverted_index[item]
+
             if doc_id not in self.nodes:
                 self.nodes[doc_id] = {
                     "title": title,
                     "connections": {},
                     "manual_connections": {}, # 🚀 [V20.0] 用户主权链路
                     "entities": entities or {},
-                    "gist": gist or ""
+                    "gist": gist or "",
+                    "source_hash": source_hash or ""
                 }
             else:
                 self.nodes[doc_id]["title"] = title
@@ -127,9 +155,20 @@ class KnowledgeGraph:
                     self.nodes[doc_id]["entities"] = current_entities
                 if gist:
                     self.nodes[doc_id]["gist"] = gist
+                if source_hash:
+                    self.nodes[doc_id]["source_hash"] = source_hash
                 
                 if "manual_connections" not in self.nodes[doc_id]:
                     self.nodes[doc_id]["manual_connections"] = {}
+
+            # 2. 将更新后的实体重新注册进反向索引
+            new_entities = self.nodes[doc_id].get("entities", {})
+            if isinstance(new_entities, dict):
+                for cat_list in new_entities.values():
+                    if isinstance(cat_list, list):
+                        for item in cat_list:
+                            if isinstance(item, str):
+                                self.entity_inverted_index.setdefault(item, set()).add(doc_id)
 
     def link(self, src_id: str, target_id: str, strength: float = 1.0, is_manual: bool = False, rel_type: str = "RELATED"):
         """建立语义链接 (双向引力)"""
@@ -185,10 +224,25 @@ class KnowledgeGraph:
                     "title": target_node.get("title", tid),
                     "strength": meta["strength"],
                     "type": meta["type"],
-                    "entities": target_node.get("entities", {}),
                     "gist": target_node.get("gist", "")
                 })
         return results
+
+    def get_shared_entities_candidates(self, doc_id: str, doc_entities: set, stop_entities: set) -> Dict[str, int]:
+        """🚀 [V100.1] 基于实体逆向索引的极速共享实体候选匹配 (避免 $O(N)$ 遍历)"""
+        with self._lock:
+            candidates = {}
+            for item in doc_entities:
+                if item in stop_entities or len(item) <= 1:
+                    continue
+                matched_docs = self.entity_inverted_index.get(item, set())
+                for other_id in matched_docs:
+                    if other_id == doc_id:
+                        continue
+                    candidates[other_id] = candidates.get(other_id, 0) + 1
+            
+            # 过滤掉共享实体数少于 2 个的，并返回
+            return {tid: count for tid, count in candidates.items() if count >= 2}
     def add_manual_link(self, src_id: str, target_id: str):
         """🚀 [V20.1] 手动建立主权链路：用户定义的关联具有最高优先级"""
         with self._lock:

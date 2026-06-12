@@ -16,7 +16,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
     """🚀 [V11.0] 指纹同步策略：基于文件哈希与影子自愈的工业级同步实现"""
 
     @SovereignCore
-    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
+    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None):
         """🚀 根据内容指纹判定是否跳过，并在管线执行后注册同步终态元数据。"""
         from core.editorial.context import SyncContext
         from core.logic.orchestration.concurrency_controller import concurrency_controller
@@ -80,12 +80,15 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                     success = True
                     return "SKIP"
                 tlog.warning(f"⏭️ [同步中止] 管线拦截: {rel_path}")
+                if not ctx.is_dry_run and hasattr(engine, "meta"):
+                    abort_reason = getattr(ctx, "abort_reason", "管线拦截中止（草稿或不满足校验条件）")
+                    engine.meta.update_egress_status(rel_path, "PIPELINE", "ABORTED", error=abort_reason)
                 engine.janitor.mark_doc_as_fresh(rel_path)
                 success = True
                 return "SKIP"
 
             # 🚀 [V15.1] 幻觉护卫
-            if not engine.no_ai:
+            if not engine.no_ai and getattr(engine.config.translation, 'enable_ai', True):
                 engine.qa_guard.audit_context(ctx)
 
             # 3. 后置阶段：SEO 注入与分发
@@ -126,29 +129,13 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             for hook in engine._hooks["pre_dispatch"]:
                 hook(ctx)
 
-            # 🚀 [V34.9] 全量异步化
-            source_seo_future = None
-            if not ctx.seo_data and not engine.no_ai:
-                lang_name = engine.get_lang_name_by_code(src_code)
-                tlog.info(f"🏎️ [SEO Autopilot] 已调度源语种 ({lang_name}) SEO 异步任务...")
-                source_seo_future = AIScheduler.generate_source_seo(engine, ctx, lang_name, ctx.is_dry_run, priority=priority)
-
             # 🚀 [V10.3] 多语言分发
             target_results = AIScheduler.dispatch_targets(
                 engine, ctx, None, ctx.route_prefix, ctx.route_source, force_sync,
                 rel_path, ctx.is_dry_run, persistence_date=None,
-                seo_data=ctx.seo_data, priority=priority, target_slot=target_slot
+                seo_data=ctx.seo_data, priority=priority, target_slot=target_slot,
+                target_langs=target_langs
             )
-
-            # 🚀 等待源语种 SEO 结果
-            if source_seo_future:
-                try:
-                    seo_res, ok = source_seo_future.result()
-                    if ok:
-                        ctx.seo_data = seo_res
-                        tlog.info(f"✨ [SEO Autopilot] 异步补全成功: {len(seo_res.get('keywords', []))} 个关键词")
-                except Exception as e:
-                    tlog.error(f"❌ [SEO Autopilot] 异步执行故障: {e}")
 
             # 🚀 [V10.3] 分发源语种版本
             primary_shadow_hash, persistence_date = engine.dispatcher.dispatch(

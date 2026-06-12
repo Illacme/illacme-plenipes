@@ -35,4 +35,5 @@ class StrategyType(str, Enum):
     SINGLE = "single"
     FALLBACK = "fallback"
     CONCURRENT = "concurrent"
+    GLOBAL_SMART = "global_smart"
     NONE = "none"

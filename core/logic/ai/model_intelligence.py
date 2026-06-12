@@ -70,7 +70,7 @@ class ModelIntelligenceHub:
             "deepseek-r1": lambda v, budget: {"max_thinking_tokens": budget if v else 1},
             "anthropic-claude": lambda v, budget: {"thinking": {"type": "enabled", "budget_tokens": budget}} if v else {},
             "openrouter-gateway": lambda v, budget: {"include_reasoning": v, "max_thinking_tokens": budget if v else 1},
-            "lmstudio-standard": lambda v, budget: {"reasoning": "on" if v else "off", "reasoning_effort": "on" if v else "off"},
+            "lmstudio-standard": lambda v, budget: {"reasoning": v, "reasoning_effort": "medium" if v else "none"},
             "google-gemini": lambda v, budget: {"thinking_config": {"include_thoughts": v}} if v else {},
             "standard-openai": lambda v, _: {}
         },
@@ -187,10 +187,21 @@ class ModelIntelligenceHub:
         # 2. 识别协议家族
         family = self._get_protocol_family(model_name, base_url)
 
+        # 🚀 [新增] 动态叠加全局翻译配置中的思维链开关干预
+        if ai_client and hasattr(ai_client, 'trans_cfg'):
+            global_thinking = getattr(ai_client.trans_cfg, 'enable_thinking', None)
+            if global_thinking is not None:
+                # 若全局关闭 CoT 则对所有模型强制压制；若全局开启 CoT，仅对非传统 OpenAI 模型（本来就支持 CoT 的模型）生效
+                if not global_thinking or family != "standard-openai":
+                    autopilot['enable_thinking'] = global_thinking
+
         # 3. 动态映射：思维链压制/开启
         thinking_mapper = self.PROTOCOL_NORMALIZER.get('thinking', {}).get(family)
         if thinking_mapper:
             payload.update(thinking_mapper(autopilot.get('enable_thinking'), autopilot.get('thinking_budget')))
+
+        # 🚀 [新增] 显式保留原始 enable_thinking 标志，以便后续参数清洗网关做精准对准
+        payload['enable_thinking'] = autopilot.get('enable_thinking')
 
         # 4. 动态映射：JSON 模式 (增强对本地环境 127.0.0.1 的兼容性)
         is_local = "localhost" in base_url or "127.0.0.1" in base_url

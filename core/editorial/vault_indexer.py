@@ -78,6 +78,36 @@ class VaultIndexer:
             
             if any(filename.lower().endswith(ext) for ext in allowed_extensions):
                 try:
+                    mtime = source.get_mtime(rel_path)
+                    cached_doc = ledger.get_doc_info(rel_path) if ledger else None
+
+                    # 🚀 [V100.4] 增量缓存极速通道：若 mtime 匹配且包含 links 缓存，直接复用，彻底短路磁盘大 I/O 读与语种探测
+                    if (cached_doc and cached_doc.get("mtime") == mtime and
+                        "links" in cached_doc and isinstance(cached_doc.get("links"), list)):
+                        
+                        detected_lang = cached_doc.get("detected_lang") or cached_doc.get("source_lang") or "zh"
+                        if not LanguageSentinel.is_language_allowed(detected_lang, target_lang):
+                            continue
+                            
+                        md_index[rel_path] = {
+                            "rel_path": rel_path,
+                            "target_prefix": target_prefix,
+                            "detected_lang": detected_lang
+                        }
+                        
+                        link_graph[rel_path] = {
+                            "links": cached_doc.get("links"),
+                            "metadata": {
+                                "title": cached_doc.get("title") or os.path.splitext(filename)[0],
+                                "lang": detected_lang,
+                                "size": cached_doc.get("size") or 0,
+                                "mtime": mtime,
+                                "tags": cached_doc.get("tags") or []
+                            }
+                        }
+                        continue
+
+                    # ❌ 缓存未命中：退避至物理读取与解析
                     content = source.read_content(rel_path)
                     
                     # 4. 语种主权审计 (Language Lock)
@@ -92,21 +122,24 @@ class VaultIndexer:
                         "detected_lang": detected_lang
                     }
                     
-                    mtime = source.get_mtime(rel_path)
-                    # 尝试从账本恢复
-                    cached_doc = ledger.get_doc_info(rel_path) if ledger else None
-                    if cached_doc and cached_doc.get('mtime') == mtime and "links" in cached_doc:
-                        link_graph[rel_path] = {
-                            "links": cached_doc.get("links", []),
-                            "metadata": cached_doc.get("metadata", {})
-                        }
-                    else:
-                        links = VaultIndexer.extract_links(content)
-                        meta = VaultIndexer._quick_parse_meta(content)
-                        meta["size"] = len(content)
-                        meta["mtime"] = mtime
-                        meta["lang"] = detected_lang
-                        link_graph[rel_path] = {"links": links, "metadata": meta}
+                    links = VaultIndexer.extract_links(content)
+                    meta = VaultIndexer._quick_parse_meta(content)
+                    meta["size"] = len(content)
+                    meta["mtime"] = mtime
+                    meta["lang"] = detected_lang
+                    link_graph[rel_path] = {"links": links, "metadata": meta}
+                    
+                    if ledger:
+                        ledger.register_document(
+                            rel_path,
+                            title=meta.get("title") or os.path.splitext(filename)[0],
+                            mtime=mtime,
+                            links=links,
+                            detected_lang=detected_lang,
+                            source_lang=detected_lang,
+                            size=meta["size"],
+                            tags=meta.get("tags", [])
+                        )
                         
                 except Exception as e:
                     tlog.warning(f"⚠️ [索引器] 处理稿件失败 {rel_path}: {e}")

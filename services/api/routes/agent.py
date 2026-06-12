@@ -32,10 +32,16 @@ async def get_active_model_info():
     🏢 动态获取当前激活的 AI 模型及其底层能力矩阵 (V76.3)
     """
     engine = get_global_engine()
+    ai_cfg = getattr(engine, 'config', None).translation if getattr(engine, 'config', None) else None
+    enable_ai = getattr(ai_cfg, 'enable_ai', True) if ai_cfg else True
+    if getattr(engine, 'no_ai', False):
+        enable_ai = False
+
     ai_adapter = getattr(engine, 'translator', None)
-    if not ai_adapter:
+    if not enable_ai or not ai_adapter:
         return {
-            "model_name": "未就绪",
+            "model_name": "已关闭" if not enable_ai else "未就绪",
+            "disabled": not enable_ai,
             "capabilities": {"cot": False, "tools": False, "stream": False, "vision": False}
         }
     

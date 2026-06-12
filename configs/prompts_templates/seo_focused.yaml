@@ -10,7 +10,9 @@ translation:
     STRICTLY PROHIBITED: Do not add extra chatter. Keep formatting exactly the same.
     If you see __B_MASK_n__ tags, keep them EXACTLY as they are.
   user: |
+    ### Content ###
     {text}
+    ### Translation ###
 
 seo:
   system: |

@@ -28,6 +28,8 @@ window.openEditor = async (docId) => {
         }
         if (mTitle) mTitle.value = doc.title || "";
         if (mSlug) mSlug.value = doc.slug || "";
+        const existingSlug = doc.slug || "";
+        window.editorSlugUserEdited = (existingSlug !== "" && existingSlug !== "未命名原稿");
         
         // 🚀 [V68.0] 动态元数据注入
         renderDynamicMetadata(doc.frontmatter || {});
@@ -98,6 +100,19 @@ window.closeEditor = () => {
 };
 
 window.saveDocument = async () => {
+    // 🛡️ [安全防线] 拦截非法 activeDocId，防止无编辑器聚焦时触发保存
+    if (!window.activeDocId || window.activeDocId === 'null' || window.activeDocId === 'undefined') {
+        console.warn("[Save] window.activeDocId 为空或无效，放弃本次强制保存。");
+        return { success: false, reason: "Invalid activeDocId" };
+    }
+    
+    // 🛡️ [安全防线] 若编辑器 Modal 处于隐藏状态，说明并无未保存的脏数据，放弃本次保存
+    const modal = document.getElementById('editor-modal');
+    if (!modal || modal.style.display === 'none') {
+        console.info("[Save] 编辑器当前处于隐藏状态，无脏数据需要落盘。");
+        return { success: true, reason: "Editor is hidden" };
+    }
+
     const content = document.getElementById('editor-body').value, titleEl = document.getElementById('editor-meta-title');
     const slugEl = document.getElementById('editor-meta-slug'), status = document.getElementById('save-status');
     status.innerText = "💾 正在写入磁道...";
@@ -179,8 +194,25 @@ window.saveDocument = async () => {
             loadVault(window.vaultCurrentQuery, window.vaultCurrentPage);
         }
     } else {
-        status.innerText = "❌ 写入失败";
+        const errorMsg = res && res.error ? res.error : "未知错误";
+        status.innerText = `❌ 写入失败: ${errorMsg}`;
         if (res && res.error) console.error(res.error);
+
+        // 🚀 [V100.0] 对 Slug 冲突或其它严重写入失败错误进行大屏 Swal 极致警告体验
+        if (res && (res.error_code === 'SLUG_CONFLICT' || errorMsg.includes('Slug 冲突'))) {
+            Swal.fire({
+                title: '🔗 Slug 路径冲突',
+                text: errorMsg,
+                icon: 'warning',
+                background: 'hsla(236, 37%, 8%, 0.95)',
+                color: 'var(--text-bright, #ffffff)',
+                confirmButtonText: '我知道了',
+                customClass: {
+                    popup: 'glass-panel',
+                    confirmButton: 'primary-btn glow-btn'
+                }
+            });
+        }
     }
 };
 
@@ -191,6 +223,25 @@ setTimeout(() => {
         modal.addEventListener('input', (e) => {
             const id = e.target.id;
             const isMeta = e.target.classList.contains('metadata-input');
+
+            if (id === 'editor-meta-slug') {
+                const val = e.target.value.trim();
+                if (val === "") {
+                    window.editorSlugUserEdited = false;
+                    const titleVal = document.getElementById('editor-meta-title')?.value || "";
+                    if (titleVal) window.generateAndSyncSlug(titleVal);
+                } else {
+                    window.editorSlugUserEdited = true;
+                }
+            }
+            
+            if (id === 'editor-meta-title') {
+                const titleVal = e.target.value;
+                if (!window.editorSlugUserEdited) {
+                    window.generateAndSyncSlug(titleVal);
+                }
+            }
+
             if (id === 'editor-body' || id === 'editor-meta-title' || id === 'editor-meta-slug' || isMeta) {
                 window.triggerAutoSave();
             }
@@ -294,4 +345,35 @@ window.handleEditorAssetUpload = async (e, mode) => {
     } catch (err) {
         if (typeof addAudit === 'function') addAudit(`❌ 上传链路异常: ${err.message}`, 'error');
     }
+};
+
+window.editorSlugDebounceTimer = null;
+window.editorSlugUserEdited = false;
+
+window.generateAndSyncSlug = function (title) {
+    if (window.editorSlugDebounceTimer) {
+        clearTimeout(window.editorSlugDebounceTimer);
+    }
+    
+    window.editorSlugDebounceTimer = setTimeout(async () => {
+        if (!title.trim() || window.editorSlugUserEdited) return;
+        
+        try {
+            const res = await window.apiFetch('/api/vault/generate-slug', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            
+            if (res && res.success && res.slug) {
+                const slugEl = document.getElementById('editor-meta-slug');
+                if (slugEl && !window.editorSlugUserEdited) {
+                    slugEl.value = res.slug;
+                    window.triggerAutoSave();
+                }
+            }
+        } catch (err) {
+            console.error("Failed to generate slug automatically:", err);
+        }
+    }, 500);
 };

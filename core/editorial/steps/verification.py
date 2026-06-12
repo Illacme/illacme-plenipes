@@ -25,6 +25,7 @@ class VerificationStep(PipelineStep):
             tlog.error(f"❌ [审计失败] {err}")
             ctx.engine.brain.log_lesson("MASK_INTEGRITY", err, {"path": ctx.rel_path})
             ctx.is_aborted = True
+            ctx.abort_reason = err
             return
 
         # 2. 括号匹配度审计 (Sovereignty Shield)
@@ -35,6 +36,7 @@ class VerificationStep(PipelineStep):
             ctx.engine.brain.log_lesson("SOVEREIGNTY_SHIELD", err, {"path": ctx.rel_path})
             # 这是一个强约束，在商业级模式下应视为失败
             ctx.is_aborted = True
+            ctx.abort_reason = err
             return
 
         # 3. 多语言矩阵对齐校验 (SEO Alignment)

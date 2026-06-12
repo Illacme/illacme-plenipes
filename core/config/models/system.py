@@ -16,16 +16,16 @@ class NetworkSettings(BaseModel):
 
 class ConcurrencySettings(BaseModel):
     global_workers: int = Field(2, ge=1, le=64)
-    ai_workers: int = Field(4, ge=1, le=128)
-    min_ai_workers: int = Field(2, ge=1)
-    audit_workers: int = Field(10, ge=1)
-    io_workers: int = Field(8, ge=1)
+    ai_workers: int = Field(2, ge=1, le=128)
+    min_ai_workers: int = Field(1, ge=1)
+    audit_workers: int = Field(4, ge=1)
+    io_workers: int = Field(4, ge=1)
 
 class ResilienceSettings(BaseModel):
     cb_failure_threshold: int = Field(5, ge=1)
     cb_recovery_timeout: int = Field(60, ge=1)
     db_timeout: float = Field(30.0, ge=1)
-    ai_semaphore_timeout: int = Field(60, ge=1)
+    ai_semaphore_timeout: int = Field(3600, ge=1)
     api_retry_delay: float = Field(1.0, ge=0)
     network_timeout: int = Field(5, ge=1)
     heartbeat_timeout: float = Field(5.0, ge=1)
@@ -33,7 +33,7 @@ class ResilienceSettings(BaseModel):
 
 class ThrottleSettings(BaseModel):
     timeline_write_delay: float = Field(5.0, ge=0)
-    ai_block_delay: float = Field(0.2, ge=0)
+    ai_block_delay: float = Field(0.05, ge=0)
     api_response_delay: float = Field(0.5, ge=0)
 
 class WatchdogSettings(BaseModel):
@@ -63,21 +63,13 @@ class PurificationSettings(BaseModel):
 class ResourceGuardSettings(BaseModel):
     """🛡️ [V48.3] 物理负载卫士设置集"""
     enabled: bool = True
-    cpu_threshold: float = Field(85.0, ge=10.0, le=100.0)
-    ram_threshold: float = Field(85.0, ge=10.0, le=100.0)
+    cpu_threshold: float = Field(90.0, ge=10.0, le=100.0)
+    ram_threshold: float = Field(90.0, ge=10.0, le=100.0)
     check_interval: float = Field(5.0, ge=1.0)
 
 class GovernanceSettings(BaseModel):
     """🚀 [V48.3] 全局治理矩阵"""
     resource_guard: ResourceGuardSettings = Field(default_factory=ResourceGuardSettings)
-
-class SafetyPolicy(BaseModel):
-
-    """🛡️ [V16.8] 系统安全与物理红线政策库"""
-    min_ai_workers: int = Field(2, ge=1)
-    singleton_port: int = Field(43210, ge=1024, le=65535)
-    network_timeout: float = Field(30.0, ge=1)
-    config_audit_severity: str = "WARN"
 
 class SystemSettings(BaseModel):
     """🚀 [V24.0] 系统全域配置主权"""
@@ -123,7 +115,6 @@ class SystemSettings(BaseModel):
     })
     
     network_settings: NetworkSettings = Field(default_factory=NetworkSettings)
-    safety_policy: SafetyPolicy = Field(default_factory=SafetyPolicy)
     
     concurrency: ConcurrencySettings = Field(default_factory=ConcurrencySettings)
     resilience: ResilienceSettings = Field(default_factory=ResilienceSettings)

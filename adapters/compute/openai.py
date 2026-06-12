@@ -182,7 +182,15 @@ class OpenAICompatibleTranslator(BaseTranslator):
         try:
             # 🚀 [V34.9] 实时可观测性：在发起物理请求前通报 (附带 PID/TID 审计指纹)
             # 🚀 [V48.3] 工业级去噪：底层不再输出 PID/TID 冗余信息，统一由调度器接管
-            pass
+            import traceback
+            import time
+            import threading
+            with open("/tmp/illacme_ai_calls.log", "a") as f:
+                f.write(f"\n--- AI CALL at {time.time()} (Thread: {threading.current_thread().name} | Semaphore: {id(self.semaphore)}) ---\n")
+                if "messages" in openai_payload and openai_payload["messages"]:
+                    f.write(f"Prompt: {openai_payload['messages'][0].get('content', '')[:100]}...\n")
+                traceback.print_stack(file=f)
+
             
             # 使用基类统一管理的超时
             resp = self._session.post(url, json=openai_payload, headers=headers, proxies=proxies, timeout=self.timeout)
@@ -248,6 +256,18 @@ class OpenAICompatibleTranslator(BaseTranslator):
 
             # 若 content 为空但 reasoning_content 不为空，降级为使用 reasoning 作为最终文本
             if not content.strip() and reasoning.strip():
+                # 🛡️ [V78.1] 当调用方明确期望 JSON 输出时（is_json=True），
+                # reasoning_content 是模型的思考过程而非结构化数据，
+                # 不能被当作正式 JSON 内容降级使用。
+                # 返回空字符串，让上游 repair_json 触发其防污染底安机制返回 '{}'。
+                is_json_request = payload.get("is_json", False) if isinstance(payload, dict) else False
+                is_translation = payload.get("is_translation", False) if isinstance(payload, dict) else False
+                if is_json_request:
+                    tlog.warning("⚠️ [OpenAI Sync Healer] is_json 请求检测到 content 为空而 reasoning_content 不为空，拒绝降级以防止 JSON 污染，将返回空字符串上报。")
+                    return ""
+                if is_translation:
+                    tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 content 为空而 reasoning_content 不为空，拒绝降级为思维链以防止内容污染，将返回空字符串上报。")
+                    return ""
                 tlog.info("✨ [OpenAI Sync Healer] 降级使用 reasoning_content 作为同步回答文本。")
                 return reasoning.strip()
 

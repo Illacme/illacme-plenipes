@@ -6,7 +6,6 @@ import os
 import sys
 import shutil
 import tempfile
-import json
 import unittest
 
 # 将项目根目录加入 python path

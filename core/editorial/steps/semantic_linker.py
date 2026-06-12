@@ -38,13 +38,32 @@ class SemanticLinkerStep(PipelineStep):
                     from core.adapters.ai.nlp import NLPAdapter
                     engine.nlp_adapter = NLPAdapter(engine)
 
-                # 1. 执行深度语义挖掘 (NER & Gist)
-                tlog.debug(f"🧠 [SemanticMining] 正在执行深度 NLP 分析: {doc_id}")
-                entities = engine.nlp_adapter.extract_entities(body)
-                gist = engine.nlp_adapter.generate_gist(body)
+                # 🚀 [V100.2] NLP Cache Guard: 增量 AI 缓存防线
+                cached_node = engine.knowledge_graph.nodes.get(doc_id)
+                need_nlp = True
+                entities = None
+                gist = None
 
-                # 2. 更新图谱节点 (包含实体与摘要)
-                engine.knowledge_graph.upsert_node(doc_id, title, entities=entities, gist=gist)
+                if isinstance(cached_node, dict) and cached_node.get("source_hash") == ctx.current_hash:
+                    if isinstance(cached_node.get("entities"), dict) and cached_node.get("gist"):
+                        entities = cached_node["entities"]
+                        gist = cached_node["gist"]
+                        need_nlp = False
+                        tlog.info(f"✨ [NLP Cache Guard] 语义实体已命中缓存，跳过 AI 提取: {doc_id}")
+
+                if need_nlp:
+                    # 🚀 [V24.5] 初始化 NLP 适配器 (Lazy Load)
+                    if not hasattr(engine, "nlp_adapter"):
+                        from core.adapters.ai.nlp import NLPAdapter
+                        engine.nlp_adapter = NLPAdapter(engine)
+
+                    # 1. 执行深度语义挖掘 (NER & Gist)
+                    tlog.debug(f"🧠 [SemanticMining] 正在执行深度 NLP 分析: {doc_id}")
+                    entities = engine.nlp_adapter.extract_entities(body)
+                    gist = engine.nlp_adapter.generate_gist(body)
+
+                    # 2. 更新图谱节点 (包含实体与摘要)
+                    engine.knowledge_graph.upsert_node(doc_id, title, entities=entities, gist=gist, source_hash=ctx.current_hash)
 
                 # 3. 生成语义特征 (仅在必要时)
                 embedding = getattr(ctx, "embedding", None)
@@ -61,7 +80,6 @@ class SemanticLinkerStep(PipelineStep):
                             discovery_count += 1
                 
                 # 🚀 [V24.5] 逻辑织网：基于实体共享的强关联 (Shared Entities)
-                # 遍历所有已知节点，寻找共享实体 (简单实现，后续可优化为索引查询)
                 if isinstance(entities, dict):
                     all_entities = set()
                     for cat_list in entities.values():
@@ -69,43 +87,42 @@ class SemanticLinkerStep(PipelineStep):
                             all_entities.update(cat_list)
                     
                     if all_entities:
-                        # 仅抽样检查部分节点以防性能抖动
-                        for other_id, other_node in list(engine.knowledge_graph.nodes.items())[:100]:
-                            if other_id == doc_id: continue
-                            
-                            # 🚀 [V48.3] 脏数据卫士：如果节点被损坏为非字典类型，安全跳过
-                            if not isinstance(other_node, dict): continue
-                            
-                            other_entities = set()
-                            # 🚀 安全获取实体列表
-                            o_ent_data = other_node.get("entities", {})
-                            if isinstance(o_ent_data, dict):
-                                for cat_list in o_ent_data.values():
-                                    if isinstance(cat_list, list): other_entities.update(cat_list)
-                            
-                            # 🚀 [V48.4] 语义精准度控制
-                            # 停用词/泛用词过滤（不参与共享实体关联计算）
-                            STOP_ENTITIES = {
-                                "Illacme Plenipes", "Illacme", "Plenipes",
-                                "主权数字出版底座", "主权出版系统", "系统",
-                                "好未来：数字教育未来趋势白皮书", "数字教育未来趋势白皮书",
-                                "好未来", "数字教育", "未来趋势", "白皮书", "welcome-to-illacme"
-                            }
-                            
-                            # 过滤并提取两个节点的所有实体
-                            filtered_all = {e for e in all_entities if e not in STOP_ENTITIES and len(e) > 1}
-                            filtered_other = {e for e in other_entities if e not in STOP_ENTITIES and len(e) > 1}
-                            
-                            common = filtered_all.intersection(filtered_other)
-                            # 精准计算节点关系：至少共享 2 个及以上的核心实体才产生连线
-                            if len(common) >= 2:
-                                # 共享实体越多，强度越高
-                                strength = min(0.5 + (len(common) * 0.1), 0.95)
+                        STOP_ENTITIES = {
+                            "Illacme Plenipes", "Illacme", "Plenipes",
+                            "主权数字出版底座", "主权出版系统", "系统",
+                            "好未来：数字教育未来趋势白皮书", "数字教育未来趋势白皮书",
+                            "好未来", "数字教育", "未来趋势", "白皮书", "welcome-to-illacme"
+                        }
+                        
+                        filtered_all = {e for e in all_entities if e not in STOP_ENTITIES and len(e) > 1}
+                        
+                        # 🚀 [V100.1] 优先采用极速反向索引匹配算法，解除 100 限制
+                        if hasattr(engine.knowledge_graph, "get_shared_entities_candidates"):
+                            common_counts = engine.knowledge_graph.get_shared_entities_candidates(doc_id, filtered_all, STOP_ENTITIES)
+                            for other_id, common_len in common_counts.items():
+                                strength = min(0.5 + (common_len * 0.1), 0.95)
                                 engine.knowledge_graph.link(doc_id, other_id, strength=strength, rel_type="SHARED_ENTITY")
                                 discovery_count += 1
+                        else:
+                            # Fallback 兼容
+                            for other_id, other_node in list(engine.knowledge_graph.nodes.items())[:100]:
+                                if other_id == doc_id: continue
+                                if not isinstance(other_node, dict): continue
+                                
+                                other_entities = set()
+                                o_ent_data = other_node.get("entities", {})
+                                if isinstance(o_ent_data, dict):
+                                    for cat_list in o_ent_data.values():
+                                        if isinstance(cat_list, list): other_entities.update(cat_list)
+                                
+                                filtered_other = {e for e in other_entities if e not in STOP_ENTITIES and len(e) > 1}
+                                common = filtered_all.intersection(filtered_other)
+                                if len(common) >= 2:
+                                    strength = min(0.5 + (len(common) * 0.1), 0.95)
+                                    engine.knowledge_graph.link(doc_id, other_id, strength=strength, rel_type="SHARED_ENTITY")
+                                    discovery_count += 1
 
                 if discovery_count > 0:
-                    # 🚀 安全获取 concept 数量
                     concept_count = 0
                     if isinstance(entities, dict):
                         concept_count = len(entities.get('concepts', []))

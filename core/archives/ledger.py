@@ -17,7 +17,7 @@ class MetadataManager:
     """🚀 [V23.0] 纯净 SQLite 元数据管理器"""
     def __init__(self, cache_path, auto_save_interval=2.0, engine=None):
         self.auto_save_interval = auto_save_interval
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.engine = engine
         
         # 🚀 [V23.0] 强制使用 .db 扩展名，不再关心 .json
@@ -88,7 +88,13 @@ class MetadataManager:
                 "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", []),
                 "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang"),
                 "target_slot": kwargs.get("target_slot") if kwargs.get("target_slot") is not None else existing.get("target_slot", "docs"),
-                "route_style": kwargs.get("route_style") if kwargs.get("route_style") is not None else existing.get("route_style")
+                "route_style": kwargs.get("route_style") if kwargs.get("route_style") is not None else existing.get("route_style"),
+                # 🚀 [V100.4] 补齐双链增量缓存通道所需字段 (避免 metadata_json 序列化时被过滤)
+                "mtime": kwargs.get("mtime") if kwargs.get("mtime") is not None else existing.get("mtime"),
+                "links": list(kwargs.get("links")) if kwargs.get("links") is not None else existing.get("links"),
+                "detected_lang": kwargs.get("detected_lang") if kwargs.get("detected_lang") is not None else existing.get("detected_lang"),
+                "size": kwargs.get("size") if kwargs.get("size") is not None else existing.get("size"),
+                "tags": list(kwargs.get("tags")) if kwargs.get("tags") is not None else existing.get("tags")
             }
             
             self.sqlite.upsert_document(rel_path, doc_data)
@@ -178,3 +184,110 @@ class MetadataManager:
             tlog.warning(f"⏪ [账本] 系统已回滚至物理快照: {name}")
             return True
         return False
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 🆕 [I5] 翻译人工校对回流 — MetadataManager 高层接口
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def set_human_lock(self, doc_id, lang_code, reviewed_body,
+                       reviewed_title=None, reviewed_desc=None,
+                       source_hash=None, reviewed_by="commander"):
+        """🔒 [I5] 设置人工校对锁（语种级，Q2=A）。
+        存储 SSG 渲染前中间态 Markdown（Q4=A），同时更新 translations 表的
+        human_approved 标记，供 BinderyDispatcher 快速感知。
+        """
+        imprint_id = getattr(self.engine, "imprint_id", "default") if self.engine else "default"
+        with self.lock:
+            self.sqlite.upsert_review(
+                imprint_id=imprint_id, doc_id=doc_id, lang_code=lang_code,
+                reviewed_body=reviewed_body, reviewed_title=reviewed_title,
+                reviewed_desc=reviewed_desc, source_hash=source_hash,
+                reviewed_by=reviewed_by
+            )
+            existing = self.sqlite.get_document(doc_id) or {}
+            trans = existing.get("translations", {})
+            lang_data = trans.get(lang_code, {})
+            lang_data["human_approved"] = True
+            lang_data["approved_source_hash"] = source_hash
+            lang_data["review_is_stale"] = False
+            if reviewed_title: lang_data["reviewed_title"] = reviewed_title
+            if reviewed_desc:  lang_data["reviewed_desc"] = reviewed_desc
+            if reviewed_body:  lang_data["reviewed_body"] = reviewed_body
+            trans[lang_code] = lang_data
+            self.sqlite.upsert_document(doc_id, {**existing, "translations": trans})
+        tlog.info(f"🔒 [I5] 校对锁已设置: {doc_id} / {lang_code}")
+
+    def clear_human_lock(self, doc_id, lang_code):
+        """🗑️ [I5] 清除人工校对锁（用户主动解锁，重置为 AI 重译）"""
+        imprint_id = getattr(self.engine, "imprint_id", "default") if self.engine else "default"
+        with self.lock:
+            self.sqlite.delete_review(imprint_id, doc_id, lang_code)
+            existing = self.sqlite.get_document(doc_id) or {}
+            trans = existing.get("translations", {})
+            lang_data = trans.get(lang_code, {})
+            for key in ["human_approved", "approved_source_hash", "review_is_stale",
+                        "reviewed_title", "reviewed_desc", "reviewed_body"]:
+                lang_data.pop(key, None)
+            trans[lang_code] = lang_data
+            self.sqlite.upsert_document(doc_id, {**existing, "translations": trans})
+        tlog.info(f"🗑️ [I5] 校对锁已解除: {doc_id} / {lang_code}")
+
+    def mark_review_stale(self, doc_id, lang_code):
+        """⚠️ [I5] 标记校对记录为 stale（原稿变更，Q3=B：保留锁，仅打警告标记）"""
+        imprint_id = getattr(self.engine, "imprint_id", "default") if self.engine else "default"
+        with self.lock:
+            self.sqlite.mark_review_stale(imprint_id, doc_id, lang_code)
+            existing = self.sqlite.get_document(doc_id) or {}
+            trans = existing.get("translations", {})
+            lang_data = trans.get(lang_code, {})
+            lang_data["review_is_stale"] = True
+            trans[lang_code] = lang_data
+            self.sqlite.upsert_document(doc_id, {**existing, "translations": trans})
+        tlog.warning(f"⚠️ [I5] 校对锁已标记为 stale（原稿已变更）: {doc_id} / {lang_code}")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 🆕 多渠道分发异步重试队列及基础同步状态
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def enqueue_syndication_retry(self, rel_path, target_id, title, slug, content, metadata, lang_code, error_msg):
+        with self.lock:
+            self.sqlite.upsert_syndication_queue(
+                rel_path=rel_path,
+                target_id=target_id,
+                title=title,
+                slug=slug,
+                content=content,
+                metadata_json=metadata,
+                lang_code=lang_code,
+                error_msg=error_msg
+            )
+
+    def get_pending_syndication_tasks(self):
+        return self.sqlite.get_pending_syndication_tasks()
+
+    def mark_syndication_success(self, rel_path, target_id):
+        with self.lock:
+            self.sqlite.mark_syndication_success(rel_path, target_id)
+
+    def mark_syndication_failure(self, rel_path, target_id, error_msg, backoff_seconds):
+        with self.lock:
+            self.sqlite.mark_syndication_failure(rel_path, target_id, error_msg, backoff_seconds)
+
+    def get_syndication_status(self, rel_path, target_id):
+        existing = self.sqlite.get_document(rel_path) or {}
+        publish_status = existing.get("publish_status", {})
+        channel_status = publish_status.get(target_id, {})
+        return {
+            "status": channel_status.get("status"),
+            "hash": channel_status.get("hash")
+        }
+
+    def register_syndication(self, rel_path, target_id, source_hash):
+        existing = self.sqlite.get_document(rel_path) or {}
+        publish_status = existing.get("publish_status", {})
+        publish_status[target_id] = {
+            "status": "DONE",
+            "hash": source_hash,
+            "timestamp": int(time.time())
+        }
+        self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=publish_status)

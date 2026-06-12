@@ -51,15 +51,36 @@ window.ComputeHandlers.updateStrategy = function(key, value) {
         this.syncStrategyBadge(value);
         if (typeof addAudit === 'function') addAudit(`⚖️ 算力调度模式已实时切换为: ${value.toUpperCase()}`, "info");
 
-        // 🛡️ 实时联动：如果是单点模式，锁定并暗化容灾守护节点
+        // 🛡️ 实时联动：处理单点、容灾与智能模式的主备节点显示状态
+        const primaryPod = document.getElementById('primary-terminal-pod');
+        const primarySelect = document.getElementById('primary_node_selector');
+        const primaryInput = document.getElementById('primary_model_input');
         const fallbackPod = document.getElementById('fallback-terminal-pod');
         const fallbackSelect = document.getElementById('fallback_node_selector');
         const fallbackInput = document.getElementById('fallback_model_input');
-        if (value === 'single') {
+
+        if (value === 'global_smart') {
+            if (primaryPod) primaryPod.style = "transition: all 0.3s; opacity: 0.3; pointer-events: none;";
+            if (primarySelect) primarySelect.disabled = true;
+            if (primaryInput) primaryInput.disabled = true;
+            
+            if (fallbackPod) fallbackPod.style = "transition: all 0.3s; opacity: 0.3; pointer-events: none;";
+            if (fallbackSelect) fallbackSelect.disabled = true;
+            if (fallbackInput) fallbackInput.disabled = true;
+        } else if (value === 'single') {
+            if (primaryPod) primaryPod.style = "transition: all 0.3s; opacity: 1; pointer-events: auto;";
+            if (primarySelect) primarySelect.disabled = false;
+            if (primaryInput) primaryInput.disabled = false;
+
             if (fallbackPod) fallbackPod.style = "transition: all 0.3s; opacity: 0.3; pointer-events: none;";
             if (fallbackSelect) fallbackSelect.disabled = true;
             if (fallbackInput) fallbackInput.disabled = true;
         } else {
+            // fallback, concurrent 等模式
+            if (primaryPod) primaryPod.style = "transition: all 0.3s; opacity: 1; pointer-events: auto;";
+            if (primarySelect) primarySelect.disabled = false;
+            if (primaryInput) primaryInput.disabled = false;
+
             if (fallbackPod) fallbackPod.style = "transition: all 0.3s; opacity: 1; pointer-events: auto;";
             if (fallbackSelect) fallbackSelect.disabled = false;
             if (fallbackInput) fallbackInput.disabled = false;

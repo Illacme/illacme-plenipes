@@ -8,6 +8,8 @@
     // 🔗 [SOP-02] 解析与寻址辅助逻辑已安全物理拆分至 agent.helper.js，此处配置全局安全代理以防双重污染并缩减行数
     const renderMarkdown = text => (typeof window.renderMarkdown === 'function' ? window.renderMarkdown(text) : text);
 
+    let originalWelcomeHtml = '';
+
     window.SovereignAgent = window.SovereignAgent || {};
 
     window.SovereignAgent.render = {
@@ -38,14 +40,118 @@
 
             ['cot', 'tools', 'stream', 'vision'].forEach(k => updateBadge(`badge-${k}`, data.capabilities[k]));
 
-            // 🧠 物理联动对齐：当大模型不支持原生思维链时，强制置灰禁用开关和深度，防止误操作
-            const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
-            if (rToggle && rDepthContainer) {
-                const switchLabel = rToggle.closest('.setting-item'), hasCot = !!data.capabilities.cot;
-                rToggle.disabled = !hasCot; rToggle.checked = hasCot;
-                const op = hasCot ? '1' : '0.4', pe = hasCot ? 'auto' : 'none';
-                if (switchLabel) { switchLabel.style.opacity = op; switchLabel.style.pointerEvents = pe; }
-                rDepthContainer.style.opacity = op; rDepthContainer.style.pointerEvents = pe;
+            // 🧠 配置面板联动与物理置灰（思维链、自动驾驶等）
+            const isDisabled = data.disabled || data.model_name === '已关闭' || data.model_name === '已禁用';
+            const engineSettings = document.querySelector('.agent-engine-settings');
+            if (engineSettings) {
+                if (isDisabled) {
+                    engineSettings.style.opacity = '0.4';
+                    engineSettings.style.pointerEvents = 'none';
+                    engineSettings.querySelectorAll('input, select').forEach(el => {
+                        el.disabled = true;
+                    });
+                } else {
+                    engineSettings.style.opacity = '1';
+                    engineSettings.style.pointerEvents = 'auto';
+                    
+                    const autopilotToggle = document.getElementById('agent-autopilot-toggle');
+                    const maxIter = document.getElementById('agent-max-iterations');
+                    if (autopilotToggle) autopilotToggle.disabled = false;
+                    if (maxIter) maxIter.disabled = false;
+
+                    const rToggle = document.getElementById('agent-reasoning-toggle');
+                    const rDepth = document.getElementById('agent-reasoning-depth');
+                    const rDepthContainer = document.getElementById('agent-reasoning-depth-container');
+                    const hasCot = !!data.capabilities.cot;
+                    
+                    if (rToggle) {
+                        rToggle.disabled = !hasCot;
+                        if (!hasCot) {
+                            rToggle.checked = false;
+                        }
+                        const switchLabel = rToggle.closest('.setting-item');
+                        if (switchLabel) {
+                            switchLabel.style.opacity = hasCot ? '1' : '0.4';
+                            switchLabel.style.pointerEvents = hasCot ? 'auto' : 'none';
+                        }
+                        if (rDepthContainer) {
+                            const isDepthActive = hasCot && rToggle.checked;
+                            rDepthContainer.style.opacity = isDepthActive ? '1' : '0.4';
+                            rDepthContainer.style.pointerEvents = isDepthActive ? 'auto' : 'none';
+                        }
+                    }
+                    if (rDepth) {
+                        rDepth.disabled = !(hasCot && rToggle.checked);
+                    }
+                }
+            }
+
+            // 🔒 AI 算力总控已关闭联动逻辑
+            const agentInput = document.getElementById('agent-command-input');
+            const agentStatus = document.getElementById('agent-status-tag');
+            const welcomeEl = document.getElementById('agent-default-welcome');
+            if (welcomeEl && !originalWelcomeHtml) {
+                originalWelcomeHtml = welcomeEl.innerHTML;
+            }
+
+            if (isDisabled) {
+                const diagCard = document.getElementById('agent-compute-diagnostic-card');
+                if (diagCard) diagCard.remove();
+
+                if (welcomeEl) {
+                    welcomeEl.style.display = 'flex';
+                    welcomeEl.style.borderLeft = '2px solid rgba(255, 255, 255, 0.15)';
+                    welcomeEl.style.background = 'rgba(255, 255, 255, 0.02)';
+                    welcomeEl.style.boxShadow = 'none';
+                    welcomeEl.innerHTML = `
+                        <div style="font-weight: bold; color: var(--text-dim); font-size: 0.72rem; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;">
+                            🔴 协同服务已离线
+                        </div>
+                        <p style="margin: 0; line-height: 1.45; color: var(--text-dim); font-size: 0.68rem;">
+                            AI 算力总控当前处于关闭状态，智能协同助手已下线。
+                        </p>
+                        <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.5; margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="display: block; font-weight: bold; color: var(--text-dim); font-size: 0.68rem;">💡 如何重新启用：</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span>• 请前往左侧菜单的 <strong>「算力中心」</strong>，在调度策略选项卡中勾选开启 <strong>“AI 算力总控”</strong> 并保存配置。</span>
+                                <span>• 或者前往 <strong>「系统设置」</strong> -> 「语言与 AI」面板重新激活 AI 算力底座。</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (agentInput) {
+                    agentInput.disabled = true;
+                    agentInput.placeholder = 'AI 算力已关闭，Copilot 离线';
+                    agentInput.value = '';
+                    agentInput.style.opacity = '0.45';
+                    agentInput.style.pointerEvents = 'none';
+                }
+                if (agentStatus) {
+                    agentStatus.textContent = '🔴 已禁用';
+                    agentStatus.style.color = 'var(--text-dim)';
+                    agentStatus.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    agentStatus.style.textShadow = 'none';
+                }
+            } else {
+                if (welcomeEl && originalWelcomeHtml) {
+                    welcomeEl.style.borderLeft = '2px solid var(--accent-secondary)';
+                    welcomeEl.style.background = 'var(--neon-cyan-03)';
+                    welcomeEl.style.boxShadow = 'var(--shadow-glow)';
+                    welcomeEl.innerHTML = originalWelcomeHtml;
+                }
+                if (agentInput && agentInput.placeholder === 'AI 算力已关闭，Copilot 离线') {
+                    agentInput.disabled = false;
+                    agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
+                    agentInput.style.opacity = '1';
+                    agentInput.style.pointerEvents = 'auto';
+                }
+                if (agentStatus && agentStatus.textContent === '🔴 已禁用') {
+                    agentStatus.textContent = '🟢 待命';
+                    agentStatus.style.color = '';
+                    agentStatus.style.borderColor = '';
+                    agentStatus.style.textShadow = '';
+                }
             }
         },
 

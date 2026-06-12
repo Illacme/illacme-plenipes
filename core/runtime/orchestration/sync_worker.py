@@ -78,7 +78,8 @@ def perform_sync(engine, args, task_queue, current_source_files):
                 is_sandbox=getattr(args, 'sandbox', False),
                 priority=TaskPriority.INGRESS,
                 task_name=f"Sync-{os.path.basename(task_path)}",
-                target_slot=target_slot
+                target_slot=target_slot,
+                target_langs=getattr(args, 'target_langs', None)
             )
             future_to_task[future] = task_path
 

@@ -55,8 +55,44 @@ INIT_SCHEMA = [
         metadata_json TEXT,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+    """,
+    # 6. 🆕 [I5] 翻译人工校对回流表 (Translation Human Review)
+    # 语种级锁定 (Q2=A)，存储 SSG 渲染前中间态 Markdown (Q4=A)
     """
-
+    CREATE TABLE IF NOT EXISTS translation_reviews (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        imprint_id     TEXT NOT NULL DEFAULT 'default',
+        doc_id         TEXT NOT NULL,
+        lang_code      TEXT NOT NULL,
+        reviewed_body  TEXT,
+        reviewed_title TEXT,
+        reviewed_desc  TEXT,
+        source_hash    TEXT,
+        is_stale       INTEGER NOT NULL DEFAULT 0,
+        reviewed_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        reviewed_by    TEXT DEFAULT 'commander',
+        UNIQUE(imprint_id, doc_id, lang_code)
+    )
+    """,
+    # 7. 🚀 多渠道分发异步重试队列
+    """
+    CREATE TABLE IF NOT EXISTS syndication_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rel_path TEXT NOT NULL,
+        target_id TEXT NOT NULL,
+        title TEXT,
+        slug TEXT,
+        content TEXT,
+        metadata_json TEXT,
+        lang_code TEXT,
+        retry_count INTEGER DEFAULT 0,
+        max_retries INTEGER DEFAULT 3,
+        last_error TEXT,
+        next_retry_time INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'PENDING',
+        UNIQUE(rel_path, target_id)
+    )
+    """
 ]
 
 UPSERT_DOC = """
@@ -67,7 +103,19 @@ ON CONFLICT(rel_path) DO UPDATE SET
     shadow_hash=excluded.shadow_hash, route_prefix=excluded.route_prefix,
     route_source=excluded.route_source, sub_dir=excluded.sub_dir,
     persistent_date=excluded.persistent_date, metadata_json=excluded.metadata_json,
-    last_updated=CURRENT_TIMESTAMP
+    last_updated=CASE
+        WHEN title IS NOT excluded.title
+             OR slug IS NOT excluded.slug
+             OR source_hash IS NOT excluded.source_hash
+             OR shadow_hash IS NOT excluded.shadow_hash
+             OR route_prefix IS NOT excluded.route_prefix
+             OR route_source IS NOT excluded.route_source
+             OR sub_dir IS NOT excluded.sub_dir
+             OR persistent_date IS NOT excluded.persistent_date
+             OR metadata_json IS NOT excluded.metadata_json
+        THEN CURRENT_TIMESTAMP
+        ELSE last_updated
+    END
 """
 
 UPSERT_TRANS = """

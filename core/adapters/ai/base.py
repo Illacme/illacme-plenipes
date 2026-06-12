@@ -26,13 +26,9 @@ class BaseTranslator(abc.ABC, AITaskMixin):
     def __init__(self, node_name, trans_cfg):
         self.node_name = node_name
         self.trans_cfg = trans_cfg
-        
         # 🚀 [V66.5] 动态对正优先级：优先读取工厂合成的虚拟镜像
-        if hasattr(trans_cfg, '_synced_providers') and node_name in trans_cfg._synced_providers:
-            self.config = trans_cfg._synced_providers[node_name]
-        else:
-            self.config = trans_cfg.compute_nodes.get(node_name)
-            
+        provs = getattr(trans_cfg, '_synced_providers', None)
+        self.config = provs[node_name] if (isinstance(provs, dict) and node_name in provs) else trans_cfg.compute_nodes.get(node_name)
         if not self.config:
             raise ValueError(f"❌ [算力网关] 未能对正节点配置: {node_name}")
 
@@ -87,10 +83,8 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         return diagnose_error_impl(self, exception)
 
     def is_cooling(self) -> bool:
-        if self._is_cooling and time.time() < self._cooling_until:
-            return True
-        self._is_cooling = False
-        return False
+        self._is_cooling = self._is_cooling and time.time() < self._cooling_until
+        return self._is_cooling
 
     def trigger_cooling(self, duration: int = 60):
         self._is_cooling = True
@@ -117,7 +111,9 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         last_error = None
         for i in range(self.max_retries + 1):
             try:
-                wait_timeout = getattr(self.trans_cfg.resilience, 'ai_semaphore_timeout', 60) if hasattr(self.trans_cfg, 'resilience') else 60
+                wait_timeout = 3600
+                if engine and hasattr(engine, 'config') and hasattr(engine.config, 'system') and hasattr(engine.config.system, 'resilience'):
+                    wait_timeout = getattr(engine.config.system.resilience, 'ai_semaphore_timeout', 3600)
                 if not self.semaphore.acquire(timeout=wait_timeout):
                     raise RuntimeError(f"AI_SEMAPHORE_TIMEOUT: {self.node_name} after {wait_timeout}s")
                 try:
@@ -183,110 +179,72 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         return ""
 
     def _sleep(self, seconds: float):
-        """[Sovereignty] 物理休眠通道，支持在测试中被单体/实例级 Mock，以防破坏全局 time.sleep"""
-        time.sleep(seconds)
+        time.sleep(seconds)  # 支持被 Mock
     def _parse_retry_after_from_error(self, error_msg: str, error_obj: Exception = None) -> float:
-        """🚀 [V62.0] 智能解析器：提取 429 报错提示的重试时间值（完美兼容 Gemini 等供应商元数据或结构化属性），保底 30.0s"""
-        # 1. 优先尝试从异常对象自身的结构化属性/Metadata 中提取 (针对 Gemini/Google API/gRPC 等供应商)
+        """🚀 [V62.0] 智能解析器：提取 429 报错提示的重试时间值，保底 30.0s"""
         if error_obj is not None:
             try:
-                # A. 探测 retry_delay 属性 (常见于 Google / Gemini SDK)
                 if hasattr(error_obj, 'retry_delay'):
                     rd = getattr(error_obj, 'retry_delay')
-                    if isinstance(rd, (int, float)):
-                        return float(rd)
-                    # 探测 pb duration 对象 (google.protobuf.duration_pb2.Duration)
+                    if isinstance(rd, (int, float)): return float(rd)
                     if hasattr(rd, 'seconds'):
-                        seconds = getattr(rd, 'seconds', 0.0)
-                        nanos = getattr(rd, 'nanos', 0.0)
-                        return float(seconds) + float(nanos) / 1e9
-
-                # B. 探测 retry_after 属性 (常见于一些 HTTP client 异常)
-                if hasattr(error_obj, 'retry_after'):
-                    ra = getattr(error_obj, 'retry_after')
-                    if isinstance(ra, (int, float)):
-                        return float(ra)
-
-                # C. 探测 metadata 属性 (常见于 gRPC / Google APICallError)
+                        return float(getattr(rd, 'seconds', 0.0)) + float(getattr(rd, 'nanos', 0.0)) / 1e9
+                if hasattr(error_obj, 'retry_after') and isinstance(getattr(error_obj, 'retry_after'), (int, float)):
+                    return float(getattr(error_obj, 'retry_after'))
                 if hasattr(error_obj, 'metadata'):
                     meta = getattr(error_obj, 'metadata')
-                    # 字典类型探测
                     if isinstance(meta, dict):
                         for k, v in meta.items():
-                            k_lower = str(k).lower()
-                            if 'retry' in k_lower or 'delay' in k_lower:
-                                try:
-                                    return float(v)
-                                except (ValueError, TypeError):
-                                    pass
-                    # 序列/元组类型探测
+                            if 'retry' in str(k).lower() or 'delay' in str(k).lower():
+                                try: return float(v)
+                                except: pass
                     elif isinstance(meta, (list, tuple)):
                         for item in meta:
                             if isinstance(item, (list, tuple)) and len(item) >= 2:
-                                k_lower = str(item[0]).lower()
-                                if 'retry' in k_lower or 'delay' in k_lower:
-                                    try:
-                                        return float(item[1])
-                                    except (ValueError, TypeError):
-                                        pass
-            except Exception:
-                pass  # 防御性忽略提取异常，继续走文本匹配逻辑
+                                if 'retry' in str(item[0]).lower() or 'delay' in str(item[0]).lower():
+                                    try: return float(item[1])
+                                    except: pass
+            except: pass
 
         import re
         msg = error_msg.lower()
-        
-        # 2. 文本匹配：匹配类似 "retry_delay { seconds: 15.0 }" 这种 Gemini 标准格式化错误文本
-        match_gemini = re.search(r'retry[-_]?delay\s*\{\s*seconds\s*:\s*([0-9.]+)', msg)
-        if match_gemini:
-            try:
-                return float(match_gemini.group(1))
-            except ValueError:
-                pass
+        patterns = [
+            r'retry[-_]?delay\s*\{\s*seconds\s*:\s*([0-9.]+)',
+            r'retry[-_]?delay["\']?\s*[:=]\s*["\']?([0-9.]+)\s*s?\b',
+            r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:seconds|second|secs|sec|s\b)?',
+            r'retry[-_]?after["\']?\s*[:\s]\s*["\']?([0-9.]+)'
+        ]
+        for pat in patterns:
+            m = re.search(pat, msg)
+            if m:
+                try: return float(m.group(1))
+                except ValueError: pass
 
-        # 3. 文本匹配：匹配类似 "retry_delay: 15s"、"retryDelay": "15s" 或 "retry_delay = 8" 等形式
-        match_gemini_var = re.search(r'retry[-_]?delay["\']?\s*[:=]\s*["\']?([0-9.]+)\s*s?\b', msg)
-        if match_gemini_var:
-            try:
-                return float(match_gemini_var.group(1))
-            except ValueError:
-                pass
+        m_mins = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:minutes|minute|mins|min|m\b)', msg)
+        if m_mins:
+            try: return float(m_mins.group(1)) * 60.0
+            except ValueError: pass
 
-        # 4. 文本匹配：支持 "try again in X seconds"、"retry after X" 或 "retry in X" 等形式
-        match_secs = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:seconds|second|secs|sec|s\b)?', msg)
-        if match_secs:
-            try:
-                return float(match_secs.group(1))
-            except ValueError:
-                pass
-                
-        # 5. 文本匹配：匹配类似 "retry-after: X"、"retry_after: X" 或 "retry-after X" (含引号兼容)
-        match_retry = re.search(r'retry[-_]?after["\']?\s*[:\s]\s*["\']?([0-9.]+)', msg)
-        if match_retry:
-            try:
-                return float(match_retry.group(1))
-            except ValueError:
-                pass
-
-        # 6. 文本匹配：匹配类似 "try again in X minute(s)" 或 "retry after X minutes"
-        match_mins = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:minutes|minute|mins|min|m\b)', msg)
-        if match_mins:
-            try:
-                return float(match_mins.group(1)) * 60.0
-            except ValueError:
-                pass
-
-        # 保底返回 30.0 秒
         return 30.0
     def _post_process_response(self, content: str, payload: dict) -> str:
-        """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链标签"""
+        """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链与思考模板"""
         if not content or not isinstance(content, str): return content
         
-        # 🧠 智能感应：只要模型名称包含 r1 或 reasoner，且内容包含 <think>，则执行净化
-        model_name = (payload.get('model') or getattr(self.config, 'model', '')).lower()
-        if 'r1' in model_name or 'reasoner' in model_name or '<think>' in content:
-            import re
-            # 剥离 <think>...</think>，flags=re.DOTALL 以匹配换行符
-            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+        import re
+        
+        # 1. 剥离闭合/未闭合的 <think> 和 <thinking> 标签
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+        content = re.sub(r'<think>.*$', '', content, flags=re.DOTALL)
+        content = re.sub(r'<thinking>.*?</thinking>', '', content, flags=re.DOTALL)
+        content = re.sub(r'<thinking>.*$', '', content, flags=re.DOTALL)
+        
+        # 2. 剥离 "Thinking Process:" 或 "Thought:" 等文本前缀及随后的思考步骤，直到双换行后的真实输出
+        thinking_patterns = [
+            r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.).*?\n\n',
+            r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.)\s*',
+        ]
+        for pattern in thinking_patterns:
+            content = re.sub(pattern, '', content, flags=re.DOTALL | re.IGNORECASE)
             
         return content.strip()
 

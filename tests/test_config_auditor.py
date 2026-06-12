@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.api.server import app
-from core.config.auditor import flatten_dict, audit_config_layers, load_raw_layers
+from core.config.auditor import flatten_dict, audit_config_layers
 
 class MockConfigManager:
     def __init__(self, config_path):

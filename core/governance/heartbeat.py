@@ -58,7 +58,7 @@ class HeartbeatService:
             except Exception as e:
                 tlog.error(f"⚠️ [Heartbeat] 脉搏采集异常: {e}")
             
-            time.sleep(self.interval)
+            self.stop_flag.wait(self.interval)
 
     def _gather_pulse(self):
         """聚合全量实时指标"""

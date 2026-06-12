@@ -10,7 +10,7 @@ window.getUIDrawersHTML = () => {
                 <div class="drawer-header">
                     <div style="display:flex; flex-direction:column;">
                         <h3 style="margin:0;">📡 分发枢纽 / DISPATCH HUB</h3>
-                        <span id="hub-doc-id" class="tiny-label mono" style="opacity:0.5;">PATH/TO/DOC.MD</span>
+                        <span id="hub-doc-id" class="tiny-label mono">PATH/TO/DOC.MD</span>
                     </div>
                     <button class="close-btn" id="close-drawer" onclick="closeVaultDrawer()">×</button>
                 </div>
@@ -38,6 +38,7 @@ window.getUIDrawersHTML = () => {
                             </div>
                         </div>
                         <div id="hub-audit-status" class="audit-badge">WAITING FOR SENSOR...</div>
+                        <div id="hub-audit-error" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 76, 76, 0.08); border: 1px solid rgba(255, 76, 76, 0.2); border-radius: 6px; color: #ff6b6b; font-size: 0.75rem; line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></div>
                     </div>
 
                     <!-- 🛡️ Section 3: Sovereign Actions -->

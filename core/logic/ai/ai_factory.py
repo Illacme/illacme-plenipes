@@ -124,6 +124,11 @@ class TranslatorFactory:
 
     @staticmethod
     def create(trans_cfg):
+        # 🚀 [V74.98] 算力总控前置防御：如果 enable_ai 关闭，直接阻断大模型实例化
+        if not getattr(trans_cfg, 'enable_ai', True):
+            tlog.info("📜 [算力网关] AI 算力开关已关闭，跳过翻译官节点装配。")
+            return None
+
         # 🚀 [V48.3] 工业级指令重载：从外部 YAML 加载全量提示词指令矩阵
         try:
             import os
@@ -206,6 +211,10 @@ class TranslatorFactory:
                     TranslatorFactory._build_node(fallback, trans_cfg, role='fallback'),
                     trans_cfg.routing_threshold
                 )
+
+            if strategy == 'global_smart':
+                from core.adapters.ai.strategies import GlobalSmartRoutingStrategy
+                return GlobalSmartRoutingStrategy(trans_cfg)
 
             raise ValueError(f"❌ 不支持的分流策略: {strategy}")
 

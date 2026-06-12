@@ -25,6 +25,10 @@ class ContextualImageAltStep(PipelineStep):
         if ctx.is_aborted or ctx.is_dry_run or ctx.is_silent_edit:
             return
 
+        # 🚀 [V74.98] 算力总控前置防御：若 AI 算力关闭，直接跳过图片描述处理
+        if not getattr(ctx.engine.config.translation, 'enable_ai', True):
+            return
+
         image_cfg = getattr(ctx.engine.config, 'image_settings', None)
         admi_enabled = getattr(image_cfg, 'generate_alt', False)
         multilingual_enabled = getattr(image_cfg, 'multilingual_alt', False)

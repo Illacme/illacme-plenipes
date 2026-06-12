@@ -5,7 +5,6 @@
 import sys
 import os
 import unittest
-import time
 from fastapi.testclient import TestClient
 
 # 将项目根目录加入 python path

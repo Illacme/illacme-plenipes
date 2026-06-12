@@ -11,7 +11,9 @@ translation:
     If you see __B_MASK_n__ tags, keep them EXACTLY as they are.
     Target Language Script Only. No original language leakage.
   user: |
+    ### Content ###
     {text}
+    ### Translation ###
 
 seo:
   system: |

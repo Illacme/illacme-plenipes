@@ -78,7 +78,9 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
         'translation.llm_concurrency': t.llm_concurrency || 1,
         'translation.api_timeout': t.api_timeout || 600,
         'translation.max_retries': t.max_retries || 5,
-        'translation.max_chunk_size': t.max_chunk_size || 2500
+        'translation.max_chunk_size': t.max_chunk_size || 2500,
+        'translation.enable_thinking': t.enable_thinking !== undefined ? t.enable_thinking : false,
+        'translation.enable_ai': t.enable_ai !== undefined ? t.enable_ai : true
     };
 
     const res = await apiFetch('/api/config/update', {
@@ -106,12 +108,32 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
             btn.innerHTML = originalText;
         }, 2000);
 
+        // 🚀 立即刷新治理上下文与 AI 助手能力状态，防止大盘显示滞后
+        if (typeof window.refreshGovernanceContext === 'function') {
+            window.refreshGovernanceContext();
+        }
+        if (window.SovereignAgent && typeof window.SovereignAgent.initModelCapabilities === 'function') {
+            window.SovereignAgent.initModelCapabilities();
+        }
+
         if (!skipRefetch) {
             const freshRes = await apiFetch('/api/system/config');
             const freshConfig = freshRes.config || freshRes;
             if (freshConfig.translation) {
                 window.settingsData.translation = freshConfig.translation;
                 this.syncStrategyBadge();
+
+                // 重新渲染当前 Tab 以实时体现置灰及拦截状态
+                const viewport = document.getElementById('compute-tab-viewport');
+                if (viewport && window.ComputeUI) {
+                    const activeTabBtn = document.querySelector('.tactical-tabs .t-tab.active');
+                    const currentTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'strategy';
+                    if (currentTab === 'strategy' && typeof window.ComputeUI.renderStrategyTab === 'function') {
+                        window.ComputeUI.renderStrategyTab(viewport, freshConfig.translation);
+                    } else if (currentTab === 'infrastructure' && typeof window.ComputeUI.renderInfrastructureTab === 'function') {
+                        window.ComputeUI.renderInfrastructureTab(viewport);
+                    }
+                }
             }
         }
     } else {
@@ -140,6 +162,8 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         t.max_retries = g.max_retries || 5;
         t.max_chunk_size = g.max_chunk_size || 2500;
         t.strategy = g.strategy || 'single';
+        t.enable_thinking = g.enable_thinking !== undefined ? g.enable_thinking : false;
+        t.enable_ai = g.enable_ai !== undefined ? g.enable_ai : true;
         
         // 2. 强效视觉同步
         const setVal = (id, val) => {
@@ -155,6 +179,8 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         setVal('input-api-timeout', t.api_timeout);
         setVal('input-max-retries', t.max_retries);
         setVal('input-max-chunk-size', t.max_chunk_size);
+        setVal('input-enable-thinking', t.enable_thinking ? 'true' : 'false');
+        setVal('input-enable-ai', t.enable_ai ? 'true' : 'false');
         
         const strategySelect = document.getElementById('select-compute-strategy');
         if (strategySelect) strategySelect.value = t.strategy;

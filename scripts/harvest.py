@@ -10,10 +10,10 @@ def get_latest_brain_dir():
     if not os.path.exists(brain_root):
         brain_root = os.path.expanduser("~/.gemini/antigravity/brain")
         if not os.path.exists(brain_root):
-            print(f"Error: Could not find Antigravity brain dir")
+            print("Error: Could not find Antigravity brain dir")
             sys.exit(1)
     
-    subdirs = [os.path.join(brain_root, d) for d in os.listdir(brain_root) if os.path.isdir(os.path.join(brain_root, d))]
+    subdirs = [os.path.join(brain_root, d) for d in os.listdir(brain_root) if os.path.isdir(os.path.join(brain_root, d)) and d != "tempmediaStorage"]
     if not subdirs:
         print(f"Error: No subdirectories found in {brain_root}")
         sys.exit(1)

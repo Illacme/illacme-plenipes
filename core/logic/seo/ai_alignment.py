@@ -17,30 +17,7 @@ from .base import BaseSeoProcessor
 from core.logic.ai.ai_logic_hub import AILogicHub
 from core.utils.tracing import tlog
 
-# 🚀 [V53.0] AI 算法对齐专用提示词
-ALIGNMENT_SYSTEM_PROMPT = """You are an expert SEO strategist specializing in search engine algorithm optimization.
-Analyze the provided content and generate SEO metadata optimized for maximum Click-Through Rate (CTR).
 
-Your output MUST be a valid JSON object with these fields:
-- "seo_title": A compelling, click-worthy title (max 60 chars) optimized for search engines
-- "description": A persuasive meta description (max 160 chars) with high-value search terms naturally embedded
-- "keywords": An array of 5-8 high-relevance keywords/phrases that match current search trends
-- "og_title": An Open Graph title optimized for social sharing (can differ from seo_title)
-
-Rules:
-- Prioritize clarity and relevance over clickbait
-- Include the primary topic keyword in the first 30 chars of the title
-- Use natural language that matches search intent
-- The description should answer the searcher's likely question
-- Output language: {lang_name}
-"""
-
-ALIGNMENT_USER_PROMPT = """### Content to Optimize ###
-Title: {title}
-Body (excerpt):
-{text}
-
-### Generate SEO JSON ###"""
 
 
 class AIAlignmentProcessor(BaseSeoProcessor):
@@ -72,11 +49,26 @@ class AIAlignmentProcessor(BaseSeoProcessor):
         try:
             # 构建 AI 请求
             from core.adapters.ai.payload_manager import PayloadManager
-            system_prompt = ALIGNMENT_SYSTEM_PROMPT.format(lang_name=lang_name)
-            user_content = ALIGNMENT_USER_PROMPT.format(
-                title=ctx.title,
-                text=body_excerpt
-            )
+            
+            # 🚀 动态加载方言与风格提示词
+            style = None
+            if hasattr(ctx, "route_source") and ctx.route_source:
+                from core.governance.license_guard import LicenseGuard
+                if LicenseGuard.is_licensed():
+                    for item in ctx.engine.config.route_matrix:
+                        if getattr(item, 'source', None) == ctx.route_source:
+                            style = getattr(item, 'style', None)
+                            break
+            
+            resolved_style = style or getattr(translator.trans_cfg, 'active_style', 'default')
+            p = translator.trans_cfg.prompts
+            if resolved_style:
+                from core.logic.ai.ai_factory import TranslatorFactory
+                imprint_id = getattr(translator, 'imprint_id', 'default') or 'default'
+                p = TranslatorFactory.get_prompts_for_style(resolved_style, imprint_id, p)
+                
+            system_prompt = PayloadManager.format_prompt(p.seo_system, lang_name=lang_name)
+            user_content = PayloadManager.format_prompt(p.seo_user, title=ctx.title, text=body_excerpt)
             payload = PayloadManager.prepare_payload(
                 translator, system_prompt, user_content, is_json=True
             )

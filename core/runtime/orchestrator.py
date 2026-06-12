@@ -27,7 +27,7 @@ def execute_full_sync(engine: Any, args: Any, task_queue: List[Any], current_sou
 _publish_lock = threading.Lock()
 _is_publishing = False
 
-def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None) -> int:
+def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None, target_langs: Optional[List[str]] = None) -> Optional[int]:
     """
     🚀 [V51.0] 异步同步触发器：专供 API/Dashboard 调用
     [V52.3 升级]：加入主权互斥检查，确保全球范围内只有一个出版流在运行。
@@ -38,7 +38,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
         tlog.warning("⚠️ [主权拦截] 探测到已有出版任务正在运行，本次点火已取消以防止算力碰撞。")
         from core.logic.notification_hub import send_sync_lifecycle_notification
         send_sync_lifecycle_notification(engine, "BLOCKED", "出版点火被拦截", "已有出版任务正在后台运行，本次启动已取消。")
-        return 0
+        return None
 
     # 1. 模拟 CLI 参数
     class MockArgs:
@@ -48,6 +48,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             self.sandbox = sandbox
             self.watch = False
             self.path = requested_paths
+            self.target_langs = target_langs
     
     args = MockArgs()
     

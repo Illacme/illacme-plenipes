@@ -154,7 +154,7 @@ window.viewTemplates = {
             <div class="view-header" style="margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border);">
                 <h2>⚙️ 治理中心 (Governance)</h2>
                 <div class="header-actions">
-                    <button class="primary-btn" id="btn-save-settings" style="display: none;" disabled>💾 保存配置</button>
+                    <button class="primary-btn" id="btn-save-settings" style="display: none; padding: 5px 12px; font-size: 0.75rem; height: 28px; line-height: 14px;" disabled>💾 保存配置</button>
                 </div>
             </div>
             <div class="view-content" style="padding-top: 25px;">
@@ -167,7 +167,9 @@ window.viewTemplates = {
                         <div class="tab-item s-tab" data-cat="localization"><span class="tab-icon">🌍</span> 翻译阵列</div>
                         <div class="tab-item s-tab" data-cat="translation_style"><span class="tab-icon">🎭</span> 翻译风格</div>
                         <div class="tab-item s-tab" data-cat="route_matrix"><span class="tab-icon">🛣️</span> 高级路由</div>
+                        <div class="tab-item s-tab" data-cat="slug_settings"><span class="tab-icon">🔗</span> Slug 策略</div>
                         <div class="tab-item s-tab" data-cat="guardrails"><span class="tab-icon">🛡️</span> 治理准入</div>
+                        <div class="tab-item s-tab" data-cat="security"><span class="tab-icon">🔒</span> 安全审计</div>
                     </aside>
                     <section class="tab-content-area">
                         <div id="settings-form" class="settings-grid">

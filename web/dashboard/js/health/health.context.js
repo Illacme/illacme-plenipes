@@ -7,6 +7,7 @@ window.refreshGovernanceContext = async () => {
     let data;
     try {
         data = await apiFetch('/api/system/context');
+        window.governanceContext = data;
     } catch (e) {
         console.error("Failed to fetch governance context:", e);
     }
@@ -126,49 +127,64 @@ window.refreshGovernanceContext = async () => {
 
         if (aiEl && data.ai) {
             const isDegraded = data.ai.status === 'degraded';
-            aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
+            const isDisabled = data.ai.status === 'disabled';
+
+            if (isDisabled) {
+                aiEl.innerText = '已禁用 (Disabled)';
+                aiEl.style.color = 'var(--text-dim)';
+                aiEl.style.textDecoration = 'line-through';
+                aiEl.style.opacity = '0.6';
+                aiEl.style.fontWeight = '';
+            } else {
+                aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
+                aiEl.style.textDecoration = '';
+                aiEl.style.opacity = '';
+                if (isDegraded) {
+                    aiEl.style.color = 'var(--accent-secondary)';
+                    aiEl.style.fontWeight = 'bold';
+
+                    // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
+                    if (window.currentView !== 'settings' && !window._ai_warning_shown) {
+                        window._ai_warning_shown = true;
+                        Swal.fire({
+                            title: '🛰️ 算力节点对正失败',
+                            text: data.ai.warning,
+                            icon: 'warning',
+                            background: 'rgba(20, 20, 25, 0.95)',
+                            color: '#fff',
+                            confirmButtonText: '前往算力策略',
+                            confirmButtonColor: 'var(--accent-primary)',
+                            showCancelButton: true,
+                            cancelButtonText: '暂时忽略'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.showView('compute', 'strategy');
+                            }
+                        });
+                    }
+                } else {
+                    aiEl.style.color = '';
+                    aiEl.style.fontWeight = '';
+                }
+            }
 
             // 📡 算力控制塔主备与容灾拓扑对正 (V75.12)
             const aiCapsule = aiEl.closest('.context-capsule');
-            if (aiCapsule && data.ai.strategy) {
-                const strategy = data.ai.strategy;
-                const pri = data.ai.primary;
-                const fal = data.ai.fallback;
-                const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
+            if (aiCapsule) {
+                if (isDisabled) {
+                    aiCapsule.title = `算力控制塔 ───\n[状态] ❌ AI 算力已关闭\n[模式] 纯本地物理出版\n\n点击前往算力中心查看详情`;
+                } else if (data.ai.strategy) {
+                    const strategy = data.ai.strategy;
+                    const pri = data.ai.primary;
+                    const fal = data.ai.fallback;
+                    const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
 
-                aiCapsule.title = `算力控制塔 ───\n` +
-                    `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
-                    `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ 🟡 STANDBY\n` +
-                    `[策略] ${strategy} (自动故障切换)\n\n` +
-                    `点击一键直达算力中心 - 调度策略`;
-            }
-
-            if (isDegraded) {
-                aiEl.style.color = 'var(--accent-secondary)';
-                aiEl.style.fontWeight = 'bold';
-
-                // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
-                if (window.currentView !== 'settings' && !window._ai_warning_shown) {
-                    window._ai_warning_shown = true;
-                    Swal.fire({
-                        title: '🛰️ 算力节点对正失败',
-                        text: data.ai.warning,
-                        icon: 'warning',
-                        background: 'rgba(20, 20, 25, 0.95)',
-                        color: '#fff',
-                        confirmButtonText: '前往算力策略',
-                        confirmButtonColor: 'var(--accent-primary)',
-                        showCancelButton: true,
-                        cancelButtonText: '暂时忽略'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.showView('compute', 'strategy');
-                        }
-                    });
+                    aiCapsule.title = `算力控制塔 ───\n` +
+                        `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
+                        `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ 🟡 STANDBY\n` +
+                        `[策略] ${strategy} (自动故障切换)\n\n` +
+                        `点击一键直达算力中心 - 调度策略`;
                 }
-            } else {
-                aiEl.style.color = '';
-                aiEl.style.fontWeight = '';
             }
         }
         if (i18nEl && data.i18n) {

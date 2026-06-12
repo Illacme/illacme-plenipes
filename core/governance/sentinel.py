@@ -68,7 +68,7 @@ class SentinelManager:
         def _watch():
             last_mtimes = {p: os.path.getmtime(p) for p in watch_paths}
             while not self._stop_event.is_set():
-                time.sleep(2.0)
+                self._stop_event.wait(2.0)
                 try:
                     # 动态检测 local 文件的出现
                     if len(watch_paths) == 1 and os.path.exists(local_path):

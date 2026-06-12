@@ -10,7 +10,9 @@ translation:
     STRICTLY PROHIBITED: Do not add extra chatter. Do not adapt or localize concepts. Translate word-for-word where grammatically possible.
     If you see __B_MASK_n__ tags, keep them EXACTLY as they are.
   user: |
+    ### Content ###
     {text}
+    ### Translation ###
 
 seo:
   system: |

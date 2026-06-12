@@ -82,6 +82,19 @@ window.loadVault = async (query = null, page = null) => {
 
         listEl.innerHTML = manuscripts.map(m => {
             const wc = (m.seo_data && m.seo_data.word_count) ? m.seo_data.word_count : 0;
+            // 🆕 [I5] 检测是否存在已翻译语种，仅当有翻译且 AI 算力开启时显示校对按钮（Q5=B）
+            const transLangs = Object.keys(m.translations || {});
+            const isAiEnabled = !window.governanceContext || 
+                               (window.governanceContext.ai && window.governanceContext.ai.status !== 'disabled');
+            const hasTranslations = transLangs.length > 0 && isAiEnabled;
+            const humanLockedLangs = transLangs.filter(lc => (m.translations[lc] || {}).human_approved);
+            const isStale = transLangs.some(lc => (m.translations[lc] || {}).review_is_stale);
+            const reviewBtnTitle = transLangs.length > 0
+                ? `译文校对工作台 (${transLangs.map(l => l.toUpperCase()).join('/')})`
+                : '译文校对工作台 (未初始化 AI 译文)';
+            const reviewBtnIcon = humanLockedLangs.length > 0
+                ? (isStale ? '⚠️' : '🔒')
+                : '🌍';
             return `
             <tr>
                 <td><div style="font-weight:600; color:var(--text-bright);">${m.title}</div>${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}</td>
@@ -91,12 +104,14 @@ window.loadVault = async (query = null, page = null) => {
                     <div style="display:flex; gap:8px;">
                         <button class="mini-action-btn" title="快速编辑原稿 (Edit)" onclick="openEditor('${m.rel_path}')">📝</button>
                         <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
-                        <button class="mini-action-btn" title="查看分发与元数据详情 (Metadata Details)" onclick="openVaultDrawer('${m.rel_path}')">⚙️</button>
+                        ${isAiEnabled ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.9rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : ''}
+                        <button class="mini-action-btn" title="打开分发枢纽与遥测监控 (Dispatch Hub)" onclick="openVaultDrawer('${m.rel_path}')">📡</button>
                     </div>
                 </td>
             </tr>
             `;
         }).join('');
+
     } catch (e) {
         console.error("Vault load error:", e);
         listEl.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--accent-primary);">🚨 物理链路异常: ${e.message}</td></tr>`;
@@ -132,14 +147,15 @@ window.openVaultDrawer = async (relPath) => {
         matrixContainer.innerHTML = data.sync_matrix.map(item => `
             <div class="matrix-item status-${item.status}">
                 <div class="m-info">
-                    <span class="m-locale">${item.locale}</span>
-                    <span class="m-status-text">${item.status.toUpperCase()}</span>
+                    <span class="m-locale">${item.locale}${item.lang_code ? ` <span class="locale-code-badge">${item.lang_code}</span>` : ''}</span>
+                    <span class="m-status-text">${item.status.toUpperCase()}${item.status === 'pending' && item.progress > 0 ? ` (${item.progress}%)` : ''}</span>
                 </div>
                 <div class="m-meta">
                     <span class="m-time">${item.last_sync}</span>
                     ${item.tokens ? `<span class="m-tokens">${item.tokens} tokens</span>` : ''}
+                    ${item.cache_info ? `<span class="m-tokens" style="opacity:0.75; margin-left:8px;">${item.cache_info}</span>` : ''}
                 </div>
-                ${item.status === 'syncing' ? `
+                ${(item.status === 'syncing' || (item.status === 'pending' && item.progress > 0)) ? `
                     <div class="mini-progress"><div class="fill" style="width:${item.progress}%"></div></div>
                 ` : ''}
                 ${item.status === 'published' ? `
@@ -178,9 +194,18 @@ window.openVaultDrawer = async (relPath) => {
     }
 
     const auditBadge = document.getElementById('hub-audit-status');
+    const auditError = document.getElementById('hub-audit-error');
     if (auditBadge) {
         auditBadge.innerText = `AUDIT: ${data.telemetry.last_audit}`;
         auditBadge.className = `audit-badge ${data.telemetry.last_audit.toLowerCase()}`;
+    }
+    if (auditError) {
+        if (data.telemetry.error_detail) {
+            auditError.innerText = data.telemetry.error_detail;
+            auditError.style.display = 'block';
+        } else {
+            auditError.style.display = 'none';
+        }
     }
 };
 

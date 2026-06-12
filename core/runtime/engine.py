@@ -158,8 +158,23 @@ class IllacmeEngine:
         global_executor.update_concurrency(config.system.concurrency.global_workers)
         ai_executor.update_concurrency(config.system.concurrency.ai_workers)
 
-        if hasattr(self, 'translator') and self.translator:
-            self.translator.api_timeout = config.translation.api_timeout
+        from core.logic.ai.ai_factory import TranslatorFactory
+        enable_ai_val = getattr(config.translation, 'enable_ai', True)
+        
+        if enable_ai_val:
+            if not getattr(self, 'no_ai', False):
+                tlog.info("📡 [算力热加载] 检测到 AI 算力总控已启用，正在热加载/更新翻译官组件...")
+                self.translator = TranslatorFactory.create(config.translation)
+                if self.translator:
+                    self.translator.api_timeout = config.translation.api_timeout
+            else:
+                self.translator = None
+        else:
+            tlog.info("🔌 [算力热卸载] 检测到 AI 算力总控已关闭，正在热卸载翻译官组件...")
+            self.translator = None
+
+        if hasattr(self, 'route_manager') and self.route_manager:
+            self.route_manager.translator = self.translator
             
         # 6. 记录主权对齐日志
         tlog.info(f"✅ [Engine] 物理参数已全量对齐: Theme={self.active_theme} | Vault={self.vault_root}")
@@ -218,7 +233,7 @@ class IllacmeEngine:
         return False
 
     @SovereignCore
-    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs"):
+    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None):
         """🚀 [V11.0] 核心同步入口：委托给具体的同步策略执行"""
         # 🧪 [TDR Protocol] 仿真校验钩子：在进入同步前核验文档与历史的一致性
         self.verify_docs_sync_hook()
@@ -229,7 +244,8 @@ class IllacmeEngine:
 
         return self.sync_strategy.execute(
             rel_path, route_prefix, route_source, is_dry_run,
-            force_sync=force_sync, is_sandbox=is_sandbox
+            force_sync=force_sync, is_sandbox=is_sandbox, target_slot=target_slot,
+            target_langs=target_langs
         )
 
     def verify_docs_sync_hook(self):

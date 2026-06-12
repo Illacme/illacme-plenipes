@@ -48,14 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 🆕 初始化获取大模型元数据并渲染徽章状态，挂载至全局总线以供重扫使用
     window.SovereignAgent.initModelCapabilities = async function() {
+        let isModelDisabled = false;
         try {
             const data = await sa.api.fetchModelInfo();
             sa.render.updateCapabilities(data);
+            isModelDisabled = !!(data.disabled || data.model_name === '已关闭' || data.model_name === '已禁用');
         } catch (e) {
             sa.render.showNotReadyState();
         }
         // 🚀 [AEL-Iter-v77.13] 启动可用性扫描与诊断引导自愈探针
-        if (window.ComputePrecheck && typeof window.ComputePrecheck.run === 'function') {
+        if (!isModelDisabled && window.ComputePrecheck && typeof window.ComputePrecheck.run === 'function') {
             window.ComputePrecheck.run(null);
         }
     };
@@ -78,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
+            if (agentInput && agentInput.disabled) return;
             if (rightSidebar && rightSidebar.classList.contains('collapsed')) rightSidebar.classList.remove('collapsed');
             if (agentInput) agentInput.focus();
             if (agentPod) {

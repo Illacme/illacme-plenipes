@@ -244,7 +244,7 @@ if __name__ == "__main__":
                 # 🧪 [V50.3] 联动 Watch 模式实现热重载
                 if args.watch:
                     from core.utils.event_bus import bus
-                    bus.on("SYNC_COMPLETED", lambda **kwargs: dev_server.notify_reload())
+                    bus.subscribe("SYNC_COMPLETED", lambda **kwargs: dev_server.notify_reload())
                 
                 # 🚀 [V50.3] 注册服务状态
                 engine.services["preview"].update({

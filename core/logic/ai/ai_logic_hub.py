@@ -21,9 +21,9 @@ class AILogicHub:
         """
         [Industrial-Grade] 物理级 Slug 净化逻辑
         - 强制小写
-        - 仅保留字母、数字与连字符
-        - 压缩连续连字符
-        - 去除首尾连字符
+        - 仅保留字母、数字、连字符与斜杠（/）
+        - 压缩连续连字符与连续斜杠
+        - 去除首尾连字符与斜杠
         - 长度硬截断
         """
         if not raw_slug: return ""
@@ -32,14 +32,15 @@ class AILogicHub:
         clean = raw_slug.lower().strip()
         clean = clean.replace(" ", "-").replace("_", "-")
 
-        # 2. 物理脱敏：只允许 a-z, 0-9 和 -
-        clean = re.sub(r'[^a-z0-9\-]', '', clean)
+        # 2. 物理脱敏：只允许 a-z, 0-9, - 和 /
+        clean = re.sub(r'[^a-z0-9\-\/]', '', clean)
 
-        # 3. 语义脱敏：压缩连续的 '-'
+        # 3. 语义脱敏：压缩连续的 '-' 和 '/'
         clean = re.sub(r'-+', '-', clean)
+        clean = re.sub(r'/+', '/', clean)
 
         # 4. 边界处理
-        clean = clean.strip('-')
+        clean = clean.strip('-/')
 
         # 5. 长度保护
         return clean[:max_length]
@@ -49,6 +50,10 @@ class AILogicHub:
         """
         [Resilience] 强力 JSON 修复算法
         处理 AI 返回的带 Markdown 标签、注释或前后缀的非标 JSON
+        
+        🚀 [V78.1] 防御推理内容污染：当原始响应中找不到有效 JSON 边界 ({...})
+        时（例如模型输出了 reasoning_content 等纯文本），直接返回空 JSON 对象
+        "{}"，防止推理文字被传入 json.loads 导致 'Expecting value' 崩溃。
         """
         if not raw_response: return "{}"
 
@@ -67,8 +72,12 @@ class AILogicHub:
         end = content.rfind('}')
         if start != -1 and end != -1:
             content = content[start:end+1]
+            return content
 
-        return content
+        # 3. 🛡️ [防污染兜底] 找不到有效 JSON 边界（例如模型返回的是推理文字），
+        #    返回空 JSON 对象，让上层调用方通过 fallback 机制优雅降级，
+        #    而不是将原始文本传入 json.loads 导致崩溃。
+        return "{}"
 
     @staticmethod
     def repair_json_array(raw_response: str) -> str:

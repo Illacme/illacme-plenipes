@@ -70,6 +70,18 @@ def get_system_context_impl():
     from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     plugins = assemble_plugin_matrix()
 
+    # 📡 算力状态检测
+    enable_ai = getattr(ai_cfg, 'enable_ai', True) and not getattr(engine, 'no_ai', False)
+    if not enable_ai:
+        ai_status = "disabled"
+        warning_msg = "AI 算力总控已关闭，系统运行于纯本地出版模式。"
+    elif getattr(engine.translator, 'node_name', '') == 'fallback_mock':
+        ai_status = "degraded"
+        warning_msg = "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。"
+    else:
+        ai_status = "online"
+        warning_msg = None
+
     return {
         "version": DisplayDelegate.get_system_version(engine.config),
         "imprint": active_imprint,
@@ -83,8 +95,8 @@ def get_system_context_impl():
         "ai": {
             "provider": active_provider,
             "model": active_model,
-            "status": "degraded" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else "online",
-            "warning": "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。" if getattr(engine.translator, 'node_name', '') == 'fallback_mock' else None,
+            "status": ai_status,
+            "warning": warning_msg,
             "strategy": strategy_str.upper(),
             "primary": {
                 "node": primary_node,
@@ -99,9 +111,11 @@ def get_system_context_impl():
         },
         "i18n": {
             "enabled": engine.config.i18n_settings.enabled,
-            "source": getattr(engine.config.i18n_settings.source, 'prompt_lang', "Chinese"),
+            "source": getattr(engine.config.i18n_settings.source, 'lang_code', 'ZH').upper(),
+            # 🛡️ [UI 一致性] 使用 lang_code 大写（如 ES、EN）而非全名（Spanish、English），
+            # 与校对工作台的语种 Tab 标签风格保持一致，避免两处显示不一致造成用户困惑。
             "targets": [
-                t.prompt_lang if hasattr(t, 'prompt_lang') else str(t)
+                (t.lang_code if hasattr(t, 'lang_code') else str(t)).upper()
                 for t in engine.config.i18n_settings.targets
             ]
         },

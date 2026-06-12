@@ -42,19 +42,41 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
     const nodes = trans.compute_nodes || {};
     window._activeNodeIds = Object.keys(nodes);
 
+    const isAiDisabled = trans.enable_ai === false;
+
+    // 🔒 算力关闭时置灰相关导航行为按钮
+    const addBtn = document.getElementById('btn-add-node');
+    const probeBtn = document.getElementById('btn-probe-nodes');
+    if (isAiDisabled) {
+        if (addBtn) { addBtn.disabled = true; addBtn.style.opacity = '0.5'; addBtn.style.pointerEvents = 'none'; }
+        if (probeBtn) { probeBtn.disabled = true; probeBtn.style.opacity = '0.5'; probeBtn.style.pointerEvents = 'none'; }
+    } else {
+        if (addBtn) { addBtn.disabled = false; addBtn.style.opacity = ''; addBtn.style.pointerEvents = ''; }
+        if (probeBtn) { probeBtn.disabled = false; probeBtn.style.opacity = ''; probeBtn.style.pointerEvents = ''; }
+    }
+
     let html = `
         <div class="infrastructure-hub" data-version="V74.35_STABLE" style="margin-top: 5px;">
+            ${isAiDisabled ? `
+            <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--neon-red, #ff4d4d); background: rgba(255, 77, 77, 0.05);">
+                <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--neon-red, #ff4d4d); letter-spacing: 2px; margin-bottom: 8px;">⚠️ 算力总控已关闭 (COMPUTE DISABLED)</div>
+                <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-bright, #ffffff); line-height: 1.5;">
+                    检测到 AI 算力总控处于关闭状态，下方配置的所有底座算力单元均处于不活跃待命状态。如需使用，请前往 <a href="javascript:void(0)" onclick="window.ComputeHandlers.switchComputeTab('strategy')" style="color: var(--accent-primary); text-decoration: underline;">调度策略</a> 页面开启。
+                </div>
+            </div>
+            ` : `
             <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.02);">
                 <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-secondary); letter-spacing: 2px; margin-bottom: 8px;">全域算力单元 (COMPUTE UNITS)</div>
                 <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
                     管理核心的算力供应资源，包括本地大模型、云端 API 等原子生产力单元。在此处定义的单元可被调度策略引用。
                 </div>
             </div>
+            `}
             <div class="node-grid">
                 ${Object.entries(nodes)
             .sort((a, b) => (b[1].last_updated || 0) - (a[1].last_updated || 0))
             .map(([id, node]) => `
-                    <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative;">
+                    <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative; ${isAiDisabled ? 'opacity: 0.5; pointer-events: none;' : ''}">
                         ${id === trans.primary_node ? '<div class="role-badge primary">PRIMARY</div>' : (id === trans.fallback_node && trans.strategy !== 'single') ? '<div class="role-badge fallback">FALLBACK</div>' : ''}
                         <div class="node-header">
                             <div class="node-identity">

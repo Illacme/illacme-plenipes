@@ -55,15 +55,102 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None) -> 
     }
 
 @router.post("/api/config/update", dependencies=[Depends(verify_token)])
-async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
+async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cache: bool = False) -> dict:
     """更新内存及磁盘配置，包含底座只读防御、类型自愈、License 校验以及在线热重构。"""
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
-    tlog.info(f"📥 [配置更新请求] Payload: {req}, Imprint: {imprint_id}")
+    tlog.info(f"📥 [配置更新请求] Payload: {req}, Imprint: {imprint_id}, MigrateCache: {migrate_cache}")
+
+    # 🚀 [V74.97] Phase 1: 检测出版模式切换并尝试进行自愈激活 (优先于后续的校验与降级转换)
+    from core.config.models.governance import PublishingMode, SeoStrategy, validate_mode_strategy, get_default_strategy
+    requested_mode_val = req.get("governance.publishing_mode")
+    if requested_mode_val:
+        m_enum = PublishingMode(requested_mode_val) if isinstance(requested_mode_val, str) else requested_mode_val
+        if m_enum in (PublishingMode.GLOBAL, PublishingMode.ENHANCED) and req.get("translation.enable_ai") is not False:
+            local_types = ["ollama", "lmstudio", "local"]
+            has_nodes = False
+            t_cfg = getattr(engine.config, "translation", None)
+            if t_cfg and hasattr(t_cfg, "compute_nodes"):
+                for node in t_cfg.compute_nodes.values():
+                    if not node.enabled:
+                        continue
+                    node_type = (node.type or "").lower()
+                    api_key = node.api_key or ""
+                    if any(t in node_type for t in local_types):
+                        has_nodes = True
+                        break
+                    if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
+                        has_nodes = True
+                        break
+            if has_nodes:
+                req["translation.enable_ai"] = True
+                tlog.info(f"🚀 [自愈激活] 检测到出版模式切换至 {m_enum.value}，已自动激活 AI 算力总控开关")
+
+    # Phase 2: 获取当前配置状态并计算目标状态
+    current_enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
+    current_i18n_enabled = getattr(engine.config.i18n_settings, "enabled", False) if engine.config.i18n_settings else False
+    current_publishing_mode = getattr(engine.config.governance, "publishing_mode", PublishingMode.BASIC) if engine.config.governance else PublishingMode.BASIC
+
+    target_enable_ai = req.get("translation.enable_ai", current_enable_ai)
+    target_i18n_enabled = req.get("i18n_settings.enabled", current_i18n_enabled)
+
+    # Phase 3: 根据新规则执行出版模式联动与校验
+    if "governance.publishing_mode" not in req:
+        # 1. AI 算力总控 关闭状态下 -> 默认选择基础物理出版
+        if not target_enable_ai:
+            if current_publishing_mode != PublishingMode.BASIC:
+                req["governance.publishing_mode"] = PublishingMode.BASIC.value
+                tlog.info(f"🔄 [自动联动] AI 算力关闭，出版模式默认选择为 {PublishingMode.BASIC.value}")
+        # 2. AI 算力总控 开启状态下
+        else:
+            enable_ai_turned_on = (not current_enable_ai and target_enable_ai)
+            i18n_changed = ("i18n_settings.enabled" in req and current_i18n_enabled != target_i18n_enabled)
+            
+            # 2.1 如果翻译阵列中关闭了多语言翻译矩阵 -> 默认选择智能母语增强
+            if not target_i18n_enabled:
+                if enable_ai_turned_on or i18n_changed or current_publishing_mode == PublishingMode.GLOBAL:
+                    req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
+                    tlog.info(f"🔄 [自动联动] AI 开启且多语言矩阵关闭，出版模式默认选择为 {PublishingMode.ENHANCED.value}")
+            # 2.2 如果翻译阵列中开启了多语言翻译矩阵 -> 默认选择全球多语言分发
+            else:
+                if enable_ai_turned_on or i18n_changed:
+                    req["governance.publishing_mode"] = PublishingMode.GLOBAL.value
+                    tlog.info(f"🔄 [自动联动] AI 开启且多语言矩阵开启，出版模式默认选择为 {PublishingMode.GLOBAL.value}")
+    else:
+        requested_mode = req["governance.publishing_mode"]
+        if isinstance(requested_mode, str):
+            try:
+                requested_mode = PublishingMode(requested_mode)
+            except ValueError:
+                pass
+        
+        if not target_enable_ai:
+            # AI 算力关闭 -> 禁止选择 global / enhanced -> 强制为 basic
+            if requested_mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
+                req["governance.publishing_mode"] = PublishingMode.BASIC.value
+                tlog.info(f"🛡️ [禁止选择拦截] AI 算力关闭，禁止选择 {requested_mode.value}，强制重置为 {PublishingMode.BASIC.value}")
+        else:
+            if not target_i18n_enabled:
+                # AI 开启且 i18n 关闭 -> 禁止选择 global -> 强制为 enhanced
+                if requested_mode == PublishingMode.GLOBAL:
+                    req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
+                    tlog.info(f"🛡️ [禁止选择拦截] AI 开启且多语言矩阵关闭，禁止选择 global，强制重置为 {PublishingMode.ENHANCED.value}")
+    
+    # 🚚 [BlockCache] 自适应物理迁移拦截
+    if migrate_cache and hasattr(engine, 'block_cache') and engine.block_cache:
+        old_levels = getattr(engine.config, "block_cache_shard_levels", 1)
+        new_levels = req.get("block_cache_shard_levels", old_levels)
+        old_dir = getattr(engine.config, "block_cache_dir", None)
+        new_dir = req.get("block_cache_dir", old_dir)
+        
+        if old_levels != new_levels or old_dir != new_dir:
+            try:
+                engine.block_cache.migrate_cache(old_dir, new_dir, old_levels, new_levels)
+            except Exception as mig_err:
+                tlog.error(f"🚨 [段落缓存迁移失败] {mig_err}")
     # 🚀 [V74.95] 模式与策略自愈联动：每种出版模式强制配置一种默认的 SEO 增强策略
     if "governance.publishing_mode" in req:
-        from core.config.models.governance import PublishingMode, get_default_strategy, validate_mode_strategy, SeoStrategy
         try:
             m_val = req["governance.publishing_mode"]
             m_enum = PublishingMode(m_val) if isinstance(m_val, str) else m_val
@@ -155,6 +242,43 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
                     engine.config.theme_options[t_key] = ThemeSettings(**t_val)
                 except Exception as theme_cast_err:
                     tlog.warning(f"⚠️ [ThemeSettings自愈失败] 键 '{t_key}': {theme_cast_err}")
+
+    # 🚀 [V74.96] 整体配置校验与自动降级联动
+    try:
+        from core.config.config_models import Configuration
+        # 使用当前内存中已更改的 config 的 model_dump() 重新进行模型校验
+        validated_config = Configuration.model_validate(engine.config.model_dump())
+        
+        # 核对关键的自愈属性，将其反向同步更新至 routing_groups 以便落盘，同时更正内存中的属性
+        keys_to_sync = [
+            "governance.publishing_mode",
+            "governance.seo_strategy",
+            "translation.enable_ai"
+        ]
+        
+        for key in keys_to_sync:
+            parts = key.split('.')
+            orig_val = engine.config
+            new_val = validated_config
+            for part in parts:
+                orig_val = getattr(orig_val, part, None)
+                new_val = getattr(new_val, part, None)
+            
+            if orig_val != new_val:
+                tlog.info(f"🔄 [更新校验自愈同步] 字段 '{key}' 发生降级调整: {orig_val} -> {new_val}")
+                level = resolve_governance_level(key)
+                if level == "global":
+                    level = "local"
+                routing_groups[level][key] = new_val
+                
+                # 重新写入内存中对应的属性值
+                target = engine.config
+                for part in parts[:-1]:
+                    target = getattr(target, part)
+                setattr(target, parts[-1], new_val)
+    except Exception as eval_err:
+        tlog.warning(f"⚠️ [更新后配置评估自愈失败]: {eval_err}")
+
 
     def make_yaml_safe(data):
         from enum import Enum
@@ -285,8 +409,12 @@ async def update_config(req: dict, imprint_id: Optional[str] = None) -> dict:
             EngineFactory._init_ingress(engine, engine.config)
             # 🚀 [V74.80] 动态算力网络重构：当用户保存翻译或算力配置时，实时在线组装并热加载翻译官组件
             if not getattr(engine, 'no_ai', False):
-                from core.logic.ai.ai_factory import TranslatorFactory
-                engine.translator = TranslatorFactory.create(engine.config.translation)
+                if getattr(engine.config.translation, 'enable_ai', True):
+                    from core.logic.ai.ai_factory import TranslatorFactory
+                    engine.translator = TranslatorFactory.create(engine.config.translation)
+                else:
+                    engine.translator = None
+                
                 if hasattr(engine, 'route_manager') and engine.route_manager:
                     engine.route_manager.translator = engine.translator
             bus.emit("CONFIG_RELOADED", config=engine.config)

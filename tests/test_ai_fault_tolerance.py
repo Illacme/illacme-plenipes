@@ -11,7 +11,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.logic.ai.ai_scheduler_shards.dispatch_ops import AISchedulerDispatchOps
 from core.logic.ai.model_intelligence import ModelIntelligenceHub
-from core.logic.orchestration.task_orchestrator import TaskPriority
 
 
 # 1. 模拟翻译器客户端
@@ -25,8 +24,6 @@ class MockTranslator:
             raise RuntimeError("Simulated API Error")
         return f"Translated [{self.node_name}]: {text}"
 
-    def generate_seo_metadata(self, text, lang, is_dry_run, **kwargs):
-        return {"description": f"SEO [{self.node_name}]", "keywords": []}, True
 
     def translate_title(self, title, lang, is_dry_run, **kwargs):
         return f"Title [{self.node_name}]: {title}"
@@ -64,11 +61,11 @@ class MockBlockCache:
     def __init__(self):
         self.cache = {}
 
-    def get_block(self, code, fingerprint):
-        return self.cache.get((code, fingerprint))
+    def get_block(self, code, fingerprint, style_hash):
+        return self.cache.get((code, fingerprint, style_hash))
 
-    def store_block(self, code, fingerprint, content):
-        self.cache[(code, fingerprint)] = content
+    def store_block(self, code, fingerprint, content, style_hash):
+        self.cache[(code, fingerprint, style_hash)] = content
 
 
 class MockCircuitBreaker:
@@ -78,7 +75,7 @@ class MockCircuitBreaker:
 
 class MockSeoConfig:
     def __init__(self):
-        self.autopilot_enabled = True
+        pass
 
 
 class MockConfig:
@@ -158,9 +155,20 @@ class TestAIFaultTolerance(unittest.TestCase):
         ModelIntelligenceHub.record_success("failing_node")
         self.assertEqual(ModelIntelligenceHub().get_health_score("failing_node"), 100)
 
+        # 构造预生成的译文 SEO 数据以供第二阶段直接使用
+        seo_mock_data = {
+            "i18n_seo": {
+                "en": {
+                    "seo_title": "SEO [healthy_node]",
+                    "description": "SEO [healthy_node]",
+                    "keywords": []
+                }
+            }
+        }
         # 执行翻译任务调度
         res = AISchedulerDispatchOps.dispatch_targets(
-            engine, ctx, engine.i18n.targets, "docs", "test_source", False, "vault/doc.md", False
+            engine, ctx, engine.i18n.targets, "docs", "test_source", False, "vault/doc.md", False,
+            seo_data=seo_mock_data
         )
 
         # 验证返回结果
@@ -191,6 +199,43 @@ class TestAIFaultTolerance(unittest.TestCase):
 
         # 3. 验证缓存成功写入
         self.assertTrue(len(engine.block_cache.cache) > 0)
+
+    def test_block_cache_style_isolation(self):
+        from core.archives.block_cache import BlockCache
+        import tempfile
+        import shutil
+        
+        # 创建临时目录用作缓存
+        temp_dir = tempfile.mkdtemp()
+        try:
+            cache = BlockCache(temp_dir, custom_cache_dir=temp_dir)
+            
+            # 使用两个不同的 style_hash 写入相同的 block_hash
+            style1 = "style1_hash_val"
+            style2 = "style2_hash_val"
+            block_hash = "some_block_fingerprint"
+            
+            cache.store_block("en", block_hash, "Translation Casual", style_hash=style1)
+            cache.store_block("en", block_hash, "Translation Professional", style_hash=style2)
+            
+            # 验证它们被成功隔离，读取时能准确拿回各自风格的翻译
+            self.assertEqual(cache.get_block("en", block_hash, style_hash=style1), "Translation Casual")
+            self.assertEqual(cache.get_block("en", block_hash, style_hash=style2), "Translation Professional")
+            
+            # 验证当传入不存在的 style_hash 时，不会发生冲突
+            self.assertIsNone(cache.get_block("en", block_hash, "non_existent_style"))
+
+            # 🚀 测试配置多级哈希子目录打散 (shard_levels=2)
+            cache_sharded = BlockCache(temp_dir, custom_cache_dir=temp_dir, shard_levels=2)
+            sharded_hash = "4ad3c9f812345"
+            cache_sharded.store_block("es", sharded_hash, "Text Sharded", "style_s")
+            
+            # 校验物理路径是否存在分流结构: temp_dir/es/style_s/4a/d3/4ad3c9f812345.txt
+            expected_path = os.path.join(temp_dir, "es", "style_s", "4a", "d3", f"{sharded_hash}.txt")
+            self.assertTrue(os.path.exists(expected_path))
+            self.assertEqual(cache_sharded.get_block("es", sharded_hash, "style_s"), "Text Sharded")
+        finally:
+            shutil.rmtree(temp_dir)
 
 
 if __name__ == '__main__':

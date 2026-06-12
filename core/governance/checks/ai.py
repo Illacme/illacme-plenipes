@@ -28,8 +28,9 @@ class AIChecker:
         """AI 算力节点审计"""
         res = {"name": "AI Gateway", "status": "PASS", "details": []}
 
-        if engine.no_ai:
-            res.get('details').append("ℹ️ 当前处于 NO-AI 模式，跳过检查。")
+        # 🚀 [V74.98] 算力总控前置防御：若 AI 关闭，跳过可用性诊断
+        if engine.no_ai or not getattr(engine.config.translation, 'enable_ai', True):
+            res.get('details').append("ℹ️ AI 算力总控已关闭，跳过检查。")
             return res
 
         translator = engine.translator
@@ -100,13 +101,15 @@ class AIChecker:
 
 def check_ai_availability_or_raise(engine):
     """🛡️ [V76.8] 翻译矩阵与算力可用性强关联校验熔断门禁"""
-    i18n = engine.config.i18n_settings
-    if i18n and i18n.enabled and i18n.targets:
-        if engine.no_ai:
-            raise RuntimeError("翻译矩阵已开启，但系统当前处于 NO-AI 模式，无法启动发布！")
-        
-        ai_report = AIChecker.check(engine)
-        if ai_report.get("status") == "FAIL":
-            err_msg = "、".join(ai_report.get("details", []))
-            raise RuntimeError(f"翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
+    # 🚀 [V74.98] 算力总控前置防御：只有在 AI 开启时，才执行强关联检验，防止物理透传时虚假熔断
+    if getattr(engine.config.translation, 'enable_ai', True):
+        i18n = engine.config.i18n_settings
+        if i18n and i18n.enabled and i18n.targets:
+            if engine.no_ai:
+                raise RuntimeError("翻译矩阵已开启，但系统当前处于 NO-AI 模式，无法启动发布！")
+            
+            ai_report = AIChecker.check(engine)
+            if ai_report.get("status") == "FAIL":
+                err_msg = "、".join(ai_report.get("details", []))
+                raise RuntimeError(f"翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
 

@@ -19,8 +19,27 @@ class AIProviderLimits(BaseModel):
 class PromptTemplates(BaseModel):
     translate_system: str = "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Do not add any explanations."
     translate_user: str = "### Content ###\n{text}\n### Translation ###"
-    seo_system: str = "Analyze the text and provide SEO metadata in JSON format with 'description' and 'keywords' fields in {lang_name}."
-    seo_user: str = "### Text ###\n{text}"
+    seo_system: str = """You are an expert SEO strategist specializing in search engine algorithm optimization.
+Analyze the provided content and generate SEO metadata optimized for maximum Click-Through Rate (CTR).
+
+Your output MUST be a valid JSON object with these fields:
+- "seo_title": A compelling, click-worthy title (max 60 chars) optimized for search engines
+- "description": A persuasive meta description (max 160 chars) with high-value search terms naturally embedded
+- "keywords": An array of 5-8 high-relevance keywords/phrases that match current search trends
+- "og_title": An Open Graph title optimized for social sharing (can differ from seo_title)
+
+Rules:
+- Prioritize clarity and relevance over clickbait
+- Include the primary topic keyword in the first 30 chars of the title
+- Use natural language that matches search intent
+- The description should answer the searcher's likely question
+- Output language: {lang_name}"""
+    seo_user: str = """### Content to Optimize ###
+Title: {title}
+Body (excerpt):
+{text}
+
+### Generate SEO JSON ###"""
     slug_system: str = "Generate a URL-friendly slug based on the title. Only output the slug string."
     slug_user: str = "{title}"
     expert_guideline_wrapper: str = "\n\n[Expert Remediation - ID:{iter_id}]\n{remedy_block}"
@@ -65,12 +84,13 @@ class TranslationSettings(BaseModel):
     prompts: PromptTemplates = Field(default_factory=PromptTemplates)
     
     # 🎯 物理算力控制阀
-    llm_concurrency: int = Field(4, ge=1, le=32)
+    llm_concurrency: int = Field(1, ge=1, le=32)
     api_timeout: float = Field(600.0, ge=1)
     max_retries: int = Field(5, ge=0)
     budget_limit: float = Field(10.0, ge=0)
     temperature: float = Field(0.2, ge=0, le=2)
-    max_tokens: int = Field(8192, ge=1)
+    max_tokens: int = Field(2048, ge=1)
+    enable_thinking: bool = Field(False, description="是否全局启用思维链推理")
     
     # 🎯 物理内容保护规则
     max_chunk_size: int = Field(2500, ge=100)
@@ -78,6 +98,7 @@ class TranslationSettings(BaseModel):
     max_slug_length: int = Field(100, ge=10)
     max_seo_description_length: int = Field(200, ge=10)
     slug_mode: str = "ai"
+    slug_dir_mode: str = "flat"  # 可选: "flat", "prefix", "nested"
     
     global_proxy: str = ""
     custom_prompts: Dict[str, str] = Field(default_factory=dict)

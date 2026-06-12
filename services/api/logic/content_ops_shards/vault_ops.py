@@ -46,17 +46,49 @@ def get_document_detail_logic(engine, doc_id: str):
 def update_document_metadata_logic(engine, doc_id: str, req: dict):
     """SQLite 核心元数据更新接口"""
     if not engine: return {"error": "Engine not initialized"}
-    success = engine.meta.sqlite.update_document_metadata(doc_id, req)
-    return {"success": success}
+    result = engine.meta.sqlite.update_document_metadata(doc_id, req)
+
+    # 🛡️ [Slug 冲突透传] 底层检测到 slug 被其他文档占用时，返回冲突 dict 而非 bool。
+    # 此处将其转化为 API 层可识别的 error 响应，前端据此弹出有意义的提示。
+    if isinstance(result, dict) and result.get("conflict"):
+        occupied_by = result.get("occupied_by", "?")
+        slug = result.get("slug", "?")
+        return {
+            "success": False,
+            "error": f"Slug 冲突：「{slug}」已被文档 '{occupied_by}' 占用，请更换其他 Slug。",
+            "error_code": "SLUG_CONFLICT",
+            "occupied_by": occupied_by
+        }
+    return {"success": bool(result)}
 
 
 def save_document_logic(engine, doc_id: str, req: dict):
     """原稿保存：frontmatter 注入与物理磁盘写入"""
     if not engine: return {"error": "Engine not initialized"}
 
+    # 🛡️ [安全防线] 拦截非法 doc_id，防止产生物理 'null'/'undefined' 脏资产文件
+    if not doc_id or doc_id.strip() in ("", "null", "undefined", "None"):
+        return {"success": False, "error": "非法的原稿文件路径名称"}
+
     content = req.get("content", "")
     metadata = req.get("frontmatter", {})
     title, slug = req.get("title"), req.get("slug")
+
+    # 🛡️ [Slug 唯一性守卫] 物理存盘时也必须通过冲突校验，防止脑裂冲突
+    if slug:
+        conn = engine.meta.sqlite._get_conn()
+        conflict_row = conn.execute(
+            "SELECT rel_path FROM documents WHERE slug = ? AND rel_path != ?",
+            (slug, doc_id)
+        ).fetchone()
+        if conflict_row:
+            conflict_path = dict(conflict_row).get("rel_path", "?")
+            return {
+                "success": False,
+                "error": f"Slug 冲突：「{slug}」已被文档 '{conflict_path}' 占用，请更换其他 Slug。",
+                "error_code": "SLUG_CONFLICT",
+                "occupied_by": conflict_path
+            }
 
     if title: metadata["title"] = title
     if slug: metadata["slug"] = slug
@@ -73,8 +105,26 @@ def save_document_logic(engine, doc_id: str, req: dict):
     except Exception as e:
         return {"error": f"Failed to write physical file: {e}"}
 
-    if title is not None or slug is not None:
-        engine.meta.register_document(doc_id, title, slug=slug)
+    # 物理计算字数与自愈元数据更新
+    import re
+    try:
+        clean_text = re.sub(r'[\s\n\t]+', ' ', full_content)
+        en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
+        zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', full_content))
+        word_count = en_words + zh_chars
+    except Exception:
+        word_count = 0
+
+    doc_info = engine.meta.get_doc_info(doc_id) or {}
+    seo_data = doc_info.get("seo_data") or {}
+    seo_data["word_count"] = word_count
+
+    engine.meta.register_document(
+        doc_id, 
+        title or doc_info.get("title") or os.path.splitext(os.path.basename(doc_id))[0], 
+        slug=slug, 
+        seo_data=seo_data
+    )
 
     # 🚀 [V100.0] 双层物理一致性自愈：即时重塑物理索引与语义知识图谱节点，确保 3D 图谱完美同步刷新
     try:
@@ -275,3 +325,37 @@ def upload_asset_logic(engine, doc_id: str, file_bytes: bytes, filename: str):
         return {"error": f"物理磁盘资产写入失败: {e}"}
         
     return {"success": True, "asset_path": rel_path}
+
+
+def generate_slug_logic(engine, title: str):
+    """通过大模型或规则物理计算得出 URL 友好的 Slug，支持多语种转写与拉丁化自愈"""
+    if not engine: return {"slug": ""}
+    slug = ""
+    success = False
+    try:
+        from core.logic.ai.ai_factory import TranslatorFactory
+        translator = TranslatorFactory.create(engine.config.translation)
+        if translator:
+            slug, success = translator.generate_slug(title)
+    except Exception as e:
+        from core.utils.tracing import tlog
+        tlog.warning(f"⚠️ [Generate Slug] AI 生成失败，降级至规则: {e}")
+    if not success or not slug:
+        slug = fallback_slugify(title)
+    return {"success": True, "slug": slug}
+
+
+def fallback_slugify(text: str) -> str:
+    """非英文国家语种的拉丁化去变音与自愈兜底"""
+    import unicodedata
+    import re
+    clean = unicodedata.normalize('NFKD', text)
+    clean = clean.encode('ascii', 'ignore').decode('utf-8')
+    clean = clean.lower().strip().replace(" ", "-").replace("_", "-")
+    clean = re.sub(r'[^a-z0-9\-]', '', clean)
+    clean = re.sub(r'-+', '-', clean).strip('-')
+    if not clean:
+        clean = text.lower().strip().replace(" ", "-").replace("_", "-")
+        clean = re.sub(r'[^\w\-\/]', '', clean)
+        clean = re.sub(r'-+', '-', clean).strip('-')
+    return clean

@@ -119,7 +119,7 @@ class DynamicCapabilityProber:
         # 1. 探测工具调用支持 (Tools Probe)
         tools_payload = {"model": model_name, **TOOLS_PROBE_PAYLOAD_TEMPLATE}
         def send_tools_probe():
-            return getattr(adapter, '_session', requests).post(url, json=tools_payload, headers=headers, timeout=5)
+            return getattr(adapter, '_session', requests).post(url, json=tools_payload, headers=headers, timeout=30)
         try:
             resp = await loop.run_in_executor(None, send_tools_probe) if run_async else send_tools_probe()
             probed_caps["tools"] = (resp.status_code == 200)
@@ -134,7 +134,7 @@ class DynamicCapabilityProber:
         # 2. 探测思维链推理支持 (CoT Probe)
         cot_payload = {"model": model_name, **COT_PROBE_PAYLOAD_TEMPLATE}
         def send_cot_probe():
-            return getattr(adapter, '_session', requests).post(url, json=cot_payload, headers=headers, timeout=5)
+            return getattr(adapter, '_session', requests).post(url, json=cot_payload, headers=headers, timeout=30)
         try:
             resp = await loop.run_in_executor(None, send_cot_probe) if run_async else send_cot_probe()
             if resp.status_code == 200:
@@ -157,7 +157,7 @@ class DynamicCapabilityProber:
         # 3. 探测多模态视觉支持 (Vision Probe)
         vision_payload = {"model": model_name, **VISION_PROBE_PAYLOAD_TEMPLATE}
         def send_vision_probe():
-            return getattr(adapter, '_session', requests).post(url, json=vision_payload, headers=headers, timeout=15)
+            return getattr(adapter, '_session', requests).post(url, json=vision_payload, headers=headers, timeout=45)
         try:
             resp = await loop.run_in_executor(None, send_vision_probe) if run_async else send_vision_probe()
             probed_caps["vision"] = (resp.status_code == 200)

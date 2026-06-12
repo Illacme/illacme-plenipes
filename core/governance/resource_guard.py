@@ -84,8 +84,8 @@ class ResourceGuard:
                 if not self.is_throttled:
                     should_throttle = cpu_usage > upper_cpu or ram_usage > upper_ram
                 else:
-                    # 已处于削峰状态，只有降到 lower 以下才释放
-                    should_throttle = cpu_usage > lower_cpu and ram_usage > lower_ram
+                    # 已处于削峰状态，只有当两者都降到 lower 以下才释放 (任意一者仍高则保持削峰)
+                    should_throttle = cpu_usage > lower_cpu or ram_usage > lower_ram
 
                 if should_throttle and not self.is_throttled:
                     # 🚀 [V51.0] 使用对齐的 get_stats() 获取运行指标
@@ -100,7 +100,7 @@ class ResourceGuard:
             except Exception as e:
                 tlog.error(f"⚠️ [ResourceGuard] 监控异常: {e}")
             
-            time.sleep(self.interval)
+            self.stop_flag.wait(self.interval)
 
     def _apply_throttle(self, cpu, ram, silent=False):
         """执行紧急削峰：将并发下调至最低保障水平"""
@@ -113,8 +113,11 @@ class ResourceGuard:
         
         # 下调至最小保护值 (由 Orchestrator 保证不低于 1)
         global_executor.update_concurrency(1)
-        # AI 池也下调，但保留基本响应能力
-        ai_executor.update_concurrency(4)
+        
+        # 🚀 [V1.1] 修复并发倒挂缺陷：AI 并发降级为原始配置的一半，且不超过 4
+        orig_ai = self.original_concurrency.get("ai", 4) if self.original_concurrency else 4
+        target_ai = max(1, min(orig_ai // 2, 4))
+        ai_executor.update_concurrency(target_ai)
         
         self.is_throttled = True
         from core.utils.event_bus import bus

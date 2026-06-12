@@ -17,6 +17,10 @@ class BaseEmbedding(abc.ABC):
     def get_embedding(self, text: str) -> List[float]:
         pass
 
+    def embed_text(self, text: str) -> List[float]:
+        """🚀 [V18.1] 别名契约对齐：完美兼容语义关联提取器的调用"""
+        return self.get_embedding(text)
+
 class OllamaEmbedding(BaseEmbedding):
     """🚀 [V1.0] 本地算力：Ollama 向量化"""
     def __init__(self, model: str = "mxbai-embed-large", base_url: str = "http://localhost:11434"):
@@ -28,7 +32,7 @@ class OllamaEmbedding(BaseEmbedding):
             resp = requests.post(
                 f"{self.base_url}/api/embeddings",
                 json={"model": self.model, "prompt": text},
-                timeout=10
+                timeout=60
             )
             return resp.json().get("embedding", [])
         except Exception as e:
@@ -48,7 +52,7 @@ class OpenAIEmbedding(BaseEmbedding):
                 f"{self.base_url}/embeddings",
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 json={"model": self.model, "input": text},
-                timeout=10
+                timeout=60
             )
             data = resp.json()
             return data.get("data", [{}])[0].get("embedding", [])

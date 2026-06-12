@@ -68,7 +68,11 @@ def main():
             "services/api/routes/dispatch.py",     # 🚀 新增物理销毁与分发控制中枢
             "services/api/routes/gov/context.py",  # 🛰️ 核心诊断与模拟干跑发布路由
             "services/api/routes/content.py",       # 📦 内容运营组件
-            "services/api/logic/content_ops.py"     # 🚀 降维拆分后解耦的内容运营业务逻辑
+            "services/api/logic/content_ops.py",     # 🚀 降维拆分后解耦的内容运营业务逻辑
+            "core/config/config_models.py",          # 🏗️ 配置中心声明式 Pydantic Model 集合
+            "core/logic/ai/ai_scheduler_shards/dispatch_ops.py", # 🚀 算力分发分片
+            "services/api/logic/content_ops_shards/vault_ops.py", # 📦 内容运营分片
+            "services/api/routes/gov/config.py"      # 🛰️ 主权控制中枢配置路由
         ]
         
         for folder in ['core', 'services']:

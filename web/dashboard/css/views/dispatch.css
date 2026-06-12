@@ -70,17 +70,17 @@
 }
 
 .dispatch-hub-panel .m-locale {
-    font-size: 0.85rem !important;
+    font-size: 0.8rem !important;
     font-weight: 600 !important;
-    color: var(--text-bright);
+    color: var(--text-bright) !important;
 }
 
 .dispatch-hub-panel .m-status-text {
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-family: var(--font-mono);
-    font-weight: 700;
+    font-size: 0.68rem !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-family: var(--font-mono) !important;
+    font-weight: 700 !important;
 }
 
 /* 状态色值与发光 */
@@ -296,3 +296,130 @@
 .dispatch-hub-panel .full-width {
     width: 100%;
 }
+
+/* 🎨 统一对齐 Global Sync Matrix 内部辅助元数据与字号 */
+.dispatch-hub-panel .matrix-item .m-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+    font-size: 0.68rem !important;
+    color: var(--text-muted) !important;
+}
+
+.dispatch-hub-panel .matrix-item .m-time {
+    font-family: var(--font-mono) !important;
+    color: var(--text-muted) !important;
+}
+
+.dispatch-hub-panel .matrix-item .m-tokens {
+    font-size: 0.65rem !important;
+    color: var(--text-muted) !important;
+    background: var(--white-03) !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--white-05) !important;
+}
+
+/* 🔌 实时引擎状态标签字号对准与去突兀优化 */
+.dispatch-hub-panel .lab-status-row .t-label {
+    font-size: 0.68rem !important;
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+}
+
+.dispatch-hub-panel .lab-status-row .badge {
+    font-size: 0.68rem !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    background: var(--white-06) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--white-08) !important;
+}
+
+.dispatch-hub-panel .lab-status-row .badge.active {
+    background: rgba(var(--neon-green-rgb), 0.15) !important;
+    color: var(--neon-green) !important;
+    border-color: rgba(var(--neon-green-rgb), 0.3) !important;
+    box-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.1) !important;
+}
+
+/* 🏷️ 分发枢纽顶部文稿路径高级样式 */
+#hub-doc-id {
+    font-size: 0.72rem !important;
+    color: var(--neon-cyan) !important;
+    background: rgba(var(--neon-cyan-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.18) !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    margin-top: 6px !important;
+    align-self: flex-start !important;
+    opacity: 0.9 !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 600 !important;
+    font-family: var(--font-mono) !important;
+    box-shadow: 0 0 8px rgba(var(--neon-cyan-rgb), 0.08) !important;
+    display: inline-block !important;
+}
+
+/* 🏷️ 语种简称微型 Badge 样式 */
+.dispatch-hub-panel .locale-code-badge {
+    font-size: 0.65rem !important;
+    font-family: var(--font-mono) !important;
+    color: var(--text-muted) !important;
+    background: var(--white-05) !important;
+    border: 1px solid var(--white-08) !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    margin-left: 6px !important;
+    vertical-align: middle !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* 🌞 Dispatch Hub Panel Light Mode Custom Overrides */
+[data-theme="light"] .dispatch-hub-panel {
+    border-left: 1px solid var(--glass-border) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-meta {
+    color: var(--text-muted) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-time {
+    color: var(--text-muted) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
+    color: var(--text-muted) !important;
+    background: var(--white-03) !important;
+    border: 1px solid var(--white-08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .lab-status-row .t-label {
+    color: var(--text-muted) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
+    background: var(--white-05) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--white-08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .locale-code-badge {
+    color: var(--text-muted) !important;
+    background: var(--white-05) !important;
+    border: 1px solid var(--white-08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
+    background: var(--white-10) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .drawer-body {
+    scrollbar-color: var(--white-10) transparent !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
+    box-shadow: 0 4px 15px var(--white-08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .lab-box {
+    border: 1px dashed var(--white-15) !important;
+    background: var(--white-01) !important;
+}
+
+
+

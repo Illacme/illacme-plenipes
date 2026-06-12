@@ -5,6 +5,7 @@ Illacme-plenipes Core - Pipeline Steps Shard
 🛡️ [AEL-Iter-v5.3]：基于分层架构的 TDR 复健版本。
 """
 
+import os
 import re
 import hashlib
 from core.utils.tracing import tlog
@@ -30,14 +31,22 @@ class AISlugAndSEOStep(PipelineStep):
             tlog.info(f"🔄 [Slug 重塑] 检测到 --re-slug 标志，正在强制重新生成 {ctx.rel_path} 的 URL...")
             slug_raw = None
 
+        if slug_raw:
             is_json_leak = any(k in slug_raw.lower() for k in ["description", "keywords", "{", "\""])
             if is_json_leak or len(slug_raw) > 50 or '%' in slug_raw or bool(re.search(r'[\u4e00-\u9fa5]', slug_raw)):
                 tlog.warning(f"⚠️ [Slug 拦截] 侦测到非法 Slug: {slug_raw[:30]}... 已强制重置")
                 slug_raw = None
 
+        # 计算映射后的子目录路径以用于 Slug 路径增强
+        vault_path = ctx.engine.paths.get('vault', '.')
+        sub = os.path.dirname(os.path.relpath(ctx.src_path, os.path.join(vault_path, ctx.route_source))).replace('\\', '/')
+        if sub == '.': sub = ""
+        mapped_sub = ctx.engine.route_manager.get_mapped_sub_dir(sub, allow_ai=not ctx.is_silent_edit)
+
         if not slug_raw:
             slug_mode = ctx.engine.config.translation.slug_mode
-            if slug_mode == 'ai' and not ctx.is_silent_edit:
+            # 🚀 [V74.98] 算力总控前置防御：只有开启了 AI 算力，才尝试走 AI 生成 Slug 路径
+            if slug_mode == 'ai' and getattr(ctx.engine.config.translation, 'enable_ai', True) and not ctx.is_silent_edit:
                 if ctx.is_dry_run:
                     slug_raw, slug_success = f"dry-run-{re.sub(r'[^a-z0-9]', '-', ctx.title.lower())[:30]}", True
                 else:
@@ -45,8 +54,6 @@ class AISlugAndSEOStep(PipelineStep):
                         # 🛡️ [V35.1] AI 熔断保护
                         if ctx.engine.translator:
                             slug_raw, slug_success = ctx.engine.translator.generate_slug(ctx.title, is_dry_run=False)
-                            from core.logic.ai.ai_logic_hub import AILogicHub
-                            slug_raw = AILogicHub.clean_slug(slug_raw)
                         else: slug_success, slug_raw = False, None
                     except Exception: slug_success, slug_raw = False, None
                 if not slug_success: ctx.ai_health_flag[0] = False
@@ -55,6 +62,18 @@ class AISlugAndSEOStep(PipelineStep):
         if not slug_raw:
             english_only = re.sub(r'[^a-z0-9\-]', '', ctx.title.lower().replace(' ', '-'))
             slug_raw = re.sub(r'-+', '-', english_only).strip('-') or f"doc-{hashlib.md5(ctx.title.encode('utf-8')).hexdigest()[:6]}"
+
+        # 🛡️ [Slug 目录增强自愈] 结合翻译配置中的 slug_dir_mode 做物理前缀或路径嵌套处理
+        from core.logic.ai.ai_logic_hub import AILogicHub
+        slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'flat')
+        if slug_dir_mode in ('prefix', 'nested') and mapped_sub:
+            if slug_dir_mode == 'prefix':
+                safe_dir = mapped_sub.replace('/', '-')
+                slug_raw = AILogicHub.clean_slug(f"{safe_dir}-{slug_raw}")
+            elif slug_dir_mode == 'nested':
+                slug_raw = AILogicHub.clean_slug(f"{mapped_sub}/{slug_raw}")
+        else:
+            slug_raw = AILogicHub.clean_slug(slug_raw)
 
         ctx.slug = slug_raw.lower() if slug_raw else "index" if is_homepage else "untitled"
 

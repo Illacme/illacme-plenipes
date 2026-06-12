@@ -4,10 +4,12 @@ system:
   log_level: INFO
   verbose_ai_logs: true
   singleton_port: 43210
-  max_workers: 8
+  max_workers: 4
   auto_save_interval: 2.0
   max_depth: 3
   enable_asset_audit: true
+  concurrency:
+    ai_workers: 1
   network_settings:
     ignored_domains:
     - img.shields.io

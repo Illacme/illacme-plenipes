@@ -39,9 +39,9 @@ class UsageMeter:
             return cls._instance
 
     def __init__(self, engine):
+        self.engine = engine
         if self._initialized:
             return
-        self.engine = engine
         self.stats = {
             "session": {
                 "input_tokens": 0,

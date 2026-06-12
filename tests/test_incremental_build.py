@@ -2,7 +2,10 @@
 """
 🧪 [Test] 增量静态装帧 (Incremental Build Cache) 单元测试
 """
-import os, sys, shutil, tempfile, json
+import os
+import sys
+import shutil
+import tempfile
 import unittest
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

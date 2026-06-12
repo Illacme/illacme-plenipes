@@ -13,7 +13,7 @@ from services.api.logic.content_ops import (search_vault_logic,
     save_document_logic, create_document_logic,
     create_directory_logic, delete_directory_logic,
     move_document_logic, get_galaxy_graph_logic, get_vault_asset_logic,
-    upload_asset_logic, rebuild_node_semantics_logic)
+    upload_asset_logic, rebuild_node_semantics_logic, generate_slug_logic)
 
 router = APIRouter()
 
@@ -40,6 +40,12 @@ async def save_document(doc_id: str, req: dict):
 async def create_document(req: dict):
     engine = get_global_engine()
     return create_document_logic(engine, req)
+
+@router.post("/api/vault/generate-slug", dependencies=[Depends(verify_token)])
+async def generate_slug_route(req: dict):
+    engine = get_global_engine()
+    title = req.get("title", "").strip()
+    return generate_slug_logic(engine, title)
 
 @router.post("/ledger/directory/create", dependencies=[Depends(verify_token)])
 async def create_directory(req: dict):

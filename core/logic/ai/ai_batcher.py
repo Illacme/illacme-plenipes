@@ -24,7 +24,9 @@ class AIBatcher:
         """
         🚀 全量扫描任务队列，为缺失 SEO 的文档进行“一站式”算力补全
         """
-        if self.engine.no_ai: return
+        # 🚀 [V74.98] 算力总控前置防御：若 AI 算力关闭，直接跳过批处理元数据补全
+        if self.engine.no_ai or not getattr(self.engine.config.translation, 'enable_ai', True):
+            return
 
         # 1. 过滤需要补全的文档
         pending_docs = []
