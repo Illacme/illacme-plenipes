@@ -9,7 +9,8 @@ window._reviewState = {
     docId: null,
     data: null,          // 服务端返回的快照
     activeLang: null,
-    layoutMode: 'split',
+    showSource: true,
+    showPreview: true,
     edits: {}            // { lang: { title, desc, paragraphs: [{index, type, text}] } }
 };
 
@@ -126,9 +127,12 @@ window.unlockTranslationReview = async function () {
 };
 
 
-window.toggleReviewLayout = function () {
-    const state = window._reviewState;
-    state.layoutMode = state.layoutMode === 'split' ? 'single' : 'split';
+window.toggleReviewSource = function () {
+    window._reviewState.showSource = !window._reviewState.showSource;
+    _reviewRenderBody();
+};
+window.toggleReviewPreview = function () {
+    window._reviewState.showPreview = !window._reviewState.showPreview;
     _reviewRenderBody();
 };
 
@@ -238,6 +242,11 @@ window.reviewSaveParagraph = function (idx, newText) {
     if (block) {
         block.dataset.editing = '0';
         block.innerHTML = _renderParaBlock(paras[idx]);
+    }
+    // 🚀 实时同步渲染预览分栏中的对应段落
+    const previewBlock = document.getElementById(`preview-para-${idx}`);
+    if (previewBlock) {
+        previewBlock.innerHTML = window.marked.parse(paras[idx].text || '');
     }
     window.updateReviewDirtyUI();
 };
