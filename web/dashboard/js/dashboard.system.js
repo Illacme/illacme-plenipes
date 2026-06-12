@@ -256,7 +256,7 @@ function renderGeneralCategory() {
             <p class="section-desc">管理当前出版版图的核心身份标识与全域元数据。</p>
             
             <div class="settings-group">
-                <h4>🏷️ 品牌与站点身份 (Brand & Site Identity)</h4>
+                <h4>🏷️ 品牌与站点身份 (Imprint & Site Identity)</h4>
                 <div class="settings-grid">
                     ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '')}
                     ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '')}

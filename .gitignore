@@ -12,6 +12,8 @@ content-vault/
 
 # 🔒 物理账本与锁文件（全量屏蔽）
 *.db
+*.db-shm
+*.db-wal
 *.pid
 
 # 🔒 终极密钥（绝对禁止外泄）

@@ -120,9 +120,9 @@ def save_document_logic(engine, doc_id: str, req: dict):
     seo_data["word_count"] = word_count
 
     engine.meta.register_document(
-        doc_id, 
-        title or doc_info.get("title") or os.path.splitext(os.path.basename(doc_id))[0], 
-        slug=slug, 
+        doc_id,
+        title or doc_info.get("title") or os.path.splitext(os.path.basename(doc_id))[0],
+        slug=slug,
         seo_data=seo_data
     )
 

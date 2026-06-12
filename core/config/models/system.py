@@ -43,7 +43,7 @@ class WatchdogSettings(BaseModel):
     gc_delay: float = Field(5.0, ge=0)
     handover_delay: float = Field(1.5, ge=0)
 
-from core.config.config import DIST_DIR
+from core.config.constants import DIST_DIR
 
 class JanitorSettings(BaseModel):
     global_exclude: List[str] = Field(default_factory=lambda: [".git", "node_modules", DIST_DIR])
@@ -95,7 +95,7 @@ class SystemSettings(BaseModel):
     
     index_filenames: List[str] = Field(default_factory=lambda: ["index.md", "readme.md", "index.mdx"])
     allowed_extensions: List[str] = Field(default_factory=lambda: [".md", ".mdx", ".markdown", ".mdown", ".txt"])
-    mask_pattern: str = r"<!\[CDATA\[.*?\]\]>|<!--.*?-->|<script.*?>.*?</script>|<style.*?>.*?</style>|```.*?```|`[^`\n]+`|\[\[[^\]]+\]\]|\!\[\[[^\]]+\]\]|\!\[.*?\]\(.*?\)|\[.*?\]\(.*?\)"
+    mask_pattern: str = r"<!\[CDATA\[.*?\]\]>|<!--.*?-->|<script.*?>.*?</script>|<style.*?>.*?</style>|```.*?```|`[^`\n]+`|\[\[[^\]]+\]\]|\!\[\[[^\]]+\]\]|\!\[[^\]\n]*\]\([^\)\n]*\)|\[[^\]\n]*\]\([^\)\n]*\)"
     
     logs_dir: str = "logs"
     sandbox_dir: str = "sandbox"
