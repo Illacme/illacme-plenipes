@@ -164,3 +164,55 @@ window.initSyncScroll = () => {
     body.addEventListener('scroll', () => sync(body, preview), { passive: true });
     preview.addEventListener('scroll', () => sync(preview, body), { passive: true });
 };
+
+// 🌓 [V87.6] Obsidian Callouts Support globally for marked.js
+if (typeof marked !== 'undefined') {
+    marked.use({
+        renderer: {
+            blockquote(token) {
+                const raw = token.raw || '';
+                // Matches Obsidian callout syntax: > [!type] or > [!type] Title
+                const match = raw.match(/^\s*>\s*\[\!([a-zA-Z0-9_-]+)\]([+-]?)(?:\s+(.*))?/);
+                if (match) {
+                    const type = match[1].toLowerCase();
+                    const titleText = match[3] ? match[3].trim() : (type.charAt(0).toUpperCase() + type.slice(1));
+                    
+                    // Strip the first line (the callout header) from raw markdown body
+                    const lines = raw.split('\n');
+                    const cleanedLines = lines.map(line => line.replace(/^\s*>\s?/, ''));
+                    cleanedLines.shift(); // Remove the header line
+                    const bodyMarkdown = cleanedLines.join('\n');
+                    
+                    // Parse the body using the same marked instance
+                    const bodyTokens = marked.lexer(bodyMarkdown);
+                    const bodyHtml = this.parser.parse(bodyTokens);
+                    
+                    // Select a premium emoji icon based on type
+                    let icon = 'ℹ️';
+                    if (['tip', 'hint'].includes(type)) icon = '💡';
+                    else if (['note', 'info'].includes(type)) icon = '📝';
+                    else if (['important', 'attention'].includes(type)) icon = '⚠️';
+                    else if (['warning', 'caution'].includes(type)) icon = '🔥';
+                    else if (['danger', 'error', 'failure', 'bug'].includes(type)) icon = '🛑';
+                    else if (['todo', 'checklist'].includes(type)) icon = '☑️';
+                    else if (type === 'example') icon = '🧪';
+                    else if (['quote', 'cite'].includes(type)) icon = '💬';
+                    
+                    return `
+<div class="obsidian-callout callout-${type}" data-callout="${type}">
+  <div class="callout-title">
+    <span class="callout-icon">${icon}</span>
+    <span class="callout-title-text">${titleText}</span>
+  </div>
+  <div class="callout-content">
+    ${bodyHtml}
+  </div>
+</div>`;
+                }
+                
+                // Fallback to default blockquote rendering
+                return `<blockquote>\n${this.parser.parse(token.tokens)}</blockquote>\n`;
+            }
+        }
+    });
+}

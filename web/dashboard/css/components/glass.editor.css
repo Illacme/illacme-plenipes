@@ -267,3 +267,140 @@
     color: var(--neon-cyan) !important;
     text-shadow: 0 0 8px var(--neon-cyan);
 }
+
+/* 📝 Obsidian Callouts (Glassmorphic Dark Mode) */
+.obsidian-callout {
+    margin: 16px 0;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--white-08);
+    border-left: 4px solid var(--accent-primary);
+    background: var(--white-02);
+    box-shadow: 0 4px 15px var(--black-30);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.obsidian-callout:hover {
+    border-color: var(--white-15);
+}
+
+.obsidian-callout .callout-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+.obsidian-callout .callout-title .callout-icon {
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.obsidian-callout .callout-title .callout-title-text {
+    text-transform: capitalize;
+}
+
+.obsidian-callout .callout-content {
+    font-size: 0.86rem;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+.obsidian-callout .callout-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Callout Type Colors (SOP HSL Tailored Colors) */
+/* 💡 TIP / HINT - Emerald/Green */
+.obsidian-callout.callout-tip,
+.obsidian-callout.callout-hint {
+    border-left-color: var(--callout-tip-color);
+    background: var(--callout-tip-bg);
+}
+.obsidian-callout.callout-tip .callout-title,
+.obsidian-callout.callout-hint .callout-title {
+    color: var(--callout-tip-title);
+}
+
+/* 📝 NOTE / INFO - Blue/Cyan */
+.obsidian-callout.callout-note,
+.obsidian-callout.callout-info {
+    border-left-color: var(--callout-note-color);
+    background: var(--callout-note-bg);
+}
+.obsidian-callout.callout-note .callout-title,
+.obsidian-callout.callout-info .callout-title {
+    color: var(--callout-note-title);
+}
+
+/* ⚠️ IMPORTANT / ATTENTION - Purple/Violet */
+.obsidian-callout.callout-important,
+.obsidian-callout.callout-attention {
+    border-left-color: var(--callout-important-color);
+    background: var(--callout-important-bg);
+}
+.obsidian-callout.callout-important .callout-title,
+.obsidian-callout.callout-attention .callout-title {
+    color: var(--callout-important-title);
+}
+
+/* 🔥 WARNING / CAUTION - Gold/Orange */
+.obsidian-callout.callout-warning,
+.obsidian-callout.callout-caution {
+    border-left-color: var(--callout-warning-color);
+    background: var(--callout-warning-bg);
+}
+.obsidian-callout.callout-warning .callout-title,
+.obsidian-callout.callout-caution .callout-title {
+    color: var(--callout-warning-title);
+}
+
+/* 🛑 DANGER / ERROR / FAILURE / BUG - Red */
+.obsidian-callout.callout-danger,
+.obsidian-callout.callout-error,
+.obsidian-callout.callout-failure,
+.obsidian-callout.callout-bug {
+    border-left-color: var(--callout-danger-color);
+    background: var(--callout-danger-bg);
+}
+.obsidian-callout.callout-danger .callout-title,
+.obsidian-callout.callout-error .callout-title,
+.obsidian-callout.callout-failure .callout-title,
+.obsidian-callout.callout-bug .callout-title {
+    color: var(--callout-danger-title);
+}
+
+/* ☑️ TODO - Slate/Indigo */
+.obsidian-callout.callout-todo,
+.obsidian-callout.callout-checklist {
+    border-left-color: var(--callout-todo-color);
+    background: var(--callout-todo-bg);
+}
+.obsidian-callout.callout-todo .callout-title,
+.obsidian-callout.callout-checklist .callout-title {
+    color: var(--callout-todo-title);
+}
+
+/* 🧪 EXAMPLE - Teal/Green */
+.obsidian-callout.callout-example {
+    border-left-color: var(--callout-example-color);
+    background: var(--callout-example-bg);
+}
+.obsidian-callout.callout-example .callout-title {
+    color: var(--callout-example-title);
+}
+
+/* 💬 QUOTE - Grey */
+.obsidian-callout.callout-quote,
+.obsidian-callout.callout-cite {
+    border-left-color: var(--callout-quote-color);
+    background: var(--callout-quote-bg);
+}
+.obsidian-callout.callout-quote .callout-title,
+.obsidian-callout.callout-cite .callout-title {
+    color: var(--callout-quote-title);
+}
+
