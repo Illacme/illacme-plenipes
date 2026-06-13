@@ -5,9 +5,28 @@
 
 window.apiFetch = async (url, options = {}) => {
     try {
-        if (options.method && options.method !== 'GET' && !options.headers) {
-            options.headers = { 'Content-Type': 'application/json' };
+        if (!options.headers) {
+            options.headers = {};
         }
+        if (options.method && options.method !== 'GET' && !options.headers['Content-Type']) {
+            options.headers['Content-Type'] = 'application/json';
+        }
+        
+        // 🚀 [V74.9] 安全中枢：自动从 localStorage 或 URL 挂载主权 X-Token 授权凭证
+        let token = localStorage.getItem('api_token');
+        if (!token) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                token = urlParams.get('token') || urlParams.get('api_token');
+                if (token) {
+                    localStorage.setItem('api_token', token);
+                }
+            } catch (paramErr) {}
+        }
+        if (token) {
+            options.headers['X-Token'] = token;
+        }
+
         const response = await fetch(url, options);
         if (response.status === 401) {
             console.warn("⚠️ [AUTH] 检测到 401 未授权信号，已拦截自动跳转以防止刷新循环。");
