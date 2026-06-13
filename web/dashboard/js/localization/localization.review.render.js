@@ -82,7 +82,7 @@ function _reviewRenderBody() {
     let previewHtml = '';
     if (!isMissing) {
         const renderPreviewTitle = edit.title ? markdownParser(`# ${edit.title}`) : '';
-        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="preview-markdown-content" style="color:var(--text-bright);"><div class="preview-title" style="margin-bottom:20px;">${renderPreviewTitle}</div><div id="preview-paras-container">${targetParas.map(p => `<div id="preview-para-${p.index}" class="preview-para-item">${markdownParser(p.text || '')}</div>`).join('')}</div></div></div>`;
+        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="preview-markdown-content" style="color:var(--text-bright);"><div class="preview-title" style="margin-bottom:20px;">${renderPreviewTitle}</div><div id="preview-paras-container">${targetParas.map(p => `<div id="preview-para-${p.index}" class="preview-para-item">${markdownParser(_reviewRewriteMarkdown(p.text || '', state.docId))}</div>`).join('')}</div></div></div>`;
     }
 
     // 3. 构建原文参考分栏 (Source Column)
@@ -203,3 +203,55 @@ window.updateReviewDirtyUI = function () {
         saveBtn.style.border = isDirty ? '1.5px solid var(--accent-primary, #ffab00)' : '';
     }
 };
+
+/* ─── 物理资源路径校正与重写（与 vault.parser.js 对准） ───────────────────── */
+function _reviewRewriteMarkdown(text, docId) {
+    if (!text) return '';
+    let md = text;
+    // 1. 替换 Obsidian 双链图片 ![[image.png]]
+    md = md.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
+        const cleanPath = decodeURIComponent(path.trim());
+        const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}`;
+        const alt = cleanPath;
+        if (extra && !isNaN(extra.trim())) {
+            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" />`;
+        }
+        return `![${alt}](${url})`;
+    });
+    // 2. 替换 Obsidian 双链普通附件
+    md = md.replace(/(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, display) => {
+        const cleanPath = decodeURIComponent(path.trim());
+        const displayName = (display || cleanPath).trim();
+        const extMatch = cleanPath.match(/\.([a-zA-Z0-9]+)$/);
+        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
+            const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}`;
+            return `<a href="${url}" target="_blank" class="attachment-link">📎 ${displayName}</a>`;
+        }
+        return match;
+    });
+    // 3. 替换标准 Markdown 图片
+    md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+        const cleanUrl = url.trim();
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:')) {
+            return match;
+        }
+        const decodedUrl = decodeURIComponent(cleanUrl);
+        const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(docId)}`;
+        return `![${alt}](${resolvedUrl})`;
+    });
+    // 4. 替换标准 Markdown 链接
+    md = md.replace(/(?<!\!)\[([^\]]+)\]\(([^)]+)\)/g, (match, textVal, url) => {
+        const cleanUrl = url.trim();
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:') || cleanUrl.startsWith('#')) {
+            return match;
+        }
+        const decodedUrl = decodeURIComponent(cleanUrl);
+        const extMatch = decodedUrl.match(/\.([a-zA-Z0-9]+)$/);
+        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
+            const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(docId)}`;
+            return `<a href="${resolvedUrl}" target="_blank" class="attachment-link">📎 ${textVal}</a>`;
+        }
+        return match;
+    });
+    return md;
+}
