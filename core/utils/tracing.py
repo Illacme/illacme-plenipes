@@ -264,4 +264,3 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             log_entry["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_entry, ensure_ascii=False)
-# Illegal hardcoding: config.local.yaml

@@ -116,3 +116,20 @@ class ConfigManager:
 def load_config(path: str = CONFIG_NAME, imprint_id: str = None) -> Configuration:
     manager = ConfigManager(path, imprint_id=imprint_id)
     return manager.config
+
+def load_local_config() -> Configuration:
+    """🚀 [V66.8] 安全加载本地覆盖配置模型，若不存在则自愈返回新模型"""
+    import yaml
+    local_path = CONFIG_LOCAL_NAME
+    if os.path.exists(local_path):
+        try:
+            with open(local_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f) or {}
+            return Configuration.model_validate(data)
+        except Exception as e:
+            tlog.warning(f"⚠️ [配置引擎] 本地配置文件 {local_path} 解析或校验失败，采用自愈空配置: {e}")
+    return Configuration()
+
+def save_local_config(config_obj: Configuration) -> None:
+    """🚀 [V66.8] 将强类型配置模型固化回本地覆盖配置层"""
+    config_obj.dump_to_disk(CONFIG_LOCAL_NAME)

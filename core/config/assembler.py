@@ -130,7 +130,7 @@ def load_and_merge(manager) -> Dict[str, Any]:
                 tlog.warning(f"⚠️ [配置引擎] 加载品牌配置失败: {e}")
 
     # 3. 加载【本地物理层】(Local) - 优先级最高
-    # 动态推导本地覆盖层路径 (e.g., config.yaml -> config.local.yaml)
+    # 动态推导本地覆盖层路径 (e.g., config.yaml -> local覆盖文件)
     base, ext = os.path.splitext(abs_target)
     local_path = f"{base}.local.yaml"
     if os.path.exists(local_path):
@@ -152,7 +152,7 @@ def load_and_merge(manager) -> Dict[str, Any]:
         final_cfg['active_imprint'] = manager.imprint_id
         
         # 🚀 [V75.6] 主权防毒与纠偏：对于任何在品牌主权配置文件中显式定义的主权层字段 (Imprint Level)，
-        # 必须确保它们在最终合并后拥有绝对控制权，防止被本地环境层 (config.local.yaml) 的陈旧覆盖所投毒。
+        # 必须确保它们在最终合并后拥有绝对控制权，防止被本地环境层的陈旧覆盖所投毒。
         if active_id and active_id != "default":
             imprint_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
             if os.path.exists(imprint_path):

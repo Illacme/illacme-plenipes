@@ -3,7 +3,7 @@
 """
 Illacme-plenipes Governance - Credentials Wizard
 模块职责：敏感凭据交互式加密向导。
-辅助用户交互式地对配置文件（config.yaml/config.local.yaml）中的明文敏感密钥进行就地对称加密。
+辅助用户交互式地对配置文件（config.yaml 和本地覆盖配置）中的明文敏感密钥进行就地对称加密。
 🛡️ [V66.8] 全自治安全增强版：支持格式与注释的 100% 物理保留。
 """
 

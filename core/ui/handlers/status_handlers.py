@@ -9,6 +9,7 @@ from rich.panel import Panel
 from rich.align import Align
 from rich.text import Text
 from core.utils.tracing import tlog
+from core.config.constants import CONFIG_LOCAL_NAME
 
 console = Console()
 
@@ -92,5 +93,5 @@ class StatusHandlers:
             version="V24.0",
             ael_iter_id="V50.3_Final",
             mode="物理火力: 8 核同步",
-            sentinel_status="双向热监听 (config.yaml + config.local.yaml)"
+            sentinel_status=f"双向热监听 (config.yaml + {CONFIG_LOCAL_NAME})"
         )

@@ -9,6 +9,7 @@ Illacme-plenipes Core - Configuration Manager (adapters_probe 智能自愈子模
 import os
 import yaml
 from core.utils.tracing import tlog
+from .constants import CONFIG_LOCAL_NAME
 
 def auto_sync_ai_adapters(manager) -> None:
     """🚀 [V75.5] 智能物理对正：全局底座零配置，自动探测本地算力服务并写入本地配置层"""
@@ -25,7 +26,7 @@ def auto_sync_ai_adapters(manager) -> None:
         lmstudio_active = check_port("127.0.0.1", 1234)
         ollama_active = check_port("127.0.0.1", 11434)
         
-        # 2. 加载本地配置文件 config.local.yaml (所有算力底座完全属于本地)
+        # 2. 加载本地覆盖配置文件 (所有算力底座完全属于本地)
         base, ext = os.path.splitext(manager.config_path)
         local_path = f"{base}.local.yaml"
         local_cfg = {}
@@ -77,7 +78,7 @@ def auto_sync_ai_adapters(manager) -> None:
         if changed:
             with open(local_path, 'w', encoding='utf-8') as f:
                 yaml.dump(local_cfg, f, allow_unicode=True, sort_keys=False)
-            tlog.info("✅ [物理底座对齐] 本地算力自愈更新已固化至 config.local.yaml。")
+            tlog.info(f"✅ [物理底座对齐] 本地算力自愈更新已固化至 {CONFIG_LOCAL_NAME}。")
             manager._raw_config = manager._load_and_merge()
             
     except Exception as e:

@@ -82,25 +82,19 @@ def run_onboarding_wizard() -> bool:
         if target_id == "back":
             return run_onboarding_wizard() # 递归返回主菜单
         
-        from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
+        from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
         # 校验 config.imprint.yaml 存在性
         config_path = os.path.join(IMPRINT_DIR, target_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
         if not os.path.exists(config_path):
             console.print(f"[bold red]❌ 逻辑残缺：品牌 '{target_id}' 缺少核心配置文件 ({CONFIG_DIR}/{CONFIG_IMPRINT_NAME})，无法激活。[/]")
             return False
             
-        # 更新 config.local.yaml
+        # 更新本地覆盖配置（使用门面层，彻底剥离物理读写行为）
         try:
-            from core.config.config import load_config
-            local_config_path = CONFIG_LOCAL_NAME
-            config_obj = load_config(local_config_path) if os.path.exists(local_config_path) else None
-            
-            if not config_obj:
-                from core.config.config_models import Configuration
-                config_obj = Configuration()
-                
+            from core.config.config import load_local_config, save_local_config
+            config_obj = load_local_config()
             config_obj.active_imprint = target_id
-            config_obj.dump_to_disk(local_config_path)
+            save_local_config(config_obj)
             
             console.print(f"\n✨ [bold green]主权对正完成！当前品牌已切换至 '{target_id}'。[/]")
             return True

@@ -10,7 +10,7 @@ import re
 
 # 🎯 [V52.18] 全息配置治理矩阵 (Sensing vs. Sovereignty)
 GOVERNANCE_RULES = {
-    # 🔴 本地感应层 (Local: config.local.yaml) - 物理机能、凭据密钥、硬件限制
+    # 🔴 本地感应层 (Local: 本地覆盖配置) - 物理机能、凭据密钥、硬件限制
     "local": [
         r"^translation\.compute_nodes\..*$", # 物理算力节点全量属性 (ID/URL/Key/Type/Model/Enabled)
         r"^publish_control\.webhook_endpoints\..*\.(?!enabled$).*$", # Webhook 物理配置（除激活状态外）
@@ -92,7 +92,7 @@ def resolve_governance_level(field_key: str) -> str:
 def get_local_config_path() -> str:
     """🚀 获取本地覆盖配置的物理路径"""
     import os
-    # 优先使用项目根目录下的 config.local.yaml
-    from core.config.config import CONFIG_LOCAL_NAME
+    # 优先使用项目根目录下的本地覆盖配置
+    from .constants import CONFIG_LOCAL_NAME
     local_path = os.path.join(os.getcwd(), CONFIG_LOCAL_NAME)
     return local_path
