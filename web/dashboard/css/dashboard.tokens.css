@@ -48,35 +48,35 @@
 
     /* 🎨 Obsidian Callout Color Tokens */
     --callout-tip-color: #10b981;
-    --callout-tip-bg: rgba(16, 185, 129, 0.04);
+    --callout-tip-bg: rgba(16, 185, 129, 0.08);
     --callout-tip-title: #34d399;
 
     --callout-note-color: #06b6d4;
-    --callout-note-bg: rgba(6, 182, 212, 0.04);
+    --callout-note-bg: rgba(6, 182, 212, 0.08);
     --callout-note-title: #22d3ee;
 
     --callout-important-color: #a855f7;
-    --callout-important-bg: rgba(168, 85, 247, 0.04);
+    --callout-important-bg: rgba(168, 85, 247, 0.08);
     --callout-important-title: #c084fc;
 
     --callout-warning-color: #f59e0b;
-    --callout-warning-bg: rgba(245, 158, 11, 0.04);
+    --callout-warning-bg: rgba(245, 158, 11, 0.08);
     --callout-warning-title: #fbbf24;
 
     --callout-danger-color: #ef4444;
-    --callout-danger-bg: rgba(239, 68, 68, 0.04);
+    --callout-danger-bg: rgba(239, 68, 68, 0.08);
     --callout-danger-title: #f87171;
 
     --callout-todo-color: #6366f1;
-    --callout-todo-bg: rgba(99, 102, 241, 0.04);
+    --callout-todo-bg: rgba(99, 102, 241, 0.08);
     --callout-todo-title: #818cf8;
 
     --callout-example-color: #14b8a6;
-    --callout-example-bg: rgba(20, 184, 166, 0.04);
+    --callout-example-bg: rgba(20, 184, 166, 0.08);
     --callout-example-title: #2dd4bf;
 
     --callout-quote-color: #94a3b8;
-    --callout-quote-bg: rgba(148, 163, 184, 0.04);
+    --callout-quote-bg: rgba(148, 163, 184, 0.08);
     --callout-quote-title: #cbd5e1;
 
     /* 🎨 Typography Colors */

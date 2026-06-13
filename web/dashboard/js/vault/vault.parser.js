@@ -171,11 +171,12 @@ if (typeof marked !== 'undefined') {
         renderer: {
             blockquote(token) {
                 const raw = token.raw || '';
-                // Matches Obsidian callout syntax: > [!type] or > [!type] Title
-                const match = raw.match(/^\s*>\s*\[\!([a-zA-Z0-9_-]+)\]([+-]?)(?:\s+(.*))?/);
+                // Matches Obsidian callout syntax: > [!type] or > [!type] Title (use [ \t] to avoid matching across lines!)
+                const match = raw.match(/^\s*>\s*\[\!([a-zA-Z0-9_-]+)\]([+-]?)(?:[ \t]+(.*))?/);
                 if (match) {
                     const type = match[1].toLowerCase();
-                    const titleText = match[3] ? match[3].trim() : (type.charAt(0).toUpperCase() + type.slice(1));
+                    const titleMarkdown = match[3] ? match[3].trim() : (type.charAt(0).toUpperCase() + type.slice(1));
+                    const titleHtml = marked.parseInline(titleMarkdown);
                     
                     // Strip the first line (the callout header) from raw markdown body
                     const lines = raw.split('\n');
@@ -202,7 +203,7 @@ if (typeof marked !== 'undefined') {
 <div class="obsidian-callout callout-${type}" data-callout="${type}">
   <div class="callout-title">
     <span class="callout-icon">${icon}</span>
-    <span class="callout-title-text">${titleText}</span>
+    <span class="callout-title-text">${titleHtml}</span>
   </div>
   <div class="callout-content">
     ${bodyHtml}
