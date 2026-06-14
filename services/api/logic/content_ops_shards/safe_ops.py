@@ -38,17 +38,28 @@ def get_vault_asset_logic(engine, asset_path: str, relative_to: str = None):
         full_asset_path = os.path.join(doc_dir, decoded_asset_path)
 
     abs_path = os.path.abspath(os.path.join(vault_root_abs, full_asset_path))
-    if not abs_path.startswith(vault_root_abs):
-        return {"error": "Access denied"}
+    
+    # 🛡️ 只有当相对路径计算出的绝对路径在安全范围内，且物理文件确实存在时，方可直接放行。
+    # 否则（包含路径穿越或文件不存在），触发库内平铺检索自愈。
+    if abs_path.startswith(vault_root_abs) and os.path.exists(abs_path) and os.path.isfile(abs_path):
+        return abs_path
 
-    if not os.path.exists(abs_path) or os.path.isdir(abs_path):
-        filename = os.path.basename(decoded_asset_path)
-        found = False
-        for root, _, files in os.walk(vault_root_abs):
-            if filename in files:
-                abs_path = os.path.join(root, filename)
+    # 🔍 触发库内平铺检索自愈以支持 Obsidian 缩写链或相对越界物理附件
+    filename = os.path.basename(decoded_asset_path)
+    found = False
+    for root, _, files in os.walk(vault_root_abs):
+        if filename in files:
+            candidate_path = os.path.abspath(os.path.join(root, filename))
+            # 🛡️ 再次进行 L3 安全围栏校验，防止 walk 本身跳出 root
+            if candidate_path.startswith(vault_root_abs):
+                abs_path = candidate_path
                 found = True
                 break
-        if not found: return {"error": "Asset file not found"}
+
+    if not found:
+        # 如果未找到，且原本推导的路径确实超出了 vault_root 范围，则触发 L3 级穿越拦截
+        if not abs_path.startswith(vault_root_abs):
+            return {"error": "Access denied"}
+        return {"error": "Asset file not found"}
 
     return abs_path

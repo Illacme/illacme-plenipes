@@ -243,11 +243,8 @@ window.reviewSaveParagraph = function (idx, newText) {
         block.dataset.editing = '0';
         block.innerHTML = _renderParaBlock(paras[idx]);
     }
-    // 🚀 实时同步渲染预览分栏中的对应段落
-    const previewBlock = document.getElementById(`preview-para-${idx}`);
-    if (previewBlock) {
-        previewBlock.innerHTML = window.marked.parse(paras[idx].text || '');
-    }
+    // 🚀 实时同步渲染预览分栏中的对应段落（渲染逻辑委托给 review.render.js）
+    _reviewRenderPreviewPara(idx, state);
     window.updateReviewDirtyUI();
 };
 

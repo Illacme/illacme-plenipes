@@ -152,12 +152,10 @@ function _reviewRenderBody() {
         });
     }
 }
-
 function _renderParaBlock(p) {
     const editedMark = p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : '';
     return `${editedMark}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
-
 /* ─── 抽屉显隐控制 ───────────────────────────────────── */
 function _reviewShowDrawer() {
     const drawer = document.getElementById('review-drawer-overlay');
@@ -166,21 +164,17 @@ function _reviewShowDrawer() {
         requestAnimationFrame(() => { drawer.style.opacity = '1'; });
     }
 }
-
 function _reviewSetLoading(on) {
     const body = document.getElementById('review-body');
     if (body && on) body.innerHTML = '<div class="review-loading">⏳ 正在加载译文快照...</div>';
 }
-
 function _reviewShowError(msg) {
     const body = document.getElementById('review-body');
     if (body) body.innerHTML = `<div class="review-error">❌ ${msg}</div>`;
 }
-
 function _escapeHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
 /* ─── 脏态交互的增量 DOM 更新 ─────────────────────────── */
 window.updateReviewDirtyUI = function () {
     const state = window._reviewState;
@@ -188,21 +182,18 @@ window.updateReviewDirtyUI = function () {
     const lc = state.activeLang;
     if (!lc) return;
     const isDirty = window._isReviewDirty && window._isReviewDirty(lc);
-
     const tabBtn = document.getElementById(`review-tab-${lc}`);
     if (tabBtn) {
         const oldDot = tabBtn.querySelector('.review-dirty-dot');
         if (isDirty && !oldDot) tabBtn.insertAdjacentHTML('beforeend', '<span class="review-dirty-dot" style="color:#ffb300; margin-left:4px; font-size:0.9rem;">●</span>');
         else if (!isDirty && oldDot) oldDot.remove();
     }
-
     const statusBar = document.querySelector('.review-status-bar');
     if (statusBar) {
         const oldBadge = statusBar.querySelector('.review-badge.dirty');
         if (isDirty && !oldBadge) statusBar.insertAdjacentHTML('beforeend', '<span class="review-badge dirty" style="background:var(--accent-secondary, #ffb300); color:#000; font-weight:bold; margin-left:8px; padding:2px 8px; border-radius:4px; font-size:0.75rem; display:inline-block; box-shadow:0 0 8px rgba(255,179,0,0.2);">⚠️ 未保存修改</span>');
         else if (!isDirty && oldBadge) oldBadge.remove();
     }
-
     const saveBtn = document.querySelector('.review-actions .review-btn.save');
     if (saveBtn) {
         saveBtn.style.boxShadow = isDirty ? '0 0 12px rgba(255, 179, 0, 0.4)' : '';
@@ -287,4 +278,21 @@ function _reviewRewriteMarkdown(text, docId, sourceText) {
         return match;
     });
     return md;
+}
+
+/* ─── 预览分栏单段落增量渲染（供 reviewSaveParagraph 调用） ─ */
+// [AEL-2026-06-14] 保证退出编辑后的增量更新与全量渲染走相同路径：
+// _reviewRewriteMarkdown → marked.parse({ breaks })，防止图片路径丢失。
+function _reviewRenderPreviewPara(idx, state) {
+    const previewBlock = document.getElementById(`preview-para-${idx}`);
+    if (!previewBlock || !state) return;
+    const lc = state.activeLang;
+    const paras = state.edits[lc]?.paragraphs || [];
+    if (!paras[idx]) return;
+    const sourceParas = state.data?.source_paragraphs || [];
+    const sourcePara  = sourceParas.find(sp => sp.index === idx);
+    const sourceText  = sourcePara?.text || '';
+    const _breaks = window.settingsData?.ingress_settings?.hard_line_break ?? false;
+    const rewritten = _reviewRewriteMarkdown(paras[idx].text || '', state.docId, sourceText);
+    previewBlock.innerHTML = window.marked.parse(rewritten, { breaks: _breaks });
 }
