@@ -56,7 +56,10 @@ function _reviewRenderBody() {
     const isMissing = ld.is_missing;
     const sourceParas = state.data.source_paragraphs || [];
     const targetParas = edit.paragraphs || [];
-    const markdownParser = (window.marked && window.marked.parse) ? window.marked.parse : (t) => t;
+    // [AEL-2026-06-14] 包装为函数而非直接引用，以便每次渲染时动态读取 hard_line_break 配置
+    const markdownParser = (window.marked && window.marked.parse)
+        ? (t) => window.marked.parse(t, { breaks: window.settingsData?.ingress_settings?.hard_line_break ?? false })
+        : (t) => t;
 
     // 1. 构建译文主栏 (Target Column)
     let targetHtml = '';
@@ -82,7 +85,10 @@ function _reviewRenderBody() {
     let previewHtml = '';
     if (!isMissing) {
         const renderPreviewTitle = edit.title ? markdownParser(`# ${edit.title}`) : '';
-        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="preview-markdown-content" style="color:var(--text-bright);"><div class="preview-title" style="margin-bottom:20px;">${renderPreviewTitle}</div><div id="preview-paras-container">${targetParas.map(p => `<div id="preview-para-${p.index}" class="preview-para-item">${markdownParser(_reviewRewriteMarkdown(p.text || '', state.docId))}</div>`).join('')}</div></div></div>`;
+        // 构建 index → source段落 映射，用于图片路径降级回退
+        const sourceParaByIndex = {};
+        (sourceParas || []).forEach(sp => { sourceParaByIndex[sp.index] = sp.text || ''; });
+        previewHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>👁️ 译文预览 (Preview)</label></div><div class="preview-markdown-content" style="color:var(--text-bright);"><div class="preview-title" style="margin-bottom:20px;">${renderPreviewTitle}</div><div id="preview-paras-container">${targetParas.map(p => `<div id="preview-para-${p.index}" class="preview-para-item">${markdownParser(_reviewRewriteMarkdown(p.text || '', state.docId, sourceParaByIndex[p.index] || ''))}</div>`).join('')}</div></div></div>`;
     }
 
     // 3. 构建原文参考分栏 (Source Column)
@@ -205,7 +211,7 @@ window.updateReviewDirtyUI = function () {
 };
 
 /* ─── 物理资源路径校正与重写（与 vault.parser.js 对准） ───────────────────── */
-function _reviewRewriteMarkdown(text, docId) {
+function _reviewRewriteMarkdown(text, docId, sourceText) {
     if (!text) return '';
     let md = text;
     // 1. 替换 Obsidian 双链图片 ![[image.png]]
@@ -213,10 +219,11 @@ function _reviewRewriteMarkdown(text, docId) {
         const cleanPath = decodeURIComponent(path.trim());
         const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}`;
         const alt = cleanPath;
+        const onError = `this.onerror=null;this.src='/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}';`;
         if (extra && !isNaN(extra.trim())) {
-            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" />`;
+            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" onerror="${onError}" />`;
         }
-        return `![${alt}](${url})`;
+        return `<img src="${url}" alt="${alt}" onerror="${onError}" />`;
     });
     // 2. 替换 Obsidian 双链普通附件
     md = md.replace(/(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, display) => {
@@ -230,17 +237,43 @@ function _reviewRewriteMarkdown(text, docId) {
         return match;
     });
     // 3. 替换标准 Markdown 图片
-    md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+    // 🛡️ [I5-Fix] 双级降级自愈：
+    //    一级：提取文件名，flat search 全库（应对路径幻觉但文件名正确的情况）
+    //    二级：从原文 sourceText 中提取第 N 张图片路径作为最终兜底（应对文件名也幻觉的情况）
+    //    这彻底解决了 AI 翻译时篡改图片路径和文件名导致译文预览看不到图的问题。
+    const _srcImgUrls = [];
+    if (sourceText) {
+        // 提取原文中所有标准 Markdown 图片的路径（按出现顺序）
+        const _srcImgRe = /!\[[^\]]*\]\(([^)]+)\)/g;
+        let _m;
+        while ((_m = _srcImgRe.exec(sourceText)) !== null) {
+            const _srcClean = decodeURIComponent(_m[1].trim());
+            if (!_srcClean.startsWith('http') && !_srcClean.startsWith('data:')) {
+                _srcImgUrls.push(`/api/vault-assets/${encodeURIComponent(_srcClean)}?relative_to=${encodeURIComponent(docId)}`);
+            }
+        }
+    }
+    let _imgIdx = 0;
+    md = md.replace(/!\[\[?([^\]]*)\]?\]\(([^)]+)\)/g, (match, alt, url) => {
         const cleanUrl = url.trim();
         if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:')) {
             return match;
         }
         const decodedUrl = decodeURIComponent(cleanUrl);
+        // 主路径：携带 relative_to 上下文解析
         const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(docId)}`;
-        return `![${alt}](${resolvedUrl})`;
+        // 一级降级：文件名 flat search（适用于路径错但文件名对的情况）
+        const filename = decodedUrl.split('/').pop().split('\\').pop();
+        const flatSearchUrl = `/api/vault-assets/${encodeURIComponent(filename)}`;
+        // 二级降级：原文对应位置图片 URL（适用于文件名也幻觉的情况）
+        const srcImgUrl = _srcImgUrls[_imgIdx] || '';
+        _imgIdx++;
+        // onerror 链：resolvedUrl 失败 → flatSearch → srcImg → 放弃
+        const onErrAttr = `if(!this.dataset.t1){this.dataset.t1='1';this.src='${flatSearchUrl}';} else if(!this.dataset.t2 && '${srcImgUrl}'){this.dataset.t2='1';this.src='${srcImgUrl}';}`;
+        return `<img src="${resolvedUrl}" alt="${alt}" loading="lazy" onerror="${onErrAttr}" style="max-width:100%;border-radius:6px;" />`;
     });
     // 4. 替换标准 Markdown 链接
-    md = md.replace(/(?<!\!)\[([^\]]+)\]\(([^)]+)\)/g, (match, textVal, url) => {
+    md = md.replace(/(?<!\!)\[\[?([^\]]+)\]?\]\(([^)]+)\)/g, (match, textVal, url) => {
         const cleanUrl = url.trim();
         if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:') || cleanUrl.startsWith('#')) {
             return match;

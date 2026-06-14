@@ -64,8 +64,11 @@ window.updateEditorPreview = () => {
     });
 
     // 🚀 [V87.0] 实时解析 Markdown (依赖 vendor/marked.js)
+    // [AEL-2026-06-14] 在渲染时动态读取 hard_line_break 配置（settingsData 在加载时可能尚未就绪，
+    // 因此必须在每次渲染时取值，而非在脚本初始化时一次性读取）。
     if (typeof marked !== 'undefined') {
-        preview.innerHTML = marked.parse(mdContent);
+        const _breaks = window.settingsData?.ingress_settings?.hard_line_break ?? false;
+        preview.innerHTML = marked.parse(mdContent, { breaks: _breaks });
     } else {
         preview.innerText = "Markdown 引擎尚未就绪...";
     }
@@ -167,11 +170,8 @@ window.initSyncScroll = () => {
 
 // 🌓 [V87.6] Obsidian Callouts Support globally for marked.js
 if (typeof marked !== 'undefined') {
-    // [AEL-2026-06-14] 换行渲染模式：从治理中心配置动态读取 ingress_settings.hard_line_break。
-    // true  = 直觉模式（GFM 兼容）：单个换行符渲染为 <br>，预览区与编辑区所见即所得对齐。
-    // false = 标准模式（CommonMark）：段落内换行不生效，需空行分段（Pydantic 默认值）。
-    const _hardLineBreak = window.settingsData?.ingress_settings?.hard_line_break ?? false;
-    marked.use({ breaks: _hardLineBreak });
+    // [AEL-2026-06-14] breaks 配置已迁移至每次渲染时动态读取（在 updateEditorPreview 的
+    // marked.parse(content, { breaks }) 调用中），以解决脚本加载时 settingsData 尚未就绪的时序问题。
     marked.use({
         renderer: {
             blockquote(token) {
