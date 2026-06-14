@@ -167,6 +167,9 @@ window.initSyncScroll = () => {
 
 // 🌓 [V87.6] Obsidian Callouts Support globally for marked.js
 if (typeof marked !== 'undefined') {
+    // [AEL-2026-06-14] 激活 GFM 换行模式：使段落内的单个换行符渲染为 <br>，
+    // 解决预览区文本与编辑器原稿区换行视觉不一致的问题（Soft-break → Hard-break）。
+    marked.use({ breaks: true });
     marked.use({
         renderer: {
             blockquote(token) {
