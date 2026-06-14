@@ -67,6 +67,14 @@
                             onchange: `window.updateConfigField('block_cache_shard_levels', parseInt(this.value))`,
                             description: '通过分切段落原文哈希前缀的字符数进行多级目录分流，避免单个目录包含海量碎片文件导致的 IO 性能下降。'
                         })}
+                        ${renderSettingsItem('Markdown 换行渲染模式', 'ingress_settings.hard_line_break', data.ingress_settings?.hard_line_break ?? false, 'select', {
+                            items: [
+                                {value: false, text: '📄 标准模式 — 单个换行符保留为段落流，需空行才能真正换行 (CommonMark 标准)'},
+                                {value: true,  text: '✍️ 直觉模式 — 单个换行符直接渲染为新行，所见即所得，推荐日常写作使用 (GFM 兼容)'}
+                            ],
+                            onchange: `window.updateConfigField('ingress_settings.hard_line_break', this.value === 'true')`,
+                            description: '控制原稿文库编辑器预览区和译文校对工作台中的换行渲染方式。<br>· <b>标准模式</b>：Markdown 原生行为，段落内换行不生效，需空行分段；适合有 Markdown 经验的专业用户。<br>· <b>直觉模式</b>：按 Enter 即换行，预览效果与编辑区完全对齐；适合从其他编辑器迁移或习惯"所见即所得"的用户。<br><span style="color: var(--text-dim); font-size: 0.8em;">⚠️ 修改后需保存配置，刷新页面后生效。</span>'
+                        })}
                     </div>
                 </div>
 

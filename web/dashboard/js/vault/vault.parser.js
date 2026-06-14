@@ -167,9 +167,11 @@ window.initSyncScroll = () => {
 
 // 🌓 [V87.6] Obsidian Callouts Support globally for marked.js
 if (typeof marked !== 'undefined') {
-    // [AEL-2026-06-14] 激活 GFM 换行模式：使段落内的单个换行符渲染为 <br>，
-    // 解决预览区文本与编辑器原稿区换行视觉不一致的问题（Soft-break → Hard-break）。
-    marked.use({ breaks: true });
+    // [AEL-2026-06-14] 换行渲染模式：从治理中心配置动态读取 ingress_settings.hard_line_break。
+    // true  = 直觉模式（GFM 兼容）：单个换行符渲染为 <br>，预览区与编辑区所见即所得对齐。
+    // false = 标准模式（CommonMark）：段落内换行不生效，需空行分段（Pydantic 默认值）。
+    const _hardLineBreak = window.settingsData?.ingress_settings?.hard_line_break ?? false;
+    marked.use({ breaks: _hardLineBreak });
     marked.use({
         renderer: {
             blockquote(token) {
