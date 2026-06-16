@@ -40,8 +40,13 @@ class MaskingAndRoutingStep(PipelineStep):
                     ctx.masks.append(matched)
                     return f"[[STB_MASK_{len(ctx.masks)-1}]]"
                 else:
-                    ctx.masks.append(f"URL_ONLY_LNK:{url_part}")
-                    return f"{prefix}[[STB_MASK_{len(ctx.masks)-1}]]{suffix}"
+                    if '#' in url_part:
+                        base_url, anchor = url_part.split('#', 1)
+                        ctx.masks.append(f"URL_ONLY_LNK:{base_url}")
+                        return f"{prefix}[[STB_MASK_{len(ctx.masks)-1}]]#|{anchor}|{suffix}"
+                    else:
+                        ctx.masks.append(f"URL_ONLY_LNK:{url_part}")
+                        return f"{prefix}[[STB_MASK_{len(ctx.masks)-1}]]{suffix}"
             ctx.masks.append(matched)
             return f"[[STB_MASK_{len(ctx.masks)-1}]]"
 

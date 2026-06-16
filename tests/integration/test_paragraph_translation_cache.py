@@ -212,6 +212,24 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 self.assertEqual(en_status_final["status"], "published")
                 self.assertEqual(en_status_final["progress"], 100)
                 
+                # 11. 🚀 [V75.13] 清除缓存并强制重译测试
+                translate_calls_after.clear()
+                
+                res_clear = engine.sync_document(
+                    doc_path, 
+                    route_prefix="", 
+                    route_source="Docs", 
+                    is_dry_run=False,
+                    force_sync=True,
+                    clear_cache=True
+                )
+                
+                # 验证：即使所有段落都有有效缓存，指定 clear_cache=True 也能强制绕过并重新调用 AI 翻译
+                self.assertEqual(len(translate_calls_after), 3)
+                self.assertIn("First block content here.", translate_calls_after)
+                self.assertIn("Second block content here.", translate_calls_after)
+                self.assertIn("Third block content here.", translate_calls_after)
+                
             finally:
                 if os.path.exists(mock_vault):
                     shutil.rmtree(mock_vault)

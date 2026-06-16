@@ -28,6 +28,7 @@ def trigger_re_dispatch_logic(engine, doc_id: str, req: dict) -> dict:
             return {"success": False, "message": f"未能在当前品牌的频道矩阵中匹配到该稿件: {doc_id}"}
             
         task_path, prefix, src_rel, target_slot = task_queue[0]
+        clear_cache = bool(req.get("clear_cache", False))
         
         # 提交至主权线程池以进行异步物理编译，彻底避免对 FastAPI 事件循环的阻塞
         global_executor.submit(
@@ -38,7 +39,8 @@ def trigger_re_dispatch_logic(engine, doc_id: str, req: dict) -> dict:
             is_sandbox=False,
             priority=TaskPriority.INGRESS,
             task_name=f"Manual-Redispatch-{os.path.basename(task_path)}",
-            target_slot=target_slot
+            target_slot=target_slot,
+            clear_cache=clear_cache
         )
         return {"success": True, "message": f"资产 {doc_id} 的强制重新发布指令已受理，正在重新穿透编译/翻译管线。"}
     except Exception as e:

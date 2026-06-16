@@ -58,11 +58,16 @@ def main():
         "services/api/logic/content_ops.py",
         "core/config/config_models.py",
         "core/logic/ai/ai_scheduler_shards/dispatch_ops.py",
+        "core/logic/ai/ai_logic_hub.py",
+        "services/api/logic/dispatch_ops_shards/telemetry_ops.py",
         "services/api/logic/content_ops_shards/vault_ops.py",
         "services/api/routes/gov/config.py",
         "tests/test_smoke.py",
         "web/dashboard/js/dashboard.system.js",
-        "web/dashboard/js/vault/vault.editor.js"
+        "web/dashboard/js/vault/vault.editor.js",
+        "web/dashboard/js/localization/localization.render.js",
+        "web/dashboard/js/localization/localization.review.js",
+        "web/dashboard/js/localization/localization.sync.js"
     }
 
     for f in staged_files:

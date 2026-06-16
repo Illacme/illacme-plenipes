@@ -16,6 +16,7 @@ def get_system_context_impl():
 
     from core.governance.imprint_manager import im
     from core.ui.delegate import DisplayDelegate
+    from core.utils.language_hub import LanguageHub
 
     ai_cfg = engine.config.translation
     active_node = ai_cfg.primary_node
@@ -111,11 +112,9 @@ def get_system_context_impl():
         },
         "i18n": {
             "enabled": engine.config.i18n_settings.enabled,
-            "source": getattr(engine.config.i18n_settings.source, 'lang_code', 'ZH').upper(),
-            # 🛡️ [UI 一致性] 使用 lang_code 大写（如 ES、EN）而非全名（Spanish、English），
-            # 与校对工作台的语种 Tab 标签风格保持一致，避免两处显示不一致造成用户困惑。
+            "source": getattr(engine.config.i18n_settings.source, 'name', '') or getattr(engine.config.i18n_settings.source, 'lang_code', 'ZH').upper(),
             "targets": [
-                (t.lang_code if hasattr(t, 'lang_code') else str(t)).upper()
+                LanguageHub.resolve_to_native_name(t.lang_code if hasattr(t, 'lang_code') else str(t))
                 for t in engine.config.i18n_settings.targets
             ]
         },

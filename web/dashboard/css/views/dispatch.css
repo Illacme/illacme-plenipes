@@ -177,6 +177,11 @@
     background: rgba(var(--neon-red-rgb), 0.04) !important;
     border: 1px solid rgba(var(--neon-red-rgb), 0.18) !important;
     box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.08), inset 0 0 10px rgba(var(--neon-red-rgb), 0.04) !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    display: block !important;
+    line-height: 1.4 !important;
+    word-break: break-all !important;
 }
 
 /* 🛸 Sovereign Action Grid and High Fidelity Buttons */
@@ -221,6 +226,19 @@
     border-color: rgba(var(--neon-red-rgb), 0.5) !important;
     color: var(--text-bright) !important;
     box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.dispatch-hub-panel .warning-hub-btn {
+    background: rgba(var(--neon-amber-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.25) !important;
+    color: var(--neon-amber) !important;
+}
+.dispatch-hub-panel .warning-hub-btn:hover {
+    background: rgba(var(--neon-amber-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-amber-rgb), 0.5) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-amber-rgb), 0.3) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -419,6 +437,74 @@
 [data-theme="light"] .dispatch-hub-panel .lab-box {
     border: 1px dashed var(--white-15) !important;
     background: var(--white-01) !important;
+}
+
+/* 🏷️ 目标语种卡片底部绝对定位的下边线进度条 */
+.dispatch-hub-panel .matrix-item .bottom-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: transparent;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.dispatch-hub-panel .matrix-item .bottom-progress-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--accent-primary));
+    width: 0%;
+    transition: width 0.4s cubic-bezier(0.1, 0.8, 0.3, 1);
+    box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+/* 重新分发瞬间的前端占位流光呼吸动画 */
+.dispatch-hub-panel .matrix-item.redispatching .bottom-progress-bar {
+    background: rgba(var(--neon-cyan-rgb), 0.05);
+}
+
+.dispatch-hub-panel .matrix-item.redispatching .bottom-progress-bar .fill {
+    width: 100% !important;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--accent-primary), var(--neon-cyan));
+    background-size: 200% 100%;
+    animation: redispatch-flow-light 1.5s infinite linear;
+}
+
+@keyframes redispatch-flow-light {
+    0% { background-position: 0% 50%; opacity: 0.6; }
+    50% { opacity: 0.95; }
+    100% { background-position: 200% 50%; opacity: 0.6; }
+}
+
+/* 🏷️ 分发管线当前阶段工况盒子样式 */
+.dispatch-hub-panel .pipeline-stage-box {
+    text-align: center;
+    font-size: 0.75rem !important;
+    padding: 10px !important;
+    background: rgba(var(--neon-cyan-rgb), 0.04) !important;
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.18) !important;
+    border-radius: 10px !important;
+    font-family: var(--font-mono);
+    color: var(--neon-cyan) !important;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    box-shadow: 0 0 15px rgba(var(--neon-cyan-rgb), 0.08), inset 0 0 10px rgba(var(--neon-cyan-rgb), 0.04) !important;
+}
+
+.dispatch-hub-panel .spinner-gear {
+    display: inline-block;
+    animation: gear-rotate 2s infinite linear;
+}
+
+@keyframes gear-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 

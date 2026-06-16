@@ -603,6 +603,59 @@ def test_telemetry_audit_status_logic():
         assert res_disabled["telemetry"]["error_detail"] is None
 
 
+def test_telemetry_hash_normalization_alignment():
+    """验证遥测端计算 current_hash 时对 input_adapter 的对齐调用"""
+    from services.api.logic.dispatch_ops_shards.telemetry_ops import get_dispatch_status_logic
+    from unittest.mock import MagicMock, patch, mock_open
+    import hashlib
+    
+    mock_engine = MagicMock()
+    mock_engine.vault_root = "/tmp"
+    mock_engine.config.active_imprint = "default"
+    mock_engine.config.active_theme = "default"
+    mock_engine.meta.sqlite.get_total_cost.return_value = 0.0
+    
+    # 模拟 input_adapter.normalize 会改变 body 和 fm
+    mock_input_adapter = MagicMock()
+    mock_input_adapter.normalize.return_value = ("normalized_body", {"title": "Normalized Title"})
+    mock_engine.input_adapter = mock_input_adapter
+    
+    # 模拟 doc_info，其中 source_hash 是在编译端用 "normalized_body" 计算出的
+    mock_engine.fm_defaults = {}
+    base_fm = {"title": "Normalized Title"}
+    expected_hash = hashlib.md5((str(base_fm) + "normalized_body").encode('utf-8')).hexdigest()
+    
+    mock_doc_info = {
+        "title": "Normalized Title",
+        "rel_path": "test.md",
+        "source_hash": expected_hash,
+        "translations": {}
+    }
+    mock_engine.meta.get_doc_info.return_value = mock_doc_info
+    
+    # 模拟目标语种配置：es
+    target_es = MagicMock(lang_code="es", prompt_lang="Spanish")
+    mock_engine.config.i18n_settings.targets = [target_es]
+    mock_engine.config.i18n_settings.enabled = True
+    
+    # 模拟 block_cache
+    mock_engine.block_cache.get_block.return_value = None
+    
+    file_content = "---\ntitle: Raw Title\n---\nRaw Body"
+    
+    with patch("os.path.exists", return_value=True), \
+         patch("os.path.getmtime", return_value=123456789), \
+         patch("builtins.open", mock_open(read_data=file_content)):
+         
+        res = get_dispatch_status_logic(mock_engine, "test.md")
+        
+        # 找到 Spanish 的同步矩阵元素
+        es_status = next(item for item in res["sync_matrix"] if item["locale"] == "Spanish")
+        # 如果 current_hash 和 source_hash 完美对正，脏状态 is_source_dirty 应为 False，
+        # 那么 cache_info 应显示 "已缓存 0/0 个段落"，而不应带 "(源稿有更新，请重新分发)"
+        assert "源稿有更新" not in es_status["cache_info"]
+
+
 
 
 

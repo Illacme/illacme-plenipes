@@ -16,7 +16,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
     """🚀 [V11.0] 指纹同步策略：基于文件哈希与影子自愈的工业级同步实现"""
 
     @SovereignCore
-    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None):
+    def execute(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None, clear_cache=False):
         """🚀 根据内容指纹判定是否跳过，并在管线执行后注册同步终态元数据。"""
         from core.editorial.context import SyncContext
         from core.logic.orchestration.concurrency_controller import concurrency_controller
@@ -38,6 +38,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
         # 🚀 [V11.0] 初始化 SyncContext (传入绝对路径以确保物理寻址)
         ctx = SyncContext(engine, abs_src_path, route_prefix, route_source, is_dry_run, force_sync, is_sandbox=is_sandbox, target_slot=target_slot)
+        ctx.clear_cache = clear_cache
 
         # 🛡️ 服务注册表注入
         ctx.services.staticizer = engine.staticizer
@@ -65,6 +66,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             Tracer.set_id(trace_id)
 
             tlog.info(f"🧬 [追踪开始] 文档: {rel_path}")
+            if hasattr(engine, "meta"):
+                engine.meta.update_egress_status(rel_path, "PIPELINE", "RUNNING", stage="正在解析文档排版与格式...")
             bus.emit("SYNC_DOC_START", rel_path=rel_path, trace_id=trace_id)
 
             # 1. 预处理
@@ -73,6 +76,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
             # 2. 执行管线
             engine.pipeline.execute(ctx)
+            if hasattr(engine, "meta"):
+                engine.meta.update_egress_status(rel_path, "PIPELINE", "RUNNING", stage="正在校验文档格式与资源合规性...")
             if ctx.is_aborted:
                 if ctx.is_skipped:
                     tlog.info(f"🔄 [同步跳过] 指纹未变: {rel_path}")
@@ -81,7 +86,7 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                     return "SKIP"
                 tlog.warning(f"⏭️ [同步中止] 管线拦截: {rel_path}")
                 if not ctx.is_dry_run and hasattr(engine, "meta"):
-                    abort_reason = getattr(ctx, "abort_reason", "管线拦截中止（草稿或不满足校验条件）")
+                    abort_reason = getattr(ctx, "abort_reason", "文档处理被终止（可能因为草稿状态或未通过合规性检查）")
                     engine.meta.update_egress_status(rel_path, "PIPELINE", "ABORTED", error=abort_reason)
                 engine.janitor.mark_doc_as_fresh(rel_path)
                 success = True
@@ -130,6 +135,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                 hook(ctx)
 
             # 🚀 [V10.3] 多语言分发
+            if hasattr(engine, "meta"):
+                engine.meta.update_egress_status(rel_path, "PIPELINE", "RUNNING", stage="正在向 AI 引擎提交多语种翻译任务...")
             target_results = AIScheduler.dispatch_targets(
                 engine, ctx, None, ctx.route_prefix, ctx.route_source, force_sync,
                 rel_path, ctx.is_dry_run, persistence_date=None,
@@ -153,6 +160,8 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
 
             # 4. 终态记录
             if not ctx.is_dry_run:
+                if hasattr(engine, "meta"):
+                    engine.meta.update_egress_status(rel_path, "PIPELINE", "SUCCESS", stage="分发全部完成，译文已成功发布")
                 engine.meta.register_document(ctx.rel_path, ctx.title, slug=ctx.slug, source_hash=ctx.current_hash, shadow_hash=primary_shadow_hash, seo_data=ctx.seo_data, route_prefix=ctx.route_prefix, route_source=ctx.route_source, sub_dir=ctx.mapped_sub_dir, assets=list(ctx.node_assets), ext_assets=list(ctx.node_ext_assets), outlinks=list(ctx.node_outlinks), persistent_date=persistence_date, translations=target_results)
                 engine.meta.save()
 

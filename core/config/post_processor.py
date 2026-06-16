@@ -106,13 +106,15 @@ def smart_normalize_i18n(manager) -> None:
     # 源语种解析
     source_data = manager._raw_config.get('i18n_settings', {}).get('source')
     if isinstance(source_data, str):
-        name = source_data
-        iso = LanguageHub.resolve_to_iso(name)
+        iso = LanguageHub.resolve_to_iso(source_data)
+        name = LanguageHub.resolve_to_native_name(iso)
         prompt_l = LanguageHub.resolve_to_name(iso)
         i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
     elif isinstance(source_data, dict):
         iso = source_data.get('lang_code', 'auto')
-        name = source_data.get('name', LanguageHub.resolve_to_name(iso))
+        name = source_data.get('name')
+        if not name or name == LanguageHub.resolve_to_name(iso) or name.lower() == iso.lower():
+            name = LanguageHub.resolve_to_native_name(iso)
         prompt_l = source_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
         i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
 
@@ -121,13 +123,15 @@ def smart_normalize_i18n(manager) -> None:
     new_targets = []
     for i, t_data in enumerate(targets_raw):
         if isinstance(t_data, str):
-            name = t_data
-            iso = LanguageHub.resolve_to_iso(name)
+            iso = LanguageHub.resolve_to_iso(t_data)
+            name = LanguageHub.resolve_to_native_name(iso)
             prompt_l = LanguageHub.resolve_to_name(iso)
             new_targets.append(I18nTarget(prompt_lang=prompt_l, lang_code=iso, name=name))
         elif isinstance(t_data, dict):
             iso = t_data.get('lang_code', 'en')
-            name = t_data.get('name', LanguageHub.resolve_to_name(iso))
+            name = t_data.get('name')
+            if not name or name == LanguageHub.resolve_to_name(iso) or name.lower() == iso.lower():
+                name = LanguageHub.resolve_to_native_name(iso)
             prompt_l = t_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
             translate_b = t_data.get('translate_body', True)
             translate_t = t_data.get('translate_title', True)

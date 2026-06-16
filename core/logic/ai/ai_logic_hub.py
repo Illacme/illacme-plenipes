@@ -104,23 +104,76 @@ class AILogicHub:
         return content
 
     @staticmethod
-    def mask_block(text: str) -> Tuple[str, Dict[str, str]]:
+    def mask_block(text: str, translate_labels: bool = True, external_mask_mode: str = "url_only") -> Tuple[str, Dict[str, str]]:
         """🚀 [V48.3] 块级防护装甲：临时屏蔽技术实体，防止 AI 误伤"""
         if not text: return "", {}
         
         masks = {}
         # 防护矩阵：Wikilinks, MD Links, Images, 占位符
         patterns = [
-            r'\!\[\[.*?\]\]',                   # Obsidian Image
-            r'\[\[.*?\]\]',                    # Wikilink
-            r'\!\[.*?\]\(.*?\)',                # Markdown Image
-            r'\[.*?\]\(.*?\)',                  # Markdown Link
-            r'<!\[CDATA\[.*?\]\]>',            # CDATA
-            r'<!--.*?-->',                      # Comments
-            r'\[\[STB_MASK_\d+\]\]'             # System Masks
+            r'\!\[\[.*?\]\]',                                                   # Obsidian Image
+            r'\[\[.*?\]\]',                                                    # Wikilink
+            r'\!\[(?P<md_img_label>.*?)\]\((?P<md_img_url>.*?)\)',               # Markdown Image
+            r'\[(?P<md_link_label>.*?)\]\((?P<md_link_url>.*?)\)',               # Markdown Link
+            r'<!\[CDATA\[.*?\]\]>',                                            # CDATA
+            r'<!--.*?-->',                                                      # Comments
+            r'\[\[STB_MASK_\d+\]\]'                                             # System Masks
         ]
         
         def repl(m):
+            # 检查是否匹配到了 Markdown Link
+            if m.group('md_link_url') is not None:
+                label = m.group('md_link_label')
+                url = m.group('md_link_url')
+                is_ext = url.startswith(('http://', 'https://', 'mailto:', 'tel:'))
+                if not translate_labels or (is_ext and external_mask_mode == "all"):
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = m.group(0)
+                    return key
+
+                if '#|' in url and url.endswith('|'):
+                    base, rest = url.split('#|', 1)
+                    anchor = rest[:-1]
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = base
+                    return f"[{label}]({key}#|{anchor}|)"
+                elif '#' in url:
+                    base, anchor = url.split('#', 1)
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = base
+                    return f"[{label}]({key}#|{anchor}|)"
+                else:
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = url
+                    return f"[{label}]({key})"
+
+            # 检查是否匹配到了 Markdown Image
+            if m.group('md_img_url') is not None:
+                label = m.group('md_img_label')
+                url = m.group('md_img_url')
+                is_ext = url.startswith(('http://', 'https://', 'mailto:', 'tel:'))
+                if not translate_labels or (is_ext and external_mask_mode == "all"):
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = m.group(0)
+                    return key
+
+                if '#|' in url and url.endswith('|'):
+                    base, rest = url.split('#|', 1)
+                    anchor = rest[:-1]
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = base
+                    return f"![{label}]({key}#|{anchor}|)"
+                elif '#' in url:
+                    base, anchor = url.split('#', 1)
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = base
+                    return f"![{label}]({key}#|{anchor}|)"
+                else:
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = url
+                    return f"![{label}]({key})"
+
+            # 兜底：整体遮罩
             key = f"__B_MASK_{len(masks)}__"
             masks[key] = m.group(0)
             return key
@@ -132,10 +185,25 @@ class AILogicHub:
     @staticmethod
     def unmask_block(text: str, masks: Dict[str, str]) -> str:
         """🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体"""
-        if not text or not masks: return text
+        if not text: return text
         
-        final_text = text
-        # 按键名长度倒序替换，防止 __B_MASK_10__ 覆盖 __B_MASK_1__
+        # 1. 还原并清洗大模型翻译后的哈希锚点
+        def clean_hash(h: str) -> str:
+            h = h.strip().lower()
+            # 转换为合规的哈希：空格和特殊字符变连字符
+            h = re.sub(r'[^a-z0-9\.\-\u4e00-\u9fa5]', '-', h)
+            h = re.sub(r'-+', '-', h)
+            return h.strip('-')
+
+        def repl_anchor(match):
+            anchor_val = match.group(1)
+            return f"#{clean_hash(anchor_val)}"
+
+        processed_text = re.sub(r'#\|(.*?)\|', repl_anchor, text)
+        if not masks: return processed_text
+        
+        # 2. 还原被遮罩的 URL
+        final_text = processed_text
         for key in sorted(masks.keys(), key=len, reverse=True):
             final_text = final_text.replace(key, masks[key])
         return final_text
@@ -242,3 +310,42 @@ class AILogicHub:
                 
         context_block += "[/SEMANTIC_CONTEXT_FROM_KNOWLEDGE_GRAPH]\n"
         return context_block
+
+    @staticmethod
+    def mask_glossary(text: str, glossary: Dict[str, str]) -> Tuple[str, Dict[str, str]]:
+        """🚀 [V24.5] 术语隔离屏蔽：在发送给 AI 前，使用占位符保护术语不被误翻译"""
+        if not text or not glossary:
+            return text, {}
+        
+        glossary_masks = {}
+        processed_text = text
+        
+        # 按照键长度降序排序，防止子词覆盖
+        for orig_word in sorted(glossary.keys(), key=len, reverse=True):
+            target_val = glossary[orig_word]
+            
+            # 使用无副作用的正则边界进行术语匹配
+            if re.search(r'[\u4e00-\u9fa5]', orig_word):
+                pattern = re.compile(re.escape(orig_word))
+            else:
+                pattern = re.compile(rf'\b{re.escape(orig_word)}\b', re.IGNORECASE)
+                
+            matches = pattern.findall(processed_text)
+            
+            for m in set(matches):
+                mask_key = f"[[GLOS_MASK_{len(glossary_masks)}]]"
+                glossary_masks[mask_key] = target_val
+                processed_text = processed_text.replace(m, mask_key)
+                
+        return processed_text, glossary_masks
+
+    @staticmethod
+    def unmask_glossary(text: str, glossary_masks: Dict[str, str]) -> str:
+        """🚀 [V24.5] 术语隔离还原：将大模型翻译后的术语占位符还原为对应的翻译目标值"""
+        if not text or not glossary_masks:
+            return text
+        
+        final_text = text
+        for mask_key, orig_val in sorted(glossary_masks.items(), key=lambda x: len(x[0]), reverse=True):
+            final_text = final_text.replace(mask_key, orig_val)
+        return final_text

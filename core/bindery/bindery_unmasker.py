@@ -146,7 +146,15 @@ class BinderyUnmasker:
                     final_url = f"{root_path}{self.asset_base_url}{processed_name}".replace('//', '/')
                     return final_url if not orig.startswith('URL_ONLY_IMG:') else f"![{alt_text}]({final_url})"
 
-                target_rel_path = self.meta.resolve_link(clean_path)
+                # 🌟 读取高级链接治理选项以决定是否自愈/映射内链
+                auto_localize = True
+                trans_cfg = getattr(self.service.config, "translation", None) if hasattr(self.service, "config") else None
+                if trans_cfg and hasattr(trans_cfg, "governance"):
+                    gov = trans_cfg.governance
+                    if gov and hasattr(gov, "link_governance"):
+                        auto_localize = gov.link_governance.auto_localize_internal_links
+
+                target_rel_path = self.meta.resolve_link(clean_path) if auto_localize else None
                 if target_rel_path:
                     log_outlink(target_rel_path)
                     if self.link_resolver:

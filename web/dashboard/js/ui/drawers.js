@@ -37,7 +37,7 @@ window.getUIDrawersHTML = () => {
                                 <span id="hub-node" class="t-value">--</span>
                             </div>
                         </div>
-                        <div id="hub-audit-status" class="audit-badge">WAITING FOR SENSOR...</div>
+                        <div id="hub-audit-status" class="audit-badge" style="margin-top: 10px;">⏳ 正在等待状态反馈...</div>
                         <div id="hub-audit-error" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 76, 76, 0.08); border: 1px solid rgba(255, 76, 76, 0.2); border-radius: 6px; color: #ff6b6b; font-size: 0.75rem; line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></div>
                     </div>
 
@@ -54,10 +54,13 @@ window.getUIDrawersHTML = () => {
                         </div>
 
                         <div class="sovereign-action-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                            <button class="hub-btn primary-hub-btn" onclick="triggerReDispatch('all')">
-                                <span class="btn-icon">♻️</span> 强制重新发布
+                            <button class="hub-btn primary-hub-btn" onclick="triggerReDispatch('all', false)" title="对当前文档执行多语种重新分发（复用段落翻译缓存）">
+                                <span class="btn-icon">♻️</span> 重新分发
                             </button>
-                            <button class="hub-btn danger-hub-btn" onclick="confirmPhysicalDelete()">
+                            <button class="hub-btn warning-hub-btn" onclick="triggerReDispatch('all', true)" title="无视已有的翻译缓存，强制调用大模型重新翻译此文档">
+                                <span class="btn-icon">🧹</span> 强制重译
+                            </button>
+                            <button class="hub-btn danger-hub-btn" style="grid-column: span 2;" onclick="confirmPhysicalDelete()">
                                 <span class="btn-icon">🗑️</span> 物理销毁
                             </button>
                         </div>

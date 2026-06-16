@@ -286,3 +286,189 @@ window.syncI18nForcePrefix = async (val) => {
     }
 };
 
+// 🚀 [V75.0] 高级治理配置即时落盘
+window.syncTranslationGovernanceField = async (path, value) => {
+    if (typeof addAudit === 'function') addAudit(`🛡️ 正在同步高级翻译治理配置: ${path}...`);
+
+    // 即时更新内存 settingsData，支持深度 dotted 键路径
+    window.updateConfigField(path, value);
+
+    const payload = {};
+    payload[path] = value;
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit(`✅ 高级翻译治理配置已固化落盘。`, "success");
+        // 物理拉取最新状态进行对准
+        const freshConfig = await apiFetch('/api/system/config?level=merged');
+        if (freshConfig) {
+            window.settingsData = freshConfig;
+            if (typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory('localization');
+            }
+        }
+    } else {
+        const errMsg = res ? (res.error || res.message) : '物理链路超时';
+        if (typeof addAudit === 'function') addAudit(`❌ 更新失败: ${errMsg}`, "error");
+    }
+};
+
+// 🚀 [V75.0] 切换提示词微调抽屉显示状态
+window.togglePromptOverride = (key) => {
+    const el = document.getElementById(`override-drawer-${key}`);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+};
+
+// 🚀 [V75.0] 新增专有名词保护词 (适配多语种对准)
+window.addGlossaryItem = async () => {
+    const srcInput = document.getElementById('glossary-src-input');
+    const dstInput = document.getElementById('glossary-dst-input');
+    if (!srcInput || !dstInput) return;
+
+    const src = srcInput.value.trim();
+    const dst = dstInput.value.trim();
+
+    if (!src || !dst) {
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ 原稿词汇与保护译词均不能为空', 'warning');
+        } else {
+            alert('⚠️ 原稿词汇与保护译词均不能为空');
+        }
+        return;
+    }
+
+    const currentLang = window.currentGlossaryLang || 'en';
+    const gov = window.settingsData.translation?.governance || {};
+    const glossary = { ...(gov.glossary || {}) };
+    
+    if (!glossary[currentLang]) {
+        glossary[currentLang] = {};
+    } else {
+        glossary[currentLang] = { ...glossary[currentLang] };
+    }
+    glossary[currentLang][src] = dst;
+
+    await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
+};
+
+// 🚀 [V75.0] 删除专有名词保护词 (适配多语种对准)
+window.removeGlossaryItem = async (src) => {
+    const currentLang = window.currentGlossaryLang || 'en';
+    const gov = window.settingsData.translation?.governance || {};
+    const glossary = { ...(gov.glossary || {}) };
+    
+    if (glossary[currentLang]) {
+        glossary[currentLang] = { ...glossary[currentLang] };
+        delete glossary[currentLang][src];
+    }
+
+    await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
+};
+
+// 🚀 [V75.5] 切换专有名词术语编辑的语种 Tab
+window.switchGlossaryLang = (code) => {
+    window.currentGlossaryLang = code;
+    if (typeof renderSettingsCategory === 'function') {
+        renderSettingsCategory('localization');
+    }
+};
+
+// 🚀 [V75.7] 块级动作选择切换处理器：若是 bypass 或 strip 动作，清空 prompt_override 以保整洁
+window.handleBlockActionChange = async (key, action) => {
+    const updates = {};
+    updates[`translation.governance.block_rules.${key}.action`] = action;
+    
+    // 如果不是需要 AI 翻译的动作，则自动把该块的 prompt_override 清空
+    if (action !== 'translate' && action !== 'parse_comments_only') {
+        updates[`translation.governance.block_rules.${key}.prompt_override`] = null;
+        window.updateConfigField(`translation.governance.block_rules.${key}.prompt_override`, null);
+    }
+    
+    if (typeof addAudit === 'function') addAudit(`🛡️ 正在同步块级分流动作: ${key} -> ${action}...`);
+    window.updateConfigField(`translation.governance.block_rules.${key}.action`, action);
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit(`✅ 块级分流配置已同步。`, "success");
+        const freshConfig = await apiFetch('/api/system/config?level=merged');
+        if (freshConfig) {
+            window.settingsData = freshConfig;
+            if (typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory('localization');
+            }
+        }
+    } else {
+        const errMsg = res ? (res.error || res.message) : '物理链路超时';
+        if (typeof addAudit === 'function') addAudit(`❌ 同步失败: ${errMsg}`, "error");
+    }
+};
+
+// 🚀 [V75.6] 提示词微调启用/禁用切换处理器 (重构版：直接开启输入框，空内容自动载入首个预设)
+window.handleOverrideToggle = async (key, checked) => {
+    const drawer = document.getElementById(`override-drawer-${key}`);
+    const textarea = document.getElementById(`textarea-override-${key}`);
+    
+    if (drawer) drawer.style.display = checked ? 'block' : 'none';
+    
+    if (!checked) {
+        if (textarea) textarea.value = '';
+        await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, null);
+    } else {
+        if (textarea) {
+            textarea.focus();
+            // 如果原本没有值，自动填充第一个预设
+            if (!textarea.value.trim()) {
+                const presets = window.blockPresets?.[key] || [];
+                if (presets.length > 0) {
+                    const defaultPreset = presets[0].value;
+                    textarea.value = defaultPreset;
+                    await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, defaultPreset);
+                } else {
+                    // 没有预设时，输入提示词，但为了保持勾选先同步一个点位字符
+                    await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, "Translate");
+                }
+            }
+        }
+    }
+};
+
+// 🚀 [V75.6] 提示词微调内容修改变更处理器
+window.handleOverrideChange = async (key, value) => {
+    const val = value.trim();
+    const checkbox = document.getElementById(`checkbox-override-${key}`);
+    const drawer = document.getElementById(`override-drawer-${key}`);
+    
+    if (val && checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        if (drawer) drawer.style.display = 'block';
+    }
+    
+    await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, val || null);
+};
+
+// 🚀 [V75.6] 应用提示词微调推荐预设
+window.applyOverridePreset = async (key, presetVal) => {
+    const textarea = document.getElementById(`textarea-override-${key}`);
+    const checkbox = document.getElementById(`checkbox-override-${key}`);
+    const drawer = document.getElementById(`override-drawer-${key}`);
+    
+    if (textarea) textarea.value = presetVal;
+    if (checkbox) checkbox.checked = true;
+    if (drawer) drawer.style.display = 'block';
+    
+    await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, presetVal);
+};
+
+

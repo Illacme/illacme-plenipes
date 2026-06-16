@@ -71,13 +71,81 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
                 content = f.read()
                 src_tokens = TokenCounter.count(content)
                 from core.utils import extract_frontmatter
-                _, body = extract_frontmatter(content)
+                raw_fm_dict, raw_body = extract_frontmatter(content)
+                
+                # 🚀 [V75.5] 物理归一化与全局隐私屏蔽，以彻底对齐分发管线，消除指纹分裂 (Fingerprint Split)
+                if hasattr(engine, 'input_adapter') and engine.input_adapter:
+                    raw_body, raw_fm_dict = engine.input_adapter.normalize(raw_body, raw_fm_dict)
+                
+                import re
+                body = engine.ast_resolver.resolve(raw_body, source_path, engine.paths.get('target_base'))
+                
+                # 🚀 [V75.5] 对齐 MetadataAndHashStep 的 current_hash 计算以实现脏状态检测
+                defaults = getattr(engine, 'fm_defaults', None) or {}
+                base_fm = {k: v for k, v in defaults.items() if v is not None and str(v).strip() != ""}
+                base_fm.update(raw_fm_dict)
+                from core.utils import normalize_keywords
+                for f in ['keywords', 'tags', 'categories']:
+                    if f in base_fm:
+                        base_fm[f] = normalize_keywords(base_fm.get(f))
+                if 'slug' in base_fm:
+                    base_fm.pop('slug', None)
+                import hashlib
+                current_hash = hashlib.md5((str(base_fm) + body).encode('utf-8')).hexdigest()
+                
+                masks = []
+                def mask_fn(m):
+                    matched = m.group(0)
+                    link_match = re.match(r'^(\!?\[.*?\]\()([^)]+)(\))$', matched)
+                    if link_match:
+                        prefix, url_part, suffix = link_match.groups()
+                        if prefix.startswith('!['):
+                            masks.append(matched)
+                            return f"[[STB_MASK_{len(masks)-1}]]"
+                        else:
+                            masks.append(f"URL_ONLY_LNK:{url_part}")
+                            return f"{prefix}[[STB_MASK_{len(masks)-1}]]{suffix}"
+                    masks.append(matched)
+                    return f"[[STB_MASK_{len(masks)-1}]]"
+
+                mask_pattern = engine.config.system.mask_pattern
+                masked_body = re.sub(mask_pattern, mask_fn, body, flags=re.DOTALL)
+
                 from core.logic.block_parser import MarkdownBlockParser
                 parser = MarkdownBlockParser()
-                blocks_fingerprints = [b.fingerprint for b in parser.parse(body) if b.type != "spacer" and b.content.strip()]
+                from core.logic.ai.ai_logic_hub import AILogicHub
+                
+                blocks_fingerprints = []
+                for b in parser.parse(masked_body):
+                    if b.type == "spacer" or not b.content.strip():
+                        continue
+                    # 💡 [V75.4] 物理对齐翻译流水线的 Pure Mask Bypass 机制：先通过 mask 屏蔽，再剔除无实质字符的占位块
+                    masked_content, _ = AILogicHub.mask_block(b.content)
+                    stripped = re.sub(r'__B_MASK_\d+__', '', masked_content)
+                    stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
+                    if not re.search(r'\w', stripped):
+                        continue
+                    # 💡 [V75.4] 彻底过滤以 <!-- 开头的 HTML 注释块（如 Sovereign-Tag 主权盾），这些在物理上无需翻译，亦不计入缓存统计
+                    if b.content.strip().startswith("<!--") and b.content.strip().endswith("-->"):
+                        continue
+                    blocks_fingerprints.append(b.fingerprint)
                 total_blocks = len(blocks_fingerprints)
         except Exception:
             pass
+
+    # 🚀 [V75.5] 自动探测或从数据库中还原已识别的原稿源语种，以实现 Auto 回显和主权透传判定
+    resolved_src_lang = doc_info.get("source_lang")
+    if not resolved_src_lang and os.path.exists(source_path):
+        try:
+            from core.utils.language_hub import LanguageHub
+            detect_sample = content[:1000] if 'content' in locals() else ""
+            resolved_src_lang = LanguageHub.detect_source_lang(detect_sample, getattr(engine, 'translator', None))
+        except Exception:
+            pass
+    resolved_src_lang = resolved_src_lang or "zh-Hans" # 兜底至 zh-Hans
+    
+    from core.utils.language_hub import LanguageHub
+    src_display_name = LanguageHub.resolve_to_name(resolved_src_lang)
 
     # 默认语种物理探测与预览 URL 转化
     source_lang = i18n.source.lang_code
@@ -96,9 +164,15 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
     else:
         zh_url = "#"
     
+    source_lang_display = i18n.source.prompt_lang or "Default"
+    if i18n.source.lang_code == "auto":
+        source_lang_display = f"Auto ({src_display_name})"
+        
+    src_short_code = resolved_src_lang.split('-')[0].upper() if resolved_src_lang else "ZH"
+
     sync_matrix.append({
-        "locale": i18n.source.prompt_lang or "Default",
-        "lang_code": i18n.source.lang_code.upper() if i18n.source.lang_code else "ZH",
+        "locale": source_lang_display,
+        "lang_code": src_short_code,
         "status": "published" if zh_exists else "pending",
         "last_sync": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(zh_path))) if zh_exists else "Never",
         "artifact_url": zh_url,
@@ -126,11 +200,22 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
         else:
             target_url = "#"
             
+        # 🚀 [V75.5] 主权透传判定：若目标语种与原稿源语种一致，则该语种免除 AI 翻译与块缓存，标记为主权透传
+        from core.utils.language_hub import LanguageHub
+        is_source_match = (
+            resolved_src_lang is not None and 
+            LanguageHub.resolve_to_iso(lang_code) == LanguageHub.resolve_to_iso(resolved_src_lang)
+        )
+
         # 计算已翻译缓存段落的比例与进度
         cached_blocks = 0
         progress = 100 if exists else 0
         cache_info = ""
-        if total_blocks > 0 and hasattr(engine, "block_cache"):
+        
+        if is_source_match:
+            # 主权透传语种免除缓存检索与缓存警告
+            cache_info = "无需翻译 (主权透传)"
+        elif total_blocks > 0 and hasattr(engine, "block_cache"):
             route_style = None
             from core.governance.license_guard import LicenseGuard
             if LicenseGuard.is_licensed():
@@ -159,9 +244,17 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             for fp in blocks_fingerprints:
                 if engine.block_cache.get_block(lang_code, fp, style_hash):
                     cached_blocks += 1
-            if not exists:
-                progress = int(cached_blocks * 100 / total_blocks)
-            cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落"
+            progress = int(cached_blocks * 100 / total_blocks)
+            
+            # 💡 [V75.5] 体验优化：如果 HTML 存在且缓存段落有缺失
+            if exists and cached_blocks < total_blocks:
+                is_source_dirty = (current_hash is None or doc_info.get("source_hash") != current_hash)
+                if is_source_dirty:
+                    cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落 (源稿有更新，请重新分发)"
+                else:
+                    cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落"
+            else:
+                cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落"
         
         sync_matrix.append({
             "locale": target.prompt_lang,
@@ -233,7 +326,12 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             "node": current_node,
             "health": health_status,
             "last_audit": audit_status,
-            "error_detail": error_detail
+            "error_detail": error_detail,
+            "pipeline": {
+                "status": pipeline_status.get("status", "IDLE") if isinstance(pipeline_status, dict) else "IDLE",
+                "stage": pipeline_status.get("stage", "") if isinstance(pipeline_status, dict) else "",
+                "timestamp": pipeline_status.get("timestamp", 0) if isinstance(pipeline_status, dict) else 0
+            }
         },
         "environment": {
             "preview_mode": "live" if is_lab_alive else "static",

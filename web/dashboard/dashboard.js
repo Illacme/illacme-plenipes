@@ -116,10 +116,15 @@ window.initDashboard = async () => {
         if (typeof window.initGalaxy === 'function') window.initGalaxy();
         if (typeof initWebSocket === 'function') initWebSocket();
 
-        // 🌍 [V55.3] 动态拉取语种智库
+        // 🌍 [V55.3] 动态拉取语种智库与系统配置
         if (typeof apiFetch === 'function') {
             apiFetch('/api/system/languages').then(res => {
                 if (res && res.languages) window.availableLangs = res.languages;
+            });
+            apiFetch('/api/system/config').then(res => {
+                if (res) {
+                    window.settingsData = { ...window.settingsData, ...(res.config || res) };
+                }
             });
         }
 

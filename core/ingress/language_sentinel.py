@@ -16,22 +16,38 @@ class LanguageSentinel:
     
     @staticmethod
     def detect_language(content: str, filename: str = "") -> str:
-        """🚀 [V35.1] 混合探测引擎：Frontmatter -> 内容特征 -> 文件名启发"""
-        # 1. 优先检查 Frontmatter
+        """🚀 [V35.1] 混合探测引擎：Frontmatter -> 标题加权 -> 内容特征 -> 文件名启发"""
+        # 1. 优先检查 Frontmatter 中的 lang 声明
         fm_match = re.search(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
         if fm_match:
             lang_match = re.search(r'lang:\s*(\w+)', fm_match.group(1))
             if lang_match:
                 return lang_match.group(1).lower()
 
-        # 2. 内容特征探测 (简单启发式)
+        # 2. 提取并判断标题，支持标题中文优先判定
+        title = ""
+        if fm_match:
+            title_match = re.search(r'title:\s*([^\n]+)', fm_match.group(1))
+            if title_match:
+                title = title_match.group(1).strip()
+        if not title:
+            h1_match = re.search(r'^#\s+([^\n]+)', content, re.MULTILINE)
+            if h1_match:
+                title = h1_match.group(1).strip()
+
+        if title:
+            title_zh = len(re.findall(r'[\u4e00-\u9fff]', title))
+            title_en = len(re.findall(r'[a-zA-Z]', title))
+            if title_zh > 1 and (title_zh > title_en * 0.5 or title_en == 0):
+                return "zh"
+
+        # 3. 内容特征探测 (简单启发式)
         # 统计中文字符比例
         chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', content[:2000]))
         if chinese_chars > 5: # 降低阈值以支持短篇稿件
             return "zh"
-
             
-        # 3. 默认回退
+        # 4. 默认回退
         return "en"
 
     @staticmethod

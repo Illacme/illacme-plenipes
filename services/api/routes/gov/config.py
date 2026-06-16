@@ -204,14 +204,15 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                             new_targets = []
                             for item in value:
                                 code = item.get("lang_code") if isinstance(item, dict) else item
-                                name = LanguageHub.resolve_to_name(code)
+                                name = LanguageHub.resolve_to_native_name(code)
+                                prompt_lang = LanguageHub.resolve_to_name(code)
                                 iso = LanguageHub.resolve_to_iso(code)
-                                new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=name))
+                                new_targets.append(I18nTarget(lang_code=iso, name=name, prompt_lang=prompt_lang))
                             value = new_targets
                             routing_groups[level][key] = [t.model_dump() for t in value]
                         elif key == "i18n_settings.source.lang_code" and isinstance(value, str):
                             from core.utils.language_hub import LanguageHub
-                            name = LanguageHub.resolve_to_name(value)
+                            name = LanguageHub.resolve_to_native_name(value)
                             if hasattr(target, 'name'): target.name = name
                             routing_groups[level]["i18n_settings.source.name"] = name
                         

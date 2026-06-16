@@ -5,11 +5,13 @@ Illacme-plenipes Config - AI Models
 职责：定义 AI 算力节点、提示词模板与翻译策略。
 🛡️ [V24.0] Pydantic 严格校验体系：实现 AI 算力安全审计。
 """
-from pydantic import BaseModel, Field
+from enum import Enum
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Dict, Optional, Any
 from .base import StrategyType, ProviderType
 
 class AIProviderLimits(BaseModel):
+    """🚀 AI 服务提供商限流与并发阈值设定"""
     max_concurrency: int = Field(5, ge=1, le=50)
     timeout: float = Field(60.0, ge=1)
     max_tokens_per_min: int = Field(40000, ge=1000)
@@ -17,6 +19,7 @@ class AIProviderLimits(BaseModel):
     rate_limit_burst: int = Field(20, ge=1)
 
 class PromptTemplates(BaseModel):
+    """🚀 大模型指令母本与提示词策略库"""
     translate_system: str = "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Do not add any explanations."
     translate_user: str = "### Content ###\n{text}\n### Translation ###"
     seo_system: str = """You are an expert SEO strategist specializing in search engine algorithm optimization.
@@ -60,9 +63,60 @@ class ComputeNode(BaseModel):
     limits: AIProviderLimits = Field(default_factory=AIProviderLimits)
 
 class FallbackStrategyConfig(BaseModel):
+    """🚀 主备算力故障切换的策略配置"""
     primary: str = ""
     fallback: str = ""
     max_retries: int = Field(3, ge=0)
+
+class BlockAction(str, Enum):
+    """🚀 块级治理的分流动作枚举"""
+    TRANSLATE = "translate"
+    BYPASS = "bypass"
+    STRIP = "strip"
+    PARSE_COMMENTS_ONLY = "parse_comments_only"
+
+class BlockRule(BaseModel):
+    """🚀 针对特定语义块设定的专属处理规则"""
+    action: BlockAction = BlockAction.TRANSLATE
+    style_override: Optional[str] = None
+    prompt_override: Optional[str] = None
+    mask_strategy: Optional[str] = "default"
+
+class LinkGovernance(BaseModel):
+    """🚀 外部与内部超链接遮蔽、翻译与自愈路由设置"""
+    translate_labels: bool = True
+    translate_anchors: bool = True
+    auto_localize_internal_links: bool = True
+    external_links_mask_mode: str = "url_only"
+
+class ContentGovernanceConfig(BaseModel):
+    """🚀 内容级别的高级翻译治理控制与专有名词对照表"""
+    enabled: bool = True
+    block_rules: Dict[str, BlockRule] = Field(
+        default_factory=lambda: {
+            "header": BlockRule(action=BlockAction.TRANSLATE),
+            "paragraph": BlockRule(action=BlockAction.TRANSLATE),
+            "table": BlockRule(action=BlockAction.TRANSLATE),
+            "callout": BlockRule(action=BlockAction.TRANSLATE),
+            "code": BlockRule(action=BlockAction.BYPASS),
+            "html": BlockRule(action=BlockAction.BYPASS),
+            "comment": BlockRule(action=BlockAction.BYPASS)
+        }
+    )
+    link_governance: LinkGovernance = Field(default_factory=LinkGovernance)
+    bypass_block_patterns: List[str] = Field(default_factory=list)
+    glossary: Dict[str, Dict[str, str]] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_glossary(cls, data):
+        if isinstance(data, dict) and "glossary" in data:
+            glossary_val = data["glossary"]
+            if isinstance(glossary_val, dict):
+                is_old_format = len(glossary_val) > 0 and all(isinstance(v, str) for v in glossary_val.values())
+                if is_old_format:
+                    data["glossary"] = {"en": glossary_val}
+        return data
 
 class TranslationSettings(BaseModel):
     """🚀 [V66.5] 翻译与算力网关配置主权 - 物理与策略已完全解耦"""
@@ -105,3 +159,6 @@ class TranslationSettings(BaseModel):
     
     # 🚀 [V15.8] 韧性感知
     resilience: Optional[Any] = None
+    
+    # 🎯 里程碑升级：Markdown 翻译高级治理控制
+    governance: ContentGovernanceConfig = Field(default_factory=ContentGovernanceConfig)

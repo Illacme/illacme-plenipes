@@ -40,7 +40,7 @@ class AISchedulerDispatchOps:
         
         source_lang = engine.i18n.source.lang_code
         if source_lang == "auto":
-            detect_sample = ctx.masked_source[:1000] if ctx.masked_source else ctx.body_content[:1000]
+            detect_sample = ctx.raw_content[:2000] if ctx.raw_content else (ctx.masked_source[:1000] if ctx.masked_source else ctx.body_content[:1000])
             source_lang = LanguageHub.detect_source_lang(detect_sample, engine.translator)
             tlog.info(f"🔍 [语种智感] 自动探测结果: {source_lang} (Source: Auto)")
         else:
@@ -148,6 +148,12 @@ class AISchedulerDispatchOps:
                     tlog.info(f"⚖️ [主权透传] {rel_path} ({code})：当前出版模式为 {publishing_mode.value if publishing_mode else 'None'} 或语种一致，跳过 AI 翻译。")
                     return (code, content_to_parse, ctx.base_fm.copy(), {}, True)
 
+                # 🌟 获取配置中的块级治理规则
+                gov_cfg = getattr(engine.config.translation, "governance", None)
+                block_rules = gov_cfg.block_rules if gov_cfg else {}
+                bypass_patterns = gov_cfg.bypass_block_patterns if gov_cfg else []
+                link_gov = gov_cfg.link_governance if gov_cfg else None
+
                 blocks = parser.parse(content_to_parse)
                 translated_blocks = [None] * len(blocks)
                 tasks = []
@@ -155,27 +161,128 @@ class AISchedulerDispatchOps:
                     if block.type == "spacer" or not block.content.strip():
                         translated_blocks[idx] = block.content
                         continue
-                    cached_content = engine.block_cache.get_block(code, block.fingerprint, style_hash=style_hash)
+
+                    # 1. 匹配 bypass 正则表达式
+                    import re
+                    is_pattern_bypass = False
+                    for pattern in bypass_patterns:
+                        try:
+                            if re.search(pattern, block.content, re.MULTILINE):
+                                is_pattern_bypass = True
+                                break
+                        except Exception as pe:
+                            tlog.warning(f"⚠️ [Bypass 正则错误] Pattern {pattern} 解析失败: {pe}")
+
+                    if is_pattern_bypass:
+                        translated_blocks[idx] = block.content
+                        continue
+
+                    # 2. 检索 Block 专属治理动作
+                    rule = block_rules.get(block.type) if block_rules else None
+                    action = rule.action if rule else "translate"
+
+                    if action == "bypass":
+                        translated_blocks[idx] = block.content
+                        continue
+                    elif action == "strip":
+                        translated_blocks[idx] = ""
+                        continue
+
+                    # 🚀 [V75.13] 若指定清除缓存，则不从本地缓存中加载，强制重新发起翻译
+                    cached_content = None
+                    if not getattr(ctx, 'clear_cache', False):
+                        cached_content = engine.block_cache.get_block(code, block.fingerprint, style_hash=style_hash)
                     if cached_content:
                         tlog.debug(f"✨ [块级缓存命中] {rel_path} | Block {idx} | {block.fingerprint[:8]} | Style: {style_hash[:8]}")
                         translated_blocks[idx] = cached_content
                         bus.emit("BLOCK_CACHE_HIT", tokens=TokenCounter.count(block.content), node_name=engine.translator.node_name, provider_config=engine.translator.config)
                     else:
-                        tasks.append((idx, block))
+                        tasks.append((idx, block, rule))
                 from core.logic.ai.ai_scheduler import AIScheduler
                 active_translator = AIScheduler.get_best_translator(engine)
 
                 if tasks:
                     tlog.info(f"🔗 [AI 调用开始] 🎯 任务: [{priority.name}] | 文档: {rel_path} | 目标: {code} | 节点: {active_translator.node_name}")
                     max_retries = 3
-                    for idx, block in tasks:
+                    
+                    # 获取专有名词表 (Glossary)
+                    glossary = {}
+                    if gov_cfg and gov_cfg.glossary:
+                        glossary = gov_cfg.glossary.get(code) or gov_cfg.glossary.get("en") or {}
+
+                    for idx, block, rule in tasks:
                         from core.logic.ai.ai_logic_hub import AILogicHub
-                        masked_content, block_masks = AILogicHub.mask_block(block.content)
+                        
+                        # 获取该 block 对应的覆盖样式与覆盖提示词
+                        block_style = style
+                        block_remedy = None
+                        if rule:
+                            if rule.style_override: block_style = rule.style_override
+                            if rule.prompt_override: block_remedy = rule.prompt_override
+
+                        action = rule.action if rule else "translate"
+
+                        # 🌟 仅翻译代码注释特判分支
+                        if action == "parse_comments_only":
+                            try:
+                                code_lines = block.content.splitlines()
+                                new_lines = []
+                                for line in code_lines:
+                                    comment_match = re.search(r'(?P<code_part>.*?)(?P<comment_symbol>//|#)(?P<comment_text>.*)', line)
+                                    if comment_match:
+                                        code_part = comment_match.group('code_part')
+                                        symbol = comment_match.group('comment_symbol')
+                                        comment_text = comment_match.group('comment_text')
+                                        
+                                        if comment_text.strip() and re.search(r'\w', comment_text):
+                                            try:
+                                                translated_text = active_translator.translate(
+                                                    comment_text.strip(),
+                                                    engine.i18n.source.prompt_lang,
+                                                    name,
+                                                    context_type="comment",
+                                                    is_dry_run=is_dry_run,
+                                                    style=block_style,
+                                                    remedy_instruction=block_remedy
+                                                )
+                                                new_lines.append(f"{code_part}{symbol} {translated_text}")
+                                            except Exception as te:
+                                                tlog.warning(f"⚠️ [注释翻译失败]: {te}")
+                                                new_lines.append(line)
+                                        else:
+                                            new_lines.append(line)
+                                    else:
+                                        new_lines.append(line)
+                                
+                                b_result = "\n".join(new_lines)
+                                tlog.info(f"✅ [注释收割] Block {idx} ({code}) 仅翻译注释成功")
+                                translated_blocks[idx] = b_result
+                                engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
+                            except Exception as ce:
+                                tlog.warning(f"⚠️ [代码注释治理执行失败] Block {idx}: {ce}，回退至全文透传。")
+                                translated_blocks[idx] = block.content
+                            continue
+
+                        # 🌟 正常翻译分支
+                        
+                        # A. 术语隔离屏蔽
+                        if glossary:
+                            masked_glossary_content, glossary_masks = AILogicHub.mask_glossary(block.content, glossary)
+                        else:
+                            masked_glossary_content, glossary_masks = block.content, {}
+
+                        # B. 块级防护屏蔽
+                        masked_content, block_masks = AILogicHub.mask_block(
+                            masked_glossary_content,
+                            translate_labels=link_gov.translate_labels if link_gov else True,
+                            external_mask_mode=link_gov.external_links_mask_mode if link_gov else "url_only"
+                        )
                         
                         # 🚀 [Optimization] Check if it's a pure mask/punctuation block to bypass LLM
                         import re
                         stripped = re.sub(r'__B_MASK_\d+__', '', masked_content)
                         stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
+                        stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
                         if not re.search(r'\w', stripped):
                             tlog.info(f"⚡ [块级跳过] Block {idx} ({code}) 仅包含占位符/标点，跳过 AI 调用直接还原")
                             translated_blocks[idx] = block.content
@@ -197,7 +304,8 @@ class AISchedulerDispatchOps:
                                     context_type=block.type,
                                     is_dry_run=is_dry_run,
                                     knowledge_context=knowledge_context, # 🚀 注入语义背景
-                                    style=style, # 🚀 [V55.26] 注入频道级风格
+                                    style=block_style, # 🚀 [V55.26] 注入专属或频道级风格
+                                    remedy_instruction=block_remedy, # 🚀 注入覆盖提示词
                                     priority=TaskPriority.TRANSLATION,
                                     task_name=f"Block-{idx}-{code}"
                                 )
@@ -205,6 +313,10 @@ class AISchedulerDispatchOps:
                                 # 🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体
                                 if b_result:
                                     b_result = AILogicHub.unmask_block(b_result, block_masks)
+                                    # C. 术语还原
+                                    if glossary_masks:
+                                        b_result = AILogicHub.unmask_glossary(b_result, glossary_masks)
+
                                     # 🚀 [V10.5] 清洗大模型指令遵循抖动产生的分隔符残留 (如 ### Content ### 及其多语言变体)
                                     import re
                                     b_result = re.sub(r'^\s*###\s*[^#\n]+\s*###\s*\n?', '', b_result)

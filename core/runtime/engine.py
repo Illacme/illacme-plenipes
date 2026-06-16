@@ -233,7 +233,7 @@ class IllacmeEngine:
         return False
 
     @SovereignCore
-    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None):
+    def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None, clear_cache=False):
         """🚀 [V11.0] 核心同步入口：委托给具体的同步策略执行"""
         # 🧪 [TDR Protocol] 仿真校验钩子：在进入同步前核验文档与历史的一致性
         self.verify_docs_sync_hook()
@@ -245,7 +245,7 @@ class IllacmeEngine:
         return self.sync_strategy.execute(
             rel_path, route_prefix, route_source, is_dry_run,
             force_sync=force_sync, is_sandbox=is_sandbox, target_slot=target_slot,
-            target_langs=target_langs
+            target_langs=target_langs, clear_cache=clear_cache
         )
 
     def verify_docs_sync_hook(self):

@@ -112,7 +112,7 @@ class MetadataManager:
             self.sqlite.delete_document(rel_path)
             self._refresh_memory_index()
 
-    def update_egress_status(self, rel_path, channel_id, status, error=None):
+    def update_egress_status(self, rel_path, channel_id, status, error=None, stage=None):
         """🚀 [V35.2] 记录特定渠道的分发事务状态"""
         with self.lock:
             existing = self.sqlite.get_document(rel_path) or {}
@@ -120,10 +120,11 @@ class MetadataManager:
             status_map[channel_id] = {
                 "status": status,
                 "timestamp": int(time.time()),
-                "error": error
+                "error": error,
+                "stage": stage
             }
             self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=status_map)
-            tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} | 文档: {rel_path}")
+            tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} ({stage}) | 文档: {rel_path}")
 
 
     def get_doc_info(self, rel_path):

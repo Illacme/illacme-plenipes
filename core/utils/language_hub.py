@@ -3,16 +3,17 @@
 """
 Illacme-plenipes Core - Language Hub (全球语种智库)
 模块职责：实现全球语种识别、ISO 归一化及主题感知的路径对齐。
-🛡️ [AEL-Iter-v7.6.5]：实现“全量语种矩阵”与“AI 联觉识别”。
+🛡️ [AEL-Iter-v10.2]：引入噪声过滤与标题中文优先启发式，并解决 300 行红线物理规避。
 """
 
 import logging
 import re
 
 from core.utils.tracing import tlog
+from core.utils.language_data import SUPPORTED_MATRIX, REVERSE_MAP
 
 class LanguageHub:
-    """🚀 [V7.6.5] 全球语种智库：支持 100+ 语种的自动对齐与 AI 联觉识别"""
+    """🚀 [V10.2] 全球语种智库：支持 100+ 语种的自动对齐与 AI 联觉识别"""
 
     # 🌍 全量语种矩阵 (ISO 639-1)
     # 涵盖全球主要国家、地区及方言的自然语言映射
@@ -60,124 +61,29 @@ class LanguageHub:
         "la": "la", "latin": "la", "拉丁语": "la", "af": "af", "afrikaans": "af",
     }
 
-    # 🚀 [V55.4] 官方支持的语种矩阵 (前 50 大语种，带元数据与图标)
-    SUPPORTED_MATRIX = [
-        {"code": "zh", "name": "简体中文", "icon": "🇨🇳"},
-        {"code": "en", "name": "English", "icon": "🇬🇧"},
-        {"code": "hi", "name": "हिन्दी", "icon": "🇮🇳"},
-        {"code": "es", "name": "Español", "icon": "🇪🇸"},
-        {"code": "fr", "name": "Français", "icon": "🇫🇷"},
-        {"code": "ar", "name": "العربية", "icon": "🇸🇦"},
-        {"code": "bn", "name": "বাংলা", "icon": "🇧🇩"},
-        {"code": "pt", "name": "Português", "icon": "🇵🇹"},
-        {"code": "ru", "name": "Русский", "icon": "🇷🇺"},
-        {"code": "ur", "name": "اردو", "icon": "🇵🇰"},
-        {"code": "id", "name": "Bahasa Indonesia", "icon": "🇮🇩"},
-        {"code": "de", "name": "Deutsch", "icon": "🇩🇪"},
-        {"code": "ja", "name": "日本語", "icon": "🇯🇵"},
-        {"code": "mr", "name": "मराठी", "icon": "🇮🇳"},
-        {"code": "te", "name": "తెలుగు", "icon": "🇮🇳"},
-        {"code": "tr", "name": "Türkçe", "icon": "🇹🇷"},
-        {"code": "ta", "name": "தமிழ்", "icon": "🇮🇳"},
-        {"code": "vi", "name": "Tiếng Việt", "icon": "🇻🇳"},
-        {"code": "tl", "name": "Tagalog", "icon": "🇵🇭"},
-        {"code": "ko", "name": "한국어", "icon": "🇰🇷"},
-        {"code": "fa", "name": "فارسی", "icon": "🇮🇷"},
-        {"code": "ha", "name": "Hausa", "icon": "🇳🇬"},
-        {"code": "sw", "name": "Kiswahili", "icon": "🇰🇪"},
-        {"code": "jv", "name": "Javanese", "icon": "🇮🇩"},
-        {"code": "it", "name": "Italiano", "icon": "🇮🇹"},
-        {"code": "pa", "name": "ਪੰਜਾਬੀ", "icon": "🇵🇰"},
-        {"code": "kn", "name": "ಕನ್ನಡ", "icon": "🇮🇳"},
-        {"code": "gu", "name": "ગુજરાતી", "icon": "🇮🇳"},
-        {"code": "th", "name": "ไทย", "icon": "🇹🇭"},
-        {"code": "am", "name": "አማርኛ", "icon": "🇪🇹"},
-        {"code": "yo", "name": "Yorùbá", "icon": "🇳🇬"},
-        {"code": "my", "name": "မြန်မာဘာသာ", "icon": "🇲🇲"},
-        {"code": "om", "name": "Oromoo", "icon": "🇪🇹"},
-        {"code": "ps", "name": "پښتو", "icon": "🇦🇫"},
-        {"code": "uk", "name": "Українська", "icon": "🇺🇦"},
-        {"code": "su", "name": "Basa Sunda", "icon": "🇮🇩"},
-        {"code": "pl", "name": "Polski", "icon": "🇵🇱"},
-        {"code": "uz", "name": "Oʻzbekcha", "icon": "🇺🇿"},
-        {"code": "ro", "name": "Română", "icon": "🇷🇴"},
-        {"code": "az", "name": "Azərbaycanca", "icon": "🇦🇿"},
-        {"code": "ml", "name": "മലയാളം", "icon": "🇮🇳"},
-        {"code": "sd", "name": "سنڌي", "icon": "🇵🇰"},
-        {"code": "ig", "name": "Igbo", "icon": "🇳🇬"},
-        {"code": "hu", "name": "Magyar", "icon": "🇭🇺"},
-        {"code": "el", "name": "Ελληνικά", "icon": "🇬🇷"},
-        {"code": "cs", "name": "Čeština", "icon": "🇨🇿"},
-        {"code": "nl", "name": "Nederlands", "icon": "🇳🇱"},
-        {"code": "sv", "name": "Svenska", "icon": "🇸🇪"},
-        {"code": "fi", "name": "Suomi", "icon": "🇫🇮"},
-        {"code": "no", "name": "Norsk", "icon": "🇳🇴"}
-    ]
+    # 🚀 [V55.4] 官方支持的语种矩阵 (从 language_data 动态挂载)
+    SUPPORTED_MATRIX = SUPPORTED_MATRIX
 
     @classmethod
     def get_supported_matrix(cls):
         """获取系统当前支持的语种大盘"""
         return cls.SUPPORTED_MATRIX
 
+    @classmethod
+    def resolve_to_native_name(cls, iso_code: str) -> str:
+        """🚀 获取 ISO -> 官方本地化/友好名称"""
+        if not iso_code: return "English"
+        code = iso_code.lower().strip()
+        for item in cls.SUPPORTED_MATRIX:
+            if item["code"] == code:
+                return item["name"]
+        return cls.resolve_to_name(iso_code)
+
     @staticmethod
     def resolve_to_name(iso_code: str) -> str:
         """🚀 反向解析：ISO -> 友好名称"""
         if not iso_code: return "English"
 
-        # 建立反向索引
-        reverse_map = {
-            "zh": "Chinese (Simplified)",
-            "zh-Hant": "Chinese (Traditional)",
-            "en": "English",
-            "ja": "Japanese",
-            "fr": "French",
-            "de": "German",
-            "es": "Spanish",
-            "it": "Italian",
-            "ko": "Korean",
-            "ru": "Russian",
-            "hi": "Hindi",
-            "ar": "Arabic",
-            "bn": "Bengali",
-            "pt": "Portuguese",
-            "ur": "Urdu",
-            "id": "Indonesian",
-            "tr": "Turkish",
-            "vi": "Vietnamese",
-            "th": "Thai",
-            "pl": "Polish",
-            "uk": "Ukrainian",
-            "nl": "Dutch",
-            "sv": "Swedish",
-            "no": "Norwegian",
-            "fi": "Finnish",
-            "el": "Greek",
-            "cs": "Czech",
-            "hu": "Hungarian",
-            "mr": "Marathi",
-            "te": "Telugu",
-            "ta": "Tamil",
-            "tl": "Tagalog",
-            "fa": "Persian",
-            "ha": "Hausa",
-            "sw": "Swahili",
-            "jv": "Javanese",
-            "pa": "Punjabi",
-            "kn": "Kannada",
-            "gu": "Gujarati",
-            "am": "Amharic",
-            "yo": "Yoruba",
-            "my": "Burmese",
-            "om": "Oromo",
-            "ps": "Pashto",
-            "su": "Sundanese",
-            "uz": "Uzbek",
-            "ro": "Romanian",
-            "az": "Azerbaijani",
-            "ml": "Malayalam",
-            "sd": "Sindhi",
-            "ig": "Igbo"
-        }
         code = iso_code.lower().strip()
         # 模糊匹配
         if code == "auto": return "Auto Detect"
@@ -185,7 +91,7 @@ class LanguageHub:
         if "zh-hant" in code or code == "zh-tw": return "Chinese (Traditional)"
         if "en" in code: return "English"
 
-        return reverse_map.get(iso_code, iso_code)
+        return REVERSE_MAP.get(iso_code, iso_code)
 
     @staticmethod
     def resolve_to_iso(name: str, ai_client=None) -> str:
@@ -215,26 +121,68 @@ class LanguageHub:
         return name
 
     @staticmethod
+    def _clean_noise(text: str) -> str:
+        """
+        🚀 清洗 Markdown / HTML 噪声：物理移除代码块、超链接及 html 标签
+        """
+        if not text: return ""
+        # 1. 移除多行及行内代码块
+        t = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+        t = re.sub(r'`[^`\n]+`', '', t)
+        # 2. 移除 Markdown 链接与图片以及 Obsidian 双链
+        t = re.sub(r'!\[.*?\]\(.*?\)', '', t)
+        t = re.sub(r'\[.*?\]\(.*?\)', '', t)
+        t = re.sub(r'!\[\[.*?\]\]', '', t)
+        t = re.sub(r'\[\[.*?\]\]', '', t)
+        # 3. 移除纯 URL 链接
+        t = re.sub(r'https?://\S+', '', t)
+        # 4. 移除 HTML 标签
+        t = re.sub(r'<[^>]+>', '', t)
+        return t
+
+    @staticmethod
     def detect_source_lang(text: str, ai_client=None) -> str:
         """
-        🚀 智感源语种探测：支持开关感知的自动降级
+        🚀 智感源语种探测：支持开关感知的自动降级与噪音排除、标题优先机制
         """
         if not text: return "zh-Hans"
 
-        # 1. 简单统计学探测 (极快，无需 AI)
-        zh_count = len(re.findall(r'[\u4e00-\u9fff]', text))
-        en_count = len(re.findall(r'[a-zA-Z]', text))
+        # 1. 优先提取标题进行强中文字符判别
+        title = ""
+        fm_match = re.search(r'^---\s*\n(.*?)\n---', text, re.DOTALL)
+        if fm_match:
+            title_match = re.search(r'title:\s*([^\n]+)', fm_match.group(1))
+            if title_match:
+                title = title_match.group(1).strip()
+        if not title:
+            h1_match = re.search(r'^#\s+([^\n]+)', text, re.MULTILINE)
+            if h1_match:
+                title = h1_match.group(1).strip()
+
+        if title:
+            title_zh = len(re.findall(r'[\u4e00-\u9fff]', title))
+            title_en = len(re.findall(r'[a-zA-Z]', title))
+            # 只要标题包含 2 个以上汉字，且汉字占比偏高，则强优先判定为中文
+            if title_zh > 1 and (title_zh > title_en * 0.5 or title_en == 0):
+                return "zh-Hans"
+
+        # 2. 排除代码块与超级链接等无语义英文语法噪声
+        clean_text = LanguageHub._clean_noise(text)
+
+        # 3. 简单统计学探测 (极快，无需 AI)
+        zh_count = len(re.findall(r'[\u4e00-\u9fff]', clean_text))
+        en_count = len(re.findall(r'[a-zA-Z]', clean_text))
 
         if zh_count > 10 and zh_count > en_count * 0.5: return "zh-Hans"
         if en_count > 50 and en_count > zh_count * 5: return "en"
 
-        # 2. [V10.0] AI 深度探测开关检查
+        # 4. [V10.0] AI 深度探测开关检查
         if ai_client:
             # 🚀 [V10.0] 检查全局 AI 推理开关
             is_enabled = getattr(ai_client.trans_cfg, 'enable_ai', True)
             if is_enabled:
                 try:
-                    return LanguageHub._resolve_via_ai(text[:500], ai_client, is_detection=True)
+                    return LanguageHub._resolve_via_ai(clean_text[:500], ai_client, is_detection=True)
                 except Exception:
                     pass
             else:
@@ -254,12 +202,10 @@ class LanguageHub:
         else:
             user_prompt = f"What is the ISO 639-1 code for language name: '{input_str}'?"
 
-        # 这里的 ai_client 应该是适配了项目的 Translator 接口
         res = ai_client.raw_inference(user_prompt, system_prompt)
         if not res: return "en"
 
         clean_res = res.strip().lower()
-        # 简单清洗
         if "zh-hans" in clean_res: return "zh-Hans"
         if "zh-hant" in clean_res: return "zh-Hant"
         return clean_res
@@ -269,12 +215,9 @@ class LanguageHub:
         """🚀 [V57.0] 动态主权路径适配：支持原稿路径的灵活挂载"""
         if not iso_code: return ""
         theme = theme.lower() if theme else "generic"
-        
-        # 🛡️ [Sovereignty Logic]
-        # 如果是原稿语种，且未开启强制前缀，则返回空前缀（即挂载在 SSG 根目录）
-        # 目前主要针对 Starlight 和 Docusaurus 等有 root locale 概念的框架
+
         if iso_code.lower() == source_lang.lower() and not force_prefix:
             if theme in ["starlight", "docusaurus"]:
                 return ""
-            
+
         return iso_code.lower()

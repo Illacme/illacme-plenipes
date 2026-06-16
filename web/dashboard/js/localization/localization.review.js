@@ -38,6 +38,19 @@ window.openTranslationReview = async function (docId) {
     _reviewShowDrawer();
     _reviewSetLoading(true);
 
+    // Ensure settingsData is loaded
+    if (!window.settingsData || !window.settingsData.ingress_settings) {
+        try {
+            const configRes = await fetch('/api/system/config');
+            if (configRes.ok) {
+                const configData = await configRes.json();
+                window.settingsData = { ...window.settingsData, ...(configData.config || configData) };
+            }
+        } catch (err) {
+            console.error("Failed to load settingsData:", err);
+        }
+    }
+
     try {
         const res = await fetch(`/api/translation/review/${encodeURIComponent(docId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

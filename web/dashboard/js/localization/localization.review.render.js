@@ -17,26 +17,28 @@ function _reviewRender() {
     const tabsHtml = langs.map(lc => {
         const ld = data.langs[lc];
         const isDirty = window._isReviewDirty && window._isReviewDirty(lc);
-        const badge = ld.human_approved ? (ld.review_is_stale ? '⚠️' : '🔒') : '🤖';
+        const cleanLc = lc.toLowerCase();
+        const langObj = (window.availableLangs || []).find(l => l.code === cleanLc) || (window.availableLangs || []).find(l => l.code === cleanLc.split('-')[0]);
+        const icon = langObj ? langObj.icon : '🌍';
         const dirtyMark = isDirty ? '<span class="review-dirty-dot" style="color:#ffb300; margin-left:4px; font-size:0.9rem;">●</span>' : '';
         const isActive = lc === state.activeLang;
-        return `<button class="review-lang-tab ${isActive ? 'active' : ''}" id="review-tab-${lc}" onclick="window.switchReviewLang('${lc}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--glass-border);background:${isActive ? 'var(--accent-primary)' : 'transparent'};color:${isActive ? '#000' : 'var(--text-dim)'};cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;">${badge} ${lc.toUpperCase()}${dirtyMark}</button>`;
+        let langName = langObj ? langObj.name : lc.toUpperCase();
+        if (!langObj) {
+            try { langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(cleanLc === 'zh' ? 'zh-Hans' : cleanLc) || langName; } catch (e) {}
+        }
+        return `<button class="review-lang-tab ${isActive ? 'active' : ''}" id="review-tab-${lc}" onclick="window.switchReviewLang('${lc}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--glass-border);background:${isActive ? 'var(--accent-primary)' : 'transparent'};color:${isActive ? '#000' : 'var(--text-dim)'};cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;">${icon} ${langName}${dirtyMark}</button>`;
     }).join('');
-
     document.getElementById('review-drawer-title').textContent = `🔍 译文校对工作台 — ${data.doc_title || state.docId}`;
     document.getElementById('review-lang-tabs').innerHTML = tabsHtml;
     _reviewRenderBody();
 }
-
 function _reviewRenderBody() {
     const state = window._reviewState;
     const lc = state.activeLang;
     if (!state.data) return;
-
     // Reset review-body padding so split view can go edge to edge
     document.getElementById('review-body').style.padding = '0';
     document.getElementById('review-body').style.gap = '0';
-
     // Synchronize toggle buttons style based on layout state
     const btnSource = document.getElementById('btn-view-source');
     const btnPreview = document.getElementById('btn-view-preview');

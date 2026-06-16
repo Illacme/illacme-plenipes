@@ -58,6 +58,7 @@ GOVERNANCE_RULES = {
         r"^translation\.max_retries$",     # 品牌算力重试机制
         r"^translation\.max_chunk_size$",  # 品牌算力切片粒度
         r"^translation\.enable_ai$",       # 品牌是否开启 AI 治理
+        r"^translation\.governance\..*$",  # 品牌翻译高级治理配置
         r"^theme_options\..*$",            # 品牌视觉参数微调
         r"^framework_adapters\..*$",       # 品牌排版框架适配
         r"^frontmatter_.*$",               # 品牌文档标准
