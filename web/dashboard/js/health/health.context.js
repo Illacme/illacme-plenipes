@@ -190,9 +190,24 @@ window.refreshGovernanceContext = async () => {
         if (i18nEl && data.i18n) {
             const isEnabled = data.i18n.enabled !== false;
             if (isEnabled) {
+                const getLangLabel = (codeOrName) => {
+                    if (!codeOrName) return 'NONE';
+                    const cleanVal = codeOrName.trim().toLowerCase();
+                    const availableLangs = window.availableLangs || [];
+                    
+                    let langObj = availableLangs.find(l => (l.name || '').toLowerCase() === cleanVal);
+                    if (!langObj) {
+                        langObj = availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal) ||
+                                  availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal.split('-')[0]);
+                    }
+                    if (cleanVal === 'auto detect' || cleanVal === 'auto') {
+                        return '🔍 AUTO';
+                    }
+                    return langObj ? `${langObj.icon} ${codeOrName}` : codeOrName;
+                };
                 const targets = data.i18n.targets || [];
-                const targetsStr = targets.length > 0 ? targets.join(', ') : 'NONE';
-                i18nEl.innerText = `${data.i18n.source} ➔ ${targetsStr}`;
+                const targetsStr = targets.length > 0 ? targets.map(t => getLangLabel(t)).join(', ') : 'NONE';
+                i18nEl.innerText = `${getLangLabel(data.i18n.source)} ➔ ${targetsStr}`;
                 i18nEl.style.color = '';
                 i18nEl.style.textDecoration = '';
                 i18nEl.style.opacity = '';
