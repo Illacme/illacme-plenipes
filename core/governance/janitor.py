@@ -223,40 +223,62 @@ class JanitorService:
 
         tlog.info(f"🧹 [物理自愈] 正在扫描并净化分发疆域: {target_root}")
         
-        removed_count = 0
+        # 1. 收集所有待比对的物理资产路径
+        all_files = []
         for root, _, files in os.walk(target_root):
             for f in files:
-                # 保护隐藏文件与系统文件
                 if f.startswith('.'): continue
-                
-                f_abs = os.path.join(root, f)
-                norm_path = os.path.realpath(f_abs).lower()
-                
-                # 🚀 [调试] 路径指纹比对 (提升至 INFO 等级)
-                tlog.info(f"🔍 [物理自愈] 正在比对资产: {norm_path}")
-                tlog.info(f"📊 [物理自愈] 当前新鲜资产池规模: {len(self.fresh_paths)}")
-                
-                # 🚀 [V35.2] 核心自愈逻辑：绝对路径精准指纹比对
-                is_fresh = norm_path in self.fresh_paths
+                all_files.append(os.path.join(root, f))
 
-                
-                # 特赦：主题静态资源 (由 SSG 适配器负责)
-                is_amnesty = any(term in norm_path for term in ['/static/', '/assets/', 'favicon', 'search_index', 'link_graph'])
-                
-                if not is_fresh and not is_amnesty:
-                    if is_dry_run:
-                        tlog.info(f"    [模拟清理] 过时影子文件: {f_abs}")
-                    else:
-                        try:
-                            tlog.warning(f"🛡️ [净化审计流水] 已抹除非法资产: {f_abs}")
-                            os.remove(f_abs)
-                            removed_count += 1
-                        except Exception: pass
-
-        
-        if removed_count > 0:
-            tlog.info(f"✨ [物理自愈] 已清理 {removed_count} 个过时资产。")
-            self._gc_empty_directories(target_root, is_dry_run)
-        else:
+        total_files = len(all_files)
+        if total_files == 0:
             tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            return
+
+        to_remove = []
+        # 2. 预先做快速比对，找出需要清理的文件列表
+        for f_abs in all_files:
+            norm_path = os.path.realpath(f_abs).lower()
+            is_fresh = norm_path in self.fresh_paths
+            is_amnesty = any(term in norm_path for term in ['/static/', '/assets/', 'favicon', 'search_index', 'link_graph'])
+            
+            if not is_fresh and not is_amnesty:
+                to_remove.append(f_abs)
+
+        total_to_remove = len(to_remove)
+        if total_to_remove == 0:
+            tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            return
+
+        # 3. 逐个执行删除，以清晰的执行进度百分比形式进行打印
+        tlog.info(f"🧹 [物理自愈] 发现 {total_to_remove} 个过时资产需要清理，正在执行净化...")
+        
+        removed_count = 0
+        log_interval = max(1, total_to_remove // 10)
+        
+        for idx, f_abs in enumerate(to_remove):
+            if is_dry_run:
+                if total_to_remove <= 5:
+                    tlog.info(f"    [模拟清理] 过时影子文件: {f_abs}")
+            else:
+                try:
+                    os.remove(f_abs)
+                    removed_count += 1
+                except Exception:
+                    pass
+
+            # 打印执行进度
+            processed = idx + 1
+            if processed % log_interval == 0 or processed == total_to_remove:
+                percent = int(processed * 100 / total_to_remove)
+                tlog.info(f"🧹 [物理自愈] 净化进度: {percent}% ({processed}/{total_to_remove})")
+
+        if not is_dry_run:
+            if removed_count > 0:
+                tlog.info(f"✨ [物理自愈] 已成功清理 {removed_count} 个过时资产。")
+                self._gc_empty_directories(target_root, is_dry_run)
+            else:
+                tlog.info("✨ [物理自愈] 净化完成，未删除任何资产。")
+        else:
+            tlog.info(f"✨ [物理自愈] [模拟清理] 拟清理 {total_to_remove} 个过时资产。")
 

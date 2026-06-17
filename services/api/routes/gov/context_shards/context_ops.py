@@ -142,14 +142,132 @@ def get_sync_stats_impl():
     """
     engine = get_global_engine()
     if not engine: return {}
+    
+    from datetime import datetime
+    
+    # 1. 读取原始同步元数据
     path = engine._resolve_path(engine.config.get_sync_stats_path())
+    sync_data = {}
     if os.path.exists(path):
         import json
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                sync_data = json.load(f)
         except: pass
-    return {}
+
+    # 2. 丰富统计：文档规模、发布状态、字数
+    docs = engine.meta.get_documents_snapshot()
+    total_docs = len(docs)
+    total_words = 0
+    live_count = 0
+    draft_count = 0
+    
+    lang_stats = {}
+    source_lang = engine.config.i18n_settings.source.lang_code.lower() if getattr(engine.config.i18n_settings, 'source', None) else "zh"
+    target_langs = [t.lang_code.lower() for t in engine.config.i18n_settings.targets] if getattr(engine.config.i18n_settings, 'targets', None) else []
+    
+    for rel_path, info in docs.items():
+        if not info: continue
+        seo_data = info.get("seo_data") or {}
+        word_count = seo_data.get("word_count") or 0
+        total_words += word_count
+        
+        status_map = info.get("publish_status") or {}
+        live_channels = [ch for ch, s in status_map.items() if s and s.get("status") == "success"]
+        if live_channels:
+            live_count += 1
+        else:
+            draft_count += 1
+            
+        translations = info.get("translations") or {}
+        for lang, t_info in translations.items():
+            if t_info and t_info.get("status") == "DONE":
+                lang_stats[lang.lower()] = lang_stats.get(lang.lower(), 0) + 1
+
+    # 翻译覆盖率百分比
+    translation_coverage = {}
+    for lang in target_langs:
+        cnt = lang_stats.get(lang, 0)
+        coverage = round(cnt / total_docs * 100, 1) if total_docs > 0 else 0.0
+        translation_coverage[lang] = {
+            "translated_count": cnt,
+            "coverage_percent": coverage
+        }
+
+    # 3. 丰富统计：知识图谱与双链健康
+    total_nodes = 0
+    total_links = 0
+    isolated_nodes = 0
+    broken_links = 0
+    
+    if hasattr(engine, "knowledge_graph") and engine.knowledge_graph:
+        nodes = getattr(engine.knowledge_graph, "nodes", {})
+        total_nodes = len(nodes)
+        
+        for node_id, node_data in nodes.items():
+            connections = node_data.get("connections", {})
+            manual = node_data.get("manual_connections", {})
+            all_conn = {**connections, **manual}
+            total_links += len(all_conn)
+            
+            if len(all_conn) == 0:
+                isolated_nodes += 1
+                
+            for target_id in all_conn.keys():
+                if target_id not in nodes:
+                    broken_links += 1
+
+    # 4. 读取最近算力账本
+    recent_usage = []
+    try:
+        conn = engine.meta.sqlite._get_conn()
+        cursor = conn.execute("""
+            SELECT event_type, description, cost, timestamp 
+            FROM usage_ledger 
+            WHERE imprint_id = ? 
+            ORDER BY timestamp DESC 
+            LIMIT 5
+        """, (engine.imprint_id,))
+        for r in cursor.fetchall():
+            rd = dict(r)
+            if rd.get("timestamp"):
+                # 转换时间戳为更易读的字符串格式
+                import time
+                rd["time_str"] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rd["timestamp"]))
+            recent_usage.append(rd)
+    except:
+        pass
+
+    enriched_stats = {
+        "imprint": engine.imprint_id,
+        "processed_timestamp": sync_data.get("processed_timestamp", datetime.now().isoformat()),
+        "engine_version": sync_data.get("engine_version", "V50.3"),
+        "documents": {
+            "total_count": total_docs,
+            "total_word_count": total_words,
+            "live_count": live_count,
+            "draft_count": draft_count,
+            "live_percent": round(live_count / total_docs * 100, 1) if total_docs > 0 else 0.0
+        },
+        "translation": {
+            "source_lang": source_lang,
+            "target_langs": target_langs,
+            "coverage": translation_coverage
+        },
+        "knowledge_graph": {
+            "total_nodes": total_nodes,
+            "total_links": total_links,
+            "isolated_count": isolated_nodes,
+            "broken_link_count": broken_links,
+            "health_score": max(0, min(100, int((1 - (broken_links / max(1, total_links))) * 100))) if total_links > 0 else 100
+        },
+        "usage": {
+            "session_cost": sync_data.get("usage", {}).get("session_cost", 0.0),
+            "total_historical_cost": sync_data.get("usage", {}).get("total_historical_cost", 0.0),
+            "recent_ledger": recent_usage
+        }
+    }
+    return enriched_stats
 
 def get_health_report_impl():
     """

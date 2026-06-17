@@ -13,6 +13,7 @@ window.vaultCurrentQuery = '';
 window.vaultPageSize = 20;
 window.vaultActiveFolder = '';
 window.vaultTreeInitialized = false;
+window.vaultTotalItems = 0;
 
 // 2. 稿件仓库加载器
 window.loadVault = async (query = null, page = null) => {
@@ -45,10 +46,14 @@ window.loadVault = async (query = null, page = null) => {
     // 预更新分页 UI
     const pageInfo = document.getElementById('vault-page-info');
     if (pageInfo) pageInfo.innerText = `第 ${window.vaultCurrentPage} 页`;
+    const firstBtn = document.getElementById('vault-first-btn');
     const prevBtn = document.getElementById('vault-prev-btn');
     const nextBtn = document.getElementById('vault-next-btn');
+    const lastBtn = document.getElementById('vault-last-btn');
+    if (firstBtn) firstBtn.disabled = true;
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
+    if (lastBtn) lastBtn.disabled = true;
     listEl.innerHTML = Array(5).fill(0).map(() => `
         <tr>
             <td><div class="skeleton" style="width: 140px; height: 20px;"></div></td>
@@ -67,9 +72,23 @@ window.loadVault = async (query = null, page = null) => {
         }
         const manuscripts = res.items;
 
-        // 更新分页按钮可用性
+        window.vaultTotalItems = res.total || 0;
+        const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
+
+        // 更新分页信息和按钮可用性
+        if (pageInfo) {
+            pageInfo.innerText = `第 ${window.vaultCurrentPage} / ${totalPages} 页 (共 ${window.vaultTotalItems} 条原稿)`;
+        }
+        if (firstBtn) firstBtn.disabled = window.vaultCurrentPage <= 1;
         if (prevBtn) prevBtn.disabled = window.vaultCurrentPage <= 1;
-        if (nextBtn) nextBtn.disabled = manuscripts.length < window.vaultPageSize;
+        if (nextBtn) nextBtn.disabled = window.vaultCurrentPage >= totalPages;
+        if (lastBtn) lastBtn.disabled = window.vaultCurrentPage >= totalPages;
+
+        const goInput = document.getElementById('vault-go-page-input');
+        if (goInput) {
+            goInput.max = totalPages;
+            goInput.value = window.vaultCurrentPage;
+        }
 
         if (manuscripts.length === 0) {
             listEl.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; opacity:0.5;">📭 仓库空空如也，未发现合规稿件。</td></tr>';
@@ -114,9 +133,40 @@ window.loadVault = async (query = null, page = null) => {
 };
 
 window.changeVaultPage = (delta) => {
+    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
     const newPage = window.vaultCurrentPage + delta;
-    if (newPage < 1) return;
+    if (newPage < 1 || newPage > totalPages) return;
     window.loadVault(null, newPage);
+};
+
+window.changeVaultPageDirect = (page) => {
+    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
+    let targetPage = page;
+    if (page === -1) {
+        targetPage = totalPages; // 尾页
+    }
+    if (targetPage < 1 || targetPage > totalPages) return;
+    window.loadVault(null, targetPage);
+};
+
+window.goVaultPage = () => {
+    const goInput = document.getElementById('vault-go-page-input');
+    if (!goInput) return;
+    const val = parseInt(goInput.value, 10);
+    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
+    if (isNaN(val) || val < 1 || val > totalPages) {
+        if (window.Swal) {
+            Swal.fire({
+                title: '无效的页码',
+                text: `请输入 1 至 ${totalPages} 之间的有效页码`,
+                icon: 'warning',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+        return;
+    }
+    window.loadVault(null, val);
 };
 window.closeVaultDrawer = () => {
     document.getElementById('vault-drawer').style.display = 'none';

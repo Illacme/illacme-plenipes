@@ -17,19 +17,62 @@ class SQLiteBackend(SQLiteReviewMixin):
         self.db_path = os.path.abspath(os.path.expanduser(db_path))
         self.engine = engine
         self._local = threading.local()
+        self._db_lock = threading.RLock()
+        self._log_warned_truncate = False
+        
+        # 🚀 [V100.6] 进程内串行化包装，确保多线程下访问 SQLite 串行进行以防止挂载盘锁冲突
+        self._wrap_db_methods()
         
         # 🛡️ [V35.2] 物理加固：确保数据库父目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
+
+    def _wrap_db_methods(self):
+        for attr_name in dir(self):
+            if attr_name.startswith('_') or attr_name in ('db_path', 'engine'):
+                continue
+            attr_val = getattr(self, attr_name)
+            if callable(attr_val):
+                setattr(self, attr_name, self._wrap_method(attr_val))
+
+    def _wrap_method(self, method):
+        def wrapper(*args, **kwargs):
+            with self._db_lock:
+                return method(*args, **kwargs)
+        return wrapper
+
     def _get_conn(self):
         if not hasattr(self._local, "conn"):
             timeout = getattr(self.engine.config.system.resilience, 'db_timeout', 30.0) if self.engine else 30.0
             self._local.conn = sqlite3.connect(self.db_path, timeout=timeout, check_same_thread=False)
             self._local.conn.row_factory = sqlite3.Row
             try:
-                self._local.conn.execute("PRAGMA journal_mode=WAL")
-                self._local.conn.execute("PRAGMA synchronous=NORMAL")
-            except: pass
+                # 🚀 [V100.5] 挂载卷/网络共享盘跨平台兼容：停用 WAL 模式以防止 disk I/O error
+                db_dir = os.path.abspath(self.db_path)
+                is_mounted = any(db_dir.startswith(p) for p in ['/Volumes/', '/mnt/', '/media/', '\\\\'])
+                
+                # 针对 Windows 进一步检测映射的网络驱动器 (DRIVE_REMOTE=4) 或可移动U盘 (DRIVE_REMOVABLE=2)
+                if not is_mounted and os.name == 'nt':
+                    try:
+                        import ctypes
+                        drive = os.path.splitdrive(db_dir)[0] + "\\"
+                        drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive)
+                        if drive_type in (2, 4):  # 2: DRIVE_REMOVABLE, 4: DRIVE_REMOTE
+                            is_mounted = True
+                    except:
+                        pass
+
+                if is_mounted:
+                    self._local.conn.execute("PRAGMA journal_mode=TRUNCATE")
+                    self._local.conn.execute("PRAGMA synchronous=FULL")
+                    if not getattr(self, '_log_warned_truncate', False):
+                        tlog.info(f"🗄️ [SQLite] 检测到挂载卷或网络共享路径 {self.db_path}，已自动切换至 TRUNCATE 兼容模式并开启同步保护")
+                        self._log_warned_truncate = True
+                else:
+                    self._local.conn.execute("PRAGMA journal_mode=WAL")
+                    self._local.conn.execute("PRAGMA synchronous=NORMAL")
+            except Exception as e:
+                tlog.warning(f"⚠️ [SQLite] 无法配置 journal_mode: {e}")
         return self._local.conn
 
     def _init_db(self):
@@ -239,6 +282,22 @@ class SQLiteBackend(SQLiteReviewMixin):
                            (json.dumps(existing_meta), rel_path))
             return True
 
+
+    def get_documents_count_filtered(self, query=None, folder=None):
+        sql = "SELECT COUNT(*) FROM documents"
+        params = []
+        conditions = []
+        if query:
+            conditions.append("(title LIKE ? OR rel_path LIKE ? OR slug LIKE ?)")
+            p = f"%{query}%"
+            params.extend([p, p, p])
+        if folder:
+            conditions.append("rel_path LIKE ?")
+            params.append(f"{folder}/%")
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
+        res = self._get_conn().execute(sql, params).fetchone()
+        return res[0] if res else 0
 
     def get_total_documents_count(self):
         res = self._get_conn().execute("SELECT COUNT(*) FROM documents").fetchone()

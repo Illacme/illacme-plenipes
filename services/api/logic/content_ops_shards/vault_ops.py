@@ -19,7 +19,8 @@ def search_vault_logic(engine, q: str = "", page: int = 1, limit: int = 50, fold
     """🚀 [V55.0] 联邦检索入口：服务于 Dashboard Vault 视图"""
     if not engine: return {"error": "Engine not initialized"}
     docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q, folder=folder)
-    return {"items": docs}
+    total = engine.meta.sqlite.get_documents_count_filtered(query=q, folder=folder)
+    return {"items": docs, "total": total}
 
 
 def get_document_detail_logic(engine, doc_id: str):

@@ -44,6 +44,7 @@ window.showView = (viewId, subId) => {
     }
     if (viewId === 'overview' && typeof refreshGalaxy === 'function') refreshGalaxy();
     if (viewId === 'tower' && typeof loadTowerCenter === 'function') loadTowerCenter();
+    if (viewId === 'analytics' && typeof loadAnalyticsCenter === 'function') loadAnalyticsCenter();
 };
 
 const originalShowView = window.showView;
@@ -79,7 +80,7 @@ window.showView = (id, subId) => {
 
 window.handleRouting = () => {
     const hash = window.location.hash.replace('#/', '');
-    const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower'];
+    const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower', 'analytics'];
     if (hash && validViews.includes(hash)) {
         if (window.currentView === hash) return; // Prevent duplicate execution from programmatic hash changes
         const subId = window.pendingSubView;

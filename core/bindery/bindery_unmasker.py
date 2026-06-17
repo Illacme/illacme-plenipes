@@ -198,6 +198,6 @@ class BinderyUnmasker:
             current_depth += 1
 
         if self.link_resolver:
-            final_body = self.link_resolver.heal_content(final_body, lang_code, route_prefix, mapped_sub_dir)
+            final_body = self.link_resolver.heal_content(final_body, lang_code, route_prefix, mapped_sub_dir, source_rel_path=rel_path)
 
         return final_body
