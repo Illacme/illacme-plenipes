@@ -127,41 +127,101 @@ window.syncGalaxyLabels = () => {
         scored.push({ node, dist, relativeX, relativeY, isHovered });
     }
 
-    // 🏎️ 按距离排序，只取最近的 MAX_VISIBLE_LABELS 个，保障超大规模下 DOM 性能守恒
-    scored.sort((a, b) => a.dist - b.dist);
-    const visibleSet = new Set();
-    const maxLabels = Math.min(scored.length, perf.MAX_VISIBLE_LABELS);
+    // 🏎️ 重新排序：被 Hover 的节点以及 Imprint 根节点拥有最高显示权，其次按相机距离从近到远排序
+    scored.sort((a, b) => {
+        if (a.isHovered !== b.isHovered) return a.isHovered ? -1 : 1;
+        const aIsImprint = a.node.group === 'imprint';
+        const bIsImprint = b.node.group === 'imprint';
+        if (aIsImprint !== bIsImprint) return aIsImprint ? -1 : 1;
+        return a.dist - b.dist;
+    });
 
-    // 🏎️ 第二遍：仅对通过筛选的胜出节点执行 DOM 操作
-    for (let i = 0; i < maxLabels; i++) {
+    const renderedBoxes = [];
+    const visibleSet = new Set();
+
+    // 🏎️ 第二遍：仅对胜出且没有碰撞重叠的节点执行 DOM 操作与 GPU 定位
+    for (let i = 0; i < scored.length; i++) {
+        // 达到最大可见标签上限则中止，保障超大规模下 DOM 性能守恒
+        if (visibleSet.size >= perf.MAX_VISIBLE_LABELS) break;
+
         const { node, dist, relativeX, relativeY, isHovered } = scored[i];
+        const isImprint = node.group === 'imprint';
+
+        // 📝 预估当前标题的包围盒尺寸
+        const labelData = window._labelDataMap.get(node.id);
+        const titleText = labelData ? labelData.title : (node.title || node.id);
+        const charCount = titleText.length;
+
+        // 计算该节点在当前距离下的 LOD 缩放字号
+        let fontSize;
+        if (isHovered) {
+            fontSize = 14;
+        } else if (isImprint) {
+            fontSize = 13; // 骨架节点采用固定清晰字号
+        } else if (dist < perf.LOD_NEAR) {
+            fontSize = Math.max(10, 16 - dist / 100);
+        } else if (dist < perf.LOD_MID) {
+            const t = (dist - perf.LOD_NEAR) / (perf.LOD_MID - perf.LOD_NEAR);
+            fontSize = Math.max(8, 14 - t * 6);
+        } else {
+            const t = (dist - perf.LOD_MID) / (perf.LOD_FAR - perf.LOD_MID);
+            fontSize = Math.max(6, 8 - t * 2);
+        }
+
+        // 预估 2D 像素盒子大小 (单字符均宽约 0.65 * fontSize，并加入 16px 的左右间距容差)
+        const boxWidth = charCount * fontSize * 0.65 + 16;
+        const boxHeight = fontSize + 10;
+
+        // 由于使用 translate(-50%, 15px) 居中与偏移定位，计算屏幕包围盒
+        const currentBox = {
+            x1: relativeX - boxWidth / 2,
+            x2: relativeX + boxWidth / 2,
+            y1: relativeY + 15,
+            y2: relativeY + 15 + boxHeight
+        };
+
+        // 📐 碰撞规避测试：普通节点必须避让已渲染的高优先级盒子，而被 Hover 的节点强行豁免
+        let hasCollision = false;
+        if (!isHovered) {
+            for (let j = 0; j < renderedBoxes.length; j++) {
+                const rBox = renderedBoxes[j];
+                const overlap = !(currentBox.x2 < rBox.x1 || currentBox.x1 > rBox.x2 || currentBox.y2 < rBox.y1 || currentBox.y1 > rBox.y2);
+                if (overlap) {
+                    hasCollision = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasCollision) continue; // 碰撞则自动抽稀隐藏
+
+        renderedBoxes.push(currentBox);
         visibleSet.add(node.id);
 
         const el = _getOrCreateLabel(node.id, container);
         if (!el) continue;
 
-        // LOD 分层字号与不透明度计算，实现 Obsidian 式极客呼吸渐变
-        let fontSize, opacity;
+        // LOD 呼吸不透明度计算
+        let opacity;
         if (isHovered) {
-            // 🧠 [V86.7] 临时显影的 Hover 节点，强行重载为高清饱满的字号 and 100% 不透明度
-            fontSize = 14;
             opacity = 1;
+        } else if (isImprint) {
+            opacity = 0.95; // 品牌骨架高亮呈现
         } else if (dist < perf.LOD_NEAR) {
-            fontSize = Math.max(10, 16 - dist / 100);
             opacity = 1;
         } else if (dist < perf.LOD_MID) {
             const t = (dist - perf.LOD_NEAR) / (perf.LOD_MID - perf.LOD_NEAR);
-            fontSize = Math.max(8, 14 - t * 6);
             opacity = Math.max(0.4, 1 - t * 0.6);
         } else {
             const t = (dist - perf.LOD_MID) / (perf.LOD_FAR - perf.LOD_MID);
-            fontSize = Math.max(6, 8 - t * 2);
             opacity = Math.max(0.15, 0.4 - t * 0.25);
         }
 
         el.style.display = 'block';
-        el.style.left = `${relativeX}px`;
-        el.style.top = `${relativeY}px`;
+        // 🚀 GPU 硬件合成层加速：彻底重置 left/top，转为 transform 渲染以消除 Layout 回流 (Reflow)
+        el.style.left = '0';
+        el.style.top = '0';
+        el.style.transform = `translate3d(${relativeX}px, ${relativeY}px, 0) translate(-50%, 15px)`;
         el.style.fontSize = `${fontSize}px`;
         el.style.opacity = opacity;
     }
