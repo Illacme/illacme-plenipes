@@ -125,7 +125,7 @@
     function renderSecurityCategory() {
         const sys = window.settingsData?.system || {};
         const gov = window.settingsData?.governance || {};
-        const rg = gov.resource_guard || { cpu_threshold: 85 };
+        const rg = gov.resource_guard || { cpu_threshold: 85, compute_ram_threshold: 50.0 };
         
         setTimeout(() => {
             if (typeof window.loadAndRenderConfigAudit === 'function') {
@@ -150,6 +150,9 @@
                     })}
                     ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox')}
                     ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold, 'number')}
+                    ${renderSettingsItem('本地算力内存削峰警戒线 (%)', 'governance.resource_guard.compute_ram_threshold', rg.compute_ram_threshold ?? 50.0, 'number', {
+                        description: '当本地大模型（如 Ollama / LM Studio 等）常驻物理内存占用宿主机总内存比例超过此阈值时，自动降低 AI 并发以防宿主崩溃。16GB 内存设备推荐设为 75% | 32GB 及以上机型推荐保持 50%。'
+                    })}
                 </div>
 
                 <div id="config-audit-topology-container" class="mt-large"></div>

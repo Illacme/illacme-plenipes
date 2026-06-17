@@ -4,10 +4,10 @@
 
 | 字段 | 值 |
 | :--- | :--- |
-| **快照生成时间** | `2026-06-18 06:12:00 +08:00` |
+| **快照生成时间** | `2026-06-18 06:28:00 +08:00` |
 | **生成本快照的对话 ID** | `85429369-a27e-40e9-9e15-c6c2e46ad07c` |
 | **挂载 of SOP 版本** | `V10.2` |
-| **挂起原因** | `手动挂起` (两项核心优化——3D星系图谱性能优化与算力进程降频自愈已顺利交付，进行仓库最终同步) |
+| **挂起原因** | `最终提交与推送` (本地算力内存削峰警戒线设置项已在治理中心 Web UI 中成功暴露，已通过所有 183 项单测，在此更新最终快照并原子提交) |
 
 ---
 
@@ -29,7 +29,7 @@
 
 ### Current_Task (当前任务)
 ```
-完成对 3D 星系图谱标题重叠/交互卡顿，以及本地算力进程级内存精准监控/防误伤降频的两项重大重构。配置中心扩增了 compute_process_names 与 compute_ram_threshold 字段；重构了 ResourceGuard 的 _monitor_loop 和 _apply_throttle 方法，利用 psutil 过滤并累加算力进程常驻内存集（RSS），制定了精准的自愈削峰触发决策树，通过全量 183 项回归单测（100% Pass）并完成 GitHub 原子化推送。
+完成对 3D 星系图谱标题重叠/交互卡顿，以及本地算力进程级内存精准监控/防误伤降频的两项重大重构。配置中心扩增了 compute_process_names 与 compute_ram_threshold 字段；重构了 ResourceGuard 的 _monitor_loop 和 _apply_throttle 方法，并在治理控制面板的安全审计 UI 界面中成功暴露了本地算力内存削峰警戒线设置项。已通过 183 项全量回归单测，完成所有历史快照的归档及 GitHub 原子化提交推送。
 ```
 
 **已完成步骤清单 (Completed Steps)**：
@@ -38,6 +38,7 @@
 - `[x]` 扩增 `system.py` 配置模型，增加进程监测配置项
 - `[x]` 重构 `resource_guard.py`，实现算力专属进程物理常驻内存（RSS）计算，免除宿主机其他进程高内存时的“削峰误伤”
 - `[x]` 修复并扩充 `test_resource_guard.py` 的测试用例，通过全量 183 项回归单测
+- `[x]` 治理中心前端系统配置面板暴露 `compute_ram_threshold` 配置项 (`system.render.js`)
 - `[x]` 物理历史档案同步至 `.plenipes/history/2026-06-18_local_llm_resource_guard_optimization/`
 - `[x]` 最终的开发文件、归档历史与本会话快照已原子化提交推送至远程 GitHub
 
@@ -72,6 +73,7 @@
 | :--- | :--- | :--- | :--- |
 | `22:54` | 引入 AABB 像素包围盒碰撞检测剔除与 `translate3d` GPU 定位 | 消除星系图谱重叠，恢复 60fps 太空交互滑帧率 | `web/dashboard/js/galaxy/galaxy.labels.js` |
 | `06:05` | 引入 psutil 精准计算白名单进程的 RSS（常驻内存集） | 解决宿主主机其他无关高内存占用软件导致大模型算力“误伤降频”的缺陷 | `core/governance/resource_guard.py` |
+| `06:18` | 安全审计页面 UI 暴露 compute_ram_threshold 设置项 | 允许用户在不触碰后台 YAML 的情况下，灵活设置本地大模型专用内存防爆线 | `web/dashboard/js/system/system.render.js` |
 
 ---
 
