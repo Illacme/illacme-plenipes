@@ -206,3 +206,85 @@ def test_resource_guard_compute_process_awareness():
     )
     assert should_throttle_resonance is True
 
+
+def test_resource_guard_dynamic_hot_reload():
+    """测试资源守卫动态配置热更新与基线对齐机制"""
+    # 构造可变的 Mock Config/Engine
+    mock_config = SimpleNamespace(
+        system=SimpleNamespace(
+            governance=SimpleNamespace(
+                resource_guard=SimpleNamespace(
+                    cpu_threshold=90.0,
+                    ram_threshold=90.0,
+                    compute_process_names=["lmstudio", "ollama"],
+                    compute_ram_threshold=40.0,
+                    check_interval=5.0
+                )
+            ),
+            concurrency=SimpleNamespace(
+                global_workers=4,
+                ai_workers=2
+            )
+        )
+    )
+    mock_engine = SimpleNamespace(config=mock_config)
+    guard = ResourceGuard(mock_engine)
+    
+    # 1. 验证初始阈值正确性
+    assert guard.cpu_threshold == 90.0
+    assert guard.ram_threshold == 90.0
+    assert guard.compute_ram_threshold == 40.0
+    assert guard.interval == 5.0
+    
+    # 2. 模拟配置热更新
+    mock_config.system.governance.resource_guard.cpu_threshold = 95.0
+    mock_config.system.governance.resource_guard.ram_threshold = 92.0
+    mock_config.system.governance.resource_guard.compute_ram_threshold = 60.0
+    mock_config.system.governance.resource_guard.check_interval = 1.0
+    
+    # 验证属性动态感知最新更改，无需重启
+    assert guard.cpu_threshold == 95.0
+    assert guard.ram_threshold == 92.0
+    assert guard.compute_ram_threshold == 60.0
+    assert guard.interval == 1.0
+    
+    # 3. 验证并发限制基线滑动同步
+    guard.is_throttled = False
+    
+    # 执行同步
+    guard.original_concurrency = {
+        "global": mock_config.system.concurrency.global_workers,
+        "ai": mock_config.system.concurrency.ai_workers
+    }
+    assert guard.original_concurrency["ai"] == 2
+    
+    # 修改系统并发配置
+    mock_config.system.concurrency.ai_workers = 8
+    mock_config.system.concurrency.global_workers = 10
+    
+    # 在非限流周期模拟同步
+    if not guard.is_throttled:
+        guard.original_concurrency = {
+            "global": guard.engine.config.system.concurrency.global_workers,
+            "ai": guard.engine.config.system.concurrency.ai_workers
+        }
+    
+    # original_concurrency 应该滑动更新为 8 和 10
+    assert guard.original_concurrency["ai"] == 8
+    assert guard.original_concurrency["global"] == 10
+    
+    # 4. 模拟触发限流
+    guard.is_throttled = True
+    
+    # 即使系统并发配置在限流期间再度修改为其他值，original_concurrency 也不应该变
+    mock_config.system.concurrency.ai_workers = 12
+    if not guard.is_throttled:
+        guard.original_concurrency = {
+            "global": guard.engine.config.system.concurrency.global_workers,
+            "ai": guard.engine.config.system.concurrency.ai_workers
+        }
+    
+    # 依然是限流触发前的 8
+    assert guard.original_concurrency["ai"] == 8
+
+

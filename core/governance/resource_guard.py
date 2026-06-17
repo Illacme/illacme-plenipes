@@ -21,20 +21,15 @@ class ResourceGuard:
 
     def __init__(self, engine, check_interval: float = 5.0):
         self.engine = engine
-        self.interval = check_interval
+        self._interval = check_interval
         self.stop_flag = threading.Event()
         self.thread = None
         
-        # 🚀 [V48.3] 阈值控制权回传：优先从配置中心读取，兜底值为 85%
+        # 🚀 [V48.3] 属性控制权回传：初始化设值，优先从配置中动态获取
         governance_cfg = getattr(engine.config.system, 'governance', None)
         rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
         
-        self.cpu_threshold = getattr(rg_cfg, 'cpu_threshold', 85.0) if rg_cfg else 85.0
-        self.ram_threshold = getattr(rg_cfg, 'ram_threshold', 85.0) if rg_cfg else 85.0
         self.interval = getattr(rg_cfg, 'check_interval', check_interval) if rg_cfg else check_interval
-        
-        self.compute_process_names = getattr(rg_cfg, 'compute_process_names', ["lmstudio", "ollama", "llama", "llama-box"]) if rg_cfg else ["lmstudio", "ollama", "llama", "llama-box"]
-        self.compute_ram_threshold = getattr(rg_cfg, 'compute_ram_threshold', 50.0) if rg_cfg else 50.0
         self.compute_ram_usage = 0.0
         
         self.is_throttled = False
@@ -42,6 +37,40 @@ class ResourceGuard:
         
         self.cpu_usage = 0.0
         self.ram_usage = 0.0
+
+    @property
+    def cpu_threshold(self) -> float:
+        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
+        return getattr(rg_cfg, 'cpu_threshold', 85.0) if rg_cfg else 85.0
+
+    @property
+    def ram_threshold(self) -> float:
+        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
+        return getattr(rg_cfg, 'ram_threshold', 85.0) if rg_cfg else 85.0
+
+    @property
+    def compute_ram_threshold(self) -> float:
+        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
+        return getattr(rg_cfg, 'compute_ram_threshold', 50.0) if rg_cfg else 50.0
+
+    @property
+    def compute_process_names(self) -> list:
+        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
+        return getattr(rg_cfg, 'compute_process_names', ["lmstudio", "ollama", "llama", "llama-box"]) if rg_cfg else ["lmstudio", "ollama", "llama", "llama-box"]
+
+    @property
+    def interval(self) -> float:
+        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
+        return getattr(rg_cfg, 'check_interval', self._interval) if rg_cfg else self._interval
+
+    @interval.setter
+    def interval(self, val: float):
+        self._interval = val
 
     def start(self):
         """在后台启动资源监控线程"""
@@ -86,8 +115,15 @@ class ResourceGuard:
                 compute_ram_percent = (total_compute_rss / total_mem) * 100.0 if total_mem > 0 else 0.0
                 self.compute_ram_usage = compute_ram_percent
                 
-                # 记录原始并发数（初次启动时）
-                if self.original_concurrency is None:
+                # 🚀 [V1.2] 并发限制基线动态滑动同步
+                if not self.is_throttled:
+                    # 未处于限流削峰状态时，实时与引擎最新的并发限制配置对齐
+                    self.original_concurrency = {
+                        "global": self.engine.config.system.concurrency.global_workers,
+                        "ai": self.engine.config.system.concurrency.ai_workers
+                    }
+                elif self.original_concurrency is None:
+                    # 极端兜底防御：若一启动就是限流状态且original_concurrency为空，从配置获取
                     self.original_concurrency = {
                         "global": self.engine.config.system.concurrency.global_workers,
                         "ai": self.engine.config.system.concurrency.ai_workers
