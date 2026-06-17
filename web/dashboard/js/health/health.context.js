@@ -201,9 +201,9 @@ window.refreshGovernanceContext = async () => {
                                   availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal.split('-')[0]);
                     }
                     if (cleanVal === 'auto detect' || cleanVal === 'auto') {
-                        return '🔍 AUTO';
+                        return '🔍\u2009AUTO';
                     }
-                    return langObj ? `${langObj.icon} ${codeOrName}` : codeOrName;
+                    return langObj ? `${langObj.icon}\u2009${codeOrName}` : codeOrName;
                 };
                 const targets = data.i18n.targets || [];
                 const targetsStr = targets.length > 0 ? targets.map(t => getLangLabel(t)).join(', ') : 'NONE';
