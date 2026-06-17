@@ -33,6 +33,10 @@ class ResourceGuard:
         self.ram_threshold = getattr(rg_cfg, 'ram_threshold', 85.0) if rg_cfg else 85.0
         self.interval = getattr(rg_cfg, 'check_interval', check_interval) if rg_cfg else check_interval
         
+        self.compute_process_names = getattr(rg_cfg, 'compute_process_names', ["lmstudio", "ollama", "llama", "llama-box"]) if rg_cfg else ["lmstudio", "ollama", "llama", "llama-box"]
+        self.compute_ram_threshold = getattr(rg_cfg, 'compute_ram_threshold', 50.0) if rg_cfg else 50.0
+        self.compute_ram_usage = 0.0
+        
         self.is_throttled = False
         self.original_concurrency = None
         
@@ -66,6 +70,21 @@ class ResourceGuard:
                 
                 self.cpu_usage = cpu_usage
                 self.ram_usage = ram_usage
+
+                # 🚀 [精准监控] 遍历进程列表，累加白名单中算力进程的常驻内存集（RSS）物理占用
+                total_compute_rss = 0
+                for proc in psutil.process_iter(['name']):
+                    try:
+                        p_name = (proc.info['name'] or '').lower()
+                        if any(pn.lower() in p_name for pn in self.compute_process_names):
+                            total_compute_rss += proc.memory_info().rss
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                        pass
+                
+                # 计算算力进程占物理总内存的比例百分比
+                total_mem = psutil.virtual_memory().total
+                compute_ram_percent = (total_compute_rss / total_mem) * 100.0 if total_mem > 0 else 0.0
+                self.compute_ram_usage = compute_ram_percent
                 
                 # 记录原始并发数（初次启动时）
                 if self.original_concurrency is None:
@@ -75,25 +94,36 @@ class ResourceGuard:
                     }
 
                 # 🚀 [V48.3] 引入滞后区间 (Hysteresis) 以防止震荡
-                # 触发阈值后，必须回落 5% 才能恢复，避免临界点反复弹跳
                 upper_cpu = self.cpu_threshold
                 upper_ram = self.ram_threshold
+                upper_compute_ram = self.compute_ram_threshold
+                
                 lower_cpu = upper_cpu - 5.0
                 lower_ram = upper_ram - 5.0
+                lower_compute_ram = upper_compute_ram - 5.0
                 
                 if not self.is_throttled:
-                    should_throttle = cpu_usage > upper_cpu or ram_usage > upper_ram
+                    # 触发判定：CPU超限，或算力自身超限，或总RAM超限且算力进程有运行（共振）
+                    should_throttle = (
+                        cpu_usage > upper_cpu
+                        or compute_ram_percent > upper_compute_ram
+                        or (ram_usage > upper_ram and compute_ram_percent > 5.0)
+                    )
                 else:
-                    # 已处于削峰状态，只有当两者都降到 lower 以下才释放 (任意一者仍高则保持削峰)
-                    should_throttle = cpu_usage > lower_cpu or ram_usage > lower_ram
-
+                    # 释放判定：必须全面回落
+                    should_throttle = (
+                        cpu_usage > lower_cpu
+                        or compute_ram_percent > lower_compute_ram
+                        or (ram_usage > lower_ram and compute_ram_percent > 5.0)
+                    )
+                
                 if should_throttle and not self.is_throttled:
                     # 🚀 [V51.0] 使用对齐的 get_stats() 获取运行指标
                     from core.logic.orchestration.task_orchestrator import global_executor
                     stats = global_executor.get_stats()
                     has_active_tasks = stats["queue_size"] > 0 or stats["active_workers"] > 0
                     
-                    self._apply_throttle(cpu_usage, ram_usage, silent=not has_active_tasks)
+                    self._apply_throttle(cpu_usage, ram_usage, compute_ram_percent, silent=not has_active_tasks)
                 elif not should_throttle and self.is_throttled:
                     self._release_throttle()
                     
@@ -102,12 +132,12 @@ class ResourceGuard:
             
             self.stop_flag.wait(self.interval)
 
-    def _apply_throttle(self, cpu, ram, silent=False):
+    def _apply_throttle(self, cpu, ram, compute_ram, silent=False):
         """执行紧急削峰：将并发下调至最低保障水平"""
         if not silent:
-            tlog.warning(f"🚨 [ResourceGuard] 物理负载过高 (CPU: {cpu}% | RAM: {ram}%)！正在紧急削峰...")
+            tlog.warning(f"🚨 [ResourceGuard] 物理负载过高 (CPU: {cpu}% | RAM: {ram}% | 算力进程: {compute_ram:.2f}%)！正在紧急削峰...")
         else:
-            tlog.debug(f"🛡️ [ResourceGuard] 环境负载高 (RAM: {ram}%)，已提前预置算力削峰 (静默模式)")
+            tlog.debug(f"🛡️ [ResourceGuard] 环境负载高 (RAM: {ram}% | 算力进程: {compute_ram:.2f}%)，已提前预置算力削峰 (静默模式)")
         
         from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         

@@ -222,10 +222,10 @@ def get_sync_stats_impl():
     try:
         conn = engine.meta.sqlite._get_conn()
         cursor = conn.execute("""
-            SELECT event_type, description, cost, timestamp 
-            FROM usage_ledger 
-            WHERE imprint_id = ? 
-            ORDER BY timestamp DESC 
+            SELECT event_type, description, cost, timestamp
+            FROM usage_ledger
+            WHERE imprint_id = ?
+            ORDER BY timestamp DESC
             LIMIT 5
         """, (engine.imprint_id,))
         for r in cursor.fetchall():

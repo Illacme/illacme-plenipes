@@ -203,7 +203,7 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
         # 🚀 [V75.5] 主权透传判定：若目标语种与原稿源语种一致，则该语种免除 AI 翻译与块缓存，标记为主权透传
         from core.utils.language_hub import LanguageHub
         is_source_match = (
-            resolved_src_lang is not None and 
+            resolved_src_lang is not None and
             LanguageHub.resolve_to_iso(lang_code) == LanguageHub.resolve_to_iso(resolved_src_lang)
         )
 

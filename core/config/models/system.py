@@ -66,6 +66,8 @@ class ResourceGuardSettings(BaseModel):
     cpu_threshold: float = Field(90.0, ge=10.0, le=100.0)
     ram_threshold: float = Field(90.0, ge=10.0, le=100.0)
     check_interval: float = Field(5.0, ge=1.0)
+    compute_process_names: List[str] = Field(default_factory=lambda: ["lmstudio", "ollama", "llama", "llama-box"])
+    compute_ram_threshold: float = Field(50.0, ge=5.0, le=100.0)
 
 class GovernanceSettings(BaseModel):
     """🚀 [V48.3] 全局治理矩阵"""

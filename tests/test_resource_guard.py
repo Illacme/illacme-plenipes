@@ -17,6 +17,8 @@ def test_resource_guard_dynamic_throttling():
                 resource_guard=SimpleNamespace(
                     cpu_threshold=95.0,
                     ram_threshold=90.0,
+                    compute_process_names=["lmstudio", "ollama"],
+                    compute_ram_threshold=50.0,
                     check_interval=5.0
                 )
             ),
@@ -34,6 +36,7 @@ def test_resource_guard_dynamic_throttling():
     # 验证配置参数正确对齐
     assert guard.cpu_threshold == 95.0
     assert guard.ram_threshold == 90.0
+    assert guard.compute_ram_threshold == 50.0
     
     # 保存原始并发状态模拟
     guard.original_concurrency = {
@@ -43,7 +46,7 @@ def test_resource_guard_dynamic_throttling():
     
     # 1. 验证削峰：当原始并发为 2 时，超载削峰应降为 1
     # 期望计算公式：max(1, min(2 // 2, 4)) = 1
-    guard._apply_throttle(cpu=97.0, ram=88.0, silent=True)
+    guard._apply_throttle(cpu=97.0, ram=88.0, compute_ram=10.0, silent=True)
     assert guard.is_throttled is True
     assert ai_executor.max_workers == 1
     assert global_executor.max_workers == 1
@@ -57,7 +60,7 @@ def test_resource_guard_dynamic_throttling():
     # 2. 验证削峰：当原始并发为 16 时，超载削峰应降为 4
     # 期望计算公式：max(1, min(16 // 2, 4)) = 4
     guard.original_concurrency["ai"] = 16
-    guard._apply_throttle(cpu=97.0, ram=88.0, silent=True)
+    guard._apply_throttle(cpu=97.0, ram=88.0, compute_ram=10.0, silent=True)
     assert ai_executor.max_workers == 4
     
     # 释放并恢复
@@ -67,7 +70,7 @@ def test_resource_guard_dynamic_throttling():
     # 3. 验证削峰：当原始并发为 1 时，超载削峰应保底为 1
     # 期望计算公式：max(1, min(1 // 2, 4)) = 1
     guard.original_concurrency["ai"] = 1
-    guard._apply_throttle(cpu=97.0, ram=88.0, silent=True)
+    guard._apply_throttle(cpu=97.0, ram=88.0, compute_ram=10.0, silent=True)
     assert ai_executor.max_workers == 1
     
     # 释放并恢复
@@ -84,6 +87,8 @@ def test_resource_guard_hysteresis_recovery():
                 resource_guard=SimpleNamespace(
                     cpu_threshold=90.0,
                     ram_threshold=90.0,
+                    compute_process_names=["lmstudio", "ollama"],
+                    compute_ram_threshold=50.0,
                     check_interval=5.0
                 )
             ),
@@ -112,7 +117,7 @@ def test_resource_guard_hysteresis_recovery():
     assert should_throttle_1 is True
     
     # 执行限流
-    guard._apply_throttle(cpu=cpu_usage, ram=ram_usage, silent=True)
+    guard._apply_throttle(cpu=cpu_usage, ram=ram_usage, compute_ram=10.0, silent=True)
     assert guard.is_throttled is True
     
     # 2. 模拟非对称回落：CPU 极低，但 RAM 仍然超载（高于 recovery threshold ram_threshold - 5.0 = 85.0）
@@ -138,4 +143,66 @@ def test_resource_guard_hysteresis_recovery():
     # 释放限流
     guard._release_throttle()
     assert guard.is_throttled is False
+
+
+def test_resource_guard_compute_process_awareness():
+    """测试算力专用进程级内存感知削峰与免除误伤逻辑"""
+    mock_config = SimpleNamespace(
+        system=SimpleNamespace(
+            governance=SimpleNamespace(
+                resource_guard=SimpleNamespace(
+                    cpu_threshold=90.0,
+                    ram_threshold=90.0,
+                    compute_process_names=["lmstudio", "ollama"],
+                    compute_ram_threshold=40.0,
+                    check_interval=5.0
+                )
+            ),
+            concurrency=SimpleNamespace(
+                global_workers=4,
+                ai_workers=2
+            )
+        )
+    )
+    mock_engine = SimpleNamespace(config=mock_config)
+    guard = ResourceGuard(mock_engine)
+    guard.original_concurrency = {"global": 4, "ai": 2}
+    
+    # 1. 模拟：宿主机整体内存高，但算力进程几乎未运行（免除削峰误伤）
+    # cpu = 40.0, ram = 95.0, compute_ram = 2.0 (由于 compute_ram <= 5.0，应不触发削峰)
+    cpu_usage = 40.0
+    ram_usage = 95.0
+    compute_ram_percent = 2.0
+    
+    upper_cpu = guard.cpu_threshold
+    upper_ram = guard.ram_threshold
+    upper_compute_ram = guard.compute_ram_threshold
+    
+    should_throttle_bypass = (
+        cpu_usage > upper_cpu
+        or compute_ram_percent > upper_compute_ram
+        or (ram_usage > upper_ram and compute_ram_percent > 5.0)
+    )
+    assert should_throttle_bypass is False
+    
+    # 2. 模拟：算力自身超负荷，直接触发削峰
+    # cpu = 40.0, ram = 60.0, compute_ram = 45.0 (直接超出 compute_ram_threshold 40.0)
+    compute_ram_percent = 45.0
+    should_throttle_compute = (
+        cpu_usage > upper_cpu
+        or compute_ram_percent > upper_compute_ram
+        or (ram_usage > upper_ram and compute_ram_percent > 5.0)
+    )
+    assert should_throttle_compute is True
+    
+    # 3. 模拟：宿主机整体内存超限，且算力进程也有较大占用（共振削峰）
+    # cpu = 40.0, ram = 92.0, compute_ram = 15.0 (ram > 90.0且compute_ram > 5.0)
+    ram_usage = 92.0
+    compute_ram_percent = 15.0
+    should_throttle_resonance = (
+        cpu_usage > upper_cpu
+        or compute_ram_percent > upper_compute_ram
+        or (ram_usage > upper_ram and compute_ram_percent > 5.0)
+    )
+    assert should_throttle_resonance is True
 
