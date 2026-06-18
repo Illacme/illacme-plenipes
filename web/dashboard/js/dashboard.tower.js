@@ -7,6 +7,7 @@
     window.towerTimeoutId = null;
     let cpuHistory = [];
     let memHistory = [];
+    let computeHistory = [];
     const MAX_HISTORY_POINTS = 15;
 
     // 格式化运行时间
@@ -121,13 +122,16 @@
             if (stats.load) {
                 const cpuPct = stats.load.cpu_percent || 0;
                 const memPct = stats.load.memory_percent || 0;
+                const compPct = stats.load.compute_memory_percent || 0;
 
                 // 压入历史数据
                 cpuHistory.push(cpuPct);
                 memHistory.push(memPct);
+                computeHistory.push(compPct);
                 if (cpuHistory.length > MAX_HISTORY_POINTS) {
                     cpuHistory.shift();
                     memHistory.shift();
+                    computeHistory.shift();
                 }
 
                 // 更新圆环仪表盘
@@ -147,9 +151,18 @@
                     memRing.style.strokeDashoffset = offset;
                 }
 
+                const compText = document.getElementById('gauge-compute');
+                const compRing = document.getElementById('gauge-compute-ring');
+                if (compText) compText.innerText = `${compPct.toFixed(1)}%`;
+                if (compRing) {
+                    const offset = 263.89 - (compPct / 100) * 263.89;
+                    compRing.style.strokeDashoffset = offset;
+                }
+
                 // 绘制 SVG 趋势图
                 const cpuPaths = generateSvgPaths(cpuHistory);
                 const memPaths = generateSvgPaths(memHistory);
+                const compPaths = generateSvgPaths(computeHistory);
 
                 const cpuLineEl = document.getElementById('trend-cpu-line');
                 const cpuAreaEl = document.getElementById('trend-cpu-area');
@@ -160,6 +173,11 @@
                 const memAreaEl = document.getElementById('trend-mem-area');
                 if (memLineEl) memLineEl.setAttribute('d', memPaths.line);
                 if (memAreaEl) memAreaEl.setAttribute('d', memPaths.area);
+
+                const compLineEl = document.getElementById('trend-compute-line');
+                const compAreaEl = document.getElementById('trend-compute-area');
+                if (compLineEl) compLineEl.setAttribute('d', compPaths.line);
+                if (compAreaEl) compAreaEl.setAttribute('d', compPaths.area);
             }
 
             // 4. 自适应决策轮询周期：有活动同步或线程池繁忙时提频为 2 秒，否则空闲为 10 秒
@@ -183,6 +201,7 @@
         // 重置走势数据，防止上一次的观测点被继承
         cpuHistory = [];
         memHistory = [];
+        computeHistory = [];
 
         // 重置定时器并立即拉取
         if (window.towerTimeoutId) {

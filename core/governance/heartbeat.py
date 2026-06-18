@@ -80,7 +80,8 @@ class HeartbeatService:
             rg = gov.resource_guard
             load = {
                 "cpu_percent": getattr(rg, 'cpu_usage', 0),
-                "memory_percent": getattr(rg, 'ram_usage', 0)
+                "memory_percent": getattr(rg, 'ram_usage', 0),
+                "compute_memory_percent": getattr(rg, 'compute_ram_usage', 0.0)
             }
         
         # 3. 采集进度
