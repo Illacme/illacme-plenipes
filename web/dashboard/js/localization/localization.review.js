@@ -157,9 +157,16 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
     const targetLangs = targetMode === 'current' ? [lc] : null;
     
     // 确定本次操作我们关心的目标语种列表，如果是生成所有则需要等待全部激活的目标语种
-    const wantedLangs = targetMode === 'current'
-        ? [lc]
-        : (window.settingsData?.i18n_settings?.targets || []).map(t => t.lang_code);
+    let wantedLangs = [];
+    if (targetMode === 'current') {
+        wantedLangs = [lc];
+    } else {
+        wantedLangs = (window.settingsData?.i18n_settings?.targets || []).map(t => t.lang_code);
+        if (!wantedLangs || wantedLangs.length === 0) {
+            // 🚀 [双重兜底] 如果 settingsData 里未能读取到 targets，从当前工作台已加载的语种中自动补齐，防止 wantedLangs 为空导致轮询秒退
+            wantedLangs = Object.keys(window._reviewState.data?.langs || {});
+        }
+    }
 
     // 🚀 [UI 自愈与状态清理]
     // 在重新生成之前，预先将关注的目标语种在前端置为 is_missing = true 并清空 edits 缓存。

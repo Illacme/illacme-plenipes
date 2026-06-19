@@ -52,6 +52,35 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     args = MockArgs()
     
+    # 🧹 [V10.7] 主线程中物理清除需要翻译的目标语种的旧 cache_mirror 文件，防止前端在异步任务开始前轮询到脏数据 (Race Condition Fix)
+    langs_to_clean = target_langs
+    if not langs_to_clean and hasattr(engine, "config") and engine.config.i18n_settings:
+        langs_to_clean = [t.lang_code for t in engine.config.i18n_settings.targets]
+
+    if langs_to_clean:
+        try:
+            task_queue, _ = build_task_queue(engine, requested_paths)
+            import os
+            for task_path, prefix, src_rel, target_slot in task_queue:
+                doc_info = engine.meta.get_doc_info(src_rel) if hasattr(engine, "meta") and engine.meta else {}
+                sub_dir = doc_info.get("sub_dir", "")
+                slug = doc_info.get("slug")
+                if slug and hasattr(engine, "route_manager") and hasattr(engine, "paths"):
+                    cache_dir = engine.paths.get("cache")
+                    target_ext = os.path.splitext(src_rel)[1].lower() or ".md"
+                    for lang in langs_to_clean:
+                        try:
+                            cache_mirror = engine.route_manager.resolve_physical_path(
+                                cache_dir, lang, prefix, sub_dir, slug, target_ext, source_type=target_slot
+                            )
+                            if os.path.exists(cache_mirror):
+                                tlog.info(f"🧹 [主线程清理缓存] 重新翻译启动，删除旧缓存镜像: {cache_mirror}")
+                                os.remove(cache_mirror)
+                        except Exception as ce:
+                            tlog.warning(f"⚠️ [主线程清理缓存失败] {src_rel} / {lang}: {ce}")
+        except Exception as qe:
+            tlog.warning(f"⚠️ [主线程清理缓存构建队列失败]: {qe}")
+
     # 2. 定义后台执行逻辑 (使用闭包保持对 engine 的引用)
     def _background_job():
         global _is_publishing
@@ -60,32 +89,6 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 _is_publishing = True
                 tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox}, Paths: {requested_paths})...")
                 task_queue, current_source_files = build_task_queue(engine, requested_paths)
-                
-                # 🧹 [V10.6] 物理清除需要翻译的目标语种的旧 cache_mirror 文件，防止前端轮询时读到脏数据
-                langs_to_clean = target_langs
-                if not langs_to_clean and hasattr(engine, "config") and engine.config.i18n_settings:
-                    langs_to_clean = [t.lang_code for t in engine.config.i18n_settings.targets]
-
-                if langs_to_clean:
-                    import os
-                    for task_path, prefix, src_rel, target_slot in task_queue:
-                        doc_info = engine.meta.get_doc_info(src_rel) if hasattr(engine, "meta") and engine.meta else {}
-                        sub_dir = doc_info.get("sub_dir", "")
-                        slug = doc_info.get("slug")
-                        if slug and hasattr(engine, "route_manager") and hasattr(engine, "paths"):
-                            cache_dir = engine.paths.get("cache")
-                            target_ext = os.path.splitext(src_rel)[1].lower() or ".md"
-                            for lang in langs_to_clean:
-                                try:
-                                    cache_mirror = engine.route_manager.resolve_physical_path(
-                                        cache_dir, lang, prefix, sub_dir, slug, target_ext, source_type=target_slot
-                                    )
-                                    if os.path.exists(cache_mirror):
-                                        tlog.info(f"🧹 [清理旧缓存] 重新翻译启动，删除旧缓存镜像: {cache_mirror}")
-                                        os.remove(cache_mirror)
-                                except Exception as ce:
-                                    tlog.warning(f"⚠️ [清理旧缓存失败] {src_rel} / {lang}: {ce}")
-
                 perform_sync(engine, args, task_queue, current_source_files)
                 tlog.info("✅ [异步出版] 后台流水线任务已全量闭环。")
             except Exception as e:
