@@ -15,7 +15,8 @@
                 if (!(error instanceof Error)) {
                     error = new Error(typeof error === 'string' ? error : JSON.stringify(error));
                 }
-                this.handleError(error, 'Unhandled Promise Rejection');
+                // 对于非致命异步网络或数据流异常，降级显示为 Toast，防止强制降级系统红屏
+                this.handleAsyncError(error);
             });
             
             // Expose manual trigger for subsystems like WebGL context lost
@@ -25,6 +26,28 @@
                 err.stack = stack || '';
                 this.handleError(err, title);
             };
+        },
+
+        handleAsyncError(error) {
+            console.warn('[Plenipes Sovereign Guard] Intercepted Async Rejection:', error);
+            const message = error.message || '网络或数据流通道发生异常';
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'bottom-end',
+                    icon: 'warning',
+                    title: '异步链路中断',
+                    text: message,
+                    showConfirmButton: false,
+                    timer: 5000,
+                    background: 'rgba(20, 15, 10, 0.95)',
+                    color: '#ffb34c'
+                });
+            }
+            if (typeof window.addAudit === 'function') {
+                window.addAudit(`⚠️ [NET FAULT] 异步链路受阻: ${message}`);
+            }
         },
 
         handleError(error, customTitle) {

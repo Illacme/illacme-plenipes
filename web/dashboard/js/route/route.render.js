@@ -107,7 +107,7 @@ window.renderRouteMatrixCategory = () => {
                 </div>
                 
                 <div style="padding: 12px; text-align: center; border-top: 1px dashed rgba(255,255,255,0.05); background: rgba(0,0,0,0.1);">
-                    <button class="mini-btn glow-btn" onclick="addRouteMatrixRow()" ${!isLicensed ? 'disabled' : ''} style="background: transparent; border: 1px dashed var(--accent-primary); color: var(--accent-primary); width: 100%; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0, 242, 255, 0.1)'" onmouseout="this.style.background='transparent'" title="${isLicensed ? '添加新路由规则' : '授权版专属功能'}">
+                    <button class="mini-btn glow-btn" onclick="addRouteMatrixRow()" style="background: transparent; border: 1px dashed ${isLicensed ? 'var(--accent-primary)' : 'var(--text-muted)'}; color: ${isLicensed ? 'var(--accent-primary)' : 'var(--text-muted)'}; width: 100%; padding: 8px; border-radius: 6px; cursor: ${isLicensed ? 'pointer' : 'not-allowed'}; transition: all 0.3s; font-size: 0.85rem;" onmouseover="${isLicensed ? "this.style.background='rgba(0, 242, 255, 0.1)'" : ''}" onmouseout="this.style.background='transparent'" title="${isLicensed ? '添加新路由规则' : '专属版特权功能 (点击查看详情)'}">
                         ➕ 添加新路由规则
                     </button>
                 </div>

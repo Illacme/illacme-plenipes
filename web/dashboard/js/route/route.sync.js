@@ -5,7 +5,22 @@
 
 window.addRouteMatrixRow = () => {
     const isLicensed = window.settingsData._is_licensed || false;
-    if (!isLicensed) return;
+    if (!isLicensed) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '👑 专属版本权益提示',
+                html: '高级频道路由与专属翻译风格矩阵为 <b>Illacme Plenipes 专属授权版 (PRO)</b> 的特权功能。<br><br>系统当前已为您自动回落至无缝的物理路径映射模式。',
+                icon: 'info',
+                background: 'rgba(20, 15, 25, 0.95)',
+                color: '#fff',
+                confirmButtonColor: 'var(--accent-primary, #a34cff)',
+                confirmButtonText: '我知道了'
+            });
+        } else {
+            alert('本功能为专属版专属功能，当前已自动降级至物理路由模式。');
+        }
+        return;
+    }
 
     const themeSlots = window.settingsData._theme_slots || {};
     const hasSlots = Object.keys(themeSlots).length > 0;
@@ -83,7 +98,22 @@ window.addRouteMatrixRow = () => {
 
 window.removeRouteMatrixRow = (btn) => {
     const isLicensed = window.settingsData._is_licensed || false;
-    if (!isLicensed) return;
+    if (!isLicensed) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '👑 专属版本权益提示',
+                html: '高级频道路由与专属翻译风格矩阵为 <b>Illacme Plenipes 专属授权版 (PRO)</b> 的特权功能。<br><br>系统当前已为您自动回落至无缝的物理路径映射模式。',
+                icon: 'info',
+                background: 'rgba(20, 15, 25, 0.95)',
+                color: '#fff',
+                confirmButtonColor: 'var(--accent-primary, #a34cff)',
+                confirmButtonText: '我知道了'
+            });
+        } else {
+            alert('本功能为专属版专属功能，当前已自动降级至物理路由模式。');
+        }
+        return;
+    }
     
     const row = btn.closest('.route-item');
     if (row) {
