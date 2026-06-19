@@ -126,6 +126,12 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                 source_desc = fm_dict.get("description", "")
         except Exception:
             pass
+
+    # 🛡️ [UI 降级自愈] 如果物理原文中没有定义 title 前置属性（例如无 frontmatter 标题）
+    # 则自动回落到账本中登记的标题（即从文件名生成的标题），解决原文标题显示为“无标题”的问题。
+    if not source_title:
+        source_title = doc_info.get("title", "")
+
     source_paras = _split_paragraphs(source_body)
 
     langs = {}
