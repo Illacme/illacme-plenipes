@@ -171,13 +171,43 @@ window.ComputeHandlers.switchComputeTab = async function(tab) {
         }
     }
 
-    // 注入加载动画
-    container.innerHTML = `
-        <div class="loading-scanner">
-            <div class="scan-line"></div>
-            <p>正在扫描 ${tab === 'infrastructure' ? '算力资源' : '全域配置'}...</p>
-        </div>
-    `;
+    // 注入加载动画与卡片骨架屏 (V74.36)
+    if (tab === 'infrastructure') {
+        container.innerHTML = `
+            <div class="loading-scanner">
+                <div class="scan-line"></div>
+                <p>正在扫描 算力资源...</p>
+            </div>
+            <div class="node-grid" style="margin-top: 20px;">
+                ${Array(3).fill(0).map(() => `
+                    <div class="node-unit active" style="opacity: 0.7;">
+                        <div class="node-header">
+                            <div class="node-identity" style="width: 100%;">
+                                <div class="node-icon-vessel skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                                <div class="node-name-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px; margin-left: 8px;">
+                                    <div class="skeleton" style="width: 120px; height: 16px;"></div>
+                                    <div class="skeleton" style="width: 60px; height: 12px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="node-telemetry" style="margin-top: 15px;">
+                            <div class="t-item"><div class="skeleton" style="width: 40px; height: 12px; margin-bottom: 4px;"></div><div class="skeleton" style="width: 30px; height: 16px;"></div></div>
+                            <div class="t-item"><div class="skeleton" style="width: 40px; height: 12px; margin-bottom: 4px;"></div><div class="skeleton" style="width: 30px; height: 16px;"></div></div>
+                            <div class="t-item"><div class="skeleton" style="width: 40px; height: 12px; margin-bottom: 4px;"></div><div class="skeleton" style="width: 30px; height: 16px;"></div></div>
+                            <div class="t-item"><div class="skeleton" style="width: 40px; height: 12px; margin-bottom: 4px;"></div><div class="skeleton" style="width: 30px; height: 16px;"></div></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <div class="loading-scanner">
+                <div class="scan-line"></div>
+                <p>正在扫描 全域配置...</p>
+            </div>
+        `;
+    }
 
     if (tab === 'infrastructure') {
         await window.ComputeUI.renderInfrastructureTab(container);
