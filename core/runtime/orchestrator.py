@@ -61,8 +61,12 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox}, Paths: {requested_paths})...")
                 task_queue, current_source_files = build_task_queue(engine, requested_paths)
                 
-                # 🧹 [V10.5] 物理清除需要翻译的目标语种的旧 cache_mirror 文件，防止前端轮询时读到脏数据
-                if target_langs:
+                # 🧹 [V10.6] 物理清除需要翻译的目标语种的旧 cache_mirror 文件，防止前端轮询时读到脏数据
+                langs_to_clean = target_langs
+                if not langs_to_clean and hasattr(engine, "config") and engine.config.i18n_settings:
+                    langs_to_clean = [t.lang_code for t in engine.config.i18n_settings.targets]
+
+                if langs_to_clean:
                     import os
                     for task_path, prefix, src_rel, target_slot in task_queue:
                         doc_info = engine.meta.get_doc_info(src_rel) if hasattr(engine, "meta") and engine.meta else {}
@@ -71,7 +75,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                         if slug and hasattr(engine, "route_manager") and hasattr(engine, "paths"):
                             cache_dir = engine.paths.get("cache")
                             target_ext = os.path.splitext(src_rel)[1].lower() or ".md"
-                            for lang in target_langs:
+                            for lang in langs_to_clean:
                                 try:
                                     cache_mirror = engine.route_manager.resolve_physical_path(
                                         cache_dir, lang, prefix, sub_dir, slug, target_ext, source_type=target_slot
