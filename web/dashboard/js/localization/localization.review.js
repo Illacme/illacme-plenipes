@@ -188,12 +188,17 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                 const lc = window._reviewState.activeLang;
                 if (checkData && checkData.langs && checkData.langs[lc] && !checkData.langs[lc].is_missing) {
                     window._reviewState.data = checkData;
-                    const ld = checkData.langs[lc];
-                    window._reviewState.edits[lc] = {
-                        title: ld.title || '',
-                        desc: ld.desc || '',
-                        paragraphs: (ld.paragraphs || []).map(p => ({ ...p }))
-                    };
+                    // 同步更新所有已就绪目标语种的 edits 缓存，防止切换标签时出现空译文状态
+                    Object.keys(checkData.langs).forEach(lc_key => {
+                        const ld = checkData.langs[lc_key];
+                        if (ld && !ld.is_missing) {
+                            window._reviewState.edits[lc_key] = {
+                                title: ld.title || '',
+                                desc: ld.desc || '',
+                                paragraphs: (ld.paragraphs || []).map(p => ({ ...p }))
+                            };
+                        }
+                    });
                     _reviewRender();
                     window._showToast?.(`✅ ${lc.toUpperCase()} 翻译已就绪！`, 'success');
                     return;
