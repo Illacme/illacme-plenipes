@@ -170,6 +170,10 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
 
     // 🚀 记录正在翻译的目标语种队列，驱动声明式进度呈现
     window._reviewState.wantedLangs = wantedLangs;
+    window._reviewState.langProgress = {};
+    wantedLangs.forEach(lang => {
+        window._reviewState.langProgress[lang] = 5;
+    });
 
     // 🚀 [UI 自愈与状态清理]
     // 在重新生成之前，预先将关注的目标语种在前端置为 is_missing = true 并清空 edits 缓存。
@@ -185,8 +189,6 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
 
     _reviewRender();
     window._showToast?.('🚀 已推送后台翻译管线，正在处理中...', 'info');
-    
-
 
     try {
         const res = await fetch('/api/publish/trigger', {
@@ -202,6 +204,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         const poll = async () => {
             if (attempts > 300) {
                 window._reviewState.wantedLangs = null;
+                window._reviewState.langProgress = null;
                 window._showToast?.('翻译耗时超出预期，请稍后重新打开抽屉查看', 'warning');
                 _reviewRender();
                 return;
@@ -213,6 +216,19 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                 if (checkData && checkData.langs) {
                     window._reviewState.data = checkData;
                     
+                    // 推进并更新各语种的翻译进度
+                    wantedLangs.forEach(lang => {
+                        const ld = checkData.langs[lang];
+                        if (ld && !ld.is_missing) {
+                            window._reviewState.langProgress[lang] = 100;
+                        } else {
+                            const curr = window._reviewState.langProgress[lang] || 5;
+                            if (curr < 95) {
+                                window._reviewState.langProgress[lang] = Math.min(95, curr + Math.floor(Math.random() * 8) + 8);
+                            }
+                        }
+                    });
+
                     // 同步更新所有已就绪目标语种 of edits 缓存，防止切换标签时出现空译文状态
                     Object.keys(checkData.langs).forEach(lc_key => {
                         const ld = checkData.langs[lc_key];
@@ -230,15 +246,13 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                     
                     if (allDone) {
                         window._reviewState.wantedLangs = null;
+                        window._reviewState.langProgress = null;
                         _reviewRender();
                         window._showToast?.(`✅ 所选翻译已全部就绪！`, 'success');
                         return;
                     } else {
-                        // 局部刷新当前活跃的语种页面，以便已就绪的语种能即时呈现给用户，而非等全部等完
-                        const activeLd = checkData.langs[lc];
-                        if (activeLd && !activeLd.is_missing) {
-                            _reviewRenderBody();
-                        }
+                        // 每次轮询有新状态都执行 _reviewRender()，保持全 Tab 进度与百分比实时刷新
+                        _reviewRender();
                     }
                 }
             } catch (err) {
@@ -251,6 +265,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
 
     } catch (e) {
         window._reviewState.wantedLangs = null;
+        window._reviewState.langProgress = null;
         window._showToast?.('分发触发失败: ' + e.message, 'error');
         _reviewRender(); // 恢复原状
     }

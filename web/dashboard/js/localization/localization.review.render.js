@@ -24,7 +24,14 @@ function _reviewRender() {
         if (!langObj) {
             try { langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(cleanLc === 'zh' ? 'zh-Hans' : cleanLc) || langName; } catch (e) {}
         }
-        return `<button class="review-lang-tab ${isActive ? 'active' : ''}" id="review-tab-${lc}" onclick="window.switchReviewLang('${lc}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--glass-border);background:${isActive ? 'var(--accent-primary)' : 'transparent'};color:${isActive ? '#000' : 'var(--text-dim)'};cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;">${icon} ${langName}${dirtyMark}</button>`;
+        let progressSuffix = '';
+        if (state.wantedLangs && state.wantedLangs.includes(lc)) {
+            const pVal = state.langProgress ? (state.langProgress[lc] || 5) : 5;
+            progressSuffix = pVal < 100 
+                ? ` <span style="color:#ffb300;font-size:0.75rem;font-weight:normal;">⏳${pVal}%</span>`
+                : ` <span style="color:#4caf50;font-size:0.75rem;font-weight:bold;">✅就绪</span>`;
+        }
+        return `<button class="review-lang-tab ${isActive ? 'active' : ''}" id="review-tab-${lc}" onclick="window.switchReviewLang('${lc}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--glass-border);background:${isActive ? 'var(--accent-primary)' : 'transparent'};color:${isActive ? '#000' : 'var(--text-dim)'};cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;">${icon} ${langName}${progressSuffix}${dirtyMark}</button>`;
     }).join('');
     document.getElementById('review-drawer-title').textContent = `🔍 译文校对工作台 — ${data.doc_title || state.docId}`;
     document.getElementById('review-lang-tabs').innerHTML = tabsHtml;
@@ -61,7 +68,34 @@ function _reviewRenderBody() {
     let targetHtml = '';
     const isTranslating = isMissing && state.wantedLangs && state.wantedLangs.includes(lc);
     if (isTranslating) {
-        targetHtml = `<div style="padding:20px;"><div class="review-status-bar"><span class="review-badge ai">⏳ 正在生成译文</span></div><div class="review-loading" style="color:var(--text-dim); text-align:center; padding: 40px 0; font-size:0.92rem;">⏳ 翻译引擎正在飞速生成中，请不要关闭抽屉，稍候片刻...</div></div>`;
+        const progress = state.langProgress ? (state.langProgress[lc] || 5) : 5;
+        const steps = [
+            { p: 10, name: '任务调度', desc: '初始化翻译管线引擎' },
+            { p: 25, name: '文本切片', desc: '解析段落与元数据结构' },
+            { p: 40, name: 'AI 物理翻译', desc: '大语言模型正在翻译' },
+            { p: 85, name: '自愈比对', desc: '校验图片与双链媒体路径' },
+            { p: 95, name: '装配落盘', desc: '写入物理缓存与账本' }
+        ];
+        const stepList = steps.map(s => {
+            let icon = '💤 排队中', style = 'color:var(--text-dim); opacity:0.5;';
+            if (progress >= s.p) { icon = '✅ 已完成'; style = 'color:#4caf50; font-weight:bold;'; }
+            else if (progress >= (s.p - 15) || (s.p === 10 && progress >= 5)) {
+                icon = '⏳ 进行中';
+                style = 'color:var(--accent-primary); font-weight:bold; animation: reviewPulse 1.5s infinite;';
+            }
+            return `<div style="display:flex; justify-content:space-between; padding:8px 12px; margin-bottom:8px; border-radius:6px; background:rgba(255,255,255,0.02); font-size:0.85rem; ${style}"><span>${s.name} <small style="opacity:0.8;font-size:0.75rem;">(${s.desc})</small></span><span>${icon}</span></div>`;
+        }).join('');
+        targetHtml = `<div style="padding:20px;">
+            <div style="font-size:0.95rem; font-weight:bold; margin-bottom:8px;">🌍 全局翻译管线处理中 - ${lc.toUpperCase()}</div>
+            <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:12px;">当前进度: ${progress}%</div>
+            <div style="background:rgba(255,255,255,0.05); border-radius:8px; height:8px; width:100%; overflow:hidden; margin-bottom:20px;">
+                <div style="background:linear-gradient(90deg, var(--accent-primary) 0%, #ffc107 100%); width:${progress}%; height:100%; transition:width 0.4s ease;"></div>
+            </div>
+            <style>
+                @keyframes reviewPulse { 0% { opacity:0.6; } 50% { opacity:1; } 100% { opacity:0.6; } }
+            </style>
+            <div>${stepList}</div>
+        </div>`;
     } else if (isMissing) {
         targetHtml = `<div style="padding:20px;"><div class="review-status-bar"><span class="review-badge ai">ℹ️ 无可用译文快照</span></div><div class="review-error" style="color:var(--text-dim); text-align:center; padding: 40px 0;">当前文档可能尚未完成 AI 译文的物理写入，或物理缓存已被清理。<br><br><button onclick="window.triggerSingleTranslation('current')" style="margin-top:20px; margin-right:12px; padding:10px 20px; background:var(--accent-primary); color:#000; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; box-shadow:0 4px 15px rgba(255, 171, 0, 0.3); transition:transform 0.2s;">🚀 仅生成当前语种译文</button><button onclick="window.triggerSingleTranslation('all')" style="margin-top:20px; padding:10px 20px; background:var(--bg-glass-heavy, rgba(255,255,255,0.05)); color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; transition:transform 0.2s;">🌍 生成所有目标语种译文</button></div></div>`;
     } else {
@@ -155,43 +189,34 @@ function _renderParaBlock(p) {
     return `${p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : ''}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
 function _reviewShowDrawer() {
-    const drawer = document.getElementById('review-drawer-overlay');
-    if (drawer) {
-        drawer.style.display = 'flex';
-        requestAnimationFrame(() => { drawer.style.opacity = '1'; });
-    }
+    const d = document.getElementById('review-drawer-overlay');
+    if (d) { d.style.display = 'flex'; requestAnimationFrame(() => d.style.opacity = '1'); }
 }
 function _reviewSetLoading(on) {
-    const body = document.getElementById('review-body');
-    if (body && on) body.innerHTML = '<div class="review-loading">⏳ 正在加载译文快照...</div>';
+    const b = document.getElementById('review-body');
+    if (b && on) b.innerHTML = '<div class="review-loading">⏳ 正在加载译文...</div>';
 }
 function _reviewShowError(msg) {
-    const body = document.getElementById('review-body');
-    if (body) body.innerHTML = `<div class="review-error">❌ ${msg}</div>`;
+    const b = document.getElementById('review-body');
+    if (b) b.innerHTML = `<div class="review-error">❌ ${msg}</div>`;
 }
-function _escapeHtml(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+function _escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 /* ─── 脏态交互的增量 DOM 更新 ─────────────────────────── */
 window.updateReviewDirtyUI = function () {
     const state = window._reviewState;
-    if (!state.data) return;
-    const lc = state.activeLang;
-    if (!lc) return;
-    const isDirty = window._isReviewDirty && window._isReviewDirty(lc);
-    const tabBtn = document.getElementById(`review-tab-${lc}`);
+    if (!state.data || !state.activeLang) return;
+    const lc = state.activeLang, isDirty = window._isReviewDirty && window._isReviewDirty(lc);
+    const tabBtn = document.getElementById(`review-tab-${lc}`), statusBar = document.querySelector('.review-status-bar'), saveBtn = document.querySelector('.review-actions .review-btn.save');
     if (tabBtn) {
-        const oldDot = tabBtn.querySelector('.review-dirty-dot');
-        if (isDirty && !oldDot) tabBtn.insertAdjacentHTML('beforeend', '<span class="review-dirty-dot" style="color:#ffb300; margin-left:4px; font-size:0.9rem;">●</span>');
-        else if (!isDirty && oldDot) oldDot.remove();
+        const dot = tabBtn.querySelector('.review-dirty-dot');
+        if (isDirty && !dot) tabBtn.insertAdjacentHTML('beforeend', '<span class="review-dirty-dot" style="color:#ffb300; margin-left:4px; font-size:0.9rem;">●</span>');
+        else if (!isDirty && dot) dot.remove();
     }
-    const statusBar = document.querySelector('.review-status-bar');
     if (statusBar) {
-        const oldBadge = statusBar.querySelector('.review-badge.dirty');
-        if (isDirty && !oldBadge) statusBar.insertAdjacentHTML('beforeend', '<span class="review-badge dirty" style="background:var(--accent-secondary, #ffb300); color:#000; font-weight:bold; margin-left:8px; padding:2px 8px; border-radius:4px; font-size:0.75rem; display:inline-block; box-shadow:0 0 8px rgba(255,179,0,0.2);">⚠️ 未保存修改</span>');
-        else if (!isDirty && oldBadge) oldBadge.remove();
+        const badge = statusBar.querySelector('.review-badge.dirty');
+        if (isDirty && !badge) statusBar.insertAdjacentHTML('beforeend', '<span class="review-badge dirty" style="background:var(--accent-secondary, #ffb300); color:#000; font-weight:bold; margin-left:8px; padding:2px 8px; border-radius:4px; font-size:0.75rem; display:inline-block; box-shadow:0 0 8px rgba(255,179,0,0.2);">⚠️ 未保存修改</span>');
+        else if (!isDirty && badge) badge.remove();
     }
-    const saveBtn = document.querySelector('.review-actions .review-btn.save');
     if (saveBtn) {
         saveBtn.style.boxShadow = isDirty ? '0 0 12px rgba(255, 179, 0, 0.4)' : '';
         saveBtn.style.border = isDirty ? '1.5px solid var(--accent-primary, #ffab00)' : '';
@@ -202,75 +227,42 @@ window.updateReviewDirtyUI = function () {
 function _reviewRewriteMarkdown(text, docId, sourceText) {
     if (!text) return '';
     let md = text;
-    // 1. 替换 Obsidian 双链图片 ![[image.png]]
     md = md.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
-        const cleanPath = decodeURIComponent(path.trim());
-        const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}`;
-        const alt = cleanPath;
-        const onError = `this.onerror=null;this.src='/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}';`;
-        if (extra && !isNaN(extra.trim())) {
-            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" onerror="${onError}" />`;
-        }
-        return `<img src="${url}" alt="${alt}" onerror="${onError}" />`;
+        const clean = decodeURIComponent(path.trim()), url = `/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}`;
+        const err = `this.onerror=null;this.src='${url}';`;
+        return (extra && !isNaN(extra.trim())) ? `<img src="${url}" alt="${clean}" width="${extra.trim()}" onerror="${err}" />` : `<img src="${url}" alt="${clean}" onerror="${err}" />`;
     });
-    // 2. 替换 Obsidian 双链普通附件
     md = md.replace(/(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, display) => {
-        const cleanPath = decodeURIComponent(path.trim());
-        const displayName = (display || cleanPath).trim();
-        const extMatch = cleanPath.match(/\.([a-zA-Z0-9]+)$/);
-        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
-            const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(docId)}`;
-            return `<a href="${url}" target="_blank" class="attachment-link">📎 ${displayName}</a>`;
+        const clean = decodeURIComponent(path.trim()), ext = clean.match(/\.([a-zA-Z0-9]+)$/);
+        if (ext && !['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
+            return `<a href="/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${(display || clean).trim()}</a>`;
         }
         return match;
     });
-    // 3. 替换标准 Markdown 图片
-    // 🛡️ [I5-Fix] 双级降级自愈：
-    //    一级：提取文件名，flat search 全库（应对路径幻觉但文件名正确的情况）
-    //    二级：从原文 sourceText 中提取第 N 张图片路径作为最终兜底（应对文件名也幻觉的情况）
-    //    这彻底解决了 AI 翻译时篡改图片路径和文件名导致译文预览看不到图的问题。
     const _srcImgUrls = [];
     if (sourceText) {
-        // 提取原文中所有标准 Markdown 图片的路径（按出现顺序）
-        const _srcImgRe = /!\[[^\]]*\]\(([^)]+)\)/g;
-        let _m;
-        while ((_m = _srcImgRe.exec(sourceText)) !== null) {
-            const _srcClean = decodeURIComponent(_m[1].trim());
-            if (!_srcClean.startsWith('http') && !_srcClean.startsWith('data:')) {
-                _srcImgUrls.push(`/api/vault-assets/${encodeURIComponent(_srcClean)}?relative_to=${encodeURIComponent(docId)}`);
-            }
+        const re = /!\[[^\]]*\]\(([^)]+)\)/g; let m;
+        while ((m = re.exec(sourceText)) !== null) {
+            const clean = decodeURIComponent(m[1].trim());
+            if (!clean.startsWith('http') && !clean.startsWith('data:')) _srcImgUrls.push(`/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}`);
         }
     }
     let _imgIdx = 0;
     md = md.replace(/!\[\[?([^\]]*)\]?\]\(([^)]+)\)/g, (match, alt, url) => {
-        const cleanUrl = url.trim();
-        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:')) {
-            return match;
-        }
-        const decodedUrl = decodeURIComponent(cleanUrl);
-        // 主路径：携带 relative_to 上下文解析
-        const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(docId)}`;
-        // 一级降级：文件名 flat search（适用于路径错但文件名对的情况）
-        const filename = decodedUrl.split('/').pop().split('\\').pop();
-        const flatSearchUrl = `/api/vault-assets/${encodeURIComponent(filename)}`;
-        // 二级降级：原文对应位置图片 URL（适用于文件名也幻觉的情况）
-        const srcImgUrl = _srcImgUrls[_imgIdx] || '';
-        _imgIdx++;
-        // onerror 链：resolvedUrl 失败 → flatSearch → srcImg → 放弃
-        const onErrAttr = `if(!this.dataset.t1){this.dataset.t1='1';this.src='${flatSearchUrl}';} else if(!this.dataset.t2 && '${srcImgUrl}'){this.dataset.t2='1';this.src='${srcImgUrl}';}`;
-        return `<img src="${resolvedUrl}" alt="${alt}" loading="lazy" onerror="${onErrAttr}" style="max-width:100%;border-radius:6px;" />`;
+        const clean = url.trim();
+        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) return match;
+        const decoded = decodeURIComponent(clean), resolved = `/api/vault-assets/${encodeURIComponent(decoded)}?relative_to=${encodeURIComponent(docId)}`;
+        const filename = decoded.split('/').pop().split('\\').pop(), flatUrl = `/api/vault-assets/${encodeURIComponent(filename)}`;
+        const srcUrl = _srcImgUrls[_imgIdx] || ''; _imgIdx++;
+        const onErr = `if(!this.dataset.t1){this.dataset.t1='1';this.src='${flatUrl}';} else if(!this.dataset.t2 && '${srcUrl}'){this.dataset.t2='1';this.src='${srcUrl}';}`;
+        return `<img src="${resolved}" alt="${alt}" loading="lazy" onerror="${onErr}" style="max-width:100%;border-radius:6px;" />`;
     });
-    // 4. 替换标准 Markdown 链接
     md = md.replace(/(?<!\!)\[\[?([^\]]+)\]?\]\(([^)]+)\)/g, (match, textVal, url) => {
-        const cleanUrl = url.trim();
-        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:') || cleanUrl.startsWith('#')) {
-            return match;
-        }
-        const decodedUrl = decodeURIComponent(cleanUrl);
-        const extMatch = decodedUrl.match(/\.([a-zA-Z0-9]+)$/);
-        if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
-            const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(docId)}`;
-            return `<a href="${resolvedUrl}" target="_blank" class="attachment-link">📎 ${textVal}</a>`;
+        const clean = url.trim();
+        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('#')) return match;
+        const decoded = decodeURIComponent(clean), ext = decoded.match(/\.([a-zA-Z0-9]+)$/);
+        if (ext && !['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
+            return `<a href="/api/vault-assets/${encodeURIComponent(decoded)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${textVal}</a>`;
         }
         return match;
     });
