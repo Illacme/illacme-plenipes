@@ -34,6 +34,22 @@ def run_step(name, command_list):
 def main():
     success = True
     
+    # 0. 强力防历史回流拦截 (Block Plenipes History from GitHub)
+    print("🚀 [审计阶段] Git 物理历史归档拦截审计...")
+    try:
+        staged_files = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).splitlines()
+        history_staged = [f for f in staged_files if f.startswith(".plenipes/history/")]
+        if history_staged:
+            print("  └── ❌ [物理拦截] 绝对禁止把 .plenipes/history/ 提交到 GitHub！")
+            print("         请执行 `git rm --cached -r .plenipes/history` 以移除跟踪并保持其在本地保留。")
+            for f in history_staged:
+                print(f"      - {f}")
+            success = False
+        else:
+            print("  └── ✅ 历史归档拦截审计通过 (未发现 staged 的历史档案)")
+    except Exception as e:
+        print(f"  └── ⚠️  物理历史归档拦截审计跳过 (Git 异常: {e})")
+
     # 1. 核心合规性审计 (GitHub 出海红线)
     print("🚀 [审计阶段] GitHub 安全合规性审计...")
     try:

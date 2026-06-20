@@ -71,6 +71,11 @@ def main():
     }
 
     for f in staged_files:
+        # Check 0: Block history directory from being committed
+        if f.startswith('.plenipes/history/'):
+            print(f"❌ VIOLATION (Blocked Path): .plenipes/history/ files are strictly forbidden from being committed: {f}")
+            violations_found = True
+
         # Check 1: 300-line physical limit
         if f.endswith(('.py', '.js')) and not f.startswith(('vendor/', 'node_modules/')):
             lines = count_lines(f)
