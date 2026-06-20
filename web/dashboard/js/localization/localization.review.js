@@ -168,6 +168,9 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         }
     }
 
+    // 🚀 记录正在翻译的目标语种队列，驱动声明式进度呈现
+    window._reviewState.wantedLangs = wantedLangs;
+
     // 🚀 [UI 自愈与状态清理]
     // 在重新生成之前，预先将关注的目标语种在前端置为 is_missing = true 并清空 edits 缓存。
     // 这能够物理级避免：在已就绪的语种下点击生成全部时，因旧快照存在导致轮询在第一轮就误判为就绪并立刻退出的致命 Bug。
@@ -183,10 +186,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
     _reviewRender();
     window._showToast?.('🚀 已推送后台翻译管线，正在处理中...', 'info');
     
-    const targetCol = document.getElementById('col-target');
-    if (targetCol && wantedLangs.includes(lc)) {
-        targetCol.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-dim);">⏳ 翻译引擎正在飞速生成中，请不要关闭抽屉，稍候片刻...</div>';
-    }
+
 
     try {
         const res = await fetch('/api/publish/trigger', {
@@ -201,6 +201,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         let attempts = 0;
         const poll = async () => {
             if (attempts > 300) {
+                window._reviewState.wantedLangs = null;
                 window._showToast?.('翻译耗时超出预期，请稍后重新打开抽屉查看', 'warning');
                 _reviewRender();
                 return;
@@ -228,6 +229,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                     const allDone = wantedLangs.every(lang => checkData.langs[lang] && !checkData.langs[lang].is_missing);
                     
                     if (allDone) {
+                        window._reviewState.wantedLangs = null;
                         _reviewRender();
                         window._showToast?.(`✅ 所选翻译已全部就绪！`, 'success');
                         return;
@@ -248,6 +250,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         setTimeout(poll, 2000);
 
     } catch (e) {
+        window._reviewState.wantedLangs = null;
         window._showToast?.('分发触发失败: ' + e.message, 'error');
         _reviewRender(); // 恢复原状
     }

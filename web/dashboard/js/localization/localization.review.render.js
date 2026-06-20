@@ -12,8 +12,6 @@ function _reviewRender() {
     const drawer = document.getElementById('review-drawer');
     if (!drawer) return;
     const langs = Object.keys(data.langs || {});
-
-    // 语种标签 tabs
     const tabsHtml = langs.map(lc => {
         const ld = data.langs[lc];
         const isDirty = window._isReviewDirty && window._isReviewDirty(lc);
@@ -36,10 +34,8 @@ function _reviewRenderBody() {
     const state = window._reviewState;
     const lc = state.activeLang;
     if (!state.data) return;
-    // Reset review-body padding so split view can go edge to edge
     document.getElementById('review-body').style.padding = '0';
     document.getElementById('review-body').style.gap = '0';
-    // Synchronize toggle buttons style based on layout state
     const btnSource = document.getElementById('btn-view-source');
     const btnPreview = document.getElementById('btn-view-preview');
     if (btnSource) {
@@ -52,20 +48,21 @@ function _reviewRenderBody() {
         btnPreview.style.color = state.showPreview ? 'var(--text-bright)' : 'var(--text-dim)';
         btnPreview.style.border = state.showPreview ? '1px solid var(--accent-primary)' : '1px solid transparent';
     }
-
     const ld = state.data.langs[lc] || {};
     const edit = state.edits[lc] || {};
     const isMissing = ld.is_missing;
     const sourceParas = state.data.source_paragraphs || [];
     const targetParas = edit.paragraphs || [];
-    // [AEL-2026-06-14] 包装为函数而非直接引用，以便每次渲染时动态读取 hard_line_break 配置
     const markdownParser = (window.marked && window.marked.parse)
         ? (t) => window.marked.parse(t, { breaks: window.settingsData?.ingress_settings?.hard_line_break ?? false })
         : (t) => t;
 
     // 1. 构建译文主栏 (Target Column)
     let targetHtml = '';
-    if (isMissing) {
+    const isTranslating = isMissing && state.wantedLangs && state.wantedLangs.includes(lc);
+    if (isTranslating) {
+        targetHtml = `<div style="padding:20px;"><div class="review-status-bar"><span class="review-badge ai">⏳ 正在生成译文</span></div><div class="review-loading" style="color:var(--text-dim); text-align:center; padding: 40px 0; font-size:0.92rem;">⏳ 翻译引擎正在飞速生成中，请不要关闭抽屉，稍候片刻...</div></div>`;
+    } else if (isMissing) {
         targetHtml = `<div style="padding:20px;"><div class="review-status-bar"><span class="review-badge ai">ℹ️ 无可用译文快照</span></div><div class="review-error" style="color:var(--text-dim); text-align:center; padding: 40px 0;">当前文档可能尚未完成 AI 译文的物理写入，或物理缓存已被清理。<br><br><button onclick="window.triggerSingleTranslation('current')" style="margin-top:20px; margin-right:12px; padding:10px 20px; background:var(--accent-primary); color:#000; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; box-shadow:0 4px 15px rgba(255, 171, 0, 0.3); transition:transform 0.2s;">🚀 仅生成当前语种译文</button><button onclick="window.triggerSingleTranslation('all')" style="margin-top:20px; padding:10px 20px; background:var(--bg-glass-heavy, rgba(255,255,255,0.05)); color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; transition:transform 0.2s;">🌍 生成所有目标语种译文</button></div></div>`;
     } else {
         let statusHtml = ld.human_approved
@@ -155,10 +152,8 @@ function _reviewRenderBody() {
     }
 }
 function _renderParaBlock(p) {
-    const editedMark = p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : '';
-    return `${editedMark}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
+    return `${p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : ''}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
-/* ─── 抽屉显隐控制 ───────────────────────────────────── */
 function _reviewShowDrawer() {
     const drawer = document.getElementById('review-drawer-overlay');
     if (drawer) {
