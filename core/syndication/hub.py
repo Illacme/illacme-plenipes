@@ -8,9 +8,11 @@ Illacme-plenipes Core - Content Syndicator (分发调度器)
 
 import os
 import logging
+import hashlib
 from core.adapters.egress.publishers.base import BasePublisher
 from core.adapters.syndication.targets import TARGET_REGISTRY
 from core.utils.tracing import Tracer, tlog
+from core.editorial.ast_processor import MarkdownASTProcessor
 class ContentSyndicator:
     def __init__(self, syndication_cfg, site_url, sys_tuning_cfg=None, meta=None):
         self.cfg = syndication_cfg
@@ -66,6 +68,22 @@ class ContentSyndicator:
         if not self.plugins:
             return
 
+        # 🚀 [阶段二：自动图床托管]
+        vault_root = self.sys_tuning.get("vault_root") or os.getcwd()
+        if rel_path:
+            doc_abs_path = os.path.join(vault_root, rel_path)
+            doc_dir = os.path.dirname(doc_abs_path)
+        else:
+            doc_dir = os.getcwd()
+
+        try:
+            from core.syndication.uploader import ImageUploader
+            uploader = ImageUploader(self.cfg, self.sys_tuning)
+            processor = MarkdownASTProcessor()
+            content = processor.process_images(content, doc_dir, uploader.upload_image)
+        except Exception as pe:
+            tlog.error(f"🛑 [分发引擎] AST 图片处理异常: {pe}")
+
         from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
 
         trace_id = Tracer.get_id() or "AEL-SYNDICATE"
@@ -94,6 +112,12 @@ class ContentSyndicator:
         try:
             if not plugin.is_enabled(rel_path, lang_code):
                 return
+
+            try:
+                processor = MarkdownASTProcessor()
+                content = processor.adapt_format(content, plugin.PLUGIN_ID if hasattr(plugin, 'PLUGIN_ID') else target_id)
+            except Exception as pe:
+                tlog.warning(f"⚠️ [分发引擎] 单通道格式转换异常: {pe}")
 
             # 🚀 [V11.1] 接入分发账本，实现断点续传与增量同步
             source_hash = metadata.get('source_hash', '') if metadata else ''
@@ -177,6 +201,12 @@ class ContentSyndicator:
             if not plugin.is_enabled(rel_path, lang_code):
                 self.meta.mark_syndication_success(rel_path, target_id)
                 return
+
+            try:
+                processor = MarkdownASTProcessor()
+                content = processor.adapt_format(content, plugin.PLUGIN_ID if hasattr(plugin, 'PLUGIN_ID') else target_id)
+            except Exception as pe:
+                tlog.warning(f"⚠️ [分发引擎] 重试通道格式转换异常: {pe}")
 
             canonical_url = None
             if self.site_url:
