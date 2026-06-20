@@ -62,12 +62,15 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             task_queue, _ = build_task_queue(engine, requested_paths)
             import os
             for task_path, prefix, src_rel, target_slot in task_queue:
-                doc_info = engine.meta.get_doc_info(src_rel) if hasattr(engine, "meta") and engine.meta else {}
+                import os
+                # 🚀 [V10.8] 正确推导出相对于 vault 根目录的相对路径，以解决命名冲突造成的元数据 ledger 查找失败
+                rel_file_path = os.path.relpath(task_path, engine.paths.get('vault', '.')).replace('\\', '/')
+                doc_info = engine.meta.get_doc_info(rel_file_path) if hasattr(engine, "meta") and engine.meta else {}
                 sub_dir = doc_info.get("sub_dir", "")
                 slug = doc_info.get("slug")
                 if slug and hasattr(engine, "route_manager") and hasattr(engine, "paths"):
                     cache_dir = engine.paths.get("cache")
-                    target_ext = os.path.splitext(src_rel)[1].lower() or ".md"
+                    target_ext = os.path.splitext(rel_file_path)[1].lower() or ".md"
                     for lang in langs_to_clean:
                         try:
                             cache_mirror = engine.route_manager.resolve_physical_path(
