@@ -53,7 +53,7 @@ class BaseSyndicator(abc.ABC):
         return getattr(self.config, 'enabled', False)
 
     @abc.abstractmethod
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """
         [Contract] 组装平台特定的 Payload 数据结构。
         """

@@ -108,7 +108,12 @@ class ContentSyndicator:
                 tlog.info(f"🧪 [分发模拟] {plugin.__class__.__name__} -> {title}")
                 return
 
-            payload = plugin.format_payload(title, slug, content, metadata)
+            canonical_url = None
+            if self.site_url:
+                base_url = self.site_url.rstrip('/')
+                canonical_url = f"{base_url}/posts/{slug}"
+
+            payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
             plugin.push(payload)
 
             # 🚀 [V11.1] 记录分发成功状态
@@ -173,7 +178,12 @@ class ContentSyndicator:
                 self.meta.mark_syndication_success(rel_path, target_id)
                 return
 
-            payload = plugin.format_payload(title, slug, content, metadata)
+            canonical_url = None
+            if self.site_url:
+                base_url = self.site_url.rstrip('/')
+                canonical_url = f"{base_url}/posts/{slug}"
+
+            payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
             plugin.push(payload)
 
             if self.meta and rel_path:

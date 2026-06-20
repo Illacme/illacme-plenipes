@@ -19,10 +19,11 @@ class DevToSyndicator(BaseSyndicator):
     # 🚀 [V11.3] 声明运行时依赖契约
     REQUIRED_PACKAGES = ["requests"]
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: dict) -> dict:
+    def format_payload(self, title: str, slug: str, content: str, metadata: dict, canonical_url: str = None) -> dict:
         tags = metadata.get('tags', [])
-        # Canonical URL 推导
-        canonical_url = f"{self.site_url}/{slug}".replace('//', '/')
+        # Canonical URL 优先使用传入值，否则 Fallback 推导
+        if not canonical_url:
+            canonical_url = f"{self.site_url}/{slug}".replace('//', '/').replace(':/', '://')
         
         return {
             "article": {

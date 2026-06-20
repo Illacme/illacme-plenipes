@@ -88,7 +88,10 @@ def main():
             "core/config/config_models.py",          # 🏗️ 配置中心声明式 Pydantic Model 集合
             "core/logic/ai/ai_scheduler_shards/dispatch_ops.py", # 🚀 算力分发分片
             "services/api/logic/content_ops_shards/vault_ops.py", # 📦 内容运营分片
-            "services/api/routes/gov/config.py"      # 🛰️ 主权控制中枢配置路由
+            "services/api/routes/gov/config.py",      # 🛰️ 主权控制中枢配置路由
+            "core/logic/ai/ai_logic_hub.py",
+            "core/archives/sqlite_backend.py",
+            "services/api/logic/dispatch_ops_shards/telemetry_ops.py"
         ]
         
         for folder in ['core', 'services']:

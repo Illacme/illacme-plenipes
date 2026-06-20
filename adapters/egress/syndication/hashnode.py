@@ -62,7 +62,7 @@ class HashnodeSyndicator(BaseSyndicator):
     # BaseSyndicator 契约实现
     # ------------------------------------------------------------------
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """
         组装 Hashnode PublishPost GraphQL 变量。
         文档：https://apidocs.hashnode.com/#mutation-publishPost
@@ -71,9 +71,8 @@ class HashnodeSyndicator(BaseSyndicator):
         tags_raw = metadata.get("tags", [])
         tags = [{"slug": t.lower().replace(" ", "-"), "name": t} for t in tags_raw[:5]]
 
-        # Canonical URL 推导
-        canonical_url: Optional[str] = None
-        if self.site_url:
+        # Canonical URL 优先使用传入值，否则 Fallback 推导
+        if not canonical_url and self.site_url:
             canonical_url = f"{self.site_url.rstrip('/')}/{slug}"
 
         variables: Dict[str, Any] = {

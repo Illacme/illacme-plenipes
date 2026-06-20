@@ -86,10 +86,12 @@ class GhostSyndicator(BaseSyndicator):
     # BaseSyndicator 契约实现
     # ------------------------------------------------------------------
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """组装 Ghost Admin API 所需的 post 数据结构"""
         tags = [{"name": t} for t in metadata.get("tags", [])]
-        canonical_url = f"{self.site_url.rstrip('/')}/{slug}" if self.site_url else ""
+        # Canonical URL 优先使用传入值，否则 Fallback 推导
+        if not canonical_url and self.site_url:
+            canonical_url = f"{self.site_url.rstrip('/')}/{slug}"
 
         post: Dict[str, Any] = {
             "title": title,

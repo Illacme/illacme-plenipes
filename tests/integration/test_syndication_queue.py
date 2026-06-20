@@ -33,7 +33,7 @@ class MockRetrySyndicator(BaseSyndicator):
     def is_enabled(self, rel_path, lang_code):
         return True
 
-    def format_payload(self, title, slug, content, metadata):
+    def format_payload(self, title, slug, content, metadata, canonical_url=None):
         return {"title": title, "slug": slug, "content": content}
 
 # 动态载入注册中心

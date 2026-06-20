@@ -58,7 +58,7 @@ class LinkedInSyndicator(BaseSyndicator):
     # BaseSyndicator 契约实现
     # ------------------------------------------------------------------
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """
         组装 LinkedIn UGC Post 数据结构（ARTICLE 类型分享）。
         文档：https://learn.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
@@ -68,9 +68,9 @@ class LinkedInSyndicator(BaseSyndicator):
         if not author_urn:
             author_urn = "urn:li:person:unknown"
 
-        # Canonical 文章 URL
-        article_url = ""
-        if self.site_url:
+        # Canonical 文章 URL，优先使用传入值，否则 Fallback 推导
+        article_url = canonical_url
+        if not article_url and self.site_url:
             article_url = f"{self.site_url.rstrip('/')}/{slug}"
 
         # 摘要：取 metadata description，或截取正文前 200 字

@@ -18,11 +18,12 @@ class MediumSyndicator(BaseSyndicator):
 
     REQUIRED_PACKAGES = ["requests"]
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """对齐 BaseSyndicator 抽象接口契约"""
         tags = metadata.get('tags', [])
-        # Canonical URL 推导
-        canonical_url = f"{self.site_url}/{slug}".replace('//', '/')
+        # Canonical URL 优先使用传入值，否则 Fallback 推导
+        if not canonical_url:
+            canonical_url = f"{self.site_url}/{slug}".replace('//', '/').replace(':/', '://')
         
         return {
             "title": title,

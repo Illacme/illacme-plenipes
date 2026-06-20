@@ -35,7 +35,7 @@ class WordPressSyndicator(BaseSyndicator):
         encoded_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
         return {"Authorization": f"Basic {encoded_auth}"}
 
-    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """组装 WordPress REST API 的标准数据结构"""
         # 提取分类与标签
         tags = metadata.get('tags', [])
@@ -50,9 +50,9 @@ class WordPressSyndicator(BaseSyndicator):
             "format": "standard"
         }
         
-        # 注意：WordPress REST API 接收分类和标签通常需要 ID，
-        # 这里为了简化，我们仅透传原始数据，具体的 ID 映射可在 push 中按需处理。
-        # 建议在 config 中预定义分类 ID 映射。
+        if canonical_url:
+            payload["meta"] = {"_yoast_wpseo_canonical": canonical_url}
+            
         return payload
 
     def push(self, payload: Dict[str, Any]):
