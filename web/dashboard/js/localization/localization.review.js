@@ -13,6 +13,23 @@ window._reviewState = {
     showPreview: true,
     edits: {}            // { lang: { title, desc, paragraphs: [{index, type, text}] } }
 };
+window.saveReviewDraft = function (lc) {
+    const state = window._reviewState;
+    if (!state.docId || !lc) return;
+    const edit = state.edits[lc];
+    if (edit) {
+        localStorage.setItem(`plenipes_review_draft_${state.docId}_${lc}`, JSON.stringify({
+            title: edit.title,
+            desc: edit.desc,
+            paragraphs: edit.paragraphs
+        }));
+    }
+};
+window.clearReviewDraft = function (lc) {
+    const state = window._reviewState;
+    if (!state.docId || !lc) return;
+    localStorage.removeItem(`plenipes_review_draft_${state.docId}_${lc}`);
+};
 
 /* ─── 入口：从 Vault 文稿列表打开校对抽屉（Q5=B） ──── */
 window.openTranslationReview = async function (docId) {
@@ -65,6 +82,21 @@ window.openTranslationReview = async function (docId) {
                 desc: ld.desc || '',
                 paragraphs: (ld.paragraphs || []).map(p => ({ ...p }))
             };
+            try {
+                const draftStr = localStorage.getItem(`plenipes_review_draft_${docId}_${lc}`);
+                if (draftStr) {
+                    const draft = JSON.parse(draftStr);
+                    if (draft) {
+                        state.edits[lc].title = draft.title ?? state.edits[lc].title;
+                        state.edits[lc].desc = draft.desc ?? state.edits[lc].desc;
+                        if (draft.paragraphs) {
+                            state.edits[lc].paragraphs = draft.paragraphs.map(p => ({ ...p }));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to restore draft:", err);
+            }
         });
 
         _reviewRender();
@@ -107,6 +139,7 @@ window.saveTranslationReview = async function () {
             ld.review_is_stale = false;
             ld.reviewed_at = new Date().toISOString();
         }
+        window.clearReviewDraft(lc);
         _reviewRender();
         window._showToast?.('🔒 校对结果已保存并锁定', 'success');
     } catch (e) {
@@ -132,6 +165,7 @@ window.unlockTranslationReview = async function () {
             state.data.langs[lc].human_approved = false;
             state.data.langs[lc].review_is_stale = false;
         }
+        window.clearReviewDraft(lc);
         _reviewRender();
         window._showToast?.('🗑️ 校对锁已解除，下次同步将重新 AI 翻译', 'info');
     } catch (e) {
@@ -320,6 +354,7 @@ window.reviewSaveParagraph = function (idx, newText) {
     }
     // 🚀 实时同步渲染预览分栏中的对应段落（渲染逻辑委托给 review.render.js）
     _reviewRenderPreviewPara(idx, state);
+    window.saveReviewDraft?.(lc);
     window.updateReviewDirtyUI();
 };
 
@@ -360,6 +395,11 @@ window.closeTranslationReview = function () {
         if (!confirm('⚠️ 当前有未保存的校对修改，确定要关闭并丢弃这些修改吗？')) {
             return;
         }
+        if (state.data && state.data.langs) {
+            Object.keys(state.data.langs).forEach(lc => {
+                window.clearReviewDraft?.(lc);
+            });
+        }
     }
 
     const overlay = document.getElementById('review-drawer-overlay');
@@ -367,4 +407,79 @@ window.closeTranslationReview = function () {
         overlay.style.opacity = '0';
         setTimeout(() => { overlay.style.display = 'none'; }, 250);
     }
+};
+
+/* ─── 集中绑定三栏交互：三向联动高亮与锚定滚动同步 ───────────────── */
+window._bindReviewInteractions = function () {
+    const colTarget = document.getElementById('col-target');
+    const colPreview = document.getElementById('col-preview');
+    const colSource = document.getElementById('col-source');
+    if (!colTarget || !colPreview || !colSource) return;
+
+    // 1. 三向段落高亮联动
+    const highlightPara = (idx, add) => {
+        ['review-para', 'source-para', 'preview-para'].forEach(prefix => {
+            const el = document.getElementById(`${prefix}-${idx}`);
+            if (el) {
+                if (add) el.classList.add('linked-hover');
+                else el.classList.remove('linked-hover');
+            }
+        });
+    };
+
+    [colTarget, colPreview, colSource].forEach(col => {
+        col.addEventListener('mouseover', (e) => {
+            const block = e.target.closest('[id^="review-para-"], [id^="source-para-"], [id^="preview-para-"]');
+            if (block) highlightPara(block.id.split('-').pop(), true);
+        });
+        col.addEventListener('mouseout', (e) => {
+            const block = e.target.closest('[id^="review-para-"], [id^="source-para-"], [id^="preview-para-"]');
+            if (block) highlightPara(block.id.split('-').pop(), false);
+        });
+    });
+
+    // 2. 基于可视段落锚定的滚动同步
+    let activeScrollSource = null;
+    let scrollTimeout = null;
+
+    const onScrollHandler = (e) => {
+        const target = e.currentTarget;
+        if (activeScrollSource && activeScrollSource !== target) return;
+        activeScrollSource = target;
+
+        const targetRect = target.getBoundingClientRect();
+        const blocks = Array.from(target.querySelectorAll('[id^="review-para-"], [id^="source-para-"], [id^="preview-para-"]'));
+        let activeIdx = null, diff = 0;
+
+        for (const b of blocks) {
+            const rect = b.getBoundingClientRect();
+            if (rect.bottom - targetRect.top > 10) {
+                activeIdx = b.id.split('-').pop();
+                diff = rect.top - targetRect.top;
+                break;
+            }
+        }
+
+        if (activeIdx !== null) {
+            const prefixes = { 'col-target': 'review-para', 'col-preview': 'preview-para', 'col-source': 'source-para' };
+            const visibleCols = [colTarget, colPreview, colSource].filter(c => c && c.style.display !== 'none');
+            visibleCols.forEach(c => {
+                if (c !== target) {
+                    const targetEl = c.querySelector(`#${prefixes[c.id]}-${activeIdx}`);
+                    if (targetEl) {
+                        const colRect = c.getBoundingClientRect();
+                        const elRect = targetEl.getBoundingClientRect();
+                        c.scrollTop += (elRect.top - colRect.top) - diff;
+                    }
+                }
+            });
+        }
+
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => { activeScrollSource = null; }, 80);
+    };
+
+    colTarget.addEventListener('scroll', onScrollHandler);
+    colPreview.addEventListener('scroll', onScrollHandler);
+    colSource.addEventListener('scroll', onScrollHandler);
 };

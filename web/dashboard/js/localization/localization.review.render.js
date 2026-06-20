@@ -113,7 +113,7 @@ function _reviewRenderBody() {
             ? `<button class="review-btn unlock" onclick="window.unlockTranslationReview()">🗑️ 重置为 AI 重译</button><button class="review-btn save active" style="${saveStyle}" onclick="window.saveTranslationReview()">🔒 更新锁定内容</button>`
             : `<button class="review-btn unlock" style="margin-right: auto;" onclick="window.triggerSingleTranslation('current')">🔄 重新生成当前语种译文</button><button class="review-btn save" style="${saveStyle}" onclick="window.saveTranslationReview()">🔒 保存并锁定（语种级）</button>`;
 
-        targetHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-status-bar">${statusHtml}</div><div class="review-field"><label>📌 译文标题 (Title)</label><input type="text" id="review-title-input" value="${_escapeHtml(edit.title || '')}" oninput="window._reviewState.edits['${lc}'].title = this.value; window.updateReviewDirtyUI();" class="review-input" placeholder="输入校对后的标题..."></div><div class="review-field"><label>🏷️ 译文描述 (Description)</label><textarea id="review-desc-input" rows="3" class="review-input" oninput="window._reviewState.edits['${lc}'].desc = this.value; window.updateReviewDirtyUI();" placeholder="输入校对后的 SEO 描述...">${_escapeHtml(edit.desc || '')}</textarea></div><div class="review-field"><label>📄 正文段落 <small style="color:var(--text-dim)">(点击段落编辑，代码块只读)</small></label><div class="review-paras-container" id="target-paras-container">${targetParas.map(p => `<div id="review-para-${p.index}" data-editing="0" class="review-para-block ${p.type === 'code' ? 'code-block' : ''} ${p._edited ? 'edited' : ''}" onclick="window.reviewEditParagraph(${p.index})" title="${p.type === 'code' ? '代码块（只读）' : '点击编辑此段落'}">${_renderParaBlock(p)}</div>`).join('')}</div></div><div class="review-actions">${actionBtns}</div></div>`;
+        targetHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-status-bar">${statusHtml}</div><div class="review-field"><label>📌 译文标题 (Title)</label><input type="text" id="review-title-input" value="${_escapeHtml(edit.title || '')}" oninput="window._reviewState.edits['${lc}'].title = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" class="review-input" placeholder="输入校对后的标题..."></div><div class="review-field"><label>🏷️ 译文描述 (Description)</label><textarea id="review-desc-input" rows="3" class="review-input" oninput="window._reviewState.edits['${lc}'].desc = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" placeholder="输入校对后的 SEO 描述...">${_escapeHtml(edit.desc || '')}</textarea></div><div class="review-field"><label>📄 正文段落 <small style="color:var(--text-dim)">(点击段落编辑，代码块只读)</small></label><div class="review-paras-container" id="target-paras-container">${targetParas.map(p => `<div id="review-para-${p.index}" data-editing="0" class="review-para-block ${p.type === 'code' ? 'code-block' : ''} ${p._edited ? 'edited' : ''}" onclick="window.reviewEditParagraph(${p.index})" title="${p.type === 'code' ? '代码块（只读）' : '点击编辑此段落'}">${_renderParaBlock(p)}</div>`).join('')}</div></div><div class="review-actions">${actionBtns}</div></div>`;
     }
 
     // 2. 构建预览分栏 (Preview Column)
@@ -142,49 +142,8 @@ function _reviewRenderBody() {
         </div>
     `;
 
-    const colTarget = document.getElementById('col-target');
-    const colPreview = document.getElementById('col-preview');
-    const colSource = document.getElementById('col-source');
-    if (colTarget && colPreview && colSource && !isMissing) {
-        let activeScrollSource = null, scrollTimeout = null;
-        const onScrollHandler = (e) => {
-            const target = e.currentTarget;
-            if (activeScrollSource && activeScrollSource !== target) return;
-            activeScrollSource = target;
-            const pct = target.scrollTop / (target.scrollHeight - target.clientHeight || 1);
-            const visibleCols = [colTarget, colPreview, colSource].filter(col => col && col.style.display !== 'none');
-            visibleCols.forEach(col => {
-                if (col !== target) col.scrollTop = pct * (col.scrollHeight - col.clientHeight);
-            });
-            if (scrollTimeout) clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => { activeScrollSource = null; }, 80);
-        };
-        colTarget.addEventListener('scroll', onScrollHandler);
-        colPreview.addEventListener('scroll', onScrollHandler);
-        colSource.addEventListener('scroll', onScrollHandler);
-
-        // 🚀 绑定段落鼠标划过联动高亮效果
-        const targetBlocks = colTarget.querySelectorAll('.review-para-block');
-        targetBlocks.forEach(block => {
-            block.addEventListener('mouseenter', () => {
-                const idAttr = block.id;
-                if (!idAttr) return;
-                const idx = idAttr.replace('review-para-', '');
-                const srcBlock = document.getElementById(`source-para-${idx}`);
-                if (srcBlock) srcBlock.classList.add('linked-hover');
-                const prevBlock = document.getElementById(`preview-para-${idx}`);
-                if (prevBlock) prevBlock.classList.add('linked-hover');
-            });
-            block.addEventListener('mouseleave', () => {
-                const idAttr = block.id;
-                if (!idAttr) return;
-                const idx = idAttr.replace('review-para-', '');
-                const srcBlock = document.getElementById(`source-para-${idx}`);
-                if (srcBlock) srcBlock.classList.remove('linked-hover');
-                const prevBlock = document.getElementById(`preview-para-${idx}`);
-                if (prevBlock) prevBlock.classList.remove('linked-hover');
-            });
-        });
+    if (!isMissing) {
+        window._bindReviewInteractions?.();
     }
 }
 function _renderParaBlock(p) {
