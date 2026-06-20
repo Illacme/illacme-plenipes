@@ -4,16 +4,37 @@
  * ❌ 不再包含任何 UI 渲染或状态机逻辑，避免与 Core 层冲突。
  */
 
+let _wsReconnectTimer = null;
+window._wsReconnectDelay = 3000;
+window._wsInstance = null;
+
 window.initWebSocket = () => {
+    // 🛡️ [V87.0] 清理现存旧实例，防止多路复用与多实例并存冲突
+    if (window._wsInstance) {
+        console.log('🔌 [WS] 发现现存旧实例，正在主动关闭...');
+        try {
+            window._wsInstance.onopen = null;
+            window._wsInstance.onmessage = null;
+            window._wsInstance.onclose = null;
+            window._wsInstance.onerror = null;
+            window._wsInstance.close();
+        } catch (e) {
+            console.error('⚠️ [WS] 主动清理旧连接时发生异常:', e);
+        }
+        window._wsInstance = null;
+    }
+
     window.lastMsgId = window.lastMsgId || 0;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/ws?last_msg_id=${window.lastMsgId}`;
     
     console.log(`🔌 [WS] 正在连接主权链路: ${wsUrl}`);
     const socket = new WebSocket(wsUrl);
+    window._wsInstance = socket;
 
     socket.onopen = () => {
         console.log('✅ [WS] 主权链路已激活');
+        window._wsReconnectDelay = 3000; // 重置重连延迟
     };
 
     const routeMessage = (data) => {
@@ -180,8 +201,17 @@ window.initWebSocket = () => {
     };
 
     socket.onclose = () => {
-        console.warn('❌ [WS] 主权链路已断开，正在尝试重连...');
-        setTimeout(initWebSocket, 3000);
+        console.warn(`❌ [WS] 主权链路已断开，将在 ${window._wsReconnectDelay}ms 后尝试重连...`);
+        if (_wsReconnectTimer) {
+            console.warn('⚠️ [WS] 现存重连定时器已在队列中，跳过本次触发。');
+            return;
+        }
+        _wsReconnectTimer = setTimeout(() => {
+            _wsReconnectTimer = null;
+            // 指数退避：每次增加延迟 1.5 倍，最大 30 秒
+            window._wsReconnectDelay = Math.min(window._wsReconnectDelay * 1.5, 30000);
+            window.initWebSocket();
+        }, window._wsReconnectDelay);
     };
 
     socket.onerror = (err) => {

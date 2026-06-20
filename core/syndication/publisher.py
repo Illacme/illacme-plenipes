@@ -6,6 +6,7 @@ Illacme-plenipes Core - Publisher Service
 🛡️ [AEL-Iter-v11.0]：将资产推送至外部生态的中央指挥部。
 """
 
+import os
 import logging
 from typing import Dict, Any, List
 from ..adapters.egress.publishers import PublisherRegistry
@@ -152,4 +153,3 @@ class PublisherService:
                 # self.run_syndication(doc_path, {"rel_path": doc_path}, ledger=engine.ledger)
 
 
-import os # 为了处理路径

@@ -19,6 +19,11 @@ window.initGalaxy = () => {
             const graph = window.setupGalaxyEngine(elem);
             window.galaxyGraph = graph;
 
+            // 🛡️ [V87.0] 初始化完成后立即暂停渲染循环
+            // 星系只在 overview 视图显示时才应运行，resumeGalaxy() 由 showView('overview') 触发
+            graph.pauseAnimation();
+            console.log("⏸️ [Hub] 星系引擎初始化完毕，进入休眠态（等待 overview 视图激活）");
+
             // 🪐 2. 调用手势 controls 及太空阻尼重载
             if (typeof window.setupGalaxyEngineControls === 'function') {
                 window.setupGalaxyEngineControls(graph);
@@ -50,9 +55,11 @@ window.initGalaxy = () => {
     }
 
     // 🪐 3. 激活双阶段渐进数据网络网关
+    // 注意：refreshGalaxy 在此处只拉取数据并缓存，不强制渲染（引擎处于暂停态）
     if (typeof window.refreshGalaxy === 'function') {
         window.refreshGalaxy();
     } else {
         console.warn("⚠️ [Hub] 渐进式刷新网关 refreshGalaxy 未装载！");
     }
 };
+
