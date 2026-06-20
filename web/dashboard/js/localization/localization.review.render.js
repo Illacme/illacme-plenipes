@@ -69,6 +69,8 @@ function _reviewRenderBody() {
     const isTranslating = isMissing && state.wantedLangs && state.wantedLangs.includes(lc);
     if (isTranslating) {
         const progress = state.langProgress ? (state.langProgress[lc] || 5) : 5;
+        const pInfo = state.data?.langs?.[lc]?.progress;
+        const pDesc = pInfo ? ` (${pInfo.translated_paras} / ${pInfo.total_paras} 段已就绪)` : '';
         const steps = [
             { p: 10, name: '任务调度', desc: '初始化翻译管线引擎' },
             { p: 25, name: '文本切片', desc: '解析段落与元数据结构' },
@@ -87,7 +89,7 @@ function _reviewRenderBody() {
         }).join('');
         targetHtml = `<div style="padding:20px;">
             <div style="font-size:0.95rem; font-weight:bold; margin-bottom:8px;">🌍 全局翻译管线处理中 - ${lc.toUpperCase()}</div>
-            <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:12px;">当前进度: ${progress}%</div>
+            <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:12px;">当前进度: ${progress}%${pDesc}</div>
             <div style="background:rgba(255,255,255,0.05); border-radius:8px; height:8px; width:100%; overflow:hidden; margin-bottom:20px;">
                 <div style="background:linear-gradient(90deg, var(--accent-primary) 0%, #ffc107 100%); width:${progress}%; height:100%; transition:width 0.4s ease;"></div>
             </div>

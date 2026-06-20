@@ -10,19 +10,7 @@ from core.utils.tracing import tlog
 
 
 def _split_paragraphs(body: str) -> list:
-    """
-    将 Markdown 正文切割为段落块列表，用于前端段落级校对（Q1=C）。
-    切割规则：
-      - 普通段落：双换行分隔
-      - Callout 块：::: ... ::: 作为整体块
-      - 代码块：``` ... ``` 作为只读整体块
-    返回：[{"index": int, "type": "paragraph"|"callout"|"code", "text": str}]
-
-    🛡️ [UI 防污染] 在分段前剥离 Sovereign-Tag 系统追踪注释。
-    这些注释（如 <!-- Sovereign-Tag: [[AEL-Iter-ID: ...]] -->）是系统内部
-    用于溯源的元数据，对普通用户无意义，在校对工作台中显示容易造成困惑。
-    原始 .md 文件磁盘内容不受影响，系统溯源功能照常工作。
-    """
+    """将 Markdown 正文切割为段落块列表，用于前端段落级校对（Q1=C）。"""
     if not body:
         return []
 
@@ -92,10 +80,7 @@ from core.utils.text import parse_frontmatter
 from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
 
 def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
-    """
-    获取文档所有已翻译语种的快照（含锁定状态、段落分割）。
-    数据来源：translation_reviews 账本 + 物理缓存（Q6=B）。
-    """
+    """获取文档所有已翻译语种的快照（含锁定状态、段落分割），源自账本及缓存（Q6=B）。"""
     if not engine or not engine.meta:
         return {"error": "Engine not initialized", "langs": {}}
 
@@ -162,6 +147,36 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
         title = r_data.get("reviewed_title")
         desc = r_data.get("reviewed_desc")
 
+        total_blocks, translated_blocks = 0, 0
+        try:
+            translation_cfg = getattr(engine.config, "translation", None)
+            resolved_style = getattr(translation_cfg, "active_style", "default") if translation_cfg else "default"
+            p_style = getattr(translation_cfg, "prompts", None) if translation_cfg else None
+            if resolved_style and p_style:
+                from core.logic.ai.ai_factory import TranslatorFactory
+                p_style = TranslatorFactory.get_prompts_for_style(resolved_style, getattr(engine, "imprint_id", "default"), p_style)
+            t_sys = getattr(p_style, "translate_system", "") if p_style else ""
+            t_user = getattr(p_style, "translate_user", "") if p_style else ""
+            if type(t_sys).__name__ in ('MagicMock', 'Mock'): t_sys = ""
+            if type(t_user).__name__ in ('MagicMock', 'Mock'): t_user = ""
+            import hashlib
+            style_content = str(t_sys or "") + "\n" + str(t_user or "")
+            style_hash = hashlib.md5(style_content.encode('utf-8')).hexdigest()
+
+            from core.logic.block_parser import MarkdownBlockParser
+            parser = MarkdownBlockParser()
+            for block in parser.parse(source_body):
+                if block.type == "spacer" or not block.content.strip(): continue
+                total_blocks += 1
+                import re
+                stripped = re.sub(r'__B_MASK_\d+__', '', block.content)
+                stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
+                stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
+                if not re.search(r'\w', stripped) or engine.block_cache.get_block(lang_code, block.fingerprint, style_hash):
+                    translated_blocks += 1
+        except Exception: pass
+        progress_data = {"translated_paras": translated_blocks, "total_paras": max(1, total_blocks)}
+
         # 若无人工校对数据，且翻译状态不为错误或缺失，则从物理缓存磁盘读取最新 AI 译文快照
         if not body and cache_dir and hasattr(engine, "route_manager"):
             try:
@@ -190,6 +205,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                     "paragraphs": [{"index": 0, "type": "paragraph", "text": "*(该语种生成失败，请稍后重试或检查 LLM 配置)*"}],
                     "human_approved": False,
                     "review_is_stale": False,
+                    "progress": progress_data
                 }
             else:
                 langs[lang_code] = {
@@ -199,6 +215,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                     "paragraphs": [],
                     "human_approved": False,
                     "review_is_stale": False,
+                    "progress": progress_data
                 }
             continue
 
@@ -211,6 +228,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             "review_is_stale": bool(r_data.get("is_stale", False)),
             "reviewed_at": r_data.get("reviewed_at"),
             "reviewed_by": r_data.get("reviewed_by"),
+            "progress": progress_data
         }
 
     return {
@@ -227,11 +245,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
 def save_human_review_impl(engine, doc_id: str, lang_code: str,
                             paragraphs: list, title: str = None,
                             desc: str = None) -> dict:
-    """
-    保存人工校对结果并上锁（语种级，Q2=A）。
-    存储 SSG 渲染前中间态 Markdown（Q4=A）。
-    paragraphs 为前端返回的段落列表（含用户修改）。
-    """
+    """保存人工校对结果并上锁（语种级，Q2=A）。存储 SSG 渲染前中间态 Markdown（Q4=A）。"""
     if not engine or not engine.meta:
         return {"ok": False, "error": "Engine not initialized"}
 
@@ -260,9 +274,7 @@ def save_human_review_impl(engine, doc_id: str, lang_code: str,
 
 
 def unlock_human_review_impl(engine, doc_id: str, lang_code: str) -> dict:
-    """
-    解除人工校对锁（用户主动操作，重置为 AI 重译）。
-    """
+    """解除人工校对锁（用户主动操作，重置为 AI 重译）。"""
     if not engine or not engine.meta:
         return {"ok": False, "error": "Engine not initialized"}
 

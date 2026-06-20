@@ -216,15 +216,18 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                 if (checkData && checkData.langs) {
                     window._reviewState.data = checkData;
                     
-                    // 推进并更新各语种的翻译进度
+                    // 推进并更新各语种的真实物理进度
                     wantedLangs.forEach(lang => {
                         const ld = checkData.langs[lang];
-                        if (ld && !ld.is_missing) {
-                            window._reviewState.langProgress[lang] = 100;
-                        } else {
-                            const curr = window._reviewState.langProgress[lang] || 5;
-                            if (curr < 95) {
-                                window._reviewState.langProgress[lang] = Math.min(95, curr + Math.floor(Math.random() * 8) + 8);
+                        if (ld) {
+                            if (!ld.is_missing) {
+                                window._reviewState.langProgress[lang] = 100;
+                            } else if (ld.progress) {
+                                const tParas = ld.progress.translated_paras || 0;
+                                const totalParas = ld.progress.total_paras || 1;
+                                window._reviewState.langProgress[lang] = Math.min(99, Math.floor((tParas / totalParas) * 100));
+                            } else {
+                                window._reviewState.langProgress[lang] = Math.min(99, window._reviewState.langProgress[lang] || 5);
                             }
                         }
                     });
