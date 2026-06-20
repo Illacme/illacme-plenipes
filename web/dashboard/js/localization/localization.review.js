@@ -343,8 +343,9 @@ window.reviewSaveParagraph = function (idx, newText) {
     if (!lc) return;
     const paras = state.edits[lc]?.paragraphs || [];
     if (paras[idx]) {
+        const originalText = state.data?.langs?.[lc]?.paragraphs?.[idx]?.text ?? '';
         paras[idx].text = newText;
-        paras[idx]._edited = true;
+        paras[idx]._edited = (newText !== originalText);
     }
     // 重新渲染该段落块（退出编辑模式）
     const block = document.getElementById(`review-para-${idx}`);
