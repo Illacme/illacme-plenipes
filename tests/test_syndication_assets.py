@@ -100,6 +100,11 @@ class TestSyndicationAssets(unittest.TestCase):
         # 动态测试 S3 上传流
         from core.syndication.uploader import ImageUploader
         uploader = ImageUploader(syndicator.cfg, syndicator.sys_tuning)
+        
+        # 校验图床插件已被动态自发现和挂载
+        self.assertIsNotNone(uploader.host_instance)
+        self.assertEqual(uploader.host_instance.PLUGIN_ID, "s3")
+
         processor = MarkdownASTProcessor()
         result_content = processor.process_images(
             content, 
