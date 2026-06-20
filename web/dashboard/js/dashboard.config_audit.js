@@ -70,18 +70,19 @@ window.renderConfigAuditTopology = (data, container) => {
     `;
 
     // 3. 拓扑图对比表框架
+    // 3. 拓扑图对比表框架
     const tableHtml = `
-        <div style="overflow-x: auto; border: 1px solid var(--glass-border); border-radius: 8px; background: rgba(0,0,0,0.15);">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;" id="audit-topology-table">
+        <div style="overflow-x: auto; border: 1px solid var(--glass-border); border-radius: 8px; background: rgba(0,0,0,0.15); backdrop-filter: blur(10px);">
+            <table style="width: 100%; min-width: 950px; border-collapse: collapse; font-size: 0.8rem; text-align: left; table-layout: fixed;" id="audit-topology-table">
                 <thead>
                     <tr style="background: var(--black-20); border-bottom: 1px solid var(--glass-border); color: var(--text-dim);">
-                        <th style="padding: 12px 16px; font-weight: 600;">配置键路径</th>
+                        <th style="padding: 12px 16px; font-weight: 600; width: 230px;">配置键路径</th>
                         <th style="padding: 12px 16px; font-weight: 600; width: 100px;">决策来源</th>
                         <th style="padding: 12px 16px; font-weight: 600; width: 100px;">安全等级</th>
-                        <th style="padding: 12px 16px; font-weight: 600; width: 180px;">GLOBAL 原始</th>
-                        <th style="padding: 12px 16px; font-weight: 600; width: 180px;">IMPRINT 原始</th>
-                        <th style="padding: 12px 16px; font-weight: 600; width: 180px;">LOCAL 原始</th>
-                        <th style="padding: 12px 16px; font-weight: 600; width: 200px;">当前生效值</th>
+                        <th style="padding: 12px 16px; font-weight: 600; width: 130px;">GLOBAL 原始</th>
+                        <th style="padding: 12px 16px; font-weight: 600; width: 130px;">IMPRINT 原始</th>
+                        <th style="padding: 12px 16px; font-weight: 600; width: 130px;">LOCAL 原始</th>
+                        <th style="padding: 12px 16px; font-weight: 600; width: 130px;">当前生效值</th>
                     </tr>
                 </thead>
                 <tbody id="audit-table-body">
@@ -91,12 +92,17 @@ window.renderConfigAuditTopology = (data, container) => {
         </div>
     `;
 
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+    let filteredItems = [...data.items];
+
     container.innerHTML = `
         <div class="section-header mt-large"><h3>📡 配置拓扑与安全审计 (Configuration Auditing)</h3></div>
         <p class="section-desc">深度展现全局、品牌主权及本地物理层级合并的最终决策，识别安全隐患。</p>
         ${alertHtml}
         ${filterHtml}
         ${tableHtml}
+        <div id="audit-pagination-container" class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0 10px 0; flex-shrink: 0;"></div>
     `;
 
     // 绑定过滤处理器
@@ -109,14 +115,15 @@ window.renderConfigAuditTopology = (data, container) => {
         const srcVal = sourceFilter.value;
         const secVal = securityFilter.value;
 
-        const filteredItems = data.items.filter(item => {
+        filteredItems = data.items.filter(item => {
             const matchesQuery = item.key.toLowerCase().includes(query);
             const matchesSource = (srcVal === 'all' || item.source === srcVal);
             const matchesSecurity = (secVal === 'all' || item.security_status === secVal);
             return matchesQuery && matchesSource && matchesSecurity;
         });
 
-        renderRows(filteredItems);
+        currentPage = 1;
+        renderPage();
     };
 
     searchInput.addEventListener('input', updateFilter);
@@ -162,8 +169,8 @@ window.renderConfigAuditTopology = (data, container) => {
                 secLabel = '<span style="color: var(--text-dim);">普通字段</span>';
             }
 
-            // 高亮层级处理
-            const hlStyle = 'outline: 1px solid var(--accent-primary-50, #00bfff); background: rgba(0, 191, 255, 0.04);';
+            // 高亮层级处理 (使用柔和的半透明高亮底色和色彩，摒弃生硬粗鲁的单元格 outline 边线)
+            const hlStyle = 'background: rgba(0, 191, 255, 0.08); color: var(--accent-secondary, #00bfff); font-weight: 600;';
             const globalHl = item.source === 'global' ? hlStyle : '';
             const imprintHl = item.source === 'imprint' ? hlStyle : '';
             const localHl = item.source === 'local' ? hlStyle : '';
@@ -174,16 +181,112 @@ window.renderConfigAuditTopology = (data, container) => {
 
             return `
                 <tr style="${rowStyle}" class="table-row-hover">
-                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 300px; word-break: break-all;">${item.key}</td>
-                    <td style="padding: 12px 16px;">${srcBadge}</td>
-                    <td style="padding: 12px 16px; font-size: 0.75rem;">${secLabel}</td>
-                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${globalHl}">${item.global_val || '-'}</td>
-                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${imprintHl}">${item.imprint_val || '-'}</td>
-                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${localHl}">${item.local_val || '-'}</td>
-                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--accent-secondary, #00bfff); font-weight: 600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.merged_val || '-'}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.key}">${item.key}</td>
+                    <td style="padding: 12px 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${srcBadge}</td>
+                    <td style="padding: 12px 16px; font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${secLabel}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${globalHl}" title="${item.global_val || '-'}">${item.global_val || '-'}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${imprintHl}" title="${item.imprint_val || '-'}">${item.imprint_val || '-'}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${localHl}" title="${item.local_val || '-'}">${item.local_val || '-'}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 0.75rem; color: var(--accent-secondary, #00bfff); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.merged_val || '-'}">${item.merged_val || '-'}</td>
                 </tr>
             `;
         }).join('');
+    };
+
+    // 渲染分页 DOM 的逻辑 (完全复刻原稿文库列表底栏的呈现和交互方式)
+    const renderPaginationDOM = () => {
+        const pagContainer = document.getElementById('audit-pagination-container');
+        if (!pagContainer) return;
+
+        const totalItems = filteredItems.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+
+        if (totalItems === 0) {
+            pagContainer.style.display = 'none';
+            return;
+        }
+        pagContainer.style.display = 'flex';
+
+        const startIdx = (currentPage - 1) * PAGE_SIZE + 1;
+        const endIdx = Math.min(currentPage * PAGE_SIZE, totalItems);
+
+        const firstDisabled = currentPage === 1 ? 'disabled' : '';
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        const lastDisabled = currentPage === totalPages ? 'disabled' : '';
+
+        pagContainer.innerHTML = `
+            <span style="font-size: 0.8rem; color: var(--text-dim);">
+                第 ${currentPage} 页 / 共 ${totalPages} 页，共 <strong>${totalItems}</strong> 条配置项
+            </span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; gap: 6px;">
+                    <button id="audit-first-btn" class="mini-btn" ${firstDisabled}>首页</button>
+                    <button id="audit-prev-btn" class="mini-btn" ${prevDisabled}>◀ 上一页</button>
+                    <button id="audit-next-btn" class="mini-btn" ${nextDisabled}>下一页 ▶</button>
+                    <button id="audit-last-btn" class="mini-btn" ${lastDisabled}>尾页</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                    <span style="font-size: 0.8rem; color: var(--text-dim);">跳转至</span>
+                    <input type="number" id="audit-go-page-input" min="1" max="${totalPages}" value="${currentPage}" style="width: 55px; height: 28px; padding: 0 4px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-bright); border-radius: 4px; text-align: center; font-size: 0.8rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;" placeholder="页">
+                    <button id="audit-go-page-btn" class="mini-btn" style="height: 28px; line-height: 14px;">跳转</button>
+                </div>
+            </div>
+        `;
+
+        // 绑定第一页/上一页/下一页/尾页事件
+        document.getElementById('audit-first-btn').addEventListener('click', () => {
+            if (currentPage !== 1) {
+                currentPage = 1;
+                renderPage();
+            }
+        });
+
+        document.getElementById('audit-prev-btn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage();
+            }
+        });
+
+        document.getElementById('audit-next-btn').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPage();
+            }
+        });
+
+        document.getElementById('audit-last-btn').addEventListener('click', () => {
+            if (currentPage !== totalPages) {
+                currentPage = totalPages;
+                renderPage();
+            }
+        });
+
+        // 绑定跳转事件
+        const goPage = () => {
+            const input = document.getElementById('audit-go-page-input');
+            const targetPage = parseInt(input.value);
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                renderPage();
+            }
+        };
+
+        document.getElementById('audit-go-page-btn').addEventListener('click', goPage);
+        document.getElementById('audit-go-page-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                goPage();
+            }
+        });
+    };
+
+    // 渲染指定页的数据
+    const renderPage = () => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageItems = filteredItems.slice(start, start + PAGE_SIZE);
+        renderRows(pageItems);
+        renderPaginationDOM();
     };
 
     updateFilter();
