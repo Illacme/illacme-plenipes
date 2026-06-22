@@ -85,7 +85,7 @@ window.getUIDrawersHTML = () => {
                 <div class="drawer-footer" style="display: flex; gap: 10px; width: 100%;">
                     <button class="secondary-btn" id="btn-restore-plugin-defaults" style="display: none; flex: 1; border: 1px solid #ff7b00; color: #ff7b00; background: rgba(255, 123, 0, 0.05); font-weight: 600;" onclick="restorePluginDefaults()">🧹 恢复默认</button>
                     <button class="primary-btn glow-btn" id="btn-save-plugin-cfg" style="flex: 1;" onclick="savePluginSettingsAndClose()">💾 保存配置</button>
-                    <button class="secondary-btn" id="btn-dry-run-plugin" style="display: none; flex: 1; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); background: rgba(0, 242, 255, 0.05); font-weight: 600;" onclick="triggerPluginDryRun()">🧪 沙盘演练</button>
+                    <button class="secondary-btn" id="btn-dry-run-plugin" style="display: none; flex: 1; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); background: rgba(0, 242, 255, 0.05); font-weight: 600;" onclick="triggerPluginDryRun()">🔌 测试连接</button>
                 </div>
             </div>
         </div>

@@ -19,7 +19,7 @@ def run_step(name, command_list):
         if os.path.exists(venv_cmd):
             command_list[0] = venv_cmd
     try:
-        result = subprocess.run(command_list, check=True, capture_output=True, text=True)
+        subprocess.run(command_list, check=True, capture_output=True, text=True)
         print(f"  └── ✅ {name} 通过")
         return True
     except subprocess.CalledProcessError as e:

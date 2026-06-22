@@ -254,6 +254,7 @@ class Configuration(BaseModel):
     framework_adapters: Dict[str, Any] = Field(default_factory=dict)
     seo_settings: SeoSettings = Field(default_factory=SeoSettings)
     image_settings: ImageSettings = Field(default_factory=ImageSettings)
+    image_hosting: Dict[str, Any] = Field(default_factory=dict)
     publish_control: PublishControl = Field(default_factory=PublishControl)
     syndication: Dict[str, Any] = Field(default_factory=dict)
     timeline: TimelineSettings = Field(default_factory=TimelineSettings)

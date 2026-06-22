@@ -38,8 +38,8 @@ class WordPressSyndicator(BaseSyndicator):
     def format_payload(self, title: str, slug: str, content: str, metadata: Dict[str, Any], canonical_url: str = None) -> Dict[str, Any]:
         """组装 WordPress REST API 的标准数据结构"""
         # 提取分类与标签
-        tags = metadata.get('tags', [])
-        categories = metadata.get('categories', [])
+        metadata.get('tags', [])
+        metadata.get('categories', [])
         
         # 🚀 组装核心 Payload
         payload = {

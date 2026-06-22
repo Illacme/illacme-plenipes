@@ -36,10 +36,10 @@ def main():
     # 3. 路径适配
     if os.name == 'nt': # Windows
         pip_exe = os.path.join(venv_dir, "Scripts", "pip.exe")
-        python_exe = os.path.join(venv_dir, "Scripts", "python.exe")
+        os.path.join(venv_dir, "Scripts", "python.exe")
     else: # Unix/Mac
         pip_exe = os.path.join(venv_dir, "bin", "pip")
-        python_exe = os.path.join(venv_dir, "bin", "python")
+        os.path.join(venv_dir, "bin", "python")
 
     # 4. 依赖项闪电安装 (集成国内加速源)
     req_file = "requirements.txt"

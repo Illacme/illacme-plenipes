@@ -1,8 +1,4 @@
-import pytest
-from unittest.mock import MagicMock
 from core.logic.ai.ai_logic_hub import AILogicHub
-from core.config.models.ai import BlockAction, BlockRule, ContentGovernanceConfig
-from core.markup.base import MarkupBlock
 
 def test_glossary_masking_unmasking():
     """测试术语屏蔽与还原功能"""

@@ -141,7 +141,7 @@ def _check_single_doc_depth(target_dir, filenames, label, min_len, audit, dir_na
     with open(found_file, "r", encoding="utf-8") as f:
         content = f.read()
         # 排除 Markdown 标题和元数据，计算净内容长度
-        clean_content = re.sub(r'#.*|---.*---|`.*`|\n', '', content, flags=re.DOTALL)
+        re.sub(r'#.*|---.*---|`.*`|\n', '', content, flags=re.DOTALL)
         
         if len(content) < min_len:
             audit.fail(label, f"{dir_name}/{os.path.basename(found_file)} 内容过短 (当前 {len(content)} 字)，疑似敷衍占位。")

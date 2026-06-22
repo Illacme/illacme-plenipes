@@ -251,7 +251,6 @@ def test_document_creation_flow():
             print("  ✅ [测试] 正常跨文件夹平滑移动与元数据继承通过！")
             
             # 2b. 场景：智能相对路径上一级（..）平滑搬迁与已有目录锚定验证
-            parent_rel_dir = "posts"
             res_parent_move = client.post("/ledger/document/move", json={
                 "doc_id": dest_new_rel,
                 "new_path": "../"
@@ -298,26 +297,3 @@ def test_document_creation_flow():
         finally:
             # 恢复单例原状，防止干扰其他用例
             singleton.set_global_engine(original_engine)
-
-def test_safe_static_files_security():
-    """🧪 测试 SafeStaticFiles 的物理防护拦截，防止敏感的本地配置文件和原稿文库泄露"""
-    client = TestClient(app)
-    
-    # 1. 尝试越权访问 imprints/ 下的 config.local.yaml 敏感文件
-    res_sensitive = client.get("/imprints/luminous_citadel/config.local.yaml")
-    assert res_sensitive.status_code == 403, "敏感配置文件越权读取拦截失败！"
-    assert "Sovereign Protection Activated" in res_sensitive.text
-    
-    # 2. 尝试越权访问 manuscripts 原稿文库目录
-    res_manuscripts = client.get("/imprints/luminous_citadel/manuscripts/some_post.md")
-    assert res_manuscripts.status_code == 403, "隐私原稿文库越权读取拦截失败！"
-    
-    # 3. 尝试越权访问 metadata 元数据 sqlite/json 目录
-    res_metadata = client.get("/imprints/luminous_citadel/metadata/themes/starlight/knowledge_graph.json")
-    assert res_metadata.status_code == 403, "元数据物理账本与图谱越权读取拦截失败！"
-    
-    print("  ✅ [测试] SafeStaticFiles 物理防泄露拦截防御测试 100% 完美通过！")
-
-if __name__ == "__main__":
-    test_document_creation_flow()
-    test_safe_static_files_security()

@@ -47,7 +47,6 @@ def run_final_audit():
 > [[COMMUNITY_LINK]]
 """
     test_fm = {"title": "全球同步大满贯测试", "author": "Antigravity"}
-    test_masks = [] # 简化处理
 
     # 3. 模拟分发 - 中文版 (zh-Hans)
     print("--- 🇨🇳 正在模拟分发：简体中文版 (zh-Hans) ---")
@@ -70,7 +69,7 @@ def run_final_audit():
     # 模拟经过翻译后的 body (占位符保持不变)
     en_body = "# 🌍 Global Sovereignty Test\n\n[[COMMUNITY_LINK]]"
     
-    final_fm_en = dispatcher._prepare_metadata(
+    dispatcher._prepare_metadata(
         test_fm, "Test", "global-test", test_rel_path, True, None, "en", "docs", ""
     )
     

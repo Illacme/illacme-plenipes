@@ -16,8 +16,8 @@ import hashlib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.runtime.engine_factory import EngineFactory
 
-# logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
-# logger = logging.getLogger("Illacme.Simulation")
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
+logger = logging.getLogger("Illacme.Simulation")
 def log_info(msg): print(f"INFO: {msg}", flush=True)
 def log_error(msg): print(f"ERROR: {msg}", flush=True)
 
@@ -132,16 +132,6 @@ def run_shadow_simulation():
             
             engine = EngineFactory.create_engine("config.yaml")
             log_info(f"🧪 [仿真调试] 引擎管线步骤: {[s.__class__.__name__ for s in engine.pipeline.steps]}")
-            
-            # 🛡️ [Debug] Verify the file content in the sandbox
-            debug_file = "core/editorial/standard_steps.py"
-            if os.path.exists(debug_file):
-                with open(debug_file, 'r') as df:
-                    lines = df.readlines()
-                    log_info(f"🧪 [仿真调试] {debug_file} 长度: {len(lines)}")
-                    # Search for my added log
-                    has_log = any("🎨 [解蔽调试]" in l for l in lines)
-                    log_info(f"🧪 [仿真调试] 是否包含解蔽调试日志: {has_log}")
             
             # 4. 执行试运行 (Dry Run) 与 SLSH 自愈校验
             log_info("🧪 [仿真] 正在试探 Pipeline 完整性与 SLSH 自愈...")

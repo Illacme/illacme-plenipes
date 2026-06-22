@@ -63,116 +63,124 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     global_theme_root = os.path.join(os.getcwd(), THEMES_DIR)
     theme_ids = set()
 
-    if os.path.exists(local_theme_root):
-        for entry in os.listdir(local_theme_root):
-            if os.path.isdir(os.path.join(local_theme_root, entry)) and not entry.startswith("."):
-                if entry in ["shared", "__pycache__", ".DS_Store"]: continue
-                is_active = (active_theme == entry)
-                
-                plugins.append({
-                    "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
-                    "status": "In-Use" if is_active else "Local",
-                    "is_in_use": is_active, "is_enabled": True,
-                    "origin": "user", "location": "local", "version": "V1.0",
-                    "description": "版图专属主题：位于当前版图目录下的物理资产。",
-                    "is_manageable": True,
-                    "schema": _load_schema(local_theme_root, entry)
-                })
-                theme_ids.add(entry)
-
-    if os.path.exists(global_theme_root):
-        for entry in os.listdir(global_theme_root):
-            if os.path.isdir(os.path.join(global_theme_root, entry)) and not entry.startswith("."):
-                if entry in theme_ids or entry in ["shared", "__pycache__", ".DS_Store"]: continue
-                is_active = (active_theme == entry)
-                
-                plugins.append({
-                    "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
-                    "status": "In-Use" if is_active else "Central",
-                    "is_in_use": is_active, "is_enabled": True,
-                    "origin": "core", "location": "global", "version": SYSTEM_TRACK,
-                    "description": "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。",
-                    "is_manageable": True,
-                    "schema": _load_schema(global_theme_root, entry)
-                })
-                theme_ids.add(entry)
+    for root, loc, status, orig, ver, desc in [
+        (local_theme_root, "local", "Local", "user", "V1.0", "版图专属主题：位于当前版图目录下的物理资产。"),
+        (global_theme_root, "global", "Central", "core", SYSTEM_TRACK, "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。")
+    ]:
+        if os.path.exists(root):
+            for entry in os.listdir(root):
+                if entry in theme_ids or entry in ["shared", "__pycache__", ".DS_Store"] or entry.startswith("."):
+                    continue
+                if os.path.isdir(os.path.join(root, entry)):
+                    is_active = (active_theme == entry)
+                    plugins.append({
+                        "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
+                        "status": "In-Use" if is_active else status,
+                        "is_in_use": is_active, "is_enabled": True,
+                        "origin": orig, "location": loc, "version": ver,
+                        "description": desc, "is_manageable": True,
+                        "schema": _load_schema(root, entry)
+                    })
+                    theme_ids.add(entry)
 
     # 1b. Native Renderers
-    for adapter_id in SSGRegistry.get_all_names():
-        if adapter_id == "generic": continue
-        if adapter_id == "sovereign" and "default" in theme_ids: continue
-        if adapter_id in theme_ids: continue
-        is_active = (active_theme == adapter_id)
-        renderer_cls = SSGRegistry.get_renderer(adapter_id)
-        display_name = getattr(renderer_cls, "DISPLAY_NAME", adapter_id.upper())
-        description = getattr(renderer_cls, "DESCRIPTION", f"内核原生适配器：驱动 {display_name} 工业级排版引擎。")
-        
+    for r_id in SSGRegistry.get_all_names():
+        if r_id in ("generic", *theme_ids) or (r_id == "sovereign" and "default" in theme_ids): continue
+        is_active = (active_theme == r_id)
+        r_cls = SSGRegistry.get_renderer(r_id)
+        name = getattr(r_cls, "DISPLAY_NAME", r_id.upper())
         plugins.append({
-            "id": adapter_id, "name": display_name, "category": "theme", "category_name": "🎨 装帧主题适配器",
-            "status": "In-Use" if is_active else "Native",
-            "is_in_use": is_active, "is_enabled": (adapter_id not in disabled),
-            "origin": "core", "location": "native", "version": getattr(renderer_cls, "VERSION", SYSTEM_TRACK), "description": description,
-            "is_manageable": True,
-            "schema": _load_schema(global_theme_root, adapter_id)
+            "id": r_id, "name": name, "category": "theme", "category_name": "🎨 装帧主题适配器",
+            "status": "In-Use" if is_active else "Native", "is_in_use": is_active, "is_enabled": (r_id not in disabled),
+            "origin": "core", "location": "native", "version": getattr(r_cls, "VERSION", SYSTEM_TRACK),
+            "description": getattr(r_cls, "DESCRIPTION", f"内核原生适配器：驱动 {name} 工业级排版引擎。"),
+            "is_manageable": True, "schema": _load_schema(global_theme_root, r_id)
         })
 
     # 2. 🧱 算力节点 (Compute Nodes)
     for node_id, node_cfg in engine.config.translation.compute_nodes.items():
         is_active = (engine.config.translation.primary_node == node_id)
         node_type = getattr(node_cfg, "type", "")
-        provider_cls = AIProviderRegistry.get_provider(node_type)
-        display_name = getattr(provider_cls, "DISPLAY_NAME", node_id.upper())
+        name = getattr(AIProviderRegistry.get_provider(node_type), "DISPLAY_NAME", node_id.upper())
         plugins.append({
-            "id": node_id, "name": display_name, "category": "compute", "category_name": "⚙️ 算力节点",
-            "status": "In-Use" if is_active else "Standby",
-            "is_in_use": is_active, "is_enabled": True,
-            "origin": "user", "version": "V1.0",
-            "base_url": getattr(node_cfg, "base_url", ""),
-            "model": getattr(node_cfg, "model", ""),
-            "node_type": node_type,
-            "description": f"已划定的算力基座：类型为 {display_name}，负责承担 AI 推理任务。",
-            "is_manageable": True
+            "id": node_id, "name": name, "category": "compute", "category_name": "⚙️ 算力节点",
+            "status": "In-Use" if is_active else "Standby", "is_in_use": is_active, "is_enabled": getattr(node_cfg, "enabled", True), "origin": "user", "version": "V1.0",
+            "base_url": getattr(node_cfg, "base_url", ""), "model": getattr(node_cfg, "model", ""), "node_type": node_type,
+            "description": f"已划定的算力基座：类型为 {name}，负责承担 AI 推理任务。", "is_manageable": True
         })
 
     # 3. 🌐 全站托管能力 (Hosting)
     hosting_root = engine.config.publish_control.direct_upload
     for p_id, cls in PublisherRegistry.get_all_publishers().items():
-        is_active = False
-        if hasattr(engine, 'deployment_manager'):
-            is_active = any(isinstance(pub, cls) for pub in engine.deployment_manager.publishers)
-        
-        # Webhook 特殊逻辑：检查全局开关
-        if p_id == "webhook_dispatch":
-            is_active = engine.config.publish_control.webhook_enabled
+        current_cfg = {}
+        if isinstance(hosting_root, dict):
+            current_cfg = hosting_root.get(p_id, {})
+        elif hasattr(hosting_root, "get"):
+            current_cfg = hosting_root.get(p_id, {})
             
-        current_cfg = hosting_root.get(p_id, {}) if isinstance(hosting_root, dict) else {}
-        display_name = getattr(cls, "DISPLAY_NAME", p_id.upper())
-        description = getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {display_name}。")
+        is_active = engine.config.publish_control.webhook_enabled if p_id == "webhook_dispatch" else (
+            current_cfg.get("enabled", False) if isinstance(current_cfg, dict) else (
+                getattr(current_cfg, "enabled", False) if hasattr(current_cfg, "enabled") else False
+            )
+        )
+        name = getattr(cls, "DISPLAY_NAME", p_id.upper())
         plugins.append({
-            "id": p_id, "name": display_name, "category": "hosting", "category_name": "🌐 全站托管",
-            "status": "In-Use" if is_active else "Ready",
-            "is_in_use": is_active, "is_enabled": True,
+            "id": p_id, "name": name, "category": "hosting", "category_name": "🌐 全站托管",
+            "status": "In-Use" if is_active else "Ready", "is_in_use": is_active, "is_enabled": (p_id not in disabled),
             "origin": "core", "version": getattr(cls, "VERSION", SYSTEM_TRACK),
-            "description": description,
-            "cfg": current_cfg,
-            "is_manageable": True
+            "description": getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {name}。"),
+            "cfg": hosting_root.get(p_id, {}) if isinstance(hosting_root, dict) else {}, "is_manageable": True
         })
 
     # 4. 🚀 分发渠道 (Syndication)
     synd_cfg = engine.config.syndication
-    for target_id in TARGET_REGISTRY.keys():
-        is_in_use = (target_id in synd_cfg.targets) if hasattr(synd_cfg, 'targets') else False
-        current_cfg = synd_cfg.targets.get(target_id, {}) if is_in_use else {}
-        if hasattr(current_cfg, 'dict'): current_cfg = current_cfg.dict()
-        target_cls = TARGET_REGISTRY.get(target_id)
-        display_name = getattr(target_cls, "DISPLAY_NAME", target_id.upper())
+    for t_id in TARGET_REGISTRY.keys():
+        targets = getattr(synd_cfg, "targets", synd_cfg) if synd_cfg else {}
+        curr_cfg = targets.get(t_id, {}) if isinstance(targets, dict) else getattr(targets, t_id, {})
+        is_in_use = curr_cfg.get("enabled", False) if isinstance(curr_cfg, dict) else getattr(curr_cfg, "enabled", False)
+        if hasattr(curr_cfg, 'dict'): curr_cfg = curr_cfg.dict()
+        t_cls = TARGET_REGISTRY.get(t_id)
+        name = getattr(t_cls, "DISPLAY_NAME", t_id.upper())
         plugins.append({
-            "id": target_id, "name": display_name, "category": "publisher", "category_name": "🚀 分发渠道",
+            "id": t_id, "name": name, "category": "publisher", "category_name": "🚀 分发渠道",
+            "status": "Active" if is_in_use else "Ready", "is_in_use": is_in_use, "is_enabled": (t_id not in disabled),
+            "origin": "core", "version": getattr(t_cls, "VERSION", SYSTEM_TRACK),
+            "description": f"全自动分发插件：支持将出版成品推向 {name} 矩阵。", "cfg": curr_cfg, "is_manageable": True
+        })
+
+    # 4c. 🔌 图床服务 (Image Hosting)
+    from core.adapters.image_hosting.targets import IMAGE_HOST_REGISTRY
+    image_hosting_cfg = getattr(engine.config, "image_hosting", {}) or {}
+    if hasattr(image_hosting_cfg, "dict"):
+        image_hosting_cfg = image_hosting_cfg.dict()
+    elif not isinstance(image_hosting_cfg, dict):
+        image_hosting_cfg = {}
+
+    for host_id, host_cls in IMAGE_HOST_REGISTRY.items():
+        is_in_use = False
+        current_cfg = {}
+        if host_id in image_hosting_cfg and isinstance(image_hosting_cfg[host_id], dict):
+            current_cfg = image_hosting_cfg[host_id]
+            is_in_use = current_cfg.get("enabled", False)
+        elif image_hosting_cfg.get("provider") == host_id:
+            current_cfg = image_hosting_cfg
+            is_in_use = True
+            
+        if host_id == "s3" and not is_in_use:
+            s3_hosting = engine.config.publish_control.direct_upload.get("s3", {})
+            if s3_hosting.get("enabled"):
+                is_in_use = True
+                current_cfg = s3_hosting
+
+        display_name = getattr(host_cls, "DISPLAY_NAME", host_id.upper())
+        description = getattr(host_cls, "DESCRIPTION", f"图床自发现适配器：支持将原稿相对图片上传至 {display_name} 并自动替换 CDN 链接。")
+        plugins.append({
+            "id": host_id, "name": display_name, "category": "image_hosting", "category_name": "🔌 图床服务",
             "status": "Active" if is_in_use else "Ready",
             "is_in_use": is_in_use,
-            "is_enabled": (target_id not in disabled),
-            "origin": "core", "version": getattr(target_cls, "VERSION", SYSTEM_TRACK),
-            "description": f"全自动分发插件：支持将出版成品推向 {display_name} 矩阵。",
+            "is_enabled": (host_id not in disabled),
+            "origin": "core" if host_id == "s3" else "extension", "version": getattr(host_cls, "VERSION", SYSTEM_TRACK),
+            "description": description,
             "cfg": current_cfg,
             "is_manageable": True
         })
@@ -245,26 +253,20 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
 
     for trans in markup_registry.get_transformers():
         t_id = getattr(trans, "PLUGIN_ID", trans.__class__.__name__.lower().replace("transformer", ""))
-        display_name = getattr(trans, "DISPLAY_NAME", t_id.upper())
-        fallback_desc = f"物理加工单元：负责对稿件进行 {display_name} 维度的结构化治理与转换。"
+        name = getattr(trans, "DISPLAY_NAME", t_id.upper())
         plugins.append({
-            "id": t_id, "name": display_name, "category": "transformer", "category_name": "🛠️ 资产加工",
-            "status": "Active", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": getattr(trans, "VERSION", SYSTEM_TRACK),
-            "description": getattr(trans, "DESCRIPTION", fallback_desc),
-            "is_manageable": False
+            "id": t_id, "name": name, "category": "transformer", "category_name": "🛠️ 资产加工",
+            "status": "Active", "is_in_use": True, "is_enabled": True, "origin": "core", "version": getattr(trans, "VERSION", SYSTEM_TRACK),
+            "description": getattr(trans, "DESCRIPTION", f"物理加工单元：负责对稿件进行 {name} 维度的结构化治理与转换。"), "is_manageable": False
         })
 
-    for masker_id in markup_registry._maskers.keys():
-        masker = markup_registry.get_masker(masker_id)
-        display_name = getattr(masker, "DISPLAY_NAME", masker_id.upper())
-        fallback_desc = f"隐私脱敏引擎：在出版分发前自动对稿件执行 {display_name} 级安全屏蔽。"
+    for m_id in markup_registry._maskers.keys():
+        masker = markup_registry.get_masker(m_id)
+        name = getattr(masker, "DISPLAY_NAME", m_id.upper())
         plugins.append({
-            "id": masker_id, "name": display_name, "category": "masker", "category_name": "🛡️ 安全防护",
-            "status": "Shielded", "is_in_use": True, "is_enabled": True,
-            "origin": "core", "version": getattr(masker, "VERSION", SYSTEM_TRACK),
-            "description": getattr(masker, "DESCRIPTION", fallback_desc),
-            "is_manageable": False
+            "id": m_id, "name": name, "category": "masker", "category_name": "🛡️ 安全防护",
+            "status": "Shielded", "is_in_use": True, "is_enabled": True, "origin": "core", "version": getattr(masker, "VERSION", SYSTEM_TRACK),
+            "description": getattr(masker, "DESCRIPTION", f"隐私脱敏引擎：在出版分发前自动对稿件执行 {name} 级安全屏蔽。"), "is_manageable": False
         })
 
     for step in StepRegistry.get_all_names():

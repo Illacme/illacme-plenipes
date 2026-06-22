@@ -79,16 +79,16 @@ class TestPipelineErrorExposure(unittest.TestCase):
                 }
                 cfg['metadata_db'] = os.path.join(self.imprint_dir, 'core/press.db')
                 cfg['i18n_settings'] = {
-                    'enabled': False, 
-                    'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 
+                    'enabled': False,
+                    'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'},
                     'targets': []
                 }
                 cfg['system'] = {
-                    'data_root': self.imprint_dir, 
-                    'allowed_extensions': ['.md'], 
+                    'data_root': self.imprint_dir,
+                    'allowed_extensions': ['.md'],
                     'data_paths': {},
-                    'log_level': 'INFO', 
-                    'max_workers': 1, 
+                    'log_level': 'INFO',
+                    'max_workers': 1,
                     'auto_save_interval': 60
                 }
                 cfg['active_theme'] = 'default'
@@ -107,9 +107,9 @@ class TestPipelineErrorExposure(unittest.TestCase):
                 
                 # 7. 运行同步该错误文档，它应当触发 VerificationStep 拦截失败，并被 FingerprintSyncStrategy 识别
                 res = engine.sync_document(
-                    doc_path, 
-                    route_prefix="", 
-                    route_source="Docs", 
+                    doc_path,
+                    route_prefix="",
+                    route_source="Docs",
                     is_dry_run=False
                 )
                 self.assertEqual(res, "SKIP") # 拦截时返回 SKIP

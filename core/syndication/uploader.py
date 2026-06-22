@@ -36,8 +36,17 @@ class ImageUploader:
             host_cfg = s3_cfg
         else:
             image_host_cfg = self.sys_tuning.get("image_hosting", {}) or self.cfg.get("image_hosting", {})
-            provider = image_host_cfg.get("provider")
-            host_cfg = image_host_cfg
+            if "provider" in image_host_cfg:
+                provider = image_host_cfg.get("provider")
+                host_cfg = image_host_cfg
+            else:
+                provider = None
+                host_cfg = {}
+                for p_id, p_cfg in image_host_cfg.items():
+                    if isinstance(p_cfg, dict) and p_cfg.get("enabled"):
+                        provider = p_id
+                        host_cfg = p_cfg
+                        break
 
         if not provider:
             tlog.warning("⚠️ [图床中枢] 未配置启用的图床服务提供商。")

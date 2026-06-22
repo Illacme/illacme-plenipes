@@ -11,7 +11,7 @@ import shutil
 
 # 定义停用实体
 STOP_ENTITIES = {
-    "Illacme Plenipes", "Illacme", "Plenipes", 
+    "Illacme Plenipes", "Illacme", "Plenipes",
     "主权数字出版底座", "主权出版系统", "系统",
     "好未来：数字教育未来趋势白皮书", "数字教育未来趋势白皮书",
     "好未来", "数字教育", "未来趋势", "白皮书", "welcome-to-illacme"

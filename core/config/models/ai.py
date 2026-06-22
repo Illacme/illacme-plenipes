@@ -113,9 +113,19 @@ class ContentGovernanceConfig(BaseModel):
         if isinstance(data, dict) and "glossary" in data:
             glossary_val = data["glossary"]
             if isinstance(glossary_val, dict):
-                is_old_format = len(glossary_val) > 0 and all(isinstance(v, str) for v in glossary_val.values())
-                if is_old_format:
-                    data["glossary"] = {"en": glossary_val}
+                # 🚀 智能自愈混合格式：将所有单层键值（旧格式的非 dict）提取出来，并并入默认的 "en" 字典下
+                new_glossary = {}
+                old_keys = {}
+                for k, v in glossary_val.items():
+                    if isinstance(v, dict):
+                        new_glossary[k] = v
+                    else:
+                        old_keys[k] = str(v)
+                if old_keys:
+                    if "en" not in new_glossary:
+                        new_glossary["en"] = {}
+                    new_glossary["en"].update(old_keys)
+                data["glossary"] = new_glossary
         return data
 
 class TranslationSettings(BaseModel):

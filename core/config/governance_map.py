@@ -16,6 +16,7 @@ GOVERNANCE_RULES = {
         r"^publish_control\.webhook_endpoints\..*\.(?!enabled$).*$", # Webhook 物理配置（除激活状态外）
         r"^publish_control\.direct_upload\..*\.(?!enabled$).*$", # 托管平台物理配置（除激活状态外，如 URL/Token/Key/Secret 等）
         r"^syndication\..*\.(?!enabled$).*$", # 聚合平台物理配置（除激活状态外，如 URL/Key/Token/Username/Password 等）
+        r"^image_hosting\..*\.(?!enabled$).*$", # 图床平台物理配置（除激活状态外，如 access_key/secret_key 等）
         r"^ingress_settings\.source_options\..*$", # 物理输入源的凭据、密钥与本地绝对路径（如 Notion/Obsidian 等）
         r"^system\.api_token$",            # 系统 API 授权令牌
         r"^system\.serve_host$",           # 本地监听地址
@@ -42,6 +43,7 @@ GOVERNANCE_RULES = {
         r"^seo_settings\..*$",             # 品牌搜索优化策略
         r"^ingress_settings\..*$",         # 品牌输入感应标准
         r"^image_settings\..*$",           # 品牌资产处理标准
+        r"^image_hosting\..*$",            # 品牌图床服务全局策略
         r"^syndication\..*$",              # 品牌内容聚合策略
         r"^timeline\..*$",                 # 品牌时间轴审计逻辑
         r"^system\.janitor_settings\..*$", # 品牌目录清理规则

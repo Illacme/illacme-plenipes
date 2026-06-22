@@ -14,7 +14,7 @@ Illacme Plenipes — Hashnode Syndicator Plugin
 """
 
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from core.adapters.syndication.base import BaseSyndicator
 from core.utils.tracing import tlog

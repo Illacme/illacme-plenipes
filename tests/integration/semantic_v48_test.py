@@ -35,7 +35,7 @@ def setup_environment():
 title: Hyper-Gravity Propulsion Guide
 keywords: Hyper-Gravity Engine
 ---
-The **Hyper-Gravity Engine** is a revolutionary technology for interstellar travel. 
+The **Hyper-Gravity Engine** is a revolutionary technology for interstellar travel.
 It utilizes quantized fluctuations in the local space-time fabric to generate thrust.
 """)
 
@@ -45,7 +45,7 @@ It utilizes quantized fluctuations in the local space-time fabric to generate th
 title: Flight Mission Report
 keywords: Hyper-Gravity Engine
 ---
-During the mission, the **Hyper-Gravity Engine** performed within expected parameters. 
+During the mission, the **Hyper-Gravity Engine** performed within expected parameters.
 Thermal management remained stable throughout the jump.
 """)
 

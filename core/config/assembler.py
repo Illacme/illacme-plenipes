@@ -21,7 +21,14 @@ from .config_models import Configuration
 from core.governance.secret_manager import secrets
 from core.governance.imprint_manager import im
 
-def deep_update(d, u):
+def deep_update(d: Dict[str, Any], u: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    递归深度更新字典。
+
+    :param d: 待更新的字典
+    :param u: 包含更新内容的字典
+    :return: 更新后的字典
+    """
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = deep_update(d.get(k, {}), v)
@@ -30,6 +37,12 @@ def deep_update(d, u):
     return d
 
 def resolve_secrets(data: Any) -> Any:
+    """
+    递归解析加密的秘密配置字段。
+
+    :param data: 输入的配置数据
+    :return: 解析后的数据
+    """
     if isinstance(data, str) and data.startswith("enc:"):
         return secrets.decrypt(data)
     elif isinstance(data, dict):
@@ -40,6 +53,12 @@ def resolve_secrets(data: Any) -> Any:
     return data
 
 def resolve_env_vars(data: Any) -> Any:
+    """
+    递归解析环境变量占位符。
+
+    :param data: 输入的配置数据
+    :return: 替换环境变量后的数据
+    """
     if isinstance(data, str):
         pattern = re.compile(r'\$\{(.+?)\}')
         def replace(match):
@@ -54,6 +73,13 @@ def resolve_env_vars(data: Any) -> Any:
     return data
 
 def resolve_includes(data: Any, base_dir: str) -> Any:
+    """
+    递归解析 YAML 包含关系。
+
+    :param data: 输入的配置数据
+    :param base_dir: 基准目录
+    :return: 合并包含内容后的数据
+    """
     if isinstance(data, dict):
         if "include" in data:
             include_target = data.pop("include")
@@ -75,7 +101,13 @@ def resolve_includes(data: Any, base_dir: str) -> Any:
         return [resolve_includes(item, base_dir) for item in data]
     return data
 
-def load_and_merge(manager) -> Dict[str, Any]:
+def load_and_merge(manager: Any) -> Dict[str, Any]:
+    """
+    加载并合并系统基础底座、本地物理层与品牌主权层的配置。
+
+    :param manager: 配置管理器实例
+    :return: 合并后的完整配置字典
+    """
     # 0. 加载 .env 文件 (如果存在)
     from .env_loader import load_dotenv
     load_dotenv()
@@ -116,7 +148,7 @@ def load_and_merge(manager) -> Dict[str, Any]:
                     sensitive_patterns = ['api_key', 'api_token', 'secret', 'app_password', 'token']
                     new_dict = {}
                     for k, v in d.items():
-                        if any(p in k.lower() for p in sensitive_patterns):
+                        if any(p in k.lower() for p in sensitive_patterns) and not any(safe in k.lower() for safe in ['max_tokens', 'token_limit', 'token_count']):
                             tlog.warning(f"⚠️ [安全治理] 版图层配置文件中发现敏感字段 '{k}'，已根据物理主权原则强制拦截。")
                             continue
                         new_dict[k] = scrub_secrets(v)

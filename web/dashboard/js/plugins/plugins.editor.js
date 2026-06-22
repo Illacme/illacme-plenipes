@@ -6,7 +6,7 @@ var renderSettingsItem = window.renderSettingsItem || (() => "");
 
 // 🚀 集中归档平台/通道表单结构参数与描述模版
 // 5. 插件配置抽屉
-window.openPluginConfig = async (id) => {
+window.openPluginConfig = async (id, category = null) => {
     try {
         const drawer = document.getElementById('plugin-drawer');
         const body = document.getElementById('p-drawer-body');
@@ -15,7 +15,7 @@ window.openPluginConfig = async (id) => {
         if (!drawer || !body) return;
 
         if (!window.allPlugins) window.allPlugins = [];
-        const p = window.allPlugins.find(x => x.id === id);
+        const p = window.allPlugins.find(x => x.id === id && (!category || x.category === category));
         if (!p) {
             throw new Error(`在全域能力矩阵 (window.allPlugins) 中未探测到 ID 为 '${id}' 的能力。`);
         }
@@ -52,7 +52,7 @@ window.openPluginConfig = async (id) => {
         // 🚀 控制底部“🧪 沙盘演练”按钮的显示与绑定
         const dryRunBtn = document.getElementById('btn-dry-run-plugin');
         if (dryRunBtn) {
-            if (p && (p.category === 'publisher' || p.category === 'hosting') && id !== 'github_pages') {
+            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting') && id !== 'github_pages') {
                 dryRunBtn.style.display = 'block';
                 dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${id}')`);
             } else {
@@ -62,142 +62,26 @@ window.openPluginConfig = async (id) => {
 
         let html = '';
 
-        if (p.type === 'container') {
-            html = `
-                <div class="channel-console-header">
-                    <p style="color: var(--text-dim); font-size: 0.85rem;">${p.description}</p>
-                    <div class="console-search">
-                        <input type="text" placeholder="🔍 在 ${p.sub_items.length} 个节点中快速检索..." onkeyup="filterConsoleTable(this)">
-                    </div>
-                </div>
-                <div class="console-table-wrapper">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>节点名称</th>
-                                <th>物理目标</th>
-                                <th>状态</th>
-                                <th style="text-align: right;">管控</th>
-                            </tr>
-                        </thead>
-                        <tbody id="console-table-body">
-                            ${p.sub_items.map(sub => `
-                                <tr class="console-tr" data-search="${sub.name.toLowerCase()} ${sub.target.toLowerCase()}">
-                                    <td>
-                                        <div style="display: flex; flex-direction: column;">
-                                            <span style="font-weight: 600;">${sub.name}</span>
-                                            <span style="font-size: 0.65rem; opacity: 0.4;">ID: ${sub.id}</span>
-                                        </div>
-                                    </td>
-                                    <td><code class="path-tag" title="${sub.target}">${sub.target.length > 30 ? sub.target.substring(0, 27) + '...' : sub.target}</code></td>
-                                    <td><span class="sub-status-pill ${sub.status.toLowerCase()}">${sub.status}</span></td>
-                                    <td style="text-align: right;">
-                                        <div style="display: inline-flex; gap: 8px;">
-                                            <button class="mini-action-btn" onclick="editSubItem('${p.id}', '${sub.id}')">⚙️</button>
-                                            <button class="mini-action-btn" onclick="addAudit('📡 正在对端点发起主权 Ping...')">📡</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        } else if (p.category === 'ssg') {
-            html = `
-                <div class="settings-grid">
-                    ${renderSettingsItem('主站点 URL', 'site_url', window.settingsData?.site_url)}
-                    ${renderSettingsItem('导航深度', 'theme_config.nav_depth', window.settingsData?.theme_config?.nav_depth || 2, 'number')}
-                    ${renderSettingsItem('强制暗色模式', 'theme_config.force_dark', window.settingsData?.theme_config?.force_dark, 'checkbox')}
-                    <div class="full-width" style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
-                        <label style="font-size: 0.75rem; color: var(--text-dim);">当前激活引擎</label>
-                        <code style="display: block; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; margin-top: 0.5rem;">${window.settingsData?.system?.ssg_engine || 'default'}</code>
-                    </div>
-                </div>
-            `;
-        } else if (p.category === 'publisher' || p.category === 'hosting') {
-            const platform = p.platform || id;
-            if (platform === 'github_pages') {
-                html = `<div class="settings-grid">${renderSettingsItem('启用 GitHub Pages 同步', 'github_enabled', window.settingsData?.github_enabled, 'checkbox')}</div>`;
-            } else if (platform === 's3') {
-                html = `<div class="settings-grid">${renderSettingsItem('启用 S3 镜像存储', 's3_enabled', window.settingsData?.s3_enabled, 'checkbox')}</div>`;
-            } else {
-                const cfg = window.settingsData?.syndication?.[id] || {};
-                html = `<div class="settings-grid">${window.renderPlatformConfig ? window.renderPlatformConfig(id, cfg, p.category) : renderPlatformConfig(id, cfg, p.category)}</div>`;
-            }
-        } else if (p.category === 'theme') {
-            const schema = p.schema || {};
-            const properties = schema.properties || {};
-            
-            // 🚀 [V88.0] 高级主题选项按 group 进行物理分类并按 order 排序
-            const groups = {};
-            for (const [key, prop] of Object.entries(properties)) {
-                const groupName = prop.group || '常规设置';
-                if (!groups[groupName]) groups[groupName] = [];
-                groups[groupName].push({ key, prop });
-            }
-            
-            // 按自定义排序对组内的 properties 进行升序排列
-            for (const g in groups) {
-                groups[g].sort((a, b) => (a.prop.order || 99) - (b.prop.order || 99));
-            }
-            
-            // 定义组本身的呈现顺序
-            const groupPriority = ["基础设置", "视觉样式", "首页 Hero", "外部链接", "常规设置"];
-            const sortedGroupNames = Object.keys(groups).sort((a, b) => {
-                let idxA = groupPriority.indexOf(a);
-                let idxB = groupPriority.indexOf(b);
-                if (idxA === -1) idxA = 99;
-                if (idxB === -1) idxB = 99;
-                return idxA - idxB;
-            });
-            
-            html = '<div style="display: flex; flex-direction: column; gap: 1.2rem;">';
-            for (const gName of sortedGroupNames) {
-                const items = groups[gName];
-                const groupIconMap = { '基础设置': '⚙️', '视觉样式': '🎨', '首页 Hero': '🏠', '外部链接': '🔗', '常规设置': '🧩' };
-                const icon = groupIconMap[gName] || '🧩';
-                
-                const isStyleBlock = gName === '视觉样式';
-                const styleBlockAttr = isStyleBlock ? 'id="theme-config-style-group-block"' : '';
-                let extraStyle = '';
-                if (isStyleBlock) {
-                    extraStyle = 'display: none; opacity: 0; transition: opacity 0.25s ease;';
-                }
-                
-                html += `
-                    <div class="theme-config-group-block" ${styleBlockAttr} style="border: 1px solid var(--glass-border); border-radius: 8px; padding: 1.2rem; background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); ${extraStyle}">
-                        <h5 style="color: var(--accent-secondary); margin: 0 0 1rem 0; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
-                            <span>${icon} ${gName}</span>
-                        </h5>
-                        <div class="settings-grid">
-                `;
-                
-                for (const { key, prop } of items) {
-                    const label = prop.title || key;
-                    const propType = prop.type === 'boolean' ? 'checkbox' : (prop.type === 'number' || prop.type === 'integer' ? 'number' : 'text');
-                    
-                    let currentVal = undefined;
-                    if (window.settingsData && window.settingsData.theme_options && window.settingsData.theme_options[id] && window.settingsData.theme_options[id].options) {
-                        currentVal = window.settingsData.theme_options[id].options[key];
-                    }
-                    if (currentVal === undefined) {
-                        currentVal = prop.default;
-                    }
-                    
-                    html += renderSettingsItem(label, `theme_options.${id}.options.${key}`, currentVal, propType, {
-                        description: prop.description,
-                        placeholder: prop.default !== undefined ? String(prop.default) : ''
-                    });
-                }
-                
-                html += `
+        if (p.is_manageable) {
+            html += `
+                <div class="settings-grid" style="margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px dashed var(--glass-border);">
+                    <div class="setting-row level-local">
+                        <div class="setting-info">
+                            <div class="setting-label">🔌 全局物理驱动装载 (Global Driver) <span class="tier-tag tier-local">物理本地</span></div>
+                            <div class="setting-desc">控制底层物理驱动是否装载。如果关闭，该功能将在全系统和所有品牌下被禁用且不加载其驱动代码（已被激活品牌绑定时会自动锁定）。</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="p-switch">
+                                <input type="checkbox" id="drawer-global-driver-toggle" ${p.is_enabled ? 'checked' : ''} onchange="window.handleGlobalDriverToggle('${p.id}', this, '${p.category}')" ${p.is_in_use ? 'disabled' : ''}>
+                                <span class="p-slider round"></span>
+                            </label>
                         </div>
                     </div>
-                `;
-            }
-            html += '</div>';
+                </div>
+            `;
         }
+
+        html += window.buildPluginConfigFormHtml(p);
 
         if (p.type !== 'container' && p.category !== 'theme') {
             html += `
@@ -206,6 +90,8 @@ window.openPluginConfig = async (id) => {
                 </div>
             `;
         }
+
+
 
         if (!html) {
             html = `
@@ -216,7 +102,7 @@ window.openPluginConfig = async (id) => {
             `;
         }
 
-        if (p && (p.category === 'publisher' || p.category === 'hosting') && id !== 'github_pages') {
+        if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting') && id !== 'github_pages') {
             html += `
                 <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                     <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
@@ -244,6 +130,22 @@ window.openPluginConfig = async (id) => {
         if (typeof window.initDrawerDirtySensing === 'function') {
             window.initDrawerDirtySensing();
         }
+        
+        // 🚀 [V89.0] 局部级联逻辑已被物理拆除，允许在全局驱动关闭状态下填写参数进行连通性探测自检
+
+        // 🚀 [V89.0] 脏数据失效逻辑：一旦用户在配置抽屉中修改了任何物理参数，重置其自检通过状态，强制要求重新点击 📡 自检/🔌 测试连接 才能再次开启全局驱动
+        const formInputs = body.querySelectorAll('input, select, textarea');
+        formInputs.forEach(input => {
+            if (input.id !== 'drawer-global-driver-toggle') {
+                input.addEventListener('change', () => {
+                    window.probePassState = window.probePassState || {};
+                    window.probePassState[id] = false;
+                    if (typeof addAudit === 'function') {
+                        addAudit(`⚠️ [${id}] 配置参数已被修改，原物理连通性自检结论已失效。重新载入驱动前需再次完成 📡 自检/🧪 演练。`, 'warning');
+                    }
+                });
+            }
+        });
         
         // 🚀 [V89.0] 视觉渐进式暴露联动：如果存在自定义样式控制开关，默认隐藏繁冗的视觉参数，只有勾选启用时才温和渐显，大幅提纯人机交互的专注度
         if (p.category === 'theme') {
@@ -286,3 +188,53 @@ window.closePluginDrawer = () => {
     const drawer = document.getElementById('plugin-drawer');
     if (drawer) drawer.style.display = 'none';
 };
+
+window.handleGlobalDriverToggle = async (id, el, category) => {
+    const checked = el.checked;
+    const p = window.allPlugins ? window.allPlugins.find(x => x.id === id && (!category || x.category === category)) : null;
+    
+    if (checked) {
+        const needsProbe = ['protocol', 'publisher', 'hosting', 'image_hosting'].includes(category) && id !== 'github_pages';
+        const isPassed = window.probePassState && window.probePassState[id] === true;
+        
+        if (needsProbe && !isPassed) {
+            el.checked = false;
+            
+            // 级联置灰已物理移除，允许在全局驱动关闭时编辑参数进行探测自检
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '🔒 连通性未校验',
+                    text: '请先在下方填写参数，并点击「📡 自检」或「🔌 测试连接」连通成功后，方可装载物理驱动。',
+                    icon: 'warning',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonText: '确定'
+                });
+            } else {
+                alert('🔒 连通性未校验: 请先在下方填写参数，并点击「📡 自检/演练」连通成功后，方可装载物理驱动。');
+            }
+            return;
+        }
+    } else {
+        if (p && p.is_in_use) {
+            el.checked = true;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '⚠️ 物理锁定',
+                    text: '当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。',
+                    icon: 'warning',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonText: '确定'
+                });
+            } else {
+                alert('⚠️ 物理锁定: 当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。');
+            }
+            return;
+        }
+    }
+    
+    await window.togglePlugin(id, checked, category);
+};
+

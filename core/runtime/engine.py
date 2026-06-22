@@ -145,6 +145,14 @@ class IllacmeEngine:
         self.img_cfg = config.image_settings
         self.pub_cfg = config.publish_control
         
+        # 3b. 📂 重新装配全渠道发布编排器 (Reassemble DeploymentManager)
+        if hasattr(self, 'deployment_manager'):
+            from core.bindery.deployment_manager import DeploymentManager
+            try:
+                self.deployment_manager = DeploymentManager(config)
+            except Exception as e:
+                tlog.error(f"❌ [Engine] 重新装配发布编排器失败: {e}")
+        
         # 4. 🗺️ 物理路径矩阵重新锚定
         # 如果 active_theme 发生变更，必须重新计算 engine.paths 以防 IO 错误
         if hasattr(self, 'paths'):

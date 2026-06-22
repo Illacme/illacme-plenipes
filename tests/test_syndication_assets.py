@@ -107,8 +107,8 @@ class TestSyndicationAssets(unittest.TestCase):
 
         processor = MarkdownASTProcessor()
         result_content = processor.process_images(
-            content, 
-            self.doc_dir, 
+            content,
+            self.doc_dir,
             uploader.upload_image
         )
         
@@ -117,6 +117,64 @@ class TestSyndicationAssets(unittest.TestCase):
         
         # 校验 CDN URL 链接已被成功替换
         self.assertIn("https://cdn.my-images.com/cdn/images/", result_content)
+        self.assertIn("test_pic_", result_content)
+
+    @patch("boto3.client")
+    def test_syndicator_image_upload_flow_style_b(self, mock_boto_client):
+        # 模拟 S3 客户端行为
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+
+        # 构造带有 Style B 新版图床配置的 syndicator
+        syndication_cfg = {
+            "mock_platform": {
+                "enabled": True,
+                "platform": "mock_platform"
+            }
+        }
+        sys_tuning = {
+            "vault_root": self.test_dir,
+            "image_hosting": {
+                "s3": {
+                    "enabled": True,
+                    "bucket": "style-b-bucket",
+                    "access_key": "style-b-access-key",
+                    "secret_key": "style-b-secret-key",
+                    "region": "ap-southeast-1",
+                    "public_url": "https://cdn.style-b.com"
+                }
+            }
+        }
+        
+        syndicator = ContentSyndicator(
+            syndication_cfg=syndication_cfg,
+            site_url="https://example.com",
+            sys_tuning_cfg=sys_tuning,
+            meta=None
+        )
+
+        content = "文章内容：![图片](../assets/test_pic.png)"
+        
+        # 动态测试 S3 上传流
+        from core.syndication.uploader import ImageUploader
+        uploader = ImageUploader(syndicator.cfg, syndicator.sys_tuning)
+        
+        # 校验图床插件已被动态自发现和挂载
+        self.assertIsNotNone(uploader.host_instance)
+        self.assertEqual(uploader.host_instance.PLUGIN_ID, "s3")
+
+        processor = MarkdownASTProcessor()
+        result_content = processor.process_images(
+            content,
+            self.doc_dir,
+            uploader.upload_image
+        )
+        
+        # 校验 boto3 被正确调用
+        mock_s3.upload_file.assert_called_once()
+        
+        # 校验 CDN URL 链接已被成功替换
+        self.assertIn("https://cdn.style-b.com/cdn/images/", result_content)
         self.assertIn("test_pic_", result_content)
 
 if __name__ == "__main__":

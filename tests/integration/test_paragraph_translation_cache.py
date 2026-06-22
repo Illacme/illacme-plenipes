@@ -96,16 +96,16 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 }
                 cfg['metadata_db'] = os.path.join(self.imprint_dir, 'core/press.db')
                 cfg['i18n_settings'] = {
-                    'enabled': True, 
-                    'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'}, 
+                    'enabled': True,
+                    'source': {'lang_code': 'zh', 'prompt_lang': 'Chinese'},
                     'targets': [{'lang_code': 'en', 'prompt_lang': 'English'}]
                 }
                 cfg['system'] = {
-                    'data_root': self.imprint_dir, 
-                    'allowed_extensions': ['.md'], 
+                    'data_root': self.imprint_dir,
+                    'allowed_extensions': ['.md'],
                     'data_paths': {},
-                    'log_level': 'INFO', 
-                    'max_workers': 1, 
+                    'log_level': 'INFO',
+                    'max_workers': 1,
                     'auto_save_interval': 60
                 }
                 cfg['active_theme'] = 'default'
@@ -145,10 +145,10 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 engine.translator = mock_translator
                 
                 # 5. 执行同步，期待由于故障块导致整体翻译失败但无崩溃
-                res = engine.sync_document(
-                    doc_path, 
-                    route_prefix="", 
-                    route_source="Docs", 
+                engine.sync_document(
+                    doc_path,
+                    route_prefix="",
+                    route_source="Docs",
                     is_dry_run=False,
                     force_sync=True
                 )
@@ -180,10 +180,10 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 mock_translator.translate = mock_translate_ok
                 
                 # 8. 重新运行同步，期待断点续传（第 1 个 Block 缓存命中，不发起 AI 翻译，只翻译后面两个）
-                res_second = engine.sync_document(
-                    doc_path, 
-                    route_prefix="", 
-                    route_source="Docs", 
+                engine.sync_document(
+                    doc_path,
+                    route_prefix="",
+                    route_source="Docs",
                     is_dry_run=False,
                     force_sync=True
                 )
@@ -215,10 +215,10 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 # 11. 🚀 [V75.13] 清除缓存并强制重译测试
                 translate_calls_after.clear()
                 
-                res_clear = engine.sync_document(
-                    doc_path, 
-                    route_prefix="", 
-                    route_source="Docs", 
+                engine.sync_document(
+                    doc_path,
+                    route_prefix="",
+                    route_source="Docs",
                     is_dry_run=False,
                     force_sync=True,
                     clear_cache=True
