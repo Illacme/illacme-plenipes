@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🛡️ [V48.3] 新增图床插件及连接探测测试 (全量扩充)
+🛡️ [V48.3] 图床插件单元测试与连接探测（已合并基类精简版）
+职责：合并原有的 test_image_hosting_plugins.py 与 test_image_hosting_plugins_extra.py。
+通过提取 BaseImageHostTest 共享基类与统一的临时文件生命周期管理，全面提升测试健壮性与可维护性。
 """
 import os
 import sys
 import pytest
+import contextlib
 import tempfile
 from unittest.mock import MagicMock, patch
 
@@ -15,14 +18,39 @@ from adapters.egress.image_hosting.github import GitHubImageHost
 from adapters.egress.image_hosting.sm_ms import SmMsImageHost
 from adapters.egress.image_hosting.imgur import ImgurImageHost
 from adapters.egress.image_hosting.telegraph import TelegraphImageHost
-
 from adapters.egress.image_hosting.aliyun_oss import AliyunOssImageHost
 from adapters.egress.image_hosting.tencent_cos import TencentCosImageHost
+from adapters.egress.image_hosting.qiniu_kodo import QiniuKodoImageHost
+from adapters.egress.image_hosting.upyun_uss import UpyunUssImageHost
+from adapters.egress.image_hosting.loli_io import LoliIoImageHost
+from adapters.egress.image_hosting.superbed import SuperbedImageHost
+from adapters.egress.image_hosting.lsky_pro import LskyProImageHost
 
-from services.api.routes.gov.context_shards.plugin_ops import probe_plugin_impl
+from services.api.routes.gov.context_shards.plugin_ops import (
+    probe_plugin_impl,
+    dry_run_plugin_impl,
+    install_plugin_deps_impl
+)
 
-class TestImageHostingPlugins:
-    """所有图床插件的单元测试"""
+class BaseImageHostTest:
+    """图床单元测试共享基类，提供安全的临时测试图片资源生命周期管理"""
+
+    @contextlib.contextmanager
+    def _temp_image(self, content: bytes = b"fake image data"):
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            tmp.write(content)
+            tmp.close()
+            try:
+                yield tmp.name
+            finally:
+                if os.path.exists(tmp.name):
+                    try:
+                        os.remove(tmp.name)
+                    except Exception:
+                        pass
+
+class TestImageHostingPlugins(BaseImageHostTest):
+    """所有图床插件的合并单元测试套件"""
 
     def test_github_image_host(self):
         host = GitHubImageHost(config={
@@ -44,16 +72,13 @@ class TestImageHostingPlugins:
         host_valid = GitHubImageHost(config={"repo": "owner/repo", "token": "token-123"})
         assert host_valid.upload("/nonexistent/file.png") is None
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake image data")
-            tmp.flush()
-
+        with self._temp_image() as img_path:
             with patch("requests.put") as mock_put:
                 mock_resp = MagicMock()
                 mock_resp.status_code = 201
                 mock_put.return_value = mock_resp
 
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url is not None
                 assert "images/" in url
                 assert url.startswith("https://cdn.my.com")
@@ -65,10 +90,7 @@ class TestImageHostingPlugins:
         host_no_conf = SmMsImageHost(config={})
         assert host_no_conf.upload("fake_path") is None
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake sm.ms data")
-            tmp.flush()
-
+        with self._temp_image() as img_path:
             with patch("requests.post") as mock_post:
                 mock_resp = MagicMock()
                 mock_resp.status_code = 200
@@ -78,7 +100,7 @@ class TestImageHostingPlugins:
                 }
                 mock_post.return_value = mock_resp
 
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url == "https://sm.ms/img.png"
 
     def test_imgur_image_host(self):
@@ -89,10 +111,7 @@ class TestImageHostingPlugins:
         host_no_conf = ImgurImageHost(config={})
         assert host_no_conf.upload("fake_path") is None
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake imgur data")
-            tmp.flush()
-
+        with self._temp_image() as img_path:
             with patch("requests.post") as mock_post:
                 mock_resp = MagicMock()
                 mock_resp.status_code = 200
@@ -102,24 +121,21 @@ class TestImageHostingPlugins:
                 }
                 mock_post.return_value = mock_resp
 
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url == "https://imgur.com/img.png"
 
     def test_telegraph_image_host(self):
         host = TelegraphImageHost(config={"endpoint": "https://telegra.ph"})
         assert host.endpoint == "https://telegra.ph"
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake telegraph data")
-            tmp.flush()
-
+        with self._temp_image() as img_path:
             with patch("requests.post") as mock_post:
                 mock_resp = MagicMock()
                 mock_resp.status_code = 200
                 mock_resp.json.return_value = [{"src": "/file/img.png"}]
                 mock_post.return_value = mock_resp
 
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url == "https://telegra.ph/file/img.png"
 
     def test_aliyun_oss_image_host(self):
@@ -141,11 +157,7 @@ class TestImageHostingPlugins:
         host_no_conf = AliyunOssImageHost(config={})
         assert host_no_conf.upload("fake_path") is None
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake aliyun oss data")
-            tmp.flush()
-
-            # 模拟 oss2 模块存在及上传成功
+        with self._temp_image() as img_path:
             mock_oss2 = MagicMock()
             mock_auth = MagicMock()
             mock_bucket = MagicMock()
@@ -154,7 +166,7 @@ class TestImageHostingPlugins:
                 mock_oss2.Auth.return_value = mock_auth
                 mock_oss2.Bucket.return_value = mock_bucket
 
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url is not None
                 assert url.startswith("https://cdn.oss.com/images")
 
@@ -175,17 +187,146 @@ class TestImageHostingPlugins:
         host_no_conf = TencentCosImageHost(config={})
         assert host_no_conf.upload("fake_path") is None
 
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(b"fake tencent cos data")
-            tmp.flush()
-
+        with self._temp_image() as img_path:
             mock_cos = MagicMock()
             with patch.dict(sys.modules, {'qcloud_cos': mock_cos}):
-                url = host.upload(tmp.name)
+                url = host.upload(img_path)
                 assert url is not None
                 assert url.startswith("https://cdn.cos.com/images")
 
+    def test_qiniu_kodo_image_host(self) -> None:
+        host = QiniuKodoImageHost(config={
+            "bucket": "test-bucket",
+            "access_key": "ak",
+            "secret_key": "sk",
+            "domain": "http://img.test.com",
+            "path": "images"
+        })
+        assert host.bucket == "test-bucket"
+        assert host.access_key == "ak"
+        assert host.secret_key == "sk"
+        assert host.domain == "http://img.test.com"
 
+        host_no_conf = QiniuKodoImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            mock_qiniu = MagicMock()
+            mock_auth = MagicMock()
+            mock_info = MagicMock()
+            mock_info.status_code = 200
+            
+            with patch.dict(sys.modules, {'qiniu': mock_qiniu}):
+                mock_qiniu.Auth.return_value = mock_auth
+                mock_qiniu.put_file.return_value = ({"key": "val"}, mock_info)
+
+                url = host.upload(img_path)
+                assert url is not None
+                assert url.startswith("http://img.test.com/images")
+
+    def test_upyun_uss_image_host(self) -> None:
+        host = UpyunUssImageHost(config={
+            "bucket": "test-bucket",
+            "operator": "op",
+            "password": "pwd",
+            "path": "images",
+            "domain": "https://img.upyun.com"
+        })
+        assert host.bucket == "test-bucket"
+        assert host.operator == "op"
+        assert host.password == "pwd"
+        assert host.domain == "https://img.upyun.com"
+
+        host_no_conf = UpyunUssImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("requests.put") as mock_put:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_put.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url is not None
+                assert url.startswith("https://img.upyun.com/images")
+
+    def test_loli_io_image_host(self) -> None:
+        host = LoliIoImageHost(config={
+            "token": "token-123",
+            "endpoint": "https://img.lol/api/v1/upload"
+        })
+        assert host.token == "token-123"
+        assert host.endpoint == "https://img.lol/api/v1/upload"
+
+        host_no_conf = LoliIoImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("requests.post") as mock_post:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.json.return_value = {
+                    "status": 200,
+                    "data": {"url": "https://img.lol/img1.png"}
+                }
+                mock_post.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url == "https://img.lol/img1.png"
+
+    def test_superbed_image_host(self) -> None:
+        host = SuperbedImageHost(config={
+            "token": "token-123",
+            "endpoint": "https://api.superbed.cn/upload"
+        })
+        assert host.token == "token-123"
+        assert host.endpoint == "https://api.superbed.cn/upload"
+
+        host_no_conf = SuperbedImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("requests.post") as mock_post:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.json.return_value = {
+                    "err": 0,
+                    "url": "https://p.superbed.cn/img.jpg"
+                }
+                mock_post.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url == "https://p.superbed.cn/img.jpg"
+
+    def test_lsky_pro_image_host(self) -> None:
+        host = LskyProImageHost(config={
+            "endpoint": "https://lsky.test.com",
+            "token": "my-token",
+            "strategy_id": "1",
+            "album_id": "2"
+        })
+        assert host.endpoint == "https://lsky.test.com"
+        assert host.token == "my-token"
+        assert host.strategy_id == "1"
+        assert host.album_id == "2"
+
+        host_no_conf = LskyProImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("requests.post") as mock_post:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.json.return_value = {
+                    "status": True,
+                    "data": {
+                        "links": {"url": "https://lsky.test.com/storage/img.png"}
+                    }
+                }
+                mock_post.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url == "https://lsky.test.com/storage/img.png"
 
     @pytest.mark.anyio
     async def test_probe_image_hosting_plugins(self):
@@ -200,24 +341,96 @@ class TestImageHostingPlugins:
                 assert res["healthy"] is True
                 assert "图床驱动已挂载" in res["message"]
 
+    @pytest.mark.anyio
+    async def test_dry_run_image_hosting_plugins(self) -> None:
+        """测试 plugin_ops 中的 Dry-Run 自检逻辑"""
+        payload_telegraph = {"id": "telegraph", "settings": {"endpoint": "https://telegra.ph"}}
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res = await dry_run_plugin_impl(payload_telegraph)
+            assert res["success"] is True
+            assert any("Telegraph 属于免配授权图床" in log["message"] for log in res["logs"])
 
+        res_oss_fail = await dry_run_plugin_impl({"id": "aliyun_oss", "settings": {"bucket": ""}})
+        assert res_oss_fail["success"] is False
+
+        with patch("requests.head") as mock_head:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_head.return_value = mock_resp
+            res_oss_ok = await dry_run_plugin_impl({
+                "id": "aliyun_oss",
+                "settings": {"bucket": "my-bucket", "endpoint": "oss-cn-beijing.aliyuncs.com", "access_key_id": "ak", "access_key_secret": "sk"}
+            })
+            assert res_oss_ok["success"] is True
+
+        with patch("requests.head") as mock_head:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_head.return_value = mock_resp
+            res_cos_ok = await dry_run_plugin_impl({
+                "id": "tencent_cos",
+                "settings": {"bucket": "my-cos-bucket-12500000", "region": "ap-beijing", "secret_id": "sid", "secret_key": "skey"}
+            })
+            assert res_cos_ok["success"] is True
+
+        with patch("requests.head") as mock_head:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_head.return_value = mock_resp
+            res_kodo_ok = await dry_run_plugin_impl({
+                "id": "qiniu_kodo",
+                "settings": {"bucket": "my-bucket", "access_key": "ak", "secret_key": "sk", "domain": "http://img.test.com"}
+            })
+            assert res_kodo_ok["success"] is True
+
+        with patch("requests.head") as mock_head:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_head.return_value = mock_resp
+            res_uss_ok = await dry_run_plugin_impl({
+                "id": "upyun_uss",
+                "settings": {"bucket": "my-bucket", "operator": "op", "password": "pwd", "domain": "img.upyun.com"}
+            })
+            assert res_uss_ok["success"] is True
+
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res_loli = await dry_run_plugin_impl({"id": "loli_io", "settings": {"token": "my-token"}})
+            assert res_loli["success"] is True
+
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res_super = await dry_run_plugin_impl({"id": "superbed", "settings": {"token": "my-token"}})
+            assert res_super["success"] is True
+
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res_lsky = await dry_run_plugin_impl({
+                "id": "lsky_pro",
+                "settings": {"endpoint": "https://lsky.test.com", "token": "my-token"}
+            })
+            assert res_lsky["success"] is True
 
     @pytest.mark.anyio
     async def test_install_plugin_deps(self):
         """测试一键安装依赖包接口"""
-        from services.api.routes.gov.context_shards.plugin_ops import install_plugin_deps_impl
-        
-        # 1. 缺失 ID
         res_fail = await install_plugin_deps_impl({})
         assert res_fail["success"] is False
         assert "Plugin ID" in res_fail["error"]
 
-        # 2. 不需要外部依赖的插件
         res_none = await install_plugin_deps_impl({"id": "telegraph"})
         assert res_none["success"] is True
         assert "不需要外部" in res_none["logs"][0]["message"]
 
-        # 3. 模拟 pip 成功安装
         with patch("subprocess.run") as mock_run:
             mock_res = MagicMock()
             mock_res.returncode = 0
@@ -229,7 +442,6 @@ class TestImageHostingPlugins:
             assert res_ok["success"] is True
             assert any("成功安装" in log["message"] for log in res_ok["logs"])
 
-        # 4. 模拟 pip 安装失败
         with patch("subprocess.run") as mock_run:
             mock_res = MagicMock()
             mock_res.returncode = 1
