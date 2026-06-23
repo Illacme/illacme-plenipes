@@ -422,7 +422,7 @@ class TestImageHostingPlugins(BaseImageHostTest):
 
     @pytest.mark.anyio
     async def test_install_plugin_deps(self):
-        """测试一键安装依赖包接口"""
+        """测试一键安装依赖包接口与环境自愈降级"""
         res_fail = await install_plugin_deps_impl({})
         assert res_fail["success"] is False
         assert "Plugin ID" in res_fail["error"]
@@ -431,6 +431,7 @@ class TestImageHostingPlugins(BaseImageHostTest):
         assert res_none["success"] is True
         assert "不需要外部" in res_none["logs"][0]["message"]
 
+        # 1. 模拟直接成功
         with patch("subprocess.run") as mock_run:
             mock_res = MagicMock()
             mock_res.returncode = 0
@@ -440,8 +441,9 @@ class TestImageHostingPlugins(BaseImageHostTest):
 
             res_ok = await install_plugin_deps_impl({"id": "aliyun_oss"})
             assert res_ok["success"] is True
-            assert any("成功安装" in log["message"] for log in res_ok["logs"])
+            assert any("成功" in log["message"] for log in res_ok["logs"])
 
+        # 2. 模拟全部源均安装失败
         with patch("subprocess.run") as mock_run:
             mock_res = MagicMock()
             mock_res.returncode = 1
@@ -452,3 +454,39 @@ class TestImageHostingPlugins(BaseImageHostTest):
             res_fail = await install_plugin_deps_impl({"id": "aliyun_oss"})
             assert res_fail["success"] is False
             assert any("安装失败" in log["message"] for log in res_fail["logs"])
+
+        # 3. 模拟镜像源 Failover 自愈降级 (第一轮失败，第二轮成功)
+        with patch("subprocess.run") as mock_run:
+            mock_res_fail = MagicMock()
+            mock_res_fail.returncode = 1
+            mock_res_fail.stderr = "Connection timeout"
+            
+            mock_res_ok = MagicMock()
+            mock_res_ok.returncode = 0
+            mock_res_ok.stdout = "Successfully installed"
+            
+            mock_run.side_effect = [mock_res_fail, mock_res_ok]
+            
+            res_failover = await install_plugin_deps_impl({"id": "aliyun_oss"})
+            assert res_failover["success"] is True
+            assert any("阿里云" in log["message"] and "成功" in log["message"] for log in res_failover["logs"])
+
+        # 4. 模拟权限不足与系统托管自愈 (第一轮权限不足/系统托管报错，第二轮自愈追加参数成功)
+        with patch("subprocess.run") as mock_run:
+            mock_res_permission = MagicMock()
+            mock_res_permission.returncode = 1
+            mock_res_permission.stderr = "error: externally-managed-environment\nPermission denied"
+            
+            mock_res_ok = MagicMock()
+            mock_res_ok.returncode = 0
+            mock_res_ok.stdout = "Successfully installed"
+            
+            mock_run.side_effect = [mock_res_permission, mock_res_ok]
+            
+            res_self_healing = await install_plugin_deps_impl({"id": "aliyun_oss"})
+            assert res_self_healing["success"] is True
+            assert any("权限拦截" in log["message"] or "系统库锁定" in log["message"] for log in res_self_healing["logs"])
+            
+            # 检验是否被传入了自愈追加的参数
+            args_passed = mock_run.call_args_list[1][0][0]
+            assert "--user" in args_passed or "--break-system-packages" in args_passed

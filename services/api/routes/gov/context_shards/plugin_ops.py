@@ -230,47 +230,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     return await impl(payload)
 
 async def install_plugin_deps_impl(payload: dict) -> dict:
-    """
-    🔌 一键依赖安装与自愈接口
-    """
-    plugin_id = payload.get("id")
-    if not plugin_id:
-        return {"success": False, "error": "Plugin ID is required"}
-
-    dependencies = {
-        "aliyun_oss": ["oss2"],
-        "tencent_cos": ["cos-python-sdk-v5"],
-        "qiniu_kodo": ["qiniu"],
-        "s3": ["boto3"],
-        "sftp": ["paramiko"]
-    }.get(plugin_id, [])
-
-    if not dependencies:
-        return {"success": True, "logs": [{"time": "", "level": "SUCCESS", "message": "该插件不需要外部 Python 依赖包。"}]}
-
-    import sys
-    import subprocess
-    import datetime
-
-    def log(level: str, msg: str) -> dict:
-        now = datetime.datetime.now().strftime("%H:%M:%S")
-        return {"time": now, "level": level, "message": msg}
-
-    logs = []
-    success = True
-
-    for pkg in dependencies:
-        logs.append(log("INFO", f"正在自动安装物理依赖包: {pkg} (基于清华 PyPI 镜像加速源)..."))
-        try:
-            cmd = [sys.executable, "-m", "pip", "install", pkg, "-i", "https://pypi.tuna.tsinghua.edu.cn/simple"]
-            process = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            if process.returncode == 0:
-                logs.append(log("SUCCESS", f"🟢 依赖包 {pkg} 成功安装至当前物理环境！"))
-            else:
-                logs.append(log("ERROR", f"❌ 依赖包 {pkg} 安装失败。错误输出: {process.stderr.strip()[:300]}"))
-                success = False
-        except Exception as e:
-            logs.append(log("ERROR", f"❌ 安装过程发生异常: {e}"))
-            success = False
-
-    return {"success": success, "logs": logs}
+    """🔌 一键依赖安装与自愈接口 (由 plugin_ops_deps 分片代理)"""
+    from .plugin_ops_deps import install_plugin_deps_impl as impl
+    return await impl(payload)
