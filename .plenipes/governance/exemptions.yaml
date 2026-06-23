@@ -1,0 +1,40 @@
+# Illacme-plenipes 治理豁免白名单 (单一真相源)
+# 🚀 [V5.4] 治理终极闭环版
+#
+# 所有超过 300 行物理红线的历史遗留文件必须在此声明后方可获得合规豁免。
+# 消费方：.githooks/pre-commit / .plenipes/tools/sentinel_matrix.py / scripts/sovereign_audit.py
+#
+# ⚠️ 注意：此文件为治理级基础设施，修改后请确保三方消费方能正确加载。
+
+redline_exempt_files:
+  # --- Core 层 ---
+  - core/ui/handlers/status_handlers.py
+  - core/config/config.py
+  - core/config/config_models.py
+  - core/runtime/engine_factory.py
+  - core/runtime/cli_bootstrap.py
+  - core/editorial/asset_pipeline.py
+  - core/editorial/standard_steps.py
+  - core/logic/ai/ai_scheduler.py
+  - core/logic/ai/ai_logic_hub.py
+  - core/logic/ai/ai_scheduler_shards/dispatch_ops.py
+  - core/archives/sqlite_backend.py
+  # --- Services 层 ---
+  - services/api/routes/system.py
+  - services/api/routes/governance.py
+  - services/api/routes/dispatch.py
+  - services/api/routes/content.py
+  - services/api/routes/gov/context.py
+  - services/api/routes/gov/config.py
+  - services/api/logic/content_ops.py
+  - services/api/logic/content_ops_shards/vault_ops.py
+  - services/api/logic/dispatch_ops_shards/telemetry_ops.py
+  - services/wizard/wizard_server.py
+  # --- Tests ---
+  - tests/test_smoke.py
+  # --- Dashboard JS ---
+  - web/dashboard/js/dashboard.system.js
+  - web/dashboard/js/vault/vault.editor.js
+  - web/dashboard/js/localization/localization.render.js
+  - web/dashboard/js/localization/localization.review.js
+  - web/dashboard/js/localization/localization.sync.js

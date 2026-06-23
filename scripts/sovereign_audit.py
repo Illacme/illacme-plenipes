@@ -73,30 +73,12 @@ def main():
     print("🚀 [审计阶段] 物理主权红线审计 (300行限制)...")
     try:
         limit_violations = []
-        # 允许豁免的文件列表 (V65.0 工业级 Command Center 组件)
-        EXEMPT_FILES = [
-            "core/ui/handlers/status_handlers.py",
-            "core/config/config.py",
-            "core/runtime/engine_factory.py",
-            "core/runtime/cli_bootstrap.py", # V65.0 全量引导内核
-            "core/editorial/asset_pipeline.py",
-            "services/api/routes/system.py",     # V65.0 预览控制中枢
-            "services/api/routes/governance.py", # V65.0 主权治理控制台
-            "services/wizard/wizard_server.py",  # V65.0 Web 引导服务
-            "core/editorial/standard_steps.py", # V65.0 标准化出版步骤
-            "core/logic/ai/ai_scheduler.py",   # V65.0 算力调度中枢
-            "services/api/routes/dispatch.py",     # 🚀 新增物理销毁与分发控制中枢
-            "services/api/routes/gov/context.py",  # 🛰️ 核心诊断与模拟干跑发布路由
-            "services/api/routes/content.py",       # 📦 内容运营组件
-            "services/api/logic/content_ops.py",     # 🚀 降维拆分后解耦的内容运营业务逻辑
-            "core/config/config_models.py",          # 🏗️ 配置中心声明式 Pydantic Model 集合
-            "core/logic/ai/ai_scheduler_shards/dispatch_ops.py", # 🚀 算力分发分片
-            "services/api/logic/content_ops_shards/vault_ops.py", # 📦 内容运营分片
-            "services/api/routes/gov/config.py",      # 🛰️ 主权控制中枢配置路由
-            "core/logic/ai/ai_logic_hub.py",
-            "core/archives/sqlite_backend.py",
-            "services/api/logic/dispatch_ops_shards/telemetry_ops.py"
-        ]
+        # 从统一 YAML 真相源加载豁免白名单
+        _tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.plenipes', 'tools')
+        if _tools_dir not in sys.path:
+            sys.path.insert(0, _tools_dir)
+        from exemption_loader import load_redline_exemptions
+        EXEMPT_FILES = load_redline_exemptions()
         
         for folder in ['core', 'services']:
             if not os.path.exists(folder): continue

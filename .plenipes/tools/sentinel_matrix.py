@@ -15,35 +15,9 @@ REDLINE_MAX_LINES = 300  # 🚀 [V5.4] 治理终极闭环版
 GENE_PATTERN = r'🚀\s*\[V\d+\.\d+\]'  # 基因标记正则
 DEPENDENCY_FILES = ['requirements.txt', 'package.json']
 
-# 历史遗留且当前正在演进中的超限大文件豁免白名单，避免非理性的野蛮重构引发 Regression
-EXEMPT_REDLINE_FILES = {
-    "core/ui/handlers/status_handlers.py",
-    "core/config/config.py",
-    "core/runtime/engine_factory.py",
-    "core/runtime/cli_bootstrap.py",
-    "core/editorial/asset_pipeline.py",
-    "services/api/routes/system.py",
-    "services/api/routes/governance.py",
-    "services/wizard/wizard_server.py",
-    "core/editorial/standard_steps.py",
-    "core/logic/ai/ai_scheduler.py",
-    "services/api/routes/dispatch.py",
-    "services/api/routes/gov/context.py",
-    "services/api/routes/content.py",
-    "services/api/logic/content_ops.py",
-    "core/config/config_models.py",
-    "core/logic/ai/ai_scheduler_shards/dispatch_ops.py",
-    "core/logic/ai/ai_logic_hub.py",
-    "services/api/logic/dispatch_ops_shards/telemetry_ops.py",
-    "services/api/logic/content_ops_shards/vault_ops.py",
-    "services/api/routes/gov/config.py",
-    "tests/test_smoke.py",
-    "web/dashboard/js/dashboard.system.js",
-    "web/dashboard/js/vault/vault.editor.js",
-    "web/dashboard/js/localization/localization.render.js",
-    "web/dashboard/js/localization/localization.review.js",
-    "web/dashboard/js/localization/localization.sync.js"
-}
+# 历史遗留且当前正在演进中的超限大文件豁免白名单 — 统一从 YAML 单一真相源加载
+from exemption_loader import load_redline_exemptions
+EXEMPT_REDLINE_FILES = load_redline_exemptions()
 
 def get_changed_files():
     """获取当前工作区中已修改或暂存的文件列表"""
