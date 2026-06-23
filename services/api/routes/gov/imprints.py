@@ -50,7 +50,7 @@ def get_imprints_stats():
         if os.path.exists(meta_db):
             import sqlite3
             try:
-                conn = sqlite3.connect(meta_db)
+                conn = sqlite3.connect(meta_db, timeout=5.0)
                 cursor = conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM documents")
                 doc_count = cursor.fetchone()[0]
