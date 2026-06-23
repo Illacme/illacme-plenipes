@@ -160,21 +160,36 @@ def audit_observability(files):
     """审计逻辑演进日志是否同步更新 (SOP-07)"""
     print("🔍 [审计阶段] 可观测性审计 (Logic Evolution Log)...")
     log_path = ".plenipes/history/logic_evolution.log"
-    if not os.path.exists(log_path):
-        print(f"  ❌ [FAIL] 缺少法定日志文件: {log_path}")
+    
+    # 获取今天的日期字符串
+    import datetime
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    
+    def check_log():
+        if not os.path.exists(log_path):
+            return False
+        with open(log_path, 'r', encoding='utf-8') as f:
+            return today in f.read()
+            
+    if not check_log():
+        print("  ⚠️  [可观测性缺失] 今日逻辑演进尚未登记。正在启动自动愈合程序...")
+        try:
+            res = subprocess.run([sys.executable, "scripts/log_healer.py"], capture_output=True, text=True)
+            if res.returncode == 0:
+                print("  ✅ [自愈成功] 逻辑演进日志已被自愈脚本修补。")
+            else:
+                print(f"  ❌ [自愈失败] 无法自动修补日志: {res.stderr or res.stdout}")
+        except Exception as e:
+            print(f"  ❌ [自愈失败] 执行自愈脚本异常: {e}")
+            
+    # 重新检查
+    if not check_log():
+        print(f"  ❌ [FAIL] 今日逻辑演进尚未登记！请手动在 {log_path} 中记录变更因果。")
         return False
         
     with open(log_path, 'r', encoding='utf-8') as f:
         log_content = f.read()
         
-    # 获取今天的日期字符串
-    import datetime
-    today = datetime.date.today().strftime("%Y-%m-%d")
-    
-    if today not in log_content:
-        print(f"  ❌ [FAIL] 今日逻辑演进尚未登记！请在 {log_path} 中记录变更因果。")
-        return False
-    
     # 进一步检查日志中是否提到了正在修改的文件（模糊匹配）
     mentions_file = False
     for f in files:

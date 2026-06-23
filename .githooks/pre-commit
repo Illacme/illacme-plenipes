@@ -94,6 +94,34 @@ def main():
                     print(f"   -> {v}")
                 violations_found = True
 
+    # Check 3: Observability & Auto-Healing (演进日志自愈)
+    import datetime
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    log_path = ".plenipes/history/logic_evolution.log"
+    
+    def check_log_exists():
+        if not os.path.exists(log_path):
+            return False
+        with open(log_path, 'r', encoding='utf-8') as f:
+            return today in f.read()
+            
+    if not check_log_exists():
+        print("⚠️  [可观测性缺失] 检测到今日逻辑演进日志尚未登记。正在为您自动补全...")
+        try:
+            res = subprocess.run([sys.executable, "scripts/log_healer.py"], capture_output=True, text=True)
+            if res.returncode == 0:
+                print("✅ [自愈成功] 逻辑演进日志自愈修补完成。")
+            else:
+                print(f"❌ [自愈失败] 自动修补发生错误: {res.stderr or res.stdout}")
+                violations_found = True
+        except Exception as e:
+            print(f"❌ [自愈失败] 无法运行自愈脚本: {e}")
+            violations_found = True
+            
+    if not check_log_exists():
+        print("❌ VIOLATION (Observability): 今日演进日志未登记且自愈失败。请核对。")
+        violations_found = True
+
     if violations_found:
         print("\n🚫 COMMIT REJECTED 🚫")
         print("Please fix the above architectural violations before committing.")
