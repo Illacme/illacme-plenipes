@@ -62,6 +62,7 @@ def main():
         "services/api/logic/dispatch_ops_shards/telemetry_ops.py",
         "services/api/logic/content_ops_shards/vault_ops.py",
         "services/api/routes/gov/config.py",
+        "core/archives/sqlite_backend.py",
         "tests/test_smoke.py",
         "web/dashboard/js/dashboard.system.js",
         "web/dashboard/js/vault/vault.editor.js",

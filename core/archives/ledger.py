@@ -246,49 +246,37 @@ class MetadataManager:
             self.sqlite.upsert_document(doc_id, {**existing, "translations": trans})
         tlog.warning(f"⚠️ [I5] 校对锁已标记为 stale（原稿已变更）: {doc_id} / {lang_code}")
 
-    # ─────────────────────────────────────────────────────────────────────────
     # 🆕 多渠道分发异步重试队列及基础同步状态
-    # ─────────────────────────────────────────────────────────────────────────
-
     def enqueue_syndication_retry(self, rel_path, target_id, title, slug, content, metadata, lang_code, error_msg):
         with self.lock:
-            self.sqlite.upsert_syndication_queue(
-                rel_path=rel_path,
-                target_id=target_id,
-                title=title,
-                slug=slug,
-                content=content,
-                metadata_json=metadata,
-                lang_code=lang_code,
-                error_msg=error_msg
-            )
+            self.sqlite.upsert_syndication_queue(rel_path, target_id, title, slug, content, metadata, lang_code, error_msg)
 
-    def get_pending_syndication_tasks(self):
-        return self.sqlite.get_pending_syndication_tasks()
+    def get_pending_syndication_tasks(self): return self.sqlite.get_pending_syndication_tasks()
 
     def mark_syndication_success(self, rel_path, target_id):
-        with self.lock:
-            self.sqlite.mark_syndication_success(rel_path, target_id)
+        with self.lock: self.sqlite.mark_syndication_success(rel_path, target_id)
 
     def mark_syndication_failure(self, rel_path, target_id, error_msg, backoff_seconds):
-        with self.lock:
-            self.sqlite.mark_syndication_failure(rel_path, target_id, error_msg, backoff_seconds)
+        with self.lock: self.sqlite.mark_syndication_failure(rel_path, target_id, error_msg, backoff_seconds)
 
     def get_syndication_status(self, rel_path, target_id):
         existing = self.sqlite.get_document(rel_path) or {}
         publish_status = existing.get("publish_status", {})
         channel_status = publish_status.get(target_id, {})
-        return {
-            "status": channel_status.get("status"),
-            "hash": channel_status.get("hash")
-        }
+        return {"status": channel_status.get("status"), "hash": channel_status.get("hash")}
 
     def register_syndication(self, rel_path, target_id, source_hash):
         existing = self.sqlite.get_document(rel_path) or {}
         publish_status = existing.get("publish_status", {})
-        publish_status[target_id] = {
-            "status": "DONE",
-            "hash": source_hash,
-            "timestamp": int(time.time())
-        }
+        publish_status[target_id] = {"status": "DONE", "hash": source_hash, "timestamp": int(time.time())}
         self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=publish_status)
+
+    def list_all_syndication_tasks(self): return self.sqlite.list_all_syndication_tasks()
+
+    def retry_syndication_task(self, rel_path=None, target_id=None):
+        with self.lock: self.sqlite.retry_syndication_task(rel_path, target_id)
+
+    def delete_syndication_task(self, rel_path=None, target_id=None):
+        with self.lock: self.sqlite.delete_syndication_task(rel_path, target_id)
+
+

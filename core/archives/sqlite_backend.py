@@ -343,3 +343,30 @@ class SQLiteBackend(SQLiteReviewMixin):
                     status = CASE WHEN retry_count + 1 >= max_retries THEN 'FAILED' ELSE 'PENDING' END
                 WHERE rel_path = ? AND target_id = ?
             """, (error_msg, next_retry, rel_path, target_id))
+
+    def list_all_syndication_tasks(self):
+        rows = self._get_conn().execute("SELECT * FROM syndication_queue ORDER BY id DESC").fetchall()
+        return [{**dict(r), "metadata": json.loads(dict(r).get("metadata_json") or "{}")} for r in rows]
+
+    def retry_syndication_task(self, rel_path=None, target_id=None):
+        with self._get_conn() as conn:
+            if rel_path and target_id:
+                conn.execute("""
+                    UPDATE syndication_queue
+                    SET retry_count = 0, status = 'PENDING', next_retry_time = 0, last_error = NULL
+                    WHERE rel_path = ? AND target_id = ?
+                """, (rel_path, target_id))
+            else:
+                conn.execute("""
+                    UPDATE syndication_queue
+                    SET retry_count = 0, status = 'PENDING', next_retry_time = 0, last_error = NULL
+                    WHERE status = 'FAILED'
+                """)
+
+    def delete_syndication_task(self, rel_path=None, target_id=None):
+        with self._get_conn() as conn:
+            if rel_path and target_id:
+                conn.execute("DELETE FROM syndication_queue WHERE rel_path = ? AND target_id = ?", (rel_path, target_id))
+            else:
+                conn.execute("DELETE FROM syndication_queue WHERE status = 'FAILED'")
+

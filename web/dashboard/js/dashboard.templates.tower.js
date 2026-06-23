@@ -131,11 +131,41 @@ window.viewTemplates.tower = `
                                 <path id="trend-mem-area" fill="url(#mem-grad)" d=""/><path id="trend-mem-line" fill="none" stroke="var(--accent-secondary)" stroke-width="2" d=""/>
                                 <path id="trend-compute-area" fill="url(#comp-grad)" d=""/><path id="trend-compute-line" fill="none" stroke="var(--accent-orange, #ff9d00)" stroke-width="2" d=""/>
                             </svg>
+                    </div>
+                </div>
+                
+                <!-- 第四行：多渠道分发任务队列 (死信队列监控与治理) -->
+                <div class="tower-syndication-row" style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
+                    <div class="glass-panel" style="display: flex; flex-direction: column; padding: 20px; border-radius: 12px; min-height: 200px;">
+                        <div class="sector-header" style="font-weight: 800; font-size: 0.85rem; color: var(--accent-secondary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace;">
+                            <span>📡 多渠道分发死信与重试队列 (SYNDICATION DEAD-LETTER QUEUE)</span>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="primary-btn glow-btn" id="btn-retry-all-synd" onclick="window.retryAllSyndicationTasks()" style="padding: 4px 10px; font-size: 0.7rem; height: 24px; line-height: 12px; background: rgba(99,102,241,0.2); border: 1px solid var(--accent-primary);">🔄 一键重试所有失败</button>
+                                <button class="danger-btn" id="btn-clear-failed-synd" onclick="window.clearFailedSyndicationTasks()" style="padding: 4px 10px; font-size: 0.7rem; height: 24px; line-height: 12px; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5; border-radius: 4px; cursor: pointer;">🗑️ 一键清空失败</button>
+                            </div>
+                        </div>
+                        <div class="table-container" style="overflow-x: auto; width: 100%; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--glass-border); text-align: left;">
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 25%;">文档路径</th>
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 15%;">目标渠道</th>
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 10%;">状态</th>
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 10%;">重试次数</th>
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 25%;">最后错误信息</th>
+                                        <th style="padding: 10px; font-size: 0.75rem; color: var(--text-dim); width: 15%; text-align: right;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tower-syndication-list" style="font-size: 0.8rem;">
+                                    <!-- 动态注入分发任务行 -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     `;
 
 window.viewTemplates.analytics = `
