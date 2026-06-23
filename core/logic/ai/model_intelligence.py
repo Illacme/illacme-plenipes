@@ -91,6 +91,8 @@ class ModelIntelligenceHub:
         self.learned_features = self._load_cache()
 
     def _load_cache(self) -> Dict[str, Any]:
+        if not isinstance(self.cache_path, (str, bytes)):
+            return {}
         if os.path.exists(self.cache_path):
             try:
                 with open(self.cache_path, 'r', encoding='utf-8') as f:
@@ -100,6 +102,8 @@ class ModelIntelligenceHub:
         return {}
 
     def _save_cache(self):
+        if not isinstance(self.cache_path, (str, bytes)):
+            return
         os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
         try:
             with open(self.cache_path, 'w', encoding='utf-8') as f:

@@ -46,6 +46,9 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         # 🧠 [V55.26] 算力智感中枢初始化 (强制对正 AI 治理目录)
         ai_cache_path = engine._resolve_path(engine.config.get_ai_features_path()) if engine else None
         self._intelligence_hub = ModelIntelligenceHub(ai_cache_path)
+        # 🛡️ [P4 Rate Limit Shield] 实例化自适应滑动窗口限流器
+        from core.logic.ai.rate_limit_shield import RateLimitShield
+        self.rate_limiter = RateLimitShield(node_name, self.config.limits, sleep_func=self._sleep)
 
     def safe_get_config(self, key: str, default: Any = None) -> Any:
         """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
@@ -117,6 +120,18 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 if not self.semaphore.acquire(timeout=wait_timeout):
                     raise RuntimeError(f"AI_SEMAPHORE_TIMEOUT: {self.node_name} after {wait_timeout}s")
                 try:
+                    # 🛡️ [P4 Rate Limit Shield] 估算本次请求的 Token 消耗
+                    total_chars = 0
+                    if "messages" in payload:
+                        for msg in payload["messages"]:
+                            content = msg.get("content", "")
+                            if isinstance(content, str):
+                                total_chars += len(content)
+                    estimated_tokens = max(10, int(total_chars * 0.5)) + 512
+
+                    # 执行限流排队
+                    self.rate_limiter.acquire(estimated_tokens, sleep_func=self._sleep)
+
                     start_time = time.time()
                     response = self._ask_ai(payload)
                     latency = time.time() - start_time
@@ -132,6 +147,10 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     result = self._post_process_response(result, payload)
                     
                     usage = getattr(response, 'usage', {})
+                    # 更新真实 Token 消耗
+                    real_tokens = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+                    self.rate_limiter.update_tokens(start_time, real_tokens)
+
                     bus.emit("AI_CALL_COMPLETED", node_name=self.node_name,
                              input_tokens=usage.get("prompt_tokens", 0),
                              output_tokens=usage.get("completion_tokens", 0),
@@ -144,6 +163,10 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 if engine:
                     engine.health_registry.report_failure(self.node_name)
                 error_msg = str(e).lower()
+
+                # 🛡️ [P4 Rate Limit Shield] 触碰 API 限流错误，触发自适应避险
+                if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
+                    self.rate_limiter.record_rate_limit_error()
                 
                 is_fatal = "400" in error_msg
                 is_last_retry = (i == self.max_retries)

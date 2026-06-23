@@ -27,8 +27,8 @@ class MockLimits:
     def __init__(self, max_concurrency=5, timeout=60.0):
         self.max_concurrency = max_concurrency
         self.timeout = timeout
-        self.rate_limit_qps = 10.0
-        self.rate_limit_burst = 20
+        self.rate_limit_qps = 100.0
+        self.rate_limit_burst = 100
 
 class MockNodeConfig:
     def __init__(self, limits=None):
@@ -47,6 +47,7 @@ class MockEngine:
         self.imprint_id = "test-imprint"
         self.config = MagicMock()
         self.config.translation = MockTransConfig()
+        self.config.get_ai_features_path.return_value = None
         self.governance = True
         self.health_registry = MagicMock()
         

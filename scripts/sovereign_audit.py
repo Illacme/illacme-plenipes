@@ -11,7 +11,7 @@ import subprocess
 # 确保能导入 core 包
 sys.path.insert(0, os.getcwd())
 
-def run_step(name, command_list):
+def run_step(name, command_list, capture=True):
     print(f"🚀 [审计阶段] {name}...")
     if command_list:
         cmd = command_list[0]
@@ -19,13 +19,17 @@ def run_step(name, command_list):
         if os.path.exists(venv_cmd):
             command_list[0] = venv_cmd
     try:
-        subprocess.run(command_list, check=True, capture_output=True, text=True)
+        if capture:
+            subprocess.run(command_list, check=True, capture_output=True, text=True)
+        else:
+            subprocess.run(command_list, check=True)
         print(f"  └── ✅ {name} 通过")
         return True
     except subprocess.CalledProcessError as e:
         print(f"  └── ❌ {name} 失败！")
-        if e.stdout: print(f"      Stdout:\n{e.stdout}")
-        if e.stderr: print(f"      Stderr:\n{e.stderr}")
+        if capture:
+            if e.stdout: print(f"      Stdout:\n{e.stdout}")
+            if e.stderr: print(f"      Stderr:\n{e.stderr}")
         return False
     except FileNotFoundError as e:
         print(f"  └── ⚠️  跳过 {name}: 未找到工具 ({e})")
@@ -215,7 +219,7 @@ def main():
 
     # 4. 回归测试 (Smoke Tests)
     # V48.2 升级：覆盖全新的 Ingress 与 Web Wizard 测试套件
-    if not run_step("自动化冒烟测试", ["pytest", "tests/", "--maxfail=1"]):
+    if not run_step("自动化冒烟测试", ["pytest", "tests/", "--maxfail=1", "-s"], capture=False):
         success = False
 
     if not success:
