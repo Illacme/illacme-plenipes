@@ -19,7 +19,53 @@ from core.logic.orchestration.task_orchestrator import global_executor, ai_execu
 
 class AISchedulerDispatchOps:
     @staticmethod
+    def validate_block_structure(source: str, translated: str) -> tuple:
+        """
+        🛡️ [P4] 块级 AST 结构守恒核验防线
+        比对原文与译文的 Markdown/HTML 控制标记的一致性与完整性。
+        """
+        import re
+        # 1. 校验代码块数量与闭合性
+        s_code = len(re.findall(r'```', source))
+        t_code = len(re.findall(r'```', translated))
+        if s_code % 2 == 0:
+            if t_code % 2 != 0:
+                return False, "译文中代码块未闭合"
+            if s_code != t_code:
+                return False, f"代码块数量不匹配 (原文 {s_code//2} vs 译文 {t_code//2})"
+        else:
+            if s_code != t_code:
+                return False, f"代码块标记个数不一致 (原文 {s_code} vs 译文 {t_code})"
+
+        # 2. 校验双链 Wikilinks 数量
+        s_wiki = len(re.findall(r'\[\[.*?\]\]', source))
+        t_wiki = len(re.findall(r'\[\[.*?\]\]', translated))
+        if s_wiki != t_wiki:
+            return False, f"双链 Wikilink 数量不匹配 (原文 {s_wiki} vs 译文 {t_wiki})"
+
+        # 3. 校验标准 Markdown 链接数量
+        s_urls = len(re.findall(r'\]\(([^)]+)\)', source))
+        t_urls = len(re.findall(r'\]\(([^)]+)\)', translated))
+        if s_urls != t_urls:
+            return False, f"Markdown 链接数量不匹配 (原文 {s_urls} vs 译文 {t_urls})"
+
+        # 4. 校验 HTML 标签对称性
+        s_tags = len(re.findall(r'<\/?([a-zA-Z0-9]+)', source))
+        t_tags = len(re.findall(r'<\/?([a-zA-Z0-9]+)', translated))
+        if s_tags != t_tags:
+            return False, f"HTML 标签数量不匹配 (原文 {s_tags} vs 译文 {t_tags})"
+
+        # 5. 校验粗体/斜体闭合性
+        s_bold = len(re.findall(r'\*\*|__', source))
+        t_bold = len(re.findall(r'\*\*|__', translated))
+        if s_bold % 2 == 0 and t_bold % 2 != 0:
+            return False, "译文中粗体/斜体控制符未闭合"
+
+        return True, ""
+
+    @staticmethod
     def dispatch_targets(engine, ctx, targets, route_prefix, route_source, force_sync, rel_path, is_dry_run, persistence_date=None, seo_data=None, priority=TaskPriority.TRANSLATION, target_slot="docs", target_langs=None):
+
         """
         🚀 [V10.3] 多语言分发调度中心
         实现语种级并行，并透传全量 SEO 渲染数据。
@@ -297,6 +343,15 @@ class AISchedulerDispatchOps:
                         
                         while retry_count < max_retries:
                             try:
+                                # 🛡️ [P4] 重试时注入结构对准自愈警告指令
+                                current_remedy = block_remedy
+                                if retry_count > 0:
+                                    warning_msg = (
+                                        "⚠️ [主权自愈提示]：前一轮翻译破坏了 Markdown/HTML 控制标记结构（如代码块不闭合、Wikilinks 数量不符或粗体未闭合）。"
+                                        "本轮请务必严格保证译文中的代码块个数、Wikilinks 链接、URL 链接、HTML 标签及粗体标记的个数与闭合性同原文完全一致！"
+                                    )
+                                    current_remedy = (current_remedy + "\n" + warning_msg) if current_remedy else warning_msg
+
                                 # 🛡️ 熔断卫士保护下的 AI 执行
                                 b_result = engine.circuit_breakers["ai"].call(
                                     active_translator.translate,
@@ -305,7 +360,7 @@ class AISchedulerDispatchOps:
                                     is_dry_run=is_dry_run,
                                     knowledge_context=knowledge_context, # 🚀 注入语义背景
                                     style=block_style, # 🚀 [V55.26] 注入专属或频道级风格
-                                    remedy_instruction=block_remedy, # 🚀 注入覆盖提示词
+                                    remedy_instruction=current_remedy, # 🚀 注入覆盖提示词
                                     priority=TaskPriority.TRANSLATION,
                                     task_name=f"Block-{idx}-{code}"
                                 )
@@ -323,6 +378,11 @@ class AISchedulerDispatchOps:
                                     b_result = re.sub(r'\n?\s*###\s*[^#\n]+\s*###\s*$', '', b_result)
                                     b_result = b_result.strip()
                                     
+                                    # 🛡️ [P4] 触发语法树及标记结构完整性校验
+                                    is_valid, err_detail = AISchedulerDispatchOps.validate_block_structure(block.content, b_result)
+                                    if not is_valid:
+                                        raise ValueError(f"Markdown 语法结构断裂：{err_detail}")
+
                                     tlog.info(f"✅ [算力收割] Block {idx} ({code}) 翻译成功 | 产物长度: {len(b_result)}")
                                     translated_blocks[idx] = b_result
                                     engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
