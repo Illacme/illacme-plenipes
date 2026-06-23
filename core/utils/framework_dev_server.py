@@ -40,9 +40,9 @@ class FrameworkDevServer:
                     time.sleep(0.5)
                     if self.process.poll() is None:
                         os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                except:
+                except OSError:
                     try: self.process.terminate()
-                    except: pass
+                    except OSError: pass
                 self.process = None
 
     def start_with_callback(self, callback: Optional[Callable] = None):
@@ -65,7 +65,7 @@ class FrameworkDevServer:
         if not os.path.exists(self.directory):
             with self._lock: self._is_starting = False
             try: tlog.error(f"🛑 [FrameworkDev] 目录不存在: {self.directory}")
-            except: pass
+            except Exception: pass
             return False
 
         if blocking:
@@ -120,7 +120,7 @@ class FrameworkDevServer:
             node_modules = os.path.join(self.directory, "node_modules")
             if not os.path.exists(node_modules):
                 try: tlog.warning("⚠️ [依赖缺失] 正在启动自动补全...")
-                except: pass
+                except Exception: pass
                 if callback: callback("⚠️ [系统感知] 检测到主题依赖缺失，正在启动物理补全 (npm install)...")
                 
                 install_cmd = "npm install"
@@ -141,7 +141,7 @@ class FrameworkDevServer:
                 except Exception as e:
                     os.close(master_fd)
                     try: os.close(slave_fd)
-                    except: pass
+                    except OSError: pass
                     if callback: callback(f"❌ [依赖补全异常] 无法启动安装进程: {str(e)}")
                     with self._lock: self._is_starting = False
                     return False
@@ -158,9 +158,9 @@ class FrameworkDevServer:
                     tlog.debug(f"ℹ️ [Install] PTY 流已中断: {e}")
                 finally:
                     try: master_reader.close()
-                    except:
+                    except Exception:
                         try: os.close(master_fd)
-                        except: pass
+                        except OSError: pass
                 
                 install_proc.wait()
                 
@@ -174,7 +174,7 @@ class FrameworkDevServer:
             # 3. 正式点火阶段
             cmd = self.command.replace("{port}", str(self.port))
             try: tlog.info(f"🚀 [框架预览] 正在执行异步点火: {cmd}")
-            except: pass
+            except Exception: pass
             
             # 🚀 [V55.9] 终端镜像：使用 PTY 伪终端欺骗子进程，强制开启行缓冲
             master_fd, slave_fd = pty.openpty()
@@ -195,7 +195,7 @@ class FrameworkDevServer:
             except Exception as e:
                 os.close(master_fd)
                 try: os.close(slave_fd)
-                except: pass
+                except OSError: pass
                 if callback: callback(f"❌ [系统异常] 启动失败: {str(e)}")
                 with self._lock: self._is_starting = False
                 return False
@@ -214,16 +214,16 @@ class FrameworkDevServer:
                 tlog.debug(f"ℹ️ [FrameworkDev] PTY 流已中断: {e}")
             finally:
                 try: master_reader.close()
-                except:
+                except Exception:
                     try: os.close(master_fd)
-                    except: pass
+                    except OSError: pass
             
             if proc:
                 proc.wait()
             return True
         except Exception as e:
             try: tlog.error(f"🚨 [FrameworkDev] 异步启动发生未预期错误: {e}")
-            except: pass
+            except Exception: pass
             if callback: callback(f"❌ [系统异常] 异步启动失败: {str(e)}")
             with self._lock: self._is_starting = False
             return False

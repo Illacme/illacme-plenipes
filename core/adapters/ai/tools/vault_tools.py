@@ -103,7 +103,7 @@ class SearchVaultTool(IllacmeTool):
                                 if keyword.lower() in f.read().lower():
                                     rel_path = os.path.relpath(full_path, vault_path)
                                     matches.append(rel_path)
-                        except:
+                        except Exception:
                             pass
                             
             if not matches:

@@ -160,7 +160,7 @@ class SSGAdapter:
         attrs_raw = m.group(1) if m.lastindex >= 1 else ""
         try:
             inner_content = m.group(2).strip() if m.lastindex >= 2 else ""
-        except:
+        except Exception:
             inner_content = ""
 
         attrs = dict(re.findall(r'(\w+)\s*=\s*["\'“”]([^"\'“”]+)["\'“”]', attrs_raw))

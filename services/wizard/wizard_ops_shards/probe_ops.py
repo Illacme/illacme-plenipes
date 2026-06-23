@@ -27,7 +27,7 @@ def probe_nodes_logic():
         try:
             with open(cfg_p, 'r', encoding='utf-8') as f:
                 current_config = yaml.safe_load(f)
-        except:
+        except Exception:
             pass
 
     existing = im.list_imprints()

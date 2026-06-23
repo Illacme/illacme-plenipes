@@ -235,7 +235,7 @@ def get_sync_stats_impl():
                 import time
                 rd["time_str"] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rd["timestamp"]))
             recent_usage.append(rd)
-    except:
+    except Exception:
         pass
 
     enriched_stats = {

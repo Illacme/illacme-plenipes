@@ -160,7 +160,7 @@ tags: [Illacme, Onboarding]
                         with open(config_path, 'r', encoding='utf-8') as f:
                             cfg = yaml.safe_load(f) or {}
                             p_name = cfg.get("imprint_name", cfg.get("press_name", entry.name))
-                    except:
+                    except Exception:
                         cfg = {}
                     
                     # 🚀 [V55.10] 增加全量金库溯源：如果品牌内缺失，尝试从全局底座补全

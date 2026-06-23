@@ -29,13 +29,13 @@ def clean_cache():
     if os.path.exists(".plenipes/capabilities_cache.json"):
         try:
             os.remove(".plenipes/capabilities_cache.json")
-        except:
+        except OSError:
             pass
     yield
     if os.path.exists(".plenipes/capabilities_cache.json"):
         try:
             os.remove(".plenipes/capabilities_cache.json")
-        except:
+        except OSError:
             pass
 
 def test_heuristic_fallback_and_cache_mechanism():

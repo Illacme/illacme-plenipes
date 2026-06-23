@@ -43,7 +43,7 @@ class AuditLedger:
                         drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive)
                         if drive_type in (2, 4):
                             is_mounted = True
-                    except:
+                    except Exception:
                         pass
 
                 if is_mounted:

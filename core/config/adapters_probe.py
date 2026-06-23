@@ -20,7 +20,7 @@ def auto_sync_ai_adapters(manager) -> None:
             try:
                 with socket.create_connection((host, port), timeout=0.15):
                     return True
-            except:
+            except Exception:
                 return False
 
         lmstudio_active = check_port("127.0.0.1", 1234)

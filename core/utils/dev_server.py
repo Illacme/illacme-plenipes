@@ -51,7 +51,7 @@ class DevServer:
         if not os.path.exists(self.directory):
             try:
                 os.makedirs(self.directory, exist_ok=True)
-            except:
+            except OSError:
                 return False
 
         # 🚀 [V80.0] 静态预览服务器端口自愈探测
@@ -112,7 +112,7 @@ class DevServer:
         except Exception as e:
             try:
                 tlog.error(f"🚨 [DevServer] 启动失败: {e}")
-            except:
+            except Exception:
                 pass
             self.httpd = None
             self.thread = None

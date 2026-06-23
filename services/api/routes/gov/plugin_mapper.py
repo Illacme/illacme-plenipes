@@ -15,7 +15,7 @@ def _load_schema(theme_root: str, entry: str) -> dict:
         try:
             with open(path, 'r', encoding='utf-8') as sf:
                 return json.load(sf)
-        except:
+        except Exception:
             pass
     return {}
 

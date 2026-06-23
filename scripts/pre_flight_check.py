@@ -19,7 +19,7 @@ def get_dirty_hash():
         hasher.update(diff)
         hasher.update(untracked)
         return hasher.hexdigest()
-    except:
+    except Exception:
         return None
 
 def check_workspace_purity(resume_mode=False):

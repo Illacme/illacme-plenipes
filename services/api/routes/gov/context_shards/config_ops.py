@@ -38,7 +38,7 @@ def get_full_config_impl(level: str = "merged", imprint_id: Optional[str] = None
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f) or {}
-        except:
+        except Exception:
             data = {"error": f"Failed to parse {path}"}
     else:
         data = {"error": f"File {path} not found"}

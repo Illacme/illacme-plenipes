@@ -59,7 +59,7 @@ class SQLiteBackend(SQLiteReviewMixin):
                         drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive)
                         if drive_type in (2, 4):  # 2: DRIVE_REMOVABLE, 4: DRIVE_REMOTE
                             is_mounted = True
-                    except:
+                    except Exception:
                         pass
 
                 if is_mounted:

@@ -32,7 +32,7 @@ def get_changed_files():
             if mode in ['M', 'A', '??']:
                 files.append(path)
         return files
-    except:
+    except Exception:
         return []
 
 def audit_file_redlines(files):

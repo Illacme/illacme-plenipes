@@ -30,7 +30,7 @@ class ComponentMonitor:
             # create_connection 会自动尝试所有解析出的地址 (127.0.0.1, ::1)
             with socket.create_connection((host, port), timeout=0.3):
                 return True
-        except:
+        except OSError:
             return False
 
     @staticmethod

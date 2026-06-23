@@ -55,7 +55,7 @@ class AITaskMixin:
             payload["params"]["max_tokens"] = 512
             raw_slug = self.ask_ai_with_retry(payload)
             return AILogicHub.clean_slug(raw_slug), True
-        except:
+        except Exception:
             return AILogicHub.clean_slug(title), False
 
     def translate_title(self, title: str, target_lang: str, is_dry_run: bool = False, style: str = None, **kwargs) -> str:
@@ -92,5 +92,5 @@ class AITaskMixin:
             payload = PayloadManager.prepare_payload(self, system_prompt, user_content, is_json=False, is_translation=True)
             res = self.ask_ai_with_retry(payload)
             return res or text
-        except:
+        except Exception:
             return text

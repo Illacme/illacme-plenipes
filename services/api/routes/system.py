@@ -231,7 +231,7 @@ async def stop_wizard() -> Dict[str, str]:
         req = urllib.request.Request("http://127.0.0.1:43211/api/shutdown", method="POST")
         with urllib.request.urlopen(req, timeout=2.0): pass
         return {"status": "stopped"}
-    except:
+    except Exception:
         return {"status": "stopped", "note": "Service may already be down"}
 
 @router.post("/api/system/sync/precheck", dependencies=[Depends(verify_token)])
