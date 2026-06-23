@@ -92,6 +92,8 @@ class SitemapGenerator:
         target_base = self.engine.paths.get('target_base')
         if target_base:
             sitemap_path = os.path.join(target_base, "sitemap.xml")
+            # 🚀 [V10.6] 健壮性：确保目标输出目录存在，防止物理缺失引发 Errno 2
+            os.makedirs(os.path.dirname(sitemap_path), exist_ok=True)
             tree = ET.ElementTree(root)
             ET.indent(tree, space="  ", level=0)
             tree.write(sitemap_path, encoding='utf-8', xml_declaration=True)
