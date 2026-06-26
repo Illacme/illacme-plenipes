@@ -62,6 +62,15 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
     
     tlog.info(f"📥 [配置更新请求] Payload: {req}, Imprint: {imprint_id}, MigrateCache: {migrate_cache}")
 
+    # 🛡️ [Sync Lock] 全域同步状态互斥检测拦截
+    if getattr(engine, "is_syncing", False):
+        if "active_theme" in req or "vault_root" in req:
+            tlog.warning("🛑 [主权拦截] 品牌当前正在进行全域同步，已拦截主题/目录切换以防止账本损坏！")
+            return {
+                "status": "error",
+                "error": "🛑 品牌当前正处于【全域同步】状态，为了防止数据账本损坏和输出路径污染，已拦截重构配置与主题切换操作。请等待当前同步任务完成后再试。"
+            }
+
     # 🚀 [V74.97] Phase 1: 检测出版模式切换并尝试进行自愈激活 (优先于后续的校验与降级转换)
     from core.config.models.governance import PublishingMode, SeoStrategy, validate_mode_strategy, get_default_strategy
     requested_mode_val = req.get("governance.publishing_mode")

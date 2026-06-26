@@ -189,6 +189,11 @@ window.switchPublishingMode = async (mode) => {
         window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
         
+        // 🚀 刷新左侧治理边栏感知状态，隐藏/显示 Intelligence 模块
+        if (typeof window.refreshGovernanceContext === 'function') {
+            window.refreshGovernanceContext();
+        }
+
         // 🚀 交互自愈：切换模式后自动平滑滚动置顶，确保列表首个可见
         const container = document.querySelector('.view-panel.active .tab-content-area');
         if (container) {
@@ -196,6 +201,17 @@ window.switchPublishingMode = async (mode) => {
         }
         
         if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${mode.toUpperCase()}]，启用 [${defaultStrategy}] 策略`, "success");
+        if (window.Swal) {
+            window.Swal.fire({
+                title: '💡 出版模式切换提示',
+                text: '出版模式已成功切换。为了让本地译文缓存和文件完全对正，强烈建议您在下一次同步时勾选“强制重构/清除缓存”选项重新发布。',
+                icon: 'info',
+                background: 'rgba(20, 20, 25, 0.95)',
+                color: '#fff',
+                confirmButtonColor: 'var(--accent-primary)',
+                confirmButtonText: '确定'
+            });
+        }
     }
 };
 
@@ -231,6 +247,11 @@ window.switchSeoStrategy = async (mode, strategy) => {
         window.settingsData = { ...window.settingsData, ...res.active_config };
         if (typeof renderSettingsCategory === 'function') renderSettingsCategory('modes');
         
+        // 🚀 刷新左侧治理边栏感知状态，隐藏/显示 Intelligence 模块
+        if (typeof window.refreshGovernanceContext === 'function') {
+            window.refreshGovernanceContext();
+        }
+
         // 🚀 交互自愈：切换策略后自动平滑滚动置顶
         const container = document.querySelector('.view-panel.active .tab-content-area');
         if (container) {

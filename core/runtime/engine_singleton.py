@@ -50,11 +50,12 @@ def set_global_observer(observer):
         except: pass
     _GLOBAL_OBSERVER = observer
 
-def acquire_singleton_lock(port=43210):
+def acquire_singleton_lock(port=43210, is_service=True):
     """
     进程级单例防线 (OS-Level Singleton Mutex)
     基于配置文件动态分配防撞端口。
     🚀 [V50.5] 增强：增加 5 秒宽容期，支持主权接力时的平滑过渡。
+    当为 CLI 瞬时操作时，端口冲突仅发出并发警告，不强制退出。
     """
     global _SINGLETON_SOCKET
     
@@ -73,10 +74,16 @@ def acquire_singleton_lock(port=43210):
             if attempts < max_attempts:
                 time.sleep(1)
             else:
-                tlog.error(f"\n🛑 [运行冲突] 启动失败：端口 {port} 已被占用，检测到系统已经在后台运行！")
-                tlog.error("   └── 💡 为了保护您的文章数据和电脑内存，本次重复启动已自动拦截。")
-                tlog.error("   └── 请检查是否开了多个终端窗口，或者在 config.yaml 中修改 singleton_port。")
-                sys.exit(1)
+                if is_service:
+                    tlog.error(f"\n🛑 [运行冲突] 启动失败：端口 {port} 已被占用，检测到系统已经在后台运行！")
+                    tlog.error("   └── 💡 为了保护您的文章数据和电脑内存，本次重复启动已自动拦截。")
+                    tlog.error("   └── 请检查是否开了多个终端窗口，或者在 config.yaml 中修改 singleton_port。")
+                    sys.exit(1)
+                else:
+                    tlog.warning(f"\n⚠️ [并发警示] 检测到端口 {port} 已被常驻服务或其他进程占用，但本次为瞬时 CLI 命令，系统已自动降级放行并启动 SQLite 共享并发锁。")
+                    tlog.warning("   └── 💡 此时多个进程可能同时在运行同步或查询任务，这通常是安全的，但请避免对同一篇文章发起冲突的操作。")
+                    _SINGLETON_SOCKET = None
+                    return
 
 def send_notification(title, message):
     """

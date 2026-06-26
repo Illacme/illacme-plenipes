@@ -6,7 +6,6 @@ tests/test_standard_steps.py
 确保 ReadAndNormalizeStep, ASTAndPurifyStep 等门面定义完整，均继承自 PipelineStep，且插件元数据可达。
 """
 
-import pytest
 from core.editorial.runner import PipelineStep
 from core.editorial.standard_steps import (
     ReadAndNormalizeStep,

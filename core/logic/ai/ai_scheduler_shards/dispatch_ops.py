@@ -241,9 +241,15 @@ class AISchedulerDispatchOps:
                     if cached_content:
                         tlog.debug(f"✨ [块级缓存命中] {rel_path} | Block {idx} | {block.fingerprint[:8]} | Style: {style_hash[:8]}")
                         translated_blocks[idx] = cached_content
-                        bus.emit("BLOCK_CACHE_HIT", tokens=TokenCounter.count(block.content), node_name=engine.translator.node_name, provider_config=engine.translator.config)
+                        t_node_name = engine.translator.node_name if getattr(engine, 'translator', None) else "Offline"
+                        t_provider_config = engine.translator.config if getattr(engine, 'translator', None) else None
+                        bus.emit("BLOCK_CACHE_HIT", tokens=TokenCounter.count(block.content), node_name=t_node_name, provider_config=t_provider_config)
                     else:
-                        tasks.append((idx, block, rule))
+                        if getattr(engine, 'no_ai', False):
+                            # 🚀 [V105.0] NO-AI 离线降级模式：直接将原文作为译文填充，跳过 AI 请求
+                            translated_blocks[idx] = block.content
+                        else:
+                            tasks.append((idx, block, rule))
                 from core.logic.ai.ai_scheduler import AIScheduler
                 active_translator = AIScheduler.get_best_translator(engine)
 
@@ -257,6 +263,10 @@ class AISchedulerDispatchOps:
                         glossary = gov_cfg.glossary.get(code) or gov_cfg.glossary.get("en") or {}
 
                     for idx, block, rule in tasks:
+                        if getattr(engine, 'abort_sync', False):
+                            tlog.warning(f"🛑 [Abort] 检测到中止信号，跳过后续 Block 翻译 ({code})")
+                            target_health = False
+                            break
                         from core.logic.ai.ai_logic_hub import AILogicHub
                         
                         # 获取该 block 对应的覆盖样式与覆盖提示词
@@ -445,21 +455,30 @@ class AISchedulerDispatchOps:
                     if t_seo_data.get("keywords"):
                         target_fm["keywords"] = t_seo_data["keywords"]
 
-                if not is_dry_run:
+                if not is_dry_run and not getattr(engine, 'no_ai', False):
                     source_title = target_fm.get('title', ctx.title)
-                    tlog.info(f"✍️ [Title Polish] 正在为 {name} 版本润色标题...")
-                    translated_title = engine.circuit_breakers["ai"].call(
-                        active_translator.translate_title,
-                        source_title, code, is_dry_run, style=style
-                    )
-                    target_fm['title'] = translated_title
+                    # 🚀 [V80.0] 性能优化：如果全局预生成的 SEO 译文中已经包含了 SEO Title 或者是 og_title，直接使用该结果，跳过大模型标题润色串行调用
+                    if t_seo_data and t_seo_data.get("og_title"):
+                        target_fm['title'] = t_seo_data["og_title"]
+                        tlog.info(f"✨ [Title Polish] 命中缓存 SEO 标题，跳过大模型润色 ({code})")
+                    else:
+                        tlog.info(f"✍️ [Title Polish] 正在为 {name} 版本润色标题...")
+                        translated_title = engine.circuit_breakers["ai"].call(
+                            active_translator.translate_title,
+                            source_title, code, is_dry_run, style=style
+                        )
+                        target_fm['title'] = translated_title
                     
                     if 'tags' in target_fm:
-                        tlog.info(f"🏷️ [Meta Polish] 正在为 {name} 版本翻译 Tags...")
-                        target_fm['tags'] = engine.circuit_breakers["ai"].call(
-                            active_translator.translate_metadata,
-                            target_fm['tags'], 'tags', code, is_dry_run, style=style
-                        )
+                        # 🚀 [V80.0] 性能优化：若有预生成 SEO 缓存，说明此篇已在缓存层闭环，不再高频翻译 Tags
+                        if t_seo_data:
+                            tlog.info(f"✨ [Meta Polish] 命中缓存，跳过 Tags 大模型翻译 ({code})")
+                        else:
+                            tlog.info(f"🏷️ [Meta Polish] 正在为 {name} 版本翻译 Tags...")
+                            target_fm['tags'] = engine.circuit_breakers["ai"].call(
+                                active_translator.translate_metadata,
+                                target_fm['tags'], 'tags', code, is_dry_run, style=style
+                            )
 
                     # 🚀 [V10.5] 翻译兜底：若 Frontmatter 仍为源语种的 description，调用翻译网关
                     if 'description' in target_fm and target_fm['description'] == ctx.base_fm.get('description'):
@@ -485,16 +504,20 @@ class AISchedulerDispatchOps:
                             target_fm['keywords'] = translated_kws
                         else:
                             target_fm['keywords'] = engine.circuit_breakers["ai"].call(
-                                active_translator.translate_metadata,
-                                kws, 'keywords', code, is_dry_run, style=style
-                            )
+                                    active_translator.translate_metadata,
+                                    kws, 'keywords', code, is_dry_run, style=style
+                                )
                     
                     if 'category' in target_fm:
-                        tlog.info(f"📁 [Meta Polish] 正在为 {name} 版本翻译 Category...")
-                        target_fm['category'] = engine.circuit_breakers["ai"].call(
-                            active_translator.translate_metadata,
-                            target_fm['category'], 'category', code, is_dry_run, style=style
-                        )
+                        # 🚀 [V80.0] 性能优化：若有预生成 SEO 缓存，说明此篇已在缓存层闭环，不再高频翻译 Category
+                        if t_seo_data:
+                            tlog.info(f"✨ [Meta Polish] 命中缓存，跳过 Category 大模型翻译 ({code})")
+                        else:
+                            tlog.info(f"📁 [Meta Polish] 正在为 {name} 版本翻译 Category...")
+                            target_fm['category'] = engine.circuit_breakers["ai"].call(
+                                active_translator.translate_metadata,
+                                target_fm['category'], 'category', code, is_dry_run, style=style
+                            )
 
                 return (code, final_body, target_fm, t_seo_data, target_health)
             except Exception as e:
@@ -514,11 +537,19 @@ class AISchedulerDispatchOps:
             futures = [concurrent.futures.Future() for _ in targets]
             def serial_executor_task(targets_list, futures_list):
                 for t_item, f_item in zip(targets_list, futures_list):
+                    if getattr(engine, 'abort_sync', False):
+                        f_item.cancel()
+                        continue
                     try:
                         res = process_target(t_item)
-                        f_item.set_result(res)
+                        if not f_item.cancelled():
+                            f_item.set_result(res)
                     except Exception as exc:
-                        f_item.set_exception(exc)
+                        try:
+                            if not f_item.cancelled():
+                                f_item.set_exception(exc)
+                        except Exception:
+                            pass
             ai_executor.submit(serial_executor_task, targets, futures, priority=priority, task_name=f"Trans-Serial-{rel_path}")
         else:
             # 🚀 [V100.3] 委托隔离算力池

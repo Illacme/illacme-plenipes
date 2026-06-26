@@ -39,7 +39,8 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
         </select>`;
     } else if (type === 'checkbox') {
         const onchange = options.onchange || `updateConfigField('${path}', this.checked)`;
-        inputHtml = `<label class="p-switch"><input type="checkbox" id="${id}" data-path="${path}" ${safeValue ? 'checked' : ''} onchange="${onchange}"><span class="p-slider"></span></label>`;
+        const disabledAttr = options.disabled ? 'disabled' : '';
+        inputHtml = `<label class="p-switch"><input type="checkbox" id="${id}" data-path="${path}" ${safeValue ? 'checked' : ''} onchange="${onchange}" ${disabledAttr}><span class="p-slider"></span></label>`;
     } else if (type === 'password') {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
         inputHtml = `<input type="password" id="${id}" data-path="${path}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}">`;

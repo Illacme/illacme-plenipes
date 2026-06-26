@@ -35,6 +35,11 @@ class SovereignSSGAdapter(BaseSSGAdapter):
             'graph_json_dir': "public"
         }
     
+    @classmethod
+    def get_build_command(cls) -> str:
+        """🚀 [V78.0] Sovereign 零依赖直出，无需 npm 构建，使用 echo 绕过"""
+        return 'echo "Sovereign build completed"'
+    
     def __init__(self, theme_settings: Any = None, engine=None):
         super().__init__(theme_settings, engine=engine)
         theme_name = getattr(theme_settings, 'name', 'default')

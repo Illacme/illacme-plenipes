@@ -116,10 +116,20 @@ window.refreshGovernanceContext = async () => {
         const displayTheme = document.getElementById('display-theme');
         if (displayTheme) displayTheme.innerText = (data.theme || 'NONE').toUpperCase();
 
+        const pubMode = data.publishing_mode || (window.settingsData && window.settingsData.governance && window.settingsData.governance.publishing_mode) || 'basic';
+
         const aiEl = document.getElementById('ctx-ai');
         const i18nEl = document.getElementById('ctx-i18n');
         const dialectEl = document.getElementById('ctx-dialect');
 
+        const intelPod = document.querySelector('.intelligence-pod');
+        if (intelPod) {
+            if (pubMode === 'basic' || pubMode === 'enhanced') {
+                intelPod.style.display = 'none';
+            } else {
+                intelPod.style.display = '';
+            }
+        }
 
         if (dialectEl && data.vault) {
             dialectEl.innerText = data.vault.dialect || '-';
@@ -127,95 +137,127 @@ window.refreshGovernanceContext = async () => {
 
         if (aiEl && data.ai) {
             const isDegraded = data.ai.status === 'degraded';
-            const isDisabled = data.ai.status === 'disabled';
+            const isDisabled = data.ai.status === 'disabled' || pubMode === 'basic';
 
-            if (isDisabled) {
-                aiEl.innerText = '已禁用 (Disabled)';
+            if (pubMode === 'basic') {
+                aiEl.innerText = '已禁用 (基础模式无 AI)';
                 aiEl.style.color = 'var(--text-dim)';
                 aiEl.style.textDecoration = 'line-through';
                 aiEl.style.opacity = '0.6';
                 aiEl.style.fontWeight = '';
-            } else {
-                aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
+            } else if (pubMode === 'enhanced') {
+                aiEl.innerText = `${data.ai.provider} / ${data.ai.model} (仅翻译 SEO)`;
+                aiEl.style.color = 'var(--accent-secondary)';
                 aiEl.style.textDecoration = '';
                 aiEl.style.opacity = '';
-                if (isDegraded) {
-                    aiEl.style.color = 'var(--accent-secondary)';
-                    aiEl.style.fontWeight = 'bold';
-
-                    // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
-                    if (window.currentView !== 'settings' && !window._ai_warning_shown) {
-                        window._ai_warning_shown = true;
-                        Swal.fire({
-                            title: '🛰️ 算力节点对正失败',
-                            text: data.ai.warning,
-                            icon: 'warning',
-                            background: 'rgba(20, 20, 25, 0.95)',
-                            color: '#fff',
-                            confirmButtonText: '前往算力策略',
-                            confirmButtonColor: 'var(--accent-primary)',
-                            showCancelButton: true,
-                            cancelButtonText: '暂时忽略'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.showView('compute', 'strategy');
-                            }
-                        });
-                    }
-                } else {
-                    aiEl.style.color = '';
+                aiEl.style.fontWeight = 'bold';
+            } else {
+                if (isDisabled) {
+                    aiEl.innerText = '已禁用 (Disabled)';
+                    aiEl.style.color = 'var(--text-dim)';
+                    aiEl.style.textDecoration = 'line-through';
+                    aiEl.style.opacity = '0.6';
                     aiEl.style.fontWeight = '';
+                } else {
+                    aiEl.innerText = `${data.ai.provider} / ${data.ai.model}${isDegraded ? ' (⚠️ 容灾中)' : ''}`;
+                    aiEl.style.textDecoration = '';
+                    aiEl.style.opacity = '';
+                    if (isDegraded) {
+                        aiEl.style.color = 'var(--accent-secondary)';
+                        aiEl.style.fontWeight = 'bold';
+
+                        // 🚀 [V74.8] 友好的物理告警：仅在非设置页面且第一次感应时提示
+                        if (window.currentView !== 'settings' && !window._ai_warning_shown) {
+                            window._ai_warning_shown = true;
+                            Swal.fire({
+                                title: '🛰️ 算力节点对正失败',
+                                text: data.ai.warning,
+                                icon: 'warning',
+                                background: 'rgba(20, 20, 25, 0.95)',
+                                color: '#fff',
+                                confirmButtonText: '前往算力策略',
+                                confirmButtonColor: 'var(--accent-primary)',
+                                showCancelButton: true,
+                                cancelButtonText: '暂时忽略'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.showView('compute', 'strategy');
+                                }
+                            });
+                        }
+                    } else {
+                        aiEl.style.color = '';
+                        aiEl.style.fontWeight = '';
+                    }
                 }
             }
 
             // 📡 算力控制塔主备与容灾拓扑对正 (V75.12)
             const aiCapsule = aiEl.closest('.context-capsule');
             if (aiCapsule) {
-                if (isDisabled) {
-                    aiCapsule.title = `算力控制塔 ───\n[状态] ❌ AI 算力已关闭\n[模式] 纯本地物理出版\n\n点击前往算力中心查看详情`;
-                } else if (data.ai.strategy) {
-                    const strategy = data.ai.strategy;
-                    const pri = data.ai.primary;
-                    const fal = data.ai.fallback;
-                    const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
+                if (pubMode === 'basic') {
+                    aiCapsule.title = `算力控制塔 ───\n[状态] ❌ 基础模式不启用 AI 算力\n[模式] 纯本地物理出版\n\n点击前往算力中心查看详情`;
+                } else if (pubMode === 'enhanced') {
+                    aiCapsule.title = `算力控制塔 ───\n[状态] 📝 仅翻译 SEO 字段\n[主力] ${data.ai.provider} / ${data.ai.model}\n\n点击前往算力中心查看详情`;
+                } else {
+                    if (isDisabled) {
+                        aiCapsule.title = `算力控制塔 ───\n[状态] ❌ AI 算力已关闭\n[模式] 纯本地物理出版\n\n点击前往算力中心查看详情`;
+                    } else if (data.ai.strategy) {
+                        const strategy = data.ai.strategy;
+                        const pri = data.ai.primary;
+                        const fal = data.ai.fallback;
+                        const activeLabel = isDegraded ? '⚠️ MOCK/DEGRADED' : '🟢 ACTIVE';
 
-                    aiCapsule.title = `算力控制塔 ───\n` +
-                        `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
-                        `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ 🟡 STANDBY\n` +
-                        `[策略] ${strategy} (自动故障切换)\n\n` +
-                        `点击一键直达算力中心 - 调度策略`;
+                        aiCapsule.title = `算力控制塔 ───\n` +
+                            `[主力] ${pri.provider} (${pri.node} / ${pri.model}) ➔ ${activeLabel}\n` +
+                            `[备用] ${fal.provider} (${fal.node} / ${fal.model}) ➔ 🟡 STANDBY\n` +
+                            `[策略] ${strategy} (自动故障切换)\n\n` +
+                            `点击一键直达算力中心 - 调度策略`;
+                    }
                 }
             }
         }
         if (i18nEl && data.i18n) {
-            const isEnabled = data.i18n.enabled !== false;
-            if (isEnabled) {
-                const getLangLabel = (codeOrName) => {
-                    if (!codeOrName) return 'NONE';
-                    const cleanVal = codeOrName.trim().toLowerCase();
-                    const availableLangs = window.availableLangs || [];
-                    
-                    let langObj = availableLangs.find(l => (l.name || '').toLowerCase() === cleanVal);
-                    if (!langObj) {
-                        langObj = availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal) ||
-                                  availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal.split('-')[0]);
-                    }
-                    if (cleanVal === 'auto detect' || cleanVal === 'auto') {
-                        return '🔍\u2009AUTO';
-                    }
-                    return langObj ? `${langObj.icon}\u2009${codeOrName}` : codeOrName;
-                };
-                const targets = data.i18n.targets || [];
-                const targetsStr = targets.length > 0 ? targets.map(t => getLangLabel(t)).join(', ') : 'NONE';
-                i18nEl.innerText = `${getLangLabel(data.i18n.source)} ➔ ${targetsStr}`;
-                i18nEl.style.color = '';
-                i18nEl.style.textDecoration = '';
-                i18nEl.style.opacity = '';
-            } else {
-                i18nEl.innerText = '已禁用 (Disabled)';
+            const isEnabled = data.i18n.enabled !== false && pubMode === 'global';
+            if (pubMode === 'basic') {
+                i18nEl.innerText = '物理透传 (基础模式)';
                 i18nEl.style.color = 'var(--text-dim)';
                 i18nEl.style.textDecoration = 'line-through';
                 i18nEl.style.opacity = '0.6';
+            } else if (pubMode === 'enhanced') {
+                i18nEl.innerText = '仅 SEO 翻译 (正文透传)';
+                i18nEl.style.color = 'var(--text-dim)';
+                i18nEl.style.textDecoration = '';
+                i18nEl.style.opacity = '0.7';
+            } else {
+                if (isEnabled) {
+                    const getLangLabel = (codeOrName) => {
+                        if (!codeOrName) return 'NONE';
+                        const cleanVal = codeOrName.trim().toLowerCase();
+                        const availableLangs = window.availableLangs || [];
+                        
+                        let langObj = availableLangs.find(l => (l.name || '').toLowerCase() === cleanVal);
+                        if (!langObj) {
+                            langObj = availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal) ||
+                                      availableLangs.find(l => (l.code || '').toLowerCase() === cleanVal.split('-')[0]);
+                        }
+                        if (cleanVal === 'auto detect' || cleanVal === 'auto') {
+                            return '🔍\u2009AUTO';
+                        }
+                        return langObj ? `${langObj.icon}\u2009${codeOrName}` : codeOrName;
+                    };
+                    const targets = data.i18n.targets || [];
+                    const targetsStr = targets.length > 0 ? targets.map(t => getLangLabel(t)).join(', ') : 'NONE';
+                    i18nEl.innerText = `${getLangLabel(data.i18n.source)} ➔ ${targetsStr}`;
+                    i18nEl.style.color = '';
+                    i18nEl.style.textDecoration = '';
+                    i18nEl.style.opacity = '';
+                } else {
+                    i18nEl.innerText = '已禁用 (Disabled)';
+                    i18nEl.style.color = 'var(--text-dim)';
+                    i18nEl.style.textDecoration = 'line-through';
+                    i18nEl.style.opacity = '0.6';
+                }
             }
         }
 

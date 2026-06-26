@@ -113,7 +113,7 @@ export default defineConfig({
 			defaultLocale: 'root',
 			// 🚀 多语言基座声明：告诉 Starlight 顶层文件夹的真实含义
 			// 如果中文内容在 /zh-cn/ 目录下则需要将 root 修改为 'zh-cn'
-			locales: {
+			locales: (themeOptions.i18n && themeOptions.i18n.locales && themeOptions.i18n.locales.length > 1) ? {
 				root: {
 					label: '简体中文',
 					lang: 'zh-CN',
@@ -122,6 +122,11 @@ export default defineConfig({
 					label: 'English',
 					lang: 'en',
 				},
+			} : {
+				root: {
+					label: '简体中文',
+					lang: 'zh-CN',
+				}
 			},
 			// 顶部导航
 			head: [

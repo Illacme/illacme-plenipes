@@ -9,7 +9,6 @@ tests/test_sitemap_engine.py
 import os
 import tempfile
 import xml.etree.ElementTree as ET
-import pytest
 from unittest.mock import MagicMock
 
 from core.logic.sitemap_engine import SitemapGenerator

@@ -251,8 +251,13 @@ class BinderyDispatcher:
 
         if mode == "source":
             cache_mirror = self.route_manager.resolve_physical_path(self.paths.get('cache'), lang, prefix, sub, slug, target_ext, source_type=source_type)
+            # 计算主题专属的源文件缓存路径镜像
+            theme_name = getattr(self.ssg_adapter.engine, 'active_theme', 'default') or 'default'
+            theme_cache_dir = self.ssg_adapter.engine.config.get_theme_source_cache_dir(theme_name)
+            theme_source_mirror = self.route_manager.resolve_physical_path(theme_cache_dir, lang, prefix, sub, slug, target_ext, source_type=source_type)
         else:
             cache_mirror = None
+            theme_source_mirror = None
 
         is_markup_content = self.ssg_adapter.supports_frontmatter(target_ext)
         if not is_markup_content and mode == 'static':
@@ -269,6 +274,13 @@ class BinderyDispatcher:
                     os.makedirs(os.path.dirname(cache_mirror), exist_ok=True)
                     with open(tmp_cache, 'w', encoding='utf-8') as f: f.write(full_content)
                     os.replace(tmp_cache, cache_mirror)
+
+                # 写入主题专属源文件缓存 (原子化)
+                if theme_source_mirror:
+                    tmp_theme_cache = theme_source_mirror + ".tmp"
+                    os.makedirs(os.path.dirname(theme_source_mirror), exist_ok=True)
+                    with open(tmp_theme_cache, 'w', encoding='utf-8') as f: f.write(full_content)
+                    os.replace(tmp_theme_cache, theme_source_mirror)
 
                 # 写入目标路径 (原子化)
                 os.makedirs(os.path.dirname(dest), exist_ok=True)

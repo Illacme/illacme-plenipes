@@ -231,6 +231,12 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             "progress": progress_data
         }
 
+    # 4. 获取出版模式并下发
+    from core.config.models.governance import PublishingMode
+    gov = getattr(engine.config, 'governance', None)
+    publishing_mode = getattr(gov, 'publishing_mode', PublishingMode.BASIC) if gov else PublishingMode.BASIC
+    mode_str = publishing_mode.value if hasattr(publishing_mode, 'value') else str(publishing_mode)
+
     return {
         "doc_id": doc_id,
         "doc_title": doc_info.get("title", ""),
@@ -238,6 +244,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
         "source_desc": source_desc,
         "source_hash": doc_info.get("source_hash", ""),
         "source_paragraphs": source_paras,
+        "publishing_mode": mode_str,
         "langs": langs
     }
 

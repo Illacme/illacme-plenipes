@@ -24,6 +24,18 @@ def perform_sync(engine, args, task_queue, current_source_files):
         tlog.warning("⚠️ 没有找到任何内容笔记！💡 请检查【品牌设置】中的目录映射配置是否正确。")
         return
 
+    # 🛡️ 锁定同步状态，重置中止标志
+    engine.is_syncing = True
+    engine.abort_sync = False
+
+    try:
+        _perform_sync_internal(engine, args, task_queue, current_source_files)
+    finally:
+        engine.is_syncing = False
+        engine.abort_sync = False
+
+
+def _perform_sync_internal(engine, args, task_queue, current_source_files):
     # 🚀 广播启动通知
     send_sync_lifecycle_notification(engine, "START", "开始全量发布任务", f"同步队列中包含 {len(task_queue)} 篇文档。")
 
@@ -31,19 +43,17 @@ def perform_sync(engine, args, task_queue, current_source_files):
     i18n = engine.config.i18n_settings
     if i18n and i18n.enabled and i18n.targets:
         if engine.no_ai:
-            tlog.error("🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
-            bus.emit("UI_TERMINAL_DATA", type="LOG", data="🛑 [发布拦截] 翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
-            send_sync_lifecycle_notification(engine, "FAIL", "发布物理熔断", "翻译矩阵已开启，但系统当前处于 NO-AI 模式，发布已物理熔断！")
-            raise RuntimeError("翻译矩阵已开启，但系统处于 NO-AI 模式，发布已强力拦截。")
-        
-        from core.governance.checks.ai import AIChecker
-        ai_report = AIChecker.check(engine)
-        if ai_report.get("status") == "FAIL":
-            err_msg = "、".join(ai_report.get("details", []))
-            tlog.error(f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
-            bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力不可用，发布已物理熔断！故障详情: {err_msg}")
-            send_sync_lifecycle_notification(engine, "FAIL", "发布物理熔断", f"翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
-            raise RuntimeError(f"翻译矩阵已开启，但 AI 算力不可用。诊断详情: {err_msg}")
+            tlog.warning("⚠️ [离线运行] 翻译矩阵已开启，且系统当前处于 NO-AI 模式，将以离线降级模式直出物理文件（未翻译块复用原文）。")
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data="⚠️ [离线运行] 翻译矩阵已开启，且系统当前处于 NO-AI 模式，将以离线降级模式直出物理文件（未翻译块复用原文）。")
+        else:
+            from core.governance.checks.ai import AIChecker
+            ai_report = AIChecker.check(engine)
+            if ai_report.get("status") == "FAIL":
+                err_msg = "、".join(ai_report.get("details", []))
+                tlog.error(f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
+                bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🛑 [发布拦截] 翻译矩阵已开启，但 AI 算力不可用，发布已物理熔断！故障详情: {err_msg}")
+                send_sync_lifecycle_notification(engine, "FAIL", "发布物理熔断", f"翻译矩阵已开启，但 AI 算力网关诊断失败: {err_msg}")
+                raise RuntimeError(f"翻译矩阵已开启，但 AI 算力不可用。诊断详情: {err_msg}")
 
     start_perf = time.perf_counter()
 
@@ -93,6 +103,14 @@ def perform_sync(engine, args, task_queue, current_source_files):
 
     # 5. 阻塞收割与结果统计
     for future in as_completed(future_to_task):
+        # 🛡️ [Abort] 协同中止检测
+        if getattr(engine, "abort_sync", False):
+            tlog.warning("🛑 [同步中止] 感应到用户手动中止指令，正在紧急取消后续任务...")
+            for f in future_to_task:
+                if not f.done():
+                    f.cancel()
+            break
+
         task_path = future_to_task[future]
         try:
             status = future.result()
@@ -172,12 +190,18 @@ def perform_sync(engine, args, task_queue, current_source_files):
     all_docs_snapshot = engine.meta.get_documents_snapshot()
     from core.services.post_sync import LifecycleManager
     LifecycleManager.execute_all(engine, stats, all_docs_snapshot, args)
+    
+    # 🚀 [V1.2] 触发主题的 post_sync 生命周期钩子
+    engine.theme_hooks.trigger("post_sync")
 
     if not args.dry_run:
         engine.meta.save()
         engine.meter.persist()
         bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot)
-        send_sync_lifecycle_notification(engine, "SUCCESS", "同步任务完成", f"已成功同步 {len(task_queue)} 篇文章，总耗时 {time_display}")
+        if getattr(engine, "abort_sync", False):
+            send_sync_lifecycle_notification(engine, "WARN", "同步任务已中止", f"用户手动中止了同步流程，总耗时 {time_display}")
+        else:
+            send_sync_lifecycle_notification(engine, "SUCCESS", "同步任务完成", f"已成功同步 {len(task_queue)} 篇文章，总耗时 {time_display}")
     else:
         tlog.info("🧪 [演练结束] Dry-run 模式下未执行物理变更。")
 

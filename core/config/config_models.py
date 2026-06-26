@@ -137,9 +137,21 @@ class Configuration(BaseModel):
         theme = self.active_theme or "default"
         return os.path.join(self.metadata_dir, "themes", theme)
 
+    def get_vault_cache_dir(self) -> str:
+        """🚀 获取原稿文库公共缓存根目录，若不可用则优雅降级为本地缓存路径"""
+        if self.vault_root and os.path.exists(self.vault_root):
+            return os.path.abspath(os.path.join(self.vault_root, ".plenipes", "cache"))
+        # 优雅降级到本地 imprints/borealis_realm/metadata/runtime/cache
+        return os.path.abspath(os.path.join(self.metadata_dir, "runtime", "cache"))
+
+    def get_theme_source_cache_dir(self, theme: str = None) -> str:
+        """🚀 获取当前主题在原稿文库公共缓存下的专属源文件缓存路径"""
+        theme = theme or self.active_theme or "default"
+        return os.path.join(self.get_vault_cache_dir(), "sources", theme)
+
     def get_ledger_path(self) -> str:
-        """🚀 [V55.26] 主权账本路径对正：强制执行主题子目录隔离"""
-        return os.path.join(self.get_theme_metadata_dir(), "ledger.db")
+        """🚀 [V55.26] 主权账本路径对正：使用原稿文库全局唯一账本，以跨主题共享元数据"""
+        return os.path.join(self.get_vault_cache_dir(), "ledger.db")
 
     def get_ai_metadata_dir(self) -> str:
         """🧠 获取 AI 算力与语义知识目录"""
@@ -226,7 +238,8 @@ class Configuration(BaseModel):
         
         if item.target_slot in slots:
             slot = slots[item.target_slot]
-            is_multi = self.i18n_settings.enabled
+            from core.config.models.governance import PublishingMode
+            is_multi = self.i18n_settings.enabled and self.governance.publishing_mode == PublishingMode.GLOBAL
             
             # 根据多语言状态选择模版
             path_tmpl = slot.get("multi" if is_multi else "single", "")

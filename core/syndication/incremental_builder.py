@@ -16,7 +16,8 @@ class IncrementalBuildManager:
         self.engine = engine
         self.theme_name = getattr(engine, 'active_theme', 'default') or 'default'
         self.theme_root = self._find_theme_root()
-        self.cache_dir = os.path.join(self.theme_root, ".plenipes", "build_cache")
+        vault_cache = engine.config.get_vault_cache_dir()
+        self.cache_dir = os.path.join(vault_cache, "build", self.theme_name)
         self.history_file = os.path.join(self.cache_dir, "build_history.json")
         self.full_output_dir = os.path.join(self.cache_dir, "full_output")
         self.adapter = engine.ssg_adapter.active_renderer

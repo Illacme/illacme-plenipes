@@ -8,7 +8,7 @@ tests/integration/test_rate_limit_breaker.py
 
 import time
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from core.adapters.ai.base import BaseTranslator
 from core.governance.circuit_breaker import CircuitBreaker, BreakerState, NodeCircuitBreaker

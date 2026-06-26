@@ -159,7 +159,6 @@ class TestAIFaultTolerance(unittest.TestCase):
         seo_mock_data = {
             "i18n_seo": {
                 "en": {
-                    "seo_title": "SEO [healthy_node]",
                     "description": "SEO [healthy_node]",
                     "keywords": []
                 }

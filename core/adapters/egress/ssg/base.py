@@ -197,17 +197,20 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
                 }
                 
                 if i18n_cfg.enabled and i18n_cfg.targets:
-                    for target in i18n_cfg.targets:
-                        target_logic = target.lang_code
-                        target_locale = self.get_language_code(target_logic)
-                        if not target_locale:
-                            target_locale = target_logic.lower()
-                        if target_locale not in locales:
-                            locales.append(target_locale)
-                            locale_configs[target_locale] = {
-                                "label": target.name or LanguageHub.resolve_to_name(target_locale),
-                                "direction": "ltr"
-                            }
+                    from core.config.models.governance import PublishingMode
+                    pub_mode = self.engine.config.governance.publishing_mode if hasattr(self.engine.config, 'governance') else None
+                    if pub_mode == PublishingMode.GLOBAL:
+                        for target in i18n_cfg.targets:
+                            target_logic = target.lang_code
+                            target_locale = self.get_language_code(target_logic)
+                            if not target_locale:
+                                target_locale = target_logic.lower()
+                            if target_locale not in locales:
+                                locales.append(target_locale)
+                                locale_configs[target_locale] = {
+                                    "label": target.name or LanguageHub.resolve_to_name(target_locale),
+                                    "direction": "ltr"
+                                }
                 
                 options["i18n"] = {
                     "defaultLocale": default_locale,

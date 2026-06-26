@@ -19,11 +19,11 @@ class LanguageHub:
     # 涵盖全球主要国家、地区及方言的自然语言映射
     ISO_KNOWLEDGE_BASE = {
         # --- 特殊标志 ---
-        "auto": "auto",
+        "auto": "zh",
 
         # --- 中文系 ---
-        "zh": "zh", "zh-cn": "zh", "简体中文": "zh", "chinese": "zh",
-        "zh-hans": "zh", "traditional chinese": "zh-Hant", "繁体中文": "zh-Hant",
+        "zh": "zh", "zh-cn": "zh-Hans", "简体中文": "zh-Hans", "chinese": "zh-Hans",
+        "zh-hans": "zh-Hans", "traditional chinese": "zh-Hant", "繁体中文": "zh-Hant",
         "zh-tw": "zh-Hant", "zh-hk": "zh-Hant", "zh-hant": "zh-Hant", "粤语": "zh", # 暂时归类
 
         # --- 英语系 ---
@@ -86,7 +86,7 @@ class LanguageHub:
 
         code = iso_code.lower().strip()
         # 模糊匹配
-        if code == "auto": return "Auto Detect"
+        if code == "auto": return "Chinese (Simplified)"
         if "zh-hans" in code or code == "zh-cn" or code == "zh": return "Chinese (Simplified)"
         if "zh-hant" in code or code == "zh-tw": return "Chinese (Traditional)"
         if "en" in code: return "English"
@@ -172,9 +172,22 @@ class LanguageHub:
         # 3. 简单统计学探测 (极快，无需 AI)
         zh_count = len(re.findall(r'[\u4e00-\u9fff]', clean_text))
         en_count = len(re.findall(r'[a-zA-Z]', clean_text))
+        ja_count = len(re.findall(r'[\u3040-\u309f\u30a0-\u30ff]', clean_text))
 
-        if zh_count > 10 and zh_count > en_count * 0.5: return "zh-Hans"
-        if en_count > 50 and en_count > zh_count * 5: return "en"
+        # 🚀 [V80.0] 增强本地字频启发式，防止短文本滑落大模型
+        if ja_count > 2:
+            return "ja"
+
+        if zh_count > 0:
+            if en_count == 0:
+                return "zh-Hans"
+            if zh_count > en_count * 0.3 or zh_count >= 5:
+                return "zh-Hans"
+
+        if en_count > 10 and zh_count == 0:
+            return "en"
+        if en_count > 50 and en_count > zh_count * 5:
+            return "en"
 
         # 4. [V10.0] AI 深度探测开关检查
         if ai_client:

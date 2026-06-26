@@ -7,7 +7,6 @@ tests/test_gov_auditor.py
 """
 
 import os
-import shutil
 import tempfile
 import pytest
 from unittest.mock import MagicMock

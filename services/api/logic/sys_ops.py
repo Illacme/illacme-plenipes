@@ -123,11 +123,17 @@ def rollback_config(engine: Any, theme_dir: str) -> List[str]:
             shutil.copy2(bak_path, target_path)
     return restored
 
-def run_precheck_logic(engine: Any) -> Dict[str, List[Any]]:
+def run_precheck_logic(engine: Any) -> Dict[str, Any]:
     """🚀 [V78.5] 毫秒级双段式预检逻辑：执行快速静态审计以供 UI 拦截"""
+    from core.config.models.governance import PublishingMode
+    gov = getattr(engine.config, 'governance', None)
+    publishing_mode = getattr(gov, 'publishing_mode', PublishingMode.BASIC) if gov else PublishingMode.BASIC
+    mode_str = publishing_mode.value if hasattr(publishing_mode, 'value') else str(publishing_mode)
+
     result = {
         "critical_errors": [],
-        "warnings": []
+        "warnings": [],
+        "publishing_mode": mode_str
     }
     
     if not engine:
@@ -153,7 +159,7 @@ def run_precheck_logic(engine: Any) -> Dict[str, List[Any]]:
             
             for doc in docs:
                 assets = doc.get("assets", [])
-                rel_path = doc.get("id", "Unknown")
+                rel_path = doc.get("rel_path") or doc.get("id") or "Unknown"
                 for asset in assets:
                     # 跳过外部链接
                     if str(asset).startswith(('http://', 'https://', '//')): continue
@@ -182,7 +188,9 @@ def run_precheck_logic(engine: Any) -> Dict[str, List[Any]]:
             scanned_files = 0
             found_missing_count = 0
             
-            for root, _, files in os.walk(vault_root):
+            for root, dirs, files in os.walk(vault_root):
+                # 剪枝：过滤隐藏目录和常见无关目录，防止将缓存文件判定为脏文件
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ["node_modules", "dist", "build", "themes", ".venv"]]
                 for f in files:
                     if f.endswith(('.md', '.mdx')):
                         file_path = os.path.join(root, f)

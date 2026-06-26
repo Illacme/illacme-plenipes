@@ -14,6 +14,7 @@ from core.utils.tracing import tlog
 
 class JanitorService:
     def __init__(self, global_lock=None, processing_locks=None, paths=None, meta_manager=None, route_manager=None, i18n_cfg=None, sys_cfg=None, active_theme='starlight', engine=None):
+        self.engine = engine
         if engine:
             self._global_engine_lock = getattr(engine, '_global_engine_lock', None)
             self._processing_locks = getattr(engine, '_processing_locks', None)

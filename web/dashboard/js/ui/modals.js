@@ -132,6 +132,8 @@ window.getUIModalsHTML = () => {
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: center; width: 100%; padding: 0.4rem 0 1rem 0; gap: 1rem;">
                     <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">完成</button>
+                    <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
+                    <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
                     <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
                 </div>
             </div>

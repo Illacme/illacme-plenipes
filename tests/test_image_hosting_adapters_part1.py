@@ -6,7 +6,6 @@
 """
 import os
 import sys
-import pytest
 import contextlib
 import tempfile
 from unittest.mock import MagicMock, patch

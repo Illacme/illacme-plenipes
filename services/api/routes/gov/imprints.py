@@ -83,6 +83,11 @@ async def switch_imprint(req: dict):
     from core.governance.imprint_manager import im
     from core.runtime.cli_bootstrap import deep_reload_imprint
     
+    # 🛡️ [Sync Lock] 检查当前是否在进行全域同步
+    engine = get_global_engine()
+    if engine and getattr(engine, "is_syncing", False):
+        return {"success": False, "error": "🛑 品牌当前正处于【全域同步】状态，为了防止数据账本损坏和输出路径污染，已拦截切换品牌操作。请等待当前同步任务完成后再试。"}
+
     imprint_id = req.get("imprint_id")
     if not imprint_id: return {"error": "Missing imprint_id"}
     

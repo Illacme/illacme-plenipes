@@ -23,7 +23,7 @@ async def list_vault_manuscripts():
     for rel_path, info in docs.items():
         if not info: continue
         status_map = info.get("publish_status") or {}
-        live_channels = [ch for ch, s in status_map.items() if s and s.get("status") == "success"]
+        live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
         seo_data = info.get("seo_data") or {}
         translations = info.get("translations") or {}
         zh_trans = translations.get("zh") or {}

@@ -56,6 +56,9 @@ class MockConfig:
         self.system = MockSystem()
         self.i18n_settings = None
 
+    def get_vault_cache_dir(self) -> str:
+        return ".plenipes/vault_cache"
+
 class MockEngine:
     def __init__(self, temp_dir, db_path):
         self.config = MockConfig()

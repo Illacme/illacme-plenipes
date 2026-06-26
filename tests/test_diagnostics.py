@@ -6,8 +6,6 @@ tests/test_diagnostics.py
 涵盖本地算力探测、金库路径推荐与 AI 连通性校验，测试核心模块与 ComponentMonitor。
 """
 
-import os
-import socket
 import pytest
 import importlib.util
 from unittest.mock import MagicMock, patch

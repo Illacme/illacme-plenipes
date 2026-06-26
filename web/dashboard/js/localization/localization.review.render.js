@@ -35,6 +35,24 @@ function _reviewRender() {
     }).join('');
     document.getElementById('review-drawer-title').textContent = `🔍 译文校对工作台 — ${data.doc_title || state.docId}`;
     document.getElementById('review-lang-tabs').innerHTML = tabsHtml;
+
+    // 🚀 [V79.2] 动态显示出版模式警告横幅
+    const mode = data.publishing_mode || 'basic';
+    const alertEl = document.getElementById('review-mode-alert');
+    if (alertEl) {
+        if (mode === 'basic') {
+            alertEl.style.display = 'block';
+            alertEl.className = 'review-alert-banner';
+            alertEl.innerHTML = `⚠️ <b>主权透传中 (基础模式)</b>：当前版图未开启 AI 全文翻译，下方展现的目标语种译文为<b>源语种（中文）物理透传内容</b>。如需启用大模型自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 将出版模式切换为 <b>全球模式 (Global)</b> 并重新同步。`;
+        } else if (mode === 'enhanced') {
+            alertEl.style.display = 'block';
+            alertEl.className = 'review-alert-banner alert-enhanced';
+            alertEl.innerHTML = `⚠️ <b>局部翻译中 (增强模式)</b>：当前处于增强模式，AI 仅用于文档的 SEO 元数据属性（Description/Keywords）润色，<b>文档正文跳过全文翻译</b>。如需开启全文自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 切换为 <b>全球模式 (Global)</b>。`;
+        } else {
+            alertEl.style.display = 'none';
+        }
+    }
+
     _reviewRenderBody();
 }
 function _reviewRenderBody() {

@@ -45,13 +45,13 @@ def test_publishing_mode_seo_alignment():
 def test_translation_matrix_guardrail():
     """验证当翻译矩阵开启但算力不可用时，同步引擎抛出异常进行物理熔断"""
     from core.runtime.orchestration.sync_worker import perform_sync
-    from unittest.mock import MagicMock
+    from unittest.mock import MagicMock, patch
     
     # 模拟 engine, args
     mock_engine = MagicMock()
     mock_engine.config.i18n_settings.enabled = True
     mock_engine.config.i18n_settings.targets = [MagicMock(lang_code="en")]
-    mock_engine.no_ai = True  # 设置为 NO-AI 模式以触发熔断
+    mock_engine.no_ai = False
     
     mock_args = MagicMock()
     mock_args.dry_run = False
@@ -59,8 +59,10 @@ def test_translation_matrix_guardrail():
     task_queue = [("doc1.md", "docs", "Docs", "docs")]
     current_source_files = {"doc1.md"}
     
-    with pytest.raises(RuntimeError) as exc_info:
-        perform_sync(mock_engine, mock_args, task_queue, current_source_files)
+    with patch('core.governance.checks.ai.AIChecker.check') as mock_check:
+        mock_check.return_value = {"status": "FAIL", "details": ["AI 算力网关诊断失败"]}
+        with pytest.raises(RuntimeError) as exc_info:
+            perform_sync(mock_engine, mock_args, task_queue, current_source_files)
         
     assert "翻译矩阵已开启" in str(exc_info.value)
 
@@ -80,15 +82,13 @@ def test_check_ai_availability_or_raise():
     from core.governance.checks.ai import check_ai_availability_or_raise
     from unittest.mock import MagicMock
 
-    # 1. 翻译开启但 NO_AI
+    # 1. 翻译开启但 NO_AI，支持优雅降级不熔断
     mock_engine = MagicMock()
     mock_engine.config.i18n_settings.enabled = True
     mock_engine.config.i18n_settings.targets = [MagicMock(lang_code="es")]
     mock_engine.no_ai = True
 
-    with pytest.raises(RuntimeError) as exc_info:
-        check_ai_availability_or_raise(mock_engine)
-    assert "处于 NO-AI 模式" in str(exc_info.value)
+    check_ai_availability_or_raise(mock_engine)
 
     # 2. 翻译开启，未开启 NO_AI，但 AI Gateway 返回 FAIL
     mock_engine.no_ai = False

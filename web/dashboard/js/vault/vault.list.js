@@ -90,14 +90,28 @@ window.loadVault = async (query = null, page = null) => {
             const isAiEnabled = !window.governanceContext || 
                                (window.governanceContext.ai && window.governanceContext.ai.status !== 'disabled');
             const hasTranslations = transLangs.length > 0 && isAiEnabled;
-            const humanLockedLangs = transLangs.filter(lc => (m.translations[lc] || {}).human_approved);
-            const isStale = transLangs.some(lc => (m.translations[lc] || {}).review_is_stale);
-            const reviewBtnTitle = transLangs.length > 0
-                ? '译文校对工作台'
-                : '译文校对工作台 (未初始化 AI 译文)';
-            const reviewBtnIcon = humanLockedLangs.length > 0
-                ? (isStale ? '⚠️' : '🔒')
-                : '🌍';
+
+            // 🚀 [V79.2] 智能降级 Tooltip & Icon
+            const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+            let reviewBtnTitle = '译文校对工作台';
+            let reviewBtnIcon = '🌍';
+            
+            if (pubMode === 'basic') {
+                reviewBtnTitle = '译文校对工作台 (基础模式：未启用翻译管线，将透传中文)';
+                reviewBtnIcon = '🌐';
+            } else if (pubMode === 'enhanced') {
+                reviewBtnTitle = '译文校对工作台 (增强模式：AI 仅优化 SEO 元数据)';
+                reviewBtnIcon = '📝';
+            } else {
+                const humanLockedLangs = transLangs.filter(lc => (m.translations[lc] || {}).human_approved);
+                const isStale = transLangs.some(lc => (m.translations[lc] || {}).review_is_stale);
+                reviewBtnTitle = transLangs.length > 0
+                    ? '译文校对工作台'
+                    : '译文校对工作台 (未初始化 AI 译文)';
+                reviewBtnIcon = humanLockedLangs.length > 0
+                    ? (isStale ? '⚠️' : '🔒')
+                    : '🌍';
+            }
             return `
             <tr>
                 <td><div style="font-weight:600; color:var(--text-bright);">${m.title}</div>${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}</td>
@@ -107,7 +121,7 @@ window.loadVault = async (query = null, page = null) => {
                     <div style="display:flex; gap:8px;">
                         <button class="mini-action-btn" title="快速编辑原稿 (Edit)" onclick="openEditor('${m.rel_path}')">📝</button>
                         <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
-                        ${isAiEnabled ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.9rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : ''}
+                        ${isAiEnabled && pubMode === 'global' ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.9rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : ''}
                         <button class="mini-action-btn" title="打开分发枢纽与遥测监控 (Dispatch Hub)" onclick="openVaultDrawer('${m.rel_path}')">📡</button>
                     </div>
                 </td>

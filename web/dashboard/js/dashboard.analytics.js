@@ -71,40 +71,55 @@ window.refreshAnalyticsData = async () => {
         // 3. 渲染翻译语种矩阵进度条
         const transContainer = document.getElementById('analytics-translation-list');
         if (transContainer) {
-            const coverageMap = res.translation.coverage || {};
-            const keys = Object.keys(coverageMap);
-            if (keys.length === 0) {
-                transContainer.innerHTML = `<div style="text-align:center; opacity:0.5; padding:10px; font-size:0.8rem;">ℹ️ 未配置任何目标语言，暂无译文覆盖。</div>`;
+            const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+            if (pubMode === 'basic') {
+                transContainer.innerHTML = `
+                    <div style="text-align:center; opacity:0.8; padding:20px; font-size:0.8rem; border: 1px dashed rgba(230, 126, 34, 0.2); border-radius: 8px; background: rgba(230, 126, 34, 0.02); color: #e67e22; line-height: 1.6;">
+                        📜 <b>当前印记模式：基础物理出版 (Basic)</b><br>
+                        此模式下不执行多语言 AI 翻译，翻译进度条与物理分发阵列已被挂起。
+                    </div>`;
+            } else if (pubMode === 'enhanced') {
+                transContainer.innerHTML = `
+                    <div style="text-align:center; opacity:0.8; padding:20px; font-size:0.8rem; border: 1px dashed rgba(52, 152, 219, 0.2); border-radius: 8px; background: rgba(52, 152, 219, 0.02); color: #3498db; line-height: 1.6;">
+                        🛰️ <b>当前印记模式：智能母语增强 (Enhanced)</b><br>
+                        此模式下仅针对 SEO 标题与网页描述进行 AI 翻译与点击率调优，正文不执行跨语言翻译，分发矩阵已被挂起。
+                    </div>`;
             } else {
-                transContainer.innerHTML = keys.map(lang => {
-                    const data = coverageMap[lang];
-                    const percent = data.coverage_percent;
-                    const nativeName = window.LanguageHub && typeof window.LanguageHub.resolveToNativeName === 'function'
-                        ? window.LanguageHub.resolveToNativeName(lang)
-                        : lang.toUpperCase();
-                    return `
-                        <div class="lang-progress-item">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.75rem;">
-                                <span style="font-weight:600; color:var(--text-bright);">${nativeName} <span class="locale-code-badge" style="background:rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; font-size:0.65rem; margin-left:4px;">${lang}</span></span>
-                                <span style="color:var(--text-bright);">${percent}% (${data.translated_count}/${docs.total_count} 篇)</span>
+                const coverageMap = res.translation.coverage || {};
+                const keys = Object.keys(coverageMap);
+                if (keys.length === 0) {
+                    transContainer.innerHTML = `<div style="text-align:center; opacity:0.5; padding:10px; font-size:0.8rem;">ℹ️ 未配置任何目标语言，暂无译文覆盖。</div>`;
+                } else {
+                    transContainer.innerHTML = keys.map(lang => {
+                        const data = coverageMap[lang];
+                        const percent = data.coverage_percent;
+                        const nativeName = window.LanguageHub && typeof window.LanguageHub.resolveToNativeName === 'function'
+                            ? window.LanguageHub.resolveToNativeName(lang)
+                            : lang.toUpperCase();
+                        return `
+                            <div class="lang-progress-item">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.75rem;">
+                                    <span style="font-weight:600; color:var(--text-bright);">${nativeName} <span class="locale-code-badge" style="background:rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; font-size:0.65rem; margin-left:4px;">${lang}</span></span>
+                                    <span style="color:var(--text-bright);">${percent}% (${data.translated_count}/${docs.total_count} 篇)</span>
+                                </div>
+                                <div class="progress-bar-bg" style="background:rgba(255,255,255,0.05); height:8px; border-radius:4px; overflow:hidden;">
+                                    <div class="fill" style="width: 0%; height:100%; background:linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius:4px; transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                                </div>
                             </div>
-                            <div class="progress-bar-bg" style="background:rgba(255,255,255,0.05); height:8px; border-radius:4px; overflow:hidden;">
-                                <div class="fill" style="width: 0%; height:100%; background:linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius:4px; transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                        `;
+                    }).join('');
 
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        const items = transContainer.querySelectorAll('.lang-progress-item');
-                        keys.forEach((lang, idx) => {
-                            const percent = coverageMap[lang].coverage_percent;
-                            const fill = items[idx].querySelector('.fill');
-                            if (fill) fill.style.width = `${percent}%`;
-                        });
-                    }, 50);
-                });
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            const items = transContainer.querySelectorAll('.lang-progress-item');
+                            keys.forEach((lang, idx) => {
+                                const percent = coverageMap[lang].coverage_percent;
+                                const fill = items[idx].querySelector('.fill');
+                                if (fill) fill.style.width = `${percent}%`;
+                            });
+                        }, 50);
+                    });
+                }
             }
         }
 

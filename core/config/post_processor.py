@@ -111,7 +111,7 @@ def smart_normalize_i18n(manager) -> None:
         prompt_l = LanguageHub.resolve_to_name(iso)
         i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
     elif isinstance(source_data, dict):
-        iso = source_data.get('lang_code', 'auto')
+        iso = LanguageHub.resolve_to_iso(source_data.get('lang_code', 'auto'))
         name = source_data.get('name')
         if not name or name == LanguageHub.resolve_to_name(iso) or name.lower() == iso.lower():
             name = LanguageHub.resolve_to_native_name(iso)

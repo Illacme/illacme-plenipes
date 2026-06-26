@@ -87,6 +87,7 @@ def get_system_context_impl():
         "version": DisplayDelegate.get_system_version(engine.config),
         "imprint": active_imprint,
         "imprint_name": engine.config.imprint_name,
+        "publishing_mode": getattr(engine.config.governance, 'publishing_mode', 'basic'),
         "theme": display_theme,
         "onboarding_required": engine.onboarding_required,
         "vault": {
@@ -173,7 +174,7 @@ def get_sync_stats_impl():
         total_words += word_count
         
         status_map = info.get("publish_status") or {}
-        live_channels = [ch for ch, s in status_map.items() if s and s.get("status") == "success"]
+        live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
         if live_channels:
             live_count += 1
         else:

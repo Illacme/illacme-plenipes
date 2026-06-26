@@ -150,6 +150,9 @@ window.initWebSocket = () => {
             if (typeof window.addAudit === 'function') {
                 window.addAudit('网站发布流程已全部完成！', 'success');
             }
+            // 🚀 [V10.4] 记录已完成发布状态，用于防重入提示及重新发布选项
+            localStorage.setItem('sync_completed', 'true');
+
             if (typeof window.refreshGalaxy === 'function') {
                 window.refreshGalaxy();
             }
@@ -161,6 +164,14 @@ window.initWebSocket = () => {
                 }
                 const okBtn = document.getElementById('btn-terminal-ok');
                 if (okBtn) okBtn.style.display = 'block';
+
+                const republishBtn = document.getElementById('btn-terminal-republish');
+                if (republishBtn) republishBtn.style.display = 'none';
+
+                // 🛡️ [Abort] 隐藏中止按钮
+                const abortBtn = document.getElementById('btn-terminal-abort');
+                if (abortBtn) abortBtn.style.display = 'none';
+
                 const statusEl = document.getElementById('terminal-status');
                 if (statusEl) {
                     statusEl.innerText = 'COMPLETED';

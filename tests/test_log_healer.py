@@ -4,7 +4,6 @@
 Illacme-plenipes - Test suite for log_healer.py (逻辑演进日志自愈脚本测试)
 """
 import os
-import re
 import tempfile
 import shutil
 from unittest.mock import patch, MagicMock

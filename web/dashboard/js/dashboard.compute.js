@@ -67,8 +67,27 @@ window.loadComputeCenter = async function(targetTab) {
         console.error("Failed to pre-sync strategy badge:", e);
     }
 
+    const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+    let modeBannerHtml = '';
+    if (pubMode === 'basic') {
+        modeBannerHtml = `
+            <div class="glass-panel alert-basic" style="padding: 14px 20px; border-radius: 8px; border: 1px solid rgba(230, 126, 34, 0.25); background: rgba(230, 126, 34, 0.04); margin-bottom: 20px; color: var(--accent-orange, #e67e22); font-size: 0.82rem; line-height: 1.5;">
+                💡 <b>当前处于：基础物理出版模式 (Basic)</b><br>
+                此模式下不启用大模型 AI 算力，算力中心配置已自动挂起。若要使用 AI 调优或多语言翻译，请先在 <b>出版模式</b> 设置中切换为增强模式或全球出版模式。
+            </div>
+        `;
+    } else if (pubMode === 'enhanced') {
+        modeBannerHtml = `
+            <div class="glass-panel alert-enhanced" style="padding: 14px 20px; border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.25); background: rgba(52, 152, 219, 0.04); margin-bottom: 20px; color: var(--accent-secondary, #3498db); font-size: 0.82rem; line-height: 1.5;">
+                💡 <b>当前处于：智能母语增强模式 (Enhanced)</b><br>
+                此模式下，大模型算力仅用于翻译与调优原稿的 SEO 标题及描述。在此配置的算力单元将仅承担轻量级 SEO 分析原子。
+            </div>
+        `;
+    }
+
     // 4. 准备加载视口
     contentRoot.innerHTML = `
+        ${modeBannerHtml}
         <div id="compute-tab-viewport" class="compute-viewport" style="margin-top: 0 !important; padding-top: 5px;">
             <div class="loading-scanner">
                 <div class="scan-line"></div>

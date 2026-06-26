@@ -33,6 +33,21 @@ window.clearReviewDraft = function (lc) {
 
 /* ─── 入口：从 Vault 文稿列表打开校对抽屉（Q5=B） ──── */
 window.openTranslationReview = async function (docId) {
+    const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+    if (pubMode === 'basic' || pubMode === 'enhanced') {
+        const modeText = pubMode === 'basic' ? '基础物理出版模式' : '智能母语增强模式';
+        Swal.fire({
+            title: '🔒 译文校对不可用',
+            text: `当前版图处于 ${modeText}，不进行正文 AI 翻译，因此译文校对工作台已挂起。若要使用多语言翻译与校对，请先将印记出版模式切换为“全球多语言分发模式”。`,
+            icon: 'warning',
+            background: 'rgba(20, 20, 25, 0.95)',
+            color: '#fff',
+            confirmButtonText: '确定',
+            confirmButtonColor: 'var(--accent-primary)'
+        });
+        return;
+    }
+
     const isAiEnabled = !window.governanceContext || 
                        (window.governanceContext.ai && window.governanceContext.ai.status !== 'disabled');
     if (!isAiEnabled) {

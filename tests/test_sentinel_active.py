@@ -7,7 +7,6 @@ tests/test_sentinel_active.py
 """
 
 import os
-import json
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
 from core.governance.sentinel import SentinelManager

@@ -7,7 +7,6 @@ Illacme-plenipes Core - Sovereign Theme Adapter Helpers
 import os
 import logging
 from typing import Dict, Any
-from core.utils.tracing import tlog
 
 logger = logging.getLogger("Illacme.plenipes")
 
@@ -149,6 +148,19 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
         -webkit-backdrop-filter: none !important;
     }
     """
+
+        from core.config.models.governance import PublishingMode
+        is_global = True
+        if adapter.engine and hasattr(adapter.engine, 'config') and hasattr(adapter.engine.config, 'governance'):
+            is_global = (adapter.engine.config.governance.publishing_mode == PublishingMode.GLOBAL)
+
+        if not is_global:
+            custom_styles_html += """
+    .lang-selector {
+        display: none !important;
+    }
+    """
+
         custom_styles_html += "\n</style>"
 
         # 智能渲染 GitHub 社交挂载

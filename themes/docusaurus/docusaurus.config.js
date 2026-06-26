@@ -122,11 +122,13 @@ const config = {
             label: 'GitHub',
             position: 'right',
           },
-          // 🚀 注入这个语言切换组件
-          {
-            type: 'localeDropdown',
-            position: 'right', // 放在导航栏右侧
-          },
+          // 🚀 仅在多语言（locales 数量大于 1）时才注入这个语言切换组件
+          ...(themeOptions.i18n && themeOptions.i18n.locales && themeOptions.i18n.locales.length > 1 ? [
+            {
+              type: 'localeDropdown',
+              position: 'right',
+            }
+          ] : []),
         ],
       },
       footer: {

@@ -106,7 +106,8 @@ def check_ai_availability_or_raise(engine):
         i18n = engine.config.i18n_settings
         if i18n and i18n.enabled and i18n.targets:
             if engine.no_ai:
-                raise RuntimeError("翻译矩阵已开启，但系统当前处于 NO-AI 模式，无法启动发布！")
+                # 🚀 [V105.0] NO-AI 模式下优雅降级，此处跳过强关联校验
+                return
             
             ai_report = AIChecker.check(engine)
             if ai_report.get("status") == "FAIL":

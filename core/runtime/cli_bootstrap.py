@@ -161,5 +161,6 @@ def parse_args_and_lock():
     except Exception as e:
         tlog.warning(f"⚠️ [主权治理自检] 检查异常: {e}")
 
-    acquire_singleton_lock(lock_port)
+    is_service = any([getattr(args, 'api', False), getattr(args, 'watch', False), getattr(args, 'serve', False), getattr(args, 'wizard', False)])
+    acquire_singleton_lock(lock_port, is_service=is_service)
     return args, cfg

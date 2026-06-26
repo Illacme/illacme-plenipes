@@ -43,7 +43,7 @@ def resolve_engine_paths(engine: Any, config: Any, themes_dir: str) -> Dict[str,
         "graph_json_dir": anchor((paths_cfg.get('graph_json_dir') or '').replace("{theme}", engine.active_theme)),
         "target_base": anchor((paths_cfg.get('target_base') or "./dist").replace("{theme}", engine.active_theme)),
         "db": anchor(config.get_ledger_path()),
-        "cache": engine._resolve_path(config.get_runtime_metadata_dir() + "/cache"),
+        "cache": os.path.join(config.get_vault_cache_dir(), "runtime"),
         "logs": engine._resolve_path(config.get_runtime_metadata_dir() + "/logs"),
         "metadata": engine._resolve_path(config.metadata_dir),
         "themes": engine._resolve_path(themes_dir)

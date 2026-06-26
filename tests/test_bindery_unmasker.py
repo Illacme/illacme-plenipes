@@ -6,9 +6,7 @@ tests/test_bindery_unmasker.py
 验证资产预扫描与并行预热调度、多语种 alt 文本注入以及内链本地化与死链修正。
 """
 
-import os
 import threading
-import pytest
 from unittest.mock import MagicMock, patch
 
 from core.bindery.bindery_unmasker import BinderyUnmasker

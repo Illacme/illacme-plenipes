@@ -81,6 +81,10 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             if ctx.is_aborted:
                 if ctx.is_skipped:
                     tlog.info(f"🔄 [同步跳过] 指纹未变: {rel_path}")
+                    if hasattr(engine, "meta"):
+                        # 🚀 [V48.6] 纠偏防呆：即使指纹未变跳过编译，账本也需将其纠偏为 SUCCESS 并落盘，防止其在统计面板中卡在非 SUCCESS 态
+                        engine.meta.update_egress_status(rel_path, "PIPELINE", "SUCCESS", stage="分发全部完成，译文已成功发布")
+                        engine.meta.save()
                     engine.janitor.mark_doc_as_fresh(rel_path)
                     success = True
                     return "SKIP"
@@ -125,6 +129,10 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
                 target_base = engine.paths.get('target_base', '.')
                 display_dest = engine.route_manager.resolve_physical_path(target_base, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext)
                 tlog.info(f"🔄 [同步跳过] {rel_path} -> {os.path.relpath(display_dest, target_base)}")
+                if hasattr(engine, "meta"):
+                    # 🚀 [V48.5] 纠偏防呆：即使跳过分发，既然物理层已一致，也需将账本状态纠偏为 SUCCESS 并落盘，防止其在统计面板中永久卡在非 SUCCESS 态
+                    engine.meta.update_egress_status(rel_path, "PIPELINE", "SUCCESS", stage="分发全部完成，译文已成功发布")
+                    engine.meta.save()
                 engine.janitor.mark_doc_as_fresh(rel_path)
                 success = True
                 return "SKIP"

@@ -60,6 +60,8 @@ class IllacmeEngine:
 
         # 挂载状态
         self.is_running = True
+        self.is_syncing = False
+        self.abort_sync = False
         self.services = {
             "engine": {"status": "running", "start_time": time.time(), "pid": os.getpid()},
             "api": {"status": "stopped", "port": None, "uptime": 0},
@@ -243,6 +245,10 @@ class IllacmeEngine:
     @SovereignCore
     def sync_document(self, rel_path, route_prefix, route_source, is_dry_run, force_sync=False, is_sandbox=False, target_slot="docs", target_langs=None, clear_cache=False):
         """🚀 [V11.0] 核心同步入口：委托给具体的同步策略执行"""
+        # 🛡️ [Abort] 协同式中止检测点
+        if getattr(self, "abort_sync", False):
+            raise RuntimeError("Sync aborted by user")
+
         # 🧪 [TDR Protocol] 仿真校验钩子：在进入同步前核验文档与历史的一致性
         self.verify_docs_sync_hook()
 

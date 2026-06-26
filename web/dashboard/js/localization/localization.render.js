@@ -6,7 +6,9 @@
 
 window.renderLocalizationCategory = function () {
     const i18n = window.settingsData.i18n_settings || {};
-    const isEnabled = i18n.enabled !== false; // 默认为 true
+    const mode = window.settingsData.governance?.publishing_mode || 'basic';
+    const isGlobal = mode === 'global';
+    const isEnabled = isGlobal ? (i18n.enabled !== false) : false; // 默认为 true，但非 global 模式强制为 false
     const sourceLangStr = i18n.source?.lang_code || 'auto';
     const targets = (i18n.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
     const isLicensed = window.settingsData._is_licensed || false;
@@ -74,6 +76,12 @@ window.renderLocalizationCategory = function () {
     const glossaryForCurrentLang = glossary[window.currentGlossaryLang] || {};
 
     // 🚀 [V57.4] 渲染物理多语言总开关
+    let descriptionText = '控制多语言与全域 AI 翻译的开关。关闭后，发布流水线将挂起所有 AI 翻译作业，仅发布源原稿。';
+    if (!isGlobal) {
+        const modeText = mode === 'basic' ? '基础模式 (Basic)' : '增强模式 (Enhanced)';
+        descriptionText = `⚠️ <b>由于当前印记处于 ${modeText}，多语言翻译总控已锁定关闭</b>。在此模式下，系统将自动透传原稿内容至多语言路径，无须执行多语言翻译矩阵。若要启用完整的 AI 多语言翻译，请在印记设置中切换为“全球出版模式 (Global)”。`;
+    }
+
     const enabledSwitchHtml = window.renderSettingsItem(
         '多语言翻译矩阵', 
         'i18n_settings.enabled', 
@@ -81,7 +89,8 @@ window.renderLocalizationCategory = function () {
         'checkbox', 
         {
             onchange: 'window.syncI18nEnabled(this.checked)',
-            description: '控制多语言与全域 AI 翻译的开关。关闭后，发布流水线将挂起所有 AI 翻译作业，仅发布源原稿。'
+            description: descriptionText,
+            disabled: !isGlobal
         }
     );
 

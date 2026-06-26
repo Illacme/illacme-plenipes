@@ -277,7 +277,7 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
     from core.runtime.orchestrator import start_asynchronous_sync
     future_id = start_asynchronous_sync(engine, dry_run=dry_run, force=force, sandbox=sandbox)
     
-    if future_id == 0:
+    if future_id is None or future_id == 0:
         return {"status": "rejected", "reason": "Already publishing"}
     
     return {
@@ -285,6 +285,31 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
         "future_id": future_id,
         "mode": "asynchronous"
     }
+
+@router.get("/api/system/sync/status", dependencies=[Depends(verify_token)])
+def get_sync_status() -> Dict[str, Any]:
+    """🚀 [V78.8] 查询当前出版流水线是否在运行"""
+    from core.runtime.orchestrator import _is_publishing
+    return {"is_publishing": _is_publishing}
+
+@router.post("/api/system/sync/abort", dependencies=[Depends(verify_token)])
+async def abort_sync() -> Dict[str, Any]:
+    """🛑 [V79.0] 中止全量同步接口"""
+    engine = get_global_engine()
+    if not engine:
+        return {"status": "error", "reason": "Engine not ready"}
+    
+    # 开启中止信号
+    engine.abort_sync = True
+    
+    # 清空并发执行池中挂起的工作
+    from core.logic.orchestration.task_orchestrator import global_executor, ai_executor, asset_executor
+    global_executor.cancel_all_pending()
+    ai_executor.cancel_all_pending()
+    asset_executor.cancel_all_pending()
+    
+    tlog.warning("🛑 [UI] 已接收到停止同步指令，已向执行器广播中止信号并清空待处理队列。")
+    return {"status": "aborted"}
 
 @router.get("/api/system/theme/slots", dependencies=[Depends(verify_token)])
 def get_theme_slots() -> Dict[str, Any]:

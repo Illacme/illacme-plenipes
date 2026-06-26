@@ -62,7 +62,6 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             task_queue, _ = build_task_queue(engine, requested_paths)
             import os
             for task_path, prefix, src_rel, target_slot in task_queue:
-                import os
                 # 🚀 [V10.8] 正确推导出相对于 vault 根目录的相对路径，以解决命名冲突造成的元数据 ledger 查找失败
                 rel_file_path = os.path.relpath(task_path, engine.paths.get('vault', '.')).replace('\\', '/')
                 doc_info = engine.meta.get_doc_info(rel_file_path) if hasattr(engine, "meta") and engine.meta else {}
@@ -107,6 +106,8 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                     tlog.info("🐕 [后台闭环] 已强行唤醒处于休眠状态的监控狗。")
 
     # 3. 提交至全局执行器 (优先级设为 CRITICAL 以确保立即响应)
-    future = global_executor.submit(_background_job, priority=TaskPriority.CRITICAL, task_name="Async-Full-Publish")
-    return id(future)
+    # 🚀 [V10.3] 线程隔离优化：启动专用的协调器线程运行后台任务，避免占用全局执行池而引发嵌套提交死锁及救援警告
+    t = threading.Thread(target=_background_job, name="SyncCoordinatorThread", daemon=True)
+    t.start()
+    return id(t)
 

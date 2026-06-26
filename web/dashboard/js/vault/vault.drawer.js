@@ -21,9 +21,44 @@ window.refreshVaultDrawerStatus = async (relPath) => {
     const data = await apiFetch(`/api/vault/dispatch-status/${encodeURIComponent(relPath)}`);
     if (!data) return;
 
+    const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+
+    // 动态调整 Global Sync Matrix 标题和按钮布局
+    const matrixTitle = document.querySelector('.dispatch-hub-panel .sector-header');
+    if (matrixTitle) {
+        matrixTitle.innerText = pubMode === 'global' ? 'GLOBAL SYNC MATRIX' : 'LOCAL SYNC MATRIX';
+    }
+
+    const reDispatchBtn = document.querySelector('.sovereign-action-grid button[onclick*="triggerReDispatch(\'all\', false)"]');
+    const forceReTranslateBtn = document.querySelector('.sovereign-action-grid button[onclick*="triggerReDispatch(\'all\', true)"]');
+    
+    if (reDispatchBtn) {
+        reDispatchBtn.innerHTML = pubMode === 'global' 
+            ? '<span class="btn-icon">♻️</span> 重新分发' 
+            : '<span class="btn-icon">♻️</span> 重新物理发布';
+        reDispatchBtn.title = pubMode === 'global' 
+            ? '对当前文档执行多语种重新分发（复用段落翻译缓存）' 
+            : '重新编译并发布此原稿';
+    }
+    if (forceReTranslateBtn) {
+        forceReTranslateBtn.style.display = pubMode === 'global' ? 'flex' : 'none';
+        const actionGrid = document.querySelector('.sovereign-action-grid');
+        if (actionGrid) {
+            actionGrid.style.gridTemplateColumns = pubMode === 'global' ? '1fr 1fr' : '1fr';
+            const deleteBtn = document.querySelector('.sovereign-action-grid button[onclick*="confirmPhysicalDelete()"]');
+            if (deleteBtn) {
+                deleteBtn.style.gridColumn = pubMode === 'global' ? 'span 2' : 'span 1';
+            }
+        }
+    }
+
     // 渲染分发矩阵
     if (matrixContainer) {
-        matrixContainer.innerHTML = data.sync_matrix.map((item, idx) => {
+        const filteredMatrix = pubMode === 'global' 
+            ? data.sync_matrix 
+            : data.sync_matrix.filter((item, idx) => idx === 0);
+
+        matrixContainer.innerHTML = filteredMatrix.map((item, idx) => {
             const showProgress = idx > 0 && item.cache_info !== '无需翻译 (主权透传)' && 
                 (item.progress < 100 || item.status === 'syncing' || item.status === 'pending');
             return `

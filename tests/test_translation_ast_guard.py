@@ -10,7 +10,6 @@ from unittest.mock import patch, MagicMock
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.logic.ai.ai_scheduler_shards.dispatch_ops import AISchedulerDispatchOps
-from core.logic.ai.model_intelligence import ModelIntelligenceHub
 
 
 # 基础 Mock 类（继承并适配自 test_ai_fault_tolerance.py）

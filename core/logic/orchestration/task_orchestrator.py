@@ -84,7 +84,7 @@ class OrchestratedExecutor(concurrent.futures.Executor):
         """标准提交接口 (默认优先级: TRANSLATION)"""
         self.ensure_active()
         priority = kwargs.pop('priority', TaskPriority.TRANSLATION)
-        name = kwargs.pop('task_name', func.__name__)
+        name = kwargs.pop('task_name', getattr(func, '__name__', None) or str(func))
 
         # 🚀 [V11.5] 核心死锁探测：严禁在当前池子的工人线程中，同步等待该池子的新任务
         current_thread_name = threading.current_thread().name
@@ -169,6 +169,9 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                     _, _, task = heapq.heappop(self.queue)
 
             if task:
+                if task.future.cancelled():
+                    # 🚀 [V79.1] 任务已被取消，直接跳过执行
+                    continue
                 import sys
                 sys.stderr.write(f"🧪 [DEBUG] 工人领取任务: {task.name} | 线程: {threading.get_ident()}\n")
                 sys.stderr.flush()
@@ -186,9 +189,19 @@ class OrchestratedExecutor(concurrent.futures.Executor):
 
                     with Tracer.trace_scope(task.trace_id):
                         result = task.func(*task.args, **task.kwargs)
-                        task.future.set_result(result)
+                        try:
+                            if not task.future.cancelled():
+                                task.future.set_result(result)
+                        except Exception:
+                            # 🛡️ 已经被外部取消，安全忽略
+                            pass
                 except Exception as e:
-                    task.future.set_exception(e)
+                    try:
+                        if not task.future.cancelled():
+                            task.future.set_exception(e)
+                    except Exception:
+                        # 🛡️ 已经被外部取消，安全忽略
+                        pass
                 finally:
                     with self.lock:
                         self.running_tasks.pop(thread_id, None)
@@ -216,6 +229,15 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                 tlog.warning(f"⚠️ [Orchestrator] 等待池 {id(self)} 闲置超时，强制跳过收割。")
                 break
             time.sleep(0.5)
+
+    def cancel_all_pending(self):
+        """🚀 [Abort] 紧急清空并取消队列中所有尚未运行的任务"""
+        with self.lock:
+            for _, _, task in self.queue:
+                if not task.future.done():
+                    task.future.cancel()
+            self.queue.clear()
+            self.condition.notify_all()
 
     def shutdown(self, wait=True):
         with self.lock:

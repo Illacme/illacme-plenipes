@@ -6,7 +6,6 @@ tests/test_engine_lifecycle.py
 验证深度重载 (Deep Reload) 流水线、旧引擎关闭与配置对正。
 """
 
-import pytest
 from unittest.mock import MagicMock, patch, mock_open
 
 from core.runtime.engine_lifecycle import deep_reload_imprint

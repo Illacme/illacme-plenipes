@@ -7,8 +7,7 @@ tests/test_concurrency_controller.py
 """
 
 import time
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from core.logic.orchestration.concurrency_controller import ConcurrencyController
 
 

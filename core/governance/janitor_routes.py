@@ -23,9 +23,9 @@ class RouteJanitor:
     def gc_node(self, rel_path, route_prefix, route_source, is_dry_run=False):
         """精准拔除单篇失效文章及其各语种路由"""
         doc_info = self.meta.get_doc_info(rel_path)
-        slug = doc_info.get("slug")
-        prefix = doc_info.get("prefix", route_prefix)
-        source = doc_info.get("source", route_source)
+        slug = doc_info.get("slug") or os.path.splitext(os.path.basename(rel_path))[0]
+        prefix = doc_info.get("prefix") or doc_info.get("route_prefix") or route_prefix or ""
+        source = doc_info.get("source") or doc_info.get("route_source") or route_source or ""
 
         if slug:
             t_abs = os.path.join(self.paths.get('vault', '.'), rel_path)
@@ -41,20 +41,49 @@ class RouteJanitor:
             if self.i18n.enabled:
                 langs.extend([t.lang_code for t in self.i18n.targets if t.lang_code])
 
-            for code in langs:
-                dest = self.route_manager.resolve_physical_path(self.paths.get('target_base'), code, prefix, mapped_sub_dir, slug, ext)
-                if os.path.exists(dest):
-                    dest_norm = os.path.realpath(dest).lower()
-                    if dest_norm in self.service.amnesty_paths:
-                        continue
+            # 计算主题专属源缓存的主目录
+            theme_name = getattr(self.service, "active_theme", "default") or "default"
+            if getattr(self.service, "engine", None) and getattr(self.service.engine, "config", None):
+                theme_cache_dir = self.service.engine.config.get_theme_source_cache_dir(theme_name)
+            else:
+                cache_root = self.paths.get('cache') or os.path.join(self.paths.get('vault', '.'), '.plenipes', 'cache')
+                theme_cache_dir = os.path.join(cache_root, "sources", theme_name)
 
-                    if is_dry_run:
-                        tlog.info(f"    [模拟回收] 拟删除文件: {dest}")
-                    else:
-                        try:
-                            if getattr(self.meta, 'is_watch_mode', False): continue
-                            os.remove(dest)
-                        except Exception as e: tlog.error(f"回收失败 {dest}: {e}")
+            for code in langs:
+                targets_to_clean = []
+                
+                # 1. 最终输出物理文件
+                dest = self.route_manager.resolve_physical_path(self.paths.get('target_base'), code, prefix, mapped_sub_dir, slug, ext)
+                targets_to_clean.append(("输出文件", dest))
+                
+                # 2. 公共源缓存镜像文件
+                cache_root = self.paths.get('cache')
+                if cache_root:
+                    cache_mirror = self.route_manager.resolve_physical_path(cache_root, code, prefix, mapped_sub_dir, slug, ext, source_type=source)
+                    targets_to_clean.append(("公共缓存", cache_mirror))
+                
+                # 3. 主题专属源缓存镜像文件
+                theme_source_mirror = self.route_manager.resolve_physical_path(theme_cache_dir, code, prefix, mapped_sub_dir, slug, ext, source_type=source)
+                targets_to_clean.append(("主题专属缓存", theme_source_mirror))
+
+                for label, target_path in targets_to_clean:
+                    if os.path.exists(target_path):
+                        target_norm = os.path.realpath(target_path).lower()
+                        if target_norm in self.service.amnesty_paths:
+                            continue
+
+                        if is_dry_run:
+                            tlog.info(f"    [模拟回收] 拟删除{label}: {target_path}")
+                        else:
+                            try:
+                                if getattr(self.meta, 'is_watch_mode', False): continue
+                                os.remove(target_path)
+                                # 清理可能残留的临时文件
+                                tmp_path = target_path + ".tmp"
+                                if os.path.exists(tmp_path):
+                                    os.remove(tmp_path)
+                            except Exception as e:
+                                tlog.error(f"回收{label}失败 {target_path}: {e}")
 
         if not is_dry_run: self.meta.remove_document(rel_path)
 

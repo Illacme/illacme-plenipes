@@ -86,6 +86,9 @@ window.saveDocument = async () => {
         
         // 💾 物理存盘生命周期闭环：成功写入后物理销毁该文档的本地草稿缓存
         localStorage.removeItem(`illacme_draft_${window.activeDocId}`);
+        // 🚀 [V10.4] 只要有新文档存盘，清除 100% 已发布状态，强推全域发布进行指纹对准
+        localStorage.removeItem('sync_completed');
+        
         const recoveryBar = document.getElementById('editor-draft-recovery-bar');
         if (recoveryBar) recoveryBar.style.display = 'none';
 

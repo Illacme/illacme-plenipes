@@ -6,7 +6,6 @@ Illacme-plenipes - 豁免加载器单元测试 🚀 [V5.4]
 """
 import os
 import sys
-import tempfile
 import unittest
 
 # 确保能导入被测模块

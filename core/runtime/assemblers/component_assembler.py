@@ -58,10 +58,11 @@ def assemble_core_components(engine, config):
     engine.conversational_brain = ConversationalBrain(engine)
 
     # 🚀 [V15.1] 初始化治理与缓存组件 (修复 AttributeError)
+    import os
     engine.circuit_breakers = {"ai": CircuitBreaker("Global-AI")}
     engine.block_cache = BlockCache(
         engine.paths["metadata"],
-        custom_cache_dir=getattr(config, 'block_cache_dir', None),
+        custom_cache_dir=getattr(config, 'block_cache_dir', None) or os.path.join(config.get_vault_cache_dir(), "blocks"),
         shard_levels=getattr(config, 'block_cache_shard_levels', 0)
     )
     
