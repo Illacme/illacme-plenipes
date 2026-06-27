@@ -76,8 +76,6 @@ window.renderOperationAuditLogs = (logs, container) => {
     let filteredLogs = [...logs];
 
     container.innerHTML = `
-        <div class="section-header mt-large"><h3>📜 物理操作合规审计账本 (Audit Trails)</h3></div>
-        <p class="section-desc">持久化记录全量算力调用事件与版图/配置变更履历，提供商业级合规追溯证据。</p>
         ${filterHtml}
         ${tableHtml}
         <div id="op-pagination-container" class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0 10px 0; flex-shrink: 0;"></div>

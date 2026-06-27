@@ -97,8 +97,6 @@ window.renderConfigAuditTopology = (data, container) => {
     let filteredItems = [...data.items];
 
     container.innerHTML = `
-        <div class="section-header mt-large"><h3>📡 配置拓扑与安全审计 (Configuration Auditing)</h3></div>
-        <p class="section-desc">深度展现全局、品牌主权及本地物理层级合并的最终决策，识别安全隐患。</p>
         ${alertHtml}
         ${filterHtml}
         ${tableHtml}

@@ -71,9 +71,6 @@ window.renderAiLessonsVisualizer = (summary, lessons, container) => {
     }
 
     container.innerHTML = `
-        <div class="section-header mt-large"><h3>🧠 AI 错误教训可视化大盘 (Lesson Learnt Visualizer)</h3></div>
-        <p class="section-desc">分析并可视化 AI 引擎在翻译、校验流水线中沉淀的纠错教训，实现大模型幻觉自愈分析。</p>
-
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
             <div style="background: rgba(138, 43, 226, 0.05); border: 1px solid rgba(138, 43, 226, 0.2); border-radius: 8px; padding: 15px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.05);">
                 <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px;">🛡️ 拦截教训总数</div>
