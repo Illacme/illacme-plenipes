@@ -134,6 +134,9 @@
             if (typeof window.loadAndRenderOperationAuditLogs === 'function') {
                 window.loadAndRenderOperationAuditLogs();
             }
+            if (typeof window.loadAndRenderAiLessonsVisualizer === 'function') {
+                window.loadAndRenderAiLessonsVisualizer();
+            }
         }, 50);
 
         return `
@@ -160,6 +163,7 @@
 
                 <div id="config-audit-topology-container" class="mt-large"></div>
                 <div id="operation-audit-logs-container" class="mt-large"></div>
+                <div id="ai-lessons-visualizer-container" class="mt-large"></div>
             </div>
         `;
     }
