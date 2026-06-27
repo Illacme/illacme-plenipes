@@ -131,6 +131,9 @@
             if (typeof window.loadAndRenderConfigAudit === 'function') {
                 window.loadAndRenderConfigAudit();
             }
+            if (typeof window.loadAndRenderOperationAuditLogs === 'function') {
+                window.loadAndRenderOperationAuditLogs();
+            }
         }, 50);
 
         return `
@@ -156,6 +159,7 @@
                 </div>
 
                 <div id="config-audit-topology-container" class="mt-large"></div>
+                <div id="operation-audit-logs-container" class="mt-large"></div>
             </div>
         `;
     }

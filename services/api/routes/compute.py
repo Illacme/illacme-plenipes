@@ -83,6 +83,14 @@ async def update_compute_node(req: dict):
         engine.config.dump_to_disk(CONFIG_LOCAL_NAME)
         
         tlog.info(f"🛰️ [物理算力更新] 节点 '{node_id}' 已同步至本地环境。")
+        if engine and hasattr(engine, "ledger") and engine.ledger:
+            engine.ledger.log(
+                event_type="PUBLISH_LAYOUT_CHANGED",
+                details=f"更新或创建了算力节点 '{node_id}'，类型: {req.get('type') or '-'}",
+                severity="INFO",
+                actor="APIAdmin",
+                metadata={"node_id": node_id, "type": req.get("type"), "model": req.get("model")}
+            )
         return {"success": True, "node": req}
     except Exception as e:
         tlog.error(f"🛑 [算力更新失败] 数据格式错误: {e}")
@@ -114,6 +122,14 @@ async def delete_node(request: Request):
     engine.config.dump_to_disk(CONFIG_LOCAL_NAME)
     
     tlog.warning(f"🪓 [物理移除] 节点 '{node_id}' 已从算力底座中抹除。")
+    if engine and hasattr(engine, "ledger") and engine.ledger:
+        engine.ledger.log(
+            event_type="PUBLISH_LAYOUT_CHANGED",
+            details=f"移除了算力节点 '{node_id}'",
+            severity="WARNING",
+            actor="APIAdmin",
+            metadata={"node_id": node_id}
+        )
     return {"success": True}
 
 @router.post("/nodes/test", dependencies=[Depends(verify_token)])
@@ -238,11 +254,12 @@ async def switch_primary_node(req: dict):
     from core.governance.imprint_manager import im
     active_imprint = im.get_active_imprint()
     from core.config.config import CONFIG_IMPRINT_NAME, CONFIG_DIR, IMPRINT_DIR
-    path = os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-    engine.config.dump_to_disk(path)
+    engine.config.dump_to_disk(os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME))
     
     bus.emit("CONFIG_RELOADED", config=engine.config)
     tlog.success(f"🔄 [算力对正] 主算力节点已切换至 '{node_id}'")
+    if engine and getattr(engine, "ledger", None):
+        engine.ledger.log(event_type="PUBLISH_LAYOUT_CHANGED", details=f"切换主算力节点至 '{node_id}'", severity="INFO", actor="APIAdmin", metadata={"node_id": node_id, "active_imprint": active_imprint})
     return {"success": True, "new_primary": node_id}
 
 @router.post("/fallback/switch", dependencies=[Depends(verify_token)])
@@ -261,9 +278,10 @@ async def switch_fallback_node(req: dict):
     from core.governance.imprint_manager import im
     active_imprint = im.get_active_imprint()
     from core.config.config import CONFIG_IMPRINT_NAME, CONFIG_DIR, IMPRINT_DIR
-    path = os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-    engine.config.dump_to_disk(path)
+    engine.config.dump_to_disk(os.path.join(IMPRINT_DIR, active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME))
     
     bus.emit("CONFIG_RELOADED", config=engine.config)
     tlog.info(f"🛰️ [容灾对正] 备用算力节点调整为 '{node_id or 'NONE'}'")
+    if engine and getattr(engine, "ledger", None):
+        engine.ledger.log(event_type="PUBLISH_LAYOUT_CHANGED", details=f"切换备用容灾算力节点至 '{node_id or 'NONE'}'", severity="INFO", actor="APIAdmin", metadata={"node_id": node_id, "active_imprint": active_imprint})
     return {"success": True, "new_fallback": node_id}

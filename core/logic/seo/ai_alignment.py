@@ -68,7 +68,7 @@ class AIAlignmentProcessor(BaseSeoProcessor):
                 p = TranslatorFactory.get_prompts_for_style(resolved_style, imprint_id, p)
                 
             system_prompt = PayloadManager.format_prompt(p.seo_system, lang_name=lang_name)
-            user_content = PayloadManager.format_prompt(p.seo_user, title=ctx.title, text=body_excerpt)
+            user_content = PayloadManager.format_prompt(p.seo_user, title=ctx.title, text=body_excerpt, lang_name=lang_name)
             payload = PayloadManager.prepare_payload(
                 translator, system_prompt, user_content, is_json=True
             )

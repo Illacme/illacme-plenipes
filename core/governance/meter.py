@@ -113,6 +113,26 @@ class UsageMeter:
                 }
             )
 
+            # 🚀 [操作审计日志] 记录算力节点调用
+            if hasattr(self.engine, 'ledger') and self.engine.ledger:
+                strategy = 'single'
+                if hasattr(self.engine, 'config') and self.engine.config:
+                    strategy = getattr(self.engine.config.translation, 'strategy', 'single')
+                self.engine.ledger.log(
+                    event_type="COMPUTE_NODE_CALLED",
+                    details=f"调用算力节点 '{node_name}'，输入: {input_tokens} tokens，输出: {output_tokens} tokens，产生费用: ${cost:.6f}",
+                    imprint_id=imprint_id,
+                    severity="INFO",
+                    actor="System",
+                    metadata={
+                        "node_name": node_name,
+                        "strategy": strategy,
+                        "cost": cost,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens
+                    }
+                )
+
             # 3. 检查熔断 (TCG Guard)
             budget = 0.0
             if self.engine and hasattr(self.engine, 'config'):

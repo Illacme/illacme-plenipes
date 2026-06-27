@@ -10,6 +10,16 @@ window.updateEditorPreview = () => {
 
     let mdContent = body.value;
 
+    // 🚀 [主权修正] 1. 代码块与行内代码保护（挖空）
+    // 收集所有 ```...``` 块以及 `...` 块，防止其内部的双链等控制符被无脑替换
+    const codeBlocks = [];
+    const codeReg = /(```[\s\S]*?```|`[^`\n]*?`)/g;
+    mdContent = mdContent.replace(codeReg, (match) => {
+        const placeholder = `__PLENIPES_CODE_PROTECT_${codeBlocks.length}__`;
+        codeBlocks.push(match);
+        return placeholder;
+    });
+
     // 1. 物理资源解析：替换 Obsidian 双链图片 ![[image.png]] 或 ![[image.png|width]]
     mdContent = mdContent.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
         const cleanPath = decodeURIComponent(path.trim());
@@ -62,6 +72,12 @@ window.updateEditorPreview = () => {
             return `<a href="#" onclick="openEditorFromPreview('${cleanDocPath.replace(/'/g, "\\'")}', event)" class="wiki-doc-link">📄 ${text}</a>`;
         }
     });
+
+    // 🚀 [主权修正] 2. 还原受保护的代码块
+    for (let i = 0; i < codeBlocks.length; i++) {
+        const placeholder = `__PLENIPES_CODE_PROTECT_${i}__`;
+        mdContent = mdContent.replace(placeholder, codeBlocks[i]);
+    }
 
     // 🚀 [V87.0] 实时解析 Markdown (依赖 vendor/marked.js)
     // [AEL-2026-06-14] 在渲染时动态读取 hard_line_break 配置（settingsData 在加载时可能尚未就绪，

@@ -76,6 +76,16 @@ async def add_imprint(req: dict):
     if not name or not path: return {"error": "Missing name or path"}
     
     success = im.init_sovereign_imprint(name, path, press_name, bootstrap_vault)
+    if success:
+        engine = get_global_engine()
+        if engine and hasattr(engine, "ledger") and engine.ledger:
+            engine.ledger.log(
+                event_type="PUBLISH_LAYOUT_CHANGED",
+                details=f"创建了新的出版版图 (Imprint): {name}，物理路径为 {path}",
+                severity="INFO",
+                actor="APIAdmin",
+                metadata={"name": name, "path": path, "press_name": press_name}
+            )
     return {"success": success}
 
 @router.post("/api/imprints/switch", dependencies=[Depends(verify_token)])
@@ -94,6 +104,14 @@ async def switch_imprint(req: dict):
     success = deep_reload_imprint(imprint_id)
     if success:
         im.switch(imprint_id)
+        if engine and hasattr(engine, "ledger") and engine.ledger:
+            engine.ledger.log(
+                event_type="PUBLISH_LAYOUT_CHANGED",
+                details=f"切换当前出版版图至: {imprint_id}",
+                severity="INFO",
+                actor="APIAdmin",
+                metadata={"imprint_id": imprint_id}
+            )
         return {"success": True, "active": imprint_id}
     else:
         return {"success": False, "error": "引擎深度重载失败，请检查终端日志。"}
@@ -105,4 +123,14 @@ async def delete_imprint(req: dict):
     if not name: return {"error": "Missing name"}
     
     success = im.delete_imprint(name)
+    if success:
+        engine = get_global_engine()
+        if engine and hasattr(engine, "ledger") and engine.ledger:
+            engine.ledger.log(
+                event_type="PUBLISH_LAYOUT_CHANGED",
+                details=f"删除了出版版图 (Imprint): {name}",
+                severity="WARNING",
+                actor="APIAdmin",
+                metadata={"name": name}
+            )
     return {"success": success}

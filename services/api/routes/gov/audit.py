@@ -23,3 +23,15 @@ def get_config_audit(imprint_id: Optional[str] = None) -> dict:
         return report
     except Exception as e:
         return {"error": f"Audit failed: {str(e)}"}
+
+@router.get("/api/governance/audit-logs", dependencies=[Depends(verify_token)])
+def get_audit_logs(imprint_id: Optional[str] = None) -> dict:
+    """获取操作审计日志列表"""
+    engine = get_global_engine()
+    if not engine:
+        return {"error": "Engine not initialized"}
+    try:
+        logs = engine.ledger.export_report(imprint_id=imprint_id)
+        return {"logs": logs}
+    except Exception as e:
+        return {"error": f"Failed to fetch audit logs: {str(e)}"}

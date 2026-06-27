@@ -407,10 +407,13 @@ class AISchedulerDispatchOps:
                                 if retry_count < max_retries:
                                     from core.logic.ai.model_intelligence import ModelIntelligenceHub
                                     ModelIntelligenceHub.record_failure(active_translator.node_name, reason=str(be))
-                                    if not hasattr(engine, 'smart_router'):
-                                        from core.logic.smart_router import SmartRouter
-                                        engine.smart_router = SmartRouter(engine)
-                                    failover_node = engine.smart_router.get_failover_node(active_translator.node_name)
+                                    failover_node = None
+                                    strategy = getattr(engine.config.translation, 'strategy', 'single')
+                                    if strategy != 'single':
+                                        if not hasattr(engine, 'smart_router'):
+                                            from core.logic.smart_router import SmartRouter
+                                            engine.smart_router = SmartRouter(engine)
+                                        failover_node = engine.smart_router.get_failover_node(active_translator.node_name)
                                     if failover_node:
                                         tlog.warning(f"🩹 [热接力] Block {idx} ({code}) 正在从 {active_translator.node_name} 自动切换至备用算力节点 {failover_node} 进行重试...")
                                         from core.logic.ai.ai_factory import TranslatorFactory
