@@ -139,31 +139,101 @@
             }
         }, 50);
 
+        if (!window.switchSecuritySubTab) {
+            window.switchSecuritySubTab = (subTab, btn) => {
+                const container = document.getElementById('security-sub-tab-bar');
+                if (container) {
+                    const btns = container.querySelectorAll('.sub-tab-btn');
+                    btns.forEach(b => b.classList.remove('active'));
+                }
+                if (btn) {
+                    btn.classList.add('active');
+                } else if (event) {
+                    event.currentTarget.classList.add('active');
+                }
+
+                const panels = ['policy', 'topology', 'logs', 'lessons'];
+                panels.forEach(p => {
+                    const el = document.getElementById(`sec-panel-${p}`);
+                    if (el) el.style.display = (p === subTab) ? 'block' : 'none';
+                });
+            };
+        }
+
         return `
+            <style>
+                .security-sub-tab-bar {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
+                    padding-bottom: 10px;
+                    flex-wrap: wrap;
+                }
+                .sub-tab-btn {
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    color: var(--text-dim, #888);
+                    padding: 6px 14px;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    outline: none;
+                }
+                .sub-tab-btn:hover {
+                    background: rgba(255,255,255,0.08);
+                    color: var(--text-bright, #fff);
+                }
+                .sub-tab-btn.active {
+                    background: rgba(0, 242, 255, 0.1);
+                    border-color: rgba(0, 242, 255, 0.3);
+                    color: #00f2ff;
+                    box-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
+                }
+            </style>
+
             <div class="full-width">
                 <div class="section-header"><h3>🛡️ 安全审计 (Security & Compliance)</h3></div>
-                <p class="section-desc">配置系统安全底座与物理审计策略。</p>
+                <p class="section-desc">配置系统安全底座并查看物理合规与 AI 校验教训日志。</p>
                 
-                <div class="settings-grid">
-                    ${renderSettingsItem('API 访问令牌 (Token)', 'system.api_token', sys.api_token || '', 'password', {placeholder: '保持为空则不启用认证'})}
-                    ${renderSettingsItem('日志输出级别', 'system.log_level', sys.log_level || 'INFO', 'select', {
-                        items: [
-                            {value: 'DEBUG', text: 'DEBUG (全量输出)'},
-                            {value: 'INFO', text: 'INFO (常规运行)'},
-                            {value: 'WARNING', text: 'WARNING (仅告警)'},
-                            {value: 'ERROR', text: 'ERROR (仅异常)'}
-                        ]
-                    })}
-                    ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox')}
-                    ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold, 'number')}
-                    ${renderSettingsItem('本地算力内存削峰警戒线 (%)', 'governance.resource_guard.compute_ram_threshold', rg.compute_ram_threshold ?? 50.0, 'number', {
-                        description: '当本地大模型（如 Ollama / LM Studio 等）常驻物理内存占用宿主机总内存比例超过此阈值时，自动降低 AI 并发以防宿主崩溃。16GB 内存设备推荐设为 75% | 32GB 及以上机型推荐保持 50%。'
-                    })}
+                <div class="security-sub-tab-bar" id="security-sub-tab-bar">
+                    <button type="button" class="sub-tab-btn active" onclick="window.switchSecuritySubTab('policy', this)">🛡️ 安全策略</button>
+                    <button type="button" class="sub-tab-btn" onclick="window.switchSecuritySubTab('topology', this)">🗺️ 配置继承</button>
+                    <button type="button" class="sub-tab-btn" onclick="window.switchSecuritySubTab('logs', this)">📜 操作账本</button>
+                    <button type="button" class="sub-tab-btn" onclick="window.switchSecuritySubTab('lessons', this)">🧠 教训自愈</button>
                 </div>
 
-                <div id="config-audit-topology-container" class="mt-large"></div>
-                <div id="operation-audit-logs-container" class="mt-large"></div>
-                <div id="ai-lessons-visualizer-container" class="mt-large"></div>
+                <div id="sec-panel-policy">
+                    <div class="settings-grid">
+                        ${renderSettingsItem('API 访问令牌 (Token)', 'system.api_token', sys.api_token || '', 'password', {placeholder: '保持为空则不启用认证'})}
+                        ${renderSettingsItem('日志输出级别', 'system.log_level', sys.log_level || 'INFO', 'select', {
+                            items: [
+                                {value: 'DEBUG', text: 'DEBUG (全量输出)'},
+                                {value: 'INFO', text: 'INFO (常规运行)'},
+                                {value: 'WARNING', text: 'WARNING (仅告警)'},
+                                {value: 'ERROR', text: 'ERROR (仅异常)'}
+                            ]
+                        })}
+                        ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox')}
+                        ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold, 'number')}
+                        ${renderSettingsItem('本地算力内存削峰警戒线 (%)', 'governance.resource_guard.compute_ram_threshold', rg.compute_ram_threshold ?? 50.0, 'number', {
+                            description: '当本地大模型（如 Ollama / LM Studio 等）常驻物理内存占用宿主机总内存比例超过此阈值时，自动降低 AI 并发以防宿主崩溃。16GB 内存设备推荐设为 75% | 32GB 及以上机型推荐保持 50%。'
+                        })}
+                    </div>
+                </div>
+
+                <div id="sec-panel-topology" style="display: none;">
+                    <div id="config-audit-topology-container"></div>
+                </div>
+
+                <div id="sec-panel-logs" style="display: none;">
+                    <div id="operation-audit-logs-container"></div>
+                </div>
+
+                <div id="sec-panel-lessons" style="display: none;">
+                    <div id="ai-lessons-visualizer-container"></div>
+                </div>
             </div>
         `;
     }
