@@ -105,20 +105,17 @@ window.renderThemesCategory = () => {
         setTimeout(async () => {
             try {
                 if (typeof loadPlugins === 'function') await loadPlugins();
-                if (typeof renderSettingsCategory === 'function') {
-                    const activeItem = document.querySelector('.s-tab.active');
-                    if (activeItem && activeItem.dataset.cat === 'themes') {
-                        renderSettingsCategory('themes');
-                        if (window._shouldScrollToTopAfterThemeSwitch) {
-                            window._shouldScrollToTopAfterThemeSwitch = false;
-                            setTimeout(() => {
-                                const c = document.querySelector('.view-panel.active .tab-content-area');
-                                if (c) { c.scrollTop = 0; c.scrollTo({ top: 0, behavior: 'smooth' }); }
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                document.documentElement.scrollTop = 0;
-                                document.body.scrollTop = 0;
-                            }, 100);
-                        }
+                if (window.currentActiveSettingsSubCat === 'themes') {
+                    renderSettingsCategory('themes');
+                    if (window._shouldScrollToTopAfterThemeSwitch) {
+                        window._shouldScrollToTopAfterThemeSwitch = false;
+                        setTimeout(() => {
+                            const c = document.querySelector('.view-panel.active .tab-content-area');
+                            if (c) { c.scrollTop = 0; c.scrollTo({ top: 0, behavior: 'smooth' }); }
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            document.documentElement.scrollTop = 0;
+                            document.body.scrollTop = 0;
+                        }, 100);
                     }
                 }
             } finally {

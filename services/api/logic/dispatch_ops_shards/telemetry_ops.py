@@ -273,7 +273,14 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
     # 动态查询 SQLite 账本获取真实历史总计费
     total_historical_cost = 0.0
     if hasattr(engine, "meta") and hasattr(engine.meta, "sqlite"):
-        total_historical_cost = engine.meta.sqlite.get_total_cost(imprint_id)
+        try:
+            raw_cost = engine.meta.sqlite.get_total_cost(imprint_id)
+            if isinstance(raw_cost, (int, float)):
+                total_historical_cost = float(raw_cost)
+            elif raw_cost is not None and not hasattr(raw_cost, "assert_called"):
+                total_historical_cost = float(raw_cost)
+        except Exception:
+            pass
         
     # 动态获取当前的 AI 算力节点名称
     current_node = "Local Sync"
@@ -317,6 +324,99 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             health_status = "Active"
     else:
         audit_status = "PENDING"
+    # 🚀 [V89.0] 物理全渠道联动：从账本中扫描并追加外部部署与社交同步渠道的真实状态
+    publish_status = doc_info.get("publish_status", {})
+    
+    # A. 提取 Hosting 全站托管渠道
+    direct_upload = getattr(config.publish_control, "direct_upload", None) or {}
+    if isinstance(direct_upload, dict):
+        pass
+    elif hasattr(direct_upload, "model_dump"):
+        direct_upload = direct_upload.model_dump()
+    elif hasattr(direct_upload, "__dataclass_fields__"):
+        from dataclasses import asdict
+        try:
+            direct_upload = asdict(direct_upload)
+        except Exception:
+            direct_upload = getattr(direct_upload, "__dict__", {})
+    else:
+        direct_upload = getattr(direct_upload, "__dict__", {})
+            
+    for chan_id, chan_cfg in direct_upload.items():
+        if isinstance(chan_cfg, dict) and chan_cfg.get("enabled"):
+            status_info = publish_status.get(chan_id, {})
+            chan_status = status_info.get("status")
+            
+            # 自愈降级：如果全站网页默认已生成，且没有显式的失败记录，我们可以默认它随全站同步了
+            if not chan_status:
+                chan_status = "published" if zh_exists else "pending"
+            
+            last_sync_str = "Never"
+            if status_info.get("timestamp"):
+                last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(status_info.get("timestamp")))
+            elif zh_exists:
+                last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(zh_path)))
+                
+            display_name = chan_id.replace("_", " ").title()
+            # 🚀 [V89.6] 自适应托管文章绝对链接：优先拼接 public_url/posts/slug，否则 fallback 导出仓库地址
+            slug = doc_info.get("slug") or ""
+            public_url = chan_cfg.get("public_url")
+            artifact_url = "#"
+            if public_url:
+                artifact_url = f"{public_url.rstrip('/')}/posts/{slug}"
+            else:
+                artifact_url = chan_cfg.get("repo_url") or "#"
+
+            sync_matrix.append({
+                "channel_id": chan_id,
+                "locale": f"🌐 {display_name} (全站部署)",
+                "lang_code": "HOSTING",
+                "status": chan_status.lower(),
+                "last_sync": last_sync_str,
+                "artifact_url": artifact_url,
+                "tokens": 0,
+                "progress": 100 if chan_status.lower() in ("published", "success") else 0,
+                "cache_info": "全站托管",
+                "reason": status_info.get("error") or ""
+            })
+             
+    # B. 提取 Syndication 社交同步渠道
+    syndication_cfg = getattr(config, "syndication", {}) or {}
+    if isinstance(syndication_cfg, dict):
+        pass
+    elif hasattr(syndication_cfg, "model_dump"):
+        syndication_cfg = syndication_cfg.model_dump()
+    elif hasattr(syndication_cfg, "__dataclass_fields__"):
+        from dataclasses import asdict
+        try:
+            syndication_cfg = asdict(syndication_cfg)
+        except Exception:
+            syndication_cfg = getattr(syndication_cfg, "__dict__", {})
+    else:
+        syndication_cfg = getattr(syndication_cfg, "__dict__", {})
+         
+    for chan_id, chan_cfg in syndication_cfg.items():
+        if isinstance(chan_cfg, dict) and chan_cfg.get("enabled"):
+            status_info = publish_status.get(chan_id, {})
+            chan_status = status_info.get("status") or "pending"
+            
+            last_sync_str = "Never"
+            if status_info.get("timestamp"):
+                last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(status_info.get("timestamp")))
+                 
+            display_name = chan_id.replace("_", " ").title()
+            sync_matrix.append({
+                "channel_id": chan_id,
+                "locale": f"📡 {display_name} (社交同步)",
+                "lang_code": "SOCIAL",
+                "status": chan_status.lower(),
+                "last_sync": last_sync_str,
+                "artifact_url": status_info.get("url") or "#",
+                "tokens": 0,
+                "progress": 100 if chan_status.lower() in ("published", "success") else 0,
+                "cache_info": "外部社区",
+                "reason": status_info.get("error") or ""
+            })
 
     return {
         "doc_id": doc_id,

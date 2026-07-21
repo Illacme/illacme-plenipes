@@ -57,6 +57,9 @@
                             <label>物理密钥 (API Key)</label>
                             <input id="swal-input-key" class="swal2-input" type="password" placeholder="sk-...">
 
+                            <label>独立代理 (Proxy)</label>
+                            <input id="swal-input-proxy" class="swal2-input" placeholder="e.g. http://127.0.0.1:10809 或 direct (可选)">
+
                             <div style="grid-column: span 2; margin-top: 5px;">
                                 <label>活跃模型感应 (Model Discovery)</label>
                                 <div class="sovereign-select-vessel" style="margin-top: 8px;">
@@ -116,6 +119,7 @@
                             id: nid,
                             base_url: document.getElementById('swal-input-url').value,
                             api_key: document.getElementById('swal-input-key').value,
+                            proxy: document.getElementById('swal-input-proxy')?.value || '',
                             type: type,
                             model: document.getElementById('swal-input-model').value
                         }
@@ -128,6 +132,7 @@
                     const prefix = `translation.compute_nodes.${formValues.id}`;
                     payload[`${prefix}.base_url`] = formValues.base_url;
                     payload[`${prefix}.api_key`] = formValues.api_key;
+                    payload[`${prefix}.proxy`] = formValues.proxy;
                     payload[`${prefix}.type`] = formValues.type;
                     payload[`${prefix}.model`] = formValues.model;
                     payload[`${prefix}.last_updated`] = Date.now();
@@ -201,6 +206,9 @@
                             <label>物理密钥 (API Key)</label>
                             <input id="swal-input-key" class="swal2-input" type="password" value="${node.api_key || ''}">
 
+                            <label>独立代理 (Proxy)</label>
+                            <input id="swal-input-proxy" class="swal2-input" value="${node.proxy || ''}" placeholder="e.g. http://127.0.0.1:10809 或 direct (可选)">
+
                             <div style="grid-column: span 2; margin-top: 5px;">
                                 <label>活跃模型感应 (Model Discovery)</label>
                                 <div class="sovereign-select-vessel" style="margin-top: 8px;">
@@ -245,6 +253,7 @@
                         return {
                             base_url: document.getElementById('swal-input-url').value,
                             api_key: document.getElementById('swal-input-key').value,
+                            proxy: document.getElementById('swal-input-proxy')?.value || '',
                             type: type,
                             model: document.getElementById('swal-input-model').value
                         }
@@ -255,6 +264,7 @@
                     const payload = {};
                     payload[`translation.compute_nodes.${id}.base_url`] = formValues.base_url;
                     payload[`translation.compute_nodes.${id}.api_key`] = formValues.api_key;
+                    payload[`translation.compute_nodes.${id}.proxy`] = formValues.proxy;
                     payload[`translation.compute_nodes.${id}.type`] = formValues.type;
                     payload[`translation.compute_nodes.${id}.model`] = formValues.model;
                     payload[`translation.compute_nodes.${id}.last_updated`] = Date.now();

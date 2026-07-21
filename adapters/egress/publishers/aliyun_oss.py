@@ -138,6 +138,8 @@ class AliyunOssPublisher(BasePublisher):
     def is_healthy(self) -> bool:
         if not self.access_key_id or not self.access_key_secret or not self.bucket or not self.endpoint:
             return False
+        if not self.ensure_python_dependency("oss2"):
+            return False
         try:
             import oss2
             endpoint_url = self.endpoint

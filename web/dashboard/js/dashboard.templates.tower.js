@@ -14,7 +14,7 @@ window.viewTemplates.tower = `
             </div>
             <div class="view-content scroll-container" style="display: flex; flex-direction: column; gap: 20px; padding: 20px; overflow-y: auto; flex: 1;">
                 <!-- 第一行：状态卡片 -->
-                <div class="tower-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                <div class="tower-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
                     <div class="glass-panel tower-card">
                         <div class="card-label">系统状态</div>
                         <div class="card-val" id="tower-status">LOADING...</div>
@@ -116,20 +116,116 @@ window.viewTemplates.tower = `
                 <!-- 第三行：历史负载走势图 -->
                 <div class="tower-history-row" style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
                     <div class="glass-panel chart-container" style="display: flex; flex-direction: column; padding: 15px; min-height: 180px;">
-                        <div class="sector-header" style="font-weight: 800; font-size: 0.8rem; color: var(--accent-secondary); margin-bottom: 10px; display: flex; justify-content: space-between;">
-                            <span>📈 负载历史演进趋势 (CPU & Memory Sparkline)</span>
-                            <div style="display: flex; gap: 15px; font-size: 0.75rem; font-family: var(--font-mono);"><span style="color: var(--accent-primary);">● CPU</span><span style="color: var(--accent-secondary);">● MEM</span><span style="color: var(--accent-orange, #ff9d00);">● COMPUTE</span></div>
+                        <div class="sector-header" style="font-weight: 800; font-size: 0.8rem; color: var(--accent-secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span>📈 负载历史演进趋势 (CPU & Memory Sparkline)</span>
+                                <!-- 🛰️ [V75.6] 时间跨度调节 Tab 组 -->
+                                <div class="trend-time-tabs" id="tower-trend-tabs" style="display: flex; gap: 2px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 2px; border-radius: 6px; height: 22px; align-items: center; box-sizing: border-box;">
+                                    <button type="button" class="mini-btn active" id="btn-trend-80s" onclick="window.switchTrendRange('80s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-bright, #fff); transition: background 0.2s; background: var(--accent-primary);">80s</button>
+                                    <button type="button" class="mini-btn" id="btn-trend-180s" onclick="window.switchTrendRange('180s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">3m</button>
+                                    <button type="button" class="mini-btn" id="btn-trend-300s" onclick="window.switchTrendRange('300s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">5m</button>
+                                    <button type="button" class="mini-btn" id="btn-trend-12h" onclick="window.switchTrendRange('12h')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">12h</button>
+                                </div>
+                            </div>
+                            <div id="trend-legend-val" style="display: flex; gap: 15px; font-size: 0.75rem; font-family: var(--font-mono); transition: color 0.15s;"><span style="color: var(--accent-primary);">● CPU</span><span style="color: var(--accent-secondary);">● MEM</span><span style="color: var(--accent-orange, #ff9d00);">● COMPUTE</span></div>
                         </div>
-                        <div style="flex: 1; position: relative; width: 100%; height: 120px;">
-                             <svg id="tower-trend-svg" width="100%" height="100%" viewBox="0 0 500 120" preserveAspectRatio="none" style="overflow: visible;">
+                        <div style="flex: 1; position: relative; width: 100%; height: 138px;">
+                             <svg id="tower-trend-svg" width="100%" height="100%" viewBox="0 0 500 138" preserveAspectRatio="none" style="overflow: visible;">
                                 <defs>
                                     <linearGradient id="cpu-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0"/></linearGradient>
                                     <linearGradient id="mem-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-secondary)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-secondary)" stop-opacity="0"/></linearGradient>
                                     <linearGradient id="comp-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-orange, #ff9d00)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-orange, #ff9d00)" stop-opacity="0"/></linearGradient>
                                 </defs>
+                                <!-- 🌌 [V75.6] 负载遥测科技感背景网格虚线 -->
+                                <g stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="2,4">
+                                    <line x1="0" y1="30" x2="500" y2="30" />
+                                    <line x1="0" y1="60" x2="500" y2="60" />
+                                    <line x1="0" y1="90" x2="500" y2="90" />
+                                    <line x1="125" y1="0" x2="125" y2="120" />
+                                    <line x1="250" y1="0" x2="250" y2="120" />
+                                    <line x1="375" y1="0" x2="375" y2="120" />
+                                </g>
+                                <!-- 时间轴底实线与刻度 -->
+                                <line x1="0" y1="120" x2="500" y2="120" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+                                <!-- Y轴极简百分比刻度标记 -->
+                                <g id="trend-y-ticks" fill="var(--text-dim)" opacity="0.35" font-size="8" font-family="var(--font-mono)" style="pointer-events: none;">
+                                    <text x="5" y="12" text-anchor="start">100%</text>
+                                    <text x="5" y="64" text-anchor="start">50%</text>
+                                    <text x="5" y="116" text-anchor="start">0%</text>
+                                </g>
+                                <!-- 磁吸式垂直数值探针线 -->
+                                <line id="trend-probe-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2,3" style="display: none; pointer-events: none;" />
+                                <g fill="var(--text-dim)" font-size="9" font-family="var(--font-mono)">
+                                    <text class="trend-tick-0" x="0" y="133" text-anchor="start">-80s</text>
+                                    <text class="trend-tick-1" x="125" y="133" text-anchor="middle">-60s</text>
+                                    <text class="trend-tick-2" x="250" y="133" text-anchor="middle">-40s</text>
+                                    <text class="trend-tick-3" x="375" y="133" text-anchor="middle">-20s</text>
+                                    <text class="trend-tick-4" x="500" y="133" text-anchor="end">现在 (0s)</text>
+                                </g>
                                 <path id="trend-cpu-area" fill="url(#cpu-grad)" d=""/><path id="trend-cpu-line" fill="none" stroke="var(--accent-primary)" stroke-width="2" d=""/>
                                 <path id="trend-mem-area" fill="url(#mem-grad)" d=""/><path id="trend-mem-line" fill="none" stroke="var(--accent-secondary)" stroke-width="2" d=""/>
                                 <path id="trend-compute-area" fill="url(#comp-grad)" d=""/><path id="trend-compute-line" fill="none" stroke="var(--accent-orange, #ff9d00)" stroke-width="2" d=""/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 新增：AI 大模型实时遥测趋势图 -->
+                <div class="tower-ai-trend-row" style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
+                    <div class="glass-panel chart-container" style="display: flex; flex-direction: column; padding: 15px; min-height: 180px;">
+                        <div class="sector-header" style="font-weight: 800; font-size: 0.8rem; color: var(--accent-secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span>🧠 AI 算力实时遥测走势 (AI Compute Live Telemetry)</span>
+                                <!-- 🛰️ [V75.6] AI 时间跨度调节 Tab 组 -->
+                                <div class="trend-time-tabs" id="tower-ai-trend-tabs" style="display: flex; gap: 2px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 2px; border-radius: 6px; height: 22px; align-items: center; box-sizing: border-box;">
+                                    <button type="button" class="mini-btn active" id="btn-ai-trend-80s" onclick="window.switchTrendRange('80s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-bright, #fff); transition: background 0.2s; background: var(--accent-primary);">80s</button>
+                                    <button type="button" class="mini-btn" id="btn-ai-trend-180s" onclick="window.switchTrendRange('180s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">3m</button>
+                                    <button type="button" class="mini-btn" id="btn-ai-trend-300s" onclick="window.switchTrendRange('300s')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">5m</button>
+                                    <button type="button" class="mini-btn" id="btn-ai-trend-12h" onclick="window.switchTrendRange('12h')" 
+                                            style="padding: 0 8px; height: 16px; line-height: 16px; font-size: 0.65rem; border-radius: 4px; border: none; cursor: pointer; color: var(--text-dim); transition: background 0.2s; background: transparent;">12h</button>
+                                </div>
+                            </div>
+                            <div id="trend-ai-legend-val" style="display: flex; gap: 15px; font-size: 0.75rem; font-family: var(--font-mono); transition: color 0.15s;"><span style="color: var(--accent-secondary);">● 吞吐速率 (Tokens/s)</span><span style="color: var(--accent-orange, #ff9d00);">● 活动工作线程 (Active Threads)</span></div>
+                        </div>
+                        <div style="flex: 1; position: relative; width: 100%; height: 138px;">
+                             <svg id="tower-ai-trend-svg" width="100%" height="100%" viewBox="0 0 500 138" preserveAspectRatio="none" style="overflow: visible;">
+                                <defs>
+                                    <linearGradient id="tokens-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-secondary)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-secondary)" stop-opacity="0"/></linearGradient>
+                                    <linearGradient id="threads-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-orange, #ff9d00)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--accent-orange, #ff9d00)" stop-opacity="0"/></linearGradient>
+                                </defs>
+                                <!-- 🌌 [V75.6] AI 遥测科技感背景网格虚线 -->
+                                <g stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="2,4">
+                                    <line x1="0" y1="30" x2="500" y2="30" />
+                                    <line x1="0" y1="60" x2="500" y2="60" />
+                                    <line x1="0" y1="90" x2="500" y2="90" />
+                                    <line x1="125" y1="0" x2="125" y2="120" />
+                                    <line x1="250" y1="0" x2="250" y2="120" />
+                                    <line x1="375" y1="0" x2="375" y2="120" />
+                                </g>
+                                <!-- 时间轴底实线与刻度 -->
+                                <line x1="0" y1="120" x2="500" y2="120" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+                                <!-- Y轴极简百分比刻度标记 -->
+                                <g id="trend-ai-y-ticks" fill="var(--text-dim)" opacity="0.35" font-size="8" font-family="var(--font-mono)" style="pointer-events: none;">
+                                    <!-- 动态由 JS 填充 -->
+                                </g>
+                                <!-- 磁吸式垂直数值探针线 -->
+                                <line id="trend-ai-probe-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2,3" style="display: none; pointer-events: none;" />
+                                <g fill="var(--text-dim)" font-size="9" font-family="var(--font-mono)">
+                                    <text class="trend-tick-0" x="0" y="133" text-anchor="start">-80s</text>
+                                    <text class="trend-tick-1" x="125" y="133" text-anchor="middle">-60s</text>
+                                    <text class="trend-tick-2" x="250" y="133" text-anchor="middle">-40s</text>
+                                    <text class="trend-tick-3" x="375" y="133" text-anchor="middle">-20s</text>
+                                    <text class="trend-tick-4" x="500" y="133" text-anchor="end">现在 (0s)</text>
+                                </g>
+                                <path id="trend-tokens-area" fill="url(#tokens-grad)" d=""/><path id="trend-tokens-line" fill="none" stroke="var(--accent-secondary)" stroke-width="2" d=""/>
+                                <path id="trend-threads-area" fill="url(#threads-grad)" d=""/><path id="trend-threads-line" fill="none" stroke="var(--accent-orange, #ff9d00)" stroke-width="2" d=""/>
                             </svg>
                         </div>
                     </div>
@@ -179,25 +275,25 @@ window.viewTemplates.analytics = `
             </div>
             <div class="view-content scroll-container" style="display: flex; flex-direction: column; gap: 20px; padding: 20px; overflow-y: auto; flex: 1; min-height: 0; box-sizing: border-box;">
                 <!-- 第一部分：宏观业务核心指标卡片 -->
-                <div class="analytics-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; flex-shrink: 0;">
-                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 15px;">
+                <div class="analytics-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex-shrink: 0;">
+                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 12px 14px;">
                         <div class="card-label" style="font-size: 0.75rem; color: var(--text-dim);">📂 原稿文库规模</div>
-                        <div class="card-val" id="analytics-total-docs" style="font-size: 1.8rem; font-weight: 800; color: var(--text-bright); margin-top: 8px;">0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-dim);">篇</span></div>
+                        <div class="card-val" id="analytics-total-docs" style="font-size: 1.4rem; font-weight: 800; color: var(--text-bright); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-dim);">篇</span></div>
                         <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;" id="analytics-total-words">全库共 0 字</div>
                     </div>
-                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 15px;">
+                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 12px 14px;">
                         <div class="card-label" style="font-size: 0.75rem; color: var(--text-dim);">🚀 线上发布率 (Live)</div>
-                        <div class="card-val" id="analytics-live-percent" style="font-size: 1.8rem; font-weight: 800; color: var(--accent-primary); margin-top: 8px;">0.0%</div>
+                        <div class="card-val" id="analytics-live-percent" style="font-size: 1.4rem; font-weight: 800; color: var(--accent-primary); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0.0%</div>
                         <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;" id="analytics-live-ratio">已发布 0 篇 / 草稿 0 篇</div>
                     </div>
-                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 15px;">
+                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 12px 14px;">
                         <div class="card-label" style="font-size: 0.75rem; color: var(--text-dim);">🔗 双链网络健康度</div>
-                        <div class="card-val" id="analytics-graph-health" style="font-size: 1.8rem; font-weight: 800; color: #4caf50; margin-top: 8px;">100分</div>
+                        <div class="card-val" id="analytics-graph-health" style="font-size: 1.4rem; font-weight: 800; color: #4caf50; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">100分</div>
                         <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;" id="analytics-graph-links">0 节点 / 0 链接</div>
                     </div>
-                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 15px;">
+                    <div class="glass-panel tower-card" style="position: relative; overflow: hidden; border-radius: 12px; padding: 12px 14px;">
                         <div class="card-label" style="font-size: 0.75rem; color: var(--text-dim);">🧠 累计算力花费</div>
-                        <div class="card-val" id="analytics-total-cost" style="font-size: 1.8rem; font-weight: 800; color: var(--accent-secondary); margin-top: 8px;">$0.00</div>
+                        <div class="card-val" id="analytics-total-cost" style="font-size: 1.4rem; font-weight: 800; color: var(--accent-secondary); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">$0.00</div>
                         <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;" id="analytics-session-cost">本次运行花费 $0.00</div>
                     </div>
                 </div>

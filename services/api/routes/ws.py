@@ -108,6 +108,9 @@ def register_event_listeners():
     bus.subscribe("KNOWLEDGE_BATCH_READY", get_event_handler("KNOWLEDGE_BATCH_READY"))
      # 🪐 [混合渐进式] AI 织网分批完成时推送增量星系数据至 Dashboard
     bus.subscribe("UI_AI_BREAKER_TRIPPED", get_event_handler("UI_AI_BREAKER_TRIPPED"))
+    # 🛡️ [V75.9] 动态警报器：订阅物理过载和安全合规事件并转发至 WS
+    bus.subscribe("UI_RESOURCE_THROTTLE", get_event_handler("UI_RESOURCE_THROTTLE"))
+    bus.subscribe("SECURITY_ALERT", get_event_handler("SECURITY_ALERT"))
 
 register_event_listeners()
 

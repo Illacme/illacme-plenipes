@@ -38,7 +38,8 @@ async def test_probe_routing_with_category_hosting():
     mock_bucket_instance = MagicMock()
     oss2.Bucket.return_value = mock_bucket_instance
 
-    with patch("services.api.routes.gov.context_shards.plugin_ops.get_global_engine", return_value=mock_engine):
+    with patch("services.api.routes.gov.context_shards.plugin_ops.get_global_engine", return_value=mock_engine), \
+         patch("core.adapters.egress.publishers.base.BasePublisher.ensure_python_dependency", return_value=True):
         # 探测 aliyun_oss 并指定 category="hosting"
         res = await probe_plugin_impl({
             "id": "aliyun_oss",

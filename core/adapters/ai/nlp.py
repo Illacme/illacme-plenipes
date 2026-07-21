@@ -21,6 +21,10 @@ class NLPAdapter:
         """
         🚀 异步实体提取 (NER)：自动识别人名、地名、技术名词、概念
         """
+        if not self.translator or not hasattr(self.translator, "raw_inference"):
+            tlog.warning("⚠️ [NLP] 未挂载有效的 AI 算力驱动，实体提取降级跳过。")
+            return {}
+
         system_prompt = (
             "You are a knowledge graph expert. Extract key entities from the provided text. "
             "Categorize them into 'concepts', 'technologies', 'people', and 'projects'. "
@@ -29,7 +33,6 @@ class NLPAdapter:
         user_prompt = f"Extract entities from this markdown content:\n\n{text[:2000]}"
         
         try:
-            # 复用翻译器的推断接口 (确保已挂载 AI 算力)
             res = self.translator.raw_inference(user_prompt, system_prompt)
             if not res: return {}
             
@@ -60,6 +63,10 @@ class NLPAdapter:
         """
         🚀 智能摘要 (Gist)：生成 100 字以内的核心语义指纹
         """
+        if not self.translator or not hasattr(self.translator, "raw_inference"):
+            tlog.warning("⚠️ [NLP] 未挂载有效的 AI 算力驱动，摘要生成降级跳过。")
+            return ""
+
         system_prompt = "Summarize the following text into a single, concise sentence in the same language. Max 100 characters."
         user_prompt = text[:3000]
         

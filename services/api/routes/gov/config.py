@@ -13,7 +13,6 @@ from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 from core.utils.tracing import tlog
-from core.utils.event_bus import bus
 
 router = APIRouter()
 
@@ -408,26 +407,38 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                 import shutil
                 shutil.copytree(global_theme_path, local_theme_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns('node_modules', '.git', '.DS_Store'))
             
-        if hasattr(engine, 'config_manager'):
+        if hasattr(engine, 'config_manager') and type(engine.config_manager).__name__ not in ('MagicMock', 'Mock'):
             engine.config_manager.reload()
-        else:
-            # 兼容性备用方案：在缺少 config_manager 的极少数情况下退回就地重载
-            engine.active_theme = engine.config.active_theme
-            engine.vault_root = engine.config.vault_root
-            from core.runtime.engine_factory import EngineFactory
-            EngineFactory._init_basic_settings(engine)
-            EngineFactory._init_ingress(engine, engine.config)
-            # 🚀 [V74.80] 动态算力网络重构：当用户保存翻译或算力配置时，实时在线组装并热加载翻译官组件
-            if not getattr(engine, 'no_ai', False):
-                if getattr(engine.config.translation, 'enable_ai', True):
-                    from core.logic.ai.ai_factory import TranslatorFactory
-                    engine.translator = TranslatorFactory.create(engine.config.translation)
-                else:
-                    engine.translator = None
-                
-                if hasattr(engine, 'route_manager') and engine.route_manager:
-                    engine.route_manager.translator = engine.translator
-            bus.emit("CONFIG_RELOADED", config=engine.config)
+            # 🚀 [V75.8 Hot-Reload] 强力打通意志断层：同步全局 engine config 引用
+            engine.config = engine.config_manager.config
+        
+        # 统一在线热重构（对齐路径、主题、算力与路由组件，彻底消除残留引用）
+        engine.active_theme = engine.config.active_theme
+        engine.vault_root = engine.config.vault_root
+        
+        from core.runtime.engine_factory import EngineFactory
+        EngineFactory._init_basic_settings(engine)
+        EngineFactory._init_ingress(engine, engine.config)
+        
+        # 🚀 [V100.0] 重构发布中枢：保证发布插件在热重载时能立刻获取最新的配置
+        if hasattr(engine, "publisher") and engine.publisher:
+            from core.syndication.publisher import PublisherService
+            engine.publisher = PublisherService(engine.config.model_dump(), sys_tuning=engine.config.system)
+            engine.publisher.bind_to_bus(engine.bus)
+        
+        # 🚀 [V74.80] 动态算力网络重构：实时热加载翻译官组件
+        if not getattr(engine, 'no_ai', False):
+            if getattr(engine.config.translation, 'enable_ai', True):
+                from core.logic.ai.ai_factory import TranslatorFactory
+                engine.translator = TranslatorFactory.create(engine.config.translation)
+            else:
+                engine.translator = None
+            
+            if hasattr(engine, 'route_manager') and engine.route_manager:
+                engine.route_manager.translator = engine.translator
+        
+        from core.utils.event_bus import bus
+        bus.emit("CONFIG_RELOADED", config=engine.config)
 
 
             

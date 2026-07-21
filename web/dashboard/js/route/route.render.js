@@ -10,18 +10,9 @@ window.renderRouteMatrixCategory = () => {
 
     let html = `
         <div class="full-width">
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3 style="display: flex; align-items: center; gap: 10px;">
-                        🛣️ 高级频道路由与魔法矩阵
-                        ${isLicensed ? '<span class="pro-badge">PRO</span>' : '<span class="community-badge" style="background: rgba(255,255,255,0.1); color: #888; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px;">COMMUNITY</span>'}
-                    </h3>
-                </div>
-            </div>
-            
-            <p class="section-desc" style="margin-bottom: 25px;">
-                突破单纯的物理目录映射，将本地特定文件夹（Local Folder）路由至全新的逻辑出版路径（Web Path），同时可为其指派专属的「网页前端模板」与「AI 翻译风格」。<br>
-                <span style="color: var(--accent-secondary); font-size: 0.85rem;">* 社区版默认退化至原始物理路径。</span>
+            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 25px; opacity: 0.85;">
+                突破单纯的物理目录映射，将本地特定文件夹路由至全新的逻辑出版路径，并可为其指派专属的前端网页模板与 AI 翻译风格。
+                ${!isLicensed ? '<br><span style="color: var(--accent-secondary); font-size: 0.75rem;">* 社区版将自动退避至物理目录映射模式。</span>' : ''}
             </p>
             
             <div class="matrix-table glass-panel" style="border-radius: 12px; overflow: hidden; position: relative;">
@@ -179,18 +170,9 @@ window.renderSlugSettingsCategory = () => {
     );
     let html = `
         <div class="full-width">
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3 style="display: flex; align-items: center; gap: 10px;">
-                        🔗 Slug 命名与路径拼接策略
-                        ${isLicensed ? '<span class="pro-badge">PRO</span>' : '<span class="community-badge" style="background: rgba(255,255,255,0.1); color: #888; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px;">COMMUNITY</span>'}
-                    </h3>
-                </div>
-            </div>
-            
-            <p class="section-desc" style="margin-bottom: 25px;">
-                配置文档发布时自动生成的 URL Slug 逻辑及目录路径整合方案，支持结合 AI 或物理文件名进行全自动治理。<br>
-                <span style="color: var(--accent-secondary); font-size: 0.85rem;">* 社区版默认退化至扁平 AI Slug 模式。</span>
+            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 25px; opacity: 0.85;">
+                配置文档发布时自动生成的 URL Slug 别名逻辑及子目录路径层级拼装方案，支持结合 AI 语义或物理文件名进行物理化治理。
+                ${!isLicensed ? '<br><span style="color: var(--accent-secondary); font-size: 0.75rem;">* 社区版将自动退避至扁平 AI Slug 模式。</span>' : ''}
             </p>
             
             <div class="settings-group glass-panel" style="padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border); position: relative; overflow: hidden;">

@@ -177,6 +177,8 @@ class SftpPublisher(BasePublisher):
             return False
         if not self.password and not self.private_key:
             return False
+        if not self.ensure_python_dependency("paramiko"):
+            return False
 
         try:
             import paramiko

@@ -22,14 +22,28 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
         });
     }
 
-    // 抓取当前已修改 but 未保存的配置（与 updateConfigField 无缝联动）
+    // 🚀 [Sovereign 实时抓取] 提取已落盘配置 + 强力合并抽屉当前 DOM 输入框的最新实时值
     let settings = {};
-    if (parentId === 'webhook_gateway') {
-        settings = window.settingsData.publish_control?.webhook_endpoints?.[id] || {};
-    } else if (parentId) {
-        settings = window.settingsData.syndication?.[id] || {};
-    } else {
-        settings = window.settingsData.syndication?.[id] || window.settingsData.publish_control?.direct_upload?.[id] || {};
+    if (window.settingsData) {
+        settings = {
+            ...(window.settingsData.image_hosting?.[id] || {}),
+            ...(window.settingsData.publish_control?.direct_upload?.[id] || {}),
+            ...(window.settingsData.syndication?.[id] || {})
+        };
+    }
+
+    if (drawerBody) {
+        drawerBody.querySelectorAll('input, select, textarea').forEach(input => {
+            const path = input.getAttribute('data-path') || input.name;
+            if (path && input.value !== undefined) {
+                const parts = path.split('.');
+                const key = parts[parts.length - 1];
+                let val = input.value;
+                if (input.type === 'checkbox') val = input.checked;
+                else if (input.type === 'number') val = parseFloat(input.value) || 0;
+                settings[key] = val;
+            }
+        });
     }
 
     try {
@@ -187,8 +201,64 @@ window.installPluginDependencies = async (id) => {
 window.savePluginSettingsAndClose = async () => {
     if (typeof addAudit === 'function') addAudit("💾 开始同步当前面板参数并准备保存...");
 
-    // 1. 强力抓取抽屉内所有 input 的当前最新状态，写入 window.settingsData
     const drawerBody = document.getElementById('p-drawer-body');
+
+    // 🔍 1. 探测当前抽屉中是否将核心 Token 擦除了
+    let tokenWasCleared = false;
+    if (drawerBody) {
+        const tokenInput = drawerBody.querySelector('input[name*="token"], input[name*="api_key"], input[name*="access_token"], input[name*="secret_key"], input[name*="integration_token"], input[name*="password"], input[data-path*="token"], input[data-path*="api_key"], input[data-path*="secret_key"]');
+        if (tokenInput && tokenInput.value.trim() === '') {
+            tokenWasCleared = true;
+        }
+    }
+
+    // 获取当前正在编辑的插件定义对象
+    const drawerTitle = document.getElementById('p-drawer-title');
+    let activePluginId = null;
+    if (drawerTitle && drawerTitle.innerText) {
+        const match = drawerTitle.innerText.match(/⚙️ 配置(?:能力|节点|插件):?\s*(.*)/);
+        if (match) activePluginId = match[1].toLowerCase().replace(/^[^\w]+/, '');
+    }
+    const pluginObj = (window.allPlugins && activePluginId) ? window.allPlugins.find(p => p.id === activePluginId || (p.name && p.name.toLowerCase() === activePluginId)) : null;
+
+    // 🛡️ 物理锁校验三重防线
+    if (tokenWasCleared && pluginObj) {
+        // 场景三：如果当前插件正在被品牌绑定使用中，强行拦截保存！
+        if (pluginObj.is_in_use) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '⚠️ 物理锁定拦截',
+                    text: `当前品牌正在激活使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止清空鉴权 Token！如需清空，请先关闭品牌绑定。`,
+                    icon: 'warning',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            } else {
+                alert(`⚠️ 物理锁定拦截: 当前品牌正在使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止擦除 Token！`);
+            }
+            return;
+        }
+
+        // 场景二：如果插件当前开启了总开关，全自动自愈关闭总开关并重置自检连通状态
+        if (pluginObj.is_enabled) {
+            pluginObj.is_enabled = false;
+            window.probePassState = window.probePassState || {};
+            window.probePassState[pluginObj.id] = false;
+
+            const masterToggle = drawerBody ? drawerBody.querySelector('#drawer-global-driver-toggle') : null;
+            if (masterToggle) masterToggle.checked = false;
+
+            // 调用后端 API 关闭该插件
+            if (typeof window.togglePlugin === 'function') {
+                await window.togglePlugin(pluginObj.id, false, pluginObj.category);
+            }
+
+            if (typeof addAudit === 'function') addAudit(`⚠️ [${pluginObj.id}] 因 Token 被擦除，系统已全自动安全关闭物理总开关。`, 'warning');
+        }
+    }
+
+    // 2. 强力抓取抽屉内所有 input 的当前最新状态，写入 window.settingsData
     if (drawerBody) {
         const inputs = drawerBody.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
@@ -198,7 +268,7 @@ window.savePluginSettingsAndClose = async () => {
                 if (input.type === 'checkbox') {
                     val = input.checked;
                 } else if (input.type === 'number') {
-                    val = parseFloat(input.value);
+                    val = parseFloat(input.value) || 0;
                 } else {
                     val = input.value;
                 }
@@ -210,7 +280,18 @@ window.savePluginSettingsAndClose = async () => {
                     if (!current[keys[i]]) current[keys[i]] = {};
                     current = current[keys[i]];
                 }
-                current[keys[keys.length - 1]] = val;
+                const fieldName = keys[keys.length - 1];
+                current[fieldName] = val;
+
+                // 🚀 [Sovereign 彻底擦除与别名防残留] 若 Token 字段被用户删为空字符串，同步清空关联别名字段
+                if (val === '') {
+                    if (fieldName === 'token') {
+                        current['api_token'] = '';
+                        current['access_token'] = '';
+                    } else if (fieldName === 'api_token' || fieldName === 'access_token') {
+                        current['token'] = '';
+                    }
+                }
             }
         });
     }
@@ -235,6 +316,20 @@ window.savePluginSettingsAndClose = async () => {
         if (typeof addAudit === 'function') addAudit("✅ 插件能力配置已成功保存并生效。", 'success');
         if (res.active_config) {
             window.settingsData = { ...window.settingsData, ...res.active_config };
+            // 确保已擦除的空字段在后端回传合并时保留空字符串，防止全局模型基准默认值回弹
+            if (drawerBody) {
+                drawerBody.querySelectorAll('input').forEach(input => {
+                    const path = input.getAttribute('data-path');
+                    if (path && input.value === '') {
+                        const keys = path.split('.');
+                        let cur = window.settingsData;
+                        for (let i = 0; i < keys.length - 1; i++) {
+                            if (cur) cur = cur[keys[i]];
+                        }
+                        if (cur) cur[keys[keys.length - 1]] = '';
+                    }
+                });
+            }
         }
 
         // 3. 弹出高保真玻璃磨砂通知，给用户强烈的物理确认视觉反馈！
@@ -255,8 +350,10 @@ window.savePluginSettingsAndClose = async () => {
             closePluginDrawer();
         }
 
-        // 5. 重新渲染插件矩阵列表，以刷新状态
-        if (typeof renderPlugins === 'function') {
+        // 5. 重新渲染插件矩阵列表，以刷新状态（通过 loadPlugins 静默拉取最新数据，防止状态不同步死锁）
+        if (typeof loadPlugins === 'function') {
+            await loadPlugins(true);
+        } else if (typeof renderPlugins === 'function') {
             renderPlugins();
         }
         

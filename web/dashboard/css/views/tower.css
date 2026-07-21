@@ -5,7 +5,7 @@
     background: var(--white-01);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 12px 15px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -29,10 +29,11 @@
 }
 
 #view-tower .card-val {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--text-bright);
     font-family: var(--font-mono);
+    white-space: nowrap;
 }
 
 /* 进度条与状态微调 */

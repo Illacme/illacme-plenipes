@@ -223,6 +223,21 @@ class SovereignDeploymentPlugin(PostSyncTask):
         # 2. 获取分发根目录 (通常是 site_dir)
         bundle_path = (engine.paths or {}).get('site_dir') or (engine.paths or {}).get('target_base')
         
+        # 🛡️ [物理自愈纠偏] 确保 bundle_path 指向真实的静态网页编译成品目录，而非 Markdown 原文目录
+        if bundle_path:
+            import os
+            has_index = os.path.exists(os.path.join(bundle_path, "index.html"))
+            is_source_dir = "src/content" in bundle_path.replace("\\", "/") or (
+                os.path.exists(os.path.join(bundle_path, "configs")) and os.path.exists(os.path.join(bundle_path, "themes"))
+            )
+            if not has_index or is_source_dir:
+                # 尝试寻找 themes/{theme}/dist 真实的静态成品根目录
+                themes_root = (engine.paths or {}).get('themes') or os.path.join(os.getcwd(), "themes")
+                theme_dist = os.path.join(themes_root, engine.active_theme or "default", "dist")
+                if os.path.exists(theme_dist) and os.path.exists(os.path.join(theme_dist, "index.html")):
+                    tlog.warning(f"⚠️ [物理纠偏] 侦测到发布源路径 {bundle_path} 异常（缺少网页入口或指向源码目录），系统已智能自动将其重定向至主题静态成品目录: {theme_dist}")
+                    bundle_path = theme_dist
+
         # 3. 准备全局分发元数据
         deployment_meta = {
             "timestamp": datetime.now().isoformat(),

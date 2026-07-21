@@ -144,6 +144,15 @@ class GlobalSmartRoutingStrategy:
     def __init__(self, trans_cfg):
         self.trans_cfg = trans_cfg
         self._handlers = {}
+        
+        # 🚀 [V75.8 Hot-Reload] 意志自愈：订阅配置重载事件以清除节点缓存并重绑最新配置
+        from core.utils.event_bus import bus
+        @bus.on("CONFIG_RELOADED")
+        def _on_config_reload(config=None, **kwargs):
+            self._handlers.clear()
+            if config and hasattr(config, 'translation'):
+                self.trans_cfg = config.translation
+                tlog.debug("🛰️ [SmartRouting] 全局智能路由调度中心已清除旧节点缓存，热对齐最新翻译配置。")
 
     def _get_best_handler(self):
         from core.runtime.cli_bootstrap import get_global_engine

@@ -119,6 +119,9 @@ class Configuration(BaseModel):
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
     block_cache_dir: Optional[str] = None # 🚀 [V100.4] 自定义段落缓存物理路径，默认为项目根目录下的 .plenipes/blocks
     block_cache_shard_levels: int = Field(default=1, ge=0, le=3, description="🚀 [V100.4] 段落缓存哈希路径分级层数，0为不分级，1为取前两位（如 ab/），2为取前四位（如 ab/cd/），3为取前六位（如 ab/cd/ef/）")
+    enable_cache_eviction: bool = False # 🚀 是否启用算力缓存垃圾回收
+    cache_eviction_days: int = Field(default=30, ge=1, description="缓存保留天数")
+    cache_max_size_mb: int = Field(default=512, ge=10, description="缓存容量上限 (MB)")
     
     # 🎨 Sovereign Global Branding & Compliance (Promoted settings)
     site_name: Optional[str] = Field(default=None, description="全局网站展示标题 (多主题共享)")
@@ -330,6 +333,13 @@ class Configuration(BaseModel):
                 from core.utils.tracing import tlog
                 tlog.warning(f"⚠️ [自动降级] 多语言翻译矩阵已关闭，出版模式从 {PublishingMode.GLOBAL.value} 降级为 {PublishingMode.ENHANCED.value}")
                 self.governance.publishing_mode = PublishingMode.ENHANCED
+
+        # 3.3 非全球多语言分发模式下，多语言翻译矩阵强制对齐为关闭状态
+        if self.governance.publishing_mode != PublishingMode.GLOBAL:
+            if self.i18n_settings and self.i18n_settings.enabled:
+                from core.utils.tracing import tlog
+                tlog.info("⚖️ [多语言矩阵对齐] 当前出版模式非全球分发模式，强制关闭多语言翻译矩阵。")
+                self.i18n_settings.enabled = False
 
         # 4. 降级后，自动对齐重置 SEO 策略
         from .models.governance import validate_mode_strategy, get_default_strategy

@@ -31,6 +31,15 @@ def test_init_validation():
     # 缺少参数
     response = client.post("/api/init", json={"press_name": "Test"})
     assert response.status_code == 422 # FastAPI 自动校验失败
+
+def test_auth_callback_endpoint():
+    """验证新增的 OAuth 本地回调接口"""
+    response = client.get("/api/auth/callback?token=test_token_abc&provider=github&extra=test_repo_url")
+    assert response.status_code == 200
+    assert "test_token_abc" in response.text
+    assert "github" in response.text
+    assert "test_repo_url" in response.text
+    assert "window.opener.postMessage" in response.text
     
 if __name__ == "__main__":
     pytest.main([__file__])

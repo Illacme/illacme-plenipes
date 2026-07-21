@@ -31,6 +31,10 @@ class InitRequest(BaseModel):
     source_lang: str = "zh"
     target_langs: List[str] = []
     active_dialect: Optional[str] = "auto"
+    github_token: Optional[str] = ""
+    github_repo: Optional[str] = ""
+    cloudflare_token: Optional[str] = ""
+    cloudflare_project: Optional[str] = ""
 
 class FsRequest(BaseModel):
     path: str = "."
@@ -85,6 +89,65 @@ async def shutdown_wizard(request: Request):
     if server_instance:
         server_instance.should_exit = True
     return {"message": "done"}
+
+@app.get("/api/auth/callback", response_class=HTMLResponse)
+async def auth_callback(token: str, extra: Optional[str] = "", provider: str = "github"):
+    """
+    🌐 OAuth 本地回环接口
+    接收来自中继服务器传回的 Token 与配置参数，通过 HTML5 postMessage 安全回传给父向导，并关闭自身窗口。
+    """
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Sovereign Auth Success</title>
+        <style>
+            body {{
+                background: #08080f;
+                color: #e8e8f0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+            }}
+            .card {{
+                background: rgba(255,255,255,0.03);
+                border: 1px solid rgba(255,255,255,0.08);
+                padding: 40px;
+                border-radius: 20px;
+                text-align: center;
+                max-width: 400px;
+                box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            }}
+            h2 {{ color: #00f2ff; margin-bottom: 10px; font-weight: 600; }}
+            p {{ color: #888; font-size: 0.9rem; line-height: 1.6; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>✅ 授权绑定成功</h2>
+            <p>主权凭证已安全注入您的本地总编室。此窗口正在自动关闭...</p>
+        </div>
+        <script>
+            if (window.opener) {{
+                window.opener.postMessage({{
+                    type: 'auth_success',
+                    provider: '{provider}',
+                    token: '{token}',
+                    extra: '{extra}'
+                }}, '*');
+            }}
+            setTimeout(function() {{
+                window.close();
+            }}, 1200);
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 server_instance = None
 

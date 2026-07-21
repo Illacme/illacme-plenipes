@@ -27,11 +27,10 @@ window.togglePlugin = async (id, enable, category = null) => {
                 }
             }
 
-            if (typeof loadPlugins === 'function') await loadPlugins();
+            if (typeof loadPlugins === 'function') await loadPlugins(true);
             
             // 🚀 [V80.2] 全域联动重绘：若当前位于系统治理的装帧主题选项卡，智能触发实时渲染以同步呼吸灯和状态条
-            const activeTab = document.querySelector('.s-tab.active');
-            if (activeTab && activeTab.dataset.cat === 'themes' && typeof renderSettingsCategory === 'function') {
+            if (window.currentActiveSettingsSubCat === 'themes' && typeof renderSettingsCategory === 'function') {
                 renderSettingsCategory('themes');
             }
         } else {
@@ -83,7 +82,7 @@ window.toggleBrandActivation = async (id, checked, category) => {
             if (response.active_config) {
                 window.settingsData = { ...window.settingsData, ...response.active_config };
             }
-            if (typeof loadPlugins === 'function') await loadPlugins();
+            if (typeof loadPlugins === 'function') await loadPlugins(true);
         } else {
             alert(`品牌激活失败: ${response ? response.error : '未知错误'}`);
         }

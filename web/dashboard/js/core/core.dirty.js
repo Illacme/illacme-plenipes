@@ -89,3 +89,13 @@ window.checkSettingsDirtyAndConfirm = async () => {
     }
     return true;
 };
+
+// 🛰️ [V75.6] 全局拦截网页刷新/关闭，防范未保存配置流失
+window.addEventListener('beforeunload', (e) => {
+    const saveBtn = document.getElementById('btn-save-settings');
+    if (saveBtn && !saveBtn.disabled) {
+        e.preventDefault();
+        e.returnValue = '⚠️ 您有未保存的配置修改，离开将丢失这些更改！';
+        return e.returnValue;
+    }
+});

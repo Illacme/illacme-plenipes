@@ -155,6 +155,7 @@ class TranslationSettings(BaseModel):
     temperature: float = Field(0.2, ge=0, le=2)
     max_tokens: int = Field(2048, ge=1)
     enable_thinking: bool = Field(False, description="是否全局启用思维链推理")
+    ai_semaphore_timeout: int = Field(3600, ge=1)
     
     # 🎯 物理内容保护规则
     max_chunk_size: int = Field(2500, ge=100)

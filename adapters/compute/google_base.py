@@ -42,7 +42,13 @@ class GoogleCompatibleTranslator(BaseTranslator):
             }
         }
         
-        resp = self._session.post(url, json=google_payload, timeout=self.timeout)
+        # 🛡️ 节点级代理支持与降级回退
+        proxies = None
+        proxy_url = self.get_proxy()
+        if proxy_url:
+            proxies = {"http": proxy_url, "https": proxy_url}
+
+        resp = self._session.post(url, json=google_payload, timeout=self.timeout, proxies=proxies)
         resp.raise_for_status()
         
         data = resp.json()

@@ -60,7 +60,7 @@ class ContentSyndicator:
             else:
                 tlog.warning(f"⚠️ [分发引擎] 无法识别的节点类型: {entry_id}")
 
-    def syndicate(self, title, slug, content, metadata=None, rel_path=None, lang_code=None, is_dry_run=False, **kwargs):
+    def syndicate(self, title, slug, content, metadata=None, rel_path=None, lang_code=None, is_dry_run=False, trigger_global_retry=True, **kwargs):
         """
         🚀 广播发射：并发调用所有已激活的插件
         🚀 [V11.1] 接入全局调度执行器，实现统一优先级流控
@@ -99,7 +99,7 @@ class ContentSyndicator:
                 task_name=f"Syndicate-{plugin.__class__.__name__}-{slug}"
             )
 
-        if not is_dry_run:
+        if not is_dry_run and trigger_global_retry:
             global_executor.submit(
                 self.process_pending_retries,
                 priority=TaskPriority.SYNDICATION,
@@ -108,10 +108,14 @@ class ContentSyndicator:
 
     def _dispatch_to_plugin(self, plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run):
         """🛡️ 扁平化重构：原子化执行单平台分发"""
-        target_id = plugin.__class__.__name__
+        target_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__)
         try:
             if not plugin.is_enabled(rel_path, lang_code):
                 return
+                
+            # 🚀 [V89.4] 物理幂等防重：首发启动前，先从待重试死信队列中将该文的老任务抹除，杜绝对端并发冲突
+            if not is_dry_run and self.meta and rel_path:
+                self.meta.mark_syndication_success(rel_path, target_id)
 
             try:
                 processor = MarkdownASTProcessor()
@@ -138,11 +142,15 @@ class ContentSyndicator:
                 canonical_url = f"{base_url}/posts/{slug}"
 
             payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
-            plugin.push(payload)
+            res = plugin.push(payload)
+            published_url = None
+            if isinstance(res, dict) and "url" in res:
+                published_url = res["url"]
 
             # 🚀 [V11.1] 记录分发成功状态
             if not is_dry_run and self.meta and rel_path:
                 self.meta.register_syndication(rel_path, target_id, source_hash)
+                self.meta.update_egress_status(rel_path, target_id, "DONE", url=published_url)
 
         except Exception as e:
             tlog.error(f"❌ [分发失败] {target_id}: {e}")
@@ -157,6 +165,7 @@ class ContentSyndicator:
                     lang_code=lang_code,
                     error_msg=str(e)
                 )
+                self.meta.update_egress_status(rel_path, target_id, "FAILED", error=str(e))
 
     def process_pending_retries(self):
         """🚀 扫描持久化重试队列，取出待执行 of 重试任务并调度执行"""
@@ -173,7 +182,7 @@ class ContentSyndicator:
 
         for task in pending_tasks:
             target_id = task.get("target_id")
-            plugin = next((p for p in self.plugins if p.__class__.__name__ == target_id), None)
+            plugin = next((p for p in self.plugins if getattr(p, 'PLUGIN_ID', p.__class__.__name__) == target_id or p.__class__.__name__ == target_id), None)
             if not plugin:
                 tlog.warning(f"⚠️ [分发重试] 无法重试：对应的分发插件未激活或不存在: {target_id}")
                 continue
@@ -214,19 +223,25 @@ class ContentSyndicator:
                 canonical_url = f"{base_url}/posts/{slug}"
 
             payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
-            plugin.push(payload)
+            res = plugin.push(payload)
+            published_url = None
+            if isinstance(res, dict) and "url" in res:
+                published_url = res["url"]
 
             if self.meta and rel_path:
                 source_hash = metadata.get('source_hash', '') if metadata else ''
                 self.meta.register_syndication(rel_path, target_id, source_hash)
                 self.meta.mark_syndication_success(rel_path, target_id)
+                self.meta.update_egress_status(rel_path, target_id, "DONE", url=published_url)
                 tlog.info(f"✅ [重试成功] {target_id} 对 {rel_path} 的分发已成功重试并移出队列。")
 
         except Exception as e:
             tlog.error(f"❌ [重试失败] {target_id} -> {title}: {e}")
-            retry_count = task.get("retry_count", 0) + 1
-            backoff_seconds = (2 ** retry_count) * 10
-            self.meta.mark_syndication_failure(rel_path, target_id, str(e), backoff_seconds)
+            if self.meta and rel_path:
+                retry_count = task.get("retry_count", 0) + 1
+                backoff_seconds = (2 ** retry_count) * 10
+                self.meta.mark_syndication_failure(rel_path, target_id, str(e), backoff_seconds)
+                self.meta.update_egress_status(rel_path, target_id, "FAILED", error=str(e))
 
     def list_all_plugins(self):
         """🚀 [V17.0] 枚举所有已发现的外部插件及其状态"""

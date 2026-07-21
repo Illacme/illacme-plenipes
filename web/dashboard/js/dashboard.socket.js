@@ -89,6 +89,64 @@ window.initWebSocket = () => {
             if (typeof refreshGovernanceContext === 'function') {
                 refreshGovernanceContext();
             }
+        } else if (data.type === 'UI_RESOURCE_THROTTLE') {
+            const active = data.payload.active;
+            if (active) {
+                const cpu = data.payload.cpu || 0;
+                const ram = data.payload.ram || 0;
+                if (typeof window.triggerDynamicAlert === 'function') {
+                    window.triggerDynamicAlert(
+                        'throttle', 
+                        '物理负载过高紧急削峰', 
+                        `宿主机物理负载已超限 (CPU: ${cpu}% | RAM: ${ram}%)！系统已紧急限制并发以防崩溃。`
+                    );
+                }
+            } else {
+                if (typeof window.clearThrottleAlert === 'function') {
+                    window.clearThrottleAlert();
+                }
+                if (typeof window.triggerDynamicAlert === 'function') {
+                    window.triggerDynamicAlert(
+                        'restore',
+                        '物理负载恢复正常',
+                        '物理指标已安全回落，全域算力并发已恢复满血运转！',
+                        3000
+                    );
+                }
+            }
+        } else if (data.type === 'SECURITY_ALERT') {
+            const cat = data.payload.category || 'UNKNOWN';
+            const msg = data.payload.message || '';
+            let title = '安全合规拦截';
+            if (cat === 'API_TOKEN_EXPIRED') title = '身份认证拦截';
+            else if (cat === 'LICENSE_LIMIT') title = '功能准入受限';
+            
+            if (typeof window.triggerDynamicAlert === 'function') {
+                window.triggerDynamicAlert('security', title, msg, 5000);
+            }
+            
+            const secTab = document.querySelector(`.s-tab[data-cat="security_audit"]`);
+            if (secTab) {
+                const isCurrentSec = secTab.classList.contains('active');
+                if (!isCurrentSec) {
+                    let dot = secTab.querySelector('.alert-dot');
+                    if (!dot) {
+                        dot = document.createElement('span');
+                        dot.className = 'alert-dot';
+                        dot.style.cssText = `
+                            display: inline-block;
+                            width: 8px;
+                            height: 8px;
+                            background: #ff3b30;
+                            border-radius: 50%;
+                            margin-left: 6px;
+                            box-shadow: 0 0 8px #ff3b30;
+                            animation: pulseRed 1.5s infinite;
+                        `;
+                        secTab.appendChild(dot);
+                    }
+                }
+            }
         } else if (data.type === 'KNOWLEDGE_BATCH_READY') {
             // 🪐 [混合渐进式] AI 织网分批完成 — 增量推送星系数据
             console.log(`📦 [WS] 收到 AI 增量批次: batch_index=${data.payload?.batch_index}`);
@@ -178,6 +236,64 @@ window.initWebSocket = () => {
                     statusEl.className = 'online';
                 }
             }
+
+            // 🚀 [V89.0] 部署后置智能自愈引导：智能查询待同步社交资产并提供一键同步弹窗
+            setTimeout(async () => {
+                try {
+                    const syncInfo = await apiFetch('/api/vault/pending-syndication');
+                    if (syncInfo && syncInfo.count > 0) {
+                        Swal.fire({
+                            title: '📢 发现待同步社交资产',
+                            html: `全站网页部署已全部就绪。<br>检测到有 <b style="color: #00f2fe;">${syncInfo.count}</b> 篇新稿件尚未同步至社交渠道（如 Dev.to），是否需要一键并行同步？`,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: '🚀 一键同步',
+                            cancelButtonText: '暂不同步',
+                            background: 'rgba(20,20,30,0.95)',
+                            color: '#e0e0e0',
+                            confirmButtonColor: '#00f2fe',
+                            cancelButtonColor: '#555'
+                        }).then(async (result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: '📡 正在同步中...',
+                                    html: '正在向激活的社交媒体网关分发资产，请稍候...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                                
+                                let successCount = 0;
+                                let failCount = 0;
+                                
+                                for (const doc of syncInfo.pending_docs) {
+                                    try {
+                                        const resp = await apiFetch(`/api/vault/re-dispatch/${encodeURIComponent(doc.rel_path)}`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ force: true })
+                                        });
+                                        if (resp && resp.success) successCount++;
+                                        else failCount++;
+                                    } catch (e) {
+                                        failCount++;
+                                    }
+                                }
+                                
+                                Swal.fire({
+                                    title: '✅ 一键同步完成',
+                                    text: `已成功将 ${successCount} 篇稿件同步至目标社交渠道。${failCount > 0 ? `有 ${failCount} 篇同步失败，请检查配置。` : ''}`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#00f2fe'
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('⚠️ [自愈引导] 检索待同步列表异常:', e);
+                }
+            }, 1500);
         } else if (data.type === 'UI_AI_BREAKER_TRIPPED') {
             console.warn('🚨 [WS] 收到 AI 熔断通知:', data.payload);
             if (typeof window.handleAiBreakerTripped === 'function') {

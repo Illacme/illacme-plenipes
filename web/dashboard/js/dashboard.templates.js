@@ -136,9 +136,22 @@ window.viewTemplates = {
         </div>
     `,
     plugins: `
-        <div id="view-plugins" class="view-panel">
-            <div class="view-header">
-                <h2>🧩 插件矩阵 (Capability Hub)</h2>
+        <div id="view-plugins" class="view-panel" style="gap: 16px;">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 6px; margin-bottom: 8px;">
+                <div class="header-title-area" style="padding-top: 2px;">
+                    <h2>🧩 插件矩阵 (Capability Hub)</h2>
+                </div>
+                <div class="header-actions" id="plugins-header-actions-top" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 320px; margin-right: 14px;">
+                    <div class="search-box" style="position: relative; width: 100%;">
+                        <input type="text" id="plugin-search-input" placeholder="搜索能力、平台或描述..." value="" oninput="window.filterPluginsBySearch(this.value)">
+                    </div>
+                    <div class="plugin-header-tools" style="display: flex; gap: 8px; justify-content: flex-end; width: 100%;">
+                        <button type="button" onclick="window.senseClipboardCredentials()" title="感应剪贴板中的 Token 并自动填入表单" style="font-size: 0.7rem; background: rgba(0, 255, 136, 0.08); border: 1px solid rgba(0, 255, 136, 0.25); color: #00ff88; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.2)'" onmouseout="this.style.background='rgba(0, 255, 136, 0.08)'">📋 剪贴板感知</button>
+                        <button type="button" onclick="window.exportConfigBackup()" title="导出全域配置为 JSON 备份" style="font-size: 0.7rem; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--neon-cyan); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,242,255,0.2)'" onmouseout="this.style.background='rgba(0, 242, 255, 0.08)'">📥 导出配置备份</button>
+                        <button type="button" onclick="document.getElementById('config-import-file-input').click()" title="从 JSON 备份恢复全站配置" style="font-size: 0.7rem; background: rgba(163, 76, 255, 0.08); border: 1px solid rgba(163, 76, 255, 0.25); color: var(--accent-primary); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(163,76,255,0.2)'" onmouseout="this.style.background='rgba(163, 76, 255, 0.08)'">📤 导入配置复原</button>
+                        <input type="file" id="config-import-file-input" accept=".json" style="display: none;" onchange="window.importConfigBackup(event)">
+                    </div>
+                </div>
             </div>
             <div class="view-content">
                 <div class="side-tabs-container">
@@ -160,6 +173,38 @@ window.viewTemplates = {
     `,
     settings: `
         <div id="view-settings" class="view-panel">
+            <style>
+                .security-sub-tab-bar {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid var(--white-08, rgba(255,255,255,0.08));
+                    padding-bottom: 10px;
+                    flex-wrap: wrap;
+                    width: 100%;
+                }
+                .sub-tab-btn {
+                    background: var(--white-03, rgba(255,255,255,0.03));
+                    border: 1px solid var(--white-08, rgba(255,255,255,0.08));
+                    color: var(--text-dim, #888);
+                    padding: 6px 14px;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    outline: none;
+                }
+                .sub-tab-btn:hover {
+                    background: var(--white-08, rgba(255,255,255,0.08));
+                    color: var(--text-bright, #fff);
+                }
+                .sub-tab-btn.active {
+                    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.1);
+                    border-color: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.3);
+                    color: var(--accent-secondary, #00f2ff);
+                    box-shadow: 0 0 8px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.2);
+                }
+            </style>
             <div class="view-header" style="margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border);">
                 <h2>⚙️ 治理中心 (Governance)</h2>
                 <div class="header-actions">
@@ -169,16 +214,10 @@ window.viewTemplates = {
             <div class="view-content" style="padding-top: 25px;">
                 <div class="side-tabs-container">
                     <aside class="side-tabs">
-                        <div class="tab-item s-tab active" data-cat="general"><span class="tab-icon">ℹ️</span> 基础信息</div>
-                        <div class="tab-item s-tab" data-cat="imprints"><span class="tab-icon">🏗️</span> 出版版图</div>
-                        <div class="tab-item s-tab" data-cat="themes"><span class="tab-icon">🎨</span> 装帧主题</div>
-                        <div class="tab-item s-tab" data-cat="modes"><span class="tab-icon">📋</span> 出版模式</div>
-                        <div class="tab-item s-tab" data-cat="localization"><span class="tab-icon">🌍</span> 翻译阵列</div>
-                        <div class="tab-item s-tab" data-cat="translation_style"><span class="tab-icon">🎭</span> 翻译风格</div>
-                        <div class="tab-item s-tab" data-cat="route_matrix"><span class="tab-icon">🛣️</span> 高级路由</div>
-                        <div class="tab-item s-tab" data-cat="slug_settings"><span class="tab-icon">🔗</span> Slug 策略</div>
-                        <div class="tab-item s-tab" data-cat="guardrails"><span class="tab-icon">🛡️</span> 治理准入</div>
-                        <div class="tab-item s-tab" data-cat="security"><span class="tab-icon">🔒</span> 安全审计</div>
+                        <div class="tab-item s-tab active" data-cat="general"><span class="tab-icon">⚙️</span> 基础配置与运维</div>
+                        <div class="tab-item s-tab" data-cat="layout"><span class="tab-icon">🎨</span> 版图装帧与模式</div>
+                        <div class="tab-item s-tab" data-cat="i18n_routing"><span class="tab-icon">🌍</span> 多语翻译与路由</div>
+                        <div class="tab-item s-tab" data-cat="security_audit"><span class="tab-icon">🛡️</span> 安全审计与治理</div>
                     </aside>
                     <section class="tab-content-area">
                         <div id="settings-form" class="settings-grid">

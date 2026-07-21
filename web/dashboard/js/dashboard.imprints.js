@@ -140,9 +140,7 @@ window.hotswapActiveImprint = async (id) => {
         
         // 1. 重新拉取全量系统设置与品牌元数据
         if (typeof loadSettings === 'function') {
-            // 记住当前的设置 Tab
-            const activeTab = document.querySelector('.s-tab.active');
-            const targetTab = activeTab ? activeTab.dataset.cat : 'imprints';
+            const targetTab = window.currentActiveSettingsSubCat || 'imprints';
             await loadSettings(targetTab);
         }
         

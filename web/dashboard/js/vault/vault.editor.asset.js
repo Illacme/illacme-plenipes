@@ -66,6 +66,16 @@ window.handleEditorAssetUpload = async (e, mode) => {
             textarea.selectionEnd = startPos + textToInsert.length;
             
             window.triggerAutoSave();
+
+            // 🚀 [V75.7] 所见即所得模式下的图片上传无感同步渲染
+            const btnWysiwyg = document.getElementById('mode-wysiwyg');
+            const wysiwyg = document.getElementById('editor-wysiwyg');
+            const preview = document.getElementById('editor-preview');
+            if (btnWysiwyg && btnWysiwyg.classList.contains('active') && wysiwyg && preview) {
+                if (typeof updateEditorPreview === 'function') updateEditorPreview();
+                wysiwyg.innerHTML = preview.innerHTML;
+            }
+
             if (typeof setEditorMode === 'function') {
                 const btnSplit = document.getElementById('mode-split');
                 if (btnSplit && btnSplit.classList.contains('active')) {

@@ -50,6 +50,8 @@ class BaseSyndicator(abc.ABC):
 
     def is_enabled(self, rel_path: str = None, lang_code: str = None) -> bool:
         """检查插件是否激活"""
+        if isinstance(self.config, dict):
+            return self.config.get('enabled', False)
         return getattr(self.config, 'enabled', False)
 
     @abc.abstractmethod

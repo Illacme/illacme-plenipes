@@ -131,15 +131,17 @@ class VercelPublisher(BasePublisher):
             return {"status": "error", "message": str(e)}
 
     def is_healthy(self) -> bool:
-        """检查 Vercel CLI 可用性"""
-        try:
-            result = subprocess.run(
-                [self.vercel_path, "--version"],
-                capture_output=True, text=True, timeout=10
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
+        """检查 Vercel CLI 可用性与自愈"""
+        self.ensure_npm_dependency("vercel")
+        for bin_name in [self.vercel_path, os.path.join(os.getcwd(), "node_modules", ".bin", "vercel"), "npx"]:
+            try:
+                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "vercel", "--version"]
+                res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+                if res.returncode == 0:
+                    return True
+            except Exception:
+                continue
+        return False
 
     def validate_config(self) -> List[str]:
         """校验配置完整性，返回错误信息列表"""

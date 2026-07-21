@@ -3,7 +3,6 @@
 验证在 translation.strategy 为 'single' (单点模式) 时，
 若在翻译过程中发生算力节点故障，系统绝不会越权调用 SmartRouter 执行 Failover 故障转移切流。
 """
-import pytest
 from unittest.mock import MagicMock
 from core.logic.ai.ai_scheduler_shards.dispatch_ops import AISchedulerDispatchOps
 

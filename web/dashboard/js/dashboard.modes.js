@@ -60,8 +60,7 @@ window.renderModesCategory = () => {
 
     return `
         <div class="full-width">
-            <div class="section-header"><h3>📋 出版模式 (Publishing Modes)</h3></div>
-            <p class="section-desc" style="margin-bottom: 20px;">选择您的内容加工深度。所有模式均遵守元数据优先原则。</p>
+            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.85;">选择您的出版内容加工深度，指定全局检索策略与社交元数据协议。</p>
             
             <!-- 🧭 极简出版决策指南 -->
             <div class="glass-panel" style="padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02); margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
@@ -265,4 +264,73 @@ window.switchSeoStrategy = async (mode, strategy) => {
 window.checkAIReadiness = () => {
     const nodes = window.settingsData?.translation?.compute_nodes || {};
     return Object.keys(nodes).length > 0;
+};
+
+window.renderLayoutCategory = () => {
+    if (!window.switchLayoutSubTab) {
+        window.switchLayoutSubTab = (subTab, btn) => {
+            window.currentActiveSettingsSubCat = subTab;
+            const container = document.getElementById('layout-sub-tab-bar');
+            if (container) {
+                const btns = container.querySelectorAll('.sub-tab-btn');
+                btns.forEach(b => b.classList.remove('active'));
+            }
+            if (btn) {
+                btn.classList.add('active');
+            } else if (event) {
+                event.currentTarget.classList.add('active');
+            }
+
+            const panels = ['imprints', 'themes', 'modes'];
+            panels.forEach(p => {
+                const el = document.getElementById(`layout-panel-${p}`);
+                if (el) el.style.display = (p === subTab) ? 'block' : 'none';
+            });
+
+            // 渲染对应的子页面
+            const panelEl = document.getElementById(`layout-panel-${subTab}`);
+            if (panelEl) {
+                let html = '';
+                if (subTab === 'imprints' && typeof window.renderImprintsCategory === 'function') {
+                    html = window.renderImprintsCategory();
+                } else if (subTab === 'themes' && typeof window.renderThemesCategory === 'function') {
+                    html = window.renderThemesCategory();
+                } else if (subTab === 'modes' && typeof window.renderModesCategory === 'function') {
+                    html = window.renderModesCategory();
+                }
+                panelEl.innerHTML = html;
+            }
+
+            if (typeof window.updateSaveButtonVisibility === 'function') {
+                window.updateSaveButtonVisibility(subTab);
+            }
+        };
+    }
+
+    const currentSub = window.currentActiveSettingsSubCat || 'imprints';
+
+    // 延迟少许以自动渲染当前的默认激活面板，防止切换大菜单时显示为空
+    setTimeout(() => {
+        const activeBtn = document.querySelector(`#layout-sub-tab-bar .sub-tab-btn[onclick*="${currentSub}"]`);
+        if (typeof window.switchLayoutSubTab === 'function') {
+            window.switchLayoutSubTab(currentSub, activeBtn);
+        }
+    }, 20);
+
+    return `
+        <div class="full-width">
+            <div class="section-header"><h3>🎨 版图装帧与模式 (Layout & Publishing Modes)</h3></div>
+            <p class="section-desc">确立物理版图标识、编排渲染装帧主题并调节出版物加工深度策略。</p>
+            
+            <div class="security-sub-tab-bar" id="layout-sub-tab-bar">
+                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)">🏷️ 版图印记</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)">🎭 装帧主题</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)">📋 出版模式</button>
+            </div>
+
+            <div id="layout-panel-imprints" style="display: ${currentSub === 'imprints' ? 'block' : 'none'};"></div>
+            <div id="layout-panel-themes" style="display: ${currentSub === 'themes' ? 'block' : 'none'};"></div>
+            <div id="layout-panel-modes" style="display: ${currentSub === 'modes' ? 'block' : 'none'};"></div>
+        </div>
+    `;
 };

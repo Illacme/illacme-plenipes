@@ -7,6 +7,7 @@
     overflow: hidden; /* [V87.1] Merged */
 }
 .editor-main { 
+    position: relative !important;
     padding: 30px; display: flex; flex-direction: column; gap: 20px; min-height: 0; 
     height: 100%; overflow: hidden; /* [V87.1] Merged */
 }
@@ -398,4 +399,42 @@
 .obsidian-callout.callout-cite .callout-title {
     color: var(--callout-quote-title);
 }
-
+/* 🚀 [V75.7] WYSIWYG 所见即所得富文本编辑器专属样式 */
+.wysiwyg-toolbar {
+    background: rgba(10, 10, 10, 0.6) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 8px;
+    padding: 0 10px !important; /* 左右内边距 */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.wysiwyg-toolbar .toolbar-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-dim);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 24px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+.wysiwyg-toolbar .toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-bright);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+.wysiwyg-toolbar .toolbar-btn:active {
+    transform: scale(0.95);
+}
+#editor-wysiwyg:focus {
+    box-shadow: inset 0 0 15px rgba(99, 102, 241, 0.05);
+}

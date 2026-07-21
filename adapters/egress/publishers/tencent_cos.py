@@ -138,6 +138,8 @@ class TencentCosPublisher(BasePublisher):
     def is_healthy(self) -> bool:
         if not self.secret_id or not self.secret_key or not self.bucket or not self.region:
             return False
+        if not self.ensure_python_dependency("qcloud_cos", "cos-python-sdk-v5"):
+            return False
         try:
             from qcloud_cos import CosConfig, CosS3Client
             cos_config = CosConfig(Region=self.region, SecretId=self.secret_id, SecretKey=self.secret_key)

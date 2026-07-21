@@ -100,10 +100,8 @@ window.renderTranslationStyleCategory = () => {
     const i18n = window.settingsData.i18n_settings || {};
     const isEnabled = i18n.enabled !== false; // 默认为 true
 
-    if (!isEnabled) {
-        return `
+    if (!isEnabled) return `
             <div class="full-width">
-                <div class="section-header"><h3>🎭 全域翻译风格 (Universal Style)</h3></div>
                 <div class="glass-panel" style="padding: 40px 30px; text-align: center; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 15px; border-radius: 12px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--glass-border);">
                     <span style="font-size: 3.5rem; filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.15));">🌍</span>
                     <h4 style="color: var(--text-bright, #ffffff); margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px;">多语言翻译引擎未启用</h4>
@@ -113,7 +111,6 @@ window.renderTranslationStyleCategory = () => {
                 </div>
             </div>
         `;
-    }
 
     const prompts = window.settingsData.translation?.prompts || {};
     const ts = prompts.translate_system || '';
@@ -176,14 +173,12 @@ window.renderTranslationStyleCategory = () => {
     `;
 
     return `
-        <div class="full-width">
-            <div class="section-header"><h3>🎭 全域翻译风格 (Universal Style)</h3></div>
-            <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.5rem;">设定当前品牌在全球化分发中所采用的语感模板，修改模板后将自动亮起右上角保存配置按钮。</p>
-            
-            <div class="settings-grid">
-                <div class="settings-group">
-                    <h4>🌐 风格预设 (Preset Templates)</h4>
-                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+            <div class="full-width">
+                <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.85;">设定当前品牌在全球化分发及 AI 编译中所采用的 Prompt 语感模板与系统提示词。</p>
+                
+                <div class="settings-grid">
+                    <div class="settings-group">
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
                         <select id="style-selector" class="setting-input" onchange="window.updateStylePreview(this.value)" style="flex: 1; min-height: 38px;">
                             ${Object.entries(window.translationStyles).map(([key, tpl]) => `
                                 <option value="${key}" ${key === activeStyleKey ? 'selected' : ''}>${tpl.name}</option>

@@ -48,6 +48,35 @@ def init_press_logic(req, shutdown_cb=None):
             if "ingress_settings" not in cfg: cfg["ingress_settings"] = {}
             cfg["ingress_settings"]["active_dialects"] = [req.active_dialect] if req.active_dialect else ["auto"]
             
+            # 🚀 [V88.0] 注入托管分发插件配置 (GitHub / Cloudflare Token)
+            if "publish_control" not in cfg:
+                cfg["publish_control"] = {}
+            if "direct_upload" not in cfg["publish_control"]:
+                cfg["publish_control"]["direct_upload"] = {}
+
+            github_token = getattr(req, "github_token", "")
+            if github_token:
+                cfg["publish_control"]["direct_upload"]["github_pages"] = {
+                    "enabled": True,
+                    "token": github_token,
+                    "repo_url": getattr(req, "github_repo", ""),
+                    "branch": "gh-pages",
+                    "cname": "",
+                    "git_user_name": "Plenipes Bot",
+                    "git_user_email": "bot@plenipes.press"
+                }
+
+            cloudflare_token = getattr(req, "cloudflare_token", "")
+            if cloudflare_token:
+                cfg["publish_control"]["direct_upload"]["cloudflare_pages"] = {
+                    "enabled": True,
+                    "token": cloudflare_token,
+                    "project_name": getattr(req, "cloudflare_project", "") or imp_id,
+                    "branch": "production",
+                    "account_id": "",
+                    "wrangler_path": "wrangler"
+                }
+
             from core.utils.common import promote_config_keys
             cfg = promote_config_keys(cfg)
             with open(cfg_p, 'w', encoding='utf-8') as f:
@@ -145,6 +174,24 @@ def init_press_logic(req, shutdown_cb=None):
         else:
             local_data["translation"]["primary_node"] = "lmstudio_local"
             local_data["translation"]["primary_model"] = "qwen/qwen3.5-9b"
+
+        # 🚀 [V88.0] 物理驱动自动装载激活
+        if "plugins" not in local_data:
+            local_data["plugins"] = {}
+        disabled_list = local_data["plugins"].get("disabled_plugins", [])
+        if not isinstance(disabled_list, list):
+            disabled_list = list(disabled_list) if hasattr(disabled_list, "__iter__") else []
+            
+        modified_disabled = False
+        if getattr(req, "github_token", "") and "github_pages" in disabled_list:
+            disabled_list.remove("github_pages")
+            modified_disabled = True
+        if getattr(req, "cloudflare_token", "") and "cloudflare_pages" in disabled_list:
+            disabled_list.remove("cloudflare_pages")
+            modified_disabled = True
+            
+        if modified_disabled:
+            local_data["plugins"]["disabled_plugins"] = disabled_list
 
         from core.utils.common import promote_config_keys
         local_data = promote_config_keys(local_data)

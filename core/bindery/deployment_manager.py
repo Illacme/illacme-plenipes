@@ -9,10 +9,38 @@ Illacme-plenipes Core - Deployment Manager
 import os
 from dataclasses import asdict
 from typing import List, Dict, Any
+from contextlib import contextmanager
 from core.utils.tracing import tlog
 from core.governance.license_guard import LicenseGuard
 from core.adapters.egress.publishers.base import BasePublisher, PublisherRegistry
 import core.adapters.egress.publishers # Trigger loading
+
+@contextmanager
+def apply_publisher_proxy(proxy: str = None):
+    old_env = {
+        "HTTP_PROXY": os.environ.get("HTTP_PROXY"),
+        "HTTPS_PROXY": os.environ.get("HTTPS_PROXY"),
+        "http_proxy": os.environ.get("http_proxy"),
+        "https_proxy": os.environ.get("https_proxy")
+    }
+    if proxy:
+        os.environ["HTTP_PROXY"] = proxy
+        os.environ["HTTPS_PROXY"] = proxy
+        os.environ["http_proxy"] = proxy
+        os.environ["https_proxy"] = proxy
+    else:
+        os.environ.pop("HTTP_PROXY", None)
+        os.environ.pop("HTTPS_PROXY", None)
+        os.environ.pop("http_proxy", None)
+        os.environ.pop("https_proxy", None)
+    try:
+        yield
+    finally:
+        for k, v in old_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
 
 class DeploymentManager:
     """🚀 [V35.0] 发布编排器：指挥全渠道分发战役"""
@@ -99,12 +127,19 @@ class DeploymentManager:
         for pub in self.publishers:
             pub_name = pub.__class__.__name__
             try:
-                # 执行物理发布
-                res = pub.push(bundle_path, metadata)
-                results["channels"][pub_name] = {"status": "success", "response": res}
-                tlog.success(f"  └── ✅ 渠道 {pub_name} 投递成功。")
+                # 执行物理发布（应用代理沙盒，保障 CLI/SDK/Requests 代理优先级全部对齐）
+                with apply_publisher_proxy(pub.get_proxy()):
+                    res = pub.push(bundle_path, metadata)
+                if isinstance(res, dict) and res.get("status") == "error":
+                    err_msg = res.get("message", "未知错误")
+                    tlog.error(f"  └── ❌ 渠道 {pub_name} 投递失败: {err_msg}")
+                    results["channels"][pub_name] = {"status": "error", "message": err_msg}
+                    fail_count += 1
+                else:
+                    results["channels"][pub_name] = {"status": "success", "response": res}
+                    tlog.success(f"  └── ✅ 渠道 {pub_name} 投递成功。")
             except Exception as e:
-                tlog.error(f"  └── ❌ 渠道 {pub_name} 投递失败: {e}")
+                tlog.error(f"  └── ❌ 渠道 {pub_name} 投递异常: {e}")
                 results["channels"][pub_name] = {"status": "error", "message": str(e)}
                 fail_count += 1
         

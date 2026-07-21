@@ -356,6 +356,9 @@ window.addGlossaryItem = async () => {
     glossary[currentLang][src] = dst;
 
     await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
+    
+    srcInput.value = '';
+    dstInput.value = '';
 };
 
 // 🚀 [V75.0] 删除专有名词保护词 (适配多语种对准)
@@ -375,6 +378,8 @@ window.removeGlossaryItem = async (src) => {
 // 🚀 [V75.5] 切换专有名词术语编辑的语种 Tab
 window.switchGlossaryLang = (code) => {
     window.currentGlossaryLang = code;
+    window.currentGlossarySearchQuery = "";
+    window.currentGlossaryPage = 1;
     if (typeof renderSettingsCategory === 'function') {
         renderSettingsCategory('localization');
     }
@@ -469,6 +474,50 @@ window.applyOverridePreset = async (key, presetVal) => {
     if (drawer) drawer.style.display = 'block';
     
     await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, presetVal);
+};
+
+// 🚀 [V75.6] 一键清空当前选定语种下的所有名词防护术语
+window.clearGlossaryCurrentLang = async () => {
+    if (typeof Swal === 'undefined') return;
+    const currentLang = window.currentGlossaryLang || 'en';
+    const result = await Swal.fire({
+        title: '🧹 确认清空术语表？',
+        text: `确定要彻底清空当前语种 [${currentLang.toUpperCase()}] 下的所有专有名词防护术语吗？此操作无法撤销。`,
+        icon: 'warning',
+        showCancelButton: true,
+        background: 'hsla(236, 37%, 8%, 0.95)',
+        color: 'var(--text-bright, #ffffff)',
+        confirmButtonText: '💥 确定清空',
+        cancelButtonText: '❌ 取消',
+        customClass: {
+            popup: 'glass-panel',
+            confirmButton: 'danger-btn glow-btn',
+            cancelButton: 'primary-btn'
+        }
+    });
+    
+    if (result.isConfirmed) {
+        const gov = window.settingsData.translation?.governance || {};
+        const glossary = { ...(gov.glossary || {}) };
+        glossary[currentLang] = {};
+        
+        if (typeof addAudit === 'function') addAudit(`🧹 正在清空 [${currentLang.toUpperCase()}] 的防护术语表...`);
+        await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
+        window.currentGlossaryPage = 1;
+        if (typeof window.refreshGlossaryUI === 'function') {
+            window.refreshGlossaryUI();
+        }
+        
+        Swal.fire({
+            title: '🎉 已清空',
+            text: `当前语种 [${currentLang.toUpperCase()}] 的保护词表已成功清空！`,
+            icon: 'success',
+            background: 'hsla(236, 37%, 8%, 0.95)',
+            color: 'var(--text-bright, #ffffff)',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
 };
 
 

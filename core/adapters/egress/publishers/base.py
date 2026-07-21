@@ -8,7 +8,7 @@ Illacme-plenipes Core - Base Publisher Interface
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Type
+from typing import Dict, Any, List, Type, Optional
 
 from core.utils.tracing import tlog
 
@@ -25,6 +25,34 @@ class BasePublisher(ABC):
         self.config = config
         self.sys_config = sys_config or {}
         self.enabled = config.get("enabled", False)
+
+    def get_proxy(self) -> Optional[str]:
+        """
+        🚀 [V48.5] 获取当前插件解析后的代理地址（双层混合路由决策）。
+        1. 若当前插件配置了特定的 proxy 且不为空：
+           - 如果值为 "direct"，则强制返回 None（不走代理）。
+           - 否则返回特定的代理地址。
+        2. 否则，如果系统配置（sys_config）中配置了 global_proxy 且不为空：
+           - 返回全局代理地址。
+        3. 否则返回 None。
+        """
+        local_proxy = self.config.get("proxy")
+        if local_proxy:
+            if str(local_proxy).lower() == "direct":
+                return None
+            return local_proxy
+        
+        global_proxy = None
+        if self.sys_config:
+            if isinstance(self.sys_config, dict):
+                global_proxy = self.sys_config.get("global_proxy")
+            else:
+                global_proxy = getattr(self.sys_config, "global_proxy", None)
+
+        if global_proxy:
+            return global_proxy
+            
+        return None
 
     @abstractmethod
     def push(self, bundle_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,6 +81,89 @@ class BasePublisher(ABC):
         子类可覆写此方法，基于当前配置推导出站点 URL。
         """
         return None
+
+    def ensure_python_dependency(self, pkg_name: str, pip_pkg_name: str = None) -> bool:
+        """
+        🧬 [V100.0] 物理自愈：智能检测并静默安装缺失的 Python 依赖包。
+        """
+        import importlib.util
+        import sys
+        import subprocess
+        import os
+        
+        if pip_pkg_name is None:
+            pip_pkg_name = pkg_name
+
+        if importlib.util.find_spec(pkg_name) is not None:
+            return True
+
+        tlog.info(f"🧬 [物理自愈] 检测到 Python 依赖 '{pkg_name}' 缺失，正在为您自动进行静默安装...")
+        import platform
+        is_windows = (platform.system() == "Windows")
+        try:
+            cmd = [sys.executable, "-m", "pip", "install", pip_pkg_name, "-i", "https://pypi.tuna.tsinghua.edu.cn/simple"]
+            is_venv = (sys.prefix != sys.base_prefix)
+            is_root = False
+            if hasattr(os, "getuid"):
+                try:
+                    is_root = (os.getuid() == 0)
+                except Exception:
+                    pass
+            if not is_venv and not is_root:
+                cmd.append("--user")
+                
+            process = subprocess.run(cmd, capture_output=True, text=True, timeout=90, shell=is_windows)
+            if process.returncode == 0:
+                if importlib.util.find_spec(pkg_name) is not None:
+                    tlog.success(f"🟢 [物理自愈] Python 依赖 '{pkg_name}' 自动装载成功！")
+                    return True
+            tlog.error(f"❌ [物理自愈] Python 依赖 '{pkg_name}' 自动安装未闭环: {process.stderr or process.stdout}")
+        except Exception as e:
+            tlog.error(f"❌ [物理自愈] 自动执行依赖安装异常: {e}")
+            
+        return False
+
+    def ensure_npm_dependency(self, pkg_name: str) -> bool:
+        """
+        🧬 [V100.0] 物理自愈：智能检测并静默安装缺失的 Node.js/npm 本地开发依赖工具。
+        """
+        import shutil
+        import subprocess
+        import os
+        import platform
+        
+        # 1. 尝试检测本地 bin 目录下是否存在
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+        local_bin_path = os.path.join(project_root, "node_modules", ".bin", pkg_name)
+        if os.path.exists(local_bin_path) or shutil.which(pkg_name) is not None:
+            return True
+
+        tlog.info(f"🧬 [物理自愈] 检测到 npm 依赖工具 '{pkg_name}' 缺失，正在为您自动进行静默安装...")
+        npm_path = shutil.which("npm")
+        if not npm_path:
+            tlog.error("❌ [物理自愈] 失败：宿主机未检测到 Node.js/npm 运行环境，无法自动安装依赖。")
+            return False
+
+        is_windows = (platform.system() == "Windows")
+        try:
+            # 🛡️ [Sovereign-UX] 自动追加淘宝 NPM 镜像加速源以防直连 npmjs 卡死
+            cmd = [npm_path, "install", pkg_name, "--save-dev", "--registry=https://registry.npmmirror.com"]
+            env = os.environ.copy()
+            # 注入非交互指令，防止缺少 TTY 时挂起
+            env["CI"] = "true"
+            env["NPM_CONFIG_YES"] = "true"
+            
+            process = subprocess.run(cmd, env=env, cwd=project_root, capture_output=True, text=True, timeout=15, shell=is_windows)
+            if process.returncode == 0:
+                tlog.success(f"🟢 [物理自愈] npm 依赖工具 '{pkg_name}' 自动装载成功！")
+                return True
+            tlog.error(f"❌ [物理自愈] npm 依赖工具 '{pkg_name}' 自动安装未闭环: {process.stderr or process.stdout}")
+        except Exception as e:
+            tlog.error(f"❌ [物理自愈] 自动执行 npm 安装异常: {e}")
+            
+        return False
+
+
 
 class PublisherRegistry:
     """

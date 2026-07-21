@@ -185,9 +185,11 @@ class S3Publisher(BasePublisher):
     def is_healthy(self) -> bool:
         """
         检查 S3 连通性：尝试列出存储桶验证凭据与网络可达性。
-        若 boto3 未安装，直接返回 False。
+        若 boto3 未安装，尝试自动进行物理自愈安装。
         """
         if not self.access_key or not self.secret_key or not self.bucket:
+            return False
+        if not self.ensure_python_dependency("boto3"):
             return False
         try:
             import boto3

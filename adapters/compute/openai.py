@@ -173,9 +173,9 @@ class OpenAICompatibleTranslator(BaseTranslator):
         if api_key and api_key not in ["not-needed", "none", "empty"]:
             headers["Authorization"] = f"Bearer {api_key}"
         
-        # 🛡️ 节点级代理支持
+        # 🛡️ 节点级代理支持与降级回退
         proxies = None
-        proxy_url = self.safe_get_config('proxy') or getattr(self.trans_cfg, 'global_proxy', None)
+        proxy_url = self.get_proxy()
         if proxy_url:
             proxies = {"http": proxy_url, "https": proxy_url}
 

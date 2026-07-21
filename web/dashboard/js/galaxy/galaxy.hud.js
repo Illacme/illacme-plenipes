@@ -19,15 +19,21 @@ window.updateGalaxyHUD = (nodes, links) => {
     }
 
     const densityEl = document.getElementById('density-val');
+    const nodeEl = document.getElementById('node-count');
     const connEl = document.getElementById('conn-count');
+    
+    const N = nodes ? nodes.length : 0;
+    const L = links ? links.length : 0;
+    
     if (densityEl) {
-        const N = nodes ? nodes.length : 0;
-        const L = links ? links.length : 0;
         const density = N > 1 ? (2 * L) / (N * (N - 1)) : 0;
         densityEl.innerText = density.toFixed(2);
     }
+    if (nodeEl) {
+        nodeEl.innerText = N;
+    }
     if (connEl) {
-        connEl.innerText = links ? links.length : 0;
+        connEl.innerText = L;
     }
 };
 
@@ -107,20 +113,24 @@ function injectGalaxyInteractiveDOM() {
         telDiv.style.cssText = 'padding: 10px 14px; width: auto; border-radius: 12px; display: flex; flex-direction: row; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
         telDiv.innerHTML = `
             <!-- 指标主区域 -->
-            <div id="telemetry-main-section" style="display: flex; flex-direction: column; gap: 8px; width: 130px; flex-shrink: 0; box-sizing: border-box;">
+            <div id="telemetry-main-section" style="display: flex; flex-direction: column; gap: 8px; width: 180px; flex-shrink: 0; box-sizing: border-box;">
                 <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; user-select: none;">
                     <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📊 实时指标</span>
                     <span id="telemetry-expand-btn" style="font-size: 0.65rem; color: var(--text-dim); transition: transform 0.3s ease; cursor: pointer; margin-right: -2px;" title="动力学参数调节">⚙️</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 2px;">
-                        <div style="flex: 1; text-align: center; cursor: help;" title="星图内星球之间连线的密集程度。数值越高，说明文献之间的交叉关联越紧密。">
+                    <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; margin-top: 2px;">
+                        <div style="flex: 1; text-align: center; cursor: help;" title="当前星图中所包含的活跃知识星球（已加载的笔记节点）总数。">
+                            <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
+                            <div class="hud-value" id="node-count" style="font-size: 0.85rem; line-height: 1;">0</div>
+                        </div>
+                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 4px; cursor: help;" title="当前星图中所有星球之间的有效物理连线与 AI 语义引力链总数。">
+                            <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">引力链</div>
+                            <div class="hud-value" id="conn-count" style="font-size: 0.85rem; line-height: 1;">0</div>
+                        </div>
+                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 4px; cursor: help;" title="星图内星球之间连线的密集程度。数值越高，说明文献之间的交叉关联越紧密。">
                             <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">关联密度</div>
                             <div class="hud-value" id="density-val" style="font-size: 0.85rem; line-height: 1;">0.00</div>
-                        </div>
-                        <div style="flex: 1; text-align: center; border-left: 1px solid var(--glass-border); padding-left: 6px; cursor: help;" title="当前星图中所包含的活跃知识星球（已加载的笔记节点）总数。">
-                            <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
-                            <div class="hud-value" id="conn-count" style="font-size: 0.85rem; line-height: 1;">0</div>
                         </div>
                     </div>
                     <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;" title="一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。">

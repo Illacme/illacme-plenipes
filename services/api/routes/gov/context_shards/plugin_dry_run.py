@@ -34,7 +34,8 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         "tencent_cos", "qiniu_kodo", "upyun_uss", "loli_io", "superbed",
         "lsky_pro", "sftp"
     ]
-    social_plugins = ["wechat", "zhihu", "juejin", "substack", "telegram", "discord"]
+    social_plugins = ["wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost"]
+    hosting_plugins = ["cloudflare_pages", "github_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
 
     # 对图床/托管/分发插件执行定制化连接探测
     if plugin_id in media_plugins:
@@ -49,6 +50,12 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前通道在品牌中处于未激活状态，测试将继续使用临时凭据验证。"))
         success = run_social_plugin_dry_run(plugin_id, settings, logs, log)
+    elif plugin_id in hosting_plugins:
+        from .plugin_dry_run_hosting import run_hosting_plugin_dry_run
+        enabled = settings.get("enabled", True)
+        if not enabled:
+            logs.append(log("WARN", "⚠️ [警告] 当前托管平台在品牌中处于未激活状态，测试将继续验证输入参数。"))
+        success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
     else:
         # 获取需要验证的字段（向下兼容多平台定制的个性化参数映射）
         enabled = settings.get("enabled", True)

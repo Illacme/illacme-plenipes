@@ -12,10 +12,11 @@ window.ThemeUI = {
 
         return `
             <div class="full-width">
-                <div class="section-header"><h3>🎨 装帧主题 (Binding Themes)</h3></div>
-                <p class="section-desc">选择并配置您的数字出版物视觉装帧样式。内核将根据所选主题自动对正物理路径与依赖。</p>
-                
-                <div class="card-gallery">
+                <div class="settings-group">
+                    <h4>🎨 装帧画廊</h4>
+                    <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 15px; opacity: 0.85;">选用符合您站点风格的数字出版视觉装帧主题，系统将自动对正前端物理路径与资产依赖。</p>
+                    
+                    <div class="card-gallery">
                     ${themes.length > 0 ? themes.map(t => {
                         const isActive = activeTheme === t.id;
                         const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
@@ -90,10 +91,12 @@ window.ThemeUI = {
                         </div>
                     `}
                 </div>
+                </div>
 
                 <div class="settings-grid" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
                     <div class="settings-group">
                         <h4>🛠️ 主题治理工具</h4>
+                        <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 12px; opacity: 0.85;">执行主题底层物理依赖的安装，并重新生成全局静态资产索引。</p>
                         <div style="display: flex; gap: 10px; margin-top: 1rem;">
                             <button class="secondary-btn" onclick="window.ThemeHandlers.invokeGlobalAction('install')" style="font-size: 0.8rem;">🏗️ 自动安装主题依赖</button>
                             <button class="secondary-btn" onclick="addAudit('📡 正在重新同步并对齐样式与脚本资源索引...')">🎨 重新生成资产索引</button>

@@ -98,6 +98,11 @@ class TestSyndicationRetryQueue(unittest.TestCase):
             is_dry_run=False
         )
 
+        # 重置重试时间以进入待执行窗口
+        conn = self.ledger.sqlite._get_conn()
+        conn.execute("UPDATE syndication_queue SET next_retry_time = 0")
+        conn.commit()
+
         # 检查是否成功排入队列
         tasks = self.ledger.get_pending_syndication_tasks()
         self.assertEqual(len(tasks), 1)
@@ -164,6 +169,11 @@ class TestSyndicationRetryQueue(unittest.TestCase):
             plugin=plugin, title="Doc One", slug="doc-one", content="Hello",
             metadata={"source_hash": "hash123"}, rel_path="doc1.md", lang_code="zh", is_dry_run=False
         )
+
+        # 重置重试时间以进入待执行窗口
+        conn = self.ledger.sqlite._get_conn()
+        conn.execute("UPDATE syndication_queue SET next_retry_time = 0")
+        conn.commit()
 
         # 2. 连续重试至上限 (max_retries 默认为 3)
         # 重试 1

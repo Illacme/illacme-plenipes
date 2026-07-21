@@ -28,6 +28,8 @@ def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None
     if not engine or not engine.config.system.api_token:
         return
     if x_token != engine.config.system.api_token:
+        from core.utils.event_bus import bus
+        bus.emit("SECURITY_ALERT", category="API_TOKEN_EXPIRED", message="接口访问认证失败：检测到未授权或非法的令牌（API Token）尝试跨站越权访问控制台。")
         raise HTTPException(status_code=403, detail="Unauthorized")
 
 @router.get("/api/system/health")

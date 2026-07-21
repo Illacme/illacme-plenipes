@@ -150,6 +150,12 @@ window.ComputeUI = {
                                        onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
                             </div>
                             <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 并发排队超时 (秒)</label>
+                                <input type="number" id="input-ai-semaphore-timeout" value="${trans.ai_semaphore_timeout ?? 3600}" min="1" 
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateStrategy('ai_semaphore_timeout', parseInt(this.value))">
+                            </div>
+                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">API 响应超时 (秒)</label>
                                 <input type="number" id="input-api-timeout" value="${trans.api_timeout}" min="10" 
                                        style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"

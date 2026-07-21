@@ -7,7 +7,11 @@
 
 from .dispatch_ops_shards.telemetry_ops import get_dispatch_status_logic
 from .dispatch_ops_shards.daemon_ops import toggle_lab_logic
-from .dispatch_ops_shards.pipeline_ops import trigger_re_dispatch_logic, destroy_artifact_logic
+from .dispatch_ops_shards.pipeline_ops import (
+    trigger_re_dispatch_logic,
+    destroy_artifact_logic,
+    get_pending_syndication_logic
+)
 
 def get_dispatch_status_facade(engine, doc_id: str) -> dict:
     """物理感应与多语种遥测分析门面中介"""
@@ -24,3 +28,7 @@ def trigger_re_dispatch_facade(engine, doc_id: str, req: dict) -> dict:
 def destroy_artifact_facade(engine, doc_id: str) -> dict:
     """出版产物彻底物理销毁与目录自愈门面中介"""
     return destroy_artifact_logic(engine, doc_id)
+
+def get_pending_syndication_facade(engine) -> dict:
+    """获取待同步至社交渠道的稿件信息门面中介"""
+    return get_pending_syndication_logic(engine)

@@ -55,6 +55,8 @@ class LicenseGuard:
         # 针对免费版的特定拦截提示
         feature_desc = cls._PRO_FEATURES[feature_name]
         tlog.debug(f"🛡️ [功能栅栏] 检测到对受限功能 '{feature_desc}' 的调用。")
+        from core.utils.event_bus import bus
+        bus.emit("SECURITY_ALERT", category="LICENSE_LIMIT", message=f"系统已拦截对未授权专业版功能 '{feature_desc}' 的调用，请导入许可证激活主权专业版。")
         return False
 
     @staticmethod

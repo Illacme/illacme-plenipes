@@ -7,7 +7,7 @@
 系统能够忠实、合规地在审计账本中写入记录。
 """
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 
 # 导入待测组件与路由
 from core.governance.meter import UsageMeter

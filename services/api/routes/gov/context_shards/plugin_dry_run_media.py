@@ -17,11 +17,21 @@ def run_media_plugin_dry_run(
     import requests
     success = True
 
+    # 提取网络代理（大部分海外图床在中国大陆需要代理）
+    proxy_url = settings.get("proxy") or ""
+    proxies = {}
+    if proxy_url:
+        proxies = {
+            "http": proxy_url,
+            "https": proxy_url
+        }
+        logs.append(log_func("INFO", f"🌐 [代理] 已装载本地网络通道代理: {proxy_url}"))
+
     if plugin_id == "telegraph":
         endpoint = settings.get("endpoint", "https://telegra.ph").rstrip("/")
         logs.append(log_func("INFO", f"📡 [探测] 正在连接至 Telegraph 免配图床端点: {endpoint}"))
         try:
-            resp = requests.get(endpoint, timeout=5)
+            resp = requests.get(endpoint, proxies=proxies, timeout=6)
             logs.append(log_func("INFO", f"🟢 [探测] TCP 三次握手成功，对端端点返回 HTTP {resp.status_code}。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立物理连接至 Telegraph 端点 ({endpoint}): {e}。这可能是本地 network 环境限制，若生产环境有代理，可安全忽略此警告。"))
@@ -33,64 +43,98 @@ def run_media_plugin_dry_run(
         token = settings.get("token", "")
         if not repo:
             logs.append(log_func("ERROR", "❌ [错误] 未配置 GitHub 仓库路径 (格式应为 'owner/repo'，例如 'username/my-images')。"))
-            success = False
+            return False
         if not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置 GitHub 访问凭据 (Token/Key)。"))
-            success = False
+            return False
         elif any(placeholder in token.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", f"❌ [错误] 检测到访问密钥或凭据使用默认占位符/未定义: '{token}'"))
-            success = False
+            return False
 
-        if success:
-            masked_token = token[:4] + "*" * 12 + token[-4:] if len(token) > 8 else "****"
-            logs.append(log_func("INFO", f"🔑 [授权] GitHub Token 格式校验通过: {masked_token}"))
-            logs.append(log_func("INFO", "📡 [探测] 正在测试 GitHub Contents API 网络连接..."))
-            try:
-                resp = requests.get("https://api.github.com", headers={"Authorization": f"token {token}"}, timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 对端 API 服务响应正常 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 测试连接至 api.github.com 失败: {e}。这可能是本地网络环境受限，若服务器端有代理，可安全忽略。"))
+        masked_token = token[:4] + "*" * 12 + token[-4:] if len(token) > 8 else "****"
+        logs.append(log_func("INFO", f"🔑 [授权] GitHub Token 格式校验通过: {masked_token}"))
+        logs.append(log_func("INFO", "📡 [探测] 正在测试 GitHub Contents API 网络连接..."))
+        try:
+            resp = requests.get("https://api.github.com", headers={"Authorization": f"token {token}"}, proxies=proxies, timeout=8)
+            if resp.status_code == 200:
+                logs.append(log_func("SUCCESS", f"🟢 [成功] 对端 GitHub API 响应正常 (HTTP {resp.status_code})。"))
+            else:
+                logs.append(log_func("ERROR", f"❌ [错误] GitHub 返回异常状态码 {resp.status_code}"))
+                success = False
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 测试连接至 api.github.com 失败: {e}。若在中国大陆，建议配置代理。"))
+            success = False
 
     elif plugin_id == "sm_ms":
         token = settings.get("token", "")
         if not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置 SM.MS 访问密钥 (Secret Token)。"))
-            success = False
+            return False
         elif any(placeholder in token.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", f"❌ [错误] 检测到访问密钥或凭据使用默认占位符/未定义: '{token}'"))
-            success = False
+            return False
 
-        if success:
-            masked_token = token[:4] + "*" * 12 + token[-4:] if len(token) > 8 else "****"
-            logs.append(log_func("INFO", f"🔑 [授权] SM.MS Token 格式校验通过: {masked_token}"))
-            logs.append(log_func("INFO", "📡 [探测] 正在测试 SM.MS API 网络连接..."))
-            try:
-                resp = requests.get("https://sm.ms/api/v2", timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 对端 API 服务响应正常 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 测试连接至 sm.ms 失败: {e}。"))
+        logs.append(log_func("INFO", "📡 [探测] 正在连接 SM.MS API 校验 Token 真实有效性..."))
+        url = "https://sm.ms/api/v2/profile"
+        headers = {"Authorization": token}
+        try:
+            resp = requests.post(url, headers=headers, proxies=proxies, timeout=8)
+            if resp.status_code == 200:
+                res_data = resp.json()
+                if res_data.get("success"):
+                    profile = res_data.get("data", {})
+                    username = profile.get("username", "")
+                    email = profile.get("email", "")
+                    disk_usage = profile.get("disk_usage", "未知")
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] SM.MS 凭证有效！成功对接账户: {username} ({email})，空间已用: {disk_usage}。"))
+                else:
+                    logs.append(log_func("ERROR", f"❌ [授权] SM.MS 拒绝授权: {res_data.get('message') or 'Token 无效'}"))
+                    success = False
+            else:
+                logs.append(log_func("ERROR", f"❌ [错误] SM.MS API 返回异常 HTTP {resp.status_code}"))
+                success = False
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 SM.MS API: {e}。若在中国大陆，建议配置代理。"))
+            success = False
 
     elif plugin_id == "imgur":
         client_id = settings.get("client_id", "")
         token = settings.get("token", "")
         if not client_id and not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置 Imgur 的 Client ID 或 Access Token。两者必须至少配置一项。"))
-            success = False
+            return False
         elif client_id and any(placeholder in client_id.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", "❌ [错误] Imgur Client ID 包含无效占位符。"))
-            success = False
+            return False
         elif token and any(placeholder in token.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", "❌ [错误] Imgur Access Token 包含无效占位符。"))
-            success = False
+            return False
 
-        if success:
-            logs.append(log_func("INFO", "🔑 [授权] Imgur 凭证格式校验通过。"))
-            logs.append(log_func("INFO", "📡 [探测] 正在测试 Imgur API 连通性..."))
-            try:
-                resp = requests.get("https://api.imgur.com/3/image", timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 对端 API 服务响应正常 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 测试连接至 api.imgur.com 失败: {e}。"))
+        logs.append(log_func("INFO", "📡 [探测] 正在连接 Imgur API 校验凭据与 IP 配额状态..."))
+        url = "https://api.imgur.com/3/credits"
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        else:
+            headers["Authorization"] = f"Client-ID {client_id}"
+
+        try:
+            resp = requests.get(url, headers=headers, proxies=proxies, timeout=8)
+            if resp.status_code == 200:
+                res_data = resp.json()
+                data = res_data.get("data", {})
+                user_remaining = data.get("UserRemaining", "未知")
+                client_remaining = data.get("ClientRemaining", "未知")
+                logs.append(log_func("SUCCESS", f"🟢 [成功] Imgur 凭证有效！当前 IP 剩余额度: {user_remaining}，应用总剩余额度: {client_remaining}。"))
+            elif resp.status_code in [401, 403]:
+                logs.append(log_func("ERROR", "❌ [错误] Imgur 鉴权失败：Client ID 或 Token 无效。"))
+                success = False
+            else:
+                logs.append(log_func("ERROR", f"❌ [错误] Imgur API 返回异常 HTTP {resp.status_code}"))
+                success = False
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 连接至 api.imgur.com 失败: {e}。由于 Imgur 在中国大陆无法直接访问，请在下方配置代理。"))
+            success = False
 
     elif plugin_id in ["s3", "aliyun_oss", "tencent_cos", "qiniu_kodo", "upyun_uss"]:
         from .plugin_dry_run_media_cloud import run_media_cloud_plugin_dry_run
@@ -102,19 +146,19 @@ def run_media_plugin_dry_run(
 
         if not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置路过图床 API Token。"))
-            success = False
+            return False
         elif any(placeholder in token.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", "❌ [错误] 路过图床 API Token 包含无效占位符。"))
-            success = False
+            return False
 
-        if success:
-            logs.append(log_func("INFO", "🔑 [授权] 路过图床凭证格式校验通过。"))
-            logs.append(log_func("INFO", f"📡 [探测] 正在测试 路过图床 API 端点连通性: {endpoint}"))
-            try:
-                resp = requests.get(endpoint, timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 对端图床 API 响应正常 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 无法建立与 路过图床域名 ({endpoint}) 的直接连接: {e}。"))
+        logs.append(log_func("INFO", "🔑 [授权] 路过图床凭证格式校验通过。"))
+        logs.append(log_func("INFO", f"📡 [探测] 正在测试 路过图床 API 端点连通性: {endpoint}"))
+        try:
+            resp = requests.get(endpoint, proxies=proxies, timeout=8)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 对端图床 API 响应正常 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 无法建立与 路过图床域名 ({endpoint}) 的直接连接: {e}。"))
+            success = False
 
     elif plugin_id == "superbed":
         token = settings.get("token", "")
@@ -122,19 +166,19 @@ def run_media_plugin_dry_run(
 
         if not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置聚合图床 API Token。"))
-            success = False
+            return False
         elif any(placeholder in token.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", "❌ [错误] 聚合图床 Token 包含无效占位符。"))
-            success = False
+            return False
 
-        if success:
-            logs.append(log_func("INFO", "🔑 [授权] 聚合图床凭证格式校验通过。"))
-            logs.append(log_func("INFO", f"📡 [探测] 正在测试 聚合图床 API 端点连通性: {endpoint}"))
-            try:
-                resp = requests.get(endpoint, timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 对端 聚合图床 API 响应正常 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 无法建立与 聚合图床域名 ({endpoint}) 的直接连接: {e}。"))
+        logs.append(log_func("INFO", "🔑 [授权] 聚合图床凭证格式校验通过。"))
+        logs.append(log_func("INFO", f"📡 [探测] 正在测试 聚合图床 API 端点连通性: {endpoint}"))
+        try:
+            resp = requests.get(endpoint, proxies=proxies, timeout=8)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 对端 聚合图床 API 响应正常 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 无法建立与 聚合图床域名 ({endpoint}) 的直接连接: {e}。"))
+            success = False
 
     elif plugin_id == "lsky_pro":
         endpoint = settings.get("endpoint", "").strip().rstrip("/")
@@ -142,19 +186,37 @@ def run_media_plugin_dry_run(
 
         if not endpoint or not token:
             logs.append(log_func("ERROR", "❌ [错误] 未配置兰空图床 接口地址 (Endpoint) 或 鉴权 Token。"))
-            success = False
+            return False
         elif any(placeholder in token.lower() or placeholder in endpoint.lower() for placeholder in ["your_", "placeholder", "undefined", "null"]):
             logs.append(log_func("ERROR", "❌ [错误] 兰空图床配置信息中包含无效占位符。"))
-            success = False
+            return False
 
-        if success:
-            logs.append(log_func("INFO", "🔑 [授权] 兰空图床凭证格式校验通过。"))
-            logs.append(log_func("INFO", f"📡 [探测] 正在测试 兰空图床端点可达性: {endpoint}"))
-            try:
-                resp = requests.get(endpoint, timeout=5)
-                logs.append(log_func("INFO", f"🟢 [探测] 兰空图床端点服务物理网络可达 (HTTP {resp.status_code})。"))
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [警告] 无法直接连接至 兰空图床端点 ({endpoint}): {e}。"))
+        logs.append(log_func("INFO", f"📡 [探测] 正在连接 兰空图床 API 校验 Token 真实有效性..."))
+        profile_url = f"{endpoint}/api/v1/profile"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json"
+        }
+        try:
+            resp = requests.get(profile_url, headers=headers, proxies=proxies, timeout=8)
+            if resp.status_code == 200:
+                res_data = resp.json()
+                if res_data.get("status"):
+                    user_data = res_data.get("data", {})
+                    name = user_data.get("name") or user_data.get("email") or "已授权用户"
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] 兰空图床凭证有效！成功匹配用户: {name}。"))
+                else:
+                    logs.append(log_func("ERROR", f"❌ [授权] 兰空图床返回鉴权失败: {res_data.get('message') or '未授权'}"))
+                    success = False
+            elif resp.status_code in [401, 403]:
+                logs.append(log_func("ERROR", "❌ [错误] 兰空图床鉴权失败：Token 无效或已过期。"))
+                success = False
+            else:
+                logs.append(log_func("ERROR", f"❌ [错误] 兰空图床 API 返回异常 HTTP {resp.status_code}"))
+                success = False
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 无法建立与 兰空图床端点 ({profile_url}) 的连接: {e}。"))
+            success = False
 
     elif plugin_id == "sftp":
         host = settings.get("host", "")

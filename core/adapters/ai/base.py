@@ -50,6 +50,18 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         from core.logic.ai.rate_limit_shield import RateLimitShield
         self.rate_limiter = RateLimitShield(node_name, self.config.limits, sleep_func=self._sleep)
 
+    def get_proxy(self) -> str:
+        """
+        🚀 [V11.2] 获取当前翻译节点的网络代理（支持节点配置、翻译全局代理以及系统全局代理三级降级回退）。
+        """
+        proxy_url = self.safe_get_config('proxy') or getattr(self.trans_cfg, 'global_proxy', None)
+        if not proxy_url:
+            from core.runtime.engine_singleton import get_global_engine
+            engine = get_global_engine()
+            if engine and engine.config and engine.config.system:
+                proxy_url = engine.config.system.global_proxy
+        return proxy_url
+
     def safe_get_config(self, key: str, default: Any = None) -> Any:
         """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
         return getattr(self.config, key, default)
@@ -115,12 +127,17 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         for i in range(self.max_retries + 1):
             try:
                 wait_timeout = 3600
-                if engine and hasattr(engine, 'config') and hasattr(engine.config, 'system') and hasattr(engine.config.system, 'resilience'):
-                    wait_timeout = getattr(engine.config.system.resilience, 'ai_semaphore_timeout', 3600)
+                if engine and hasattr(engine, 'config') and hasattr(engine.config, 'translation'):
+                    wait_timeout = getattr(engine.config.translation, 'ai_semaphore_timeout', 3600)
                 if not self.semaphore.acquire(timeout=wait_timeout):
                     raise RuntimeError(f"AI_SEMAPHORE_TIMEOUT: {self.node_name} after {wait_timeout}s")
                 try:
-                    # 🛡️ [P4 Rate Limit Shield] 估算本次请求的 Token 消耗
+                    if engine and hasattr(engine, 'governance'):
+                        breaker = engine.circuit_breakers.get("ai")
+                        if breaker and not breaker.allow_request(self.node_name):
+                            raise RuntimeError(f"AI_CIRCUIT_BREAKER_OPEN: {self.node_name}")
+                    
+                    # 🛡️ [P4 Rate Limit Shield] 估算本次请求 of Token 消耗
                     total_chars = 0
                     if "messages" in payload:
                         for msg in payload["messages"]:

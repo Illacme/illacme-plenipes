@@ -75,7 +75,25 @@ window.loadViewData = (viewId, subId) => {
 // ==========================================
 // 🚀 [V87.0] 统一视图切换入口（使用 View Transitions 解耦数据加载）
 // ==========================================
-window.showView = (id, subId) => {
+window.showView = async (id, subId) => {
+    // 🛡️ [优化点2] 大分类切换拦截：如果是从 settings 切换到其他视图，检查配置是否 dirty
+    if (window.currentView === 'settings' && id !== 'settings') {
+        if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
+            const proceed = await window.checkSettingsDirtyAndConfirm();
+            if (!proceed) {
+                // 如果用户取消，还原左侧导航栏的 active 状态
+                const activeNav = document.getElementById('nav-settings');
+                const allNavs = document.querySelectorAll('.nav-item');
+                allNavs.forEach(n => n.classList.remove('active'));
+                if (activeNav) activeNav.classList.add('active');
+                
+                // 还原锚点
+                window.location.hash = '#/settings';
+                return;
+            }
+        }
+    }
+
     if (subId) window.pendingSubView = subId;
     else window.pendingSubView = null; // Fix for stale subId bleeding
     const container = document.querySelector('main');
@@ -117,17 +135,17 @@ window.showView = (id, subId) => {
     }
 };
 
-window.handleRouting = () => {
+window.handleRouting = async () => {
     const hash = window.location.hash.replace('#/', '');
     const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower', 'analytics'];
     if (hash && validViews.includes(hash)) {
         if (window.currentView === hash) return; // Prevent duplicate execution from programmatic hash changes
         const subId = window.pendingSubView;
         window.pendingSubView = null;
-        window.showView(hash, subId);
+        await window.showView(hash, subId);
         if (hash === 'overview' && typeof window.toggleHub === 'function') window.toggleHub('show');
     } else {
-        window.showView('overview');
+        await window.showView('overview');
         if (typeof window.toggleHub === 'function') window.toggleHub('show');
     }
 };

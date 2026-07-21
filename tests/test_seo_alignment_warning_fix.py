@@ -3,7 +3,6 @@
 验证 AIAlignmentProcessor 在使用自定义模板（例如含有 {lang_name} 占位符的 seo.user 模板）时，
 格式化过程不会产生 `提示词格式化缺失占位符` 的 KeyError 警告。
 """
-import pytest
 from unittest.mock import MagicMock
 from core.logic.seo.ai_alignment import AIAlignmentProcessor
 

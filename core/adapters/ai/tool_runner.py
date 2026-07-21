@@ -71,6 +71,11 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
 
     proxies = None
     proxy_url = actual_adapter.safe_get_config('proxy') or getattr(actual_adapter.trans_cfg, 'global_proxy', None)
+    if not proxy_url:
+        from core.runtime.engine_singleton import get_global_engine
+        engine = get_global_engine()
+        if engine and engine.config and engine.config.system:
+            proxy_url = engine.config.system.global_proxy
     if proxy_url: proxies = {"http": proxy_url, "https": proxy_url}
 
     timeout_val = max(180.0, getattr(actual_adapter, 'timeout', 60.0))

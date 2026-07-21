@@ -71,7 +71,7 @@ window.renderAiLessonsVisualizer = (summary, lessons, container) => {
     }
 
     container.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
             <div style="background: rgba(138, 43, 226, 0.05); border: 1px solid rgba(138, 43, 226, 0.2); border-radius: 8px; padding: 15px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.05);">
                 <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px;">🛡️ 拦截教训总数</div>
                 <div style="font-size: 1.8rem; font-weight: 800; color: #a066ff; text-shadow: 0 0 10px rgba(160,102,255,0.3);">${total} 次</div>
@@ -86,13 +86,13 @@ window.renderAiLessonsVisualizer = (summary, lessons, container) => {
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; align-items: start;" class="visualizer-body-grid">
-            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; backdrop-filter: blur(10px);">
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; align-items: start;" class="visualizer-body-grid">
+            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; backdrop-filter: blur(10px); flex: 1; min-width: 300px;">
                 <h4 style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--text-bright); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">📊 故障比例雷达图</h4>
                 ${progressBarsHtml}
             </div>
 
-            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; backdrop-filter: blur(10px); display: flex; flex-direction: column;">
+            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; backdrop-filter: blur(10px); display: flex; flex-direction: column; flex: 2; min-width: 460px;">
                 <h4 style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--text-bright); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">📜 教训库落盘明细</h4>
                 
                 <div style="display: flex; gap: 10px; margin-bottom: 12px;">

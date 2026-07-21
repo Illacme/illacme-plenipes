@@ -18,7 +18,10 @@ window.getUIDrawersHTML = () => {
                 <div class="drawer-body" style="padding-top:10px;">
                     <!-- 🛰️ Section 1: Global Sync Matrix -->
                     <div class="hub-section">
-                        <div class="sector-header">GLOBAL SYNC MATRIX</div>
+                        <div class="sector-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span>GLOBAL SYNC MATRIX</span>
+                            <button id="btn-sync-all-channels" class="p-btn" style="display: none; padding: 3px 8px; font-size: 0.65rem; background: var(--accent-secondary); color: #000; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onclick="window.triggerSyncAllChannels()" onmouseover="this.style.background='rgba(0, 242, 255, 0.8)'" onmouseout="this.style.background='var(--accent-secondary)'">🚀 一键同步全渠道</button>
+                        </div>
                         <div id="hub-sync-matrix" class="matrix-list">
                             <!-- Mock 列表将注入此处 -->
                         </div>
@@ -83,11 +86,24 @@ window.getUIDrawersHTML = () => {
                     <!-- 动态注入插件特定配置 -->
                 </div>
                 <div class="drawer-footer" style="display: flex; gap: 10px; width: 100%;">
+                    <button class="secondary-btn" id="btn-reset-drawer-cfg" style="flex: 1; border: 1px dashed rgba(255, 77, 77, 0.4); color: #ff4d4d; background: rgba(255, 77, 77, 0.05); font-weight: 600;" onclick="window.resetCurrentDrawerFields()">🗑️ 清空重置</button>
                     <button class="secondary-btn" id="btn-restore-plugin-defaults" style="display: none; flex: 1; border: 1px solid #ff7b00; color: #ff7b00; background: rgba(255, 123, 0, 0.05); font-weight: 600;" onclick="restorePluginDefaults()">🧹 恢复默认</button>
-                    <button class="primary-btn glow-btn" id="btn-save-plugin-cfg" style="flex: 1;" onclick="savePluginSettingsAndClose()">💾 保存配置</button>
                     <button class="secondary-btn" id="btn-dry-run-plugin" style="display: none; flex: 1; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); background: rgba(0, 242, 255, 0.05); font-weight: 600;" onclick="triggerPluginDryRun()">🔌 测试连接</button>
+                    <button class="primary-btn glow-btn" id="btn-save-plugin-cfg" style="flex: 1; font-weight: 600;" onclick="savePluginSettingsAndClose()">💾 保存配置</button>
                 </div>
             </div>
         </div>
     `;
+};
+
+window.resetCurrentDrawerFields = () => {
+    if (confirm("确认擦除当前配置抽屉中填写的所有文本框？")) {
+        const body = document.getElementById('p-drawer-body');
+        if (!body) return;
+        body.querySelectorAll('input[type="text"], input[type="password"], textarea').forEach(input => {
+            input.value = '';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        if (window.showToast) window.showToast("已清空擦除草稿参数", "info");
+    }
 };

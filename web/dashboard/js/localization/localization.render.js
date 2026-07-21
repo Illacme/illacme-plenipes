@@ -5,6 +5,9 @@
  */
 
 window.renderLocalizationCategory = function () {
+    if (window.currentGlossarySearchQuery === undefined) window.currentGlossarySearchQuery = "";
+    if (window.currentGlossaryPage === undefined) window.currentGlossaryPage = 1;
+
     const i18n = window.settingsData.i18n_settings || {};
     const mode = window.settingsData.governance?.publishing_mode || 'basic';
     const isGlobal = mode === 'global';
@@ -276,27 +279,31 @@ window.renderLocalizationCategory = function () {
                             `}
                         </div>
 
-                        <!-- 术语列表显示 -->
-                        <div class="glossary-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; max-height: 250px; overflow-y: auto;">
-                            ${Object.keys(glossaryForCurrentLang).length === 0 ? `
-                                <div style="padding: 15px; text-align: center; color: var(--text-dim); background: rgba(0,0,0,0.1); border-radius: 8px; font-size: 0.8rem; border: 1px dashed var(--glass-border);">
-                                    尚未在当前语种 [${window.currentGlossaryLang.toUpperCase()}] 下添加任何防护术语。在下方输入并添加。
-                                </div>
-                            ` : `
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;">
-                                    ${Object.entries(glossaryForCurrentLang).map(([src, dst]) => `
-                                        <div class="glass-panel" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,242,255,0.02);">
-                                            <div style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
-                                                <span style="color: var(--text-bright, #fff); font-weight: 600;">${src}</span>
-                                                <span style="color: var(--text-dim); margin: 0 4px;">➡️</span>
-                                                <span style="color: var(--accent-secondary);">${dst}</span>
-                                            </div>
-                                            <span style="cursor: pointer; color: #ff6b6b; font-size: 0.9rem; padding: 2px 6px; transition: opacity 0.2s;" 
-                                                  onclick="window.removeGlossaryItem('${src.replace(/'/g, "\\'")}')" title="删除该保护词">🗑️</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
+                        <!-- 🔍 检索与操作控制栏 -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                            <div style="position: relative; flex: 1; min-width: 200px; max-width: 320px;">
+                                <input type="text" id="glossary-search-input" class="setting-input" 
+                                       style="width: 100%; min-height: 28px; font-size: 0.75rem; border-radius: 6px; padding: 4px 10px 4px 10px; box-sizing: border-box;" 
+                                       placeholder="🔍 过滤保护词条..." value="${window.currentGlossarySearchQuery || ''}"
+                                       oninput="window.onGlossarySearch(this.value)">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="mini-btn glow-btn" 
+                                        style="padding: 4px 12px; font-size: 0.72rem; border-radius: 6px; border: 1px solid var(--accent-secondary); cursor: pointer; height: 28px; line-height: 18px;"
+                                        onclick="window.openGlossaryImportModal()">
+                                    📄 批量导入 (CSV/JSON/粘贴)
+                                </button>
+                                <button type="button" class="mini-btn danger-btn" 
+                                        style="padding: 4px 12px; font-size: 0.72rem; border-radius: 6px; border: 1px solid #ff6b6b; cursor: pointer; height: 28px; line-height: 18px; color: #ff6b6b; background: rgba(255, 107, 107, 0.05);"
+                                        onclick="window.clearGlossaryCurrentLang()">
+                                    🧹 一键清空
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 术语列表显示局部容器 -->
+                        <div class="glossary-container" id="glossary-display-wrapper" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; min-height: 80px; max-height: 250px; overflow-y: auto;">
+                            ${window.renderGlossaryListHtml()}
                         </div>
 
                         <!-- 术语新增表单 -->
@@ -309,6 +316,382 @@ window.renderLocalizationCategory = function () {
                     </div>
                 </div>
             ` : ''}
+        </div>
+    `;
+};
+
+// ==========================================
+// 💡 [新增] 专有名词保护术语批量导入与分页搜索辅助函数
+// ==========================================
+
+window.renderGlossaryListHtml = () => {
+    const gov = window.settingsData.translation?.governance || {};
+    const glossary = gov.glossary || {};
+    const glossaryForCurrentLang = glossary[window.currentGlossaryLang] || {};
+    
+    let entries = Object.entries(glossaryForCurrentLang);
+    const q = (window.currentGlossarySearchQuery || '').toLowerCase().trim();
+    if (q) {
+        entries = entries.filter(([src, dst]) => src.toLowerCase().includes(q) || dst.toLowerCase().includes(q));
+    }
+    
+    const itemsPerPage = 8;
+    const totalEntries = entries.length;
+    const totalPages = Math.ceil(totalEntries / itemsPerPage) || 1;
+    
+    if (window.currentGlossaryPage > totalPages) window.currentGlossaryPage = totalPages;
+    if (window.currentGlossaryPage < 1) window.currentGlossaryPage = 1;
+    
+    const startIdx = (window.currentGlossaryPage - 1) * itemsPerPage;
+    const paginatedEntries = entries.slice(startIdx, startIdx + itemsPerPage);
+    
+    let listHtml = "";
+    if (paginatedEntries.length === 0) {
+        listHtml = `
+            <div style="padding: 15px; text-align: center; color: var(--text-dim); background: rgba(0,0,0,0.1); border-radius: 8px; font-size: 0.8rem; border: 1px dashed var(--glass-border);">
+                ${q ? '未检索到匹配的保护词条。' : `尚未在当前语种 [${window.currentGlossaryLang.toUpperCase()}] 下添加任何防护术语。`}
+            </div>
+        `;
+    } else {
+        listHtml = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;">
+                ${paginatedEntries.map(([src, dst]) => `
+                    <div class="glass-panel" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,242,255,0.02); height: 38px; box-sizing: border-box;">
+                        <div style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;" title="${src} ➡️ ${dst}">
+                            <span style="color: var(--text-bright, #fff); font-weight: 600;">${src}</span>
+                            <span style="color: var(--text-dim); margin: 0 4px;">➡️</span>
+                            <span style="color: var(--accent-secondary);">${dst}</span>
+                        </div>
+                        <span style="cursor: pointer; color: #ff6b6b; font-size: 0.9rem; padding: 2px 6px; transition: opacity 0.2s;" 
+                              onclick="window.removeGlossaryItem('${src.replace(/'/g, "\\'")}')" title="删除该保护词">🗑️</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    let paginationHtml = "";
+    if (totalPages > 1) {
+        paginationHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem; color: var(--text-dim);">
+                <div>共 <b>${totalEntries}</b> 条词项</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" class="mini-btn" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--glass-border);" 
+                            ${window.currentGlossaryPage === 1 ? 'disabled style="opacity:0.4; cursor:default;"' : `onclick="window.changeGlossaryPage(-1)"`}>上一页</button>
+                    <span>${window.currentGlossaryPage} / ${totalPages} 页</span>
+                    <button type="button" class="mini-btn" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--glass-border);" 
+                            ${window.currentGlossaryPage === totalPages ? 'disabled style="opacity:0.4; cursor:default;"' : `onclick="window.changeGlossaryPage(1)"`}>下一页</button>
+                </div>
+            </div>
+        `;
+    } else if (totalEntries > 0) {
+        paginationHtml = `
+            <div style="margin-top: 10px; font-size: 0.7rem; color: var(--text-dim); text-align: right;">共 <b>${totalEntries}</b> 条词项</div>
+        `;
+    }
+    
+    return listHtml + paginationHtml;
+};
+
+window.refreshGlossaryUI = () => {
+    const container = document.getElementById('glossary-display-wrapper');
+    if (container) {
+        container.innerHTML = window.renderGlossaryListHtml();
+    }
+};
+
+window.changeGlossaryPage = (dir) => {
+    window.currentGlossaryPage += dir;
+    window.refreshGlossaryUI();
+};
+
+window.onGlossarySearch = (query) => {
+    window.currentGlossarySearchQuery = query;
+    window.currentGlossaryPage = 1;
+    window.refreshGlossaryUI();
+};
+
+window.openGlossaryImportModal = () => {
+    if (typeof Swal === 'undefined') return;
+    
+    Swal.fire({
+        title: '📄 批量导入保护术语',
+        html: `
+            <div style="text-align: left; font-size: 0.8rem; color: var(--text-dim);">
+                <p style="margin-bottom: 10px;">支持两种导入方式：</p>
+                <p>1. <b>粘贴导入</b>：在下方文本域中输入术语项（格式为 <b>原文=译文</b>，每行一项）。</p>
+                <p style="margin-bottom: 12px;">2. <b>文件导入</b>：选择或拖拽本地 <b>.csv</b> 或 <b>.json</b> 文件。</p>
+                
+                <div style="margin-bottom: 12px; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border);">
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">导入模式：</span>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-bright, #fff);">
+                        <input type="radio" name="glossary-import-mode" value="merge" checked style="cursor: pointer; transform: scale(0.9);"> 📥 增量合并
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-bright, #fff);">
+                        <input type="radio" name="glossary-import-mode" value="replace" style="cursor: pointer; transform: scale(0.9);"> 🔄 覆盖替换
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <input type="file" id="glossary-file-uploader" accept=".csv,.json" style="width: 100%; font-size: 0.75rem; background: var(--black-20); padding: 5px; border-radius: 4px; border: 1px solid var(--glass-border); color: var(--text-primary);">
+                </div>
+                
+                <textarea id="glossary-import-textarea" placeholder="原稿词汇1=保护译词1&#10;原稿词汇2=保护译词2" 
+                          style="width: 100%; height: 160px; background: var(--black-20); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; font-family: var(--font-mono); font-size: 0.75rem; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        background: 'hsla(236, 37%, 8%, 0.95)',
+        color: 'var(--text-bright, #ffffff)',
+        confirmButtonText: '⚡ 开始导入',
+        cancelButtonText: '❌ 取消',
+        customClass: {
+            popup: 'glass-panel',
+            confirmButton: 'primary-btn glow-btn',
+            cancelButton: 'danger-btn'
+        },
+        didOpen: () => {
+            const uploader = document.getElementById('glossary-file-uploader');
+            const textarea = document.getElementById('glossary-import-textarea');
+            if (uploader && textarea) {
+                uploader.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        const content = evt.target.result;
+                        if (file.name.endsWith('.json')) {
+                            try {
+                                const obj = JSON.parse(content);
+                                let text = "";
+                                let targetObj = obj;
+                                if (obj[window.currentGlossaryLang]) {
+                                    targetObj = obj[window.currentGlossaryLang];
+                                }
+                                for (const [k, v] of Object.entries(targetObj)) {
+                                    if (typeof v === 'string') text += `${k}=${v}\n`;
+                                }
+                                textarea.value = text;
+                            } catch (err) {
+                                Swal.showValidationMessage('❌ 无法解析此 JSON 文件！');
+                            }
+                        } else if (file.name.endsWith('.csv')) {
+                            const lines = content.split('\n');
+                            let text = "";
+                            lines.forEach(line => {
+                                const parts = line.split(',');
+                                if (parts.length >= 2) {
+                                    const k = parts[0].replace(/"/g, '').trim();
+                                    const v = parts[1].replace(/"/g, '').trim();
+                                    if (k && v && k !== 'source' && k !== 'src') {
+                                        text += `${k}=${v}\n`;
+                                    }
+                                }
+                            });
+                            textarea.value = text;
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                };
+            }
+        },
+        preConfirm: () => {
+            const textarea = document.getElementById('glossary-import-textarea');
+            if (!textarea || !textarea.value.trim()) {
+                Swal.showValidationMessage('❌ 导入文本域不能为空！');
+                return false;
+            }
+            
+            const mode = document.querySelector('input[name="glossary-import-mode"]:checked')?.value || 'merge';
+            
+            const text = textarea.value.trim();
+            const lines = text.split('\n');
+            const newItems = {};
+            lines.forEach(line => {
+                const parts = line.split(/[=|:]/);
+                if (parts.length >= 2) {
+                    const src = parts[0].trim();
+                    const dst = parts[1].trim();
+                    if (src && dst) {
+                        newItems[src] = dst;
+                    }
+                }
+            });
+            
+            const count = Object.keys(newItems).length;
+            if (count === 0) {
+                Swal.showValidationMessage('❌ 未解析到任何合法的原文=译文项！');
+                return false;
+            }
+            
+            // 安全环路与冲突校验
+            const gov = window.settingsData.translation?.governance || {};
+            const glossary = gov.glossary || {};
+            const currentLang = window.currentGlossaryLang || 'en';
+            const existingGlossary = (mode === 'replace') ? {} : (glossary[currentLang] || {});
+            
+            // 1. 一词多译冲突校验 (Ambiguity Check)
+            const conflicts = [];
+            for (const [src, dst] of Object.entries(newItems)) {
+                if (existingGlossary[src] && existingGlossary[src] !== dst) {
+                    conflicts.push(`【${src}】已映射为【${existingGlossary[src]}】（拟更新为【${dst}】）`);
+                }
+            }
+            if (conflicts.length > 0) {
+                Swal.showValidationMessage(`⚠️ 冲突: ${conflicts.slice(0, 1).join('; ')}${conflicts.length > 1 ? ' ...' : ''}`);
+                return false;
+            }
+            
+            // 2. 环路依赖深度检测 (Cycle Detection)
+            const tempMap = { ...existingGlossary, ...newItems };
+            const hasCycle = (start) => {
+                let current = start;
+                const visited = new Set();
+                while (current && tempMap[current]) {
+                    if (visited.has(current)) return true;
+                    visited.add(current);
+                    current = tempMap[current];
+                }
+                return false;
+            };
+            
+            const cycleKeys = [];
+            for (const k of Object.keys(tempMap)) {
+                if (hasCycle(k)) {
+                    cycleKeys.push(k);
+                }
+            }
+            if (cycleKeys.length > 0) {
+                Swal.showValidationMessage(`❌ 环路依赖警告: 词项 【${cycleKeys.slice(0, 2).join(' / ')}】 构成了循环映射关系！`);
+                return false;
+            }
+            
+            return {
+                text: text,
+                mode: mode
+            };
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed && result.value) {
+            const { text, mode } = result.value;
+            const lines = text.split('\n');
+            const newItems = {};
+            lines.forEach(line => {
+                const parts = line.split(/[=|:]/);
+                if (parts.length >= 2) {
+                    const src = parts[0].trim();
+                    const dst = parts[1].trim();
+                    if (src && dst) {
+                        newItems[src] = dst;
+                    }
+                }
+            });
+            
+            const gov = window.settingsData.translation?.governance || {};
+            const glossary = { ...(gov.glossary || {}) };
+            const currentLang = window.currentGlossaryLang;
+            
+            if (mode === 'replace') {
+                glossary[currentLang] = {};
+            } else if (!glossary[currentLang]) {
+                glossary[currentLang] = {};
+            } else {
+                glossary[currentLang] = { ...glossary[currentLang] };
+            }
+            
+            Object.assign(glossary[currentLang], newItems);
+            const count = Object.keys(newItems).length;
+            
+            if (typeof addAudit === 'function') {
+                addAudit(`📥 正在以【${mode === 'replace' ? '覆盖替换' : '增量合并'}】模式批量导入并保存 ${count} 个保护词条...`);
+            }
+            
+            await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
+            
+            window.currentGlossaryPage = 1;
+            window.refreshGlossaryUI();
+            
+            Swal.fire({
+                title: '🎉 导入成功',
+                text: `成功以【${mode === 'replace' ? '覆盖替换' : '增量合并'}】模式导入并保存了 ${count} 条保护术语！`,
+                icon: 'success',
+                background: 'hsla(236, 37%, 8%, 0.95)',
+                color: 'var(--text-bright, #ffffff)',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    });
+};
+
+window.renderI18nRoutingCategory = () => {
+    if (!window.switchI18nRoutingSubTab) {
+        window.switchI18nRoutingSubTab = (subTab, btn) => {
+            window.currentActiveSettingsSubCat = subTab;
+            const container = document.getElementById('i18n-routing-sub-tab-bar');
+            if (container) {
+                const btns = container.querySelectorAll('.sub-tab-btn');
+                btns.forEach(b => b.classList.remove('active'));
+            }
+            if (btn) {
+                btn.classList.add('active');
+            } else if (event) {
+                event.currentTarget.classList.add('active');
+            }
+
+            const panels = ['localization', 'translation_style', 'slug_settings', 'route_matrix'];
+            panels.forEach(p => {
+                const el = document.getElementById(`i18n-panel-${p}`);
+                if (el) el.style.display = (p === subTab) ? 'block' : 'none';
+            });
+
+            // 渲染对应的子页面
+            const panelEl = document.getElementById(`i18n-panel-${subTab}`);
+            if (panelEl) {
+                let html = '';
+                if (subTab === 'localization' && typeof window.renderLocalizationCategory === 'function') {
+                    html = window.renderLocalizationCategory();
+                } else if (subTab === 'translation_style' && typeof window.renderTranslationStyleCategory === 'function') {
+                    html = window.renderTranslationStyleCategory();
+                } else if (subTab === 'slug_settings' && typeof window.renderSlugSettingsCategory === 'function') {
+                    html = window.renderSlugSettingsCategory();
+                } else if (subTab === 'route_matrix' && typeof window.renderRouteMatrixCategory === 'function') {
+                    html = window.renderRouteMatrixCategory();
+                }
+                panelEl.innerHTML = html;
+            }
+
+            if (typeof window.updateSaveButtonVisibility === 'function') {
+                window.updateSaveButtonVisibility(subTab);
+            }
+        };
+    }
+
+    const currentSub = window.currentActiveSettingsSubCat || 'localization';
+
+    setTimeout(() => {
+        const activeBtn = document.getElementById('i18n-routing-sub-tab-bar')?.querySelector(`.sub-tab-btn[onclick*="${currentSub}"]`);
+        if (typeof window.switchI18nRoutingSubTab === 'function') {
+            window.switchI18nRoutingSubTab(currentSub, activeBtn);
+        }
+    }, 20);
+
+    return `
+        <div class="full-width">
+            <div class="section-header"><h3>🌍 多语翻译与分发路由 (Translation & Dissemination Routing)</h3></div>
+            <p class="section-desc">调节翻译语种映射与高级超链接治理，编排分发通道物理路由矩阵。</p>
+            
+            <div class="security-sub-tab-bar" id="i18n-routing-sub-tab-bar">
+                <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('localization', this)">🌍 翻译矩阵</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('translation_style', this)">🎭 翻译风格</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('slug_settings', this)">📝 别名策略</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('route_matrix', this)">🧭 物理路由</button>
+            </div>
+
+            <div id="i18n-panel-localization" style="display: ${currentSub === 'localization' ? 'block' : 'none'};"></div>
+            <div id="i18n-panel-translation_style" style="display: ${currentSub === 'translation_style' ? 'block' : 'none'};"></div>
+            <div id="i18n-panel-slug_settings" style="display: ${currentSub === 'slug_settings' ? 'block' : 'none'};"></div>
+            <div id="i18n-panel-route_matrix" style="display: ${currentSub === 'route_matrix' ? 'block' : 'none'};"></div>
         </div>
     `;
 };

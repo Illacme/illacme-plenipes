@@ -118,9 +118,9 @@ class TestGitHubPagesPublisher:
             with open(os.path.join(bundle_dir, ".DS_Store"), 'w') as f:
                 f.write("")
 
-            count = pub._copy_bundle(bundle_dir, work_dir)
+            copied_count, skipped_count = pub._copy_bundle(bundle_dir, work_dir)
 
-            assert count == 2  # index.html + style.css
+            assert copied_count == 2  # index.html + style.css
             assert os.path.isfile(os.path.join(work_dir, "index.html"))
             assert os.path.isfile(os.path.join(work_dir, "assets", "style.css"))
             assert not os.path.exists(os.path.join(work_dir, ".DS_Store"))
@@ -288,7 +288,7 @@ class TestGitHubPagesPublisher:
                 assert f.read() == "test.plenipes.press"
             shutil.rmtree(verify_dir, ignore_errors=True)
 
-            # ── 验证二次部署（幂等性）──
+             # ── 验证二次部署（幂等性）──
             result2 = pub.push(bundle_dir, {})
             assert result2["status"] == "success"
             assert result2.get("message") == "No changes to deploy."
@@ -296,3 +296,94 @@ class TestGitHubPagesPublisher:
         finally:
             shutil.rmtree(remote_dir, ignore_errors=True)
             shutil.rmtree(bundle_dir, ignore_errors=True)
+
+    def test_github_pages_token_injection_and_masking(self):
+        """验证传入 token 时 URL 能正确注入凭证，且在错误发生时能自动脱敏过滤"""
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        
+        # 1. 验证正常 HTTPS 注入
+        pub = GitHubPagesPublisher(config={
+            "repo_url": "https://github.com/owner/my-repo.git",
+            "token": "ghp_securetoken123"
+        })
+        auth_url = pub._get_authenticated_repo_url()
+        assert auth_url == "https://x-access-token:ghp_securetoken123@github.com/owner/my-repo.git"
+        
+        # 2. 验证 HTTP 注入
+        pub_http = GitHubPagesPublisher(config={
+            "repo_url": "http://github.com/owner/my-repo",
+            "token": "ghp_securetoken123"
+        })
+        assert pub_http._get_authenticated_repo_url() == "http://x-access-token:ghp_securetoken123@github.com/owner/my-repo"
+        
+        # 3. 验证剔除原有凭证再注入
+        pub_mixed = GitHubPagesPublisher(config={
+            "repo_url": "https://old_user@github.com/owner/my-repo.git",
+            "token": "ghp_securetoken123"
+        })
+        assert pub_mixed._get_authenticated_repo_url() == "https://x-access-token:ghp_securetoken123@github.com/owner/my-repo.git"
+        
+        # 4. 验证错误信息脱敏
+        raw_error_message = "Fatal: clone failed for https://x-access-token:ghp_securetoken123@github.com/owner/my-repo.git"
+        masked_message = pub._mask_url_credentials(raw_error_message)
+        assert "ghp_securetoken123" not in masked_message
+        assert masked_message == "Fatal: clone failed for https://x-access-token:***@github.com/owner/my-repo.git"
+
+    def test_parse_owner_repo(self):
+        """验证能够正确从 https/ssh 的 repo_url 解析出 owner 和 repo 名字"""
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        pub = GitHubPagesPublisher(config={
+            "repo_url": "https://github.com/illacme/celestial_pulse.git"
+        })
+        owner, repo = pub._parse_owner_repo()
+        assert owner == "illacme"
+        assert repo == "celestial_pulse"
+
+        pub_ssh = GitHubPagesPublisher(config={
+            "repo_url": "git@github.com:illacme/my-blog-website.git"
+        })
+        owner_ssh, repo_ssh = pub_ssh._parse_owner_repo()
+        assert owner_ssh == "illacme"
+        assert repo_ssh == "my-blog-website"
+
+    def test_auto_create_github_repo_success(self):
+        """验证在 Mock 情况下，建仓 API 能够自愈成功"""
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        from unittest.mock import patch, MagicMock
+
+        pub = GitHubPagesPublisher(config={
+            "repo_url": "https://github.com/illacme/celestial_pulse.git",
+            "token": "ghp_mock_token"
+        })
+
+        # 模拟 urllib.request.urlopen 上下文管理器的返回值
+        mock_ctx = MagicMock()
+        mock_ctx.status = 201
+        mock_response = MagicMock()
+        mock_response.__enter__.return_value = mock_ctx
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success = pub._auto_create_github_repo()
+            assert success is True
+
+    def test_github_pages_autotherapy_suggestions(self):
+        """验证在发生网络连接或 SSL 握手错误时，能正确向报错中追加物理自愈建议"""
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        pub = GitHubPagesPublisher(config={})
+
+        # 1. 模拟网络错误报错信息
+        err_raw = "fatal: unable to access 'https://github.com/.../': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443"
+        res = pub._add_autotherapy_suggestion(err_raw)
+
+        # 验证提示语已经追加到结果中
+        assert "💡 [自愈建议]" in res
+        assert "git config --global http.proxy" in res
+        assert "git@github.com" in res
+
+        # 2. 验证非网络错误不会追加提示
+        err_other = "fatal: pathspec 'non_exist' did not match any files"
+        res_other = pub._add_autotherapy_suggestion(err_other)
+        assert res_other == err_other
+
+
+

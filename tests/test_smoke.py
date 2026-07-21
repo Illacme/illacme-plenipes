@@ -190,6 +190,7 @@ def test_publishing_mode_fallback_scenarios():
     assert cfg3.governance.publishing_mode == PublishingMode.BASIC
     assert cfg3.governance.seo_strategy == SeoStrategy.HEURISTIC
     assert cfg3.translation.enable_ai is False
+    assert cfg3.i18n_settings.enabled is False
 
     # 4. 场景三：无可用节点 (compute_nodes 为空) -> 出版模式降级为 basic，SEO策略对正为 heuristic
     data_no_nodes = {
@@ -203,6 +204,7 @@ def test_publishing_mode_fallback_scenarios():
     assert cfg4.governance.publishing_mode == PublishingMode.BASIC
     assert cfg4.governance.seo_strategy == SeoStrategy.HEURISTIC
     assert cfg4.translation.enable_ai is False
+    assert cfg4.i18n_settings.enabled is False
 
     # 5. 场景四：全部节点被禁用 -> 出版模式降级为 basic，SEO策略对正为 heuristic
     data_nodes_disabled = {
@@ -384,7 +386,8 @@ async def test_update_config_api_auto_activation():
             # 应该自动触发自愈激活逻辑，使 enable_ai = True 且模式切换成功
             payload = {
                 "governance.publishing_mode": "global",
-                "governance.seo_strategy": "ai_localized"
+                "governance.seo_strategy": "ai_localized",
+                "i18n_settings.enabled": True
             }
             res = await update_config(payload, imprint_id=None)
             

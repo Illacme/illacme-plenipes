@@ -86,17 +86,29 @@ class PublisherService:
                 tlog.info("🧪 [发布中心] 侦测到模拟模式，拦截物理分发。")
                 return
 
+            # 🛡️ [物理避让机制] 如果主权引擎中已经激活了生命周期托管的流式分发插件，本旁听事件自动熔断，防范双核重复投递
+            engine = kwargs.get("engine")
+            if engine and hasattr(engine, 'lifecycle_manager'):
+                try:
+                    active_plugins = [p.__class__.__name__ for p in getattr(engine.lifecycle_manager, 'plugins', [])]
+                    if "SovereignDeploymentPlugin" in active_plugins:
+                        tlog.debug("🛡️ [发布中心] 侦测到已启用生命周期托管的 SovereignDeploymentPlugin，事件旁路分发自动避让熔断。")
+                        return
+                except Exception:
+                    pass
+
             # [Sovereignty] 默认发布逻辑：根据配置分发至 SSG 目录或影子库
             # 🚀 [V56.9] 命名与占位符治理：优先使用 engine 已解析的物理路径
             engine = kwargs.get("engine")
             output_path = None
             
             if engine and hasattr(engine, 'paths'):
-                output_path = engine.paths.get("source_dir")
+                # 🛡️ [物理对齐自愈] 全域发布中心必须分发 site_dir (HTML 成品目录)，严禁分发 source_dir (Markdown 源码目录)
+                output_path = engine.paths.get("site_dir") or engine.paths.get("target_base")
             
             if not output_path:
                 paths_cfg = self.config.get("output_paths") or {}
-                output_path = paths_cfg.get("source_dir", "")
+                output_path = paths_cfg.get("site_dir") or paths_cfg.get("target_base", "")
                 
                 # 处理路径占位符
                 active_theme = self.config.get("active_theme", "docusaurus")

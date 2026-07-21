@@ -21,6 +21,8 @@ def cleanup_global_engine():
     """清理全局引擎单例以防止跨测试污染"""
     yield
     set_global_engine(None)
+    from core.governance.rate_limiter import GovernanceGuard
+    GovernanceGuard._limiters.clear()
 
 
 # ==========================================

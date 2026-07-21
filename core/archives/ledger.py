@@ -112,16 +112,25 @@ class MetadataManager:
             self.sqlite.delete_document(rel_path)
             self._refresh_memory_index()
 
-    def update_egress_status(self, rel_path, channel_id, status, error=None, stage=None):
+    def update_egress_status(self, rel_path, channel_id, status, error=None, stage=None, url=None):
         """🚀 [V35.2] 记录特定渠道的分发事务状态"""
         with self.lock:
+            # 🛡️ [V89.8] 控制台 ANSI 颜色乱码正则彻底洗涤
+            cleaned_error = None
+            if error:
+                import re
+                cleaned_error = re.sub(r'\x1b\[[0-9;]*[mGKH]', '', str(error))
+
             existing = self.sqlite.get_document(rel_path) or {}
             status_map = existing.get("publish_status", {})
+            prev_info = status_map.get(channel_id) or {}
             status_map[channel_id] = {
+                **prev_info,
                 "status": status,
                 "timestamp": int(time.time()),
-                "error": error,
-                "stage": stage
+                "error": cleaned_error,
+                "stage": stage,
+                "url": url or prev_info.get("url")
             }
             self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=status_map)
             tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} ({stage}) | 文档: {rel_path}")

@@ -26,6 +26,7 @@ GOVERNANCE_RULES = {
         r"^system\.singleton_port$",       # 本地单例冲突端口
         r"^system\.max_workers$",          # 本地算力并发限制
         r"^system\.log_level$",            # 本地日志详细度
+        r"^system\.global_proxy$",         # 本地系统全局代理地址（全站托管/分发共享）
         r"^system\.watchdog_settings\..*$", # 本地监控轮询策略
         r"^plugins\.disabled_plugins$",    # 本机禁用的插件列表
         r"^active_imprint$",               # 本机当前活跃品牌 ID
@@ -71,6 +72,9 @@ GOVERNANCE_RULES = {
         r"^route_matrix$",                 # 品牌路径路由规则
         r"^block_cache_dir$",              # 品牌专属/共享段落缓存物理目录
         r"^block_cache_shard_levels$",     # 品牌专属/共享段落缓存哈希分级数
+        r"^enable_cache_eviction$",        # 品牌是否启用算力缓存垃圾回收
+        r"^cache_eviction_days$",          # 品牌缓存保留天数
+        r"^cache_max_size_mb$",            # 品牌缓存最大容量上限
     ],
     
     # 🟢 系统底座层 (Global: config.yaml) - 缺省蓝图、公共定义
@@ -80,6 +84,9 @@ GOVERNANCE_RULES = {
         r"^publish_control\.webhook_registry\..*$", # 全局分发类型定义
         r"^system\.auto_save_interval$",
         r"^system\.enable_asset_audit$",
+        r"^system\.telemetry_history_limit$",
+        r"^system\.telemetry_archive_interval_seconds$",
+        r"^system\.telemetry_archive_limit$",
         r"^system\.data_root$",            # 全局数据锚点
     ]
 }

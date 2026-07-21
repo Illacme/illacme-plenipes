@@ -1,9 +1,24 @@
 /* 🧩 [V60.5] Illacme Plenipes Plugins View Styles - Local Sovereign Unit */
 
 #view-plugins #plugins-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 16px;
+}
+
+#view-plugins .plugins-category-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#view-plugins .shield-matrix {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+    width: 100%;
 }
 
 #view-plugins .plugin-card {

@@ -43,6 +43,19 @@ button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
 .action-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); }
 .mini-btn { padding: 4px 8px; font-size: 0.65rem; border-radius: 4px; }
 
+/* ⚡ [V90.0] 快捷测试连接按钮自适应亮暗色调主题样式 */
+.action-btn.p-btn-test-direct {
+    background: var(--accent-primary-05);
+    border: 1px solid var(--accent-primary-20);
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+.action-btn.p-btn-test-direct:hover:not(:disabled) {
+    background: var(--accent-primary-15);
+    border-color: var(--accent-primary-30);
+    color: var(--accent-primary);
+}
+
 /* 2. 输入控制 (Input Controls) */
 input[type="text"], input[type="password"], input[type="number"], select, textarea {
     background: var(--black-20);
@@ -149,4 +162,82 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 @keyframes skeleton-loading {
     0% { background-position: 100% 50%; }
     100% { background-position: 0 50%; }
+}
+
+/* 🔑 [V90.2] 抽屉配置项向导辅助按钮自适应亮暗色主题样式 */
+.helper-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 5px 12px !important;
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    text-decoration: none !important;
+    line-height: 1.2 !important;
+    border: 1px solid var(--accent-primary-20) !important;
+    background: var(--accent-primary-05) !important;
+    color: var(--accent-primary) !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+.helper-btn:hover {
+    background: var(--accent-primary-15) !important;
+    border-color: var(--accent-primary-35) !important;
+    color: var(--accent-primary) !important;
+    text-decoration: none !important;
+}
+
+/* 💡 [V90.3] 抽屉配置向导卡片容器及文本内容自适应亮暗色主题样式 */
+.api-token-helper {
+    background: var(--accent-primary-05) !important;
+    border: 1px dashed var(--accent-primary-25) !important;
+    color: var(--text-bright) !important;
+}
+
+.api-token-helper div, 
+.api-token-helper span, 
+.api-token-helper p {
+    color: var(--text-bright) !important;
+}
+
+/* 精准覆写说明性文字的行内浅白半透明色，适配亮暗主题 */
+.api-token-helper div[style*="rgba(255, 255, 255"],
+.api-token-helper div[style*="rgba(255,255,255"],
+.api-token-helper div[style*="color: rgba(255, 255, 255"],
+.api-token-helper div[style*="color: rgba(255,255,255"] {
+    color: var(--text-dim) !important;
+}
+
+/* 警示框自适应微调：在保留黄色警示特性的同时保证对比度 */
+.api-token-helper div[style*="#ffb700"] {
+    color: var(--callout-warning-color) !important;
+    background: var(--callout-warning-bg) !important;
+    border-color: var(--callout-warning-color) !important;
+}
+
+/* 🔄 [V90.4] 渠道自决同步按钮自适应亮暗色主题样式 */
+.sync-channel-btn {
+    color: var(--accent-primary) !important;
+    border: 1px solid var(--accent-primary-20) !important;
+    background: var(--accent-primary-05) !important;
+    text-shadow: none !important;
+}
+
+.sync-channel-btn:hover {
+    background: var(--accent-primary-15) !important;
+    border-color: var(--accent-primary-35) !important;
+    color: var(--accent-primary) !important;
+}
+
+/* 🩹 [V90.4] 部署自愈小贴士容器及文本自适应亮暗色主题样式 */
+.deployment-self-healing-tip {
+    background: var(--accent-primary-05) !important;
+    border: 1px solid var(--accent-primary-20) !important;
+    color: var(--text-bright) !important;
+    text-shadow: none !important;
 }

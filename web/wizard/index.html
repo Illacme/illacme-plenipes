@@ -119,6 +119,7 @@
             font-weight: 600;
             background: linear-gradient(135deg, #fff 0%, #bbb 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .step-header p {
@@ -466,6 +467,7 @@
                 <div class="step-dot" data-step="2"></div>
                 <div class="step-dot" data-step="3"></div>
                 <div class="step-dot" data-step="4"></div>
+                <div class="step-dot" data-step="5"></div>
             </div>
 
             <!-- Step 0: 出版社基础 -->
@@ -622,17 +624,72 @@
 
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(2)">← 返回</button>
-                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()" disabled style="opacity:0.5; cursor:not-allowed;">
-                        <span id="btn-text">⚡ 完成配置，确立主权</span>
-                        <div id="spinner" class="loading-spinner"></div>
+                    <button class="btn btn-primary" onclick="goStep(4)">
+                        <span>⚡ 继续配置分发与托管 →</span>
                     </button>
-                    <button class="btn btn-ghost btn-small" onclick="initialize()">跳过语种矩阵，直接完成 →</button>
+                    <button class="btn btn-ghost btn-small" onclick="skipToSubmit()">直接确立主权 →</button>
                 </div>
                 <div id="status"></div>
             </div>
 
-            <!-- Step 4: 完成 (主权加冕) -->
+            <!-- Step 4: 🌎 全站分发与托管 -->
             <div class="step" id="step-4">
+                <div class="step-header">
+                     <h1>Step 04</h1>
+                     <h2>🌎 全站分发与托管</h2>
+                     <p>一键绑定您的 GitHub 或 Cloudflare 账号，实现免密零门槛建站上线</p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
+                    <!-- GitHub Card -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <span style="font-size: 2rem;">🐙</span>
+                            <div>
+                                <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 2px;">GitHub Pages</h3>
+                                <p style="font-size: 0.75rem; color: var(--text-dim);">自动将网站发布到您的 GitHub 仓库的 Pages 分支</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="github-auth-btn" class="btn btn-ghost btn-small" onclick="authGithub(event)" style="border-color: var(--accent); color: var(--accent); white-space: nowrap;">一键授权绑定</button>
+                            <span id="github-status-badge" style="display: none; font-size: 0.75rem; color: var(--accent-green); font-weight: 500;">已授权绑定 ✅</span>
+                        </div>
+                    </div>
+
+                    <!-- Cloudflare Card -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <span style="font-size: 2rem;">☁️</span>
+                            <div>
+                                <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 2px;">Cloudflare Pages</h3>
+                                <p style="font-size: 0.75rem; color: var(--text-dim);">利用 Cloudflare Edge 边缘网络在全球极速发布</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="cloudflare-auth-btn" class="btn btn-ghost btn-small" onclick="authCloudflare(event)" style="border-color: var(--accent); color: var(--accent); white-space: nowrap;">一键授权绑定</button>
+                            <span id="cloudflare-status-badge" style="display: none; font-size: 0.75rem; color: var(--accent-green); font-weight: 500;">已授权绑定 ✅</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 隐藏的凭证表单 -->
+                <input type="hidden" id="github_token" value="">
+                <input type="hidden" id="github_repo" value="">
+                <input type="hidden" id="cloudflare_token" value="">
+                <input type="hidden" id="cloudflare_project" value="">
+
+                <div class="btn-row" style="margin-top: 20px;">
+                    <button class="btn btn-ghost" onclick="goStep(3)">← 返回</button>
+                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
+                        <span id="btn-text">⚡ 确立主权并发布站点</span>
+                        <div id="spinner" class="loading-spinner"></div>
+                    </button>
+                    <button class="btn btn-ghost btn-small" onclick="skipHostingAndSubmit()">跳过授权并直接提交 →</button>
+                </div>
+            </div>
+
+            <!-- Step 5: 完成 (主权加冕) -->
+            <div class="step" id="step-5">
                 <div class="completion-panel">
                     <div class="success-pulse">🛡️</div>
                     <h2 style="font-family:'Outfit'; font-size:1.8rem; margin-bottom:8px; letter-spacing:-0.5px;">出版版图划定成功！</h2>
@@ -681,6 +738,56 @@
                             </div>
                         </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态弹窗 -->
+    <div id="auth-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8,8,15,0.85); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 90%; max-width: 440px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+            <h3 id="modal-title" style="font-family:'Outfit'; font-size: 1.4rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;"></h3>
+            <p id="modal-desc" style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; line-height: 1.6;"></p>
+            
+            <!-- ⚡ 通道一：官方真实 OAuth 授权 -->
+            <div id="modal-oauth-section" style="margin-bottom: 20px; text-align: center;">
+                <button class="btn btn-primary" id="modal-oauth-btn" style="width: 100%; height: 50px; background: linear-gradient(135deg, #8a2be2 0%, #00f2ff 100%); font-size: 0.95rem; font-weight: 600; border: none; box-shadow: 0 4px 15px rgba(0,242,255,0.2); border-radius: 12px; cursor: pointer; color: #fff;">
+                    ⚡ 跳转官方一键授权绑定
+                </button>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">
+                    点击后将拉起浏览器，在官方授权页同意即可安全绑定（本地不上传您的密钥）
+                </div>
+            </div>
+
+            <div style="width: 100%; height: 1px; background: var(--glass-border); margin: 20px 0;"></div>
+
+            <!-- 🛠 通道二：极客/离线手动录入 -->
+            <div id="modal-manual-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px;" onclick="toggleManualInput()">
+                    <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">🛠️ 极客通道：手动输入自备 Token</span>
+                    <span id="manual-toggle-icon" style="font-size: 0.8rem; color: var(--text-muted);">▶</span>
+                </div>
+                
+                <div id="modal-manual-fields" style="display: none; transition: all 0.3s ease;">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label id="modal-label" style="font-size: 0.65rem; color: var(--accent); margin-bottom: 6px; display: block;"></label>
+                        <input type="text" id="modal-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff; font-size: 0.9rem; margin-top: 4px;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;" id="modal-extra-group">
+                        <label id="modal-extra-label" style="font-size: 0.65rem; color: var(--accent); margin-bottom: 6px; display: block;"></label>
+                        <input type="text" id="modal-extra-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff; font-size: 0.9rem; margin-top: 4px;">
+                    </div>
+                    
+                    <p id="modal-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 6px; display: none;"></p>
+                    
+                    <button class="btn btn-ghost" id="modal-confirm-btn" style="width: 100%; padding: 12px; border-color: var(--glass-border); color: #fff; font-size: 0.85rem; background: rgba(255,255,255,0.01); margin-top: 8px; cursor: pointer;">
+                        确定并手动关联
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-ghost" onclick="closeAuthModal()" style="padding: 10px 20px;">取消</button>
             </div>
         </div>
     </div>
@@ -1221,6 +1328,224 @@
             document.getElementById('fs-browser').style.display = 'none';
         }
 
+        // 🚀 [V88.0] 监听来自子弹出窗的 OAuth 回调广播并安全绑定
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'auth_success') {
+                const provider = event.data.provider;
+                const token = event.data.token;
+                const extra = event.data.extra; // 例如 repo_url 或 project_name
+
+                if (provider === 'github') {
+                    githubToken = token;
+                    githubRepo = extra || "";
+                    document.getElementById('github_token').value = token;
+                    if (githubRepo) document.getElementById('github_repo').value = githubRepo;
+                    
+                    const btn = document.getElementById('github-auth-btn');
+                    if (btn) btn.style.display = 'none';
+                    const badge = document.getElementById('github-status-badge');
+                    if (badge) {
+                        badge.innerText = `已授权绑定: ${githubRepo ? githubRepo.replace('https://github.com/','') : 'GitHub'} ✅`;
+                        badge.style.display = 'inline';
+                    }
+                } else if (provider === 'cloudflare') {
+                    cloudflareToken = token;
+                    cloudflareProject = extra || "";
+                    document.getElementById('cloudflare_token').value = token;
+                    if (cloudflareProject) document.getElementById('cloudflare_project').value = cloudflareProject;
+                    
+                    const btn = document.getElementById('cloudflare-auth-btn');
+                    if (btn) btn.style.display = 'none';
+                    const badge = document.getElementById('cloudflare-status-badge');
+                    if (badge) {
+                        badge.innerText = `已授权绑定: ${cloudflareProject || 'Cloudflare'} ✅`;
+                        badge.style.display = 'inline';
+                    }
+                }
+                
+                // 自动关闭模态弹窗
+                const modal = document.getElementById('auth-modal');
+                if (modal) modal.style.display = 'none';
+            }
+        });
+
+        let githubToken = "";
+        let githubRepo = "";
+        let cloudflareToken = "";
+        let cloudflareProject = "";
+
+        function toggleManualInput() {
+            const fields = document.getElementById('modal-manual-fields');
+            const icon = document.getElementById('manual-toggle-icon');
+            if (fields.style.display === 'none') {
+                fields.style.display = 'block';
+                icon.innerText = '▼';
+            } else {
+                fields.style.display = 'none';
+                icon.innerText = '▶';
+            }
+        }
+
+        function showAuthModal(options) {
+            const modal = document.getElementById('auth-modal');
+            const titleEl = document.getElementById('modal-title');
+            const descEl = document.getElementById('modal-desc');
+            
+            const labelEl = document.getElementById('modal-label');
+            const inputEl = document.getElementById('modal-input');
+            const errorEl = document.getElementById('modal-error');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            const extraGroup = document.getElementById('modal-extra-group');
+            const extraLabel = document.getElementById('modal-extra-label');
+            const extraInput = document.getElementById('modal-extra-input');
+
+            // 填充标题与描述
+            titleEl.innerHTML = options.title;
+            descEl.innerHTML = options.desc;
+
+            // 初始化弹窗面板状态：先展示跳转大按钮，收起 Token 输入框
+            document.getElementById('modal-oauth-section').style.display = 'block';
+            document.getElementById('modal-manual-section').style.display = 'none';
+            document.getElementById('modal-manual-fields').style.display = 'none';
+            errorEl.style.display = 'none';
+
+            // ⚡ 配置官方一键跳转授权通道
+            const oauthBtn = document.getElementById('modal-oauth-btn');
+            oauthBtn.disabled = false;
+            oauthBtn.innerText = "⚡ 跳转官方授权页一键生成";
+
+            oauthBtn.onclick = () => {
+                // 1. 打开官方预设页面
+                window.open(options.oauthUrl, '_blank');
+                
+                // 2. 渐进式切换弹窗状态：隐藏跳转按钮，直接向用户展示 Token 粘贴确认框
+                document.getElementById('modal-oauth-section').style.display = 'none';
+                document.getElementById('modal-manual-section').style.display = 'block';
+                document.getElementById('modal-manual-fields').style.display = 'block';
+                
+                descEl.innerHTML = `<span style="color:var(--accent);">已成功在浏览器中拉起官方凭证创建页面。</span><br/>请在官方生成令牌 (Token) 后，将其复制并粘贴在下方：`;
+                
+                labelEl.innerText = options.manualLabel || "访问令牌 (Token)";
+                inputEl.placeholder = options.manualPlaceholder || "请输入您的 Token";
+                inputEl.value = "";
+
+                if (options.manualExtraLabel) {
+                    extraGroup.style.display = 'block';
+                    extraLabel.innerText = options.manualExtraLabel;
+                    extraInput.placeholder = options.manualExtraPlaceholder || "";
+                    extraInput.value = options.manualExtraDefault || "";
+                } else {
+                    extraGroup.style.display = 'none';
+                }
+                
+                inputEl.focus();
+            };
+
+            // 确认按钮处理
+            confirmBtn.onclick = () => {
+                const tokenVal = inputEl.value.trim();
+                const extraVal = extraInput.value.trim();
+                if (!tokenVal && options.required) {
+                    errorEl.innerText = options.requiredMessage || "令牌 (Token) 不能为空";
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                modal.style.display = 'none';
+                if (options.onConfirmManual) options.onConfirmManual(tokenVal, extraVal);
+            };
+
+            modal.style.display = 'flex';
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').style.display = 'none';
+            if (window._currentAuthBtn) {
+                window._currentAuthBtn.disabled = false;
+                window._currentAuthBtn.innerText = "一键授权绑定";
+            }
+        }
+
+        function authGithub(e) {
+            e.preventDefault();
+            const btn = document.getElementById('github-auth-btn');
+            btn.disabled = true;
+            btn.innerText = "⏳ 连接中...";
+            window._currentAuthBtn = btn;
+            
+            const impId = document.getElementById('imprint_id').value.trim() || 'my_press';
+            setTimeout(() => {
+                showAuthModal({
+                    title: '🐙 绑定自有 GitHub 账号',
+                    desc: '系统将引导您直连 GitHub 官方安全网关，一键预勾选必要权限并生成 Token 凭证进行安全免密绑定。',
+                    oauthUrl: 'https://github.com/settings/tokens/new?scopes=repo,public_repo&description=Illacme%20Plenipes%20Publishing%20Gateway',
+                    manualLabel: 'GitHub 个人访问令牌 (Personal Access Token / PAT)',
+                    manualPlaceholder: '例如: ghp_xxxxxxxxxxxxxxxxxxxx',
+                    manualExtraLabel: 'GitHub 用户名 (用于自动推算仓库地址)',
+                    manualExtraPlaceholder: '例如: eason-dev',
+                    required: true,
+                    requiredMessage: '请输入您的 GitHub PAT 令牌',
+                    onConfirmManual: (token, user) => {
+                        githubToken = token;
+                        githubRepo = `https://github.com/${user || 'user'}/${impId}.git`;
+                        
+                        document.getElementById('github_token').value = githubToken;
+                        document.getElementById('github_repo').value = githubRepo;
+                        
+                        btn.style.display = 'none';
+                        const badge = document.getElementById('github-status-badge');
+                        badge.innerText = `已手动关联: ${user || 'user'}/${impId} ✅`;
+                        badge.style.display = 'inline';
+                    }
+                });
+            }, 600);
+        }
+
+        function authCloudflare(e) {
+            e.preventDefault();
+            const btn = document.getElementById('cloudflare-auth-btn');
+            btn.disabled = true;
+            btn.innerText = "⏳ 连接中...";
+            window._currentAuthBtn = btn;
+            
+            const impId = document.getElementById('imprint_id').value.trim() || 'my_press';
+            setTimeout(() => {
+                showAuthModal({
+                    title: '☁️ 绑定 Cloudflare 账号',
+                    desc: '系统将引导您直连 Cloudflare 官方控制台，一键生成用于 Wrangler 静默部署的 API 令牌。',
+                    oauthUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+                    manualLabel: 'Cloudflare API 令牌 (API Token)',
+                    manualPlaceholder: '例如: CLOUDFLARE_API_TOKEN',
+                    manualExtraLabel: 'Cloudflare 托管项目名称',
+                    manualExtraDefault: impId,
+                    required: true,
+                    requiredMessage: '请输入您的 Cloudflare API 令牌',
+                    onConfirmManual: (token, proj) => {
+                        cloudflareToken = token;
+                        cloudflareProject = proj || impId;
+                        
+                        document.getElementById('cloudflare_token').value = cloudflareToken;
+                        document.getElementById('cloudflare_project').value = cloudflareProject;
+                        
+                        btn.style.display = 'none';
+                        const badge = document.getElementById('cloudflare-status-badge');
+                        badge.innerText = `已授权绑定: ${cloudflareProject} ✅`;
+                        badge.style.display = 'inline';
+                    }
+                });
+            }, 600);
+        }
+
+        function skipToSubmit() {
+            goStep(4);
+        }
+
+        function skipHostingAndSubmit() {
+            document.getElementById('github_token').value = '';
+            document.getElementById('cloudflare_token').value = '';
+            initialize();
+        }
+
         async function initialize() {
             const btn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
@@ -1241,7 +1566,11 @@
                 ai_base_url: document.getElementById('ai_base_url') ? document.getElementById('ai_base_url').value : '',
                 source_lang: document.getElementById('source_lang') ? document.getElementById('source_lang').value : 'zh',
                 target_langs: selectedLang ? [selectedLang] : [],
-                active_dialect: selectedDialect || 'auto'
+                active_dialect: selectedDialect || 'auto',
+                github_token: document.getElementById('github_token') ? document.getElementById('github_token').value : '',
+                github_repo: document.getElementById('github_repo') ? document.getElementById('github_repo').value : '',
+                cloudflare_token: document.getElementById('cloudflare_token') ? document.getElementById('cloudflare_token').value : '',
+                cloudflare_project: document.getElementById('cloudflare_project') ? document.getElementById('cloudflare_project').value : ''
             };
 
             try {
@@ -1259,7 +1588,7 @@
                     document.getElementById('final-vault-path').innerText = payload.manuscripts_path;
                     document.getElementById('final-theme-name').innerText = themeName;
 
-                    goStep(4);
+                    goStep(5);
                     
                     // 🚀 [V65.0] 场景感应：判断是在 Dashboard 中扩张还是初始引导
                     if (window.location.port === '43212' || window.location.pathname.includes('/wizard')) {

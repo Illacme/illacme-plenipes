@@ -101,14 +101,16 @@
 .view-panel.active { display: flex; }
 
 /* 🎭 Tab Matrix System (Sovereign Upgrade) */
-.side-tabs-container { display: flex; height: 100%; gap: 40px; overflow: hidden; }
-.side-tabs { width: 220px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+.side-tabs-container { display: flex; height: 100%; gap: 32px; overflow: hidden; }
+.side-tabs { width: 224px; display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; overflow-y: auto; scrollbar-width: none; padding-right: 2px; }
+.side-tabs::-webkit-scrollbar { display: none; }
 .tab-item {
-    padding: 14px 20px; border-radius: 12px; cursor: pointer;
-    font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 2px; font-weight: 800; transition: all 0.4s;
+    padding: 10px 16px; border-radius: 11px; cursor: pointer;
+    font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 1.2px; font-weight: 800; transition: all 0.3s;
     background: var(--white-02); border: 1px solid transparent;
-    display: flex; align-items: center; gap: 12px; position: relative;
+    display: flex; align-items: center; gap: 10px; position: relative;
+    flex-shrink: 0;
 }
 .tab-item:hover { background: var(--white-06); color: var(--color-white); transform: translateX(5px); }
 .tab-item.active {

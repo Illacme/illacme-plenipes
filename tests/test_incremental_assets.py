@@ -212,8 +212,9 @@ if os.path.exists("static"):
         self.assertFalse(os.path.exists(os.path.join(work, "orphan.txt")))
 
         # 2. 增量拷贝：跳过已存在的一致文件
-        count = publisher._copy_bundle(bundle, work)
-        self.assertEqual(count, 2)
+        copied_count, skipped_count = publisher._copy_bundle(bundle, work)
+        self.assertEqual(copied_count, 0)
+        self.assertEqual(skipped_count, 2)
 
 
 if __name__ == '__main__':

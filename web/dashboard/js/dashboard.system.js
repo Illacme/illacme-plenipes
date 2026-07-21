@@ -5,21 +5,44 @@
  * 对应重构拆分协议：SOP-02/SOP-05 模板一合规重组。
  */
 
+const getParentCat = (cat) => {
+    if (['imprints', 'themes', 'modes'].includes(cat)) return 'layout';
+    if (['localization', 'translation_style', 'slug_settings', 'route_matrix'].includes(cat)) return 'i18n_routing';
+    if (['security', 'guardrails'].includes(cat)) return 'security_audit';
+    return 'general';
+};
+
 window.switchToSettingsTab = (catName) => {
-    const tab = document.querySelector(`.s-tab[data-cat="${catName}"]`);
-    if (tab) tab.click();
+    const parentCat = getParentCat(catName);
+    const tab = document.querySelector(`.s-tab[data-cat="${parentCat}"]`);
+    if (tab) {
+        document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderSettingsCategory(catName);
+    }
 };
 
 // 1. 系统设置加载器
 window.loadSettings = async (targetCat = 'general') => {
     // 🚀 [V55.21] 物理状态先行：在异步加载前先对正侧边栏标签状态
+    const parentCat = getParentCat(targetCat);
     document.querySelectorAll('.s-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.cat === targetCat);
+        tab.classList.toggle('active', tab.dataset.cat === parentCat);
         tab.onclick = () => {
+            const dot = tab.querySelector('.alert-dot');
+            if (dot) dot.remove();
+
             document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            renderSettingsCategory(tab.dataset.cat);
-            if (tab.dataset.cat === 'general' && typeof window.refreshCacheStats === 'function') {
+            
+            // 点击大 Tab 时，默认跳转到对应的第一个子页面
+            let target = tab.dataset.cat;
+            if (target === 'layout') target = 'imprints';
+            else if (target === 'i18n_routing') target = 'localization';
+            else if (target === 'security_audit') target = 'security';
+            
+            renderSettingsCategory(target);
+            if (target === 'general' && typeof window.refreshCacheStats === 'function') {
                 window.refreshCacheStats();
             }
             const c = document.querySelector('.view-panel.active .tab-content-area');
@@ -64,6 +87,9 @@ window.loadSettings = async (targetCat = 'general') => {
     if (targetCat === 'general' && typeof window.refreshCacheStats === 'function') {
         window.refreshCacheStats();
     }
+    if (window.feBus) {
+        window.feBus.emit('SETTINGS_DATA_LOADED', window.settingsData);
+    }
 };
 
 // 🚀 [V57.3] 动态更新设置选项卡的多语言状态信标与锁标识
@@ -83,46 +109,62 @@ window.renderSettingsCategory = (cat) => {
     const formEl = document.getElementById('settings-form');
     if (!formEl) return;
 
+    let actualCat = cat;
+    if (cat === 'layout') actualCat = 'imprints';
+    else if (cat === 'i18n_routing') actualCat = 'localization';
+    else if (cat === 'security_audit') actualCat = 'security';
+
+    window.currentActiveSettingsSubCat = actualCat;
+
+    const layoutCats = ['imprints', 'themes', 'modes'];
+    const i18nCats = ['localization', 'translation_style', 'slug_settings', 'route_matrix'];
+
     let html = '';
-    switch (cat) {
-        case 'general':
-            html = typeof renderGeneralCategory === 'function' ? renderGeneralCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'modes':
-            html = typeof renderModesCategory === 'function' ? renderModesCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'imprints':
-            html = typeof renderImprintsCategory === 'function' ? renderImprintsCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'themes':
-            html = typeof renderThemesCategory === 'function' ? renderThemesCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'localization':
-            html = typeof renderLocalizationCategory === 'function' ? renderLocalizationCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'guardrails':
-            html = typeof renderGuardrailsCategory === 'function' ? renderGuardrailsCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'translation_style':
-            html = typeof renderTranslationStyleCategory === 'function' ? renderTranslationStyleCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'route_matrix':
-            html = typeof renderRouteMatrixCategory === 'function' ? renderRouteMatrixCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'slug_settings':
-            html = typeof renderSlugSettingsCategory === 'function' ? renderSlugSettingsCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
-        case 'compute_strategy':
-            if (typeof renderComputeStrategy === 'function') {
-                html = renderComputeStrategy(window.settingsData);
-            }
-            break;
-        case 'security':
-            html = typeof renderSecurityCategory === 'function' ? renderSecurityCategory() : '<div class="empty-state">模块加载中...</div>';
-            break;
+    if (actualCat === 'general') {
+        html = typeof renderGeneralCategory === 'function' ? renderGeneralCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (layoutCats.includes(actualCat)) {
+        html = typeof renderLayoutCategory === 'function' ? renderLayoutCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (i18nCats.includes(actualCat)) {
+        html = typeof renderI18nRoutingCategory === 'function' ? renderI18nRoutingCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (actualCat === 'security') {
+        html = typeof renderSecurityCategory === 'function' ? renderSecurityCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (actualCat === 'guardrails') {
+        renderSettingsCategory('security');
+        return;
+    } else if (actualCat === 'compute_strategy') {
+        if (typeof renderComputeStrategy === 'function') {
+            html = renderComputeStrategy(window.settingsData);
+        }
     }
 
     formEl.innerHTML = html;
+
+    // 动态在渲染后激活点亮二级 Sub-Tab 对应的面板（同安全审计、基础信息机制全面对齐）
+    if (layoutCats.includes(actualCat)) {
+        const btn = document.querySelector(`#layout-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
+        if (typeof window.switchLayoutSubTab === 'function') {
+            window.switchLayoutSubTab(actualCat, btn);
+        }
+    } else if (i18nCats.includes(actualCat)) {
+        const btn = document.querySelector(`#i18n-routing-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
+        if (typeof window.switchI18nRoutingSubTab === 'function') {
+            window.switchI18nRoutingSubTab(actualCat, btn);
+        }
+    } else if (actualCat === 'general') {
+        let activeSub = window.currentActiveGeneralSubTab || 'identity';
+        if (activeSub === 'compliance') activeSub = 'identity';
+        const btn = document.querySelector(`#general-sub-tab-bar .sub-tab-btn[onclick*="${activeSub}"]`);
+        if (typeof window.switchGeneralSubTab === 'function') {
+            window.switchGeneralSubTab(activeSub, btn);
+        }
+    } else if (actualCat === 'security') {
+        let activeSub = window.currentActiveSecuritySubTab || 'policy';
+        if (activeSub === 'guardrails') activeSub = 'policy';
+        const btn = document.querySelector(`#security-sub-tab-bar .sub-tab-btn[onclick*="${activeSub}"]`);
+        if (typeof window.switchSecuritySubTab === 'function') {
+            window.switchSecuritySubTab(activeSub, btn);
+        }
+    }
 
     if (window._shouldScrollToTopAfterThemeSwitch) {
         window._shouldScrollToTopAfterThemeSwitch = false;
@@ -139,10 +181,18 @@ window.renderSettingsCategory = (cat) => {
     }
     
     // 🚀 [V55.8] 核心能见度治理：统一管理不需要显示“全局保存”按钮的页面
-    const saveBtn = document.getElementById('btn-save-settings');
-    if (saveBtn) {
-        const noSaveTabs = ['imprints', 'modes', 'localization', 'guardrails'];
-        saveBtn.style.display = noSaveTabs.includes(cat) ? 'none' : 'flex';
+    if (!window.updateSaveButtonVisibility) {
+        window.updateSaveButtonVisibility = (catOrSub) => {
+            const saveBtn = document.getElementById('btn-save-settings');
+            if (!saveBtn) return;
+            const noSaveTabs = ['imprints', 'themes', 'modes', 'layout', 'topology', 'logs', 'lessons'];
+            saveBtn.style.display = noSaveTabs.includes(catOrSub) ? 'none' : 'flex';
+        };
+    }
+    window.updateSaveButtonVisibility(actualCat);
+
+    if (window.feBus) {
+        window.feBus.emit('SETTINGS_RENDERED', actualCat);
     }
 };
 
@@ -228,10 +278,9 @@ window.saveAllSettings = async () => {
                 }
             }
 
-            const activeTab = document.querySelector('.s-tab.active');
-            if (activeTab && typeof renderSettingsCategory === 'function') {
-                renderSettingsCategory(activeTab.dataset.cat);
-                if (activeTab.dataset.cat === 'general' && typeof window.refreshCacheStats === 'function') {
+            if (window.currentActiveSettingsSubCat && typeof renderSettingsCategory === 'function') {
+                renderSettingsCategory(window.currentActiveSettingsSubCat);
+                if (window.currentActiveSettingsSubCat === 'general' && typeof window.refreshCacheStats === 'function') {
                     window.refreshCacheStats();
                 }
             }

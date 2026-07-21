@@ -25,7 +25,6 @@ class ResilienceSettings(BaseModel):
     cb_failure_threshold: int = Field(5, ge=1)
     cb_recovery_timeout: int = Field(60, ge=1)
     db_timeout: float = Field(30.0, ge=1)
-    ai_semaphore_timeout: int = Field(3600, ge=1)
     api_retry_delay: float = Field(1.0, ge=0)
     network_timeout: int = Field(5, ge=1)
     heartbeat_timeout: float = Field(5.0, ge=1)
@@ -90,10 +89,14 @@ class SystemSettings(BaseModel):
     
     max_workers: int = Field(4, ge=1)
     auto_save_interval: float = Field(2.0, ge=0.5)
+    telemetry_history_limit: int = Field(150, ge=10, le=500, description="系统及算力遥测历史时序常驻点数上限")
+    telemetry_archive_interval_seconds: int = Field(120, ge=10, description="遥测长效历史归档间隔(秒)")
+    telemetry_archive_limit: int = Field(360, ge=10, le=1000, description="遥测长效历史保存点数上限")
     max_depth: int = Field(3, ge=1)
     enable_asset_audit: bool = True
     typing_idle_threshold: float = Field(0.5, ge=0.1)
     headless: bool = False
+    global_proxy: Optional[str] = None
     
     index_filenames: List[str] = Field(default_factory=lambda: ["index.md", "readme.md", "index.mdx"])
     allowed_extensions: List[str] = Field(default_factory=lambda: [".md", ".mdx", ".markdown", ".mdown", ".txt"])

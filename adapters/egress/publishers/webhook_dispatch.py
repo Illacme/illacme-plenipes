@@ -42,7 +42,9 @@ class WebhookDispatchPublisher(BasePublisher):
             headers['X-Hub-Signature-256'] = f"sha256={signature}"
 
         try:
-            resp = requests.post(url, data=data, headers=headers, timeout=10)
+            proxy = self.get_proxy()
+            proxies = {"http": proxy, "https": proxy} if proxy else None
+            resp = requests.post(url, data=data, headers=headers, proxies=proxies, timeout=10)
             resp.raise_for_status()
             return {"status": "success", "http_code": resp.status_code}
         except Exception as e:

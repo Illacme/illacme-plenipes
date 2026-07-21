@@ -64,12 +64,31 @@ window.getUIModalsHTML = () => {
                             <!-- 🌓 [V87.0] 模式切换器 (Obsidian Style) -->
                             <div class="editor-mode-toggle" style="display: flex; gap: 5px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-transform: none;">
                                 <button class="mode-btn active" id="mode-source" onclick="setEditorMode('source')" title="源码模式">源码</button>
+                                <button class="mode-btn" id="mode-wysiwyg" onclick="setEditorMode('wysiwyg')" title="可视化富文本编辑">视觉</button>
                                 <button class="mode-btn" id="mode-preview" onclick="setEditorMode('preview')" title="阅读视图">阅读</button>
                                 <button class="mode-btn" id="mode-split" onclick="setEditorMode('split')" title="实时预览">分栏</button>
                             </div>
                         </div>
-                        <div class="tactical-viewport" style="display: flex; flex: 1; min-height: 0; gap: 20px;">
+                        <!-- 🚀 [V75.7] 紧贴上面横线与下面文章内容区的富文本工具栏 (WYSIWYG Toolbar) -->
+                        <div id="editor-wysiwyg-toolbar" class="wysiwyg-toolbar" style="display: none; flex-wrap: wrap; gap: 4px; padding: 6px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; align-items: center; justify-content: flex-start; width: 100%; height: 36px; margin-top: -35px; margin-bottom: -20px; flex-shrink: 0; position: relative; z-index: 10;">
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('bold')" title="加粗" style="font-weight: bold;">B</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('italic')" title="斜体" style="font-style: italic;">I</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('formatBlock', 'h1')" style="font-weight: bold;">H1</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('formatBlock', 'h2')" style="font-weight: bold;">H2</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('formatBlock', 'h3')" style="font-weight: bold;">H3</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('formatBlock', 'blockquote')" title="引用">“</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('insertUnorderedList')" title="无序列表">• List</button>
+                            <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('insertOrderedList')" title="有序列表">1. List</button>
+                            <button type="button" class="toolbar-btn" onclick="window.insertWysiwygLink()" title="插入超链接">🔗</button>
+                            <button type="button" class="toolbar-btn" onclick="window.insertWysiwygWikiLink()" title="插入Wiki双链" style="font-family: monospace;">[[ ]]</button>
+                        </div>
+
+                        <div class="tactical-viewport" style="display: flex; flex: 1; min-height: 0; gap: 20px; position: relative;">
                             <textarea id="editor-body" class="tactical-editor" spellcheck="false" placeholder="等待数据载入..." oninput="updateEditorPreview()"></textarea>
+                            
+                            <!-- 🚀 [V75.7] 视觉模式下的富文本可编辑区 (高度、圆角和外边框与其它模式 100% 保持绝对一致) -->
+                            <div id="editor-wysiwyg" class="tactical-preview markdown-body scroll-container" contenteditable="true" spellcheck="false" style="display: none; outline: none; line-height: 1.7; color: var(--text-bright); height: 100%;"></div>
+
                             <div id="editor-preview" class="tactical-preview markdown-body" style="display: none;"></div>
                         </div>
                     </div>
@@ -180,7 +199,7 @@ window.getUIModalsHTML = () => {
                         <div class="settings-grid" style="display: flex; flex-direction: column; gap: 15px;">
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <div class="setting-label">物理唯一标识符 (ID) <span class="tier-tag tier-global">系统宪法</span></div>
+                                    <div class="setting-label">物理唯一标识符 (ID) <span class="tier-tag tier-global">全局</span></div>
                                     <div class="setting-desc">必须为英文/数字组合，用作物理文件夹及配置文件夹路径名称。</div>
                                 </div>
                                 <div class="setting-control">
@@ -190,7 +209,7 @@ window.getUIModalsHTML = () => {
                             </div>
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <div class="setting-label">版图展示名称 (Name) <span class="tier-tag tier-imprint">品牌主权</span></div>
+                                    <div class="setting-label">版图展示名称 (Name) <span class="tier-tag tier-imprint">品牌</span></div>
                                     <div class="setting-desc">对外展示的文学出版社名号，随时可以更改。</div>
                                 </div>
                                 <div class="setting-control">
@@ -211,7 +230,7 @@ window.getUIModalsHTML = () => {
                         <div class="settings-grid" style="display: flex; flex-direction: column; gap: 15px;">
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <div class="setting-label">内容文库 (Vault) 绝对物理路径 <span class="tier-tag tier-local">物理本地</span></div>
+                                    <div class="setting-label">内容文库 (Vault) 绝对物理路径 <span class="tier-tag tier-local">本地</span></div>
                                     <div class="setting-desc">输入您本地电脑的物理目录绝对路径。</div>
                                 </div>
                                 <div class="setting-control">
@@ -221,7 +240,7 @@ window.getUIModalsHTML = () => {
                             </div>
                             <div class="setting-row" style="display: flex; justify-content: space-between; align-items: center;">
                                 <div class="setting-info" style="flex: 1; padding-right: 20px;">
-                                    <div class="setting-label">🌱 自动灌入 Obsidian 标准自愈空间 <span class="tier-tag tier-local">物理本地</span></div>
+                                    <div class="setting-label">🌱 自动灌入 Obsidian 标准自愈空间 <span class="tier-tag tier-local">本地</span></div>
                                     <div class="setting-desc">若路径为空，我们将自动为您建立 Blog/Docs/Pages 三层资产文件夹，并生成首篇演示文章。</div>
                                 </div>
                                 <div class="setting-control">

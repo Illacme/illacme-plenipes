@@ -3,18 +3,29 @@
 
 /* 🛡️ Governance Shield Matrix (V65.0) */
 .shield-matrix {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; margin-top: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; margin-top: 16px;
 }
 .shield-pod {
     background: var(--white-03); border: 1px solid var(--glass-border);
-    border-radius: 16px; padding: 20px; transition: all 0.3s;
+    border-radius: 16px; padding: 20px;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s, border-color 0.3s, background 0.3s;
+    perspective: 1000px; transform-style: preserve-3d; position: relative; overflow: hidden;
 }
-.shield-pod:hover { border-color: var(--accent-primary); transform: translateY(-3px); background: rgba(163, 76, 255, 0.05); }
+.shield-pod::before {
+    content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 242, 255, 0.12) 0%, transparent 60%);
+    pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 1;
+}
+.shield-pod:hover::before { opacity: 1; }
+.shield-pod:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 242, 255, 0.15);
+}
 .shield-status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .shield-status-inner { display: flex; align-items: center; gap: 10px; }
 .shield-id { font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-secondary); letter-spacing: 1px; }
 .shield-body { flex: 1; display: flex; flex-direction: column; }
-.shield-body h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; color: var(--color-white); }
+.shield-body h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; color: var(--text-bright); }
 .shield-body p { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; }
 
 /* 🏗️ Sovereign Territory Card Components */
@@ -202,7 +213,7 @@
     border-radius: 12px; border: 1px solid transparent; transition: all 0.2s;
 }
 .setting-row:hover { background: var(--white-04); border-color: var(--glass-border); }
-.setting-info { flex: 1; min-width: 0; /* 允许弹性盒收缩，保障响应式 */ }
+.setting-info { flex: 1; min-width: 140px; /* 设定物理防护最小宽度，彻底杜绝文本被挤压成单字竖排 */ }
 .setting-label { 
     font-size: 0.95rem; 
     font-weight: 600; 
@@ -213,8 +224,8 @@
     gap: 10px; 
     white-space: normal; /* 允许文本正常换行，完美消除溢出 */
 }
-.setting-desc { font-size: 0.75rem; color: var(--text-dim); }
-.setting-control { width: 180px; display: flex; justify-content: flex-end; flex-shrink: 0; }
+.setting-desc { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; }
+.setting-control { flex: 1.2; max-width: 65%; min-width: 200px; display: flex; justify-content: flex-end; }
 .setting-input {
     width: 100%; background: var(--black-50); border: 1px solid var(--glass-border);
     border-radius: 10px; padding: 10px 15px; color: var(--color-white); font-size: 0.85rem;

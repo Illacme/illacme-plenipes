@@ -166,6 +166,8 @@ class JanitorService:
 
         self.gc_tombstones(is_dry_run)
         self.gc_assets(current_source_files, is_dry_run)
+        # 🚀 [新增] 动态算力缓存审计清理
+        self.gc_block_cache(is_dry_run)
 
     def gc_tombstones(self, is_dry_run=False):
         scan_root = os.path.abspath(self.paths.get('target_base', '.'))
@@ -282,4 +284,92 @@ class JanitorService:
                 tlog.info("✨ [物理自愈] 净化完成，未删除任何资产。")
         else:
             tlog.info(f"✨ [物理自愈] [模拟清理] 拟清理 {total_to_remove} 个过时资产。")
+
+    def gc_block_cache(self, is_dry_run=False):
+        """🧹 清算大模型段落缓存目录，执行过期与 LRU 清理"""
+        config = self.engine.config if self.engine else self.sys_cfg
+        if not config: return
+            
+        enable_eviction = getattr(config, "enable_cache_eviction", False)
+        if not enable_eviction: return
+            
+        retention_days = getattr(config, "cache_eviction_days", 30)
+        max_size_mb = getattr(config, "cache_max_size_mb", 512)
+        
+        cache_root = getattr(self.engine, "block_cache", None)
+        if not cache_root or not hasattr(cache_root, "root"): return
+        root_dir = cache_root.root
+        if not os.path.exists(root_dir): return
+            
+        tlog.info(f"🧹 [清道夫] 正在审计算力缓存目录: {root_dir} (保留天数: {retention_days}天 | 大小上限: {max_size_mb}MB)")
+        
+        import time
+        now = time.time()
+        eviction_time_threshold = now - (retention_days * 86400)
+        
+        files_info = []
+        total_size_bytes = 0
+        
+        for root, _, files in os.walk(root_dir):
+            for f in files:
+                if not f.endswith(".txt"): continue
+                f_abs = os.path.join(root, f)
+                try:
+                    stat = os.stat(f_abs)
+                    size = stat.st_size
+                    mtime = stat.st_mtime
+                    files_info.append({"path": f_abs, "size": size, "mtime": mtime})
+                    total_size_bytes += size
+                except Exception: pass
+                    
+        # 1. 过期时效物理清理
+        expired_count = 0
+        expired_bytes = 0
+        remaining_files = []
+        
+        for item in files_info:
+            if item["mtime"] < eviction_time_threshold:
+                if not is_dry_run:
+                    try:
+                        os.remove(item["path"])
+                        expired_count += 1
+                        expired_bytes += item["size"]
+                    except Exception: pass
+                else:
+                    expired_count += 1
+                    expired_bytes += item["size"]
+            else:
+                remaining_files.append(item)
+                
+        if expired_count > 0:
+            tlog.info(f"✨ [清道夫] 清理了 {expired_count} 个过期段落缓存，释放空间: {expired_bytes / 1024 / 1024:.2f} MB")
+            
+        # 2. 空间上限 LRU 淘汰清理
+        max_size_bytes = max_size_mb * 1024 * 1024
+        current_size_bytes = total_size_bytes - expired_bytes
+        
+        if current_size_bytes > max_size_bytes:
+            remaining_files.sort(key=lambda x: x["mtime"]) # 最旧的先淘汰
+            
+            lru_count = 0
+            lru_bytes = 0
+            for item in remaining_files:
+                if current_size_bytes <= max_size_bytes: break
+                if not is_dry_run:
+                    try:
+                        os.remove(item["path"])
+                        lru_count += 1
+                        lru_bytes += item["size"]
+                        current_size_bytes -= item["size"]
+                    except Exception: pass
+                else:
+                    lru_count += 1
+                    lru_bytes += item["size"]
+                    current_size_bytes -= item["size"]
+                    
+            if lru_count > 0:
+                tlog.info(f"✨ [清道夫] 已超出大小上限，触发 LRU 淘汰清理了 {lru_count} 个段落缓存，释放空间: {lru_bytes / 1024 / 1024:.2f} MB")
+                
+        # 3. 清理空目录
+        self._gc_empty_directories(root_dir, is_dry_run)
 

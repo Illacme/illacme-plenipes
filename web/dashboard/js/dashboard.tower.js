@@ -5,10 +5,33 @@
 
 (function() {
     window.towerTimeoutId = null;
-    let cpuHistory = [];
-    let memHistory = [];
-    let computeHistory = [];
-    const MAX_HISTORY_POINTS = 15;
+    window.currentTrendRange = '80s'; // 默认 80 秒历史
+
+    // 🚀 [V75.6] 切换时间轴趋势范围切换器，实现负载与 AI 的同步联动
+    window.switchTrendRange = function(range) {
+        window.currentTrendRange = range;
+        
+        // 立即触发一次渲染刷新，提高交互响应敏捷度
+        if (typeof window.refreshTowerTelemetry === 'function') {
+            window.refreshTowerTelemetry();
+        }
+    };
+
+    // 🚀 [新增] 动态自适应 Sparkline 渲染函数
+    function generateAdaptiveSvgPaths(history, maxVal = null) {
+        if (!history || history.length === 0) return { line: '', area: '' };
+        const computedMax = maxVal || Math.max(10, Math.max(...history) * 1.2);
+        
+        const points = history.map((val, i) => {
+            const x = history.length > 1 ? (i / (history.length - 1)) * 500 : 250;
+            const y = 115 - (val / computedMax) * 110;
+            return { x, y };
+        });
+
+        const linePath = 'M ' + points.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ');
+        const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} 120 L ${points[0].x.toFixed(1)} 120 Z`;
+        return { line: linePath, area: areaPath };
+    }
 
     // 格式化运行时间
     function formatUptime(seconds) {
@@ -124,16 +147,6 @@
                 const memPct = stats.load.memory_percent || 0;
                 const compPct = stats.load.compute_memory_percent || 0;
 
-                // 压入历史数据
-                cpuHistory.push(cpuPct);
-                memHistory.push(memPct);
-                computeHistory.push(compPct);
-                if (cpuHistory.length > MAX_HISTORY_POINTS) {
-                    cpuHistory.shift();
-                    memHistory.shift();
-                    computeHistory.shift();
-                }
-
                 // 更新圆环仪表盘
                 const cpuText = document.getElementById('gauge-cpu');
                 const cpuRing = document.getElementById('gauge-cpu-ring');
@@ -159,25 +172,159 @@
                     compRing.style.strokeDashoffset = offset;
                 }
 
-                // 绘制 SVG 趋势图
-                const cpuPaths = generateSvgPaths(cpuHistory);
-                const memPaths = generateSvgPaths(memHistory);
-                const compPaths = generateSvgPaths(computeHistory);
+                // 绘制 SVG 趋势图（根据当前维度进行时序切片）
+                const range = window.currentTrendRange || '80s';
+                const isArchive = range === '12h';
+                const dataSource = isArchive ? (stats.history_archive || {}) : (stats.history || {});
+                
+                if (dataSource) {
+                    const rangePoints = { '80s': 40, '180s': 90, '300s': 150, '12h': 360 };
+                    const limit = rangePoints[range] || 40;
+                    
+                    const sliceHistory = (arr) => {
+                        if (!arr) return [];
+                        return arr.slice(-limit);
+                    };
 
-                const cpuLineEl = document.getElementById('trend-cpu-line');
-                const cpuAreaEl = document.getElementById('trend-cpu-area');
-                if (cpuLineEl) cpuLineEl.setAttribute('d', cpuPaths.line);
-                if (cpuAreaEl) cpuAreaEl.setAttribute('d', cpuPaths.area);
+                    const cpuPaths = generateAdaptiveSvgPaths(sliceHistory(dataSource.cpu), 100);
+                    const memPaths = generateAdaptiveSvgPaths(sliceHistory(dataSource.memory), 100);
+                    const compPaths = generateAdaptiveSvgPaths(sliceHistory(dataSource.compute_memory), 100);
 
-                const memLineEl = document.getElementById('trend-mem-line');
-                const memAreaEl = document.getElementById('trend-mem-area');
-                if (memLineEl) memLineEl.setAttribute('d', memPaths.line);
-                if (memAreaEl) memAreaEl.setAttribute('d', memPaths.area);
+                    const cpuLineEl = document.getElementById('trend-cpu-line');
+                    const cpuAreaEl = document.getElementById('trend-cpu-area');
+                    if (cpuLineEl) cpuLineEl.setAttribute('d', cpuPaths.line);
+                    if (cpuAreaEl) cpuAreaEl.setAttribute('d', cpuPaths.area);
 
-                const compLineEl = document.getElementById('trend-compute-line');
-                const compAreaEl = document.getElementById('trend-compute-area');
-                if (compLineEl) compLineEl.setAttribute('d', compPaths.line);
-                if (compAreaEl) compAreaEl.setAttribute('d', compPaths.area);
+                    const memLineEl = document.getElementById('trend-mem-line');
+                    const memAreaEl = document.getElementById('trend-mem-area');
+                    if (memLineEl) memLineEl.setAttribute('d', memPaths.line);
+                    if (memAreaEl) memAreaEl.setAttribute('d', memPaths.area);
+
+                    const compLineEl = document.getElementById('trend-compute-line');
+                    const compAreaEl = document.getElementById('trend-compute-area');
+                    if (compLineEl) compLineEl.setAttribute('d', compPaths.line);
+                    if (compAreaEl) compAreaEl.setAttribute('d', compPaths.area);
+
+                    // 绘制 AI 大模型专属时序遥测 Sparkline
+                    const tokensPaths = generateAdaptiveSvgPaths(sliceHistory(dataSource.tokens_rate));
+                    const threadsPaths = generateAdaptiveSvgPaths(sliceHistory(dataSource.active_workers));
+
+                    const tokensLineEl = document.getElementById('trend-tokens-line');
+                    const tokensAreaEl = document.getElementById('trend-tokens-area');
+                    if (tokensLineEl) tokensLineEl.setAttribute('d', tokensPaths.line);
+                    if (tokensAreaEl) tokensAreaEl.setAttribute('d', tokensPaths.area);
+
+                    const threadsLineEl = document.getElementById('trend-threads-line');
+                    const threadsAreaEl = document.getElementById('trend-threads-area');
+                    if (threadsLineEl) threadsLineEl.setAttribute('d', threadsPaths.line);
+                    if (threadsAreaEl) threadsAreaEl.setAttribute('d', threadsPaths.area);
+
+                    // 🚀 [V75.7] 缓存绘图切片数据至 DOM 属性中，以供给 Hover 探针免 DOM 悬停抓取
+                    const svgEl = document.getElementById('tower-trend-svg');
+                    if (svgEl) {
+                        svgEl._currentData = {
+                            cpu: sliceHistory(dataSource.cpu),
+                            memory: sliceHistory(dataSource.memory),
+                            compute_memory: sliceHistory(dataSource.compute_memory),
+                            limit: limit,
+                            range: range
+                        };
+                    }
+                    const aiSvgEl = document.getElementById('tower-ai-trend-svg');
+                    if (aiSvgEl) {
+                        aiSvgEl._currentData = {
+                            tokens_rate: sliceHistory(dataSource.tokens_rate),
+                            active_workers: sliceHistory(dataSource.active_workers),
+                            limit: limit,
+                            range: range
+                        };
+                    }
+
+                    // 🚀 [V75.7] 动态重绘 AI 趋势图 Y 轴量纲刻度文本
+                    const maxTokens = Math.max(...sliceHistory(dataSource.tokens_rate), 10.0);
+                    const aiTicksEl = document.getElementById('trend-ai-y-ticks');
+                    if (aiTicksEl) {
+                        aiTicksEl.innerHTML = `
+                            <text x="5" y="12" text-anchor="start">${Math.ceil(maxTokens)} t/s</text>
+                            <text x="5" y="64" text-anchor="start">${Math.ceil(maxTokens / 2)} t/s</text>
+                            <text x="5" y="116" text-anchor="start">0 t/s</text>
+                        `;
+                    }
+
+                    // 🚀 [V75.7] 触发 Hover 探针绑定
+                    if (window.setupTrendHoverProbes) {
+                        window.setupTrendHoverProbes();
+                    }
+
+                    // 🛰️ [V75.6] 同步更新两个趋势图的 X 轴刻度文本
+                    const updateTrendTicks = (svgId, currentRange) => {
+                        const svg = document.getElementById(svgId);
+                        if (!svg) return;
+                        const t0 = svg.querySelector('.trend-tick-0');
+                        const t1 = svg.querySelector('.trend-tick-1');
+                        const t2 = svg.querySelector('.trend-tick-2');
+                        const t3 = svg.querySelector('.trend-tick-3');
+                        const t4 = svg.querySelector('.trend-tick-4');
+                        
+                        if (currentRange === '80s') {
+                            if (t0) t0.textContent = '-80s';
+                            if (t1) t1.textContent = '-60s';
+                            if (t2) t2.textContent = '-40s';
+                            if (t3) t3.textContent = '-20s';
+                            if (t4) t4.textContent = '现在 (0s)';
+                        } else if (currentRange === '180s') {
+                            if (t0) t0.textContent = '-180s';
+                            if (t1) t1.textContent = '-135s';
+                            if (t2) t2.textContent = '-90s';
+                            if (t3) t3.textContent = '-45s';
+                            if (t4) t4.textContent = '现在 (0s)';
+                        } else if (currentRange === '300s') {
+                            if (t0) t0.textContent = '-300s';
+                            if (t1) t1.textContent = '-225s';
+                            if (t2) t2.textContent = '-150s';
+                            if (t3) t3.textContent = '-75s';
+                            if (t4) t4.textContent = '现在 (0s)';
+                        } else if (currentRange === '12h') {
+                            if (t0) t0.textContent = '-12h';
+                            if (t1) t1.textContent = '-9h';
+                            if (t2) t2.textContent = '-6h';
+                            if (t3) t3.textContent = '-3h';
+                            if (t4) t4.textContent = '现在 (0s)';
+                        }
+                    };
+                    updateTrendTicks('tower-trend-svg', range);
+                    updateTrendTicks('tower-ai-trend-svg', range);
+
+                    // 🛰️ [V75.6] 每次刷新时自动对 Tab 按钮的样式进行一次同步（确保重新渲染模板时自愈）
+                    const loadTabs = ['80s', '180s', '300s', '12h'];
+                    loadTabs.forEach(r => {
+                        const btnLoad = document.getElementById(`btn-trend-${r}`);
+                        if (btnLoad) {
+                            if (r === range) {
+                                btnLoad.classList.add('active');
+                                btnLoad.style.background = 'var(--accent-primary)';
+                                btnLoad.style.color = 'var(--text-bright, #fff)';
+                            } else {
+                                btnLoad.classList.remove('active');
+                                btnLoad.style.background = 'transparent';
+                                btnLoad.style.color = 'var(--text-dim)';
+                            }
+                        }
+                        
+                        const btnAI = document.getElementById(`btn-ai-trend-${r}`);
+                        if (btnAI) {
+                            if (r === range) {
+                                btnAI.classList.add('active');
+                                btnAI.style.background = 'var(--accent-primary)';
+                                btnAI.style.color = 'var(--text-bright, #fff)';
+                            } else {
+                                btnAI.classList.remove('active');
+                                btnAI.style.background = 'transparent';
+                                btnAI.style.color = 'var(--text-dim)';
+                            }
+                        }
+                    });
+                }
             }
 
             // 4. 自适应决策轮询周期：有活动同步或线程池繁忙时提频为 2 秒，否则空闲为 10 秒
@@ -261,12 +408,108 @@
         if (res?.success) { showToast("🗑️ 已清空失败任务", "success"); window.refreshSyndicationQueue(); }
     };
 
+    // 🚀 [V75.7] 设置 SVG 折线图鼠标悬停数值探针与 Legend 图例回填
+    window.setupTrendHoverProbes = () => {
+        const bindEvents = (svgId, legendId, probeLineId, isAi = false) => {
+            const svg = document.getElementById(svgId);
+            if (!svg || svg._hasProbeEvent) return;
+            svg._hasProbeEvent = true;
+
+            const legend = document.getElementById(legendId);
+            const probeLine = document.getElementById(probeLineId);
+
+            const handleMove = (e) => {
+                const data = svg._currentData;
+                if (!data) return;
+
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const pctX = Math.min(1.0, Math.max(0.0, mouseX / rect.width));
+                
+                const limit = data.limit || 40;
+                const range = data.range || '80s';
+                const idx = Math.min(limit - 1, Math.max(0, Math.round(pctX * (limit - 1))));
+                
+                // 计算磁吸对应的 X 轴坐标 (0-500 SVG视口宽度)
+                const snapX = (idx / (limit - 1)) * 500;
+                
+                if (probeLine) {
+                    probeLine.setAttribute('x1', snapX);
+                    probeLine.setAttribute('x2', snapX);
+                    probeLine.style.display = 'block';
+                }
+
+                // 格式化时间偏差文本
+                const formatTimeOffset = (idx, limit, range) => {
+                    const offsetTicks = limit - 1 - idx;
+                    if (range === '12h') {
+                        const minutes = offsetTicks * 2;
+                        if (minutes === 0) return '现在';
+                        if (minutes >= 60) {
+                            const h = Math.floor(minutes / 60);
+                            const m = minutes % 60;
+                            return `-${h}h${m > 0 ? m + 'm' : ''}`;
+                        }
+                        return `-${minutes}m`;
+                    } else {
+                        const seconds = offsetTicks * 2;
+                        if (seconds === 0) return '现在';
+                        return `-${seconds}s`;
+                    }
+                };
+                const timeStr = formatTimeOffset(idx, limit, range);
+
+                if (legend) {
+                    if (isAi) {
+                        const tokens = (data.tokens_rate || [])[idx] || 0.0;
+                        const threads = (data.active_workers || [])[idx] || 0;
+                        legend.innerHTML = `
+                            <span style="color: var(--accent-secondary);">● 吞吐: ${tokens.toFixed(1)} t/s</span>
+                            <span style="color: var(--accent-orange, #ff9d00);">● 线程: ${threads}</span>
+                            <span style="color: var(--text-dim); margin-left: 5px;">(${timeStr})</span>
+                        `;
+                    } else {
+                        const cpu = (data.cpu || [])[idx] || 0.0;
+                        const mem = (data.memory || [])[idx] || 0.0;
+                        const comp = (data.compute_memory || [])[idx] || 0.0;
+                        legend.innerHTML = `
+                            <span style="color: var(--accent-primary);">● CPU: ${cpu.toFixed(1)}%</span>
+                            <span style="color: var(--accent-secondary);">● MEM: ${mem.toFixed(1)}%</span>
+                            <span style="color: var(--accent-orange, #ff9d00);">● COMPUTE: ${comp.toFixed(1)}%</span>
+                            <span style="color: var(--text-dim); margin-left: 5px;">(${timeStr})</span>
+                        `;
+                    }
+                }
+            };
+
+            const handleLeave = () => {
+                if (probeLine) probeLine.style.display = 'none';
+                if (legend) {
+                    if (isAi) {
+                        legend.innerHTML = `
+                            <span style="color: var(--accent-secondary);">● 吞吐速率 (Tokens/s)</span>
+                            <span style="color: var(--accent-orange, #ff9d00);">● 活动工作线程 (Active Threads)</span>
+                        `;
+                    } else {
+                        legend.innerHTML = `
+                            <span style="color: var(--accent-primary);">● CPU</span>
+                            <span style="color: var(--accent-secondary);">● MEM</span>
+                            <span style="color: var(--accent-orange, #ff9d00);">● COMPUTE</span>
+                        `;
+                    }
+                }
+            };
+
+            svg.addEventListener('mousemove', handleMove);
+            svg.addEventListener('mouseleave', handleLeave);
+        };
+
+        bindEvents('tower-trend-svg', 'trend-legend-val', 'trend-probe-line', false);
+        bindEvents('tower-ai-trend-svg', 'trend-ai-legend-val', 'trend-ai-probe-line', true);
+    };
+
     // 初始化控制塔
     window.loadTowerCenter = () => {
-        cpuHistory = [];
-        memHistory = [];
-        computeHistory = [];
-
         // 重置定时器并立即拉取
         if (window.towerTimeoutId) {
             clearTimeout(window.towerTimeoutId);
