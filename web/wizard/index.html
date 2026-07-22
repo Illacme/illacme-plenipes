@@ -612,6 +612,15 @@
                     <p>设置原稿语言与目标翻译语言，构建多语种跨国出版链路</p>
                 </div>
 
+                <!-- 1. 原稿语种 (Source) -->
+                <div class="form-group">
+                    <label>原稿语种 (Source)</label>
+                    <select id="source_lang" onchange="renderLangs(probeData.available_langs)">
+                        <option value="auto">✨ 自动探测 (推荐)</option>
+                    </select>
+                </div>
+
+                <!-- 2. 多语言翻译矩阵 (i18n Matrix) -->
                 <div class="toggle-row" style="margin-bottom: 12px;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span style="font-size:0.9rem; font-weight:600;">启用多语言翻译矩阵 (i18n Matrix)</span>
@@ -624,14 +633,8 @@
                     ⚡ 已开启多语言翻译矩阵（出版模式：<b>全球化出版 GLOBAL</b>）
                 </div>
 
-                <div id="matrix-config-panel" style="transition: all 0.3s ease;">
-                    <div class="form-group">
-                        <label>原稿语种 (Source)</label>
-                        <select id="source_lang" onchange="renderLangs(probeData.available_langs)">
-                            <option value="auto">✨ 自动探测 (推荐)</option>
-                        </select>
-                    </div>
-
+                <!-- 3. 目标分发语种 (Target) -->
+                <div id="matrix-target-panel" style="transition: all 0.3s ease;">
                     <label style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;display:block;">目标分发语种 (Target)</label>
                     <div id="lang-grid" class="card-grid three-col"></div>
                 </div>
@@ -641,7 +644,6 @@
                     <button class="btn btn-primary" onclick="goStep(4)">
                         <span>⚡ 继续配置全站托管与分发渠道 →</span>
                     </button>
-                    <button class="btn btn-ghost btn-small" onclick="skipToSubmit()">跳过并完成创建 →</button>
                 </div>
                 <div id="status"></div>
             </div>
@@ -694,11 +696,13 @@
 
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(3)">← 返回</button>
-                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
+                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()" disabled style="opacity: 0.5; cursor: not-allowed;">
                         <span id="btn-text">⚡ 完成配置并发布站点</span>
                         <div id="spinner" class="loading-spinner"></div>
                     </button>
-                    <button class="btn btn-ghost btn-small" onclick="skipHostingAndSubmit()">跳过授权并直接提交 →</button>
+                </div>
+                <div id="step4-auth-hint" style="font-size:0.75rem; color:var(--text-dim); margin-top:12px; text-align:center; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px dashed var(--glass-border);">
+                    🔒 提示：须至少授权绑定 GitHub Pages 或 Cloudflare Pages 其中一项分发托管渠道后，方可完成配置
                 </div>
             </div>
 
@@ -829,28 +833,125 @@
         let storageEnabled = false;
         let complianceEnabled = false;
 
-        function toggleMatrix() {
-            matrixEnabled = !matrixEnabled;
-            const toggleEl = document.getElementById('matrix-toggle');
-            const panelEl = document.getElementById('matrix-config-panel');
+        function syncStep3MatrixWithStep2AI() {
+            const aiToggle = document.getElementById('ai-toggle');
+            const isAiOn = aiToggle ? aiToggle.classList.contains('on') : aiEnabled;
+
+            const matrixToggle = document.getElementById('matrix-toggle');
+            const targetPanel = document.getElementById('matrix-target-panel');
             const hintText = document.getElementById('matrix-mode-hint');
 
-            if (matrixEnabled) {
-                if (toggleEl) toggleEl.classList.add('on');
-                if (panelEl) {
-                    panelEl.style.opacity = '1';
-                    panelEl.style.pointerEvents = 'auto';
+            if (!isAiOn) {
+                // Step 02 未启用 AI：默认关闭多语言矩阵，且禁止物理交互/不允许开启
+                matrixEnabled = false;
+                if (matrixToggle) {
+                    matrixToggle.classList.remove('on');
+                    matrixToggle.style.pointerEvents = 'none';
+                    matrixToggle.style.opacity = '0.4';
+                    matrixToggle.style.cursor = 'not-allowed';
                 }
-                if (hintText) hintText.innerHTML = '⚡ 已开启多语言翻译矩阵（出版模式：<b>全球化出版 GLOBAL</b>）';
-            } else {
-                if (toggleEl) toggleEl.classList.remove('on');
-                if (panelEl) {
-                    panelEl.style.opacity = '0.4';
-                    panelEl.style.pointerEvents = 'none';
+                if (targetPanel) {
+                    targetPanel.style.opacity = '0.4';
+                    targetPanel.style.pointerEvents = 'none';
                 }
-                if (hintText) hintText.innerHTML = '💡 已关闭翻译矩阵，仅使用 AI 执行母语 SEO 与智能润色（出版模式：<b>智能母语增强 ENHANCED</b>）';
+                if (hintText) {
+                    hintText.innerHTML = '🔒 Step 02 未开启 AI 翻译支持，多语言矩阵已锁定关闭（出版模式：<b>基础物理出版 BASIC</b>）';
+                    hintText.style.color = 'var(--text-dim)';
+                    hintText.style.background = 'rgba(255,255,255,0.03)';
+                    hintText.style.borderColor = 'rgba(255,255,255,0.1)';
+                }
                 selectedLang = null;
                 document.querySelectorAll('#lang-grid .selectable-card').forEach(c => c.classList.remove('selected'));
+            } else {
+                // Step 02 已启用 AI
+                if (matrixToggle) {
+                    matrixToggle.style.pointerEvents = 'auto';
+                    matrixToggle.style.opacity = '1';
+                    matrixToggle.style.cursor = 'pointer';
+                }
+                if (!matrixEnabled && (!matrixToggle || !matrixToggle.dataset.userToggled)) {
+                    matrixEnabled = true;
+                }
+
+                if (matrixEnabled) {
+                    if (matrixToggle) matrixToggle.classList.add('on');
+                    if (targetPanel) {
+                        targetPanel.style.opacity = '1';
+                        targetPanel.style.pointerEvents = 'auto';
+                    }
+                    if (hintText) {
+                        hintText.innerHTML = '⚡ 已开启多语言翻译矩阵（出版模式：<b>全球化出版 GLOBAL</b>）';
+                        hintText.style.color = 'var(--accent-green)';
+                        hintText.style.background = 'rgba(0,255,127,0.06)';
+                        hintText.style.borderColor = 'rgba(0,255,127,0.15)';
+                    }
+                } else {
+                    if (matrixToggle) matrixToggle.classList.remove('on');
+                    if (targetPanel) {
+                        targetPanel.style.opacity = '0.4';
+                        targetPanel.style.pointerEvents = 'none';
+                    }
+                    if (hintText) {
+                        hintText.innerHTML = '💡 已关闭翻译矩阵，仅使用 AI 执行母语 SEO 与智能润色（出版模式：<b>智能母语增强 ENHANCED</b>）';
+                        hintText.style.color = 'var(--accent)';
+                        hintText.style.background = 'rgba(255,215,0,0.06)';
+                        hintText.style.borderColor = 'rgba(255,215,0,0.15)';
+                    }
+                }
+            }
+        }
+
+        function toggleMatrix() {
+            const aiToggle = document.getElementById('ai-toggle');
+            const isAiOn = aiToggle ? aiToggle.classList.contains('on') : aiEnabled;
+
+            if (!isAiOn) {
+                showStatus('⚠️ 须先在 Step 02 启用全球化翻译支持 (AI)，方可开启多语言翻译矩阵', 'error');
+                setTimeout(() => showStatus('', ''), 3000);
+                return;
+            }
+
+            const matrixToggle = document.getElementById('matrix-toggle');
+            if (matrixToggle) matrixToggle.dataset.userToggled = "true";
+
+            matrixEnabled = !matrixEnabled;
+            syncStep3MatrixWithStep2AI();
+        }
+
+        function checkStep4Authorization() {
+            const ghToken = document.getElementById('github_token')?.value.trim();
+            const cfToken = document.getElementById('cloudflare_token')?.value.trim();
+            const ghBadge = document.getElementById('github-status-badge');
+            const cfBadge = document.getElementById('cloudflare-status-badge');
+
+            const isGhAuthed = Boolean(ghToken || (ghBadge && ghBadge.style.display !== 'none'));
+            const isCfAuthed = Boolean(cfToken || (cfBadge && cfBadge.style.display !== 'none'));
+
+            const isAuthed = isGhAuthed || isCfAuthed;
+
+            const submitBtn = document.getElementById('submit-btn');
+            const hintEl = document.getElementById('step4-auth-hint');
+
+            if (submitBtn) {
+                if (!isAuthed) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.5';
+                    submitBtn.style.cursor = 'not-allowed';
+                    if (hintEl) {
+                        hintEl.style.display = 'block';
+                        hintEl.style.color = 'var(--danger)';
+                        hintEl.innerText = '🔒 提示：须至少授权绑定 GitHub Pages 或 Cloudflare Pages 其中一项分发托管渠道后，方可完成配置';
+                    }
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                    if (hintEl) {
+                        hintEl.style.display = 'block';
+                        hintEl.style.color = 'var(--accent-green)';
+                        hintEl.innerText = '✅ 已完成托管授权，您可以随时点击上方按钮完成配置并发布站点。';
+                    }
+                }
             }
         }
 
@@ -861,6 +962,13 @@
                 if (!id) { showStatus('⚠️ 请输入出版品牌标识', 'error'); return; }
                 if (!name) { showStatus('⚠️ 请输入出版品牌名称', 'error'); return; }
             }
+
+            if (n === 3) {
+                syncStep3MatrixWithStep2AI();
+            } else if (n === 4) {
+                checkStep4Authorization();
+            }
+
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             const target = document.getElementById(`step-${n}`);
             if (target) target.classList.add('active');
@@ -1536,6 +1644,7 @@
                         const badge = document.getElementById('github-status-badge');
                         badge.innerText = `已手动关联: ${user || 'user'}/${impId} ✅`;
                         badge.style.display = 'inline';
+                        checkStep4Authorization();
                     }
                 });
             }, 600);
@@ -1571,6 +1680,7 @@
                         const badge = document.getElementById('cloudflare-status-badge');
                         badge.innerText = `已授权绑定: ${cloudflareProject} ✅`;
                         badge.style.display = 'inline';
+                        checkStep4Authorization();
                     }
                 });
             }, 600);
