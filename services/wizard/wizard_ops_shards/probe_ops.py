@@ -14,12 +14,47 @@ from core.logic.diagnostics import DiagnosticsService
 from core.config.config import CONFIG_IMPRINT_NAME
 from core.utils.language_hub import LanguageHub
 
+def probe_local_github_credential():
+    """
+    探测本地 Git config 或 gh CLI 的 GitHub 关联账号及 Token
+    """
+    username = ""
+    token = ""
+    gh_config = os.path.expanduser("~/.config/gh/hosts.yml")
+    if os.path.exists(gh_config):
+        try:
+            with open(gh_config, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+                if isinstance(data, dict):
+                    gh_data = data.get("github.com", {})
+                    username = gh_data.get("user", "")
+                    token = gh_data.get("oauth_token", "")
+        except Exception:
+            pass
+
+    if not username:
+        try:
+            import subprocess
+            res = subprocess.run(["git", "config", "--global", "github.user"], capture_output=True, text=True, timeout=2)
+            if res.returncode == 0 and res.stdout.strip():
+                username = res.stdout.strip()
+            else:
+                res2 = subprocess.run(["git", "config", "--global", "user.name"], capture_output=True, text=True, timeout=2)
+                if res2.returncode == 0 and res2.stdout.strip():
+                    username = res2.stdout.strip()
+        except Exception:
+            pass
+
+    return {"username": username, "token": token}
+
+
 def probe_nodes_logic():
     nodes = DiagnosticsService.probe_local_compute()
     rec_p = nodes[0]["provider"] if nodes else "openai"
     rec_m = "llama3.1" if rec_p == "ollama" else ("gpt-4o-mini" if rec_p == "openai" else "default")
     
     vault_suggestions = DiagnosticsService.get_vault_suggestions()
+    github_suggestion = probe_local_github_credential()
     
     cfg_p = os.path.join(os.getcwd(), CONFIG_IMPRINT_NAME)
     current_config = None
@@ -77,6 +112,7 @@ def probe_nodes_logic():
             "vault": vault_suggestions[0]["path"] if vault_suggestions else "./manuscripts"
         },
         "vault_suggestions": vault_suggestions,
+        "github_suggestion": github_suggestion,
         "available_themes": [
             {"id": "default", "name": "Sovereign (Default)", "desc": "极致简约的主权底座，回归创作本质", "official": True},
             {"id": "universal", "name": "Universal (General Markdown)", "desc": "通用 Markdown 排版，完美兼容各类写作场景", "official": True},

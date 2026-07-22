@@ -1536,6 +1536,19 @@
             }
         }
 
+        async function fetchGithubUserByToken(token) {
+            try {
+                const res = await fetch('https://api.github.com/user', {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.login || "";
+                }
+            } catch (e) {}
+            return "";
+        }
+
         function showAuthModal(options) {
             const modal = document.getElementById('auth-modal');
             const titleEl = document.getElementById('modal-title');
@@ -1560,6 +1573,17 @@
             document.getElementById('modal-manual-fields').style.display = 'none';
             errorEl.style.display = 'none';
 
+            // 清理上一次的 focus 监听
+            if (window._authFocusHandler) {
+                window.removeEventListener('focus', window._authFocusHandler);
+                window._authFocusHandler = null;
+            }
+
+            // 预填本地探针感知到的用户名和 Token
+            const localGh = probeData?.github_suggestion || {};
+            const initialToken = options.prefillToken || localGh.token || "";
+            const initialUser = options.prefillUser || localGh.username || options.manualExtraDefault || "";
+
             // ⚡ 配置官方一键跳转授权通道
             const oauthBtn = document.getElementById('modal-oauth-btn');
             oauthBtn.disabled = false;
@@ -1574,23 +1598,56 @@
                 document.getElementById('modal-manual-section').style.display = 'block';
                 document.getElementById('modal-manual-fields').style.display = 'block';
                 
-                descEl.innerHTML = `<span style="color:var(--accent);">已成功在浏览器中拉起官方凭证创建页面。</span><br/>请在官方生成令牌 (Token) 后，将其复制并粘贴在下方：`;
+                descEl.innerHTML = `<span style="color:var(--accent);">已成功在浏览器中拉起官方凭证创建页面。</span><br/>请在官方生成令牌 (Token) 后复制，系统将全自动感知并回填：`;
                 
                 labelEl.innerText = options.manualLabel || "访问令牌 (Token)";
-                inputEl.placeholder = options.manualPlaceholder || "请输入您的 Token";
-                inputEl.value = "";
+                inputEl.placeholder = options.manualPlaceholder || "例如: ghp_xxxxxxxxxxxxxxxxxxxx";
+                inputEl.value = initialToken;
 
                 if (options.manualExtraLabel) {
                     extraGroup.style.display = 'block';
                     extraLabel.innerText = options.manualExtraLabel;
                     extraInput.placeholder = options.manualExtraPlaceholder || "";
-                    extraInput.value = options.manualExtraDefault || "";
+                    extraInput.value = initialUser;
                 } else {
                     extraGroup.style.display = 'none';
                 }
-                
+
+                // 🚀 启动自动剪贴板捕获与 GitHub 身份全自动感知
+                const checkClipboard = async () => {
+                    try {
+                        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+                        const text = (await navigator.clipboard.readText()).trim();
+                        if (text && (text.startsWith('ghp_') || text.startsWith('github_pat_') || text.startsWith('gho_') || (text.length === 40 && /^[a-f0-9]+$/i.test(text)))) {
+                            if (inputEl.value !== text) {
+                                inputEl.value = text;
+                                descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">⚡ 智能捕获剪贴板 Token！正在反查 GitHub 账号...</span>`;
+                                const login = await fetchGithubUserByToken(text);
+                                if (login) {
+                                    extraInput.value = login;
+                                    descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已自动识别并填入 GitHub 账号 [${login}] 与凭证！点击下方确定即可完成关联。</span>`;
+                                } else {
+                                    descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已全自动填入 GitHub 令牌！点击下方确定即可完成关联。</span>`;
+                                }
+                            }
+                        }
+                    } catch (err) {}
+                };
+
+                window._authFocusHandler = checkClipboard;
+                window.addEventListener('focus', window._authFocusHandler);
+                checkClipboard();
+
                 inputEl.focus();
             };
+
+            // 如果本地已有预填，直接展示
+            if (initialToken) {
+                inputEl.value = initialToken;
+            }
+            if (initialUser) {
+                extraInput.value = initialUser;
+            }
 
             // 确认按钮处理
             confirmBtn.onclick = () => {
@@ -1600,6 +1657,10 @@
                     errorEl.innerText = options.requiredMessage || "令牌 (Token) 不能为空";
                     errorEl.style.display = 'block';
                     return;
+                }
+                if (window._authFocusHandler) {
+                    window.removeEventListener('focus', window._authFocusHandler);
+                    window._authFocusHandler = null;
                 }
                 modal.style.display = 'none';
                 if (options.onConfirmManual) options.onConfirmManual(tokenVal, extraVal);
