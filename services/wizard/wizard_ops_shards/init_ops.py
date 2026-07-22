@@ -39,6 +39,12 @@ def init_press_logic(req, shutdown_cb=None):
                 cfg = yaml.safe_load(f) or {}
             cfg["active_theme"] = req.active_theme
             cfg["imprint_name"] = imp_name
+            
+            # 🚀 [核心修复] 明确写入算力开关 enable_ai
+            if "translation" not in cfg or not isinstance(cfg["translation"], dict):
+                cfg["translation"] = {}
+            cfg["translation"]["enable_ai"] = bool(req.enable_ai)
+
             if req.target_langs:
                 ln = {"en":"English","ja":"日本語","ko":"한국어","de":"Deutsch","fr":"Français","es":"Español"}
                 cfg["i18n_settings"] = {"enabled":True, "source":{"lang_code":req.source_lang, "name":"中文"},
@@ -104,6 +110,9 @@ def init_press_logic(req, shutdown_cb=None):
         if "translation" not in local_data or not isinstance(local_data["translation"], dict):
             local_data["translation"] = {}
 
+        # 🚀 [核心修复] 必须显式将 enable_ai 状态写入 translation 节点中，防止 Dashboard 表现为“算力总控已关闭”
+        local_data["translation"]["enable_ai"] = bool(req.enable_ai)
+
         if req.enable_ai:
             # 🚀 [算力复用与去重逻辑]
             def is_url_equal(u1, u2):
@@ -155,22 +164,26 @@ def init_press_logic(req, shutdown_cb=None):
                 if matched_node_id not in local_data["translation"]["compute_nodes"]:
                     local_data["translation"]["compute_nodes"][matched_node_id] = {}
                 local_data["translation"]["compute_nodes"][matched_node_id]["enabled"] = True
-                # local_data["translation"]["compute_nodes"][matched_node_id]["model"] = req.ai_model
+                local_data["translation"]["compute_nodes"][matched_node_id]["model"] = req.ai_model
+                if req.ai_base_url:
+                    local_data["translation"]["compute_nodes"][matched_node_id]["base_url"] = req.ai_base_url
                 tlog.info(f"✨ [算力复用] 检测到已有完全匹配的算力节点 '{matched_node_id}'，直接复用该节点。")
             else:
-                local_data["translation"]["primary_node"] = "wizard"
+                node_name = "wizard" if req.ai_provider != "lmstudio" else "lmstudio_local"
+                default_base_url = "http://localhost:1234/v1" if req.ai_provider == "lmstudio" else ""
+                local_data["translation"]["primary_node"] = node_name
                 local_data["translation"]["primary_model"] = req.ai_model
                 if "compute_nodes" not in local_data["translation"]:
                     local_data["translation"]["compute_nodes"] = {}
-                local_data["translation"]["compute_nodes"]["wizard"] = {
-                    "id": "wizard",
+                local_data["translation"]["compute_nodes"][node_name] = {
+                    "id": node_name,
                     "type": req.ai_provider,
-                    "api_key": req.ai_api_key,
-                    "base_url": req.ai_base_url,
+                    "api_key": req.ai_api_key or ("lm-studio" if req.ai_provider == "lmstudio" else ""),
+                    "base_url": req.ai_base_url or default_base_url,
                     "model": req.ai_model,
                     "enabled": True
                 }
-                tlog.info(f"✨ [算力新建] 未检测到匹配的已有算力节点，成功创建新引导节点 'wizard'，且绑定模型为 '{req.ai_model}'。")
+                tlog.info(f"✨ [算力新建] 未检测到匹配的已有算力节点，成功创建新节点 '{node_name}'，且绑定模型为 '{req.ai_model}'。")
         else:
             local_data["translation"]["primary_node"] = "lmstudio_local"
             local_data["translation"]["primary_model"] = "qwen/qwen3.5-9b"

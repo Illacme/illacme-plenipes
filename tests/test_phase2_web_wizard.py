@@ -40,6 +40,35 @@ def test_auth_callback_endpoint():
     assert "github" in response.text
     assert "test_repo_url" in response.text
     assert "window.opener.postMessage" in response.text
-    
+
+def test_init_press_enable_ai_injection(tmp_path, monkeypatch):
+    """验证向导初始化时 enable_ai 为 True 能成功写入配置字典"""
+    monkeypatch.chdir(tmp_path)
+    from services.wizard.wizard_ops_shards.init_ops import init_press_logic
+    from services.wizard.wizard_server import InitRequest
+    import yaml, os
+
+    # 模拟输入请求
+    req = InitRequest(
+        imprint_id="test_ai_imp",
+        imprint_name="Test AI Press",
+        manuscripts_path=str(tmp_path),
+        enable_ai=True,
+        ai_provider="lmstudio",
+        ai_model="qwen/qwen3.5-9b",
+        ai_base_url="http://localhost:1234/v1"
+    )
+    init_press_logic(req)
+
+    # 校验 config.local.yaml
+    local_cfg_p = tmp_path / "config.local.yaml"
+    assert local_cfg_p.exists()
+    with open(local_cfg_p, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    assert data["translation"]["enable_ai"] is True
+    assert data["translation"]["primary_node"] == "lmstudio_local"
+    assert data["translation"]["primary_model"] == "qwen/qwen3.5-9b"
+    assert data["translation"]["compute_nodes"]["lmstudio_local"]["enabled"] is True
+
 if __name__ == "__main__":
     pytest.main([__file__])

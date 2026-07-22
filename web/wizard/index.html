@@ -1554,12 +1554,15 @@
             btnText.style.display = 'none'; spinner.style.display = 'block';
             btn.disabled = true;
 
+            const toggleEl = document.getElementById('ai-toggle');
+            const isToggleOn = toggleEl ? toggleEl.classList.contains('on') : false;
+
             const payload = {
                 imprint_id: document.getElementById('imprint_id').value.trim(),
                 imprint_name: document.getElementById('imprint_name').value.trim(),
                 manuscripts_path: document.getElementById('manuscripts_path').value.trim(),
                 active_theme: selectedTheme || 'default',
-                enable_ai: aiEnabled || false,
+                enable_ai: isToggleOn || aiEnabled || false,
                 ai_provider: document.getElementById('ai_provider') ? document.getElementById('ai_provider').value : 'openai',
                 ai_model: document.getElementById('ai_model') ? document.getElementById('ai_model').value : 'gpt-4o-mini',
                 ai_api_key: document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value : '',
