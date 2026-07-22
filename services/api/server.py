@@ -31,6 +31,17 @@ app = FastAPI(title="Illacme-plenipes API Gateway", version="V52.0", lifespan=li
 # 2. 注入核心基础设施逻辑 (代理执行)
 setup_middleware(app)
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    """🛡️ 主权防线：全局未捕获异常兜底，防止暴露原始堆栈及 500 HTML 崩溃"""
+    from fastapi.responses import JSONResponse
+    from core.utils.tracing import tlog
+    tlog.error(f"🚨 [全局异常拦截] 未捕获请求异常: {request.url.path} - {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"status": "error", "detail": f"内部服务异常: {str(exc)}"}
+    )
+
 # 3. 挂载路由器
 app.include_router(compute.router)
 app.include_router(system.router, tags=["System"])

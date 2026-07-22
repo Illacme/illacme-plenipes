@@ -225,9 +225,10 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                             routing_groups[level]["i18n_settings.source.name"] = name
                         
                         # 🚀 [V74.75] TypeAdapter 智能类型强力自愈，防止 Pydantic V2 序列化时报 UnexpectedValue 警告
-                        if hasattr(target, "model_fields") and final_key in target.model_fields:
+                        target_cls = type(target)
+                        if hasattr(target_cls, "model_fields") and final_key in target_cls.model_fields:
                             from pydantic import TypeAdapter
-                            field_info = target.model_fields[final_key]
+                            field_info = target_cls.model_fields[final_key]
                             if field_info.annotation is not None:
                                 try:
                                     value = TypeAdapter(field_info.annotation).validate_python(value)

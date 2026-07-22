@@ -962,6 +962,10 @@
                 const id = document.getElementById('imprint_id').value.trim();
                 const name = document.getElementById('imprint_name').value.trim();
                 if (!id) { showStatus('⚠️ 请输入出版品牌标识', 'error'); return; }
+                if (!/^[a-z0-9_-]+$/i.test(id)) { 
+                    showStatus('⚠️ 出版品牌标识仅支持英文字母、数字、下划线和连字符', 'error'); 
+                    return; 
+                }
                 if (!name) { showStatus('⚠️ 请输入出版品牌名称', 'error'); return; }
             }
 
@@ -1185,6 +1189,11 @@
             }).join('');
         }
 
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
         async function updateModels() {
             if (window._isUpdating) return;
             window._isUpdating = true;
@@ -1249,7 +1258,7 @@
                 const data = await res.json();
                 const errSpan = document.getElementById('ai-model-error');
                 if (data.models && data.models.length > 0) {
-                    sel.innerHTML = data.models.map(m => `<option value="${m}">${m}</option>`).join('');
+                    sel.innerHTML = data.models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
                     sel.disabled = false;
                     errSpan.innerText = ''; // 清除标签旁的错误
                     msgEl.innerHTML = '';   // 清除下方消息
@@ -1261,7 +1270,7 @@
                     if (data.error) {
                         errSpan.innerText = '⚠️ 列表拉取失败';
                         msgEl.className = 'error';
-                        msgEl.innerHTML = `❌ ${data.error}`;
+                        msgEl.innerText = `❌ ${data.error}`;
                     }
 
                     // 🛡️ 按照用户要求：不再使用保底模型，直接显示失败状态
@@ -1332,9 +1341,15 @@
 
         function selectLang(code, el) {
             if (selectedLang === code) {
-                // 🚀 已选中状态下再次点击：取消选择！
+                // 🚀 已选中状态下再次点击：取消选择并同步锁定提交按钮！
                 selectedLang = null;
                 el.classList.remove('selected');
+                const submitBtn = document.getElementById('submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = "0.5";
+                    submitBtn.style.cursor = "not-allowed";
+                }
                 return;
             }
 
