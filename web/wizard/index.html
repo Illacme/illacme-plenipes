@@ -1571,6 +1571,21 @@
             return "";
         }
 
+        async function fetchCloudflareTokenStatus(token) {
+            try {
+                const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.result) {
+                        return data.result.status || "active";
+                    }
+                }
+            } catch (e) {}
+            return "";
+        }
+
         function showAuthModal(options) {
             const modal = document.getElementById('auth-modal');
             const titleEl = document.getElementById('modal-title');
@@ -1603,8 +1618,8 @@
 
             // 预填本地探针感知到的用户名和 Token
             const localGh = probeData?.github_suggestion || {};
-            const initialToken = options.prefillToken || localGh.token || "";
-            const initialUser = options.prefillUser || localGh.username || options.manualExtraDefault || "";
+            const initialToken = options.prefillToken || (options.provider === 'github' ? localGh.token : "") || "";
+            const initialUser = options.prefillUser || (options.provider === 'github' ? localGh.username : "") || options.manualExtraDefault || "";
 
             // ⚡ 配置官方一键跳转授权通道
             const oauthBtn = document.getElementById('modal-oauth-btn');
@@ -1635,12 +1650,17 @@
                     extraGroup.style.display = 'none';
                 }
 
-                // 🚀 启动自动剪贴板捕获与 GitHub 身份全自动感知
+                // 🚀 启动自动剪贴板捕获与凭证全自动感知 (支持 GitHub & Cloudflare)
                 const checkClipboard = async () => {
                     try {
                         if (!navigator.clipboard || !navigator.clipboard.readText) return;
                         const text = (await navigator.clipboard.readText()).trim();
-                        if (text && (text.startsWith('ghp_') || text.startsWith('github_pat_') || text.startsWith('gho_') || (text.length === 40 && /^[a-f0-9]+$/i.test(text)))) {
+                        if (!text) return;
+
+                        const isGh = text.startsWith('ghp_') || text.startsWith('github_pat_') || text.startsWith('gho_') || (text.length === 40 && /^[a-f0-9]+$/i.test(text));
+                        const isCf = options.provider === 'cloudflare' || (text.length >= 35 && text.length <= 60 && /^[a-zA-Z0-9_\-]+$/.test(text) && !isGh);
+
+                        if (options.provider === 'github' && isGh) {
                             if (inputEl.value !== text) {
                                 inputEl.value = text;
                                 descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">⚡ 智能捕获剪贴板 Token！正在反查 GitHub 账号...</span>`;
@@ -1650,6 +1670,17 @@
                                     descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已自动识别并填入 GitHub 账号 [${login}] 与凭证！点击下方确定即可完成关联。</span>`;
                                 } else {
                                     descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已全自动填入 GitHub 令牌！点击下方确定即可完成关联。</span>`;
+                                }
+                            }
+                        } else if (options.provider === 'cloudflare' && isCf) {
+                            if (inputEl.value !== text) {
+                                inputEl.value = text;
+                                descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">⚡ 智能捕获剪贴板 Cloudflare Token！正在验证令牌有效性...</span>`;
+                                const status = await fetchCloudflareTokenStatus(text);
+                                if (status) {
+                                    descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已自动识别并验证 Cloudflare 令牌 [状态: ${status}]！点击下方确定即可完成关联。</span>`;
+                                } else {
+                                    descEl.innerHTML = `<span style="color:var(--accent-green);font-weight:600;">✅ 已全自动填入 Cloudflare 令牌！点击下方确定即可完成关联。</span>`;
                                 }
                             }
                         }
@@ -1709,6 +1740,7 @@
             const impId = document.getElementById('imprint_id').value.trim() || 'my_press';
             setTimeout(() => {
                 showAuthModal({
+                    provider: 'github',
                     title: '🐙 绑定自有 GitHub 账号',
                     desc: '系统将引导您直连 GitHub 官方安全网关，一键预勾选必要权限并生成 Token 凭证进行安全免密绑定。',
                     oauthUrl: 'https://github.com/settings/tokens/new?scopes=repo,public_repo&description=Illacme%20Plenipes%20Publishing%20Gateway',
@@ -1745,6 +1777,7 @@
             const impId = document.getElementById('imprint_id').value.trim() || 'my_press';
             setTimeout(() => {
                 showAuthModal({
+                    provider: 'cloudflare',
                     title: '☁️ 绑定 Cloudflare 账号',
                     desc: '系统将引导您直连 Cloudflare 官方控制台，一键生成用于 Wrangler 静默部署的 API 令牌。',
                     oauthUrl: 'https://dash.cloudflare.com/profile/api-tokens',
