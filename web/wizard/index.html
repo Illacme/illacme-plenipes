@@ -612,15 +612,29 @@
                     <p>设置原稿语言与目标翻译语言，构建多语种跨国出版链路</p>
                 </div>
 
-                <div class="form-group">
-                    <label>原稿语种 (Source)</label>
-                    <select id="source_lang" onchange="renderLangs(probeData.available_langs)">
-                        <option value="auto">✨ 自动探测 (推荐)</option>
-                    </select>
+                <div class="toggle-row" style="margin-bottom: 12px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:0.9rem; font-weight:600;">启用多语言翻译矩阵 (i18n Matrix)</span>
+                        <span class="concept-hint" data-tip="关闭后系统仅在母语下执行 AI 智能润色与 SEO 增强（智能模式）；开启后将根据所选目标语言执行跨国多语种翻译（全球模式）。">什么是翻译矩阵？</span>
+                    </div>
+                    <div class="toggle-switch on" id="matrix-toggle" onclick="toggleMatrix()"></div>
                 </div>
 
-                <label style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;display:block;">目标分发语种 (Target)</label>
-                <div id="lang-grid" class="card-grid three-col"></div>
+                <div id="matrix-mode-hint" style="font-size:0.75rem; color:var(--accent-green); margin-bottom:15px; background:rgba(0,255,127,0.06); padding:8px 12px; border-radius:8px; border:1px solid rgba(0,255,127,0.15); transition: all 0.3s ease;">
+                    ⚡ 已开启多语言翻译矩阵（出版模式：<b>全球化出版 GLOBAL</b>）
+                </div>
+
+                <div id="matrix-config-panel" style="transition: all 0.3s ease;">
+                    <div class="form-group">
+                        <label>原稿语种 (Source)</label>
+                        <select id="source_lang" onchange="renderLangs(probeData.available_langs)">
+                            <option value="auto">✨ 自动探测 (推荐)</option>
+                        </select>
+                    </div>
+
+                    <label style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;display:block;">目标分发语种 (Target)</label>
+                    <div id="lang-grid" class="card-grid three-col"></div>
+                </div>
 
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(2)">← 返回</button>
@@ -811,8 +825,34 @@
         let selectedLang = null;
         let selectedDialect = 'auto';
         let aiEnabled = false;
+        let matrixEnabled = true;
         let storageEnabled = false;
         let complianceEnabled = false;
+
+        function toggleMatrix() {
+            matrixEnabled = !matrixEnabled;
+            const toggleEl = document.getElementById('matrix-toggle');
+            const panelEl = document.getElementById('matrix-config-panel');
+            const hintText = document.getElementById('matrix-mode-hint');
+
+            if (matrixEnabled) {
+                if (toggleEl) toggleEl.classList.add('on');
+                if (panelEl) {
+                    panelEl.style.opacity = '1';
+                    panelEl.style.pointerEvents = 'auto';
+                }
+                if (hintText) hintText.innerHTML = '⚡ 已开启多语言翻译矩阵（出版模式：<b>全球化出版 GLOBAL</b>）';
+            } else {
+                if (toggleEl) toggleEl.classList.remove('on');
+                if (panelEl) {
+                    panelEl.style.opacity = '0.4';
+                    panelEl.style.pointerEvents = 'none';
+                }
+                if (hintText) hintText.innerHTML = '💡 已关闭翻译矩阵，仅使用 AI 执行母语 SEO 与智能润色（出版模式：<b>智能母语增强 ENHANCED</b>）';
+                selectedLang = null;
+                document.querySelectorAll('#lang-grid .selectable-card').forEach(c => c.classList.remove('selected'));
+            }
+        }
 
         function goStep(n) {
             if (n > currentStep && currentStep === 1) {
@@ -1568,7 +1608,7 @@
                 ai_api_key: document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value : '',
                 ai_base_url: document.getElementById('ai_base_url') ? document.getElementById('ai_base_url').value : '',
                 source_lang: document.getElementById('source_lang') ? document.getElementById('source_lang').value : 'zh',
-                target_langs: selectedLang ? [selectedLang] : [],
+                target_langs: (matrixEnabled && selectedLang) ? [selectedLang] : [],
                 active_dialect: selectedDialect || 'auto',
                 github_token: document.getElementById('github_token') ? document.getElementById('github_token').value : '',
                 github_repo: document.getElementById('github_repo') ? document.getElementById('github_repo').value : '',
