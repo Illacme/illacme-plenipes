@@ -742,7 +742,21 @@ window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) 
         footerContainer.style.background = '';
     }
 
-    // 3. 根据步骤索引激活对应的常驻大卡片
+    // 3. 辅助函数：物理精准滚动至目标大卡片的外框顶部（保留 14px 完美发光边距）
+    const scrollToCardTop = (targetCard) => {
+        if (!targetCard) return;
+        const drawerBody = document.getElementById('p-drawer-body');
+        if (drawerBody) {
+            const cardRect = targetCard.getBoundingClientRect();
+            const bodyRect = drawerBody.getBoundingClientRect();
+            const relativeTop = cardRect.top - bodyRect.top;
+            const targetScrollTop = drawerBody.scrollTop + relativeTop - 14;
+            drawerBody.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+        } else {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     if (stepIdx === 0) {
         if (missionBanner) {
             missionBanner.innerHTML = '<span>🎯 当前步骤 [1/3]：请在下方【步骤 1 专属卡片】中填写凭据或使用一键复用</span>';
@@ -751,7 +765,7 @@ window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) 
             missionBanner.style.background = 'rgba(0, 255, 136, 0.06)';
         }
         if (card0) {
-            card0.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            scrollToCardTop(card0);
             card0.style.border = '1.5px solid var(--neon-cyan)';
             card0.style.background = 'rgba(0, 242, 255, 0.05)';
             card0.style.boxShadow = '0 0 25px rgba(0, 242, 255, 0.3)';
@@ -774,7 +788,7 @@ window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) 
             missionBanner.style.background = 'rgba(0, 242, 255, 0.06)';
         }
         if (card1) {
-            card1.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            scrollToCardTop(card1);
             card1.style.border = '1.5px solid #00ff88';
             card1.style.background = 'rgba(0, 255, 136, 0.05)';
             card1.style.boxShadow = '0 0 25px rgba(0, 255, 136, 0.3)';

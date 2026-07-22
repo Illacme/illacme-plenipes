@@ -16,12 +16,20 @@ class BaseSyndicator(abc.ABC):
     def __init__(self, config: Any, *args, **kwargs):
         self.config = config
         
-        # 🚀 [V75.1] 弹性参数提取：支持多种历史调用格式的自动对准与自愈
-        timeout = 10
+        # 🚀 [V105.0] 动态感应治理中心网络超时配置 (system.network_timeout)
+        default_timeout = 15
+        try:
+            from core.config.config_models import load_config
+            sys_cfg = load_config()
+            default_timeout = getattr(getattr(sys_cfg, "system", None), "network_timeout", 15) or 15
+        except Exception:
+            default_timeout = 15
+
+        timeout = default_timeout
         site_url = ""
         
         # 优先提取 kwargs
-        if "timeout" in kwargs:
+        if "timeout" in kwargs and kwargs["timeout"]:
             timeout = kwargs["timeout"]
         if "site_url" in kwargs:
             site_url = kwargs["site_url"]
@@ -30,7 +38,7 @@ class BaseSyndicator(abc.ABC):
         if args:
             second_arg = args[0]
             if isinstance(second_arg, dict):
-                timeout = second_arg.get("timeout", 10)
+                timeout = second_arg.get("timeout", default_timeout)
                 site_url = second_arg.get("site_url", "")
             elif isinstance(second_arg, (int, float)):
                 timeout = int(second_arg)

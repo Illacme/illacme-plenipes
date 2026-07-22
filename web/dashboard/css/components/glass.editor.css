@@ -401,7 +401,7 @@
 }
 /* 🚀 [V75.7] WYSIWYG 所见即所得富文本编辑器专属样式 */
 .wysiwyg-toolbar {
-    background: rgba(10, 10, 10, 0.6) !important;
+    background: rgba(0, 0, 0, 0.6) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -436,5 +436,5 @@
     transform: scale(0.95);
 }
 #editor-wysiwyg:focus {
-    box-shadow: inset 0 0 15px rgba(99, 102, 241, 0.05);
+    box-shadow: inset 0 0 15px rgba(var(--accent-primary-rgb), 0.05);
 }

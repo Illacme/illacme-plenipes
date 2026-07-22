@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 🛡️ [V74.97] Gov Plugin Dry Run Social Shard
-职责：物理通道连接测试引擎中的社交及分发渠道类插件（WeChat, Dev.to, Hashnode, Medium, Substack, Telegram, Discord, WordPress, Ghost 等）的真实 API 凭证有效性探测与代理路由穿透。
+职责：物理通道连接测试引擎中的分发渠道类插件（WeChat, Dev.to, Hashnode, Medium, Substack, Telegram, Discord, WordPress, Ghost 等）的真实 API 凭证有效性探测与代理路由穿透。
 """
 from typing import Dict, Any, List
 
@@ -12,12 +12,12 @@ def run_social_plugin_dry_run(
     log_func: Any
 ) -> bool:
     """
-    🚀 物理测试社交及分发类托管通道连接性
+    🚀 物理测试分发渠道类托管通道连接性
     """
     import requests
     success = True
 
-    # 提取网络代理（大部分海外社交平台必须使用代理）
+    # 提取网络代理（大部分海外分发平台必须使用代理）
     proxy_url = settings.get("proxy") or ""
     proxies = {}
     if proxy_url:
@@ -64,7 +64,7 @@ def run_social_plugin_dry_run(
         logs.append(log_func("INFO", "🔑 [授权] 知乎授权凭证格式校验通过。"))
         logs.append(log_func("INFO", "📡 [探测] 正在测试 知乎 API 连通性: api.zhihu.com..."))
         try:
-            resp = requests.get("https://api.zhihu.com", proxies=proxies, timeout=6)
+            resp = requests.get("https://api.zhihu.com", proxies=proxies, timeout=15)
             logs.append(log_func("INFO", f"🟢 [探测] 对端知乎 API 服务网络握手正常 (HTTP {resp.status_code})。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立与 知乎 API 端点的物理连接: {e}。"))
@@ -79,7 +79,7 @@ def run_social_plugin_dry_run(
         
         logs.append(log_func("INFO", "📡 [探测] 正在校验 掘金 API 连通度..."))
         try:
-            resp = requests.head("https://api.juejin.cn", proxies=proxies, timeout=6)
+            resp = requests.head("https://api.juejin.cn", proxies=proxies, timeout=15)
             logs.append(log_func("SUCCESS", f"🟢 [成功] 对端掘金 API 服务网络握手正常 (HTTP {resp.status_code})。已完成本地凭据格式匹配。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立与 掘金 API 端的物理连接: {e}。"))
@@ -276,7 +276,7 @@ def run_social_plugin_dry_run(
             logs.append(log_func("ERROR", f"❌ [错误] 物理端点 URL 格式不合法 (缺少 http:// 或 https://): '{url}'"))
             return False
 
-        logs.append(log_func("INFO", f"📡 [探测] 正在校验 Ghost 站点可达性与 API Key..."))
+        logs.append(log_func("INFO", "📡 [探测] 正在校验 Ghost 站点可达性与 API Key..."))
         # 请求 posts 列表以验证 Key
         ghost_api = f"{url.rstrip('/')}/ghost/api/content/posts/?key={content_key}&limit=1"
         try:

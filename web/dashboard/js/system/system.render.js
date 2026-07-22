@@ -166,6 +166,13 @@
                                 placeholder: '例如: http://127.0.0.1:10809 (留空表示直连)',
                                 description: '全站兜底网络代理地址。若发布渠道未配置独立代理，将自动使用此全局代理。填写 direct 表示强行直连。'
                             })}
+                            ${renderSettingsItem('第三方 API 网络请求超时 (Timeout)', 'system.network_timeout', data.system?.network_timeout ?? 15, 'number', {
+                                onchange: `window.updateConfigField('system.network_timeout', parseInt(this.value))`,
+                                placeholder: '默认 15 秒',
+                                min: 1,
+                                max: 120,
+                                description: '控制系统在连接 GitHub、Dev.to、Vercel 等第三方 API 或测试物理链路时的请求超时上限（秒）。推荐在代理环境或高延迟网络下设置为 15~30 秒。'
+                            })}
                             ${renderSettingsItem('启用 HTTP 访问日志', 'system.access_log', data.system?.access_log ?? true, 'checkbox', {
                                 description: '是否记录每一次网页 and API 访问（包含心跳请求）。建议关闭以防终端频繁被 stats 心跳刷屏。'
                             })}

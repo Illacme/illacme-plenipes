@@ -26,6 +26,7 @@ GOVERNANCE_RULES = {
         r"^system\.singleton_port$",       # 本地单例冲突端口
         r"^system\.max_workers$",          # 本地算力并发限制
         r"^system\.log_level$",            # 本地日志详细度
+        r"^system\.network_timeout$",      # 第三方 API 及物理网络请求超时控制 (秒)
         r"^system\.global_proxy$",         # 本地系统全局代理地址（全站托管/分发共享）
         r"^system\.watchdog_settings\..*$", # 本地监控轮询策略
         r"^plugins\.disabled_plugins$",    # 本机禁用的插件列表

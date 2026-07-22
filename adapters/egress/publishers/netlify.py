@@ -105,8 +105,9 @@ class NetlifyPublisher(BasePublisher):
 
             if result.returncode != 0:
                 error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
-                tlog.error(f"❌ [Netlify] 部署失败: {error_msg}")
-                return {"status": "error", "message": f"Netlify deploy failed: {error_msg}"}
+                healed_err = self._add_autotherapy_suggestion(error_msg)
+                tlog.error(f"❌ [Netlify] 部署失败: {healed_err}")
+                return {"status": "error", "message": f"Netlify deploy failed: {healed_err}"}
 
             # ── 5. 解析部署 URL ──────────────────────────
             live_url = self._extract_url(result.stdout, "Website URL" if self.prod else "Website draft URL")
@@ -129,8 +130,25 @@ class NetlifyPublisher(BasePublisher):
             tlog.error(f"❌ [Netlify] 找不到 Netlify CLI: '{self.netlify_path}'")
             return {"status": "error", "message": f"Netlify CLI not found: '{self.netlify_path}'"}
         except Exception as e:
-            tlog.error(f"❌ [Netlify] 部署异常: {e}")
-            return {"status": "error", "message": str(e)}
+            healed_err = self._add_autotherapy_suggestion(str(e))
+            tlog.error(f"❌ [Netlify] 部署异常: {healed_err}")
+            return {"status": "error", "message": healed_err}
+
+    def _add_autotherapy_suggestion(self, err_msg: str) -> str:
+        """
+        💡 为 Netlify 错误注入友好免密授权物理自愈提示。
+        """
+        if not err_msg:
+            return err_msg
+
+        auth_keywords = ["unauthorized", "authentication", "expired", "token", "unrecognized token"]
+        if any(kw in err_msg.lower() for kw in auth_keywords):
+            return (
+                f"{err_msg}\n\n"
+                "💡 [自愈建议] Netlify 授权 Token 无效或已过期。\n"
+                "推荐操作：请在治理中心配置中，点击「🔑 本地一键免密授权」，系统将后台唤醒授权浏览器并自动回填密钥，免去手动获取的麻烦！"
+            )
+        return err_msg
 
     def is_healthy(self) -> bool:
         """检查 Netlify CLI 可用性与自愈"""

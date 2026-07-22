@@ -11,6 +11,12 @@ from core.adapters.syndication.base import BaseSyndicator
 from core.utils.tracing import tlog
 
 
+import threading
+
+# 全局平滑流控防线：强制控制两次发送的间隔时间在 1.5 秒以上
+_last_substack_time = 0.0
+_substack_lock = threading.Lock()
+
 class SubstackSyndicator(BaseSyndicator):
     PLUGIN_ID = "substack"
     DISPLAY_NAME = "Substack"
@@ -30,6 +36,9 @@ class SubstackSyndicator(BaseSyndicator):
         }
 
     def push(self, payload: dict):
+        import time
+        import random
+
         url_cfg = getattr(self.config, 'url', None) or self.config.get('url')
         cookie = getattr(self.config, 'cookie', None) or self.config.get('cookie')
         api_key = getattr(self.config, 'api_key', None) or self.config.get('api_key')
@@ -58,11 +67,49 @@ class SubstackSyndicator(BaseSyndicator):
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        try:
-            resp = requests.post(api_url, json=payload, headers=headers, timeout=self.timeout)
-            if resp.status_code in [200, 201]:
-                tlog.info(f"🚀 [Substack 分发成功] 成功同步草稿至子域名 '{subdomain}'。")
-            else:
-                tlog.warning(f"⚠️ [Substack 异常] 状态码 {resp.status_code}: {resp.text}")
-        except Exception as e:
-            tlog.error(f"🛑 [Substack 失败]: {e}")
+        # 🛡️ 1. 全局平滑流控防线：强制控制两次发送的间隔时间在 1.5 秒以上 (加上线程锁防止竞态穿透)
+        global _last_substack_time
+        with _substack_lock:
+            while True:
+                elapsed = time.time() - _last_substack_time
+                if elapsed < 1.5:
+                    time.sleep(1.5 - elapsed)
+                else:
+                    break
+
+            _last_substack_time = time.time()
+
+        # 🛡️ 2. 指数退避重试循环 (对冲 429 频控)
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                resp = requests.post(api_url, json=payload, headers=headers, timeout=self.timeout)
+                _last_substack_time = time.time()
+
+                if resp.status_code == 429:
+                    if attempt < max_attempts - 1:
+                        sleep_time = 3.0 * (2 ** attempt) + random.uniform(0.1, 0.5)
+                        time.sleep(sleep_time)
+                        continue
+                    else:
+                        raise RuntimeError("对端 Substack 接口频控限制 (429 Too Many Requests)，请稍后重试。")
+
+                if resp.status_code in [200, 201]:
+                    tlog.info(f"🚀 [Substack 分发成功] 成功同步草稿至子域名 '{subdomain}'。")
+                    return {"success": True, "subdomain": subdomain}
+                elif resp.status_code in (401, 403):
+                    raise RuntimeError("Substack 认证失败（401/403）：Cookie 或 API Key 无效，请重新配置 Substack 访问凭据。")
+                else:
+                    raise RuntimeError(f"Substack API 报错 ({resp.status_code}): {resp.text}")
+
+            except requests.RequestException as req_err:
+                if attempt < max_attempts - 1:
+                    sleep_time = 2.0 + random.uniform(0.1, 0.5)
+                    time.sleep(sleep_time)
+                    continue
+                else:
+                    tlog.error(f"🛑 [Substack] 网络请求失败: {req_err}")
+                    raise RuntimeError(f"Substack 网络请求失败: {req_err}") from req_err
+            except Exception as e:
+                tlog.error(f"🛑 [Substack 失败]: {e}")
+                raise e

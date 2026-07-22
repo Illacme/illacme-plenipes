@@ -5,7 +5,6 @@
 import sys
 import os
 import unittest
-import base64
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 

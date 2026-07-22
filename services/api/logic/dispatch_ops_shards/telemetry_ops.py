@@ -8,6 +8,7 @@
 import os
 import time
 import socket
+import re
 from core.utils.common import TokenCounter
 
 def check_port(port: int) -> bool:
@@ -53,6 +54,8 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
         static_root = os.path.join("imprints", imprint_id, "themes", theme, "static")
 
     # 2. 扫描语种矩阵并计算真实算力 Token
+    serve_port = getattr(config.system, 'serve_port', 43213)
+    live_base_url = f"http://localhost:{serve_port}"
     sync_matrix = []
     i18n = config.i18n_settings
     
@@ -77,7 +80,6 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
                 if hasattr(engine, 'input_adapter') and engine.input_adapter:
                     raw_body, raw_fm_dict = engine.input_adapter.normalize(raw_body, raw_fm_dict)
                 
-                import re
                 body = engine.ast_resolver.resolve(raw_body, source_path, engine.paths.get('target_base'))
                 
                 # 🚀 [V75.5] 对齐 MetadataAndHashStep 的 current_hash 计算以实现脏状态检测
@@ -163,6 +165,15 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
         zh_url = "/" + rel_zh_path
     else:
         zh_url = "#"
+
+    # 🚀 [V110.0] 计算 Live 预览 URL：以 SSG 容器地址为基底，挂载相对路径
+    zh_live_url = "#"
+    if zh_exists and static_root:
+        try:
+            live_rel = os.path.relpath(zh_path, static_root).replace('\\', '/')
+            zh_live_url = f"{live_base_url}/{live_rel}"
+        except Exception:
+            pass
     
     source_lang_display = i18n.source.prompt_lang or "Default"
     if i18n.source.lang_code == "auto":
@@ -176,6 +187,7 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
         "status": "published" if zh_exists else "pending",
         "last_sync": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(zh_path))) if zh_exists else "Never",
         "artifact_url": zh_url,
+        "live_url": zh_live_url,
         "tokens": src_tokens if zh_exists else 0,
         "progress": 100 if zh_exists else 0,
         "cache_info": ""
@@ -199,6 +211,15 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             target_url = "/" + rel_target_path
         else:
             target_url = "#"
+
+        # 🚀 [V110.0] 计算目标语种的 Live 预览 URL
+        target_live_url = "#"
+        if exists and static_root:
+            try:
+                live_rel = os.path.relpath(target_path, static_root).replace('\\', '/')
+                target_live_url = f"{live_base_url}/{live_rel}"
+            except Exception:
+                pass
             
         # 🚀 [V75.5] 主权透传判定：若目标语种与原稿源语种一致，则该语种免除 AI 翻译与块缓存，标记为主权透传
         from core.utils.language_hub import LanguageHub
@@ -262,6 +283,7 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             "status": "published" if exists else "pending",
             "last_sync": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(target_path))) if exists else "Never",
             "artifact_url": target_url,
+            "live_url": target_live_url,
             "tokens": trans_tokens,
             "progress": progress,
             "cache_info": cache_info
@@ -324,7 +346,7 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             health_status = "Active"
     else:
         audit_status = "PENDING"
-    # 🚀 [V89.0] 物理全渠道联动：从账本中扫描并追加外部部署与社交同步渠道的真实状态
+    # 🚀 [V89.0] 物理全渠道联动：从账本中扫描并追加外部部署与分发渠道的真实状态
     publish_status = doc_info.get("publish_status", {})
     
     # A. 提取 Hosting 全站托管渠道
@@ -358,29 +380,55 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
                 last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(zh_path)))
                 
             display_name = chan_id.replace("_", " ").title()
-            # 🚀 [V89.6] 自适应托管文章绝对链接：优先拼接 public_url/posts/slug，否则 fallback 导出仓库地址
-            slug = doc_info.get("slug") or ""
-            public_url = chan_cfg.get("public_url")
-            artifact_url = "#"
-            if public_url:
-                artifact_url = f"{public_url.rstrip('/')}/posts/{slug}"
+            # 🚀 [V89.6] 自适应托管文章绝对链接：防御性提取 Base URL 并精确拼接由 RouteManager & Slug 决定的页面相对路径
+            raw_base_url = chan_cfg.get("public_url") or chan_cfg.get("site_url") or status_info.get("pages_base_url") or status_info.get("url") or ""
+            if not raw_base_url or raw_base_url == "#":
+                raw_base_url = chan_cfg.get("repo_url") or "#"
+
+            # 🛡️ 物理根域名保护：若 URL 中残留了旧的具体 HTML/MD 文件后缀，正则清洗切除还原为纯根目录
+            if raw_base_url != "#":
+                raw_base_url = re.sub(r'/[^/]+\.(html|md|htm)$', '', raw_base_url, flags=re.IGNORECASE)
+
+            # 提取 RouteManager & Slug 决定的物理页面相对路径
+            web_rel_route = ""
+            if zh_path and static_root and os.path.exists(zh_path):
+                try:
+                    web_rel_route = os.path.relpath(zh_path, static_root).replace('\\', '/')
+                except Exception:
+                    web_rel_route = ""
+
+            if not web_rel_route:
+                web_rel_route = doc_info.get("target_path") or doc_info.get("route_path") or ""
+
+            if not web_rel_route and slug:
+                web_rel_route = f"{slug}.html"
+
+            if web_rel_route.lower().endswith((".md", ".markdown")):
+                web_rel_route = web_rel_route.rsplit(".", 1)[0] + ".html"
+
+            # 有且仅有一次精确拼接
+            if raw_base_url and raw_base_url != "#" and web_rel_route:
+                artifact_url = f"{raw_base_url.rstrip('/')}/{web_rel_route.lstrip('/')}"
             else:
-                artifact_url = chan_cfg.get("repo_url") or "#"
+                artifact_url = raw_base_url if raw_base_url else "#"
+
+            chan_status_clean = (chan_status or "pending").lower()
+            is_hosting_done = chan_status_clean in ("published", "success", "done", "synced")
 
             sync_matrix.append({
                 "channel_id": chan_id,
-                "locale": f"🌐 {display_name} (全站部署)",
+                "locale": f"🌐 {display_name}",
                 "lang_code": "HOSTING",
-                "status": chan_status.lower(),
+                "status": chan_status_clean,
                 "last_sync": last_sync_str,
                 "artifact_url": artifact_url,
                 "tokens": 0,
-                "progress": 100 if chan_status.lower() in ("published", "success") else 0,
+                "progress": 100 if is_hosting_done else 0,
                 "cache_info": "全站托管",
                 "reason": status_info.get("error") or ""
             })
              
-    # B. 提取 Syndication 社交同步渠道
+    # B. 提取 Syndication 分发渠道
     syndication_cfg = getattr(config, "syndication", {}) or {}
     if isinstance(syndication_cfg, dict):
         pass
@@ -405,16 +453,31 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
                 last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(status_info.get("timestamp")))
                  
             display_name = chan_id.replace("_", " ").title()
+            
+            # 🚀 [V105.0] 多维度捕获发布后的真实文章/渠道 URL 直达页面
+            syndication_url = (
+                status_info.get("url")
+                or status_info.get("target_url")
+                or status_info.get("post_url")
+                or status_info.get("web_url")
+                or status_info.get("article_url")
+                or status_info.get("link")
+                or "#"
+            )
+
+            chan_status_clean = (chan_status or "pending").lower()
+            is_syndication_done = chan_status_clean in ("published", "success", "done", "synced")
+
             sync_matrix.append({
                 "channel_id": chan_id,
-                "locale": f"📡 {display_name} (社交同步)",
-                "lang_code": "SOCIAL",
-                "status": chan_status.lower(),
+                "locale": f"📡 {display_name}",
+                "lang_code": "SYNDICATION",
+                "status": chan_status_clean,
                 "last_sync": last_sync_str,
-                "artifact_url": status_info.get("url") or "#",
+                "artifact_url": syndication_url,
                 "tokens": 0,
-                "progress": 100 if chan_status.lower() in ("published", "success") else 0,
-                "cache_info": "外部社区",
+                "progress": 100 if is_syndication_done else 0,
+                "cache_info": "分发渠道",
                 "reason": status_info.get("error") or ""
             })
 

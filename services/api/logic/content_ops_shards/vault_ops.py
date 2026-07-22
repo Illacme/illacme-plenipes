@@ -72,28 +72,44 @@ def save_document_logic(engine, doc_id: str, req: dict):
         return {"success": False, "error": "非法的原稿文件路径名称"}
 
     content = req.get("content", "")
-    metadata = req.get("frontmatter", {})
+    metadata = req.get("frontmatter", {}) or {}
     title, slug = req.get("title"), req.get("slug")
+    
+    from core.logic.ai.ai_logic_hub import AILogicHub
+    if slug:
+        slug = AILogicHub.clean_slug(slug)
+
+    # 🛡️ [双层物理一致性自愈] 剥离可能包含的旧 YAML 头，防叠头部，防特殊字符漏网
+    from core.utils.text import parse_frontmatter
+    old_meta, pure_content, has_head = parse_frontmatter(content)
+    
+    merged_meta = {**old_meta, **metadata}
+    if title:
+        merged_meta["title"] = title
+    if slug:
+        merged_meta["slug"] = slug
+    elif "slug" in merged_meta:
+        # 对已有的 slug 进行物理净化清洗
+        merged_meta["slug"] = AILogicHub.clean_slug(merged_meta["slug"])
 
     # 🛡️ [Slug 唯一性守卫] 物理存盘时也必须通过冲突校验，防止脑裂冲突
-    if slug:
+    final_slug = merged_meta.get("slug")
+    if final_slug:
         conn = engine.meta.sqlite._get_conn()
         conflict_row = conn.execute(
             "SELECT rel_path FROM documents WHERE slug = ? AND rel_path != ?",
-            (slug, doc_id)
+            (final_slug, doc_id)
         ).fetchone()
         if conflict_row:
             conflict_path = dict(conflict_row).get("rel_path", "?")
             return {
                 "success": False,
-                "error": f"Slug 冲突：「{slug}」已被文档 '{conflict_path}' 占用，请更换其他 Slug。",
+                "error": f"Slug 冲突：「{final_slug}」已被文档 '{conflict_path}' 占用，请更换其他 Slug。",
                 "error_code": "SLUG_CONFLICT",
                 "occupied_by": conflict_path
             }
 
-    if title: metadata["title"] = title
-    if slug: metadata["slug"] = slug
-    full_content = inject_frontmatter(content, metadata)
+    full_content = inject_frontmatter(pure_content, merged_meta)
 
     abs_path = resolve_safe_path(engine, doc_id)
     if not abs_path:

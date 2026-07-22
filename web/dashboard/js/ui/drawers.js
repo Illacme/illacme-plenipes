@@ -45,7 +45,7 @@ window.getUIDrawersHTML = () => {
                     </div>
 
                     <!-- 🛡️ Section 3: Sovereign Actions -->
-                    <div class="hub-section" style="margin-top:auto;">
+                    <div class="hub-section">
                         <div class="sector-header">SOVEREIGN ACTIONS</div>
                         
                         <div id="lab-control-panel" class="lab-box">
@@ -55,18 +55,20 @@ window.getUIDrawersHTML = () => {
                             </div>
                             <button id="btn-toggle-lab" class="engine-btn start-mode" onclick="toggleThemeLab()">🔌 启动实时预览引擎 (LIVE PREVIEW)</button>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="sovereign-action-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                            <button class="hub-btn primary-hub-btn" onclick="triggerReDispatch('all', false)" title="对当前文档执行多语种重新分发（复用段落翻译缓存）">
-                                <span class="btn-icon">♻️</span> 重新分发
-                            </button>
-                            <button class="hub-btn warning-hub-btn" onclick="triggerReDispatch('all', true)" title="无视已有的翻译缓存，强制调用大模型重新翻译此文档">
-                                <span class="btn-icon">🧹</span> 强制重译
-                            </button>
-                            <button class="hub-btn danger-hub-btn" style="grid-column: span 2;" onclick="confirmPhysicalDelete()">
-                                <span class="btn-icon">🗑️</span> 物理销毁
-                            </button>
-                        </div>
+                <div class="drawer-footer hub-footer" style="display: flex; gap: 10px; width: 100%; padding: 14px 16px; border-top: 1px solid var(--white-10); background: rgba(var(--bg-dropdown-solid-rgb), 0.95); backdrop-filter: blur(15px); box-sizing: border-box;">
+                    <div class="sovereign-action-grid" style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                        <button class="hub-btn primary-hub-btn" style="flex: 1;" onclick="triggerReDispatch('all', false)" title="对当前文档执行多语种重新分发（复用段落翻译缓存）">
+                            <span class="btn-icon">♻️</span> 分发全网
+                        </button>
+                        <button class="hub-btn warning-hub-btn" style="flex: 1; display: none;" onclick="triggerReDispatch('all', true)" title="无视已有的翻译缓存，强制调用大模型重新翻译此文档">
+                            <span class="btn-icon">🧹</span> 强制重译
+                        </button>
+                        <button class="hub-btn danger-hub-btn" style="flex: 1;" onclick="confirmPhysicalDelete()">
+                            <span class="btn-icon">🗑️</span> 物理销毁
+                        </button>
                     </div>
                 </div>
             </div>

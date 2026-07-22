@@ -120,7 +120,7 @@ async def install_plugin_deps_impl(payload: dict) -> dict:
         npm_path = shutil.which("npm")
         if not npm_path:
             return {
-                "success": False, 
+                "success": False,
                 "error": "物理自愈失败：系统未检测到 Node.js 或 npm 运行环境，请先在宿主机安装 Node.js 后重试。"
             }
         

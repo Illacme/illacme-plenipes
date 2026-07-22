@@ -102,7 +102,6 @@ class CloudflarePagesPublisher(BasePublisher):
 
         # 🛡️ 强制进行依赖自愈检测与高速安装，彻底避开后台动态 npx 拉包网络超时
         import shutil
-        import sys
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         # 仅当不在 pytest 测试环境中运行时执行自愈物理安装，避免测试 Mock 参数断言被二次调用污染
         is_testing = "PYTEST_CURRENT_TEST" in os.environ

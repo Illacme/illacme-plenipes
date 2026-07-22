@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🛡️ [V89.0] 全渠道联动与待同步社交资产检测逻辑单元测试
+🛡️ [V89.0] 全渠道联动与待同步分发资产检测逻辑单元测试
 """
 import os
 import sys
@@ -10,14 +10,14 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.abspath('.'))
 
 def test_get_pending_syndication_logic():
-    """验证获取待同步社交文章列表的过滤算法"""
+    """验证获取待同步分发文章列表的过滤算法"""
     from services.api.logic.dispatch_ops_shards.pipeline_ops import get_pending_syndication_logic
     
     # 1. 模拟 engine, config, meta, sqlite
     engine = MagicMock()
     config = MagicMock()
     
-    # 模拟启用的社交同步配置
+    # 模拟启用的分发同步配置
     config.syndication = {
         "dev_to": {"enabled": True},
         "medium": {"enabled": False}  # 未启用
@@ -28,9 +28,10 @@ def test_get_pending_syndication_logic():
     meta = MagicMock()
     sqlite = MagicMock()
     
-    # doc1: dev_to 已成功 (不应在 pending)
+    # doc1: dev_to 已成功 - success (不应在 pending)
     # doc2: dev_to 失败 (应该在 pending)
     # doc3: dev_to 没同步过 (应该在 pending)
+    # doc4: dev_to 已成功 - done (不应在 pending)
     all_docs = [
         {
             "rel_path": "docs/doc1.md",
@@ -50,6 +51,13 @@ def test_get_pending_syndication_logic():
             "rel_path": "docs/doc3.md",
             "title": "Document 3",
             "publish_status": {}
+        },
+        {
+            "rel_path": "docs/doc4.md",
+            "title": "Document 4",
+            "publish_status": {
+                "dev_to": {"status": "done", "timestamp": 12345}
+            }
         }
     ]
     sqlite.get_all_documents.return_value = all_docs
@@ -62,6 +70,7 @@ def test_get_pending_syndication_logic():
     assert "docs/doc2.md" in paths
     assert "docs/doc3.md" in paths
     assert "docs/doc1.md" not in paths
+    assert "docs/doc4.md" not in paths
 
 @patch("os.path.exists")
 def test_telemetry_ops_append_channels(mock_exists):
@@ -84,7 +93,7 @@ def test_telemetry_ops_append_channels(mock_exists):
         "cloudflare_pages": {"enabled": False}
     }
     
-    # 模拟启用的 社交渠道
+    # 模拟启用的 分发渠道
     config.syndication = {
         "dev_to": {"enabled": True}
     }
@@ -110,14 +119,14 @@ def test_telemetry_ops_append_channels(mock_exists):
             res = get_dispatch_status_logic(engine, "docs/test.md")
             
             sync_matrix = res["sync_matrix"]
-            # 应包含: 默认语种卡片 + 1个 Hosting 卡片 + 1个 Social 卡片
+            # 应包含: 默认语种卡片 + 1个 Hosting 卡片 + 1个 Syndication 卡片
             assert len(sync_matrix) == 3
             
             hosting_card = next(c for c in sync_matrix if c["lang_code"] == "HOSTING")
-            assert hosting_card["locale"] == "🌐 Github Pages (全站部署)"
+            assert hosting_card["locale"] == "🌐 Github Pages"
             assert hosting_card["status"] == "success"
             
-            social_card = next(c for c in sync_matrix if c["lang_code"] == "SOCIAL")
-            assert social_card["locale"] == "📡 Dev To (社交同步)"
-            assert social_card["status"] == "failed"
-            assert social_card["reason"] == "API Limit"
+            syndication_card = next(c for c in sync_matrix if c["lang_code"] == "SYNDICATION")
+            assert syndication_card["locale"] == "📡 Dev To"
+            assert syndication_card["status"] == "failed"
+            assert syndication_card["reason"] == "API Limit"

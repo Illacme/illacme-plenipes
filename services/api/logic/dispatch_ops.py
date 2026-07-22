@@ -30,5 +30,5 @@ def destroy_artifact_facade(engine, doc_id: str) -> dict:
     return destroy_artifact_logic(engine, doc_id)
 
 def get_pending_syndication_facade(engine) -> dict:
-    """获取待同步至社交渠道的稿件信息门面中介"""
+    """获取待同步至分发渠道的稿件信息门面中介"""
     return get_pending_syndication_logic(engine)

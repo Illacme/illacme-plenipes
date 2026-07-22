@@ -27,6 +27,14 @@ def run_hosting_plugin_dry_run(
         }
         logs.append(log_func("INFO", f"🌐 [代理] 已装载本地网络通道代理: {proxy_url}"))
 
+    # 动态感应治理中心配置的第三方 API 超时时间 (默认 15s)
+    try:
+        from core.config.config_models import load_config
+        sys_cfg = load_config()
+        net_timeout = getattr(getattr(sys_cfg, "system", None), "network_timeout", 15) or 15
+    except Exception:
+        net_timeout = 15
+
     if plugin_id == "cloudflare_pages":
         account_id = settings.get("account_id", "")
         # 对齐前端的字段：Wrangler 配置中使用的是 token，兼容 api_token
@@ -111,9 +119,15 @@ def run_hosting_plugin_dry_run(
                 "Accept": "application/vnd.github.v3+json"
             }
             try:
-                resp = requests.get(url, headers=headers, proxies=proxies, timeout=6)
+                resp = requests.get(url, headers=headers, proxies=proxies, timeout=net_timeout)
                 if resp.status_code == 200:
-                    logs.append(log_func("SUCCESS", f"🟢 [成功] GitHub API 鉴权校验通过，成功探测到仓库 '{repo}'。"))
+                    data = resp.json() if hasattr(resp, "json") else {}
+                    is_private = data.get("private", False)
+                    if is_private:
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] API 鉴权通过！成功探测到私有仓库 '{repo}' (🔒 私有仓库在主页公开列表中隐私隐藏)。"))
+                        logs.append(log_func("INFO", "💡 [提示] GitHub 免费版的私有仓库默认无法挂载 Pages。若访问网页报 404，请前往 GitHub 仓库 (Settings -> Change visibility) 设为 Public (公开仓库)。"))
+                    else:
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] GitHub API 鉴权校验通过，成功探测到公开仓库 '{repo}'。"))
                 elif resp.status_code in [401, 403]:
                     logs.append(log_func("ERROR", "❌ [错误] GitHub Token 校验失败：访问令牌无效或已过期，请核对权限。"))
                     success = False
@@ -123,15 +137,32 @@ def run_hosting_plugin_dry_run(
                 else:
                     logs.append(log_func("ERROR", f"❌ [错误] GitHub API 返回异常状态码 {resp.status_code}: {resp.text[:100]}"))
                     success = False
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [网络] 连接 GitHub API 超时或出错: {e}。"))
-                success = False
+            except Exception:
+                # 🛡️ 物理自动重试 1 次（防止瞬时网络波动）
+                try:
+                    logs.append(log_func("INFO", "📡 [重试] 正在通过本地代理尝试第 2 次连接 GitHub API..."))
+                    resp = requests.get(url, headers=headers, proxies=proxies, timeout=net_timeout)
+                    if resp.status_code == 200:
+                        data = resp.json() if hasattr(resp, "json") else {}
+                        is_private = data.get("private", False)
+                        if is_private:
+                            logs.append(log_func("SUCCESS", f"🟢 [成功] 重试成功！API 鉴权通过，探测到私有仓库 '{repo}' (🔒 主页公开列表隐身)。"))
+                        else:
+                            logs.append(log_func("SUCCESS", f"🟢 [成功] 重试成功！GitHub API 鉴权校验通过，探测到仓库 '{repo}'。"))
+                        success = True
+                    else:
+                        logs.append(log_func("ERROR", f"❌ [错误] GitHub API 重试返回异常状态码 {resp.status_code}"))
+                        success = False
+                except Exception as retry_err:
+                    logs.append(log_func("WARN", f"⚠️ [网络] 连接 GitHub API 超时或出错: {retry_err}。"))
+                    logs.append(log_func("INFO", "💡 [自愈建议] 1. 请核对本地代理 127.0.0.1:10808 节点连接性；2. 若仅部署网页，亦可使用 SSH 格式 (git@github.com:owner/repo.git) 避开 API 限频。"))
+                    success = False
         else:
             # 免密 SSH 探测或不带 Token 的公开仓库探测
             logs.append(log_func("INFO", "📡 [探测] 当前未配置 HTTPS Token，正在测试公开仓库的可达性..."))
             url = f"https://api.github.com/repos/{repo}"
             try:
-                resp = requests.get(url, proxies=proxies, timeout=6)
+                resp = requests.get(url, proxies=proxies, timeout=15)
                 if resp.status_code == 200:
                     logs.append(log_func("SUCCESS", f"🟢 [成功] 成功检测到公开仓库 '{repo}'。由于使用 SSH 免密部署，请确认您的本地 SSH Key 已绑定至 GitHub。"))
                 else:
@@ -156,7 +187,7 @@ def run_hosting_plugin_dry_run(
             "Authorization": f"Bearer {token}"
         }
         try:
-            resp = requests.get(url, headers=headers, proxies=proxies, timeout=6)
+            resp = requests.get(url, headers=headers, proxies=proxies, timeout=15)
             if resp.status_code == 200:
                 logs.append(log_func("SUCCESS", "🟢 [成功] Netlify 访问令牌与站点 ID 验证通过！"))
             elif resp.status_code in [401, 403]:
@@ -185,7 +216,7 @@ def run_hosting_plugin_dry_run(
             "Authorization": f"Bearer {token}"
         }
         try:
-            resp = requests.get(url, headers=headers, proxies=proxies, timeout=6)
+            resp = requests.get(url, headers=headers, proxies=proxies, timeout=15)
             if resp.status_code == 200:
                 logs.append(log_func("SUCCESS", "🟢 [成功] Vercel 访问令牌校验通过！"))
             elif resp.status_code in [401, 403]:
@@ -212,7 +243,7 @@ def run_hosting_plugin_dry_run(
             parsed_url = urlparse(deploy_hook_url)
             domain_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
             
-            resp = requests.head(domain_url, proxies=proxies, timeout=6)
+            resp = requests.head(domain_url, proxies=proxies, timeout=15)
             logs.append(log_func("INFO", f"🟢 [网络] {plugin_id.capitalize()} 网关可达，TCP 三次握手完成 (HTTP {resp.status_code})。"))
             logs.append(log_func("SUCCESS", f"🟢 [成功] {plugin_id.capitalize()} 部署钩子网络连通性测试通过！"))
         except Exception as e:

@@ -19,6 +19,7 @@ import hashlib
 import base64
 import json
 import time
+import threading
 from typing import Dict, Any, Optional
 
 import requests
@@ -62,6 +63,10 @@ def _build_ghost_jwt(key_id: str, hex_secret: str) -> str:
 
     return f"{header_b64}.{payload_b64}.{signature_b64}"
 
+
+# 全局平滑流控防线：强制控制两次发送的间隔时间在 1.5 秒以上
+_last_ghost_time = 0.0
+_ghost_lock = threading.Lock()
 
 class GhostSyndicator(BaseSyndicator):
     """
@@ -107,6 +112,9 @@ class GhostSyndicator(BaseSyndicator):
 
     def push(self, payload: Dict[str, Any]):
         """执行物理推流到 Ghost Admin API"""
+        import time
+        import random
+
         if not self.url or not self.admin_api_key:
             tlog.warning("⚠️ [Ghost] 缺少 url 或 admin_api_key，分发跳过。")
             return
@@ -119,67 +127,113 @@ class GhostSyndicator(BaseSyndicator):
 
         key_id, hex_secret = key_parts[0], key_parts[1]
 
-        try:
-            jwt_token = _build_ghost_jwt(key_id, hex_secret)
-        except ValueError as e:
-            tlog.error(f"❌ [Ghost] JWT 生成失败，请检查 admin_api_key 的 secret 是否为合法十六进制: {e}")
-            raise
+        # 🛡️ 1. 全局平滑流控防线：强制控制两次发送的间隔时间在 1.5 秒以上 (加上线程锁防止竞态穿透)
+        global _last_ghost_time
 
-        headers = {
-            "Authorization": f"Ghost {jwt_token}",
-            "Content-Type": "application/json",
-            "Accept-Version": "v3.0",
-        }
-
-        post_data = payload.get("posts", [{}])[0]
-        slug = post_data.get("slug", "")
-        api_base = f"{self.url}/ghost/api/admin"
-
-        try:
-            # 幂等检查：查询同 Slug 是否已存在
-            existing_id: Optional[str] = None
-            if self.update_existing and slug:
-                existing_id = self._find_post_id_by_slug(api_base, headers, slug)
-
-            if existing_id:
-                # 更新现有文章（PUT 需要附带 updated_at 做乐观锁）
-                tlog.info(f"📡 [Ghost] 正在更新现有文章 (ID: {existing_id}): {post_data.get('title')}")
-                # 获取当前 updated_at
-                get_resp = requests.get(
-                    f"{api_base}/posts/{existing_id}/",
-                    headers=headers,
-                    timeout=self.timeout,
-                )
-                get_resp.raise_for_status()
-                current_updated_at = get_resp.json().get("posts", [{}])[0].get("updated_at")
-                post_data["updated_at"] = current_updated_at
-
-                resp = requests.put(
-                    f"{api_base}/posts/{existing_id}/",
-                    json={"posts": [post_data]},
-                    headers=headers,
-                    timeout=self.timeout,
-                )
+        while True:
+            elapsed = time.time() - _last_ghost_time
+            if elapsed < 1.5:
+                time.sleep(1.5 - elapsed)
             else:
-                # 创建新文章
-                tlog.info(f"📡 [Ghost] 正在创建新文章: {post_data.get('title')}")
-                resp = requests.post(
-                    f"{api_base}/posts/",
-                    json=payload,
-                    headers=headers,
-                    timeout=self.timeout,
-                )
+                break
 
-            if resp.status_code in (200, 201):
-                result_post = resp.json().get("posts", [{}])[0]
-                post_url = result_post.get("url", "")
-                tlog.info(f"✨ [Ghost 同步成功] URL: {post_url}")
-            else:
-                raise RuntimeError(f"Ghost Admin API 报错 ({resp.status_code}): {resp.text}")
+        _last_ghost_time = time.time()
 
-        except requests.RequestException as e:
-            tlog.error(f"🛑 [Ghost] 网络请求失败: {e}")
-            raise RuntimeError(f"Ghost 网络请求失败: {e}") from e
+        # 🛡️ 2. 指数退避重试循环 (对冲 429 频控)
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                jwt_token = _build_ghost_jwt(key_id, hex_secret)
+            except ValueError as e:
+                tlog.error(f"❌ [Ghost] JWT 生成失败，请检查 admin_api_key 的 secret 是否为合法十六进制: {e}")
+                raise
+
+            headers = {
+                "Authorization": f"Ghost {jwt_token}",
+                "Content-Type": "application/json",
+                "Accept-Version": "v3.0",
+            }
+
+            post_data = payload.get("posts", [{}])[0]
+            slug = post_data.get("slug", "")
+            api_base = f"{self.url}/ghost/api/admin"
+
+            try:
+                # 幂等检查：查询同 Slug 是否已存在
+                existing_id: Optional[str] = None
+                if self.update_existing and slug:
+                    existing_id = self._find_post_id_by_slug(api_base, headers, slug)
+
+                if existing_id:
+                    # 更新现有文章（PUT 需要附带 updated_at 做乐观锁）
+                    tlog.info(f"📡 [Ghost] 正在更新现有文章 (ID: {existing_id}): {post_data.get('title')} (第 {attempt + 1} 次尝试)")
+                    # 获取当前 updated_at
+                    get_resp = requests.get(
+                        f"{api_base}/posts/{existing_id}/",
+                        headers=headers,
+                        timeout=self.timeout,
+                    )
+                    _last_ghost_time = time.time()
+
+                    if get_resp.status_code == 429:
+                        if attempt < max_attempts - 1:
+                            sleep_time = 3.0 * (2 ** attempt) + random.uniform(0.1, 0.5)
+                            time.sleep(sleep_time)
+                            continue
+                        else:
+                            raise RuntimeError("对端 Ghost 接口频控限制 (429 Too Many Requests)，请稍后重试。")
+
+                    get_resp.raise_for_status()
+                    current_updated_at = get_resp.json().get("posts", [{}])[0].get("updated_at")
+                    post_data["updated_at"] = current_updated_at
+
+                    resp = requests.put(
+                        f"{api_base}/posts/{existing_id}/",
+                        json={"posts": [post_data]},
+                        headers=headers,
+                        timeout=self.timeout,
+                    )
+                else:
+                    # 创建新文章
+                    tlog.info(f"📡 [Ghost] 正在创建新文章: {post_data.get('title')} (第 {attempt + 1} 次尝试)")
+                    resp = requests.post(
+                        f"{api_base}/posts/",
+                        json=payload,
+                        headers=headers,
+                        timeout=self.timeout,
+                    )
+                
+                _last_ghost_time = time.time()
+
+                if resp.status_code == 429:
+                    if attempt < max_attempts - 1:
+                        sleep_time = 3.0 * (2 ** attempt) + random.uniform(0.1, 0.5)
+                        time.sleep(sleep_time)
+                        continue
+                    else:
+                        raise RuntimeError("对端 Ghost 接口频控限制 (429 Too Many Requests)，请稍后重试。")
+
+                if resp.status_code in (200, 201):
+                    result_post = resp.json().get("posts", [{}])[0]
+                    post_url = result_post.get("url", "")
+                    tlog.info(f"✨ [Ghost 同步成功] URL: {post_url}")
+                    return {"url": post_url}
+                elif resp.status_code == 401:
+                    raise RuntimeError("Ghost 认证失败（401）：JWT 鉴权未通过，请检查 admin_api_key 格式与 Secret。")
+                else:
+                    raise RuntimeError(f"Ghost Admin API 报错 ({resp.status_code}): {resp.text}")
+
+            except requests.RequestException as req_err:
+                if attempt < max_attempts - 1:
+                    sleep_time = 2.0 + random.uniform(0.1, 0.5)
+                    time.sleep(sleep_time)
+                    continue
+                else:
+                    tlog.error(f"🛑 [Ghost] 网络请求失败: {req_err}")
+                    raise RuntimeError(f"Ghost 网络请求失败: {req_err}") from req_err
+            except Exception as e:
+                tlog.error(f"🛑 [Ghost] 失败: {e}")
+                raise e
 
     # ------------------------------------------------------------------
     # 内部辅助方法

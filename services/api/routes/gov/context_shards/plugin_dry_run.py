@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 🛡️ [V74.91] Gov Plugin Dry Run Driver
-职责：承载物理通道连接测试引擎，负责分流委派至具体物理介质或社交端点自检。
+职责：承载物理通道连接测试引擎，负责分流委派至具体物理介质或分发渠道端点自检。
 """
 
 async def dry_run_plugin_impl(payload: dict) -> dict:
@@ -34,7 +34,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         "tencent_cos", "qiniu_kodo", "upyun_uss", "loli_io", "superbed",
         "lsky_pro", "sftp"
     ]
-    social_plugins = ["wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost"]
+    syndication_plugins = ["wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost"]
     hosting_plugins = ["cloudflare_pages", "github_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
 
     # 对图床/托管/分发插件执行定制化连接探测
@@ -44,7 +44,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前图床通道在品牌中处于未激活状态，测试将继续验证输入参数。"))
         success = run_media_plugin_dry_run(plugin_id, settings, logs, log)
-    elif plugin_id in social_plugins:
+    elif plugin_id in syndication_plugins:
         from .plugin_dry_run_social import run_social_plugin_dry_run
         enabled = settings.get("enabled", True)
         if not enabled:

@@ -104,8 +104,9 @@ class VercelPublisher(BasePublisher):
 
             if result.returncode != 0:
                 error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
-                tlog.error(f"❌ [Vercel] 部署失败: {error_msg}")
-                return {"status": "error", "message": f"Vercel deploy failed: {error_msg}"}
+                healed_err = self._add_autotherapy_suggestion(error_msg)
+                tlog.error(f"❌ [Vercel] 部署失败: {healed_err}")
+                return {"status": "error", "message": f"Vercel deploy failed: {healed_err}"}
 
             # ── 5. 解析部署 URL ──────────────────────────
             # Vercel CLI 在成功时会将部署 URL 输出到 stdout
@@ -127,8 +128,25 @@ class VercelPublisher(BasePublisher):
             tlog.error(f"❌ [Vercel] 找不到 Vercel CLI: '{self.vercel_path}'")
             return {"status": "error", "message": f"Vercel CLI not found: '{self.vercel_path}'"}
         except Exception as e:
-            tlog.error(f"❌ [Vercel] 部署异常: {e}")
-            return {"status": "error", "message": str(e)}
+            healed_err = self._add_autotherapy_suggestion(str(e))
+            tlog.error(f"❌ [Vercel] 部署异常: {healed_err}")
+            return {"status": "error", "message": healed_err}
+
+    def _add_autotherapy_suggestion(self, err_msg: str) -> str:
+        """
+        💡 为 Vercel 错误注入友好免密授权物理自愈提示。
+        """
+        if not err_msg:
+            return err_msg
+
+        auth_keywords = ["unauthorized", "forbidden", "token", "login", "expired", "invalid token"]
+        if any(kw in err_msg.lower() for kw in auth_keywords):
+            return (
+                f"{err_msg}\n\n"
+                "💡 [自愈建议] Vercel 授权 Token 无效或已过期。\n"
+                "推荐操作：请在治理中心配置中，点击「🔑 本地一键免密授权」，系统将后台唤醒授权浏览器并自动回填密钥，免去手动获取的麻烦！"
+            )
+        return err_msg
 
     def is_healthy(self) -> bool:
         """检查 Vercel CLI 可用性与自愈"""

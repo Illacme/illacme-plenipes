@@ -67,7 +67,7 @@ async def destroy_artifact(doc_id: str):
 @router.get("/api/vault/pending-syndication", dependencies=[Depends(verify_token)])
 async def get_pending_syndication():
     """
-    📡 获取待同步至社交渠道的稿件信息（用于前端同步自愈引导）
+    📡 获取待同步至分发渠道的稿件信息（用于前端同步自愈引导）
     """
     engine = get_global_engine()
     if not engine:
@@ -273,7 +273,7 @@ async def github_ssh_status():
             return {
                 "ssh_ok": True,
                 "username": match.group(1),
-                "message": f"探测到本地 SSH 密钥与 GitHub 连通极佳，您可以使用 SSH 地址免密克隆与发布！"
+                "message": "探测到本地 SSH 密钥与 GitHub 连通极佳，您可以使用 SSH 地址免密克隆与发布！"
             }
     except Exception:
         pass

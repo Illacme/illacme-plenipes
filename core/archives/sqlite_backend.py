@@ -139,6 +139,8 @@ class SQLiteBackend(SQLiteReviewMixin):
     def get_document(self, rel_path):
         conn = self._get_conn()
         row = conn.execute("SELECT * FROM documents WHERE rel_path = ?", (rel_path,)).fetchone()
+        if not row:
+            row = conn.execute("SELECT * FROM documents WHERE LOWER(rel_path) = LOWER(?)", (rel_path,)).fetchone()
         if not row: return None
         data = dict(row)
         extra = json.loads(data.pop("metadata_json") or "{}")

@@ -187,79 +187,100 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     return;
                 }
                 
-                // 弱阻断 (Warnings)
+                // 弱阻断 (Warnings) 与就绪点火确认统一收拢至 Sovereign-UX 确认弹窗
                 if (precheckRes.warnings && precheckRes.warnings.length > 0) {
-                    if (window.Swal) {
-                        const warningsListHtml = precheckRes.warnings.map(w => {
-                            const docPath = w.doc_id ? (w.doc_id.startsWith('*') ? w.doc_id.substring(1) : w.doc_id) : '';
-                            const docLinkHtml = docPath && docPath !== 'Unknown'
-                                ? `<a href="javascript:void(0)" onclick="if (window.Swal) window.Swal.close(); if (typeof window.openEditor === 'function') { window.openEditor('${docPath.replace(/'/g, "\\\\'")}') } else { console.warn('openEditor not found') }" style="color: var(--accent-secondary, #3085d6); text-decoration: underline; cursor: pointer; font-weight: bold;">${docPath}</a>`
-                                : '未知文档';
-                            return `<div style="padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); text-align: left; word-break: break-all; line-height: 1.4;">
-                                <span style="color: var(--accent-orange, #e67e22); font-weight: 600; font-family: monospace;">• ${w.asset}</span>
-                                <br>
-                                <span style="font-size: 0.85em; color: #888; padding-left: 10px;">引用源: ${docLinkHtml}</span>
-                            </div>`;
-                        }).join('');
+                    // warnings 会在下方的统一弹窗中渲染
+                }
+            }
+        }
 
-                        const mode = precheckRes.publishing_mode || (window.settingsData && window.settingsData.governance && window.settingsData.governance.publishing_mode) || 'basic';
-                        let modeTipHtml = '';
-                        if (mode === 'basic') {
-                            modeTipHtml = `<div style="margin-top: 10px; padding: 10px; border-radius: 6px; background: rgba(230, 126, 34, 0.1); border: 1px solid rgba(230, 126, 34, 0.2); text-align: left; font-size: 0.9em; color: #d35400;">
-                                💡 <b>当前印记模式：基础模式 (Basic)</b><br>
-                                此模式下不启用 AI 翻译，多语言译文直接透传中文原文，校对工作台将显示中文原文。
-                            </div>`;
-                        } else if (mode === 'enhanced') {
-                            modeTipHtml = `<div style="margin-top: 10px; padding: 10px; border-radius: 6px; background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.2); text-align: left; font-size: 0.9em; color: #2980b9;">
-                                💡 <b>当前印记模式：增强模式 (Enhanced)</b><br>
-                                此模式下仅对 SEO 信息执行 AI 翻译，正文直接透传中文原文，校对工作台正文区域将显示中文。
-                            </div>`;
-                        } else {
-                            modeTipHtml = `<div style="margin-top: 10px; padding: 10px; border-radius: 6px; background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.2); text-align: left; font-size: 0.9em; color: #27ae60;">
-                                💡 <b>当前印记模式：全球出版模式 (Global)</b><br>
-                                已启用全量 AI 多语言翻译及主权隔离防护。
-                            </div>`;
-                        }
+        // 🚀 [Sovereign-UX] 预检完美通过或仅有 warnings 时，统一先弹出精美的确认弹窗
+        const mode = (precheckRes && precheckRes.publishing_mode) || (window.settingsData && window.settingsData.governance && window.settingsData.governance.publishing_mode) || 'basic';
+        const modeText = mode === 'basic' ? '基础模式 (Basic) — 多语言透传' :
+                         mode === 'enhanced' ? '增强模式 (Enhanced) — SEO字段AI翻译' : '全球出版模式 (Global) — 全量AI翻译';
 
-                        const warningHtml = `
-                            预检探测到 <b>${precheckRes.warnings.length}</b> 处本地物理资产文件丢失或路径错误。<br>
-                            若强制发布，静态网站极大概率会出现破图。<br><br>
-                            ${modeTipHtml}
-                            <br>
-                            <details style="text-align: left; background: rgba(0, 0, 0, 0.03); padding: 10px; border-radius: 6px; border: 1px solid rgba(0, 0, 0, 0.08);">
-                                <summary style="cursor: pointer; font-weight: bold; color: var(--accent-secondary, #3085d6); outline: none; user-select: none;">
-                                    查看具体的丢失资产清单
-                                </summary>
-                                <div style="max-height: 180px; overflow-y: auto; margin-top: 8px; font-size: 0.95em;">
-                                    ${warningsListHtml}
-                                </div>
-                            </details>
-                            <br>
-                            是否忽略警告，强行点火发布？
-                        `;
+        const hasWarnings = precheckRes && precheckRes.warnings && precheckRes.warnings.length > 0;
+        const statusHtml = hasWarnings ? 
+            `<span style="color: #e67e22; font-weight: bold;">⚠️ 预检警告 (有 ${precheckRes.warnings.length} 处资产丢失)</span>` :
+            `<span style="color: #00ff88; font-weight: bold;">🟢 物理环境完美就绪 (0 资产丢失)</span>`;
 
-                        const result = await window.Swal.fire({
-                            title: '⚠️ 物理资产丢失预警',
-                            html: warningHtml,
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: '强行发布 (忽略破图)',
-                            cancelButtonText: '取消并去修复',
-                            confirmButtonColor: '#d33',
-                            cancelButtonColor: '#3085d6'
-                        });
-                        if (!result.isConfirmed) {
-                            if (typeof window.addAudit === 'function') window.addAudit('已取消发布，请检查并补齐丢失的物理资产。', 'info');
-                            try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch(e) {}
-                            return;
-                        }
-                    } else {
-                        const ok = confirm(`预检探测到 ${precheckRes.warnings.length} 处资产丢失。确定要强行发布吗？`);
-                        if (!ok) {
-                            try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch(e) {}
-                            return;
-                        }
+        let warningDetailsHtml = '';
+        if (hasWarnings) {
+            const warningsListHtml = precheckRes.warnings.map(w => {
+                const docPath = w.doc_id ? (w.doc_id.startsWith('*') ? w.doc_id.substring(1) : w.doc_id) : '';
+                const docLinkHtml = docPath && docPath !== 'Unknown'
+                    ? `<a href="javascript:void(0)" onclick="if (window.Swal) window.Swal.close(); if (typeof window.openEditor === 'function') { window.openEditor('${docPath.replace(/'/g, "\\\\'")}') } else { console.warn('openEditor not found') }" style="color: var(--accent-secondary, #3085d6); text-decoration: underline; cursor: pointer; font-weight: bold;">${docPath}</a>`
+                    : '未知文档';
+                return `<div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; word-break: break-all; line-height: 1.4;">
+                    <span style="color: #e67e22; font-weight: 600; font-family: monospace;">• ${w.asset}</span>
+                    <br>
+                    <span style="font-size: 0.85em; color: #888; padding-left: 10px;">引用源: ${docLinkHtml}</span>
+                </div>`;
+            }).join('');
+
+            warningDetailsHtml = `
+                <br>
+                <details style="text-align: left; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <summary style="cursor: pointer; font-weight: bold; color: #3085d6; outline: none; user-select: none;">
+                        查看具体丢失的 ${precheckRes.warnings.length} 处资产清单
+                    </summary>
+                    <div style="max-height: 120px; overflow-y: auto; margin-top: 8px; font-size: 0.9em; color: #ccc;">
+                        ${warningsListHtml}
+                    </div>
+                </details>
+            `;
+        }
+
+        const confirmHtml = `
+            <div style="text-align: left; font-size: 0.95rem; line-height: 1.6; color: #e0e0e0;">
+                <p style="margin-bottom: 12px; color: #aaa;">启动全域全息同步流水线，系统将执行全量静态页面生成，并分发对齐至已启用的第三方渠道：</p>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px; margin-bottom: 16px; backdrop-filter: blur(10px);">
+                    <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                        <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">⚙️ 出版模式:</span>
+                        <span style="color: #fff; font-weight: 500;">${modeText}</span>
+                    </div>
+                    <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                        <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">🛡️ 预检状态:</span>
+                        <span>${statusHtml}</span>
+                    </div>
+                    <div style="display: flex; align-items: flex-start;">
+                        <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">📡 渠道矩阵:</span>
+                        <span style="color: #fff; font-weight: 500; flex: 1;">一键推送至已开启的托管平台与内容分发渠道</span>
+                    </div>
+                </div>
+                ${warningDetailsHtml}
+                <p style="text-align: center; font-weight: bold; margin-top: 15px; color: #fff; font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
+            </div>
+        `;
+
+        if (!force) {
+            if (window.Swal) {
+                const result = await window.Swal.fire({
+                    title: '🚀 全域全息发布就绪预检',
+                    html: confirmHtml,
+                    icon: hasWarnings ? 'warning' : 'info',
+                    showCancelButton: true,
+                    confirmButtonText: '🚀 确认点火发布',
+                    cancelButtonText: '取消并返回',
+                    confirmButtonColor: '#00ff88',
+                    cancelButtonColor: '#d33',
+                    background: 'rgba(20, 20, 25, 0.95)',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'glass-modal-swal'
                     }
+                });
+
+                if (!result.isConfirmed) {
+                    if (typeof window.addAudit === 'function') window.addAudit('已取消全域发布。', 'info');
+                    try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch(e) {}
+                    return;
+                }
+            } else {
+                const ok = confirm(`全域同步准备完毕。模式: ${modeText}。确定要执行发布吗？`);
+                if (!ok) {
+                    try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch(e) {}
+                    return;
                 }
             }
         }

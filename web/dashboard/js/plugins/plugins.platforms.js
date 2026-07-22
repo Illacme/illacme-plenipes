@@ -126,6 +126,7 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
+                ${renderSettingsItem('访问令牌 (Personal Access Token / Token)', `publish_control.direct_upload.github_pages.token`, cfg.token || cfg.git_token || '', 'password', { placeholder: "例如: ghp_xxxxxxxxxxxx (使用 HTTPS 协议建仓/推送时必填，SSH 免密可留空)", description: "GitHub 个人访问令牌，需包含 repo 权限。使用 SSH 免密部署时可留空。" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.github_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git", description: "您的 GitHub 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.github_pages.branch`, cfg.branch || 'gh-pages', 'text', { placeholder: "例如: gh-pages" })}
                 ${renderPlatformAdvancedGroup('高级 Git 参数 (CNAME / 代理 / 用户身份)', `
@@ -148,10 +149,10 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
+                ${renderSettingsItem('私人令牌 (Access Token)', `publish_control.direct_upload.gitee_pages.access_token`, cfg.access_token || cfg.token || '', 'password', { placeholder: "例如: Gitee Personal Access Token" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.gitee_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@gitee.com:username/repo.git", description: "您的 Gitee 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.gitee_pages.branch`, cfg.branch || 'gitee-pages', 'text', { placeholder: "例如: gitee-pages" })}
-                ${renderPlatformAdvancedGroup('高级 Gitee 参数 (私人令牌 / 代理 / 用户身份)', `
-                    ${renderSettingsItem('私人令牌 (Access Token)', `publish_control.direct_upload.gitee_pages.access_token`, cfg.access_token, 'password', { placeholder: "例如: Gitee Personal Access Token" })}
+                ${renderPlatformAdvancedGroup('高级 Gitee 参数 (代理 / 用户身份)', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.gitee_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                     ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitee_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text')}
                     ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitee_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text')}
@@ -169,10 +170,10 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
+                ${renderSettingsItem('访问令牌 (Personal Access Token)', `publish_control.direct_upload.gitlab_pages.access_token`, cfg.access_token || cfg.token || '', 'password', { placeholder: "GitLab Personal Access Token" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.gitlab_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@gitlab.com:username/repo.git", description: "您的 GitLab 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.gitlab_pages.branch`, cfg.branch || 'main', 'text', { placeholder: "例如: main" })}
-                ${renderPlatformAdvancedGroup('高级 GitLab 参数 (Access Token / 代理 / 用户身份)', `
-                    ${renderSettingsItem('Personal Access Token', `publish_control.direct_upload.gitlab_pages.access_token`, cfg.access_token, 'password', { placeholder: "GitLab Personal Access Token" })}
+                ${renderPlatformAdvancedGroup('高级 GitLab 参数 (代理 / 用户身份)', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.gitlab_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
                     ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitlab_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text')}
                     ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitlab_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text')}

@@ -31,7 +31,7 @@ def run_media_plugin_dry_run(
         endpoint = settings.get("endpoint", "https://telegra.ph").rstrip("/")
         logs.append(log_func("INFO", f"📡 [探测] 正在连接至 Telegraph 免配图床端点: {endpoint}"))
         try:
-            resp = requests.get(endpoint, proxies=proxies, timeout=6)
+            resp = requests.get(endpoint, proxies=proxies, timeout=15)
             logs.append(log_func("INFO", f"🟢 [探测] TCP 三次握手成功，对端端点返回 HTTP {resp.status_code}。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立物理连接至 Telegraph 端点 ({endpoint}): {e}。这可能是本地 network 环境限制，若生产环境有代理，可安全忽略此警告。"))
@@ -191,7 +191,7 @@ def run_media_plugin_dry_run(
             logs.append(log_func("ERROR", "❌ [错误] 兰空图床配置信息中包含无效占位符。"))
             return False
 
-        logs.append(log_func("INFO", f"📡 [探测] 正在连接 兰空图床 API 校验 Token 真实有效性..."))
+        logs.append(log_func("INFO", "📡 [探测] 正在连接 兰空图床 API 校验 Token 真实有效性..."))
         profile_url = f"{endpoint}/api/v1/profile"
         headers = {
             "Authorization": f"Bearer {token}",

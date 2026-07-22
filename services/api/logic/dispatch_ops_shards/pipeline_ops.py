@@ -9,7 +9,7 @@ import os
 from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
 from core.utils.tracing import tlog
 
-def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clear_cache, doc_id, target_channel=None):
+def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clear_cache, doc_id, target_channel=None, skip_syndication=False):
     try:
         # 1. 物理编译生成本地网页
         engine.sync_document(
@@ -70,19 +70,24 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
                     tlog.warning(f"⚠️ [分发中枢] 未能找到已激活的托管通道: {target_channel}")
             return
 
-        # 3. 🚀 [物理社交全渠道/单通道联动]
+        # 🚀 [V110.1] 强制重译/重编译跳过分发渠道：若显示请求 skip_syndication，完成本地网页重编译后即可退出
+        if skip_syndication:
+            tlog.info(f"💡 [分发中枢] {doc_id} 属于本地重译/编译任务，已跳过外部分发渠道同步。")
+            return
+
+        # 3. 🚀 [物理分发全渠道/单通道联动]
         syndication_cfg = getattr(engine.config, "syndication", {}) or {}
         site_url = getattr(engine.config, "site_url", "")
         sys_tuning = {"vault_root": getattr(engine, "vault_root", os.getcwd())}
         
-        # 找出已启用并匹配的社交同步渠道
-        enabled_social_channels = []
+        # 找出已启用并匹配的分发同步渠道
+        enabled_syndication_channels = []
         for chan_id, chan_cfg in syndication_cfg.items():
             if isinstance(chan_cfg, dict) and chan_cfg.get("enabled"):
                 if not target_channel or chan_id == target_channel:
-                    enabled_social_channels.append((chan_id, chan_cfg))
+                    enabled_syndication_channels.append((chan_id, chan_cfg))
                 
-        if enabled_social_channels:
+        if enabled_syndication_channels:
             from core.syndication.hub import ContentSyndicator
             syndicator = ContentSyndicator(
                 syndication_cfg=syndication_cfg,
@@ -102,13 +107,13 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
                 fm, body = extract_frontmatter(content)
                 
                 # 记录正在分发状态
-                for chan_id, _ in enabled_social_channels:
+                for chan_id, _ in enabled_syndication_channels:
                     engine.meta.update_egress_status(doc_id, chan_id, "syncing")
                     
-                tlog.info(f"📡 [分发中枢] 正在将 {doc_id} 联动分发至 {len(enabled_social_channels)} 个社交渠道...")
+                tlog.info(f"📡 [分发中枢] 正在将 {doc_id} 联动分发至 {len(enabled_syndication_channels)} 个分发渠道...")
                 
-                # 临时过滤分发插件数组，使其仅保留我们定向需要的社交渠道
-                target_channel_ids = [c[0] for c in enabled_social_channels]
+                # 临时过滤分发插件数组，使其仅保留我们定向需要的分发渠道
+                target_channel_ids = [c[0] for c in enabled_syndication_channels]
                 syndicator.plugins = [p for p in syndicator.plugins if getattr(p, 'PLUGIN_ID', p.__class__.__name__) in target_channel_ids]
 
                 # 执行分发
@@ -144,15 +149,16 @@ def trigger_re_dispatch_logic(engine, doc_id: str, req: dict) -> dict:
         task_path, prefix, src_rel, target_slot = task_queue[0]
         clear_cache = bool(req.get("clear_cache", False))
         target_channel = req.get("target_channel")
+        skip_syndication = bool(req.get("skip_syndication", clear_cache if not target_channel else False))
         
         # 提交至主权线程池以进行异步物理编译，彻底避免对 FastAPI 事件循环的阻塞
         global_executor.submit(
             _async_redispatch_task,
-            engine, task_path, prefix, src_rel, target_slot, clear_cache, doc_id, target_channel,
+            engine, task_path, prefix, src_rel, target_slot, clear_cache, doc_id, target_channel, skip_syndication,
             priority=TaskPriority.INGRESS,
             task_name=f"Manual-Redispatch-{os.path.basename(task_path)}"
         )
-        return {"success": True, "message": f"资产 {doc_id} 的同步任务已受理，正在向目标渠道进行物理同步分发。"}
+        return {"success": True, "message": f"资产 {doc_id} 的重编译/分发任务已受理。"}
     except Exception as e:
         import traceback
         tlog.error(f"❌ [手动重调度异常]: {e}\n{traceback.format_exc()}")
@@ -235,26 +241,26 @@ def destroy_artifact_logic(engine, doc_id: str) -> dict:
 
 def get_pending_syndication_logic(engine) -> dict:
     """
-    📡 扫描全账本，找出已启用的社交渠道中，状态不为 SUCCESS 的待同步文档列表
+    渠道系统扫描：扫描全账本，找出已启用的分发渠道中，状态不为 SUCCESS 的待同步文档列表
     """
     if not hasattr(engine, "meta"):
         return {"count": 0, "pending_docs": []}
         
     config = engine.config
     
-    # 提取已启用的社交同步渠道
+    # 提取已启用的分发同步渠道
     syndication_cfg = getattr(config, "syndication", {}) or {}
     if hasattr(syndication_cfg, "model_dump"):
         syndication_cfg = syndication_cfg.model_dump()
     elif not isinstance(syndication_cfg, dict):
         syndication_cfg = getattr(syndication_cfg, "__dict__", {})
         
-    enabled_social_channels = []
+    enabled_syndication_channels = []
     for chan_id, chan_cfg in syndication_cfg.items():
         if isinstance(chan_cfg, dict) and chan_cfg.get("enabled"):
-            enabled_social_channels.append(chan_id)
+            enabled_syndication_channels.append(chan_id)
             
-    if not enabled_social_channels:
+    if not enabled_syndication_channels:
         return {"count": 0, "pending_docs": []}
         
     # 读取账本中所有的文档
@@ -276,12 +282,12 @@ def get_pending_syndication_logic(engine) -> dict:
             continue
             
         publish_status = doc.get("publish_status", {})
-        # 检测是否每个启用的社交渠道都成功同步了
+        # 检测是否每个启用的分发渠道都成功同步了
         has_pending = False
-        for chan in enabled_social_channels:
+        for chan in enabled_syndication_channels:
             status_info = publish_status.get(chan, {})
             status = str(status_info.get("status", "")).lower()
-            if status not in ("success", "published"):
+            if status not in ("success", "published", "done"):
                 has_pending = True
                 break
                 

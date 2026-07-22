@@ -87,6 +87,12 @@
 .dispatch-hub-panel .status-published .m-status-text { background: rgba(var(--neon-green-rgb), 0.15) !important; color: var(--neon-green) !important; }
 .dispatch-hub-panel .status-published { border-left: 3px solid var(--neon-green) !important; }
 
+.dispatch-hub-panel .status-success .m-status-text { background: rgba(var(--neon-cyan-rgb), 0.15) !important; color: var(--neon-cyan) !important; }
+.dispatch-hub-panel .status-success { border-left: 3px solid var(--neon-cyan) !important; }
+
+.dispatch-hub-panel .status-done .m-status-text { background: rgba(var(--accent-primary-rgb), 0.15) !important; color: var(--neon-purple) !important; }
+.dispatch-hub-panel .status-done { border-left: 3px solid var(--neon-purple) !important; }
+
 .dispatch-hub-panel .status-syncing .m-status-text { background: rgba(var(--neon-cyan-rgb), 0.15) !important; color: var(--neon-cyan) !important; }
 .dispatch-hub-panel .status-syncing { border-left: 3px solid var(--neon-cyan) !important; }
 
@@ -185,12 +191,31 @@
 }
 
 /* 🛸 Sovereign Action Grid and High Fidelity Buttons */
+.dispatch-hub-panel .drawer-footer {
+    display: flex !important;
+    padding: 14px 16px !important;
+    border-top: 1px solid var(--white-10) !important;
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+.dispatch-hub-panel .sovereign-action-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: center !important;
+}
+
 .dispatch-hub-panel .hub-btn {
+    flex: 1 !important;
     height: 36px !important;
     font-size: 0.75rem !important;
     font-weight: 600 !important;
     border-radius: 8px !important;
-    display: inline-flex !important;
+    display: inline-flex;
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
@@ -198,9 +223,15 @@
     border: 1px solid var(--white-10) !important;
     outline: none !important;
     cursor: pointer !important;
-    padding: 0 10px !important;
+    padding: 0 8px !important;
     background: var(--white-03) !important;
     color: var(--text-bright) !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+
+.dispatch-hub-panel .hub-btn[style*="display: none"] {
+    display: none !important;
 }
 
 .dispatch-hub-panel .primary-hub-btn {

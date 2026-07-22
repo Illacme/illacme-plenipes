@@ -26,7 +26,7 @@ class ResilienceSettings(BaseModel):
     cb_recovery_timeout: int = Field(60, ge=1)
     db_timeout: float = Field(30.0, ge=1)
     api_retry_delay: float = Field(1.0, ge=0)
-    network_timeout: int = Field(5, ge=1)
+    network_timeout: int = Field(15, ge=1)
     heartbeat_timeout: float = Field(5.0, ge=1)
     asset_ping_timeout: int = Field(3, ge=1)
 

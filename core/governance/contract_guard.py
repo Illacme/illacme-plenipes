@@ -223,6 +223,7 @@ class ContractGuard:
                     f.startswith(".plenipes/history/") or
                     f.startswith(".plenipes/tools/") or
                     f.startswith(".plenipes/SOP/") or
+                    f.startswith(".plenipes/governance/") or
                     f == ".plenipes/evolution_records.md" or
                     f == ".plenipes/protocols.md"
                 )

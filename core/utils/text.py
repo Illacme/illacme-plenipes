@@ -65,21 +65,47 @@ def strip_technical_noise(content: str, options=None) -> str:
 
 def parse_frontmatter(content: str) -> Tuple[Dict, str, bool]:
     """
-    🚀 将 Markdown 拆分为 metadata 和 pure_content
-    采用严谨的 --- 分隔符审计
+    🚀 [Resilient] 自愈式 Frontmatter 解析器：
+    物理级递归剥离多重 --- 堆叠头部，合并元数据，防止历史污染，返回绝对干净的正文。
     """
-    pattern = r'^---\s*\n(.*?)\n---\s*\n'
-    match = re.match(pattern, content, re.DOTALL)
-    
-    if match:
-        yaml_content = match.group(1)
-        pure_content = content[match.end():]
-        try:
-            metadata = yaml.safe_load(yaml_content) or {}
-            return metadata, pure_content, True
-        except Exception:
-            return {}, content, False
-    return {}, content, False
+    if not content:
+        return {}, "", False
+
+    merged_metadata = {}
+    has_any_fm = False
+    current_content = content
+
+    while True:
+        pattern = r'^---\s*\n(.*?)\n---\s*\n'
+        match = re.match(pattern, current_content, re.DOTALL)
+        if match:
+            yaml_content = match.group(1)
+            current_content = current_content[match.end():]
+            has_any_fm = True
+            try:
+                meta = yaml.safe_load(yaml_content) or {}
+                if isinstance(meta, dict):
+                    merged_metadata.update(meta)
+            except Exception:
+                pass
+        else:
+            # 兼容带有 \r\n 的 Windows 换行情况
+            win_pattern = r'^---\s*\r\n(.*?)\r\n---\s*\r\n'
+            win_match = re.match(win_pattern, current_content, re.DOTALL)
+            if win_match:
+                yaml_content = win_match.group(1)
+                current_content = current_content[win_match.end():]
+                has_any_fm = True
+                try:
+                    meta = yaml.safe_load(yaml_content) or {}
+                    if isinstance(meta, dict):
+                        merged_metadata.update(meta)
+                except Exception:
+                    pass
+            else:
+                break
+
+    return merged_metadata, current_content, has_any_fm
 
 def inject_frontmatter(pure_content: str, metadata: dict) -> str:
     """

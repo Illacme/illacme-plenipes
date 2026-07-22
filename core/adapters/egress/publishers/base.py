@@ -54,6 +54,35 @@ class BasePublisher(ABC):
             
         return None
 
+    def get_timeout(self, default_timeout: int = 15) -> int:
+        """
+        🚀 [V105.0] 动态读取系统配置治理中心中的网络超时配置 (system.network_timeout)。
+        """
+        local_timeout = self.config.get("timeout")
+        if local_timeout and isinstance(local_timeout, (int, float)) and local_timeout > 0:
+            return int(local_timeout)
+
+        if self.sys_config:
+            if isinstance(self.sys_config, dict):
+                sys_part = self.sys_config.get("system", {})
+                if isinstance(sys_part, dict) and sys_part.get("network_timeout"):
+                    return int(sys_part["network_timeout"])
+                elif self.sys_config.get("network_timeout"):
+                    return int(self.sys_config["network_timeout"])
+            else:
+                sys_obj = getattr(self.sys_config, "system", None)
+                if sys_obj and hasattr(sys_obj, "network_timeout"):
+                    return int(sys_obj.network_timeout)
+                elif hasattr(self.sys_config, "network_timeout"):
+                    return int(self.sys_config.network_timeout)
+
+        try:
+            from core.config.config_models import load_config
+            sys_cfg = load_config()
+            return getattr(getattr(sys_cfg, "system", None), "network_timeout", default_timeout) or default_timeout
+        except Exception:
+            return default_timeout
+
     @abstractmethod
     def push(self, bundle_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
