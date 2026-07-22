@@ -20,6 +20,7 @@ redline_exempt_files:
   - core/logic/ai/ai_scheduler_shards/dispatch_ops.py
   - core/archives/sqlite_backend.py
   - core/bindery/bindery_dispatcher.py
+  - core/logic/diagnostics/component_monitor.py
   - core/governance/janitor.py
   - core/governance/heartbeat.py
   # --- Services 层 ---

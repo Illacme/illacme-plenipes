@@ -39,9 +39,9 @@ class TestExemptionLoader(unittest.TestCase):
             self.assertIn(entry, result, f"缺失已知豁免条目: {entry}")
 
     def test_load_count_matches_yaml(self):
-        """加载的条目数应与 YAML 文件声明数一致 (40 条)"""
+        """加载的条目数应与 YAML 文件声明数一致 (41 条)"""
         result = load_redline_exemptions()
-        self.assertEqual(len(result), 40, f"期望 40 条，实际 {len(result)} 条")
+        self.assertEqual(len(result), 41, f"期望 41 条，实际 {len(result)} 条")
 
     def test_no_empty_entries(self):
         """不应包含空字符串或 None 条目"""
