@@ -78,22 +78,26 @@ window.renderLocalizationCategory = function () {
     }
     const glossaryForCurrentLang = glossary[window.currentGlossaryLang] || {};
 
-    // 🚀 [V57.4] 渲染物理多语言总开关
-    let descriptionText = '控制多语言与全域 AI 翻译的开关。关闭后，发布流水线将挂起所有 AI 翻译作业，仅发布源原稿。';
-    if (!isGlobal) {
-        const modeText = mode === 'basic' ? '基础模式 (Basic)' : '增强模式 (Enhanced)';
-        descriptionText = `⚠️ <b>由于当前印记处于 ${modeText}，多语言翻译总控已锁定关闭</b>。在此模式下，系统将自动透传原稿内容至多语言路径，无须执行多语言翻译矩阵。若要启用完整的 AI 多语言翻译，请在印记设置中切换为“全球出版模式 (Global)”。`;
+    // 🚀 [V75.7] 物理多语言总开关：解开模式死锁，根据 enable_ai 进行智能准入
+    const enableAi = window.settingsData.translation?.enable_ai !== false;
+    let descriptionText = '';
+    if (!enableAi) {
+        descriptionText = '🔒 <b>未开启 AI 算力总控，多语言翻译矩阵处于离线关闭状态</b>（模式：基础物理出版 Basic）。';
+    } else if (isGlobal) {
+        descriptionText = '⚡ <b>多语言翻译矩阵已激活</b>。系统将使用 AI 将您的原稿翻译并分发至多国语言路径（模式：全球出版模式 Global）。';
+    } else {
+        descriptionText = '💡 <b>多语言翻译矩阵目前已关闭</b>。系统仅在母语下执行 AI SEO 与智能润色，原稿内容自动透传至多语言路径（模式：智能母语增强 Enhanced）。点击开启将自动切换至全球出版模式。';
     }
 
     const enabledSwitchHtml = window.renderSettingsItem(
         '多语言翻译矩阵', 
         'i18n_settings.enabled', 
-        isEnabled, 
+        i18n.enabled !== false && isGlobal, 
         'checkbox', 
         {
             onchange: 'window.syncI18nEnabled(this.checked)',
             description: descriptionText,
-            disabled: !isGlobal
+            disabled: !enableAi
         }
     );
 

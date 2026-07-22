@@ -61,78 +61,42 @@ window.renderModesCategory = () => {
     return `
         <div class="full-width">
             <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.85;">选择您的出版内容加工深度，指定全局检索策略与社交元数据协议。</p>
-            
-            <!-- 🧭 极简出版决策指南 -->
             <div class="glass-panel" style="padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02); margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
-                <h5 style="color: #00f2ff; margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    🧭 如何选择适合您的出版模式？
-                </h5>
+                <h5 style="color: #00f2ff; margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🧭 如何选择适合您的出版模式？</h5>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 0.78rem; line-height: 1.5; color: var(--text-normal);">
-                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;">
-                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🌍 全球多语言分发</span>
-                        适合有<b>海外/跨国流量需求</b>。写完后 AI 自动帮您全量翻译成多国语种并对齐海外搜索习惯（需配置算力网关）。
-                    </div>
-                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;">
-                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🛰️ 智能母语增强</span>
-                        适合<b>仅写单语（母语）但想冲高点击率</b>。不翻译，仅让 AI 帮您润色标题、提取实体优化本土检索（需配置算力网关）。
-                    </div>
-                    <div>
-                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">📜 基础物理出版</span>
-                        适合<b>离线写作、高度隐私</b>，或无 AI 算力。完全不调用 AI 接口，只通过程序物理规则抓取首段和 H1，零算力成本。
-                    </div>
+                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;"><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🌍 全球多语言分发</span>适合有<b>海外/跨国流量需求</b>。写完后 AI 自动帮您全量翻译成多国语种（需配置算力网关）。</div>
+                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;"><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🛰️ 智能母语增强</span>适合<b>仅写单语（母语）但想冲高点击率</b>。不翻译，仅让 AI 润色标题与实体（需配置算力网关）。</div>
+                    <div><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">📜 基础物理出版</span>适合<b>离线写作、高度隐私</b>。零 AI 算力调用，纯固定规则提取。</div>
                 </div>
             </div>
-
             <div class="card-gallery">
                 ${modeDefinitions.map(m => {
                     const isActive = m.id === currentMode;
-                    const isDisabled = (m.id === 'global' && (!enableAi || !i18nEnabled)) || (m.id === 'enhanced' && !enableAi);
-                    let disabledReason = '';
-                    if (m.id === 'global') {
-                        if (!enableAi) disabledReason = '🔒 未开启 AI 算力总控';
-                        else if (!i18nEnabled) disabledReason = '🔒 未开启多语言翻译矩阵';
-                    } else if (m.id === 'enhanced' && !enableAi) {
-                        disabledReason = '🔒 未开启 AI 算力总控';
-                    }
+                    const isDisabled = (m.id !== 'basic' && !enableAi);
+                    const disabledReason = (m.id !== 'basic' && !enableAi) ? '🔒 未开启 AI 算力总控' : '';
 
-                    return `
-                        <div class="identity-card mode-card ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
-                             style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}"
-                             onclick="${isDisabled ? '' : `switchPublishingMode('${m.id}')`}">
+                    return `<div class="identity-card mode-card ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}" onclick="${isDisabled ? '' : `switchPublishingMode('${m.id}')`}">
                             <div class="card-header">
                                 <div class="card-icon">${m.icon}</div>
-                                <div class="card-body">
-                                    <h4>${m.title}</h4>
-                                    <span class="subtitle">${m.subtitle}</span>
-                                </div>
+                                <div class="card-body"><h4>${m.title}</h4><span class="subtitle">${m.subtitle}</span></div>
                                 ${isActive ? '<div class="badge active">ACTIVE</div>' : ''}
                                 ${isDisabled ? `<div class="badge error" style="background: rgba(255, 68, 68, 0.15); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); font-size: 0.65rem; padding: 4px 8px;">${disabledReason}</div>` : ''}
                             </div>
                             <p class="mode-desc">${m.desc}</p>
-                            
                             <div class="strategy-list" style="${isDisabled ? 'pointer-events: none;' : ''}">
                                 <span class="strategy-label">SEO 增强方式</span>
                                 ${m.strategies.map(s => {
                                     const isStratActive = isActive && s.id === currentStrategy;
-                                    return `
-                                        <div class="strategy-item ${isStratActive ? 'active' : ''}" 
-                                             style="${isDisabled ? 'cursor: not-allowed;' : ''}"
-                                             onclick="event.stopPropagation(); ${isDisabled ? '' : `switchSeoStrategy('${m.id}', '${s.id}')`}">
-                                            <div class="radio-indicator">
-                                                <div class="radio-inner"></div>
-                                            </div>
-                                            <div class="strategy-info">
-                                                <div class="strategy-name">${s.name}</div>
-                                                <div class="strategy-desc">${s.desc}</div>
-                                            </div>
+                                    return `<div class="strategy-item ${isStratActive ? 'active' : ''}" style="${isDisabled ? 'cursor: not-allowed;' : ''}" onclick="event.stopPropagation(); ${isDisabled ? '' : `switchSeoStrategy('${m.id}', '${s.id}')`}">
+                                            <div class="radio-indicator"><div class="radio-inner"></div></div>
+                                            <div class="strategy-info"><div class="strategy-name">${s.name}</div><div class="strategy-desc">${s.desc}</div></div>
                                         </div>`;
                                 }).join('')}
                             </div>
                         </div>`;
                 }).join('')}
             </div>
-        </div>
-    `;
+        </div>`;
 };
 
 window.switchPublishingMode = async (mode) => {
@@ -145,17 +109,10 @@ window.switchPublishingMode = async (mode) => {
     }
 
     const enableAi = window.settingsData.translation?.enable_ai !== false;
-    const i18nEnabled = window.settingsData.i18n_settings?.enabled !== false;
 
-    if (mode === 'global' && (!enableAi || !i18nEnabled)) {
-        const reason = !enableAi ? '未开启 AI 算力总控' : '未开启多语言翻译矩阵';
-        if (typeof addAudit === 'function') addAudit(`🛑 无法切换至 全球多语言分发 模式：${reason}`, "error");
-        if (typeof showNotification === 'function') showNotification(`🔒 无法选择全球多语言分发：${reason}`, 'error');
-        return;
-    }
-    if (mode === 'enhanced' && !enableAi) {
-        if (typeof addAudit === 'function') addAudit(`🛑 无法切换至 智能母语增强 模式：未开启 AI 算力总控`, "error");
-        if (typeof showNotification === 'function') showNotification(`🔒 无法选择智能母语增强：未开启 AI 算力总控`, 'error');
+    if (mode !== 'basic' && !enableAi) {
+        if (typeof addAudit === 'function') addAudit(`🛑 无法切换至 ${mode.toUpperCase()} 模式：未开启 AI 算力总控`, "error");
+        if (typeof showNotification === 'function') showNotification(`🔒 无法选择 ${mode.toUpperCase()}：未开启 AI 算力总控`, 'error');
         return;
     }
 
@@ -173,13 +130,21 @@ window.switchPublishingMode = async (mode) => {
     const lastStrategyKey = `illacme_plenipes_last_strategy_for_${mode}`;
     const defaultStrategy = localStorage.getItem(lastStrategyKey) || defaultStrategies[mode] || 'heuristic';
     
+    // 🚀 [模式与多语言联动] 切换至 global 自动开启多语言矩阵，切换至 enhanced/basic 自动关闭多语言矩阵
+    const updatePayload = {
+        'governance.publishing_mode': mode,
+        'governance.seo_strategy': defaultStrategy
+    };
+    if (mode === 'global') {
+        updatePayload['i18n_settings.enabled'] = true;
+    } else if (mode === 'enhanced') {
+        updatePayload['i18n_settings.enabled'] = false;
+    }
+
     if (typeof addAudit === 'function') addAudit(`📋 正在切换出版模式至: ${mode.toUpperCase()}...`);
     const res = await apiFetch('/api/config/update', { 
         method: 'POST', 
-        body: JSON.stringify({ 
-            'governance.publishing_mode': mode,
-            'governance.seo_strategy': defaultStrategy
-        }) 
+        body: JSON.stringify(updatePayload)
     });
     if (res && res.status === 'success') {
         // 智能在本地缓存中再次固化这次的选择
@@ -331,6 +296,5 @@ window.renderLayoutCategory = () => {
             <div id="layout-panel-imprints" style="display: ${currentSub === 'imprints' ? 'block' : 'none'};"></div>
             <div id="layout-panel-themes" style="display: ${currentSub === 'themes' ? 'block' : 'none'};"></div>
             <div id="layout-panel-modes" style="display: ${currentSub === 'modes' ? 'block' : 'none'};"></div>
-        </div>
-    `;
+        </div>`;
 };

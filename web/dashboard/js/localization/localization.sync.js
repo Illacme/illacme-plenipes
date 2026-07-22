@@ -520,4 +520,36 @@ window.clearGlossaryCurrentLang = async () => {
     }
 };
 
+// 🚀 [V75.7] 物理多语言总开关同步：自动协同更新 publishing_mode 消除模式死锁
+window.syncI18nEnabled = async (checked) => {
+    if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
+        const proceed = await window.checkSettingsDirtyAndConfirm();
+        if (!proceed) {
+            if (typeof renderSettingsCategory === 'function') renderSettingsCategory('localization');
+            return;
+        }
+    }
+
+    const targetMode = checked ? 'global' : 'enhanced';
+    if (typeof addAudit === 'function') addAudit(`🌐 正在${checked ? '激活' : '关闭'}多语言翻译矩阵 (出版模式协同切换为: ${targetMode.toUpperCase()})...`);
+
+    const res = await apiFetch('/api/config/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            'i18n_settings.enabled': checked,
+            'governance.publishing_mode': targetMode
+        })
+    });
+
+    if (res && res.status === 'success') {
+        if (typeof addAudit === 'function') addAudit(`✅ 多语言翻译矩阵与出版模式同步更新成功。`, "success");
+        const freshConfig = await apiFetch('/api/system/config?level=merged');
+        if (freshConfig) {
+            window.settingsData = freshConfig;
+            if (typeof renderSettingsCategory === 'function') renderSettingsCategory('localization');
+        }
+    }
+};
+
 
