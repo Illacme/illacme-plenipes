@@ -474,23 +474,23 @@
             <div class="step active" id="step-0">
                 <div class="step-header">
                     <h1>Illacme Plenipes</h1>
-                    <h2>🏗️ 划定您的主权出版版图</h2>
-                    <p>您的所有出版资产将受到“主权防御”保护，由底层文库系统进行隔离</p>
+                    <h2>🏗️ 创建您的出版品牌</h2>
+                    <p>您的原稿与配置文件将独立存储，与系统底层解耦隔离</p>
                 </div>
 
                 <div class="form-group">
                     <label>
-                        出版版图名称 (Imprint Name)
+                        出版品牌名称 (Imprint Name)
                         <span class="concept-hint" data-tip="您的正式出版社名称，将显示在 Dashboard、网站页脚和元数据中。">显示在哪？</span>
                     </label>
-                    <input type="text" id="imprint_name" placeholder="例如: 极客主权出版社" oninput="syncSlug(this.value)">
+                    <input type="text" id="imprint_name" placeholder="例如: 极客前沿出版社" oninput="syncSlug(this.value)">
                     <p class="input-desc">正式显示名称，支持中文。</p>
                 </div>
 
                 <div class="form-group">
                     <label>
                         出版品牌标识 (Imprint ID)
-                        <span class="concept-hint" data-tip="这是您的‘主权标识’。它决定了文件夹的命名，建议使用小写字母和下划线。">为何需要？</span>
+                        <span class="concept-hint" data-tip="这是您的‘品牌唯一 ID’。它决定了文件夹的命名，建议使用小写字母和下划线。">为何需要？</span>
                     </label>
                     <input type="text" id="imprint_id" placeholder="例如: my_tech_press">
                     <p class="input-desc">物理标识符，将划定独立的配置空间。</p>
@@ -507,7 +507,7 @@
                     </div>
                     <div id="fs-browser" class="browser-panel"></div>
                     <div id="vault-suggestions" class="vault-suggestions"></div>
-                    <div class="safety-badge">🛡️ 主权保护：系统仅执行镜像读取，绝不物理修改您的原始稿件。</div>
+                    <div class="safety-badge">🛡️ 原稿保护：系统仅执行镜像读取，绝不修改您的原始文件。</div>
                 </div>
 
                 <div class="btn-row">
@@ -627,7 +627,7 @@
                     <button class="btn btn-primary" onclick="goStep(4)">
                         <span>⚡ 继续配置全站托管与分发渠道 →</span>
                     </button>
-                    <button class="btn btn-ghost btn-small" onclick="skipToSubmit()">直接确立主权 →</button>
+                    <button class="btn btn-ghost btn-small" onclick="skipToSubmit()">跳过并完成创建 →</button>
                 </div>
                 <div id="status"></div>
             </div>
@@ -681,19 +681,19 @@
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(3)">← 返回</button>
                     <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
-                        <span id="btn-text">⚡ 确立主权并发布站点</span>
+                        <span id="btn-text">⚡ 完成配置并发布站点</span>
                         <div id="spinner" class="loading-spinner"></div>
                     </button>
                     <button class="btn btn-ghost btn-small" onclick="skipHostingAndSubmit()">跳过授权并直接提交 →</button>
                 </div>
             </div>
 
-            <!-- Step 5: 完成 (主权加冕) -->
+            <!-- Step 5: 完成 -->
             <div class="step" id="step-5">
                 <div class="completion-panel">
                     <div class="success-pulse">🛡️</div>
-                    <h2 style="font-family:'Outfit'; font-size:1.8rem; margin-bottom:8px; letter-spacing:-0.5px;">出版版图划定成功！</h2>
-                    <p style="color:var(--text-dim); font-size:0.85rem;">您的出版品牌已正式确立主权地位，物理隔离已生效。</p>
+                    <h2 style="font-family:'Outfit'; font-size:1.8rem; margin-bottom:8px; letter-spacing:-0.5px;">出版品牌创建成功！</h2>
+                    <p style="color:var(--text-dim); font-size:0.85rem;">您的出版品牌已成功建立，配置隔离已生效。</p>
 
                     <div class="sovereign-contract">
                         <div class="contract-item">
@@ -712,21 +712,21 @@
 
                         <div id="expansion-actions" style="display:none; flex-direction: column; gap: 12px; width: 100%; align-items: center;">
                             <button class="btn btn-primary" onclick="switchToNewImprint()" style="min-width: 280px; font-size: 1rem; height: 54px;">
-                                🔄 立即切换至新版图
+                                🔄 立即切换至新品牌
                             </button>
                             <button class="btn btn-ghost" onclick="window.location.href='/dashboard/'" style="min-width: 280px;">
-                                🏠 返回总编室
+                                🏠 返回管理后台
                             </button>
                         </div>
 
                         <div id="onboarding-actions" style="display:flex; flex-direction: column; gap: 20px; width: 100%; align-items: center;">
                             <div id="ignition-status" style="font-size: 0.8rem; color: var(--accent); display: flex; align-items: center; gap: 10px; background: rgba(0,242,255,0.05); padding: 8px 16px; border-radius: 20px;">
                                 <div class="loading-spinner" style="display:block; width:14px; height:14px;"></div>
-                                <span>正在激活主权总编室...</span>
+                                <span>正在准备出版管理后台...</span>
                             </div>
                             
                             <button class="btn btn-primary" id="enter-btn" onclick="enterDashboard()" style="display:none; min-width: 280px; font-size: 1rem; height: 54px;">
-                                🚀 立即登入总编室 (Dashboard)
+                                🚀 立即登入管理后台 (Dashboard)
                             </button>
 
                             <div id="manual-tip" style="width: 100%; text-align: left;">
@@ -1609,7 +1609,7 @@
 
         async function enterDashboard() {
             const statusEl = document.getElementById('ignition-status');
-            statusEl.innerHTML = '🚀 正在建立主权链接，请稍候...';
+            statusEl.innerHTML = '🚀 正在建立通信链接，请稍候...';
             
             try {
                 // 尝试通知向导服务关闭
@@ -1659,7 +1659,7 @@
 
                         if (activeId === targetImprint) {
                             clearInterval(timer);
-                            statusEl.innerHTML = `✅ 引擎重载就绪，主权版图 '${targetImprint}' 现已在线。`;
+                            statusEl.innerHTML = `✅ 引擎重载就绪，出版品牌 '${targetImprint}' 现已在线。`;
                             statusEl.style.background = 'rgba(0,255,127,0.1)';
                             statusEl.style.color = 'var(--accent-green)';
                             
@@ -1679,7 +1679,7 @@
                             // 主动调用切换 API 通知主进程执行引擎热重载。
                             if (!switchRequested && activeId) {
                                 switchRequested = true;
-                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在通知主进程执行版图热重载...`;
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在通知主进程刷新配置...`;
                                 console.log(`🔄 [主动切换] 向 43212 发送深度重载指令: ${targetImprint}`);
                                 try {
                                     await fetch('http://127.0.0.1:43212/api/imprints/switch', {
@@ -1691,13 +1691,13 @@
                                     console.warn('切换请求发送失败，将继续轮询等待', switchErr);
                                 }
                             } else if (!activeId) {
-                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在同步物理疆域，请稍候... [${attempts}]`;
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在同步配置空间，请稍候... [${attempts}]`;
                             } else {
-                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在对齐主权指纹 (${activeId} → ${targetImprint})... [${attempts}]`;
+                                statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在对齐品牌标识 (${activeId} → ${targetImprint})... [${attempts}]`;
                             }
                             
                             if (attempts > 30 && activeId !== targetImprint && activeId !== "") {
-                                statusEl.innerHTML = `⚠️ 版图热重载超时，您可以尝试强制进入后手动切换。`;
+                                statusEl.innerHTML = `⚠️ 进程刷新超时，您可以尝试强制进入后手动切换。`;
                                 enterBtn.style.display = 'block';
                             }
                         }
@@ -1708,7 +1708,7 @@
                         statusEl.innerHTML = '⚠️ 启动耗时较长，请在终端执行 `python3 plenipes.py` 或尝试手动刷新。';
                         enterBtn.style.display = 'block';
                     } else {
-                        statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在等待主进程接管主权 (43212)... [${attempts}]`;
+                        statusEl.innerHTML = `<div class="loading-spinner" style="width:12px;height:12px;"></div> 正在等待主服务响应 (43212)... [${attempts}]`;
                     }
                 }
             }, 1000);
@@ -1741,7 +1741,7 @@
             const oldText = btn.innerText;
             
             btn.disabled = true;
-            btn.innerText = '🔄 正在切换主权版图...';
+            btn.innerText = '🔄 正在切换出版品牌...';
             
             try {
                 // 🚀 [V65.1] 执行物理切换
