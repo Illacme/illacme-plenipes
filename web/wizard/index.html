@@ -1331,6 +1331,13 @@
         }
 
         function selectLang(code, el) {
+            if (selectedLang === code) {
+                // 🚀 已选中状态下再次点击：取消选择！
+                selectedLang = null;
+                el.classList.remove('selected');
+                return;
+            }
+
             if (selectedLang && selectedLang !== code) {
                 showStatus('🔒 社区版暂不支持多选目标语种，请升级至授权版', 'error');
                 setTimeout(() => showStatus('',''), 3000);
