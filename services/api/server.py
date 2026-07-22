@@ -52,13 +52,13 @@ app.include_router(agent.router, tags=["Agent"])
 
 @app.get("/health")
 async def health_check() -> Dict[str, Any]:
-    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘的存活探测"""
+    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘与向导的存活探测 (规范契约)"""
     from core.runtime.engine_singleton import get_global_engine
     engine = get_global_engine()
     return {
-        "status": "ok",
+        "status": "online" if engine else "starting",
         "engine": "Illacme Plenipes V50.3",
-        "active_imprint": engine.imprint_id if engine else None
+        "imprint": engine.imprint_id if engine else ""
     }
 
 @app.get("/")

@@ -1923,8 +1923,8 @@
                     
                     if (res.ok) {
                         const health = await res.json();
-                        // 🚀 [V65.1] 关键对正：后端字段名为 'imprint' 而非 'active_imprint'
-                        const activeId = (health.imprint || health.active_imprint || health.id || '').toLowerCase().trim();
+                        // 🚀 [契约规范] 后端健康检查契约统一规范为 'imprint' 字段
+                        const activeId = (health.imprint || '').toLowerCase().trim();
                         
                         console.log(`📡 [探测中] 目标: ${targetImprint}, 当前发现: ${activeId}`);
 

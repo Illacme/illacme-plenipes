@@ -34,10 +34,16 @@ def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None
 
 @router.get("/api/system/health")
 def health_check() -> Dict[str, str]:
-    """基础健康检查"""
+    """基础健康检查 (规范契约)"""
     engine = get_global_engine()
-    if not engine: return {"status": "starting", "engine": "Illacme-plenipes"}
-    return {"status": "online", "engine": "Illacme-plenipes", "imprint": engine.imprint_id, "services": str(engine.services)}
+    if not engine: 
+        return {"status": "starting", "engine": "Illacme-plenipes", "imprint": ""}
+    return {
+        "status": "online", 
+        "engine": "Illacme-plenipes", 
+        "imprint": engine.imprint_id or "", 
+        "services": str(engine.services)
+    }
 
 @router.get("/api/system/status", dependencies=[Depends(verify_token)])
 def get_system_status() -> Dict[str, Any]:
