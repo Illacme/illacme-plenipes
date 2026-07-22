@@ -51,88 +51,83 @@ class ComponentMonitor:
         return nodes
 
     @staticmethod
-    def get_vault_suggestions() -> List[Dict[str, str]]:
+    def get_vault_suggestions() -> List[Dict[str, Any]]:
         """
-        🚀 [V50.5] 智感路径扫描：探测潜在的出版文库并感应本机编辑器。
-        根据操作系统获取用户主目录下各编辑器的标准文档库绝对路径。
+        🚀 [V88.2] 智感路径扫描：自动解析 Obsidian 官方配置、感应系统进程并匹配真实出版文库。
         
         Returns:
             List[Dict]: 建议的物理路径列表，包含 name, path, icon 属性。
         """
         import platform
+        import json
         suggestions = []
+        seen_paths = set()
         home = os.path.expanduser("~")
         system = platform.system()  # Darwin / Windows / Linux
-        
-        # 1. 各编辑器在不同操作系统下的标准文档库位置
-        editor_vaults = {
-            "obsidian": {
-                "name": "Obsidian 文库",
-                "icon": "💎",
-                "paths": {
-                    "Darwin": [os.path.join(home, "Documents", "Obsidian Vault"),
-                               os.path.join(home, "Documents", "obsidian-vault"),
-                               os.path.join(home, "Obsidian")],
-                    "Windows": [os.path.join(home, "Documents", "Obsidian Vault"),
-                                os.path.join(home, "Obsidian")],
-                    "Linux": [os.path.join(home, "Documents", "Obsidian Vault"),
-                              os.path.join(home, "obsidian-vault")]
-                }
-            },
-            "logseq": {
-                "name": "Logseq 库",
-                "icon": "🍃",
-                "paths": {
-                    "Darwin": [os.path.join(home, "Documents", "Logseq"),
-                               os.path.join(home, "Logseq")],
-                    "Windows": [os.path.join(home, "Documents", "Logseq"),
-                                os.path.join(home, "Logseq")],
-                    "Linux": [os.path.join(home, "Documents", "Logseq"),
-                              os.path.join(home, "logseq")]
-                }
-            },
-            "typora": {
-                "name": "Typora 工作区",
-                "icon": "📝",
-                "paths": {
-                    "Darwin": [os.path.join(home, "Documents")],
-                    "Windows": [os.path.join(home, "Documents")],
-                    "Linux": [os.path.join(home, "Documents")]
-                }
-            }
-        }
 
-        # 2. 感应正在运行的编辑器进程，并匹配其物理文档库
-        try:
-            import psutil
-            seen_editors = set()
-            for proc in psutil.process_iter(['name']):
+        # 1. 🚀 [核心增强] 优先读取 Obsidian 官方桌面客户端配置文件 (无视软件是否正在运行)
+        obsidian_config_paths = [
+            os.path.join(home, "Library", "Application Support", "obsidian", "obsidian.json"),
+            os.path.join(home, ".config", "obsidian", "obsidian.json"),
+            os.path.join(os.environ.get("APPDATA", ""), "obsidian", "obsidian.json")
+        ]
+
+        active_vaults = []
+        other_vaults = []
+
+        for cfg_path in obsidian_config_paths:
+            if cfg_path and os.path.exists(cfg_path):
                 try:
-                    pname = proc.info['name'].lower()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-                for key, info in editor_vaults.items():
-                    if key in pname and key not in seen_editors:
-                        # 按优先级扫描该编辑器的标准路径
-                        candidate_paths = info["paths"].get(system, [])
-                        resolved_path = None
-                        for cp in candidate_paths:
-                            if os.path.isdir(cp):
-                                resolved_path = cp
-                                break
-                        if resolved_path:
-                            suggestions.append({
-                                "name": info["name"],
-                                "path": resolved_path,
-                                "icon": info["icon"],
-                                "dialect": key,
-                                "is_detected": True
-                            })
-                        seen_editors.add(key)
-        except ImportError:
-            pass
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        vaults = data.get("vaults", {})
+                        for v_info in vaults.values():
+                            p = v_info.get("path")
+                            if p and os.path.exists(p) and p not in seen_paths:
+                                seen_paths.add(p)
+                                basename = os.path.basename(p) or p
+                                item = {
+                                    "name": f"Obsidian ({basename})",
+                                    "path": p,
+                                    "icon": "💎",
+                                    "dialect": "obsidian",
+                                    "is_detected": True
+                                }
+                                if v_info.get("open"):
+                                    active_vaults.append(item)
+                                else:
+                                    other_vaults.append(item)
+                except Exception:
+                    pass
 
-        # 3. 物理目录扫描（工作区相对路径转为绝对路径）
+        # 正在活跃打开的 Obsidian 文库优先置顶
+        suggestions.extend(active_vaults)
+        suggestions.extend(other_vaults)
+
+        # 2. 扫描静态默认路径与进程感应
+        search_targets = [
+            (["Documents", "Obsidian Vault"], "Obsidian Vault", "💎", "obsidian"),
+            (["Documents", "Obsidian"], "Obsidian", "💎", "obsidian"),
+            (["Documents", "Logseq"], "Logseq 库", "🌿", "logseq"),
+            (["Documents", "Zettlr"], "Zettlr 库", "🔬", "zettlr"),
+            (["Documents", "VNote"], "VNote 库", "📓", "vnote"),
+            (["Documents", "Typora"], "Typora 工作区", "✍️", "typora"),
+            (["Documents", "Manuscripts"], "原稿库", "📚", "standard"),
+            (["Desktop", "Manuscripts"], "桌面原稿", "📚", "standard")
+        ]
+
+        for parts, name, icon, dialect in search_targets:
+            full_path = os.path.join(home, *parts)
+            if os.path.exists(full_path) and full_path not in seen_paths:
+                seen_paths.add(full_path)
+                suggestions.append({
+                    "name": name,
+                    "path": full_path,
+                    "icon": icon,
+                    "dialect": dialect
+                })
+
+        # 3. 物理工作区目录扫描（相对路径转绝对路径）
         cwd = os.getcwd()
         candidates = [
             {"name": "默认原稿库", "rel": "manuscripts", "icon": "📦"},
@@ -143,14 +138,18 @@ class ComponentMonitor:
         
         for cand in candidates:
             abs_path = os.path.join(cwd, cand["rel"])
-            if os.path.isdir(abs_path):
-                if not any(s["path"] == abs_path for s in suggestions):
-                    suggestions.append({"name": cand["name"], "path": abs_path, "icon": cand["icon"]})
-                    
-        # 4. 兜底：如果没有任何感应结果，返回工作区下的默认路径
+            if os.path.isdir(abs_path) and abs_path not in seen_paths:
+                seen_paths.add(abs_path)
+                suggestions.append({"name": cand["name"], "path": abs_path, "icon": cand["icon"]})
+
+        # 4. 兜底：如果没有任何感应结果，返回工作区下默认路径
         if not suggestions:
-            suggestions.append({"name": "新建原稿库", "path": os.path.join(cwd, "manuscripts"), "icon": "🆕"})
-        
+            suggestions.append({
+                "name": "默认原稿库",
+                "path": os.path.join(cwd, "manuscripts"),
+                "icon": "📦"
+            })
+
         return suggestions
 
     @staticmethod

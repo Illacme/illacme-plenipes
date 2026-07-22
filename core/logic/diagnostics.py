@@ -46,11 +46,52 @@ class DiagnosticsService:
 
     @staticmethod
     def get_vault_suggestions() -> List[Dict[str, Any]]:
-        """扫描常见的本地知识库/原稿文库路径锚点"""
+        """🚀 [V88.2] 智能感应全域 Markdown 知识库/Obsidian 文库候选路径"""
+        import json
         suggestions = []
+        seen_paths = set()
         home = os.path.expanduser("~")
+
+        # 1. 优先动态感应 Obsidian 桌面客户端官方配置文件 (macOS / Linux / Windows)
+        obsidian_config_paths = [
+            os.path.join(home, "Library", "Application Support", "obsidian", "obsidian.json"),
+            os.path.join(home, ".config", "obsidian", "obsidian.json"),
+            os.path.join(os.environ.get("APPDATA", ""), "obsidian", "obsidian.json")
+        ]
+
+        active_vaults = []
+        other_vaults = []
+
+        for cfg_path in obsidian_config_paths:
+            if cfg_path and os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        vaults = data.get("vaults", {})
+                        for v_info in vaults.values():
+                            p = v_info.get("path")
+                            if p and os.path.exists(p) and p not in seen_paths:
+                                seen_paths.add(p)
+                                basename = os.path.basename(p) or p
+                                item = {
+                                    "name": f"Obsidian ({basename})",
+                                    "path": p,
+                                    "icon": "💎"
+                                }
+                                if v_info.get("open"):
+                                    active_vaults.append(item)
+                                else:
+                                    other_vaults.append(item)
+                except Exception:
+                    pass
+
+        # 正在打开的 Obsidian 文库优先置顶
+        suggestions.extend(active_vaults)
+        suggestions.extend(other_vaults)
+
+        # 2. 静态常用路径补全扫描
         search_targets = [
-            (["Documents", "Obsidian Vault"], "Obsidian", "💎"),
+            (["Documents", "Obsidian Vault"], "Obsidian Vault", "💎"),
             (["Documents", "Obsidian"], "Obsidian", "💎"),
             (["Documents", "Logseq"], "Logseq", "🌿"),
             (["Documents", "Zettlr"], "Zettlr", "🔬"),
@@ -63,7 +104,8 @@ class DiagnosticsService:
         
         for parts, name, icon in search_targets:
             full_path = os.path.join(home, *parts)
-            if os.path.exists(full_path):
+            if os.path.exists(full_path) and full_path not in seen_paths:
+                seen_paths.add(full_path)
                 suggestions.append({"name": name, "path": full_path, "icon": icon})
         
         return suggestions
