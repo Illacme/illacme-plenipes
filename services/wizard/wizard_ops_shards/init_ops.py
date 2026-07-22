@@ -40,10 +40,24 @@ def init_press_logic(req, shutdown_cb=None):
             cfg["active_theme"] = req.active_theme
             cfg["imprint_name"] = imp_name
             
-            # 🚀 [核心修复] 明确写入算力开关 enable_ai
+            # 🚀 [核心修复] 明确写入算力开关 enable_ai 及对应的出版模式 governance
             if "translation" not in cfg or not isinstance(cfg["translation"], dict):
                 cfg["translation"] = {}
             cfg["translation"]["enable_ai"] = bool(req.enable_ai)
+
+            if "governance" not in cfg or not isinstance(cfg["governance"], dict):
+                cfg["governance"] = {}
+
+            if req.enable_ai:
+                if req.target_langs:
+                    cfg["governance"]["publishing_mode"] = "global"
+                    cfg["governance"]["seo_strategy"] = "ai_sync"
+                else:
+                    cfg["governance"]["publishing_mode"] = "enhanced"
+                    cfg["governance"]["seo_strategy"] = "ai_alignment"
+            else:
+                cfg["governance"]["publishing_mode"] = "basic"
+                cfg["governance"]["seo_strategy"] = "heuristic"
 
             if req.target_langs:
                 ln = {"en":"English","ja":"日本語","ko":"한국어","de":"Deutsch","fr":"Français","es":"Español"}
@@ -109,9 +123,21 @@ def init_press_logic(req, shutdown_cb=None):
         
         if "translation" not in local_data or not isinstance(local_data["translation"], dict):
             local_data["translation"] = {}
+        if "governance" not in local_data or not isinstance(local_data["governance"], dict):
+            local_data["governance"] = {}
 
-        # 🚀 [核心修复] 必须显式将 enable_ai 状态写入 translation 节点中，防止 Dashboard 表现为“算力总控已关闭”
+        # 🚀 [核心修复] 必须显式将 enable_ai 状态与出版模式写入配置中，防止被默认 basic 强行离线
         local_data["translation"]["enable_ai"] = bool(req.enable_ai)
+        if req.enable_ai:
+            if req.target_langs:
+                local_data["governance"]["publishing_mode"] = "global"
+                local_data["governance"]["seo_strategy"] = "ai_sync"
+            else:
+                local_data["governance"]["publishing_mode"] = "enhanced"
+                local_data["governance"]["seo_strategy"] = "ai_alignment"
+        else:
+            local_data["governance"]["publishing_mode"] = "basic"
+            local_data["governance"]["seo_strategy"] = "heuristic"
 
         if req.enable_ai:
             # 🚀 [算力复用与去重逻辑]

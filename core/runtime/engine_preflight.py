@@ -90,9 +90,19 @@ class EnginePreflight:
                     config.governance.publishing_mode = PublishingMode.BASIC
                     config.governance.seo_strategy = SeoStrategy.HEURISTIC
                     tlog.warning("⚠️ [模式降级] 未检测到可用 AI 算力，品牌模式已自动降级至 basic")
-            
-            # 🚀 [V53.0] 模式联动：基础模式自动禁用 AI 算力
-            if config.governance.publishing_mode == PublishingMode.BASIC:
+            else:
+                # 🚀 [智能升格防退化] 如果 AI 算力已开启且就绪，但出版模式为 basic，自动升级至合规模式
+                if config.translation.enable_ai and explicit_mode == PublishingMode.BASIC:
+                    if config.i18n_settings and config.i18n_settings.enabled and config.i18n_settings.targets:
+                        config.governance.publishing_mode = PublishingMode.GLOBAL
+                        config.governance.seo_strategy = SeoStrategy.AI_SYNC
+                    else:
+                        config.governance.publishing_mode = PublishingMode.ENHANCED
+                        config.governance.seo_strategy = SeoStrategy.AI_ALIGNMENT
+                    tlog.info(f"✨ [智能升级] 检测到 AI 算力就绪，出版模式自动升格至 {config.governance.publishing_mode.value}")
+
+            # 🚀 [V53.0] 模式联动：仅在确实为 BASIC 且算力未使能时关闭 AI 算力
+            if config.governance.publishing_mode == PublishingMode.BASIC and not config.translation.enable_ai:
                 config.translation.enable_ai = False
                 tlog.info("📜 [基础模式] AI 算力已自动离线，使用物理规则引擎")
 
