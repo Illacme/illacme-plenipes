@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Illacme Plenipes | 全球私人出版品牌开业向导</title>
+    <title>Illacme Plenipes | 出版品牌初始化向导</title>
     <style>
         @font-face {
             font-family: 'Inter';
@@ -653,7 +653,7 @@
                 <div class="step-header">
                      <h1>Step 04</h1>
                      <h2>🌐 云端全站托管渠道</h2>
-                     <p>一键绑定 GitHub Pages 或 Cloudflare Pages 静态全站托管（可选项，亦可跳过并在开业后补充配置）</p>
+                     <p>一键绑定 GitHub Pages 或 Cloudflare Pages 静态全站托管（可选项，亦可跳过并在创建后补充配置）</p>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
@@ -940,7 +940,7 @@
                 submitBtn.style.cursor = 'pointer';
 
                 if (!isAuthed) {
-                    if (btnText) btnText.innerText = '⏩ 跳过托管配置并完成品牌开业';
+                    if (btnText) btnText.innerText = '⏩ 跳过托管配置，直接完成创建';
                     if (hintEl) {
                         hintEl.style.display = 'block';
                         hintEl.style.color = 'var(--accent)';
