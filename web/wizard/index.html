@@ -642,18 +642,18 @@
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(2)">← 返回</button>
                     <button class="btn btn-primary" onclick="goStep(4)">
-                        <span>⚡ 继续配置全站托管与分发渠道 →</span>
+                        <span>⚡ 继续配置全站托管渠道 →</span>
                     </button>
                 </div>
                 <div id="status"></div>
             </div>
 
-            <!-- Step 4: 🌎 全站托管与分发渠道 -->
+            <!-- Step 4: 🌐 云端全站托管渠道 -->
             <div class="step" id="step-4">
                 <div class="step-header">
                      <h1>Step 04</h1>
-                     <h2>🌎 全站托管与分发渠道</h2>
-                     <p>一键绑定 GitHub 或 Cloudflare 站点托管，并开启多渠道同步发布</p>
+                     <h2>🌐 云端全站托管渠道</h2>
+                     <p>一键绑定 GitHub Pages 或 Cloudflare Pages 静态全站托管（可选项，亦可跳过并在开业后补充配置）</p>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
@@ -663,7 +663,7 @@
                             <span style="font-size: 2rem;">🐙</span>
                             <div>
                                 <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 2px;">GitHub Pages</h3>
-                                <p style="font-size: 0.75rem; color: var(--text-dim);">自动将网站发布到您的 GitHub 仓库的 Pages 分支</p>
+                                <p style="font-size: 0.75rem; color: var(--text-dim);">自动将网站发布到您的 GitHub 仓库 Pages 分支</p>
                             </div>
                         </div>
                         <div>
@@ -696,13 +696,13 @@
 
                 <div class="btn-row" style="margin-top: 20px;">
                     <button class="btn btn-ghost" onclick="goStep(3)">← 返回</button>
-                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()" disabled style="opacity: 0.5; cursor: not-allowed;">
-                        <span id="btn-text">⚡ 完成配置并发布站点</span>
+                    <button class="btn btn-primary" id="submit-btn" onclick="initialize()">
+                        <span id="btn-text">🚀 完成配置并发布站点</span>
                         <div id="spinner" class="loading-spinner"></div>
                     </button>
                 </div>
-                <div id="step4-auth-hint" style="font-size:0.75rem; color:var(--text-dim); margin-top:12px; text-align:center; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px dashed var(--glass-border);">
-                    🔒 提示：须至少授权绑定 GitHub Pages 或 Cloudflare Pages 其中一项分发托管渠道后，方可完成配置
+                <div id="step4-auth-hint" style="font-size:0.75rem; color:var(--accent); margin-top:12px; text-align:center; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px dashed var(--glass-border);">
+                    💡 提示：当前未绑定全站托管。您可以直接点击上按钮跳过配置，后续可随时在治理中心【全站托管】中补充配置。
                 </div>
             </div>
 
@@ -930,22 +930,24 @@
             const isAuthed = isGhAuthed || isCfAuthed;
 
             const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
             const hintEl = document.getElementById('step4-auth-hint');
 
             if (submitBtn) {
+                // 🚀 支持跳过全站托管配置：按钮始终保持可点击交互
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+
                 if (!isAuthed) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.5';
-                    submitBtn.style.cursor = 'not-allowed';
+                    if (btnText) btnText.innerText = '⏩ 跳过托管配置并完成品牌开业';
                     if (hintEl) {
                         hintEl.style.display = 'block';
-                        hintEl.style.color = 'var(--danger)';
-                        hintEl.innerText = '🔒 提示：须至少授权绑定 GitHub Pages 或 Cloudflare Pages 其中一项分发托管渠道后，方可完成配置';
+                        hintEl.style.color = 'var(--accent)';
+                        hintEl.innerText = '💡 提示：当前未绑定全站托管。您可以直接点击上方按钮跳过配置，后续可随时在治理中心【全站托管】中补充配置。';
                     }
                 } else {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = '1';
-                    submitBtn.style.cursor = 'pointer';
+                    if (btnText) btnText.innerText = '⚡ 完成配置并发布站点';
                     if (hintEl) {
                         hintEl.style.display = 'block';
                         hintEl.style.color = 'var(--accent-green)';
