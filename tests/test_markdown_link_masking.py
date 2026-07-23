@@ -81,3 +81,17 @@ def test_other_masks_intact():
     
     unmasked = AILogicHub.unmask_block(masked, masks)
     assert unmasked == text
+
+
+def test_llm_casing_and_bracket_dropped_self_healing():
+    """验证 LLM 产生大小写抖动及丢弃方括号时的自愈还原能力"""
+    text = "写点笔记，[[创建链接]]，或者试一试[导入器](https://example.com/import)"
+    masked, masks = AILogicHub.mask_block(text)
+    
+    # 模拟 LLM 产生了大小写抖动 (__b_mask_0__) 并且把 [导入器] 的方括号丢弃变成了 Importer (__B_MASK_1__)
+    llm_output = "Schreiben Sie Notizen, __b_mask_0__, oder probieren Sie Importer (__B_MASK_1__)"
+    unmasked = AILogicHub.unmask_block(llm_output, masks)
+    
+    assert "[[创建链接]]" in unmasked
+    assert "[Importer](https://example.com/import)" in unmasked
+

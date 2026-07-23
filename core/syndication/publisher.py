@@ -88,14 +88,17 @@ class PublisherService:
 
             # 🛡️ [物理避让机制] 如果主权引擎中已经激活了生命周期托管的流式分发插件，本旁听事件自动熔断，防范双核重复投递
             engine = kwargs.get("engine")
-            if engine and hasattr(engine, 'lifecycle_manager'):
-                try:
-                    active_plugins = [p.__class__.__name__ for p in getattr(engine.lifecycle_manager, 'plugins', [])]
-                    if "SovereignDeploymentPlugin" in active_plugins:
-                        tlog.debug("🛡️ [发布中心] 侦测到已启用生命周期托管的 SovereignDeploymentPlugin，事件旁路分发自动避让熔断。")
-                        return
-                except Exception:
-                    pass
+            try:
+                from core.services.post_sync import LifecycleManager
+                active_tasks = getattr(LifecycleManager, '_tasks', [])
+                if engine and hasattr(engine, 'lifecycle_manager'):
+                    active_tasks = getattr(engine.lifecycle_manager, '_tasks', active_tasks) or getattr(engine.lifecycle_manager, 'plugins', [])
+                active_plugins = [p.__class__.__name__ for p in active_tasks]
+                if "SovereignDeploymentPlugin" in active_plugins:
+                    tlog.debug("🛡️ [发布中心] 侦测到已启用生命周期托管的 SovereignDeploymentPlugin，事件旁路分发自动避让熔断。")
+                    return
+            except Exception as le:
+                tlog.debug(f"⚠️ [发布中心] 生命周期插件判定跳过: {le}")
 
             # [Sovereignty] 默认发布逻辑：根据配置分发至 SSG 目录或影子库
             # 🚀 [V56.9] 命名与占位符治理：优先使用 engine 已解析的物理路径

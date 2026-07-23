@@ -187,12 +187,13 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
     elapsed_seconds = time.perf_counter() - start_perf
     time_display = f"{elapsed_seconds:.2f} 秒" if elapsed_seconds < 60 else f"{int(elapsed_seconds // 60)} 分 {elapsed_seconds % 60:.2f} 秒"
     
+    # 🚀 [V1.2] 优先触发主题的 post_sync 生命周期钩子 (合成 index.html 网页入口与根重定向)
+    engine.theme_hooks.trigger("post_sync")
+
     all_docs_snapshot = engine.meta.get_documents_snapshot()
     from core.services.post_sync import LifecycleManager
+    # ⚡ 统一执行全量下游生命周期插件 (包括一次性全量分发 SovereignDeploymentPlugin)
     LifecycleManager.execute_all(engine, stats, all_docs_snapshot, args)
-    
-    # 🚀 [V1.2] 触发主题的 post_sync 生命周期钩子
-    engine.theme_hooks.trigger("post_sync")
 
     if not args.dry_run:
         engine.meta.save()

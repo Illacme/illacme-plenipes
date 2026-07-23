@@ -184,7 +184,7 @@ class AILogicHub:
 
     @staticmethod
     def unmask_block(text: str, masks: Dict[str, str]) -> str:
-        """🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体"""
+        """🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体，具备 Markdown 结构自愈能力"""
         if not text: return text
         
         # 1. 还原并清洗大模型翻译后的哈希锚点
@@ -202,10 +202,25 @@ class AILogicHub:
         processed_text = re.sub(r'#\|(.*?)\|', repl_anchor, text)
         if not masks: return processed_text
         
-        # 2. 还原被遮罩的 URL
+        # 2. 还原被遮罩的 URL 与实体，并执行 Markdown 控制语法结构自愈
         final_text = processed_text
         for key in sorted(masks.keys(), key=len, reverse=True):
-            final_text = final_text.replace(key, masks[key])
+            val = masks[key]
+            esc_key = re.escape(key)
+            
+            # 自愈 1：修补大模型在 ] 和 ( 之间误插空格的情况，如 `[Label] (__B_MASK_0__)` -> `[Label](__B_MASK_0__)`
+            final_text = re.sub(r'\]\s+\(' + esc_key + r'\)', ']' + '(' + key + ')', final_text)
+
+            # 自愈 2：若 Mask 代表 URL，且大模型在翻译时丢弃了 [ ] 括号（如 `Label (__B_MASK_0__)` 或 `Label(__B_MASK_0__)`）
+            # 自动进行闭环包裹修复 `[Label](key)`
+            if not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
+                pattern_no_bracket = r'(?<!\])\b(?P<label>[^\s\[\]\(\)\{\}]+)\s*\(\s*' + esc_key + r'\s*\)'
+                final_text = re.sub(pattern_no_bracket, r'[\g<label>](' + key + ')', final_text, flags=re.IGNORECASE)
+
+            # 自愈 3：不区分大小写及灵活正则替换 (适配 __b_mask_0__, __B_MASK_0__ 等大模型输出变体)
+            pattern_key = re.compile(esc_key, re.IGNORECASE)
+            final_text = pattern_key.sub(lambda m: val, final_text)
+
         return final_text
 
     @staticmethod
