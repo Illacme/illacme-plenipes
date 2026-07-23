@@ -116,9 +116,12 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                 else:
                     tlog.warning(f"⚠️ [Rescue Blocked] 嵌套提交 '{name}' 探测到救援线程数已达物理上限 ({rescue_count}/{max_rescue_limit})，已拦截增殖。")
 
-            import sys
-            sys.stderr.write(f"📥 [DEBUG] 任务 '{name}' 已压栈 | 池: {id(self)} | 队列: {len(self.queue)}\n")
-            sys.stderr.flush()
+            try:
+                import sys
+                sys.stderr.write(f"📥 [DEBUG] 任务 '{name}' 已压栈 | 池: {id(self)} | 队列: {len(self.queue)}\n")
+                sys.stderr.flush()
+            except Exception:
+                pass
             # 🚀 [V11.5] 格式统一化：(优先级, 时间戳, 任务对象)
             heapq.heappush(self.queue, (priority, task.timestamp, task))
 
