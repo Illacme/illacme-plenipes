@@ -208,36 +208,43 @@ class AILogicHub:
             val = masks[key]
             esc_key = re.escape(key)
             
-            # 自愈 1：修补大模型在 ] 和 ( 之间误插空格的情况，如 `[Label] (__B_MASK_0__)` -> `[Label](__B_MASK_0__)`
-            final_text = re.sub(r'\]\s+\(' + esc_key + r'\)', ']' + '(' + key + ')', final_text)
-
-            # 自愈 2：若 Mask 代表 URL，且大模型在翻译时丢弃了 [ ] 括号（如 `Label (__B_MASK_0__)` 或 `Label(__B_MASK_0__)`）
-            # 自动进行闭环包裹修复 `[Label](key)`
+            # 如果 val 是 URL 或 Anchor URL
             if not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
-                pattern_no_bracket = r'(?<!\])\b(?P<label>[^\s\[\]\(\)\{\}]+)\s*\(\s*' + esc_key + r'\s*\)'
-                final_text = re.sub(pattern_no_bracket, r'[\g<label>](' + key + ')', final_text, flags=re.IGNORECASE)
+                def repl_link(m):
+                    lbl = m.group('label')
+                    anc = m.group('anchor') or ''
+                    return f"[{lbl}]({val}{anc})"
 
-            # 自愈 3：不区分大小写及灵活正则替换 (适配 __b_mask_0__, __B_MASK_0__ 等大模型输出变体)
+                # 自愈 1：强力对齐 [label] __B_MASK_N__#anchor、[label](__B_MASK_N__#anchor)、[label] ( __B_MASK_N__ )
+                # 必须使用 (?<!\[) 和 (?!\]) 排除 Wikilink [[...]]
+                bracket_mask_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\]\s*\(?\s*' + esc_key + r'(?P<anchor>#[^)\s]+)?\s*\)?(?!\])'
+                if re.search(bracket_mask_pattern, final_text, re.IGNORECASE):
+                    final_text = re.sub(bracket_mask_pattern, repl_link, final_text, flags=re.IGNORECASE)
+                    continue
+                
+                # 自愈 2：对于无 [ ] 括起来的单词 + (__B_MASK_N__)，如 `Importer (__B_MASK_0__)`
+                no_bracket_pattern = r'(?<!\])\b(?P<label>[^\s\[\]\(\)\{\}]+)\s*\(\s*' + esc_key + r'\s*\)'
+                if re.search(no_bracket_pattern, final_text, re.IGNORECASE):
+                    final_text = re.sub(no_bracket_pattern, r'[\g<label>](' + val + ')', final_text, flags=re.IGNORECASE)
+                    continue
+
+            # 自愈 3：标准/通用不区分大小写遮罩替换 (用于 Wikilinks [[...]]、Images、Comments、System Masks 等)
             pattern_key = re.compile(esc_key, re.IGNORECASE)
             if pattern_key.search(final_text):
                 final_text = pattern_key.sub(lambda m: val, final_text)
-            elif not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
-                # 自愈 4：若 Mask 为 URL，但大模型彻底丢失了占位符 `(__B_MASK_N__)`，导致只剩下单边 `[Label]`
-                # 自动为未闭合的孤立 `[Label]` 挂载 `(val)`，拯救全链路 AST 校验
-                orphan_pattern = r'\[(?P<label>[^\]]+)\](?!\s*\()'
-                if re.search(orphan_pattern, final_text):
-                    final_text = re.sub(orphan_pattern, r'[\g<label>](' + val + ')', final_text, count=1)
 
-        # 自愈 5：防漏熔断兜底 (若大模型在翻译时彻底抹掉了掩码实体，自动挂载缺失实体，确保 AST 语法及主权标签零丢失)
+        # 自愈 4：防漏熔断兜底 (若大模型在翻译时彻底抹掉了掩码实体，自动挂载缺失实体，确保 AST 语法及主权标签零丢失)
         for key, val in masks.items():
             if val not in final_text:
                 if val.startswith(('http://', 'https://', '/')):
-                    orphan_pattern = r'\[(?P<label>[^\]]+)\](?!\s*\()'
+                    # 寻找未挂载 URL 的单方括号 [label] (排除 Wikilink [[...]])
+                    orphan_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\](?!\]|\s*\()'
                     if re.search(orphan_pattern, final_text):
                         final_text = re.sub(orphan_pattern, r'[\g<label>](' + val + ')', final_text, count=1)
                     else:
                         final_text = final_text.rstrip() + f" [Link]({val})"
                 else:
+                    # 缺失的是 Wikilink 或其他实体，安全地追加在文本末尾
                     final_text = final_text.rstrip() + f" {val}"
 
         return final_text
