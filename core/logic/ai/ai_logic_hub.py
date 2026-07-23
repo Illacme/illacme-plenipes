@@ -215,9 +215,9 @@ class AILogicHub:
                     anc = m.group('anchor') or ''
                     return f"[{lbl}]({val}{anc})"
 
-                # 自愈 1：强力对齐 [label] __B_MASK_N__#anchor、[label](__B_MASK_N__#anchor)、[label] ( __B_MASK_N__ )
+                # 自愈 1：强力对齐 [label] __B_MASK_N__#anchor、[label]-(__B_MASK_N__)、[label] ( __B_MASK_N__ )
                 # 必须使用 (?<!\[) 和 (?!\]) 排除 Wikilink [[...]]
-                bracket_mask_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\]\s*\(?\s*' + esc_key + r'(?P<anchor>#[^)\s]+)?\s*\)?(?!\])'
+                bracket_mask_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\]\s*[-–—]?\s*\(?\s*' + esc_key + r'(?P<anchor>#[^)\s]+)?\s*\)?(?!\])'
                 if re.search(bracket_mask_pattern, final_text, re.IGNORECASE):
                     final_text = re.sub(bracket_mask_pattern, repl_link, final_text, flags=re.IGNORECASE)
                     continue
@@ -246,6 +246,9 @@ class AILogicHub:
                 else:
                     # 缺失的是 Wikilink 或其他实体，安全地追加在文本末尾
                     final_text = final_text.rstrip() + f" {val}"
+
+        # 自愈 5：终极语法连字符与空格清洗（防止德语等语言大模型在 ] 和 ( 之间误加 - 或空格，如 `[Importer]-(http...)` -> `[Importer](http...)`）
+        final_text = re.sub(r'(?<!\[)\]\s*[-–—]?\s*\(', '](', final_text)
 
         return final_text
 
