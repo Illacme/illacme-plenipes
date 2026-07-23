@@ -228,6 +228,18 @@ class AILogicHub:
                 if re.search(orphan_pattern, final_text):
                     final_text = re.sub(orphan_pattern, r'[\g<label>](' + val + ')', final_text, count=1)
 
+        # 自愈 5：防漏熔断兜底 (若大模型在翻译时彻底抹掉了掩码实体，自动挂载缺失实体，确保 AST 语法及主权标签零丢失)
+        for key, val in masks.items():
+            if val not in final_text:
+                if val.startswith(('http://', 'https://', '/')):
+                    orphan_pattern = r'\[(?P<label>[^\]]+)\](?!\s*\()'
+                    if re.search(orphan_pattern, final_text):
+                        final_text = re.sub(orphan_pattern, r'[\g<label>](' + val + ')', final_text, count=1)
+                    else:
+                        final_text = final_text.rstrip() + f" [Link]({val})"
+                else:
+                    final_text = final_text.rstrip() + f" {val}"
+
         return final_text
 
     @staticmethod
