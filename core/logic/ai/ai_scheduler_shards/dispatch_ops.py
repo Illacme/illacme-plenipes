@@ -111,18 +111,25 @@ class AISchedulerDispatchOps:
             source_raw_links = [b for b in re.findall(r'\[\[.*?\]\]', source_raw) if "MASK" not in b]
             if not source_raw_links:
                 return None, None
-                
+
+            # 🚀 [V10.9] 预先解包当前 context 中挂载的系统遮罩 (STB_MASK_N -> 原始 Wikilink)，消除误报
+            if hasattr(ctx, 'masks') and ctx.masks:
+                for idx_mask, mask_val in enumerate(ctx.masks):
+                    mask_key = f"[[STB_MASK_{idx_mask}]]"
+                    if mask_key in body and isinstance(mask_val, str):
+                        body = body.replace(mask_key, mask_val)
+
             source_targets = {normalize_wikilink(b) for b in source_raw_links}
             target_raw_links = re.findall(r'\[\[.*?\]\]', body)
             target_targets = {normalize_wikilink(b) for b in target_raw_links}
-            
+
             body_lower = body.lower()
             missing_targets = set()
             for src_target in source_targets:
                 clean_src = src_target[:-3] if src_target.endswith('.md') else src_target
                 if src_target not in target_targets and clean_src not in target_targets and src_target not in body_lower and clean_src not in body_lower:
                     missing_targets.add(src_target)
-                    
+
             if missing_targets:
                 return "SOVEREIGNTY_SHIELD", f"主权标签 [[{list(missing_targets)[0]}]] 在译文中丢失"
             return None, None
@@ -429,6 +436,7 @@ class AISchedulerDispatchOps:
                             except Exception as be:
                                 retry_count += 1
                                 tlog.warning(f"⚠️ [算力瞬时故障] Block {idx} ({code}) 尝试 {retry_count}/{max_retries} 失败: {be}")
+                                tlog.error(f"🐛 [Block {idx} Failure Debug] Source: {repr(block.content)} | Masked: {repr(masked_content)} | Unmasked: {repr(b_result if 'b_result' in locals() else None)}")
                                 if retry_count < max_retries:
                                     from core.logic.ai.model_intelligence import ModelIntelligenceHub
                                     ModelIntelligenceHub.record_failure(active_translator.node_name, reason=str(be))
