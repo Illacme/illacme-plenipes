@@ -219,7 +219,14 @@ class AILogicHub:
 
             # 自愈 3：不区分大小写及灵活正则替换 (适配 __b_mask_0__, __B_MASK_0__ 等大模型输出变体)
             pattern_key = re.compile(esc_key, re.IGNORECASE)
-            final_text = pattern_key.sub(lambda m: val, final_text)
+            if pattern_key.search(final_text):
+                final_text = pattern_key.sub(lambda m: val, final_text)
+            elif not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
+                # 自愈 4：若 Mask 为 URL，但大模型彻底丢失了占位符 `(__B_MASK_N__)`，导致只剩下单边 `[Label]`
+                # 自动为未闭合的孤立 `[Label]` 挂载 `(val)`，拯救全链路 AST 校验
+                orphan_pattern = r'\[(?P<label>[^\]]+)\](?!\s*\()'
+                if re.search(orphan_pattern, final_text):
+                    final_text = re.sub(orphan_pattern, r'[\g<label>](' + val + ')', final_text, count=1)
 
         return final_text
 

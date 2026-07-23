@@ -95,3 +95,16 @@ def test_llm_casing_and_bracket_dropped_self_healing():
     assert "[[创建链接]]" in unmasked
     assert "[Importer](https://example.com/import)" in unmasked
 
+
+def test_llm_complete_placeholder_dropped_self_healing():
+    """验证 LLM 彻底遗漏占位符 (__B_MASK_1__) 只保留 [Importer] 时的自愈挂载能力"""
+    text = "写点笔记，或者试一试[导入器](https://example.com/import)"
+    masked, masks = AILogicHub.mask_block(text)
+    
+    # 模拟 LLM 彻底删除了 (__B_MASK_0__) 占位符，只返回了 [Importer]
+    llm_output = "Schreiben Sie Notizen, oder probieren Sie [Importer]"
+    unmasked = AILogicHub.unmask_block(llm_output, masks)
+    
+    assert "[Importer](https://example.com/import)" in unmasked
+
+

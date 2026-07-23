@@ -99,11 +99,27 @@ class AISchedulerDispatchOps:
 
         def _audit_translation(body, source_raw):
             import re
-            source_brackets = {b for b in re.findall(r'\[\[.*?\]\]', source_raw) if "MASK" not in b}
-            target_brackets = set(re.findall(r'\[\[.*?\]\]', body))
-            missing = source_brackets - target_brackets
-            if missing:
-                return "SOVEREIGNTY_SHIELD", f"主权标签 {list(missing)[0]} 在译文中丢失"
+            def normalize_wikilink(link):
+                content = link.strip('[]')
+                target = content.split('|')[0].strip()
+                return target.lower()
+
+            source_raw_links = [b for b in re.findall(r'\[\[.*?\]\]', source_raw) if "MASK" not in b]
+            if not source_raw_links:
+                return None, None
+                
+            source_targets = {normalize_wikilink(b) for b in source_raw_links}
+            target_raw_links = re.findall(r'\[\[.*?\]\]', body)
+            target_targets = {normalize_wikilink(b) for b in target_raw_links}
+            
+            body_lower = body.lower()
+            missing_targets = set()
+            for src_target in source_targets:
+                if src_target not in target_targets and src_target not in body_lower:
+                    missing_targets.add(src_target)
+                    
+            if missing_targets:
+                return "SOVEREIGNTY_SHIELD", f"主权标签 [[{list(missing_targets)[0]}]] 在译文中丢失"
             return None, None
 
         route_style = None
@@ -353,8 +369,12 @@ class AISchedulerDispatchOps:
                         
                         while retry_count < max_retries:
                             try:
-                                # 🛡️ [P4] 重试时注入结构对准自愈警告指令
+                                # 🛡️ [P4] 重试与屏蔽保护：注入结构对准与遮罩保留提示指令
                                 current_remedy = block_remedy
+                                if "MASK_" in masked_content:
+                                    mask_guard_instruction = "CRITICAL: You MUST strictly preserve all __B_MASK_N__ or MASK tags in the translated text exactly inside their parentheses, e.g. [translated_text](__B_MASK_N__). Do NOT remove or omit any __B_MASK_N__ tags!"
+                                    current_remedy = (current_remedy + "\n" + mask_guard_instruction) if current_remedy else mask_guard_instruction
+
                                 if retry_count > 0:
                                     warning_msg = (
                                         "⚠️ [主权自愈提示]：前一轮翻译破坏了 Markdown/HTML 控制标记结构（如代码块不闭合、Wikilinks 数量不符或粗体未闭合）。"
