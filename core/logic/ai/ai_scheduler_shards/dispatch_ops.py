@@ -102,6 +102,10 @@ class AISchedulerDispatchOps:
             def normalize_wikilink(link):
                 content = link.strip('[]')
                 target = content.split('|')[0].strip()
+                if target.lower().endswith('.md'):
+                    target = target[:-3]
+                elif target.lower().endswith('.markdown'):
+                    target = target[:-9]
                 return target.lower()
 
             source_raw_links = [b for b in re.findall(r'\[\[.*?\]\]', source_raw) if "MASK" not in b]
@@ -115,7 +119,8 @@ class AISchedulerDispatchOps:
             body_lower = body.lower()
             missing_targets = set()
             for src_target in source_targets:
-                if src_target not in target_targets and src_target not in body_lower:
+                clean_src = src_target[:-3] if src_target.endswith('.md') else src_target
+                if src_target not in target_targets and clean_src not in target_targets and src_target not in body_lower and clean_src not in body_lower:
                     missing_targets.add(src_target)
                     
             if missing_targets:
