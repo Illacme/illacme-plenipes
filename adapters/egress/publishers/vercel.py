@@ -153,7 +153,7 @@ class VercelPublisher(BasePublisher):
         self.ensure_npm_dependency("vercel")
         for bin_name in [self.vercel_path, os.path.join(os.getcwd(), "node_modules", ".bin", "vercel"), "npx"]:
             try:
-                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "vercel", "--version"]
+                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "-y", "vercel", "--version"]
                 res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
                 if res.returncode == 0:
                     return True

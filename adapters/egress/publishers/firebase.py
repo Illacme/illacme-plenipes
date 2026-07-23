@@ -80,7 +80,7 @@ class FirebaseHostingPublisher(BasePublisher):
                 json.dump(fb_config, f, indent=2)
 
             # 组装命令，若支持本地 npx 执行则使用 npx firebase
-            cmd = ["npx", "firebase", "deploy", "--only", "hosting", "--project", self.project]
+            cmd = ["npx", "-y", "firebase", "deploy", "--only", "hosting", "--project", self.project]
 
             env = os.environ.copy()
             # 过滤 Token 占位符
@@ -157,7 +157,7 @@ class FirebaseHostingPublisher(BasePublisher):
     def is_healthy(self) -> bool:
         self.ensure_npm_dependency("firebase-tools")
         try:
-            res = subprocess.run(["npx", "firebase", "--version"], capture_output=True, text=True, timeout=15)
+            res = subprocess.run(["npx", "-y", "firebase", "--version"], capture_output=True, text=True, timeout=15)
             return res.returncode == 0
         except Exception:
             return False

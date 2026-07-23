@@ -106,4 +106,4 @@ class HexoAdapter(BaseSSGAdapter):
     @classmethod
     def get_build_command(cls) -> str:
         """🚀 [V78.0] 返回 Hexo 的标准构建命令"""
-        return "npx hexo generate"
+        return "npx -y hexo generate"

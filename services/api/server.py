@@ -50,16 +50,19 @@ app.include_router(governance.router, tags=["Governance"])
 app.include_router(ws.router, tags=["Realtime"])
 app.include_router(agent.router, tags=["Agent"])
 
-@app.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘与向导的存活探测 (规范契约)"""
+from .schemas import HealthCheckResponse
+
+@app.get("/health", response_model=HealthCheckResponse)
+async def health_check() -> HealthCheckResponse:
+    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘的存活探测"""
     from core.runtime.engine_singleton import get_global_engine
     engine = get_global_engine()
-    return {
-        "status": "online" if engine else "starting",
-        "engine": "Illacme Plenipes V50.3",
-        "imprint": engine.imprint_id if engine else ""
-    }
+    return HealthCheckResponse(
+        status="ok",
+        engine="Illacme-plenipes",
+        imprint=engine.imprint_id if engine else None
+    )
+
 
 @app.get("/")
 async def root_redirect() -> RedirectResponse:

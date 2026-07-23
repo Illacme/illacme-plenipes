@@ -32,18 +32,26 @@ def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None
         bus.emit("SECURITY_ALERT", category="API_TOKEN_EXPIRED", message="接口访问认证失败：检测到未授权或非法的令牌（API Token）尝试跨站越权访问控制台。")
         raise HTTPException(status_code=403, detail="Unauthorized")
 
-@router.get("/api/system/health")
-def health_check() -> Dict[str, str]:
-    """基础健康检查 (规范契约)"""
+from services.api.schemas import SystemHealthResponse, HealthMatrixResponse
+
+@router.get("/api/system/health", response_model=SystemHealthResponse)
+def health_check() -> SystemHealthResponse:
+    """🚀 [P1 规范统一] 系统全息健康检查端点"""
     engine = get_global_engine()
-    if not engine: 
-        return {"status": "starting", "engine": "Illacme-plenipes", "imprint": ""}
-    return {
-        "status": "online", 
-        "engine": "Illacme-plenipes", 
-        "imprint": engine.imprint_id or "", 
-        "services": str(engine.services)
-    }
+    if not engine:
+        return SystemHealthResponse(
+            status="starting",
+            engine="Illacme-plenipes",
+            imprint=None,
+            services={}
+        )
+    services_dict = engine.services if isinstance(engine.services, dict) else {}
+    return SystemHealthResponse(
+        status="online",
+        engine="Illacme-plenipes",
+        imprint=getattr(engine, "imprint_id", None),
+        services=services_dict
+    )
 
 @router.get("/api/system/status", dependencies=[Depends(verify_token)])
 def get_system_status() -> Dict[str, Any]:
@@ -172,10 +180,15 @@ def stop_preview() -> Dict[str, str]:
         return {"status": "success", "message": "Preview server stopped."}
     except Exception as e: raise HTTPException(status_code=500, detail=f"Stop failed: {str(e)}")
 
-@router.get("/api/system/health/matrix", dependencies=[Depends(verify_token)])
-def get_health_matrix() -> Dict[str, Dict[str, Any]]:
-    """获取系统组件全息健康矩阵"""
-    return ComponentMonitor.get_matrix()
+@router.get("/api/system/health/matrix", dependencies=[Depends(verify_token)], response_model=HealthMatrixResponse)
+def get_health_matrix() -> HealthMatrixResponse:
+    """🚀 [P1 规范统一] 获取系统组件全息健康矩阵"""
+    matrix = ComponentMonitor.get_matrix()
+    return HealthMatrixResponse(
+        engine=matrix.get("engine", {"status": "offline", "label": "核心引擎", "health": 0}),
+        onboarding=matrix.get("onboarding", {"status": "offline", "label": "版图向导", "health": 0}),
+        preview=matrix.get("preview", {"status": "offline", "label": "预览服务", "health": 0})
+    )
 
 @router.get("/api/system/languages")
 def get_supported_languages() -> Dict[str, List[Any]]:

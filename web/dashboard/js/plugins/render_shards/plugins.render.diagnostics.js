@@ -1,0 +1,219 @@
+/**
+ * ⚙️ [V87.0] Illacme Plenipes Plugins - Cross-Plugin Diagnostics & Credentials Sensing Shard
+ * 职责：全站配置 JSON 备份导出/导入、剪贴板 Token 特征智能感知回填与跨插件同源凭据复用算子。
+ */
+
+window.exportConfigBackup = () => {
+    const data = window.settingsData || {};
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `illacme_plenipes_config_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (window.showToast) window.showToast("🟢 配置备份文件导出成功！", "success");
+};
+
+window.importConfigBackup = (event) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            if (!parsed || typeof parsed !== 'object') throw new Error("无效的 JSON 配置格式");
+            
+            if (confirm("确认使用导入的文件恢复全站插件与平台配置？这将覆盖当前保存数据！")) {
+                const fetchFunc = window.apiFetch || (async (url, init) => {
+                    const r = await fetch(url, init);
+                    return r.json();
+                });
+                const res = await fetchFunc('/api/system/config/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: parsed })
+                });
+                if (res && (res.status === 'success' || res.success)) {
+                    window.settingsData = parsed;
+                    if (window.loadPlugins) await window.loadPlugins(true);
+                    if (window.showToast) window.showToast("🟢 成功导入配置备份！全站配置已自动同步。", "success");
+                } else {
+                    alert("导入保存失败: " + (res ? (res.error || res.message) : "未知错误"));
+                }
+            }
+        } catch(err) {
+            alert("解析配置文件失败: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+};
+
+// 剪贴板凭据智能感知与一秒导入 (Smart Clipboard Credentials Sense)
+window.senseClipboardCredentials = async () => {
+    try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+            if (window.showToast) window.showToast("当前浏览器未开放剪贴板读取权限", "warning");
+            return;
+        }
+        const text = (await navigator.clipboard.readText() || '').trim();
+        if (!text || text.length < 8) {
+            if (window.showToast) window.showToast("未在剪贴板中检测到有效凭据字符串", "info");
+            return;
+        }
+
+        const activeDrawer = document.getElementById('plugin-drawer');
+        const drawerTitle = document.getElementById('p-drawer-title');
+        const isDrawerOpen = activeDrawer && activeDrawer.style.display !== 'none' && activeDrawer.offsetHeight > 0;
+
+        if (isDrawerOpen) {
+            const tokenInput = activeDrawer.querySelector('input[data-path*="token"], input[data-path*="api_key"], input[data-path*="secret_key"], input[data-path*="password"], input[name*="token"], input[type="password"]');
+            if (tokenInput) {
+                tokenInput.value = text;
+                tokenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                tokenInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                tokenInput.focus();
+                tokenInput.style.transition = 'all 0.3s';
+                tokenInput.style.outline = '2px solid #00ff88';
+                tokenInput.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.6)';
+                setTimeout(() => {
+                    tokenInput.style.outline = '';
+                    tokenInput.style.boxShadow = '';
+                }, 1500);
+
+                const pluginName = drawerTitle ? drawerTitle.innerText.replace('⚙️ 配置能力:', '').trim() : '当前平台';
+                if (window.showToast) window.showToast(`🟢 已成功将剪贴板凭据智能填入 [${pluginName}]！`, "success");
+                return;
+            }
+        }
+
+        let detectedProvider = null;
+        if (text.startsWith('ghp_') || text.startsWith('github_pat_')) {
+            detectedProvider = { id: 'github_pages', name: 'GitHub Token', category: 'hosting' };
+        } else if (text.startsWith('glpat-')) {
+            detectedProvider = { id: 'gitlab_pages', name: 'GitLab Token', category: 'hosting' };
+        } else if (text.startsWith('wrangler_')) {
+            detectedProvider = { id: 'cloudflare_pages', name: 'Cloudflare Token', category: 'hosting' };
+        } else if (text.startsWith('Bearer ')) {
+            detectedProvider = { id: 'lsky_pro', name: 'Lsky Pro Token', category: 'image_hosting' };
+        }
+
+        if (detectedProvider && typeof window.openPluginDrawer === 'function') {
+            window.openPluginDrawer(detectedProvider.id, detectedProvider.category);
+            setTimeout(() => {
+                const drawer = document.getElementById('plugin-drawer');
+                if (drawer) {
+                    const input = drawer.querySelector('input[data-path*="token"], input[data-path*="api_key"], input[type="password"]');
+                    if (input) {
+                        input.value = text;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.focus();
+                        if (window.showToast) window.showToast(`🟢 已自动打开 [${detectedProvider.name}] 并回填凭据！`, "success");
+                    }
+                }
+            }, 200);
+        } else {
+            if (window.showToast) {
+                window.showToast(`💡 已从剪贴板捕获 Key (${text.slice(0, 8)}...)，请打开目标插件抽屉自动填充。`, "info");
+            }
+        }
+    } catch(err) {
+        if (window.showToast) window.showToast(`读取剪贴板提示: ${err.message || err}`, "warning");
+    }
+};
+
+// 全站跨插件链路诊断算子
+window.runCrossPluginDiagnostics = () => {
+    const issues = [];
+    const cfgData = window.settingsData || {};
+    const plugins = window.allPlugins || [];
+
+    plugins.forEach(p => {
+        if (p.is_enabled && p.is_manageable && ['hosting', 'image_hosting', 'publisher'].includes(p.category)) {
+            let platformCfg = {};
+            if (p.category === 'hosting') platformCfg = cfgData.publish_control?.direct_upload?.[p.id] || {};
+            else if (p.category === 'image_hosting') platformCfg = cfgData.image_hosting?.[p.id] || {};
+            else platformCfg = cfgData.syndication?.[p.id] || {};
+
+            const tokenVal = platformCfg.token || platformCfg.api_key || platformCfg.access_token || platformCfg.api_token || platformCfg.secret_key || platformCfg.integration_token || platformCfg.cookie || platformCfg.password || platformCfg.private_key || '';
+            if (!tokenVal && !['sftp', 'local_fs'].includes(p.id)) {
+                issues.push({
+                    type: 'warning',
+                    title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据丢失警示`,
+                    desc: `该通道处于开启状态但未充填有效鉴权 Token，可能导致物理分发失败。`,
+                    actionText: '🎯 补全凭据',
+                    action: `openPluginConfig('${p.id}', '${p.category}')`
+                });
+            }
+        }
+    });
+
+    const ghPagesToken = cfgData.publish_control?.direct_upload?.github_pages?.token || cfgData.publish_control?.direct_upload?.github_pages?.access_token;
+    const ghImgToken = cfgData.image_hosting?.github?.token || cfgData.image_hosting?.github?.access_token;
+
+    if (ghPagesToken && !ghImgToken) {
+        issues.push({
+            type: 'info',
+            title: `💡 [GitHub 图床] 可复用 GitHub Pages 凭据`,
+            desc: `检测到 GitHub Pages 已配置有效 Token，建议一键共享给 GitHub 图床。`,
+            actionText: '📋 一键同源复用',
+            action: `window.autoReuseSameOriginCredential('${ghPagesToken}', 'github', 'image_hosting')`
+        });
+    }
+
+    if (issues.length === 0) return '';
+
+    const firstIssue = issues[0];
+    return `
+        <div class="cross-plugin-diagnostics-banner" style="width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; border: 1px dashed ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.4)' : 'var(--neon-cyan)'}; background: ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.06)' : 'rgba(0, 242, 255, 0.05)'}; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: ${firstIssue.type === 'warning' ? '#ffb700' : 'var(--neon-cyan)'};">${firstIssue.title}</span>
+                <span style="font-size: 0.78rem; color: var(--text-dim);">${firstIssue.desc}</span>
+            </div>
+            <button type="button" onclick="${firstIssue.action}" style="font-size: 0.72rem; background: ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.15)' : 'rgba(0, 242, 255, 0.12)'}; border: 1px solid ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.35)' : 'rgba(0, 242, 255, 0.3)'}; color: ${firstIssue.type === 'warning' ? '#ffb700' : 'var(--neon-cyan)'}; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">${firstIssue.actionText}</button>
+        </div>
+    `;
+};
+
+// 自动快速同源凭据复用算子
+window.autoReuseSameOriginCredential = (sourceToken, targetId, targetCategory) => {
+    if (typeof window.openPluginDrawer === 'function') {
+        window.openPluginDrawer(targetId, targetCategory);
+        setTimeout(() => {
+            const drawer = document.getElementById('plugin-drawer');
+            if (drawer && sourceToken) {
+                const input = drawer.querySelector('input[name*="token"], input[name*="access_token"], input[data-path*="token"]');
+                if (input) {
+                    input.value = sourceToken;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    input.focus();
+                    if (window.showToast) window.showToast("✅ 已全自动同步并填入同源 Token！", "success");
+                }
+            }
+        }, 150);
+    } else if (typeof window.openPluginConfig === 'function') {
+        window.openPluginConfig(targetId, targetCategory);
+        setTimeout(() => {
+            const drawer = document.getElementById('plugin-drawer');
+            if (drawer && sourceToken) {
+                const input = drawer.querySelector('input[name*="token"], input[name*="access_token"], input[data-path*="token"]');
+                if (input) {
+                    input.value = sourceToken;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    input.focus();
+                    if (window.showToast) window.showToast("✅ 已全自动同步并填入同源 Token！", "success");
+                }
+            }
+        }, 150);
+    }
+};
+
+window.addEventListener('focus', () => {
+    const pluginsPanel = document.getElementById('view-plugins');
+    if (pluginsPanel && pluginsPanel.classList.contains('active')) {
+        window.senseClipboardCredentials();
+    }
+});

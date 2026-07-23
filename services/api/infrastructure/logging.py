@@ -23,6 +23,8 @@ class HeartbeatFilter(logging.Filter):
         msg = record.getMessage()
         # 屏蔽仪表盘的高频数据轮询与心跳日志，防止污染控制台
         ignored_endpoints = [
+            "/health",
+            "/api/system/health",
             "/api/system/stats",
             "/api/system/health/matrix",
             "/api/system/context",

@@ -246,7 +246,7 @@ class CloudflarePagesPublisher(BasePublisher):
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         for bin_name in [self.wrangler_path, os.path.join(project_root, "node_modules", ".bin", "wrangler"), "npx"]:
             try:
-                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "wrangler", "--version"]
+                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "-y", "wrangler", "--version"]
                 res = subprocess.run(cmd, capture_output=True, text=True, timeout=self.health_check_timeout)
                 if res.returncode == 0:
                     return True
