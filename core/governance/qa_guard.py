@@ -65,7 +65,7 @@ class QAGuard:
 
         # 如果 AI 产物中丢失了追踪标签，则强制物理补全
         if tid not in ctx.body_content and "AEL-" not in ctx.body_content:
-            tlog.warning(f"🛡️ [QA Guard] 发现 {ctx.rel_path} 产物中丢失主权追踪标签，正在执行物理修复...")
+            tlog.info(f"🛡️ [QA Guard] 物理补充 {ctx.rel_path} 产物的主权追踪标签...")
             ctx.body_content += f"\n\n<!-- Sovereign-Tag: [[AEL-Iter-ID: {tid}]] -->"
 
     def _verify_structure(self, ctx):
