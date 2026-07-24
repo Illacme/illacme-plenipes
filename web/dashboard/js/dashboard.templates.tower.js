@@ -338,7 +338,7 @@ window.viewTemplates.analytics = `
                                     <span>自愈机制守护状态</span>
                                     <span style="opacity: 0.6; cursor: help;" title="系统物理自动核验双向链接，并在出版构建时兜底自愈死链">💡</span>
                                 </span>
-                                <span id="analytics-self-heal-status" style="font-size: 0.82rem; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 4px; height: 26px;">🟢 严丝合缝 (零死链风险)</span>
+                                <span id="analytics-self-heal-status" style="font-size: 0.78rem; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 4px; height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🛡️ 已自动兜底 1 处死链</span>
                             </div>
                         </div>
                     </div>
