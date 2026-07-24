@@ -2,23 +2,35 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes Webhook Dispatcher Plugin
-🚀 [V17.0]：从核心库剥离，作为独立适配器运行。
-职责：在同步完成后向目标端点推送物理分发信号。
+🚀 [V18.0]：独立于通知与 Hook 大类下运行。
+职责：在同步完成后向目标端点推送物理分发信号，触发下游 CI/CD 或自动化逻辑。
 """
 
 import requests
 import json
 import hmac
 import hashlib
-from core.adapters.egress.publishers.base import BasePublisher
+from core.adapters.egress.webhook.base import BaseWebhookDriver
 
-class WebhookDispatchPublisher(BasePublisher):
-    """🚀 [V17.0] Webhook 分发插件"""
+class WebhookDispatchDriver(BaseWebhookDriver):
+    """🚀 [V18.0] Webhook 信号触发器适配器"""
     PLUGIN_ID = "webhook_dispatch"
-    DISPLAY_NAME = "Webhook Dispatcher"
+    DISPLAY_NAME = "Webhook Dispatcher 信号触发器"
     VERSION = "V1.0"
-    DESCRIPTION = "在内容发布后向指定 URL 推送物理分发信号，触发下游 CI/CD 或通知逻辑。"
-    
+    DESCRIPTION = "同步完成后向目标端点推送带 HMAC 签名的分发信号，触发下游 CI/CD 或自动化工具。"
+
+    def match(self, url: str) -> bool:
+        return 'webhook_dispatch' in url or 'ci.yourdomain.com' in url
+
+    def build_payload(self, title: str, url_path: str, lang_code: str, ael_tag: str) -> dict:
+        return {
+            "event": "sync.completed",
+            "title": title,
+            "url_path": url_path,
+            "lang": lang_code,
+            "ael_tag": ael_tag
+        }
+
     def push(self, bundle_path: str, metadata: dict) -> dict:
         url = self.config.get("url")
         secret = self.config.get("secret")
@@ -42,10 +54,9 @@ class WebhookDispatchPublisher(BasePublisher):
             headers['X-Hub-Signature-256'] = f"sha256={signature}"
 
         try:
-            proxy = self.get_proxy()
-            proxies = {"http": proxy, "https": proxy} if proxy else None
-            resp = requests.post(url, data=data, headers=headers, proxies=proxies, timeout=10)
+            resp = requests.post(url, data=data, headers=headers, timeout=10)
             resp.raise_for_status()
             return {"status": "success", "http_code": resp.status_code}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+

@@ -1,8 +1,22 @@
+import time
+import hmac
+import hashlib
+import base64
 from core.adapters.egress.webhook.base import BaseWebhookDriver
+
 class FeishuDriver(BaseWebhookDriver):
-    def match(self, url): return 'feishu.cn' in url
-    def build_payload(self, title, url_path, lang_code, ael_tag):
-        return {
+    DISPLAY_NAME = "飞书 Notice 适配器"
+    VERSION = "V1.0"
+    DESCRIPTION = "自动构造飞书 Post/Interactive 富文本卡片，支持签名校验密钥。"
+
+    def match(self, url: str) -> bool:
+        return 'feishu.cn' in url or 'larksuite.com' in url
+
+    def build_payload(self, title: str, url_path: str, lang_code: str, ael_tag: str) -> dict:
+        secret = self.config.get("secret") or ""
+        msg_type = self.config.get("msg_type") or "post"
+
+        payload = {
             "msg_type": "post",
             "content": {
                 "post": {
@@ -18,3 +32,13 @@ class FeishuDriver(BaseWebhookDriver):
                 }
             }
         }
+
+        if secret:
+            timestamp = str(int(time.time()))
+            string_to_sign = f"{timestamp}\n{secret}"
+            hmac_code = hmac.new(string_to_sign.encode("utf-8"), digestmod=hashlib.sha256).digest()
+            sign = base64.b64encode(hmac_code).decode("utf-8")
+            payload["timestamp"] = timestamp
+            payload["sign"] = sign
+
+        return payload

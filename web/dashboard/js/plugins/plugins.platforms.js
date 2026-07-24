@@ -19,6 +19,7 @@
         'rawRenderPlatformConfig',
         'renderPlatformConfig',
         'rawRenderPublisherConfig',
+        'rawRenderNotificationConfig',
         'rawRenderImageHostingConfig',
         'renderImageHostingConfig',
         'triggerGithubSSHCheck',

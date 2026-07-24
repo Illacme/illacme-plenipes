@@ -36,9 +36,101 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     ]
     syndication_plugins = ["wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost"]
     hosting_plugins = ["cloudflare_pages", "github_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
+    notification_plugins = ["feishu", "dingtalk", "wecom", "telegram", "discord", "generic", "webhook_dispatch"]
 
-    # 对图床/托管/分发插件执行定制化连接探测
-    if plugin_id in media_plugins:
+    # 对图床/托管/分发/通知类插件执行定制化连接探测
+    if plugin_id in notification_plugins or parent_id == "webhook_gateway":
+        url = settings.get("url") or ""
+        secret = settings.get("secret") or ""
+        bot_token = settings.get("bot_token") or settings.get("token") or ""
+        chat_id = settings.get("chat_id") or ""
+        enabled = settings.get("enabled", True)
+
+        if not enabled:
+            logs.append(log("WARN", "⚠️ [警告] 当前通知节点在系统面板中处于未激活状态，连通性演练将基于当前参数强制进行。"))
+        
+        # 针对 Telegram Bot 的专用寻址逻辑
+        target_url = url
+        if plugin_id == "telegram":
+            if not target_url and bot_token:
+                target_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                logs.append(log("INFO", f"🤖 [Telegram] 自动根据 Bot Token 组装 API 访问端点。"))
+            if not chat_id:
+                logs.append(log("ERROR", "❌ [错误] Telegram 未配置目标 Chat ID (如 @my_channel 或 -100xxx)。"))
+                success = False
+
+        if not target_url and success:
+            logs.append(log("ERROR", "❌ [错误] 物理端点 URL 为空！请输入有效的 Webhook HTTP/HTTPS 地址或 Bot 凭据。"))
+            success = False
+        elif target_url and not (target_url.startswith("http://") or target_url.startswith("https://")):
+            # 🚀 [V105.0] 极简智能降级自愈：全自动补全平台官方标准前缀
+            if plugin_id == "feishu":
+                target_url = f"https://open.feishu.cn/open-apis/bot/v2/hook/{target_url.lstrip('/')}"
+                logs.append(log("INFO", f"🪄 [智能自愈] 探测到纯指纹 Key，已全自动补齐飞书官方标准前缀: {target_url[:55]}..."))
+            elif plugin_id == "dingtalk":
+                target_url = f"https://oapi.dingtalk.com/robot/send?access_token={target_url.lstrip('/')}"
+                logs.append(log("INFO", f"🪄 [智能自愈] 探测到纯 Token，已全自动补齐钉钉官方标准前缀: {target_url[:55]}..."))
+            elif plugin_id == "wecom":
+                target_url = f"https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={target_url.lstrip('/')}"
+                logs.append(log("INFO", f"🪄 [智能自愈] 探测到纯 Key，已全自动补齐企业微信官方标准前缀: {target_url[:55]}..."))
+            elif plugin_id == "discord":
+                target_url = f"https://discord.com/api/webhooks/{target_url.lstrip('/')}"
+                logs.append(log("INFO", f"🪄 [智能自愈] 探测到纯路径，已全自动补齐 Discord 官方标准前缀: {target_url[:55]}..."))
+            else:
+                logs.append(log("ERROR", f"❌ [错误] 物理端点 URL 格式不合法 (必须以 http:// 或 https:// 开头): '{target_url}'"))
+                success = False
+
+        if success:
+            logs.append(log("INFO", f"📡 [探测] 正在对第三方 API 发起真实连通性握手: {target_url[:50]}..."))
+            try:
+                import requests
+                headers = {'Content-Type': 'application/json'}
+                
+                # 动态加载对应驱动构造官方合规的 Test Payload
+                driver_payload = {
+                    "event": "connectivity_test",
+                    "text": "✨ Illacme Plenipes 真实 API 物理通道连通性测试成功。"
+                }
+                
+                if plugin_id == "dingtalk":
+                    from adapters.notifications.webhook.dingtalk import DingTalkDriver
+                    driver = DingTalkDriver(config=settings)
+                    target_url = driver.compute_signed_url(target_url, secret)
+                    driver_payload = driver.build_payload("真实 API 握手测试", "/test", "zh", "AEL-PING")
+                    if secret:
+                        logs.append(log("INFO", "🔑 [签名] 钉钉 timestamp + sign HMAC-SHA256 签名计算并拼接完成。"))
+                elif plugin_id == "feishu":
+                    from adapters.notifications.webhook.feishu import FeishuDriver
+                    driver = FeishuDriver(config=settings)
+                    driver_payload = driver.build_payload("真实 API 握手测试", "/test", "zh", "AEL-PING")
+                    if secret:
+                        logs.append(log("INFO", "🔑 [签名] 飞书 timestamp + sign 签名卡片凭据已成功算入。"))
+                elif plugin_id == "telegram":
+                    from adapters.notifications.webhook.telegram import TelegramDriver
+                    driver = TelegramDriver(config=settings)
+                    driver_payload = driver.build_payload("真实 API 握手测试", "/test", "zh", "AEL-PING")
+                elif plugin_id == "discord":
+                    from adapters.notifications.webhook.discord import DiscordNoticeDriver
+                    driver = DiscordNoticeDriver(config=settings)
+                    driver_payload = driver.build_payload("真实 API 握手测试", "/test", "zh", "AEL-PING")
+                elif plugin_id == "generic":
+                    from adapters.notifications.webhook.generic import GenericWebhookDriver
+                    driver = GenericWebhookDriver(config=settings)
+                    custom_hdrs = driver.get_custom_headers()
+                    if custom_hdrs:
+                        headers.update(custom_hdrs)
+                        logs.append(log("INFO", f"🔑 [Header] 自定义 HTTP 报头已成功注入 ({len(custom_hdrs)} 项)。"))
+
+                resp = requests.post(target_url, json=driver_payload, headers=headers, timeout=8)
+                if resp.status_code in (200, 201, 202, 204):
+                    logs.append(log("INFO", f"🟢 [成功] 第三方 API 物理服务响应 HTTP {resp.status_code} OK。链路与凭据校验圆满成功！"))
+                else:
+                    logs.append(log("WARN", f"⚠️ [响应异常] 对端 API 返回非 20x 状态码: HTTP {resp.status_code} | 响应体: {resp.text[:120]}"))
+            except Exception as e:
+                logs.append(log("ERROR", f"❌ [网络错误] API 物理可达性异常或超时: {e}"))
+                success = False
+
+    elif plugin_id in media_plugins:
         from .plugin_dry_run_media import run_media_plugin_dry_run
         enabled = settings.get("enabled", True)
         if not enabled:
@@ -56,6 +148,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前托管平台在品牌中处于未激活状态，测试将继续验证输入参数。"))
         success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
+
     else:
         # 获取需要验证的字段（向下兼容多平台定制的个性化参数映射）
         enabled = settings.get("enabled", True)

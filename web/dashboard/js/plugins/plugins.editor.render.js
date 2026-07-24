@@ -61,10 +61,12 @@ window.buildPluginConfigFormHtml = (p) => {
                 </div>
             </div>
         `;
-    } else if (p.category === 'publisher' || p.category === 'hosting') {
+    } else if (p.category === 'publisher' || p.category === 'hosting' || p.category === 'notification') {
         const cfg = p.category === 'hosting'
             ? (window.settingsData?.publish_control?.direct_upload?.[id] || {})
-            : (window.settingsData?.syndication?.[id] || {});
+            : (p.category === 'notification'
+                ? (window.settingsData?.publish_control?.webhook_endpoints?.[id] || {})
+                : (window.settingsData?.syndication?.[id] || {}));
         html += `<div class="settings-grid">${window.renderPlatformConfig ? window.renderPlatformConfig(id, cfg, p.category) : renderPlatformConfig(id, cfg, p.category)}</div>`;
     } else if (p.category === 'image_hosting') {
         const cfg = window.settingsData?.image_hosting?.[id] || {};

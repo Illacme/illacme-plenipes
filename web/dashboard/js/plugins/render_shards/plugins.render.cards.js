@@ -1,8 +1,3 @@
-/**
- * ⚙️ [V87.0] Illacme Plenipes Plugins - Pod Cards & Matrix Grid Render Shard
- * 职责：能力矩阵节点 Pod 卡片渲染、侧边 Tab 栏、搜索过滤、置顶管理与 3D 视差微动效。
- */
-
 window.getPinnedPlugins = () => {
     try {
         return JSON.parse(localStorage.getItem('pinned_plugins') || '[]');
@@ -74,8 +69,9 @@ window.loadPlugins = async (silent = false) => {
         { id: 'protocol', name: '🧠 AI 协议' },
         { id: 'theme', name: '🎨 视觉装帧' },
         { id: 'hosting', name: '🌐 全站托管' },
-        { id: 'image_hosting', name: '📷 图床服务' },
+        { id: 'image_hosting', name: '📷 图床存储' },
         { id: 'publisher', name: '🚀 分发渠道' },
+        { id: 'notification', name: '📢 消息通知' },
         { id: 'editorial', name: '🧬 流程审计' }
     ];
 
@@ -125,7 +121,7 @@ window.isPluginConfigurable = (p) => {
     if (p.has_config === false || p.is_configurable === false) return false;
     if (p.is_manageable === false) return false;
 
-    const configurableCategories = ['hosting', 'image_hosting', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source'];
+    const configurableCategories = ['hosting', 'image_hosting', 'notification', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source'];
     if (configurableCategories.includes(p.category)) {
         return true;
     }
@@ -149,6 +145,8 @@ window.checkPluginConfiguredStatus = (p) => {
         settings = cfgData.publish_control?.direct_upload?.[p.id] || {};
     } else if (p.category === 'image_hosting') {
         settings = cfgData.image_hosting?.[p.id] || {};
+    } else if (p.category === 'notification') {
+        settings = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
     } else {
         settings = cfgData.syndication?.[p.id] || {};
     }
@@ -199,7 +197,8 @@ window.renderPlugins = () => {
         'protocol': '🧠 AI 协议',
         'theme': '🎨 视觉装帧',
         'hosting': '🌐 全站托管',
-        'image_hosting': '📷 图床服务',
+        'image_hosting': '📷 图床存储',
+        'notification': '📢 消息通知',
         'publisher': '🚀 分发渠道',
         'editorial': '🧬 流程审计'
     };
@@ -213,6 +212,7 @@ window.renderPlugins = () => {
         'theme': '定制全站出版物装帧主题、CSS 样式排版与视觉渲染模版引擎。',
         'hosting': '支持 Cloudflare, GitHub Pages, Vercel 等平台自动化构建与部署。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
+        'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
         'publisher': '聚合微信公众号, 知乎, CSDN, Dev.to 等主流创作者社交平台的同步分发渠道。',
         'editorial': '记录全站稿件版本演化指纹、发布履历与全生命周期审计追溯日志。'
     };
@@ -225,7 +225,7 @@ window.renderPlugins = () => {
             <div class="matrix-title-group" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                 <h2 style="margin: 0; font-size: 1.35rem; color: var(--text-bright, #ffffff); font-weight: 700; display: flex; align-items: center; gap: 10px;">
                     ${activeCatTitle}
-                    <span style="font-size: 0.72rem; color: var(--neon-cyan, #00f2fe); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.2); padding: 2px 8px; border-radius: 12px; font-weight: 600;">${filtered.length} 个节点</span>
+                    <span style="font-size: 0.72rem; color: var(--neon-cyan, #00f2fe); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 12px; font-weight: 600;">${filtered.length} 个节点</span>
                 </h2>
             </div>
             <div class="matrix-cat-description" style="font-size: 0.82rem; color: var(--text-dim, rgba(255, 255, 255, 0.65)); line-height: 1.5; margin-top: 2px;">
@@ -266,7 +266,7 @@ window.renderPlugins = () => {
         `;
     }
 
-    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'image_hosting', 'publisher', 'editorial'];
+    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'image_hosting', 'publisher', 'notification', 'editorial'];
 
     const activeSections = categoryOrder.filter(catId => categories[catId] && categories[catId].items.length > 0);
     const hideSectionHeader = window.activePluginCategory !== 'all' && activeSections.length <= 1;
@@ -280,7 +280,7 @@ window.renderPlugins = () => {
                     <div class="plugins-category-header">
                         <h3 style="display: flex; align-items: center; gap: 10px;">
                             ${cat.name}
-                            <span style="font-size: 0.72rem; color: var(--neon-cyan); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.2); padding: 1px 8px; border-radius: 12px; font-weight: 600;">${cat.items.length} 个节点</span>
+                            <span style="font-size: 0.72rem; color: var(--neon-cyan); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 1px 8px; border-radius: 12px; font-weight: 600;">${cat.items.length} 个节点</span>
                         </h3>
                     </div>
                     `}

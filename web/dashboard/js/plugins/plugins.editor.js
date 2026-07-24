@@ -22,7 +22,7 @@ window.renderCrossPluginReuseGuide = (id, category) => {
     }
 
     const selfToken = selfCfg.token || selfCfg.access_token || selfCfg.api_token || selfCfg.api_key || selfCfg.secret_key || selfCfg.password || '';
-    
+
     // 如果当前插件自身已经配置过 Token，物理 0 渲染，不展示同源复用提示
     let reuseHtml = '';
     if (!selfToken) {
@@ -116,7 +116,7 @@ window.asyncCheckClipboardForDrawerToken = async (id) => {
                 <button type="button" class="helper-btn" onclick="window.injectClipboardTextToDrawerToken('${text}', this)" style="background: rgba(0, 255, 136, 0.18); border: 1px solid rgba(0, 255, 136, 0.4); color: #00ff88; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; font-weight: 600;">📋 智能填入</button>
             </div>
         `;
-    } catch(e) {}
+    } catch (e) { }
 };
 
 // 🚀 [V105.0] 剪贴板 Token 精准直投回填算子
@@ -292,10 +292,10 @@ window.openPluginConfig = async (id, category = null) => {
             }
         }
 
-        // 🚀 控制底部“🧪 沙盘演练”按钮的显示与绑定
+        // 🚀 控制底部“🧪 沙盘演练 (测试连接)”按钮的显示与绑定
         const dryRunBtn = document.getElementById('btn-dry-run-plugin');
         if (dryRunBtn) {
-            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting')) {
+            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification')) {
                 dryRunBtn.style.display = 'block';
                 dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${id}')`);
             } else {
@@ -306,7 +306,7 @@ window.openPluginConfig = async (id, category = null) => {
         let html = window.renderCrossPluginReuseGuide(id, p.category);
 
         if (p.is_manageable) {
-            if (typeof window.renderPluginStepWizardHeader === 'function') {
+            if (typeof window.renderPluginStepWizardHeader === 'function' && p.category !== 'notification') {
                 html += window.renderPluginStepWizardHeader(p.id, p.category);
             }
             html += `
@@ -341,7 +341,7 @@ window.openPluginConfig = async (id, category = null) => {
             `;
         }
 
-        if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting')) {
+        if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification')) {
             html += `
                 <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                     <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
@@ -353,7 +353,7 @@ window.openPluginConfig = async (id, category = null) => {
         }
 
         body.innerHTML = html;
-        
+
         // 🚀 [V74.96] 离线预检自愈与出厂设置绑定
         const restoreBtn = document.getElementById('btn-restore-plugin-defaults');
         if (restoreBtn) {
@@ -364,14 +364,14 @@ window.openPluginConfig = async (id, category = null) => {
                 restoreBtn.style.display = 'none';
             }
         }
-        
+
         // 🚀 [V74.96] 脏检查激活
         if (typeof window.initDrawerDirtySensing === 'function') {
             window.initDrawerDirtySensing();
         }
-        
-        // 🚀 [V105.0] 物理结构重构：将表单自动归类封装到 Step 1 与 Step 2 大卡片中
-        if (typeof window.groupDrawerFormIntoStepCards === 'function') {
+
+        // 🚀 [V105.0] 物理结构重构：针对具有多步骤向导的插件 (托管, 图床, 出版) 恢复 Step 1 与 Step 2 发光卡片外框
+        if (p.category !== 'notification' && typeof window.groupDrawerFormIntoStepCards === 'function') {
             window.groupDrawerFormIntoStepCards(body);
         }
 
@@ -398,14 +398,14 @@ window.openPluginConfig = async (id, category = null) => {
                 });
             }
         });
-        
+
         // 🚀 默认全量激活 Step 0 卡片状态
         setTimeout(() => {
             if (typeof window.handleWizardStepClick === 'function') {
                 window.handleWizardStepClick(0, id, p.category);
             }
         }, 50);
-        
+
         // 🚀 [V89.0] 视觉渐进式暴露联动：如果存在自定义样式控制开关，默认隐藏繁冗的视觉参数，只有勾选启用时才温和渐显，大幅提纯人机交互的专注度
         if (p.category === 'theme') {
             setTimeout(() => {
@@ -458,16 +458,16 @@ window.closePluginDrawer = () => {
 window.handleGlobalDriverToggle = async (id, el, category) => {
     const checked = el.checked;
     const p = window.allPlugins ? window.allPlugins.find(x => x.id === id && (!category || x.category === category)) : null;
-    
+
     if (checked) {
         const needsProbe = ['protocol', 'publisher', 'hosting', 'image_hosting'].includes(category);
         const isPassed = window.probePassState && window.probePassState[id] === true;
-        
+
         if (needsProbe && !isPassed) {
             el.checked = false;
-            
+
             // 级联置灰已物理移除，允许在全局驱动关闭时编辑参数进行探测自检
-            
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: '🔒 连通性未校验',
@@ -500,7 +500,7 @@ window.handleGlobalDriverToggle = async (id, el, category) => {
             return;
         }
     }
-    
+
     await window.togglePlugin(id, checked, category);
 };
 
@@ -515,6 +515,8 @@ window.renderPluginStepWizardHeader = (pluginId, category = '') => {
         steps = ['1. 授权 Token', '2. 域名与分支', '3. 测试与保存'];
     } else if (cat === 'image_hosting') {
         steps = ['1. 存储 Key', '2. Bucket与域名', '3. 测试与保存'];
+    } else if (cat === 'notification') {
+        steps = ['1. 消息端点/凭据', '2. 提醒与样式', '3. 测试与保存'];
     } else if (cat === 'publisher') {
         steps = ['1. 专栏 Token', '2. 发布偏好', '3. 测试与保存'];
     } else if (cat === 'protocol' || pid.includes('ai') || pid.includes('llm')) {
@@ -560,7 +562,7 @@ window.groupDrawerFormIntoStepCards = (drawerBody) => {
     // 1. 搜集所有合法的授权向导卡片
     const guideCards = [];
     const helperCards = Array.from(drawerBody.querySelectorAll('.api-token-helper, .cross-plugin-reuse-guide, .clip-sense-card, .reuse-helper-card, [class*="api-token"]'));
-    
+
     helperCards.forEach(div => {
         if (isSafeGuideCard(div) && !div.closest('.wiz-step-card') && !guideCards.includes(div)) {
             guideCards.push(div);
@@ -692,7 +694,7 @@ window.groupDrawerFormIntoStepCards = (drawerBody) => {
 window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) => {
     const drawer = document.getElementById('plugin-drawer') || document;
     const missionBanner = drawer.querySelector('#wiz-mission-banner');
-    
+
     // 1. 切换视觉 Active 高光状态
     const steps = drawer.querySelectorAll('.wiz-step');
     steps.forEach((st, idx) => {
@@ -782,7 +784,10 @@ window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) 
         }
     } else if (stepIdx === 1) {
         if (missionBanner) {
-            missionBanner.innerHTML = '<span>🎯 当前步骤 [2/3]：请在下方【步骤 2 专属卡片】中配置仓库、Bucket或自定义域名等核心参数</span>';
+            const step2Hint = (category || '').toLowerCase() === 'notification'
+                ? '<span>🎯 当前步骤 [2/3]：请在下方配置消息渲染样式、@被提醒人或自定义扩展参数</span>'
+                : '<span>🎯 当前步骤 [2/3]：请在下方【步骤 2 专属卡片】中配置仓库、Bucket或自定义域名等核心参数</span>';
+            missionBanner.innerHTML = step2Hint;
             missionBanner.style.color = 'var(--neon-cyan)';
             missionBanner.style.borderColor = 'rgba(0, 242, 255, 0.3)';
             missionBanner.style.background = 'rgba(0, 242, 255, 0.06)';
@@ -816,10 +821,12 @@ window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) 
         }
         if (footerContainer) {
             footerContainer.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            // 🚀 使用 inset 2px 内亮描边 + 内部金黄发光，100% 物理消除下/左/右三侧边缘遮挡裁切
+            // 🚀 匹配抽屉最底部圆角 (16px)，呈现完美具有弧度的金黄极光外框
+            footerContainer.style.borderRadius = '12px 12px 16px 16px';
+            footerContainer.style.border = '1.5px solid #ffb700';
             footerContainer.style.outline = 'none';
-            footerContainer.style.boxShadow = 'inset 0 0 0 2px #ffb700, 0 0 22px rgba(255, 183, 0, 0.65), inset 0 0 15px rgba(255, 183, 0, 0.2)';
-            footerContainer.style.background = 'rgba(255, 183, 0, 0.05)';
+            footerContainer.style.boxShadow = '0 0 25px rgba(255, 183, 0, 0.45), inset 0 0 15px rgba(255, 183, 0, 0.15)';
+            footerContainer.style.background = 'rgba(255, 183, 0, 0.06)';
         }
     }
 };

@@ -8,7 +8,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
     const homeUrl = portalInfo ? portalInfo.home : null;
 
     const canConfig = window.isPluginConfigurable(p);
-    const canTest = ['hosting', 'image_hosting', 'publisher'].includes(p.category) && p.is_manageable;
+    const canTest = ['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category) && p.is_manageable;
     const statusBadge = window.checkPluginConfiguredStatus(p);
 
     let controlBtnsHtml = '';

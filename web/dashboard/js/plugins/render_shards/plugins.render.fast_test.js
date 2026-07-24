@@ -25,6 +25,7 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
         settings = {
             ...(window.settingsData.image_hosting?.[id] || {}),
             ...(window.settingsData.publish_control?.direct_upload?.[id] || {}),
+            ...(window.settingsData.publish_control?.webhook_endpoints?.[id] || {}),
             ...(window.settingsData.syndication?.[id] || {})
         };
     }

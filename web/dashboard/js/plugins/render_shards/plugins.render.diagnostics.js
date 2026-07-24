@@ -128,15 +128,28 @@ window.runCrossPluginDiagnostics = () => {
     const issues = [];
     const cfgData = window.settingsData || {};
     const plugins = window.allPlugins || [];
+    const currentCat = window.activePluginCategory || 'all';
 
     plugins.forEach(p => {
-        if (p.is_enabled && p.is_manageable && ['hosting', 'image_hosting', 'publisher'].includes(p.category)) {
+        // 🎯 [精准分类过滤] 如果用户选中了特定的子菜单 Tab，只处理当前子菜单下的插件
+        if (currentCat !== 'all') {
+            let matchesCategory = false;
+            if (currentCat === 'ingress') {
+                matchesCategory = (p.category === 'ingress_source' || p.category === 'ingress_dialect');
+            } else {
+                matchesCategory = (p.category === currentCat);
+            }
+            if (!matchesCategory) return;
+        }
+
+        if (p.is_enabled && p.is_manageable && ['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category)) {
             let platformCfg = {};
             if (p.category === 'hosting') platformCfg = cfgData.publish_control?.direct_upload?.[p.id] || {};
             else if (p.category === 'image_hosting') platformCfg = cfgData.image_hosting?.[p.id] || {};
+            else if (p.category === 'notification') platformCfg = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
             else platformCfg = cfgData.syndication?.[p.id] || {};
 
-            const tokenVal = platformCfg.token || platformCfg.api_key || platformCfg.access_token || platformCfg.api_token || platformCfg.secret_key || platformCfg.integration_token || platformCfg.cookie || platformCfg.password || platformCfg.private_key || '';
+            const tokenVal = platformCfg.token || platformCfg.url || platformCfg.api_key || platformCfg.access_token || platformCfg.api_token || platformCfg.secret_key || platformCfg.integration_token || platformCfg.cookie || platformCfg.password || platformCfg.private_key || '';
             if (!tokenVal && !['sftp', 'local_fs'].includes(p.id)) {
                 issues.push({
                     type: 'warning',
@@ -152,7 +165,8 @@ window.runCrossPluginDiagnostics = () => {
     const ghPagesToken = cfgData.publish_control?.direct_upload?.github_pages?.token || cfgData.publish_control?.direct_upload?.github_pages?.access_token;
     const ghImgToken = cfgData.image_hosting?.github?.token || cfgData.image_hosting?.github?.access_token;
 
-    if (ghPagesToken && !ghImgToken) {
+    // 💡 同源图床复用建议仅在全部或图床分类时触发
+    if ((currentCat === 'all' || currentCat === 'image_hosting') && ghPagesToken && !ghImgToken) {
         issues.push({
             type: 'info',
             title: `💡 [GitHub 图床] 可复用 GitHub Pages 凭据`,

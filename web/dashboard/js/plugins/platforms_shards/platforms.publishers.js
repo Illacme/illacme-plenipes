@@ -148,6 +148,20 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
             ${renderSettingsItem('Webhook 地址 (Webhook URL)', `syndication.discord.webhook_url`, cfg.webhook_url, 'text', { placeholder: "请输入 Discord Webhook 完整 URL" })}
             ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.discord.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
         `;
+    } else if (id === 'linkedin') {
+        return `
+            ${renderSettingsItem('访问令牌 (Access Token)', `syndication.linkedin.access_token`, cfg.access_token || cfg.api_key, 'password', { placeholder: "请输入 LinkedIn OAuth2 Access Token", description: "【如何获取】在 LinkedIn Developer Portal -> Auth 中生成并申请 Publish Posts 权限。" })}
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 LinkedIn Token 开发者直达向导</span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 2px;">
+                    <a href="https://www.linkedin.com/developers/apps" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 LinkedIn Developer Portal</a>
+                </div>
+            </div>
+            ${renderSettingsItem('作者 URN (Author URN)', `syndication.linkedin.author_urn`, cfg.author_urn, 'text', { placeholder: "例如: urn:li:person:xxxxxxxxxx", description: "您的 LinkedIn 个人或 Organization 唯一标识指纹 URN。" })}
+            ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.linkedin.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+        `;
     } else {
         return `
             ${renderSettingsItem('凭据/密钥 (Key/Token)', category === 'hosting' ? `publish_control.direct_upload.${id}.api_key` : `syndication.${id}.api_key`, cfg.api_key || cfg.app_password, 'password', { placeholder: "请输入访问令牌/API密钥" })}

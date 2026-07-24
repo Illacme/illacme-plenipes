@@ -239,6 +239,13 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
         }
     }
 
+    if (category === 'notification') {
+        if (window.rawRenderNotificationConfig) {
+            return window.rawRenderNotificationConfig(id, cfg);
+        }
+        return '';
+    }
+
     if (window.rawRenderPublisherConfig) {
         return window.rawRenderPublisherConfig(id, cfg, category);
     }
