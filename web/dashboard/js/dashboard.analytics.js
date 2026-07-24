@@ -59,15 +59,15 @@ window.refreshAnalyticsData = async () => {
 
         const healStatusEl = document.getElementById('analytics-self-heal-status');
         if (healStatusEl) {
-            if (graph.broken_link_count === 0 && graph.total_links > 0) {
-                healStatusEl.innerHTML = '🟢 严丝合缝';
+            if (graph.broken_link_count > 0) {
+                healStatusEl.innerHTML = `🛡️ 自愈守护中 (已兜底 ${graph.broken_link_count} 处死链)`;
+                healStatusEl.style.color = 'var(--accent-secondary, #00f2fe)';
+            } else if (graph.total_links > 0) {
+                healStatusEl.innerHTML = '🟢 严丝合缝 (零死链风险)';
                 healStatusEl.style.color = '#4caf50';
-            } else if (graph.total_links === 0 && graph.total_nodes > 0) {
-                healStatusEl.innerHTML = '🟡 孤岛图谱 (未织就)';
+            } else if (graph.total_nodes > 0) {
+                healStatusEl.innerHTML = '🟡 待构建连通网路';
                 healStatusEl.style.color = 'var(--accent-orange, #ff9d00)';
-            } else if (graph.broken_link_count > 0) {
-                healStatusEl.innerHTML = `⚠️ 发现 ${graph.broken_link_count} 处断链`;
-                healStatusEl.style.color = '#ff6b6b';
             } else {
                 healStatusEl.innerHTML = '🟢 待接入数据';
                 healStatusEl.style.color = 'var(--text-dim)';

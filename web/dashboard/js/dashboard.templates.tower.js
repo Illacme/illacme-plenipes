@@ -333,12 +333,12 @@ window.viewTemplates.analytics = `
                                 </span>
                                 <span id="analytics-graph-density" style="font-size: 1.25rem; font-weight: bold; color: var(--accent-primary); font-family: var(--font-mono);">0.00</span>
                             </div>
-                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="系统物理自动扫描并自愈链接的安全校验状态">
+                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="系统物理自动扫描并自愈死链的防线守护状态">
                                 <span style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                                    <span>双链自愈校验状态</span>
-                                    <span style="opacity: 0.6; cursor: help;" title="系统物理自动核验双向链接与路由连通性">💡</span>
+                                    <span>自愈机制守护状态</span>
+                                    <span style="opacity: 0.6; cursor: help;" title="系统物理自动核验双向链接，并在出版构建时兜底自愈死链">💡</span>
                                 </span>
-                                <span id="analytics-self-heal-status" style="font-size: 0.9rem; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 4px; height: 26px;">🟢 严丝合缝</span>
+                                <span id="analytics-self-heal-status" style="font-size: 0.82rem; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 4px; height: 26px;">🟢 严丝合缝 (零死链风险)</span>
                             </div>
                         </div>
                     </div>
