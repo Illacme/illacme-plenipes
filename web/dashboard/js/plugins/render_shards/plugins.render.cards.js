@@ -1,7 +1,12 @@
+/**
+ * ⚙️ [V87.0] Illacme Plenipes Plugins - Pod Cards & Matrix Grid Render Shard
+ * 职责：能力矩阵节点 Pod 卡片渲染、侧边 Tab 栏、搜索过滤、置顶管理与 3D 视差微动效。
+ */
+
 window.getPinnedPlugins = () => {
     try {
         return JSON.parse(localStorage.getItem('pinned_plugins') || '[]');
-    } catch(e) {
+    } catch (e) {
         return [];
     }
 };
@@ -280,7 +285,7 @@ window.renderPlugins = () => {
                     <div class="plugins-category-header">
                         <h3 style="display: flex; align-items: center; gap: 10px;">
                             ${cat.name}
-                            <span style="font-size: 0.72rem; color: var(--neon-cyan); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 1px 8px; border-radius: 12px; font-weight: 600;">${cat.items.length} 个节点</span>
+                            <span style="font-size: 0.72rem; color: var(--neon-cyan); background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.2); padding: 1px 8px; border-radius: 12px; font-weight: 600;">${cat.items.length} 个节点</span>
                         </h3>
                     </div>
                     `}
