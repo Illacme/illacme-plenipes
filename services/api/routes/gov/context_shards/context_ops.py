@@ -195,13 +195,39 @@ def get_sync_stats_impl():
             "coverage_percent": coverage
         }
 
-    # 3. 丰富统计：知识图谱与双链健康
+    # 3. 丰富统计：知识图谱与双链健康 (优先融合 engine.link_graph 手写 Wikilinks 与 AI 高维图谱)
     total_nodes = 0
     total_links = 0
     isolated_nodes = 0
     broken_links = 0
     
-    if hasattr(engine, "knowledge_graph") and engine.knowledge_graph:
+    # 🚀 [V74.90] 物理优先：优先提取 link_graph 中的原生手写 Wikilinks
+    link_graph = getattr(engine, "link_graph", {}) or {}
+    if link_graph:
+        total_nodes = len(link_graph)
+        all_node_keys = set(link_graph.keys())
+        
+        for rel_path, data in link_graph.items():
+            links = data.get("links", []) if isinstance(data, dict) else []
+            # 过滤掉图片/静态资源，仅保留文本/文档类引用
+            doc_links = [l for l in links if not l.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'))]
+            total_links += len(doc_links)
+            
+            if len(doc_links) == 0:
+                isolated_nodes += 1
+                
+            for target in doc_links:
+                # 解析目标是否存在于文库中
+                resolved = engine.meta.resolve_link(target) if hasattr(engine.meta, "resolve_link") else None
+                if not resolved:
+                    # 匹配文件名基名
+                    found = any(
+                        target == k or target == os.path.basename(k) or target == os.path.splitext(os.path.basename(k))[0]
+                        for k in all_node_keys
+                    )
+                    if not found:
+                        broken_links += 1
+    elif hasattr(engine, "knowledge_graph") and engine.knowledge_graph:
         nodes = getattr(engine.knowledge_graph, "nodes", {})
         total_nodes = len(nodes)
         
