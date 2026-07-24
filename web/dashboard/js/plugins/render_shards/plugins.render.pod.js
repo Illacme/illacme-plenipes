@@ -60,18 +60,42 @@ window.buildPluginPodHtml = (p, isPinned) => {
             </h4>
             <p style="margin-bottom:15px; flex:1; font-size:0.75rem; color:var(--text-dim);">${p.description || 'Capability syncing...'}</p>
             
-            ${p.is_manageable ? `
-              <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; ${!p.is_enabled ? 'opacity:0.45; filter:grayscale(1); cursor:not-allowed;' : ''}">
-                  <span class="tiny-label" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--text-bright);">
-                      ${p.is_enabled ? '<span style="color:#00ff88; font-size:0.8rem; line-height:1;">●</span>' : '<span style="color:#ff4d4d; font-size:0.8rem; line-height:1;">●</span>'}
-                      当前品牌启用
-                  </span>
-                  <label class="p-switch" style="${!p.is_enabled ? 'pointer-events:none;' : ''}">
-                      <input type="checkbox" ${p.is_in_use ? 'checked' : ''} onchange="toggleBrandActivation('${p.id}', this.checked, '${p.category}')" ${!p.is_enabled ? 'disabled' : ''}>
-                      <span class="p-slider round"></span>
-                  </label>
-              </div>
-              ` : `
+            ${p.is_manageable ? (() => {
+                const isConfigured = statusBadge && statusBadge.label && statusBadge.label.includes('配置齐全');
+                let dotColor = 'rgba(255, 255, 255, 0.35)';
+                let statusText = '当前品牌未启用';
+                let textColor = 'var(--text-dim)';
+                let glowEffect = '';
+
+                if (!p.is_enabled) {
+                    dotColor = '#ff4d4d';
+                    statusText = '全局已禁用';
+                    textColor = '#ff4d4d';
+                } else if (p.is_in_use) {
+                    dotColor = '#00ff88';
+                    statusText = '当前品牌已启用';
+                    textColor = '#00ff88';
+                    glowEffect = 'box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);';
+                } else if (isConfigured) {
+                    dotColor = '#ffb700';
+                    statusText = '配置就绪 (待启用)';
+                    textColor = '#ffb700';
+                    glowEffect = 'box-shadow: 0 0 8px rgba(255, 183, 0, 0.5);';
+                }
+
+                return `
+                <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; ${!p.is_enabled ? 'opacity:0.55; filter:grayscale(0.8); cursor:not-allowed;' : ''}">
+                    <span class="tiny-label" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:${textColor}; font-size:0.75rem;">
+                        <span style="background:${dotColor}; width:7px; height:7px; border-radius:50%; display:inline-block; ${glowEffect}"></span>
+                        ${statusText}
+                    </span>
+                    <label class="p-switch" style="${!p.is_enabled ? 'pointer-events:none;' : ''}">
+                        <input type="checkbox" ${p.is_in_use ? 'checked' : ''} onchange="toggleBrandActivation('${p.id}', this.checked, '${p.category}')" ${!p.is_enabled ? 'disabled' : ''}>
+                        <span class="p-slider round"></span>
+                    </label>
+                </div>
+                `;
+            })() : `
               <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
                   ${p.is_in_use ? '<span class="tiny-label" style="color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>品牌已绑定</span>' : '<span class="tiny-label" style="color:var(--text-dim);">系统基础节点</span>'}
               </div>
