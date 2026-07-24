@@ -217,6 +217,10 @@ class PublisherRegistry:
         return list(cls._targets.keys())
 
     @classmethod
+    def list_publishers(cls) -> List[str]:
+        return list(cls._targets.keys())
+
+    @classmethod
     def list_active(cls) -> List[str]:
         return cls.list_active_targets()
 

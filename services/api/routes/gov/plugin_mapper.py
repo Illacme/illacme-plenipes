@@ -110,7 +110,7 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             })
 
     # 2. Direct Upload Platforms (Publish Control)
-    for p_id in PublisherRegistry.list_publishers():
+    for p_id in PublisherRegistry.list_active_targets():
         pub_cls = PublisherRegistry.get_publisher(p_id)
         is_en = p_id not in disabled
         name = getattr(pub_cls, "DISPLAY_NAME", p_id.upper()) if pub_cls else p_id.upper()
@@ -179,23 +179,25 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     # 3. Syndication Platforms
     for target_id, target in TARGET_REGISTRY.items():
         is_en = target_id not in disabled
+        t_name = getattr(target, "name", getattr(target, "DISPLAY_NAME", target_id.upper()))
+        t_desc = getattr(target, "description", getattr(target, "DESCRIPTION", f"分发渠道适配器 ({target_id})"))
         plugins.append({
             "id": target_id,
-            "name": target.name,
+            "name": t_name,
             "category": "publisher",
             "category_name": "🚀 分发渠道",
             "status": "Enabled" if is_en else "Disabled",
             "is_in_use": is_en,
             "is_enabled": is_en,
             "origin": "official",
-            "version": SYSTEM_TRACK,
-            "description": target.description,
+            "version": getattr(target, "VERSION", SYSTEM_TRACK),
+            "description": t_desc,
             "has_config": True,
             "is_manageable": True
         })
 
     # 4. AI Provider Network
-    for prov_id in AIProviderRegistry.list_providers():
+    for prov_id in AIProviderRegistry.list_active():
         prov_cls = AIProviderRegistry.get_provider(prov_id)
         is_en = prov_id not in disabled
         name = getattr(prov_cls, "DISPLAY_NAME", prov_id.upper()) if prov_cls else prov_id.upper()
