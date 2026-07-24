@@ -182,7 +182,7 @@ def get_sync_stats_impl():
             
         translations = info.get("translations") or {}
         for lang, t_info in translations.items():
-            if t_info and t_info.get("status") == "DONE":
+            if t_info and (t_info.get("status") == "DONE" or t_info.get("health") is True or bool(t_info.get("seo"))):
                 lang_stats[lang.lower()] = lang_stats.get(lang.lower(), 0) + 1
 
     # 翻译覆盖率百分比
@@ -239,6 +239,17 @@ def get_sync_stats_impl():
     except Exception:
         pass
 
+    # 🚀 [V74.89] 修复健康度漏洞：结合死链扣分与孤儿节点扣分，避免无链接时盲目显示 100 分假象
+    if total_nodes == 0:
+        health_score = 100
+    elif total_links == 0:
+        # 没有任何双链连接（100% 孤儿），处于未织就状态，基准健康度给 60 分
+        health_score = 60
+    else:
+        broken_penalty = (broken_links / total_links) * 50
+        isolated_penalty = (isolated_nodes / total_nodes) * 30
+        health_score = max(0, min(100, int(100 - broken_penalty - isolated_penalty)))
+
     enriched_stats = {
         "imprint": engine.imprint_id,
         "processed_timestamp": sync_data.get("processed_timestamp", datetime.now().isoformat()),
@@ -260,7 +271,7 @@ def get_sync_stats_impl():
             "total_links": total_links,
             "isolated_count": isolated_nodes,
             "broken_link_count": broken_links,
-            "health_score": max(0, min(100, int((1 - (broken_links / max(1, total_links))) * 100))) if total_links > 0 else 100
+            "health_score": health_score
         },
         "usage": {
             "session_cost": sync_data.get("usage", {}).get("session_cost", 0.0),
