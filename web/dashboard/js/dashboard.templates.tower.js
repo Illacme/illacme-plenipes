@@ -310,22 +310,34 @@ window.viewTemplates.analytics = `
                     
                     <!-- 双链连通状态明细 -->
                     <div class="glass-panel" style="display: flex; flex-direction: column; padding: 20px; border-radius: 12px;">
-                        <div class="sector-header" style="font-weight: 800; font-size: 0.85rem; color: var(--accent-secondary); margin-bottom: 15px; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">🧬 知识图谱连通性审计 (GRAPH INTEGRITY)</div>
+                        <div class="sector-header" style="font-weight: 800; font-size: 0.85rem; color: var(--accent-secondary); margin-bottom: 15px; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">🧬 知识网路连通审计 (GRAPH INTEGRITY)</div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; flex: 1; align-items: center; min-height: 120px;">
-                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                                <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">孤儿原稿 (无任何双链)</span>
+                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="未与其他文章建立 [[双向链接]] 的独立稿件数量">
+                                <span style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>独立未关联稿件</span>
+                                    <span style="opacity: 0.6; cursor: help;" title="未与文库中其他文章建立 [[双向链接]] 的孤立稿件">💡</span>
+                                </span>
                                 <span id="analytics-isolated-count" style="font-size: 1.25rem; font-weight: bold; color: var(--text-bright); font-family: var(--font-mono);">0</span>
                             </div>
-                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                                <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">已断裂的死链 (Broken Links)</span>
+                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="文章中引用了已被删除或改名的文件链接数">
+                                <span style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>失效断裂引用 (死链)</span>
+                                    <span style="opacity: 0.6; cursor: help;" title="指向不存在或已被删除文章的无效链接">💡</span>
+                                </span>
                                 <span id="analytics-broken-links" style="font-size: 1.25rem; font-weight: bold; color: #ff6b6b; font-family: var(--font-mono);">0</span>
                             </div>
-                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                                <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">双链网关边密度</span>
+                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="全库文章之间双向引用的交织密集程度 (0.0~1.0)">
+                                <span style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>知识网织密度</span>
+                                    <span style="opacity: 0.6; cursor: help;" title="文章与文章之间交叉引用交织的密集程度">💡</span>
+                                </span>
                                 <span id="analytics-graph-density" style="font-size: 1.25rem; font-weight: bold; color: var(--accent-primary); font-family: var(--font-mono);">0.00</span>
                             </div>
-                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                                <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">图谱自愈校验状态</span>
+                            <div class="metric-item-small" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);" title="系统物理自动扫描并自愈链接的安全校验状态">
+                                <span style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>双链自愈校验状态</span>
+                                    <span style="opacity: 0.6; cursor: help;" title="系统物理自动核验双向链接与路由连通性">💡</span>
+                                </span>
                                 <span id="analytics-self-heal-status" style="font-size: 0.9rem; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 4px; height: 26px;">🟢 严丝合缝</span>
                             </div>
                         </div>
