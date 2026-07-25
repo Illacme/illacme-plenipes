@@ -121,95 +121,139 @@ window.renderRouteMatrixCategory = () => {
 window.renderSlugSettingsCategory = () => {
     const isLicensed = window.settingsData._is_licensed || false;
     const translation = window.settingsData.translation || {};
-    const prompts = translation.prompts || {};
+    const dirMode = translation.slug_dir_mode || 'flat';
+    const slugMode = translation.slug_mode || 'ai';
 
-    // 1. Slug 命名模式
-    const slugModeHtml = window.renderSettingsItem(
-        'Slug 命名模式',
-        'translation.slug_mode',
-        translation.slug_mode || 'ai',
-        'select',
-        {
-            items: [
-                { value: 'ai', text: '🤖 AI 自动推导友好 Slug' },
-                { value: 'filename', text: '📁 物理文件名清洗自愈' }
-            ],
-            disabled: !isLicensed,
-            description: '决定系统如何处理文档发布的 Slug 命名。AI 模式下，系统会结合原稿标题推导英文 Slug。'
-        }
-    );
-
-    // 2. Slug 目录处理方式
-    const slugDirModeHtml = window.renderSettingsItem(
-        'Slug 目录处理方式',
-        'translation.slug_dir_mode',
-        translation.slug_dir_mode || 'flat',
-        'select',
-        {
-            items: [
-                { value: 'flat', text: '📄 扁平模式 (忽略源目录路径)' },
-                { value: 'prefix', text: '🔗 目录前缀模式 (拼接连字符前缀)' },
-                { value: 'nested', text: '📂 嵌套路径模式 (物理保留斜杠层级)' }
-            ],
-            disabled: !isLicensed,
-            description: '若文档存在子目录，决定如何将映射子目录体现到 Slug 中。例如，源目录 docs/tech/intro.md 映射为 tech/intro，对应：扁平(intro)、前缀(tech-intro)、嵌套(tech/intro)。'
-        }
-    );
-
-    // 3. Slug 最大字符长度
-    const maxSlugLengthHtml = window.renderSettingsItem(
-        'Slug 最大字符长度',
-        'translation.max_slug_length',
-        translation.max_slug_length ?? 100,
-        'number',
-        {
-            disabled: !isLicensed,
-            placeholder: '100',
-            description: 'Slug 生成后的最大保留长度（默认 100，超出将截断）。'
-        }
-    );
     let html = `
         <div class="full-width">
-            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 25px; opacity: 0.85;">
-                配置文档发布时自动生成的 URL Slug 别名逻辑及子目录路径层级拼装方案，支持结合 AI 语义或物理文件名进行物理化治理。
-                ${!isLicensed ? '<br><span style="color: var(--accent-secondary); font-size: 0.75rem;">* 社区版将自动退避至扁平 AI Slug 模式。</span>' : ''}
+            <p class="section-desc" style="font-size: 0.85rem; margin-bottom: 25px; opacity: 0.85; line-height: 1.6;">
+                配置全局原稿发布的 <b>URL 域名后缀格式与目录路径结构</b>。系统内置零技术门槛的物理路径推导引擎，帮助您打造极具 SEO 优势或清晰简洁的动态数字花园。
             </p>
-            
-            <div class="settings-group glass-panel" style="padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border); position: relative; overflow: hidden;">
-                ${!isLicensed ? `
-                    <div class="pro-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 11, 24, 0.6); backdrop-filter: blur(4px); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));">👑</div>
-                        <h3 style="color: #FFD700; font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; letter-spacing: 1px;">Pro Only Feature</h3>
-                        <p style="color: #ccc; max-width: 400px; line-height: 1.6;">自定义 Slug 命名策略、目录映射前缀/嵌套模式及 AI 提示词控制仅在授权版中开放。</p>
-                        <p style="color: #888; font-size: 0.8rem; margin-top: 15px;">系统当前已自动为您回落至默认的扁平 AI Slug 生成模式。</p>
-                    </div>
-                ` : ''}
-                <div>
-                    ${slugModeHtml}
-                    ${slugDirModeHtml}
-                    ${maxSlugLengthHtml}
+
+            <!-- 1. 基础 Slug 命名法则 -->
+            <div style="margin-bottom: 25px;">
+                <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px; font-weight: 600;">1. 基础命名法则 (Slug Naming)</h4>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <label style="flex: 1; min-width: 260px; padding: 15px 20px; background: ${slugMode === 'ai' ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${slugMode === 'ai' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                        <input type="radio" name="translation_slug_mode" value="ai" ${slugMode === 'ai' ? 'checked' : ''} onchange="window.settingsData.translation.slug_mode='ai'; window.updateSlugSandboxPreview(); if(typeof addAudit==='function') addAudit('📝 Slug 命名法则已切换为【🤖 AI 自动推导】');" />
+                        <div>
+                            <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">🤖 AI 智能推导 (推荐)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">自动提取中文标题的核心语义，转化为简短优雅的英文短网址</div>
+                        </div>
+                    </label>
+                    <label style="flex: 1; min-width: 260px; padding: 15px 20px; background: ${slugMode === 'filename' ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${slugMode === 'filename' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                        <input type="radio" name="translation_slug_mode" value="filename" ${slugMode === 'filename' ? 'checked' : ''} onchange="window.settingsData.translation.slug_mode='filename'; window.updateSlugSandboxPreview(); if(typeof addAudit==='function') addAudit('📝 Slug 命名法则已切换为【📁 物理文件名清洗】');" />
+                        <div>
+                            <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">📁 物理文件名清洗</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">直接擦除原始文件名中的特殊标点与空格，保留源文件物理名</div>
+                        </div>
+                    </label>
                 </div>
             </div>
-            
-            <div style="margin-top: 25px; padding: 15px 20px; background: rgba(0, 242, 255, 0.05); border: 1px dashed rgba(0, 242, 255, 0.2); border-radius: 8px;">
-                <h5 style="color: #00f2ff; margin-bottom: 8px; font-size: 0.9rem;">💡 目录路径处理策略</h5>
-                <ul style="font-size: 0.8rem; color: #bbb; line-height: 1.6; padding-left: 20px; margin: 0;">
-                    <li><b>扁平模式 (Flat)</b>：仅保留文档自身的 Slug，完全忽略父目录（如 <code>tech/intro</code> 生成 Slug 为 <code>intro</code>）。</li>
-                    <li><b>前缀模式 (Prefix)</b>：提取当前文档所在子目录并用连字符拼接为前缀（如 <code>tech/intro</code> 生成 Slug 为 <code>tech-intro</code>）。</li>
-                    <li><b>嵌套模式 (Nested)</b>：保留完整的多级目录层次结构并用斜杠拼接（如 <code>tech/intro</code> 生成 Slug 为 <code>tech/intro</code>）。</li>
-                </ul>
+
+            <!-- 2. 网址路径组织形态卡片 -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px; font-weight: 600;">2. 网址路径组织形态 (网址结构三选一)</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">
+                    <!-- 卡片 1: 极简根目录 -->
+                    <div class="slug-dir-card ${dirMode === 'flat' ? 'active' : ''}" data-mode="flat" onclick="window.selectSlugDirModeCard('flat')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'flat' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'flat' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">📄 极简根目录</span>
+                            <span style="font-size: 0.7rem; background: rgba(0, 242, 255, 0.2); color: #00f2fe; padding: 2px 6px; border-radius: 4px; font-weight: 600;">推荐</span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
+                            忽略 Obsidian 本地子文件夹层级，所有网页物理落盘并挂载在<b>站点根目录</b>下，网址最短最利于分享。
+                        </p>
+                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
+                            site.com/install-guide.html
+                        </div>
+                    </div>
+
+                    <!-- 卡片 2: 目录前缀 -->
+                    <div class="slug-dir-card ${dirMode === 'prefix' ? 'active' : ''}" data-mode="prefix" onclick="window.selectSlugDirModeCard('prefix')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'prefix' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'prefix' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">🔗 智能 SEO 前缀</span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
+                            物理文件仍落盘在根目录，但自动将父文件夹提取并拼接为 Slug 连字符前缀，大幅提升关键词 SEO 权重。
+                        </p>
+                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
+                            site.com/tech-guide-install.html
+                        </div>
+                    </div>
+
+                    <!-- 卡片 3: 目录树复刻 -->
+                    <div class="slug-dir-card ${dirMode === 'nested' ? 'active' : ''}" data-mode="nested" onclick="window.selectSlugDirModeCard('nested')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'nested' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'nested' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">📂 完整目录树复刻</span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
+                            网页网址与您的本地 Obsidian 文件夹多级层级结构 <b>1:1 完全物理对齐</b>，适合大型 Wiki 或软件文档库。
+                        </p>
+                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
+                            site.com/docs/tech/guide/install.html
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div style="margin-top: 20px; padding: 15px 20px; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 0.8rem; color: var(--text-dim); display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.1rem;">💡</span>
-                <span>
-                    如需调整 AI 自动推导 Slug 时的 <b>System / User Prompt 提示词策略</b>，该功能已统一合并至 
-                    <a href="javascript:void(0)" onclick="window.switchToSettingsTab('translation_style')" style="color: #00f2ff; text-decoration: underline; font-weight: 600; cursor: pointer;">🎭 翻译风格</a> 
-                    菜单中，以实现全域多场景提示词的完全对称化管理。
-                </span>
+            <!-- 3. 实时 URL 沙盒模拟器 -->
+            <div style="margin-bottom: 25px; padding: 20px; background: rgba(0, 242, 255, 0.03); border: 1px dashed rgba(0, 242, 255, 0.2); border-radius: 12px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="font-size: 0.95rem; color: #00f2fe; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        🧪 实时 URL 沙盒模拟器 (Live URL Playground)
+                    </h4>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">随选随变 · 即时计算推导</span>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label style="font-size: 0.78rem; color: var(--text-dim); display: block; margin-bottom: 6px;">📂 选择测试原稿路径:</label>
+                        <select id="sandbox-file-select" onchange="window.updateSlugSandboxPreview();" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 6px; color: #fff; font-size: 0.82rem;">
+                            <option value="tech/guide/安装与部署指南.md">tech/guide/安装与部署指南.md</option>
+                            <option value="journal/2026/我的第二脑随想.md">journal/2026/我的第二脑随想.md</option>
+                            <option value="projects/core/系统架构说明.md">projects/core/系统架构说明.md</option>
+                            <option value="_custom">✏️ 手动输入自定义路径...</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <label style="font-size: 0.78rem; color: var(--text-dim); display: block; margin-bottom: 6px;">✏️ 自定义相对路径 (可选):</label>
+                        <input type="text" id="sandbox-custom-input" placeholder="例如: docs/setup/quick-start.md" oninput="window.updateSlugSandboxPreview();" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 6px; color: #fff; font-size: 0.82rem;" />
+                    </div>
+                </div>
+
+                <!-- 模拟器推导高亮盒子 -->
+                <div style="background: rgba(10, 11, 24, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 8px; font-family: monospace; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #888; width: 140px; shrink: 0;">🌐 线上访问 URL:</span>
+                        <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all;">-</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #888; width: 140px; shrink: 0;">📁 物理落盘位置:</span>
+                        <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all;">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 高级频道重定向引流提示 -->
+            <div style="padding: 15px 20px; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 0.82rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.1rem;">🎯</span>
+                    <span>需要把特定文件夹（如 <code>vault/journal</code>）单独映射为特定 Web 频道（如 <code>/blog/</code>）并指定模板？</span>
+                </div>
+                <a href="javascript:void(0)" onclick="window.switchI18nRoutingSubTab('route_matrix', this)" style="color: #00f2fe; text-decoration: none; font-weight: 600; padding: 6px 14px; background: rgba(0, 242, 255, 0.1); border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.3); font-size: 0.78rem;">
+                    🧭 打开物理路由矩阵 ➔
+                </a>
             </div>
         </div>
     `;
+
+    // 延迟少许触发沙盒计算初始化
+    setTimeout(() => {
+        if (typeof window.updateSlugSandboxPreview === 'function') {
+            window.updateSlugSandboxPreview();
+        }
+    }, 50);
 
     return html;
 };
