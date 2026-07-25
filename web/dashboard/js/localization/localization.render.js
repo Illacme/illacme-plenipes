@@ -629,19 +629,19 @@ window.openGlossaryImportModal = () => {
 };
 
 window.renderI18nRoutingCategory = () => {
-    if (!window.switchI18nRoutingSubTab) {
-        window.switchI18nRoutingSubTab = (subTab, btn) => {
-            window.currentActiveSettingsSubCat = subTab;
-            const container = document.getElementById('i18n-routing-sub-tab-bar');
-            if (container) {
-                const btns = container.querySelectorAll('.sub-tab-btn');
-                btns.forEach(b => b.classList.remove('active'));
-            }
-            if (btn) {
-                btn.classList.add('active');
-            } else if (event) {
-                event.currentTarget.classList.add('active');
-            }
+    window.switchI18nRoutingSubTab = (subTab, btn) => {
+        window.currentActiveSettingsSubCat = subTab;
+        const container = document.getElementById('i18n-routing-sub-tab-bar');
+        if (container) {
+            const btns = container.querySelectorAll('.sub-tab-btn');
+            btns.forEach(b => {
+                if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${subTab}'`)) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
 
             const panels = ['localization', 'translation_style', 'slug_settings', 'route_matrix'];
             panels.forEach(p => {
@@ -669,7 +669,6 @@ window.renderI18nRoutingCategory = () => {
                 window.updateSaveButtonVisibility(subTab);
             }
         };
-    }
 
     const currentSub = window.currentActiveSettingsSubCat || 'localization';
 
