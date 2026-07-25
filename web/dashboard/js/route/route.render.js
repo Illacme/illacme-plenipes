@@ -255,7 +255,7 @@ window.renderSlugSettingsCategory = () => {
                     <span>需要把特定文件夹（如 <code>vault/journal</code>）单独映射为特定 Web 频道（如 <code>/blog/</code>）并指定模板？</span>
                 </div>
                 <a href="javascript:void(0)" onclick="window.switchI18nRoutingSubTab('route_matrix', this)" style="color: #00f2fe; text-decoration: none; font-weight: 600; padding: 6px 14px; background: rgba(0, 242, 255, 0.1); border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.3); font-size: 0.78rem;">
-                    🧭 打开物理路由矩阵 ➔
+                    🧭 打开频道映射矩阵 ➔
                 </a>
             </div>
         </div>
