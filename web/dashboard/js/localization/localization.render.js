@@ -668,6 +668,13 @@ window.renderI18nRoutingCategory = () => {
             if (typeof window.updateSaveButtonVisibility === 'function') {
                 window.updateSaveButtonVisibility(subTab);
             }
+
+            // 🚀 自动将视口平滑滚动回顶部，确保新切换的 SubTab 视图完整呈现在顶部
+            try {
+                const mainEl = document.querySelector('.main-content') || document.documentElement;
+                if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch(e) {}
         };
 
     const currentSub = window.currentActiveSettingsSubCat || 'localization';
