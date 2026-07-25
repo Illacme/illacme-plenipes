@@ -6,7 +6,6 @@
 """
 
 import os
-from typing import Dict, Any
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse

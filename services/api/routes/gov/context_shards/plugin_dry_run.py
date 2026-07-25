@@ -54,7 +54,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         if plugin_id == "telegram":
             if not target_url and bot_token:
                 target_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                logs.append(log("INFO", f"🤖 [Telegram] 自动根据 Bot Token 组装 API 访问端点。"))
+                logs.append(log("INFO", "🤖 [Telegram] 自动根据 Bot Token 组装 API 访问端点。"))
             if not chat_id:
                 logs.append(log("ERROR", "❌ [错误] Telegram 未配置目标 Chat ID (如 @my_channel 或 -100xxx)。"))
                 success = False

@@ -88,6 +88,14 @@ class RouteManager:
                 force_prefix=self.force_source_prefix
             )
 
+        # 🚀 [V88.9] 物理主权对正：当配置为扁平模式 (flat) 且无显式子目录时，强力压平 docs 前缀，实现真·根目录落盘
+        if not mapped_sub_dir and route_prefix in ("docs", "docs/", "docs/{lang}"):
+            cfg = getattr(self, 'config', None) or getattr(getattr(self, 'engine', None), 'config', None)
+            trans_cfg = getattr(cfg, 'translation', None) if cfg else None
+            dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'flat') if trans_cfg else 'flat'
+            if dir_mode == 'flat':
+                route_prefix = ""
+
         if route_prefix and "{" in route_prefix and "}" in route_prefix:
             # 模式 A：声明式模板模式 (如 /docs/{lang})
             try:

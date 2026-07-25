@@ -46,7 +46,7 @@ def test_init_press_enable_ai_injection(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     from services.wizard.wizard_ops_shards.init_ops import init_press_logic
     from services.wizard.wizard_server import InitRequest
-    import yaml, os
+    import yaml
 
     # 模拟输入请求
     req = InitRequest(

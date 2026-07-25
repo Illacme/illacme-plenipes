@@ -3,7 +3,6 @@
 ⚙️ Health Check API Contract Test — 校验全站健康检查接口响应强契约规范。
 """
 
-import pytest
 from fastapi.testclient import TestClient
 from services.api.server import app
 from services.api.schemas import HealthCheckResponse, SystemHealthResponse, HealthMatrixResponse
