@@ -25,21 +25,21 @@ window.renderRouteMatrixCategory = () => {
                     </div>
                 ` : ''}
 
-                <div class="matrix-header" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr 60px; gap: 15px; padding: 15px 20px; background: rgba(0,0,0,0.2); font-size: 0.85rem; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--glass-border);">
-                    <span>📁 文库路径 (Local Path)</span>
-                    <span>🔗 网页路径 (Web Path)</span>
-                    <span>🧩 网页模板 (Page Template)</span>
+                <div class="matrix-header" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.1fr 50px; gap: 10px; padding: 12px 15px; background: rgba(0,0,0,0.25); font-size: 0.8rem; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--glass-border);">
+                    <span>📁 文库路径</span>
+                    <span>🔗 网页路径</span>
+                    <span>🧩 网页模板</span>
                     <span>🎭 翻译风格</span>
                     <span style="text-align: center;">操作</span>
                 </div>
                 
-                <div class="matrix-body" id="route-matrix-body" style="padding: 10px;">
+                <div class="matrix-body" id="route-matrix-body" style="padding: 6px 10px;">
                     ${routes.length === 0 ? `
                         <div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-dim);">
                             暂无路由策略。您的全部文件目前均按照原始物理路径进行映射发布。
                         </div>
                     ` : routes.map((route, idx) => `
-                        <div class="matrix-row route-item" data-idx="${idx}" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr 60px; gap: 15px; padding: 12px 10px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
+                        <div class="matrix-row route-item" data-idx="${idx}" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.1fr 50px; gap: 10px; padding: 8px 0; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
                             <div>
                                 ${(() => {
             const directories = window.settingsData._directories || [];
@@ -48,20 +48,20 @@ window.renderRouteMatrixCategory = () => {
             const isStandard = !sourceVal || directories.includes(sourceVal);
             let html = '';
             if (hasDirs) {
-                html += `<select class="setting-input source-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                html += `<select class="setting-input source-select" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
                 html += `<option value="" ${!sourceVal ? 'selected' : ''}>-- 选择文库目录 --</option>`;
                 directories.forEach(d => {
                     if (d) html += `<option value="${d}" ${sourceVal === d ? 'selected' : ''}>📁 ${d}</option>`;
                 });
-                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
+                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
                 html += `</select>`;
             }
-            html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+            html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
             return html;
         })()}
                             </div>
                             <div>
-                                <input type="text" class="setting-input prefix-input" value="${route.prefix || ''}" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                                <input type="text" class="setting-input prefix-input" value="${route.prefix || ''}" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace; font-size: 0.76rem; padding: 6px 8px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
                             </div>
                             <div>
                                 ${(() => {
@@ -70,20 +70,20 @@ window.renderRouteMatrixCategory = () => {
             const isStandard = !slotVal || Object.keys(themeSlots).includes(slotVal);
             let html = '';
             if (hasSlots) {
-                html += `<select class="setting-input slot-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                html += `<select class="setting-input slot-select" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
                 html += `<option value="" ${!slotVal ? 'selected' : ''}>-- 选择网页模板 --</option>`;
                 Object.entries(themeSlots).forEach(([k, v]) => {
                     html += `<option value="${k}" ${slotVal === k ? 'selected' : ''}>${v.label || k}</option>`;
                 });
-                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
+                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
                 html += `</select>`;
             }
-            html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: custom_template" style="width: 100%; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+            html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: custom_template" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
             return html;
         })()}
                             </div>
                             <div>
-                                <select class="setting-input style-input" style="width: 100%;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()">
+                                <select class="setting-input style-input" style="width: 100%; font-size: 0.76rem; padding: 6px 8px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()">
                                     <option value="">继承全局默认</option>
                                     <option value="professional" ${route.style === 'professional' ? 'selected' : ''}>💼 商务严谨</option>
                                     <option value="casual" ${route.style === 'casual' ? 'selected' : ''}>☕ 随性自然</option>
@@ -91,7 +91,7 @@ window.renderRouteMatrixCategory = () => {
                                 </select>
                             </div>
                             <div style="text-align: center;">
-                                <button class="mini-btn" onclick="removeRouteMatrixRow(this)" style="background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3); color: #ff5555; height: 32px; width: 32px; padding: 0; border-radius: 6px; cursor: pointer; transition: all 0.2s;" title="删除此规则" ${!isLicensed ? 'disabled' : ''}>×</button>
+                                <button class="mini-btn" onclick="removeRouteMatrixRow(this)" style="background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3); color: #ff5555; height: 28px; width: 28px; padding: 0; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem;" title="删除此规则" ${!isLicensed ? 'disabled' : ''}>×</button>
                             </div>
                         </div>
                     `).join('')}
