@@ -712,7 +712,7 @@ window.renderI18nRoutingCategory = () => {
             <div class="security-sub-tab-bar" id="i18n-routing-sub-tab-bar">
                 <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('localization', this)">🌍 翻译矩阵</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('translation_style', this)">🎭 翻译风格</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('slug_settings', this)">📝 别名策略</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('slug_settings', this)">📝 网址路径</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('route_matrix', this)">🧭 物理路由</button>
             </div>
 
