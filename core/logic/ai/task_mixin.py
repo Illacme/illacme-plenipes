@@ -53,10 +53,26 @@ class AITaskMixin:
             payload = PayloadManager.prepare_payload(self, system_prompt, user_content, is_json=False)
             if "params" not in payload: payload["params"] = {}
             payload["params"]["max_tokens"] = 512
-            raw_slug = self.ask_ai_with_retry(payload)
-            return AILogicHub.clean_slug(raw_slug), True
-        except Exception:
-            return AILogicHub.clean_slug(title), False
+            raw_slug = self.ask_ai_with_retry(payload) or ""
+            
+            # 🛡️ [V88.0] 物理思维链剥离与废话前缀提取
+            import re
+            raw_slug = re.sub(r'<think>.*?</think>', '', raw_slug, flags=re.DOTALL).strip()
+            
+            # 如果大模型返回了形如 "Slug: welcome-to-site" 或包含引弧，提取核心词
+            quoted_match = re.search(r'["`\']([a-z0-9\-_/]+)["`\']', raw_slug, re.IGNORECASE)
+            if quoted_match:
+                raw_slug = quoted_match.group(1)
+            else:
+                raw_slug = re.sub(r'^(the\s+slug\s+is|slug|here\s+is\s+the\s+slug)[:\s]*', '', raw_slug, flags=re.IGNORECASE)
+
+            cleaned = AILogicHub.clean_slug(raw_slug)
+            if cleaned:
+                return cleaned, True
+            return "", False
+        except Exception as e:
+            tlog.warning(f"⚠️ [Slug AI 调起异常]: {e}")
+            return "", False
 
     def translate_title(self, title: str, target_lang: str, is_dry_run: bool = False, style: str = None, **kwargs) -> str:
         from core.utils.language_hub import LanguageHub
