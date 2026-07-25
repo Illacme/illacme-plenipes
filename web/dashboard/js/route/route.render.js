@@ -229,18 +229,18 @@ window.renderSlugSettingsCategory = () => {
                 </div>
 
                 <!-- 模拟器推导高亮盒子 -->
-                <div style="background: rgba(10, 11, 24, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #888; width: 140px; shrink: 0;">🌐 线上访问 URL:</span>
-                        <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all;">-</span>
+                <div style="background: rgba(10, 11, 24, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 10px; font-family: monospace; font-size: 0.8rem; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">🌐 线上访问 URL:</span>
+                        <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all; flex: 1; line-height: 1.5;">-</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #888; width: 140px; shrink: 0;">☁️ 托管平台文件路径:</span>
-                        <span id="sandbox-preview-cloud-path" style="color: #00ffaa; word-break: break-all;">-</span>
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">☁️ 托管平台文件路径:</span>
+                        <span id="sandbox-preview-cloud-path" style="color: #00ffaa; word-break: break-all; flex: 1; line-height: 1.5;">-</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #888; width: 140px; shrink: 0;">💻 本机磁盘构建位置:</span>
-                        <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all;">-</span>
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">💻 本机磁盘构建位置:</span>
+                        <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all; flex: 1; line-height: 1.5;">-</span>
                     </div>
                 </div>
 
