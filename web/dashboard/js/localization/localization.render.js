@@ -669,11 +669,27 @@ window.renderI18nRoutingCategory = () => {
                 window.updateSaveButtonVisibility(subTab);
             }
 
-            // 🚀 自动将视口平滑滚动回顶部，确保新切换的 SubTab 视图完整呈现在顶部
+            // 🚀 物理全量重置真正的 DOM 滚动容器 scrollTop = 0
             try {
-                const mainEl = document.querySelector('.main-content') || document.documentElement;
-                if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const scrollContainers = [
+                    document.querySelector('.tab-content-area'),
+                    document.querySelector('#view-settings'),
+                    document.querySelector('.view-content'),
+                    document.querySelector('#settings-form'),
+                    document.querySelector('.side-tabs-container'),
+                    document.querySelector('.main-content'),
+                    document.querySelector('.app-body'),
+                    document.documentElement,
+                    document.body
+                ];
+                scrollContainers.forEach(c => {
+                    if (c) {
+                        c.scrollTop = 0;
+                        if (typeof c.scrollTo === 'function') {
+                            c.scrollTo({ top: 0, behavior: 'auto' });
+                        }
+                    }
+                });
             } catch(e) {}
         };
 
