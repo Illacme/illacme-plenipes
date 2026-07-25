@@ -235,7 +235,11 @@ window.renderSlugSettingsCategory = () => {
                         <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all;">-</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #888; width: 140px; shrink: 0;">📁 物理落盘位置:</span>
+                        <span style="color: #888; width: 140px; shrink: 0;">☁️ 托管平台文件路径:</span>
+                        <span id="sandbox-preview-cloud-path" style="color: #00ffaa; word-break: break-all;">-</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #888; width: 140px; shrink: 0;">💻 本机磁盘构建位置:</span>
                         <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all;">-</span>
                     </div>
                 </div>

@@ -169,9 +169,15 @@ window.updateSlugSandboxPreview = async function() {
     }
 
     const fullWebUrl = `${baseUrl}${webUrlPath}`;
+    const activeImprint = window.settingsData._active_imprint || "obsidian_vortex";
+    const localDiskPath = `imprints/${activeImprint}/themes/default/${physicalHtmlPath}`;
 
     previewWebUrl.innerHTML = `<a href="${fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;">${fullWebUrl}</a>`;
-    previewDiskPath.innerHTML = `<span style="color: var(--text-dim, #aaa);">${physicalHtmlPath}</span>`;
+
+    const cloudEl = document.getElementById('sandbox-preview-cloud-path');
+    if (cloudEl) cloudEl.innerHTML = `<span style="color: #00ffaa;">${webUrlPath}</span>`;
+
+    previewDiskPath.innerHTML = `<span style="color: var(--text-dim, #aaa);">${localDiskPath}</span>`;
 
     // 🚀 [V91.0] 物理即时探测与重新发布提醒机制
     if (previewStatusBox) {
