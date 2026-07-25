@@ -1,6 +1,6 @@
 /**
- * 🛣️ [V91.0] Illacme Plenipes Route & Slug Sandbox Module
- * 职责：别名策略视觉卡片切换、真实原稿全量感知、物理状态即时探测与重新发布提醒。
+ * 🛣️ [V92.0] Illacme Plenipes Route & Slug Sandbox Module
+ * 职责：别名策略视觉卡片切换、真实原稿全量感知、物理状态即时探测、云端 GitHub 仓库点击直达与本机 Finder 唤醒。
  */
 
 window.selectSlugDirModeCard = function(mode) {
@@ -78,6 +78,23 @@ window.populateSandboxRealFiles = async function() {
     }
 };
 
+// 🚀 物理唤醒本机 Finder / 文件资源管理器
+window.openLocalWorkspaceFolder = async function(relPath) {
+    try {
+        const res = await apiFetch('/api/vault/open-local-folder', {
+            method: 'POST',
+            body: JSON.stringify({ rel_path: relPath })
+        });
+        if (res && res.status === 'ok') {
+            if (typeof addAudit === 'function') addAudit(`📂 已成功物理唤醒本机 Finder 定位至: ${res.opened_dir}`);
+        } else {
+            console.warn("Open local folder response:", res);
+        }
+    } catch(e) {
+        console.error("Open local folder error:", e);
+    }
+};
+
 window.updateSlugSandboxPreview = async function() {
     const selector = document.getElementById('sandbox-file-select');
     const customInput = document.getElementById('sandbox-custom-input');
@@ -138,15 +155,18 @@ window.updateSlugSandboxPreview = async function() {
         webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
     }
 
-    // 🚀 提取真实的托管 Base URL
+    // 🚀 提取真实的托管 Base URL 与 GitHub Cloud 直达文件路径
     let baseUrl = "https://illacme.github.io/obsidian_vortex/";
+    let githubFileUrl = "";
     const platforms = window.settingsData.platforms || {};
 
     if (platforms.github_pages && platforms.github_pages.cname && platforms.github_pages.cname.trim()) {
         let cname = platforms.github_pages.cname.trim();
         if (!cname.startsWith('http://') && !cname.startsWith('https://')) cname = 'https://' + cname;
         baseUrl = cname.replace(/\/+$/, '') + '/';
-    } else if (platforms.github_pages && platforms.github_pages.repo_url) {
+    }
+
+    if (platforms.github_pages && platforms.github_pages.repo_url) {
         let clean = platforms.github_pages.repo_url.trim().replace(/\.git$/, '');
         let owner = "", repo = "";
         if (clean.includes("github.com/")) {
@@ -160,7 +180,10 @@ window.updateSlugSandboxPreview = async function() {
             if (p.length === 2) { owner = p[0]; repo = p[1]; }
         }
         if (owner && repo) {
-            baseUrl = `https://${owner.toLowerCase()}.github.io/${repo}/`;
+            if (!platforms.github_pages.cname) {
+                baseUrl = `https://${owner.toLowerCase()}.github.io/${repo}/`;
+            }
+            githubFileUrl = `https://github.com/${owner}/${repo}/blob/gh-pages/${webUrlPath}`;
         }
     } else if (platforms.netlify && platforms.netlify.site_url) {
         let siteUrl = platforms.netlify.site_url.trim();
@@ -172,12 +195,25 @@ window.updateSlugSandboxPreview = async function() {
     const activeImprint = window.settingsData._active_imprint || "obsidian_vortex";
     const localDiskPath = `imprints/${activeImprint}/themes/default/${physicalHtmlPath}`;
 
-    previewWebUrl.innerHTML = `<a href="${fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;">${fullWebUrl}</a>`;
+    // 1. 🌐 线上访问 URL（在新标签页打开网页）
+    previewWebUrl.innerHTML = `<a href="${fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;" title="在浏览器中访问线上真实网页">${fullWebUrl}</a>`;
 
+    // 2. ☁️ 云端托管平台文件路径（在新标签页打开 GitHub 仓库源码文件）
     const cloudEl = document.getElementById('sandbox-preview-cloud-path');
-    if (cloudEl) cloudEl.innerHTML = `<span style="color: #00ffaa;">${webUrlPath}</span>`;
+    if (cloudEl) {
+        if (githubFileUrl) {
+            cloudEl.innerHTML = `<a href="${githubFileUrl}" target="_blank" style="color: #00ffaa; font-weight: 600; text-decoration: underline;" title="在 GitHub 云端仓库 gh-pages 分支中查看此物理文件">☁️ ${webUrlPath}</a>`;
+        } else {
+            cloudEl.innerHTML = `<span style="color: #00ffaa;">${webUrlPath}</span>`;
+        }
+    }
 
-    previewDiskPath.innerHTML = `<span style="color: var(--text-dim, #aaa);">${localDiskPath}</span>`;
+    // 3. 💻 本机磁盘构建位置（唤醒 Mac Finder / 本地文件管理器打开文件夹）
+    previewDiskPath.innerHTML = `
+        <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${localDiskPath}')" style="color: var(--text-dim, #aaa); text-decoration: underline; cursor: pointer; font-weight: 500;" title="点击物理唤醒 Mac Finder / 本地资源管理器打开该文件所在目录">
+            📂 ${localDiskPath}
+        </a>
+    `;
 
     // 🚀 [V91.0] 物理即时探测与重新发布提醒机制
     if (previewStatusBox) {
