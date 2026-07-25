@@ -58,10 +58,21 @@ class AISlugAndSEOStep(PipelineStep):
                     except Exception: slug_success, slug_raw = False, None
                 if not slug_success: ctx.ai_health_flag[0] = False
 
-        # 🚀 [V35.1] 物理主权兜底：如果 AI 失败或模式不支持，执行字符清洗
+        # 🚀 [V35.1] 物理主权自愈兜底：如果 AI 失败或模式不支持，优先采用拼音转化/英文字符清洗
         if not slug_raw:
             english_only = re.sub(r'[^a-z0-9\-]', '', ctx.title.lower().replace(' ', '-'))
-            slug_raw = re.sub(r'-+', '-', english_only).strip('-') or f"doc-{hashlib.md5(ctx.title.encode('utf-8')).hexdigest()[:6]}"
+            slug_raw = re.sub(r'-+', '-', english_only).strip('-')
+            if not slug_raw and ctx.title:
+                try:
+                    import pypinyin
+                    py_list = pypinyin.lazy_pinyin(ctx.title)
+                    py_str = "-".join(py_list)
+                    slug_raw = re.sub(r'[^a-z0-9\-]', '', py_str.lower())
+                    slug_raw = re.sub(r'-+', '-', slug_raw).strip('-')
+                except Exception:
+                    pass
+            if not slug_raw:
+                slug_raw = f"doc-{hashlib.md5((ctx.title or 'untitled').encode('utf-8')).hexdigest()[:6]}"
 
         # 🛡️ [Slug 目录增强自愈] 结合翻译配置中的 slug_dir_mode 做物理前缀或路径嵌套处理
         from core.logic.ai.ai_logic_hub import AILogicHub
