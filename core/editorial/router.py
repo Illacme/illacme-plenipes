@@ -61,12 +61,16 @@ class RouteManager:
                         source_lang=self.default_lang,
                         force_prefix=self.force_source_prefix
                     )
-                    if "{lang}" in template:
-                        slot_formatted = True
                     try:
                         route_prefix = template.format(lang=physical_lang)
                     except Exception:
                         route_prefix = template.replace("{lang}", physical_lang)
+
+        # 🚀 [V88.5] 纯正扁平模式增强：当为扁平模式 (flat) 且无特定频道路由时，前缀自动压平落盘到站点根目录
+        if not mapped_sub_dir and (not route_prefix or route_prefix in ("docs", "docs/{lang}")):
+            if hasattr(self, 'engine') and self.engine and hasattr(self.engine, 'config'):
+                if getattr(self.engine.config.translation, 'slug_dir_mode', 'flat') == 'flat':
+                    route_prefix = ""
 
         # 🚀 [V15.7] 物理主权对正：计算物理语种标识
         from core.utils.language_hub import LanguageHub
