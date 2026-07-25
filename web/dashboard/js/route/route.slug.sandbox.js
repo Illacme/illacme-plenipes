@@ -86,8 +86,39 @@ window.updateSlugSandboxPreview = function() {
         webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
     }
 
-    const activeRepoName = (window.settingsData.platforms?.github_pages?.repo_url || "obsidian_vortex").split('/').pop().replace(/\.git$/, '') || "obsidian_vortex";
-    const fullWebUrl = `https://username.github.io/${activeRepoName}/${webUrlPath}`;
+    // 🚀 [V89.5] 真实全站托管平台地址解析探针
+    let baseUrl = "https://illacme.github.io/obsidian_vortex/";
+    const platforms = window.settingsData.platforms || {};
+
+    // 1. 优先提取自定义 CNAME / 域名
+    if (platforms.github_pages && platforms.github_pages.cname && platforms.github_pages.cname.trim()) {
+        let cname = platforms.github_pages.cname.trim();
+        if (!cname.startsWith('http://') && !cname.startsWith('https://')) cname = 'https://' + cname;
+        baseUrl = cname.replace(/\/+$/, '') + '/';
+    } else if (platforms.github_pages && platforms.github_pages.repo_url) {
+        // 2. 从真实 GitHub 仓库链接解析 owner / repo
+        let clean = platforms.github_pages.repo_url.trim().replace(/\.git$/, '');
+        let owner = "", repo = "";
+        if (clean.includes("github.com/")) {
+            const parts = clean.split("github.com/")[1].split("/");
+            if (parts.length >= 2) { owner = parts[0]; repo = parts[1]; }
+        } else if (clean.includes("github.com:")) {
+            const parts = clean.split("github.com:")[1].split("/");
+            if (parts.length >= 2) { owner = parts[0]; repo = parts[1]; }
+        } else if (clean.includes("/")) {
+            const parts = clean.split("/");
+            if (parts.length === 2) { owner = parts[0]; repo = parts[1]; }
+        }
+        if (owner && repo) {
+            baseUrl = `https://${owner.toLowerCase()}.github.io/${repo}/`;
+        }
+    } else if (platforms.netlify && platforms.netlify.site_url) {
+        let siteUrl = platforms.netlify.site_url.trim();
+        if (!siteUrl.startsWith('http')) siteUrl = 'https://' + siteUrl;
+        baseUrl = siteUrl.replace(/\/+$/, '') + '/';
+    }
+
+    const fullWebUrl = `${baseUrl}${webUrlPath}`;
 
     previewWebUrl.innerHTML = `<span style="color: var(--accent-primary, #00f2fe); font-weight: 600;">${fullWebUrl}</span>`;
     previewDiskPath.innerHTML = `<span style="color: var(--text-dim, #aaa);">${physicalHtmlPath}</span>`;
