@@ -126,7 +126,7 @@ window.renderSlugSettingsCategory = () => {
 
     let html = `
         <div class="full-width">
-            <p class="section-desc" style="font-size: 0.85rem; margin-bottom: 25px; opacity: 0.85; line-height: 1.6;">
+            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.75; line-height: 1.5;">
                 配置全局原稿发布的 <b>URL 域名后缀格式与目录路径结构</b>。系统内置零技术门槛的物理路径推导引擎，帮助您打造极具 SEO 优势或清晰简洁的动态数字花园。
             </p>
 
