@@ -42,45 +42,45 @@ window.renderRouteMatrixCategory = () => {
                         <div class="matrix-row route-item" data-idx="${idx}" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr 60px; gap: 15px; padding: 12px 10px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
                             <div>
                                 ${(() => {
-                                    const directories = window.settingsData._directories || [];
-                                    const sourceVal = route.source || '';
-                                    const hasDirs = directories.length > 0;
-                                    const isStandard = !sourceVal || directories.includes(sourceVal);
-                                    let html = '';
-                                    if (hasDirs) {
-                                        html += `<select class="setting-input source-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                                        html += `<option value="" ${!sourceVal ? 'selected' : ''}>-- 选择文库目录 --</option>`;
-                                        directories.forEach(d => {
-                                            if (d) html += `<option value="${d}" ${sourceVal === d ? 'selected' : ''}>📁 ${d}</option>`;
-                                        });
-                                        html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
-                                        html += `</select>`;
-                                    }
-                                    html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-                                    return html;
-                                })()}
+            const directories = window.settingsData._directories || [];
+            const sourceVal = route.source || '';
+            const hasDirs = directories.length > 0;
+            const isStandard = !sourceVal || directories.includes(sourceVal);
+            let html = '';
+            if (hasDirs) {
+                html += `<select class="setting-input source-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                html += `<option value="" ${!sourceVal ? 'selected' : ''}>-- 选择文库目录 --</option>`;
+                directories.forEach(d => {
+                    if (d) html += `<option value="${d}" ${sourceVal === d ? 'selected' : ''}>📁 ${d}</option>`;
+                });
+                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
+                html += `</select>`;
+            }
+            html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+            return html;
+        })()}
                             </div>
                             <div>
                                 <input type="text" class="setting-input prefix-input" value="${route.prefix || ''}" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
                             </div>
                             <div>
                                 ${(() => {
-                                    const hasSlots = Object.keys(themeSlots).length > 0;
-                                    const slotVal = route.target_slot || '';
-                                    const isStandard = !slotVal || Object.keys(themeSlots).includes(slotVal);
-                                    let html = '';
-                                    if (hasSlots) {
-                                        html += `<select class="setting-input slot-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                                        html += `<option value="" ${!slotVal ? 'selected' : ''}>-- 选择网页模板 --</option>`;
-                                        Object.entries(themeSlots).forEach(([k, v]) => {
-                                            html += `<option value="${k}" ${slotVal === k ? 'selected' : ''}>${v.label || k}</option>`;
-                                        });
-                                        html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
-                                        html += `</select>`;
-                                    }
-                                    html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: custom_template" style="width: 100%; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-                                    return html;
-                                })()}
+            const hasSlots = Object.keys(themeSlots).length > 0;
+            const slotVal = route.target_slot || '';
+            const isStandard = !slotVal || Object.keys(themeSlots).includes(slotVal);
+            let html = '';
+            if (hasSlots) {
+                html += `<select class="setting-input slot-select" style="width: 100%; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                html += `<option value="" ${!slotVal ? 'selected' : ''}>-- 选择网页模板 --</option>`;
+                Object.entries(themeSlots).forEach(([k, v]) => {
+                    html += `<option value="${k}" ${slotVal === k ? 'selected' : ''}>${v.label || k}</option>`;
+                });
+                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义输入...</option>`;
+                html += `</select>`;
+            }
+            html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: custom_template" style="width: 100%; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+            return html;
+        })()}
                             </div>
                             <div>
                                 <select class="setting-input style-input" style="width: 100%;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()">
@@ -229,7 +229,7 @@ window.renderSlugSettingsCategory = () => {
                 </div>
 
                 <!-- 模拟器推导高亮盒子 -->
-                <div style="background: rgba(10, 11, 24, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 8px; font-family: monospace; font-size: 0.8rem;">
+                <div style="background: rgba(10, 11, 24, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="color: #888; width: 140px; shrink: 0;">🌐 线上访问 URL:</span>
                         <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all;">-</span>
@@ -239,6 +239,9 @@ window.renderSlugSettingsCategory = () => {
                         <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all;">-</span>
                     </div>
                 </div>
+
+                <!-- 🚀 物理就绪状态与重新发布友好提醒卡片 -->
+                <div id="sandbox-preview-status-box"></div>
             </div>
 
             <!-- 4. 高级频道重定向引流提示 -->
