@@ -218,8 +218,9 @@ window.updateSlugSandboxPreview = async function() {
         
         let isOnlineExist = false;
         try {
-            // 尝试 HEAD 探测线上 URL 物理存在状态
-            const res = await fetch(fullWebUrl, { method: 'HEAD', cache: 'no-cache' });
+            // 尝试带时间戳穿透 CDN 节点物理探测线上 URL 存在状态
+            const probeUrl = fullWebUrl.includes('?') ? `${fullWebUrl}&_t=${Date.now()}` : `${fullWebUrl}?_t=${Date.now()}`;
+            const res = await fetch(probeUrl, { method: 'HEAD', cache: 'no-store' });
             if (res.status === 200) {
                 isOnlineExist = true;
             }
@@ -235,19 +236,24 @@ window.updateSlugSandboxPreview = async function() {
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.3); padding: 8px 12px; border-radius: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="color: #00ffaa; font-weight: 600; font-size: 0.8rem;">🟢 线上已物理就绪 (200 OK)</span>
-                        <span style="color: #aaa; font-size: 0.75rem;">该路径当前已在云端部署成功并生效</span>
+                        <span style="color: #aaa; font-size: 0.75rem;">该路径已在 GitHub Pages 云端节点部署成功并可公网访问</span>
                     </div>
                 </div>
             `;
         } else {
             previewStatusBox.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); padding: 8px 12px; border-radius: 6px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #ffb400; font-weight: 600; font-size: 0.8rem;">🟡 待全域发布生效 (未物理就绪/404)</span>
-                        <span style="color: #ddd; font-size: 0.75rem;">当前选择形态为【${currentModeName}】，需要点击右上角 <b>「🚀 全域发布」</b> 后即可上线生效！</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); padding: 10px 12px; border-radius: 6px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: #ffb400; font-weight: 600; font-size: 0.8rem;">🟡 待全域发布生效 (未物理就绪/404)</span>
+                            <span style="color: #888; font-size: 0.72rem;">当前选择形态为【${currentModeName}】</span>
+                        </div>
+                        <div style="color: #bbb; font-size: 0.73rem; line-height: 1.4;">
+                            💡 <b>常见原因</b>：1. GitHub Pages / CDN 部署刷新需 1 ~ 3 分钟物理时延； 2. 此原稿为最新更改，尚未执行「🚀 全域发布」。
+                        </div>
                     </div>
-                    <button class="mini-btn glow-btn" onclick="if(document.getElementById('btn-publish')) document.getElementById('btn-publish').click();" style="padding: 3px 10px; font-size: 0.72rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;">
-                        🚀 立即发布
+                    <button class="mini-btn glow-btn" onclick="if(document.getElementById('btn-publish')) document.getElementById('btn-publish').click();" style="padding: 5px 12px; font-size: 0.75rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 10px;">
+                        🚀 重新发布全站
                     </button>
                 </div>
             `;
