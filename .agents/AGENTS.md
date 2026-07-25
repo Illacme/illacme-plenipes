@@ -24,8 +24,8 @@
 *   **二级子标签（4个）**：
     1.  `localization`（🌍 翻译矩阵）：调用 `window.renderLocalizationCategory()`
     2.  `translation_style`（🎭 翻译风格）：调用 `window.renderTranslationStyleCategory()`
-    3.  `slug_settings`（📝 别名策略）：调用 `window.renderSlugSettingsCategory()`
-    4.  `route_matrix`（🧭 物理路由）：调用 `window.renderRouteMatrixCategory()`
+    3.  `slug_settings`（📝 网址路径）：调用 `window.renderSlugSettingsCategory()`
+    4.  `route_matrix`（🧭 频道映射）：调用 `window.renderRouteMatrixCategory()`
 *   **交互实现**：必须提供 `window.switchI18nRoutingSubTab(subTab, btn)` 并支持自动点亮回填。
 
 ## 4. 后台非交互式子进程安全调用规则 (Non-Interactive Subprocess Invocation Rules)
