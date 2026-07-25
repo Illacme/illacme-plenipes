@@ -669,10 +669,12 @@ window.renderI18nRoutingCategory = () => {
                 window.updateSaveButtonVisibility(subTab);
             }
 
-            // 🚀 物理全量重置真正的 DOM 滚动容器 scrollTop = 0
+            // 🚀 物理全量重置真正的 DOM 滚动容器 scrollTop = 0 (querySelectorAll 全量检索所有 tab-content-area)
             try {
+                const tabAreas = document.querySelectorAll('.tab-content-area');
+                tabAreas.forEach(area => { if (area) area.scrollTop = 0; });
+
                 const scrollContainers = [
-                    document.querySelector('.tab-content-area'),
                     document.querySelector('#view-settings'),
                     document.querySelector('.view-content'),
                     document.querySelector('#settings-form'),
