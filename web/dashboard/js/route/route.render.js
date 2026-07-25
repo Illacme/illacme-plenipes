@@ -151,47 +151,47 @@ window.renderSlugSettingsCategory = () => {
                 </div>
             </div>
 
-            <!-- 2. 网址路径组织形态卡片 -->
-            <div style="margin-bottom: 30px;">
-                <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px; font-weight: 600;">2. 网址路径组织形态 (网址结构三选一)</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">
+            <!-- 2. 网址路径组织形态卡片 (强制一行三列物理并排，同屏直观联动) -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 0.9rem; color: #fff; margin-bottom: 10px; font-weight: 600;">2. 网址路径组织形态 (网址结构三选一)</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%;">
                     <!-- 卡片 1: 极简根目录 -->
-                    <div class="slug-dir-card ${dirMode === 'flat' ? 'active' : ''}" data-mode="flat" onclick="window.selectSlugDirModeCard('flat')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'flat' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'flat' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">📄 极简根目录</span>
-                            <span style="font-size: 0.7rem; background: rgba(0, 242, 255, 0.2); color: #00f2fe; padding: 2px 6px; border-radius: 4px; font-weight: 600;">推荐</span>
+                    <div class="slug-dir-card ${dirMode === 'flat' ? 'active' : ''}" data-mode="flat" onclick="window.selectSlugDirModeCard('flat')" style="padding: 12px 14px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'flat' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'flat' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'}; flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: #fff; white-space: nowrap;">📄 极简根目录</span>
+                            <span style="font-size: 0.65rem; background: rgba(0, 242, 255, 0.2); color: #00f2fe; padding: 1px 5px; border-radius: 4px; font-weight: 600; shrink: 0;">推荐</span>
                         </div>
-                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
-                            忽略 Obsidian 本地子文件夹层级，所有网页物理落盘并挂载在<b>站点根目录</b>下，网址最短最利于分享。
+                        <p style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 8px; min-height: 28px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            忽略 Obsidian 本地子文件夹层级，所有网页物理落盘并挂载在<b>站点根目录</b>下。
                         </p>
-                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
+                        <div style="font-family: monospace; font-size: 0.7rem; background: rgba(0,0,0,0.35); padding: 5px 8px; border-radius: 4px; color: #00f2fe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="site.com/install-guide.html">
                             site.com/install-guide.html
                         </div>
                     </div>
 
                     <!-- 卡片 2: 目录前缀 -->
-                    <div class="slug-dir-card ${dirMode === 'prefix' ? 'active' : ''}" data-mode="prefix" onclick="window.selectSlugDirModeCard('prefix')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'prefix' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'prefix' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">🔗 智能 SEO 前缀</span>
+                    <div class="slug-dir-card ${dirMode === 'prefix' ? 'active' : ''}" data-mode="prefix" onclick="window.selectSlugDirModeCard('prefix')" style="padding: 12px 14px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'prefix' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'prefix' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'}; flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: #fff; white-space: nowrap;">🔗 智能 SEO 前缀</span>
                         </div>
-                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
-                            物理文件仍落盘在根目录，但自动将父文件夹提取并拼接为 Slug 连字符前缀，大幅提升关键词 SEO 权重。
+                        <p style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 8px; min-height: 28px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            物理文件仍落盘在根目录，自动提取父文件夹为 Slug 连字符前缀，提升 SEO。
                         </p>
-                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
+                        <div style="font-family: monospace; font-size: 0.7rem; background: rgba(0,0,0,0.35); padding: 5px 8px; border-radius: 4px; color: #00f2fe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="site.com/tech-guide-install.html">
                             site.com/tech-guide-install.html
                         </div>
                     </div>
 
                     <!-- 卡片 3: 目录树复刻 -->
-                    <div class="slug-dir-card ${dirMode === 'nested' ? 'active' : ''}" data-mode="nested" onclick="window.selectSlugDirModeCard('nested')" style="padding: 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'nested' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'nested' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-weight: 600; font-size: 0.95rem; color: #fff;">📂 完整目录树复刻</span>
+                    <div class="slug-dir-card ${dirMode === 'nested' ? 'active' : ''}" data-mode="nested" onclick="window.selectSlugDirModeCard('nested')" style="padding: 12px 14px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 1px solid ${dirMode === 'nested' ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${dirMode === 'nested' ? 'rgba(0, 242, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)'}; flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: #fff; white-space: nowrap;">📂 目录树复刻</span>
                         </div>
-                        <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 15px; min-height: 36px;">
-                            网页网址与您的本地 Obsidian 文件夹多级层级结构 <b>1:1 完全物理对齐</b>，适合大型 Wiki 或软件文档库。
+                        <p style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 8px; min-height: 28px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            网页网址与您的本地 Obsidian 文件夹多级层级结构 <b>1:1 完全物理对齐</b>。
                         </p>
-                        <div style="font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; color: #00f2fe; word-break: break-all;">
-                            site.com/docs/tech/guide/install.html
+                        <div style="font-family: monospace; font-size: 0.7rem; background: rgba(0,0,0,0.35); padding: 5px 8px; border-radius: 4px; color: #00f2fe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="site.com/docs/tech/guide/install.html">
+                            site.com/docs/tech/guide/...
                         </div>
                     </div>
                 </div>
