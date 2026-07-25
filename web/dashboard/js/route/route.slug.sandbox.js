@@ -141,18 +141,31 @@ window.updateSlugSandboxPreview = async function() {
     let cleanRelPath = "";
     let webUrlPath = "";
 
-    if (dirMode === 'flat') {
-        cleanRelPath = `${finalSlug}.html`;
-        webUrlPath = `${finalSlug}.html`;
-    } else if (dirMode === 'prefix') {
-        const safePrefix = subDir ? subDir.replace(/\//g, '-') + '-' : '';
-        const prefixedSlug = `${safePrefix}${finalSlug}`;
-        cleanRelPath = `${prefixedSlug}.html`;
-        webUrlPath = `${prefixedSlug}.html`;
-    } else if (dirMode === 'nested') {
-        const nestedSub = subDir ? `${subDir}/` : '';
-        cleanRelPath = `docs/${nestedSub}${finalSlug}.html`;
-        webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
+    // 🚀 [物理主权适配] 优先匹配 route_matrix 中的专区/频道重定向映射
+    const routeMatrix = window.settingsData.route_matrix || [];
+    let matchedRoute = null;
+    if (subDir) {
+        matchedRoute = routeMatrix.find(r => r.source && (subDir === r.source || subDir.startsWith(r.source + '/')));
+    }
+
+    if (matchedRoute && matchedRoute.prefix) {
+        let cleanP = matchedRoute.prefix.replace(/^\/+|\/+$/g, '');
+        cleanRelPath = `docs/${cleanP}/${finalSlug}.html`;
+        webUrlPath = `docs/${cleanP}/${finalSlug}.html`;
+    } else {
+        if (dirMode === 'flat') {
+            cleanRelPath = `${finalSlug}.html`;
+            webUrlPath = `${finalSlug}.html`;
+        } else if (dirMode === 'prefix') {
+            const safePrefix = subDir ? subDir.replace(/\//g, '-') + '-' : '';
+            const prefixedSlug = `${safePrefix}${finalSlug}`;
+            cleanRelPath = `${prefixedSlug}.html`;
+            webUrlPath = `${prefixedSlug}.html`;
+        } else if (dirMode === 'nested') {
+            const nestedSub = subDir ? `${subDir}/` : '';
+            cleanRelPath = `docs/${nestedSub}${finalSlug}.html`;
+            webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
+        }
     }
 
     // 🚀 提取真实的托管 Base URL 与 GitHub Cloud 直达文件路径
