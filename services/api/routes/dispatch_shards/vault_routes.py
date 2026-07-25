@@ -84,7 +84,7 @@ class OpenFolderReq(BaseModel):
 @router.post("/api/vault/open-local-folder", dependencies=[Depends(verify_token)])
 async def open_local_folder(req: OpenFolderReq):
     """
-    📂 物理一键唤醒本机 Finder / 资源管理器定位产物目录
+    📂 物理一键唤醒本机 Finder / 资源管理器定位并高亮聚焦产物文件/目录
     """
     engine = get_global_engine()
     if not engine:
@@ -94,16 +94,27 @@ async def open_local_folder(req: OpenFolderReq):
     rel = (req.rel_path or '').strip().lstrip("/")
     
     target_path = os.path.abspath(os.path.join(root_dir, rel))
-    target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-    os.makedirs(target_dir, exist_ok=True)
+    exists = os.path.exists(target_path)
     
     try:
         if sys.platform == 'darwin':
-            subprocess.run(['open', target_dir], check=False)
+            if exists and not os.path.isdir(target_path):
+                subprocess.run(['open', '-R', target_path], check=False)
+            else:
+                target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
+                os.makedirs(target_dir, exist_ok=True)
+                subprocess.run(['open', target_dir], check=False)
         elif sys.platform == 'win32':
-            os.startfile(target_dir)
+            if exists and not os.path.isdir(target_path):
+                subprocess.run(['explorer', '/select,', target_path], check=False)
+            else:
+                target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
+                os.makedirs(target_dir, exist_ok=True)
+                os.startfile(target_dir)
         else:
+            target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
+            os.makedirs(target_dir, exist_ok=True)
             subprocess.run(['xdg-open', target_dir], check=False)
-        return {"status": "ok", "opened_dir": target_dir}
+        return {"status": "ok", "opened_path": target_path}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
