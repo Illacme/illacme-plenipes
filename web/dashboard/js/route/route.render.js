@@ -248,9 +248,11 @@ window.renderSlugSettingsCategory = () => {
         </div>
     `;
 
-    // 延迟少许触发沙盒计算初始化
+    // 延迟少许触发沙盒计算与真实文稿列表 populate
     setTimeout(() => {
-        if (typeof window.updateSlugSandboxPreview === 'function') {
+        if (typeof window.populateSandboxRealFiles === 'function') {
+            window.populateSandboxRealFiles();
+        } else if (typeof window.updateSlugSandboxPreview === 'function') {
             window.updateSlugSandboxPreview();
         }
     }, 50);

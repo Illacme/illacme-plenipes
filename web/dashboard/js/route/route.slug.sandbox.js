@@ -1,6 +1,6 @@
 /**
- * 🛣️ [V89.0] Illacme Plenipes Route & Slug Sandbox Module
- * 职责：别名策略视觉卡片切换、实时 URL 沙盒推导模拟器与配置同步。
+ * 🛣️ [V90.0] Illacme Plenipes Route & Slug Sandbox Module
+ * 职责：别名策略视觉卡片切换、真实 Obsidian 金库文稿全量感知与物理 URL 模拟器。
  */
 
 window.selectSlugDirModeCard = function(mode) {
@@ -34,6 +34,50 @@ window.selectSlugDirModeCard = function(mode) {
     window.updateSlugSandboxPreview();
 };
 
+window.realManuscriptCache = [];
+
+// 🚀 物理拉取金库全量真实原稿注入下拉框
+window.populateSandboxRealFiles = async function() {
+    const selector = document.getElementById('sandbox-file-select');
+    if (!selector) return;
+
+    try {
+        let manuscripts = window.realManuscriptCache;
+        if (!manuscripts || manuscripts.length === 0) {
+            const res = await apiFetch('/api/vault/list');
+            if (res && res.manuscripts) {
+                manuscripts = res.manuscripts;
+                window.realManuscriptCache = manuscripts;
+            }
+        }
+
+        if (manuscripts && manuscripts.length > 0) {
+            selector.innerHTML = '';
+            manuscripts.forEach(m => {
+                const path = m.rel_path || m.path;
+                if (!path) return;
+                const opt = document.createElement('option');
+                opt.value = path;
+                opt.text = `📄 ${path}`;
+                opt.dataset.slug = m.slug || '';
+                opt.dataset.title = m.title || '';
+                selector.appendChild(opt);
+            });
+
+            // 附带自定义输入项
+            const customOpt = document.createElement('option');
+            customOpt.value = '_custom';
+            customOpt.text = '✏️ 手动输入自定义相对路径...';
+            selector.appendChild(customOpt);
+
+            // 刷新计算
+            window.updateSlugSandboxPreview();
+        }
+    } catch (e) {
+        console.warn("Populate sandbox real files warning:", e);
+    }
+};
+
 window.updateSlugSandboxPreview = function() {
     const selector = document.getElementById('sandbox-file-select');
     const customInput = document.getElementById('sandbox-custom-input');
@@ -42,20 +86,18 @@ window.updateSlugSandboxPreview = function() {
 
     if (!previewWebUrl || !previewDiskPath) return;
 
-    let samplePath = "tech/guide/安装与部署指南.md";
+    let samplePath = "tech/guide/e2e_slug_test.md";
     let sampleTitle = "安装与部署指南";
-    let sampleSlug = "install-guide";
+    let existingSlug = "";
 
     if (selector && selector.value && selector.value !== '_custom') {
         samplePath = selector.value;
-        const filename = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
-        sampleTitle = filename;
-        sampleSlug = filename.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || "document";
+        const selectedOpt = selector.options[selector.selectedIndex];
+        existingSlug = selectedOpt ? selectedOpt.dataset.slug : '';
+        sampleTitle = selectedOpt ? (selectedOpt.dataset.title || samplePath.split('/').pop().replace(/\.mdx?$/i, '')) : samplePath.split('/').pop().replace(/\.mdx?$/i, '');
     } else if (customInput && customInput.value.trim()) {
         samplePath = customInput.value.trim();
-        const filename = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
-        sampleTitle = filename;
-        sampleSlug = filename.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || "document";
+        sampleTitle = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
     }
 
     const translation = window.settingsData.translation || {};
@@ -63,12 +105,23 @@ window.updateSlugSandboxPreview = function() {
     const slugMode = translation.slug_mode || 'ai';
     const isAi = (slugMode === 'ai');
 
-    // 计算映射子目录
+    // 计算父级相对路径与文件名
+    const filename = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
     const parts = samplePath.split('/');
     parts.pop(); // 移除文件名
     const subDir = parts.join('/');
 
-    let finalSlug = isAi ? sampleSlug : sampleTitle.toLowerCase().replace(/\s+/g, '-');
+    // 若文档已有已有真实计算好的 Slug，优先使用，否则生成
+    let finalSlug = existingSlug;
+    if (!finalSlug) {
+        if (isAi) {
+            finalSlug = filename.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || "document";
+        } else {
+            finalSlug = sampleTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+            if (!finalSlug) finalSlug = "document";
+        }
+    }
+
     let physicalHtmlPath = "";
     let webUrlPath = "";
 
@@ -86,28 +139,26 @@ window.updateSlugSandboxPreview = function() {
         webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
     }
 
-    // 🚀 [V89.5] 真实全站托管平台地址解析探针
+    // 🚀 提取真实的托管 Base URL
     let baseUrl = "https://illacme.github.io/obsidian_vortex/";
     const platforms = window.settingsData.platforms || {};
 
-    // 1. 优先提取自定义 CNAME / 域名
     if (platforms.github_pages && platforms.github_pages.cname && platforms.github_pages.cname.trim()) {
         let cname = platforms.github_pages.cname.trim();
         if (!cname.startsWith('http://') && !cname.startsWith('https://')) cname = 'https://' + cname;
         baseUrl = cname.replace(/\/+$/, '') + '/';
     } else if (platforms.github_pages && platforms.github_pages.repo_url) {
-        // 2. 从真实 GitHub 仓库链接解析 owner / repo
         let clean = platforms.github_pages.repo_url.trim().replace(/\.git$/, '');
         let owner = "", repo = "";
         if (clean.includes("github.com/")) {
-            const parts = clean.split("github.com/")[1].split("/");
-            if (parts.length >= 2) { owner = parts[0]; repo = parts[1]; }
+            const p = clean.split("github.com/")[1].split("/");
+            if (p.length >= 2) { owner = p[0]; repo = p[1]; }
         } else if (clean.includes("github.com:")) {
-            const parts = clean.split("github.com:")[1].split("/");
-            if (parts.length >= 2) { owner = parts[0]; repo = parts[1]; }
+            const p = clean.split("github.com:")[1].split("/");
+            if (p.length >= 2) { owner = p[0]; repo = p[1]; }
         } else if (clean.includes("/")) {
-            const parts = clean.split("/");
-            if (parts.length === 2) { owner = parts[0]; repo = parts[1]; }
+            const p = clean.split("/");
+            if (p.length === 2) { owner = p[0]; repo = p[1]; }
         }
         if (owner && repo) {
             baseUrl = `https://${owner.toLowerCase()}.github.io/${repo}/`;
@@ -120,6 +171,6 @@ window.updateSlugSandboxPreview = function() {
 
     const fullWebUrl = `${baseUrl}${webUrlPath}`;
 
-    previewWebUrl.innerHTML = `<span style="color: var(--accent-primary, #00f2fe); font-weight: 600;">${fullWebUrl}</span>`;
+    previewWebUrl.innerHTML = `<a href="${fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;">${fullWebUrl}</a>`;
     previewDiskPath.innerHTML = `<span style="color: var(--text-dim, #aaa);">${physicalHtmlPath}</span>`;
 };
