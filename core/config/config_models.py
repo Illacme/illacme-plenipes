@@ -98,10 +98,17 @@ class SeoSettings(BaseModel):
 
 class RouteItem(BaseModel):
     """🚀 [V55.26] 路由矩阵项：支持频道级的方言与风格绑定"""
-    source: str
-    prefix: str
+    source: str = ""
+    prefix: str = ""
     target_slot: str = "docs" # 🚀 [V56.0] 意图感知：docs, blog, pages 等
     style: Optional[str] = None # 🔗 频道级方言映射，优先级高于全局 active_style
+
+    @field_validator('source', 'prefix', mode='before')
+    @classmethod
+    def sanitize_null_strings(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        return str(v)
     
 class Configuration(BaseModel):
     """💎 [Illacme Plenipes] 全局配置模型总纲"""

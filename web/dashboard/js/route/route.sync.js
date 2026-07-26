@@ -159,8 +159,8 @@ window.syncRouteMatrixToSettings = () => {
 
         newRouteMatrix.push({
             source: source,
-            prefix: prefix || null,
-            target_slot: target_slot || null,
+            prefix: prefix || "",
+            target_slot: target_slot || "docs",
             style: style || null
         });
     });
