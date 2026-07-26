@@ -44,9 +44,8 @@ window.ThemeUI = {
                         }
 
                         // 🚀 [V80.6] 📱 220px 竖屏长网页 1:1 Mockup 渲染器 (Vertical Full-Page Preview Frame)
-                        const dotColor = t.is_enabled ? 'healthy' : 'blocked';
                         const previewImage = t.preview_image || t.cover || t.preview || '';
-                        const mockupInner = getVerticalMockupContent(t.id);
+                        const mockupInner = (window.getThemeVerticalMockupContent ? window.getThemeVerticalMockupContent(t.id) : '');
 
                         const previewHtml = previewImage 
                             ? `<img src="${previewImage}" alt="${t.id}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transition: transform 0.4s ease;" class="theme-preview-img" />`
