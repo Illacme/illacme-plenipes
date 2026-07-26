@@ -120,7 +120,7 @@ tags: [Illacme, Onboarding]
                 "log_level": "INFO"
             },
 
-            "route_matrix": self._probe_vault_structure(manuscripts_path)
+            "route_matrix": []
         }
 
         # 🧪 [V50.3] 凭据主权加固：执行物理脱敏

@@ -7,6 +7,12 @@ window.renderRouteMatrixCategory = () => {
     const isLicensed = window.settingsData._is_licensed || false;
     const routes = window.settingsData.route_matrix || [];
     const themeSlots = window.settingsData._theme_slots || {};
+    const directories = window.settingsData._directories || [];
+
+    // 💡 检测是否有常见的规范目录可供智能推荐
+    const mappingRules = { "Blog": "blog", "Docs": "docs", "Pages": "pages" };
+    const detectedSubdirs = Object.keys(mappingRules).filter(d => directories.includes(d));
+    const showSmartRecommendation = (routes.length === 0) && (detectedSubdirs.length > 0);
 
     let html = `
         <div class="full-width">
@@ -15,6 +21,21 @@ window.renderRouteMatrixCategory = () => {
                 ${!isLicensed ? '<br><span style="color: var(--accent-secondary); font-size: 0.75rem;">* 社区版将自动退避至物理目录映射模式。</span>' : ''}
             </p>
             
+            ${showSmartRecommendation ? `
+                <div style="margin-bottom: 20px; padding: 12px 18px; background: rgba(0, 242, 255, 0.06); border: 1px dashed rgba(0, 242, 255, 0.3); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">💡</span>
+                        <div>
+                            <div style="color: #00f2fe; font-weight: 600; font-size: 0.83rem;">智能感知推荐</div>
+                            <div style="color: var(--text-dim); font-size: 0.75rem;">探测到您的文库中包含 <b>${detectedSubdirs.join(', ')}</b> 等目录，是否一键装载推荐的频道映射？</div>
+                        </div>
+                    </div>
+                    <button class="mini-btn glow-btn" onclick="window.applyRecommendedRouteMatrix(['${detectedSubdirs.join("','")}'])" style="padding: 5px 12px; font-size: 0.75rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 15px;">
+                        ✨ 一键装载推荐映射
+                    </button>
+                </div>
+            ` : ''}
+
             <div class="matrix-table glass-panel" style="border-radius: 12px; overflow: hidden; position: relative;">
                 ${!isLicensed ? `
                     <div class="pro-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 11, 24, 0.6); backdrop-filter: blur(4px); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
@@ -271,4 +292,31 @@ window.renderSlugSettingsCategory = () => {
     }, 50);
 
     return html;
+};
+
+// 💡 智能发现：一键装载推荐的频道映射规则
+window.applyRecommendedRouteMatrix = (subdirs) => {
+    if (!window.settingsData.route_matrix) window.settingsData.route_matrix = [];
+    const rulesMap = { "Blog": "blog", "Docs": "docs", "Pages": "pages" };
+    
+    subdirs.forEach(folder => {
+        const prefix = rulesMap[folder] || folder.toLowerCase();
+        const exists = window.settingsData.route_matrix.some(r => r.source === folder);
+        if (!exists) {
+            window.settingsData.route_matrix.push({
+                source: folder,
+                prefix: prefix,
+                target_slot: "docs",
+                style: ""
+            });
+        }
+    });
+
+    // 重新渲染 Sub-Tab 重新绘制矩阵
+    if (typeof window.renderRouteMatrixCategory === 'function') {
+        const container = document.getElementById('i18n-panel-route_matrix');
+        if (container) container.innerHTML = window.renderRouteMatrixCategory();
+    }
+    if (typeof addAudit === 'function') addAudit(`✨ 已一键装载智能感知推荐的频道映射规则 (${subdirs.join(', ')})`);
+    if (typeof syncRouteMatrixToSettings === 'function') syncRouteMatrixToSettings();
 };
