@@ -23,7 +23,7 @@ window.getUIDrawersHTML = () => {
                             <button id="btn-sync-all-channels" class="p-btn" style="display: none; padding: 3px 8px; font-size: 0.65rem; background: var(--accent-secondary); color: #000; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onclick="window.triggerSyncAllChannels()" onmouseover="this.style.background='rgba(0, 242, 255, 0.8)'" onmouseout="this.style.background='var(--accent-secondary)'">🚀 一键同步全渠道</button>
                         </div>
                         <div id="hub-sync-matrix" class="matrix-list">
-                            <!-- Mock 列表将注入此处 -->
+                            <!-- 矩阵通道动态列表将注入此处 -->
                         </div>
                     </div>
 
