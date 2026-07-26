@@ -4,110 +4,27 @@
  */
 
 (function () {
-    function showToast(message, icon = 'success') {
-        if (window.Swal) {
+    function notify(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else if (window.Swal) {
             const Toast = window.Swal.mixin({
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,
-                timer: 2000,
+                timer: 2200,
                 timerProgressBar: true,
                 background: 'rgba(20, 20, 20, 0.9)',
                 color: '#fff',
                 customClass: { popup: 'swal2-glass-toast' }
             });
-            Toast.fire({ icon: icon, title: message });
+            Toast.fire({ icon: type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success'), title: message });
         } else {
             console.log(`[Palette] ${message}`);
         }
     }
 
-    const commands = [
-        {
-            id: 'publish',
-            title: '全域发布 (Trigger Publish)',
-            icon: '🚀',
-            shortcut: 'Enter',
-            action: () => {
-                if (typeof window.triggerPublish === 'function') {
-                    window.triggerPublish();
-                } else {
-                    showToast('发布接口未就绪', 'error');
-                }
-            }
-        },
-        {
-            id: 'toggle_preview',
-            title: '开启预览服务 (Live Preview Engine)',
-            icon: '👁️',
-            shortcut: 'Enter',
-            action: () => {
-                if (typeof window.toggleThemeLab === 'function') {
-                    window.toggleThemeLab();
-                    showToast('预览服务调起指令已发送');
-                } else {
-                    showToast('预览服务组件未加载', 'warning');
-                }
-            }
-        },
-        {
-            id: 'toggle_galaxy',
-            title: '知识星图视界 (Toggle Galaxy Graph)',
-            icon: '🌌',
-            shortcut: 'Enter',
-            action: () => {
-                // Global view switch to overview first
-                if (typeof window.showView === 'function') {
-                    // Force close all possible overlay panels to ensure clear view
-                    if (typeof window.closeTerminalModal === 'function') window.closeTerminalModal();
-                    if (typeof window.closeVaultDrawer === 'function') window.closeVaultDrawer();
-                    if (typeof window.closePluginDrawer === 'function') window.closePluginDrawer();
-                    if (typeof window.closeEditor === 'function') window.closeEditor();
-
-                    window.showView('overview');
-                    setTimeout(() => {
-                        // Ensure the command hub overlay is hidden so we can see the 3D galaxy
-                        if (typeof window.toggleHub === 'function') window.toggleHub('hide');
-                        
-                        if (typeof window.initGalaxy === 'function') {
-                            window.initGalaxy();
-                            showToast('正在进入星图视界...');
-                        }
-                    }, 100);
-                } else {
-                    if (typeof window.initGalaxy === 'function') {
-                        window.initGalaxy();
-                        showToast('正在进入星图视界...');
-                    } else {
-                        showToast('星图引擎未加载', 'error');
-                    }
-                }
-            }
-        },
-        {
-            id: 'clean_orphans',
-            title: '清理悬空资产 (Clean Orphans)',
-            icon: '🧹',
-            shortcut: 'Enter',
-            action: () => {
-                if (typeof window.apiFetch === 'function') {
-                    window.apiFetch('/api/governance/gc', { method: 'POST' })
-                        .then(res => {
-                            showToast('清理指令已发送至后台引擎');
-                            if (typeof window.addAudit === 'function') {
-                                window.addAudit("已触发悬空资产清理指令", "INFO");
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            showToast('清理指令发送失败', 'error');
-                        });
-                } else {
-                    showToast('API 模块未就绪', 'error');
-                }
-            }
-        }
-    ];
+    const commands = typeof window.getPaletteCommandsList === 'function' ? window.getPaletteCommandsList() : [];
 
     let overlay, input, list;
     let selectedIndex = 0;
@@ -145,8 +62,8 @@
     }
 
     function handleGlobalKeydown(e) {
-        // Listen for Cmd+P or Ctrl+P
-        if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        // Listen for Cmd+P / Cmd+K or Ctrl+P / Ctrl+K
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'p' || e.key === 'k')) {
             e.preventDefault();
             togglePalette();
         }
