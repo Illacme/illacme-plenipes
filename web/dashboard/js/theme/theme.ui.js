@@ -43,7 +43,7 @@ window.ThemeUI = {
                             }
                         }
 
-                        // 🚀 [V80.6] 📱 220px 竖屏长网页 1:1 Mockup 渲染器 (Vertical Full-Page Preview Frame)
+                        const dotColor = t.is_enabled ? 'healthy' : 'blocked';
                         const previewImage = t.preview_image || t.cover || t.preview || '';
                         const mockupInner = (window.getThemeVerticalMockupContent ? window.getThemeVerticalMockupContent(t.id) : '');
 
