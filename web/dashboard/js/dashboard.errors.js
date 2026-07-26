@@ -92,8 +92,9 @@
                     </div>
                     <div class="error-modal-footer">
                         <p class="hint">The system has halted faulty operations to prevent data corruption.</p>
-                        <div class="error-actions">
+                        <div class="error-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button class="btn secondary-btn" onclick="document.getElementById('global-error-overlay').style.display='none'">Dismiss Warning</button>
+                            <button class="btn secondary-btn" style="border-color: var(--accent-secondary); color: var(--accent-secondary);" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();">🏥 一键自愈重载</button>
                             <button class="btn primary-btn error-btn" onclick="window.location.reload()">Reload Subsystem (${reloadHint})</button>
                         </div>
                     </div>

@@ -27,6 +27,7 @@ window.ThemeHandlers = {
         if (success) {
             // 重新渲染当前分类以更新 UI 状态
             window._shouldScrollToTopAfterThemeSwitch = true;
+            if (typeof window.showToast === 'function') window.showToast(`✨ 装帧主题已成功切换为 ${themeId.toUpperCase()}`, 'success');
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
             

@@ -1,26 +1,83 @@
 /**
- * 🍞 Breathing Toast Notification System
- * 职责：非侵入式“呼吸胶囊”微提示，直接集成至底部状态栏的审计雷达位。
+ * 🍞 Illacme Plenipes - Global Toast Micro-interactions Queue
+ * 职责：提供高质量毛玻璃 Toast 微通知，替代突兀的 Alert 弹窗。
  */
 
-window.showBreathingToast = (message) => {
-    // 1. 复用原生的审计中心记录机制，确保日志可追溯
-    if (typeof window.addAudit === 'function') {
-        window.addAudit(message, 'success');
-    }
+(function() {
+    window.showToast = function(message, type = 'success', duration = 3200) {
+        let container = document.getElementById('global-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'global-toast-container';
+            container.style.cssText = `
+                position: fixed;
+                top: 24px;
+                right: 24px;
+                z-index: 99999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                pointer-events: none;
+                max-width: 380px;
+            `;
+            document.body.appendChild(container);
+        }
 
-    // 2. 截获底部的简报文本，赋予临时的“呼吸胶囊”物理特效
-    const summaryText = document.getElementById('audit-summary-text');
-    if (summaryText) {
-        // 重置动画状态
-        summaryText.classList.remove('toast-breathe-active');
-        void summaryText.offsetWidth; // 触发重绘
+        const toast = document.createElement('div');
+        toast.className = `glass-toast toast-${type}`;
         
-        summaryText.classList.add('toast-breathe-active');
+        const typeConfig = {
+            success: { icon: '✨', border: 'hsla(152, 100%, 50%, 0.4)', bg: 'rgba(10, 30, 20, 0.85)', color: '#00ff88' },
+            info:    { icon: '📡', border: 'hsla(183, 100%, 50%, 0.4)', bg: 'rgba(10, 25, 35, 0.85)', color: 'var(--accent-secondary, #00f2ff)' },
+            warning: { icon: '⚠️', border: 'hsla(43, 100%, 50%, 0.4)',  bg: 'rgba(35, 25, 10, 0.85)', color: '#ffb300' },
+            error:   { icon: '🛑', border: 'hsla(0, 100%, 60%, 0.4)',   bg: 'rgba(35, 10, 10, 0.85)', color: '#ff5555' }
+        };
 
-        // 3秒后消散特效，回归普通的审计文本状态
+        const cfg = typeConfig[type] || typeConfig.info;
+
+        toast.style.cssText = `
+            pointer-events: auto;
+            background: ${cfg.bg};
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid ${cfg.border};
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #ffffff;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(-12px) scale(0.96);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        `;
+
+        toast.innerHTML = `
+            <span style="font-size: 1.1rem; flex-shrink: 0;">${cfg.icon}</span>
+            <div style="flex: 1; word-break: break-word;">${message}</div>
+        `;
+
+        container.appendChild(toast);
+
+        // 动画触发
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0) scale(1)';
+        });
+
+        // 自动出场
         setTimeout(() => {
-            summaryText.classList.remove('toast-breathe-active');
-        }, 3000);
-    }
-};
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px) scale(0.96)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+    };
+})();
