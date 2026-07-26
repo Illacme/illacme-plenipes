@@ -178,10 +178,44 @@ tags: [Illacme, Onboarding]
                     imprints.append({
                         "id": entry.name,
                         "name": p_name,
-                        "description": cfg.get("imprint_description", ""),
-                        "path": v_path
+                        "vault": v_path,
+                        "active": (entry.name == active_imprint)
                     })
         return imprints
+
+    def get_most_recent_imprint(self) -> Optional[str]:
+        """
+        🛰️ [V52.12] 智能物理侦察：获取最新修改或使用的真实主权品牌。
+        按配置文件的最后修改时间 (mtime) 倒序排列，优先选择 Vault 真实物理可达的合法品牌。
+        """
+        if not os.path.exists(self.imprint_root):
+            return None
+
+        candidates = []
+        for entry in os.scandir(self.imprint_root):
+            if entry.is_dir() and entry.name != "default" and not entry.name.startswith("test_"):
+                config_path = os.path.join(entry.path, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+                if os.path.exists(config_path):
+                    try:
+                        mtime = os.path.getmtime(config_path)
+                        # 🚀 [V75.8] 校验物理可达性：如果 Vault 路径不存在（如单测临时目录被物理清理），降低其权重
+                        is_vault_valid = False
+                        with open(config_path, 'r', encoding='utf-8') as f:
+                            cfg = yaml.safe_load(f) or {}
+                            v_root = cfg.get("vault_root")
+                            if v_root and os.path.exists(os.path.abspath(os.path.expanduser(v_root))):
+                                is_vault_valid = True
+                        
+                        candidates.append((is_vault_valid, mtime, entry.name))
+                    except Exception:
+                        pass
+
+        if not candidates:
+            return None
+
+        # 优先按 Vault 真实物理可达性 (True > False)，其次按 mtime 倒序
+        candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        return candidates[0][2]
  
     def _probe_vault_structure(self, vault_path: str) -> List[Dict[str, str]]:
         """🚀 [V65.8] 金库主权自感知：根据物理目录结构智能生成路由矩阵"""

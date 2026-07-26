@@ -80,6 +80,20 @@ def auto_sync_ai_adapters(manager) -> None:
                 yaml.dump(local_cfg, f, allow_unicode=True, sort_keys=False)
             tlog.info(f"✅ [物理底座对齐] 本地算力自愈更新已固化至 {CONFIG_LOCAL_NAME}。")
             manager._raw_config = manager._load_and_merge()
+
+        # 3. 🚀 [V75.6] 算力主节点智能纠偏自愈：若 primary_node 无效，自动重定向至可用物理节点
+        trans = manager._raw_config.get("translation", {})
+        if isinstance(trans, dict):
+            current_primary = trans.get("primary_node")
+            nodes = trans.get("compute_nodes", {})
+            if current_primary not in nodes:
+                available = [nid for nid, ncfg in nodes.items() if isinstance(ncfg, dict) and ncfg.get("enabled")]
+                if not available:
+                    available = list(nodes.keys())
+                if available:
+                    new_primary = "lmstudio_local" if "lmstudio_local" in available else available[0]
+                    tlog.info(f"✨ [算力节点自愈] 检测到配置的 primary_node '{current_primary}' 无效，自动重定向至可用节点: '{new_primary}'")
+                    manager._raw_config["translation"]["primary_node"] = new_primary
             
     except Exception as e:
         tlog.warning(f"⚠️ [物理底座同步失败]: {e}")

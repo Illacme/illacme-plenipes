@@ -111,6 +111,12 @@ class BasePublisher(ABC):
         """
         return None
 
+    def is_healthy(self) -> bool:
+        """
+        🟢 默认物理探针：配置校验通过即视为健康就绪
+        """
+        return len(self.validate_config()) == 0
+
     def ensure_python_dependency(self, pkg_name: str, pip_pkg_name: str = None) -> bool:
         """
         🧬 [V100.0] 物理自愈：智能检测并静默安装缺失的 Python 依赖包。
@@ -207,6 +213,12 @@ class PublisherRegistry:
             cls._targets[name] = publisher_cls
             return publisher_cls
         return wrapper
+
+    @classmethod
+    def register_class(cls, publisher_cls):
+        name = getattr(publisher_cls, "PLUGIN_ID", publisher_cls.__name__.lower())
+        cls._targets[name] = publisher_cls
+        return publisher_cls
 
     @classmethod
     def get_publisher(cls, name: str):

@@ -9,5 +9,6 @@ Illacme-plenipes Core - Utils Package
 # 🚀 导出原有的工具函数，保持向后兼容
 from .common import *
 
-# 🚀 导出新的插件加载器
+# 🚀 导出新的插件加载器与 YAML 自愈修复器
 from .plugin_loader import PluginLoader
+from .yaml_healer import FrontmatterHealer

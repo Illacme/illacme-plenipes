@@ -14,7 +14,7 @@
 ## 2. 版图装帧与模式 (Layout & Publishing Modes) 选项卡规则
 *   **组合渲染入口**：必须在 `dashboard.modes.js` 结尾挂载 `window.renderLayoutCategory`，接收 `layout` 路由并动态按需切换。
 *   **二级子标签（3个）**：
-    1.  `imprints`（🏷️ 版图印记）：调用 `window.renderImprintsCategory()`
+    1.  `imprints`（🏷️ 版图管理）：调用 `window.renderImprintsCategory()`
     2.  `themes`（🎭 装帧主题）：调用 `window.renderThemesCategory()`
     3.  `modes`（📋 出版模式）：调用 `window.renderModesCategory()`
 *   **交互实现**：必须提供 `window.switchLayoutSubTab(subTab, btn)` 并支持在初次加载/大类切换时延迟少许自动激活点亮子面板（避免首屏白屏）。
@@ -64,3 +64,12 @@
 *   **物理约束**：
     1. 严禁直接假设数据库或配置项返回的数据格式为固定 `list` 或 `dict`，在迭代前必须显式进行断言和类型解包（例如 `if isinstance(raw, dict): items = list(raw.values())`）。
     2. 在对集合中的元素（如 `doc`）调用属性/方法（如 `.get(...)`）前，必须判断 `if isinstance(doc, dict):`，绝不允许字符串等非字典类型引发 AttributeError (500 内部服务错误)。
+
+## 10. 用户配置与原稿文库绝对保护及测试隔离红线规则 (Absolute Configuration & Vault Protection Rules)
+*   **适用场景**：所有参与单元测试、集成测试、代码重构、单测修缮与脚本编写的 AI 助手与自动化脚本。
+*   **物理红线**：
+    1. **未经创作者显式授权，绝对禁止因测试、调试或跑单测而修改/覆盖用户真实的物理配置文件**（包括但不限于 `config.local.yaml`、`config.yaml`、`imprints/*/configs/config.imprint.yaml`）。
+    2. **绝对禁止修改/污染创作者的原稿文库路径 (`vault_root`) 与物理笔记文件**。
+    3. **测试必须 100% 运行在临时物理沙盒 (`tmp_path` / `tempfile`) 中**：所有单测逻辑（如 `InitRequest`、向导逻辑测试）在执行前必须在独立的临时目录中隔离，且在测试结束后自动进行物理现场清理，严禁在项目的物理 `imprints/` 根目录留存任何 `test_*` 废弃测试版图或改写主配置文件。
+
+

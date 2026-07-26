@@ -155,7 +155,7 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 # 因为 ai_health_flag[0] 变为 False，但同步并没有直接 crash，
                 # 并且因为 t_health 故障，物理 dispatch 应该被拦截，
                 # 我们期待 target_path 的 HTML 没有被写入。
-                target_html_path = os.path.join(self.imprint_dir, "dist/static", "docs", "en", "paragraph-cache-test.html")
+                target_html_path = os.path.join(self.imprint_dir, "dist/static", "en", "docs", "en", "paragraph-cache-test.html")
                 self.assertFalse(os.path.exists(target_html_path))
                 
                 # 6. 调用遥测 API 确认已缓存段落比例为 1/3 (33%)

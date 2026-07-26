@@ -39,6 +39,8 @@ def init_press_logic(req, shutdown_cb=None):
                 cfg = yaml.safe_load(f) or {}
             cfg["active_theme"] = req.active_theme
             cfg["imprint_name"] = imp_name
+            # 🛡️ 物理防误导隔离：新品牌初始化时频道映射强制对齐为纯净空列表 []
+            cfg["route_matrix"] = []
             
             # 🚀 [核心修复] 明确写入算力开关 enable_ai 及对应的出版模式 governance
             if "translation" not in cfg or not isinstance(cfg["translation"], dict):

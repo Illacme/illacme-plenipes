@@ -288,7 +288,7 @@ window.renderLayoutCategory = () => {
             <p class="section-desc">确立物理版图标识、编排渲染装帧主题并调节出版物加工深度策略。</p>
             
             <div class="security-sub-tab-bar" id="layout-sub-tab-bar">
-                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)">🏷️ 版图印记</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)">🏷️ 版图管理</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)">🎭 装帧主题</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)">📋 出版模式</button>
             </div>

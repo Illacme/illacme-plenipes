@@ -28,17 +28,24 @@ class DynamicCapabilityProber:
         if not cls._cache and os.path.exists(CACHE_PATH):
             try:
                 with open(CACHE_PATH, 'r', encoding='utf-8') as f:
-                    cls._cache = json.load(f)
+                    content = f.read().strip()
+                    if content:
+                        cls._cache = json.loads(content)
+                    else:
+                        cls._cache = {}
             except Exception as e:
                 logger.warning(f"⚠️ Failed to load capabilities cache: {e}")
+                cls._cache = {}
         return cls._cache
 
     @classmethod
     def save_cache(cls):
         try:
             os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-            with open(CACHE_PATH, 'w', encoding='utf-8') as f:
+            tmp_path = f"{CACHE_PATH}.tmp"
+            with open(tmp_path, 'w', encoding='utf-8') as f:
                 json.dump(cls._cache, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, CACHE_PATH)
         except Exception as e:
             logger.error(f"🛑 Failed to save capabilities cache: {e}")
 

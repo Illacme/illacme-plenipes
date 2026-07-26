@@ -99,14 +99,21 @@ window.ThemeHandlers = {
 };
 
 window.renderThemesCategory = () => {
-    // 🚀 [V80.2] 全息状态自愈：每次进入主题分类时自动静默触发物理探测刷新，解决列表首次加载空引用 race condition
-    if (!window._isRefreshingThemes) {
+    // 🚀 [V80.3] 物理防震荡修复：仅在插件数据未初始化时触发单次静默加载，严禁无限递归重绘
+    if (!window._themesHasLoaded && !window._isRefreshingThemes) {
         window._isRefreshingThemes = true;
         setTimeout(async () => {
             try {
                 if (typeof loadPlugins === 'function') await loadPlugins();
+                window._themesHasLoaded = true;
                 if (window.currentActiveSettingsSubCat === 'themes') {
-                    renderSettingsCategory('themes');
+                    const el = document.getElementById('layout-panel-themes');
+                    if (el) {
+                        const allPlugins = window.allPlugins || [];
+                        const themes = allPlugins.filter(p => p.category === 'theme' && p.is_enabled);
+                        const activeTheme = window.settingsData?.active_theme || 'default';
+                        el.innerHTML = window.ThemeUI.renderThemesGallery(themes, activeTheme);
+                    }
                     if (window._shouldScrollToTopAfterThemeSwitch) {
                         window._shouldScrollToTopAfterThemeSwitch = false;
                         setTimeout(() => {

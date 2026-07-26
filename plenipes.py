@@ -56,51 +56,54 @@ signal.signal(signal.SIGTERM, graceful_shutdown)
 
 def probe_local_compute():
     """探测本机算力环境"""
-    # 🚀 [V50.3] 抢占式输出：在日志系统尚未对齐前，通过标准输出确保主权可见
     print("🔍 [环境探测] 正在扫描本机算力节点...")
     from core.logic.diagnostics import DiagnosticsService
     nodes = DiagnosticsService.probe_local_compute()
-    
     if nodes:
-        names = [n["name"] for n in nodes]
-        print(f"  └── ✅ 发现活跃算力节点: {', '.join(names)}")
+        print(f"  └── ✅ 发现活跃算力节点: {', '.join([n['name'] for n in nodes])}")
     else:
         print("  └── ℹ️ 未发现本机活跃算力节点，建议配合云端 API 使用。")
 
 if __name__ == "__main__":
-    # 0. 解析参数 (抢占优先权，支持 --version / --help 极速响应)
     args, config = parse_args_and_lock()
     set_global_args(args)
 
-    # 🚀 [V52.20] 视觉主权优先：在任何探测开始前，物理展示产品 Banner
     from core.ui.handlers.status_handlers import StatusHandlers
     StatusHandlers.quick_banner()
 
-    # 1. 视觉主权：监听器挂载（Banner 将由 EnginePreflight 自动触发）
     from core.ui.mediator import UIMediator
     UIMediator.register_listeners()
-
-    # 2. 准入审计
     LicenseGuard.verify_authority()
-
-    # 4. 环境探测
     probe_local_compute()
 
-    # 🚀 [V52.10] 主权探测逻辑：优先从配置中获取激活品牌，并校验物理存在性
-    # 调试日志已静默处理，不再污染 Banner 下方的工业界面
+    if config and not config.active_imprint:
+        chosen = im.get_most_recent_imprint()
+        if chosen:
+            config.active_imprint = chosen
+            tlog.info(f"✨ [主权自愈] 自动探测并对正最新活动物理品牌: '{chosen}'")
+            try:
+                import yaml
+                local_p = "config.local.yaml"
+                l_data = {}
+                if os.path.exists(local_p):
+                    with open(local_p, 'r', encoding='utf-8') as f:
+                        l_data = yaml.safe_load(f) or {}
+                l_data["active_imprint"] = chosen
+                with open(local_p, 'w', encoding='utf-8') as f:
+                    yaml.safe_dump(l_data, f, allow_unicode=True)
+            except Exception as e:
+                tlog.warning(f"⚠️ [配置持久化失败] 无法锁存 active_imprint: {e}")
 
     if config and config.active_imprint:
-        # 🛡️ 物理红线校验：检查品牌目录及其核心配置文件是否真实存在
         from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR
         imprint_config = os.path.join(IMPRINT_DIR, config.active_imprint, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-        
         if os.path.exists(imprint_config):
-            if args.imprint == "default": # 如果用户没手动指定，则使用配置锁定的品牌
+            if args.imprint == "default":
                 args.imprint = config.active_imprint
                 tlog.info(f"🔄 [品牌激活] (切换出版社) 出版品牌已切换至: {args.imprint}")
         else:
             tlog.warning(f"⚠️ [配置缺失] 品牌 '{config.active_imprint}' 的核心配置文件已丢失，进入初始化修复模式。")
-            config.active_imprint = None # 强制重置以触发 should_wizard
+            config.active_imprint = None
     
     # 3. 决定是否开启引导
     # 逻辑：如果没找到 active_imprint，且不是在执行管理指令，则开启引导
@@ -169,8 +172,6 @@ if __name__ == "__main__":
             tlog.info("🔍 [凭据审计] 正在启动交互式脱敏与加密向导...")
             from core.governance.credential_wizard import run_credentials_wizard
             run_credentials_wizard(args.config)
-            
-            # 加密结束后，重新加载配置以验证是否通过 ContractGuard 审计
             if hasattr(engine, 'config_manager') and engine.config_manager:
                 engine.config_manager.reload()
                 from core.governance.contract_guard import ContractGuard

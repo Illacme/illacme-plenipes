@@ -78,8 +78,13 @@ class AIAlignmentProcessor(BaseSeoProcessor):
 
             # 调用 AI
             raw_response = translator.ask_ai_with_retry(payload)
+            if hasattr(raw_response, 'text'): raw_response = getattr(raw_response, 'text')
+            elif hasattr(raw_response, 'content'): raw_response = getattr(raw_response, 'content')
+            if not isinstance(raw_response, (str, bytes, bytearray)):
+                raw_response = '{"seo_title": "", "description": "", "keywords": []}'
+
             repaired = AILogicHub.repair_json(raw_response)
-            data = json.loads(repaired)
+            data = json.loads(repaired) if isinstance(repaired, str) else {}
 
             # 提取结果
             if data.get('seo_title'):

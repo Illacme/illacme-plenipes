@@ -95,8 +95,13 @@ class AISyncProcessor(BaseSeoProcessor):
                 payload["params"]["max_tokens"] = 1024
 
                 raw = translator.ask_ai_with_retry(payload)
+                if hasattr(raw, 'text'): raw = getattr(raw, 'text')
+                elif hasattr(raw, 'content'): raw = getattr(raw, 'content')
+                if not isinstance(raw, (str, bytes, bytearray)):
+                    raw = '{"seo_title": "", "description": "", "keywords": []}'
+
                 repaired = AILogicHub.repair_json(raw)
-                data = json.loads(repaired)
+                data = json.loads(repaired) if isinstance(repaired, str) else {}
 
                 translated_seo[lang_code] = {
                     'seo_title': data.get('seo_title', '')[:self.MAX_TITLE_LENGTH],

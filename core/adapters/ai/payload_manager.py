@@ -26,8 +26,28 @@ class PayloadManager:
         )
 
         # 2. 构造意图对象
+        cfg = adapter.config or {}
+        model_name = cfg.get('model', '') if isinstance(cfg, dict) else getattr(cfg, 'model', '')
+        temp_val = cfg.get('temperature', None) if isinstance(cfg, dict) else getattr(cfg, 'temperature', None)
+        max_tok = cfg.get('max_tokens', None) if isinstance(cfg, dict) else getattr(cfg, 'max_tokens', None)
+        params_dict = cfg.get('params', {}) if isinstance(cfg, dict) else getattr(cfg, 'params', {})
+
+        if not isinstance(temp_val, (int, float)):
+            temp_val = None
+        if not isinstance(max_tok, (int, float)):
+            max_tok = None
+
+        trans_cfg = getattr(adapter, 'trans_cfg', None)
+        trans_temp = trans_cfg.get('temperature', 0.2) if isinstance(trans_cfg, dict) else getattr(trans_cfg, 'temperature', 0.2)
+        trans_max = trans_cfg.get('max_tokens', 4096) if isinstance(trans_cfg, dict) else getattr(trans_cfg, 'max_tokens', 4096)
+
+        if not isinstance(trans_temp, (int, float)):
+            trans_temp = 0.2
+        if not isinstance(trans_max, (int, float)):
+            trans_max = 4096
+
         intent = {
-            "model": adapter.config.model,
+            "model": model_name,
             "system": system_prompt,
             "user": user_content,
             "messages": messages or [],
@@ -35,9 +55,9 @@ class PayloadManager:
             "is_json": is_json,
             "params": {
                 **intelligent_payload,
-                "temperature": getattr(adapter.config, 'temperature', None) or getattr(adapter.trans_cfg, 'temperature', 0.2),
-                "max_tokens": payload_max_tokens or getattr(adapter.config, 'max_tokens', None) or getattr(adapter.trans_cfg, 'max_tokens', 4096),
-                **getattr(adapter.config, 'params', {}),
+                "temperature": temp_val or trans_temp,
+                "max_tokens": payload_max_tokens or max_tok or trans_max,
+                **(params_dict if isinstance(params_dict, dict) else {}),
             },
             **kwargs
         }

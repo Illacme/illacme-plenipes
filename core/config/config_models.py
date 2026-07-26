@@ -66,13 +66,13 @@ class TimelineSettings(BaseModel):
 
 class WebhookDefinition(BaseModel):
     """🚀 全局 Webhook 通道定义 (蓝图层)"""
-    id: str
-    name: str
+    id: str = ""
+    name: str = ""
     description: Optional[str] = None
 
 class WebhookEndpoint(BaseModel):
     """🚀 本地 Webhook 物理端点 (授权层)"""
-    url: str
+    url: str = ""
     secret: Optional[str] = None
     enabled: bool = True
 

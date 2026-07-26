@@ -75,6 +75,8 @@ def parse_frontmatter(content: str) -> Tuple[Dict, str, bool]:
     has_any_fm = False
     current_content = content
 
+    from .yaml_healer import FrontmatterHealer
+
     while True:
         pattern = r'^---\s*\n(.*?)\n---\s*\n'
         match = re.match(pattern, current_content, re.DOTALL)
@@ -82,12 +84,9 @@ def parse_frontmatter(content: str) -> Tuple[Dict, str, bool]:
             yaml_content = match.group(1)
             current_content = current_content[match.end():]
             has_any_fm = True
-            try:
-                meta = yaml.safe_load(yaml_content) or {}
-                if isinstance(meta, dict):
-                    merged_metadata.update(meta)
-            except Exception:
-                pass
+            meta = FrontmatterHealer.heal_and_parse_yaml(yaml_content)
+            if isinstance(meta, dict):
+                merged_metadata.update(meta)
         else:
             # 兼容带有 \r\n 的 Windows 换行情况
             win_pattern = r'^---\s*\r\n(.*?)\r\n---\s*\r\n'
@@ -96,12 +95,9 @@ def parse_frontmatter(content: str) -> Tuple[Dict, str, bool]:
                 yaml_content = win_match.group(1)
                 current_content = current_content[win_match.end():]
                 has_any_fm = True
-                try:
-                    meta = yaml.safe_load(yaml_content) or {}
-                    if isinstance(meta, dict):
-                        merged_metadata.update(meta)
-                except Exception:
-                    pass
+                meta = FrontmatterHealer.heal_and_parse_yaml(yaml_content)
+                if isinstance(meta, dict):
+                    merged_metadata.update(meta)
             else:
                 break
 

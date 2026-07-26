@@ -45,8 +45,9 @@ def extract_frontmatter(content):
     """安全隔离器：物理分离 YAML 属性与正文"""
     match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
     if match:
-        try: return yaml.safe_load(match.group(1)) or {}, content[match.end():]
-        except Exception: pass
+        from .yaml_healer import FrontmatterHealer
+        fm_dict = FrontmatterHealer.heal_and_parse_yaml(match.group(1))
+        return fm_dict, content[match.end():]
     return {}, content
 
 def normalize_keywords(kw_data):

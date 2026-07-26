@@ -19,30 +19,25 @@ from services.api.routes.gov.context_shards.plugin_ops import probe_plugin_impl,
 @pytest.mark.anyio
 async def test_probe_routing_with_category_hosting():
     """
-    验证当指定 category="hosting" 时，aliyun_oss 能够精准路由到托管分支，而非被图床分支拦截。
+    验证当指定 category="hosting" 时，sftp 能够精准路由到托管分支。
     """
     mock_engine = MagicMock()
     # 模拟托管配置
     mock_engine.config.publish_control.direct_upload = {
-        "aliyun_oss": {
-            "bucket": "my-bucket",
-            "endpoint": "oss-cn-hangzhou.aliyuncs.com",
-            "access_key_id": "key-id",
-            "access_key_secret": "key-secret"
+        "sftp": {
+            "host": "1.2.3.4",
+            "username": "admin",
+            "password": "pass",
+            "remote_path": "/var/www"
         }
     }
     mock_engine.config.dict.return_value = {}
 
-    # Mock oss2.Bucket 使得 is_healthy() 返回 True
-    import oss2
-    mock_bucket_instance = MagicMock()
-    oss2.Bucket.return_value = mock_bucket_instance
-
     with patch("services.api.routes.gov.context_shards.plugin_ops.get_global_engine", return_value=mock_engine), \
          patch("core.adapters.egress.publishers.base.BasePublisher.ensure_python_dependency", return_value=True):
-        # 探测 aliyun_oss 并指定 category="hosting"
+        # 探测 sftp 并指定 category="hosting"
         res = await probe_plugin_impl({
-            "id": "aliyun_oss",
+            "id": "sftp",
             "category": "hosting"
         })
         assert res["success"] is True

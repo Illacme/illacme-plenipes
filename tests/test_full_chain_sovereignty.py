@@ -123,6 +123,10 @@ class TestFullChainSovereignty(unittest.TestCase):
                     
                     # 手动触发同步完成信号，激活全球分发渠道
                     engine.bus.emit("SYNC_COMPLETED", engine=engine)
+                    
+                    from core.syndication.publisher import PublisherService
+                    pub_service = PublisherService(engine.config.dict() if hasattr(engine.config, 'dict') else engine.config)
+                    pub_service.run_syndication(engine.config.output_paths.get('site_dir') if isinstance(engine.config.output_paths, dict) else getattr(engine.config.output_paths, 'site_dir', ''), {})
         
                     # 6. 终极验证
                     mock_push.assert_called()
