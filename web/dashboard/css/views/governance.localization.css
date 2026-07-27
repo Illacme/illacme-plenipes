@@ -97,60 +97,94 @@
 /* 🔍 译文校对工作台段落悬浮与定位 */
 .review-para-block {
     position: relative;
+    padding: 10px 14px 10px 32px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
     transition: all 0.2s ease;
+    overflow: visible !important;
 }
 
 .review-para-block:hover {
     border-color: rgba(255, 171, 0, 0.3);
-    background: rgba(255, 171, 0, 0.02);
+    background: rgba(255, 171, 0, 0.03);
 }
 
-.review-para-header {
+.review-para-num {
     position: absolute;
-    top: 6px;
-    right: 8px;
+    left: 8px;
+    top: 11px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-dim, rgba(255,255,255,0.35));
+    font-family: var(--font-mono, monospace);
+    user-select: none;
+}
+
+.review-para-actions {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.edited-icon-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    z-index: 2;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(30, 27, 16, 0.95);
+    border: 1.5px solid var(--accent-primary, rgba(255, 179, 0, 1));
+    color: var(--accent-primary, rgba(255, 179, 0, 1));
+    font-size: 0.68rem;
+    box-shadow: 0 2px 8px rgba(255, 179, 0, 0.3);
+    cursor: help;
     white-space: nowrap;
-}
-
-.review-para-header .edited-mark {
-    white-space: nowrap;
-    display: inline-block;
-    color: #ffb300;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 1px 6px;
-    background: rgba(255, 179, 0, 0.12);
-    border-radius: 4px;
-    border: 1px solid rgba(255, 179, 0, 0.25);
 }
 
 .review-para-block .para-retrans-btn {
     opacity: 0;
-    pointer-events: none;
-    transition: all 0.2s ease;
-    padding: 2px 8px;
-    font-size: 0.72rem;
-    background: rgba(255, 171, 0, 0.12);
-    border: 1px solid rgba(255, 171, 0, 0.3);
-    color: var(--accent-primary, #ffab00);
-    border-radius: 4px;
+    transform: scale(0.85);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(23, 28, 36, 0.95);
+    border: 1.5px solid var(--accent-primary, rgba(255, 171, 0, 1));
+    color: var(--accent-primary, rgba(255, 171, 0, 1));
+    font-size: 0.68rem;
     cursor: pointer;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     white-space: nowrap;
 }
 
 .review-para-block:hover .para-retrans-btn {
     opacity: 1;
-    pointer-events: auto;
+    transform: scale(1);
 }
 
 .review-para-block .para-retrans-btn:hover {
-    background: rgba(255, 171, 0, 0.28);
-    border-color: var(--accent-primary, #ffab00);
-    transform: scale(1.05);
+    background: var(--accent-primary, rgba(255, 171, 0, 1));
+    color: var(--bg-black, rgba(0, 0, 0, 1));
+    box-shadow: 0 0 10px rgba(255, 171, 0, 0.5);
+}
+
+.review-para-text {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-bright);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
 }

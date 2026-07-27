@@ -166,9 +166,9 @@ function _reviewRenderBody() {
 }
 function _renderParaBlock(p) {
     const isCode = p.type === 'code';
-    const editedBadge = p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : '';
-    const retransBtn = !isCode ? `<button class="para-retrans-btn" onclick="event.stopPropagation(); window.retranslateSingleParagraph(${p.index});" title="使用 AI 单独重译当前段落">🪄 重译</button>` : '';
-    return `<div class="review-para-top-bar"><span class="review-para-num">#${p.index + 1}</span><div class="review-para-actions">${editedBadge}${retransBtn}</div></div><div class="review-para-text">${_escapeHtml(p.text)}</div>`;
+    const editedBadge = p._edited ? '<span class="edited-icon-badge" title="已人工校对修改">✏️</span>' : '';
+    const retransBtn = !isCode ? `<button class="para-retrans-btn" onclick="event.stopPropagation(); window.retranslateSingleParagraph(${p.index});" title="仅重译此段">🪄</button>` : '';
+    return `<span class="review-para-num">#${p.index + 1}</span><div class="review-para-actions">${editedBadge}${retransBtn}</div><div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
 function _reviewShowDrawer() {
     const d = document.getElementById('review-drawer-overlay');
