@@ -203,6 +203,9 @@ window.updateReviewDirtyUI = function () {
 };
 
 window.openReviewForDoc = async function(targetDocId) {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
     if (typeof window.openTranslationReview === 'function') {
         window.openTranslationReview(targetDocId);
     }
@@ -221,7 +224,7 @@ function _reviewRewriteMarkdown(text, docId, sourceText) {
         const clean = decodeURIComponent(path.trim()), ext = clean.match(/\.([a-zA-Z0-9]+)$/);
         if (!ext || ['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
             const name = (display || clean).trim();
-            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${clean.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;" title="点击切换至 ${clean} 的译文对照工作台">📄 ${name}</a>`;
+            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${clean.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;">📄 ${name}</a>`;
         }
         return `<a href="/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${(display || clean).trim()}</a>`;
     });
@@ -248,7 +251,7 @@ function _reviewRewriteMarkdown(text, docId, sourceText) {
         if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('#')) return match;
         const decoded = decodeURIComponent(clean), ext = decoded.match(/\.([a-zA-Z0-9]+)$/);
         if (!ext || ['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
-            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${decoded.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;" title="点击切换至 ${decoded} 的译文对照工作台">📄 ${textVal}</a>`;
+            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${decoded.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;">📄 ${textVal}</a>`;
         }
         return `<a href="/api/vault-assets/${encodeURIComponent(decoded)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${textVal}</a>`;
     });
