@@ -93,8 +93,10 @@ class TranslatorFactory:
             raise ValueError(f"❌ [算力网关] 未能对正物理节点: {node_name}。请先在‘算力底座’中配置。")
             
         tlog.info(f"🛰️ [主权对正] 正在将版图策略注入物理底座: {node_name} (Role: {role})")
-        # 动态决定模型（优先使用版图层指定的模型）
-        target_model = getattr(trans_cfg, f"{role}_model", "gpt-4o")
+        # 动态决定模型（优先使用节点显式配置的模型；若节点配置为 null/None，则精准继承品牌装帧层的 primary_model / fallback_model 策略）
+        node_model = getattr(physical_node, 'model', None)
+        brand_model = getattr(trans_cfg, f"{role}_model", None)
+        target_model = node_model if node_model else (brand_model if brand_model else "qwen/qwen3.5-9b")
         
         # 🚀 工业级 Mock：合成符合 BaseTranslator 预期的配置镜像
         from types import SimpleNamespace
