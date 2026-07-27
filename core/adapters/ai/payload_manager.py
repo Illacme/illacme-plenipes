@@ -146,7 +146,7 @@ class PayloadManager:
         """
         import copy
         cleaned = copy.deepcopy(payload)
-        model_lower = model_name.lower()
+        model_lower = (model_name or "").lower()
         
         # 1. 识别算力节点属性与适配器来源
         ac_name = ""

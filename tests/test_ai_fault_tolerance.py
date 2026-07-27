@@ -236,6 +236,12 @@ class TestAIFaultTolerance(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_payload_manager_none_model_name(self):
+        from core.adapters.ai.payload_manager import PayloadManager
+        # 当 model_name 为 None 时必须平滑防护处理，不得抛出 AttributeError: 'NoneType' object has no attribute 'lower'
+        res = PayloadManager.align_and_clean_payload(None, {"messages": []})
+        self.assertIsInstance(res, dict)
+
 
 if __name__ == '__main__':
     unittest.main()
