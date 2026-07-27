@@ -11,7 +11,7 @@ def test_retranslate_paragraph_empty_input():
 def test_retranslate_paragraph_success():
     mock_engine = MagicMock()
     mock_node = MagicMock()
-    mock_node.translate_segment.return_value = "Dies ist ein Test."
+    mock_node.translate.return_value = "Dies ist ein Test."
     
     from core.logic.ai.ai_factory import TranslatorFactory
     with pytest.MonkeyPatch.context() as m:

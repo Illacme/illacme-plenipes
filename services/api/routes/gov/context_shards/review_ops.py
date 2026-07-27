@@ -295,5 +295,6 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
         from core.logic.ai.ai_factory import TranslatorFactory
         node = TranslatorFactory.create(engine.config.translation) if hasattr(engine, "config") and engine.config else None
         if not node: return {"ok": False, "error": "无可用算力节点"}
-        return {"ok": True, "translated_text": node.translate_segment(source_text, target_lang=lang_code) or source_text}
+        res = node.translate(source_text, source_lang="zh-cn", target_lang=lang_code)
+        return {"ok": True, "translated_text": res or source_text}
     except Exception as e: return {"ok": False, "error": str(e)}
