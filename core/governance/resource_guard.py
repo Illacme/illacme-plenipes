@@ -107,7 +107,7 @@ class ResourceGuard:
                         p_name = (proc.info['name'] or '').lower()
                         if any(pn.lower() in p_name for pn in self.compute_process_names):
                             total_compute_rss += proc.memory_info().rss
-                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    except Exception:
                         pass
                 
                 # 计算算力进程占物理总内存的比例百分比

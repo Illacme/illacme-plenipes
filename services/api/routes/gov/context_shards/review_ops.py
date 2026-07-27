@@ -90,13 +90,19 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
     t_rows = engine.meta.sqlite._get_conn().execute(
         "SELECT lang_code, status FROM translations WHERE rel_path = ?", (doc_id,)
     ).fetchall()
-    t_map = {dict(t)["lang_code"]: dict(t) for t in t_rows}
+    t_map = {}
+    for t in t_rows:
+        td = dict(t) if hasattr(t, "keys") else ({"lang_code": t[0], "status": t[1]} if isinstance(t, (list, tuple)) and len(t) >= 2 else None)
+        if td: t_map[td["lang_code"]] = td
     
     # 2. 查询人工校对表
     r_rows = engine.meta.sqlite._get_conn().execute(
         "SELECT lang_code, reviewed_body, reviewed_title, reviewed_desc, is_stale, reviewed_at, reviewed_by FROM translation_reviews WHERE doc_id = ?", (doc_id,)
     ).fetchall()
-    r_map = {dict(r)["lang_code"]: dict(r) for r in r_rows}
+    r_map = {}
+    for r in r_rows:
+        rd = dict(r) if hasattr(r, "keys") else ({"lang_code": r[0], "reviewed_body": r[1], "reviewed_title": r[2], "reviewed_desc": r[3], "is_stale": r[4], "reviewed_at": r[5], "reviewed_by": r[6]} if isinstance(r, (list, tuple)) and len(r) >= 7 else None)
+        if rd: r_map[rd["lang_code"]] = rd
 
     # 3. 获取原文用于对比
     src_abs = resolve_safe_path(engine, doc_id)

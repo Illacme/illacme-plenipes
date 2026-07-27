@@ -13,8 +13,9 @@ def resolve_safe_path(engine, rel_path: str) -> str:
     """🛡️ L3 级绝对路径穿越防御与物理路径安全收拢"""
     if not rel_path: return ""
     vault_root_abs = os.path.abspath(engine.vault_root)
+    vault_root_prefix = os.path.join(vault_root_abs, "")
     abs_path = os.path.abspath(os.path.join(vault_root_abs, rel_path.strip()))
-    if not abs_path.startswith(vault_root_abs) or abs_path == vault_root_abs:
+    if not abs_path.startswith(vault_root_prefix) or abs_path == vault_root_abs:
         return ""
     return abs_path
 
