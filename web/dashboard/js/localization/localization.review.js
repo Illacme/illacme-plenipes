@@ -399,6 +399,9 @@ window._isReviewDirty = function (lc) {
 
 
 window.closeTranslationReview = function () {
+    // 🛡️ 重入锁：防止 confirm 面板显示期间被反复调用
+    if (window._closeReviewLocked) return;
+
     const state = window._reviewState;
     let hasDirty = false;
     if (state.data && state.data.langs) {
@@ -411,26 +414,84 @@ window.closeTranslationReview = function () {
     }
     
     function _doClose() {
+        window._closeReviewLocked = false;
         const overlay = document.getElementById('review-drawer-overlay');
         if (overlay) {
             overlay.style.opacity = '0';
             setTimeout(() => { overlay.style.display = 'none'; }, 250);
         }
+        // 移除确认面板（如存在）
+        const panel = document.getElementById('review-close-confirm-panel');
+        if (panel) panel.remove();
     }
 
     if (hasDirty) {
-        // 🛡️ setTimeout(20ms) 脱离同步 onclick 事件流，
-        // 防止 confirm() 在 backdrop-filter overlay 上被 blur/mouseup 事件一闪即关
-        setTimeout(() => {
-            if (window.confirm('⚠️ 当前有未保存的校对修改，确定要关闭并丢弃这些修改吗？')) {
-                if (state.data && state.data.langs) {
-                    Object.keys(state.data.langs).forEach(lc => {
-                        window.clearReviewDraft?.(lc);
-                    });
-                }
-                _doClose();
+        window._closeReviewLocked = true;
+
+        // 移除已有的确认面板（防止重复）
+        const existing = document.getElementById('review-close-confirm-panel');
+        if (existing) existing.remove();
+
+        // 🛡️ 自定义 DOM 内确认面板，彻底替代原生 confirm()
+        const panel = document.createElement('div');
+        panel.id = 'review-close-confirm-panel';
+        panel.style.cssText = `
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+        `;
+        panel.innerHTML = `
+            <div style="
+                background: rgb(var(--bg-modal-solid-rgb, 30,30,35));
+                border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+                border-radius: 12px; padding: 24px 28px; max-width: 400px;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+                text-align: center; color: var(--text-bright, #eee);
+            ">
+                <div style="font-size: 1.5rem; margin-bottom: 12px;">⚠️</div>
+                <div style="font-size: 0.92rem; line-height: 1.5; margin-bottom: 20px;">
+                    当前有未保存的校对修改，确定要关闭并丢弃这些修改吗？
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button id="review-confirm-cancel" style="
+                        padding: 8px 20px; border-radius: 8px; border: 1px solid var(--glass-border, rgba(255,255,255,0.15));
+                        background: var(--white-05, rgba(255,255,255,0.05));
+                        color: var(--text-bright, #eee); cursor: pointer; font-size: 0.85rem;
+                        transition: background 0.2s;
+                    ">取消</button>
+                    <button id="review-confirm-discard" style="
+                        padding: 8px 20px; border-radius: 8px; border: none;
+                        background: linear-gradient(135deg, #e53935, #ff7043);
+                        color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+                        box-shadow: 0 2px 8px rgba(229,57,53,0.3); transition: transform 0.15s;
+                    ">丢弃并关闭</button>
+                </div>
+            </div>
+        `;
+
+        // 点击面板背景也视为取消
+        panel.addEventListener('click', (e) => {
+            if (e.target === panel) {
+                window._closeReviewLocked = false;
+                panel.remove();
             }
-        }, 20);
+        });
+
+        panel.querySelector('#review-confirm-cancel').addEventListener('click', () => {
+            window._closeReviewLocked = false;
+            panel.remove();
+        });
+
+        panel.querySelector('#review-confirm-discard').addEventListener('click', () => {
+            if (state.data && state.data.langs) {
+                Object.keys(state.data.langs).forEach(lc => {
+                    window.clearReviewDraft?.(lc);
+                });
+            }
+            _doClose();
+        });
+
+        document.body.appendChild(panel);
         return;
     }
 
