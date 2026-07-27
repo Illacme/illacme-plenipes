@@ -112,7 +112,7 @@ class AILogicHub:
         # 防护矩阵：Wikilinks, MD Links, Images, 占位符
         patterns = [
             r'\!\[\[.*?\]\]',                                                   # Obsidian Image
-            r'\[\[.*?\]\]',                                                    # Wikilink
+            r'\[\[(?P<wiki_body>.*?)\]\]',                                      # Wikilink (含 display label 提取)
             r'\!\[(?P<md_img_label>.*?)\]\((?P<md_img_url>.*?)\)',               # Markdown Image
             r'\[(?P<md_link_label>.*?)\]\((?P<md_link_url>.*?)\)',               # Markdown Link
             r'<!\[CDATA\[.*?\]\]>',                                            # CDATA
@@ -121,7 +121,30 @@ class AILogicHub:
         ]
         
         def repl(m):
-            # 检查是否匹配到了 Markdown Link
+            # A. 检查是否匹配到了 Wikilink [[...]]
+            try:
+                wiki_body = m.group('wiki_body')
+            except IndexError:
+                wiki_body = None
+            if wiki_body is not None:
+                if not translate_labels:
+                    # 不翻译标签时，整体遮罩
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = m.group(0)
+                    return key
+                # 翻译标签模式：保留 display text 参与 AI 翻译
+                if '|' in wiki_body:
+                    target_part, alias_part = wiki_body.split('|', 1)
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = target_part
+                    return f"[[{key}|{alias_part}]]"
+                else:
+                    # [[创建链接]] → 遮罩 target 并复制为 display text
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = wiki_body
+                    return f"[[{key}|{wiki_body}]]"
+
+            # B. 检查是否匹配到了 Markdown Link
             if m.group('md_link_url') is not None:
                 label = m.group('md_link_label')
                 url = m.group('md_link_url')
@@ -210,6 +233,17 @@ class AILogicHub:
             
             # 如果 val 是 URL 或 Anchor URL
             if not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
+                # 自愈 0：Wikilink [[__B_MASK_N__|translated_alias]] 还原
+                wikilink_mask_pattern = r'\[\[\s*' + esc_key + r'\s*\|\s*(?P<alias>[^\]\n]+?)\s*\]\]'
+                if re.search(wikilink_mask_pattern, final_text, re.IGNORECASE):
+                    def _repl_wikilink(m, _val=val):
+                        alias = m.group('alias').strip()
+                        if alias == _val:
+                            return f"[[{_val}]]"
+                        return f"[[{_val}|{alias}]]"
+                    final_text = re.sub(wikilink_mask_pattern, _repl_wikilink, final_text, flags=re.IGNORECASE)
+                    continue
+
                 def repl_link(m):
                     lbl = m.group('label')
                     anc = m.group('anchor') or ''

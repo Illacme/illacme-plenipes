@@ -403,29 +403,38 @@ window.closeTranslationReview = function () {
     let hasDirty = false;
     if (state.data && state.data.langs) {
         for (const lc of Object.keys(state.data.langs)) {
-            if (window._isReviewDirty(lc)) {
+            if (window._isReviewDirty && window._isReviewDirty(lc)) {
                 hasDirty = true;
                 break;
             }
         }
     }
     
-    if (hasDirty) {
-        if (!confirm('⚠️ 当前有未保存的校对修改，确定要关闭并丢弃这些修改吗？')) {
-            return;
-        }
-        if (state.data && state.data.langs) {
-            Object.keys(state.data.langs).forEach(lc => {
-                window.clearReviewDraft?.(lc);
-            });
+    function _doClose() {
+        const overlay = document.getElementById('review-drawer-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 250);
         }
     }
 
-    const overlay = document.getElementById('review-drawer-overlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 250);
+    if (hasDirty) {
+        // 🛡️ setTimeout(20ms) 脱离同步 onclick 事件流，
+        // 防止 confirm() 在 backdrop-filter overlay 上被 blur/mouseup 事件一闪即关
+        setTimeout(() => {
+            if (window.confirm('⚠️ 当前有未保存的校对修改，确定要关闭并丢弃这些修改吗？')) {
+                if (state.data && state.data.langs) {
+                    Object.keys(state.data.langs).forEach(lc => {
+                        window.clearReviewDraft?.(lc);
+                    });
+                }
+                _doClose();
+            }
+        }, 20);
+        return;
     }
+
+    _doClose();
 };
 
 /* ─── 集中绑定三栏交互：三向联动高亮与锚定滚动同步 ───────────────── */

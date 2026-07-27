@@ -95,9 +95,13 @@
 }
 
 /* 🔍 译文校对工作台段落悬浮与定位 */
+.review-paras-container {
+    padding-left: 28px;
+}
+
 .review-para-block {
     position: relative;
-    padding: 10px 14px 10px 32px;
+    padding: 10px 14px;
     margin-bottom: 8px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.02);
@@ -113,11 +117,11 @@
 
 .review-para-num {
     position: absolute;
-    left: 8px;
-    top: 11px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: var(--text-dim, rgba(255,255,255,0.35));
+    left: -24px;
+    top: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-dim, rgba(255,255,255,0.45));
     font-family: var(--font-mono, monospace);
     user-select: none;
 }
