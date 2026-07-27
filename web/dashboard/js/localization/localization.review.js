@@ -502,3 +502,52 @@ window._bindReviewInteractions = function () {
     colPreview.addEventListener('scroll', onScrollHandler);
     colSource.addEventListener('scroll', onScrollHandler);
 };
+
+/* ─── 🪄 单段落 AI 微粒度重译 ─────────────────────────────────── */
+window.retranslateSingleParagraph = async function (idx) {
+    const state = window._reviewState;
+    const lc = state.activeLang;
+    if (!lc || !state.docId) return;
+
+    const sourceParas = state.data?.source_paragraphs || [];
+    const sourcePara = sourceParas.find(sp => sp.index === idx);
+    const sourceText = sourcePara?.text || '';
+    if (!sourceText) return;
+
+    const blockEl = document.getElementById(`review-para-${idx}`);
+    const btnEl = blockEl?.querySelector('.para-retrans-btn');
+    if (btnEl) {
+        btnEl.innerText = "⏳ 翻译中...";
+        btnEl.disabled = true;
+    }
+
+    try {
+        const res = await apiFetch('/api/translation/review/retranslate-paragraph', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doc_id: state.docId,
+                lang_code: lc,
+                para_index: idx,
+                source_text: sourceText
+            })
+        });
+
+        if (res && res.ok && res.translated_text) {
+            window.reviewSaveParagraph(idx, res.translated_text);
+            window._showToast?.(`✅ 第 ${idx + 1} 段 AI 重译完成！`, 'success');
+        } else {
+            window._showToast?.('重译失败: ' + (res?.error || '未知错误'), 'error');
+            if (btnEl) {
+                btnEl.innerText = "🪄 仅重译此段";
+                btnEl.disabled = false;
+            }
+        }
+    } catch (e) {
+        window._showToast?.('重译网络异常: ' + e.message, 'error');
+        if (btnEl) {
+            btnEl.innerText = "🪄 仅重译此段";
+            btnEl.disabled = false;
+        }
+    }
+};

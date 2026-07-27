@@ -165,7 +165,8 @@ function _reviewRenderBody() {
     }
 }
 function _renderParaBlock(p) {
-    return `${p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : ''}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
+    const retransBtn = p.type !== 'code' ? `<button class="para-retrans-btn" onclick="event.stopPropagation(); window.retranslateSingleParagraph(${p.index});" style="float:right; padding:2px 8px; font-size:0.7rem; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--accent-primary); border-radius:4px; cursor:pointer;" title="使用 AI 单独重译当前段落">🪄 仅重译此段</button>` : '';
+    return `${retransBtn}${p._edited ? '<span class="edited-mark">✏️ 已修改</span>' : ''}<div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
 function _reviewShowDrawer() {
     const d = document.getElementById('review-drawer-overlay');

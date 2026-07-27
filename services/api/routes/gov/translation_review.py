@@ -99,7 +99,6 @@ async def unlock_review(req: UnlockReviewRequest):
     if not engine:
         raise HTTPException(status_code=503, detail="Engine not initialized")
     
-    # 🛡️ [安全拦截] AI 算力关闭时，禁止访问译文校对接口
     enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     if not enable_ai:
         raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态，译文校对工作台不可用。")
@@ -107,4 +106,38 @@ async def unlock_review(req: UnlockReviewRequest):
     result = unlock_human_review_impl(engine, doc_id=req.doc_id, lang_code=req.lang_code)
     if not result.get("ok"):
         raise HTTPException(status_code=500, detail=result.get("error", "Unlock failed"))
+    return result
+
+
+class RetranslateParagraphRequest(BaseModel):
+    doc_id: str
+    lang_code: str
+    para_index: int
+    source_text: str
+
+
+@router.post("/retranslate-paragraph")
+async def retranslate_paragraph(req: RetranslateParagraphRequest):
+    """
+    POST /api/translation/review/retranslate-paragraph
+    微粒度单段落 AI 重译接口。
+    """
+    engine = get_global_engine()
+    if not engine:
+        raise HTTPException(status_code=503, detail="Engine not initialized")
+    
+    enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
+    if not enable_ai:
+        raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态。")
+
+    from .context_shards.review_ops import retranslate_paragraph_impl
+    result = retranslate_paragraph_impl(
+        engine,
+        doc_id=req.doc_id,
+        lang_code=req.lang_code,
+        para_index=req.para_index,
+        source_text=req.source_text
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Retranslation failed"))
     return result

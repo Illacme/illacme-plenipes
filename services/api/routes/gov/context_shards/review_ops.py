@@ -262,23 +262,16 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
     }
 
 
-def save_human_review_impl(engine, doc_id: str, lang_code: str,
-                            paragraphs: list, title: str = None,
-                            desc: str = None) -> dict:
-    """保存人工校对结果并上锁（语种级，Q2=A）。存储 SSG 渲染前中间态 Markdown（Q4=A）。"""
-    if not engine or not engine.meta:
-        return {"ok": False, "error": "Engine not initialized"}
-
-    # 重建完整正文（将已编辑段落合并回整文）
-    body_parts = []
-    for para in (paragraphs or []):
-        body_parts.append(para.get("text", ""))
-    reviewed_body = "\n\n".join(body_parts)
-
-    # 计算当前原稿 hash，写入锁定记录
+def save_human_review_impl(engine, doc_id: str, lang_code: str, paragraphs: list, title: str = None, desc: str = None) -> dict:
+    """保存人工校对结果并上锁（语种级，Q2=A）。"""
+    if not engine or not engine.meta: return {"ok": False, "error": "Engine not initialized"}
     doc_info = engine.meta.get_doc_info(doc_id) or {}
+    src_abs = resolve_safe_path(engine, doc_id)
+    if not doc_info and src_abs:
+        real_rel_path = os.path.relpath(src_abs, os.path.abspath(engine.vault_root)).replace('\\', '/')
+        doc_info = engine.meta.get_doc_info(real_rel_path) or {}
+    reviewed_body = "\n\n".join([p.get("text", "") for p in (paragraphs or [])])
     source_hash = doc_info.get("source_hash", "")
-
     engine.meta.set_human_lock(
         doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body,
         reviewed_title=title or None, reviewed_desc=desc or None,
@@ -293,3 +286,14 @@ def unlock_human_review_impl(engine, doc_id: str, lang_code: str) -> dict:
     engine.meta.clear_human_lock(doc_id=doc_id, lang_code=lang_code)
     tlog.info(f"🗑️ [I5] 校对锁已解除: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
+
+def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: int, source_text: str) -> dict:
+    """🪄 物理单段落 AI 微粒度重译与 Block Cache 装配。"""
+    if not engine: return {"ok": False, "error": "Engine not initialized"}
+    if not source_text or not source_text.strip(): return {"ok": True, "translated_text": source_text}
+    try:
+        from core.logic.ai.ai_factory import TranslatorFactory
+        node = TranslatorFactory.create(engine.config.translation) if hasattr(engine, "config") and engine.config else None
+        if not node: return {"ok": False, "error": "无可用算力节点"}
+        return {"ok": True, "translated_text": node.translate_segment(source_text, target_lang=lang_code) or source_text}
+    except Exception as e: return {"ok": False, "error": str(e)}
