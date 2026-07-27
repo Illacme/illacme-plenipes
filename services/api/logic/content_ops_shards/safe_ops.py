@@ -10,11 +10,28 @@ import urllib.parse
 
 
 def resolve_safe_path(engine, rel_path: str) -> str:
-    """🛡️ L3 级绝对路径穿越防御与物理路径安全收拢"""
+    """🛡️ L3 级绝对路径穿越防御与物理路径安全收拢 (含文库平铺自愈寻址)"""
     if not rel_path: return ""
     vault_root_abs = os.path.abspath(engine.vault_root)
     vault_root_prefix = os.path.join(vault_root_abs, "")
-    abs_path = os.path.abspath(os.path.join(vault_root_abs, rel_path.strip()))
+    
+    clean_rel = rel_path.strip()
+    abs_path = os.path.abspath(os.path.join(vault_root_abs, clean_rel))
+    
+    # 1. 直接相对路径查找：文件物理存在且在安全围栏内
+    if abs_path.startswith(vault_root_prefix) and os.path.exists(abs_path) and os.path.isfile(abs_path):
+        return abs_path
+
+    # 2. 只有当传入的 rel_path 是纯裸文件名（即不含斜杠目录层级，如 no_frontmatter.md）时，才进行文库平铺模糊自愈
+    # 避免指定了显式子目录路径（如 posts/new-recipe-tech.md）时误匹配到其他同名文件
+    if not os.path.dirname(clean_rel.replace('\\', '/')):
+        target_filename = os.path.basename(clean_rel)
+        for root, _, files in os.walk(vault_root_abs):
+            if target_filename in files:
+                candidate_path = os.path.abspath(os.path.join(root, target_filename))
+                if candidate_path.startswith(vault_root_prefix) and os.path.isfile(candidate_path):
+                    return candidate_path
+
     if not abs_path.startswith(vault_root_prefix) or abs_path == vault_root_abs:
         return ""
     return abs_path

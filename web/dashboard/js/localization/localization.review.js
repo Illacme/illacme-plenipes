@@ -87,6 +87,9 @@ window.openTranslationReview = async function (docId) {
         const res = await fetch(`/api/translation/review/${encodeURIComponent(docId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         state.data = await res.json();
+        if (state.data && state.data.doc_id) {
+            state.docId = state.data.doc_id;
+        }
 
         const langs = Object.keys(state.data.langs || {});
         state.activeLang = langs[0] || null;

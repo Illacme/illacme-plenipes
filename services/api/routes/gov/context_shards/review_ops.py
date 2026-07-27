@@ -243,8 +243,10 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
     publishing_mode = getattr(gov, 'publishing_mode', PublishingMode.BASIC) if gov else PublishingMode.BASIC
     mode_str = publishing_mode.value if hasattr(publishing_mode, 'value') else str(publishing_mode)
 
+    real_rel_path = os.path.relpath(src_abs, os.path.abspath(engine.vault_root)).replace('\\', '/') if src_abs else doc_id
+
     return {
-        "doc_id": doc_id,
+        "doc_id": real_rel_path,
         "doc_title": doc_info.get("title", ""),
         "source_title": source_title,
         "source_desc": source_desc,

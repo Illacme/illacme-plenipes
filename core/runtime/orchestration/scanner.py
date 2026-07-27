@@ -44,7 +44,7 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                 if normalized_requests:
                     match_found = False
                     for req in normalized_requests:
-                        if rel_path == req or rel_path.startswith(req + '/'):
+                        if rel_path == req or rel_path.startswith(req + '/') or os.path.basename(rel_path) == os.path.basename(req):
                             match_found = True
                             break
                     if not match_found:
