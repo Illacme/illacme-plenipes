@@ -299,6 +299,36 @@ window.openVaultDrawer = async (relPath) => {
 
 window.triggerReDispatch = async (scope, clearCache = false) => {
     if (!window.currentDocId) return;
+    
+    const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
+    if (clearCache && pubMode !== 'global') {
+        const confirmSwitch = await Swal.fire({
+            title: '🌐 需要开启全球出版模式',
+            html: `强制重新 AI 翻译正文需要将出版模式设置为 <b style="color:var(--accent-secondary);">全球多语言分发模式 (global)</b>。<br/><span style="font-size:0.75rem;color:var(--text-dim);">是否自动将当前出版模式升级为全球模式并立即执行全量重译？</span>`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: '一键升级模式并重译',
+            cancelButtonText: '取消',
+            background: 'hsla(220, 43%, 7%, 0.98)',
+            color: 'var(--text-bright)',
+            confirmButtonColor: 'var(--accent-secondary)',
+            cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
+        });
+
+        if (!confirmSwitch.isConfirmed) return;
+        
+        // 自动升级模式
+        if (window.settingsData && window.settingsData.governance) {
+            window.settingsData.governance.publishing_mode = 'global';
+        }
+        await apiFetch('/api/gov/save-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: 'modes', config: { publishing_mode: 'global' } })
+        });
+        window._showToast?.('✨ 已成功自动升级为全球多语言出版模式！', 'success');
+    }
+
     addAudit(`🚀 [Dispatch] 手动触发重调度请求: ${scope} (清除缓存: ${clearCache})`, "info");
     
     const res = await apiFetch(`/api/vault/re-dispatch/${encodeURIComponent(window.currentDocId)}`, {

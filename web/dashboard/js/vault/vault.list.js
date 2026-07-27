@@ -120,6 +120,7 @@ window.loadVault = async (query = null, page = null) => {
                 <td>
                     <div style="display:flex; gap:8px;">
                         <button class="mini-action-btn" title="快速编辑原稿 (Edit)" onclick="openEditor('${m.rel_path}')">📝</button>
+                        <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
                         <button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.9rem;${(transLangs.length === 0 || pubMode !== 'global') ? ' opacity: 0.75;' : ''}">${reviewBtnIcon}</button>
                         <button class="mini-action-btn" title="打开分发枢纽与遥测监控 (Dispatch Hub)" onclick="openVaultDrawer('${m.rel_path}')">📡</button>
                     </div>
