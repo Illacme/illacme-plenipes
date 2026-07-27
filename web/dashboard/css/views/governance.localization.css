@@ -96,7 +96,7 @@
 
 /* 🔍 译文校对工作台段落悬浮与定位 */
 .review-paras-container {
-    padding-left: 28px;
+    padding-right: 28px;
 }
 
 .review-para-block {
@@ -117,7 +117,7 @@
 
 .review-para-num {
     position: absolute;
-    left: -24px;
+    right: -24px;
     top: 10px;
     font-size: 0.72rem;
     font-weight: 700;
@@ -129,7 +129,7 @@
 .review-para-actions {
     position: absolute;
     top: -6px;
-    right: -8px;
+    right: -32px;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
