@@ -97,9 +97,9 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
                                     </div>
                                     <div class="node-model-line">
                                         <div class="model-marquee-vessel">
-                                            <span class="node-model-badge">
+                                            <span class="node-model-badge" title="${node.model ? '节点专属指定模型: ' + node.model : '未指定物理模型，自动继承品牌装帧层策略: ' + (id === trans.primary_node ? (trans.primary_model || 'qwen/qwen3.5-9b') : (trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'))}">
                                                 <span class="brain-icon">🧠</span>
-                                                <span class="model-name">${node.model || '未绑定模型'}</span>
+                                                <span class="model-name">${node.model ? node.model : (id === trans.primary_node ? `继承品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})` : (id === trans.fallback_node ? `继承备用策略 (${trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'})` : `自适应品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})`))}</span>
                                             </span>
                                         </div>
                                     </div>
