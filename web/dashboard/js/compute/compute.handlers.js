@@ -98,35 +98,39 @@ window.ComputeHandlers.updateStrategy = function(key, value) {
 /**
  * 🔍 算力单元实时过滤
  */
+let _filterTimer = null;
 window.ComputeHandlers.filterNodes = function(query) {
-    const lowerQuery = query.toLowerCase();
-    const nodes = document.querySelectorAll('.node-unit');
-    let visibleCount = 0;
+    if (_filterTimer) clearTimeout(_filterTimer);
+    _filterTimer = setTimeout(() => {
+        const lowerQuery = query.toLowerCase();
+        const nodes = document.querySelectorAll('.node-unit');
+        let visibleCount = 0;
 
-    nodes.forEach(node => {
-        const id = node.id.replace('node-unit-', '').toLowerCase();
-        const type = (node.querySelector('.node-type')?.innerText || '').toLowerCase();
-        const model = (node.querySelector('.model-name')?.innerText || '').toLowerCase();
+        nodes.forEach(node => {
+            const id = node.id.replace('node-unit-', '').toLowerCase();
+            const type = (node.querySelector('.node-type')?.innerText || '').toLowerCase();
+            const model = (node.querySelector('.model-name')?.innerText || '').toLowerCase();
 
-        const isMatch = id.includes(lowerQuery) || type.includes(lowerQuery) || model.includes(lowerQuery);
-        node.classList.toggle('hidden', !isMatch);
-        if (isMatch) visibleCount++;
-    });
+            const isMatch = id.includes(lowerQuery) || type.includes(lowerQuery) || model.includes(lowerQuery);
+            node.classList.toggle('hidden', !isMatch);
+            if (isMatch) visibleCount++;
+        });
 
-    const grid = document.querySelector('.node-grid');
-    const hintId = 'no-nodes-hint';
-    if (visibleCount === 0) {
-        if (!document.getElementById(hintId)) {
-            const hint = document.createElement('div');
-            hint.id = hintId;
-            hint.style.cssText = 'grid-column: 1/-1; padding: 100px; text-align: center; color: var(--text-dim); font-style: italic;';
-            hint.innerHTML = '🕳️ 未发现匹配的算力单元';
-            grid.appendChild(hint);
+        const grid = document.querySelector('.node-grid');
+        const hintId = 'no-nodes-hint';
+        if (visibleCount === 0) {
+            if (!document.getElementById(hintId)) {
+                const hint = document.createElement('div');
+                hint.id = hintId;
+                hint.style.cssText = 'grid-column: 1/-1; padding: 100px; text-align: center; color: var(--text-dim); font-style: italic;';
+                hint.innerHTML = '🕳️ 未发现匹配的算力单元';
+                grid.appendChild(hint);
+            }
+        } else {
+            const hint = document.getElementById(hintId);
+            if (hint) hint.remove();
         }
-    } else {
-        const hint = document.getElementById(hintId);
-        if (hint) hint.remove();
-    }
+    }, 150);
 };
 
 /**

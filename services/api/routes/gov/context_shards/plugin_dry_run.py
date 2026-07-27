@@ -131,23 +131,38 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
                 success = False
 
     elif plugin_id in media_plugins:
+        import asyncio
         from .plugin_dry_run_media import run_media_plugin_dry_run
         enabled = settings.get("enabled", True)
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前图床通道在品牌中处于未激活状态，测试将继续验证输入参数。"))
-        success = run_media_plugin_dry_run(plugin_id, settings, logs, log)
+        try:
+            asyncio.get_running_loop()
+            success = await asyncio.to_thread(run_media_plugin_dry_run, plugin_id, settings, logs, log)
+        except Exception:
+            success = run_media_plugin_dry_run(plugin_id, settings, logs, log)
     elif plugin_id in syndication_plugins:
+        import asyncio
         from .plugin_dry_run_social import run_social_plugin_dry_run
         enabled = settings.get("enabled", True)
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前通道在品牌中处于未激活状态，测试将继续使用临时凭据验证。"))
-        success = run_social_plugin_dry_run(plugin_id, settings, logs, log)
+        try:
+            asyncio.get_running_loop()
+            success = await asyncio.to_thread(run_social_plugin_dry_run, plugin_id, settings, logs, log)
+        except Exception:
+            success = run_social_plugin_dry_run(plugin_id, settings, logs, log)
     elif plugin_id in hosting_plugins:
+        import asyncio
         from .plugin_dry_run_hosting import run_hosting_plugin_dry_run
         enabled = settings.get("enabled", True)
         if not enabled:
             logs.append(log("WARN", "⚠️ [警告] 当前托管平台在品牌中处于未激活状态，测试将继续验证输入参数。"))
-        success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
+        try:
+            asyncio.get_running_loop()
+            success = await asyncio.to_thread(run_hosting_plugin_dry_run, plugin_id, settings, logs, log)
+        except Exception:
+            success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
 
     else:
         # 获取需要验证的字段（向下兼容多平台定制的个性化参数映射）
