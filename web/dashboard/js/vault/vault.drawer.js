@@ -46,9 +46,10 @@ window.refreshVaultDrawerStatus = async (relPath) => {
             : '在本地重新编译此文章，并一键向已绑定的分发渠道同步更新';
     }
     if (forceReTranslateBtn) {
-        forceReTranslateBtn.style.setProperty('display', 'inline-flex', 'important');
-        if (pubMode !== 'global') {
-            forceReTranslateBtn.title = '强制清除缓存并对全文章节执行全量重新翻译与刷新';
+        if (pubMode === 'global' && needsTranslation) {
+            forceReTranslateBtn.style.setProperty('display', 'inline-flex', 'important');
+        } else {
+            forceReTranslateBtn.style.setProperty('display', 'none', 'important');
         }
     }
 
