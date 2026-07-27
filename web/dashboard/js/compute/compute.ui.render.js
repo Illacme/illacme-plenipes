@@ -97,10 +97,52 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
                                     </div>
                                     <div class="node-model-line">
                                         <div class="model-marquee-vessel">
-                                            <span class="node-model-badge" title="${node.model ? '节点专属指定模型: ' + node.model : '未指定物理模型，自动继承品牌装帧层策略: ' + (id === trans.primary_node ? (trans.primary_model || 'qwen/qwen3.5-9b') : (trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'))}">
-                                                <span class="brain-icon">🧠</span>
-                                                <span class="model-name">${node.model ? node.model : (id === trans.primary_node ? `继承品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})` : (id === trans.fallback_node ? `继承备用策略 (${trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'})` : `自适应品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})`))}</span>
-                                            </span>
+                                            ${(() => {
+                                                const isEnabled = node.enabled !== false && node.is_enabled !== false;
+                                                const isPrimary = id === trans.primary_node;
+                                                const isFallback = id === trans.fallback_node && trans.strategy !== 'single';
+                                                
+                                                if (!isEnabled) {
+                                                    return `
+                                                        <span class="node-model-badge disabled-badge" title="算力单元已被禁用" style="opacity: 0.65; background: rgba(255,255,255,0.05); color: var(--text-dim);">
+                                                            <span class="brain-icon">⚪</span>
+                                                            <span class="model-name">单元未开启</span>
+                                                        </span>
+                                                    `;
+                                                }
+                                                
+                                                if (node.model) {
+                                                    return `
+                                                        <span class="node-model-badge" title="节点专属指定模型: ${node.model}">
+                                                            <span class="brain-icon">🧠</span>
+                                                            <span class="model-name">${node.model}</span>
+                                                        </span>
+                                                    `;
+                                                }
+
+                                                if (isPrimary) {
+                                                    return `
+                                                        <span class="node-model-badge" title="未指定专属物理模型，自动继承品牌装帧层主力策略">
+                                                            <span class="brain-icon">🧠</span>
+                                                            <span class="model-name">继承品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})</span>
+                                                        </span>
+                                                    `;
+                                                } else if (isFallback) {
+                                                    return `
+                                                        <span class="node-model-badge fallback-badge" title="未指定专属物理模型，自动继承品牌装帧层备用策略">
+                                                            <span class="brain-icon">🧠</span>
+                                                            <span class="model-name">继承备用策略 (${trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'})</span>
+                                                        </span>
+                                                    `;
+                                                } else {
+                                                    return `
+                                                        <span class="node-model-badge standby-badge" title="当前节点处于待命状态，未与调度策略绑定" style="opacity: 0.75; background: rgba(255,255,255,0.04);">
+                                                            <span class="brain-icon">⚪</span>
+                                                            <span class="model-name">待命未连接</span>
+                                                        </span>
+                                                    `;
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
