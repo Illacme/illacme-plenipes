@@ -118,10 +118,15 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
         except Exception:
             pass
 
-    # 🛡️ [UI 降级自愈] 如果物理原文中没有定义 title 前置属性（例如无 frontmatter 标题）
-    # 则自动回落到账本中登记的标题（即从文件名生成的标题），解决原文标题显示为“无标题”的问题。
+    real_rel_path = os.path.relpath(src_abs, os.path.abspath(engine.vault_root)).replace('\\', '/') if src_abs else doc_id
+    if not doc_info and real_rel_path: doc_info = engine.meta.get_doc_info(real_rel_path) or {}
+
+    # 🛡️ 3 级钢铁标题提取 (Frontmatter -> 正文 H1 标题 -> 账本/物理文件名)
+    if not source_title and source_body:
+        import re; m = re.search(r'^\s*#\s+(.+)$', source_body, re.MULTILINE)
+        if m: source_title = m.group(1).strip()
     if not source_title:
-        source_title = doc_info.get("title", "")
+        source_title = doc_info.get("title") or os.path.splitext(os.path.basename(real_rel_path))[0]
 
     source_paras = _split_paragraphs(source_body)
 
@@ -275,24 +280,16 @@ def save_human_review_impl(engine, doc_id: str, lang_code: str,
     source_hash = doc_info.get("source_hash", "")
 
     engine.meta.set_human_lock(
-        doc_id=doc_id,
-        lang_code=lang_code,
-        reviewed_body=reviewed_body,
-        reviewed_title=title or None,
-        reviewed_desc=desc or None,
-        source_hash=source_hash,
-        reviewed_by="commander"
+        doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body,
+        reviewed_title=title or None, reviewed_desc=desc or None,
+        source_hash=source_hash, reviewed_by="commander"
     )
-
     tlog.info(f"🔒 [I5] 校对结果已保存并上锁: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
 
-
 def unlock_human_review_impl(engine, doc_id: str, lang_code: str) -> dict:
     """解除人工校对锁（用户主动操作，重置为 AI 重译）。"""
-    if not engine or not engine.meta:
-        return {"ok": False, "error": "Engine not initialized"}
-
+    if not engine or not engine.meta: return {"ok": False, "error": "Engine not initialized"}
     engine.meta.clear_human_lock(doc_id=doc_id, lang_code=lang_code)
     tlog.info(f"🗑️ [I5] 校对锁已解除: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
