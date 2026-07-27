@@ -27,7 +27,13 @@ class PayloadManager:
 
         # 2. 构造意图对象
         cfg = adapter.config or {}
-        model_name = cfg.get('model', '') if isinstance(cfg, dict) else getattr(cfg, 'model', '')
+        if isinstance(cfg, dict):
+            model_name = cfg.get('model') or cfg.get('model_name') or cfg.get('primary_model') or ''
+        else:
+            model_name = getattr(cfg, 'model', None) or getattr(cfg, 'model_name', None) or getattr(cfg, 'primary_model', '') or ''
+        if not model_name and hasattr(adapter, 'trans_cfg') and adapter.trans_cfg:
+            tc = adapter.trans_cfg
+            model_name = tc.get('primary_model', '') if isinstance(tc, dict) else getattr(tc, 'primary_model', '')
         temp_val = cfg.get('temperature', None) if isinstance(cfg, dict) else getattr(cfg, 'temperature', None)
         max_tok = cfg.get('max_tokens', None) if isinstance(cfg, dict) else getattr(cfg, 'max_tokens', None)
         params_dict = cfg.get('params', {}) if isinstance(cfg, dict) else getattr(cfg, 'params', {})
