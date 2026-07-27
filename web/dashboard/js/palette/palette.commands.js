@@ -20,7 +20,7 @@
             });
             Toast.fire({ icon: type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success'), title: message });
         } else {
-            console.log(`[Palette] ${message}`);
+            // 静默安全兜底
         }
     }
 

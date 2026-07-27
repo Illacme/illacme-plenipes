@@ -109,3 +109,22 @@ window.resetCurrentDrawerFields = () => {
         if (window.showToast) window.showToast("已清空擦除草稿参数", "info");
     }
 };
+
+// ⌨️ 全局 Escape 按键栈式一键关闭抽屉面板
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Escape') {
+        const vDrawer = document.getElementById('vault-drawer');
+        const pDrawer = document.getElementById('plugin-drawer');
+        if (vDrawer && vDrawer.style.display !== 'none') {
+            window.closeVaultDrawer();
+            e.stopPropagation();
+            return;
+        }
+        if (pDrawer && pDrawer.style.display !== 'none') {
+            if (typeof window.closePluginDrawer === 'function') window.closePluginDrawer();
+            e.stopPropagation();
+            return;
+        }
+    }
+});
+

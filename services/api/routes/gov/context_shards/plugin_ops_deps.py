@@ -14,6 +14,8 @@ async def install_plugin_deps_impl(payload: dict) -> dict:
     🔌 一键依赖安装与自愈接口
     实现功能：虚拟环境感应、非虚拟环境 --user 隔离自适应、PEP 668 环境自愈、多 PyPI 源 Failover。
     """
+    if not isinstance(payload, dict):
+        payload = {}
     plugin_id = payload.get("id")
     if not plugin_id:
         return {"success": False, "error": "Plugin ID is required"}
