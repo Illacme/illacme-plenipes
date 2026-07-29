@@ -77,7 +77,7 @@ def test_other_masks_intact():
     assert "My Note" in masked
     assert "MyNote" not in masked  # target 被遮罩
     assert "这里是注释" not in masked
-    assert "__B_MASK_0__" in masked
+    assert "__W_MASK_0__" in masked
     assert "__B_MASK_1__" in masked
     
     unmasked = AILogicHub.unmask_block(masked, masks)
@@ -89,10 +89,10 @@ def test_llm_casing_and_bracket_dropped_self_healing():
     text = "写点笔记，[[创建链接]]，或者试一试[导入器](https://example.com/import)"
     masked, masks = AILogicHub.mask_block(text)
     
-    # Wikilink [[创建链接]] 现在变为 [[__B_MASK_0__|创建链接]]，display text 参与翻译
-    # Markdown link [导入器](url) 变为 [导入器](__B_MASK_1__)
-    # 模拟 LLM 产生了大小写抖动 (__b_mask_0__) 并翻译了 display text
-    llm_output = "Schreiben Sie Notizen, [[__b_mask_0__|Links erstellen]], oder probieren Sie Importer (__B_MASK_1__)"
+    # Wikilink [[创建链接]] 转换为 [创建链接](__W_MASK_0__)
+    # Markdown link [导入器](url) 转换为 [导入器](__B_MASK_1__)
+    # 模拟 LLM 产生了大小写抖动 (__w_mask_0__) 并翻译了 display text
+    llm_output = "Schreiben Sie Notizen, [Links erstellen](__w_mask_0__), oder probieren Sie Importer (__B_MASK_1__)"
     unmasked = AILogicHub.unmask_block(llm_output, masks)
     
     assert "[[创建链接|Links erstellen]]" in unmasked

@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-🔒 [I5] Translation Human Review Ops
-职责：翻译人工校对回流的业务原子逻辑实现。
-遵循职责分离 SOP：路由层仅注册端点，业务逻辑全量下沉至此文件。
-"""
-
+"""🔒 [I5] Translation Human Review Ops"""
 import re
 from core.utils.tracing import tlog
 
-
 def _split_paragraphs(body: str) -> list:
     """将 Markdown 正文切割为段落块列表，用于前端段落级校对（Q1=C）。"""
-    if not body:
-        return []
+    if not body: return []
 
     # 剥离系统内部追踪注释（Sovereign-Tag），不在校对 UI 中对用户展示
     body = re.sub(r'\s*<!--\s*Sovereign-Tag:.*?-->', '', body, flags=re.DOTALL).strip()
@@ -272,11 +265,7 @@ def save_human_review_impl(engine, doc_id: str, lang_code: str, paragraphs: list
         doc_info = engine.meta.get_doc_info(real_rel_path) or {}
     reviewed_body = "\n\n".join([p.get("text", "") for p in (paragraphs or [])])
     source_hash = doc_info.get("source_hash", "")
-    engine.meta.set_human_lock(
-        doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body,
-        reviewed_title=title or None, reviewed_desc=desc or None,
-        source_hash=source_hash, reviewed_by="commander"
-    )
+    engine.meta.set_human_lock(doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body, reviewed_title=title or None, reviewed_desc=desc or None, source_hash=source_hash, reviewed_by="commander")
     tlog.info(f"🔒 [I5] 校对结果已保存并上锁: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
 
@@ -293,8 +282,13 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
     if not source_text or not source_text.strip(): return {"ok": True, "translated_text": source_text}
     try:
         from core.logic.ai.ai_factory import TranslatorFactory
+        from core.logic.ai.ai_logic_hub import AILogicHub
         node = TranslatorFactory.create(engine.config.translation) if hasattr(engine, "config") and engine.config else None
         if not node: return {"ok": False, "error": "无可用算力节点"}
-        res = node.translate(source_text, source_lang="zh-cn", target_lang=lang_code)
+        gov_cfg = getattr(engine.config.translation, "governance", None) if hasattr(engine, "config") and engine.config else None
+        link_gov = gov_cfg.link_governance if gov_cfg else None
+        masked_content, block_masks = AILogicHub.mask_block(source_text, translate_labels=link_gov.translate_labels if link_gov else True, external_mask_mode=link_gov.external_links_mask_mode if link_gov else "url_only")
+        res = node.translate(masked_content, source_lang="zh-cn", target_lang=lang_code)
+        if res: res = AILogicHub.unmask_block(res, block_masks)
         return {"ok": True, "translated_text": res or source_text}
     except Exception as e: return {"ok": False, "error": str(e)}

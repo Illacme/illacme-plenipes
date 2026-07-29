@@ -135,14 +135,11 @@ class AILogicHub:
                 # 翻译标签模式：保留 display text 参与 AI 翻译
                 if '|' in wiki_body:
                     target_part, alias_part = wiki_body.split('|', 1)
-                    key = f"__B_MASK_{len(masks)}__"
-                    masks[key] = target_part
-                    return f"[[{key}|{alias_part}]]"
                 else:
-                    # [[创建链接]] → 遮罩 target 并复制为 display text
-                    key = f"__B_MASK_{len(masks)}__"
-                    masks[key] = wiki_body
-                    return f"[[{key}|{wiki_body}]]"
+                    target_part, alias_part = wiki_body, wiki_body
+                key = f"__W_MASK_{len(masks)}__"
+                masks[key] = target_part.strip()
+                return f"[{alias_part.strip()}]({key})"
 
             # B. 检查是否匹配到了 Markdown Link
             if m.group('md_link_url') is not None:
@@ -231,9 +228,36 @@ class AILogicHub:
             val = masks[key]
             esc_key = re.escape(key)
             
+            # 🚀 [V105.2] 解封 Wikilink __W_MASK_N__ 专属处理
+            if key.startswith('__W_MASK_'):
+                w_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\]\s*\(?\s*' + esc_key + r'\s*\)?(?!\])'
+                if re.search(w_pattern, final_text, re.IGNORECASE):
+                    def _repl_w(m, _val=val):
+                        lbl = m.group('label').strip()
+                        if lbl == _val:
+                            return f"[[{_val}]]"
+                        return f"[[{_val}|{lbl}]]"
+                    final_text = re.sub(w_pattern, _repl_w, final_text, flags=re.IGNORECASE)
+                    continue
+
+                w_nobracket = r'(?<!\])\b(?P<label>[^\s\[\]\(\)\{\}]+)\s*\(\s*' + esc_key + r'\s*\)'
+                if re.search(w_nobracket, final_text, re.IGNORECASE):
+                    def _repl_w_nb(m, _val=val):
+                        lbl = m.group('label').strip()
+                        if lbl == _val:
+                            return f"[[{_val}]]"
+                        return f"[[{_val}|{lbl}]]"
+                    final_text = re.sub(w_nobracket, _repl_w_nb, final_text, flags=re.IGNORECASE)
+                    continue
+
+                pattern_key = re.compile(esc_key, re.IGNORECASE)
+                if pattern_key.search(final_text):
+                    final_text = pattern_key.sub(lambda m, _val=val: f"[[{_val}]]", final_text)
+                    continue
+
             # 如果 val 是 URL 或 Anchor URL
             if not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
-                # 自愈 0：Wikilink [[__B_MASK_N__|translated_alias]] 还原
+                # 自愈 0：兼容旧版 Wikilink [[__B_MASK_N__|translated_alias]] 还原
                 wikilink_mask_pattern = r'\[\[\s*' + esc_key + r'\s*\|\s*(?P<alias>[^\]\n]+?)\s*\]\]'
                 if re.search(wikilink_mask_pattern, final_text, re.IGNORECASE):
                     def _repl_wikilink(m, _val=val):
