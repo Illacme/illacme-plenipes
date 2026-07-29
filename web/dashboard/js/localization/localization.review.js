@@ -346,6 +346,7 @@ window.reviewEditParagraph = function (idx) {
 
     const prev = block.innerHTML;
     block.innerHTML = `
+        <span class="review-para-num">#${idx + 1}</span>
         <textarea class="review-para-textarea" onblur="window.reviewSaveParagraph(${idx}, this.value)"
             style="width:100%;min-height:80px;background:var(--bg-agent-input);color:var(--text-bright);
                    border:1.5px solid var(--accent-primary);border-radius:6px;padding:10px;
