@@ -384,7 +384,10 @@ class AISchedulerDispatchOps:
                                 # 🛡️ [P4] 重试与屏蔽保护：注入结构对准与遮罩保留提示指令
                                 current_remedy = block_remedy
                                 if "MASK_" in masked_content:
-                                    mask_guard_instruction = "CRITICAL: You MUST strictly preserve all __B_MASK_N__ or MASK tags in the translated text exactly inside their parentheses, e.g. [translated_text](__B_MASK_N__). Do NOT remove or omit any __B_MASK_N__ tags!"
+                                    mask_guard_instruction = (
+                                        "CRITICAL: You MUST strictly preserve all __B_MASK_N__ or MASK tags in the translated text exactly inside their parentheses, e.g. [translated_text](__B_MASK_N__). Do NOT remove or omit any __B_MASK_N__ tags!\n"
+                                        "For WikiLinks in the format [[__B_MASK_N__|display_text]], you MUST translate the display_text portion after the pipe character '|' while keeping the __B_MASK_N__ tag unchanged. Example: [[__B_MASK_0__|创建链接]] should become [[__B_MASK_0__|Erstellen von Links]] in German."
+                                    )
                                     current_remedy = (current_remedy + "\n" + mask_guard_instruction) if current_remedy else mask_guard_instruction
 
                                 if retry_count > 0:
