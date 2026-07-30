@@ -87,3 +87,17 @@ def test_pydantic_glossary_multi_lang():
     cfg = ContentGovernanceConfig.model_validate(raw_data)
     assert cfg.glossary["en"]["主权版图"] == "Sovereign Territory"
     assert cfg.glossary["ja"]["主权版图"] == "主権領域"
+
+def test_clean_translation_response_prompt_delimiter_stripping():
+    """测试彻底剥离 LLM 幻觉输出的多语种 Prompt 分隔符与 <think> 标签"""
+    raw_llm_out = "### Inhalt ###\n# Unbenannter Entwurf\n### Übersetzung ###"
+    cleaned = AILogicHub.clean_translation_response(raw_llm_out)
+    assert cleaned == "# Unbenannter Entwurf"
+
+def test_clean_metadata_value_wikilink_and_json_stripping():
+    """测试 SEO 描述与元数据在 AI 润色时自动剥离 Wikilinks 语法与 LLM 键值包围"""
+    raw_llm_out = 'Unbenannter Original 1: Hier den Inhalt des Manuskripts eingeben...\n[[index|Index]]\n### Übersetzung ###'
+    cleaned = AILogicHub.clean_metadata_value(raw_llm_out)
+    assert "[[index|Index]]" not in cleaned
+    assert "Index" in cleaned
+    assert "### Übersetzung ###" not in cleaned
