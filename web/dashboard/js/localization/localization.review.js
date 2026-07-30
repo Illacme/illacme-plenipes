@@ -391,19 +391,24 @@ window.polishFieldWithAI = async function (fieldKey, btnEl) {
     const lc = state.activeLang;
     if (!lc || !state.docId) return;
 
-    let originalText = fieldKey === 'title' ? state.data?.source_title : state.data?.source_desc;
-    if (!originalText || !originalText.trim() || originalText.trim() === '无描述') {
-        const sourceParas = state.data?.source_paragraphs || [];
-        const firstPara = (sourceParas.find(p => p.text && !p.text.startsWith('#') && !p.text.startsWith('```'))?.text || '').slice(0, 150);
-        originalText = `${state.data?.source_title || ''}: ${firstPara}`.trim();
-    }
-    if (!originalText) {
-        window._showToast?.('原文暂无有效正文，无法发起 AI 润色', 'warning');
-        return;
-    }
-
     const fieldLabel = fieldKey === 'title' ? '标题' : '描述';
     const inputEl = document.getElementById(fieldKey === 'title' ? 'review-title-input' : 'review-desc-input');
+    let currentVal = inputEl ? inputEl.value.trim() : (state.edits[lc]?.[fieldKey] || '').trim();
+
+    let textToPolish = currentVal;
+    if (!textToPolish || textToPolish === '无描述') {
+        let originalText = fieldKey === 'title' ? state.data?.source_title : state.data?.source_desc;
+        if (!originalText || !originalText.trim() || originalText.trim() === '无描述') {
+            const sourceParas = state.data?.source_paragraphs || [];
+            const firstPara = (sourceParas.find(p => p.text && !p.text.startsWith('#') && !p.text.startsWith('```'))?.text || '').slice(0, 150);
+            originalText = `${state.data?.source_title || ''}: ${firstPara}`.trim();
+        }
+        textToPolish = originalText;
+    }
+    if (!textToPolish) {
+        window._showToast?.('暂无有效文本或正文，无法发起 AI 润色', 'warning');
+        return;
+    }
     
     // 🚀 [UI 实时进度与状态倒流]
     let oldBtnHtml = '🪄';
@@ -428,7 +433,7 @@ window.polishFieldWithAI = async function (fieldKey, btnEl) {
                 doc_id: state.docId,
                 lang_code: lc,
                 para_index: fieldKey === 'title' ? -1 : -2,
-                source_text: originalText
+                source_text: textToPolish
             })
         });
 

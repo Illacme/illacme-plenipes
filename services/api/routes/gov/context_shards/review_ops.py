@@ -264,11 +264,7 @@ def save_human_review_impl(engine, doc_id: str, lang_code: str, paragraphs: list
         doc_info = engine.meta.get_doc_info(real_rel_path) or {}
     reviewed_body = "\n\n".join([p.get("text", "") for p in (paragraphs or [])])
     source_hash = doc_info.get("source_hash", "")
-    engine.meta.set_human_lock(
-        doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body,
-        reviewed_title=title or None, reviewed_desc=desc or None,
-        source_hash=source_hash, reviewed_by="commander"
-    )
+    engine.meta.set_human_lock(doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body, reviewed_title=title or None, reviewed_desc=desc or None, source_hash=source_hash, reviewed_by="commander")
     tlog.info(f"🔒 [I5] 校对结果已保存并上锁: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
 
@@ -290,10 +286,11 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
         if not node: return {"ok": False, "error": "无可用算力节点"}
 
         if para_index == -2:
-            rem = "Generate a clean 1-2 sentence SEO description in target language. Do not output Wikilinks like [[...]], headings, or prompt delimiters."
-            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code, remedy_instruction=rem) or "")
+            rem = "Polish into an elegant 1-2 sentence SEO abstract in target language. Remove raw Wikilinks or placeholders. No prompt delimiters."
+            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="auto", target_lang=lang_code, remedy_instruction=rem) or "")
         elif para_index == -1:
-            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
+            rem = "Polish into a concise title in target language. No prompt delimiters."
+            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="auto", target_lang=lang_code, remedy_instruction=rem) or "")
         else:
             res = AILogicHub.clean_translation_response(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
         return {"ok": True, "translated_text": res or source_text}
