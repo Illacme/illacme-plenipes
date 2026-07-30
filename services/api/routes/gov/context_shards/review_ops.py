@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
-"""🔒 [I5] Translation Human Review Ops"""
+"""
+🔒 [I5] Translation Human Review Ops
+职责：翻译人工校对回流的业务原子逻辑实现。
+遵循职责分离 SOP：路由层仅注册端点，业务逻辑全量下沉至此文件。
+"""
+
 import re
 from core.utils.tracing import tlog
 
+
 def _split_paragraphs(body: str) -> list:
     """将 Markdown 正文切割为段落块列表，用于前端段落级校对（Q1=C）。"""
-    if not body: return []
+    if not body:
+        return []
 
     # 剥离系统内部追踪注释（Sovereign-Tag），不在校对 UI 中对用户展示
     body = re.sub(r'\s*<!--\s*Sovereign-Tag:.*?-->', '', body, flags=re.DOTALL).strip()
@@ -143,14 +150,11 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
     for lang_code in target_codes:
         td = t_map.get(lang_code, {})
         st = td.get("status", "MISSING")
-        
         r_data = r_map.get(lang_code, {})
         has_review = bool(r_data)
-        
         body = r_data.get("reviewed_body")
         title = r_data.get("reviewed_title")
         desc = r_data.get("reviewed_desc")
-
         total_blocks, translated_blocks = 0, 0
         try:
             translation_cfg = getattr(engine.config, "translation", None)
@@ -167,26 +171,27 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             style_content = str(t_sys or "") + "\n" + str(t_user or "")
             style_hash = hashlib.md5(style_content.encode('utf-8')).hexdigest()
 
-            from core.logic.block_parser import MarkdownBlockParser
-            parser = MarkdownBlockParser()
-            for block in parser.parse(source_body):
-                if block.type == "spacer" or not block.content.strip(): continue
-                total_blocks += 1
-                import re
-                stripped = re.sub(r'__B_MASK_\d+__', '', block.content)
-                stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
-                stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
-                if not re.search(r'\w', stripped) or engine.block_cache.get_block(lang_code, block.fingerprint, style_hash):
-                    translated_blocks += 1
-        except Exception: pass
-        progress_data = {"translated_paras": translated_blocks, "total_paras": max(1, total_blocks)}
+            if hasattr(engine, 'active_translation_progress') and (real_rel_path, lang_code) in engine.active_translation_progress:
+                progress_data = engine.active_translation_progress[(real_rel_path, lang_code)]
+            else:
+                from core.logic.block_parser import MarkdownBlockParser
+                parser = MarkdownBlockParser()
+                for block in parser.parse(source_body):
+                    if block.type == "spacer" or not block.content.strip(): continue
+                    total_blocks += 1
+                    import re
+                    stripped = re.sub(r'__B_MASK_\d+__', '', block.content)
+                    stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
+                    stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
+                    if not re.search(r'\w', stripped) or engine.block_cache.get_block(lang_code, block.fingerprint, style_hash):
+                        translated_blocks += 1
+                progress_data = {"translated_paras": translated_blocks, "total_paras": max(1, total_blocks)}
+        except Exception:
+            progress_data = {"translated_paras": 0, "total_paras": 1}
 
-        # 若无人工校对数据，且翻译状态不为错误或缺失，则从物理缓存磁盘读取最新 AI 译文快照
         if not body and cache_dir and hasattr(engine, "route_manager"):
             try:
-                cache_mirror = engine.route_manager.resolve_physical_path(
-                    cache_dir, lang_code, route_prefix, sub_dir, slug, target_ext, source_type=target_slot
-                )
+                cache_mirror = engine.route_manager.resolve_physical_path(cache_dir, lang_code, route_prefix, sub_dir, slug, target_ext, source_type=target_slot)
                 if os.path.exists(cache_mirror):
                     with open(cache_mirror, "r", encoding="utf-8") as f:
                         fm_dict, pure_content, _ = parse_frontmatter(f.read())
@@ -195,44 +200,38 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                         desc = desc or fm_dict.get("description", "")
             except Exception as e:
                 from core.utils.tracing import tlog
-                tlog.warning(f"Failed to read AI translation snapshot for {doc_id} / {lang_code}: {e}")
+                tlog.warning(f"Failed to read AI snapshot for {doc_id} / {lang_code}: {e}")
 
-        # 如果没有读到正文，则标记为空状态，但不跳过渲染
         if not body:
-            # 🚀 [BugFix] 如果底层翻译状态已经明确标识为 ERROR（如 OOM、断网多次重试后放弃）
-            # 则强制结束 is_missing 轮询，向前端明确下发错误状态，避免前端无限转圈
-            if st == "ERROR":
-                langs[lang_code] = {
-                    "is_missing": False,
-                    "title": title or "⚠️ 翻译失败 / Translation Failed",
-                    "desc": desc or "AI 引擎处理该语种时发生严重错误，请检查后台日志或节点连通性。",
-                    "paragraphs": [{"index": 0, "type": "paragraph", "text": "*(该语种生成失败，请稍后重试或检查 LLM 配置)*"}],
-                    "human_approved": False,
-                    "review_is_stale": False,
-                    "progress": progress_data
-                }
-            else:
-                langs[lang_code] = {
-                    "is_missing": True,
-                    "title": "",
-                    "desc": "",
-                    "paragraphs": [],
-                    "human_approved": False,
-                    "review_is_stale": False,
-                    "progress": progress_data
-                }
+            err_title = title or "⚠️ 翻译失败 / Translation Failed" if st == "ERROR" else ""
+            err_desc = desc or "AI 引擎处理该语种时发生严重错误，请检查后台日志或节点连通性。" if st == "ERROR" else ""
+            err_paras = [{"index": 0, "type": "paragraph", "text": "*(该语种生成失败，请稍后重试或检查 LLM 配置)*"}] if st == "ERROR" else []
+            langs[lang_code] = {
+                "is_missing": (st != "ERROR"),
+                "title": err_title, "desc": err_desc, "paragraphs": err_paras,
+                "human_approved": False, "review_is_stale": False, "progress": progress_data
+            }
             continue
 
+        target_paras = _split_paragraphs(body)
+        count_mismatch = bool(source_paras and len(target_paras) != len(source_paras))
+
+        if not desc or desc.strip() == "无描述":
+            for tp in target_paras:
+                t_text = (tp.get("text") or "").strip()
+                if t_text and not t_text.startswith("#") and not t_text.startswith("```"):
+                    desc = t_text[:150]
+                    break
+        if desc:
+            from core.logic.ai.ai_logic_hub import AILogicHub
+            desc = AILogicHub.clean_metadata_value(desc)
+
         langs[lang_code] = {
-            "is_missing": False,
-            "title": title or "",
-            "desc": desc or "",
-            "paragraphs": _split_paragraphs(body),
-            "human_approved": True if has_review else False,
+            "is_missing": False, "title": title or "", "desc": desc or "",
+            "paragraphs": target_paras, "human_approved": bool(has_review),
             "review_is_stale": bool(r_data.get("is_stale", False)),
-            "reviewed_at": r_data.get("reviewed_at"),
-            "reviewed_by": r_data.get("reviewed_by"),
-            "progress": progress_data
+            "reviewed_at": r_data.get("reviewed_at"), "reviewed_by": r_data.get("reviewed_by"),
+            "progress": progress_data, "paragraph_count_mismatch": count_mismatch
         }
 
     # 4. 获取出版模式并下发
@@ -265,7 +264,11 @@ def save_human_review_impl(engine, doc_id: str, lang_code: str, paragraphs: list
         doc_info = engine.meta.get_doc_info(real_rel_path) or {}
     reviewed_body = "\n\n".join([p.get("text", "") for p in (paragraphs or [])])
     source_hash = doc_info.get("source_hash", "")
-    engine.meta.set_human_lock(doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body, reviewed_title=title or None, reviewed_desc=desc or None, source_hash=source_hash, reviewed_by="commander")
+    engine.meta.set_human_lock(
+        doc_id=doc_id, lang_code=lang_code, reviewed_body=reviewed_body,
+        reviewed_title=title or None, reviewed_desc=desc or None,
+        source_hash=source_hash, reviewed_by="commander"
+    )
     tlog.info(f"🔒 [I5] 校对结果已保存并上锁: {doc_id} / {lang_code}")
     return {"ok": True, "doc_id": doc_id, "lang_code": lang_code}
 
@@ -282,13 +285,8 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
     if not source_text or not source_text.strip(): return {"ok": True, "translated_text": source_text}
     try:
         from core.logic.ai.ai_factory import TranslatorFactory
-        from core.logic.ai.ai_logic_hub import AILogicHub
         node = TranslatorFactory.create(engine.config.translation) if hasattr(engine, "config") and engine.config else None
         if not node: return {"ok": False, "error": "无可用算力节点"}
-        gov_cfg = getattr(engine.config.translation, "governance", None) if hasattr(engine, "config") and engine.config else None
-        link_gov = gov_cfg.link_governance if gov_cfg else None
-        masked_content, block_masks = AILogicHub.mask_block(source_text, translate_labels=link_gov.translate_labels if link_gov else True, external_mask_mode=link_gov.external_links_mask_mode if link_gov else "url_only")
-        res = node.translate(masked_content, source_lang="zh-cn", target_lang=lang_code)
-        if res: res = AILogicHub.unmask_block(res, block_masks)
+        res = node.translate(source_text, source_lang="zh-cn", target_lang=lang_code)
         return {"ok": True, "translated_text": res or source_text}
     except Exception as e: return {"ok": False, "error": str(e)}

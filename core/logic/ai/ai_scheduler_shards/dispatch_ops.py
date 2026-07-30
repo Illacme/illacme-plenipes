@@ -156,7 +156,7 @@ class AISchedulerDispatchOps:
                 if isinstance(doc_info, dict) and type(doc_info).__name__ not in ('MagicMock', 'Mock'):
                     lang_meta = (doc_info.get("translations") or {}).get(code, {})
                     if isinstance(lang_meta, dict) and type(lang_meta).__name__ not in ('MagicMock', 'Mock'):
-                        if lang_meta.get("human_approved"):
+                        if not force_sync and not getattr(ctx, 'clear_cache', False) and lang_meta.get("human_approved"):
                             tlog.info(f"🔒 [I5校对锁] 检测到 {rel_path} / {code} 已被人工校对锁定，跳过 AI 自动翻译。")
                             reviewed_body = lang_meta.get("reviewed_body") or ""
                             reviewed_title = lang_meta.get("reviewed_title") or ctx.title
@@ -211,7 +211,7 @@ class AISchedulerDispatchOps:
                         tlog.debug(f"🧠 [TermGuard] 注入 {len(related)} 节点语义背景")
 
                 parser = MarkdownBlockParser()
-                content_to_parse = ctx.masked_source if ctx.masked_source else ctx.body_content
+                content_to_parse = ctx.body_content if ctx.body_content else ctx.masked_source
                 # 🚀 [V10.6] 出版模式与翻译管线联动：非全球模式禁用翻译，只进行物理复制 (主权透传)
                 from core.config.models.governance import PublishingMode
                 gov = getattr(engine.config, 'governance', None)
@@ -231,6 +231,24 @@ class AISchedulerDispatchOps:
                 blocks = parser.parse(content_to_parse)
                 translated_blocks = [None] * len(blocks)
                 tasks = []
+
+                # 🚀 [V105.0] 初始化全局实时翻译进度的原子字典，只统计有效正文段落，杜绝 Spacer/Header 占位误加
+                if not hasattr(engine, 'active_translation_progress'):
+                    engine.active_translation_progress = {}
+
+                valid_block_indices = set(
+                    idx for idx, b in enumerate(blocks)
+                    if b.type != "spacer" and b.content.strip()
+                    and not b.content.strip().startswith("---")
+                    and not b.content.strip().startswith("<!--")
+                )
+                total_para_count = max(1, len(valid_block_indices))
+                engine.active_translation_progress[(rel_path, code)] = {
+                    "translated_paras": 0,
+                    "total_paras": total_para_count,
+                    "running": True
+                }
+
                 for idx, block in enumerate(blocks):
                     if block.type == "spacer" or not block.content.strip():
                         translated_blocks[idx] = block.content
@@ -381,13 +399,15 @@ class AISchedulerDispatchOps:
                         
                         while retry_count < max_retries:
                             try:
-                                # 🛡️ [P4] 重试与屏蔽保护：注入结构对准与遮罩保留提示指令
+                                # 🛡️ [P4] 行数防漏与遮罩保护：强制要求逐行翻译，防止跳过占位符
                                 current_remedy = block_remedy
+                                non_empty_lines = [l for l in masked_content.strip().splitlines() if l.strip()]
+                                if len(non_empty_lines) > 1:
+                                    line_guard = f"CRITICAL: The input content has {len(non_empty_lines)} distinct lines. You MUST translate EVERY SINGLE line (including placeholder lines like '在此输入原稿内容...'). Do NOT omit, skip, or merge any lines!"
+                                    current_remedy = (current_remedy + "\n" + line_guard) if current_remedy else line_guard
+
                                 if "MASK_" in masked_content:
-                                    mask_guard_instruction = (
-                                        "CRITICAL: You MUST strictly preserve all __B_MASK_N__ or MASK tags in the translated text exactly inside their parentheses, e.g. [translated_text](__B_MASK_N__). Do NOT remove or omit any __B_MASK_N__ tags!\n"
-                                        "For WikiLinks in the format [[__B_MASK_N__|display_text]], you MUST translate the display_text portion after the pipe character '|' while keeping the __B_MASK_N__ tag unchanged. Example: [[__B_MASK_0__|创建链接]] should become [[__B_MASK_0__|Erstellen von Links]] in German."
-                                    )
+                                    mask_guard_instruction = "CRITICAL: You MUST strictly preserve all __B_MASK_N__ or MASK tags in the translated text exactly inside their parentheses, e.g. [translated_text](__B_MASK_N__). Do NOT remove or omit any __B_MASK_N__ tags!"
                                     current_remedy = (current_remedy + "\n" + mask_guard_instruction) if current_remedy else mask_guard_instruction
 
                                 if retry_count > 0:
@@ -431,6 +451,9 @@ class AISchedulerDispatchOps:
                                     tlog.info(f"✅ [算力收割] Block {idx} ({code}) 翻译成功 | 产物长度: {len(b_result)}")
                                     translated_blocks[idx] = b_result
                                     engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
+                                    done_valid_count = len([i for i in valid_block_indices if translated_blocks[i] is not None])
+                                    if hasattr(engine, 'active_translation_progress') and (rel_path, code) in engine.active_translation_progress:
+                                        engine.active_translation_progress[(rel_path, code)]["translated_paras"] = min(total_para_count, done_valid_count)
                                 else:
                                     tlog.warning(f"⚠️ [算力空回] Block {idx} ({code}) 返回了空内容，将回退至原文并跳过写入缓存")
                                     translated_blocks[idx] = block.content
@@ -497,7 +520,7 @@ class AISchedulerDispatchOps:
                 if not is_dry_run and not getattr(engine, 'no_ai', False):
                     source_title = target_fm.get('title', ctx.title)
                     # 🚀 [V80.0] 性能优化：如果全局预生成的 SEO 译文中已经包含了 SEO Title 或者是 og_title，直接使用该结果，跳过大模型标题润色串行调用
-                    if t_seo_data and t_seo_data.get("og_title"):
+                    if not getattr(ctx, 'clear_cache', False) and t_seo_data and t_seo_data.get("og_title"):
                         target_fm['title'] = t_seo_data["og_title"]
                         tlog.info(f"✨ [Title Polish] 命中缓存 SEO 标题，跳过大模型润色 ({code})")
                     else:
@@ -519,13 +542,40 @@ class AISchedulerDispatchOps:
                                 target_fm['tags'], 'tags', code, is_dry_run, style=style
                             )
 
-                    # 🚀 [V10.5] 翻译兜底：若 Frontmatter 仍为源语种的 description，调用翻译网关
-                    if 'description' in target_fm and target_fm['description'] == ctx.base_fm.get('description'):
+                    # 🚀 [V10.6] 译文描述 (Description) 兜底补全与智能生成
+                    desc_val = target_fm.get('description') or ctx.base_fm.get('description') or ""
+                    if desc_val and desc_val.strip() and desc_val != "无描述":
                         tlog.info(f"📝 [Meta Polish] 正在为 {name} 版本翻译 Description...")
                         target_fm['description'] = engine.circuit_breakers["ai"].call(
                             active_translator.translate_metadata,
-                            target_fm['description'], 'description', code, is_dry_run, style=style
+                            desc_val, 'description', code, is_dry_run, style=style
                         )
+                    elif not target_fm.get('description'):
+                        first_para = ""
+                        if translated_blocks:
+                            import re
+                            for b in translated_blocks:
+                                b_str = str(b).strip()
+                                if b_str and not b_str.startswith("#") and not b_str.startswith("```"):
+                                    clean_text = re.sub(r'\[\[.*?\]\]', '', b_str)
+                                    clean_text = re.sub(r'\[.*?\]\(.*?\)', '', clean_text)
+                                    clean_text = re.sub(r'__B_MASK_\d+__', '', clean_text).strip()
+                                    if len(clean_text) >= 5:
+                                        first_para = clean_text[:150]
+                                        break
+                        if first_para:
+                            raw_seed = f"{source_title}: {first_para}"
+                        else:
+                            raw_seed = f"本文围绕「{source_title}」内容展开，提供清晰简明的内容说明。"
+                        tlog.info(f"✨ [Meta Polish] 源文无 Description，自动为 {name} 版本生成 SEO 描述...")
+                        gen_desc = engine.circuit_breakers["ai"].call(
+                            active_translator.translate_metadata,
+                            raw_seed, 'description', code, is_dry_run, style=style
+                        )
+                        target_fm['description'] = gen_desc or first_para or source_title
+
+                    if target_fm.get('description'):
+                        target_fm['description'] = AILogicHub.clean_metadata_value(target_fm['description'])
 
                     # 🚀 [V10.5] 翻译兜底：对 Keywords 进行翻译处理（支持列表与单字符串结构）
                     if 'keywords' in target_fm and target_fm['keywords'] == ctx.base_fm.get('keywords'):

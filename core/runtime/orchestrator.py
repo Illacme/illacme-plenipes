@@ -52,11 +52,11 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     args = MockArgs()
     
-    # 🧹 [V10.7] 主线程中物理清除需要翻译的目标语种的旧 cache_mirror 文件，防止前端在异步任务开始前轮询到脏数据 (Race Condition Fix)
     langs_to_clean = target_langs
-    if not langs_to_clean and hasattr(engine, "config") and engine.config.i18n_settings:
+    if not langs_to_clean and hasattr(engine, "config") and getattr(engine.config, "i18n_settings", None):
         langs_to_clean = [t.lang_code for t in engine.config.i18n_settings.targets]
 
+    cleaned_bak_files = []
     if langs_to_clean:
         try:
             task_queue, _ = build_task_queue(engine, requested_paths)
@@ -76,8 +76,10 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                                 cache_dir, lang, prefix, sub_dir, slug, target_ext, source_type=target_slot
                             )
                             if os.path.exists(cache_mirror):
-                                tlog.info(f"🧹 [主线程清理缓存] 重新翻译启动，删除旧缓存镜像: {cache_mirror}")
-                                os.remove(cache_mirror)
+                                bak_file = cache_mirror + ".bak"
+                                tlog.info(f"🧹 [主线程缓存保护] 创建旧快照备份: {cache_mirror} -> {bak_file}")
+                                os.replace(cache_mirror, bak_file)
+                                cleaned_bak_files.append((cache_mirror, bak_file))
                         except Exception as ce:
                             tlog.warning(f"⚠️ [主线程清理缓存失败] {src_rel} / {lang}: {ce}")
         except Exception as qe:
@@ -93,9 +95,22 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 task_queue, current_source_files = build_task_queue(engine, requested_paths)
                 perform_sync(engine, args, task_queue, current_source_files)
                 tlog.info("✅ [异步出版] 后台流水线任务已全量闭环。")
+                # 任务成功闭环，物理删除旧快照备份
+                import os
+                for orig_file, bak_file in cleaned_bak_files:
+                    if os.path.exists(bak_file):
+                        try: os.remove(bak_file)
+                        except Exception: pass
             except Exception as e:
-                import traceback
+                import traceback, os
                 tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}\n{traceback.format_exc()}")
+                # 🚀 发生异常时，自动回滚恢复原快照，避免物理 missing 死锁
+                for orig_file, bak_file in cleaned_bak_files:
+                    if os.path.exists(bak_file) and not os.path.exists(orig_file):
+                        try:
+                            os.replace(bak_file, orig_file)
+                            tlog.info(f"🛡️ [灾难自愈] 自动还原崩溃前快照: {orig_file}")
+                        except Exception: pass
                 from core.logic.notification_hub import send_sync_lifecycle_notification
                 send_sync_lifecycle_notification(engine, "FAIL", "异步出版流水线异常崩溃", str(e))
             finally:

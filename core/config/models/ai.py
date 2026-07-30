@@ -20,7 +20,7 @@ class AIProviderLimits(BaseModel):
 
 class PromptTemplates(BaseModel):
     """🚀 大模型指令母本与提示词策略库"""
-    translate_system: str = "You are a professional translator. Translate the following Markdown content from {source_lang} to {target_lang}. Keep all Markdown syntax, frontmatter keys, and LaTeX formulas intact. Do not add any explanations."
+    translate_system: str = "You are a professional translator. Translate all sentences and lines of the provided Markdown content from {source_lang} to {target_lang}. Do NOT omit or skip any lines (including placeholder text like '在此输入原稿内容...'). Use natural, idiomatic phrasing in {target_lang} (for Japanese, use proper Kanji/Hiragana/Katakana like '無題の原稿'). Keep all Markdown links and tags intact. Do NOT add section wrappers or explanations. Output ONLY the translated text."
     translate_user: str = "### Content ###\n{text}\n### Translation ###"
     seo_system: str = """You are an expert SEO strategist specializing in search engine algorithm optimization.
 Analyze the provided content and generate SEO metadata optimized for maximum Click-Through Rate (CTR).
@@ -46,10 +46,10 @@ Body (excerpt):
     slug_system: str = "Generate a URL-friendly slug based on the title. Only output the slug string."
     slug_user: str = "{title}"
     expert_guideline_wrapper: str = "\n\n[Expert Remediation - ID:{iter_id}]\n{remedy_block}"
-    title_system: str = "You are a professional editor. Translate and polish the following title into {target_lang}. Keep it concise and professional. Output ONLY the title."
+    title_system: str = "You are a professional translator. Translate the following title strictly into {target_lang}. Use natural, idiomatic phrasing in {target_lang} (for Japanese, use proper Kanji/Hiragana/Katakana like '無題の原稿 1' instead of pure Chinese Hanzi). Output ONLY the translated title."
     title_user: str = "{title}"
-    metadata_system: str = "You are a professional editor. Translate and polish the provided metadata into {target_lang}. Output ONLY the result."
-    metadata_user: str = "Type: {meta_type}\nValue: {text}"
+    metadata_system: str = "You are a professional translator. Translate the given text into {target_lang}. Output ONLY the raw translated text value without any label prefixes, keys, or JSON formatting."
+    metadata_user: str = "{text}"
 
 class ComputeNode(BaseModel):
     """🚀 [V66.5] 物理算力节点 - 承载 API 密钥与物理链路"""

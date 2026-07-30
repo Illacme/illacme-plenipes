@@ -22,39 +22,51 @@ function _reviewRender() {
         const isActive = lc === state.activeLang;
         let langName = langObj ? langObj.name : lc.toUpperCase();
         if (!langObj) {
-            try { langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(cleanLc === 'zh' ? 'zh-Hans' : cleanLc) || langName; } catch (e) {}
+            try { langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(cleanLc === 'zh' ? 'zh-Hans' : cleanLc) || langName; } catch (e) { }
         }
         let progressSuffix = '';
-        if (state.wantedLangs && state.wantedLangs.includes(lc)) {
-            const pVal = state.langProgress ? (state.langProgress[lc] || 5) : 5;
-            progressSuffix = pVal < 100 
+        if (state.wantedLangMap && state.wantedLangMap[lc]) {
+            const langState = state.wantedLangMap[lc];
+            const pVal = langState.progress || 5;
+            progressSuffix = langState.status === 'running'
                 ? ` <span style="color:#ffb300;font-size:0.75rem;font-weight:normal;">⏳${pVal}%</span>`
                 : ` <span style="color:#4caf50;font-size:0.75rem;font-weight:bold;">✅就绪</span>`;
+        } else if (state.wantedLangs && state.wantedLangs.includes(lc)) {
+            progressSuffix = ` <span style="color:#ffb300;font-size:0.75rem;font-weight:normal;">⏳排队中</span>`;
         }
         return `<button class="review-lang-tab ${isActive ? 'active' : ''}" id="review-tab-${lc}" onclick="window.switchReviewLang('${lc}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--glass-border);background:${isActive ? 'var(--accent-primary)' : 'transparent'};color:${isActive ? '#000' : 'var(--text-dim)'};cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;">${icon} ${langName}${progressSuffix}${dirtyMark}</button>`;
     }).join('');
     document.getElementById('review-drawer-title').textContent = `🔍 译文校对工作台 — ${data.doc_title || state.docId}`;
     document.getElementById('review-lang-tabs').innerHTML = tabsHtml;
-
-    // 🚀 [V79.2] 动态显示出版模式警告横幅
-    const mode = data.publishing_mode || 'basic';
-    const alertEl = document.getElementById('review-mode-alert');
+    const mode = data.publishing_mode || 'basic', alertEl = document.getElementById('review-mode-alert');
     if (alertEl) {
         if (mode === 'basic') {
-            alertEl.style.display = 'block';
-            alertEl.className = 'review-alert-banner';
+            alertEl.style.display = 'block'; alertEl.className = 'review-alert-banner';
             alertEl.innerHTML = `⚠️ <b>主权透传中 (基础模式)</b>：当前版图未开启 AI 全文翻译，下方展现的目标语种译文为<b>源语种（中文）物理透传内容</b>。如需启用大模型自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 将出版模式切换为 <b>全球模式 (Global)</b> 并重新同步。`;
         } else if (mode === 'enhanced') {
-            alertEl.style.display = 'block';
-            alertEl.className = 'review-alert-banner alert-enhanced';
+            alertEl.style.display = 'block'; alertEl.className = 'review-alert-banner alert-enhanced';
             alertEl.innerHTML = `⚠️ <b>局部翻译中 (增强模式)</b>：当前处于增强模式，AI 仅用于文档的 SEO 元数据属性（Description/Keywords）润色，<b>文档正文跳过全文翻译</b>。如需开启全文自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 切换为 <b>全球模式 (Global)</b>。`;
-        } else {
-            alertEl.style.display = 'none';
-        }
+        } else { alertEl.style.display = 'none'; }
     }
-
     _reviewRenderBody();
 }
+
+function _formatReviewDate(isoStr) {
+    if (!isoStr) return '';
+    try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${year}/${month}/${day} ${hours}:${minutes}`;
+    } catch (e) {
+        return isoStr;
+    }
+}
+
 function _reviewRenderBody() {
     const state = window._reviewState;
     const lc = state.activeLang;
@@ -84,22 +96,30 @@ function _reviewRenderBody() {
 
     // 1. 构建译文主栏 (Target Column)
     let targetHtml = '';
-    const isTranslating = isMissing && state.wantedLangs && state.wantedLangs.includes(lc);
+    const isTranslating = isMissing && state.wantedLangMap && state.wantedLangMap[lc] && state.wantedLangMap[lc].status === 'running';
     if (isTranslating) {
-        const progress = state.langProgress ? (state.langProgress[lc] || 5) : 5;
+        const langTask = state.wantedLangMap[lc] || {};
+        const progress = langTask.progress || 5;
         const pInfo = state.data?.langs?.[lc]?.progress;
-        const pDesc = pInfo ? ` (${pInfo.translated_paras} / ${pInfo.total_paras} 段已就绪)` : '';
+        const tParas = pInfo ? (pInfo.translated_paras || 0) : (langTask.translated_paras || 0);
+        const totalParas = pInfo ? (pInfo.total_paras || sourceParas.length || 1) : (sourceParas.length || 1);
+        const pDesc = ` (${tParas} / ${totalParas} 段已就绪)`;
+
         const steps = [
-            { p: 10, name: '任务调度', desc: '初始化翻译管线引擎' },
-            { p: 25, name: '文本切片', desc: '解析段落与元数据结构' },
-            { p: 40, name: 'AI 物理翻译', desc: '大语言模型正在翻译' },
-            { p: 85, name: '自愈比对', desc: '校验图片与双链媒体路径' },
-            { p: 95, name: '装配落盘', desc: '写入物理缓存与账本' }
+            { p: 15, name: '任务调度', desc: '初始化翻译管线引擎' },
+            { p: 35, name: '文本切片', desc: '解析段落与元数据结构' },
+            { p: 85, name: 'AI 物理翻译', desc: '大语言模型正在翻译' },
+            { p: 95, name: '自愈比对', desc: '校验图片与双链媒体路径' },
+            { p: 100, name: '装配落盘', desc: '写入物理缓存与账本' }
         ];
+        let activeFound = false;
         const stepList = steps.map(s => {
             let icon = '💤 排队中', style = 'color:var(--text-dim); opacity:0.5;';
-            if (progress >= s.p) { icon = '✅ 已完成'; style = 'color:#4caf50; font-weight:bold;'; }
-            else if (progress >= (s.p - 15) || (s.p === 10 && progress >= 5)) {
+            if (progress >= s.p) {
+                icon = '✅ 已完成';
+                style = 'color:#4caf50; font-weight:bold;';
+            } else if (!activeFound) {
+                activeFound = true;
                 icon = '⏳ 进行中';
                 style = 'color:var(--accent-primary); font-weight:bold; animation: reviewPulse 1.5s infinite;';
             }
@@ -117,21 +137,70 @@ function _reviewRenderBody() {
             <div>${stepList}</div>
         </div>`;
     } else if (isMissing) {
-        targetHtml = `<div style="padding:20px;"><div class="review-status-bar"><span class="review-badge ai">ℹ️ 无可用译文快照</span></div><div class="review-error" style="color:var(--text-dim); text-align:center; padding: 40px 0;">当前文档可能尚未完成 AI 译文的物理写入，或物理缓存已被清理。<br><br><button onclick="window.triggerSingleTranslation('current')" style="margin-top:20px; margin-right:12px; padding:10px 20px; background:var(--accent-primary); color:#000; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; box-shadow:0 4px 15px rgba(255, 171, 0, 0.3); transition:transform 0.2s;">🚀 仅生成当前语种译文</button><button onclick="window.triggerSingleTranslation('all')" style="margin-top:20px; padding:10px 20px; background:var(--bg-glass-heavy, rgba(255,255,255,0.05)); color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; transition:transform 0.2s;">🌍 生成所有目标语种译文</button></div></div>`;
+        const cleanLc = lc.toLowerCase();
+        const langObj = (window.availableLangs || []).find(l => l.code === cleanLc) || (window.availableLangs || []).find(l => l.code === cleanLc.split('-')[0]);
+        const curLangName = langObj ? langObj.name : lc.toUpperCase();
+        const otherRunningLangs = state.wantedLangMap ? Object.keys(state.wantedLangMap).filter(l => state.wantedLangMap[l].status === 'running' && l !== lc) : [];
+        const activeOtherTrans = (otherRunningLangs.length > 0)
+            ? `<div style="margin-top:12px; padding:8px 12px; background:rgba(255, 171, 0, 0.1); border:1px solid rgba(255, 171, 0, 0.3); border-radius:6px; font-size:0.8rem; color:var(--accent-primary, #ffab00); display:inline-block;">⚡ 提示：后台当前正在单独处理 [${otherRunningLangs.join(', ').toUpperCase()}] 语种的 AI 翻译...</div>`
+            : '';
+
+        targetHtml = `<div style="padding:20px;">
+            <div class="review-status-bar"><span class="review-badge ai">ℹ️ 无可用译文快照</span></div>
+            <div class="review-error" style="color:var(--text-dim); text-align:center; padding: 30px 0;">
+                当前【${curLangName}】文档可能尚未完成 AI 译文的物理写入，或物理缓存已被清理。
+                ${activeOtherTrans}
+                <br><br>
+                <button onclick="window.triggerSingleTranslation('current')" style="margin-top:16px; margin-right:12px; padding:10px 20px; background:var(--accent-primary); color:#000; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; box-shadow:0 4px 15px rgba(255, 171, 0, 0.3); transition:transform 0.2s;">🚀 仅生成【${curLangName}】译文</button>
+                <button onclick="window.triggerSingleTranslation('all')" style="margin-top:16px; padding:10px 20px; background:var(--bg-glass-heavy, rgba(255,255,255,0.05)); color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; transition:transform 0.2s;">🌍 生成所有目标语种译文 (${Object.keys(state.data.langs || {}).length}个语种)</button>
+            </div>
+        </div>`;
     } else {
         let statusHtml = ld.human_approved
-            ? (ld.review_is_stale ? `<span class="review-badge stale">⚠️ 原稿已变更，建议复核 · 锁定于 ${new Date(ld.reviewed_at).toLocaleDateString('zh-CN')}</span>` : `<span class="review-badge locked">🔒 人工锁定 · ${new Date(ld.reviewed_at).toLocaleDateString('zh-CN')} · ${ld.reviewed_by || 'commander'}</span>`)
-            : `<span class="review-badge ai">🤖 AI 生成，未校对</span>`;
+            ? (ld.review_is_stale ? `<span class="review-badge stale" data-tooltip="中文原稿发生变更，建议复核校对内容">⚠️ 原稿已更新 · 建议复核 (${_formatReviewDate(ld.reviewed_at)})</span>` : `<span class="review-badge locked" data-tooltip="已开启精校保护：全站发布时将跳过 AI 重新翻译，直接保留并发布您人工校对的译文">🛡️ 已人工精校 (保留校对，跳过 AI 重译) · ${_formatReviewDate(ld.reviewed_at)}</span>`)
+            : `<span class="review-badge ai" data-tooltip="当前语种为 AI 初代翻译，尚未保存人工校对保护">🤖 AI 初始翻译 (未保护)</span>`;
 
         const isDirty = window._isReviewDirty && window._isReviewDirty(lc);
-        if (isDirty) statusHtml += `<span class="review-badge dirty" style="background:var(--accent-secondary, #ffb300); color:#000; font-weight:bold; margin-left:8px; padding:2px 8px; border-radius:4px; font-size:0.75rem; display:inline-block; box-shadow:0 0 8px rgba(255,179,0,0.2);">⚠️ 未保存修改</span>`;
+        const saveStyle = isDirty ? 'box-shadow: 0 0 14px rgba(255, 179, 0, 0.5); border: 1.5px solid var(--accent-primary, #ffab00);' : '';
+        const saveBtnLabel = _getSaveBtnText(ld, isDirty);
 
-        const saveStyle = isDirty ? 'box-shadow: 0 0 12px rgba(255, 179, 0, 0.4); border: 1.5px solid var(--accent-primary, #ffab00);' : '';
         const actionBtns = ld.human_approved
-            ? `<button class="review-btn unlock" onclick="window.unlockTranslationReview()">🗑️ 重置为 AI 重译</button><button class="review-btn save active" style="${saveStyle}" onclick="window.saveTranslationReview()">🔒 更新锁定内容</button>`
-            : `<button class="review-btn unlock" style="margin-right: auto;" onclick="window.triggerSingleTranslation('current')">🔄 重新生成当前语种译文</button><button class="review-btn save" style="${saveStyle}" onclick="window.saveTranslationReview()">🔒 保存并锁定（语种级）</button>`;
+            ? `<button class="review-btn unlock" onclick="window.unlockTranslationReview()" data-tooltip="解除保护后，下次发布时 AI 将重新翻译此语种；当前校对内容将被覆盖">🔓 解除保护</button><button class="review-btn save active" style="${saveStyle}" onclick="window.saveTranslationReview()">${saveBtnLabel}</button>`
+            : `<button class="review-btn unlock" style="margin-right: auto;" onclick="window.triggerSingleTranslation('current')" data-tooltip="重新请求 AI 翻译当前语种">🔄 重新生成当前语种译文</button><button class="review-btn save" style="${saveStyle}" onclick="window.saveTranslationReview()">${saveBtnLabel}</button>`;
 
-        targetHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-status-bar">${statusHtml}</div><div class="review-field"><label>📌 译文标题 (Title)</label><input type="text" id="review-title-input" value="${_escapeHtml(edit.title || '')}" oninput="window._reviewState.edits['${lc}'].title = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" class="review-input" placeholder="输入校对后的标题..."></div><div class="review-field"><label>🏷️ 译文描述 (Description)</label><textarea id="review-desc-input" rows="3" class="review-input" oninput="window._reviewState.edits['${lc}'].desc = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" placeholder="输入校对后的 SEO 描述...">${_escapeHtml(edit.desc || '')}</textarea></div><div class="review-field"><label>📄 正文段落 <small style="color:var(--text-dim)">(点击段落编辑，代码块只读)</small></label><div class="review-paras-container" id="target-paras-container">${targetParas.map(p => `<div id="review-para-${p.index}" data-editing="0" class="review-para-block ${p.type === 'code' ? 'code-block' : ''} ${p._edited ? 'edited' : ''}" onclick="window.reviewEditParagraph(${p.index})">${_renderParaBlock(p)}</div>`).join('')}</div></div><div class="review-actions">${actionBtns}</div></div>`;
+        const countMismatchBanner = ld.paragraph_count_mismatch
+            ? `<div style="padding:8px 12px; background:rgba(255, 171, 0, 0.1); border:1px solid rgba(255, 171, 0, 0.3); border-radius:6px; font-size:0.78rem; color:var(--accent-primary, #ffab00); margin-bottom:8px;">⚠️ 提示：此语种切片段落数 (${targetParas.length} 段) 与原文 (${sourceParas.length} 段) 存在不一致，建议人工复核段落结构。</div>`
+            : '';
+
+        targetHtml = `<div style="padding:20px 20px 20px 30px; display:flex; flex-direction:column; gap:16px;">
+            <div class="review-status-bar">${statusHtml}</div>
+            <div class="review-field">
+                <div class="review-field-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">📌 译文标题 (Title)</label>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="window.polishFieldWithAI('title', this)" class="mini-field-btn" data-tooltip="AI 重新润色标题">🪄</button>
+                        <button onclick="window.resetFieldToDefault('title', this)" class="mini-field-btn" data-tooltip="恢复为初始标题">🔄</button>
+                    </div>
+                </div>
+                <input type="text" id="review-title-input" value="${_escapeHtml(edit.title || '')}" oninput="window._reviewState.edits['${lc}'].title = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" class="review-input" placeholder="输入校对后的标题...">
+            </div>
+            <div class="review-field">
+                <div class="review-field-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">🏷️ 译文描述 (Description)</label>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="window.polishFieldWithAI('desc', this)" class="mini-field-btn" data-tooltip="AI 重新润色描述">🪄</button>
+                        <button onclick="window.resetFieldToDefault('desc', this)" class="mini-field-btn" data-tooltip="恢复为初始描述">🔄</button>
+                    </div>
+                </div>
+                <textarea id="review-desc-input" rows="3" class="review-input" oninput="window._reviewState.edits['${lc}'].desc = this.value; window.updateReviewDirtyUI(); window.saveReviewDraft?.('${lc}');" placeholder="输入校对后的 SEO 描述...">${_escapeHtml(edit.desc || '')}</textarea>
+            </div>
+            <div class="review-field">
+                <label style="margin-bottom:6px; display:block;">📄 正文段落 <small style="color:var(--text-dim)">(点击段落编辑，代码块只读)</small></label>
+                ${countMismatchBanner}
+                <div class="review-paras-container" id="target-paras-container">${targetParas.map(p => `<div id="review-para-${p.index}" data-editing="0" class="review-para-block ${p.type === 'code' ? 'code-block' : ''} ${p._edited ? 'edited' : ''}" onclick="window.reviewEditParagraph(${p.index})">${_renderParaBlock(p)}</div>`).join('')}</div>
+            </div>
+            <div class="review-actions">${actionBtns}</div>
+        </div>`;
     }
 
     // 2. 构建预览分栏 (Preview Column)
@@ -145,7 +214,7 @@ function _reviewRenderBody() {
     }
 
     // 3. 构建原文参考分栏 (Source Column)
-    const sourceHtml = `<div style="padding:20px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>📜 原文参考 (Source)</label></div><div class="review-field"><label>📌 原文标题 (Source Title)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5;">${_escapeHtml(state.data.source_title || '无标题')}</div></div><div class="review-field"><label>🏷️ 原文描述 (Source Description)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5; white-space:pre-wrap;">${_escapeHtml(state.data.source_desc || '无描述')}</div></div><div class="review-field"><label>📄 原文正文段落 (Source Paragraphs)</label><div class="review-paras-container" id="source-paras-container">${sourceParas.map((sp, idx) => `<div id="source-para-${idx}" class="review-para-block source-only" style="background:rgba(255,255,255,0.02); opacity:0.8; margin-bottom:6px; padding:6px 12px; border-radius:6px;"><div class="review-para-top-bar" style="border:none; margin-bottom:2px;"><span class="review-para-num">#${idx + 1}</span></div><div class="review-para-text" style="color:var(--text-dim); font-size:0.85rem; line-height:1.6; font-family:inherit; white-space:pre-wrap; margin:0;">${_escapeHtml(sp.text)}</div></div>`).join('')}</div></div></div>`;
+    const sourceHtml = `<div style="padding:20px 20px 20px 30px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>📜 原文参考 (Source)</label></div><div class="review-field"><label>📌 原文标题 (Source Title)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5;">${_escapeHtml(state.data.source_title || '无标题')}</div></div><div class="review-field"><label>🏷️ 原文描述 (Source Description)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5; white-space:pre-wrap;">${_escapeHtml(state.data.source_desc || '无描述')}</div></div><div class="review-field"><label>📄 原文正文段落 (Source Paragraphs)</label><div class="review-paras-container" id="source-paras-container">${sourceParas.map((sp, idx) => `<div id="source-para-${idx}" class="review-para-block source-only" style="background:rgba(255,255,255,0.02); opacity:0.8; margin-bottom:6px; padding:6px 12px; border-radius:6px;"><div class="review-para-top-bar" style="border:none; margin-bottom:2px;"><span class="review-para-num">#${idx + 1}</span></div><div class="review-para-text" style="color:var(--text-dim); font-size:0.85rem; line-height:1.6; font-family:inherit; white-space:pre-wrap; margin:0;">${_escapeHtml(sp.text)}</div></div>`).join('')}</div></div></div>`;
 
     const displayPreview = state.showPreview ? 'block' : 'none';
     const displaySource = state.showSource ? 'block' : 'none';
@@ -166,8 +235,8 @@ function _reviewRenderBody() {
 }
 function _renderParaBlock(p) {
     const isCode = p.type === 'code';
-    const editedBadge = p._edited ? '<span class="edited-icon-badge" title="已人工校对修改">✏️</span>' : '';
-    const retransBtn = !isCode ? `<button class="para-retrans-btn" onclick="event.stopPropagation(); window.retranslateSingleParagraph(${p.index});" title="仅重译此段">🪄</button>` : '';
+    const editedBadge = p._edited ? '<span class="edited-icon-badge" data-tooltip="已人工校对修改">✏️</span>' : '';
+    const retransBtn = !isCode ? `<button class="para-retrans-btn mini-field-btn" onclick="event.stopPropagation(); window.retranslateSingleParagraph(${p.index});" data-tooltip="仅重译此段">🪄</button>` : '';
     return `<span class="review-para-num">#${p.index + 1}</span><div class="review-para-actions">${editedBadge}${retransBtn}</div><div class="review-para-text">${_escapeHtml(p.text)}</div>`;
 }
 function _reviewShowDrawer() {
@@ -183,96 +252,43 @@ function _reviewShowError(msg) {
     if (b) b.innerHTML = `<div class="review-error">❌ ${msg}</div>`;
 }
 function _escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function _getSaveBtnText(ld, isDirty) {
+    return (ld && ld.human_approved)
+        ? (isDirty ? '🛡️ 更新精校 (⚠️ 未保存)' : '🛡️ 更新精校内容')
+        : (isDirty ? '🛡️ 保存精校 (⚠️ 未保存)' : '🛡️ 保存精校 (跳过 AI 重译)');
+}
+
 /* ─── 脏态交互的增量 DOM 更新 ─────────────────────────── */
 window.updateReviewDirtyUI = function () {
     const state = window._reviewState;
     if (!state.data || !state.activeLang) return;
     const lc = state.activeLang, isDirty = window._isReviewDirty && window._isReviewDirty(lc);
-    const tabBtn = document.getElementById(`review-tab-${lc}`), statusBar = document.querySelector('.review-status-bar'), saveBtn = document.querySelector('.review-actions .review-btn.save');
+    const ld = state.data.langs ? state.data.langs[lc] : {};
+    const tabBtn = document.getElementById(`review-tab-${lc}`), saveBtn = document.querySelector('.review-actions .review-btn.save');
     if (tabBtn) {
         const dot = tabBtn.querySelector('.review-dirty-dot');
         if (isDirty && !dot) tabBtn.insertAdjacentHTML('beforeend', '<span class="review-dirty-dot" style="color:#ffb300; margin-left:4px; font-size:0.9rem;">●</span>');
         else if (!isDirty && dot) dot.remove();
     }
-    if (statusBar) {
-        const badge = statusBar.querySelector('.review-badge.dirty');
-        if (isDirty && !badge) statusBar.insertAdjacentHTML('beforeend', '<span class="review-badge dirty" style="background:var(--accent-secondary, #ffb300); color:#000; font-weight:bold; margin-left:8px; padding:2px 8px; border-radius:4px; font-size:0.75rem; display:inline-block; box-shadow:0 0 8px rgba(255,179,0,0.2);">⚠️ 未保存修改</span>');
-        else if (!isDirty && badge) badge.remove();
-    }
     if (saveBtn) {
-        saveBtn.style.boxShadow = isDirty ? '0 0 12px rgba(255, 179, 0, 0.4)' : '';
+        saveBtn.innerHTML = _getSaveBtnText(ld, isDirty);
+        saveBtn.style.boxShadow = isDirty ? '0 0 14px rgba(255, 179, 0, 0.5)' : '';
         saveBtn.style.border = isDirty ? '1.5px solid var(--accent-primary, #ffab00)' : '';
     }
 };
 
-window.openReviewForDoc = async function(targetDocId) {
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-    }
-    if (typeof window.openTranslationReview === 'function') {
-        window.openTranslationReview(targetDocId);
-    }
+window.openReviewForDoc = async function (targetDocId) {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+    if (typeof window.openTranslationReview === 'function') window.openTranslationReview(targetDocId);
 };
 
-/* ─── 物理资源路径校正与重写（与 vault.parser.js 对准） ───────────────────── */
-function _reviewRewriteMarkdown(text, docId, sourceText) {
-    if (!text) return '';
-    let md = text;
-    md = md.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
-        const clean = decodeURIComponent(path.trim()), url = `/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}`;
-        const err = `this.onerror=null;this.src='${url}';`;
-        return (extra && !isNaN(extra.trim())) ? `<img src="${url}" alt="${clean}" width="${extra.trim()}" onerror="${err}" />` : `<img src="${url}" alt="${clean}" onerror="${err}" />`;
-    });
-    md = md.replace(/(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, display) => {
-        const clean = decodeURIComponent(path.trim()), ext = clean.match(/\.([a-zA-Z0-9]+)$/);
-        if (!ext || ['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
-            const name = (display || clean).trim();
-            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${clean.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;">📄 ${name}</a>`;
-        }
-        return `<a href="/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${(display || clean).trim()}</a>`;
-    });
-    const _srcImgUrls = [];
-    if (sourceText) {
-        const re = /!\[[^\]]*\]\(([^)]+)\)/g; let m;
-        while ((m = re.exec(sourceText)) !== null) {
-            const clean = decodeURIComponent(m[1].trim());
-            if (!clean.startsWith('http') && !clean.startsWith('data:')) _srcImgUrls.push(`/api/vault-assets/${encodeURIComponent(clean)}?relative_to=${encodeURIComponent(docId)}`);
-        }
-    }
-    let _imgIdx = 0;
-    md = md.replace(/!\[\[?([^\]]*)\]?\]\(([^)]+)\)/g, (match, alt, url) => {
-        const clean = url.trim();
-        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) return match;
-        const decoded = decodeURIComponent(clean), resolved = `/api/vault-assets/${encodeURIComponent(decoded)}?relative_to=${encodeURIComponent(docId)}`;
-        const filename = decoded.split('/').pop().split('\\').pop(), flatUrl = `/api/vault-assets/${encodeURIComponent(filename)}`;
-        const srcUrl = _srcImgUrls[_imgIdx] || ''; _imgIdx++;
-        const onErr = `if(!this.dataset.t1){this.dataset.t1='1';this.src='${flatUrl}';} else if(!this.dataset.t2 && '${srcUrl}'){this.dataset.t2='1';this.src='${srcUrl}';}`;
-        return `<img src="${resolved}" alt="${alt}" loading="lazy" onerror="${onErr}" style="max-width:100%;border-radius:6px;" />`;
-    });
-    md = md.replace(/(?<!\!)\[([^\]]+)\]\(([^)]+)\)/g, (match, textVal, url) => {
-        const clean = url.trim();
-        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('#')) return match;
-        const decoded = decodeURIComponent(clean), ext = decoded.match(/\.([a-zA-Z0-9]+)$/);
-        if (!ext || ['md', 'mdx', 'markdown'].includes(ext[1].toLowerCase())) {
-            return `<a href="javascript:void(0)" onclick="window.openReviewForDoc('${decoded.replace(/'/g, "\\'")}')" class="wiki-doc-link" style="color:var(--accent-primary, #ffab00); text-decoration:underline; font-weight:600; cursor:pointer;">📄 ${textVal}</a>`;
-        }
-        return `<a href="/api/vault-assets/${encodeURIComponent(decoded)}?relative_to=${encodeURIComponent(docId)}" target="_blank" class="attachment-link">📎 ${textVal}</a>`;
-    });
-    return md;
-}
-
 /* ─── 预览分栏单段落增量渲染（供 reviewSaveParagraph 调用） ─ */
-// [AEL-2026-06-14] 保证退出编辑后的增量更新与全量渲染走相同路径：
-// _reviewRewriteMarkdown → marked.parse({ breaks })，防止图片路径丢失。
 function _reviewRenderPreviewPara(idx, state) {
     const previewBlock = document.getElementById(`preview-para-${idx}`);
     if (!previewBlock || !state) return;
-    const lc = state.activeLang;
-    const paras = state.edits[lc]?.paragraphs || [];
+    const lc = state.activeLang, paras = state.edits[lc]?.paragraphs || [];
     if (!paras[idx]) return;
-    const sourceParas = state.data?.source_paragraphs || [];
-    const sourcePara  = sourceParas.find(sp => sp.index === idx);
-    const sourceText  = sourcePara?.text || '';
+    const sourceParas = state.data?.source_paragraphs || [], sourcePara = sourceParas.find(sp => sp.index === idx), sourceText = sourcePara?.text || '';
     const _breaks = window.settingsData?.ingress_settings?.hard_line_break ?? false;
     const rewritten = _reviewRewriteMarkdown(paras[idx].text || '', state.docId, sourceText);
     previewBlock.innerHTML = window.marked.parse(rewritten, { breaks: _breaks });

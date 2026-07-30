@@ -107,6 +107,8 @@ class AITaskMixin:
         try:
             payload = PayloadManager.prepare_payload(self, system_prompt, user_content, is_json=False, is_translation=True)
             res = self.ask_ai_with_retry(payload)
+            if res and isinstance(res, str):
+                res = AILogicHub.clean_metadata_value(res)
             return res or text
         except Exception:
             return text

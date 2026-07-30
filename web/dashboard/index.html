@@ -494,6 +494,7 @@
     <script src="js/dashboard.modes.js"></script>
     <script src="js/localization/localization.render.js"></script>
     <script src="js/localization/localization.style.js"></script>    <!-- 🔒 [I5] 翻译风格预设 (SOP-02拆分) -->
+    <script src="js/localization/localization.review.markdown.js"></script> <!-- 🔒 [I5] 翻译校对 Markdown 重写器 (SOP-02拆分) -->
     <script src="js/localization/localization.review.render.js"></script>  <!-- 🔒 [I5] 翻译校对工作台渲染层 -->
     <script src="js/localization/localization.review.js"></script>  <!-- 🔒 [I5] 翻译校对工作台 -->
     <script src="js/localization/localization.sync.js"></script>
@@ -561,14 +562,14 @@
                 <div style="display:flex; align-items:center; gap:12px;">
                     <!-- 视图切换器 -->
                     <div class="review-view-toggle" style="display:flex; background:var(--white-05); border-radius:6px; padding:2px; border:1px solid var(--white-08); gap:4px;">
-                        <button id="btn-view-preview" onclick="window.toggleReviewPreview()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" title="显示/隐藏预览分栏">👁️ 预览</button>
-                        <button id="btn-view-source" onclick="window.toggleReviewSource()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" title="显示/隐藏原文分栏">📜 原文</button>
+                        <button id="btn-view-preview" onclick="window.toggleReviewPreview()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" data-tooltip="显示/隐藏预览分栏" data-tooltip-pos="bottom">👁️ 预览</button>
+                        <button id="btn-view-source" onclick="window.toggleReviewSource()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" data-tooltip="显示/隐藏原文分栏" data-tooltip-pos="bottom">📜 原文</button>
                     </div>
                     
                     <button onclick="window.closeTranslationReview()"
                         style="background:none; border:none; color:var(--text-dim); font-size:1.3rem;
                                cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px;
-                               transition:color 0.2s;" title="关闭校对工作台">✕</button>
+                               transition:color 0.2s;" data-tooltip="关闭校对工作台" data-tooltip-pos="bottom">✕</button>
                 </div>
             </div>
 

@@ -45,6 +45,7 @@ window.initializeCustomTooltip = () => {
         const text = target.getAttribute('title');
         if (!text || !text.trim()) return;
         target.setAttribute('data-tooltip', text);
+        target.setAttribute('data-title-converted', 'true');
         target.removeAttribute('title');
 
         // 2. 创建高保真 Glassmorphism 悬浮层
@@ -78,14 +79,15 @@ window.initializeCustomTooltip = () => {
     });
 
     document.body.addEventListener('mouseout', (e) => {
-        const target = e.target.closest('[data-tooltip]');
-        if (!target) return;
-
-        // 归还 title
-        const text = target.getAttribute('data-tooltip');
-        if (text) {
-            target.setAttribute('title', text);
-            target.removeAttribute('data-tooltip');
+        const target = e.target.closest('[data-title-converted]');
+        if (target) {
+            // 仅归还真正由 title 转换而来的 data-tooltip
+            const text = target.getAttribute('data-tooltip');
+            if (text) {
+                target.setAttribute('title', text);
+                target.removeAttribute('data-tooltip');
+                target.removeAttribute('data-title-converted');
+            }
         }
 
         // 销毁悬浮层

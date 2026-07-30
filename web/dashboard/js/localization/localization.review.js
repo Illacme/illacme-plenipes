@@ -5,13 +5,16 @@
  */
 
 /* ─── 状态 ─────────────────────────────────────────── */
+/* ─── 状态 ─────────────────────────────────────────── */
 window._reviewState = {
     docId: null,
     data: null,          // 服务端返回的快照
     activeLang: null,
     showSource: true,
     showPreview: true,
-    edits: {}            // { lang: { title, desc, paragraphs: [{index, type, text}] } }
+    edits: {},           // { lang: { title, desc, paragraphs: [{index, type, text}] } }
+    wantedLangMap: {},   // 🚀 [V81.0] 多语种独立并发状态字典 { [lang]: { status, progress } }
+    wantedLangs: null
 };
 window.saveReviewDraft = function (lc) {
     const state = window._reviewState;
@@ -21,7 +24,8 @@ window.saveReviewDraft = function (lc) {
         localStorage.setItem(`plenipes_review_draft_${state.docId}_${lc}`, JSON.stringify({
             title: edit.title,
             desc: edit.desc,
-            paragraphs: edit.paragraphs
+            paragraphs: edit.paragraphs,
+            source_hash: state.data?.source_hash || ''
         }));
     }
 };
@@ -48,8 +52,8 @@ window.openTranslationReview = async function (docId) {
         return;
     }
 
-    const isAiEnabled = !window.governanceContext || 
-                       (window.governanceContext.ai && window.governanceContext.ai.status !== 'disabled');
+    const isAiEnabled = !window.governanceContext ||
+        (window.governanceContext.ai && window.governanceContext.ai.status !== 'disabled');
     if (!isAiEnabled) {
         Swal.fire({
             title: '🔒 协同服务已离线',
@@ -66,6 +70,8 @@ window.openTranslationReview = async function (docId) {
     const state = window._reviewState;
     state.docId = docId;
     state.edits = {};
+    state.wantedLangMap = {};
+    state.wantedLangs = null;
 
     _reviewShowDrawer();
     _reviewSetLoading(true);
@@ -104,12 +110,15 @@ window.openTranslationReview = async function (docId) {
                 const draftStr = localStorage.getItem(`plenipes_review_draft_${docId}_${lc}`);
                 if (draftStr) {
                     const draft = JSON.parse(draftStr);
-                    if (draft) {
+                    if (draft && draft.source_hash === state.data.source_hash) {
                         state.edits[lc].title = draft.title ?? state.edits[lc].title;
                         state.edits[lc].desc = draft.desc ?? state.edits[lc].desc;
                         if (draft.paragraphs) {
                             state.edits[lc].paragraphs = draft.paragraphs.map(p => ({ ...p }));
                         }
+                    } else if (draft && draft.source_hash !== state.data.source_hash) {
+                        // 🚀 原稿 Hash 已更新，清理已过期的旧草稿
+                        localStorage.removeItem(`plenipes_review_draft_${docId}_${lc}`);
                     }
                 }
             } catch (err) {
@@ -159,7 +168,7 @@ window.saveTranslationReview = async function () {
         }
         window.clearReviewDraft(lc);
         _reviewRender();
-        window._showToast?.('🔒 校对结果已保存并锁定', 'success');
+        window._showToast?.('🛡️ 校对结果已保存并锁定保护 (防 AI 覆盖)', 'success');
     } catch (e) {
         window._showToast?.('保存失败: ' + e.message, 'error');
     }
@@ -170,7 +179,31 @@ window.unlockTranslationReview = async function () {
     const state = window._reviewState;
     const lc = state.activeLang;
     if (!lc || !state.docId) return;
-    if (!confirm(`确认解除「${lc.toUpperCase()}」的人工锁定？下次同步时 AI 将重新翻译此文档。`)) return;
+
+    let confirmed = false;
+    const titleMsg = `确认解除「${lc.toUpperCase()}」的精校保护？`;
+    const textMsg = `解除保护后，下次全站同步或发布时 AI 将自动重新翻译此语种；您当前的人工校对内容将被覆盖。`;
+
+    if (window.Swal) {
+        const res = await window.Swal.fire({
+            title: titleMsg,
+            text: textMsg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '🔓 确认解除保护',
+            cancelButtonText: '取消',
+            confirmButtonColor: '#ff4d4f',
+            cancelButtonColor: 'rgba(255, 255, 255, 0.15)',
+            background: 'rgba(20, 20, 25, 0.95)',
+            color: '#fff',
+            target: document.getElementById('review-drawer') || document.body
+        });
+        confirmed = res.isConfirmed;
+    } else {
+        confirmed = confirm(`${titleMsg}\n\n${textMsg}`);
+    }
+
+    if (!confirmed) return;
 
     try {
         const res = await fetch('/api/translation/review/unlock', {
@@ -185,7 +218,7 @@ window.unlockTranslationReview = async function () {
         }
         window.clearReviewDraft(lc);
         _reviewRender();
-        window._showToast?.('🗑️ 校对锁已解除，下次同步将重新 AI 翻译', 'info');
+        window._showToast?.('🔓 精校保护已解除，下次同步将由 AI 重新翻译', 'info');
     } catch (e) {
         window._showToast?.('解锁失败: ' + e.message, 'error');
     }
@@ -204,43 +237,51 @@ window.toggleReviewPreview = function () {
 window.triggerSingleTranslation = async function (targetMode = 'current') {
     const docId = window._reviewState.docId;
     if (!docId) return;
-    
+
     const lc = window._reviewState.activeLang;
     const targetLangs = targetMode === 'current' ? [lc] : null;
-    
-    // 确定本次操作我们关心的目标语种列表，如果是生成所有则需要等待全部激活的目标语种
+
     let wantedLangs = [];
     if (targetMode === 'current') {
         wantedLangs = [lc];
     } else {
         wantedLangs = (window.settingsData?.i18n_settings?.targets || []).map(t => t.lang_code);
         if (!wantedLangs || wantedLangs.length === 0) {
-            // 🚀 [双重兜底] 如果 settingsData 里未能读取到 targets，从当前工作台已加载的语种中自动补齐，防止 wantedLangs 为空导致轮询秒退
             wantedLangs = Object.keys(window._reviewState.data?.langs || {});
         }
     }
 
-    // 🚀 记录正在翻译的目标语种队列，驱动声明式进度呈现
-    window._reviewState.wantedLangs = wantedLangs;
-    window._reviewState.langProgress = {};
-    wantedLangs.forEach(lang => {
-        window._reviewState.langProgress[lang] = 5;
-    });
+    if (!window._reviewState.wantedLangMap) {
+        window._reviewState.wantedLangMap = {};
+    }
 
-    // 🚀 [UI 自愈与状态清理]
-    // 在重新生成之前，预先将关注的目标语种在前端置为 is_missing = true 并清空 edits 缓存。
-    // 这能够物理级避免：在已就绪的语种下点击生成全部时，因旧快照存在导致轮询在第一轮就误判为就绪并立刻退出的致命 Bug。
+    // 🚀 [V81.0] 多语种独立并发合并：按语种维护 wantedLangMap 字典，防止状态覆盖
+    const sourceParasCount = (window._reviewState.data?.source_paragraphs || []).length || 1;
     wantedLangs.forEach(lang => {
+        window._reviewState.wantedLangMap[lang] = {
+            status: 'running',
+            progress: 5,
+            translated_paras: 0,
+            total_paras: sourceParasCount
+        };
         if (window._reviewState.data && window._reviewState.data.langs && window._reviewState.data.langs[lang]) {
             window._reviewState.data.langs[lang].is_missing = true;
+            // 物理重置旧的残余进度账本，杜绝旧数据污染新进度呈现
+            window._reviewState.data.langs[lang].progress = {
+                translated_paras: 0,
+                total_paras: sourceParasCount
+            };
         }
         if (window._reviewState.edits && window._reviewState.edits[lang]) {
             delete window._reviewState.edits[lang];
         }
     });
 
+    window._reviewState.wantedLangs = Object.keys(window._reviewState.wantedLangMap).filter(l => window._reviewState.wantedLangMap[l].status === 'running');
+
     _reviewRender();
-    window._showToast?.('🚀 已推送后台翻译管线，正在处理中...', 'info');
+    const modeLabel = targetMode === 'current' ? `[${(lc || '').toUpperCase()}]` : '所有目标语种';
+    window._showToast?.(`🚀 已推送后台 AI 翻译管线 (${modeLabel})，正在处理中...`, 'info');
 
     try {
         const res = await fetch('/api/publish/trigger', {
@@ -251,12 +292,16 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         const d = await res.json();
         if (d.status === 'error') throw new Error(d.message);
 
-        // 轮询快照直到所有请求的语种都完成翻译
+        // 如果已有轮询循环在运行，不再开启重复轮询
+        if (window._reviewState._isPolling) return;
+        window._reviewState._isPolling = true;
+
         let attempts = 0;
         const poll = async () => {
-            if (attempts > 300) {
+            if (attempts > 300 || !window._reviewState.wantedLangMap || Object.keys(window._reviewState.wantedLangMap).length === 0) {
+                window._reviewState.wantedLangMap = {};
                 window._reviewState.wantedLangs = null;
-                window._reviewState.langProgress = null;
+                window._reviewState._isPolling = false;
                 window._showToast?.('翻译耗时超出预期，请稍后重新打开抽屉查看', 'warning');
                 _reviewRender();
                 return;
@@ -264,27 +309,29 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
             try {
                 const checkRes = await fetch(`/api/translation/review/${encodeURIComponent(docId)}`);
                 const checkData = await checkRes.json();
-                
+
                 if (checkData && checkData.langs) {
                     window._reviewState.data = checkData;
-                    
-                    // 推进并更新各语种的真实物理进度
-                    wantedLangs.forEach(lang => {
+
+                    const runningLangs = Object.keys(window._reviewState.wantedLangMap).filter(l => window._reviewState.wantedLangMap[l].status === 'running');
+
+                    runningLangs.forEach(lang => {
                         const ld = checkData.langs[lang];
                         if (ld) {
                             if (!ld.is_missing) {
-                                window._reviewState.langProgress[lang] = 100;
+                                window._reviewState.wantedLangMap[lang].status = 'done';
+                                window._reviewState.wantedLangMap[lang].progress = 100;
                             } else if (ld.progress) {
                                 const tParas = ld.progress.translated_paras || 0;
                                 const totalParas = ld.progress.total_paras || 1;
-                                window._reviewState.langProgress[lang] = Math.min(99, Math.floor((tParas / totalParas) * 100));
+                                window._reviewState.wantedLangMap[lang].progress = Math.min(99, Math.floor((tParas / totalParas) * 100));
                             } else {
-                                window._reviewState.langProgress[lang] = Math.min(99, window._reviewState.langProgress[lang] || 5);
+                                window._reviewState.wantedLangMap[lang].progress = Math.min(99, window._reviewState.wantedLangMap[lang].progress || 5);
                             }
                         }
                     });
 
-                    // 同步更新所有已就绪目标语种 of edits 缓存，防止切换标签时出现空译文状态
+                    // 同步更新已就绪目标语种的 edits 缓存
                     Object.keys(checkData.langs).forEach(lc_key => {
                         const ld = checkData.langs[lc_key];
                         if (ld && !ld.is_missing) {
@@ -295,18 +342,19 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                             };
                         }
                     });
-                    
-                    // 检查 wantedLangs 里的所有语种是否全部就绪（非 missing）
-                    const allDone = wantedLangs.every(lang => checkData.langs[lang] && !checkData.langs[lang].is_missing);
-                    
-                    if (allDone) {
+
+                    const stillRunning = Object.keys(window._reviewState.wantedLangMap).filter(l => window._reviewState.wantedLangMap[l].status === 'running');
+                    window._reviewState.wantedLangs = stillRunning;
+
+                    if (stillRunning.length === 0) {
+                        const finishedNames = Object.keys(window._reviewState.wantedLangMap).map(l => l.toUpperCase()).join(', ');
+                        window._reviewState.wantedLangMap = {};
                         window._reviewState.wantedLangs = null;
-                        window._reviewState.langProgress = null;
+                        window._reviewState._isPolling = false;
                         _reviewRender();
-                        window._showToast?.(`✅ 所选翻译已全部就绪！`, 'success');
+                        window._showToast?.(`✅ 译文已全量成功就绪 (${finishedNames})！`, 'success');
                         return;
                     } else {
-                        // 每次轮询有新状态都执行 _reviewRender()，保持全 Tab 进度与百分比实时刷新
                         _reviewRender();
                     }
                 }
@@ -314,15 +362,20 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                 console.error("Polling error", err);
             }
             attempts++;
-            setTimeout(poll, 2000);
+            setTimeout(poll, 600);
         };
-        setTimeout(poll, 2000);
+        setTimeout(poll, 300);
 
     } catch (e) {
+        if (targetMode === 'current' && lc && window._reviewState.wantedLangMap) {
+            delete window._reviewState.wantedLangMap[lc];
+        } else {
+            window._reviewState.wantedLangMap = {};
+        }
         window._reviewState.wantedLangs = null;
-        window._reviewState.langProgress = null;
+        window._reviewState._isPolling = false;
         window._showToast?.('分发触发失败: ' + e.message, 'error');
-        _reviewRender(); // 恢复原状
+        _reviewRender();
     }
 };
 
@@ -330,6 +383,127 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
 window.switchReviewLang = function (lc) {
     window._reviewState.activeLang = lc;
     _reviewRender();
+};
+
+/* ─── 单字段 AI 润色与重置 ───────────────────────────── */
+window.polishFieldWithAI = async function (fieldKey, btnEl) {
+    const state = window._reviewState;
+    const lc = state.activeLang;
+    if (!lc || !state.docId) return;
+
+    let originalText = fieldKey === 'title' ? state.data?.source_title : state.data?.source_desc;
+    if (!originalText || !originalText.trim() || originalText.trim() === '无描述') {
+        const sourceParas = state.data?.source_paragraphs || [];
+        const firstPara = (sourceParas.find(p => p.text && !p.text.startsWith('#') && !p.text.startsWith('```'))?.text || '').slice(0, 150);
+        originalText = `${state.data?.source_title || ''}: ${firstPara}`.trim();
+    }
+    if (!originalText) {
+        window._showToast?.('原文暂无有效正文，无法发起 AI 润色', 'warning');
+        return;
+    }
+
+    const fieldLabel = fieldKey === 'title' ? '标题' : '描述';
+    const inputEl = document.getElementById(fieldKey === 'title' ? 'review-title-input' : 'review-desc-input');
+    
+    // 🚀 [UI 实时进度与状态倒流]
+    let oldBtnHtml = '🪄';
+    if (btnEl) {
+        oldBtnHtml = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.innerHTML = '⏳';
+        btnEl.style.opacity = '0.7';
+    }
+    if (inputEl) {
+        inputEl.style.transition = 'all 0.3s ease';
+        inputEl.style.boxShadow = '0 0 10px rgba(255, 171, 0, 0.4)';
+        inputEl.style.borderColor = 'var(--accent-primary, #ffab00)';
+    }
+
+    window._showToast?.(`🪄 正在使用 AI 为 [${lc.toUpperCase()}] 润色${fieldLabel}...`, 'info');
+    try {
+        const res = await fetch('/api/translation/review/retranslate-paragraph', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doc_id: state.docId,
+                lang_code: lc,
+                para_index: fieldKey === 'title' ? -1 : -2,
+                source_text: originalText
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data && data.translated_text) {
+            if (!state.edits[lc]) state.edits[lc] = {};
+            state.edits[lc][fieldKey] = data.translated_text;
+
+            if (btnEl) {
+                btnEl.innerHTML = '✅';
+                setTimeout(() => {
+                    btnEl.innerHTML = oldBtnHtml;
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                }, 1200);
+            }
+
+            _reviewRender();
+            window._showToast?.(`✅ ${fieldLabel} AI 润色已完成！`, 'success');
+            window.saveReviewDraft?.(lc);
+            window.updateReviewDirtyUI?.();
+        } else {
+            if (btnEl) {
+                btnEl.innerHTML = oldBtnHtml;
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+            }
+            window._showToast?.('润色失败: ' + (data?.error || data?.detail || '未知错误'), 'error');
+        }
+    } catch (e) {
+        if (btnEl) {
+            btnEl.innerHTML = oldBtnHtml;
+            btnEl.disabled = false;
+            btnEl.style.opacity = '1';
+        }
+        window._showToast?.('润色网络异常: ' + e.message, 'error');
+    } finally {
+        if (inputEl) {
+            inputEl.style.boxShadow = '';
+            inputEl.style.borderColor = '';
+        }
+    }
+};
+
+window.resetFieldToDefault = function (fieldKey, btnEl) {
+    const state = window._reviewState;
+    const lc = state.activeLang;
+    if (!lc || !state.data?.langs?.[lc]) return;
+
+    const defaultVal = state.data.langs[lc][fieldKey] || '';
+    const fieldLabel = fieldKey === 'title' ? '标题' : '描述';
+    const inputEl = document.getElementById(fieldKey === 'title' ? 'review-title-input' : 'review-desc-input');
+
+    if (btnEl) {
+        const oldHtml = btnEl.innerHTML;
+        btnEl.innerHTML = '✅';
+        btnEl.disabled = true;
+        setTimeout(() => {
+            btnEl.innerHTML = oldHtml;
+            btnEl.disabled = false;
+        }, 800);
+    }
+
+    if (inputEl) {
+        inputEl.style.transition = 'all 0.3s ease';
+        inputEl.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.4)';
+        setTimeout(() => { if (inputEl) inputEl.style.boxShadow = ''; }, 800);
+    }
+
+    if (!state.edits[lc]) state.edits[lc] = {};
+    state.edits[lc][fieldKey] = defaultVal;
+    _reviewRender();
+    window._showToast?.(`🔄 已恢复为初始 ${fieldLabel}`, 'info');
+    window.saveReviewDraft?.(lc);
+    window.updateReviewDirtyUI?.();
 };
 
 /* ─── 段落块点击编辑（Q1=C） ──────────────────────────── */
@@ -345,14 +519,7 @@ window.reviewEditParagraph = function (idx) {
     block.dataset.editing = '1';
 
     const prev = block.innerHTML;
-    block.innerHTML = `
-        <span class="review-para-num">#${idx + 1}</span>
-        <textarea class="review-para-textarea" onblur="window.reviewSaveParagraph(${idx}, this.value)"
-            style="width:100%;min-height:80px;background:var(--bg-agent-input);color:var(--text-bright);
-                   border:1.5px solid var(--accent-primary);border-radius:6px;padding:10px;
-                   font-size:0.82rem;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;
-                   font-family:inherit;">${_escapeHtml(para.text)}</textarea>
-    `;
+    block.innerHTML = `<span class="review-para-num">#${idx + 1}</span><textarea class="review-para-textarea" onblur="window.reviewSaveParagraph(${idx}, this.value)">${_escapeHtml(para.text)}</textarea>`;
     block.querySelector('textarea').focus();
 };
 
@@ -413,7 +580,7 @@ window.closeTranslationReview = function () {
             }
         }
     }
-    
+
     function _doClose() {
         window._closeReviewLocked = false;
         const overlay = document.getElementById('review-drawer-overlay');

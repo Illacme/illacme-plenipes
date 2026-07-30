@@ -46,6 +46,38 @@ class AILogicHub:
         return clean[:max_length]
 
     @staticmethod
+    def clean_metadata_value(raw_response: str) -> str:
+        """
+        🚀 [V106.0] 物理级 SEO 与元数据提取算法
+        物理剥离 LLM 返回结果中的 Typ: / Wert: / Value: / Description: / Tags: / Category: 等提示词键值对围栏或 JSON 结构
+        """
+        if not raw_response: return ""
+        text = re.sub(r'<think>.*?</think>', '', str(raw_response), flags=re.DOTALL).strip()
+
+        # 0. 尝试解析 JSON 格式 (例如 {"type": "Beschreibung", "value": "..."})
+        if (text.startswith('{') and text.endswith('}')) or ('"value":' in text or '"description":' in text):
+            try:
+                start = text.find('{')
+                end = text.rfind('}')
+                if start != -1 and end != -1:
+                    json_str = text[start:end+1]
+                    data = json.loads(json_str)
+                    if isinstance(data, dict):
+                        val = data.get('value') or data.get('description') or data.get('text') or data.get('desc')
+                        if val:
+                            return str(val).strip()
+            except Exception:
+                pass
+
+        val_match = re.search(r'(?:Wert|Value|Description|描述|值|説明|概要|詳細)[:：]\s*(?P<val>.*?)(?:\n(?:Tags|Category|Kategorie|Typ|Type|カテゴリ|タグ|タイトル)[:：]|$)', text, re.IGNORECASE | re.DOTALL)
+        if val_match:
+            return val_match.group('val').strip()
+        text = re.sub(r'^(?:Typ|Type|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*?\n', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'^(?:Wert|Value|Description|描述|值|説明|概要|詳細)[:：]\s*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\n(?:Tags|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*$', '', text, flags=re.IGNORECASE | re.DOTALL)
+        return text.strip()
+
+    @staticmethod
     def repair_json(raw_response: str) -> str:
         """
         [Resilience] 强力 JSON 修复算法
@@ -135,11 +167,14 @@ class AILogicHub:
                 # 翻译标签模式：保留 display text 参与 AI 翻译
                 if '|' in wiki_body:
                     target_part, alias_part = wiki_body.split('|', 1)
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = target_part
+                    return f"[[{key}|{alias_part}]]"
                 else:
-                    target_part, alias_part = wiki_body, wiki_body
-                key = f"__W_MASK_{len(masks)}__"
-                masks[key] = target_part.strip()
-                return f"[{alias_part.strip()}]({key})"
+                    # [[创建链接]] → 遮罩 target 并复制为 display text
+                    key = f"__B_MASK_{len(masks)}__"
+                    masks[key] = wiki_body
+                    return f"[[{key}|{wiki_body}]]"
 
             # B. 检查是否匹配到了 Markdown Link
             if m.group('md_link_url') is not None:
@@ -228,36 +263,9 @@ class AILogicHub:
             val = masks[key]
             esc_key = re.escape(key)
             
-            # 🚀 [V105.2] 解封 Wikilink __W_MASK_N__ 专属处理
-            if key.startswith('__W_MASK_'):
-                w_pattern = r'(?<!\[)\[(?P<label>[^\[\]\n]+)\]\s*\(?\s*' + esc_key + r'\s*\)?(?!\])'
-                if re.search(w_pattern, final_text, re.IGNORECASE):
-                    def _repl_w(m, _val=val):
-                        lbl = m.group('label').strip()
-                        if lbl == _val:
-                            return f"[[{_val}]]"
-                        return f"[[{_val}|{lbl}]]"
-                    final_text = re.sub(w_pattern, _repl_w, final_text, flags=re.IGNORECASE)
-                    continue
-
-                w_nobracket = r'(?<!\])\b(?P<label>[^\s\[\]\(\)\{\}]+)\s*\(\s*' + esc_key + r'\s*\)'
-                if re.search(w_nobracket, final_text, re.IGNORECASE):
-                    def _repl_w_nb(m, _val=val):
-                        lbl = m.group('label').strip()
-                        if lbl == _val:
-                            return f"[[{_val}]]"
-                        return f"[[{_val}|{lbl}]]"
-                    final_text = re.sub(w_nobracket, _repl_w_nb, final_text, flags=re.IGNORECASE)
-                    continue
-
-                pattern_key = re.compile(esc_key, re.IGNORECASE)
-                if pattern_key.search(final_text):
-                    final_text = pattern_key.sub(lambda m, _val=val: f"[[{_val}]]", final_text)
-                    continue
-
             # 如果 val 是 URL 或 Anchor URL
             if not val.startswith('![') and not val.startswith('[') and not val.startswith('<!') and not val.startswith('<!--'):
-                # 自愈 0：兼容旧版 Wikilink [[__B_MASK_N__|translated_alias]] 还原
+                # 自愈 0：Wikilink [[__B_MASK_N__|translated_alias]] 还原
                 wikilink_mask_pattern = r'\[\[\s*' + esc_key + r'\s*\|\s*(?P<alias>[^\]\n]+?)\s*\]\]'
                 if re.search(wikilink_mask_pattern, final_text, re.IGNORECASE):
                     def _repl_wikilink(m, _val=val):
