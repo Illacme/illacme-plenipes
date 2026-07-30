@@ -285,8 +285,16 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
     if not source_text or not source_text.strip(): return {"ok": True, "translated_text": source_text}
     try:
         from core.logic.ai.ai_factory import TranslatorFactory
+        from core.logic.ai.ai_logic_hub import AILogicHub
         node = TranslatorFactory.create(engine.config.translation) if hasattr(engine, "config") and engine.config else None
         if not node: return {"ok": False, "error": "无可用算力节点"}
-        res = node.translate(source_text, source_lang="zh-cn", target_lang=lang_code)
+
+        if para_index == -2:
+            rem = "Generate a clean 1-2 sentence SEO description in target language. Do not output Wikilinks like [[...]], headings, or prompt delimiters."
+            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code, remedy_instruction=rem) or "")
+        elif para_index == -1:
+            res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
+        else:
+            res = AILogicHub.clean_translation_response(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
         return {"ok": True, "translated_text": res or source_text}
     except Exception as e: return {"ok": False, "error": str(e)}

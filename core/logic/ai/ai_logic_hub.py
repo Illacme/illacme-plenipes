@@ -46,13 +46,37 @@ class AILogicHub:
         return clean[:max_length]
 
     @staticmethod
-    def clean_metadata_value(raw_response: str) -> str:
+    def clean_translation_response(raw_response: str) -> str:
         """
-        🚀 [V106.0] 物理级 SEO 与元数据提取算法
-        物理剥离 LLM 返回结果中的 Typ: / Wert: / Value: / Description: / Tags: / Category: 等提示词键值对围栏或 JSON 结构
+        🚀 [V107.0] 物理级 AI 译文提纯与 prompt 围栏防护
+        彻底剥离 <think>...</think>、### Content ### / ### Translation ### 及其多语种变体
+        （Inhalt, Übersetzung, Traduction, Contenido, 翻訳, 译文, 原文等）。
         """
         if not raw_response: return ""
         text = re.sub(r'<think>.*?</think>', '', str(raw_response), flags=re.DOTALL).strip()
+
+        lines = text.split("\n")
+        cleaned_lines = []
+        for line in lines:
+            stripped_line = line.strip()
+            if re.match(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}$', stripped_line, re.IGNORECASE):
+                continue
+            cleaned_lines.append(line)
+
+        result = "\n".join(cleaned_lines).strip()
+        result = re.sub(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}\n?', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'\n?#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}$', '', result, flags=re.IGNORECASE)
+        return result.strip()
+
+    @staticmethod
+    def clean_metadata_value(raw_response: str) -> str:
+        """
+        🚀 [V106.0] 物理级 SEO 与元数据提取算法
+        物理剥离 LLM 返回结果中的 Typ: / Wert: / Value: / Description: / Tags: / Category: 等提示词键值对围栏、Prompt 分隔符或 Wikilinks 结构
+        """
+        if not raw_response: return ""
+        text = re.sub(r'<think>.*?</think>', '', str(raw_response), flags=re.DOTALL).strip()
+        text = re.sub(r'#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}', '', text, flags=re.IGNORECASE).strip()
 
         # 0. 尝试解析 JSON 格式 (例如 {"type": "Beschreibung", "value": "..."})
         if (text.startswith('{') and text.endswith('}')) or ('"value":' in text or '"description":' in text):
@@ -65,16 +89,20 @@ class AILogicHub:
                     if isinstance(data, dict):
                         val = data.get('value') or data.get('description') or data.get('text') or data.get('desc')
                         if val:
-                            return str(val).strip()
+                            text = str(val).strip()
             except Exception:
                 pass
 
         val_match = re.search(r'(?:Wert|Value|Description|描述|值|説明|概要|詳細)[:：]\s*(?P<val>.*?)(?:\n(?:Tags|Category|Kategorie|Typ|Type|カテゴリ|タグ|タイトル)[:：]|$)', text, re.IGNORECASE | re.DOTALL)
         if val_match:
-            return val_match.group('val').strip()
-        text = re.sub(r'^(?:Typ|Type|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*?\n', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'^(?:Wert|Value|Description|描述|值|説明|概要|詳細)[:：]\s*', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'\n(?:Tags|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*$', '', text, flags=re.IGNORECASE | re.DOTALL)
+            text = val_match.group('val').strip()
+        else:
+            text = re.sub(r'^(?:Typ|Type|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*?\n', '', text, flags=re.IGNORECASE)
+            text = re.sub(r'^(?:Wert|Value|Description|描述|值|説明|概要|詳細)[:：]\s*', '', text, flags=re.IGNORECASE)
+            text = re.sub(r'\n(?:Tags|Category|Kategorie|カテゴリ|タグ|タイトル)[:：].*$', '', text, flags=re.IGNORECASE | re.DOTALL)
+
+        # 剥离 Wikilinks 语法，例如 [[index|Index]] -> Index, [[index]] -> index
+        text = re.sub(r'\[\[(?:[^\]|]*\|)?([^\]]+)\]\]', r'\1', text)
         return text.strip()
 
     @staticmethod
