@@ -61,7 +61,7 @@ window.renderLocalizationCategory = function () {
             { text: '工作流日志风', value: 'Translate TODOs and draft comments into a simple, professional work-log style.' }
         ]
     };
-    
+
     // 挂载至全局以便在 sync 模块中读取
     window.blockPresets = blockPresets;
 
@@ -90,10 +90,10 @@ window.renderLocalizationCategory = function () {
     }
 
     const enabledSwitchHtml = window.renderSettingsItem(
-        '多语言翻译矩阵', 
-        'i18n_settings.enabled', 
-        i18n.enabled !== false && isGlobal, 
-        'checkbox', 
+        '多语言翻译矩阵',
+        'i18n_settings.enabled',
+        i18n.enabled !== false && isGlobal,
+        'checkbox',
         {
             onchange: 'window.syncI18nEnabled(this.checked)',
             description: descriptionText,
@@ -103,9 +103,6 @@ window.renderLocalizationCategory = function () {
 
     return `
         <div class="full-width">
-            <div class="section-header"><h3>🌍 全球分发矩阵 (Global Matrix)</h3></div>
-            <p class="section-desc">配置全域内容的物理分发语种映射。每一项激活的语种都将触发一次算力原子的物理加工。</p>
-            
             <!-- 1. 授权等级模块（最顶部） -->
             <div class="license-banner" style="margin-bottom: 1.5rem;">
                 <div class="license-info">
@@ -119,16 +116,16 @@ window.renderLocalizationCategory = function () {
             <div class="settings-group" style="margin-bottom: 2rem;">
                 <h4>🎯 源内容语种 (Source Sovereignty)</h4>
                 ${window.renderSettingsItem('主出版语种', 'i18n_settings.source.lang_code', sourceLangStr, 'select', {
-                    items: [
-                        { value: 'auto', text: '✨ 自动探测 (Auto Detect)' },
-                        ...availableLangs.map(l => ({ value: l.code, text: `${l.icon} ${l.name}` }))
-                    ],
-                    onchange: 'syncI18nSource(this.value)'
-                })}
+        items: [
+            { value: 'auto', text: '✨ 自动探测 (Auto Detect)' },
+            ...availableLangs.map(l => ({ value: l.code, text: `${l.icon} ${l.name}` }))
+        ],
+        onchange: 'syncI18nSource(this.value)'
+    })}
                 ${window.renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', i18n.force_source_prefix || false, 'checkbox', {
-                    onchange: 'window.syncI18nForcePrefix(this.checked)',
-                    description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
-                })}
+        onchange: 'window.syncI18nForcePrefix(this.checked)',
+        description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
+    })}
             </div>
 
             <!-- 3. 多语言翻译矩阵开关总控闸 -->
@@ -144,11 +141,11 @@ window.renderLocalizationCategory = function () {
                     </div>
                     <div class="lang-matrix">
                         ${availableLangs
-                            .filter(l => sourceLangStr === 'auto' || l.code !== sourceLangStr)
-                            .map(l => {
-                                const isSelected = activeTargets.includes(l.code);
-                                const isLocked = !isLicensed && !isSelected && activeTargets.length >= 1;
-                                return `
+                .filter(l => sourceLangStr === 'auto' || l.code !== sourceLangStr)
+                .map(l => {
+                    const isSelected = activeTargets.includes(l.code);
+                    const isLocked = !isLicensed && !isSelected && activeTargets.length >= 1;
+                    return `
                                             <div class="lang-card ${isSelected ? 'active' : ''} ${isLocked ? 'locked' : ''}" 
                                                  onclick="window.toggleI18nTarget(this, '${l.code}')">
                                                 <span style="font-size: 1.5rem;">${l.icon}</span>
@@ -157,39 +154,55 @@ window.renderLocalizationCategory = function () {
                                                     <span style="font-size: 0.65rem; color: var(--text-dim);">${l.code.toUpperCase()}</span>
                                                 </div>
                                             </div>`;
-                            }).join('')}
+                }).join('')}
                     </div>
                 </div>
+            ` : ''}
+        </div>
+    `;
+};
 
-                <div id="translation-governance-group" style="margin-top: 3rem; border-top: 1px dashed var(--glass-border); padding-top: 2.5rem;">
-                    <div class="section-header"><h3>🛡️ 翻译高级治理 (Advanced Translation Governance)</h3></div>
-                    <p class="section-desc" style="margin-bottom: 20px;">配置 Markdown 各模块在 AI 编译过程中的块级分流动作、词汇隔离保护与超链接自愈策略。</p>
+window.renderBlockRulesCategory = function () {
+    const gov = window.settingsData?.translation?.governance || {};
+    const lg = gov.link_governance || {};
+    const blockRules = gov.block_rules || {};
+    const blockTypes = {
+        header: { name: '📌 标题块 (Header)', desc: 'Markdown 中的各级标题。' },
+        paragraph: { name: '📄 正文段落 (Paragraph)', desc: 'Markdown 中的一般段落文本。' },
+        table: { name: '📊 表格内容 (Table)', desc: 'Markdown 中的数据表格。' },
+        callout: { name: '💡 提示卡片 (Callout)', desc: '各种高亮提示框（如 > [!NOTE] ）。' },
+        code: { name: '💻 代码块 (Code Block)', desc: 'Markdown 代码围栏块。' },
+        html: { name: '🌐 HTML 块', desc: 'Markdown 中嵌入的原生 HTML 元素。' },
+        comment: { name: '💬 行内/块级注释', desc: '原稿中以特定语法标记的草稿/Todo 注释。' }
+    };
+    const blockPresets = window.blockPresets || {};
 
-                    <!-- A. 超链接治理卡片 -->
-                    <div class="settings-group" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 10px;">
-                        <h4 style="color: var(--accent-secondary); margin-bottom: 5px; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace;">🔗 链接与锚点对准 (Link & Anchor Resolution)</h4>
-                        ${window.renderSettingsItem('翻译链接标题 (Translate Link Labels)', 'translation.governance.link_governance.translate_labels', lg.translate_labels ?? true, 'checkbox', {
-                            onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.translate_labels', this.checked)",
-                            description: '是否自动将超链接 Markdown 文本的中文标题部分通过 AI 翻译为目标语种。'
-                        })}
-                        ${window.renderSettingsItem('翻译哈希锚点 (Translate Anchor Hashes)', 'translation.governance.link_governance.translate_anchors', lg.translate_anchors ?? true, 'checkbox', {
-                            onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.translate_anchors', this.checked)",
-                            description: '开启后，AI 将自动翻译锚点文本并按规范清洗为小写连字符格式（如 #1-安装与准备 -> #1-install-and-prepare），用于 SSG 框架页内精准定位自愈。'
-                        })}
-                        ${window.renderSettingsItem('内链多语言路径自愈 (Auto-Localize Internal Links)', 'translation.governance.link_governance.auto_localize_internal_links', lg.auto_localize_internal_links ?? true, 'checkbox', {
-                            onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.auto_localize_internal_links', this.checked)",
-                            description: '开启后，对于类似 ./getting-started.html 的本站内部链接，系统将自动映射检测是否有对应语种的副本，并自动转换前缀为目标语言目录，防止跳转错位。'
-                        })}
-                        ${window.renderSettingsItem('外部超链接掩码模式', 'translation.governance.link_governance.external_links_mask_mode', lg.external_links_mask_mode || 'url_only', 'select', {
-                            items: [
-                                { value: 'url_only', text: '🔒 仅保护 URL (url_only)' },
-                                { value: 'all', text: '🔒 完整保护链接 (all)' },
-                                { value: 'none', text: '🔓 不执行保护 (none)' }
-                            ],
-                            onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.external_links_mask_mode', this.value)",
-                            description: '配置外部超链接在发送给大模型时的遮蔽脱敏策略。推荐使用 url_only，在防止大模型篡改 URL 的同时允许翻译链接文字。'
-                        })}
-                    </div>
+    return `
+        <div class="full-width">
+            <div class="settings-group" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 10px;">
+                <h4 style="color: var(--accent-secondary); margin-bottom: 5px; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace;">🔗 链接与锚点对准 (Link & Anchor Resolution)</h4>
+                ${window.renderSettingsItem('翻译链接标题 (Translate Link Labels)', 'translation.governance.link_governance.translate_labels', lg.translate_labels ?? true, 'checkbox', {
+        onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.translate_labels', this.checked)",
+        description: '是否自动将超链接 Markdown 文本的中文标题部分通过 AI 翻译为目标语种。'
+    })}
+                ${window.renderSettingsItem('翻译哈希锚点 (Translate Anchor Hashes)', 'translation.governance.link_governance.translate_anchors', lg.translate_anchors ?? true, 'checkbox', {
+        onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.translate_anchors', this.checked)",
+        description: '开启后，AI 将自动翻译锚点文本并按规范清洗为小写连字符格式（如 #1-安装与准备 -> #1-install-and-prepare），用于 SSG 框架页内精准定位自愈。'
+    })}
+                ${window.renderSettingsItem('内链多语言路径自愈 (Auto-Localize Internal Links)', 'translation.governance.link_governance.auto_localize_internal_links', lg.auto_localize_internal_links ?? true, 'checkbox', {
+        onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.auto_localize_internal_links', this.checked)",
+        description: '开启后，对于类似 ./getting-started.html 的本站内部链接，系统将自动映射检测是否有对应语种的副本，并自动转换前缀为目标语言目录，防止跳转错位。'
+    })}
+                ${window.renderSettingsItem('外部超链接掩码模式', 'translation.governance.link_governance.external_links_mask_mode', lg.external_links_mask_mode || 'url_only', 'select', {
+        items: [
+            { value: 'url_only', text: '🔒 仅保护 URL (url_only)' },
+            { value: 'all', text: '🔒 完整保护链接 (all)' },
+            { value: 'none', text: '🔓 不执行保护 (none)' }
+        ],
+        onchange: "window.syncTranslationGovernanceField('translation.governance.link_governance.external_links_mask_mode', this.value)",
+        description: '配置外部超链接在发送给大模型时的遮蔽脱敏策略。推荐使用 url_only，在防止大模型篡改 URL 的同时允许翻译链接文字。'
+    })}
+            </div>
 
                     <!-- B. 块行为流控卡片 -->
                     <div class="settings-group" style="margin-bottom: 2.5rem;">
@@ -197,12 +210,12 @@ window.renderLocalizationCategory = function () {
                         <p class="section-desc" style="margin-bottom: 15px;">通过对 Markdown 不同的切片语义块类型指定独立 Action，实现精准的行文级流控。</p>
                         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
                             ${Object.entries(blockTypes).map(([key, info]) => {
-                                const rule = blockRules[key] || {};
-                                const action = rule.action || (key === 'code' || key === 'html' || key === 'comment' ? 'bypass' : 'translate');
-                                const overrideVal = rule.prompt_override || '';
-                                const isChecked = !!overrideVal;
-                                const presets = blockPresets[key] || [];
-                                return `
+        const rule = blockRules[key] || {};
+        const action = rule.action || (key === 'code' || key === 'html' || key === 'comment' ? 'bypass' : 'translate');
+        const overrideVal = rule.prompt_override || '';
+        const isChecked = !!overrideVal;
+        const presets = blockPresets[key] || [];
+        return `
                                 <div class="glass-panel" style="padding: 16px 20px; border-radius: 8px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; gap: 15px;">
                                     <div style="flex: 1; min-width: 0;">
                                         <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-bright, #fff);">${info.name}</div>
@@ -254,29 +267,44 @@ window.renderLocalizationCategory = function () {
                                     </div>
                                 </div>
                                 `;
-                            }).join('')}
+    }).join('')}
                         </div>
                     </div>
+        </div>
+    `;
+};
 
-                    <!-- C. 专有名词与术语表 -->
-                    <div class="settings-group" style="margin-bottom: 2rem;">
-                        <h4 style="color: var(--accent-secondary); margin-bottom: 5px; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace;">🎯 术语与专有名词屏护对照表 (Glossary Protection)</h4>
-                        <p class="section-desc" style="margin-bottom: 15px;">在此添加专属于您品牌的专有名词（如系统名称、特色名词）。系统在 AI 翻译前将对其进行物理隔离屏护，大模型翻译还原后自动无损重填，确保 100% 不发生脑补 and 错译。</p>
+window.renderGlossaryCategory = function () {
+    const gov = window.settingsData?.translation?.governance || {};
+    const glossary = gov.glossary || {};
+    const targets = (window.settingsData?.i18n_settings?.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
+    const isLicensed = window.settingsData?._is_licensed || false;
+    const activeTargets = (!isLicensed && targets.length > 1) ? [targets[0]] : targets;
+    const availableLangs = window.availableLangs || [];
+    const activeTargetsForTabs = activeTargets;
+
+    if (!window.currentGlossaryLang) {
+        window.currentGlossaryLang = activeTargetsForTabs.length > 0 ? activeTargetsForTabs[0] : 'en';
+    }
+
+    return `
+        <div class="full-width">
+            <div class="settings-group" style="margin-bottom: 2rem;">
                         
                         <!-- 🚀 [V75.5] 语种 Tab 切换选择栏 -->
                         <div class="lang-tabs" style="display: flex; gap: 8px; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; flex-wrap: wrap;">
                             <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 6px;">编辑语种对照表:</span>
                             ${activeTargetsForTabs.length > 0 ? activeTargetsForTabs.map(code => {
-                                const isTabActive = code === window.currentGlossaryLang;
-                                const langObj = availableLangs.find(l => l.code === code) || { name: code.toUpperCase(), icon: '🌐' };
-                                return `
+        const isTabActive = code === window.currentGlossaryLang;
+        const langObj = availableLangs.find(l => l.code === code) || { name: code.toUpperCase(), icon: '🌐' };
+        return `
                                     <button type="button" class="mini-btn ${isTabActive ? 'active glow-btn' : ''}" 
                                             style="padding: 6px 12px; font-size: 0.72rem; border-radius: 20px; border: 1px solid ${isTabActive ? 'var(--accent-secondary)' : 'var(--glass-border)'}; cursor: pointer; height: 26px; line-height: 14px;"
                                             onclick="window.switchGlossaryLang('${code}')">
                                         ${langObj.icon} ${langObj.name}
                                     </button>
                                 `;
-                            }).join('') : `
+    }).join('') : `
                                 <button type="button" class="mini-btn active glow-btn" style="padding: 6px 12px; font-size: 0.72rem; border-radius: 20px; border: 1px solid var(--accent-secondary); cursor: default; height: 26px; line-height: 14px;">
                                     🇬🇧 English (EN)
                                 </button>
@@ -318,8 +346,7 @@ window.renderLocalizationCategory = function () {
                             <button class="primary-btn glow-btn" style="padding: 0 15px; height: 32px; font-size: 0.8rem; white-space: nowrap; border-radius: 6px;" onclick="window.addGlossaryItem()">＋ 添加保护词</button>
                         </div>
                     </div>
-                </div>
-            ` : ''}
+            </div>
         </div>
     `;
 };
@@ -332,23 +359,23 @@ window.renderGlossaryListHtml = () => {
     const gov = window.settingsData.translation?.governance || {};
     const glossary = gov.glossary || {};
     const glossaryForCurrentLang = glossary[window.currentGlossaryLang] || {};
-    
+
     let entries = Object.entries(glossaryForCurrentLang);
     const q = (window.currentGlossarySearchQuery || '').toLowerCase().trim();
     if (q) {
         entries = entries.filter(([src, dst]) => src.toLowerCase().includes(q) || dst.toLowerCase().includes(q));
     }
-    
+
     const itemsPerPage = 8;
     const totalEntries = entries.length;
     const totalPages = Math.ceil(totalEntries / itemsPerPage) || 1;
-    
+
     if (window.currentGlossaryPage > totalPages) window.currentGlossaryPage = totalPages;
     if (window.currentGlossaryPage < 1) window.currentGlossaryPage = 1;
-    
+
     const startIdx = (window.currentGlossaryPage - 1) * itemsPerPage;
     const paginatedEntries = entries.slice(startIdx, startIdx + itemsPerPage);
-    
+
     let listHtml = "";
     if (paginatedEntries.length === 0) {
         listHtml = `
@@ -373,7 +400,7 @@ window.renderGlossaryListHtml = () => {
             </div>
         `;
     }
-    
+
     let paginationHtml = "";
     if (totalPages > 1) {
         paginationHtml = `
@@ -393,7 +420,7 @@ window.renderGlossaryListHtml = () => {
             <div style="margin-top: 10px; font-size: 0.7rem; color: var(--text-dim); text-align: right;">共 <b>${totalEntries}</b> 条词项</div>
         `;
     }
-    
+
     return listHtml + paginationHtml;
 };
 
@@ -417,7 +444,7 @@ window.onGlossarySearch = (query) => {
 
 window.openGlossaryImportModal = () => {
     if (typeof Swal === 'undefined') return;
-    
+
     Swal.fire({
         title: '📄 批量导入保护术语',
         html: `
@@ -505,9 +532,9 @@ window.openGlossaryImportModal = () => {
                 Swal.showValidationMessage('❌ 导入文本域不能为空！');
                 return false;
             }
-            
+
             const mode = document.querySelector('input[name="glossary-import-mode"]:checked')?.value || 'merge';
-            
+
             const text = textarea.value.trim();
             const lines = text.split('\n');
             const newItems = {};
@@ -521,19 +548,19 @@ window.openGlossaryImportModal = () => {
                     }
                 }
             });
-            
+
             const count = Object.keys(newItems).length;
             if (count === 0) {
                 Swal.showValidationMessage('❌ 未解析到任何合法的原文=译文项！');
                 return false;
             }
-            
+
             // 安全环路与冲突校验
             const gov = window.settingsData.translation?.governance || {};
             const glossary = gov.glossary || {};
             const currentLang = window.currentGlossaryLang || 'en';
             const existingGlossary = (mode === 'replace') ? {} : (glossary[currentLang] || {});
-            
+
             // 1. 一词多译冲突校验 (Ambiguity Check)
             const conflicts = [];
             for (const [src, dst] of Object.entries(newItems)) {
@@ -545,7 +572,7 @@ window.openGlossaryImportModal = () => {
                 Swal.showValidationMessage(`⚠️ 冲突: ${conflicts.slice(0, 1).join('; ')}${conflicts.length > 1 ? ' ...' : ''}`);
                 return false;
             }
-            
+
             // 2. 环路依赖深度检测 (Cycle Detection)
             const tempMap = { ...existingGlossary, ...newItems };
             const hasCycle = (start) => {
@@ -558,7 +585,7 @@ window.openGlossaryImportModal = () => {
                 }
                 return false;
             };
-            
+
             const cycleKeys = [];
             for (const k of Object.keys(tempMap)) {
                 if (hasCycle(k)) {
@@ -569,7 +596,7 @@ window.openGlossaryImportModal = () => {
                 Swal.showValidationMessage(`❌ 环路依赖警告: 词项 【${cycleKeys.slice(0, 2).join(' / ')}】 构成了循环映射关系！`);
                 return false;
             }
-            
+
             return {
                 text: text,
                 mode: mode
@@ -590,11 +617,11 @@ window.openGlossaryImportModal = () => {
                     }
                 }
             });
-            
+
             const gov = window.settingsData.translation?.governance || {};
             const glossary = { ...(gov.glossary || {}) };
             const currentLang = window.currentGlossaryLang;
-            
+
             if (mode === 'replace') {
                 glossary[currentLang] = {};
             } else if (!glossary[currentLang]) {
@@ -602,19 +629,19 @@ window.openGlossaryImportModal = () => {
             } else {
                 glossary[currentLang] = { ...glossary[currentLang] };
             }
-            
+
             Object.assign(glossary[currentLang], newItems);
             const count = Object.keys(newItems).length;
-            
+
             if (typeof addAudit === 'function') {
                 addAudit(`📥 正在以【${mode === 'replace' ? '覆盖替换' : '增量合并'}】模式批量导入并保存 ${count} 个保护词条...`);
             }
-            
+
             await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
-            
+
             window.currentGlossaryPage = 1;
             window.refreshGlossaryUI();
-            
+
             Swal.fire({
                 title: '🎉 导入成功',
                 text: `成功以【${mode === 'replace' ? '覆盖替换' : '增量合并'}】模式导入并保存了 ${count} 条保护术语！`,
@@ -628,36 +655,125 @@ window.openGlossaryImportModal = () => {
     });
 };
 
-window.renderI18nRoutingCategory = () => {
-    window.switchI18nRoutingSubTab = (subTab, btn) => {
-        window.currentActiveSettingsSubCat = subTab;
-        const container = document.getElementById('i18n-routing-sub-tab-bar');
-        if (container) {
-            const btns = container.querySelectorAll('.sub-tab-btn');
-            btns.forEach(b => {
-                if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${subTab}'`)) {
-                    b.classList.add('active');
-                } else {
-                    b.classList.remove('active');
-                }
-            });
-        }
+window.renderLocalizationGovCategory = () => {
+    const locSubDescs = {
+        localization: '💡 设置文章主出版语种（中文/英文）以及多语言分发的目标语种阵列。',
+        block_rules: '💡 配置 Markdown 标题、段落、代码块的分流 Action，以及超链接与页内锚点自愈策略。',
+        glossary: '💡 维护品牌专有名词保护词库，AI 翻译前自动屏护，确保关键术语 100% 不被误译。',
+        translation_style: '💡 设定大模型翻译时的行文语气、专业风格基调与自定义 Prompt 微调。'
+    };
 
-            const panels = ['localization', 'translation_style', 'slug_settings', 'route_matrix'];
+    if (!window.switchLocalizationGovSubTab) {
+        window.switchLocalizationGovSubTab = (subTab, btn) => {
+            window.currentActiveSettingsSubCat = subTab;
+            const container = document.getElementById('loc-gov-sub-tab-bar');
+            if (container) {
+                const btns = container.querySelectorAll('.sub-tab-btn');
+                btns.forEach(b => {
+                    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${subTab}'`)) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+            }
+
+            const panels = ['localization', 'block_rules', 'glossary', 'translation_style'];
             panels.forEach(p => {
-                const el = document.getElementById(`i18n-panel-${p}`);
+                const el = document.getElementById(`loc-panel-${p}`);
                 if (el) el.style.display = (p === subTab) ? 'block' : 'none';
             });
 
-            // 渲染对应的子页面
-            const panelEl = document.getElementById(`i18n-panel-${subTab}`);
+            const descEl = document.getElementById('loc-gov-sub-tab-desc');
+            if (descEl) descEl.innerHTML = locSubDescs[subTab] || '';
+
+            const panelEl = document.getElementById(`loc-panel-${subTab}`);
             if (panelEl) {
                 let html = '';
                 if (subTab === 'localization' && typeof window.renderLocalizationCategory === 'function') {
                     html = window.renderLocalizationCategory();
+                } else if (subTab === 'block_rules' && typeof window.renderBlockRulesCategory === 'function') {
+                    html = window.renderBlockRulesCategory();
+                } else if (subTab === 'glossary' && typeof window.renderGlossaryCategory === 'function') {
+                    html = window.renderGlossaryCategory();
                 } else if (subTab === 'translation_style' && typeof window.renderTranslationStyleCategory === 'function') {
                     html = window.renderTranslationStyleCategory();
-                } else if (subTab === 'slug_settings' && typeof window.renderSlugSettingsCategory === 'function') {
+                }
+                panelEl.innerHTML = html;
+            }
+
+            if (typeof window.updateSaveButtonVisibility === 'function') {
+                window.updateSaveButtonVisibility(subTab);
+            }
+        };
+    }
+
+    const currentSub = window.currentActiveSettingsSubCat || 'localization';
+
+    setTimeout(() => {
+        const activeBtn = document.getElementById('loc-gov-sub-tab-bar')?.querySelector(`.sub-tab-btn[onclick*="${currentSub}"]`);
+        if (typeof window.switchLocalizationGovSubTab === 'function') {
+            window.switchLocalizationGovSubTab(currentSub, activeBtn);
+        }
+    }, 20);
+
+    return `
+        <div class="full-width">
+            <div class="section-header"><h3>🌍 语言翻译与内容治理 (Localization & Content Governance)</h3></div>
+            <p class="section-desc">管理多语言分发语种矩阵、设置 Markdown 块级翻译规则、保护专有名词词库与翻译风格。</p>
+            
+            <div class="security-sub-tab-bar" id="loc-gov-sub-tab-bar">
+                <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('localization', this)">🌍 语种矩阵</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'block_rules' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('block_rules', this)">🧱 块级规则</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'glossary' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('glossary', this)">📖 术语词库</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('translation_style', this)">🎭 翻译风格</button>
+            </div>
+            <div id="loc-gov-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+                ${locSubDescs[currentSub] || ''}
+            </div>
+
+            <div id="loc-panel-localization" style="display: ${currentSub === 'localization' ? 'block' : 'none'};"></div>
+            <div id="loc-panel-block_rules" style="display: ${currentSub === 'block_rules' ? 'block' : 'none'};"></div>
+            <div id="loc-panel-glossary" style="display: ${currentSub === 'glossary' ? 'block' : 'none'};"></div>
+            <div id="loc-panel-translation_style" style="display: ${currentSub === 'translation_style' ? 'block' : 'none'};"></div>
+        </div>
+    `;
+};
+
+window.renderDisseminationRoutingCategory = () => {
+    const routingSubDescs = {
+        slug_settings: '💡 设定物理文章发布后的 URL Slug 生成规则（AI 智能推导短网址或物理文件名清洗）。',
+        route_matrix: '💡 将本地特定文件夹路由至全新的逻辑出版路径，并指派专属前端模板与翻译风格。'
+    };
+
+    if (!window.switchDisseminationRoutingSubTab) {
+        window.switchDisseminationRoutingSubTab = (subTab, btn) => {
+            window.currentActiveSettingsSubCat = subTab;
+            const container = document.getElementById('dissemination-routing-sub-tab-bar');
+            if (container) {
+                const btns = container.querySelectorAll('.sub-tab-btn');
+                btns.forEach(b => {
+                    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${subTab}'`)) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+            }
+
+            const panels = ['slug_settings', 'route_matrix'];
+            panels.forEach(p => {
+                const el = document.getElementById(`routing-panel-${p}`);
+                if (el) el.style.display = (p === subTab) ? 'block' : 'none';
+            });
+
+            const descEl = document.getElementById('dissemination-routing-sub-tab-desc');
+            if (descEl) descEl.innerHTML = routingSubDescs[subTab] || '';
+
+            const panelEl = document.getElementById(`routing-panel-${subTab}`);
+            if (panelEl) {
+                let html = '';
+                if (subTab === 'slug_settings' && typeof window.renderSlugSettingsCategory === 'function') {
                     html = window.renderSlugSettingsCategory();
                 } else if (subTab === 'route_matrix' && typeof window.renderRouteMatrixCategory === 'function') {
                     html = window.renderRouteMatrixCategory();
@@ -668,58 +784,37 @@ window.renderI18nRoutingCategory = () => {
             if (typeof window.updateSaveButtonVisibility === 'function') {
                 window.updateSaveButtonVisibility(subTab);
             }
-
-            // 🚀 物理全量重置真正的 DOM 滚动容器 scrollTop = 0 (querySelectorAll 全量检索所有 tab-content-area)
-            try {
-                const tabAreas = document.querySelectorAll('.tab-content-area');
-                tabAreas.forEach(area => { if (area) area.scrollTop = 0; });
-
-                const scrollContainers = [
-                    document.querySelector('#view-settings'),
-                    document.querySelector('.view-content'),
-                    document.querySelector('#settings-form'),
-                    document.querySelector('.side-tabs-container'),
-                    document.querySelector('.main-content'),
-                    document.querySelector('.app-body'),
-                    document.documentElement,
-                    document.body
-                ];
-                scrollContainers.forEach(c => {
-                    if (c) {
-                        c.scrollTop = 0;
-                        if (typeof c.scrollTo === 'function') {
-                            c.scrollTo({ top: 0, behavior: 'auto' });
-                        }
-                    }
-                });
-            } catch(e) {}
         };
+    }
 
-    const currentSub = window.currentActiveSettingsSubCat || 'localization';
+    const currentSub = window.currentActiveSettingsSubCat || 'slug_settings';
 
     setTimeout(() => {
-        const activeBtn = document.getElementById('i18n-routing-sub-tab-bar')?.querySelector(`.sub-tab-btn[onclick*="${currentSub}"]`);
-        if (typeof window.switchI18nRoutingSubTab === 'function') {
-            window.switchI18nRoutingSubTab(currentSub, activeBtn);
+        const activeBtn = document.getElementById('dissemination-routing-sub-tab-bar')?.querySelector(`.sub-tab-btn[onclick*="${currentSub}"]`);
+        if (typeof window.switchDisseminationRoutingSubTab === 'function') {
+            window.switchDisseminationRoutingSubTab(currentSub, activeBtn);
         }
     }, 20);
 
     return `
         <div class="full-width">
-            <div class="section-header"><h3>🌍 多语翻译与分发路由 (Translation & Dissemination Routing)</h3></div>
-            <p class="section-desc">调节翻译语种映射与高级超链接治理，编排分发通道物理路由矩阵。</p>
+            <div class="section-header"><h3>🧭 分发路由与网址路径 (Dissemination & URL Routing)</h3></div>
+            <p class="section-desc">自定义文章短网址 (URL Slug) 命名规则，编排各频道目录的逻辑发布路径与模板映射。</p>
             
-            <div class="security-sub-tab-bar" id="i18n-routing-sub-tab-bar">
-                <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('localization', this)">🌍 翻译矩阵</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('translation_style', this)">🎭 翻译风格</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('slug_settings', this)">📝 网址路径</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchI18nRoutingSubTab('route_matrix', this)">🧭 频道映射</button>
+            <div class="security-sub-tab-bar" id="dissemination-routing-sub-tab-bar">
+                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('slug_settings', this)">📝 网址路径</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('route_matrix', this)">🧭 频道映射</button>
+            </div>
+            <div id="dissemination-routing-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+                ${routingSubDescs[currentSub] || ''}
             </div>
 
-            <div id="i18n-panel-localization" style="display: ${currentSub === 'localization' ? 'block' : 'none'};"></div>
-            <div id="i18n-panel-translation_style" style="display: ${currentSub === 'translation_style' ? 'block' : 'none'};"></div>
-            <div id="i18n-panel-slug_settings" style="display: ${currentSub === 'slug_settings' ? 'block' : 'none'};"></div>
-            <div id="i18n-panel-route_matrix" style="display: ${currentSub === 'route_matrix' ? 'block' : 'none'};"></div>
+            <div id="routing-panel-slug_settings" style="display: ${currentSub === 'slug_settings' ? 'block' : 'none'};"></div>
+            <div id="routing-panel-route_matrix" style="display: ${currentSub === 'route_matrix' ? 'block' : 'none'};"></div>
         </div>
     `;
 };
+
+// 🚀 向后兼容旧接口别名
+window.renderI18nRoutingCategory = window.renderLocalizationGovCategory;
+window.switchI18nRoutingSubTab = window.switchLocalizationGovSubTab;

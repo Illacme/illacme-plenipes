@@ -48,6 +48,7 @@ class TestTelemetryResilience(unittest.TestCase):
 
     def test_circular_buffer_truncation(self):
         """测试全局消息缓冲区在超过 1000 条时能够自动进行环形截断"""
+        ws_module.message_buffer.clear()
         # 注入 1050 条测试消息
         for i in range(1050):
             bus.emit("AUDIT_LOG", message=f"Loop Msg {i}", level="INFO")

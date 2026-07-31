@@ -19,14 +19,22 @@
     3.  `modes`（📋 出版模式）：调用 `window.renderModesCategory()`
 *   **交互实现**：必须提供 `window.switchLayoutSubTab(subTab, btn)` 并支持在初次加载/大类切换时延迟少许自动激活点亮子面板（避免首屏白屏）。
 
-## 3. 多语翻译与路由 (Translation & Dissemination Routing) 选项卡规则
-*   **组合渲染入口**：必须在 `localization.render.js` 结尾挂载 `window.renderI18nRoutingCategory`，接收 `i18n_routing` 路由。
+## 3. 语言翻译与内容治理 (Localization & Content Governance) 选项卡规则
+*   **组合渲染入口**：必须在 `localization.render.js` 结尾挂载 `window.renderLocalizationGovCategory`，接收 `localization_gov` 路由（兼容 `i18n_routing` 别名）。
 *   **二级子标签（4个）**：
-    1.  `localization`（🌍 翻译矩阵）：调用 `window.renderLocalizationCategory()`
-    2.  `translation_style`（🎭 翻译风格）：调用 `window.renderTranslationStyleCategory()`
-    3.  `slug_settings`（📝 网址路径）：调用 `window.renderSlugSettingsCategory()`
-    4.  `route_matrix`（🧭 频道映射）：调用 `window.renderRouteMatrixCategory()`
-*   **交互实现**：必须提供 `window.switchI18nRoutingSubTab(subTab, btn)` 并支持自动点亮回填。
+    1.  `localization`（🌍 语种矩阵）：调用 `window.renderLocalizationCategory()`
+    2.  `block_rules`（🧱 块级规则）：调用 `window.renderBlockRulesCategory()`
+    3.  `glossary`（📖 术语词库）：调用 `window.renderGlossaryCategory()`
+    4.  `translation_style`（🎭 翻译风格）：调用 `window.renderTranslationStyleCategory()`
+*   **交互实现**：必须提供 `window.switchLocalizationGovSubTab(subTab, btn)` 并支持自动点亮回填。
+
+## 3.1 分发路由与网址路径 (Dissemination & URL Routing) 选项卡规则
+*   **组合渲染入口**：必须在 `localization.render.js` 结尾挂载 `window.renderDisseminationRoutingCategory`，接收 `dissemination_routing` 路由。
+*   **二级子标签（2个）**：
+    1.  `slug_settings`（📝 网址路径）：调用 `window.renderSlugSettingsCategory()`
+    2.  `route_matrix`（🧭 频道映射）：调用 `window.renderRouteMatrixCategory()`
+*   **交互实现**：必须提供 `window.switchDisseminationRoutingSubTab(subTab, btn)` 并支持自动点亮回填。
+
 
 ## 4. 后台非交互式子进程安全调用规则 (Non-Interactive Subprocess Invocation Rules)
 *   **适用场景**：所有由后端 Python 脚本、Celery 队列或守护进程触发的 `subprocess`、`os.system` 等外部命令行调用。
@@ -78,5 +86,11 @@
     3. **零掩饰与实事求是红线**：面对功能缺漏或体验割裂，严禁通过强行迎合、顺杆爬或打太极来掩饰失误；实现即实现，缺失即缺失。
     4. **物理凭证闭环红线**：任何代码修改完成后，必须强制运行 `node -c` 及 pytest 测试套件，只有在 exit code 归零且输出 Pass 凭证后方可声明完成。
 
-
-
+## 12. 治理中心局部平滑滚动物理铁律 (Governance Partial Scroll Iron Rules)
+*   **适用场景**：所有涉及治理中心 (`#view-settings`) 面板中 `.tab-content-area` 局部平滑滚动的前端代码变更。
+*   **知识库文档**：完整死穴根因分析与标准滚动模板详见 `knowledge/governance_scroll_iron_rules/artifacts/scroll_iron_rules.md`。
+*   **物理铁律**：
+    1.  **禁止使用 `scrollIntoView()`**：治理中心的右侧内容区是 `overflow-y: auto` 的局部容器 (`#view-settings .tab-content-area`)，不是 window 级滚动。`scrollIntoView` 在 DOM `innerHTML` 重写后的 Stacking Context 中会被浏览器静默吞掉。必须使用 `scrollContainer.scrollTo({ top: ..., behavior: 'smooth' })` 配合 `getBoundingClientRect()` 像素差计算。
+    2.  **滚动延迟必须 ≥ 300ms**：`renderSettingsCategory()` 会触发级联的二次异步 DOM 重写（内部有 20ms `setTimeout` 调用 `switchLocalizationGovSubTab` 再次 `innerHTML`），在此之前执行的任何滚动指令都会因 `scrollTop` 归零而被吞掉。
+    3.  **容器选择器必须带 `#view-settings` 前缀**：页面上存在多个 `.tab-content-area`，不带前缀的选择器可能误匹配到隐藏面板的容器。
+    4.  **修改 `window.xxx` 全局函数后必须全文件去重**：禁止在同一文件中出现同名全局函数的多次赋值定义，后定义会静默覆盖前面包含滚动逻辑的版本。修改后必须运行 `grep -rn 'window\.函数名\s*=' web/dashboard/js/` 确认仅有 1 个赋值定义。

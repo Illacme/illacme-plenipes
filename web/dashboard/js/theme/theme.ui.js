@@ -13,9 +13,6 @@ window.ThemeUI = {
         return `
             <div class="full-width">
                 <div class="settings-group">
-                    <h4>🎨 装帧画廊</h4>
-                    <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 15px; opacity: 0.85;">选用符合您站点风格的数字出版视觉装帧主题，系统将自动对正前端物理路径与资产依赖。</p>
-                    
                     <div class="card-gallery">
                     ${themes.length > 0 ? themes.map(t => {
                         const isActive = activeTheme === t.id;

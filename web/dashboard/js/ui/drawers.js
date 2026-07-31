@@ -66,7 +66,7 @@ window.getUIDrawersHTML = () => {
                         <button class="hub-btn warning-hub-btn" style="flex: 1; display: none;" onclick="triggerReDispatch('all', true)" title="无视已有的翻译缓存，强制调用大模型重新翻译此文档">
                             <span class="btn-icon">🧹</span> 强制重译
                         </button>
-                        <button class="hub-btn danger-hub-btn" style="flex: 1;" onclick="confirmPhysicalDelete()">
+                        <button type="button" class="hub-btn danger-hub-btn" style="flex: 1;" onclick="event.preventDefault(); event.stopPropagation(); confirmPhysicalDelete()">
                             <span class="btn-icon">🗑️</span> 物理销毁
                         </button>
                     </div>

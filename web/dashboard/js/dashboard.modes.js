@@ -60,7 +60,6 @@ window.renderModesCategory = () => {
 
     return `
         <div class="full-width">
-            <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.85;">选择您的出版内容加工深度，指定全局检索策略与社交元数据协议。</p>
             <div class="glass-panel" style="padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02); margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
                 <h5 style="color: #00f2ff; margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🧭 如何选择适合您的出版模式？</h5>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 0.78rem; line-height: 1.5; color: var(--text-normal);">
@@ -232,6 +231,12 @@ window.checkAIReadiness = () => {
 };
 
 window.renderLayoutCategory = () => {
+    const layoutSubDescs = {
+        imprints: '💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。',
+        themes: '💡 为当前出版品牌选用匹配的现代前端视觉装帧主题。',
+        modes: '💡 调节加工深度与出版模式（基础出版 / 全球出版 / 智能母语增强）。'
+    };
+
     if (!window.switchLayoutSubTab) {
         window.switchLayoutSubTab = (subTab, btn) => {
             window.currentActiveSettingsSubCat = subTab;
@@ -251,6 +256,9 @@ window.renderLayoutCategory = () => {
                 const el = document.getElementById(`layout-panel-${p}`);
                 if (el) el.style.display = (p === subTab) ? 'block' : 'none';
             });
+
+            const descEl = document.getElementById('layout-sub-tab-desc');
+            if (descEl) descEl.innerHTML = layoutSubDescs[subTab] || '';
 
             // 渲染对应的子页面
             const panelEl = document.getElementById(`layout-panel-${subTab}`);
@@ -284,13 +292,16 @@ window.renderLayoutCategory = () => {
 
     return `
         <div class="full-width">
-            <div class="section-header"><h3>🎨 版图装帧与模式 (Layout & Publishing Modes)</h3></div>
-            <p class="section-desc">确立物理版图标识、编排渲染装帧主题并调节出版物加工深度策略。</p>
+            <div class="section-header"><h3>🎨 品牌外观与出版模式 (Layout & Publishing Modes)</h3></div>
+            <p class="section-desc">切换与管理出版品牌、选用数字出版视觉装帧主题，并调节内容的加工编译模式。</p>
             
             <div class="security-sub-tab-bar" id="layout-sub-tab-bar">
                 <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)">🏷️ 版图管理</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)">🎭 装帧主题</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)">📋 出版模式</button>
+            </div>
+            <div id="layout-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+                ${layoutSubDescs[currentSub] || ''}
             </div>
 
             <div id="layout-panel-imprints" style="display: ${currentSub === 'imprints' ? 'block' : 'none'};"></div>

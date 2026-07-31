@@ -83,19 +83,15 @@ window.deleteImprint = async (id) => {
     // 🛡️ [安全底线拦截] 前端双重保护：严禁删除活动版图与默认版图，防范系统配置丢失雪崩
     const activeImprint = window.settingsData?._active_imprint || 'default';
     if (id === 'default' || id === activeImprint) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
+        if (window.Swal) {
+            await window.Swal.fire({
                 title: '🛡️ 安全拦截',
-                html: `<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">` +
-                      `无法删除当前<b>正处于激活状态</b>（或默认）的版图：<b style="color:var(--accent-secondary)">${id}</b>。<br><br>` +
-                      `💡 <b>自愈建议：</b><br>` +
-                      `请先在左上角切换至其他可用版图，然后再对本版图执行注销或物理抹除。` +
-                      `</div>`,
+                html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">无法物理抹除当前<b>处于激活状态</b>（或默认）的出版版图：<b style="color:var(--accent-secondary, #00f2fe);">${id}</b>。<br><br>💡 <b>建议：</b>请先在左上角或下方卡片中切换至其他可用版图后再行抹除。</div>`,
                 icon: 'error',
-                confirmButtonText: '了解',
-                background: 'var(--card-bg)',
-                color: 'var(--text-bright)',
-                confirmButtonColor: 'var(--accent-primary)'
+                confirmButtonText: '我知道了',
+                confirmButtonColor: 'var(--accent-primary, #7c3aed)',
+                background: 'var(--bg-solid, #0f111a)',
+                color: 'var(--text-bright, #ffffff)'
             });
         } else {
             alert(`🛡️ [安全拦截]\n无法删除当前处于激活状态（或默认）的版图 [${id}]！\n请先切换至其他可用版图后再行操作。`);
@@ -108,7 +104,24 @@ window.deleteImprint = async (id) => {
         if (!proceed) return;
     }
 
-    if (!confirm(`🚨 危险操作！\n确认要物理抹除出版版图 [${id}] 吗？`)) return;
+    // 🛡️ [物理安全防线 2] SweetAlert2 霸权防闪退确认框
+    if (window.Swal) {
+        const res = await window.Swal.fire({
+            title: '🚨 确认物理抹除出版版图',
+            html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">您确定要彻底物理抹除出版版图 <b style="color:#ff4444;">[${id}]</b> 吗？<br><br>⚠️ <b>后果提示</b>：该版图下的独立样式、配置及专有产物元数据将被销毁，此物理操作不可撤销！</div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '🔥 确认物理抹除',
+            cancelButtonText: '取消',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            background: 'var(--bg-solid, #0f111a)',
+            color: 'var(--text-bright, #ffffff)'
+        });
+        if (!res.isConfirmed) return;
+    } else {
+        if (!confirm(`🚨 危险操作！\n确认要物理抹除出版版图 [${id}] 吗？`)) return;
+    }
 
     const res = await apiFetch('/api/imprints/delete', {
         method: 'POST',
@@ -117,8 +130,8 @@ window.deleteImprint = async (id) => {
     });
 
     if (res && res.success) {
-        addAudit(`🗑️ 版图已撤销: ${id}`, "warning");
-        loadSettings('imprints');
+        if (typeof addAudit === 'function') addAudit(`🗑️ 版图已物理抹除: ${id}`, "warning");
+        if (typeof window.loadSettings === 'function') window.loadSettings('imprints');
     }
 };
 

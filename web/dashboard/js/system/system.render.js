@@ -9,6 +9,13 @@
     function renderGeneralCategory() {
         const data = window.settingsData;
 
+        const generalSubDescs = {
+            identity: '💡 配置全站品牌展示名称、副标题描述、全局 LOGO 与浏览器 Favicon 图标。',
+            compliance: '💡 配置主站点线上网址、默认作者署名与出版知识产权许可协议。',
+            storage: '💡 管理本地笔记文库路径、编辑器语法解析协议与跨版图段落缓存淘汰策略。',
+            engine: '💡 查看系统底座版本，配置日志输出级别、全局代理、网络超时与遥测采集容量上限。'
+        };
+
         if (!window.switchGeneralSubTab) {
             window.switchGeneralSubTab = (subTab, btn) => {
                 window.currentActiveGeneralSubTab = subTab;
@@ -29,6 +36,9 @@
                     if (el) el.style.display = (p === subTab) ? 'block' : 'none';
                 });
 
+                const descEl = document.getElementById('gen-sub-tab-desc');
+                if (descEl) descEl.innerHTML = generalSubDescs[subTab] || '';
+
                 if (typeof window.updateSaveButtonVisibility === 'function') {
                     window.updateSaveButtonVisibility(subTab);
                 }
@@ -39,8 +49,8 @@
 
         return `
             <div class="full-width">
-                <div class="section-header"><h3>ℹ️ 基础配置与运维 (General Configuration)</h3></div>
-                <p class="section-desc">管理当前出版版图的核心身份标识、出版合规元数据与存储基座配置。</p>
+                <div class="section-header"><h3>⚙️ 基础运维 (General Configuration & Operations)</h3></div>
+                <p class="section-desc">管理您的站点品牌标识、出版合规声明、缓存存储策略与 Markdown 编译引擎基座。</p>
                 
                 <div class="security-sub-tab-bar" id="general-sub-tab-bar">
                     <button type="button" class="sub-tab-btn ${activeSub === 'identity' ? 'active' : ''}" onclick="window.switchGeneralSubTab('identity', this)">🏷️ 身份标识</button>
@@ -48,36 +58,60 @@
                     <button type="button" class="sub-tab-btn ${activeSub === 'storage' ? 'active' : ''}" onclick="window.switchGeneralSubTab('storage', this)">📂 存储缓存</button>
                     <button type="button" class="sub-tab-btn ${activeSub === 'engine' ? 'active' : ''}" onclick="window.switchGeneralSubTab('engine', this)">⚙️ 系统基座</button>
                 </div>
+                <div id="gen-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+                    ${generalSubDescs[activeSub] || ''}
+                </div>
 
                 <div id="gen-panel-identity" style="display: ${activeSub === 'identity' ? 'block' : 'none'};">
                     <div class="settings-group">
-                        <h4>🏷️ 品牌与站点身份 (Imprint & Site Identity)</h4>
                         <div class="settings-grid">
-                            ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '')}
-                            ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '')}
-                            ${renderSettingsItem('全局站点名称', 'site_name', data.site_name || '', 'text', {placeholder: '未填则自愈 fallback 为版图展示名称'})}
-                            ${renderSettingsItem('全局站点描述', 'site_description', data.site_description || '', 'text', {placeholder: '未填则自愈 fallback 为版图描述'})}
-                            ${renderSettingsItem('全局品牌 Logo 路径', 'logo_path', data.logo_path || '', 'text', {placeholder: '例如: /static/logo.png'})}
-                            ${renderSettingsItem('全局 Favicon 图标路径', 'favicon_path', data.favicon_path || '', 'text', {placeholder: '例如: /static/favicon.ico'})}
+                            ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '', 'text', {
+                                description: '您的品牌/期刊显示名称（如：极客技术周刊、产品设计随笔）。'
+                            })}
+                            ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '', 'text', {
+                                description: '品牌核心定位一句话介绍，将在主页与面板中展示。'
+                            })}
+                            ${renderSettingsItem('全局站点名称', 'site_name', data.site_name || '', 'text', {
+                                placeholder: '未填则自愈 fallback 为版图展示名称',
+                                description: '部署到线上网站的页面主标题。若留空则自动跟随品牌名称。'
+                            })}
+                            ${renderSettingsItem('全局站点描述', 'site_description', data.site_description || '', 'text', {
+                                placeholder: '未填则自愈 fallback 为版图描述',
+                                description: '主站点的全局摘要，用于首页 Subtitle 与搜索引擎 SEO 检索描述。'
+                            })}
+                            ${renderSettingsItem('全局品牌 Logo 路径', 'logo_path', data.logo_path || '', 'text', {
+                                placeholder: '例如: /static/logo.png',
+                                description: '全站 Header 展示的品牌 LOGO 图标相对路径。'
+                            })}
+                            ${renderSettingsItem('全局 Favicon 图标路径', 'favicon_path', data.favicon_path || '', 'text', {
+                                placeholder: '例如: /static/favicon.ico',
+                                description: '浏览器标签页上显示的网站小图标 (Favicon) 路径。'
+                            })}
                         </div>
                     </div>
                 </div>
 
                 <div id="gen-panel-compliance" style="display: ${activeSub === 'compliance' ? 'block' : 'none'};">
                     <div class="settings-group">
-                        <h4>📖 出版合规与元数据 (Publishing Compliance & Metadata)</h4>
                         <div class="settings-grid">
-                            ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '')}
-                            ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '')}
-                            ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved')}
-                            ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0')}
+                            ${renderSettingsItem('主站点 URL', 'site_url', data.site_url || '', 'text', {
+                                description: '主站点的真实线上访问网址（如 https://blog.example.com），用于生成规范 Canonical URL。'
+                            })}
+                            ${renderSettingsItem('默认作者署名', 'frontmatter_defaults.author', data.frontmatter_defaults?.author || '', 'text', {
+                                description: '出版物文章的默认作者署名。如原稿 Frontmatter 未指定作者，将自动使用此项。'
+                            })}
+                            ${renderSettingsItem('全域版权声明', 'frontmatter_defaults.copyright', data.frontmatter_defaults?.copyright || '© 2024 All Rights Reserved', 'text', {
+                                description: '全站页脚及各文章底部默认附带的版权归属声明。'
+                            })}
+                            ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0', 'text', {
+                                description: '内容出版知识产权许可证（如 CC BY-NC-SA 4.0 署名-非商业性使用-相同方式共享）。'
+                            })}
                         </div>
                     </div>
                 </div>
 
                 <div id="gen-panel-storage" style="display: ${activeSub === 'storage' ? 'block' : 'none'};">
                     <div class="settings-group">
-                        <h4>📂 数据存储与原稿适配 (Storage & Dialect Adaptation)</h4>
                         <div class="settings-grid">
                             ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'static', {
                                 description: '🔒 物理主权路径在版图确立后不可变。如需迁移资产领土，请新建版图。'
@@ -141,7 +175,7 @@
                             <div style="display: flex; flex-direction: column; justify-content: center; gap: 10px;">
                                 <div style="display: flex; gap: 10px;">
                                     <button type="button" class="primary-btn glow-btn" onclick="window.manualMigrateCache()" style="padding: 6px 14px; font-size: 0.75rem; height: 32px; line-height: 14px;">🚚 物理分级迁移</button>
-                                    <button type="button" class="danger-btn" onclick="window.clearBlockCacheAll()" style="padding: 6px 14px; font-size: 0.75rem; height: 32px; line-height: 14px;">🗑️ 清空所有缓存</button>
+                                    <button type="button" class="danger-btn" onclick="event.preventDefault(); event.stopPropagation(); window.clearBlockCacheAll()" style="padding: 6px 14px; font-size: 0.75rem; height: 32px; line-height: 14px;">🗑️ 清空所有缓存</button>
                                 </div>
                             </div>
                         </div>
@@ -150,7 +184,6 @@
 
                 <div id="gen-panel-engine" style="display: ${activeSub === 'engine' ? 'block' : 'none'};">
                     <div class="settings-group">
-                        <h4>⚙️ 系统基座与遥测运维 (Engine Base & Telemetry)</h4>
                         <div class="settings-grid">
                             ${renderSettingsItem('系统底座版本', 'version', data.version || 'V24.0', 'text', {readonly: true})}
                             ${renderSettingsItem('系统日志级别', 'system.log_level', data.system?.log_level || 'INFO', 'select', {
@@ -229,6 +262,13 @@
             }
         }, 50);
 
+        const secSubDescs = {
+            policy: '💡 配置后端 API 验证令牌、全站访问日志开关、CPU 警戒红线与本地大模型内存削峰控制。',
+            topology: '💡 可视化展示全局主主权配置、品牌版图覆盖与环境变量的层级继承树结构。',
+            logs: '💡 实时查阅后端守护进程与控制中心的关键操作与变更安全审计日志。',
+            lessons: '💡 查阅 AI 引擎自动修正格式异常与超链接失效的历史自愈教训库。'
+        };
+
         if (!window.switchSecuritySubTab) {
             window.switchSecuritySubTab = (subTab, btn) => {
                 const container = document.getElementById('security-sub-tab-bar');
@@ -248,6 +288,9 @@
                     if (el) el.style.display = (p === subTab) ? 'block' : 'none';
                 });
 
+                const descEl = document.getElementById('sec-sub-tab-desc');
+                if (descEl) descEl.innerHTML = secSubDescs[subTab] || '';
+
                 if (typeof window.updateSaveButtonVisibility === 'function') {
                     window.updateSaveButtonVisibility(subTab);
                 }
@@ -265,8 +308,8 @@
                     flex-wrap: wrap;
                 }
                 .sub-tab-btn {
-                    background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.08);
+                    background: var(--white-03, rgba(255,255,255,0.03));
+                    border: 1px solid var(--white-08, rgba(255,255,255,0.08));
                     color: var(--text-dim, #888);
                     padding: 6px 14px;
                     border-radius: 4px;
@@ -276,20 +319,20 @@
                     outline: none;
                 }
                 .sub-tab-btn:hover {
-                    background: rgba(255,255,255,0.08);
+                    background: var(--white-08, rgba(255,255,255,0.08));
                     color: var(--text-bright, #fff);
                 }
                 .sub-tab-btn.active {
-                    background: rgba(0, 242, 255, 0.1);
-                    border-color: rgba(0, 242, 255, 0.3);
-                    color: #00f2ff;
-                    box-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
+                    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.1);
+                    border-color: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.3);
+                    color: var(--accent-secondary, #00f2ff);
+                    box-shadow: 0 0 8px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.15);
                 }
             </style>
 
             <div class="full-width">
-                <div class="section-header"><h3>🛡️ 安全审计 (Security & Compliance)</h3></div>
-                <p class="section-desc">配置系统安全底座并查看物理合规与 AI 校验教训日志。</p>
+                <div class="section-header"><h3>🛡️ 安全审计 (Security Audit & Governance)</h3></div>
+                <p class="section-desc">查看系统安全访问策略、主权配置继承关系、守护进程操作账本与 AI 自愈教训。</p>
                 
                 <div class="security-sub-tab-bar" id="security-sub-tab-bar">
                     <button type="button" class="sub-tab-btn active" onclick="window.switchSecuritySubTab('policy', this)">🛡️ 安全策略</button>
@@ -297,22 +340,33 @@
                     <button type="button" class="sub-tab-btn" onclick="window.switchSecuritySubTab('logs', this)">📜 操作账本</button>
                     <button type="button" class="sub-tab-btn" onclick="window.switchSecuritySubTab('lessons', this)">🧠 教训自愈</button>
                 </div>
+                <div id="sec-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+                    ${secSubDescs['policy']}
+                </div>
 
                 <div id="sec-panel-policy">
                     <div class="settings-grid">
-                        ${renderSettingsItem('API 访问令牌 (Token)', 'system.api_token', sys.api_token || '', 'password', {placeholder: '保持为空则不启用认证'})}
+                        ${renderSettingsItem('API 访问令牌 (Token)', 'system.api_token', sys.api_token || '', 'password', {
+                            placeholder: '保持为空则不启用认证',
+                            description: '后端 Web API 网关身份校验 Token，保持留空表示无密码访问。'
+                        })}
                         ${renderSettingsItem('日志输出级别', 'system.log_level', sys.log_level || 'INFO', 'select', {
                             items: [
                                 {value: 'DEBUG', text: 'DEBUG (全量输出)'},
                                 {value: 'INFO', text: 'INFO (常规运行)'},
                                 {value: 'WARNING', text: 'WARNING (仅告警)'},
                                 {value: 'ERROR', text: 'ERROR (仅异常)'}
-                            ]
+                            ],
+                            description: '控制服务器后端在终端与日志文件中输出的详细程度。'
                         })}
-                        ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox')}
-                        ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold, 'number')}
+                        ${renderSettingsItem('启用资产安全审计', 'system.enable_asset_audit', sys.enable_asset_audit ?? true, 'checkbox', {
+                            description: '开启后，系统在编译原稿时会自动审计和监控静态资产与外部链接的合法性。'
+                        })}
+                        ${renderSettingsItem('资源负载红线 (%)', 'governance.resource_guard.cpu_threshold', rg.cpu_threshold ?? 85, 'number', {
+                            description: 'CPU 负载警戒红线（%）。当宿主机 CPU 占用率持续高于此阈值时，自动平滑降低并发算力。'
+                        })}
                         ${renderSettingsItem('本地算力内存削峰警戒线 (%)', 'governance.resource_guard.compute_ram_threshold', rg.compute_ram_threshold ?? 50.0, 'number', {
-                            description: '当本地大模型（如 Ollama / LM Studio 等）常驻物理内存占用宿主机总内存比例超过此阈值时，自动降低 AI 并发以防宿主崩溃。16GB 内存设备推荐设为 75% | 32GB 及以上机型推荐保持 50%。'
+                            description: '当本地大模型（如 Ollama / LM Studio 等）常驻物理内存占用宿主机总内存比例超过此阈值时，自动降低 AI 并发以防宿主崩溃。'
                         })}
                     </div>
                 </div>

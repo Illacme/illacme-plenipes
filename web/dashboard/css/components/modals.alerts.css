@@ -1,4 +1,13 @@
 /* ⚠️ [V75.0] Illacme Plenipes Modals Alerts - Sovereign Shard */
+
+/* 🚀 [Z-INDEX 霸权置顶] 确保所有 SweetAlert 确认弹窗 100% 置顶在系统最前端，绝不被任何 glass-panel 或 sidebar 遮挡 */
+.swal2-container {
+    z-index: 9999999 !important;
+}
+.swal2-popup {
+    z-index: 10000000 !important;
+}
+
 /* ⚠️ 警告框深度优化 */
 .error-text-box {
     margin-top: 10px;

@@ -374,7 +374,7 @@
                 <td style="padding: 8px; color:var(--text-dim); font-size:0.75rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${err}">${err}</td>
                 <td style="padding: 8px; text-align: right;">
                     <button class="primary-btn" onclick="window.retrySyndicationTask('${t.rel_path}', '${t.target_id}')" style="padding:1px 5px; font-size:0.65rem; height:20px; cursor:pointer;">重试</button>
-                    <button class="danger-btn" onclick="window.deleteSyndicationTask('${t.rel_path}', '${t.target_id}')" style="padding:1px 5px; font-size:0.65rem; height:20px; cursor:pointer; background:rgba(239,68,68,0.1); border:1px solid #ef4444; color:#fca5a5; border-radius:4px; margin-left:4px;">删除</button>
+                    <button type="button" class="danger-btn" onclick="event.preventDefault(); event.stopPropagation(); window.deleteSyndicationTask('${t.rel_path}', '${t.target_id}')" style="padding:1px 5px; font-size:0.65rem; height:20px; cursor:pointer; background:rgba(239,68,68,0.1); border:1px solid #ef4444; color:#fca5a5; border-radius:4px; margin-left:4px;">删除</button>
                 </td></tr>`;
         }).join('');
     };

@@ -83,6 +83,7 @@
     --color-white: #ffffff;
     --color-black: #000000;
     --text-bright: #ffffff;
+    --text-normal: #cbd5e1;
     --text-dim: hsl(215, 20%, 65%);
     --text-slate-bright: #f8fafc;
     --text-light-gray: #cccccc;
@@ -215,6 +216,7 @@
     --color-white: #000000;
     --color-black: #ffffff;
     --text-bright: #0f172a;
+    --text-normal: #334155;
     --text-dim: #334155;
     --text-slate-bright: #1e293b;
     --text-light-gray: #475569;

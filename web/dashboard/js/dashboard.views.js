@@ -54,7 +54,7 @@ window.loadViewData = (viewId, subId) => {
     if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter(subId);
     if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
     if (viewId === 'settings' && typeof loadSettings === 'function') {
-        const target = subId || 'general';
+        const target = subId || window.currentActiveSettingsSubCat || 'layout';
         console.log(`🛰️ [导航对正] 定位设置子页: ${target}`);
         loadSettings(target);
         if (typeof loadPlugins === 'function') loadPlugins();

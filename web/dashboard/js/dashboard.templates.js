@@ -214,10 +214,11 @@ window.viewTemplates = {
             <div class="view-content" style="padding-top: 25px;">
                 <div class="side-tabs-container">
                     <aside class="side-tabs">
-                        <div class="tab-item s-tab active" data-cat="general"><span class="tab-icon">⚙️</span> 基础配置与运维</div>
-                        <div class="tab-item s-tab" data-cat="layout"><span class="tab-icon">🎨</span> 版图装帧与模式</div>
-                        <div class="tab-item s-tab" data-cat="i18n_routing"><span class="tab-icon">🌍</span> 多语翻译与路由</div>
-                        <div class="tab-item s-tab" data-cat="security_audit"><span class="tab-icon">🛡️</span> 安全审计与治理</div>
+                        <div class="tab-item s-tab active" data-cat="layout"><span class="tab-icon">🎨</span> 品牌外观</div>
+                        <div class="tab-item s-tab" data-cat="localization_gov"><span class="tab-icon">🌍</span> 多语翻译</div>
+                        <div class="tab-item s-tab" data-cat="dissemination_routing"><span class="tab-icon">🧭</span> 网址分发</div>
+                        <div class="tab-item s-tab" data-cat="general"><span class="tab-icon">⚙️</span> 基础运维</div>
+                        <div class="tab-item s-tab" data-cat="security_audit"><span class="tab-icon">🛡️</span> 系统安全</div>
                     </aside>
                     <section class="tab-content-area">
                         <div id="settings-form" class="settings-grid">

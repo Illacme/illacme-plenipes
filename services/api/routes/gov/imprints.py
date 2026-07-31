@@ -36,12 +36,18 @@ def get_imprints_stats():
         
         active_theme = "default"
         config_path = os.path.join(actual_imp_path, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+        vault_exists = True
+        vault_path = ""
         if os.path.exists(config_path):
             try:
                 import yaml
                 with open(config_path, 'r', encoding='utf-8') as f:
                     c = yaml.safe_load(f) or {}
                     active_theme = c.get("active_theme", "default")
+                    vault_path = c.get("vault_root", "")
+                    if vault_path:
+                        abs_v = os.path.abspath(os.path.expanduser(vault_path))
+                        vault_exists = os.path.exists(abs_v)
             except: pass
 
         from core.config.config import METADATA_DIR
@@ -59,10 +65,15 @@ def get_imprints_stats():
             
         health = sentry.check_isolation_health(actual_imp_path, theme=active_theme)
         
+        # 🛡️ 物理真理对正：只有当工具链健全且原稿文库路径在物理磁盘真实存在时，健康状态才为 True
+        is_healthy = bool(health.get("has_local_toolchain", True) and vault_exists)
+
         stats[imp_id] = {
             "doc_count": doc_count,
-            "isolation": health["isolation_level"],
-            "healthy": health["has_local_toolchain"]
+            "isolation": health.get("isolation_level", "NORMAL"),
+            "healthy": is_healthy,
+            "vault_exists": vault_exists,
+            "vault_path": vault_path
         }
     return stats
 
@@ -101,7 +112,16 @@ async def switch_imprint(req: dict):
     imprint_id = req.get("imprint_id")
     if not imprint_id: return {"error": "Missing imprint_id"}
     
-    success = deep_reload_imprint(imprint_id)
+    try:
+        success = deep_reload_imprint(imprint_id)
+    except (ValueError, SystemExit) as e:
+        msg = str(e)
+        if not msg or msg == "1":
+            msg = f"版图 [{imprint_id}] 预检或路径校验未通过"
+        return {"success": False, "error": f"版图预检未通过: {msg}"}
+    except Exception as e:
+        return {"success": False, "error": f"引擎深度重载异常: {e}"}
+
     if success:
         im.switch(imprint_id)
         if engine and hasattr(engine, "ledger") and engine.ledger:

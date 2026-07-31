@@ -115,9 +115,9 @@ window.updateStylePreview = (styleKey) => {
         if (descEl) {
             descEl.innerHTML = `<span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #000); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">自定义</span> <p style="margin: 0; font-weight: 500;">正在使用专属于该品牌的个性化翻译 Prompt 模板。</p>`;
         }
-        
+
         const prompts = window.settingsData.translation?.prompts || {};
-        
+
         // 移出只读限制，展现可编辑样式，并将内存中的值回填到输入框中
         Object.entries(promptMapping).forEach(([domId, propName]) => {
             const ta = document.getElementById(domId);
@@ -130,7 +130,7 @@ window.updateStylePreview = (styleKey) => {
         });
         return;
     }
-    
+
     // 更新描述卡片并触发平滑发光淡入动画
     if (descEl) {
         descEl.innerHTML = `
@@ -138,7 +138,7 @@ window.updateStylePreview = (styleKey) => {
             <p style="margin: 0; font-weight: 500;">${style.desc}</p>
         `;
     }
-    
+
     // 动态回填 8 个 Prompt 预览文本框，并设置为只读且淡化样式，同时更新内存中的 settingsData
     Object.entries(promptMapping).forEach(([domId, propName]) => {
         const ta = document.getElementById(domId);
@@ -160,7 +160,7 @@ window.checkStyleMatch = () => {
     if (!selector) return;
 
     let matchKey = 'custom';
-    
+
     const vals = {};
     Object.entries(promptMapping).forEach(([domId, propName]) => {
         const ta = document.getElementById(domId);
@@ -236,15 +236,28 @@ window.syncI18nEnabled = async (val) => {
             if (typeof renderSettingsCategory === 'function') {
                 renderSettingsCategory('localization');
             }
-            // 🚀 [V57.5] 开启多语言翻译矩阵时，平滑滚动使“多语言翻译矩阵开关模块”对准视口上方露出
-            if (val) {
-                setTimeout(() => {
-                    const targetEl = document.getElementById('i18n-enable-control-group');
-                    if (targetEl) {
-                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 100);
-            }
+            // 🚀 [V57.5] 物理防线：必须在所有级联 DOM 重塑完成后（renderSettingsCategory → 20ms switchLocalizationGovSubTab → panelEl.innerHTML）再驱动滚动
+            // 级联链路：renderSettingsCategory() → formEl.innerHTML → 20ms setTimeout → switchLocalizationGovSubTab → renderLocalizationCategory → panelEl.innerHTML
+            // 因此必须等待 >120ms 后再执行滚动，否则 DOM 元素会被二次 innerHTML 销毁重建导致 scrollTop 归零
+            setTimeout(() => {
+                const scrollContainer = document.querySelector('#view-settings .tab-content-area') ||
+                                        document.querySelector('.view-panel.active .tab-content-area') ||
+                                        document.querySelector('.tab-content-area');
+                const targetEl = document.getElementById('i18n-enable-control-group');
+                console.log('[Scroll Debug] container:', scrollContainer, 'target:', targetEl);
+                if (scrollContainer && targetEl) {
+                    const containerRect = scrollContainer.getBoundingClientRect();
+                    const targetRect = targetEl.getBoundingClientRect();
+                    const offset = targetRect.top - containerRect.top;
+                    console.log('[Scroll Debug] scrollTop:', scrollContainer.scrollTop, 'offset:', offset, 'newTop:', scrollContainer.scrollTop + offset - 15);
+                    scrollContainer.scrollTo({
+                        top: scrollContainer.scrollTop + offset - 15,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    console.warn('[Scroll Debug] ❌ 未找到滚动容器或目标元素');
+                }
+            }, 300);
         }
     } else {
         const errMsg = res ? (res.error || res.message) : '物理链路超时';
@@ -347,7 +360,7 @@ window.addGlossaryItem = async () => {
     const currentLang = window.currentGlossaryLang || 'en';
     const gov = window.settingsData.translation?.governance || {};
     const glossary = { ...(gov.glossary || {}) };
-    
+
     if (!glossary[currentLang]) {
         glossary[currentLang] = {};
     } else {
@@ -356,7 +369,7 @@ window.addGlossaryItem = async () => {
     glossary[currentLang][src] = dst;
 
     await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
-    
+
     srcInput.value = '';
     dstInput.value = '';
 };
@@ -366,7 +379,7 @@ window.removeGlossaryItem = async (src) => {
     const currentLang = window.currentGlossaryLang || 'en';
     const gov = window.settingsData.translation?.governance || {};
     const glossary = { ...(gov.glossary || {}) };
-    
+
     if (glossary[currentLang]) {
         glossary[currentLang] = { ...glossary[currentLang] };
         delete glossary[currentLang][src];
@@ -389,13 +402,13 @@ window.switchGlossaryLang = (code) => {
 window.handleBlockActionChange = async (key, action) => {
     const updates = {};
     updates[`translation.governance.block_rules.${key}.action`] = action;
-    
+
     // 如果不是需要 AI 翻译的动作，则自动把该块的 prompt_override 清空
     if (action !== 'translate' && action !== 'parse_comments_only') {
         updates[`translation.governance.block_rules.${key}.prompt_override`] = null;
         window.updateConfigField(`translation.governance.block_rules.${key}.prompt_override`, null);
     }
-    
+
     if (typeof addAudit === 'function') addAudit(`🛡️ 正在同步块级分流动作: ${key} -> ${action}...`);
     window.updateConfigField(`translation.governance.block_rules.${key}.action`, action);
 
@@ -424,9 +437,9 @@ window.handleBlockActionChange = async (key, action) => {
 window.handleOverrideToggle = async (key, checked) => {
     const drawer = document.getElementById(`override-drawer-${key}`);
     const textarea = document.getElementById(`textarea-override-${key}`);
-    
+
     if (drawer) drawer.style.display = checked ? 'block' : 'none';
-    
+
     if (!checked) {
         if (textarea) textarea.value = '';
         await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, null);
@@ -454,12 +467,12 @@ window.handleOverrideChange = async (key, value) => {
     const val = value.trim();
     const checkbox = document.getElementById(`checkbox-override-${key}`);
     const drawer = document.getElementById(`override-drawer-${key}`);
-    
+
     if (val && checkbox && !checkbox.checked) {
         checkbox.checked = true;
         if (drawer) drawer.style.display = 'block';
     }
-    
+
     await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, val || null);
 };
 
@@ -468,11 +481,11 @@ window.applyOverridePreset = async (key, presetVal) => {
     const textarea = document.getElementById(`textarea-override-${key}`);
     const checkbox = document.getElementById(`checkbox-override-${key}`);
     const drawer = document.getElementById(`override-drawer-${key}`);
-    
+
     if (textarea) textarea.value = presetVal;
     if (checkbox) checkbox.checked = true;
     if (drawer) drawer.style.display = 'block';
-    
+
     await window.syncTranslationGovernanceField(`translation.governance.block_rules.${key}.prompt_override`, presetVal);
 };
 
@@ -495,19 +508,19 @@ window.clearGlossaryCurrentLang = async () => {
             cancelButton: 'primary-btn'
         }
     });
-    
+
     if (result.isConfirmed) {
         const gov = window.settingsData.translation?.governance || {};
         const glossary = { ...(gov.glossary || {}) };
         glossary[currentLang] = {};
-        
+
         if (typeof addAudit === 'function') addAudit(`🧹 正在清空 [${currentLang.toUpperCase()}] 的防护术语表...`);
         await window.syncTranslationGovernanceField('translation.governance.glossary', glossary);
         window.currentGlossaryPage = 1;
         if (typeof window.refreshGlossaryUI === 'function') {
             window.refreshGlossaryUI();
         }
-        
+
         Swal.fire({
             title: '🎉 已清空',
             text: `当前语种 [${currentLang.toUpperCase()}] 的保护词表已成功清空！`,
@@ -520,36 +533,6 @@ window.clearGlossaryCurrentLang = async () => {
     }
 };
 
-// 🚀 [V75.7] 物理多语言总开关同步：自动协同更新 publishing_mode 消除模式死锁
-window.syncI18nEnabled = async (checked) => {
-    if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
-        const proceed = await window.checkSettingsDirtyAndConfirm();
-        if (!proceed) {
-            if (typeof renderSettingsCategory === 'function') renderSettingsCategory('localization');
-            return;
-        }
-    }
 
-    const targetMode = checked ? 'global' : 'enhanced';
-    if (typeof addAudit === 'function') addAudit(`🌐 正在${checked ? '激活' : '关闭'}多语言翻译矩阵 (出版模式协同切换为: ${targetMode.toUpperCase()})...`);
-
-    const res = await apiFetch('/api/config/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            'i18n_settings.enabled': checked,
-            'governance.publishing_mode': targetMode
-        })
-    });
-
-    if (res && res.status === 'success') {
-        if (typeof addAudit === 'function') addAudit(`✅ 多语言翻译矩阵与出版模式同步更新成功。`, "success");
-        const freshConfig = await apiFetch('/api/system/config?level=merged');
-        if (freshConfig) {
-            window.settingsData = freshConfig;
-            if (typeof renderSettingsCategory === 'function') renderSettingsCategory('localization');
-        }
-    }
-};
 
 

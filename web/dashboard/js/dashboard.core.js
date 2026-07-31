@@ -237,7 +237,7 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                 <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px; margin-bottom: 16px; backdrop-filter: blur(10px);">
                     <div style="margin-bottom: 10px; display: flex; align-items: center;">
                         <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">⚙️ 出版模式:</span>
-                        <span style="color: #fff; font-weight: 500;">${modeText}</span>
+                        <span style="color: var(--text-bright, #ffffff); font-weight: 500;">${modeText}</span>
                     </div>
                     <div style="margin-bottom: 10px; display: flex; align-items: center;">
                         <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">🛡️ 预检状态:</span>
@@ -245,11 +245,11 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     </div>
                     <div style="display: flex; align-items: flex-start;">
                         <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">📡 渠道矩阵:</span>
-                        <span style="color: #fff; font-weight: 500; flex: 1;">一键推送至已开启的托管平台与内容分发渠道</span>
+                        <span style="color: var(--text-bright, #ffffff); font-weight: 500; flex: 1;">一键推送至已开启的托管平台与内容分发渠道</span>
                     </div>
                 </div>
                 ${warningDetailsHtml}
-                <p style="text-align: center; font-weight: bold; margin-top: 15px; color: #fff; font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
+                <p style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--text-bright, #ffffff); font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
             </div>
         `;
 

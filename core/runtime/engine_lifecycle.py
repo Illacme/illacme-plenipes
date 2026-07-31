@@ -43,8 +43,22 @@ def deep_reload_imprint(imprint_id: str):
         except: pass
 
     try:
-        # 🚀 [V52.15] 抢先主权对正 (物理消杀)：在加载配置前，直接清空 CONFIG_LOCAL_NAME
+        # 1. 优先校验并实例化新版图配置与引擎（物理原子性：预检失败则绝不更新 config.local.yaml）
+        from core.config.config import ConfigManager
+        config_path = _GLOBAL_ARGS.config
+        manager = ConfigManager(config_path, imprint_id=imprint_id)
+        config = manager.config
+        
+        # 2. 调用工厂组装新引擎
+        from core.runtime.engine_factory import EngineFactory
+        new_engine = EngineFactory.create_engine(config, args=_GLOBAL_ARGS, imprint_id=imprint_id)
+        new_engine.config_manager = manager
 
+        if not new_engine:
+            tlog.error("🛑 [重载失败] 引擎工厂组装失败。")
+            return False
+
+        # 3. 预检与组装全成功后，安全更新 Local 缓存中的激活版图
         try:
             local_path = CONFIG_LOCAL_NAME
             existing_local = {}
@@ -69,7 +83,6 @@ def deep_reload_imprint(imprint_id: str):
                         tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
 
             # 🚀 [V65.1] 物理主权对正：仅安全更新活跃品牌标识 active_imprint。
-            # system.data_root 等特定品牌属性应全部交由品牌层或引擎预检程序动态挂载，无需在本地环境层冗余写入。
             existing_local["active_imprint"] = imprint_id
             if "system" in existing_local and isinstance(existing_local["system"], dict):
                 if "data_root" in existing_local["system"]:
@@ -81,26 +94,9 @@ def deep_reload_imprint(imprint_id: str):
             existing_local = promote_config_keys(existing_local)
             with open(local_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(existing_local, f, allow_unicode=True)
-            tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活版图为 '{imprint_id}'，保持了环境层的高度精简与纯净。")
+            tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活版图为 '{imprint_id}'。")
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
-
-        # 1. 加载基础配置
-        # 1. 加载基础配置
-        from core.config.config import ConfigManager
-        config_path = _GLOBAL_ARGS.config
-        manager = ConfigManager(config_path, imprint_id=imprint_id)
-        config = manager.config
-        
-        # 2. 调用工厂重新组装引擎
-        from core.runtime.engine_factory import EngineFactory
-        new_engine = EngineFactory.create_engine(config, args=_GLOBAL_ARGS, imprint_id=imprint_id)
-        new_engine.config_manager = manager
-
-        
-        if not new_engine:
-            tlog.error("🛑 [重载失败] 引擎工厂组装失败。")
-            return False
             
         # 3. 注册新引擎 (自动清理旧哨兵)
         set_global_engine(new_engine)
@@ -125,4 +121,4 @@ def deep_reload_imprint(imprint_id: str):
         
     except Exception as e:
         tlog.error(f"🛑 [迁移异常] 致命错误: {e}")
-        return False
+        raise e

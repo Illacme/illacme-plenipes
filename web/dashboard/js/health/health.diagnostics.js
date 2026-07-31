@@ -42,16 +42,16 @@ window.triggerSystemGC = async () => {
     }
 };
 
-window.copyVaultPath = async () => {
-    const el = document.getElementById('sidebar-vault-display');
-    if (!el) return;
-    
-    let rawPath = el.title || el.innerText;
-    if (rawPath.includes('点击') || rawPath.includes('物理文稿')) {
-        rawPath = el.innerText;
+window.copyVaultPath = async (overridePath) => {
+    let rawPath = overridePath;
+    if (!rawPath || typeof rawPath !== 'string') {
+        const el = document.getElementById('sidebar-vault-display');
+        if (el) {
+            rawPath = el.dataset.fullPath || el.innerText;
+        }
     }
     
-    if (!rawPath || rawPath === 'LOADING...' || rawPath === '-') return;
+    if (!rawPath || rawPath === 'LOADING...' || rawPath === '-' || rawPath === '默认全局文库') return;
     
     let success = false;
     
@@ -65,27 +65,29 @@ window.copyVaultPath = async () => {
         }
     }
     
-    // 2. 经典 Fallback 兜底复制方案
+    // 2. 降级走 execCommand
     if (!success) {
-        const textArea = document.createElement("textarea");
-        textArea.value = rawPath;
-        textArea.style.top = "0";
-        textArea.style.left = "0";
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
         try {
+            const textArea = document.createElement("textarea");
+            textArea.value = rawPath;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
             success = document.execCommand('copy');
-        } catch (err) {
-            console.error('Fallback copy command failed:', err);
+            document.body.removeChild(textArea);
+        } catch (e) {
+            console.error("Fallback execCommand failed:", e);
         }
-        document.body.removeChild(textArea);
     }
     
     if (success) {
-        addAudit("📋 已成功复制物理文库绝对路径到剪贴板！", "success");
+        if (typeof showNotification === 'function') {
+            showNotification(`📋 物理原稿文库路径已复制到剪贴板！`, 'success');
+        } else if (typeof addAudit === 'function') {
+            addAudit(`📋 已复制文库路径: ${rawPath}`, "success");
+        }
         Swal.fire({
             toast: true,
             position: 'top',

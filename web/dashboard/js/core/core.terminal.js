@@ -43,12 +43,31 @@ window.apiFetch = async (url, options = {}) => {
 window.addAudit = (message, type = 'info') => {
     const feed = document.getElementById('audit-feed');
     
-    const iconMap = {
+    const defaultIconMap = {
         'info': '⚡',
         'success': '✅',
         'error': '🚨',
         'warning': '⚠️'
     };
+
+    const typeLabelMap = {
+        'info': 'INFO',
+        'success': 'SUCCESS',
+        'error': 'ERROR',
+        'warning': 'WARN'
+    };
+
+    // 🚀 [V76.6] 全局主权规范化：统一标定 4 大核心状态图标 (✅/🚨/⚠️/⚡)，物理剥离所有杂乱的散落 Emoji
+    const displayIcon = defaultIconMap[type] || '⚡';
+    const typeLabel = typeLabelMap[type] || String(type).toUpperCase();
+    let cleanMessage = message || '';
+
+    if (typeof cleanMessage === 'string') {
+        const emojiRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0DF}\u{1F100}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{E000}-\u{F8FF}\u{2B50}\u{2B55}\u{231A}-\u{231B}\u{23E9}-\u{23EC}\u{23F0}\u{23F3}]|[\uD800-\uDBFF][\uDC00-\uDFFF])\s*/u;
+        while (emojiRegex.test(cleanMessage)) {
+            cleanMessage = cleanMessage.replace(emojiRegex, '');
+        }
+    }
 
     // 🌟 物理自愈防线：即便 feed 容器被主权裁撤，也安全绕过 DOM 注入，确保向下执行状态栏刷新
     if (feed) {
@@ -58,10 +77,13 @@ window.addAudit = (message, type = 'info') => {
         
         item.innerHTML = `
             <div class="audit-header">
-                <span class="audit-icon">${iconMap[type] || '📡'}</span>
+                <div class="audit-meta-left">
+                    <span class="audit-icon">${displayIcon}</span>
+                    <span class="audit-badge ${type}">${typeLabel}</span>
+                </div>
                 <span class="audit-time">${now}</span>
             </div>
-            <div class="audit-msg">${message}</div>
+            <div class="audit-msg">${cleanMessage}</div>
         `;
         
         feed.prepend(item);

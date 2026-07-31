@@ -91,11 +91,13 @@ class ConfigManager:
             return Configuration.model_validate(self._raw_config)
         except ValidationError as e:
             tlog.critical("🛑 [配置审计失败] 发现严重的物理红线冲突，引擎拒绝点火！")
+            err_msg_list = []
             for error in e.errors():
                 loc = " -> ".join([str(x) for x in error['loc']])
                 msg = error['msg']
                 tlog.error(f"   └── 🚩 路径: {loc} | 原因: {msg}")
-            sys.exit(1)
+                err_msg_list.append(f"[{loc}]: {msg}")
+            raise ValueError(f"配置模型校验失败 ({'; '.join(err_msg_list)})。")
 
     def _post_process(self):
         from .post_processor import post_process

@@ -7,8 +7,12 @@
 
 const getParentCat = (cat) => {
     if (['imprints', 'themes', 'modes'].includes(cat)) return 'layout';
-    if (['localization', 'translation_style', 'slug_settings', 'route_matrix'].includes(cat)) return 'i18n_routing';
+    if (['localization', 'block_rules', 'glossary', 'translation_style'].includes(cat)) return 'localization_gov';
+    if (['slug_settings', 'route_matrix'].includes(cat)) return 'dissemination_routing';
     if (['security', 'guardrails'].includes(cat)) return 'security_audit';
+    if (cat === 'i18n_routing') return 'localization_gov';
+    // 父级分类名自身传入时直接返回自身，防止 fall through 到 general
+    if (['layout', 'localization_gov', 'dissemination_routing', 'security_audit', 'general'].includes(cat)) return cat;
     return 'general';
 };
 
@@ -23,7 +27,7 @@ window.switchToSettingsTab = (catName) => {
 };
 
 // 1. 系统设置加载器
-window.loadSettings = async (targetCat = 'general') => {
+window.loadSettings = async (targetCat = 'layout') => {
     // 🚀 [V55.21] 物理状态先行：在异步加载前先对正侧边栏标签状态
     const parentCat = getParentCat(targetCat);
     document.querySelectorAll('.s-tab').forEach(tab => {
@@ -38,7 +42,9 @@ window.loadSettings = async (targetCat = 'general') => {
             // 点击大 Tab 时，默认跳转到对应的第一个子页面
             let target = tab.dataset.cat;
             if (target === 'layout') target = 'imprints';
-            else if (target === 'i18n_routing') target = 'localization';
+            else if (target === 'general') target = 'identity';
+            else if (target === 'localization_gov' || target === 'i18n_routing') target = 'localization';
+            else if (target === 'dissemination_routing') target = 'slug_settings';
             else if (target === 'security_audit') target = 'security';
             
             renderSettingsCategory(target);
@@ -66,6 +72,7 @@ window.loadSettings = async (targetCat = 'general') => {
     window.settingsData._is_licensed = res._is_licensed || false;
     window.settingsData._theme_slots = (slotsRes && slotsRes.slots) ? slotsRes.slots : {};
     window.settingsData._directories = (vaultRes && vaultRes.directories) ? vaultRes.directories : [];
+    window.settingsData._imprint_stats = window.settingsData._imprint_stats || {};
 
     const stats = await apiFetch('/api/imprints/stats');
     window.settingsData._imprint_stats = stats || {};
@@ -96,11 +103,8 @@ window.loadSettings = async (targetCat = 'general') => {
 window.updateSettingsTabsStatus = () => {
     const isEnabled = window.settingsData?.i18n_settings?.enabled !== false;
     document.querySelectorAll('.s-tab').forEach(tab => {
-        if (tab.dataset.cat === 'localization') {
-            tab.innerHTML = isEnabled ? '<span class="tab-icon">🌍</span> 翻译阵列' : '<span class="tab-icon" style="opacity: 0.5;">🌍</span> <span style="opacity: 0.7;">翻译阵列 (已关闭)</span>';
-        }
-        if (tab.dataset.cat === 'translation_style') {
-            tab.innerHTML = isEnabled ? '<span class="tab-icon">🎭</span> 翻译风格' : '<span class="tab-icon" style="opacity: 0.5;">🔒</span> <span style="color: var(--text-dim); text-decoration: line-through; opacity: 0.65;">翻译风格</span>';
+        if (tab.dataset.cat === 'localization_gov') {
+            tab.innerHTML = isEnabled ? '<span class="tab-icon">🌍</span> 多语翻译' : '<span class="tab-icon" style="opacity: 0.5;">🌍</span> <span style="opacity: 0.7;">多语翻译 (已关闭)</span>';
         }
     });
 };
@@ -111,21 +115,26 @@ window.renderSettingsCategory = (cat) => {
 
     let actualCat = cat;
     if (cat === 'layout') actualCat = 'imprints';
-    else if (cat === 'i18n_routing') actualCat = 'localization';
+    else if (cat === 'general' || ['identity', 'compliance', 'storage', 'engine'].includes(cat)) actualCat = 'general';
+    else if (cat === 'localization_gov' || cat === 'i18n_routing') actualCat = 'localization';
+    else if (cat === 'dissemination_routing') actualCat = 'slug_settings';
     else if (cat === 'security_audit') actualCat = 'security';
 
     window.currentActiveSettingsSubCat = actualCat;
 
     const layoutCats = ['imprints', 'themes', 'modes'];
-    const i18nCats = ['localization', 'translation_style', 'slug_settings', 'route_matrix'];
+    const locGovCats = ['localization', 'block_rules', 'glossary', 'translation_style'];
+    const routingCats = ['slug_settings', 'route_matrix'];
 
     let html = '';
     if (actualCat === 'general') {
         html = typeof renderGeneralCategory === 'function' ? renderGeneralCategory() : '<div class="empty-state">模块加载中...</div>';
     } else if (layoutCats.includes(actualCat)) {
         html = typeof renderLayoutCategory === 'function' ? renderLayoutCategory() : '<div class="empty-state">模块加载中...</div>';
-    } else if (i18nCats.includes(actualCat)) {
-        html = typeof renderI18nRoutingCategory === 'function' ? renderI18nRoutingCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (locGovCats.includes(actualCat)) {
+        html = typeof renderLocalizationGovCategory === 'function' ? renderLocalizationGovCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (routingCats.includes(actualCat)) {
+        html = typeof renderDisseminationRoutingCategory === 'function' ? renderDisseminationRoutingCategory() : '<div class="empty-state">模块加载中...</div>';
     } else if (actualCat === 'security') {
         html = typeof renderSecurityCategory === 'function' ? renderSecurityCategory() : '<div class="empty-state">模块加载中...</div>';
     } else if (actualCat === 'guardrails') {
@@ -139,20 +148,24 @@ window.renderSettingsCategory = (cat) => {
 
     formEl.innerHTML = html;
 
-    // 动态在渲染后激活点亮二级 Sub-Tab 对应的面板（同安全审计、基础信息机制全面对齐）
+    // 动态在渲染后激活点亮二级 Sub-Tab 对应的面板
     if (layoutCats.includes(actualCat)) {
         const btn = document.querySelector(`#layout-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
         if (typeof window.switchLayoutSubTab === 'function') {
             window.switchLayoutSubTab(actualCat, btn);
         }
-    } else if (i18nCats.includes(actualCat)) {
-        const btn = document.querySelector(`#i18n-routing-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
-        if (typeof window.switchI18nRoutingSubTab === 'function') {
-            window.switchI18nRoutingSubTab(actualCat, btn);
+    } else if (locGovCats.includes(actualCat)) {
+        const btn = document.querySelector(`#loc-gov-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
+        if (typeof window.switchLocalizationGovSubTab === 'function') {
+            window.switchLocalizationGovSubTab(actualCat, btn);
+        }
+    } else if (routingCats.includes(actualCat)) {
+        const btn = document.querySelector(`#dissemination-routing-sub-tab-bar .sub-tab-btn[onclick*="${actualCat}"]`);
+        if (typeof window.switchDisseminationRoutingSubTab === 'function') {
+            window.switchDisseminationRoutingSubTab(actualCat, btn);
         }
     } else if (actualCat === 'general') {
         let activeSub = window.currentActiveGeneralSubTab || 'identity';
-        if (activeSub === 'compliance') activeSub = 'identity';
         const btn = document.querySelector(`#general-sub-tab-bar .sub-tab-btn[onclick*="${activeSub}"]`);
         if (typeof window.switchGeneralSubTab === 'function') {
             window.switchGeneralSubTab(activeSub, btn);

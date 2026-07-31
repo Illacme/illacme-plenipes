@@ -238,7 +238,7 @@ window.viewTemplates.tower = `
                             <span>📡 多渠道分发死信与重试队列 (SYNDICATION DEAD-LETTER QUEUE)</span>
                             <div style="display: flex; gap: 10px;">
                                 <button class="primary-btn glow-btn" id="btn-retry-all-synd" onclick="window.retryAllSyndicationTasks()" style="padding: 4px 10px; font-size: 0.7rem; height: 24px; line-height: 12px; background: rgba(99,102,241,0.2); border: 1px solid var(--accent-primary);">🔄 一键重试所有失败</button>
-                                <button class="danger-btn" id="btn-clear-failed-synd" onclick="window.clearFailedSyndicationTasks()" style="padding: 4px 10px; font-size: 0.7rem; height: 24px; line-height: 12px; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5; border-radius: 4px; cursor: pointer;">🗑️ 一键清空失败</button>
+                                <button type="button" class="danger-btn" id="btn-clear-failed-synd" onclick="event.preventDefault(); event.stopPropagation(); window.clearFailedSyndicationTasks()" style="padding: 4px 10px; font-size: 0.7rem; height: 24px; line-height: 12px; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5; border-radius: 4px; cursor: pointer;">🗑️ 一键清空失败</button>
                             </div>
                         </div>
                         <div class="table-container" style="overflow-x: auto; width: 100%; border-radius: 8px; border: 1px solid var(--glass-border);">

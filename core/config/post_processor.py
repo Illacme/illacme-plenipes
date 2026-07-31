@@ -106,17 +106,24 @@ def smart_normalize_i18n(manager) -> None:
     # 源语种解析
     source_data = manager._raw_config.get('i18n_settings', {}).get('source')
     if isinstance(source_data, str):
-        iso = LanguageHub.resolve_to_iso(source_data)
-        name = LanguageHub.resolve_to_native_name(iso)
-        prompt_l = LanguageHub.resolve_to_name(iso)
-        i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
-    elif isinstance(source_data, dict):
-        iso = LanguageHub.resolve_to_iso(source_data.get('lang_code', 'auto'))
-        name = source_data.get('name')
-        if not name or name == LanguageHub.resolve_to_name(iso) or name.lower() == iso.lower():
+        if source_data.lower() == 'auto':
+            i18n.source = I18nSource(prompt_lang='Auto', lang_code='auto', name='自动探测')
+        else:
+            iso = LanguageHub.resolve_to_iso(source_data)
             name = LanguageHub.resolve_to_native_name(iso)
-        prompt_l = source_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
-        i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
+            prompt_l = LanguageHub.resolve_to_name(iso)
+            i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
+    elif isinstance(source_data, dict):
+        raw_code = source_data.get('lang_code', 'auto')
+        if raw_code and raw_code.lower() == 'auto':
+            i18n.source = I18nSource(prompt_lang='Auto', lang_code='auto', name='自动探测')
+        else:
+            iso = LanguageHub.resolve_to_iso(raw_code)
+            name = source_data.get('name')
+            if not name or name == LanguageHub.resolve_to_name(iso) or name.lower() == iso.lower():
+                name = LanguageHub.resolve_to_native_name(iso)
+            prompt_l = source_data.get('prompt_lang') or LanguageHub.resolve_to_name(iso)
+            i18n.source = I18nSource(prompt_lang=prompt_l, lang_code=iso, name=name)
 
     # 目标语种解析
     targets_raw = manager._raw_config.get('i18n_settings', {}).get('targets', [])
@@ -152,13 +159,19 @@ def smart_normalize_i18n(manager) -> None:
 def validate_paths(manager) -> None:
     """🚀 [V52.10] 物理路径校验：仅在主权已确立的情况下强制拦截"""
     raw_vault = manager.config.vault_root
+    imp_id = getattr(manager, 'imprint_id', None) or manager.config.active_imprint or '当前版图'
+    if not raw_vault:
+        if manager.config.active_imprint:
+            raise ValueError(f"版图 [{imp_id}] 未指定原稿文库路径 (vault_root)。")
+        return
+
     abs_vault = os.path.abspath(os.path.expanduser(raw_vault))
 
     if not os.path.exists(abs_vault):
         # 🛡️ 逻辑对正：如果尚未激活任何品牌（主权真空），则允许路径缺失以便启动引导向导
         if manager.config.active_imprint:
             tlog.error(f"🛑 物理红线校验失败: 库根路径不存在 -> {abs_vault}")
-            sys.exit(1)
+            raise ValueError(f"原稿文库路径不存在: '{abs_vault}'。修正建议：请在本地文件系统中创建或恢复对应的物理文件夹。")
         else:
             tlog.debug(f"ℹ️ [主权真空] 探测到预设路径不存在，暂缓校验以等待引导向导: {abs_vault}")
 

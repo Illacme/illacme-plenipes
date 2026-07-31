@@ -55,9 +55,9 @@
             },
             {
                 id: 'subtab_identity',
-                title: '🏷️ 基础配置 ➔ 身份标识 (Imprint & Site Identity)',
+                title: '🏷️ 基础运维 ➔ 身份标识 (Imprint & Site Identity)',
                 icon: '🏷️',
-                shortcut: 'Tab 1-1',
+                shortcut: 'Tab 2-1',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('identity');
@@ -67,9 +67,9 @@
             },
             {
                 id: 'subtab_compliance',
-                title: '📖 基础配置 ➔ 出版合规 (Publishing Compliance & Metadata)',
+                title: '📖 基础运维 ➔ 出版合规 (Publishing Compliance & Metadata)',
                 icon: '📖',
-                shortcut: 'Tab 1-2',
+                shortcut: 'Tab 2-2',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('compliance');
@@ -79,9 +79,9 @@
             },
             {
                 id: 'subtab_storage',
-                title: '📂 基础配置 ➔ 存储缓存 (Storage & LRU Janitor GC)',
+                title: '📂 基础运维 ➔ 存储缓存 (Storage & LRU Janitor GC)',
                 icon: '📂',
-                shortcut: 'Tab 1-3',
+                shortcut: 'Tab 2-3',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('storage');
@@ -91,9 +91,9 @@
             },
             {
                 id: 'subtab_engine',
-                title: '⚙️ 基础配置 ➔ 系统基座 (Engine Base & Logs)',
+                title: '⚙️ 基础运维 ➔ 系统基座 (Engine Base & Logs)',
                 icon: '⚙️',
-                shortcut: 'Tab 1-4',
+                shortcut: 'Tab 2-4',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('engine');
@@ -103,9 +103,9 @@
             },
             {
                 id: 'subtab_imprints',
-                title: '🏷️ 版图装帧 ➔ 版图管理 (Imprints Management)',
+                title: '🏷️ 品牌外观 ➔ 版图管理 (Imprints Management)',
                 icon: '🏷️',
-                shortcut: 'Tab 2-1',
+                shortcut: 'Tab 1-1',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
                         window.switchLayoutSubTab('imprints');
@@ -115,9 +115,9 @@
             },
             {
                 id: 'subtab_themes',
-                title: '🎭 版图装帧 ➔ 装帧主题 (Themes Gallery)',
+                title: '🎭 品牌外观 ➔ 装帧主题 (Themes Gallery)',
                 icon: '🎭',
-                shortcut: 'Tab 2-2',
+                shortcut: 'Tab 1-2',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
                         window.switchLayoutSubTab('themes');
@@ -127,9 +127,9 @@
             },
             {
                 id: 'subtab_modes',
-                title: '📋 版图装帧 ➔ 出版模式 (Publishing Modes)',
+                title: '📋 品牌外观 ➔ 出版模式 (Publishing Modes)',
                 icon: '📋',
-                shortcut: 'Tab 2-3',
+                shortcut: 'Tab 1-3',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
                         window.switchLayoutSubTab('modes');

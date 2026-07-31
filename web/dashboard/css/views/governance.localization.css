@@ -328,3 +328,100 @@
     cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
+
+/* 🌞 [Light Mode] 亮色主题视觉高对比度无瑕适配加固 */
+[data-theme="light"] .slug-dir-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .slug-dir-card:hover {
+    border-color: var(--accent-secondary) !important;
+    box-shadow: 0 4px 12px rgba(5, 105, 199, 0.08) !important;
+}
+
+[data-theme="light"] .slug-dir-card.active {
+    background: rgba(5, 105, 199, 0.05) !important;
+    border-color: var(--accent-secondary) !important;
+}
+
+[data-theme="light"] select, 
+[data-theme="light"] input[type="text"] {
+    background: #ffffff !important;
+    color: var(--text-bright) !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .slug-dir-card div[style*="font-family: monospace"] {
+    background: #f1f5f9 !important;
+    color: #0284c7 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] #view-settings .section-header h3,
+[data-theme="light"] #view-settings h4 {
+    color: var(--text-bright) !important;
+}
+
+/* 🧪 实时 URL 沙盒模拟器亮色主题完美高对比度覆写 */
+[data-theme="light"] div[style*="font-family: monospace"][style*="margin-bottom: 12px"] {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] #sandbox-preview-web-url {
+    color: #2563eb !important; /* 经典深蓝色，高可读性 */
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+}
+
+[data-theme="light"] #sandbox-preview-cloud-path {
+    color: #16a34a !important; /* 优雅深绿色 */
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] #sandbox-preview-disk-path {
+    color: #475569 !important; /* 石板灰 */
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] div[style*="font-family: monospace"] span[style*="color: #888"] {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+/* 🚀 提醒卡片高对比度 */
+[data-theme="light"] #sandbox-preview-status-box > div {
+    background: #fffbeb !important;
+    border-color: #fde68a !important;
+    color: #92400e !important;
+}
+
+/* ➕ 添加新路由规则与通用操作按钮悬停 (Hover) 完美感知高亮 */
+.add-rule-btn:hover {
+    background: rgba(var(--accent-secondary-rgb, 5, 105, 199), 0.12) !important;
+    border-color: var(--accent-secondary) !important;
+    color: var(--accent-secondary) !important;
+    border-style: solid !important;
+    box-shadow: 0 4px 14px rgba(var(--accent-secondary-rgb, 5, 105, 199), 0.15) !important;
+}
+
+[data-theme="light"] .add-rule-btn {
+    background: #ffffff !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .add-rule-btn:hover {
+    background: #e0f2fe !important; /* 柔和浅清天蓝色悬停背景 */
+    color: #0369a1 !important; /* 醒目高对比度深蓝 */
+    border-color: #0369a1 !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* 🌞 亮色模式下策略原理与注释列表文字深度清晰化 */
+[data-theme="light"] ul li, 
+[data-theme="light"] ol li {
+    color: var(--text-dim) !important;
+}

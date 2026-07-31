@@ -174,8 +174,6 @@ window.renderTranslationStyleCategory = () => {
 
     return `
             <div class="full-width">
-                <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 20px; opacity: 0.85;">设定当前品牌在全球化分发及 AI 编译中所采用的 Prompt 语感模板与系统提示词。</p>
-                
                 <div class="settings-grid">
                     <div class="settings-group">
                         <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
