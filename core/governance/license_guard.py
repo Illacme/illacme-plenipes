@@ -178,7 +178,7 @@ class LicenseGuard:
                 pass
             bus.emit("CONFIG_RELOADED", config=fresh_cfg)
             tlog.success(f"✅ [准入激活] 许可证落盘成功: {lic_path}")
-            return True, f"激活成功！已解锁【{payload.get('customer', '专业版')}】准入特权。"
+            return True, f"激活成功！已解锁【{payload.get('customer', '专业版')}】商业专业版全量特权。"
         except Exception as e:
             return False, f"物理写入失败: {e}"
 
