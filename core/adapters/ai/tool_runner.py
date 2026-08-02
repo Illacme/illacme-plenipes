@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 from core.adapters.ai.xml_parser import parse_xml_tool_calls
 
-async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_enabled: bool, reasoning_effort: str):
+async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_enabled: bool, reasoning_effort: str, stream_enabled: bool = True):
     """
     [Sovereign Core] 统一的 LLM 物理流式调用器。
     """
@@ -29,7 +29,7 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
     if not is_openai:
         logger.info("⚠️ [Agent Stream] Non-OpenAI adapter detected, falling back to sync path.")
         payload = {
-            "model": getattr(actual_adapter.trans_cfg, 'primary_model', 'gpt-4o') if hasattr(actual_adapter, 'trans_cfg') else 'gpt-4o',
+            "model": getattr(actual_adapter.trans_cfg, 'primary_model', 'gpt-4o') if hasattr(actual_adapter.trans_cfg, 'primary_model') else 'gpt-4o',
             "messages": messages, "tools": tools, "params": {"temperature": 0.2}
         }
         response = actual_adapter.ask_ai_with_retry(payload)
@@ -58,7 +58,7 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
     raw_payload = {
         "model": model_name,
         "messages": messages,
-        "stream": True,
+        "stream": stream_enabled,
         "temperature": 0.2 if reasoning_enabled else 0.1,
         "enable_thinking": reasoning_enabled,
         "think": reasoning_enabled,

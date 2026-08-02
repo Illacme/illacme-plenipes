@@ -141,10 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rToggleBtn = document.getElementById('agent-reasoning-toggle'), rDepth = document.getElementById('agent-reasoning-depth');
         const aToggle = document.getElementById('agent-autopilot-toggle'), maxIterSelect = document.getElementById('agent-max-iterations');
+        const sToggleBtn = document.getElementById('agent-stream-toggle');
 
         const isReasoningEnabled = (rToggleBtn && !rToggleBtn.disabled) ? rToggleBtn.checked : false;
         const selectedReasoningEffort = rDepth ? rDepth.value : 'medium';
         const isAutopilotEnabled = aToggle ? aToggle.checked : false;
+        const isStreamEnabled = (sToggleBtn && !sToggleBtn.disabled) ? sToggleBtn.checked : true;
         const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;
 
         let activeThinkingDiv = null, activeThinkingDetails = null;
@@ -155,7 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 max_iterations: maxIterations,
                 reasoning_enabled: isReasoningEnabled,
                 reasoning_effort: selectedReasoningEffort,
-                autopilot_enabled: isAutopilotEnabled
+                autopilot_enabled: isAutopilotEnabled,
+                stream_enabled: isStreamEnabled
             });
 
             // 投喂给渲染层打字机 SSE 解析器进行流式刷新

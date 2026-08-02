@@ -31,7 +31,7 @@ class AutonomousAgent:
         self.working_dir = os.path.abspath(engine.config.vault_root) if engine and hasattr(engine, 'config') and getattr(engine.config, 'vault_root', None) else os.path.abspath("./vault")
         logger.info(f"📁 [Agent Sandbox] AI module default working directory locked to: {self.working_dir}")
 
-    async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = False, reasoning_effort: str = "medium", autopilot_enabled: bool = False):
+    async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = False, reasoning_effort: str = "medium", autopilot_enabled: bool = False, stream_enabled: bool = True):
         """
         异步流式生成器，执行任务并抛出关键节点的状态。
         """
@@ -81,7 +81,7 @@ class AutonomousAgent:
 
             # 1. 呼叫流式大模型，实时吐出思维链与文本 Chunk
             response = None
-            async for chunk in self._call_llm_stream(messages, tools, reasoning_enabled, reasoning_effort):
+            async for chunk in self._call_llm_stream(messages, tools, reasoning_enabled, reasoning_effort, stream_enabled=stream_enabled):
                 if chunk["type"] == "thinking_chunk":
                     yield {"type": "thinking_chunk", "delta": chunk["delta"]}
                 elif chunk["type"] == "content_chunk":
@@ -205,9 +205,9 @@ class AutonomousAgent:
                 final_message = event.get("message", "")
         return final_message
 
-    async def _call_llm_stream(self, messages: list, tools: list, reasoning_enabled: bool, reasoning_effort: str):
+    async def _call_llm_stream(self, messages: list, tools: list, reasoning_enabled: bool, reasoning_effort: str, stream_enabled: bool = True):
         """
         [Sovereign Core] 算力物理流式转发器，用于防腐与测试隔离。
         """
-        async for chunk in call_llm_stream(self.ai_adapter, messages, tools, reasoning_enabled, reasoning_effort):
+        async for chunk in call_llm_stream(self.ai_adapter, messages, tools, reasoning_enabled, reasoning_effort, stream_enabled=stream_enabled):
             yield chunk

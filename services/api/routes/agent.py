@@ -16,6 +16,7 @@ class AgentTaskRequest(BaseModel):
     reasoning_enabled: bool = False
     reasoning_effort: str = "medium"
     autopilot_enabled: bool = False
+    stream_enabled: bool = True
 
 class AgentAuthorizeRequest(BaseModel):
     hitl_id: str
@@ -94,7 +95,8 @@ async def execute_agent_task(request: AgentTaskRequest):
                     request.user_prompt,
                     reasoning_enabled=request.reasoning_enabled,
                     reasoning_effort=request.reasoning_effort,
-                    autopilot_enabled=request.autopilot_enabled
+                    autopilot_enabled=request.autopilot_enabled,
+                    stream_enabled=request.stream_enabled
                 ):
                     yield "data: " + json.dumps(event) + "\n\n"
             except Exception as inner_e:

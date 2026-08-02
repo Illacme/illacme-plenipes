@@ -57,6 +57,21 @@
                 if (autopilotToggle) autopilotToggle.disabled = false;
                 if (maxIter) maxIter.disabled = false;
 
+                const streamToggle = document.getElementById('agent-stream-toggle');
+                const hasStream = data.capabilities.stream !== false;
+                if (streamToggle) {
+                    streamToggle.disabled = !hasStream;
+                    if (!hasStream) {
+                        streamToggle.checked = false;
+                    }
+                    const streamItem = streamToggle.closest('.setting-item');
+                    if (streamItem) {
+                        streamItem.style.opacity = hasStream ? '1' : '0.4';
+                        streamItem.style.pointerEvents = hasStream ? 'auto' : 'none';
+                        streamItem.title = hasStream ? '开启后使用 SSE 打字机流式增量输出，关闭后回退完整同步输出' : '当前所选 AI 模型不支持 SSE 流式输出，强制回退同步模式';
+                    }
+                }
+
                 const rToggle = document.getElementById('agent-reasoning-toggle');
                 const rDepth = document.getElementById('agent-reasoning-depth');
                 const rDepthContainer = document.getElementById('agent-reasoning-depth-container');
