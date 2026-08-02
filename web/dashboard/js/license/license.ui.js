@@ -146,7 +146,7 @@
             if (res.is_licensed) {
                 if (emblem) { emblem.innerText = '💎'; emblem.style.background = 'linear-gradient(135deg, rgba(0, 255, 170, 0.18), rgba(0, 242, 255, 0.08))'; emblem.style.borderColor = 'rgba(0, 255, 170, 0.4)'; }
                 if (badge) { badge.innerText = '高级专业版'; badge.className = 'tier-tag tier-global'; }
-                if (descEl) descEl.innerHTML = `<div>🚀 已解锁商业专业版全量特权！支持多版图隔离、50+ 语种多线程翻译矩阵与算力联合调度。</div><div style="margin-top: 6px; font-weight: 600; color: var(--accent-primary, #00f2fe); font-size: 0.78rem;">🔑 授权客户：${res.customer} <span style="opacity: 0.85; font-weight: normal;">(至 ${res.exp_date})</span></div>`;
+                if (descEl) descEl.innerHTML = `<div>🚀 已解锁高级专业版全量特权！支持多版图隔离、50+ 语种多线程翻译矩阵与算力联合调度。</div><div style="margin-top: 6px; font-weight: 600; color: var(--accent-primary, #00f2fe); font-size: 0.78rem;">🔑 授权客户：${res.customer} <span style="opacity: 0.85; font-weight: normal;">(至 ${res.exp_date})</span></div>`;
                 if (pillsEl) pillsEl.innerHTML = `<span class="lic-pill-unlocked">✓ 工业级 AI 出版引擎</span><span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span><span class="lic-pill-unlocked">✓ 创作中心灵感润色</span><span class="lic-pill-unlocked">✓ 算力节点灵活对接</span><span class="lic-pill-unlocked">✓ ♾️ 无限版图独立隔离</span><span class="lic-pill-unlocked">✓ 🌐 50+语种矩阵分发</span><span class="lic-pill-unlocked">✓ 📂 子目录频道映射</span><span class="lic-pill-unlocked">✓ 🎭 频道专属方言风格</span><span class="lic-pill-unlocked">✓ ☁️ 算力集群自动容灾</span>`;
                 if (revokeBtn) revokeBtn.style.display = 'inline-block';
             } else {
