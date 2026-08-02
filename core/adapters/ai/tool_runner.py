@@ -105,6 +105,7 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
     accumulated_content = []
     accumulated_reasoning = []
     was_truncated = False
+    in_think_tag = False
     
     def line_generator():
         try:
@@ -140,8 +141,34 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
                     continue
                 content_chunk = delta.get("content", "")
                 if content_chunk:
-                    accumulated_content.append(content_chunk)
-                    yield {"type": "content_chunk", "delta": content_chunk}
+                    # 🚀 [V77.4] 动态识别文本中塞入的 <think> 和 </think> 伪推理块并进行实时打字机分流
+                    if "<think>" in content_chunk:
+                        in_think_tag = True
+                        parts = content_chunk.split("<think>", 1)
+                        if parts[0]:
+                            accumulated_content.append(parts[0])
+                            yield {"type": "content_chunk", "delta": parts[0]}
+                        content_chunk = parts[1]
+
+                    if in_think_tag:
+                        if "</think>" in content_chunk:
+                            in_think_tag = False
+                            parts = content_chunk.split("</think>", 1)
+                            if parts[0]:
+                                accumulated_reasoning.append(parts[0])
+                                yield {"type": "thinking_chunk", "delta": parts[0]}
+                            if parts[1]:
+                                accumulated_content.append(parts[1])
+                                yield {"type": "content_chunk", "delta": parts[1]}
+                        else:
+                            if content_chunk:
+                                accumulated_reasoning.append(content_chunk)
+                                yield {"type": "thinking_chunk", "delta": content_chunk}
+                        continue
+
+                    if content_chunk:
+                        accumulated_content.append(content_chunk)
+                        yield {"type": "content_chunk", "delta": content_chunk}
                     continue
                 tool_calls_delta = delta.get("tool_calls", [])
                 for tc in tool_calls_delta:

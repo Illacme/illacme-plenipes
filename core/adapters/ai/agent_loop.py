@@ -35,8 +35,12 @@ class AutonomousAgent:
         """
         异步流式生成器，执行任务并抛出关键节点的状态。
         """
+        effective_system_prompt = system_prompt
+        if not reasoning_enabled:
+            effective_system_prompt += "\nIMPORTANT: Do NOT output any <think> tags or internal reasoning steps. Provide ONLY the final answer directly and concisely."
+
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": effective_system_prompt},
             {"role": "user", "content": user_content}
         ]
         

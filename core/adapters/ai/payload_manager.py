@@ -270,9 +270,9 @@ class PayloadManager:
                 })
 
         # 4.5. 针对本地 LM Studio 推理思维链模型的 token 预算扩容
-        if is_lmstudio:
+        if is_lmstudio and reasoning_enabled:
             # 本地推理模型由于思维链生成非常多，如果 max_tokens 过小会导致推理被截断，content 为空
-            # 确保 max_tokens 至少为 4096，使其有足够的预算完成思考和输出
+            # 仅在开启思维链时，确保 max_tokens 至少为 4096，使其有足够的预算完成思考和输出
             if "max_tokens" in params and isinstance(params["max_tokens"], (int, float)) and params["max_tokens"] < 4096:
                 params["max_tokens"] = 4096
             if "max_tokens" in cleaned and isinstance(cleaned["max_tokens"], (int, float)) and cleaned["max_tokens"] < 4096:
