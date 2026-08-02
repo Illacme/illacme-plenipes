@@ -62,10 +62,11 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0;
 }
 .agent-engine-settings.expanded {
-    max-height: 140px; padding: 8px 15px; border-bottom: 1px solid var(--border-subtle); opacity: 1; gap: 8px;
+    max-height: 210px; padding: 10px 15px 12px 15px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 6px; opacity: 1; gap: 9px;
 }
 .agent-engine-settings .setting-item { display: flex; align-items: center; gap: 6px; color: var(--text-bright); white-space: nowrap; }
 .agent-engine-settings .setting-item span { flex-shrink: 0; }
+.agent-engine-settings .setting-icon { display: inline-block; width: 18px; text-align: center; margin-right: 3px; flex-shrink: 0; }
 .switch-container { position: relative; display: inline-block; width: 32px; height: 18px; margin: 0; }
 .switch-container input { opacity: 0; width: 0; height: 0; }
 .switch-slider {
@@ -93,7 +94,7 @@
 }
 #agent-reasoning-depth:hover,
 #agent-max-iterations:hover { border-color: var(--accent-secondary); background: var(--bg-agent-hover); }
-.agent-engine-settings .settings-row .setting-item:first-child { flex: 0 0 106px; justify-content: space-between; }
+.agent-engine-settings .settings-row .setting-item:first-child { flex: 0 0 116px; justify-content: space-between; }
 .agent-msg.thinking-msg {
     border: 1px solid var(--neon-cyan-12); border-left: 3px solid var(--accent-secondary);
     background: var(--bg-agent-thinking); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
