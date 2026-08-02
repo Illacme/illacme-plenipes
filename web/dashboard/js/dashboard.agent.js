@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🧠 思维链 Toggle 与深度选择框的联动
     const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
     if (rToggle && rDepthContainer) {
+        rDepthContainer.style.opacity = rToggle.checked ? '1' : '0.4';
+        rDepthContainer.style.pointerEvents = rToggle.checked ? 'auto' : 'none';
         rToggle.addEventListener('change', () => {
             rDepthContainer.style.opacity = rToggle.checked ? '1' : '0.4';
             rDepthContainer.style.pointerEvents = rToggle.checked ? 'auto' : 'none';
@@ -136,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rToggleBtn = document.getElementById('agent-reasoning-toggle'), rDepth = document.getElementById('agent-reasoning-depth');
         const aToggle = document.getElementById('agent-autopilot-toggle'), maxIterSelect = document.getElementById('agent-max-iterations');
 
-        const isReasoningEnabled = rToggleBtn ? rToggleBtn.checked : true;
+        const isReasoningEnabled = rToggleBtn ? rToggleBtn.checked : false;
         const selectedReasoningEffort = rDepth ? rDepth.value : 'medium';
         const isAutopilotEnabled = aToggle ? aToggle.checked : false;
         const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;

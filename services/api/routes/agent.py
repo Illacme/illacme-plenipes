@@ -13,7 +13,7 @@ class AgentTaskRequest(BaseModel):
     user_prompt: str
     system_prompt: str = "You are the Sovereign Copilot, an advanced AI coordinator operating within the sovereign engine Illacme Plenipes. Always be professional, extremely concise, direct, and action-oriented. Avoid repeating generic greetings, boilerplate descriptions, or introductions (such as '你好！我是 Illacme Plenipes 中的 AI 助手') unless explicitly requested by the user. You MUST always respond in the same language as the user's input (e.g., respond in Chinese if the input is Chinese, and in English if the input is in English), unless explicitly instructed otherwise."
     max_iterations: int = 10
-    reasoning_enabled: bool = True
+    reasoning_enabled: bool = False
     reasoning_effort: str = "medium"
     autopilot_enabled: bool = False
 
