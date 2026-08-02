@@ -709,19 +709,24 @@ window.renderLocalizationGovCategory = () => {
     }, 20);
 
     return `
-        <div class="full-width">
-            <div class="section-header"><h3>🌍 语言翻译与内容治理 (Localization & Content Governance)</h3></div>
-            <p class="section-desc">管理多语言分发语种矩阵、设置 Markdown 块级翻译规则、保护专有名词词库与翻译风格。</p>
-            
-            <div class="security-sub-tab-bar" id="loc-gov-sub-tab-bar">
-                <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('localization', this)">🌍 语种矩阵</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'block_rules' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('block_rules', this)">🧱 块级规则</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'glossary' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('glossary', this)">📖 术语词库</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('translation_style', this)">🎭 翻译风格</button>
+        <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🌍 语言翻译与内容治理</h2>
+                </div>
             </div>
-            <div id="loc-gov-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+
+            <div class="sub-tab-navigation-bar" id="loc-gov-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('localization', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🌍 语种矩阵</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'block_rules' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('block_rules', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🧱 块级规则</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'glossary' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('glossary', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📖 术语词库</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('translation_style', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎭 翻译风格</button>
+            </div>
+
+            <div id="loc-gov-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
                 ${locSubDescs[currentSub] || ''}
             </div>
+        </div>
 
             <div id="loc-panel-localization" style="display: ${currentSub === 'localization' ? 'block' : 'none'};"></div>
             <div id="loc-panel-block_rules" style="display: ${currentSub === 'block_rules' ? 'block' : 'none'};"></div>
@@ -733,7 +738,7 @@ window.renderLocalizationGovCategory = () => {
 
 window.renderDisseminationRoutingCategory = () => {
     const routingSubDescs = {
-        slug_settings: '💡 设定物理文章发布后的 URL Slug 生成规则（AI 智能推导短网址或物理文件名清洗）。',
+        slug_settings: '💡 设定文章 URL Slug 生成规则（AI 智能推导短网址或文件名清洗）。',
         route_matrix: '💡 将本地特定文件夹路由至全新的逻辑出版路径，并指派专属前端模板与翻译风格。'
     };
 
@@ -788,17 +793,22 @@ window.renderDisseminationRoutingCategory = () => {
     }, 20);
 
     return `
-        <div class="full-width">
-            <div class="section-header"><h3>🧭 分发路由与网址路径 (Dissemination & URL Routing)</h3></div>
-            <p class="section-desc">自定义文章短网址 (URL Slug) 命名规则，编排各频道目录的逻辑发布路径与模板映射。</p>
-            
-            <div class="security-sub-tab-bar" id="dissemination-routing-sub-tab-bar">
-                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('slug_settings', this)">📝 网址路径</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('route_matrix', this)">🧭 频道映射</button>
+        <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🧭 分发路由与网址路径</h2>
+                </div>
             </div>
-            <div id="dissemination-routing-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+
+            <div class="sub-tab-navigation-bar" id="dissemination-routing-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                <button type="button" class="sub-tab-btn ${currentSub === 'slug_settings' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('slug_settings', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📝 网址路径</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'route_matrix' ? 'active' : ''}" onclick="window.switchDisseminationRoutingSubTab('route_matrix', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🧭 频道映射</button>
+            </div>
+
+            <div id="dissemination-routing-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
                 ${routingSubDescs[currentSub] || ''}
             </div>
+        </div>
 
             <div id="routing-panel-slug_settings" style="display: ${currentSub === 'slug_settings' ? 'block' : 'none'};"></div>
             <div id="routing-panel-route_matrix" style="display: ${currentSub === 'route_matrix' ? 'block' : 'none'};"></div>
