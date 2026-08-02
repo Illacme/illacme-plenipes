@@ -278,11 +278,12 @@
 
         try {
             const res = await apiFetch('/api/governance/license/revoke', { method: 'POST' });
-            if (res && res.success) {
-                showNotification('🔓 许可证已解绑，系统已切回免费社区版 (LITE)', 'info');
+            if (res && (res.status === 'success' || res.success)) {
+                showNotification(`🔓 ${res.message || '许可证已成功解绑，系统切回免费社区版 (LITE)'}`, 'info');
                 fetchLicenseDataAndUpdateDOM();
             } else {
-                showNotification(`❌ 解绑失败: ${res ? res.message : '网络异常'}`, 'error');
+                const errMsg = res ? (res.message || res.error || '解绑拒绝') : '网络连接失败';
+                showNotification(`❌ 解绑失败: ${errMsg}`, 'error');
             }
         } catch (e) {
             showNotification(`❌ 解绑请求异常: ${e.message}`, 'error');

@@ -31,10 +31,11 @@ async def activate_license(req: ActivateRequest) -> Dict[str, Any]:
         return {"status": "success", "message": message, "info": LicenseGuard.get_license_info()}
     return {"status": "error", "message": message}
 
+@router.post("/api/governance/license/revoke", dependencies=[Depends(verify_token)])
 @router.delete("/api/governance/license/revoke", dependencies=[Depends(verify_token)])
 async def revoke_license() -> Dict[str, Any]:
-    """注销并注销当前准入许可证"""
+    """注销并解绑当前准入许可证"""
     success, message = LicenseGuard.revoke_license()
     if success:
-        return {"status": "success", "message": message, "info": LicenseGuard.get_license_info()}
-    return {"status": "error", "message": message}
+        return {"status": "success", "success": True, "message": message, "info": LicenseGuard.get_license_info()}
+    return {"status": "error", "success": False, "message": message}
