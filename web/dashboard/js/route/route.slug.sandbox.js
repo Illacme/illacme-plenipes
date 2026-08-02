@@ -3,7 +3,7 @@
  * 职责：别名策略视觉卡片切换、真实原稿全量感知、物理状态即时探测、云端 GitHub 仓库点击直达与本机 Finder 定位高亮。
  */
 
-window.selectSlugDirModeCard = function(mode) {
+window.selectSlugDirModeCard = function (mode) {
     if (!window.settingsData.translation) {
         window.settingsData.translation = {};
     }
@@ -37,7 +37,7 @@ window.selectSlugDirModeCard = function(mode) {
 window.realManuscriptCache = [];
 
 // 🚀 物理拉取金库全量真实原稿注入下拉框
-window.populateSandboxRealFiles = async function() {
+window.populateSandboxRealFiles = async function () {
     const selector = document.getElementById('sandbox-file-select');
     if (!selector) return;
 
@@ -79,7 +79,7 @@ window.populateSandboxRealFiles = async function() {
 };
 
 // 🚀 物理唤醒本机 Finder / 文件资源管理器
-window.openLocalWorkspaceFolder = async function(relPath) {
+window.openLocalWorkspaceFolder = async function (relPath) {
     try {
         const res = await apiFetch('/api/vault/open-local-folder', {
             method: 'POST',
@@ -90,12 +90,12 @@ window.openLocalWorkspaceFolder = async function(relPath) {
         } else {
             console.warn("Open local folder response:", res);
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Open local folder error:", e);
     }
 };
 
-window.updateSlugSandboxPreview = async function() {
+window.updateSlugSandboxPreview = async function () {
     const selector = document.getElementById('sandbox-file-select');
     const customInput = document.getElementById('sandbox-custom-input');
     const previewWebUrl = document.getElementById('sandbox-preview-web-url');
@@ -205,7 +205,7 @@ window.updateSlugSandboxPreview = async function() {
 
     const fullWebUrl = `${baseUrl}${webUrlPath}`;
     const activeImprint = window.settingsData._active_imprint || "obsidian_vortex";
-    
+
     // 纯正通用 SSG 本地构建落盘路径 (已抹去 github_pages 前缀)
     const localDiskPath = `imprints/${activeImprint}/themes/default/dist/${cleanRelPath}`;
 
@@ -228,7 +228,7 @@ window.updateSlugSandboxPreview = async function() {
     // 🚀 [V91.0] 物理即时探测与重新发布提醒机制
     if (previewStatusBox) {
         previewStatusBox.innerHTML = `<span style="color: #bbb; font-size: 0.75rem;">⏳ 正在物理感应线上存在状态...</span>`;
-        
+
         let isOnlineExist = false;
         try {
             // 尝试带时间戳穿透 CDN 节点物理探测线上 URL 存在状态

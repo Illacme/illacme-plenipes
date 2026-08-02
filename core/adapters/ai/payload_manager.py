@@ -86,12 +86,12 @@ class PayloadManager:
             audit_path.append("⚠️ [语义不一致] 开启了 JSON 模式但提示词中未显式要求 JSON")
 
         # 2. 算力预算审计
-        base_url = getattr(config, 'base_url', '')
-        safe_url = base_url.lower() if base_url else ""
+        base_url = getattr(config, 'base_url', '') if config else ''
+        safe_url = (base_url or "").lower() if isinstance(base_url, str) else ""
         is_local = "localhost" in safe_url or "127.0.0.1" in safe_url
         
         max_tokens = params.get("max_tokens", 4096)
-        safe_system = system_prompt.lower() if system_prompt else ""
+        safe_system = (system_prompt or "").lower() if isinstance(system_prompt, str) else ""
         if max_tokens > 4096 and "translate" in safe_system:
             audit_path.append("💡 [算力建议] 翻译任务建议压减 max_tokens 以节省开销")
 
@@ -152,7 +152,22 @@ class PayloadManager:
         """
         import copy
         cleaned = copy.deepcopy(payload)
-        model_lower = (model_name or "").lower()
+        
+        # 🛡️ 物理强校验与降级补防：若 model 缺失、为 None 或 "null" 字符，自动全路径自愈恢复
+        cur_model = cleaned.get("model") or model_name
+        if not cur_model or str(cur_model).lower() in ["null", "none", ""]:
+            if adapter:
+                cfg = getattr(adapter, 'config', None)
+                if cfg:
+                    cur_model = getattr(cfg, 'model', None) or getattr(cfg, 'model_name', None) or getattr(cfg, 'primary_model', None)
+                if not cur_model and hasattr(adapter, 'trans_cfg') and adapter.trans_cfg:
+                    tc = adapter.trans_cfg
+                    cur_model = tc.get('primary_model', None) if isinstance(tc, dict) else getattr(tc, 'primary_model', None)
+            if not cur_model or str(cur_model).lower() in ["null", "none", ""]:
+                cur_model = 'qwen/qwen3.5-9b'
+        
+        cleaned["model"] = str(cur_model)
+        model_lower = str(cur_model).lower()
         
         # 1. 识别算力节点属性与适配器来源
         ac_name = ""
@@ -232,15 +247,15 @@ class PayloadManager:
             params["thinking"] = reasoning_enabled
         elif is_lmstudio:
             # 🏢 [LM Studio 极致兼容防线]
-            # 本地思维链模型（如 Qwen, Llama）与外层 LM Studio 顶级网关的 reasoning_effort 存在严重的格式与警告冲突。
-            # 经深度调研与物理对准，最稳妥、百分之百无报错和警告的方案是：
-            # 当关闭思维链时，必须传递标准 "none" 值，开启时传递正确的努力程度，并且保留原生支持的 enable_thinking / think / thinking_budget。
+            # LM Studio 对 reasoning_effort 支持的枚举合集为 ['none', 'minimal', 'low', 'medium', 'high', 'xhigh']
+            # 对 reasoning 支持的布尔开关为 'on' / 'off'
+            eff_val = reasoning_effort if (reasoning_enabled and reasoning_effort in ["minimal", "low", "medium", "high", "xhigh"]) else ("medium" if reasoning_enabled else "none")
             params.update({
                 "enable_thinking": reasoning_enabled,
                 "think": reasoning_enabled,
                 "thinking_budget": 1024 if reasoning_enabled else 0,
-                "reasoning": reasoning_enabled,
-                "reasoning_effort": reasoning_effort if reasoning_enabled else "none"
+                "reasoning": "on" if reasoning_enabled else "off",
+                "reasoning_effort": eff_val
             })
         elif is_o_series and is_openai_official:
             if reasoning_enabled:

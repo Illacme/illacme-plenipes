@@ -146,8 +146,8 @@ window.viewTemplates = {
                         <input type="text" id="plugin-search-input" placeholder="搜索能力、平台或描述..." value="" oninput="window.filterPluginsBySearch(this.value)">
                     </div>
                     <div class="plugin-header-tools" style="display: flex; gap: 8px; justify-content: flex-end; width: 100%;">
-                        <button type="button" onclick="window.senseClipboardCredentials()" title="感应剪贴板中的 Token 并自动填入表单" style="font-size: 0.7rem; background: rgba(0, 255, 136, 0.08); border: 1px solid rgba(0, 255, 136, 0.25); color: #00ff88; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.2)'" onmouseout="this.style.background='rgba(0, 255, 136, 0.08)'">📋 剪贴板感知</button>
-                        <button type="button" onclick="window.exportConfigBackup()" title="导出全域配置为 JSON 备份" style="font-size: 0.7rem; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--neon-cyan); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,242,255,0.2)'" onmouseout="this.style.background='rgba(0, 242, 255, 0.08)'">📥 导出配置备份</button>
+                        <button type="button" onclick="window.senseClipboardCredentials(true)" title="感应剪贴板中的 Token 并自动填入表单" style="font-size: 0.7rem; background: rgba(0, 255, 136, 0.08); border: 1px solid rgba(0, 255, 136, 0.25); color: #00ff88; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.2)'" onmouseout="this.style.background='rgba(0, 255, 136, 0.08)'">📋 剪贴板感知</button>
+                        <button type="button" onclick="window.exportConfigBackup()" title="导出全域配置为 JSON 备份" style="font-size: 0.7rem; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--neon-cyan); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,242,255,0.2)'" onmouseout="this.style.background='rgba(0, 255, 242, 255, 0.08)'">📥 导出配置备份</button>
                         <button type="button" onclick="document.getElementById('config-import-file-input').click()" title="从 JSON 备份恢复全站配置" style="font-size: 0.7rem; background: rgba(163, 76, 255, 0.08); border: 1px solid rgba(163, 76, 255, 0.25); color: var(--accent-primary); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(163,76,255,0.2)'" onmouseout="this.style.background='rgba(163, 76, 255, 0.08)'">📤 导入配置复原</button>
                         <input type="file" id="config-import-file-input" accept=".json" style="display: none;" onchange="window.importConfigBackup(event)">
                     </div>
@@ -219,6 +219,7 @@ window.viewTemplates = {
                         <div class="tab-item s-tab" data-cat="dissemination_routing"><span class="tab-icon">🧭</span> 网址分发</div>
                         <div class="tab-item s-tab" data-cat="general"><span class="tab-icon">⚙️</span> 基础运维</div>
                         <div class="tab-item s-tab" data-cat="security_audit"><span class="tab-icon">🛡️</span> 系统安全</div>
+                        <div class="tab-item s-tab" data-cat="license"><span class="tab-icon">💎</span> 授权帮助</div>
                     </aside>
                     <section class="tab-content-area">
                         <div id="settings-form" class="settings-grid">

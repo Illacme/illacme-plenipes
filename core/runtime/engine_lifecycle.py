@@ -98,7 +98,18 @@ def deep_reload_imprint(imprint_id: str):
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
             
-        # 3. 注册新引擎 (自动清理旧哨兵)
+        # 3. 🚀 [V100.7] 旧引擎资源显式释放：关闭 SQLite 连接句柄，防止文件句柄泄漏
+        if _GLOBAL_ENGINE:
+            try:
+                if hasattr(_GLOBAL_ENGINE, 'meta') and hasattr(_GLOBAL_ENGINE.meta, 'sqlite'):
+                    sqlite_be = _GLOBAL_ENGINE.meta.sqlite
+                    if hasattr(sqlite_be, '_local') and hasattr(sqlite_be._local, 'conn'):
+                        sqlite_be._local.conn.close()
+                        tlog.debug("🗄️ [资源回收] 已关闭旧引擎的 SQLite 元数据连接。")
+            except Exception as close_err:
+                tlog.debug(f"⚠️ [资源回收] 旧引擎 SQLite 连接关闭时异常 (可忽略): {close_err}")
+
+        # 注册新引擎
         set_global_engine(new_engine)
         
         # 4. 🚀 [V52.6] 日志管线对正
@@ -116,6 +127,13 @@ def deep_reload_imprint(imprint_id: str):
             new_observer, _ = start_watchdog(new_engine, _GLOBAL_ARGS, current_files)
             set_global_observer(new_observer)
             
+        # 6. 🚀 [V100.7] 广播配置重载信号，确保事件总线驱动的组件感知到版图切换
+        try:
+            from core.utils.event_bus import bus
+            bus.emit("CONFIG_RELOADED", config=new_engine.config)
+        except Exception:
+            pass
+
         tlog.success(f"✅ [迁移完成] 出版版图已成功切换至 '{imprint_id}'，物理主权已全面对正。")
         return True
         

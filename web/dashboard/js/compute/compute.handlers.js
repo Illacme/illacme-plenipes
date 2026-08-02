@@ -96,6 +96,22 @@ window.ComputeHandlers.updateStrategy = function(key, value) {
 };
 
 /**
+ * 🕹️ 系统级并发矩阵联动更新
+ */
+window.ComputeHandlers.updateSystemConcurrency = function(key, value) {
+    if (!window.settingsData.system) window.settingsData.system = {};
+    if (!window.settingsData.system.concurrency) window.settingsData.system.concurrency = {};
+    window.settingsData.system.concurrency[key] = value;
+
+    const saveBtn = document.getElementById('btn-save-compute-strategy');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.classList.add('pulse-alert');
+        saveBtn.innerHTML = '🛡️ 配置已变更，请保存';
+    }
+};
+
+/**
  * 🔍 算力单元实时过滤
  */
 let _filterTimer = null;

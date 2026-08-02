@@ -50,13 +50,15 @@ async def get_active_model_info():
     while hasattr(actual_adapter, 'primary') and getattr(actual_adapter, 'primary', None) is not None:
         actual_adapter = actual_adapter.primary
         
-    model_name = "Unknown"
-    if hasattr(actual_adapter, 'config') and hasattr(actual_adapter.config, 'model'):
-        model_name = actual_adapter.config.model
-    elif hasattr(actual_adapter, 'trans_cfg') and hasattr(actual_adapter.trans_cfg, 'primary_model'):
-        model_name = actual_adapter.trans_cfg.primary_model
+    raw_model = getattr(actual_adapter.config, 'model', None) or getattr(actual_adapter.config, 'model_name', None)
+    if not raw_model and hasattr(actual_adapter, 'trans_cfg') and actual_adapter.trans_cfg:
+        tc = actual_adapter.trans_cfg
+        raw_model = tc.get('primary_model', None) if isinstance(tc, dict) else getattr(tc, 'primary_model', None)
+    if not raw_model:
+        raw_model = "qwen/qwen3.5-9b"
         
-    short_name = model_name.split("/")[-1] if model_name else "Unknown"
+    model_name = str(raw_model)
+    short_name = model_name.split("/")[-1] if model_name else "qwen3.5-9b"
     
     # 🚀 使用全动态探测系统
     capabilities = DynamicCapabilityProber.get_capabilities(actual_adapter, model_name)

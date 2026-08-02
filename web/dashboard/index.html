@@ -55,7 +55,10 @@
             <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;">
                 <img src="logo.png" alt="Logo">
                 <div class="status-box">
-                    <h1>ILLACME <span class="accent">PLENIPES</span></h1>
+                    <div style="display: flex; align-items: center;">
+                        <h1>ILLACME <span class="accent">PLENIPES</span></h1>
+                        <span id="header-pro-badge" class="header-pro-badge lite-active">🌱 LITE</span>
+                    </div>
                     <div class="context-switcher" id="imprint-selector-trigger"
                         onclick="event.stopPropagation(); toggleImprintDropdown()">
                         <span class="context-label">品牌/版图:</span>
@@ -232,12 +235,12 @@
                                 <span class="switch-slider"></span>
                             </label>
                         </div>
-                        <div class="setting-item" id="agent-reasoning-depth-container">
+                        <div class="setting-item" id="agent-reasoning-depth-container" title="针对云端/标准模型调控推理深度(Low/Medium/High)；本地模型(LMStudio/Ollama)由洗涤网关自动转译对准">
                             <span>深度:</span>
                             <select id="agent-reasoning-depth">
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                                <option value="high">High</option>
+                                <option value="medium">Medium (标准)</option>
+                                <option value="low">Low (轻度)</option>
+                                <option value="high">High (深度)</option>
                             </select>
                         </div>
                     </div>
@@ -511,6 +514,8 @@
     <script src="js/dashboard.config_audit.js"></script>
     <script src="js/dashboard.operation_audit.js"></script>
     <script src="js/dashboard.ai_lessons.js"></script>
+    <script src="js/license/license.templates.js"></script>
+    <script src="js/license/license.ui.js"></script>
     <script src="js/system/system.render.js"></script>
     <script src="js/system/system.cache.js"></script>
     <script src="js/dashboard.system.js"></script>

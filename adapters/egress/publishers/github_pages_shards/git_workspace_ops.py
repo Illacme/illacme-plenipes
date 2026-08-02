@@ -17,6 +17,8 @@ def run_git_impl(publisher_inst, work_dir: str, args: list, check: bool = True, 
     """执行 Git 命令的统一入口"""
     cmd = ["git", "-C", work_dir] + args
     env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    env["GIT_ASKPASS"] = "echo"
     proxy = publisher_inst.get_proxy()
     if proxy:
         env["HTTP_PROXY"] = proxy
@@ -42,6 +44,8 @@ def clone_target_branch_impl(publisher_inst, work_dir: str) -> bool:
     """
     auth_url = get_authenticated_repo_url_impl(publisher_inst.repo_url, publisher_inst.token)
     env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    env["GIT_ASKPASS"] = "echo"
     proxy = publisher_inst.get_proxy()
     if proxy:
         env["HTTP_PROXY"] = proxy

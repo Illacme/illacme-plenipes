@@ -36,7 +36,15 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
         yield {"type": "final_text", "text": response} if isinstance(response, str) else {"type": "tool_calls", "events": response}
         return
 
-    model_name = getattr(actual_adapter.config, 'model', 'gpt-4o')
+    cfg = getattr(actual_adapter, 'config', None)
+    model_name = None
+    if cfg:
+        model_name = getattr(cfg, 'model', None) or getattr(cfg, 'model_name', None) or getattr(cfg, 'primary_model', None)
+    if not model_name and hasattr(actual_adapter, 'trans_cfg') and actual_adapter.trans_cfg:
+        tc = actual_adapter.trans_cfg
+        model_name = tc.get('primary_model', None) if isinstance(tc, dict) else getattr(tc, 'primary_model', None)
+    if not model_name or str(model_name).lower() in ["null", "none", ""]:
+        model_name = 'qwen/qwen3.5-9b'
     openai_tools = []
     if tools:
         from core.adapters.ai.tool_protocol import IllacmeTool

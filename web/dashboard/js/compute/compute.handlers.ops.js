@@ -69,6 +69,7 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
     btn.innerText = "正在保存配置...";
 
     const t = window.settingsData?.translation || {};
+    const sysConc = window.settingsData?.system?.concurrency || {};
     const payload = {
         'translation.primary_node': t.primary_node,
         'translation.primary_model': t.primary_model,
@@ -80,7 +81,10 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
         'translation.max_retries': t.max_retries || 5,
         'translation.max_chunk_size': t.max_chunk_size || 2500,
         'translation.enable_thinking': t.enable_thinking !== undefined ? t.enable_thinking : false,
-        'translation.enable_ai': t.enable_ai !== undefined ? t.enable_ai : true
+        'translation.enable_ai': t.enable_ai !== undefined ? t.enable_ai : true,
+        'system.concurrency.global_workers': sysConc.global_workers || 2,
+        'system.concurrency.ai_workers': sysConc.ai_workers || 2,
+        'system.concurrency.io_workers': sysConc.io_workers || 4
     };
 
     const res = await apiFetch('/api/config/update', {

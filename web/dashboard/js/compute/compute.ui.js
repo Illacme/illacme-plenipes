@@ -112,19 +112,22 @@ window.ComputeUI = {
                         </div>
                     </div>
 
-                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid hsla(183, 100%, 50%, 0.1); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 35px; border: 1px solid hsla(183, 100%, 50%, 0.1); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
                         <div class="strategy-label">容灾调度算法 (RESILLIENCE ALGORITHM)</div>
                         <div class="strategy-list">
-                            ${this.renderStrategyItem('single', '📍 单点模式', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
-                            ${this.renderStrategyItem('fallback', '🛡️ 容灾模式', '主力节点故障时，能量自动导向备用节点，确保出版不中断。', trans.strategy)}
-                            ${this.renderStrategyItem('concurrent', '🚀 竞速模式', '主备并联齐发，以毫秒级响应优先者为准，榨取极限性能。', trans.strategy)}
-                            ${this.renderStrategyItem('global_smart', '🧠 智能模式', '全域健康监控，自动将任何任务派发给当前最健康的算力节点。', trans.strategy)}
+                            ${this.renderStrategyItem('single', '📍 单点模式 (Single)', '仅通过主力节点执行任务，追求绝对的路径控制。', trans.strategy)}
+                            ${this.renderStrategyItem('fallback', '🛡️ 容灾模式 (Fallback)', '主力节点故障时，能量自动导向备用节点，确保出版不中断。', trans.strategy)}
+                            ${this.renderStrategyItem('concurrent', '🚀 竞速模式 (Concurrent)', '主备并联齐发，以毫秒级响应优先者为准，榨取极限性能。', trans.strategy)}
+                            ${this.renderStrategyItem('global_smart', '🧠 智能模式 (Global Smart)', '全域健康监控，自动将任何任务派发给当前最健康的算力节点。', trans.strategy)}
                         </div>
                     </div>
-                    
-                    <div class="logic-pod glass-panel" style="padding: 25px; margin-bottom: 30px; border: 1px solid hsla(269, 100%, 65%, 0.1);">
-                        <div class="strategy-label">物理执行参数 (PHYSICAL EXECUTION CONTROL)</div>
-                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+
+                    <!-- 🤖 区域 1: AI 算力推理与并发管控 -->
+                    <div class="logic-pod glass-panel" style="padding: 22px; margin-bottom: 20px; border: 1px solid rgba(0, 242, 254, 0.15); border-radius: 12px;">
+                        <div class="strategy-label" style="display: flex; align-items: center; gap: 8px; color: var(--neon-cyan, #00f2fe); font-size: 0.85rem; font-weight: 700;">
+                            <span>🤖 AI 算力推理与并发管控 (AI EXECUTION & CONCURRENCY)</span>
+                        </div>
+                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 15px;">
                             <div class="setting-item">
                                 <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 算力总控 (Enable AI)</label>
                                 <select id="input-enable-ai" 
@@ -144,7 +147,13 @@ window.ComputeUI = {
                                 </select>
                             </div>
                             <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 全域并发数</label>
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">🤖 AI 算力隔离池并发 (AI Workers)</label>
+                                <input type="number" id="input-ai-workers" value="${window.settingsData?.system?.concurrency?.ai_workers ?? 2}" min="1" max="128" 
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateSystemConcurrency('ai_workers', parseInt(this.value))">
+                            </div>
+                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">🌐 单文档多语种 AI 并发 (LLM Concurrency)</label>
                                 <input type="number" id="input-llm-concurrency" value="${trans.llm_concurrency}" min="1" max="32" 
                                        style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
@@ -172,6 +181,72 @@ window.ComputeUI = {
                                 <input type="number" id="input-max-chunk-size" value="${trans.max_chunk_size}" step="100" 
                                        style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
                                        onchange="window.ComputeHandlers.updateStrategy('max_chunk_size', parseInt(this.value))">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⚡ 区域 2: 系统管线与通用编译配置 -->
+                    <div class="logic-pod glass-panel" style="padding: 22px; margin-bottom: 24px; border: 1px solid rgba(163, 76, 255, 0.15); border-radius: 12px;">
+                        <div class="strategy-label" style="display: flex; align-items: center; gap: 8px; color: #a34cff; font-size: 0.85rem; font-weight: 700;">
+                            <span>⚡ 系统管线与通用编译配置 (SYSTEM PIPELINE & GENERAL CONTROL)</span>
+                        </div>
+                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 15px;">
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">⚡ 全局文档流水线并发 (Global Workers)</label>
+                                <input type="number" id="input-global-workers" value="${window.settingsData?.system?.concurrency?.global_workers ?? 2}" min="1" max="64" 
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateSystemConcurrency('global_workers', parseInt(this.value))">
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">📂 磁盘 I/O 编译并发 (I/O Workers)</label>
+                                <input type="number" id="input-io-workers" value="${window.settingsData?.system?.concurrency?.io_workers ?? 4}" min="1" max="32" 
+                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
+                                       onchange="window.ComputeHandlers.updateSystemConcurrency('io_workers', parseInt(this.value))">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 💡 算力并发控制与全流程出版业务流对齐向导卡片（已下移至参数区下方） -->
+                    <div class="logic-pod glass-panel" style="padding: 20px 24px; margin-bottom: 30px; border: 1px dashed var(--neon-cyan, #00f2fe); background: rgba(0, 242, 254, 0.03); border-radius: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--neon-cyan, #00f2fe); display: flex; align-items: center; gap: 8px;">
+                                <span>💡 算力并发控制与全流程出版业务流对齐向导</span>
+                            </div>
+                            <span style="font-size: 0.68rem; padding: 2px 8px; border-radius: 4px; background: rgba(0, 242, 254, 0.15); color: var(--neon-cyan); border: 1px solid rgba(0, 242, 254, 0.3);">流程图解与最佳实践</span>
+                        </div>
+
+                        <div style="font-size: 0.78rem; line-height: 1.6; color: var(--text-bright, #fff); opacity: 0.9;">
+                            <p style="margin: 0 0 10px 0;">以同步 <b>10 篇文档</b> 并翻译为 <b>3 个目标语种</b> 的标准出版流程为例，4 维并发控制参数的物理协作机制如下：</p>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0 16px 0;">
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+                                    <div style="color: #a34cff; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">1. ⚡ 全局文档流水线并发</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制同时开启加工的<b>原稿文档数</b>。<br><code>Global Workers=2</code> 表示同时并行加工 2 篇文档。</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+                                    <div style="color: #00f2fe; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">2. 🤖 AI 算力隔离池并发</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制允许提交给 AI 算力网关的<b>最高任务数</b>。<br><code>AI Workers=2</code> 限制全局同时向 AI 提问的线程数。</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+                                    <div style="color: #00ff88; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">3. 🌐 单文档多语种并发</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制单篇文档在翻译为多个语种时的<b>语种并行度</b>。<br><code>LLM Concurrency=1</code> 表示单文档多语种串行翻译。</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+                                    <div style="color: #ffaa00; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">4. 📂 磁盘 I/O 编译并发</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制最终静态 HTML / MD 产物的<b>物理落盘线程数</b>。<br><code>I/O Workers=4</code> 实现多文件高速磁盘写入。</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; font-size: 0.74rem;">
+                                <div style="flex: 1;">
+                                    <span style="color: #00ff88; font-weight: 700;">🏠 本地算力场景 (LM Studio / Ollama)</span>
+                                    <div style="opacity: 0.8; margin-top: 2px;">建议均设为 <code>1</code>（或开启 <b>[SINGLE MODE]</b>），实现全链路纯串行，彻底杜绝本地显存溢出与 500 报错。</div>
+                                </div>
+                                <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+                                <div style="flex: 1;">
+                                    <span style="color: #00f2fe; font-weight: 700;">☁️ 云端 API 场景 (OpenAI / DeepSeek)</span>
+                                    <div style="opacity: 0.8; margin-top: 2px;">建议设为 <code>Global=4~8</code>, <code>AI=4~8</code>, <code>LLM=2~4</code>，发挥云端无限吞吐，几秒内极速收割全站静态编译。</div>
+                                </div>
                             </div>
                         </div>
                     </div>

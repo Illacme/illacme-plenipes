@@ -32,17 +32,27 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         if not self.config:
             raise ValueError(f"❌ [算力网关] 未能对正节点配置: {node_name}")
 
-        self.semaphore = threading.BoundedSemaphore(self.config.limits.max_concurrency)
+        # 🚀 [V55.26] 主权 ID 绑定：确保算力任务能感知品牌身份以加载正确方言
+        from core.runtime.cli_bootstrap import get_global_engine
+        engine = get_global_engine()
+        self.imprint_id = engine.imprint_id if engine else "default"
+
+        # 🚀 [V105.2] 算力对齐：若 llm_concurrency == 1 或 ai_workers == 1 且为本地节点，物理强约束并发信号量为 1，杜绝多文档并发导致 LM Studio 500
+        max_conc = getattr(self.config.limits, 'max_concurrency', 5)
+        llm_conc = getattr(trans_cfg, 'llm_concurrency', None)
+        base_url = getattr(self.config, 'base_url', '') or ''
+        is_local_node = node_name.lower() in ['lmstudio_local', 'ollama_local'] or 'localhost' in base_url or '127.0.0.1' in base_url
+        sys_cfg = getattr(engine.config, 'system', None) if (engine and hasattr(engine, 'config')) else None
+        ai_workers = getattr(getattr(sys_cfg, 'concurrency', None), 'ai_workers', None) if sys_cfg else None
+        if (llm_conc == 1 or ai_workers == 1 or getattr(trans_cfg, 'single_mode', False)) and is_local_node:
+            max_conc = 1
+        self.semaphore = threading.BoundedSemaphore(max_conc)
         self.timeout = getattr(self.trans_cfg, 'api_timeout', 60.0)
         if self.config.limits.timeout != 60.0:
             self.timeout = self.config.limits.timeout
         self.max_retries = getattr(trans_cfg, 'max_retries', 3)
         self._is_cooling = False
         self._cooling_until = 0.0
-        # 🚀 [V55.26] 主权 ID 绑定：确保算力任务能感知品牌身份以加载正确方言
-        from core.runtime.cli_bootstrap import get_global_engine
-        engine = get_global_engine()
-        self.imprint_id = engine.imprint_id if engine else "default"
         # 🧠 [V55.26] 算力智感中枢初始化 (强制对正 AI 治理目录)
         ai_cache_path = engine._resolve_path(engine.config.get_ai_features_path()) if engine else None
         self._intelligence_hub = ModelIntelligenceHub(ai_cache_path)
@@ -142,13 +152,9 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     if "messages" in payload:
                         for msg in payload["messages"]:
                             content = msg.get("content", "")
-                            if isinstance(content, str):
-                                total_chars += len(content)
+                            if isinstance(content, str): total_chars += len(content)
                     estimated_tokens = max(10, int(total_chars * 0.5)) + 512
-
-                    # 执行限流排队
                     self.rate_limiter.acquire(estimated_tokens, sleep_func=self._sleep)
-
                     start_time = time.time()
                     response = self._ask_ai(payload)
                     latency = time.time() - start_time
@@ -159,12 +165,8 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                             breaker.record_success(self.node_name)
                             breaker._thread_local.reported = True
                     result = getattr(response, 'text', response)
-                    
-                    # 🛡️ [V67.0] 自动内容净化 (对齐主权审计标准)
                     result = self._post_process_response(result, payload)
-                    
                     usage = getattr(response, 'usage', {})
-                    # 更新真实 Token 消耗
                     real_tokens = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
                     self.rate_limiter.update_tokens(start_time, real_tokens)
 
@@ -272,20 +274,16 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         
         import re
         
-        # 1. 剥离闭合/未闭合的 <think> 和 <thinking> 标签
         content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
         content = re.sub(r'<think>.*$', '', content, flags=re.DOTALL)
         content = re.sub(r'<thinking>.*?</thinking>', '', content, flags=re.DOTALL)
         content = re.sub(r'<thinking>.*$', '', content, flags=re.DOTALL)
-        
-        # 2. 剥离 "Thinking Process:" 或 "Thought:" 等文本前缀及随后的思考步骤，直到双换行后的真实输出
         thinking_patterns = [
             r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.).*?\n\n',
             r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.)\s*',
         ]
         for pattern in thinking_patterns:
             content = re.sub(pattern, '', content, flags=re.DOTALL | re.IGNORECASE)
-            
         return content.strip()
 
     def raw_inference(self, user_prompt, system_prompt=None) -> str:

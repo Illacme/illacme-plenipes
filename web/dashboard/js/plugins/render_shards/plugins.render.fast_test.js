@@ -77,7 +77,7 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             }
 
             if (typeof window.savePluginConfig === 'function') {
-                try { await window.savePluginConfig(true); } catch(e) {}
+                try { await window.savePluginConfig(true); } catch (e) { }
             }
 
             if (window.showToast) {
@@ -85,7 +85,7 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             }
         } else {
             const errMsg = (res && (res.error || res.message || res.detail || (Array.isArray(res.logs) && res.logs.length ? res.logs.filter(l => typeof l === 'string' && (l.includes('ERROR') || l.includes('WARN'))).pop() : null))) || "物理通道无法连通，请检查凭据或代理参数。";
-            
+
             if (res && res.logs) {
                 window.lastTestLogs = window.lastTestLogs || {};
                 window.lastTestLogs[id] = res.logs;
@@ -222,7 +222,7 @@ window.copyLogTerminalContent = async (btn) => {
         if (window.showToast) {
             window.showToast('🟢 诊断日志已成功复制到剪贴板！', 'success');
         }
-    } catch(err) {
+    } catch (err) {
         if (btn) btn.innerText = '❌ 复制失败';
     }
 };

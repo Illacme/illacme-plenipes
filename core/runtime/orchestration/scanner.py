@@ -30,6 +30,7 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
         normalized_requests = [p.replace('\\', '/').rstrip('/') for p in requested_paths]
 
     allowed_exts = engine.config.system.allowed_extensions
+    subfolder_allowed = LicenseGuard.is_pro_feature_allowed("subfolder_ingress")
     
     # 2. 全局物理寻址：遍历整个金库根目录
     for root, dirs, files in os.walk(engine.vault_root):
@@ -70,9 +71,8 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                     target_slot = getattr(best_route, 'target_slot', 'docs')
                     
                     # 🛡️ [V55.26] 语义化主权栅栏：拦截子目录精准收稿
-                    if not LicenseGuard.is_pro_feature_allowed("subfolder_ingress"):
+                    if not subfolder_allowed:
                         if src_rel != "" or prefix != "":
-                            tlog.warning(f"🛡️ [License Guard] 社区版限制：拦截非标准映射 [Source: {src_rel} | Prefix: {prefix}]")
                             src_rel = ""
                             prefix = ""
                 else:
@@ -81,7 +81,7 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                     prefix = src_rel
                     target_slot = 'docs'
                     
-                    if not LicenseGuard.is_pro_feature_allowed("subfolder_ingress"):
+                    if not subfolder_allowed:
                         if src_rel != "" or prefix != "":
                             src_rel = ""
                             prefix = ""

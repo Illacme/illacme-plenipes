@@ -167,23 +167,24 @@ def get_sync_stats_impl():
     source_lang = engine.config.i18n_settings.source.lang_code.lower() if getattr(engine.config.i18n_settings, 'source', None) else "zh"
     target_langs = [t.lang_code.lower() for t in engine.config.i18n_settings.targets] if getattr(engine.config.i18n_settings, 'targets', None) else []
     
-    for rel_path, info in docs.items():
-        if not info: continue
-        seo_data = info.get("seo_data") or {}
-        word_count = seo_data.get("word_count") or 0
-        total_words += word_count
-        
-        status_map = info.get("publish_status") or {}
-        live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
-        if live_channels:
-            live_count += 1
-        else:
-            draft_count += 1
+    if isinstance(docs, dict):
+        for rel_path, info in docs.items():
+            if not isinstance(info, dict): continue
+            seo_data = info.get("seo_data") if isinstance(info.get("seo_data"), dict) else {}
+            word_count = seo_data.get("word_count") if isinstance(seo_data, dict) and isinstance(seo_data.get("word_count"), (int, float)) else 0
+            total_words += word_count
             
-        translations = info.get("translations") or {}
-        for lang, t_info in translations.items():
-            if t_info and (t_info.get("status") == "DONE" or t_info.get("health") is True or bool(t_info.get("seo"))):
-                lang_stats[lang.lower()] = lang_stats.get(lang.lower(), 0) + 1
+            status_map = info.get("publish_status") if isinstance(info.get("publish_status"), dict) else {}
+            live_channels = [ch for ch, s in status_map.items() if isinstance(s, dict) and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
+            if live_channels:
+                live_count += 1
+            else:
+                draft_count += 1
+                
+            translations = info.get("translations") if isinstance(info.get("translations"), dict) else {}
+            for lang, t_info in translations.items():
+                if isinstance(t_info, dict) and (t_info.get("status") == "DONE" or t_info.get("health") is True or bool(t_info.get("seo"))):
+                    lang_stats[lang.lower()] = lang_stats.get(lang.lower(), 0) + 1
 
     # 翻译覆盖率百分比
     translation_coverage = {}

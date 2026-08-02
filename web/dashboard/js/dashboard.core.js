@@ -54,8 +54,11 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             throw new Error('apiFetch 核心未加载完毕');
         }
 
-        // 🚀 [V10.4] 100% 发布状态检测：如果检测到已完成发布且未跳过检查，弹出重新发布选项终端
-        if (!bypassCompletedCheck && localStorage.getItem('sync_completed') === 'true') {
+        // 🚀 [V10.4] 100% 发布状态检测：按当前活跃版图 (active_imprint) 维度精准判定，避免跨版图幽灵判定
+        const activeId = window.settingsData?._active_imprint || 'default';
+        const isCompletedForActiveImprint = localStorage.getItem(`sync_completed_${activeId}`) === 'true' || localStorage.getItem('sync_completed') === 'true';
+
+        if (!bypassCompletedCheck && isCompletedForActiveImprint) {
             const modal = document.getElementById('terminal-modal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -72,7 +75,7 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                 
                 if (typeof window.appendTerminalLog === 'function') {
                     window.appendTerminalLog('📡 [系统] 检测到当前同步已 100% 完成。', '#00ff88');
-                    window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#ffffff');
+                    window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#38bdf8');
                 }
                 
                 const okBtn = document.getElementById('btn-terminal-ok');
@@ -187,9 +190,49 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     return;
                 }
                 
-                // 弱阻断 (Warnings) 与就绪点火确认统一收拢至 Sovereign-UX 确认弹窗
-                if (precheckRes.warnings && precheckRes.warnings.length > 0) {
-                    // warnings 会在下方的统一弹窗中渲染
+                // 🚀 如果后端账本记录表明当前版图已完成过初始同步，且前端未绕过已完成校验，直接切至终端重新发布界面
+                if (!bypassCompletedCheck && precheckRes.has_synced) {
+                    localStorage.setItem(`sync_completed_${activeId}`, 'true');
+                    localStorage.setItem('sync_completed', 'true');
+                    const modal = document.getElementById('terminal-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        const title = document.getElementById('terminal-title');
+                        if (title) title.innerText = '🚀 全域全息同步 (已完成)';
+                        const toolbar = document.getElementById('terminal-toolbar');
+                        if (toolbar) toolbar.style.display = 'none';
+                        
+                        const out = document.getElementById('terminal-output');
+                        if (out) {
+                            out.innerHTML = '';
+                            modal.dataset.context = 'republish_prompt';
+                        }
+                        
+                        if (typeof window.appendTerminalLog === 'function') {
+                            window.appendTerminalLog('📡 [系统] 检测到当前同步已 100% 完成。', '#00ff88');
+                            window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#38bdf8');
+                        }
+                        
+                        const okBtn = document.getElementById('btn-terminal-ok');
+                        if (okBtn) okBtn.style.display = 'none';
+                        
+                        const abortBtn = document.getElementById('btn-terminal-abort');
+                        if (abortBtn) abortBtn.style.display = 'none';
+                        
+                        const republishBtn = document.getElementById('btn-terminal-republish');
+                        if (republishBtn) republishBtn.style.display = 'block';
+
+                        const statusEl = document.getElementById('terminal-status');
+                        if (statusEl) {
+                            statusEl.innerText = 'COMPLETED';
+                            statusEl.className = 'online';
+                        }
+                    }
+                    if (typeof window.addAudit === 'function') {
+                        window.addAudit('网站已处于100%发布状态，已弹出重新发布选项。', 'info');
+                    }
+                    try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch(e) {}
+                    return;
                 }
             }
         }
@@ -481,7 +524,9 @@ window.republishFromTerminal = async function () {
     if (republishBtn) republishBtn.style.display = 'none';
     
     // 清理已完成状态，避免下次触发再次拦截
+    const activeId = window.settingsData?._active_imprint || 'default';
     localStorage.removeItem('sync_completed');
+    localStorage.removeItem(`sync_completed_${activeId}`);
     
     if (typeof window.appendTerminalLog === 'function') {
         window.appendTerminalLog('🔄 正在重新初始化全域同步流程...', '#ffaa00');

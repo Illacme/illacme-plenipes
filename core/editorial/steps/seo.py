@@ -33,7 +33,9 @@ class AISlugAndSEOStep(PipelineStep):
 
         if slug_raw:
             is_json_leak = any(k in slug_raw.lower() for k in ["description", "keywords", "{", "\""])
-            if is_json_leak or len(slug_raw) > 50 or '%' in slug_raw or bool(re.search(r'[\u4e00-\u9fa5]', slug_raw)):
+            # 🛡️ 拆分基本文件名部分校验，避免嵌套路径长度防错误杀
+            slug_leaf = os.path.basename(slug_raw)
+            if is_json_leak or len(slug_leaf) > 80 or '%' in slug_raw or bool(re.search(r'[\u4e00-\u9fa5]', slug_raw)):
                 tlog.warning(f"⚠️ [Slug 拦截] 侦测到非法 Slug: {slug_raw[:30]}... 已强制重置")
                 slug_raw = None
 
@@ -74,15 +76,23 @@ class AISlugAndSEOStep(PipelineStep):
             if not slug_raw:
                 slug_raw = f"doc-{hashlib.md5((ctx.title or 'untitled').encode('utf-8')).hexdigest()[:6]}"
 
-        # 🛡️ [Slug 目录增强自愈] 结合翻译配置中的 slug_dir_mode 做物理前缀或路径嵌套处理
+        # 🛡️ [Slug 目录增强自愈] 结合翻译配置中的 slug_dir_mode 做物理前缀或路径嵌套处理 (包含前缀去重防护)
         from core.logic.ai.ai_logic_hub import AILogicHub
         slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'flat')
         if slug_dir_mode in ('prefix', 'nested') and mapped_sub:
             if slug_dir_mode == 'prefix':
                 safe_dir = mapped_sub.replace('/', '-')
-                slug_raw = AILogicHub.clean_slug(f"{safe_dir}-{slug_raw}")
+                prefix = f"{safe_dir}-"
+                if not slug_raw.startswith(prefix):
+                    slug_raw = AILogicHub.clean_slug(f"{safe_dir}-{slug_raw}")
+                else:
+                    slug_raw = AILogicHub.clean_slug(slug_raw)
             elif slug_dir_mode == 'nested':
-                slug_raw = AILogicHub.clean_slug(f"{mapped_sub}/{slug_raw}")
+                prefix = f"{mapped_sub}/"
+                if not slug_raw.startswith(prefix):
+                    slug_raw = AILogicHub.clean_slug(f"{mapped_sub}/{slug_raw}")
+                else:
+                    slug_raw = AILogicHub.clean_slug(slug_raw)
         else:
             slug_raw = AILogicHub.clean_slug(slug_raw)
 

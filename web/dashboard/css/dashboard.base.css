@@ -98,11 +98,69 @@ header {
     backdrop-filter: blur(25px);
 }
 
-.logo-section { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
-.logo-section img { height: 32px !important; width: auto !important; object-fit: contain; }
+.logo-section { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.logo-section img { height: 28px !important; width: auto !important; object-fit: contain; }
 [data-theme="light"] .logo-section img { content: url("../logo-light.png") !important; }
-h1 { font-size: 1.2rem; letter-spacing: 1px; font-weight: 300; white-space: nowrap; }
+h1 { font-size: 1.05rem; letter-spacing: 0.5px; font-weight: 300; white-space: nowrap; }
 .accent { color: hsl(267, 80%, 75%); font-weight: 600; text-shadow: 0 0 10px rgba(163, 76, 255, 0.3); } /* 降噪处理，减轻视觉疲劳 */
+
+/* 🏷️ Sovereign Header Tier Badge (左上角对称版本勋章) */
+.header-pro-badge {
+    font-size: 0.55rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.2;
+    margin-left: 5px;
+    vertical-align: middle;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+/* 💎 PRO 商业专业版样式 */
+.header-pro-badge.pro-active {
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.22), rgba(0, 255, 170, 0.2));
+    border: 1px solid rgba(0, 242, 255, 0.45);
+    color: #00ffaa;
+    text-shadow: 0 0 6px rgba(0, 255, 170, 0.4);
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
+    animation: proBadgeGlow 3s infinite alternate ease-in-out;
+}
+
+/* 🌱 LITE 社区免费版样式 */
+.header-pro-badge.lite-active {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--text-dim, #94a3b8);
+    text-shadow: none;
+    box-shadow: none;
+    animation: none;
+}
+
+[data-theme="light"] .header-pro-badge.pro-active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(6, 182, 212, 0.16)) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #059669 !important;
+    text-shadow: none !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="light"] .header-pro-badge.lite-active {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #64748b !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+@keyframes proBadgeGlow {
+    0% { box-shadow: 0 0 8px rgba(0, 242, 255, 0.2); }
+    100% { box-shadow: 0 0 16px rgba(0, 255, 170, 0.45); }
+}
 
 /* 🛰️ 导航系统 */
 #top-nav { display: flex; gap: 2rem; align-items: center; flex-shrink: 0; flex-wrap: nowrap; }

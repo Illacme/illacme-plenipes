@@ -70,7 +70,7 @@ class ModelIntelligenceHub:
             "deepseek-r1": lambda v, budget: {"max_thinking_tokens": budget if v else 1},
             "anthropic-claude": lambda v, budget: {"thinking": {"type": "enabled", "budget_tokens": budget}} if v else {},
             "openrouter-gateway": lambda v, budget: {"include_reasoning": v, "max_thinking_tokens": budget if v else 1},
-            "lmstudio-standard": lambda v, budget: {"reasoning": v, "reasoning_effort": "medium" if v else "none"},
+            "lmstudio-standard": lambda v, budget: {"reasoning": "on" if v else "off", "reasoning_effort": "medium" if v else "none"},
             "google-gemini": lambda v, budget: {"thinking_config": {"include_thoughts": v}} if v else {},
             "standard-openai": lambda v, _: {}
         },
@@ -182,7 +182,7 @@ class ModelIntelligenceHub:
     def get_intelligent_payload(self, config, archetype: str, ai_client=None, is_json: bool = False) -> Dict[str, Any]:
         """🚀 [AEL-Iter-v10.3] 归一化网关载荷组装器"""
         payload = {}
-        model_name = getattr(config, 'model', 'unknown')
+        model_name = getattr(config, 'model', None) or getattr(config, 'model_name', None) or getattr(config, 'primary_model', None) or 'unknown'
         base_url = str(getattr(config, 'base_url', '') or getattr(config, 'url', '') or '')
 
         # 1. 执行全自动驾驶 (Autopilot)
@@ -211,7 +211,7 @@ class ModelIntelligenceHub:
         is_local = "localhost" in base_url or "127.0.0.1" in base_url
         if (autopilot.get('enable_json_mode') or is_json):
             json_family = family if family in self.PROTOCOL_NORMALIZER.get('json_mode', {}) else "openai-compatible"
-            if "gemini" in model_name.lower(): json_family = "google-gemini"
+            if "gemini" in (model_name or "").lower(): json_family = "google-gemini"
 
             json_mapper = self.PROTOCOL_NORMALIZER.get('json_mode', {}).get(json_family)
             if json_mapper:

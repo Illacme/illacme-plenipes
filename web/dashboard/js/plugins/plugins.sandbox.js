@@ -11,7 +11,7 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
 
     // 展现透明终端，启动脉冲动画
     terminalWrapper.style.display = 'block';
-    terminal.innerHTML = '<div style="color: var(--accent-secondary); opacity: 0.8; font-style: italic; animation: pulse 1.5s infinite;">📡 物理通道连接测试中，正在抓取并对齐当前表单临时参数...</div>';
+    terminal.innerHTML = '<div style="color: #38bdf8; font-weight: 600; opacity: 0.95; font-style: italic; animation: pulse 1.5s infinite;">📡 物理通道连接测试中，正在抓取并对齐当前表单临时参数...</div>';
     
     // 自动滑动定位到测试终端 (仅在抽屉 body 容器内部滚动，防止外层 window 或整个抽屉浮层发生位移溢出)
     const drawerBody = document.getElementById('p-drawer-body');
@@ -221,59 +221,29 @@ window.savePluginSettingsAndClose = async () => {
     }
     const pluginObj = (window.allPlugins && activePluginId) ? window.allPlugins.find(p => p.id === activePluginId || (p.name && p.name.toLowerCase() === activePluginId)) : null;
 
-    // 🛡️ 物理锁校验三重防线
     if (tokenWasCleared && pluginObj) {
-        // 场景三：如果当前插件正在被品牌绑定使用中，强行拦截保存！
         if (pluginObj.is_in_use) {
             if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '⚠️ 物理锁定拦截',
-                    text: `当前品牌正在激活使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止清空鉴权 Token！如需清空，请先关闭品牌绑定。`,
-                    icon: 'warning',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-bright)',
-                    confirmButtonColor: 'var(--accent-primary)'
-                });
-            } else {
-                alert(`⚠️ 物理锁定拦截: 当前品牌正在使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止擦除 Token！`);
-            }
+                Swal.fire({ title: '⚠️ 物理锁定拦截', text: `当前品牌正在激活使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止清空鉴权 Token！如需清空，请先关闭品牌绑定。`, icon: 'warning', background: 'var(--card-bg)', color: 'var(--text-bright)', confirmButtonColor: 'var(--accent-primary)' });
+            } else { alert(`⚠️ 物理锁定拦截: 当前品牌正在使用 [${pluginObj.name || activePluginId.toUpperCase()}]，禁止擦除 Token！`); }
             return;
         }
-
-        // 场景二：如果插件当前开启了总开关，全自动自愈关闭总开关并重置自检连通状态
         if (pluginObj.is_enabled) {
             pluginObj.is_enabled = false;
             window.probePassState = window.probePassState || {};
             window.probePassState[pluginObj.id] = false;
-
             const masterToggle = drawerBody ? drawerBody.querySelector('#drawer-global-driver-toggle') : null;
             if (masterToggle) masterToggle.checked = false;
-
-            // 调用后端 API 关闭该插件
-            if (typeof window.togglePlugin === 'function') {
-                await window.togglePlugin(pluginObj.id, false, pluginObj.category);
-            }
-
+            if (typeof window.togglePlugin === 'function') await window.togglePlugin(pluginObj.id, false, pluginObj.category);
             if (typeof addAudit === 'function') addAudit(`⚠️ [${pluginObj.id}] 因 Token 被擦除，系统已全自动安全关闭物理总开关。`, 'warning');
         }
     }
 
-    // 2. 强力抓取抽屉内所有 input 的当前最新状态，写入 window.settingsData
     if (drawerBody) {
-        const inputs = drawerBody.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        drawerBody.querySelectorAll('input, select, textarea').forEach(input => {
             const path = input.getAttribute('data-path');
             if (path) {
-                let val;
-                if (input.type === 'checkbox') {
-                    val = input.checked;
-                } else if (input.type === 'number') {
-                    val = parseFloat(input.value) || 0;
-                } else {
-                    val = input.value;
-                }
-                
-                // 写入 window.settingsData
+                let val = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? (parseFloat(input.value) || 0) : input.value);
                 const keys = path.split('.');
                 let current = window.settingsData;
                 for (let i = 0; i < keys.length - 1; i++) {
@@ -282,98 +252,48 @@ window.savePluginSettingsAndClose = async () => {
                 }
                 const fieldName = keys[keys.length - 1];
                 current[fieldName] = val;
-
-                // 🚀 [Sovereign 彻底擦除与别名防残留] 若 Token 字段被用户删为空字符串，同步清空关联别名字段
                 if (val === '') {
-                    if (fieldName === 'token') {
-                        current['api_token'] = '';
-                        current['access_token'] = '';
-                    } else if (fieldName === 'api_token' || fieldName === 'access_token') {
-                        current['token'] = '';
-                    }
+                    if (fieldName === 'token') { current['api_token'] = ''; current['access_token'] = ''; }
+                    else if (fieldName === 'api_token' || fieldName === 'access_token') { current['token'] = ''; }
                 }
             }
         });
     }
 
-    // 2. 调用后台保存接口落盘
     const fullConfig = typeof window.flattenObject === 'function' ? window.flattenObject(window.settingsData) : window.settingsData;
     const payload = {};
-    
     Object.keys(fullConfig).forEach(key => {
-        if (!key.split('.').some(part => part.startsWith('_'))) {
-            payload[key] = fullConfig[key];
-        }
+        if (!key.split('.').some(part => part.startsWith('_'))) payload[key] = fullConfig[key];
     });
 
-    const res = await apiFetch('/api/config/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+    const res = await apiFetch('/api/config/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
     if (res && res.status === 'success') {
         if (typeof addAudit === 'function') addAudit("✅ 插件能力配置已成功保存并生效。", 'success');
         if (res.active_config) {
             window.settingsData = { ...window.settingsData, ...res.active_config };
-            // 确保已擦除的空字段在后端回传合并时保留空字符串，防止全局模型基准默认值回弹
             if (drawerBody) {
                 drawerBody.querySelectorAll('input').forEach(input => {
                     const path = input.getAttribute('data-path');
                     if (path && input.value === '') {
                         const keys = path.split('.');
                         let cur = window.settingsData;
-                        for (let i = 0; i < keys.length - 1; i++) {
-                            if (cur) cur = cur[keys[i]];
-                        }
+                        for (let i = 0; i < keys.length - 1; i++) { if (cur) cur = cur[keys[i]]; }
                         if (cur) cur[keys[keys.length - 1]] = '';
                     }
                 });
             }
         }
-
-        // 3. 弹出高保真玻璃磨砂通知，给用户强烈的物理确认视觉反馈！
         if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '💾 保存成功',
-                text: '插件能力配置已成功保存，系统配置已即刻更新生效！',
-                icon: 'success',
-                confirmButtonText: '确定',
-                background: 'var(--card-bg)',
-                color: 'var(--text-bright)',
-                confirmButtonColor: 'var(--accent-primary)'
-            });
+            Swal.fire({ title: '💾 保存成功', text: '插件能力配置已成功保存，系统配置已即刻更新生效！', icon: 'success', confirmButtonText: '确定', background: 'var(--card-bg)', color: 'var(--text-bright)', confirmButtonColor: 'var(--accent-primary)' });
         }
-
-        // 4. 自动关闭抽屉
-        if (typeof closePluginDrawer === 'function') {
-            closePluginDrawer();
-        }
-
-        // 5. 重新渲染插件矩阵列表，以刷新状态（通过 loadPlugins 静默拉取最新数据，防止状态不同步死锁）
-        if (typeof loadPlugins === 'function') {
-            await loadPlugins(true);
-        } else if (typeof renderPlugins === 'function') {
-            renderPlugins();
-        }
-        
-        // 6. 即时更新左侧身份及状态面板
-        if (typeof refreshGovernanceContext === 'function') {
-            await refreshGovernanceContext();
-        }
+        if (typeof closePluginDrawer === 'function') closePluginDrawer();
+        if (typeof loadPlugins === 'function') await loadPlugins(true);
+        else if (typeof renderPlugins === 'function') renderPlugins();
+        if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
     } else {
         const errMsg = res ? res.error : '物理链路异常';
         if (typeof addAudit === 'function') addAudit(`❌ 插件配置保存失败: ${errMsg}`, 'error');
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '❌ 保存失败',
-                text: errMsg,
-                icon: 'error',
-                confirmButtonText: '了解',
-                background: 'var(--card-bg)',
-                color: 'var(--text-bright)',
-                confirmButtonColor: 'var(--accent-primary)'
-            });
-        }
+        if (typeof Swal !== 'undefined') Swal.fire({ title: '❌ 保存失败', text: errMsg, icon: 'error', confirmButtonText: '了解', background: 'var(--card-bg)', color: 'var(--text-bright)', confirmButtonColor: 'var(--accent-primary)' });
     }
 };

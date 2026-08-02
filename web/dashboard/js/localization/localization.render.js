@@ -103,16 +103,7 @@ window.renderLocalizationCategory = function () {
 
     return `
         <div class="full-width">
-            <!-- 1. 授权等级模块（最顶部） -->
-            <div class="license-banner" style="margin-bottom: 1.5rem;">
-                <div class="license-info">
-                    <h4>授权等级: ${isLicensed ? '主权专业版' : '社区标准版'}</h4>
-                    <p>${isLicensed ? '已解锁无限语种并行分发矩阵。' : '当前限制 1 个目标语种，升级专业版解锁全球全量分发。'}</p>
-                </div>
-                <div class="badge" style="background: var(--accent-secondary); color: var(--bg-solid, #000000); font-weight: 800; padding: 4px 12px; border-radius: 20px;">${isLicensed ? 'PRO' : 'LITE'}</div>
-            </div>
-
-            <!-- 2. 源内容语种（上移并常驻，不受开关控制） -->
+            <!-- 1. 源内容语种（上移并常驻，不受开关控制） -->
             <div class="settings-group" style="margin-bottom: 2rem;">
                 <h4>🎯 源内容语种 (Source Sovereignty)</h4>
                 ${window.renderSettingsItem('主出版语种', 'i18n_settings.source.lang_code', sourceLangStr, 'select', {

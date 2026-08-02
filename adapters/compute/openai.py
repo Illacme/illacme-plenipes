@@ -125,8 +125,12 @@ class OpenAICompatibleTranslator(BaseTranslator):
                 {"role": "user", "content": payload.get("user")}
             ]
 
+        raw_model = payload.get("model") or self.safe_get_config('model') or self.safe_get_config('model_name') or self.safe_get_config('primary_model')
+        if not raw_model or str(raw_model).lower() in ["null", "none", ""]:
+            raw_model = "qwen/qwen3.5-9b"
+
         openai_payload = {
-            "model": payload.get("model"),
+            "model": str(raw_model),
             "messages": messages,
             **payload.get("params", {})
         }

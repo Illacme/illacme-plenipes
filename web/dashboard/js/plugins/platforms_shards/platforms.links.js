@@ -76,7 +76,9 @@ window.renderPlatformPortalGuide = (id) => {
 };
 
 window.renderPlatformAdvancedGroup = (title, content, isDefaultOpen = false) => {
-    if (!content) return '';
+    if (!content || !content.trim()) return '';
+    // 🚀 [V105.1] 如果高级参数内容区不包含任何 input/select/textarea 输入配置项，直接删除/不渲染该区，节省上下空间
+    if (!/<(input|select|textarea)\b/i.test(content)) return '';
     return `
         <details class="advanced-settings-block" ${isDefaultOpen ? 'open' : ''} style="margin-top: 15px; border: 1px dashed var(--glass-border, rgba(255,255,255,0.12)); border-radius: 8px; padding: 10px 14px; background: rgba(0,0,0,0.15);">
             <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 700; color: var(--accent-secondary, #00f2fe); user-select: none; padding: 4px 0; outline: none; display: flex; align-items: center; justify-content: space-between;">

@@ -209,6 +209,8 @@ window.initWebSocket = () => {
                 window.addAudit('网站发布流程已全部完成！', 'success');
             }
             // 🚀 [V10.4] 记录已完成发布状态，用于防重入提示及重新发布选项
+            const activeId = window.settingsData?._active_imprint || 'default';
+            localStorage.setItem(`sync_completed_${activeId}`, 'true');
             localStorage.setItem('sync_completed', 'true');
 
             if (typeof window.refreshGalaxy === 'function') {

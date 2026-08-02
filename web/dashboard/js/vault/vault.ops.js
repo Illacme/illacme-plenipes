@@ -51,8 +51,6 @@ window.confirmPhysicalDelete = () => {
             const res = await apiFetch(`/api/vault/destroy/${encodeURIComponent(window.currentDocId)}`, { method: 'DELETE' });
             
             if (res && res.success) {
-                // 🚀 [V10.4] 资产物理删除后，清除 100% 已发布状态
-                localStorage.removeItem('sync_completed');
                 Swal.fire({
                     title: '资产已销毁',
                     text: res.message,
@@ -131,8 +129,6 @@ window.triggerDeleteDirectory = async () => {
                 });
                 
                 if (res && res.success) {
-                    // 🚀 [V10.4] 物理目录删除后，清除 100% 已发布状态
-                    localStorage.removeItem('sync_completed');
                     Swal.fire({
                         title: '目录销毁成功',
                         text: `物理空目录已清理: ${res.dir_id}`,

@@ -25,7 +25,7 @@ router = APIRouter()
 def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None:
     """验证 API 访问令牌"""
     engine = get_global_engine()
-    if not engine or not engine.config.system.api_token:
+    if not engine or not getattr(engine, 'config', None) or not getattr(engine.config, 'system', None) or not getattr(engine.config.system, 'api_token', None):
         return
     if x_token != engine.config.system.api_token:
         from core.utils.event_bus import bus

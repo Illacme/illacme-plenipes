@@ -94,3 +94,47 @@
     50% { opacity: 1; }
     100% { opacity: 0.6; }
 }
+
+/* 💎 License Feature Pills (Theme Adaptive & Eye Comfort) */
+.lic-pill-unlocked {
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: rgba(0, 255, 170, 0.12);
+    border: 1px solid rgba(0, 255, 170, 0.3);
+    color: #00ffaa;
+    font-weight: 700;
+    transition: all 0.25s ease;
+}
+
+[data-theme="light"] .lic-pill-unlocked {
+    background: rgba(16, 185, 129, 0.14) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    color: #059669 !important;
+}
+
+.lic-pill-locked {
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted, #64748b);
+    transition: all 0.25s ease;
+}
+
+[data-theme="light"] .lic-pill-locked {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #64748b !important;
+}
+
+.lic-table-pro-feature {
+    color: #00ffaa;
+    font-weight: bold;
+}
+
+[data-theme="light"] .lic-table-pro-feature {
+    color: #059669 !important;
+    font-weight: bold;
+}

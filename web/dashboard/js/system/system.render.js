@@ -13,7 +13,7 @@
             identity: '💡 配置全站品牌展示名称、副标题描述、全局 LOGO 与浏览器 Favicon 图标。',
             compliance: '💡 配置主站点线上网址、默认作者署名与出版知识产权许可协议。',
             storage: '💡 管理本地笔记文库路径、编辑器语法解析协议与跨版图段落缓存淘汰策略。',
-            engine: '💡 查看系统底座版本，配置日志输出级别、全局代理、网络超时与遥测采集容量上限。'
+            engine: '💡 配置日志输出级别、全局代理、网络超时与遥测采集容量上限。'
         };
 
         if (!window.switchGeneralSubTab) {
@@ -185,7 +185,6 @@
                 <div id="gen-panel-engine" style="display: ${activeSub === 'engine' ? 'block' : 'none'};">
                     <div class="settings-group">
                         <div class="settings-grid">
-                            ${renderSettingsItem('系统底座版本', 'version', data.version || 'V24.0', 'text', {readonly: true})}
                             ${renderSettingsItem('系统日志级别', 'system.log_level', data.system?.log_level || 'INFO', 'select', {
                                 items: [
                                     {value: 'DEBUG', text: 'DEBUG (全量输出)'},

@@ -57,10 +57,10 @@ window.addNewImprint = async () => {
             Swal.fire({
                 title: '🛡️ 准入拦截',
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
-                      '您当前处于 <b>社区标准版</b>。<br><br>' +
+                      '您当前处于 <b>免费社区版</b>。<br><br>' +
                       '• 版图限额: 1/1 (已满)<br>' +
                       '• 治理限制: 无法添加更多出版版图。<br><br>' +
-                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [专业版] 以开启无限版图管理。</span>' +
+                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [高级专业版] 以开启无限版图管理。</span>' +
                       '</div>',
                 icon: 'warning',
                 confirmButtonText: '了解',
@@ -178,7 +178,18 @@ window.hotswapActiveImprint = async (id) => {
             refreshGalaxy();
         }
         
-        // 5. 交互徽章特制霓虹微光脉冲
+        // 5. 🚀 [V100.7] 全域视图条件热刷新 (根据用户当前停留在的视图面板同步更新数据)
+        if (window.currentView === 'compute' && typeof window.loadComputeCenter === 'function') {
+            await window.loadComputeCenter();
+        } else if (window.currentView === 'plugins' && typeof window.loadPlugins === 'function') {
+            await window.loadPlugins();
+        } else if (window.currentView === 'tower' && typeof window.loadTowerCenter === 'function') {
+            window.loadTowerCenter();
+        } else if (window.currentView === 'analytics' && typeof window.loadAnalyticsCenter === 'function') {
+            window.loadAnalyticsCenter();
+        }
+        
+        // 6. 交互徽章特制霓虹微光脉冲
         const badge = document.getElementById('active-imprint-name');
         if (badge) {
             badge.classList.add('pulse-success');

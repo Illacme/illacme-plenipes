@@ -143,14 +143,16 @@ window.appendTerminalLog = (msg, color = null) => {
     div.className = 'term-line';
     let cleanMsg = typeof msg === 'string' ? msg : JSON.stringify(msg);
 
-    const ansiMap = { '31': '#ff4d4d', '32': '#00ff88', '33': '#ffaa00', '34': '#4da6ff', '35': '#a34cff', '36': '#00ffff', '37': '#ffffff' };
+    const ansiMap = { '31': '#ff4d4d', '32': '#00ff88', '33': '#ffaa00', '34': '#4da6ff', '35': '#a34cff', '36': '#00ffff', '37': 'var(--text-bright)' };
     cleanMsg = cleanMsg.replace(/\x1b\[(\d+)m/g, (match, code) => {
         const colorHex = ansiMap[code];
         return colorHex ? `</span><span style="color:${colorHex}">` : '</span><span>';
     });
     
     div.innerHTML = `<span>${cleanMsg}</span>`;
-    if (color) div.style.color = color;
+    if (color) {
+        div.style.color = (color === '#ffffff' || color === '#fff') ? 'var(--text-bright)' : color;
+    }
     out.appendChild(div);
     out.scrollTop = out.scrollHeight;
 };

@@ -10,9 +10,10 @@ const getParentCat = (cat) => {
     if (['localization', 'block_rules', 'glossary', 'translation_style'].includes(cat)) return 'localization_gov';
     if (['slug_settings', 'route_matrix'].includes(cat)) return 'dissemination_routing';
     if (['security', 'guardrails'].includes(cat)) return 'security_audit';
+    if (['license', 'activation', 'comparison', 'docs'].includes(cat)) return 'license';
     if (cat === 'i18n_routing') return 'localization_gov';
     // 父级分类名自身传入时直接返回自身，防止 fall through 到 general
-    if (['layout', 'localization_gov', 'dissemination_routing', 'security_audit', 'general'].includes(cat)) return cat;
+    if (['layout', 'localization_gov', 'dissemination_routing', 'security_audit', 'general', 'license'].includes(cat)) return cat;
     return 'general';
 };
 
@@ -46,6 +47,7 @@ window.loadSettings = async (targetCat = 'layout') => {
             else if (target === 'localization_gov' || target === 'i18n_routing') target = 'localization';
             else if (target === 'dissemination_routing') target = 'slug_settings';
             else if (target === 'security_audit') target = 'security';
+            else if (target === 'license') target = 'license';
             
             renderSettingsCategory(target);
             if (target === 'general' && typeof window.refreshCacheStats === 'function') {
@@ -70,6 +72,12 @@ window.loadSettings = async (targetCat = 'layout') => {
     window.settingsData._imprints = imprints ? imprints.imprints : [];
     window.settingsData._active_imprint = imprints ? imprints.active : 'default';
     window.settingsData._is_licensed = res._is_licensed || false;
+    const headerProBadge = document.getElementById('header-pro-badge');
+    if (headerProBadge) {
+        headerProBadge.innerText = window.settingsData._is_licensed ? '💎 PRO' : '🌱 LITE';
+        headerProBadge.className = window.settingsData._is_licensed ? 'header-pro-badge pro-active' : 'header-pro-badge lite-active';
+        headerProBadge.style.display = 'inline-flex';
+    }
     window.settingsData._theme_slots = (slotsRes && slotsRes.slots) ? slotsRes.slots : {};
     window.settingsData._directories = (vaultRes && vaultRes.directories) ? vaultRes.directories : [];
     window.settingsData._imprint_stats = window.settingsData._imprint_stats || {};
@@ -119,6 +127,7 @@ window.renderSettingsCategory = (cat) => {
     else if (cat === 'localization_gov' || cat === 'i18n_routing') actualCat = 'localization';
     else if (cat === 'dissemination_routing') actualCat = 'slug_settings';
     else if (cat === 'security_audit') actualCat = 'security';
+    else if (cat === 'license' || ['activation', 'comparison', 'docs'].includes(cat)) actualCat = 'license';
 
     window.currentActiveSettingsSubCat = actualCat;
 
@@ -137,6 +146,8 @@ window.renderSettingsCategory = (cat) => {
         html = typeof renderDisseminationRoutingCategory === 'function' ? renderDisseminationRoutingCategory() : '<div class="empty-state">模块加载中...</div>';
     } else if (actualCat === 'security') {
         html = typeof renderSecurityCategory === 'function' ? renderSecurityCategory() : '<div class="empty-state">模块加载中...</div>';
+    } else if (actualCat === 'license') {
+        html = typeof renderLicenseCategory === 'function' ? renderLicenseCategory() : '<div class="empty-state">模块加载中...</div>';
     } else if (actualCat === 'guardrails') {
         renderSettingsCategory('security');
         return;

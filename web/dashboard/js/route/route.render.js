@@ -273,37 +273,21 @@ window.renderSlugSettingsCategory = () => {
         </div>
     `;
 
-    // 延迟少许触发沙盒计算与真实文稿列表 populate
     setTimeout(() => {
-        if (typeof window.populateSandboxRealFiles === 'function') {
-            window.populateSandboxRealFiles();
-        } else if (typeof window.updateSlugSandboxPreview === 'function') {
-            window.updateSlugSandboxPreview();
-        }
+        if (typeof window.populateSandboxRealFiles === 'function') window.populateSandboxRealFiles();
+        else if (typeof window.updateSlugSandboxPreview === 'function') window.updateSlugSandboxPreview();
     }, 50);
-
     return html;
 };
 
-// 💡 智能发现：一键装载推荐的频道映射规则
 window.applyRecommendedRouteMatrix = (subdirs) => {
     if (!window.settingsData.route_matrix) window.settingsData.route_matrix = [];
     const rulesMap = { "Blog": "blog", "Docs": "docs", "Pages": "pages" };
-    
     subdirs.forEach(folder => {
         const prefix = rulesMap[folder] || folder.toLowerCase();
         const exists = window.settingsData.route_matrix.some(r => r.source === folder);
-        if (!exists) {
-            window.settingsData.route_matrix.push({
-                source: folder,
-                prefix: prefix,
-                target_slot: "docs",
-                style: ""
-            });
-        }
+        if (!exists) { window.settingsData.route_matrix.push({ source: folder, prefix: prefix, target_slot: "docs", style: "" }); }
     });
-
-    // 重新渲染 Sub-Tab 重新绘制矩阵
     if (typeof window.renderRouteMatrixCategory === 'function') {
         const container = document.getElementById('i18n-panel-route_matrix');
         if (container) container.innerHTML = window.renderRouteMatrixCategory();

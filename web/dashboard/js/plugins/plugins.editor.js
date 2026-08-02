@@ -685,6 +685,14 @@ window.groupDrawerFormIntoStepCards = (drawerBody) => {
         cardsWrapper.appendChild(card1);
     }
 
+    // 🚀 [V105.1] 物理清理：如果存在任何内部不含输入配置项的空高级参数折叠块，直接清理剔除以节省上下空间
+    const emptyBlocks = drawerBody.querySelectorAll('.advanced-settings-block, details');
+    emptyBlocks.forEach(b => {
+        if (b.querySelectorAll('input, select, textarea').length === 0) {
+            b.remove();
+        }
+    });
+
     // 将 cardsWrapper 完美插入在预先固定的 marker 位置，然后移除 marker
     parentContainer.insertBefore(cardsWrapper, marker);
     marker.remove();

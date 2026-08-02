@@ -51,40 +51,45 @@ window.importConfigBackup = (event) => {
 };
 
 // 剪贴板凭据智能感知与一秒导入 (Smart Clipboard Credentials Sense)
-window.senseClipboardCredentials = async () => {
+window.senseClipboardCredentials = async (isManualCall = false) => {
     try {
         if (!navigator.clipboard || !navigator.clipboard.readText) {
-            if (window.showToast) window.showToast("当前浏览器未开放剪贴板读取权限", "warning");
+            if (isManualCall && window.showToast) window.showToast("当前浏览器未开放剪贴板读取权限", "warning");
             return;
         }
         const text = (await navigator.clipboard.readText() || '').trim();
         if (!text || text.length < 8) {
-            if (window.showToast) window.showToast("未在剪贴板中检测到有效凭据字符串", "info");
+            if (isManualCall && window.showToast) window.showToast("未在剪贴板中检测到有效凭据字符串", "info");
             return;
         }
+
+        // 🛡️ [凭据指纹精准检测] 避免将普通文本、日期 (如 2026-08-...) 或日志行误判为 API Key
+        const isKnownKeyFormat = /^(ghp_|github_pat_|glpat-|wrangler_|Bearer |sk-|pk\.|key-|token-|AKIA|eyJ)/i.test(text);
 
         const activeDrawer = document.getElementById('plugin-drawer');
         const drawerTitle = document.getElementById('p-drawer-title');
         const isDrawerOpen = activeDrawer && activeDrawer.style.display !== 'none' && activeDrawer.offsetHeight > 0;
 
         if (isDrawerOpen) {
-            const tokenInput = activeDrawer.querySelector('input[data-path*="token"], input[data-path*="api_key"], input[data-path*="secret_key"], input[data-path*="password"], input[name*="token"], input[type="password"]');
-            if (tokenInput) {
-                tokenInput.value = text;
-                tokenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                tokenInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                tokenInput.focus();
-                tokenInput.style.transition = 'all 0.3s';
-                tokenInput.style.outline = '2px solid #00ff88';
-                tokenInput.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.6)';
-                setTimeout(() => {
-                    tokenInput.style.outline = '';
-                    tokenInput.style.boxShadow = '';
-                }, 1500);
+            if (isManualCall || isKnownKeyFormat) {
+                const tokenInput = activeDrawer.querySelector('input[data-path*="token"], input[data-path*="api_key"], input[data-path*="secret_key"], input[data-path*="password"], input[name*="token"], input[type="password"]');
+                if (tokenInput) {
+                    tokenInput.value = text;
+                    tokenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    tokenInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    tokenInput.focus();
+                    tokenInput.style.transition = 'all 0.3s';
+                    tokenInput.style.outline = '2px solid #00ff88';
+                    tokenInput.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.6)';
+                    setTimeout(() => {
+                        tokenInput.style.outline = '';
+                        tokenInput.style.boxShadow = '';
+                    }, 1500);
 
-                const pluginName = drawerTitle ? drawerTitle.innerText.replace('⚙️ 配置能力:', '').trim() : '当前平台';
-                if (window.showToast) window.showToast(`🟢 已成功将剪贴板凭据智能填入 [${pluginName}]！`, "success");
-                return;
+                    const pluginName = drawerTitle ? drawerTitle.innerText.replace('⚙️ 配置能力:', '').trim() : '当前平台';
+                    if (window.showToast) window.showToast(`🟢 已成功将剪贴板凭据智能填入 [${pluginName}]！`, "success");
+                    return;
+                }
             }
         }
 
@@ -114,12 +119,13 @@ window.senseClipboardCredentials = async () => {
                 }
             }, 200);
         } else {
-            if (window.showToast) {
+            // 只有当确为 Key 格式且用户手动触发时，才弹窗提示捕获
+            if (isKnownKeyFormat && isManualCall && window.showToast) {
                 window.showToast(`💡 已从剪贴板捕获 Key (${text.slice(0, 8)}...)，请打开目标插件抽屉自动填充。`, "info");
             }
         }
     } catch(err) {
-        if (window.showToast) window.showToast(`读取剪贴板提示: ${err.message || err}`, "warning");
+        if (isManualCall && window.showToast) window.showToast(`读取剪贴板提示: ${err.message || err}`, "warning");
     }
 };
 

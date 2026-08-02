@@ -117,16 +117,22 @@ class IllacmeEngine:
     def _on_progress_update(self, amount=1, **kwargs):
         self._last_progress += amount
 
-    def _on_config_reloaded(self, config):
+    def _on_config_reloaded(self, config=None, **kwargs):
         """⚡ [V55.12] 深度主权对齐：响应配置变更，同步全量运行时参数"""
         tlog.info("⚡ [Engine] 接收到配置变更信号，正在执行全量参数对齐...")
         
-        # 1. 记录热更前是否处于 Onboarding 状态
+        if config is None:
+            try:
+                from core.config.config import load_config
+                config = load_config()
+            except Exception as cfg_err:
+                tlog.error(f"❌ [Engine] 加载物理配置失败: {cfg_err}")
+                config = None
+        if not config:
+            tlog.error("❌ [Engine] 热重载配置失败，新的配置为空！物理拒绝覆盖当前有效配置。")
+            return
         was_onboarding = self.onboarding_required
-        
         self.config = config
-        
-        # 2. 🚀 物理属性全量同步 (Projected Attributes)
         self.active_theme = config.active_theme
         self.vault_root = os.path.abspath(os.path.expanduser(config.vault_root)) if config.vault_root else ""
         

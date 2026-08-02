@@ -3,7 +3,8 @@
 /* 🌌 [V57.0] Sovereign Component System (组件大一统) */
 
 /* 1. 按钮矩阵 (Button Matrix) */
-button, .btn {
+button,
+.btn {
     cursor: pointer;
     font-family: inherit;
     font-size: 0.8rem;
@@ -14,7 +15,10 @@ button, .btn {
     border: 1px solid var(--white-10);
     background: var(--white-05);
     color: var(--text-bright);
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     outline: none;
 }
 
@@ -25,40 +29,69 @@ button:hover:not(:disabled) {
     box-shadow: 0 4px 12px var(--black-20);
 }
 
-button:active:not(:disabled) { transform: translateY(0); }
-button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
 
 /* 功能变体 */
-.primary-btn, .glow-btn {
+.primary-btn,
+.glow-btn {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: #ffffff;
+    color: var(--white);
     font-weight: 600;
     box-shadow: var(--shadow-glow);
 }
-.primary-btn:hover:not(:disabled), .glow-btn:hover:not(:disabled) { 
-    filter: brightness(1.1); 
+
+.primary-btn:hover:not(:disabled),
+.glow-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
     background: var(--accent-primary);
-    color: #ffffff !important;
+    color: var(--white) !important;
 }
 
 [data-theme="light"] .primary-btn,
 [data-theme="light"] .glow-btn {
-    color: #ffffff !important;
+    color: var(--white) !important;
     background: var(--accent-primary) !important;
 }
 
 [data-theme="light"] .primary-btn:hover:not(:disabled),
 [data-theme="light"] .glow-btn:hover:not(:disabled) {
-    color: #ffffff !important;
-    background: hsl(260, 60%, 42%) !important;
-    box-shadow: 0 4px 16px rgba(104, 51, 204, 0.35) !important;
+    color: var(--white) !important;
+    background: var(--accent-primary-hover, var(--accent-primary)) !important;
+    box-shadow: var(--shadow-glow) !important;
 }
 
-.secondary-btn { background: var(--accent-primary-10); border-color: var(--accent-primary-20); color: var(--accent-primary); }
-.action-btn { padding: 6px 12px; font-size: 0.75rem; background: var(--white-03); }
-.action-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); color: #ffffff !important; }
-.mini-btn { padding: 4px 8px; font-size: 0.65rem; border-radius: 4px; }
+.secondary-btn {
+    background: var(--accent-primary-10);
+    border-color: var(--accent-primary-20);
+    color: var(--accent-primary);
+}
+
+.action-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    background: var(--white-03);
+}
+
+.action-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--white) !important;
+}
+
+.mini-btn {
+    padding: 4px 8px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
 
 /* ⚡ [V90.0] 快捷测试连接按钮自适应亮暗色调主题样式 */
 .action-btn.p-btn-test-direct {
@@ -67,6 +100,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
     color: var(--accent-primary);
     font-weight: 500;
 }
+
 .action-btn.p-btn-test-direct:hover:not(:disabled) {
     background: var(--accent-primary-15);
     border-color: var(--accent-primary-30);
@@ -74,7 +108,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
 }
 
 /* 2. 输入控制 (Input Controls) */
-input[type="text"], input[type="password"], input[type="number"], select, textarea {
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
     background: var(--black-20);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
@@ -87,7 +125,9 @@ input[type="text"], input[type="password"], input[type="number"], select, textar
     width: 100%;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     border-color: var(--accent-primary);
     background: var(--accent-primary-05);
     box-shadow: 0 0 0 3px var(--accent-primary-10);
@@ -98,10 +138,12 @@ input:focus, select:focus, textarea:focus {
     position: relative;
     width: 100%;
 }
+
 .search-box input {
     padding-left: 36px;
     background: var(--white-03);
 }
+
 .search-box::before {
     content: '🔍';
     position: absolute;
@@ -131,6 +173,7 @@ input[type="range"] {
     border: none;
     padding: 0;
 }
+
 input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 16px;
@@ -141,7 +184,10 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 0 10px var(--accent-primary);
     transition: transform 0.2s;
 }
-input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
 
 .quick-adjust-group {
     display: flex;
@@ -151,6 +197,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     border-radius: 6px;
     border: 1px solid var(--glass-border);
 }
+
 .quick-adjust-btn {
     padding: 4px 8px;
     border: none;
@@ -159,13 +206,33 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     border-radius: 4px;
     min-width: 32px;
 }
-.quick-adjust-btn:hover { background: var(--white-05); }
-.quick-adjust-btn.active { background: var(--accent-primary); color: var(--color-white); }
+
+.quick-adjust-btn:hover {
+    background: var(--white-05);
+}
+
+.quick-adjust-btn.active {
+    background: var(--accent-primary);
+    color: var(--color-white);
+}
 
 /* 6. 辅助布局 (Layout Helpers) */
-.section-desc { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.6; }
-.mt-large { margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem; }
-.full-width { width: 100%; }
+.section-desc {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.mt-large {
+    margin-top: 2rem;
+    border-top: 1px solid var(--glass-border);
+    padding-top: 2rem;
+}
+
+.full-width {
+    width: 100%;
+}
 
 /* 7. 骨架屏占位与呼吸动画 (Skeleton Loading Elements) */
 .skeleton {
@@ -177,8 +244,13 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 }
 
 @keyframes skeleton-loading {
-    0% { background-position: 100% 50%; }
-    100% { background-position: 0 50%; }
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
 }
 
 /* 🔑 [V90.2] 抽屉配置项向导辅助按钮自适应亮暗色主题样式 */
@@ -216,8 +288,8 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     color: var(--text-bright) !important;
 }
 
-.api-token-helper div, 
-.api-token-helper span, 
+.api-token-helper div,
+.api-token-helper span,
 .api-token-helper p {
     color: var(--text-bright) !important;
 }

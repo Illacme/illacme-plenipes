@@ -58,13 +58,15 @@ class ResourceGuard:
 
     @property
     def compute_process_names(self) -> list:
-        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        sys_cfg = getattr(getattr(self.engine, 'config', None), 'system', None)
+        governance_cfg = getattr(sys_cfg, 'governance', None) if sys_cfg else None
         rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
         return getattr(rg_cfg, 'compute_process_names', ["lmstudio", "ollama", "llama", "llama-box"]) if rg_cfg else ["lmstudio", "ollama", "llama", "llama-box"]
 
     @property
     def interval(self) -> float:
-        governance_cfg = getattr(self.engine.config.system, 'governance', None)
+        sys_cfg = getattr(getattr(self.engine, 'config', None), 'system', None)
+        governance_cfg = getattr(sys_cfg, 'governance', None) if sys_cfg else None
         rg_cfg = getattr(governance_cfg, 'resource_guard', None) if governance_cfg else None
         return getattr(rg_cfg, 'check_interval', self._interval) if rg_cfg else self._interval
 

@@ -15,38 +15,38 @@ window.ThemeUI = {
                 <div class="settings-group">
                     <div class="card-gallery">
                     ${themes.length > 0 ? themes.map(t => {
-                        const isActive = activeTheme === t.id;
-                        const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
-                        const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
-                        
-                        let statusLabelPill = "";
-                        let actionButton = "";
-                        const location = t.location || 'native';
-                        
-                        const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前版图库' };
-                        const locationText = locationMap[location] || location.toUpperCase();
+            const isActive = activeTheme === t.id;
+            const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
+            const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
 
-                        if (isActive) {
-                            statusLabelPill = `<div class="log-tag success" style="background: hsla(152, 100%, 50%, 0.08); color: var(--neon-green, #00ff88); border: 1px solid hsla(152, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
-                            actionButton = '<button class="action-btn active" style="height: 28px; line-height: 18px;" disabled>已就绪</button>';
-                        } else {
-                            statusLabelPill = `<div class="log-tag info" style="background: hsla(183, 100%, 50%, 0.08); color: var(--accent-secondary); border: 1px solid hsla(183, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 ${locationText}</div>`;
-                            if (location === 'native') {
-                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.bootstrapTheme('${t.id}')">⚡ 下载并切换</button>`;
-                            } else if (location === 'global') {
-                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 同步并切换</button>`;
-                            } else {
-                                actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 切换主题</button>`;
-                            }
-                        }
+            let statusLabelPill = "";
+            let actionButton = "";
+            const location = t.location || 'native';
 
-                        const dotColor = t.is_enabled ? 'healthy' : 'blocked';
-                        const previewImage = t.preview_image || t.cover || t.preview || '';
-                        const mockupInner = (window.getThemeVerticalMockupContent ? window.getThemeVerticalMockupContent(t.id) : '');
+            const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前版图库' };
+            const locationText = locationMap[location] || location.toUpperCase();
 
-                        const previewHtml = previewImage 
-                            ? `<img src="${previewImage}" alt="${t.id}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transition: transform 0.4s ease;" class="theme-preview-img" />`
-                            : `<div class="mock-browser-window" style="width: 100%; height: 100%; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+            if (isActive) {
+                statusLabelPill = `<div class="log-tag success" style="background: hsla(152, 100%, 50%, 0.08); color: var(--neon-green, #00ff88); border: 1px solid hsla(152, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
+                actionButton = '<button class="action-btn active" style="height: 28px; line-height: 18px;" disabled>已就绪</button>';
+            } else {
+                statusLabelPill = `<div class="log-tag info" style="background: hsla(183, 100%, 50%, 0.08); color: var(--accent-secondary); border: 1px solid hsla(183, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🔘 ${locationText}</div>`;
+                if (location === 'native') {
+                    actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.bootstrapTheme('${t.id}')">⚡ 下载并切换</button>`;
+                } else if (location === 'global') {
+                    actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 同步并切换</button>`;
+                } else {
+                    actionButton = `<button class="action-btn glow-btn" style="height: 28px; line-height: 18px;" onclick="window.ThemeHandlers.switchTheme('${t.id}')">🎬 切换主题</button>`;
+                }
+            }
+
+            const dotColor = t.is_enabled ? 'healthy' : 'blocked';
+            const previewImage = t.preview_image || t.cover || t.preview || '';
+            const mockupInner = (window.getThemeVerticalMockupContent ? window.getThemeVerticalMockupContent(t.id) : '');
+
+            const previewHtml = previewImage
+                ? `<img src="${previewImage}" alt="${t.id}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transition: transform 0.4s ease;" class="theme-preview-img" />`
+                : `<div class="mock-browser-window" style="width: 100%; height: 100%; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
                                 <div class="browser-header-bar" style="height: 16px; background: #222225; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 6px; gap: 4px; flex-shrink: 0; z-index: 2;">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #ff5f56; display: inline-block;"></span>
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #ffbd2e; display: inline-block;"></span>
@@ -58,7 +58,7 @@ window.ThemeUI = {
                                 </div>
                               </div>`;
 
-                        return `
+            return `
                             <div class="shield-pod plugin-pod ${isActive ? 'active-duty' : ''}" style="display: flex; gap: 16px; align-items: center; padding: 16px 18px;">
                                 <!-- 👈 左侧精细 140px 高度自成体系区域 (顶平 RELEASE，底平 CONFIG 按钮，绝无空隙死角) -->
                                 <div class="shield-main-content" style="flex: 1; min-width: 0; height: 140px; display: flex; flex-direction: column; justify-content: space-between;">
@@ -84,13 +84,13 @@ window.ThemeUI = {
                                     </div>
 
                                     <div class="pod-telemetry" style="margin: 2px 0; padding: 3px 10px; display: flex; align-items: center; font-size: 0.65rem; height: 24px; flex-shrink: 0;">
-                                        ${isActive 
-                                            ? '<span class="tiny-label" style="color:var(--neon-green, #00ff88); display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green, #00ff88); width:6px; height:6px;"></span>🟢 当前版图已绑定</span>' 
-                                            : (location === 'local' 
-                                                ? '<span class="tiny-label" style="color:var(--accent-secondary); font-weight:700;">🔘 本地就绪：可直接切换</span>' 
-                                                : (location === 'global' 
-                                                    ? '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需同步：请点击同步并切换</span>' 
-                                                    : '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需下载：请点击下载并切换</span>'))}
+                                        ${isActive
+                    ? '<span class="tiny-label" style="color:var(--neon-green, #00ff88); display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green, #00ff88); width:6px; height:6px;"></span>🟢 当前版图已绑定</span>'
+                    : (location === 'local'
+                        ? '<span class="tiny-label" style="color:var(--accent-secondary); font-weight:700;">🔘 本地就绪：可直接切换</span>'
+                        : (location === 'global'
+                            ? '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需同步：请点击同步并切换</span>'
+                            : '<span class="tiny-label" style="color:var(--neon-amber, #ffb300); font-weight:700;">⚠️ 需下载：请点击下载并切换</span>'))}
                                     </div>
 
                                     <div class="p-control-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0;">
@@ -121,7 +121,7 @@ window.ThemeUI = {
                                 `}
                             </div>
                         `;
-                    }).join('') : `
+        }).join('') : `
                         <div class="empty-state" style="grid-column: 1/-1;">
                             <div class="spinner">📡</div>
                             <p>正在同步装帧资产库，请稍候...</p>

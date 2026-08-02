@@ -48,6 +48,7 @@ GOVERNANCE_RULES = {
         r"^image_hosting\..*$",            # 品牌图床服务全局策略
         r"^syndication\..*$",              # 品牌内容聚合策略
         r"^timeline\..*$",                 # 品牌时间轴审计逻辑
+        r"^system\.concurrency\..*$",      # 品牌流水线与算力池并发矩阵控制
         r"^system\.janitor_settings\..*$", # 品牌目录清理规则
         r"^system\.ai_context_purification\..*$", # 品牌 AI 语境清洗策略
         r"^system\.pipeline_steps$",       # 品牌出版管线流程

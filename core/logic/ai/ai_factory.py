@@ -99,19 +99,20 @@ class TranslatorFactory:
         target_model = node_model if node_model else (brand_model if brand_model else "qwen/qwen3.5-9b")
         
         # 🚀 工业级 Mock：合成符合 BaseTranslator 预期的配置镜像
+        node_type = getattr(physical_node, 'type', None) or getattr(physical_node, 'provider', None) or 'openai'
         from types import SimpleNamespace
         node_cfg = SimpleNamespace(
-            type=physical_node.type,
-            provider=physical_node.type,
+            type=node_type,
+            provider=node_type,
             model=target_model,
-            api_key=physical_node.api_key,
-            base_url=physical_node.base_url,
-            enabled=physical_node.enabled,
-            limits=physical_node.limits,
+            api_key=getattr(physical_node, 'api_key', '') or '',
+            base_url=getattr(physical_node, 'base_url', '') or '',
+            enabled=getattr(physical_node, 'enabled', True),
+            limits=getattr(physical_node, 'limits', None),
             iter_id="v1"
         )
 
-        ptype = node_cfg.type.lower()
+        ptype = (node_cfg.type or "openai").lower()
         
         # 🚀 [V52.10] 语义容错：将通用的 openai-compatible 自动对正为标准 openai 协议
         if ptype == "openai-compatible":

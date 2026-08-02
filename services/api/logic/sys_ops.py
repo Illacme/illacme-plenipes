@@ -130,10 +130,19 @@ def run_precheck_logic(engine: Any) -> Dict[str, Any]:
     publishing_mode = getattr(gov, 'publishing_mode', PublishingMode.BASIC) if gov else PublishingMode.BASIC
     mode_str = publishing_mode.value if hasattr(publishing_mode, 'value') else str(publishing_mode)
 
+    has_synced = False
+    if engine and hasattr(engine, 'meta'):
+        try:
+            ledger = engine.meta.get_active_ledger() if hasattr(engine.meta, 'get_active_ledger') else None
+            has_synced = bool(ledger)
+        except Exception:
+            has_synced = False
+
     result = {
         "critical_errors": [],
         "warnings": [],
-        "publishing_mode": mode_str
+        "publishing_mode": mode_str,
+        "has_synced": has_synced
     }
     
     if not engine:
