@@ -55,8 +55,8 @@
             },
             {
                 id: 'subtab_identity',
-                title: '🏷️ 基础运维 ➔ 身份标识 (Imprint & Site Identity)',
-                icon: '🏷️',
+                title: '📛 基础运维 ➔ 身份标识 (Imprint & Site Identity)',
+                icon: '📛',
                 shortcut: 'Tab 2-1',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
@@ -67,8 +67,8 @@
             },
             {
                 id: 'subtab_compliance',
-                title: '📖 基础运维 ➔ 出版合规 (Publishing Compliance & Metadata)',
-                icon: '📖',
+                title: '⚖️ 基础运维 ➔ 出版合规 (Publishing Compliance & Metadata)',
+                icon: '⚖️',
                 shortcut: 'Tab 2-2',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
@@ -103,8 +103,8 @@
             },
             {
                 id: 'subtab_imprints',
-                title: '🏷️ 品牌外观 ➔ 版图管理 (Imprints Management)',
-                icon: '🏷️',
+                title: '🚩 品牌外观 ➔ 版图管理 (Imprints Management)',
+                icon: '🚩',
                 shortcut: 'Tab 1-1',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
@@ -115,8 +115,8 @@
             },
             {
                 id: 'subtab_themes',
-                title: '🎭 品牌外观 ➔ 装帧主题 (Themes Gallery)',
-                icon: '🎭',
+                title: '🎨 品牌外观 ➔ 装帧主题 (Themes Gallery)',
+                icon: '🎨',
                 shortcut: 'Tab 1-2',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
@@ -151,8 +151,8 @@
             },
             {
                 id: 'subtab_translation_style',
-                title: '🎭 多语路由 ➔ 翻译风格 (Translation Style)',
-                icon: '🎭',
+                title: '🗣️ 多语路由 ➔ 翻译风格 (Translation Style)',
+                icon: '🗣️',
                 shortcut: 'Tab 3-2',
                 action: () => {
                     if (typeof window.switchI18nRoutingSubTab === 'function') {

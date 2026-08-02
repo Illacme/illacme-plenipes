@@ -241,15 +241,9 @@ window.renderLayoutCategory = () => {
         window.switchLayoutSubTab = (subTab, btn) => {
             window.currentActiveSettingsSubCat = subTab;
             const container = document.getElementById('layout-sub-tab-bar');
-            if (container) {
-                const btns = container.querySelectorAll('.sub-tab-btn');
-                btns.forEach(b => b.classList.remove('active'));
-            }
-            if (btn) {
-                btn.classList.add('active');
-            } else if (event) {
-                event.currentTarget.classList.add('active');
-            }
+            if (container) container.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            else if (typeof event !== 'undefined' && event.currentTarget) event.currentTarget.classList.add('active');
 
             const panels = ['imprints', 'themes', 'modes'];
             panels.forEach(p => {
@@ -264,45 +258,38 @@ window.renderLayoutCategory = () => {
             const panelEl = document.getElementById(`layout-panel-${subTab}`);
             if (panelEl) {
                 let html = '';
-                if (subTab === 'imprints' && typeof window.renderImprintsCategory === 'function') {
-                    html = window.renderImprintsCategory();
-                } else if (subTab === 'themes' && typeof window.renderThemesCategory === 'function') {
-                    html = window.renderThemesCategory();
-                } else if (subTab === 'modes' && typeof window.renderModesCategory === 'function') {
-                    html = window.renderModesCategory();
-                }
+                if (subTab === 'imprints' && typeof window.renderImprintsCategory === 'function') html = window.renderImprintsCategory();
+                else if (subTab === 'themes' && typeof window.renderThemesCategory === 'function') html = window.renderThemesCategory();
+                else if (subTab === 'modes' && typeof window.renderModesCategory === 'function') html = window.renderModesCategory();
                 panelEl.innerHTML = html;
             }
-
-            if (typeof window.updateSaveButtonVisibility === 'function') {
-                window.updateSaveButtonVisibility(subTab);
-            }
+            if (typeof window.updateSaveButtonVisibility === 'function') window.updateSaveButtonVisibility(subTab);
         };
     }
-
     const currentSub = window.currentActiveSettingsSubCat || 'imprints';
-
-    // 延迟少许以自动渲染当前的默认激活面板，防止切换大菜单时显示为空
     setTimeout(() => {
         const activeBtn = document.querySelector(`#layout-sub-tab-bar .sub-tab-btn[onclick*="${currentSub}"]`);
-        if (typeof window.switchLayoutSubTab === 'function') {
-            window.switchLayoutSubTab(currentSub, activeBtn);
-        }
+        if (typeof window.switchLayoutSubTab === 'function') window.switchLayoutSubTab(currentSub, activeBtn);
     }, 20);
 
     return `
-        <div class="full-width">
-            <div class="section-header"><h3>🎨 品牌外观与出版模式 (Layout & Publishing Modes)</h3></div>
-            <p class="section-desc">切换与管理出版品牌、选用数字出版视觉装帧主题，并调节内容的加工编译模式。</p>
-            
-            <div class="security-sub-tab-bar" id="layout-sub-tab-bar">
-                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)">🏷️ 版图管理</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)">🎭 装帧主题</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)">📋 出版模式</button>
+        <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🎨 版图装帧与模式</h2>
+                </div>
             </div>
-            <div id="layout-sub-tab-desc" style="font-size: 0.78rem; color: var(--accent-secondary, #00f2fe); margin-bottom: 18px; line-height: 1.4; opacity: 0.9;">
+
+            <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 版图管理</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎨 装帧主题</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 出版模式</button>
+            </div>
+
+            <div id="layout-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
                 ${layoutSubDescs[currentSub] || ''}
             </div>
+        </div>
 
             <div id="layout-panel-imprints" style="display: ${currentSub === 'imprints' ? 'block' : 'none'};"></div>
             <div id="layout-panel-themes" style="display: ${currentSub === 'themes' ? 'block' : 'none'};"></div>
