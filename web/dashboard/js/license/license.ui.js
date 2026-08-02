@@ -240,7 +240,7 @@
                 body: JSON.stringify({ license_text: textInput.value.trim() })
             });
 
-            if (res && res.success) {
+            if (res && (res.status === 'success' || res.success)) {
                 showNotification(`🎉 ${res.message || '激活成功！已解锁高级专业版全量能力'}`, 'success');
                 textInput.value = '';
                 fetchLicenseDataAndUpdateDOM();

@@ -24,12 +24,12 @@ async def get_license_info() -> Dict[str, Any]:
 async def activate_license(req: ActivateRequest) -> Dict[str, Any]:
     """点火激活并物理落盘准入许可证"""
     if not req.license_text:
-        return {"status": "error", "message": "许可证数据为空"}
+        return {"status": "error", "success": False, "message": "许可证数据为空"}
 
     success, message = LicenseGuard.activate_license(req.license_text)
     if success:
-        return {"status": "success", "message": message, "info": LicenseGuard.get_license_info()}
-    return {"status": "error", "message": message}
+        return {"status": "success", "success": True, "message": message, "info": LicenseGuard.get_license_info()}
+    return {"status": "error", "success": False, "message": message}
 
 @router.post("/api/governance/license/revoke", dependencies=[Depends(verify_token)])
 @router.delete("/api/governance/license/revoke", dependencies=[Depends(verify_token)])
