@@ -70,7 +70,7 @@ class ModelIntelligenceHub:
             "deepseek-r1": lambda v, budget: {"max_thinking_tokens": budget if v else 1},
             "anthropic-claude": lambda v, budget: {"thinking": {"type": "enabled", "budget_tokens": budget}} if v else {},
             "openrouter-gateway": lambda v, budget: {"include_reasoning": v, "max_thinking_tokens": budget if v else 1},
-            "lmstudio-standard": lambda v, budget: {"reasoning": "on" if v else "off", "reasoning_effort": "medium" if v else "none"},
+            "lmstudio-standard": lambda v, budget: {"reasoning": "on" if v else "off"},
             "google-gemini": lambda v, budget: {"thinking_config": {"include_thoughts": v}} if v else {},
             "standard-openai": lambda v, _: {}
         },
