@@ -247,16 +247,17 @@ class PayloadManager:
             params["thinking"] = reasoning_enabled
         elif is_lmstudio:
             # 🏢 [LM Studio 极致兼容防线]
-            # LM Studio 对 reasoning_effort 支持的枚举合集为 ['none', 'minimal', 'low', 'medium', 'high', 'xhigh']
-            # 对 reasoning 支持的布尔开关为 'on' / 'off'
-            eff_val = reasoning_effort if (reasoning_enabled and reasoning_effort in ["minimal", "low", "medium", "high", "xhigh"]) else ("medium" if reasoning_enabled else "none")
+            # 对 Qwen/DeepSeek 等通用模型下发 reasoning='on'/'off' 开关
+            # 仅在 o1/o3 等原生支持推理深度的模型上透传 reasoning_effort 字段
             params.update({
                 "enable_thinking": reasoning_enabled,
                 "think": reasoning_enabled,
                 "thinking_budget": 1024 if reasoning_enabled else 0,
-                "reasoning": "on" if reasoning_enabled else "off",
-                "reasoning_effort": eff_val
+                "reasoning": "on" if reasoning_enabled else "off"
             })
+            if is_o_series:
+                eff_val = reasoning_effort if (reasoning_enabled and reasoning_effort in ["minimal", "low", "medium", "high", "xhigh"]) else ("medium" if reasoning_enabled else "none")
+                params["reasoning_effort"] = eff_val
         elif is_o_series and is_openai_official:
             if reasoning_enabled:
                 params["reasoning_effort"] = reasoning_effort
