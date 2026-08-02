@@ -222,7 +222,7 @@ window.viewTemplates = {
                         <div class="tab-item s-tab" data-cat="license"><span class="tab-icon">💎</span> 授权帮助</div>
                     </aside>
                     <section class="tab-content-area">
-                        <div id="settings-form" class="settings-grid">
+                        <div id="settings-form" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
                             <!-- 动态注入 -->
                         </div>
                     </section>
