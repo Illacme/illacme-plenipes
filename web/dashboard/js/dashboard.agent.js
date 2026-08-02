@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rToggleBtn = document.getElementById('agent-reasoning-toggle'), rDepth = document.getElementById('agent-reasoning-depth');
         const aToggle = document.getElementById('agent-autopilot-toggle'), maxIterSelect = document.getElementById('agent-max-iterations');
 
-        const isReasoningEnabled = rToggleBtn ? rToggleBtn.checked : false;
+        const isReasoningEnabled = (rToggleBtn && !rToggleBtn.disabled) ? rToggleBtn.checked : false;
         const selectedReasoningEffort = rDepth ? rDepth.value : 'medium';
         const isAutopilotEnabled = aToggle ? aToggle.checked : false;
         const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;

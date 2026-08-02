@@ -71,11 +71,13 @@
                     if (switchLabel) {
                         switchLabel.style.opacity = hasCot ? '1' : '0.4';
                         switchLabel.style.pointerEvents = hasCot ? 'auto' : 'none';
+                        switchLabel.title = hasCot ? '开启/关闭模型思维链推理' : '当前所选 AI 模型不支持 CoT 思维链推理';
                     }
                     if (rDepthContainer) {
                         const isDepthActive = hasCot && rToggle.checked;
                         rDepthContainer.style.opacity = isDepthActive ? '1' : '0.4';
                         rDepthContainer.style.pointerEvents = isDepthActive ? 'auto' : 'none';
+                        rDepthContainer.title = hasCot ? '针对云端/标准模型调控推理深度(Low/Medium/High)；本地模型(LMStudio/Ollama)由洗涤网关自动转译对准' : '当前所选 AI 模型不支持 CoT 思维链推理';
                     }
                 }
                 if (rDepth) {
