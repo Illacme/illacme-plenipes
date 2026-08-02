@@ -191,7 +191,8 @@
             }
 
             if (widescreenToggleBtn) {
-                widescreenToggleBtn.textContent = '🗗';
+                widescreenToggleBtn.textContent = '✖';
+                widescreenToggleBtn.style.fontSize = '0.95rem';
                 widescreenToggleBtn.style.color = 'var(--accent-secondary)';
                 widescreenToggleBtn.style.textShadow = '0 0 8px var(--accent-secondary)';
                 setTimeout(() => {
