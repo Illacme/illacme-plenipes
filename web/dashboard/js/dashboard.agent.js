@@ -22,14 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!agentInput || !agentFeed) return;
 
     // 🧠 思维链 Toggle 与深度选择框的联动
-    const rToggle = document.getElementById('agent-reasoning-toggle'), rDepthContainer = document.getElementById('agent-reasoning-depth-container');
+    const rToggle = document.getElementById('agent-reasoning-toggle');
+    const rDepth = document.getElementById('agent-reasoning-depth');
+    const rDepthContainer = document.getElementById('agent-reasoning-depth-container');
     if (rToggle && rDepthContainer) {
-        rDepthContainer.style.opacity = rToggle.checked ? '1' : '0.4';
-        rDepthContainer.style.pointerEvents = rToggle.checked ? 'auto' : 'none';
-        rToggle.addEventListener('change', () => {
-            rDepthContainer.style.opacity = rToggle.checked ? '1' : '0.4';
-            rDepthContainer.style.pointerEvents = rToggle.checked ? 'auto' : 'none';
-        });
+        const updateDepthState = () => {
+            const isEnabled = rToggle.checked && !rToggle.disabled;
+            rDepthContainer.style.opacity = isEnabled ? '1' : '0.4';
+            rDepthContainer.style.pointerEvents = isEnabled ? 'auto' : 'none';
+            if (rDepth) rDepth.disabled = !isEnabled;
+        };
+        updateDepthState();
+        rToggle.addEventListener('change', updateDepthState);
     }
 
     // ⚙️ 思维链面板点击收折切换
