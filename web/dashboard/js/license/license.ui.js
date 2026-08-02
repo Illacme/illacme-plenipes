@@ -144,55 +144,53 @@
             }
 
             if (res.is_licensed) {
-                if (emblem) {
-                    emblem.innerText = '💎';
-                    emblem.style.background = 'linear-gradient(135deg, rgba(0, 255, 170, 0.18), rgba(0, 242, 255, 0.08))';
-                    emblem.style.borderColor = 'rgba(0, 255, 170, 0.4)';
-                }
-                if (badge) {
-                    badge.innerText = '高级专业版';
-                    badge.className = 'tier-tag tier-global';
-                }
-                if (descEl) {
-                    descEl.innerHTML = `
-                        <div>🚀 已解锁商业专业版全量特权！支持多版图隔离、50+ 语种多线程翻译矩阵与算力联合调度。</div>
-                        <div style="margin-top: 6px; font-weight: 600; color: var(--accent-primary, #00f2fe); font-size: 0.78rem;">🔑 授权客户：${res.customer} <span style="opacity: 0.85; font-weight: normal;">(至 ${res.exp_date})</span></div>
-                    `;
-                }
-                if (pillsEl) {
-                    pillsEl.innerHTML = `
-                        <span class="lic-pill-unlocked">✓ 工业级 AI 出版引擎</span>
-                        <span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span>
-                        <span class="lic-pill-unlocked">✓ 创作中心灵感润色</span>
-                        <span class="lic-pill-unlocked">✓ 算力节点灵活对接</span>
-                        <span class="lic-pill-unlocked">✓ ♾️ 无限版图独立隔离</span>
-                        <span class="lic-pill-unlocked">✓ 🌐 50+语种矩阵分发</span>
-                        <span class="lic-pill-unlocked">✓ 📂 子目录频道映射</span>
-                        <span class="lic-pill-unlocked">✓ 🎭 频道专属方言风格</span>
-                        <span class="lic-pill-unlocked">✓ ☁️ 算力集群自动容灾</span>
-                    `;
-                }
+                if (emblem) { emblem.innerText = '💎'; emblem.style.background = 'linear-gradient(135deg, rgba(0, 255, 170, 0.18), rgba(0, 242, 255, 0.08))'; emblem.style.borderColor = 'rgba(0, 255, 170, 0.4)'; }
+                if (badge) { badge.innerText = '高级专业版'; badge.className = 'tier-tag tier-global'; }
+                if (descEl) descEl.innerHTML = `<div>🚀 已解锁商业专业版全量特权！支持多版图隔离、50+ 语种多线程翻译矩阵与算力联合调度。</div><div style="margin-top: 6px; font-weight: 600; color: var(--accent-primary, #00f2fe); font-size: 0.78rem;">🔑 授权客户：${res.customer} <span style="opacity: 0.85; font-weight: normal;">(至 ${res.exp_date})</span></div>`;
+                if (pillsEl) pillsEl.innerHTML = `<span class="lic-pill-unlocked">✓ 工业级 AI 出版引擎</span><span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span><span class="lic-pill-unlocked">✓ 创作中心灵感润色</span><span class="lic-pill-unlocked">✓ 算力节点灵活对接</span><span class="lic-pill-unlocked">✓ ♾️ 无限版图独立隔离</span><span class="lic-pill-unlocked">✓ 🌐 50+语种矩阵分发</span><span class="lic-pill-unlocked">✓ 📂 子目录频道映射</span><span class="lic-pill-unlocked">✓ 🎭 频道专属方言风格</span><span class="lic-pill-unlocked">✓ ☁️ 算力集群自动容灾</span>`;
                 if (revokeBtn) revokeBtn.style.display = 'inline-block';
             } else {
-                if (emblem) {
-                    emblem.innerText = '🌱';
-                    emblem.style.background = 'rgba(0, 242, 255, 0.08)';
-                    emblem.style.borderColor = 'rgba(0, 242, 255, 0.25)';
-                }
-                if (badge) {
-                    badge.innerText = '免费社区版';
-                    badge.className = 'tier-tag tier-local';
-                }
-                if (descEl) {
-                    descEl.innerHTML = '✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎。激活专业版可进一步解封无限版图隔离、50+ 语种并行矩阵分发与子目录频道映射。';
-                }
+                if (emblem) { emblem.innerText = '🌱'; emblem.style.background = 'rgba(0, 242, 255, 0.08)'; emblem.style.borderColor = 'rgba(0, 242, 255, 0.25)'; }
+                if (badge) { badge.innerText = '免费社区版'; badge.className = 'tier-tag tier-local'; }
+                if (descEl) descEl.innerHTML = '✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎。激活专业版可进一步解封无限版图隔离、50+ 语种并行矩阵分发与子目录频道映射。';
                 if (revokeBtn) revokeBtn.style.display = 'none';
             }
-        } catch (err) {
-            console.error('获取许可证信息失败:', err);
-        }
+        } catch (err) { console.error('获取许可证信息失败:', err); }
     }
     window.fetchLicenseDataAndUpdateDOM = fetchLicenseDataAndUpdateDOM;
+
+    window.refreshLicenseStatusWithFeedback = async function () {
+        const btn = document.getElementById('btn-refresh-lic-status');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⌛ 正在刷新...';
+            btn.style.opacity = '0.75';
+        }
+
+        try {
+            await fetchLicenseDataAndUpdateDOM();
+            const emblem = document.getElementById('lic-emblem-container');
+            if (emblem) {
+                emblem.style.transform = 'scale(1.08)';
+                emblem.style.boxShadow = '0 0 16px rgba(0, 242, 255, 0.4)';
+                setTimeout(() => {
+                    emblem.style.transform = 'scale(1)';
+                    emblem.style.boxShadow = 'none';
+                }, 400);
+            }
+            if (typeof showNotification === 'function') {
+                showNotification('✨ 已完成最新授权状态探针校验与回显', 'info');
+            }
+        } catch (err) {
+            console.error('刷新授权状态失败:', err);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 刷新授权状态';
+                btn.style.opacity = '1';
+            }
+        }
+    };
 
     window.checkAndUpdateHeaderProBadge = async function () {
         try {

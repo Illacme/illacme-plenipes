@@ -19,7 +19,7 @@
                         <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">💎 授权与帮助中心</h2>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <button type="button" class="action-btn" onclick="if(typeof window.fetchLicenseDataAndUpdateDOM==='function')window.fetchLicenseDataAndUpdateDOM();" style="padding: 4px 10px; font-size: 0.78rem;">🔄 刷新准入状态</button>
+                        <button type="button" class="action-btn" id="btn-refresh-lic-status" onclick="if(typeof window.refreshLicenseStatusWithFeedback==='function'){window.refreshLicenseStatusWithFeedback();}else if(typeof window.fetchLicenseDataAndUpdateDOM==='function'){window.fetchLicenseDataAndUpdateDOM();}" style="padding: 4px 12px; font-size: 0.78rem; cursor: pointer; transition: all 0.25s;">🔄 刷新授权状态</button>
                     </div>
                 </div>
 
