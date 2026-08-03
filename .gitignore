@@ -48,14 +48,14 @@ themes/*/src/content/docs/*
 !themes/*/src/content/docs/index.md
 !themes/*/src/content/docs/readme.md
 
-# 🛡️ 审计与日志
+# 🛡️ 审计与日志及私有开发者脚本隔离
 *.log
 api_current_audit.json
 logs/
 .coverage
 htmlcov/
 .pytest_cache/
-scripts/*.tmp
+scripts/
 dashboard/public/data/engine_pulse_*.json
 
 # 🚀 临时资产与自愈脚本
