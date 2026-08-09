@@ -87,7 +87,7 @@ class SeoProcessorFactory:
             from .heuristic import HeuristicSeoProcessor
             processor_cls = HeuristicSeoProcessor
 
-        tlog.info(f"🧬 [SEO 工厂] 已装载处理器: {processor_cls.__name__} (模式={mode.value})")
+        tlog.debug(f"🧬 [SEO 工厂] 已装载处理器: {processor_cls.__name__} (模式={mode.value})")
         return processor_cls()
 
     @classmethod

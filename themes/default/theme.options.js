@@ -2,7 +2,7 @@
  * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
  */
 export const themeOptions = {
-  "site_name": "Borealis realm",
+  "site_name": "默认出版版图",
   "logo_path": "/static/logo.png",
   "footer_copyright": "© 2026 Illacme Sovereign. All Rights Reserved.",
   "enable_custom_style": false,
@@ -13,6 +13,6 @@ export const themeOptions = {
   "hero_title": "Illacme Sovereign",
   "hero_subtitle": "Premium Decentralized Publishing Base Platform.",
   "github_repo": "",
-  "site_description": "这是一个主权出版版图节点。"
+  "site_description": "在此输入品牌介绍/格言..."
 };
 export default themeOptions;

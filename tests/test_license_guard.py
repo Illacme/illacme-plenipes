@@ -6,9 +6,6 @@ Illacme Plenipes - License Guard Unit Tests
 """
 
 import os
-import sys
-import time
-import pytest
 from core.governance.license_guard import LicenseGuard
 from scripts.generate_license import generate_license
 

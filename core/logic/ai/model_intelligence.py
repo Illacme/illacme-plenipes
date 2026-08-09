@@ -63,14 +63,22 @@ class ModelIntelligenceHub:
         }
     }
 
-    # 🏺 [V10.3] 工业级协议归一化库 (参考 OpenRouter/LiteLLM 设计)
+    # 🏺 [V10.3] 工业级协议归一化库 (参考 OpenRouter/LiteLLM/LM Studio 最新设计)
     PROTOCOL_NORMALIZER = {
         "thinking": {
-            "openai-o1": lambda v, budget: {"reasoning_effort": "medium" if v and budget > 0 else "low"},
-            "deepseek-r1": lambda v, budget: {"max_thinking_tokens": budget if v else 1},
-            "anthropic-claude": lambda v, budget: {"thinking": {"type": "enabled", "budget_tokens": budget}} if v else {},
-            "openrouter-gateway": lambda v, budget: {"include_reasoning": v, "max_thinking_tokens": budget if v else 1},
-            "lmstudio-standard": lambda v, budget: {"reasoning": "on" if v else "off"},
+            "openai-o1": lambda v, budget: {"reasoning_effort": "medium" if (v and budget > 0) else "low"},
+            "deepseek-r1": lambda v, budget: {"max_thinking_tokens": budget if v else 0, "reasoning_effort": "high" if v else "none"},
+            "anthropic-claude": lambda v, budget: {"thinking": {"type": "enabled", "budget_tokens": budget}} if v else {"thinking": {"type": "disabled"}},
+            "openrouter-gateway": lambda v, budget: {"include_reasoning": v, "max_thinking_tokens": budget if v else 0},
+            "lmstudio-standard": lambda v, budget: {
+                "reasoning_effort": "none" if not v else "medium",
+                "reasoning": "off" if not v else "on",
+                "thinking": {"type": "disabled" if not v else "enabled"},
+                "chat_template_kwargs": {"enable_thinking": False if not v else True},
+                "enable_thinking": False if not v else True,
+                "think": False if not v else True,
+                "max_thinking_tokens": 0 if not v else budget,
+            },
             "google-gemini": lambda v, budget: {"thinking_config": {"include_thoughts": v}} if v else {},
             "standard-openai": lambda v, _: {}
         },

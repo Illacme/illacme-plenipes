@@ -18,10 +18,17 @@ async def list_vault_manuscripts():
     engine = get_global_engine()
     if not engine: return {"error": "Engine not initialized"}
     
+    vault_root_abs = os.path.abspath(engine.vault_root) if getattr(engine, "vault_root", None) else ""
     docs = engine.meta.get_documents_snapshot()
     vault_list = []
     for rel_path, info in docs.items():
         if not info: continue
+        
+        # 🛡️ 物理真理对正：只返回当前物理 vault_root 目录下真实存在的稿件
+        if vault_root_abs:
+            abs_file_path = os.path.join(vault_root_abs, rel_path)
+            if not os.path.exists(abs_file_path):
+                continue
         status_map = info.get("publish_status") or {}
         live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
         seo_data = info.get("seo_data") or {}

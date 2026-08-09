@@ -372,3 +372,66 @@ class SQLiteBackend(SQLiteReviewMixin):
             else:
                 conn.execute("DELETE FROM syndication_queue WHERE status = 'FAILED'")
 
+    def _normalize_paths_for_query(self, rel_path: str) -> tuple:
+        """🚀 [V121.0] 双向路径归一化：消除带/不带 .md 及前导斜杠对物权账本查询的影响"""
+        if not rel_path:
+            return ("",)
+        clean = rel_path.strip().lstrip('/')
+        clean_no_md = clean[:-3] if clean.endswith('.md') else clean
+        clean_md = clean_no_md + '.md'
+        return tuple(set([
+            rel_path,
+            clean,
+            clean_no_md,
+            clean_md,
+            f"/{clean}",
+            f"/{clean_md}",
+            f"/{clean_no_md}"
+        ]))
+
+    # 🚀 [V120.0] 全渠道文章生命周期物权记录表 CRUD 方法
+    def save_syndication_record(self, rel_path: str, lang_code: str, target_id: str, remote_article_id: str, remote_url: str = None, content_hash: str = None):
+        with self._get_conn() as conn:
+            conn.execute("""
+                INSERT INTO syndication_records (rel_path, lang_code, target_id, remote_article_id, remote_url, content_hash, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(rel_path, lang_code, target_id) DO UPDATE SET
+                    remote_article_id=excluded.remote_article_id,
+                    remote_url=excluded.remote_url,
+                    content_hash=excluded.content_hash,
+                    updated_at=CURRENT_TIMESTAMP
+            """, (rel_path, lang_code, target_id, str(remote_article_id), remote_url, content_hash))
+
+    def get_syndication_record(self, rel_path: str, lang_code: str, target_id: str) -> dict:
+        candidates = self._normalize_paths_for_query(rel_path)
+        placeholders = ','.join('?' * len(candidates))
+        row = self._get_conn().execute(
+            f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
+            (*candidates, lang_code, target_id)
+        ).fetchone()
+        return dict(row) if row else None
+
+    def list_syndication_records_for_doc(self, rel_path: str, lang_code: str = None) -> list:
+        candidates = self._normalize_paths_for_query(rel_path)
+        placeholders = ','.join('?' * len(candidates))
+        if lang_code:
+            rows = self._get_conn().execute(
+                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ?",
+                (*candidates, lang_code)
+            ).fetchall()
+        else:
+            rows = self._get_conn().execute(
+                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders})",
+                candidates
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def delete_syndication_record(self, rel_path: str, lang_code: str, target_id: str):
+        candidates = self._normalize_paths_for_query(rel_path)
+        placeholders = ','.join('?' * len(candidates))
+        with self._get_conn() as conn:
+            conn.execute(
+                f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
+                (*candidates, lang_code, target_id)
+            )
+

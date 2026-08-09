@@ -8,7 +8,7 @@ Illacme Plenipes — Hosting & Egress Plugins Tests
 import os
 import sys
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # 注入 Mock 依赖以防本地 Python 环境未安装包时引发导入错误
 sys.modules['oss2'] = MagicMock()

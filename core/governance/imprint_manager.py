@@ -45,8 +45,8 @@ class ImprintManager:
 
         if not LicenseGuard.is_pro_feature_allowed("multi_imprint"):
             existing = self.list_imprints()
-            if len(existing) >= 1:
-                tlog.error("🛑 [准入拦截] (权限受限) 社区版仅限划定 1 个版图。请升级至授权版。")
+            if len(existing) >= 2:
+                tlog.error("🛑 [准入拦截] (权限受限) 社区版除默认版图外仅限新增 1 个自定义版图 (总量限额 2)。请升级至授权版。")
                 return False
  
         tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理版图...")

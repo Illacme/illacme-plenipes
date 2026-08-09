@@ -6,6 +6,7 @@ Illacme-plenipes Core - OpenAI Adapter
 🛡️ [AEL-Iter-v5.3]：基于 TDR 复健的解耦适配器。
 """
 
+import re
 import requests
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
@@ -129,15 +130,25 @@ class OpenAICompatibleTranslator(BaseTranslator):
         if not raw_model or str(raw_model).lower() in ["null", "none", ""]:
             raw_model = "qwen/qwen3.5-9b"
 
+        # 🛡️ 顶格强效拦截：若请求被指定关闭思维链，仅向 System Prompt 注入硬约束
+        params = payload.get("params", {})
+        if params.get("enable_thinking") is False and messages:
+            for m in messages:
+                if m.get("role") == "system" and "[DIRECT ANSWER MODE]" not in m.get("content", ""):
+                    m["content"] = "[DIRECT ANSWER MODE: Do NOT output <think> tags or Thinking Process. Provide the raw result immediately.]\n" + (m.get("content") or "")
+                    break
+
         openai_payload = {
             "model": str(raw_model),
             "messages": messages,
-            **payload.get("params", {})
+            **params
         }
 
         # 🏢 [AEL-Iter-v77.12] 算力洗涤：对同步调用载荷进行强制智能参数对准
         from core.adapters.ai.payload_manager import PayloadManager
         openai_payload = PayloadManager.align_and_clean_payload(payload.get("model"), openai_payload, self)
+
+        tlog.info(f"🐛 [DEBUG PROMPT] System: {repr(messages[0]['content'] if messages else '')} | User: {repr(messages[1]['content'] if len(messages)>1 else '')}")
 
         # 🚀 [V75.0] 动态工具网关翻译 (Tool Translation Layer)
         tools = payload.get("tools", [])
@@ -258,20 +269,38 @@ class OpenAICompatibleTranslator(BaseTranslator):
                     tlog.info(f"✨ [OpenAI Sync Healer] 从同步响应中成功自愈解析出 {len(valid_events)} 个 XML 工具调用事件")
                     return valid_events
 
-            # 若 content 为空但 reasoning_content 不为空，降级为使用 reasoning 作为最终文本
+            # 若 content 为空但 reasoning_content 不为空，进行智能物理提纯解包
             if not content.strip() and reasoning.strip():
-                # 🛡️ [V78.1] 当调用方明确期望 JSON 输出时（is_json=True），
-                # reasoning_content 是模型的思考过程而非结构化数据，
-                # 不能被当作正式 JSON 内容降级使用。
-                # 返回空字符串，让上游 repair_json 触发其防污染底安机制返回 '{}'。
                 is_json_request = payload.get("is_json", False) if isinstance(payload, dict) else False
                 is_translation = payload.get("is_translation", False) if isinstance(payload, dict) else False
+                
                 if is_json_request:
-                    tlog.warning("⚠️ [OpenAI Sync Healer] is_json 请求检测到 content 为空而 reasoning_content 不为空，拒绝降级以防止 JSON 污染，将返回空字符串上报。")
+                    # 🚀 [智能提纯] 尝试从 reasoning_content 中自愈提取完整的 JSON
+                    json_match = re.search(r'(\{.*\}|\[.*\])', reasoning.strip(), re.DOTALL)
+                    if json_match:
+                        candidate = json_match.group(1).strip()
+                        try:
+                            json.loads(candidate)
+                            tlog.info("✨ [OpenAI Sync Healer] 成功从 reasoning_content 中自愈提纯拯救出合法 JSON 载荷！")
+                            return candidate
+                        except Exception:
+                            pass
+                    tlog.warning("⚠️ [OpenAI Sync Healer] is_json 请求检测到 content 为空且无法从 reasoning_content 提纯 JSON，返回空字符串上报。")
                     return ""
+                
                 if is_translation:
-                    tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 content 为空而 reasoning_content 不为空，拒绝降级为思维链以防止内容污染，将返回空字符串上报。")
+                    # 🚀 [智能提纯] 检查 reasoning 是否为思维链推导内容，若是则拦截
+                    dirty_keywords = ["reasoning process", "final result", "thinking process", "analyze the input", "analyze the request", "output only"]
+                    if any(kw in reasoning.lower() for kw in dirty_keywords):
+                        tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 reasoning_content 为思维链且 content 为空，拦截返回空字符串。")
+                        return ""
+                    cleaned_reasoning = re.sub(r'Thinking Process:.*?(?=\n\n|\Z)', '', reasoning.strip(), flags=re.DOTALL).strip()
+                    if cleaned_reasoning and len(cleaned_reasoning) > 0:
+                        tlog.info("✨ [OpenAI Sync Healer] 成功从 reasoning_content 中提纯出有效翻译文本。")
+                        return cleaned_reasoning
+                    tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 content 为空且无法提纯有效正文，返回空字符串上报。")
                     return ""
+                
                 tlog.info("✨ [OpenAI Sync Healer] 降级使用 reasoning_content 作为同步回答文本。")
                 return reasoning.strip()
 

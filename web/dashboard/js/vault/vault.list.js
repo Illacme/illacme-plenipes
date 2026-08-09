@@ -112,17 +112,28 @@ window.loadVault = async (query = null, page = null) => {
                     ? (isStale ? '⚠️' : '🔒')
                     : '🌍';
             }
+            const escapedTitle = (m.title || '').replace(/'/g, "\\'");
             return `
             <tr>
                 <td><div style="font-weight:600; color:var(--text-bright);">${m.title}</div>${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}</td>
                 <td><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
                 <td style="text-align: center;"><span class="mono">${wc.toLocaleString()}</span></td>
                 <td>
-                    <div style="display:flex; gap:8px;">
-                        <button class="mini-action-btn" title="快速编辑原稿 (Edit)" onclick="openEditor('${m.rel_path}')">📝</button>
-                        <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
-                        ${isAiEnabled && pubMode === 'global' ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.9rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : ''}
-                        <button class="mini-action-btn" title="打开分发枢纽与遥测监控 (Dispatch Hub)" onclick="openVaultDrawer('${m.rel_path}')">📡</button>
+                    <div class="vault-actions-grid" style="display: flex; flex-direction: column; gap: 5px; width: fit-content;">
+                        <!-- 🎨 行 1: 原稿创作、迁移、预览与路径复制 -->
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <button class="mini-action-btn" title="快速编辑原稿 (Edit Markdown)" onclick="openEditor('${m.rel_path}')">📝</button>
+                            <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
+                            <button class="mini-action-btn" title="实时渲染预览 (Live Web Preview)" onclick="window.openArticleLivePreview('${m.rel_path}', '${m.slug || ''}')">👁️</button>
+                            <button class="mini-action-btn" title="复制文章 Slug 路径 / 链接 (Copy Slug & Path)" onclick="window.copyArticleMagicLink('${m.rel_path}', '${m.slug || ''}')">📋</button>
+                        </div>
+                        <!-- 🌐 行 2: 译文精校、网页托管发布、社媒渠道分发与物理销毁 -->
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            ${isAiEnabled && pubMode === 'global' ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem; filter: grayscale(100%); opacity: 0.4;">🌍</button>`}
+                            <button class="mini-action-btn" title="网页托管发布与全网遥测 (Web Hosting & Publish)" onclick="openVaultDrawer('${m.rel_path}')">🌐</button>
+                            <button class="mini-action-btn" title="社媒渠道分发与多平台推流 (Social Media Syndication)" onclick="window.openArticleSyndicationDrawer('${m.rel_path}', '${escapedTitle}')">📢</button>
+                            <button class="mini-action-btn" title="物理安全销毁 (Physical Destroy)" onclick="window.triggerDirectDocDelete('${m.rel_path}', '${escapedTitle}')" style="color: var(--neon-red, #ff4d4f); border-color: rgba(255, 77, 79, 0.35);">🗑️</button>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -132,6 +143,99 @@ window.loadVault = async (query = null, page = null) => {
     } catch (e) {
         console.error("Vault load error:", e);
         listEl.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--accent-primary);">🚨 物理链路异常: ${e.message}</td></tr>`;
+    }
+};
+
+// 🚀 [快捷动作算子 1] 实时网页渲染预览
+window.openArticleLivePreview = async (relPath, slug) => {
+    const previewPort = window.settingsData?.system?.serve_port || 43213;
+    let targetUrl = '';
+    
+    if (slug && slug !== 'null' && slug !== 'undefined') {
+        const cleanSlug = slug.startsWith('/') ? slug.substring(1) : slug;
+        targetUrl = `http://localhost:${previewPort}/${cleanSlug}`;
+    } else {
+        const cleanPath = relPath.replace(/\.md$/, '.html');
+        targetUrl = `http://localhost:${previewPort}/${cleanPath}`;
+    }
+
+    if (typeof window.showToast === 'function') {
+        window.showToast(`🌐 正在打开实时预览: ${relPath}`, 'info');
+    }
+    window.open(targetUrl, '_blank');
+};
+
+// 🚀 [快捷动作算子 2] 一键复制 Slug 路径 / 链接
+window.copyArticleMagicLink = async (relPath, slug) => {
+    let copyText = '';
+    if (slug && slug !== 'null' && slug !== 'undefined') {
+        copyText = slug.startsWith('/') ? slug : `/${slug}`;
+    } else {
+        copyText = relPath;
+    }
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(copyText);
+        } else {
+            const input = document.createElement('textarea');
+            input.value = copyText;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+        }
+        if (typeof window.showToast === 'function') {
+            window.showToast(`📋 文章路径已复制: ${copyText}`, 'success');
+        }
+    } catch (e) {
+        console.warn('Copy failed:', e);
+        if (typeof window.showToast === 'function') {
+            window.showToast(`📋 复制路径: ${copyText}`, 'info');
+        }
+    }
+};
+
+// 🚀 [快捷动作算子 3] 单篇原稿安全快速销毁入口
+window.triggerDirectDocDelete = (relPath, title) => {
+    window.currentDocId = relPath;
+    const displayTitle = title || relPath;
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '确认销毁该原稿吗？',
+            html: `将物理抹除磁盘源文件 <b>${displayTitle}</b> 及其全网所有出版产物。<br><br><span style="color:#ff6b6b; font-size:0.82rem;">⚠️ 此物理销毁操作不可撤销！</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--neon-red, #ff4d4f)',
+            confirmButtonText: '🔥 确认销毁',
+            cancelButtonText: '取消',
+            background: 'var(--card-bg)',
+            color: 'var(--text-bright)'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                if (typeof addAudit === 'function') addAudit(`🗑️ 正在物理销毁资产 [${relPath}]...`, "warning");
+                const res = await apiFetch(`/api/vault/destroy/${encodeURIComponent(relPath)}`, { method: 'DELETE' });
+                if (res && res.success) {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`🗑️ 原稿 [${displayTitle}] 已物理销毁`, 'success');
+                    }
+                    if (typeof window.loadVault === 'function') {
+                        window.loadVault();
+                    }
+                } else {
+                    const err = res ? res.detail || res.message : '销毁失败';
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`❌ 销毁失败: ${err}`, 'error');
+                    }
+                }
+            }
+        });
+    } else {
+        if (confirm(`确认物理销毁 [${displayTitle}] 吗？不可撤销！`)) {
+            if (typeof window.confirmPhysicalDelete === 'function') {
+                window.confirmPhysicalDelete();
+            }
+        }
     }
 };
 

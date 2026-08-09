@@ -107,12 +107,14 @@ async def trigger_publish(req: Dict[str, Any]) -> Dict[str, Any]:
         mode: str = req.get("mode", "static")
         paths = req.get("paths", None)
         force: bool = req.get("force", False)
+        clear_cache: bool = req.get("clear_cache", False)
         target_langs = req.get("target_langs", None)
         from core.runtime.orchestrator import start_asynchronous_sync
         task_id = start_asynchronous_sync(
             engine,
             dry_run=(mode == "dry-run"),
             force=force,
+            clear_cache=clear_cache,
             sandbox=(mode == "sandbox"),
             requested_paths=paths,
             target_langs=target_langs
@@ -163,7 +165,7 @@ async def apply_translation_style(req: StyleRequest, request: Request) -> Dict[s
 @router.post("/api/governance/gc", dependencies=[Depends(verify_token)])
 async def trigger_system_gc() -> Dict[str, Any]:
     """
-    一键物理剪枝 (🧹 物理 GC)：唤醒清道夫回收幽灵路由和冗余 Markdown 资产。
+    一键物理剪枝 (🧹 物理 GC)：唤醒清道夫回收幽灵路由、物理垃圾资产与 SQLite 孤儿账本。
     """
     engine = get_global_engine()
     if not engine:
@@ -171,10 +173,32 @@ async def trigger_system_gc() -> Dict[str, Any]:
     if not hasattr(engine, "janitor") or engine.janitor is None:
         return {"status": "error", "message": "Janitor engine not initialized"}
     try:
-        # 执行幽灵节点物理清洗
+        # 1. 扫描当前 vault_root 物理磁盘上的真实文件列表
+        vault_root_abs = os.path.abspath(engine.vault_root) if getattr(engine, "vault_root", None) else ""
+        current_source_files = set()
+        if vault_root_abs and os.path.exists(vault_root_abs):
+            for root, _, files in os.walk(vault_root_abs):
+                for f in files:
+                    if f.endswith(('.md', '.markdown')):
+                        abs_p = os.path.join(root, f)
+                        rel_p = os.path.relpath(abs_p, vault_root_abs).replace("\\", "/")
+                        current_source_files.add(rel_p)
+
+        # 2. 执行 SQLite 数据库中的孤儿账本擦除 (方案二履约)
+        docs_snapshot = engine.meta.get_documents_snapshot()
+        orphans = [p for p in docs_snapshot.keys() if p not in current_source_files]
+        if orphans:
+            for orphan in orphans:
+                try:
+                    engine.meta.remove_document(orphan)
+                except Exception:
+                    pass
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🧹 [物理 GC] 已成功擦除 {len(orphans)} 篇不在当前文库内的 SQLite 幽灵孤儿账本。")
+
+        # 3. 执行幽灵节点与路由物理清洗
         engine.janitor.gc_ghost_nodes(is_dry_run=False)
         bus.emit("UI_TERMINAL_DATA", type="LOG", data="🧹 [一键物理剪枝] 物理 GC 成功！已物理回收幽灵路由与冗余 Markdown 资产。")
-        return {"status": "success", "message": "GC executed successfully"}
+        return {"status": "success", "message": f"GC executed successfully. Cleaned {len(orphans)} orphan records."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

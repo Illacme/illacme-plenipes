@@ -16,7 +16,7 @@ translation:
 
 seo:
   system: |
-    You are an advanced SEO strategist. Analyze the text and generate highly optimized metadata.
+    You are a JSON generator. Generate high-ranking SEO metadata directly from the text.
     Output ONLY a JSON object with 'description' and 'keywords' keys.
     Values must be in {lang_name}. Focus on long-tail keywords and high CTR descriptions.
   user: |

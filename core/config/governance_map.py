@@ -10,13 +10,13 @@ import re
 
 # 🎯 [V52.18] 全息配置治理矩阵 (Sensing vs. Sovereignty)
 GOVERNANCE_RULES = {
-    # 🔴 本地感应层 (Local: 本地覆盖配置) - 物理机能、凭据密钥、硬件限制
+    # 🔴 本地全局感应层 (Local: config.local.yaml) - 全局总开关、全局默认凭据与系统算力限制
     "local": [
         r"^translation\.compute_nodes\..*$", # 物理算力节点全量属性 (ID/URL/Key/Type/Model/Enabled)
-        r"^publish_control\.webhook_endpoints\..*\.(?!enabled$).*$", # Webhook 物理配置（除激活状态外）
-        r"^publish_control\.direct_upload\..*\.(?!enabled$).*$", # 托管平台物理配置（除激活状态外，如 URL/Token/Key/Secret 等）
-        r"^syndication\..*\.(?!enabled$).*$", # 聚合平台物理配置（除激活状态外，如 URL/Key/Token/Username/Password 等）
-        r"^image_hosting\..*\.(?!enabled$).*$", # 图床平台物理配置（除激活状态外，如 access_key/secret_key 等）
+        r"^publish_control\.webhook_endpoints\..*\.enabled$", # Webhook 全局总开关
+        r"^publish_control\.direct_upload\..*\.enabled$",     # 全站托管平台全局总开关
+        r"^syndication\..*\.enabled$",                        # 社交广播平台全局总开关
+        r"^image_hosting\..*\.enabled$",                      # 图床平台全局总开关
         r"^ingress_settings\.source_options\..*$", # 物理输入源的凭据、密钥与本地绝对路径（如 Notion/Obsidian 等）
         r"^system\.api_token$",            # 系统 API 授权令牌
         r"^system\.serve_host$",           # 本地监听地址
@@ -33,7 +33,7 @@ GOVERNANCE_RULES = {
         r"^active_imprint$",               # 本机当前活跃品牌 ID
     ],
     
-    # 🔵 品牌主权层 (Imprint: imprints/{id}/configs/config.imprint.yaml) - 品牌意志、策略选择
+    # 🔵 品牌主权层 (Imprint: imprints/{id}/configs/config.imprint.yaml) - 品牌特定配置、品牌启用标记与偏好覆盖
     "imprint": [
         r"^imprint_name$",                 # 品牌名称
         r"^imprint_description$",          # 品牌介绍
@@ -45,8 +45,9 @@ GOVERNANCE_RULES = {
         r"^seo_settings\..*$",             # 品牌搜索优化策略
         r"^ingress_settings\..*$",         # 品牌输入感应标准
         r"^image_settings\..*$",           # 品牌资产处理标准
-        r"^image_hosting\..*$",            # 品牌图床服务全局策略
-        r"^syndication\..*$",              # 品牌内容聚合策略
+        r"^image_hosting\..*$",            # 品牌图床特定覆盖与配置
+        r"^syndication\..*$",              # 品牌分发渠道特定覆盖与配置
+        r"^publish_control\.direct_upload\..*$", # 品牌托管渠道特定覆盖与配置
         r"^timeline\..*$",                 # 品牌时间轴审计逻辑
         r"^system\.concurrency\..*$",      # 品牌流水线与算力池并发矩阵控制
         r"^system\.janitor_settings\..*$", # 品牌目录清理规则
@@ -54,6 +55,7 @@ GOVERNANCE_RULES = {
         r"^system\.pipeline_steps$",       # 品牌出版管线流程
         r"^plugins\.imprint_disabled_plugins$", # 品牌自愿禁用的插件
         r"^translation\.strategy$",        # 品牌翻译调度逻辑
+        r"^translation\.enable_ai$",       # 品牌 AI 算力总控开关
         r"^translation\.primary_node$",    # 品牌主力算力节点
         r"^translation\.primary_model$",   # 品牌主力执行模型
         r"^translation\.fallback_node$",   # 品牌备用算力节点

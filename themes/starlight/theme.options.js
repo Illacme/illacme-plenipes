@@ -2,7 +2,7 @@
  * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
  */
 export const themeOptions = {
-  "site_name": "Borealis realm",
+  "site_name": "Illacme Press",
   "logo_path": "/src/assets/logo.svg",
   "footer_copyright": "Built with Starlight. © 2026 Astro sovereign.",
   "enable_custom_style": false,
@@ -13,6 +13,6 @@ export const themeOptions = {
   "hero_subtitle": "Delightful Astro-based documentation that shines.",
   "github_repo": "",
   "sidebar_collapse_all": true,
-  "site_description": "这是一个主权出版版图节点。"
+  "site_description": "在此输入品牌介绍/格言..."
 };
 export default themeOptions;

@@ -48,24 +48,42 @@ class AILogicHub:
     @staticmethod
     def clean_translation_response(raw_response: str) -> str:
         """
-        🚀 [V107.0] 物理级 AI 译文提纯与 prompt 围栏防护
-        彻底剥离 <think>...</think>、### Content ### / ### Translation ### 及其多语种变体
-        （Inhalt, Übersetzung, Traduction, Contenido, 翻訳, 译文, 原文等）。
+        🚀 [V108.0] 物理级 AI 译文提纯与 prompt 围栏防护
+        彻底剥离 <think>...</think>、markdown 代码块包裹、### Content ### / ### Translation ### / ### Tərcümə ### 及其多语种变体，
+        以及废话引言 (Let's translate..., Here is the translation...)。
         """
         if not raw_response: return ""
-        text = re.sub(r'<think>.*?</think>', '', str(raw_response), flags=re.DOTALL).strip()
+        # 1. 彻底剥离 <think>...</think> 及其变体
+        text = re.sub(r'<(?:think|thinking)>.*?</(?:think|thinking)>', '', str(raw_response), flags=re.DOTALL).strip()
 
+        # 2. 如果整段输出被 ```markdown 或 ``` 代码块包裹（而原文并非代码块），提取内部纯文本
+        if text.startswith("```") and text.endswith("```"):
+            m = re.match(r'^```[a-zA-Z0-9_-]*\n?(.*?)\n?```$', text, flags=re.DOTALL)
+            if m:
+                text = m.group(1).strip()
+
+        # 3. 物理擦除 LLM 废话前缀 (如 "Here is the translation:", "Let's translate line by line", "Translation:", "Tərcümə:")
+        text = re.sub(r'^(?:Here is the translation|Here\'s the translation|Translation|Tərcümə|Çeviri|Traduction|Übersetzung|Traducción|翻译结果|译文)[:：]?\s*\n?', '', text, flags=re.IGNORECASE).strip()
+
+        # 4. 按行过滤围栏标签 (如 ### Content ###, ### Translation ###, 以及孤立的空 ### 标题)
         lines = text.split("\n")
         cleaned_lines = []
+        skip_line_prefix_re = re.compile(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)?\s*#{0,6}$', re.IGNORECASE)
+        
         for line in lines:
             stripped_line = line.strip()
-            if re.match(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}$', stripped_line, re.IGNORECASE):
+            if skip_line_prefix_re.match(stripped_line):
                 continue
+            # 滤除单个 Line X: Translation: 前缀
+            line = re.sub(r'^Line\s*\d+[:：]\s*(?:Translation[:：]?)?\s*', '', line, flags=re.IGNORECASE)
             cleaned_lines.append(line)
 
         result = "\n".join(cleaned_lines).strip()
-        result = re.sub(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}\n?', '', result, flags=re.IGNORECASE)
-        result = re.sub(r'\n?#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|原文|内容|译文|説明|概要)\s*#{0,6}$', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)\s*#{0,6}\n?', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'\n?#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)\s*#{0,6}$', '', result, flags=re.IGNORECASE)
+        # 5. 彻底剥离行首/行尾孤立的 ### 标签残余 (例如 LLM 回吐的空标题头)
+        result = re.sub(r'^\s*#{1,6}\s*\n', '', result).strip()
+        result = re.sub(r'\n\s*#{1,6}\s*$', '', result).strip()
         return result.strip()
 
     @staticmethod
@@ -439,7 +457,14 @@ class AILogicHub:
             entities = node.get("entities", {})
             
             context_block += f"- Document: {title}\n"
-            if gist: context_block += f"  Summary: {gist}\n"
+            if gist:
+                import re
+                clean_gist = re.sub(r'(?:\d+\.\s*Analyze the Request|Draft\s*\d+:|Final Decision:).*', '', gist, flags=re.DOTALL | re.IGNORECASE)
+                clean_gist = re.sub(r'<think>.*?</think>', '', clean_gist, flags=re.DOTALL)
+                clean_gist = clean_gist.strip()
+                if clean_gist:
+                    clean_gist = clean_gist.split('\n')[-1][:150]
+                    context_block += f"  Summary: {clean_gist}\n"
             
             # 提取核心技术术语
             concepts = entities.get("concepts", []) + entities.get("technologies", [])

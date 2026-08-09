@@ -30,7 +30,8 @@ class HeartbeatFilter(logging.Filter):
             "/api/system/context",
             "/api/imprints",
             "/api/billing/stats",
-            "/api/galaxy/graph"
+            "/api/galaxy/graph",
+            "/api/translation/review"
         ]
         return not any(endpoint in msg for endpoint in ignored_endpoints)
 

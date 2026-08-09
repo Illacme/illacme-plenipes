@@ -215,10 +215,15 @@ window.syncI18nEnabled = async (val) => {
 
     if (typeof addAudit === 'function') addAudit(`🌍 正在${val ? '开启' : '关闭'}多语言翻译矩阵...`);
 
+    const updatePayload = {
+        'i18n_settings.enabled': val,
+        'governance.publishing_mode': val ? 'global' : 'enhanced'
+    };
+
     const res = await apiFetch('/api/config/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'i18n_settings.enabled': val })
+        body: JSON.stringify(updatePayload)
     });
 
     if (res && res.status === 'success') {

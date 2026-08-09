@@ -103,28 +103,21 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
     target_enable_ai = req.get("translation.enable_ai", current_enable_ai)
     target_i18n_enabled = req.get("i18n_settings.enabled", current_i18n_enabled)
 
-    # Phase 3: 根据新规则执行出版模式联动与校验
+    # Phase 3: 以算力中心 AI 算力总控开关 (target_enable_ai) 为准进行出版模式联动
     if "governance.publishing_mode" not in req:
-        # 1. AI 算力总控 关闭状态下 -> 默认选择基础物理出版
+        # 1. 若 AI 算力总控处于关闭状态 -> 出版模式强制归位基础物理出版 (BASIC)，多语言矩阵关闭
         if not target_enable_ai:
-            if current_publishing_mode != PublishingMode.BASIC:
-                req["governance.publishing_mode"] = PublishingMode.BASIC.value
-                tlog.info(f"🔄 [自动联动] AI 算力关闭，出版模式默认选择为 {PublishingMode.BASIC.value}")
-        # 2. AI 算力总控 开启状态下
+            req["governance.publishing_mode"] = PublishingMode.BASIC.value
+            req["i18n_settings.enabled"] = False
+            tlog.info(f"🔄 [自动联动] AI 算力总控关闭，出版模式自动对齐为 {PublishingMode.BASIC.value}，多语言矩阵关闭")
+        # 2. 若 AI 算力总控处于开启状态 -> 根据多语言矩阵开关自愈升降阶出版模式
         else:
-            enable_ai_turned_on = (not current_enable_ai and target_enable_ai)
-            i18n_changed = ("i18n_settings.enabled" in req and current_i18n_enabled != target_i18n_enabled)
-            
-            # 2.1 如果翻译阵列中关闭了多语言翻译矩阵 -> 默认选择智能母语增强
-            if not target_i18n_enabled:
-                if enable_ai_turned_on or i18n_changed or current_publishing_mode == PublishingMode.GLOBAL:
-                    req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
-                    tlog.info(f"🔄 [自动联动] AI 开启且多语言矩阵关闭，出版模式默认选择为 {PublishingMode.ENHANCED.value}")
-            # 2.2 如果翻译阵列中开启了多语言翻译矩阵 -> 默认选择全球多语言分发
+            if target_i18n_enabled:
+                req["governance.publishing_mode"] = PublishingMode.GLOBAL.value
+                tlog.info(f"🔄 [自动联动] AI 算力总控开启且多语言矩阵开启，出版模式选择为 {PublishingMode.GLOBAL.value}")
             else:
-                if enable_ai_turned_on or i18n_changed:
-                    req["governance.publishing_mode"] = PublishingMode.GLOBAL.value
-                    tlog.info(f"🔄 [自动联动] AI 开启且多语言矩阵开启，出版模式默认选择为 {PublishingMode.GLOBAL.value}")
+                req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
+                tlog.info(f"🔄 [自动联动] AI 算力总控开启且多语言矩阵关闭，出版模式选择为 {PublishingMode.ENHANCED.value}")
     else:
         requested_mode = req["governance.publishing_mode"]
         if isinstance(requested_mode, str):
@@ -266,26 +259,7 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
             "translation.enable_ai"
         ]
         
-        for key in keys_to_sync:
-            parts = key.split('.')
-            orig_val = engine.config
-            new_val = validated_config
-            for part in parts:
-                orig_val = getattr(orig_val, part, None)
-                new_val = getattr(new_val, part, None)
-            
-            if orig_val != new_val:
-                tlog.info(f"🔄 [更新校验自愈同步] 字段 '{key}' 发生降级调整: {orig_val} -> {new_val}")
-                level = resolve_governance_level(key)
-                if level == "global":
-                    level = "local"
-                routing_groups[level][key] = new_val
-                
-                # 重新写入内存中对应的属性值
-                target = engine.config
-                for part in parts[:-1]:
-                    target = getattr(target, part)
-                setattr(target, parts[-1], new_val)
+
     except Exception as eval_err:
         tlog.warning(f"⚠️ [更新后配置评估自愈失败]: {eval_err}")
 
@@ -409,9 +383,12 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                 shutil.copytree(global_theme_path, local_theme_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns('node_modules', '.git', '.DS_Store'))
             
         if hasattr(engine, 'config_manager') and type(engine.config_manager).__name__ not in ('MagicMock', 'Mock'):
+            target_imp = imprint_id or engine.im.get_active_imprint()
+            engine.config_manager.imprint_id = target_imp
+            tlog.info(f"🔍 [Reload 前] engine.config: mode={getattr(engine.config.governance, 'publishing_mode', None)}, i18n={getattr(engine.config.i18n_settings, 'enabled', None)}")
             engine.config_manager.reload()
-            # 🚀 [V75.8 Hot-Reload] 强力打通意志断层：同步全局 engine config 引用
             engine.config = engine.config_manager.config
+            tlog.info(f"🔍 [Reload 后] engine.config: mode={getattr(engine.config.governance, 'publishing_mode', None)}, i18n={getattr(engine.config.i18n_settings, 'enabled', None)}")
         
         # 统一在线热重构（对齐路径、主题、算力与路由组件，彻底消除残留引用）
         engine.active_theme = engine.config.active_theme

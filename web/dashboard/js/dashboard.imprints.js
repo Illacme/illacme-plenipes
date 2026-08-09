@@ -52,15 +52,15 @@ window.addNewImprint = async () => {
     const isLicensed = window.settingsData?._is_licensed || false;
     const currentCount = window.settingsData?._imprints?.length || 0;
 
-    if (!isLicensed && currentCount >= 1) {
+    if (!isLicensed && currentCount >= 2) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: '🛡️ 准入拦截',
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
                       '您当前处于 <b>免费社区版</b>。<br><br>' +
-                      '• 版图限额: 1/1 (已满)<br>' +
-                      '• 治理限制: 无法添加更多出版版图。<br><br>' +
-                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [高级专业版] 以开启无限版图管理。</span>' +
+                      '• 版图限额: 2/2 (已含 1 个默认版图 + 1 个自定义版图)<br>' +
+                      '• 治理限制: 社区版最多允许创建 1 个自定义出版版图。<br><br>' +
+                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [高级专业版] 以解锁多版图管理。</span>' +
                       '</div>',
                 icon: 'warning',
                 confirmButtonText: '了解',
@@ -69,7 +69,7 @@ window.addNewImprint = async () => {
                 confirmButtonColor: 'var(--accent-primary)'
             });
         } else {
-            alert("🛡️ [准入拦截]\n社区版限额 1 个版图，无法继续添加。");
+            alert("🛡️ [准入拦截]\n免费社区版限额 2 个版图 (1 个默认 + 1 个自定义)，无法继续添加。");
         }
         return;
     }

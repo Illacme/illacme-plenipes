@@ -35,6 +35,11 @@
 
         const cfg = typeConfig[type] || typeConfig.info;
 
+        // 🛡️ 智能去重：若 message 自身已包含前置 Emoji，自动清洗，防止出现双图标 (如 ⚠️ ⚠️)
+        let cleanMessage = String(message || '').trim();
+        const leadingEmojiRegex = /^(\u26a0\ufe0f?|\ud83d\udeab|\ud83d\udea8|\u2728|\ud83d\udce1|\u2705|\u274c|\ud83d\uddd1\ufe0f?|\ud83d\udd17|\ud83e\uddf1|\ud83d\udee0\ufe0f?|\u26a0)\s*/;
+        cleanMessage = cleanMessage.replace(leadingEmojiRegex, '');
+
         toast.style.cssText = `
             pointer-events: auto;
             background: ${cfg.bg};
@@ -58,7 +63,7 @@
 
         toast.innerHTML = `
             <span style="font-size: 1.1rem; flex-shrink: 0;">${cfg.icon}</span>
-            <div style="flex: 1; word-break: break-word;">${message}</div>
+            <div style="flex: 1; word-break: break-word;">${cleanMessage}</div>
         `;
 
         container.appendChild(toast);

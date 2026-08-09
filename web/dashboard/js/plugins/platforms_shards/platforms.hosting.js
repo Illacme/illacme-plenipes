@@ -236,6 +236,31 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                 ${renderSettingsItem('站点访问域名 (Public URL)', `publish_control.direct_upload.sftp.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mysite.com", description: "网站公开访问的基地址。" })}
                 ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.sftp.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `;
+        } else if (id === 'railway') {
+            return `
+                ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.railway.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://backboard.railway.app/deploy/...", description: "在 Railway 项目服务设置 -> Deploy Triggers 中创建的 Deploy Hook URL。" })}
+                ${window.renderPlatformAdvancedGroup('可选 Git 关联部署参数', `
+                    ${renderSettingsItem('关联 Git 仓库 URL', `publish_control.direct_upload.railway.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git (可选)" })}
+                    ${renderSettingsItem('Git 访问令牌 (Token)', `publish_control.direct_upload.railway.token`, cfg.token, 'password', { placeholder: "Git Token (可选)" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.railway.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                `)}
+            `;
+        } else if (id === 'render') {
+            return `
+                ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.render.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://api.render.com/deploy/srv-...", description: "在 Render 静态服务 Settings -> Deploy Hook 中复制的 Hook 地址。" })}
+                ${window.renderPlatformAdvancedGroup('可选 API 密钥与代理', `
+                    ${renderSettingsItem('Render API Key', `publish_control.direct_upload.render.api_key`, cfg.api_key, 'password', { placeholder: "rnd_xxxxxxxx (可选)" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.render.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                `)}
+            `;
+        } else if (id === 'zeabur') {
+            return `
+                ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.zeabur.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://gateway.zeabur.app/api/v1/deploy/...", description: "在 Zeabur 服务设置 -> Git/Deploy Webhook 中生成的 Hook 地址。" })}
+                ${window.renderPlatformAdvancedGroup('可选 API 密钥与代理', `
+                    ${renderSettingsItem('Zeabur API Token', `publish_control.direct_upload.zeabur.token`, cfg.token, 'password', { placeholder: "Zeabur Personal Access Token (可选)" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.zeabur.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                `)}
+            `;
         }
     }
 

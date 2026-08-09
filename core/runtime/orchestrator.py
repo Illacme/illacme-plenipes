@@ -26,25 +26,31 @@ def execute_full_sync(engine: Any, args: Any, task_queue: List[Any], current_sou
 # 🔒 [V52.3] 主权原子锁：防止出版流水线重入与进度条飞涨
 _publish_lock = threading.Lock()
 _is_publishing = False
+_pending_sync_queue = []
 
-def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None, target_langs: Optional[List[str]] = None) -> Optional[int]:
+def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None, target_langs: Optional[List[str]] = None, clear_cache: bool = False) -> Optional[int]:
     """
     🚀 [V51.0] 异步同步触发器：专供 API/Dashboard 调用
-    [V52.3 升级]：加入主权互斥检查，确保全球范围内只有一个出版流在运行。
+    [V52.3 升级]：支持任务排队与语种无缝追加机制，杜绝二次并发碰撞拦截。
     """
-    global _is_publishing
+    global _is_publishing, _pending_sync_queue
     
-    if _is_publishing:
-        tlog.warning("⚠️ [主权拦截] 探测到已有出版任务正在运行，本次点火已取消以防止算力碰撞。")
-        from core.logic.notification_hub import send_sync_lifecycle_notification
-        send_sync_lifecycle_notification(engine, "BLOCKED", "出版点火被拦截", "已有出版任务正在后台运行，本次启动已取消。")
-        return None
+    with _publish_lock:
+        if _is_publishing:
+            tlog.info(f"⏳ [排队追加] 探测到已有出版任务在运行，已将 requested_paths={requested_paths}, target_langs={target_langs} 压入排队队列...")
+            _pending_sync_queue.append({
+                'dry_run': dry_run, 'force': force, 'sandbox': sandbox,
+                'requested_paths': requested_paths, 'target_langs': target_langs,
+                'clear_cache': clear_cache
+            })
+            return 999999  # 返回排队标记 ID
 
     # 1. 模拟 CLI 参数
     class MockArgs:
         def __init__(self):
             self.dry_run = dry_run
             self.force = force
+            self.clean = clear_cache or force
             self.sandbox = sandbox
             self.watch = False
             self.path = requested_paths
@@ -102,7 +108,8 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                         try: os.remove(bak_file)
                         except Exception: pass
             except Exception as e:
-                import traceback, os
+                import traceback
+                import os
                 tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}\n{traceback.format_exc()}")
                 # 🚀 发生异常时，自动回滚恢复原快照，避免物理 missing 死锁
                 for orig_file, bak_file in cleaned_bak_files:
@@ -119,6 +126,20 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 if hasattr(engine, 'is_watchdog_suspended') and engine.is_watchdog_suspended:
                     engine.is_watchdog_suspended = False
                     tlog.info("🐕 [后台闭环] 已强行唤醒处于休眠状态的监控狗。")
+
+                # 🚀 自动消费排队队列中的下一个翻译任务
+                if _pending_sync_queue:
+                    next_item = _pending_sync_queue.pop(0)
+                    tlog.info(f"🔄 [排队自动接力] 正在为排队任务启动点火: {next_item['requested_paths']} / {next_item['target_langs']}")
+                    start_asynchronous_sync(
+                        engine,
+                        dry_run=next_item.get('dry_run', False),
+                        force=next_item.get('force', False),
+                        sandbox=next_item.get('sandbox', False),
+                        requested_paths=next_item.get('requested_paths'),
+                        target_langs=next_item.get('target_langs'),
+                        clear_cache=next_item.get('clear_cache', False)
+                    )
 
     # 3. 提交至全局执行器 (优先级设为 CRITICAL 以确保立即响应)
     # 🚀 [V10.3] 线程隔离优化：启动专用的协调器线程运行后台任务，避免占用全局执行池而引发嵌套提交死锁及救援警告

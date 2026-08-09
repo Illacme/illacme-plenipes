@@ -92,6 +92,21 @@ INIT_SCHEMA = [
         status TEXT DEFAULT 'PENDING',
         UNIQUE(rel_path, target_id)
     )
+    """,
+    # 8. 🚀 [V120.0] 全渠道文章生命周期物权记录表 (Syndication Records)
+    """
+    CREATE TABLE IF NOT EXISTS syndication_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rel_path TEXT NOT NULL,
+        lang_code TEXT NOT NULL DEFAULT 'zh',
+        target_id TEXT NOT NULL,
+        remote_article_id TEXT NOT NULL,
+        remote_url TEXT,
+        content_hash TEXT,
+        published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(rel_path, lang_code, target_id)
+    )
     """
 ]
 

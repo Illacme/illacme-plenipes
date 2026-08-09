@@ -162,11 +162,29 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
             ${renderSettingsItem('作者 URN (Author URN)', `syndication.linkedin.author_urn`, cfg.author_urn, 'text', { placeholder: "例如: urn:li:person:xxxxxxxxxx", description: "您的 LinkedIn 个人或 Organization 唯一标识指纹 URN。" })}
             ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.linkedin.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
         `;
+    } else if (id === 'devto' || id === 'dev_to') {
+        return `
+            ${renderSettingsItem('API 密钥 (API Key)', `syndication.devto.api_key`, cfg.api_key || cfg.token, 'password', {
+            placeholder: "请输入 Dev.to API Key",
+            description: "【如何获取】登录 Dev.to 网页端 -> 点击右上角头像 -> Settings -> Extensions -> 生成并复制 Personal Access Tokens"
+        })}
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 Dev.to API Key 申请直达魔术链接</span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 2px;">
+                    <a href="https://dev.to/settings/extensions" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 Dev.to Extensions 密钥申请页</a>
+                </div>
+            </div>
+            ${renderSettingsItem('默认直接公开发布', `syndication.devto.published`, cfg.published === true, 'checkbox', {
+            description: "勾选表示同步到 Dev.to 后直接公开展示 (Published)；留空表示默认存为私密草稿 (Draft)"
+        })}
+            ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.devto.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+        `;
     } else {
         return `
-            ${renderSettingsItem('凭据/密钥 (Key/Token)', category === 'hosting' ? `publish_control.direct_upload.${id}.api_key` : `syndication.${id}.api_key`, cfg.api_key || cfg.app_password, 'password', { placeholder: "请输入访问令牌/API密钥" })}
-            ${renderSettingsItem('发布目标 (URL/Bucket)', category === 'hosting' ? `publish_control.direct_upload.${id}.url` : `syndication.${id}.url`, cfg.url, 'text', { placeholder: "请输入目标 URL 或存储桶名称" })}
-            ${renderSettingsItem('账号/ID', category === 'hosting' ? `publish_control.direct_upload.${id}.username` : `syndication.${id}.username`, cfg.username, 'text', { placeholder: "请输入账号名" })}
+            ${renderSettingsItem('访问令牌 (API Key / Token)', category === 'hosting' ? `publish_control.direct_upload.${id}.api_key` : `syndication.${id}.api_key`, cfg.api_key || cfg.token || cfg.app_password, 'password', { placeholder: "请输入访问令牌 / API Key" })}
+            ${renderSettingsItem('平台服务地址 (API URL)', category === 'hosting' ? `publish_control.direct_upload.${id}.url` : `syndication.${id}.url`, cfg.url || cfg.api_url, 'text', { placeholder: "例如: https://your-domain.com/api (可选)" })}
             ${renderSettingsItem('独立代理地址 (Proxy)', category === 'hosting' ? `publish_control.direct_upload.${id}.proxy` : `syndication.${id}.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
         `;
     }

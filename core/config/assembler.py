@@ -130,12 +130,12 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
             deep_update(final_cfg, local_cfg)
         final_cfg = resolve_includes(final_cfg, os.path.dirname(local_path))
 
-    # 3. 品牌主权层 (Imprint Sovereign)
+    # 3. 品牌主权层 (Imprint Sovereign) - 根据 governance_map 规则进行主权字段对正
     active_id = manager.imprint_id
     if not active_id:
         active_id = final_cfg.get('active_imprint')
 
-    if active_id and active_id != "default":
+    if active_id:
         imprint_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
         if os.path.exists(imprint_path):
             try:
@@ -156,36 +156,39 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                 
                 imprint_cfg = scrub_secrets(imprint_cfg)
                 imprint_cfg = resolve_includes(imprint_cfg, os.path.dirname(imprint_path))
-                final_cfg = deep_update(final_cfg, imprint_cfg)
-                tlog.info(f"🎨 [配置引擎] 已合并品牌主权层: {imprint_path}")
+                
+                # 🚀 遵照 governance_map.py 的三层契约进行字段级精准合并
+                from .governance_map import resolve_governance_level
+
+                def merge_imprint_sovereign(target, source, prefix=""):
+                    for k, v in source.items():
+                        full_key = f"{prefix}{k}"
+                        level = resolve_governance_level(full_key)
+                        if isinstance(v, dict):
+                            if k not in target or not isinstance(target[k], dict):
+                                target[k] = {}
+                            merge_imprint_sovereign(target[k], v, prefix=f"{full_key}.")
+                        else:
+                            # 仅当字段属于 imprint 主权层时覆盖；若属于 local 层（如物理机本地路径/端口），保留 local 的覆盖
+                            if level == "imprint":
+                                target[k] = v
+
+                merge_imprint_sovereign(final_cfg, imprint_cfg)
+                tlog.info(f"🎨 [配置引擎] 已根据主权治理矩阵对齐品牌层: {imprint_path}")
             except Exception as e:
                 tlog.warning(f"⚠️ [配置引擎] 加载品牌配置失败: {e}")
-
-    # 3. 加载【本地物理层】(Local) - 优先级最高
-    # 动态推导本地覆盖层路径 (e.g., config.yaml -> local覆盖文件)
-    base, ext = os.path.splitext(abs_target)
-    local_path = f"{base}.local.yaml"
-    if os.path.exists(local_path):
-        try:
-            with open(local_path, 'r', encoding='utf-8') as f:
-                local_cfg = yaml.safe_load(f) or {}
-            local_cfg = resolve_includes(local_cfg, os.path.dirname(local_path))
-            final_cfg = deep_update(final_cfg, local_cfg)
-            tlog.info(f"🧬 [配置引擎] 已合并本地物理层 (最高优先级): {local_path}")
-        except Exception as e:
-            tlog.warning(f"⚠️ [配置引擎] 加载本地配置失败: {e}")
 
     # 4. 递归解析环境变量与加密字段
     final_cfg = resolve_env_vars(final_cfg)
     final_cfg = resolve_secrets(final_cfg)
 
-    # 🚀 [V52.13] 最终主权纠偏：如果显式指定了 Imprint，确保它不会被 Local 覆盖层篡位
+    # 🚀 [V52.13] 最终主权纠偏：如果显式指定了 Imprint，确保它不会被篡位
     if manager.imprint_id:
         final_cfg['active_imprint'] = manager.imprint_id
         
         # 🚀 [V75.6] 主权防毒与纠偏：对于任何在品牌主权配置文件中显式定义的主权层字段 (Imprint Level)，
-        # 必须确保它们在最终合并后拥有绝对控制权，防止被本地环境层的陈旧覆盖所投毒。
-        if active_id and active_id != "default":
+        # 必须确保它们在最终合并后拥有绝对控制权
+        if active_id:
             imprint_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
             if os.path.exists(imprint_path):
                 try:
@@ -218,10 +221,67 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
 
         # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
         # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
+        # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
+        # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
         if manager.imprint_id == "default":
             # 切换回默认时，强制恢复系统基准名称 (除非 Global Config 另有定义)
             # 我们通过删除 Local 层可能存在的覆盖来实现
             pass # 已经在 deep_reload_imprint 中处理了物理层面的更新
+
+    # 🚀 [V75.7] 默认底座自愈：如果 default 版图或全局底座缺失 vault_root，自动从现存版图中探测继承
+    if not final_cfg.get('vault_root'):
+        found_vault = None
+        # 1. 尝试从全局引擎获取
+        try:
+            from core.runtime.engine_singleton import get_global_engine
+            engine = get_global_engine()
+            if engine and getattr(engine, 'config', None) and getattr(engine.config, 'vault_root', None):
+                found_vault = engine.config.vault_root
+        except Exception:
+            pass
+
+        # 2. 从 imprints 目录遍历有效版图
+        if not found_vault and os.path.exists(IMPRINT_DIR):
+            for entry in os.scandir(IMPRINT_DIR):
+                if entry.is_dir():
+                    cfg_file = os.path.join(entry.path, CONFIG_DIR, CONFIG_IMPRINT_NAME)
+                    if os.path.exists(cfg_file):
+                        try:
+                            with open(cfg_file, 'r', encoding='utf-8') as f:
+                                c = yaml.safe_load(f) or {}
+                                if isinstance(c, dict):
+                                    v = c.get('vault_root')
+                                    if v and os.path.exists(os.path.abspath(os.path.expanduser(v))):
+                                        found_vault = v
+                                        break
+                        except Exception:
+                            pass
+
+        # 3. 探查本地物理目录兜底 (如 ./vault)
+        if not found_vault:
+            fallback_dirs = ["vault", "docs", "manuscripts"]
+            for f_dir in fallback_dirs:
+                abs_f = os.path.abspath(f_dir)
+                if os.path.exists(abs_f):
+                    found_vault = abs_f
+                    break
+
+        if found_vault:
+            final_cfg['vault_root'] = found_vault
+            tlog.info(f"🩺 [金库自愈] 探测到全局/default 版图未指定 vault_root，已自愈继承物理文库路径: {found_vault}")
+            
+            # 物理回写至 config.local.yaml 保障持久性
+            try:
+                if os.path.exists(CONFIG_LOCAL_NAME):
+                    with open(CONFIG_LOCAL_NAME, 'r', encoding='utf-8') as f:
+                        loc_data = yaml.safe_load(f) or {}
+                    if isinstance(loc_data, dict) and not loc_data.get('vault_root'):
+                        loc_data['vault_root'] = found_vault
+                        with open(CONFIG_LOCAL_NAME, 'w', encoding='utf-8') as f:
+                            yaml.safe_dump(loc_data, f, allow_unicode=True)
+                        tlog.debug(f"💾 [自愈固化] 已将自愈后的 vault_root 写入 {CONFIG_LOCAL_NAME}")
+            except Exception as w_err:
+                tlog.warning(f"⚠️ [自愈固化失败] {w_err}")
 
     # 🚀 [V65.10] 主权自愈：如果路由矩阵缺失，启动智能探测
     if not final_cfg.get('route_matrix') and final_cfg.get('vault_root'):

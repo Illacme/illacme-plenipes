@@ -17,6 +17,14 @@ def _split_paragraphs(body: str) -> list:
     # 剥离系统内部追踪注释（Sovereign-Tag），不在校对 UI 中对用户展示
     body = re.sub(r'\s*<!--\s*Sovereign-Tag:.*?-->', '', body, flags=re.DOTALL).strip()
 
+    # 🚀 [V115.0] 物理级 Markdown Block 对齐规范化：物理擦除 Çeviri ### 杂质、空 ### 标题及补齐标题前后空行断点
+    body = re.sub(r'^(?:Çeviri|Translation|Translate|Çevirisi|翻译)\s*(?:###|:|：)?\s*', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'(?:Çeviri|Translation|Translate|Çevirisi|翻译)\s*###', '', body, flags=re.IGNORECASE)
+    lines_clean = [l for l in body.split("\n") if not re.match(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)?\s*#{0,6}$', l.strip(), re.IGNORECASE)]
+    body = "\n".join(lines_clean)
+    body = re.sub(r'([^\n#])\s*(#{1,6}\s+)', r'\1\n\n\2', body)
+    body = re.sub(r'^(#{1,6}\s+.*?)\n([^\n#])', r'\1\n\n\2', body, flags=re.MULTILINE)
+
     blocks = []
     idx = 0
     lines = body.split("\n")
@@ -24,6 +32,17 @@ def _split_paragraphs(body: str) -> list:
 
     while i < len(lines):
         line = lines[i]
+
+        # 🚀 [V114.2] Alert 块自动归一化：若 > [!TAG] 标签与引文正文被 LLM 粘连在同一行，自动切割为独立的 Alert 头 Block
+        if line.strip().startswith(">") and "[!" in line and "]" in line:
+            match = re.match(r'^(\s*>\s*\[![^\]]+\])(.+)$', line.strip())
+            if match and match.group(2).strip():
+                tag_line = match.group(1).strip()
+                rest_text = match.group(2).strip()
+                rest_line = f"> {rest_text}" if not rest_text.startswith(">") else rest_text
+                lines[i] = tag_line
+                lines.insert(i + 1, rest_line)
+                line = tag_line
 
         # 代码块：只读整体
         if line.strip().startswith("```"):
@@ -57,16 +76,35 @@ def _split_paragraphs(body: str) -> list:
             i = end_j
             continue
 
-        # 普通段落：收集连续非空行
+        # 普通段落 / Callout (>)：智能拆分与连贯性识别
         if line.strip():
             para_lines = []
+            is_quote_block = line.strip().startswith(">")
             while i < len(lines) and lines[i].strip():
+                curr_l = lines[i].strip()
+                if para_lines:
+                    if curr_l.startswith('#'):
+                        break
+                    if not is_quote_block and curr_l.startswith('>'):
+                        break
+                    if is_quote_block and not curr_l.startswith('>'):
+                        break
                 para_lines.append(lines[i])
                 i += 1
+            text = "\n".join(para_lines).strip()
+            # 🛡️ 分割线与 HTML 注释：设为 spacer 块（index=-1），在 UI 中展示但不计入正文段落编号
+            if text.startswith("---") or text.startswith("***") or text.startswith("___") or text.startswith("<!--"):
+                blocks.append({
+                    "index": -1,
+                    "type": "spacer",
+                    "text": text
+                })
+                continue
+            b_type = "callout" if is_quote_block else "paragraph"
             blocks.append({
                 "index": idx,
-                "type": "paragraph",
-                "text": "\n".join(para_lines)
+                "type": b_type,
+                "text": text
             })
             idx += 1
         else:
@@ -177,10 +215,11 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                 from core.logic.block_parser import MarkdownBlockParser
                 parser = MarkdownBlockParser()
                 for block in parser.parse(source_body):
-                    if block.type == "spacer" or not block.content.strip(): continue
+                    c_str = block.content.strip()
+                    if block.type == "spacer" or not c_str or c_str.startswith("---") or c_str.startswith("<!--"): continue
                     total_blocks += 1
                     import re
-                    stripped = re.sub(r'__B_MASK_\d+__', '', block.content)
+                    stripped = re.sub(r'__B_MASK_\d+__', '', c_str)
                     stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
                     stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
                     if not re.search(r'\w', stripped) or engine.block_cache.get_block(lang_code, block.fingerprint, style_hash):
@@ -189,15 +228,47 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
         except Exception:
             progress_data = {"translated_paras": 0, "total_paras": 1}
 
-        if not body and cache_dir and hasattr(engine, "route_manager"):
+        # 🛡️ [V106.0] 竞态防护：如果后台翻译管线正在 running，即使旧缓存/旧 body 仍存在于磁盘上，
+        # 也必须强制返回 is_missing=True + 实时进度，防止前端轮询被旧数据骗到而提前宣布翻译完成。
+        is_actively_running = (
+            hasattr(engine, 'active_translation_progress')
+            and (real_rel_path, lang_code) in engine.active_translation_progress
+            and engine.active_translation_progress[(real_rel_path, lang_code)].get('running', False)
+        )
+        if is_actively_running:
+            langs[lang_code] = {
+                "is_missing": True,
+                "title": "", "desc": "", "paragraphs": [],
+                "human_approved": False, "review_is_stale": False,
+                "progress": progress_data
+            }
+            continue
+
+        if not body and hasattr(engine, "route_manager"):
             try:
-                cache_mirror = engine.route_manager.resolve_physical_path(cache_dir, lang_code, route_prefix, sub_dir, slug, target_ext, source_type=target_slot)
-                if os.path.exists(cache_mirror):
-                    with open(cache_mirror, "r", encoding="utf-8") as f:
-                        fm_dict, pure_content, _ = parse_frontmatter(f.read())
-                        body = pure_content
-                        title = title or fm_dict.get("title", "")
-                        desc = desc or fm_dict.get("description", "")
+                candidate_paths = []
+                if hasattr(engine, "config") and engine.config:
+                    theme_name = getattr(engine, 'active_theme', 'default') or 'default'
+                    theme_cache_dir = engine.config.get_theme_source_cache_dir(theme_name)
+                    if theme_cache_dir:
+                        candidate_paths.append(engine.route_manager.resolve_physical_path(theme_cache_dir, lang_code, route_prefix, sub_dir, slug, target_ext, source_type=target_slot))
+                if cache_dir:
+                    candidate_paths.append(engine.route_manager.resolve_physical_path(cache_dir, lang_code, route_prefix, sub_dir, slug, target_ext, source_type=target_slot))
+
+                for c_path in candidate_paths:
+                    if c_path and os.path.exists(c_path):
+                        with open(c_path, "r", encoding="utf-8") as f:
+                            fm_dict, pure_content, _ = parse_frontmatter(f.read())
+                            if pure_content and pure_content.strip():
+                                body = pure_content
+                                title = title or fm_dict.get("title", "")
+                                d_val = fm_dict.get("description", "")
+                                if d_val and isinstance(d_val, str) and lang_code != "ja":
+                                    import re
+                                    if re.search(r'[\u3040-\u30ff]', d_val):
+                                        d_val = ""
+                                desc = desc or d_val
+                                break
             except Exception as e:
                 from core.utils.tracing import tlog
                 tlog.warning(f"Failed to read AI snapshot for {doc_id} / {lang_code}: {e}")

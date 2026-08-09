@@ -82,10 +82,21 @@ class GhostSyndicator(BaseSyndicator):
 
     def __init__(self, config: Any, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.url = getattr(config, "url", "").rstrip("/")
-        self.admin_api_key = getattr(config, "admin_api_key", "")
-        self.update_existing = getattr(config, "update_existing", True)
-        self.default_status = getattr(config, "default_status", "draft")
+        if isinstance(config, dict):
+            self.url = (config.get("url") or config.get("api_url") or "").rstrip("/")
+            self.admin_api_key = config.get("admin_api_key") or ""
+            self.update_existing = config.get("update_existing", True)
+            self.default_status = config.get("default_status", "draft")
+        else:
+            raw_url = getattr(config, "url", None)
+            if raw_url is None:
+                raw_url = getattr(config, "api_url", "")
+            self.url = raw_url.rstrip("/") if isinstance(raw_url, str) else ""
+            raw_key = getattr(config, "admin_api_key", "")
+            self.admin_api_key = raw_key if isinstance(raw_key, str) else ""
+            self.update_existing = getattr(config, "update_existing", True)
+            self.default_status = getattr(config, "default_status", "draft")
+        self.api_url = self.url
 
     # ------------------------------------------------------------------
     # BaseSyndicator 契约实现
@@ -98,17 +109,18 @@ class GhostSyndicator(BaseSyndicator):
         if not canonical_url and self.site_url:
             canonical_url = f"{self.site_url.rstrip('/')}/{slug}"
 
-        post: Dict[str, Any] = {
+        mobiledoc = self._markdown_to_mobiledoc(content)
+        post_item: Dict[str, Any] = {
             "title": title,
             "slug": slug,
-            "mobiledoc": self._markdown_to_mobiledoc(content),
+            "mobiledoc": mobiledoc,
             "status": self.default_status,
             "tags": tags,
         }
         if canonical_url:
-            post["canonical_url"] = canonical_url
+            post_item["canonical_url"] = canonical_url
 
-        return {"posts": [post]}
+        return {"posts": [post_item]}
 
     def push(self, payload: Dict[str, Any]):
         """执行物理推流到 Ghost Admin API"""
@@ -269,3 +281,36 @@ class GhostSyndicator(BaseSyndicator):
             "sections": [[10, 0]],
         }
         return json.dumps(mobiledoc, ensure_ascii=False)
+
+    def delete(self, remote_id: str) -> bool:
+        """🚀 远程物理下架：通过 Ghost Admin API 彻底删除对端文章"""
+        if not remote_id or not self.api_url or not self.admin_api_key:
+            return False
+        
+        api_base = f"{self.api_url}/ghost/api/admin"
+        try:
+            key_id, hex_secret = self.admin_api_key.split(":")
+            token = _build_ghost_jwt(key_id, hex_secret)
+        except Exception:
+            return False
+
+        headers = {
+            "Authorization": f"Ghost {token}",
+            "Content-Type": "application/json",
+            "Accept-Version": "v5.0"
+        }
+        
+        try:
+            resp = requests.delete(f"{api_base}/posts/{remote_id}/", headers=headers, timeout=self.timeout)
+            if resp.status_code in (200, 204):
+                tlog.info(f"🗑️ [Ghost 物理下架成功] 文章已永久删除 (ID: {remote_id})")
+                return True
+            elif resp.status_code == 404:
+                tlog.info(f"🗑️ [Ghost 物理对正] 文章在 Ghost 已不存在 (ID: {remote_id})，自动对正解绑。")
+                return True
+            else:
+                tlog.error(f"🛑 [Ghost 物理下架失败] ID: {remote_id} (HTTP {resp.status_code}): {resp.text[:200]}")
+                return False
+        except Exception as e:
+            tlog.error(f"🛑 [Ghost 物理下架异常] ID: {remote_id}: {e}")
+            return False

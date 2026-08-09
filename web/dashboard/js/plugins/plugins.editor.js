@@ -249,7 +249,7 @@ window.resetDrawerConfig = (id) => {
 };
 
 // 5. 插件配置抽屉
-window.openPluginConfig = async (id, category = null) => {
+window.openPluginConfig = async (id, category = null, fromDrawer = null) => {
     try {
         const drawer = document.getElementById('plugin-drawer');
         const body = document.getElementById('p-drawer-body');
@@ -257,8 +257,38 @@ window.openPluginConfig = async (id, category = null) => {
 
         if (!drawer || !body) return;
 
+        // 🚀 [V104.0] 多抽屉压栈治理：强行提升配置抽屉的 z-index 为 10005，确保覆盖在其他抽屉 (如单篇广播 9999) 上方
+        drawer.style.zIndex = '10005';
+
+        // 🎯 严格隔离返回上下文：仅当显式声明从跨抽屉跳转入口打开时才保留对应上下文，否则彻底清空以防污染常规插件中心
+        if (fromDrawer === 'syndicate') {
+            window._vaultReturnContext = null;
+        } else if (fromDrawer === 'vault') {
+            window._syndicateReturnContext = null;
+        } else {
+            window._syndicateReturnContext = null;
+            window._vaultReturnContext = null;
+        }
+        if (typeof window.updateDrawerReturnButtons === 'function') {
+            window.updateDrawerReturnButtons();
+        }
+
+        if (!window.allPlugins || window.allPlugins.length === 0) {
+            const fetchFunc = window.apiFetch || (async (url) => (await fetch(url)).json());
+            try {
+                const res = await fetchFunc('/api/plugins/list');
+                if (res && res.plugins) window.allPlugins = res.plugins;
+            } catch (e) {
+                console.warn("[Plugin Editor] Unable to auto-fetch plugin list:", e);
+            }
+        }
         if (!window.allPlugins) window.allPlugins = [];
-        const p = window.allPlugins.find(x => x.id === id && (!category || x.category === category));
+
+        let p = window.allPlugins.find(x => x.id === id && (!category || x.category === category));
+        if (!p) {
+            p = window.allPlugins.find(x => x.id === id || x.id.replace(/_/g, '') === id.replace(/_/g, ''));
+        }
+
         if (!p) {
             throw new Error(`在全域能力矩阵 (window.allPlugins) 中未探测到 ID 为 '${id}' 的能力。`);
         }
@@ -280,7 +310,7 @@ window.openPluginConfig = async (id, category = null) => {
             return;
         }
 
-        title.innerText = `⚙️ 配置能力: ${p.name || id}`;
+        title.innerText = `⚙️ ${p.name || id}`;
         body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
         drawer.style.display = 'flex';
 
@@ -309,25 +339,86 @@ window.openPluginConfig = async (id, category = null) => {
             if (typeof window.renderPluginStepWizardHeader === 'function' && p.category !== 'notification') {
                 html += window.renderPluginStepWizardHeader(p.id, p.category);
             }
-            html += `
-                <div class="settings-grid" style="margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--glass-border);">
-                    <div class="setting-row level-local" style="padding: 4px 0;">
-                        <div class="setting-info" style="display: flex; align-items: center; gap: 6px;">
-                            <div class="setting-label" style="display: flex; align-items: center; gap: 6px;">
-                                🔌 插件全局总开关 (Master Switch)
-                                <span class="tier-tag tier-local">本地</span>
-                                <span class="info-tooltip-icon" title="控制此插件在全系统的启禁用状态。关闭后，该功能将在全站暂停服务（已被品牌绑定时需先解绑）。" style="cursor: help; color: var(--neon-cyan); opacity: 0.75; font-size: 0.82rem; margin-left: 4px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">ⓘ</span>
-                            </div>
-                        </div>
-                        <div class="setting-control">
-                            <label class="p-switch">
-                                <input type="checkbox" id="drawer-global-driver-toggle" ${p.is_enabled ? 'checked' : ''} onchange="window.handleGlobalDriverToggle('${p.id}', this, '${p.category}')">
-                                <span class="p-slider round"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            `;
+        }
+
+        // 🚀 [V106.0] 方案 1：Master Switch 移至抽屉 Header 标题右侧 + 强防线关卡
+        const headerSwitch = document.getElementById('drawer-global-driver-toggle');
+        const headerSwitchWrapper = document.getElementById('header-master-switch-wrapper');
+        const headerStatusLabel = document.getElementById('header-toggle-status-label');
+
+        window.probePassState = window.probePassState || {};
+
+        if (headerSwitch) {
+            if (p.is_manageable) {
+                if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'inline-flex';
+
+                // 若插件本身在后端已经是 is_enabled 状态，默认视作已被证明的物理通过状态
+                if (p.is_enabled) {
+                    window.probePassState[p.id] = true;
+                }
+
+                const isCurrentlyEnabled = !!p.is_enabled;
+                headerSwitch.checked = isCurrentlyEnabled;
+
+                // 强制修正 Label 文字与 CSS 风格，彻底解决视觉与实际 Switch 错配问题
+                if (headerStatusLabel) {
+                    headerStatusLabel.textContent = isCurrentlyEnabled ? '🟢 全局已启用' : '⚪ 全局已暂停';
+                    headerStatusLabel.style.color = isCurrentlyEnabled ? 'var(--neon-cyan)' : 'var(--text-dim)';
+                }
+
+                headerSwitch.onchange = function(e) {
+                    const isAttemptingEnable = this.checked;
+                    const isPassed = !!window.probePassState[p.id];
+
+                    if (isAttemptingEnable) {
+                        // 🛡️ 物理强制关卡：如果没有测试连接通过记录，强行拦截弹回关闭！
+                        if (!isPassed) {
+                            this.checked = false;
+                            if (headerStatusLabel) {
+                                headerStatusLabel.textContent = '⚪ 全局已暂停';
+                                headerStatusLabel.style.color = 'var(--text-dim)';
+                            }
+
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: '🚨 无法开启全局驱动',
+                                    html: `插件 [<b>${p.name || p.id}</b>] 尚未通过物理连通性校验。<br><br><span style="color:#00f2ff; font-size:0.85rem;">💡 请先点击抽屉底部的 <b>「🔌 测试连接」</b> 完成链路验证！</span>`,
+                                    icon: 'warning',
+                                    confirmButtonText: '⚡ 立即测试连通性',
+                                    showCancelButton: true,
+                                    cancelButtonText: '取消',
+                                    background: 'var(--card-bg)',
+                                    color: 'var(--text-bright)',
+                                    confirmButtonColor: 'var(--accent-secondary)'
+                                }).then((r) => {
+                                    if (r.isConfirmed && typeof window.triggerPluginDryRun === 'function') {
+                                        window.triggerPluginDryRun(p.id);
+                                    }
+                                });
+                            } else if (window.showToast) {
+                                window.showToast("🚨 请先点击「🔌 测试连接」完成链路验证", "error");
+                            }
+                            return;
+                        }
+
+                        // 通过验证，物理允许开启
+                        if (headerStatusLabel) {
+                            headerStatusLabel.textContent = '🟢 全局已启用';
+                            headerStatusLabel.style.color = 'var(--neon-cyan)';
+                        }
+                        window.handleGlobalDriverToggle(p.id, this, p.category);
+                    } else {
+                        // 允许手动暂停
+                        if (headerStatusLabel) {
+                            headerStatusLabel.textContent = '⚪ 全局已暂停';
+                            headerStatusLabel.style.color = 'var(--text-dim)';
+                        }
+                        window.handleGlobalDriverToggle(p.id, this, p.category);
+                    }
+                };
+            } else {
+                if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'none';
+            }
         }
 
         html += window.buildPluginConfigFormHtml(p);
@@ -353,6 +444,8 @@ window.openPluginConfig = async (id, category = null) => {
         }
 
         body.innerHTML = html;
+        body.setAttribute('data-plugin-id', id);
+        body.setAttribute('data-plugin-category', p.category || '');
 
         // 🚀 [V74.96] 离线预检自愈与出厂设置绑定
         const restoreBtn = document.getElementById('btn-restore-plugin-defaults');
@@ -453,6 +546,11 @@ window.openPluginConfig = async (id, category = null) => {
 window.closePluginDrawer = () => {
     const drawer = document.getElementById('plugin-drawer');
     if (drawer) drawer.style.display = 'none';
+    window._syndicateReturnContext = null;
+    window._vaultReturnContext = null;
+    if (typeof window.updateDrawerReturnButtons === 'function') {
+        window.updateDrawerReturnButtons();
+    }
 };
 
 window.handleGlobalDriverToggle = async (id, el, category) => {
@@ -505,25 +603,62 @@ window.handleGlobalDriverToggle = async (id, el, category) => {
 };
 
 // 🚀 [V105.0] 复杂平台分类感知 3 步引导配置向导 Component
-window.renderPluginStepWizardHeader = (pluginId, category = '') => {
-    let steps = ['1. 账号与密钥', '2. 选项与参数', '3. 测试与保存'];
+// 🚀 [V105.0] 复杂平台分类感知 3 步引导配置向导步骤名称映射提取器
+window.getPluginWizardSteps = (pluginId, category = '') => {
+    const specificStepsMap = {
+        'devto': ['1. 个人 API Key 凭据', '2. 默认发布偏好模式', '3. 连通测试与保存'],
+        'dev_to': ['1. 个人 API Key 凭据', '2. 默认发布偏好模式', '3. 连通测试与保存'],
+        'wordpress': ['1. API 端点与应用密码', '2. 默认文章发布状态', '3. 连通测试与保存'],
+        'medium': ['1. Integration Token 凭据', '2. 默认状态与发布偏好', '3. 连通测试与保存'],
+        'hashnode': ['1. GraphQL API Token 凭据', '2. Publication 专栏绑定', '3. 连通测试与保存'],
+        'ghost': ['1. Admin API Key & URL', '2. 模板与装帧偏好设置', '3. 连通测试与保存'],
+        'wechat': ['1. 公众号 AppID/Secret 凭据', '2. 独立代理与图文设置', '3. 连通测试与保存'],
+        'zhihu': ['1. 个人 Token / 专栏 ID', '2. 独立代理与发布偏好', '3. 连通测试与保存'],
+        'telegram': ['1. Bot Token 机器人凭据', '2. 目标 Chat ID 频道参数', '3. 连通测试与保存'],
+        'discord': ['1. Webhook 授权回调地址', '2. 提醒与独立代理参数', '3. 连通测试与保存'],
+        'github_pages': ['1. 个人 Access Token 凭据', '2. 仓库 URL 与部署分支', '3. CNAME 与 Git 身份参数'],
+        'gitee_pages': ['1. Gitee 私人 Access Token', '2. 仓库 URL 与部署分支', '3. 独立代理与 Git 身份'],
+        'gitlab_pages': ['1. Personal Access Token', '2. 仓库 URL 与部署分支', '3. 独立代理与 Git 身份'],
+        'sftp': ['1. 服务器主机与登录凭据', '2. 远程部署目录与域名', '3. 连通测试与保存'],
+        'vercel': ['1. Vercel Access Token 凭据', '2. 项目名称与组织 ID 参数', '3. 生产部署与代理参数'],
+        'netlify': ['1. Netlify Access Token 凭据', '2. Site ID 与部署分支参数', '3. 生产部署与代理参数'],
+        'cloudflare_pages': ['1. Cloudflare API Token 凭据', '2. 项目名称与账号 ID 参数', '3. 部署分支与代理参数'],
+        'firebase': ['1. Firebase CI Token 凭据', '2. 项目 ID 与 Site ID 参数', '3. 代理与部署测试'],
+        'railway': ['1. Deploy Hook 触发地址', '2. 关联 Git 部署拓展参数', '3. 触发测试与保存'],
+        'render': ['1. Deploy Hook 触发地址', '2. API Key 与代理拓展参数', '3. 触发测试与保存'],
+        'zeabur': ['1. Deploy Hook 触发地址', '2. API Token 与代理拓展参数', '3. 触发测试与保存'],
+        's3': ['1. AccessKey 身份凭据', '2. Bucket 存储桶与访问域名', '3. Endpoint 与 ACL 扩展参数'],
+        'qiniu': ['1. 七牛云 AK/SK 密钥凭据', '2. 存储空间 Bucket 与访问域名', '3. 连通测试与保存'],
+        'upyun': ['1. 操作员账号与授权密码', '2. 服务名称 Bucket 与访问域名', '3. 连通测试与保存']
+    };
 
     const cat = (category || '').toLowerCase();
     const pid = (pluginId || '').toLowerCase();
 
-    if (cat === 'hosting') {
-        steps = ['1. 授权 Token', '2. 域名与分支', '3. 测试与保存'];
-    } else if (cat === 'image_hosting') {
-        steps = ['1. 存储 Key', '2. Bucket与域名', '3. 测试与保存'];
-    } else if (cat === 'notification') {
-        steps = ['1. 消息端点/凭据', '2. 提醒与样式', '3. 测试与保存'];
-    } else if (cat === 'publisher') {
-        steps = ['1. 专栏 Token', '2. 发布偏好', '3. 测试与保存'];
-    } else if (cat === 'protocol' || pid.includes('ai') || pid.includes('llm')) {
-        steps = ['1. API Key/端点', '2. 采样与提示词', '3. 测试与保存'];
-    } else if (cat === 'ssg' || cat === 'theme') {
-        steps = ['1. 基础配置', '2. 视觉与装帧', '3. 预览与保存'];
+    let steps = specificStepsMap[pid];
+    if (!steps) {
+        if (cat === 'hosting') {
+            steps = ['1. 平台 API Token 凭据', '2. 仓库与域名扩展参数', '3. 测试连通与保存'];
+        } else if (cat === 'image_hosting') {
+            steps = ['1. 存储 Key/密钥凭据', '2. 存储桶 Bucket 与访问域名', '3. 测试连通与保存'];
+        } else if (cat === 'notification') {
+            steps = ['1. 消息端点/授权凭据', '2. 提醒与样式偏好参数', '3. 测试连通与保存'];
+        } else if (cat === 'publisher') {
+            steps = ['1. 访问 Token/密钥凭据', '2. 默认发布偏好参数', '3. 测试连通与保存'];
+        } else if (cat === 'protocol' || pid.includes('ai') || pid.includes('llm')) {
+            steps = ['1. API Key 与服务端点', '2. 采样与提示词策略', '3. 校验模型与保存'];
+        } else if (cat === 'ssg' || cat === 'theme') {
+            steps = ['1. 基础全局设置', '2. 视觉样式与装帧配置', '3. 预览生成与保存'];
+        } else {
+            steps = ['1. 账号与授权凭据', '2. 选项与存储参数', '3. 测试连通与保存'];
+        }
     }
+    return steps;
+};
+
+// 🚀 [V105.0] 复杂平台分类感知 3 步引导配置向导 Component
+window.renderPluginStepWizardHeader = (pluginId, category = '') => {
+    const steps = window.getPluginWizardSteps(pluginId, category);
 
     return `
         <div class="plugin-wizard-header" style="margin-bottom: 16px; padding: 12px 14px; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.25); border-radius: 8px;">
@@ -546,6 +681,12 @@ window.renderPluginStepWizardHeader = (pluginId, category = '') => {
 // 🚀 [V105.0] 物理结构分组大卡片包装器 (全能力与授权向导全量无死角适配 + 严格 DOM 安全防环断言)
 window.groupDrawerFormIntoStepCards = (drawerBody) => {
     if (!drawerBody || drawerBody.querySelector('.wiz-step-card')) return;
+
+    const pluginId = drawerBody.getAttribute('data-plugin-id') || '';
+    const category = drawerBody.getAttribute('data-plugin-category') || '';
+    const steps = window.getPluginWizardSteps(pluginId, category);
+    const step0Title = steps[0].replace(/^[0-9]+\.\s*/, '');
+    const step1Title = steps[1].replace(/^[0-9]+\.\s*/, '');
 
     // 安全断言：判断一个 div 是否是合法的向导卡片（严禁包含主容器节点，避免循环嵌套崩溃）
     const isSafeGuideCard = (div) => {
@@ -642,8 +783,8 @@ window.groupDrawerFormIntoStepCards = (drawerBody) => {
         `;
         card0.innerHTML = `
             <div style="font-size: 0.78rem; font-weight: 700; color: var(--neon-cyan); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                <span>🔑 步骤 1：授权与访问凭据 (Step 1 Credentials)</span>
-                <span class="card-status-tag" style="font-size: 0.65rem; padding: 2px 8px; background: rgba(0, 242, 255, 0.2); color: var(--neon-cyan); border-radius: 4px; font-weight: 600;">聚焦配置中</span>
+                <span>🔑 步骤 1：${step0Title}</span>
+                <span class="card-status-tag" style="font-size: 0.65rem; padding: 2px 8px; background: rgba(0, 242, 254, 0.2); color: var(--neon-cyan); border-radius: 4px; font-weight: 600;">聚焦配置中</span>
             </div>
             <div class="card-content"></div>
         `;
@@ -671,7 +812,7 @@ window.groupDrawerFormIntoStepCards = (drawerBody) => {
         `;
         card1.innerHTML = `
             <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                <span>⚙️ 步骤 2：核心选项与存储参数 (Step 2 Parameters)</span>
+                <span>⚙️ 步骤 2：${step1Title}</span>
                 <span class="card-status-tag" style="font-size: 0.65rem; padding: 2px 8px; background: rgba(255, 255, 255, 0.05); color: var(--text-dim); border-radius: 4px; font-weight: 600; display: none;">聚焦配置中</span>
             </div>
             <div class="card-content"></div>

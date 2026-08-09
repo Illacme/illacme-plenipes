@@ -255,14 +255,16 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         window._reviewState.wantedLangMap = {};
     }
 
-    // 🚀 [V81.0] 多语种独立并发合并：按语种维护 wantedLangMap 字典，防止状态覆盖
-    const sourceParasCount = (window._reviewState.data?.source_paragraphs || []).length || 1;
+    const validSourceParas = (window._reviewState.data?.source_paragraphs || []).filter(p => p.index >= 0);
+    const sourceParasCount = validSourceParas.length || 1;
     wantedLangs.forEach(lang => {
         window._reviewState.wantedLangMap[lang] = {
             status: 'running',
             progress: 5,
             translated_paras: 0,
-            total_paras: sourceParasCount
+            total_paras: sourceParasCount,
+            _triggeredAt: Date.now(),
+            _confirmedRunning: false
         };
         if (window._reviewState.data && window._reviewState.data.langs && window._reviewState.data.langs[lang]) {
             window._reviewState.data.langs[lang].is_missing = true;
@@ -277,6 +279,10 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         }
     });
 
+    if (targetMode === 'current' && lc) {
+        window._reviewState.activeLang = lc;
+    }
+
     window._reviewState.wantedLangs = Object.keys(window._reviewState.wantedLangMap).filter(l => window._reviewState.wantedLangMap[l].status === 'running');
 
     _reviewRender();
@@ -287,7 +293,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
         const res = await fetch('/api/publish/trigger', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: 'static', paths: [docId], force: true, target_langs: targetLangs })
+            body: JSON.stringify({ mode: 'static', paths: [docId], force: true, clear_cache: true, target_langs: targetLangs })
         });
         const d = await res.json();
         if (d.status === 'error') throw new Error(d.message);
@@ -317,24 +323,37 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
 
                     runningLangs.forEach(lang => {
                         const ld = checkData.langs[lang];
-                        if (ld) {
-                            if (!ld.is_missing) {
-                                window._reviewState.wantedLangMap[lang].status = 'done';
-                                window._reviewState.wantedLangMap[lang].progress = 100;
-                            } else if (ld.progress) {
-                                const tParas = ld.progress.translated_paras || 0;
-                                const totalParas = ld.progress.total_paras || 1;
-                                window._reviewState.wantedLangMap[lang].progress = Math.min(99, Math.floor((tParas / totalParas) * 100));
+                        if (!ld) return;
+                        const langEntry = window._reviewState.wantedLangMap[lang];
+
+                        // 🚀 [V114.7] 分阶段线性映射进度算法：正文段落翻译精准占用 25% - 85% 动态区间
+                        if (ld.progress && ld.progress.running) {
+                            langEntry._confirmedRunning = true;
+                            const tParas = ld.progress.translated_paras || 0;
+                            const totalParas = ld.progress.total_paras || 1;
+                            langEntry.translated_paras = tParas;
+                            langEntry.total_paras = totalParas;
+
+                            const textRatio = Math.min(1.0, tParas / Math.max(1, totalParas));
+                            if (textRatio < 1.0) {
+                                langEntry.progress = Math.min(84, Math.floor(25 + textRatio * 60));
                             } else {
-                                window._reviewState.wantedLangMap[lang].progress = Math.min(99, window._reviewState.wantedLangMap[lang].progress || 5);
+                                langEntry.progress = 85; // 正文完成，开启元数据润色
                             }
+                        }
+
+                        // 🚀 译文全量就绪检测：当且仅当后端管线完全跑完且已写入账本 (is_missing=false 且不在 running 中)，标记该语种翻译完成
+                        if (!ld.is_missing && langEntry._confirmedRunning && (!ld.progress || !ld.progress.running)) {
+                            langEntry.status = 'done';
+                            langEntry.progress = 100;
                         }
                     });
 
-                    // 同步更新已就绪目标语种的 edits 缓存
+                    // 同步更新已就绪目标语种的 edits 缓存（仅限非 running 语种，防止旧数据污染）
                     Object.keys(checkData.langs).forEach(lc_key => {
                         const ld = checkData.langs[lc_key];
-                        if (ld && !ld.is_missing) {
+                        const isLangRunning = window._reviewState.wantedLangMap && window._reviewState.wantedLangMap[lc_key] && window._reviewState.wantedLangMap[lc_key].status === 'running';
+                        if (ld && !ld.is_missing && !isLangRunning) {
                             window._reviewState.edits[lc_key] = {
                                 title: ld.title || '',
                                 desc: ld.desc || '',
@@ -344,6 +363,7 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                     });
 
                     const stillRunning = Object.keys(window._reviewState.wantedLangMap).filter(l => window._reviewState.wantedLangMap[l].status === 'running');
+                    const hasStatusChanged = !window._reviewState.wantedLangs || window._reviewState.wantedLangs.length !== stillRunning.length;
                     window._reviewState.wantedLangs = stillRunning;
 
                     if (stillRunning.length === 0) {
@@ -355,14 +375,24 @@ window.triggerSingleTranslation = async function (targetMode = 'current') {
                         window._showToast?.(`✅ 译文已全量成功就绪 (${finishedNames})！`, 'success');
                         return;
                     } else {
-                        _reviewRender();
+                        // 🛡️ [V114.5] 智能防抖与正确作用域计算：计算 activeIsRunning 变量，严防 ReferenceError
+                        const activeEntry = window._reviewState.activeLang && window._reviewState.wantedLangMap && window._reviewState.wantedLangMap[window._reviewState.activeLang];
+                        const activeIsRunning = activeEntry && activeEntry.status === 'running';
+
+                        if (hasStatusChanged) {
+                            _reviewRender();
+                        } else if (activeIsRunning) {
+                            if (typeof window.updateReviewProgressOnly === 'function') {
+                                window.updateReviewProgressOnly();
+                            }
+                        }
                     }
                 }
             } catch (err) {
                 console.error("Polling error", err);
             }
             attempts++;
-            setTimeout(poll, 600);
+            setTimeout(poll, 1200);
         };
         setTimeout(poll, 300);
 
@@ -409,7 +439,7 @@ window.polishFieldWithAI = async function (fieldKey, btnEl) {
         window._showToast?.('暂无有效文本或正文，无法发起 AI 润色', 'warning');
         return;
     }
-    
+
     // 🚀 [UI 实时进度与状态倒流]
     let oldBtnHtml = '🪄';
     if (btnEl) {
@@ -700,7 +730,7 @@ window._bindReviewInteractions = function () {
         });
     });
 
-    // 2. 基于可视段落锚定的滚动同步
+    // 2. 基于物理边界吸附与段落锚定的 3 轴同步联动滚动
     let activeScrollSource = null;
     let scrollTimeout = null;
 
@@ -709,29 +739,60 @@ window._bindReviewInteractions = function () {
         if (activeScrollSource && activeScrollSource !== target) return;
         activeScrollSource = target;
 
-        const targetRect = target.getBoundingClientRect();
-        const blocks = Array.from(target.querySelectorAll('[id^="review-para-"], [id^="source-para-"], [id^="preview-para-"]'));
-        let activeIdx = null, diff = 0;
+        const maxScroll = target.scrollHeight - target.clientHeight;
+        if (maxScroll <= 0) return;
 
-        for (const b of blocks) {
-            const rect = b.getBoundingClientRect();
-            if (rect.bottom - targetRect.top > 10) {
-                activeIdx = b.id.split('-').pop();
-                diff = rect.top - targetRect.top;
-                break;
-            }
-        }
+        const isAtBottom = (maxScroll - target.scrollTop) < 15;
+        const isAtTop = target.scrollTop < 15;
+        const scrollRatio = target.scrollTop / maxScroll;
 
-        if (activeIdx !== null) {
-            const prefixes = { 'col-target': 'review-para', 'col-preview': 'preview-para', 'col-source': 'source-para' };
-            const visibleCols = [colTarget, colPreview, colSource].filter(c => c && c.style.display !== 'none');
+        const visibleCols = [colTarget, colPreview, colSource].filter(c => c && c.style.display !== 'none');
+
+        if (isAtBottom) {
+            // 🛡️ [边界吸附红线] 一栏到达最底部，强制所有分栏精准到达各自 100% 底部
             visibleCols.forEach(c => {
                 if (c !== target) {
-                    const targetEl = c.querySelector(`#${prefixes[c.id]}-${activeIdx}`);
-                    if (targetEl) {
-                        const colRect = c.getBoundingClientRect();
-                        const elRect = targetEl.getBoundingClientRect();
-                        c.scrollTop += (elRect.top - colRect.top) - diff;
+                    c.scrollTop = c.scrollHeight - c.clientHeight;
+                }
+            });
+        } else if (isAtTop) {
+            // 🛡️ [边界吸附红线] 一栏到达最顶部，强制所有分栏精准复位至 0
+            visibleCols.forEach(c => {
+                if (c !== target) {
+                    c.scrollTop = 0;
+                }
+            });
+        } else {
+            // 🛡️ [中间区段段落锚定 + 比例补偿]
+            const targetRect = target.getBoundingClientRect();
+            const blocks = Array.from(target.querySelectorAll('[id^="review-para-"], [id^="source-para-"], [id^="preview-para-"]'));
+            let activeIdx = null, diff = 0;
+
+            for (const b of blocks) {
+                const rect = b.getBoundingClientRect();
+                if (rect.bottom - targetRect.top > 10) {
+                    activeIdx = b.id.split('-').pop();
+                    diff = rect.top - targetRect.top;
+                    break;
+                }
+            }
+
+            const prefixes = { 'col-target': 'review-para', 'col-preview': 'preview-para', 'col-source': 'source-para' };
+            visibleCols.forEach(c => {
+                if (c !== target) {
+                    if (activeIdx !== null) {
+                        const targetEl = c.querySelector(`#${prefixes[c.id]}-${activeIdx}`);
+                        if (targetEl) {
+                            const colRect = c.getBoundingClientRect();
+                            const elRect = targetEl.getBoundingClientRect();
+                            c.scrollTop += (elRect.top - colRect.top) - diff;
+                        } else {
+                            const cMax = c.scrollHeight - c.clientHeight;
+                            c.scrollTop = Math.round(scrollRatio * cMax);
+                        }
+                    } else {
+                        const cMax = c.scrollHeight - c.clientHeight;
+                        c.scrollTop = Math.round(scrollRatio * cMax);
                     }
                 }
             });

@@ -1,5 +1,22 @@
-# Illacme Plenipes Governance Tab UI Sovereign Rules
+# Illacme Plenipes Governance Rules & SOP Routing
 
+## 0. 项目 SOP 治理宪章与规范索引物理路由
+本项目物理存在完整 SOP 治理规范库与底层协议规约。所有 AI 助手在执行对应开发与治理任务前，必须根据场景优先调用 `view_file` 查阅对应的 SOP 手册与项目规约：
+* **治理大宪章与场景判定**：[.plenipes/SOP/SOP_MASTER_CONSTITUTION.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP_MASTER_CONSTITUTION.md)
+* **治理规则总索引**：[.plenipes/SOP/RULES_INDEX.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/RULES_INDEX.md)
+* **LLM 参数兼容与载荷清洗规约**：[.plenipes/protocols.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/protocols.md)
+* **跨会话接力快照模板**：[.plenipes/SESSION_SNAPSHOT_TEMPLATE.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SESSION_SNAPSHOT_TEMPLATE.md)
+* **项目架构演进历史记录**：[.plenipes/evolution_records.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/evolution_records.md)
+* **场景触发按需调阅**：
+  - 核心工程标准与逻辑契约 -> [SOP-01_CORE_ENGINEERING.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP-01_CORE_ENGINEERING.md)
+  - 逻辑演进与物理拆分重构 -> [SOP-02_TRANSFORMATION.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP-02_TRANSFORMATION.md)
+  - 前端 UI 视觉主权与资产本土化 -> [SOP-03_UI_UX_SOVEREIGNTY.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP-03_UI_UX_SOVEREIGNTY.md)
+  - 硬核审计哨兵与故障容错 -> [SOP-04_HARDENING_INTEGRITY.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP-04_HARDENING_INTEGRITY.md)
+  - AI 协作提示词准则 -> [SOP-05_AI_COLLABORATION_PROMPTS.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/.plenipes/SOP/SOP-05_AI_COLLABORATION_PROMPTS.md)
+
+---
+
+## 治理中心 UI 主权规则 (Governance Tab UI Sovereign Rules)
 为保持治理中心（Governance Dashboard）前端页面交互的高档毛玻璃与二级 Sub-Tab 体验，所有参与前端变更的 AI 助手必须强制遵守以下二级子选项卡（Sub-Tab）规则，禁止平铺渲染或覆盖退化：
 
 ## 1. 基础配置与运维 (General Configuration) 选项卡规则
@@ -7,8 +24,8 @@
 *   **二级子标签（4个）**：
     1.  `identity`（🏷️ 身份标识）：包含 Imprint & Site Identity 品牌身份组。
     2.  `compliance`（📖 出版合规）：包含 Publishing Compliance & Metadata 合规组。
-    3.  `storage`（📂 存储缓存）：包含数据存储与原稿适配组，以及算力缓存自动清理（Janitor GC / LRU）策略、段落缓存治理中枢（Block Cache Hub）。
-    4.  `engine`（⚙️ 系统基座）：包含日志级别、访问日志开关以及 Markdown 换行渲染模式。
+    3.  `storage`（📂 存储适配）：包含文库路径与原稿 Markdown 语法适配组（含换行渲染模式），以及算力缓存自动清理（Janitor GC / LRU）策略、段落缓存治理中枢（Block Cache Hub）。
+    4.  `engine`（⚙️ 运行基座）：包含日志级别、全局代理、网络超时与遥测采集容量上限。
 *   **交互实现**：必须定义并调用 `window.switchGeneralSubTab(subTab, btn)`，在常规设置中隐藏/显示对应的面板并点亮 Tab 按钮。
 
 ## 2. 版图装帧与模式 (Layout & Publishing Modes) 选项卡规则

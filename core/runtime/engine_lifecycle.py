@@ -81,6 +81,13 @@ def deep_reload_imprint(imprint_id: str):
                         with open(target_imprint_yaml, "w", encoding="utf-8") as f:
                             yaml.safe_dump(target_cfg, f, allow_unicode=True)
                         tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
+            else:
+                # 🚀 [V75.7] 切换回 default 版图时的物理自愈对正
+                if isinstance(existing_local, dict) and not existing_local.get("vault_root"):
+                    cur_engine = get_global_engine()
+                    if cur_engine and getattr(cur_engine, 'config', None) and getattr(cur_engine.config, 'vault_root', None):
+                        existing_local["vault_root"] = cur_engine.config.vault_root
+                        tlog.debug(f"🏗️ [默认底座对正] 已将活动文库路径继承至默认配置: {existing_local['vault_root']}")
 
             # 🚀 [V65.1] 物理主权对正：仅安全更新活跃品牌标识 active_imprint。
             existing_local["active_imprint"] = imprint_id

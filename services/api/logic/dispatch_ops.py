@@ -13,9 +13,9 @@ from .dispatch_ops_shards.pipeline_ops import (
     get_pending_syndication_logic
 )
 
-def get_dispatch_status_facade(engine, doc_id: str) -> dict:
+def get_dispatch_status_facade(engine, doc_id: str, lang_code: str = None) -> dict:
     """物理感应与多语种遥测分析门面中介"""
-    return get_dispatch_status_logic(engine, doc_id)
+    return get_dispatch_status_logic(engine, doc_id, lang_code=lang_code)
 
 def toggle_lab_facade(engine) -> dict:
     """本地 DevServer 预览引擎调度门面中介"""

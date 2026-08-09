@@ -29,10 +29,16 @@ class WordPressSyndicator(BaseSyndicator):
 
     def __init__(self, config: Any, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.api_url = getattr(config, 'api_url', '').rstrip('/')
-        self.username = getattr(config, 'username', '')
-        self.app_password = getattr(config, 'application_password', '')
-        self.status = getattr(config, 'default_status', 'publish')
+        if isinstance(config, dict):
+            self.api_url = (config.get('api_url') or '').rstrip('/')
+            self.username = config.get('username') or ''
+            self.app_password = config.get('application_password') or config.get('app_password') or ''
+            self.status = config.get('default_status') or 'publish'
+        else:
+            self.api_url = getattr(config, 'api_url', '').rstrip('/')
+            self.username = getattr(config, 'username', '')
+            self.app_password = getattr(config, 'application_password', '')
+            self.status = getattr(config, 'default_status', 'publish')
 
 
     def _get_auth_header(self):
@@ -151,3 +157,27 @@ class WordPressSyndicator(BaseSyndicator):
             except Exception as e:
                 tlog.error(f"❌ [WordPress] 推流失败: {e}")
                 raise e
+
+    def delete(self, remote_id: str) -> bool:
+        """🚀 远程物理下架：通过 WordPress REST API 彻底删除对端文章 (force=true)"""
+        if not remote_id or not self.api_url or not self.username or not self.app_password:
+            return False
+        
+        endpoint = f"{self.api_url}/wp-json/wp/v2/posts/{remote_id}"
+        headers = self._get_auth_header()
+        headers["Content-Type"] = "application/json"
+        
+        try:
+            resp = requests.delete(f"{endpoint}?force=true", headers=headers, timeout=self.timeout)
+            if resp.status_code in (200, 204):
+                tlog.info(f"🗑️ [WordPress 物理下架成功] 文章已永久删除 (ID: {remote_id})")
+                return True
+            elif resp.status_code == 404:
+                tlog.info(f"🗑️ [WordPress 物理对正] 文章在 WordPress 已不存在 (ID: {remote_id})，自动对正解绑。")
+                return True
+            else:
+                tlog.error(f"🛑 [WordPress 物理下架失败] ID: {remote_id} (HTTP {resp.status_code}): {resp.text[:200]}")
+                return False
+        except Exception as e:
+            tlog.error(f"🛑 [WordPress 物理下架异常] ID: {remote_id}: {e}")
+            return False

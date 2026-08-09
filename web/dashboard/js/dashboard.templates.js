@@ -139,7 +139,7 @@ window.viewTemplates = {
         <div id="view-plugins" class="view-panel" style="gap: 16px;">
             <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 6px; margin-bottom: 8px;">
                 <div class="header-title-area" style="padding-top: 2px;">
-                    <h2>🧩 插件矩阵 (Capability Hub)</h2>
+                    <h2>🧩 插件中心 (Capability Hub)</h2>
                 </div>
                 <div class="header-actions" id="plugins-header-actions-top" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 320px; margin-right: 14px;">
                     <div class="search-box" style="position: relative; width: 100%;">
@@ -158,8 +158,9 @@ window.viewTemplates = {
                     <aside class="side-tabs">
                         <div class="tab-item cap-tab active" data-cat="all"><span class="tab-icon">🌈</span> 全部能力</div>
                         <div class="tab-item cap-tab" data-cat="theme"><span class="tab-icon">🎨</span> 视觉装帧</div>
+                        <div class="tab-item cap-tab" data-cat="image_hosting"><span class="tab-icon">📷</span> 图床存储</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>
-                        <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">🚀</span> 分发渠道</div>
+                        <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">📢</span> 社媒分发</div>
                         <div class="tab-item cap-tab" data-cat="editorial"><span class="tab-icon">🧬</span> 流程审计</div>
                     </aside>
                     <section class="tab-content-area scroll-container">

@@ -57,9 +57,15 @@ class BaseSyndicator(abc.ABC):
 
 
     def is_enabled(self, rel_path: str = None, lang_code: str = None) -> bool:
-        """检查插件是否激活"""
+        """检查插件是否激活或配有可用凭据"""
         if isinstance(self.config, dict):
-            return self.config.get('enabled', False)
+            if self.config.get('enabled', False):
+                return True
+            # 🚀 物理凭据断言：即使全局 enabled 未打开，只要配置了 Key/Token 凭据，即认定具备物理分发能力
+            return any(
+                k not in ("enabled", "proxy", "force_push", "published") and v and str(v).strip()
+                for k, v in self.config.items()
+            )
         return getattr(self.config, 'enabled', False)
 
     @abc.abstractmethod
@@ -70,8 +76,20 @@ class BaseSyndicator(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None) -> Dict[str, Any]:
         """
-        [Contract] 执行具体的推流逻辑。
+        [Contract] 执行具体的推流逻辑。若 remote_id 存在，物理路由至 update。
         """
         pass
+
+    def update(self, remote_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Contract] 覆盖更新接口。如平台 API 不支持，抛出 NotImplementedError。
+        """
+        raise NotImplementedError(f"{getattr(self, 'DISPLAY_NAME', self.__class__.__name__)} 平台官方 API 不支持覆盖更新。")
+
+    def delete(self, remote_id: str) -> bool:
+        """
+        [Contract] 远程下架接口。如平台 API 不支持，抛出 NotImplementedError。
+        """
+        raise NotImplementedError(f"{getattr(self, 'DISPLAY_NAME', self.__class__.__name__)} 平台官方 API 不支持远程下架。")

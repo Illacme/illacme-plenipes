@@ -8,6 +8,7 @@ Illacme-plenipes Core - Egress Adapter (SSG 渲染矩阵)
 
 import logging
 import sys
+from typing import Dict, Any, List, Optional
 from .registry import SSGRegistry
 from .base import BaseSSGAdapter
 from core.utils.plugin_loader import discover_and_register
@@ -97,6 +98,16 @@ class SSGAdapter:
     def get_output_schema(self):
         """🚀 [V11.2] 获取该适配器支持的输出出口列表"""
         return self.active_renderer.get_output_schema()
+
+    def get_default_path_mappings(self) -> Dict[str, str]:
+        """🚀 [V76.0] 查询当前激活 SSG 渲染器的原生默认物理路径映射"""
+        if hasattr(self, 'active_renderer') and hasattr(self.active_renderer, 'get_default_path_mappings'):
+            return self.active_renderer.get_default_path_mappings()
+        return {'source_dir': 'src/content', 'site_dir': 'dist', 'assets_dir': 'public/assets', 'graph_json_dir': 'public'}
+
+    def get_site_dir(self) -> str:
+        """🚀 [V76.0] 快捷查询当前 SSG 渲染器的静态成品输出目录 (如 dist / build / out / public)"""
+        return self.get_default_path_mappings().get('site_dir', 'dist')
 
     def get_feature_slots(self):
         """🚀 [V56.0] 意图感知：透传底层渲染器的功能槽声明"""

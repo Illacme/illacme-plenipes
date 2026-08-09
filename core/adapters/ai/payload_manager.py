@@ -47,14 +47,14 @@ class PayloadManager:
         trans_temp = trans_cfg.get('temperature', 0.2) if isinstance(trans_cfg, dict) else getattr(trans_cfg, 'temperature', 0.2)
         trans_max = trans_cfg.get('max_tokens', 4096) if isinstance(trans_cfg, dict) else getattr(trans_cfg, 'max_tokens', 4096)
 
-        if not isinstance(trans_temp, (int, float)):
-            trans_temp = 0.2
-        if not isinstance(trans_max, (int, float)):
-            trans_max = 4096
+        # 🛡️ 物理思维链压制墙：若当前请求关闭了思维链，向 System Prompt 注入硬约束
+        if intelligent_payload.get('enable_thinking') is False:
+            if isinstance(safe_system, str) and "[DIRECT ANSWER MODE]" not in safe_system:
+                safe_system += "\n[DIRECT ANSWER MODE: DO NOT output any <think> tags or reasoning process. Output the final result directly.]"
 
         intent = {
             "model": model_name,
-            "system": system_prompt,
+            "system": safe_system,
             "user": user_content,
             "messages": messages or [],
             "tools": tools or [],

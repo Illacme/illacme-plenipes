@@ -118,6 +118,13 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             shadow_src_path = engine.route_manager.resolve_physical_path(shadow_path, src_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext) if shadow_path else ""
             
             dest_exists = os.path.exists(dest_path)
+            if can_recover and target_langs and hasattr(engine, "route_manager"):
+                for t_code in target_langs:
+                    t_dest = engine.route_manager.resolve_physical_path(target_base, t_code, ctx.route_prefix, ctx.mapped_sub_dir, ctx.slug, ext, source_type=target_slot)
+                    if not os.path.exists(t_dest):
+                        can_recover = False
+                        break
+
             if can_recover and shadow_src_path and os.path.exists(shadow_src_path) and dest_exists:
                 try:
                     with open(shadow_src_path, 'r', encoding='utf-8') as sf:
@@ -141,6 +148,9 @@ class FingerprintSyncStrategy(BaseSyncStrategy):
             # 🚀 [V10.4] 中间件：Pre-Dispatch 钩子
             for hook in engine._hooks["pre_dispatch"]:
                 hook(ctx)
+
+            if clear_cache:
+                ctx.clear_cache = True
 
             # 🚀 [V10.3] 多语言分发
             if hasattr(engine, "meta"):

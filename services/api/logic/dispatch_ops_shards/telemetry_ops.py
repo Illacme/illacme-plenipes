@@ -19,7 +19,7 @@ def check_port(port: int) -> bool:
     sock.close()
     return result == 0
 
-def get_dispatch_status_logic(engine, doc_id: str) -> dict:
+def get_dispatch_status_logic(engine, doc_id: str, lang_code: str = None) -> dict:
     """
     🛰️ 物理感应探针 (Sovereign Sensing)
     穿透 dist 目录并扫描真实产物分布，零 Mock 真实还原算力、费用与节点状态。
@@ -30,8 +30,16 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
     
     # 1. 基础路径对正（获取数据库中注册的文档元数据，尊重 Slug 别名）
     doc_info = {}
+    doc_records = {}
     if hasattr(engine, "meta"):
         doc_info = engine.meta.get_doc_info(doc_id) or {}
+        if hasattr(engine.meta, "list_syndication_records_for_doc"):
+            try:
+                records_list = engine.meta.list_syndication_records_for_doc(doc_id, lang_code)
+                for r in records_list:
+                    doc_records[r.get("target_id", "")] = r
+            except Exception:
+                pass
 
     slug = doc_info.get("slug") or os.path.splitext(os.path.basename(doc_id))[0]
     route_prefix = doc_info.get("route_prefix") or ""
@@ -115,22 +123,11 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
 
                 from core.logic.block_parser import MarkdownBlockParser
                 parser = MarkdownBlockParser()
-                from core.logic.ai.ai_logic_hub import AILogicHub
-                
-                blocks_fingerprints = []
-                for b in parser.parse(masked_body):
-                    if b.type == "spacer" or not b.content.strip():
+                for block in parser.parse(body):
+                    c_str = block.content.strip()
+                    if block.type == "spacer" or not c_str or c_str.startswith("---") or c_str.startswith("<!--"):
                         continue
-                    # 💡 [V75.4] 物理对齐翻译流水线的 Pure Mask Bypass 机制：先通过 mask 屏蔽，再剔除无实质字符的占位块
-                    masked_content, _ = AILogicHub.mask_block(b.content)
-                    stripped = re.sub(r'__B_MASK_\d+__', '', masked_content)
-                    stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
-                    if not re.search(r'\w', stripped):
-                        continue
-                    # 💡 [V75.4] 彻底过滤以 <!-- 开头的 HTML 注释块（如 Sovereign-Tag 主权盾），这些在物理上无需翻译，亦不计入缓存统计
-                    if b.content.strip().startswith("<!--") and b.content.strip().endswith("-->"):
-                        continue
-                    blocks_fingerprints.append(b.fingerprint)
+                    blocks_fingerprints.append(block.fingerprint)
                 total_blocks = len(blocks_fingerprints)
         except Exception:
             pass
@@ -228,14 +225,35 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             LanguageHub.resolve_to_iso(lang_code) == LanguageHub.resolve_to_iso(resolved_src_lang)
         )
 
+        # 🚀 物理探测翻译产物 Markdown 是否存在 (Content Dir / Runtime Cache / Sources Cache)
+        content_root = ""
+        if hasattr(engine, "paths") and engine.paths.get("content_dir"):
+            content_root = engine.paths.get("content_dir")
+        else:
+            content_root = os.path.join("themes", theme, "src", "content")
+
+        target_md_candidates = [
+            os.path.join(content_root, lang_code, route_prefix, sub_dir, f"{slug}.md"),
+            os.path.join(content_root, lang_code, "docs", lang_code, f"{slug}.md"),
+            os.path.join(content_root, lang_code, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "runtime", lang_code, route_prefix, sub_dir, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "runtime", lang_code, "docs", lang_code, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "runtime", lang_code, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "sources", imprint_id, lang_code, route_prefix, sub_dir, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "sources", imprint_id, lang_code, "docs", lang_code, f"{slug}.md"),
+            os.path.join(engine.vault_root, ".plenipes", "cache", "sources", imprint_id, lang_code, f"{slug}.md"),
+        ]
+        md_exists = any(os.path.exists(p) for p in target_md_candidates)
+
         # 计算已翻译缓存段落的比例与进度
         cached_blocks = 0
-        progress = 100 if exists else 0
+        progress = 100 if (exists or md_exists) else 0
         cache_info = ""
         
         if is_source_match:
             # 主权透传语种免除缓存检索与缓存警告
             cache_info = "无需翻译 (主权透传)"
+            progress = 100
         elif total_blocks > 0 and hasattr(engine, "block_cache"):
             route_style = None
             from core.governance.license_guard import LicenseGuard
@@ -263,25 +281,25 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
             style_hash = hashlib.md5(style_content.encode('utf-8')).hexdigest()
 
             for fp in blocks_fingerprints:
-                if engine.block_cache.get_block(lang_code, fp, style_hash):
+                if engine.block_cache.get_block(lang_code, fp, style_hash) or (style_hash != "" and engine.block_cache.get_block(lang_code, fp, "")):
                     cached_blocks += 1
-            progress = int(cached_blocks * 100 / total_blocks)
-            
-            # 💡 [V75.5] 体验优化：如果 HTML 存在且缓存段落有缺失
-            if exists and cached_blocks < total_blocks:
-                is_source_dirty = (current_hash is None or doc_info.get("source_hash") != current_hash)
-                if is_source_dirty:
-                    cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落 (源稿有更新，请重新分发)"
-                else:
-                    cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落"
+
+            if md_exists or exists or (total_blocks > 0 and cached_blocks >= total_blocks):
+                cached_blocks = max(cached_blocks, total_blocks)
+                progress = 100
+                cache_info = f"{total_blocks}/{total_blocks} 个段落已缓存"
             else:
-                cache_info = f"已缓存 {cached_blocks}/{total_blocks} 个段落"
+                progress = int(cached_blocks * 100 / total_blocks) if total_blocks > 0 else 0
+                cache_info = f"{cached_blocks}/{total_blocks} 个段落已缓存"
+        
+        is_ready = exists or md_exists or (total_blocks > 0 and cached_blocks >= total_blocks)
+        status_val = "published" if exists else ("synced" if is_ready else "pending")
         
         sync_matrix.append({
             "locale": target.prompt_lang,
             "lang_code": lang_code.upper() if lang_code else "",
-            "status": "published" if exists else "pending",
-            "last_sync": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(target_path))) if exists else "Never",
+            "status": status_val,
+            "last_sync": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(target_path))) if exists else ("Recently" if md_exists else "Never"),
             "artifact_url": target_url,
             "live_url": target_live_url,
             "tokens": trans_tokens,
@@ -443,43 +461,100 @@ def get_dispatch_status_logic(engine, doc_id: str) -> dict:
     else:
         syndication_cfg = getattr(syndication_cfg, "__dict__", {})
          
+    # 🚀 计算当前文档内容物理哈希 (用于智能感知文章是否已修改需覆写)
+    current_content_hash = None
+    if os.path.exists(source_path):
+        try:
+            import hashlib
+            with open(source_path, 'rb') as sf:
+                current_content_hash = hashlib.sha256(sf.read()).hexdigest()
+        except Exception:
+            pass
+
     for chan_id, chan_cfg in syndication_cfg.items():
-        if isinstance(chan_cfg, dict) and chan_cfg.get("enabled"):
-            status_info = publish_status.get(chan_id, {})
-            chan_status = status_info.get("status") or "pending"
+        if isinstance(chan_cfg, dict):
+            clean_chan_key = chan_id.lower().replace("_", "").replace("-", "")
+            status_info = publish_status.get(chan_id)
+            if not status_info:
+                for k, v in publish_status.items():
+                    if k.lower().replace("_", "").replace("-", "") == clean_chan_key:
+                        status_info = v
+                        break
+            status_info = status_info or {}
+
+            chan_record = doc_records.get(chan_id)
+            if not chan_record:
+                for k, v in doc_records.items():
+                    if k.lower().replace("_", "").replace("-", "") == clean_chan_key:
+                        chan_record = v
+                        break
+            chan_record = chan_record or {}
+            record_url = chan_record.get("remote_url")
             
-            last_sync_str = "Never"
-            if status_info.get("timestamp"):
-                last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(status_info.get("timestamp")))
-                 
-            display_name = chan_id.replace("_", " ").title()
-            
-            # 🚀 [V105.0] 多维度捕获发布后的真实文章/渠道 URL 直达页面
-            syndication_url = (
-                status_info.get("url")
-                or status_info.get("target_url")
-                or status_info.get("post_url")
-                or status_info.get("web_url")
-                or status_info.get("article_url")
-                or status_info.get("link")
-                or "#"
+            has_keys = any(
+                k not in ("enabled", "proxy", "force_push") and v and str(v).strip()
+                for k, v in chan_cfg.items()
             )
+            # 🚀 只要配置了物理凭据或包含历史/刚调度的发布记录，即导出至感知矩阵
+            if has_keys or status_info or chan_cfg.get("enabled") or chan_record:
+                chan_status = status_info.get("status") or ("synced" if (status_info.get("timestamp") or chan_record) else "pending")
+                
+                last_sync_str = "Never"
+                if status_info.get("timestamp"):
+                    last_sync_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(status_info.get("timestamp")))
+                elif chan_record.get("updated_at"):
+                    last_sync_str = str(chan_record.get("updated_at"))[:16]
+                     
+                display_name = chan_id.replace("_", " ").title()
+                
+                # 🚀 多维度捕获发布后的真实文章/渠道 URL 直达页面（优先目标语种专属物权账本链接）
+                if status_info.get("status") == "syncing":
+                    chan_status = "syncing"
+                    syndication_url = "#"
+                elif record_url:
+                    syndication_url = record_url
+                elif chan_record.get("remote_article_id"):
+                    syndication_url = (
+                        status_info.get("url")
+                        or status_info.get("target_url")
+                        or status_info.get("post_url")
+                        or status_info.get("web_url")
+                        or status_info.get("article_url")
+                        or status_info.get("link")
+                        or "#"
+                    )
+                else:
+                    syndication_url = "#"
 
-            chan_status_clean = (chan_status or "pending").lower()
-            is_syndication_done = chan_status_clean in ("published", "success", "done", "synced")
+                chan_status_clean = (chan_status or "pending").lower()
+                error_reason = status_info.get("error") or ""
+                if chan_record.get("remote_article_id"):
+                    if chan_status_clean != "syncing":
+                        chan_status_clean = "published"
+                        error_reason = ""
+                elif chan_status_clean != "syncing":
+                    if chan_status_clean not in ("failed", "error"):
+                        chan_status_clean = "pending"
 
-            sync_matrix.append({
-                "channel_id": chan_id,
-                "locale": f"📡 {display_name}",
-                "lang_code": "SYNDICATION",
-                "status": chan_status_clean,
-                "last_sync": last_sync_str,
-                "artifact_url": syndication_url,
-                "tokens": 0,
-                "progress": 100 if is_syndication_done else 0,
-                "cache_info": "分发渠道",
-                "reason": status_info.get("error") or ""
-            })
+                is_syndication_done = chan_status_clean in ("published", "success", "done", "synced", "skipped")
+
+                # 🚀 [V121.0] 哈希变更智能感知
+                saved_hash = chan_record.get("content_hash")
+                is_outdated = bool(saved_hash and current_content_hash and saved_hash != current_content_hash)
+
+                sync_matrix.append({
+                    "channel_id": chan_id,
+                    "locale": f"📡 {display_name}",
+                    "lang_code": "SYNDICATION",
+                    "status": chan_status_clean,
+                    "last_sync": last_sync_str,
+                    "artifact_url": syndication_url,
+                    "tokens": 0,
+                    "progress": 100 if is_syndication_done else 0,
+                    "cache_info": "内容已变更" if is_outdated else "分发渠道",
+                    "is_outdated": is_outdated,
+                    "reason": error_reason
+                })
 
     return {
         "doc_id": doc_id,

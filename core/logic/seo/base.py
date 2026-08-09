@@ -66,9 +66,16 @@ class BaseSeoProcessor(ABC):
         protected_fields = ['title', 'description', 'keywords', 'slug', 'canonical']
         
         for field in protected_fields:
-            if fm_dict.get(field):
+            val = fm_dict.get(field)
+            if val:
+                # 🛡️ 防污染检查：如果 description 中混入了与源文明显不符的日文字符(如假名)，拒绝当作手写元数据保护
+                if field == 'description' and isinstance(val, str):
+                    import re
+                    if re.search(r'[\u3040-\u30ff]', val): # 包含日文平假名/片假名
+                        tlog.warning(f"⚠️ [元数据防污染] 拒绝保护混入日文的异常 Frontmatter description: {val[:30]}...")
+                        continue
                 # 用户手动定义的优先级最高，覆盖自动生成的
-                seo_result[field] = fm_dict[field]
+                seo_result[field] = val
                 tlog.debug(f"  └── 🛡️ [元数据优先] '{field}' 保留用户手动定义值")
         
         return seo_result

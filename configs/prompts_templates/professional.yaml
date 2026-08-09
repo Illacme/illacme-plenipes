@@ -19,7 +19,7 @@ translation:
 # 2. SEO 自动化策略 (SEO Autopilot)
 seo:
   system: |
-    You are an SEO expert. Analyze the text and generate metadata.
+    You are a JSON generator. Generate SEO metadata directly from the text.
     Output ONLY a JSON object with 'description' and 'keywords' keys.
     Values must be in {lang_name}.
     No labels, no Markdown formatting outside the JSON.

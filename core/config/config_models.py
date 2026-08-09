@@ -303,21 +303,24 @@ class Configuration(BaseModel):
     @model_validator(mode='after')
     def validate_publishing_mode_and_ai(self) -> 'Configuration':
         """🚀 [V74.96] 出版模式自动降级与自愈保护机制"""
-        # 1. 检查 AI 算力可用性
+        # 1. 检查 AI 算力可用性：以算力中心 AI 算力总控开关 (enable_ai) 为准，并探查物理节点
         local_types = ["ollama", "lmstudio", "local"]
-        ai_available = False
-        if self.translation and self.translation.enable_ai:
+        has_node = False
+        if self.translation and self.translation.compute_nodes:
             for node in self.translation.compute_nodes.values():
                 if not node.enabled:
                     continue
                 node_type = (node.type or "").lower()
                 api_key = node.api_key or ""
                 if any(t in node_type for t in local_types):
-                    ai_available = True
+                    has_node = True
                     break
                 if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
-                    ai_available = True
+                    has_node = True
                     break
+
+        ai_enabled = bool(self.translation and self.translation.enable_ai)
+        ai_available = ai_enabled and has_node
 
         # 2. 获取当前出版模式和多语言矩阵状态
         if not self.governance:
@@ -326,27 +329,28 @@ class Configuration(BaseModel):
         i18n_enabled = self.i18n_settings.enabled if self.i18n_settings else False
 
         # 3. 校验并自动降级
-        # 3.1 算力关闭或无可用节点 -> 出版模式不能选择智能增强(enhanced)或全球分发(global)
+        # 3.1 AI 算力总控关闭或无可用节点 -> 出版模式强制重置为基础物理出版 (BASIC)，多语言矩阵关闭
         if not ai_available:
-            if mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
+            if mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL) or i18n_enabled:
                 from core.utils.tracing import tlog
-                tlog.warning(f"⚠️ [自动降级] 算力关闭或无可用节点，出版模式从 {mode.value} 降级为 {PublishingMode.BASIC.value}")
+                tlog.warning(f"⚠️ [自动降级] AI 算力总控关闭或无可用节点，出版模式降级为 {PublishingMode.BASIC.value}，多语言矩阵重置为关闭")
                 self.governance.publishing_mode = PublishingMode.BASIC
+                if self.i18n_settings:
+                    self.i18n_settings.enabled = False
                 if self.translation:
-                    self.translation.enable_ai = False  # 物理降级对正：基础模式下 AI 算力自动关闭
-        # 3.2 算力可用，但多语言翻译矩阵关闭 -> 出版模式不能选择全球多语言分发(global)
-        elif not i18n_enabled:
-            if mode == PublishingMode.GLOBAL:
-                from core.utils.tracing import tlog
-                tlog.warning(f"⚠️ [自动降级] 多语言翻译矩阵已关闭，出版模式从 {PublishingMode.GLOBAL.value} 降级为 {PublishingMode.ENHANCED.value}")
-                self.governance.publishing_mode = PublishingMode.ENHANCED
-
-        # 3.3 非全球多语言分发模式下，多语言翻译矩阵强制对齐为关闭状态
-        if self.governance.publishing_mode != PublishingMode.GLOBAL:
-            if self.i18n_settings and self.i18n_settings.enabled:
-                from core.utils.tracing import tlog
-                tlog.info("⚖️ [多语言矩阵对齐] 当前出版模式非全球分发模式，强制关闭多语言翻译矩阵。")
-                self.i18n_settings.enabled = False
+                    self.translation.enable_ai = False
+        # 3.2 AI 算力开启且节点可用 -> 根据多语言矩阵开关自愈升降阶出版模式
+        else:
+            if i18n_enabled:
+                if mode != PublishingMode.GLOBAL:
+                    from core.utils.tracing import tlog
+                    tlog.info(f"⚖️ [模式对齐] AI 算力与多语言矩阵均激活，出版模式对齐升阶为 {PublishingMode.GLOBAL.value}")
+                    self.governance.publishing_mode = PublishingMode.GLOBAL
+            else:
+                if mode == PublishingMode.GLOBAL:
+                    from core.utils.tracing import tlog
+                    tlog.info(f"⚖️ [模式对齐] 多语言矩阵处于关闭状态，出版模式对齐为 {PublishingMode.ENHANCED.value}")
+                    self.governance.publishing_mode = PublishingMode.ENHANCED
 
         # 4. 降级后，自动对齐重置 SEO 策略
         from .models.governance import validate_mode_strategy, get_default_strategy

@@ -99,11 +99,8 @@ class OrchestratedExecutor(concurrent.futures.Executor):
 
             f = concurrent.futures.Future()
             task = OrchestratedTask(func, priority, name, f, *args, **kwargs)
-            # 🚀 [V35.2] 强制诊断：使用 print 绕过日志等级过滤
-            print(f"📥 [Orchestrator] 任务 '{name}' 提交至池 {id(self)} | 队列长度: {len(self.queue)}")
+            tlog.debug(f"📥 [Orchestrator] 任务 '{name}' 提交至池 {id(self)} | 队列长度: {len(self.queue)}")
 
-
-            
             # 🚀 [V11.8 生产就绪] 嵌套死锁自愈：如果检测到嵌套提交，动态激活一个“救援工人”
             if f"@{id(self)}" in current_thread_name:
                 rescue_count = sum(1 for w in self.workers if w.name.startswith("OrchestratorRescue-"))
@@ -116,12 +113,6 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                 else:
                     tlog.warning(f"⚠️ [Rescue Blocked] 嵌套提交 '{name}' 探测到救援线程数已达物理上限 ({rescue_count}/{max_rescue_limit})，已拦截增殖。")
 
-            try:
-                import sys
-                sys.stderr.write(f"📥 [DEBUG] 任务 '{name}' 已压栈 | 池: {id(self)} | 队列: {len(self.queue)}\n")
-                sys.stderr.flush()
-            except Exception:
-                pass
             # 🚀 [V11.5] 格式统一化：(优先级, 时间戳, 任务对象)
             heapq.heappush(self.queue, (priority, task.timestamp, task))
 
@@ -175,9 +166,7 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                 if task.future.cancelled():
                     # 🚀 [V79.1] 任务已被取消，直接跳过执行
                     continue
-                import sys
-                sys.stderr.write(f"🧪 [DEBUG] 工人领取任务: {task.name} | 线程: {threading.get_ident()}\n")
-                sys.stderr.flush()
+                tlog.debug(f"🧪 [DEBUG] 工人领取任务: {task.name} | 线程: {threading.get_ident()}")
                 
                 thread_id = threading.get_ident()
 

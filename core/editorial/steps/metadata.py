@@ -75,6 +75,18 @@ class MetadataAndHashStep(PipelineStep):
                         if not os.path.exists(cache_mirror):
                             all_cached = False
                             break
+                        # 🚀 [物理防假译防线] 检查译文镜像内容：如果非母语语种文件体全是母语中文，则视同未缓存，物理强行重重译
+                        src_lang_code = ctx.engine.config.i18n_settings.source.lang_code
+                        if lang != src_lang_code:
+                            with open(cache_mirror, 'r', encoding='utf-8') as cmf:
+                                from core.utils.text import parse_frontmatter
+                                _, cm_body, _ = parse_frontmatter(cmf.read())
+                                import re
+                                if cm_body and re.search(r'[\u4e00-\u9fa5]', cm_body):
+                                    from core.utils.tracing import tlog
+                                    tlog.warning(f"⚠️ [物理污染防御] 探测到 {lang} 物理缓存镜像包含未翻译的中文母语正文，强行作废并触发重新翻译: {cache_mirror}")
+                                    all_cached = False
+                                    break
                     except Exception:
                         all_cached = False
                         break

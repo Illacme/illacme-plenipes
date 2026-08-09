@@ -126,9 +126,14 @@ window.renderLocalizationCategory = function () {
             
             <!-- 4. 目标分发阵列与高级翻译治理（仅当 isEnabled 为开启时才渲染显示） -->
             ${isEnabled ? `
-                <div id="target-dissemination-group" style="margin-top: 2.5rem;">
-                    <div class="section-header">
-                        <h4>🛰️ 目标分发阵列 (Target Dissemination)</h4>
+                <div id="target-dissemination-group" style="margin-top: 1.8rem;">
+                    <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <h4 style="margin: 0; font-size: 0.95rem;">🛰️ 目标分发阵列 (Target Dissemination)</h4>
+                        ${!isLicensed ? `
+                            <span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                🌱 免费社区版：仅限 1 个目标语种
+                            </span>
+                        ` : ''}
                     </div>
                     <div class="lang-matrix">
                         ${availableLangs
@@ -136,13 +141,15 @@ window.renderLocalizationCategory = function () {
                 .map(l => {
                     const isSelected = activeTargets.includes(l.code);
                     const isLocked = !isLicensed && !isSelected && activeTargets.length >= 1;
+                    const cardTitle = isLocked ? '点击一键置换为此语种' : '';
                     return `
                                             <div class="lang-card ${isSelected ? 'active' : ''} ${isLocked ? 'locked' : ''}" 
+                                                 ${cardTitle ? `title="${cardTitle}"` : ''}
                                                  onclick="window.toggleI18nTarget(this, '${l.code}')">
-                                                <span style="font-size: 1.5rem;">${l.icon}</span>
-                                                <div style="display: flex; flex-direction: column; gap: 2px;">
-                                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright, #ffffff);">${l.name}</span>
-                                                    <span style="font-size: 0.65rem; color: var(--text-dim);">${l.code.toUpperCase()}</span>
+                                                <span style="font-size: 1.15rem; line-height: 1;">${l.icon}</span>
+                                                <div style="display: flex; flex-direction: column; gap: 1px; align-items: center;">
+                                                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-bright, #ffffff); line-height: 1.2;">${l.name}</span>
+                                                    <span style="font-size: 0.6rem; color: var(--text-dim); line-height: 1;">${l.code.toUpperCase()}</span>
                                                 </div>
                                             </div>`;
                 }).join('')}
@@ -300,6 +307,11 @@ window.renderGlossaryCategory = function () {
                                     🇬🇧 English (EN)
                                 </button>
                             `}
+                            ${!isLicensed ? `
+                                <span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: auto; white-space: nowrap;">
+                                    🌱 免费社区版：单语种术语库
+                                </span>
+                            ` : ''}
                         </div>
 
                         <!-- 🔍 检索与操作控制栏 -->
@@ -816,6 +828,13 @@ window.renderDisseminationRoutingCategory = () => {
     `;
 };
 
-// 🚀 向后兼容旧接口别名
+// 🚀 向后兼容旧接口别名与智能双轨分发器
 window.renderI18nRoutingCategory = window.renderLocalizationGovCategory;
-window.switchI18nRoutingSubTab = window.switchLocalizationGovSubTab;
+window.switchI18nRoutingSubTab = (subTab, btn) => {
+    if (['slug_settings', 'route_matrix'].includes(subTab) && typeof window.switchDisseminationRoutingSubTab === 'function') {
+        return window.switchDisseminationRoutingSubTab(subTab, btn);
+    }
+    if (typeof window.switchLocalizationGovSubTab === 'function') {
+        return window.switchLocalizationGovSubTab(subTab, btn);
+    }
+};

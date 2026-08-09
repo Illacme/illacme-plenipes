@@ -124,16 +124,20 @@ class MetadataManager:
             existing = self.sqlite.get_document(rel_path) or {}
             status_map = existing.get("publish_status", {})
             prev_info = status_map.get(channel_id) or {}
+            
+            # 若传入了显式 url，则使用新 url；若传入 url===''，清空旧 url；若未传，按需保留
+            target_url = url if url is not None else (prev_info.get("url") if status not in ("syncing", "FAILED") else None)
+            
             status_map[channel_id] = {
                 **prev_info,
                 "status": status,
                 "timestamp": int(time.time()),
                 "error": cleaned_error,
                 "stage": stage,
-                "url": url or prev_info.get("url")
+                "url": target_url
             }
             self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=status_map)
-            tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} ({stage}) | 文档: {rel_path}")
+            tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} ({stage}) | 文档: {rel_path} | URL: {target_url}")
 
 
     def get_doc_info(self, rel_path):
@@ -264,6 +268,19 @@ class MetadataManager:
 
     def mark_syndication_success(self, rel_path, target_id):
         with self.lock: self.sqlite.mark_syndication_success(rel_path, target_id)
+
+    # 🚀 [V120.0] 全渠道文章生命周期物权记录表账本代理
+    def save_syndication_record(self, rel_path: str, lang_code: str, target_id: str, remote_article_id: str, remote_url: str = None, content_hash: str = None):
+        with self.lock: self.sqlite.save_syndication_record(rel_path, lang_code, target_id, remote_article_id, remote_url, content_hash)
+
+    def get_syndication_record(self, rel_path: str, lang_code: str, target_id: str) -> dict:
+        return self.sqlite.get_syndication_record(rel_path, lang_code, target_id)
+
+    def list_syndication_records_for_doc(self, rel_path: str, lang_code: str = None) -> list:
+        return self.sqlite.list_syndication_records_for_doc(rel_path, lang_code)
+
+    def delete_syndication_record(self, rel_path: str, lang_code: str, target_id: str):
+        with self.lock: self.sqlite.delete_syndication_record(rel_path, lang_code, target_id)
 
     def mark_syndication_failure(self, rel_path, target_id, error_msg, backoff_seconds):
         with self.lock: self.sqlite.mark_syndication_failure(rel_path, target_id, error_msg, backoff_seconds)

@@ -102,8 +102,6 @@ window.updateSlugSandboxPreview = async function () {
     const previewDiskPath = document.getElementById('sandbox-preview-disk-path');
     const previewStatusBox = document.getElementById('sandbox-preview-status-box');
 
-    if (!previewWebUrl || !previewDiskPath) return;
-
     let samplePath = "tech/guide/e2e_slug_test.md";
     let sampleTitle = "安装与部署指南";
     let existingSlug = "";
@@ -118,10 +116,33 @@ window.updateSlugSandboxPreview = async function () {
         sampleTitle = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
     }
 
-    const translation = window.settingsData.translation || {};
+    const settingsData = window.settingsData || {};
+    const translation = settingsData.translation || {};
+    const i18nSettings = settingsData.i18n_settings || {};
     const dirMode = translation.slug_dir_mode || 'flat';
     const slugMode = translation.slug_mode || 'ai';
     const isAi = (slugMode === 'ai');
+
+    // 🛡️ [防御性解构] 统一提取纯净字符串语种代码与友好名称
+    const extractLangCode = (item, fallback = 'en') => {
+        if (!item) return fallback;
+        if (typeof item === 'string') return item.trim().toLowerCase();
+        if (typeof item === 'object') {
+            const code = item.lang_code || item.code || item.id || item.lang || fallback;
+            return typeof code === 'string' ? code.trim().toLowerCase() : fallback;
+        }
+        return String(item).trim().toLowerCase();
+    };
+
+    // 语种矩阵与前缀开关感知 (支持字符串及对象字典双模态)
+    const rawSource = i18nSettings.source || 'zh';
+    const sourceLang = extractLangCode(rawSource, 'zh');
+    
+    let targetLangs = ['en'];
+    if (i18nSettings.targets && Array.isArray(i18nSettings.targets) && i18nSettings.targets.length > 0) {
+        targetLangs = i18nSettings.targets.map(t => extractLangCode(t, 'en')).filter(Boolean);
+    }
+    const forceDefaultLangPrefix = !!i18nSettings.force_default_lang_prefix;
 
     const filename = samplePath.split('/').pop().replace(/\.mdx?$/i, '');
     const parts = samplePath.split('/');
@@ -138,44 +159,20 @@ window.updateSlugSandboxPreview = async function () {
         }
     }
 
-    let cleanRelPath = "";
-    let webUrlPath = "";
-
     // 🚀 [物理主权适配] 优先匹配 route_matrix 中的专区/频道重定向映射
-    const routeMatrix = window.settingsData.route_matrix || [];
+    const routeMatrix = settingsData.route_matrix || [];
     let matchedRoute = null;
     if (subDir) {
         matchedRoute = routeMatrix.find(r => r.source && (subDir === r.source || subDir.startsWith(r.source + '/')));
     }
 
-    if (matchedRoute && matchedRoute.prefix) {
-        let cleanP = matchedRoute.prefix.replace(/^\/+|\/+$/g, '');
-        cleanRelPath = `docs/${cleanP}/${finalSlug}.html`;
-        webUrlPath = `docs/${cleanP}/${finalSlug}.html`;
-    } else {
-        if (dirMode === 'flat') {
-            cleanRelPath = `${finalSlug}.html`;
-            webUrlPath = `${finalSlug}.html`;
-        } else if (dirMode === 'prefix') {
-            const safePrefix = subDir ? subDir.replace(/\//g, '-') + '-' : '';
-            const prefixedSlug = `${safePrefix}${finalSlug}`;
-            cleanRelPath = `${prefixedSlug}.html`;
-            webUrlPath = `${prefixedSlug}.html`;
-        } else if (dirMode === 'nested') {
-            const nestedSub = subDir ? `${subDir}/` : '';
-            cleanRelPath = `docs/${nestedSub}${finalSlug}.html`;
-            webUrlPath = `docs/${nestedSub}${finalSlug}.html`;
-        }
-    }
-
-    // 🚀 提取真实的托管 Base URL 与 GitHub Cloud 直达文件路径
+    // 提取真实的托管 Base URL 与 GitHub Cloud 仓库信息
     let baseUrl = "https://illacme.github.io/obsidian_vortex/";
     let owner = "Illacme", repo = "obsidian_vortex";
 
-    const platforms = window.settingsData.platforms || {};
-    const egress = window.settingsData.egress || {};
-
-    const ghConfig = platforms.github_pages || egress.github_pages || {};
+    const platforms = settingsData.platforms || {};
+    const egress = settingsData.egress || {};
+    const ghConfig = platforms.github_pages || egress.github_pages || (settingsData.publish_control?.direct_upload?.github_pages) || {};
 
     if (ghConfig.cname && ghConfig.cname.trim()) {
         let cname = ghConfig.cname.trim();
@@ -200,39 +197,142 @@ window.updateSlugSandboxPreview = async function () {
         }
     }
 
-    // 云端物理 GitHub 源码链接 (gh-pages 分支)
-    const githubFileUrl = `https://github.com/${owner}/${repo}/blob/gh-pages/${webUrlPath}`;
+    const activeImprint = settingsData.active_imprint || settingsData._active_imprint || "default";
+    const activeTheme = settingsData.active_theme || "default";
 
-    const fullWebUrl = `${baseUrl}${webUrlPath}`;
-    const activeImprint = window.settingsData._active_imprint || "obsidian_vortex";
+    // 辅助函数：根据语种计算最终的 URL 路径与本地磁盘落盘路径
+    const computeLangPaths = (langCode, isSource) => {
+        const cleanCode = typeof langCode === 'string' ? langCode.trim().toLowerCase() : 'en';
+        let langPrefix = "";
+        if (isSource) {
+            langPrefix = forceDefaultLangPrefix ? `${cleanCode}/` : "";
+        } else {
+            langPrefix = `${cleanCode}/`;
+        }
 
-    // 纯正通用 SSG 本地构建落盘路径 (已抹去 github_pages 前缀)
-    const localDiskPath = `imprints/${activeImprint}/themes/default/dist/${cleanRelPath}`;
+        let channelRelPath = "";
+        if (matchedRoute && matchedRoute.prefix) {
+            let cleanP = matchedRoute.prefix.replace(/^\/+|\/+$/g, '');
+            channelRelPath = `docs/${cleanP}/${finalSlug}.html`;
+        } else {
+            if (dirMode === 'flat') {
+                channelRelPath = `${finalSlug}.html`;
+            } else if (dirMode === 'prefix') {
+                const safePrefix = subDir ? subDir.replace(/\//g, '-') + '-' : '';
+                channelRelPath = `${safePrefix}${finalSlug}.html`;
+            } else if (dirMode === 'nested') {
+                const nestedSub = subDir ? `${subDir}/` : '';
+                channelRelPath = `docs/${nestedSub}${finalSlug}.html`;
+            }
+        }
 
-    // 1. 🌐 线上访问 URL（在新标签页打开网页）
-    previewWebUrl.innerHTML = `<a href="${fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;" title="在浏览器中访问线上真实网页">${fullWebUrl}</a>`;
+        const relativeWebPath = `${langPrefix}${channelRelPath}`.replace(/^\/+/, '');
+        const fullWebUrl = `${baseUrl}${relativeWebPath}`;
+        const githubFileUrl = `https://github.com/${owner}/${repo}/blob/gh-pages/${relativeWebPath}`;
+        const localDiskPath = `imprints/${activeImprint}/themes/${activeTheme}/dist/${relativeWebPath}`;
 
-    // 2. ☁️ 云端托管平台文件路径（在 GitHub 上查看该物理文件）
-    const cloudEl = document.getElementById('sandbox-preview-cloud-path');
-    if (cloudEl) {
-        cloudEl.innerHTML = `<a href="${githubFileUrl}" target="_blank" style="color: #00ffaa; font-weight: 600; text-decoration: underline;" title="点击在 GitHub 云端仓库 gh-pages 分支中直接查看此物理文件源码">☁️ gh-pages / ${webUrlPath}</a>`;
+        return {
+            langCode: cleanCode,
+            isSource,
+            relativeWebPath,
+            fullWebUrl,
+            githubFileUrl,
+            localDiskPath
+        };
+    };
+
+    // 计算母语及所有目标翻译语种路径
+    const sourceInfo = computeLangPaths(sourceLang, true);
+    const targetInfos = targetLangs.filter(l => l !== sourceLang).map(l => computeLangPaths(l, false));
+    const allLangInfos = [sourceInfo, ...targetInfos];
+
+    // 语种名称与国旗映射字典
+    const langFlags = {
+        'zh': { flag: '🇨🇳', name: '中文 (母语)' },
+        'en': { flag: '🇺🇸', name: '英文 (English)' },
+        'ja': { flag: '🇯🇵', name: '日文 (日本語)' },
+        'es': { flag: '🇪🇸', name: '西班牙文 (Español)' },
+        'fr': { flag: '🇫🇷', name: '法文 (Français)' },
+        'de': { flag: '🇩🇪', name: '德文 (Deutsch)' },
+        'ru': { flag: '🇷🇺', name: '俄文 (Русский)' },
+        'ko': { flag: '🇰🇷', name: '韩文 (한국어)' },
+        'az': { flag: '🇦🇿', name: '阿塞拜疆文 (Azərbaycan)' },
+        'pt': { flag: '🇵🇹', name: '葡萄牙文 (Português)' }
+    };
+
+    // 渲染全息多语种并列 URL 矩阵列表
+    const matrixBox = document.getElementById('sandbox-multilingual-matrix');
+    if (matrixBox) {
+        matrixBox.innerHTML = allLangInfos.map((info, idx) => {
+            const codeStr = typeof info.langCode === 'string' ? info.langCode : String(info.langCode || 'en');
+            const langMeta = langFlags[codeStr] || { flag: '🌐', name: codeStr.toUpperCase() };
+            const isSource = info.isSource;
+            const prefixTag = isSource
+                ? (forceDefaultLangPrefix ? '<span style="font-size: 0.65rem; color: #00f2fe; background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🏷️ 强制母语前缀</span>' : '<span style="font-size: 0.65rem; color: #00ff88; background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">👑 默认根路径</span>')
+                : '<span style="font-size: 0.65rem; color: #a34cff; background: rgba(163,76,255,0.12); border: 1px solid rgba(163,76,255,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🌍 多语分身译本</span>';
+
+            return `
+                <div style="background: ${idx === 0 ? 'rgba(0, 242, 254, 0.04)' : 'rgba(255, 255, 255, 0.015)'}; border: 1px solid ${idx === 0 ? 'rgba(0, 242, 254, 0.25)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; transition: all 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.82rem; font-weight: 600; color: #fff;">${langMeta.flag} ${langMeta.name}</span>
+                            ${prefixTag}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <a href="${info.fullWebUrl}" target="_blank" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 600; color: var(--neon-cyan, #00f2fe); border: 1px solid rgba(0, 242, 254, 0.35); background: rgba(0, 242, 254, 0.08); border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;" title="在浏览器新标签页访问此语种线上网页">🔗 访问 ↗</a>
+                            <a href="${info.githubFileUrl}" target="_blank" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 600; color: #00ffaa; border: 1px solid rgba(0, 255, 170, 0.35); background: rgba(0, 255, 170, 0.08); border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;" title="在 GitHub 云端仓库 gh-pages 分支直接查看此物理文件">☁️ GitHub ↗</a>
+                            <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${info.localDiskPath}')" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 500; color: var(--text-dim, #aaa); border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); border-radius: 4px; text-decoration: none; cursor: pointer;" title="物理唤醒 Mac Finder / 资源管理器高亮选中该文件">📂 Finder</a>
+                        </div>
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.76rem; color: ${idx === 0 ? 'var(--neon-cyan, #00f2fe)' : '#d0d8e8'}; word-break: break-all; line-height: 1.4;">
+                        ${info.fullWebUrl}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
-    // 3. 💻 本机磁盘构建位置（唤醒 Mac Finder / 本地文件管理器高亮定位）
-    previewDiskPath.innerHTML = `
-        <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${localDiskPath}')" style="color: var(--text-dim, #aaa); text-decoration: underline; cursor: pointer; font-weight: 500;" title="点击物理唤醒 Mac Finder / 本地资源管理器高亮选中该文件">
-            📂 ${localDiskPath}
-        </a>
-    `;
+    // 兼容回填旧版单行选择器 (如有)
+    if (previewWebUrl) {
+        previewWebUrl.innerHTML = `<a href="${sourceInfo.fullWebUrl}" target="_blank" style="color: var(--accent-primary, #00f2fe); font-weight: 600; text-decoration: underline;">${sourceInfo.fullWebUrl}</a>`;
+    }
+    const cloudEl = document.getElementById('sandbox-preview-cloud-path');
+    if (cloudEl) {
+        cloudEl.innerHTML = `<a href="${sourceInfo.githubFileUrl}" target="_blank" style="color: #00ffaa; font-weight: 600; text-decoration: underline;">☁️ gh-pages / ${sourceInfo.relativeWebPath}</a>`;
+    }
+    if (previewDiskPath) {
+        previewDiskPath.innerHTML = `
+            <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${sourceInfo.localDiskPath}')" style="color: var(--text-dim, #aaa); text-decoration: underline; cursor: pointer; font-weight: 500;">
+                📂 ${sourceInfo.localDiskPath}
+            </a>
+        `;
+    }
 
-    // 🚀 [V91.0] 物理即时探测与重新发布提醒机制
+    // 动态解析诊断徽标栏
+    const diagnosticBox = document.getElementById('sandbox-preview-diagnostic-bar');
+    if (diagnosticBox) {
+        const modeLabels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '目录树复刻' };
+        const routeHint = matchedRoute ? `🎯 命中频道: ${matchedRoute.source} ➔ /${matchedRoute.prefix}/` : '📁 默认频道';
+        const prefixHint = forceDefaultLangPrefix ? '🏷️ 母语前缀: 强制开启' : '👑 母语前缀: 默认根路径';
+        
+        diagnosticBox.innerHTML = `
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.68rem; margin-top: 8px;">
+                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${routeHint}</span>
+                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">📝 命名: ${modeLabels[dirMode] || dirMode} (${slugMode === 'ai' ? 'AI 语义' : '文件名'})</span>
+                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">🎭 主题: ${activeTheme}</span>
+                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${prefixHint}</span>
+                <span style="background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.25); padding: 2px 8px; border-radius: 4px; color: #00ff88;">🌍 多语矩阵: ${1 + targetInfos.length} 个版本实时同步</span>
+            </div>
+        `;
+    }
+
+    // 🚀 物理即时探测与重新发布提醒机制
     if (previewStatusBox) {
-        previewStatusBox.innerHTML = `<span style="color: #bbb; font-size: 0.75rem;">⏳ 正在物理感应线上存在状态...</span>`;
+        previewStatusBox.innerHTML = `<span style="color: #bbb; font-size: 0.72rem;">⏳ 正在感应线上多语言云端可达状态...</span>`;
 
         let isOnlineExist = false;
         try {
-            // 尝试带时间戳穿透 CDN 节点物理探测线上 URL 存在状态
-            const probeUrl = fullWebUrl.includes('?') ? `${fullWebUrl}&_t=${Date.now()}` : `${fullWebUrl}?_t=${Date.now()}`;
+            const probeUrl = sourceInfo.fullWebUrl.includes('?') ? `${sourceInfo.fullWebUrl}&_t=${Date.now()}` : `${sourceInfo.fullWebUrl}?_t=${Date.now()}`;
             const res = await fetch(probeUrl, { method: 'HEAD', cache: 'no-store' });
             if (res.status === 200) {
                 isOnlineExist = true;
@@ -246,23 +346,23 @@ window.updateSlugSandboxPreview = async function () {
 
         if (isOnlineExist) {
             previewStatusBox.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.3); padding: 8px 12px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.3); padding: 8px 12px; border-radius: 6px; margin-top: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #00ffaa; font-weight: 600; font-size: 0.8rem;">🟢 线上已物理就绪 (200 OK)</span>
-                        <span style="color: #aaa; font-size: 0.75rem;">该路径已在 GitHub Pages 云端节点部署成功并可公网访问</span>
+                        <span style="color: #00ffaa; font-weight: 600; font-size: 0.78rem;">🟢 线上母语版本已就绪 (200 OK)</span>
+                        <span style="color: #aaa; font-size: 0.72rem;">多语种译本已在 GitHub Pages 云端节点部署完成</span>
                     </div>
                 </div>
             `;
         } else {
             previewStatusBox.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); padding: 10px 12px; border-radius: 6px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); padding: 10px 12px; border-radius: 6px; margin-top: 10px;">
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: #ffb400; font-weight: 600; font-size: 0.8rem;">🟡 待全域发布生效 (未物理就绪/404)</span>
-                            <span style="color: #888; font-size: 0.72rem;">当前选择形态为【${currentModeName}】</span>
+                            <span style="color: #ffb400; font-weight: 600; font-size: 0.78rem;">🟡 待全域发布生效 (推导就绪)</span>
+                            <span style="color: #888; font-size: 0.72rem;">当前形态为【${currentModeName}】</span>
                         </div>
-                        <div style="color: #bbb; font-size: 0.73rem; line-height: 1.4;">
-                            💡 <b>常见原因</b>：1. GitHub Pages / CDN 部署刷新需 1 ~ 3 分钟物理时延； 2. 此原稿为最新更改，尚未执行「🚀 全域发布」。
+                        <div style="color: #bbb; font-size: 0.72rem; line-height: 1.4;">
+                            💡 更改前缀、频道或 Slug 命名后，点击「🚀 重新发布全站」即可立即按此全息路径推流上线。
                         </div>
                     </div>
                     <button class="mini-btn glow-btn" onclick="if(document.getElementById('btn-publish')) document.getElementById('btn-publish').click();" style="padding: 5px 12px; font-size: 0.75rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 10px;">

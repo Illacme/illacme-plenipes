@@ -4,7 +4,8 @@
 职责：承载稿件状态扫描、离线预览调起、强制重出版、物理销毁及待同步感知路由。
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..system import verify_token
 from core.runtime.engine_singleton import get_global_engine
 
@@ -20,7 +21,7 @@ from services.api.logic.dispatch_ops import (
 router = APIRouter()
 
 @router.get("/api/vault/dispatch-status/{doc_id:path}", dependencies=[Depends(verify_token)])
-async def get_dispatch_status(doc_id: str):
+async def get_dispatch_status(doc_id: str, lang_code: Optional[str] = Query(None)):
     """
     🛰️ 物理感应探针 (Sovereign Sensing)
     委派给 telemetry_ops 分片完成，扫描真实产物分布并还原算力、费用与节点状态。
@@ -28,7 +29,7 @@ async def get_dispatch_status(doc_id: str):
     engine = get_global_engine()
     if not engine:
         raise HTTPException(status_code=503, detail="Engine not initialized")
-    return get_dispatch_status_facade(engine, doc_id)
+    return get_dispatch_status_facade(engine, doc_id, lang_code=lang_code)
 
 @router.post("/api/vault/toggle-lab", dependencies=[Depends(verify_token)])
 async def toggle_lab():
@@ -81,6 +82,61 @@ import subprocess
 class OpenFolderReq(BaseModel):
     rel_path: str
 
+class RemoteActionReq(BaseModel):
+    rel_path: str
+    lang_code: str = 'zh'
+    target_id: str
+    action: str  # 'delete' or 'unlink'
+
+@router.get("/api/syndication/records/{doc_id:path}", dependencies=[Depends(verify_token)])
+async def get_syndication_records(doc_id: str, lang_code: str = None):
+    """
+    🛰️ 全渠道分发物权账本查询接口：获取文档的远程文章 ID 与公网 URL
+    """
+    engine = get_global_engine()
+    if not engine: raise HTTPException(status_code=503, detail="Engine not initialized")
+    if hasattr(engine, 'meta') and engine.meta:
+        records = engine.meta.list_syndication_records_for_doc(doc_id, lang_code)
+        return {"ok": True, "records": records}
+    return {"ok": True, "records": []}
+
+@router.post("/api/syndication/remote-action", dependencies=[Depends(verify_token)])
+async def handle_remote_syndication_action(req: RemoteActionReq):
+    """
+    🗑️ 全渠道文章生命周期物权控制：远程下架 (delete) 或本地解绑 (unlink)
+    """
+    engine = get_global_engine()
+    if not engine:
+        raise HTTPException(status_code=503, detail="Engine not initialized")
+
+    syndicator = getattr(engine, 'syndication', None)
+    if not syndicator:
+        from core.syndication.hub import ContentSyndicator
+        syndication_cfg = getattr(engine.config, 'syndication', None) or {}
+        if hasattr(syndication_cfg, 'dict'):
+            syndication_cfg = syndication_cfg.dict()
+
+        site_url = getattr(getattr(engine.config, 'publishing', None), 'site_url', '') or ''
+        sys_tuning = getattr(engine.config, 'system_tuning', None) or {}
+        if hasattr(sys_tuning, 'dict'):
+            sys_tuning = sys_tuning.dict()
+
+        syndicator = ContentSyndicator(
+            syndication_cfg=syndication_cfg,
+            site_url=site_url,
+            sys_tuning_cfg=sys_tuning,
+            meta=getattr(engine, 'meta', None)
+        )
+
+    if req.action == "delete":
+        res = syndicator.delete_remote_article(req.rel_path, req.lang_code, req.target_id)
+        return res
+    elif req.action == "unlink":
+        res = syndicator.unlink_remote_article(req.rel_path, req.lang_code, req.target_id)
+        return res
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported action: {req.action}")
+
 @router.post("/api/vault/open-local-folder", dependencies=[Depends(verify_token)])
 async def open_local_folder(req: OpenFolderReq):
     """
@@ -98,23 +154,17 @@ async def open_local_folder(req: OpenFolderReq):
     
     try:
         if sys.platform == 'darwin':
-            if exists and not os.path.isdir(target_path):
-                subprocess.run(['open', '-R', target_path], check=False)
+            if exists:
+                subprocess.Popen(['open', '-R', target_path])
             else:
-                target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-                os.makedirs(target_dir, exist_ok=True)
-                subprocess.run(['open', target_dir], check=False)
+                subprocess.Popen(['open', os.path.dirname(target_path)])
         elif sys.platform == 'win32':
-            if exists and not os.path.isdir(target_path):
-                subprocess.run(['explorer', '/select,', target_path], check=False)
+            if exists:
+                subprocess.Popen(['explorer', '/select,', target_path])
             else:
-                target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-                os.makedirs(target_dir, exist_ok=True)
-                os.startfile(target_dir)
+                subprocess.Popen(['explorer', os.path.dirname(target_path)])
         else:
-            target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-            os.makedirs(target_dir, exist_ok=True)
-            subprocess.run(['xdg-open', target_dir], check=False)
-        return {"status": "ok", "opened_path": target_path}
+            subprocess.Popen(['xdg-open', os.path.dirname(target_path)])
+        return {"ok": True, "path": target_path}
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
+        return {"ok": False, "error": str(e)}

@@ -44,10 +44,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         secret = settings.get("secret") or ""
         bot_token = settings.get("bot_token") or settings.get("token") or ""
         chat_id = settings.get("chat_id") or ""
-        enabled = settings.get("enabled", True)
-
-        if not enabled:
-            logs.append(log("WARN", "⚠️ [警告] 当前通知节点在系统面板中处于未激活状态，连通性演练将基于当前参数强制进行。"))
         
         # 针对 Telegram Bot 的专用寻址逻辑
         target_url = url
@@ -133,9 +129,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     elif plugin_id in media_plugins:
         import asyncio
         from .plugin_dry_run_media import run_media_plugin_dry_run
-        enabled = settings.get("enabled", True)
-        if not enabled:
-            logs.append(log("WARN", "⚠️ [警告] 当前图床通道在品牌中处于未激活状态，测试将继续验证输入参数。"))
         try:
             asyncio.get_running_loop()
             success = await asyncio.to_thread(run_media_plugin_dry_run, plugin_id, settings, logs, log)
@@ -144,9 +137,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     elif plugin_id in syndication_plugins:
         import asyncio
         from .plugin_dry_run_social import run_social_plugin_dry_run
-        enabled = settings.get("enabled", True)
-        if not enabled:
-            logs.append(log("WARN", "⚠️ [警告] 当前通道在品牌中处于未激活状态，测试将继续使用临时凭据验证。"))
         try:
             asyncio.get_running_loop()
             success = await asyncio.to_thread(run_social_plugin_dry_run, plugin_id, settings, logs, log)
@@ -155,9 +145,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     elif plugin_id in hosting_plugins:
         import asyncio
         from .plugin_dry_run_hosting import run_hosting_plugin_dry_run
-        enabled = settings.get("enabled", True)
-        if not enabled:
-            logs.append(log("WARN", "⚠️ [警告] 当前托管平台在品牌中处于未激活状态，测试将继续验证输入参数。"))
         try:
             asyncio.get_running_loop()
             success = await asyncio.to_thread(run_hosting_plugin_dry_run, plugin_id, settings, logs, log)
@@ -166,16 +153,11 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
 
     else:
         # 获取需要验证的字段（向下兼容多平台定制的个性化参数映射）
-        enabled = settings.get("enabled", True)
         url = settings.get("url") or settings.get("api_url") or ""
         api_key = settings.get("api_key") or settings.get("application_password") or settings.get("integration_token") or ""
         secret = settings.get("secret") or ""
         token = settings.get("token") or ""
         app_password = settings.get("app_password") or ""
-
-        # 判断是否为未激活状态
-        if not enabled:
-            logs.append(log("WARN", "⚠️ [警告] 当前通道在品牌中处于未激活状态，测试将继续使用临时凭据验证。"))
 
         # 进行真实的凭据校验模拟
         target_key = api_key or token or app_password or secret

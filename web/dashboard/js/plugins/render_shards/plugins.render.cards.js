@@ -73,10 +73,10 @@ window.loadPlugins = async (silent = false) => {
         { id: 'masker', name: '🛡️ 安全防护' },
         { id: 'protocol', name: '🧠 AI 协议' },
         { id: 'theme', name: '🎨 视觉装帧' },
-        { id: 'hosting', name: '🌐 全站托管' },
         { id: 'image_hosting', name: '📷 图床存储' },
-        { id: 'publisher', name: '🚀 分发渠道' },
-        { id: 'notification', name: '📢 消息通知' },
+        { id: 'hosting', name: '🌐 全站托管' },
+        { id: 'publisher', name: '📢 社媒分发' },
+        { id: 'notification', name: '🔔 消息通知' },
         { id: 'editorial', name: '🧬 流程审计' }
     ];
 
@@ -201,24 +201,24 @@ window.renderPlugins = () => {
         'masker': '🛡️ 安全防护',
         'protocol': '🧠 AI 协议',
         'theme': '🎨 视觉装帧',
-        'hosting': '🌐 全站托管',
         'image_hosting': '📷 图床存储',
-        'notification': '📢 消息通知',
-        'publisher': '🚀 分发渠道',
+        'hosting': '🌐 全站托管',
+        'publisher': '📢 社媒分发',
+        'notification': '🔔 消息通知',
         'editorial': '🧬 流程审计'
     };
 
     const catDescMap = {
-        'all': '全站全球能力矩阵中枢，支持全自动一键授权、独立网络代理与物理通道探针自检。',
+        'all': '全站全球能力中心，支持全自动一键授权、独立网络代理与物理通道探针自检。',
         'ingress': '感知本地 Markdown/HTML 稿件与物理文件变动，自动逆向生成语法树与解析元素。',
         'transformer': '负责 Markdown 逆向渲染加工、排版指纹识别与段落结构装帧引擎。',
         'masker': '内置敏感词过滤、EXIF 地理指纹脱敏与图像安全隐私掩码保护屏障。',
         'protocol': '连接底座大语言模型，提供语义润色、智能提炼与多语言翻译中枢协议。',
         'theme': '定制全站出版物装帧主题、CSS 样式排版与视觉渲染模版引擎。',
-        'hosting': '支持 Cloudflare, GitHub Pages, Vercel 等平台自动化构建与部署。',
+        'hosting': '支持 GitHub Pages, Vercel, Netlify, Cloudflare Pages 等平台整站多语言打包构建与托管发布（全语种 SSG 静态网站同步推送到主站点）。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
         'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
-        'publisher': '聚合微信公众号, 知乎, CSDN, Dev.to 等主流创作者社交平台的同步分发渠道。',
+        'publisher': '支持 Dev.to, Medium, WordPress, Ghost, Hashnode, LinkedIn 等第三方社交媒体渠道的内容分发与多平台推流。',
         'editorial': '记录全站稿件版本演化指纹、发布履历与全生命周期审计追溯日志。'
     };
 

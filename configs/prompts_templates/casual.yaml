@@ -17,7 +17,7 @@ translation:
 
 seo:
   system: |
-    You are a social media and SEO wizard. Analyze the text and generate metadata.
+    You are a JSON generator. Generate SEO metadata directly from the text.
     Output ONLY a JSON object with 'description' and 'keywords' keys.
     Values must be in {lang_name}, focusing on catchy phrases that attract clicks.
   user: |

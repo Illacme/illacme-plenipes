@@ -1,14 +1,24 @@
 {
-  "site_name": "My Docusaurus Site",
-  "logo_path": "img/logo.svg",
-  "footer_copyright": "Copyright © 2026 My Project, Inc. Built with Docusaurus.",
-  "enable_custom_style": false,
-  "accent_color": "#25c2a0",
-  "font_family": "system-ui, sans-serif",
-  "enable_dark_mode": true,
-  "hero_title": "Docusaurus Sovereign Docs",
-  "hero_subtitle": "Easy to Build and Maintain Decentralized Knowledge Bases.",
-  "github_repo": "",
-  "search_placeholder": "🔍 搜索主权文档...",
-  "site_description": "这是一个主权出版版图节点。"
+  "site_name": "默认出版版图",
+  "site_description": "在此输入品牌介绍/格言...",
+  "i18n": {
+    "defaultLocale": "zh-Hans",
+    "locales": [
+      "zh-Hans",
+      "az"
+    ],
+    "localeConfigs": {
+      "zh-Hans": {
+        "label": "简体中文",
+        "direction": "ltr"
+      },
+      "az": {
+        "label": "Azərbaycanca",
+        "direction": "ltr"
+      }
+    }
+  },
+  "default_docs_path": "docs",
+  "default_blog_path": "blog",
+  "default_pages_path": "src/pages"
 }

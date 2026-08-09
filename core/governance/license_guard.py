@@ -151,6 +151,8 @@ class LicenseGuard:
             feature_desc = cls._PRO_FEATURES.get(feature_name, feature_name)
             tlog.debug(f"🛡️ [功能栅栏] 未激活授权，静默拦截受限功能 '{feature_desc}' (同类提示已抑制)。")
             cls._warned_features.add(feature_name)
+            from core.utils.event_bus import bus
+            bus.emit("SECURITY_ALERT", category="LICENSE_LIMIT", message=f"系统已拦截对未授权专业版功能'{feature_desc}'的访问")
         return False
 
     @classmethod

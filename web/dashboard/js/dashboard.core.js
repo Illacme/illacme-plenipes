@@ -288,7 +288,7 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     </div>
                     <div style="display: flex; align-items: flex-start;">
                         <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">📡 渠道矩阵:</span>
-                        <span style="color: var(--text-bright, #ffffff); font-weight: 500; flex: 1;">一键推送至已开启的托管平台与内容分发渠道</span>
+                        <span style="color: var(--text-bright, #ffffff); font-weight: 500; flex: 1;">一键发布至已开启的托管平台与社媒分发渠道</span>
                     </div>
                 </div>
                 ${warningDetailsHtml}

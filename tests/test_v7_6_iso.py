@@ -52,13 +52,16 @@ def test_imprint_vault_bootstrapping():
         im.delete_imprint(imprint_name)
         
         try:
-            # 启动初始化与自愈空间灌入
-            success = im.init_sovereign_imprint(
-                name=imprint_name,
-                manuscripts_path=temp_vault,
-                imprint_name="测试虚拟向导出版社",
-                bootstrap_vault=True
-            )
+            from unittest.mock import patch
+            from core.governance.license_guard import LicenseGuard
+            # 启动初始化与自愈空间灌入 (使用 LicenseGuard 隔离打桩)
+            with patch.object(LicenseGuard, "is_pro_feature_allowed", return_value=True):
+                success = im.init_sovereign_imprint(
+                    name=imprint_name,
+                    manuscripts_path=temp_vault,
+                    imprint_name="测试虚拟向导出版社",
+                    bootstrap_vault=True
+                )
             
             assert success is True, "❌ 独立版图空间划定失败"
             

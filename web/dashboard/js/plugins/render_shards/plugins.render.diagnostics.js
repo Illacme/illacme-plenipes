@@ -86,7 +86,7 @@ window.senseClipboardCredentials = async (isManualCall = false) => {
                         tokenInput.style.boxShadow = '';
                     }, 1500);
 
-                    const pluginName = drawerTitle ? drawerTitle.innerText.replace('⚙️ 配置能力:', '').trim() : '当前平台';
+                    const pluginName = drawerTitle ? drawerTitle.innerText.replace('⚙️', '').trim() : '当前平台';
                     if (window.showToast) window.showToast(`🟢 已成功将剪贴板凭据智能填入 [${pluginName}]！`, "success");
                     return;
                 }

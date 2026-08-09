@@ -79,25 +79,25 @@
             },
             {
                 id: 'subtab_storage',
-                title: '📂 基础运维 ➔ 存储缓存 (Storage & LRU Janitor GC)',
+                title: '📂 基础运维 ➔ 存储适配 (Storage & Adaptations)',
                 icon: '📂',
                 shortcut: 'Tab 2-3',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('storage');
-                        notify('已切换至【存储缓存】面板', 'success');
+                        notify('已切换至【存储适配】面板', 'success');
                     }
                 }
             },
             {
                 id: 'subtab_engine',
-                title: '⚙️ 基础运维 ➔ 系统基座 (Engine Base & Logs)',
+                title: '⚙️ 基础运维 ➔ 运行基座 (Runtime Engine & Logs)',
                 icon: '⚙️',
                 shortcut: 'Tab 2-4',
                 action: () => {
                     if (typeof window.switchGeneralSubTab === 'function') {
                         window.switchGeneralSubTab('engine');
-                        notify('已切换至【系统基座】面板', 'success');
+                        notify('已切换至【运行基座】面板', 'success');
                     }
                 }
             },

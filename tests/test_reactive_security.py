@@ -42,7 +42,8 @@ def test_license_guard_interception_emits_security_alert():
     def _on_alert(category, message, **kwargs):
         alerts.append((category, message))
         
-    # 模拟未激活授权版
+    # 模拟未激活授权版 (清空全局警告缓存以避免测试污染)
+    LicenseGuard._warned_features.clear()
     with patch.object(LicenseGuard, "is_licensed", return_value=False):
         # 拦截多语言矩阵功能调用
         allowed = LicenseGuard.is_pro_feature_allowed("multi_language")

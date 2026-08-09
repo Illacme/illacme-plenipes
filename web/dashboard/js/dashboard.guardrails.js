@@ -15,7 +15,7 @@ window.renderGuardrailsCategory = () => {
     return `
         <div class="full-width">
             <div class="section-header"><h3>🛡️ GOVERNANCE SHIELD MATRIX</h3></div>
-            <p class="section-desc">Real-time monitoring of LicenseGuard physical admission policies. Core running in <strong>${isLicensed ? 'PRO EDITION' : 'COMMUNITY'}</strong> mode.</p>
+            <p class="section-desc">Real-time monitoring of LicenseGuard physical admission policies. Core running in <strong>${isLicensed ? 'PRO EDITION (商业授权版)' : 'COMMUNITY EDITION (🌱 免费社区版)'}</strong> mode.</p>
             
             <div class="shield-matrix">
                 ${rules.map(r => `

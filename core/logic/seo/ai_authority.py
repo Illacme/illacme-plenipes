@@ -20,7 +20,7 @@ from core.utils.tracing import tlog
 
 # 🚀 [V53.0] AI 实体增强专用提示词
 AUTHORITY_SYSTEM_PROMPT = """You are an expert in Schema.org structured data and Google E-E-A-T optimization.
-Analyze the provided content and extract knowledge entities to build authoritative SEO metadata.
+Extract knowledge entities from the provided content to build authoritative SEO metadata.
 
 Your output MUST be a valid JSON object with these fields:
 - "description": A factual, authority-building meta description (max 160 chars)

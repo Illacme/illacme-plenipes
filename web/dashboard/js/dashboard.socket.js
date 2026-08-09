@@ -250,14 +250,14 @@ window.initWebSocket = () => {
                     const syncInfo = await apiFetch('/api/vault/pending-syndication');
                     if (syncInfo && syncInfo.count > 0) {
                         Swal.fire({
-                            title: '📢 发现待同步分发资产',
-                            html: `全站网页部署已全部就绪。<br>检测到有 <b style="color: #00f2fe;">${syncInfo.count}</b> 篇新稿件尚未同步至分发渠道（如 Dev.to），是否需要一键并行同步？`,
+                            title: '📢 发现待分发社媒资产',
+                            html: `全站网页发布已全部就绪。<br>检测到有 <b style="color: #00f2fe;">${syncInfo.count}</b> 篇新稿件尚未分发至社交媒体（如 Dev.to 等），是否需要一键并行分发？`,
                             icon: 'question',
                             showCancelButton: true,
                             showDenyButton: true, // 提供“不再提示”屏蔽开关
-                            confirmButtonText: '🚀 一键同步',
+                            confirmButtonText: '🚀 一键分发',
                             denyButtonText: '🔕 不再提示',
-                            cancelButtonText: '暂不同步',
+                            cancelButtonText: '暂不分发',
                             background: 'rgba(20,20,30,0.95)',
                             color: '#e0e0e0',
                             confirmButtonColor: '#00f2fe',
@@ -267,15 +267,15 @@ window.initWebSocket = () => {
                             if (result.isDenied) {
                                 localStorage.setItem('ignore_syndication_sync_prompt', 'true');
                                 if (typeof window.addAudit === 'function') {
-                                    window.addAudit('已记录创作者偏好：后续发布完毕后不再主动弹出分发渠道同步提醒。', 'info');
+                                    window.addAudit('已记录创作者偏好：后续全站发布完毕后不再主动弹出社媒分发提醒。', 'info');
                                 }
                                 return;
                             }
 
                             if (result.isConfirmed) {
                                 Swal.fire({
-                                    title: '📡 正在同步中...',
-                                    html: '正在向激活的分发渠道网关分发资产，并实时追踪链路状态，请稍候...',
+                                    title: '🛰️ 正在分发中...',
+                                    html: '正在向激活的社交媒体网关分发资产，并实时追踪链路状态，请稍候...',
                                     allowOutsideClick: false,
                                     didOpen: () => {
                                         Swal.showLoading();

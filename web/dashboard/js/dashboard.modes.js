@@ -231,8 +231,9 @@ window.checkAIReadiness = () => {
 };
 
 window.renderLayoutCategory = () => {
+    const isLicensed = window.settingsData?._is_licensed || false;
     const layoutSubDescs = {
-        imprints: '💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。',
+        imprints: `💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。${!isLicensed ? '<span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: 8px; white-space: nowrap;">🌱 免费社区版：支持 1 个自定义版图</span>' : ''}`,
         themes: '💡 为当前出版品牌选用匹配的现代前端视觉装帧主题。',
         modes: '💡 调节加工深度与出版模式（基础出版 / 全球出版 / 智能母语增强）。'
     };

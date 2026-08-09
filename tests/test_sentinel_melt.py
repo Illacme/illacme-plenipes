@@ -37,7 +37,7 @@ async def test_sentinel_infinite_loop_melt():
     tool_event = ToolCallEvent(tool_name="check_health", arguments={}, raw_call_id="call_1")
 
     call_count = 0
-    async def mock_call_llm_stream(messages, tools, reasoning_enabled, reasoning_effort):
+    async def mock_call_llm_stream(messages, tools=None, reasoning_enabled=True, reasoning_effort="medium", stream_enabled=True, **kwargs):
         nonlocal call_count
         call_count += 1
         # 返回工具调用事件

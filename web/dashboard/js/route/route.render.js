@@ -33,11 +33,11 @@ window.renderRouteMatrixCategory = () => {
 
             <div class="matrix-table glass-panel" style="border-radius: 12px; overflow: hidden; position: relative;">
                 ${!isLicensed ? `
-                    <div class="pro-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 11, 24, 0.6); backdrop-filter: blur(4px); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));">👑</div>
-                        <h3 style="color: #FFD700; font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; letter-spacing: 1px;">Pro Only Feature</h3>
-                        <p style="color: #ccc; max-width: 400px; line-height: 1.6;">高级频道路由、自定义发布 URL 前缀及专属翻译风格矩阵仅在授权版中开放。</p>
-                        <p style="color: #888; font-size: 0.8rem; margin-top: 15px;">系统当前已自动为您回落至无缝的物理路径映射模式。</p>
+                    <div class="pro-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 11, 24, 0.65); backdrop-filter: blur(4px); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <span class="community-edition-badge" style="font-size: 0.72rem; color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); padding: 3px 12px; border-radius: 12px; font-weight: 600; margin-bottom: 12px;">🌱 免费社区版功能受限</span>
+                        <h3 style="color: #FFD700; font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; letter-spacing: 1px;">自定义路由矩阵锁定</h3>
+                        <p style="color: #ccc; max-width: 420px; line-height: 1.6; font-size: 0.82rem;">自定义频道路由前缀、URL Mapping 与插槽样式定制属于高级出版功能。</p>
+                        <p style="color: #888; font-size: 0.78rem; margin-top: 10px;">免费社区版系统已为您自动激活无缝的物理路径透传映射。</p>
                     </div>
                 ` : ''}
 
@@ -240,21 +240,19 @@ window.renderSlugSettingsCategory = () => {
                     </div>
                 </div>
 
-                <!-- 模拟器推导高亮盒子 -->
-                <div style="background: var(--bg-glass, rgba(10, 11, 24, 0.7)); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; gap: 10px; font-family: monospace; font-size: 0.8rem; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">🌐 线上访问 URL:</span>
-                        <span id="sandbox-preview-web-url" style="color: #00f2fe; word-break: break-all; flex: 1; line-height: 1.5;">-</span>
+                <!-- 多语种全息并列推导矩阵盒子 -->
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🌐 多语种全息推导矩阵 (母语 + 全量目标翻译语种):</span>
+                        <span style="font-size: 0.7rem; color: var(--accent-secondary, #00f2fe);">所见即所得 · 联动主语言前缀开关</span>
                     </div>
-                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">☁️ 托管平台文件路径:</span>
-                        <span id="sandbox-preview-cloud-path" style="color: #00ffaa; word-break: break-all; flex: 1; line-height: 1.5;">-</span>
-                    </div>
-                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                        <span style="color: #888; white-space: nowrap; flex-shrink: 0; min-width: 155px; line-height: 1.5;">💻 本机磁盘构建位置:</span>
-                        <span id="sandbox-preview-disk-path" style="color: var(--text-dim); word-break: break-all; flex: 1; line-height: 1.5;">-</span>
+                    <div id="sandbox-multilingual-matrix">
+                        <div style="padding: 15px; text-align: center; color: var(--text-dim); font-size: 0.78rem;">⏳ 正在推导全息多语种访问路径...</div>
                     </div>
                 </div>
+
+                <!-- 动态解析诊断徽标栏 -->
+                <div id="sandbox-preview-diagnostic-bar"></div>
 
                 <!-- 🚀 物理就绪状态与重新发布友好提醒卡片 -->
                 <div id="sandbox-preview-status-box"></div>
@@ -266,7 +264,7 @@ window.renderSlugSettingsCategory = () => {
                     <span style="font-size: 1.1rem;">🎯</span>
                     <span>需要把特定文件夹（如 <code>vault/journal</code>）单独映射为特定 Web 频道（如 <code>/blog/</code>）并指定模板？</span>
                 </div>
-                <a href="javascript:void(0)" onclick="window.switchI18nRoutingSubTab('route_matrix', this)" style="color: #00f2fe; text-decoration: none; font-weight: 600; padding: 6px 14px; background: rgba(0, 242, 255, 0.1); border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.3); font-size: 0.78rem;">
+                <a href="javascript:void(0)" onclick="if(typeof window.switchDisseminationRoutingSubTab==='function'){window.switchDisseminationRoutingSubTab('route_matrix', this);}else if(typeof window.switchI18nRoutingSubTab==='function'){window.switchI18nRoutingSubTab('route_matrix', this);}" style="color: #00f2fe; text-decoration: none; font-weight: 600; padding: 6px 14px; background: rgba(0, 242, 255, 0.1); border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.3); font-size: 0.78rem;">
                     🧭 打开频道映射矩阵 ➔
                 </a>
             </div>

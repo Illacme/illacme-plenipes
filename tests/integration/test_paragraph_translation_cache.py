@@ -169,7 +169,7 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 self.assertIsNotNone(en_status)
                 self.assertEqual(en_status["status"], "pending")
                 self.assertEqual(en_status["progress"], 66)
-                self.assertIn("已缓存 2/3 个段落", en_status["cache_info"])
+                self.assertIn("2/3", en_status["cache_info"])
                 
                 # 7. 解除 Mock 故障，使其能正常通过
                 translate_calls_after = []

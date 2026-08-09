@@ -3,7 +3,6 @@
 """
 🧪 Frontmatter YAML 物理自愈修复器单元测试套件
 """
-import pytest
 from core.utils.yaml_healer import FrontmatterHealer
 from core.utils.text import parse_frontmatter
 from core.utils.common import extract_frontmatter

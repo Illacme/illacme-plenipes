@@ -217,7 +217,8 @@ class AISchedulerDispatchOps:
                 gov = getattr(engine.config, 'governance', None)
                 publishing_mode = getattr(gov, 'publishing_mode', PublishingMode.GLOBAL) if gov else PublishingMode.GLOBAL
 
-                if (publishing_mode in (PublishingMode.BASIC, PublishingMode.ENHANCED)
+                is_explicit_force_target = bool(target_langs or force_sync or getattr(ctx, 'clear_cache', False))
+                if not is_explicit_force_target and (publishing_mode in (PublishingMode.BASIC, PublishingMode.ENHANCED)
                         or LanguageHub.resolve_to_iso(source_lang) == LanguageHub.resolve_to_iso(code)):
                     tlog.info(f"⚖️ [主权透传] {rel_path} ({code})：当前出版模式为 {publishing_mode.value if publishing_mode else 'None'} 或语种一致，跳过 AI 翻译。")
                     return (code, content_to_parse, ctx.base_fm.copy(), {}, True)
@@ -280,10 +281,17 @@ class AISchedulerDispatchOps:
                         translated_blocks[idx] = ""
                         continue
 
-                    # 🚀 [V75.13] 若指定清除缓存，则不从本地缓存中加载，强制重新发起翻译
+                    # 🚀 [V75.13] 若指定清除缓存，跳过本地 Block Cache 命中，强制全量 LLM 真实重译
                     cached_content = None
                     if not getattr(ctx, 'clear_cache', False):
                         cached_content = engine.block_cache.get_block(code, block.fingerprint, style_hash=style_hash)
+                    if cached_content:
+                        import re
+                        src_lcode = getattr(getattr(engine, 'i18n', None), 'source', None) and getattr(engine.i18n.source, 'lang_code', 'zh')
+                        if code != src_lcode and re.search(r'[\u4e00-\u9fa5]', cached_content) and not re.search(r'[\u4e00-\u9fa5]', block.content):
+                            tlog.warning(f"⚠️ [块级缓存防护] {rel_path} | Block {idx} ({code}) 命中残留母语脏缓存，强制作废重发 AI 翻译")
+                            cached_content = None
+
                     if cached_content:
                         tlog.debug(f"✨ [块级缓存命中] {rel_path} | Block {idx} | {block.fingerprint[:8]} | Style: {style_hash[:8]}")
                         translated_blocks[idx] = cached_content
@@ -430,17 +438,24 @@ class AISchedulerDispatchOps:
                                     task_name=f"Block-{idx}-{code}"
                                 )
                                 
-                                # 🚀 [V48.3] 块级护盾解除：还原被临时屏蔽的技术实体
+                                # 🚀 [V108.0] 物理级 AI 译文提纯：擦除 LLM <think> 思考链、引言及围栏标签
                                 if b_result:
+                                    from core.logic.ai.ai_logic_hub import AILogicHub
+                                    b_result = AILogicHub.clean_translation_response(b_result)
                                     b_result = AILogicHub.unmask_block(b_result, block_masks)
                                     # C. 术语还原
                                     if glossary_masks:
                                         b_result = AILogicHub.unmask_glossary(b_result, glossary_masks)
 
-                                    # 🚀 [V10.5] 清洗大模型指令遵循抖动产生的分隔符残留 (如 ### Content ### 及其多语言变体)
+                                    # 🚀 [V114.8] 物理主权标题与乱码清洗护盾：精准剔除 LLM 误吐的前缀杂质 (如 Çeviri ###, ### İçəridən ###)，严防误杀真实标题
                                     import re
-                                    b_result = re.sub(r'^\s*###\s*[^#\n]+\s*###\s*\n?', '', b_result)
-                                    b_result = re.sub(r'\n?\s*###\s*[^#\n]+\s*###\s*$', '', b_result)
+                                    b_result = re.sub(r'^\s*###\s*(?:Çeviri|Translation|Translate|Çevirisi|İçəridən|İçerik|Content|翻译)\s*###\s*', '', b_result, flags=re.IGNORECASE)
+                                    b_result = re.sub(r'^\s*(?:Çeviri|Translation|Translate|Çevirisi|İçəridən|İçerik|Content|翻译)\s*(?:###|:|：|\n)\s*', '', b_result, flags=re.IGNORECASE)
+                                    b_result = re.sub(r'(?:Çeviri|Translation|Translate|Çevirisi|İçəridən|İçerik|Content|翻译)\s*###\s*', '', b_result, flags=re.IGNORECASE)
+
+                                    # 🚀 [V115.0] 标题万能断行自愈：补齐标题前后的物理空行分割，防止列表项与标题强行粘连
+                                    b_result = re.sub(r'([^\n#])\s*(#{1,6}\s+)', r'\1\n\n\2', b_result)
+                                    b_result = re.sub(r'^(#{1,6}\s+.*?)\n([^\n#])', r'\1\n\n\2', b_result, flags=re.MULTILINE)
                                     b_result = b_result.strip()
                                     
                                     # 🛡️ [P4] 触发语法树及标记结构完整性校验
@@ -450,7 +465,12 @@ class AISchedulerDispatchOps:
 
                                     tlog.info(f"✅ [算力收割] Block {idx} ({code}) 翻译成功 | 产物长度: {len(b_result)}")
                                     translated_blocks[idx] = b_result
-                                    engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
+                                    src_lcode = getattr(getattr(engine, 'i18n', None), 'source', None) and getattr(engine.i18n.source, 'lang_code', 'zh')
+                                    is_chinese_fallback = (code != src_lcode and re.search(r'[\u4e00-\u9fa5]', b_result) and not re.search(r'[\u4e00-\u9fa5]', block.content))
+                                    if not is_chinese_fallback:
+                                        engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
+                                    else:
+                                        tlog.warning(f"⚠️ [防污染拦截] Block {idx} ({code}) 包含未翻译的中文母语正文，已拦截缓存落盘")
                                     done_valid_count = len([i for i in valid_block_indices if translated_blocks[i] is not None])
                                     if hasattr(engine, 'active_translation_progress') and (rel_path, code) in engine.active_translation_progress:
                                         engine.active_translation_progress[(rel_path, code)]["translated_paras"] = min(total_para_count, done_valid_count)
@@ -498,20 +518,27 @@ class AISchedulerDispatchOps:
                 if seo_data and "i18n_seo" in seo_data and isinstance(seo_data["i18n_seo"], dict):
                     lang_seo = seo_data["i18n_seo"].get(code)
                     if lang_seo and isinstance(lang_seo, dict):
-                        # 对齐格式，转换为最终需要的 SEO 结构
-                        t_seo_data = {
-                            "description": lang_seo.get("description", ""),
-                            "keywords": lang_seo.get("keywords", []),
-                            "og_title": lang_seo.get("seo_title", "")
-                        }
-                        if "search_intent_note" in lang_seo:
-                            t_seo_data["search_intent_note"] = lang_seo["search_intent_note"]
-                        tlog.info(f"✨ [SEO] 命中新版全局模式预生成的译文 SEO 数据 ({code})")
+                        desc_candidate = lang_seo.get("description", "") or ""
+                        # 🛡️ [物理防污染墙] 检查预生成描述是否包含上一轮残留的思维链/系统提示词垃圾
+                        dirty_keywords = ["reasoning process", "final result", "Thinking Process:", "Analyze the Input", "Output ONLY"]
+                        if any(kw.lower() in desc_candidate.lower() for kw in dirty_keywords):
+                            tlog.warning(f"⚠️ [SEO 防污染] 发现预生成的 {code} 语种 SEO 描述包含历史思维链垃圾，已强行剥离纯净化。")
+                            desc_candidate = ""
+
+                        if desc_candidate or lang_seo.get("keywords"):
+                            t_seo_data = {
+                                "description": desc_candidate,
+                                "keywords": lang_seo.get("keywords", []),
+                                "og_title": lang_seo.get("seo_title", "")
+                            }
+                            if "search_intent_note" in lang_seo:
+                                t_seo_data["search_intent_note"] = lang_seo["search_intent_note"]
+                            tlog.info(f"✨ [SEO] 命中新版全局模式预生成的纯净译文 SEO 数据 ({code})")
 
                 target_fm = ctx.base_fm.copy()
 
-                # 🚀 [V10.5] 优先注入：如果 AI SEO 处理器产出了对应语种数据，直接反向覆盖 Frontmatter
-                if t_seo_data:
+                # 🚀 [V10.5] 优先注入：如果 AI SEO 处理器产出了对应语种数据且非强制重译，直接反向覆盖 Frontmatter
+                if t_seo_data and not getattr(ctx, 'clear_cache', False):
                     if t_seo_data.get("description"):
                         target_fm["description"] = t_seo_data["description"]
                     if t_seo_data.get("keywords"):
@@ -532,8 +559,8 @@ class AISchedulerDispatchOps:
                         target_fm['title'] = translated_title
                     
                     if 'tags' in target_fm:
-                        # 🚀 [V80.0] 性能优化：若有预生成 SEO 缓存，说明此篇已在缓存层闭环，不再高频翻译 Tags
-                        if t_seo_data:
+                        # 🚀 [V80.0] 性能优化：若有预生成 SEO 缓存且非重译，说明此篇已在缓存层闭环，不再高频翻译 Tags
+                        if t_seo_data and not getattr(ctx, 'clear_cache', False):
                             tlog.info(f"✨ [Meta Polish] 命中缓存，跳过 Tags 大模型翻译 ({code})")
                         else:
                             tlog.info(f"🏷️ [Meta Polish] 正在为 {name} 版本翻译 Tags...")
@@ -543,14 +570,17 @@ class AISchedulerDispatchOps:
                             )
 
                     # 🚀 [V10.6] 译文描述 (Description) 兜底补全与智能生成
-                    desc_val = target_fm.get('description') or ctx.base_fm.get('description') or ""
-                    if desc_val and desc_val.strip() and desc_val != "无描述":
+                    # 强行锁定母语原文为输入源；若原稿无 Description，则绝不继承上一语种在 target_fm 中的遗留值
+                    base_desc = ctx.base_fm.get('description') or ""
+                    if base_desc and base_desc.strip() and base_desc != "无描述":
                         tlog.info(f"📝 [Meta Polish] 正在为 {name} 版本翻译 Description...")
                         target_fm['description'] = engine.circuit_breakers["ai"].call(
                             active_translator.translate_metadata,
-                            desc_val, 'description', code, is_dry_run, style=style
+                            base_desc.strip(), 'description', code, is_dry_run, style=style
                         )
-                    elif not target_fm.get('description'):
+                    else:
+                        # 🛡️ 物理清空继承自上一语种的残留描述，强制使用当前语种的译文第一段提炼
+                        target_fm.pop('description', None)
                         first_para = ""
                         if translated_blocks:
                             import re
@@ -563,16 +593,17 @@ class AISchedulerDispatchOps:
                                     if len(clean_text) >= 5:
                                         first_para = clean_text[:150]
                                         break
+                        target_title = target_fm.get('title', source_title)
                         if first_para:
-                            raw_seed = f"{source_title}: {first_para}"
+                            raw_seed = f"{target_title}: {first_para}"
                         else:
-                            raw_seed = f"本文围绕「{source_title}」内容展开，提供清晰简明的内容说明。"
+                            raw_seed = f"本文围绕「{target_title}」内容展开，提供清晰简明的内容说明。"
                         tlog.info(f"✨ [Meta Polish] 源文无 Description，自动为 {name} 版本生成 SEO 描述...")
                         gen_desc = engine.circuit_breakers["ai"].call(
                             active_translator.translate_metadata,
                             raw_seed, 'description', code, is_dry_run, style=style
                         )
-                        target_fm['description'] = gen_desc or first_para or source_title
+                        target_fm['description'] = gen_desc or first_para or target_title
 
                     if target_fm.get('description'):
                         target_fm['description'] = AILogicHub.clean_metadata_value(target_fm['description'])
@@ -608,9 +639,17 @@ class AISchedulerDispatchOps:
                                 target_fm['category'], 'category', code, is_dry_run, style=style
                             )
 
+
+                # 🛡️ [V106.0] 翻译完成，清理 active_translation_progress 条目，解除 running 竞态锁
+                if hasattr(engine, 'active_translation_progress'):
+                    engine.active_translation_progress.pop((rel_path, code), None)
+
                 return (code, final_body, target_fm, t_seo_data, target_health)
             except Exception as e:
                 tlog.error(f"🚨 [线程执行异常] {rel_path} ({code}): {e}")
+                # 🛡️ [V106.0] 异常退出也必须清理 running 标记，防止死锁
+                if hasattr(engine, 'active_translation_progress'):
+                    engine.active_translation_progress.pop((rel_path, code), None)
                 return (code, "", {}, {}, False)
         llm_concurrency = 1
         if hasattr(engine, 'config') and engine.config:

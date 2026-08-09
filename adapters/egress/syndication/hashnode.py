@@ -60,9 +60,14 @@ class HashnodeSyndicator(BaseSyndicator):
 
     def __init__(self, config: Any, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.token = getattr(config, "token", "")
-        self.publication_id = getattr(config, "publication_id", "")
-        self.hide_from_feed = getattr(config, "hide_from_feed", False)
+        if isinstance(config, dict):
+            self.token = config.get("token") or config.get("personal_access_token") or ""
+            self.publication_id = config.get("publication_id") or ""
+            self.hide_from_feed = config.get("hide_from_feed", False)
+        else:
+            self.token = getattr(config, "token", "")
+            self.publication_id = getattr(config, "publication_id", "")
+            self.hide_from_feed = getattr(config, "hide_from_feed", False)
 
     # ------------------------------------------------------------------
     # BaseSyndicator 契约实现
@@ -190,3 +195,52 @@ class HashnodeSyndicator(BaseSyndicator):
                 if "Hashnode GraphQL 错误" in str(ex):
                     raise ex
                 raise RuntimeError(f"Hashnode 返回异常: {ex}")
+
+    def delete(self, remote_id: str) -> bool:
+        """🚀 远程物理下架：通过 Hashnode GraphQL removePost 彻底删除对端文章"""
+        if not remote_id or not self.token:
+            return False
+        
+        headers = {
+            "Authorization": self.token,
+            "Content-Type": "application/json",
+        }
+        mutation = """
+        mutation RemovePost($input: RemovePostInput!) {
+            removePost(input: $input) {
+                post {
+                    id
+                }
+            }
+        }
+        """
+        payload = {
+            "query": mutation,
+            "variables": {
+                "input": {
+                    "id": remote_id
+                }
+            }
+        }
+        try:
+            resp = requests.post(HASHNODE_GQL_URL, json=payload, headers=headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                res_data = resp.json()
+                if res_data.get("errors"):
+                    err_msg = str(res_data["errors"])
+                    if "not found" in err_msg.lower():
+                        tlog.info(f"🗑️ [Hashnode 物理对正] 文章在 Hashnode 已不存在 (ID: {remote_id})，自动对正解绑。")
+                        return True
+                    tlog.error(f"🛑 [Hashnode 物理下架失败] ID: {remote_id}: {err_msg}")
+                    return False
+                tlog.info(f"🗑️ [Hashnode 物理下架成功] 文章已永久删除 (ID: {remote_id})")
+                return True
+            elif resp.status_code == 404:
+                tlog.info(f"🗑️ [Hashnode 物理对正] 文章在 Hashnode 已不存在 (ID: {remote_id})，自动对正解绑。")
+                return True
+            else:
+                tlog.error(f"🛑 [Hashnode 物理下架失败] ID: {remote_id} (HTTP {resp.status_code}): {resp.text[:200]}")
+                return False
+        except Exception as e:
+            tlog.error(f"🛑 [Hashnode 物理下架异常] ID: {remote_id}: {e}")
+            return False

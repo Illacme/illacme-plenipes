@@ -29,7 +29,16 @@ class ContentSyndicator:
         
         # 遍历配置字典，支持自定义键名 (如 devto_personal)
         for entry_id, entry_cfg in self.cfg.items():
-            if not isinstance(entry_cfg, dict) or not entry_cfg.get('enabled', False):
+            if not isinstance(entry_cfg, dict):
+                continue
+
+            has_credentials = any(
+                k not in ("enabled", "proxy", "force_push", "published") and v and str(v).strip()
+                for k, v in entry_cfg.items()
+            )
+            is_enabled = bool(entry_cfg.get('enabled', False))
+
+            if not (is_enabled or has_credentials):
                 continue
             
             # 推断平台类型：优先使用显式的 platform 字段，否则尝试从 ID 中提取
@@ -87,7 +96,19 @@ class ContentSyndicator:
         from core.logic.orchestration.task_orchestrator import global_executor, TaskPriority
 
         trace_id = Tracer.get_id() or "AEL-SYNDICATE"
+        target_plugins = kwargs.get("target_plugins") or kwargs.get("platforms")
+        if target_plugins and isinstance(target_plugins, list):
+            target_plugins_lower = [str(p).lower() for p in target_plugins]
+        else:
+            target_plugins_lower = None
+
         for plugin in self.plugins:
+            plugin_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__).lower()
+            instance_id = getattr(plugin, 'instance_id', plugin_id).lower()
+            if target_plugins_lower is not None:
+                if plugin_id not in target_plugins_lower and instance_id not in target_plugins_lower:
+                    continue
+
             # 🚀 [V12.0] 注入熔断保护包装
             call_fn = self.breaker.call if self.breaker else lambda f, *a, **k: f(*a, **k)
 
@@ -106,7 +127,7 @@ class ContentSyndicator:
                 task_name="Syndicate-Retry-Queue"
             )
 
-    def _dispatch_to_plugin(self, plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run):
+    def _dispatch_to_plugin(self, plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run, **kwargs):
         """🛡️ 扁平化重构：原子化执行单平台分发"""
         target_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__)
         try:
@@ -123,49 +144,99 @@ class ContentSyndicator:
             except Exception as pe:
                 tlog.warning(f"⚠️ [分发引擎] 单通道格式转换异常: {pe}")
 
-            # 🚀 [V11.1] 接入分发账本，实现断点续传与增量同步
-            source_hash = metadata.get('source_hash', '') if metadata else ''
+            # 🚀 [V120.0] 全渠道生命周期物权检索：判断是否存在远程 ID 与内容哈希变动
+            import hashlib
+            cur_lang = lang_code or "zh"
+            content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+            source_hash = metadata.get('source_hash', content_hash) if metadata else content_hash
+            existing_record = self.meta.get_syndication_record(rel_path, cur_lang, target_id) if (self.meta and rel_path) else None
+            remote_id = existing_record.get('remote_article_id') if existing_record else None
 
-            if not is_dry_run and self.meta and rel_path:
-                prev = self.meta.get_syndication_status(rel_path, target_id)
-                if prev and prev.get('status') == "DONE" and prev.get('hash') == source_hash:
-                    tlog.debug(f"⏭️ [分发跳过] {target_id} 对 {rel_path} 的同步已是最新。")
+            if not is_dry_run and existing_record and not kwargs.get('force_push', False):
+                if existing_record.get('content_hash') == content_hash:
+                    tlog.info(f"✨ [分发对正] {target_id} 对 {rel_path} ({cur_lang}) 内容无变动，自动跳过 (Remote ID: {remote_id})")
+                    if self.meta and rel_path:
+                        self.meta.update_egress_status(
+                            rel_path, target_id, "SKIPPED",
+                            url=existing_record.get('remote_url')
+                        )
                     return
 
             if is_dry_run:
-                tlog.info(f"🧪 [分发模拟] {plugin.__class__.__name__} -> {title}")
+                action_type = "UPDATE" if remote_id else "CREATE"
+                tlog.info(f"🧪 [分发模拟] [{action_type}] {plugin.__class__.__name__} -> {title} (Remote ID: {remote_id})")
                 return
 
             canonical_url = None
             if self.site_url:
                 base_url = self.site_url.rstrip('/')
-                canonical_url = f"{base_url}/posts/{slug}"
+                if cur_lang and cur_lang.lower() not in ("zh", "zh-hans", "zh-cn", "default"):
+                    canonical_url = f"{base_url}/{cur_lang}/posts/{slug}"
+                else:
+                    canonical_url = f"{base_url}/posts/{slug}"
 
             payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
-            res = plugin.push(payload)
+            res = plugin.push(payload, remote_id=remote_id)
             published_url = None
-            if isinstance(res, dict) and "url" in res:
-                published_url = res["url"]
+            is_draft = False
+            dashboard_url = None
+            res_remote_id = remote_id
+            if isinstance(res, dict):
+                if "url" in res:
+                    published_url = res["url"]
+                is_draft = bool(res.get("draft"))
+                dashboard_url = res.get("dashboard_url")
+                if res.get("remote_id"):
+                    res_remote_id = str(res["remote_id"])
 
-            # 🚀 [V11.1] 记录分发成功状态
+            # 🚀 [V120.0] 记录分发成功及物权映射记录
             if not is_dry_run and self.meta and rel_path:
                 self.meta.register_syndication(rel_path, target_id, source_hash)
-                self.meta.update_egress_status(rel_path, target_id, "DONE", url=published_url)
+                if res_remote_id:
+                    self.meta.save_syndication_record(
+                        rel_path=rel_path,
+                        lang_code=cur_lang,
+                        target_id=target_id,
+                        remote_article_id=res_remote_id,
+                        remote_url=published_url or (existing_record.get('remote_url') if existing_record else None),
+                        content_hash=content_hash
+                    )
+                if is_draft:
+                    self.meta.update_egress_status(rel_path, target_id, "DRAFT", url=dashboard_url or published_url)
+                else:
+                    self.meta.update_egress_status(rel_path, target_id, "DONE", url=published_url)
+                if hasattr(self.meta, "save"):
+                    self.meta.save()
 
         except Exception as e:
             tlog.error(f"❌ [分发失败] {target_id}: {e}")
             if not is_dry_run and self.meta and rel_path:
-                self.meta.enqueue_syndication_retry(
-                    rel_path=rel_path,
-                    target_id=target_id,
-                    title=title,
-                    slug=slug,
-                    content=content,
-                    metadata=metadata,
-                    lang_code=lang_code,
-                    error_msg=str(e)
-                )
-                self.meta.update_egress_status(rel_path, target_id, "FAILED", error=str(e))
+                try:
+                    self.meta.update_egress_status(rel_path, target_id, "FAILED", error=str(e))
+                    if hasattr(self.meta, "save"):
+                        self.meta.save()
+                except Exception as ue:
+                    tlog.error(f"❌ [分发状态写盘异常] {ue}")
+
+                try:
+                    # 过滤 metadata，确保可 json 序列化
+                    safe_meta = {}
+                    if isinstance(metadata, dict):
+                        for k, v in metadata.items():
+                            if isinstance(v, (str, int, float, bool, list, dict)) or v is None:
+                                safe_meta[k] = v
+                    self.meta.enqueue_syndication_retry(
+                        rel_path=rel_path,
+                        target_id=target_id,
+                        title=title,
+                        slug=slug,
+                        content=content,
+                        metadata=safe_meta,
+                        lang_code=lang_code,
+                        error_msg=str(e)
+                    )
+                except Exception as qe:
+                    tlog.warning(f"⚠️ [分发入队重试忽略] {qe}")
 
     def process_pending_retries(self):
         """🚀 扫描持久化重试队列，取出待执行 of 重试任务并调度执行"""
@@ -269,3 +340,51 @@ class ContentSyndicator:
                 "missing": missing_reqs
             })
         return report
+
+    def delete_remote_article(self, rel_path: str, lang_code: str, target_id: str) -> dict:
+        """🚀 [V120.0] 远程下架：调起插件的 delete 接口并清除物理账本映射"""
+        if not self.meta: return {"ok": False, "error": "Meta ledger not initialized"}
+        rec = self.meta.get_syndication_record(rel_path, lang_code, target_id)
+        if not rec or not rec.get("remote_article_id"):
+            return {"ok": False, "error": "未找到对应的远程文章映射记录"}
+
+        remote_id = rec["remote_article_id"]
+        plugin = next((p for p in self.plugins if getattr(p, 'PLUGIN_ID', p.__class__.__name__).lower() == target_id.lower()), None)
+        if not plugin:
+            return {"ok": False, "error": f"渠道插件 {target_id} 未激活或未装载"}
+
+        if not hasattr(plugin, "delete"):
+            return {
+                "ok": False,
+                "error": f"{target_id} 平台官方 API 不支持远程删除，建议点击右侧「🔗 解绑」并在该平台后台手动处理。"
+            }
+
+        try:
+            success = plugin.delete(remote_id)
+            if success:
+                self.meta.delete_syndication_record(rel_path, lang_code, target_id)
+                if hasattr(self.meta, "update_egress_status"):
+                    self.meta.update_egress_status(rel_path, target_id, "pending", url="")
+                    self.meta.save()
+                tlog.info(f"🗑️ [物理下架与解绑成功] {rel_path} ({lang_code}) -> {target_id} (ID: {remote_id})")
+                return {"ok": True, "message": f"文章 (ID: {remote_id}) 已从 {target_id} 成功物理下架。"}
+            else:
+                return {"ok": False, "error": f"{target_id} 平台返回下架失败。"}
+        except NotImplementedError:
+            return {
+                "ok": False,
+                "error": f"{target_id} 平台官方 API 不支持远程删除，建议点击右侧「🔗 解绑」并在该平台后台手动处理。"
+            }
+        except Exception as e:
+            tlog.error(f"🛑 [远程下架异常] {target_id}: {e}")
+            return {"ok": False, "error": str(e)}
+
+    def unlink_remote_article(self, rel_path: str, lang_code: str, target_id: str) -> dict:
+        """🚀 [V120.0] 本地解绑：仅从 SQLite 账本删除物理映射，不影响对端已发布的文章"""
+        if not self.meta: return {"ok": False, "error": "Meta ledger not initialized"}
+        self.meta.delete_syndication_record(rel_path, lang_code, target_id)
+        if hasattr(self.meta, "update_egress_status"):
+            self.meta.update_egress_status(rel_path, target_id, "pending", url="")
+            self.meta.save()
+        tlog.info(f"🔗 [本地解绑成功] {rel_path} ({lang_code}) -> {target_id}")
+        return {"ok": True, "message": f"已解除 {target_id} 与该文章的本地绑定。"}

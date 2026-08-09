@@ -12,8 +12,8 @@
         const generalSubDescs = {
             identity: '💡 配置全站品牌展示名称、副标题描述、全局 LOGO 与浏览器 Favicon 图标。',
             compliance: '💡 配置主站点线上网址、默认作者署名与出版知识产权许可协议。',
-            storage: '💡 管理本地笔记文库路径、编辑器语法解析协议与跨版图段落缓存淘汰策略。',
-            engine: '💡 配置日志输出级别、全局代理、网络超时与遥测采集容量上限。'
+            storage: '💡 管理本地文库路径、Markdown 语法解析协议与段落缓存淘汰策略。',
+            engine: '💡 配置底层服务运行日志级别、全局代理、网络超时与遥测采集容量上限。'
         };
 
         if (!window.switchGeneralSubTab) {
@@ -39,6 +39,10 @@
                 const descEl = document.getElementById('gen-sub-tab-desc');
                 if (descEl) descEl.innerHTML = generalSubDescs[subTab] || '';
 
+                if (subTab === 'storage' && typeof window.refreshCacheStats === 'function') {
+                    window.refreshCacheStats();
+                }
+
                 if (typeof window.updateSaveButtonVisibility === 'function') {
                     window.updateSaveButtonVisibility(subTab);
                 }
@@ -46,6 +50,9 @@
         }
 
         const activeSub = window.currentActiveGeneralSubTab || 'identity';
+        if (activeSub === 'storage' && typeof window.refreshCacheStats === 'function') {
+            setTimeout(() => { window.refreshCacheStats(); }, 50);
+        }
 
         return `
             <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
@@ -58,8 +65,8 @@
                 <div class="sub-tab-navigation-bar" id="general-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
                     <button type="button" class="sub-tab-btn ${activeSub === 'identity' ? 'active' : ''}" onclick="window.switchGeneralSubTab('identity', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📛 身份标识</button>
                     <button type="button" class="sub-tab-btn ${activeSub === 'compliance' ? 'active' : ''}" onclick="window.switchGeneralSubTab('compliance', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">⚖️ 出版合规</button>
-                    <button type="button" class="sub-tab-btn ${activeSub === 'storage' ? 'active' : ''}" onclick="window.switchGeneralSubTab('storage', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📂 存储缓存</button>
-                    <button type="button" class="sub-tab-btn ${activeSub === 'engine' ? 'active' : ''}" onclick="window.switchGeneralSubTab('engine', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">⚙️ 系统基座</button>
+                    <button type="button" class="sub-tab-btn ${activeSub === 'storage' ? 'active' : ''}" onclick="window.switchGeneralSubTab('storage', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📂 存储适配</button>
+                    <button type="button" class="sub-tab-btn ${activeSub === 'engine' ? 'active' : ''}" onclick="window.switchGeneralSubTab('engine', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">⚙️ 运行基座</button>
                 </div>
 
                 <div id="gen-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
@@ -133,6 +140,14 @@
                                 onchange: `window.updateConfigField('ingress_settings.active_dialects', [this.value])`,
                                 description: '定义系统如何识别原稿格式。选择“自动感应”将根据文件特征物理识别；选择特定协议则执行主权强制解析。'
                             })}
+                            ${renderSettingsItem('Markdown 换行渲染模式', 'ingress_settings.hard_line_break', data.ingress_settings?.hard_line_break ?? false, 'select', {
+                                items: [
+                                    {value: false, text: '📄 标准模式 — 单个换行符保留为段落流，需空行真正换行 (CommonMark 标准)'},
+                                    {value: true,  text: '✍️ 直觉模式 — 单个换行符直接渲染为新行，所见即所得，推荐日常写作使用 (GFM 兼容)'}
+                                ],
+                                onchange: `window.updateConfigField('ingress_settings.hard_line_break', this.value === 'true')`,
+                                description: '控制原稿文库编辑器预览区和译文校对工作台中的换行渲染方式。<br>· <b>标准模式</b>：Markdown 原生行为，段落内换行不生效，需空行分段；适合有 Markdown 经验的专业用户。<br>· <b>直觉模式</b>：按 Enter 即换行，预览效果与编辑区完全对齐；适合从其他编辑器迁移或习惯"所见即所得"的用户。<br><span style="color: var(--text-dim); font-size: 0.8em;">⚠️ 修改后需保存配置，刷新页面后生效。</span>'
+                            })}
                             ${renderSettingsItem('段落缓存存储目录', 'block_cache_dir', data.block_cache_dir || '', 'text', {
                                 placeholder: '默认为空（自愈退避至项目根目录下的隐藏目录 .plenipes/blocks/）',
                                 description: '跨版图共享段落缓存物理存储根目录。支持自定义重定向以实现在任意版图和任意 SSG 主题之间共用。'
@@ -170,18 +185,48 @@
 
                     <div class="settings-group mt-large">
                         <h4>🧰 段落缓存治理中枢 (Block Cache Hub)</h4>
-                        <p class="section-desc" style="font-size: 0.8rem; opacity: 0.85; margin-bottom: 12px;">实时盘点和管理跨版图共享段落翻译缓存的占用状态并执行搬移和清理。</p>
-                        <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 20px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.08);">
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <div style="font-size: 0.85rem; opacity: 0.75;">缓存状态盘点：</div>
-                                <div style="font-size: 0.95rem; font-weight: bold; color: var(--accent, #00ff88);" id="cache-stats-count">正在统计...</div>
-                                <div style="font-size: 0.95rem; font-weight: bold; color: var(--accent, #00ff88);" id="cache-stats-size">正在统计...</div>
-                            </div>
-                            <div style="display: flex; flex-direction: column; justify-content: center; gap: 10px;">
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="primary-btn glow-btn" onclick="window.manualMigrateCache()" style="padding: 6px 14px; font-size: 0.75rem; height: 32px; line-height: 14px;">🚚 物理分级迁移</button>
-                                    <button type="button" class="danger-btn" onclick="event.preventDefault(); event.stopPropagation(); window.clearBlockCacheAll()" style="padding: 6px 14px; font-size: 0.75rem; height: 32px; line-height: 14px;">🗑️ 清空所有缓存</button>
+                        <p class="section-desc" style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 16px;">实时盘点和管理跨版图共享段落翻译缓存的占用状态，支持目录分级迁移与一键全量净化。</p>
+                        
+                        <!-- 📊 状态盘点面板 -->
+                        <div style="background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding: 16px 20px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 1.5rem;">📊</div>
+                                <div>
+                                    <div style="font-size: 0.85rem; opacity: 0.75; margin-bottom: 2px;">当前段落缓存占用盘点</div>
+                                    <div style="display: flex; gap: 16px; align-items: center;">
+                                        <span style="font-size: 1.05rem; font-weight: bold; color: var(--accent-primary, #00f2ff);" id="cache-stats-count">正在统计...</span>
+                                        <span style="opacity: 0.3;">|</span>
+                                        <span style="font-size: 1.05rem; font-weight: bold; color: #00ff88;" id="cache-stats-size">正在统计...</span>
+                                    </div>
                                 </div>
+                            </div>
+                            <button type="button" class="sub-tab-btn" onclick="window.refreshCacheStats()" style="padding: 4px 12px; font-size: 0.75rem; white-space: nowrap; word-break: keep-all;">🔄 重新盘点</button>
+                        </div>
+
+                        <!-- 🛠️ 两个功能操作面板 (含说明卡片) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <!-- 功能一：物理分级迁移 -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright, #fff);">🚚 物理分级迁移</span>
+                                        <span class="badge" style="font-size: 0.7rem; background: rgba(0,242,255,0.1); color: #00f2ff; border: 1px solid rgba(0,242,255,0.2); padding: 2px 6px; border-radius: 4px; white-space: nowrap;">目录重组</span>
+                                    </div>
+                                    <p style="font-size: 0.78rem; opacity: 0.75; line-height: 1.4; margin: 0;">当调整了上方的【段落缓存目录分级】参数时，点击此项可将磁盘现有缓存安全搬移至新的分级路径。</p>
+                                </div>
+                                <button type="button" class="primary-btn glow-btn" onclick="window.manualMigrateCache()" style="padding: 8px 16px; font-size: 0.8rem; height: 36px; white-space: nowrap; word-break: keep-all; width: 100%; justify-content: center;">🚚 物理分级迁移</button>
+                            </div>
+
+                            <!-- 功能二：清空所有缓存 -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright, #fff);">🗑️ 清空所有缓存</span>
+                                        <span class="badge" style="font-size: 0.7rem; background: rgba(255,77,77,0.1); color: #ff4d4d; border: 1px solid rgba(255,77,77,0.2); padding: 2px 6px; border-radius: 4px; white-space: nowrap;">全量抹除</span>
+                                    </div>
+                                    <p style="font-size: 0.78rem; opacity: 0.75; line-height: 1.4; margin: 0;">物理清空磁盘上的全部段落级 AI 翻译缓存。当修改了提示词模板或需强行重新翻译全文时使用。</p>
+                                </div>
+                                <button type="button" class="danger-btn" onclick="event.preventDefault(); event.stopPropagation(); window.clearBlockCacheAll()" style="padding: 8px 16px; font-size: 0.8rem; height: 36px; white-space: nowrap; word-break: keep-all; width: 100%; justify-content: center;">🗑️ 清空所有缓存</button>
                             </div>
                         </div>
                     </div>
@@ -232,14 +277,6 @@
                                 min: 10,
                                 max: 1000,
                                 description: '设定控制塔长效归档时序的最大保留点数。默认 360 点，配合 120 秒采样间隔，可支持保存展示过去 12 小时的完整演进曲线。该项配置热加载即时生效。'
-                            })}
-                            ${renderSettingsItem('Markdown 换行渲染模式', 'ingress_settings.hard_line_break', data.ingress_settings?.hard_line_break ?? false, 'select', {
-                                items: [
-                                    {value: false, text: '📄 标准模式 — 单个换行符保留为段落流，需空行真正换行 (CommonMark 标准)'},
-                                    {value: true,  text: '✍️ 直觉模式 — 单个换行符直接渲染为新行，所见即所得，推荐日常写作使用 (GFM 兼容)'}
-                                ],
-                                onchange: `window.updateConfigField('ingress_settings.hard_line_break', this.value === 'true')`,
-                                description: '控制原稿文库编辑器预览区和译文校对工作台中的换行渲染方式。<br>· <b>标准模式</b>：Markdown 原生行为，段落内换行不生效，需空行分段；适合有 Markdown 经验的专业用户。<br>· <b>直觉模式</b>：按 Enter 即换行，预览效果与编辑区完全对齐；适合从其他编辑器迁移或习惯"所见即所得"的用户。<br><span style="color: var(--text-dim); font-size: 0.8em;">⚠️ 修改后需保存配置，刷新页面后生效。</span>'
                             })}
                         </div>
                     </div>

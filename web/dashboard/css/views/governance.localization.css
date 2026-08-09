@@ -3,57 +3,67 @@
 /* 🌍 Global Matrix - Language Chip System */
 #view-settings .lang-matrix {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 12px;
-    margin-top: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
 }
 
 #view-settings .lang-card {
     background: var(--white-02);
     border: 1px solid var(--white-05);
-    border-radius: 12px;
-    padding: 15px 10px;
+    border-radius: 8px;
+    padding: 8px 4px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 4px;
     position: relative;
     overflow: hidden;
+    min-height: 56px;
 }
 
 #view-settings .lang-card::after {
-    content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-    background: transparent; transition: all 0.3s;
+    display: none;
 }
 
 #view-settings .lang-card:hover {
-    background: var(--white-05);
-    border-color: var(--white-10);
-    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 #view-settings .lang-card.active {
-    background: var(--neon-cyan-10);
-    border-color: var(--accent-secondary);
-    box-shadow: 0 10px 20px var(--neon-cyan-10);
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.14) 0%, rgba(0, 242, 255, 0.03) 100%);
+    border: 1px solid var(--accent-secondary);
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.25), inset 0 0 8px rgba(0, 242, 255, 0.1);
 }
 
-#view-settings .lang-card.active::after {
-    background: var(--accent-secondary);
-    box-shadow: 0 0 10px var(--accent-secondary);
+#view-settings .lang-card.active:hover {
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, rgba(0, 242, 255, 0.06) 100%);
+    border-color: #38bdf8;
+    box-shadow: 0 4px 16px rgba(0, 242, 255, 0.35), inset 0 0 12px rgba(0, 242, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 #view-settings .lang-card.locked {
-    opacity: 0.4;
-    filter: grayscale(1);
-    cursor: not-allowed;
+    opacity: 0.45;
+    filter: grayscale(0.8);
+    cursor: pointer;
     border-style: dashed;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#view-settings .lang-card.locked:hover { transform: none; background: transparent; }
+#view-settings .lang-card.locked:hover {
+    opacity: 0.85;
+    filter: grayscale(0.2);
+    border-color: rgba(251, 191, 36, 0.5);
+    transform: translateY(-2px);
+    background: rgba(251, 191, 36, 0.05);
+}
 
 /* 📜 Prompt Capsules - Secured Style */
 #view-settings .prompt-container {
@@ -331,7 +341,7 @@
 
 /* 🌞 [Light Mode] 亮色主题视觉高对比度无瑕适配加固 */
 [data-theme="light"] .slug-dir-card {
-    background: #ffffff !important;
+    background: var(--bg-card) !important;
     border-color: #cbd5e1 !important;
 }
 
@@ -347,7 +357,7 @@
 
 [data-theme="light"] select, 
 [data-theme="light"] input[type="text"] {
-    background: #ffffff !important;
+    background: var(--bg-card) !important;
     color: var(--text-bright) !important;
     border-color: #cbd5e1 !important;
 }
@@ -408,7 +418,7 @@
 }
 
 [data-theme="light"] .add-rule-btn {
-    background: #ffffff !important;
+    background: var(--bg-card) !important;
     border-color: #0284c7 !important;
     color: #0284c7 !important;
 }

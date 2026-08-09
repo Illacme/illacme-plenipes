@@ -58,7 +58,11 @@ def test_init_press_enable_ai_injection(tmp_path, monkeypatch):
         ai_model="qwen/qwen3.5-9b",
         ai_base_url="http://localhost:1234/v1"
     )
-    init_press_logic(req)
+    from unittest.mock import patch
+    from core.governance.license_guard import LicenseGuard
+
+    with patch.object(LicenseGuard, "is_pro_feature_allowed", return_value=True):
+        init_press_logic(req)
 
     # 校验 config.local.yaml
     local_cfg_p = tmp_path / "config.local.yaml"
