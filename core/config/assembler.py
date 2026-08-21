@@ -202,13 +202,9 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                         for k, v in source_dict.items():
                             full_key = f"{prefix}{k}"
                             if isinstance(v, dict):
-                                level = resolve_governance_level(full_key)
-                                if level == "imprint":
-                                    target_dict[k] = deep_update(target_dict.get(k, {}), v)
-                                else:
-                                    if k not in target_dict or not isinstance(target_dict[k], dict):
-                                        target_dict[k] = {}
-                                    reapply_imprint_fields(target_dict[k], v, f"{full_key}.")
+                                if k not in target_dict or not isinstance(target_dict[k], dict):
+                                    target_dict[k] = {}
+                                reapply_imprint_fields(target_dict[k], v, f"{full_key}.")
                             else:
                                 level = resolve_governance_level(full_key)
                                 if level == "imprint":

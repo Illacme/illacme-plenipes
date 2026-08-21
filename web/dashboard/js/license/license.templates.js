@@ -109,43 +109,55 @@
                                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                                     <thead>
                                         <tr style="border-bottom: 2px solid rgba(0, 242, 255, 0.4);">
-                                            <th style="padding: 14px 12px; font-size: 0.98rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">核心功能特性</th>
-                                            <th style="padding: 14px 12px; width: 28%; font-size: 0.98rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">免费社区版</th>
-                                            <th style="padding: 14px 12px; width: 32%; font-size: 1.02rem; font-weight: 800; color: var(--accent-secondary, #00f2fe); letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(0,242,255,0.25);">高级专业版</th>
+                                            <th style="padding: 14px 10px; font-size: 0.95rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">核心功能特性</th>
+                                            <th style="padding: 14px 10px; width: 22%; font-size: 0.92rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.5px;">🌱 免费社区版</th>
+                                            <th style="padding: 14px 10px; width: 26%; font-size: 0.95rem; font-weight: 800; color: var(--neon-cyan, #00f2fe); letter-spacing: 0.5px; text-shadow: 0 0 8px rgba(0,242,254,0.2);">🚀 基础增强版</th>
+                                            <th style="padding: 14px 10px; width: 26%; font-size: 0.98rem; font-weight: 800; color: var(--accent-secondary, #00f2fe); letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(0,242,255,0.3);">💎 旗舰专业版</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px;"><b>多版图独立管理</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">独立文库与全套样式隔离</span></td>
-                                            <td style="padding: 12px; color: var(--text-muted);">仅限 1 个版图管理</td>
-                                            <td style="padding: 12px;" class="lic-table-pro-feature">✓ ♾️ 无限独立版图</td>
+                                            <td style="padding: 12px 10px;"><b>多版图独立管理</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">独立文库与全套样式隔离</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个主版图 (default)</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3 个独立出版版图</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ♾️ 无限独立版图</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px;"><b>多语种自动翻译</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">全语种多线程并行翻译分发</span></td>
-                                            <td style="padding: 12px; color: var(--text-muted);">仅限 1 个目标语种</td>
-                                            <td style="padding: 12px;" class="lic-table-pro-feature">✓ 🌐 50+ 语种并行翻译分发</td>
+                                            <td style="padding: 12px 10px;"><b>多语种自动翻译</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">全语种多线程并行翻译分发</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个目标语种</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3~5 个主流语种</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 50+ 语种并行翻译分发</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px;"><b>子目录频道映射</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">金库子目录精准频道路由</span></td>
-                                            <td style="padding: 12px; color: var(--text-muted);">仅根目录全局映射</td>
-                                            <td style="padding: 12px;" class="lic-table-pro-feature">✓ 📂 子目录频道映射</td>
+                                            <td style="padding: 12px 10px;"><b>子目录频道映射</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">金库子目录精准频道路由</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅根目录全局映射</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 📂 多子目录精准频道映射</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 📂 多子目录精准频道映射</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px;"><b>多风格润色方言</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">按语种/目录独立润色风格</span></td>
-                                            <td style="padding: 12px; color: var(--text-muted);">标准统一润色</td>
-                                            <td style="padding: 12px;" class="lic-table-pro-feature">✓ 🎭 专属多维润色风格库</td>
+                                            <td style="padding: 12px 10px;"><b>装帧主题排版</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">多 SSG 引擎换装与定制</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">全量主题自由切换</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 全量主题 + 自定义样式注入</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 全量主题 + 专属装帧母本克隆</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px;"><b>AI 算力联合调度</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">云端与本地节点并发负载均衡</span></td>
-                                            <td style="padding: 12px; color: var(--text-muted);">单本地节点</td>
-                                            <td style="padding: 12px;" class="lic-table-pro-feature">✓ ☁️ 混合算力多节点自动容灾</td>
+                                            <td style="padding: 12px 10px;"><b>多风格润色方言</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">按语种/目录独立润色风格</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">标准统一润色</td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">标准统一润色</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🎭 专属多维润色风格库</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                                            <td style="padding: 12px 10px;"><b>AI 算力联合调度</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">云端与本地节点并发负载均衡</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">单节点手动切换</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ ⚡ 双节点主备自动容灾</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ☁️ 混合算力多节点自动容灾</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                             <div style="margin-top: 16px; text-align: center; border: 1px dashed var(--glass-border); border-radius: 8px; padding: 12px;">
-                                <span style="font-size: 0.85rem; color: var(--text-main);">想解锁全量 50+ 语种翻译与无限版图管理？</span>
-                                <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="margin-left: 12px; padding: 5px 16px; font-size: 0.82rem;">🔑 立即激活专业版</button>
+                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 3 个出版品牌或 50+ 语种并行翻译矩阵？</span>
+                                <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="margin-left: 12px; padding: 5px 16px; font-size: 0.82rem;">🔑 立即激活授权</button>
                             </div>
                         </div>
                     </div>

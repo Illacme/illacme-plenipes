@@ -41,7 +41,7 @@
     <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js"></script>
-    
+
     <!-- 🌌 Galaxy Engine Dependencies -->
     <script src="vendor/sweetalert2.all.min.js"></script>
     <script src="vendor/marked.js"></script>
@@ -69,28 +69,37 @@
                 <div id="imprint-dropdown" class="glass-panel dropdown-menu" style="display: none;"></div>
             </div>
             <nav id="top-nav">
-                <div class="nav-item active" id="nav-overview">
-                    <span class="nav-icon">🌌</span><span class="nav-text">指挥中心</span>
+                <div class="nav-tabs-wrapper">
+                    <div class="nav-item active" id="nav-overview">
+                        <span class="nav-icon">🌌</span><span class="nav-text">指挥中心</span>
+                    </div>
+                    <div class="nav-item" id="nav-vault">
+                        <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
+                    </div>
+                    <div class="nav-item" id="nav-compute">
+                        <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
+                    </div>
+                    <div class="nav-item" id="nav-plugins">
+                        <span class="nav-icon">🧩</span><span class="nav-text">插件中心</span>
+                    </div>
+                    <div class="nav-item" id="nav-settings">
+                        <span class="nav-icon">⚙️</span><span class="nav-text">治理中心</span>
+                    </div>
+                    <div class="nav-item" id="nav-tower">
+                        <span class="nav-icon">🗼</span><span class="nav-text">系统遥测</span>
+                    </div>
+                    <div class="nav-item" id="nav-analytics">
+                        <span class="nav-icon">📊</span><span class="nav-text">数据统计</span>
+                    </div>
                 </div>
-                <div class="nav-item" id="nav-vault">
-                    <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
+                <div class="header-actions-group">
+                    <button class="secondary-btn glow-btn" id="btn-preview" onclick="window.triggerPublishAndPreview()">
+                        <span class="btn-icon">⚡</span><span class="btn-text">发布预览</span>
+                    </button>
+                    <button class="primary-btn glow-btn" id="btn-publish">
+                        <span class="btn-icon">🚀</span><span class="btn-text">全域发布</span>
+                    </button>
                 </div>
-                <div class="nav-item" id="nav-compute">
-                    <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
-                </div>
-                <div class="nav-item" id="nav-plugins">
-                    <span class="nav-icon">🧩</span><span class="nav-text">插件中心</span>
-                </div>
-                <div class="nav-item" id="nav-settings">
-                    <span class="nav-icon">⚙️</span><span class="nav-text">治理中心</span>
-                </div>
-                <div class="nav-item" id="nav-tower">
-                    <span class="nav-icon">🗼</span><span class="nav-text">系统遥测</span>
-                </div>
-                <div class="nav-item" id="nav-analytics">
-                    <span class="nav-icon">📊</span><span class="nav-text">数据统计</span>
-                </div>
-                <button class="primary-btn glow-btn" id="btn-publish">🚀 全域发布</button>
             </nav>
         </header>
 
@@ -121,38 +130,98 @@
                 </div>
             </div>
 
-            <!-- 🧠 Intelligence Pod: Governance Context -->
-            <div class="sidebar-pod intelligence-pod">
-                <div class="pod-header">
-                    <span class="pod-title">INTELLIGENCE</span>
+            <!-- 🗺️ Publishing Pipeline Pod: 6-Stage Causal Workflow -->
+            <div class="sidebar-pod pipeline-pod">
+                <div class="pod-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pod-title">PUBLISHING PIPELINE</span>
+                    <span class="version-tag tiny" style="color: var(--accent-secondary); font-size: 0.58rem;">FLOW</span>
                 </div>
-                <div id="governance-context" class="context-matrix vertical">
+                <div id="publishing-pipeline-matrix" class="pipeline-matrix">
 
-                    <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')"
-                        title="点击一键直达治理中心 - 翻译矩阵配置">
-                        <div class="capsule-icon">✍️</div>
-                        <div class="capsule-data">
-                            <div class="capsule-label">DIALECT</div>
-                            <div class="capsule-value mono" id="ctx-dialect">-</div>
+                    <!-- 阶段 1: 原稿文库 -->
+                    <div class="pipeline-capsule" id="pipe-cap-vault" onclick="window.showView('vault')"
+                        title="点击一键直达原稿文库列表与文稿管理">
+                        <div class="pipe-icon">📂</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">1. 原稿文库</div>
+                            <div class="pipe-value" id="pipe-val-vault"><span class="pipe-skeleton"></span></div>
                         </div>
+                        <div class="pipe-dot standby" id="pipe-dot-vault"></div>
                     </div>
-                    <div class="context-capsule clickable" onclick="window.showView('settings', 'localization')"
-                        title="点击一键直达治理中心 - 翻译矩阵配置">
-                        <div class="capsule-icon">🌍</div>
-                        <div class="capsule-data">
-                            <div class="capsule-label">TRANSLATION ARRAY</div>
-                            <div class="capsule-value mono" id="ctx-i18n">-</div>
+
+                    <!-- 阶段 2: 多语言翻译 -->
+                    <div class="pipeline-capsule" id="pipe-cap-i18n" onclick="window.showView('settings', 'localization')"
+                        title="点击一键直达多语言翻译治理与目标语种配置">
+                        <div class="pipe-icon">🌍</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">2. 多语言翻译</div>
+                            <div class="pipe-value" id="pipe-val-i18n"><span class="pipe-skeleton"></span></div>
                         </div>
+                        <div class="pipe-dot standby" id="pipe-dot-i18n"></div>
                     </div>
-                    <div class="context-capsule clickable" onclick="window.showView('compute', 'strategy')"
-                        title="点击一键直达算力中心配置">
-                        <div class="capsule-icon">🧠</div>
-                        <div class="capsule-data">
-                            <div class="capsule-label">COMPUTE CORE</div>
-                            <div class="capsule-value mono" id="ctx-ai">-</div>
+
+                    <!-- 阶段 3: 网站主题 -->
+                    <div class="pipeline-capsule" id="pipe-cap-theme" onclick="window.showView('settings', 'themes')"
+                        title="点击一键直达网站视觉主题与出版模式选择">
+                        <div class="pipe-icon">🎭</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">3. 网站主题</div>
+                            <div class="pipe-value" id="pipe-val-theme"><span class="pipe-skeleton"></span></div>
                         </div>
+                        <div class="pipe-dot standby" id="pipe-dot-theme"></div>
                     </div>
+
+                    <!-- 阶段 4: 网址路径 -->
+                    <div class="pipeline-capsule" id="pipe-cap-routing" onclick="window.showView('settings', 'slug_settings')"
+                        title="点击一键直达网址访问路径与 Slug 沙盒定制">
+                        <div class="pipe-icon">🧭</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">4. 网址路径</div>
+                            <div class="pipe-value" id="pipe-val-routing"><span class="pipe-skeleton"></span></div>
+                        </div>
+                        <div class="pipe-dot standby" id="pipe-dot-routing"></div>
+                    </div>
+
+                    <!-- 阶段 5: 独立站托管 (优先于社媒) -->
+                    <div class="pipeline-capsule" id="pipe-cap-hosting" onclick="window.showView('plugins', 'hosting')"
+                        title="点击一键直达独立站全站托管与云端部署配置">
+                        <div class="pipe-icon">🌐</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">5. 独立站托管</div>
+                            <div class="pipe-value" id="pipe-val-hosting"><span class="pipe-skeleton"></span></div>
+                        </div>
+                        <div class="pipe-dot standby" id="pipe-dot-hosting"></div>
+                    </div>
+
+                    <!-- 阶段 6: 社交平台同步 (独立站上线后全网广播) -->
+                    <div class="pipeline-capsule" id="pipe-cap-syndication" onclick="if(typeof window.openDispatchHub==='function'){window.openDispatchHub();}else{window.showView('plugins', 'publisher');}"
+                        title="点击一键唤起多平台社交媒体同步与广播中枢">
+                        <div class="pipe-icon">🚀</div>
+                        <div class="pipe-data">
+                            <div class="pipe-label">6. 社交平台同步</div>
+                            <div class="pipe-value" id="pipe-val-syndication"><span class="pipe-skeleton"></span></div>
+                        </div>
+                        <div class="pipe-dot standby" id="pipe-dot-syndication"></div>
+                    </div>
+
                 </div>
+                <script>
+                    // 🚀 [Zero-Flicker 极速恢复] 优先恢复最近一次的真实状态，杜绝假数据闪烁
+                    (function(){
+                        try {
+                            const cached = sessionStorage.getItem('_illacme_pipe_cache');
+                            if (cached) {
+                                const map = JSON.parse(cached);
+                                Object.keys(map).forEach(k => {
+                                    const valEl = document.getElementById(`pipe-val-${k}`);
+                                    const dotEl = document.getElementById(`pipe-dot-${k}`);
+                                    if (valEl && map[k].val) valEl.innerText = map[k].val;
+                                    if (dotEl && map[k].dot) dotEl.className = map[k].dot;
+                                });
+                            }
+                        } catch(e) {}
+                    })();
+                </script>
             </div>
 
             <!-- 📡 Functional Matrix: Health Monitoring -->
@@ -245,7 +314,8 @@
                                 <span class="switch-slider"></span>
                             </label>
                         </div>
-                        <div class="setting-item" id="agent-reasoning-depth-container" title="针对云端/标准模型调控推理深度(Low/Medium/High)；本地模型(LMStudio/Ollama)由洗涤网关自动转译对准">
+                        <div class="setting-item" id="agent-reasoning-depth-container"
+                            title="针对云端/标准模型调控推理深度(Low/Medium/High)；本地模型(LMStudio/Ollama)由洗涤网关自动转译对准">
                             <span>深度:</span>
                             <select id="agent-reasoning-depth">
                                 <option value="medium">Medium</option>
@@ -257,7 +327,8 @@
                     <div class="settings-row"
                         style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
                         <div class="setting-item">
-                            <span title="启用后，Agent 将自动执行 Write/Commit 等写操作，无需人工物理审批"><span class="setting-icon">🤖</span>自动驾驶</span>
+                            <span title="启用后，Agent 将自动执行 Write/Commit 等写操作，无需人工物理审批"><span
+                                    class="setting-icon">🤖</span>自动驾驶</span>
                             <label class="switch-container">
                                 <input type="checkbox" id="agent-autopilot-toggle">
                                 <span class="switch-slider autopilot-slider"></span>
@@ -338,12 +409,16 @@
             </div>
 
             <!-- 📑 Intelligence Feed Pod: SIGNAL INTELLIGENCE (默认物理隐藏，可点击状态栏动态切换) -->
-            <div class="sidebar-pod feed-pod" id="audit-feed-pod" style="display: none; height: 180px; flex-shrink: 0; margin-top: 10px;">
+            <div class="sidebar-pod feed-pod" id="audit-feed-pod"
+                style="display: none; height: 180px; flex-shrink: 0; margin-top: 10px;">
                 <div class="pod-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <span class="pod-title">SIGNAL INTELLIGENCE</span>
-                    <span class="version-tag tiny" style="color: var(--accent-secondary); border-color: rgba(0, 242, 255, 0.2); background: none; font-size: 0.58rem;">LIVE AUDIT</span>
+                    <span class="version-tag tiny"
+                        style="color: var(--accent-secondary); border-color: rgba(0, 242, 255, 0.2); background: none; font-size: 0.58rem;">LIVE
+                        AUDIT</span>
                 </div>
-                <div id="audit-feed" class="scroll-container scanline-overlay" style="flex: 1; overflow-y: auto; padding: 8px 10px; font-family: var(--font-mono); font-size: 0.65rem; display: flex; flex-direction: column; gap: 6px;">
+                <div id="audit-feed" class="scroll-container scanline-overlay"
+                    style="flex: 1; overflow-y: auto; padding: 8px 10px; font-family: var(--font-mono); font-size: 0.65rem; display: flex; flex-direction: column; gap: 6px;">
                     <!-- Dynamic Audit Entries -->
                 </div>
             </div>
@@ -400,7 +475,9 @@
                     </div>
                 </div>
                 <div class="version-tag tiny">V74.0_STABLE</div>
-                <select id="theme-mode-select" style="margin-left: 10px; font-size: 0.65rem; padding: 2px 24px 2px 8px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--white-05); color: var(--text-bright); outline: none; cursor: pointer; transition: all 0.3s;" onchange="if(window.ThemeModeManager) ThemeModeManager.applySetting(this.value)" title="Theme Mode">
+                <select id="theme-mode-select"
+                    style="margin-left: 10px; font-size: 0.65rem; padding: 2px 24px 2px 8px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--white-05); color: var(--text-bright); outline: none; cursor: pointer; transition: all 0.3s;"
+                    onchange="if(window.ThemeModeManager) ThemeModeManager.applySetting(this.value)" title="Theme Mode">
                     <option value="dark">🌙 Dark Mode</option>
                     <option value="light">☀️ Light Mode</option>
                     <option value="auto">⏳ Auto Mode</option>
@@ -441,6 +518,7 @@
     <script src="js/core/core.render.js"></script>
     <script src="js/core/core.dirty.js"></script>
     <script src="js/core/core.terminal.js"></script>
+    <script src="js/core/core.preview.js"></script>
     <script src="js/dashboard.core.js"></script>
     <script src="js/compute/compute.api.js"></script>
     <script src="js/compute/compute.ui.js"></script>
@@ -507,10 +585,11 @@
     <script src="js/dashboard.imprints.js"></script>
     <script src="js/dashboard.modes.js"></script>
     <script src="js/localization/localization.render.js"></script>
-    <script src="js/localization/localization.style.js"></script>    <!-- 🔒 [I5] 翻译风格预设 (SOP-02拆分) -->
-    <script src="js/localization/localization.review.markdown.js"></script> <!-- 🔒 [I5] 翻译校对 Markdown 重写器 (SOP-02拆分) -->
-    <script src="js/localization/localization.review.render.js"></script>  <!-- 🔒 [I5] 翻译校对工作台渲染层 -->
-    <script src="js/localization/localization.review.js"></script>  <!-- 🔒 [I5] 翻译校对工作台 -->
+    <script src="js/localization/localization.style.js"></script> <!-- 🔒 [I5] 翻译风格预设 (SOP-02拆分) -->
+    <script src="js/localization/localization.review.markdown.js"></script>
+    <!-- 🔒 [I5] 翻译校对 Markdown 重写器 (SOP-02拆分) -->
+    <script src="js/localization/localization.review.render.js"></script> <!-- 🔒 [I5] 翻译校对工作台渲染层 -->
+    <script src="js/localization/localization.review.js"></script> <!-- 🔒 [I5] 翻译校对工作台 -->
     <script src="js/localization/localization.sync.js"></script>
     <script src="js/dashboard.localization.js"></script>
     <script src="js/route/route.slug.sandbox.js?v=89.0"></script>
@@ -527,10 +606,12 @@
     <script src="js/dashboard.ai_lessons.js"></script>
     <script src="js/license/license.templates.js"></script>
     <script src="js/license/license.ui.js"></script>
-    <script src="js/system/system.render.js"></script>
+    <script src="js/system/system.render.js?v=77.0"></script>
     <script src="js/system/system.security.js"></script>
-    <script src="js/system/system.cache.js"></script>
-    <script src="js/dashboard.system.js"></script>
+    <script src="js/system/system.cache.js?v=77.0"></script>
+    <script src="js/dashboard.system.js?v=77.0"></script>
+
+
     <script src="js/dashboard.socket.js"></script>
     <script src="js/agent/agent.api.js?v=7"></script>
     <script src="js/agent/agent.helper.js?v=7"></script>
@@ -558,14 +639,13 @@
     <script src="js/dashboard.palette.js?v=1.2"></script>
 
     <!-- 🔒 [I5] 翻译人工校对回流工作台抽屉 DOM 骨架 -->
-    <div id="review-drawer-overlay"
-         style="display:none; opacity:0; position:fixed; inset:0; z-index:9000;
+    <div id="review-drawer-overlay" style="display:none; opacity:0; position:fixed; inset:0; z-index:9000;
                 background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
                 justify-content:flex-end; align-items:stretch;
                 transition:opacity 0.25s cubic-bezier(0.4,0,0.2,1);"
-         onclick="if(event.target===this) window.closeTranslationReview()">
+        onclick="if(event.target===this) window.closeTranslationReview()">
         <div id="review-drawer"
-             style="width:min(1400px,85vw); height:100%; background:rgb(var(--bg-modal-solid-rgb));
+            style="width:min(1400px,85vw); height:100%; background:rgb(var(--bg-modal-solid-rgb));
                     border-left:1px solid var(--glass-border); display:flex; flex-direction:column;
                     box-shadow:-8px 0 40px rgba(0,0,0,0.6); overflow:hidden; transition: width 0.3s cubic-bezier(0.4,0,0.2,1);">
 
@@ -575,33 +655,36 @@
                          background:rgba(var(--bg-modal-solid-rgb),0.85); flex-shrink:0;">
                 <span id="review-drawer-title" style="font-weight:700; font-size:0.95rem;
                        color:var(--text-bright); letter-spacing:0.3px;">🔍 译文校对工作台</span>
-                
+
                 <div style="display:flex; align-items:center; gap:12px;">
                     <!-- 视图切换器 -->
-                    <div class="review-view-toggle" style="display:flex; background:var(--white-05); border-radius:6px; padding:2px; border:1px solid var(--white-08); gap:4px;">
-                        <button id="btn-view-preview" onclick="window.toggleReviewPreview()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" data-tooltip="显示/隐藏预览分栏" data-tooltip-pos="bottom">👁️ 预览</button>
-                        <button id="btn-view-source" onclick="window.toggleReviewSource()" style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;" data-tooltip="显示/隐藏原文分栏" data-tooltip-pos="bottom">📜 原文</button>
+                    <div class="review-view-toggle"
+                        style="display:flex; background:var(--white-05); border-radius:6px; padding:2px; border:1px solid var(--white-08); gap:4px;">
+                        <button id="btn-view-preview" onclick="window.toggleReviewPreview()"
+                            style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;"
+                            data-tooltip="显示/隐藏预览分栏" data-tooltip-pos="bottom">👁️ 预览</button>
+                        <button id="btn-view-source" onclick="window.toggleReviewSource()"
+                            style="background:var(--white-10); color:var(--text-bright); border:none; padding:4px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.15); transition:all 0.2s;"
+                            data-tooltip="显示/隐藏原文分栏" data-tooltip-pos="bottom">📜 原文</button>
                     </div>
-                    
+
                     <!-- 右上角操作按钮：支持从社交广播工作流深度串联跳转时自动变身为「‹ 返回广播中枢」 -->
-                    <button id="btn-close-review-drawer" onclick="window.handleReviewDrawerCloseClick()"
-                        style="background:none; border:none; color:var(--text-dim); font-size:1.3rem;
+                    <button id="btn-close-review-drawer" onclick="window.handleReviewDrawerCloseClick()" style="background:none; border:none; color:var(--text-dim); font-size:1.3rem;
                                cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px;
-                               display:inline-flex; align-items:center; gap:4px; transition:color 0.2s;" data-tooltip="关闭或返回上级" data-tooltip-pos="bottom">✕</button>
+                               display:inline-flex; align-items:center; gap:4px; transition:color 0.2s;"
+                        data-tooltip="关闭或返回上级" data-tooltip-pos="bottom">✕</button>
                 </div>
             </div>
 
             <!-- Lang Tabs -->
-            <div id="review-lang-tabs"
-                 style="display:flex; gap:8px; padding:12px 20px; flex-shrink:0;
+            <div id="review-lang-tabs" style="display:flex; gap:8px; padding:12px 20px; flex-shrink:0;
                          border-bottom:1px solid var(--glass-border); flex-wrap:wrap;"></div>
 
             <!-- ⚠️ 出版模式警告 Banner -->
             <div id="review-mode-alert" style="display:none; flex-shrink:0;"></div>
 
             <!-- Body (scrollable) -->
-            <div id="review-body"
-                 style="flex:1; overflow-y:auto; padding:20px;
+            <div id="review-body" style="flex:1; overflow-y:auto; padding:20px;
                          display:flex; flex-direction:column; gap:16px;"></div>
         </div>
     </div>
@@ -617,11 +700,13 @@
             border-bottom: 1px solid rgba(255, 179, 0, 0.2);
             backdrop-filter: blur(2px);
         }
+
         .review-alert-banner.alert-enhanced {
             color: #00f2ff;
             background: rgba(0, 242, 255, 0.08);
             border-bottom: 1px solid rgba(0, 242, 255, 0.2);
         }
+
         .review-alert-banner a {
             color: var(--accent-primary, #00f2ff);
             text-decoration: underline;
@@ -629,42 +714,122 @@
         }
 
         /* 🔒 [I5] 校对工作台样式系统 */
-        .review-status-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .review-badge { font-size:0.75rem; font-weight:600; padding:4px 10px;
-            border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
-        .review-badge.locked { background:rgba(var(--accent-secondary-rgb,0,242,255),0.12);
-            color:var(--accent-secondary); border:1px solid rgba(var(--accent-secondary-rgb,0,242,255),0.3); }
-        .review-badge.stale { background:rgba(255,165,0,0.1); color:var(--color-warning,#f59e0b);
-            border:1px solid rgba(255,165,0,0.3); }
-        .review-badge.ai { background:rgba(255,255,255,0.05); color:var(--text-dim);
-            border:1px solid var(--glass-border); }
-        .review-field { display:flex; flex-direction:column; gap:6px; }
-        .review-field label { font-size:0.78rem; font-weight:600;
-            color:var(--text-bright); opacity:0.85; }
-        .review-input { width:100%; box-sizing:border-box; padding:10px 14px;
-            background:var(--bg-agent-input,rgba(255,255,255,0.04));
-            border:1px solid var(--glass-border); border-radius:8px;
-            color:var(--text-bright); font-size:0.84rem; font-family:inherit;
-            outline:none; resize:vertical; transition:border-color 0.2s; }
-        .review-input:focus { border-color:var(--accent-primary); }
-        .review-paras-container { display:flex; flex-direction:column; gap:4px; }
-        .review-para-block { padding:6px 12px; border-radius:6px; cursor:pointer;
-            border-left:3px solid transparent; font-size:0.82rem; line-height:1.7;
-            color:var(--text-bright); background:rgba(255,255,255,0.02);
-            transition:background 0.15s, border-color 0.15s; white-space:pre-wrap;
-            word-break:break-word; position:relative; }
-        .review-para-block:hover { background:rgba(255,255,255,0.05);
-            border-left-color:rgba(var(--accent-primary-rgb,100,220,255),0.4); }
-        .review-para-block.edited { border-left-color:var(--accent-primary); }
-        .review-para-block.code-block { cursor:not-allowed;
-            border:1px solid rgba(255,140,0,0.3); background:rgba(255,140,0,0.05);
-            color:var(--text-dim); }
-        .review-para-text { margin:0; font-family:inherit; white-space:pre-wrap;
-            word-break:break-word; }
+        .review-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .review-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .review-badge.locked {
+            background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.12);
+            color: var(--accent-secondary);
+            border: 1px solid rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.3);
+        }
+
+        .review-badge.stale {
+            background: rgba(255, 165, 0, 0.1);
+            color: var(--color-warning, #f59e0b);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+
+        .review-badge.ai {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+        }
+
+        .review-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .review-field label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-bright);
+            opacity: 0.85;
+        }
+
+        .review-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            background: var(--bg-agent-input, rgba(255, 255, 255, 0.04));
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-bright);
+            font-size: 0.84rem;
+            font-family: inherit;
+            outline: none;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        .review-input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .review-paras-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .review-para-block {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: var(--text-bright);
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.15s, border-color 0.15s;
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+        }
+
+        .review-para-block:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(var(--accent-primary-rgb, 100, 220, 255), 0.4);
+        }
+
+        .review-para-block.edited {
+            border-left-color: var(--accent-primary);
+        }
+
+        .review-para-block.code-block {
+            cursor: not-allowed;
+            border: 1px solid rgba(255, 140, 0, 0.3);
+            background: rgba(255, 140, 0, 0.05);
+            color: var(--text-dim);
+        }
+
+        .review-para-text {
+            margin: 0;
+            font-family: inherit;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         .linked-hover {
-            background: rgba(var(--accent-primary-rgb,100,220,255),0.08) !important;
+            background: rgba(var(--accent-primary-rgb, 100, 220, 255), 0.08) !important;
             border-left-color: var(--accent-primary) !important;
         }
+
         .preview-para-item {
             margin-bottom: 1.2rem;
             color: var(--text-bright);
@@ -675,86 +840,148 @@
             padding-left: 0;
             transition: all 0.15s ease;
         }
+
         .preview-para-item.linked-hover {
-            background: rgba(var(--accent-primary-rgb,100,220,255),0.08) !important;
+            background: rgba(var(--accent-primary-rgb, 100, 220, 255), 0.08) !important;
             border-left-color: var(--accent-primary) !important;
             padding-left: 8px !important;
         }
-        .edited-mark { font-size:0.7rem; color:var(--accent-primary); white-space:nowrap; }
-        .review-actions { display:flex; gap:10px; justify-content:flex-end;
-            padding-top:8px; border-top:1px solid var(--glass-border); flex-wrap:wrap; }
-        .review-btn { padding:8px 18px; border-radius:8px; border:none;
-            font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
-        .review-btn.save { background:var(--accent-primary); color:#000; }
-        .review-btn.save:hover { filter:brightness(1.15); }
-        .review-btn.save.active { background:var(--accent-secondary); }
-        .review-btn.unlock { background:rgba(255,255,255,0.06); color:var(--text-dim);
-            border:1px solid var(--glass-border); }
-        .review-btn.unlock:hover { color:var(--text-bright);
-            border-color:rgba(255,80,80,0.5); background:rgba(255,80,80,0.08); }
-        .review-loading, .review-error { text-align:center; padding:40px;
-            color:var(--text-dim); font-size:0.88rem; }
-        .review-error { color:var(--color-error,#f87171); }
+
+        .edited-mark {
+            font-size: 0.7rem;
+            color: var(--accent-primary);
+            white-space: nowrap;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 8px;
+            border-top: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+        }
+
+        .review-btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .review-btn.save {
+            background: var(--accent-primary);
+            color: #000;
+        }
+
+        .review-btn.save:hover {
+            filter: brightness(1.15);
+        }
+
+        .review-btn.save.active {
+            background: var(--accent-secondary);
+        }
+
+        .review-btn.unlock {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+        }
+
+        .review-btn.unlock:hover {
+            color: var(--text-bright);
+            border-color: rgba(255, 80, 80, 0.5);
+            background: rgba(255, 80, 80, 0.08);
+        }
+
+        .review-loading,
+        .review-error {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+            font-size: 0.88rem;
+        }
+
+        .review-error {
+            color: var(--color-error, #f87171);
+        }
 
         /* 🌞 翻译校对工作台白天模式特定适配 */
         [data-theme="light"] #review-drawer-overlay {
             background: var(--white-30) !important;
         }
+
         [data-theme="light"] #review-drawer {
             box-shadow: -8px 0 30px var(--white-08) !important;
         }
+
         [data-theme="light"] .review-badge.ai {
             background: var(--white-03) !important;
             border-color: var(--white-08) !important;
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] .review-para-block {
             background: var(--white-02) !important;
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] .review-para-block:hover {
             background: var(--white-05) !important;
         }
+
         [data-theme="light"] .review-para-block.code-block {
             background: rgba(219, 114, 11, 0.03) !important;
             border-color: rgba(219, 114, 11, 0.2) !important;
             color: var(--text-muted) !important;
         }
+
         [data-theme="light"] .review-input {
             background: #ffffff !important;
             border-color: var(--white-10) !important;
             color: var(--text-bright) !important;
         }
+
         [data-theme="light"] .review-input:focus {
             border-color: var(--accent-primary) !important;
         }
+
         [data-theme="light"] .review-btn.unlock {
             background: var(--white-03) !important;
             border-color: var(--white-08) !important;
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] .review-btn.unlock:hover {
             background: rgba(207, 23, 23, 0.06) !important;
             border-color: rgba(207, 23, 23, 0.3) !important;
             color: var(--neon-red) !important;
         }
+
         [data-theme="light"] .review-view-toggle {
             background: var(--white-03) !important;
             border-color: var(--white-08) !important;
         }
+
         [data-theme="light"] .review-dirty-dot {
             color: #d97706 !important;
         }
-        [data-theme="light"] #col-source .review-field > div {
+
+        [data-theme="light"] #col-source .review-field>div {
             background: var(--white-02) !important;
             opacity: 1 !important;
             border-color: var(--white-08) !important;
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] #col-source .review-para-block.source-only {
             background: var(--white-02) !important;
             opacity: 1 !important;
         }
+
         [data-theme="light"] #col-source .review-para-block.source-only .review-para-text {
             color: var(--text-dim) !important;
         }
@@ -763,46 +990,57 @@
         [data-theme="light"] .dispatch-hub-panel {
             border-left: 1px solid var(--glass-border) !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .matrix-item .m-meta {
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .matrix-item .m-time {
             color: var(--text-dim) !important;
             font-weight: 500 !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
             color: var(--text-dim) !important;
             background: var(--white-03) !important;
             border: 1px solid var(--white-08) !important;
             font-weight: 500 !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens[style*="opacity"] {
             opacity: 1 !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .lab-status-row .t-label {
             color: var(--text-dim) !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
             background: var(--white-05) !important;
             color: var(--text-dim) !important;
             border: 1px solid var(--white-08) !important;
             font-weight: 500 !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .locale-code-badge {
             color: var(--text-dim) !important;
             background: var(--white-05) !important;
             border: 1px solid var(--white-08) !important;
             font-weight: 500 !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
             background: var(--white-10) !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .drawer-body {
             scrollbar-color: var(--white-10) transparent !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
             box-shadow: 0 4px 15px var(--white-08) !important;
         }
+
         [data-theme="light"] .dispatch-hub-panel .lab-box {
             border: 1px dashed var(--white-15) !important;
             background: var(--white-01) !important;

@@ -234,4 +234,36 @@ class ContractGuard:
             # 如果不是 git 仓库或命令执行失败，在开发环境下暂时放行
             pass
 
+        theme_pollution_dirs = {".astro", ".temp", ".vscode", "build", "dist"}
+        theme_pollution_files = {"graph.json", "sitemap.xml"}
+        if os.path.exists("themes"):
+            # 自动自愈：同步母本主题核心更新至所有品牌实例
+            try:
+                from core.bindery.theme_synchronizer import ThemeSynchronizer
+                ThemeSynchronizer.sync_all_imprints()
+            except Exception:
+                pass
+
+            for t_entry in os.scandir("themes"):
+                if t_entry.is_dir() and not t_entry.name.startswith((".", "__")):
+                    for root, dirs, files in os.walk(t_entry.path):
+                        rel = os.path.relpath(root, t_entry.path).replace("\\", "/")
+                        if any(p in ['node_modules', '.git'] for p in rel.split('/')):
+                            continue
+                        for d in dirs:
+                            # 豁免前端框架主题母本自带的只读组件源码 src，但严格禁止稿件目录 content
+                            if d == "src" and t_entry.name in ["starlight", "docusaurus", "nextra", "vitepress", "universal"]:
+                                continue
+                            if d == "content" and (rel == "src" or rel.endswith("/src")):
+                                violations.append(f"❌ [主题污染] 自带主题母本 'themes/{t_entry.name}' 包含编译稿件目录: {os.path.join(rel, d)}")
+                                continue
+                            if d in theme_pollution_dirs:
+                                violations.append(f"❌ [主题污染] 自带主题母本 'themes/{t_entry.name}' 包含非法临时目录: {os.path.join(rel, d)}")
+                        for f in files:
+                            if f == ".DS_Store":
+                                try: os.remove(os.path.join(root, f))
+                                except: pass
+                            elif f in theme_pollution_files:
+                                violations.append(f"❌ [主题污染] 自带主题母本 'themes/{t_entry.name}' 包含编译残留文件: {os.path.join(rel, f)}")
+
         return violations

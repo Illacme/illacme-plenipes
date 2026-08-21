@@ -310,7 +310,16 @@ window.openPluginConfig = async (id, category = null, fromDrawer = null) => {
             return;
         }
 
-        title.innerText = `⚙️ ${p.name || id}`;
+        const brand = typeof window.getPlatformBrandBadge === 'function'
+            ? window.getPlatformBrandBadge(p.id, p.category)
+            : { icon: '⚙️', bg: 'rgba(0, 242, 254, 0.12)', border: 'rgba(0, 242, 254, 0.3)' };
+
+        title.innerHTML = `
+            <div style="display:inline-flex; align-items:center; gap:8px;">
+                <span class="p-title-badge" style="width:24px; height:24px; min-width:24px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:0.95rem; background:${brand.bg}; border:1px solid ${brand.border}; box-shadow: 0 1px 4px rgba(0,0,0,0.25);">${brand.icon}</span>
+                <span>${p.name || id}</span>
+            </div>
+        `;
         body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
         drawer.style.display = 'flex';
 
@@ -335,90 +344,34 @@ window.openPluginConfig = async (id, category = null, fromDrawer = null) => {
 
         let html = window.renderCrossPluginReuseGuide(id, p.category);
 
-        if (p.is_manageable) {
-            if (typeof window.renderPluginStepWizardHeader === 'function' && p.category !== 'notification') {
-                html += window.renderPluginStepWizardHeader(p.id, p.category);
-            }
-        }
+        // 🛡️ 情境自适应：仅当从治理中心 (governance) 打开主题配置时隐藏全局驱动开关；在插件中心保留全局驱动启停开关
+        const hideMasterSwitch = (fromDrawer === 'governance' && p.category === 'theme');
+        if (p.is_manageable && !hideMasterSwitch) {
+            const headerSwitch = document.getElementById('drawer-global-driver-toggle');
+            const headerSwitchWrapper = document.getElementById('header-master-switch-wrapper');
+            const headerStatusLabel = document.getElementById('header-toggle-status-label');
 
-        // 🚀 [V106.0] 方案 1：Master Switch 移至抽屉 Header 标题右侧 + 强防线关卡
-        const headerSwitch = document.getElementById('drawer-global-driver-toggle');
-        const headerSwitchWrapper = document.getElementById('header-master-switch-wrapper');
-        const headerStatusLabel = document.getElementById('header-toggle-status-label');
+            window.probePassState = window.probePassState || {};
 
-        window.probePassState = window.probePassState || {};
-
-        if (headerSwitch) {
-            if (p.is_manageable) {
+            if (headerSwitch) {
                 if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'inline-flex';
-
-                // 若插件本身在后端已经是 is_enabled 状态，默认视作已被证明的物理通过状态
-                if (p.is_enabled) {
-                    window.probePassState[p.id] = true;
-                }
 
                 const isCurrentlyEnabled = !!p.is_enabled;
                 headerSwitch.checked = isCurrentlyEnabled;
 
-                // 强制修正 Label 文字与 CSS 风格，彻底解决视觉与实际 Switch 错配问题
                 if (headerStatusLabel) {
                     headerStatusLabel.textContent = isCurrentlyEnabled ? '🟢 全局已启用' : '⚪ 全局已暂停';
                     headerStatusLabel.style.color = isCurrentlyEnabled ? 'var(--neon-cyan)' : 'var(--text-dim)';
                 }
 
                 headerSwitch.onchange = function(e) {
-                    const isAttemptingEnable = this.checked;
-                    const isPassed = !!window.probePassState[p.id];
-
-                    if (isAttemptingEnable) {
-                        // 🛡️ 物理强制关卡：如果没有测试连接通过记录，强行拦截弹回关闭！
-                        if (!isPassed) {
-                            this.checked = false;
-                            if (headerStatusLabel) {
-                                headerStatusLabel.textContent = '⚪ 全局已暂停';
-                                headerStatusLabel.style.color = 'var(--text-dim)';
-                            }
-
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    title: '🚨 无法开启全局驱动',
-                                    html: `插件 [<b>${p.name || p.id}</b>] 尚未通过物理连通性校验。<br><br><span style="color:#00f2ff; font-size:0.85rem;">💡 请先点击抽屉底部的 <b>「🔌 测试连接」</b> 完成链路验证！</span>`,
-                                    icon: 'warning',
-                                    confirmButtonText: '⚡ 立即测试连通性',
-                                    showCancelButton: true,
-                                    cancelButtonText: '取消',
-                                    background: 'var(--card-bg)',
-                                    color: 'var(--text-bright)',
-                                    confirmButtonColor: 'var(--accent-secondary)'
-                                }).then((r) => {
-                                    if (r.isConfirmed && typeof window.triggerPluginDryRun === 'function') {
-                                        window.triggerPluginDryRun(p.id);
-                                    }
-                                });
-                            } else if (window.showToast) {
-                                window.showToast("🚨 请先点击「🔌 测试连接」完成链路验证", "error");
-                            }
-                            return;
-                        }
-
-                        // 通过验证，物理允许开启
-                        if (headerStatusLabel) {
-                            headerStatusLabel.textContent = '🟢 全局已启用';
-                            headerStatusLabel.style.color = 'var(--neon-cyan)';
-                        }
-                        window.handleGlobalDriverToggle(p.id, this, p.category);
-                    } else {
-                        // 允许手动暂停
-                        if (headerStatusLabel) {
-                            headerStatusLabel.textContent = '⚪ 全局已暂停';
-                            headerStatusLabel.style.color = 'var(--text-dim)';
-                        }
-                        window.handleGlobalDriverToggle(p.id, this, p.category);
-                    }
+                    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+                    window.handleGlobalDriverToggle(p.id, this, p.category);
                 };
-            } else {
-                if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'none';
             }
+        } else {
+            const headerSwitchWrapper = document.getElementById('header-master-switch-wrapper');
+            if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'none';
         }
 
         html += window.buildPluginConfigFormHtml(p);
@@ -543,6 +496,28 @@ window.openPluginConfig = async (id, category = null, fromDrawer = null) => {
     }
 };
 
+window.isPluginActiveInCurrentBrand = (id, category) => {
+    const cfg = window.settingsData || {};
+    if (category === 'notification') {
+        const isSelfEnabled = !!(cfg.publish_control?.webhook_endpoints?.[id]?.enabled);
+        if (!isSelfEnabled && id === 'generic_webhook') {
+            return !!(cfg.publish_control?.webhook_endpoints?.['generic']?.enabled);
+        }
+        return isSelfEnabled;
+    }
+    if (category === 'hosting') {
+        return !!(cfg.publish_control?.direct_upload?.[id]?.enabled);
+    }
+    if (category === 'publisher') {
+        return !!(cfg.syndication?.[id]?.enabled);
+    }
+    if (category === 'image_hosting') {
+        return !!(cfg.image_hosting?.[id]?.enabled || (cfg.image_hosting?.provider === id));
+    }
+    const p = window.allPlugins ? window.allPlugins.find(x => x.id === id && (!category || x.category === category)) : null;
+    return !!(p && p.is_in_use);
+};
+
 window.closePluginDrawer = () => {
     const drawer = document.getElementById('plugin-drawer');
     if (drawer) drawer.style.display = 'none';
@@ -554,48 +529,84 @@ window.closePluginDrawer = () => {
 };
 
 window.handleGlobalDriverToggle = async (id, el, category) => {
-    const checked = el.checked;
+    const checked = el ? el.checked : false;
     const p = window.allPlugins ? window.allPlugins.find(x => x.id === id && (!category || x.category === category)) : null;
+    const headerStatusLabel = document.getElementById('header-toggle-status-label');
 
     if (checked) {
-        const needsProbe = ['protocol', 'publisher', 'hosting', 'image_hosting'].includes(category);
-        const isPassed = window.probePassState && window.probePassState[id] === true;
+        const needsProbe = ['protocol', 'publisher', 'hosting', 'image_hosting', 'notification'].includes(category);
+        const isPassed = !!(window.probePassState && window.probePassState[id] === true);
 
         if (needsProbe && !isPassed) {
-            el.checked = false;
-
-            // 级联置灰已物理移除，允许在全局驱动关闭时编辑参数进行探测自检
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '🔒 连通性未校验',
-                    text: '请先在下方填写参数，并点击「📡 自检」或「🔌 测试连接」连通成功后，方可装载物理驱动。',
-                    icon: 'warning',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-bright)',
-                    confirmButtonText: '确定'
-                });
-            } else {
-                alert('🔒 连通性未校验: 请先在下方填写参数，并点击「📡 自检/演练」连通成功后，方可装载物理驱动。');
+            if (el) el.checked = false;
+            if (headerStatusLabel) {
+                headerStatusLabel.textContent = '⚪ 全局已暂停';
+                headerStatusLabel.style.color = 'var(--text-dim)';
             }
+
+            setTimeout(() => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '🚨 无法开启全局驱动',
+                        html: `插件 [<b>${p?.name || id}</b>] 尚未通过物理连通性校验。<br><br><span style="color:#00f2ff; font-size:0.85rem;">💡 请先点击抽屉底部的 <b>「🔌 测试连接」</b> 完成链路验证！</span>`,
+                        icon: 'warning',
+                        allowOutsideClick: false,
+                        allowEscapeKey: true,
+                        confirmButtonText: '⚡ 立即测试连通性',
+                        showCancelButton: true,
+                        cancelButtonText: '取消',
+                        background: 'var(--card-bg)',
+                        color: 'var(--text-bright)',
+                        confirmButtonColor: 'var(--accent-secondary)'
+                    }).then((r) => {
+                        if (r.isConfirmed && typeof window.triggerPluginDryRun === 'function') {
+                            window.triggerPluginDryRun(id);
+                        }
+                    });
+                } else if (window.showToast) {
+                    window.showToast("🚨 请先点击「🔌 测试连接」完成链路验证", "error");
+                } else {
+                    alert(`🔒 连通性未校验: 插件 [${p?.name || id}] 尚未通过物理连通性校验，请先完成测试连接。`);
+                }
+            }, 30);
             return;
         }
+
+        if (headerStatusLabel) {
+            headerStatusLabel.textContent = '🟢 全局已启用';
+            headerStatusLabel.style.color = 'var(--neon-cyan)';
+        }
     } else {
-        if (p && p.is_in_use) {
-            el.checked = true;
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '⚠️ 物理锁定',
-                    text: '当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。',
-                    icon: 'warning',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-bright)',
-                    confirmButtonText: '确定'
-                });
-            } else {
-                alert('⚠️ 物理锁定: 当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。');
+        const isActiveInBrand = window.isPluginActiveInCurrentBrand(id, category);
+        if (isActiveInBrand) {
+            if (el) el.checked = true;
+            if (headerStatusLabel) {
+                headerStatusLabel.textContent = '🟢 全局已启用';
+                headerStatusLabel.style.color = 'var(--neon-cyan)';
             }
+
+            setTimeout(() => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '⚠️ 物理锁定',
+                        text: '当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。',
+                        icon: 'warning',
+                        allowOutsideClick: false,
+                        allowEscapeKey: true,
+                        background: 'var(--card-bg)',
+                        color: 'var(--text-bright)',
+                        confirmButtonText: '确定'
+                    });
+                } else {
+                    alert('⚠️ 物理锁定: 当前品牌已激活并正在使用此功能，禁止关闭全局物理驱动！如需停用，请先关闭当前品牌的“品牌激活使用”开关。');
+                }
+            }, 30);
             return;
+        }
+
+        if (headerStatusLabel) {
+            headerStatusLabel.textContent = '⚪ 全局已暂停';
+            headerStatusLabel.style.color = 'var(--text-dim)';
         }
     }
 
@@ -606,6 +617,10 @@ window.handleGlobalDriverToggle = async (id, el, category) => {
 // 🚀 [V105.0] 复杂平台分类感知 3 步引导配置向导步骤名称映射提取器
 window.getPluginWizardSteps = (pluginId, category = '') => {
     const specificStepsMap = {
+        'email': ['1. SMTP 主机与端口', '2. 账号与发信授权码', '3. 发信测试与保存'],
+        'sms': ['1. 服务商与签名配置', '2. 密钥凭据与模板 ID', '3. 握手测试与保存'],
+        'app_push': ['1. 推送平台与设备 Key', '2. 提示音效与消息分组', '3. 极速推送与保存'],
+        'generic_webhook': ['1. 物理 Webhook 地址', '2. 签名防伪 Secret', '3. 连通测试与保存'],
         'devto': ['1. 个人 API Key 凭据', '2. 默认发布偏好模式', '3. 连通测试与保存'],
         'dev_to': ['1. 个人 API Key 凭据', '2. 默认发布偏好模式', '3. 连通测试与保存'],
         'wordpress': ['1. API 端点与应用密码', '2. 默认文章发布状态', '3. 连通测试与保存'],
@@ -615,7 +630,7 @@ window.getPluginWizardSteps = (pluginId, category = '') => {
         'wechat': ['1. 公众号 AppID/Secret 凭据', '2. 独立代理与图文设置', '3. 连通测试与保存'],
         'zhihu': ['1. 个人 Token / 专栏 ID', '2. 独立代理与发布偏好', '3. 连通测试与保存'],
         'telegram': ['1. Bot Token 机器人凭据', '2. 目标 Chat ID 频道参数', '3. 连通测试与保存'],
-        'discord': ['1. Webhook 授权回调地址', '2. 提醒与独立代理参数', '3. 连通测试与保存'],
+        'discord': ['1. Webhook 授权回调地址', '2. 广播与独立代理参数', '3. 连通测试与保存'],
         'github_pages': ['1. 个人 Access Token 凭据', '2. 仓库 URL 与部署分支', '3. CNAME 与 Git 身份参数'],
         'gitee_pages': ['1. Gitee 私人 Access Token', '2. 仓库 URL 与部署分支', '3. 独立代理与 Git 身份'],
         'gitlab_pages': ['1. Personal Access Token', '2. 仓库 URL 与部署分支', '3. 独立代理与 Git 身份'],

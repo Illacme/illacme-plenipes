@@ -196,7 +196,7 @@ class VaultIndexer:
 
     @staticmethod
     def export_search_index_v2(all_docs_snapshot: Dict[str, Any], output_path: str, engine: Any = None):
-        """导出搜索索引"""
+        """导出全域搜索索引"""
         search_data = []
         for rel_path, info in all_docs_snapshot.items():
             slug = info.get('slug')
@@ -209,17 +209,36 @@ class VaultIndexer:
                 sub_dir = info.get('sub_dir', '')
                 url = engine.route_manager.resolve_logical_url(lang, route_prefix, sub_dir, slug)
             else:
-                # 兼容旧逻辑
                 url = f"/{lang}/docs/{slug}.html"
+
+            raw_kw = (info.get('seo_data') or {}).get('keywords', []) or info.get('keywords', [])
+            keywords_list = raw_kw if isinstance(raw_kw, list) else [k.strip() for k in str(raw_kw).split(',') if k.strip()]
+            
+            raw_tags = info.get('tags', [])
+            tags_list = raw_tags if isinstance(raw_tags, list) else [t.strip() for t in str(raw_tags).split(',') if t.strip()]
 
             search_data.append({
                 "title": info.get('title', os.path.basename(rel_path)),
                 "description": (info.get('seo_data') or {}).get('description', ''),
                 "url": url,
-                "path": rel_path
+                "path": rel_path,
+                "keywords": keywords_list,
+                "tags": tags_list,
+                "lang": lang
             })
         try:
             from core.utils.common import atomic_write
             import json
-            atomic_write(output_path, json.dumps(search_data, indent=2, ensure_ascii=False))
-        except: pass
+            json_payload = json.dumps(search_data, indent=2, ensure_ascii=False)
+            atomic_write(output_path, json_payload)
+            
+            # 🚀 若当前主题为原生 Sovereign 主题，同步写入 site_dir/static/search_index.json
+            if engine and hasattr(engine, 'paths'):
+                site_dir = engine.paths.get('site_dir')
+                if site_dir and os.path.exists(site_dir):
+                    static_idx = os.path.join(site_dir, 'static', 'search_index.json')
+                    os.makedirs(os.path.dirname(static_idx), exist_ok=True)
+                    atomic_write(static_idx, json_payload)
+        except Exception as e:
+            tlog.warning(f"⚠️ [索引器] 导出搜索索引异常: {e}")
+

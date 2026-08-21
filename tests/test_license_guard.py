@@ -60,31 +60,38 @@ def test_license_activation_and_revocation(tmp_path, monkeypatch):
     monkeypatch.delenv("ILLACME_DEV_LICENSE", raising=False)
     LicenseGuard.clear_cache()
 
-    fp = LicenseGuard.get_machine_fingerprint()
-    lic_text = generate_license(customer="Activation Test", fingerprint=fp, days=365)
+    from core.governance.imprint_manager import im
+    old_imp = im.active_imprint
+    try:
+        im.active_imprint = "custom_press"
+        fp = LicenseGuard.get_machine_fingerprint()
+        lic_text = generate_license(customer="Activation Test", fingerprint=fp, days=365)
 
-    # 1. 初始为 LITE 状态
-    assert LicenseGuard.is_licensed() is False
-    info = LicenseGuard.get_license_info()
-    assert info["tier"] == "LITE"
+        # 1. 初始自定义品牌为 LITE 状态
+        assert LicenseGuard.is_licensed() is False
+        info = LicenseGuard.get_license_info()
+        assert info["tier"] == "LITE"
 
-    # 2. 点火激活
-    success, msg = LicenseGuard.activate_license(lic_text)
-    assert success is True
-    assert os.path.exists(test_lic_file)
+        # 2. 点火激活
+        success, msg = LicenseGuard.activate_license(lic_text)
+        assert success is True
+        assert os.path.exists(test_lic_file)
 
-    # 3. 验证激活为 PRO 状态
-    assert LicenseGuard.is_licensed() is True
-    info = LicenseGuard.get_license_info()
-    assert info["tier"] == "PRO"
-    assert info["customer"] == "Activation Test"
+        # 3. 验证激活为 PRO 状态
+        assert LicenseGuard.is_licensed() is True
+        info = LicenseGuard.get_license_info()
+        assert info["tier"] == "PRO"
+        assert info["customer"] == "Activation Test"
 
-    # 4. 验证功能栅栏拦截解禁
-    assert LicenseGuard.is_pro_feature_allowed("multi_imprint") is True
-    assert LicenseGuard.is_pro_feature_allowed("multi_language") is True
+        # 4. 验证功能栅栏拦截解禁
+        assert LicenseGuard.is_pro_feature_allowed("multi_imprint") is True
+        assert LicenseGuard.is_pro_feature_allowed("multi_language") is True
 
-    # 5. 注销许可证
-    rev_success, rev_msg = LicenseGuard.revoke_license()
-    assert rev_success is True
-    assert not os.path.exists(test_lic_file)
-    assert LicenseGuard.is_licensed() is False
+        # 5. 注销许可证
+        rev_success, rev_msg = LicenseGuard.revoke_license()
+        assert rev_success is True
+        assert not os.path.exists(test_lic_file)
+        assert LicenseGuard.is_licensed() is False
+        assert LicenseGuard.get_license_info()["tier"] == "LITE"
+    finally:
+        im.active_imprint = old_imp

@@ -1,9 +1,9 @@
 from core.adapters.egress.webhook.base import BaseWebhookDriver
 
 class DiscordNoticeDriver(BaseWebhookDriver):
-    DISPLAY_NAME = "Discord Notice 适配器"
+    DISPLAY_NAME = "Discord 运维事件通知"
     VERSION = "V1.0"
-    DESCRIPTION = "对接 Discord 频道 Webhook，支持富文本 Embeds 卡片及 Bot 属性自定义 Override。"
+    DESCRIPTION = "面向站长与运维的系统监控通道：实时接收全站编译就绪、AI 算力熔断告警等内部系统事件推送。"
 
     def match(self, url: str) -> bool:
         return 'discord.com/api/webhooks' in url or 'discordapp.com/api/webhooks' in url

@@ -125,6 +125,27 @@ window.handleTerminalData = (payload) => {
         }
     }
 
+    // 🚀 [端口动态捕获与对正] 自动嗅探子进程实际绑定的服务端口 (如 Astro/Vite 冲突避让至 43214)
+    if (msg) {
+        const portMatch = String(msg).match(/https?:\/\/(?:localhost|127\.0\.0\.1):(\d+)/i);
+        if (portMatch) {
+            const detectedPort = parseInt(portMatch[1], 10);
+            window._actualPreviewPort = detectedPort;
+            window._actualPreviewUrl = `http://localhost:${detectedPort}/`;
+            
+            // 实时刷新弹窗中的直达超链接与端口展示
+            const linkEl = document.getElementById('preview-site-link');
+            if (linkEl) {
+                linkEl.href = window._actualPreviewUrl;
+                linkEl.innerText = window._actualPreviewUrl;
+            }
+            const portEl = document.getElementById('preview-site-port');
+            if (portEl) {
+                portEl.innerText = detectedPort;
+            }
+        }
+    }
+
     if (payload.type === 'INSTALL_SUCCESS' || payload.type === 'INSTALL_ERROR') {
         if (statusEl) {
             statusEl.innerText = payload.type === 'INSTALL_SUCCESS' ? 'COMPLETED' : 'FAILED';
@@ -139,8 +160,14 @@ window.appendTerminalLog = (msg, color = null) => {
     const out = document.getElementById('terminal-output');
     if (!out) return;
 
+    // 🛡️ 限制 DOM 节点总数不超过 150 行，防止长日志造成页面卡顿
+    while (out.children.length > 150) {
+        out.removeChild(out.firstChild);
+    }
+
     const div = document.createElement('div');
     div.className = 'term-line';
+    div.style.cssText = 'line-height: 1.5; word-break: break-word; font-size: 0.82rem;';
     let cleanMsg = typeof msg === 'string' ? msg : JSON.stringify(msg);
 
     const ansiMap = { '31': '#ff4d4d', '32': '#00ff88', '33': '#ffaa00', '34': '#4da6ff', '35': '#a34cff', '36': '#00ffff', '37': 'var(--text-bright)' };
@@ -154,7 +181,15 @@ window.appendTerminalLog = (msg, color = null) => {
         div.style.color = (color === '#ffffff' || color === '#fff') ? 'var(--text-bright)' : color;
     }
     out.appendChild(div);
-    out.scrollTop = out.scrollHeight;
+    
+    // 🚀 使用 requestAnimationFrame 平滑贴底滚动，杜绝高频日志掉帧卡顿
+    if (!window._termScrollPending) {
+        window._termScrollPending = true;
+        requestAnimationFrame(() => {
+            out.scrollTop = out.scrollHeight;
+            window._termScrollPending = false;
+        });
+    }
 };
 
 window.triggerThemeInstall = async () => {
@@ -167,11 +202,27 @@ window.triggerThemeInstall = async () => {
     }
 };
 
+window.resetTerminalModalFooter = () => {
+    const forceBar = document.getElementById('preview-force-sync-bar');
+    if (forceBar) forceBar.style.display = 'none';
+    const startBtn = document.getElementById('btn-terminal-start-preview');
+    if (startBtn) startBtn.style.display = 'none';
+    const openBtn = document.getElementById('btn-terminal-open-preview');
+    if (openBtn) openBtn.style.display = 'none';
+    const okBtn = document.getElementById('btn-terminal-ok');
+    if (okBtn) okBtn.style.display = 'none';
+    const republishBtn = document.getElementById('btn-terminal-republish');
+    if (republishBtn) republishBtn.style.display = 'none';
+    const abortBtn = document.getElementById('btn-terminal-abort');
+    if (abortBtn) abortBtn.style.display = 'none';
+    const closeBtn = document.getElementById('btn-terminal-close');
+    if (closeBtn) closeBtn.style.display = 'none';
+};
+
 window.closeTerminalModal = () => {
     const modal = document.getElementById('terminal-modal');
     if (modal) {
         modal.style.display = 'none';
-        const okBtn = document.getElementById('btn-terminal-ok');
-        if (okBtn) okBtn.style.display = 'none';
+        window.resetTerminalModalFooter();
     }
 };

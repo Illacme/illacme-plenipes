@@ -65,9 +65,10 @@ class RouteManager:
                         route_prefix = template.format(lang=physical_lang)
                     except Exception:
                         route_prefix = template.replace("{lang}", physical_lang)
+                    slot_formatted = True
 
-        # 🚀 [V88.5] 纯正扁平模式增强：当为扁平模式 (flat) 且无特定频道路由时，前缀自动压平落盘到站点根目录
-        if not mapped_sub_dir and (not route_prefix or route_prefix in ("docs", "docs/{lang}")):
+        # 🚀 [V88.5] 纯正扁平模式增强：当非特定功能槽且为扁平模式 (flat) 无特定频道路由时，前缀自动压平落盘到站点根目录
+        if not slot_formatted and not mapped_sub_dir and (not route_prefix or route_prefix in ("docs", "docs/{lang}")):
             if hasattr(self, 'engine') and self.engine and hasattr(self.engine, 'config'):
                 if getattr(self.engine.config.translation, 'slug_dir_mode', 'flat') == 'flat':
                     route_prefix = ""
@@ -88,13 +89,20 @@ class RouteManager:
                 force_prefix=self.force_source_prefix
             )
 
-        # 🚀 [V88.9] 物理主权对正：当配置为扁平模式 (flat) 且无显式子目录时，强力压平 docs 前缀，实现真·根目录落盘
-        if not mapped_sub_dir and route_prefix in ("docs", "docs/", "docs/{lang}"):
+        # 🚀 [V88.9] 物理主权对正：当非特定功能槽且配置为扁平模式 (flat) 无显式子目录时，强力压平 docs 前缀，实现真·根目录落盘
+        if not slot_formatted and not mapped_sub_dir and route_prefix in ("docs", "docs/", "docs/{lang}"):
             cfg = getattr(self, 'config', None) or getattr(getattr(self, 'engine', None), 'config', None)
             trans_cfg = getattr(cfg, 'translation', None) if cfg else None
             dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'flat') if trans_cfg else 'flat'
             if dir_mode == 'flat':
                 route_prefix = ""
+
+        # 🛡️ 路径去重防线：避免 mapped_sub_dir 与 route_prefix 出现同名频道路由重叠 (如 /zh/docs/docs/...)
+        if mapped_sub_dir:
+            sub_clean = mapped_sub_dir.strip("/\\")
+            prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
+            if sub_clean in prefix_parts:
+                mapped_sub_dir = ""
 
         if route_prefix and "{" in route_prefix and "}" in route_prefix:
             # 模式 A：声明式模板模式 (如 /docs/{lang})
@@ -111,8 +119,6 @@ class RouteManager:
             # 模式 B：标准阶梯模式 (base / lang / prefix / sub / slug)
             parts = [p for p in [base_path, physical_lang, route_prefix, mapped_sub_dir, f"{slug}{ext}"] if p]
             raw_path = os.path.join(*parts) if parts else ""
-
-        return os.path.normpath(re.sub(r'[/\\]+', os.sep, raw_path))
 
         return os.path.normpath(re.sub(r'[/\\]+', os.sep, raw_path))
 
@@ -197,7 +203,10 @@ class RouteManager:
 
         # 阶段 2：安全组装
         # 🚀 [V15.7] 物理主权对齐：默认语种 URL 不带前缀 (但需尊重强制前缀配置)
-        url_lang = "" if (logical_lang == self.default_lang and not self.force_source_prefix) else logical_lang
+        def_iso = LanguageHub.resolve_to_iso(self.default_lang) if self.default_lang else "zh"
+        if not def_iso or def_iso == "auto":
+            def_iso = "zh"
+        url_lang = "" if (iso_code == def_iso and not self.force_source_prefix) else iso_code
         parts = [p for p in [url_lang, prefix_processed, mapped_sub_dir, slug] if p]
         raw_url = "/" + "/".join(parts)
 

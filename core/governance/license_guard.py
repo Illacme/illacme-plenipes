@@ -138,15 +138,70 @@ class LicenseGuard:
             return False
 
     @classmethod
+    def is_default_imprint_and_theme_active(cls) -> bool:
+        """
+        🛡️ [V100.9] 检测当前是否为系统默认品牌 (default)。
+        默认品牌享有全量 PRO 权限豁免，作为无限制的产品功能展示与体验橱窗，支持任意装帧主题与全语种矩阵。
+        """
+        try:
+            from core.governance.imprint_manager import im
+            active_imp = im.get_active_imprint()
+            return active_imp == "default"
+        except Exception:
+            return False
+
+    @classmethod
+    def get_active_tier(cls) -> str:
+        """获取当前生效的许可证级别 (PRO / STANDARD / LITE)"""
+        if os.environ.get("ILLACME_DEV_LICENSE", "").strip() == "1":
+            return "PRO"
+        
+        # 默认品牌永远享有 PRO 级别全功能体验沙盒
+        if cls.is_default_imprint_and_theme_active():
+            return "PRO"
+            
+        if cls.is_licensed():
+            payload = cls._cached_license_result[1] if (cls._cached_license_result and cls._cached_license_result[0]) else {}
+            tier_val = str(payload.get("tier", "PRO")).upper()
+            if tier_val in ("STANDARD", "PLUS", "STD"):
+                return "STANDARD"
+            return "PRO"
+            
+        return "LITE"
+
+    @classmethod
+    def get_max_imprints(cls) -> int:
+        """获取当前授权允许管理的最大版图数量"""
+        tier = cls.get_active_tier()
+        if tier == "PRO": return 999
+        if tier == "STANDARD": return 3
+        return 1
+
+    @classmethod
+    def get_max_i18n_targets(cls) -> int:
+        """获取当前授权允许配置的最大多语言目标语种数量"""
+        tier = cls.get_active_tier()
+        if tier == "PRO": return 999
+        if tier == "STANDARD": return 5
+        return 1
+
+    @classmethod
     def is_pro_feature_allowed(cls, feature_name: str) -> bool:
         """🚀 [V35.1] 功能栅栏校验：拦截未授权的高级功能调用"""
         if feature_name not in cls._PRO_FEATURES:
-            return True # 非管控功能默认允许
-            
-        if cls.is_licensed():
             return True
-            
-        # 针对免费版的特定拦截提示 (同一功能在会话中仅打印 1 次日志防刷屏)
+
+        tier = cls.get_active_tier()
+        if tier == "PRO":
+            return True
+
+        if tier == "STANDARD":
+            # 基础增强版支持：多语种矩阵(上限5个)、子目录频道映射、基础版图(上限3个)
+            if feature_name in ("subfolder_ingress", "multi_language", "multi_imprint"):
+                return True
+            return False
+
+        # LITE 免费社区版拦截
         if feature_name not in cls._warned_features:
             feature_desc = cls._PRO_FEATURES.get(feature_name, feature_name)
             tlog.debug(f"🛡️ [功能栅栏] 未激活授权，静默拦截受限功能 '{feature_desc}' (同类提示已抑制)。")
@@ -180,7 +235,8 @@ class LicenseGuard:
                 pass
             bus.emit("CONFIG_RELOADED", config=fresh_cfg)
             tlog.success(f"✅ [准入激活] 许可证落盘成功: {lic_path}")
-            return True, f"激活成功！已解锁【{payload.get('customer', '高级专业版')}】高级专业版全量特权。"
+            tier_name = "基础增强版" if str(payload.get("tier", "")).upper() in ("STANDARD", "PLUS", "STD") else "高级专业版"
+            return True, f"激活成功！已解锁【{payload.get('customer', tier_name)}】{tier_name}全量特权。"
         except Exception as e:
             return False, f"物理写入失败: {e}"
 
@@ -212,20 +268,34 @@ class LicenseGuard:
     def get_license_info(cls) -> Dict:
         """获取全量系统准入信息概览"""
         is_licensed = cls.is_licensed()
+        is_default_pro = cls.is_default_imprint_and_theme_active()
+        effective_licensed = is_licensed or is_default_pro
+        tier = cls.get_active_tier()
         fingerprint = cls.get_machine_fingerprint()
         payload = cls._cached_license_result[1] if cls._cached_license_result and cls._cached_license_result[0] else {}
 
         exp = payload.get("exp", 0)
-        exp_str = "永久授权" if exp == 0 else time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp))
+        exp_str = "永久授权" if (exp == 0 or (not is_licensed and is_default_pro)) else time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp))
+
+        tier_names = {
+            "PRO": "高级专业版",
+            "STANDARD": "基础增强版",
+            "LITE": "免费社区版"
+        }
+        tier_name = tier_names.get(tier, "高级专业版")
 
         return {
             "version": "v11.2",
-            "is_licensed": is_licensed,
+            "is_licensed": effective_licensed,
+            "is_default_imprint": is_default_pro,
             "fingerprint": fingerprint,
-            "tier": payload.get("tier", "PRO") if is_licensed else "LITE",
-            "customer": payload.get("customer", "社区用户") if is_licensed else "社区免费版用户",
-            "exp_date": exp_str if is_licensed else "N/A",
-            "features": payload.get("features", list(cls._PRO_FEATURES.keys())) if is_licensed else []
+            "tier": tier,
+            "tier_name": tier_name,
+            "customer": payload.get("customer", f"{tier_name}用户") if is_licensed else (f"{tier_name}用户" if is_default_pro else "社区免费版用户"),
+            "exp_date": exp_str if effective_licensed else "N/A",
+            "features": payload.get("features", list(cls._PRO_FEATURES.keys())) if effective_licensed else [],
+            "max_imprints": cls.get_max_imprints(),
+            "max_i18n_targets": cls.get_max_i18n_targets()
         }
 
     @staticmethod

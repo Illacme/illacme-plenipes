@@ -210,7 +210,12 @@ class SovereignDeploymentPlugin(PostSyncTask):
     职责：执行最终的出版资产投递，将印刷好的印张上架至全球书店 (The Bookstore)。
     """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
-        # 1. 只有在非 dry_run 且有实际产出（或强制模式）时执行
+        # 1. 只有在非 dry_run、非 local_only 且有实际产出（或强制模式）时执行
+        if getattr(args, 'local_only', False):
+            tlog.info("ℹ️ [Deployment] 当前处于发布预览模式 (local_only)，已完成本地静态装帧，跳过全网外部渠道推流。")
+            bus.emit("UI_TERMINAL_DATA", type="LOG", data="⚡ [发布预览] 本地装帧与静态编译已就绪，跳过全网外部渠道推流。")
+            return
+
         has_output = stats.get("UPDATED", 0) > 0 or (args and args.force)
         if (args and args.dry_run) or not has_output:
             tlog.info("ℹ️ [Deployment] 无新增产出或处于演练模式，跳过渠道投递。")
@@ -254,14 +259,29 @@ class SovereignDeploymentPlugin(PostSyncTask):
                           imprint_id=engine.imprint_id, metadata=results)
 
 
+class BlogIndexGeneratorPlugin(PostSyncTask):
+    """
+    🚀 [V1.0] 博客归档动态聚合生成插件 (零文库污染)
+    职责：自动扫描文库中的所有博文，为 Universal 及各主题动态聚合生成现代化博客首页。
+    """
+    def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
+        try:
+            from core.adapters.egress.ssg.generic_templates import generate_dynamic_blog_archive
+            generate_dynamic_blog_archive(engine, snapshot=snapshot)
+        except Exception as e:
+            tlog.warning(f"⚠️ [BlogIndexGeneratorPlugin] 博客归档聚合跳过: {e}")
+
+
 # 🚀 自动注册内置插件 (注意顺序：Janitor 清理在前，分发在后)
 LifecycleManager.register(GraphExportPlugin())
 LifecycleManager.register(SearchIndexPlugin())
 LifecycleManager.register(SyncStatsPlugin())
 LifecycleManager.register(AssetAuditPlugin())
+LifecycleManager.register(BlogIndexGeneratorPlugin())
 LifecycleManager.register(JanitorPlugin())
 LifecycleManager.register(DigitalGardenPlugin())
 LifecycleManager.register(SovereignDeploymentPlugin())
 
 
 import time
+

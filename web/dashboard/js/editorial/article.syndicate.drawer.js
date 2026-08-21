@@ -73,6 +73,14 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
 
     // 2. 🚀 物理感应全量分发渠道及其凭据就绪状态 (Credential & Plugin Matrix Full Probe)
     const platformMetadata = window.platformMetadata || {
+        'xiaohongshu': { name: '小红书', icon: '📕', desc: '小红书图文笔记与热门话题' },
+        'red': { name: '小红书', icon: '📕', desc: '小红书图文笔记与热门话题' },
+        'toutiao': { name: '今日头条', icon: '⚡', desc: '今日头条（头条号）全网算法推荐' },
+        'csdn': { name: 'CSDN 博客', icon: '📑', desc: 'CSDN 开发者社区与搜索引擎收录' },
+        'cnblogs': { name: '博客园', icon: '🌿', desc: '博客园极客技术社区' },
+        'bilibili': { name: 'Bilibili 专栏', icon: '📺', desc: 'B 站专栏长文与硬核科技' },
+        'segmentfault': { name: 'SegmentFault 思否', icon: '💡', desc: '思否开发者技术专栏' },
+        'oschina': { name: '开源中国', icon: '🇨🇳', desc: '开源中国技术与软件资讯' },
         'devto': { name: 'Dev.to', icon: '👩‍💻', desc: '开发者社区 (支持 Markdown / Canonical URL 注入)' },
         'medium': { name: 'Medium', icon: '📝', desc: '高权重长文平台' },
         'hashnode': { name: 'Hashnode', icon: '🔷', desc: '技术博客平台' },
@@ -83,52 +91,52 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
         'wordpress': { name: 'WordPress', icon: '📰', desc: 'WordPress 自动打标发布' },
         'juejin': { name: '掘金', icon: '🧱', desc: '掘金技术社区' },
         'linkedin': { name: 'LinkedIn', icon: '💼', desc: '职场社交平台' },
-        'telegram': { name: 'Telegram', icon: '✈️', desc: 'Telegram 频道与群组 Bot' },
-        'discord': { name: 'Discord', icon: '💬', desc: 'Discord Webhook 社区频道' }
+        'telegram': { name: 'Telegram 频道广播', icon: '✈️', desc: '读者频道与社区群组新文章推送' },
+        'discord': { name: 'Discord 社区广播', icon: '💬', desc: '读者社区公告与新文章 Embed 广播' }
     };
     window.platformMetadata = platformMetadata;
 
-    // 辅助断言 1：物理检测某个渠道是否已满足全局总开关开启且配置就绪 (is_enabled === true)
-    const checkChannelReadiness = (key, itemCfg) => {
-        // 1. 优先查验全域能力矩阵中的全局总开关状态 target.is_enabled
+    // 2. 🚀 物理感应全量分发渠道及其多因子凭据就绪状态 (Omni-Sensing Hub Full Probe)
+    // (使用已在上方解构声明的 syndicationCfg)
+    
+    // 全量多因子凭据智能判决算子
+    const evaluateChannelStatus = (key, itemCfg) => {
+        const cleanKey = key.toLowerCase().replace('_', '');
+        let targetPlugin = null;
         if (window.allPlugins && Array.isArray(window.allPlugins)) {
-            const cleanKey = key.toLowerCase().replace('_', '');
-            const target = window.allPlugins.find(p => p.id === key || p.id.replace('_', '') === cleanKey);
-            if (target) {
-                // 只有全局总开关已开启 (is_enabled === true)，才表示该插件已被激活并就绪
-                return !!target.is_enabled;
-            }
+            targetPlugin = window.allPlugins.find(p => p.id === key || p.id.replace('_', '') === cleanKey);
         }
-        // 2. 备选在配置对象中探查 enabled
-        if (itemCfg && typeof itemCfg === 'object') {
-            return itemCfg.enabled === true;
-        }
-        return false;
-    };
 
-    // 辅助断言 2：检测在当前品牌版图设置中该分发渠道是否已被激活启用 (Brand In-Use Active)
-    const checkBrandActive = (key, itemCfg) => {
-        // 1. 优先查验全域能力矩阵中的物理品牌激活状态 target.is_in_use (对应 Pod 卡片 Switch)
-        if (window.allPlugins && Array.isArray(window.allPlugins)) {
-            const cleanKey = key.toLowerCase().replace('_', '');
-            const target = window.allPlugins.find(p => p.id === key || p.id.replace('_', '') === cleanKey);
-            if (target) {
-                return !!target.is_in_use;
-            }
+        // 结合能力矩阵中的全局总开关 is_enabled 与品牌激活状态 is_in_use
+        const isPluginEnabled = targetPlugin ? !!targetPlugin.is_enabled : (itemCfg && itemCfg.enabled === true);
+        const isBrandActive = targetPlugin ? !!targetPlugin.is_in_use : (itemCfg && (itemCfg.enabled === true || itemCfg.is_in_use === true));
+
+        // 调取多因子凭据智能判决算子
+        let credCheck = { ready: false, mode: 'missing', label: '待填凭据' };
+        if (typeof window.isPluginCredentialReady === 'function') {
+            credCheck = window.isPluginCredentialReady(key, 'publisher', itemCfg);
+        } else {
+            const hasSecret = Boolean(itemCfg.token || itemCfg.api_key || itemCfg.webhook_url || itemCfg.access_token || itemCfg.bot_token);
+            credCheck = { ready: hasSecret, mode: hasSecret ? 'secret' : 'missing', label: hasSecret ? '凭据就绪' : '待填凭据' };
         }
-        // 2. 备选在品牌配置对象中探查 enabled / is_in_use 字段
-        if (itemCfg && typeof itemCfg === 'object') {
-            if (itemCfg.enabled === true || itemCfg.is_in_use === true) return true;
-        }
-        return false;
+
+        // 只有【插件启用 + 物理凭据就绪】，渠道才被视为完全就绪可广播
+        const isReady = isPluginEnabled && credCheck.ready;
+
+        return {
+            isReady,
+            isPluginEnabled,
+            isBrandActive,
+            credReady: credCheck.ready,
+            credMode: credCheck.mode,
+            credLabel: credCheck.label
+        };
     };
 
     const activePlatforms = [];
-    // 遍历所有已知平台清单
     Object.keys(platformMetadata).forEach(key => {
         const itemCfg = syndicationCfg[key] || syndicationCfg[key.replace('_', '')] || {};
-        const isReady = checkChannelReadiness(key, itemCfg);
-        const isBrandActive = checkBrandActive(key, itemCfg);
+        const status = evaluateChannelStatus(key, itemCfg);
         const meta = platformMetadata[key];
 
         activePlatforms.push({
@@ -136,9 +144,11 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
             name: meta.name,
             icon: meta.icon,
             desc: meta.desc,
-            isReady: isReady,
-            isBrandActive: isBrandActive,
-            isChecked: isReady && isBrandActive
+            isReady: status.isReady,
+            isBrandActive: status.isBrandActive,
+            credLabel: status.credLabel,
+            credReady: status.credReady,
+            isChecked: status.isReady && status.isBrandActive
         });
     });
     window.currentActivePlatforms = activePlatforms;
@@ -188,12 +198,12 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
         drawerEl.id = 'article-syndicate-drawer';
         drawerEl.className = 'syndicate-drawer-overlay';
         drawerEl.style.cssText = `
-            position: fixed; top: 0; right: -440px; width: 420px; height: 100vh;
+            position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
             background: rgba(15, 17, 26, 0.96); backdrop-filter: blur(16px);
             border-left: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
             box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6); z-index: 9999;
             transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;
+            padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;
             color: var(--text-bright, #fff); font-family: system-ui, -apple-system, sans-serif;
         `;
         document.body.appendChild(drawerEl);
@@ -235,7 +245,7 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
             </div>
         </div>
 
-        <!-- 2. 勾选社交分发平台 (支持一键点击 ⚙️ 去配置/激活 直达插件配置面板) -->
+        <!-- 2. 勾选社交分发平台 (多因子凭据智能判决与一键配置直达) -->
         <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto;">
             <label style="font-size: 0.82rem; font-weight: 600; color: var(--accent-primary, #00f2fe); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                 <span>2. 勾选目标社媒分发渠道</span>
@@ -256,7 +266,6 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
                     const remoteUrl = record ? record.remote_url : null;
                     const noUpdateSupport = ['medium', 'substack', 'zhihu'].includes(p.id.toLowerCase());
 
-                    let statusBadgeHtml = '🟢 已就绪';
                     let actionBadgeHtml = '🚀 首次发布 (Create)';
                     let actionBadgeBg = 'rgba(0, 242, 255, 0.12)';
                     let actionBadgeColor = '#00f2fe';
@@ -274,13 +283,18 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
                     }
 
                     return `
-                    <div class="glass-panel" style="padding: 10px 12px; border-radius: 8px; border: 1px solid ${hasRemoteRecord ? 'rgba(187, 134, 252, 0.35)' : (p.isReady ? 'rgba(0, 255, 136, 0.25)' : 'rgba(255,255,255,0.06)')}; display: flex; flex-direction: column; gap: 8px; opacity: ${p.isReady ? '1' : '0.65'}; background: ${hasRemoteRecord ? 'rgba(187, 134, 252, 0.04)' : (p.isReady ? 'rgba(0, 255, 136, 0.03)' : 'rgba(255,255,255,0.01)')};">
+                    <div class="glass-panel" style="padding: 10px 12px; border-radius: 8px; border: 1px solid ${hasRemoteRecord ? 'rgba(187, 134, 252, 0.35)' : (p.isReady ? 'rgba(0, 255, 136, 0.25)' : 'rgba(255,255,255,0.06)')}; display: flex; flex-direction: column; gap: 8px; opacity: ${p.isReady ? '1' : '0.75'}; background: ${hasRemoteRecord ? 'rgba(187, 134, 252, 0.04)' : (p.isReady ? 'rgba(0, 255, 136, 0.03)' : 'rgba(255,255,255,0.01)')};">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <input type="checkbox" value="${p.id}" class="syndicate-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'} style="accent-color: var(--accent-secondary); width: 16px; height: 16px; cursor: ${p.isReady ? 'pointer' : 'not-allowed'};">
                                 <div>
-                                    <div style="font-size: 0.82rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'};">${p.icon} ${p.name}</div>
-                                    <div style="font-size: 0.68rem; color: var(--text-dim);">${p.desc}</div>
+                                    <div style="font-size: 0.82rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'}; display: flex; align-items: center; gap: 6px;">
+                                        <span>${p.icon} ${p.name}</span>
+                                        <span style="font-size: 0.64rem; font-weight: normal; padding: 1px 5px; border-radius: 3px; background: ${p.isReady ? 'rgba(0, 255, 136, 0.12)' : 'rgba(245, 158, 11, 0.12)'}; color: ${p.isReady ? '#00ff88' : '#f59e0b'}; border: 1px solid ${p.isReady ? 'rgba(0, 255, 136, 0.3)' : 'rgba(245, 158, 11, 0.3)'};">
+                                            ${p.isReady ? `🟢 ${p.credLabel}` : `⚠️ ${p.credLabel}`}
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 2px;">${p.desc}</div>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;">
@@ -288,7 +302,7 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
                                     <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; background: ${actionBadgeBg}; color: ${actionBadgeColor}; border: 1px solid ${actionBadgeColor}55; font-weight: 600;">${actionBadgeHtml}</span>
                                     <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="修改此渠道的 Token 密钥或配置" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;">⚙️</button>
                                 ` : `
-                                    <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="前往配置并激活此渠道" style="background: rgba(0, 242, 255, 0.15); border: 1px solid rgba(0, 242, 255, 0.35); color: var(--neon-cyan, #00f2fe); border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap;">⚙️ 去配置/激活</button>
+                                    <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="前往配置并激活此渠道" style="background: rgba(0, 242, 255, 0.15); border: 1px solid rgba(0, 242, 255, 0.35); color: var(--neon-cyan, #00f2fe); border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap;">⚙️ 去配置/补全凭据</button>
                                 `}
                             </div>
                         </div>
@@ -314,7 +328,26 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
             </div>
         </div>
 
-        <!-- 3. 实时传输与进度指示卡片 -->
+        <!-- 3. 👁️ 富文本广播卡片实时预览 (Broadcast Live Preview) 折叠面板 -->
+        <details class="glass-panel" id="syndicate-live-preview-details" style="padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02);">
+            <summary style="font-size: 0.78rem; font-weight: 600; color: var(--accent-secondary, #00f2fe); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+                <span>👁️ 实时广播卡片视觉预览</span>
+                <span style="font-size: 0.68rem; color: var(--text-dim); font-weight: normal;">展开查看各平台真实排版 ▾</span>
+            </summary>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;" id="syndicate-preview-content-box">
+                <!-- 动态预览渲染区 -->
+                <div style="display: flex; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;" id="syndicate-preview-tabs">
+                    <button type="button" class="mini-btn preview-tab-btn active" data-ptarget="discord" onclick="window.switchSyndicatePreviewTarget('discord')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(0, 242, 255, 0.2); color: #fff; border: 1px solid rgba(0, 242, 255, 0.4); cursor: pointer;">💬 Discord Embed</button>
+                    <button type="button" class="mini-btn preview-tab-btn" data-ptarget="telegram" onclick="window.switchSyndicatePreviewTarget('telegram')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">✈️ Telegram Card</button>
+                    <button type="button" class="mini-btn preview-tab-btn" data-ptarget="devto" onclick="window.switchSyndicatePreviewTarget('devto')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">👩‍💻 Dev.to 文章</button>
+                </div>
+                <div id="syndicate-card-preview-renderer" style="min-height: 100px;">
+                    <!-- 预览卡片内容将由 JS 动态装配 -->
+                </div>
+            </div>
+        </details>
+
+        <!-- 4. 实时传输与进度指示卡片 -->
         <div id="syndicate-progress-panel" style="display: none; padding: 12px; background: rgba(0, 242, 255, 0.06); border: 1px solid rgba(0, 242, 255, 0.25); border-radius: 8px; flex-direction: column; gap: 8px;">
             <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-secondary); display: flex; align-items: center; justify-content: space-between;">
                 <span id="syndicate-progress-title">⚙️ 正在处理分发管线...</span>
@@ -367,6 +400,9 @@ window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
     });
 
     window.updateSyndicateSelectionCounter();
+    if (typeof window.renderSyndicateCardPreview === 'function') {
+        window.renderSyndicateCardPreview('discord');
+    }
 
     setTimeout(() => {
         drawerEl.style.right = '0px';
@@ -497,6 +533,15 @@ window.returnToSyndicateDrawer = async function () {
 
     window.updateDrawerReturnButtons();
 
+    // ⚡ 静默刷新全局设置数据，保证刚在插件抽屉保存的凭据立即生效
+    try {
+        const fetchApi = window.apiFetch || (async (url, opts) => (await fetch(url, opts)).json());
+        const cfgRes = await fetchApi('/api/settings/get');
+        if (cfgRes && cfgRes.config) {
+            window.settingsData = cfgRes.config;
+        }
+    } catch (_) {}
+
     // 🛡️ 瞬态防误触防线：1. 立即无缝拉起社媒分发抽屉（保持遮罩常驻，彻底阻断底层主页面暴露）
     if (typeof window.openArticleSyndicationDrawer === 'function') {
         await window.openArticleSyndicationDrawer(ctx.relPath, ctx.title);
@@ -523,7 +568,7 @@ window.returnToSyndicateDrawer = async function () {
 window.closeArticleSyndicationDrawer = function () {
     const drawerEl = document.getElementById('article-syndicate-drawer');
     if (drawerEl) {
-        drawerEl.style.right = '-440px';
+        drawerEl.style.right = '-500px';
     }
     const backdropEl = document.getElementById('article-syndicate-drawer-backdrop');
     if (backdropEl) {
@@ -599,6 +644,9 @@ window.onSyndicateLangChange = function (radioInput, relPath) {
     if (typeof window.updateSyndicatePlatformCards === 'function') {
         window.updateSyndicatePlatformCards(relPath || window.currentSyndicatingRelPath);
     }
+    if (typeof window.renderSyndicateCardPreview === 'function') {
+        window.renderSyndicateCardPreview();
+    }
 };
 
 window.updateSyndicatePlatformCards = async function (relPath) {
@@ -650,13 +698,18 @@ window.updateSyndicatePlatformCards = async function (relPath) {
         }
 
         return `
-        <div class="glass-panel" style="padding: 10px 12px; border-radius: 8px; border: 1px solid ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.45)' : 'rgba(187, 134, 252, 0.35)') : (p.isReady ? 'rgba(0, 255, 136, 0.25)' : 'rgba(255,255,255,0.06)')}; display: flex; flex-direction: column; gap: 8px; opacity: ${p.isReady ? '1' : '0.65'}; background: ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.05)' : 'rgba(187, 134, 252, 0.04)') : (p.isReady ? 'rgba(0, 255, 136, 0.03)' : 'rgba(255,255,255,0.01)')};">
+        <div class="glass-panel" style="padding: 10px 12px; border-radius: 8px; border: 1px solid ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.45)' : 'rgba(187, 134, 252, 0.35)') : (p.isReady ? 'rgba(0, 255, 136, 0.25)' : 'rgba(255,255,255,0.06)')}; display: flex; flex-direction: column; gap: 8px; opacity: ${p.isReady ? '1' : '0.75'}; background: ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.05)' : 'rgba(187, 134, 252, 0.04)') : (p.isReady ? 'rgba(0, 255, 136, 0.03)' : 'rgba(255,255,255,0.01)')};">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" value="${p.id}" class="syndicate-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'} style="accent-color: var(--accent-secondary); width: 16px; height: 16px; cursor: ${p.isReady ? 'pointer' : 'not-allowed'};">
                     <div>
-                        <div style="font-size: 0.82rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'};">${p.icon} ${p.name}</div>
-                        <div style="font-size: 0.68rem; color: var(--text-dim);">${p.desc}</div>
+                        <div style="font-size: 0.82rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'}; display: flex; align-items: center; gap: 6px;">
+                            <span>${p.icon} ${p.name}</span>
+                            <span style="font-size: 0.64rem; font-weight: normal; padding: 1px 5px; border-radius: 3px; background: ${p.isReady ? 'rgba(0, 255, 136, 0.12)' : 'rgba(245, 158, 11, 0.12)'}; color: ${p.isReady ? '#00ff88' : '#f59e0b'}; border: 1px solid ${p.isReady ? 'rgba(0, 255, 136, 0.3)' : 'rgba(245, 158, 11, 0.3)'};">
+                                ${p.isReady ? `🟢 ${p.credLabel}` : `⚠️ ${p.credLabel}`}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 2px;">${p.desc}</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -664,7 +717,7 @@ window.updateSyndicatePlatformCards = async function (relPath) {
                         <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; background: ${actionBadgeBg}; color: ${actionBadgeColor}; border: 1px solid ${actionBadgeColor}55; font-weight: 600;">${actionBadgeHtml}</span>
                         <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="修改此渠道的 Token 密钥或配置" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;">⚙️</button>
                     ` : `
-                        <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="前往配置并激活此渠道" style="background: rgba(0, 242, 255, 0.15); border: 1px solid rgba(0, 242, 255, 0.35); color: var(--neon-cyan, #00f2fe); border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap;">⚙️ 去配置/激活</button>
+                        <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="前往配置并激活此渠道" style="background: rgba(0, 242, 255, 0.15); border: 1px solid rgba(0, 242, 255, 0.35); color: var(--neon-cyan, #00f2fe); border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap;">⚙️ 去配置/补全凭据</button>
                     `}
                 </div>
             </div>
@@ -1143,3 +1196,89 @@ window.retrySinglePlatform = async function(relPath, channelId) {
         }
     }
 };
+
+// 👁️ [实时广播卡片渲染引擎 (Broadcast Live Preview Engine)]
+window.currentSyndicatePreviewTarget = 'discord';
+
+window.switchSyndicatePreviewTarget = function(target) {
+    window.currentSyndicatePreviewTarget = target;
+    const tabBtns = document.querySelectorAll('#syndicate-preview-tabs .preview-tab-btn');
+    tabBtns.forEach(btn => {
+        if (btn.getAttribute('data-ptarget') === target) {
+            btn.classList.add('active');
+            btn.style.background = 'rgba(0, 242, 255, 0.2)';
+            btn.style.color = '#fff';
+            btn.style.borderColor = 'rgba(0, 242, 255, 0.4)';
+        } else {
+            btn.classList.remove('active');
+            btn.style.background = 'rgba(255, 255, 255, 0.04)';
+            btn.style.color = 'var(--text-dim)';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        }
+    });
+    window.renderSyndicateCardPreview(target);
+};
+
+window.renderSyndicateCardPreview = function(target) {
+    target = target || window.currentSyndicatePreviewTarget || 'discord';
+    const container = document.getElementById('syndicate-card-preview-renderer');
+    if (!container) return;
+
+    const langRadio = document.querySelector('input[name="syndicate_lang"]:checked');
+    const selectedLang = (langRadio ? langRadio.value : 'zh').toUpperCase();
+    const title = window.currentSyndicatingTitle || window.currentSyndicatingRelPath || '未命名文稿';
+    const siteUrl = window.settingsData?.compliance?.site_url || 'https://your-domain.com';
+    const slug = (window.currentSyndicatingRelPath || 'article').replace(/\.md$/i, '');
+    const canonicalUrl = `${siteUrl.replace(/\/$/, '')}/${slug}`;
+
+    if (target === 'discord') {
+        container.innerHTML = `
+            <div style="background: #2b2d31; border-radius: 6px; padding: 12px 14px; border-left: 4px solid #3498db; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 0.68rem; font-weight: 700; color: #00f2fe;">✨ Illacme Sovereign Broadcast</span>
+                    <span style="font-size: 0.62rem; padding: 1px 5px; border-radius: 3px; background: rgba(0, 242, 255, 0.15); color: #00f2fe;">[${selectedLang}]</span>
+                </div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: #00a8fc; margin-bottom: 6px; line-height: 1.3;">
+                    📝 ${title}
+                </div>
+                <div style="font-size: 0.76rem; color: #dbdee1; line-height: 1.45; margin-bottom: 8px;">
+                    这是文章在 [${selectedLang}] 语种下的自动生成摘要与段落提炼。多语言内容将通过工业级 AST 解析与 Canonical 指向精准对齐。
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; color: #949ba4; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;">🔗 ${canonicalUrl}</span>
+                    <span>⚡ SSG 全息广播</span>
+                </div>
+            </div>
+        `;
+    } else if (target === 'telegram') {
+        container.innerHTML = `
+            <div style="background: #182533; border-radius: 8px; padding: 12px 14px; border: 1px solid rgba(41, 182, 246, 0.25); font-family: system-ui, -apple-system, sans-serif;">
+                <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
+                    📌 <b>${title}</b> <span style="font-size: 0.65rem; color: #29b6f6;">[${selectedLang}]</span>
+                </div>
+                <div style="font-size: 0.76rem; color: #e0e0e0; line-height: 1.45; margin-bottom: 10px;">
+                    这是推送到 Telegram 频道的摘要内容。支持 Markdown 格式与超链接跳转。
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <span style="background: rgba(41, 182, 246, 0.18); border: 1px solid rgba(41, 182, 246, 0.4); color: #29b6f6; padding: 3px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">📖 阅读全文 ↗</span>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.1); font-family: system-ui, -apple-system, sans-serif;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <span style="font-size: 0.65rem; background: #000; color: #fff; padding: 1px 6px; border-radius: 3px; font-weight: 700;">DEV.TO</span>
+                    <span style="font-size: 0.72rem; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;">Canonical: <code>${canonicalUrl}</code></span>
+                </div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-bottom: 6px;">
+                    ${title}
+                </div>
+                <div style="font-size: 0.72rem; color: var(--accent-secondary, #00f2fe); display: flex; gap: 6px;">
+                    <span>#markdown</span> <span>#i18n</span> <span>#publishing</span>
+                </div>
+            </div>
+        `;
+    }
+};
+

@@ -42,16 +42,22 @@ def test_license_guard_interception_emits_security_alert():
     def _on_alert(category, message, **kwargs):
         alerts.append((category, message))
         
-    # 模拟未激活授权版 (清空全局警告缓存以避免测试污染)
+    # 模拟未激活授权版且切换至自定义品牌 (清空全局警告缓存以避免测试污染)
     LicenseGuard._warned_features.clear()
-    with patch.object(LicenseGuard, "is_licensed", return_value=False):
-        # 拦截多语言矩阵功能调用
-        allowed = LicenseGuard.is_pro_feature_allowed("multi_language")
-        
-        assert allowed is False
-        assert len(alerts) == 1
-        assert alerts[0][0] == "LICENSE_LIMIT"
-        assert "系统已拦截对未授权专业版功能" in alerts[0][1]
+    from core.governance.imprint_manager import im
+    old_imp = im.active_imprint
+    try:
+        im.active_imprint = "custom_press"
+        with patch.object(LicenseGuard, "is_licensed", return_value=False):
+            # 拦截多语言矩阵功能调用
+            allowed = LicenseGuard.is_pro_feature_allowed("multi_language")
+            
+            assert allowed is False
+            assert len(alerts) == 1
+            assert alerts[0][0] == "LICENSE_LIMIT"
+            assert "系统已拦截对未授权专业版功能" in alerts[0][1]
+    finally:
+        im.active_imprint = old_imp
 
 def test_resource_guard_overload_emits_throttle_event():
     """测试物理过载紧急削峰和负载恢复时能够发射 UI_RESOURCE_THROTTLE 事件"""

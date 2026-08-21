@@ -28,10 +28,11 @@ _publish_lock = threading.Lock()
 _is_publishing = False
 _pending_sync_queue = []
 
-def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None, target_langs: Optional[List[str]] = None, clear_cache: bool = False) -> Optional[int]:
+def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = False, sandbox: bool = False, requested_paths: Optional[List[str]] = None, target_langs: Optional[List[str]] = None, clear_cache: bool = False, local_only: bool = False) -> Optional[int]:
     """
     🚀 [V51.0] 异步同步触发器：专供 API/Dashboard 调用
     [V52.3 升级]：支持任务排队与语种无缝追加机制，杜绝二次并发碰撞拦截。
+    [V100.9 升级]：支持 local_only 模式，专供「发布预览 (Publish & Preview)」本地快速装帧。
     """
     global _is_publishing, _pending_sync_queue
     
@@ -41,7 +42,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             _pending_sync_queue.append({
                 'dry_run': dry_run, 'force': force, 'sandbox': sandbox,
                 'requested_paths': requested_paths, 'target_langs': target_langs,
-                'clear_cache': clear_cache
+                'clear_cache': clear_cache, 'local_only': local_only
             })
             return 999999  # 返回排队标记 ID
 
@@ -55,6 +56,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             self.watch = False
             self.path = requested_paths
             self.target_langs = target_langs
+            self.local_only = local_only
     
     args = MockArgs()
     

@@ -1,9 +1,9 @@
 from core.adapters.egress.webhook.base import BaseWebhookDriver
 
 class TelegramDriver(BaseWebhookDriver):
-    DISPLAY_NAME = "Telegram Bot 适配器"
+    DISPLAY_NAME = "Telegram 运维事件通知"
     VERSION = "V1.0"
-    DESCRIPTION = "利用 Telegram Bot API 发送 Markdown/HTML 格式消息至指定 Telegram 群组或 Channel。"
+    DESCRIPTION = "面向站长与运维的系统监控通道：利用 Telegram Bot API 实时接收全站编译就绪、AI 算力熔断等系统事件推送。"
 
     def match(self, url: str) -> bool:
         return 'api.telegram.org' in url or not url

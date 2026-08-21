@@ -243,7 +243,10 @@ class JanitorService:
         for f_abs in all_files:
             norm_path = os.path.realpath(f_abs).lower()
             is_fresh = norm_path in self.fresh_paths
-            is_amnesty = any(term in norm_path for term in ['/static/', '/assets/', 'favicon', 'search_index', 'link_graph'])
+            is_amnesty = any(term in norm_path for term in [
+                '/static/', '/assets/', 'favicon', 'search_index', 'link_graph',
+                'index.html', 'index.htm', '404.html', 'sitemap.xml', 'robots.txt', 'graph.json'
+            ])
             
             if not is_fresh and not is_amnesty:
                 to_remove.append(f_abs)

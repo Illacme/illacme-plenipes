@@ -28,6 +28,22 @@ class AIAlignmentProcessor(BaseSeoProcessor):
     """
 
     def process(self, ctx) -> dict:
+        import hashlib
+        body = getattr(ctx, 'ai_pure_body', '') or getattr(ctx, 'raw_body', '')
+        # 截取前 2000 字避免超出 Token 限制
+        body_excerpt = body[:2000] if len(body) > 2000 else body
+        rel_path = getattr(ctx, 'rel_path', '') or getattr(ctx, 'title', '')
+        current_hash = getattr(ctx, 'current_hash', None) or hashlib.md5(body_excerpt.encode('utf-8')).hexdigest()
+        engine_meta = getattr(getattr(ctx, 'engine', None), 'meta', None)
+
+        # 🚀 [V101.0] 增量缓存：基于原稿内容 Hash 检查母语 AI 算法对齐 SEO 缓存
+        if engine_meta and rel_path and current_hash and not getattr(ctx, 'clear_cache', False):
+            doc_info = engine_meta.get_doc_info(rel_path) or {}
+            cached_seo = doc_info.get("ai_seo_alignment")
+            if isinstance(cached_seo, dict) and cached_seo.get("hash") == current_hash and cached_seo.get("data"):
+                tlog.info(f"✨ [AI 算法对齐] 命中本地 SEO 缓存，跳过大模型投喂 ({ctx.title})")
+                return self._respect_frontmatter(ctx.fm_dict, cached_seo.get("data", {}))
+
         tlog.info(f"🛰️ [AI 算法对齐] 正在为 '{ctx.title}' 执行智能 SEO 投喂...")
 
         translator = getattr(ctx.engine, 'translator', None)
@@ -35,10 +51,6 @@ class AIAlignmentProcessor(BaseSeoProcessor):
             tlog.warning("⚠️ [AI 算法对齐] AI 引擎未就绪，回退至启发式处理")
             from .heuristic import HeuristicSeoProcessor
             return HeuristicSeoProcessor().process(ctx)
-
-        body = getattr(ctx, 'ai_pure_body', '') or getattr(ctx, 'raw_body', '')
-        # 截取前 2000 字避免超出 Token 限制
-        body_excerpt = body[:2000] if len(body) > 2000 else body
         
         source_lang = getattr(ctx, 'source_lang', 'zh')
         from core.utils.language_hub import LanguageHub
@@ -54,7 +66,7 @@ class AIAlignmentProcessor(BaseSeoProcessor):
             style = None
             if hasattr(ctx, "route_source") and ctx.route_source:
                 from core.governance.license_guard import LicenseGuard
-                if LicenseGuard.is_licensed():
+                if LicenseGuard.is_pro_feature_allowed("multi_dialect"):
                     for item in ctx.engine.config.route_matrix:
                         if getattr(item, 'source', None) == ctx.route_source:
                             style = getattr(item, 'style', None)
@@ -105,6 +117,14 @@ class AIAlignmentProcessor(BaseSeoProcessor):
             tlog.warning(f"⚠️ [AI 算法对齐] AI 处理异常: {e}，回退至启发式")
             from .heuristic import HeuristicSeoProcessor
             return HeuristicSeoProcessor().process(ctx)
+
+        # 🚀 [V101.0] 持久化缓存：将新生成的 SEO 投喂数据记录至账本
+        if engine_meta and rel_path and current_hash and seo_result:
+            try:
+                doc_info = engine_meta.get_doc_info(rel_path) or {}
+                engine_meta.sqlite.upsert_document(rel_path, {**doc_info, "ai_seo_alignment": {"hash": current_hash, "data": seo_result}})
+            except Exception as e:
+                tlog.debug(f"⚠️ [AI 算法对齐] 写入 SEO 缓存失败: {e}")
 
         # 应用元数据优先原则
         seo_result = self._respect_frontmatter(ctx.fm_dict, seo_result)

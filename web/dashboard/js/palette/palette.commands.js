@@ -27,6 +27,19 @@
     window.getPaletteCommandsList = function() {
         return [
             {
+                id: 'preview_site',
+                title: '🌐 本地预览 (Open Local Preview Site)',
+                icon: '🌐',
+                shortcut: 'Enter',
+                action: () => {
+                    if (typeof window.triggerPreview === 'function') {
+                        window.triggerPreview();
+                    } else {
+                        notify('预览接口未就绪', 'error');
+                    }
+                }
+            },
+            {
                 id: 'publish',
                 title: '🚀 全域发布 (Trigger Full Syndication)',
                 icon: '🚀',

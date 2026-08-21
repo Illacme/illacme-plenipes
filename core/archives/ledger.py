@@ -11,26 +11,38 @@ import time
 import atexit
 import shutil
 from .sqlite_backend import SQLiteBackend
+from .metadata_file_store import MetadataFileStore
 from core.utils.tracing import tlog
 
 class MetadataManager:
-    """🚀 [V23.0] 纯净 SQLite 元数据管理器"""
+    """🚀 [V23.0] 纯净 SQLite + 物理文件双轨元数据管理器"""
     def __init__(self, cache_path, auto_save_interval=2.0, engine=None):
         self.auto_save_interval = auto_save_interval
         self.lock = threading.RLock()
         self.engine = engine
         
-        # 🚀 [V23.0] 强制使用 .db 扩展名，不再关心 .json
+        # 🚀 [V23.0] 强制使用 .db 扩展名
         db_path = cache_path.replace(".json", ".db")
         if not db_path.endswith(".db"):
             db_path += ".db"
             
         self.sqlite = SQLiteBackend(db_path, engine=engine)
         
+        # 📂 [V106.0] 物理文件双轨持久化存储器
+        meta_file_dir = os.path.join(os.path.dirname(db_path), "metadata")
+        self.file_store = MetadataFileStore(meta_file_dir)
+
         # 内存级快速索引 (仅用于 Link Resolution)
         self.data = {"link_index": {}}
         self._refresh_memory_index()
         
+        # 🩹 [V106.0] 自动冷备自愈：若 SQLite 数据库为空但物理元数据镜像存在，自动无损回填
+        try:
+            if self.sqlite.get_total_documents_count() == 0:
+                self.rebuild_from_file_cache()
+        except Exception as e:
+            tlog.warning(f"⚠️ [账本自愈检测跳过]: {e}")
+
         atexit.register(self.force_save)
 
     def _refresh_memory_index(self):
@@ -64,7 +76,7 @@ class MetadataManager:
     def register_document(self, rel_path, title, **kwargs):
         """
         核心方法：注册或更新文档元数据
-        支持深度合并，防止属性丢失。
+        支持深度合并，防止属性丢失；同时双轨物理落盘。
         """
         with self.lock:
             existing = self.sqlite.get_document(rel_path) or {}
@@ -89,7 +101,7 @@ class MetadataManager:
                 "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang"),
                 "target_slot": kwargs.get("target_slot") if kwargs.get("target_slot") is not None else existing.get("target_slot", "docs"),
                 "route_style": kwargs.get("route_style") if kwargs.get("route_style") is not None else existing.get("route_style"),
-                # 🚀 [V100.4] 补齐双链增量缓存通道所需字段 (避免 metadata_json 序列化时被过滤)
+                # 🚀 [V100.4] 补齐双链增量缓存通道所需字段
                 "mtime": kwargs.get("mtime") if kwargs.get("mtime") is not None else existing.get("mtime"),
                 "links": list(kwargs.get("links")) if kwargs.get("links") is not None else existing.get("links"),
                 "detected_lang": kwargs.get("detected_lang") if kwargs.get("detected_lang") is not None else existing.get("detected_lang"),
@@ -98,6 +110,10 @@ class MetadataManager:
             }
             
             self.sqlite.upsert_document(rel_path, doc_data)
+            
+            # 📂 [V106.0] 双轨持久化至物理 JSON 镜像
+            if hasattr(self, 'file_store') and self.file_store:
+                self.file_store.save_document_metadata(rel_path, doc_data)
             
             # 更新内存索引
             idx = self.data["link_index"]
@@ -110,7 +126,45 @@ class MetadataManager:
     def remove_document(self, rel_path):
         with self.lock:
             self.sqlite.delete_document(rel_path)
+            if hasattr(self, 'file_store') and self.file_store:
+                self.file_store.delete_document_metadata(rel_path)
             self._refresh_memory_index()
+
+    def clear_fingerprints_only(self):
+        """⚡ [V106.0] 仅清空文档指纹记录，保留 AI Slug、SEO 元数据、译文记录与物理镜像"""
+        with self.lock:
+            self.sqlite.clear_fingerprints_only()
+
+    def clear_ai_metadata(self, mode="all"):
+        """🏷️ [V106.0] 清空 AI 生成的 Slug 与 SEO 元数据（含数据库与物理镜像）"""
+        with self.lock:
+            self.sqlite.clear_ai_metadata(mode=mode)
+            if mode == "all" and hasattr(self, 'file_store') and self.file_store:
+                self.file_store.clear_all_metadata()
+            self._refresh_memory_index()
+
+    def rebuild_from_file_cache(self) -> int:
+        """🩹 [V106.0] 从物理元数据文件扫描并自愈重建 SQLite 账本"""
+        with self.lock:
+            if not hasattr(self, 'file_store') or not self.file_store:
+                return 0
+            records = self.file_store.scan_all_metadata()
+            if not records:
+                return 0
+            for rel_path, doc_data in records.items():
+                self.sqlite.upsert_document(rel_path, doc_data)
+            self._refresh_memory_index()
+            tlog.info(f"🩹 [账本自愈] 已成功从物理元信息快照重建 {len(records)} 篇文档账本！")
+            return len(records)
+
+    def clear_all_documents(self, clear_files=True):
+        """🗑️ [V105.0] 彻底清空所有文档账本与索引"""
+        with self.lock:
+            self.sqlite.clear_all_documents()
+            if clear_files and hasattr(self, 'file_store') and self.file_store:
+                self.file_store.clear_all_metadata()
+            self._refresh_memory_index()
+
 
     def update_egress_status(self, rel_path, channel_id, status, error=None, stage=None, url=None):
         """🚀 [V35.2] 记录特定渠道的分发事务状态"""

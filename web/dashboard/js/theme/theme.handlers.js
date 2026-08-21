@@ -8,9 +8,10 @@ window.ThemeHandlers = {
      * 🎬 切换主题
      */
     async switchTheme(themeId) {
+        const themeName = window.getThemeDisplayName ? window.getThemeDisplayName(themeId) : themeId;
         const result = await Swal.fire({
             title: '🎨 确认切换装帧主题？',
-            html: `确定要将当前版图的主题切换为 <b style="color:var(--accent-secondary);">${themeId.toUpperCase()}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">系统将自动重新对齐内容路径与编译依赖。</span>`,
+            html: `确定要将当前版图的主题切换为 <b style="color:var(--accent-secondary);">${themeName}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">系统将自动重新对齐内容路径与编译依赖。</span>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: '确定切换',
@@ -21,13 +22,13 @@ window.ThemeHandlers = {
             cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
         if (!result.isConfirmed) { if (typeof addAudit === 'function') addAudit(`🎬 已取消主题切换。`); return; }
-        if (typeof addAudit === 'function') addAudit(`🎨 正在执行装帧切换: ${themeId.toUpperCase()}...`);
+        if (typeof addAudit === 'function') addAudit(`🎨 正在执行装帧切换: ${themeName}...`);
         const success = await window.ThemeAPI.switchTheme(themeId);
         
         if (success) {
             // 重新渲染当前分类以更新 UI 状态
             window._shouldScrollToTopAfterThemeSwitch = true;
-            if (typeof window.showToast === 'function') window.showToast(`✨ 装帧主题已成功切换为 ${themeId.toUpperCase()}`, 'success');
+            if (typeof window.showToast === 'function') window.showToast(`✨ 装帧主题已成功切换为 ${themeName}`, 'success');
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
             
@@ -51,9 +52,10 @@ window.ThemeHandlers = {
      * 🚀 引导初始化
      */
     async bootstrapTheme(themeId) {
+        const themeName = window.getThemeDisplayName ? window.getThemeDisplayName(themeId) : themeId;
         const result = await Swal.fire({
             title: '🚀 确认下载并初始化主题？',
-            html: `确定要部署并启用主题 <b style="color:var(--accent-secondary);">${themeId.toUpperCase()}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">这可能需要从网络或本地缓存拉取高保真依赖，并自动设置为当前选用主题。</span>`,
+            html: `确定要部署并启用主题 <b style="color:var(--accent-secondary);">${themeName}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">这可能需要从网络或本地缓存拉取高保真依赖，并自动设置为当前选用主题。</span>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '开始部署',
@@ -64,11 +66,11 @@ window.ThemeHandlers = {
             cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
         });
         if (!result.isConfirmed) { if (typeof addAudit === 'function') addAudit(`🚀 已取消主题部署初始化。`); return; }
-        if (typeof addAudit === 'function') addAudit(`🚀 正在部署并启用主题: ${themeId.toUpperCase()}...`);
+        if (typeof addAudit === 'function') addAudit(`🚀 正在部署并启用主题: ${themeName}...`);
         const success = await window.ThemeAPI.bootstrapTheme(themeId);
         
         if (success) {
-            if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeId.toUpperCase()}' 已部署成功并启用。`, "success");
+            if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeName}' 已部署成功并启用。`, "success");
             if (typeof loadPlugins === 'function') await loadPlugins();
             window._shouldScrollToTopAfterThemeSwitch = true;
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
@@ -118,18 +120,15 @@ window.renderThemesCategory = () => {
                     if (window._shouldScrollToTopAfterThemeSwitch) {
                         window._shouldScrollToTopAfterThemeSwitch = false;
                         setTimeout(() => {
-                            const c = document.querySelector('.view-panel.active .tab-content-area');
-                            if (c) { c.scrollTop = 0; c.scrollTo({ top: 0, behavior: 'smooth' }); }
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            document.documentElement.scrollTop = 0;
-                            document.body.scrollTop = 0;
-                        }, 100);
+                            const scrollContainer = document.querySelector('#view-settings .tab-content-area');
+                            if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 50);
                     }
                 }
             } finally {
                 window._isRefreshingThemes = false;
             }
-        }, 10);
+        }, 30);
     }
 
     const allPlugins = window.allPlugins || [];
@@ -164,8 +163,9 @@ window.openPluginConfig = window.openPluginConfig || async function(id) {
     }
     
     // 降级兜底 Swal
+    const themeName = window.getThemeDisplayName ? window.getThemeDisplayName(id) : id;
     Swal.fire({
-        title: `⚙️ 主题配置: ${id.toUpperCase()}`,
+        title: `⚙️ 主题配置: ${themeName}`,
         text: '请前往 [PLUGINS / 插件中心] 进行完整物理管道参数划定与热重载配置。',
         icon: 'info',
         background: 'hsla(220, 43%, 7%, 0.98)',

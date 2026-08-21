@@ -75,8 +75,13 @@ class BinderyUnmasker:
         return futures
 
     def unmask(self, body, lang_code, route_prefix, route_source, mapped_sub_dir, masks, is_dry_run, is_target, asset_index, node_assets, assets_lock, node_outlinks, slug=None, rel_path=None):
-        # 🚀 [V11.7] 动态深度感知
-        route_path = os.path.join(route_prefix or "", mapped_sub_dir or "")
+        eff_sub = mapped_sub_dir
+        if mapped_sub_dir and route_prefix:
+            sub_clean = mapped_sub_dir.strip("/\\")
+            prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
+            if sub_clean in prefix_parts:
+                eff_sub = ""
+        route_path = os.path.join(route_prefix or "", eff_sub or "")
         depth = len([p for p in route_path.replace('\\', '/').split('/') if p]) + 1
         root_path = "../" * depth
         

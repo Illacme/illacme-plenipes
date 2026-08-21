@@ -24,7 +24,7 @@ class TranslatorFactory:
         """🚀 [V55.26] 动态方言获取：优先从缓存读取，否则从物理磁盘加载"""
         # 🚀 [V55.26] 授权版主权检查
         from core.governance.license_guard import LicenseGuard
-        if style_id != "default" and not LicenseGuard.is_licensed():
+        if style_id != "default" and not LicenseGuard.is_pro_feature_allowed("multi_dialect"):
             tlog.warning(f"🛡️ [License Guard] 社区版尝试加载非默认方言 [{style_id}]，已强制降级。")
             return base_prompts
             

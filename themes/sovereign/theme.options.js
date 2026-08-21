@@ -1,0 +1,78 @@
+/**
+ * 🚀 [V88.0 Live Hot-Reload] 自动生成的主题选项常量，请勿手动编辑
+ */
+export const themeOptions = {
+  "site_name": "Illacme Press",
+  "logo_path": "/static/logo.png",
+  "footer_copyright": "© 2026 Illacme Sovereign. All Rights Reserved.",
+  "enable_custom_style": false,
+  "accent_color": "#00f5ff",
+  "font_family": "Outfit, sans-serif",
+  "enable_glassmorphism": true,
+  "enable_dark_mode": true,
+  "hero_title": "Illacme Sovereign",
+  "hero_subtitle": "Premium Decentralized Publishing Base Platform.",
+  "github_repo": "",
+  "site_description": "全球私人出版社——从灵感到全球分发的一站式 AI 原生出版引擎",
+  "navbar_items": [
+    {
+      "type": "link",
+      "to": "/blog/",
+      "label": "📚 Blog",
+      "raw_label": "Blog",
+      "icon": "📚",
+      "position": "left",
+      "target_slot": "blog"
+    },
+    {
+      "type": "link",
+      "label": "🌐 GitHub / 官网",
+      "raw_label": "GitHub / 官网",
+      "icon": "🌐",
+      "href": "https://",
+      "position": "right",
+      "external": true,
+      "target_slot": "external"
+    },
+    {
+      "type": "docSidebar",
+      "sidebarId": "tutorialSidebar",
+      "position": "left",
+      "label": "📚 Docs",
+      "raw_label": "Docs",
+      "icon": "📚",
+      "to": "/docs/",
+      "target_slot": "docs"
+    }
+  ],
+  "nav_links": [
+    {
+      "text": "📚 Blog",
+      "raw_text": "Blog",
+      "icon": "📚",
+      "url": "/blog/",
+      "slot": "blog",
+      "external": false,
+      "position": "left"
+    },
+    {
+      "text": "🌐 GitHub / 官网",
+      "raw_text": "GitHub / 官网",
+      "icon": "🌐",
+      "url": "https://",
+      "slot": "external",
+      "external": true,
+      "position": "right"
+    },
+    {
+      "text": "📚 Docs",
+      "raw_text": "Docs",
+      "icon": "📚",
+      "url": "/docs/",
+      "slot": "docs",
+      "external": false,
+      "position": "left"
+    }
+  ]
+};
+export default themeOptions;

@@ -115,8 +115,16 @@ window.renderLocalizationCategory = function () {
     })}
                 ${window.renderSettingsItem('主语言路径前缀强制化', 'i18n_settings.force_source_prefix', i18n.force_source_prefix || false, 'checkbox', {
         onchange: 'window.syncI18nForcePrefix(this.checked)',
-        description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后，所有语种将拥有完全对称的路径结构。'
+        description: '决定主语言（如中文）在发布后是否拥有独立的路径前缀（如 /zh/）。开启后所有语种完全对称；关闭后主语言直接落盘至站点根路径。'
     })}
+                <div class="path-simulator-box" id="path-simulator-preview">
+                    <div class="sim-label">🗺️ 物理拓扑演算预览 (Path Topology Simulator)</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                        <div>• <b>主出版语言</b>: <span class="sim-url" id="sim-url-source">${i18n.force_source_prefix ? '/zh/docs/quick-start.html' : '/docs/quick-start.html (根目录扁平化)'}</span></div>
+                        <div>• <b>多语言目标</b>: <span class="sim-url" id="sim-url-target">/en/docs/quick-start.html</span></div>
+                    </div>
+                    <div class="sim-note">💡 提示：更改此配置会改变全站物理 URL 拓扑。保存后需执行<b>「⚡ 开始发布」</b>重新编译生成静态网页与全局索引。</div>
+                </div>
             </div>
 
             <!-- 3. 多语言翻译矩阵开关总控闸 -->

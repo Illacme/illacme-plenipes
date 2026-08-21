@@ -293,4 +293,108 @@ def run_social_plugin_dry_run(
             logs.append(log_func("WARN", f"⚠️ [网络] 无法连接 Ghost 站点: {e}。"))
             success = False
 
+    elif plugin_id in ["xiaohongshu", "red"]:
+        token = settings.get("token") or ""
+        cookie = settings.get("cookie") or ""
+        if not token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] 小红书 Token 与 Cookie 必须至少配置一项。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在探测小红书创作者服务网络握手与凭证格式..."))
+        try:
+            resp = requests.head("https://creator.xiaohongshu.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 小红书创作者平台网络握手正常 (HTTP {resp.status_code})。凭证格式校验通过。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 连接小红书创作者网络端点异常: {e}。"))
+            success = False
+
+    elif plugin_id == "toutiao":
+        access_token = settings.get("access_token") or settings.get("token") or ""
+        cookie = settings.get("cookie") or ""
+        if not access_token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] 今日头条 Access Token 与 Cookie 必须至少配置一项。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在探测今日头条 (头条号) 平台连通性..."))
+        try:
+            resp = requests.head("https://mp.toutiao.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 今日头条发布服务网络连接通畅 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至今日头条端点: {e}。"))
+            success = False
+
+    elif plugin_id == "csdn":
+        token = settings.get("token") or ""
+        cookie = settings.get("cookie") or ""
+        if not token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] CSDN Token 或 Cookie 凭据必须至少配置一项。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在探测 CSDN 博客控制台 API 连通度..."))
+        try:
+            resp = requests.head("https://mp.csdn.net", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] CSDN 创作中心网络通道畅通 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法直接连接 CSDN 创作者服务器: {e}。"))
+            success = False
+
+    elif plugin_id == "cnblogs":
+        token = settings.get("token") or settings.get("bearer_token") or ""
+        if not token:
+            logs.append(log_func("ERROR", "❌ [错误] 博客园 Personal Access Token / Bearer Token 尚未配置。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在向 博客园 API 端点发起握手探测..."))
+        try:
+            resp = requests.head("https://api.cnblogs.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 博客园 API 服务端点连接正常 (HTTP {resp.status_code})。已装载授权令牌。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至博客园 API 服务: {e}。"))
+            success = False
+
+    elif plugin_id == "bilibili":
+        sessdata = settings.get("sessdata") or ""
+        cookie = settings.get("cookie") or ""
+        token = settings.get("token") or ""
+        if not (sessdata or cookie or token):
+            logs.append(log_func("ERROR", "❌ [错误] Bilibili 专栏 SESSDATA / Cookie 凭证缺失。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在校验 Bilibili 专栏服务握手状态..."))
+        try:
+            resp = requests.get("https://api.bilibili.com/x/web-interface/nav", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] Bilibili 接口网络通道通畅 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至 Bilibili API 服务: {e}。"))
+            success = False
+
+    elif plugin_id == "segmentfault":
+        token = settings.get("token") or ""
+        cookie = settings.get("cookie") or ""
+        if not token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] SegmentFault 思否 Token 与 Cookie 必须至少配置一项。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在探测 SegmentFault 思否服务连通性..."))
+        try:
+            resp = requests.head("https://segmentfault.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] SegmentFault 思否网络握手正常 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接 SegmentFault 服务器: {e}。"))
+            success = False
+
+    elif plugin_id == "oschina":
+        access_token = settings.get("access_token") or settings.get("token") or ""
+        if not access_token:
+            logs.append(log_func("ERROR", "❌ [错误] 开源中国 (OSChina) OpenAPI Access Token 尚未配置。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在向 开源中国 OpenAPI 端点发起握手..."))
+        try:
+            resp = requests.head("https://www.oschina.net", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 开源中国网络通道正常 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 连接开源中国 OpenAPI 异常: {e}。"))
+            success = False
+
     return success

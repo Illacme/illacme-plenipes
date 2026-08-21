@@ -62,25 +62,29 @@ class AILogicHub:
             if m:
                 text = m.group(1).strip()
 
-        # 3. 物理擦除 LLM 废话前缀 (如 "Here is the translation:", "Let's translate line by line", "Translation:", "Tərcümə:")
-        text = re.sub(r'^(?:Here is the translation|Here\'s the translation|Translation|Tərcümə|Çeviri|Traduction|Übersetzung|Traducción|翻译结果|译文)[:：]?\s*\n?', '', text, flags=re.IGNORECASE).strip()
+        # 3. 物理擦除 LLM 废话前缀 (如 "Here is the translation:", "Translation:", "翻訳:", "【翻訳】", "翻訳結果:")
+        text = re.sub(r'^(?:Here is the translation|Here\'s the translation|Translation|Tərcümə|Çeviri|Traduction|Übersetzung|Traducción|翻译结果|译文|翻訳結果|翻訳文|日本語訳|対訳|訳文|翻訳)[:：]?\s*\n?', '', text, flags=re.IGNORECASE).strip()
 
-        # 4. 按行过滤围栏标签 (如 ### Content ###, ### Translation ###, 以及孤立的空 ### 标题)
+        # 4. 按行过滤围栏标签 (如 ### Content ###, ### Translation ###, ### 翻訳 ###, 【翻訳】, 翻訳:, 以及孤立的空 ### 标题)
         lines = text.split("\n")
         cleaned_lines = []
-        skip_line_prefix_re = re.compile(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)?\s*#{0,6}$', re.IGNORECASE)
+        skip_line_re = re.compile(
+            r'^\s*#{0,6}\s*[*_【\[`]*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要|翻訳|日本語訳|対訳|翻訳結果|翻訳文|訳文)[*_】\]`]*\s*[:：]?\s*#{0,6}\s*$',
+            re.IGNORECASE
+        )
         
         for line in lines:
             stripped_line = line.strip()
-            if skip_line_prefix_re.match(stripped_line):
+            if skip_line_re.match(stripped_line):
                 continue
-            # 滤除单个 Line X: Translation: 前缀
+            # 滤除单个 Line X: Translation: 前缀与行首 【翻訳】/ 翻訳: 标记
             line = re.sub(r'^Line\s*\d+[:：]\s*(?:Translation[:：]?)?\s*', '', line, flags=re.IGNORECASE)
+            line = re.sub(r'^\s*[*_【\[]*(?:翻訳|日本語訳|対訳|翻訳結果|翻訳文|訳文|Translation)[:：]\s*[*_】\]]*\s*', '', line, flags=re.IGNORECASE)
             cleaned_lines.append(line)
 
         result = "\n".join(cleaned_lines).strip()
-        result = re.sub(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)\s*#{0,6}\n?', '', result, flags=re.IGNORECASE)
-        result = re.sub(r'\n?#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要)\s*#{0,6}$', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'^#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要|翻訳|日本語訳|対訳|翻訳結果|翻訳文|訳文)\s*#{0,6}\n?', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'\n?#{1,6}\s*(?:Translation|Content|Inhalt|Übersetzung|Traduction|Contenido|Context|Tərcümə|Çeviri|原文|内容|译文|説明|概要|翻訳|日本語訳|対訳|翻訳结果|翻訳文|訳文)\s*#{0,6}$', '', result, flags=re.IGNORECASE)
         # 5. 彻底剥离行首/行尾孤立的 ### 标签残余 (例如 LLM 回吐的空标题头)
         result = re.sub(r'^\s*#{1,6}\s*\n', '', result).strip()
         result = re.sub(r'\n\s*#{1,6}\s*$', '', result).strip()

@@ -196,8 +196,10 @@ function _reviewRenderBody() {
             ? `<button class="review-btn unlock" onclick="window.unlockTranslationReview()" data-tooltip="解除保护后，下次发布时 AI 将重新翻译此语种；当前校对内容将被覆盖">🔓 解除保护</button><button class="review-btn save active" style="${saveStyle}" onclick="window.saveTranslationReview()">${saveBtnLabel}</button>`
             : `<button class="review-btn unlock" style="margin-right: auto;" onclick="window.triggerSingleTranslation('current')" data-tooltip="重新请求 AI 翻译当前语种">🔄 重新生成当前语种译文</button><button class="review-btn save" style="${saveStyle}" onclick="window.saveTranslationReview()">${saveBtnLabel}</button>`;
 
-        const countMismatchBanner = ld.paragraph_count_mismatch
-            ? `<div style="padding:8px 12px; background:rgba(255, 171, 0, 0.1); border:1px solid rgba(255, 171, 0, 0.3); border-radius:6px; font-size:0.78rem; color:var(--accent-primary, #ffab00); margin-bottom:8px;">⚠️ 提示：此语种切片段落数 (${targetParas.length} 段) 与原文 (${sourceParas.length} 段) 存在不一致，建议人工复核段落结构。</div>`
+        const validSourceCount = sourceParas.filter(p => p.index >= 0).length;
+        const validTargetCount = targetParas.filter(p => p.index >= 0).length;
+        const countMismatchBanner = (ld.paragraph_count_mismatch || (validSourceCount > 0 && validTargetCount > 0 && validSourceCount !== validTargetCount))
+            ? `<div style="padding:8px 12px; background:rgba(255, 171, 0, 0.1); border:1px solid rgba(255, 171, 0, 0.3); border-radius:6px; font-size:0.78rem; color:var(--accent-primary, #ffab00); margin-bottom:8px;">⚠️ 提示：此语种切片段落数 (${validTargetCount} 段) 与原文 (${validSourceCount} 段) 存在不一致，建议人工复核段落结构。</div>`
             : '';
 
         targetHtml = `<div style="padding:20px 20px 20px 30px; display:flex; flex-direction:column; gap:16px;">

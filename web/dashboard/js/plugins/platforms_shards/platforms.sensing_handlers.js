@@ -288,3 +288,122 @@ window.focusErrorField = (fieldName) => {
         if (window.showToast) window.showToast(`已为您高亮闪烁定位至参数: ${fieldName}`, 'info');
     }
 };
+
+// 📡 [Omni-Sensing Hub] 全局环境与免密凭据感应中枢 (带 SessionStorage 极速预热)
+const _cachedEnv = (() => {
+    try {
+        const raw = sessionStorage.getItem('illacme_env_sensing');
+        return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+})();
+
+window.envSensing = _cachedEnv || {
+    github_ssh: null,
+    aws: null,
+    docker: null,
+    git: null,
+    loading: false
+};
+
+window.ensureEnvSensing = async (force = false) => {
+    if (window.envSensing.loading) return window.envSensing;
+    if (!force && window.envSensing.github_ssh !== null) return window.envSensing;
+
+    window.envSensing.loading = true;
+    const fetchFunc = window.apiFetch || (async (url, init) => {
+        try {
+            const r = await fetch(url, init);
+            return await r.json();
+        } catch (_) { return null; }
+    });
+
+    try {
+        const [sshRes, awsRes, gitRes] = await Promise.allSettled([
+            fetchFunc('/api/plugins/github/ssh-status'),
+            fetchFunc('/api/plugins/aws/credentials-status'),
+            fetchFunc('/api/system/sensing/git', { method: 'POST' })
+        ]);
+
+        if (sshRes.status === 'fulfilled' && sshRes.value) window.envSensing.github_ssh = sshRes.value;
+        if (awsRes.status === 'fulfilled' && awsRes.value) window.envSensing.aws = awsRes.value;
+        if (gitRes.status === 'fulfilled' && gitRes.value) window.envSensing.git = gitRes.value;
+
+        // 缓存到 sessionStorage 供刷新页面时 0 毫秒秒开
+        try {
+            sessionStorage.setItem('illacme_env_sensing', JSON.stringify({
+                github_ssh: window.envSensing.github_ssh,
+                aws: window.envSensing.aws,
+                git: window.envSensing.git,
+                docker: window.envSensing.docker
+            }));
+        } catch (_) {}
+    } catch (_) {}
+    finally {
+        window.envSensing.loading = false;
+    }
+    return window.envSensing;
+};
+
+// 🎯 全面多因子凭据智能判决算子 (支持 Token / SSH 免密 / 本地 CLI 授权 / 凭据助手)
+window.isPluginCredentialReady = (pluginId, category, cfg) => {
+    const pCfg = cfg || {};
+    const env = window.envSensing || {};
+
+    // 提取可能的仓库地址/URL (兼容 repo_url, repo, repository, git_url, url)
+    const repoAddress = (pCfg.repo_url || pCfg.repo || pCfg.repository || pCfg.git_url || pCfg.url || '').trim();
+    const tokenVal = (pCfg.token || pCfg.access_token || pCfg.api_token || pCfg.git_token || '').trim();
+
+    // 1. GitHub Pages (全站托管) 与 GitHub (图床)
+    if (pluginId === 'github_pages' || (pluginId === 'github' && category === 'image_hosting')) {
+        if (tokenVal) return { ready: true, mode: 'token', label: 'Token 鉴权就绪' };
+        if (repoAddress) {
+            if (repoAddress.startsWith('git@') || repoAddress.includes('git@github.com')) {
+                return { ready: true, mode: 'ssh_repo', label: 'SSH 仓库就绪' };
+            }
+            if (env.github_ssh?.ssh_ok) {
+                return { ready: true, mode: 'ssh', label: `SSH 免密就绪 (${env.github_ssh.username || 'Git'})` };
+            }
+            if (env.git?.name || pCfg.git_user_name) {
+                return { ready: true, mode: 'git_credential', label: 'Git 仓库已就绪' };
+            }
+            return { ready: true, mode: 'configured_repo', label: '目标仓库已就绪' };
+        }
+        if (env.github_ssh?.ssh_ok) {
+            return { ready: false, mode: 'missing_repo', label: '待填目标仓库' };
+        }
+        return { ready: false, mode: 'missing', label: '待配置仓库' };
+    }
+
+    // 2. Gitee Pages
+    if (pluginId === 'gitee_pages' || (pluginId === 'gitee' && category === 'image_hosting')) {
+        if (tokenVal) return { ready: true, mode: 'token', label: 'Token 鉴权就绪' };
+        if (repoAddress) {
+            return { ready: true, mode: 'configured_repo', label: 'Gitee 仓库就绪' };
+        }
+        return { ready: false, mode: 'missing', label: '待配置仓库' };
+    }
+
+    // 3. AWS S3 (托管或图床)
+    if (pluginId === 's3' || pluginId === 'aws_s3') {
+        if (pCfg.access_key_id && pCfg.secret_access_key) return { ready: true, mode: 'key', label: '密钥就绪' };
+        if (env.aws?.logged_in) return { ready: true, mode: 'local_aws', label: '本地 AWS 凭据就绪' };
+        return { ready: false, mode: 'missing', label: '待填 Access Key' };
+    }
+
+    // 4. Vercel / Netlify / Cloudflare (CLI / OAuth 免密)
+    if (['vercel', 'netlify', 'cloudflare_pages', 'cloudflare'].includes(pluginId)) {
+        if (pCfg.token || pCfg.api_token || pCfg.api_key || pCfg.auth_token) return { ready: true, mode: 'token', label: 'Token 就绪' };
+        if (pCfg.project_name || pCfg.site_id || pCfg.account_id) return { ready: true, mode: 'cli_oauth', label: 'CLI 免密就绪' };
+        return { ready: false, mode: 'missing', label: '待授权 / 待填项目名' };
+    }
+
+    // 5. SFTP / 本地服务
+    if (pluginId === 'sftp' || pluginId === 'local_fs') {
+        if (pCfg.host || pCfg.path || pluginId === 'local_fs') return { ready: true, mode: 'config', label: '配置就绪' };
+        return { ready: false, mode: 'missing', label: '待配置主机' };
+    }
+
+    // 6. 通用社媒与通知插件 (Dev.to, Medium, Hashnode, 飞书, 钉钉等)
+    const hasSecret = Boolean(pCfg.token || pCfg.api_key || pCfg.url || pCfg.webhook || pCfg.access_token || pCfg.secret_key);
+    return { ready: hasSecret, mode: hasSecret ? 'secret' : 'missing', label: hasSecret ? '凭据就绪' : '待填 Token' };
+};

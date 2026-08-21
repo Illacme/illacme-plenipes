@@ -63,6 +63,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     global_theme_root = os.path.join(os.getcwd(), THEMES_DIR)
     theme_ids = set()
 
+    norm_active = "sovereign" if (active_theme in ("default", "sovereign", None, "")) else active_theme
+
     for root, loc, status, orig, ver, desc in [
         (local_theme_root, "local", "Local", "user", "V1.0", "版图专属主题：位于当前版图目录下的物理资产。"),
         (global_theme_root, "global", "Central", "core", SYSTEM_TRACK, "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。")
@@ -71,8 +73,11 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             for entry in os.listdir(root):
                 if entry in theme_ids or entry in ["shared", "__pycache__", ".DS_Store"] or entry.startswith("."):
                     continue
+                # 🛡️ 过滤历史旧别名 default，统一归一化为 sovereign
+                if entry == "default":
+                    continue
                 if os.path.isdir(os.path.join(root, entry)):
-                    is_active = (active_theme == entry)
+                    is_active = (norm_active == entry)
                     plugins.append({
                         "id": entry, "category": "theme", "category_name": "🎨 装帧主题",
                         "status": "In-Use" if is_active else status,
@@ -85,8 +90,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
 
     # 1b. Native Renderers
     for r_id in SSGRegistry.get_all_names():
-        if r_id in ("generic", *theme_ids) or (r_id == "sovereign" and "default" in theme_ids): continue
-        is_active = (active_theme == r_id)
+        if r_id in ("generic", *theme_ids) or (r_id in ("sovereign", "default") and "sovereign" in theme_ids): continue
+        is_active = (norm_active == r_id)
         r_cls = SSGRegistry.get_renderer(r_id)
         name = getattr(r_cls, "DISPLAY_NAME", r_id.upper())
         plugins.append({
@@ -140,10 +145,13 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         {"id": "feishu", "name": "飞书 Notice 适配器", "desc": "自动构造飞书 Post 富文本卡片，支持编译就绪与分发失败状态推送。"},
         {"id": "dingtalk", "name": "钉钉 Notice 适配器", "desc": "自动构造钉钉 Markdown 消息卡片，实时同步系统出版生命周期。"},
         {"id": "wecom", "name": "企业微信 Notice 适配器", "desc": "对接企业微信群机器人，提供高颜值出版告警与状态提醒。"},
-        {"id": "telegram", "name": "Telegram Bot 适配器", "desc": "利用 Telegram Bot API 发送 Markdown 消息至指定 Telegram 群组或 Channel。"},
-        {"id": "discord", "name": "Discord Notice 适配器", "desc": "对接 Discord 频道 Webhook，支持构造 Embeds 富文本卡片同步系统状态与告警。"},
-        {"id": "generic", "name": "通用 HTTP Webhook 适配器", "desc": "向任意自定义 HTTP API 发送 JSON 事件报文，兼容标准 Webhook。"},
-        {"id": "webhook_dispatch", "name": "Webhook Dispatcher 信号触发器", "desc": "同步完成后向目标端点推送带 HMAC 签名的分发信号，触发下游 CI/CD 或自动化工具。"}
+        {"id": "telegram", "name": "Telegram 运维事件通知", "desc": "面向站长/运维：利用 Telegram Bot API 实时接收全站编译就绪与系统故障告警推送。"},
+        {"id": "discord", "name": "Discord 运维事件通知", "desc": "面向站长/运维：通过 Discord Webhook 接收全站编译日志、算力熔断与系统状态告警推送。"},
+        {"id": "generic_webhook", "name": "通用 HTTP Webhook 适配器", "desc": "向任意自定义 HTTP API 发送 JSON 事件报文，兼容标准 Webhook。"},
+        {"id": "webhook_dispatch", "name": "Webhook Dispatcher 信号触发器", "desc": "同步完成后向目标端点推送带 HMAC 签名的分发信号，触发下游 CI/CD 或自动化工具。"},
+        {"id": "email", "name": "SMTP 邮件通知适配器", "desc": "支持标准 SMTP / SSL / STARTTLS 发送高质感 HTML 出版通知与故障运维告警。"},
+        {"id": "sms", "name": "短信告警通知适配器", "desc": "对接阿里云/腾讯云/Twilio/通用短信网关，在全站出版故障或算力熔断时下发短信通知。"},
+        {"id": "app_push", "name": "移动与桌面推送中枢", "desc": "支持 Bark (iOS)、Gotify (私有化)、Server酱 (微信通知) 与 Pushover 极速推送。"}
     ]
     pub_ctrl = getattr(engine.config, "publish_control", None)
     endpoints = getattr(pub_ctrl, "webhook_endpoints", {}) if pub_ctrl else {}
@@ -155,11 +163,13 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     for notif in notification_plugins_meta:
         n_id = notif["id"]
         n_cfg = endpoints.get(n_id, {}) if isinstance(endpoints, dict) else {}
+        if not n_cfg and n_id == "generic_webhook" and isinstance(endpoints, dict):
+            n_cfg = endpoints.get("generic", {})
         if hasattr(n_cfg, "dict"): n_cfg = n_cfg.dict()
         if not isinstance(n_cfg, dict): n_cfg = {}
         
-        # 激活状态判定：如果节点单独启用，或开启了全局 Webhook 且包含配置
-        is_in_use = n_cfg.get("enabled", False) or (global_webhook_enabled and bool(n_cfg.get("url")))
+        # 激活状态判定：严格以节点显式配置的 enabled 字段为准，与 hosting / publisher 保持 100% 契约一致
+        is_in_use = bool(n_cfg.get("enabled", False))
         plugins.append({
             "id": n_id,
             "name": notif["name"],
@@ -234,6 +244,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     # 5. 🧠 AI 协议 (Protocols)
     seen_proto_classes = set()
     for proto in AIProviderRegistry.get_all_protocols():
+        if proto == "generic":
+            continue
         proto_cls = AIProviderRegistry.get_provider(proto)
         if not proto_cls:
             continue
@@ -336,10 +348,23 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
             "is_manageable": False
         })
     # 🚀 [V74.56] 统一对齐：同步核心 SSG 驱动的 DISPLAY_NAME 与 DESCRIPTION
+    theme_display_names = {
+        "sovereign": "Sovereign",
+        "default": "Sovereign",
+        "docusaurus": "Docusaurus",
+        "starlight": "Starlight",
+        "vitepress": "VitePress",
+        "nextra": "Nextra",
+        "universal": "Universal",
+        "hexo": "Hexo",
+        "hugo": "Hugo",
+    }
     for p in plugins:
-        renderer_cls = SSGRegistry.get_renderer("sovereign" if p["id"] == "default" else ("generic" if p["id"] == "universal" else p["id"])) if p["category"] == "theme" else None
-        if renderer_cls:
-            p["name"] = getattr(renderer_cls, "DISPLAY_NAME", p["id"].upper())
-            p["description"] = getattr(renderer_cls, "DESCRIPTION", p["description"])
-        if "name" not in p: p["name"] = p["id"].upper()
+        if p.get("category") == "theme":
+            p["name"] = theme_display_names.get(p["id"].lower(), p["id"].capitalize())
+            renderer_cls = SSGRegistry.get_renderer("sovereign" if p["id"] == "default" else ("generic" if p["id"] == "universal" else p["id"]))
+            if renderer_cls:
+                p["description"] = getattr(renderer_cls, "DESCRIPTION", p.get("description", ""))
+        elif "name" not in p:
+            p["name"] = p["id"].upper()
     return plugins

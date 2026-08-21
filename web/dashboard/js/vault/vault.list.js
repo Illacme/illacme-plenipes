@@ -64,6 +64,12 @@ window.loadVault = async (query = null, page = null) => {
         window.vaultTotalItems = res.total || 0;
         const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
 
+        // 同步更新左边栏 1. 原稿文库 实时篇数
+        const pipeValVault = document.getElementById('pipe-val-vault');
+        if (pipeValVault) {
+            pipeValVault.innerText = `${window.vaultTotalItems} 篇原稿`;
+        }
+
         // 更新分页信息和按钮可用性
         if (pageInfo) {
             pageInfo.innerText = `第 ${window.vaultCurrentPage} / ${totalPages} 页 (共 ${window.vaultTotalItems} 条原稿)`;

@@ -17,13 +17,42 @@ window.resolveFieldLevel = (key) => {
     return 'imprint';
 };
 
+window.resolveFieldEffectiveness = (key) => {
+    if (!key) return 'live';
+    const rebuildPatterns = [
+        /^i18n_settings/i,
+        /^imprint_/i,
+        /^site_(name|slogan|description|url)/i,
+        /^logo_path/i,
+        /^favicon_path/i,
+        /^frontmatter_defaults/i,
+        /^ingress_settings/i,
+        /^slug_/i,
+        /^route_matrix/i,
+        /^theme_/i,
+        /^custom_theme/i,
+        /^translation\.(governance|prompts|style)/i,
+        /^(append_credit|credit_text)/i,
+        /^(publishing_mode|seo_strategy)/i
+    ];
+    for (const pattern of rebuildPatterns) {
+        if (pattern.test(key)) return 'rebuild';
+    }
+    return 'live';
+};
+
 window.renderSettingsItem = (label, path, value, type = 'text', options = {}, tierOverride = null) => {
     const tier = tierOverride || window.resolveFieldLevel(path);
     const badgeMap = {
-        'local': '<span class="tier-tag tier-local">本地</span>',
-        'imprint': '<span class="tier-tag tier-imprint">品牌</span>',
-        'global': '<span class="tier-tag tier-global">全局</span>'
+        'local': '<span class="tier-icon tier-local" title="📁 配置层级：本地专属配置 (config.local.yaml)">💻</span>',
+        'imprint': '<span class="tier-icon tier-imprint" title="🏷️ 配置层级：出版品牌专属配置 (config.imprint.yaml)">🏷️</span>',
+        'global': '<span class="tier-icon tier-global" title="🏛️ 配置层级：全局基线配置 (config.yaml)">🏛️</span>'
     };
+
+    const effectiveness = options.effectiveness || window.resolveFieldEffectiveness(path);
+    const effectBadge = (effectiveness === 'rebuild')
+        ? '<span class="effect-icon effect-rebuild" title="⚡ 生效时机：装帧编译属性，保存后需执行「发布预览」或「全网发布」编译生效">⚡</span>'
+        : '<span class="effect-icon effect-live" title="🟢 生效时机：运行基座属性，保存后后台即刻热更新生效">🟢</span>';
 
     let inputHtml = '';
     const id = `cfg-${path.replace(/\./g, '-')}`;
@@ -70,7 +99,10 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
     return `
         <div class="setting-row level-${tier}">
             <div class="setting-info">
-                <div class="setting-label">${label} ${reqStar} ${badgeMap[tier] || ''}</div>
+                <div class="setting-label">
+                    <span>${label}${reqStar}</span>
+                    <span class="badge-group">${badgeMap[tier] || ''}${effectBadge}</span>
+                </div>
                 <div class="setting-desc">${description}</div>
             </div>
             <div class="setting-control" style="display: flex; flex-direction: column; ${alignStyle} flex: 1.2; max-width: 65%; min-width: 220px;">

@@ -50,10 +50,26 @@ class AISchedulerDispatchOps:
             return False, f"Markdown 链接数量不匹配 (原文 {s_urls} vs 译文 {t_urls})"
 
         # 4. 校验 HTML 标签对称性
-        s_tags = len(re.findall(r'<\/?([a-zA-Z0-9]+)', source))
-        t_tags = len(re.findall(r'<\/?([a-zA-Z0-9]+)', translated))
-        if s_tags != t_tags:
-            return False, f"HTML 标签数量不匹配 (原文 {s_tags} vs 译文 {t_tags})"
+        s_open = len(re.findall(r'<([a-zA-Z0-9]+)[^>]*>', source))
+        s_close = len(re.findall(r'<\/([a-zA-Z0-9]+)>', source))
+        t_open = len(re.findall(r'<([a-zA-Z0-9]+)[^>]*>', translated))
+        t_close = len(re.findall(r'<\/([a-zA-Z0-9]+)>', translated))
+        s_tags = s_open + s_close
+        t_tags = t_open + t_close
+
+        # 如果原文本身是开闭完全平衡的完整 HTML 结构（如 <div><span>Hello</span></div>），
+        # 则译文必须保持开闭平衡且标签总数一致
+        if s_open == s_close:
+            if t_open != t_close or s_tags != t_tags:
+                return False, f"HTML 标签数量不匹配 (原文 {s_tags} vs 译文 {t_tags})"
+        else:
+            # 如果原文本身就是跨段落的开放式容器（s_open != s_close），
+            # 允许在边界处存在与原文不平衡差值以内的容错（但核心标签不应归零）
+            imbalance = abs(s_open - s_close)
+            if s_tags > 0 and t_tags == 0:
+                return False, "译文中遗漏了 HTML 标签结构"
+            if abs(s_tags - t_tags) > imbalance:
+                return False, f"HTML 标签数量不匹配 (原文 {s_tags} vs 译文 {t_tags})"
 
         # 5. 校验粗体/斜体闭合性
         s_bold = len(re.findall(r'\*\*|__', source))
@@ -135,7 +151,7 @@ class AISchedulerDispatchOps:
             return None, None
 
         route_style = None
-        if LicenseGuard.is_licensed():
+        if LicenseGuard.is_pro_feature_allowed("multi_dialect"):
             for item in engine.config.route_matrix:
                 if getattr(item, 'source', None) == route_source:
                     route_style = getattr(item, 'style', None)
@@ -505,8 +521,15 @@ class AISchedulerDispatchOps:
                                         time.sleep(1.0)
                                 else:
                                     tlog.error(f"❌ [块级翻译彻底故障] {rel_path} ({code}) | Block {idx} 在重试 {max_retries} 次后依然失败。")
-                                    translated_blocks[idx] = block.content
                                     target_health = False
+                                    # 🚀 [V115.2] 故障降级自愈：若 LLM 产出了译文产物 (b_result)，即便存在微弱格式标记偏差，
+                                    # 也绝不暴力回退至母语中文，而是保留该译文产物，允许创作者在校对工作台复核。
+                                    if 'b_result' in locals() and b_result and b_result.strip():
+                                        tlog.warning(f"🩹 [自愈兜底] Block {idx} ({code}) 保留 LLM 译文产物用于人工校对，防止整篇退化为中文母语")
+                                        translated_blocks[idx] = b_result
+                                        engine.block_cache.store_block(code, block.fingerprint, b_result, style_hash=style_hash)
+                                    else:
+                                        translated_blocks[idx] = block.content
 
                 final_body = "\n".join([str(b) for b in translated_blocks])
                 err_cat, err_msg = _audit_translation(final_body, ctx.raw_content)
@@ -706,7 +729,8 @@ class AISchedulerDispatchOps:
                                 is_dry_run, is_target=True, node_assets=ctx.node_assets,
                                 node_ext_assets=ctx.node_ext_assets, node_outlinks=ctx.node_outlinks,
                                 assets_lock=ctx.assets_lock, force_persistence_date=persistence_date,
-                                seo_data=t_seo_data
+                                seo_data=t_seo_data,
+                                target_slot=getattr(ctx, 'target_slot', 'docs')
                             )
                         else:
                             tlog.warning(f"🛑 [主权护盾] 语种 {t_code} 翻译有故障块，拦截物理分发，防止污染。")

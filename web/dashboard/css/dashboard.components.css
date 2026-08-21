@@ -75,6 +75,33 @@ button:disabled {
     color: var(--accent-primary);
 }
 
+#btn-preview {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: var(--neon-cyan, #00f0ff);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.12);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#btn-preview:hover:not(:disabled) {
+    background: rgba(0, 240, 255, 0.18);
+    border-color: rgba(0, 240, 255, 0.6);
+    color: #ffffff !important;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+[data-theme="light"] #btn-preview {
+    background: rgba(0, 150, 255, 0.08) !important;
+    border-color: rgba(0, 150, 255, 0.3) !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #btn-preview:hover:not(:disabled) {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
 .action-btn {
     padding: 6px 12px;
     font-size: 0.75rem;
@@ -329,4 +356,47 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border: 1px solid var(--accent-primary-20) !important;
     color: var(--text-bright) !important;
     text-shadow: none !important;
+}
+
+/* ⚡ [V100.9] 发布预览流光工作流步骤条 (Publish & Preview Stepper) */
+.preview-stepper-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+}
+
+.step-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-item.active {
+    color: var(--neon-cyan, #00f0ff);
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    transform: scale(1.04);
+}
+
+.step-item.completed {
+    color: #00ffaa;
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+}
+
+.step-arrow {
+    color: var(--text-dim);
+    opacity: 0.4;
+    font-size: 0.7rem;
+    user-select: none;
 }

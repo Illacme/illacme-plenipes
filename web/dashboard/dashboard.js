@@ -80,17 +80,18 @@ window.initDashboard = async () => {
 
         // 🌍 [V55.3] 动态拉取语种智库与系统配置
         if (typeof apiFetch === 'function') {
-            apiFetch('/api/system/languages').then(res => {
-                if (res && res.languages) {
-                    window.availableLangs = res.languages;
-                    if (typeof window.refreshGovernanceContext === 'function') {
-                        window.refreshGovernanceContext();
-                    }
+            Promise.all([
+                apiFetch('/api/system/languages').catch(() => null),
+                apiFetch('/api/system/config').catch(() => null)
+            ]).then(([langRes, cfgRes]) => {
+                if (langRes && langRes.languages) {
+                    window.availableLangs = langRes.languages;
                 }
-            });
-            apiFetch('/api/system/config').then(res => {
-                if (res) {
-                    window.settingsData = { ...window.settingsData, ...(res.config || res) };
+                if (cfgRes) {
+                    window.settingsData = { ...window.settingsData, ...(cfgRes.config || cfgRes) };
+                }
+                if (typeof window.refreshGovernanceContext === 'function') {
+                    window.refreshGovernanceContext();
                 }
             });
         }

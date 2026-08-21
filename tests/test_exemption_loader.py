@@ -39,9 +39,18 @@ class TestExemptionLoader(unittest.TestCase):
             self.assertIn(entry, result, f"缺失已知豁免条目: {entry}")
 
     def test_load_count_matches_yaml(self):
-        """加载的条目数应与 YAML 文件声明数一致 (41 条)"""
+        """加载的条目数应与 YAML 文件声明数完全一致"""
+        import yaml
+        root = _locate_project_root()
+        yaml_path = os.path.join(root, ".plenipes", "governance", "exemptions.yaml")
+        if os.path.exists(yaml_path):
+            with open(yaml_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+                expected_count = len(data.get("redline_exempt_files", []))
+        else:
+            expected_count = 52
         result = load_redline_exemptions()
-        self.assertEqual(len(result), 41, f"期望 41 条，实际 {len(result)} 条")
+        self.assertEqual(len(result), expected_count, f"期望 {expected_count} 条，实际 {len(result)} 条")
 
     def test_no_empty_entries(self):
         """不应包含空字符串或 None 条目"""

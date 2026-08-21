@@ -37,19 +37,49 @@ window.filterPluginsBySearch = (query) => {
     }
 };
 
+// 🚀 全局分类切换算子
+window.filterPluginCategory = (catId) => {
+    window.activePluginCategory = catId || 'all';
+    document.querySelectorAll('.cap-tab').forEach(tab => {
+        if (tab.dataset.cat === window.activePluginCategory) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    if (typeof window.renderPlugins === 'function') {
+        window.renderPlugins();
+    }
+    const containerEl = document.querySelector('.view-panel.active .tab-content-area') || document.querySelector('#view-plugins .tab-content-area');
+    if (containerEl) containerEl.scrollTop = 0;
+};
+
 // 能力矩阵加载与 Tab 构建器
-window.loadPlugins = async (silent = false) => {
+window.loadPlugins = async (silent = false, targetCat = null) => {
     const gridEl = document.getElementById('plugins-grid');
     const tabsEl = document.querySelector('.side-tabs');
     if (!gridEl || !tabsEl) return;
 
+    if (targetCat) {
+        window.activePluginCategory = targetCat;
+    } else if (window.pendingSubView) {
+        window.activePluginCategory = window.pendingSubView;
+        window.pendingSubView = null;
+    } else if (!window.activePluginCategory) {
+        window.activePluginCategory = 'all';
+    }
+
     const container = document.querySelector('.view-panel.active .tab-content-area') || document.querySelector('.tab-content-area');
     const scrollPos = container ? container.scrollTop : 0;
 
-    if (!silent) {
+    // ⚡ [SWR 极速瞬开] 若内存中已存在插件列表，0 毫秒先绘制页面，后台静默拉取更新，彻底消除首屏白屏与骨架跳动
+    if (window.allPlugins && window.allPlugins.length > 0) {
+        window.renderPlugins();
+        silent = true;
+    } else if (!silent) {
         gridEl.innerHTML = `
-            <div class="skeleton-grid">
-                ${Array(6).fill('<div class="plugin-card skeleton" style="height: 180px;"></div>').join('')}
+            <div class="card-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; width: 100%;">
+                ${Array(6).fill('<div class="plugin-card skeleton" style="height: 180px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.08);"></div>').join('')}
             </div>
         `;
     }
@@ -59,13 +89,29 @@ window.loadPlugins = async (silent = false) => {
         return r.json();
     });
 
-    const data = await fetchFunc('/api/plugins/list');
+    // 🚀 [毫秒级瞬开] 仅拉取轻量的插件元数据列表，绝不阻塞等待网络探针
+    let data = null;
+    try {
+        data = await fetchFunc('/api/plugins/list');
+    } catch (_) {}
+
     if (!data || !data.plugins) {
-        gridEl.innerHTML = '<div class="empty-state">⚠️ 无法感应全球能力矩阵，请检查核心链路。</div>';
+        if (!window.allPlugins || window.allPlugins.length === 0) {
+            gridEl.innerHTML = '<div class="empty-state">⚠️ 无法感应全球能力矩阵，请检查核心链路。</div>';
+        }
         return;
     }
 
     window.allPlugins = data.plugins;
+
+    // 📡 触发后台静默环境探针嗅探，完成后静默更新状态，零阻塞主 UI
+    if (typeof window.ensureEnvSensing === 'function') {
+        window.ensureEnvSensing().then(() => {
+            if (window.currentView === 'plugins') {
+                window.renderPlugins();
+            }
+        }).catch(() => {});
+    }
 
     const categories = [
         { id: 'ingress', name: '📥 内容接入' },
@@ -144,6 +190,18 @@ window.checkPluginConfiguredStatus = (p) => {
         return { label: '🚫 全局禁用', class: 'warning', style: 'background: rgba(255, 77, 77, 0.08); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
     }
 
+    // 🎨 装帧主题状态呈现：统一严格 4 字符对齐（当前选用 / 本地就绪 / 云端母本）
+    if (p.category === 'theme') {
+        if (p.is_in_use) {
+            return { label: '🟢 当前选用', class: 'info', style: 'background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+        }
+        const loc = p.location || 'native';
+        if (loc === 'local' || loc === 'global') {
+            return { label: '📦 本地就绪', class: 'info', style: 'background: rgba(0, 242, 254, 0.08); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 254, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+        }
+        return { label: '☁️ 云端母本', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+    }
+
     const cfgData = window.settingsData || {};
     let settings = {};
     if (p.category === 'hosting') {
@@ -154,6 +212,15 @@ window.checkPluginConfiguredStatus = (p) => {
         settings = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
     } else {
         settings = cfgData.syndication?.[p.id] || {};
+    }
+
+    if (window.isPluginCredentialReady) {
+        const cred = window.isPluginCredentialReady(p.id, p.category, settings);
+        if (cred.ready) {
+            return { label: `🟢 ${cred.label || '配置齐全'}`, class: 'info', style: 'background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
+        } else {
+            return { label: `⚠️ ${cred.label || '待填凭据'}`, class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
+        }
     }
 
     const hasKeys = Object.entries(settings).some(([k, v]) => {

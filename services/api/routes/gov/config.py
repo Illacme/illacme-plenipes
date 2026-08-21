@@ -28,7 +28,7 @@ def get_full_config(level: str = "merged", imprint_id: Optional[str] = None) -> 
     if level == "merged":
         data = engine.config.model_dump()
         data["_governance_rules"] = GOVERNANCE_RULES
-        data["_is_licensed"] = LicenseGuard.is_licensed()
+        data["_is_licensed"] = LicenseGuard.is_licensed() or LicenseGuard.is_default_imprint_and_theme_active()
         return data
     
     path = CONFIG_NAME
@@ -198,8 +198,10 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                     try:
                         if key == "i18n_settings.targets" and isinstance(value, list):
                             from core.governance.license_guard import LicenseGuard
-                            if not LicenseGuard.is_licensed() and len(value) > 1:
-                                return {"status": "error", "error": "🛡️ [主权拦截] 社区版仅支持 1 个目标语种。"}
+                            max_targets = LicenseGuard.get_max_i18n_targets()
+                            if len(value) > max_targets:
+                                tier_name = LicenseGuard.get_license_info().get("tier_name", "社区版")
+                                return {"status": "error", "error": f"🛡️ [主权拦截] {tier_name}仅支持最多 {max_targets} 个目标语种。"}
                             from core.config.config_models import I18nTarget
                             from core.utils.language_hub import LanguageHub
                             new_targets = []
@@ -382,8 +384,8 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
                 import shutil
                 shutil.copytree(global_theme_path, local_theme_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns('node_modules', '.git', '.DS_Store'))
             
-        if hasattr(engine, 'config_manager') and type(engine.config_manager).__name__ not in ('MagicMock', 'Mock'):
-            target_imp = imprint_id or engine.im.get_active_imprint()
+        if hasattr(engine, 'config_manager') and engine.config_manager and type(engine.config_manager).__name__ not in ('MagicMock', 'Mock'):
+            target_imp = imprint_id or (engine.im.get_active_imprint() if hasattr(engine, 'im') and engine.im else 'default')
             engine.config_manager.imprint_id = target_imp
             tlog.info(f"🔍 [Reload 前] engine.config: mode={getattr(engine.config.governance, 'publishing_mode', None)}, i18n={getattr(engine.config.i18n_settings, 'enabled', None)}")
             engine.config_manager.reload()
@@ -412,8 +414,21 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
             else:
                 engine.translator = None
             
-            if hasattr(engine, 'route_manager') and engine.route_manager:
-                engine.route_manager.translator = engine.translator
+        if hasattr(engine, 'route_manager') and engine.route_manager:
+            engine.route_manager.lang_mapping = engine.config.lang_mapping
+            engine.route_manager.default_lang = engine.config.i18n_settings.source.lang_code
+            engine.route_manager.active_theme = (engine.active_theme or "starlight").lower()
+            engine.route_manager.ssg_adapter = engine.ssg_adapter
+            engine.route_manager.force_source_prefix = engine.config.i18n_settings.force_source_prefix
+
+        if hasattr(engine, 'dispatcher') and engine.dispatcher:
+            engine.dispatcher.ssg_adapter = engine.ssg_adapter
+            engine.dispatcher.i18n_cfg = engine.config.i18n_settings
+            engine.dispatcher.pub_cfg = engine.config.publish_control
+
+        if hasattr(engine, 'janitor') and engine.janitor:
+            engine.janitor.i18n_cfg = engine.config.i18n_settings
+            engine.janitor.active_theme = engine.active_theme
         
         from core.utils.event_bus import bus
         bus.emit("CONFIG_RELOADED", config=engine.config)

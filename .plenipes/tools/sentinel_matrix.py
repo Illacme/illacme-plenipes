@@ -16,6 +16,9 @@ GENE_PATTERN = r'🚀\s*\[V\d+\.\d+\]'  # 基因标记正则
 DEPENDENCY_FILES = ['requirements.txt', 'package.json']
 
 # 历史遗留且当前正在演进中的超限大文件豁免白名单 — 统一从 YAML 单一真相源加载
+tools_dir = os.path.dirname(os.path.abspath(__file__))
+if tools_dir not in sys.path:
+    sys.path.insert(0, tools_dir)
 from exemption_loader import load_redline_exemptions
 EXEMPT_REDLINE_FILES = load_redline_exemptions()
 

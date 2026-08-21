@@ -111,3 +111,11 @@
     2.  **滚动延迟必须 ≥ 300ms**：`renderSettingsCategory()` 会触发级联的二次异步 DOM 重写（内部有 20ms `setTimeout` 调用 `switchLocalizationGovSubTab` 再次 `innerHTML`），在此之前执行的任何滚动指令都会因 `scrollTop` 归零而被吞掉。
     3.  **容器选择器必须带 `#view-settings` 前缀**：页面上存在多个 `.tab-content-area`，不带前缀的选择器可能误匹配到隐藏面板的容器。
     4.  **修改 `window.xxx` 全局函数后必须全文件去重**：禁止在同一文件中出现同名全局函数的多次赋值定义，后定义会静默覆盖前面包含滚动逻辑的版本。修改后必须运行 `grep -rn 'window\.函数名\s*=' web/dashboard/js/` 确认仅有 1 个赋值定义。
+
+## 13. 自带主题母本绝对纯净与物理隔离铁律 (Built-in Theme Absolute Purity & Isolation Rules)
+*   **适用场景**：所有涉及 `themes/` 目录下官方自带主题（如 `default`、`docusaurus`、`starlight`、`nextra`、`vitepress`、`universal`）以及分发同步、测试用例的 AI 助手与自动化脚本。
+*   **物理红线**：
+    1. **严禁在 `themes/` 母本目录下遗留构建产物与临时文件**：包括但不限于 `dist/`、`build/`、`.astro/`、`.vscode/`、`.temp/`、`graph.json`、`sitemap.xml`、`__pycache__/` 以及历史生成的稿件目录 `src/content/`。
+    2. **母本与运行时输出严格物理分离**：`themes/` 根目录下的所有主题纯粹作为**只读主题母本模板 (Mother Theme Templates)**，实际同步与构建产物必须输出至对应的品牌版图（如 `imprints/{brand}/themes/{theme}/`）或全局 `dist/`，严禁污染 `themes/` 母本。
+    3. **提交与测试前自动执行纯净合规审计**：任何对主题或构建管线的修改，必须通过 `ContractGuard.verify_repository_compliance()` 审计，确保 `themes/` 目录 0 污染。
+

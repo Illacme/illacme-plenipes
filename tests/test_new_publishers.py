@@ -230,7 +230,7 @@ class TestRailwayPublisher:
         assert pub.repo_url == "https://github.com/owner/railway-repo.git"
         assert pub.token == "rw_token"
 
-    @patch("requests.post")
+    @patch("adapters.egress.publishers.railway.requests.post")
     def test_push_success_trigger_only(self, mock_post):
         from adapters.egress.publishers.railway import RailwayPublisher
         pub = RailwayPublisher(config={
@@ -248,7 +248,7 @@ class TestRailwayPublisher:
             mock_post.assert_called_once_with("https://backboard.railway.app/webhook/deploy/srv-123", proxies=None, timeout=10)
 
     @patch("subprocess.run")
-    @patch("requests.post")
+    @patch("adapters.egress.publishers.railway.requests.post")
     def test_push_success_with_git(self, mock_post, mock_run):
         from adapters.egress.publishers.railway import RailwayPublisher
         pub = RailwayPublisher(config={
@@ -291,7 +291,7 @@ class TestZeaburPublisher:
         assert pub.repo_url == "https://github.com/owner/zeabur-repo.git"
         assert pub.token == "zb_token"
 
-    @patch("requests.post")
+    @patch("adapters.egress.publishers.zeabur.requests.post")
     def test_push_success_trigger_only(self, mock_post):
         from adapters.egress.publishers.zeabur import ZeaburPublisher
         pub = ZeaburPublisher(config={
@@ -309,7 +309,7 @@ class TestZeaburPublisher:
             mock_post.assert_called_once_with("https://api.zeabur.com/deploy/srv-123", proxies=None, timeout=10)
 
     @patch("subprocess.run")
-    @patch("requests.post")
+    @patch("adapters.egress.publishers.zeabur.requests.post")
     def test_push_success_with_git(self, mock_post, mock_run):
         from adapters.egress.publishers.zeabur import ZeaburPublisher
         pub = ZeaburPublisher(config={

@@ -3,20 +3,39 @@
  * 职责：负责装帧主题画廊的渲染、卡片状态映射与视觉对齐。
  */
 
+const THEME_DISPLAY_NAMES = {
+    'sovereign': 'Sovereign',
+    'default': 'Sovereign',
+    'docusaurus': 'Docusaurus',
+    'starlight': 'Starlight',
+    'vitepress': 'VitePress',
+    'nextra': 'Nextra',
+    'universal': 'Universal',
+    'hexo': 'Hexo',
+    'hugo': 'Hugo'
+};
+
+window.getThemeDisplayName = (id) => {
+    if (!id) return '';
+    const key = String(id).toLowerCase();
+    return THEME_DISPLAY_NAMES[key] || (id.charAt(0).toUpperCase() + id.slice(1));
+};
+
 window.ThemeUI = {
     /**
      * 🏗️ 渲染主题画廊
      */
     renderThemesGallery(themes, activeTheme) {
-        themes.sort((a, b) => (activeTheme === a.id ? -1 : (activeTheme === b.id ? 1 : 0)));
+        const normalizedActive = (activeTheme === 'default' || !activeTheme) ? 'sovereign' : activeTheme;
+        themes.sort((a, b) => (normalizedActive === a.id ? -1 : (normalizedActive === b.id ? 1 : 0)));
 
         return `
             <div class="full-width">
                 <div class="settings-group">
                     <div class="card-gallery">
                     ${themes.length > 0 ? themes.map(t => {
-            const isActive = activeTheme === t.id;
-            const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖' };
+            const isActive = normalizedActive === t.id;
+            const iconMap = { 'starlight': '🌟', 'docusaurus': '🦖', 'sovereign': '👑', 'default': '👑', 'vitepress': '⚡', 'nextra': '📖', 'universal': '🌐', 'hexo': '🎨', 'hugo': '🐹' };
             const icon = iconMap[t.id] || (t.origin === 'core' ? '🎨' : '🧩');
 
             let statusLabelPill = "";
@@ -24,7 +43,7 @@ window.ThemeUI = {
             const location = t.location || 'native';
 
             const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前版图库' };
-            const locationText = locationMap[location] || location.toUpperCase();
+            const locationText = locationMap[location] || location;
 
             if (isActive) {
                 statusLabelPill = `<div class="log-tag success" style="background: hsla(152, 100%, 50%, 0.08); color: var(--neon-green, #00ff88); border: 1px solid hsla(152, 100%, 50%, 0.2); font-weight: 700; font-size: 0.65rem; padding: 2px 8px; border-radius: 6px;">🟢 当前选用</div>`;
@@ -75,8 +94,8 @@ window.ThemeUI = {
                                             <div class="card-icon" style="font-size: 1.4rem; flex-shrink: 0; margin-top: 1px;">${icon}</div>
                                             <div style="flex: 1; min-width: 0;">
                                                 <h4 style="font-size: 1.05rem; color: var(--text-bright, #ffffff); margin: 0 0 2px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                    <span>${(t.id || '').toUpperCase()}</span>
-                                                    ${t.name ? `<span style="font-size: 0.65rem; font-weight: normal; color: var(--accent-secondary); background: hsla(183, 100%, 50%, 0.08); border: 1px solid hsla(183, 100%, 50%, 0.15); padding: 1px 6px; border-radius: 4px;">${t.name}</span>` : ''}
+                                                    <span style="font-weight: 700; letter-spacing: 0.2px;">${window.getThemeDisplayName(t.id)}</span>
+                                                    ${t.name && t.name.toLowerCase() !== (t.id || '').toLowerCase() && t.name !== window.getThemeDisplayName(t.id) ? `<span style="font-size: 0.65rem; font-weight: normal; color: var(--accent-secondary); background: hsla(183, 100%, 50%, 0.08); border: 1px solid hsla(183, 100%, 50%, 0.15); padding: 1px 6px; border-radius: 4px;">${t.name}</span>` : ''}
                                                 </h4>
                                                 <p style="margin: 0; font-size: 0.73rem; color: var(--text-dim); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${t.description || '自定义装帧主题'}</p>
                                             </div>
@@ -95,7 +114,7 @@ window.ThemeUI = {
 
                                     <div class="p-control-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0;">
                                         ${actionButton}
-                                        <button class="action-btn secondary" style="height: 28px; line-height: 18px;" onclick="window.openPluginConfig('${t.id}')" ${(!t.is_enabled || location !== 'local') ? 'disabled' : ''} title="${!t.is_enabled ? '主题已被禁用' : (location === 'local' ? '自定义配置此主题的细节属性' : '请先部署或切换此主题为当前版图主题，启用后即可配置属性')}">⚙️ CONFIG</button>
+                                        <button class="action-btn secondary" style="height: 28px; line-height: 18px;" onclick="window.openPluginConfig('${t.id}', 'theme', 'governance')" ${(!t.is_enabled || location !== 'local') ? 'disabled' : ''} title="${!t.is_enabled ? '主题已被禁用' : (location === 'local' ? '自定义配置此主题的细节属性' : '请先部署或切换此主题为当前版图主题，启用后即可配置属性')}">⚙️ CONFIG</button>
                                     </div>
                                 </div>
 
@@ -128,17 +147,6 @@ window.ThemeUI = {
                         </div>
                     `}
                 </div>
-                </div>
-
-                <div class="settings-grid" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
-                    <div class="settings-group">
-                        <h4>🛠️ 主题治理工具</h4>
-                        <p class="section-desc" style="font-size: 0.8rem; margin-bottom: 12px; opacity: 0.85;">执行主题底层物理依赖的安装，并重新生成全局静态资产索引。</p>
-                        <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                            <button class="secondary-btn" onclick="window.ThemeHandlers.invokeGlobalAction('install')" style="font-size: 0.8rem;">🏗️ 自动安装主题依赖</button>
-                            <button class="secondary-btn" onclick="addAudit('📡 正在重新同步并对齐样式与脚本资源索引...')">🎨 重新生成资产索引</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;

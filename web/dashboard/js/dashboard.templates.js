@@ -27,6 +27,7 @@ window.viewTemplates = {
                         </div>
                     </div>
                     <div class="quick-actions">
+                        <div class="action-card" onclick="triggerPreview()"><div class="action-icon">🌐</div><div class="action-text"><h4>本地预览</h4><p>启动并打开 43213 预览站点</p></div></div>
                         <div class="action-card" onclick="triggerPublish()"><div class="action-icon">🚀</div><div class="action-text"><h4>全域发布</h4><p>启动流水线并分发内容</p></div></div>
                         <div class="action-card" onclick="showView('vault')"><div class="action-icon">📦</div><div class="action-text"><h4>文稿管理</h4><p>审计文库文稿与元数据</p></div></div>
                         <div class="action-card" onclick="showView('settings')"><div class="action-icon">⚙️</div><div class="action-text"><h4>系统设置</h4><p>管理出版社核心参数与翻译风格</p></div></div>
@@ -157,10 +158,15 @@ window.viewTemplates = {
                 <div class="side-tabs-container">
                     <aside class="side-tabs">
                         <div class="tab-item cap-tab active" data-cat="all"><span class="tab-icon">🌈</span> 全部能力</div>
+                        <div class="tab-item cap-tab" data-cat="ingress"><span class="tab-icon">📥</span> 内容接入</div>
+                        <div class="tab-item cap-tab" data-cat="transformer"><span class="tab-icon">🛠️</span> 文稿加工</div>
+                        <div class="tab-item cap-tab" data-cat="masker"><span class="tab-icon">🛡️</span> 安全防护</div>
+                        <div class="tab-item cap-tab" data-cat="protocol"><span class="tab-icon">🧠</span> AI 协议</div>
                         <div class="tab-item cap-tab" data-cat="theme"><span class="tab-icon">🎨</span> 视觉装帧</div>
                         <div class="tab-item cap-tab" data-cat="image_hosting"><span class="tab-icon">📷</span> 图床存储</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>
                         <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">📢</span> 社媒分发</div>
+                        <div class="tab-item cap-tab" data-cat="notification"><span class="tab-icon">🔔</span> 消息通知</div>
                         <div class="tab-item cap-tab" data-cat="editorial"><span class="tab-icon">🧬</span> 流程审计</div>
                     </aside>
                     <section class="tab-content-area scroll-container">

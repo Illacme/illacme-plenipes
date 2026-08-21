@@ -22,11 +22,11 @@ window.renderRouteMatrixCategory = () => {
                         <span style="font-size: 1.2rem;">💡</span>
                         <div>
                             <div style="color: #00f2fe; font-weight: 600; font-size: 0.83rem;">智能感知推荐</div>
-                            <div style="color: var(--text-dim); font-size: 0.75rem;">探测到您的文库中包含 <b>${detectedSubdirs.join(', ')}</b> 等目录，是否一键装载推荐的频道映射？</div>
+                            <div style="color: var(--text-dim); font-size: 0.75rem;">探测到您的文库中包含 <b>${detectedSubdirs.join(', ')}</b> 等目录，是否一键装载推荐的频道映射与全景导航？</div>
                         </div>
                     </div>
                     <button class="mini-btn glow-btn" onclick="window.applyRecommendedRouteMatrix(['${detectedSubdirs.join("','")}'])" style="padding: 5px 12px; font-size: 0.75rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 15px;">
-                        ✨ 一键装载推荐映射
+                        ✨ 一键装载推荐频道与导航
                     </button>
                 </div>
             ` : ''}
@@ -41,91 +41,153 @@ window.renderRouteMatrixCategory = () => {
                     </div>
                 ` : ''}
 
-                <div class="matrix-header" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.1fr 50px; gap: 10px; padding: 12px 15px; background: rgba(0,0,0,0.25); font-size: 0.8rem; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--glass-border);">
-                    <span>📁 文库路径</span>
-                    <span>🔗 网页路径</span>
-                    <span>🧩 网页模板</span>
-                    <span>🎭 翻译风格</span>
-                    <span style="text-align: center;">操作</span>
-                </div>
-                
-                <div class="matrix-body" id="route-matrix-body" style="padding: 6px 10px;">
-                    ${routes.length === 0 ? `
-                        <div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-dim);">
-                            暂无路由策略。您的全部文件目前均按照原始物理路径进行映射发布。
+                <!-- 🚀 [窄屏优化] 容器平滑横向滚动与防挤压最小宽度 -->
+                <div style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+                    <div style="min-width: 760px;">
+                        <div class="matrix-header" style="display: grid; grid-template-columns: 36px 1.1fr 1fr 1fr 1.4fr 0.9fr 46px 36px; gap: 8px; padding: 12px 14px; background: rgba(0,0,0,0.25); font-size: 0.76rem; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--glass-border); align-items: center; white-space: nowrap;">
+                            <span style="text-align: center;" title="调整导航菜单在顶栏的排列顺序">↕️ 排序</span>
+                            <span>📁 文库目录</span>
+                            <span>🔗 网页路径</span>
+                            <span>🧩 网页模板</span>
+                            <span>🏷️ 顶栏导航菜单</span>
+                            <span>🎭 翻译风格</span>
+                            <span style="text-align: center;">👁️ 顶栏</span>
+                            <span style="text-align: center;">操作</span>
                         </div>
-                    ` : routes.map((route, idx) => `
-                        <div class="matrix-row route-item" data-idx="${idx}" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.1fr 50px; gap: 10px; padding: 8px 0; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
-                            <div>
-                                ${(() => {
-            const directories = window.settingsData._directories || [];
-            const sourceVal = route.source || '';
-            const hasDirs = directories.length > 0;
-            const isStandard = !sourceVal || directories.includes(sourceVal);
-            let html = '';
-            if (hasDirs) {
-                html += `<select class="setting-input source-select" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                html += `<option value="" ${!sourceVal ? 'selected' : ''}>-- 选择文库目录 --</option>`;
-                directories.forEach(d => {
-                    if (d) html += `<option value="${d}" ${sourceVal === d ? 'selected' : ''}>📁 ${d}</option>`;
-                });
-                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
-                html += `</select>`;
-            }
-            html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-            return html;
-        })()}
-                            </div>
-                            <div>
-                                <input type="text" class="setting-input prefix-input" value="${route.prefix || ''}" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace; font-size: 0.76rem; padding: 6px 8px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
-                            </div>
-                            <div>
-                                ${(() => {
-            const hasSlots = Object.keys(themeSlots).length > 0;
-            const slotVal = route.target_slot || '';
-            const isStandard = !slotVal || Object.keys(themeSlots).includes(slotVal);
-            let html = '';
-            if (hasSlots) {
-                html += `<select class="setting-input slot-select" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                html += `<option value="" ${!slotVal ? 'selected' : ''}>-- 选择网页模板 --</option>`;
-                Object.entries(themeSlots).forEach(([k, v]) => {
-                    html += `<option value="${k}" ${slotVal === k ? 'selected' : ''}>${v.label || k}</option>`;
-                });
-                html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
-                html += `</select>`;
-            }
-            html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: custom_template" style="width: 100%; font-size: 0.76rem; padding: 6px 8px; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-            return html;
-        })()}
-                            </div>
-                            <div>
-                                <select class="setting-input style-input" style="width: 100%; font-size: 0.76rem; padding: 6px 8px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()">
-                                    <option value="">继承全局默认</option>
-                                    <option value="professional" ${route.style === 'professional' ? 'selected' : ''}>💼 商务严谨</option>
-                                    <option value="casual" ${route.style === 'casual' ? 'selected' : ''}>☕ 随性自然</option>
-                                    <option value="literal" ${route.style === 'literal' ? 'selected' : ''}>⚖️ 精准直译</option>
-                                </select>
-                            </div>
-                            <div style="text-align: center;">
-                                <button class="mini-btn" onclick="removeRouteMatrixRow(this)" style="background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3); color: #ff5555; height: 28px; width: 28px; padding: 0; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem;" title="删除此规则" ${!isLicensed ? 'disabled' : ''}>×</button>
-                            </div>
+                        
+                        <div class="matrix-body" id="route-matrix-body" style="padding: 6px 10px;">
+                            ${routes.length === 0 ? `
+                                <div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-dim);">
+                                    暂无路由与导航策略。您的全部文件目前均按照原始物理路径进行映射发布。
+                                </div>
+                            ` : routes.map((route, idx) => `
+                                <div class="matrix-row route-item" data-idx="${idx}" style="display: grid; grid-template-columns: 36px 1.1fr 1fr 1fr 1.4fr 0.9fr 46px 36px; gap: 8px; padding: 8px 4px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
+                                    <!-- 0. 顺序调整控制器 -->
+                                    <div class="order-controls" style="display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center;">
+                                        <button type="button" class="mini-btn move-up-btn" onclick="window.moveRouteMatrixRow(this, 'up')" ${!isLicensed || idx === 0 ? 'disabled' : ''} style="padding: 0; width: 22px; height: 13px; font-size: 0.55rem; line-height: 1; border-radius: 3px; background: rgba(255,255,255,0.05); color: ${idx === 0 ? 'rgba(255,255,255,0.2)' : 'var(--text-dim)'}; border: 1px solid rgba(255,255,255,0.08); cursor: ${idx === 0 ? 'default' : 'pointer'};" title="上移">▲</button>
+                                        <button type="button" class="mini-btn move-down-btn" onclick="window.moveRouteMatrixRow(this, 'down')" ${!isLicensed || idx === routes.length - 1 ? 'disabled' : ''} style="padding: 0; width: 22px; height: 13px; font-size: 0.55rem; line-height: 1; border-radius: 3px; background: rgba(255,255,255,0.05); color: ${idx === routes.length - 1 ? 'rgba(255,255,255,0.2)' : 'var(--text-dim)'}; border: 1px solid rgba(255,255,255,0.08); cursor: ${idx === routes.length - 1 ? 'default' : 'pointer'};" title="下移">▼</button>
+                                    </div>
+                                    <!-- 1. 文库目录 -->
+                                    <div>
+                                        ${(() => {
+                    const directories = window.settingsData._directories || [];
+                    const sourceVal = route.source || '';
+                    const isExt = !!route.external_url;
+                    if (isExt) {
+                        return `<input type="text" class="setting-input source-input" value="🌐 外部直链" disabled style="width: 100%; font-size: 0.74rem; padding: 5px 6px; opacity: 0.7;">`;
+                    }
+                    const hasDirs = directories.length > 0;
+                    const isStandard = !sourceVal || directories.includes(sourceVal);
+                    let html = '';
+                    if (hasDirs) {
+                        html += `<select class="setting-input source-select" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                        html += `<option value="" ${!sourceVal ? 'selected' : ''}>-- 选择目录 --</option>`;
+                        directories.forEach(d => {
+                            if (d) html += `<option value="${d}" ${sourceVal === d ? 'selected' : ''}>📁 ${d}</option>`;
+                        });
+                        html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
+                        html += `</select>`;
+                    }
+                    html += `<input type="text" class="setting-input source-input" value="${sourceVal}" placeholder="例如: journal" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${!hasDirs || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+                    return html;
+                })()}
+                                    </div>
+                                    <!-- 2. 网页路径 / 外部 URL -->
+                                    <div>
+                                        ${route.external_url ? `
+                                            <input type="text" class="setting-input ext-url-input" value="${route.external_url}" placeholder="https://github.com/..." style="width: 100%; color: var(--neon-cyan, #00f2fe); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                                        ` : `
+                                            <input type="text" class="setting-input prefix-input" value="${route.prefix || ''}" placeholder="例如: /blog/" style="width: 100%; color: var(--accent-secondary); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                                        `}
+                                    </div>
+                                    <!-- 3. 网页模板槽位 -->
+                                    <div>
+                                        ${route.external_url ? `
+                                            <span style="font-size: 0.72rem; color: var(--text-dim); padding: 4px 8px; background: rgba(255,255,255,0.03); border-radius: 4px; display: inline-block;">🔗 外部直链</span>
+                                        ` : (() => {
+                    const hasSlots = Object.keys(themeSlots).length > 0;
+                    const slotVal = route.target_slot || 'docs';
+                    const isStandard = !slotVal || Object.keys(themeSlots).includes(slotVal);
+                    let html = '';
+                    if (hasSlots) {
+                        html += `<select class="setting-input slot-select" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
+                        Object.entries(themeSlots).forEach(([k, v]) => {
+                            html += `<option value="${k}" ${slotVal === k ? 'selected' : ''}>${v.label || k}</option>`;
+                        });
+                        html += `<option value="_custom" ${!isStandard ? 'selected' : ''}>✏️ 自定义... </option>`;
+                        html += `</select>`;
+                    }
+                    html += `<input type="text" class="setting-input slot-input" value="${slotVal}" placeholder="例如: docs" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${!hasSlots || !isStandard ? 'block' : 'none'};" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
+                    return html;
+                })()}
+                                    </div>
+                                    <!-- 4. 顶栏导航展示 (带图标快捷选择与 🌐 多语种配置) -->
+                                    <div style="display: flex; gap: 4px; align-items: center; position: relative;">
+                                        <button type="button" class="mini-btn icon-picker-btn" onclick="window.toggleIconPicker(this, event)" ${!isLicensed ? 'disabled' : ''} style="width: 30px; height: 26px; padding: 0; font-size: 0.92rem; border-radius: 6px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="点击弹出选择常见图标">
+                                            <span class="icon-preview">${route.nav_icon || (route.external_url ? '🌐' : '📚')}</span>
+                                        </button>
+                                        <input type="hidden" class="nav-icon-input" value="${route.nav_icon || (route.external_url ? '🌐' : '📚')}">
+                                        <input type="text" class="setting-input nav-label-input" value="${route.nav_label || ''}" placeholder="${route.source || (route.external_url ? '外部链接' : '显示名称')}" style="flex: 1; min-width: 0; font-size: 0.74rem; padding: 5px 6px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                                        
+                                        <!-- 🌐 多语种导航配置按钮 -->
+                                        ${(() => {
+                                            const i18nMap = route.nav_label_i18n || {};
+                                            const customCount = Object.keys(i18nMap).filter(k => !!i18nMap[k]).length;
+                                            const hasCustom = customCount > 0;
+                                            return `
+                                                <button type="button" class="mini-btn nav-i18n-btn" onclick="window.toggleNavI18nModal(this, event)" ${!isLicensed ? 'disabled' : ''} style="padding: 2px 6px; height: 26px; font-size: 0.7rem; border-radius: 6px; background: ${hasCustom ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 255, 255, 0.05)'}; border: 1px solid ${hasCustom ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 255, 255, 0.1)'}; color: ${hasCustom ? 'var(--neon-green, #00ff88)' : 'var(--text-dim)'}; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 3px;" title="${hasCustom ? `已定制 ${customCount} 种语言导航名称` : '配置多语种导航名称'}">
+                                                    <span>🌐</span>
+                                                    <span class="i18n-count-badge" style="font-size: 0.65rem; font-weight: 700;">${hasCustom ? customCount : '+'}</span>
+                                                </button>
+                                                <input type="hidden" class="nav-i18n-input" value='${JSON.stringify(i18nMap).replace(/'/g, "&apos;")}'>
+                                            `;
+                                        })()}
+                                    </div>
+                                    <!-- 5. 专属翻译风格 -->
+                                    <div>
+                                        ${route.external_url ? `
+                                            <select class="setting-input style-input" disabled style="width: 100%; font-size: 0.74rem; padding: 5px 6px; opacity: 0.5;">
+                                                <option value="">不适用</option>
+                                            </select>
+                                        ` : `
+                                            <select class="setting-input style-input" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()">
+                                                <option value="">继承全局默认</option>
+                                                <option value="professional" ${route.style === 'professional' ? 'selected' : ''}>💼 商务严谨</option>
+                                                <option value="casual" ${route.style === 'casual' ? 'selected' : ''}>☕ 随性自然</option>
+                                                <option value="literal" ${route.style === 'literal' ? 'selected' : ''}>⚖️ 精准直译</option>
+                                            </select>
+                                        `}
+                                    </div>
+                                    <!-- 6. 顶栏显示开关 -->
+                                    <div style="text-align: center;">
+                                        <input type="checkbox" class="nav-show-input" ${(route.show_in_nav !== false) ? 'checked' : ''} ${!isLicensed ? 'disabled' : ''} onchange="syncRouteMatrixToSettings()" style="cursor: pointer; transform: scale(1.1); accent-color: var(--accent-secondary, #00f2fe);" title="是否在网站顶栏导航显示" />
+                                    </div>
+                                    <!-- 7. 操作 -->
+                                    <div style="text-align: center;">
+                                        <button class="mini-btn" onclick="removeRouteMatrixRow(this)" style="background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3); color: #ff5555; height: 26px; width: 26px; padding: 0; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem;" title="删除此规则" ${!isLicensed ? 'disabled' : ''}>×</button>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
-                    `).join('')}
-                </div>
-                
-                <div style="padding: 12px; text-align: center; border-top: 1px dashed var(--glass-border); background: var(--bg-glass, rgba(0,0,0,0.05)); border-radius: 0 0 8px 8px;">
-                    <button type="button" class="add-rule-btn" onclick="addRouteMatrixRow()" style="background: var(--white-03, rgba(255,255,255,0.03)); border: 1px dashed ${isLicensed ? 'var(--accent-secondary, #00f2fe)' : 'var(--text-muted)'}; color: ${isLicensed ? 'var(--accent-secondary, #00f2fe)' : 'var(--text-muted)'}; width: 100%; padding: 10px; border-radius: 6px; cursor: ${isLicensed ? 'pointer' : 'not-allowed'}; transition: all 0.25s ease; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;" title="${isLicensed ? '添加新路由规则' : '专属版特权功能 (点击查看详情)'}">
-                        ➕ 添加新路由规则
-                    </button>
+                        
+                        <div style="padding: 10px 14px; display: flex; gap: 10px; justify-content: space-between; border-top: 1px dashed var(--glass-border); background: var(--bg-glass, rgba(0,0,0,0.05)); border-radius: 0 0 8px 8px;">
+                            <button type="button" class="add-rule-btn" onclick="addRouteMatrixRow()" style="flex: 1; background: var(--white-03, rgba(255,255,255,0.03)); border: 1px dashed ${isLicensed ? 'var(--accent-secondary, #00f2fe)' : 'var(--text-muted)'}; color: ${isLicensed ? 'var(--accent-secondary, #00f2fe)' : 'var(--text-muted)'}; padding: 8px 12px; border-radius: 6px; cursor: ${isLicensed ? 'pointer' : 'not-allowed'}; transition: all 0.25s ease; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;" title="${isLicensed ? '添加新内容频道' : '专属版特权功能'}">
+                                ➕ 添加内容频道
+                            </button>
+                            <button type="button" class="add-rule-btn" onclick="addExternalNavRow()" style="flex: 1; background: var(--white-03, rgba(255,255,255,0.03)); border: 1px dashed ${isLicensed ? 'var(--neon-green, #00ff88)' : 'var(--text-muted)'}; color: ${isLicensed ? 'var(--neon-green, #00ff88)' : 'var(--text-muted)'}; padding: 8px 12px; border-radius: 6px; cursor: ${isLicensed ? 'pointer' : 'not-allowed'}; transition: all 0.25s ease; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;" title="${isLicensed ? '添加外部链接导航' : '专属版特权功能'}">
+                                🌐 添加外部链接导航
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div style="margin-top: 25px; padding: 15px 20px; background: rgba(0, 242, 255, 0.03); border: 1px dashed rgba(0, 242, 255, 0.2); border-radius: 8px;">
-                <h5 style="color: var(--accent-secondary, #00f2fe); margin-bottom: 8px; font-size: 0.9rem; font-weight: 700;">💡 策略运行原理</h5>
-                <ul style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.6; padding-left: 20px; margin: 0;">
-                    <li>当扫描引擎遇到与 <b>源目录</b> 匹配的文件夹时，将物理拦截原路，并将其分发至配置的 <b>Web 路由路径</b>。</li>
-                    <li>指派独立的<b>网页模板</b>将覆盖全局默认的渲染管线，允许为该频道的文章套用完全不同的前端布局组件。</li>
-                    <li>当进行双语多语言生成时，AI 将自动采用本配置行锁定的 <b>翻译风格</b>。</li>
+            <div style="margin-top: 22px; padding: 14px 18px; background: rgba(0, 242, 255, 0.03); border: 1px dashed rgba(0, 242, 255, 0.2); border-radius: 8px;">
+                <h5 style="color: var(--accent-secondary, #00f2fe); margin-bottom: 8px; font-size: 0.88rem; font-weight: 700;">💡 频道与全景导航工作原理</h5>
+                <ul style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.6; padding-left: 18px; margin: 0;">
+                    <li><b>频道即导航</b>：配置好内容频道与 Web 路径后，系统自动将其编译为网站顶栏的导航菜单项（勾选“顶栏”即可生效）。</li>
+                    <li><b>跨 SSG 零死链自愈</b>：无论从 Sovereign 切换到 Docusaurus、VitePress 还是 Starlight，所有频道路径与多语言路由全部由适配器 100% 自动对齐。</li>
+                    <li><b>外部直链扩展</b>：支持添加 GitHub、官方社区等外部链接导航，自动归纳至顶栏右侧。</li>
                 </ul>
             </div>
         </div>

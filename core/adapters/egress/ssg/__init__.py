@@ -73,13 +73,16 @@ class SSGAdapter:
     def _load_theme_adapters(self, theme_name: str):
         import os
         from core.config.config import THEMES_DIR
-        path = os.path.abspath(f"{THEMES_DIR}/{theme_name}/adapters")
+        target_name = "sovereign" if theme_name in ("default", "sovereign", "") else theme_name
+        path = os.path.abspath(f"{THEMES_DIR}/{target_name}/adapters")
+        if not os.path.exists(path):
+            path = os.path.abspath(f"{THEMES_DIR}/{theme_name}/adapters")
         if not os.path.exists(path): return
         try:
             theme_root = os.path.abspath(THEMES_DIR)
             if theme_root not in sys.path:
                 sys.path.append(theme_root)
-            pkg_name = f"{theme_name}.adapters"
+            pkg_name = f"{target_name}.adapters"
             discover_and_register([path], pkg_name, BaseSSGAdapter, SSGRegistry.register)
         except Exception as e:
             tlog.warning(f"⚠️ [SSG 引擎] 加载主题适配器失败: {e}")

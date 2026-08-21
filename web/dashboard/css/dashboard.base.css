@@ -162,22 +162,112 @@ h1 { font-size: 1.05rem; letter-spacing: 0.5px; font-weight: 300; white-space: n
     100% { box-shadow: 0 0 16px rgba(0, 255, 170, 0.45); }
 }
 
-/* 🛰️ 导航系统 */
-#top-nav { display: flex; gap: 2rem; align-items: center; flex-shrink: 0; flex-wrap: nowrap; }
-
-.nav-item {
-    display: flex; align-items: center; gap: 8px;
-    color: var(--text-dim); cursor: pointer;
-    font-size: 0.85rem; font-weight: 500;
-    transition: all 0.3s; padding: 10px 0;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap; /* 🛡️ 禁止折行 */
+/* 🛰️ 导航系统 (Fluid Responsive Top Nav) */
+#top-nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 20px);
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 0;
 }
 
-.nav-item:hover, .nav-item.active {
+.nav-tabs-wrapper {
+    display: flex;
+    align-items: center;
+    gap: clamp(4px, 0.8vw, 16px);
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.nav-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: clamp(0.76rem, 0.82vw, 0.84rem);
+    font-weight: 500;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 6px clamp(6px, 0.6vw, 10px);
+    border-radius: 6px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.nav-item:hover {
+    color: var(--text-bright);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-item.active {
     color: var(--text-bright);
     border-bottom-color: var(--accent-primary);
+    background: rgba(163, 76, 255, 0.08);
     text-shadow: var(--shadow-glow);
+}
+
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: 2px;
+}
+
+.header-actions-group button {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 📱 响应式媒体断点矩阵 (SOP-03 Responsive Grid Breakpoints) */
+
+/* 1. 紧凑型桌面与大笔记本 (≤ 1560px) */
+@media (max-width: 1560px) {
+    header { padding: 0 16px; }
+    #top-nav { gap: 8px; }
+    .nav-tabs-wrapper { gap: 4px; }
+    .nav-item { padding: 5px 6px; font-size: 0.76rem; gap: 4px; }
+    .header-actions-group button { padding: 5px 10px; font-size: 0.74rem; }
+}
+
+/* 2. 标准笔记本屏幕 (≤ 1360px)：智能精简文字，显示高质感极简图标态 */
+@media (max-width: 1360px) {
+    .nav-item .nav-text { display: none; }
+    .nav-item {
+        padding: 7px 10px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border-bottom: none;
+    }
+    .nav-item.active {
+        background: rgba(163, 76, 255, 0.18);
+        box-shadow: 0 0 10px rgba(163, 76, 255, 0.25);
+    }
+    .header-actions-group button { padding: 5px 8px; font-size: 0.72rem; }
+}
+
+/* 3. 平板 / 紧凑窗口 (≤ 960px) */
+@media (max-width: 960px) {
+    .logo-section .context-switcher { display: none; }
+    .header-actions-group .btn-text { display: none; }
+    .header-actions-group button { padding: 6px 9px; font-size: 0.85rem; }
+}
+
+/* 4. 移动端与极窄视口 (≤ 640px) */
+@media (max-width: 640px) {
+    header { padding: 0 8px; }
+    .logo-section h1 { font-size: 0.85rem; }
+    .header-pro-badge { display: none; }
 }
 
 /* 🌌 [V57.0] Sovereign Component System (组件大一统) */

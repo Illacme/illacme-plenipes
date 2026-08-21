@@ -55,9 +55,14 @@ window.initWebSocket = () => {
             // 🚀 [V78.7] 白盒化进度流：拦截后端 tlog 投递至终端
             const modal = document.getElementById('terminal-modal');
             if (modal && modal.style.display !== 'none') {
-                if (typeof window.appendTerminalLog === 'function') {
-                    const msg = data.payload.message || '';
-                    const level = data.payload.level || 'INFO';
+                const msg = data.payload.message || '';
+                const level = data.payload.level || 'INFO';
+                
+                if (modal.dataset.context === 'publish_preview' && typeof window.updatePreviewStepperFromLog === 'function') {
+                    // 发布预览模式：由专用过滤器输出精简友好的创作者日志
+                    window.updatePreviewStepperFromLog(msg);
+                } else if (typeof window.appendTerminalLog === 'function') {
+                    // 全网发布/通用模式：输出详细工程日志
                     let color = null;
                     if (level === 'ERROR' || level === 'CRITICAL') color = '#ff4d4d';
                     else if (level === 'WARNING') color = '#ffaa00';
@@ -219,27 +224,48 @@ window.initWebSocket = () => {
             // 🚀 [V78.7] 白盒化进度流：显示流水线完成并点亮确认按钮
             const modal = document.getElementById('terminal-modal');
             if (modal && modal.style.display !== 'none') {
-                if (typeof window.appendTerminalLog === 'function') {
-                    window.appendTerminalLog('✅ 同步流水线执行完毕，资产已全量生成！', '#00ff88');
-                }
-                const okBtn = document.getElementById('btn-terminal-ok');
-                if (okBtn) okBtn.style.display = 'block';
+                if ((modal.dataset.context === 'publish_preview' || modal.dataset.context === 'preview') && typeof window.handlePreviewSyncCompleted === 'function') {
+                    window.handlePreviewSyncCompleted();
+                } else {
+                    if (typeof window.appendTerminalLog === 'function') {
+                        window.appendTerminalLog('✅ 同步流水线执行完毕，资产已全量生成！', '#00ff88');
+                    }
+                    const okBtn = document.getElementById('btn-terminal-ok');
+                    if (okBtn) okBtn.style.display = 'block';
 
-                const republishBtn = document.getElementById('btn-terminal-republish');
-                if (republishBtn) republishBtn.style.display = 'none';
+                    const republishBtn = document.getElementById('btn-terminal-republish');
+                    if (republishBtn) republishBtn.style.display = 'none';
 
-                // 🛡️ [Abort] 隐藏中止按钮
-                const abortBtn = document.getElementById('btn-terminal-abort');
-                if (abortBtn) abortBtn.style.display = 'none';
+                    const openPreviewBtn = document.getElementById('btn-terminal-open-preview');
+                    if (openPreviewBtn) openPreviewBtn.style.display = 'none';
 
-                const statusEl = document.getElementById('terminal-status');
-                if (statusEl) {
-                    statusEl.innerText = 'COMPLETED';
-                    statusEl.className = 'online';
+                    // 🛡️ [Abort] 隐藏中止按钮
+                    const abortBtn = document.getElementById('btn-terminal-abort');
+                    if (abortBtn) abortBtn.style.display = 'none';
+
+                    const statusEl = document.getElementById('terminal-status');
+                    if (statusEl) {
+                        statusEl.innerText = 'COMPLETED';
+                        statusEl.className = 'online';
+                    }
                 }
             }
 
             // 🚀 [V89.0] 部署后置智能自愈引导：智能查询待同步分发资产并提供一键同步弹窗
+            // 🛡️ [发布预览与校对豁免] 本地发布预览、单篇校对工作台激活中、或未启用社媒分发时，绝不弹出社媒分发提示
+            const isReviewDrawerOpen = !!(window._reviewState?.docId || 
+                                          document.getElementById('translation-review-drawer')?.classList.contains('active') ||
+                                          document.getElementById('translation-review-modal')?.classList.contains('active'));
+            const isSyndicationEnabled = window.settingsData?.syndication?.enabled === true;
+            const isPreviewFlow = data.payload?.local_only === true ||
+                                  window._isPublishPreviewActive ||
+                                  isReviewDrawerOpen ||
+                                  !isSyndicationEnabled ||
+                                  (modal && (modal.dataset.context === 'publish_preview' || modal.dataset.context === 'preview' || modal.dataset.lastContext?.startsWith('publish_preview')));
+            if (isPreviewFlow) {
+                return;
+            }
+
             setTimeout(async () => {
                 try {
                     // 🛡️ 免打扰自愈：如果用户点击过“不再提示”，则直接屏蔽后续弹窗

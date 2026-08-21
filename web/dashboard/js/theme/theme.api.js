@@ -16,7 +16,8 @@ window.ThemeAPI = {
             });
             
             if (res && res.status === 'success') {
-                if (typeof addAudit === 'function') addAudit(`✅ [装帧对正] 成功切换至主题: ${themeId.toUpperCase()}`, "success");
+                const themeName = window.getThemeDisplayName ? window.getThemeDisplayName(themeId) : themeId;
+                if (typeof addAudit === 'function') addAudit(`✅ [装帧对正] 成功切换至主题: ${themeName}`, "success");
                 window.settingsData.active_theme = themeId;
                 return true;
             }

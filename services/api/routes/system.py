@@ -111,12 +111,28 @@ def restart_preview() -> Dict[str, str]:
         raise HTTPException(status_code=400, detail="Engine not initialized")
     
     from core.config.config import THEMES_DIR
-    theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
-    is_framework = os.path.exists(os.path.join(theme_dir, "package.json"))
+    brand_theme_dir = os.path.join(getattr(engine, 'imprint_root', ''), "themes", engine.active_theme) if getattr(engine, 'imprint_root', None) else ""
+    mother_theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
+    theme_dir = brand_theme_dir if (brand_theme_dir and os.path.exists(brand_theme_dir)) else mother_theme_dir
+    
+    # 🎯 准确判别是否为真实的 SSG 前端框架 DevServer 还是原生静态编译站点
+    # 真实框架判定条件：必须存在框架特有的配置文件 (Docusaurus/VitePress/Nextra/Starlight)
+    is_docusaurus = os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) or os.path.exists(os.path.join(mother_theme_dir, "docusaurus.config.js"))
+    is_vitepress = os.path.exists(os.path.join(theme_dir, ".vitepress")) or os.path.exists(os.path.join(mother_theme_dir, ".vitepress"))
+    is_nextra = os.path.exists(os.path.join(theme_dir, "theme.config.jsx")) or os.path.exists(os.path.join(theme_dir, "theme.config.tsx")) or os.path.exists(os.path.join(mother_theme_dir, "theme.config.jsx"))
+    is_starlight = "starlight" in (engine.active_theme or "").lower() and (
+        os.path.exists(os.path.join(theme_dir, "astro.config.mjs")) or os.path.exists(os.path.join(mother_theme_dir, "astro.config.mjs"))
+    )
+
+    has_package_json = os.path.exists(os.path.join(theme_dir, "package.json")) or os.path.exists(os.path.join(mother_theme_dir, "package.json"))
+    is_framework = bool((is_docusaurus or is_vitepress or is_nextra or is_starlight) and has_package_json)
     
     from core.utils.dev_server import DevServer, FrameworkDevServer
     srv = getattr(engine, 'preview_server', None)
     p_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
+    if p_dir:
+        os.makedirs(p_dir, exist_ok=True)
+
     is_diff = srv and (not isinstance(srv, FrameworkDevServer if is_framework else DevServer) or srv.directory != (theme_dir if is_framework else p_dir))
     if is_diff:
         try:
@@ -126,8 +142,9 @@ def restart_preview() -> Dict[str, str]:
         engine.preview_server = None
     if not srv or is_diff:
         port = getattr(engine.config.system, 'serve_port', 43213)
-        cmd = "npm run start -- --port {port}" if os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) else "npm run dev -- --port {port}"
-        engine.preview_server = FrameworkDevServer(directory=theme_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
+        cmd = "npm run start -- --port {port}" if is_docusaurus else "npm run dev -- --port {port}"
+        target_dir = theme_dir if (is_framework and os.path.exists(theme_dir)) else mother_theme_dir if is_framework else p_dir
+        engine.preview_server = FrameworkDevServer(directory=target_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
     
     try:
         if engine.preview_server:
@@ -282,8 +299,8 @@ async def resume_watchdog() -> Dict[str, str]:
     return {"status": "resumed"}
 
 @router.post("/api/system/sync/trigger", dependencies=[Depends(verify_token)])
-async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool = False) -> Dict[str, Any]:
-    """🚀 [V51.0] 全球同步点火接口：驱动编排中枢执行全量同步"""
+async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool = False, local_only: bool = False, clear_cache: bool = False) -> Dict[str, Any]:
+    """🚀 [V51.0] 全球同步点火接口：驱动编排中枢执行全量同步 / 发布预览"""
     engine = get_global_engine()
     if not engine:
         raise HTTPException(status_code=503, detail="Engine not ready")
@@ -296,7 +313,8 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
         return {"status": "error", "reason": str(e)}
 
     from core.runtime.orchestrator import start_asynchronous_sync
-    future_id = start_asynchronous_sync(engine, dry_run=dry_run, force=force, sandbox=sandbox)
+    future_id = start_asynchronous_sync(engine, dry_run=dry_run, force=force, sandbox=sandbox, local_only=local_only, clear_cache=clear_cache)
+
     
     if future_id is None or future_id == 0:
         return {"status": "rejected", "reason": "Already publishing"}
@@ -304,7 +322,8 @@ async def trigger_sync(dry_run: bool = False, force: bool = False, sandbox: bool
     return {
         "status": "started",
         "future_id": future_id,
-        "mode": "asynchronous"
+        "mode": "asynchronous",
+        "local_only": local_only
     }
 
 @router.get("/api/system/sync/status", dependencies=[Depends(verify_token)])
@@ -322,6 +341,13 @@ async def abort_sync() -> Dict[str, Any]:
     
     # 开启中止信号
     engine.abort_sync = True
+
+    # 清空后台排队队列
+    try:
+        from core.runtime.orchestrator import _pending_sync_queue
+        _pending_sync_queue.clear()
+    except Exception:
+        pass
     
     # 清空并发执行池中挂起的工作
     from core.logic.orchestration.task_orchestrator import global_executor, ai_executor, asset_executor

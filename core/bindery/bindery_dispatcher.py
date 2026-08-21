@@ -101,7 +101,19 @@ class BinderyDispatcher:
                     lang_seo = seo_data["i18n_seo"].get(lang_code)
                     if lang_seo and isinstance(lang_seo, dict):
                         actual_seo = {**seo_data, **lang_seo}
-                sub_path = os.path.join(route_prefix, mapped_sub_dir) if route_prefix or mapped_sub_dir else ""
+                eff_sub = mapped_sub_dir
+                if mapped_sub_dir and route_prefix:
+                    sub_clean = mapped_sub_dir.strip("/\\")
+                    prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
+                    if sub_clean in prefix_parts:
+                        eff_sub = ""
+
+                # 🚀 [V100.9] 静态层级精准对齐：直接基于 resolve_physical_path 预判实际静态落盘相对路径
+                static_site_root = self.paths.get('site_dir') or 'dist'
+                predicted_dest = self.route_manager.resolve_physical_path(
+                    static_site_root, lang_code, route_prefix, eff_sub, slug, '.html', source_type=target_slot
+                )
+                sub_path = os.path.relpath(predicted_dest, static_site_root).replace('\\', '/')
 
                 # 🔒 [I5] 人工校对锁检测（Q4=A：SSG 渲染前拦截，确保跨主题兼容）
                 _use_locked = False
@@ -176,8 +188,15 @@ class BinderyDispatcher:
 
         # 🚀 [V7.7] Hreflang SEO 矩阵注入
         hreflangs = []
-        source_code = self.i18n.source.lang_code
-        all_langs = [source_code] + [t.lang_code for t in self.i18n.targets if t.lang_code]
+        source_code = self.i18n.source.lang_code if (self.i18n and self.i18n.source) else "zh"
+        # 🚀 [V7.7.1] 将 "auto" 解析为系统的默认母语言，杜绝覆盖为当前译文语言导致源语种丢失
+        if not source_code or source_code == "auto":
+            source_code = getattr(self.route_manager, 'default_lang', 'zh') or 'zh'
+            if source_code == 'auto':
+                source_code = 'zh'
+        
+        target_codes = [t.lang_code for t in self.i18n.targets if t.lang_code] if (self.i18n and self.i18n.targets) else []
+        all_langs = [source_code] + [tc for tc in target_codes if tc != source_code]
 
         for code in all_langs:
             # 推导逻辑 URL

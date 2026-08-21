@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 
 TEST_VAULT = os.path.join(BASE_DIR, "content-vault/V12_Test")
-OUTPUT_BASE = os.path.join(BASE_DIR, "themes/default/src/content/docs")
+OUTPUT_BASE = os.path.join(BASE_DIR, "imprints/default/themes/sovereign/src/content/docs")
 
 def setup_test_files():
     print("🛠️  [1/4] 正在构造全后缀测试矩阵...")

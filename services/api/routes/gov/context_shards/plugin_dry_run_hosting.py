@@ -3,6 +3,7 @@
 🛡️ [V74.96] Gov Plugin Dry Run Hosting Shard
 职责：物理通道连接测试引擎中的全站托管类插件（Cloudflare, GitHub Pages, Netlify, Vercel 等）的真实 API 握手探测与代理路由穿透。
 """
+import os
 from typing import Dict, Any, List
 
 def run_hosting_plugin_dry_run(
@@ -98,17 +99,20 @@ def run_hosting_plugin_dry_run(
             success = False
 
     elif plugin_id == "github_pages":
-        repo = settings.get("repo", "") or settings.get("repo_url", "")
-        # 如果是 repo_url，尝试从中提取 owner/repo
-        if repo and ("github.com" in repo or "git@github.com" in repo):
-            parts = repo.split("github.com/") or repo.split("github.com:")
-            if len(parts) > 1:
-                repo = parts[1].replace(".git", "").strip()
+        raw_repo = (settings.get("repo", "") or settings.get("repo_url", "") or settings.get("repository", "") or "").strip()
+        repo = raw_repo
+        
+        # 兼容规范化提取 owner/repo
+        if "github.com/" in raw_repo:
+            repo = raw_repo.split("github.com/")[1]
+        elif "github.com:" in raw_repo:
+            repo = raw_repo.split("github.com:")[1]
+        repo = repo.replace(".git", "").strip().strip("/")
 
         token = settings.get("token", "")
 
         if not repo:
-            logs.append(log_func("ERROR", "❌ [错误] 未配置 GitHub 仓库 (格式应为 'owner/repo'，例如 'username/blog-site')。"))
+            logs.append(log_func("ERROR", "❌ [错误] 未配置 GitHub 仓库 (格式应为 'owner/repo' 或 'git@github.com:owner/repo.git')。"))
             return False
 
         if token:
@@ -155,22 +159,51 @@ def run_hosting_plugin_dry_run(
                         success = False
                 except Exception as retry_err:
                     logs.append(log_func("WARN", f"⚠️ [网络] 连接 GitHub API 超时或出错: {retry_err}。"))
-                    logs.append(log_func("INFO", "💡 [自愈建议] 1. 请核对本地代理 127.0.0.1:10808 节点连接性；2. 若仅部署网页，亦可使用 SSH 格式 (git@github.com:owner/repo.git) 避开 API 限频。"))
+                    logs.append(log_func("INFO", "💡 [自愈建议] 1. 请核对本地代理节点连接性；2. 若仅部署网页，亦可使用 SSH 格式 (git@github.com:owner/repo.git) 避开 API 限频。"))
                     success = False
         else:
-            # 免密 SSH 探测或不带 Token 的公开仓库探测
-            logs.append(log_func("INFO", "📡 [探测] 当前未配置 HTTPS Token，正在测试公开仓库的可达性..."))
-            url = f"https://api.github.com/repos/{repo}"
+            # 🚀 [多因子免密探测] 优先使用本地 Git / SSH 探针直接握手远程仓库
+            full_repo_url = raw_repo if ("github.com" in raw_repo or raw_repo.startswith("git@")) else f"git@github.com:{repo}.git"
+            logs.append(log_func("INFO", f"🔑 [免密探测] 当前未配置 Token，正在通过本地 Git / SSH 协议握手 '{full_repo_url}'..."))
+            
+            import subprocess
+            ssh_probe_passed = False
             try:
-                resp = requests.get(url, proxies=proxies, timeout=15)
-                if resp.status_code == 200:
-                    logs.append(log_func("SUCCESS", f"🟢 [成功] 成功检测到公开仓库 '{repo}'。由于使用 SSH 免密部署，请确认您的本地 SSH Key 已绑定至 GitHub。"))
-                else:
-                    logs.append(log_func("ERROR", f"❌ [错误] 无法获取公开仓库 '{repo}' 的状态，若为私有仓库请填写 Git Token (Access Token)。"))
+                probe_env = dict(os.environ)
+                probe_env["GIT_TERMINAL_PROMPT"] = "0"
+                probe_env["GIT_SSH_COMMAND"] = "ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+                probe_proc = subprocess.run(
+                    ["git", "ls-remote", "--heads", full_repo_url],
+                    capture_output=True,
+                    text=True,
+                    timeout=8,
+                    env=probe_env
+                )
+                if probe_proc.returncode == 0:
+                    ssh_probe_passed = True
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] 本地 SSH 密钥连通极佳！已成功免密握手远程仓库 '{repo}'，无需填写 Token 即可直接实现全自动打包发布！"))
+                    success = True
+            except Exception:
+                pass
+
+            if not ssh_probe_passed:
+                # 降级尝试公开仓库 API 探针
+                logs.append(log_func("INFO", f"📡 [公开探测] 正在测试公开仓库 '{repo}' 的可达性..."))
+                url = f"https://api.github.com/repos/{repo}"
+                try:
+                    resp = requests.get(url, proxies=proxies, timeout=10)
+                    if resp.status_code == 200:
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] 成功检测到公开仓库 '{repo}'。若本地已配置 SSH Key 即可直接免密推送。"))
+                        success = True
+                    elif resp.status_code == 404:
+                        logs.append(log_func("WARN", f"⚠️ [提示] 未能在公开列表找到仓库 '{repo}' (若为私有仓库，请确保本地 SSH Key 具备访问权限或填入 Personal Access Token)。"))
+                        success = False
+                    else:
+                        logs.append(log_func("ERROR", f"❌ [错误] 无法获取仓库 '{repo}' 的状态 (HTTP {resp.status_code})。"))
+                        success = False
+                except Exception as e:
+                    logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 GitHub: {e}。建议检查网络或配置代理。"))
                     success = False
-            except Exception as e:
-                logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 GitHub: {e}。"))
-                success = False
 
     elif plugin_id == "netlify":
         # 对齐前端的字段：netlify 中使用的是 auth_token，兼容 token

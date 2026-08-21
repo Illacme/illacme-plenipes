@@ -98,7 +98,7 @@ class IncrementalBuildManager:
 
     def build(self) -> bool:
         os.makedirs(self.cache_dir, exist_ok=True)
-        build_cmd = self.adapter.get_build_command()
+        build_cmd = getattr(self.adapter, "get_build_command", lambda: "python plenipes.py --sync")()
         tlog.info("🔍 [增量编译] 正在扫描源文件指纹...")
         current_fps = self.scan_source_fingerprints()
         history = {}

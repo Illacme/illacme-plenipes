@@ -110,18 +110,22 @@ const config = {
           src: themeOptions.logo_path || 'img/logo.svg',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Wiki',
-          },
-          { to: '/blog', label: 'Blog', position: 'left' },
-          {
-            href: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes',
-            label: 'GitHub',
-            position: 'right',
-          },
+          ...(themeOptions.navbar_items && themeOptions.navbar_items.length > 0
+            ? themeOptions.navbar_items
+            : [
+                {
+                  type: 'docSidebar',
+                  sidebarId: 'tutorialSidebar',
+                  position: 'left',
+                  label: '📚 文档中心',
+                },
+                { to: '/blog', label: '📰 官方博客', position: 'left' },
+                {
+                  href: themeOptions.github_repo || 'https://github.com/illacme/illacme-plenipes',
+                  label: 'GitHub',
+                  position: 'right',
+                },
+              ]),
           // 🚀 仅在多语言（locales 数量大于 1）时才注入这个语言切换组件
           ...(themeOptions.i18n && themeOptions.i18n.locales && themeOptions.i18n.locales.length > 1 ? [
             {

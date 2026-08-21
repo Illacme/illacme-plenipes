@@ -63,7 +63,11 @@ python3 plenipes.py --watch
 
 ---
 
-### 📜 治理协议 / License
-本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。
+### 📜 治理协议与商业许可 / License & Legal
+
+- **开源非商业许可**：开源版本采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议，供个人创作与学术研究免费使用。
+- **商业授权 (Commercial EULA)**：任何用于商业运营、付费分发或企业部署的场景，请参阅 **[最终用户许可协议 (EULA)](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/EULA.md)**。
+- **数据主权保障**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/DATA_SOVEREIGNTY.md)**。
+- **免责声明与隐私政策**：详见 **[第三方凭据与 AI 内容免责声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[隐私与遥测声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/PRIVACY_POLICY.md)**。
 
 🛡️ *Illacme-plenipes - 让主权照耀创作，让版图横跨全球。*

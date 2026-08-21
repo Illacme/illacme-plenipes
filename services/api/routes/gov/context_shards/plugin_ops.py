@@ -170,6 +170,7 @@ async def toggle_plugin_impl(payload: dict) -> dict:
     """🚀 [V74.89] 插件物理主权开关实现：从系统内核层面启用或禁用驱动加载"""
     plugin_id = payload.get("id")
     enable = payload.get("enable")
+    category = payload.get("category")
     
     engine = get_global_engine()
     if not engine: return {"status": "error", "error": "Engine offline"}
@@ -178,7 +179,10 @@ async def toggle_plugin_impl(payload: dict) -> dict:
     # 🛡️ 安全验证：如果是正在活跃使用的插件，不能被关闭！
     from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
     matrix = assemble_plugin_matrix()
-    is_in_use = any(p["id"] == plugin_id and p.get("is_in_use") for p in matrix)
+    if category:
+        is_in_use = any(p["id"] == plugin_id and p.get("category") == category and p.get("is_in_use") for p in matrix)
+    else:
+        is_in_use = any(p["id"] == plugin_id and p.get("is_in_use") for p in matrix)
             
     if is_in_use and not enable:
         return {"status": "error", "error": "该插件正在被当前品牌绑定使用，无法在全局层面禁用。请先进入配置抽屉解绑。"}

@@ -33,7 +33,16 @@ window.PLATFORM_PORTAL_LINKS = {
     'qiniu': { name: '七牛云 Kodo', home: 'https://www.qiniu.com', token: 'https://portal.qiniu.com/user/key' },
 
     // 社交媒体与分发平台 (Publishers)
+    'xiaohongshu': { name: '小红书', home: 'https://creator.xiaohongshu.com', token: 'https://creator.xiaohongshu.com' },
+    'red': { name: '小红书', home: 'https://creator.xiaohongshu.com', token: 'https://creator.xiaohongshu.com' },
+    'toutiao': { name: '今日头条', home: 'https://mp.toutiao.com', token: 'https://mp.toutiao.com/profile_v4/graphic/publish' },
+    'csdn': { name: 'CSDN 博客', home: 'https://blog.csdn.net', token: 'https://mp.csdn.net' },
+    'cnblogs': { name: '博客园', home: 'https://www.cnblogs.com', token: 'https://i.cnblogs.com/settings' },
+    'bilibili': { name: 'Bilibili 专栏', home: 'https://member.bilibili.com/platform/article-up', token: 'https://member.bilibili.com/platform/article-up' },
+    'segmentfault': { name: 'SegmentFault 思否', home: 'https://segmentfault.com', token: 'https://segmentfault.com/user/settings' },
+    'oschina': { name: '开源中国', home: 'https://www.oschina.net', token: 'https://www.oschina.net/openapi' },
     'devto': { name: 'Dev.to', home: 'https://dev.to', token: 'https://dev.to/settings/extensions' },
+    'dev_to': { name: 'Dev.to', home: 'https://dev.to', token: 'https://dev.to/settings/extensions' },
     'hashnode': { name: 'Hashnode', home: 'https://hashnode.com', token: 'https://hashnode.com/settings/developer' },
     'medium': { name: 'Medium', home: 'https://medium.com', token: 'https://medium.com/me/settings/security' },
     'ghost': { name: 'Ghost', home: 'https://ghost.org', token: 'https://ghost.org' },
@@ -46,12 +55,50 @@ window.PLATFORM_PORTAL_LINKS = {
     'discord': { name: 'Discord', home: 'https://discord.com', token: 'https://discord.com/developers/applications' },
     'linkedin': { name: 'LinkedIn', home: 'https://www.linkedin.com', token: 'https://www.linkedin.com/developers/apps' },
 
-    // 静态生成器引擎 (SSG Engines)
+    // 消息通知与告警 (Notifications & Webhooks)
+    'feishu': { name: '飞书开放平台', home: 'https://open.feishu.cn', token: 'https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot' },
+    'dingtalk': { name: '钉钉开放平台', home: 'https://open.dingtalk.com', token: 'https://open.dingtalk.com/document/robots/custom-robot-access' },
+    'wecom': { name: '企业微信', home: 'https://work.weixin.qq.com', token: 'https://work.weixin.qq.com/api/doc/90000/90136/91770' },
+    'email': { name: 'SMTP 邮件服务', home: 'https://support.google.com/mail/answer/7126229', token: 'https://myaccount.google.com/apppasswords' },
+    'sms': { name: '短信服务网关', home: 'https://www.aliyun.com/product/sms', token: 'https://dysms.console.aliyun.com' },
+    'app_push': { name: 'APP Push 通知', home: 'https://pusher.com', token: 'https://dashboard.pusher.com' },
+    'generic_webhook': { name: '通用 Webhook', home: 'https://webhook.site', token: 'https://webhook.site' },
+    'webhook_dispatch': { name: 'Webhook 调度中心', home: 'https://webhook.site', token: 'https://webhook.site' },
+
+    // 图床与存储补充 (Storage Addons)
+    'lsky_pro': { name: 'Lsky Pro 兰空图床', home: 'https://www.lsky.pro', token: 'https://docs.lsky.pro' },
+    'superbed': { name: '聚合图床 Superbed', home: 'https://www.superbed.cn', token: 'https://www.superbed.cn' },
+    'sftp': { name: 'SFTP 存储服务器', home: 'https://www.openssh.com', token: 'https://www.openssh.com' },
+
+    // 大语言模型 AI 协议 (AI Providers & Protocols)
+    'openai': { name: 'OpenAI', home: 'https://openai.com', token: 'https://platform.openai.com/api-keys' },
+    'anthropic': { name: 'Anthropic Claude', home: 'https://www.anthropic.com', token: 'https://console.anthropic.com/settings/keys' },
+    'claude': { name: 'Anthropic Claude', home: 'https://www.anthropic.com', token: 'https://console.anthropic.com/settings/keys' },
+    'gemini': { name: 'Google Gemini', home: 'https://ai.google.dev', token: 'https://aistudio.google.com/app/apikey' },
+    'deepseek': { name: 'DeepSeek', home: 'https://www.deepseek.com', token: 'https://platform.deepseek.com/api_keys' },
+    'ollama': { name: 'Ollama 本地大模型', home: 'https://ollama.com', token: 'https://ollama.com' },
+    'qwen': { name: '通义千问 (Qwen)', home: 'https://tongyi.aliyun.com', token: 'https://dashscope.console.aliyun.com/apiKey' },
+    'zhipu': { name: '智谱 GLM', home: 'https://open.bigmodel.cn', token: 'https://open.bigmodel.cn/usercenter/apikeys' },
+
+    // 静态生成器引擎与装帧主题 (SSG Engines & Themes)
+    'default': { name: 'Default 默认母本', home: 'https://github.com/eason-space/illacme-plenipes', token: '' },
+    'docusaurus': { name: 'Docusaurus', home: 'https://docusaurus.io', token: 'https://docusaurus.io/docs' },
+    'starlight': { name: 'Starlight', home: 'https://starlight.astro.build', token: 'https://starlight.astro.build/getting-started/' },
+    'vitepress': { name: 'VitePress', home: 'https://vitepress.dev', token: 'https://vitepress.dev/guide/what-is-vitepress' },
+    'nextra': { name: 'Nextra', home: 'https://nextra.site', token: 'https://nextra.site/docs' },
+    'universal': { name: 'Universal Markdown', home: 'https://www.markdownguide.org', token: 'https://www.markdownguide.org' },
+    'sovereign': { name: 'Sovereign', home: 'https://github.com/eason-space/illacme-plenipes', token: '' },
     'hugo': { name: 'Hugo 引擎', home: 'https://gohugo.io', token: 'https://gohugo.io/documentation/' },
     'hexo': { name: 'Hexo 引擎', home: 'https://hexo.io', token: 'https://hexo.io/docs/' },
     'astro': { name: 'Astro 引擎', home: 'https://astro.build', token: 'https://docs.astro.build' },
     'nextjs': { name: 'Next.js 引擎', home: 'https://nextjs.org', token: 'https://nextjs.org/docs' },
-    'vuepress': { name: 'VuePress 引擎', home: 'https://vuepress.vuejs.org', token: 'https://vuepress.vuejs.org' }
+    'vuepress': { name: 'VuePress 引擎', home: 'https://vuepress.vuejs.org', token: 'https://vuepress.vuejs.org' },
+
+    // 安全与文稿加工 (Security & Processing)
+    'exif_scrubber': { name: 'EXIF 地理脱敏', home: 'https://exiftool.org', token: '' },
+    'sensitive_filter': { name: '敏感词屏障', home: 'https://github.com/eason-space/illacme-plenipes', token: '' },
+    'ast_processor': { name: 'AST 语法加工', home: 'https://github.com/Python-Markdown/markdown', token: '' },
+    'markdown_normalizer': { name: 'Markdown 归一化', home: 'https://commonmark.org', token: '' }
 };
 
 window.renderPlatformPortalGuide = (id) => {

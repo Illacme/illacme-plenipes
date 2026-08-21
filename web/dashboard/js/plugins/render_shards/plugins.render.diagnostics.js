@@ -155,15 +155,28 @@ window.runCrossPluginDiagnostics = () => {
             else if (p.category === 'notification') platformCfg = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
             else platformCfg = cfgData.syndication?.[p.id] || {};
 
-            const tokenVal = platformCfg.token || platformCfg.url || platformCfg.api_key || platformCfg.access_token || platformCfg.api_token || platformCfg.secret_key || platformCfg.integration_token || platformCfg.cookie || platformCfg.password || platformCfg.private_key || '';
-            if (!tokenVal && !['sftp', 'local_fs'].includes(p.id)) {
-                issues.push({
-                    type: 'warning',
-                    title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据丢失警示`,
-                    desc: `该通道处于开启状态但未充填有效鉴权 Token，可能导致物理分发失败。`,
-                    actionText: '🎯 补全凭据',
-                    action: `openPluginConfig('${p.id}', '${p.category}')`
-                });
+            if (window.isPluginCredentialReady) {
+                const cred = window.isPluginCredentialReady(p.id, p.category, platformCfg);
+                if (!cred.ready && !['sftp', 'local_fs'].includes(p.id)) {
+                    issues.push({
+                        type: 'warning',
+                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据待补全`,
+                        desc: `该通道已启用但尚未配置鉴权凭据或目标仓库，可能导致物理分发失败。`,
+                        actionText: '🎯 补全配置',
+                        action: `openPluginConfig('${p.id}', '${p.category}')`
+                    });
+                }
+            } else {
+                const tokenVal = platformCfg.token || platformCfg.url || platformCfg.api_key || platformCfg.access_token || platformCfg.api_token || platformCfg.secret_key || platformCfg.integration_token || platformCfg.cookie || platformCfg.password || platformCfg.private_key || '';
+                if (!tokenVal && !['sftp', 'local_fs'].includes(p.id)) {
+                    issues.push({
+                        type: 'warning',
+                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据丢失警示`,
+                        desc: `该通道处于开启状态但未充填有效鉴权 Token，可能导致物理分发失败。`,
+                        actionText: '🎯 补全凭据',
+                        action: `openPluginConfig('${p.id}', '${p.category}')`
+                    });
+                }
             }
         }
     });

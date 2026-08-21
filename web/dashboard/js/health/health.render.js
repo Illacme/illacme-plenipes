@@ -63,21 +63,49 @@ window.updateHealthUI = (health) => {
     }
 };
 
+window.renderServiceToolbar = () => {
+    return `
+        <button class="mini-action-btn" id="btn-modal-restart" onclick="invokeServiceAction('restart')" style="margin-right: 8px;"><span>🔄</span> 重启服务</button>
+        <button class="mini-action-btn" id="btn-modal-stop" onclick="invokeServiceAction('stop')" style="border-color: #ff4d4d; color: #ff4d4d; margin-right: 8px;"><span>⏹️</span> 停止服务</button>
+        <button class="mini-action-btn" id="btn-modal-open" onclick="window.open('http://localhost:43213', '_blank')" style="border-color: #00ff88; color: #00ff88; margin-right: 12px;"><span>🌐</span> 打开预览</button>
+        <div style="width: 1px; height: 18px; background: var(--glass-border); margin: 0 12px;"></div>
+        <button class="mini-action-btn" id="btn-modal-reinstall" onclick="invokeServiceAction('install')" style="border-color: #ffaa00; color: #ffaa00; margin-right: 8px;"><span>🏗️</span> 补全依赖</button>
+        <button class="mini-action-btn" id="btn-modal-upgrade" onclick="invokeServiceAction('upgrade')" style="border-color: var(--neon-cyan); color: var(--neon-cyan); margin-right: 8px;"><span>🆙</span> 升级版本</button>
+        <button class="mini-action-btn" id="btn-modal-rollback" onclick="invokeServiceAction('rollback')" style="border-color: #ff4d4d; color: #ff4d4d;"><span>⏪</span> 环境复原</button>
+        <div style="flex: 1;"></div>
+        <button class="mini-action-btn" onclick="document.getElementById('terminal-output').innerHTML = ''"><span>🗑️</span> 清空屏幕</button>
+    `;
+};
+
 window.showServiceManager = (service) => {
     if (service === 'preview') {
-        // 🚀 [V55.9] 物理对正：打开全功能指挥中心
+        // 🚀 [V55.9] 物理对正：打开全功能 SSG 容器指挥中心
         const modal = document.getElementById('terminal-modal');
         if (modal) {
             modal.style.display = 'flex';
+            modal.dataset.context = 'service_preview';
             document.getElementById('terminal-title').innerText = "🛰️ 预览服务主权指挥中心";
+            
             const toolbar = document.getElementById('terminal-toolbar');
-            if (toolbar) toolbar.style.display = 'flex';
+            if (toolbar) {
+                toolbar.style.display = 'flex';
+                toolbar.innerHTML = window.renderServiceToolbar();
+            }
+            
             const out = document.getElementById('terminal-output');
-            if (out && modal.dataset.context !== 'preview') {
+            if (out && (modal.dataset.lastContext !== 'service_preview' || out.innerHTML.trim() === "")) {
                 out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
-                modal.dataset.context = 'preview';
-            } else if (out && out.innerHTML.trim() === "") {
-                out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
+            }
+            modal.dataset.lastContext = 'service_preview';
+            
+            // 🛡️ 单例彻底隔离：重置所有页脚控件，只点亮服务管理需要的「关闭」按钮
+            if (typeof window.resetTerminalModalFooter === 'function') {
+                window.resetTerminalModalFooter();
+            }
+            const okBtn = document.getElementById('btn-terminal-ok');
+            if (okBtn) {
+                okBtn.style.display = 'inline-flex';
+                okBtn.innerText = '关闭';
             }
             
             // 实时同步当前节点状态至终端状态栏

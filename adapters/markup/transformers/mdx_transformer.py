@@ -21,10 +21,15 @@ class MDXTransformer(IContentTransformer):
         self._import_pattern = re.compile(r'^(import\s+(?:\{[^}]+\}|.*?)\s+from\s+[\'"])(.*?)(\'|")', re.MULTILINE | re.DOTALL)
 
     def transform(self, content: str, context: Dict[str, Any]) -> str:
-        src_path = context.get('src_path')
-        dest_path = context.get('dest_path')
+        src_path = context.get('src_path', '')
+        dest_path = context.get('dest_path', '')
         
         if not src_path or not dest_path:
+            return content
+
+        # 🛡️ 仅针对目标或源文件为 .mdx 的场景执行 MDX 专有转换
+        is_mdx = dest_path.endswith('.mdx') or src_path.endswith('.mdx')
+        if not is_mdx:
             return content
 
         # 1. HTML 注释降维护盾

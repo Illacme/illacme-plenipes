@@ -41,6 +41,8 @@ class IllacmeEngine:
         """🚀 [V50.3] 引擎初始化：通过工厂进行标准化装配"""
         self.no_ai = no_ai
         self.imprint_id = imprint_id
+        from core.config.config import IMPRINT_DIR
+        self.imprint_root = os.path.abspath(os.path.join(IMPRINT_DIR, imprint_id or "default"))
         self.config = config # 🚀 [V22.1] 显式挂载配置，确保治理组件可读
         
         # 🛡️ [Industrial Grade] 物理并发锁初始化

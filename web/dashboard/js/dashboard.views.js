@@ -52,7 +52,14 @@ window.loadViewData = (viewId, subId) => {
     console.log(`📥 [Views] 开始为视图 ${viewId} 加载数据...`);
     if (viewId === 'vault' && typeof loadVault === 'function') loadVault();
     if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter(subId);
-    if (viewId === 'plugins' && typeof loadPlugins === 'function') loadPlugins();
+    if (viewId === 'plugins') {
+        if (typeof loadPlugins === 'function') {
+            loadPlugins(false, subId);
+        }
+        if (subId && typeof window.filterPluginCategory === 'function') {
+            window.filterPluginCategory(subId);
+        }
+    }
     if (viewId === 'settings' && typeof loadSettings === 'function') {
         const target = subId || window.currentActiveSettingsSubCat || 'layout';
         console.log(`🛰️ [导航对正] 定位设置子页: ${target}`);

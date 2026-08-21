@@ -27,15 +27,21 @@ class MetadataAndHashStep(PipelineStep):
         for f in ['keywords', 'tags', 'categories']:
             if f in ctx.base_fm: ctx.base_fm[f] = normalize_keywords(ctx.base_fm.get(f))
 
+        # 🛡️ [物理主权显式 Slug 提取]
+        explicit_slug = ctx.base_fm.get('slug') or ctx.fm_dict.get('slug')
+        ctx.explicit_slug = str(explicit_slug).strip() if explicit_slug else None
+
         if 'slug' in ctx.base_fm: ctx.base_fm.pop('slug', None)
         ctx.current_hash = hashlib.md5((str(ctx.base_fm) + ctx.body_content).encode('utf-8')).hexdigest()
 
         old_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
-        ctx.engine.meta.register_document(
-            ctx.rel_path, ctx.title,
-            source_hash=ctx.current_hash,
-            source_lang=getattr(ctx, 'source_lang', None)
-        )
+        register_kwargs = {
+            "source_hash": ctx.current_hash,
+            "source_lang": getattr(ctx, 'source_lang', None)
+        }
+        if ctx.explicit_slug:
+            register_kwargs["slug"] = ctx.explicit_slug
+        ctx.engine.meta.register_document(ctx.rel_path, ctx.title, **register_kwargs)
         ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
 
         if not old_info.get("slug"):
@@ -56,9 +62,15 @@ class MetadataAndHashStep(PipelineStep):
                 src_lang = ctx.engine.config.i18n_settings.source.lang_code
                 if src_lang and src_lang not in langs:
                     langs.append(src_lang)
+            if not langs:
+                src_lang = getattr(getattr(ctx.engine.config, 'i18n_settings', None), 'source', None)
+                src_code = getattr(src_lang, 'lang_code', 'zh') if src_lang else 'zh'
+                langs = [src_code or 'zh']
             
             theme_name = getattr(ctx.engine, 'active_theme', 'default') or 'default'
             cache_dir = ctx.engine.config.get_theme_source_cache_dir(theme_name)
+            source_dir = ctx.engine.paths.get('source_dir')
+            site_dir = ctx.engine.paths.get('site_dir')
             slug = ctx.doc_info.get("slug") or old_info.get("slug") or os.path.splitext(os.path.basename(ctx.rel_path))[0]
             
             if cache_dir and slug:
@@ -69,24 +81,48 @@ class MetadataAndHashStep(PipelineStep):
                 
                 for lang in langs:
                     try:
+                        # 1. 检查物理源文件缓存是否存在
                         cache_mirror = ctx.engine.route_manager.resolve_physical_path(
                             cache_dir, lang, ctx.route_prefix, mapped_sub, slug, ext, source_type=ctx.target_slot
                         )
                         if not os.path.exists(cache_mirror):
                             all_cached = False
                             break
-                        # 🚀 [物理防假译防线] 检查译文镜像内容：如果非母语语种文件体全是母语中文，则视同未缓存，物理强行重重译
+
+                        # 2. 检查当前激活装帧主题的目标输出目录中是否存在该文件，若缺失则绝不跳过（自愈重装）
+                        if source_dir:
+                            theme_src_file = ctx.engine.route_manager.resolve_physical_path(
+                                source_dir, lang, ctx.route_prefix, mapped_sub, slug, ext, source_type=ctx.target_slot
+                            )
+                            if not os.path.exists(theme_src_file):
+                                all_cached = False
+                                break
+                        elif site_dir:
+                            theme_site_file = ctx.engine.route_manager.resolve_physical_path(
+                                site_dir, lang, ctx.route_prefix, mapped_sub, slug, '.html', source_type=ctx.target_slot
+                            )
+                            if not os.path.exists(theme_site_file):
+                                all_cached = False
+                                break
+
+                        # 3. 🚀 [物理防假译防线] 检查译文镜像内容：如果非母语语种主要包含未翻译的中文母语正文，则视同未缓存，物理强行重译
                         src_lang_code = ctx.engine.config.i18n_settings.source.lang_code
                         if lang != src_lang_code:
                             with open(cache_mirror, 'r', encoding='utf-8') as cmf:
                                 from core.utils.text import parse_frontmatter
                                 _, cm_body, _ = parse_frontmatter(cmf.read())
                                 import re
-                                if cm_body and re.search(r'[\u4e00-\u9fa5]', cm_body):
-                                    from core.utils.tracing import tlog
-                                    tlog.warning(f"⚠️ [物理污染防御] 探测到 {lang} 物理缓存镜像包含未翻译的中文母语正文，强行作废并触发重新翻译: {cache_mirror}")
-                                    all_cached = False
-                                    break
+                                if cm_body:
+                                    clean_body = re.sub(r'\s+', '', cm_body)
+                                    total_chars = len(clean_body)
+                                    if total_chars > 0:
+                                        chinese_chars = len(re.findall(r'[\u4e00-\u9fa5]', clean_body))
+                                        # 只有当中文汉字比例超过 40% 时，才判定为未翻译的假译正文
+                                        if (chinese_chars / total_chars) > 0.40:
+                                            from core.utils.tracing import tlog
+                                            tlog.warning(f"⚠️ [物理污染防御] 探测到 {lang} 物理缓存镜像主要包含未翻译的中文母语正文 ({chinese_chars}/{total_chars})，强行作废并触发重新翻译: {cache_mirror}")
+                                            all_cached = False
+                                            break
                     except Exception:
                         all_cached = False
                         break

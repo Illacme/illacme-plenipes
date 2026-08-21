@@ -20,6 +20,13 @@ class AISlugAndSEOStep(PipelineStep):
 
     def process(self, ctx):
         slug_raw = ctx.doc_info.get("slug")
+        
+        # 👑 [物理主权显式声明最高优先级]
+        explicit_slug = getattr(ctx, 'explicit_slug', None) or (getattr(ctx, 'fm_dict', None) or {}).get('slug')
+        if explicit_slug and str(explicit_slug).strip():
+            slug_raw = str(explicit_slug).strip()
+            tlog.info(f"🏷️ [显式 Slug] 采用原稿 Frontmatter 声明的 Slug: '{slug_raw}' (文档: {ctx.rel_path})")
+
         # 🛡️ [V48.3] 首页主权防护：强制锁定 Index.md 的 Slug 为 'index'
         is_homepage = ctx.rel_path.lower().endswith('index.md') or ctx.rel_path.lower().endswith('index.mdx')
         if is_homepage:
@@ -27,11 +34,11 @@ class AISlugAndSEOStep(PipelineStep):
             tlog.info(f"🏠 [首页防护] 强制将 {ctx.rel_path} 的 Slug 锁定为 'index'")
 
         # 🚀 [V26.5] 显性重构支持：如果开启了 --re-slug，强制重置非首页的 Slug
-        if getattr(ctx.engine, 'args', None) and getattr(ctx.engine.args, 're_slug', False) and not is_homepage:
+        if getattr(ctx.engine, 'args', None) and getattr(ctx.engine.args, 're_slug', False) and not is_homepage and not explicit_slug:
             tlog.info(f"🔄 [Slug 重塑] 检测到 --re-slug 标志，正在强制重新生成 {ctx.rel_path} 的 URL...")
             slug_raw = None
 
-        if slug_raw:
+        if slug_raw and not explicit_slug:
             is_json_leak = any(k in slug_raw.lower() for k in ["description", "keywords", "{", "\""])
             # 🛡️ 拆分基本文件名部分校验，避免嵌套路径长度防错误杀
             slug_leaf = os.path.basename(slug_raw)

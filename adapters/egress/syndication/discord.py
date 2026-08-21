@@ -18,9 +18,9 @@ _discord_lock = threading.Lock()
 
 class DiscordSyndicator(BaseSyndicator):
     PLUGIN_ID = "discord"
-    DISPLAY_NAME = "Discord Webhook"
+    DISPLAY_NAME = "Discord 社区频道广播"
     VERSION = "V1.0"
-    DESCRIPTION = "通过 Discord Webhook 安全可靠地向频道内推送带有图文排版、阅读链接的 Embed 富文本广播。"
+    DESCRIPTION = "面向读者的公开发布通道：将新文章的标题、摘要、封面与阅读链接以 Embed 富文本卡片形式广播至 Discord 读者社区。"
     
     REQUIRED_PACKAGES = ["requests"]
 

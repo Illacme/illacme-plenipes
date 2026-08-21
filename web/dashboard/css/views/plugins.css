@@ -38,3 +38,21 @@
     transform: translateY(-8px) scale(1.02); 
     box-shadow: 0 20px 50px var(--black-50), 0 0 20px var(--neon-cyan-10);
 }
+
+/* 🎨 品牌标识图徽章 (Brand Identity Avatar Badges - Compact & Refined) */
+.plugin-brand-avatar {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, filter 0.2s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.shield-pod:hover .plugin-brand-avatar {
+    transform: scale(1.08);
+    filter: brightness(1.12);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.plugin-pod-header {
+    transition: all 0.2s ease;
+}
+

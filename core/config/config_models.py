@@ -97,11 +97,20 @@ class SeoSettings(BaseModel):
     generate_keywords: bool = True
 
 class RouteItem(BaseModel):
-    """🚀 [V55.26] 路由矩阵项：支持频道级的方言与风格绑定"""
+    """🚀 [V55.26 / V100.9] 路由矩阵与全景导航项：支持频道级方言绑定与统一跨 SSG 导航呈现"""
     source: str = ""
     prefix: str = ""
     target_slot: str = "docs" # 🚀 [V56.0] 意图感知：docs, blog, pages 等
     style: Optional[str] = None # 🔗 频道级方言映射，优先级高于全局 active_style
+    
+    # 🧭 [全新全景导航呈现扩展字段 (100% 向后兼容)]
+    nav_label: Optional[str] = None # 导航栏展示名称（如“文档中心”、“博客资讯”），若为空则自动自愈
+    nav_label_i18n: Optional[Dict[str, str]] = None # 🌐 多语言导航名称定制字典: {"en": "Docs", "ja": "ドキュメント"}
+    show_in_nav: bool = True # 是否在顶部主导航栏展示
+    nav_icon: Optional[str] = None # 导航图标（如 📚, 📰, 🌐 或 emoji）
+    nav_position: str = "left" # 导航位置: 'left' | 'right'
+    nav_order: int = 0 # 排序权重 (数字越小越靠前)
+    external_url: Optional[str] = None # 外部链接 (若是纯外部菜单项)
 
     @field_validator('source', 'prefix', mode='before')
     @classmethod
@@ -121,7 +130,7 @@ class Configuration(BaseModel):
     active_imprint: Optional[str] = None # 🚀 [V52.10] 当前激活的物理品牌 ID
     vault_root: str = ""
     metadata_dir: str = "metadata"
-    active_theme: str = "default"
+    active_theme: str = "sovereign"
     site_url: str = ""
     lang_mapping: Dict[str, str] = Field(default_factory=dict)
     block_cache_dir: Optional[str] = None # 🚀 [V100.4] 自定义段落缓存物理路径，默认为项目根目录下的 .plenipes/blocks
@@ -144,7 +153,8 @@ class Configuration(BaseModel):
 
     def get_theme_metadata_dir(self) -> str:
         """🎨 获取品牌/主题专属元数据目录 (主权对正)"""
-        theme = self.active_theme or "default"
+        theme = self.active_theme or "sovereign"
+        if theme == "default": theme = "sovereign"
         return os.path.join(self.metadata_dir, "themes", theme)
 
     def get_vault_cache_dir(self) -> str:
@@ -156,7 +166,8 @@ class Configuration(BaseModel):
 
     def get_theme_source_cache_dir(self, theme: str = None) -> str:
         """🚀 获取当前主题在原稿文库公共缓存下的专属源文件缓存路径"""
-        theme = theme or self.active_theme or "default"
+        theme = theme or self.active_theme or "sovereign"
+        if theme == "default": theme = "sovereign"
         return os.path.join(self.get_vault_cache_dir(), "sources", theme)
 
     def get_ledger_path(self) -> str:
@@ -251,6 +262,19 @@ class Configuration(BaseModel):
             from core.config.models.governance import PublishingMode
             is_multi = self.i18n_settings.enabled and self.governance.publishing_mode == PublishingMode.GLOBAL
             
+            # 🛡️ [V56.1] 默认语言主权对齐：在全球发布模式下，若传入的 lang 是默认源语种且未开启强制前缀，
+            # 则该语种的文档应落在站点根目录（使用 single 模板），而非带语种前缀的多语目录（multi 模板）。
+            # 防止 route_prefix 被错误写入 zh/docs 等含语种段的路径，导致 hreflangs 和导航链接全部错误。
+            if is_multi:
+                from core.utils.language_hub import LanguageHub as _LH
+                _src_lang = getattr(self.i18n_settings, 'source', None)
+                _src_code = getattr(_src_lang, 'lang_code', 'zh') if _src_lang else 'zh'
+                if not _src_code or _src_code == 'auto':
+                    _src_code = 'zh'
+                _force_prefix = getattr(self.i18n_settings, 'force_source_prefix', False)
+                if _LH.resolve_to_iso(lang) == _LH.resolve_to_iso(_src_code) and not _force_prefix:
+                    is_multi = False  # 默认语言降级为 single 模板，落在站点根目录
+            
             # 根据多语言状态选择模版
             path_tmpl = slot.get("multi" if is_multi else "single", "")
             
@@ -261,7 +285,6 @@ class Configuration(BaseModel):
             # 2. 渲染语种占位符
             from core.utils.language_hub import LanguageHub
             physical_lang = LanguageHub.resolve_to_iso(lang)
-            # 如果是默认语言且未强制前缀，路径中可能不需要 lang 段（取决于适配器实现，此处先简单替换）
             res_path = path_tmpl.replace("{lang}", physical_lang)
             return res_path
             

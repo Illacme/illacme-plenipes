@@ -47,6 +47,21 @@ class AISyncProcessor(BaseSeoProcessor):
     """
 
     def process(self, ctx) -> dict:
+        import hashlib
+        body = getattr(ctx, 'ai_pure_body', '') or getattr(ctx, 'raw_body', '')
+        body_excerpt = body[:2000] if len(body) > 2000 else body
+        rel_path = getattr(ctx, 'rel_path', '') or getattr(ctx, 'title', '')
+        current_hash = getattr(ctx, 'current_hash', None) or hashlib.md5(body_excerpt.encode('utf-8')).hexdigest()
+        engine_meta = getattr(getattr(ctx, 'engine', None), 'meta', None)
+
+        # 🚀 [V101.0] 增量缓存：基于原稿内容 Hash 检查多语 AI 翻译同步 SEO 缓存
+        if engine_meta and rel_path and current_hash and not getattr(ctx, 'clear_cache', False):
+            doc_info = engine_meta.get_doc_info(rel_path) or {}
+            cached_sync_seo = doc_info.get("ai_seo_sync")
+            if isinstance(cached_sync_seo, dict) and cached_sync_seo.get("hash") == current_hash and cached_sync_seo.get("data"):
+                tlog.info(f"✨ [AI 翻译同步] 命中本地多语 SEO 缓存，跳过大模型翻译 ({ctx.title})")
+                return self._respect_frontmatter(ctx.fm_dict, cached_sync_seo.get("data", {}))
+
         tlog.info(f"🔄 [AI 翻译同步] 正在为 '{ctx.title}' 执行跨语种 SEO 同步...")
 
         # 阶段 1: 先用 AI Alignment 生成母语 SEO
@@ -115,6 +130,14 @@ class AISyncProcessor(BaseSeoProcessor):
 
         if translated_seo:
             base_seo['i18n_seo'] = translated_seo
+
+        # 🚀 [V101.0] 持久化缓存：将跨语种 SEO 翻译数据写入账本
+        if engine_meta and rel_path and current_hash and translated_seo:
+            try:
+                doc_info = engine_meta.get_doc_info(rel_path) or {}
+                engine_meta.sqlite.upsert_document(rel_path, {**doc_info, "ai_seo_sync": {"hash": current_hash, "data": base_seo}})
+            except Exception as e:
+                tlog.debug(f"⚠️ [AI 翻译同步] 写入多语 SEO 缓存失败: {e}")
 
         tlog.info(f"✅ [AI 翻译同步] 完成: 母语 + {len(translated_seo)} 语种同步")
         base_seo = self._respect_frontmatter(ctx.fm_dict, base_seo)

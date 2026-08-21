@@ -83,6 +83,27 @@ def get_system_context_impl():
         ai_status = "online"
         warning_msg = None
 
+    # 📂 统计文库真实原稿数量 (优先与 SQLite 账本真实入账文档严格对正)
+    vault_doc_count = 0
+    try:
+        if hasattr(engine, 'meta') and hasattr(engine.meta, 'sqlite') and engine.meta.sqlite:
+            vault_doc_count = engine.meta.sqlite.get_documents_count_filtered(query="", folder="")
+        elif hasattr(engine, 'meta') and hasattr(engine.meta, 'get_documents_snapshot'):
+            vault_doc_count = len(engine.meta.get_documents_snapshot())
+    except Exception:
+        vault_doc_count = 0
+
+    if vault_doc_count == 0 and engine.vault_root and os.path.exists(engine.vault_root):
+        try:
+            ignored_dirs = {".git", ".obsidian", ".trash", ".plenipes", "node_modules", ".venv", "themes", "dist", "public", "build", "assets", "static", ".github"}
+            for root, dirs, files in os.walk(engine.vault_root):
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d.lower() not in ignored_dirs]
+                for f in files:
+                    if f.endswith(('.md', '.markdown')) and not f.startswith('.'):
+                        vault_doc_count += 1
+        except Exception:
+            pass
+
     return {
         "version": DisplayDelegate.get_system_version(engine.config),
         "imprint": active_imprint,
@@ -92,7 +113,8 @@ def get_system_context_impl():
         "onboarding_required": engine.onboarding_required,
         "vault": {
             "root": engine.vault_root,
-            "dialect": dialect_display
+            "dialect": dialect_display,
+            "doc_count": vault_doc_count
         },
         "ai": {
             "provider": active_provider,

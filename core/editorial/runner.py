@@ -40,8 +40,9 @@ class Pipeline:
     def execute(self, context):
         total_steps = len(self.steps)
         for i, step in enumerate(self.steps):
-            if context.is_aborted:
-                # 管道已触发熔断，静默跳过后续所有动作
+            if context.is_aborted or getattr(context.engine, 'abort_sync', False):
+                # 管道已触发熔断或用户手动中止，静默跳过后续所有动作
+                context.is_aborted = True
                 break
 
             step_name = step.__class__.__name__
@@ -57,5 +58,5 @@ class Pipeline:
                 context.push_status("CRASHED", msg=f"工序 {step_name} 崩溃: {e}")
                 raise # 向上抛出，交由 orchestrator 的 ThreadPoolExecutor 捕获并打印堆栈
         
-        if not context.is_aborted:
+        if not context.is_aborted and not getattr(context.engine, 'abort_sync', False):
             context.push_status("COMPLETED", msg="文档同步流水线执行完毕", progress=100.0)

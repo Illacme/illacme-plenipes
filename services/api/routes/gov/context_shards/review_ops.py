@@ -244,6 +244,33 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             }
             continue
 
+        # 🚀 [BlockCache 增强] 优先尝试从 BlockCache 聚合已翻译的段落 (按 source_paras 对齐)
+        block_cached_paras = []
+        has_block_cache_content = False
+        try:
+            from core.markup.base import MarkupBlock
+            cached_texts = []
+            hit_count = 0
+            valid_src_count = 0
+            for sp in source_paras:
+                if sp.get("index", -1) < 0 or sp.get("type") == "spacer":
+                    cached_texts.append(dict(sp))
+                    continue
+                valid_src_count += 1
+                fp = MarkupBlock(sp.get("text", ""), block_type=sp.get("type", "paragraph")).fingerprint
+                c_text = engine.block_cache.get_block(lang_code, fp, style_hash)
+                if c_text:
+                    hit_count += 1
+                    cached_texts.append({"index": sp.get("index", 0), "type": sp.get("type", "paragraph"), "text": c_text})
+                else:
+                    cached_texts.append(dict(sp))
+            
+            if valid_src_count > 0 and hit_count > 0:
+                block_cached_paras = cached_texts
+                has_block_cache_content = (hit_count >= valid_src_count / 2)
+        except Exception as e:
+            tlog.warning(f"BlockCache reading error for snapshot: {e}")
+
         if not body and hasattr(engine, "route_manager"):
             try:
                 candidate_paths = []
@@ -273,6 +300,11 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                 from core.utils.tracing import tlog
                 tlog.warning(f"Failed to read AI snapshot for {doc_id} / {lang_code}: {e}")
 
+        import re
+        is_disk_body_chinese = bool(body and lang_code != 'zh' and re.search(r'[\u4e00-\u9fa5]', body) and re.search(r'[\u4e00-\u9fa5]', source_body))
+        if (not body or is_disk_body_chinese) and has_block_cache_content:
+            body = "\n\n".join([p["text"] for p in block_cached_paras if p.get("index", -1) >= 0])
+
         if not body:
             err_title = title or "⚠️ 翻译失败 / Translation Failed" if st == "ERROR" else ""
             err_desc = desc or "AI 引擎处理该语种时发生严重错误，请检查后台日志或节点连通性。" if st == "ERROR" else ""
@@ -284,8 +316,10 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             }
             continue
 
-        target_paras = _split_paragraphs(body)
-        count_mismatch = bool(source_paras and len(target_paras) != len(source_paras))
+        target_paras = block_cached_paras if (has_block_cache_content and is_disk_body_chinese) else _split_paragraphs(body)
+        valid_src_p_count = len([p for p in source_paras if p.get("index", -1) >= 0])
+        valid_tgt_p_count = len([p for p in target_paras if p.get("index", -1) >= 0])
+        count_mismatch = bool(valid_src_p_count > 0 and valid_tgt_p_count > 0 and valid_tgt_p_count != valid_src_p_count)
 
         if not desc or desc.strip() == "无描述":
             for tp in target_paras:
@@ -364,5 +398,17 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
             res = AILogicHub.clean_metadata_value(node.translate(source_text, source_lang="auto", target_lang=lang_code, remedy_instruction=rem) or "")
         else:
             res = AILogicHub.clean_translation_response(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
+            if res and hasattr(engine, 'block_cache'):
+                import hashlib
+                from core.logic.block_parser import MarkdownBlock
+                fp = MarkdownBlock(source_text, type='paragraph', index=para_index).fingerprint
+                translation_cfg = getattr(engine.config, "translation", None)
+                resolved_style = getattr(translation_cfg, "active_style", "default") if translation_cfg else "default"
+                p_style = getattr(translation_cfg, "prompts", None) if translation_cfg else None
+                t_sys = getattr(p_style, "translate_system", "") if p_style else ""
+                t_user = getattr(p_style, "translate_user", "") if p_style else ""
+                style_content = str(t_sys or "") + "\n" + str(t_user or "")
+                style_hash = hashlib.md5(style_content.encode('utf-8')).hexdigest()
+                engine.block_cache.store_block(lang_code, fp, res, style_hash=style_hash)
         return {"ok": True, "translated_text": res or source_text}
     except Exception as e: return {"ok": False, "error": str(e)}

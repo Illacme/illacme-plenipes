@@ -34,6 +34,9 @@ class EngineFactory:
 
         # 2. 实例化引擎主体
         engine = IllacmeEngine(config, no_ai=no_ai, config=config, imprint_id=imprint_id)
+        from core.config.config import ConfigManager
+        config_path = config.config_path if hasattr(config, 'config_path') else 'config.yaml'
+        engine.config_manager = ConfigManager(config_path, imprint_id=imprint_id)
         engine.config = config
         engine.vault_root = os.path.abspath(os.path.expanduser(config.vault_root)) if config.vault_root else ""
         engine.route_matrix = config.route_matrix

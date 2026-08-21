@@ -119,9 +119,19 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
                 stats[status] += 1
             engine.theme_hooks.trigger("document_synced", rel_path=task_path, status=status)
         except Exception as e:
+            if getattr(engine, "abort_sync", False):
+                break
             bus.emit("UI_ERROR", path=task_path, error=str(e))
             tlog.error(f"❌ 文章处理故障 ({os.path.basename(task_path)}): {traceback.format_exc()}")
             stats["ERROR"] += 1
+
+    # 🛡️ [Abort] 若已触发中止，立即物理熔断退出，绝不执行后续 AI 收割、图谱重建及分发插件
+    if getattr(engine, "abort_sync", False):
+        tlog.warning("🛑 [同步中止] 发布流水线已被用户手动中止，跳过残留算力收割与全息图谱重建。")
+        bus.emit("UI_PROGRESS_STOP")
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data="🛑 [同步中止] 发布流水线已成功停止，后续所有任务与大模型调用已全部取消。")
+        send_sync_lifecycle_notification(engine, "WARN", "同步任务已中止", "用户手动中止了同步流程。")
+        return
 
     # 6. 异步算力屏障 (AI/Assets 收割)
     if not engine.no_ai:
@@ -199,7 +209,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
     if not args.dry_run:
         engine.meta.save()
         engine.meter.persist()
-        bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot)
+        bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot, local_only=getattr(args, 'local_only', False))
         if getattr(engine, "abort_sync", False):
             send_sync_lifecycle_notification(engine, "WARN", "同步任务已中止", f"用户手动中止了同步流程，总耗时 {time_display}")
         else:

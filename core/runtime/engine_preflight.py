@@ -57,67 +57,61 @@ class EnginePreflight:
         initialize_ledger(audit_path)
 
         # 🛡️ [V53.0] 品牌主权路径与环境对正
-        if imprint_id and imprint_id != "default":
-            imprint_path = os.path.join(IMPRINT_DIR, imprint_id)
-            
-            # 🚀 [V53.0] 出版模式智能推断：根据实际配置自动推导最佳模式
-            gov_cfg = config.governance
-            explicit_mode = gov_cfg.publishing_mode
-            
-            # 检测 AI 就绪性 (基于合并后的配置)
-            ai_ready = False
-            local_types = ["ollama", "lmstudio", "local"]
-            compute_nodes = config.translation.compute_nodes or {}
-            
-            for node_id, node_cfg in compute_nodes.items():
-                node_type = (getattr(node_cfg, "type", "") or "").lower()
-                api_key = getattr(node_cfg, "api_key", "") or ""
-                # 本地模型无需 API Key
-                if any(t in node_type for t in local_types):
-                    ai_ready = True
-                    break
-                # 远程模型需有效 API Key
-                if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
-                    ai_ready = True
-                    break
-            
-            # 智能推断逻辑
-            from core.config.models.governance import PublishingMode, SeoStrategy
-            
-            # 如果配置仍为默认/空，或者需要根据算力状态进行安全校验
-            if not ai_ready:
-                if explicit_mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
-                    config.governance.publishing_mode = PublishingMode.BASIC
-                    config.governance.seo_strategy = SeoStrategy.HEURISTIC
-                    tlog.warning("⚠️ [模式降级] 未检测到可用 AI 算力，品牌模式已自动降级至 basic")
-            else:
-                # 🚀 [智能升格防退化] 如果 AI 算力已开启且就绪，但出版模式为 basic，自动升级至合规模式
-                if config.translation.enable_ai and explicit_mode == PublishingMode.BASIC:
-                    if config.i18n_settings and config.i18n_settings.enabled and config.i18n_settings.targets:
-                        config.governance.publishing_mode = PublishingMode.GLOBAL
-                        config.governance.seo_strategy = SeoStrategy.AI_SYNC
-                    else:
-                        config.governance.publishing_mode = PublishingMode.ENHANCED
-                        config.governance.seo_strategy = SeoStrategy.AI_ALIGNMENT
-                    tlog.info(f"✨ [智能升级] 检测到 AI 算力就绪，出版模式自动升格至 {config.governance.publishing_mode.value}")
-
-            # 🚀 [V53.0] 模式联动：仅在确实为 BASIC 且算力未使能时关闭 AI 算力
-            if config.governance.publishing_mode == PublishingMode.BASIC and not config.translation.enable_ai:
-                config.translation.enable_ai = False
-                tlog.info("📜 [基础模式] AI 算力已自动离线，使用物理规则引擎")
-
-            # 强制 data_root 锚定到品牌目录
-            if not config.system:
-                config.system = type('SystemConfig', (), {'data_root': imprint_path})()
-            else:
-                config.system.data_root = imprint_path
-            
-            tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {imprint_path}")
+        imprint_path = os.path.join(IMPRINT_DIR, imprint_id or "default")
+        
+        # 🚀 [V53.0] 出版模式智能推断：根据实际配置自动推导最佳模式
+        gov_cfg = config.governance
+        explicit_mode = gov_cfg.publishing_mode
+        
+        # 检测 AI 就绪性 (基于合并后的配置)
+        ai_ready = False
+        local_types = ["ollama", "lmstudio", "local"]
+        compute_nodes = config.translation.compute_nodes or {}
+        
+        for node_id, node_cfg in compute_nodes.items():
+            node_type = (getattr(node_cfg, "type", "") or "").lower()
+            api_key = getattr(node_cfg, "api_key", "") or ""
+            # 本地模型无需 API Key
+            if any(t in node_type for t in local_types):
+                ai_ready = True
+                break
+            # 远程模型需有效 API Key
+            if len(str(api_key)) > 10 and "your" not in str(api_key).lower():
+                ai_ready = True
+                break
+        
+        # 智能推断逻辑
+        from core.config.models.governance import PublishingMode, SeoStrategy
+        
+        # 如果配置仍为默认/空，或者需要根据算力状态进行安全校验
+        if not ai_ready:
+            if explicit_mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
+                config.governance.publishing_mode = PublishingMode.BASIC
+                config.governance.seo_strategy = SeoStrategy.HEURISTIC
+                tlog.warning("⚠️ [模式降级] 未检测到可用 AI 算力，品牌模式已自动降级至 basic")
         else:
-            # default 品牌也需要基本的 data_root
-            if config.system:
-                if not config.system.data_root:
-                    config.system.data_root = ".plenipes"
+            # 🚀 [智能升格防退化] 如果 AI 算力已开启且就绪，但出版模式为 basic，自动升级至合规模式
+            if config.translation.enable_ai and explicit_mode == PublishingMode.BASIC:
+                if config.i18n_settings and config.i18n_settings.enabled and config.i18n_settings.targets:
+                    config.governance.publishing_mode = PublishingMode.GLOBAL
+                    config.governance.seo_strategy = SeoStrategy.AI_SYNC
+                else:
+                    config.governance.publishing_mode = PublishingMode.ENHANCED
+                    config.governance.seo_strategy = SeoStrategy.AI_ALIGNMENT
+                tlog.info(f"✨ [智能升级] 检测到 AI 算力就绪，出版模式自动升格至 {config.governance.publishing_mode.value}")
+
+        # 🚀 [V53.0] 模式联动：仅在确实为 BASIC 且算力未使能时关闭 AI 算力
+        if config.governance.publishing_mode == PublishingMode.BASIC and not config.translation.enable_ai:
+            config.translation.enable_ai = False
+            tlog.info("📜 [基础模式] AI 算力已自动离线，使用物理规则引擎")
+
+        # 强制 data_root 锚定到品牌目录 (每个品牌包括 default 均拥有独立的数据与产物领土)
+        if not config.system:
+            config.system = type('SystemConfig', (), {'data_root': imprint_path})()
+        else:
+            config.system.data_root = imprint_path
+        
+        tlog.debug(f"🛰️ [主权对正] 引擎数据根部已强制锚定至: {imprint_path}")
 
         # 5. 🚀 [审计逻辑] 契约校验
         violations = ContractGuard.verify_config(config)

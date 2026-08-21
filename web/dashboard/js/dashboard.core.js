@@ -78,14 +78,19 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#38bdf8');
                 }
                 
-                const okBtn = document.getElementById('btn-terminal-ok');
-                if (okBtn) okBtn.style.display = 'none';
-                
-                const abortBtn = document.getElementById('btn-terminal-abort');
-                if (abortBtn) abortBtn.style.display = 'none';
-                
+                // 🛡️ 单例隔离
+                if (typeof window.resetTerminalModalFooter === 'function') {
+                    window.resetTerminalModalFooter();
+                }
+
                 const republishBtn = document.getElementById('btn-terminal-republish');
-                if (republishBtn) republishBtn.style.display = 'block';
+                if (republishBtn) republishBtn.style.display = 'inline-flex';
+
+                const okBtn = document.getElementById('btn-terminal-ok');
+                if (okBtn) {
+                    okBtn.style.display = 'inline-flex';
+                    okBtn.innerText = '关闭';
+                }
 
                 const statusEl = document.getElementById('terminal-status');
                 if (statusEl) {
@@ -115,14 +120,21 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                 const toolbar = document.getElementById('terminal-toolbar');
                 if (toolbar) toolbar.style.display = 'none';
                 
-                const okBtn = document.getElementById('btn-terminal-ok');
-                if (okBtn) okBtn.style.display = 'none';
-                
+                if (typeof window.resetTerminalModalFooter === 'function') {
+                    window.resetTerminalModalFooter();
+                }
+
                 const abortBtn = document.getElementById('btn-terminal-abort');
                 if (abortBtn) {
-                    abortBtn.style.display = 'block';
+                    abortBtn.style.display = 'inline-flex';
                     abortBtn.disabled = false;
                     abortBtn.innerText = '🛑 中止同步';
+                }
+
+                const closeBtn = document.getElementById('btn-terminal-close');
+                if (closeBtn) {
+                    closeBtn.style.display = 'inline-flex';
+                    closeBtn.innerText = '隐藏窗口 (后台继续)';
                 }
 
                 const statusEl = document.getElementById('terminal-status');
@@ -332,8 +344,9 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             window.addAudit('预检通过，正在为您准备网站文件...', 'info');
         }
 
-        // 🚀 [V74.8] 物理点火：连接重构后的编排中枢 (V10.4 修复：正确传入 force 选项以保证重新发布时重跑翻译管线)
-        const res = await apiFetch(`/api/system/sync/trigger?force=${force ? 'true' : 'false'}`, { method: 'POST' });
+        // 🚀 [V74.8] 物理点火：连接重构后的编排中枢 (V10.4 修复：正确传入 force 与 clear_cache 选项以保证重新发布时重跑翻译管线)
+        const res = await apiFetch(`/api/system/sync/trigger?force=${force ? 'true' : 'false'}&clear_cache=${force ? 'true' : 'false'}`, { method: 'POST' });
+
 
         if (res && res.status === 'started') {
             if (typeof window.addAudit === 'function') {
@@ -491,8 +504,29 @@ async function executeAbortAction() {
     const res = await apiFetch('/api/system/sync/abort', { method: 'POST' });
     if (res && res.status === 'aborted') {
         if (typeof window.appendTerminalLog === 'function') {
-            window.appendTerminalLog('🛑 中止指令已成功接收。后续任务已取消，正在进行收尾收割...', '#ff4d4d');
+            window.appendTerminalLog('🛑 中止指令已成功接收。流水线已物理熔断，后续所有大模型调用与分发已全部取消。', '#ff4d4d');
         }
+        
+        // 归位 UI 按钮与状态
+        window._isPublishPreviewActive = false;
+        const statusEl = document.getElementById('terminal-status');
+        if (statusEl) {
+            statusEl.innerText = 'ABORTED';
+            statusEl.className = 'error';
+        }
+        const title = document.getElementById('terminal-title');
+        if (title) {
+            title.innerHTML = '⚡ 发布流水线已中止 <span class="version-tag tiny" style="background:rgba(255,77,77,0.15);color:#ff4d4d;border:1px solid rgba(255,77,77,0.4);margin-left:8px;">ABORTED</span>';
+        }
+        if (btn) btn.style.display = 'none';
+        const closeBtn = document.getElementById('btn-terminal-close');
+        if (closeBtn) closeBtn.style.display = 'none';
+        const okBtn = document.getElementById('btn-terminal-ok');
+        if (okBtn) {
+            okBtn.style.display = 'inline-flex';
+            okBtn.innerText = '关闭';
+        }
+
         if (window.Swal) {
             window.Swal.fire({
                 title: '同步已中止',

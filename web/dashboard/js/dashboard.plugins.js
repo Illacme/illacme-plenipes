@@ -33,8 +33,24 @@ window.togglePlugin = async (id, enable, category = null) => {
             if (window.currentActiveSettingsSubCat === 'themes' && typeof renderSettingsCategory === 'function') {
                 renderSettingsCategory('themes');
             }
+            if (typeof window.refreshGovernanceContext === 'function') {
+                await window.refreshGovernanceContext();
+            }
         } else {
-            alert(`操作失败: ${result.error}`);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '⚠️ 物理锁定',
+                    text: result.error || '无法切换物理驱动状态',
+                    icon: 'warning',
+                    allowOutsideClick: false,
+                    allowEscapeKey: true,
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-bright)',
+                    confirmButtonText: '确定'
+                });
+            } else {
+                alert(`操作失败: ${result.error}`);
+            }
         }
     } catch (e) {
         console.error("Toggle error:", e);
@@ -51,8 +67,21 @@ window.toggleBrandActivation = async (id, checked, category) => {
             path = `syndication.${id}.enabled`;
         } else if (category === 'image_hosting') {
             path = `image_hosting.${id}.enabled`;
+        } else if (category === 'notification') {
+            path = `publish_control.webhook_endpoints.${id}.enabled`;
         } else {
             return;
+        }
+
+        // ⚡ [0ms 乐观即时响应] 同步修改内存中当前插件节点的 is_in_use 状态并即时刷新卡片
+        if (window.allPlugins && Array.isArray(window.allPlugins)) {
+            const targetP = window.allPlugins.find(p => p.id === id);
+            if (targetP) {
+                targetP.is_in_use = checked;
+                if (typeof window.renderPlugins === 'function') {
+                    window.renderPlugins();
+                }
+            }
         }
 
         if (!window.settingsData || Object.keys(window.settingsData).length === 0) {
@@ -63,13 +92,14 @@ window.toggleBrandActivation = async (id, checked, category) => {
         }
 
         // 修改内存中的扁平配置字段
-        window.updateConfigField(path, checked);
+        if (typeof window.updateConfigField === 'function') {
+            window.updateConfigField(path, checked);
+        }
         
-        // 打包当前 settingsData 并通过 API 保存至后端
-        const full = window.flattenObject(window.settingsData), payload = {};
-        Object.keys(full).forEach(k => {
-            if (!k.split('.').some(p => p.startsWith('_'))) payload[k] = full[k];
-        });
+        // 🚀 [精准增量更新] 仅向后端提交目标字段变更，杜绝全量扁平化脏数据覆盖与副作用
+        const payload = {
+            [path]: checked
+        };
         
         const response = await apiFetch('/api/config/update', {
             method: 'POST',
@@ -78,16 +108,26 @@ window.toggleBrandActivation = async (id, checked, category) => {
         });
 
         if (response && response.status === 'success') {
-            addAudit(`🟢 品牌配置联动：已在当前品牌下${checked ? '启用' : '停用'}了 [${id}] 能力`);
+            if (typeof addAudit === 'function') {
+                addAudit(`🟢 品牌配置联动：已在当前品牌下${checked ? '启用' : '停用'}了 [${id}] 能力`);
+            }
+            if (window.showToast) {
+                window.showToast(`已在当前品牌下${checked ? '启用' : '停用'} [${id.toUpperCase()}] 能力`, 'info');
+            }
             if (response.active_config) {
                 window.settingsData = { ...window.settingsData, ...response.active_config };
             }
             if (typeof loadPlugins === 'function') await loadPlugins(true);
+            if (typeof window.refreshGovernanceContext === 'function') {
+                await window.refreshGovernanceContext();
+            }
         } else {
             alert(`品牌激活失败: ${response ? response.error : '未知错误'}`);
+            if (typeof loadPlugins === 'function') await loadPlugins(true);
         }
     } catch (e) {
         console.error("Brand toggle error:", e);
+        if (typeof loadPlugins === 'function') await loadPlugins(true);
     }
 };
 

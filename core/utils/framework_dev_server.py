@@ -203,12 +203,22 @@ class FrameworkDevServer:
             with self._lock: self._is_starting = False
 
             try:
+                import re
                 master_reader = io.open(master_fd, 'r', encoding='utf-8', errors='replace')
                 while True:
                     if proc.poll() is not None: break
                     line = master_reader.readline()
                     if not line: break
                     line_str = line.strip()
+                    # 🚀 自动感知并对正子进程实际绑定的端口
+                    port_match = re.search(r'https?://(?:localhost|127\.0\.0\.1):(\d+)', line_str)
+                    if port_match:
+                        try:
+                            actual_port = int(port_match.group(1))
+                            if actual_port != self.port:
+                                self.port = actual_port
+                                tlog.info(f"🟢 [FrameworkDev] 感知到框架实际服务端口已对正为: {self.port}")
+                        except Exception: pass
                     if callback: callback(line_str)
             except Exception as e:
                 tlog.debug(f"ℹ️ [FrameworkDev] PTY 流已中断: {e}")

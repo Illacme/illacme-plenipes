@@ -43,11 +43,12 @@ class ImprintManager:
             tlog.warning(f"⚠️ [品牌存在] (激活现有品牌) 出版品牌 '{name}' 已就绪，跳过物理划定。")
             return True
 
-        if not LicenseGuard.is_pro_feature_allowed("multi_imprint"):
-            existing = self.list_imprints()
-            if len(existing) >= 2:
-                tlog.error("🛑 [准入拦截] (权限受限) 社区版除默认版图外仅限新增 1 个自定义版图 (总量限额 2)。请升级至授权版。")
-                return False
+        existing = self.list_imprints()
+        max_allowed = LicenseGuard.get_max_imprints()
+        if len(existing) >= max_allowed:
+            tier_name = LicenseGuard.get_license_info().get("tier_name", "社区版")
+            tlog.error(f"🛑 [准入拦截] (权限受限) 当前{tier_name}支持最多管理 {max_allowed} 个独立版图。请升级以解锁更多版图。")
+            return False
  
         tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理版图...")
         

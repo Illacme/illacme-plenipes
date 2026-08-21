@@ -63,7 +63,7 @@ class TestMultilingualSyndicationDispatch(unittest.TestCase):
                     )
                 
                 # 2. 模拟 AZ 语种已生成在内容候选目录中
-                content_az_dir = os.path.join(self.imprint_dir, "themes", "default", "src", "content", "az")
+                content_az_dir = os.path.join(self.imprint_dir, "themes", "sovereign", "src", "content", "az")
                 os.makedirs(content_az_dir, exist_ok=True)
                 with open(os.path.join(content_az_dir, "welcome-to-illacme-plenipes.md"), 'w', encoding='utf-8') as f:
                     f.write(
@@ -91,7 +91,7 @@ class TestMultilingualSyndicationDispatch(unittest.TestCase):
                 cfg['output_paths'] = {
                     'source_dir': os.path.join(self.imprint_dir, 'dist/source'),
                     'site_dir': os.path.join(self.imprint_dir, 'dist/static'),
-                    'content_dir': os.path.join(self.imprint_dir, "themes", "default", "src", "content"),
+                    'content_dir': os.path.join(self.imprint_dir, "themes", "sovereign", "src", "content"),
                     'assets_dir': os.path.join(self.imprint_dir, 'dist/assets'),
                     'graph_json_dir': os.path.join(self.imprint_dir, 'dist/graph')
                 }

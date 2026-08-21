@@ -137,7 +137,7 @@ window.updateSlugSandboxPreview = async function () {
     // 语种矩阵与前缀开关感知 (支持字符串及对象字典双模态)
     const rawSource = i18nSettings.source || 'zh';
     const sourceLang = extractLangCode(rawSource, 'zh');
-    
+
     let targetLangs = ['en'];
     if (i18nSettings.targets && Array.isArray(i18nSettings.targets) && i18nSettings.targets.length > 0) {
         targetLangs = i18nSettings.targets.map(t => extractLangCode(t, 'en')).filter(Boolean);
@@ -269,7 +269,7 @@ window.updateSlugSandboxPreview = async function () {
             const isSource = info.isSource;
             const prefixTag = isSource
                 ? (forceDefaultLangPrefix ? '<span style="font-size: 0.65rem; color: #00f2fe; background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🏷️ 强制母语前缀</span>' : '<span style="font-size: 0.65rem; color: #00ff88; background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">👑 默认根路径</span>')
-                : '<span style="font-size: 0.65rem; color: #a34cff; background: rgba(163,76,255,0.12); border: 1px solid rgba(163,76,255,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🌍 多语分身译本</span>';
+                : '<span style="font-size: 0.65rem; color: #a34cff; background: rgba(163,76,255,0.12); border: 1px solid rgba(163,76,255,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🌍 目标语种译本</span>';
 
             return `
                 <div style="background: ${idx === 0 ? 'rgba(0, 242, 254, 0.04)' : 'rgba(255, 255, 255, 0.015)'}; border: 1px solid ${idx === 0 ? 'rgba(0, 242, 254, 0.25)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; transition: all 0.2s;">
@@ -314,7 +314,7 @@ window.updateSlugSandboxPreview = async function () {
         const modeLabels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '目录树复刻' };
         const routeHint = matchedRoute ? `🎯 命中频道: ${matchedRoute.source} ➔ /${matchedRoute.prefix}/` : '📁 默认频道';
         const prefixHint = forceDefaultLangPrefix ? '🏷️ 母语前缀: 强制开启' : '👑 母语前缀: 默认根路径';
-        
+
         diagnosticBox.innerHTML = `
             <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.68rem; margin-top: 8px;">
                 <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${routeHint}</span>

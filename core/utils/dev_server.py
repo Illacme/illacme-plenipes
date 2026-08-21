@@ -21,11 +21,32 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
     """
     🚀 [V11.7] 主权处理器：支持 CORS 与跨域预览。
     """
+    def guess_type(self, path):
+        ctype = super().guess_type(path)
+        if ctype and (ctype.startswith('text/') or ctype in ('application/javascript', 'application/json')):
+            if 'charset=' not in ctype:
+                ctype += '; charset=utf-8'
+        return ctype
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
         super().end_headers()
+
+    def translate_path(self, path):
+        translated = super().translate_path(path)
+        if not os.path.exists(translated):
+            dirname, basename = os.path.split(translated)
+            stem, ext = os.path.splitext(basename)
+            if ext in ('.html', '') and os.path.exists(dirname):
+                clean_stem = stem.lower().replace('_', '-').strip('-')
+                candidates = [f for f in os.listdir(dirname) if f.endswith('.html')]
+                for c in candidates:
+                    c_stem = os.path.splitext(c)[0].lower()
+                    if clean_stem in c_stem or c_stem.endswith(clean_stem) or c_stem.startswith(clean_stem):
+                        return os.path.join(dirname, c)
+        return translated
 
     def do_OPTIONS(self):
         self.send_response(200)

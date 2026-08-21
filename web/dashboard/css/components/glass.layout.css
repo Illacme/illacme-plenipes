@@ -134,9 +134,10 @@
     background: var(--white-08); color: var(--accent-secondary);
 }
 .nav-item.active::after {
-    content: ""; position: absolute; bottom: -10px; left: 20%; width: 60%; height: 3px;
+    content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 60%; height: 3px;
     background: var(--accent-secondary); border-radius: 10px;
     box-shadow: 0 0 10px var(--accent-secondary);
+    pointer-events: none;
 }
 .tab-icon { margin-right: 10px; }
 .tab-content-area { flex: 1; overflow-y: auto; padding-right: 10px; }

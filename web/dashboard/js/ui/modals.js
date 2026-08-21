@@ -149,11 +149,26 @@ window.getUIModalsHTML = () => {
                         <div id="terminal-output" style="flex: 1; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-bright); overflow-y: auto; line-height: 1.4; background: var(--black-10);"></div>
                     </div>
                 </div>
-                <div class="modal-footer" style="display: flex; justify-content: center; width: 100%; padding: 0.4rem 0 1rem 0; gap: 1rem;">
-                    <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">完成</button>
-                    <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
-                    <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
-                    <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
+                <div class="modal-footer" style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0.4rem 1.5rem 1rem 1.5rem; gap: 0.8rem;">
+                    <!-- ⚡ 强制覆盖选项条（常驻于发布按钮上方，绝不因日志滚动而丢失） -->
+                    <div id="preview-force-sync-bar" style="display: none; width: 100%; max-width: 680px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 8px 14px; align-items: center; justify-content: space-between; box-sizing: border-box;">
+                        <label for="chk-preview-force-sync" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--text-bright); font-weight: 600; margin: 0; user-select: none;">
+                            <input type="checkbox" id="chk-preview-force-sync" style="accent-color: var(--neon-cyan); width: 16px; height: 16px; cursor: pointer; margin: 0;">
+                            <span>⚡ 强制全量覆盖同步 (Force Sync)</span>
+                        </label>
+                        <span style="font-size: 0.74rem; color: var(--text-muted);">
+                            切换装帧主题或重构站点时推荐勾选 (复用已有 AI 译文缓存，0 算力开销)
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; width: 100%; gap: 1rem;">
+                        <button class="primary-btn glow-btn" id="btn-terminal-start-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.startPublishAndPreviewExecution()">⚡ 开始发布</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-open-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.openPreviewSite()">🌐 立即前往预览站点</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">完成</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
+                        <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
+                        <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -18,9 +18,9 @@ _telegram_lock = threading.Lock()
 
 class TelegramSyndicator(BaseSyndicator):
     PLUGIN_ID = "telegram"
-    DISPLAY_NAME = "Telegram Channel"
+    DISPLAY_NAME = "Telegram 频道广播"
     VERSION = "V1.0"
-    DESCRIPTION = "使用 Telegram Bot 将文章的标题、摘要与阅读全文链接自动推送至指定的 Telegram 频道或群组。"
+    DESCRIPTION = "面向读者的公开发布通道：使用 Telegram Bot 将新文章标题、摘要与阅读全文链接自动推送至指定的读者频道或群组。"
     
     REQUIRED_PACKAGES = ["requests"]
 

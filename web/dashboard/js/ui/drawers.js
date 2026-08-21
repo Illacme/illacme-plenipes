@@ -91,8 +91,8 @@ window.getUIDrawersHTML = () => {
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div id="header-master-switch-wrapper" style="display: inline-flex; align-items: center; gap: 8px; padding: 3px 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; backdrop-filter: blur(8px);">
                             <span id="header-toggle-status-label" style="font-size: 0.72rem; font-weight: 600; color: var(--text-dim);">全局驱动</span>
-                            <label class="p-switch" style="margin: 0; transform: scale(0.82); transform-origin: center;">
-                                <input type="checkbox" id="drawer-global-driver-toggle">
+                            <label class="p-switch" style="margin: 0; transform: scale(0.82); transform-origin: center;" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="drawer-global-driver-toggle" onclick="event.stopPropagation()">
                                 <span class="p-slider round"></span>
                             </label>
                         </div>

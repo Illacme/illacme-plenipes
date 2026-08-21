@@ -8,13 +8,13 @@ Illacme-plenipes - Theme Schema and Custom Options Sovereignty Unit Tests
 
 import unittest
 from core.config.models.theme import ThemeSettings
-from themes.default.adapters.sovereign import SovereignSSGAdapter
+from themes.sovereign.adapters.sovereign import SovereignSSGAdapter
 
 class TestThemeSchemaSovereignty(unittest.TestCase):
 
     def test_schema_loading_integrity(self):
-        """🚀 验证 BaseSSGAdapter 能够正确从 themes/default 物理探测并加载 theme.schema.json 契约"""
-        settings = ThemeSettings(name="default", renderer="sovereign")
+        """🚀 验证 BaseSSGAdapter 能够正确从 themes/sovereign 物理探测并加载 theme.schema.json 契约"""
+        settings = ThemeSettings(name="sovereign", renderer="sovereign")
         adapter = SovereignSSGAdapter(theme_settings=settings)
         
         self.assertIsNotNone(adapter.theme_schema)
@@ -148,6 +148,51 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         self.assertEqual(opts_override["footer_copyright"], "© 2026 Theme Specific Copyright")
         # 未被局部选项覆盖、仍继承全局的字段
         self.assertEqual(opts_override["logo_path"], "/static/unified-logo.png")
+
+    def test_default_imprint_license_sovereignty(self):
+        """🚀 验证默认品牌 (default) 无论切换到何种主题均享有 PRO 完整授权，绝不发生误降级"""
+        from core.governance.license_guard import LicenseGuard
+        
+        # 默认品牌状态下
+        LicenseGuard.clear_cache()
+        self.assertTrue(LicenseGuard.is_default_imprint_and_theme_active())
+        self.assertEqual(LicenseGuard.get_active_tier(), "PRO")
+        self.assertTrue(LicenseGuard.is_pro_feature_allowed("multi_language"))
+        self.assertTrue(LicenseGuard.is_pro_feature_allowed("subfolder_ingress"))
+        self.assertEqual(LicenseGuard.get_max_imprints(), 999)
+        self.assertEqual(LicenseGuard.get_max_i18n_targets(), 999)
+        
+        info = LicenseGuard.get_license_info()
+        self.assertEqual(info["tier"], "PRO")
+        self.assertEqual(info["tier_name"], "高级专业版")
+        self.assertTrue(info["is_licensed"])
+
+    def test_three_tier_quotas(self):
+        """🚀 验证 3-Tier（LITE / STANDARD / PRO）配额分级体系"""
+        from core.governance.license_guard import LicenseGuard
+        
+        LicenseGuard.clear_cache()
+        # Mock 基础增强版 (STANDARD)
+        LicenseGuard._cached_license_result = (True, {"tier": "STANDARD", "customer": "标准版创作者"})
+        
+        # 当非默认品牌时
+        import unittest.mock as mock
+        with mock.patch.object(LicenseGuard, "is_default_imprint_and_theme_active", return_value=False):
+            self.assertEqual(LicenseGuard.get_active_tier(), "STANDARD")
+            self.assertEqual(LicenseGuard.get_max_imprints(), 3)
+            self.assertEqual(LicenseGuard.get_max_i18n_targets(), 5)
+            self.assertTrue(LicenseGuard.is_pro_feature_allowed("multi_language"))
+            self.assertTrue(LicenseGuard.is_pro_feature_allowed("subfolder_ingress"))
+            self.assertFalse(LicenseGuard.is_pro_feature_allowed("multi_dialect"))
+            self.assertFalse(LicenseGuard.is_pro_feature_allowed("cloud_harvesting"))
+            
+            info = LicenseGuard.get_license_info()
+            self.assertEqual(info["tier"], "STANDARD")
+            self.assertEqual(info["tier_name"], "基础增强版")
+            self.assertEqual(info["max_imprints"], 3)
+            self.assertEqual(info["max_i18n_targets"], 5)
+        
+        LicenseGuard.clear_cache()
 
 if __name__ == "__main__":
     unittest.main()

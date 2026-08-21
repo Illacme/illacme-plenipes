@@ -39,7 +39,7 @@ window.loadSettings = async (targetCat = 'layout') => {
 
             document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             // 点击大 Tab 时，默认跳转到对应的第一个子页面
             let target = tab.dataset.cat;
             if (target === 'layout') target = 'imprints';
@@ -48,7 +48,7 @@ window.loadSettings = async (targetCat = 'layout') => {
             else if (target === 'dissemination_routing') target = 'slug_settings';
             else if (target === 'security_audit') target = 'security';
             else if (target === 'license') target = 'license';
-            
+
             renderSettingsCategory(target);
             if (target === 'general' && typeof window.refreshCacheStats === 'function') {
                 window.refreshCacheStats();
@@ -203,7 +203,7 @@ window.renderSettingsCategory = (cat) => {
             document.body.scrollTop = 0;
         }, 80);
     }
-    
+
     // 🚀 [V55.8] 核心能见度治理：统一管理不需要显示“全局保存”按钮的页面
     if (!window.updateSaveButtonVisibility) {
         window.updateSaveButtonVisibility = (catOrSub) => {
@@ -232,7 +232,7 @@ window.saveAllSettings = async () => {
 
     try {
         addAudit("💾 正在打包全量主权配置快照...");
-        
+
         // 🚚 [BlockCache] 检测缓存分级或目录变更
         let migrateCache = false;
         if (window.initialSettingsState) {
@@ -251,9 +251,9 @@ window.saveAllSettings = async () => {
                         const result = await Swal.fire({
                             title: '⚠️ 检测到缓存配置变更',
                             html: `您已修改段落缓存配置：<br>` +
-                                  (levelsChanged ? `• 目录分级: <b>${oldShardLevels}级</b> ➡️ <b>${newShardLevels}级</b><br>` : '') +
-                                  (dirChanged ? `• 存储目录: <b>${oldCacheDir || '默认'}</b> ➡️ <b>${newCacheDir || '默认'}</b><br>` : '') +
-                                  `<br>为了避免已有翻译缓存失效导致重复请求大模型，建议对已有缓存进行物理迁移。是否执行迁移？`,
+                                (levelsChanged ? `• 目录分级: <b>${oldShardLevels}级</b> ➡️ <b>${newShardLevels}级</b><br>` : '') +
+                                (dirChanged ? `• 存储目录: <b>${oldCacheDir || '默认'}</b> ➡️ <b>${newCacheDir || '默认'}</b><br>` : '') +
+                                `<br>为了避免已有翻译缓存失效导致重复请求大模型，建议对已有缓存进行物理迁移。是否执行迁移？`,
                             icon: 'warning',
                             showCancelButton: true,
                             showDenyButton: true,
@@ -269,7 +269,7 @@ window.saveAllSettings = async () => {
                                 cancelButton: 'danger-btn'
                             }
                         });
-                        
+
                         if (result.isDismissed) {
                             addAudit("❌ 已取消保存配置。", 'info');
                             return;
@@ -286,11 +286,27 @@ window.saveAllSettings = async () => {
             }
         }
 
+        // 🔍 检测本次保存是否包含需重新编译装帧的属性变更
+        let rebuildKeysChanged = [];
+        if (window.initialSettingsState) {
+            try {
+                const initialObj = JSON.parse(window.initialSettingsState);
+                const currentFlat = window.flattenObject(window.settingsData);
+                for (const [k, v] of Object.entries(currentFlat)) {
+                    if (initialObj[k] !== v && !k.split('.').some(p => p.startsWith('_'))) {
+                        if (typeof window.resolveFieldEffectiveness === 'function' && window.resolveFieldEffectiveness(k) === 'rebuild') {
+                            rebuildKeysChanged.push(k);
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
         const full = window.flattenObject(window.settingsData), payload = {};
         Object.keys(full).forEach(k => {
             if (!k.split('.').some(p => p.startsWith('_'))) payload[k] = full[k];
         });
-        
+
         const url = `/api/config/update?migrate_cache=${migrateCache}`;
         const res = await apiFetch(url, {
             method: 'POST',
@@ -299,10 +315,24 @@ window.saveAllSettings = async () => {
         });
 
         if (res && res.status === 'success') {
-            addAudit("✅ 全局主权配置已成功保存并即刻生效。", 'success');
+            if (rebuildKeysChanged.length > 0) {
+                addAudit(`✅ 主权配置已持久化保存：检测到 ${rebuildKeysChanged.length} 项装帧与路由属性发生变更，将在下次「发布预览」或「全网发布」时编译生效。`, 'warning');
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`💡 配置已保存！检测到装帧参数变更，需执行「发布预览」编译生效。`, 'info');
+                } else if (window._showToast) {
+                    window._showToast(`💡 配置已保存！检测到装帧参数变更，需执行「发布预览」编译生效。`, 'info');
+                }
+            } else {
+                addAudit("✅ 全局主权配置已成功保存并即刻生效。", 'success');
+                if (typeof window.showToast === 'function') {
+                    window.showToast("✅ 配置已保存并即时热更新生效！", 'success');
+                } else if (window._showToast) {
+                    window._showToast("✅ 配置已保存并即时热更新生效！", 'success');
+                }
+            }
             if (res.active_config) {
                 window.settingsData = { ...window.settingsData, ...res.active_config };
-                
+
                 // 🚀 [V57.1] 同步新的基准状态并重置按钮
                 if (typeof window.getCleanConfig === 'function') {
                     window.initialSettingsState = window.getCleanConfig(window.settingsData);
