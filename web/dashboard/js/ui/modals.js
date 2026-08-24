@@ -173,13 +173,13 @@ window.getUIModalsHTML = () => {
             </div>
         </div>
 
-        <!-- 🏛️ Imprint Setup Wizard Modal (版图配置向导) -->
+        <!-- 🏛️ Imprint Setup Wizard Modal (品牌配置向导) -->
         <div id="imprint-wizard-modal" class="modal-overlay" style="display: none;">
             <div class="glass-panel modal-content" style="max-width: 650px; width: 90%; height: auto; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 25px;">
                 <div class="modal-header" style="margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-size: 1.5rem;">🏛️</span>
-                        <h2 style="margin: 0; font-size: 1.3rem; letter-spacing: 1px; color: var(--accent-primary);">新版图配置向导 <span class="version-tag tiny">WIZARD</span></h2>
+                        <h2 style="margin: 0; font-size: 1.3rem; letter-spacing: 1px; color: var(--accent-primary);">新品牌配置向导 <span class="version-tag tiny">WIZARD</span></h2>
                     </div>
                     <button class="close-btn" onclick="closeImprintWizard()" style="position: static; margin-left: auto;">×</button>
                 </div>
@@ -208,7 +208,7 @@ window.getUIModalsHTML = () => {
                     <div id="wiz-step-1" class="wizard-pane fade-in">
                         <div class="sovereign-memo glass-panel" style="margin-bottom: 20px; padding: 15px; border-left: 3px solid var(--accent-primary); background: rgba(163, 76, 255, 0.03);">
                             <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0; line-height: 1.5;">
-                                <b>版图 (Imprint)</b> 是您在数字帝国中的物理发行单元。我们将为该版图划定独立的内容文库、算力策略和分发链条。首先请确立其 Imprint 标识：
+                                <b>品牌 (Imprint)</b> 是您在数字帝国中的物理发行单元。我们将为该品牌划定独立的内容文库、算力策略和分发链条。首先请确立其 Imprint 标识：
                             </p>
                         </div>
                         <div class="settings-grid" style="display: flex; flex-direction: column; gap: 15px;">
@@ -224,7 +224,7 @@ window.getUIModalsHTML = () => {
                             </div>
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <div class="setting-label">版图展示名称 (Name) <span class="tier-tag tier-imprint">品牌</span></div>
+                                    <div class="setting-label">品牌展示名称 (Name) <span class="tier-tag tier-imprint">品牌</span></div>
                                     <div class="setting-desc">对外展示的文学出版社名号，随时可以更改。</div>
                                 </div>
                                 <div class="setting-control">
@@ -239,7 +239,7 @@ window.getUIModalsHTML = () => {
                     <div id="wiz-step-2" class="wizard-pane fade-in" style="display: none;">
                         <div class="sovereign-memo glass-panel" style="margin-bottom: 20px; padding: 15px; border-left: 3px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.03);">
                             <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0; line-height: 1.5;">
-                                版图的底层资产存储在<b>文库 (Vault)</b> 目录中。您可以使用原有的文库，亦或是让系统为您一键自愈初始化全新的 Obsidian 资产金库。
+                                品牌的底层资产存储在<b>文库 (Vault)</b> 目录中。您可以使用原有的文库，亦或是让系统为您一键自愈初始化全新的 Obsidian 资产金库。
                             </p>
                         </div>
                         <div class="settings-grid" style="display: flex; flex-direction: column; gap: 15px;">
@@ -273,7 +273,7 @@ window.getUIModalsHTML = () => {
                             </p>
                         </div>
                         <div class="glass-panel" style="padding: 15px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid var(--glass-border);">
-                            <h4 style="margin-top: 0; color: var(--accent-primary); font-size: 0.9rem;">🏛️ 准备发射的出版版图概要</h4>
+                            <h4 style="margin-top: 0; color: var(--accent-primary); font-size: 0.9rem;">🏛️ 准备发射的出版品牌概要</h4>
                             <div style="font-size: 0.8rem; line-height: 1.8; color: var(--text-dim);">
                                 • <b>物理标识</b>: <span id="summary-id" style="color: var(--text-bright); font-weight: bold; font-family: monospace;">-</span><br>
                                 • <b>出版品牌</b>: <span id="summary-name" style="color: var(--text-bright); font-weight: bold;">-</span><br>

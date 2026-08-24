@@ -98,7 +98,6 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
     # Phase 2: 获取当前配置状态并计算目标状态
     current_enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     current_i18n_enabled = getattr(engine.config.i18n_settings, "enabled", False) if engine.config.i18n_settings else False
-    current_publishing_mode = getattr(engine.config.governance, "publishing_mode", PublishingMode.BASIC) if engine.config.governance else PublishingMode.BASIC
 
     target_enable_ai = req.get("translation.enable_ai", current_enable_ai)
     target_i18n_enabled = req.get("i18n_settings.enabled", current_i18n_enabled)
@@ -252,16 +251,7 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
     try:
         from core.config.config_models import Configuration
         # 使用当前内存中已更改的 config 的 model_dump() 重新进行模型校验
-        validated_config = Configuration.model_validate(engine.config.model_dump())
-        
-        # 核对关键的自愈属性，将其反向同步更新至 routing_groups 以便落盘，同时更正内存中的属性
-        keys_to_sync = [
-            "governance.publishing_mode",
-            "governance.seo_strategy",
-            "translation.enable_ai"
-        ]
-        
-
+        Configuration.model_validate(engine.config.model_dump())
     except Exception as eval_err:
         tlog.warning(f"⚠️ [更新后配置评估自愈失败]: {eval_err}")
 

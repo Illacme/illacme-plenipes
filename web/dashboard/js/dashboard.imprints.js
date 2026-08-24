@@ -1,6 +1,6 @@
 /**
  * ⚙️ [V74.0] Illacme Plenipes Imprints Management Module (Hub Controller)
- * 职责：出版集团指挥中心、核心版图意志切换、物理隔离与一键注销。
+ * 职责：出版集团指挥中心、核心品牌意志切换、物理隔离与一键注销。
  */
 
 window.switchImprint = async (id) => {
@@ -18,7 +18,7 @@ window.switchImprint = async (id) => {
         }
     }
 
-    addAudit(`🛰️ 正在申请版图切换: ${id}...`, "info");
+    addAudit(`🛰️ 正在申请品牌切换: ${id}...`, "info");
 
     const res = await apiFetch('/api/imprints/switch', {
         method: 'POST',
@@ -27,7 +27,7 @@ window.switchImprint = async (id) => {
     });
 
     if (res && res.success) {
-        addAudit(`🔄 [对正] 成功切换至版图: ${id}`, "success");
+        addAudit(`🔄 [对正] 成功切换至品牌: ${id}`, "success");
         if (typeof renderImprintDropdown === 'function') renderImprintDropdown();
         
         // 🚀 [V75.6] 全域事件总线无感热重载 (Zero-Reload Hotswap)
@@ -58,9 +58,9 @@ window.addNewImprint = async () => {
                 title: '🛡️ 准入拦截',
                 html: '<div style="text-align:left; font-size: 0.9rem; line-height: 1.6;">' +
                       '您当前处于 <b>免费社区版</b>。<br><br>' +
-                      '• 版图限额: 2/2 (已含 1 个默认版图 + 1 个自定义版图)<br>' +
-                      '• 治理限制: 社区版最多允许创建 1 个自定义出版版图。<br><br>' +
-                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [高级专业版] 以解锁多版图管理。</span>' +
+                      '• 品牌限额: 2/2 (已含 1 个默认品牌 + 1 个自定义品牌)<br>' +
+                      '• 治理限制: 社区版最多允许创建 1 个自定义出版品牌。<br><br>' +
+                      '<span style="color:var(--accent-secondary)">💡 建议：升级至 [高级专业版] 以解锁多品牌管理。</span>' +
                       '</div>',
                 icon: 'warning',
                 confirmButtonText: '了解',
@@ -69,7 +69,7 @@ window.addNewImprint = async () => {
                 confirmButtonColor: 'var(--accent-primary)'
             });
         } else {
-            alert("🛡️ [准入拦截]\n免费社区版限额 2 个版图 (1 个默认 + 1 个自定义)，无法继续添加。");
+            alert("🛡️ [准入拦截]\n免费社区版限额 2 个品牌 (1 个默认 + 1 个自定义)，无法继续添加。");
         }
         return;
     }
@@ -80,13 +80,13 @@ window.addNewImprint = async () => {
 };
 
 window.deleteImprint = async (id) => {
-    // 🛡️ [安全底线拦截] 前端双重保护：严禁删除活动版图与默认版图，防范系统配置丢失雪崩
+    // 🛡️ [安全底线拦截] 前端双重保护：严禁删除活动品牌与默认品牌，防范系统配置丢失雪崩
     const activeImprint = window.settingsData?._active_imprint || 'default';
     if (id === 'default' || id === activeImprint) {
         if (window.Swal) {
             await window.Swal.fire({
                 title: '🛡️ 安全拦截',
-                html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">无法物理抹除当前<b>处于激活状态</b>（或默认）的出版版图：<b style="color:var(--accent-secondary, #00f2fe);">${id}</b>。<br><br>💡 <b>建议：</b>请先在左上角或下方卡片中切换至其他可用版图后再行抹除。</div>`,
+                html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">无法物理抹除当前<b>处于激活状态</b>（或默认）的出版品牌：<b style="color:var(--accent-secondary, #00f2fe);">${id}</b>。<br><br>💡 <b>建议：</b>请先在左上角或下方卡片中切换至其他可用品牌后再行抹除。</div>`,
                 icon: 'error',
                 confirmButtonText: '我知道了',
                 confirmButtonColor: 'var(--accent-primary, #7c3aed)',
@@ -94,7 +94,7 @@ window.deleteImprint = async (id) => {
                 color: 'var(--text-bright, #ffffff)'
             });
         } else {
-            alert(`🛡️ [安全拦截]\n无法删除当前处于激活状态（或默认）的版图 [${id}]！\n请先切换至其他可用版图后再行操作。`);
+            alert(`🛡️ [安全拦截]\n无法删除当前处于激活状态（或默认）的品牌 [${id}]！\n请先切换至其他可用品牌后再行操作。`);
         }
         return;
     }
@@ -107,8 +107,8 @@ window.deleteImprint = async (id) => {
     // 🛡️ [物理安全防线 2] SweetAlert2 霸权防闪退确认框
     if (window.Swal) {
         const res = await window.Swal.fire({
-            title: '🚨 确认物理抹除出版版图',
-            html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">您确定要彻底物理抹除出版版图 <b style="color:#ff4444;">[${id}]</b> 吗？<br><br>⚠️ <b>后果提示</b>：该版图下的独立样式、配置及专有产物元数据将被销毁，此物理操作不可撤销！</div>`,
+            title: '🚨 确认物理抹除出版品牌',
+            html: `<div style="text-align:left; font-size: 0.88rem; line-height: 1.6;">您确定要彻底物理抹除出版品牌 <b style="color:#ff4444;">[${id}]</b> 吗？<br><br>⚠️ <b>后果提示</b>：该品牌下的独立样式、配置及专有产物元数据将被销毁，此物理操作不可撤销！</div>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '🔥 确认物理抹除',
@@ -120,7 +120,7 @@ window.deleteImprint = async (id) => {
         });
         if (!res.isConfirmed) return;
     } else {
-        if (!confirm(`🚨 危险操作！\n确认要物理抹除出版版图 [${id}] 吗？`)) return;
+        if (!confirm(`🚨 危险操作！\n确认要物理抹除出版品牌 [${id}] 吗？`)) return;
     }
 
     const res = await apiFetch('/api/imprints/delete', {
@@ -130,24 +130,24 @@ window.deleteImprint = async (id) => {
     });
 
     if (res && res.success) {
-        if (typeof addAudit === 'function') addAudit(`🗑️ 版图已物理抹除: ${id}`, "warning");
+        if (typeof addAudit === 'function') addAudit(`🗑️ 品牌已物理抹除: ${id}`, "warning");
         if (typeof window.loadSettings === 'function') window.loadSettings('imprints');
     }
 };
 
 /**
  * 🚀 [V75.6] 全域事件总线无感热重载 (Zero-Reload Hotswap)
- * 解决切换版图全页白屏重载的痛点，毫秒级无缝换脑
+ * 解决切换品牌全页白屏重载的痛点，毫秒级无缝换脑
  */
 window.hotswapActiveImprint = async (id) => {
     try {
         if (typeof showNotification === 'function') {
-            showNotification(`🔄 正在快速切换至版图: ${id}...`, 'info');
+            showNotification(`🔄 正在快速切换至品牌: ${id}...`, 'info');
         } else if (typeof addAudit === 'function') {
             addAudit(`🔄 正在执行零加载无感热重载至: ${id}...`, 'info');
         }
 
-        // 0. 关闭可能处于打开状态的编辑器与元数据详情抽屉，防范跨版图物理误写
+        // 0. 关闭可能处于打开状态的编辑器与元数据详情抽屉，防范跨品牌物理误写
         if (typeof window.closeEditor === 'function') window.closeEditor();
         if (typeof window.closeVaultDrawer === 'function') window.closeVaultDrawer();
         
@@ -159,7 +159,7 @@ window.hotswapActiveImprint = async (id) => {
         
         // 2. 重新加载原稿文库及目录探索树
         if (typeof loadVault === 'function') {
-            // 重置文库上下文状态，防范旧版图“幽灵活跃目录”污染新版图视图
+            // 重置文库上下文状态，防范旧品牌“幽灵活跃目录”污染新品牌视图
             window.vaultActiveFolder = '';
             window.vaultCurrentQuery = '';
             window.vaultCurrentPage = 1;
@@ -197,9 +197,9 @@ window.hotswapActiveImprint = async (id) => {
         }
         
         if (typeof showNotification === 'function') {
-            showNotification(`✅ 已无缝热重载至版图: ${id}`, 'success');
+            showNotification(`✅ 已无缝热重载至品牌: ${id}`, 'success');
         } else if (typeof addAudit === 'function') {
-            addAudit(`✅ 零加载热重载成功，版图: ${id}`, 'success');
+            addAudit(`✅ 零加载热重载成功，品牌: ${id}`, 'success');
         }
     } catch (err) {
         console.error("Hotswap failed, falling back to reload:", err);

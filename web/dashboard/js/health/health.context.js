@@ -404,7 +404,7 @@ window.refreshGovernanceContext = async () => {
         }
     }
 
-    // 🚀 [V55.0] 全局主权感知：同步版图列表，确保切换器在非设置页面也可用
+    // 🚀 [V55.0] 全局主权感知：同步品牌列表，确保切换器在非设置页面也可用
     const imprintsData = await apiFetch('/api/imprints');
     if (imprintsData && imprintsData.imprints) {
         if (!window.settingsData) window.settingsData = {};

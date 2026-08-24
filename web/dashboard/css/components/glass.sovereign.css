@@ -57,10 +57,10 @@
     font-size: 0.58rem; font-weight: 800; padding: 1px 6px; border-radius: 4px;
     letter-spacing: 0.5px; text-transform: uppercase; font-family: var(--font-mono); line-height: 1.2;
 }
-.audit-badge.info { background: rgba(0, 242, 255, 0.12); color: #00f2ff; border: 1px solid rgba(0, 242, 255, 0.25); }
-.audit-badge.success { background: rgba(0, 255, 136, 0.12); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); }
-.audit-badge.error { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); }
-.audit-badge.warning { background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); }
+.audit-badge.info { background: rgba(var(--neon-cyan-rgb), 0.12); color: var(--neon-cyan); border: 1px solid rgba(var(--neon-cyan-rgb), 0.25); }
+.audit-badge.success { background: rgba(var(--neon-green-rgb), 0.12); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); }
+.audit-badge.error { background: rgba(var(--neon-red-rgb), 0.15); color: var(--neon-red); border: 1px solid rgba(var(--neon-red-rgb), 0.3); }
+.audit-badge.warning { background: rgba(var(--neon-amber-rgb), 0.15); color: var(--neon-amber); border: 1px solid rgba(var(--neon-amber-rgb), 0.3); }
 .audit-time { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim); opacity: 0.6; }
 .audit-msg { color: var(--color-white); line-height: 1.4; font-weight: 500; }
 .audit-icon { font-size: 0.8rem; margin-right: 2px; }

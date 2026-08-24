@@ -157,8 +157,6 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     endpoints = getattr(pub_ctrl, "webhook_endpoints", {}) if pub_ctrl else {}
     if hasattr(endpoints, "dict"): endpoints = endpoints.dict()
     if not isinstance(endpoints, dict): endpoints = {}
-    
-    global_webhook_enabled = getattr(pub_ctrl, "webhook_enabled", False) if pub_ctrl else False
 
     for notif in notification_plugins_meta:
         n_id = notif["id"]

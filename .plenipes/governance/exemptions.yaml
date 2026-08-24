@@ -20,7 +20,6 @@ redline_exempt_files:
   - core/editorial/standard_steps.py
   - core/logic/ai/ai_scheduler.py
   - core/logic/ai/ai_logic_hub.py
-  - core/logic/ai/ai_scheduler_shards/dispatch_ops.py
   - core/archives/sqlite_backend.py
   - core/bindery/bindery_dispatcher.py
   - core/logic/diagnostics/component_monitor.py
@@ -42,17 +41,26 @@ redline_exempt_files:
   # --- Adapters / Compute / Syndication ---
   - adapters/compute/openai.py
   - adapters/egress/syndication/ghost.py
+  - adapters/egress/publishers/gitlab_pages.py
   # --- Tests ---
   - tests/test_smoke.py
   # --- Dashboard JS ---
-  - web/dashboard/js/dashboard.core.js
   - web/dashboard/js/dashboard.socket.js
   - web/dashboard/js/dashboard.system.js
+  - web/dashboard/js/dashboard.plugins.js
+  - web/dashboard/js/compute/compute.ui.js
+  - web/dashboard/js/health/health.context.js
+  - web/dashboard/js/license/license.ui.js
+  - web/dashboard/js/ui/launchpad.js
   - web/dashboard/js/editorial/article.syndicate.drawer.js
   - web/dashboard/js/plugins/plugins.editor.js
   - web/dashboard/js/plugins/plugins.platforms.js
   - web/dashboard/js/plugins/plugins.sandbox.js
+  - web/dashboard/js/plugins/platforms_shards/platforms.hosting.js
+  - web/dashboard/js/plugins/platforms_shards/platforms.sensing_handlers.js
   - web/dashboard/js/plugins/render_shards/plugins.render.cards.js
+  - web/dashboard/js/plugins/render_shards/plugins.render.pod.js
+  - web/dashboard/js/route/route.render.js
   - web/dashboard/js/route/route.slug.sandbox.js
   - web/dashboard/js/system/system.render.js
   - web/dashboard/js/vault/vault.drawer.js
@@ -60,10 +68,14 @@ redline_exempt_files:
   - web/dashboard/js/localization/localization.render.js
   - web/dashboard/js/localization/localization.review.js
   - web/dashboard/js/localization/localization.review.render.js
-  - web/dashboard/js/localization/localization.sync.js
-  # --- Publishers / Shards ---
-  - adapters/egress/publishers/cloudflare_pages.py
-  - adapters/egress/publishers/github_pages.py
+  # --- Core & Shards ---
+  - core/logic/ai/ai_scheduler_shards/batch_chunker.py
+  - core/governance/license_guard.py
+  # --- Services & Route Shards ---
+  - services/api/routes/gov/actions.py
+  - services/api/routes/gov/plugin_mapper.py
+  - services/api/routes/gov/context_shards/plugin_dry_run_hosting.py
+  - services/api/routes/gov/context_shards/plugin_dry_run_social.py
   - services/api/logic/dispatch_ops_shards/pipeline_ops.py
 
 

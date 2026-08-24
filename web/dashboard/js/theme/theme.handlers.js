@@ -11,7 +11,7 @@ window.ThemeHandlers = {
         const themeName = window.getThemeDisplayName ? window.getThemeDisplayName(themeId) : themeId;
         const result = await Swal.fire({
             title: '🎨 确认切换装帧主题？',
-            html: `确定要将当前版图的主题切换为 <b style="color:var(--accent-secondary);">${themeName}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">系统将自动重新对齐内容路径与编译依赖。</span>`,
+            html: `确定要将当前品牌的主题切换为 <b style="color:var(--accent-secondary);">${themeName}</b> 吗？<br/><span style="font-size:0.75rem;color:var(--text-dim);">系统将自动重新对齐内容路径与编译依赖。</span>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: '确定切换',

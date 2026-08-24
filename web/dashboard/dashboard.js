@@ -55,6 +55,9 @@ window.initDashboard = async () => {
             if (e.key === 'i' && typeof window.toggleHub === 'function') {
                 window.toggleHub('show');
             }
+            if (e.key === 'Escape' && typeof window.toggleHub === 'function') {
+                window.toggleHub('hide');
+            }
             if (e.key === ']') window.toggleSidebar('right');
         };
 

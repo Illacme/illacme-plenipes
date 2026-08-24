@@ -263,8 +263,7 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
                             assembled_blocks = []
                             all_cached = True
                             for blk in parsed_blocks:
-                                c_str = blk.content.strip()
-                                if blk.type == "spacer" or not c_str or c_str.startswith("---") or c_str.startswith("<!--"):
+                                if not blk.is_translatable:
                                     assembled_blocks.append(blk.content)
                                     continue
                                 cached = engine.block_cache.get_block(target_slot_str, blk.fingerprint, "")

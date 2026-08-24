@@ -92,8 +92,9 @@ def _split_paragraphs(body: str) -> list:
                 para_lines.append(lines[i])
                 i += 1
             text = "\n".join(para_lines).strip()
-            # 🛡️ 分割线与 HTML 注释：设为 spacer 块（index=-1），在 UI 中展示但不计入正文段落编号
-            if text.startswith("---") or text.startswith("***") or text.startswith("___") or text.startswith("<!--"):
+            # 🛡️ [SSOT] 分割线与纯 HTML 注释：设为 spacer 块（index=-1），在 UI 中展示但不计入正文段落编号
+            from core.markup.base import MarkupBlock
+            if MarkupBlock.is_ignorable_spacer(text):
                 blocks.append({
                     "index": -1,
                     "type": "spacer",
@@ -161,8 +162,9 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
 
     # 🛡️ 3 级钢铁标题提取 (Frontmatter -> 正文 H1 标题 -> 账本/物理文件名)
     if not source_title and source_body:
-        import re; m = re.search(r'^\s*#\s+(.+)$', source_body, re.MULTILINE)
-        if m: source_title = m.group(1).strip()
+        m = re.search(r'^\s*#\s+(.+)$', source_body, re.MULTILINE)
+        if m:
+            source_title = m.group(1).strip()
     if not source_title:
         source_title = doc_info.get("title") or os.path.splitext(os.path.basename(real_rel_path))[0]
 
@@ -214,11 +216,11 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
             else:
                 from core.logic.block_parser import MarkdownBlockParser
                 parser = MarkdownBlockParser()
+                import re
                 for block in parser.parse(source_body):
-                    c_str = block.content.strip()
-                    if block.type == "spacer" or not c_str or c_str.startswith("---") or c_str.startswith("<!--"): continue
+                    if not block.is_translatable: continue
                     total_blocks += 1
-                    import re
+                    c_str = block.content.strip()
                     stripped = re.sub(r'__B_MASK_\d+__', '', c_str)
                     stripped = re.sub(r'\[\[STB_MASK_\d+\]\]', '', stripped)
                     stripped = re.sub(r'\[\[GLOS_MASK_\d+\]\]', '', stripped)
@@ -297,7 +299,6 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
                                 desc = desc or d_val
                                 break
             except Exception as e:
-                from core.utils.tracing import tlog
                 tlog.warning(f"Failed to read AI snapshot for {doc_id} / {lang_code}: {e}")
 
         import re
@@ -400,10 +401,9 @@ def retranslate_paragraph_impl(engine, doc_id: str, lang_code: str, para_index: 
             res = AILogicHub.clean_translation_response(node.translate(source_text, source_lang="zh-cn", target_lang=lang_code) or "")
             if res and hasattr(engine, 'block_cache'):
                 import hashlib
-                from core.logic.block_parser import MarkdownBlock
-                fp = MarkdownBlock(source_text, type='paragraph', index=para_index).fingerprint
+                from core.markup.base import MarkupBlock
+                fp = MarkupBlock(source_text, block_type='paragraph').fingerprint
                 translation_cfg = getattr(engine.config, "translation", None)
-                resolved_style = getattr(translation_cfg, "active_style", "default") if translation_cfg else "default"
                 p_style = getattr(translation_cfg, "prompts", None) if translation_cfg else None
                 t_sys = getattr(p_style, "translate_system", "") if p_style else ""
                 t_user = getattr(p_style, "translate_user", "") if p_style else ""

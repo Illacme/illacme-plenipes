@@ -42,7 +42,7 @@ function _reviewRender() {
     if (alertEl) {
         if (mode === 'basic') {
             alertEl.style.display = 'block'; alertEl.className = 'review-alert-banner';
-            alertEl.innerHTML = `⚠️ <b>主权透传中 (基础模式)</b>：当前版图未开启 AI 全文翻译，下方展现的目标语种译文为<b>源语种（中文）物理透传内容</b>。如需启用大模型自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 将出版模式切换为 <b>全球模式 (Global)</b> 并重新同步。`;
+            alertEl.innerHTML = `⚠️ <b>主权透传中 (基础模式)</b>：当前品牌未开启 AI 全文翻译，下方展现的目标语种译文为<b>源语种（中文）物理透传内容</b>。如需启用大模型自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 将出版模式切换为 <b>全球模式 (Global)</b> 并重新同步。`;
         } else if (mode === 'enhanced') {
             alertEl.style.display = 'block'; alertEl.className = 'review-alert-banner alert-enhanced';
             alertEl.innerHTML = `⚠️ <b>局部翻译中 (增强模式)</b>：当前处于增强模式，AI 仅用于文档的 SEO 元数据属性（Description/Keywords）润色，<b>文档正文跳过全文翻译</b>。如需开启全文自动翻译，请前往 <a href="#/settings" onclick="window.closeTranslationReview();">系统设置</a> 切换为 <b>全球模式 (Global)</b>。`;
@@ -253,11 +253,19 @@ function _reviewRenderBody() {
 
     document.getElementById('review-body').innerHTML = `
         <div style="display:flex; height:100%; width:100%; overflow:hidden;">
-            <div style="flex:1; min-width:0; border-right:${borderTarget}; overflow-y:auto;" id="col-target">${targetHtml}</div>
-            <div style="flex:1; min-width:0; border-right:${borderPreview}; overflow-y:auto; display:${displayPreview};" id="col-preview">${previewHtml}</div>
-            <div style="flex:1; min-width:0; overflow-y:auto; display:${displaySource};" id="col-source">${sourceHtml}</div>
+            <div style="flex:1; min-width:0; border-right:${borderTarget}; overflow-y:auto;" id="col-target"></div>
+            <div style="flex:1; min-width:0; border-right:${borderPreview}; overflow-y:auto; display:${displayPreview};" id="col-preview"></div>
+            <div style="flex:1; min-width:0; overflow-y:auto; display:${displaySource};" id="col-source"></div>
         </div>
     `;
+
+    // 🛡️ [DOM Isolation Gate] 分栏独立注入，防止段落中未平衡的 HTML 标签逃逸并破坏外部三栏 Flex 容器
+    const elTarget = document.getElementById('col-target');
+    const elPreview = document.getElementById('col-preview');
+    const elSource = document.getElementById('col-source');
+    if (elTarget) elTarget.innerHTML = targetHtml;
+    if (elPreview) elPreview.innerHTML = previewHtml;
+    if (elSource) elSource.innerHTML = sourceHtml;
 
     if (!isMissing) {
         window._bindReviewInteractions?.();

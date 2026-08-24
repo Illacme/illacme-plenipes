@@ -193,6 +193,9 @@ window.buildPluginPodHtml = (p, isPinned) => {
         ? 'color: #ffb700; text-shadow: 0 0 6px rgba(255, 183, 0, 0.7); opacity: 1; transform: scale(1.08);'
         : 'color: rgba(255, 255, 255, 0.35); text-shadow: none; opacity: 0.55;';
 
+    // primaryHostingId 供卡片内主/镜像角色行使用（顶部不再显示徽章）
+    const primaryHostingId = window.settingsData?.publish_control?.primary_hosting_id || '';
+
     return `
     <div class="shield-pod plugin-pod ${p.is_in_use ? 'active-duty' : ''}">
         <div class="shield-status">
@@ -206,6 +209,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
             : `<div class="log-tag info" style="margin-right: 0 !important;">${p.status ? p.status.toUpperCase() : 'ACTIVE'}</div>`
         }
         </div>
+
         
         <div class="shield-body" style="flex:1; display:flex; flex-direction:column;">
             <div class="plugin-pod-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
@@ -225,7 +229,6 @@ window.buildPluginPodHtml = (p, isPinned) => {
             <p style="margin-bottom:12px; flex:1; font-size:0.75rem; color:var(--text-dim); line-height:1.45;">${p.description || 'Capability syncing...'}</p>
             
             ${isTheme ? '' : (p.is_manageable ? (() => {
-            const isConfigured = statusBadge && statusBadge.label && (statusBadge.label.includes('🟢') || statusBadge.label.includes('就绪') || statusBadge.label.includes('配置齐全'));
             let dotColor = 'rgba(255, 255, 255, 0.35)';
             let statusText = '当前品牌未启用';
             let textColor = 'var(--text-dim)';
@@ -240,11 +243,6 @@ window.buildPluginPodHtml = (p, isPinned) => {
                 statusText = '当前品牌已启用';
                 textColor = '#00ff88';
                 glowEffect = 'box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);';
-            } else if (isConfigured) {
-                dotColor = '#ffb700';
-                statusText = '配置就绪 (待启用)';
-                textColor = '#ffb700';
-                glowEffect = 'box-shadow: 0 0 8px rgba(255, 183, 0, 0.5);';
             }
 
             return `
@@ -259,17 +257,34 @@ window.buildPluginPodHtml = (p, isPinned) => {
                     </label>
                 </div>
                 `;
+
+
         })() : `
               <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center;">
                   ${p.is_in_use ? '<span class="tiny-label" style="color:#00ff88; display:flex; align-items:center; gap:6px;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>品牌已绑定</span>' : '<span class="tiny-label" style="color:var(--text-dim);">系统基础节点</span>'}
               </div>
             `)}
 
+            ${(p.category === 'hosting' && p.is_in_use) ? (() => {
+                const _isPrimary = primaryHostingId === p.id;
+                return _isPrimary
+                    ? `<div style="display:flex;align-items:center;gap:5px;margin-top:-10px;margin-bottom:10px;padding:0 12px;">
+                           <span style="font-size:0.68rem;color:#00ff88;font-weight:700;letter-spacing:0.2px;">🏠 主站</span>
+                           <span style="font-size:0.6rem;color:rgba(0,255,136,0.4);font-weight:400;">· canonical · SEO 权威</span>
+                       </div>`
+                    : `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:-10px;margin-bottom:10px;padding:0 12px;">
+                           <span style="font-size:0.68rem;color:var(--text-dim);font-weight:600;opacity:0.8;">🔄 镜像站</span>
+                           <button type="button" onclick="window.setHostingAsPrimary('${p.id}',event)" title="将此平台切换为主站" style="font-size:0.65rem;color:rgba(0,255,136,0.6);background:none;border:none;cursor:pointer;font-weight:600;padding:0;text-decoration:underline;text-underline-offset:2px;transition:color 0.15s;" onmouseover="this.style.color='#00ff88'" onmouseout="this.style.color='rgba(0,255,136,0.6)'">设为主站 →</button>
+                       </div>`;
+            })() : ''}
+
             ${controlBtnsHtml}
         </div>
     </div>
 `;
+
 };
+
 
 window.init3DHoverPhysics = () => {
     document.querySelectorAll('.shield-pod').forEach(pod => {

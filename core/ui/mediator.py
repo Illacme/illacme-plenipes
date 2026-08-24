@@ -58,17 +58,17 @@ class UIMediator:
 
     @classmethod
     def handle_progress_start(cls, total, description):
-        cls._progress_total = total
+        cls._progress_total = max(1, total or 1)
         cls._progress_count = 0
         if not cls.is_web_active():
             tlog.info(f"⏳ [进度开始] {description}")
 
     @classmethod
     def handle_progress_advance(cls, amount=1, **kwargs):
-        cls._progress_count += amount
+        cls._progress_count = min(cls._progress_total, cls._progress_count + amount)
         if not cls.is_web_active():
-            percentage = int((cls._progress_count / (cls._progress_total or 1)) * 100)
-            if percentage % 20 == 0 or cls._progress_count == cls._progress_total:
+            percentage = min(100, int((cls._progress_count / (cls._progress_total or 1)) * 100))
+            if percentage % 20 == 0 or cls._progress_count >= cls._progress_total:
                 tlog.info(f"📡 [进度] 已完成 {percentage}% ({cls._progress_count}/{cls._progress_total})")
 
     @classmethod

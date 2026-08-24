@@ -154,6 +154,8 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         from core.governance.license_guard import LicenseGuard
         
         # 默认品牌状态下
+        from core.governance.imprint_manager import im
+        im.active_imprint = "default"
         LicenseGuard.clear_cache()
         self.assertTrue(LicenseGuard.is_default_imprint_and_theme_active())
         self.assertEqual(LicenseGuard.get_active_tier(), "PRO")

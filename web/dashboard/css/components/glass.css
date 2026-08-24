@@ -59,7 +59,7 @@
 /* 📥 Drawer Specifics */
 .drawer-overlay { justify-content: flex-end; }
 .drawer-content {
-    width: 500px; height: 100%;
+    width: 660px; height: 100%;
     border-radius: 20px 0 0 20px;
     display: flex; flex-direction: column; overflow: hidden;
     animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);

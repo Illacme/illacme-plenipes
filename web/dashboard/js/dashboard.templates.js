@@ -17,21 +17,19 @@ window.viewTemplates = {
             <div id="galaxy-right-column" style="position: absolute; top: 25px; right: 25px; z-index: 101; display: flex; flex-direction: column; gap: 12px; width: 260px;">
                 <!-- 动态检索框与星球控制仪由 galaxy.hud.js 注入 -->
             </div>
-            <div class="overview-overlay" id="command-hub-overlay" style="display: flex;">
+            <div class="overview-overlay" id="command-hub-overlay" style="display: flex;" onclick="if(event.target===this) window.toggleHub('hide')">
                 <div class="command-hub">
                     <div class="hub-header">
-                        <button class="close-btn" style="position: absolute; right: 2rem; top: 2rem;">×</button>
-                        <h2 id="hub-title" style="font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: -1px; font-weight: 900;">主权指挥中心</h2>
-                        <div class="hub-meta-row" style="display: flex; gap: 1.5rem; font-size: 0.8rem; opacity: 0.7; justify-content: center; font-family: 'JetBrains Mono', monospace;">
+                        <button class="close-btn" onclick="window.toggleHub('hide')" title="关闭出版工作台 (Esc)">×</button>
+                        <div class="hub-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 20px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--accent-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px;">🚀 出版工作台 · PUBLISHER HUB</div>
+                        <h2 id="hub-title" style="font-size: 2.2rem; margin: 0 0 6px 0; letter-spacing: -0.5px; font-weight: 900;">全球私人出版社</h2>
+                        <p class="hub-subtitle" style="font-size: 0.86rem; color: var(--text-dim); margin: 0 0 14px 0; letter-spacing: 0.5px;">您的主权化全球出版分发中心</p>
+                        <div class="hub-meta-row" style="display: flex; gap: 1.5rem; font-size: 0.78rem; opacity: 0.8; justify-content: center; font-family: 'JetBrains Mono', monospace;">
                             <div><span style="color: var(--accent-secondary);">IMPRINT:</span> <span id="display-imprint">...</span></div><div><span style="color: var(--accent-secondary);">THEME:</span> <span id="display-theme">...</span></div>
                         </div>
                     </div>
-                    <div class="quick-actions">
-                        <div class="action-card" onclick="triggerPreview()"><div class="action-icon">🌐</div><div class="action-text"><h4>本地预览</h4><p>启动并打开 43213 预览站点</p></div></div>
-                        <div class="action-card" onclick="triggerPublish()"><div class="action-icon">🚀</div><div class="action-text"><h4>全域发布</h4><p>启动流水线并分发内容</p></div></div>
-                        <div class="action-card" onclick="showView('vault')"><div class="action-icon">📦</div><div class="action-text"><h4>文稿管理</h4><p>审计文库文稿与元数据</p></div></div>
-                        <div class="action-card" onclick="showView('settings')"><div class="action-icon">⚙️</div><div class="action-text"><h4>系统设置</h4><p>管理出版社核心参数与翻译风格</p></div></div>
-                    </div>
+                    <!-- 🚀 [V80.0] 出版工作台动态内容区 - 由 launchpad.js 的 initLaunchpad() 注入 -->
+                    <div id="hub-dynamic-area" style="width: 100%;"></div>
                 </div>
             </div>
             <div class="viewport-hint">🖱️ 旋转 | 滚轮缩放 | 右键平移</div>

@@ -339,19 +339,3 @@ window.renderSlugSettingsCategory = () => {
     }, 50);
     return html;
 };
-
-window.applyRecommendedRouteMatrix = (subdirs) => {
-    if (!window.settingsData.route_matrix) window.settingsData.route_matrix = [];
-    const rulesMap = { "Blog": "blog", "Docs": "docs", "Pages": "pages" };
-    subdirs.forEach(folder => {
-        const prefix = rulesMap[folder] || folder.toLowerCase();
-        const exists = window.settingsData.route_matrix.some(r => r.source === folder);
-        if (!exists) { window.settingsData.route_matrix.push({ source: folder, prefix: prefix, target_slot: "docs", style: "" }); }
-    });
-    if (typeof window.renderRouteMatrixCategory === 'function') {
-        const container = document.getElementById('i18n-panel-route_matrix');
-        if (container) container.innerHTML = window.renderRouteMatrixCategory();
-    }
-    if (typeof addAudit === 'function') addAudit(`✨ 已一键装载智能感知推荐的频道映射规则 (${subdirs.join(', ')})`);
-    if (typeof syncRouteMatrixToSettings === 'function') syncRouteMatrixToSettings();
-};

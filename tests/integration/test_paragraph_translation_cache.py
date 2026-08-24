@@ -79,6 +79,11 @@ class TestParagraphTranslationCache(unittest.TestCase):
                 cfg['translation'] = {
                     'enable_ai': True,
                     'llm_concurrency': 1,
+                    'governance': {
+                        'batch_translation': {
+                            'enabled': False
+                        }
+                    },
                     'compute_nodes': {
                         'lmstudio_local': {
                             'id': 'lmstudio_local',

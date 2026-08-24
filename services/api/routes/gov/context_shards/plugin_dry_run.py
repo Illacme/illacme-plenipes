@@ -38,7 +38,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         "wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost",
         "xiaohongshu", "red", "toutiao", "csdn", "cnblogs", "bilibili", "segmentfault", "oschina"
     ]
-    hosting_plugins = ["cloudflare_pages", "github_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
+    hosting_plugins = ["cloudflare_pages", "github_pages", "gitee_pages", "gitlab_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
     notification_plugins = ["feishu", "dingtalk", "wecom", "telegram", "discord", "generic_webhook", "generic", "webhook_dispatch", "email", "sms", "app_push"]
 
     # 📧 [Email] SMTP 邮件通知独立探测
@@ -47,7 +47,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         port = int(settings.get("smtp_port") or (465 if settings.get("use_ssl", True) else 587))
         user = settings.get("smtp_user") or ""
         password = settings.get("smtp_pass") or settings.get("password") or ""
-        sender = settings.get("sender") or user
         receivers = settings.get("receivers") or settings.get("to") or ""
 
         if not host:

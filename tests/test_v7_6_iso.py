@@ -54,8 +54,10 @@ def test_imprint_vault_bootstrapping():
         try:
             from unittest.mock import patch
             from core.governance.license_guard import LicenseGuard
+            im.active_imprint = "default"
             # 启动初始化与自愈空间灌入 (使用 LicenseGuard 隔离打桩)
-            with patch.object(LicenseGuard, "is_pro_feature_allowed", return_value=True):
+            with patch.object(LicenseGuard, "is_pro_feature_allowed", return_value=True), \
+                 patch.object(LicenseGuard, "get_max_imprints", return_value=999):
                 success = im.init_sovereign_imprint(
                     name=imprint_name,
                     manuscripts_path=temp_vault,

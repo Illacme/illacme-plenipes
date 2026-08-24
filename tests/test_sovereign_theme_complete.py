@@ -100,7 +100,7 @@ def publish():
         self.assertIn("prose-container", html)
         self.assertIn("tag-pill", html)
         self.assertNotIn("{{ language_switcher }}", html)
-        self.assertIn('<select class="control-select"', html)
+        self.assertIn('lang-dropdown', html)
 
     def test_render_blog_page(self):
         """测试博客文章页面渲染"""

@@ -27,7 +27,7 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
     # 1. 路径列表归一化 (跨平台对正)
     normalized_requests = []
     if requested_paths:
-        normalized_requests = [p.replace('\\', '/').rstrip('/') for p in requested_paths]
+        normalized_requests = [p.replace('\\', '/').strip('/').lstrip('./') for p in requested_paths if p]
 
     allowed_exts = engine.config.system.allowed_extensions
     subfolder_allowed = LicenseGuard.is_pro_feature_allowed("subfolder_ingress")
@@ -41,11 +41,11 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
             if any(f.lower().endswith(ext) for ext in allowed_exts):
                 rel_path = os.path.relpath(os.path.join(root, f), engine.vault_root).replace('\\', '/')
 
-                # 3. 路径过滤器注入
+                # 3. 路径过滤器注入 (精确匹配文件或目录前缀)
                 if normalized_requests:
                     match_found = False
                     for req in normalized_requests:
-                        if rel_path == req or rel_path.startswith(req + '/') or os.path.basename(rel_path) == os.path.basename(req):
+                        if rel_path == req or rel_path.startswith(req + '/'):
                             match_found = True
                             break
                     if not match_found:

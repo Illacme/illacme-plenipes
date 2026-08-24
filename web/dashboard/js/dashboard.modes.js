@@ -233,7 +233,7 @@ window.checkAIReadiness = () => {
 window.renderLayoutCategory = () => {
     const isLicensed = window.settingsData?._is_licensed || false;
     const layoutSubDescs = {
-        imprints: `💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。${!isLicensed ? '<span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: 8px; white-space: nowrap;">🌱 免费社区版：支持 1 个自定义版图</span>' : ''}`,
+        imprints: `💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。${!isLicensed ? '<span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: 8px; white-space: nowrap;">🌱 免费社区版：支持 1 个自定义品牌</span>' : ''}`,
         themes: '💡 为当前出版品牌选用匹配的现代前端视觉装帧主题。',
         modes: '💡 调节加工深度与出版模式（基础出版 / 全球出版 / 智能母语增强）。'
     };
@@ -277,12 +277,12 @@ window.renderLayoutCategory = () => {
         <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🎨 版图装帧与模式</h2>
+                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🎨 品牌装帧与模式</h2>
                 </div>
             </div>
 
             <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
-                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 版图管理</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 品牌管理</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎨 装帧主题</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 出版模式</button>
             </div>

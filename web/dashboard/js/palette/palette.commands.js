@@ -116,13 +116,13 @@
             },
             {
                 id: 'subtab_imprints',
-                title: '🚩 品牌外观 ➔ 版图管理 (Imprints Management)',
+                title: '🚩 品牌外观 ➔ 品牌管理 (Imprints Management)',
                 icon: '🚩',
                 shortcut: 'Tab 1-1',
                 action: () => {
                     if (typeof window.switchLayoutSubTab === 'function') {
                         window.switchLayoutSubTab('imprints');
-                        notify('已切换至【版图管理】画廊', 'success');
+                        notify('已切换至【品牌管理】画廊', 'success');
                     }
                 }
             },

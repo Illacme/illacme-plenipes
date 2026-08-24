@@ -7,6 +7,7 @@ Illacme-plenipes Core - Markup Plugin Base
 """
 import abc
 import hashlib
+import re
 from typing import Dict, Any, List, Optional, Tuple
 
 class MarkupBlock:
@@ -20,6 +21,27 @@ class MarkupBlock:
 
     def __repr__(self):
         return f"<MarkupBlock type={self.type} hash={self.fingerprint[:8]}>"
+
+    @classmethod
+    def is_ignorable_spacer(cls, content: str, block_type: str = "") -> bool:
+        """🛡️ [SSOT] 全局唯一段落过滤判定：判断内容是否为纯注释、纯分割线或空白占位（非正文块）"""
+        if block_type == "spacer":
+            return True
+        if not content or not content.strip():
+            return True
+        c_str = content.strip()
+        # 纯分割线 (---, ___, ***)
+        if re.match(r'^(?:---|___|\*\*\*)\s*$', c_str):
+            return True
+        # 纯 HTML 注释 (<!-- ... -->)
+        if re.match(r'^\s*<!--.*?-->\s*$', c_str, flags=re.DOTALL):
+            return True
+        return False
+
+    @property
+    def is_translatable(self) -> bool:
+        """🛡️ [SSOT] 全局唯一实质可翻译段落判定"""
+        return not self.is_ignorable_spacer(self.content, self.type)
 
 class ISyntaxBlockPlugin(abc.ABC):
     """[Contract] 语法块插件接口：负责识别特定语法的起始与结束"""

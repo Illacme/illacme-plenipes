@@ -89,6 +89,14 @@ class LinkGovernance(BaseModel):
     auto_localize_internal_links: bool = True
     external_links_mask_mode: str = "url_only"
 
+class BatchTranslationConfig(BaseModel):
+    """🚀 [V120.0] 出版级自适应多段聚合翻译与分包调度控制"""
+    enabled: bool = True
+    max_batch_paras: int = Field(8, ge=1, le=30)
+    max_batch_chars: int = Field(1500, ge=100, le=10000)
+    model_tier_adaptive: bool = True
+    fallback_on_error: bool = True
+
 class ContentGovernanceConfig(BaseModel):
     """🚀 内容级别的高级翻译治理控制与专有名词对照表"""
     enabled: bool = True
@@ -104,6 +112,7 @@ class ContentGovernanceConfig(BaseModel):
         }
     )
     link_governance: LinkGovernance = Field(default_factory=LinkGovernance)
+    batch_translation: BatchTranslationConfig = Field(default_factory=BatchTranslationConfig)
     bypass_block_patterns: List[str] = Field(default_factory=list)
     glossary: Dict[str, Dict[str, str]] = Field(default_factory=dict)
 

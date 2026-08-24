@@ -205,6 +205,122 @@ def run_hosting_plugin_dry_run(
                     logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 GitHub: {e}。建议检查网络或配置代理。"))
                     success = False
 
+    elif plugin_id == "gitee_pages":
+        raw_repo = (settings.get("repo", "") or settings.get("repo_url", "") or settings.get("repository", "") or "").strip()
+        repo = raw_repo
+        if "gitee.com/" in raw_repo:
+            repo = raw_repo.split("gitee.com/")[1]
+        elif "gitee.com:" in raw_repo:
+            repo = raw_repo.split("gitee.com:")[1]
+        repo = repo.replace(".git", "").strip().strip("/")
+
+        token = settings.get("token", "") or settings.get("access_token", "")
+
+        if not repo:
+            logs.append(log_func("ERROR", "❌ [错误] 未配置 Gitee 仓库 (格式应为 'owner/repo' 或 'git@gitee.com:owner/repo.git')。"))
+            return False
+
+        if token:
+            logs.append(log_func("INFO", f"📡 [探测] 正在校验 Gitee 仓库 '{repo}' API 连通性..."))
+            url = f"https://gitee.com/api/v5/repos/{repo}"
+            params = {"access_token": token}
+            try:
+                resp = requests.get(url, params=params, proxies=proxies, timeout=net_timeout)
+                if resp.status_code == 200:
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] Gitee API 鉴权校验通过，成功探测到仓库 '{repo}'。"))
+                elif resp.status_code in [401, 403]:
+                    logs.append(log_func("ERROR", "❌ [错误] Gitee Token 校验失败：访问令牌无效或已过期。"))
+                    success = False
+                elif resp.status_code == 404:
+                    logs.append(log_func("ERROR", f"❌ [错误] 未在 Gitee 上发现仓库 '{repo}'，请确认仓库路径。"))
+                    success = False
+                else:
+                    logs.append(log_func("ERROR", f"❌ [错误] Gitee API 返回异常状态码 {resp.status_code}"))
+                    success = False
+            except Exception as e:
+                logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 Gitee API: {e}。"))
+                success = False
+        else:
+            full_repo_url = raw_repo if ("gitee.com" in raw_repo or raw_repo.startswith("git@")) else f"git@gitee.com:{repo}.git"
+            logs.append(log_func("INFO", f"🔑 [免密探测] 当前未配置 Token，正在通过本地 Git / SSH 协议握手 '{full_repo_url}'..."))
+            import subprocess
+            try:
+                probe_env = dict(os.environ)
+                probe_env["GIT_TERMINAL_PROMPT"] = "0"
+                probe_env["GIT_SSH_COMMAND"] = "ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+                probe_proc = subprocess.run(
+                    ["git", "ls-remote", "--heads", full_repo_url],
+                    capture_output=True, text=True, timeout=8, env=probe_env
+                )
+                if probe_proc.returncode == 0:
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] 本地 SSH 密钥连通极佳！已成功免密握手远程仓库 '{repo}'。"))
+                    success = True
+                else:
+                    logs.append(log_func("WARN", "⚠️ [提示] SSH 免密探测未通过，请配置 Access Token 或检查 SSH Key 授权。"))
+                    success = False
+            except Exception as e:
+                logs.append(log_func("WARN", f"⚠️ [探测异常] SSH 握手失败: {e}"))
+                success = False
+
+    elif plugin_id == "gitlab_pages":
+        raw_repo = (settings.get("repo", "") or settings.get("repo_url", "") or settings.get("repository", "") or "").strip()
+        repo = raw_repo
+        if "gitlab.com/" in raw_repo:
+            repo = raw_repo.split("gitlab.com/")[1]
+        elif "gitlab.com:" in raw_repo:
+            repo = raw_repo.split("gitlab.com:")[1]
+        repo = repo.replace(".git", "").strip().strip("/")
+
+        token = settings.get("token", "") or settings.get("access_token", "")
+
+        if not repo:
+            logs.append(log_func("ERROR", "❌ [错误] 未配置 GitLab 仓库 (格式应为 'owner/repo' 或 'git@gitlab.com:owner/repo.git')。"))
+            return False
+
+        if token:
+            logs.append(log_func("INFO", f"📡 [探测] 正在校验 GitLab 仓库 '{repo}' API 连通性..."))
+            import urllib.parse
+            encoded_project = urllib.parse.quote(repo, safe="")
+            url = f"https://gitlab.com/api/v4/projects/{encoded_project}"
+            headers = {"PRIVATE-TOKEN": token}
+            try:
+                resp = requests.get(url, headers=headers, proxies=proxies, timeout=net_timeout)
+                if resp.status_code == 200:
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] GitLab API 鉴权校验通过，成功探测到仓库 '{repo}'。"))
+                elif resp.status_code in [401, 403]:
+                    logs.append(log_func("ERROR", "❌ [错误] GitLab Token 校验失败：访问令牌无效或缺少 api/read_repository 权限。"))
+                    success = False
+                elif resp.status_code == 404:
+                    logs.append(log_func("ERROR", f"❌ [错误] 未在 GitLab 上发现项目 '{repo}'，请核对路径。"))
+                    success = False
+                else:
+                    logs.append(log_func("ERROR", f"❌ [错误] GitLab API 返回异常状态码 {resp.status_code}"))
+                    success = False
+            except Exception as e:
+                logs.append(log_func("WARN", f"⚠️ [网络] 无法连接到 GitLab API: {e}。建议配置代理。"))
+                success = False
+        else:
+            full_repo_url = raw_repo if ("gitlab.com" in raw_repo or raw_repo.startswith("git@")) else f"git@gitlab.com:{repo}.git"
+            logs.append(log_func("INFO", f"🔑 [免密探测] 当前未配置 Token，正在通过本地 Git / SSH 协议握手 '{full_repo_url}'..."))
+            import subprocess
+            try:
+                probe_env = dict(os.environ)
+                probe_env["GIT_TERMINAL_PROMPT"] = "0"
+                probe_env["GIT_SSH_COMMAND"] = "ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+                probe_proc = subprocess.run(
+                    ["git", "ls-remote", "--heads", full_repo_url],
+                    capture_output=True, text=True, timeout=8, env=probe_env
+                )
+                if probe_proc.returncode == 0:
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] 本地 SSH 密钥连通极佳！已成功免密握手远程仓库 '{repo}'。"))
+                    success = True
+                else:
+                    logs.append(log_func("WARN", "⚠️ [提示] SSH 免密探测未通过，请配置 Personal Access Token 或检查 SSH Key 授权。"))
+                    success = False
+            except Exception as e:
+                logs.append(log_func("WARN", f"⚠️ [探测异常] SSH 握手失败: {e}"))
+                success = False
+
     elif plugin_id == "netlify":
         # 对齐前端的字段：netlify 中使用的是 auth_token，兼容 token
         token = settings.get("auth_token") or settings.get("token") or ""

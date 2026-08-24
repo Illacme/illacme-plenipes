@@ -143,10 +143,11 @@ class MockContext:
 
 
 # 为了模拟 block 解析，需要 mock MarkdownBlockParser 返回的 blocks
-class DummyBlock:
+from core.markup.base import MarkupBlock
+
+class DummyBlock(MarkupBlock):
     def __init__(self, content, block_type="paragraph"):
-        self.content = content
-        self.type = block_type
+        super().__init__(content, block_type)
         self.fingerprint = f"fp_{hash(content)}"
 
 

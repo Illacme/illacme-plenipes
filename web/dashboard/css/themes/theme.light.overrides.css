@@ -1,0 +1,138 @@
+/* 🌞 白天明亮模式特定主题覆盖系统 (SOP-02 模块拆分物理外置) */
+
+/* 🌞 翻译校对工作台白天模式特定适配 */
+[data-theme="light"] #review-drawer-overlay {
+    background: var(--white-30) !important;
+}
+
+[data-theme="light"] #review-drawer {
+    box-shadow: -8px 0 30px var(--white-08) !important;
+}
+
+[data-theme="light"] .review-badge.ai {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-para-block {
+    background: var(--white-02) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-para-block:hover {
+    background: var(--white-05) !important;
+}
+
+[data-theme="light"] .review-para-block.code-block {
+    background: rgba(var(--neon-amber-rgb), 0.03) !important;
+    border-color: rgba(var(--neon-amber-rgb), 0.2) !important;
+    color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .review-input {
+    background: var(--color-white) !important;
+    border-color: var(--white-10) !important;
+    color: var(--text-bright) !important;
+}
+
+[data-theme="light"] .review-input:focus {
+    border-color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .review-btn.unlock {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-btn.unlock:hover {
+    background: rgba(var(--neon-red-rgb), 0.06) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.3) !important;
+    color: var(--neon-red) !important;
+}
+
+[data-theme="light"] .review-view-toggle {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+}
+
+[data-theme="light"] .review-dirty-dot {
+    color: var(--neon-amber) !important;
+}
+
+[data-theme="light"] #col-source .review-field>div {
+    background: var(--white-02) !important;
+    opacity: 1 !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] #col-source .review-para-block.source-only {
+    background: var(--white-02) !important;
+    opacity: 1 !important;
+}
+
+[data-theme="light"] #col-source .review-para-block.source-only .review-para-text {
+    color: var(--text-dim) !important;
+}
+
+/* 🌞 分发枢纽白天模式特定双保险覆盖 */
+[data-theme="light"] .dispatch-hub-panel {
+    border-left: 1px solid var(--glass-border) !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-meta {
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-time {
+    color: var(--text-dim) !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
+    color: var(--text-dim) !important;
+    background: var(--white-03) !important;
+    border: 1px solid var(--white-08) !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens[style*="opacity"] {
+    opacity: 1 !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .lab-status-row .t-label {
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
+    background: var(--white-05) !important;
+    color: var(--text-dim) !important;
+    border: 1px solid var(--white-08) !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .locale-code-badge {
+    color: var(--text-dim) !important;
+    background: var(--white-05) !important;
+    border: 1px solid var(--white-08) !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
+    background: var(--white-10) !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .drawer-body {
+    scrollbar-color: var(--white-10) transparent !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
+    box-shadow: 0 4px 15px var(--white-08) !important;
+}
+
+[data-theme="light"] .dispatch-hub-panel .lab-box {
+    border: 1px dashed var(--white-15) !important;
+    background: var(--white-01) !important;
+}

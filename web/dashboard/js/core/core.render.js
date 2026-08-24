@@ -82,7 +82,16 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
         `;
     } else if (type === 'number') {
         const onchange = options.onchange || `updateConfigField('${path}', parseFloat(this.value))`;
-        inputHtml = `<input type="number" id="${id}" data-path="${path}" data-label="${label}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${requiredAttr}>`;
+        const minAttr = options.min !== undefined ? `min="${options.min}"` : '';
+        const maxAttr = options.max !== undefined ? `max="${options.max}"` : '';
+        const stepAttr = options.step !== undefined ? `step="${options.step}"` : '';
+        const unitHtml = options.unit ? `<span class="setting-unit" style="font-size: 0.78rem; color: var(--text-dim); flex-shrink: 0; font-family: monospace; user-select: none;">${options.unit}</span>` : '';
+        inputHtml = `
+            <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end; width: 100%;">
+                <input type="number" id="${id}" data-path="${path}" data-label="${label}" class="setting-input setting-input-number" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${minAttr} ${maxAttr} ${stepAttr} ${requiredAttr} style="max-width: 96px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;">
+                ${unitHtml}
+            </div>
+        `;
     } else if (type === 'static') {
         inputHtml = `<div id="${id}" class="setting-static-value" style="padding: 10px 12px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px dashed var(--border-color); color: var(--text-dim); font-family: monospace; word-break: break-all;">${safeValue}</div>`;
     } else {
@@ -95,17 +104,17 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
         inputHtml += presetsHtml;
     }
 
-    const alignStyle = (type === 'checkbox' || type === 'select') ? 'align-items: flex-end;' : 'align-items: stretch;';
+    const alignStyle = (type === 'checkbox' || type === 'select' || type === 'number') ? 'align-items: flex-end;' : 'align-items: stretch;';
     return `
         <div class="setting-row level-${tier}">
-            <div class="setting-info">
+            <div class="setting-info" style="flex: 2; min-width: 280px; max-width: 70%;">
                 <div class="setting-label">
                     <span>${label}${reqStar}</span>
                     <span class="badge-group">${badgeMap[tier] || ''}${effectBadge}</span>
                 </div>
                 <div class="setting-desc">${description}</div>
             </div>
-            <div class="setting-control" style="display: flex; flex-direction: column; ${alignStyle} flex: 1.2; max-width: 65%; min-width: 220px;">
+            <div class="setting-control" style="display: flex; flex-direction: column; ${alignStyle} flex: 1; min-width: 160px; max-width: 45%;">
                 ${inputHtml}
             </div>
         </div>

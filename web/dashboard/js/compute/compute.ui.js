@@ -127,60 +127,100 @@ window.ComputeUI = {
                         <div class="strategy-label" style="display: flex; align-items: center; gap: 8px; color: var(--neon-cyan, #00f2fe); font-size: 0.85rem; font-weight: 700;">
                             <span>🤖 AI 算力推理与并发管控 (AI EXECUTION & CONCURRENCY)</span>
                         </div>
-                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 15px;">
-                            <div class="setting-item">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 算力总控 (Enable AI)</label>
-                                <select id="input-enable-ai" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('enable_ai', this.value === 'true')">
-                                    <option value="false" ${trans.enable_ai === false ? 'selected' : ''}>❌ 关闭 AI 算力</option>
-                                    <option value="true" ${trans.enable_ai === true ? 'selected' : ''}>🟢 开启 AI 算力</option>
-                                </select>
+                        <div class="settings-grid" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">AI 算力总控 (Enable AI)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">控制全局是否允许调用大模型算力。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 200px; display: flex; justify-content: flex-end;">
+                                    <select id="input-enable-ai" class="setting-input"
+                                           style="width: 100%; max-width: 180px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('enable_ai', this.value === 'true')">
+                                        <option value="false" ${trans.enable_ai === false ? 'selected' : ''}>❌ 关闭 AI 算力</option>
+                                        <option value="true" ${trans.enable_ai === true ? 'selected' : ''}>🟢 开启 AI 算力</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">全局思维链推理 (CoT)</label>
-                                <select id="input-enable-thinking" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('enable_thinking', this.value === 'true')">
-                                    <option value="false" ${trans.enable_thinking === false ? 'selected' : ''}>❌ 压制思维链 (极速响应)</option>
-                                    <option value="true" ${trans.enable_thinking === true ? 'selected' : ''}>🛡️ 启用思维链 (深度推理)</option>
-                                </select>
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">全局思维链推理 (CoT)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">是否全局允许大语言模型输出内部深度思考过程。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 200px; display: flex; justify-content: flex-end;">
+                                    <select id="input-enable-thinking" class="setting-input"
+                                           style="width: 100%; max-width: 180px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('enable_thinking', this.value === 'true')">
+                                        <option value="false" ${trans.enable_thinking === false ? 'selected' : ''}>❌ 压制思维链</option>
+                                        <option value="true" ${trans.enable_thinking === true ? 'selected' : ''}>🛡️ 启用思维链</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">🤖 AI 算力隔离池并发 (AI Workers)</label>
-                                <input type="number" id="input-ai-workers" value="${window.settingsData?.system?.concurrency?.ai_workers ?? 2}" min="1" max="128" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateSystemConcurrency('ai_workers', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">🤖 AI 算力隔离池并发 (AI Workers)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">限制 AI 请求的最大全局并发进程数。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-ai-workers" class="setting-input setting-input-number" value="${window.settingsData?.system?.concurrency?.ai_workers ?? 2}" min="1" max="128" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateSystemConcurrency('ai_workers', parseInt(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">🌐 单文档多语种 AI 并发 (LLM Concurrency)</label>
-                                <input type="number" id="input-llm-concurrency" value="${trans.llm_concurrency}" min="1" max="32" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">🌐 单文档多语种 AI 并发 (LLM Concurrency)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">单篇长文内向多目标语言分发时的最大瞬时并发。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-llm-concurrency" class="setting-input setting-input-number" value="${trans.llm_concurrency}" min="1" max="32" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('llm_concurrency', parseInt(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">AI 并发排队超时 (秒)</label>
-                                <input type="number" id="input-ai-semaphore-timeout" value="${trans.ai_semaphore_timeout ?? 3600}" min="1" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('ai_semaphore_timeout', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">AI 并发排队超时 (秒)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">请求在算力信号量队列中等待获取令牌的最大超时秒数。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-ai-semaphore-timeout" class="setting-input setting-input-number" value="${trans.ai_semaphore_timeout ?? 3600}" min="1" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('ai_semaphore_timeout', parseInt(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">API 响应超时 (秒)</label>
-                                <input type="number" id="input-api-timeout" value="${trans.api_timeout}" min="10" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('api_timeout', parseFloat(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">API 响应超时 (秒)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">单次 HTTP 请求大模型服务的最大网络响应等待时间。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-api-timeout" class="setting-input setting-input-number" value="${trans.api_timeout}" min="10" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('api_timeout', parseFloat(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">最大重试次数</label>
-                                <input type="number" id="input-max-retries" value="${trans.max_retries}" min="0" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('max_retries', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">最大重试次数</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">遇到瞬时网络异常或限流时触发热接力重试的最大次数。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-max-retries" class="setting-input setting-input-number" value="${trans.max_retries}" min="0" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('max_retries', parseInt(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item" style="${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">分块长度 (Chars)</label>
-                                <input type="number" id="input-max-chunk-size" value="${trans.max_chunk_size}" step="100" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateStrategy('max_chunk_size', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border); ${isAiDisabled ? 'opacity: 0.3; pointer-events: none;' : ''}">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">分块长度 (Chars)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">单段落安全切片的最大字符阈值。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-max-chunk-size" class="setting-input setting-input-number" value="${trans.max_chunk_size}" step="100" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateStrategy('max_chunk_size', parseInt(this.value))">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -190,18 +230,28 @@ window.ComputeUI = {
                         <div class="strategy-label" style="display: flex; align-items: center; gap: 8px; color: #a34cff; font-size: 0.85rem; font-weight: 700;">
                             <span>⚡ 系统管线与通用编译配置 (SYSTEM PIPELINE & GENERAL CONTROL)</span>
                         </div>
-                        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 15px;">
-                            <div class="setting-item">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">⚡ 全局文档流水线并发 (Global Workers)</label>
-                                <input type="number" id="input-global-workers" value="${window.settingsData?.system?.concurrency?.global_workers ?? 2}" min="1" max="64" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateSystemConcurrency('global_workers', parseInt(this.value))">
+                        <div class="settings-grid" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">⚡ 全局文档流水线并发 (Global Workers)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">全站出版流水线同时处理原稿文档的最大协程数。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-global-workers" class="setting-input setting-input-number" value="${window.settingsData?.system?.concurrency?.global_workers ?? 2}" min="1" max="64" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateSystemConcurrency('global_workers', parseInt(this.value))">
+                                </div>
                             </div>
-                            <div class="setting-item">
-                                <label style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px;">📂 磁盘 I/O 编译并发 (I/O Workers)</label>
-                                <input type="number" id="input-io-workers" value="${window.settingsData?.system?.concurrency?.io_workers ?? 4}" min="1" max="32" 
-                                       style="width: 100%; background: var(--black-30); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: var(--text-bright, #ffffff); margin-top: 5px;"
-                                       onchange="window.ComputeHandlers.updateSystemConcurrency('io_workers', parseInt(this.value))">
+                            <div class="setting-item glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                <div style="flex: 2; min-width: 280px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-white);">📂 磁盘 I/O 编译并发 (I/O Workers)</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">静态站点生成与多语言文件写入的最大并发线程数。</div>
+                                </div>
+                                <div style="flex: 1; max-width: 120px; display: flex; justify-content: flex-end;">
+                                    <input type="number" id="input-io-workers" class="setting-input setting-input-number" value="${window.settingsData?.system?.concurrency?.io_workers ?? 4}" min="1" max="32" 
+                                           style="max-width: 90px; text-align: right; font-variant-numeric: tabular-nums; padding: 8px 10px;"
+                                           onchange="window.ComputeHandlers.updateSystemConcurrency('io_workers', parseInt(this.value))">
+                                </div>
                             </div>
                         </div>
                     </div>

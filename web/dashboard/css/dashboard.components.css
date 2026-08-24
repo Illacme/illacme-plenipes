@@ -76,30 +76,30 @@ button:disabled {
 }
 
 #btn-preview {
-    background: rgba(0, 240, 255, 0.08);
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    color: var(--neon-cyan, #00f0ff);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.12);
+    background: rgba(var(--neon-cyan-rgb), 0.08);
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.3);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 12px rgba(var(--neon-cyan-rgb), 0.12);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #btn-preview:hover:not(:disabled) {
-    background: rgba(0, 240, 255, 0.18);
-    border-color: rgba(0, 240, 255, 0.6);
-    color: #ffffff !important;
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    background: rgba(var(--neon-cyan-rgb), 0.18);
+    border-color: rgba(var(--neon-cyan-rgb), 0.6);
+    color: var(--color-white) !important;
+    box-shadow: 0 0 20px rgba(var(--neon-cyan-rgb), 0.4);
     transform: translateY(-1px);
 }
 
 [data-theme="light"] #btn-preview {
-    background: rgba(0, 150, 255, 0.08) !important;
-    border-color: rgba(0, 150, 255, 0.3) !important;
-    color: #0284c7 !important;
+    background: rgba(var(--accent-secondary-rgb), 0.08) !important;
+    border-color: rgba(var(--accent-secondary-rgb), 0.3) !important;
+    color: var(--callout-note-color) !important;
 }
 
 [data-theme="light"] #btn-preview:hover:not(:disabled) {
-    background: #0284c7 !important;
-    color: #ffffff !important;
+    background: var(--callout-note-color) !important;
+    color: var(--color-white) !important;
 }
 
 .action-btn {
@@ -118,6 +118,28 @@ button:disabled {
     padding: 4px 8px;
     font-size: 0.65rem;
     border-radius: 4px;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+}
+
+.close-btn:hover {
+    color: var(--neon-red);
+    background: rgba(var(--neon-red-rgb), 0.12);
+    transform: scale(1.1);
 }
 
 /* ⚡ [V90.0] 快捷测试连接按钮自适应亮暗色调主题样式 */
@@ -382,16 +404,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .step-item.active {
-    color: var(--neon-cyan, #00f0ff);
+    color: var(--neon-cyan);
     font-weight: 600;
-    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    text-shadow: 0 0 8px rgba(var(--neon-cyan-rgb), 0.5);
     transform: scale(1.04);
 }
 
 .step-item.completed {
-    color: #00ffaa;
+    color: var(--neon-green);
     font-weight: 600;
-    text-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+    text-shadow: 0 0 8px rgba(var(--neon-green-rgb), 0.4);
 }
 
 .step-arrow {

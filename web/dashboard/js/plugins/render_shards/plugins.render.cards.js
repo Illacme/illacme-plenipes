@@ -214,6 +214,29 @@ window.checkPluginConfiguredStatus = (p) => {
         settings = cfgData.syndication?.[p.id] || {};
     }
 
+    // 📭 [V80.2] 「从未配置」与「配置不完整」语义分离
+    // 如果整个配置节完全为空（只有 enabled 等非凭据字段，或全为占位模板值），属于"从未触碰"状态
+    // 不应显示 ⚠️ 警告（会造成新用户焦虑），显示中性占位徽章即可
+    const SKIP_FIELDS = new Set(['enabled', 'proxy', 'force_push', 'git_user_name', 'git_user_email', 'branch', 'is_primary']);
+    // 与 isPluginCredentialReady 保持一致的占位模板值检测（YOUR_*、REPLACE_*、<...> 等）
+    const _isPlaceholder = (v) => {
+        if (!v || typeof v !== 'string') return true;
+        const t = v.trim();
+        if (!t) return true;
+        return /^YOUR[_\-]/i.test(t) || /^REPLACE/i.test(t) || /^TOKEN_HERE$/i.test(t) ||
+               /^<.+>$/.test(t) || /^\{.+\}$/.test(t) || /^EXAMPLE[_\-]/i.test(t) || /^PLACEHOLDER/i.test(t);
+    };
+    const hasAnyUserInput = Object.entries(settings).some(([k, v]) => {
+        if (SKIP_FIELDS.has(k)) return false;
+        const s = String(v ?? '').trim();
+        return s.length > 0 && !_isPlaceholder(s);
+    });
+
+    if (!hasAnyUserInput) {
+        // 完全未配置（或全为模板占位值）→ 中性占位，不显示警告
+        return { label: '─ 待配置', class: 'info', style: 'color: var(--text-dim); opacity: 0.55; font-weight: 500; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);' };
+    }
+
     if (window.isPluginCredentialReady) {
         const cred = window.isPluginCredentialReady(p.id, p.category, settings);
         if (cred.ready) {
@@ -223,9 +246,11 @@ window.checkPluginConfiguredStatus = (p) => {
         }
     }
 
+    // 兜底：有用户输入 → 判断是否完整（同样排除占位值）
     const hasKeys = Object.entries(settings).some(([k, v]) => {
-        if (['enabled', 'proxy', 'force_push', 'git_user_name', 'git_user_email', 'branch'].includes(k)) return false;
-        return v !== undefined && v !== null && String(v).trim().length > 0;
+        if (SKIP_FIELDS.has(k)) return false;
+        const s = String(v ?? '').trim();
+        return s.length > 0 && !_isPlaceholder(s);
     });
 
     if (hasKeys) {
@@ -233,7 +258,9 @@ window.checkPluginConfiguredStatus = (p) => {
     } else {
         return { label: '⚠️ 待填凭据', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
     }
+
 };
+
 
 window.renderPlugins = () => {
     const gridEl = document.getElementById('plugins-grid');
@@ -282,7 +309,7 @@ window.renderPlugins = () => {
         'masker': '内置敏感词过滤、EXIF 地理指纹脱敏与图像安全隐私掩码保护屏障。',
         'protocol': '连接底座大语言模型，提供语义润色、智能提炼与多语言翻译中枢协议。',
         'theme': '定制全站出版物装帧主题、CSS 样式排版与视觉渲染模版引擎。',
-        'hosting': '支持 GitHub Pages, Vercel, Netlify, Cloudflare Pages 等平台整站多语言打包构建与托管发布（全语种 SSG 静态网站同步推送到主站点）。',
+        'hosting': '将编译好的静态网站推送到 GitHub Pages、Vercel、Netlify、Cloudflare Pages 等平台。支持指定一个「主站」作为 canonical 权威域名（集中 SEO 权重），其余平台作为镜像备用站运行，实现容灾与加速。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
         'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
         'publisher': '支持 Dev.to, Medium, WordPress, Ghost, Hashnode, LinkedIn 等第三方社交媒体渠道的内容分发与多平台推流。',

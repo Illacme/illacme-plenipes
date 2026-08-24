@@ -42,7 +42,7 @@ window.ThemeUI = {
             let actionButton = "";
             const location = t.location || 'native';
 
-            const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前版图库' };
+            const locationMap = { 'native': '主题官方库', 'global': '主题中心库', 'local': '当前品牌库' };
             const locationText = locationMap[location] || location;
 
             if (isActive) {
@@ -104,7 +104,7 @@ window.ThemeUI = {
 
                                     <div class="pod-telemetry" style="margin: 2px 0; padding: 3px 10px; display: flex; align-items: center; font-size: 0.65rem; height: 24px; flex-shrink: 0;">
                                         ${isActive
-                    ? '<span class="tiny-label" style="color:var(--neon-green, #00ff88); display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green, #00ff88); width:6px; height:6px;"></span>🟢 当前版图已绑定</span>'
+                    ? '<span class="tiny-label" style="color:var(--neon-green, #00ff88); display:flex; align-items:center; gap:6px; font-weight:700;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green, #00ff88); width:6px; height:6px;"></span>🟢 当前品牌已绑定</span>'
                     : (location === 'local'
                         ? '<span class="tiny-label" style="color:var(--accent-secondary); font-weight:700;">🔘 本地就绪：可直接切换</span>'
                         : (location === 'global'
@@ -114,7 +114,7 @@ window.ThemeUI = {
 
                                     <div class="p-control-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0;">
                                         ${actionButton}
-                                        <button class="action-btn secondary" style="height: 28px; line-height: 18px;" onclick="window.openPluginConfig('${t.id}', 'theme', 'governance')" ${(!t.is_enabled || location !== 'local') ? 'disabled' : ''} title="${!t.is_enabled ? '主题已被禁用' : (location === 'local' ? '自定义配置此主题的细节属性' : '请先部署或切换此主题为当前版图主题，启用后即可配置属性')}">⚙️ CONFIG</button>
+                                        <button class="action-btn secondary" style="height: 28px; line-height: 18px;" onclick="window.openPluginConfig('${t.id}', 'theme', 'governance')" ${(!t.is_enabled || location !== 'local') ? 'disabled' : ''} title="${!t.is_enabled ? '主题已被禁用' : (location === 'local' ? '自定义配置此主题的细节属性' : '请先部署或切换此主题为当前品牌主题，启用后即可配置属性')}">⚙️ CONFIG</button>
                                     </div>
                                 </div>
 
@@ -129,7 +129,7 @@ window.ThemeUI = {
                                         ${previewHtml}
                                     </div>
                                 ` : `
-                                    <div class="theme-preview-container card-right-preview disabled-preview" style="width: 160px; height: 140px; flex-shrink: 0; position: relative; cursor: default; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column;" title="${t.id} 尚未激活为当前版图主题（激活后即可直接点击打开本地预览）">
+                                    <div class="theme-preview-container card-right-preview disabled-preview" style="width: 160px; height: 140px; flex-shrink: 0; position: relative; cursor: default; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column;" title="${t.id} 尚未激活为当前品牌主题（激活后即可直接点击打开本地预览）">
                                         <style>
                                             .theme-preview-container:hover .vertical-page-mockup {
                                                 transform: translateY(-50%);

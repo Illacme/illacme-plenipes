@@ -124,8 +124,7 @@ def get_dispatch_status_logic(engine, doc_id: str, lang_code: str = None) -> dic
                 from core.logic.block_parser import MarkdownBlockParser
                 parser = MarkdownBlockParser()
                 for block in parser.parse(body):
-                    c_str = block.content.strip()
-                    if block.type == "spacer" or not c_str or c_str.startswith("---") or c_str.startswith("<!--"):
+                    if not block.is_translatable:
                         continue
                     blocks_fingerprints.append(block.fingerprint)
                 total_blocks = len(blocks_fingerprints)

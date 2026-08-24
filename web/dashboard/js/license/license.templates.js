@@ -53,7 +53,7 @@
                                         <button type="button" class="primary-btn" id="btn-revoke-license" onclick="window.revokeCurrentLicense(event)" style="display:none; background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.3); color: #ff6b6b; padding: 3px 10px; font-size: 0.75rem;">🔓 解绑授权</button>
                                     </div>
                                     <div class="setting-desc" id="lic-banner-desc" style="font-size: 0.82rem; line-height: 1.4; color: var(--text-muted);">
-                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎。激活专业版可进一步解封无限版图隔离、50+ 语种并行矩阵分发与子目录频道映射。
+                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎。激活专业版可进一步解封无限品牌隔离、50+ 语种并行矩阵分发与子目录频道映射。
                                     </div>
                                 </div>
                             </div>
@@ -64,7 +64,7 @@
                                 <span class="lic-pill-unlocked">✓ 创作中心灵感润色</span>
                                 <span class="lic-pill-unlocked">✓ 算力节点灵活对接</span>
                                 <span class="lic-pill-unlocked">✓ 单品牌全渠道分发</span>
-                                <span class="lic-pill-locked">🔒 无限版图独立隔离 (专业版)</span>
+                                <span class="lic-pill-locked">🔒 无限品牌独立隔离 (专业版)</span>
                                 <span class="lic-pill-locked">🔒 50+语种矩阵分发 (专业版)</span>
                                 <span class="lic-pill-locked">🔒 子目录频道映射 (专业版)</span>
                                 <span class="lic-pill-locked">🔒 频道专属方言风格 (专业版)</span>
@@ -117,10 +117,10 @@
                                     </thead>
                                     <tbody>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>多版图独立管理</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">独立文库与全套样式隔离</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个主版图 (default)</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3 个独立出版版图</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ♾️ 无限独立版图</td>
+                                            <td style="padding: 12px 10px;"><b>多品牌独立管理</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">独立文库与全套样式隔离</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个主品牌 (default)</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3 个独立出版品牌</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ♾️ 无限独立品牌</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
                                             <td style="padding: 12px 10px;"><b>多语种自动翻译</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">全语种多线程并行翻译分发</span></td>

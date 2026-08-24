@@ -77,18 +77,18 @@
                 <div id="gen-panel-identity" style="display: ${activeSub === 'identity' ? 'block' : 'none'};">
                     <div class="settings-group">
                         <div class="settings-grid">
-                            ${renderSettingsItem('版图展示名称', 'imprint_name', data.imprint_name || '', 'text', {
+                            ${renderSettingsItem('品牌展示名称', 'imprint_name', data.imprint_name || '', 'text', {
                                 description: '您的品牌/期刊显示名称（如：极客技术周刊、产品设计随笔）。'
                             })}
-                            ${renderSettingsItem('版图描述', 'imprint_description', data.imprint_description || '', 'text', {
+                            ${renderSettingsItem('品牌描述', 'imprint_description', data.imprint_description || '', 'text', {
                                 description: '品牌核心定位一句话介绍，将在主页与面板中展示。'
                             })}
                             ${renderSettingsItem('全局站点名称', 'site_name', data.site_name || '', 'text', {
-                                placeholder: '未填则自愈 fallback 为版图展示名称',
+                                placeholder: '未填则自愈 fallback 为品牌展示名称',
                                 description: '部署到线上网站的页面主标题。若留空则自动跟随品牌名称。'
                             })}
                             ${renderSettingsItem('全局站点描述', 'site_description', data.site_description || '', 'text', {
-                                placeholder: '未填则自愈 fallback 为版图描述',
+                                placeholder: '未填则自愈 fallback 为品牌描述',
                                 description: '主站点的全局摘要，用于首页 Subtitle 与搜索引擎 SEO 检索描述。'
                             })}
                             ${renderSettingsItem('全局品牌 Logo 路径', 'logo_path', data.logo_path || '', 'text', {
@@ -126,7 +126,7 @@
                     <div class="settings-group">
                         <div class="settings-grid">
                             ${renderSettingsItem('原稿文库路径', 'vault_root', data.vault_root || '', 'static', {
-                                description: '🔒 物理主权路径在版图确立后不可变。如需迁移资产领土，请新建版图。'
+                                description: '🔒 物理主权路径在品牌确立后不可变。如需迁移资产领土，请新建品牌。'
                             })}
                             ${renderSettingsItem('首选解析协议', 'ingress_settings.active_dialects', data.ingress_settings?.active_dialects?.[0] || 'auto', 'select', {
                                 items: [
@@ -150,7 +150,7 @@
                             })}
                             ${renderSettingsItem('段落缓存存储目录', 'block_cache_dir', data.block_cache_dir || '', 'text', {
                                 placeholder: '默认为空（自愈退避至项目根目录下的隐藏目录 .plenipes/blocks/）',
-                                description: '跨版图共享段落缓存物理存储根目录。支持自定义重定向以实现在任意版图和任意 SSG 主题之间共用。'
+                                description: '跨品牌共享段落缓存物理存储根目录。支持自定义重定向以实现在任意品牌和任意 SSG 主题之间共用。'
                             })}
                             ${renderSettingsItem('段落缓存目录分级', 'block_cache_shard_levels', data.block_cache_shard_levels ?? 0, 'select', {
                                 items: [

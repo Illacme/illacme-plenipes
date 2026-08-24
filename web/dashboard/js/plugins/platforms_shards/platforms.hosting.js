@@ -5,9 +5,63 @@
 
 var renderSettingsItem = window.renderSettingsItem || (() => "");
 
+/**
+ * 🏠 [V80.1] 主站/镜像角色横幅
+ * 在每个托管平台配置表单顶部渲染"当前角色"提示条。
+ */
+function _hostingRoleBanner(platformId) {
+    const primaryId = window.settingsData?.publish_control?.primary_hosting_id || '';
+    const isPrimary = primaryId === platformId;
+    const hasAnyEnabled = (function () {
+        const du = window.settingsData?.publish_control?.direct_upload || {};
+        return Object.keys(du).length > 0;
+    })();
+
+    const roleHtml = isPrimary
+        ? `<div class="hosting-role-banner" style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:rgba(0,255,136,0.07); border:1px solid rgba(0,255,136,0.25); margin-bottom:4px; width:100%; box-sizing:border-box;">
+            <span style="font-size:1.2rem;">🏠</span>
+            <div style="flex:1;">
+                <div style="font-size:0.82rem; font-weight:800; color:#00ff88;">当前主站 (Primary)</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.4; margin-top:2px;">
+                    所有页面的 <code style="color:var(--accent-secondary);">canonical</code> URL 将指向此平台，搜索引擎只索引此站。其他托管平台将以"镜像"角色运行。
+                </div>
+            </div>
+        </div>`
+        : `<div class="hosting-role-banner" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.12); margin-bottom:4px; width:100%; box-sizing:border-box;">
+            <span style="font-size:1.2rem;">🔄</span>
+            <div style="flex:1;">
+                <div style="font-size:0.82rem; font-weight:700; color:var(--text-dim);">镜像备用站 (Mirror)</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.4; margin-top:2px; opacity:0.75;">
+                    此平台作为备用容灾或加速节点使用，canonical 指向主站，不参与 SEO 权重竞争。
+                </div>
+            </div>
+            <button type="button"
+                style="flex-shrink:0; background:rgba(0,242,254,0.1); border:1px solid rgba(0,242,254,0.3); color:var(--accent-secondary); font-size:0.75rem; font-weight:700; padding:5px 12px; border-radius:7px; cursor:pointer; white-space:nowrap; transition:all 0.2s;"
+                onmouseover="this.style.background='rgba(0,242,254,0.22)'"
+                onmouseout="this.style.background='rgba(0,242,254,0.1)'"
+                onclick="(async function(){
+                    try {
+                        await apiFetch('/api/config/update', { method:'POST', body: JSON.stringify({ path: 'publish_control.primary_hosting_id', value: '${platformId}' }) });
+                        if (window.settingsData && window.settingsData.publish_control) {
+                            window.settingsData.publish_control.primary_hosting_id = '${platformId}';
+                        }
+                        if (typeof window.renderPlugins === 'function') window.renderPlugins();
+                        if (typeof window.openPluginConfig === 'function') window.openPluginConfig('${platformId}', 'hosting');
+                        if (typeof addAudit === 'function') addAudit('🏠 已将 ${platformId} 设为主站', 'success');
+                    } catch(e) { alert('设置主站失败: ' + e.message); }
+                })()">
+                🏠 设为主站
+            </button>
+        </div>`;
+    return roleHtml;
+}
+
 window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
     const portalGuide = window.renderPlatformPortalGuide ? window.renderPlatformPortalGuide(id) : '';
     if (category === 'hosting') {
+        // 每个托管平台配置顶部注入主站/镜像角色横幅
+        const roleBanner = _hostingRoleBanner(id);
+
         if (id === 's3') {
             return `
                 <div class="api-token-helper" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; border: 1px dashed var(--neon-cyan); background: rgba(0, 242, 254, 0.05);">
@@ -42,13 +96,13 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
                 ${renderSettingsItem('访问令牌 (Personal Access Token / Token)', `publish_control.direct_upload.github_pages.token`, cfg.token || cfg.git_token || '', 'password', { placeholder: "例如: ghp_xxxxxxxxxxxx (使用 HTTPS 协议建仓/推送时必填，SSH 免密可留空)", description: "GitHub 个人访问令牌，需包含 repo 权限。使用 SSH 免密部署时可留空。" })}
+                ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.github_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text', { description: "Git 提交身份中的用户名，可点击「自动感应本地 Git 凭据」自动回填。" })}
+                ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.github_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text', { description: "Git 提交身份中的邮箱，可点击「自动感应本地 Git 凭据」自动回填。" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.github_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git", description: "您的 GitHub 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.github_pages.branch`, cfg.branch || 'gh-pages', 'text', { placeholder: "例如: gh-pages" })}
-                ${window.renderPlatformAdvancedGroup('高级 Git 参数 (CNAME / 代理 / 用户身份)', `
+                ${window.renderPlatformAdvancedGroup('高级可选参数 (CNAME / 代理 / 强制推送)', `
                     ${renderSettingsItem('自定义域名 (CNAME)', `publish_control.direct_upload.github_pages.cname`, cfg.cname, 'text', { placeholder: "例如: blog.example.com", description: "可选，若绑定了自定义域名请在此填写。" })}
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.github_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
-                    ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.github_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text')}
-                    ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.github_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text')}
                     ${renderSettingsItem('强制推送 (Force Push)', `publish_control.direct_upload.github_pages.force_push`, cfg.force_push, 'checkbox')}
                 `)}
             `;
@@ -65,12 +119,12 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
                 ${renderSettingsItem('私人令牌 (Access Token)', `publish_control.direct_upload.gitee_pages.access_token`, cfg.access_token || cfg.token || '', 'password', { placeholder: "例如: Gitee Personal Access Token" })}
+                ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitee_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text', { description: "Git 提交身份中的用户名，可点击「自动感应本地 Git 凭据」自动回填。" })}
+                ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitee_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text', { description: "Git 提交身份中的邮箱，可点击「自动感应本地 Git 凭据」自动回填。" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.gitee_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@gitee.com:username/repo.git", description: "您的 Gitee 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.gitee_pages.branch`, cfg.branch || 'gitee-pages', 'text', { placeholder: "例如: gitee-pages" })}
-                ${window.renderPlatformAdvancedGroup('高级 Gitee 参数 (代理 / 用户身份)', `
+                ${window.renderPlatformAdvancedGroup('高级可选参数 (代理)', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.gitee_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
-                    ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitee_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text')}
-                    ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitee_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text')}
                 `)}
             `;
         } else if (id === 'gitlab_pages') {
@@ -86,12 +140,12 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
                 ${renderSettingsItem('访问令牌 (Personal Access Token)', `publish_control.direct_upload.gitlab_pages.access_token`, cfg.access_token || cfg.token || '', 'password', { placeholder: "GitLab Personal Access Token" })}
+                ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitlab_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text', { description: "Git 提交身份中的用户名，可点击「自动感应本地 Git 凭据」自动回填。" })}
+                ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitlab_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text', { description: "Git 提交身份中的邮箱，可点击「自动感应本地 Git 凭据」自动回填。" })}
                 ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.gitlab_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@gitlab.com:username/repo.git", description: "您的 GitLab 仓库的 SSH 或 HTTPS 地址。" })}
                 ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.gitlab_pages.branch`, cfg.branch || 'main', 'text', { placeholder: "例如: main" })}
-                ${window.renderPlatformAdvancedGroup('高级 GitLab 参数 (代理 / 用户身份)', `
+                ${window.renderPlatformAdvancedGroup('高级可选参数 (代理)', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.gitlab_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
-                    ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.gitlab_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text')}
-                    ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.gitlab_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text')}
                 `)}
             `;
         } else if (id === 'firebase') {

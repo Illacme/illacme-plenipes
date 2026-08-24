@@ -18,7 +18,7 @@ window.triggerSystemGC = async () => {
             addAudit("✅ 清洗路由成功：失效的幽灵路由与冗余文件回收完毕！", "success");
             Swal.fire({
                 title: '🧹 清洗路由成功',
-                text: '系统已安全唤醒清道夫 Janitor 引擎，彻底回收了出版版图内已失效的幽灵路由、过期页面和冗余垃圾资产。',
+                text: '系统已安全唤醒清道夫 Janitor 引擎，彻底回收了出版品牌内已失效的幽灵路由、过期页面和冗余垃圾资产。',
                 icon: 'success',
                 confirmButtonColor: 'var(--accent-primary)'
             });

@@ -33,7 +33,7 @@ window.refreshHealthMatrix = async () => {
                     ${isActive ? 
                         `<button class="mini-action-btn" title="停止向导" onclick="controlWizard('stop')">⏹️</button>
                          <button class="mini-action-btn" title="进入向导" onclick="window.open('http://localhost:43211', '_blank')">🚀</button>` : 
-                        `<button class="mini-action-btn" title="版图向导" onclick="controlWizard('start')">▶️</button>`
+                        `<button class="mini-action-btn" title="品牌向导" onclick="controlWizard('start')">▶️</button>`
                     }
                 </div>
             `;

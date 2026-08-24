@@ -137,7 +137,7 @@ window.invokeServiceAction = async (action) => {
 };
 
 window.controlWizard = async (action) => {
-    addAudit(`📡 正在向版图向导下达 [${action === 'start' ? '启动' : '停机'}] 指令...`, "info");
+    addAudit(`📡 正在向品牌向导下达 [${action === 'start' ? '启动' : '停机'}] 指令...`, "info");
     try {
         const res = await apiFetch(`/api/system/wizard/${action}`, { method: 'POST' });
         if (res && (res.status === 'started' || res.status === 'stopped' || res.status === 'already_running')) {

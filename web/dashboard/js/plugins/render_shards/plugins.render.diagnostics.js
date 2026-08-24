@@ -148,21 +148,32 @@ window.runCrossPluginDiagnostics = () => {
             if (!matchesCategory) return;
         }
 
-        if (p.is_enabled && p.is_manageable && ['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category)) {
+        // ✅ [V80.2] 仅当插件在当前品牌已激活 (is_in_use) 时才提示凭据缺失
+        // 未激活的插件配置不完整不影响任何操作，提示是无效噪声
+        if (p.is_enabled && p.is_in_use && p.is_manageable && ['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category)) {
             let platformCfg = {};
             if (p.category === 'hosting') platformCfg = cfgData.publish_control?.direct_upload?.[p.id] || {};
             else if (p.category === 'image_hosting') platformCfg = cfgData.image_hosting?.[p.id] || {};
             else if (p.category === 'notification') platformCfg = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
             else platformCfg = cfgData.syndication?.[p.id] || {};
 
+            // 按分类使用准确的操作动词，避免「分发」一词误用于托管与图床类插件
+            const categoryVerbMap = {
+                'hosting': '站点部署失败',
+                'image_hosting': '图片上传失败',
+                'notification': '通知推送失败',
+                'publisher': '内容分发失败'
+            };
+            const failVerb = categoryVerbMap[p.category] || '操作失败';
+
             if (window.isPluginCredentialReady) {
                 const cred = window.isPluginCredentialReady(p.id, p.category, platformCfg);
                 if (!cred.ready && !['sftp', 'local_fs'].includes(p.id)) {
                     issues.push({
                         type: 'warning',
-                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据待补全`,
-                        desc: `该通道已启用但尚未配置鉴权凭据或目标仓库，可能导致物理分发失败。`,
-                        actionText: '🎯 补全配置',
+                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 凭据待补全`,
+                        desc: `已在当前品牌启用但凭据尚未配置完整，发布时可能导致${failVerb}。`,
+                        actionText: '⚙️ 立即补全',
                         action: `openPluginConfig('${p.id}', '${p.category}')`
                     });
                 }
@@ -171,15 +182,16 @@ window.runCrossPluginDiagnostics = () => {
                 if (!tokenVal && !['sftp', 'local_fs'].includes(p.id)) {
                     issues.push({
                         type: 'warning',
-                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 物理凭据丢失警示`,
-                        desc: `该通道处于开启状态但未充填有效鉴权 Token，可能导致物理分发失败。`,
-                        actionText: '🎯 补全凭据',
+                        title: `⚠️ [${p.name || p.id.toUpperCase()}] 凭据待补全`,
+                        desc: `已在当前品牌启用但凭据尚未配置完整，发布时可能导致${failVerb}。`,
+                        actionText: '⚙️ 立即补全',
                         action: `openPluginConfig('${p.id}', '${p.category}')`
                     });
                 }
             }
         }
     });
+
 
     const ghPagesToken = cfgData.publish_control?.direct_upload?.github_pages?.token || cfgData.publish_control?.direct_upload?.github_pages?.access_token;
     const ghImgToken = cfgData.image_hosting?.github?.token || cfgData.image_hosting?.github?.access_token;

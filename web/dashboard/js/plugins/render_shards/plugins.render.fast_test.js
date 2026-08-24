@@ -3,15 +3,19 @@
  * 职责：卡片快捷物理连通性测试、全自动保存、演练诊断日志终端抽屉与剪贴板一键复制。
  */
 
-// 卡片上快捷一键测试连接
+// 卡片上快捷一键测试连接（btn 可为 null，此时以无 UI 模式运行，仅更新 probePassState）
 window.fastTestPluginConnectivity = async (id, category, btn) => {
-    if (!btn || btn.disabled) return;
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "⏳ 测试中...";
-    btn.style.opacity = "0.7";
+    // btn 为 null 时允许无头运行（由 Swal preConfirm 触发时不需要操作按钮）
+    if (btn && btn.disabled) return;
+    const originalText = btn ? btn.innerText : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "⏳ 测试中...";
+        btn.style.opacity = "0.7";
+    }
 
-    const cardEl = btn.closest('.plugin-pod');
+    // 优先从按钮所在的卡片查找状态元素；无按钮时从 DOM 全局查找
+    const cardEl = btn ? btn.closest('.plugin-pod') : document.querySelector(`.plugin-pod:has(.p-btn-test-direct[data-id="${id}"])`);
     const statusDot = cardEl ? cardEl.querySelector('.status-dot-mini') : null;
     const logTagEl = cardEl ? cardEl.querySelector('.log-tag') : null;
     let originalDotClass = "";
@@ -60,9 +64,11 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             body: JSON.stringify({ id, parentId: category, settings })
         });
 
-        btn.disabled = false;
-        btn.innerText = originalText;
-        btn.style.opacity = "1";
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            btn.style.opacity = "1";
+        }
 
         if (res && res.success) {
             window.probePassState = window.probePassState || {};
@@ -117,20 +123,47 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             if (window.showToast) {
                 window.showToast(`❌ [${id.toUpperCase()}] 物理测试失败: ${errMsg}`, 'error');
             }
+            // ← 写入失败状态，供 preConfirm 轮询立即感知
+            window.probePassState = window.probePassState || {};
+            window.probePassState[id] = false;
         }
     } catch (err) {
-        btn.disabled = false;
-        btn.innerText = originalText;
-        btn.style.opacity = "1";
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            btn.style.opacity = "1";
+        }
         if (statusDot && originalDotClass) statusDot.className = originalDotClass;
         if (window.showToast) {
             window.showToast(`❌ 测试异常: ${err.message || err}`, 'error');
         }
+        // ← 写入失败状态，供 preConfirm 轮询立即感知
+        window.probePassState = window.probePassState || {};
+        window.probePassState[id] = false;
     }
 };
 
 // 物理测试连通性日志抽屉 (Connectivity Log Drawer)
+// 关闭日志抽屉（同步隐藏抽屉 + 遮罩）
+window.closeLogDrawer = () => {
+    const d = document.getElementById('log-terminal-drawer');
+    const o = document.getElementById('log-terminal-overlay');
+    if (d) d.style.right = '-520px';
+    if (o) { o.style.opacity = '0'; o.style.pointerEvents = 'none'; }
+};
+
 window.showPluginLogDrawer = (id, title, status, logs) => {
+    // ── 遮罩层（点击非抽屉区域关闭）─────────────────────────────
+    let overlay = document.getElementById('log-terminal-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'log-terminal-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer;';
+        overlay.addEventListener('click', () => window.closeLogDrawer());
+        document.body.appendChild(overlay);
+    }
+
+    // ── 抽屉本体 ────────────────────────────────────────────────
     let drawer = document.getElementById('log-terminal-drawer');
     if (!drawer) {
         drawer = document.createElement('div');
@@ -171,19 +204,23 @@ window.showPluginLogDrawer = (id, title, status, logs) => {
                 <h3 style="margin: 0; font-size: 1.05rem; color: #fff;">📋 物理连通性日志</h3>
                 <span style="font-size: 0.72rem; color: var(--text-dim);">${title || id.toUpperCase()} 通道演练诊断信息</span>
             </div>
-            <button type="button" onclick="document.getElementById('log-terminal-drawer').style.right = '-520px'" style="background: transparent; border: none; color: #888; font-size: 1.2rem; cursor: pointer;">✕</button>
+            <button type="button" onclick="window.closeLogDrawer()" style="background: transparent; border: none; color: #888; font-size: 1.2rem; cursor: pointer;">✕</button>
         </div>
         <div style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6; background: #07070a; color: #d1d5db; word-break: break-all;">
             ${formattedLogs}
         </div>
         <div style="padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px; justify-content: flex-end; background: rgba(0,0,0,0.3);">
             <button type="button" onclick="window.copyLogTerminalContent(this)" style="font-size: 0.75rem; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--neon-cyan); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease;">📋 一键复制日志</button>
-            <button type="button" onclick="document.getElementById('log-terminal-drawer').style.right = '-520px'" style="font-size: 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
+            <button type="button" onclick="window.closeLogDrawer()" style="font-size: 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
         </div>
     `;
 
+    // 先展示遮罩，再滑入抽屉
+    overlay.style.pointerEvents = 'auto';
+    overlay.style.opacity = '1';
     setTimeout(() => { drawer.style.right = '0px'; }, 10);
 };
+
 
 // 全局日志终端复制与即时微交互提示
 window.copyLogTerminalContent = async (btn) => {

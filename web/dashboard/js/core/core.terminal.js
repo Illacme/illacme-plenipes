@@ -193,7 +193,7 @@ window.appendTerminalLog = (msg, color = null) => {
 };
 
 window.triggerThemeInstall = async () => {
-    if (typeof addAudit === 'function') addAudit("🏗️ 发现当前版图主题依赖缺失，正在尝试物理安装...", "warning");
+    if (typeof addAudit === 'function') addAudit("🏗️ 发现当前品牌主题依赖缺失，正在尝试物理安装...", "warning");
     const res = await window.apiFetch('/api/system/theme/install', { method: 'POST' });
     if (res && res.status === 'started') {
         const modal = document.getElementById('terminal-modal');
