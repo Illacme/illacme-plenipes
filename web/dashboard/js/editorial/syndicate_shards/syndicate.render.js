@@ -4,6 +4,16 @@
  */
 
 (function () {
+    window.closeArticleSyndicationDrawer = function () {
+        const drawerEl = document.getElementById('article-syndicate-drawer');
+        const backdropEl = document.getElementById('article-syndicate-drawer-backdrop');
+        if (drawerEl) drawerEl.style.right = '-480px';
+        if (backdropEl) {
+            backdropEl.style.opacity = '0';
+            backdropEl.style.pointerEvents = 'none';
+        }
+    };
+
     window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {
         window.currentSyndicatingRelPath = relPath;
         window.currentSyndicatingTitle = articleTitle;

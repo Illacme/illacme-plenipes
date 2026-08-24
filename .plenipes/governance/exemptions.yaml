@@ -36,7 +36,6 @@ redline_exempt_files:
   - services/api/routes/gov/context_shards/review_ops.py
   - services/api/logic/content_ops.py
   - services/api/logic/content_ops_shards/vault_ops.py
-  - services/api/logic/dispatch_ops_shards/telemetry_ops.py
   - services/wizard/wizard_server.py
   # --- Adapters / Compute / Syndication ---
   - adapters/compute/openai.py
