@@ -19,7 +19,6 @@ redline_exempt_files:
   - core/editorial/asset_pipeline.py
   - core/editorial/standard_steps.py
   - core/logic/ai/ai_scheduler.py
-  - core/logic/ai/ai_logic_hub.py
   - core/archives/sqlite_backend.py
   - core/bindery/bindery_dispatcher.py
   - core/logic/diagnostics/component_monitor.py
