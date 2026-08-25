@@ -69,11 +69,9 @@ redline_exempt_files:
   # --- Core & Shards ---
   - core/logic/ai/ai_scheduler_shards/batch_chunker.py
   - core/governance/license_guard.py
-  # --- Services & Route Shards ---
   - services/api/routes/gov/actions.py
   - services/api/routes/gov/plugin_mapper.py
   - services/api/routes/gov/context_shards/plugin_dry_run_hosting.py
   - services/api/routes/gov/context_shards/plugin_dry_run_social.py
-  - services/api/logic/dispatch_ops_shards/pipeline_ops.py
 
 
