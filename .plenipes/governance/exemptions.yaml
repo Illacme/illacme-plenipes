@@ -55,7 +55,6 @@ redline_exempt_files:
   - web/dashboard/js/plugins/plugins.platforms.js
   - web/dashboard/js/plugins/plugins.sandbox.js
   - web/dashboard/js/plugins/platforms_shards/platforms.hosting.js
-  - web/dashboard/js/plugins/platforms_shards/platforms.sensing_handlers.js
   - web/dashboard/js/plugins/render_shards/plugins.render.cards.js
   - web/dashboard/js/plugins/render_shards/plugins.render.pod.js
   - web/dashboard/js/route/route.render.js
