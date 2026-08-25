@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Illacme-plenipes Core - SQLite Persistence Backend
-🛡️ [V48.3 Refactored]"""
+🛡️ [V48.3 Refactored]
+🛡️ [SOP-02 模块拆分 / AEL-Iter-v10] 社媒分发与维护方法已纵切至 Mixin 子分片。
+"""
 import sqlite3
 import json
 import threading
@@ -9,8 +11,11 @@ import time
 from core.utils.tracing import tlog
 from .sql_statements import INIT_SCHEMA, UPSERT_DOC, UPSERT_TRANS
 from .sqlite_review import SQLiteReviewMixin
+from .sqlite_syndication import SQLiteSyndicationMixin
+from .sqlite_maintenance import SQLiteMaintenanceMixin
+from .sqlite_doc_queries import SQLiteDocQueryMixin
 
-class SQLiteBackend(SQLiteReviewMixin):
+class SQLiteBackend(SQLiteReviewMixin, SQLiteSyndicationMixin, SQLiteMaintenanceMixin, SQLiteDocQueryMixin):
     """🚀 [V48.3] 工业级元数据存储方案"""
     
     def __init__(self, db_path, engine=None):
@@ -189,277 +194,9 @@ class SQLiteBackend(SQLiteReviewMixin):
     def get_total_cost(self, imprint_id):
         row = self._get_conn().execute("SELECT SUM(cost) FROM usage_ledger WHERE imprint_id = ?", (imprint_id,)).fetchone()
         return row[0] if row and row[0] is not None else 0.0
-    def list_documents_paginated(self, page=1, limit=20, query=None, folder=None):
-        offset = (page - 1) * limit
-        sql = "SELECT * FROM documents"
-        params = []
-        
-        conditions = []
-        if query:
-            conditions.append("(title LIKE ? OR rel_path LIKE ? OR slug LIKE ?)")
-            p = f"%{query}%"
-            params.extend([p, p, p])
-            
-        if folder:
-            conditions.append("rel_path LIKE ?")
-            params.append(f"{folder}/%")
-            
-        if conditions:
-            sql += " WHERE " + " AND ".join(conditions)
-            
-        sql += " ORDER BY last_updated DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-        
-        rows = self._get_conn().execute(sql, params).fetchall()
-        
-        # 批量获取 translations 和 translation_reviews (Q6=B)
-        t_map = {}
-        if rows:
-            paths = [row["rel_path"] for row in rows]
-            placeholders = ",".join(["?"] * len(paths))
-            
-            # 1. 翻译状态
-            t_rows = self._get_conn().execute(
-                f"SELECT rel_path, lang_code, status FROM translations WHERE rel_path IN ({placeholders})", paths
-            ).fetchall()
-            for tr in t_rows:
-                rp, lc, st = tr["rel_path"], tr["lang_code"], tr["status"]
-                if rp not in t_map: t_map[rp] = {}
-                t_map[rp][lc] = {"status": st, "human_approved": False, "review_is_stale": False}
-                
-            # 2. 人工校对锁
-            r_rows = self._get_conn().execute(
-                f"SELECT doc_id, lang_code, is_stale FROM translation_reviews WHERE doc_id IN ({placeholders})", paths
-            ).fetchall()
-            for rr in r_rows:
-                rp, lc, stale = rr["doc_id"], rr["lang_code"], rr["is_stale"]
-                if rp not in t_map: t_map[rp] = {}
-                if lc not in t_map[rp]: t_map[rp][lc] = {"status": "DONE"}
-                t_map[rp][lc]["human_approved"] = True
-                t_map[rp][lc]["review_is_stale"] = bool(stale)
-
-        results = []
-        for row in rows:
-            data = dict(row)
-            extra = json.loads(data.pop("metadata_json") or "{}")
-            data.update(extra)
-            # 注入 translations 字段供前端 Vault 判断
-            data["translations"] = t_map.get(data["rel_path"], {})
-            results.append(data)
-        return results
-
-    def update_document_metadata(self, rel_path, metadata_updates):
-        """🚀 [V52.0] 局部元数据注入：仅更新 metadata_json 中的特定字段"""
-        conn = self._get_conn()
-        with conn:
-            row = conn.execute("SELECT metadata_json FROM documents WHERE rel_path = ?", (rel_path,)).fetchone()
-            if not row: return False
-
-            # 🛡️ [Slug 唯一性守卫] 如果本次更新包含 slug，先做全库冲突检测。
-            # slug 是路由层面的唯一标识符（直接映射为 URL 路径），
-            # 两个不同物理路径的文档若共享同一 slug，会导致静态站点路由冲突、
-            # SEO 索引混乱，以及译文缓存命中错误文档等严重问题。
-            if "slug" in metadata_updates:
-                new_slug = metadata_updates["slug"]
-                conflict_row = conn.execute(
-                    "SELECT rel_path FROM documents WHERE slug = ? AND rel_path != ?",
-                    (new_slug, rel_path)
-                ).fetchone()
-                if conflict_row:
-                    conflict_path = dict(conflict_row).get("rel_path", "?")
-                    return {"conflict": True, "slug": new_slug, "occupied_by": conflict_path}
-
-            existing_meta = json.loads(dict(row).get("metadata_json") or "{}")
-            existing_meta.update(metadata_updates)
-
-            # 如果更新中包含 title 或 slug，也同步更新主表字段
-            if "title" in metadata_updates:
-                conn.execute("UPDATE documents SET title = ?, metadata_json = ? WHERE rel_path = ?",
-                           (metadata_updates["title"], json.dumps(existing_meta), rel_path))
-            elif "slug" in metadata_updates:
-                 conn.execute("UPDATE documents SET slug = ?, metadata_json = ? WHERE rel_path = ?",
-                           (metadata_updates["slug"], json.dumps(existing_meta), rel_path))
-            else:
-                conn.execute("UPDATE documents SET metadata_json = ? WHERE rel_path = ?",
-                           (json.dumps(existing_meta), rel_path))
-            return True
-
-
-    def get_documents_count_filtered(self, query=None, folder=None):
-        sql = "SELECT COUNT(*) FROM documents"
-        params = []
-        conditions = []
-        if query:
-            conditions.append("(title LIKE ? OR rel_path LIKE ? OR slug LIKE ?)")
-            p = f"%{query}%"
-            params.extend([p, p, p])
-        if folder:
-            conditions.append("rel_path LIKE ?")
-            params.append(f"{folder}/%")
-        if conditions:
-            sql += " WHERE " + " AND ".join(conditions)
-        res = self._get_conn().execute(sql, params).fetchone()
-        return res[0] if res else 0
-
-    def get_total_documents_count(self):
-        res = self._get_conn().execute("SELECT COUNT(*) FROM documents").fetchone()
-        return res[0] if res else 0
 
     def delete_document(self, rel_path):
         with self._get_conn() as conn:
             conn.execute("DELETE FROM documents WHERE rel_path = ?", (rel_path,))
             conn.execute("DELETE FROM translations WHERE rel_path = ?", (rel_path,))
-
-    def clear_fingerprints_only(self):
-        """⚡ [V106.0] 仅清空文档指纹记录，保留 AI Slug、SEO 元数据与译文记录"""
-        with self._get_conn() as conn:
-            conn.execute("UPDATE documents SET source_hash = NULL, shadow_hash = NULL")
-
-    def clear_ai_metadata(self, mode="all"):
-        """🏷️ [V106.0] 清空 AI 生成的 Slug 与 SEO 元数据"""
-        with self._get_conn() as conn:
-            if mode in ("all", "slug"):
-                conn.execute("UPDATE documents SET slug = NULL")
-            if mode in ("all", "seo"):
-                rows = conn.execute("SELECT rel_path, metadata_json FROM documents").fetchall()
-                for row in rows:
-                    rel_path = row[0]
-                    try:
-                        meta = json.loads(row[1] or "{}")
-                        if isinstance(meta, dict) and "seo_data" in meta:
-                            meta.pop("seo_data", None)
-                            conn.execute("UPDATE documents SET metadata_json = ? WHERE rel_path = ?", (json.dumps(meta), rel_path))
-                    except Exception: pass
-
-    def clear_all_documents(self):
-        """🗑️ [V105.0] 彻底清空所有文档记录、指纹与多语言译文账本"""
-        with self._get_conn() as conn:
-            conn.execute("DELETE FROM documents")
-            conn.execute("DELETE FROM translations")
-
-
-    # 🆕 多渠道分发异步重试队列数据库操作
-    def upsert_syndication_queue(self, rel_path, target_id, title, slug, content, metadata_json, lang_code, error_msg):
-        with self._get_conn() as conn:
-            conn.execute("""
-                INSERT INTO syndication_queue (
-                    rel_path, target_id, title, slug, content, metadata_json, lang_code, last_error, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
-                ON CONFLICT(rel_path, target_id) DO UPDATE SET
-                    title=excluded.title, slug=excluded.slug, content=excluded.content,
-                    metadata_json=excluded.metadata_json, lang_code=excluded.lang_code,
-                    last_error=excluded.last_error, status='PENDING'
-            """, (rel_path, target_id, title, slug, content, json.dumps(metadata_json or {}), lang_code, error_msg))
-
-    def get_pending_syndication_tasks(self):
-        now = int(time.time())
-        rows = self._get_conn().execute("""
-            SELECT * FROM syndication_queue
-            WHERE status = 'PENDING' AND next_retry_time <= ? AND retry_count < max_retries
-        """, (now,)).fetchall()
-        return [{**dict(r), "metadata": json.loads(dict(r).get("metadata_json") or "{}")} for r in rows]
-
-    def mark_syndication_success(self, rel_path, target_id):
-        with self._get_conn() as conn:
-            conn.execute("DELETE FROM syndication_queue WHERE rel_path = ? AND target_id = ?", (rel_path, target_id))
-
-    def mark_syndication_failure(self, rel_path, target_id, error_msg, backoff_seconds):
-        now = int(time.time())
-        next_retry = now + backoff_seconds
-        with self._get_conn() as conn:
-            conn.execute("""
-                UPDATE syndication_queue
-                SET retry_count = retry_count + 1, last_error = ?, next_retry_time = ?,
-                    status = CASE WHEN retry_count + 1 >= max_retries THEN 'FAILED' ELSE 'PENDING' END
-                WHERE rel_path = ? AND target_id = ?
-            """, (error_msg, next_retry, rel_path, target_id))
-
-    def list_all_syndication_tasks(self):
-        rows = self._get_conn().execute("SELECT * FROM syndication_queue ORDER BY id DESC").fetchall()
-        return [{**dict(r), "metadata": json.loads(dict(r).get("metadata_json") or "{}")} for r in rows]
-
-    def retry_syndication_task(self, rel_path=None, target_id=None):
-        with self._get_conn() as conn:
-            if rel_path and target_id:
-                conn.execute("""
-                    UPDATE syndication_queue
-                    SET retry_count = 0, status = 'PENDING', next_retry_time = 0, last_error = NULL
-                    WHERE rel_path = ? AND target_id = ?
-                """, (rel_path, target_id))
-            else:
-                conn.execute("""
-                    UPDATE syndication_queue
-                    SET retry_count = 0, status = 'PENDING', next_retry_time = 0, last_error = NULL
-                    WHERE status = 'FAILED'
-                """)
-
-    def delete_syndication_task(self, rel_path=None, target_id=None):
-        with self._get_conn() as conn:
-            if rel_path and target_id:
-                conn.execute("DELETE FROM syndication_queue WHERE rel_path = ? AND target_id = ?", (rel_path, target_id))
-            else:
-                conn.execute("DELETE FROM syndication_queue WHERE status = 'FAILED'")
-
-    def _normalize_paths_for_query(self, rel_path: str) -> tuple:
-        """🚀 [V121.0] 双向路径归一化：消除带/不带 .md 及前导斜杠对物权账本查询的影响"""
-        if not rel_path:
-            return ("",)
-        clean = rel_path.strip().lstrip('/')
-        clean_no_md = clean[:-3] if clean.endswith('.md') else clean
-        clean_md = clean_no_md + '.md'
-        return tuple(set([
-            rel_path,
-            clean,
-            clean_no_md,
-            clean_md,
-            f"/{clean}",
-            f"/{clean_md}",
-            f"/{clean_no_md}"
-        ]))
-
-    # 🚀 [V120.0] 全渠道文章生命周期物权记录表 CRUD 方法
-    def save_syndication_record(self, rel_path: str, lang_code: str, target_id: str, remote_article_id: str, remote_url: str = None, content_hash: str = None):
-        with self._get_conn() as conn:
-            conn.execute("""
-                INSERT INTO syndication_records (rel_path, lang_code, target_id, remote_article_id, remote_url, content_hash, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(rel_path, lang_code, target_id) DO UPDATE SET
-                    remote_article_id=excluded.remote_article_id,
-                    remote_url=excluded.remote_url,
-                    content_hash=excluded.content_hash,
-                    updated_at=CURRENT_TIMESTAMP
-            """, (rel_path, lang_code, target_id, str(remote_article_id), remote_url, content_hash))
-
-    def get_syndication_record(self, rel_path: str, lang_code: str, target_id: str) -> dict:
-        candidates = self._normalize_paths_for_query(rel_path)
-        placeholders = ','.join('?' * len(candidates))
-        row = self._get_conn().execute(
-            f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
-            (*candidates, lang_code, target_id)
-        ).fetchone()
-        return dict(row) if row else None
-
-    def list_syndication_records_for_doc(self, rel_path: str, lang_code: str = None) -> list:
-        candidates = self._normalize_paths_for_query(rel_path)
-        placeholders = ','.join('?' * len(candidates))
-        if lang_code:
-            rows = self._get_conn().execute(
-                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ?",
-                (*candidates, lang_code)
-            ).fetchall()
-        else:
-            rows = self._get_conn().execute(
-                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders})",
-                candidates
-            ).fetchall()
-        return [dict(r) for r in rows]
-
-    def delete_syndication_record(self, rel_path: str, lang_code: str, target_id: str):
-        candidates = self._normalize_paths_for_query(rel_path)
-        placeholders = ','.join('?' * len(candidates))
-        with self._get_conn() as conn:
-            conn.execute(
-                f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
-                (*candidates, lang_code, target_id)
-            )
 

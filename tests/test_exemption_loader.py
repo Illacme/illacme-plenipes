@@ -31,7 +31,7 @@ class TestExemptionLoader(unittest.TestCase):
         known_entries = [
             "core/ui/handlers/status_handlers.py",
             "core/config/config_models.py",
-            "core/archives/sqlite_backend.py",
+            "core/archives/ledger.py",
             "web/dashboard/js/localization/localization.render.js",
             "tests/test_smoke.py",
         ]
