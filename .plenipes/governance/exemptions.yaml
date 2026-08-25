@@ -43,7 +43,6 @@ redline_exempt_files:
   # --- Tests ---
   - tests/test_smoke.py
   # --- Dashboard JS ---
-  - web/dashboard/js/dashboard.socket.js
   - web/dashboard/js/dashboard.system.js
   - web/dashboard/js/dashboard.plugins.js
   - web/dashboard/js/compute/compute.ui.js
