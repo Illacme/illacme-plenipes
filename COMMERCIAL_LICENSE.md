@@ -26,13 +26,13 @@ Illacme Plenipes 的默认许可证为 **PolyForm Noncommercial License 1.0.0**�
 商业授权以 **商业最终用户许可协议（EULA）** 为准：
 
 - 协议全文：[`docs/legal/EULA.md`](docs/legal/EULA.md)
-- 商业授权联系：<在此填写商业授权联系邮箱或入口，例如 business@your-domain.com>
+- 商业授权联系：wqbyc@msn.com
 
 取得商业许可后，你方可在授权范围内进行商业部署、托管与分发，并免受默认非商业许可证的商业使用限制。
 
 ## 版权
 
-Copyright (c) 2026 <版权所有者姓名/公司>. 保留一切权利（All rights reserved except as granted herein）。
+Copyright (c) 2026 Eason.Bai. 保留一切权利（All rights reserved except as granted herein）。
 默认非商业许可证不转让任何商标、商号或服务标记的使用权。
 
 ---
