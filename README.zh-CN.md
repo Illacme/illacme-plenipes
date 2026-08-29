@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-v11.2--sovereign-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![License: PolyForm-Noncommercial-1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
 
@@ -59,15 +59,15 @@ python3 plenipes.py --watch
 
 *   **[Manuscript Vault](./core/)**：支撑海量文稿的高性能调度内核。
 *   **[The Matrix](./core/adapters/)**：支持 Cloudflare, DeepSeek, Webhook 等全渠道发行适配。
-*   **[Command Center](./web/dashboard/)**：全息可视化看板，掌控您的出版疆域。
+*   **[Command Center](./dashboard/)**：全息可视化看板，掌控您的出版疆域。
 
 ---
 
 ### 📜 治理协议与商业许可 / License & Legal
 
-- **默认许可证（非商业）**：本仓库代码采用 [PolyForm Noncommercial License 1.0.0](LICENSE)（源码可用、非商业）。任何人都可免费用于非商业目的；**商业使用被明确禁止**，除非取得版权所有者的单独书面授权。
-- **商业授权 (Commercial EULA)**：任何用于商业运营、付费分发或企业部署的场景，请先取得商业许可，详见 **[商业授权说明](COMMERCIAL_LICENSE.md)** 与 **[最终用户许可协议 (EULA)](docs/legal/EULA.md)**。
-- **数据主权保障**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](docs/legal/DATA_SOVEREIGNTY.md)**。
-- **免责声明与隐私政策**：详见 **[第三方凭据与 AI 内容免责声明](docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[隐私与遥测声明](docs/legal/PRIVACY_POLICY.md)**。
+- **开源非商业许可**：开源版本采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议，供个人创作与学术研究免费使用。
+- **商业授权 (Commercial EULA)**：任何用于商业运营、付费分发或企业部署的场景，请参阅 **[最终用户许可协议 (EULA)](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/EULA.md)**。
+- **数据主权保障**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/DATA_SOVEREIGNTY.md)**。
+- **免责声明与隐私政策**：详见 **[第三方凭据与 AI 内容免责声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[隐私与遥测声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/PRIVACY_POLICY.md)**。
 
 🛡️ *Illacme-plenipes - 让主权照耀创作，让版图横跨全球。*

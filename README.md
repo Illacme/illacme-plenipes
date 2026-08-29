@@ -1,7 +1,7 @@
 # 🏛️ Illacme Plenipes: 全球私人出版社 (Global Private Press)
 ## 您的主权化全球出版发行中心 (Sovereign Global Publishing & Distribution Center)
 
-[![License: PolyForm-Noncommercial-1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Version: V50.3](https://img.shields.io/badge/Version-V50.3--Sovereign-8b5cf6.svg)]()
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Agents-3b82f6.svg)]()
 
@@ -23,7 +23,7 @@ Illacme Plenipes 是一款为高端创作者、机构及极客打造的**高维�
 
 ```bash
 # 1. 克隆并进入
-git clone https://github.com/Illacme/illacme-plenipes.git
+git clone https://github.com/your-username/illacme-plenipes.git
 cd illacme-plenipes
 
 # 2. 一键点火（进入交互式主权引导）
@@ -46,11 +46,10 @@ graph TD
 
 ## 📜 治理协议与商业许可 (Governance & Commercial Licensing)
 
-- **默认许可证（非商业）**：本仓库代码采用 [PolyForm Noncommercial License 1.0.0](LICENSE)（源码可用、非商业）。任何人可免费用于非商业目的；**商业使用被明确禁止**，除非取得版权所有者的单独书面授权。
-- **商业授权 (Commercial EULA)**：企业、付费托管或任何商业部署，必须先取得商业许可。请参阅 [商业授权说明](COMMERCIAL_LICENSE.md) 与 [商业最终用户许可协议 (EULA)](docs/legal/EULA.md)。
-- **数据主权承诺**：请参阅 [数据主权与内容所有权协议](docs/legal/DATA_SOVEREIGNTY.md)。
-- **隐私政策**：请参阅 [隐私政策](docs/legal/PRIVACY_POLICY.md)。
-- **免责与第三方声明**：请参阅 [第三方凭据免责声明](docs/legal/THIRD_PARTY_DISCLAIMER.md) 与 [第三方开源致谢](docs/legal/THIRD_PARTY_NOTICES.md)。
+- **开源非商业许可**：开源版本采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 协议，仅供个人学习与非商业研究。
+- **商业授权 (Commercial EULA)**：企业或商业化部署请参阅 [商业最终用户许可协议 (EULA)](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/EULA.md)。
+- **数据主权承诺**：请参阅 [数据主权与内容所有权协议](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/DATA_SOVEREIGNTY.md)。
+- **免责与第三方声明**：请参阅 [第三方凭据免责声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_DISCLAIMER.md) 与 [第三方开源致谢](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_NOTICES.md)。
 
 ---
 

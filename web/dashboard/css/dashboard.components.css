@@ -58,15 +58,18 @@ button:disabled {
 
 [data-theme="light"] .primary-btn,
 [data-theme="light"] .glow-btn {
-    color: var(--white) !important;
-    background: var(--accent-primary) !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #0066f5, #0052cc) !important;
+    border: 1px solid #0052cc !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 245, 0.25) !important;
 }
 
 [data-theme="light"] .primary-btn:hover:not(:disabled),
 [data-theme="light"] .glow-btn:hover:not(:disabled) {
-    color: var(--white) !important;
-    background: var(--accent-primary-hover, var(--accent-primary)) !important;
-    box-shadow: var(--shadow-glow) !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #0052cc, #0040a8) !important;
+    border-color: #0040a8 !important;
+    box-shadow: 0 6px 18px rgba(0, 102, 245, 0.35) !important;
 }
 
 .secondary-btn {
@@ -86,7 +89,7 @@ button:disabled {
 #btn-preview:hover:not(:disabled) {
     background: rgba(var(--neon-cyan-rgb), 0.18);
     border-color: rgba(var(--neon-cyan-rgb), 0.6);
-    color: var(--color-white) !important;
+    color: #fff !important;
     box-shadow: 0 0 20px rgba(var(--neon-cyan-rgb), 0.4);
     transform: translateY(-1px);
 }
@@ -99,7 +102,7 @@ button:disabled {
 
 [data-theme="light"] #btn-preview:hover:not(:disabled) {
     background: var(--callout-note-color) !important;
-    color: var(--color-white) !important;
+    color: #fff !important;
 }
 
 .action-btn {
@@ -262,7 +265,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .quick-adjust-btn.active {
     background: var(--accent-primary);
-    color: var(--color-white);
+    color: #fff;
 }
 
 /* 6. 辅助布局 (Layout Helpers) */
@@ -421,4 +424,168 @@ input[type="range"]::-webkit-slider-thumb:hover {
     opacity: 0.4;
     font-size: 0.7rem;
     user-select: none;
+}
+
+/* 🧙 插件配置抽屉极简向导 (Step Wizard) 基础组件样式 */
+.wiz-step {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-dim);
+    font-weight: 500;
+}
+
+.wiz-step:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-bright);
+}
+
+.wiz-step.active {
+    background: rgba(0, 242, 255, 0.18);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.25);
+}
+
+/* 🧙 步骤大卡片容器基础样式 (Step Card Box - Dark Mode) */
+.wiz-step-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.wiz-step-card .step-title-text {
+    color: var(--text-dim);
+}
+
+.wiz-step-card.active {
+    background: rgba(0, 242, 255, 0.05);
+    border: 1.5px solid var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+}
+
+.wiz-step-card.active .step-title-text {
+    color: var(--neon-cyan);
+}
+
+.wiz-step-card .card-status-tag {
+    background: rgba(0, 242, 254, 0.2);
+    color: var(--neon-cyan);
+}
+
+/* 🎭 品牌建站向导主题卡片基础样式 (Theme Card Grid - Dark Mode) */
+.wiz-theme-card {
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.2s ease;
+}
+
+.wiz-theme-card:hover {
+    border-color: rgba(0, 242, 255, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.wiz-theme-card.active {
+    border-color: var(--accent-secondary) !important;
+    background: rgba(0, 242, 255, 0.08) !important;
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.15);
+}
+
+/* 🏷️ 主题卡片右上角特性徽标 (Theme Card Feature Badge) */
+.wiz-theme-badge {
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-dim);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.wiz-theme-card.active .wiz-theme-badge {
+    background: rgba(0, 242, 255, 0.15);
+    color: var(--neon-cyan);
+    border-color: rgba(0, 242, 255, 0.35);
+}
+
+.wiz-theme-badge.flag-badge {
+    background: var(--accent-secondary) !important;
+    color: #050b14 !important;
+    border: none !important;
+    font-weight: 700;
+}
+
+/* 🤖 算力提供商单选卡片 (Compute Provider Card) */
+.wiz-provider-card {
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.2s ease;
+}
+
+.wiz-provider-card:hover {
+    border-color: rgba(0, 242, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.wiz-provider-card.active {
+    border-color: var(--accent-secondary) !important;
+    background: rgba(0, 242, 255, 0.08) !important;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.12);
+}
+
+/* 🌍 目标发行语种多选药丸 (Target Lang Pill) */
+.wiz-lang-pill {
+    cursor: pointer;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-dim);
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.wiz-lang-pill:hover {
+    border-color: rgba(0, 242, 255, 0.4);
+    color: var(--text-bright);
+}
+
+.wiz-lang-pill.active {
+    border-color: var(--accent-secondary) !important;
+    background: rgba(0, 242, 255, 0.15) !important;
+    color: var(--accent-secondary) !important;
+    font-weight: 600;
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.15);
+}
+
+/* 🚀 全域分发渠道卡片 (Dispatch Channel Card) */
+.wiz-dispatch-card {
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.2s ease;
+}
+
+.wiz-dispatch-card:hover {
+    border-color: rgba(0, 242, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.wiz-dispatch-card.active {
+    border-color: var(--accent-secondary) !important;
+    background: rgba(0, 242, 255, 0.08) !important;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.12);
 }

@@ -38,7 +38,7 @@
 通过向本项目提交 Pull Request、Issue 或补丁代码，您即表示同意：
 1. 您所提交的代码与文档为您原创，或您拥有合法再授权之权利；
 2. 您授予本项目维护团队对您的贡献内容进行合并、修改、发布以及在双重许可（开源许可与商业许可）模式下进行商业分发的永久性、全球性许可；
-3. 本项目核心代码库默认采用 [PolyForm Noncommercial License 1.0.0](LICENSE)（源码可用、非商业）；商业使用须经版权所有者另行授权，详见 [商业授权说明](COMMERCIAL_LICENSE.md) 与 [EULA](docs/legal/EULA.md)。
+3. 本项目核心开源代码库严格遵循 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。
 
 ## 5. 获取帮助
 
@@ -46,5 +46,5 @@
 
 ---
 > [!TIP]
-> **商业授权说明**：开源版本仅供非商业学习与个人使用。任何用于商业运营、闭源分发或企业级部署的需求，请先参阅 **[商业授权说明 (COMMERCIAL_LICENSE.md)](COMMERCIAL_LICENSE.md)**，或联系核心维护团队获取商业许可（EULA 全文见 [docs/legal/EULA.md](docs/legal/EULA.md)）。
+> **商业授权说明**：开源版本仅供非商业学习与个人使用。任何用于商业运营、闭源分发或企业级部署的需求，请参阅 **[商业最终用户许可协议 (EULA)](./docs/legal/EULA.md)** 或与核心维护团队联系。
 
