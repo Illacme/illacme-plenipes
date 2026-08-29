@@ -308,6 +308,21 @@
     font-size: 0.85rem !important;
 }
 
+/* ⚡ 极速发布预览流水线 步骤说明卡片 (Step Description Cards) 白天亮色模式覆盖 */
+[data-theme="light"] .preview-step-cards-grid > div {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .preview-step-cards-grid > div > div:first-child {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .preview-step-cards-grid > div > div:last-child {
+    color: #475569 !important;
+}
+
 /* 🚀 出版工作台 (Publisher Hub) 白天亮色模式覆盖 */
 [data-theme="light"] #view-overview .command-hub {
     background: rgba(255, 255, 255, 0.96) !important;

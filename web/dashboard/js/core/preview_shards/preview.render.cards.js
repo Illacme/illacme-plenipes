@@ -37,7 +37,7 @@ window.renderPreviewIntroCard = function (activeTheme) {
                 系统将在您的设备本地快速完成原稿排版与站点装配，让您在正式全网发布前<b>完整体验最终上线效果</b>。
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <div class="preview-step-cards-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px;">
                     <div style="color: #00ffaa; font-weight: bold; font-size: 0.84rem; margin-bottom: 4px;">🔍 1. 原稿预检</div>
                     <div style="color: #888; font-size: 0.76rem;">扫描原稿文库，检查图片、双向链接完整性与合规性。</div>
