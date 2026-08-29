@@ -10,6 +10,7 @@ from rich.align import Align
 from rich.text import Text
 from core.utils.tracing import tlog
 from core.config.constants import CONFIG_LOCAL_NAME
+from core import __version__
 
 console = Console()
 
@@ -90,7 +91,7 @@ class StatusHandlers:
         """🚀 [V52.20] 极速 Banner 展示：用于系统自举初期"""
         # 硬编码或从简易配置文件读取，确保 Banner 优先于任何模块加载
         StatusHandlers.handle_banner(
-            version="V24.0",
+            version=f"V{__version__}",
             ael_iter_id="V50.3_Final",
             mode="物理火力: 8 核同步",
             sentinel_status=f"双向热监听 (config.yaml + {CONFIG_LOCAL_NAME})"
