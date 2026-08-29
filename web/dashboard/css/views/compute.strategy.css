@@ -486,10 +486,47 @@
 
 
 /* 🌞 [PATCH] Compute Strategy 白天模式浅色卡片（修复调度策略卡片白天深色） */
-[data-theme="light"] #view-compute .strategy-item {
-    background: rgba(255,255,255,0.65);
-    border: 1px solid rgba(15,23,42,0.08);
+/* 旧 PATCH 误用 .strategy-item（不存在）；以下覆盖真实存在的容器。 */
+/* 真根因：.binding-terminal 用 var(--bg-card-rgb, 15, 23, 42)，但 --bg-card-rgb 未定义，fallback 永远是深蓝灰 */
+[data-theme="light"] #view-compute .strategy-command-deck {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
 }
-[data-theme="light"] #view-compute .strategy-item:hover {
-    background: rgba(255,255,255,0.85);
+[data-theme="light"] #view-compute .binding-terminal {
+    background: rgba(248, 250, 252, 0.90) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+}
+[data-theme="light"] #view-compute .binding-terminal.primary {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.10), rgba(255, 255, 255, 0.90)) !important;
+    border-color: rgba(124, 58, 237, 0.30) !important;
+}
+[data-theme="light"] #view-compute .binding-terminal.fallback {
+    background: linear-gradient(145deg, rgba(0, 242, 255, 0.12), rgba(255, 255, 255, 0.90)) !important;
+    border-color: rgba(0, 242, 255, 0.30) !important;
+}
+[data-theme="light"] #view-compute .binding-terminal:hover,
+[data-theme="light"] #view-compute .binding-terminal:focus-within {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10) !important;
+}
+[data-theme="light"] #view-compute .concurrency-guide-deck {
+    background: rgba(0, 242, 254, 0.06) !important;
+    border-color: rgba(0, 242, 254, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+[data-theme="light"] #view-compute .guide-step-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #view-compute .terminal-select,
+[data-theme="light"] #view-compute .terminal-input {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #view-compute .terminal-select:focus,
+[data-theme="light"] #view-compute .terminal-input:focus {
+    background: rgba(255, 255, 255, 1) !important;
+    border-color: var(--accent-secondary) !important;
 }

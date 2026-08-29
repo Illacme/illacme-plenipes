@@ -606,6 +606,31 @@
 }
 
 
+/* 🌞 [PATCH] 社交媒体分发抽屉（.syndicate-drawer-overlay）白天模式适配
+   根因：syndicate.render.js:117 用 inline style.cssText 硬编码 background: rgba(15,17,26,0.96) 深蓝黑，
+   对白天/深色一视同仁，CSS 需 !important 才能压过 inline style。 */
+[data-theme="light"] .syndicate-drawer-overlay {
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: -10px 0 35px rgba(15, 23, 42, 0.15) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .syndicate-drawer-overlay h3 {
+    color: var(--accent-primary, #00f2fe) !important;
+}
+/* 抽屉内的目标原稿盒 */
+[data-theme="light"] .syndicate-drawer-overlay div[style*="background: rgba(255, 255, 255, 0.03)"] {
+    background: rgba(15, 23, 42, 0.04) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+}
+/* 抽屉内的"暂无已就绪渠道"等状态色保持主题感知，不反转 */
+[data-theme="light"] #syndicate-channel-status-badge {
+    opacity: 0.95;
+}
+/* 底部"实时广播卡片视觉预览"外层保持浅色，但内部子组件用 inline 已自适配，无需额外改 */
+[data-theme="light"] #article-syndicate-drawer-backdrop {
+    background: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(2px) !important;
+}
 
 
 
