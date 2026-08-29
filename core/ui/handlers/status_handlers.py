@@ -10,7 +10,7 @@ from rich.align import Align
 from rich.text import Text
 from core.utils.tracing import tlog
 from core.config.constants import CONFIG_LOCAL_NAME
-from core import __version__
+from core import __version__, __edition__
 
 console = Console()
 
@@ -18,7 +18,7 @@ class StatusHandlers:
     """🚀 [V48.3] 终端基础状态渲染器"""
     
     @classmethod
-    def handle_banner(cls, version, ael_iter_id, mode, sentinel_status=None):
+    def handle_banner(cls, version, edition, mode, sentinel_status=None):
         """🚀 [V35.0] 品牌化 ASCII Banner：全球私人出版社专属视觉"""
         console.clear()
         from rich.table import Table
@@ -48,7 +48,7 @@ class StatusHandlers:
         table.add_column("value", justify="left")
 
         table.add_row(" 🛰️  Release", ":", f"[bold cyan]{version}[/]")
-        table.add_row(" 📜  Edition", ":", f"[italic grey]{ael_iter_id}[/]")
+        table.add_row(" 📜  Edition", ":", f"[italic grey]{edition}[/]")
         table.add_row(" ⚙️  Press Power", ":", f"[bold green]{mode}[/]")
         
         if sentinel_status:
@@ -92,7 +92,7 @@ class StatusHandlers:
         # 硬编码或从简易配置文件读取，确保 Banner 优先于任何模块加载
         StatusHandlers.handle_banner(
             version=f"V{__version__}",
-            ael_iter_id="V50.3_Final",
+            edition=__edition__,
             mode="物理火力: 8 核同步",
             sentinel_status=f"双向热监听 (config.yaml + {CONFIG_LOCAL_NAME})"
         )

@@ -53,7 +53,7 @@ class UIMediator:
         else:
             from core.ui.handlers.status_handlers import StatusHandlers
             if not cls._banner_shown:
-                StatusHandlers.handle_banner(kwargs.get('version'), kwargs.get('ael_iter_id'), kwargs.get('mode'), kwargs.get('sentinel_status'))
+                StatusHandlers.handle_banner(kwargs.get('version'), kwargs.get('edition'), kwargs.get('mode'), kwargs.get('sentinel_status'))
                 cls._banner_shown = True
 
     @classmethod
