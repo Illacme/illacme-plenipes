@@ -23,7 +23,7 @@ Illacme Plenipes 是一款为高端创作者、机构及极客打造的**高维�
 
 ```bash
 # 1. 克隆并进入
-git clone https://github.com/your-username/illacme-plenipes.git
+git clone https://github.com/Illacme/illacme-plenipes.git
 cd illacme-plenipes
 
 # 2. 一键点火（进入交互式主权引导）

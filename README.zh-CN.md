@@ -59,7 +59,7 @@ python3 plenipes.py --watch
 
 *   **[Manuscript Vault](./core/)**：支撑海量文稿的高性能调度内核。
 *   **[The Matrix](./core/adapters/)**：支持 Cloudflare, DeepSeek, Webhook 等全渠道发行适配。
-*   **[Command Center](./dashboard/)**：全息可视化看板，掌控您的出版疆域。
+*   **[Command Center](./web/dashboard/)**：全息可视化看板，掌控您的出版疆域。
 
 ---
 
