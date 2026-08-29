@@ -440,24 +440,24 @@
 }
 [data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
     color: var(--text-muted) !important;
-    background: var(--white-03) !important;
+    background: rgba(255,255,255,0.03) !important;
     border: 1px solid var(--white-08) !important;
 }
 [data-theme="light"] .dispatch-hub-panel .lab-status-row .t-label {
     color: var(--text-muted) !important;
 }
 [data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
-    background: var(--white-05) !important;
+    background: rgba(255,255,255,0.05) !important;
     color: var(--text-muted) !important;
     border: 1px solid var(--white-08) !important;
 }
 [data-theme="light"] .dispatch-hub-panel .locale-code-badge {
     color: var(--text-muted) !important;
-    background: var(--white-05) !important;
+    background: rgba(255,255,255,0.05) !important;
     border: 1px solid var(--white-08) !important;
 }
 [data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
-    background: var(--white-10) !important;
+    background: rgba(255,255,255,0.10) !important;
 }
 [data-theme="light"] .dispatch-hub-panel .drawer-body {
     scrollbar-color: var(--white-10) transparent !important;
@@ -467,7 +467,7 @@
 }
 [data-theme="light"] .dispatch-hub-panel .lab-box {
     border: 1px dashed var(--white-15) !important;
-    background: var(--white-01) !important;
+    background: rgba(255,255,255,0.01) !important;
 }
 
 /* 🏷️ 目标语种卡片底部绝对定位的下边线进度条 */
@@ -540,3 +540,41 @@
 
 
 
+
+
+/* 🌞 [PATCH] Dispatch Hub 白天主题浅色叠层（修复白天模式背景深色问题） */
+/* 由于 --white-NN 在白天主题下反转为黑色透明（rgba(0,0,0,0.NN)）， */
+/* 叠加在浅白玻璃上反而糊一层黑。在 light 主题下用绝对不反转的白色透明叠层。 */
+[data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.40) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item {
+    background: rgba(255,255,255,0.55) !important;
+    border: 1px solid rgba(15,23,42,0.08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
+    background: rgba(255,255,255,0.75) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .t-pod {
+    background: rgba(241,245,249,0.70) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .audit-badge {
+    background: rgba(241,245,249,0.80) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .hub-btn {
+    background: rgba(255,255,255,0.60) !important;
+    border: 1px solid rgba(15,23,42,0.10) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .dispatch-hub-panel .lab-box {
+    background: rgba(255,255,255,0.65) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
+    background: rgba(255,255,255,0.75) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
+    background: rgba(255,255,255,0.80) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .locale-code-badge {
+    background: rgba(255,255,255,0.80) !important;
+}
