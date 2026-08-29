@@ -1,7 +1,7 @@
 # 🏛️ Illacme Plenipes: 全球私人出版社 (Global Private Press)
 ## 您的主权化全球出版发行中心 (Sovereign Global Publishing & Distribution Center)
 
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 [![Version: V50.3](https://img.shields.io/badge/Version-V50.3--Sovereign-8b5cf6.svg)]()
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Agents-3b82f6.svg)]()
 
@@ -46,10 +46,10 @@ graph TD
 
 ## 📜 治理协议与商业许可 (Governance & Commercial Licensing)
 
-- **开源非商业许可**：开源版本采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 协议，仅供个人学习与非商业研究。
-- **商业授权 (Commercial EULA)**：企业或商业化部署请参阅 [商业最终用户许可协议 (EULA)](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/EULA.md)。
-- **数据主权承诺**：请参阅 [数据主权与内容所有权协议](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/DATA_SOVEREIGNTY.md)。
-- **免责与第三方声明**：请参阅 [第三方凭据免责声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_DISCLAIMER.md) 与 [第三方开源致谢](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_NOTICES.md)。
+- **开源非商业许可**：开源版本采用 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 协议，仅供个人学习与非商业研究。
+- **商业授权 (Commercial EULA)**：企业或商业化部署须取得版权所有者书面授权，详见 [商业授权说明](./COMMERCIAL_LICENSE.md) 与 [商业最终用户许可协议 (EULA)](./docs/legal/EULA.md)（联系：wqbyc@msn.com）。
+- **数据主权承诺**：请参阅 [数据主权与内容所有权协议](./docs/legal/DATA_SOVEREIGNTY.md)。
+- **免责与第三方声明**：请参阅 [第三方凭据免责声明](./docs/legal/THIRD_PARTY_DISCLAIMER.md) 与 [第三方开源致谢](./docs/legal/THIRD_PARTY_NOTICES.md)。
 
 ---
 

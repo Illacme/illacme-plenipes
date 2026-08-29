@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-v11.2--sovereign-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | 🇬🇧 English
 
@@ -65,9 +65,9 @@ python3 plenipes.py --watch
 
 ### 📜 治理协议与商业许可 / License & Legal
 
-- **开源非商业许可**：开源版本采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议，供个人创作与学术研究免费使用。
-- **商业授权 (Commercial EULA)**：任何用于商业运营、付费分发或企业部署的场景，请参阅 **[最终用户许可协议 (EULA)](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/EULA.md)**。
-- **数据主权保障**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/DATA_SOVEREIGNTY.md)**。
-- **免责声明与隐私政策**：详见 **[第三方凭据与 AI 内容免责声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[隐私与遥测声明](file:///Volumes/Notebook/omni-hub/illacme-plenipes/docs/legal/PRIVACY_POLICY.md)**。
+- **开源非商业许可**：开源版本采用 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 协议，供个人创作与学术研究等非商业用途免费使用。
+- **商业授权 (Commercial EULA)**：任何用于商业运营、付费分发或企业部署的场景，须取得版权所有者书面授权，详见 **[商业授权说明](./COMMERCIAL_LICENSE.md)** 与 **[最终用户许可协议 (EULA)](./docs/legal/EULA.md)**（联系：wqbyc@msn.com）。
+- **数据主权保障**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](./docs/legal/DATA_SOVEREIGNTY.md)**。
+- **免责声明与隐私政策**：详见 **[第三方凭据与 AI 内容免责声明](./docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[隐私与遥测声明](./docs/legal/PRIVACY_POLICY.md)**。
 
 🛡️ *Illacme-plenipes - 让主权照耀创作，让版图横跨全球。*

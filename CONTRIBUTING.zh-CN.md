@@ -38,7 +38,7 @@
 通过向本项目提交 Pull Request、Issue 或补丁代码，您即表示同意：
 1. 您所提交的代码与文档为您原创，或您拥有合法再授权之权利；
 2. 您授予本项目维护团队对您的贡献内容进行合并、修改、发布以及在双重许可（开源许可与商业许可）模式下进行商业分发的永久性、全球性许可；
-3. 本项目核心开源代码库严格遵循 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议。
+3. 本项目核心开源代码库严格遵循 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 协议。
 
 ## 5. 获取帮助
 
