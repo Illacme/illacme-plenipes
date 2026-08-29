@@ -14,6 +14,7 @@ import hmac
 import json
 import base64
 import time
+from core import __version__
 import binascii
 from typing import Dict, Tuple, Optional
 from core.utils.tracing import tlog
@@ -285,7 +286,7 @@ class LicenseGuard:
         tier_name = tier_names.get(tier, "高级专业版")
 
         return {
-            "version": "v11.2",
+            "version": f"v{__version__}",
             "is_licensed": effective_licensed,
             "is_default_imprint": is_default_pro,
             "fingerprint": fingerprint,
