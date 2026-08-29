@@ -2,6 +2,32 @@
 
 本文件记录了 Illacme-plenipes 引擎从初版至今的所有重大演进。
 
+> **版本号对齐说明（2026-08-30）**：自本条目起，CHANGELOG 版本号与引擎全局版本真理源 `core/__init__.py::__version__`（即终端启动横幅显示的版本）保持一致，历史条目保留原始编号不作改写。
+
+## [v50.3-Industrial-Sovereignty] - 2026-08-30
+自 v6.4.0（2026-06-05）以来累计 **246 次提交**，本条目按主题域汇总至引擎全局版本 v50.3（工业主权版，Production-Ready）。
+
+### 🛡️ 主权治理与商业许可（Governance & Licensing）
+- **PolyForm Noncommercial 1.0.0 双重许可落地**：`LICENSE` / `COMMERCIAL_LICENSE.md` / `docs/legal/EULA.md` 三层协议体系收口；README 与 CONTRIBUTING 许可文案统一并修复本机绝对路径死链；商业授权联系通道固化。
+- **治理中心体验重构 [V66.5-V66.7]**：高级专业版/免费社区版准入勋章重构、授权状态 Pulse 探针动画、许可证激活/解绑 API 修复与防御性类型解包。
+- **LMStudio 本地算力对准防护矩阵**：本地算力节点与授权准入状态联动防护。
+- **主权账本物理隔离 [V50.5]**：审计账本强制锚定品牌领土（`imprints/<id>/metadata/core/audit.db`）；解除遗留运行时账本的仓库跟踪，运行时数据不再进版本库。
+- **治理工具链容错**：豁免加载器依赖（PyYAML）在钩子环境落位，300 行红线豁免白名单恢复正常解析（56 文件）。
+
+### ⚡ AI Copilot 与思维链（Copilot & CoT）
+- **「⚡ 流式极速」开关 [V77.3]**：流式推理全链路物理校验与后端 Payload 穿透。
+- **思维链 CoT 精准适配 [V77.2/V77.4]**：Qwen 内置思考流式伪解构打字机分流；LM Studio reasoning 参数精准隔离（非 o1/o3 模型仅下发 `on/off`）；不支持 CoT 的模型物理置灰与强制关停。
+
+### 📝 翻译校对工作台（Review Workbench）
+- **单段细粒度 AI 重译**：段落级重译 API 与 UI 控件实装。
+- **Review Drawer 升级**：元数据净化、块级行完整性保护；预览内 wiki/markdown 链接交互式文档切换；既有译文润色不再回退覆盖源文。
+
+### 🛰️ 发行矩阵与指挥中心 UI（Matrix & Dashboard）
+- **30+ 渠道生态扩展**：社媒渠道矩阵扩展、主权主题与紧凑 UI，多分段 i18n 预备。
+- **命令面板增强**：Cmd+P / Cmd+K 全子页导航、toast 集成与自愈动作。
+- **商用级微交互**：toast 微交互、响应式网格、自愈错误边界、主题卡片画廊 1:1 竖向预览。
+- **白天模式缺陷修复**：社交媒体分发抽屉与算力调度策略卡片白天深色背景修复；分发抽屉语种选择按钮 active 态在 dark/light 双主题恢复（浏览器实地验证）。
+
 ## [v6.4.0-Tower] - 2026-06-05
 ### 🚀 总编室控制塔可视化面板（阶段四）
 - **实时指标 REST API 封装**：在 `services/api/routes/gov` 中实现了 `/api/governance/pulse` REST 端点及底层安全加载逻辑，强制进行了 API Token 验证与主权数据隔离。

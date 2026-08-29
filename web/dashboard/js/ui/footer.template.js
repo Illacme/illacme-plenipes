@@ -57,7 +57,7 @@ window.ensureMainFooterMounted = function () {
                     <span id="ws-status" class="status-val online">CONNECTED</span>
                 </div>
             </div>
-            <div class="version-tag tiny">V74.0_STABLE</div>
+            <div class="version-tag tiny">v50.3_STABLE</div>
             <select id="theme-mode-select"
                 style="margin-left: 10px; font-size: 0.65rem; padding: 2px 24px 2px 8px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--white-05); color: var(--text-bright); outline: none; cursor: pointer; transition: all 0.3s;"
                 onchange="if(window.ThemeModeManager) ThemeModeManager.applySetting(this.value)" title="Theme Mode">
