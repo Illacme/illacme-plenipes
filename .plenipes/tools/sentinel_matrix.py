@@ -12,7 +12,9 @@ import hashlib
 
 # --- 治理红线配置 ---
 REDLINE_MAX_LINES = 300  # 🚀 [V5.4] 治理终极闭环版
-GENE_PATTERN = r'🚀\s*\[V\d+\.\d+\]'  # 基因标记正则
+# 基因标记正则(多 emoji 语义体系: 🚀核心/🛡️治理/🕹️交互/🔗拆分/⚓锚点)
+# 采用 Unicode 转义以正确处理带变体选择符(FE0F)的 emoji，避免字符类匹配偏移。
+GENE_PATTERN = r'(?:\U0001F680|\U0001F6E1\uFE0F?|\U0001F579\uFE0F?|\U0001F517|\u2693\uFE0F?)\s*\[V\d+\.\d+\]'
 DEPENDENCY_FILES = ['requirements.txt', 'package.json']
 
 # 历史遗留且当前正在演进中的超限大文件豁免白名单 — 统一从 YAML 单一真相源加载
@@ -63,34 +65,38 @@ def audit_file_redlines(files):
     return not failed
 
 def audit_gene_traceability(files):
-    """审计基因标记是否被非预期删除"""
-    print("🔍 [审计阶段] 基因溯源审计 (🚀 标记维护)...")
+    """审计基因标记完整性 (项目采用多 emoji 基因体系: 核心/治理/交互/拆分/锚点)
+
+    演进说明：原实现仅靠 diff 删除行比对单一标记，会把 emoji 体系演进、
+    版本号升级、文件重命名(拆分)误判为基因阉割。现改为：仅对 diff 中删除了
+    基因标记的文件，复检其当前工作树版本是否仍含任一合法基因标记；仍含则放行，
+    完全消失(真阉割)才拦截；文件被删除(重构)则放行。
+    """
+    print("🔍 [审计阶段] 基因溯源审计 (多 emoji 基因体系)...")
     failed = False
     try:
         diff = subprocess.check_output(["git", "diff", "HEAD"], text=True)
-        deleted_genes = re.findall(r'^-.*' + GENE_PATTERN, diff, re.MULTILINE)
-        added_genes = re.findall(r'^\+.*' + GENE_PATTERN, diff, re.MULTILINE)
-        
-        def extract_tags(lines):
-            tags = set()
-            for line in lines:
-                m = re.search(r'🚀\s*\[V\d+\.\d+\]', line)
-                if m:
-                    # Normalize whitespaces inside the tag match
-                    tags.add(re.sub(r'\s+', '', m.group(0)))
-            return tags
-            
-        del_tags = extract_tags(deleted_genes)
-        add_tags = extract_tags(added_genes)
-        actual_deleted = del_tags - add_tags
-        
-        if actual_deleted:
-            print("  ❌ [FAIL] 检测到基因阉割！以下基因标记被非法删除：")
-            for gene in actual_deleted:
-                print(f"    └── {gene}")
-            failed = True
-        else:
-            print("  ✅ [PASS] 基因完整性校验通过")
+        cur = None
+        del_genes = {}
+        for line in diff.splitlines():
+            if line.startswith("diff --git"):
+                cur = line.split(" b/")[-1]
+                del_genes.setdefault(cur, [])
+            elif line.startswith("-") and not line.startswith("---"):
+                for m in re.finditer(GENE_PATTERN, line):
+                    del_genes[cur].append(m.group(0))
+        for f, genes in del_genes.items():
+            if not genes:
+                continue
+            if not os.path.exists(f):
+                continue
+            with open(f, "r", encoding="utf-8", errors="ignore") as fh:
+                content = fh.read()
+            if not re.search(GENE_PATTERN, content):
+                print(f"  ❌ [FAIL] {f}: 基因标记被删除且当前版本未补回任何基因标记")
+                failed = True
+        if not failed:
+            print("  ✅ [PASS] 基因完整性校验通过 (多 emoji 基因体系)")
     except Exception as e:
         print(f"  ⚠️  [跳过] 无法执行基因差分审计: {e}")
     return not failed

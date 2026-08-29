@@ -30,11 +30,11 @@ window.loadComputeCenter = async function(targetTab) {
     navTabsSlot.innerHTML = `
         <div style="display: flex; align-items: center; gap: 24px;">
             <nav class="tactical-tabs">
-                <button class="t-tab active" data-tab="infrastructure" onclick="window.ComputeHandlers.switchComputeTab('infrastructure')">
-                    <span class="t-icon">🧱</span> 算力单元
-                </button>
-                <button class="t-tab" data-tab="strategy" onclick="window.ComputeHandlers.switchComputeTab('strategy')">
+                <button class="t-tab active" data-tab="strategy" onclick="window.ComputeHandlers.switchComputeTab('strategy')">
                     <span class="t-icon">⚖️</span> 调度策略
+                </button>
+                <button class="t-tab" data-tab="infrastructure" onclick="window.ComputeHandlers.switchComputeTab('infrastructure')">
+                    <span class="t-icon">🧱</span> 算力单元
                 </button>
             </nav>
             <div id="compute-strategy-badge-slot">
@@ -96,7 +96,11 @@ window.loadComputeCenter = async function(targetTab) {
         </div>
     `;
 
-    // 默认启动指定子选项卡视图，兜底使用基础架构视图
-    const activeTab = targetTab || 'infrastructure';
+    // 默认启动指定子选项卡视图，优先读取用户上次激活记忆（含 localStorage），兜底使用调度策略视图
+    let savedTab = null;
+    try {
+        savedTab = localStorage.getItem('illacme_plenipes_current_compute_tab');
+    } catch (e) {}
+    const activeTab = targetTab || window.currentActiveComputeTab || savedTab || 'strategy';
     await window.ComputeHandlers.switchComputeTab(activeTab);
 };

@@ -71,6 +71,8 @@ window.buildPluginConfigFormHtml = (p) => {
     } else if (p.category === 'image_hosting') {
         const cfg = window.settingsData?.image_hosting?.[id] || {};
         html += `<div class="settings-grid">${window.renderImageHostingConfig ? window.renderImageHostingConfig(id, cfg) : renderImageHostingConfig(id, cfg)}</div>`;
+    } else if (p.category === 'protocol') {
+        html += `<div class="settings-grid">${window.renderAIProtocolConfig ? window.renderAIProtocolConfig(id, p) : rawRenderAIProtocolConfig(id, p)}</div>`;
     } else if (p.category === 'theme') {
         const schema = p.schema || {};
         const properties = schema.properties || {};

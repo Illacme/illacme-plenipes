@@ -10,6 +10,7 @@ Illacme-plenipes - 治理豁免白名单加载器 🚀 [V5.4]
   效果：所有超标文件都将被拦截（安全方向），而非全部放行。
 """
 import os
+import re
 
 
 def _locate_project_root():
@@ -43,11 +44,41 @@ def load_redline_exemptions():
         return set()
 
     try:
-        import yaml
+        import yaml  # 首选：精确解析
         with open(yaml_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         entries = data.get("redline_exempt_files", []) if data else []
         return set(entries)
     except Exception as e:
-        print(f"  ⚠️  [豁免加载器] YAML 解析失败: {e}，豁免白名单降级为空集合。")
-        return set()
+        # PyYAML 在钩子运行环境可能缺失或 YAML 解析异常：
+        # 降级为内置极简解析器，确保红线豁免白名单仍可被加载（不降级为空集）。
+        print(f"  ⚠️  [豁免加载器] PyYAML 不可用/解析失败 ({e})，启用内置降级解析器。")
+        return _fallback_load_redline_exemptions(yaml_path)
+
+
+def _fallback_load_redline_exemptions(yaml_path):
+    """极简 YAML 降级解析：仅支持本项目豁免文件结构
+
+    支持的语法：
+      - 顶层块列表键   key:
+      - 列表项         - value
+      - # 注释与空行忽略
+    当 PyYAML 不可用时（如 pre-commit 钩子的 python 环境）保证豁免白名单仍生效，
+    而非安全一侧失败成空集导致所有超标文件被误拦截。
+    """
+    result = {}
+    current_key = None
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.split("#", 1)[0].rstrip()  # 去除行内注释
+            if not line.strip():
+                continue
+            key_m = re.match(r"^([A-Za-z0-9_-]+):\s*$", line)
+            if key_m:
+                current_key = key_m.group(1)
+                result.setdefault(current_key, [])
+                continue
+            item_m = re.match(r"^\s*-\s+(.+?)\s*$", line)
+            if item_m and current_key is not None:
+                result[current_key].append(item_m.group(1))
+    return set(result.get("redline_exempt_files", []))

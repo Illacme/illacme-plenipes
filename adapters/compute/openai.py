@@ -50,10 +50,15 @@ class OpenAICompatibleTranslator(BaseTranslator):
         if api_key and api_key not in ["not-needed", "none", "empty"]:
             headers["Authorization"] = f"Bearer {api_key}"
             
+        proxies = self.get_proxy_dict()
+        timeout = self.get_network_timeout(default=15.0)
+
         try:
             import asyncio
             loop = asyncio.get_event_loop()
-            resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+            def _fetch():
+                return self._session.get(url, headers=headers, proxies=proxies, timeout=timeout)
+            resp = await loop.run_in_executor(None, _fetch)
             if resp.status_code == 200:
                 data = resp.json()
                 # 🚀 [V53.8] 强健的模型解析逻辑：支持列表直接返回或 data/models 嵌套

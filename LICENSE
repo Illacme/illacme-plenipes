@@ -1,17 +1,43 @@
-Creative Commons Attribution-NonCommercial 4.0 International Public License
+Required Notice: Copyright 2026 <版权所有者姓名/公司> (<你的官网或商业授权联系页>). 商业使用须取得版权所有者的单独书面授权，详见 COMMERCIAL_LICENSE.md。
 
-By exercising the Licensed Rights (defined below), You accept and agree to be bound by the terms and conditions of this Creative Commons Attribution-NonCommercial 4.0 International Public License ("Public License"). To the extent this Public License may be interpreted as a contract, You are granted the Licensed Rights in consideration of Your acceptance of these terms and conditions, and the Licensor grants You such rights in consideration of benefits the Licensor receives from making the Licensed Material available under these terms and conditions.
+PolyForm Noncommercial License 1.0.0
 
-This is a human-readable summary of (and not a substitute for) the license.
-You are free to:
-- Share — copy and redistribute the material in any medium or format
-- Adapt — remix, transform, and build upon the material
+This is the PolyForm Noncommercial License 1.0.0, a license for software source code.
+The full text and latest version are available at:
+https://polyformproject.org/licenses/noncommercial/1.0.0
 
-Under the following terms:
-- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
-- NonCommercial — You may not use the material for commercial purposes.
+Terms & Conditions
 
-No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+1. Definitions
+"Copyright License" means a license under copyright to do any of the following with source code: the right to reproduce, prepare derivative works of, publicly display, publicly perform, and distribute the work.
+"Covered Work" means the work of authorship made available under this License.
+"Developer" means any person or entity that makes a Covered Work available under this License.
+"Noncommercial" means not primarily intended for or directed towards commercial advantage or monetary compensation. For the purposes of this License, research by a commercial entity is noncommercial if it is not intended for commercial advantage or monetary compensation.
+"Patent License" means a license under any patent to do any of the following with source code: make, use, offer to sell, sell, import, and transfer the work.
+"You" means any person or entity exercising permissions under this License.
 
-For the full legal code of this license, please visit:
-https://creativecommons.org/licenses/by-nc/4.0/legalcode
+2. Grant of Copyright License
+Subject to the terms and conditions of this License, the Developer hereby grants to You a worldwide, non-exclusive, no-charge, royalty-free, irrevocable Copyright License to reproduce, prepare derivative works of, publicly display, publicly perform, and distribute the Covered Work, provided that Your exercise of the Copyright License is Noncommercial.
+
+3. Grant of Patent License
+Subject to the terms and conditions of this License, the Developer hereby grants to You a worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) Patent License to make, use, offer to sell, sell, import, and transfer the Covered Work, provided that Your exercise of the Patent License is Noncommercial. This Patent License does not apply to any patent claims that are not infringed by the Covered Work as made available under this License. If You, directly or indirectly via an agent, institute patent litigation against any person or entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Covered Work infringes a patent, then any Patent License granted to You under this License for the Covered Work shall terminate as of the date such litigation is filed.
+
+4. Conditions
+Your exercise of either the Copyright License or the Patent License is expressly conditioned on Your compliance with all of the following:
+You must give any other recipients of the Covered Work a copy of this License.
+You must cause any modified files to carry prominent notices stating that You changed the files.
+You must retain, in the Source form of the Covered Work that You distribute, all copyright, patent, trademark, and attribution notices from the Source form of the Covered Work, excluding those notices that do not pertain to any part of the Covered Work after modification.
+You must make reasonable efforts to ensure that any modified version of the Covered Work is made available to the Developer prior to distribution, or, if the Developer has designated a specific location for making such versions available, at that location.
+
+5. Limitations
+Neither the Copyright License nor the Patent License applies to any combination of the Covered Work with other software or other materials that You distribute, unless the combination is also Noncommercial.
+This License does not grant any rights in the names, trademarks, service marks, or logos of the Developer, except as required for reasonable and customary use in describing the origin of the Covered Work.
+
+6. Term
+This License applies for the term of the copyright and patent licenses granted here. However, if You fail to comply with this License, then Your rights under this License terminate automatically.
+
+7. Disclaimer of Warranty and Limitation of Liability
+THE COVERED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE DEVELOPER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE COVERED WORK OR THE USE OR OTHER DEALINGS IN THE COVERED WORK.
+
+8. Interpretation
+This License shall be construed as limiting no other permission or license that You may have, or that may otherwise be available to You, for the Covered Work. If any term of this License is held to be invalid or unenforceable, that term shall be modified to the minimum extent necessary to make it valid and enforceable, and the remaining terms of this License shall continue in full force and effect.

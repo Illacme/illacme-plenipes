@@ -78,11 +78,13 @@
     4.  `43213`（🌐 本地预览端口）：分发同步演练完成后，内嵌的静态预览服务启动的监听端口。
 *   **开发约束**：调试或拉起服务时必须严格区分单例锁端口 (`43210`) 与实际 HTTP 网络服务端口 (如 `43212`)，不得将其混淆或硬编码错误端口。
 
-## 7. 前端变更强制 node -c 语法静态自检规则 (Frontend Code Syntax Compilation Gate Rules)
-*   **适用场景**：所有对 `web/dashboard/js/*.js` 前端 JavaScript 代码文件、DOM 模版进行修改的 AI 助手与自动化脚本。
-*   **物理约束**：
-    1. 凡是修改了任何前端 `.js` 文件，在完成代码替换后，**必须强制自动运行 `node -c <path_to_file>` 尝试进行 V8 引擎语法静态编译**。
-    2. 若 `node -c` 抛出 `SyntaxError`（如括号未闭合、语法错位、大写 False/True 拼写错误），必须拦截并物理修正，直至编译 exit code 归零。
+## 7. 前端变更沙箱真实执行与 DOM 拓扑完备性铁律 (Frontend Code Syntax, Runtime Sandboxing & DOM Parity Rules)
+*   **适用场景**：所有对 `web/dashboard/js/*.js` 前端 JavaScript 代码文件、DOM 模版、卡片及组件渲染函数进行修改的 AI 助手与自动化脚本。
+*   **物理约束与硬性门禁**：
+    1. **V8 静态编译门禁**：凡是修改了任何前端 `.js` 文件，在完成代码替换后，**必须强制运行 `node -c <path_to_file>` 进行 V8 引擎语法静态编译**，严禁遗留括号未闭合或词法错位。
+    2. **Node.js 真实运行沙箱门禁 (拦截 ReferenceError)**：严禁仅依赖 `node -c`（静态编译无法检查未声明变量）。凡修改了 `render*` / `build*Html` 等核心渲染函数，**必须在 Node.js 中注入 Mock 上下文真实调用执行该函数**，确保 0 `ReferenceError` (如未定义变量 `xxx is not defined`) 与 0 `TypeError`。
+    3. **HTML DOM 拓扑与容器结构断言**：执行渲染函数后，必须显式断言生成的 HTML 字符串包含预期的外层主包裹容器（例如 `.node-unit`、`.shield-pod`、`.tactical-tabs` 等），严禁因字符串模板拼接替换导致外层容器丢失或开闭标签残缺。
+    4. **机器自动化回归门禁**：所有核心前端渲染模块必须接入 `tests/test_frontend_render_integrity.py` 自动化测试套件，纳入 `pytest` 每次提交前的全局必跑门禁。
 
 ## 8. 后端数据解包与防御性类型防护规则 (Defensive Unpacking & Type Verification Rules)
 *   **适用场景**：所有涉及从数据库 (SQLite/Redis)、配置文件或外部 API 读取集合与字典的后端 Python 代码。

@@ -46,7 +46,9 @@ class BaiduQianfanTranslator(BaseTranslator):
                 return token
 
         token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}"
-        resp = self._session.post(token_url, headers={'Content-Type': 'application/json'}, timeout=10)
+        timeout = self.get_network_timeout(default=15.0)
+        proxies = self.get_proxy_dict()
+        resp = self._session.post(token_url, headers={'Content-Type': 'application/json'}, timeout=timeout, proxies=proxies)
         resp.raise_for_status()
         data = resp.json()
 

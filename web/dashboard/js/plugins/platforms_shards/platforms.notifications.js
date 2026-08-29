@@ -77,13 +77,15 @@ window.rawRenderNotificationConfig = (id, cfg) => {
                     • <b>Gmail</b>: 主机 <code>smtp.gmail.com</code> | 端口 <code>587</code> (TLS) | 密码为 <b>Google 账户应用专用密码</b>
                 </p>
             </div>
+            ${renderSettingsItem('发信邮箱账号 (User)', `publish_control.webhook_endpoints.${id}.smtp_user`, cfg.smtp_user || "", 'text', { placeholder: "例如: your_name@qq.com", description: "用于登录 SMTP 服务器的邮箱账号。" })}
+            ${renderSettingsItem('授权码 / 邮箱密码 (Password)', `publish_control.webhook_endpoints.${id}.smtp_pass`, cfg.smtp_pass || "", 'password', { placeholder: "邮箱授权码或应用专用密码", description: "建议在邮箱设置中生成独立的第三方客户端授权码。" })}
             ${renderSettingsItem('SMTP 服务器主机 (Host)', `publish_control.webhook_endpoints.${id}.smtp_host`, cfg.smtp_host || "", 'text', { placeholder: "例如: smtp.qq.com / smtp.163.com / smtp.gmail.com", description: "邮件服务商的 SMTP 服务器地址。" })}
             ${renderSettingsItem('SMTP 端口 (Port)', `publish_control.webhook_endpoints.${id}.smtp_port`, cfg.smtp_port || 465, 'number', { placeholder: "465 (SSL) 或 587 (TLS)", description: "通常 SSL 为 465，STARTTLS 为 587，明文为 25。" })}
             ${renderSettingsItem('启用 SSL 加密', `publish_control.webhook_endpoints.${id}.use_ssl`, cfg.use_ssl !== false, 'boolean', { description: "启用后将建立安全的 SSL/TLS 传输通道。" })}
-            ${renderSettingsItem('发信邮箱账号 (User)', `publish_control.webhook_endpoints.${id}.smtp_user`, cfg.smtp_user || "", 'text', { placeholder: "例如: your_name@qq.com", description: "用于登录 SMTP 服务器的邮箱账号。" })}
-            ${renderSettingsItem('授权码 / 邮箱密码 (Password)', `publish_control.webhook_endpoints.${id}.smtp_pass`, cfg.smtp_pass || "", 'password', { placeholder: "邮箱授权码或应用专用密码", description: "建议在邮箱设置中生成独立的第三方客户端授权码。" })}
-            ${renderSettingsItem('发件人显示地址 (Sender)', `publish_control.webhook_endpoints.${id}.sender`, cfg.sender || "", 'text', { placeholder: "例如: noreply@yourdomain.com (留空则同账号)", description: "邮件头部显示的 From 发件人地址。" })}
             ${renderSettingsItem('接收者邮箱列表 (Receivers)', `publish_control.webhook_endpoints.${id}.receivers`, cfg.receivers || "", 'text', { placeholder: "例如: admin@example.com, alerts@domain.com (逗号分隔)", description: "接收出版通知与运维告警的目标邮箱地址。" })}
+            ${window.renderPlatformAdvancedGroup('高级发件人参数', `
+                ${renderSettingsItem('发件人显示地址 (Sender)', `publish_control.webhook_endpoints.${id}.sender`, cfg.sender || "", 'text', { placeholder: "例如: noreply@yourdomain.com (留空则同账号)", description: "邮件头部显示的 From 发件人地址。" })}
+            `)}
         `;
     } else if (cleanId === 'sms' || cleanId.includes('sms')) {
         html += `
@@ -92,12 +94,14 @@ window.rawRenderNotificationConfig = (id, cfg) => {
                 <p style="margin: 4px 0; font-size: 0.82rem; line-height: 1.5; color: var(--text-dim, rgba(255,255,255,0.7));">面向<b>关键出版任务与算力熔断告警</b>：支持阿里云短信、腾讯云短信、Twilio 或自建 HTTP 短信网关直接推送到手机短信。</p>
             </div>
             ${renderSettingsItem('短信服务商 (Provider)', `publish_control.webhook_endpoints.${id}.provider`, cfg.provider || "aliyun", 'select', { options: [{ value: "aliyun", label: "阿里云短信 (Aliyun SMS)" }, { value: "tencent", label: "腾讯云短信 (Tencent SMS)" }, { value: "twilio", label: "Twilio 短信 (Global)" }, { value: "http_gateway", label: "通用 HTTP 短信网关" }], description: "选择您所使用的云短信服务商。" })}
-            ${renderSettingsItem('API 网关端点 (URL)', `publish_control.webhook_endpoints.${id}.api_url`, cfg.api_url || "", 'text', { placeholder: "例如: https://sms.yourdomain.com/send", description: "自建短信网关端点，或第三方云短信 API 代理地址。" })}
             ${renderSettingsItem('AccessKey ID / API Key', `publish_control.webhook_endpoints.${id}.access_key_id`, cfg.access_key_id || "", 'text', { placeholder: "云服务商 AccessKey ID 或 API Key", description: "用于调用短信服务 API 的鉴权公钥/账号。" })}
             ${renderSettingsItem('AccessKey Secret / Auth Token', `publish_control.webhook_endpoints.${id}.access_key_secret`, cfg.access_key_secret || "", 'password', { placeholder: "云服务商 AccessKey Secret 或 Auth Token", description: "用于签名计算的私钥凭据。" })}
+            ${renderSettingsItem('目标手机号列表 (Phones)', `publish_control.webhook_endpoints.${id}.phone_numbers`, cfg.phone_numbers || "", 'text', { placeholder: "例如: +8613800000000, +8613900000000", description: "用于接收紧急告警短信的手机号列表，以逗号分隔。" })}
             ${renderSettingsItem('短信签名 (Sign Name)', `publish_control.webhook_endpoints.${id}.sign_name`, cfg.sign_name || "【极速出版】", 'text', { placeholder: "例如: 【极速出版】", description: "在短信运营商处审核通过的短信签名。" })}
             ${renderSettingsItem('模板代码 (Template Code)', `publish_control.webhook_endpoints.${id}.template_code`, cfg.template_code || "", 'text', { placeholder: "例如: SMS_123456789", description: "在运营商后台申请的短信通知模板 ID。" })}
-            ${renderSettingsItem('目标手机号列表 (Phones)', `publish_control.webhook_endpoints.${id}.phone_numbers`, cfg.phone_numbers || "", 'text', { placeholder: "例如: +8613800000000, +8613900000000", description: "用于接收紧急告警短信的手机号列表，以逗号分隔。" })}
+            ${window.renderPlatformAdvancedGroup('高级网关参数', `
+                ${renderSettingsItem('API 网关端点 (URL)', `publish_control.webhook_endpoints.${id}.api_url`, cfg.api_url || "", 'text', { placeholder: "例如: https://sms.yourdomain.com/send", description: "自建短信网关端点，或第三方云短信 API 代理地址。" })}
+            `)}
         `;
     } else if (cleanId === 'app_push' || cleanId.includes('bark') || cleanId.includes('push')) {
         html += `
@@ -111,19 +115,25 @@ window.rawRenderNotificationConfig = (id, cfg) => {
             </div>
             ${renderSettingsItem('推送平台 (Push Provider)', `publish_control.webhook_endpoints.${id}.push_provider`, cfg.push_provider || "bark", 'select', { options: [{ value: "bark", label: "Bark (iOS 极速推送)" }, { value: "serverchan", label: "Server酱 (微信通知)" }, { value: "gotify", label: "Gotify (私有化服务器)" }, { value: "pushover", label: "Pushover (全平台推送)" }, { value: "custom", label: "自定义 Push 端点" }], description: "选择您所使用的移动端或桌面推送平台。" })}
             ${renderSettingsItem('设备 Key / Token / SendKey', `publish_control.webhook_endpoints.${id}.device_key`, cfg.device_key || "", 'password', { placeholder: "粘贴您的 Bark Key / Server酱 SendKey / Gotify Token", description: "用于投递消息至特定设备或频道的授权密钥。" })}
-            ${renderSettingsItem('自建服务器地址 (Server URL)', `publish_control.webhook_endpoints.${id}.server_url`, cfg.server_url || "", 'text', { placeholder: "留空默认官方云 (例如 Gotify: https://gotify.yourdomain.com)", description: "若使用私有化自建的 Bark / Gotify 服务，请在此填入完整根地址。" })}
-            ${renderSettingsItem('提示音效 (Sound)', `publish_control.webhook_endpoints.${id}.sound`, cfg.sound || "glass", 'select', { options: [{ value: "glass", label: "清脆玻璃 (Glass - 默认)" }, { value: "minuet", label: "优雅小步舞曲 (Minuet)" }, { value: "bell", label: "风铃 (Bell)" }, { value: "alarm", label: "高优先级警报 (Alarm)" }, { value: "silence", label: "静默推送 (Silence)" }], description: "移动设备收到推送时的提示音效（仅支持 Bark / Pushover）。" })}
-            ${renderSettingsItem('消息分组 (Group)', `publish_control.webhook_endpoints.${id}.group`, cfg.group || "Illacme-Plenipes", 'text', { placeholder: "例如: Illacme-Plenipes", description: "iOS 通知中心折叠归类的消息分组名称。" })}
+            ${window.renderPlatformAdvancedGroup('高级自建服务器与音效参数', `
+                ${renderSettingsItem('自建服务器地址 (Server URL)', `publish_control.webhook_endpoints.${id}.server_url`, cfg.server_url || "", 'text', { placeholder: "留空默认官方云 (例如 Gotify: https://gotify.yourdomain.com)", description: "若使用私有化自建的 Bark / Gotify 服务，请在此填入完整根地址。" })}
+                ${renderSettingsItem('提示音效 (Sound)', `publish_control.webhook_endpoints.${id}.sound`, cfg.sound || "glass", 'select', { options: [{ value: "glass", label: "清脆玻璃 (Glass - 默认)" }, { value: "minuet", label: "优雅小步舞曲 (Minuet)" }, { value: "bell", label: "风铃 (Bell)" }, { value: "alarm", label: "高优先级警报 (Alarm)" }, { value: "silence", label: "静默推送 (Silence)" }], description: "移动设备收到推送时的提示音效（仅支持 Bark / Pushover）。" })}
+                ${renderSettingsItem('消息分组 (Group)', `publish_control.webhook_endpoints.${id}.group`, cfg.group || "Illacme-Plenipes", 'text', { placeholder: "例如: Illacme-Plenipes", description: "iOS 通知中心折叠归类的消息分组名称。" })}
+            `)}
         `;
     } else if (cleanId === 'generic_webhook' || cleanId === 'generic' || cleanId.includes('generic')) {
         html += `
             ${renderSettingsItem('物理端点 (URL)', `publish_control.webhook_endpoints.${id}.url`, cfg.url || "", 'text', { placeholder: "例如: https://yourdomain.com/api/v1/webhook", description: "接收系统事件通知的物理 HTTP/HTTPS 接口地址。" })}
-            ${renderSettingsItem('签名校验密钥 (Secret Key)', `publish_control.webhook_endpoints.${id}.secret`, cfg.secret || "", 'password', { placeholder: "防伪造签名 Secret (可选)", description: "可选。填写后系统将在 HTTP 标头中注入带 HMAC-SHA256 签名的凭据。" })}
+            ${window.renderPlatformAdvancedGroup('高级签名密钥', `
+                ${renderSettingsItem('签名校验密钥 (Secret Key)', `publish_control.webhook_endpoints.${id}.secret`, cfg.secret || "", 'password', { placeholder: "防伪造签名 Secret (可选)", description: "可选。填写后系统将在 HTTP 标头中注入带 HMAC-SHA256 签名的凭据。" })}
+            `)}
         `;
     } else if (cleanId === 'webhook_dispatch' || cleanId.includes('dispatch') || cleanId.includes('webhook')) {
         html += `
             ${renderSettingsItem('触发端点 (URL)', `publish_control.webhook_endpoints.${id}.url`, cfg.url || "", 'text', { placeholder: "例如: https://ci.yourdomain.com/hooks/publish-complete", description: "下游 CI/CD、n8n、Make 或 Jenkins 的触发 Webhook URL。" })}
-            ${renderSettingsItem('签名校验密钥 (Secret Key)', `publish_control.webhook_endpoints.${id}.secret`, cfg.secret || "", 'password', { placeholder: "签名 Secret (可选)", description: "可选。用于下游校验信号合规性。" })}
+            ${window.renderPlatformAdvancedGroup('高级签名密钥', `
+                ${renderSettingsItem('签名校验密钥 (Secret Key)', `publish_control.webhook_endpoints.${id}.secret`, cfg.secret || "", 'password', { placeholder: "签名 Secret (可选)", description: "可选。用于下游校验信号合规性。" })}
+            `)}
         `;
     }
 
@@ -152,6 +162,13 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
     const isAllEvents = events.length >= 8 && ['SYNC_SUCCESS', 'SYNC_FAIL', 'SYNC_START', 'SYNDICATION_COMPLETED', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_SUCCESS'].every(k => events.includes(k));
     const isRecommended = !isAlertsOnly && !isAllEvents && events.length === 7 && ['SYNC_SUCCESS', 'SYNC_FAIL', 'SYNDICATION_COMPLETED', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_SUCCESS'].every(k => events.includes(k));
     const activePreset = isAlertsOnly ? 'alerts_only' : (isAllEvents ? 'all' : (isRecommended ? 'recommended' : 'custom'));
+
+    const getEventLabelStyle = (evKey, checked) => {
+        if (!checked) return 'background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.06);';
+        if (evKey === 'COMPLIANCE_BLOCKED') return 'background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.35);';
+        if (evKey.includes('FAIL') || evKey.includes('MELT')) return 'background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.35);';
+        return 'background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.35);';
+    };
 
     return `
         <div class="lifecycle-subscription-card" style="margin-top: 18px; padding: 16px 18px; border-radius: 12px; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08);">
@@ -187,15 +204,15 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
                         📚 文章出版与构建 (Publishing)
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('SYNC_SUCCESS') ? 'var(--neon-cyan, #00f2fe)' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('SYNC_SUCCESS', hasEvent('SYNC_SUCCESS'))}">
                             <input type="checkbox" data-event-key="SYNC_SUCCESS" onchange="window.updateChannelEventSubscription('${id}', 'SYNC_SUCCESS', this.checked, this)" ${hasEvent('SYNC_SUCCESS') ? 'checked' : ''}>
                             <span>✅ 全量出版完成</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('SYNC_FAIL') ? '#ef4444' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('SYNC_FAIL', hasEvent('SYNC_FAIL'))}">
                             <input type="checkbox" data-event-key="SYNC_FAIL" onchange="window.updateChannelEventSubscription('${id}', 'SYNC_FAIL', this.checked, this)" ${hasEvent('SYNC_FAIL') ? 'checked' : ''}>
                             <span>❌ 编译出版失败</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('SYNC_START') ? 'var(--neon-cyan, #00f2fe)' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('SYNC_START', hasEvent('SYNC_START'))}">
                             <input type="checkbox" data-event-key="SYNC_START" onchange="window.updateChannelEventSubscription('${id}', 'SYNC_START', this.checked, this)" ${hasEvent('SYNC_START') ? 'checked' : ''}>
                             <span>🚀 发布流水线启动</span>
                         </label>
@@ -208,11 +225,11 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
                         🌐 跨平台社交分发 (Syndication)
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('SYNDICATION_COMPLETED') ? 'var(--neon-cyan, #00f2fe)' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('SYNDICATION_COMPLETED', hasEvent('SYNDICATION_COMPLETED'))}">
                             <input type="checkbox" data-event-key="SYNDICATION_COMPLETED" onchange="window.updateChannelEventSubscription('${id}', 'SYNDICATION_COMPLETED', this.checked, this)" ${hasEvent('SYNDICATION_COMPLETED') ? 'checked' : ''}>
                             <span>📤 社交全网分发完成</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('SYNDICATION_FAILED') ? '#ef4444' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('SYNDICATION_FAILED', hasEvent('SYNDICATION_FAILED'))}">
                             <input type="checkbox" data-event-key="SYNDICATION_FAILED" onchange="window.updateChannelEventSubscription('${id}', 'SYNDICATION_FAILED', this.checked, this)" ${hasEvent('SYNDICATION_FAILED') ? 'checked' : ''}>
                             <span>⚠️ 渠道分发异常</span>
                         </label>
@@ -225,11 +242,11 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
                         🛡️ 安全合规与算力告警 (Safety & AI Sentinel)
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('AI_MELT') ? '#ef4444' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('AI_MELT', hasEvent('AI_MELT'))}">
                             <input type="checkbox" data-event-key="AI_MELT" onchange="window.updateChannelEventSubscription('${id}', 'AI_MELT', this.checked, this)" ${hasEvent('AI_MELT') ? 'checked' : ''}>
                             <span>⚡ AI 算力熔断 (Token耗尽)</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('COMPLIANCE_BLOCKED') ? '#f59e0b' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('COMPLIANCE_BLOCKED', hasEvent('COMPLIANCE_BLOCKED'))}">
                             <input type="checkbox" data-event-key="COMPLIANCE_BLOCKED" onchange="window.updateChannelEventSubscription('${id}', 'COMPLIANCE_BLOCKED', this.checked, this)" ${hasEvent('COMPLIANCE_BLOCKED') ? 'checked' : ''}>
                             <span>🔒 出版合规与敏感词拦截</span>
                         </label>
@@ -242,11 +259,11 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
                         🚀 云端托管与上线 (Hosting & Deployment)
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('DEPLOY_SUCCESS') ? 'var(--neon-cyan, #00f2fe)' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('DEPLOY_SUCCESS', hasEvent('DEPLOY_SUCCESS'))}">
                             <input type="checkbox" data-event-key="DEPLOY_SUCCESS" onchange="window.updateChannelEventSubscription('${id}', 'DEPLOY_SUCCESS', this.checked, this)" ${hasEvent('DEPLOY_SUCCESS') ? 'checked' : ''}>
                             <span>🌐 全站部署上线成功</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid ${hasEvent('DEPLOY_FAILED') ? '#ef4444' : 'rgba(255,255,255,0.05)'};">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-normal); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s ease; ${getEventLabelStyle('DEPLOY_FAILED', hasEvent('DEPLOY_FAILED'))}">
                             <input type="checkbox" data-event-key="DEPLOY_FAILED" onchange="window.updateChannelEventSubscription('${id}', 'DEPLOY_FAILED', this.checked, this)" ${hasEvent('DEPLOY_FAILED') ? 'checked' : ''}>
                             <span>🚨 云端构建推流失败</span>
                         </label>
@@ -260,22 +277,23 @@ window.renderLifecycleEventsSubscription = (id, cfg, defaultEvents = ['SYNC_SUCC
 // 🚀 [V107.0] 一键应用预设方案 (纯 DOM 丝滑响应，无闪烁，无表单数据丢失)
 window.applyNotificationPreset = (id, presetType) => {
     let targetEvents = [];
-    if (presetType === 'recommended') {
-        targetEvents = ['SYNC_SUCCESS', 'SYNC_FAIL', 'SYNDICATION_COMPLETED', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_SUCCESS'];
-    } else if (presetType === 'alerts_only') {
+    if (presetType === 'alerts_only') {
         targetEvents = ['SYNC_FAIL', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_FAILED'];
     } else if (presetType === 'all') {
         targetEvents = ['SYNC_SUCCESS', 'SYNC_FAIL', 'SYNC_START', 'SYNDICATION_COMPLETED', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_SUCCESS', 'DEPLOY_FAILED'];
+    } else {
+        // 智能推荐
+        targetEvents = ['SYNC_SUCCESS', 'SYNC_FAIL', 'SYNDICATION_COMPLETED', 'SYNDICATION_FAILED', 'AI_MELT', 'COMPLIANCE_BLOCKED', 'DEPLOY_SUCCESS'];
     }
 
-    // 1. 同步全局配置数据
+    // 1. 同步更新全局内存数据模型
     window.settingsData = window.settingsData || {};
     window.settingsData.publish_control = window.settingsData.publish_control || {};
     window.settingsData.publish_control.webhook_endpoints = window.settingsData.publish_control.webhook_endpoints || {};
     window.settingsData.publish_control.webhook_endpoints[id] = window.settingsData.publish_control.webhook_endpoints[id] || {};
     window.settingsData.publish_control.webhook_endpoints[id].events = targetEvents;
 
-    // 2. 毫秒级直接操作 DOM 元素，更新勾选与视觉边框高亮
+    // 2. 毫秒级直接操作 DOM 元素，更新勾选与视觉边框柔和高亮
     const cardEl = document.querySelector('.lifecycle-subscription-card');
     if (cardEl) {
         // 更新所有复选框状态与边框
@@ -285,8 +303,19 @@ window.applyNotificationPreset = (id, presetType) => {
             const isChecked = targetEvents.includes(evKey);
             cb.checked = isChecked;
             if (cb.parentElement) {
-                const isAlert = evKey.includes('FAIL') || evKey.includes('MELT') || evKey.includes('BLOCKED');
-                cb.parentElement.style.borderColor = isChecked ? (isAlert ? '#ef4444' : 'var(--neon-cyan, #00f2fe)') : 'rgba(255,255,255,0.05)';
+                if (!isChecked) {
+                    cb.parentElement.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                    cb.parentElement.style.background = 'rgba(255, 255, 255, 0.015)';
+                } else if (evKey === 'COMPLIANCE_BLOCKED') {
+                    cb.parentElement.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+                    cb.parentElement.style.background = 'rgba(245, 158, 11, 0.06)';
+                } else if (evKey.includes('FAIL') || evKey.includes('MELT')) {
+                    cb.parentElement.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                    cb.parentElement.style.background = 'rgba(239, 68, 68, 0.06)';
+                } else {
+                    cb.parentElement.style.borderColor = 'rgba(0, 242, 254, 0.35)';
+                    cb.parentElement.style.background = 'rgba(0, 242, 254, 0.06)';
+                }
             }
         });
 
@@ -339,8 +368,19 @@ window.updateChannelEventSubscription = (id, eventKey, isChecked, inputEl) => {
     node.events = currentEvents;
 
     if (inputEl && inputEl.parentElement) {
-        const isAlert = eventKey.includes('FAIL') || eventKey.includes('MELT') || eventKey.includes('BLOCKED');
-        inputEl.parentElement.style.borderColor = isChecked ? (isAlert ? '#ef4444' : 'var(--neon-cyan, #00f2fe)') : 'rgba(255,255,255,0.05)';
+        if (!isChecked) {
+            inputEl.parentElement.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+            inputEl.parentElement.style.background = 'rgba(255, 255, 255, 0.015)';
+        } else if (eventKey === 'COMPLIANCE_BLOCKED') {
+            inputEl.parentElement.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+            inputEl.parentElement.style.background = 'rgba(245, 158, 11, 0.06)';
+        } else if (eventKey.includes('FAIL') || eventKey.includes('MELT')) {
+            inputEl.parentElement.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+            inputEl.parentElement.style.background = 'rgba(239, 68, 68, 0.06)';
+        } else {
+            inputEl.parentElement.style.borderColor = 'rgba(0, 242, 254, 0.35)';
+            inputEl.parentElement.style.background = 'rgba(0, 242, 254, 0.06)';
+        }
     }
 
     // 当用户手动点选单个复选框时，重置所有预设按钮为普通透明状态（表示当前处于自定义模式）

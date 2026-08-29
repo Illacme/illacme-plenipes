@@ -91,7 +91,7 @@ window.initWebSocket = () => {
         } else if (data.type === 'REPLAY_EVENTS') {
             console.log(`🔄 [WS] 收到离线重放事件包，共 ${data.events.length} 条事件`);
             (data.events || []).forEach(evt => {
-                routeMessage(evt);
+                routeMessage({ ...evt, _is_replay: true });
             });
         } else {
             routeMessage(data);

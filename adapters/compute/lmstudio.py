@@ -24,7 +24,9 @@ class LMStudioBase(OpenAICompatibleTranslator):
         try:
             url = self.safe_get_url("/models")
             loop = asyncio.get_event_loop()
-            resp = await loop.run_in_executor(None, lambda: requests.get(url, timeout=5))
+            timeout = self.get_network_timeout(default=10.0)
+            proxies = self.get_proxy_dict()
+            resp = await loop.run_in_executor(None, lambda: requests.get(url, proxies=proxies, timeout=timeout))
             if resp.status_code == 200:
                 data = resp.json()
                 return [m['id'] for m in data.get('data', [])]

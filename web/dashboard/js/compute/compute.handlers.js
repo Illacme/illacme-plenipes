@@ -153,6 +153,10 @@ window.ComputeHandlers.filterNodes = function(query) {
  * 🕹️ 视图切换调度 (职责归位)
  */
 window.ComputeHandlers.switchComputeTab = async function(tab) {
+    window.currentActiveComputeTab = tab;
+    try {
+        localStorage.setItem('illacme_plenipes_current_compute_tab', tab);
+    } catch (e) {}
     const container = document.getElementById('compute-tab-viewport');
     if (!container) return;
 
@@ -256,8 +260,7 @@ window.ComputeHandlers.showNotification = function(text, type = 'success') {
 window.probeNode = (id) => window.ComputeHandlers.probeNode(id);
 window.editNode = (id) => window.ComputeHandlers.editNode(id);
 window.switchComputeTab = (tab) => window.ComputeHandlers.switchComputeTab(tab);
-window.showNotification = (text, type) => window.ComputeHandlers.showNotification(text, type);
-window.showAddNodeModal = () => window.ComputeHandlers.showAddNodeModal();
+window.showAddNodeModal = (proto) => window.ComputeHandlers.showAddNodeModal(proto);
 window.probeAllNodes = () => window.ComputeHandlers.probeAllNodes();
 window.filterNodes = (q) => window.ComputeHandlers.filterNodes(q);
 window.saveComputeStrategy = (e) => window.ComputeHandlers.saveComputeStrategy(e);

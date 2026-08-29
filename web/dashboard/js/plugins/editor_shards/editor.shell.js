@@ -100,7 +100,7 @@
             // 🚀 控制底部“🧪 沙盘演练 (测试连接)”按钮的显示与绑定
             const dryRunBtn = document.getElementById('btn-dry-run-plugin');
             if (dryRunBtn) {
-                if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification')) {
+                if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol')) {
                     dryRunBtn.style.display = 'block';
                     dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${id}')`);
                 } else {
@@ -142,8 +142,8 @@
                 if (headerSwitchWrapper) headerSwitchWrapper.style.display = 'none';
             }
 
-            // 🚀 [V105.0] 恢复三步极简向导 Tab Header
-            if (['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category) && p.is_manageable) {
+            // 🚀 [V105.0] 恢复三步/四步极简向导 Tab Header
+            if (['hosting', 'image_hosting', 'publisher', 'notification', 'protocol'].includes(p.category) && p.is_manageable) {
                 if (typeof window.renderPluginStepWizardHeader === 'function') {
                     html += window.renderPluginStepWizardHeader(id, p.category);
                 }
@@ -161,7 +161,7 @@
                 `;
             }
 
-            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification')) {
+            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol')) {
                 html += `
                     <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                         <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
@@ -192,8 +192,8 @@
                 window.initDrawerDirtySensing();
             }
 
-            // 🚀 [V105.0] 物理结构重构：针对具有多步骤向导的插件 (托管, 图床, 出版) 恢复 Step 1 与 Step 2 发光卡片外框
-            if (p.category !== 'notification' && typeof window.groupDrawerFormIntoStepCards === 'function') {
+            // 🚀 [V105.0] 物理结构重构：针对全品类多步骤向导插件恢复 Step 1、Step 2 与 Step 3 步骤大卡片外框
+            if (typeof window.groupDrawerFormIntoStepCards === 'function') {
                 window.groupDrawerFormIntoStepCards(body);
             }
 
@@ -211,14 +211,33 @@
 
                     // 🚀 [V105.0] 输入框 Focus 智能反向联动 Step Wizard
                     input.addEventListener('focus', () => {
-                        const path = input.getAttribute('data-path') || input.name || '';
-                        if (path.includes('token') || path.includes('key') || input.type === 'password') {
+                        const totalSteps = (typeof window.getPluginWizardSteps === 'function') ? window.getPluginWizardSteps(id, p.category).length : 3;
+                        if (input.closest('#wiz-card-step-0')) {
                             if (typeof window.handleWizardStepClick === 'function') {
                                 window.handleWizardStepClick(0, id, p.category);
                             }
-                        } else if (path.includes('repo') || path.includes('bucket') || path.includes('domain') || path.includes('branch') || path.includes('path') || path.includes('url')) {
+                        } else if (input.closest('#wiz-card-step-1')) {
                             if (typeof window.handleWizardStepClick === 'function') {
                                 window.handleWizardStepClick(1, id, p.category);
+                            }
+                        } else if (input.closest('#wiz-card-step-2')) {
+                            if (typeof window.handleWizardStepClick === 'function') {
+                                window.handleWizardStepClick(2, id, p.category);
+                            }
+                        } else {
+                            const path = (input.getAttribute('data-path') || input.name || '').toLowerCase();
+                            if (path.includes('token') || path.includes('key') || path.includes('pass') || path.includes('user') || path.includes('operator') || input.type === 'password') {
+                                if (typeof window.handleWizardStepClick === 'function') {
+                                    window.handleWizardStepClick(0, id, p.category);
+                                }
+                            } else if (path.includes('proxy') || path.includes('prefix') || path.includes('acl') || path.includes('cname') || path.includes('prod')) {
+                                if (typeof window.handleWizardStepClick === 'function') {
+                                    window.handleWizardStepClick(totalSteps === 4 ? 2 : 1, id, p.category);
+                                }
+                            } else {
+                                if (typeof window.handleWizardStepClick === 'function') {
+                                    window.handleWizardStepClick(1, id, p.category);
+                                }
                             }
                         }
                     });

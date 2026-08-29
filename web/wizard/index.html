@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Illacme Plenipes | 出版品牌初始化向导</title>
+    <title>Illacme Plenipes | 出版品牌创建向导</title>
     <style>
         @font-face {
             font-family: 'Inter';
@@ -949,6 +949,12 @@
                     </div>
                 </div>
 
+                <div class="sovereign-memo glass-panel" style="margin-bottom: 15px; padding: 12px 15px; border-left: 3px solid var(--accent); background: rgba(0, 242, 255, 0.03); border-radius: 8px;">
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0; line-height: 1.5;">
+                        💡 <b>可选增强说明</b>：AI 翻译为出版流水线的可选算力。若探测到本机运行的 Ollama 或 LM Studio 将全自动对正；若暂无 API 密钥，可直接点击下方<b>「暂时跳过，稍后配置」</b>，进入系统后随时在控制台【算力中心】进行配置。
+                    </p>
+                </div>
+
                 <div class="toggle-row">
                     <span style="font-size:0.9rem;">启用全球化翻译支持 (AI)</span>
                     <div class="toggle-switch" id="ai-toggle" onclick="toggleAI()"></div>
@@ -957,9 +963,9 @@
                 <div class="ai-config hidden" id="ai-config">
                     <div class="form-group">
                         <label>
-                            算力驱动 (Driver)
+                            算力渠道 (Channel)
                             <span class="concept-hint"
-                                data-tip="选择为您提供 AI 翻译服务的引擎。您可以选择云端 API 或本机运行的开源模型。">驱动是什么？</span>
+                                data-tip="选择为您提供 AI 翻译服务的算力渠道。您可以选择云端 API 或本机运行的开源模型。">渠道是什么？</span>
                         </label>
                         <select id="ai_provider" onchange="updateModels()"></select>
                     </div>
@@ -1570,23 +1576,28 @@
 
             document.getElementById('theme-grid').innerHTML = themes.map(t => {
                 window._theme_metadata[t.id] = { ...t, icon: icons[t.id] || '📦', preview: previews[t.id] || '' };
+                const isDefault = t.id === 'default';
+                const badgeHtml = isDefault ? `<span style="font-size:0.65rem; background:rgba(0, 242, 255, 0.15); color:var(--accent); border:1px solid rgba(0, 242, 255, 0.3); border-radius:4px; padding:1px 6px; font-weight:600;">🌟 官方推荐</span>` : '';
                 return `
                     <div class="selectable-card mini ${t.id === selectedTheme ? 'selected' : ''}" 
                          data-id="${t.id}"
                          onclick="selectTheme('${t.id}')"
                          onmouseover="previewTheme('${t.id}')">
                         <div class="icon">${icons[t.id] || '📦'}</div>
-                        <div class="text-box">
-                            <h4>${t.name}</h4>
+                        <div class="text-box" style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <h4>${t.name}</h4>
+                                ${badgeHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
 
-
-            // 🚀 [V50.0] 强制选中第一个主题（遵从用户“默认选第一个”的最高指令）
-            if (themes.length > 0) {
-                selectTheme(themes[0].id);
+            // 🚀 [开箱推荐] 默认优先选中 Sovereign 主题
+            const defaultTheme = themes.find(t => t.id === 'default') || themes[0];
+            if (defaultTheme) {
+                selectTheme(defaultTheme.id);
             }
         }
 

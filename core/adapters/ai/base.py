@@ -10,7 +10,7 @@ import abc
 import os
 import threading
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from core.utils.event_bus import bus
 from core.logic.ai.model_intelligence import ModelIntelligenceHub
 from .payload_manager import PayloadManager
@@ -47,9 +47,7 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         if (llm_conc == 1 or ai_workers == 1 or getattr(trans_cfg, 'single_mode', False)) and is_local_node:
             max_conc = 1
         self.semaphore = threading.BoundedSemaphore(max_conc)
-        self.timeout = getattr(self.trans_cfg, 'api_timeout', 60.0)
-        if self.config.limits.timeout != 60.0:
-            self.timeout = self.config.limits.timeout
+        self.timeout = self.get_network_timeout(default=60.0)
         self.max_retries = getattr(trans_cfg, 'max_retries', 3)
         self._is_cooling = False
         self._cooling_until = 0.0
@@ -69,8 +67,35 @@ class BaseTranslator(abc.ABC, AITaskMixin):
             from core.runtime.engine_singleton import get_global_engine
             engine = get_global_engine()
             if engine and engine.config and engine.config.system:
-                proxy_url = engine.config.system.global_proxy
+                proxy_url = getattr(engine.config.system, 'global_proxy', None)
         return proxy_url
+
+    def get_proxy_dict(self) -> Optional[Dict[str, str]]:
+        """🛡️ 获取 requests / aiohttp 适用的代理字典字典映射"""
+        p = self.get_proxy()
+        return {"http": p, "https": p} if p else None
+
+    def get_network_timeout(self, default: float = 15.0) -> float:
+        """
+        🚀 [V11.3] 动态对齐治理中心统一网络超时：
+        优先级：节点独立超时 limits.timeout / timeout -> 治理中心 system.network_timeout -> 翻译全局 api_timeout -> 默认兜底。
+        """
+        limits = getattr(self.config, 'limits', None)
+        if limits and hasattr(limits, 'timeout') and limits.timeout and limits.timeout != 60.0:
+            return float(limits.timeout)
+        node_timeout = self.safe_get_config('timeout')
+        if node_timeout:
+            return float(node_timeout)
+        from core.runtime.engine_singleton import get_global_engine
+        engine = get_global_engine()
+        if engine and engine.config and hasattr(engine.config, 'system'):
+            sys_timeout = getattr(engine.config.system, 'network_timeout', None)
+            if sys_timeout:
+                return float(sys_timeout)
+        trans_timeout = getattr(self.trans_cfg, 'api_timeout', None)
+        if trans_timeout:
+            return float(trans_timeout)
+        return default
 
     def safe_get_config(self, key: str, default: Any = None) -> Any:
         """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""

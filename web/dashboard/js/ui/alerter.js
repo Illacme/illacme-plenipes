@@ -137,6 +137,8 @@
         const existing = document.getElementById('active-throttle-alert');
         if (existing) {
             window.dismissDynamicAlert(existing);
+            return true;
         }
+        return false;
     };
 })();

@@ -17,28 +17,19 @@
         'ar': { name: 'العربية (AR)', icon: '🇸🇦' }
     };
 
-    // 2. 🚀 物理分发平台元数据矩阵
-    window.platformMetadata = window.platformMetadata || {
-        'xiaohongshu': { name: '小红书', icon: '📕', desc: '小红书图文笔记与热门话题' },
-        'red': { name: '小红书', icon: '📕', desc: '小红书图文笔记与热门话题' },
-        'toutiao': { name: '今日头条', icon: '⚡', desc: '今日头条（头条号）全网算法推荐' },
-        'csdn': { name: 'CSDN 博客', icon: '📑', desc: 'CSDN 开发者社区与搜索引擎收录' },
-        'cnblogs': { name: '博客园', icon: '🌿', desc: '博客园极客技术社区' },
-        'bilibili': { name: 'Bilibili 专栏', icon: '📺', desc: 'B 站专栏长文与硬核科技' },
-        'segmentfault': { name: 'SegmentFault 思否', icon: '💡', desc: '思否开发者技术专栏' },
-        'oschina': { name: '开源中国', icon: '🇨🇳', desc: '开源中国技术与软件资讯' },
-        'devto': { name: 'Dev.to', icon: '👩‍💻', desc: '开发者社区 (支持 Markdown / Canonical URL 注入)' },
-        'medium': { name: 'Medium', icon: '📝', desc: '高权重长文平台' },
-        'hashnode': { name: 'Hashnode', icon: '🔷', desc: '技术博客平台' },
-        'substack': { name: 'Substack', icon: '📮', desc: 'Newsletter 通讯平台' },
-        'zhihu': { name: '知乎', icon: '💡', desc: '中文知识社区' },
-        'wechat': { name: '微信公众号', icon: '💬', desc: '微信图文矩阵' },
-        'ghost': { name: 'Ghost CLI', icon: '👻', desc: '独立 Ghost 站点 API' },
-        'wordpress': { name: 'WordPress', icon: '📰', desc: 'WordPress 自动打标发布' },
-        'juejin': { name: '掘金', icon: '🧱', desc: '掘金技术社区' },
-        'linkedin': { name: 'LinkedIn', icon: '💼', desc: '职场社交平台' },
-        'telegram': { name: 'Telegram 频道广播', icon: '✈️', desc: '读者频道与社区群组新文章推送' },
-        'discord': { name: 'Discord 社区广播', icon: '💬', desc: '读者社区公告与新文章 Embed 广播' }
+    // 2. 🚀 动态分发平台元数据解析算子 (不再硬编码静态列表，彻底源自已注册插件矩阵)
+    window.getSyndicatePlatformMeta = function (pluginId) {
+        if (!pluginId) return { name: '未知渠道', icon: '📡', desc: '' };
+        const cleanId = pluginId.toLowerCase().replace(/[_-\s]/g, '');
+        const p = (window.allPlugins || []).find(x => x.id === pluginId || x.id.replace(/[_-\s]/g, '') === cleanId);
+        if (p) {
+            return {
+                name: p.name || pluginId,
+                icon: p.icon || '📡',
+                desc: p.desc || ''
+            };
+        }
+        return { name: pluginId.toUpperCase(), icon: '📡', desc: '' };
     };
 
     /**

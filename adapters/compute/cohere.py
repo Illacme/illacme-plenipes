@@ -41,7 +41,9 @@ class CohereTranslator(BaseTranslator):
         loop = asyncio.get_event_loop()
         url = self.safe_get_url("/models")
         headers = {"Authorization": f"Bearer {api_key}"}
-        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, timeout=5))
+        timeout = self.get_network_timeout(default=15.0)
+        proxies = self.get_proxy_dict()
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, proxies=proxies, timeout=timeout))
         if resp.status_code == 200:
             return [m['name'] for m in resp.json().get('models', []) if m.get('endpoints', {}).get('chat')]
         resp.raise_for_status()

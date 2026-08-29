@@ -96,12 +96,12 @@
     window.onSyndicateLangChange = function (radioInput, relPath) {
         const labels = document.querySelectorAll('#syndicate-lang-picker .lang-radio-btn');
         labels.forEach(l => {
-            l.style.background = 'rgba(255, 255, 255, 0.02)';
-            l.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            l.classList.remove('active');
+            l.style.background = '';
+            l.style.borderColor = '';
         });
         if (radioInput && radioInput.parentElement) {
-            radioInput.parentElement.style.background = 'rgba(0, 242, 255, 0.15)';
-            radioInput.parentElement.style.borderColor = 'var(--accent-secondary)';
+            radioInput.parentElement.classList.add('active');
         }
 
         const selectedLang = radioInput ? radioInput.value : 'zh';

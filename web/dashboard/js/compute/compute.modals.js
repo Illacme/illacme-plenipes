@@ -9,37 +9,43 @@
         /**
          * ➕ 弹出新增算力单元模态框 (像素级还原)
          */
-        async showAddNodeModal() {
+        async showAddNodeModal(preselectedProtocol = null) {
             try {
                 const pluginRes = await apiFetch('/api/plugins/list');
                 const protocols = (pluginRes.plugins || [])
                     .filter(p => p.category === 'protocol')
                     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
+                const preselected = protocols.find(p => p.id === preselectedProtocol);
+                const initialType = preselected ? preselected.id : '';
+                const initialName = preselected ? preselected.name : '请选择算力渠道...';
+                const initialUrl = preselected ? (preselected.default_url || '') : '';
+                const initialId = preselected ? `${preselected.id}-node` : '';
+
                 const { value: formValues } = await Swal.fire({
-                    title: '➕ 划定新算力单元',
+                    title: '➕ 新增算力单元',
                     html: `
                         <div class="swal-edit-grid sovereign-form">
                             <label>节点标识 (Unique ID)</label>
-                            <input id="swal-input-id" class="swal2-input" placeholder="e.g. cloudflare-ai">
+                            <input id="swal-input-id" class="swal2-input" value="${initialId}" placeholder="e.g. deepseek-node">
                             <div id="error-id" class="field-error-hint"></div>
 
-                            <label>算力驱动 (Provider)</label>
+                            <label>算力渠道 (Channel)</label>
                             <div class="sovereign-select-vessel">
-                                <input type="hidden" id="swal-input-type" value="">
+                                <input type="hidden" id="swal-input-type" value="${initialType}">
                                 <div class="sovereign-input-field custom-select-trigger" id="provider-trigger-add"
                                      onclick="window.ComputeHandlers.toggleSovereignDropdown(event, 'provider-menu-add', 'provider-search-input-add')">
-                                    请选择协议驱动...
+                                    ${initialName}
                                 </div>
                                 <div class="custom-dropdown-menu" id="provider-menu-add">
                                     <div class="dropdown-search-vessel" onclick="event.stopPropagation()">
                                         <input type="text" class="dropdown-search-input" id="provider-search-input-add" 
                                                oninput="window.ComputeHandlers.filterProtocols(this.value, 'provider-list-items-add')"
-                                               placeholder="🔍 搜索驱动名称或协议..." autocomplete="off">
+                                               placeholder="🔍 搜索算力渠道名称..." autocomplete="off">
                                     </div>
                                     <div id="provider-list-items-add">
                                         ${protocols.map(p => `
-                                            <div class="dropdown-item" 
+                                            <div class="dropdown-item ${p.id === initialType ? 'selected' : ''}" 
                                                  data-name="${p.name.toLowerCase()}"
                                                  onclick="window.ComputeHandlers.selectProvider('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.default_url || ''}')">
                                                 <span>${p.name}</span>
@@ -52,7 +58,7 @@
                             <div id="error-type" class="field-error-hint"></div>
                             
                             <label>端点地址 (Endpoint)</label>
-                            <input id="swal-input-url" class="swal2-input" placeholder="e.g. https://api.openai.com/v1">
+                            <input id="swal-input-url" class="swal2-input" value="${initialUrl}" placeholder="e.g. https://api.openai.com/v1">
                             
                             <label>物理密钥 (API Key)</label>
                             <input id="swal-input-key" class="swal2-input" type="password" placeholder="sk-...">
@@ -61,20 +67,23 @@
                             <input id="swal-input-proxy" class="swal2-input" placeholder="e.g. http://127.0.0.1:10809 或 direct (可选)">
 
                             <div style="grid-column: span 2; margin-top: 5px;">
-                                <label>活跃模型感应 (Model Discovery)</label>
+                                <label>默认推荐 / 基准探针模型 (Default & Probe Model)</label>
                                 <div class="sovereign-select-vessel" style="margin-top: 8px;">
                                     <div style="display: flex; gap: 0;">
-                                        <input id="swal-input-model" class="swal2-input" style="margin:0; flex:1; border-top-right-radius:0; border-bottom-right-radius:0;" placeholder="选择或输入模型 ID">
+                                        <input id="swal-input-model" class="swal2-input" style="margin:0; flex:1; border-top-right-radius:0; border-bottom-right-radius:0;" placeholder="输入探针基准模型 (调度策略将默认选用)">
                                         <button type="button" class="mini-btn glow-btn" style="border-top-left-radius:0; border-bottom-left-radius:0;" 
                                                 onclick="window.ComputeHandlers.discoverModels(event, 'new_node_temp'); return false;">📡 感应</button>
                                     </div>
                                     <div id="asset-discovery-menu" class="custom-dropdown-menu asset-dropdown"></div>
                                 </div>
+                                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 5px; line-height: 1.4;">
+                                    💡 此模型既用于硬件连通性与网络时延探针，也是调度策略装配时的默认选用模型；在各品牌的「调度策略」中可随时切换为其他模型。
+                                </div>
                             </div>
                         </div>
                     `,
                     width: '600px',
-                    confirmButtonText: '🏗️ 初始化并固化算力单元',
+                    confirmButtonText: '💾 保存算力单元',
                     didOpen: () => {
                         const closeMenu = (e) => {
                             if (!e.target.closest('.sovereign-select-vessel')) {
@@ -111,7 +120,7 @@
                             return false;
                         }
                         if (!type) {
-                            window.ComputeHandlers.showFieldError('type', '请选择协议');
+                            window.ComputeHandlers.showFieldError('type', '请选择算力渠道');
                             return false;
                         }
 
@@ -127,7 +136,7 @@
                 });
 
                 if (formValues) {
-                    if (typeof addAudit === 'function') addAudit(`🚀 正在物理层划定新单元 [${formValues.id}]...`, "info");
+                    if (typeof addAudit === 'function') addAudit(`🚀 正在新增算力单元 [${formValues.id}]...`, "info");
                     const payload = {};
                     const prefix = `translation.compute_nodes.${formValues.id}`;
                     payload[`${prefix}.base_url`] = formValues.base_url;
@@ -145,7 +154,7 @@
                     });
 
                     if (updateRes?.status === 'success') {
-                        if (typeof addAudit === 'function') addAudit(`✅ 新单元 [${formValues.id}] 已物理固化。`, "success");
+                        if (typeof addAudit === 'function') addAudit(`✅ 算力单元 [${formValues.id}] 已保存。`, "success");
                         if (typeof window.loadComputeCenter === 'function') window.loadComputeCenter();
                     }
                 }
@@ -168,13 +177,13 @@
                     .filter(p => p.category === 'protocol')
                     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-                const activeProtocol = protocols.find(p => p.id === node.type) || { name: '请选择协议驱动...' };
+                const activeProtocol = protocols.find(p => p.id === node.type) || { name: '请选择算力渠道...' };
 
                 const { value: formValues } = await Swal.fire({
-                    title: `⚙️ 修正算力单元: ${id}`,
+                    title: `⚙️ 编辑算力单元: ${id}`,
                     html: `
                         <div class="swal-edit-grid sovereign-form">
-                            <label>算力驱动 (Provider)</label>
+                            <label>算力渠道 (Channel)</label>
                             <div class="sovereign-select-vessel">
                                 <input type="hidden" id="swal-input-type" value="${node.type || ''}">
                                 <div class="sovereign-input-field custom-select-trigger" id="provider-trigger-edit"
@@ -185,7 +194,7 @@
                                     <div class="dropdown-search-vessel" onclick="event.stopPropagation()">
                                         <input type="text" class="dropdown-search-input" id="provider-search-input-edit" 
                                                oninput="window.ComputeHandlers.filterProtocols(this.value, 'provider-list-items-edit')"
-                                               placeholder="🔍 搜索驱动名称或协议..." autocomplete="off">
+                                               placeholder="🔍 搜索算力渠道名称..." autocomplete="off">
                                     </div>
                                     <div id="provider-list-items-edit">
                                         ${protocols.map(p => `
@@ -210,21 +219,24 @@
                             <input id="swal-input-proxy" class="swal2-input" value="${node.proxy || ''}" placeholder="e.g. http://127.0.0.1:10809 或 direct (可选)">
 
                             <div style="grid-column: span 2; margin-top: 5px;">
-                                <label>活跃模型感应 (Model Discovery)</label>
+                                <label>默认推荐 / 基准探针模型 (Default & Probe Model)</label>
                                 <div class="sovereign-select-vessel" style="margin-top: 8px;">
                                     <div style="display: flex; gap: 0;">
                                         <input id="swal-input-model" class="swal2-input" style="margin:0; flex:1; border-top-right-radius:0; border-bottom-right-radius:0;" 
-                                               value="${node.model || ''}" placeholder="选择或输入模型 ID">
+                                               value="${node.model || ''}" placeholder="输入探针基准模型 (调度策略将默认选用)">
                                         <button type="button" class="mini-btn glow-btn" style="border-top-left-radius:0; border-bottom-left-radius:0;" 
                                                 onclick="window.ComputeHandlers.discoverModels(event, '${id}'); return false;">📡 感应</button>
                                     </div>
                                     <div id="asset-discovery-menu" class="custom-dropdown-menu asset-dropdown"></div>
                                 </div>
+                                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 5px; line-height: 1.4;">
+                                    💡 此模型既用于硬件连通性与网络时延探针，也是调度策略装配时的默认选用模型；在各品牌的「调度策略」中可随时切换为其他模型。
+                                </div>
                             </div>
                         </div>
                     `,
                     width: '600px',
-                    confirmButtonText: '🏗️ 固化算力配置',
+                    confirmButtonText: '💾 保存算力单元',
                     didOpen: () => {
                         const closeMenu = (e) => {
                             if (!e.target.closest('.sovereign-select-vessel')) {
@@ -246,7 +258,7 @@
 
                         const type = document.getElementById('swal-input-type').value;
                         if (!type) {
-                            window.ComputeHandlers.showFieldError('type', '请选择协议');
+                            window.ComputeHandlers.showFieldError('type', '请选择算力渠道');
                             return false;
                         }
 

@@ -50,14 +50,19 @@ def auto_sync_ai_adapters(manager) -> None:
                 "id": "lmstudio_local",
                 "type": "lmstudio",
                 "base_url": "http://localhost:1234/v1",
-                "api_key": "ENC:PUT_YOUR_KEY_HERE",
+                "api_key": "",
                 "enabled": lmstudio_active
             }
             changed = True
-        elif lmstudio_active and not local_nodes["lmstudio_local"].get("enabled", False):
-            tlog.success("⚡ [本地算力感应] 感应到 LMStudio 本地大模型服务正在运行！自动在本地层将其激活！")
-            local_nodes["lmstudio_local"]["enabled"] = True
-            changed = True
+        else:
+            if lmstudio_active and not local_nodes["lmstudio_local"].get("enabled", False):
+                tlog.success("⚡ [本地算力感应] 感应到 LMStudio 本地大模型服务正在运行！自动在本地层将其激活！")
+                local_nodes["lmstudio_local"]["enabled"] = True
+                changed = True
+            # 清理历史可能残留的占位符 Key
+            if "PUT_YOUR_KEY_HERE" in str(local_nodes["lmstudio_local"].get("api_key", "")):
+                local_nodes["lmstudio_local"]["api_key"] = ""
+                changed = True
             
         # Ollama 本地服务感应
         if "ollama_local" not in local_nodes:
@@ -66,14 +71,19 @@ def auto_sync_ai_adapters(manager) -> None:
                 "id": "ollama_local",
                 "type": "ollama",
                 "base_url": "http://localhost:11434",
-                "api_key": "ENC:PUT_YOUR_KEY_HERE",
+                "api_key": "",
                 "enabled": ollama_active
             }
             changed = True
-        elif ollama_active and not local_nodes["ollama_local"].get("enabled", False):
-            tlog.success("⚡ [本地算力感应] 感应到 Ollama 本地大模型服务正在运行！自动在本地层将其激活！")
-            local_nodes["ollama_local"]["enabled"] = True
-            changed = True
+        else:
+            if ollama_active and not local_nodes["ollama_local"].get("enabled", False):
+                tlog.success("⚡ [本地算力感应] 感应到 Ollama 本地大模型服务正在运行！自动在本地层将其激活！")
+                local_nodes["ollama_local"]["enabled"] = True
+                changed = True
+            # 清理历史可能残留的占位符 Key
+            if "PUT_YOUR_KEY_HERE" in str(local_nodes["ollama_local"].get("api_key", "")):
+                local_nodes["ollama_local"]["api_key"] = ""
+                changed = True
             
         if changed:
             with open(local_path, 'w', encoding='utf-8') as f:

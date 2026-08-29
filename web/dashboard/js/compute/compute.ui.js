@@ -47,39 +47,60 @@ window.ComputeUI = {
         }
 
         const isAiDisabled = trans.enable_ai === false;
+        const activeImprintId = window.settingsData?._active_imprint || 'default';
+        const imprintsList = window.settingsData?._imprints || [];
+        const activeImprintObj = imprintsList.find(im => im.id === activeImprintId);
+        const activeImprintDisplayName = activeImprintObj?.name ? `${activeImprintObj.name} (${activeImprintId})` : activeImprintId;
 
         let html = `
             <div class="strategy-command-deck-wrap fade-in">
                 ${isAiDisabled ? `
-                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--neon-red, #ff4d4d); background: rgba(255, 77, 77, 0.05);">
-                    <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--neon-red, #ff4d4d); letter-spacing: 2px; margin-bottom: 8px;">⚠️ 算力总控已关闭 (COMPUTE DISABLED)</div>
-                    <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-bright, #ffffff); line-height: 1.5;">
-                        检测到 AI 算力总控处于关闭状态，右侧 Sovereign Copilot 及全域 AI 出版流已处于离线或纯本地物理降级模式。如需恢复大模型辅助，请在下方启用“AI 算力总控”并点击保存。
-                    </div>
+                <div class="tactical-info-pod" style="padding: 12px 16px; margin-bottom: 18px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.3); background: rgba(255, 77, 77, 0.04); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 0.8rem; color: #ff6b6b; font-weight: 600;">⚠️ 算力总控已关闭：全域 AI 出版流处于离线状态，大模型推理已暂停。</div>
                 </div>
                 ` : `
-                <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-primary); background: hsla(269, 100%, 65%, 0.02);">
-                    <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-primary); letter-spacing: 2px; margin-bottom: 8px;">算力分配策略 (ALLOCATION STRATEGY)</div>
-                    <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
-                        配置系统如何分配出版任务。您可以指定主力与备用单元的联动逻辑，确保在任何环境下都能保持高可用输出。
+                <!-- 💡 顶部轻量说明栏：与下方配置卡片彻底拉开层级差距 -->
+                <div class="strategy-top-memo" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.015); border: 1px dashed var(--glass-border); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.9rem;">🧠</span>
+                        <span style="font-size: 0.78rem; color: var(--text-dim);">为当前出版品牌配置生成、翻译与润色时的主力与备用算力单元</span>
+                    </div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); padding: 3px 10px; border-radius: 6px;">
+                        <span style="font-size: 0.68rem; color: var(--text-dim);">生效品牌:</span>
+                        <span style="font-size: 0.74rem; font-weight: 700; color: var(--accent-secondary);">🏷️ ${activeImprintDisplayName}</span>
                     </div>
                 </div>
                 `}
 
-                <div class="strategy-command-deck" style="margin-top: 0 !important;">
-                    <div class="strategy-binding-matrix">
+                <div class="strategy-command-deck" style="margin-top: 0 !important; padding: 24px; border-radius: 20px;">
+                    <!-- ⚡ 主备算力工作台：双栏对立 + 流向通道 -->
+                    <div class="strategy-binding-matrix" style="margin-top: 0; margin-bottom: 25px; gap: 20px;">
+                        <!-- 主力计算节点 -->
                         <div class="binding-terminal primary" id="primary-terminal-pod" style="transition: all 0.3s; ${(isAiDisabled || trans.strategy === 'global_smart') ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                            <div class="terminal-label">PRIMARY NODE (主力执行)</div>
-                            <div class="selection-vessel">
-                                <select id="primary_node_selector" 
+                            <div class="terminal-header-row">
+                                <div class="terminal-badge primary-badge">
+                                    <span>⚡ 主力计算节点</span>
+                                    <span class="pulse-dot"></span>
+                                </div>
+                                <span class="terminal-subtag">PRIMARY EXECUTION</span>
+                            </div>
+
+                            <div class="terminal-field-group">
+                                <label class="field-label">1. 选择主力底座算力 (Compute Provider)</label>
+                                <select id="primary_node_selector" class="terminal-select"
                                         onchange="window.ComputeHandlers.updateStrategy('primary_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'primary_model')"
                                         ${(isAiDisabled || trans.strategy === 'global_smart') ? 'disabled' : ''}>
-                                    <option value="">选择算力单元</option>
-                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.primary_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}
+                                    <option value="">-- 请选择主力算力单元 --</option>
+                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.primary_node ? 'selected' : ''} data-model="${n.model || ''}">${nid} (${n.provider || 'custom'})</option>`).join('')}
                                 </select>
-                                <div class="input-vessel">
-                                    <input type="text" id="primary_model_input" value="${trans.primary_model || ''}" 
-                                           placeholder="执行模型标识符" 
+                            </div>
+
+                            <div class="terminal-field-group">
+                                <label class="field-label">2. 执行大模型名称 (Model Identifier)</label>
+                                <div class="input-vessel" style="position: relative;">
+                                    <input type="text" id="primary_model_input" class="terminal-input"
+                                           value="${trans.primary_model || ''}" 
+                                           placeholder="👈 选择算力单元后自动探测，或直接输入模型名..." 
                                            onchange="window.ComputeHandlers.updateStrategy('primary_model', this.value)"
                                            ${(isAiDisabled || trans.strategy === 'global_smart') ? 'disabled' : ''}>
                                     <div id="primary_model_suggestions" class="discovery-suggestions"></div>
@@ -87,23 +108,40 @@ window.ComputeUI = {
                             </div>
                         </div>
 
-                        <div class="binding-vessel">
-                            <div class="vessel-icon">⚡</div>
-                            <div class="vessel-link-line"></div>
+                        <!-- 中间流向连接通道 -->
+                        <div class="binding-vessel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                            <div class="vessel-icon-circle" title="主力节点故障时，能量自动秒级流向容灾节点">
+                                <span class="vessel-pulse-icon">⚡</span>
+                            </div>
+                            <span class="vessel-flow-text">FAILOVER</span>
                         </div>
 
-                        <div class="binding-terminal fallback" id="fallback-terminal-pod" style="transition: all 0.3s; ${(isAiDisabled || ['single', 'global_smart'].includes(trans.strategy)) ? 'opacity: 0.3; pointer-events: none;' : ''}">
-                            <div class="terminal-label">FALLBACK NODE (容灾守护)</div>
-                            <div class="selection-vessel">
-                                <select id="fallback_node_selector"
+                        <!-- 容灾备用节点 -->
+                        <div class="binding-terminal fallback" id="fallback-terminal-pod" style="transition: all 0.3s; ${(isAiDisabled || ['single', 'global_smart'].includes(trans.strategy)) ? 'opacity: 0.35; filter: grayscale(0.6); pointer-events: none;' : ''}">
+                            <div class="terminal-header-row">
+                                <div class="terminal-badge fallback-badge">
+                                    <span>🛡️ 容灾备用节点</span>
+                                    <span class="standby-tag">STANDBY</span>
+                                </div>
+                                <span class="terminal-subtag">FALLBACK RESILIENCE</span>
+                            </div>
+
+                            <div class="terminal-field-group">
+                                <label class="field-label">1. 选择容灾底座算力 (Fallback Provider)</label>
+                                <select id="fallback_node_selector" class="terminal-select"
                                         onchange="window.ComputeHandlers.updateStrategy('fallback_node', this.value); window.ComputeHandlers.fetchNodeModels(this.value, 'fallback_model')"
                                         ${(isAiDisabled || ['single', 'global_smart'].includes(trans.strategy)) ? 'disabled' : ''}>
-                                    <option value="">选择算力单元</option>
-                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.fallback_node ? 'selected' : ''} data-model="${n.model || ''}">${nid}</option>`).join('')}
+                                    <option value="">-- 请选择容灾备用单元 --</option>
+                                    ${Object.entries(nodes).map(([nid, n]) => `<option value="${nid}" ${nid === trans.fallback_node ? 'selected' : ''} data-model="${n.model || ''}">${nid} (${n.provider || 'custom'})</option>`).join('')}
                                 </select>
-                                <div class="input-vessel">
-                                    <input type="text" id="fallback_model_input" value="${trans.fallback_model || ''}" 
-                                           placeholder="容灾模型标识符" 
+                            </div>
+
+                            <div class="terminal-field-group">
+                                <label class="field-label">2. 容灾大模型名称 (Fallback Model)</label>
+                                <div class="input-vessel" style="position: relative;">
+                                    <input type="text" id="fallback_model_input" class="terminal-input"
+                                           value="${trans.fallback_model || ''}" 
+                                           placeholder="👈 选择容灾单元后自动探测，或直接输入模型名..." 
                                            onchange="window.ComputeHandlers.updateStrategy('fallback_model', this.value)"
                                            ${(isAiDisabled || ['single', 'global_smart'].includes(trans.strategy)) ? 'disabled' : ''}>
                                     <div id="fallback_model_suggestions" class="discovery-suggestions"></div>
@@ -257,45 +295,45 @@ window.ComputeUI = {
                     </div>
 
                     <!-- 💡 算力并发控制与全流程出版业务流对齐向导卡片（已下移至参数区下方） -->
-                    <div class="logic-pod glass-panel" style="padding: 20px 24px; margin-bottom: 30px; border: 1px dashed var(--neon-cyan, #00f2fe); background: rgba(0, 242, 254, 0.03); border-radius: 12px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--neon-cyan, #00f2fe); display: flex; align-items: center; gap: 8px;">
+                    <div class="concurrency-guide-deck">
+                        <div class="guide-header">
+                            <div class="guide-title">
                                 <span>💡 算力并发控制与全流程出版业务流对齐向导</span>
                             </div>
-                            <span style="font-size: 0.68rem; padding: 2px 8px; border-radius: 4px; background: rgba(0, 242, 254, 0.15); color: var(--neon-cyan); border: 1px solid rgba(0, 242, 254, 0.3);">流程图解与最佳实践</span>
+                            <span class="guide-badge">流程图解与最佳实践</span>
                         </div>
 
-                        <div style="font-size: 0.78rem; line-height: 1.6; color: var(--text-bright, #fff); opacity: 0.9;">
-                            <p style="margin: 0 0 10px 0;">以同步 <b>10 篇文档</b> 并翻译为 <b>3 个目标语种</b> 的标准出版流程为例，4 维并发控制参数的物理协作机制如下：</p>
+                        <div class="guide-content">
+                            <p class="guide-intro">以同步 <b>10 篇文档</b> 并翻译为 <b>3 个目标语种</b> 的标准出版流程为例，4 维并发控制参数的物理协作机制如下：</p>
                             
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0 16px 0;">
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
-                                    <div style="color: #a34cff; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">1. ⚡ 全局文档流水线并发</div>
-                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制同时开启加工的<b>原稿文档数</b>。<br><code>Global Workers=2</code> 表示同时并行加工 2 篇文档。</div>
+                            <div class="guide-grid-4">
+                                <div class="guide-step-card step-1">
+                                    <div class="step-title">1. ⚡ 全局文档流水线并发</div>
+                                    <div class="step-desc">控制同时开启加工的<b>原稿文档数</b>。<br><code>Global Workers=2</code> 表示同时并行加工 2 篇文档。</div>
                                 </div>
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
-                                    <div style="color: #00f2fe; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">2. 🤖 AI 算力隔离池并发</div>
-                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制允许提交给 AI 算力网关的<b>最高任务数</b>。<br><code>AI Workers=2</code> 限制全局同时向 AI 提问的线程数。</div>
+                                <div class="guide-step-card step-2">
+                                    <div class="step-title">2. 🤖 AI 算力隔离池并发</div>
+                                    <div class="step-desc">控制允许提交给 AI 算力网关的<b>最高任务数</b>。<br><code>AI Workers=2</code> 限制全局同时向 AI 提问的线程数。</div>
                                 </div>
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
-                                    <div style="color: #00ff88; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">3. 🌐 单文档多语种并发</div>
-                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制单篇文档在翻译为多个语种时的<b>语种并行度</b>。<br><code>LLM Concurrency=1</code> 表示单文档多语种串行翻译。</div>
+                                <div class="guide-step-card step-3">
+                                    <div class="step-title">3. 🌐 单文档多语种并发</div>
+                                    <div class="step-desc">控制单篇文档在翻译为多个语种时的<b>语种并行度</b>。<br><code>LLM Concurrency=1</code> 表示单文档多语种串行翻译。</div>
                                 </div>
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
-                                    <div style="color: #ffaa00; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px;">4. 📂 磁盘 I/O 编译并发</div>
-                                    <div style="font-size: 0.7rem; opacity: 0.8; line-height: 1.4;">控制最终静态 HTML / MD 产物的<b>物理落盘线程数</b>。<br><code>I/O Workers=4</code> 实现多文件高速磁盘写入。</div>
+                                <div class="guide-step-card step-4">
+                                    <div class="step-title">4. 📂 磁盘 I/O 编译并发</div>
+                                    <div class="step-desc">控制最终静态 HTML / MD 产物的<b>物理落盘线程数</b>。<br><code>I/O Workers=4</code> 实现多文件高速磁盘写入。</div>
                                 </div>
                             </div>
 
-                            <div style="display: flex; gap: 12px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; font-size: 0.74rem;">
-                                <div style="flex: 1;">
-                                    <span style="color: #00ff88; font-weight: 700;">🏠 本地算力场景 (LM Studio / Ollama)</span>
-                                    <div style="opacity: 0.8; margin-top: 2px;">建议均设为 <code>1</code>（或开启 <b>[SINGLE MODE]</b>），实现全链路纯串行，彻底杜绝本地显存溢出与 500 报错。</div>
+                            <div class="guide-scene-box">
+                                <div class="scene-col">
+                                    <span class="scene-title local">🏠 本地算力场景 (LM Studio / Ollama)</span>
+                                    <div class="scene-desc">建议均设为 <code>1</code>（或开启 <b>[SINGLE MODE]</b>），实现全链路纯串行，彻底杜绝本地显存溢出与 500 报错。</div>
                                 </div>
-                                <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
-                                <div style="flex: 1;">
-                                    <span style="color: #00f2fe; font-weight: 700;">☁️ 云端 API 场景 (OpenAI / DeepSeek)</span>
-                                    <div style="opacity: 0.8; margin-top: 2px;">建议设为 <code>Global=4~8</code>, <code>AI=4~8</code>, <code>LLM=2~4</code>，发挥云端无限吞吐，几秒内极速收割全站静态编译。</div>
+                                <div class="scene-divider"></div>
+                                <div class="scene-col">
+                                    <span class="scene-title cloud">☁️ 云端 API 场景 (OpenAI / DeepSeek)</span>
+                                    <div class="scene-desc">建议设为 <code>Global=4~8</code>, <code>AI=4~8</code>, <code>LLM=2~4</code>，发挥云端无限吞吐，几秒内极速收割全站静态编译。</div>
                                 </div>
                             </div>
                         </div>

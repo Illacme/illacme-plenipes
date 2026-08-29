@@ -60,6 +60,9 @@ def test_init_press_enable_ai_injection(tmp_path, monkeypatch):
     )
     from unittest.mock import patch
     from core.governance.license_guard import LicenseGuard
+    from core.governance.imprint_manager import im
+    
+    monkeypatch.setattr(im, "imprint_root", str(tmp_path / "imprints"))
 
     with patch.object(LicenseGuard, "is_pro_feature_allowed", return_value=True):
         init_press_logic(req)

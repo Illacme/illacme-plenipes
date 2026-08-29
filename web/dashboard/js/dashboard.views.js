@@ -143,14 +143,15 @@ window.showView = async (id, subId) => {
 };
 
 window.handleRouting = async () => {
-    const hash = window.location.hash.replace('#/', '');
+    const rawHash = window.location.hash.replace('#/', '');
+    const [viewId, routeSubId] = rawHash.split('/');
     const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower', 'analytics'];
-    if (hash && validViews.includes(hash)) {
-        if (window.currentView === hash) return; // Prevent duplicate execution from programmatic hash changes
-        const subId = window.pendingSubView;
+    if (viewId && validViews.includes(viewId)) {
+        const subId = routeSubId || window.pendingSubView;
         window.pendingSubView = null;
-        await window.showView(hash, subId);
-        if (hash === 'overview' && typeof window.toggleHub === 'function') window.toggleHub('show');
+        if (window.currentView === viewId && !routeSubId) return; // Prevent duplicate execution from programmatic hash changes
+        await window.showView(viewId, subId);
+        if (viewId === 'overview' && typeof window.toggleHub === 'function') window.toggleHub('show');
     } else {
         await window.showView('overview');
         if (typeof window.toggleHub === 'function') window.toggleHub('show');

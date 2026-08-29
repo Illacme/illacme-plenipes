@@ -163,6 +163,7 @@ def restart_preview() -> Dict[str, str]:
             success = engine.preview_server.start(blocking=False)
             if success:
                 bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器点火中...")
+                bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器启动中...")
                 bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"📂 [静态预览] 物理映射目录: {engine.preview_server.directory}")
                 bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🟢 [静态预览] Local: http://localhost:{engine.preview_server.port}")
             
@@ -173,7 +174,7 @@ def restart_preview() -> Dict[str, str]:
                 "start_time": time.time(),
                 "mode": "framework" if is_framework else "static"
             })
-            return {"status": "success", "message": "Preview server ignition started."}
+            return {"status": "success", "message": "Preview server started."}
         else:
             raise HTTPException(status_code=500, detail="Failed to start preview server")
     except Exception as e:
@@ -185,8 +186,8 @@ def restart_preview() -> Dict[str, str]:
 
 
 @router.post("/api/system/preview/stop", dependencies=[Depends(verify_token)])
-def stop_preview() -> Dict[str, str]:
-    """⏹️ 安全停机"""
+async def stop_preview() -> Dict[str, str]:
+    """🛑 [V55.0] 停止预览服务"""
     engine = get_global_engine()
     if not engine: raise HTTPException(status_code=400, detail="Engine not initialized")
     try:
@@ -203,7 +204,7 @@ def get_health_matrix() -> HealthMatrixResponse:
     matrix = ComponentMonitor.get_matrix()
     return HealthMatrixResponse(
         engine=matrix.get("engine", {"status": "offline", "label": "核心引擎", "health": 0}),
-        onboarding=matrix.get("onboarding", {"status": "offline", "label": "版图向导", "health": 0}),
+        onboarding=matrix.get("onboarding", {"status": "offline", "label": "品牌向导", "health": 0}),
         preview=matrix.get("preview", {"status": "offline", "label": "预览服务", "health": 0})
     )
 
@@ -254,7 +255,7 @@ async def rollback_theme_config() -> Dict[str, Any]:
 
 @router.post("/api/system/wizard/start", dependencies=[Depends(verify_token)])
 async def start_wizard() -> Dict[str, str]:
-    """🚀 [V55.0] 远程点火版图向导"""
+    """🚀 [V55.0] 启动品牌向导服务"""
     if ComponentMonitor.check_port(43211):
         return {"status": "already_running"}
     from services.wizard.wizard_server import start_wizard_server
@@ -263,7 +264,7 @@ async def start_wizard() -> Dict[str, str]:
 
 @router.post("/api/system/wizard/stop", dependencies=[Depends(verify_token)])
 async def stop_wizard() -> Dict[str, str]:
-    """🛑 [V55.0] 销毁版图向导"""
+    """🛑 [V55.0] 停止品牌向导服务"""
     try:
         import urllib.request
         req = urllib.request.Request("http://127.0.0.1:43211/api/shutdown", method="POST")
@@ -271,6 +272,35 @@ async def stop_wizard() -> Dict[str, str]:
         return {"status": "stopped"}
     except Exception:
         return {"status": "stopped", "note": "Service may already be down"}
+
+@router.post("/api/system/pick_directory", dependencies=[Depends(verify_token)])
+async def pick_directory() -> Dict[str, Any]:
+    """📂 [V75.6] 唤起操作系统原生文件夹拾取器，返回绝对路径"""
+    import subprocess
+    import sys
+    if sys.platform == "darwin":
+        try:
+            cmd = ['osascript', '-e', 'POSIX path of (choose folder with prompt "请选择内容文库 (Vault) 物理根目录:")']
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if res.returncode == 0 and res.stdout.strip():
+                selected_path = res.stdout.strip().rstrip('/')
+                return {"success": True, "path": selected_path}
+            elif "User canceled" in res.stderr or "-128" in res.stderr:
+                return {"success": False, "canceled": True}
+            return {"success": False, "error": res.stderr.strip() or "未选择任何路径"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    elif sys.platform == "win32":
+        try:
+            ps_script = "[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms') | Out-Null; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = '请选择内容文库根目录'; if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"
+            res = subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, text=True, timeout=60)
+            if res.returncode == 0 and res.stdout.strip():
+                return {"success": True, "path": res.stdout.strip()}
+            return {"success": False, "canceled": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    return {"success": False, "unsupported": True, "message": "当前服务器环境暂无图形界面，请直接手动输入绝对路径"}
 
 @router.post("/api/system/sync/precheck", dependencies=[Depends(verify_token)])
 async def precheck_sync() -> Dict[str, Any]:

@@ -14,7 +14,7 @@ def run_onboarding_wizard(config_path: str):
     print("🏛️  欢迎来到 Illacme Plenipes：全球私人出版社")
     print("     ── 您的主权化全球出版发行中心")
     print("="*60 + "\n")
-    print("检测到这是你首次点火。请跟随引导完成基础导航配置：\n")
+    print("检测到这是你首次运行。请跟随引导完成基础导航配置：\n")
 
     try:
         # 1. 基础信息
@@ -62,14 +62,14 @@ def run_onboarding_wizard(config_path: str):
             yaml.dump(config_data, f, default_flow_style=False, allow_unicode=True)
 
         print("\n" + "-"*60)
-        print("✨ 点火成功！配置文件已固化至: " + config_path)
+        print("✨ 初始化完成！配置文件已保存至: " + config_path)
         print("🚀 正在加载算力矩阵，准备进入全真同步流程...")
         print("-"*60 + "\n")
         
         return config_data
 
     except KeyboardInterrupt:
-        print("\n\n🛑 点火已中断。你可以随时重新运行 plenipes.py 开启引导。")
+        print("\n\n🛑 初始化已中断。你可以随时重新运行 plenipes.py 开启引导。")
         return None
     except Exception as e:
         print(f"\n❌ 引导程序发生意外错误: {e}")

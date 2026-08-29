@@ -76,7 +76,7 @@ async def test_imprint_changes_audit(monkeypatch):
     assert res_add["success"] is True
     assert mock_ledger.log.call_count == 1
     assert mock_ledger.log.call_args[1]["event_type"] == "PUBLISH_LAYOUT_CHANGED"
-    assert "创建了新的出版版图" in mock_ledger.log.call_args[1]["details"]
+    assert "创建了新的出版品牌" in mock_ledger.log.call_args[1]["details"]
     
     mock_ledger.reset_mock()
     

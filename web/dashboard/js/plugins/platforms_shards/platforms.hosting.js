@@ -72,15 +72,16 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.s3.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-hosting-bucket" })}
                 ${renderSettingsItem('访问密钥 ID (Access Key)', `publish_control.direct_upload.s3.access_key`, cfg.access_key, 'text', { placeholder: "AWS_ACCESS_KEY_ID" })}
                 ${renderSettingsItem('安全私钥 (Secret Key)', `publish_control.direct_upload.s3.secret_key`, cfg.secret_key, 'password', { placeholder: "AWS_SECRET_ACCESS_KEY" })}
-                ${window.renderPlatformAdvancedGroup('高级扩展参数 (Region / Endpoint / ACL)', `
-                    ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.s3.region`, cfg.region || 'us-east-1', 'text', { placeholder: "例如: us-east-1" })}
+                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.s3.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-hosting-bucket" })}
+                ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.s3.region`, cfg.region || 'us-east-1', 'text', { placeholder: "例如: us-east-1" })}
+                ${window.renderPlatformAdvancedGroup('高级可选调参 (Endpoint / Public URL / Prefix / ACL / 代理)', `
                     ${renderSettingsItem('自定义端点 (Endpoint URL)', `publish_control.direct_upload.s3.endpoint_url`, cfg.endpoint_url, 'text', { placeholder: "Cloudflare R2, MinIO, or custom endpoint", description: "如果使用 Cloudflare R2 等非标准 AWS 存储，请填写此项。" })}
                     ${renderSettingsItem('公开访问域名 (Public URL)', `publish_control.direct_upload.s3.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://myblog.com", description: "网站公开访问的基地址。" })}
                     ${renderSettingsItem('存储路径前缀 (Prefix)', `publish_control.direct_upload.s3.prefix`, cfg.prefix, 'text', { placeholder: "可选前缀，例如: html-site" })}
                     ${renderSettingsItem('对象访问控制 (ACL)', `publish_control.direct_upload.s3.acl`, cfg.acl, 'text', { placeholder: "例如: public-read" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.s3.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
         } else if (id === 'github_pages') {
@@ -159,10 +160,10 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('项目 ID (Project ID)', `publish_control.direct_upload.firebase.project_id`, cfg.project_id, 'text', { placeholder: "例如: my-firebase-project" })}
                 ${renderSettingsItem('部署 Token (CLI Token)', `publish_control.direct_upload.firebase.token`, cfg.token, 'password', { placeholder: "Firebase CI Token (使用一键授权或 firebase login:ci 获取)" })}
-                ${window.renderPlatformAdvancedGroup('高级站点与代理参数', `
-                    ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.firebase.site`, cfg.site, 'text', { placeholder: "可选，多站点支持" })}
+                ${renderSettingsItem('项目 ID (Project ID)', `publish_control.direct_upload.firebase.project_id`, cfg.project_id, 'text', { placeholder: "例如: my-firebase-project" })}
+                ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.firebase.site`, cfg.site, 'text', { placeholder: "可选，多站点支持" })}
+                ${window.renderPlatformAdvancedGroup('高级代理参数', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.firebase.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
@@ -177,11 +178,11 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.cloudflare_pages.project_name`, cfg.project_name, 'text', { placeholder: "例如: my-docs-site" })}
                 ${renderSettingsItem('API 访问令牌 (Token)', `publish_control.direct_upload.cloudflare_pages.token`, cfg.token, 'password', { placeholder: "请输入 Cloudflare API Token" })}
-                ${window.renderPlatformAdvancedGroup('高级分支与环境参数', `
-                    ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.cloudflare_pages.branch`, cfg.branch || 'production', 'text', { placeholder: "例如: production" })}
-                    ${renderSettingsItem('账号 ID (Account ID)', `publish_control.direct_upload.cloudflare_pages.account_id`, cfg.account_id, 'text', { placeholder: "Cloudflare 账号 ID (可选)" })}
+                ${renderSettingsItem('账号 ID (Account ID)', `publish_control.direct_upload.cloudflare_pages.account_id`, cfg.account_id, 'text', { placeholder: "Cloudflare 账号 ID" })}
+                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.cloudflare_pages.project_name`, cfg.project_name, 'text', { placeholder: "例如: my-docs-site" })}
+                ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.cloudflare_pages.branch`, cfg.branch || 'production', 'text', { placeholder: "例如: production" })}
+                ${window.renderPlatformAdvancedGroup('高级代理与 CLI 路径参数', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.cloudflare_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                     ${renderSettingsItem('Wrangler CLI 路径', `publish_control.direct_upload.cloudflare_pages.wrangler_path`, cfg.wrangler_path || 'wrangler', 'text')}
                 `)}
@@ -197,11 +198,11 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.netlify.site_id`, cfg.site_id, 'text', { placeholder: "例如: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" })}
                 ${renderSettingsItem('身份凭证 (Auth Token)', `publish_control.direct_upload.netlify.auth_token`, cfg.auth_token, 'password', { placeholder: "Netlify Personal Access Token" })}
+                ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.netlify.site_id`, cfg.site_id, 'text', { placeholder: "例如: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" })}
                 ${window.renderPlatformAdvancedGroup('高级部署与代理参数', `
-                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.netlify.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                     ${renderSettingsItem('生产模式部署 (Prod)', `publish_control.direct_upload.netlify.prod`, cfg.prod !== false, 'checkbox')}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.netlify.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                     ${renderSettingsItem('Netlify CLI 路径', `publish_control.direct_upload.netlify.netlify_path`, cfg.netlify_path || 'netlify', 'text')}
                 `)}
             `;
@@ -218,19 +219,15 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                 </div>
                 ${renderSettingsItem('访问令牌 (Token)', `publish_control.direct_upload.vercel.token`, cfg.token, 'password', { placeholder: "请输入 Vercel 访问令牌 (Token)" })}
                 ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.vercel.project_name`, cfg.project_name, 'text', { placeholder: "请输入 Vercel 项目名称" })}
-                ${window.renderPlatformAdvancedGroup('高级组织与代理参数', `
-                    ${renderSettingsItem('组织 ID (Org ID)', `publish_control.direct_upload.vercel.org_id`, cfg.org_id, 'text', { placeholder: "请输入 Vercel 组织 ID (可选)" })}
-                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.vercel.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                ${renderSettingsItem('组织 ID (Org ID)', `publish_control.direct_upload.vercel.org_id`, cfg.org_id, 'text', { placeholder: "请输入 Vercel 组织 ID (可选)" })}
+                ${window.renderPlatformAdvancedGroup('高级生产部署与代理参数', `
                     ${renderSettingsItem('生产部署 (Prod)', `publish_control.direct_upload.vercel.prod`, cfg.prod !== false, 'checkbox')}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.vercel.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                     ${renderSettingsItem('Vercel CLI 路径', `publish_control.direct_upload.vercel.vercel_path`, cfg.vercel_path || 'vercel', 'text')}
                 `)}
             `;
         } else if (id === 'aliyun_oss') {
             return `
-                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.aliyun_oss.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-oss-bucket" })}
-                ${renderSettingsItem('接入点 (Endpoint)', `publish_control.direct_upload.aliyun_oss.endpoint`, cfg.endpoint, 'text', { placeholder: "例如: oss-cn-hangzhou.aliyuncs.com" })}
-                ${renderSettingsItem('访问密钥 ID (Access Key ID)', `publish_control.direct_upload.aliyun_oss.access_key_id`, cfg.access_key_id, 'text', { placeholder: "Access Key ID" })}
-                ${renderSettingsItem('安全密钥 (Access Key Secret)', `publish_control.direct_upload.aliyun_oss.access_key_secret`, cfg.access_key_secret, 'password', { placeholder: "Access Key Secret" })}
                 <div class="api-token-helper">
                     <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                         <span>💡 阿里云 AccessKey 获取向导</span>
@@ -239,16 +236,18 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                         <a href="https://ram.console.aliyun.com/manage/ak" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达阿里云 AccessKey 管理页</a>
                     </div>
                 </div>
-                ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.aliyun_oss.prefix`, cfg.prefix, 'text', { placeholder: "例如: site-root (可选)" })}
-                ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.aliyun_oss.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mydomain.com", description: "如果配置了自定义 CDN 域名，请在此填写。" })}
-                ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.aliyun_oss.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                ${renderSettingsItem('访问密钥 ID (Access Key ID)', `publish_control.direct_upload.aliyun_oss.access_key_id`, cfg.access_key_id, 'text', { placeholder: "Access Key ID" })}
+                ${renderSettingsItem('安全密钥 (Access Key Secret)', `publish_control.direct_upload.aliyun_oss.access_key_secret`, cfg.access_key_secret, 'password', { placeholder: "Access Key Secret" })}
+                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.aliyun_oss.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-oss-bucket" })}
+                ${renderSettingsItem('接入点 (Endpoint)', `publish_control.direct_upload.aliyun_oss.endpoint`, cfg.endpoint, 'text', { placeholder: "例如: oss-cn-hangzhou.aliyuncs.com" })}
+                ${window.renderPlatformAdvancedGroup('高级托管前缀与加速参数', `
+                    ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.aliyun_oss.prefix`, cfg.prefix, 'text', { placeholder: "例如: site-root (可选)" })}
+                    ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.aliyun_oss.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mydomain.com", description: "如果配置了自定义 CDN 域名，请在此填写。" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.aliyun_oss.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
             `;
         } else if (id === 'tencent_cos') {
             return `
-                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.tencent_cos.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-cos-1250000000" })}
-                ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.tencent_cos.region`, cfg.region, 'text', { placeholder: "例如: ap-shanghai" })}
-                ${renderSettingsItem('密钥 ID (SecretId)', `publish_control.direct_upload.tencent_cos.secret_id`, cfg.secret_id, 'text', { placeholder: "SecretId" })}
-                ${renderSettingsItem('安全密钥 (SecretKey)', `publish_control.direct_upload.tencent_cos.secret_key`, cfg.secret_key, 'password', { placeholder: "SecretKey" })}
                 <div class="api-token-helper">
                     <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                         <span>💡 腾讯云 API 密钥获取向导</span>
@@ -257,18 +256,26 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                         <a href="https://console.cloud.tencent.com/cam/capi" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达腾讯云 API 密钥管理页</a>
                     </div>
                 </div>
-                ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.tencent_cos.prefix`, cfg.prefix, 'text', { placeholder: "例如: html-site (可选)" })}
-                ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.tencent_cos.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mydomain.com", description: "如果配置了自定义 CDN 域名，请在此填写。" })}
-                ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.tencent_cos.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                ${renderSettingsItem('密钥 ID (SecretId)', `publish_control.direct_upload.tencent_cos.secret_id`, cfg.secret_id, 'text', { placeholder: "SecretId" })}
+                ${renderSettingsItem('安全密钥 (SecretKey)', `publish_control.direct_upload.tencent_cos.secret_key`, cfg.secret_key, 'password', { placeholder: "SecretKey" })}
+                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.tencent_cos.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-cos-1250000000" })}
+                ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.tencent_cos.region`, cfg.region, 'text', { placeholder: "例如: ap-shanghai" })}
+                ${window.renderPlatformAdvancedGroup('高级托管前缀与加速参数', `
+                    ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.tencent_cos.prefix`, cfg.prefix, 'text', { placeholder: "例如: html-site (可选)" })}
+                    ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.tencent_cos.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mydomain.com", description: "如果配置了自定义 CDN 域名，请在此填写。" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.tencent_cos.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
             `;
         } else if (id === 'upyun_uss') {
             return `
-                ${renderSettingsItem('服务名称 (Bucket)', `publish_control.direct_upload.upyun_uss.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-upyun-service" })}
                 ${renderSettingsItem('操作员 (Operator)', `publish_control.direct_upload.upyun_uss.operator`, cfg.operator, 'text', { placeholder: "操作员账号" })}
                 ${renderSettingsItem('操作员密码 (Password)', `publish_control.direct_upload.upyun_uss.password`, cfg.password, 'password', { placeholder: "操作员密码" })}
-                ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.upyun_uss.prefix`, cfg.prefix, 'text', { placeholder: "例如: site (可选)" })}
-                ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.upyun_uss.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://site.upaiyun.com", description: "网站公开访问的基地址。" })}
-                ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.upyun_uss.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                ${renderSettingsItem('服务名称 (Bucket)', `publish_control.direct_upload.upyun_uss.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-upyun-service" })}
+                ${window.renderPlatformAdvancedGroup('高级托管前缀与加速参数', `
+                    ${renderSettingsItem('静态托管前缀 (Prefix)', `publish_control.direct_upload.upyun_uss.prefix`, cfg.prefix, 'text', { placeholder: "例如: site (可选)" })}
+                    ${renderSettingsItem('绑定加速域名 (Public URL)', `publish_control.direct_upload.upyun_uss.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://site.upaiyun.com", description: "网站公开访问的基地址。" })}
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.upyun_uss.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
             `;
         } else if (id === 'sftp') {
             return `
@@ -288,31 +295,57 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                 ${renderSettingsItem('私钥口令 (Passphrase)', `publish_control.direct_upload.sftp.passphrase`, cfg.passphrase, 'password', { placeholder: "私钥保护口令（如有）" })}
                 ${renderSettingsItem('远程目标目录 (Remote Path)', `publish_control.direct_upload.sftp.remote_path`, cfg.remote_path, 'text', { placeholder: "例如: /var/www/html/blog" })}
                 ${renderSettingsItem('站点访问域名 (Public URL)', `publish_control.direct_upload.sftp.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mysite.com", description: "网站公开访问的基地址。" })}
-                ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.sftp.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                ${window.renderPlatformAdvancedGroup('高级代理调参', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.sftp.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
             `;
         } else if (id === 'railway') {
             return `
+                <div class="api-token-helper">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 Railway Deploy Hook 与 Token 向导</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 2px;">
+                        <a href="https://railway.app/dashboard" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 直达 Railway 控制台</a>
+                    </div>
+                </div>
+                ${renderSettingsItem('Git 访问令牌 (Token)', `publish_control.direct_upload.railway.token`, cfg.token, 'password', { placeholder: "Git Token (可选)" })}
                 ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.railway.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://backboard.railway.app/deploy/...", description: "在 Railway 项目服务设置 -> Deploy Triggers 中创建的 Deploy Hook URL。" })}
-                ${window.renderPlatformAdvancedGroup('可选 Git 关联部署参数', `
-                    ${renderSettingsItem('关联 Git 仓库 URL', `publish_control.direct_upload.railway.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git (可选)" })}
-                    ${renderSettingsItem('Git 访问令牌 (Token)', `publish_control.direct_upload.railway.token`, cfg.token, 'password', { placeholder: "Git Token (可选)" })}
-                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.railway.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                ${renderSettingsItem('关联 Git 仓库 URL', `publish_control.direct_upload.railway.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git (可选)" })}
+                ${window.renderPlatformAdvancedGroup('高级代理调参', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.railway.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
         } else if (id === 'render') {
             return `
+                <div class="api-token-helper">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 Render API 密钥向导</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 2px;">
+                        <a href="https://dashboard.render.com/u/settings#api-keys" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 Render API 密钥页</a>
+                    </div>
+                </div>
+                ${renderSettingsItem('Render API Key (可选)', `publish_control.direct_upload.render.api_key`, cfg.api_key, 'password', { placeholder: "rnd_xxxxxxxx (可选，用于高级部署状态探测)" })}
                 ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.render.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://api.render.com/deploy/srv-...", description: "在 Render 静态服务 Settings -> Deploy Hook 中复制的 Hook 地址。" })}
-                ${window.renderPlatformAdvancedGroup('可选 API 密钥与代理', `
-                    ${renderSettingsItem('Render API Key', `publish_control.direct_upload.render.api_key`, cfg.api_key, 'password', { placeholder: "rnd_xxxxxxxx (可选)" })}
-                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.render.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                ${window.renderPlatformAdvancedGroup('高级代理调参', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.render.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
         } else if (id === 'zeabur') {
             return `
+                <div class="api-token-helper">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 Zeabur Access Token 向导</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 2px;">
+                        <a href="https://zeabur.com/account" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 Zeabur 个人账户页</a>
+                    </div>
+                </div>
+                ${renderSettingsItem('Zeabur API Token (可选)', `publish_control.direct_upload.zeabur.token`, cfg.token, 'password', { placeholder: "Zeabur Personal Access Token (可选)" })}
                 ${renderSettingsItem('触发构建 Hook (Deploy Hook URL)', `publish_control.direct_upload.zeabur.deploy_hook_url`, cfg.deploy_hook_url, 'text', { placeholder: "例如: https://gateway.zeabur.app/api/v1/deploy/...", description: "在 Zeabur 服务设置 -> Git/Deploy Webhook 中生成的 Hook 地址。" })}
-                ${window.renderPlatformAdvancedGroup('可选 API 密钥与代理', `
-                    ${renderSettingsItem('Zeabur API Token', `publish_control.direct_upload.zeabur.token`, cfg.token, 'password', { placeholder: "Zeabur Personal Access Token (可选)" })}
-                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.zeabur.proxy`, cfg.proxy, 'text', { placeholder: "例如: direct 或代理地址" })}
+                ${window.renderPlatformAdvancedGroup('高级代理调参', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.zeabur.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
         }

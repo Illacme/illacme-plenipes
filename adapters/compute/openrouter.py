@@ -19,11 +19,29 @@ class OpenRouterTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 OpenRouter 实时模型感应"""
+        import asyncio
         loop = asyncio.get_event_loop()
         url = self.safe_get_url("/models")
-        resp = await loop.run_in_executor(None, lambda: self._session.get(url, timeout=5))
+        headers = {
+            'HTTP-Referer': 'https://github.com/Illacme-plenipes/illacme-plenipes',
+            'X-Title': 'Illacme-plenipes Engine',
+            'User-Agent': 'Illacme-Plenipes/V100.0'
+        }
+        api_key = self.safe_get_config('api_key')
+        if api_key and api_key not in ["not-needed", "none", "empty", ""]:
+            headers["Authorization"] = f"Bearer {api_key}"
+            
+        proxies = self.get_proxy_dict()
+        timeout = self.get_network_timeout(default=15.0)
+
+        def _fetch():
+            return self._session.get(url, headers=headers, proxies=proxies, timeout=timeout)
+
+        resp = await loop.run_in_executor(None, _fetch)
         if resp.status_code == 200:
-            return [m['id'] for m in resp.json().get('data', [])]
+            data = resp.json()
+            items = data.get('data', [])
+            return [m['id'] for m in items if isinstance(m, dict) and 'id' in m]
             
         resp.raise_for_status()
         return ["openai/gpt-4o", "anthropic/claude-3.5-sonnet"]

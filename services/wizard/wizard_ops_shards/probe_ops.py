@@ -50,8 +50,8 @@ def probe_local_github_credential():
 
 def probe_nodes_logic():
     nodes = DiagnosticsService.probe_local_compute()
-    rec_p = nodes[0]["provider"] if nodes else "openai"
-    rec_m = "llama3.1" if rec_p == "ollama" else ("gpt-4o-mini" if rec_p == "openai" else "default")
+    rec_p = nodes[0]["provider"] if nodes else "deepseek"
+    rec_m = "llama3.1" if rec_p == "ollama" else ("deepseek-chat" if rec_p == "deepseek" else "gpt-4o-mini")
     
     vault_suggestions = DiagnosticsService.get_vault_suggestions()
     github_suggestion = probe_local_github_credential()

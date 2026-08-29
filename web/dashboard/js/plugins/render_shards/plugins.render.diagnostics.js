@@ -24,7 +24,7 @@ window.importConfigBackup = (event) => {
         try {
             const parsed = JSON.parse(e.target.result);
             if (!parsed || typeof parsed !== 'object') throw new Error("无效的 JSON 配置格式");
-            
+
             if (confirm("确认使用导入的文件恢复全站插件与平台配置？这将覆盖当前保存数据！")) {
                 const fetchFunc = window.apiFetch || (async (url, init) => {
                     const r = await fetch(url, init);
@@ -43,7 +43,7 @@ window.importConfigBackup = (event) => {
                     alert("导入保存失败: " + (res ? (res.error || res.message) : "未知错误"));
                 }
             }
-        } catch(err) {
+        } catch (err) {
             alert("解析配置文件失败: " + err.message);
         }
     };
@@ -124,7 +124,7 @@ window.senseClipboardCredentials = async (isManualCall = false) => {
                 window.showToast(`💡 已从剪贴板捕获 Key (${text.slice(0, 8)}...)，请打开目标插件抽屉自动填充。`, "info");
             }
         }
-    } catch(err) {
+    } catch (err) {
         if (isManualCall && window.showToast) window.showToast(`读取剪贴板提示: ${err.message || err}`, "warning");
     }
 };
@@ -210,13 +210,19 @@ window.runCrossPluginDiagnostics = () => {
     if (issues.length === 0) return '';
 
     const firstIssue = issues[0];
+    const isWarning = (firstIssue.type === 'warning');
+
     return `
-        <div class="cross-plugin-diagnostics-banner" style="width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; border: 1px dashed ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.4)' : 'var(--neon-cyan)'}; background: ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.06)' : 'rgba(0, 242, 255, 0.05)'}; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: ${firstIssue.type === 'warning' ? '#ffb700' : 'var(--neon-cyan)'};">${firstIssue.title}</span>
-                <span style="font-size: 0.78rem; color: var(--text-dim);">${firstIssue.desc}</span>
+        <div class="cross-plugin-diagnostics-banner" style="width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; border: 1px dashed ${isWarning ? 'rgba(255, 183, 0, 0.4)' : 'var(--neon-cyan)'}; background: ${isWarning ? 'rgba(255, 183, 0, 0.06)' : 'rgba(0, 242, 255, 0.05)'}; display: flex; align-items: center; gap: 16px;">
+            <div style="min-width: max-content; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: ${isWarning ? '#ffb700' : 'var(--neon-cyan)'}; white-space: nowrap;">${firstIssue.title}</span>
+                <div>
+                    <button type="button" onclick="${firstIssue.action}" style="font-size: 0.72rem; background: ${isWarning ? 'rgba(255, 183, 0, 0.15)' : 'rgba(0, 242, 255, 0.12)'}; border: 1px solid ${isWarning ? 'rgba(255, 183, 0, 0.35)' : 'rgba(0, 242, 255, 0.3)'}; color: ${isWarning ? '#ffb700' : 'var(--neon-cyan)'}; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">${firstIssue.actionText}</button>
+                </div>
             </div>
-            <button type="button" onclick="${firstIssue.action}" style="font-size: 0.72rem; background: ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.15)' : 'rgba(0, 242, 255, 0.12)'}; border: 1px solid ${firstIssue.type === 'warning' ? 'rgba(255, 183, 0, 0.35)' : 'rgba(0, 242, 255, 0.3)'}; color: ${firstIssue.type === 'warning' ? '#ffb700' : 'var(--neon-cyan)'}; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">${firstIssue.actionText}</button>
+            <div style="flex: 1; font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;">
+                ${firstIssue.desc}
+            </div>
         </div>
     `;
 };

@@ -83,6 +83,70 @@ class FallbackStrategy:
             tlog.warning(f"⚠️ [AI 主节点故障] 正在切换备份节点执行带重试的推理: {e}")
             return self.secondary.ask_ai_with_retry(payload)
 
+class ConcurrentStrategy:
+    """🚀 竞速模式 (Concurrent Strategy)：主备并联齐发，以毫秒级响应优先者为准，榨取极限性能"""
+    def __init__(self, primary, secondary):
+        self.primary = primary
+        self.secondary = secondary
+
+    @property
+    def node_name(self): return f"{self.primary.node_name}+{self.secondary.node_name}"
+
+    @property
+    def config(self): return self.primary.config
+
+    @property
+    def plugin_id(self): return getattr(self.primary, 'plugin_id', 'openai')
+
+    @property
+    def trans_cfg(self): return getattr(self.primary, 'trans_cfg', None)
+
+    @property
+    def _intelligence_hub(self): return self.primary._intelligence_hub
+
+    def _execute_concurrent(self, method_name, *args, **kwargs):
+        """双发竞速执行器：主备节点同时请求，最先成功返回者胜出"""
+        import concurrent.futures
+        errors = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            fut_primary = executor.submit(getattr(self.primary, method_name), *args, **kwargs)
+            fut_secondary = executor.submit(getattr(self.secondary, method_name), *args, **kwargs)
+            
+            futures = {fut_primary: "primary", fut_secondary: "fallback"}
+            for fut in concurrent.futures.as_completed(futures):
+                role = futures[fut]
+                try:
+                    res = fut.result()
+                    if res is not None:
+                        tlog.debug(f"⚡ [AI 竞速决出] 节点 [{role}] 优先完成响应。")
+                        return res
+                except Exception as e:
+                    tlog.warning(f"⚠️ [AI 竞速节点告警] 节点 [{role}] 抛出异常: {e}")
+                    errors.append(f"[{role}]: {e}")
+
+        raise RuntimeError(f"❌ [AI 竞速失败] 主备节点均无法完成任务: {'; '.join(errors)}")
+
+    def translate(self, text, source_lang, target_lang, context_type="content", remedy_instruction=None, is_dry_run=False, **kwargs):
+        return self._execute_concurrent("translate", text, source_lang, target_lang, context_type=context_type, remedy_instruction=remedy_instruction, is_dry_run=is_dry_run, **kwargs)
+
+    def generate_slug(self, title, is_dry_run=False, **kwargs):
+        return self._execute_concurrent("generate_slug", title, is_dry_run=is_dry_run, **kwargs)
+
+    def translate_title(self, title, target_lang, is_dry_run=False, **kwargs):
+        return self._execute_concurrent("translate_title", title, target_lang, is_dry_run=is_dry_run, **kwargs)
+
+    def translate_metadata(self, text, meta_type, target_lang, is_dry_run=False, **kwargs):
+        return self._execute_concurrent("translate_metadata", text, meta_type, target_lang, is_dry_run=is_dry_run, **kwargs)
+
+    def translate_document(self, text, target_lang_name, rel_path, is_dry_run=False, source_lang="zh-cn", remedy_instruction=None, **kwargs):
+        return self._execute_concurrent("translate_document", text, target_lang_name, rel_path, is_dry_run=is_dry_run, source_lang=source_lang, remedy_instruction=remedy_instruction, **kwargs)
+
+    def raw_inference(self, user_prompt, system_prompt=None):
+        return self._execute_concurrent("raw_inference", user_prompt, system_prompt=system_prompt)
+
+    def ask_ai_with_retry(self, payload):
+        return self._execute_concurrent("ask_ai_with_retry", payload)
+
 class SmartRoutingStrategy:
     """🚀 智能调度策略：根据文本长度与语种，动态分配最经济/最强大的算力节点"""
     def __init__(self, primary, secondary, threshold=1000):

@@ -29,10 +29,10 @@ class TestExemptionLoader(unittest.TestCase):
         """返回集合应包含 YAML 中声明的已知条目"""
         result = load_redline_exemptions()
         known_entries = [
-            "core/ui/handlers/status_handlers.py",
+            "core/governance/heartbeat.py",
             "core/config/config_models.py",
             "core/archives/ledger.py",
-            "web/dashboard/js/localization/localization.render.js",
+            "web/dashboard/js/dashboard.system.js",
             "tests/test_smoke.py",
         ]
         for entry in known_entries:

@@ -1,5 +1,5 @@
 # Illacme-plenipes 治理豁免白名单 (单一真相源)
-# 🚀 [V5.4] 治理终极闭环版
+# 🚀 [V5.5] 治理终极闭环版
 #
 # 所有超过 300 行物理红线的历史遗留文件必须在此声明后方可获得合规豁免。
 # 消费方：.githooks/pre-commit / .plenipes/tools/sentinel_matrix.py / scripts/sovereign_audit.py
@@ -8,33 +8,21 @@
 
 redline_exempt_files:
   # --- Core 层 ---
-  - core/ui/handlers/status_handlers.py
-  - core/config/config.py
   - core/config/config_models.py
-  - core/config/assembler.py
   - core/archives/ledger.py
   - core/syndication/hub.py
-  - core/runtime/engine_factory.py
-  - core/runtime/cli_bootstrap.py
-  - core/editorial/asset_pipeline.py
-  - core/editorial/standard_steps.py
-  - core/logic/ai/ai_scheduler.py
   - core/bindery/bindery_dispatcher.py
   - core/logic/diagnostics/component_monitor.py
   - core/governance/janitor.py
   - core/governance/heartbeat.py
+  - core/logic/ai/ai_scheduler_shards/batch_chunker.py
+  - core/governance/license_guard.py
   # --- Services 层 ---
   - services/api/routes/system.py
-  - services/api/routes/governance.py
-  - services/api/routes/dispatch.py
-  - services/api/routes/content.py
-  - services/api/routes/gov/context.py
-  - services/api/routes/gov/config.py
   - services/api/routes/gov/context_shards/context_ops.py
   - services/api/routes/gov/context_shards/review_ops.py
-  - services/api/logic/content_ops.py
+  - services/api/routes/gov/plugin_mapper.py
   - services/api/logic/content_ops_shards/vault_ops.py
-  - services/wizard/wizard_server.py
   # --- Adapters / Compute / Syndication ---
   - adapters/compute/openai.py
   - adapters/egress/syndication/ghost.py
@@ -45,29 +33,51 @@ redline_exempt_files:
   - web/dashboard/js/dashboard.system.js
   - web/dashboard/js/dashboard.plugins.js
   - web/dashboard/js/compute/compute.ui.js
-  - web/dashboard/js/health/health.context.js
   - web/dashboard/js/license/license.ui.js
   - web/dashboard/js/ui/launchpad.js
-  - web/dashboard/js/editorial/article.syndicate.drawer.js
-  - web/dashboard/js/plugins/plugins.editor.js
-  - web/dashboard/js/plugins/plugins.platforms.js
-  - web/dashboard/js/plugins/plugins.sandbox.js
   - web/dashboard/js/plugins/platforms_shards/platforms.hosting.js
   - web/dashboard/js/plugins/render_shards/plugins.render.cards.js
   - web/dashboard/js/plugins/render_shards/plugins.render.pod.js
   - web/dashboard/js/route/route.render.js
   - web/dashboard/js/route/route.slug.sandbox.js
   - web/dashboard/js/system/system.render.js
-  - web/dashboard/js/vault/vault.drawer.js
   - web/dashboard/js/vault/vault.editor.js
-  - web/dashboard/js/localization/localization.render.js
-  - web/dashboard/js/localization/localization.review.js
-  - web/dashboard/js/localization/localization.review.render.js
-  # --- Core & Shards ---
-  - core/logic/ai/ai_scheduler_shards/batch_chunker.py
-  - core/governance/license_guard.py
-  - services/api/routes/gov/plugin_mapper.py
-  - services/api/routes/gov/context_shards/plugin_dry_run_hosting.py
-  - services/api/routes/gov/context_shards/plugin_dry_run_social.py
-
-
+  # ✅ 已毕业 (门面文件 ≤45 行或已完成 SOP-02 拆分与达标)：
+  #   - core/editorial/standard_steps.py (25行)
+  #   - services/api/routes/governance.py (26行)
+  #   - services/api/logic/content_ops.py (27行)
+  #   - core/logic/ai/ai_scheduler.py (43行)
+  #   - services/api/routes/dispatch.py (72行)
+  #   - services/api/routes/gov/context.py (83行)
+  #   - core/ui/handlers/status_handlers.py (97行)
+  #   - core/config/config.py (137行)
+  #   - services/api/routes/content.py (139行)
+  #   - core/editorial/asset_pipeline.py (149行)
+  #   - core/runtime/engine_factory.py (151行)
+  #   - services/wizard/wizard_server.py (161行)
+  #   - core/runtime/cli_bootstrap.py (166行)
+  #   - core/config/assembler.py (300行)
+  #   - web/dashboard/js/editorial/article.syndicate.drawer.js (13行)
+  #   - web/dashboard/js/plugins/plugins.editor.js (12行)
+  #   - web/dashboard/js/plugins/plugins.platforms.js (45行)
+  #   - web/dashboard/js/vault/vault.drawer.js (11行)
+  #   - web/dashboard/js/localization/localization.render.js (12行)
+  #   - web/dashboard/js/localization/localization.review.js (13行)
+  #   - web/dashboard/js/localization/localization.review.render.js (已拆分为 review.render.body.js 与 review.render.progress.js)
+  #   - web/dashboard/js/health/health.context.js (已拆分为 health.pipeline.js 与 health.heartbeat.js)
+  #   - services/api/routes/gov/config.py (已拆分为 config_shards/*，主文件 83 行门面)
+  #   - services/api/routes/gov/context_shards/plugin_dry_run_hosting.py (已拆分为 hosting_shards/*，主文件 45 行门面)
+  #   - services/api/routes/gov/context_shards/plugin_dry_run_social.py (已拆分为 social_shards/*，主文件 49 行门面)
+  # --- 2026-08-29 商用发布前既有 WIP 红线豁免（用户决策：加白名单后提交，待后续按 SOP-02 拆分达标）---
+  # 以下文件因未提交的本地演进（WIP）行数超过 300 红线，经用户明确授权豁免放行以便提交。
+  # 性质：既有开发进度，非本次许可改动引入；须在后续迭代中按 SOP-02 物理拆分至 ≤300 行。
+  - core/adapters/ai/base.py
+  - services/api/routes/compute.py
+  - services/api/routes/gov/context_shards/plugin_dry_run.py
+  - web/dashboard/js/dashboard.imprints.js
+  - web/dashboard/js/dashboard.modes.js
+  - web/dashboard/js/plugins/platforms_shards/platforms.notifications.js
+  - web/dashboard/js/plugins/platforms_shards/platforms.publishers.js
+  - web/dashboard/js/ui/modals.js
+  - web/dashboard/js/plugins/platforms_shards/platforms.protocols.js
+  - web/dashboard/js/ui/dashboard.tour.js

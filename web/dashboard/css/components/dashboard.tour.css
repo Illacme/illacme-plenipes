@@ -1,0 +1,329 @@
+/* 🧭 [V82.0] Illacme Plenipes Dashboard Tour System - UI/UX Sovereignty Component */
+
+/* 🌌 全屏半透明遮罩与聚光灯容器 */
+.dashboard-tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9000;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+}
+.dashboard-tour-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 🔦 聚光灯镂空高亮框 (Spotlight Cutout) */
+.tour-spotlight-box {
+    position: fixed;
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.72), 0 0 30px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.45);
+    border: 2px solid var(--accent-secondary);
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 9001;
+    box-sizing: border-box;
+    will-change: top, left, width, height;
+}
+
+/* ✨ 聚光灯边缘呼吸动效 */
+@keyframes tourGlowPulse {
+    0% {
+        border-color: var(--accent-secondary);
+        box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.72), 0 0 20px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.35);
+    }
+    100% {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.72), 0 0 35px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.55);
+    }
+}
+.tour-spotlight-box.pulse {
+    animation: tourGlowPulse 2.4s infinite alternate ease-in-out;
+}
+
+/* 💬 悬浮引导气泡卡片 (Glass Tooltip Card) */
+.tour-tooltip-card {
+    position: fixed;
+    width: 400px;
+    max-width: min(420px, 94vw);
+    background: rgba(var(--bg-modal-solid-rgb, 15, 23, 42), 0.95);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.2);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    z-index: 9002;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: top 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                left 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.25s ease,
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    will-change: top, left, transform, opacity;
+}
+
+/* 🏷️ 气泡头部 */
+.tour-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.tour-step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.12);
+    border: 1px solid rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.3);
+    color: var(--accent-secondary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+.tour-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+.tour-close-btn:hover {
+    color: var(--text-bright);
+    background: var(--white-10);
+}
+
+/* 📝 气泡内容 */
+.tour-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.tour-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    margin: 0;
+    line-height: 1.35;
+}
+.tour-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* 💡 探索秘籍 / 快捷手势胶囊 (Pro-Tip Capsule) */
+.tour-pro-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.08);
+    border: 1px solid rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.22);
+    font-size: 0.72rem;
+    line-height: 1.45;
+    margin-top: 2px;
+}
+.tour-pro-tip-icon {
+    font-size: 0.82rem;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+.tour-pro-tip-text {
+    flex: 1;
+    color: var(--accent-secondary);
+    font-weight: 600;
+}
+
+/* 🎁 创作者进阶探索图鉴 (Discovery Badges) */
+.tour-discovery-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 6px;
+    border-radius: 10px;
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+}
+.tour-discovery-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--white-05);
+    border: 1px solid var(--white-10);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.tour-discovery-item:hover {
+    background: rgba(var(--accent-primary-rgb, 163, 76, 255), 0.15);
+    border-color: rgba(var(--accent-primary-rgb, 163, 76, 255), 0.4);
+    transform: translateY(-1px);
+}
+
+/* 🕹️ 底部操作按钮栏 */
+.tour-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--white-08);
+}
+.tour-skip-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+}
+.tour-btn-skip {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.74rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+.tour-btn-skip:hover {
+    color: var(--text-bright);
+    background: var(--white-05);
+}
+.tour-keyboard-hint {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    opacity: 0.7;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    white-space: nowrap;
+    user-select: none;
+}
+.tour-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.tour-btn {
+    padding: 6px 14px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tour-btn-prev {
+    background: var(--white-05);
+    border: 1px solid var(--white-15);
+    color: var(--text-bright);
+}
+.tour-btn-prev:hover {
+    background: var(--white-10);
+    border-color: var(--white-30);
+    transform: translateY(-1px);
+}
+.tour-btn-next {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border: none;
+    color: var(--color-white);
+    box-shadow: 0 3px 10px rgba(var(--accent-primary-rgb), 0.35);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.tour-btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--accent-primary-rgb), 0.5);
+}
+.tour-btn-launch {
+    background: linear-gradient(135deg, var(--neon-green) 0%, var(--neon-cyan) 100%);
+    border: none;
+    color: var(--color-white);
+    box-shadow: 0 3px 12px rgba(var(--neon-green-rgb), 0.4);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    font-weight: 800;
+}
+.tour-btn-launch:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--neon-green) 0%, var(--accent-secondary) 100%);
+    box-shadow: 0 6px 20px rgba(var(--neon-green-rgb), 0.55);
+}
+
+/* 🔘 顶部流线进度胶囊点 (Progress Pills Bar) */
+.tour-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px;
+    border-radius: 10px;
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+}
+.tour-pill {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tour-pill:hover {
+    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.6);
+    transform: scale(1.2);
+}
+.tour-pill.passed {
+    background: var(--accent-secondary);
+    box-shadow: 0 0 6px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.4);
+}
+.tour-pill.active {
+    width: 18px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    box-shadow: 0 0 10px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.6);
+}
+
+/* 🌊 步骤 2 聚焦时的流水线级联流光扫描 (Pipeline Cascade Shimmer) */
+@keyframes tourPipelineShimmer {
+    0% {
+        border-color: var(--white-10);
+        background: var(--white-03);
+        box-shadow: none;
+    }
+    35% {
+        border-color: var(--accent-secondary);
+        background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.18);
+        box-shadow: 0 0 16px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.4);
+        transform: translateX(4px);
+    }
+    100% {
+        border-color: var(--white-10);
+        background: var(--white-03);
+        box-shadow: none;
+        transform: translateX(0);
+    }
+}
+.pipeline-capsule.tour-cascade-shimmer {
+    animation: tourPipelineShimmer 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

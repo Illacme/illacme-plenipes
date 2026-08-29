@@ -101,7 +101,7 @@
 
 ## 6. 已知现状与追踪依据
 
-- 代码仓库的 `LICENSE` 为 CC BY-NC 4.0，而不同 README 的许可证标识并不一致，需由 COM-001 统一。
+- [已闭环] `LICENSE` 已切换为 **PolyForm Noncommercial License 1.0.0**，README / README.zh-CN / CONTRIBUTING 徽章与许可章节已统一，失效的 `file:///` 绝对路径链接已改为相对路径；商业授权入口见 `COMMERCIAL_LICENSE.md`（COM-001 完成）。
 - `requirements.txt` 含格式异常的依赖声明与不应进入发行包的依赖，需由 COM-003 修复并纳入发布门禁。
 - API 使用配置 Token 且当前中间件配置为开放 CORS，需由 COM-004 定义生产认证边界。
 - 现有 CI 工作流具有直接写回 main 的行为，且部署配置存在占位值，需由 COM-005 替换为受控发布流程。

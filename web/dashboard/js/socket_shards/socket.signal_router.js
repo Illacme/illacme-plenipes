@@ -84,6 +84,10 @@ window._wsRouteSignal = (data) => {
     }
 
     if (type === 'UI_RESOURCE_THROTTLE') {
+        if (data._is_replay) {
+            // 🛡️ [UI 防重放] 离线历史事件包中的物理削峰/恢复无需在重连/刷新时回放弹窗
+            return true;
+        }
         const active = data.payload.active;
         if (active) {
             const cpu = data.payload.cpu || 0;
@@ -96,10 +100,13 @@ window._wsRouteSignal = (data) => {
                 );
             }
         } else {
+            // 🛡️ [UI 防误报] 仅当当前界面上确实存在生效中的削峰告警时，状态回落才弹出“恢复正常”提示；
+            // 避免刷新页面建立 WebSocket 重放历史消息时产生突兀的假恢复提示。
+            let hadActiveThrottle = false;
             if (typeof window.clearThrottleAlert === 'function') {
-                window.clearThrottleAlert();
+                hadActiveThrottle = window.clearThrottleAlert();
             }
-            if (typeof window.triggerDynamicAlert === 'function') {
+            if (hadActiveThrottle && typeof window.triggerDynamicAlert === 'function') {
                 window.triggerDynamicAlert(
                     'restore',
                     '物理负载恢复正常',
@@ -118,7 +125,7 @@ window._wsRouteSignal = (data) => {
         if (cat === 'API_TOKEN_EXPIRED') title = '身份认证拦截';
         else if (cat === 'LICENSE_LIMIT') title = '功能准入受限';
         
-        if (typeof window.triggerDynamicAlert === 'function') {
+        if (!data._is_replay && typeof window.triggerDynamicAlert === 'function') {
             window.triggerDynamicAlert('security', title, msg, 5000);
         }
         

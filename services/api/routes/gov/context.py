@@ -20,7 +20,6 @@ from .context_shards.plugin_ops import (
     list_active_plugins_impl,
     probe_plugin_impl,
     toggle_plugin_impl,
-    dry_run_plugin_impl,
     install_plugin_deps_impl
 )
 
@@ -69,7 +68,10 @@ async def toggle_plugin(payload: dict):
 @router.post("/api/plugins/dry-run", dependencies=[Depends(verify_token)])
 async def dry_run_plugin(payload: dict):
     """测试自检校验仿真测试接口"""
-    return await dry_run_plugin_impl(payload)
+    import importlib
+    from .context_shards import plugin_dry_run
+    importlib.reload(plugin_dry_run)
+    return await plugin_dry_run.dry_run_plugin_impl(payload)
 
 @router.post("/api/plugins/install-deps", dependencies=[Depends(verify_token)])
 async def install_plugin_deps(payload: dict):

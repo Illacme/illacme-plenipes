@@ -1,6 +1,6 @@
 /**
  * 🕹️ Illacme Compute Center - Modal Operations Shard (SOP-02 DECOUPLED)
- * 职责：管理模态框内交互控制，包括自定义下拉选项触发、驱动筛选、选项同步与字段校验提示。
+ * 职责：管理模态框内交互控制，包括自定义下拉选项触发、算力渠道筛选、选项同步与字段校验提示。
  */
 
 window.ComputeHandlers = window.ComputeHandlers || {};
@@ -32,7 +32,7 @@ window.ComputeHandlers = window.ComputeHandlers || {};
         },
 
         /**
-         * 🔍 协议过滤
+         * 🔍 算力渠道过滤
          */
         filterProtocols(term, listId) {
             const lowerTerm = term.toLowerCase();
@@ -44,7 +44,7 @@ window.ComputeHandlers = window.ComputeHandlers || {};
         },
 
         /**
-         * 🎯 选择协议驱动
+         * 🎯 选择算力渠道
          */
         selectProvider(id, name, defaultUrl) {
             const input = document.getElementById('swal-input-type');

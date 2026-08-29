@@ -58,17 +58,19 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
     let html = `
         <div class="infrastructure-hub" data-version="V74.35_STABLE" style="margin-top: 5px;">
             ${isAiDisabled ? `
-            <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--neon-red, #ff4d4d); background: rgba(255, 77, 77, 0.05);">
-                <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--neon-red, #ff4d4d); letter-spacing: 2px; margin-bottom: 8px;">⚠️ 算力总控已关闭 (COMPUTE DISABLED)</div>
-                <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-bright, #ffffff); line-height: 1.5;">
-                    检测到 AI 算力总控处于关闭状态，下方配置的所有底座算力单元均处于不活跃待命状态。如需使用，请前往 <a href="javascript:void(0)" onclick="window.ComputeHandlers.switchComputeTab('strategy')" style="color: var(--accent-primary); text-decoration: underline;">调度策略</a> 页面开启。
-                </div>
+            <div class="tactical-info-pod" style="padding: 12px 16px; margin-bottom: 18px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.3); background: rgba(255, 77, 77, 0.04); display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 0.8rem; color: #ff6b6b; font-weight: 600;">⚠️ 算力总控已关闭：下方算力单元处于待命状态。如需启用，请前往 <a href="javascript:void(0)" onclick="window.ComputeHandlers.switchComputeTab('strategy')" style="color: var(--accent-primary); text-decoration: underline;">调度策略</a> 开启。</div>
             </div>
             ` : `
-            <div class="tactical-info-pod glass-panel" style="padding: 20px; margin-bottom: 25px; border-left: 4px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.02);">
-                <div class="pod-label" style="font-size: 0.65rem; font-weight: 900; color: var(--accent-secondary); letter-spacing: 2px; margin-bottom: 8px;">全域算力单元 (COMPUTE UNITS)</div>
-                <div class="pod-desc" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">
-                    管理核心的算力供应资源，包括本地大模型、云端 API 等原子生产力单元。在此处定义的单元可被调度策略引用。
+            <!-- 💡 顶部轻量说明栏：通透亲和，与调度策略统一风格 -->
+            <div class="strategy-top-memo" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-bottom: 18px; background: rgba(255, 255, 255, 0.015); border: 1px dashed var(--glass-border); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.9rem;">🔌</span>
+                    <span style="font-size: 0.78rem; color: var(--text-dim);">管理本地大模型 (LM Studio / Ollama) 与云端 API 原子算力单元</span>
+                </div>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); padding: 3px 10px; border-radius: 6px;">
+                    <span style="font-size: 0.68rem; color: var(--text-dim);">可用单元:</span>
+                    <span style="font-size: 0.74rem; font-weight: 700; color: var(--accent-secondary);">${Object.keys(nodes).length} 个节点</span>
                 </div>
             </div>
             `}
@@ -77,7 +79,19 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
             .sort((a, b) => (b[1].last_updated || 0) - (a[1].last_updated || 0))
             .map(([id, node]) => `
                     <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative; ${isAiDisabled ? 'opacity: 0.5; pointer-events: none;' : ''}">
-                        ${id === trans.primary_node ? '<div class="role-badge primary">PRIMARY</div>' : (id === trans.fallback_node && trans.strategy !== 'single') ? '<div class="role-badge fallback">FALLBACK</div>' : ''}
+                        ${(() => {
+                            if (trans.strategy === 'concurrent') {
+                                const concurrentNodes = Array.isArray(trans.concurrent_nodes) && trans.concurrent_nodes.length > 0
+                                    ? trans.concurrent_nodes
+                                    : [trans.primary_node, trans.fallback_node].filter(Boolean);
+                                if (concurrentNodes.includes(id)) {
+                                    return '<div class="role-badge" style="background: linear-gradient(135deg, rgba(255, 183, 0, 0.25), rgba(255, 77, 77, 0.25)); color: #ffb700; border: 1px solid rgba(255, 183, 0, 0.5); font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; position: absolute; top: 12px; right: 12px; letter-spacing: 0.5px; box-shadow: 0 0 8px rgba(255, 183, 0, 0.3);">RACE 竞速</div>';
+                                }
+                            }
+                            if (id === trans.primary_node) return '<div class="role-badge primary">PRIMARY</div>';
+                            if (id === trans.fallback_node && trans.strategy !== 'single') return '<div class="role-badge fallback">FALLBACK</div>';
+                            return '';
+                        })()}
                         <div class="node-header">
                             <div class="node-identity">
                                 <div class="node-icon-vessel">

@@ -23,7 +23,9 @@ class LocalAITranslator(OpenAICompatibleTranslator):
         try:
             loop = asyncio.get_event_loop()
             url = self.safe_get_url("/models")
-            resp = await loop.run_in_executor(None, lambda: requests.get(url, timeout=5))
+            timeout = self.get_network_timeout(default=10.0)
+            proxies = self.get_proxy_dict()
+            resp = await loop.run_in_executor(None, lambda: requests.get(url, proxies=proxies, timeout=timeout))
             if resp.status_code == 200:
                 return [m['id'] for m in resp.json().get('data', [])]
             return []

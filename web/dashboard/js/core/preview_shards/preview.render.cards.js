@@ -52,7 +52,7 @@ window.renderPreviewIntroCard = function (activeTheme) {
                 </div>
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px;">
                     <div style="color: #00ffaa; font-weight: bold; font-size: 0.84rem; margin-bottom: 4px;">🚀 4. 开启预览</div>
-                    <div style="color: #888; font-size: 0.76rem;">点火本地预览服务容器，自动在浏览器新标签页打开。</div>
+                    <div style="color: #888; font-size: 0.76rem;">启动本地预览服务容器，自动在浏览器新标签页打开。</div>
                 </div>
             </div>
 
@@ -77,7 +77,15 @@ window.renderPreviewSuccessCard = function (finalUrl, finalPort) {
                 <span style="font-size: 0.75rem; color: #00f0ff; background: rgba(0,240,255,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,240,255,0.3);">HTTP 200 OK</span>
             </div>
             <div style="color: #ccc; font-size: 0.82rem; margin-bottom: 4px;">✔ <b>原稿合规</b>：已通过资产与双链审计（0 外部推流）</div>
-            <div style="color: #ccc; font-size: 0.82rem;">✔ <b>预览服务</b>：<a id="preview-site-link" href="${finalUrl}" target="_blank" style="color: #00f0ff; text-decoration: underline; font-weight: bold;">${finalUrl}</a> (端口 <span id="preview-site-port">${finalPort}</span>)</div>
+            <div style="color: #ccc; font-size: 0.82rem; margin-bottom: 12px;">✔ <b>预览服务</b>：<a id="preview-site-link" href="${finalUrl}" target="_blank" style="color: #00f0ff; text-decoration: underline; font-weight: bold;">${finalUrl}</a> (端口 <span id="preview-site-port">${finalPort}</span>)</div>
+            <div style="background: rgba(162, 155, 254, 0.08); border: 1px dashed rgba(162, 155, 254, 0.35); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
+                <div style="font-size: 0.8rem; color: #dfe6e9; line-height: 1.4;">
+                    <span style="font-weight: 600; color: #a29bfe;">🏛️ 下一步建议：</span>已熟悉示范站出版流程？准备好将您自己的本地 Markdown 知识文库打造为全球多语种独立网站了吗？
+                </div>
+                <button onclick="if (typeof window.closeTerminalModal === 'function') window.closeTerminalModal(); if (typeof window.showImprintWizard === 'function') window.showImprintWizard();" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 10px rgba(108, 92, 231, 0.35); transition: all 0.2s; flex-shrink: 0;">
+                    ✨ 开启专属品牌创建向导 →
+                </button>
+            </div>
         </div>
     `;
 };

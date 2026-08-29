@@ -26,7 +26,9 @@ class GeminiNativeTranslator(GoogleCompatibleTranslator):
         base_endpoint = self.safe_get_url("/models")
         url = f"{base_endpoint}?key={api_key}"
         loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(None, lambda: self._session.get(url, timeout=5))
+        timeout = self.get_network_timeout(default=15.0)
+        proxies = self.get_proxy_dict()
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, proxies=proxies, timeout=timeout))
         if resp.status_code == 200:
             data = resp.json()
             models = []

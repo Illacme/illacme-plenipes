@@ -395,6 +395,11 @@
     box-sizing: border-box;
 }
 .setting-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.2); }
+.setting-input.input-error {
+    border-color: #ff4d6a !important;
+    box-shadow: 0 0 12px rgba(255, 77, 106, 0.25) !important;
+    background: rgba(255, 77, 106, 0.03) !important;
+}
 .setting-input-number {
     max-width: 96px !important;
     text-align: right;

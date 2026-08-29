@@ -19,32 +19,44 @@
     <link rel="stylesheet" href="css/components/dashboard.animations.css?v=76.2">
     <link rel="stylesheet" href="css/components/modals.base.css?v=75.0">
     <link rel="stylesheet" href="css/components/modals.forms.css?v=75.0">
-    <link rel="stylesheet" href="css/components/modals.discovery.css?v=75.0">
+    <link rel="stylesheet" href="css/components/modals.discovery.css?v=20260828_live_v6">
     <link rel="stylesheet" href="css/components/modals.alerts.css?v=75.0">
     <link rel="stylesheet" href="css/components/dashboard.agent.css?v=75.1">
     <link rel="stylesheet" href="css/components/glass.toast.css">
     <link rel="stylesheet" href="css/components/dashboard.agent.patch.css?v=76.8">
     <link rel="stylesheet" href="css/components/dashboard.agent.markdown.css?v=75.1">
     <link rel="stylesheet" href="css/components/dashboard.agent.widescreen.css?v=76.0">
-    <link rel="stylesheet" href="css/views/overview.css?v=75.0">
+    <link rel="stylesheet" href="css/views/overview.css?v=20260828_onboarding_dual_v29">
+    <link rel="stylesheet" href="css/views/galaxy.css">
+    <link rel="stylesheet" href="css/views/vault.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.header.css?v=75.0">
-    <link rel="stylesheet" href="css/views/compute.strategy.css?v=75.0">
-    <link rel="stylesheet" href="css/views/plugins.css?v=75.0">
+    <link rel="stylesheet" href="css/views/compute.strategy.css?v=20260828_workstation_v6">
+    <link rel="stylesheet" href="css/views/plugins.css?v=76.0">
     <link rel="stylesheet" href="css/views/governance.themes.css">
-    <link rel="stylesheet" href="css/views/governance.strategies.css">
+    <link rel="stylesheet" href="css/views/governance.strategies.css?v=20260828_balanced2_v5">
     <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
     <link rel="stylesheet" href="css/views/dispatch.css?v=76.0">
+    <link rel="stylesheet" href="css/dashboard.components.css?v=20260828_step3_compute_dispatch_v39">
     <link rel="stylesheet" href="css/views/tower.css">
     <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <link rel="stylesheet" href="css/components/review.drawer.css">
-    <link rel="stylesheet" href="css/themes/theme.light.overrides.css">
+    <link rel="stylesheet" href="css/components/dashboard.tour.css?v=82.0">
+    <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20260828_step3_compute_dispatch_v39">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js"></script>
 
-    <!-- 🌌 Galaxy Engine Dependencies -->
+    <!-- [DEV ONLY] Polyfill for require() if missing -->
+    <script>
+      if (typeof window.require === 'undefined') {
+        window.require = function(mod) {
+          console.warn('[Polyfill] require("' + mod + '") called in browser environment. Returning empty stub.');
+          return {};
+        };
+      }
+    </script>
     <script src="vendor/sweetalert2.all.min.js"></script>
     <script src="vendor/marked.js"></script>
     <script src="vendor/3d-force-graph.min.js"></script>
@@ -134,14 +146,14 @@
     <script src="js/core/core_shards/core.publish.abort.js"></script>
     <script src="js/dashboard.core.js"></script>
     <script src="js/compute/compute.api.js"></script>
-    <script src="js/compute/compute.ui.js"></script>
-    <script src="js/compute/compute.ui.render.js"></script>
+    <script src="js/compute/compute.ui.js?v=20260828_workstation_v5"></script>
+    <script src="js/compute/compute.ui.render.js?v=20260828_top_memo_v5"></script>
     <script src="js/compute/compute.ui.banner.js"></script>
     <script src="js/compute/compute.handlers.ops.js"></script>
     <script src="js/compute/compute.handlers.js"></script>
     <script src="js/compute/compute.modals.ops.js"></script>
     <script src="js/compute/compute.modals.js"></script>
-    <script src="js/compute/compute.diag.js"></script>
+    <script src="js/compute/compute.diag.js?v=20260828_live_v6"></script>
     <script src="js/compute/compute.precheck.js?v=77.13"></script>
     <script src="js/theme/theme.mode.js?v=80.1"></script>
     <script src="js/theme/theme.api.js?v=80.1"></script>
@@ -149,13 +161,14 @@
     <script src="js/theme/theme.ui.js?v=80.1"></script>
     <script src="js/theme/theme.handlers.js?v=80.1"></script>
     <script src="js/dashboard.compute.js?v=75.1"></script>
-    <script src="js/dashboard.templates.js"></script>
+    <script src="js/dashboard.templates.js?v=20260828_brand_header_v30"></script>
     <script src="js/dashboard.templates.tower.js"></script>
     <script src="js/dashboard.views.js?v=75.2"></script>
     <script src="js/ui/fe_bus.js"></script>
     <script src="js/ui/drawers.js?v=110.0"></script>
-    <script src="js/ui/modals.js"></script>
-    <script src="js/ui/launchpad.js"></script>
+    <script src="js/ui/modals.js?v=20260829_hosting_wording_exact_v54"></script>
+    <script src="js/ui/launchpad.js?v=20260828_all_6themes_sovereign_v33"></script>
+    <script src="js/ui/dashboard.tour.js?v=82.0"></script>
     <script src="js/ui/tooltip.js"></script>
     <script src="js/ui/toast.js"></script>
     <script src="js/ui/alerter.js"></script>
@@ -197,6 +210,7 @@
     <script src="js/plugins/platforms_shards/platforms.publishers.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.image_hosting.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.notifications.js?v=87.0"></script>
+    <script src="js/plugins/platforms_shards/platforms.protocols.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.oauth_handlers.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.sensing_judger.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.sensing_handlers.js?v=87.0"></script>
@@ -206,17 +220,18 @@
     <script src="js/plugins/plugins.editor.render.js"></script>
     <script src="js/plugins/editor_shards/editor.reuse.js?v=105.0"></script>
     <script src="js/plugins/editor_shards/editor.wizard.js?v=105.0"></script>
-    <script src="js/plugins/editor_shards/editor.grouping.js?v=105.0"></script>
-    <script src="js/plugins/editor_shards/editor.focus.js?v=105.0"></script>
+    <script src="js/plugins/editor_shards/editor.grouping.js?v=20260828_card_box_v27"></script>
+    <script src="js/plugins/editor_shards/editor.focus.js?v=20260828_card_box_v27"></script>
     <script src="js/plugins/editor_shards/editor.driver.js?v=105.0"></script>
     <script src="js/plugins/editor_shards/editor.shell.js?v=105.0"></script>
     <script src="js/plugins/plugins.editor.js?v=105.0"></script>
-    <script src="js/plugins/plugins.sandbox.js"></script>
+    <script src="js/plugins/sandbox_shards/sandbox.runner.js"></script>
+    <script src="js/plugins/sandbox_shards/sandbox.saver.js"></script>
     <script src="js/dashboard.plugins.js?v=75.1"></script>
     <script src="js/imprints/imprints.wizard.js"></script>
-    <script src="js/imprints/imprints.render.js"></script>
-    <script src="js/dashboard.imprints.js"></script>
-    <script src="js/dashboard.modes.js"></script>
+    <script src="js/imprints/imprints.render.js?v=20260828_bottom_memo_v4"></script>
+    <script src="js/dashboard.imprints.js?v=20260828_step3_model_discovery_dist_v40"></script>
+    <script src="js/dashboard.modes.js?v=20260828_toast_v4"></script>
     <script src="js/localization/render_shards/loc.matrix.render.js?v=105.0"></script>
     <script src="js/localization/render_shards/loc.blocks.render.js?v=105.0"></script>
     <script src="js/localization/render_shards/loc.glossary.render.js?v=105.0"></script>
@@ -225,8 +240,9 @@
     <script src="js/localization/localization.render.js?v=105.0"></script>
     <script src="js/localization/localization.style.js"></script> <!-- 🔒 [I5] 翻译风格预设 (SOP-02拆分) -->
     <script src="js/localization/localization.review.markdown.js"></script>
-    <!-- 🔒 [I5] 翻译校对 Markdown 重写器 (SOP-02拆分) -->
-    <script src="js/localization/localization.review.render.js"></script> <!-- 🔒 [I5] 翻译校对工作台渲染层 -->
+    <script src="js/localization/review_shards/review.render.progress.js"></script>
+    <!-- 🔒 [I5] 翻译校对进度与辅助渲染 (SOP-02拆分) -->
+    <script src="js/localization/review_shards/review.render.body.js"></script> <!-- 🔒 [I5] 翻译校对主体渲染 (SOP-02拆分) -->
     <script src="js/localization/review_shards/review.template.js"></script>
     <script src="js/localization/review_shards/review.state.js?v=105.0"></script>
     <script src="js/localization/review_shards/review.lock.js?v=105.0"></script>
@@ -252,7 +268,8 @@
     <script src="js/route/route.sync.js?v=105.0"></script>
     <script src="js/dashboard.guardrails.js"></script>
     <script src="js/health/health.render.js"></script>
-    <script src="js/health/health.context.js"></script>
+    <script src="js/health/health_shards/health.pipeline.js"></script> <!-- 🔒 [I5] 系统流水线全景感知 (SOP-02拆分) -->
+    <script src="js/health/health_shards/health.heartbeat.js"></script> <!-- 🔒 [I5] 系统体征与心跳门面 (SOP-02拆分) -->
     <script src="js/health/health.services.js"></script>
     <script src="js/health/health.diagnostics.js"></script>
     <script src="js/dashboard.health.js"></script>

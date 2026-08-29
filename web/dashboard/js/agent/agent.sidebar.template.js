@@ -148,6 +148,15 @@ window.ensureRightSidebarMounted = function () {
                                 style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">系统当前负载怎么样？底层的各项微服务在线吗？</code>
                             (状态审计)
                         </div>
+
+                        <div>
+                            <span
+                                style="display: block; font-weight: 700; color: var(--text-bright); margin-bottom: 2px;">🧭
+                                系统导览与使用指南：</span>
+                            • <code class="clickable-suggestion" onclick="if(window.startDashboardTour) window.startDashboardTour()"
+                                style="color: var(--neon-green); background: rgba(5, 150, 105, 0.12); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(5, 150, 105, 0.3); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">启动工作台功能漫游导览</code>
+                            (重温 6 步出版流线与操作中枢)
+                        </div>
                     </div>
                 </div>
             </div>

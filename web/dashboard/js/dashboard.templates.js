@@ -19,13 +19,16 @@ window.viewTemplates = {
             </div>
             <div class="overview-overlay" id="command-hub-overlay" style="display: flex;" onclick="if(event.target===this) window.toggleHub('hide')">
                 <div class="command-hub">
-                    <div class="hub-header">
+                    <div class="hub-header" style="margin-bottom: 8px;">
                         <button class="close-btn" onclick="window.toggleHub('hide')" title="关闭出版工作台 (Esc)">×</button>
-                        <div class="hub-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 20px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--accent-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px;">🚀 出版工作台 · PUBLISHER HUB</div>
-                        <h2 id="hub-title" style="font-size: 2.2rem; margin: 0 0 6px 0; letter-spacing: -0.5px; font-weight: 900;">全球私人出版社</h2>
-                        <p class="hub-subtitle" style="font-size: 0.86rem; color: var(--text-dim); margin: 0 0 14px 0; letter-spacing: 0.5px;">您的主权化全球出版分发中心</p>
-                        <div class="hub-meta-row" style="display: flex; gap: 1.5rem; font-size: 0.78rem; opacity: 0.8; justify-content: center; font-family: 'JetBrains Mono', monospace;">
-                            <div><span style="color: var(--accent-secondary);">IMPRINT:</span> <span id="display-imprint">...</span></div><div><span style="color: var(--accent-secondary);">THEME:</span> <span id="display-theme">...</span></div>
+                        <div class="hub-title-row" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 3px;">
+                            <div class="hub-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 20px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--accent-secondary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">ILLACME PRESS</div>
+                            <h2 id="hub-title" style="font-size: 1.45rem; margin: 0; letter-spacing: -0.5px; font-weight: 900; line-height: 1.2;">全球私人出版社</h2>
+                        </div>
+                        <div class="hub-meta-row" style="display: flex; gap: 8px; font-size: 0.76rem; opacity: 0.85; justify-content: center; align-items: center; margin-bottom: 6px;">
+                            <span style="color: var(--accent-secondary); font-weight: 700; letter-spacing: 0.5px;">🚀 出版工作台</span>
+                            <span style="display:none;" id="display-imprint"></span>
+                            <span style="display:none;" id="display-theme"></span>
                         </div>
                     </div>
                     <!-- 🚀 [V80.0] 出版工作台动态内容区 - 由 launchpad.js 的 initLaunchpad() 注入 -->
@@ -159,7 +162,7 @@ window.viewTemplates = {
                         <div class="tab-item cap-tab" data-cat="ingress"><span class="tab-icon">📥</span> 内容接入</div>
                         <div class="tab-item cap-tab" data-cat="transformer"><span class="tab-icon">🛠️</span> 文稿加工</div>
                         <div class="tab-item cap-tab" data-cat="masker"><span class="tab-icon">🛡️</span> 安全防护</div>
-                        <div class="tab-item cap-tab" data-cat="protocol"><span class="tab-icon">🧠</span> AI 协议</div>
+                        <div class="tab-item cap-tab" data-cat="protocol"><span class="tab-icon">🧠</span> 算力渠道</div>
                         <div class="tab-item cap-tab" data-cat="theme"><span class="tab-icon">🎨</span> 视觉装帧</div>
                         <div class="tab-item cap-tab" data-cat="image_hosting"><span class="tab-icon">📷</span> 图床存储</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>

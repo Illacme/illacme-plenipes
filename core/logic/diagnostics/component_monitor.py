@@ -325,6 +325,6 @@ class ComponentMonitor:
 
         return {
             "engine": {"status": engine_status, "label": "核心引擎", "health": 100 if engine else 0},
-            "onboarding": {"status": "active" if onboarding_active else "standby", "label": "版图向导", "health": 100 if onboarding_active else 50},
+            "onboarding": {"status": "active" if onboarding_active else "standby", "label": "品牌向导", "health": 100 if onboarding_active else 50},
             "preview": {"status": "online" if preview_active else "offline", "label": "预览服务", "health": 100 if preview_active else 0}
         }

@@ -229,8 +229,9 @@
     --neon-cyan: hsl(200, 95%, 40%);
     --neon-cyan-rgb: 5, 105, 199;
     
-    --accent-primary: hsl(260, 60%, 50%);
-    --accent-primary-rgb: 104, 51, 204;
+    --accent-primary: hsl(212, 100%, 48%);
+    --accent-primary-rgb: 0, 102, 245;
+    --accent-primary-hover: hsl(212, 100%, 42%);
     
     --neon-purple: hsl(260, 60%, 50%);
     --neon-green: hsl(150, 70%, 35%);

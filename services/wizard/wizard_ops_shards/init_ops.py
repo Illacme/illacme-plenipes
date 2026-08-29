@@ -18,16 +18,16 @@ def init_press_logic(req, shutdown_cb=None):
     imp_id = req.imprint_id or req.press_name
     imp_name = req.imprint_name or req.press_name or imp_id
     if not imp_id:
-        raise HTTPException(status_code=400, detail="创建失败：物理版图 id 不能为空")
+        raise HTTPException(status_code=400, detail="创建失败：出版品牌 ID 不能为空")
 
     m_path = os.path.abspath(os.path.expanduser(req.manuscripts_path))
     
     if not LicenseGuard.is_pro_feature_allowed("multi_imprint"):
         if len(im.list_imprints()) >= 1:
-            raise HTTPException(status_code=403, detail="社区版仅限划定 1 个版图。请升级至授权版。")
+            raise HTTPException(status_code=403, detail="社区版仅限创建 1 个自定义出版品牌。请升级至授权版。")
 
     if not im.init_sovereign_imprint(imp_id, m_path, imprint_name=imp_name):
-        raise HTTPException(status_code=400, detail="创建失败：物理版图初始化异常。")
+        raise HTTPException(status_code=400, detail="创建失败：出版品牌初始化异常。")
     
     from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
     

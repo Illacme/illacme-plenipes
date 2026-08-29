@@ -15,6 +15,22 @@ import os
 
 router = APIRouter(prefix="/api/compute", tags=["Compute"])
 
+@router.get("/probe", dependencies=[Depends(verify_token)])
+def probe_compute():
+    """🚀 [V76.0] 实时嗅探本地算力（LM Studio / Ollama）与本地凭据环境"""
+    from core.logic.diagnostics import DiagnosticsService
+    from services.wizard.wizard_ops_shards.probe_ops import probe_local_github_credential
+    
+    local_nodes = DiagnosticsService.probe_local_compute()
+    github_cred = probe_local_github_credential()
+    
+    return {
+        "local_nodes": local_nodes,
+        "github": github_cred,
+        "has_local_compute": len(local_nodes) > 0,
+        "recommended_provider": local_nodes[0]["provider"] if local_nodes else "deepseek"
+    }
+
 @router.get("/nodes", dependencies=[Depends(verify_token)])
 def list_compute_nodes():
     """🚀 [V66.5] 枚举物理底座中的算力节点"""
@@ -175,7 +191,7 @@ async def test_node_connectivity(req: dict):
         return {"status": "error", "error": str(e)}
 
 @router.get("/models", dependencies=[Depends(verify_token)])
-async def get_node_models(node_id: str, provider: str = None, api_key: str = None, base_url: str = None):
+async def get_node_models(node_id: str, provider: str = None, api_key: str = None, base_url: str = None, proxy: str = None):
     """🚀 [V66.5] 动态模型发现：实时从算力节点获取可用模型列表"""
     from core.adapters.ai.registry import AIProviderRegistry
     
@@ -183,12 +199,18 @@ async def get_node_models(node_id: str, provider: str = None, api_key: str = Non
     target_provider = provider
     target_key = api_key
     target_url = base_url
+    target_proxy = proxy
     
-    if engine and node_id in engine.config.translation.compute_nodes:
-        node_cfg = engine.config.translation.compute_nodes[node_id]
-        target_provider = target_provider or node_cfg.type
-        target_key = target_key or node_cfg.api_key
-        target_url = target_url or node_cfg.base_url
+    if engine and hasattr(engine, 'config') and hasattr(engine.config, 'translation'):
+        compute_nodes = getattr(engine.config.translation, 'compute_nodes', {})
+        if node_id in compute_nodes:
+            node_cfg = compute_nodes[node_id]
+            target_provider = target_provider or getattr(node_cfg, 'type', None)
+            target_key = target_key or getattr(node_cfg, 'api_key', None)
+            target_url = target_url or getattr(node_cfg, 'base_url', None)
+            target_proxy = target_proxy or getattr(node_cfg, 'proxy', None)
+        if not target_proxy and hasattr(engine.config, 'system'):
+            target_proxy = getattr(engine.config.system, 'global_proxy', None)
         
     if not target_provider: return {"models": []}
     p_cls = AIProviderRegistry.get_provider(target_provider)
@@ -198,20 +220,22 @@ async def get_node_models(node_id: str, provider: str = None, api_key: str = Non
         target_url = target_url or getattr(p_cls, "DEFAULT_URL", "")
         from types import SimpleNamespace
         
-        mock_limits = SimpleNamespace(max_concurrency=1, timeout=10)
+        mock_limits = SimpleNamespace(max_concurrency=1, timeout=20)
         mock_node = SimpleNamespace(
             base_url=target_url,
             api_key=target_key,
             type=target_provider,
-            limits=mock_limits
+            limits=mock_limits,
+            proxy=target_proxy
         )
         
         mock_config = SimpleNamespace(
             base_url=target_url,
             api_key=target_key,
             model='discovery',
-            api_timeout=10,
+            api_timeout=20,
             max_retries=1,
+            global_proxy=target_proxy,
             compute_nodes={node_id: mock_node}
         )
         

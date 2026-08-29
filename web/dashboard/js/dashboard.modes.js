@@ -59,27 +59,20 @@ window.renderModesCategory = () => {
     }
 
     return `
-        <div class="full-width">
-            <div class="glass-panel" style="padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02); margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
-                <h5 style="color: #00f2ff; margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🧭 如何选择适合您的出版模式？</h5>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 0.78rem; line-height: 1.5; color: var(--text-normal);">
-                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;"><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🌍 全球多语言分发</span>适合有<b>海外/跨国流量需求</b>。写完后 AI 自动帮您全量翻译成多国语种（需配置算力网关）。</div>
-                    <div style="border-right: 1px solid rgba(255, 255, 255, 0.05); padding-right: 15px;"><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🛰️ 智能母语增强</span>适合<b>仅写单语（母语）但想冲高点击率</b>。不翻译，仅让 AI 润色标题与实体（需配置算力网关）。</div>
-                    <div><span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">📜 基础物理出版</span>适合<b>离线写作、高度隐私</b>。零 AI 算力调用，纯固定规则提取。</div>
-                </div>
-            </div>
-            <div class="card-gallery">
+        <div class="full-width fade-in">
+            <!-- 📋 首屏核心业务：出版模式3列横向并排对比矩阵 -->
+            <div class="modes-grid">
                 ${modeDefinitions.map(m => {
                     const isActive = m.id === currentMode;
                     const isDisabled = (m.id !== 'basic' && !enableAi);
                     const disabledReason = (m.id !== 'basic' && !enableAi) ? '🔒 未开启 AI 算力总控' : '';
 
-                    return `<div class="identity-card mode-card ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}" onclick="${isDisabled ? '' : `switchPublishingMode('${m.id}')`}">
+                    return `<div class="identity-card mode-card ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" style="position: relative; ${isDisabled ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}" onclick="${isDisabled ? '' : `switchPublishingMode('${m.id}')`}">
+                            ${isActive ? '<div class="badge active" style="position: absolute; top: 18px; right: 18px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; padding: 3px 8px; background: rgba(0, 242, 255, 0.15); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 255, 0.35); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);">ACTIVE</div>' : ''}
+                            ${isDisabled ? `<div class="badge error" style="position: absolute; top: 18px; right: 18px; background: rgba(255, 68, 68, 0.15); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); font-size: 0.62rem; padding: 3px 6px; border-radius: 6px;">${disabledReason}</div>` : ''}
                             <div class="card-header">
                                 <div class="card-icon">${m.icon}</div>
-                                <div class="card-body"><h4>${m.title}</h4><span class="subtitle">${m.subtitle}</span></div>
-                                ${isActive ? '<div class="badge active">ACTIVE</div>' : ''}
-                                ${isDisabled ? `<div class="badge error" style="background: rgba(255, 68, 68, 0.15); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); font-size: 0.65rem; padding: 4px 8px;">${disabledReason}</div>` : ''}
+                                <div class="card-body"><h4 style="margin: 0 0 2px 0;">${m.title}</h4><span class="subtitle">${m.subtitle}</span></div>
                             </div>
                             <p class="mode-desc">${m.desc}</p>
                             <div class="strategy-list" style="${isDisabled ? 'pointer-events: none;' : ''}">
@@ -94,6 +87,28 @@ window.renderModesCategory = () => {
                             </div>
                         </div>`;
                 }).join('')}
+            </div>
+
+            <!-- 🧭 底部精炼知识卡：如何选择适合您的出版模式 -->
+            <div class="glass-panel" style="padding: 16px 20px; border-radius: 12px; border-left: 4px solid var(--accent-secondary); background: rgba(0, 242, 255, 0.02); margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h5 style="color: var(--accent-secondary); margin: 0; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🧭 如何选择适合您的出版模式？</h5>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">可根据文稿类型与目标读者随时一键切换</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; font-size: 0.76rem; line-height: 1.5; color: var(--text-normal);">
+                    <div style="background: rgba(255, 255, 255, 0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🌍 全球多语言分发</span>
+                        适合有<b>海外/跨国读者群与多语流量需求</b>。写完后 AI 自动帮您全量翻译成多国语种并优化各地区 SEO（需配置算力网关）。
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">🛰️ 智能母语增强</span>
+                        适合<b>仅写作单语（母语）但希望最大化曝光与点击率</b>。不进行多语翻译，由 AI 针对母语润色标题与知识实体（需配置算力网关）。
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <span style="color: var(--text-bright, #fff); font-weight: 600; display: block; margin-bottom: 4px;">📜 基础物理出版</span>
+                        适合<b>离线写作、极简轻量或对内容隐私有极高要求</b>的场景。完全零 AI 算力调用，基于纯固定规则静态生成。
+                    </div>
+                </div>
             </div>
         </div>`;
 };
@@ -163,17 +178,16 @@ window.switchPublishingMode = async (mode) => {
             container.scrollTo({ top: 0, behavior: 'smooth' });
         }
         
-        if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${mode.toUpperCase()}]，启用 [${defaultStrategy}] 策略`, "success");
-        if (window.Swal) {
-            window.Swal.fire({
-                title: '💡 出版模式切换提示',
-                text: '出版模式已成功切换。为了让本地译文缓存和文件完全对正，强烈建议您在下一次同步时勾选“强制重构/清除缓存”选项重新发布。',
-                icon: 'info',
-                background: 'rgba(20, 20, 25, 0.95)',
-                color: '#fff',
-                confirmButtonColor: 'var(--accent-primary)',
-                confirmButtonText: '确定'
-            });
+        const modeTitles = {
+            'global': '全球多语言分发',
+            'enhanced': '智能母语增强',
+            'basic': '基础物理出版'
+        };
+        const currentTitle = modeTitles[mode] || mode.toUpperCase();
+        
+        if (typeof addAudit === 'function') addAudit(`✅ 出版模式已切换至 [${currentTitle}]，启用 [${defaultStrategy}] 策略`, "success");
+        if (typeof showNotification === 'function') {
+            showNotification(`✅ 出版模式已切换至「${currentTitle}」(建议下次同步时清除缓存)`, 'success');
         }
     }
 };

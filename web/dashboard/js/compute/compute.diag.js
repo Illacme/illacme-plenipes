@@ -59,7 +59,7 @@
                             <div class="p-3 text-center" style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
                                 <div style="color:var(--neon-red); font-weight:bold; margin-bottom:5px;">📡 算力感应连接失败</div>
                                 <div style="font-size:0.7rem; color:var(--text-bright); margin-bottom:8px;">${res.error}</div>
-                                <div style="font-size:0.65rem; color:var(--text-muted);">排查建议：请仔细核对您的端点地址 (Endpoint) 是否多写/少写了路径，以及 API 密钥与所选协议驱动是否匹配。</div>
+                                <div style="font-size:0.65rem; color:var(--text-muted);">排查建议：请仔细核对您的端点地址 (Endpoint) 是否多写/少写了路径，以及 API 密钥与所选算力渠道是否匹配。</div>
                             </div>
                         `;
                     } else {
@@ -101,35 +101,126 @@
         },
 
         /**
-         * 📡 策略页模型建议感应
+         * 📡 策略页模型真实在线感知（0 假数据，100% 真实探测）
          */
         async fetchNodeModels(nodeId, targetField) {
+            const input = document.getElementById(`${targetField}_input`);
             const suggestions = document.getElementById(`${targetField}_suggestions`);
             if (!nodeId || !suggestions) return;
 
-            suggestions.innerHTML = '<div class="suggestion-item loading">📡 正在感应单元模型...</div>';
+            const nodes = window.settingsData?.translation?.compute_nodes || {};
+            const node = nodes[nodeId] || {};
+            const nodeDisplayName = node.provider_name || node.type || nodeId;
+
+            // 1. 自动回填节点的基准探针模型作为默认值（若当前为空）
+            if (node.model && (!input.value || input.value.trim() === '')) {
+                input.value = node.model;
+                window.ComputeHandlers.updateStrategy(targetField, node.model);
+            }
+
+            // 2. 初始呈现真实探测中的过渡状态
+            suggestions.innerHTML = `
+                <div class="discovery-popover-card loading-card">
+                    <div class="popover-header">
+                        <span class="popover-title cyan">
+                            <span class="pulse-dot"></span> 正在探测「${nodeId}」的在线模型...
+                        </span>
+                        <span class="popover-close" onclick="document.getElementById('${targetField}_suggestions').classList.remove('show'); document.getElementById('${targetField}_suggestions').innerHTML='';" title="关闭">✕</span>
+                    </div>
+                    <div class="popover-desc">正在向该节点端点发起物理握手，获取当前真实已加载或可用的模型清单...</div>
+                </div>
+            `;
             suggestions.classList.add('show');
 
             try {
                 const res = await apiFetch(`/api/compute/models?node_id=${nodeId}`);
-                if (res?.models?.length > 0) {
-                    suggestions.innerHTML = res.models.map(m => `
-                        <div class="suggestion-item" onclick="window.ComputeHandlers.applyModelSuggestion('${targetField}', '${m}')">
-                            <span class="icon">💎</span> ${m}
+                const realModels = Array.isArray(res?.models) ? res.models : [];
+
+                if (realModels.length > 0) {
+                    // 🟢 探测成功：展示 100% 真实可用的模型列表
+                    let html = `
+                        <div class="discovery-popover-card success-card">
+                            <div class="popover-header">
+                                <span class="popover-title cyan">
+                                    <span>🟢 真实在线感知到 ${realModels.length} 个可用模型</span>
+                                </span>
+                                <span class="popover-close" onclick="document.getElementById('${targetField}_suggestions').classList.remove('show'); document.getElementById('${targetField}_suggestions').innerHTML='';" title="关闭">✕</span>
+                            </div>
+                            
+                            <!-- 快速过滤搜索框 -->
+                            <div class="popover-search-wrap">
+                                <input type="text" class="popover-search-input" placeholder="🔍 快速过滤模型名称..." 
+                                       oninput="const val = this.value.toLowerCase(); document.querySelectorAll('#${targetField}_model_list .suggestion-item').forEach(el => { el.style.display = el.dataset.model.toLowerCase().includes(val) ? 'flex' : 'none'; });"
+                                       onclick="event.stopPropagation()">
+                            </div>
+
+                            <div id="${targetField}_model_list" class="popover-model-list">
+                    `;
+
+                    realModels.forEach(m => {
+                        const isCurrentConfigured = (m === node.model || m === input.value);
+                        html += `
+                            <div class="suggestion-item" data-model="${m}" onclick="window.ComputeHandlers.applyModelSuggestion('${targetField}', '${m}')">
+                                <div class="item-name-box">
+                                    <span class="item-icon">📦</span>
+                                    <span class="item-text">${m}</span>
+                                </div>
+                                ${isCurrentConfigured ? '<span class="item-current-tag">当前使用</span>' : ''}
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
                         </div>
-                    `).join('');
+                    `;
+                    suggestions.innerHTML = html;
                 } else {
-                    suggestions.innerHTML = '<div class="suggestion-item error">⚠️ 未感应到活跃模型</div>';
+                    // ⚠️ 未探测到模型：诚实告知，绝不造假
+                    suggestions.innerHTML = `
+                        <div class="discovery-popover-card warning-card">
+                            <div class="popover-header">
+                                <span class="popover-title amber">
+                                    <span>⚠️ 暂未在线感知到可用模型</span>
+                                </span>
+                                <span class="popover-close" onclick="document.getElementById('${targetField}_suggestions').classList.remove('show'); document.getElementById('${targetField}_suggestions').innerHTML='';" title="关闭">✕</span>
+                            </div>
+                            <div class="popover-desc main-text">
+                                该算力单元 (${nodeDisplayName}) 物理链路握手未返回模型列表。
+                            </div>
+                            <div class="popover-guide-box">
+                                💡 <b>排查与操作建议：</b><br>
+                                1. 若为本地服务 (LM Studio / Ollama)，请确认服务已启动并开启 Local Server；<br>
+                                2. 您可直接在上方输入框<b>手动键入精确的模型标识符</b>（如 <code>qwen2.5-7b</code>），保存即可生效。
+                            </div>
+                        </div>
+                    `;
                 }
             } catch (e) {
-                suggestions.innerHTML = '<div class="suggestion-item error">🛑 感应链路中断</div>';
+                // 🛑 探测异常：诚实提示网络或服务错误
+                suggestions.innerHTML = `
+                    <div class="discovery-popover-card error-card">
+                        <div class="popover-header">
+                            <span class="popover-title red">
+                                <span>🛑 算力单元握手未响应</span>
+                            </span>
+                            <span class="popover-close" onclick="document.getElementById('${targetField}_suggestions').classList.remove('show'); document.getElementById('${targetField}_suggestions').innerHTML='';" title="关闭">✕</span>
+                        </div>
+                        <div class="popover-desc">
+                            暂时无法直连算力节点进行实时模型发现。您可以直接在上方输入框手动输入模型标识符。
+                        </div>
+                    </div>
+                `;
             }
         },
 
         applyModelSuggestion(targetField, model) {
             const input = document.getElementById(`${targetField}_input`);
             const suggestions = document.getElementById(`${targetField}_suggestions`);
-            if (input) input.value = model;
+            if (input) {
+                input.value = model;
+                input.focus();
+            }
             if (suggestions) {
                 suggestions.innerHTML = '';
                 suggestions.classList.remove('show');
@@ -137,6 +228,29 @@
             window.ComputeHandlers.updateStrategy(targetField, model);
         }
     };
+
+    // 🌐 [Click-Outside & ESC] 全局点击页面其他位置或按 ESC 键自动关闭模型探测弹窗
+    if (!window._computeSuggestionsDismissListenerAttached) {
+        window._computeSuggestionsDismissListenerAttached = true;
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.discovery-suggestions') || e.target.closest('.terminal-input') || e.target.closest('.terminal-select')) {
+                return;
+            }
+            document.querySelectorAll('.discovery-suggestions.show').forEach(el => {
+                el.classList.remove('show');
+                el.innerHTML = '';
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.discovery-suggestions.show').forEach(el => {
+                    el.classList.remove('show');
+                    el.innerHTML = '';
+                });
+            }
+        });
+    }
 
     // 🚀 [V74.24] 物理挂载至全局总线
     Object.assign(window.ComputeHandlers, Diag);

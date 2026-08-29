@@ -124,8 +124,9 @@
                 `;
 
                 selectedPlatforms.forEach(chanId => {
-                    const chanMeta = platformMetadata[chanId] || { name: chanId.toUpperCase(), icon: '📡' };
                     const cleanChanId = chanId.toLowerCase().replace(/[_-\s]/g, '');
+                    const chanPlugin = (window.allPlugins || []).find(p => p.id === chanId || p.id.replace(/[_-\s]/g, '') === cleanChanId);
+                    const chanMeta = chanPlugin ? { name: chanPlugin.name || chanId, icon: chanPlugin.icon || '📡' } : { name: chanId.toUpperCase(), icon: '📡' };
                     const statusItem = syncMatrix.find(m => (m.channel_id || '').toLowerCase().replace(/[_-\s]/g, '') === cleanChanId) || {};
                     
                     // 优先从当前选中语种的物权账本中获取真实 remote_url

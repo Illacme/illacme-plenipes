@@ -30,7 +30,9 @@ class OllamaNativeTranslator(BaseTranslator):
         try:
             url = self.safe_get_url("/api/tags")
             loop = asyncio.get_event_loop()
-            res = await loop.run_in_executor(None, lambda: self._session.get(url, timeout=5))
+            timeout = self.get_network_timeout(default=10.0)
+            proxies = self.get_proxy_dict()
+            res = await loop.run_in_executor(None, lambda: self._session.get(url, proxies=proxies, timeout=timeout))
             if res.status_code == 200:
                 data = res.json()
                 return [m['name'] for m in data.get('models', [])]

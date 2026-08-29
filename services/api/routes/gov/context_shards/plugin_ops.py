@@ -39,7 +39,7 @@ async def probe_plugin_impl(payload: dict) -> dict:
     if (category in ("transformer", "masker") or (not category and (plugin_id in markup_registry._transformers or plugin_id in markup_registry._maskers))) and (plugin_id in markup_registry._transformers or plugin_id in markup_registry._maskers):
         return {"success": True, "healthy": True, "message": "处理管道链路畅通，正则指纹校验完成。"}
 
-    # 3. 探测 AI 协议 (Infrastructure)
+    # 3. 探测算力渠道 (Infrastructure)
     if (category == "protocol" or (not category and plugin_id in AIProviderRegistry.get_all_protocols())) and plugin_id in AIProviderRegistry.get_all_protocols():
         provider_class = AIProviderRegistry.get_provider(plugin_id)
         # Find all nodes of this type in config
@@ -230,8 +230,10 @@ async def toggle_plugin_impl(payload: dict) -> dict:
 
 async def dry_run_plugin_impl(payload: dict) -> dict:
     """🔌 [V74.9] 物理通道连接测试引擎入口 (由 plugin_dry_run 分片代理)"""
-    from .plugin_dry_run import dry_run_plugin_impl as impl
-    return await impl(payload)
+    import importlib
+    from . import plugin_dry_run
+    importlib.reload(plugin_dry_run)
+    return await plugin_dry_run.dry_run_plugin_impl(payload)
 
 async def install_plugin_deps_impl(payload: dict) -> dict:
     """🔌 一键依赖安装与自愈接口 (由 plugin_ops_deps 分片代理)"""

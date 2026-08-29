@@ -44,89 +44,100 @@ window.initLaunchpad = async function () {
 // ══════════════════════════════════════════════════════
 
 /**
- * 计算当前向导应高亮哪一步（基于系统实际配置完成度）。
+ * 计算当前向导应高亮哪一步（基于创作者真实心智链路：文库 -> 品牌 -> 算力）。
  * 返回 1 / 2 / 3。
  */
 function _calcOnboardingStep(ctx) {
-    const hasAI = ctx && ctx.ai && ctx.ai.status !== 'offline' && ctx.ai.status !== 'degraded';
-    if (!hasAI) return 1;
     const hasVault = !!(ctx?.vault?.root);
-    if (!hasVault) return 2;
+    if (!hasVault) return 1;
+
+    const imprints = (window.settingsData && window.settingsData._imprints) || [];
+    const hasCustomImprint = imprints.some(function(imp) { return imp.id && imp.id !== 'default'; });
+    if (!hasCustomImprint) return 2;
+
+    const hasAI = ctx && ctx.ai && ctx.ai.status !== 'offline' && ctx.ai.status !== 'degraded';
+    if (!hasAI) return 3;
+
     return 3;
 }
 
 /**
- * 渲染 3 步引导向导。
+ * 渲染首次启动双轨引导向导 (Dual-Track Onboarding)。
+ * 提供「极速体验官方示例」与「创建专属品牌 3 步流水线」双分支。
  */
 function _renderOnboarding(area, ctx) {
-    const step = _calcOnboardingStep(ctx);
-
     const steps = [
         {
-            icon: '🤖',
-            num: 1,
-            label: '配置 AI 算力',
-            title: '第一步：接入 AI 大模型',
-            desc: '出版工作台的核心能力——自动翻译、SEO 优化、多语言内容分发——都需要一个 AI 大模型来驱动。您可以选择 OpenAI、DeepSeek、Ollama 等主流大模型，只需填入 API Key 即可完成接入。',
-            hint: '💡 没有 API Key？进入算力中心后，我们会引导您申请试用资格。',
-            btnText: '🤖 前往配置算力底座',
-            btnAction: "window.toggleHub('hide'); window.showView('compute');"
-        },
-        {
             icon: '📂',
-            num: 2,
-            label: '绑定文库',
-            title: '第二步：指定您的稿件存放位置',
-            desc: '请告诉系统您的 Markdown 笔记文件存放在哪里（例如 Obsidian 笔记本的根目录）。系统会自动扫描该目录下的所有 .md 文件，并将它们纳入出版管道。',
-            hint: '💡 文库路径就是您在电脑上存放文章的文件夹，例如：/Users/yourname/Documents/Notes',
-            btnText: '📂 前往绑定文稿文库',
-            btnAction: "window.toggleHub('hide'); window.showView('settings', 'general');"
+            num: 1,
+            label: '关联原稿文库',
+            desc: '选择本地 Obsidian / Typora 笔记目录，智能扫描并建立内容账本。'
         },
         {
             icon: '🏛️',
+            num: 2,
+            label: '品牌名称与装帧',
+            desc: '命名专属出版社，挑选 Universal / Docusaurus 等精美主题版式。'
+        },
+        {
+            icon: '🤖',
             num: 3,
-            label: '创建品牌',
-            title: '第三步：创建您的第一个出版品牌',
-            desc: '「品牌 (Imprint)」是您出版社的品牌容器——每个品牌对应一个独立的网站，拥有自己的主题风格、目标语言和分发渠道。您可以先创建一个默认品牌，后续随时添加更多。',
-            hint: '💡 您可以把品牌理解为"一个品牌网站"，例如："我的技术博客"或"公司官方知识库"。',
-            btnText: '🏛️ 创建我的第一个品牌',
-            btnAction: "if (typeof window.showImprintWizard === 'function') { window.showImprintWizard(); } else if (typeof window.launchFullImprintWizard === 'function') { window.launchFullImprintWizard(); }"
+            label: '算力底座与分发',
+            desc: '接入 AI 大模型，开启多语言全自动翻译与全网托管渠道。'
         }
     ];
 
-    const stepIndicator = steps.map(function(s, i) {
-        const n = i + 1;
-        const isDone = n < step;
-        const isActive = n === step;
+    const stepListHtml = steps.map(function(s) {
         return (
-            '<div class="lpwiz-step-node' + (isDone ? ' done' : '') + (isActive ? ' active' : '') + '">' +
-                '<div class="lpwiz-step-circle">' + (isDone ? '✓' : n) + '</div>' +
-                '<span class="lpwiz-step-label">' + s.label + '</span>' +
-            '</div>' +
-            (i < steps.length - 1 ? '<div class="lpwiz-step-connector' + (isDone ? ' done' : '') + '"></div>' : '')
+            '<div class="lpwiz-step-item">' +
+                '<div class="lpwiz-step-num">' + s.num + '</div>' +
+                '<div class="lpwiz-step-info">' +
+                    '<div class="lpwiz-step-name">' + s.icon + ' ' + s.label + '</div>' +
+                    '<div class="lpwiz-step-desc">' + s.desc + '</div>' +
+                '</div>' +
+            '</div>'
         );
     }).join('');
-
-    const cur = steps[step - 1];
 
     area.innerHTML =
         '<div class="lpwiz-container">' +
             '<div class="lpwiz-welcome">' +
-                '<p class="lpwiz-welcome-text">欢迎使用全球私人出版社！以下 3 个步骤帮您完成初始化，全程约需 5 分钟。</p>' +
+                '<div class="lpwiz-welcome-badge">🎉 欢迎开启您的本地化全球出版发行之旅</div>' +
+                '<p class="lpwiz-welcome-text">系统已为您预置官方示范品牌<strong>「Illacme Press 创作者指南」</strong>，您可以选择<strong>零门槛极速体验</strong>，或<strong>创建专属品牌</strong>开启本地文档全域分发：</p>' +
             '</div>' +
-            '<div class="lpwiz-steps-track">' + stepIndicator + '</div>' +
-            '<div class="lpwiz-panel">' +
-                '<div class="lpwiz-panel-icon">' + cur.icon + '</div>' +
-                '<div class="lpwiz-panel-body">' +
-                    '<h3 class="lpwiz-panel-title">' + cur.title + '</h3>' +
-                    '<p class="lpwiz-panel-desc">' + cur.desc + '</p>' +
-                    '<div class="lpwiz-panel-hint">' + cur.hint + '</div>' +
-                    '<button class="lpwiz-action-btn" onclick="' + cur.btnAction.replace(/"/g, '&quot;') + '">' + cur.btnText + '</button>' +
+            '<div class="lpwiz-dual-track">' +
+                '<!-- 轨道 A: 极速体验官方示例 -->' +
+                '<div class="lpwiz-track-card sample-track">' +
+                    '<div class="lpwiz-track-header">' +
+                        '<div class="lpwiz-track-badge sample">⚡ 极速体验 · 0门槛</div>' +
+                        '<h3 class="lpwiz-track-title">体验创作者指南工作台</h3>' +
+                        '<p class="lpwiz-track-desc">无需任何外部配置，直接使用预置文库与官方主题模板，感受从原稿到全球站点的全自动化出版发行流程：</p>' +
+                    '</div>' +
+                    '<div class="lpwiz-track-features">' +
+                        '<div class="lpwiz-feature-item"><span>📖</span> 预置 32 篇多语种创作指南示范原稿（中英双语）</div>' +
+                        '<div class="lpwiz-feature-item"><span>🎭</span> 官方 Sovereign 旗舰装帧主题与全套排版组件</div>' +
+                        '<div class="lpwiz-feature-item"><span>⚡</span> 完整贯通原稿、AI 翻译、装帧到全域托管分发链</div>' +
+                    '</div>' +
+                    '<div class="lpwiz-track-actions">' +
+                        '<button class="lpwiz-btn sample-preview-btn" onclick="window.toggleHub(\'hide\'); if (typeof window.startDashboardTour === \'function\') { window.startDashboardTour(); } else if (typeof window.triggerPreview === \'function\') { window.triggerPreview(); } else { window.triggerPublishAndPreview(); }">🧭 开启工作台功能导览与发布预览 →</button>' +
+                    '</div>' +
+                '</div>' +
+                '<!-- 轨道 B: 实战定制专属品牌 -->' +
+                '<div class="lpwiz-track-card custom-track">' +
+                    '<div class="lpwiz-track-header">' +
+                        '<div class="lpwiz-track-badge custom">🏛️ 实战建站 · 3步发布</div>' +
+                        '<h3 class="lpwiz-track-title">创建我的专属出版品牌</h3>' +
+                        '<p class="lpwiz-track-desc">开启一站式建站向导，将您的本地 Markdown 文档打造为全球多语种独立网站：</p>' +
+                    '</div>' +
+                    '<div class="lpwiz-steps-stack">' + stepListHtml + '</div>' +
+                    '<div class="lpwiz-track-actions">' +
+                        '<button class="lpwiz-btn custom-action-btn glow-action" onclick="if (typeof window.showImprintWizard === \'function\') { window.showImprintWizard(); } else if (typeof window.launchFullImprintWizard === \'function\') { window.launchFullImprintWizard(); }">✨ 开启品牌创建向导 (开始建站) →</button>' +
+                    '</div>' +
                 '</div>' +
             '</div>' +
             '<div class="lpwiz-footer-note">' +
                 '已完成配置？<a href="#" onclick="event.preventDefault(); window.governanceContext=null; window.initLaunchpad();" style="color: var(--accent-secondary);">点击刷新检测</a> · ' +
-                '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\');" style="color: var(--text-dim);">稍后再说，先去探索</a>' +
+                '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\');" style="color: var(--text-dim);">稍后再说，先去探索主界面</a>' +
             '</div>' +
         '</div>';
 }
@@ -144,9 +155,15 @@ function _renderDashboard(area, ctx) {
     area.innerHTML =
         '<div class="lpdash-container">' +
             statsHtml +
-            pipeHtml +
-            suggestHtml +
-            actionsHtml +
+            '<div class="lpdash-grid-split">' +
+                '<div class="lpdash-col-diag">' +
+                    pipeHtml +
+                    suggestHtml +
+                '</div>' +
+                '<div class="lpdash-col-actions">' +
+                    actionsHtml +
+                '</div>' +
+            '</div>' +
         '</div>';
 }
 
@@ -326,6 +343,12 @@ function _buildQuickActions() {
             title: '系统设置',
             desc: '配置品牌信息、主题风格、翻译语种、分发渠道等核心参数。',
             action: "window.toggleHub('hide'); window.showView('settings');"
+        },
+        {
+            icon: '🧭',
+            title: '漫游导览',
+            desc: '随时重温工作台 6 步漫游导览，温习各区域功能与快捷交互。',
+            action: "window.toggleHub('hide'); if (typeof window.startDashboardTour === 'function') { window.startDashboardTour(); }"
         }
     ];
 

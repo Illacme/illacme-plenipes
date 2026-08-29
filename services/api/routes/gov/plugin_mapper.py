@@ -257,10 +257,12 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         display_name = getattr(proto_cls, "DISPLAY_NAME", proto.upper())
         protocol_family = getattr(proto_cls, "PROTOCOL_FAMILY", "native")
         default_url = getattr(proto_cls, "DEFAULT_URL", "")
+        aliases = getattr(proto_cls, "ALIASES", [])
         fallback_desc = f"内核级 AI 通讯协议：支持对接任何符合 {proto.upper()} 标准的算力终端。"
         plugins.append({
             "id": proto, "name": display_name, "protocol_family": protocol_family, "default_url": default_url,
-            "category": "protocol", "category_name": "🧠 AI 协议",
+            "aliases": aliases,
+            "category": "protocol", "category_name": "🧠 算力渠道",
             "status": protocol_family.capitalize(), "is_in_use": True, "is_enabled": True,
             "origin": "core", "version": getattr(proto_cls, "VERSION", SYSTEM_TRACK),
             "description": getattr(proto_cls, "DESCRIPTION", fallback_desc), "is_manageable": True

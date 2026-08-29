@@ -34,14 +34,14 @@ class ImprintManager:
         if not os.path.exists(self.imprint_root):
             os.makedirs(self.imprint_root)
 
-    def init_sovereign_imprint(self, name: str, manuscripts_path: str, imprint_name: Optional[str] = None, bootstrap_vault: bool = False) -> bool:
+    def init_sovereign_imprint(self, name: str, manuscripts_path: str, imprint_name: Optional[str] = None, bootstrap_vault: bool = False, theme: Optional[str] = None) -> bool:
         """🚀 [V50.3] 划定一个新的主权出版社品牌 (Imprint)"""
 
-        # 1. 准入校验：检查是否有权创建新空间
+        # 1. 准入校验：检查是否有权创建新空间，禁止覆盖已有物理空间
         imprint_path = os.path.join(self.imprint_root, name)
         if os.path.exists(imprint_path):
-            tlog.warning(f"⚠️ [品牌存在] (激活现有品牌) 出版品牌 '{name}' 已就绪，跳过物理划定。")
-            return True
+            tlog.error(f"🛑 [准入拦截] (物理冲突) 出版品牌目录 '{name}' 已在磁盘存在，禁止重复创建覆盖。")
+            return False
 
         existing = self.list_imprints()
         max_allowed = LicenseGuard.get_max_imprints()
@@ -59,7 +59,7 @@ class ImprintManager:
             os.makedirs(os.path.join(imprint_path, d), exist_ok=True)
 
         # 3. 镜像分发：分发母本配置与方言
-        self._mirror_mother_templates(imprint_path, manuscripts_path, imprint_name)
+        self._mirror_mother_templates(imprint_path, manuscripts_path, imprint_name, theme=theme)
         
         # 4. 🌱 [V75.6] 空内容金库自愈初始化引导
         if bootstrap_vault and manuscripts_path:
@@ -85,7 +85,7 @@ tags: [Illacme, Onboarding]
 
 # 🌌 欢迎来到 Illacme Plenipes 数字出版星系！
 
-这是一篇由**版图配置向导**自动生成的新手文档。它正安全地躺在您的物理文库（Vault）中。
+这是一篇由**出版品牌创建向导**自动生成的新手文档。它正安全地躺在您的物理文库（Vault）中。
 
 ## 🚀 接下来您可以：
 1. **全域发布**：点击导航栏的 **🚀 全域发布**，本篇文章将瞬间经过系统智囊的翻译、润色，然后跨线程推送到您激活的 WordPress、Medium 或 Webhook 分发端点！
@@ -107,7 +107,7 @@ tags: [Illacme, Onboarding]
         return True
 
 
-    def _mirror_mother_templates(self, imprint_path: str, manuscripts_path: str, imprint_name: Optional[str] = None):
+    def _mirror_mother_templates(self, imprint_path: str, manuscripts_path: str, imprint_name: Optional[str] = None, theme: Optional[str] = None):
         """从核心母本库镜像初始化配置"""
         # A. 系统基础配置 (🛡️ V50.3 主权定型精简版)
         # 仅固化保留该品牌特有的“物理主权”描述：
@@ -115,6 +115,7 @@ tags: [Illacme, Onboarding]
             "imprint_name": imprint_name or os.path.basename(imprint_path),
             "imprint_description": "这是一个主权出版版图节点。",
             "vault_root": manuscripts_path,
+            "theme": theme or "sovereign",
             
             "system": {
                 "data_root": imprint_path,

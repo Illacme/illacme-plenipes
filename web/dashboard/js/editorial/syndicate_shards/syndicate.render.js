@@ -48,25 +48,25 @@
         const syndicationCfg = cfgData.syndication || {};
         const availableLangs = window.getAvailableSyndicateLangs ? window.getAvailableSyndicateLangs(cfgData) : [];
 
-        // 2. 🚀 物理感应全量分发渠道及其多因子凭据就绪状态
-        const platformMetadata = window.platformMetadata || {};
-        const activePlatforms = [];
-        Object.keys(platformMetadata).forEach(key => {
-            const itemCfg = syndicationCfg[key] || syndicationCfg[key.replace('_', '')] || {};
-            const status = window.evaluateSyndicateChannelStatus ? window.evaluateSyndicateChannelStatus(key, itemCfg) : { isReady: false, isBrandActive: false, credLabel: '待填凭据', credReady: false };
-            const meta = platformMetadata[key] || { name: key, icon: '📡', desc: '' };
+        // 2. 🚀 动态感应插件中心中所有真实注册的社媒分发渠道 (publisher 类别)
+        const publisherPlugins = (window.allPlugins || []).filter(p => p.category === 'publisher');
+        const activePlatforms = publisherPlugins.map(p => {
+            const itemCfg = syndicationCfg[p.id] || syndicationCfg[p.id.replace('_', '')] || {};
+            const status = window.evaluateSyndicateChannelStatus 
+                ? window.evaluateSyndicateChannelStatus(p.id, itemCfg) 
+                : { isReady: false, isBrandActive: false, credLabel: '待填凭据', credReady: false };
 
-            activePlatforms.push({
-                id: key,
-                name: meta.name,
-                icon: meta.icon,
-                desc: meta.desc,
+            return {
+                id: p.id,
+                name: p.name || p.id,
+                icon: p.icon || '📡',
+                desc: p.desc || '',
                 isReady: status.isReady,
                 isBrandActive: status.isBrandActive,
                 credLabel: status.credLabel,
                 credReady: status.credReady,
                 isChecked: status.isReady && status.isBrandActive
-            });
+            };
         });
         window.currentActivePlatforms = activePlatforms;
 
@@ -148,14 +148,14 @@
                 </label>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="syndicate-lang-picker">
                     ${availableLangs.map((l, idx) => `
-                        <label class="lang-radio-btn" style="padding: 6px 12px; border: 1px solid ${idx === 0 ? 'var(--accent-secondary)' : 'rgba(255, 255, 255, 0.15)'}; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px; background: ${idx === 0 ? 'rgba(0, 242, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)'};">
+                        <label class="lang-radio-btn ${idx === 0 ? 'active' : ''}" style="padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                             <input type="radio" name="syndicate_lang" value="${l.code}" ${idx === 0 ? 'checked' : ''} style="display: none;" onchange="window.onSyndicateLangChange(this, '${relPath}')">
-                            ${l.icon} ${l.name} ${l.isSource ? '<span style="font-size:0.62rem; background:rgba(0,242,255,0.2); padding:1px 4px; border-radius:4px;">(母语)</span>' : '<span style="font-size:0.62rem; background:rgba(187,134,252,0.2); padding:1px 4px; border-radius:4px; color:#bb86fc;">(译文)</span>'}
+                            ${l.icon} ${l.name} ${l.isSource ? '<span class="lang-tag-source" style="font-size:0.62rem; padding:1px 4px; border-radius:4px;">(母语)</span>' : '<span class="lang-tag-target" style="font-size:0.62rem; padding:1px 4px; border-radius:4px;">(译文)</span>'}
                         </label>
                     `).join('')}
                 </div>
                 <!-- 译文就绪提示卡片 -->
-                <div id="syndicate-translation-readiness-tip" style="font-size: 0.72rem; color: #00ff88; background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.2); padding: 6px 10px; border-radius: 6px; margin-top: 2px;">
+                <div id="syndicate-translation-readiness-tip" style="font-size: 0.72rem; padding: 6px 10px; border-radius: 6px; margin-top: 2px;">
                     🟢 当前选中的是原稿母语，无需翻译，启动后可直达社交分发平台。
                 </div>
             </div>
@@ -175,16 +175,16 @@
             </div>
 
             <!-- 3. 富文本广播卡片实时预览 -->
-            <details class="glass-panel" id="syndicate-live-preview-details" style="padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.02);">
+            <details class="glass-panel" id="syndicate-live-preview-details" style="padding: 10px 12px; border-radius: 8px;">
                 <summary style="font-size: 0.78rem; font-weight: 600; color: var(--accent-secondary, #00f2fe); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
                     <span>👁️ 实时广播卡片视觉预览</span>
                     <span style="font-size: 0.68rem; color: var(--text-dim); font-weight: normal;">展开查看各平台真实排版 ▾</span>
                 </summary>
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;" id="syndicate-preview-content-box">
-                    <div style="display: flex; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;" id="syndicate-preview-tabs">
-                        <button type="button" class="mini-btn preview-tab-btn active" data-ptarget="discord" onclick="window.switchSyndicatePreviewTarget('discord')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(0, 242, 255, 0.2); color: #fff; border: 1px solid rgba(0, 242, 255, 0.4); cursor: pointer;">💬 Discord Embed</button>
-                        <button type="button" class="mini-btn preview-tab-btn" data-ptarget="telegram" onclick="window.switchSyndicatePreviewTarget('telegram')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">✈️ Telegram Card</button>
-                        <button type="button" class="mini-btn preview-tab-btn" data-ptarget="devto" onclick="window.switchSyndicatePreviewTarget('devto')" style="padding: 2px 8px; font-size: 0.68rem; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">👩‍💻 Dev.to 文章</button>
+                    <div style="display: flex; gap: 6px; padding-bottom: 6px;" id="syndicate-preview-tabs">
+                        <button type="button" class="mini-btn preview-tab-btn active" data-ptarget="discord" onclick="window.switchSyndicatePreviewTarget('discord')">💬 Discord Embed</button>
+                        <button type="button" class="mini-btn preview-tab-btn" data-ptarget="telegram" onclick="window.switchSyndicatePreviewTarget('telegram')">✈️ Telegram Card</button>
+                        <button type="button" class="mini-btn preview-tab-btn" data-ptarget="devto" onclick="window.switchSyndicatePreviewTarget('devto')">👩‍💻 Dev.to 文章</button>
                     </div>
                     <div id="syndicate-card-preview-renderer" style="min-height: 100px;"></div>
                 </div>

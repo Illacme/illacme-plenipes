@@ -30,7 +30,8 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             ...(window.settingsData.image_hosting?.[id] || {}),
             ...(window.settingsData.publish_control?.direct_upload?.[id] || {}),
             ...(window.settingsData.publish_control?.webhook_endpoints?.[id] || {}),
-            ...(window.settingsData.syndication?.[id] || {})
+            ...(window.settingsData.syndication?.[id] || {}),
+            ...(window.settingsData.translation?.compute_nodes?.[id] || {})
         };
     }
 
@@ -187,31 +188,31 @@ window.showPluginLogDrawer = (id, title, status, logs) => {
         cleanLogTexts.push(str);
 
         if (str.includes('ERROR') || str.includes('❌') || str.includes('失败')) {
-            return `<div style="color: #ff4d4d; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
+            return `<div class="log-line log-line-error" style="color: #ff4d4d; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
         } else if (str.includes('WARN') || str.includes('⚠️')) {
-            return `<div style="color: #f59e0b; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
+            return `<div class="log-line log-line-warn" style="color: #f59e0b; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
         } else if (str.includes('SUCCESS') || str.includes('🟢') || str.includes('成功')) {
-            return `<div style="color: #00ff88; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
+            return `<div class="log-line log-line-success" style="color: #00ff88; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
         }
-        return `<div style="color: #d1d5db; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
+        return `<div class="log-line log-line-info" style="color: #d1d5db; margin-bottom: 3px; font-family: monospace;">${str}</div>`;
     }).join('');
 
     window.lastCleanLogText = cleanLogTexts.join('\n');
 
     drawer.innerHTML = `
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3);">
+        <div class="log-terminal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3);">
             <div>
-                <h3 style="margin: 0; font-size: 1.05rem; color: #fff;">📋 物理连通性日志</h3>
-                <span style="font-size: 0.72rem; color: var(--text-dim);">${title || id.toUpperCase()} 通道演练诊断信息</span>
+                <h3 class="log-terminal-title" style="margin: 0; font-size: 1.05rem; color: #fff;">📋 物理连通性日志</h3>
+                <span class="log-terminal-subtitle" style="font-size: 0.72rem; color: var(--text-dim);">${title || id.toUpperCase()} 通道演练诊断信息</span>
             </div>
-            <button type="button" onclick="window.closeLogDrawer()" style="background: transparent; border: none; color: #888; font-size: 1.2rem; cursor: pointer;">✕</button>
+            <button type="button" class="log-terminal-close-btn" onclick="window.closeLogDrawer()" style="background: transparent; border: none; color: #888; font-size: 1.2rem; cursor: pointer;">✕</button>
         </div>
-        <div style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6; background: #07070a; color: #d1d5db; word-break: break-all;">
+        <div class="log-terminal-body" style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6; background: #07070a; color: #d1d5db; word-break: break-all;">
             ${formattedLogs}
         </div>
-        <div style="padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px; justify-content: flex-end; background: rgba(0,0,0,0.3);">
-            <button type="button" onclick="window.copyLogTerminalContent(this)" style="font-size: 0.75rem; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--neon-cyan); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease;">📋 一键复制日志</button>
-            <button type="button" onclick="window.closeLogDrawer()" style="font-size: 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
+        <div class="log-terminal-footer" style="padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px; justify-content: flex-end; background: rgba(0,0,0,0.3);">
+            <button type="button" class="btn-copy-log" onclick="window.copyLogTerminalContent(this)" style="font-size: 0.75rem; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--neon-cyan); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease;">📋 一键复制日志</button>
+            <button type="button" class="btn-close-log" onclick="window.closeLogDrawer()" style="font-size: 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
         </div>
     `;
 
