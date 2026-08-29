@@ -632,6 +632,25 @@
     backdrop-filter: blur(2px) !important;
 }
 
+/* 🌞 [PATCH] 社交媒体分发抽屉 - 语种选择按钮白天模式适配
+   抽屉背景已由上方 .syndicate-drawer-overlay 改白底深字，
+   故按钮配色需同步反转为浅底深字，否则 active 青字会糊在浅底上。 */
+[data-theme="light"] .lang-radio-btn {
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    color: #475569;
+}
+[data-theme="light"] .lang-radio-btn:hover {
+    border-color: rgba(0, 170, 210, 0.5);
+    color: #0f172a;
+}
+[data-theme="light"] .lang-radio-btn.active {
+    background: rgba(0, 170, 210, 0.12);
+    border-color: #0a9bc4;
+    color: #0a6b8a;
+    box-shadow: 0 0 0 1px rgba(0, 170, 210, 0.25);
+}
+
 
 
 

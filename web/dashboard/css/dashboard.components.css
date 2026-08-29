@@ -589,3 +589,32 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background: rgba(0, 242, 255, 0.08) !important;
     box-shadow: 0 0 10px rgba(0, 242, 255, 0.12);
 }
+
+/* 🌐 社交媒体分发抽屉 - 语种选择按钮（.lang-radio-btn）
+   根因：syndicate.render.js 重构时砍掉了 inline 高亮样式，且全 CSS 树从未定义 .lang-radio-btn，
+   导致 active 态在 dark/light 下都无视觉强调（问题1 回归）。
+   onSyndicateLangChange() 切换时会清空 inline background/borderColor 并移动 active class，
+   意图即让 CSS 类规则接管，故此处用纯 CSS 补全。
+   注意：inline style 已含 padding/border-radius/font-size/display/gap，此处不重复以免覆盖。
+   配色用字面量 rgba，避开 --white-NN 在 light 下反转成深色的陷阱。
+   此为暗模式默认；light 覆盖见 theme.light.overrides.css。 */
+.lang-radio-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.78);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.lang-radio-btn:hover {
+    border-color: rgba(0, 242, 255, 0.45);
+    color: #ffffff;
+}
+.lang-radio-btn.active {
+    background: rgba(0, 242, 255, 0.15);
+    border-color: #00f2fe;
+    color: #00f2fe;
+    box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.25);
+}
+.lang-radio-btn.active:hover {
+    border-color: #00f2fe;
+    color: #00f2fe;
+}
