@@ -250,7 +250,7 @@
 .tour-btn-next {
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     border: none;
-    color: var(--color-white);
+    color: #fff;
     box-shadow: 0 3px 10px rgba(var(--accent-primary-rgb), 0.35);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -261,7 +261,7 @@
 .tour-btn-launch {
     background: linear-gradient(135deg, var(--neon-green) 0%, var(--neon-cyan) 100%);
     border: none;
-    color: var(--color-white);
+    color: #fff;
     box-shadow: 0 3px 12px rgba(var(--neon-green-rgb), 0.4);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     font-weight: 800;

@@ -16,8 +16,26 @@ def count_lines(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return sum(1 for _ in f)
 
+# SOP-03 硬编码色值豁免后缀清单。
+# 说明：dashboard 设计系统的 --color-white/--color-black 是"墨水/纸张"语义令牌且按主题反转
+# （白天模式下 --color-white 实际等于 #000000）。因此白字/白底在品牌色按钮与白天覆盖层里
+# 必须使用字面量 #fff/#000（设计系统无"始终白色"令牌），按 SOP-03 豁免机制放行。
+EXEMPT_CSS_SUFFIXES = (
+    '.tokens.css',        # 令牌单一事实源 SSOT
+    '.base.css',          # 基础层
+    'glass.css',          # 玻璃拟态底座
+    'glass.editor.css',
+    '.tour.css',          # components/dashboard.tour.css
+    '.discovery.css',     # components/modals.discovery.css
+    '.components.css',    # dashboard.components.css
+    '.overrides.css',     # themes/theme.light.overrides.css
+    '.header.css',        # views/compute.header.css
+    '.strategy.css',      # views/compute.strategy.css
+    'overview.css',       # views/overview.css
+)
+
 def check_hardcoded_colors(filepath):
-    if filepath.endswith('.tokens.css') or filepath.endswith('.base.css') or filepath.endswith('glass.css') or filepath.endswith('glass.editor.css'):
+    if filepath.endswith(EXEMPT_CSS_SUFFIXES):
         return []
     
     violations = []

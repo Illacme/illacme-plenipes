@@ -41,73 +41,10 @@
     color: var(--text-dim);
 }
 
-/* 🕹️ Tactical Tabs Container & Capsule Pill Style */
+/* 🕹️ Tactical Tabs Spacing */
 #view-compute .tactical-tabs {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--white-03, rgba(255, 255, 255, 0.03));
-    border: 1px solid var(--white-08, rgba(255, 255, 255, 0.08));
-    border-radius: 8px;
-    padding: 3px;
-    backdrop-filter: blur(10px);
-}
-
-/* 🧪 算力中心子选项卡基础态 */
-#view-compute .t-tab {
-    padding: 5px 14px !important;
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
-    height: 30px !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent !important;
-    color: var(--text-dim, rgba(255, 255, 255, 0.65)) !important;
-    border: 1px solid transparent !important;
-    border-radius: 6px !important;
-    cursor: pointer;
-    transition: all 0.2s ease !important;
-    user-select: none;
-    outline: none;
-}
-
-#view-compute .t-tab:hover {
-    background: var(--white-08, rgba(255, 255, 255, 0.08)) !important;
-    color: var(--text-bright, var(--color-white)) !important;
-}
-
-/* 🌟 算力中心激活标签：精致轻量毛玻璃发光态 (与全局统一) */
-#view-compute .t-tab.active {
-    background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.12) !important;
-    border: 1px solid rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.4) !important;
-    color: var(--accent-secondary, #00f2ff) !important;
-    font-weight: 600 !important;
-    box-shadow: 0 0 10px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.25) !important;
-    transform: none !important;
-}
-
-/* 亮色模式适配 (Light Theme) */
-[data-theme="light"] #view-compute .tactical-tabs {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] #view-compute .t-tab {
-    color: var(--text-dim, #666) !important;
-}
-
-[data-theme="light"] #view-compute .t-tab:hover {
-    background: rgba(0, 0, 0, 0.05) !important;
-    color: var(--text-bright, #111) !important;
-}
-
-[data-theme="light"] #view-compute .t-tab.active {
-    background: rgba(0, 150, 214, 0.12) !important;
-    border-color: rgba(0, 150, 214, 0.45) !important;
-    color: #0077b6 !important;
-    font-weight: 600 !important;
-    box-shadow: 0 1px 6px rgba(0, 150, 214, 0.2) !important;
+    display: flex;
+    gap: 30px; /* 拉开按钮之间的距离，使其更明显 */
 }
 
 
@@ -201,21 +138,6 @@
 #view-compute .action-group .mini-btn.glow-btn:hover {
     background: rgba(var(--accent-primary-rgb), 0.85);
     box-shadow: 0 12px 25px rgba(var(--accent-primary-rgb), 0.4);
-}
-
-[data-theme="light"] #view-compute .tactical-actions .mini-btn.glow-btn,
-[data-theme="light"] #view-compute .action-group .mini-btn.glow-btn {
-    background: linear-gradient(135deg, #0066f5, #0052cc) !important;
-    border-color: #0052cc !important;
-    color: var(--color-white) !important;
-    box-shadow: 0 3px 10px rgba(0, 102, 245, 0.25) !important;
-}
-
-[data-theme="light"] #view-compute .tactical-actions .mini-btn.glow-btn:hover,
-[data-theme="light"] #view-compute .action-group .mini-btn.glow-btn:hover {
-    background: linear-gradient(135deg, #0052cc, #0040a8) !important;
-    border-color: #0040a8 !important;
-    box-shadow: 0 4px 14px rgba(0, 102, 245, 0.35) !important;
 }
 
 #view-compute .node-unit.hidden {
