@@ -83,7 +83,6 @@ redline_exempt_files:
   - themes/docusaurus/src/lib/topology-core.js
   - themes/docusaurus/static/topology-core.js
   - themes/sovereign/adapters/sovereign.py
-  - themes/sovereign/adapters/sovereign_helpers.py
   - themes/sovereign/theme.options.js
   - themes/starlight/src/scripts/topology-core.js
   - themes/starlight/theme.options.js
