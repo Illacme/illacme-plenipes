@@ -5,6 +5,8 @@ Illacme Plenipes V18 Pipeline Step - Semantic Linker
 职责：利用向量检索自动发现当前文档与其他已索引文档间的语义关联。
 """
 
+import os
+import json
 from core.editorial.registry import StepRegistry, PipelineStep
 from core.utils.tracing import tlog
 
@@ -50,6 +52,28 @@ class SemanticLinkerStep(PipelineStep):
                         gist = cached_node["gist"]
                         need_nlp = False
                         tlog.info(f"✨ [NLP Cache Guard] 语义实体已命中缓存，跳过 AI 提取: {doc_id}")
+
+                if need_nlp:
+                    # 🚀 [跨主题图谱缓存穿透] 优先探测其他已有主题的图谱缓存，实现语义实体与摘要 100% 秒级复用
+                    themes_meta_dir = os.path.dirname(os.path.dirname(getattr(engine.knowledge_graph, 'graph_path', '')))
+                    if themes_meta_dir and os.path.isdir(themes_meta_dir):
+                        for other_t in os.listdir(themes_meta_dir):
+                            other_graph_p = os.path.join(themes_meta_dir, other_t, f"knowledge_graph_{other_t}.json")
+                            if os.path.exists(other_graph_p) and other_graph_p != engine.knowledge_graph.graph_path:
+                                try:
+                                    with open(other_graph_p, 'r', encoding='utf-8') as f_other:
+                                        other_nodes = json.load(f_other)
+                                    o_node = other_nodes.get(doc_id)
+                                    if isinstance(o_node, dict) and o_node.get("source_hash") == ctx.current_hash:
+                                        if isinstance(o_node.get("entities"), dict) and o_node.get("gist"):
+                                            entities = o_node["entities"]
+                                            gist = o_node["gist"]
+                                            need_nlp = False
+                                            engine.knowledge_graph.upsert_node(doc_id, title, entities=entities, gist=gist, source_hash=ctx.current_hash)
+                                            tlog.info(f"✨ [NLP Cache Guard] 成功跨主题复用知识图谱缓存 ({other_t}): {doc_id}")
+                                            break
+                                except Exception:
+                                    pass
 
                 if need_nlp:
                     # 🚀 [V24.5] 初始化 NLP 适配器 (Lazy Load)
