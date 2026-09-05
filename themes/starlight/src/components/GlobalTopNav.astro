@@ -5,33 +5,39 @@ import themeOptions from '../../theme.options.js';
 
 // 🚀 1. 获取当前真实的物理 URL 路径与语言环境
 const currentPath = Astro.url.pathname;
-const currentLocale = Astro.currentLocale || (currentPath.includes('/en/') || currentPath.endsWith('/en') ? 'en' : 'zh');
-const isDefaultLocale = currentLocale === 'zh' || !currentLocale;
+const currentLocale = Astro.currentLocale || (currentPath.includes('/en/') || currentPath.endsWith('/en') ? 'en' : (currentPath.includes('/ja/') || currentPath.endsWith('/ja') ? 'ja' : 'root'));
+const isDefaultLocale = currentLocale === 'root' || currentLocale === 'zh' || currentLocale === 'zh-CN' || !currentLocale;
 const langPrefix = isDefaultLocale ? '' : `/${currentLocale}`;
 
 // 🚀 2. 解析多语言动态导航项
-const rawNavLinks = (themeOptions?.nav_links_i18n && themeOptions.nav_links_i18n[currentLocale]) || themeOptions?.nav_links || [];
+const rawNavLinks = (themeOptions?.nav_links_i18n && (themeOptions.nav_links_i18n[currentLocale] || (isDefaultLocale && (themeOptions.nav_links_i18n['zh'] || themeOptions.nav_links_i18n['zh-CN'])))) || themeOptions?.nav_links || [];
 
 let dynamicNavLinks = [];
 if (rawNavLinks.length > 0) {
   dynamicNavLinks = rawNavLinks.map(item => {
-    let url = item.url || '/';
+    let url = item.url || item.to || '/';
     if (!item.external && !url.startsWith('http')) {
-      url = url.replace(/^\/?/, '/');
+      // 🛡️ 抹除 .html 后缀以契合 Starlight Clean URL
+      url = url.replace(/\.html$/, '/').replace(/^\/?/, '/');
       if (langPrefix && !url.startsWith(langPrefix)) {
         url = `${langPrefix}${url}`;
       }
     }
     return {
-      text: item.text || item.raw_text || 'Channel',
+      text: item.text || item.label || item.raw_text || 'Channel',
       href: url,
       external: item.external || false
     };
   });
 } else {
+  const isEn = currentLocale === 'en';
+  const isJa = currentLocale === 'ja';
   dynamicNavLinks = [
-    { text: currentLocale === 'en' ? 'Docs' : '📚 文档中心', href: `${langPrefix}/docs/`, external: false },
-    { text: currentLocale === 'en' ? 'Blog' : '📰 官方博客', href: `${langPrefix}/blog/`, external: false },
+    { text: isEn ? '📚 Document Guide' : (isJa ? '📚 ドキュメントガイド' : '📚 文档指南'), href: `${langPrefix}/docs/`, external: false },
+    { text: isEn ? '📰 Demo Blog' : (isJa ? '📰 デモブログ' : '📰 演示博客'), href: `${langPrefix}/blog/`, external: false },
+    { text: isEn ? '🎨 Product Features' : (isJa ? '🎨 製品特徴' : '🎨 产品特性'), href: `${langPrefix}/showcase/`, external: false },
+    { text: isEn ? '✨ About Us' : (isJa ? '✨ 私たちについて' : '✨ 关于我们'), href: `${langPrefix}/about/`, external: false },
+    { text: isEn ? '🌐 GitHub Repo' : '🌐 GitHub', href: 'https://github.com/Illacme/illacme-plenipes', external: true },
   ];
 }
 ---

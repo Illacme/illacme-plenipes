@@ -47,13 +47,17 @@ def get_system_context_impl():
 
     theme_map = {
         "default": "Sovereign (default)",
+        "sovereign": "Sovereign (default)",
+        "universal": "Universal (official)",
         "starlight": "Starlight (official)",
         "docusaurus": "Docusaurus (classic)",
         "vitepress": "VitePress (next)",
-        "nextra": "Nextra (docs)"
+        "nextra": "Nextra (docs)",
+        "hexo": "Hexo (blog)",
+        "hugo": "Hugo (static)"
     }
-    raw_theme = engine.active_theme
-    display_theme = theme_map.get(raw_theme, f"Custom ({raw_theme})")
+    raw_theme = (engine.active_theme or "sovereign").lower()
+    display_theme = theme_map.get(raw_theme, f"Custom ({engine.active_theme})")
 
 
     from core.ingress.registry import ingress_registry

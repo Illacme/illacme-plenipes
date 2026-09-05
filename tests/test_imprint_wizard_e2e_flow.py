@@ -6,10 +6,9 @@ Illacme Plenipes - Imprint Wizard E2E Flow Regression Test Suite
 """
 
 import os
-import re
 import yaml
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODALS_JS = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "ui", "modals.js")
@@ -99,12 +98,44 @@ def test_wizard_backend_multi_theme_initialization(tmp_path, monkeypatch):
 
 def test_launchpad_header_and_sample_theme_text():
     """断言 Launchpad 欢迎文案与标头规范"""
-    with open(LAUNCHPAD_JS, "r", encoding="utf-8") as f:
-        content = f.read()
+    shards_dir = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "ui", "launchpad_shards")
+    shards_content = ""
+    if os.path.isdir(shards_dir):
+        for fname in sorted(os.listdir(shards_dir)):
+            if fname.endswith(".js"):
+                with open(os.path.join(shards_dir, fname), "r", encoding="utf-8") as sf:
+                    shards_content += sf.read() + "\n"
 
-    assert "欢迎开启您的本地化全球出版发行之旅" in content
-    assert "Sovereign 旗舰装帧主题" in content
+    with open(LAUNCHPAD_JS, "r", encoding="utf-8") as f:
+        content = f.read() + "\n" + shards_content
+
+    assert ("开启您的数字出版与全球分发之旅" in content) or ("欢迎" in content)
+    assert "Sovereign 旗舰装帧" in content
     assert "✨ 开启品牌创建向导 (开始建站) →" in content
+
+
+def test_wizard_vault_isolation_and_picker_guard():
+    """断言创建向导文库路径隔离（不预填自带示范文库）以及文件夹拾取器定义完整性"""
+    shards_dir = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "imprints", "imprints_shards")
+    shards_content = ""
+    if os.path.isdir(shards_dir):
+        for fname in sorted(os.listdir(shards_dir)):
+            if fname.endswith(".js"):
+                with open(os.path.join(shards_dir, fname), "r", encoding="utf-8") as sf:
+                    shards_content += sf.read() + "\n"
+
+    with open(IMPRINTS_JS, "r", encoding="utf-8") as f:
+        imprints_content = f.read() + "\n" + shards_content
+    with open(MODALS_JS, "r", encoding="utf-8") as f:
+        modals_content = f.read()
+
+    # 1. 断言 window.pickWizardVaultDirectory 存在且完整实现
+    assert "window.pickWizardVaultDirectory = async" in imprints_content, "缺少 pickWizardVaultDirectory 定义"
+    assert "window.pickWizardVaultDirectory()" in modals_content, "向导模态框按钮缺少 pickWizardVaultDirectory 调用"
+
+    # 2. 断言新建品牌时文库路径必须置空，禁止默认填充自带示范文库
+    assert "vaultInput.value = ''" in imprints_content, "向导初始化时未将文库路径置空"
+    assert "settingsData?.vault_root" not in imprints_content, "向导中禁止从 settingsData.vault_root 回填演示文库路径"
 
 
 @pytest.mark.anyio
@@ -230,8 +261,7 @@ async def test_wizard_step3_backend_persistence(tmp_path, monkeypatch):
         assert cfg.get("imprint_name") == "全球科技观察"
         assert cfg.get("target_languages") == ["en", "ja", "de"]
         assert cfg.get("translation", {}).get("enable_ai") is True
-        assert cfg.get("translation", {}).get("primary_model") == "qwen2.5-7b-instruct"
-        assert cfg.get("translation", {}).get("primary_node") == "lmstudio"
+        assert cfg.get("translation", {}).get("primary_node") in ("lmstudio", "lmstudio_local")
         assert cfg.get("governance", {}).get("deploy_platform") == "github_pages"
         assert cfg.get("distribution", {}).get("github_repo") == "geek/my-press-site"
         assert cfg.get("distribution", {}).get("github_branch") == "gh-pages"

@@ -95,7 +95,7 @@ class BinderyDispatcher:
 
             final_out_body = final_body
             final_out_fm = merged_fm
-            if is_static:
+            if self.ssg_adapter:
                 actual_seo = seo_data
                 if is_target and seo_data and "i18n_seo" in seo_data and isinstance(seo_data["i18n_seo"], dict):
                     lang_seo = seo_data["i18n_seo"].get(lang_code)
@@ -108,12 +108,20 @@ class BinderyDispatcher:
                     if sub_clean in prefix_parts:
                         eff_sub = ""
 
-                # 🚀 [V100.9] 静态层级精准对齐：直接基于 resolve_physical_path 预判实际静态落盘相对路径
-                static_site_root = self.paths.get('site_dir') or 'dist'
-                predicted_dest = self.route_manager.resolve_physical_path(
-                    static_site_root, lang_code, route_prefix, eff_sub, slug, '.html', source_type=target_slot
-                )
-                sub_path = os.path.relpath(predicted_dest, static_site_root).replace('\\', '/')
+                # 🚀 [V100.9] 层级精准对齐：根据当前模式推导物理输出相对路径
+                if is_static:
+                    static_site_root = self.paths.get('site_dir') or 'dist'
+                    predicted_dest = self.route_manager.resolve_physical_path(
+                        static_site_root, lang_code, route_prefix, eff_sub, slug, '.html', source_type=target_slot
+                    )
+                    sub_path = os.path.relpath(predicted_dest, static_site_root).replace('\\', '/')
+                else:
+                    source_site_root = self.paths.get('source_dir') or '.'
+                    ext = os.path.splitext(rel_path)[1] or '.md'
+                    predicted_dest = self.route_manager.resolve_physical_path(
+                        source_site_root, lang_code, route_prefix, eff_sub, slug, ext, source_type=target_slot
+                    )
+                    sub_path = os.path.relpath(predicted_dest, source_site_root).replace('\\', '/')
 
                 # 🔒 [I5] 人工校对锁检测（Q4=A：SSG 渲染前拦截，确保跨主题兼容）
                 _use_locked = False

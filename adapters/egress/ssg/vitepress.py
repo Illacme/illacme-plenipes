@@ -34,22 +34,27 @@ class VitepressAdapter(BaseSSGAdapter):
         }
 
     def get_feature_slots(self) -> dict:
-        """🚀 [V56.0] Vitepress 标准布局声明"""
+        """🚀 [V56.0] Vitepress 标准布局声明 (纯相对路径，0 冗余前缀)"""
         return {
             "docs": {
                 "label": "文档中心",
-                "single": "docs",
-                "multi": "docs/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "blog": {
                 "label": "博客文章",
                 "single": "blog",
-                "multi": "blog/{lang}"
+                "multi": "{lang}/blog"
+            },
+            "showcase": {
+                "label": "产品特性",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "pages",
-                "multi": "pages/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
                 "label": "静态资产",
@@ -68,8 +73,10 @@ class VitepressAdapter(BaseSSGAdapter):
         if new_fm.get('template') == 'splash':
             new_fm['layout'] = 'home'
             new_fm.pop('template', None)
+        # 链接与双链自愈标准化 (Universal Link & Wikilink Healing)
+        healed_body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
             
-        return body, new_fm
+        return healed_body, new_fm
 
     def render_callout(self, g_type: str, title: str, body: str) -> str:
         """Vitepress 特有的 Native 自定义标题容器渲染"""

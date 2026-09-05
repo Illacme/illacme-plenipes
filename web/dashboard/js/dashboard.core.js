@@ -5,7 +5,7 @@
  */
 
 // 2. 统一出版点火接口
-window.triggerPublish = async function (force = false, bypassCompletedCheck = false) {
+window.triggerPublish = async function (force = false, bypassCompletedCheck = false, clearCache = false) {
     if (typeof window.triggerSystemPulse === 'function') {
         window.triggerSystemPulse();
     }
@@ -140,8 +140,8 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             window.addAudit('预检通过，正在为您准备网站文件...', 'info');
         }
 
-        // 🚀 [V74.8] 物理点火：连接重构后的编排中枢 (V10.4 修复：正确传入 force 与 clear_cache 选项以保证重新发布时重跑翻译管线)
-        const res = await apiFetch(`/api/system/sync/trigger?force=${force ? 'true' : 'false'}&clear_cache=${force ? 'true' : 'false'}`, { method: 'POST' });
+        // 🚀 [V74.8] 物理点火：连接重构后的编排中枢 (V10.4 修复：彻底解耦 force 与 clear_cache，仅在明确指定 clear_cache 时才失效 AI 缓存)
+        const res = await apiFetch(`/api/system/sync/trigger?force=${force ? 'true' : 'false'}&clear_cache=${clearCache ? 'true' : 'false'}`, { method: 'POST' });
 
         if (res && res.status === 'started') {
             if (typeof window.addAudit === 'function') {

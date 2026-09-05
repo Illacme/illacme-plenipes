@@ -2,6 +2,23 @@
 
 这里记录了我们在系统的物理迭代和开发过程里，所沉淀下的最为关键的架构缺陷自检与教训（Lessons），以防止后续开发在相同的物理逻辑上发生脑裂或回退。
 
+## 📅 2026-09-02: 全球 50 语种前台组件视图与国际化架构解耦重构 (View I18N Matrix)
+*   **现象描述**：博客与案例展厅等前台页面的视图切换按钮（如时间轴、卡片、列表）在早期实现中，使用了硬编码的语言分支判断（仅判断 zh/en/ja），导致在切换到西、法、俄、德、阿、韩等其他数十种主流语种时无法呈现地道母语，违背了商业级多语言出版产品的设计标准。
+*   **根因剖析**：未将前台组件与视图的交互词汇纳入系统级国际化标准字典；业务层代码（SSG 归档器、主题模板辅助器）越权承担了语言分支逻辑。
+*   **防线策略与沉淀**：
+    1.  **50 语种全局视图矩阵（VIEW_I18N_MATRIX）**：在 `ssg_slot_matrix.py` 中 100% 对齐系统 `SUPPORTED_MATRIX` 50 大语种规范，统一建立 `timeline`、`cards`、`list`、`all`、`read_more` 等组件级词汇矩阵。
+    2.  **通用级联解析器（get_i18n_view_label）与主题 UI 字典无缝打通**：通过精确匹配 -> 语族前缀 -> 英文降级的级联算法，让 `get_ui_i18n(lang)` 自动覆盖全量 50 语种。
+    3.  **业务代码 0 语言硬编码**：彻底移除所有页面渲染层中的 `if lang == 'zh'` 分支，全面改用动态矩阵查询，实现真正可扩展的商业级全语种自适应。
+
+---
+
+## 📅 2026-09-01: 频道路由矩阵（Route Matrix）单篇文件与分组选择器交互重构
+*   **现象描述**：频道映射配置中，文库来源下拉框只列出物理目录，无法点选单篇稿件（如 `about.md`）；且一旦创作者切为“自定义输入”后，界面单向锁定无法切回下拉列表；同时缺少最终三模态产物路径推演。
+*   **根因剖析**：底层扫描器（`scanner.py`）天然支持单篇文件与目录双轨匹配，但前端装配数据时仅注入了 `_directories`，未消费 `_vault_files` 稿件列表；且自定义模式下没有保留恢复 `<select>` 渲染的逆向控制句柄。
+*   **防线策略与沉淀**：
+    1.  **分组选择器（Grouped Selector）**：在 `<select>` 中通过 `<optgroup>` 明确区隔「📁 专题目录（整栏映射）」与「📄 单篇稿件（独立单页）」，并在自定义输入框右侧附加 `🔄` 逆向恢复按钮，消除单向死穴。
+    2.  **三级意图自动联动与三模态实时推演**：点选单篇文件自动联动切换模板为 `📄 独立页面 (pages)` 并填充去除后缀的路径与文档标题；在网页路径下方实时渲染推演徽标（如 `👉 产物: /about.html`），消除创作者盲猜成本。
+
 ---
 
 ## 📅 2026-05-19: Scriptorium Vault 目录树渲染缺陷
@@ -302,5 +319,16 @@
     2. **API 状态自愈与持久化回写**：在 `/api/config/update` 中对更新后的 config 执行全量验证。一旦发生校验降级，自愈机制会自动将更改的值反向更新到持久化字典并写回 YAML 文件及内存，保持完全一致性。
     3. **强制发布与段落级缓存解耦**：将 `force_sync` 仅限定在“文档级/文件级”是否重新同步落盘，而允许段落块级别继续在 `dispatch_ops.py` 中完美匹配并读取 `block_cache` 以免造成 LLM 算力浪费和测试失败。
 
-
-
+## 📅 2026-09-05: Sovereign 原生主题独立单页导航基准路径漂移修复与 DevServer 递归 302 防卫
+*   **现象描述**：访问 Sovereign 主题下的独立单页（如“关于我们” `about.md`，槽位 `pages`）时，顶部导航栏的“关于我们”链接错误生成为 `./about/index.html`。当创作者点击后，浏览器进入虚拟目录 `/about/index.html`，导致浏览器的 Base URI 被下移一级到 `/about/`，使得页面内所有相对超链接（如 `./docs/quick-start.html`、`./about.html`）全部偏移，引发正文内链 404，且连续点击关于我们时陷入 `/about/about/about/...` 的无限递归套娃死循环。
+*   **根因剖析**：
+    1. **SSG 导航合成器槽位判断盲区**：`core/adapters/egress/ssg/base_shards/ssg_nav_synthesizer.py` 在非 clean-url 模式下将所有未带扩展名的项统一推导为目录路径（`target_path = f"/{prefix}/"`），未能识别独立单页（`pages` 槽位）不需要带尾斜杠。
+    2. **模版相对链接盲目拼装 index.html**：`themes/sovereign/adapters/sovereign_helpers.py` 的 `apply_template` 在组装顶部主导航相对路径时，未排除单页槽位，直接将带有尾随斜杠的单页按频道规则拼接为 `{root_path}{nav_lang_prefix}{u_clean}/index.html`。
+    3. **本地开发预览服务静默映射缺陷**：`core/utils/dev_server.py` 的 `SovereignHandler.translate_path` 对不存在的虚拟路径 `/about/index.html` 采用静默 200 返回根目录 `about.html` 内容，导致浏览器地址栏未同步纠偏，使得相对路径基准继续错位。
+*   **防线策略与沉淀**：
+    1. **SSGNavSynthesizer 单页排他规范**：显式增加 `is_standalone_page = (slot in ("pages", "page") or prefix in ("about", "terms", "privacy", "disclaimer", "contact"))` 判断，强制输出 `/{prefix}.html`（如 `/about.html`）。
+    2. **SovereignHelpers 模版相对路径对齐**：在 `apply_template` 识别单页槽位，强制生成 `{root_path}{nav_lang_prefix}{u_slug}.html`（根目录直接输出 `<a href="./about.html" class="active">`），杜绝输出伪目录 `/index.html`，彻底稳定浏览器 Base URI。
+    3. **SovereignHandler 302 客户端协议纠偏防卫**：在 `core/utils/dev_server.py` 中实现 `do_GET` 拦截器：
+       - 正则折叠连续重复的套娃路径（如 `/about/about/...`），发送 HTTP 302 重定向；
+       - 请求虚拟子目录索引（如 `/about/index.html`）且物理磁盘不存在该目录、但父级存在实体单页 `about.html` 时，发送 HTTP 302 重定向至规范单页地址 `about.html`，从网络层强制矫正浏览器 Base URI。
+    4. **防御性类型解包加固**：遵循 Rule 8，在 `sovereign_helpers.py` 中对 `adapter.get_custom_options()` 及 `footer_copyright` 进行防御性类型转换，防止非字典或 MagicMock 对象引发 `TypeError`。

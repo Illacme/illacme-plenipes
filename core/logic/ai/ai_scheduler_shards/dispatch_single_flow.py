@@ -178,6 +178,10 @@ class DispatchSingleFlow:
                         b_result = re.sub(r'^(#{1,6}\s+.*?)\n([^\n#])', r'\1\n\n\2', b_result, flags=re.MULTILINE)
                         b_result = b_result.strip()
 
+                        # 🛡️ 标题语法守卫 (Heading Parity Guard)：若原文非标题（不以 # 开头），剥离译文开头误加的 # 标记，防范大模型标题幻觉
+                        if not block.content.strip().startswith('#') and b_result.strip().startswith('#'):
+                            b_result = re.sub(r'^\s*#{1,6}\s*', '', b_result)
+
                         # 触发语法树结构校验
                         is_valid, err_detail = DispatchASTGuard.validate_block_structure(block.content, b_result)
                         if not is_valid:

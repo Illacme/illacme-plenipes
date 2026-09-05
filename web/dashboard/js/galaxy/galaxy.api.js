@@ -56,7 +56,17 @@ window.refreshGalaxy = async () => {
         }
 
         // 🌌 自动计算视域，将骨架星群以 1.2s 缓动完美框进屏幕
-        window.galaxyGraph.zoomToFit(1200, 60);
+        if (skeleton.nodes.length === 1) {
+            // 🌟 创世星球 (Genesis Star) 特写视域：平滑飞向 (0, 0, 180) 居中观察
+            skeleton.nodes[0].x = 0;
+            skeleton.nodes[0].y = 0;
+            skeleton.nodes[0].z = 0;
+            if (typeof window.galaxyGraph.cameraPosition === 'function') {
+                window.galaxyGraph.cameraPosition({ x: 0, y: 0, z: 180 }, { x: 0, y: 0, z: 0 }, 1200);
+            }
+        } else {
+            window.galaxyGraph.zoomToFit(1200, 60);
+        }
 
         if (typeof window.galaxyGraph.d3Reheat === 'function') {
             window.galaxyGraph.d3Reheat();
@@ -71,6 +81,13 @@ window.refreshGalaxy = async () => {
             window.updateGalaxyLabelElements(skeleton.nodes);
         }
         console.log(`🌌 [Phase 1] 骨架渲染完成: ${skeleton.nodes.length} 节点, ${skeleton.links.length} 有效连线, 力学引擎运行中`);
+    } else {
+        // 🌌 0 节点空态处理：清空旧数据并同步 HUD 指标
+        window.galaxyGraph.graphData({ nodes: [], links: [] });
+        window._lastGalaxyData = { nodes: [], links: [] };
+        if (typeof window.updateGalaxyHUD === 'function') {
+            window.updateGalaxyHUD([], []);
+        }
     }
 
     // ──── Phase 2: 全量增量合并 (Full Incremental Merge) ────

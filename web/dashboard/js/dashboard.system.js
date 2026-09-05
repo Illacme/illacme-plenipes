@@ -70,6 +70,10 @@ window.loadSettings = async (targetCat = 'layout') => {
     window.settingsData = res.config || res;
     window.governanceRules = res.governance_rules || res._governance_rules;
     window.settingsData._imprints = imprints ? imprints.imprints : [];
+    window._existingImprintList = window.settingsData._imprints;
+    if (typeof window.updateWizardQuotaNotice === 'function') {
+        window.updateWizardQuotaNotice(window.settingsData._imprints);
+    }
     window.settingsData._active_imprint = imprints ? imprints.active : 'default';
     window.settingsData._is_licensed = res._is_licensed || false;
     const headerProBadge = document.getElementById('header-pro-badge');
@@ -80,6 +84,7 @@ window.loadSettings = async (targetCat = 'layout') => {
     }
     window.settingsData._theme_slots = (slotsRes && slotsRes.slots) ? slotsRes.slots : {};
     window.settingsData._directories = (vaultRes && vaultRes.directories) ? vaultRes.directories : [];
+    window.settingsData._vault_files = (vaultRes && (vaultRes.manuscripts || vaultRes.vault_list)) ? (vaultRes.manuscripts || vaultRes.vault_list) : [];
     window.settingsData._imprint_stats = window.settingsData._imprint_stats || {};
 
     const stats = await apiFetch('/api/imprints/stats');
@@ -222,6 +227,12 @@ window.renderSettingsCategory = (cat) => {
 
 // 2. 配置保存
 window.saveAllSettings = async () => {
+    // 🛡️ [V106.0] 频道路由冲突前置拦截守卫 (防止保存损坏路由矩阵)
+    if (typeof window.validateRouteMatrixBeforeSave === 'function') {
+        const isValid = window.validateRouteMatrixBeforeSave();
+        if (!isValid) return;
+    }
+
     const saveBtn = document.getElementById('btn-save-settings');
     if (saveBtn) {
         if (saveBtn.disabled) return;

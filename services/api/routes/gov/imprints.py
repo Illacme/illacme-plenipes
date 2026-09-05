@@ -6,7 +6,7 @@
 """
 
 import os
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_DIR, CONFIG_IMPRINT_NAME
@@ -18,6 +18,52 @@ router = APIRouter()
 def list_imprints():
     from core.governance.imprint_manager import im
     return {"imprints": im.list_imprints(), "active": im.get_active_imprint()}
+
+@router.get("/api/imprints/check-vault", dependencies=[Depends(verify_token)])
+def check_vault_binding(path: str = Query("", description="待检测的文库物理路径")):
+    """
+    🔍 检查所选原稿文库路径是否已被其他出版品牌绑定。
+    仅用于页面感知与友情提示，不拦截或阻断用户继续创建新品牌。
+    """
+    from core.governance.imprint_manager import im
+    if not path or not path.strip():
+        return {"bound": False, "imprints": []}
+
+    clean_path = path.strip()
+    try:
+        target_norm = os.path.normcase(os.path.normpath(os.path.abspath(os.path.expanduser(clean_path))))
+    except Exception:
+        target_norm = clean_path
+
+    bound_imprints = []
+    for imp in im.list_imprints():
+        v_raw = imp.get("vault", "")
+        v_abs = imp.get("vault_abs", "")
+        
+        match = False
+        if v_abs:
+            try:
+                if os.path.normcase(os.path.normpath(v_abs)) == target_norm:
+                    match = True
+            except Exception: pass
+        if not match and v_raw and v_raw != "Unknown Vault":
+            try:
+                if os.path.normcase(os.path.normpath(os.path.abspath(os.path.expanduser(v_raw)))) == target_norm:
+                    match = True
+            except Exception: pass
+
+        if match:
+            bound_imprints.append({
+                "id": imp["id"],
+                "name": imp["name"],
+                "vault": v_raw
+            })
+
+    return {
+        "bound": len(bound_imprints) > 0,
+        "imprints": bound_imprints,
+        "path": clean_path
+    }
 
 @router.get("/api/imprints/stats", dependencies=[Depends(verify_token)])
 def get_imprints_stats():
@@ -108,14 +154,27 @@ async def add_imprint(req: dict):
         return {"success": False, "error": f"创建失败：品牌唯一标识 (ID) '{name}' 已存在，请换一个标识"}
     if any(imp.get("name", "").lower() == press_name.lower() for imp in existing_imprints):
         return {"success": False, "error": f"创建失败：品牌展示名称 '{press_name}' 已被占用，请换一个名称"}
-    
-    if not path:
-        path = f"./manuscripts/{name}"
-    
+    # 🛡️ [商业配额轻量化校验] 校验自定义独立品牌上限（排除 default 官方示范品牌）
+    from core.governance.license_guard import LicenseGuard
+    custom_existing = [imp for imp in existing_imprints if imp.get("id") != "default"]
+    max_custom = LicenseGuard.get_max_custom_imprints()
+    try:
+        max_total = LicenseGuard.get_max_imprints()
+        if max_total > 2 and (max_total - 1) > max_custom: max_custom = max_total - 1
+    except Exception: max_total = 2
+    if len(custom_existing) >= max_custom:
+        tier_name = LicenseGuard.get_license_info().get("tier_name", "免费社区版")
+        return {"success": False, "error": f"创建受限：当前{tier_name}支持管理 {max_custom} 个自定义独立品牌。请删除已有自定义品牌后再创建，或升级以解锁更多版图。"}
+
+    if not path: path = f"./manuscripts/{name}"
     enable_ai = bool(req.get("enable_ai", False))
     ai_provider = (req.get("ai_provider") or "deepseek").strip()
     ai_model = (req.get("ai_model") or "").strip()
     target_langs = req.get("target_langs") if isinstance(req.get("target_langs"), list) else ["en"]
+    if max_total <= 2:
+        max_langs = LicenseGuard.get_max_i18n_targets()
+        if len(target_langs) > max_langs: target_langs = target_langs[:max_langs]
+        
     deploy_platform = (req.get("deploy_platform") or "github_pages").strip()
     deploy_repo = (req.get("deploy_repo") or "").strip()
     deploy_branch = (req.get("deploy_branch") or "gh-pages").strip()
@@ -139,7 +198,16 @@ async def add_imprint(req: dict):
                     cfg["translation"] = {}
                 cfg["translation"]["enable_ai"] = enable_ai
                 if ai_model: cfg["translation"]["primary_model"] = ai_model
-                if ai_provider != "none": cfg["translation"]["primary_node"] = ai_provider
+                if ai_provider != "none":
+                    # 🚀 [V100.8] 节点物理标识对齐：优先使用前端明确传递的 node_id，或自动根据厂商名映射
+                    ai_node_id = (req.get("ai_node_id") or "").strip()
+                    provider_to_node_map = {
+                        "lmstudio": "lmstudio_local",
+                        "ollama": "ollama_local",
+                        "deepseek": "deepseek_official",
+                        "openai": "openai_official"
+                    }
+                    cfg["translation"]["primary_node"] = ai_node_id or provider_to_node_map.get(ai_provider, ai_provider)
                 
                 if "governance" not in cfg or not isinstance(cfg["governance"], dict):
                     cfg["governance"] = {}

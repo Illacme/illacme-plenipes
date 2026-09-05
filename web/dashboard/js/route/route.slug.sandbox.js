@@ -3,36 +3,58 @@
  * 职责：别名策略视觉卡片切换、真实原稿全量感知、物理状态即时探测、云端 GitHub 仓库点击直达与本机 Finder 定位高亮。
  */
 
+window.notifySlugLockedByTheme = function (mode, theme) {
+    const labels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀' };
+    const modeName = labels[mode] || mode;
+    const themeUpper = (theme || '当前主题').toUpperCase();
+    const msg = `⚠️ 当前主题【${themeUpper}】采用文件树强绑定路由，不支持【${modeName}】，系统已锁定为【📂 目录树复刻】以保障最佳兼容。`;
+    if (typeof showNotification === 'function') {
+        showNotification(msg, 'warning');
+    } else if (typeof showToast === 'function') {
+        showToast(msg, 'warning');
+    }
+    if (typeof addAudit === 'function') {
+        addAudit(msg);
+    }
+};
+
 window.selectSlugDirModeCard = function (mode) {
+    const activeTheme = (window.settingsData.active_theme || 'universal').toLowerCase();
+    const isNativeTheme = ['sovereign', 'universal', 'default'].includes(activeTheme);
+    if (!isNativeTheme && mode !== 'nested') {
+        window.notifySlugLockedByTheme(mode, activeTheme);
+        return;
+    }
+
     if (!window.settingsData.translation) {
         window.settingsData.translation = {};
     }
     window.settingsData.translation.slug_dir_mode = mode;
 
-    // UI 卡片激活状态同步
+    // UI 卡片激活状态同步 (基于 CSS class，不再内联写入颜色，确保白天/黑夜主题自适应)
     const cards = document.querySelectorAll('.slug-dir-card');
     cards.forEach(card => {
-        if (card.getAttribute('data-mode') === mode) {
-            card.classList.add('active');
-            card.style.borderColor = 'var(--accent-secondary, #00f2fe)';
-            card.style.background = 'rgba(0, 242, 255, 0.06)';
-            card.style.boxShadow = '0 0 15px rgba(0, 242, 255, 0.15)';
-        } else {
-            card.classList.remove('active');
-            card.style.borderColor = 'var(--glass-border, rgba(255,255,255,0.08))';
-            card.style.background = 'rgba(255, 255, 255, 0.02)';
-            card.style.boxShadow = 'none';
+        const isMatch = (card.getAttribute('data-mode') === mode);
+        card.classList.toggle('active', isMatch);
+        const radio = card.querySelector('.slug-radio-indicator');
+        if (radio) {
+            radio.innerText = isMatch ? '✓' : '';
         }
     });
 
+    if (typeof window.checkSettingsDirty === 'function') {
+        window.checkSettingsDirty();
+    }
+
     if (typeof addAudit === 'function') {
-        const labels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '复刻目录树' };
-        addAudit(`📝 网址路径形态已更新为【${labels[mode] || mode}】`);
+        const labels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '目录树复刻' };
+        addAudit(`📝 网址路径形态已选择为【${labels[mode] || mode}】(沙盒实时推导中)`);
     }
 
     // 触发沙盒实时推导更新
     window.updateSlugSandboxPreview();
 };
+
 
 window.realManuscriptCache = [];
 
@@ -119,7 +141,7 @@ window.updateSlugSandboxPreview = async function () {
     const settingsData = window.settingsData || {};
     const translation = settingsData.translation || {};
     const i18nSettings = settingsData.i18n_settings || {};
-    const dirMode = translation.slug_dir_mode || 'flat';
+    const dirMode = translation.slug_dir_mode || 'nested';
     const slugMode = translation.slug_mode || 'ai';
     const isAi = (slugMode === 'ai');
 
@@ -213,16 +235,16 @@ window.updateSlugSandboxPreview = async function () {
         let channelRelPath = "";
         if (matchedRoute && matchedRoute.prefix) {
             let cleanP = matchedRoute.prefix.replace(/^\/+|\/+$/g, '');
-            channelRelPath = `docs/${cleanP}/${finalSlug}.html`;
+            channelRelPath = cleanP ? `${cleanP}/${finalSlug}.html` : `${finalSlug}.html`;
         } else {
             if (dirMode === 'flat') {
                 channelRelPath = `${finalSlug}.html`;
             } else if (dirMode === 'prefix') {
-                const safePrefix = subDir ? subDir.replace(/\//g, '-') + '-' : '';
+                const safePrefix = subDir ? subDir.replace(/\//g, '-').toLowerCase() + '-' : '';
                 channelRelPath = `${safePrefix}${finalSlug}.html`;
             } else if (dirMode === 'nested') {
-                const nestedSub = subDir ? `${subDir}/` : '';
-                channelRelPath = `docs/${nestedSub}${finalSlug}.html`;
+                const nestedSub = subDir ? `${subDir.toLowerCase()}/` : '';
+                channelRelPath = `${nestedSub}${finalSlug}.html`;
             }
         }
 
@@ -344,7 +366,42 @@ window.updateSlugSandboxPreview = async function () {
         const modeLabels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '目录树复刻' };
         const currentModeName = modeLabels[dirMode] || dirMode;
 
-        if (isOnlineExist) {
+        // 判定是否与磁盘已保存的初始状态偏离
+        let initialDirMode = 'nested';
+        if (window.initialSettingsState) {
+            try {
+                const initObj = JSON.parse(window.initialSettingsState);
+                initialDirMode = initObj['translation.slug_dir_mode'] || initObj.translation?.slug_dir_mode || 'nested';
+            } catch (e) { }
+        }
+        const isModeChanged = (dirMode !== initialDirMode);
+
+        if (isModeChanged) {
+            previewStatusBox.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1.5px solid #d4a72c; padding: 12px 14px; border-radius: 8px; margin-top: 12px; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 240px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: #ffb400; font-weight: 700; font-size: 0.82rem;">⚠️ 检测到网址路径形态变更（当前试选：【${currentModeName}】）</span>
+                            <span style="background: rgba(255, 180, 0, 0.15); color: #ffb400; font-size: 0.65rem; padding: 2px 6px; border-radius: 3px; font-weight: 600;">生产结构变更</span>
+                        </div>
+                        <div style="font-size: 0.72rem; line-height: 1.45; opacity: 0.85;">
+                            💡 修改路径形态将重塑全站所有 HTML 落盘结构、公开 URL 与 Sitemap。为保护生产环境安全，请确认保存或一键重新发布。
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <button type="button" class="mini-btn secondary-btn" onclick="window.revertSlugDirMode();" style="padding: 6px 12px; font-size: 0.74rem; border-radius: 5px; cursor: pointer;" title="撤销试选，恢复为当前线上生效配置">
+                            ↩️ 还原初始配置
+                        </button>
+                        <button type="button" class="mini-btn glow-btn" onclick="window.saveSlugDirModeConfig();" style="padding: 6px 12px; font-size: 0.74rem; border-radius: 5px; cursor: pointer; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                            💾 仅保存配置
+                        </button>
+                        <button type="button" class="mini-btn primary-btn glow-btn" onclick="window.saveAndPublishSlugDirMode();" style="padding: 6px 14px; font-size: 0.74rem; border-radius: 5px; font-weight: 600; cursor: pointer;">
+                            🚀 保存并立即发布
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (isOnlineExist) {
             previewStatusBox.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.3); padding: 8px 12px; border-radius: 6px; margin-top: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -355,17 +412,17 @@ window.updateSlugSandboxPreview = async function () {
             `;
         } else {
             previewStatusBox.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); padding: 10px 12px; border-radius: 6px; margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); padding: 10px 12px; border-radius: 6px; margin-top: 10px;">
                     <div style="display: flex; flex-direction: column; gap: 3px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: #ffb400; font-weight: 600; font-size: 0.78rem;">🟡 待全域发布生效 (推导就绪)</span>
-                            <span style="color: #888; font-size: 0.72rem;">当前形态为【${currentModeName}】</span>
+                            <span style="color: var(--accent-secondary, #00f2fe); font-weight: 600; font-size: 0.78rem;">✨ 当前形态已生效【${currentModeName}】</span>
+                            <span style="color: #888; font-size: 0.72rem;">推导演算已就绪</span>
                         </div>
-                        <div style="color: #bbb; font-size: 0.72rem; line-height: 1.4;">
-                            💡 更改前缀、频道或 Slug 命名后，点击「🚀 重新发布全站」即可立即按此全息路径推流上线。
+                        <div style="color: var(--text-dim); font-size: 0.72rem; line-height: 1.4;">
+                            💡 点击卡片可自由试看其他组织形态；点击「🚀 重新发布全站」可刷新全量静态产物。
                         </div>
                     </div>
-                    <button class="mini-btn glow-btn" onclick="if(document.getElementById('btn-publish')) document.getElementById('btn-publish').click();" style="padding: 5px 12px; font-size: 0.75rem; background: var(--accent-primary, #00f2fe); color: #000; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 10px;">
+                    <button class="mini-btn glow-btn primary-btn" onclick="if(document.getElementById('btn-publish')) document.getElementById('btn-publish').click();" style="padding: 5px 12px; font-size: 0.75rem; border-radius: 4px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 10px;">
                         🚀 重新发布全站
                     </button>
                 </div>
@@ -373,3 +430,48 @@ window.updateSlugSandboxPreview = async function () {
         }
     }
 };
+
+/**
+ * ↩️ 撤销试选，将网址路径形态一键还原为当前线上生效配置
+ */
+window.revertSlugDirMode = function () {
+    let initialDirMode = 'nested';
+    if (window.initialSettingsState) {
+        try {
+            const initObj = JSON.parse(window.initialSettingsState);
+            initialDirMode = initObj['translation.slug_dir_mode'] || initObj.translation?.slug_dir_mode || 'nested';
+        } catch (e) { }
+    }
+    if (!window.settingsData.translation) window.settingsData.translation = {};
+    window.settingsData.translation.slug_dir_mode = initialDirMode;
+    window.selectSlugDirModeCard(initialDirMode);
+    if (typeof window.showToast === 'function') {
+        const labels = { 'flat': '极简根目录', 'prefix': '智能 SEO 前缀', 'nested': '目录树复刻' };
+        window.showToast(`↩️ 已还原为生效配置【${labels[initialDirMode] || initialDirMode}】`, 'info');
+    }
+};
+
+/**
+ * 💾 仅保存当前路径形态配置
+ */
+window.saveSlugDirModeConfig = async function () {
+    if (typeof window.saveSettings === 'function') {
+        await window.saveSettings();
+    }
+};
+
+/**
+ * 🚀 保存配置并立即触发全网发布
+ */
+window.saveAndPublishSlugDirMode = async function () {
+    if (typeof window.saveSettings === 'function') {
+        await window.saveSettings();
+    }
+    const pubBtn = document.getElementById('btn-publish') || document.querySelector('[onclick*="publish"]');
+    if (pubBtn) {
+        pubBtn.click();
+    } else if (typeof window.triggerPublish === 'function') {
+        window.triggerPublish();
+    }
+};
+

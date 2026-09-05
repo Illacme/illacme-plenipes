@@ -120,7 +120,7 @@ window.ThemeUI = {
 
                                 <!-- 👉 右侧精致 Preview 预览视窗 (精确 160px × 140px，顶端平齐 RELEASE，底端平齐 CONFIG 按钮；默认展示上半部分，Hover 自动向上滑屏) -->
                                 ${isActive ? `
-                                    <div class="theme-preview-container card-right-preview active-preview" style="width: 160px; height: 140px; flex-shrink: 0; position: relative; cursor: pointer; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(0,255,136,0.3); display: flex; flex-direction: column;" onclick="window.open('http://localhost:' + (window.settingsData?.system?.serve_port || 43213), '_blank')" title="🟢 当前生效主题：点击新标签页直接打开本地网页预览 (http://localhost:${window.settingsData?.system?.serve_port || 43213})">
+                                    <div class="theme-preview-container card-right-preview active-preview" style="width: 160px; height: 140px; flex-shrink: 0; position: relative; cursor: pointer; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(0,255,136,0.3); display: flex; flex-direction: column;" onclick="if(typeof window.openPreviewSite === 'function'){ window.openPreviewSite(); } else { window.open('http://localhost:' + (window.settingsData?.system?.serve_port || 43213) + '/?t=' + Date.now(), '_blank'); }" title="🟢 当前生效主题：点击新标签页直接打开本地网页预览 (http://localhost:${window.settingsData?.system?.serve_port || 43213})">
                                         <style>
                                             .theme-preview-container:hover .vertical-page-mockup {
                                                 transform: translateY(-50%);

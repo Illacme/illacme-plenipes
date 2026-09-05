@@ -64,15 +64,8 @@ class DocusaurusAdapter(BaseSSGAdapter):
         if seo_data:
             new_fm = self.inject_seo(new_fm, seo_data.get('description'), seo_data.get('keywords'))
             
-        # 2. 链接自愈 (Link Healing)
-        import re
-        def heal_link(match):
-            text, path = match.groups()
-            if path.endswith('.md') and not path.startswith('http'):
-                return f"[{text}]({path})"
-            return match.group(0)
-            
-        healed_body = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', heal_link, body)
+        # 2. 链接与双链自愈标准化 (Universal Link & Wikilink Healing)
+        healed_body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
         
         # 3. 智能兼容落地页模板
         if new_fm.get('template') == 'splash':

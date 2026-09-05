@@ -47,3 +47,29 @@ document.addEventListener('click', (e) => {
         window.toggleHub('hide');
     }
 });
+
+// 🚀 [V121.0] 出版工作台自动展开偏好持久化与广播控制
+window.shouldAutoOpenLaunchpad = function () {
+    try {
+        if (typeof localStorage === 'undefined') return true;
+        return localStorage.getItem('illacme_launchpad_auto_open') !== 'false';
+    } catch (e) {
+        return true; // 异常时安全降级为默认开启，绝不中断主流程
+    }
+};
+
+window.setLaunchpadAutoOpenPreference = function (checked) {
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('illacme_launchpad_auto_open', checked ? 'true' : 'false');
+        }
+    } catch (e) {
+        console.warn('[Launchpad] 偏好持久化受限:', e);
+    }
+    // 广播同步当前 DOM 树中所有对应的复选框节点 (包括弹窗底部与治理中心开关)
+    const toggles = document.querySelectorAll('.chk-auto-open-launchpad');
+    toggles.forEach(chk => { chk.checked = checked; });
+    const cfgToggle = document.getElementById('cfg-ui-launchpad_auto_open');
+    if (cfgToggle) cfgToggle.checked = checked;
+};
+

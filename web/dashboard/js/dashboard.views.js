@@ -151,10 +151,16 @@ window.handleRouting = async () => {
         window.pendingSubView = null;
         if (window.currentView === viewId && !routeSubId) return; // Prevent duplicate execution from programmatic hash changes
         await window.showView(viewId, subId);
-        if (viewId === 'overview' && typeof window.toggleHub === 'function') window.toggleHub('show');
+        const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
+        if (viewId === 'overview' && shouldAutoOpen && typeof window.toggleHub === 'function') {
+            window.toggleHub('show');
+        }
     } else {
         await window.showView('overview');
-        if (typeof window.toggleHub === 'function') window.toggleHub('show');
+        const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
+        if (shouldAutoOpen && typeof window.toggleHub === 'function') {
+            window.toggleHub('show');
+        }
     }
 };
 window.addEventListener('hashchange', window.handleRouting);

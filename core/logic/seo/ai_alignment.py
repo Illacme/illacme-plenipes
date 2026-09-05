@@ -43,6 +43,11 @@ class AIAlignmentProcessor(BaseSeoProcessor):
             if isinstance(cached_seo, dict) and cached_seo.get("hash") == current_hash and cached_seo.get("data"):
                 tlog.info(f"✨ [AI 算法对齐] 命中本地 SEO 缓存，跳过大模型投喂 ({ctx.title})")
                 return self._respect_frontmatter(ctx.fm_dict, cached_seo.get("data", {}))
+            existing_seo = doc_info.get("seo_data")
+            if (isinstance(existing_seo, dict) and (existing_seo.get("description") or existing_seo.get("keywords"))
+                    and doc_info.get("source_hash") == current_hash):
+                tlog.info(f"✨ [AI 算法对齐] 命中账本已有 SEO 资产，跳过大模型投喂 ({ctx.title})")
+                return self._respect_frontmatter(ctx.fm_dict, existing_seo)
 
         tlog.info(f"🛰️ [AI 算法对齐] 正在为 '{ctx.title}' 执行智能 SEO 投喂...")
 

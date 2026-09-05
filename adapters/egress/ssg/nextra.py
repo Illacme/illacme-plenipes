@@ -34,22 +34,27 @@ class NextraAdapter(BaseSSGAdapter):
         }
 
     def get_feature_slots(self) -> dict:
-        """🚀 [V56.0] Nextra 标准布局声明 (对齐 Next.js pages)"""
+        """🚀 [V56.0] Nextra 标准布局声明 (纯相对路径，对齐 Next.js pages)"""
         return {
             "docs": {
                 "label": "文档中心",
-                "single": "pages",
-                "multi": "pages/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "blog": {
                 "label": "博客文章",
-                "single": "pages/blog",
-                "multi": "pages/{lang}/blog"
+                "single": "blog",
+                "multi": "{lang}/blog"
+            },
+            "showcase": {
+                "label": "产品特性",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "pages/custom",
-                "multi": "pages/{lang}/custom"
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
                 "label": "静态资产",
@@ -68,6 +73,9 @@ class NextraAdapter(BaseSSGAdapter):
         if new_fm.get('template') == 'splash':
             new_fm['layout'] = 'raw'
             new_fm.pop('template', None)
+
+        # 统一规范化双链及 Markdown 相对链接
+        body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
 
         # 确保 Nextra 页面顶部导入了 Callout 组件 (如果文本中包含 <Callout)
         if "<Callout" in body and "import { Callout }" not in body:

@@ -104,7 +104,7 @@ def shutdown() -> Dict[str, str]:
     return {"status": "accepted"}
 
 @router.post("/api/system/preview/restart", dependencies=[Depends(verify_token)])
-def restart_preview() -> Dict[str, str]:
+def restart_preview() -> Dict[str, Any]:
     """🚀 [V55.8] 工业级增强型重启：支持依赖自愈与日志实时穿透"""
     engine = get_global_engine()
     if not engine:
@@ -127,31 +127,50 @@ def restart_preview() -> Dict[str, str]:
     has_package_json = os.path.exists(os.path.join(theme_dir, "package.json")) or os.path.exists(os.path.join(mother_theme_dir, "package.json"))
     is_framework = bool((is_docusaurus or is_vitepress or is_nextra or is_starlight) and has_package_json)
     
+    import importlib
+    import core.utils.dev_server
+    try:
+        importlib.reload(core.utils.dev_server)
+    except Exception:
+        pass
     from core.utils.dev_server import DevServer, FrameworkDevServer
     srv = getattr(engine, 'preview_server', None)
+    
+    # 🗺️ 动态根据当前 active_theme 重新锚定主权路径矩阵，消除目录漂移
+    from core.runtime.infrastructure.path_resolver import resolve_engine_paths
+    from core.config.config import THEMES_DIR
+    engine.paths = resolve_engine_paths(engine, engine.config, THEMES_DIR)
     p_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
     if p_dir:
         os.makedirs(p_dir, exist_ok=True)
 
-    is_diff = srv and (not isinstance(srv, FrameworkDevServer if is_framework else DevServer) or srv.directory != (theme_dir if is_framework else p_dir))
-    if is_diff:
+    if not is_framework and isinstance(srv, DevServer) and srv.httpd:
+        srv.update_directory(p_dir)
+        engine.services["preview"].update({
+            "status": "running",
+            "port": srv.port,
+            "start_time": time.time(),
+            "mode": "static"
+        })
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器已保持在线...")
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"📂 [静态预览] 物理映射目录已动态热重定向至: {srv.directory}")
+        bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🟢 [静态预览] Local: http://localhost:{srv.port}")
+        return {"status": "success", "message": "Preview server directory hot-swapped.", "port": srv.port}
+
+    if srv:
         try:
-            engine.preview_server.stop()
+            srv.stop()
             time.sleep(0.5)
-        except: pass
+        except Exception:
+            pass
         engine.preview_server = None
-    if not srv or is_diff:
-        port = getattr(engine.config.system, 'serve_port', 43213)
-        cmd = "npm run start -- --port {port}" if is_docusaurus else "npm run dev -- --port {port}"
-        target_dir = theme_dir if (is_framework and os.path.exists(theme_dir)) else mother_theme_dir if is_framework else p_dir
-        engine.preview_server = FrameworkDevServer(directory=target_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
+
+    port = getattr(engine.config.system, 'serve_port', 43213)
+    cmd = "npm run start -- --port {port}" if is_docusaurus else "npm run dev -- --port {port}"
+    target_dir = theme_dir if (is_framework and os.path.exists(theme_dir)) else mother_theme_dir if is_framework else p_dir
+    engine.preview_server = FrameworkDevServer(directory=target_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
     
     try:
-        if engine.preview_server:
-            try:
-                engine.preview_server.stop()
-                time.sleep(1.0)
-            except: pass
             
         def terminal_broadcaster(line: str) -> None:
             tlog.info(f"🛰️ [终端采样] {line}")
@@ -159,6 +178,11 @@ def restart_preview() -> Dict[str, str]:
 
         if hasattr(engine.preview_server, 'start_with_callback'):
             success = engine.preview_server.start_with_callback(callback=terminal_broadcaster)
+            # 🚀 [V55.9] 物理防假死探活：等待 4 秒验证 DevServer 进程是否正常存活/绑定
+            if hasattr(engine.preview_server, 'wait_until_ready'):
+                engine.preview_server.wait_until_ready(timeout=4.0)
+                if not engine.preview_server.is_alive():
+                    raise HTTPException(status_code=500, detail="Framework DevServer exited unexpectedly during initialization.")
         else:
             success = engine.preview_server.start(blocking=False)
             if success:
@@ -174,7 +198,7 @@ def restart_preview() -> Dict[str, str]:
                 "start_time": time.time(),
                 "mode": "framework" if is_framework else "static"
             })
-            return {"status": "success", "message": "Preview server started."}
+            return {"status": "success", "message": "Preview server started.", "port": engine.preview_server.port}
         else:
             raise HTTPException(status_code=500, detail="Failed to start preview server")
     except Exception as e:

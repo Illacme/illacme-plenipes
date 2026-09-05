@@ -172,7 +172,7 @@ class TranslationSettings(BaseModel):
     max_slug_length: int = Field(100, ge=10)
     max_seo_description_length: int = Field(200, ge=10)
     slug_mode: str = "ai"
-    slug_dir_mode: str = "flat"  # 可选: "flat", "prefix", "nested"
+    slug_dir_mode: str = "nested"  # 默认: "nested" (目录树复刻); 可选: "nested", "flat", "prefix"
     
     global_proxy: str = ""
     custom_prompts: Dict[str, str] = Field(default_factory=dict)

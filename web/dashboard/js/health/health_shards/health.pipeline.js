@@ -61,8 +61,9 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
     const pipeDotTheme = document.getElementById('pipe-dot-theme');
     const pipeCapTheme = document.getElementById('pipe-cap-theme');
     if (pipeValTheme) {
-        const rawTheme = data.theme || s.active_theme || 'SOVEREIGN';
-        const cleanThemeName = rawTheme.replace(/\s*\([^)]*\)/g, '').trim().toUpperCase() || 'SOVEREIGN';
+        const rawTheme = data.theme || s.active_theme || 'Sovereign';
+        const cleanTheme = rawTheme.replace(/\s*\([^)]*\)/g, '').trim();
+        const cleanThemeName = (window.getThemeDisplayName ? window.getThemeDisplayName(cleanTheme || rawTheme) : cleanTheme) || 'Sovereign';
         pipeValTheme.innerText = `${cleanThemeName} · ${currentModeMeta.short}`;
         if (pipeDotTheme) pipeDotTheme.className = 'pipe-dot healthy';
 
@@ -79,7 +80,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         const strategyDesc = strategyLabels[seoStrategy] || seoStrategy;
 
         if (pipeCapTheme) {
-            pipeCapTheme.title = `🎭 3. 网站主题 (Visual Theme & Layout)\n────────────────────────\n• 装帧主题：${cleanThemeName} ${rawTheme.includes('DEFAULT') ? '(系统默认)' : ''}\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• SEO 策略：${strategyDesc}\n\n💡 点击一键直达视觉主题与出版模式设置`;
+            pipeCapTheme.title = `🎭 3. 网站主题 (Visual Theme & Layout)\n────────────────────────\n• 装帧主题：${cleanThemeName} ${rawTheme.toLowerCase().includes('default') ? '(系统默认)' : ''}\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• SEO 策略：${strategyDesc}\n\n💡 点击一键直达视觉主题与出版模式设置`;
         }
     }
 
@@ -88,7 +89,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
     const pipeDotRouting = document.getElementById('pipe-dot-routing');
     const pipeCapRouting = document.getElementById('pipe-cap-routing');
     if (pipeValRouting) {
-        const dirMode = s.translation?.slug_dir_mode || 'flat';
+        const dirMode = s.translation?.slug_dir_mode || 'nested';
         const slugMode = s.translation?.slug_mode || 'ai';
         const dirLabels = { 'flat': '极简根目录', 'prefix': 'SEO 语言前缀', 'nested': '文库目录树' };
         const slugLabels = { 'ai': 'AI 语义 Slug', 'filename': '原文件名清洗' };

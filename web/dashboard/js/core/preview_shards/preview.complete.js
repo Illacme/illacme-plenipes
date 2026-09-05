@@ -42,15 +42,7 @@ window.handlePreviewSyncCompleted = async function () {
                         <span style="font-size: 0.75rem; color: #00f0ff; background: rgba(0,240,255,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,240,255,0.3);">HTTP 200 OK</span>
                     </div>
                     <div style="color: #ccc; font-size: 0.82rem; margin-bottom: 4px;">✔ <b>原稿合规</b>：已通过资产与双链审计（0 外部推流）</div>
-                    <div style="color: #ccc; font-size: 0.82rem; margin-bottom: 12px;">✔ <b>预览服务</b>：<a id="preview-site-link" href="${finalUrl}" target="_blank" style="color: #00f0ff; text-decoration: underline; font-weight: bold;">${finalUrl}</a> (端口 <span id="preview-site-port">${finalPort}</span>)</div>
-                    <div style="background: rgba(162, 155, 254, 0.08); border: 1px dashed rgba(162, 155, 254, 0.35); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                        <div style="font-size: 0.8rem; color: #dfe6e9; line-height: 1.4;">
-                            <span style="font-weight: 600; color: #a29bfe;">🏛️ 下一步建议：</span>已熟悉示范站出版流程？准备好将您自己的本地 Markdown 知识文库打造为全球多语种独立网站了吗？
-                        </div>
-                        <button onclick="if (typeof window.closeTerminalModal === 'function') window.closeTerminalModal(); if (typeof window.showImprintWizard === 'function') window.showImprintWizard();" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 10px rgba(108, 92, 231, 0.35); transition: all 0.2s; flex-shrink: 0;">
-                            ✨ 开启专属品牌创建向导 →
-                        </button>
-                    </div>
+                    <div style="color: #ccc; font-size: 0.82rem;">✔ <b>预览服务</b>：<a id="preview-site-link" href="${finalUrl}" target="_blank" style="color: #00f0ff; text-decoration: underline; font-weight: bold;">${finalUrl}</a> (端口 <span id="preview-site-port">${finalPort}</span>)</div>
                 </div>`;
             out.innerHTML += cardHtml;
             out.scrollTop = out.scrollHeight;
@@ -96,9 +88,10 @@ window.handlePreviewSyncCompleted = async function () {
             window.addAudit(`发布预览成功开启: ${finalUrl}`, 'success');
         }
 
-        // 5. 尝试直接拉起浏览器新标签页
+        // 5. 尝试直接拉起浏览器新标签页 (附带防缓存时间戳穿透)
         try {
-            window.open(finalUrl, '_blank', 'noopener,noreferrer');
+            const freshUrl = finalUrl.includes('?') ? `${finalUrl}&t=${Date.now()}` : `${finalUrl}?t=${Date.now()}`;
+            window.open(freshUrl, '_blank', 'noopener,noreferrer');
         } catch (e) {
             console.warn('[Preview] 浏览器弹窗拦截:', e);
         }

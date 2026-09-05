@@ -36,4 +36,13 @@ import type { Props } from '@astrojs/starlight/props';
 .custom-global-footer a:hover {
   text-decoration: underline;
 }
+
+/* 🛡️ 深度排版层级防御：若正文中出现残留的 h1 标题，自愈收敛至副标题字号，杜绝排版断崖 */
+:global(.sl-markdown-content h1) {
+  font-size: var(--sl-text-2xl, 1.5rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
 </style>

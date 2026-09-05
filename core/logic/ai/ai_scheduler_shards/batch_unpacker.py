@@ -134,6 +134,10 @@ class BatchUnpacker:
             # 还原掩码
             unmasked_text = cls.unmask_scoped(raw_seg_content, block_masks, glossary_masks)
 
+            # 🛡️ 标题语法守卫 (Heading Parity Guard)：若原文非标题（不以 # 开头），剥离译文开头误加的 # 标记，防范大模型标题幻觉
+            if not item.raw_text.strip().startswith('#') and unmasked_text.strip().startswith('#'):
+                unmasked_text = re.sub(r'^\s*#{1,6}\s*', '', unmasked_text)
+
             # 校验 AST 结构完整性 (如果提供了校验函数)
             if structure_validator:
                 try:

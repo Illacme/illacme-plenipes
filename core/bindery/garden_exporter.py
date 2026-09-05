@@ -69,20 +69,34 @@ def export_digital_garden(engine, all_docs_snapshot=None):
 
             prefix_val = f"/{fmt_prefix}" if fmt_prefix else ""
             src_lang = engine.i18n.source.lang_code
-            if is_docusaurus and logical_code == src_lang:
-                raw_url = f"{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"{prefix_val}/{slug}"
-            else:
-                raw_url = f"/{physical_code}{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"/{physical_code}{prefix_val}/{slug}"
+            is_src_lang = (logical_code == src_lang) or (logical_code in ('auto', 'zh', 'default')) or (physical_code in ('auto', 'default'))
+            
+            # 只有当非源语言（如 en, ja）且物理代码合法时才追加 /{physical_code} 前缀，严禁出现 /auto/
+            lang_prefix = ""
+            if not is_src_lang and physical_code and physical_code != 'auto':
+                lang_prefix = f"/{physical_code}"
+
+            raw_url = f"{lang_prefix}{prefix_val}/{mapped_sub_dir}/{slug}" if mapped_sub_dir else f"{lang_prefix}{prefix_val}/{slug}"
 
             final_url = re.sub(r'/+', '/', raw_url)
             
             # 🚀 [V34.9] 性能手术：直接从内存获取标题，杜绝磁盘扫描
             title = doc_info.get("title")
-            if logical_code != src_lang:
+            if not is_src_lang and logical_code != src_lang:
                 trans = doc_info.get("translations", {}).get(logical_code, {})
-                title = trans.get("title") or title
+                if isinstance(trans, dict):
+                    trans_title = (
+                        trans.get("title") or
+                        trans.get("reviewed_title") or
+                        (trans.get("seo") or {}).get("og_title") or
+                        (trans.get("seo") or {}).get("title") or
+                        trans.get("og_title")
+                    )
+                    if trans_title:
+                        title = trans_title
 
-            return { "lang": logical_code, "url": final_url, "title": title }
+            norm_lang = 'root' if is_src_lang else logical_code
+            return { "lang": norm_lang, "url": final_url, "title": title }
 
         src_code = engine.i18n.source.lang_code
         if src_code is not None:
@@ -95,11 +109,29 @@ def export_digital_garden(engine, all_docs_snapshot=None):
         url_cache[rel_path] = urls
         return urls
 
+    # 🚀 构建全息反链解析寻址索引 (Lookup Map)
+    lookup_map = {}
+    for p, info in docs.items():
+        lookup_map[p] = p
+        lookup_map[p.lower()] = p
+        stem = os.path.splitext(os.path.basename(p))[0].lower()
+        lookup_map[stem] = p
+        slug = info.get("slug")
+        if slug:
+            lookup_map[slug.lower()] = p
+        title = info.get("title")
+        if title:
+            lookup_map[title.lower()] = p
+
     inlinks_dict = { path: [] for path in docs.keys() }
     for path, info in docs.items():
         for outlink in info.get("outlinks", []):
-            if outlink in inlinks_dict:
-                inlinks_dict[outlink].append(path)
+            clean_out = str(outlink).strip().lower().removesuffix('.md').removesuffix('.html').strip('/')
+            clean_stem = os.path.splitext(os.path.basename(clean_out))[0]
+            target_path = lookup_map.get(clean_out) or lookup_map.get(clean_stem)
+            if target_path and target_path != path:
+                if path not in inlinks_dict[target_path]:
+                    inlinks_dict[target_path].append(path)
 
     node_titles = {}
     for target_path, inlinks in inlinks_dict.items():
@@ -149,27 +181,46 @@ def export_digital_garden(engine, all_docs_snapshot=None):
     graph_path = engine._resolve_path(os.path.join(theme_meta_dir, "link_graph.json"))
     new_json_bytes = orjson.dumps(final_graph, option=orjson.OPT_INDENT_2)
 
-    if os.path.exists(graph_path):
-        try:
-            with open(graph_path, 'rb') as f:
-                old_json_bytes = f.read()
-            if hashlib.md5(new_json_bytes).hexdigest() == hashlib.md5(old_json_bytes).hexdigest():
-                tlog.debug("✨ [数字花园] 拓扑数据无变化，已跳过物理更新。")
-                return
-        except Exception: pass
-
-    try:
-        os.makedirs(os.path.dirname(graph_path), exist_ok=True)
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(graph_path), suffix=".json.tmp")
+    def _safe_write_file(target_file: str, content: bytes):
+        if os.path.exists(target_file):
+            try:
+                with open(target_file, 'rb') as f:
+                    if hashlib.md5(content).hexdigest() == hashlib.md5(f.read()).hexdigest():
+                        return False
+            except Exception: pass
+        os.makedirs(os.path.dirname(target_file), exist_ok=True)
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(target_file), suffix=".json.tmp")
         try:
             with os.fdopen(tmp_fd, 'wb') as f:
-                f.write(new_json_bytes)
+                f.write(content)
                 f.flush()
                 os.fsync(f.fileno())
-            os.replace(tmp_path, graph_path)
+            os.replace(tmp_path, target_file)
+            return True
         except Exception:
             if os.path.exists(tmp_path): os.remove(tmp_path)
             raise
-        tlog.debug(f"🕸️ [数字花园] 全语种拓扑图数据已导出 ({len(backlinks_map)} 组反链)")
+
+    try:
+        updated = _safe_write_file(graph_path, new_json_bytes)
+        
+        # 🚀 [V105.2] 静态公共目录同步：直接输出到 public/graph.json 供前端 D3 图谱无缝拉取
+        target_public_dirs = []
+        g_dir = engine.paths.get('graph_json_dir')
+        if g_dir:
+            target_public_dirs.append(engine._resolve_path(g_dir))
+        theme_public = engine._resolve_path(os.path.join(engine.paths.get('target_base', '.'), 'public'))
+        if theme_public not in target_public_dirs:
+            target_public_dirs.append(theme_public)
+
+        for p_dir in target_public_dirs:
+            if os.path.isdir(p_dir) or os.path.isdir(os.path.dirname(p_dir)):
+                pub_graph = os.path.join(p_dir, "graph.json")
+                _safe_write_file(pub_graph, new_json_bytes)
+
+        if updated:
+            tlog.debug(f"🕸️ [数字花园] 全语种拓扑图数据已导出 ({len(backlinks_map)} 组反链)")
+        else:
+            tlog.debug("✨ [数字花园] 拓扑数据无变化，已跳过物理更新。")
     except Exception as e:
         tlog.error(f"❌ [数字花园] 拓扑图生成失败: {e}")

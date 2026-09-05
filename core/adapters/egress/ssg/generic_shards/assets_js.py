@@ -67,7 +67,7 @@ def get_universal_client_js() -> str:
                     tagBtns.forEach(function(tb) { tb.classList.remove('active'); });
                     tBtn.classList.add('active');
 
-                    var items = blogApp.querySelectorAll('.timeline-item, .blog-card');
+                    var items = blogApp.querySelectorAll('.timeline-item, .blog-card, .compact-row');
                     items.forEach(function(it) {
                         var tags = (it.dataset.tags || '').split(',');
                         if (tag === 'all' || tags.indexOf(tag) !== -1) {

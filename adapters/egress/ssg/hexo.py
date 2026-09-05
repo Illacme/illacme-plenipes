@@ -34,27 +34,32 @@ class HexoAdapter(BaseSSGAdapter):
         }
 
     def get_feature_slots(self) -> dict:
-        """🚀 [V56.0] Hexo 标准布局声明 (对齐 Hexo source)"""
+        """🚀 [V56.0] Hexo 标准布局声明 (纯相对路径，对齐 Hexo source)"""
         return {
             "docs": {
                 "label": "文档中心",
-                "single": "source",
-                "multi": "source/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "blog": {
                 "label": "博客文章",
-                "single": "source/_posts",
-                "multi": "source/_posts/{lang}"
+                "single": "_posts",
+                "multi": "_posts/{lang}"
+            },
+            "showcase": {
+                "label": "产品特性",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "source/custom",
-                "multi": "source/{lang}/custom"
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
                 "label": "静态资产",
-                "single": "source/assets",
-                "multi": "source/assets"
+                "single": "assets",
+                "multi": "assets"
             }
         }
 
@@ -68,6 +73,9 @@ class HexoAdapter(BaseSSGAdapter):
         if new_fm.get('template') == 'splash':
             new_fm['layout'] = 'splash'
             new_fm.pop('template', None)
+
+        # 统一规范化双链及 Markdown 相对链接
+        body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
             
         return body, new_fm
 

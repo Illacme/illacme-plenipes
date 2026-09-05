@@ -164,9 +164,9 @@ window.getUIModalsHTML = () => {
                     <div style="display: flex; justify-content: center; width: 100%; gap: 1rem;">
                         <button class="primary-btn glow-btn" id="btn-terminal-start-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.startPublishAndPreviewExecution()">⚡ 开始发布</button>
                         <button class="primary-btn glow-btn" id="btn-terminal-open-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.openPreviewSite()">🌐 立即前往预览站点</button>
-                        <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">完成</button>
                         <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
                         <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">关闭</button>
                         <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
                     </div>
                 </div>
@@ -211,22 +211,36 @@ window.getUIModalsHTML = () => {
                                 💡 <b>内容文库 (Vault)</b> 是存放手稿 Markdown 笔记的本地物理文件夹。支持选取已有目录或自动新建：
                             </p>
                         </div>
+                        <!-- 💡 自定义品牌配额前置感知友好提示卡片 -->
+                        <div id="wiz-quota-notice" class="glass-panel" style="display: none; margin-bottom: 10px; padding: 8px 12px; border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.08); border-radius: 6px; color: #fbbf24; font-size: 0.73rem; line-height: 1.4;">
+                            <div style="display: flex; align-items: flex-start; gap: 7px;">
+                                <span style="font-size: 0.9rem; line-height: 1.2;">💡</span>
+                                <div id="wiz-quota-msg" style="flex: 1;"></div>
+                            </div>
+                        </div>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <div class="wiz-form-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <label style="font-weight: 600; font-size: 0.84rem; color: var(--text-bright); margin: 0;">内容文库绝对物理路径</label>
                                     <span class="tier-tag tier-local" style="font-size: 0.62rem; padding: 1px 5px;">本地物理路径</span>
                                 </div>
-                                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0; line-height: 1.3;">选择您本地电脑的笔记文件夹路径。留空将自动生成标准演示路径。</p>
+                                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0; line-height: 1.3;">选择您本地电脑的笔记文件夹路径。留空将自动创建专属独立文库。</p>
                                 <div style="display: flex; gap: 8px; margin-top: 4px;">
-                                    <input type="text" id="wiz-vault-path" class="setting-input" placeholder="例如: /Users/username/MyVault" style="flex: 1; font-family: var(--font-mono); font-size: 0.78rem; padding: 6px 10px; border-radius: 6px;">
-                                    <button type="button" class="secondary-btn" onclick="window.pickWizardVaultDirectory()" style="padding: 6px 12px; font-size: 0.75rem; white-space: nowrap;">📁 选择文件夹</button>
+                                    <input type="text" id="wiz-vault-path" class="setting-input" placeholder="例如: /Users/username/Documents/MyVault (留空将自动新建专属文库)" style="flex: 1; font-family: var(--font-mono); font-size: 0.78rem; padding: 6px 10px; border-radius: 6px;">
+                                    <button type="button" id="btn-pick-wizard-vault" class="secondary-btn" onclick="window.pickWizardVaultDirectory()" style="padding: 6px 12px; font-size: 0.75rem; white-space: nowrap;">📁 选择文件夹</button>
                                 </div>
                                 <div id="wiz-error-path" class="glass-panel" style="display: none; margin-top: 6px; padding: 6px 10px; border-left: 3px solid #ff4d6a; background: rgba(255, 77, 106, 0.08); border-radius: 6px; color: #ff859b; font-size: 0.74rem; line-height: 1.3;"></div>
+                                <!-- 💡 文库复用与已绑定品牌温和提示卡片 (不阻断用户继续创建) -->
+                                <div id="wiz-vault-bound-notice" class="glass-panel" style="display: none; margin-top: 6px; padding: 7px 12px; border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.08); border-radius: 6px; color: #fbbf24; font-size: 0.73rem; line-height: 1.4;">
+                                    <div style="display: flex; align-items: flex-start; gap: 7px;">
+                                        <span style="font-size: 0.88rem; line-height: 1.2;">💡</span>
+                                        <div id="wiz-vault-bound-msg" style="flex: 1;"></div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="wiz-form-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" id="wiz-bootstrap-vault" style="margin: 0; transform: scale(1.1); cursor: pointer;" checked>
+                                <input type="checkbox" id="wiz-bootstrap-vault" style="margin: 0; transform: scale(1.1); cursor: pointer;">
                                 <label for="wiz-bootstrap-vault" style="font-size: 0.74rem; color: var(--text-dim); cursor: pointer; line-height: 1.3;">
                                     自动注入中英双语演示手稿与资产目录结构 (推荐新手勾选)
                                 </label>
@@ -550,8 +564,8 @@ window.getUIModalsHTML = () => {
                 </div>
 
                 <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 12px; margin-top: auto;">
-                    <button class="secondary-btn" id="btn-wiz-prev" onclick="navigateWizard(-1)" style="visibility: hidden; font-size: 0.78rem; padding: 6px 14px;">上一步</button>
-                    <button class="primary-btn glow-btn" id="btn-wiz-next" onclick="navigateWizard(1)" style="min-width: 110px; font-size: 0.78rem; padding: 6px 16px;">下一步 →</button>
+                    <button class="secondary-btn" id="btn-wiz-prev" onclick="window.navigateWizard(-1)" style="visibility: hidden; font-size: 0.78rem; padding: 6px 14px;">上一步</button>
+                    <button class="primary-btn glow-btn" id="btn-wiz-next" onclick="window.navigateWizard(1)" style="min-width: 110px; font-size: 0.78rem; padding: 6px 16px;">下一步 →</button>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 ---
 import Default from '@astrojs/starlight/components/Footer.astro';
 import type { Props } from '@astrojs/starlight/props';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // Read graph.json from public/ at SSR/build time
@@ -10,6 +10,15 @@ try {
   const raw = readFileSync(resolve(process.cwd(), 'public/graph.json'), 'utf-8');
   graphData = JSON.parse(raw);
 } catch { /* graph.json not yet generated — silently skip */ }
+
+// Read theme.options.json at SSR/build time
+let themeOptions: any = {};
+try {
+  const optPath = resolve(process.cwd(), 'theme.options.json');
+  if (existsSync(optPath)) {
+    themeOptions = JSON.parse(readFileSync(optPath, 'utf-8'));
+  }
+} catch { /* options not found — fallback */ }
 
 const currentPath = Astro.url.pathname;
 const allBacklinks = graphData.backlinks || {};
@@ -29,7 +38,16 @@ const backlinksForPage = Object.keys(allBacklinks).reduce((acc, key) => {
 }, [] as { url: string; title: string }[]);
 
 const isEnglish = currentPath.startsWith('/en/');
-const uiTitle = isEnglish ? "Backlinks" : "漫游关联";
+const isJapanese = currentPath.startsWith('/ja/');
+const uiTitle = isEnglish ? "Backlinks" : (isJapanese ? "バックリンク" : "漫游关联");
+
+// Compliance & Identity options
+const siteName = themeOptions.site_name || 'Illacme Plenipes';
+const currentYear = new Date().getFullYear();
+const copyright = themeOptions.footer_copyright || `© ${currentYear} ${siteName}. All Rights Reserved.`;
+const license = themeOptions.license || 'CC BY-NC-SA 4.0';
+const icpLicense = themeOptions.icp_license;
+const policeLicense = themeOptions.police_license;
 ---
 
 {backlinksForPage.length > 0 && (
@@ -51,10 +69,47 @@ const uiTitle = isEnglish ? "Backlinks" : "漫游关联";
 <!-- 先渲染 Starlight 原生的翻页器和编辑链接 -->
 <Default {...Astro.props} />
 
-<!-- 然后追加我们自己极其克制的版权行 -->
-<div class="custom-global-footer">
-	<p>Powered by <a href="https://github.com/Illacme/illacme-plenipes" target="_blank">Illacme-plenipes</a></p>
-</div>
+<!-- 然后追加极具质感的出版合规与全域版权栏 -->
+<footer class="custom-global-footer">
+	<div class="compliance-shield-bar">
+		{copyright && <span class="compliance-item copyright-text">{copyright}</span>}
+		
+		{license && (
+			<span class="compliance-item license-item">
+				<span class="badge-icon">⚖️</span>
+				<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">
+					{license}
+				</a>
+			</span>
+		)}
+
+		{icpLicense && (
+			<span class="compliance-item icp-item">
+				<span class="badge-icon">📜</span>
+				<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+					{icpLicense}
+				</a>
+			</span>
+		)}
+
+		{policeLicense && (
+			<span class="compliance-item police-item">
+				<svg class="police-badge-svg" viewBox="0 0 32 32" width="13" height="13" fill="currentColor">
+					<path d="M16 2 L28 7 L28 15 C28 22.5 22.8 28.6 16 30 C9.2 28.6 4 22.5 4 15 L4 7 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+					<path d="M16 7 L23 10.5 L23 15 C23 19.5 19.8 24.2 16 25.5 C12.2 24.2 9 19.5 9 15 L9 10.5 Z" fill="currentColor" opacity="0.85"/>
+					<polygon points="16,11 17.5,14 20.5,14.5 18.2,16.8 18.8,20 16,18.3 13.2,20 13.8,16.8 11.5,14.5 14.5,14" fill="#fff"/>
+				</svg>
+				<a href="http://www.beian.gov.cn/" target="_blank" rel="noopener noreferrer">
+					{policeLicense}
+				</a>
+			</span>
+		)}
+	</div>
+
+	<p class="powered-by">
+		Powered by <a href="https://github.com/Illacme/illacme-plenipes" target="_blank" rel="noopener noreferrer">Illacme-plenipes</a> · Sovereign Publishing Engine
+	</p>
+</footer>
 
 <style>
 .garden-backlinks {
@@ -129,15 +184,66 @@ const uiTitle = isEnglish ? "Backlinks" : "漫游关联";
 }
 
 .custom-global-footer {
-	margin-top: 2rem;
+	margin-top: 2.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--sl-color-gray-6);
 	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.65rem;
 }
-.custom-global-footer p {
-	font-size: 0.8rem;
+
+.compliance-shield-bar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 0.6rem 1.25rem;
+	font-size: 0.78rem;
 	color: var(--sl-color-gray-3);
 }
-.custom-global-footer a {
+
+.compliance-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	line-height: 1.5;
+}
+
+.compliance-item a {
+	color: var(--sl-color-gray-3);
+	text-decoration: none;
+	transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.compliance-item a:hover {
+	color: var(--sl-color-text-accent);
+	text-decoration: underline;
+}
+
+.badge-icon {
+	font-size: 0.85em;
+}
+
+.police-badge-svg {
+	vertical-align: -2px;
+	color: var(--sl-color-accent);
+}
+
+.powered-by {
+	font-size: 0.74rem;
+	color: var(--sl-color-gray-4);
+	margin: 0;
+}
+
+.powered-by a {
 	color: var(--sl-color-text-accent);
 	text-decoration: none;
+	font-weight: 500;
+}
+
+.powered-by a:hover {
+	text-decoration: underline;
 }
 </style>

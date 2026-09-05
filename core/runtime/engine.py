@@ -79,7 +79,9 @@ class IllacmeEngine:
         # 🚀 [V50.3] 自动接管主权 Imprint
         if config and hasattr(config, 'vault_root'):
             # 如果品牌尚未划定（例如 CLI 首次启动），则执行物理划定
-            self.im.init_sovereign_imprint(imprint_id, config.vault_root)
+            imprint_path = os.path.join(self.im.imprint_root, imprint_id)
+            if not os.path.exists(imprint_path):
+                self.im.init_sovereign_imprint(imprint_id, config.vault_root)
             self.im.switch(imprint_id)
 
 
@@ -134,6 +136,13 @@ class IllacmeEngine:
             tlog.error("❌ [Engine] 热重载配置失败，新的配置为空！物理拒绝覆盖当前有效配置。")
             return
         was_onboarding = self.onboarding_required
+        
+        # 🛡️ [SOP-13 物理隔离防护] 锁定品牌领地，防止重载时 data_root 退化回根目录
+        imprint_id = getattr(self, 'imprint_id', 'default') or 'default'
+        imprint_path = os.path.join("imprints", imprint_id) if imprint_id != "root" else "."
+        if hasattr(config, 'system') and config.system:
+            config.system.data_root = imprint_path
+            
         self.config = config
         self.active_theme = config.active_theme
         self.vault_root = os.path.abspath(os.path.expanduser(config.vault_root)) if config.vault_root else ""
@@ -163,12 +172,28 @@ class IllacmeEngine:
             except Exception as e:
                 tlog.error(f"❌ [Engine] 重新装配发布编排器失败: {e}")
         
+        # 3c. 🪝 重新装配主题钩子管理器，对齐当前 active_theme
+        from core.logic.hooks import ThemeHookManager
+        self.theme_hooks = ThemeHookManager(self)
+
         # 4. 🗺️ 物理路径矩阵重新锚定
         # 如果 active_theme 发生变更，必须重新计算 engine.paths 以防 IO 错误
         if hasattr(self, 'paths'):
             from core.runtime.infrastructure.path_resolver import resolve_engine_paths
             from core.config.config import THEMES_DIR
             self.paths = resolve_engine_paths(self, self.config, THEMES_DIR)
+
+        # 4b. 🎨 重新装配 SSG 渲染适配器与分发器，对齐当前 active_theme
+        from core.adapters.egress.ssg import SSGAdapter
+        from core.config.models.theme import ThemeSettings
+        theme_settings = self.config.theme_options.get(self.active_theme, ThemeSettings())
+        theme_settings.name = self.active_theme
+        self.ssg_adapter = SSGAdapter(theme_settings, custom_adapters=self.config.framework_adapters, engine=self)
+        self.ssg_adapter.default_lang = self.config.i18n_settings.source.lang_code or "zh"
+
+        if hasattr(self, 'dispatcher') and self.dispatcher:
+            self.dispatcher.ssg_adapter = self.ssg_adapter
+            self.dispatcher.paths = self.paths
 
 
         # 5. 🧠 算力池与业务中枢重校

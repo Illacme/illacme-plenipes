@@ -1,10 +1,21 @@
 ---
-const isEnContext = Astro.url.pathname.startsWith('/en/');
-const canvasTitle = isEnContext ? "Graph View" : "关系图谱";
-const langPrefix  = isEnContext ? '/en' : '';
+const pathname = Astro.url.pathname;
+const isEn = pathname.startsWith('/en/') || pathname === '/en';
+const isJa = pathname.startsWith('/ja/') || pathname === '/ja';
+
+let currentLang = 'root';
+let canvasTitle = "关系图谱";
+
+if (isEn) {
+  currentLang = 'en';
+  canvasTitle = "Graph View";
+} else if (isJa) {
+  currentLang = 'ja';
+  canvasTitle = "ナレッジグラフ";
+}
 ---
 
-<topology-canvas data-lang={isEnContext ? 'en' : 'zh'}>
+<topology-canvas data-lang={currentLang}>
   <div class="garden-canvas-wrapper">
     <div class="canvas-title">
       <span class="icon">🌌</span> {canvasTitle}
@@ -21,9 +32,9 @@ const langPrefix  = isEnContext ? '/en' : '';
     margin-bottom: 1rem;
     padding: 1rem;
     border-radius: 0.75rem;
-    background: var(--sl-color-bg-nav);
-    border: 1px solid var(--sl-color-hairline);
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    background: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -31,7 +42,8 @@ const langPrefix  = isEnContext ? '/en' : '';
   }
 
   html[data-theme='dark'] .garden-canvas-wrapper {
-    background: rgba(20, 20, 25, 0.5);
+    background: rgba(20, 20, 25, 0.6);
+    border: 1px solid var(--sl-color-hairline);
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
   }
 
@@ -106,9 +118,23 @@ const langPrefix  = isEnContext ? '/en' : '';
   // ─── Web Component ────────────────────────────────────────────────────────
   class TopologyCanvas extends HTMLElement {
     private _rendered = false;
+    private _graphInstance: any = null;
+    private _themeObserver: MutationObserver | null = null;
+    private _data: any = null;
 
     connectedCallback() {
       setTimeout(() => this._init(), 50);
+    }
+
+    disconnectedCallback() {
+      if (this._themeObserver) {
+        this._themeObserver.disconnect();
+        this._themeObserver = null;
+      }
+      if (this._graphInstance?.destroy) {
+        this._graphInstance.destroy();
+        this._graphInstance = null;
+      }
     }
 
     private async _init() {
@@ -118,29 +144,58 @@ const langPrefix  = isEnContext ? '/en' : '';
       if (!container) return;
 
       // Language filter based on the data-lang attribute (set at SSR time)
-      const lang = this.getAttribute('data-lang') || 'zh';
-      const matchUrl = (url: string) =>
-        lang === 'en' ? url.startsWith('/en/') : !url.startsWith('/en/');
+      const lang = this.getAttribute('data-lang') || 'root';
+      const matchUrl = (url: string) => {
+        if (lang === 'en') {
+          return url.startsWith('/en/') || url === '/en';
+        } else if (lang === 'ja') {
+          return url.startsWith('/ja/') || url === '/ja';
+        } else {
+          // 默认源语言（中文）：排除属于其他已知目标语言的节点
+          return !url.startsWith('/en/') && !url.startsWith('/ja/') && !url.startsWith('/auto/');
+        }
+      };
 
-      let data: any;
       try {
-        data = await (fetchGraphData as any)('/graph.json', matchUrl);
+        this._data = await (fetchGraphData as any)('/graph.json', matchUrl);
       } catch { return; }
 
-      if (!data?.backlinks && !data?.all_nodes) return;
+      if (!this._data?.backlinks && !this._data?.all_nodes) return;
 
       try { await ensureD3(); } catch { return; }
 
       this._rendered = true;
+      this._renderCurrentGraph();
+
+      // 🛡️ 深度主题切换监听器：当用户在右上角切换浅色/深色模式时，实时重塑调色板与文字高对比度轮廓
+      if (!this._themeObserver) {
+        this._themeObserver = new MutationObserver(() => {
+          this._renderCurrentGraph();
+        });
+        this._themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-theme', 'class'],
+        });
+      }
+    }
+
+    private _renderCurrentGraph() {
+      const container = this.querySelector<HTMLElement>('.garden-canvas-internal');
+      if (!container || !this._data) return;
+
+      if (this._graphInstance?.destroy) {
+        this._graphInstance.destroy();
+      }
 
       // Starlight-specific width: read from .right-sidebar (position:fixed quirk)
       const sidebarEl = document.querySelector('.right-sidebar') as HTMLElement | null;
       const sidebarW  = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 0;
       const width     = sidebarW > 50 ? Math.min(sidebarW - 32, 300) : undefined;
 
-      renderTopologyGraph(container, data, {
+      this._graphInstance = renderTopologyGraph(container, this._data, {
         width,
         height: container.clientHeight || 250,
+        activeUrl: window.location.pathname,
       });
     }
   }

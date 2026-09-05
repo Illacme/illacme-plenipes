@@ -108,11 +108,12 @@ tags: [Showcase, Themes, Features, Innovations, Gallery]
 ## 🎭 装帧主题宇宙
 
 <article class="pioneer-grid" style="margin-top: 1.5rem;">
-    <a href="./themes-matrix.html" class="card-pioneer" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(22,27,34,0.95), rgba(33,38,45,0.95)); border: 1px solid var(--accent-color); padding: 1.75rem 2rem;">
-        <span class="card-tag" style="background: var(--accent-color); color: #000; font-weight: 700;">8 大旗舰装帧</span>
-        <h3 style="font-size: 1.4rem; color: var(--accent-color); margin-top: 8px;">🎭 8 大装帧主题全景与选型矩阵</h3>
-        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-top: 6px;">
+    <a href="./themes-matrix.html" class="card-pioneer card-pioneer-featured">
+        <span class="card-tag card-tag-highlight">8 大旗舰装帧</span>
+        <h3>🎭 8 大装帧主题全景与选型矩阵</h3>
+        <p>
             一网打尽 Sovereign 原生旗舰、Universal 标准、Docusaurus、VitePress、Astro Starlight、Nextra、Hexo 与 Hugo。查看横向性能指标、首屏体积、技术栈天梯对比与场景选型决策树。
         </p>
     </a>
 </article>
+

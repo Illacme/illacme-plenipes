@@ -266,6 +266,10 @@ class BlogIndexGeneratorPlugin(PostSyncTask):
     """
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         try:
+            adapter = getattr(engine, 'ssg_adapter', None)
+            if adapter and adapter.is_framework_engine():
+                # 独立外部框架 SSG (Docusaurus/VitePress/Astro/Nextra) 自治
+                return
             from core.adapters.egress.ssg.generic_templates import generate_dynamic_blog_archive
             generate_dynamic_blog_archive(engine, snapshot=snapshot)
         except Exception as e:

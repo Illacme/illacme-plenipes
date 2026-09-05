@@ -54,9 +54,17 @@ window.toggleI18nTarget = async (el, code) => {
         nextTargets = currentTargets.filter(c => c !== code);
     } else {
         // 新增/置换
-        if (!isLicensed && currentTargets.length >= 1) {
-            if (typeof addAudit === 'function') addAudit(`🔄 [社区版] 自动置换目标语种为: ${code}`, "info");
+        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 1);
+        if (maxTargets === 1 && currentTargets.length >= 1) {
+            if (typeof addAudit === 'function') addAudit(`🔄 [免费社区版] 自动置换目标语种为: ${code}`, "info");
             nextTargets = [code];
+        } else if (currentTargets.length >= maxTargets) {
+            const tierName = window.settingsData?._license_info?.tier_name || '当前版本';
+            if (typeof showNotification === 'function') {
+                showNotification(`【${tierName}】最多支持配置 ${maxTargets} 个目标语种，如需更多请升级授权`, 'warning');
+            }
+            if (typeof addAudit === 'function') addAudit(`⚠️ 目标语种数量已达【${tierName}】上限 (${maxTargets})`, "warning");
+            return;
         } else {
             nextTargets = [...currentTargets, code];
         }

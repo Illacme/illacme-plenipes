@@ -50,12 +50,12 @@
 
     <!-- [DEV ONLY] Polyfill for require() if missing -->
     <script>
-      if (typeof window.require === 'undefined') {
-        window.require = function(mod) {
-          console.warn('[Polyfill] require("' + mod + '") called in browser environment. Returning empty stub.');
-          return {};
-        };
-      }
+        if (typeof window.require === 'undefined') {
+            window.require = function (mod) {
+                console.warn('[Polyfill] require("' + mod + '") called in browser environment. Returning empty stub.');
+                return {};
+            };
+        }
     </script>
     <script src="vendor/sweetalert2.all.min.js"></script>
     <script src="vendor/marked.js"></script>
@@ -66,7 +66,7 @@
     <div id="app-container">
         <!-- 🛰️ Header -->
         <header>
-            <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;">
+            <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;" title="点击展开/收起出版工作台 (快捷键 I)">
                 <img src="logo.png" alt="Logo">
                 <div class="status-box">
                     <div style="display: flex; align-items: center;">
@@ -166,7 +166,11 @@
     <script src="js/dashboard.views.js?v=75.2"></script>
     <script src="js/ui/fe_bus.js"></script>
     <script src="js/ui/drawers.js?v=110.0"></script>
-    <script src="js/ui/modals.js?v=20260829_hosting_wording_exact_v54"></script>
+    <script src="js/ui/modals.js?v=20260904_vault_binding_notice_v1"></script>
+    <script src="js/ui/launchpad_shards/launchpad.onboarding.js"></script>
+    <script src="js/ui/launchpad_shards/launchpad.skeleton.js"></script>
+    <script src="js/ui/launchpad_shards/launchpad.pipeline.js"></script>
+    <script src="js/ui/launchpad_shards/launchpad.dashboard.js"></script>
     <script src="js/ui/launchpad.js?v=20260828_all_6themes_sovereign_v33"></script>
     <script src="js/ui/dashboard.tour.js?v=83.0"></script>
     <script src="js/ui/tooltip.js"></script>
@@ -230,7 +234,14 @@
     <script src="js/dashboard.plugins.js?v=75.1"></script>
     <script src="js/imprints/imprints.wizard.js"></script>
     <script src="js/imprints/imprints.render.js?v=20260828_bottom_memo_v4"></script>
-    <script src="js/dashboard.imprints.js?v=20260828_step3_model_discovery_dist_v40"></script>
+    <script src="js/imprints/imprints_shards/imprints.lifecycle.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.form.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.compute.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.config.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.flow.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.submit.js?v=74.0"></script>
+    <script src="js/imprints/imprints_shards/imprints.wizard.modal.js?v=74.0"></script>
+    <script src="js/dashboard.imprints.js?v=20260904_vault_binding_notice_v1"></script>
     <script src="js/dashboard.modes.js?v=20260828_toast_v4"></script>
     <script src="js/localization/render_shards/loc.matrix.render.js?v=105.0"></script>
     <script src="js/localization/render_shards/loc.blocks.render.js?v=105.0"></script>
@@ -257,15 +268,21 @@
     <script src="js/localization/sync_shards/sync.glossary.js"></script>
     <script src="js/localization/localization.sync.js"></script>
     <script src="js/dashboard.localization.js"></script>
-    <script src="js/route/route.slug.sandbox.js?v=89.0"></script>
-    <script src="js/route/route.render.js?v=2"></script>
-    <script src="js/route/route_shards/route.constants.js?v=105.0"></script>
-    <script src="js/route/route_shards/route.icons.js?v=105.0"></script>
-    <script src="js/route/route_shards/route.i18n.js?v=105.0"></script>
-    <script src="js/route/route_shards/route.rows.js?v=105.0"></script>
-    <script src="js/route/route_shards/route.external.js?v=105.0"></script>
-    <script src="js/route/route_shards/route.state.js?v=105.0"></script>
-    <script src="js/route/route.sync.js?v=105.0"></script>
+    <script src="js/route/route_shards/route.i18n.dict.js"></script>
+    <script src="js/route/route_shards/route.style.selector.js"></script>
+    <script src="js/route/route_shards/route.source.options.js"></script>
+    <script src="js/route/route_shards/route.source.picker.js"></script>
+    <script src="js/route/route_shards/route.source.events.js"></script>
+    <script src="js/route/route_shards/route.path.badges.js"></script>
+    <script src="js/route/route_shards/route.constants.js?v=117.7"></script>
+    <script src="js/route/route_shards/route.icons.js?v=117.7"></script>
+    <script src="js/route/route_shards/route.i18n.js?v=117.7"></script>
+    <script src="js/route/route_shards/route.rows.js?v=117.7"></script>
+    <script src="js/route/route_shards/route.external.js?v=117.7"></script>
+    <script src="js/route/route_shards/route.state.js?v=117.7"></script>
+    <script src="js/route/route.slug.sandbox.js?v=117.7"></script>
+    <script src="js/route/route.sync.js?v=117.7"></script>
+    <script src="js/route/route.render.js?v=117.7"></script>
     <script src="js/dashboard.guardrails.js"></script>
     <script src="js/health/health.render.js"></script>
     <script src="js/health/health_shards/health.pipeline.js"></script> <!-- 🔒 [I5] 系统流水线全景感知 (SOP-02拆分) -->

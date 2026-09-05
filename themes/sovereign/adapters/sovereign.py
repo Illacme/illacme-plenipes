@@ -45,26 +45,36 @@ class SovereignSSGAdapter(BaseSSGAdapter):
         theme_name = getattr(theme_settings, 'name', 'sovereign')
         if theme_name == 'default': theme_name = 'sovereign'
         self.template_path = f"themes/{theme_name}/templates/layout.html"
+
+    def has_autonomous_blog_engine(self) -> bool:
+        """🚀 Sovereign 主题具备独立全息博客与展示流合成器"""
+        return True
+
     def get_feature_slots(self) -> dict:
         """🚀 [V56.0] Sovereign 标准布局声明"""
         return {
             "docs": {
-                "label": "文档中心",
+                "label": "📚 文档中心 (docs)",
                 "single": "docs",
                 "multi": "{lang}/docs"
             },
             "blog": {
-                "label": "博客文章",
+                "label": "📰 博客文章 (blog)",
                 "single": "blog",
                 "multi": "{lang}/blog"
             },
+            "showcase": {
+                "label": "🎨 展示中心 (show)",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
+            },
             "pages": {
-                "label": "独立页面",
-                "single": "pages",
-                "multi": "{lang}/pages"
+                "label": "📄 独立页面 (page)",
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
-                "label": "静态资源",
+                "label": "📦 静态资源 (static)",
                 "single": "static",
                 "multi": "static"
             }
@@ -135,9 +145,78 @@ class SovereignSSGAdapter(BaseSSGAdapter):
             h = f'<div class="sovereign-mermaid-diagram"><pre class="mermaid">{html_code}</pre></div>'
             mermaids.append(h)
             return f"\n@@MERMAID:{idx}@@\n"
-        body = mermaid_pattern.sub(_mermaid_collect, body)
+        # 4.5 🚀 [WikiLink & Relative Link Dynamic Resolver] 将双向链接与相对链接动态解析为真实落盘路径
+        from core.adapters.egress.ssg.generic_shards.navigation_builder import get_doc_slug_map
+        slug_map = get_doc_slug_map(self.engine)
 
-        # 4.5 🚀 [WikiLink Resolver] 将 Obsidian 双向链接 [[target|alias]] 解析为当前上下文的相对 HTML 超链接
+        trans_cfg = getattr(getattr(self.engine, 'config', None), 'translation', None)
+        dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') if trans_cfg else 'nested'
+
+        # 推导当前页面相对于根目录的相对路径
+        sub_clean = sub_path.replace('\\', '/').strip('/')
+        parts = [p for p in sub_clean.split('/') if p and not p.endswith('.html')]
+        depth = len(parts)
+        root_path = "../" * depth if depth > 0 else "./"
+
+        def _resolve_relative_url(clean_target: str, anchor: str = "") -> str:
+            """统一将相对原稿或旧相对路径转换为匹配当前 slug_dir_mode 的物理落地路径"""
+            clean_norm = clean_target.replace('\\', '/').strip('/')
+            clean_lookup = clean_norm.lower().removesuffix('.md').removesuffix('.html')
+            stem = os.path.splitext(os.path.basename(clean_norm))[0].lower()
+
+            # 🎯 1. 频道中心入口识别 (docs, blog, showcase)
+            first_segment = clean_lookup.split('/')[0] if '/' in clean_lookup else clean_lookup
+            if first_segment in ('docs', 'blog', 'showcase'):
+                if clean_lookup in (first_segment, f"{first_segment}/index"):
+                    sub_parts = [p for p in sub_clean.split('/') if p and not p.endswith('.html')]
+                    lang_prefix = ""
+                    if sub_parts and len(sub_parts[0]) <= 4 and sub_parts[0].isalpha() and sub_parts[0] not in ('docs', 'blog', 'showcase'):
+                        lang_prefix = f"{sub_parts[0]}/"
+
+                    if dir_mode == 'flat':
+                        return f"{root_path}{lang_prefix}{first_segment}.html{anchor}".replace('//', '/')
+                    else:
+                        return f"{root_path}{lang_prefix}{first_segment}/index.html{anchor}".replace('//', '/')
+
+            # 🎯 2. 文档与页面映射识别 (防止非首页的 index 误回退到根目录首页)
+            matched_entry = slug_map.get(clean_lookup)
+            if not matched_entry and stem != 'index':
+                matched_entry = slug_map.get(stem)
+            elif not matched_entry and clean_lookup == 'index':
+                matched_entry = slug_map.get('index')
+
+            if matched_entry:
+                actual_slug = matched_entry['slug']
+                channel = matched_entry.get('channel', '')
+                current_dir = os.path.dirname(sub_path.replace('\\', '/')).strip('/')
+                
+                if dir_mode == 'flat':
+                    # 极简根目录：单篇与专区首页都在根目录
+                    target_dir = ""
+                elif dir_mode == 'prefix':
+                    target_dir = ""
+                    if channel and channel not in ('', 'pages') and not actual_slug.startswith(f"{channel}-"):
+                        actual_slug = f"{channel}-{actual_slug}"
+                else:
+                    # nested 目录树复刻
+                    target_dir = channel if (channel not in ('', 'pages')) else ""
+
+                if current_dir == target_dir:
+                    return f"./{actual_slug}.html{anchor}"
+                elif not current_dir and target_dir:
+                    return f"./{target_dir}/{actual_slug}.html{anchor}"
+                elif current_dir and not target_dir:
+                    return f"../{actual_slug}.html{anchor}"
+                else:
+                    return f"../{target_dir}/{actual_slug}.html{anchor}"
+            else:
+                clean_slug = clean_lookup
+                if dir_mode == 'flat' and '/' in clean_slug:
+                    p_parts = clean_slug.split('/')
+                    if p_parts[0] in ('docs', 'blog', 'showcase', 'about'):
+                        clean_slug = "/".join(p_parts[1:])
+                return f"{root_path}{clean_slug}.html{anchor}".replace('//', '/')
+
         def _wikilink_repl(match):
             target = match.group(1).strip()
             alias = (match.group(2) or target).strip()
@@ -150,15 +229,50 @@ class SovereignSSGAdapter(BaseSSGAdapter):
                 clean_target = parts[0]
                 anchor = f"#{parts[1]}"
             if not clean_target.startswith(('http://', 'https://', 'mailto:', '/')):
-                if not clean_target.endswith('.html'):
-                    clean_target = f"{clean_target}.html"
-                final_link = f"./{clean_target}{anchor}"
+                final_link = _resolve_relative_url(clean_target, anchor)
             else:
                 final_link = f"{clean_target}{anchor}"
             return f"[{alias}]({final_link})"
 
+        def _mdlink_repl(match):
+            alias = match.group(1)
+            target = match.group(2)
+            if target.startswith(('http://', 'https://', 'mailto:', '/', '#')):
+                return match.group(0)
+            anchor = ""
+            clean_target = target
+            if '#' in clean_target:
+                parts = clean_target.split('#', 1)
+                clean_target = parts[0]
+                anchor = f"#{parts[1]}"
+            if clean_target.endswith(('.html', '.md')):
+                resolved_url = _resolve_relative_url(clean_target, anchor)
+                return f"[{alias}]({resolved_url})"
+            return match.group(0)
+
+        def _html_a_repl(match):
+            prefix_attr = match.group(1)
+            href_val = match.group(2)
+            suffix_attr = match.group(3)
+            if href_val.startswith(('http://', 'https://', 'mailto:', '/', '#')):
+                return match.group(0)
+            anchor = ""
+            clean_href = href_val.lstrip('./')
+            if '#' in clean_href:
+                parts = clean_href.split('#', 1)
+                clean_href = parts[0]
+                anchor = f"#{parts[1]}"
+            if clean_href.endswith(('.html', '.md')):
+                resolved_url = _resolve_relative_url(clean_href, anchor)
+                return f'<a {prefix_attr}href="{resolved_url}"{suffix_attr}>'
+            return match.group(0)
+
         wiki_pattern = re.compile(r'(?<!\!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]')
         body = wiki_pattern.sub(_wikilink_repl, body)
+        body = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', _mdlink_repl, body)
+        # 🔗 对 HTML <a href="..."> 相对链接同样做动态路由重写，使内嵌 HTML 完全契合 slug_dir_mode
+        html_a_pattern = re.compile(r'<a\s+([^>]*?)href=["\']([^"\']+)["\']([^>]*)>', re.IGNORECASE)
+        body = html_a_pattern.sub(_html_a_repl, body)
 
         html_fragment = markdown.markdown(body, extensions=['extra', 'codehilite', 'toc', 'nl2br'])
         

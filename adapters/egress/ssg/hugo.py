@@ -34,22 +34,27 @@ class HugoAdapter(BaseSSGAdapter):
         }
 
     def get_feature_slots(self) -> dict:
-        """🚀 [V56.0] Hugo 标准布局声明 (对齐 Hugo content)"""
+        """🚀 [V56.0] Hugo 标准布局声明 (纯相对路径，对齐 Hugo content)"""
         return {
             "docs": {
                 "label": "文档中心",
-                "single": "content",
-                "multi": "content/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "blog": {
                 "label": "博客文章",
-                "single": "content/blog",
-                "multi": "content/{lang}/blog"
+                "single": "blog",
+                "multi": "{lang}/blog"
+            },
+            "showcase": {
+                "label": "产品特性",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "content/custom",
-                "multi": "content/{lang}/custom"
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
                 "label": "静态资产",
@@ -68,6 +73,9 @@ class HugoAdapter(BaseSSGAdapter):
         if new_fm.get('template') == 'splash':
             new_fm['layout'] = 'landing'
             new_fm.pop('template', None)
+
+        # 统一规范化双链及 Markdown 相对链接
+        body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
             
         return body, new_fm
 

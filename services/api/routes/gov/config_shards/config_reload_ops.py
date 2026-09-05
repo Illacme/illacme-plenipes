@@ -50,6 +50,15 @@ def live_reload_engine_config(
     from core.runtime.engine_factory import EngineFactory
     EngineFactory._init_basic_settings(engine)
     EngineFactory._init_ingress(engine, engine.config)
+
+    # 🗺️ [物理主权路径对齐] 同步重新计算 engine.paths，防止发布产物路径与 DevServer 绑定漂移
+    from core.runtime.infrastructure.path_resolver import resolve_engine_paths
+    from core.config.config import THEMES_DIR
+    engine.paths = resolve_engine_paths(engine, engine.config, THEMES_DIR)
+    
+    # 🪝 重新装配主题生命周期钩子，防止旧主题钩子残留
+    from core.logic.hooks import ThemeHookManager
+    engine.theme_hooks = ThemeHookManager(engine)
     
     # 🚀 [V100.0] 重构发布中枢：保证发布插件在热重载时能立刻获取最新的配置
     if hasattr(engine, "publisher") and engine.publisher:
@@ -74,6 +83,7 @@ def live_reload_engine_config(
 
     if hasattr(engine, 'dispatcher') and engine.dispatcher:
         engine.dispatcher.ssg_adapter = engine.ssg_adapter
+        engine.dispatcher.paths = engine.paths
         engine.dispatcher.i18n_cfg = engine.config.i18n_settings
         engine.dispatcher.pub_cfg = engine.config.publish_control
 

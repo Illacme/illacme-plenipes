@@ -80,9 +80,9 @@
         if (emptyState) emptyState.remove();
 
         const newIdx = tbody.querySelectorAll('.route-item').length;
-        
+
         const rowHtml = `
-            <div class="matrix-row route-item" data-idx="${newIdx}" style="display: grid; grid-template-columns: 36px 1.1fr 1fr 1fr 1.4fr 0.9fr 46px 36px; gap: 8px; padding: 8px 4px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
+            <div class="matrix-row route-item" data-idx="${newIdx}" style="display: grid; grid-template-columns: 36px 1.4fr 1.0fr 1.45fr 1.5fr 0.95fr 42px 36px; gap: 8px; padding: 8px 6px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
                 <!-- 0. 排序控制器 -->
                 <div class="order-controls" style="display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center;">
                     <button type="button" class="mini-btn move-up-btn" onclick="window.moveRouteMatrixRow(this, 'up')" style="padding: 0; width: 22px; height: 13px; font-size: 0.55rem; line-height: 1; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.08); cursor: pointer;" title="上移">▲</button>
@@ -90,42 +90,35 @@
                 </div>
                 <!-- 1. 文库目录 -->
                 <div>
-                    ${(() => {
-                        const directories = window.settingsData?._directories || [];
-                        const hasDirs = directories.length > 0;
-                        let html = '';
-                        if (hasDirs) {
-                            html += `<select class="setting-input source-select" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                            html += `<option value="" selected>-- 选择目录 --</option>`;
-                            directories.forEach(d => {
-                                if(d) html += `<option value="${d}">📁 ${d}</option>`;
-                            });
-                            html += `<option value="_custom">✏️ 自定义... </option>`;
-                            html += `</select>`;
-                        }
-                        html += `<input type="text" class="setting-input source-input" value="" placeholder="例如: docs" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${!hasDirs ? 'block' : 'none'};" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-                        return html;
-                    })()}
+                    ${window.buildSourcePickerHtml ? window.buildSourcePickerHtml('', true, false, 'docs') : ''}
                 </div>
                 <!-- 2. 网页路径 -->
                 <div>
-                    <input type="text" class="setting-input prefix-input" value="" placeholder="例如: /docs/" style="width: 100%; color: var(--accent-secondary); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                    <input type="text" class="setting-input prefix-input" value="" placeholder="例如: /docs/" title="${window.getLivePathTooltip ? window.getLivePathTooltip({ source: '', prefix: '' }) : ''}" style="width: 100%; color: var(--accent-secondary); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings(); window.updateAllLivePathBadges();">
                 </div>
                 <!-- 3. 网页模板 -->
                 <div>
                     ${(() => {
-                        let html = '';
-                        if (hasSlots) {
-                            html += `<select class="setting-input slot-select" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } syncRouteMatrixToSettings();">`;
-                            Object.entries(themeSlots).forEach(([k, v]) => {
-                                html += `<option value="${k}">${v.label || k}</option>`;
-                            });
-                            html += `<option value="_custom">✏️ 自定义... </option>`;
-                            html += `</select>`;
-                        }
-                        html += `<input type="text" class="setting-input slot-input" value="docs" placeholder="例如: docs" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${!hasSlots ? 'block' : 'none'};" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">`;
-                        return html;
-                    })()}
+                const formatSlotDisplay = (k, v) => {
+                    const rawLabel = (v && v.label) ? v.label : k;
+                    if (k === 'showcase') return `🎨 展示中心 (show)`;
+                    if (rawLabel.includes('(')) return rawLabel;
+                    const icons = { docs: '📚', blog: '📰', pages: '📄', page: '📄', showcase: '🎨', static: '📦' };
+                    const icon = icons[k] || '🧩';
+                    return `${icon} ${rawLabel} (${k})`;
+                };
+                let html = '';
+                if (hasSlots) {
+                    html += `<select class="setting-input slot-select" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" onchange="if(this.value === '_custom') { this.style.display='none'; this.nextElementSibling.style.display='block'; this.nextElementSibling.value=''; this.nextElementSibling.focus(); } else { this.nextElementSibling.value=this.value; } const _row = this.closest('.matrix-row'); const _srcInput = _row?.querySelector('.source-input'); const _dl = _srcInput ? document.getElementById(_srcInput.getAttribute('list')) : null; if(_dl && window.buildSourceDatalistOptions) { _dl.innerHTML = window.buildSourceDatalistOptions(this.value, _srcInput.value); } syncRouteMatrixToSettings(); if(window.updateAllLivePathBadges) window.updateAllLivePathBadges();">`;
+                    Object.entries(themeSlots).forEach(([k, v]) => {
+                        html += `<option value="${k}">${formatSlotDisplay(k, v)}</option>`;
+                    });
+                    html += `<option value="_custom">✏️ 自定义... </option>`;
+                    html += `</select>`;
+                }
+                html += `<input type="text" class="setting-input slot-input" value="docs" placeholder="例如: docs" style="width: 100%; font-size: 0.74rem; padding: 5px 6px; display: ${!hasSlots ? 'block' : 'none'};" onchange="const _row = this.closest('.matrix-row'); const _srcInput = _row?.querySelector('.source-input'); const _dl = _srcInput ? document.getElementById(_srcInput.getAttribute('list')) : null; if(_dl && window.buildSourceDatalistOptions) { _dl.innerHTML = window.buildSourceDatalistOptions(this.value, _srcInput.value); } syncRouteMatrixToSettings(); if(window.updateAllLivePathBadges) window.updateAllLivePathBadges();" oninput="syncRouteMatrixToSettings()">`;
+                return html;
+            })()}
                 </div>
                 <!-- 4. 顶栏导航 -->
                 <div style="display: flex; gap: 4px; align-items: center; position: relative;">
@@ -141,14 +134,13 @@
                     </button>
                     <input type="hidden" class="nav-i18n-input" value="{}">
                 </div>
-                <!-- 5. 翻译风格 -->
+                <!-- 5. 译文风格 -->
                 <div>
-                    <select class="setting-input style-input" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()">
-                        <option value="">继承全局默认</option>
-                        <option value="professional">💼 商务严谨</option>
-                        <option value="casual">☕ 随性自然</option>
-                        <option value="literal">⚖️ 精准直译</option>
-                    </select>
+                    ${window.buildTranslationStyleSelectHtml ? window.buildTranslationStyleSelectHtml('', true, false) : `
+                        <select class="setting-input style-input" style="width: 100%; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()">
+                            <option value="">继承全局默认</option>
+                        </select>
+                    `}
                 </div>
                 <!-- 6. 顶栏展示 -->
                 <div style="text-align: center;">
@@ -160,11 +152,11 @@
                 </div>
             </div>
         `;
-        
+
         tbody.insertAdjacentHTML('beforeend', rowHtml);
-        
+
         window.refreshRouteMatrixOrderButtons();
-        
+
         const container = document.querySelector('#view-settings .tab-content-area');
         if (container) {
             container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
@@ -172,6 +164,9 @@
 
         if (typeof window.syncRouteMatrixToSettings === 'function') {
             window.syncRouteMatrixToSettings();
+        }
+        if (typeof window.updateAllLivePathBadges === 'function') {
+            window.updateAllLivePathBadges();
         }
     };
 
@@ -193,14 +188,14 @@
             }
             return;
         }
-        
+
         const row = btn.closest('.route-item');
         if (row) {
             row.style.opacity = '0';
             row.style.transform = 'translateY(-10px)';
             setTimeout(() => {
                 row.remove();
-                
+
                 const tbody = document.getElementById('route-matrix-body');
                 if (tbody && tbody.querySelectorAll('.route-item').length === 0) {
                     tbody.innerHTML = `

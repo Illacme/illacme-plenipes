@@ -21,6 +21,12 @@ class SSGNavSynthesizer:
         """
         routes = getattr(adapter.engine.config, 'route_matrix', []) if adapter.engine and hasattr(adapter.engine, 'config') else []
 
+        # 🚀 [V105.1] 读取网址组织形态 (flat/prefix/nested)
+        dir_mode = 'nested'
+        if adapter.engine and hasattr(adapter.engine, 'config'):
+            trans_cfg = getattr(adapter.engine.config, 'translation', None)
+            dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') if trans_cfg else 'nested'
+
         # 默认回退槽位标签与图标
         slot_label_fallback = {
             "docs": "文档中心",
@@ -74,7 +80,19 @@ class SSGNavSynthesizer:
                     "target_slot": "external"
                 })
             else:
-                target_path = f"/{prefix}/" if prefix else "/"
+                # 🚀 [V105.1] 框架级 Clean URL 感知：Starlight、Docusaurus、Nextra、VitePress 绝不带 .html 后缀
+                is_clean_url = getattr(adapter, 'clean_urls', False) or getattr(adapter, 'is_framework', False) or (getattr(adapter, 'PLUGIN_ID', '') in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+                is_standalone_page = (slot in ("pages", "page") or prefix in ("about", "terms", "privacy", "disclaimer", "contact"))
+                if is_clean_url:
+                    target_path = f"/{prefix}/" if prefix else "/"
+                elif is_standalone_page:
+                    target_path = f"/{prefix}.html" if prefix else "/"
+                elif dir_mode == 'flat' and prefix:
+                    target_path = f"/{prefix}.html"
+                elif dir_mode == 'prefix' and prefix:
+                    target_path = f"/{prefix}-index.html"
+                else:
+                    target_path = f"/{prefix}/" if prefix else "/"
                 if slot == "docs":
                     nav_items.append({
                         "type": "docSidebar",
@@ -97,28 +115,24 @@ class SSGNavSynthesizer:
                         "target_slot": slot
                     })
 
-        # 若未配置任何 route_matrix，提供自愈默认项 (Docs + Blog)
+        # 若未配置任何 route_matrix，提供自愈默认项 (全套 4 个标准频道)
         if not nav_items:
+            is_clean_url = getattr(adapter, 'clean_urls', False) or getattr(adapter, 'is_framework', False) or (getattr(adapter, 'PLUGIN_ID', '') in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+            if is_clean_url:
+                docs_to = "/docs/"
+                blog_to = "/blog/"
+                showcase_to = "/showcase/"
+                about_to = "/about/"
+            else:
+                docs_to = "/docs.html" if dir_mode == 'flat' else "/docs/"
+                blog_to = "/blog.html" if dir_mode == 'flat' else "/blog/"
+                showcase_to = "/showcase.html" if dir_mode == 'flat' else "/showcase/"
+                about_to = "/about.html"
             nav_items = [
-                {
-                    "type": "docSidebar",
-                    "sidebarId": "tutorialSidebar",
-                    "position": "left",
-                    "label": "📚 文档中心",
-                    "raw_label": "文档中心",
-                    "icon": "📚",
-                    "to": "/docs/",
-                    "target_slot": "docs"
-                },
-                {
-                    "type": "link",
-                    "to": "/blog/",
-                    "label": "📰 官方博客",
-                    "raw_label": "官方博客",
-                    "icon": "📰",
-                    "position": "left",
-                    "target_slot": "blog"
-                }
+                {"type": "docSidebar", "sidebarId": "tutorialSidebar", "position": "left", "label": "📚 文档指南", "raw_label": "文档指南", "icon": "📚", "to": docs_to, "target_slot": "docs"},
+                {"type": "link", "to": blog_to, "label": "📰 演示博客", "raw_label": "演示博客", "icon": "📰", "position": "left", "target_slot": "blog"},
+                {"type": "link", "to": showcase_to, "label": "🎨 产品特性", "raw_label": "产品特性", "icon": "🎨", "position": "left", "target_slot": "showcase"},
+                {"type": "link", "to": about_to, "label": "✨ 关于我们", "raw_label": "关于我们", "icon": "✨", "position": "left", "target_slot": "pages"}
             ]
 
         # 始终注入 GitHub 仓库项（若未显式配置 GitHub 且存在仓库地址）
@@ -172,14 +186,19 @@ class SSGNavSynthesizer:
                 position = getattr(r, 'nav_position', 'left') or 'left'
                 ext_url = getattr(r, 'external_url', None)
 
-                # 优先读取自定义字典 -> 其次读取内置术语字典 -> 最后回落到默认主语言
+                # 优先读取自定义多语言字典 -> 默认母语使用用户 nav_label -> 目标语言优先读取内置术语字典 -> 最后回落
                 i18n_map = getattr(r, 'nav_label_i18n', {}) or {}
+                user_nav_label = getattr(r, 'nav_label', None)
+                default_lang = getattr(adapter, 'default_lang', 'zh') or 'zh'
+                
                 if isinstance(i18n_map, dict) and i18n_map.get(l_code):
                     l_label = i18n_map.get(l_code)
+                elif l_code == default_lang and user_nav_label:
+                    l_label = user_nav_label
                 elif slot in SLOT_I18N_FALLBACK and l_code in SLOT_I18N_FALLBACK[slot]:
                     l_label = SLOT_I18N_FALLBACK[slot][l_code]
                 else:
-                    l_label = getattr(r, 'nav_label', None) or (source if source else slot_label_fallback.get(slot, slot.capitalize()))
+                    l_label = user_nav_label or (source if source else slot_label_fallback.get(slot, slot.capitalize()))
 
                 display_l_label = f"{icon} {l_label}".strip() if icon else l_label
 
@@ -195,7 +214,19 @@ class SSGNavSynthesizer:
                         "target_slot": "external"
                     })
                 else:
-                    target_path = f"/{prefix}/" if prefix else "/"
+                    # 🚀 [V105.1] 框架级 Clean URL 与单页组织形态感知
+                    is_clean_url = getattr(adapter, 'clean_urls', False) or getattr(adapter, 'is_framework', False) or (getattr(adapter, 'PLUGIN_ID', '') in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+                    is_standalone_page = (slot in ("pages", "page") or prefix in ("about", "terms", "privacy", "disclaimer", "contact"))
+                    if is_clean_url:
+                        target_path = f"/{prefix}/" if prefix else "/"
+                    elif is_standalone_page:
+                        target_path = f"/{prefix}.html" if prefix else "/"
+                    elif dir_mode == 'flat' and prefix:
+                        target_path = f"/{prefix}.html"
+                    elif dir_mode == 'prefix' and prefix:
+                        target_path = f"/{prefix}-index.html"
+                    else:
+                        target_path = f"/{prefix}/" if prefix else "/"
                     if slot == "docs":
                         l_items.append({
                             "type": "docSidebar",

@@ -78,8 +78,12 @@ def post_process(manager) -> None:
         is_stale_theme_path = False
         if k in raw_paths:
             raw_val = raw_paths[k]
-            if isinstance(raw_val, str) and raw_val.startswith("themes/") and not raw_val.startswith(f"themes/{theme}/") and not raw_val.startswith("themes/{theme}/"):
-                is_stale_theme_path = True
+            if isinstance(raw_val, str):
+                if raw_val.startswith("themes/") and not raw_val.startswith(f"themes/{theme}/") and not raw_val.startswith("themes/{theme}/"):
+                    is_stale_theme_path = True
+                elif raw_val in ("themes/{theme}/src/content", "./themes/{theme}/src/content") and v != "src/content":
+                    # 🚀 [V76.1] 框架专属架构自愈：当具体 SSG 适配器声明了原生专属路径时，自动覆盖通用兜底路径
+                    is_stale_theme_path = True
                 
         if k not in raw_paths or is_stale_theme_path:
             val = v

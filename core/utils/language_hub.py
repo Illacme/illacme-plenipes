@@ -229,8 +229,13 @@ class LanguageHub:
         if not iso_code: return ""
         theme = theme.lower() if theme else "generic"
 
-        if iso_code.lower() == source_lang.lower() and not force_prefix:
-            if theme in ["starlight", "docusaurus"]:
+        # 🚀 规范化比较：无论是 zh、zh-CN、zh-Hans 还是 auto，只要解析后的主语言一致即视为源语言
+        iso_clean = LanguageHub.resolve_to_iso(iso_code).lower()
+        source_clean = LanguageHub.resolve_to_iso(source_lang).lower()
+        is_source = (iso_clean == source_clean) or (iso_code.lower() == source_lang.lower()) or (iso_clean.split('-')[0] == source_clean.split('-')[0])
+
+        if is_source and not force_prefix:
+            if theme in ["starlight", "docusaurus", "generic"]:
                 return ""
 
         return iso_code.lower()

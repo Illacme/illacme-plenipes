@@ -61,6 +61,11 @@ class AISyncProcessor(BaseSeoProcessor):
             if isinstance(cached_sync_seo, dict) and cached_sync_seo.get("hash") == current_hash and cached_sync_seo.get("data"):
                 tlog.info(f"✨ [AI 翻译同步] 命中本地多语 SEO 缓存，跳过大模型翻译 ({ctx.title})")
                 return self._respect_frontmatter(ctx.fm_dict, cached_sync_seo.get("data", {}))
+            existing_seo = doc_info.get("seo_data")
+            if (isinstance(existing_seo, dict) and existing_seo.get("i18n_seo")
+                    and doc_info.get("source_hash") == current_hash):
+                tlog.info(f"✨ [AI 翻译同步] 命中账本已有多语 SEO 资产，跳过大模型翻译 ({ctx.title})")
+                return self._respect_frontmatter(ctx.fm_dict, existing_seo)
 
         tlog.info(f"🔄 [AI 翻译同步] 正在为 '{ctx.title}' 执行跨语种 SEO 同步...")
 

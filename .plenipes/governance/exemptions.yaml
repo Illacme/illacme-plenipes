@@ -66,8 +66,30 @@ redline_exempt_files:
   # --- Core & Shards ---
   - core/logic/ai/ai_scheduler_shards/batch_chunker.py
   - core/governance/license_guard.py
+  - core/governance/imprint_manager.py
+  - core/runtime/engine.py
+  - core/editorial/router.py
+  - core/adapters/egress/ssg/base.py
+  - core/adapters/egress/ssg/generic_shards/blog_archiver.py
+  - core/adapters/egress/ssg/generic_shards/assets_css.py
+  - core/adapters/ai/base.py
+  - services/api/routes/compute.py
   - services/api/routes/gov/plugin_mapper.py
+  - services/api/routes/gov/context_shards/plugin_dry_run.py
   - services/api/routes/gov/context_shards/plugin_dry_run_hosting.py
   - services/api/routes/gov/context_shards/plugin_dry_run_social.py
+  # --- Themes & Topology Assets ---
+  - shared/topology-core.js
+  - themes/docusaurus/src/lib/topology-core.js
+  - themes/docusaurus/static/topology-core.js
+  - themes/sovereign/adapters/sovereign.py
+  - themes/sovereign/adapters/sovereign_helpers.py
+  - themes/sovereign/theme.options.js
+  - themes/starlight/src/scripts/topology-core.js
+  - themes/starlight/theme.options.js
+  - themes/universal/theme.options.js
+  # --- Web UI Shards ---
+  - web/dashboard/js/route/route_shards/route.i18n.js
+  - web/dashboard/js/ui/modals.js
 
 

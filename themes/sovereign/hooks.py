@@ -31,6 +31,12 @@ def on_post_sync(engine):
         tlog.info("🧪 [主题钩子] 处于演练模式，跳过默认主题博客列表合成与重定向生成。")
         return
 
+    # 🛡️ [跨主题越权防护] 严禁 Sovereign 专属钩子篡改其他主题（如 universal, docusaurus, vitepress 等）的编译产物
+    active_theme = (getattr(engine, 'active_theme', '') or '').lower()
+    if active_theme and active_theme not in ("sovereign", "default"):
+        tlog.debug(f"🤫 [Sovereign 钩子] 当前活跃主题为 {active_theme}，豁免 Sovereign 专属资产合成与重定向。")
+        return
+
     tlog.info("🎨 [主题钩子] 默认主题正在执行资产合成...")
     
     # 🚀 [V1.2] 获取动态品牌输出路径
@@ -54,12 +60,26 @@ def on_post_sync(engine):
     default_lang = getattr(getattr(engine.config, 'i18n_settings', None), 'source', None)
     default_code = getattr(default_lang, 'lang_code', 'zh') if default_lang else 'zh'
 
+    # 🚀 [V105.1] 读取网址组织形态
+    dir_mode = 'nested'
+    trans_cfg = getattr(getattr(engine, 'config', None), 'translation', None)
+    if trans_cfg:
+        dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') or 'nested'
+
     if force_prefix:
         preferred_order = [
             lambda p: p.startswith(f"{default_code}/docs") and ("creator-5-minute" in p or "quick-start" in p),
             lambda p: p.startswith(f"{default_code}/docs"),
             lambda p: "creator-5-minute" in p or "quick-start" in p,
             lambda p: p.startswith(f"{default_code}/"),
+            lambda p: True
+        ]
+    elif dir_mode == 'flat':
+        # 🚀 [V105.1] flat 模式下文件在根目录，不在 docs/ 子目录
+        preferred_order = [
+            lambda p: '/' not in p and ("creator-5-minute" in p or "quick-start" in p),
+            lambda p: '/' not in p and p.endswith('.html'),
+            lambda p: "creator-5-minute" in p or "quick-start" in p,
             lambda p: True
         ]
     else:
@@ -70,7 +90,12 @@ def on_post_sync(engine):
             lambda p: not p.startswith(f"{default_code}/") and "docs" in p,
             lambda p: True
         ]
-    redirect_url = f"{default_code}/docs/creator-5-minute-quick-start-guide.html" if force_prefix else "docs/creator-5-minute-quick-start-guide.html"
+    if dir_mode == 'flat':
+        redirect_url = "quick-start.html"
+    elif force_prefix:
+        redirect_url = f"{default_code}/docs/creator-5-minute-quick-start-guide.html"
+    else:
+        redirect_url = "docs/creator-5-minute-quick-start-guide.html"
     for matcher in preferred_order:
         matched = [p for p in all_html_files if matcher(p)]
         if matched:
@@ -182,4 +207,38 @@ def on_post_sync(engine):
                     f.write(sub_redirect_html)
             except Exception:
                 pass
+
+    # 🧭 自动生成全站 404 智能自愈寻路页面 (保全 SEO 与跨形态外链访问)
+    tpl_404 = os.path.join(theme_dir, "templates", "404.html")
+    dist_404 = os.path.join(dist_dir, "404.html")
+    if os.path.exists(tpl_404):
+        try:
+            with open(tpl_404, 'r', encoding='utf-8') as f:
+                content_404 = f.read()
+            site_name = getattr(getattr(engine, 'config', None), 'site_name', 'Illacme Sovereign') or 'Illacme Sovereign'
+            content_404 = content_404.replace("{{ site_name }}", site_name)
+            content_404 = content_404.replace("{{ root_path }}", "./")
+            content_404 = content_404.replace("{{ lang_code | default('zh') }}", default_code)
+            content_404 = content_404.replace("{{ nav_home_url }}", "./index.html")
+            content_404 = content_404.replace("{{ logo_html }}", '<span class="logo-icon">🧬</span>')
+            # 🚀 [V105.1] 404 页导航链接与文档中心按钮统一感知三模态
+            if dir_mode == 'flat':
+                content_404 = content_404.replace("{{ main_nav_container }}", '<a href="./docs.html">文档</a><a href="./blog.html">博客</a><a href="./showcase.html">案例</a><a href="./about.html">关于</a>')
+                content_404 = content_404.replace("{{ docs_home_url }}", "./docs.html")
+            elif dir_mode == 'prefix':
+                content_404 = content_404.replace("{{ main_nav_container }}", '<a href="./docs-index.html">文档</a><a href="./blog-index.html">博客</a><a href="./showcase-index.html">案例</a><a href="./about.html">关于</a>')
+                content_404 = content_404.replace("{{ docs_home_url }}", "./docs-index.html")
+            else:
+                content_404 = content_404.replace("{{ main_nav_container }}", '<a href="./docs/index.html">文档</a><a href="./blog/index.html">博客</a><a href="./showcase/index.html">案例</a><a href="./about.html">关于</a>')
+                content_404 = content_404.replace("{{ docs_home_url }}", "./docs/index.html")
+            content_404 = content_404.replace("{{ github_link_container }}", '')
+            content_404 = content_404.replace("{{ custom_theme_styles }}", '')
+            content_404 = content_404.replace("{{ footer_copyright }}", f"&copy; {site_name}.")
+            content_404 = content_404.replace("{{ t_footer_slogan }}", "主权私有出版引擎")
+            with open(dist_404, 'w', encoding='utf-8') as f:
+                f.write(content_404)
+            tlog.info(f"✨ [主题钩子] 已生成全站智能 404 自愈寻路页面: {dist_404}")
+        except Exception as e:
+            tlog.error(f"❌ [主题钩子] 生成 404 页面失败: {e}")
+
 

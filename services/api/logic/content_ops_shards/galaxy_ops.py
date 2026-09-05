@@ -11,7 +11,7 @@ import os
 def get_galaxy_graph_logic(engine, mode: str = "full"):
     """🪰 [混合渐进式] 物理优先与高维全量图模式的节点/连线融合算法"""
     if not engine:
-        return {"nodes": [], "links": []}
+        return {"nodes": [], "links": [], "_debug": "no_engine"}
 
     # 🪰 [混合渐进式] 静态骨架模式
     if mode == "skeleton":

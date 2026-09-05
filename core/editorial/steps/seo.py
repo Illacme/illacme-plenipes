@@ -27,11 +27,25 @@ class AISlugAndSEOStep(PipelineStep):
             slug_raw = str(explicit_slug).strip()
             tlog.info(f"🏷️ [显式 Slug] 采用原稿 Frontmatter 声明的 Slug: '{slug_raw}' (文档: {ctx.rel_path})")
 
-        # 🛡️ [V48.3] 首页主权防护：强制锁定 Index.md 的 Slug 为 'index'
-        is_homepage = ctx.rel_path.lower().endswith('index.md') or ctx.rel_path.lower().endswith('index.mdx')
+        # 🛡️ [V48.3] 首页主权防护：仅文库根目录的 Index.md / Readme.md 才是全站根首页
+        clean_rel = ctx.rel_path.replace('\\', '/').strip('/')
+        is_homepage = clean_rel.lower() in ('index.md', 'index.mdx', 'readme.md', 'readme.mdx')
         if is_homepage:
             slug_raw = "index"
-            tlog.info(f"🏠 [首页防护] 强制将 {ctx.rel_path} 的 Slug 锁定为 'index'")
+            tlog.info(f"🏠 [首页防护] 强制将根首页 {ctx.rel_path} 的 Slug 锁定为 'index'")
+        elif slug_raw == "index":
+            # 🛡️ 防撞锁：仅在 flat/prefix 模式下才需要把子频道 index 重命名为频道名，防止根路由霸占
+            slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'nested')
+            if slug_dir_mode in ('flat', 'prefix'):
+                parent_dir = os.path.basename(os.path.dirname(clean_rel))
+                if parent_dir:
+                    slug_raw = parent_dir.lower()
+                    tlog.info(f"🧭 [子频道索引] flat模式将非全站首页 {ctx.rel_path} 的 Slug 纠偏为频道名 '{slug_raw}'，杜绝根路由霸占")
+                else:
+                    slug_raw = None
+            else:
+                # nested 模式下保留 'index'，使其落入对应子目录成为标准频道首页 (如 docs/index.md -> /docs/)
+                slug_raw = "index"
 
         # 🚀 [V26.5] 显性重构支持：如果开启了 --re-slug，强制重置非首页的 Slug
         if getattr(ctx.engine, 'args', None) and getattr(ctx.engine.args, 're_slug', False) and not is_homepage and not explicit_slug:
@@ -49,8 +63,9 @@ class AISlugAndSEOStep(PipelineStep):
         # 计算映射后的子目录路径以用于 Slug 路径增强
         vault_path = ctx.engine.paths.get('vault', '.')
         sub = os.path.dirname(os.path.relpath(ctx.src_path, os.path.join(vault_path, ctx.route_source))).replace('\\', '/')
-        if sub == '.': sub = ""
-        mapped_sub = ctx.engine.route_manager.get_mapped_sub_dir(sub, allow_ai=not ctx.is_silent_edit)
+        if sub in ('.', '..', '') or sub.startswith('..'):
+            sub = ""
+        mapped_sub = ctx.engine.route_manager.get_mapped_sub_dir(sub, allow_ai=not ctx.is_silent_edit) if (sub and hasattr(ctx.engine, 'route_manager') and hasattr(ctx.engine.route_manager, 'get_mapped_sub_dir')) else ""
 
         if not slug_raw:
             slug_mode = ctx.engine.config.translation.slug_mode
@@ -85,7 +100,7 @@ class AISlugAndSEOStep(PipelineStep):
 
         # 🛡️ [Slug 目录增强自愈] 结合翻译配置中的 slug_dir_mode 做物理前缀或路径嵌套处理 (包含前缀去重防护)
         from core.logic.ai.ai_logic_hub import AILogicHub
-        slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'flat')
+        slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'nested')
         if slug_dir_mode in ('prefix', 'nested') and mapped_sub:
             if slug_dir_mode == 'prefix':
                 safe_dir = mapped_sub.replace('/', '-')

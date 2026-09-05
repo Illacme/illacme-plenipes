@@ -105,8 +105,12 @@ window.republishFromTerminal = async function () {
         window.appendTerminalLog('🔄 正在重新初始化全域同步流程...', '#ffaa00');
     }
 
-    // 重新调用触发同步流程，传入 force = true, bypassCompletedCheck = true
+    // 🚀 [V10.4] 解耦重新发布与强制清缓存：只有用户明确勾选复选框才清缓存，否则走全量增量命中
+    const forceSyncCheckbox = document.getElementById('chk-preview-force-sync');
+    const isClearCache = forceSyncCheckbox ? forceSyncCheckbox.checked : false;
+
+    // 重新调用触发同步流程，传入 force = true (覆盖输出站点), bypassCompletedCheck = true, clearCache = isClearCache
     if (typeof window.triggerPublish === 'function') {
-        await window.triggerPublish(true, true);
+        await window.triggerPublish(true, true, isClearCache);
     }
 };

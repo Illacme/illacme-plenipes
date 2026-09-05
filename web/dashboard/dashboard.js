@@ -71,7 +71,15 @@ window.initDashboard = async () => {
                         window.showView(id);
                     }
                     if (id === 'overview' && typeof window.toggleHub === 'function') {
-                        window.toggleHub('show');
+                        const hub = document.getElementById('command-hub-overlay');
+                        const isCurrentlyOverview = (window.currentView === 'overview');
+                        const isHidden = (!hub || hub.style.display === 'none');
+                        // 🚀 意图辨析：若当前已经在首页且工作台处于关闭态，主动点击 Overview 被视为显式展开意图
+                        if (isCurrentlyOverview && isHidden) {
+                            window.toggleHub('show');
+                        } else if (!isCurrentlyOverview && (typeof window.shouldAutoOpenLaunchpad === 'function' ? window.shouldAutoOpenLaunchpad() : true)) {
+                            window.toggleHub('show');
+                        }
                     }
                 };
             }

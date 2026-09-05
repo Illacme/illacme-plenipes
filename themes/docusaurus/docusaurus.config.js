@@ -178,7 +178,26 @@ const config = {
             ],
           },
         ],
-        copyright: themeOptions.footer_copyright || `Copyright © ${new Date().getFullYear()} Dipoda, Inc. Built with Illacme.`,
+        copyright: (() => {
+          const parts = [themeOptions.footer_copyright || `Copyright © ${new Date().getFullYear()} Dipoda, Inc. Built with Illacme.`];
+          if (themeOptions.license) {
+            const isCC = themeOptions.license.toUpperCase().includes('CC');
+            parts.push(isCC 
+              ? `⚖️ <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">${themeOptions.license}</a>`
+              : `⚖️ <span>${themeOptions.license}</span>`
+            );
+          }
+          if (themeOptions.icp_license) {
+            parts.push(`📜 <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">${themeOptions.icp_license}</a>`);
+          }
+          if (themeOptions.police_license) {
+            const policeNum = themeOptions.police_license.replace(/\D/g, '');
+            const policeHref = policeNum ? `https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=${policeNum}` : 'https://www.beian.gov.cn/';
+            const badgeSvg = `<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align: -2px; fill: currentColor; display: inline-block; margin-right: 2px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>`;
+            parts.push(`<a href="${policeHref}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">${badgeSvg}${themeOptions.police_license}</a>`);
+          }
+          return `<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px; line-height: 1.6;">${parts.join('')}</div>`;
+        })(),
       },
       prism: {
         theme: prismThemes.github,

@@ -21,7 +21,12 @@ def resolve_engine_paths(engine: Any, config: Any, themes_dir: str) -> Dict[str,
         Dict[str, str]: 锚定后的路径矩阵。
     """
     paths_cfg = config.output_paths or {}
-    data_root = os.path.abspath(os.path.expanduser(config.system.data_root))
+    raw_data_root = getattr(config.system, 'data_root', '.') if hasattr(config, 'system') and config.system else '.'
+    # 🛡️ [SOP-13 物理隔离防护] 确保所有非 root 品牌的产物严格锁定在 imprints/{brand} 领地内，严防漂移至 themes/ 母本
+    imprint_id = getattr(engine, 'imprint_id', 'default') or 'default'
+    if (not raw_data_root or raw_data_root == '.') and imprint_id and imprint_id != 'root':
+        raw_data_root = os.path.join("imprints", imprint_id)
+    data_root = os.path.abspath(os.path.expanduser(raw_data_root))
     
     def anchor(p: Optional[str]) -> Optional[str]:
         """物理路径锚定器：将相对路径锁定在 data_root 之下"""

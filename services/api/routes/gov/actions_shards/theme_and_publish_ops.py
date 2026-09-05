@@ -179,7 +179,22 @@ async def translate_nav_labels_impl(req: TranslateNavLabelsRequest) -> Dict[str,
     translations = {}
     from core.adapters.egress.ssg.base import SLOT_I18N_FALLBACK
     slot = (req.slot or "docs").lower()
-    
+
+    # 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
+    clean_label_lower = label.lower()
+    matched_dict_key = slot
+    if matched_dict_key not in SLOT_I18N_FALLBACK:
+        for k, dict_item in SLOT_I18N_FALLBACK.items():
+            if k.lower() == clean_label_lower or dict_item.get("zh") == label or (dict_item.get("en") and dict_item.get("en", "").lower() == clean_label_lower):
+                matched_dict_key = k
+                break
+    else:
+        # 如果 slot 存在，但 label 明显是其他槽位（如 slot 是 custom/pages 但 label 是“关于”或“特性”）
+        for k, dict_item in SLOT_I18N_FALLBACK.items():
+            if dict_item.get("zh") == label or (dict_item.get("en") and dict_item.get("en", "").lower() == clean_label_lower):
+                matched_dict_key = k
+                break
+
     # 尝试获取 AI 算力节点
     node = None
     if engine and hasattr(engine, "config") and getattr(engine.config, "translation", None):
@@ -191,19 +206,28 @@ async def translate_nav_labels_impl(req: TranslateNavLabelsRequest) -> Dict[str,
 
     for lang in target_langs:
         # 1. 若字典精准匹配已知标准槽位与常用中文名称，优先秒级回填
-        if slot in SLOT_I18N_FALLBACK and lang in SLOT_I18N_FALLBACK[slot]:
-            dict_val = SLOT_I18N_FALLBACK[slot][lang]
-            if label in ["文档中心", "官方博客", "展示页面", "自定义频道", "Docs", "Blog", "Showcase", "Pages", slot]:
-                translations[lang] = dict_val
-                continue
+        if matched_dict_key in SLOT_I18N_FALLBACK and lang in SLOT_I18N_FALLBACK[matched_dict_key]:
+            dict_val = SLOT_I18N_FALLBACK[matched_dict_key][lang]
+            translations[lang] = dict_val
+            continue
 
-        # 2. 调用大模型 AI 进行高保真翻译
+        # 2. 调用大模型 AI 进行高保真短语/标题翻译
         if node:
             try:
                 from core.logic.ai.ai_logic_hub import AILogicHub
-                rem = f"Translate this short website navigation title concisely into {lang}. Output only the translated title (1-3 words), no punctuation, no quotes, no markdown."
-                translated = node.translate(label, source_lang=req.source_language or "auto", target_lang=lang, remedy_instruction=rem)
-                clean_res = AILogicHub.clean_metadata_value(translated or "") if translated else ""
+                raw_translated = None
+                # 优先使用专用的 translate_title（避免段落围栏 Prompt 污染）
+                if hasattr(node, 'translate_title'):
+                    raw_translated = node.translate_title(label, target_lang=lang)
+                elif hasattr(node, 'translate_metadata'):
+                    raw_translated = node.translate_metadata(label, meta_type="Navigation Title", target_lang=lang)
+                else:
+                    rem = f"Translate this short website navigation menu title strictly into natural {lang}. Output ONLY the translated term (1-3 words), no Markdown, no headers."
+                    raw_translated = node.translate(label, source_lang=req.source_language or "auto", target_lang=lang, remedy_instruction=rem)
+
+                # 双重物理级净化：剥离围栏 + 剥离元数据 key
+                cleaned_1 = AILogicHub.clean_translation_response(raw_translated or "")
+                clean_res = AILogicHub.clean_metadata_value(cleaned_1 or "") if cleaned_1 else ""
                 if clean_res:
                     translations[lang] = clean_res
                     continue
@@ -211,8 +235,8 @@ async def translate_nav_labels_impl(req: TranslateNavLabelsRequest) -> Dict[str,
                 tlog.warning(f"AI translation for nav label '{label}' into {lang} failed: {e}")
 
         # 3. 降级回退
-        if slot in SLOT_I18N_FALLBACK and lang in SLOT_I18N_FALLBACK[slot]:
-            translations[lang] = SLOT_I18N_FALLBACK[slot][lang]
+        if matched_dict_key in SLOT_I18N_FALLBACK and lang in SLOT_I18N_FALLBACK[matched_dict_key]:
+            translations[lang] = SLOT_I18N_FALLBACK[matched_dict_key][lang]
         else:
             translations[lang] = label
 

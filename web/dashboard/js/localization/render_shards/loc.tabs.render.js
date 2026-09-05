@@ -129,6 +129,13 @@
                 html = window.renderRouteMatrixCategory();
             }
             panelEl.innerHTML = html;
+            if (subTab === 'route_matrix') {
+                setTimeout(() => {
+                    if (typeof window.updateAllLivePathBadges === 'function') {
+                        window.updateAllLivePathBadges();
+                    }
+                }, 30);
+            }
         }
 
         if (typeof window.updateSaveButtonVisibility === 'function') {

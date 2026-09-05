@@ -9,6 +9,13 @@ window.refreshHealthMatrix = async () => {
 
     const matrix = await apiFetch('/api/system/health/matrix');
     
+    if (matrix && typeof matrix === 'object') {
+        window._healthMatrix = matrix;
+        if (typeof window.updateLaunchpadPreviewStatus === 'function') {
+            window.updateLaunchpadPreviewStatus(matrix);
+        }
+    }
+
     // 🚀 [V55.0] 增强型防抖与容错：如果接口返回异常，保持上一次的状态而不是清空
     if (!matrix || Object.keys(matrix).length === 0) {
         if (container.innerHTML === "" || container.querySelector('.loading')) {

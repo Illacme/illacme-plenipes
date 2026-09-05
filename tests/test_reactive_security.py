@@ -34,28 +34,23 @@ def test_token_verification_failure_emits_security_alert():
         assert alerts[0][0] == "API_TOKEN_EXPIRED"
         assert "接口访问认证失败" in alerts[0][1]
 
-def test_license_guard_interception_emits_security_alert():
-    """测试功能准入拦截时成功向事件总线广播 SECURITY_ALERT 事件"""
+def test_license_guard_no_security_alert_on_feature_check():
+    """测试常规功能探测时不再向事件总线误报 SECURITY_ALERT 事件，杜绝前端弹红框"""
     alerts = []
     
     @bus.on("SECURITY_ALERT")
     def _on_alert(category, message, **kwargs):
         alerts.append((category, message))
         
-    # 模拟未激活授权版且切换至自定义品牌 (清空全局警告缓存以避免测试污染)
     LicenseGuard._warned_features.clear()
     from core.governance.imprint_manager import im
     old_imp = im.active_imprint
     try:
         im.active_imprint = "custom_press"
         with patch.object(LicenseGuard, "is_licensed", return_value=False):
-            # 拦截多语言矩阵功能调用
             allowed = LicenseGuard.is_pro_feature_allowed("multi_language")
-            
-            assert allowed is False
-            assert len(alerts) == 1
-            assert alerts[0][0] == "LICENSE_LIMIT"
-            assert "系统已拦截对未授权专业版功能" in alerts[0][1]
+            assert allowed is True
+            assert len(alerts) == 0  # 确保 0 误报弹窗
     finally:
         im.active_imprint = old_imp
 

@@ -81,8 +81,9 @@ class MetadataManager:
         with self.lock:
             existing = self.sqlite.get_document(rel_path) or {}
             
-            # 🚀 [V23.0] 智能属性对齐
-            doc_data = {
+            # 🚀 [V23.0] 智能属性对齐 (深度合并已存在的所有元数据与缓存字段，防止增量缓存丢失)
+            doc_data = dict(existing)
+            doc_data.update({
                 "title": title if title and title.strip() else existing.get("title", title),
                 "slug": kwargs.get("slug") if kwargs.get("slug") is not None else existing.get("slug"),
                 "source_hash": kwargs.get("source_hash") if kwargs.get("source_hash") is not None else existing.get("source_hash"),
@@ -95,7 +96,6 @@ class MetadataManager:
                 "translations": kwargs.get("translations") if kwargs.get("translations") is not None else existing.get("translations", {}),
                 "publish_status": kwargs.get("publish_status") if kwargs.get("publish_status") is not None else existing.get("publish_status", {}),
                 "assets": list(kwargs.get("assets")) if kwargs.get("assets") is not None else existing.get("assets", []),
-
                 "ext_assets": list(kwargs.get("ext_assets")) if kwargs.get("ext_assets") is not None else existing.get("ext_assets", []),
                 "outlinks": list(kwargs.get("outlinks")) if kwargs.get("outlinks") is not None else existing.get("outlinks", []),
                 "source_lang": kwargs.get("source_lang") if kwargs.get("source_lang") is not None else existing.get("source_lang"),
@@ -107,7 +107,10 @@ class MetadataManager:
                 "detected_lang": kwargs.get("detected_lang") if kwargs.get("detected_lang") is not None else existing.get("detected_lang"),
                 "size": kwargs.get("size") if kwargs.get("size") is not None else existing.get("size"),
                 "tags": list(kwargs.get("tags")) if kwargs.get("tags") is not None else existing.get("tags")
-            }
+            })
+            for k, v in kwargs.items():
+                if k not in doc_data and v is not None:
+                    doc_data[k] = v
             
             self.sqlite.upsert_document(rel_path, doc_data)
             

@@ -84,12 +84,21 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
 
         # 🌐 全息多语言 UI 字典
         t = get_ui_i18n(effective_lang)
-        options = adapter.get_custom_options()
-        site_name_val = options.get('site_name', 'Illacme Sovereign')
-        accent_color_val = options.get('accent_color', '#00f5ff')
-        enable_glass = options.get('enable_glassmorphism', True)
-        github_repo_val = options.get('github_repo', '')
-        logo_path_val = options.get('logo_path', '') or ''
+        options = adapter.get_custom_options() if hasattr(adapter, 'get_custom_options') else {}
+        if not isinstance(options, dict):
+            options = {}
+        site_name_val = str(options.get('site_name', 'Illacme Sovereign'))
+        accent_color_val = str(options.get('accent_color', '#00f5ff'))
+        enable_glass = bool(options.get('enable_glassmorphism', True))
+        github_repo_val = str(options.get('github_repo', ''))
+        logo_path_val = str(options.get('logo_path', '') or '')
+
+        # 🚀 [V105.1] 读取网址组织形态 (flat/prefix/nested)
+        _sv_dir_mode = 'nested'
+        _sv_engine = getattr(adapter, 'engine', None) or get_global_engine()
+        if _sv_engine and hasattr(_sv_engine, 'config'):
+            _sv_trans_cfg = getattr(_sv_engine.config, 'translation', None)
+            _sv_dir_mode = getattr(_sv_trans_cfg, 'slug_dir_mode', 'nested') if _sv_trans_cfg else 'nested'
         
         # 🌐 动态语种切换器构建 (仅展示当前治理中心配置的活跃语种)
         lang_names = get_language_display_names()
@@ -158,18 +167,30 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
                 # 智能计算对等相对路径 (遵循通用路由前缀契约：无前缀则为根目录页面，有前缀则为频道子目录)
                 clean_p = (prefix or "").strip("/\\").lower()
                 sub_segment = f"{sub_dir}/" if sub_dir else ""
+                is_global_h = (slug in ("index", "home", "") and not clean_p and not sub_segment and layout_type not in ('docs', 'blog', 'showcase'))
+                is_channel_h = (slug in ("index", "home", "") and not is_global_h)
+                channel_n = clean_p or (layout_type if layout_type in ('docs', 'blog', 'showcase') else 'docs')
                 
-                if slug in ("index", "home", "") and not clean_p and not sub_segment:
-                    # 🏠 全站首页：直接对齐根目录 index.html
-                    dest = f"{l_code}/index.html" if l_code != default_code else "index.html"
-                elif slug:
-                    # 📄 普通页面：有频道前缀则进入频道目录，无频道前缀则直出根目录
-                    if clean_p:
-                        dest = f"{l_code}/{clean_p}/{sub_segment}{slug}.html" if l_code != default_code else f"{clean_p}/{sub_segment}{slug}.html"
+                lang_seg = f"{l_code}/" if l_code != default_code else ""
+                if is_global_h:
+                    dest = f"{lang_seg}index.html"
+                elif is_channel_h:
+                    if _sv_dir_mode == 'flat':
+                        dest = f"{lang_seg}{channel_n}.html"
+                    elif _sv_dir_mode == 'prefix':
+                        dest = f"{lang_seg}{channel_n}-index.html"
                     else:
-                        dest = f"{l_code}/{sub_segment}{slug}.html" if l_code != default_code else f"{sub_segment}{slug}.html"
+                        dest = f"{lang_seg}{channel_n}/index.html"
+                elif slug:
+                    if _sv_dir_mode == 'flat':
+                        dest = f"{lang_seg}{slug}.html"
+                    elif _sv_dir_mode == 'prefix':
+                        _p_slug = slug if slug.startswith(f"{channel_n}-") else f"{channel_n}-{slug}"
+                        dest = f"{lang_seg}{_p_slug}.html"
+                    else:
+                        dest = f"{lang_seg}{clean_p}/{sub_segment}{slug}.html" if clean_p else f"{lang_seg}{sub_segment}{slug}.html"
                 else:
-                    dest = f"{l_code}/index.html" if l_code != default_code else "index.html"
+                    dest = f"{lang_seg}index.html"
                 
                 full_dest = f"{root_path}{dest}".replace('//', '/')
             
@@ -197,8 +218,8 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
             breadcrumbs_html = build_breadcrumbs(effective_lang, prefix, sub_path, doc_title, root_path, nav_lang_prefix=nav_lang_prefix)
             article_meta_html = build_article_meta(fm, effective_lang, reading_meta)
 
-        # 🎨 案例页多视图自适应包装
-        if layout_type == "showcase" and "<article" in content_html:
+        # 🎨 案例页多视图自适应包装 (排除博客聚合中心)
+        if (layout_type == "showcase" or "card-pioneer" in content_html) and "card-pioneer" in content_html and "blog-app" not in content_html and layout_type != "blog":
             content_html = transform_showcase_multi_view(content_html, effective_lang)
 
         # 📖 上一篇/下一篇导航 (针对 docs 文档与 blog 博客详情页)
@@ -227,11 +248,19 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
                                     if t_t: d_title = t_t
                                 
                                 d_date = str(d_info.get('persistent_date') or d_info.get('date') or '')
+                                # 🚀 [V105.1] 上下篇导航链接统一路由解析
+                                if _sv_dir_mode == 'flat':
+                                    d_nav_url = f"{root_path}{nav_lang_prefix}{d_slug}.html".replace('//', '/')
+                                elif _sv_dir_mode == 'prefix':
+                                    _d_p_slug = d_slug if d_slug.startswith(f"{layout_type}-") else f"{layout_type}-{d_slug}"
+                                    d_nav_url = f"{root_path}{nav_lang_prefix}{_d_p_slug}.html".replace('//', '/')
+                                else:
+                                    d_nav_url = f"{root_path}{nav_lang_prefix}{layout_type}/{d_slug}.html".replace('//', '/')
                                 channel_docs.append({
                                     "slug": d_slug,
                                     "title": d_title,
                                     "date": d_date,
-                                    "url": f"{root_path}{nav_lang_prefix}{layout_type}/{d_slug}.html".replace('//', '/')
+                                    "url": d_nav_url
                                 })
                     
                     if layout_type == "blog":
@@ -255,24 +284,19 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
         # 🎨 Logo 与社交元素
         if logo_path_val:
             clean_logo_p = logo_path_val.lstrip("/")
-            if clean_logo_p == "static/logo.png":
-                clean_logo_p = "static/assets/logo.png"
-            logo_html_val = f'<img src="{root_path}{clean_logo_p}" alt="{site_name_val}" class="logo-img" height="32">'
+            if logo_path_val.startswith("http"):
+                logo_html_val = f'<img src="{logo_path_val}" alt="{site_name_val}" class="logo-img" height="36">'
+            else:
+                logo_html_val = f'<img src="{root_path}{clean_logo_p}" alt="{site_name_val}" class="logo-img" height="36">'
         else:
             logo_html_val = '<span class="logo-icon">🧬</span>'
 
-        import datetime as _dt
-        _year = _dt.date.today().year
-        _raw_cr = fm.get('copyright') or options.get('footer_copyright', '')
-        if _raw_cr and "Illacme Sovereign" not in _raw_cr:
-            footer_copyright_val = _raw_cr
-        else:
-            footer_copyright_val = f"&copy; {_year} {site_name_val}."
-
+        github_html = f'<a href="{github_repo_val}" target="_blank" rel="noopener noreferrer" class="social-icon-link github-btn" title="GitHub">🐙</a>' if github_repo_val else ''
         glow_color = f"{accent_color_val}40" if (accent_color_val.startswith("#") and len(accent_color_val) == 7) else "rgba(0, 245, 255, 0.25)"
         custom_styles_html = f"""<style>
     :root {{
         --accent-color: {accent_color_val};
+        --accent-cyan: {accent_color_val};
         --accent-glow: {glow_color};
     }}
 """
@@ -285,91 +309,69 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
     """
         custom_styles_html += "\n</style>"
 
-        social_links = []
-        if github_repo_val:
-            social_links.append(f"""<a href="{github_repo_val}" class="control-btn theme-btn github-btn" target="_blank" rel="noopener noreferrer" title="GitHub">
-                <span class="btn-icon">🐙</span>
-                <span class="btn-label">GitHub</span>
-            </a>""")
-        twitter_url = options.get('twitter_url')
-        if twitter_url:
-            social_links.append(f"""<a href="{twitter_url}" class="control-btn theme-btn twitter-btn" target="_blank" rel="noopener noreferrer" title="Twitter / X">
-                <span class="btn-icon">𝕏</span>
-                <span class="btn-label">X</span>
-            </a>""")
-        discord_url = options.get('discord_url')
-        if discord_url:
-            social_links.append(f"""<a href="{discord_url}" class="control-btn theme-btn discord-btn" target="_blank" rel="noopener noreferrer" title="Discord">
-                <span class="btn-icon">💬</span>
-                <span class="btn-label">Discord</span>
-            </a>""")
-        telegram_url = options.get('telegram_url')
-        if telegram_url:
-            social_links.append(f"""<a href="{telegram_url}" class="control-btn theme-btn telegram-btn" target="_blank" rel="noopener noreferrer" title="Telegram">
-                <span class="btn-icon">✈️</span>
-                <span class="btn-label">TG</span>
-            </a>""")
-        github_html = "\n".join(social_links)
+        # 🎨 页脚与版权信息构建
+        footer_copyright_raw = str(options.get('footer_copyright', f"&copy; {site_name_val}."))
+        if "Illacme Sovereign" in footer_copyright_raw and site_name_val != "Illacme Sovereign":
+            footer_copyright_raw = footer_copyright_raw.replace("Illacme Sovereign", site_name_val)
+        import datetime
+        current_year = datetime.datetime.now().year
+        footer_copyright_val = footer_copyright_raw.replace("{year}", str(current_year)).replace("{site_name}", site_name_val)
 
-        # 🧭 顶部导航合成与当前频道激活判定
-        nav_links_data = options.get('nav_links_i18n', {}).get(effective_lang) or options.get('nav_links', [])
-        nav_lang_prefix = f"{effective_lang}/" if (effective_lang != default_code or getattr(adapter, 'force_source_prefix', False)) else ""
-        
-        # 🎯 提取当前文档所在频道与 Slug 特征
-        clean_prefix = prefix.strip("/\\").lower() if prefix else ""
-        clean_sub_path = sub_path.replace("\\", "/").lower()
+        # 🧭 主导航容器注入 (兼容直接指定 / 自定义 route_matrix / fallback)
+        clean_sub_path = sub_path.replace('\\', '/').strip('/')
+        clean_prefix = (prefix or "").strip('/\\')
         curr_slug = (slug or "").lower()
-        
-        main_nav_html_items = []
+
         if nav_links_data:
+            main_nav_html_items = []
             for item in nav_links_data:
                 u = item.get('url', '#')
-                text = item.get('text', '')
-                is_ext = item.get('external', False)
-                item_slot = (item.get('slot') or '').lower()
+                text = item.get('text') or item.get('label') or ''
+                is_ext = item.get('external', False) or u.startswith("http://") or u.startswith("https://")
+                item_slot = item.get('slot', '')
                 
+                # 🎯 智能判定当前项是否处于 Active 激活状态
                 is_active = False
-                if not is_ext and not u.startswith('http'):
+                if not is_ext:
                     u_clean = u.strip('/')
-                    
-                    # 1. 频道级激活匹配（Slot 与路径前缀双重判定）
-                    channel_name = item_slot
-                    if not channel_name:
-                        for ch in ("docs", "blog", "showcase", "tutorials"):
-                            if u_clean == ch or u_clean.startswith(f"{ch}/"):
-                                channel_name = ch
-                                break
-                    
-                    if channel_name:
-                        if (
-                            clean_prefix == channel_name or 
-                            layout_type == channel_name or 
-                            clean_sub_path.startswith(f"{channel_name}/") or
-                            f"/{channel_name}/" in f"/{clean_sub_path}"
-                        ):
-                            is_active = True
-                    
-                    # 2. 单页面级精准匹配（如 首页、关于页）
-                    if not is_active:
-                        if not u_clean or u_clean == "index.html":
-                            if curr_slug in ("index", "") and not clean_prefix and layout_type in ("home", "page"):
-                                is_active = True
-                        elif u_clean.endswith('.html'):
+                    if item_slot == "docs" or u_clean in ("docs", "docs.html", "docs-index.html", "docs/index.html"):
+                        is_active = (clean_prefix == "docs" or layout_type == "docs" or "docs/" in clean_sub_path or clean_sub_path in ("docs.html", "docs-index.html", "docs/index.html"))
+                    elif item_slot == "blog" or u_clean in ("blog", "blog.html", "blog-index.html", "blog/index.html"):
+                        is_active = (clean_prefix == "blog" or layout_type == "blog" or "blog/" in clean_sub_path or clean_sub_path in ("blog.html", "blog-index.html", "blog/index.html"))
+                    elif item_slot == "showcase" or u_clean in ("showcase", "showcase.html", "showcase-index.html", "showcase/index.html"):
+                        is_active = (clean_prefix == "showcase" or layout_type == "showcase" or "showcase/" in clean_sub_path or clean_sub_path in ("showcase.html", "showcase-index.html", "showcase/index.html"))
+                    elif u_clean in ("about", "about.html"):
+                        is_active = (curr_slug == "about" or clean_sub_path.endswith("about.html"))
+                    else:
+                        if u_clean.endswith('.html'):
                             target_slug = os.path.splitext(os.path.basename(u_clean))[0]
                             if curr_slug == target_slug or clean_sub_path.endswith(u_clean):
                                 is_active = True
                         elif curr_slug == u_clean or clean_sub_path.endswith(f"{u_clean}.html"):
                             is_active = True
+                
+                # 🚀 构造相对链接
+                if not is_ext and not u.startswith("#"):
+                    u_clean = u.lstrip('/')
+                    if u_clean.startswith(f"{effective_lang}/"):
+                        u_clean = u_clean[len(f"{effective_lang}/"):]
                     
-                    # 构造链接 URL
-                    if not u_clean:
-                        full_u = f"{root_path}{nav_lang_prefix}index.html".replace('//', '/')
-                    elif u_clean.endswith('.html'):
+                    u_slug = u_clean.rstrip('/')
+                    is_page_slot = (item_slot in ("pages", "page") or u_slug in ("about", "terms", "privacy", "disclaimer", "contact"))
+
+                    if u_clean.endswith('.html') or u_clean == "index.html":
                         full_u = f"{root_path}{nav_lang_prefix}{u_clean}".replace('//', '/')
-                    elif u.endswith('/') or item_slot or u_clean in ("docs", "blog", "showcase", "tutorials"):
-                        full_u = f"{root_path}{nav_lang_prefix}{u_clean}/index.html".replace('//', '/')
+                    elif is_page_slot:
+                        full_u = f"{root_path}{nav_lang_prefix}{u_slug}.html".replace('//', '/')
+                    elif u.endswith('/') or (item_slot and item_slot not in ("pages", "page")) or u_slug in ("docs", "blog", "showcase", "tutorials"):
+                        if _sv_dir_mode == 'flat':
+                            full_u = f"{root_path}{nav_lang_prefix}{u_slug}.html".replace('//', '/')
+                        elif _sv_dir_mode == 'prefix':
+                            full_u = f"{root_path}{nav_lang_prefix}{u_slug}-index.html".replace('//', '/')
+                        else:
+                            full_u = f"{root_path}{nav_lang_prefix}{u_slug}/index.html".replace('//', '/')
                     else:
-                        full_u = f"{root_path}{nav_lang_prefix}{u_clean}.html".replace('//', '/')
+                        full_u = f"{root_path}{nav_lang_prefix}{u_slug}.html".replace('//', '/')
                 else:
                     full_u = u
                 
@@ -378,16 +380,28 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
                 main_nav_html_items.append(f'<a href="{full_u}"{active_class}{target_attr}>{text}</a>')
             main_nav_container = "\n                    ".join(main_nav_html_items)
         else:
-            _blog_p = f"{nav_lang_prefix}blog/index.html".replace('//', '/')
-            _docs_p = f"{nav_lang_prefix}docs/index.html".replace('//', '/')
-            is_docs_active = ' class="active"' if (clean_prefix == "docs" or layout_type == "docs" or "docs/" in clean_sub_path) else ''
-            is_blog_active = ' class="active"' if (clean_prefix == "blog" or layout_type == "blog" or "blog/" in clean_sub_path) else ''
-            is_showcase_active = ' class="active"' if (clean_prefix == "showcase" or layout_type == "showcase" or "showcase/" in clean_sub_path) else ''
+            # 🚀 [V105.1] fallback 导航统一遵循三模态设计原则
+            if _sv_dir_mode == 'flat':
+                _blog_p = f"{nav_lang_prefix}blog.html".replace('//', '/')
+                _docs_p = f"{nav_lang_prefix}docs.html".replace('//', '/')
+                _showcase_p = f"{nav_lang_prefix}showcase.html".replace('//', '/')
+            elif _sv_dir_mode == 'prefix':
+                _blog_p = f"{nav_lang_prefix}blog-index.html".replace('//', '/')
+                _docs_p = f"{nav_lang_prefix}docs-index.html".replace('//', '/')
+                _showcase_p = f"{nav_lang_prefix}showcase-index.html".replace('//', '/')
+            else:
+                _blog_p = f"{nav_lang_prefix}blog/index.html".replace('//', '/')
+                _docs_p = f"{nav_lang_prefix}docs/index.html".replace('//', '/')
+                _showcase_p = f"{nav_lang_prefix}showcase/index.html".replace('//', '/')
+
+            is_docs_active = ' class="active"' if (clean_prefix == "docs" or layout_type == "docs" or "docs/" in clean_sub_path or clean_sub_path in ("docs.html", "docs-index.html", "docs/index.html")) else ''
+            is_blog_active = ' class="active"' if (clean_prefix == "blog" or layout_type == "blog" or "blog/" in clean_sub_path or clean_sub_path in ("blog.html", "blog-index.html", "blog/index.html")) else ''
+            is_showcase_active = ' class="active"' if (clean_prefix == "showcase" or layout_type == "showcase" or "showcase/" in clean_sub_path or clean_sub_path in ("showcase.html", "showcase-index.html", "showcase/index.html")) else ''
             is_about_active = ' class="active"' if (curr_slug == "about" or "about.html" in clean_sub_path) else ''
             
             main_nav_container = f"""<a href="{root_path}{_docs_p}"{is_docs_active}>{t["nav_docs"]}</a>
                     <a href="{root_path}{_blog_p}"{is_blog_active}>{t["nav_blog"]}</a>
-                    <a href="{root_path}{nav_lang_prefix}showcase/index.html"{is_showcase_active}>{t["nav_showcase"]}</a>
+                    <a href="{root_path}{_showcase_p}"{is_showcase_active}>{t["nav_showcase"]}</a>
                     <a href="{root_path}{nav_lang_prefix}about.html"{is_about_active}>{t["nav_about"]}</a>"""
 
         replacements = {
@@ -402,7 +416,38 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
             "{{ root_path }}": root_path,
             "{{ lang_code | default('zh') }}": effective_lang,
             "{{ layout_class }}": f"layout-{layout_type}",
-            "{{ canonical_url }}": f"/{effective_lang if not is_default else ''}/{prefix}/{slug}.html".replace('//', '/'),
+        }
+        # 🚀 [V105.1] Canonical URL 感知网址组织形态与频道首页收敛规则 (遵循 RouteManager 三模态)
+        _is_source_lang = (effective_lang == default_code)
+        _force_src_prefix = getattr(adapter, 'force_source_prefix', False)
+        _need_lang_prefix = not _is_source_lang or _force_src_prefix
+        _lang_prefix_seg = f"{effective_lang}/" if _need_lang_prefix else ""
+
+        clean_p = (prefix or "").strip("/\\").lower()
+        is_global_home = (slug in ('', 'index', 'home') and not clean_p and not sub_dir and layout_type not in ('docs', 'blog', 'showcase'))
+        is_channel_home = (slug in ('', 'index', 'home') and not is_global_home)
+        channel_name = clean_p or (layout_type if layout_type in ('docs', 'blog', 'showcase') else 'docs')
+
+        if is_global_home:
+            _canonical = f"/{_lang_prefix_seg}index.html".replace('//', '/')
+        elif is_channel_home:
+            if _sv_dir_mode == 'flat':
+                _canonical = f"/{_lang_prefix_seg}{channel_name}.html".replace('//', '/')
+            elif _sv_dir_mode == 'prefix':
+                _canonical = f"/{_lang_prefix_seg}{channel_name}-index.html".replace('//', '/')
+            else:
+                _canonical = f"/{_lang_prefix_seg}{channel_name}/index.html".replace('//', '/')
+        else:
+            if _sv_dir_mode == 'flat':
+                _canonical = f"/{_lang_prefix_seg}{slug}.html".replace('//', '/')
+            elif _sv_dir_mode == 'prefix':
+                _p_slug = slug if slug.startswith(f"{channel_name}-") else f"{channel_name}-{slug}"
+                _canonical = f"/{_lang_prefix_seg}{_p_slug}.html".replace('//', '/')
+            else:
+                _sub_seg = f"{sub_dir}/" if sub_dir else ""
+                _canonical = f"/{_lang_prefix_seg}{clean_p}/{_sub_seg}{slug}.html".replace('//', '/')
+        replacements["{{ canonical_url }}"] = _canonical
+        replacements.update({
             "{{ custom_theme_styles }}": custom_styles_html,
             "{{ github_link_container }}": github_html,
             "{{ main_nav_container }}": main_nav_container,
@@ -421,7 +466,7 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
             "{{ t_footer_motto }}": t["footer_motto"],
             "{{ t_footer_slogan }}": t["footer_slogan"],
             "{{ t_toc_title }}": t["toc_title"]
-        }
+        })
 
         for key, val in replacements.items():
             template = template.replace(key, str(val))
@@ -528,8 +573,14 @@ def build_sidebar(adapter, lang: str, prefix: str, current_sub: str, root_path: 
             if t_title:
                 doc_title = t_title
 
-        sub_part = f"{sub}/" if sub else ""
-        doc_url = f"{root_path}{sidebar_lang_prefix}{target_channel}/{sub_part}{slug}.html".replace('//', '/')
+        if hasattr(engine, 'route_manager'):
+            rel_p = engine.route_manager.resolve_physical_path("", lang, target_channel, sub, slug, ".html", source_type=target_channel)
+            clean_rel = rel_p.replace('\\', '/').lstrip('/')
+            doc_url = f"{root_path}{clean_rel}".replace('//', '/')
+        else:
+            sub_part = f"{sub}/" if sub else ""
+            doc_url = f"{root_path}{sidebar_lang_prefix}{target_channel}/{sub_part}{slug}.html".replace('//', '/')
+
         
         # 🎯 激活项高精度命中：支持 slug 精准比对与路径匹配
         is_active = bool(
@@ -587,17 +638,19 @@ def build_sidebar(adapter, lang: str, prefix: str, current_sub: str, root_path: 
 def transform_showcase_multi_view(content_html: str, lang: str) -> str:
     """🎨 为案例页注入网格与紧凑列表双视图切换器"""
     import re
-    article_match = re.search(r'<article\b[^>]*>(.*?)</article>', content_html, re.DOTALL)
-    if not article_match:
-        return content_html
-
-    article_inner = article_match.group(1)
     
-    # 解析卡片项
-    cards = re.findall(r'<a\s+href="([^"]+)"\s+class="card-pioneer">(.*?)</a>', article_inner, re.DOTALL)
+    # 1. 提取全页所有 card-pioneer
+    cards = re.findall(r'<a\s+[^>]*href="([^"]+)"[^>]*class="[^"]*card-pioneer[^"]*"[^>]*>(.*?)</a>|<a\s+[^>]*class="[^"]*card-pioneer[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', content_html, re.DOTALL)
+    
     compact_rows = []
-    for href, inner in cards:
-        tag_match = re.search(r'<span\s+class="card-tag">([^<]+)</span>', inner)
+    card_count = 0
+    for match in cards:
+        href = match[0] or match[2]
+        inner = match[1] or match[3]
+        if not href or not inner:
+            continue
+        card_count += 1
+        tag_match = re.search(r'<span\s+[^>]*class="[^"]*card-tag[^"]*"[^>]*>([^<]+)</span>', inner)
         tag = tag_match.group(1).strip() if tag_match else "生态"
         title_match = re.search(r'<h3[^>]*>([^<]+)</h3>', inner)
         title = title_match.group(1).strip() if title_match else "Showcase"
@@ -610,15 +663,20 @@ def transform_showcase_multi_view(content_html: str, lang: str) -> str:
 <span class="compact-desc">{desc}</span>
 </a>""")
 
-    t_grid = "网格卡片" if lang == "zh" else ("Grid View" if lang == "en" else "グリッド")
-    t_compact = "紧凑列表" if lang == "zh" else ("Compact View" if lang == "en" else "コンパクト")
+    if card_count == 0:
+        return content_html
+
+    from themes.sovereign.adapters.sovereign_i18n import get_ui_i18n
+    ui = get_ui_i18n(lang)
+    t_grid = ui.get("view_cards", "Cards")
+    t_compact = ui.get("view_list", "List")
 
     toolbar_html = f"""<div class="showcase-toolbar">
 <div class="showcase-view-switcher" role="tablist" aria-label="Showcase layout views">
 <button class="view-switch-btn active" data-view="grid" role="tab" aria-selected="true">
 <span class="view-btn-icon">🎛️</span>
 <span class="view-btn-text">{t_grid}</span>
-<span class="view-btn-badge">{len(cards)}</span>
+<span class="view-btn-badge">{card_count}</span>
 </button>
 <button class="view-switch-btn" data-view="compact" role="tab" aria-selected="false">
 <span class="view-btn-icon">📑</span>
@@ -627,11 +685,20 @@ def transform_showcase_multi_view(content_html: str, lang: str) -> str:
 </div>
 </div>"""
 
-    grid_view = f'<div class="showcase-view-container showcase-grid-view active" id="showcase-view-grid"><article>{article_inner}</article></div>'
-    compact_view = f'<div class="showcase-view-container showcase-compact-view" id="showcase-view-compact"><div class="compact-table">{"".join(compact_rows)}</div></div>'
+    # 包装：网格视图包含原页面全部 HTML 内容；紧凑视图展示平铺列表
+    grid_view = f'<div class="showcase-view-container showcase-grid-view active" id="showcase-view-grid">\n{content_html}\n</div>'
+    compact_view = f'<div class="showcase-view-container showcase-compact-view" id="showcase-view-compact">\n<div class="compact-table">{"".join(compact_rows)}</div>\n</div>'
 
-    new_section = f"{toolbar_html}\n{grid_view}\n{compact_view}"
-    return content_html[:article_match.start()] + new_section + content_html[article_match.end():]
+    # 将切换栏插入到第一个标题/描述之后或内容最前部
+    first_hr = content_html.find('<hr')
+    if first_hr != -1:
+        hr_end = content_html.find('>', first_hr) + 1
+        head_part = content_html[:hr_end]
+        rest_part = content_html[hr_end:]
+        grid_view_rest = f'<div class="showcase-view-container showcase-grid-view active" id="showcase-view-grid">\n{rest_part}\n</div>'
+        return f"{head_part}\n{toolbar_html}\n{grid_view_rest}\n{compact_view}"
+
+    return f"{toolbar_html}\n{grid_view}\n{compact_view}"
 
 
 def render_callout(c_type: str, title: str, body: str) -> str:

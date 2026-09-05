@@ -116,6 +116,24 @@ class SSGAdapter:
         """🚀 [V56.0] 意图感知：透传底层渲染器的功能槽声明"""
         return self.active_renderer.get_feature_slots()
 
+    def has_autonomous_blog_engine(self) -> bool:
+        """🚀 博客自治契约声明透传"""
+        if hasattr(self, 'active_renderer') and hasattr(self.active_renderer, 'has_autonomous_blog_engine'):
+            return self.active_renderer.has_autonomous_blog_engine()
+        return False
+
+    def is_framework_engine(self) -> bool:
+        """🚀 框架 SSG 能力声明透传"""
+        if hasattr(self, 'active_renderer') and hasattr(self.active_renderer, 'is_framework_engine'):
+            return self.active_renderer.is_framework_engine()
+        return False
+
+    def get_theme_root(self) -> str:
+        """🚀 主题物理根目录透传"""
+        if hasattr(self, 'active_renderer') and hasattr(self.active_renderer, 'get_theme_root'):
+            return self.active_renderer.get_theme_root()
+        return ""
+
     def supports_frontmatter(self, ext: str) -> bool:
         """🚀 [V15.6] 判定特定扩展名是否支持元数据头"""
         return self.active_renderer.supports_frontmatter(ext)

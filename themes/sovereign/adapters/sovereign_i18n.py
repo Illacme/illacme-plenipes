@@ -6,6 +6,7 @@ Illacme-plenipes Core - Sovereign Theme Multi-Language Internationalization
 
 from typing import Dict
 from core.utils.language_data import SUPPORTED_MATRIX
+from core.adapters.egress.ssg.base_shards.ssg_slot_matrix import get_i18n_view_label
 
 SOVEREIGN_UI_I18N: Dict[str, Dict[str, str]] = {
     "zh": {
@@ -112,14 +113,28 @@ SOVEREIGN_UI_I18N: Dict[str, Dict[str, str]] = {
 
 
 def get_ui_i18n(lang: str) -> Dict[str, str]:
-    """获取指定语言的 UI 本地化字典，默认降级至英语"""
-    clean_lang = lang.strip().lower() if lang else "zh"
+    """获取指定语言的 UI 本地化字典，全量对齐 50 语种前台组件标准并自动降级"""
+    clean_lang = lang.strip().lower().replace('_', '-') if lang else "zh"
+    base_dict = {}
     if clean_lang in SOVEREIGN_UI_I18N:
-        return SOVEREIGN_UI_I18N[clean_lang]
-    # 针对 zh-cn, zh-tw 等别名进行适配
-    if clean_lang.startswith("zh"):
-        return SOVEREIGN_UI_I18N["zh-Hans"] if "hant" not in clean_lang and "tw" not in clean_lang and "hk" not in clean_lang else SOVEREIGN_UI_I18N["zh-Hant"]
-    return SOVEREIGN_UI_I18N.get(clean_lang, SOVEREIGN_UI_I18N["en"])
+        base_dict = SOVEREIGN_UI_I18N[clean_lang]
+    elif clean_lang.startswith("zh"):
+        is_hant = any(x in clean_lang for x in ('hant', 'tw', 'hk', 'mo'))
+        base_dict = SOVEREIGN_UI_I18N["zh-Hant"] if is_hant else SOVEREIGN_UI_I18N["zh-Hans"]
+    else:
+        prefix = clean_lang.split('-')[0]
+        base_dict = SOVEREIGN_UI_I18N.get(prefix, SOVEREIGN_UI_I18N["en"])
+
+    # 🌐 动态从全球 50 语种交互矩阵补齐核心视图与操作词汇
+    res = dict(base_dict)
+    res.setdefault("view_timeline", get_i18n_view_label("timeline", clean_lang, "Timeline"))
+    res.setdefault("view_cards", get_i18n_view_label("cards", clean_lang, "Cards"))
+    res.setdefault("view_list", get_i18n_view_label("list", clean_lang, "List"))
+    res.setdefault("filter_all", get_i18n_view_label("all", clean_lang, "All"))
+    res.setdefault("read_more", get_i18n_view_label("read_more", clean_lang, "Read More →"))
+    res.setdefault("blog_hero_title", get_i18n_view_label("blog_hero_title", clean_lang, "✍️ Blog Archive"))
+    res.setdefault("blog_hero_desc", get_i18n_view_label("blog_hero_desc", clean_lang, "Explore technical insights and publishing notes."))
+    return res
 
 
 def get_language_display_names() -> Dict[str, str]:

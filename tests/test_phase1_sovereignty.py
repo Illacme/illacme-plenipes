@@ -60,22 +60,20 @@ from unittest.mock import patch
 
 @patch('core.governance.license_guard.LicenseGuard.is_licensed', return_value=False)
 def test_license_gating(mock_is_licensed):
-    """验证功能栅栏拦截逻辑（默认品牌豁免与自定义品牌拦截）"""
+    """验证轻量化版本策略下功能放行逻辑（全级别放行，不设多余限制）"""
     from core.governance.imprint_manager import im
     old_imp = im.active_imprint
     try:
         # 1. 默认品牌下：无条件放行
         im.active_imprint = "default"
-        LicenseGuard._warned_features.clear()
         assert LicenseGuard.is_pro_feature_allowed("multi_imprint") is True
         assert LicenseGuard.is_pro_feature_allowed("multi_language") is True
 
-        # 2. 自定义品牌下：未激活时严格拦截
+        # 2. 自定义品牌下：轻量化策略全级别放行，切换品牌绝不拦截
         im.active_imprint = "custom_press"
-        LicenseGuard._warned_features.clear()
-        assert LicenseGuard.is_pro_feature_allowed("multi_imprint") is False
-        assert LicenseGuard.is_pro_feature_allowed("multi_language") is False
-        # 非管控功能应允许
+        assert LicenseGuard.is_pro_feature_allowed("multi_imprint") is True
+        assert LicenseGuard.is_pro_feature_allowed("multi_language") is True
+        # 非管控功能亦允许
         assert LicenseGuard.is_pro_feature_allowed("basic_markdown") is True
     finally:
         im.active_imprint = old_imp

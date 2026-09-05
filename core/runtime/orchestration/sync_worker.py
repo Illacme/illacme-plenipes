@@ -90,7 +90,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
                 task_name=f"Sync-{os.path.basename(task_path)}",
                 target_slot=target_slot,
                 target_langs=getattr(args, 'target_langs', None),
-                clear_cache=args.force or getattr(args, 'clean', False)
+                clear_cache=getattr(args, 'clean', False)
             )
             future_to_task[future] = task_path
 

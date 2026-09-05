@@ -1,6 +1,4 @@
 import subprocess
-import json
-import pytest
 from pathlib import Path
 
 def test_frontend_render_runtime_and_dom_integrity():
@@ -79,6 +77,96 @@ def test_frontend_render_runtime_and_dom_integrity():
         if (!html.includes('RACE 竞速') && !html.includes('PRIMARY')) {
             throw new Error('Compute infrastructure DOM topology broken: missing role badge');
         }
+
+        // 4. 加载并执行 route.constants.js 与 route.render.js (Rule 7: Combobox + 内联状态徽标)
+        global.window.settingsData._directories = ['Docs', 'Blog'];
+        global.window.settingsData._vault_files = [
+            { path: 'Docs/1.md' }, { path: 'about.md', title: '关于我们' }
+        ];
+        global.window.settingsData.route_matrix = [
+            { source: 'Docs', prefix: 'docs', target_slot: 'docs' },
+            { source: 'about.md', prefix: 'about', target_slot: 'pages' },
+            { source: 'MissingSource', prefix: 'missing', target_slot: 'docs' }
+        ];
+
+        const routeShardFiles = [
+            'web/dashboard/js/route/route_shards/route.i18n.dict.js',
+            'web/dashboard/js/route/route_shards/route.style.selector.js',
+            'web/dashboard/js/route/route_shards/route.source.options.js',
+            'web/dashboard/js/route/route_shards/route.source.picker.js',
+            'web/dashboard/js/route/route_shards/route.source.events.js',
+            'web/dashboard/js/route/route_shards/route.path.badges.js',
+            'web/dashboard/js/route/route_shards/route.constants.js'
+        ];
+        routeShardFiles.forEach(f => eval(fs.readFileSync(f, 'utf8')));
+        const routeRenderCode = fs.readFileSync('web/dashboard/js/route/route.render.js', 'utf8');
+        eval(routeRenderCode);
+
+        const routeHtml = window.renderRouteMatrixCategory();
+        if (!routeHtml.includes('source-picker-wrap')) {
+            throw new Error('Route matrix DOM topology broken: missing source-picker-wrap');
+        }
+        if (!routeHtml.includes('in-input-badge-container')) {
+            throw new Error('Route matrix DOM topology broken: missing in-input-badge-container');
+        }
+        if (!routeHtml.includes('<datalist id="source-datalist-')) {
+            throw new Error('Route matrix DOM topology broken: missing datalist for combobox');
+        }
+        // 🌲 验证树形制导结构已生效
+        if (!routeHtml.includes('📁 Docs (目录)') || !routeHtml.includes('├─') && !routeHtml.includes('└─')) {
+            throw new Error('Route matrix tree structure topology missing in datalist options');
+        }
+        if (routeHtml.includes('source-status-bar')) {
+            throw new Error('Legacy source-status-bar should be eliminated');
+        }
+
+        // 5. 加载并执行 launchpad.js 引导向导沙箱断言与仪表盘拓扑断言
+        global.localStorage = { getItem: () => null, setItem: () => {} };
+        global.sessionStorage = { getItem: () => null, setItem: () => {} };
+        global.window.settingsData = {
+            _imprints: [{ id: 'default', name: '默认出版品牌' }],
+            _active_imprint: 'default',
+            compliance: { site_url: 'https://example.com' }
+        };
+        const lpShardFiles = [
+            'web/dashboard/js/ui/launchpad_shards/launchpad.onboarding.js',
+            'web/dashboard/js/ui/launchpad_shards/launchpad.skeleton.js',
+            'web/dashboard/js/ui/launchpad_shards/launchpad.pipeline.js',
+            'web/dashboard/js/ui/launchpad_shards/launchpad.dashboard.js',
+            'web/dashboard/js/ui/launchpad.js'
+        ];
+        const launchpadCode = lpShardFiles.map(f => fs.readFileSync(f, 'utf8')).join('\\n');
+        const dummyLpArea = {};
+        const runLpFn = new Function('window', 'area', 'ctx', launchpadCode + '; _renderOnboarding(area, ctx); return area.innerHTML;');
+        const lpHtml = runLpFn(global.window, dummyLpArea, {});
+        if (!lpHtml.includes('lpwiz-container') || !lpHtml.includes('lpwiz-step-item') || !lpHtml.includes('lpwiz-step-num sample') || !lpHtml.includes('lpwiz-step-num custom')) {
+            throw new Error('Launchpad onboarding DOM topology broken: missing lpwiz-container, lpwiz-step-item, sample or custom step-num');
+        }
+        if (!lpHtml.includes('官方示范原稿文库') || !lpHtml.includes('增量翻译与极速分发')) {
+            throw new Error('Launchpad onboarding core feature descriptions missing in DOM');
+        }
+
+        // 6. 验证 Launchpad 仪表盘与三栏合一顶栏 DOM 沙箱
+        const dummySkelArea = {};
+        const runSkelFn = new Function('window', 'area', launchpadCode + '; _mountLaunchpadSkeleton(area, "dashboard"); return area.innerHTML;');
+        const skelHtml = runSkelFn(global.window, dummySkelArea);
+        if (!skelHtml.includes('hub-top-trio-bar') || !skelHtml.includes('hub-brand-badge') || !skelHtml.includes('hub-mode-capsule')) {
+            throw new Error('Launchpad skeleton DOM missing hub-top-trio-bar, hub-brand-badge, or capsule');
+        }
+
+        const dummyDashArea = {};
+        const runDashFn = new Function('window', 'area', 'ctx', launchpadCode + '; _renderDashboard(area, ctx); return area.innerHTML;');
+        const dashHtml = runDashFn(global.window, dummyDashArea, { vault: { doc_count: 33, root: '/test/vault' }, i18n: { targets: ['en'] } });
+        if (!dashHtml.includes('lpdash-container') || !dashHtml.includes('lpdash-stats-strip') || !dashHtml.includes('primary-cta') || !dashHtml.includes('lpdash-quick-actions')) {
+            throw new Error('Launchpad dashboard DOM missing lpdash-container, stats, primary-cta, or quick-actions');
+        }
+        if (!dashHtml.includes('点击刷新检测') || !dashHtml.includes('按 Esc 关闭工作台')) {
+            throw new Error('Launchpad dashboard missing streamlined footer actions');
+        }
+        if (lpHtml.includes('lpwiz-footer-note')) {
+            throw new Error('Launchpad onboarding should not have redundant footer note');
+        }
+
         console.log('ALL_FRONTEND_RENDER_DOM_VERIFIED_SUCCESS');
     }).catch(err => {
         console.error(err);

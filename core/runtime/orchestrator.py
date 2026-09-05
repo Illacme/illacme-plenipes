@@ -51,7 +51,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
         def __init__(self):
             self.dry_run = dry_run
             self.force = force
-            self.clean = clear_cache or force
+            self.clean = clear_cache
             self.sandbox = sandbox
             self.watch = False
             self.path = requested_paths
@@ -60,12 +60,12 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     args = MockArgs()
     
-    langs_to_clean = target_langs
-    if not langs_to_clean and hasattr(engine, "config") and getattr(engine.config, "i18n_settings", None):
+    langs_to_clean = target_langs if clear_cache else []
+    if clear_cache and not langs_to_clean and hasattr(engine, "config") and getattr(engine.config, "i18n_settings", None):
         langs_to_clean = [t.lang_code for t in engine.config.i18n_settings.targets]
 
     cleaned_bak_files = []
-    if langs_to_clean:
+    if clear_cache and langs_to_clean:
         try:
             task_queue, _ = build_task_queue(engine, requested_paths)
             import os

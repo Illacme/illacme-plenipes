@@ -10,7 +10,8 @@
 // 点击直达预览站点全局函数
 window.openPreviewSite = function () {
     const port = window._actualPreviewPort || window.settingsData?.system?.serve_port || 43213;
-    const previewUrl = window._actualPreviewUrl || `http://localhost:${port}/`;
+    const baseUrl = window._actualPreviewUrl || `http://localhost:${port}/`;
+    const previewUrl = baseUrl.includes('?') ? `${baseUrl}&t=${Date.now()}` : `${baseUrl}?t=${Date.now()}`;
     window.open(previewUrl, '_blank', 'noopener,noreferrer');
 };
 

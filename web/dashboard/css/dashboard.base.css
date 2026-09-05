@@ -55,16 +55,15 @@ body::before {
     -webkit-text-fill-color: transparent;
 }
 
-/* 🧬 [V61.0] Technical Texture Overlay */
+/* 🧬 [V61.0] Technical Blueprint Grid (纯净科技方格，彻底消灭 4px 扫描线对字形与按钮的切割) */
 body::after {
     content: "";
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: 
-        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-size: 100% 4px, 50px 50px, 50px 50px;
-    z-index: 9999;
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px, 50px 50px;
+    z-index: 0;
     pointer-events: none;
     opacity: 0.6;
 }

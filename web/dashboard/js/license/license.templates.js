@@ -53,7 +53,7 @@
                                         <button type="button" class="primary-btn" id="btn-revoke-license" onclick="window.revokeCurrentLicense(event)" style="display:none; background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.3); color: #ff6b6b; padding: 3px 10px; font-size: 0.75rem;">🔓 解绑授权</button>
                                     </div>
                                     <div class="setting-desc" id="lic-banner-desc" style="font-size: 0.82rem; line-height: 1.4; color: var(--text-muted);">
-                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎。激活专业版可进一步解封无限品牌隔离、50+ 语种并行矩阵分发与子目录频道映射。
+                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 1 个目标翻译语种。升级增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。
                                     </div>
                                 </div>
                             </div>
@@ -63,12 +63,12 @@
                                 <span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span>
                                 <span class="lic-pill-unlocked">✓ 创作中心灵感润色</span>
                                 <span class="lic-pill-unlocked">✓ 算力节点灵活对接</span>
-                                <span class="lic-pill-unlocked">✓ 单品牌全渠道分发</span>
-                                <span class="lic-pill-locked">🔒 无限品牌独立隔离 (专业版)</span>
-                                <span class="lic-pill-locked">🔒 50+语种矩阵分发 (专业版)</span>
-                                <span class="lic-pill-locked">🔒 子目录频道映射 (专业版)</span>
-                                <span class="lic-pill-locked">🔒 频道专属方言风格 (专业版)</span>
-                                <span class="lic-pill-locked">🔒 算力集群自动容灾 (专业版)</span>
+                                <span class="lic-pill-unlocked">✓ 1个自建品牌+官方示范</span>
+                                <span class="lic-pill-unlocked">✓ 1个目标翻译语种</span>
+                                <span class="lic-pill-unlocked">✓ 子目录精准收稿</span>
+                                <span class="lic-pill-locked">🔒 5 个独立品牌 (增强版)</span>
+                                <span class="lic-pill-locked">🔒 5 个目标语种 (增强版)</span>
+                                <span class="lic-pill-locked">🔒 99 独立品牌+全量语种 (专业版)</span>
                             </div>
                         </div>
 
@@ -117,46 +117,46 @@
                                     </thead>
                                     <tbody>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>多品牌独立管理</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">独立文库与全套样式隔离</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个主品牌 (default)</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3 个独立出版品牌</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ♾️ 无限独立品牌</td>
+                                            <td style="padding: 12px 10px;"><b>自定义品牌配额</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">自建独立品牌文库与样式隔离</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">1 个自建品牌 (+官方示范)</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 5 个独立自建品牌</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 99 个独立自建品牌</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>多语种自动翻译</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">全语种多线程并行翻译分发</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅限 1 个目标语种</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 3~5 个主流语种</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 50+ 语种并行翻译分发</td>
+                                            <td style="padding: 12px 10px;"><b>多语种翻译矩阵</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">多语种并行翻译分发能力</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">1 个目标语种 (如中->英)</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 5 个目标语种并行</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 全量语种矩阵任选</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>子目录频道映射</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">金库子目录精准频道路由</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">仅根目录全局映射</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 📂 多子目录精准频道映射</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 📂 多子目录精准频道映射</td>
+                                            <td style="padding: 12px 10px;"><b>子目录精准收稿映射</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">金库子目录频道路由映射</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">✓ 全量子目录精准收稿</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 全量子目录精准收稿</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 全量子目录精准收稿</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
                                             <td style="padding: 12px 10px;"><b>装帧主题排版</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">多 SSG 引擎换装与定制</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">全量主题自由切换</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 全量主题 + 自定义样式注入</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 全量主题 + 专属装帧母本克隆</td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">✓ 全量主题自由切换</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 全量主题自由切换</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 全量主题自由切换</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>多风格润色方言</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">按语种/目录独立润色风格</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">标准统一润色</td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">标准统一润色</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🎭 专属多维润色风格库</td>
+                                            <td style="padding: 12px 10px;"><b>润色风格与方言</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">按语种/目录风格定制</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">✓ 统一润色与风格定制</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 统一润色与风格定制</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 统一润色与风格定制</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
-                                            <td style="padding: 12px 10px;"><b>AI 算力联合调度</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">云端与本地节点并发负载均衡</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">单节点手动切换</td>
-                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ ⚡ 双节点主备自动容灾</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ ☁️ 混合算力多节点自动容灾</td>
+                                            <td style="padding: 12px 10px;"><b>AI 算力调度</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">云端与本地节点灵活对接</span></td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">✓ 灵活对接与负载容灾</td>
+                                            <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 灵活对接与负载容灾</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 灵活对接与负载容灾</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                             <div style="margin-top: 16px; text-align: center; border: 1px dashed var(--glass-border); border-radius: 8px; padding: 12px;">
-                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 3 个出版品牌或 50+ 语种并行翻译矩阵？</span>
+                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 5~99 个出版品牌或全量语种矩阵？</span>
                                 <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="margin-left: 12px; padding: 5px 16px; font-size: 0.82rem;">🔑 立即激活授权</button>
                             </div>
                         </div>

@@ -31,7 +31,7 @@
         const newIdx = tbody.querySelectorAll('.route-item').length;
         
         const rowHtml = `
-            <div class="matrix-row route-item" data-idx="${newIdx}" style="display: grid; grid-template-columns: 36px 1.1fr 1fr 1fr 1.4fr 0.9fr 46px 36px; gap: 8px; padding: 8px 4px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
+            <div class="matrix-row route-item" data-idx="${newIdx}" style="display: grid; grid-template-columns: 36px 1.4fr 1.0fr 1.45fr 1.5fr 0.95fr 42px 36px; gap: 8px; padding: 8px 6px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; background: rgba(0, 242, 254, 0.03); border-left: 2px solid var(--neon-cyan, #00f2fe); border-radius: 4px; margin: 3px 0;">
                 <!-- 0. 排序控制器 -->
                 <div class="order-controls" style="display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center;">
                     <button type="button" class="mini-btn move-up-btn" onclick="window.moveRouteMatrixRow(this, 'up')" style="padding: 0; width: 22px; height: 13px; font-size: 0.55rem; line-height: 1; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.08); cursor: pointer;" title="上移">▲</button>
@@ -39,15 +39,15 @@
                 </div>
                 <!-- 1. 文库目录 -->
                 <div>
-                    <input type="text" class="setting-input source-input" value="🌐 外部直链" disabled style="width: 100%; font-size: 0.74rem; padding: 5px 6px; opacity: 0.7;">
+                    <span style="font-size: 0.72rem; color: var(--neon-cyan, #00f2fe); padding: 4px 8px; background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">🌐 外部直链</span>
                 </div>
                 <!-- 2. 网页路径 -->
                 <div>
-                    <input type="text" class="setting-input ext-url-input" value="https://" placeholder="https://..." style="width: 100%; color: var(--neon-cyan, #00f2fe); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings()">
+                    <input type="text" class="setting-input ext-url-input" value="https://" placeholder="https://..." title="${window.getLivePathTooltip ? window.getLivePathTooltip({ external_url: 'https://' }) : ''}" style="width: 100%; color: var(--neon-cyan, #00f2fe); font-family: monospace; font-size: 0.74rem; padding: 5px 6px;" onchange="syncRouteMatrixToSettings()" oninput="syncRouteMatrixToSettings(); window.updateAllLivePathBadges();">
                 </div>
                 <!-- 3. 网页模板 -->
                 <div>
-                    <span style="font-size: 0.72rem; color: var(--text-dim); padding: 4px 8px; background: rgba(255,255,255,0.03); border-radius: 4px; display: inline-block;">🔗 外部直链</span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); padding: 4px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">🔗 外部直链 (无需模板)</span>
                 </div>
                 <!-- 4. 顶栏导航 -->
                 <div style="display: flex; gap: 4px; align-items: center; position: relative;">
@@ -63,11 +63,13 @@
                     </button>
                     <input type="hidden" class="nav-i18n-input" value="{}">
                 </div>
-                <!-- 5. 翻译风格 -->
+                <!-- 5. 译文风格 -->
                 <div>
-                    <select class="setting-input style-input" disabled style="width: 100%; font-size: 0.74rem; padding: 5px 6px; opacity: 0.5;">
-                        <option value="">不适用</option>
-                    </select>
+                    ${window.buildTranslationStyleSelectHtml ? window.buildTranslationStyleSelectHtml('', true, true) : `
+                        <select class="setting-input style-input" disabled style="width: 100%; font-size: 0.74rem; padding: 5px 6px; opacity: 0.5;">
+                            <option value="">不适用</option>
+                        </select>
+                    `}
                 </div>
                 <!-- 6. 顶栏展示 -->
                 <div style="text-align: center;">
@@ -93,6 +95,9 @@
 
         if (typeof window.syncRouteMatrixToSettings === 'function') {
             window.syncRouteMatrixToSettings();
+        }
+        if (typeof window.updateAllLivePathBadges === 'function') {
+            window.updateAllLivePathBadges();
         }
     };
 

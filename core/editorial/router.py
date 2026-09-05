@@ -19,7 +19,7 @@ class RouteManager:
     通过挂载状态机账本与 AI 翻译工厂，专职负责物理路径到安全前端 URL 路由的映射，
     以及全局统一的物理路径推导，彻底消灭探针与写盘器的脑裂问题。
     """
-    def __init__(self, meta_manager, translator_factory, lang_mapping=None, default_lang=None, active_theme=None, ssg_adapter=None, force_source_prefix=False):
+    def __init__(self, meta_manager, translator_factory, lang_mapping=None, default_lang=None, active_theme=None, ssg_adapter=None, force_source_prefix=False, config=None, engine=None):
         self.meta = meta_manager
         self.translator = translator_factory
         self.lang_mapping = lang_mapping or {}
@@ -27,6 +27,9 @@ class RouteManager:
         self.active_theme = (active_theme or "starlight").lower()
         self.ssg_adapter = ssg_adapter
         self.force_source_prefix = force_source_prefix
+        self.config = config
+        self.engine = engine
+
 
     def resolve_physical_path(self, base_path, lang_code, route_prefix, mapped_sub_dir, slug, ext, source_type="docs"):
         """
@@ -53,7 +56,7 @@ class RouteManager:
                 is_multi = (iso_logical != iso_default) or self.force_source_prefix
                 template = slot_cfg.get("multi" if is_multi else "single")
                 
-                if template:
+                if template is not None:
                     # 解析物理语种前缀
                     physical_lang = LanguageHub.get_physical_path(
                         iso_logical,
@@ -67,11 +70,59 @@ class RouteManager:
                         route_prefix = template.replace("{lang}", physical_lang)
                     slot_formatted = True
 
-        # 🚀 [V88.5] 纯正扁平模式增强：当非特定功能槽且为扁平模式 (flat) 无特定频道路由时，前缀自动压平落盘到站点根目录
-        if not slot_formatted and not mapped_sub_dir and (not route_prefix or route_prefix in ("docs", "docs/{lang}")):
-            if hasattr(self, 'engine') and self.engine and hasattr(self.engine, 'config'):
-                if getattr(self.engine.config.translation, 'slug_dir_mode', 'flat') == 'flat':
-                    route_prefix = ""
+        # 🚀 [V105.0] 网址组织形态策略推导 (nested: 目录树复刻; flat: 极简根目录; prefix: 智能 SEO 前缀)
+        cfg = getattr(self, 'config', None) or getattr(getattr(self, 'engine', None), 'config', None)
+        trans_cfg = getattr(cfg, 'translation', None) if cfg else None
+        dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') if trans_cfg else 'nested'
+
+        # 🚀 Frontmatter 绝对路径主权: 以 / 开头直接输出至站点根目录
+        if slug.startswith('/'):
+            slug = slug.lstrip('/')
+            route_prefix = ""
+            mapped_sub_dir = ""
+            dir_mode = 'flat'
+
+        # 判定是否为全站主首页 vs 频道子首页
+        is_global_home = (slug in ('', 'index', 'home') and not mapped_sub_dir and source_type not in ('docs', 'blog', 'showcase'))
+        is_channel_home = (slug in ('', 'index', 'home') and not is_global_home)
+
+        if dir_mode == 'flat':
+            if is_global_home:
+                # 全站主首页豁免权：必须固定输出为根目录 index.html
+                route_prefix = ""
+                mapped_sub_dir = ""
+                slug = "index"
+            elif is_channel_home:
+                # 频道子首页语义收敛：避免与全站 index.html 碰撞覆盖
+                channel_name = mapped_sub_dir or (source_type if source_type in ('docs', 'blog', 'showcase') else 'docs')
+                slug = channel_name.strip('/\\').replace('/', '-')
+                route_prefix = ""
+                mapped_sub_dir = ""
+            else:
+                # 普通文档在 flat 模式下压平至根目录
+                route_prefix = ""
+                mapped_sub_dir = ""
+        elif dir_mode == 'prefix':
+            if is_global_home:
+                route_prefix = ""
+                mapped_sub_dir = ""
+                slug = "index"
+            elif is_channel_home:
+                channel_name = mapped_sub_dir or (source_type if source_type in ('docs', 'blog', 'showcase') else 'docs')
+                clean_channel = channel_name.strip('/\\').replace('/', '-')
+                slug = f"{clean_channel}-index"
+                route_prefix = ""
+                mapped_sub_dir = ""
+            else:
+                channel_name = mapped_sub_dir or (route_prefix if route_prefix in ('docs', 'blog', 'showcase') else '')
+                if channel_name and not slug.startswith(f"{channel_name}-"):
+                    clean_channel = channel_name.strip('/\\').replace('/', '-')
+                    slug = f"{clean_channel}-{slug}"
+                route_prefix = ""
+                mapped_sub_dir = ""
+        else:
+            # nested 模式：保持目录树复刻层级，但如果未指定 slot 且没有 mapped_sub_dir 时保持原有 route_prefix
+            pass
 
         # 🚀 [V15.7] 物理主权对正：计算物理语种标识
         from core.utils.language_hub import LanguageHub
@@ -79,7 +130,7 @@ class RouteManager:
         iso_default = LanguageHub.resolve_to_iso(self.default_lang)
         
         # 🛡️ 智能对齐：如果为默认/原稿语言且未强制前缀，或者模板中已经包含了语种占位符，则物理语种前缀置空
-        if (iso_logical == iso_default and not self.force_source_prefix) or slot_formatted:
+        if (iso_logical == iso_default and not self.force_source_prefix) or (slot_formatted and dir_mode == 'nested'):
             physical_lang = ""
         else:
             physical_lang = LanguageHub.get_physical_path(
@@ -89,22 +140,23 @@ class RouteManager:
                 force_prefix=self.force_source_prefix
             )
 
-        # 🚀 [V88.9] 物理主权对正：当非特定功能槽且配置为扁平模式 (flat) 无显式子目录时，强力压平 docs 前缀，实现真·根目录落盘
-        if not slot_formatted and not mapped_sub_dir and route_prefix in ("docs", "docs/", "docs/{lang}"):
-            cfg = getattr(self, 'config', None) or getattr(getattr(self, 'engine', None), 'config', None)
-            trans_cfg = getattr(cfg, 'translation', None) if cfg else None
-            dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'flat') if trans_cfg else 'flat'
-            if dir_mode == 'flat':
-                route_prefix = ""
-
-        # 🛡️ 路径去重防线：避免 mapped_sub_dir 与 route_prefix 出现同名频道路由重叠 (如 /zh/docs/docs/...)
+        # 🛡️ 路径去重防线与套娃拦截网：
+        # 1. 避免 mapped_sub_dir 与 route_prefix 出现同名频道路由重叠 (如 /zh/docs/docs/...)
         if mapped_sub_dir:
             sub_clean = mapped_sub_dir.strip("/\\")
             prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
             if sub_clean in prefix_parts:
                 mapped_sub_dir = ""
 
-        if route_prefix and "{" in route_prefix and "}" in route_prefix:
+        # 2. 避免 base_path 末级与 route_prefix 首级相同引发双重目录套娃 (如 content/content/...)
+        base_norm = base_path.replace('\\', '/').rstrip('/')
+        base_last = os.path.basename(base_norm) if base_norm else ""
+        prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
+        if prefix_parts and base_last and prefix_parts[0] == base_last:
+            prefix_parts.pop(0)
+            route_prefix = '/'.join(prefix_parts)
+
+        if route_prefix and "{" in route_prefix and "}" in route_prefix and dir_mode == 'nested':
             # 模式 A：声明式模板模式 (如 /docs/{lang})
             try:
                 formatted_prefix = route_prefix.format(
@@ -124,8 +176,7 @@ class RouteManager:
 
     def get_mapped_sub_dir(self, raw_sub_dir, is_dry_run=False, allow_ai=False):
         """
-        🚀 目录结构状态机：将包含中文的源目录物理路径，极度安全地翻译并固化为纯英文 URL 路径。
-        一旦确立，终身不变，彻底解决跨平台部署时的中文 URL 编码雪崩灾难。
+        🚀 目录结构状态机：将源目录物理路径安全映射为纯英文 URL 路径。
         """
         if not raw_sub_dir or raw_sub_dir == '.':
             return ""
@@ -135,22 +186,15 @@ class RouteManager:
 
         for p in parts:
             if not p: continue
-
-            # 1. 尝试从内存账本读取极速映射
             d_slug = self.meta.get_dir_slug(p)
-
-            # 2. 缓存击穿，触发全新目录创建流程
             if not d_slug:
                 if allow_ai and not is_dry_run and self.translator:
-                    tlog.info(f"   └── ⏳ 探测到全新中文目录 '{p}'，正调度 AI 为其生成永久英文 URL 路由...")
                     try:
                         d_slug, _ = self.translator.generate_slug(p, is_dry_run)
                     except Exception as e:
                         tlog.warning(f"⚠️ [路由 AI 故障] {e}，将回退至物理清洗。")
                         d_slug = None
 
-
-                # 3. 终极无缝兜底：彻底脱离 AI 和网络环境的防撞设计
                 if not d_slug:
                     safe_p = re.sub(r'[^\w\-]', '', p.replace(' ', '-')).lower()
                     safe_p = re.sub(r'-+', '-', safe_p).strip('-')
@@ -158,7 +202,6 @@ class RouteManager:
                         safe_p = f"dir-{hashlib.md5(p.encode('utf-8')).hexdigest()[:6]}"
                     d_slug = safe_p
 
-                # 4. 固化账本
                 if not is_dry_run:
                     self.meta.register_dir_slug(p, d_slug)
 
@@ -169,49 +212,67 @@ class RouteManager:
     def resolve_logical_url(self, lang_code: str, route_prefix: str, mapped_sub_dir: str, slug: str) -> str:
         """
         🚀 逻辑 URL 构造器：将各组件组装为最终浏览器可跳转的 URL 路径。
-        逻辑流程：语种标识 -> 路由前缀（带模板解析） -> 映射文件夹 -> Slug
         """
         logical_lang = str(lang_code or "").strip("/\\").lower()
         mapped_sub_dir = str(mapped_sub_dir or "").strip("/\\")
         slug = str(slug or "")
         route_prefix = str(route_prefix or "")
 
-        # 🚀 [V7.6] 智能语种物理化
+        # 🚀 [V105.0] 网址组织形态策略推导
+        cfg = getattr(self, 'config', None) or getattr(getattr(self, 'engine', None), 'config', None)
+        trans_cfg = getattr(cfg, 'translation', None) if cfg else None
+        dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') if trans_cfg else 'nested'
+
+        if slug.startswith('/'):
+            slug = slug.lstrip('/')
+            route_prefix = ""
+            mapped_sub_dir = ""
+            dir_mode = 'flat'
+
+        is_global_home = (slug in ('', 'index', 'home') and not mapped_sub_dir and route_prefix not in ('docs', 'blog', 'showcase'))
+        is_channel_home = (slug in ('', 'index', 'home') and not is_global_home)
+
+        if dir_mode == 'flat':
+            if is_global_home:
+                route_prefix, mapped_sub_dir, slug = "", "", "index"
+            elif is_channel_home:
+                channel_name = mapped_sub_dir or (route_prefix if route_prefix in ('docs', 'blog', 'showcase') else 'docs')
+                slug = channel_name.strip('/\\').replace('/', '-')
+                route_prefix, mapped_sub_dir = "", ""
+            else:
+                route_prefix, mapped_sub_dir = "", ""
+        elif dir_mode == 'prefix':
+            if is_global_home:
+                route_prefix, mapped_sub_dir, slug = "", "", "index"
+            elif is_channel_home:
+                channel_name = mapped_sub_dir or (route_prefix if route_prefix in ('docs', 'blog', 'showcase') else 'docs')
+                clean_name = channel_name.strip('/\\').replace('/', '-')
+                slug = f"{clean_name}-index"
+                route_prefix, mapped_sub_dir = "", ""
+            else:
+                channel_name = mapped_sub_dir or (route_prefix if route_prefix in ('docs', 'blog', 'showcase') else '')
+                if channel_name and not slug.startswith(f"{channel_name}-"):
+                    clean_name = channel_name.strip('/\\').replace('/', '-')
+                    slug = f"{clean_name}-{slug}"
+                route_prefix, mapped_sub_dir = "", ""
+
+        # 🚀 [V7.6] 智能语种物理化与单页同名折叠
         from core.utils.language_hub import LanguageHub
         iso_code = LanguageHub.resolve_to_iso(logical_lang)
-        physical_lang = LanguageHub.get_physical_path(
-            iso_code,
-            theme=self.active_theme,
-            source_lang=self.default_lang,
-            force_prefix=self.force_source_prefix
-        )
+        prefix_processed = route_prefix.strip("/")
+        
+        # 🛡️ 同名单页坍缩折叠：当 route_prefix 与 slug 同名且无子目录时折叠为单级 /slug，消灭 /about/about
+        if prefix_processed == slug and not mapped_sub_dir:
+            prefix_processed = ""
 
-        # 阶段 1：解析路由前缀
-        if "{" in route_prefix and "}" in route_prefix:
-            # 模式 A：模板解析 (如 /docs/{lang})
-            try:
-                prefix_processed = route_prefix.format(
-                    lang=physical_lang,
-                    slug=slug,
-                    sub_dir=mapped_sub_dir
-                ).strip("/")
-            except Exception:
-                prefix_processed = route_prefix.strip("/")
-        else:
-            # 模式 B：透传
-            prefix_processed = route_prefix.strip("/")
-
-        # 阶段 2：安全组装
-        # 🚀 [V15.7] 物理主权对齐：默认语种 URL 不带前缀 (但需尊重强制前缀配置)
         def_iso = LanguageHub.resolve_to_iso(self.default_lang) if self.default_lang else "zh"
         if not def_iso or def_iso == "auto":
             def_iso = "zh"
         url_lang = "" if (iso_code == def_iso and not self.force_source_prefix) else iso_code
         parts = [p for p in [url_lang, prefix_processed, mapped_sub_dir, slug] if p]
         raw_url = "/" + "/".join(parts)
-
-        # 阶段 3：物理脱敏
         return re.sub(r'/+', '/', raw_url)
+
 
     def predict_logical_url(self, target_lang, route_prefix, mapped_sub_dir, title):
         """

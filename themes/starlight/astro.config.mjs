@@ -113,7 +113,7 @@ export default defineConfig({
 			defaultLocale: 'root',
 			// 🚀 多语言基座声明：告诉 Starlight 顶层文件夹的真实含义
 			// 如果中文内容在 /zh-cn/ 目录下则需要将 root 修改为 'zh-cn'
-			locales: (themeOptions.i18n && themeOptions.i18n.locales && themeOptions.i18n.locales.length > 1) ? {
+			locales: {
 				root: {
 					label: '简体中文',
 					lang: 'zh-CN',
@@ -122,11 +122,10 @@ export default defineConfig({
 					label: 'English',
 					lang: 'en',
 				},
-			} : {
-				root: {
-					label: '简体中文',
-					lang: 'zh-CN',
-				}
+				ja: {
+					label: '日本語',
+					lang: 'ja',
+				},
 			},
 			// 顶部导航
 			head: [
@@ -135,19 +134,40 @@ export default defineConfig({
 			// 🚀 侧边栏自动生成策略：自动读取 content 文件夹生成目录树
 			sidebar: [
 				{
-					label: '博客',
-					translations: { 'en': 'Blog' },
-					items: [{ autogenerate: { directory: 'blog' } }],
+					label: '博客文章',
+					translations: {
+						'en': 'Blog',
+						'ja': 'ブログ記事',
+						'zh-TW': '部落格文章',
+					},
+					autogenerate: { directory: 'blog', collapsed: true },
 				},
 				{
-					label: '知识库',
-					translations: { 'en': 'Documents' },
-					items: [{ autogenerate: { directory: 'docs' } }],
+					label: '文档库',
+					translations: {
+						'en': 'Documents',
+						'ja': 'ドキュメント',
+						'zh-TW': '文件庫',
+					},
+					autogenerate: { directory: 'docs', collapsed: true },
 				},
 				{
-					label: '混沌测试',
-					translations: { 'en': 'Chaos' },
-					items: [{ autogenerate: { directory: 'chaos' } }],
+					label: '展示橱窗',
+					translations: {
+						'en': 'Showcase',
+						'ja': 'ショーケース',
+						'zh-TW': '成果展示',
+					},
+					autogenerate: { directory: 'showcase', collapsed: true },
+				},
+				{
+					label: '全部内容',
+					translations: {
+						'en': 'All Pages',
+						'ja': 'すべてのコンテンツ',
+						'zh-TW': '全部內容',
+					},
+					autogenerate: { directory: '' },
 				},
 			],
 

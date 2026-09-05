@@ -129,7 +129,24 @@ def build_docs_sidebar(current_slug: str, root_path: str, lang_prefix: str = "",
                     actual_slug = slug_map[stem.lower()]["slug"]
                     break
 
-            target_url = f"{root_path}{lang_prefix}docs/{actual_slug}.html" if actual_slug != "index" else f"{root_path}{lang_prefix}docs/index.html"
+            if engine and hasattr(engine, 'route_manager'):
+                rel_p = engine.route_manager.resolve_physical_path("", target_lang, "docs", "", actual_slug, ".html", source_type="docs")
+                clean_rel = rel_p.replace('\\', '/').lstrip('/')
+                target_url = f"{root_path}{clean_rel}".replace('//', '/')
+            else:
+                trans_cfg = getattr(getattr(engine, 'config', None), 'translation', None) if engine else None
+                dir_mode = getattr(trans_cfg, 'slug_dir_mode', 'nested') if trans_cfg else 'nested'
+                if dir_mode == 'flat':
+                    p_slug = "docs" if actual_slug == "index" else actual_slug
+                    target_url = f"{root_path}{lang_prefix}{p_slug}.html"
+                elif dir_mode == 'prefix':
+                    p_slug = f"docs-{actual_slug}" if not actual_slug.startswith("docs-") else actual_slug
+                    target_url = f"{root_path}{lang_prefix}{p_slug}.html"
+                else:
+                    target_url = f"{root_path}{lang_prefix}docs/{actual_slug}.html" if actual_slug != "index" else f"{root_path}{lang_prefix}docs/index.html"
+
+            target_url = target_url.replace('//', '/')
+
 
             is_active = (
                 current_slug == actual_slug or
@@ -162,7 +179,9 @@ def get_doc_slug_map(engine: Any = None) -> Dict[str, Dict[str, str]]:
     for rel_path, info in docs.items():
         stem = os.path.splitext(os.path.basename(rel_path))[0]
         slug = info.get('slug') or stem
-        slot = info.get('target_slot') or info.get('route_prefix') or 'docs'
+        clean_rel = rel_path.replace('\\', '/')
+        slot = info.get('target_slot') or info.get('route_prefix') or (clean_rel.split('/')[0].lower() if '/' in clean_rel else 'docs')
+        if slot.startswith('/'): slot = slot.strip('/')
 
         entry = {"slug": slug, "channel": slot, "title": info.get('title') or stem}
         mapping[stem.lower()] = entry

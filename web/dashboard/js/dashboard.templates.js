@@ -3,6 +3,8 @@
  * 职责：定义所有顶级 HTML 模板以解除 dashboard.views.js 的文件大小限制。
  */
 
+var _initialHubAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
+
 window.viewTemplates = {
     overview: `
         <div id="view-overview" class="view-panel active">
@@ -17,7 +19,7 @@ window.viewTemplates = {
             <div id="galaxy-right-column" style="position: absolute; top: 25px; right: 25px; z-index: 101; display: flex; flex-direction: column; gap: 12px; width: 260px;">
                 <!-- 动态检索框与星球控制仪由 galaxy.hud.js 注入 -->
             </div>
-            <div class="overview-overlay" id="command-hub-overlay" style="display: flex;" onclick="if(event.target===this) window.toggleHub('hide')">
+            <div class="overview-overlay" id="command-hub-overlay" style="display: ${_initialHubAutoOpen ? 'flex' : 'none'};" onclick="if(event.target===this) window.toggleHub('hide')">
                 <div class="command-hub">
                     <div class="hub-header" style="margin-bottom: 8px;">
                         <button class="close-btn" onclick="window.toggleHub('hide')" title="关闭出版工作台 (Esc)">×</button>
@@ -35,7 +37,7 @@ window.viewTemplates = {
                     <div id="hub-dynamic-area" style="width: 100%;"></div>
                 </div>
             </div>
-            <div class="viewport-hint">🖱️ 旋转 | 滚轮缩放 | 右键平移</div>
+            <div class="viewport-hint">🖱️ 旋转 | 滚轮缩放 | 右键平移 · 🚀 按 I 唤起出版工作台</div>
         </div>
     `,
     vault: `

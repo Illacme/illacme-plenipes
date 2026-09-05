@@ -45,6 +45,31 @@ class FrameworkDevServer:
                     except OSError: pass
                 self.process = None
 
+    def is_alive(self) -> bool:
+        """判断预览进程是否依然存活或正在拉起"""
+        with self._lock:
+            if self._is_starting:
+                return True
+        if self.process and self.process.poll() is None:
+            return True
+        return False
+
+    def wait_until_ready(self, timeout: float = 6.0) -> bool:
+        """🚀 [V55.9] 探活探测：等待 DevServer 成功绑定端口并响应"""
+        start = time.time()
+        while time.time() - start < timeout:
+            if not self._is_starting and self.process and self.process.poll() is not None:
+                return False
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.5)
+                    if s.connect_ex(("127.0.0.1", self.port)) == 0:
+                        return True
+            except Exception:
+                pass
+            time.sleep(0.3)
+        return self.is_alive()
+
     def start_with_callback(self, callback: Optional[Callable] = None):
         """
         🚀 [V55.8] 回调点火：支持将日志实时透传至 UI 终端。

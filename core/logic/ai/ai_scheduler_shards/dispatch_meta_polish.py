@@ -89,9 +89,11 @@ class DispatchMetaPolish:
                     )
 
             # 🚀 [V10.6] 译文描述 (Description) 兜底补全与智能生成
-            # 强行锁定母语原文为输入源；若原稿无 Description，则绝不继承上一语种在 target_fm 中的遗留值
+            # 优先复用预生成 SEO 缓存或已有译文描述，杜绝重复调用大模型
             base_desc = ctx.base_fm.get('description') or ""
-            if base_desc and base_desc.strip() and base_desc != "无描述":
+            if not getattr(ctx, 'clear_cache', False) and target_fm.get('description') and str(target_fm['description']).strip():
+                tlog.info(f"✨ [Meta Polish] 命中缓存 SEO 描述，跳过 Description 大模型翻译 ({code})")
+            elif base_desc and base_desc.strip() and base_desc != "无描述":
                 tlog.info(f"📝 [Meta Polish] 正在为 {name} 版本翻译 Description...")
                 target_fm['description'] = engine.circuit_breakers["ai"].call(
                     active_translator.translate_metadata,

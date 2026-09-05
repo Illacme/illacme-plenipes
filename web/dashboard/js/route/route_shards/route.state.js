@@ -79,8 +79,121 @@
             window.settingsData.route_matrix = newRouteMatrix;
         }
 
+        // 🚀 [V106.0] 实时执行路径冲突前置检测与视觉标记
+        if (typeof window.detectRouteMatrixConflicts === 'function') {
+            const conflicts = window.detectRouteMatrixConflicts(newRouteMatrix);
+            window.highlightRouteMatrixConflicts(conflicts);
+        }
+
         if (typeof window.checkSettingsDirty === 'function') {
             window.checkSettingsDirty();
         }
+    };
+
+    /**
+     * 🚨 [V106.0] 路径冲突分析纯函数 (返回冲突行索引及冲突描述)
+     */
+    window.detectRouteMatrixConflicts = (routes) => {
+        const conflicts = []; // { index: number, reason: string, type: 'duplicate' | 'shadow' }
+        if (!routes || !Array.isArray(routes) || routes.length <= 1) return conflicts;
+
+        const prefixMap = new Map(); // normalizedPrefix -> [index]
+
+        routes.forEach((r, idx) => {
+            if (r.target_slot === 'external' || r.external_url) return;
+            const rawPrefix = (r.prefix || r.source || 'docs').trim().replace(/\\/g, '/');
+            const normPrefix = rawPrefix.toLowerCase().replace(/^\/+|\/+$/g, '');
+
+            if (!prefixMap.has(normPrefix)) {
+                prefixMap.set(normPrefix, []);
+            }
+            prefixMap.get(normPrefix).push(idx);
+        });
+
+        prefixMap.forEach((indices, normPrefix) => {
+            if (indices.length > 1) {
+                const displayPath = normPrefix ? `/${normPrefix}/` : '/ (根路径)';
+                indices.forEach(idx => {
+                    const otherIndices = indices.filter(i => i !== idx).map(i => `#${i + 1}`).join(', ');
+                    conflicts.push({
+                        index: idx,
+                        reason: `网页路径【${displayPath}】与第 ${otherIndices} 项重复，将导致构建产物互相覆盖`,
+                        type: 'duplicate'
+                    });
+                });
+            }
+        });
+
+        return conflicts;
+    };
+
+    /**
+     * 🎨 [V106.0] 将冲突状态渲染到表格对应行的输入框中
+     */
+    window.highlightRouteMatrixConflicts = (conflicts) => {
+        const rows = document.querySelectorAll('#route-matrix-body .route-item');
+        if (!rows || rows.length === 0) return;
+
+        // 先清理所有旧的高亮与气泡
+        rows.forEach(r => {
+            const prefixInput = r.querySelector('.prefix-input');
+            if (prefixInput) {
+                prefixInput.classList.remove('input-conflict-warning');
+                prefixInput.style.borderColor = '';
+                prefixInput.style.boxShadow = '';
+            }
+            const oldBubble = r.querySelector('.route-conflict-bubble');
+            if (oldBubble) oldBubble.remove();
+        });
+
+        if (!conflicts || conflicts.length === 0) return;
+
+        conflicts.forEach(c => {
+            const targetRow = rows[c.index];
+            if (!targetRow) return;
+
+            const prefixInput = targetRow.querySelector('.prefix-input');
+            if (prefixInput) {
+                prefixInput.classList.add('input-conflict-warning');
+                prefixInput.style.borderColor = 'rgba(255, 77, 79, 0.8)';
+                prefixInput.style.boxShadow = '0 0 8px rgba(255, 77, 79, 0.35)';
+
+                // 挂载行内警告气泡
+                const cell = prefixInput.parentElement;
+                if (cell && !cell.querySelector('.route-conflict-bubble')) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'route-conflict-bubble';
+                    bubble.style.cssText = 'display: flex; align-items: center; gap: 4px; font-size: 0.65rem; color: #ff4d4f; background: rgba(255, 77, 79, 0.1); border: 1px solid rgba(255, 77, 79, 0.3); border-radius: 4px; padding: 2px 6px; margin-top: 3px; line-height: 1.3;';
+                    bubble.innerHTML = `<span>⚠️</span> <span>${c.reason}</span>`;
+                    cell.appendChild(bubble);
+                }
+            }
+        });
+    };
+
+    /**
+     * 🛡️ [V106.0] 暴露给全局保存前置调用的阻断守卫
+     */
+    window.validateRouteMatrixBeforeSave = () => {
+        const routes = window.settingsData?.route_matrix || [];
+        const conflicts = window.detectRouteMatrixConflicts ? window.detectRouteMatrixConflicts(routes) : [];
+        if (conflicts && conflicts.length > 0) {
+            const first = conflicts[0];
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '🚨 发现频道路由冲突',
+                    html: `在第 <b>${first.index + 1}</b> 行中：<br>${first.reason}<br><br>为防止静态站点构建相互覆盖并产生死链，请先修正重复的网页路径。`,
+                    icon: 'warning',
+                    background: 'rgba(20, 15, 25, 0.95)',
+                    color: '#fff',
+                    confirmButtonColor: '#ff4d4f',
+                    confirmButtonText: '立即修正'
+                });
+            } else if (typeof showToast === 'function') {
+                showToast(`🚨 路由冲突：${first.reason}`, 'error');
+            }
+            return false;
+        }
+        return true;
     };
 })();

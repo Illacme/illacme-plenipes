@@ -31,6 +31,7 @@ window.ThemeHandlers = {
             if (typeof window.showToast === 'function') window.showToast(`✨ 装帧主题已成功切换为 ${themeName}`, 'success');
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
+            if (typeof window.autoAlignRouteMatrixWithActiveTheme === 'function') await window.autoAlignRouteMatrixWithActiveTheme(themeId);
             
             // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效
             setTimeout(() => {

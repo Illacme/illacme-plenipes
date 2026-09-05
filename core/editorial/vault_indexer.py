@@ -34,8 +34,16 @@ class VaultIndexer:
         """
         allowed_extensions = getattr(config.system, 'allowed_extensions', ['.md', '.markdown'])
         ingress_cfg = getattr(config, 'ingress_settings', None)
-        # 获取目标语种锁 (从 i18n 配置中)
-        target_lang = config.i18n_settings.source.lang_code if hasattr(config, 'i18n_settings') else "zh"
+        # 获取目标语种锁 (从 i18n 配置中目标语种列表提取)
+        target_lang = ""
+        if hasattr(config, 'i18n_settings'):
+            targets = getattr(config.i18n_settings, 'targets', [])
+            if targets and isinstance(targets, list) and len(targets) > 0:
+                t0 = targets[0]
+                target_lang = getattr(t0, 'lang_code', '') if hasattr(t0, 'lang_code') else (t0.get('lang_code', '') if isinstance(t0, dict) else str(t0))
+            elif hasattr(config.i18n_settings, 'source') and getattr(config.i18n_settings.source, 'lang_code', None):
+                # 兼容未定义 targets 时的情况
+                target_lang = ""
         
         md_index = {}
         asset_index = {}
@@ -58,8 +66,10 @@ class VaultIndexer:
 
             # 2. 商业化路径审计 (Ingress Gate)
             is_root = '/' not in rel_path
-            if not is_pro and not is_root:
-                # 免费版拦截子目录收稿
+            # 允许系统标准大写分类目录 (Blog/, Docs/, Pages/) 及根目录手稿收录
+            is_standard_dir = any(rel_path.startswith(f"{d}/") for d in ["Blog", "Docs", "Pages"])
+            if not is_pro and not is_root and not is_standard_dir:
+                # 免费版拦截深度自定义非标准子目录收稿
                 continue
             
             # 3. 匹配映射规则

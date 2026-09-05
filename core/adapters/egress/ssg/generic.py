@@ -20,11 +20,11 @@ class GenericSSGAdapter(BaseSSGAdapter):
     def get_feature_slots(self) -> dict:
         """🚀 通用 / Universal 现代清晰路由槽协议 (修复多语言下 docs/blog/showcase 路径隔离)"""
         return {
-            "docs": {"label": "文档中心", "single": "docs", "multi": "{lang}/docs"},
-            "blog": {"label": "博客文章", "single": "blog", "multi": "{lang}/blog"},
-            "showcase": {"label": "案例展示", "single": "showcase", "multi": "{lang}/showcase"},
-            "pages": {"label": "独立页面", "single": "", "multi": "{lang}"},
-            "static": {"label": "静态资产", "single": "static", "multi": "static"}
+            "docs": {"label": "📚 文档中心 (docs)", "single": "docs", "multi": "{lang}/docs"},
+            "blog": {"label": "📰 博客文章 (blog)", "single": "blog", "multi": "{lang}/blog"},
+            "showcase": {"label": "🎨 展示中心 (show)", "single": "showcase", "multi": "{lang}/showcase"},
+            "pages": {"label": "📄 独立页面 (page)", "single": "", "multi": "{lang}"},
+            "static": {"label": "📦 静态资源 (static)", "single": "static", "multi": "static"}
         }
 
     def render(self, body: str, fm: dict, seo_data: dict = None, target_lang: str = "en", sub_path: str = "") -> tuple:

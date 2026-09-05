@@ -19,7 +19,6 @@ class OpenRouterTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 OpenRouter 实时模型感应"""
-        import asyncio
         loop = asyncio.get_event_loop()
         url = self.safe_get_url("/models")
         headers = {

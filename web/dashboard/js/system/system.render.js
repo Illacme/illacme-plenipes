@@ -7,13 +7,14 @@
 (function() {
     // 3. 基础信息渲染
     function renderGeneralCategory() {
-        const data = window.settingsData;
+        const data = window.settingsData || {};
+        const renderSettingsItem = window.renderSettingsItem || (() => '');
 
         const generalSubDescs = {
             identity: '💡 配置全站品牌展示名称、副标题描述、全局 LOGO 与浏览器 Favicon 图标。',
             compliance: '💡 配置主站点线上网址、默认作者署名与出版知识产权许可协议。',
             storage: '💡 管理本地文库路径、Markdown 语法解析协议与段落缓存淘汰策略。',
-            engine: '💡 配置底层服务运行日志级别、全局代理、网络超时与遥测采集容量上限。'
+            engine: '💡 配置首页工作台自启、系统运行日志级别、全局代理、网络超时与遥测采集容量上限。'
         };
 
         if (!window.switchGeneralSubTab) {
@@ -117,6 +118,14 @@
                             })}
                             ${renderSettingsItem('出版许可证 (License)', 'frontmatter_defaults.license', data.frontmatter_defaults?.license || 'CC BY-NC-SA 4.0', 'text', {
                                 description: '内容出版知识产权许可证（如 CC BY-NC-SA 4.0 署名-非商业性使用-相同方式共享）。'
+                            })}
+                            ${renderSettingsItem('工信部 ICP 备案号', 'frontmatter_defaults.icp_license', data.frontmatter_defaults?.icp_license || '', 'text', {
+                                placeholder: '如：京ICP备12345678号-1',
+                                description: '工信部域名信息备案号。配置后将在全站页脚显示并自动挂载工信部备案系统 (beian.miit.gov.cn) 官方直链。'
+                            })}
+                            ${renderSettingsItem('全国公安网安备号', 'frontmatter_defaults.police_license', data.frontmatter_defaults?.police_license || '', 'text', {
+                                placeholder: '如：京公网安备 11010802020110号',
+                                description: '全国公安机关互联网站安全管理服务平台备案号。配置后将在页脚自动佩戴警徽徽章与直链。'
                             })}
                         </div>
                     </div>
@@ -312,6 +321,11 @@
                 <div id="gen-panel-engine" style="display: ${activeSub === 'engine' ? 'block' : 'none'};">
                     <div class="settings-group">
                         <div class="settings-grid">
+                            ${renderSettingsItem('首页工作台自动展开', 'ui.launchpad_auto_open', (typeof window.shouldAutoOpenLaunchpad === 'function' ? window.shouldAutoOpenLaunchpad() : true), 'checkbox', {
+                                onchange: `window.setLaunchpadAutoOpenPreference(this.checked); if(typeof window.addAudit==='function') window.addAudit('🚀 首页工作台自启偏好已更新为: ' + (this.checked ? '开启' : '关闭'), 'info');`,
+                                description: '控制进入管理后台首页（概览）时是否自动展开全屏出版工作台（Launchpad）。关闭后进入首页将直接展示 3D 知识星系宇宙，随时可按键盘快捷键 I 或点击顶部 Logo 呼出。',
+                                effectiveness: 'live'
+                            }, 'local')}
                             ${renderSettingsItem('系统日志级别', 'system.log_level', data.system?.log_level || 'INFO', 'select', {
                                 items: [
                                     {value: 'DEBUG', text: 'DEBUG (全量输出)'},

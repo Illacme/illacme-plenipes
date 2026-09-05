@@ -16,16 +16,35 @@ function TopologyCanvasInner({ height = 250 }) {
   const { colorMode } = useColorMode();
   const [loaded, setLoaded] = useState(false);
 
-  // Extract locale from path
-  const isEn = location.pathname.startsWith('/en/');
-  const isZh = location.pathname.startsWith('/zh-Hans/') || (!location.pathname.startsWith('/en/') && !location.pathname.startsWith('/zh-Hans/'));
-  
-  // Robust matching: harmonize default locale paths
+  // Extract locale from path with dynamic prefix matching
+  const getLocale = (path) => {
+    if (path.startsWith('/en/') || path === '/en') return 'en';
+    if (path.startsWith('/ja/') || path === '/ja') return 'ja';
+    if (path.startsWith('/zh-Hans/') || path === '/zh-Hans') return 'zh-Hans';
+    const m = path.match(/^\/([a-z]{2}(-[A-Za-z]+)?)\//);
+    if (m && !['docs', 'blog', 'showcase', 'auto'].includes(m[1])) {
+      return m[1];
+    }
+    return 'root';
+  };
+
+  const currentLocale = getLocale(location.pathname);
+
+  // Dynamic language filtering aligned with Starlight & Universal
   const matchUrl = (url) => {
-    if (isEn) return url.startsWith('/en/');
-    // If current page is Chinese (either /zh-Hans/ or no prefix), match zh-Hans data
-    if (isZh) return url.startsWith('/zh-Hans/') || (!url.startsWith('/en/') && !url.startsWith('/zh-Hans/'));
-    return false;
+    if (currentLocale === 'root') {
+      return !url.startsWith('/en/') && !url.startsWith('/ja/') && !url.startsWith('/zh-Hans/') && !url.startsWith('/auto/');
+    }
+    return url.startsWith(`/${currentLocale}/`) || url === `/${currentLocale}`;
+  };
+
+  const getGraphTitle = (locale) => {
+    switch (locale) {
+      case 'en': return '🌌 Knowledge Graph';
+      case 'ja': return '🌌 ナレッジグラフ';
+      case 'ko': return '🌌 지식 그래프';
+      default:   return '🌌 关系图谱';
+    }
   };
 
   useEffect(() => {
@@ -39,13 +58,9 @@ function TopologyCanvasInner({ height = 250 }) {
         const data = await fetchGraphData('/graph.json', matchUrl);
         if (cancelled) return;
 
-        console.log('[TopologyCanvas] Matched nodes:', Object.keys(data.all_nodes || {}).length);
-
         const hasBacklinks = data?.backlinks && Object.keys(data.backlinks).length > 0;
         const hasNodes = data?.all_nodes && Object.keys(data.all_nodes).length > 0;
         
-        // If no nodes/backlinks for this page, we still render the container but it might be empty
-        // Or we can return null. For now, let's keep it visible if data exists but maybe empty.
         if (!hasBacklinks && !hasNodes) {
            setLoaded(true);
            return;
@@ -59,6 +74,7 @@ function TopologyCanvasInner({ height = 250 }) {
         const result = renderTopologyGraph(containerRef.current, data, {
           height,
           darkMode: colorMode === 'dark',
+          activeUrl: location.pathname,
         });
 
         graphRef.current = result;
@@ -92,7 +108,7 @@ function TopologyCanvasInner({ height = 250 }) {
         marginBottom: '0.5rem',
         color: 'var(--ifm-color-emphasis-700)',
       }}>
-        🌌 {isEn ? 'Graph View' : '关系图谱'}
+        {getGraphTitle(currentLocale)}
       </div>
       <div
         ref={containerRef}

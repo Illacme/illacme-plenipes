@@ -57,8 +57,28 @@
         // 判断是否有标准字典未命中的项（需要推荐 AI 填充）
         let hasMissingDict = false;
         const commonDict = window.COMMON_SLOT_I18N || {};
+
+        // 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
+        const cleanLabelLower = (defaultLabel || '').trim().toLowerCase();
+        let matchedDictKey = slot;
+        if (!commonDict[matchedDictKey]) {
+            for (const [k, dict] of Object.entries(commonDict)) {
+                if (k.toLowerCase() === cleanLabelLower || dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
+                    matchedDictKey = k;
+                    break;
+                }
+            }
+        } else {
+            for (const [k, dict] of Object.entries(commonDict)) {
+                if (dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
+                    matchedDictKey = k;
+                    break;
+                }
+            }
+        }
+
         targetLanguages.forEach(lang => {
-            if (!currentI18n[lang] && (!commonDict[slot] || !commonDict[slot][lang])) {
+            if (!currentI18n[lang] && (!commonDict[matchedDictKey] || !commonDict[matchedDictKey][lang])) {
                 hasMissingDict = true;
             }
         });
@@ -92,7 +112,7 @@
         targetLanguages.forEach(lang => {
             const meta = typeof window.getProductLanguageMeta === 'function' ? window.getProductLanguageMeta(lang) : { name: lang.toUpperCase(), flag: '🌐' };
             const val = currentI18n[lang] || "";
-            const dictVal = commonDict[slot] && commonDict[slot][lang];
+            const dictVal = commonDict[matchedDictKey] && commonDict[matchedDictKey][lang];
             const placeholderText = dictVal ? `标准字典: ${dictVal}` : `待翻译 (推荐点击上方 "AI 一键填充")`;
 
             modalHtml += `
@@ -168,11 +188,24 @@
         // 1. 优先查阅产品 50 语种完整标准字典，并收集需要大模型 AI 翻译的语种
         const pendingAILangs = [];
         const commonDict = window.COMMON_SLOT_I18N || {};
+
+        // 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
+        const cleanLabelLower = (defaultLabel || '').trim().toLowerCase();
+        let matchedDictKey = slot;
+        if (!commonDict[matchedDictKey]) {
+            for (const [k, dict] of Object.entries(commonDict)) {
+                if (k.toLowerCase() === cleanLabelLower || dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
+                    matchedDictKey = k;
+                    break;
+                }
+            }
+        }
+
         inputs.forEach(input => {
             const targetLang = input.getAttribute('data-lang');
             if (!targetLang) return;
-            const dictVal = commonDict[slot] && commonDict[slot][targetLang];
-            if (dictVal && (!defaultLabel || defaultLabel === slot || ["文档中心", "官方博客", "展示页面", "自定义频道", "Docs", "Blog", "Showcase"].includes(defaultLabel))) {
+            const dictVal = commonDict[matchedDictKey] && commonDict[matchedDictKey][targetLang];
+            if (dictVal) {
                 input.value = dictVal;
             } else {
                 pendingAILangs.push(targetLang);
@@ -220,7 +253,7 @@
                     inputs.forEach(input => {
                         const l = input.getAttribute('data-lang');
                         if (l && !input.value) {
-                            const fallback = (commonDict[slot] && commonDict[slot][l]) || defaultLabel;
+                            const fallback = (commonDict[matchedDictKey] && commonDict[matchedDictKey][l]) || defaultLabel;
                             input.value = fallback;
                         }
                     });
@@ -230,7 +263,7 @@
                 inputs.forEach(input => {
                     const l = input.getAttribute('data-lang');
                     if (l && !input.value) {
-                        const fallback = (commonDict[slot] && commonDict[slot][l]) || defaultLabel;
+                        const fallback = (commonDict[matchedDictKey] && commonDict[matchedDictKey][l]) || defaultLabel;
                         input.value = fallback;
                     }
                 });

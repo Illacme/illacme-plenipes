@@ -20,7 +20,7 @@ class StarlightAdapter(BaseSSGAdapter):
     def get_default_path_mappings(cls) -> Dict[str, str]:
         """🚀 [V76.0] Starlight 推荐的原生默认物理寻址映射"""
         return {
-            'source_dir': "src/content",
+            'source_dir': "src/content/docs",
             'site_dir': "dist",
             'assets_dir': "public/assets",
             'graph_json_dir': "public"
@@ -38,17 +38,22 @@ class StarlightAdapter(BaseSSGAdapter):
             "docs": {
                 "label": "文档中心",
                 "single": "docs",
-                "multi": "docs/{lang}"
+                "multi": "{lang}/docs"
             },
             "blog": {
                 "label": "博客文章",
                 "single": "blog",
-                "multi": "blog/{lang}"
+                "multi": "{lang}/blog"
+            },
+            "showcase": {
+                "label": "展示橱窗",
+                "single": "showcase",
+                "multi": "{lang}/showcase"
             },
             "pages": {
                 "label": "展示页面",
-                "single": "../pages",
-                "multi": "../pages/{lang}"
+                "single": "",
+                "multi": "{lang}"
             },
             "static": {
                 "label": "静态资产",
@@ -57,6 +62,8 @@ class StarlightAdapter(BaseSSGAdapter):
             }
         }
     
+    IS_CLEAN_URL = True
+
     def render(self, body: str, fm: Dict[str, Any], seo_data: Dict[str, Any] = None, target_lang: str = "en", sub_path: str = "") -> Tuple[str, Dict[str, Any]]:
         """🚀 [V10.3] Starlight 深度渲染：SEO 注入与元数据对齐"""
         new_fm = fm.copy()
@@ -76,7 +83,47 @@ class StarlightAdapter(BaseSSGAdapter):
                 pass
             new_fm['sidebar'] = {"order": order_val}
 
-        return body, new_fm
+        # 3. 🛡️ 在 Starlight 架构下，frontmatter 中的 slug 会覆盖目录物理路径并破坏多语言隔离
+        # 移除 frontmatter 中的 slug，让 Starlight 完全基于真实的物理文件拓扑计算多语言路由
+        new_fm.pop('slug', None)
+
+        # 4. 智能剥离正文首行冗余的 H1 标题，防止与 Starlight 页面框架自带的 <h1>{fm.title}</h1> 冲突产生双标题
+        lines = body.split('\n')
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith('# '):
+                h1_text = stripped[2:].strip()
+                # 若正文首行标题带 emoji 且更加生动完整，赋给 new_fm['title']
+                if h1_text and len(h1_text) >= len(new_fm.get('title', '')):
+                    new_fm['title'] = h1_text
+                # 从正文移除该首行 H1
+                lines.pop(idx)
+            break
+
+        # 🛡️ 正文排版层级韧性自愈 (Heading & Paragraph Resilience Guard)
+        # 扫描剥离首行后剩余的正文内容：
+        # 1) 若存在误加 '# ' 的长文本段落（如译文简介、长度 > 35 或包含句子标点），强制剥离 '# ' 还原为普通正文段落，杜绝巨大字体排版断崖；
+        # 2) 若存在残留的 '# ' 短小章节标题，自动降级为 '## ' (H2)，避免在现代 SSG 框架下破坏大纲树与字体层级
+        healed_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('# '):
+                header_body = stripped[2:].strip()
+                is_paragraph_sentence = (len(header_body) > 35 or any(p in header_body for p in ['。', '！', '!', '？', '?', '...', '…']))
+                if is_paragraph_sentence:
+                    healed_lines.append(header_body)
+                else:
+                    healed_lines.append('## ' + header_body)
+            else:
+                healed_lines.append(line)
+        cleaned_body = '\n'.join(healed_lines)
+
+        # 5. 链接与双链自愈标准化 (Universal Link & Wikilink Healing，Starlight 使用 Clean URL 规范)
+        healed_body = self.normalize_markdown_content(cleaned_body, sub_path=sub_path, target_lang=target_lang, clean_url=True)
+
+        return healed_body, new_fm
 
     def render_callout(self, g_type: str, title: str, body: str) -> str:
         target_type = self._GENERIC_MAP.get(g_type.lower(), 'note')

@@ -69,14 +69,19 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
                         window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#38bdf8');
                     }
 
-                    const okBtn = document.getElementById('btn-terminal-ok');
-                    if (okBtn) okBtn.style.display = 'none';
-
-                    const abortBtn = document.getElementById('btn-terminal-abort');
-                    if (abortBtn) abortBtn.style.display = 'none';
+                    // 🛡️ 单例隔离
+                    if (typeof window.resetTerminalModalFooter === 'function') {
+                        window.resetTerminalModalFooter();
+                    }
 
                     const republishBtn = document.getElementById('btn-terminal-republish');
-                    if (republishBtn) republishBtn.style.display = 'block';
+                    if (republishBtn) republishBtn.style.display = 'inline-flex';
+
+                    const okBtn = document.getElementById('btn-terminal-ok');
+                    if (okBtn) {
+                        okBtn.style.display = 'inline-flex';
+                        okBtn.innerText = '关闭';
+                    }
 
                     const statusEl = document.getElementById('terminal-status');
                     if (statusEl) {

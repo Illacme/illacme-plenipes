@@ -61,7 +61,7 @@
                 <p class="error-desc">该坐标处尚未落盘任何出版资产，或者该文档已被移至其他频道。</p>
                 <div class="error-actions">
                     <a href="{{ nav_home_url }}" class="control-btn" style="padding: 0.8rem 1.8rem; font-size: 1rem; text-decoration: none; border-color: var(--accent-color); background: var(--card-bg);">🏠 返回出版社首页</a>
-                    <a href="{{ root_path }}docs/index.html" class="control-btn" style="padding: 0.8rem 1.8rem; font-size: 1rem; text-decoration: none; background: var(--card-bg);">📚 浏览文档中心</a>
+                    <a href="{{ docs_home_url }}" class="control-btn" style="padding: 0.8rem 1.8rem; font-size: 1rem; text-decoration: none; background: var(--card-bg);">📚 浏览文档中心</a>
                 </div>
             </div>
         </main>
@@ -76,6 +76,41 @@
 
     <script src="{{ root_path }}static/js/main.theme.js"></script>
     <script src="{{ root_path }}static/js/main.js"></script>
+    <!-- 🧭 智能 404 模糊寻路自愈重定向 (SEO 权重无损保护) -->
+    <script>
+        (async function () {
+            try {
+                var pathname = window.location.pathname;
+                var filename = pathname.split('/').pop();
+                if (!filename || filename === '404.html' || filename === 'index.html') return;
+                var stem = filename.replace(/\.(html|md)$/i, '');
+                var root = document.body.getAttribute('data-root-path') || './';
+                
+                // 构造候选迁移路径 (Nested, Flat, Prefix)
+                var candidates = [
+                    root + stem + '.html',
+                    root + 'docs/' + stem + '.html',
+                    root + 'docs-' + stem + '.html',
+                    root + 'blog/' + stem + '.html'
+                ];
+                
+                for (var i = 0; i < candidates.length; i++) {
+                    var target = candidates[i];
+                    if (target === pathname) continue;
+                    try {
+                        var res = await fetch(target, { method: 'HEAD', cache: 'no-store' });
+                        if (res.status === 200) {
+                            var desc = document.querySelector('.error-desc');
+                            if (desc) desc.innerHTML = '✨ 侦测到该文档已随形态升级迁移，正在为您平滑跳转至新地址：<code>' + target + '</code>...';
+                            setTimeout(function () { window.location.href = target; }, 600);
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            } catch (err) {}
+        })();
+    </script>
 </body>
+
 
 </html>

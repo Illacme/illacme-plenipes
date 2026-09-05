@@ -96,6 +96,23 @@ def render_html_page(
     css_content = get_universal_css()
     js_content = get_universal_client_js()
 
+    # 动态推导各频道与入口导航 URL (支持 flat, nested, prefix 等各种组织形态)
+    def _resolve_nav_link(channel: str, slug: str, source_type: str, fallback_path: str) -> str:
+        if engine and hasattr(engine, 'route_manager'):
+            try:
+                rel_p = engine.route_manager.resolve_physical_path("", target_lang, channel, "", slug, ".html", source_type=source_type)
+                clean_rel = rel_p.replace('\\', '/').lstrip('/')
+                return f"{root_path}{clean_rel}".replace('//', '/')
+            except Exception:
+                pass
+        return f"{root_path}{lang_nav_prefix}{fallback_path}".replace('//', '/')
+
+    home_url = _resolve_nav_link("", "index", "pages", "index.html")
+    docs_url = _resolve_nav_link("docs", "index", "docs", "docs/index.html")
+    blog_url = _resolve_nav_link("blog", "index", "blog", "blog/index.html")
+    showcase_url = _resolve_nav_link("showcase", "index", "showcase", "showcase/index.html")
+    about_url = _resolve_nav_link("", "about", "pages", "about.html")
+
     return f"""<!DOCTYPE html>
 <html lang="{target_lang}" data-theme="dark">
 <head>
@@ -124,17 +141,17 @@ def render_html_page(
 <body class="{layout_cls}">
     <header class="universal-header">
         <div class="header-container">
-            <a href="{root_path}{lang_nav_prefix}index.html" class="header-logo">
+            <a href="{home_url}" class="header-logo">
                 <span>🏛️</span>
                 <span>{site_name}</span>
             </a>
             <nav>
                 <ul class="header-nav">
-                    <li><a href="{root_path}{lang_nav_prefix}index.html" class="header-nav-link{nav_home_cls}">{t_nav_home}</a></li>
-                    <li><a href="{root_path}{lang_nav_prefix}docs/index.html" class="header-nav-link{nav_docs_cls}">{t_nav_docs}</a></li>
-                    <li><a href="{root_path}{lang_nav_prefix}blog/index.html" class="header-nav-link{nav_blog_cls}">{t_nav_blog}</a></li>
-                    <li><a href="{root_path}{lang_nav_prefix}showcase/index.html" class="header-nav-link{nav_showcase_cls}">{t_nav_showcase}</a></li>
-                    <li><a href="{root_path}{lang_nav_prefix}about.html" class="header-nav-link{nav_about_cls}">{t_nav_about}</a></li>
+                    <li><a href="{home_url}" class="header-nav-link{nav_home_cls}">{t_nav_home}</a></li>
+                    <li><a href="{docs_url}" class="header-nav-link{nav_docs_cls}">{t_nav_docs}</a></li>
+                    <li><a href="{blog_url}" class="header-nav-link{nav_blog_cls}">{t_nav_blog}</a></li>
+                    <li><a href="{showcase_url}" class="header-nav-link{nav_showcase_cls}">{t_nav_showcase}</a></li>
+                    <li><a href="{about_url}" class="header-nav-link{nav_about_cls}">{t_nav_about}</a></li>
                 </ul>
             </nav>
             <div style="display: flex; align-items: center; gap: 10px;">

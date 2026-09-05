@@ -42,9 +42,10 @@ def test_pro_ingress_mapping(mock_is_licensed):
     finally:
         shutil.rmtree(test_root)
 
+@patch('core.governance.license_guard.LicenseGuard.is_default_imprint_and_theme_active', return_value=False)
 @patch('core.governance.license_guard.LicenseGuard.is_licensed', return_value=False)
-def test_free_ingress_blocking(mock_is_licensed):
-    """验证免费版拦截子目录"""
+def test_free_ingress_blocking(mock_is_licensed, mock_is_default):
+    """验证轻量化版本策略下免费版放开子目录精准收稿"""
     test_root = "test_ingress_free"
     if os.path.exists(test_root): shutil.rmtree(test_root)
     os.makedirs(os.path.join(test_root, "docs"))
@@ -58,7 +59,7 @@ def test_free_ingress_blocking(mock_is_licensed):
     try:
         md_index, _, _ = VaultIndexer.build_indexes(source, config)
         assert "root.md" in md_index
-        assert "docs/sub.md" not in md_index # 免费版应拦截子目录
+        assert "docs/sub.md" in md_index # 轻量化版本策略下放开子目录精准收稿
     finally:
         shutil.rmtree(test_root)
 
