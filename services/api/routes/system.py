@@ -117,9 +117,20 @@ def restart_preview() -> Dict[str, Any]:
     
     # 🎯 准确判别是否为真实的 SSG 前端框架 DevServer 还是原生静态编译站点
     # 真实框架判定条件：必须存在框架特有的配置文件 (Docusaurus/VitePress/Nextra/Starlight)
-    is_docusaurus = os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) or os.path.exists(os.path.join(mother_theme_dir, "docusaurus.config.js"))
-    is_vitepress = os.path.exists(os.path.join(theme_dir, ".vitepress")) or os.path.exists(os.path.join(mother_theme_dir, ".vitepress"))
-    is_nextra = os.path.exists(os.path.join(theme_dir, "theme.config.jsx")) or os.path.exists(os.path.join(theme_dir, "theme.config.tsx")) or os.path.exists(os.path.join(mother_theme_dir, "theme.config.jsx"))
+    is_docusaurus = (
+        "docusaurus" in (engine.active_theme or "").lower() or
+        os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) or
+        os.path.exists(os.path.join(mother_theme_dir, "docusaurus.config.js"))
+    )
+    is_vitepress = (
+        "vitepress" in (engine.active_theme or "").lower() or
+        os.path.exists(os.path.join(theme_dir, ".vitepress")) or
+        os.path.exists(os.path.join(mother_theme_dir, ".vitepress"))
+    )
+    is_nextra = (
+        "nextra" in (engine.active_theme or "").lower() or
+        any(os.path.exists(os.path.join(d, f)) for d in (theme_dir, mother_theme_dir) for f in ("theme.config.js", "theme.config.jsx", "theme.config.tsx", "next.config.js"))
+    )
     is_starlight = "starlight" in (engine.active_theme or "").lower() and (
         os.path.exists(os.path.join(theme_dir, "astro.config.mjs")) or os.path.exists(os.path.join(mother_theme_dir, "astro.config.mjs"))
     )

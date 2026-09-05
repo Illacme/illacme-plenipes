@@ -68,6 +68,17 @@ class SovereignHandler(http.server.SimpleHTTPRequestHandler):
                         self.end_headers()
                         return
 
+        # 3. 根路径默认页缺失自愈 (防止向创作者展示生硬的 Directory listing)
+        if clean_path in ('/', '') and not os.path.exists(os.path.join(base_dir, 'index.html')) and not os.path.exists(os.path.join(base_dir, 'index.htm')):
+            for cand in ('docs/index.html', 'about.html', 'blog/index.html', 'showcase/index.html'):
+                if os.path.exists(os.path.join(base_dir, cand)):
+                    target_url = f"/{cand}"
+                    if parsed.query: target_url += f"?{parsed.query}"
+                    self.send_response(302)
+                    self.send_header('Location', target_url)
+                    self.end_headers()
+                    return
+
         return super().do_GET()
     def guess_type(self, path):
         ctype = super().guess_type(path)

@@ -144,15 +144,33 @@ class FrameworkDevServer:
             # 2. 依赖自愈阶段
             node_modules = os.path.join(self.directory, "node_modules")
             if not os.path.exists(node_modules):
-                try: tlog.warning("⚠️ [依赖缺失] 正在启动自动补全...")
-                except Exception: pass
-                if callback: callback("⚠️ [系统感知] 检测到主题依赖缺失，正在启动物理补全 (npm install)...")
-                
-                install_cmd = "npm install"
-                if os.path.exists(os.path.join(self.directory, "pnpm-lock.yaml")): install_cmd = "pnpm install"
-                elif os.path.exists(os.path.join(self.directory, "yarn.lock")): install_cmd = "yarn install"
+                # 🚀 [母本依赖秒级共享自愈] 若当前为版图派生主题且母本主题已就绪 node_modules，优先建立绝对物理软链接
+                t_base = os.path.basename(os.path.normpath(self.directory))
+                mother_candidates = [
+                    os.path.abspath(os.path.join("themes", t_base, "node_modules")),
+                    os.path.abspath(os.path.join(self.directory, "..", "..", "..", "..", "themes", t_base, "node_modules"))
+                ]
+                linked = False
+                for m_nm in mother_candidates:
+                    if os.path.exists(m_nm) and os.path.isdir(m_nm):
+                        try:
+                            os.symlink(m_nm, node_modules)
+                            if callback: callback("🔗 [依赖共享] 已与母本主题建立 node_modules 秒级物理软链接。")
+                            linked = True
+                            break
+                        except Exception:
+                            pass
 
-                # 🚀 [V55.9] 物理劫持：安装阶段也必须使用 PTY，防止日志闷死在缓冲区
+                if not linked:
+                    try: tlog.warning("⚠️ [依赖缺失] 正在启动自动补全...")
+                    except Exception: pass
+                    if callback: callback("⚠️ [系统感知] 检测到主题依赖缺失，正在启动物理补全 (npm install)...")
+                    
+                    install_cmd = "npm install"
+                    if os.path.exists(os.path.join(self.directory, "pnpm-lock.yaml")): install_cmd = "pnpm install"
+                    elif os.path.exists(os.path.join(self.directory, "yarn.lock")): install_cmd = "yarn install"
+
+                    # 🚀 [V55.9] 物理劫持：安装阶段也必须使用 PTY，防止日志闷死在缓冲区
                 master_fd, slave_fd = pty.openpty()
                 try:
                     install_proc = subprocess.Popen(
