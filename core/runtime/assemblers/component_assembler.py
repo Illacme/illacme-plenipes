@@ -35,7 +35,7 @@ def assemble_core_components(engine, config):
     from core.logic.smart_router import SmartRouter
     from core.logic.knowledge.conversational_brain import ConversationalBrain
 
-    g_path = engine._resolve_path(config.get_sync_stats_path().replace("sync_stats", "knowledge_graph"))
+    g_path = engine._resolve_path(config.get_knowledge_graph_path())
     engine.paths["pulse"] = engine._resolve_path(config.get_pulse_path())
     
     # 🚀 [V50.3] 注入系统配置快照 (修复 AttributeError)

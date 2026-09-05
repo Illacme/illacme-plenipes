@@ -1,4 +1,7 @@
-const withNextra = require('nextra')({
+const _nextra = require('nextra');
+const nextra = _nextra.default || _nextra;
+
+const withNextra = nextra({
   theme: 'nextra-theme-docs',
   themeConfig: './theme.config.js',
   unstable_staticImage: true,

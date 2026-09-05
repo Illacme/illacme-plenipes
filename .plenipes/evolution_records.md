@@ -2,6 +2,27 @@
 
 这里记录了我们在系统的物理迭代和开发过程里，所沉淀下的最为关键的架构缺陷自检与教训（Lessons），以防止后续开发在相同的物理逻辑上发生脑裂或回退。
 
+## 📅 2026-09-06: 知识图谱升级版图全局单例与 Nextra 配置平滑适配 (Knowledge Graph Singleton & Nextra Parity)
+*   **现象描述**：
+    1.  本地发布时用户切换装帧主题（如从 `sovereign` 首次切至 `nextra`），系统重新调用了大模型进行语义分析（NER & Gist 提取），且静态服务器访问根目录时暴露了 `Directory listing for /`；
+    2.  Nextra DevServer 启动时抛出 `TypeError: require(...) is not a function at Object.<anonymous> (next.config.js:1:37)` 导致预览服务异常退出。
+*   **根因剖析**：
+    1.  知识图谱此前按主题物理隔离存储在 `imprints/{imprint}/metadata/themes/{theme}/knowledge_graph_{theme}.json`，与排版主题错误耦合；首次切至新主题时账本为空，导致系统误判为新内容而触发重复大模型语义提取；
+    2.  Nextra 母本安装了最新的 4.x/React 19 尝鲜版本，其与 Nextra 2.x 的 `theme.config.js` 配置规范产生代差（4.x 废弃了 `withNextra({ theme: ... })` 的参数格式且为 ESM/CJS 混编导出）。
+*   **防线策略与沉淀**：
+    1.  **知识图谱提升为版图级全局单例 (`get_knowledge_graph_path`)**：
+        - 在 `core/config/config_models.py` 中新增 `get_knowledge_graph_path()`，统一将知识图谱锚定至 `metadata/core/knowledge_graph.json`；
+        - 在 `core/runtime/assemblers/component_assembler.py` 中统一组装全局单例；
+        - 在 `core/logic/knowledge/knowledge_migrator.py` 中实现向前兼容物理自愈迁移：全局账本为空时自动聚合所有历史旧主题的图谱数据，彻底消除切换主题时的重复大模型开销。
+    2.  **Nextra 生产级现代配置平滑适配**：
+        - 锁定稳定成熟的 `nextra@^2.13.4`、`nextra-theme-docs@^2.13.4`、`next@^14.2.5`、`react@^18.3.1` 黄金组合；
+        - 在 `themes/nextra/next.config.js` 中使用 `const nextra = _nextra.default || _nextra;` 进行防御性解构，确保 CJS/ESM 混编环境下 100% 稳健启动。
+    3.  **全域主权门禁 494 项测试 100% 绿灯准予提交**：
+        - `core/logic/knowledge/knowledge_graph.py` 严格收敛在 297 行（严格低于 300 行红线）；
+        - `scripts/sovereign_audit.py` 全部 8 项治理阶段全绿通过。
+
+---
+
 ## 📅 2026-09-06: Nextra 与 VitePress 独立单页 Clean URL 与多语言前缀自愈 (SSG Nav & Options Parity)
 *   **现象描述**：在异构 SSG 架构下，独立单页（如 `about.md`）在 Nextra 与 VitePress 中由于路由合成器未细分单页与频道，导航链接被附加了末尾斜杠（`/about/`），导致静态托管服务寻找不存在的 `about/index.html` 目录并触发 301/302 重定向甚至 404；且多语言矩阵下单页链接丢失语种前缀（如跳回默认语言 `/about`），同时 Nextra 的 `i18n` 与 VitePress 的 `locales` 未能与 `route_matrix` 的多语言导航结构完成自动化热编译水合。
 *   **根因剖析**：

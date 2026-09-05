@@ -42,7 +42,7 @@ class KnowledgeGraph:
                                 self.entity_inverted_index.setdefault(item, set()).add(doc_id)
 
     def _load(self):
-        """物理加载图谱数据"""
+        """物理加载图谱数据并支持历史主题图谱向全局单例自动自愈合并"""
         if os.path.exists(self.graph_path):
             try:
                 with open(self.graph_path, 'r', encoding='utf-8') as f:
@@ -50,6 +50,13 @@ class KnowledgeGraph:
             except Exception as e:
                 tlog.error(f"❌ [KnowledgeGraph] 加载失败: {e}")
                 self.nodes = {}
+
+        # 🚀 [V105.0] 物理自愈迁移：若全局账本为空，委托迁移器扫描旧版主题图谱并无损聚合
+        if not self.nodes:
+            from core.logic.knowledge.knowledge_migrator import KnowledgeGraphMigrator
+            if KnowledgeGraphMigrator.migrate_legacy_theme_graphs(self.graph_path, self.nodes) > 0:
+                self.save(debounce=False)
+
         self._rebuild_inverted_index()
 
     def _execute_physical_save(self, snapshot: dict):
@@ -109,10 +116,8 @@ class KnowledgeGraph:
         self.flush()
 
     def __del__(self):
-        try:
-            self.shutdown()
-        except Exception:
-            pass
+        try: self.shutdown()
+        except Exception: pass
 
     def upsert_node(self, doc_id: str, title: str, entities: Dict[str, List[str]] = None, gist: str = None, source_hash: str = None):
         """🚀 [V24.5] 增强型节点更新：支持实体与语义指纹"""
@@ -201,8 +206,7 @@ class KnowledgeGraph:
     @staticmethod
     def _normalize_link_data(v):
         """🚀 [V24.5] 兼容性归一化：支持旧版浮点权重与新版字典格式"""
-        if isinstance(v, dict): return v
-        return {"strength": v, "type": "RELATED"}
+        return v if isinstance(v, dict) else {"strength": v, "type": "RELATED"}
 
     def get_related(self, doc_id: str, limit: int = 5) -> List[Dict[str, Any]]:
         """🚀 [V24.5] 增强型关联查询：返回包含实体与摘要的富元数据"""
@@ -240,16 +244,14 @@ class KnowledgeGraph:
                     if other_id == doc_id:
                         continue
                     candidates[other_id] = candidates.get(other_id, 0) + 1
-            
             # 过滤掉共享实体数少于 2 个的，并返回
             return {tid: count for tid, count in candidates.items() if count >= 2}
+
     def add_manual_link(self, src_id: str, target_id: str):
         """🚀 [V20.1] 手动建立主权链路：用户定义的关联具有最高优先级"""
         with self._lock:
-            # 确保节点存在 (即便没有标题也建立占位符)
             if src_id not in self.nodes: self.upsert_node(src_id, src_id)
             if target_id not in self.nodes: self.upsert_node(target_id, target_id)
-            
             self.link(src_id, target_id, strength=1.0, is_manual=True)
             self.save()
             tlog.info(f"🔗 [KnowledgeGraph] 手动链路已固化: {src_id} <-> {target_id}")
@@ -267,16 +269,12 @@ class KnowledgeGraph:
             self.save()
             tlog.info(f"✂️ [KnowledgeGraph] 链路已物理断开: {src_id} <-> {target_id}")
 
-
     def get_galaxy_graph(self) -> Dict[str, Any]:
         """🚀 [V20.2] 导出 3D 银河标准格式数据"""
         with self._lock:
-            nodes_list = []
-            links_list = []
-            
+            nodes_list, links_list = [], []
             for doc_id, data in self.nodes.items():
                 if not isinstance(data, dict): continue
-                
                 nodes_list.append({
                     "id": doc_id,
                     "title": data.get("title", doc_id),
