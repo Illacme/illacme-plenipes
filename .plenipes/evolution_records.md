@@ -2,6 +2,19 @@
 
 这里记录了我们在系统的物理迭代和开发过程里，所沉淀下的最为关键的架构缺陷自检与教训（Lessons），以防止后续开发在相同的物理逻辑上发生脑裂或回退。
 
+## 📅 2026-09-06: Nextra 与 VitePress 独立单页 Clean URL 与多语言前缀自愈 (SSG Nav & Options Parity)
+*   **现象描述**：在异构 SSG 架构下，独立单页（如 `about.md`）在 Nextra 与 VitePress 中由于路由合成器未细分单页与频道，导航链接被附加了末尾斜杠（`/about/`），导致静态托管服务寻找不存在的 `about/index.html` 目录并触发 301/302 重定向甚至 404；且多语言矩阵下单页链接丢失语种前缀（如跳回默认语言 `/about`），同时 Nextra 的 `i18n` 与 VitePress 的 `locales` 未能与 `route_matrix` 的多语言导航结构完成自动化热编译水合。
+*   **根因剖析**：
+    1.  `SSGNavSynthesizer` 早期仅对通用频道执行 `/{prefix}/` 的目录级拼接，未对单页槽位（`slot in ("pages", "page")` 或特定单页 prefix 如 `about`、`terms`、`privacy`）做 Clean URL 无斜杠特化；
+    2.  多语言循环 `nav_links_i18n` 中未统一将目标语言前缀（如 `/en`、`/ja`）与 Clean URL 规则做闭包统一计算；
+    3.  `SSGThemeCompiler` 编译输出时缺乏对 Nextra `i18n` (包含 `defaultLocale` 和 `locales` 列表) 及 VitePress `locales` 树结构的自动化生成与注入。
+*   **防线策略与沉淀**：
+    1.  **路径合成闭包化 (`_calc_target_path`)**：在 `SSGNavSynthesizer` 中统一提取单页识别与 Clean URL 运算逻辑，对 `is_clean_url` 环境下单页输出精准的 `/{lang}/{prefix}`（严禁末尾斜杠），目录频道输出 `/{lang}/{prefix}/`；并加入 SOP-08 防御性解包（`isinstance(routes, list)`）。
+    2.  **异构 SSG Options 动态编译水合**：在 `SSGThemeCompiler` 中原生实现 `nextra`（输出标准 `i18n` 与 `defaultLocale`）和 `vitepress`（输出带有 `root` 与各语种 link 的 `locales`）的编译逻辑，确保两款引擎可直接消费 `theme.options.json`。
+    3.  **穿透测试与全域主权门禁 100% 覆盖**：在 `tests/test_universal_navigation.py` 中新增 `test_nextra_and_vitepress_standalone_page_and_i18n_parity` 完整断言，494 项全域主权测试与代码红线全部 100% 绿灯。
+
+---
+
 ## 📅 2026-09-06: Sovereign 主题适配器大文件物理拆分与治理豁免消减 (SOP-02 Modularization)
 *   **现象描述**：`themes/sovereign/adapters/sovereign_helpers.py` 物理行数历史膨胀至 717 行，严重突破 300 行警戒线及 500 行强制重构硬红线，长期处于 `.plenipes/governance/exemptions.yaml` 豁免白名单中，违背精益架构主权。
 *   **根因剖析**：早期的 `sovereign_helpers.py` 作为“万能辅助模块”，承担了树状侧边栏测绘、案例多视图自适应转换、语言切换器动态装配、主导航渲染、上下篇分页计算以及主模版注入等多重异质职责，导致职责混杂与单体过大。

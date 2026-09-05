@@ -86,6 +86,37 @@ class SSGThemeCompiler:
         options["navbar_items_i18n"] = nav_data.get("navbar_items_i18n", {})
         options["nav_links_i18n"] = nav_data.get("nav_links_i18n", {})
 
+        # 🌐 [Nextra & VitePress 多语言矩阵与 Locales 桥接自愈]
+        if theme_name in ("nextra", "vitepress") and adapter.engine and hasattr(adapter.engine, 'config') and getattr(adapter.engine.config, 'i18n_settings', None):
+            from core.utils.language_hub import LanguageHub
+            i18n_cfg = adapter.engine.config.i18n_settings
+            def_lang = getattr(i18n_cfg.source, 'lang_code', 'zh') or 'zh'
+            def_name = getattr(i18n_cfg.source, 'name', None) or LanguageHub.resolve_to_name(def_lang)
+            targets = [t for t in getattr(i18n_cfg, 'targets', []) if getattr(t, 'enabled', True) and getattr(t, 'lang_code', None)]
+
+            if theme_name == "nextra":
+                nextra_i18n = [{"locale": def_lang, "text": def_name}]
+                for t in targets:
+                    t_code = t.lang_code
+                    t_name = getattr(t, 'name', None) or LanguageHub.resolve_to_name(t_code)
+                    nextra_i18n.append({"locale": t_code, "text": t_name})
+                options["i18n"] = nextra_i18n
+                options["defaultLocale"] = def_lang
+
+            elif theme_name == "vitepress":
+                vp_locales = {
+                    "root": {"label": def_name, "lang": def_lang}
+                }
+                for t in targets:
+                    t_code = t.lang_code
+                    t_name = getattr(t, 'name', None) or LanguageHub.resolve_to_name(t_code)
+                    vp_locales[t_code] = {
+                        "label": t_name,
+                        "lang": t_code,
+                        "link": f"/{t_code}/"
+                    }
+                options["locales"] = vp_locales
+
         if adapter.engine and hasattr(adapter.engine, 'paths') and adapter.engine.paths:
             themes_root = adapter.engine.paths.get("themes", "themes")
         elif adapter.engine and hasattr(adapter.engine, '_resolve_path'):

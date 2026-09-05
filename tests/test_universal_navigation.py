@@ -415,4 +415,115 @@ def test_translate_nav_labels_api():
     assert translations["ko"] == "문서 센터"
 
 
+def test_nextra_and_vitepress_standalone_page_and_i18n_parity(tmp_path):
+    """验证 Nextra 与 VitePress 独立单页 (无末尾斜杠) 与多语言前缀自愈及 Options 编译"""
+    mock_engine = MagicMock()
+    mock_config = MagicMock()
+    mock_engine.config = mock_config
+    mock_engine.paths = {"themes": str(tmp_path / "themes")}
+
+    mock_i18n = MagicMock()
+    mock_i18n.source.lang_code = "zh"
+    mock_i18n.source.name = "简体中文"
+    target_en = MagicMock()
+    target_en.lang_code = "en"
+    target_en.name = "English"
+    target_en.enabled = True
+    target_ja = MagicMock()
+    target_ja.lang_code = "ja"
+    target_ja.name = "日本語"
+    target_ja.enabled = True
+    mock_i18n.targets = [target_en, target_ja]
+    mock_config.i18n_settings = mock_i18n
+    mock_config.site_url = "https://example.com"
+
+    mock_config.route_matrix = [
+        RouteItem(
+            source="Tutorials", prefix="docs", target_slot="docs",
+            nav_label="文档中心", nav_icon="📚",
+            nav_order=0
+        ),
+        RouteItem(
+            source="About", prefix="about", target_slot="pages",
+            nav_label="关于我们", nav_icon="💡",
+            nav_order=1
+        ),
+        RouteItem(
+            source="Single", prefix="privacy", target_slot="pages",
+            nav_label="隐私协议",
+            nav_order=2
+        )
+    ]
+
+    from adapters.egress.ssg.nextra import NextraAdapter
+    from adapters.egress.ssg.vitepress import VitepressAdapter
+    from core.adapters.egress.ssg.base_shards.ssg_theme_compiler import SSGThemeCompiler
+
+    # 1. 验证 NextraAdapter
+    nextra_adapter = NextraAdapter(engine=mock_engine)
+    nextra_adapter.theme_settings = MagicMock()
+    nextra_adapter.theme_settings.name = "nextra"
+    nextra_adapter.theme_settings.options = {}
+    nextra_nav = nextra_adapter.generate_navigation_items()
+
+    # 1.1 主语言单页无末尾斜杠，频道保留末尾斜杠
+    assert nextra_nav["nav_links"][0]["url"] == "/docs/"
+    assert nextra_nav["nav_links"][1]["url"] == "/about"
+    assert nextra_nav["nav_links"][2]["url"] == "/privacy"
+
+    # 1.2 多语言导航感知语言前缀
+    assert nextra_nav["nav_links_i18n"]["en"][0]["url"] == "/en/docs/"
+    assert nextra_nav["nav_links_i18n"]["en"][1]["url"] == "/en/about"
+    assert nextra_nav["nav_links_i18n"]["en"][2]["url"] == "/en/privacy"
+
+    assert nextra_nav["nav_links_i18n"]["ja"][0]["url"] == "/ja/docs/"
+    assert nextra_nav["nav_links_i18n"]["ja"][1]["url"] == "/ja/about"
+    assert nextra_nav["nav_links_i18n"]["ja"][2]["url"] == "/ja/privacy"
+
+    # 1.3 Nextra theme.options 编译与落盘验证
+    ok = SSGThemeCompiler.compile_theme_options(nextra_adapter)
+    assert ok is True
+    nextra_json_path = tmp_path / "themes" / "nextra" / "theme.options.json"
+    assert nextra_json_path.exists()
+    with open(nextra_json_path, 'r', encoding='utf-8') as f:
+        nextra_opts = json.load(f)
+    assert "i18n" in nextra_opts
+    assert nextra_opts["defaultLocale"] == "zh"
+    locales = [item["locale"] for item in nextra_opts["i18n"]]
+    assert "zh" in locales
+    assert "en" in locales
+    assert "ja" in locales
+
+    # 2. 验证 VitepressAdapter
+    vite_adapter = VitepressAdapter(engine=mock_engine)
+    vite_adapter.theme_settings = MagicMock()
+    vite_adapter.theme_settings.name = "vitepress"
+    vite_adapter.theme_settings.options = {}
+    vite_nav = vite_adapter.generate_navigation_items()
+
+    # 2.1 主语言单页无末尾斜杠
+    assert vite_nav["nav_links"][0]["url"] == "/docs/"
+    assert vite_nav["nav_links"][1]["url"] == "/about"
+    assert vite_nav["nav_links"][2]["url"] == "/privacy"
+
+    # 2.2 多语言导航
+    assert vite_nav["nav_links_i18n"]["en"][1]["url"] == "/en/about"
+    assert vite_nav["nav_links_i18n"]["ja"][1]["url"] == "/ja/about"
+
+    # 2.3 Vitepress theme.options locales 编译与落盘验证
+    ok_vp = SSGThemeCompiler.compile_theme_options(vite_adapter)
+    assert ok_vp is True
+    vp_json_path = tmp_path / "themes" / "vitepress" / "theme.options.json"
+    assert vp_json_path.exists()
+    with open(vp_json_path, 'r', encoding='utf-8') as f:
+        vite_opts = json.load(f)
+    assert "locales" in vite_opts
+    assert "root" in vite_opts["locales"]
+    assert "en" in vite_opts["locales"]
+    assert "ja" in vite_opts["locales"]
+    assert vite_opts["locales"]["en"]["link"] == "/en/"
+    assert vite_opts["locales"]["ja"]["link"] == "/ja/"
+
+
+
 

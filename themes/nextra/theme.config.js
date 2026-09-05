@@ -43,4 +43,5 @@ export default {
   footerEditLink: "Edit this page on GitHub",
   footerText: <>{themeOptions.footer_copyright}</>,
   unstable_faviconGlyph: themeOptions.unstable_favicon_glyph || "👑",
+  i18n: themeOptions.i18n || [],
 };
