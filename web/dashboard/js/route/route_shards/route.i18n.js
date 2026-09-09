@@ -58,27 +58,18 @@
         let hasMissingDict = false;
         const commonDict = window.COMMON_SLOT_I18N || {};
 
-        // 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
+        // 智能推导字典槽位 key (仅当 defaultLabel 确实精准命中官方标准词汇时才匹配，绝不盲目假定底层 slot)
         const cleanLabelLower = (defaultLabel || '').trim().toLowerCase();
-        let matchedDictKey = slot;
-        if (!commonDict[matchedDictKey]) {
-            for (const [k, dict] of Object.entries(commonDict)) {
-                if (k.toLowerCase() === cleanLabelLower || dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
-                    matchedDictKey = k;
-                    break;
-                }
-            }
-        } else {
-            for (const [k, dict] of Object.entries(commonDict)) {
-                if (dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
-                    matchedDictKey = k;
-                    break;
-                }
+        let matchedDictKey = null;
+        for (const [k, dict] of Object.entries(commonDict)) {
+            if (dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower) || k.toLowerCase() === cleanLabelLower) {
+                matchedDictKey = k;
+                break;
             }
         }
 
         targetLanguages.forEach(lang => {
-            if (!currentI18n[lang] && (!commonDict[matchedDictKey] || !commonDict[matchedDictKey][lang])) {
+            if (!currentI18n[lang] && (!matchedDictKey || !commonDict[matchedDictKey] || !commonDict[matchedDictKey][lang])) {
                 hasMissingDict = true;
             }
         });
@@ -185,26 +176,23 @@
 
         const targetLangs = Array.from(inputs).map(i => i.getAttribute('data-lang')).filter(Boolean);
 
-        // 1. 优先查阅产品 50 语种完整标准字典，并收集需要大模型 AI 翻译的语种
+        // 1. 智能推导标准字典槽位 key (仅当 defaultLabel 确实精准命中官方标准词汇时才秒级预填)
         const pendingAILangs = [];
         const commonDict = window.COMMON_SLOT_I18N || {};
 
-        // 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
         const cleanLabelLower = (defaultLabel || '').trim().toLowerCase();
-        let matchedDictKey = slot;
-        if (!commonDict[matchedDictKey]) {
-            for (const [k, dict] of Object.entries(commonDict)) {
-                if (k.toLowerCase() === cleanLabelLower || dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower)) {
-                    matchedDictKey = k;
-                    break;
-                }
+        let matchedDictKey = null;
+        for (const [k, dict] of Object.entries(commonDict)) {
+            if (dict.zh === defaultLabel || (dict.en && dict.en.toLowerCase() === cleanLabelLower) || k.toLowerCase() === cleanLabelLower) {
+                matchedDictKey = k;
+                break;
             }
         }
 
         inputs.forEach(input => {
             const targetLang = input.getAttribute('data-lang');
             if (!targetLang) return;
-            const dictVal = commonDict[matchedDictKey] && commonDict[matchedDictKey][targetLang];
+            const dictVal = matchedDictKey && commonDict[matchedDictKey] && commonDict[matchedDictKey][targetLang];
             if (dictVal) {
                 input.value = dictVal;
             } else {

@@ -77,7 +77,7 @@ class GitHubPagesPublisher(BasePublisher):
         return auto_create_github_repo_impl(self)
 
     def _parse_owner_repo(self) -> tuple[str, str]:
-        return parse_owner_repo_impl(self.repo_url, self.token)
+        return parse_owner_repo_impl(self.repo_url, self.token, proxy=self.get_proxy())
 
     def _auto_enable_github_pages(self) -> str:
         return auto_enable_github_pages_impl(self)
@@ -112,13 +112,24 @@ class GitHubPagesPublisher(BasePublisher):
         """
         🚀 执行物理发布：将 bundle_path 下的全部产物推送至 gh-pages 分支。
         """
+        # 零配置自动推导：若未配置 repo_url 但配置了 token，尝试通过 Token 解析用户并推导默认仓库
+        if not self.repo_url and self.token:
+            owner, repo = self._parse_owner_repo()
+            if owner and repo:
+                self.repo_url = f"https://github.com/{owner}/{repo}.git"
+                tlog.info(f"✨ [GitHub Pages] 零配置自动推导：已通过 Token 自动识别用户 '{owner}' 并绑定仓库 '{self.repo_url}'")
+                # 自动确保云端公开仓库已就绪（不存在则自动建仓）
+                self._auto_create_github_repo()
+
         if not self.repo_url:
             return {"status": "skipped", "message": "GitHub Pages repo_url not configured."}
 
         if not os.path.isdir(bundle_path):
             return {"status": "error", "message": f"Bundle path does not exist: {bundle_path}"}
 
-        tlog.info(f"🚀 [GitHub Pages] 正在部署至 {self.repo_url} ({self.branch})...")
+        is_primary = metadata.get("is_primary", False) if isinstance(metadata, dict) else False
+        role_tag = " [官方主站]" if is_primary else (" [备用镜像]" if isinstance(metadata, dict) and "is_primary" in metadata else "")
+        tlog.info(f"🚀 [GitHub Pages]{role_tag} 正在部署至 {self.repo_url} ({self.branch})...")
 
         work_dir = tempfile.mkdtemp(prefix="plenipes_ghpages_")
         try:
@@ -141,7 +152,9 @@ class GitHubPagesPublisher(BasePublisher):
 
             if pushed:
                 pages_url = self._auto_enable_github_pages()
-                tlog.success(f"✅ [GitHub Pages] 部署成功！{copied_count} 个文件已推送至 {self.branch} 分支。")
+                role_desc = f" [{ '官方主站' if is_primary else '备用镜像' }]" if isinstance(metadata, dict) and "is_primary" in metadata else ""
+                url_str = f" URL: {pages_url} " if pages_url else " "
+                tlog.success(f"✅ [GitHub Pages] 部署成功{role_desc}！{url_str}({copied_count} 个文件已推送至 {self.branch} 分支)")
                 return {
                     "status": "success",
                     "files": copied_count,

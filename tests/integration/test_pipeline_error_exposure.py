@@ -23,32 +23,42 @@ class TestPipelineErrorExposure(unittest.TestCase):
         self.imprint_root = os.path.join(self.test_root, "imprints")
         self.imprint_dir = os.path.join(self.imprint_root, self.test_press)
         
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         os.makedirs(self.imprint_root, exist_ok=True)
         
         from core.utils.event_bus import bus
         bus.reset()
 
     def tearDown(self):
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         from core.utils.event_bus import bus
         bus.reset()
+
+    def _cleanup(self):
+        if os.path.exists(self.test_root):
+            shutil.rmtree(self.test_root, ignore_errors=True)
+        if os.path.exists("test_mock_vault_error"):
+            shutil.rmtree("test_mock_vault_error", ignore_errors=True)
+        from core.config.constants import IMPRINT_DIR
+        leaked_path = os.path.join(IMPRINT_DIR, self.test_press)
+        if os.path.exists(leaked_path):
+            shutil.rmtree(leaked_path, ignore_errors=True)
 
     def test_pipeline_abort_telemetry_exposure(self):
         """🚀 测试管线审计拦截后，错误成功持久化并在 Telemetry API 曝光"""
         # 1. 物理主权对齐 Mock
+        im = ImprintManager(root_dir=self.test_root)
+        im.imprint_root = self.imprint_root
+
         with patch('core.config.config.IMPRINT_DIR', self.imprint_root), \
+             patch('core.config.constants.IMPRINT_DIR', self.imprint_root), \
              patch('core.runtime.engine_preflight.IMPRINT_DIR', self.imprint_root), \
              patch('core.governance.imprint_manager.IMPRINT_DIR', self.imprint_root), \
-             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root):
+             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root), \
+             patch('core.governance.imprint_manager.im', im):
             
             # 2. 初始化测试沙箱
-            im = ImprintManager(root_dir=self.test_root)
-            mock_vault = os.path.abspath("test_mock_vault_error")
-            if os.path.exists(mock_vault):
-                shutil.rmtree(mock_vault)
+            mock_vault = os.path.join(self.test_root, "mock_vault")
             os.makedirs(mock_vault, exist_ok=True)
             
             try:

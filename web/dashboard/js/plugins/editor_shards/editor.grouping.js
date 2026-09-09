@@ -5,10 +5,12 @@
 
 (function () {
     window.groupDrawerFormIntoStepCards = (drawerBody) => {
-        if (!drawerBody || drawerBody.querySelector('.wiz-step-card')) return;
+        if (!drawerBody) return;
+        const category = (drawerBody.getAttribute('data-plugin-category') || '').toLowerCase();
+        // 🎨 装帧主题拥有原生的排版分类块（基础设置、视觉样式、首页 Hero等），不走发布凭据向导卡片包装
+        if (category === 'theme' || drawerBody.querySelector('.wiz-step-card')) return;
 
         const pluginId = (drawerBody.getAttribute('data-plugin-id') || '').toLowerCase();
-        const category = (drawerBody.getAttribute('data-plugin-category') || '').toLowerCase();
         const steps = window.getPluginWizardSteps ? window.getPluginWizardSteps(pluginId, category) : ['1. 鉴权身份凭据', '2. 目标仓库与分支', '3. 测试连通与保存'];
         const totalSteps = steps.length;
         const step0Title = (steps[0] || '').replace(/^[0-9]+\.\s*/, '');

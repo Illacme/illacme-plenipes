@@ -257,6 +257,8 @@ class SovereignDeploymentPlugin(PostSyncTask):
         # 5. 记录分发凭证至注册簿 (Registry)
         engine.ledger.log("GLOBAL_DEPLOY", f"全渠道分发完成，状态: {(results or {}).get('status')}",
                           imprint_id=engine.imprint_id, metadata=results)
+        # 🚀 [V90.0] 挂载至 engine 实例，供 API 和生命周期广播快速调用
+        engine.last_deployment_results = results
 
 
 class BlogIndexGeneratorPlugin(PostSyncTask):

@@ -128,7 +128,6 @@ if __name__ == "__main__":
         tlog.info(f"🛰️ [自举成功] 品牌 '{args.imprint}' 已激活，正在接力启动...")
     
     try:
-
         if getattr(sys, '_plenipes_fresh_install', False):
             args.api = True
 
@@ -137,8 +136,6 @@ if __name__ == "__main__":
         engine = EngineFactory.create_engine(config or args.config, no_ai=args.no_ai, args=args, imprint_id=args.imprint)
         from core.config.config import ConfigManager
         engine.config_manager = ConfigManager(args.config, imprint_id=args.imprint)
-
-        
         # 🧪 [V50.3] 日志主权对正：在引擎划定品牌后，重定向日志管线
         logger = setup_logger(engine.paths["logs"])
 
@@ -221,6 +218,10 @@ if __name__ == "__main__":
             })
             # 🚀 [V51.0] 强制使用非阻塞模式启动，以便后续执行同步任务
             start_api_server(port=api_port, blocking=False)
+
+            if getattr(args, 'reload', False):
+                from core.runtime.version_sentinel import VersionSentinel
+                VersionSentinel.start_auto_reload_watcher(check_interval=2.0)
 
         task_queue, current_source_files = prepare_sync_tasks(engine, requested_paths=args.path)
 

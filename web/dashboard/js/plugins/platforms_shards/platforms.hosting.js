@@ -18,10 +18,10 @@ function _hostingRoleBanner(platformId) {
     })();
 
     const roleHtml = isPrimary
-        ? `<div class="hosting-role-banner" style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:rgba(0,255,136,0.07); border:1px solid rgba(0,255,136,0.25); margin-bottom:4px; width:100%; box-sizing:border-box;">
+        ? `<div class="hosting-role-banner" style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:rgba(var(--neon-green-rgb),0.07); border:1px solid rgba(var(--neon-green-rgb),0.25); margin-bottom:4px; width:100%; box-sizing:border-box;">
             <span style="font-size:1.2rem;">🏠</span>
             <div style="flex:1;">
-                <div style="font-size:0.82rem; font-weight:800; color:#00ff88;">当前主站 (Primary)</div>
+                <div style="font-size:0.82rem; font-weight:800; color:var(--neon-green);">当前主站 (Primary)</div>
                 <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.4; margin-top:2px;">
                     所有页面的 <code style="color:var(--accent-secondary);">canonical</code> URL 将指向此平台，搜索引擎只索引此站。其他托管平台将以"镜像"角色运行。
                 </div>
@@ -87,20 +87,22 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
         } else if (id === 'github_pages') {
             return `
                 <div class="api-token-helper" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; border: 1px dashed var(--neon-cyan); background: rgba(0, 242, 254, 0.05);">
-                    <h4 style="margin-top: 0; color: var(--neon-cyan);">💡 GitHub Pages 极简向导</h4>
-                    <p style="margin: 4px 0; font-size: 0.85rem; line-height: 1.4;">系统支持自动感应本地 Git 账户、探测本地 SSH 免密连通性，或一键申请 Access Token。</p>
+                    <h4 style="margin-top: 0; color: var(--neon-cyan);">💡 GitHub Pages 零配置一键向导 (Zero-Config)</h4>
+                    <p style="margin: 4px 0; font-size: 0.85rem; line-height: 1.4; color: var(--text-bright);">
+                        <b style="color: var(--neon-green);">✨ 小白极简模式：</b>只需点击下方「🔑 直达 Token 申请魔术链接」（已预先勾选 repo 权限），复制 Token 粘贴到第一项，其他所有配置（仓库名、分支等）全部留空即可！系统将自动识别您的 GitHub 账号并在云端自动建仓部署。
+                    </p>
                     <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="https://github.com/settings/tokens/new?scopes=repo&description=Illacme-Plenipes-Syndication" target="_blank" class="helper-btn" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.4); color: #fff; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">🔑 直达 Token 申请魔术链接 (免选权限)</a>
                         <button type="button" class="helper-btn" style="background: rgba(163, 76, 255, 0.15); border: 1px solid rgba(163, 76, 255, 0.4); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;" onclick="window.triggerGitCredentialsSense(this, 'publish_control.direct_upload.github_pages')">🔑 自动感应本地 Git 凭据</button>
                         <button type="button" class="helper-btn" style="background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0, 255, 136, 0.4); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;" onclick="window.triggerGithubSSHCheck(this)">🔍 自动探测本地 SSH 免密</button>
-                        <a href="https://github.com/settings/tokens/new?scopes=repo&description=Plenipes-Syndication" target="_blank" class="helper-btn" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.4); color: #fff; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">🔑 直达 Token 申请魔术链接</a>
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('访问令牌 (Personal Access Token / Token)', `publish_control.direct_upload.github_pages.token`, cfg.token || cfg.git_token || '', 'password', { placeholder: "例如: ghp_xxxxxxxxxxxx (使用 HTTPS 协议建仓/推送时必填，SSH 免密可留空)", description: "GitHub 个人访问令牌，需包含 repo 权限。使用 SSH 免密部署时可留空。" })}
-                ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.github_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text', { description: "Git 提交身份中的用户名，可点击「自动感应本地 Git 凭据」自动回填。" })}
-                ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.github_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text', { description: "Git 提交身份中的邮箱，可点击「自动感应本地 Git 凭据」自动回填。" })}
-                ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.github_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "例如: git@github.com:username/repo.git", description: "您的 GitHub 仓库的 SSH 或 HTTPS 地址。" })}
-                ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.github_pages.branch`, cfg.branch || 'gh-pages', 'text', { placeholder: "例如: gh-pages" })}
+                ${renderSettingsItem('访问令牌 (Personal Access Token / Token)', `publish_control.direct_upload.github_pages.token`, cfg.token || cfg.git_token || '', 'password', { placeholder: "例如: ghp_xxxxxxxxxxxx (只需填此项！其他项全可留空)", description: "GitHub 个人访问令牌，点击上方魔术链接可一键生成。使用 SSH 免密部署时可留空。" })}
+                ${renderSettingsItem('仓库 URL (Repo URL)', `publish_control.direct_upload.github_pages.repo_url`, cfg.repo_url, 'text', { placeholder: "选填！留空将使用 Token 自动在您的 GitHub 创建公开仓库 (illacme-press)", description: "【选填】留空即可。系统将自动通过 Token 解析您的账户并自动在云端创建公开仓库。" })}
+                ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.github_pages.branch`, cfg.branch || 'gh-pages', 'text', { placeholder: "gh-pages (默认)", description: "【选填】默认自动绑定至 gh-pages 孤儿分支。" })}
+                ${renderSettingsItem('Git 用户名', `publish_control.direct_upload.github_pages.git_user_name`, cfg.git_user_name || 'Plenipes Bot', 'text', { description: "【选填】Git 提交身份中的用户名，默认自动回填。" })}
+                ${renderSettingsItem('Git 邮箱', `publish_control.direct_upload.github_pages.git_user_email`, cfg.git_user_email || 'bot@plenipes.press', 'text', { description: "【选填】Git 提交身份中的邮箱，默认自动回填。" })}
                 ${window.renderPlatformAdvancedGroup('高级可选参数 (CNAME / 代理 / 强制推送)', `
                     ${renderSettingsItem('自定义域名 (CNAME)', `publish_control.direct_upload.github_pages.cname`, cfg.cname, 'text', { placeholder: "例如: blog.example.com", description: "可选，若绑定了自定义域名请在此填写。" })}
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.github_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}

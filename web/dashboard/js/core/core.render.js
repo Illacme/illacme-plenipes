@@ -94,6 +94,40 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
         `;
     } else if (type === 'static') {
         inputHtml = `<div id="${id}" class="setting-static-value" style="padding: 10px 12px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px dashed var(--border-color); color: var(--text-dim); font-family: monospace; word-break: break-all;">${safeValue}</div>`;
+    } else if (type === 'color') {
+        const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
+        const hexVal = (safeValue && safeValue.startsWith('#')) ? safeValue : (safeValue ? `#${safeValue}` : '#0070f3');
+        const pickerId = `${id}-picker`;
+        const presets = [
+            { name: '极客青', hex: '#00f0ff' },
+            { name: '翡翠绿', hex: '#00dc82' },
+            { name: '赛博紫', hex: '#a855f7' },
+            { name: '琥珀金', hex: '#f59e0b' },
+            { name: '极光粉', hex: '#ec4899' },
+            { name: '深海蓝', hex: '#0070f3' },
+            { name: '极简墨', hex: '#64748b' }
+        ];
+        const presetsHtml = `
+            <div class="color-preset-pills" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                ${presets.map(p => `
+                    <button type="button" class="color-pill-btn" onclick="window.applyColorPreset('${id}', '${p.hex}', '${path}')" title="${p.name} (${p.hex})" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; color: var(--text-dim); transition: all 0.2s ease;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${p.hex}; display: inline-block; box-shadow: 0 0 4px ${p.hex};"></span>
+                        <span>${p.name}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        inputHtml = `
+            <div class="color-input-container" style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <div style="position: relative; width: 34px; height: 34px; flex-shrink: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                        <input type="color" id="${pickerId}" value="${hexVal}" oninput="window.syncColorPickerToText('${id}', this.value, '${path}')" class="setting-color-picker" style="position: absolute; top: -8px; left: -8px; width: 50px; height: 50px; cursor: pointer; border: none; padding: 0; background: transparent;">
+                    </div>
+                    <input type="text" id="${id}" data-path="${path}" data-label="${label}" class="setting-input color-hex-input" value="${safeValue}" oninput="window.syncColorTextToPicker('${id}', this.value, '${path}')" onchange="${onchange}" placeholder="${options.placeholder || '#0070f3'}" ${requiredAttr} style="font-family: monospace; font-weight: 600; text-transform: lowercase; flex: 1;">
+                </div>
+                ${presetsHtml}
+            </div>
+        `;
     } else {
         const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
         inputHtml = `<input type="text" id="${id}" data-path="${path}" data-label="${label}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${options.readonly ? 'readonly' : ''} ${requiredAttr}>`;
@@ -139,3 +173,33 @@ window.togglePasswordVisibility = (btn) => {
         btn.style.opacity = '0.7';
     }
 };
+
+window.syncColorPickerToText = (baseId, val, path) => {
+    const textInput = document.getElementById(baseId);
+    if (textInput) {
+        textInput.value = val;
+        textInput.dispatchEvent(new Event('input', { bubbles: true }));
+        textInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+};
+
+window.syncColorTextToPicker = (baseId, val, path) => {
+    const pickerInput = document.getElementById(`${baseId}-picker`);
+    if (pickerInput && /^#[0-9a-fA-F]{6}$/.test(val)) {
+        pickerInput.value = val;
+    }
+};
+
+window.applyColorPreset = (baseId, hex, path) => {
+    const textInput = document.getElementById(baseId);
+    const pickerInput = document.getElementById(`${baseId}-picker`);
+    if (textInput) {
+        textInput.value = hex;
+        textInput.dispatchEvent(new Event('input', { bubbles: true }));
+        textInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (pickerInput) {
+        pickerInput.value = hex;
+    }
+};
+

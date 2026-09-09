@@ -22,30 +22,41 @@ class TestMultilingualSyndicationDispatch(unittest.TestCase):
         self.imprint_root = os.path.join(self.test_root, "imprints")
         self.imprint_dir = os.path.join(self.imprint_root, self.test_press)
         
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         os.makedirs(self.imprint_root, exist_ok=True)
         
         from core.utils.event_bus import bus
         bus.reset()
 
     def tearDown(self):
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         from core.utils.event_bus import bus
         bus.reset()
 
+    def _cleanup(self):
+        if os.path.exists(self.test_root):
+            shutil.rmtree(self.test_root, ignore_errors=True)
+        for legacy_vault in ["test_mock_vault_multi_syndicate", "test_mock_vault_failed_syndicate"]:
+            if os.path.exists(legacy_vault):
+                shutil.rmtree(legacy_vault, ignore_errors=True)
+        from core.config.constants import IMPRINT_DIR
+        leaked_path = os.path.join(IMPRINT_DIR, self.test_press)
+        if os.path.exists(leaked_path):
+            shutil.rmtree(leaked_path, ignore_errors=True)
+
     def test_target_lang_loading_from_disk_and_syndication(self):
         """测试从目标语种磁盘候选文件装载译文并定向分发至 Dev.to"""
+        im = ImprintManager(root_dir=self.test_root)
+        im.imprint_root = self.imprint_root
+
         with patch('core.config.config.IMPRINT_DIR', self.imprint_root), \
+             patch('core.config.constants.IMPRINT_DIR', self.imprint_root), \
              patch('core.runtime.engine_preflight.IMPRINT_DIR', self.imprint_root), \
              patch('core.governance.imprint_manager.IMPRINT_DIR', self.imprint_root), \
-             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root):
+             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root), \
+             patch('core.governance.imprint_manager.im', im):
             
-            im = ImprintManager(root_dir=self.test_root)
-            mock_vault = os.path.abspath("test_mock_vault_multi_syndicate")
-            if os.path.exists(mock_vault):
-                shutil.rmtree(mock_vault)
+            mock_vault = os.path.join(self.test_root, "mock_vault_multi")
             os.makedirs(mock_vault, exist_ok=True)
             
             try:
@@ -157,15 +168,17 @@ class TestMultilingualSyndicationDispatch(unittest.TestCase):
 
     def test_missing_translation_records_failed_status_in_ledger(self):
         """测试当译文缺失时，账本中正确更新 FAILED 状态且不会被母语状态掩盖"""
+        im = ImprintManager(root_dir=self.test_root)
+        im.imprint_root = self.imprint_root
+
         with patch('core.config.config.IMPRINT_DIR', self.imprint_root), \
+             patch('core.config.constants.IMPRINT_DIR', self.imprint_root), \
              patch('core.runtime.engine_preflight.IMPRINT_DIR', self.imprint_root), \
              patch('core.governance.imprint_manager.IMPRINT_DIR', self.imprint_root), \
-             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root):
+             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root), \
+             patch('core.governance.imprint_manager.im', im):
             
-            im = ImprintManager(root_dir=self.test_root)
-            mock_vault = os.path.abspath("test_mock_vault_failed_syndicate")
-            if os.path.exists(mock_vault):
-                shutil.rmtree(mock_vault)
+            mock_vault = os.path.join(self.test_root, "mock_vault_failed")
             os.makedirs(mock_vault, exist_ok=True)
             
             try:

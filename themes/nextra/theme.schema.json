@@ -6,7 +6,7 @@
   "properties": {
     "site_name": {
       "type": "string",
-      "default": "Nextra Sovereign Site",
+      "default": "",
       "title": "Site Name",
       "description": "The site name displayed in the navigation and footer.",
       "group": "基础设置",
@@ -22,7 +22,7 @@
     },
     "footer_copyright": {
       "type": "string",
-      "default": "© 2026 Nextra Sovereign. Powered by Next.js.",
+      "default": "",
       "title": "Footer Copyright Info",
       "description": "Copyright text shown on footer.",
       "group": "基础设置",
@@ -62,7 +62,7 @@
     },
     "hero_title": {
       "type": "string",
-      "default": "Nextra Sovereign Publisher",
+      "default": "",
       "title": "Hero Main Title",
       "description": "Large text heading on front hero page.",
       "group": "首页 Hero",
@@ -70,7 +70,7 @@
     },
     "hero_subtitle": {
       "type": "string",
-      "default": "Beautiful, simple and powerful static site generator.",
+      "default": "",
       "title": "Hero Subtitle Info",
       "description": "Sub-heading explanatory text on front page.",
       "group": "首页 Hero",

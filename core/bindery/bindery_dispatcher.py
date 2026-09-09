@@ -218,7 +218,11 @@ class BinderyDispatcher:
         merged_fm['route_prefix'] = route_prefix
         merged_fm['route_source'] = route_source
         merged_fm['mapped_sub_dir'] = mapped_sub_dir
-        merged_fm['slug'] = slug
+        theme_id = getattr(getattr(self.ssg_adapter, 'theme_settings', None), 'name', '') or getattr(self.route_manager, 'active_theme', '')
+        if (route_prefix == 'docs' or 'docs' in str(rel_path).lower()) and slug == 'index' and not mapped_sub_dir and 'docusaurus' in str(theme_id).lower():
+            merged_fm['slug'] = '/'
+        else:
+            merged_fm['slug'] = slug
 
         src_abs = os.path.join(self.paths.get('vault', '.'), rel_path)
         try:
@@ -274,6 +278,10 @@ class BinderyDispatcher:
             return None, None
 
         dest = self.route_manager.resolve_physical_path(target_root, lang, prefix, sub, slug, target_ext, source_type=source_type)
+        if mode == "source" and dest.replace('\\', '/').endswith("src/pages/index.md"):
+            if os.path.exists(os.path.join(os.path.dirname(dest), "index.js")):
+                tlog.info(f"🛡️ [Docusaurus 物理避让] 检测到原生 React 首页 index.js，安全跳过冲突的 {dest}")
+                return None, None
         tlog.info(f"💾 [物理落盘] ({mode}) -> {dest}")
 
         if mode == "source":

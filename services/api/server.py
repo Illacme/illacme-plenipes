@@ -50,16 +50,19 @@ app.include_router(ws.router, tags=["Realtime"])
 app.include_router(agent.router, tags=["Agent"])
 
 from .schemas import HealthCheckResponse
+from core.runtime.version_sentinel import VersionSentinel
 
 @app.get("/health", response_model=HealthCheckResponse)
 async def health_check() -> HealthCheckResponse:
-    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘的存活探测"""
+    """🚀 [V52.10] 极速健康自愈接口：用于前端仪表盘的存活探测与版本漂移感知"""
     from core.runtime.engine_singleton import get_global_engine
     engine = get_global_engine()
+    drift_data = VersionSentinel.check_drift()
     return HealthCheckResponse(
         status="ok",
         engine="Illacme-plenipes",
-        imprint=engine.imprint_id if engine else None
+        imprint=engine.imprint_id if engine else None,
+        version_drift=drift_data
     )
 
 

@@ -59,6 +59,7 @@ def parse_args_and_lock():
     parser.add_argument('--build', '-b', action='store_true', help="📦 [增量装帧] 立即执行下游静态网站的增量打包与装帧")
     parser.add_argument('--api', action='store_true', help="🔌 [API 模式] 启动 FastAPI 后端服务，暴露监控接口与实时事件流")
     parser.add_argument('--api-port', type=int, help="[API 端口] 自定义 API 服务器端口")
+    parser.add_argument('--reload', '-r', action='store_true', help="🔄 [代码热重载] 启动核心源码感知看门狗，文件变动时自动平滑重启进程")
     parser.add_argument('--headless', action='store_true', help="[无头模式] 彻底剥离 Rich 视觉组件与进度条，仅保留基础日志")
     parser.add_argument('--json-log', action='store_true', help="[结构化日志] 强制以 JSON 格式输出日志，便于外部系统采集审计")
     parser.add_argument('--rollback', action='store_true', help="⏪ [时光机回滚] 将账本恢复至上一个紧急检查点 (pre_sync)")

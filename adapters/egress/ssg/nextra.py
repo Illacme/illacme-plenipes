@@ -15,6 +15,7 @@ class NextraAdapter(BaseSSGAdapter):
     DISPLAY_NAME = "Nextra Engine"
     VERSION = "V1.0"
     DESCRIPTION = "驱动 Next.js + MDX 的 Nextra 架构排版渲染，支持 React 组件式 Callout 与 Meta 结构。"
+    USE_SUFFIX_I18N = True
 
     _GENERIC_MAP = {
         'info': ('info', 'ℹ️'), 'abstract': ('info', 'ℹ️'), 'note': ('info', 'ℹ️'), 'question': ('info', 'ℹ️'),
@@ -34,27 +35,27 @@ class NextraAdapter(BaseSSGAdapter):
         }
 
     def get_feature_slots(self) -> dict:
-        """🚀 [V56.0] Nextra 标准布局声明 (纯相对路径，对齐 Next.js pages)"""
+        """🚀 [V56.0] Nextra 标准布局声明 (同级后缀式 i18n 规范，禁止注入 {lang} 物理子目录)"""
         return {
             "docs": {
                 "label": "文档中心",
                 "single": "",
-                "multi": "{lang}"
+                "multi": ""
             },
             "blog": {
                 "label": "博客文章",
                 "single": "blog",
-                "multi": "{lang}/blog"
+                "multi": "blog"
             },
             "showcase": {
                 "label": "产品特性",
                 "single": "showcase",
-                "multi": "{lang}/showcase"
+                "multi": "showcase"
             },
             "pages": {
                 "label": "展示页面",
                 "single": "",
-                "multi": "{lang}"
+                "multi": ""
             },
             "static": {
                 "label": "静态资产",
@@ -76,6 +77,11 @@ class NextraAdapter(BaseSSGAdapter):
 
         # 统一规范化双链及 Markdown 相对链接
         body = self.normalize_markdown_content(body, sub_path=sub_path, target_lang=target_lang)
+
+        # 🛡️ [Nextra 根文档槽位链接自愈] 剥离由于通用 docs 频道名产生的虚假 docs/ 路径前缀
+        import re
+        body = re.sub(r'\]\(\s*(\./|/)docs/([^)]+)\)', r'](\1\2)', body)
+        body = re.sub(r'href=["\']\s*(\./|/)docs/([^"\']+)["\']', r'href="\1\2"', body)
 
         # 确保 Nextra 页面顶部导入了 Callout 组件 (如果文本中包含 <Callout)
         if "<Callout" in body and "import { Callout }" not in body:
@@ -115,4 +121,4 @@ class NextraAdapter(BaseSSGAdapter):
         )
 
     def get_i18n_path_template(self, source_type: str = "docs") -> str:
-        return "{lang}/{sub_dir}"
+        return "{sub_dir}"

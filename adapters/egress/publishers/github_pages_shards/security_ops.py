@@ -45,13 +45,29 @@ def mask_url_credentials_impl(text: str) -> str:
 
 def add_autotherapy_suggestion_impl(err_msg: str) -> str:
     """
-    💡 为网络连接或 SSL 握手失败的报错信息注入高情商物理自愈提示。
+    💡 为网络连接、SSL 握手失败或 403 权限拒绝的报错信息注入高情商物理自愈提示。
     """
     if not err_msg:
         return err_msg
 
+    lower_msg = err_msg.lower()
+
+    # 🔑 1. 权限不足 / 403 鉴权自愈拦截
+    permission_keywords = ["permission to", "denied to", "error: 403", "403", "resource not accessible"]
+    if any(kw in lower_msg for kw in permission_keywords):
+        tlog.warning("💡 [自愈指引] GitHub 拒绝推送 (403 权限不足，Token 缺少写权限)。")
+        return (
+            f"{err_msg}\n\n"
+            "💡 [自愈指引] GitHub 拒绝推送 (403 权限不足，Token 缺少仓库写权限)：\n"
+            "1. 🌟【极简推荐】使用 Classic Token (免去复杂权限挑选)：\n"
+            "   前往 GitHub -> Settings -> Developer Settings -> Personal access tokens (classic) -> Generate new token (classic)，仅勾选 [repo] 权限即可全自动推送与建仓。\n"
+            "2. 若使用细粒度 Token (github_pat_...)：\n"
+            "   请在 GitHub Token 设置页中将 [Repository access] 设为 All repositories，并将 [Permissions -> Contents] 设为 'Read and write' (读写权限)。"
+        )
+
+    # 🌐 2. 网络或 SSL 握手自愈拦截
     network_keywords = ["unable to access", "ssl_error", "ssl_connect", "timed out", "could not resolve host", "connection refused"]
-    if any(kw in err_msg.lower() for kw in network_keywords):
+    if any(kw in lower_msg for kw in network_keywords):
         tlog.warning("💡 [自愈建议] 检测到本地网络在直连 github.com 时超时或 SSL 握手失败。")
         tlog.warning("   1. 检查本地代理：如果使用了代理工具，请确保已正确配置 git 全局代理，例如：")
         tlog.warning("      git config --global http.proxy http://127.0.0.1:您的代理端口")

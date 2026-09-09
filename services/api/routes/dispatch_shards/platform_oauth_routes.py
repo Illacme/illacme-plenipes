@@ -161,20 +161,24 @@ async def vercel_oauth_status():
     """
     📡 探测本地 vercel 会话登录状态与 Token
     """
-    config_path = os.path.expanduser("~/.config/vercel/auth.json")
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            token = data.get("token")
-            if token:
-                return {
-                    "logged_in": True,
-                    "username": data.get("username") or "已授权 Vercel 账户",
-                    "token": token
-                }
-        except Exception:
-            pass
+    config_paths = [
+        os.path.expanduser("~/.config/vercel/auth.json"),
+        os.path.expanduser("~/Library/Application Support/com.vercel.cli/auth.json")
+    ]
+    for config_path in config_paths:
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                token = data.get("token")
+                if token:
+                    return {
+                        "logged_in": True,
+                        "username": data.get("username") or "已授权 Vercel 账户",
+                        "token": token
+                    }
+            except Exception:
+                pass
     return {"logged_in": False, "message": "未检测到本地有效的 Vercel 登录会话，请先点击登录授权"}
 
 @router.post("/api/plugins/firebase/oauth-login", dependencies=[Depends(verify_token)])

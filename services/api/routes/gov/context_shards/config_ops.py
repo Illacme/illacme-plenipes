@@ -22,7 +22,8 @@ def get_full_config_impl(level: str = "merged", imprint_id: Optional[str] = None
     if level == "merged":
         data = engine.config.model_dump()
         data["_governance_rules"] = GOVERNANCE_RULES
-        data["_is_licensed"] = LicenseGuard.is_licensed() or LicenseGuard.is_default_imprint_and_theme_active()
+        data["_is_licensed"] = LicenseGuard.is_licensed()
+        data["_license_tier"] = LicenseGuard.get_active_tier()
         return data
 
     import yaml

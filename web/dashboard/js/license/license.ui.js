@@ -116,6 +116,33 @@
         return html;
     };
 
+    /**
+     * 🏷️ [统一三级映射] 左上角版本标识与授权中心保持一致
+     * 此为唯一权威赋值入口，所有对 header-pro-badge 的更新必须走此函数
+     */
+    function _applyHeaderTierBadge(isLicensed, tier) {
+        const el = document.getElementById('header-pro-badge');
+        if (!el) return;
+
+        // 🛡️ 严格三级对正：未激活授权、LITE 或空值均坚决映射为社区版，绝不误跳为专业版
+        const rawTier = (tier || '').toUpperCase();
+        if (!isLicensed || rawTier === 'LITE' || !rawTier) {
+            el.innerText = '🌱 社区版';
+            el.className = 'header-pro-badge lite-active';
+        } else if (rawTier === 'STANDARD' || rawTier === 'PLUS' || rawTier === 'STD') {
+            el.innerText = '🚀 增强版';
+            el.className = 'header-pro-badge standard-active';
+        } else if (rawTier === 'PRO') {
+            el.innerText = '💎 专业版';
+            el.className = 'header-pro-badge pro-active';
+        } else {
+            el.innerText = '🌱 社区版';
+            el.className = 'header-pro-badge lite-active';
+        }
+        el.style.display = 'inline-flex';
+    }
+    window._applyHeaderTierBadge = _applyHeaderTierBadge;
+
     async function fetchLicenseDataAndUpdateDOM() {
         try {
             const res = await apiFetch('/api/governance/license/info');
@@ -130,22 +157,18 @@
             const descEl = document.getElementById('lic-banner-desc');
             const pillsEl = document.getElementById('lic-feature-pills');
             const revokeBtn = document.getElementById('btn-revoke-license');
-            const headerProBadge = document.getElementById('header-pro-badge');
 
-            if (headerProBadge) {
-                headerProBadge.innerText = res.is_licensed ? '💎 PRO' : '🌱 LITE';
-                headerProBadge.className = res.is_licensed ? 'header-pro-badge pro-active' : 'header-pro-badge lite-active';
-                headerProBadge.style.display = 'inline-flex';
-            }
+            // 🏷️ 同步左上角版本标识（统一走三级映射）
+            _applyHeaderTierBadge(res.is_licensed, res.tier);
 
             if (verBadge && res.version) {
                 const cleanVer = String(res.version).split('-')[0];
                 verBadge.innerText = cleanVer.startsWith('v') || cleanVer.startsWith('V') ? cleanVer : `v${cleanVer}`;
             }
 
-            if (res.is_licensed) {
-                const tier = res.tier || 'PRO';
-                if (tier === 'STANDARD') {
+            const rawTier = (res.tier || '').toUpperCase();
+            if (res.is_licensed && rawTier !== 'LITE' && rawTier) {
+                if (rawTier === 'STANDARD' || rawTier === 'PLUS' || rawTier === 'STD') {
                     if (emblem) { emblem.innerText = '🚀'; emblem.style.background = 'linear-gradient(135deg, rgba(0, 242, 255, 0.18), rgba(0, 100, 255, 0.08))'; emblem.style.borderColor = 'rgba(0, 242, 255, 0.4)'; }
                     if (badge) { badge.innerText = '基础增强版'; badge.className = 'tier-tag tier-global'; badge.style.color = 'var(--neon-cyan, #00f2fe)'; }
                     if (descEl) descEl.innerHTML = `<div>🚀 已解锁基础增强版特权！支持 5 个独立品牌与 5 个目标语种矩阵。</div><div style="margin-top: 6px; font-weight: 600; color: var(--accent-primary, #00f2fe); font-size: 0.78rem;">🔑 授权客户：${res.customer} <span style="opacity: 0.85; font-weight: normal;">(至 ${res.exp_date})</span></div>`;
@@ -161,8 +184,8 @@
             } else {
                 if (emblem) { emblem.innerText = '🌱'; emblem.style.background = 'rgba(0, 242, 255, 0.08)'; emblem.style.borderColor = 'rgba(0, 242, 255, 0.25)'; }
                 if (badge) { badge.innerText = '免费社区版'; badge.className = 'tier-tag tier-local'; }
-                if (descEl) descEl.innerHTML = '✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 1 个目标翻译语种。激活增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。';
-                if (pillsEl) pillsEl.innerHTML = `<span class="lic-pill-unlocked">✓ 工业级 AI 出版引擎</span><span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span><span class="lic-pill-unlocked">✓ 创作中心灵感润色</span><span class="lic-pill-unlocked">✓ 1个自建品牌+官方示范</span><span class="lic-pill-unlocked">✓ 1个目标翻译语种</span><span class="lic-pill-unlocked">✓ 📂 子目录精准收稿</span><span class="lic-pill-locked">🔒 5 个独立品牌 (增强版)</span><span class="lic-pill-locked">🔒 5 个目标语种 (增强版)</span><span class="lic-pill-locked">🔒 99 个独立品牌 (专业版)</span><span class="lic-pill-locked">🔒 全量语种矩阵 (专业版)</span>`;
+                if (descEl) descEl.innerHTML = '✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 2 个目标翻译语种。激活增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。';
+                if (pillsEl) pillsEl.innerHTML = `<span class="lic-pill-unlocked">✓ 工业级 AI 出版引擎</span><span class="lic-pill-unlocked">✓ Obsidian 双链全息图谱</span><span class="lic-pill-unlocked">✓ 创作中心灵感润色</span><span class="lic-pill-unlocked">✓ 1个自建品牌+官方示范</span><span class="lic-pill-unlocked">✓ 2个目标翻译语种</span><span class="lic-pill-unlocked">✓ 📂 子目录精准收稿</span><span class="lic-pill-locked">🔒 5 个独立品牌 (增强版)</span><span class="lic-pill-locked">🔒 5 个目标语种 (增强版)</span><span class="lic-pill-locked">🔒 99 个独立品牌 (专业版)</span><span class="lic-pill-locked">🔒 全量语种矩阵 (专业版)</span>`;
                 if (revokeBtn) revokeBtn.style.display = 'none';
             }
         } catch (err) { console.error('获取许可证信息失败:', err); }
@@ -205,20 +228,7 @@
     window.checkAndUpdateHeaderProBadge = async function () {
         try {
             const res = await apiFetch('/api/governance/license/info');
-            const headerProBadge = document.getElementById('header-pro-badge');
-            if (headerProBadge && res) {
-                if (!res.is_licensed) {
-                    headerProBadge.innerText = '🌱 LITE';
-                    headerProBadge.className = 'header-pro-badge lite-active';
-                } else if (res.tier === 'STANDARD') {
-                    headerProBadge.innerText = '🚀 PLUS';
-                    headerProBadge.className = 'header-pro-badge pro-active';
-                } else {
-                    headerProBadge.innerText = '💎 PRO';
-                    headerProBadge.className = 'header-pro-badge pro-active';
-                }
-                headerProBadge.style.display = 'inline-flex';
-            }
+            if (res) _applyHeaderTierBadge(res.is_licensed, res.tier);
         } catch (e) {}
     };
 

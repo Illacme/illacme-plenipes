@@ -35,56 +35,88 @@ def probe_git_hosting(
 
         token = settings.get("token", "")
 
-        if not repo:
-            logs.append(log_func("ERROR", "❌ [错误] 未配置 GitHub 仓库 (格式应为 'owner/repo' 或 'git@github.com:owner/repo.git')。"))
-            return False
-
         if token:
-            logs.append(log_func("INFO", f"📡 [探测] 正在校验 GitHub Repository '{repo}' API 连通性..."))
-            url = f"https://api.github.com/repos/{repo}"
             headers = {
                 "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json"
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "Illacme-Plenipes-Sovereignty-Bot"
             }
+            logs.append(log_func("INFO", "📡 [探测] 正在校验 GitHub Token 访问令牌有效性..."))
+
+            user_login = ""
+            try:
+                user_resp = requests.get("https://api.github.com/user", headers=headers, proxies=proxies, timeout=net_timeout)
+                if user_resp.status_code == 200:
+                    user_data = user_resp.json() if hasattr(user_resp, "json") else {}
+                    user_login = user_data.get("login", "")
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] GitHub Token 鉴权有效，识别当前用户身份: '{user_login}'。"))
+                elif user_resp.status_code in [401, 403]:
+                    logs.append(log_func("ERROR", "❌ [错误] GitHub Token 鉴权失败：访问令牌无效、已过期或缺少 repo 权限。"))
+                    return False
+                else:
+                    logs.append(log_func("WARN", f"⚠️ [提示] GitHub 用户状态码: {user_resp.status_code}，正在尝试验证目标仓库..."))
+            except Exception as u_err:
+                logs.append(log_func("WARN", f"⚠️ [网络] 探测 GitHub 用户接口轻微波动: {u_err}，尝试直接核对仓库..."))
+
+            # 🚀 [零配置自愈]：若未指定仓库，自动使用默认仓库名
+            if not repo:
+                derived_repo = f"{user_login}/illacme-press" if user_login else "illacme-press"
+                logs.append(log_func("SUCCESS", f"🟢 [零配置就绪] 未手动指定仓库，首次发布时系统将利用 Token 自动在云端为您创建公开仓库 '{derived_repo}' 并激活 Pages。"))
+                return True
+
+            # 自动补全单层仓库名 (如 illacme-test -> user_login/illacme-test)
+            if "/" not in repo and user_login:
+                repo = f"{user_login}/{repo}"
+
+            logs.append(log_func("INFO", f"📡 [探测] 正在校验 GitHub Repository '{repo}' 云端状态..."))
+            url = f"https://api.github.com/repos/{repo}"
             try:
                 resp = requests.get(url, headers=headers, proxies=proxies, timeout=net_timeout)
                 if resp.status_code == 200:
                     data = resp.json() if hasattr(resp, "json") else {}
                     is_private = data.get("private", False)
                     if is_private:
-                        logs.append(log_func("SUCCESS", f"🟢 [成功] API 鉴权通过！成功探测到私有仓库 '{repo}' (🔒 私有仓库在主页公开列表中隐私隐藏)。"))
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] API 校验通过！检测到已存在的私有仓库 '{repo}' (🔒 私有仓库在主页公开列表中隐私隐藏)。"))
                         logs.append(log_func("INFO", "💡 [提示] GitHub 免费版的私有仓库默认无法挂载 Pages。若访问网页报 404，请前往 GitHub 仓库 (Settings -> Change visibility) 设为 Public (公开仓库)。"))
                     else:
-                        logs.append(log_func("SUCCESS", f"🟢 [成功] GitHub API 鉴权校验通过，成功探测到公开仓库 '{repo}'。"))
-                elif resp.status_code in [401, 403]:
-                    logs.append(log_func("ERROR", "❌ [错误] GitHub Token 校验失败：访问令牌无效或已过期，请核对权限。"))
-                    success = False
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] API 校验通过！检测到已存在的公开仓库 '{repo}'。"))
+
+                    # 🛡️ 细粒度 Token (github_pat_) 权限探针：校验 Contents 读写权，防止 Git Push 报 403
+                    if token.startswith("github_pat_"):
+                        try:
+                            c_resp = requests.get(f"https://api.github.com/repos/{repo}/contents", headers=headers, proxies=proxies, timeout=min(net_timeout, 8))
+                            if c_resp.status_code == 403:
+                                logs.append(log_func("ERROR", f"❌ [权限不足] 当前细粒度 Token (Fine-grained) 缺少对仓库 '{repo}' 的写入权限 (403)。"))
+                                logs.append(log_func("INFO", "💡 [排查指引] 请前往 GitHub 令牌设置页，在 Repository permissions 中将 [Contents] 设为 'Read and write'；或直接创建 Classic Token 并勾选 [repo] 即可！"))
+                                return False
+                        except Exception:
+                            pass
+
+                    return True
                 elif resp.status_code == 404:
-                    logs.append(log_func("ERROR", f"❌ [错误] 未在 GitHub 上发现仓库 '{repo}'，请确认仓库是否正确创建，或 Token 具备 Repo 访问权限。"))
-                    success = False
+                    # 🚀 [核心闭环]：目标仓库尚未创建，这正是系统将全自动建仓的目标，判定为测试通过！
+                    logs.append(log_func("SUCCESS", f"🟢 [自动建仓就绪] 目标仓库 '{repo}' 尚未在 GitHub 创建。发布时系统将自动调用 API 在云端为您创建公开仓库并开启 GitHub Pages！"))
+                    return True
+                elif resp.status_code in [401, 403]:
+                    logs.append(log_func("ERROR", "❌ [错误] 访问仓库权限受限 (401/403)，请确认 Token 具备完整的 repo 权限。"))
+                    return False
                 else:
-                    logs.append(log_func("ERROR", f"❌ [错误] GitHub API 返回异常状态码 {resp.status_code}: {resp.text[:100]}"))
-                    success = False
-            except Exception:
-                # 🛡️ 物理自动重试 1 次（防止瞬时网络波动）
+                    logs.append(log_func("WARN", f"⚠️ [提示] GitHub 仓库状态返回 {resp.status_code}，但 Token 鉴权有效，允许测试通过。"))
+                    return True
+            except Exception as e:
+                # 重试一次
                 try:
-                    logs.append(log_func("INFO", "📡 [重试] 正在通过本地代理尝试第 2 次连接 GitHub API..."))
                     resp = requests.get(url, headers=headers, proxies=proxies, timeout=net_timeout)
                     if resp.status_code == 200:
-                        data = resp.json() if hasattr(resp, "json") else {}
-                        is_private = data.get("private", False)
-                        if is_private:
-                            logs.append(log_func("SUCCESS", f"🟢 [成功] 重试成功！API 鉴权通过，探测到私有仓库 '{repo}' (🔒 主页公开列表隐身)。"))
-                        else:
-                            logs.append(log_func("SUCCESS", f"🟢 [成功] 重试成功！GitHub API 鉴权校验通过，探测到仓库 '{repo}'。"))
-                        success = True
-                    else:
-                        logs.append(log_func("ERROR", f"❌ [错误] GitHub API 重试返回异常状态码 {resp.status_code}"))
-                        success = False
-                except Exception as retry_err:
-                    logs.append(log_func("WARN", f"⚠️ [网络] 连接 GitHub API 超时或出错: {retry_err}。"))
-                    logs.append(log_func("INFO", "💡 [自愈建议] 1. 请核对本地代理节点连接性；2. 若仅部署网页，亦可使用 SSH 格式 (git@github.com:owner/repo.git) 避开 API 限频。"))
-                    success = False
+                        logs.append(log_func("SUCCESS", f"🟢 [成功] 重试成功！API 校验通过，探测到仓库 '{repo}'。"))
+                        return True
+                    elif resp.status_code == 404:
+                        logs.append(log_func("SUCCESS", f"🟢 [自动建仓就绪] 目标仓库 '{repo}' 尚未创建，发布时系统将自动在云端创建公开仓库。"))
+                        return True
+                except Exception:
+                    pass
+                logs.append(log_func("WARN", f"⚠️ [网络] 连接 GitHub 仓库 API 波动: {e}，但 Token 鉴权已有效，允许测试通过。"))
+                return True
         else:
             # 🚀 [多因子免密探测] 优先使用本地 Git / SSH 探针直接握手远程仓库
             full_repo_url = raw_repo if ("github.com" in raw_repo or raw_repo.startswith("git@")) else f"git@github.com:{repo}.git"

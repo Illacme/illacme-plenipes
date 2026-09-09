@@ -195,14 +195,14 @@ class LicenseGuard:
     def get_max_i18n_targets(cls) -> int:
         """
         获取当前授权允许配置的最大多语言目标语种数量。
-        - 免费社区版 (LITE): 1 个目标语种
+        - 免费社区版 (LITE): 2 个目标语种
         - 基础增强版 (STANDARD): 5 个目标语种
         - 高级专业版 (PRO): 全量语种矩阵任选 (999)
         """
         tier = cls.get_active_tier()
         if tier == "PRO": return 999
         if tier == "STANDARD": return 5
-        return 1
+        return 2
 
     @classmethod
     def is_pro_feature_allowed(cls, feature_name: str) -> bool:

@@ -5,7 +5,10 @@
 
 (function () {
     // 🚀 [V108.0] 自适应向导点击联动与任务指引更新算子 (常驻大卡片焦点高亮与精准滚动)
-    window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null) => {
+    window.handleWizardStepClick = (stepIdx, pluginId, category, clickedBtn = null, skipFocus = false) => {
+        // 装帧主题不走分步凭据向导逻辑，豁免任何光标抢夺
+        if (category === 'theme') return;
+
         const drawer = document.getElementById('plugin-drawer') || document;
         const missionBanner = drawer.querySelector('#wiz-mission-banner');
         const steps = window.getPluginWizardSteps ? window.getPluginWizardSteps(pluginId, category) : ['1. 鉴权身份凭据', '2. 目标与扩展', '3. 连通测试与保存'];
@@ -62,7 +65,7 @@
 
         // 3. 辅助函数：物理精准滚动至目标大卡片的外框顶部（感知 sticky 吸顶向导高度并保留 12px 舒适发光边距）
         const scrollToCardTop = (targetCard) => {
-            if (!targetCard) return;
+            if (!targetCard || skipFocus) return;
             const drawerBody = document.getElementById('p-drawer-body');
             if (drawerBody) {
                 const wizardHeader = drawerBody.querySelector('.plugin-wizard-header');
@@ -94,9 +97,11 @@
                 card0.style.boxShadow = '';
                 const tag = card0.querySelector('.card-status-tag');
                 if (tag) tag.style.display = 'inline-block';
-                const firstInput = card0.querySelector('input, textarea');
-                if (firstInput) firstInput.focus();
-                setTimeout(() => scrollToCardTop(card0), 60);
+                if (!skipFocus) {
+                    const firstInput = card0.querySelector('input, textarea');
+                    if (firstInput) firstInput.focus();
+                    setTimeout(() => scrollToCardTop(card0), 60);
+                }
             }
         } else if (isFinalStep) {
             // === 最终步：连通测试与保存 ===
@@ -107,7 +112,7 @@
                 missionBanner.style.background = 'rgba(255, 183, 0, 0.06)';
             }
             const drawerBody = document.getElementById('p-drawer-body');
-            if (drawerBody) {
+            if (drawerBody && !skipFocus) {
                 drawerBody.scrollTo({ top: drawerBody.scrollHeight, behavior: 'smooth' });
             }
             if (footerContainer) {
@@ -138,9 +143,11 @@
                 const internalDetails = card1.querySelector('details');
                 if (internalDetails) internalDetails.open = true;
 
-                const firstInput = card1.querySelector('input, select, textarea');
-                if (firstInput) firstInput.focus();
-                setTimeout(() => scrollToCardTop(card1), 60);
+                if (!skipFocus) {
+                    const firstInput = card1.querySelector('input, select, textarea');
+                    if (firstInput) firstInput.focus();
+                    setTimeout(() => scrollToCardTop(card1), 60);
+                }
             }
         } else if (stepIdx === 2 && totalSteps === 4) {
             // === 4 步流程中的步骤 3：高级调参 / 静态托管 / 代理 / 事件订阅 ===
@@ -162,9 +169,11 @@
                 const internalDetails = card2.querySelector('details');
                 if (internalDetails) internalDetails.open = true;
 
-                const firstInput = card2.querySelector('input, select, textarea');
-                if (firstInput) firstInput.focus();
-                setTimeout(() => scrollToCardTop(card2), 60);
+                if (!skipFocus) {
+                    const firstInput = card2.querySelector('input, select, textarea');
+                    if (firstInput) firstInput.focus();
+                    setTimeout(() => scrollToCardTop(card2), 60);
+                }
             }
         }
     };

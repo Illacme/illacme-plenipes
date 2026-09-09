@@ -9,7 +9,8 @@
         const glossary = gov.glossary || {};
         const targets = (window.settingsData?.i18n_settings?.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
         const isLicensed = window.settingsData?._is_licensed || false;
-        const activeTargets = (!isLicensed && targets.length > 1) ? [targets[0]] : targets;
+        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 2);
+        const activeTargets = (!isLicensed && targets.length > maxTargets) ? targets.slice(0, maxTargets) : targets;
         const availableLangs = window.availableLangs || [];
         const activeTargetsForTabs = activeTargets;
 
@@ -40,7 +41,7 @@
                         `}
                         ${!isLicensed ? `
                             <span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: auto; white-space: nowrap;">
-                                🌱 免费社区版：单语种术语库
+                                🌱 免费社区版：最多支持 ${maxTargets} 目标语种术语库
                             </span>
                         ` : ''}
                     </div>

@@ -105,7 +105,7 @@ class TestVercelPublisher:
             assert "deploy" in cmd
             assert "--token=token-123" in cmd
             assert "--prod" in cmd
-            assert "--name" in cmd
+            assert "--project" in cmd
             env = mock_run.call_args[1]["env"]
             assert env["CI"] == "1"
             assert env["VERCEL_ORG_ID"] == "org-123"

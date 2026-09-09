@@ -121,21 +121,50 @@ window.buildPluginConfigFormHtml = (p) => {
                     <div class="settings-grid">
             `;
             
+            // 🚀 [V114.0 零假数据架构] 全局真实出版基线映射：优先使用真实全站数据，杜绝 schema 僵尸假数据
+            const globalRealDefaults = {
+                site_name: window.settingsData?.site_name || window.settingsData?.imprint_name || '',
+                site_description: window.settingsData?.site_description || window.settingsData?.imprint_description || '',
+                logo_path: window.settingsData?.logo_path || '',
+                favicon_path: window.settingsData?.favicon_path || '',
+                footer_copyright: window.settingsData?.frontmatter_defaults?.copyright || window.settingsData?.publishing_compliance?.copyright || '',
+                license: window.settingsData?.frontmatter_defaults?.license || '',
+                author: window.settingsData?.frontmatter_defaults?.author || '',
+            };
+
             for (const { key, prop } of items) {
                 const label = prop.title || key;
-                const propType = prop.type === 'boolean' ? 'checkbox' : (prop.type === 'number' || prop.type === 'integer' ? 'number' : 'text');
+                const isColor = key.includes('color') || prop.format === 'color';
+                const propType = prop.type === 'boolean' ? 'checkbox' : (prop.type === 'number' || prop.type === 'integer' ? 'number' : (isColor ? 'color' : 'text'));
+
                 
                 let currentVal = undefined;
-                if (window.settingsData && window.settingsData.theme_options && window.settingsData.theme_options[id] && window.settingsData.theme_options[id].options) {
+                if (window.settingsData?.theme_options?.[id]?.options && key in window.settingsData.theme_options[id].options) {
                     currentVal = window.settingsData.theme_options[id].options[key];
                 }
+                
+                // 仅当用户未专属定制时回退：优先继承全局真实出版基线；若非全局基线字段才使用 prop.default
                 if (currentVal === undefined) {
-                    currentVal = prop.default;
+                    if (key in globalRealDefaults && globalRealDefaults[key]) {
+                        currentVal = globalRealDefaults[key];
+                    } else if (key === 'hero_subtitle' || key === 'hero_title') {
+                        // 首页 Hero 不硬编码第三方 SSG 的开源假宣传语，默认置空
+                        currentVal = '';
+                    } else {
+                        currentVal = prop.default;
+                    }
+                }
+                
+                let placeholderText = '';
+                if (key in globalRealDefaults && globalRealDefaults[key]) {
+                    placeholderText = `继承全站基线: ${globalRealDefaults[key]}`;
+                } else if (prop.default !== undefined) {
+                    placeholderText = String(prop.default);
                 }
                 
                 html += renderSettingsItem(label, `theme_options.${id}.options.${key}`, currentVal, propType, {
                     description: prop.description,
-                    placeholder: prop.default !== undefined ? String(prop.default) : ''
+                    placeholder: placeholderText
                 });
             }
             

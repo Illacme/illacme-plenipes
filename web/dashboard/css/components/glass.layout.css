@@ -124,21 +124,7 @@
     box-shadow: 0 0 10px var(--accent-primary);
 }
 
-/* 🧭 Top Nav Active Indicators */
-.nav-item {
-    padding: 10px 20px; border-radius: 12px; cursor: pointer; transition: all 0.3s;
-    display: flex; align-items: center; gap: 8px; position: relative;
-}
-.nav-item:hover { background: var(--white-05); }
-.nav-item.active {
-    background: var(--white-08); color: var(--accent-secondary);
-}
-.nav-item.active::after {
-    content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 60%; height: 3px;
-    background: var(--accent-secondary); border-radius: 10px;
-    box-shadow: 0 0 10px var(--accent-secondary);
-    pointer-events: none;
-}
+/* 🧭 Top Nav Active Indicators: Fully governed by dashboard.base.css (Sovereign Aurora Matrix) */
 .tab-icon { margin-right: 10px; }
 .tab-content-area { flex: 1; overflow-y: auto; padding-right: 10px; }
 

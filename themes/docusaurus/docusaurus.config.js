@@ -6,6 +6,8 @@
 
 import { themes as prismThemes } from 'prism-react-renderer';
 import themeOptions from './theme.options.js';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -15,10 +17,15 @@ const config = {
   tagline: themeOptions.hero_subtitle || 'Eason are cool',
   favicon: 'img/favicon.ico',
 
+
+
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
+
+  // 🛡️ 强制规范化末尾斜杠，彻底解决 SPA 客户端路由严格匹配 404
+  trailingSlash: false,
 
   // Set the production url of your site here
   url: 'https://your-docusaurus-site.example.com',
@@ -31,7 +38,11 @@ const config = {
   organizationName: 'dipoda', // Usually your GitHub org/user name.
   projectName: 'illacme-plenipes', // Usually your repo name.
 
-  onBrokenLinks: 'warn',  // plenipes 管理的内容可能有跨语言的临时断链
+  onBrokenLinks: 'throw',  // 严格模式：构建若有断链立即拦截报错
+
+  clientModules: [
+    './src/clientModules/routeGuard.js',
+  ],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -77,16 +88,23 @@ const config = {
           path: themeOptions.default_docs_path || 'i18n/zh-Hans/docusaurus-plugin-content-docs/current', // 核心对齐：告诉 Docusaurus 默认中文文档在引擎生成的那个 zh-Hans 目录下
           // plenipes 引擎管理内容，自动生成侧边栏
           sidebarPath: './sidebars.js',
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
         },
         blog: {
           path: themeOptions.default_blog_path || 'i18n/zh-Hans/docusaurus-plugin-content-blog', // 👈 关键：手动指定默认语种的博客存放路径
           showReadingTime: true,
-          // 🚀 注入以下两行静默指令，彻底屏蔽自动化管线带来的警告噪音
+          // 🚀 注入以下静默指令，彻底屏蔽自动化管线带来的警告噪音
           onInlineAuthors: 'ignore',
           onUntruncatedBlogPosts: 'ignore',
+          onInlineTags: 'ignore',
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
         },
         pages: {
-          path: themeOptions.default_pages_path || 'i18n/zh-Hans/docusaurus-plugin-content-pages', // 👈 关键：手动指定默认语种的博客存放路径
+          path: themeOptions.default_pages_path || 'src/pages', // 👈 独立页面存放路径，包含 src/pages/index.js
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -94,6 +112,18 @@ const config = {
       }),
     ],
   ],
+
+  stylesheets: [
+    {
+      href: '/katex/katex.min.css',
+      type: 'text/css',
+    },
+    {
+      href: '/assets/theme.options.css',
+      type: 'text/css',
+    },
+  ],
+
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -111,7 +141,26 @@ const config = {
         },
         items: [
           ...(themeOptions.navbar_items && themeOptions.navbar_items.length > 0
-            ? themeOptions.navbar_items
+            ? themeOptions.navbar_items.map(item => {
+                const clean = {
+                  position: item.position || 'left',
+                  label: item.label || '',
+                };
+                if (item.type === 'docSidebar') {
+                  clean.type = 'docSidebar';
+                  clean.sidebarId = item.sidebarId || 'tutorialSidebar';
+                } else if (item.href) {
+                  clean.href = item.href;
+                } else if (item.to || item.url) {
+                  const rawTarget = item.to || item.url;
+                  if (rawTarget.startsWith('http://') || rawTarget.startsWith('https://')) {
+                    clean.href = rawTarget;
+                  } else {
+                    clean.to = rawTarget.length > 1 ? rawTarget.replace(/\/+$/, '') : rawTarget;
+                  }
+                }
+                return clean;
+              })
             : [
                 {
                   type: 'docSidebar',

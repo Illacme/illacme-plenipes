@@ -166,6 +166,7 @@ window.getUIModalsHTML = () => {
                         <button class="primary-btn glow-btn" id="btn-terminal-open-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.openPreviewSite()">🌐 立即前往预览站点</button>
                         <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
                         <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-visit-site" style="display: none; background: linear-gradient(135deg, #00ff88 0%, #00f0ff 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 255, 136, 0.4);" onclick="window.openPrimaryLiveSite()">🌐 立即访问线上主站 ↗</button>
                         <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">关闭</button>
                         <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
                     </div>

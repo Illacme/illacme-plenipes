@@ -13,6 +13,7 @@ class HealthCheckResponse(BaseModel):
     status: str = Field("ok", description="探针存活状态 (ok, starting, degraded, error)")
     engine: str = Field("Illacme-plenipes", description="系统引擎名称与版本标识")
     imprint: Optional[str] = Field(None, description="当前物理激活的版图印记 ID")
+    version_drift: Optional[Dict[str, Any]] = Field(None, description="版本与源码漂移感知数据")
     timestamp: float = Field(default_factory=time.time, description="响应生成的 Unix 时间戳")
 
 class SystemHealthResponse(BaseModel):
@@ -21,6 +22,7 @@ class SystemHealthResponse(BaseModel):
     engine: str = Field("Illacme-plenipes", description="系统引擎名称与版本标识")
     imprint: Optional[str] = Field(None, description="当前物理激活的版图印记 ID")
     services: Dict[str, Any] = Field(default_factory=dict, description="底层核心服务运行状态字典")
+    version_drift: Optional[Dict[str, Any]] = Field(None, description="版本与源码漂移感知数据")
     timestamp: float = Field(default_factory=time.time, description="响应生成的 Unix 时间戳")
 
 class ComponentHealthModel(BaseModel):

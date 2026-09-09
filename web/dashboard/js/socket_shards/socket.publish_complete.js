@@ -32,6 +32,18 @@ window._wsHandlePublishComplete = (data) => {
             if (typeof window.appendTerminalLog === 'function') {
                 window.appendTerminalLog('✅ 同步流水线执行完毕，资产已全量生成！', '#00ff88');
             }
+            // 🌐 [V90.0] 渲染全域发布推送统计结果与访问看板
+            if (typeof window.renderDeploymentSummaryCard === 'function') {
+                if (data.payload?.deployment_summary) {
+                    window.renderDeploymentSummaryCard(data.payload.deployment_summary);
+                } else if (typeof window.apiFetch === 'function') {
+                    window.apiFetch('/api/governance/deployment-summary').then(res => {
+                        if (res && res.status === 'success' && res.summary) {
+                            window.renderDeploymentSummaryCard(res.summary);
+                        }
+                    }).catch(() => {});
+                }
+            }
             const okBtn = document.getElementById('btn-terminal-ok');
             if (okBtn) okBtn.style.display = 'block';
 

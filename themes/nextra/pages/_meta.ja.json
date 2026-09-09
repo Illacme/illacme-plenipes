@@ -1,0 +1,31 @@
+{
+  "index": "Nextra",
+  "advanced": "⚡ 高度な機能",
+  "features": "✨ コア機能",
+  "get-started": "Get Started",
+  "themes": "🎭 テーマ",
+  "en": {
+    "display": "hidden"
+  },
+  "ja": {
+    "display": "hidden"
+  },
+  "zh": {
+    "display": "hidden"
+  },
+  "ko": {
+    "display": "hidden"
+  },
+  "fr": {
+    "display": "hidden"
+  },
+  "de": {
+    "display": "hidden"
+  },
+  "es": {
+    "display": "hidden"
+  },
+  "ru": {
+    "display": "hidden"
+  }
+}

@@ -35,3 +35,36 @@ def get_audit_logs(imprint_id: Optional[str] = None) -> dict:
         return {"logs": logs}
     except Exception as e:
         return {"error": f"Failed to fetch audit logs: {str(e)}"}
+
+@router.get("/api/governance/link-doctor/audit", dependencies=[Depends(verify_token)])
+def get_link_doctor_audit(imprint_id: Optional[str] = None) -> dict:
+    """运行全库跨主题多语言内链健康体检"""
+    engine = get_global_engine()
+    vault_dir = engine.config.vault_root if engine and hasattr(engine, "config") else "vault"
+    from core.governance.link_doctor import CrossThemeLinkDoctor
+    try:
+        report = CrossThemeLinkDoctor.run_full_vault_audit(vault_dir, engine=engine)
+        return report
+    except Exception as e:
+        return {"error": f"Link Doctor audit failed: {str(e)}", "passed": False, "issues": []}
+
+@router.post("/api/governance/link-doctor/diagnose", dependencies=[Depends(verify_token)])
+def diagnose_doc_links(payload: dict) -> dict:
+    """针对单篇稿件内容即时诊断跨 5 大主题的链接健康状态"""
+    engine = get_global_engine()
+    body = payload.get("body", "")
+    sub_path = payload.get("sub_path", "docs/untitled.md")
+    from core.governance.link_doctor import CrossThemeLinkDoctor
+    all_issues = []
+    for theme in CrossThemeLinkDoctor.THEMES:
+        for lang in CrossThemeLinkDoctor.LOCALES:
+            issues = CrossThemeLinkDoctor.diagnose_content_links(
+                body=body, theme_name=theme, lang=lang, sub_path=sub_path, engine=engine
+            )
+            all_issues.extend(issues)
+    return {
+        "themes": CrossThemeLinkDoctor.THEMES,
+        "locales": CrossThemeLinkDoctor.LOCALES,
+        "issues": all_issues,
+        "passed": len([i for i in all_issues if i["level"] in ("CRITICAL", "ERROR")]) == 0
+    }

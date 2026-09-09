@@ -116,6 +116,7 @@ async def trigger_publish_impl(req: Dict[str, Any]) -> Dict[str, Any]:
         force: bool = req.get("force", False)
         clear_cache: bool = req.get("clear_cache", False)
         target_langs = req.get("target_langs", None)
+        local_only: bool = req.get("local_only", False)
         from core.runtime.orchestrator import start_asynchronous_sync
         task_id = start_asynchronous_sync(
             engine,
@@ -124,7 +125,8 @@ async def trigger_publish_impl(req: Dict[str, Any]) -> Dict[str, Any]:
             clear_cache=clear_cache,
             sandbox=(mode == "sandbox"),
             requested_paths=paths,
-            target_langs=target_langs
+            target_langs=target_langs,
+            local_only=local_only
         )
         if task_id is None:
             return {"status": "error", "message": "Already running"}
@@ -178,22 +180,14 @@ async def translate_nav_labels_impl(req: TranslateNavLabelsRequest) -> Dict[str,
 
     translations = {}
     from core.adapters.egress.ssg.base import SLOT_I18N_FALLBACK
-    slot = (req.slot or "docs").lower()
 
-    # 智能推导字典槽位 key (支持按 slot、中文名、英文名智能索引)
+    # 智能推导字典槽位 key (仅当用户 label 确实精准命中官方标准词汇时才匹配，绝不盲目兜底到底层 slot)
     clean_label_lower = label.lower()
-    matched_dict_key = slot
-    if matched_dict_key not in SLOT_I18N_FALLBACK:
-        for k, dict_item in SLOT_I18N_FALLBACK.items():
-            if k.lower() == clean_label_lower or dict_item.get("zh") == label or (dict_item.get("en") and dict_item.get("en", "").lower() == clean_label_lower):
-                matched_dict_key = k
-                break
-    else:
-        # 如果 slot 存在，但 label 明显是其他槽位（如 slot 是 custom/pages 但 label 是“关于”或“特性”）
-        for k, dict_item in SLOT_I18N_FALLBACK.items():
-            if dict_item.get("zh") == label or (dict_item.get("en") and dict_item.get("en", "").lower() == clean_label_lower):
-                matched_dict_key = k
-                break
+    matched_dict_key = None
+    for k, dict_item in SLOT_I18N_FALLBACK.items():
+        if dict_item.get("zh") == label or (dict_item.get("en") and dict_item.get("en", "").lower() == clean_label_lower) or k.lower() == clean_label_lower:
+            matched_dict_key = k
+            break
 
     # 尝试获取 AI 算力节点
     node = None

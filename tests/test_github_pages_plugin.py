@@ -385,5 +385,44 @@ class TestGitHubPagesPublisher:
         res_other = pub._add_autotherapy_suggestion(err_other)
         assert res_other == err_other
 
+    def test_parse_owner_repo_zero_config(self):
+        """验证零配置场景下：repo_url 为空但有 token 时，能通过 API 自动获取用户并推导仓库"""
+        from adapters.egress.publishers.github_pages_shards.cloud_api_ops import parse_owner_repo_impl
+        from unittest.mock import patch, MagicMock
+        import json
+
+        mock_ctx = MagicMock()
+        mock_ctx.status = 200
+        mock_ctx.read.return_value = json.dumps({"login": "autouser"}).encode("utf-8")
+        mock_response = MagicMock()
+        mock_response.__enter__.return_value = mock_ctx
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            owner, repo = parse_owner_repo_impl("", "ghp_mock_token")
+            assert owner == "autouser"
+            assert repo == "illacme-press"
+
+    def test_zero_config_auto_derive_repo_url(self):
+        """验证 GitHubPagesPublisher 在零配置 (未填 repo_url 但有 token) 下自动推导并绑定仓库"""
+        from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        from unittest.mock import patch, MagicMock
+        import json
+
+        pub = GitHubPagesPublisher(config={
+            "token": "ghp_mock_token"
+        })
+        assert pub.repo_url == ""
+
+        mock_user_ctx = MagicMock()
+        mock_user_ctx.status = 200
+        mock_user_ctx.read.return_value = json.dumps({"login": "autodeployer"}).encode("utf-8")
+        mock_user_response = MagicMock()
+        mock_user_response.__enter__.return_value = mock_user_ctx
+
+        with patch("urllib.request.urlopen", return_value=mock_user_response):
+            owner, repo = pub._parse_owner_repo()
+            assert owner == "autodeployer"
+            assert repo == "illacme-press"
+
 
 

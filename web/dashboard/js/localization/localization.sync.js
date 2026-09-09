@@ -53,13 +53,10 @@ window.toggleI18nTarget = async (el, code) => {
         // 取消选择
         nextTargets = currentTargets.filter(c => c !== code);
     } else {
-        // 新增/置换
-        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 1);
-        if (maxTargets === 1 && currentTargets.length >= 1) {
-            if (typeof addAudit === 'function') addAudit(`🔄 [免费社区版] 自动置换目标语种为: ${code}`, "info");
-            nextTargets = [code];
-        } else if (currentTargets.length >= maxTargets) {
-            const tierName = window.settingsData?._license_info?.tier_name || '当前版本';
+        // 新增/置换 (免费社区版最多可用 2 个目标语种)
+        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 2);
+        if (currentTargets.length >= maxTargets) {
+            const tierName = window.settingsData?._license_info?.tier_name || (isLicensed ? '当前版本' : '免费社区版');
             if (typeof showNotification === 'function') {
                 showNotification(`【${tierName}】最多支持配置 ${maxTargets} 个目标语种，如需更多请升级授权`, 'warning');
             }

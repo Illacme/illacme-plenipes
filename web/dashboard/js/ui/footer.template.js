@@ -16,6 +16,9 @@ window.ensureMainFooterMounted = function () {
             <div class="status-indicator">
                 <span id="system-status-label" class="tiny-label">ENGINE ONLINE</span>
             </div>
+            <div id="footer-version-badge" style="display: none; cursor: pointer; background: hsla(45, 100%, 50%, 0.15); border: 1px solid hsla(45, 100%, 50%, 0.4); color: #ffcc00; font-size: 0.65rem; padding: 2px 8px; border-radius: 12px; margin-left: 6px; align-items: center; gap: 4px; transition: all 0.3s;" onclick="window.restartSystemKernel()" title="检测到本地核心代码已更新，点击平滑热重启内核">
+                <span>⚡ 内核已更新 · 重启</span>
+            </div>
             <div id="audit-summary-text" class="audit-summary-mini">WAITING FOR COMMAND...</div>
         </div>
 
@@ -75,3 +78,60 @@ if (document.readyState === 'loading') {
 } else {
     window.ensureMainFooterMounted();
 }
+
+/**
+ * ⚡ 平滑热重启系统内核 (执行原地 execv 接力)
+ */
+window.restartSystemKernel = async function () {
+    if (window._isRestartingKernel) return;
+    const ok = confirm("⚡ 检测到本地核心代码已更新。\n\n是否立即平滑热重启内核？重启将在 1 秒内完成。");
+    if (!ok) return;
+    window._isRestartingKernel = true;
+    const badge = document.getElementById('footer-version-badge');
+    if (badge) {
+        badge.innerHTML = '<span>⏳ 正在重启内核...</span>';
+        badge.style.pointerEvents = 'none';
+    }
+    try {
+        if (typeof apiFetch === 'function') {
+            await apiFetch('/api/system/restart', { method: 'POST' });
+        } else {
+            await fetch('/api/system/restart', { method: 'POST' });
+        }
+    } catch (e) {
+        // 请求发出后旧进程可能已断开，正常忽略
+    }
+    setTimeout(() => {
+        let attempts = 0;
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                const res = await fetch('/api/system/health');
+                if (res.ok) {
+                    clearInterval(interval);
+                    window._isRestartingKernel = false;
+                    if (badge) {
+                        badge.style.display = 'none';
+                        badge.style.pointerEvents = 'auto';
+                        badge.innerHTML = '<span>⚡ 内核已更新 · 重启</span>';
+                    }
+                    if (typeof showToast === 'function') {
+                        showToast('🎉 内核已平滑热重载并恢复！', 'success');
+                    } else if (typeof window.showToast === 'function') {
+                        window.showToast('🎉 内核已平滑热重载并恢复！', 'success');
+                    }
+                }
+            } catch (err) {
+                if (attempts > 15) {
+                    clearInterval(interval);
+                    window._isRestartingKernel = false;
+                    if (badge) {
+                        badge.innerHTML = '<span>⚠️ 重启超时，请刷新</span>';
+                        badge.style.pointerEvents = 'auto';
+                    }
+                }
+            }
+        }, 500);
+    }, 600);
+};
+

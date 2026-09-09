@@ -13,18 +13,30 @@ from .security_ops import get_authenticated_repo_url_impl, mask_url_credentials_
 from .cloud_api_ops import auto_create_github_repo_impl
 
 
-def run_git_impl(publisher_inst, work_dir: str, args: list, check: bool = True, timeout: int = 30) -> subprocess.CompletedProcess:
-    """执行 Git 命令的统一入口"""
-    cmd = ["git", "-C", work_dir] + args
+def run_git_impl(publisher_inst, work_dir: str, args: list, check: bool = True, timeout: int = 60) -> subprocess.CompletedProcess:
+    """执行 Git 命令的统一入口，强力覆盖宿主机残留的失效代理配置"""
+    proxy = publisher_inst.get_proxy()
+    cmd = ["git", "-C", work_dir]
+    if proxy:
+        cmd.extend(["-c", f"http.proxy={proxy}", "-c", f"https.proxy={proxy}"])
+    else:
+        cmd.extend(["-c", "http.proxy=", "-c", "https.proxy="])
+    cmd.extend(args)
+
     env = os.environ.copy()
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["GIT_ASKPASS"] = "echo"
-    proxy = publisher_inst.get_proxy()
     if proxy:
         env["HTTP_PROXY"] = proxy
         env["HTTPS_PROXY"] = proxy
         env["http_proxy"] = proxy
         env["https_proxy"] = proxy
+    else:
+        env.pop("HTTP_PROXY", None)
+        env.pop("HTTPS_PROXY", None)
+        env.pop("http_proxy", None)
+        env.pop("https_proxy", None)
+
     return subprocess.run(
         cmd, env=env, capture_output=True, text=True,
         timeout=timeout, check=check
@@ -47,14 +59,26 @@ def clone_target_branch_impl(publisher_inst, work_dir: str) -> bool:
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["GIT_ASKPASS"] = "echo"
     proxy = publisher_inst.get_proxy()
+    clone_cmd = ["git"]
     if proxy:
+        clone_cmd.extend(["-c", f"http.proxy={proxy}", "-c", f"https.proxy={proxy}"])
         env["HTTP_PROXY"] = proxy
         env["HTTPS_PROXY"] = proxy
         env["http_proxy"] = proxy
         env["https_proxy"] = proxy
+    else:
+        clone_cmd.extend(["-c", "http.proxy=", "-c", "https.proxy="])
+        env.pop("HTTP_PROXY", None)
+        env.pop("HTTPS_PROXY", None)
+        env.pop("http_proxy", None)
+        env.pop("https_proxy", None)
+
+    clone_cmd.extend([
+        "clone", "--depth", "1", "--single-branch",
+        "--branch", publisher_inst.branch, auth_url, work_dir
+    ])
     result = subprocess.run(
-        ["git", "clone", "--depth", "1", "--single-branch",
-         "--branch", publisher_inst.branch, auth_url, work_dir],
+        clone_cmd,
         env=env, capture_output=True, text=True, timeout=120
     )
     if result.returncode == 0:
@@ -86,37 +110,12 @@ def clone_target_branch_impl(publisher_inst, work_dir: str) -> bool:
 
 def init_orphan_branch_impl(publisher_inst, work_dir: str):
     """创建孤儿分支：用于首次部署时目标分支尚不存在的场景"""
-    tlog.info(f"📦 [GitHub Pages] 目标分支 '{publisher_inst.branch}' 不存在，正在创建孤儿分支...")
+    tlog.info(f"📦 [GitHub Pages] 目标分支 '{publisher_inst.branch}' 不存在，正在初始化本地独立发布工作区...")
 
     auth_url = get_authenticated_repo_url_impl(publisher_inst.repo_url, publisher_inst.token)
-    env = os.environ.copy()
-    proxy = publisher_inst.get_proxy()
-    if proxy:
-        env["HTTP_PROXY"] = proxy
-        env["HTTPS_PROXY"] = proxy
-        env["http_proxy"] = proxy
-        env["https_proxy"] = proxy
-    try:
-        # 先克隆仓库默认分支（仅获取 .git 元数据）
-        subprocess.run(
-            ["git", "clone", "--depth", "1", auth_url, work_dir],
-            env=env, capture_output=True, text=True, timeout=120, check=True
-        )
-    except subprocess.CalledProcessError as e:
-        # 过滤异常参数以防泄露 Token
-        safe_args = [mask_url_credentials_impl(arg) for arg in e.cmd]
-        safe_stderr = mask_url_credentials_impl(e.stderr) if e.stderr else None
-        safe_stdout = mask_url_credentials_impl(e.stdout) if e.stdout else None
-        raise subprocess.CalledProcessError(
-            e.returncode, safe_args,
-            output=safe_stdout, stderr=safe_stderr
-        )
-
-    # 创建孤儿分支
-    run_git_impl(publisher_inst, work_dir, ["checkout", "--orphan", publisher_inst.branch])
-    # 清空暂存区
-    run_git_impl(publisher_inst, work_dir, ["rm", "-rf", "."], check=False)
-
+    run_git_impl(publisher_inst, work_dir, ["init"])
+    run_git_impl(publisher_inst, work_dir, ["remote", "add", "origin", auth_url])
+    run_git_impl(publisher_inst, work_dir, ["checkout", "-b", publisher_inst.branch])
     configure_git_identity_impl(publisher_inst, work_dir)
 
 

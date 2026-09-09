@@ -113,6 +113,15 @@ def render_html_page(
     showcase_url = _resolve_nav_link("showcase", "index", "showcase", "showcase/index.html")
     about_url = _resolve_nav_link("", "about", "pages", "about.html")
 
+    # 离线 Mermaid 图表支持 (仅在页面包含图表时局部按需加载，彻底杜绝外网 CDN)
+    has_mermaid = ('class="mermaid"' in html_content or 'universal-mermaid' in html_content)
+    mermaid_block = f"""    <script src="{root_path}assets/vendor/mermaid/mermaid.min.js"></script>
+    <script>
+        if (window.mermaid) {{
+            mermaid.initialize({{ startOnLoad: true, theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark' }});
+        }}
+    </script>""" if has_mermaid else ""
+
     return f"""<!DOCTYPE html>
 <html lang="{target_lang}" data-theme="dark">
 <head>
@@ -133,10 +142,7 @@ def render_html_page(
     <style>
 {css_content}
     </style>
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({{ startOnLoad: true, theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark' }});
-    </script>
+{mermaid_block}
 </head>
 <body class="{layout_cls}">
     <header class="universal-header">

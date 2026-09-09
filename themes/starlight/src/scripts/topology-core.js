@@ -127,6 +127,112 @@ export function filterGraphData(rawData, matchUrl) {
 }
 
 /**
+ * Filters graph data to only include the active node and its immediate (or 2-hop) neighbors.
+ * Produces an Obsidian-style Local Graph dataset.
+ * @param {object} rawData - Full parsed graph.json
+ * @param {string} activeUrl - Current page URL (e.g. '/docs/architecture' or window.location.pathname)
+ * @param {number} [depth=1] - Traversal depth (1 or 2)
+ * @returns {object} - Filtered local graph data (same shape as graph.json)
+ */
+export function filterLocalGraph(rawData, activeUrl, depth = 1) {
+  if (!rawData) return rawData;
+  const backlinks = rawData.backlinks || {};
+  const allNodes = rawData.all_nodes || {};
+  const nodeTitles = rawData.node_titles || {};
+
+  const allUrls = Array.from(new Set([
+    ...Object.keys(allNodes),
+    ...Object.keys(nodeTitles),
+    ...Object.keys(backlinks),
+  ]));
+
+  const currentPath = (activeUrl || (typeof window !== 'undefined' ? window.location.pathname : ''))
+    .split('?')[0].split('#')[0];
+  if (!currentPath || allUrls.length === 0) return rawData;
+
+  const clean = (u) => (u ? u.split('?')[0].split('#')[0].replace(/\/$/, '') || '/' : '');
+  const targetClean = clean(currentPath);
+
+  // Match root URL
+  let rootUrl = allUrls.find(u => clean(u) === targetClean);
+  if (!rootUrl && targetClean !== '/') {
+    rootUrl = allUrls.find(u => {
+      const c = clean(u);
+      return c !== '/' && (c.endsWith(targetClean) || targetClean.endsWith(c));
+    });
+  }
+
+  // If no root match found, fallback to original graph
+  if (!rootUrl) return rawData;
+
+  // Build bidirectional adjacency map
+  const adj = new Map();
+  const addEdge = (u, v) => {
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v);
+    adj.get(v).add(u);
+  };
+
+  for (const [targetUrl, sources] of Object.entries(backlinks)) {
+    for (const src of (sources || [])) {
+      if (src && src.url) addEdge(src.url, targetUrl);
+    }
+  }
+
+  // BFS to collect neighbor nodes
+  const visited = new Set([rootUrl]);
+  let currentLayer = new Set([rootUrl]);
+
+  for (let d = 0; d < Math.min(depth, 3); d++) {
+    const nextLayer = new Set();
+    for (const node of currentLayer) {
+      const neighbors = adj.get(node);
+      if (neighbors) {
+        for (const n of neighbors) {
+          if (!visited.has(n)) {
+            visited.add(n);
+            nextLayer.add(n);
+          }
+        }
+      }
+    }
+    currentLayer = nextLayer;
+  }
+
+  // Construct filtered graph object
+  const localTitles = {};
+  const localAllNodes = {};
+  const localBacklinks = {};
+
+  for (const url of visited) {
+    if (nodeTitles[url]) localTitles[url] = nodeTitles[url];
+    if (allNodes[url]) localAllNodes[url] = allNodes[url];
+  }
+  if (!localAllNodes[rootUrl]) {
+    localAllNodes[rootUrl] = nodeTitles[rootUrl] || rootUrl;
+  }
+
+  for (const [targetUrl, sources] of Object.entries(backlinks)) {
+    if (!visited.has(targetUrl)) continue;
+    const filteredSources = (sources || []).filter(s => visited.has(s.url));
+    if (filteredSources.length > 0) {
+      localBacklinks[targetUrl] = filteredSources;
+    }
+  }
+
+  return {
+    version: rawData.version,
+    node_titles: localTitles,
+    all_nodes: localAllNodes,
+    backlinks: localBacklinks,
+    _isLocal: true,
+    _rootUrl: rootUrl,
+    _localCount: visited.size,
+  };
+}
+
+/**
  * Fetches graph.json from a URL and optionally filters by language.
  * @param {string}   url       - URL to fetch (e.g. '/graph.json')
  * @param {function} [matchUrl] - Optional lang filter fn(url: string) => boolean
@@ -236,7 +342,14 @@ export function renderTopologyGraph(container, data, options = {}) {
     activeUrl     = null,
     onNavigate    = (url) => { window.location.href = url; },
     widthDetector = null,
+    isLocal       = false,
+    localDepth    = 1,
+    isolatedHint  = null,
   } = options;
+
+  // Local graph slice vs Global graph
+  const effectiveData = isLocal ? filterLocalGraph(data, activeUrl, localDepth) : data;
+  const isLocalGraph  = Boolean(isLocal && effectiveData && effectiveData._isLocal);
 
   // Dimensions
   const containerRect = container.getBoundingClientRect();
@@ -251,7 +364,7 @@ export function renderTopologyGraph(container, data, options = {}) {
   const C = getColors(darkMode);
 
   // Build graph
-  const { nodes, links } = buildGraphData(data);
+  const { nodes, links } = buildGraphData(effectiveData);
   if (nodes.length === 0) return null;
 
   // Calculate degree (connection count) for celestial sizing & label hierarchy
@@ -266,15 +379,15 @@ export function renderTopologyGraph(container, data, options = {}) {
 
   // Current active doc path matching
   const currentPath = (activeUrl || (typeof window !== 'undefined' ? window.location.pathname : ''))
-    .replace(/\/$/, '') || '/';
+    .split('?')[0].split('#')[0].replace(/\/$/, '') || '/';
 
   nodes.forEach((n, idx) => {
     n.degree = degMap.get(n.id) || 0;
-    // Celestial radius: leaf nodes 3.5px, major hubs up to 7px
+    // Celestial radius: leaf nodes 3.5px, major hubs up to 7.5px
     n.r = Math.min(7.5, Math.max(3.5, 3.5 + Math.sqrt(n.degree) * 1.3));
     
     // Check if active node
-    const nClean = n.url.replace(/\/$/, '') || '/';
+    const nClean = n.url.split('?')[0].split('#')[0].replace(/\/$/, '') || '/';
     n.isActive = (nClean === currentPath) || (currentPath !== '/' && nClean.endsWith(currentPath));
 
     // Natural cosmic spiral distribution to eliminate grid-like rows
@@ -284,14 +397,27 @@ export function renderTopologyGraph(container, data, options = {}) {
     n.y = height / 2 + Math.sin(angle) * dist;
   });
 
-  // Determine Hub nodes for default label visibility (strictly max 2-3 to guarantee 0 collision)
-  // Only the active node and top 2 connected hubs show labels by default in compact cards.
-  const sortedByDegree = [...nodes].filter(n => n.degree > 0).sort((a, b) => b.degree - a.degree);
-  const topHubIds = new Set(sortedByDegree.slice(0, 2).map(n => n.id));
-  
-  nodes.forEach(n => {
-    n.isHub = n.isActive || topHubIds.has(n.id);
-  });
+  // If local graph, ensure root node is active and center-anchored
+  if (isLocalGraph) {
+    const rootUrl = effectiveData._rootUrl;
+    if (rootUrl) {
+      nodes.forEach(n => { if (n.id === rootUrl) n.isActive = true; });
+    }
+    if (!nodes.some(n => n.isActive)) {
+      nodes[0].isActive = true;
+    }
+    nodes.forEach(n => {
+      n.isHub = true; // All local neighbors show labels
+      if (n.isActive) n.r = Math.max(n.r, 6.5);
+    });
+  } else {
+    // Global graph: only top hubs show labels by default
+    const sortedByDegree = [...nodes].filter(n => n.degree > 0).sort((a, b) => b.degree - a.degree);
+    const topHubIds = new Set(sortedByDegree.slice(0, 2).map(n => n.id));
+    nodes.forEach(n => {
+      n.isHub = n.isActive || topHubIds.has(n.id);
+    });
+  }
 
   container.innerHTML = '';
   container.style.position = 'relative';
@@ -340,19 +466,39 @@ export function renderTopologyGraph(container, data, options = {}) {
   const simulation = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links)
       .id((d) => d.id)
-      .distance((d) => 50 + Math.max(0, 25 - (d.source.degree + d.target.degree) * 2))
-      .strength(0.6)
+      .distance((d) => isLocalGraph
+        ? (nodes.length <= 4 ? 65 : 52)
+        : (50 + Math.max(0, 25 - (d.source.degree + d.target.degree) * 2))
+      )
+      .strength(isLocalGraph ? 0.75 : 0.6)
     )
-    // Connected hubs have strong repulsion to stretch clusters; isolated nodes have tiny repulsion to float naturally
     .force('charge', d3.forceManyBody()
-      .strength((d) => d.degree > 0 ? (-120 - Math.min(d.degree * 30, 220)) : -25)
+      .strength((d) => isLocalGraph
+        ? (d.isActive ? -180 : -90)
+        : (d.degree > 0 ? (-120 - Math.min(d.degree * 30, 220)) : -25)
+      )
       .distanceMax(Math.min(width, height) * 0.85)
     )
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('x', d3.forceX(width / 2).strength((d) => d.degree > 0 ? 0.06 : 0.12))
-    .force('y', d3.forceY(height / 2).strength((d) => d.degree > 0 ? 0.06 : 0.12))
-    // Generous collision buffer for hub nodes with text labels to completely eliminate collisions
+    .force('x', d3.forceX(width / 2).strength((d) => isLocalGraph ? (d.isActive ? 0.8 : 0.08) : (d.degree > 0 ? 0.06 : 0.12)))
+    .force('y', d3.forceY(height / 2).strength((d) => isLocalGraph ? (d.isActive ? 0.8 : 0.08) : (d.degree > 0 ? 0.06 : 0.12)))
     .force('collision', d3.forceCollide().radius((d) => d.isHub ? (d.r + 26) : (d.r + 10)).iterations(3));
+
+  // If local graph with isolated node, render hint
+  if (isLocalGraph && nodes.length === 1) {
+    g.append('text')
+      .attr('x', width / 2)
+      .attr('y', height / 2 + 38)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px')
+      .style('font-weight', '500')
+      .style('fill', C.labelDim)
+      .style('stroke', C.labelStroke)
+      .style('stroke-width', '2px')
+      .style('paint-order', 'stroke fill')
+      .style('opacity', '0.85')
+      .text(isolatedHint || '🌱 当前文档暂无双向链接');
+  }
 
   // Links
   const linkSel = g.append('g')
@@ -419,10 +565,12 @@ export function renderTopologyGraph(container, data, options = {}) {
     .style('paint-order', 'stroke fill')
     .style('pointer-events', 'none')
     .style('user-select', 'none')
-    .style('transition', 'opacity 0.2s ease, font-size 0.2s ease')
-    // Only top hubs/active nodes are visible by default
-    .style('opacity', (d) => d.isHub ? '0.95' : '0')
-    .text((d) => truncate(d.title || ''));
+    // Only top hubs/active nodes are visible by default in global, all in local
+    .style('opacity', (d) => (isLocalGraph || d.isHub) ? '0.95' : '0')
+    .text((d) => {
+      const maxLen = isLocalGraph ? Math.max(labelTruncate, 13) : labelTruncate;
+      return (d.title && d.title.length > maxLen) ? d.title.slice(0, maxLen) + '…' : (d.title || '');
+    });
 
   // Interactive Hover and Click Handlers
   nodeGroup
@@ -491,7 +639,7 @@ export function renderTopologyGraph(container, data, options = {}) {
         .style('filter', 'none');
 
       nodeGroup.select('text')
-        .style('opacity', (d) => d.isHub ? '0.95' : '0')
+        .style('opacity', (d) => (isLocalGraph || d.isHub) ? '0.95' : '0')
         .style('font-size', '10px')
         .style('font-weight', (d) => d.isHub || d.isActive ? '700' : '500')
         .style('fill', C.label);

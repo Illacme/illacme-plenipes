@@ -6,6 +6,8 @@ Illacme-plenipes Core - Docusaurus SSG Adapter
 🛡️ [AEL-Iter-v5.3]：物理隔离的渲染插件实现。
 """
 
+import os
+import re
 from typing import Tuple, Dict, Any
 from core.adapters.egress.ssg.base import BaseSSGAdapter
 
@@ -49,6 +51,11 @@ class DocusaurusAdapter(BaseSSGAdapter):
                 "single": "src/pages",
                 "multi": "i18n/{lang}/docusaurus-plugin-content-pages"
             },
+            "showcase": {
+                "label": "展示橱窗",
+                "single": "src/pages/showcase",
+                "multi": "i18n/{lang}/docusaurus-plugin-content-pages/showcase"
+            },
             "static": {
                 "label": "静态资产",
                 "single": "static",
@@ -81,6 +88,46 @@ class DocusaurusAdapter(BaseSSGAdapter):
             except (ValueError, TypeError):
                 pass
             new_fm['sidebar_position'] = order_val
+
+        # 5. 🛡️ MDX v2/v3 语法自愈：将 HTML 注释与内联 style 属性转化为合法 JSX
+        healed_body = re.sub(r'<!--(.*?)-->', r'{/*\1*/}', healed_body, flags=re.DOTALL)
+        def _style_to_jsx(m):
+            raw = m.group(1).strip()
+            pairs = [p.strip() for p in raw.split(';') if ':' in p]
+            props = []
+            for p in pairs:
+                k, v = p.split(':', 1)
+                k, v = k.strip(), v.strip().replace("'", "\\'")
+                parts = k.split('-')
+                camel_k = parts[0] + ''.join(x.capitalize() for x in parts[1:])
+                props.append(f"{camel_k}: '{v}'")
+            return f"style={{{{{', '.join(props)}}}}}"
+        healed_body = re.sub(r'style="([^"]*)"', _style_to_jsx, healed_body)
+        healed_body = re.sub(r"style='([^']*)'", _style_to_jsx, healed_body)
+        # 转义非 JSX 占位符并压缩多行 p 标签
+        healed_body = healed_body.replace("{lang}", "{'{lang}'}")
+        healed_body = re.sub(r'<p>\s+([^<]+?)\s+</p>', r'<p>\1</p>', healed_body)
+
+        # 6. 🛡️ 路由归一与自愈
+        norm_sp = sub_path.replace("\\", "/").lower()
+        # 文档中心首页路由归一：确保 docs/index.md 拥有根 slug '/'
+        if norm_sp.endswith(("/docs/index.md", "docs/index.md", "index.md")) and new_fm.get('layout') != 'pages' and "showcase" not in norm_sp:
+            new_fm['slug'] = '/'
+        elif "showcase" in norm_sp:
+            # 独立展示橱窗路由归一
+            if norm_sp.endswith(("showcase/index.md", "/showcase/index.md")):
+                new_fm['slug'] = '/showcase'
+            else:
+                stem = os.path.splitext(os.path.basename(norm_sp))[0]
+                new_fm['slug'] = f"/showcase/{stem}"
+            # 清洗页面中的卡片 href 链接为绝对展示橱窗路径
+            lang_code = self.get_language_code(target_lang) if hasattr(self, 'get_language_code') else ""
+            prefix = f"/{lang_code}" if lang_code else ""
+            def _replace_docusaurus_card_href(m):
+                target = m.group(1).strip()
+                clean_target = os.path.splitext(target)[0].lstrip('./')
+                return f'href="{prefix}/showcase/{clean_target}"'
+            healed_body = re.sub(r'href="\./([^"]+?)"', _replace_docusaurus_card_href, healed_body)
 
         return healed_body, new_fm
 
@@ -134,7 +181,8 @@ class DocusaurusAdapter(BaseSSGAdapter):
         plugin_map = {
             "docs": "docusaurus-plugin-content-docs/current",
             "blog": "docusaurus-plugin-content-blog",
-            "pages": "docusaurus-plugin-content-pages"
+            "pages": "docusaurus-plugin-content-pages",
+            "showcase": "docusaurus-plugin-content-pages/showcase"
         }
         plugin_path = plugin_map.get(source_type.lower(), plugin_map["docs"])
         

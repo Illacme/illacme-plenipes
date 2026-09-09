@@ -907,8 +907,93 @@
     background: rgba(255,255,255,0.80) !important;
 }
 
+/* 🌿 [UI 视觉主权] 白天明亮模式：绿色文字与状态指示器全域对比度增强 */
+[data-theme="light"] {
+    --neon-green: #059669 !important; /* 翡翠绿 (Emerald 600)，白底对比度超过 4.5:1 (WCAG AA 规范) */
+    --neon-green-rgb: 5, 150, 105 !important;
+}
 
+/* 插件卡片与顶栏徽章对比度增强 */
+[data-theme="light"] .plugin-pod .shield-status .log-tag,
+[data-theme="light"] .shield-status .log-tag {
+    font-weight: 700 !important;
+    background: rgba(5, 150, 105, 0.12) !important;
+    color: #047857 !important;
+    border: 1px solid rgba(5, 150, 105, 0.35) !important;
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.08) !important;
+}
 
+/* 品牌激活开关与指示灯文本 */
+[data-theme="light"] .plugin-pod .pod-telemetry .tiny-label,
+[data-theme="light"] .shield-pod .pod-telemetry .tiny-label {
+    color: #047857 !important;
+    font-weight: 700 !important;
+}
 
+/* 主站提示条与辅助说明文字 */
+[data-theme="light"] .hosting-canonical-tip {
+    color: #334155 !important; /* 稳重的石板蓝灰，对比度 > 7:1 (AAA级) */
+    font-weight: 600 !important;
+    opacity: 0.9 !important;
+}
 
+[data-theme="light"] .plugin-pod span[style*="color:#00ff88"],
+[data-theme="light"] .plugin-pod span[style*="color: #00ff88"],
+[data-theme="light"] [style*="color:#00ff88"],
+[data-theme="light"] [style*="color: #00ff88"] {
+    color: #047857 !important;
+}
+
+[data-theme="light"] span[style*="rgba(0,255,136"],
+[data-theme="light"] span[style*="rgba(0, 255, 136"] {
+    color: #475569 !important; /* 转为高对比度石板灰，彻底解决看不清 */
+    font-weight: 500 !important;
+}
+
+/* 托管主站 Banner */
+[data-theme="light"] .hosting-role-banner {
+    background: rgba(5, 150, 105, 0.08) !important;
+    border-color: rgba(5, 150, 105, 0.3) !important;
+}
+[data-theme="light"] .hosting-role-banner div[style*="color:#00ff88"],
+[data-theme="light"] .hosting-role-banner div[style*="color: #00ff88"],
+[data-theme="light"] .hosting-role-banner div[style*="color:var(--neon-green)"] {
+    color: #047857 !important;
+}
+
+/* 🌐 [V90.0] 全域发布看板亮色模式高对比度适配 */
+[data-theme="light"] .deploy-summary-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(14, 165, 233, 0.35) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .deploy-summary-card span[style*="color:#00ff88"],
+[data-theme="light"] .deploy-summary-card span[style*="color: #00ff88"] {
+    color: #047857 !important;
+}
+[data-theme="light"] .deploy-summary-card div[style*="background:rgba(255,255,255,0.03)"] {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .deploy-summary-card a[style*="color:#00f0ff"],
+[data-theme="light"] .deploy-summary-card a[style*="background:rgba(0,240,255,0.15)"] {
+    background: rgba(2, 132, 199, 0.1) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0284c7 !important;
+}
+[data-theme="light"] .deploy-summary-card button[onclick*="copyAllLiveUrls"] {
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+}
+[data-theme="light"] .deploy-summary-card button[onclick*="runHealthRadar"] {
+    border-color: rgba(2, 132, 199, 0.4) !important;
+    color: #0284c7 !important;
+    background: #f0f9ff !important;
+}
+[data-theme="light"] .deploy-summary-card .health-radar-badge {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
 

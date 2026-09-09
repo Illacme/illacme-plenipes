@@ -12,6 +12,7 @@ import threading
 from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel
 
 from core.runtime.engine_singleton import get_global_engine
 from core.logic.orchestration.task_orchestrator import global_executor
@@ -33,24 +34,28 @@ def verify_token(x_token: Optional[str] = Header(None, alias="X-Token")) -> None
         raise HTTPException(status_code=403, detail="Unauthorized")
 
 from services.api.schemas import SystemHealthResponse, HealthMatrixResponse
+from core.runtime.version_sentinel import VersionSentinel
 
 @router.get("/api/system/health", response_model=SystemHealthResponse)
 def health_check() -> SystemHealthResponse:
-    """🚀 [P1 规范统一] 系统全息健康检查端点"""
+    """🚀 [P1 规范统一] 系统全息健康检查端点 (含版本漂移感知)"""
     engine = get_global_engine()
+    drift_data = VersionSentinel.check_drift()
     if not engine:
         return SystemHealthResponse(
             status="starting",
             engine="Illacme-plenipes",
             imprint=None,
-            services={}
+            services={},
+            version_drift=drift_data
         )
     services_dict = engine.services if isinstance(engine.services, dict) else {}
     return SystemHealthResponse(
         status="online",
         engine="Illacme-plenipes",
         imprint=getattr(engine, "imprint_id", None),
-        services=services_dict
+        services=services_dict,
+        version_drift=drift_data
     )
 
 @router.get("/api/system/status", dependencies=[Depends(verify_token)])
@@ -82,7 +87,7 @@ def get_stats() -> Dict[str, Any]:
     """🚀 [V74.8] 物理资源采样：返回真实的 CPU、内存与计费数据"""
     engine = get_global_engine()
     if not engine:
-        return {"error": "Engine not initialized"}
+        return {"error": "Engine not initialized", "version_drift": VersionSentinel.check_drift()}
     cpu, mem = 0.0, 0.0
     try:
         import psutil
@@ -94,6 +99,7 @@ def get_stats() -> Dict[str, Any]:
     return {
         "usage": engine.meter.get_summary_report(),
         "load": {"cpu": cpu, "memory": mem, "workers": workers},
+        "version_drift": VersionSentinel.check_drift(),
         "timestamp": time.time()
     }
 
@@ -103,135 +109,160 @@ def shutdown() -> Dict[str, str]:
     os.kill(os.getpid(), signal.SIGINT)
     return {"status": "accepted"}
 
-@router.post("/api/system/preview/restart", dependencies=[Depends(verify_token)])
-def restart_preview() -> Dict[str, Any]:
-    """🚀 [V55.8] 工业级增强型重启：支持依赖自愈与日志实时穿透"""
+@router.get("/api/system/version", dependencies=[Depends(verify_token)])
+def get_version_info() -> Dict[str, Any]:
+    """🚀 [V85.0] 运行时源码指纹与版本漂移查询接口"""
+    return VersionSentinel.check_drift()
+
+class SwitchAndLaunchPreviewRequest(BaseModel):
+    theme_id: str
+    imprint_id: Optional[str] = "default"
+    port: Optional[int] = None
+    allow_fallback: Optional[bool] = True
+    sync_vault: Optional[bool] = True
+
+@router.post("/api/system/preview/switch-and-launch", dependencies=[Depends(verify_token)])
+def switch_and_launch_preview(req: SwitchAndLaunchPreviewRequest) -> Dict[str, Any]:
+    """⚡ [工业级编排] 切换主题并一键点火 DevServer 预览"""
     engine = get_global_engine()
     if not engine:
         raise HTTPException(status_code=400, detail="Engine not initialized")
-    
-    from core.config.config import THEMES_DIR
-    brand_theme_dir = os.path.join(getattr(engine, 'imprint_root', ''), "themes", engine.active_theme) if getattr(engine, 'imprint_root', None) else ""
-    mother_theme_dir = os.path.join(engine.paths.get(THEMES_DIR, THEMES_DIR), engine.active_theme)
-    theme_dir = brand_theme_dir if (brand_theme_dir and os.path.exists(brand_theme_dir)) else mother_theme_dir
-    
-    # 🎯 准确判别是否为真实的 SSG 前端框架 DevServer 还是原生静态编译站点
-    # 真实框架判定条件：必须存在框架特有的配置文件 (Docusaurus/VitePress/Nextra/Starlight)
-    is_docusaurus = (
-        "docusaurus" in (engine.active_theme or "").lower() or
-        os.path.exists(os.path.join(theme_dir, "docusaurus.config.js")) or
-        os.path.exists(os.path.join(mother_theme_dir, "docusaurus.config.js"))
-    )
-    is_vitepress = (
-        "vitepress" in (engine.active_theme or "").lower() or
-        os.path.exists(os.path.join(theme_dir, ".vitepress")) or
-        os.path.exists(os.path.join(mother_theme_dir, ".vitepress"))
-    )
-    is_nextra = (
-        "nextra" in (engine.active_theme or "").lower() or
-        any(os.path.exists(os.path.join(d, f)) for d in (theme_dir, mother_theme_dir) for f in ("theme.config.js", "theme.config.jsx", "theme.config.tsx", "next.config.js"))
-    )
-    is_starlight = "starlight" in (engine.active_theme or "").lower() and (
-        os.path.exists(os.path.join(theme_dir, "astro.config.mjs")) or os.path.exists(os.path.join(mother_theme_dir, "astro.config.mjs"))
-    )
+    from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
 
-    has_package_json = os.path.exists(os.path.join(theme_dir, "package.json")) or os.path.exists(os.path.join(mother_theme_dir, "package.json"))
-    is_framework = bool((is_docusaurus or is_vitepress or is_nextra or is_starlight) and has_package_json)
-    
-    import importlib
-    import core.utils.dev_server
+    imprint_id = req.imprint_id or getattr(engine.config, "active_imprint", "default") or "default"
+
+    # 1. 物理持久化与全链路在线热重构 (彻底对齐当前出版品牌的 active_theme、engine.paths 与 ssg_adapter)
     try:
-        importlib.reload(core.utils.dev_server)
-    except Exception:
-        pass
-    from core.utils.dev_server import DevServer, FrameworkDevServer
-    srv = getattr(engine, 'preview_server', None)
-    
-    # 🗺️ 动态根据当前 active_theme 重新锚定主权路径矩阵，消除目录漂移
-    from core.runtime.infrastructure.path_resolver import resolve_engine_paths
-    from core.config.config import THEMES_DIR
-    engine.paths = resolve_engine_paths(engine, engine.config, THEMES_DIR)
-    p_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
-    if p_dir:
-        os.makedirs(p_dir, exist_ok=True)
+        from services.api.routes.gov.config_shards.config_sync_ops import process_config_sync
+        from services.api.routes.gov.config_shards.config_persistence_ops import persist_config_to_disk
+        from services.api.routes.gov.config_shards.config_reload_ops import live_reload_engine_config
 
-    if not is_framework and isinstance(srv, DevServer) and srv.httpd:
-        srv.update_directory(p_dir)
+        update_payload = {"active_theme": req.theme_id}
+        routing_groups, err_response = process_config_sync(engine, update_payload, imprint_id=imprint_id)
+        if err_response:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=400, content=err_response)
+        if routing_groups:
+            persist_config_to_disk(engine, routing_groups, imprint_id=imprint_id)
+        live_reload_engine_config(engine, update_payload, imprint_id=imprint_id)
+    except Exception as e:
+        tlog.warning(f"⚠️ [Switch & Launch] 配置持久化或热重构容错降级: {e}")
+        engine.active_theme = req.theme_id
+        if hasattr(engine, "config"):
+            engine.config.active_theme = req.theme_id
+
+    result = theme_orchestrator.launch_dev_server(
+        theme_id=req.theme_id,
+        imprint_id=imprint_id,
+        requested_port=req.port,
+        engine=engine
+    )
+
+    if result.get("status") == "error":
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content=result)
+
+    port = result.get("port", 43213)
+    if "preview" in engine.services:
         engine.services["preview"].update({
             "status": "running",
-            "port": srv.port,
+            "port": port,
             "start_time": time.time(),
-            "mode": "static"
+            "mode": result.get("mode", "framework")
         })
-        bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器已保持在线...")
-        bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"📂 [静态预览] 物理映射目录已动态热重定向至: {srv.directory}")
-        bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🟢 [静态预览] Local: http://localhost:{srv.port}")
-        return {"status": "success", "message": "Preview server directory hot-swapped.", "port": srv.port}
 
-    if srv:
+    # 2. 🚀 [极致简化] 强制全量编译落盘文库文档至当前主题目录 (HMR 实时呈现)
+    if req.sync_vault:
         try:
-            srv.stop()
-            time.sleep(0.5)
-        except Exception:
-            pass
-        engine.preview_server = None
+            from core.runtime.orchestrator import start_asynchronous_sync
+            task_id = start_asynchronous_sync(engine, force=True, local_only=True)
+            result["sync_triggered"] = True
+            result["sync_task_id"] = task_id
+        except Exception as e:
+            tlog.error(f"Failed to trigger auto sync during preview switch: {e}")
+            result["sync_triggered"] = False
+            result["sync_error"] = str(e)
+    else:
+        result["sync_triggered"] = False
 
-    port = getattr(engine.config.system, 'serve_port', 43213)
-    cmd = "npm run start -- --port {port}" if is_docusaurus else "npm run dev -- --port {port}"
-    target_dir = theme_dir if (is_framework and os.path.exists(theme_dir)) else mother_theme_dir if is_framework else p_dir
-    engine.preview_server = FrameworkDevServer(directory=target_dir, command=cmd, port=port) if is_framework else DevServer(directory=p_dir, port=port)
-    
-    try:
-            
-        def terminal_broadcaster(line: str) -> None:
-            tlog.info(f"🛰️ [终端采样] {line}")
-            bus.emit("UI_TERMINAL_DATA", type="LOG", data=line)
+    return result
 
-        if hasattr(engine.preview_server, 'start_with_callback'):
-            success = engine.preview_server.start_with_callback(callback=terminal_broadcaster)
-            # 🚀 [V55.9] 物理防假死探活：等待 4 秒验证 DevServer 进程是否正常存活/绑定
-            if hasattr(engine.preview_server, 'wait_until_ready'):
-                engine.preview_server.wait_until_ready(timeout=4.0)
-                if not engine.preview_server.is_alive():
-                    raise HTTPException(status_code=500, detail="Framework DevServer exited unexpectedly during initialization.")
-        else:
-            success = engine.preview_server.start(blocking=False)
-            if success:
-                bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器点火中...")
-                bus.emit("UI_TERMINAL_DATA", type="LOG", data="🚀 [静态预览] 零依赖静态资源容器启动中...")
-                bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"📂 [静态预览] 物理映射目录: {engine.preview_server.directory}")
-                bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"🟢 [静态预览] Local: http://localhost:{engine.preview_server.port}")
-            
-        if success:
-            engine.services["preview"].update({
-                "status": "running",
-                "port": engine.preview_server.port,
-                "start_time": time.time(),
-                "mode": "framework" if is_framework else "static"
-            })
-            return {"status": "success", "message": "Preview server started.", "port": engine.preview_server.port}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to start preview server")
-    except Exception as e:
-        import traceback
-        f = open("/Volumes/Notebook/omni-hub/illacme-plenipes/scratch/restart_error.log", "w")
-        traceback.print_exc(file=f)
-        f.close()
-        raise HTTPException(status_code=500, detail=f"Restart failed: {str(e)}")
+@router.post("/api/system/preview/restart", dependencies=[Depends(verify_token)])
+def restart_preview() -> Dict[str, Any]:
+    """🚀 [Orchestrator 桥接] 工业级增强型重启预览"""
+    engine = get_global_engine()
+    if not engine:
+        raise HTTPException(status_code=400, detail="Engine not initialized")
+    from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
 
+    imprint_id = getattr(engine.config, "active_imprint", "default") or "default"
+    theme_id = getattr(engine, "active_theme", "default") or "default"
+    result = theme_orchestrator.launch_dev_server(
+        theme_id=theme_id,
+        imprint_id=imprint_id,
+        engine=engine
+    )
+    if result.get("status") == "error":
+        raise HTTPException(status_code=500, detail=result.get("message", "Restart failed"))
+
+    port = result.get("port", 43213)
+    if "preview" in engine.services:
+        engine.services["preview"].update({
+            "status": "running",
+            "port": port,
+            "start_time": time.time(),
+            "mode": result.get("mode", "framework")
+        })
+    return {"status": "success", "message": "Preview server started.", "port": port, "url": result.get("url", f"http://localhost:{port}")}
 
 @router.post("/api/system/preview/stop", dependencies=[Depends(verify_token)])
 async def stop_preview() -> Dict[str, str]:
-    """🛑 [V55.0] 停止预览服务"""
+    """🛑 [Orchestrator 桥接] 停止预览服务"""
     engine = get_global_engine()
     if not engine: raise HTTPException(status_code=400, detail="Engine not initialized")
-    try:
-        if getattr(engine, 'preview_server', None):
-            engine.preview_server.stop()
-            engine.services["preview"].update({"status": "offline", "port": engine.preview_server.port, "start_time": 0.0})
-            bus.emit("UI_TERMINAL_DATA", type="LOG", data="⏹️ [系统感知] 预览服务器已物理停机，端口已释放。")
-        return {"status": "success", "message": "Preview server stopped."}
-    except Exception as e: raise HTTPException(status_code=500, detail=f"Stop failed: {str(e)}")
+    from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
+    theme_orchestrator.shutdown_all()
+    if "preview" in engine.services:
+        engine.services["preview"].update({"status": "offline", "port": theme_orchestrator.active_port, "start_time": 0.0})
+    bus.emit("UI_TERMINAL_DATA", type="LOG", data="⏹️ [系统感知] 预览服务器已物理停机，端口已安全释放。")
+    return {"status": "success", "message": "Preview server stopped."}
+
+@router.get("/api/system/preview/logs", dependencies=[Depends(verify_token)])
+def get_preview_logs() -> Dict[str, Any]:
+    """📋 [Orchestrator 桥接] 获取预览服务最新采样日志"""
+    from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
+    return {
+        "status": "success",
+        "logs": list(theme_orchestrator.log_ring_buffer),
+        "theme": theme_orchestrator.active_theme,
+        "port": theme_orchestrator.active_port,
+        "is_alive": bool(theme_orchestrator.active_process and theme_orchestrator.active_process.poll() is None)
+    }
+
+@router.post("/api/system/restart", dependencies=[Depends(verify_token)])
+def restart_kernel() -> Dict[str, str]:
+    """🚀 [V85.0] 平滑热重启 API 核心引擎：释放端口并自我 execv 接力"""
+    tlog.warning("🔄 [API] 收到平滑热重启指令，即将唤醒全新内核进程...")
+    VersionSentinel.trigger_process_restart(delay_seconds=0.3)
+    return {"status": "restarting", "message": "Kernel is gracefully restarting..."}
+
+
+@router.get("/api/system/preview/status", dependencies=[Depends(verify_token)])
+def get_preview_status() -> Dict[str, Any]:
+    """🔍 [Orchestrator 桥接] 查询本地预览服务实时运行状态与拓扑元数据"""
+    from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
+    is_alive = bool(theme_orchestrator.active_process and theme_orchestrator.active_process.poll() is None)
+    port = theme_orchestrator.active_port or 43213
+    theme_id = theme_orchestrator.active_theme or "default"
+    return {
+        "status": "online" if is_alive else "offline",
+        "theme": theme_id,
+        "port": port,
+        "is_alive": is_alive,
+        "pid": theme_orchestrator.active_process.pid if (is_alive and theme_orchestrator.active_process) else None,
+        "url": f"http://localhost:{port}" if is_alive else None
+    }
+
 
 @router.get("/api/system/health/matrix", dependencies=[Depends(verify_token)], response_model=HealthMatrixResponse)
 def get_health_matrix() -> HealthMatrixResponse:

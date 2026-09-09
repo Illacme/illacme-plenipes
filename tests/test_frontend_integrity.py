@@ -91,3 +91,24 @@ def test_critical_core_components_present():
 
     missing_core = [mod for mod in CRITICAL_MODULES if mod not in imported_set]
     assert not missing_core, "关键核心业务引擎在 index.html 中缺失:\n" + "\n".join(missing_core)
+
+
+def test_index_html_stylesheets_exist_on_disk():
+    """断言 index.html 中引入的所有 CSS 样式表均物理存在于磁盘上 (0 个 404)"""
+    assert os.path.exists(INDEX_HTML_PATH), f"index.html not found at {INDEX_HTML_PATH}"
+    with open(INDEX_HTML_PATH, 'r', encoding='utf-8') as f:
+        html = f.read()
+    stylesheets = re.findall(r'<link\s+[^>]*href=[\"\']([^\"\']+\.css(?:\?[^\"\']*)?)[\"\']', html)
+    assert len(stylesheets) > 0, "index.html 中未解析到任何 CSS link 标签"
+
+    missing = []
+    for s in stylesheets:
+        clean_s = s.split('?')[0]
+        if clean_s.startswith('http://') or clean_s.startswith('https://') or clean_s.startswith('//'):
+            continue
+        file_path = os.path.join(DASHBOARD_DIR, clean_s)
+        if not os.path.isfile(file_path):
+            missing.append(f"{s} -> {file_path}")
+
+    assert not missing, "发现 index.html 中引用的样式表在磁盘上不存在 (404):\n" + "\n".join(missing)
+

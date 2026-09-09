@@ -247,3 +247,21 @@ def get_i18n_view_label(key: str, lang: str = "zh", default: str = "") -> str:
 
     # 5. 默认回退
     return default or (list(matrix.values())[0] if matrix else key)
+
+
+SLOT_DOC_FALLBACK: Dict[str, Dict[str, str]] = {
+    "ast-dialect-bridge": {"en": "AST Dialect Bridge & Transpilation Engine", "ja": "AST 多方言変換・連携エンジン"},
+    "block-cache-shadow-translation": {"en": "Block-Level Shadow Cache & Translation Hub", "ja": "ブロック級シャドウキャッシュと校閲ハブ"},
+    "galaxy-knowledge-graph": {"en": "Galaxy Holographic Knowledge Graph & Self-Healing", "ja": "銀河ナレッジグラフと自己治癒エンジン"},
+    "hybrid-compute-ai": {"en": "29+ Hybrid Compute Dispatching & Paragraph Cache", "ja": "29+ ハイブリッド演算統合スケジューリング事例"},
+    "intelligent-slug-seo": {"en": "Intelligent Slug Sandbox & SEO Routing Matrix", "ja": "インテリジェント Slug サンドボックスと SEO 経路"},
+    "janitor-gc-self-healing": {"en": "Janitor GC Physical Garbage Collector & Ledger", "ja": "Janitor GC 物理清掃と自己治癒元帳"},
+    "multi-channel-syndication": {"en": "30+ Multi-Channel Syndication Case Studies", "ja": "30+ マルチチャネル全域配信事例"},
+    "multi-imprint-sovereignty": {"en": "Multi-Imprint Sovereign Workspace Matrix", "ja": "マルチインプリント主権マトリクス"},
+    "omni-channel-notifications": {"en": "Omni-Channel Real-Time Notifications & Reports", "ja": "オムニチャネル即時通知と出版速報"},
+    "preflight-dry-run-probes": {"en": "Preflight Dry-Run Probes & Zero-Secret Auth", "ja": "事前 Dry-Run 検証とパスワードレス認証"},
+    "privacy-security-pipeline": {"en": "Privacy Desensitization & Security Pipeline", "ja": "プライバシー保護と安全加工パイプライン"},
+    "process-lock-resilience-gateway": {"en": "4-Port Physical Singleton Lock & Gateway", "ja": "4ポート物理排他ロックと高可用性ゲートウェイ"},
+    "themes-matrix": {"en": "8 Core Themes Landscape & Selection Matrix", "ja": "8大テーマ全景と選定マトリクス"}
+}
+

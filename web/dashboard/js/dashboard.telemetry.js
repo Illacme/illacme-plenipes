@@ -52,6 +52,16 @@ window.initGlobalTelemetryPulse = () => {
             if (globalCost && stats.usage) {
                 globalCost.innerText = '$' + (stats.usage.cost || 0).toFixed(4);
             }
+
+            // 4. 同步代码版本感知徽标 (footer-version-badge)
+            const badgeEl = document.getElementById('footer-version-badge');
+            if (badgeEl && !window._isRestartingKernel) {
+                if (stats.version_drift && stats.version_drift.is_drifted) {
+                    badgeEl.style.display = 'inline-flex';
+                } else {
+                    badgeEl.style.display = 'none';
+                }
+            }
         } catch (e) {
             console.warn("Global telemetry pulse dropped:", e);
         }

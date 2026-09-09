@@ -129,26 +129,31 @@ class RouteManager:
         iso_logical = LanguageHub.resolve_to_iso(logical_lang)
         iso_default = LanguageHub.resolve_to_iso(self.default_lang)
         
-        # 🛡️ 智能对齐：如果为默认/原稿语言且未强制前缀，或者模板中已经包含了语种占位符，则物理语种前缀置空
-        if (iso_logical == iso_default and not self.force_source_prefix) or (slot_formatted and dir_mode == 'nested'):
+        # 探测是否启用同级多语言后缀模式 (如 Nextra)
+        use_suffix = getattr(self.ssg_adapter, 'USE_SUFFIX_I18N', False) or getattr(getattr(self.ssg_adapter, 'active_renderer', None), 'USE_SUFFIX_I18N', False)
+        if (iso_logical == iso_default and not self.force_source_prefix) or (slot_formatted and dir_mode == 'nested') or use_suffix:
             physical_lang = ""
         else:
-            physical_lang = LanguageHub.get_physical_path(
-                iso_logical,
-                theme=self.active_theme,
-                source_lang=self.default_lang,
-                force_prefix=self.force_source_prefix
-            )
+            physical_lang = LanguageHub.get_physical_path(iso_logical, theme=self.active_theme, source_lang=self.default_lang, force_prefix=self.force_source_prefix)
 
-        # 🛡️ 路径去重防线与套娃拦截网：
-        # 1. 避免 mapped_sub_dir 与 route_prefix 出现同名频道路由重叠 (如 /zh/docs/docs/...)
-        if mapped_sub_dir:
-            sub_clean = mapped_sub_dir.strip("/\\")
-            prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
-            if sub_clean in prefix_parts:
-                mapped_sub_dir = ""
+        # 🛡️ 路径去重防线与套娃拦截网：防止 slug 已经携带子目录或前缀导致重复嵌套 (如 engineering/engineering/)
+        norm_sub = mapped_sub_dir.strip("/\\")
+        norm_slug = slug.strip("/\\")
+        if norm_sub and (norm_slug.startswith(f"{norm_sub}/") or norm_slug == norm_sub):
+            slug = norm_slug[len(norm_sub):].lstrip("/\\")
+            norm_slug = slug
 
-        # 2. 避免 base_path 末级与 route_prefix 首级相同引发双重目录套娃 (如 content/content/...)
+        clean_prefix = route_prefix.strip("/\\")
+        if clean_prefix and (norm_slug.startswith(f"{clean_prefix}/") or norm_slug == clean_prefix):
+            slug = norm_slug[len(clean_prefix):].lstrip("/\\")
+
+        file_name = f"{slug}{ext}"
+        if use_suffix and iso_logical and iso_logical != iso_default:
+            file_name = f"{slug}.{iso_logical}{ext}" if not slug.endswith(f".{iso_logical}") else f"{slug}{ext}"
+
+        if mapped_sub_dir and mapped_sub_dir.strip("/\\") in [p for p in route_prefix.replace('\\', '/').split('/') if p]:
+            mapped_sub_dir = ""
+
         base_norm = base_path.replace('\\', '/').rstrip('/')
         base_last = os.path.basename(base_norm) if base_norm else ""
         prefix_parts = [p for p in route_prefix.replace('\\', '/').split('/') if p]
@@ -157,19 +162,13 @@ class RouteManager:
             route_prefix = '/'.join(prefix_parts)
 
         if route_prefix and "{" in route_prefix and "}" in route_prefix and dir_mode == 'nested':
-            # 模式 A：声明式模板模式 (如 /docs/{lang})
             try:
-                formatted_prefix = route_prefix.format(
-                    lang=physical_lang or "",
-                    slug=slug or "",
-                    sub_dir=mapped_sub_dir or ""
-                )
+                formatted_prefix = route_prefix.format(lang=physical_lang or "", slug=slug or "", sub_dir=mapped_sub_dir or "")
             except Exception:
                 formatted_prefix = route_prefix
-            raw_path = os.path.join(base_path, formatted_prefix.strip("/"), f"{slug}{ext}")
+            raw_path = os.path.join(base_path, formatted_prefix.strip("/"), file_name)
         else:
-            # 模式 B：标准阶梯模式 (base / lang / prefix / sub / slug)
-            parts = [p for p in [base_path, physical_lang, route_prefix, mapped_sub_dir, f"{slug}{ext}"] if p]
+            parts = [p for p in [base_path, physical_lang, route_prefix, mapped_sub_dir, file_name] if p]
             raw_path = os.path.join(*parts) if parts else ""
 
         return os.path.normpath(re.sub(r'[/\\]+', os.sep, raw_path))

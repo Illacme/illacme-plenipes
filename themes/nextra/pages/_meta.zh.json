@@ -1,0 +1,31 @@
+{
+  "index": "Nextra",
+  "advanced": "⚡ 高级特性",
+  "features": "✨ 核心特性",
+  "get-started": "Get Started",
+  "themes": "🎭 装帧主题",
+  "en": {
+    "display": "hidden"
+  },
+  "ja": {
+    "display": "hidden"
+  },
+  "zh": {
+    "display": "hidden"
+  },
+  "ko": {
+    "display": "hidden"
+  },
+  "fr": {
+    "display": "hidden"
+  },
+  "de": {
+    "display": "hidden"
+  },
+  "es": {
+    "display": "hidden"
+  },
+  "ru": {
+    "display": "hidden"
+  }
+}

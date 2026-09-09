@@ -46,3 +46,16 @@ def test_health_matrix_contract():
     assert matrix_obj.onboarding.status in ["active", "standby", "offline"]
     assert matrix_obj.preview.status in ["online", "running", "offline"]
     assert 0 <= matrix_obj.engine.health <= 100
+
+def test_preview_status_contract():
+    """验证 GET /api/system/preview/status 强契约与字段自愈"""
+    response = client.get("/api/system/preview/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert "status" in data
+    assert data["status"] in ["online", "offline"]
+    assert "theme" in data
+    assert "port" in data
+    assert "is_alive" in data
+    assert isinstance(data["is_alive"], bool)
+

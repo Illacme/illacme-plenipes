@@ -51,6 +51,7 @@ class VercelPublisher(BasePublisher):
         self.org_id = config.get("org_id", "")
         self.prod = config.get("prod", True)
         self.vercel_path = config.get("vercel_path", "vercel")
+        self.proxy = config.get("proxy", "") or (sys_config.get("global_proxy") if isinstance(sys_config, dict) else "")
 
     # ==========================================
     # BasePublisher 契约实现
@@ -64,7 +65,7 @@ class VercelPublisher(BasePublisher):
           1. 校验配置完整性 (token 必填)
           2. 校验 bundle_path 物理存在性
           3. 组装 vercel deploy 命令
-          4. 执行子进程 (超时 300s)
+          4. 执行子进程 (超时 300s，支持网络自愈与重试)
           5. 解析 stdout 提取部署 URL
           6. 返回标准化结果字典
 
@@ -79,28 +80,61 @@ class VercelPublisher(BasePublisher):
         if not os.path.isdir(bundle_path):
             return {"status": "error", "message": f"Bundle path does not exist: {bundle_path}"}
 
+        is_primary = metadata.get("is_primary", False) if isinstance(metadata, dict) else False
+        role_tag = " [官方主站]" if is_primary else (" [备用镜像]" if isinstance(metadata, dict) and "is_primary" in metadata else "")
         mode_label = "生产" if self.prod else "预览"
-        tlog.info(f"🚀 [Vercel] 正在以 {mode_label} 模式部署...")
+        tlog.info(f"🚀 [Vercel]{role_tag} 正在以 {mode_label} 模式部署...")
+
+        # ── 1.5 自动增强静态路由（Clean URL 友好支持）──────
+        vercel_json_path = os.path.join(bundle_path, "vercel.json")
+        if not os.path.exists(vercel_json_path):
+            try:
+                import json
+                with open(vercel_json_path, "w", encoding="utf-8") as f:
+                    json.dump({"cleanUrls": True, "trailingSlash": False}, f, indent=2)
+            except Exception as e:
+                tlog.warning(f"⚠️ [Vercel] 写入 vercel.json 失败: {e}")
 
         try:
             # ── 2. 组装命令 ──────────────────────────────
             cmd = self._build_vercel_command(bundle_path)
             tlog.debug(f"📋 [Vercel] 执行命令: {self._sanitize_cmd_for_log(cmd)}")
 
-            # ── 3. 准备环境变量 ──────────────────────────
+            # ── 3. 准备环境变量 (注入代理以提升国际连通性) ───
             env = os.environ.copy()
             # 禁止交互式提示
             env["CI"] = "1"
             if self.org_id:
                 env["VERCEL_ORG_ID"] = self.org_id
+            env = self._resolve_proxy_env(env)
 
-            # ── 4. 执行部署 ──────────────────────────────
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True,
-                timeout=300,
-                env=env
-            )
+            # ── 4. 执行部署 (带网络重试与项目创建自愈) ────────
+            max_attempts = 2
+            result = None
+            for attempt in range(1, max_attempts + 1):
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True, text=True,
+                    timeout=300,
+                    env=env
+                )
+
+                if result.returncode == 0:
+                    break
+
+                error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
+                if "was not found in the current scope" in error_msg and self.project_name:
+                    tlog.info(f"ℹ️ [Vercel] 检测到项目 '{self.project_name}' 尚未创建，正在自动执行一键自愈创建...")
+                    if self._auto_create_project():
+                        continue
+
+                # 若因瞬时网络抖动失败，自动重试一次
+                network_errs = ["fetch failed", "upload aborted", "econnreset", "socket hang up", "timed out"]
+                if attempt < max_attempts and any(ne in error_msg.lower() for ne in network_errs):
+                    tlog.warning(f"⚠️ [Vercel] 遭遇网络抖动 ({error_msg[:100]}...)，正在执行自愈重试 ({attempt}/{max_attempts})...")
+                    continue
+
+                break
 
             if result.returncode != 0:
                 error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
@@ -111,13 +145,17 @@ class VercelPublisher(BasePublisher):
             # ── 5. 解析部署 URL ──────────────────────────
             # Vercel CLI 在成功时会将部署 URL 输出到 stdout
             deploy_url = self._extract_deploy_url(result.stdout)
+            canonical_url = f"https://{self.project_name}.vercel.app" if self.project_name else ""
+            primary_url = canonical_url if (self.prod and canonical_url) else (deploy_url or canonical_url)
 
-            tlog.success(f"✅ [Vercel] 部署成功！URL: {deploy_url or '(未解析)'}")
+            role_desc = f" [{ '官方主站' if is_primary else '备用镜像' }]" if isinstance(metadata, dict) and "is_primary" in metadata else ""
+            tlog.success(f"✅ [Vercel] 部署成功{role_desc}！生产域名: {primary_url} (实例: {deploy_url or '未解析'})")
             return {
                 "status": "success",
                 "project": self.project_name,
                 "mode": "production" if self.prod else "preview",
-                "url": deploy_url,
+                "url": primary_url,
+                "deployment_url": deploy_url,
                 "message": result.stdout.strip()[-200:] if result.stdout else ""
             }
 
@@ -178,10 +216,52 @@ class VercelPublisher(BasePublisher):
     # 内部实现
     # ==========================================
 
+    def _resolve_executable(self) -> list:
+        """自愈解析 Vercel 可执行命令，优先使用指定路径，缺失时自动降级到 npx -y vercel"""
+        import shutil
+        if shutil.which(self.vercel_path):
+            return [self.vercel_path]
+        local_bin = os.path.join(os.getcwd(), "node_modules", ".bin", "vercel")
+        if os.path.exists(local_bin) and os.access(local_bin, os.X_OK):
+            return [local_bin]
+        return ["npx", "-y", "vercel"]
+
+    def _auto_create_project(self) -> bool:
+        """🚀 [V48.4] 远端项目自动创建自愈：若项目未创建，全自动调用 vercel project add 创建"""
+        if not self.project_name:
+            return False
+        cmd = self._resolve_executable() + [
+            "project", "add", self.project_name,
+            f"--token={self.token}"
+        ]
+        if self.org_id:
+            cmd.extend(["--scope", self.org_id])
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if res.returncode == 0:
+                tlog.info(f"✨ [Vercel] 远端项目自愈创建成功: {self.project_name}")
+                return True
+        except Exception as e:
+            tlog.warning(f"⚠️ [Vercel] 远端项目自动创建异常: {e}")
+    def _resolve_proxy_env(self, env: dict) -> dict:
+        """注入代理环境变量，确保国内环境发布至全球边缘节点网络链路高可用"""
+        effective_proxy = self.proxy or env.get("HTTPS_PROXY") or env.get("HTTP_PROXY") or env.get("https_proxy") or env.get("http_proxy")
+        if not effective_proxy:
+            import socket
+            for port in [10809, 7890, 7897, 1087, 8889]:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.15)
+                    if s.connect_ex(('127.0.0.1', port)) == 0:
+                        effective_proxy = f"http://127.0.0.1:{port}"
+                        break
+        if effective_proxy:
+            for k in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]:
+                env[k] = effective_proxy
+        return env
+
     def _build_vercel_command(self, bundle_path: str) -> list:
         """组装 vercel deploy 命令参数"""
-        cmd = [
-            self.vercel_path,
+        cmd = self._resolve_executable() + [
             "deploy",
             bundle_path,
             "--yes",  # 跳过确认提示
@@ -192,7 +272,7 @@ class VercelPublisher(BasePublisher):
             cmd.append("--prod")
 
         if self.project_name:
-            cmd.extend(["--name", self.project_name])
+            cmd.extend(["--project", self.project_name])
 
         return cmd
 
@@ -219,17 +299,17 @@ class VercelPublisher(BasePublisher):
         # Vercel CLI 的 stdout 通常最后一行就是部署 URL
         lines = stdout.strip().split('\n')
         for line in reversed(lines):
-            line = line.strip()
+            line = line.strip().rstrip('",\';')
             if line.startswith("https://"):
                 return line
 
         # 兜底正则匹配
-        url_pattern = re.compile(r'(https://[\w\-\.]+\.vercel\.app\S*)', re.IGNORECASE)
+        url_pattern = re.compile(r'(https://[a-zA-Z0-9\-\.]+\.vercel\.app)', re.IGNORECASE)
         match = url_pattern.search(stdout)
         if match:
-            return match.group(1)
+            return match.group(1).rstrip('",\';')
 
         # 最终兜底：匹配任何 https URL
-        fallback_pattern = re.compile(r'(https://\S+)')
+        fallback_pattern = re.compile(r'(https://[^\s",\';]+)')
         match = fallback_pattern.search(stdout)
-        return match.group(1) if match else None
+        return match.group(1).rstrip('",\';') if match else None

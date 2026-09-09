@@ -6,7 +6,7 @@
   "properties": {
     "site_name": {
       "type": "string",
-      "default": "My Universal Document",
+      "default": "",
       "title": "Site Name",
       "description": "The publication or document collection title.",
       "group": "基础设置",
@@ -14,7 +14,7 @@
     },
     "footer_copyright": {
       "type": "string",
-      "default": "© 2026 Sovereign Writer. All Rights Reserved.",
+      "default": "",
       "title": "Footer Copyright Info",
       "description": "Global copyright text shown on document footer.",
       "group": "基础设置",
@@ -22,7 +22,7 @@
     },
     "author": {
       "type": "string",
-      "default": "Sovereign Writer",
+      "default": "",
       "title": "Default Author Name",
       "description": "Default author name to prepend on generated markdown frontmatters.",
       "group": "基础设置",

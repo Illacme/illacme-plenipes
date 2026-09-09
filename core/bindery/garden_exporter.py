@@ -80,8 +80,9 @@ def export_digital_garden(engine, all_docs_snapshot=None):
 
             final_url = re.sub(r'/+', '/', raw_url)
             
-            # 🚀 [V34.9] 性能手术：直接从内存获取标题，杜绝磁盘扫描
+            # 🚀 [V34.9] 性能手术：直接从内存获取标题与摘要，杜绝磁盘扫描
             title = doc_info.get("title")
+            excerpt = (doc_info.get("seo_data") or {}).get("description") or doc_info.get("description") or doc_info.get("summary") or ""
             if not is_src_lang and logical_code != src_lang:
                 trans = doc_info.get("translations", {}).get(logical_code, {})
                 if isinstance(trans, dict):
@@ -94,9 +95,17 @@ def export_digital_garden(engine, all_docs_snapshot=None):
                     )
                     if trans_title:
                         title = trans_title
+                    trans_desc = (
+                        (trans.get("seo") or {}).get("description") or
+                        trans.get("description") or
+                        trans.get("reviewed_desc") or
+                        (trans.get("seo") or {}).get("og_description")
+                    )
+                    if trans_desc:
+                        excerpt = trans_desc
 
             norm_lang = 'root' if is_src_lang else logical_code
-            return { "lang": norm_lang, "url": final_url, "title": title }
+            return { "lang": norm_lang, "url": final_url, "title": title, "excerpt": excerpt }
 
         src_code = engine.i18n.source.lang_code
         if src_code is not None:
@@ -162,17 +171,21 @@ def export_digital_garden(engine, all_docs_snapshot=None):
                 backlinks_map[url_key] = backlinks_for_this
 
     all_nodes: dict = {}
+    node_excerpts: dict = {}
     for path, info in docs.items():
         for url_info in get_all_lang_urls(path, info):
             url = url_info.get("url")
             if not is_content_article(url): continue
             title = url_info.get("title") or url.split('/')[-1].replace('-', ' ').title()
             all_nodes[url] = title
+            exc = url_info.get("excerpt") or ""
+            if exc: node_excerpts[url] = str(exc)[:200]
 
     final_graph = {
         "version": "1.0",
         "node_titles": node_titles,
         "all_nodes": all_nodes,
+        "node_excerpts": node_excerpts,
         "backlinks": backlinks_map
     }
 
@@ -204,14 +217,17 @@ def export_digital_garden(engine, all_docs_snapshot=None):
     try:
         updated = _safe_write_file(graph_path, new_json_bytes)
         
-        # 🚀 [V105.2] 静态公共目录同步：直接输出到 public/graph.json 供前端 D3 图谱无缝拉取
+        # 🚀 [V105.2] 静态公共目录同步：输出到 public/、static/ 与 build/ 供前端 D3 图谱无缝拉取 (适配 Docusaurus/Astro 等多框架)
         target_public_dirs = []
         g_dir = engine.paths.get('graph_json_dir')
         if g_dir:
             target_public_dirs.append(engine._resolve_path(g_dir))
-        theme_public = engine._resolve_path(os.path.join(engine.paths.get('target_base', '.'), 'public'))
-        if theme_public not in target_public_dirs:
-            target_public_dirs.append(theme_public)
+        
+        target_base = engine.paths.get('target_base', '.')
+        for folder_name in ('public', 'static', 'build'):
+            candidate = engine._resolve_path(os.path.join(target_base, folder_name))
+            if candidate not in target_public_dirs:
+                target_public_dirs.append(candidate)
 
         for p_dir in target_public_dirs:
             if os.path.isdir(p_dir) or os.path.isdir(os.path.dirname(p_dir)):

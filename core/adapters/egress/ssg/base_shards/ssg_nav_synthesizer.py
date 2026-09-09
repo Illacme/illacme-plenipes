@@ -23,6 +23,11 @@ class SSGNavSynthesizer:
         if not isinstance(routes, list):
             routes = []
 
+        def _safe_get(item: Any, key: str, default: Any = None) -> Any:
+            if isinstance(item, dict):
+                return item.get(key, default)
+            return getattr(item, key, default)
+
         # 🚀 读取网址组织形态 (flat/prefix/nested)
         dir_mode = 'nested'
         if adapter.engine and hasattr(adapter.engine, 'config'):
@@ -31,7 +36,20 @@ class SSGNavSynthesizer:
 
         default_lang = getattr(adapter, 'default_lang', 'zh') or 'zh'
         force_src_prefix = getattr(adapter, 'force_source_prefix', False)
-        is_clean_url = getattr(adapter, 'clean_urls', False) or getattr(adapter, 'is_framework', False) or (getattr(adapter, 'PLUGIN_ID', '') in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+        
+        theme_name = (getattr(getattr(adapter, 'theme_settings', None), 'name', '') or '').lower()
+        is_framework = False
+        if hasattr(adapter, 'is_framework_engine') and callable(adapter.is_framework_engine):
+            try:
+                is_framework = adapter.is_framework_engine()
+            except Exception:
+                pass
+        is_clean_url = (
+            getattr(adapter, 'clean_urls', False)
+            or is_framework
+            or (theme_name in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+            or (getattr(adapter, 'PLUGIN_ID', '') in ('starlight', 'docusaurus', 'nextra', 'vitepress'))
+        )
 
         def _calc_target_path(p_prefix: str, p_slot: str, p_lang_prefix: str = "") -> str:
             """统一计算符合 Clean URL 规范与多语言隔离的导航目标路径"""
@@ -66,20 +84,20 @@ class SSGNavSynthesizer:
         }
 
         # 1. 过滤并排序需要展示在导航栏的项
-        visible_routes = [r for r in routes if getattr(r, 'show_in_nav', True)]
+        visible_routes = [r for r in routes if _safe_get(r, 'show_in_nav', True)]
         try:
-            visible_routes.sort(key=lambda x: getattr(x, 'nav_order', 0))
+            visible_routes.sort(key=lambda x: _safe_get(x, 'nav_order', 0))
         except Exception:
             pass
 
         nav_items = []
         for r in visible_routes:
-            slot = getattr(r, 'target_slot', 'docs') or 'docs'
-            source = getattr(r, 'source', '')
-            prefix = getattr(r, 'prefix', '') or (source.lower() if source else '')
+            slot = _safe_get(r, 'target_slot', 'docs') or 'docs'
+            source = _safe_get(r, 'source', '')
+            prefix = _safe_get(r, 'prefix', '') or (source.lower() if source else '')
             prefix = prefix.strip('/')
 
-            label = getattr(r, 'nav_label', None)
+            label = _safe_get(r, 'nav_label', None)
             if not label:
                 if source:
                     label = source
@@ -88,9 +106,9 @@ class SSGNavSynthesizer:
                 else:
                     label = slot_label_fallback.get(slot, slot.capitalize())
 
-            icon = getattr(r, 'nav_icon', None) or ('✨' if prefix == 'about' else slot_icon_fallback.get(slot, '📄'))
-            position = getattr(r, 'nav_position', 'left') or 'left'
-            ext_url = getattr(r, 'external_url', None)
+            icon = _safe_get(r, 'nav_icon', None) or ('✨' if prefix == 'about' else slot_icon_fallback.get(slot, '📄'))
+            position = _safe_get(r, 'nav_position', 'left') or 'left'
+            ext_url = _safe_get(r, 'external_url', None)
 
             if ext_url:
                 nav_items.append({
@@ -170,17 +188,17 @@ class SSGNavSynthesizer:
             l_prefix = l_code if (l_code != default_lang or force_src_prefix) else ""
             l_items = []
             for r in visible_routes:
-                slot = getattr(r, 'target_slot', 'docs') or 'docs'
-                source = getattr(r, 'source', '')
-                prefix = getattr(r, 'prefix', '') or (source.lower() if source else '')
+                slot = _safe_get(r, 'target_slot', 'docs') or 'docs'
+                source = _safe_get(r, 'source', '')
+                prefix = _safe_get(r, 'prefix', '') or (source.lower() if source else '')
                 prefix = prefix.strip('/')
-                icon = getattr(r, 'nav_icon', None) or slot_icon_fallback.get(slot, '📄')
-                position = getattr(r, 'nav_position', 'left') or 'left'
-                ext_url = getattr(r, 'external_url', None)
+                icon = _safe_get(r, 'nav_icon', None) or slot_icon_fallback.get(slot, '📄')
+                position = _safe_get(r, 'nav_position', 'left') or 'left'
+                ext_url = _safe_get(r, 'external_url', None)
 
                 # 优先读取自定义多语言字典 -> 默认母语使用用户 nav_label -> 目标语言优先读取内置术语字典 -> 最后回落
-                i18n_map = getattr(r, 'nav_label_i18n', {}) or {}
-                user_nav_label = getattr(r, 'nav_label', None)
+                i18n_map = _safe_get(r, 'nav_label_i18n', {}) or {}
+                user_nav_label = _safe_get(r, 'nav_label', None)
                 if isinstance(i18n_map, dict) and i18n_map.get(l_code):
                     l_label = i18n_map.get(l_code)
                 elif l_code == default_lang and user_nav_label:

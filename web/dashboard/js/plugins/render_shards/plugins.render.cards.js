@@ -193,7 +193,7 @@ window.checkPluginConfiguredStatus = (p) => {
     // 🎨 装帧主题状态呈现：统一严格 4 字符对齐（当前选用 / 本地就绪 / 云端母本）
     if (p.category === 'theme') {
         if (p.is_in_use) {
-            return { label: '🟢 当前选用', class: 'info', style: 'background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+            return { label: '🟢 当前选用', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
         }
         const loc = p.location || 'native';
         if (loc === 'local' || loc === 'global') {
@@ -240,7 +240,7 @@ window.checkPluginConfiguredStatus = (p) => {
     if (window.isPluginCredentialReady) {
         const cred = window.isPluginCredentialReady(p.id, p.category, settings);
         if (cred.ready) {
-            return { label: `🟢 ${cred.label || '配置齐全'}`, class: 'info', style: 'background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
+            return { label: `🟢 ${cred.label || '配置齐全'}`, class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
         } else {
             return { label: `⚠️ ${cred.label || '待填凭据'}`, class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
         }
@@ -254,7 +254,7 @@ window.checkPluginConfiguredStatus = (p) => {
     });
 
     if (hasKeys) {
-        return { label: '🟢 配置齐全', class: 'info', style: 'background: rgba(0, 255, 136, 0.08); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
+        return { label: '🟢 配置齐全', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
     } else {
         return { label: '⚠️ 待填凭据', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
     }
@@ -309,7 +309,7 @@ window.renderPlugins = () => {
         'masker': '内置敏感词过滤、EXIF 地理指纹脱敏与图像安全隐私掩码保护屏障。',
         'protocol': '连接底座大语言模型，提供语义润色、智能提炼与多语言翻译中枢协议。',
         'theme': '定制全站出版物装帧主题、CSS 样式排版与视觉渲染模版引擎。',
-        'hosting': '将编译好的静态网站推送到 GitHub Pages、Vercel、Netlify、Cloudflare Pages 等平台。支持指定一个「主站」作为 canonical 权威域名（集中 SEO 权重），其余平台作为镜像备用站运行，实现容灾与加速。',
+        'hosting': '将编译好的静态网站发布至 GitHub Pages、Vercel 等多平台。支持指定一个「首选主站」作为官方主要网址，其余平台作为备用镜像同步容灾，确保全网随时随地流畅访问。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
         'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
         'publisher': '支持 Dev.to, Medium, WordPress, Ghost, Hashnode, LinkedIn 等第三方社交媒体渠道的内容分发与多平台推流。',

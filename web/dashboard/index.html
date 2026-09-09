@@ -27,8 +27,6 @@
     <link rel="stylesheet" href="css/components/dashboard.agent.markdown.css?v=75.1">
     <link rel="stylesheet" href="css/components/dashboard.agent.widescreen.css?v=76.0">
     <link rel="stylesheet" href="css/views/overview.css?v=20260828_onboarding_dual_v29">
-    <link rel="stylesheet" href="css/views/galaxy.css">
-    <link rel="stylesheet" href="css/views/vault.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.header.css?v=75.0">
@@ -71,7 +69,7 @@
                 <div class="status-box">
                     <div style="display: flex; align-items: center;">
                         <h1>ILLACME <span class="accent">PLENIPES</span></h1>
-                        <span id="header-pro-badge" class="header-pro-badge lite-active">🌱 LITE</span>
+                        <span id="header-pro-badge" class="header-pro-badge lite-active">🌱 社区版</span>
                     </div>
                     <div class="context-switcher" id="imprint-selector-trigger"
                         onclick="event.stopPropagation(); toggleImprintDropdown()">
@@ -84,26 +82,60 @@
             </div>
             <nav id="top-nav">
                 <div class="nav-tabs-wrapper">
-                    <div class="nav-item active" id="nav-overview">
-                        <span class="nav-icon">🌌</span><span class="nav-text">指挥中心</span>
+                    <div class="nav-item active" id="nav-overview" data-view="overview">
+                        <span class="nav-icon">🌌</span><span class="nav-text">指挥中枢</span>
                     </div>
-                    <div class="nav-item" id="nav-vault">
+                    <div class="nav-item" id="nav-vault" data-view="vault">
                         <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
                     </div>
-                    <div class="nav-item" id="nav-compute">
-                        <span class="nav-icon">🧠</span><span class="nav-text">算力中心</span>
+                    <div class="nav-item nav-group-item" id="nav-group-governance" data-group="governance">
+                        <div class="nav-item-main" id="nav-gov-main">
+                            <span class="nav-icon">⚙️</span><span class="nav-text">出版治理</span><span class="nav-caret">▾</span>
+                        </div>
+                        <div class="nav-dropdown-menu glass-panel">
+                            <div class="nav-dropdown-item" id="nav-settings" data-view="settings" onclick="window.showView('settings')">
+                                <span class="dropdown-item-icon">🏷️</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">规则装帧与合规</span>
+                                    <span class="dropdown-item-desc">品牌身份、存储适配、主题与模式</span>
+                                </div>
+                            </div>
+                            <div class="nav-dropdown-item" id="nav-compute" data-view="compute" onclick="window.showView('compute')">
+                                <span class="dropdown-item-icon">🧠</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">算力基座与模型</span>
+                                    <span class="dropdown-item-desc">AI 提供商、密钥配额、上下文网关</span>
+                                </div>
+                            </div>
+                            <div class="nav-dropdown-item" id="nav-plugins" data-view="plugins" onclick="window.showView('plugins')">
+                                <span class="dropdown-item-icon">🧩</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">插件生态与分发</span>
+                                    <span class="dropdown-item-desc">全域托管、社交渠道、扩展插件包</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="nav-item" id="nav-plugins">
-                        <span class="nav-icon">🧩</span><span class="nav-text">插件中心</span>
-                    </div>
-                    <div class="nav-item" id="nav-settings">
-                        <span class="nav-icon">⚙️</span><span class="nav-text">治理中心</span>
-                    </div>
-                    <div class="nav-item" id="nav-tower">
-                        <span class="nav-icon">🗼</span><span class="nav-text">系统遥测</span>
-                    </div>
-                    <div class="nav-item" id="nav-analytics">
-                        <span class="nav-icon">📊</span><span class="nav-text">数据统计</span>
+                    <div class="nav-item nav-group-item" id="nav-group-telemetry" data-group="telemetry">
+                        <div class="nav-item-main" id="nav-telem-main">
+                            <span class="nav-icon">📊</span><span class="nav-text">运营遥测</span><span class="nav-caret">▾</span>
+                        </div>
+                        <div class="nav-dropdown-menu glass-panel">
+                            <div class="nav-dropdown-item" id="nav-tower" data-view="tower" onclick="window.showView('tower')">
+                                <span class="dropdown-item-icon">🗼</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">实时系统遥测</span>
+                                    <span class="dropdown-item-desc">服务拓扑、进程健康、链路时延</span>
+                                </div>
+                            </div>
+                            <div class="nav-dropdown-item" id="nav-analytics" data-view="analytics" onclick="window.showView('analytics')">
+                                <span class="dropdown-item-icon">📈</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">内容数据统计</span>
+                                    <span class="dropdown-item-desc">词频资产、读者画像、知识网络</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="header-actions-group">
@@ -158,8 +190,8 @@
     <script src="js/theme/theme.mode.js?v=80.1"></script>
     <script src="js/theme/theme.api.js?v=80.1"></script>
     <script src="js/theme/theme.mockups.js?v=80.6"></script>
-    <script src="js/theme/theme.ui.js?v=80.1"></script>
-    <script src="js/theme/theme.handlers.js?v=80.1"></script>
+    <script src="js/theme/theme.ui.js?v=85.0"></script>
+    <script src="js/theme/theme.handlers.js?v=85.0"></script>
     <script src="js/dashboard.compute.js?v=75.1"></script>
     <script src="js/dashboard.templates.js?v=20260828_brand_header_v30"></script>
     <script src="js/dashboard.templates.tower.js"></script>
@@ -243,12 +275,13 @@
     <script src="js/imprints/imprints_shards/imprints.wizard.modal.js?v=74.0"></script>
     <script src="js/dashboard.imprints.js?v=20260904_vault_binding_notice_v1"></script>
     <script src="js/dashboard.modes.js?v=20260828_toast_v4"></script>
-    <script src="js/localization/render_shards/loc.matrix.render.js?v=105.0"></script>
-    <script src="js/localization/render_shards/loc.blocks.render.js?v=105.0"></script>
-    <script src="js/localization/render_shards/loc.glossary.render.js?v=105.0"></script>
-    <script src="js/localization/render_shards/loc.glossary.modal.js?v=105.0"></script>
-    <script src="js/localization/render_shards/loc.tabs.render.js?v=105.0"></script>
-    <script src="js/localization/localization.render.js?v=105.0"></script>
+    <script src="js/localization/render_shards/loc.matrix.render.js?v=106.0"></script>
+    <script src="js/localization/render_shards/loc.link_doctor.render.js?v=106.0"></script>
+    <script src="js/localization/render_shards/loc.blocks.render.js?v=106.0"></script>
+    <script src="js/localization/render_shards/loc.glossary.render.js?v=106.0"></script>
+    <script src="js/localization/render_shards/loc.glossary.modal.js?v=106.0"></script>
+    <script src="js/localization/render_shards/loc.tabs.render.js?v=106.0"></script>
+    <script src="js/localization/localization.render.js?v=106.0"></script>
     <script src="js/localization/localization.style.js"></script> <!-- 🔒 [I5] 翻译风格预设 (SOP-02拆分) -->
     <script src="js/localization/localization.review.markdown.js"></script>
     <script src="js/localization/review_shards/review.render.progress.js"></script>

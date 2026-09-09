@@ -31,7 +31,8 @@ const normalizePath = (p: string) => (() => {
 const normalizedCurrent = normalizePath(currentPath);
 
 const backlinksForPage = Object.keys(allBacklinks).reduce((acc, key) => {
-	if (normalizePath(key) === normalizedCurrent) {
+	const kClean = normalizePath(key);
+	if (kClean === normalizedCurrent || (normalizedCurrent !== '/' && (kClean.endsWith(normalizedCurrent) || normalizedCurrent.endsWith(kClean)))) {
 		return acc.concat(allBacklinks[key as keyof typeof allBacklinks]);
 	}
 	return acc;
@@ -39,7 +40,18 @@ const backlinksForPage = Object.keys(allBacklinks).reduce((acc, key) => {
 
 const isEnglish = currentPath.startsWith('/en/');
 const isJapanese = currentPath.startsWith('/ja/');
-const uiTitle = isEnglish ? "Backlinks" : (isJapanese ? "バックリンク" : "漫游关联");
+const uiTitle = isEnglish ? "🔗 Linked Mentions" : (isJapanese ? "🔗 双方向リンクと参照" : "🔗 双向链接与引用回响");
+const uiSubtitle = isEnglish ? "Documents referencing this page" : (isJapanese ? "このページを参照している文書" : "提及本篇的手稿");
+
+const resolveStarlightUrl = (rawUrl: string) => {
+	if (!rawUrl) return '/';
+	let u = String(rawUrl).trim();
+	u = u.replace(/\/engineering\/engineering\//g, '/engineering/');
+	if (u.startsWith('/docs/')) {
+		u = u.replace(/^\/docs\//, '/');
+	}
+	return u || '/';
+};
 
 // Compliance & Identity options
 const siteName = themeOptions.site_name || 'Illacme Plenipes';
@@ -51,19 +63,26 @@ const policeLicense = themeOptions.police_license;
 ---
 
 {backlinksForPage.length > 0 && (
-<div class="garden-backlinks">
-	<h3><span class="icon">🌱</span> {uiTitle} <span class="count">({backlinksForPage.length})</span></h3>
-	<ul class="backlink-list">
-		{backlinksForPage.map((link) => (
-			<li>
-				<a href={link.url} class="backlink-card">
-					<span class="link-title">{link.title}</span>
-					<span class="sl-icon">↗</span>
+<section class="linked-mentions-container">
+	<div class="mentions-header">
+		<div class="title-group">
+			<span class="main-title">{uiTitle}</span>
+			<span class="count-badge">{backlinksForPage.length}</span>
+		</div>
+		<span class="sub-title">{uiSubtitle}</span>
+	</div>
+	<div class="mentions-grid">
+		{backlinksForPage.map((link) => {
+			const targetUrl = resolveStarlightUrl(link.url);
+			return (
+				<a href={targetUrl} class="mention-card">
+					<span class="link-title">📄 {link.title || link.url}</span>
+					<span class="arrow-icon">↗</span>
 				</a>
-			</li>
-		))}
-	</ul>
-</div>
+			);
+		})}
+	</div>
+</section>
 )}
 
 <!-- 先渲染 Starlight 原生的翻页器和编辑链接 -->
@@ -111,76 +130,105 @@ const policeLicense = themeOptions.police_license;
 	</p>
 </footer>
 
+<script is:inline>
+	if (typeof window !== 'undefined') {
+		import('/wiki-preview-core.js').then(m => m.initWikiPreview && m.initWikiPreview()).catch(() => {});
+		import('/article-telemetry-core.js').then(m => m.mountArticleTelemetry && m.mountArticleTelemetry()).catch(() => {});
+	}
+</script>
+
 <style>
-.garden-backlinks {
-	margin-top: 3rem;
-	margin-bottom: 2rem;
-	padding: 1.5rem;
+.linked-mentions-container {
+	margin: 3.5rem 0 2.5rem 0;
+	padding: 1.25rem 1.5rem;
+	border-radius: 12px;
+	border: 1px solid var(--sl-color-gray-5);
 	background: var(--sl-color-gray-6);
-	border: 1px solid var(--sl-color-gray-5);
-	border-radius: 0.75rem;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	backdrop-filter: blur(8px);
+	box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05);
 }
-
-.garden-backlinks h3 {
-	font-size: 1.2rem;
-	margin-top: 0;
-	margin-bottom: 1rem;
-	color: var(--sl-color-white);
+.mentions-header {
 	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.garden-backlinks .count {
-	font-size: 0.9rem;
-	color: var(--sl-color-gray-3);
-	font-weight: normal;
-}
-
-.backlink-list {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: 1rem;
-}
-
-.backlink-card {
-	display: flex;
+	align-items: baseline;
 	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px dashed var(--sl-color-gray-5);
+}
+.title-group { display: inline-flex; align-items: center; gap: 0.6rem; }
+.main-title {
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	color: var(--sl-color-white, var(--sl-color-text));
+}
+
+.count-badge {
+	display: inline-flex;
 	align-items: center;
+	justify-content: center;
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 0.1rem 0.5rem;
+	border-radius: 9999px;
+	background: rgba(99, 102, 241, 0.15);
+	color: var(--sl-color-text-accent, var(--sl-color-accent));
+	border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.sub-title {
+	font-size: 0.75rem;
+	color: var(--sl-color-gray-3);
+}
+
+.mentions-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 0.85rem;
+}
+
+.mention-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	padding: 0.75rem 1rem;
-	background: var(--sl-color-black);
+	border-radius: 8px;
 	border: 1px solid var(--sl-color-gray-5);
-	border-radius: 0.5rem;
+	background: var(--sl-color-black);
 	text-decoration: none !important;
 	color: var(--sl-color-text) !important;
-	transition: all 0.2s ease-in-out;
+	font-size: 0.88rem;
+	font-weight: 500;
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.backlink-card:hover {
+.mention-card:hover {
 	border-color: var(--sl-color-accent);
 	background: var(--sl-color-gray-6);
 	transform: translateY(-2px);
-	box-shadow: 0 4px 12px rgba(var(--sl-color-accent), 0.2);
+	box-shadow: 0 4px 14px -2px rgba(99, 102, 241, 0.25);
+	color: var(--sl-color-text-accent, var(--sl-color-accent)) !important;
 }
 
-.backlink-card .link-title {
-	font-weight: 500;
-	line-height: 1.4;
+.link-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.backlink-card .sl-icon {
-	color: var(--sl-color-gray-4);
-	font-size: 0.8em;
-	transition: color 0.2s;
+.arrow-icon {
+	font-size: 0.8rem;
+	opacity: 0.5;
+	transition: transform 0.2s ease, opacity 0.2s ease;
 	margin-left: 0.5rem;
+	flex-shrink: 0;
 }
 
-.backlink-card:hover .sl-icon {
-	color: var(--sl-color-accent);
+.mention-card:hover .arrow-icon {
+	opacity: 1;
+	transform: translate(2px, -2px);
 }
 
 .custom-global-footer {

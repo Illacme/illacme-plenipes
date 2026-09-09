@@ -53,7 +53,7 @@
                                         <button type="button" class="primary-btn" id="btn-revoke-license" onclick="window.revokeCurrentLicense(event)" style="display:none; background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.3); color: #ff6b6b; padding: 3px 10px; font-size: 0.75rem;">🔓 解绑授权</button>
                                     </div>
                                     <div class="setting-desc" id="lic-banner-desc" style="font-size: 0.82rem; line-height: 1.4; color: var(--text-muted);">
-                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 1 个目标翻译语种。升级增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。
+                                        ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 2 个目标翻译语种。升级增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。
                                     </div>
                                 </div>
                             </div>
@@ -64,7 +64,7 @@
                                 <span class="lic-pill-unlocked">✓ 创作中心灵感润色</span>
                                 <span class="lic-pill-unlocked">✓ 算力节点灵活对接</span>
                                 <span class="lic-pill-unlocked">✓ 1个自建品牌+官方示范</span>
-                                <span class="lic-pill-unlocked">✓ 1个目标翻译语种</span>
+                                <span class="lic-pill-unlocked">✓ 2个目标翻译语种</span>
                                 <span class="lic-pill-unlocked">✓ 子目录精准收稿</span>
                                 <span class="lic-pill-locked">🔒 5 个独立品牌 (增强版)</span>
                                 <span class="lic-pill-locked">🔒 5 个目标语种 (增强版)</span>
@@ -124,7 +124,7 @@
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
                                             <td style="padding: 12px 10px;"><b>多语种翻译矩阵</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">多语种并行翻译分发能力</span></td>
-                                            <td style="padding: 12px 10px; color: var(--text-muted);">1 个目标语种 (如中->英)</td>
+                                            <td style="padding: 12px 10px; color: var(--text-muted);">最多 2 个目标语种 (如中->英、日)</td>
                                             <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 5 个目标语种并行</td>
                                             <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 全量语种矩阵任选</td>
                                         </tr>

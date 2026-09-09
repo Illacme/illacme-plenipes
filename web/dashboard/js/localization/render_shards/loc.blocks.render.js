@@ -51,6 +51,9 @@
         })}
                 </div>
 
+                <!-- 🛰️ 跨主题多语言内链健康体检中枢 (Link Doctor) -->
+                ${window.renderLinkDoctorCard ? window.renderLinkDoctorCard() : ''}
+
                 <!-- A. 链接与跳转对准 -->
                 <div class="settings-group" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 10px;">
                     <h4 style="color: var(--accent-secondary); margin-bottom: 5px; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace;">🔗 链接与跳转对准 (Link & Anchor Resolution)</h4>

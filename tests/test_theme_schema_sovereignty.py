@@ -162,7 +162,7 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         self.assertTrue(LicenseGuard.is_pro_feature_allowed("subfolder_ingress"))
         self.assertEqual(LicenseGuard.get_max_custom_imprints(), 1)
         self.assertEqual(LicenseGuard.get_max_imprints(), 2)
-        self.assertEqual(LicenseGuard.get_max_i18n_targets(), 1)
+        self.assertEqual(LicenseGuard.get_max_i18n_targets(), 2)
         
         info = LicenseGuard.get_license_info()
         self.assertEqual(info["tier"], "LITE")

@@ -163,8 +163,23 @@ def test_frontend_render_runtime_and_dom_integrity():
         if (!dashHtml.includes('点击刷新检测') || !dashHtml.includes('按 Esc 关闭工作台')) {
             throw new Error('Launchpad dashboard missing streamlined footer actions');
         }
-        if (lpHtml.includes('lpwiz-footer-note')) {
-            throw new Error('Launchpad onboarding should not have redundant footer note');
+        // 7. 验证 loc.link_doctor.render.js 与 loc.blocks.render.js (Link Doctor 跨主题体检沙箱)
+        const linkDoctorCode = fs.readFileSync('web/dashboard/js/localization/render_shards/loc.link_doctor.render.js', 'utf8');
+        eval(linkDoctorCode);
+        const blocksRenderCode = fs.readFileSync('web/dashboard/js/localization/render_shards/loc.blocks.render.js', 'utf8');
+        eval(blocksRenderCode);
+
+        const cardHtml = window.renderLinkDoctorCard();
+        if (!cardHtml.includes('link-doctor-card-container') || !cardHtml.includes('btn-trigger-link-doctor')) {
+            throw new Error('Link Doctor card DOM missing container or trigger button');
+        }
+        if (!cardHtml.includes('Universal 通用') || !cardHtml.includes('Nextra (Next.js)') || !cardHtml.includes('Starlight (Astro)')) {
+            throw new Error('Link Doctor card missing SSG theme badges');
+        }
+
+        const blockRulesHtml = window.renderBlockRulesCategory();
+        if (!blockRulesHtml.includes('link-doctor-card-container')) {
+            throw new Error('renderBlockRulesCategory failed to embed Link Doctor card');
         }
 
         console.log('ALL_FRONTEND_RENDER_DOM_VERIFIED_SUCCESS');

@@ -209,7 +209,9 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
     if not args.dry_run:
         engine.meta.save()
         engine.meter.persist()
-        bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot, local_only=getattr(args, 'local_only', False))
+        deploy_res = getattr(engine, 'last_deployment_results', {}) or {}
+        deploy_summary = deploy_res.get("summary") if isinstance(deploy_res, dict) else None
+        bus.emit("SYNC_COMPLETED", stats=stats, engine=engine, is_dry_run=args.dry_run, all_docs_snapshot=all_docs_snapshot, local_only=getattr(args, 'local_only', False), deployment_summary=deploy_summary)
         if getattr(engine, "abort_sync", False):
             send_sync_lifecycle_notification(engine, "WARN", "同步任务已中止", f"用户手动中止了同步流程，总耗时 {time_display}")
         else:

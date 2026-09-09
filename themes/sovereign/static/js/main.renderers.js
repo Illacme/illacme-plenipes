@@ -77,11 +77,10 @@
 
         const staticRoot = getStaticRoot();
         const localMermaid = `${staticRoot}vendor/mermaid/mermaid.min.js`;
-        const cdnMermaid = 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js';
 
         try {
-            // 🛡️ 100% 优先加载本地静态资产
-            await loadScript(localMermaid, cdnMermaid);
+            // 🛡️ 100% 纯本地静态资产加载，杜绝外部网络请求
+            await loadScript(localMermaid);
             if (!window.mermaid) return;
 
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -149,8 +148,8 @@
 
         try {
             loadCSS(localKatexCss);
-            await loadScript(localKatexJs, 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js');
-            await loadScript(localAutoRenderJs, 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js');
+            await loadScript(localKatexJs);
+            await loadScript(localAutoRenderJs);
 
             if (window.renderMathInElement) {
                 window.renderMathInElement(prose, {

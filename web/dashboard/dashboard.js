@@ -66,7 +66,9 @@ window.initDashboard = async () => {
         navs.forEach(id => {
             const el = document.getElementById(`nav-${id}`);
             if (el) {
-                el.onclick = () => {
+                el.onclick = (e) => {
+                    // 阻止事件冒泡到父级组容器
+                    if (e && e.stopPropagation) e.stopPropagation();
                     if (typeof window.showView === 'function') {
                         window.showView(id);
                     }
@@ -83,6 +85,67 @@ window.initDashboard = async () => {
                     }
                 };
             }
+        });
+
+        // 🛡️ 导航大类聚合主体：Hover 延时缓冲 (Grace Period) + 点击直达与展开
+        const setupNavGroup = (groupId, defaultViewId) => {
+            const groupEl = document.getElementById(groupId);
+            if (!groupEl) return;
+            let closeTimer = null;
+
+            const openMenu = () => {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+                document.querySelectorAll('.nav-group-item').forEach(g => {
+                    if (g !== groupEl) g.classList.remove('open');
+                });
+                groupEl.classList.add('open');
+            };
+
+            const closeMenuWithGrace = () => {
+                if (closeTimer) clearTimeout(closeTimer);
+                closeTimer = setTimeout(() => {
+                    groupEl.classList.remove('open');
+                }, 280); // 280ms 延时缓冲，彻底解决斜向滑动或微小离开导致的闪退
+            };
+
+            groupEl.addEventListener('mouseenter', openMenu);
+            groupEl.addEventListener('mouseleave', closeMenuWithGrace);
+
+            // 点击大类头部：确保展开锁定，若不在该大类下则快速直达默认业务页
+            const mainBtn = groupEl.querySelector('.nav-item-main');
+            if (mainBtn) {
+                mainBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openMenu();
+                    if (typeof window.showView === 'function') {
+                        const isGov = (groupId === 'nav-group-governance');
+                        const subViews = isGov ? ['settings', 'compute', 'plugins'] : ['tower', 'analytics'];
+                        if (!subViews.includes(window.currentView)) {
+                            window.showView(defaultViewId);
+                        }
+                    }
+                });
+            }
+        };
+
+        setupNavGroup('nav-group-governance', 'settings');
+        setupNavGroup('nav-group-telemetry', 'tower');
+
+        // 点击页面任意外部空白区域，自动关闭所有展开的下拉菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.nav-group-item')) {
+                document.querySelectorAll('.nav-group-item').forEach(g => g.classList.remove('open'));
+            }
+        });
+
+        // 点击下拉子项后，自动平滑收起下拉浮层
+        document.querySelectorAll('.nav-dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-group-item').forEach(g => g.classList.remove('open'));
+            });
         });
 
         // 核心组件初始化

@@ -3,175 +3,193 @@ const pathname = Astro.url.pathname;
 const isEn = pathname.startsWith('/en/') || pathname === '/en';
 const isJa = pathname.startsWith('/ja/') || pathname === '/ja';
 
-let currentLang = 'root';
-let canvasTitle = "关系图谱";
+const I18N = {
+  en: { lang: 'en', title: '🌌 Local Graph', modalTitle: '🌌 Celestial Knowledge Galaxy', btn: 'Fullscreen', hint: '💡 Hint: Scroll to Zoom / Drag to Pan / Click Node to Teleport / Press ESC or Click Top-Right to Exit', close: '✕ Exit Fullscreen [ESC]' },
+  ja: { lang: 'ja', title: '🌌 局所グラフ', modalTitle: '🌌 全域星系ナレッジグラフ', btn: '全画面', hint: '💡 ヒント: スクロールで拡大縮小 / ドラッグで移動 / クリックで移動 / ESCキーまたは右上で安全終了', close: '✕ 全画面終了 [ESC]' },
+  zh: { lang: 'root', title: '🌌 局部关系图谱', modalTitle: '🌌 全域星系知识网络', btn: '全屏探索', hint: '💡 提示: 滚轮缩放 / 拖拽漫游 / 点击节点穿梭 / 点击右上角或按 ESC 键安全退出', close: '✕ 退出全屏 [ESC]' }
+};
 
-if (isEn) {
-  currentLang = 'en';
-  canvasTitle = "Graph View";
-} else if (isJa) {
-  currentLang = 'ja';
-  canvasTitle = "ナレッジグラフ";
-}
+const current = isEn ? I18N.en : (isJa ? I18N.ja : I18N.zh);
 ---
 
-<topology-canvas data-lang={currentLang}>
+<topology-canvas data-lang={current.lang}>
   <div class="garden-canvas-wrapper">
-    <div class="canvas-title">
-      <span class="icon">🌌</span> {canvasTitle}
+    <div class="canvas-header">
+      <div class="canvas-title">{current.title}</div>
+      <button type="button" class="fullscreen-btn" title={current.btn}>⛶ {current.btn}</button>
     </div>
     <div class="garden-canvas-internal"></div>
+  </div>
+
+  <div class="topology-fullscreen-modal" style="display: none;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">{current.modalTitle}</div>
+        <div class="modal-hint">{current.hint}</div>
+      </div>
+      <button type="button" class="modal-close-btn" title="点击退出全屏 (ESC)">{current.close}</button>
+    </div>
+    <div class="modal-canvas-container"></div>
   </div>
 </topology-canvas>
 
 <style>
   topology-canvas { display: block; }
-
   .garden-canvas-wrapper {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
+    margin: 0 0 1rem 0;
+    padding: 0.85rem;
+    border-radius: 0.65rem;
     background: #f8fafc;
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     position: relative;
   }
-
   html[data-theme='dark'] .garden-canvas-wrapper {
     background: rgba(20, 20, 25, 0.6);
     border: 1px solid var(--sl-color-hairline);
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
   }
-
-  .canvas-title {
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    color: var(--sl-color-text-accent);
+  .canvas-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
     margin-bottom: 0.5rem;
   }
-
+  .canvas-title {
+    font-size: var(--sl-text-xs, 0.78rem);
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+  }
+  .fullscreen-btn {
+    background: transparent;
+    border: 1px solid var(--sl-color-hairline, rgba(226, 232, 240, 0.8));
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--sl-color-text-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .fullscreen-btn:hover { background: var(--sl-color-gray-6, rgba(148, 163, 184, 0.15)); }
   .garden-canvas-internal {
     width: 100%;
-    height: 250px;
-    min-height: 250px;
-    flex-shrink: 0;
+    height: 260px;
     border-radius: 0.5rem;
     overflow: hidden;
     background: transparent;
     cursor: grab;
   }
+  .garden-canvas-internal:active { cursor: grabbing; }
 
-  .garden-canvas-internal:active {
-    cursor: grabbing;
-  }
-
-  /* D3 SVG classes */
-  :global(.node-circle) {
-    fill: var(--sl-color-accent-low);
-    stroke: var(--sl-color-accent);
-    stroke-width: 1.5px;
-    transition: fill 0.2s;
-    cursor: pointer;
-  }
-
-  :global(.node-circle:hover) {
-    fill: var(--sl-color-accent);
-    stroke: var(--sl-color-text-accent);
-  }
-
-  :global(.link-line) {
-    stroke: var(--sl-color-accent);
-    stroke-opacity: 0.35;
-    stroke-width: 1.5px;
-  }
-
-  :global(.canvas-tooltip) {
+  .topology-fullscreen-modal {
     position: fixed;
-    text-align: center;
-    padding: 4px 8px;
-    font: 12px sans-serif;
-    background: var(--sl-color-black);
-    color: var(--sl-color-white);
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 4px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 9999;
-    white-space: nowrap;
-    max-width: 200px;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999999;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 1.25rem 1.5rem;
+    box-sizing: border-box;
+  }
+  html:not([data-theme='dark']) .topology-fullscreen-modal { background: rgba(255, 255, 255, 0.98); }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--sl-color-hairline, rgba(148, 163, 184, 0.25));
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+  .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--sl-color-white, #f8fafc); }
+  html:not([data-theme='dark']) .modal-title { color: var(--sl-color-black, #0f172a); }
+  .modal-hint { font-size: 0.78rem; font-weight: 500; color: #38bdf8; margin-top: 4px; }
+  html:not([data-theme='dark']) .modal-hint { color: #0284c7; }
+  .modal-close-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fca5a5;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  html:not([data-theme='dark']) .modal-close-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #dc2626;
+  }
+  .modal-canvas-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
+    position: relative;
+    border-radius: 10px;
   }
 </style>
 
 <script>
   import { ensureD3, fetchGraphData, renderTopologyGraph } from '../scripts/topology-core.js';
 
-  // ─── Web Component ────────────────────────────────────────────────────────
   class TopologyCanvas extends HTMLElement {
     private _rendered = false;
     private _graphInstance: any = null;
+    private _fullscreenGraphInstance: any = null;
     private _themeObserver: MutationObserver | null = null;
     private _data: any = null;
+    private _boundKeyDown: any = null;
+    private _modalEl: HTMLElement | null = null;
 
-    connectedCallback() {
-      setTimeout(() => this._init(), 50);
-    }
+    connectedCallback() { setTimeout(() => this._init(), 50); }
 
     disconnectedCallback() {
-      if (this._themeObserver) {
-        this._themeObserver.disconnect();
-        this._themeObserver = null;
-      }
-      if (this._graphInstance?.destroy) {
-        this._graphInstance.destroy();
-        this._graphInstance = null;
-      }
+      if (this._themeObserver) { this._themeObserver.disconnect(); this._themeObserver = null; }
+      if (this._graphInstance?.destroy) this._graphInstance.destroy();
+      if (this._fullscreenGraphInstance?.destroy) this._fullscreenGraphInstance.destroy();
+      if (this._boundKeyDown) window.removeEventListener('keydown', this._boundKeyDown);
+      if (this._modalEl?.parentElement === document.body) this._modalEl.remove();
     }
 
     private async _init() {
       if (this._rendered) return;
-
       const container = this.querySelector<HTMLElement>('.garden-canvas-internal');
       if (!container) return;
 
-      // Language filter based on the data-lang attribute (set at SSR time)
       const lang = this.getAttribute('data-lang') || 'root';
       const matchUrl = (url: string) => {
-        if (lang === 'en') {
-          return url.startsWith('/en/') || url === '/en';
-        } else if (lang === 'ja') {
-          return url.startsWith('/ja/') || url === '/ja';
-        } else {
-          // 默认源语言（中文）：排除属于其他已知目标语言的节点
-          return !url.startsWith('/en/') && !url.startsWith('/ja/') && !url.startsWith('/auto/');
-        }
+        if (lang === 'en') return url.startsWith('/en/') || url === '/en';
+        if (lang === 'ja') return url.startsWith('/ja/') || url === '/ja';
+        return !url.startsWith('/en/') && !url.startsWith('/ja/') && !url.startsWith('/auto/');
       };
 
       try {
         this._data = await (fetchGraphData as any)('/graph.json', matchUrl);
       } catch { return; }
-
       if (!this._data?.backlinks && !this._data?.all_nodes) return;
-
       try { await ensureD3(); } catch { return; }
 
       this._rendered = true;
       this._renderCurrentGraph();
+      this._setupListeners();
 
-      // 🛡️ 深度主题切换监听器：当用户在右上角切换浅色/深色模式时，实时重塑调色板与文字高对比度轮廓
       if (!this._themeObserver) {
-        this._themeObserver = new MutationObserver(() => {
-          this._renderCurrentGraph();
-        });
+        this._themeObserver = new MutationObserver(() => this._renderCurrentGraph());
         this._themeObserver.observe(document.documentElement, {
           attributes: true,
           attributeFilter: ['data-theme', 'class'],
@@ -182,21 +200,74 @@ if (isEn) {
     private _renderCurrentGraph() {
       const container = this.querySelector<HTMLElement>('.garden-canvas-internal');
       if (!container || !this._data) return;
+      if (this._graphInstance?.destroy) this._graphInstance.destroy();
 
-      if (this._graphInstance?.destroy) {
-        this._graphInstance.destroy();
-      }
-
-      // Starlight-specific width: read from .right-sidebar (position:fixed quirk)
       const sidebarEl = document.querySelector('.right-sidebar') as HTMLElement | null;
       const sidebarW  = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 0;
-      const width     = sidebarW > 50 ? Math.min(sidebarW - 32, 300) : undefined;
+      const containerW = container.clientWidth;
+      const width     = containerW > 50 ? containerW : (sidebarW > 50 ? Math.min(sidebarW - 32, 320) : 240);
 
       this._graphInstance = renderTopologyGraph(container, this._data, {
         width,
-        height: container.clientHeight || 250,
+        height: container.clientHeight || 260,
         activeUrl: window.location.pathname,
+        isLocal: true,
+        localDepth: 1,
       });
+    }
+
+    private _setupListeners() {
+      const fullBtn = this.querySelector<HTMLButtonElement>('.fullscreen-btn');
+      this._modalEl = this.querySelector<HTMLElement>('.topology-fullscreen-modal');
+      const closeBtn = this._modalEl?.querySelector<HTMLButtonElement>('.modal-close-btn');
+
+      fullBtn?.addEventListener('click', () => this._openModal());
+      closeBtn?.addEventListener('click', () => this._closeModal());
+
+      this._boundKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && this._modalEl && this._modalEl.style.display !== 'none') {
+          this._closeModal();
+        }
+      };
+      window.addEventListener('keydown', this._boundKeyDown);
+    }
+
+    private _openModal() {
+      if (!this._modalEl || !this._data) return;
+      if (this._modalEl.parentElement !== document.body) {
+        document.body.appendChild(this._modalEl);
+      }
+      const modalContainer = this._modalEl.querySelector<HTMLElement>('.modal-canvas-container');
+      if (!modalContainer) return;
+
+      this._modalEl.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      if (this._fullscreenGraphInstance?.destroy) this._fullscreenGraphInstance.destroy();
+
+      const rect = modalContainer.getBoundingClientRect();
+      this._fullscreenGraphInstance = renderTopologyGraph(modalContainer, this._data, {
+        width: Math.floor(rect.width || window.innerWidth * 0.96),
+        height: Math.floor(rect.height || window.innerHeight * 0.86),
+        nodeRadius: 5.5,
+        nodeRadiusHov: 11,
+        labelTruncate: 24,
+        isExpanded: true,
+        activeUrl: window.location.pathname,
+        onNavigate: (url: string) => {
+          this._closeModal();
+          window.location.href = url;
+        }
+      });
+    }
+
+    private _closeModal() {
+      if (this._modalEl) this._modalEl.style.display = 'none';
+      document.body.style.overflow = '';
+      if (this._fullscreenGraphInstance?.destroy) {
+        this._fullscreenGraphInstance.destroy();
+        this._fullscreenGraphInstance = null;
+      }
     }
   }
 
@@ -204,7 +275,6 @@ if (isEn) {
     customElements.define('topology-canvas', TopologyCanvas);
   }
 
-  // Re-run on Astro View Transitions
   document.addEventListener('astro:page-load', () => {
     document.querySelectorAll('topology-canvas').forEach(el => {
       (el as any)._rendered = false;

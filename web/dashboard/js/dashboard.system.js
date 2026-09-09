@@ -76,11 +76,10 @@ window.loadSettings = async (targetCat = 'layout') => {
     }
     window.settingsData._active_imprint = imprints ? imprints.active : 'default';
     window.settingsData._is_licensed = res._is_licensed || false;
-    const headerProBadge = document.getElementById('header-pro-badge');
-    if (headerProBadge) {
-        headerProBadge.innerText = window.settingsData._is_licensed ? '💎 PRO' : '🌱 LITE';
-        headerProBadge.className = window.settingsData._is_licensed ? 'header-pro-badge pro-active' : 'header-pro-badge lite-active';
-        headerProBadge.style.display = 'inline-flex';
+    window.settingsData._license_tier = res._license_tier || 'LITE';
+    // 🏷️ 首屏即同步左上角版本徽标（走统一三级映射）
+    if (typeof window._applyHeaderTierBadge === 'function') {
+        window._applyHeaderTierBadge(window.settingsData._is_licensed, window.settingsData._license_tier);
     }
     window.settingsData._theme_slots = (slotsRes && slotsRes.slots) ? slotsRes.slots : {};
     window.settingsData._directories = (vaultRes && vaultRes.directories) ? vaultRes.directories : [];

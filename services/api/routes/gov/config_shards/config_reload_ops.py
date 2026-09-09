@@ -91,5 +91,12 @@ def live_reload_engine_config(
         engine.janitor.i18n_cfg = engine.config.i18n_settings
         engine.janitor.active_theme = engine.active_theme
     
+    # ⚡ [V88.9] 确保新激活主题的 options 立即完成物理落盘 (theme.options.json / theme.options.js)
+    if hasattr(engine, 'ssg_adapter') and engine.ssg_adapter:
+        try:
+            engine.ssg_adapter.compile_theme_options()
+        except Exception as e:
+            tlog.warning(f"⚠️ [ConfigReload] 主题选项热编译失败: {e}")
+
     from core.utils.event_bus import bus
     bus.emit("CONFIG_RELOADED", config=engine.config)

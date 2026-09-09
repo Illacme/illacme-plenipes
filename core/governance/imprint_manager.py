@@ -26,13 +26,28 @@ class ImprintManager:
     def __init__(self, root_dir: str = "."):
         self.root_dir = os.path.abspath(root_dir)
         
-        # 🚀 [V50.3] 物理主权对正：主权 Imprint 必须存在于 imprints 目录
-        self.imprint_root = os.path.join(self.root_dir, "imprints")
+        self._custom_imprint_root = None
         self.active_imprint = "default"
         
         # 确保主权 Imprint 根目录存在
         if not os.path.exists(self.imprint_root):
-            os.makedirs(self.imprint_root)
+            os.makedirs(self.imprint_root, exist_ok=True)
+
+    @property
+    def imprint_root(self) -> str:
+        if hasattr(self, '_custom_imprint_root') and self._custom_imprint_root:
+            return self._custom_imprint_root
+        try:
+            from core.config.config import IMPRINT_DIR
+        except Exception:
+            from core.config.constants import IMPRINT_DIR
+        if os.path.isabs(IMPRINT_DIR):
+            return IMPRINT_DIR
+        return os.path.join(self.root_dir, IMPRINT_DIR)
+
+    @imprint_root.setter
+    def imprint_root(self, value: str):
+        self._custom_imprint_root = value
 
     def init_sovereign_imprint(self, name: str, manuscripts_path: str, imprint_name: Optional[str] = None, bootstrap_vault: bool = False, theme: Optional[str] = None) -> bool:
         """🚀 [V50.3] 划定一个新的主权出版社品牌 (Imprint)"""

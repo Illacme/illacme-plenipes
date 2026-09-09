@@ -25,15 +25,9 @@
             // 🚀 [V104.0] 多抽屉压栈治理：强行提升配置抽屉的 z-index 为 10005，确保覆盖在其他抽屉 (如单篇广播 9999) 上方
             drawer.style.zIndex = '10005';
 
-            // 🎯 严格隔离返回上下文：仅当显式声明从跨抽屉跳转入口打开时才保留对应上下文，否则彻底清空以防污染常规插件中心
-            if (fromDrawer === 'syndicate') {
-                window._vaultReturnContext = null;
-            } else if (fromDrawer === 'vault') {
-                window._syndicateReturnContext = null;
-            } else {
-                window._syndicateReturnContext = null;
-                window._vaultReturnContext = null;
-            }
+            // 🎯 严格隔离返回上下文：仅当显式声明从跨抽屉跳转入口打开时才保留对应上下文，否则彻底清空
+            window._vaultReturnContext = (fromDrawer === 'vault') ? window._vaultReturnContext : null;
+            window._syndicateReturnContext = (fromDrawer === 'syndicate') ? window._syndicateReturnContext : null;
             if (typeof window.updateDrawerReturnButtons === 'function') {
                 window.updateDrawerReturnButtons();
             }
@@ -209,47 +203,51 @@
                         }
                     });
 
-                    // 🚀 [V105.0] 输入框 Focus 智能反向联动 Step Wizard
-                    input.addEventListener('focus', () => {
-                        const totalSteps = (typeof window.getPluginWizardSteps === 'function') ? window.getPluginWizardSteps(id, p.category).length : 3;
-                        if (input.closest('#wiz-card-step-0')) {
-                            if (typeof window.handleWizardStepClick === 'function') {
-                                window.handleWizardStepClick(0, id, p.category);
-                            }
-                        } else if (input.closest('#wiz-card-step-1')) {
-                            if (typeof window.handleWizardStepClick === 'function') {
-                                window.handleWizardStepClick(1, id, p.category);
-                            }
-                        } else if (input.closest('#wiz-card-step-2')) {
-                            if (typeof window.handleWizardStepClick === 'function') {
-                                window.handleWizardStepClick(2, id, p.category);
-                            }
-                        } else {
-                            const path = (input.getAttribute('data-path') || input.name || '').toLowerCase();
-                            if (path.includes('token') || path.includes('key') || path.includes('pass') || path.includes('user') || path.includes('operator') || input.type === 'password') {
+                    // 🚀 [V105.0] 输入框 Focus 智能反向联动 Step Wizard（仅针对多步发布向导，并声明 skipFocus: true 防止抢焦）
+                    if (p.category !== 'theme') {
+                        input.addEventListener('focus', () => {
+                            const totalSteps = (typeof window.getPluginWizardSteps === 'function') ? window.getPluginWizardSteps(id, p.category).length : 3;
+                            if (input.closest('#wiz-card-step-0')) {
                                 if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(0, id, p.category);
+                                    window.handleWizardStepClick(0, id, p.category, null, true);
                                 }
-                            } else if (path.includes('proxy') || path.includes('prefix') || path.includes('acl') || path.includes('cname') || path.includes('prod')) {
+                            } else if (input.closest('#wiz-card-step-1')) {
                                 if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(totalSteps === 4 ? 2 : 1, id, p.category);
+                                    window.handleWizardStepClick(1, id, p.category, null, true);
+                                }
+                            } else if (input.closest('#wiz-card-step-2')) {
+                                if (typeof window.handleWizardStepClick === 'function') {
+                                    window.handleWizardStepClick(2, id, p.category, null, true);
                                 }
                             } else {
-                                if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(1, id, p.category);
+                                const path = (input.getAttribute('data-path') || input.name || '').toLowerCase();
+                                if (path.includes('token') || path.includes('key') || path.includes('pass') || path.includes('user') || path.includes('operator') || input.type === 'password') {
+                                    if (typeof window.handleWizardStepClick === 'function') {
+                                        window.handleWizardStepClick(0, id, p.category, null, true);
+                                    }
+                                } else if (path.includes('proxy') || path.includes('prefix') || path.includes('acl') || path.includes('cname') || path.includes('prod')) {
+                                    if (typeof window.handleWizardStepClick === 'function') {
+                                        window.handleWizardStepClick(totalSteps === 4 ? 2 : 1, id, p.category, null, true);
+                                    }
+                                } else {
+                                    if (typeof window.handleWizardStepClick === 'function') {
+                                        window.handleWizardStepClick(1, id, p.category, null, true);
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             });
 
-            // 🚀 默认全量激活 Step 0 卡片状态
-            setTimeout(() => {
-                if (typeof window.handleWizardStepClick === 'function') {
-                    window.handleWizardStepClick(0, id, p.category);
-                }
-            }, 50);
+            // 🚀 默认全量激活 Step 0 卡片状态（非 theme 插件，并且 skipFocus: true 绝不抢占首项光标）
+            if (p.category !== 'theme') {
+                setTimeout(() => {
+                    if (typeof window.handleWizardStepClick === 'function') {
+                        window.handleWizardStepClick(0, id, p.category, null, true);
+                    }
+                }, 50);
+            }
 
             // 🚀 [V89.0] 视觉渐进式暴露联动
             if (p.category === 'theme') {

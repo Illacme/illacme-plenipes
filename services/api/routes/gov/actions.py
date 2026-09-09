@@ -8,6 +8,7 @@
 
 from fastapi import APIRouter, Depends, Request
 from typing import Dict, Any
+from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from .actions_shards.theme_and_publish_ops import (
     StyleRequest,
@@ -123,3 +124,33 @@ async def reset_ledger_and_sync() -> Dict[str, Any]:
 async def trigger_cache_migration(req: Dict[str, Any]) -> Dict[str, Any]:
     """🚚 [段落缓存治理] 手动触发物理迁移接口"""
     return await trigger_cache_migration_impl(req)
+
+
+@router.get("/api/governance/deployment-summary", dependencies=[Depends(verify_token)])
+async def get_deployment_summary() -> Dict[str, Any]:
+    """📊 [全域发布成果] 获取最近一次全域分发的推送统计结果与访问网址清单"""
+    engine = get_global_engine()
+    if not engine:
+        return {"status": "error", "message": "Engine not initialized"}
+
+    last_results = getattr(engine, "last_deployment_results", None)
+    if isinstance(last_results, dict) and "summary" in last_results:
+        return {"status": "success", "summary": last_results["summary"]}
+
+    # 尝试从 ledger 读取最近一次 GLOBAL_DEPLOY 记录
+    if hasattr(engine, "ledger"):
+        try:
+            logs = engine.ledger.get_recent_logs(category="GLOBAL_DEPLOY", limit=1)
+            if logs and isinstance(logs[0].get("metadata"), dict) and "summary" in logs[0]["metadata"]:
+                return {"status": "success", "summary": logs[0]["metadata"]["summary"]}
+        except Exception:
+            pass
+
+from .actions_shards.health_radar_ops import HealthRadarRequest, probe_all_urls_impl
+
+
+@router.post("/api/governance/health-radar", dependencies=[Depends(verify_token)])
+async def probe_health_radar(req: HealthRadarRequest) -> Dict[str, Any]:
+    """⚡ [线上站点健康雷达] 实时探测全网 CDN 边缘节点连通性与 RTT 延迟"""
+    results = probe_all_urls_impl(req.urls)
+    return {"status": "success", "results": results}

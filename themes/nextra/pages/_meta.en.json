@@ -1,0 +1,31 @@
+{
+  "index": "Nextra",
+  "advanced": "⚡ Advanced",
+  "features": "✨ Features",
+  "get-started": "Get Started",
+  "themes": "🎭 Themes",
+  "en": {
+    "display": "hidden"
+  },
+  "ja": {
+    "display": "hidden"
+  },
+  "zh": {
+    "display": "hidden"
+  },
+  "ko": {
+    "display": "hidden"
+  },
+  "fr": {
+    "display": "hidden"
+  },
+  "de": {
+    "display": "hidden"
+  },
+  "es": {
+    "display": "hidden"
+  },
+  "ru": {
+    "display": "hidden"
+  }
+}

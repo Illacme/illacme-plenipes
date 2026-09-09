@@ -114,7 +114,7 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
 
         if self.theme_settings and hasattr(self.theme_settings, 'options') and self.theme_settings.options:
             for key, val in self.theme_settings.options.items():
-                if val is not None and str(val).strip() != "":
+                if val is not None:
                     options[key] = val
 
         # 🧭 [Universal Navigation Injection] 将 route_matrix 动态合成的导航项注入 options
@@ -281,7 +281,12 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
                 if matched:
                     actual_slug = matched.get('slug', stem)
                     channel = matched.get('channel', '')
-                    target_dir = channel if (channel and channel not in ('', 'pages')) else ""
+                    slots = self.get_feature_slots() if hasattr(self, 'get_feature_slots') else {}
+                    slot_single = slots.get(channel, {}).get("single", channel) if isinstance(slots.get(channel), dict) else channel
+                    if slot_single == "":
+                        target_dir = ""
+                    else:
+                        target_dir = channel if (channel and channel not in ('', 'pages')) else ""
 
                     if current_dir == target_dir:
                         return f"./{actual_slug}{suffix}{anchor}"
@@ -372,6 +377,13 @@ class BaseSSGAdapter(CITemplateMixin, abc.ABC):
                     if not clean_stem.endswith('/'):
                         clean_stem += '/'
                     return f'<a {prefix_attr}href="{clean_stem}{anchor}"{suffix_attr}>'
+            else:
+                resolved = _resolve_target_md(clean_href, anchor)
+                if resolved:
+                    return f'<a {prefix_attr}href="{resolved}"{suffix_attr}>'
+                if clean_href.endswith('.html'):
+                    clean_stem = clean_href.removesuffix('.html')
+                    return f'<a {prefix_attr}href="{clean_stem}.md{anchor}"{suffix_attr}>'
             return match.group(0)
 
         html_a_pattern = re.compile(r'<a\s+([^>]*?)href=["\']([^"\']+)["\']([^>]*)>', re.IGNORECASE)

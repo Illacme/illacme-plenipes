@@ -170,7 +170,8 @@ class TestRenderPublisher:
     def test_push_success_trigger_only(self, mock_post):
         from adapters.egress.publishers.render import RenderPublisher
         pub = RenderPublisher(config={
-            "deploy_hook_url": "https://api.render.com/deploy/srv-12345"
+            "deploy_hook_url": "https://api.render.com/deploy/srv-12345",
+            "proxy": "direct"
         })
 
         mock_resp = MagicMock()
@@ -191,7 +192,8 @@ class TestRenderPublisher:
             "deploy_hook_url": "https://api.render.com/deploy/srv-12345",
             "repo_url": "https://github.com/owner/repo.git",
             "token": "my_pat_token",
-            "branch": "prod"
+            "branch": "prod",
+            "proxy": "direct"
         })
 
         # 模拟 git clone, git status, git commit & push
@@ -234,7 +236,8 @@ class TestRailwayPublisher:
     def test_push_success_trigger_only(self, mock_post):
         from adapters.egress.publishers.railway import RailwayPublisher
         pub = RailwayPublisher(config={
-            "deploy_hook_url": "https://backboard.railway.app/webhook/deploy/srv-123"
+            "deploy_hook_url": "https://backboard.railway.app/webhook/deploy/srv-123",
+            "proxy": "direct"
         })
 
         mock_resp = MagicMock()
@@ -254,7 +257,8 @@ class TestRailwayPublisher:
         pub = RailwayPublisher(config={
             "deploy_hook_url": "https://backboard.railway.app/webhook/deploy/srv-123",
             "repo_url": "https://github.com/owner/railway-repo.git",
-            "token": "rw_token"
+            "token": "rw_token",
+            "proxy": "direct"
         })
 
         mock_process = MagicMock()
@@ -295,7 +299,8 @@ class TestZeaburPublisher:
     def test_push_success_trigger_only(self, mock_post):
         from adapters.egress.publishers.zeabur import ZeaburPublisher
         pub = ZeaburPublisher(config={
-            "deploy_hook_url": "https://api.zeabur.com/deploy/srv-123"
+            "deploy_hook_url": "https://api.zeabur.com/deploy/srv-123",
+            "proxy": "direct"
         })
 
         mock_resp = MagicMock()
@@ -315,7 +320,8 @@ class TestZeaburPublisher:
         pub = ZeaburPublisher(config={
             "deploy_hook_url": "https://api.zeabur.com/deploy/srv-123",
             "repo_url": "https://github.com/owner/zeabur-repo.git",
-            "token": "zb_token"
+            "token": "zb_token",
+            "proxy": "direct"
         })
 
         mock_process = MagicMock()

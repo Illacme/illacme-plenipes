@@ -334,7 +334,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
                         <span style="color:var(--accent-secondary);">⚡</span>
                         <b style="color:var(--text-bright); font-weight:700;">${typicalModel}</b>
                     </span>
-                    <span style="font-size:0.72rem; color:${usedCount > 0 ? '#00ff88' : 'var(--text-dim)'}; font-weight:700; white-space:nowrap; ${usedCount > 0 ? 'cursor:pointer; text-decoration:underline; text-underline-offset:2px;' : 'cursor:default;'}" title="${usedCount > 0 ? `已接入算力单元: ${matchingNodeIds.join(', ')}（点击跳转并定位单元）` : '未接入算力单元'}" onclick="event.stopPropagation(); ${usedCount > 0 ? `window.locateAndHighlightComputeNode('${matchingNodeIds[0]}')` : ''}">
+                    <span style="font-size:0.72rem; color:${usedCount > 0 ? 'var(--neon-green)' : 'var(--text-dim)'}; font-weight:700; white-space:nowrap; ${usedCount > 0 ? 'cursor:pointer; text-decoration:underline; text-underline-offset:2px;' : 'cursor:default;'}" title="${usedCount > 0 ? `已接入算力单元: ${matchingNodeIds.join(', ')}（点击跳转并定位单元）` : '未接入算力单元'}" onclick="event.stopPropagation(); ${usedCount > 0 ? `window.locateAndHighlightComputeNode('${matchingNodeIds[0]}')` : ''}">
                         ${usedCount > 0 ? `🟢 ${usedCount} 单元在用` : '⚪ 暂未接入'}
                     </span>
                 </div>
@@ -349,10 +349,10 @@ window.buildPluginPodHtml = (p, isPinned) => {
                 statusText = '全局已禁用';
                 textColor = '#ff4d4d';
             } else if (p.is_in_use) {
-                dotColor = '#00ff88';
+                dotColor = 'var(--neon-green)';
                 statusText = '当前品牌已启用';
-                textColor = '#00ff88';
-                glowEffect = 'box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);';
+                textColor = 'var(--neon-green)';
+                glowEffect = 'box-shadow: 0 0 8px rgba(var(--neon-green-rgb), 0.6);';
             }
 
             return `
@@ -371,20 +371,20 @@ window.buildPluginPodHtml = (p, isPinned) => {
 
         })() : `
               <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center; white-space:nowrap;">
-                  ${p.is_in_use ? '<span class="tiny-label" style="color:#00ff88; display:flex; align-items:center; gap:6px; white-space:nowrap;"><span class="heartbeat-indicator pulsing" style="background:#00ff88; width:6px; height:6px;"></span>品牌已绑定</span>' : '<span class="tiny-label" style="color:var(--text-dim); white-space:nowrap;">系统基础节点</span>'}
+                  ${p.is_in_use ? '<span class="tiny-label" style="color:var(--neon-green); display:flex; align-items:center; gap:6px; white-space:nowrap;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green); width:6px; height:6px;"></span>品牌已绑定</span>' : '<span class="tiny-label" style="color:var(--text-dim); white-space:nowrap;">系统基础节点</span>'}
               </div>
             `))}
 
             ${(p.category === 'hosting' && p.is_in_use) ? (() => {
                 const _isPrimary = primaryHostingId === p.id;
                 return _isPrimary
-                    ? `<div style="display:flex;align-items:center;gap:5px;margin-top:-10px;margin-bottom:10px;padding:0 12px;">
-                           <span style="font-size:0.68rem;color:#00ff88;font-weight:700;letter-spacing:0.2px;">🏠 主站</span>
-                           <span style="font-size:0.6rem;color:rgba(0,255,136,0.4);font-weight:400;">· canonical · SEO 权威</span>
+                    ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:-10px;margin-bottom:10px;padding:0 12px;white-space:nowrap;">
+                           <span style="font-size:0.7rem;color:var(--neon-green);font-weight:800;letter-spacing:0.2px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🏠 官方主站</span>
+                           <span class="hosting-canonical-tip" style="font-size:0.65rem;color:var(--text-muted, #475569);font-weight:600;white-space:nowrap;" title="搜索引擎以此为主访问入口（Canonical 权威收录），其余平台作为备用镜像同步更新">首选访问源 ℹ️</span>
                        </div>`
-                    : `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:-10px;margin-bottom:10px;padding:0 12px;">
-                           <span style="font-size:0.68rem;color:var(--text-dim);font-weight:600;opacity:0.8;">🔄 镜像站</span>
-                           <button type="button" onclick="window.setHostingAsPrimary('${p.id}',event)" title="将此平台切换为主站" style="font-size:0.65rem;color:rgba(0,255,136,0.6);background:none;border:none;cursor:pointer;font-weight:600;padding:0;text-decoration:underline;text-underline-offset:2px;transition:color 0.15s;" onmouseover="this.style.color='#00ff88'" onmouseout="this.style.color='rgba(0,255,136,0.6)'">设为主站 →</button>
+                    : `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:-10px;margin-bottom:10px;padding:0 12px;white-space:nowrap;">
+                           <span style="font-size:0.68rem;color:var(--text-dim);font-weight:600;opacity:0.8;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🔄 备用镜像</span>
+                           <button type="button" onclick="window.setHostingAsPrimary('${p.id}',event)" title="将此平台切换为主站" style="font-size:0.65rem;color:var(--neon-green);background:none;border:none;cursor:pointer;font-weight:600;padding:0;text-decoration:underline;text-underline-offset:2px;transition:opacity 0.15s;white-space:nowrap;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">设为主站 →</button>
                        </div>`;
             })() : ''}
 

@@ -51,7 +51,21 @@ class BasePublisher(ABC):
 
         if global_proxy:
             return global_proxy
-            
+
+        # 3. 环境变量感知
+        import os
+        env_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY") or os.environ.get("https_proxy") or os.environ.get("http_proxy")
+        if env_proxy:
+            return env_proxy
+
+        # 4. 🚀 [V48.6] 物理自愈：自动探测常见本地代理守护端口
+        import socket
+        for port in [10809, 7890, 7897, 1087, 8889]:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.08)
+                if s.connect_ex(('127.0.0.1', port)) == 0:
+                    return f"http://127.0.0.1:{port}"
+
         return None
 
     def get_timeout(self, default_timeout: int = 15) -> int:

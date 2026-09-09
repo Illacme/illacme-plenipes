@@ -54,13 +54,17 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                 if engine._is_excluded(rel_path):
                     continue
 
-                # 4. 动态路由矩阵匹配 (最长前缀匹配)
+                # 4. 动态路由矩阵匹配 (最长前缀匹配，排除外链与纯链接)
                 best_route = None
                 best_len = -1
                 for route_cfg in engine.route_matrix:
-                    cfg_source = route_cfg.source
+                    if getattr(route_cfg, 'external_url', None) or getattr(route_cfg, 'target_slot', '') == 'external':
+                        continue
+                    cfg_source = (route_cfg.source or "").strip()
+                    if not cfg_source:
+                        continue
                     # 检查是否匹配该路由的源目录
-                    if cfg_source == "" or rel_path == cfg_source or rel_path.startswith(cfg_source + '/'):
+                    if rel_path == cfg_source or rel_path.startswith(cfg_source + '/'):
                         if len(cfg_source) > best_len:
                             best_len = len(cfg_source)
                             best_route = route_cfg
@@ -79,7 +83,11 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                     # 兜底：未匹配到路由矩阵，使用其物理路径本身作为发布路径
                     src_rel = os.path.dirname(rel_path)
                     prefix = src_rel
-                    target_slot = 'docs'
+                    # 根目录下的 index.md 或直接单页归属于 pages 独立页面槽位
+                    if rel_path in ('index.md', 'readme.md') or not src_rel:
+                        target_slot = 'pages'
+                    else:
+                        target_slot = 'docs'
                     
                     if not subfolder_allowed:
                         if src_rel != "" or prefix != "":

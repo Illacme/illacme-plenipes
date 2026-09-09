@@ -47,8 +47,8 @@ def test_slot_pages_physical_paths_all_8_ssg_engines():
         
         ("nextra", NextraAdapter, "pages",
          os.path.normpath("pages/about.md"),
-         os.path.normpath("pages/en/about.md"),
-         os.path.normpath("pages/ja/about.md")),
+         os.path.normpath("pages/about.en.md"),
+         os.path.normpath("pages/about.ja.md")),
         
         ("hugo", HugoAdapter, "content",
          os.path.normpath("content/about.md"),

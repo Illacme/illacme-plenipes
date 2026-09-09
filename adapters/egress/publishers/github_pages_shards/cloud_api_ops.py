@@ -10,8 +10,8 @@ import urllib.request
 from core.utils.tracing import tlog
 
 
-def parse_owner_repo_impl(repo_url: str, token: str = "") -> tuple[str, str]:
-    """解析 GitHub 仓库的 Owner 与 Name (支持完整的 HTTPS/SSH 链接、'owner/repo' 简写及 Token 自动解析)"""
+def parse_owner_repo_impl(repo_url: str, token: str = "", proxy: str = "") -> tuple[str, str]:
+    """解析 GitHub 仓库的 Owner 与 Name (支持完整的 HTTPS/SSH 链接、'owner/repo' 简写及 Token 自动解析与零配置推导)"""
     url = (repo_url or "").strip()
     if url.endswith(".git"):
         url = url[:-4]
@@ -28,20 +28,26 @@ def parse_owner_repo_impl(repo_url: str, token: str = "") -> tuple[str, str]:
         parts = url.split("/")
         if len(parts) == 2 and parts[0] and parts[1]:
             return parts[0], parts[1]
-    elif url and token:
-        # 仅填了仓库名且有 Token，尝试自动通过 API 获取当前登录用户名
+    elif token:
+        # 仓库名为空或仅填了简写仓库名，利用 Token 调 API 获取当前登录用户名并推导仓库名
+        repo_name = url if url else "illacme-press"
         try:
+            if proxy:
+                proxy_support = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
+                opener = urllib.request.build_opener(proxy_support)
+                urllib.request.install_opener(opener)
             req = urllib.request.Request("https://api.github.com/user", headers={
                 "Authorization": f"token {token}",
                 "Accept": "application/vnd.github.v3+json",
                 "User-Agent": "Illacme-Plenipes-Sovereignty-Bot"
             })
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
                     user_login = json.loads(resp.read().decode("utf-8")).get("login", "")
                     if user_login:
-                        return user_login, url
-        except Exception:
+                        return user_login, repo_name
+        except Exception as e:
+            tlog.debug(f"ℹ️ [GitHub Pages] 自动解析 Token 所属用户退避: {e}")
             pass
     return "", ""
 
@@ -54,17 +60,35 @@ def auto_create_github_repo_impl(publisher_inst) -> bool:
     if not token or not publisher_inst.repo_url:
         return False
 
-    owner, repo = parse_owner_repo_impl(publisher_inst.repo_url, token)
+    custom_proxy = publisher_inst.get_proxy()
+    owner, repo = parse_owner_repo_impl(publisher_inst.repo_url, token, proxy=custom_proxy)
     if not owner or not repo:
         return False
 
-    tlog.info(f"🧬 [GitHub Pages] 物理自愈：检测到仓库 '{owner}/{repo}' 不存在，正在尝试利用 Token 自动为您在 GitHub 创建仓库...")
-
-    custom_proxy = publisher_inst.get_proxy()
     if custom_proxy:
         proxy_support = urllib.request.ProxyHandler({'http': custom_proxy, 'https': custom_proxy})
         opener = urllib.request.build_opener(proxy_support)
         urllib.request.install_opener(opener)
+
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Illacme-Plenipes-Sovereignty-Bot"
+    }
+
+    # 0. 先静默探测远端仓库是否已经就绪，已存在则直接就绪，无需盲目尝试建仓触发 422
+    try:
+        check_req = urllib.request.Request(f"https://api.github.com/repos/{owner}/{repo}", headers=headers, method="GET")
+        with urllib.request.urlopen(check_req, timeout=10) as check_resp:
+            if check_resp.status == 200:
+                return True
+    except urllib.error.HTTPError as he:
+        if he.code != 404:
+            tlog.debug(f"ℹ️ [GitHub Pages] 探测仓库状态返回 HTTP {he.code}: {he.reason}")
+    except Exception as e:
+        tlog.debug(f"ℹ️ [GitHub Pages] 探测仓库连通退避: {e}")
+
+    tlog.info(f"🧬 [GitHub Pages] 物理自愈：检测到仓库 '{owner}/{repo}' 不存在，正在尝试利用 Token 自动为您在 GitHub 创建仓库...")
 
     # 1. 尝试直接在用户账号下建仓
     user_url = "https://api.github.com/user/repos"
@@ -92,6 +116,11 @@ def auto_create_github_repo_impl(publisher_inst) -> bool:
             if response.status in [201, 200]:
                 tlog.success(f"🟢 [GitHub Pages] 物理自愈：已成功在 GitHub 上一键创建公开仓库 '{owner}/{repo}'！")
                 return True
+    except urllib.error.HTTPError as he:
+        if he.code == 422:
+            tlog.info(f"ℹ️ [GitHub Pages] 仓库 '{owner}/{repo}' 在云端已就绪 (422 name already exists)，无需重复创建。")
+            return True
+        tlog.debug(f"ℹ️ [GitHub Pages] 个人账号建仓尝试未闭环: {he}，正在尝试向组织仓库建仓...")
     except Exception as e:
         tlog.debug(f"ℹ️ [GitHub Pages] 个人账号建仓尝试未闭环: {e}，正在尝试向组织仓库建仓...")
         

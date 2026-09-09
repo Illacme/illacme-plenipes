@@ -39,9 +39,12 @@ redline_exempt_files:
   - adapters/compute/openai.py
   - adapters/egress/syndication/ghost.py
   - adapters/egress/publishers/gitlab_pages.py
+  - adapters/egress/publishers/vercel.py
   # --- Tests ---
   - tests/test_smoke.py
   # --- Dashboard JS ---
+  - web/dashboard/js/core/core.terminal.js
+  - web/dashboard/js/theme/theme.handlers.js
   - web/dashboard/js/dashboard.system.js
   - web/dashboard/js/dashboard.plugins.js
   - web/dashboard/js/compute/compute.ui.js
@@ -82,6 +85,7 @@ redline_exempt_files:
   - shared/topology-core.js
   - themes/docusaurus/src/lib/topology-core.js
   - themes/docusaurus/static/topology-core.js
+  - themes/nextra/lib/topology-core.js
   - themes/sovereign/adapters/sovereign.py
   - themes/sovereign/theme.options.js
   - themes/starlight/src/scripts/topology-core.js

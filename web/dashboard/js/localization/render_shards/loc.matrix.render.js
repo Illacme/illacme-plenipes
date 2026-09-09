@@ -49,8 +49,9 @@
         const targets = (i18n.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
         const isLicensed = window.settingsData?._is_licensed || false;
 
-        // 🚀 [V57.4] 完美支持授权限制：如果是非授权社区版，强力规整只激活前 1 个选中的语种卡片，其余在界面上自愈为锁定态
-        const activeTargets = (!isLicensed && targets.length > 1) ? [targets[0]] : targets;
+        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 2);
+        // 🚀 [V57.4] 完美支持授权限制：根据许可证上限（社区版最多2个）动态截断激活项
+        const activeTargets = (!isLicensed && targets.length > maxTargets) ? targets.slice(0, maxTargets) : targets;
         const availableLangs = window.availableLangs || [];
 
         // 🚀 [V75.7] 物理多语言总开关：解开模式死锁，根据 enable_ai 进行智能准入
@@ -115,7 +116,7 @@
                             <h4 style="margin: 0; font-size: 0.95rem;">🛰️ 目标分发阵列 (Target Dissemination)</h4>
                             ${!isLicensed ? `
                                 <span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                    🌱 免费社区版：仅限 1 个目标语种
+                                    🌱 免费社区版：最多 2 个目标语种
                                 </span>
                             ` : ''}
                         </div>
@@ -123,9 +124,10 @@
                             ${availableLangs
                     .filter(l => sourceLangStr === 'auto' || l.code !== sourceLangStr)
                     .map(l => {
+                        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 2);
                         const isSelected = activeTargets.includes(l.code);
-                        const isLocked = !isLicensed && !isSelected && activeTargets.length >= 1;
-                        const cardTitle = isLocked ? '点击一键置换为此语种' : '';
+                        const isLocked = !isLicensed && !isSelected && activeTargets.length >= maxTargets;
+                        const cardTitle = isLocked ? `已达上限 (最多 ${maxTargets} 个语种)` : '';
                         return `
                                                 <div class="lang-card ${isSelected ? 'active' : ''} ${isLocked ? 'locked' : ''}" 
                                                      ${cardTitle ? `title="${cardTitle}"` : ''}

@@ -20,6 +20,16 @@ window.initViewContainers = () => {
 // ==========================================
 // 🛡️ [V87.0] 物理 UI 切换（仅执行 DOM 样式操作，不触发慢速 API 请求）
 // ==========================================
+const VIEW_GROUP_MAP = {
+    overview: null,
+    vault: null,
+    settings: 'nav-group-governance',
+    compute: 'nav-group-governance',
+    plugins: 'nav-group-governance',
+    tower: 'nav-group-telemetry',
+    analytics: 'nav-group-telemetry'
+};
+
 window.switchViewDOM = (viewId) => {
     // 🛡️ P0 修复：离开 overview 时立即暂停星系 WebGL 渲染，减轻 GPU 负载
     if (viewId !== 'overview' && typeof window.pauseGalaxy === 'function') {
@@ -32,13 +42,22 @@ window.switchViewDOM = (viewId) => {
     }
     const panels = document.querySelectorAll('.view-panel');
     const navItems = document.querySelectorAll('.nav-item');
+    const dropdownItems = document.querySelectorAll('.nav-dropdown-item');
     panels.forEach(p => p.classList.remove('active'));
     navItems.forEach(n => n.classList.remove('active'));
+    dropdownItems.forEach(d => d.classList.remove('active'));
     
     const activePanel = document.getElementById(`view-${viewId}`);
     const activeNav = document.getElementById(`nav-${viewId}`);
     if (activePanel) activePanel.classList.add('active');
     if (activeNav) activeNav.classList.add('active');
+    
+    // 🛡️ 智能高亮联动：如果当前属于聚合大类，点亮其所属父级大类
+    const parentGroupId = VIEW_GROUP_MAP[viewId];
+    if (parentGroupId) {
+        const parentGroup = document.getElementById(parentGroupId);
+        if (parentGroup) parentGroup.classList.add('active');
+    }
     
     if (typeof window.addAudit === 'function') {
         window.addAudit(`📡 导航: ${viewId.toUpperCase()}`);

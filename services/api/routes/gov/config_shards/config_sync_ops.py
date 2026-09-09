@@ -139,10 +139,13 @@ def process_config_sync(
                     target = target[part]
                 elif hasattr(target, part):
                     val = getattr(target, part)
-                    if isinstance(val, dict):
-                        target = val
-                    else:
-                        target = val
+                    if val is None:
+                        val = {}
+                        try:
+                            setattr(target, part, val)
+                        except Exception:
+                            pass
+                    target = val
                 else:
                     target = None
                     break

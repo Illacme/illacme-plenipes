@@ -2,6 +2,53 @@
 
 这里记录了我们在系统的物理迭代和开发过程里，所沉淀下的最为关键的架构缺陷自检与教训（Lessons），以防止后续开发在相同的物理逻辑上发生脑裂或回退。
 
+## 📅 2026-09-09: 线上站点全球边缘健康度雷达 (Live Health & Latency Radar) 架构落地
+*   **现象描述**：
+    1.  全域发布向 Vercel、GitHub Pages 等 CDN 渠道投递后，终端看板仅输出静态 URL 文本，创作者无法实时感知站点在全球边缘节点的健康状态、HTTP 状态码及 RTT 往返时延（ms）；
+    2.  境内网络在直接发起探测请求时容易受网络波动影响出现假性超时，需要自动感知本地代理加速通道；
+    3.  部分静态 CDN 边缘服务器出于安全策略对 `HEAD` 请求返回 405 Method Not Allowed，若缺乏自愈机制会导致误报；
+    4.  终端日志中的 URL 偶尔附带括号（如 `(实例: https://...app)`），若直接捕获会导致末尾标点混入链接引发 404。
+*   **根因剖析与工程设计**：
+    1.  **后端并发雷达探测端点与协议适配**：
+        - 拆分独立治理分片 `services/api/routes/gov/actions_shards/health_radar_ops.py`；
+        - 在 `services/api/routes/gov/actions.py` 注册 `POST /api/governance/health-radar` 端点；
+        - 实现 `_resolve_effective_proxy()` 嗅探机制，支持从环境变量与本地常用加速端口（10809/7890/1080）自动挂载代理；
+        - 采用 `ThreadPoolExecutor` 高性能异步并发，对所有上线渠道 URL 并行发起探测；
+        - 优先发送零带宽开销的 `HEAD` 轻量请求，遇到 405/403 自动降级为流式 `GET`（仅读 Headers 即断开），根绝误报；
+        - 基于 `Server`、`Via`、`x-vercel-id`、`x-github-request-id` 等响应头，毫秒级指纹比对出 CDN 供应商名称。
+    2.  **前端终端全息徽章与交互联动**：
+        - 在 `web/dashboard/js/core/core.terminal.js` 的 `renderDeploymentSummaryCard()` 中，为每个上线成功的渠道卡片注入 `.health-radar-badge`；
+        - 终端弹窗渲染后自动延迟 200ms 点火探测，动态回填如 `⚡ 956ms · HTTP 200 (GitHub Pages)`，支持异常时呈现 `⚠️ 异常 · HTTP 502`；
+        - 在看板操作栏增加 `⚡ 刷新测速` 按钮，赋予创作者随时一键重新打测速包的能力；
+        - 重构 URL 提取正则，强制剔除末尾闭合字符 `/[),.;!?:\]]+$/`，根治 URL 尾随符号污染。
+    3.  **样式适配与高质感视觉**：
+        - 补充 `web/dashboard/css/themes/theme.light.overrides.css` 亮色主题高对比度样式，兼顾暗色毛玻璃与亮色高清晰度。
+    4.  **自动化守护与门禁**：
+        - 接入 `tests/test_health_radar.py` 自动化测试套件（单测、厂商指纹匹配、批量并发）；
+        - 通过 `pytest tests/test_frontend_integrity.py` 与 Node.js 真实运行沙箱校验，满足 Rule 7 与 Rule 11 物理铁律。
+
+## 📅 2026-09-07: 文章正文顶部出版级全息装帧元数据栏通用引擎跨主题实装 (Article Header & Reading Telemetry)
+*   **现象描述**：
+    1.  读者阅读文章时缺乏对正文字数、预计阅读时长、修订版本的直观感知；
+    2.  双语/多语种矩阵中，读者在进入特定语言页面时无法快速感知并一键穿梭切换至同一手稿的其他语言版本；
+    3.  各 SSG 主题（Nextra、Docusaurus、Starlight 等）渲染机制各异，且存在异步竞态导致重复挂载或样式割裂的风险。
+*   **根因剖析与工程设计**：
+    1.  在 `core/bindery/garden_exporter.py` 中强化手稿语义图谱，导出手稿摘要与全局路由映射；
+    2.  设计零依赖跨主题通用引擎 `article-telemetry-core.js`：
+        - ⏱️ 智能统计 CJK 汉字与西文字词，精准计算预计阅读时间；
+        - 📅 自动解析修订日期与版本时间戳；
+        - 🌐 基于全局路由图谱自动嗅探同源 Slug 的多语种版本，生成高亮激活与穿梭链接胶囊；
+        - 🛡️ 设计双重锁与单例幂等清理机制（`data-telemetry-mounted` / `data-telemetry-mounting` + 插入前 `oldBars.forEach(b => b.remove())`），根绝异步竞态与 SPA 路由二次加载重复注入。
+    3.  各主题原生挂载与 1:1 版图同步：
+        - Nextra：在 `components/LinkedMentions.jsx` 中按路由与语言状态动态挂载；
+        - Docusaurus：在 `clientModules/routeGuard.js` 与 `DocItem/Footer/index.js` 中挂载；
+        - Starlight：在 `CustomFooter.astro` 内联脚本中以动态 import 挂载（严格保持 ≤ 300 行）。
+*   **物理验证与实机验收凭证**：
+    - V8 静态编译 (`node -c`) 与 `pytest tests/test_frontend_integrity.py`、`python scripts/sovereign_audit.py` 538 项测试 100% 通过；
+    - 逐个拉起 Nextra、Docusaurus、Starlight 实机服务（43213），浏览器无头 subagent 截取实机快照，断言元素计数严格为 1，多语种胶囊与阅读指标真实可用。
+
+---
+
 ## 📅 2026-09-06: 知识图谱升级版图全局单例与 Nextra 配置平滑适配 (Knowledge Graph Singleton & Nextra Parity)
 *   **现象描述**：
     1.  本地发布时用户切换装帧主题（如从 `sovereign` 首次切至 `nextra`），系统重新调用了大模型进行语义分析（NER & Gist 提取），且静态服务器访问根目录时暴露了 `Directory listing for /`；
@@ -380,3 +427,21 @@
        - 正则折叠连续重复的套娃路径（如 `/about/about/...`），发送 HTTP 302 重定向；
        - 请求虚拟子目录索引（如 `/about/index.html`）且物理磁盘不存在该目录、但父级存在实体单页 `about.html` 时，发送 HTTP 302 重定向至规范单页地址 `about.html`，从网络层强制矫正浏览器 Base URI。
     4. **防御性类型解包加固**：遵循 Rule 8，在 `sovereign_helpers.py` 中对 `adapter.get_custom_options()` 及 `footer_copyright` 进行防御性类型转换，防止非字典或 MagicMock 对象引发 `TypeError`。
+
+## 📅 2026-09-09: 全域发布推送统计与访问看板打通 (Sovereign Deployment Summary Hub)
+*   **现象描述**：全域发布（分发）流程执行完毕后，控制台仅输出冗长的日志流与基础的 `同步流水线执行完毕` 文本提示。创作者无法直观知晓本次同步了哪些渠道、各渠道成功/失败状态，更无法直接获取或点击线上已上线的真实访问网址，导致发布后的“最后一公里”体验割裂。
+*   **根因剖析**：
+    1. **分发结果未结构化汇总**：`core/bindery/deployment_manager.py` 在推送完成后仅返回原始布尔值字典，未根据各 Publisher 凭证与品牌配置推导并组织各渠道的线上公网访问 URL。
+    2. **前端终端缺乏成果卡片交互**：`web/dashboard/js/core/core.terminal.js` 中虽然有日志输出，但未对 URL 进行自动超链接解析，且弹窗 Footer 在发布完成后仅有置灰的关闭按钮，未点亮核心访问行动点。
+*   **防线策略与沉淀**：
+    1. **全域推送智能汇总与 URL 推导 (Deployment Summary Builder)**：
+       - 在 `deployment_manager.py` 的 `deploy_all()` 结尾组装结构化 `summary` 载荷（包含成功/失败渠道计数、各渠道线上 URL、官方主站标识与错误原因）；
+       - 智能推导官方主站与镜像 URL（如 GitHub Pages `https://{owner}.github.io/{repo}/`、Vercel `https://{project}.vercel.app/` 等）；
+       - 通过事件总线广播 `DEPLOY_SUMMARY` 并在 ASCII 终端日志中输出对齐看板。
+    2. **状态驻留与治理 API (`GET /api/governance/deployment-summary`)**：
+       - 在 `core/services/post_sync.py` 与引擎中驻留 `last_deployment_results`，并在治理路由提供专用调阅接口，防止长连接丢失或刷新后数据丢失。
+    3. **前端高质感成果看板与主站高光行动点 (`renderDeploymentSummaryCard`)**：
+       - `core.terminal.js` 自动将日志流中的所有公网 URL 转为带安全属性 (`target="_blank" rel="noopener noreferrer"`) 的高亮点击链接；
+       - 弹窗输出流末尾渲染「🎉 全域发布圆满完成 · 站点已上线」毛玻璃看板，区分「🏠 官方主站」与「🔄 容灾镜像」，提供各渠道专属「打开浏览 ↗」按钮及「📋 复制全部链接」功能；
+       - 弹窗底部操作栏点亮翡翠绿色核心 CTA 按钮「🌐 立即访问线上主站 ↗」，点击直达官方主站。
+

@@ -23,8 +23,7 @@ class TestFullChainSovereignty(unittest.TestCase):
         self.imprint_root = os.path.join(self.test_root, "imprints")
         self.imprint_dir = os.path.join(self.imprint_root, self.test_press)
         
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         os.makedirs(self.imprint_root, exist_ok=True)
         
         # 🧹 重置全局事件总线回调，彻底切断前置测试干扰导致的挂起
@@ -32,36 +31,47 @@ class TestFullChainSovereignty(unittest.TestCase):
         bus.reset()
 
     def tearDown(self):
-        if os.path.exists(self.test_root):
-            shutil.rmtree(self.test_root)
+        self._cleanup()
         from core.utils.event_bus import bus
         bus.reset()
 
+    def _cleanup(self):
+        if os.path.exists(self.test_root):
+            shutil.rmtree(self.test_root, ignore_errors=True)
+        if os.path.exists("test_mock_vault"):
+            shutil.rmtree("test_mock_vault", ignore_errors=True)
+        from core.config.constants import IMPRINT_DIR
+        leaked_path = os.path.join(IMPRINT_DIR, self.test_press)
+        if os.path.exists(leaked_path):
+            shutil.rmtree(leaked_path, ignore_errors=True)
 
     @patch('core.bindery.deployment_manager.PublisherRegistry.list_active_targets')
     def test_end_to_end_publishing_cycle(self, mock_load):
         """🚀 终极演习：验证全链路主权闭环"""
         from core.adapters.egress.publishers.base import BasePublisher
         class MockPub(BasePublisher):
-            PLUGIN_ID = "mock_pub"
-            def push(self, bundle_path, metadata):
-                return {"status": "success"}
-        
+            name = "mock_pub"
+            def push(self, dist_dir, config):
+                return {"status": "success", "message": "Deployed to mock successfully"}
+
         mock_load.return_value = ["mock_pub"]
         from core.adapters.egress.publishers.base import PublisherRegistry
         PublisherRegistry.register("mock_pub")(MockPub)
 
         # 🚀 [V65.1] 关键：对齐物理路径常量，确保 ConfigManager 能在沙箱中找到品牌配置
+        im = ImprintManager(root_dir=self.test_root)
+        im.imprint_root = self.imprint_root
+
         with patch('core.config.config.IMPRINT_DIR', self.imprint_root), \
+             patch('core.config.constants.IMPRINT_DIR', self.imprint_root), \
              patch('core.runtime.engine_preflight.IMPRINT_DIR', self.imprint_root), \
              patch('core.governance.imprint_manager.IMPRINT_DIR', self.imprint_root), \
-             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root):
+             patch('core.config.assembler.IMPRINT_DIR', self.imprint_root), \
+             patch('core.governance.imprint_manager.im', im):
             with patch.object(MockPub, 'push', return_value={"status": "success"}) as mock_push:
                 # 2. 初始化主权空间 (传入沙箱根目录)
-                im = ImprintManager(root_dir=self.test_root)
                 with patch('core.governance.license_guard.LicenseGuard.is_pro_feature_allowed', return_value=True):
-                    mock_vault = os.path.abspath("test_mock_vault")
-                    if os.path.exists(mock_vault): shutil.rmtree(mock_vault)
+                    mock_vault = os.path.join(self.test_root, "mock_vault")
                     os.makedirs(mock_vault, exist_ok=True)
                     
                     success = im.init_sovereign_imprint(self.test_press, manuscripts_path=mock_vault)

@@ -3,13 +3,13 @@ from typing import List, Dict, Any
 from core.runtime.engine_singleton import get_global_engine
 
 def _load_schema(theme_root: str, entry: str) -> dict:
-    """🚀 物理探测并加载主题自描述配置，自动处理 IO 异常与缺省，支持全局 fallback"""
+    """🚀 物理探测并加载主题自描述配置，优先对齐全局母本契约，防卫版图旧假数据"""
     import json
-    path = os.path.join(theme_root, entry, "theme.schema.json")
+    from core.config.config import THEMES_DIR
+    global_root = os.path.join(os.getcwd(), THEMES_DIR)
+    path = os.path.join(global_root, entry, "theme.schema.json")
     if not os.path.exists(path):
-        from core.config.config import THEMES_DIR
-        global_root = os.path.join(os.getcwd(), THEMES_DIR)
-        path = os.path.join(global_root, entry, "theme.schema.json")
+        path = os.path.join(theme_root, entry, "theme.schema.json")
 
     if os.path.exists(path):
         try:
