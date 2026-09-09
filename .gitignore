@@ -37,6 +37,7 @@ dist/
 build/
 .docusaurus/
 .astro/
+.next/
 cache/
 **/cache/
 themes/*/dist/
@@ -78,15 +79,9 @@ sync_stats_*.json
 .illacme-shadow/
 .antigravity/
 .antigravitycli/
-
-.plenipes/*
-!.plenipes/evolution_records.md
-!.plenipes/governance/
-!.plenipes/tools/
+.plenipes/
 
 # 🛠️ [治理加固] 物理资产与运行数据隔离 (SOP-07)
 artifacts/
-*.log
 metadata/
-imprints/
 MagicMock/
