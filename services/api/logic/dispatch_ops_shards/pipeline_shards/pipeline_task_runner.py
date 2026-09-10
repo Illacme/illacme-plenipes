@@ -83,7 +83,11 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
         )
         
         source_lang = (doc_info.get("source_lang") or "zh").lower()
+        if source_lang in ("auto", ""):
+            source_lang = "zh"
         target_slot_str = str(target_slot).lower() if target_slot else source_lang
+        if target_slot_str in ("auto", "source", ""):
+            target_slot_str = source_lang
         
         # 记录正在分发状态 (显式把上一轮的 url 设为空，防止继承 404 草稿旧地址)
         for chan_id, _ in enabled_syndication_channels:

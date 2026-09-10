@@ -147,6 +147,8 @@ class ContentSyndicator:
             # 🚀 [V120.0] 全渠道生命周期物权检索：判断是否存在远程 ID 与内容哈希变动
             import hashlib
             cur_lang = lang_code or "zh"
+            if str(cur_lang).lower() in ("auto", "source", ""):
+                cur_lang = "zh"
             content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
             source_hash = metadata.get('source_hash', content_hash) if metadata else content_hash
             existing_record = self.meta.get_syndication_record(rel_path, cur_lang, target_id) if (self.meta and rel_path) else None

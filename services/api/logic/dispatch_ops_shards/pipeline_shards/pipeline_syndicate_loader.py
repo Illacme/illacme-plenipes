@@ -47,7 +47,11 @@ def load_syndication_content_and_metadata(
 
     # 🚀 [多语种译文广播适配] 若目标语种不等于母语，智能装载已就绪译文
     source_lang = (doc_info.get("source_lang") or "zh").lower()
+    if source_lang in ("auto", ""):
+        source_lang = "zh"
     target_slot_str = str(target_slot).lower() if target_slot else source_lang
+    if target_slot_str in ("auto", "source", ""):
+        target_slot_str = source_lang
     
     if target_slot_str != source_lang:
         translations = doc_info.get("translations", {}) if isinstance(doc_info.get("translations"), dict) else {}

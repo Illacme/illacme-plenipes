@@ -36,9 +36,15 @@ def get_dispatch_status_logic(engine, doc_id: str, lang_code: str = None) -> dic
     doc_records = {}
     if hasattr(engine, "meta"):
         doc_info = engine.meta.get_doc_info(doc_id) or {}
+        source_lang = (doc_info.get("source_lang") or "zh").lower()
+        if source_lang in ("auto", ""):
+            source_lang = "zh"
+        query_lang = lang_code
+        if query_lang and str(query_lang).lower() in ("auto", "source"):
+            query_lang = source_lang
         if hasattr(engine.meta, "list_syndication_records_for_doc"):
             try:
-                records_list = engine.meta.list_syndication_records_for_doc(doc_id, lang_code)
+                records_list = engine.meta.list_syndication_records_for_doc(doc_id, query_lang)
                 for r in records_list:
                     doc_records[r.get("target_id", "")] = r
             except Exception:
