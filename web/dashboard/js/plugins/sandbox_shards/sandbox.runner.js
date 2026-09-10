@@ -4,6 +4,18 @@
  * 🛡️ [SOP-02 模块拆分 / AEL-Iter-v10]
  */
 
+// 自动平滑滚动定位到抽屉最底部的沙盒演练终端 (仅在抽屉 body 容器内部滚动，防止外层 window 或整个抽屉浮层发生位移溢出)
+const scrollDrawerToTerminalBottom = (smooth = true) => {
+    const drawerBody = document.getElementById('p-drawer-body');
+    if (!drawerBody) return;
+    requestAnimationFrame(() => {
+        drawerBody.scrollTo({
+            top: drawerBody.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    });
+};
+
 // 🚀 物理沙盒干跑前端控制台交互算子（高保真流式淡入动画效果）
 window.triggerPluginDryRun = async (id, parentId = null) => {
     const terminalWrapper = document.getElementById('sandbox-console-wrapper');
@@ -14,14 +26,8 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
     terminalWrapper.style.display = 'block';
     terminal.innerHTML = '<div style="color: #38bdf8; font-weight: 600; opacity: 0.95; font-style: italic; animation: pulse 1.5s infinite;">📡 物理通道连接测试中，正在抓取并对齐当前表单临时参数...</div>';
     
-    // 自动滑动定位到测试终端 (仅在抽屉 body 容器内部滚动，防止外层 window 或整个抽屉浮层发生位移溢出)
-    const drawerBody = document.getElementById('p-drawer-body');
-    if (drawerBody) {
-        drawerBody.scrollTo({
-            top: drawerBody.scrollHeight,
-            behavior: 'smooth'
-        });
-    }
+    // 自动滑动定位到测试终端 (使用微延迟与 rAF，确保 display:block 的 DOM 重新布局后再计算滚动高度)
+    setTimeout(() => scrollDrawerToTerminalBottom(true), 40);
 
     // 🚀 [Sovereign 实时抓取] 提取已落盘配置 + 强力合并抽屉当前 DOM 输入框的最新实时值
     let settings = {};
@@ -35,6 +41,7 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
         };
     }
 
+    const drawerBody = document.getElementById('p-drawer-body');
     if (drawerBody) {
         drawerBody.querySelectorAll('input, select, textarea').forEach(input => {
             const path = input.getAttribute('data-path') || input.name;
@@ -65,6 +72,7 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
 
         if (!res || !res.logs) {
             terminal.innerHTML = '<div style="color: #ff4d4d; font-weight: bold;">❌ 物理通道连接测试超时，未获得连接反馈。</div>';
+            scrollDrawerToTerminalBottom(true);
             return;
         }
 
@@ -82,6 +90,9 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
                 } else {
                     window.probePassState[id] = false;
                 }
+                
+                // 确保流式全部完成后终端与回执状态稳稳呈现在视口底部
+                scrollDrawerToTerminalBottom(true);
                 
                 // 🔍 检查是否有依赖缺失的 Warn 级日志
                 const hasDepWarning = res.logs.some(log => log.message.includes('install') || log.message.includes('安装') || log.message.includes('依赖库'));
@@ -106,13 +117,7 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
                         <button id="btn-install-dep" class="p-btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-primary); border-radius: 4px; color: var(--text-bright); border: none; cursor: pointer;" onclick="window.installPluginDependencies('${id}')">🔌 一键安装依赖</button>
                     `;
                     terminal.parentNode.appendChild(installBox);
-                    
-                    if (drawerBody) {
-                        drawerBody.scrollTo({
-                            top: drawerBody.scrollHeight,
-                            behavior: 'smooth'
-                        });
-                    }
+                    scrollDrawerToTerminalBottom(true);
                 }
                 return;
             }
@@ -135,11 +140,18 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
             setTimeout(() => { line.style.opacity = '1'; }, 10);
             terminal.scrollTop = terminal.scrollHeight;
             
+            // 实时保持外层抽屉容器紧密触底，避免被每 280ms 频繁触发的 smooth 动画打断造成位置停滞
+            const curDrawerBody = document.getElementById('p-drawer-body');
+            if (curDrawerBody) {
+                curDrawerBody.scrollTop = curDrawerBody.scrollHeight;
+            }
+            
             i++;
         }, 280); // 精雕细琢的 280ms 节奏，极其逼真的发布沙盘动态推演反馈
 
     } catch (e) {
         terminal.innerHTML = `<div style="color: #ff4d4d;">❌ 连接测试物理通信报错: ${e}</div>`;
+        scrollDrawerToTerminalBottom(true);
     }
 };
 
@@ -163,6 +175,7 @@ window.installPluginDependencies = async (id) => {
         line.innerText = `[${now}] [${level}] ${msg}`;
         terminal.appendChild(line);
         terminal.scrollTop = terminal.scrollHeight;
+        scrollDrawerToTerminalBottom(true);
     };
 
     addLogLine('🔑 物理触发一键依赖自愈管线，自动连接远端镜像源...', 'INFO');
