@@ -86,12 +86,61 @@ class LanguageHub:
 
         code = iso_code.lower().strip()
         # 模糊匹配
-        if code == "auto": return "Chinese (Simplified)"
+        if code == "auto": return "Auto (自动探测)"
         if "zh-hans" in code or code == "zh-cn" or code == "zh": return "Chinese (Simplified)"
         if "zh-hant" in code or code == "zh-tw": return "Chinese (Traditional)"
         if "en" in code: return "English"
 
         return REVERSE_MAP.get(iso_code, iso_code)
+
+    @classmethod
+    def resolve_document_language(
+        cls,
+        content: str = "",
+        doc_info: dict = None,
+        fm: dict = None,
+        default_fallback: str = "zh-Hans",
+        ai_client=None
+    ) -> str:
+        """
+        🚀 终极文档语种解析器：基于文章真实内容动态检测语种
+        彻底拔除将 'auto' 静态硬编码为固定值的反模式。
+        优先级：Frontmatter 显式定义 > 账本显式定义(非 auto) > 正文内容动态探测 > 兜底降级
+        """
+        import os
+        if fm and isinstance(fm, dict):
+            fm_lang = fm.get("lang") or fm.get("language")
+            if fm_lang and str(fm_lang).strip().lower() not in ("auto", "", "none"):
+                return str(fm_lang).strip()
+
+        if doc_info and isinstance(doc_info, dict):
+            cfg_lang = doc_info.get("source_lang")
+            if cfg_lang and str(cfg_lang).strip().lower() not in ("auto", "", "none"):
+                return str(cfg_lang).strip()
+            
+            detected_prev = doc_info.get("detected_lang")
+            if detected_prev and str(detected_prev).strip().lower() not in ("auto", "", "none"):
+                return str(detected_prev).strip()
+
+        sample = (content or "").strip()
+        if not sample and doc_info and isinstance(doc_info, dict):
+            file_path = doc_info.get("source_path") or doc_info.get("file_path") or doc_info.get("rel_path")
+            if file_path and os.path.exists(file_path):
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        sample = f.read(2000)
+                except Exception:
+                    pass
+
+        if sample:
+            try:
+                detected = cls.detect_source_lang(sample, ai_client=ai_client)
+                if detected and str(detected).lower() not in ("auto", "", "none"):
+                    return detected
+            except Exception:
+                pass
+
+        return default_fallback
 
     @staticmethod
     def resolve_to_iso(name: str, ai_client=None) -> str:

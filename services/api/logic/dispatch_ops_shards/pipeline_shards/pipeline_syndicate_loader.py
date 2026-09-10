@@ -45,15 +45,26 @@ def load_syndication_content_and_metadata(
     # 🚀 [V113.2] 标题优先级链：frontmatter.title > 账本.title > Untitled
     broadcast_title = fm.get("title") or doc_info.get("title") or "Untitled"
 
-    # 🚀 [多语种译文广播适配] 若目标语种不等于母语，智能装载已就绪译文
-    source_lang = (doc_info.get("source_lang") or "zh").lower()
-    if source_lang in ("auto", ""):
-        source_lang = "zh"
+    # 🚀 [多语种译文广播适配] 基于文章真实内容动态探测母语，彻底拔除 auto 写死反模式
+    from core.utils.language_hub import LanguageHub
+    resolved_source_lang = LanguageHub.resolve_document_language(
+        content=content,
+        doc_info=doc_info,
+        fm=fm,
+        default_fallback="zh-Hans",
+        ai_client=getattr(engine, "translator", None)
+    )
+    fm["_detected_source_lang"] = resolved_source_lang
+    source_lang = resolved_source_lang.lower()
+
     target_slot_str = str(target_slot).lower() if target_slot else source_lang
     if target_slot_str in ("auto", "source", ""):
         target_slot_str = source_lang
     
-    if target_slot_str != source_lang:
+    source_iso = LanguageHub.resolve_to_iso(source_lang)
+    target_iso = LanguageHub.resolve_to_iso(target_slot_str)
+
+    if target_iso != source_iso and target_slot_str != source_lang:
         translations = doc_info.get("translations", {}) if isinstance(doc_info.get("translations"), dict) else {}
         target_trans = None
         for k, v in translations.items():

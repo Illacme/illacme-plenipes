@@ -36,9 +36,21 @@ def get_dispatch_status_logic(engine, doc_id: str, lang_code: str = None) -> dic
     doc_records = {}
     if hasattr(engine, "meta"):
         doc_info = engine.meta.get_doc_info(doc_id) or {}
-        source_lang = (doc_info.get("source_lang") or "zh").lower()
-        if source_lang in ("auto", ""):
-            source_lang = "zh"
+        from core.utils.language_hub import LanguageHub
+        source_path = os.path.join(getattr(engine, "vault_root", os.getcwd()), doc_id) if hasattr(engine, "vault_root") else ""
+        sample = ""
+        if source_path and os.path.exists(source_path):
+            try:
+                with open(source_path, 'r', encoding='utf-8') as f:
+                    sample = f.read(2000)
+            except Exception:
+                pass
+        source_lang = LanguageHub.resolve_document_language(
+            content=sample,
+            doc_info=doc_info,
+            default_fallback="zh-Hans",
+            ai_client=getattr(engine, "translator", None)
+        ).lower()
         query_lang = lang_code
         if query_lang and str(query_lang).lower() in ("auto", "source"):
             query_lang = source_lang

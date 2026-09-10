@@ -82,9 +82,15 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
             meta=engine.meta
         )
         
-        source_lang = (doc_info.get("source_lang") or "zh").lower()
-        if source_lang in ("auto", ""):
-            source_lang = "zh"
+        from core.utils.language_hub import LanguageHub
+        resolved_source_lang = fm.get("_detected_source_lang") or LanguageHub.resolve_document_language(
+            content=body,
+            doc_info=doc_info,
+            fm=fm,
+            default_fallback="zh-Hans",
+            ai_client=getattr(engine, "translator", None)
+        )
+        source_lang = resolved_source_lang.lower()
         target_slot_str = str(target_slot).lower() if target_slot else source_lang
         if target_slot_str in ("auto", "source", ""):
             target_slot_str = source_lang
