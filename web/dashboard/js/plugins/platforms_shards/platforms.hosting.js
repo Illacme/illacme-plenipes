@@ -72,15 +72,15 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('访问密钥 ID (Access Key)', `publish_control.direct_upload.s3.access_key`, cfg.access_key, 'text', { placeholder: "AWS_ACCESS_KEY_ID" })}
-                ${renderSettingsItem('安全私钥 (Secret Key)', `publish_control.direct_upload.s3.secret_key`, cfg.secret_key, 'password', { placeholder: "AWS_SECRET_ACCESS_KEY" })}
-                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.s3.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-hosting-bucket" })}
-                ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.s3.region`, cfg.region || 'us-east-1', 'text', { placeholder: "例如: us-east-1" })}
+                ${renderSettingsItem('访问密钥 ID (Access Key)', `publish_control.direct_upload.s3.access_key`, cfg.access_key, 'text', { placeholder: "AWS_ACCESS_KEY_ID", description: "AWS IAM 用户的访问密钥公钥（Access Key ID）。" })}
+                ${renderSettingsItem('安全私钥 (Secret Key)', `publish_control.direct_upload.s3.secret_key`, cfg.secret_key, 'password', { placeholder: "AWS_SECRET_ACCESS_KEY", description: "AWS IAM 用户的安全私钥（Secret Access Key），用于签名请求。" })}
+                ${renderSettingsItem('存储桶名称 (Bucket)', `publish_control.direct_upload.s3.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-hosting-bucket", description: "用于托管静态网页与资源的 S3 存储桶名称。" })}
+                ${renderSettingsItem('存储区域 (Region)', `publish_control.direct_upload.s3.region`, cfg.region || 'us-east-1', 'text', { placeholder: "例如: us-east-1", description: "S3 存储桶所在的数据中心物理区域（如 us-east-1、ap-northeast-1）。" })}
                 ${window.renderPlatformAdvancedGroup('高级可选调参 (Endpoint / Public URL / Prefix / ACL / 代理)', `
                     ${renderSettingsItem('自定义端点 (Endpoint URL)', `publish_control.direct_upload.s3.endpoint_url`, cfg.endpoint_url, 'text', { placeholder: "Cloudflare R2, MinIO, or custom endpoint", description: "如果使用 Cloudflare R2 等非标准 AWS 存储，请填写此项。" })}
                     ${renderSettingsItem('公开访问域名 (Public URL)', `publish_control.direct_upload.s3.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://myblog.com", description: "网站公开访问的基地址。" })}
-                    ${renderSettingsItem('存储路径前缀 (Prefix)', `publish_control.direct_upload.s3.prefix`, cfg.prefix, 'text', { placeholder: "可选前缀，例如: html-site" })}
-                    ${renderSettingsItem('对象访问控制 (ACL)', `publish_control.direct_upload.s3.acl`, cfg.acl, 'text', { placeholder: "例如: public-read" })}
+                    ${renderSettingsItem('存储路径前缀 (Prefix)', `publish_control.direct_upload.s3.prefix`, cfg.prefix, 'text', { placeholder: "可选前缀，例如: html-site", description: "文件上传至存储桶时的可选相对子目录路径（留空则部署于根目录）。" })}
+                    ${renderSettingsItem('对象访问控制 (ACL)', `publish_control.direct_upload.s3.acl`, cfg.acl, 'text', { placeholder: "例如: public-read", description: "上传对象的云端访问权限（通常设为 public-read）。" })}
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.s3.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
@@ -180,13 +180,13 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('API 访问令牌 (Token)', `publish_control.direct_upload.cloudflare_pages.token`, cfg.token, 'password', { placeholder: "请输入 Cloudflare API Token" })}
-                ${renderSettingsItem('账号 ID (Account ID)', `publish_control.direct_upload.cloudflare_pages.account_id`, cfg.account_id, 'text', { placeholder: "Cloudflare 账号 ID" })}
-                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.cloudflare_pages.project_name`, cfg.project_name, 'text', { placeholder: "例如: my-docs-site" })}
-                ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.cloudflare_pages.branch`, cfg.branch || 'production', 'text', { placeholder: "例如: production" })}
+                ${renderSettingsItem('API 访问令牌 (Token)', `publish_control.direct_upload.cloudflare_pages.token`, cfg.token, 'password', { placeholder: "请输入 Cloudflare API Token", description: "具备 Cloudflare Pages 编辑权限的 API Token，点击上方魔术链接可快速创建。" })}
+                ${renderSettingsItem('账号 ID (Account ID)', `publish_control.direct_upload.cloudflare_pages.account_id`, cfg.account_id, 'text', { placeholder: "32 位 Cloudflare 账号 ID", description: "登录 Cloudflare 控制台，在任意域名或 Pages 概览右下角复制 32 位 Account ID。" })}
+                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.cloudflare_pages.project_name`, cfg.project_name, 'text', { placeholder: "例如: my-docs-site", description: "Cloudflare Pages 中创建的静态项目名称，系统将直接发布至此项目。" })}
+                ${renderSettingsItem('部署分支 (Branch)', `publish_control.direct_upload.cloudflare_pages.branch`, cfg.branch || 'production', 'text', { placeholder: "例如: production", description: "绑定自动构建部署的目标分支（默认常用 production 或 main）。" })}
                 ${window.renderPlatformAdvancedGroup('高级代理与 CLI 路径参数', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.cloudflare_pages.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
-                    ${renderSettingsItem('Wrangler CLI 路径', `publish_control.direct_upload.cloudflare_pages.wrangler_path`, cfg.wrangler_path || 'wrangler', 'text')}
+                    ${renderSettingsItem('Wrangler CLI 路径', `publish_control.direct_upload.cloudflare_pages.wrangler_path`, cfg.wrangler_path || 'wrangler', 'text', { description: "本地安装的 Wrangler CLI 命令行工具路径（默认 wrangler）。" })}
                 `)}
             `;
         } else if (id === 'netlify') {
@@ -200,12 +200,12 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('身份凭证 (Auth Token)', `publish_control.direct_upload.netlify.auth_token`, cfg.auth_token, 'password', { placeholder: "Netlify Personal Access Token" })}
-                ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.netlify.site_id`, cfg.site_id, 'text', { placeholder: "例如: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" })}
+                ${renderSettingsItem('身份凭证 (Auth Token)', `publish_control.direct_upload.netlify.auth_token`, cfg.auth_token, 'password', { placeholder: "Netlify Personal Access Token", description: "Netlify 个人访问令牌，点击上方向导可一键免密授权或直达创建。" })}
+                ${renderSettingsItem('站点 ID (Site ID)', `publish_control.direct_upload.netlify.site_id`, cfg.site_id, 'text', { placeholder: "例如: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", description: "在 Netlify 站点后台 -> Site configuration -> General -> Site details 中复制 API ID。" })}
                 ${window.renderPlatformAdvancedGroup('高级部署与代理参数', `
-                    ${renderSettingsItem('生产模式部署 (Prod)', `publish_control.direct_upload.netlify.prod`, cfg.prod !== false, 'checkbox')}
+                    ${renderSettingsItem('生产模式部署 (Prod)', `publish_control.direct_upload.netlify.prod`, cfg.prod !== false, 'checkbox', { description: "勾选直接发布至正式生产环境；取消勾选将发布至预览测试草稿环境。" })}
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.netlify.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
-                    ${renderSettingsItem('Netlify CLI 路径', `publish_control.direct_upload.netlify.netlify_path`, cfg.netlify_path || 'netlify', 'text')}
+                    ${renderSettingsItem('Netlify CLI 路径', `publish_control.direct_upload.netlify.netlify_path`, cfg.netlify_path || 'netlify', 'text', { description: "本地安装的 Netlify CLI 执行路径（默认 netlify）。" })}
                 `)}
             `;
         } else if (id === 'vercel') {
@@ -219,13 +219,13 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('访问令牌 (Token)', `publish_control.direct_upload.vercel.token`, cfg.token, 'password', { placeholder: "请输入 Vercel 访问令牌 (Token)" })}
-                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.vercel.project_name`, cfg.project_name, 'text', { placeholder: "请输入 Vercel 项目名称" })}
-                ${renderSettingsItem('组织 ID (Org ID)', `publish_control.direct_upload.vercel.org_id`, cfg.org_id, 'text', { placeholder: "请输入 Vercel 组织 ID (可选)" })}
+                ${renderSettingsItem('访问令牌 (Token)', `publish_control.direct_upload.vercel.token`, cfg.token, 'password', { placeholder: "请输入 Vercel 访问令牌 (Token)", description: "Vercel 访问凭证，点击上方向导可免密授权或直达 Token 申请页创建。" })}
+                ${renderSettingsItem('项目名称 (Project Name)', `publish_control.direct_upload.vercel.project_name`, cfg.project_name, 'text', { placeholder: "例如: illacme-press", description: "Vercel 中对应的项目名称（首次发布若不存在将自动在云端初始化）。" })}
+                ${renderSettingsItem('组织 ID (Org ID)', `publish_control.direct_upload.vercel.org_id`, cfg.org_id, 'text', { placeholder: "个人项目留空即可 (可选)", description: "【选填】仅在发布至企业或 Team 空间时填写 Team ID，个人账号请留空。" })}
                 ${window.renderPlatformAdvancedGroup('高级生产部署与代理参数', `
-                    ${renderSettingsItem('生产部署 (Prod)', `publish_control.direct_upload.vercel.prod`, cfg.prod !== false, 'checkbox')}
+                    ${renderSettingsItem('生产部署 (Prod)', `publish_control.direct_upload.vercel.prod`, cfg.prod !== false, 'checkbox', { description: "勾选直接发布至正式生产环境；取消勾选将发布至预览测试环境。" })}
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.vercel.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
-                    ${renderSettingsItem('Vercel CLI 路径', `publish_control.direct_upload.vercel.vercel_path`, cfg.vercel_path || 'vercel', 'text')}
+                    ${renderSettingsItem('Vercel CLI 路径', `publish_control.direct_upload.vercel.vercel_path`, cfg.vercel_path || 'vercel', 'text', { description: "本地安装的 Vercel CLI 命令行工具路径（默认 vercel）。" })}
                 `)}
             `;
         } else if (id === 'aliyun_oss') {
@@ -289,13 +289,13 @@ window.rawRenderPlatformConfig = (id, cfg, category = 'publisher') => {
                     </div>
                     <div class="oauth-status-info" style="display: none; margin-top: 8px; font-size: 0.85rem;"></div>
                 </div>
-                ${renderSettingsItem('服务器主机 (Host)', `publish_control.direct_upload.sftp.host`, cfg.host, 'text', { placeholder: "例如: 123.45.67.89 或 sftp.myblog.com" })}
-                ${renderSettingsItem('SSH 端口 (Port)', `publish_control.direct_upload.sftp.port`, cfg.port || 22, 'number', { placeholder: "默认 22" })}
-                ${renderSettingsItem('登录用户名 (Username)', `publish_control.direct_upload.sftp.username`, cfg.username, 'text', { placeholder: "例如: root" })}
-                ${renderSettingsItem('登录密码 (Password)', `publish_control.direct_upload.sftp.password`, cfg.password, 'password', { placeholder: "SSH 密码，若使用私钥可留空" })}
-                ${renderSettingsItem('SSH 私钥 (Private Key)', `publish_control.direct_upload.sftp.private_key`, cfg.private_key, 'textarea', { placeholder: "私钥文件路径或私钥字符串内容", rows: 4 })}
-                ${renderSettingsItem('私钥口令 (Passphrase)', `publish_control.direct_upload.sftp.passphrase`, cfg.passphrase, 'password', { placeholder: "私钥保护口令（如有）" })}
-                ${renderSettingsItem('远程目标目录 (Remote Path)', `publish_control.direct_upload.sftp.remote_path`, cfg.remote_path, 'text', { placeholder: "例如: /var/www/html/blog" })}
+                ${renderSettingsItem('服务器主机 (Host)', `publish_control.direct_upload.sftp.host`, cfg.host, 'text', { placeholder: "例如: 123.45.67.89 或 sftp.myblog.com", description: "远程服务器的公网 IP 地址或解析域名。" })}
+                ${renderSettingsItem('SSH 端口 (Port)', `publish_control.direct_upload.sftp.port`, cfg.port || 22, 'number', { placeholder: "默认 22", description: "远程主机的 SSH/SFTP 服务监听端口（通常为 22）。" })}
+                ${renderSettingsItem('登录用户名 (Username)', `publish_control.direct_upload.sftp.username`, cfg.username, 'text', { placeholder: "例如: root 或 deployer", description: "用于登录远程服务器执行静态文件写入的系统账户名。" })}
+                ${renderSettingsItem('登录密码 (Password)', `publish_control.direct_upload.sftp.password`, cfg.password, 'password', { placeholder: "SSH 密码，若使用私钥可留空", description: "远程账户的登录密码（密码或下方私钥任选一种即可）。" })}
+                ${renderSettingsItem('SSH 私钥 (Private Key)', `publish_control.direct_upload.sftp.private_key`, cfg.private_key, 'textarea', { placeholder: "私钥文件路径或私钥字符串内容", rows: 4, description: "本地 SSH 私钥路径（如 ~/.ssh/id_rsa）或私钥文本内容（与密码二选一）。" })}
+                ${renderSettingsItem('私钥口令 (Passphrase)', `publish_control.direct_upload.sftp.passphrase`, cfg.passphrase, 'password', { placeholder: "私钥保护口令（无口令留空）", description: "【选填】若您的 SSH 私钥设置了保护口令（Passphrase），请在此填写。" })}
+                ${renderSettingsItem('远程目标目录 (Remote Path)', `publish_control.direct_upload.sftp.remote_path`, cfg.remote_path, 'text', { placeholder: "例如: /var/www/html/blog", description: "静态网页文件上传部署至对端服务器的绝对目标路径（请确保该目录具备写入权限）。" })}
                 ${renderSettingsItem('站点访问域名 (Public URL)', `publish_control.direct_upload.sftp.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://blog.mysite.com", description: "网站公开访问的基地址。" })}
                 ${window.renderPlatformAdvancedGroup('高级代理调参', `
                     ${renderSettingsItem('独立代理地址 (Proxy)', `publish_control.direct_upload.sftp.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}

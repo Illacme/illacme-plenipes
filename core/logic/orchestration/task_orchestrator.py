@@ -149,9 +149,11 @@ class OrchestratedExecutor(concurrent.futures.Executor):
             task = None
             with self.lock:
                 while not self.shutdown_flag and not self.queue:
-                    # 🚀 [V16.0] 缩容检查：如果当前活跃线程数已经超过了设定的 max_workers
-                    # 则让当前这个因为 Condition 等待被唤醒的线程直接退出
+                    self.workers = [w for w in self.workers if w.is_alive()]
                     if len(self.workers) > self.max_workers:
+                        curr_t = threading.current_thread()
+                        if curr_t in self.workers:
+                            self.workers.remove(curr_t)
                         return # 优雅退役
                     self.condition.wait(timeout=1.0)
 

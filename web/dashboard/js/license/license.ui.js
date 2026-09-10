@@ -51,8 +51,8 @@
                 const isValidLicFile = lowerName.endsWith('.lic') || lowerName.endsWith('.lic.txt') || lowerName.endsWith('.key') || lowerName.endsWith('.txt');
 
                 if (!isValidLicFile) {
-                    if (typeof showNotification === 'function') {
-                        showNotification(`⚠️ 拖入的文件 [${fileName}] 格式不匹配！请拖入官方发放的 .lic 许可证文件`, 'warning');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`⚠️ 拖入的文件 [${fileName}] 格式不匹配！请拖入官方发放的 .lic 许可证文件`, 'warning');
                     } else {
                         alert(`⚠️ 拖入的文件 [${fileName}] 格式不匹配！请拖入官方发放的 .lic 许可证文件`);
                     }
@@ -62,8 +62,8 @@
                 const reader = new FileReader();
                 reader.onload = (evt) => {
                     textarea.value = evt.target.result;
-                    if (typeof showNotification === 'function') {
-                        showNotification(`📄 已成功装载许可证文件: ${fileName}`, 'info');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`📄 已成功装载许可证文件: ${fileName}`, 'info');
                     }
                 };
                 reader.readAsText(file);
@@ -211,8 +211,8 @@
                     emblem.style.boxShadow = 'none';
                 }, 400);
             }
-            if (typeof showNotification === 'function') {
-                showNotification('✨ 已完成最新授权状态探针校验与回显', 'info');
+            if (typeof window.showToast === 'function') {
+                window.showToast('✨ 已完成最新授权状态探针校验与回显', 'info');
             }
         } catch (err) {
             console.error('刷新授权状态失败:', err);
@@ -241,8 +241,8 @@
         if (!input) return;
         input.select();
         navigator.clipboard.writeText(input.value).then(() => {
-            if (typeof showNotification === 'function') {
-                showNotification('📋 已复制机器指纹至剪贴板', 'info');
+            if (typeof window.showToast === 'function') {
+                window.showToast('📋 已复制机器指纹至剪贴板', 'info');
             } else {
                 alert('已复制机器指纹！');
             }
@@ -254,7 +254,7 @@
     window.submitLicenseActivation = async function () {
         const textInput = document.getElementById('license-text-input');
         if (!textInput || !textInput.value.trim()) {
-            showNotification('请先粘贴或拖入有效的 .lic 许可证内容', 'warning');
+            if (typeof window.showToast === 'function') window.showToast('请先粘贴或拖入有效的 .lic 许可证内容', 'warning');
             return;
         }
 
@@ -269,14 +269,14 @@
             });
 
             if (res && (res.status === 'success' || res.success)) {
-                showNotification(`🎉 ${res.message || '激活成功！已解锁高级专业版全量能力'}`, 'success');
+                if (typeof window.showToast === 'function') window.showToast(`🎉 ${res.message || '激活成功！已解锁高级专业版全量能力'}`, 'success');
                 textInput.value = '';
                 fetchLicenseDataAndUpdateDOM();
             } else {
-                showNotification(`❌ ${res ? res.message : '激活失败，密钥不匹配'}`, 'error');
+                if (typeof window.showToast === 'function') window.showToast(`❌ ${res ? res.message : '激活失败，密钥不匹配'}`, 'error');
             }
         } catch (e) {
-            showNotification(`❌ 激活开验抛出异常: ${e.message}`, 'error');
+            if (typeof window.showToast === 'function') window.showToast(`❌ 激活开验抛出异常: ${e.message}`, 'error');
         } finally {
             if (btn) { btn.disabled = false; btn.innerText = '🚀 验证并激活'; }
         }
@@ -307,14 +307,14 @@
         try {
             const res = await apiFetch('/api/governance/license/revoke', { method: 'POST' });
             if (res && (res.status === 'success' || res.success)) {
-                showNotification(`🔓 ${res.message || '许可证已成功解绑，系统切回免费社区版 (LITE)'}`, 'info');
+                if (typeof window.showToast === 'function') window.showToast(`🔓 ${res.message || '许可证已成功解绑，系统切回免费社区版 (LITE)'}`, 'info');
                 fetchLicenseDataAndUpdateDOM();
             } else {
                 const errMsg = res ? (res.message || res.error || '解绑拒绝') : '网络连接失败';
-                showNotification(`❌ 解绑失败: ${errMsg}`, 'error');
+                if (typeof window.showToast === 'function') window.showToast(`❌ 解绑失败: ${errMsg}`, 'error');
             }
         } catch (e) {
-            showNotification(`❌ 解绑请求异常: ${e.message}`, 'error');
+            if (typeof window.showToast === 'function') window.showToast(`❌ 解绑请求异常: ${e.message}`, 'error');
         }
     };
 })();

@@ -36,6 +36,7 @@
 
     /* 🎨 Neon/Alert Colors */
     --neon-purple: hsl(267, 100%, 65%);
+    --neon-purple-rgb: 163, 76, 255;
     --neon-cyan: hsl(181, 100%, 50%);
     --neon-cyan-rgb: 0, 242, 255;
     --neon-green: hsl(152, 100%, 50%);
@@ -234,6 +235,7 @@
     --accent-primary-hover: hsl(212, 100%, 42%);
     
     --neon-purple: hsl(260, 60%, 50%);
+    --neon-purple-rgb: 102, 51, 204;
     --neon-green: hsl(150, 70%, 35%);
     --neon-green-rgb: 27, 153, 76;
     --neon-amber: hsl(35, 90%, 45%);

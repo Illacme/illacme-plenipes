@@ -322,6 +322,9 @@ window.setHostingAsPrimary = async (id, event) => {
         }
 
         if (typeof loadPlugins === 'function') await loadPlugins(true);
+        if (typeof window.refreshGovernanceContext === 'function') {
+            await window.refreshGovernanceContext();
+        }
     } catch (e) {
         console.error('setHostingAsPrimary error:', e);
     }

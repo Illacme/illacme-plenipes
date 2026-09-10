@@ -43,14 +43,14 @@
                                     🌱
                                 </div>
                                 
-                                <div class="setting-info" style="margin: 0; flex: 1;">
+                                <div class="setting-info" style="margin: 0; flex: 1; max-width: 100%;">
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; width: 100%;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; white-space: nowrap;">
                                             <span style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); white-space: nowrap;">出版引擎版本</span>
                                             <span class="tier-tag tier-local" id="lic-tier-badge" style="font-size: 0.75rem; padding: 2px 8px; font-weight: 700; white-space: nowrap;">免费社区版</span>
                                             <span class="tier-tag tier-global" id="lic-version-badge" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 600; opacity: 0.85; white-space: nowrap;">v50.3</span>
                                         </div>
-                                        <button type="button" class="primary-btn" id="btn-revoke-license" onclick="window.revokeCurrentLicense(event)" style="display:none; background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.3); color: #ff6b6b; padding: 3px 10px; font-size: 0.75rem;">🔓 解绑授权</button>
+                                        <button type="button" class="primary-btn" id="btn-revoke-license" onclick="window.revokeCurrentLicense(event)" style="display:none; margin-left: auto; background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.3); color: #ff6b6b; padding: 3px 10px; font-size: 0.75rem; white-space: nowrap;">🔓 解绑授权</button>
                                     </div>
                                     <div class="setting-desc" id="lic-banner-desc" style="font-size: 0.82rem; line-height: 1.4; color: var(--text-muted);">
                                         ✨ 免费社区版已包含完整 AI 创作润色、Obsidian 双链全息图谱与全自动静态出版引擎，支持 1 个自建品牌与 2 个目标翻译语种。升级增强版或专业版可进一步解封 5~99 个独立品牌与多语种并行矩阵。

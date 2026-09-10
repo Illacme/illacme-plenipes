@@ -71,6 +71,22 @@ window.applyScaleAdaptation = (nodeCount) => {
 
     window._galaxyScaleMode = scaleMode;
 
+    // 🌟 [V130.0] Bloom 辉光强度自适应降级 — 防止大规模 GPU 过载
+    if (window._galaxyBloomPass) {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (scaleMode === 'huge') {
+            window._galaxyBloomPass.strength = 0; // 超大规模：完全关闭辉光
+            console.log('🌟 [Bloom] 超大规模 → 辉光已关闭');
+        } else if (scaleMode === 'large') {
+            window._galaxyBloomPass.strength = isLight ? 0.3 : 0.6; // 大规模：半强度
+            console.log('🌟 [Bloom] 大规模 → 辉光降至半强度');
+        } else if (scaleMode === 'medium') {
+            window._galaxyBloomPass.strength = isLight ? 0.5 : 1.0; // 中等：适度
+        } else {
+            window._galaxyBloomPass.strength = isLight ? 0.6 : 1.5; // 小规模：全强度
+        }
+    }
+
     // 🚀 [V100.0] 触发 3D 渲染器快速重绘所有链路样式回调，以应用 scaleMode 所致的变化
     window.galaxyGraph
         .linkColor(window.galaxyGraph.linkColor())

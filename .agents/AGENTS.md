@@ -124,7 +124,7 @@
 ## 14. 前端脚本引入完整性与底板父页面双层验证铁律 (Frontend Script Integrity & Dual-Layer Parity Rules)
 *   **适用场景**：所有对 `web/dashboard/index.html` 前端 HTML 进行 script 标签修改，或对局部抽屉/弹窗组件执行模块拆分及浏览器实机验收的场景。
 *   **物理红线**：
-    1. **HTML 脚本拓扑 0 丢失 0 孤儿红线**：凡修改 `index.html`，必须强制运行 `pytest tests/test_frontend_integrity.py` 与 `python scripts/sovereign_audit.py` (Stage 2.7)，严禁因批量替换而误伤删除任何非目标脚本，严禁遗留任何未在 HTML 中引用的磁盘孤儿 JS 文件。
+    1. **HTML 脚本拓扑 0 丢失 0 孤儿红线**：凡修改 `index.html`，必须强制运行 `pytest tests/test_frontend_integrity.py` 与 `python scripts/sovereign_audit.py --stage 2.7`（或 `--frontend` 前端全套门禁），严禁因批量替换而误伤删除任何非目标脚本，严禁遗留任何未在 HTML 中引用的磁盘孤儿 JS 文件。
     2. **双层全域实机验证红线 (Dual-Layer Full-View Gate)**：验收任何抽屉 (Drawer)、弹窗 (Modal) 或局部小部件前，**必须先截图并断言底层的整个父页面主体数据是否 100% 完整加载**（例如：先检查文库表格存在且有行数据 -> 再打开抽屉测试），严禁“只看抽屉内部而无视父页面底板白屏/崩溃”的管中窥豹式验收。
 
 ## 15. 多语种频道路由与官方导航字典主权锁定铁律 (Nav I18N & Route Matrix Sovereignty Lock Rules)

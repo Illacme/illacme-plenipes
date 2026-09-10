@@ -117,6 +117,11 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     # 3. 🌐 全站托管能力 (Hosting)
     hosting_root = engine.config.publish_control.direct_upload
     non_hosting_publishers = {"webhook_dispatch", "aliyun_oss", "tencent_cos", "s3", "upyun_uss"}
+    pub_ctrl = getattr(engine.config, "publish_control", None)
+    primary_hosting_id = (
+        getattr(pub_ctrl, "primary_hosting_id", "") or
+        (hosting_root.get("primary_hosting_id", "") if isinstance(hosting_root, dict) else "")
+    )
     for p_id, cls in PublisherRegistry.get_all_publishers().items():
         if p_id in non_hosting_publishers:
             continue  # 🚀 [V18.0] 物理剥离：非纯网页托管（如对象存储与通知信号触发器）归位至专属大类，不再占用托管额度
@@ -135,6 +140,7 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         plugins.append({
             "id": p_id, "name": name, "category": "hosting", "category_name": "🌐 全站托管",
             "status": "In-Use" if is_active else "Ready", "is_in_use": is_active, "is_enabled": (p_id not in disabled),
+            "is_primary": bool(is_active and p_id == primary_hosting_id),
             "origin": "core", "version": getattr(cls, "VERSION", SYSTEM_TRACK),
             "description": getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {name}。"),
             "cfg": hosting_root.get(p_id, {}) if isinstance(hosting_root, dict) else {}, "is_manageable": True

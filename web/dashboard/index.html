@@ -58,6 +58,7 @@
     <script src="vendor/sweetalert2.all.min.js"></script>
     <script src="vendor/marked.js"></script>
     <script src="vendor/3d-force-graph.min.js"></script>
+    <script src="vendor/three-bloom.vendor.js"></script> <!-- 🌟 UnrealBloomPass 辉光后处理 -->
 </head>
 
 <body>
@@ -82,10 +83,10 @@
             </div>
             <nav id="top-nav">
                 <div class="nav-tabs-wrapper">
-                    <div class="nav-item active" id="nav-overview" data-view="overview">
-                        <span class="nav-icon">🌌</span><span class="nav-text">指挥中枢</span>
+                    <div class="nav-item active" id="nav-overview" data-view="overview" onclick="window.toggleHub('hide'); window.showView('overview')">
+                        <span class="nav-icon">🌌</span><span class="nav-text">知识星谱</span>
                     </div>
-                    <div class="nav-item" id="nav-vault" data-view="vault">
+                    <div class="nav-item" id="nav-vault" data-view="vault" onclick="window.showView('vault')">
                         <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
                     </div>
                     <div class="nav-item nav-group-item" id="nav-group-governance" data-group="governance">

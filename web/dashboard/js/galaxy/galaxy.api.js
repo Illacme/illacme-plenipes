@@ -37,6 +37,16 @@ window.refreshGalaxy = async () => {
             return nodeIds.has(src) && nodeIds.has(tgt);
         });
 
+        // 🌟 [V130.0] 预计算节点连接度 — 用于多色彩映射与动态尺寸分级
+        const linkCountMap = {};
+        skeleton.links.forEach(l => {
+            const src = l.source?.id || l.source;
+            const tgt = l.target?.id || l.target;
+            linkCountMap[src] = (linkCountMap[src] || 0) + 1;
+            linkCountMap[tgt] = (linkCountMap[tgt] || 0) + 1;
+        });
+        skeleton.nodes.forEach(n => { n._linkCount = linkCountMap[n.id] || 0; });
+
         // 🌌 预分配随机初始位置，防止所有节点堆叠在原点
         const spread = Math.max(100, skeleton.nodes.length * 10);
         skeleton.nodes.forEach(n => {
@@ -164,6 +174,17 @@ window.refreshGalaxy = async () => {
                 nodes: Object.values(mergedNodesMap),
                 links: validLinks
             };
+
+            // 🌟 [V130.0] 增量合并后重新计算连接度
+            const mergedLinkCount = {};
+            validLinks.forEach(l => {
+                const src = l.source?.id || l.source;
+                const tgt = l.target?.id || l.target;
+                mergedLinkCount[src] = (mergedLinkCount[src] || 0) + 1;
+                mergedLinkCount[tgt] = (mergedLinkCount[tgt] || 0) + 1;
+            });
+            mergedData.nodes.forEach(n => { n._linkCount = mergedLinkCount[n.id] || 0; });
+
             window.galaxyGraph.graphData(mergedData);
             window._lastGalaxyData = mergedData;
 

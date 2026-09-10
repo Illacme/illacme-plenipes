@@ -169,7 +169,11 @@ class UsageMeter:
             # 🚀 [V23.0] 深度合并：从注册簿获取历史总额
             report = self.stats.get('session', {}).copy()
             imprint_id = getattr(self.engine, 'imprint_id', 'default')
-            report["total_historical_cost"] = self.engine.meta.sqlite.get_total_cost(imprint_id)
+            meta = getattr(self.engine, 'meta', None)
+            if meta and hasattr(meta, 'sqlite') and hasattr(meta.sqlite, 'get_total_cost'):
+                report["total_historical_cost"] = meta.sqlite.get_total_cost(imprint_id)
+            else:
+                report["total_historical_cost"] = 0.0
             return report
 
     def check_and_block(self, content: str, targets: list, rel_path: str) -> bool:
@@ -182,7 +186,8 @@ class UsageMeter:
         
         # 1. 汇总当前总消耗 (今日已耗 + 本次 Session 已耗)
         imprint_id = getattr(self.engine, 'imprint_id', 'default')
-        today_cost = self.engine.meta.sqlite.get_total_cost(imprint_id)
+        meta = getattr(self.engine, 'meta', None)
+        today_cost = meta.sqlite.get_total_cost(imprint_id) if meta and hasattr(meta, 'sqlite') and hasattr(meta.sqlite, 'get_total_cost') else 0.0
 
         session_cost = self.stats.get('session', {}).get('cost', 0.0)
         total_spent = today_cost + session_cost

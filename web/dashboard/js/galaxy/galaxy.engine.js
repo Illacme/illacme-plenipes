@@ -1,6 +1,7 @@
 /**
  * 🚀 Illacme Plenipes 3D Galaxy Engine - 3D Core & Controls Module
  * 职责：ForceGraph3D 链式配置、三维飞跃聚焦、OrbitControls太空滑行阻尼重载与Kinetic自呼吸。
+ * 🌟 [V130.0] 星光辉芒升级：UnrealBloom 后处理 + 多色彩自发光材质 + 动态尺寸分级
  * 符合 SOP-02 模块拆分协议，行数严格控制在 300 行内。
  */
 
@@ -21,6 +22,17 @@ function focusNodeIn3D(node) {
     window.galaxyGraph.cameraPosition(targetPos, node, 1200); // 1.2 秒柔和过渡
 }
 
+// 🌟 [V130.0] 多色彩星球色系映射 — 基于节点连接度与类型分配 7 种渐变色
+function _getStarColor(node, isLight) {
+    if (node.group === 'imprint') return isLight ? '#c030aa' : '#ff44cc'; // 品牌节点：洋红
+    const links = node._linkCount || 0;
+    if (links >= 10) return isLight ? '#7ab800' : '#a3ff00'; // 超级枢纽：明亮黄绿
+    if (links >= 6)  return isLight ? '#00b860' : '#00ff88'; // 高连接：翠绿
+    if (links >= 3)  return isLight ? '#0098b0' : '#00f2ff'; // 中等连接：青色
+    if (links >= 1)  return isLight ? '#6858d8' : '#7b68ee'; // 低连接：蓝紫
+    return isLight ? '#b88830' : '#ffaa33'; // 孤立节点：琥珀橙
+}
+
 // 🪐 初始化 3D 力学星系图核心配置
 window.setupGalaxyEngine = (elem) => {
     let lastClickTime = 0, clickTimeout = null;
@@ -29,24 +41,29 @@ window.setupGalaxyEngine = (elem) => {
     // 🚀 [V86.8] 色彩治理适配：从 CSS 变量读取 RGB 原始通道值以兼容 WebGL / Three.js 渲染器，杜绝 HSL/var 导致的黑屏故障
     const getColors = () => {
         const style = getComputedStyle(document.documentElement);
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         return {
-            purpleRgb: (style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim(),
-            cyanRgb: (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim()
+            purpleRgb: (style.getPropertyValue('--neon-purple-rgb') || style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim(),
+            cyanRgb: (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim(),
+            isLight
         };
     };
     
-    let { purpleRgb, cyanRgb } = getColors();
-    let neonPurple = `rgb(${purpleRgb})`;
-    let neonCyan = `rgb(${cyanRgb})`;
+    let { purpleRgb, cyanRgb, isLight } = getColors();
 
     const graph = ForceGraph3D()(elem)
         .width(elem.clientWidth || window.innerWidth || 1200)
         .height(elem.clientHeight || window.innerHeight || 800)
         .backgroundColor('rgba(0,0,0,0)')
-        .nodeColor(node => node.group === 'imprint' ? neonPurple : neonCyan)
+        // 🌟 [V130.0] 多色彩星球：基于连接度与节点类型分配 7 种渐变色系
+        .nodeColor(node => _getStarColor(node, isLight))
         .nodeResolution(24)
         .nodeRelSize(5)
-        .nodeVal(node => window._hoveredNode && node.id === window._hoveredNode.id ? 2.2 : 1.0)
+        .nodeVal(node => {
+            const links = node._linkCount || 0;
+            const isHovered = window._hoveredNode && node.id === window._hoveredNode.id;
+            return isHovered ? Math.max(1.5, Math.sqrt(links + 1) * 1.6) : Math.max(0.5, Math.sqrt(links + 1) * 0.8);
+        })
         .linkColor(link => {
             const isWikilink = link.type === 'wikilink';
             if (isWikilink && window._showWikilinks === false) return 'rgba(0,0,0,0)';
@@ -54,16 +71,22 @@ window.setupGalaxyEngine = (elem) => {
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
             if (!window._hoveredNode) {
-                // 静默状态：物理连线亮青色，语义连线暗紫色，拉开主次感
-                return isWikilink ? `rgba(${cyanRgb}, 0.35)` : `rgba(${purpleRgb}, 0.12)`;
+                // 静默状态：物理连线亮青色，语义连线暗紫色，拉开主次感（白底下适度提升透明度保证对比度）
+                const cyanAlpha = isLight ? 0.45 : 0.35;
+                const purpleAlpha = isLight ? 0.35 : 0.12;
+                return isWikilink ? `rgba(${cyanRgb}, ${cyanAlpha})` : `rgba(${purpleRgb}, ${purpleAlpha})`;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
             if (isConnected) {
                 // 激活状态下：物理连线极亮，语义连线亮紫以呈现高维交织感
-                return isWikilink ? `rgba(${cyanRgb}, 0.95)` : `rgba(${purpleRgb}, 0.75)`;
+                const cyanActiveAlpha = isLight ? 0.95 : 0.95;
+                const purpleActiveAlpha = isLight ? 0.85 : 0.75;
+                return isWikilink ? `rgba(${cyanRgb}, ${cyanActiveAlpha})` : `rgba(${purpleRgb}, ${purpleActiveAlpha})`;
             }
             // 未激活连线：物理和语义均降为极弱半透明，聚焦当前节点网络
-            return isWikilink ? `rgba(${cyanRgb}, 0.02)` : `rgba(${purpleRgb}, 0.01)`;
+            const cyanDimAlpha = isLight ? 0.04 : 0.02;
+            const purpleDimAlpha = isLight ? 0.03 : 0.01;
+            return isWikilink ? `rgba(${cyanRgb}, ${cyanDimAlpha})` : `rgba(${purpleRgb}, ${purpleDimAlpha})`;
         })
         .linkWidth(link => {
             const isWikilink = link.type === 'wikilink';
@@ -121,6 +144,7 @@ window.setupGalaxyEngine = (elem) => {
             // 触发 3D 渲染器对节点和连线高亮/脉冲属性的快速增量更新评估，保证 WebGL 极速响应
             if (window.galaxyGraph) {
                 window.galaxyGraph
+                    .nodeColor(window.galaxyGraph.nodeColor())
                     .nodeVal(window.galaxyGraph.nodeVal())
                     .linkColor(window.galaxyGraph.linkColor())
                     .linkWidth(window.galaxyGraph.linkWidth())
@@ -128,7 +152,7 @@ window.setupGalaxyEngine = (elem) => {
                     .linkDirectionalParticleWidth(window.galaxyGraph.linkDirectionalParticleWidth())
                     .linkDirectionalParticleSpeed(window.galaxyGraph.linkDirectionalParticleSpeed());
             }
-            // 🏷️ 瞬间触发标签同步，让“雷达显影特赦标签”能够以 0 毫秒延迟显影
+            // 🏷️ 瞬间触发标签同步，让"雷达显影特赦标签"能够以 0 毫秒延迟显影
             if (typeof window.syncGalaxyLabels === 'function') {
                 window.syncGalaxyLabels();
             }
@@ -196,15 +220,39 @@ window.setupGalaxyEngine = (elem) => {
     const linkForce = graph.d3Force('link');
     if (linkForce) linkForce.distance(80).strength(0.4);
 
+    // 🌟 [V130.0] 注入 UnrealBloom 辉光后处理管线
+    if (window.THREE && window.THREE.UnrealBloomPass) {
+        try {
+            const bloomPass = new window.THREE.UnrealBloomPass(
+                new window.THREE.Vector2(elem.clientWidth || 1200, elem.clientHeight || 800),
+                isLight ? 0.6 : 1.5,   // strength: 亮色模式降低辉光强度
+                0.8,                   // radius: 辉光扩散半径
+                isLight ? 0.4 : 0.1    // threshold: 亮色模式提高阈值，避免画面过曝
+            );
+            graph.postProcessingComposer().addPass(bloomPass);
+            window._galaxyBloomPass = bloomPass;
+            console.log('🌟 [Bloom] UnrealBloomPass 辉光后处理已注入', isLight ? '(亮色模式)' : '(暗色模式)');
+        } catch (e) {
+            console.warn('🌟 [Bloom] 辉光后处理注入失败，降级为无辉光模式:', e.message);
+        }
+    } else {
+        console.warn('🌟 [Bloom] UnrealBloomPass 未加载，使用默认渲染');
+    }
+
     // 🌗 [Theme] 昼夜模式深度联动：实时响应光影切换
     window.addEventListener('themeModeChanged', () => {
         const newColors = getColors();
         purpleRgb = newColors.purpleRgb;
         cyanRgb = newColors.cyanRgb;
-        neonPurple = `rgb(${purpleRgb})`;
-        neonCyan = `rgb(${cyanRgb})`;
+        isLight = newColors.isLight;
         
-        // 强制引擎基于新闭包变量重绘色彩
+        // 🌟 [V130.0] 动态调整 Bloom 参数适配昼夜模式
+        if (window._galaxyBloomPass) {
+            window._galaxyBloomPass.strength = isLight ? 0.6 : 1.5;
+            window._galaxyBloomPass.threshold = isLight ? 0.4 : 0.1;
+        }
+
+        // 强制引擎基于新闭包变量重绘色彩与节点
         graph.nodeColor(graph.nodeColor());
         graph.linkColor(graph.linkColor());
     });

@@ -114,8 +114,19 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
         `;
     } else if (id === 'zhihu') {
         return `
-            ${renderSettingsItem('用户令牌 (Token)', `syndication.zhihu.token`, cfg.token, 'password', { placeholder: "请输入知乎个人访问令牌 (Access Token)" })}
-            ${renderSettingsItem('专栏 ID (Column ID)', `syndication.zhihu.column_id`, cfg.column_id, 'text', { placeholder: "请输入知乎专栏 ID (如 column-id)" })}
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 知乎专栏直达与令牌说明</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                    知乎同步支持通过专栏发布文章。请在下方填入专栏唯一英文/拼音标识（例如 <code>my-column</code>）及个人访问令牌。
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 6px;">
+                    <a href="https://www.zhihu.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达知乎首页</a>
+                </div>
+            </div>
+            ${renderSettingsItem('用户令牌 (Token)', `syndication.zhihu.token`, cfg.token, 'password', { placeholder: "请输入知乎个人访问令牌 (Access Token)", description: "用于安全鉴权与知乎专栏草稿/正式发布的访问令牌。" })}
+            ${renderSettingsItem('专栏 ID (Column ID)', `syndication.zhihu.column_id`, cfg.column_id, 'text', { placeholder: "例如: column-id 或专栏后缀路径", description: "知乎专栏链接中的唯一英文/拼音标识（如 zhihu.com/column/xxx 中的 xxx）。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.zhihu.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}
@@ -124,23 +135,34 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
         return `
             <div class="api-token-helper">
                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <span>💡 Juejin Token 直达链接</span>
+                    <span>💡 稀土掘金 Token 直达链接</span>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 2px;">
                     <a href="https://juejin.cn/user/settings/key" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达掘金 API Key 申请页</a>
                 </div>
             </div>
-            ${renderSettingsItem('接口访问 Token (API Token)', `syndication.juejin.api_token`, cfg.api_token, 'password', { placeholder: "请输入掘金 API 访问令牌 (二选一)" })}
-            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.juejin.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入掘金 Cookie 凭据 (二选一)", rows: 2 })}
+            ${renderSettingsItem('接口访问 Token (API Token)', `syndication.juejin.api_token`, cfg.api_token, 'password', { placeholder: "请输入掘金 API 访问令牌 (二选一)", description: "用于发布文章至掘金社区的 API 访问凭证（与下方登录 Cookie 二选一）。" })}
+            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.juejin.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入掘金 Cookie 凭据 (二选一)", rows: 2, description: "掘金网页端登录后的 Cookie 字符串凭证（与上方 Token 二选一）。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.juejin.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}
         `;
     } else if (id === 'substack') {
         return `
-            ${renderSettingsItem('Substack 主页 URL', `syndication.substack.url`, cfg.url, 'text', { placeholder: "例如: https://myname.substack.com" })}
-            ${renderSettingsItem('API 令牌 (API Key)', `syndication.substack.api_key`, cfg.api_key, 'password', { placeholder: "请输入 Substack API 密钥 (二选一)" })}
-            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.substack.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 Substack sid Cookie 凭证 (二选一)", rows: 2 })}
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 Substack 专栏直达与凭证说明</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                    Substack 自动化排版分发：填入您的 Substack 专栏主页 URL 与 sid 登录凭证或 API Key。
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 6px;">
+                    <a href="https://substack.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 Substack 官网</a>
+                </div>
+            </div>
+            ${renderSettingsItem('Substack 主页 URL', `syndication.substack.url`, cfg.url, 'text', { placeholder: "例如: https://myname.substack.com", description: "您的 Substack 专栏公开访问主页完整地址。" })}
+            ${renderSettingsItem('API 令牌 (API Key)', `syndication.substack.api_key`, cfg.api_key, 'password', { placeholder: "请输入 Substack API 密钥 (二选一)", description: "Substack 官方或第三方扩展 API 密钥（与下方 Cookie 二选一）。" })}
+            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.substack.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 Substack sid Cookie 凭证 (二选一)", rows: 2, description: "Substack 浏览器端登录会话中的 connect.sid Cookie 凭证。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.substack.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}
@@ -262,8 +284,8 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                     <a href="https://mp.csdn.net" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 CSDN 创作者中心</a>
                 </div>
             </div>
-            ${renderSettingsItem('用户 Token (X-CSDN-Token)', `syndication.csdn.token`, cfg.token, 'password', { placeholder: "请输入 CSDN 访问令牌 (二选一)" })}
-            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.csdn.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 CSDN 登录 Cookie 凭据 (二选一)", rows: 2 })}
+            ${renderSettingsItem('用户 Token (X-CSDN-Token)', `syndication.csdn.token`, cfg.token, 'password', { placeholder: "请输入 CSDN 访问令牌 (二选一)", description: "CSDN 开放平台或创作者接口专属 Token（与下方 Cookie 二选一）。" })}
+            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.csdn.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 CSDN 登录 Cookie 凭据 (二选一)", rows: 2, description: "网页登录 CSDN 后包含 UserName 与 UserToken 的 Cookie 字符串凭证。" })}
             ${renderSettingsItem('默认存为草稿', `syndication.csdn.save_as_draft`, cfg.save_as_draft !== false, 'checkbox', { description: "勾选表示保存至 CSDN 草稿箱；取消勾选表示直接公开发布。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.csdn.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
@@ -279,8 +301,8 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                     <a href="https://i.cnblogs.com/settings" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达博客园设置页</a>
                 </div>
             </div>
-            ${renderSettingsItem('访问令牌 (Bearer Token)', `syndication.cnblogs.token`, cfg.token || cfg.bearer_token, 'password', { placeholder: "请输入博客园 Personal Access Token" })}
-            ${renderSettingsItem('博客标识 (Blog App)', `syndication.cnblogs.blog_app`, cfg.blog_app, 'text', { placeholder: "例如: your-blog-name (博客园后缀标识)" })}
+            ${renderSettingsItem('访问令牌 (Bearer Token)', `syndication.cnblogs.token`, cfg.token || cfg.bearer_token, 'password', { placeholder: "请输入博客园 Personal Access Token", description: "登录博客园个人后台 -> 设置 -> 申请 Personal Access Token 并粘贴至此。" })}
+            ${renderSettingsItem('博客标识 (Blog App)', `syndication.cnblogs.blog_app`, cfg.blog_app, 'text', { placeholder: "例如: your-blog-name (博客园后缀标识)", description: "您的博客园个人主页后缀标识（例如 cnblogs.com/xxx 中的 xxx）。" })}
             ${renderSettingsItem('默认存为草稿', `syndication.cnblogs.save_as_draft`, cfg.save_as_draft !== false, 'checkbox', { description: "勾选表示保存为未发布的草稿文章。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.cnblogs.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
@@ -296,8 +318,8 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                     <a href="https://member.bilibili.com/platform/article-up" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 B 站专栏投稿页面</a>
                 </div>
             </div>
-            ${renderSettingsItem('SESSDATA (Cookie 核心凭据)', `syndication.bilibili.sessdata`, cfg.sessdata, 'password', { placeholder: "请输入 B 站登录凭据 SESSDATA" })}
-            ${renderSettingsItem('CSRF 校验值 (bili_jct)', `syndication.bilibili.bili_jct`, cfg.bili_jct, 'password', { placeholder: "请输入 B 站 bili_jct 校验值" })}
+            ${renderSettingsItem('SESSDATA (Cookie 核心凭据)', `syndication.bilibili.sessdata`, cfg.sessdata, 'password', { placeholder: "请输入 B 站登录凭据 SESSDATA", description: "浏览器登录 bilibili.com 后 Cookie 中的 SESSDATA 身份凭据。" })}
+            ${renderSettingsItem('CSRF 校验值 (bili_jct)', `syndication.bilibili.bili_jct`, cfg.bili_jct, 'password', { placeholder: "请输入 B 站 bili_jct 校验值", description: "浏览器登录 bilibili.com 后 Cookie 中的 bili_jct 防跨站请求伪造令牌。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.bilibili.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}
@@ -312,8 +334,8 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                     <a href="https://segmentfault.com/user/settings" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达思否个人设置页</a>
                 </div>
             </div>
-            ${renderSettingsItem('访问令牌 (API Token)', `syndication.segmentfault.token`, cfg.token, 'password', { placeholder: "请输入 SegmentFault 访问令牌 (二选一)" })}
-            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.segmentfault.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 SegmentFault 登录 Cookie (二选一)", rows: 2 })}
+            ${renderSettingsItem('访问令牌 (API Token)', `syndication.segmentfault.token`, cfg.token, 'password', { placeholder: "请输入 SegmentFault 访问令牌 (二选一)", description: "用于调用 SegmentFault 专栏发布 API 的 Token（与下方 Cookie 二选一）。" })}
+            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.segmentfault.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入 SegmentFault 登录 Cookie (二选一)", rows: 2, description: "网页登录思否社区后的 Cookie 身份凭据字符串。" })}
             ${renderSettingsItem('默认存为草稿', `syndication.segmentfault.save_as_draft`, cfg.save_as_draft !== false, 'checkbox', { description: "勾选表示保存至思否草稿箱；取消勾选直接发布。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.segmentfault.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
@@ -329,7 +351,7 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                     <a href="https://www.oschina.net/openapi" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达开源中国开放平台</a>
                 </div>
             </div>
-            ${renderSettingsItem('开放平台令牌 (Access Token)', `syndication.oschina.access_token`, cfg.access_token || cfg.token, 'password', { placeholder: "请输入开源中国 OpenAPI Access Token" })}
+            ${renderSettingsItem('开放平台令牌 (Access Token)', `syndication.oschina.access_token`, cfg.access_token || cfg.token, 'password', { placeholder: "请输入开源中国 OpenAPI Access Token", description: "在开源中国开放平台申请并通过 OAuth 授权获得的 Access Token。" })}
             ${renderSettingsItem('默认存为草稿', `syndication.oschina.save_as_draft`, cfg.save_as_draft !== false, 'checkbox', { description: "勾选表示暂存为草稿；取消勾选直接公开。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.oschina.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}

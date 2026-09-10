@@ -161,6 +161,9 @@ window.showView = async (id, subId) => {
     }
 };
 
+// 🌟 [V130.1] 仅首次页面加载时才根据偏好自动弹出工作台，后续导航点击切换不弹
+window._isInitialRouting = true;
+
 window.handleRouting = async () => {
     const rawHash = window.location.hash.replace('#/', '');
     const [viewId, routeSubId] = rawHash.split('/');
@@ -170,16 +173,22 @@ window.handleRouting = async () => {
         window.pendingSubView = null;
         if (window.currentView === viewId && !routeSubId) return; // Prevent duplicate execution from programmatic hash changes
         await window.showView(viewId, subId);
-        const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
-        if (viewId === 'overview' && shouldAutoOpen && typeof window.toggleHub === 'function') {
-            window.toggleHub('show');
+        // 仅首次加载时尊重偏好自动弹出，后续导航点击不弹
+        if (window._isInitialRouting && viewId === 'overview') {
+            const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
+            if (shouldAutoOpen && typeof window.toggleHub === 'function') {
+                window.toggleHub('show');
+            }
         }
     } else {
         await window.showView('overview');
-        const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
-        if (shouldAutoOpen && typeof window.toggleHub === 'function') {
-            window.toggleHub('show');
+        if (window._isInitialRouting) {
+            const shouldAutoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
+            if (shouldAutoOpen && typeof window.toggleHub === 'function') {
+                window.toggleHub('show');
+            }
         }
     }
+    window._isInitialRouting = false;
 };
 window.addEventListener('hashchange', window.handleRouting);
