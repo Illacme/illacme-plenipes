@@ -136,6 +136,9 @@ def load_syndication_content_and_metadata(
                             cand_content = cf.read()
                         cand_fm, cand_body = extract_frontmatter(cand_content)
                         if cand_body and cand_body.strip():
+                            from core.editorial.ast_shards.html_sanitizer import HtmlSanitizer
+                            if HtmlSanitizer.is_full_html_page(cand_body):
+                                cand_body, _ = HtmlSanitizer.strip_html_boilerplate(cand_body)
                             translated_body = cand_body
                             if cand_fm:
                                 fm.update(cand_fm)

@@ -138,13 +138,6 @@ class ContentSyndicator:
             if not is_dry_run and self.meta and rel_path:
                 self.meta.mark_syndication_success(rel_path, target_id)
 
-            try:
-                processor = MarkdownASTProcessor()
-                content = processor.adapt_format(content, plugin.PLUGIN_ID if hasattr(plugin, 'PLUGIN_ID') else target_id)
-            except Exception as pe:
-                tlog.warning(f"⚠️ [分发引擎] 单通道格式转换异常: {pe}")
-
-            # 🚀 [V120.0] 全渠道生命周期物权检索：判断是否存在远程 ID 与内容哈希变动
             import hashlib
             from core.utils.language_hub import LanguageHub
             cur_lang = lang_code
@@ -154,6 +147,28 @@ class ContentSyndicator:
                     fm=metadata,
                     default_fallback="zh-Hans"
                 )
+
+            # 🚀 [V121.0] AST 全渠道自适应清洗与元数据合规治理 (剥离全页外壳、补全绝对链接、治理 Tags)
+            try:
+                processor = MarkdownASTProcessor()
+                content = processor.adapt_format(
+                    content,
+                    target_platform=getattr(plugin, 'PLUGIN_ID', target_id),
+                    site_url=getattr(self, 'site_url', ''),
+                    slug=slug,
+                    fm=metadata
+                )
+                metadata = processor.sanitize_metadata(
+                    metadata=metadata,
+                    target_platform=getattr(plugin, 'PLUGIN_ID', target_id),
+                    site_url=getattr(self, 'site_url', ''),
+                    slug=slug,
+                    doc_id=rel_path,
+                    lang_code=cur_lang
+                )
+            except Exception as pe:
+                tlog.warning(f"⚠️ [分发引擎] 单通道格式转换异常: {pe}")
+
             content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
             source_hash = metadata.get('source_hash', content_hash) if metadata else content_hash
             existing_record = self.meta.get_syndication_record(rel_path, cur_lang, target_id) if (self.meta and rel_path) else None

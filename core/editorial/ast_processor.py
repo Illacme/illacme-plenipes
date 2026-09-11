@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Illacme-plenipes Core - Editorial AST Processor (文稿格式与资产处理器)
-职责：对文稿进行分发前格式规约，处理相对路径资产上云与特定渠道的版式降级。
+Illacme-plenipes Core - Editorial AST Processor (文稿格式与资产门面处理器)
+职责：对文稿进行分发前格式规约，处理相对路径资产上云、整页外壳清洗与全渠道排版降级。
 🛡️ [SOP-01] 物理行数限制：保持在 300 行以内。
 """
 
 import os
 import re
-from typing import Callable
+from typing import Callable, Dict, Any
+from core.utils.tracing import tlog
+from .ast_shards import HtmlSanitizer, GfmNormalizer, MetadataSanitizer, LandingPageTransformer
 
 class MarkdownASTProcessor:
     def __init__(self):
@@ -27,10 +29,7 @@ class MarkdownASTProcessor:
         def replace_img(match):
             alt_text = match.group(1)
             rel_path = match.group(2).strip()
-            # 剔除可能存在的查询参数
             clean_path = rel_path.split('?')[0]
-            
-            # 定位本地物理路径
             abs_path = os.path.normpath(os.path.join(doc_dir, clean_path))
             if os.path.exists(abs_path) and os.path.isfile(abs_path):
                 try:
@@ -43,10 +42,8 @@ class MarkdownASTProcessor:
                     pass
             return match.group(0)
 
-        # 1. 匹配替换标准 Markdown 图片
         content = self.img_pattern.sub(replace_img, content)
 
-        # 2. 匹配替换 HTML img 标签 中的相对路径图片
         def replace_html_img(match):
             full_tag = match.group(0)
             rel_path = match.group(1).strip()
@@ -66,15 +63,48 @@ class MarkdownASTProcessor:
         content = self.html_img_pattern.sub(replace_html_img, content)
         return content
 
-    def adapt_format(self, content: str, target_platform: str) -> str:
+    def adapt_format(
+        self,
+        content: str,
+        target_platform: str,
+        site_url: str = "",
+        slug: str = "",
+        fm: Dict[str, Any] = None
+    ) -> str:
         """
-        多平台版式降级规范化：针对特定发布平台对正文进行排版微调。
-        - Medium: 不支持 # (H1) 和 ## (H2)，需自动降级为 ### (H3)。
+        多平台版式深度规范化：
+        1. 针对整页 HTML 产物执行全页外壳剥离 (剔除 DOCTYPE, script, style, header, nav)；
+        2. 针对首页 (Landing Page) 执行营销组件 GFM 通告化转换；
+        3. 补全相对超链接为官方站点 Canonical 绝对 URL (消除 404，提升 SEO)；
+        4. 针对特定发布平台 (如 Medium 标题降级) 执行方言自适应。
         """
         if not content:
             return content
-            
+
         platform = (target_platform or "").lower()
+
+        # 1. 🚀 [外壳剥离] 侦测到整页网页骨架时，实时剥离
+        if HtmlSanitizer.is_full_html_page(content):
+            stripped_body, stripped_lines = HtmlSanitizer.strip_html_boilerplate(content)
+            if stripped_lines > 0:
+                tlog.info(f"🧹 [AST 语义净化] 侦测到整页网页外壳，已自动剔除脚本与全站导航 ({stripped_lines} 行)")
+            content = stripped_body
+
+        # 2. 🚀 [首页通告化] 针对首页布局执行结构化 GFM 转换
+        if LandingPageTransformer.is_landing_page(slug, fm):
+            title = (fm or {}).get("title", "")
+            content = LandingPageTransformer.transform_hero_components(content, title=title, site_url=site_url)
+
+        # 3. 🚀 [HTML 语义转换] 将零散 HTML 标签规范化为 GFM (保留 details/summary 等合法标签)
+        content = GfmNormalizer.html_to_clean_markdown(content)
+
+        # 4. 🚀 [外链绝对化] 补全超链接为官方 Canonical 绝对路径
+        if site_url:
+            content, link_count = GfmNormalizer.absolutize_links(content, site_url=site_url)
+            if link_count > 0:
+                tlog.info(f"🔗 [外链对正] 成功将 {link_count} 个相对链接对齐为官方站点 Canonical 绝对路径")
+
+        # 5. 🚀 [平台定制方言]
         if "medium" in platform:
             lines = content.split('\n')
             new_lines = []
@@ -84,6 +114,44 @@ class MarkdownASTProcessor:
                 elif line.startswith('## '):
                     line = '### ' + line[3:]
                 new_lines.append(line)
-            return '\n'.join(new_lines)
-            
+            content = '\n'.join(new_lines)
+
         return content
+
+    def sanitize_metadata(
+        self,
+        metadata: Dict[str, Any],
+        target_platform: str,
+        site_url: str = "",
+        slug: str = "",
+        doc_id: str = "",
+        lang_code: str = ""
+    ) -> Dict[str, Any]:
+        """
+        清洗并规范化社媒元数据：
+        - 标签合规化 (去特殊符号，截断)
+        - 封面图绝对化与公网验证 (防 422 报错)
+        - 注入 Canonical URL 原创物权声明
+        """
+        clean_fm = dict(metadata) if metadata else {}
+
+        # 1. 规范化标签
+        raw_tags = clean_fm.get("tags") or clean_fm.get("keywords") or []
+        clean_tags = MetadataSanitizer.sanitize_tags(raw_tags, max_tags=4, target_platform=target_platform)
+        clean_fm["tags"] = clean_tags
+
+        # 2. 规范化封面图
+        cover = MetadataSanitizer.resolve_cover_image(clean_fm, site_url=site_url)
+        if cover:
+            clean_fm["main_image"] = cover
+            clean_fm["cover_image"] = cover
+        elif "main_image" in clean_fm:
+            clean_fm.pop("main_image", None)
+
+        # 3. 注入 Canonical URL 原创声明
+        canonical = MetadataSanitizer.build_canonical_url(doc_id, slug, lang_code, site_url=site_url)
+        if canonical:
+            clean_fm["canonical_url"] = canonical
+            clean_fm["original_article_url"] = canonical
+
+        return clean_fm
