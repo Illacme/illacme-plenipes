@@ -72,7 +72,46 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
         )
 
         site_url = getattr(engine.config, "site_url", "")
-        sys_tuning = {"vault_root": getattr(engine, "vault_root", os.getcwd())}
+        if not site_url and hasattr(engine, "meta"):
+            egress = engine.meta.get_egress_status(doc_id) if hasattr(engine.meta, "get_egress_status") else {}
+            for h_id in ("github_pages", "vercel", "cloudflare_pages", "netlify"):
+                c_status = egress.get(h_id, {})
+                if isinstance(c_status, dict) and c_status.get("url"):
+                    from urllib.parse import urlparse
+                    parsed = urlparse(c_status.get("url"))
+                    if parsed.scheme and parsed.netloc:
+                        site_url = f"{parsed.scheme}://{parsed.netloc}"
+                        if h_id == "github_pages" and parsed.path:
+                            parts = [p for p in parsed.path.split('/') if p]
+                            if parts and not parts[0].endswith(('.html', '.htm', '.md')):
+                                site_url += f"/{parts[0]}"
+                        break
+
+        image_hosting_cfg = getattr(engine.config, "image_hosting", {}) or {}
+        if hasattr(image_hosting_cfg, "model_dump"):
+            image_hosting_cfg = image_hosting_cfg.model_dump()
+        elif hasattr(image_hosting_cfg, "dict"):
+            image_hosting_cfg = image_hosting_cfg.dict()
+        elif not isinstance(image_hosting_cfg, dict):
+            image_hosting_cfg = getattr(image_hosting_cfg, "__dict__", {})
+
+        pub_ctrl = getattr(engine.config, "publish_control", {})
+        if hasattr(pub_ctrl, "model_dump"):
+            pub_ctrl = pub_ctrl.model_dump()
+        elif hasattr(pub_ctrl, "dict"):
+            pub_ctrl = pub_ctrl.dict()
+        elif hasattr(pub_ctrl, "__dict__"):
+            pub_ctrl = pub_ctrl.__dict__
+        elif not isinstance(pub_ctrl, dict):
+            pub_ctrl = {}
+
+        sys_tuning = {
+            "vault_root": getattr(engine, "vault_root", os.getcwd()),
+            "image_hosting": image_hosting_cfg,
+            "site_url": site_url,
+            "paths": getattr(engine, "paths", {}),
+            "publish_control": pub_ctrl
+        }
         
         from core.syndication.hub import ContentSyndicator
         syndicator = ContentSyndicator(

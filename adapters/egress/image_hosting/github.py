@@ -29,10 +29,60 @@ class GitHubImageHost(BaseImageHost):
         self.path = self.config.get("path", "images").strip("/")
         self.cdn_url = self.config.get("cdn_url", "").rstrip("/")
 
+    def _resolve_repo(self):
+        """🚀 [V114.0] 零配置自动推导：若未显式指定 repo，优先继承 GitHub Pages 已绑定的仓库"""
+        if self.repo:
+            return self.repo
+        if not self.token:
+            return ""
+
+        import re
+        # 1. 尝试从上下文中的 GitHub Pages 配置提取
+        pub_ctrl = self.sys_tuning.get("publish_control", {})
+        if hasattr(pub_ctrl, "direct_upload"):
+            direct_upload = getattr(pub_ctrl, "direct_upload", {})
+        elif isinstance(pub_ctrl, dict):
+            direct_upload = pub_ctrl.get("direct_upload", {})
+        else:
+            direct_upload = {}
+
+        gh_pages = direct_upload.get("github_pages", {}) if isinstance(direct_upload, dict) else getattr(direct_upload, "github_pages", {})
+        if hasattr(gh_pages, "__dict__"):
+            gh_pages = gh_pages.__dict__
+        repo_url = gh_pages.get("repo_url", "") if isinstance(gh_pages, dict) else ""
+
+        if repo_url and "github.com" in repo_url:
+            m = re.search(r'github\.com[/:]([^/]+/[^/]+?)(?:\.git)?$', repo_url)
+            if m:
+                self.repo = m.group(1)
+                tlog.info(f"✨ [图床-GitHub] 自动继承 GitHub Pages 仓库: {self.repo}")
+                return self.repo
+
+        # 2. 通过 GitHub API /user 动态推导用户空间仓库
+        try:
+            resp = requests.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"token {self.token}", "User-Agent": "Illacme-Plenipes-Client"},
+                timeout=8
+            )
+            if resp.status_code == 200:
+                user_login = resp.json().get("login")
+                if user_login:
+                    self.repo = f"{user_login}/illacme-press"
+                    tlog.info(f"✨ [图床-GitHub] 零配置自动推导图床仓库: {self.repo}")
+                    return self.repo
+        except Exception:
+            pass
+
+        return ""
+
     def upload(self, local_path: str) -> str:
         """
         物理上传本地相对图片至 GitHub 仓库
         """
+        if not self.repo:
+            self._resolve_repo()
+
         if not self.repo or not self.token:
             tlog.warning("⚠️ GitHub 图床凭证/仓库未配置，跳过上传。")
             return None

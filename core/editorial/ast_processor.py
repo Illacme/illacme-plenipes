@@ -8,7 +8,7 @@ Illacme-plenipes Core - Editorial AST Processor (文稿格式与资产门面处�
 
 import os
 import re
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, Optional
 from core.utils.tracing import tlog
 from .ast_shards import HtmlSanitizer, GfmNormalizer, MetadataSanitizer, LandingPageTransformer
 
@@ -18,20 +18,52 @@ class MarkdownASTProcessor:
         self.img_pattern = re.compile(r'!\[(.*?)\]\(((?!https?://)(.*?))\)')
         # 匹配 HTML img src="path" 相对路径图片
         self.html_img_pattern = re.compile(r'<img[^>]+src=["\']((?!https?://)([^"\']+))["\']')
+        # 匹配 Obsidian 嵌入式图片语法 ![[image.png]] 或 ![[assets/pic.png|300]]
+        self.wiki_img_pattern = re.compile(r'!\[\[((?!https?://)([^\]|]+?))(?:\s*\|\s*([^\]]*))?\]\]')
+
+    def _locate_image(self, doc_dir: str, clean_path: str) -> Optional[str]:
+        """多级鲁棒寻址：在当前目录、文库根目录与全局资产目录中查找物理图片"""
+        stripped = clean_path.lstrip('/')
+        candidates = [
+            os.path.normpath(os.path.join(doc_dir, clean_path)),
+            os.path.normpath(os.path.join(doc_dir, stripped)),
+            os.path.normpath(os.path.join(doc_dir, "assets", os.path.basename(clean_path)))
+        ]
+        # 向上寻找文库根目录 (含有 .obsidian 或名为 vault)
+        cur = os.path.abspath(doc_dir)
+        vault_root = None
+        while cur and cur != os.path.dirname(cur):
+            if os.path.exists(os.path.join(cur, ".obsidian")) or os.path.basename(cur).lower() == "vault":
+                vault_root = cur
+                break
+            cur = os.path.dirname(cur)
+
+        if vault_root:
+            candidates.extend([
+                os.path.normpath(os.path.join(vault_root, stripped)),
+                os.path.normpath(os.path.join(vault_root, "assets", os.path.basename(clean_path))),
+                os.path.normpath(os.path.join(vault_root, "static", os.path.basename(clean_path)))
+            ])
+
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        return None
 
     def process_images(self, content: str, doc_dir: str, upload_fn: Callable[[str], str]) -> str:
         """
-        提取正文中的相对路径图片，转换为绝对物理路径，调用 upload_fn 回调上传并原地替换链接。
+        提取正文中的相对路径图片与 Obsidian 嵌入图片，物理寻址后调用 upload_fn 回调上传并原地替换链接。
         """
         if not content:
             return content
 
+        # 1. 处理标准 Markdown 图片语法 ![alt](rel_path)
         def replace_img(match):
             alt_text = match.group(1)
             rel_path = match.group(2).strip()
             clean_path = rel_path.split('?')[0]
-            abs_path = os.path.normpath(os.path.join(doc_dir, clean_path))
-            if os.path.exists(abs_path) and os.path.isfile(abs_path):
+            abs_path = self._locate_image(doc_dir, clean_path)
+            if abs_path:
                 try:
                     public_url = upload_fn(abs_path)
                     if public_url:
@@ -44,12 +76,13 @@ class MarkdownASTProcessor:
 
         content = self.img_pattern.sub(replace_img, content)
 
+        # 2. 处理 HTML 格式 <img> 标签
         def replace_html_img(match):
             full_tag = match.group(0)
             rel_path = match.group(1).strip()
             clean_path = rel_path.split('?')[0]
-            abs_path = os.path.normpath(os.path.join(doc_dir, clean_path))
-            if os.path.exists(abs_path) and os.path.isfile(abs_path):
+            abs_path = self._locate_image(doc_dir, clean_path)
+            if abs_path:
                 try:
                     public_url = upload_fn(abs_path)
                     if public_url:
@@ -61,6 +94,26 @@ class MarkdownASTProcessor:
             return full_tag
 
         content = self.html_img_pattern.sub(replace_html_img, content)
+
+        # 3. 🚀 [V114.0] 处理 Obsidian Wiki 嵌入图片语法 ![[image.png]]
+        def replace_wiki_img(match):
+            full_tag = match.group(0)
+            rel_path = match.group(1).strip()
+            caption = match.group(3) or os.path.basename(rel_path)
+            clean_path = rel_path.split('?')[0]
+            abs_path = self._locate_image(doc_dir, clean_path)
+            if abs_path:
+                try:
+                    public_url = upload_fn(abs_path)
+                    if public_url:
+                        query = rel_path.split('?')[1] if '?' in rel_path else ''
+                        final_url = f"{public_url}?{query}" if query else public_url
+                        return f"![{caption.strip()}]({final_url})"
+                except Exception:
+                    pass
+            return full_tag
+
+        content = self.wiki_img_pattern.sub(replace_wiki_img, content)
         return content
 
     def adapt_format(

@@ -190,6 +190,7 @@ class OrchestratedExecutor(concurrent.futures.Executor):
                             # 🛡️ 已经被外部取消，安全忽略
                             pass
                 except Exception as e:
+                    tlog.error(f"❌ [TaskOrchestrator] 任务 '{task.name}' 异常: {e}", exc_info=True)
                     try:
                         if not task.future.cancelled():
                             task.future.set_exception(e)
