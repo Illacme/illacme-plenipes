@@ -105,19 +105,33 @@ class SQLiteSyndicationMixin:
     def get_syndication_record(self, rel_path: str, lang_code: str, target_id: str) -> dict:
         candidates = self._normalize_paths_for_query(rel_path)
         placeholders = ','.join('?' * len(candidates))
-        row = self._get_conn().execute(
-            f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
-            (*candidates, lang_code, target_id)
-        ).fetchone()
+        clean_lang = (lang_code or '').strip()
+        if clean_lang and clean_lang.lower() in ('auto', 'all', 'any', '*', 'source'):
+            clean_lang = None
+
+        if clean_lang:
+            row = self._get_conn().execute(
+                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND (lang_code = ? OR lang_code LIKE ?) AND target_id = ?",
+                (*candidates, clean_lang, f"{clean_lang}-%", target_id)
+            ).fetchone()
+        else:
+            row = self._get_conn().execute(
+                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND target_id = ? ORDER BY id DESC",
+                (*candidates, target_id)
+            ).fetchone()
         return dict(row) if row else None
 
     def list_syndication_records_for_doc(self, rel_path: str, lang_code: str = None) -> list:
         candidates = self._normalize_paths_for_query(rel_path)
         placeholders = ','.join('?' * len(candidates))
-        if lang_code:
+        clean_lang = (lang_code or '').strip()
+        if clean_lang and clean_lang.lower() in ('auto', 'all', 'any', '*', 'source'):
+            clean_lang = None
+
+        if clean_lang:
             rows = self._get_conn().execute(
-                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ?",
-                (*candidates, lang_code)
+                f"SELECT * FROM syndication_records WHERE rel_path IN ({placeholders}) AND (lang_code = ? OR lang_code LIKE ?)",
+                (*candidates, clean_lang, f"{clean_lang}-%")
             ).fetchall()
         else:
             rows = self._get_conn().execute(
@@ -129,8 +143,18 @@ class SQLiteSyndicationMixin:
     def delete_syndication_record(self, rel_path: str, lang_code: str, target_id: str):
         candidates = self._normalize_paths_for_query(rel_path)
         placeholders = ','.join('?' * len(candidates))
+        clean_lang = (lang_code or '').strip()
+        if clean_lang and clean_lang.lower() in ('auto', 'all', 'any', '*', 'source'):
+            clean_lang = None
+
         with self._get_conn() as conn:
-            conn.execute(
-                f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND lang_code = ? AND target_id = ?",
-                (*candidates, lang_code, target_id)
-            )
+            if clean_lang:
+                conn.execute(
+                    f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND (lang_code = ? OR lang_code LIKE ?) AND target_id = ?",
+                    (*candidates, clean_lang, f"{clean_lang}-%", target_id)
+                )
+            else:
+                conn.execute(
+                    f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND target_id = ?",
+                    (*candidates, target_id)
+                )

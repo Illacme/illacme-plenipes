@@ -14,13 +14,32 @@ from core.utils.tracing import tlog
 def get_enabled_syndication_channels(syndication_cfg: dict, target_channel: str = None) -> List[Tuple[str, dict]]:
     """找出已启用全局总开关或单篇手动指定的社交同步渠道"""
     enabled_syndication_channels = []
-    for chan_id, chan_cfg in syndication_cfg.items():
+    target_clean = str(target_channel).lower().replace('_', '').replace('-', '') if target_channel else None
+
+    for chan_id, chan_cfg in (syndication_cfg or {}).items():
         if isinstance(chan_cfg, dict):
-            # 手动单篇定向广播时，只要该渠道在配置中有 api_key / token 凭据，直接放行支持定向广播
-            has_cred = bool(chan_cfg.get("api_key") or chan_cfg.get("token") or chan_cfg.get("webhook_url"))
-            is_match = not target_channel or chan_id == target_channel or chan_id.replace('_', '') == str(target_channel).replace('_', '')
-            if is_match and (chan_cfg.get("enabled") or has_cred):
+            chan_clean = str(chan_id).lower().replace('_', '').replace('-', '')
+            is_match = not target_channel or chan_id == target_channel or chan_clean == target_clean
+            
+            # 手动单篇定向广播时，只要该渠道在配置中有凭据（微信 app_id/app_secret、Cookie、Token 等），或用户显式定向指定，直接放行
+            has_cred = bool(
+                chan_cfg.get("api_key") or
+                chan_cfg.get("token") or
+                chan_cfg.get("webhook_url") or
+                chan_cfg.get("cookie") or
+                chan_cfg.get("sessdata") or
+                (chan_cfg.get("app_id") and chan_cfg.get("app_secret")) or
+                chan_cfg.get("app_id") or
+                chan_cfg.get("integration_token") or
+                chan_cfg.get("admin_api_key")
+            )
+            if is_match and (chan_cfg.get("enabled") or has_cred or (target_channel and is_match)):
                 enabled_syndication_channels.append((chan_id, chan_cfg))
+
+    # 🚀 若用户在前端显式指定了 target_channel 但配置中未定义该键，注入默认配置项让其能够执行并触发诊断自愈
+    if target_channel and not any(c[0] == target_channel or c[0].replace('_', '').replace('-', '') == target_clean for c in enabled_syndication_channels):
+        enabled_syndication_channels.append((target_channel, {}))
+
     return enabled_syndication_channels
 
 def load_syndication_content_and_metadata(
@@ -42,6 +61,9 @@ def load_syndication_content_and_metadata(
         content = f.read()
         
     fm, body = extract_frontmatter(content)
+    fm["doc_dir"] = os.path.dirname(source_path)
+    fm["file_path"] = source_path
+    fm["vault_root"] = getattr(engine, "vault_root", os.getcwd())
     # 🚀 [V113.2] 标题优先级链：frontmatter.title > 账本.title > Untitled
     broadcast_title = fm.get("title") or doc_info.get("title") or "Untitled"
 
@@ -64,7 +86,17 @@ def load_syndication_content_and_metadata(
     source_iso = LanguageHub.resolve_to_iso(source_lang)
     target_iso = LanguageHub.resolve_to_iso(target_slot_str)
 
-    if target_iso != source_iso and target_slot_str != source_lang:
+    # 🚀 判断是否确实需要切换至外语译文：
+    # 只要满足以下任意一条，即代表分发目标就是当前原稿母语本身（无需查找译文）：
+    # 1. 槽位代码相等；2. ISO 归一化后相等；3. 主语言族前缀一致 (如 zh 与 zh-Hans, en 与 en-US)
+    is_source_document = (
+        target_slot_str == source_lang or
+        (target_iso and source_iso and target_iso.lower() == source_iso.lower()) or
+        (target_slot_str.split('-')[0] == source_lang.split('-')[0]) or
+        (target_iso and source_iso and target_iso.split('-')[0].lower() == source_iso.split('-')[0].lower())
+    )
+
+    if not is_source_document:
         translations = doc_info.get("translations", {}) if isinstance(doc_info.get("translations"), dict) else {}
         target_trans = None
         for k, v in translations.items():

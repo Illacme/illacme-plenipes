@@ -5,7 +5,6 @@ Illacme-plenipes Core - Anthropic Messages Protocol Adapter
 职责：负责 Anthropic 风格 (Messages API) 的协议适配。
 🛡️ [V67.0]：独立协议族基类，处理 System Prompt 隔离与 Top-level 参数。
 """
-import requests
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 
@@ -15,16 +14,37 @@ class AnthropicCompatibleTranslator(BaseTranslator):
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        self._session = requests.Session()
+        self._session = self.init_session()
 
-    def build_anthropic_payload(self, system_prompt: str, user_content: str, params: dict) -> dict:
+    def build_anthropic_payload(self, system_prompt: str, user_content: str, params: dict, messages: list = None) -> dict:
         """核心契约：将通用请求转换为 Anthropic Messages 格式"""
+        anthropic_messages = []
+        anthropic_system = system_prompt
+        if isinstance(messages, list) and messages:
+            sys_texts = []
+            for m in messages:
+                if not isinstance(m, dict):
+                    continue
+                role = str(m.get("role", "")).lower()
+                c = m.get("content", "")
+                if not isinstance(c, str):
+                    c = str(c) if c is not None else ""
+                if role == "system":
+                    if c.strip():
+                        sys_texts.append(c.strip())
+                else:
+                    a_role = "assistant" if role in ["assistant", "model"] else "user"
+                    anthropic_messages.append({"role": a_role, "content": c if c.strip() else " "})
+            if sys_texts:
+                anthropic_system = "\n\n".join(sys_texts) if not anthropic_system else f"{anthropic_system}\n\n" + "\n\n".join(sys_texts)
+
+        if not anthropic_messages:
+            anthropic_messages = [{"role": "user", "content": user_content if user_content.strip() else " "}]
+
         return {
             "model": self.config.model,
-            "system": system_prompt, # Anthropic 强制 System 为顶层参数
-            "messages": [
-                {"role": "user", "content": user_content}
-            ],
+            "system": anthropic_system, # Anthropic 强制 System 为顶层参数
+            "messages": anthropic_messages,
             "max_tokens": params.get("max_tokens", 4096),
             "temperature": params.get("temperature", 0.7),
             **{k: v for k, v in params.items() if k not in ["max_tokens", "temperature"]}
@@ -39,10 +59,11 @@ class AnthropicCompatibleTranslator(BaseTranslator):
         anthropic_payload = self.build_anthropic_payload(
             payload.get("system", ""),
             payload.get("user", ""),
-            payload.get("params", {})
+            payload.get("params", {}),
+            payload.get("messages")
         )
         
-        resp = self._session.post(api_url, headers=headers, json=anthropic_payload, timeout=self.timeout)
+        resp = self._session.post(api_url, headers=headers, json=anthropic_payload, timeout=self.timeout, proxies=self.get_proxy_dict())
         resp.raise_for_status()
         
         data = resp.json()

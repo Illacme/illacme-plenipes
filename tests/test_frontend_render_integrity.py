@@ -15,7 +15,10 @@ def test_frontend_render_runtime_and_dom_integrity():
     // 1. 构造浏览器虚拟上下文
     global.document = {
         getElementById: () => ({ style: {}, classList: { add: ()=>{}, remove: ()=>{} } }),
-        querySelectorAll: () => []
+        querySelectorAll: () => [],
+        querySelector: () => null,
+        addEventListener: () => {},
+        removeEventListener: () => {}
     };
     global.window = {
         settingsData: {
@@ -66,7 +69,7 @@ def test_frontend_render_runtime_and_dom_integrity():
     eval(computeRenderCode);
 
     const fakeContainer = {};
-    window.ComputeUI.renderInfrastructureTabImpl(fakeContainer).then(() => {
+    window.ComputeUI.renderInfrastructureTabImpl(fakeContainer).then(async () => {
         const html = fakeContainer.innerHTML || '';
         if (!html.includes('class="node-grid"')) {
             throw new Error('Compute infrastructure DOM topology broken: missing div.node-grid');
@@ -177,9 +180,201 @@ def test_frontend_render_runtime_and_dom_integrity():
             throw new Error('Link Doctor card missing SSG theme badges');
         }
 
-        const blockRulesHtml = window.renderBlockRulesCategory();
-        if (!blockRulesHtml.includes('link-doctor-card-container')) {
-            throw new Error('renderBlockRulesCategory failed to embed Link Doctor card');
+        // 8. 验证 platforms.sensing_judger.js 与 plugins.render.cards.js 凭据判定与算力寻路沙箱
+        const judgerCode = fs.readFileSync('web/dashboard/js/plugins/platforms_shards/platforms.sensing_judger.js', 'utf8');
+        eval(judgerCode);
+        const cardsCode = fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.cards.js', 'utf8');
+        eval(cardsCode);
+
+        // 8.1 匿名免配图床 (Catbox)
+        const rCat = window.isPluginCredentialReady('catbox', 'image_hosting', {});
+        if (!rCat.ready || rCat.label !== '免配即用') throw new Error('Catbox anonymous readiness failed');
+
+        // 8.2 阿里云 OSS access_key_id / access_key_secret
+        const rOSS = window.isPluginCredentialReady('aliyun_oss', 'image_hosting', { access_key_id: 'LTAI5t', access_key_secret: 'sec' });
+        if (!rOSS.ready || !rOSS.label.includes('就绪')) throw new Error('Aliyun OSS credential readiness failed');
+
+        // 8.3 微信公众号 app_id / app_secret
+        const rWX = window.isPluginCredentialReady('wechat', 'publisher', { app_id: 'wx123', app_secret: 'sec' });
+        if (!rWX.ready || !rWX.label.includes('就绪')) throw new Error('WeChat credential readiness failed');
+
+        // 8.4 算力驱动路由感知
+        window.settingsData.translation = {
+            compute_nodes: {
+                'deepseek_node': { type: 'deepseek', api_key: 'sk-123', enabled: true }
+            }
+        };
+        const rProto = window.checkPluginConfiguredStatus({ id: 'deepseek', category: 'protocol', is_enabled: true });
+        if (!rProto.label.includes('就绪')) throw new Error('Protocol compute node status routing failed');
+
+        // 9. 验证 design.studio.js 提供商渲染与分类过滤器真实调用 (Rule 7)
+        const designStudioCode = fs.readFileSync('web/dashboard/js/design/design.studio.js', 'utf8');
+        eval(designStudioCode);
+        if (typeof window.buildDesignProvidersHtml !== 'function') throw new Error('buildDesignProvidersHtml is not defined');
+        if (typeof window.filterDesignProviders !== 'function') throw new Error('filterDesignProviders is not defined on window');
+        
+        const designHtml = window.buildDesignProvidersHtml();
+        if (!designHtml.includes('id="provider-category-filter"') || !designHtml.includes('id="provider-cards-grid"')) {
+            throw new Error('Design providers DOM topology missing filter or cards grid');
+        }
+        // 真实调用测试分类过滤，拦截 TypeError: window.filterDesignProviders is not a function
+        window.filterDesignProviders('cloud_api', { classList: { add: ()=>{}, remove: ()=>{} } });
+        // 10. 验证 syndicate.preview.js 全渠道高保真排版沉浸式 Modal 运行时与 DOM 拓扑 (Rule 7)
+        const syndicatePreviewCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.preview.js', 'utf8');
+        eval(syndicatePreviewCode);
+        const syndicateCoverCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.preview_cover.js', 'utf8');
+        eval(syndicateCoverCode);
+        if (typeof window.renderChannelCoverStudio !== 'function') throw new Error('renderChannelCoverStudio is not defined');
+        if (typeof window.bindViewportDragAndWheel !== 'function') throw new Error('bindViewportDragAndWheel is not defined');
+
+        // 测试真机封面取景器渲染 (Rule 7)
+        const mockCoverContainer = { innerHTML: '' };
+        window.renderChannelCoverStudio('wechat', mockCoverContainer, 'https://example.com/cover.jpg');
+        if (!mockCoverContainer.innerHTML.includes('channel-crop-viewport-wechat')) {
+            throw new Error('renderChannelCoverStudio missing viewport topology');
+        }
+        if (mockCoverContainer.innerHTML.includes('type="range"')) {
+            throw new Error('renderChannelCoverStudio should not contain redundant range sliders');
+        }
+        if (!mockCoverContainer.innerHTML.includes('channel-preview-focal-hint-wechat')) {
+            throw new Error('renderChannelCoverStudio missing focal hint capsule');
+        }
+        if (typeof window.openSyndicateLivePreviewModal !== 'function') throw new Error('openSyndicateLivePreviewModal is not defined');
+        if (typeof window.closeSyndicateLivePreviewModal !== 'function') throw new Error('closeSyndicateLivePreviewModal is not defined');
+        if (typeof window.switchSyndicatePreviewTarget !== 'function') throw new Error('switchSyndicatePreviewTarget is not defined');
+
+        let createdPreviewModal = null;
+        global.document.getElementById = (id) => null;
+        global.document.createElement = (tag) => {
+            createdPreviewModal = { id: '', style: {}, innerHTML: '', onclick: null };
+            return createdPreviewModal;
+        };
+        global.document.body = { appendChild: () => {} };
+        global.document.addEventListener = () => {};
+        global.document.removeEventListener = () => {};
+
+        window.currentSyndicatingTitle = '测试文稿';
+        window.openSyndicateLivePreviewModal();
+        if (!createdPreviewModal || !createdPreviewModal.innerHTML.includes('syndicate-preview-modal-card')) {
+            throw new Error('syndicate-preview-modal-card topology missing from modal');
+        }
+        if (!createdPreviewModal.innerHTML.includes('syndicate-modal-preview-tabs')) {
+            throw new Error('syndicate-modal-preview-tabs missing from modal');
+        }
+
+        // 真实调用 renderSyndicateCardPreview 拦截未声明变量 (Rule 7 ReferenceError 拦截)
+        const mockPreviewCardContainer = { innerHTML: '' };
+        const mockStatsSlot = { innerHTML: '' };
+        const mockActionsSlot = { innerHTML: '' };
+        global.document.getElementById = (id) => {
+            if (id === 'syndicate-card-preview-renderer') return mockPreviewCardContainer;
+            if (id === 'syndicate-modal-stats-capsule') return mockStatsSlot;
+            if (id === 'syndicate-modal-actions-slot') return mockActionsSlot;
+            return null;
+        };
+        window.fetchSyndicatePreviewData = async () => ({
+            status: 'success',
+            title: '测试',
+            rendered_html: '<h1>标题</h1><p>正文</p>',
+            rendered_markdown: '正文',
+            stats: { word_count: 100, reading_time_min: 1, footnotes_count: 0, title_length: 2 },
+            compliance: { platform_rules: '微信规则' }
+        });
+        await window.renderSyndicateCardPreview('wechat');
+        if (!mockPreviewCardContainer.innerHTML.includes('preview-viewport-chassis')) {
+            throw new Error('renderSyndicateCardPreview chassis topology missing');
+        }
+        await window.renderSyndicateCardPreview('xiaohongshu');
+        await window.renderSyndicateCardPreview('devto');
+
+        // 11. 验证 syndicate.render.js 抽屉三大骨架与分步状态机 (Rule 7)
+        const syndicateRenderCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.render.js', 'utf8');
+        eval(syndicateRenderCode);
+        if (typeof window.switchSyndicateDrawerStage !== 'function') throw new Error('switchSyndicateDrawerStage is not defined');
+
+        const mockConfigView = { style: {} };
+        const mockTelemetryView = { style: {} };
+        const mockFooter = { innerHTML: '' };
+        const mockCapsule = { innerHTML: '' };
+        global.document.getElementById = (id) => {
+            if (id === 'syndicate-config-stage-view') return mockConfigView;
+            if (id === 'syndicate-telemetry-stage-view') return mockTelemetryView;
+            if (id === 'article-syndicate-drawer-footer') return mockFooter;
+            if (id === 'syndicate-telemetry-summary-capsule') return mockCapsule;
+            return null;
+        };
+
+        window.switchSyndicateDrawerStage('running', { lang: 'zh', platformCount: 2 });
+        if (mockConfigView.style.display !== 'none' || mockTelemetryView.style.display !== 'flex') {
+            throw new Error('switchSyndicateDrawerStage running stage topology mismatch');
+        }
+        window.switchSyndicateDrawerStage('telemetry', { failedCount: 1, failedChannelsJson: '["wechat"]' });
+        if (!mockFooter.innerHTML.includes('修改配置') || !mockFooter.innerHTML.includes('一键重试失败')) {
+            throw new Error('switchSyndicateDrawerStage telemetry footer action mismatch');
+        }
+        // 12. 验证 syndicate.dispatch.js 真实推流与结果回填闭环 (Rule 7 TypeError / ReferenceError 拦截)
+        const syndicateDispatchCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.dispatch.js', 'utf8');
+        eval(syndicateDispatchCode);
+        if (typeof window.dispatchArticleSyndication !== 'function') throw new Error('dispatchArticleSyndication is not defined');
+
+        const mockProgressPanel = { style: {} };
+        const mockProgressTitle = { innerText: '' };
+        const mockProgressPercent = { innerText: '' };
+        const mockProgressBar = { style: {} };
+        const mockProgressDesc = { innerText: '' };
+        const mockResultsSlot = { innerHTML: '' };
+
+        global.document.getElementById = (id) => {
+            if (id === 'syndicate-config-stage-view') return mockConfigView;
+            if (id === 'syndicate-telemetry-stage-view') return mockTelemetryView;
+            if (id === 'article-syndicate-drawer-footer') return mockFooter;
+            if (id === 'syndicate-telemetry-summary-capsule') return mockCapsule;
+            if (id === 'syndicate-progress-panel') return mockProgressPanel;
+            if (id === 'syndicate-progress-title') return mockProgressTitle;
+            if (id === 'syndicate-progress-percent') return mockProgressPercent;
+            if (id === 'syndicate-progress-bar') return mockProgressBar;
+            if (id === 'syndicate-progress-desc') return mockProgressDesc;
+            if (id === 'syndicate-results-panel-slot') return mockResultsSlot;
+            return null;
+        };
+
+        global.document.querySelector = (sel) => {
+            if (sel === 'input[name="syndicate_lang"]:checked') return { value: 'auto' };
+            return null;
+        };
+        global.document.querySelectorAll = (sel) => {
+            if (sel === '.syndicate-platform-checkbox:checked') return [{ value: 'wechat' }, { value: 'juejin' }, { value: 'devto' }];
+            return [];
+        };
+
+        global.window.apiFetch = async (url) => {
+            if (url.includes('/api/vault/dispatch-status/')) {
+                return {
+                    doc_id: 'test.md',
+                    sync_matrix: [
+                        { locale: 'Auto', lang_code: 'ZH', status: 'published' },
+                        { channel_id: 'wechat', status: 'draft', artifact_url: 'https://mp.weixin.qq.com' },
+                        { channel_id: 'juejin', status: 'draft', artifact_url: 'https://juejin.cn/editor/drafts/123' },
+                        { channel_id: 'devto', status: 'failed', reason: '401 Unauthorized', diagnosis: { badge: '⚠️ 凭据失效', friendly_message: 'Token失效' } }
+                    ]
+                };
+            }
+            if (url.includes('/api/syndication/records/')) {
+                return { records: [] };
+            }
+            return { ok: true };
+        };
+        global.apiFetch = global.window.apiFetch;
+
+        await window.dispatchArticleSyndication('test.md');
+        if (!mockResultsSlot.innerHTML.includes('syndicate-results-panel')) {
+            throw new Error('dispatchArticleSyndication failed to render syndicate-results-panel');
+        }
+        if (!mockResultsSlot.innerHTML.includes('广播物理凭证终态分布')) {
+            throw new Error('dispatchArticleSyndication missing results distribution card');
+        }
+        if (!mockFooter.innerHTML.includes('修改配置')) {
+            throw new Error('dispatchArticleSyndication failed to switch footer to telemetry stage');
         }
 
         console.log('ALL_FRONTEND_RENDER_DOM_VERIFIED_SUCCESS');

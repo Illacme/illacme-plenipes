@@ -53,6 +53,7 @@ class HashnodeSyndicator(BaseSyndicator):
     """
     PLUGIN_ID = "hashnode"
     DISPLAY_NAME = "Hashnode"
+    ICON = "🔷"
     VERSION = "V2.0"
     DESCRIPTION = "同步至 Hashnode 全球博客社区，通过 GraphQL API 实现文章发布，支持 Publication 绑定与标签映射。"
 
@@ -105,7 +106,7 @@ class HashnodeSyndicator(BaseSyndicator):
             "variables": variables,
         }
 
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None, **kwargs):
         """执行物理推流到 Hashnode GraphQL API"""
         import time
         import random

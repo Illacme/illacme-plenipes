@@ -5,10 +5,17 @@ slug: ast-dialect-bridge
 route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
-description: 探索 Illacme Plenipes 如何通过 AST 抽象语法树无损转译 Obsidian Callouts、Mermaid 拓扑图、MathJax 公式与 MDX 组件，实现跨 8 大主题的零代码语法抹平。
-tags: [Showcase, AST, Markdown, Parser, Dialect, Transpiler]
+description: 探索 Illacme Plenipes 如何通过 AST 抽象语法树无损转译 Obsidian Callouts、Mermaid 拓扑图、MathJax
+  公式与 MDX 组件，实现跨 8 大主题的零代码语法抹平。
+tags:
+- Showcase
+- AST
+- Markdown
+- Parser
+- Dialect
+- Transpiler
+cover: /api/design/assets/covers/cover_5fcc8c910c06.jpg
 ---
-
 # 🌳 AST 多方言转译与跨框架桥接引擎
 
 > [!TIP]

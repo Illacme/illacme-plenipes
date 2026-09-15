@@ -83,3 +83,17 @@ def get_pulse():
     """获取治理中枢的心跳状态脉冲"""
     return get_pulse_impl()
 
+@router.post("/api/plugins/auto-capture-cookie")
+async def auto_capture_cookie(payload: dict):
+    """🪄 接收浏览器小书签或前端推送的 Cookie，自动核验身份并更新本地配置"""
+    from .context_shards.plugin_capture_ops import auto_capture_cookie_impl
+    return await auto_capture_cookie_impl(payload)
+
+@router.post("/api/plugins/auto-sniff-cookie")
+async def auto_sniff_cookie(payload: dict = None):
+    """🪄 自动从本地运行的 Chrome 浏览器中嗅探抓取掘金等网站的 HttpOnly Cookie 并自动点亮"""
+    from .context_shards.plugin_capture_ops import auto_sniff_local_browser_impl
+    return await auto_sniff_local_browser_impl(payload or {})
+
+
+

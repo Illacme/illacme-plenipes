@@ -1,4 +1,3 @@
-import requests
 import asyncio
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
@@ -15,7 +14,7 @@ class CohereTranslator(BaseTranslator):
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        self._session = requests.Session()
+        self._session = self.init_session()
 
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """实现 Cohere 协议的原子对话"""
@@ -24,7 +23,7 @@ class CohereTranslator(BaseTranslator):
         prompt = payload.get("user", "")
         body = {"message": prompt, "model": self.trans_cfg.model}
         try:
-            res = self._session.post(url, json=body, headers=headers, timeout=self.timeout)
+            res = self._session.post(url, json=body, headers=headers, timeout=self.timeout, proxies=self.get_proxy_dict())
             if res.status_code == 200:
                 return res.json().get('text', "No Text")
             return f"Cohere Error: {res.status_code}"

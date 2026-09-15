@@ -154,7 +154,7 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
     const description = options.description || (window.resolveSmartDescription ? window.resolveSmartDescription(label, path) : `设置当前服务所需的 ${label} 参数。`);
 
     const safeValue = (value === undefined || value === null) ? '' : value;
-    const requiredAttr = options.required ? 'required data-required="true"' : '';
+    const requiredAttr = options.required ? 'required data-required="true"' : (options.optional ? 'data-optional="true"' : '');
     const reqStar = options.required ? '<span style="color: #ff4d4f; font-weight: bold; margin-left: 2px;">*</span>' : '';
 
     if (type === 'select') {
@@ -175,6 +175,10 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
                 <button type="button" class="pwd-toggle-btn" onclick="window.togglePasswordVisibility(this)" title="切换明文/密文" style="position: absolute; right: 8px; background: transparent; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.7; transition: opacity 0.2s; padding: 2px 4px; color: var(--neon-cyan, #00f2fe);">👁️</button>
             </div>
         `;
+    } else if (type === 'textarea') {
+        const onchange = options.onchange || `updateConfigField('${path}', this.value)`;
+        const rowsAttr = options.rows ? `rows="${options.rows}"` : 'rows="3"';
+        inputHtml = `<textarea id="${id}" data-path="${path}" data-label="${label}" class="setting-input" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${rowsAttr} ${options.readonly ? 'readonly' : ''} ${requiredAttr} style="width: 100%; min-height: 60px; resize: vertical; font-family: monospace; font-size: 0.8rem; padding: 8px 10px; box-sizing: border-box;">${safeValue}</textarea>`;
     } else if (type === 'number') {
         const onchange = options.onchange || `updateConfigField('${path}', parseFloat(this.value))`;
         const minAttr = options.min !== undefined ? `min="${options.min}"` : '';
@@ -228,24 +232,24 @@ window.renderSettingsItem = (label, path, value, type = 'text', options = {}, ti
         inputHtml = `<input type="text" id="${id}" data-path="${path}" data-label="${label}" class="setting-input" value="${safeValue}" onchange="${onchange}" placeholder="${options.placeholder || ''}" ${options.readonly ? 'readonly' : ''} ${requiredAttr}>`;
     }
 
-    if (path && path.toLowerCase().includes('proxy')) {
-        const presetsHtml = typeof window.renderProxyPresetsHtml === 'function' ? window.renderProxyPresetsHtml() : '';
-        inputHtml += presetsHtml;
-    }
+    const isProxyField = Boolean(path && path.toLowerCase().includes('proxy'));
+    const proxyPresetsHtml = (isProxyField && typeof window.renderProxyPresetsHtml === 'function') ? window.renderProxyPresetsHtml(safeValue) : '';
 
     const alignStyle = (type === 'checkbox' || type === 'select' || type === 'number') ? 'align-items: flex-end;' : 'align-items: stretch;';
+    const wrapStyle = isProxyField ? 'flex-wrap: wrap; row-gap: 4px;' : '';
     return `
-        <div class="setting-row level-${tier}">
-            <div class="setting-info" style="flex: 2; min-width: 280px; max-width: 70%;">
+        <div class="setting-row level-${tier} ${isProxyField ? 'setting-row-proxy' : ''}" style="${wrapStyle}">
+            <div class="setting-info" style="flex: 2; min-width: 260px; max-width: 65%;">
                 <div class="setting-label">
                     <span>${label}${reqStar}</span>
                     <span class="badge-group">${badgeMap[tier] || ''}${effectBadge}</span>
                 </div>
                 <div class="setting-desc">${description}</div>
             </div>
-            <div class="setting-control" style="display: flex; flex-direction: column; ${alignStyle} flex: 1; min-width: 160px; max-width: 45%;">
+            <div class="setting-control" style="display: flex; flex-direction: column; ${alignStyle} flex: 1; min-width: 180px; max-width: 45%;">
                 ${inputHtml}
             </div>
+            ${proxyPresetsHtml}
         </div>
     `;
 };

@@ -207,9 +207,13 @@ window.checkPluginConfiguredStatus = (p) => {
     if (p.category === 'hosting') {
         settings = cfgData.publish_control?.direct_upload?.[p.id] || {};
     } else if (p.category === 'image_hosting') {
-        settings = cfgData.image_hosting?.[p.id] || {};
+        settings = cfgData.image_hosting?.[p.id] || cfgData.publish_control?.direct_upload?.[p.id] || {};
     } else if (p.category === 'notification') {
         settings = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
+    } else if (p.category === 'protocol' || p.category === 'compute') {
+        const nodes = Object.values(cfgData.translation?.compute_nodes || {});
+        const matched = nodes.find(n => n && (n.type === p.id || n.provider === p.id || n.id === p.id));
+        settings = matched || {};
     } else {
         settings = cfgData.syndication?.[p.id] || {};
     }

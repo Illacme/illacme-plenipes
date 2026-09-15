@@ -6,9 +6,15 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何在文稿与图片发布前自动抹除 GPS 地理信息、敏感隐私与合规风险，物理保护创作者数据主权。
-tags: [Showcase, Privacy, Security, ExifScrubber, Sovereignty, Protection]
+tags:
+- Showcase
+- Privacy
+- Security
+- ExifScrubber
+- Sovereignty
+- Protection
+cover: /api/design/assets/covers/cover_7d838497fba6.jpg
 ---
-
 # 🛡️ 隐私脱敏与安全加工流水线
 
 > [!TIP]

@@ -17,6 +17,9 @@ GOVERNANCE_RULES = {
         r"^publish_control\.direct_upload\..*\.enabled$",     # 全站托管平台全局总开关
         r"^syndication\..*\.enabled$",                        # 社交广播平台全局总开关
         r"^image_hosting\..*\.enabled$",                      # 图床平台全局总开关
+        r"^syndication\..*\.(api_key|token|secret|password|cookie|sessdata|bili_jct|api_token|app_secret|app_password)$", # 分发渠道敏感机密凭据
+        r"^publish_control\.direct_upload\..*\.(api_token|token|secret|password|key|auth_token)$", # 全站托管敏感机密凭据
+        r"^image_hosting\..*\.(token|secret|api_key|password)$", # 图床平台敏感机密凭据
         r"^ingress_settings\.source_options\..*$", # 物理输入源的凭据、密钥与本地绝对路径（如 Notion/Obsidian 等）
         r"^system\.api_token$",            # 系统 API 授权令牌
         r"^system\.serve_host$",           # 本地监听地址
@@ -28,6 +31,7 @@ GOVERNANCE_RULES = {
         r"^system\.log_level$",            # 本地日志详细度
         r"^system\.network_timeout$",      # 第三方 API 及物理网络请求超时控制 (秒)
         r"^system\.global_proxy$",         # 本地系统全局代理地址（全站托管/分发共享）
+        r"^system\.encrypt_secrets$",      # 本地敏感凭据落盘自动加密开关
         r"^system\.watchdog_settings\..*$", # 本地监控轮询策略
         r"^plugins\.disabled_plugins$",    # 本机禁用的插件列表
         r"^active_imprint$",               # 本机当前活跃品牌 ID

@@ -32,6 +32,22 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         if not self.config:
             raise ValueError(f"❌ [算力网关] 未能对正节点配置: {node_name}")
 
+        # 🛡️ [全域防断链架构兜底] 算力节点凭据全自动透明解密
+        try:
+            from core.governance.secret_manager import SecretManager
+            if isinstance(self.config, dict):
+                from core.config.assembler import resolve_secrets
+                self.config = resolve_secrets(dict(self.config))
+            else:
+                raw_key = getattr(self.config, 'api_key', None)
+                if isinstance(raw_key, str) and (raw_key.startswith("enc:") or raw_key.startswith("ENC:")):
+                    try:
+                        setattr(self.config, 'api_key', SecretManager.decrypt(raw_key))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         # 🚀 [V55.26] 主权 ID 绑定：确保算力任务能感知品牌身份以加载正确方言
         from core.runtime.cli_bootstrap import get_global_engine
         engine = get_global_engine()
@@ -57,6 +73,17 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         # 🛡️ [P4 Rate Limit Shield] 实例化自适应滑动窗口限流器
         from core.logic.ai.rate_limit_shield import RateLimitShield
         self.rate_limiter = RateLimitShield(node_name, self.config.limits, sleep_func=self._sleep)
+        # 🛡️ [V105.0] 初始化全局代理自愈 Session
+        self._session = self.init_session()
+
+    def init_session(self):
+        """🚀 [V105.0] 初始化具备代理感知与长效连接池的 Session"""
+        import requests
+        session = requests.Session()
+        proxies = self.get_proxy_dict()
+        if proxies:
+            session.proxies.update(proxies)
+        return session
 
     def get_proxy(self) -> str:
         """
@@ -68,6 +95,13 @@ class BaseTranslator(abc.ABC, AITaskMixin):
             engine = get_global_engine()
             if engine and engine.config and engine.config.system:
                 proxy_url = getattr(engine.config.system, 'global_proxy', None)
+        if not proxy_url:
+            try:
+                from core.config.config import load_config
+                sys_cfg = load_config()
+                proxy_url = getattr(getattr(sys_cfg, 'system', None), 'global_proxy', None)
+            except Exception:
+                pass
         return proxy_url
 
     def get_proxy_dict(self) -> Optional[Dict[str, str]]:
@@ -92,6 +126,14 @@ class BaseTranslator(abc.ABC, AITaskMixin):
             sys_timeout = getattr(engine.config.system, 'network_timeout', None)
             if sys_timeout:
                 return float(sys_timeout)
+        try:
+            from core.config.config import load_config
+            sys_cfg = load_config()
+            sys_timeout = getattr(getattr(sys_cfg, 'system', None), 'network_timeout', None)
+            if sys_timeout:
+                return float(sys_timeout)
+        except Exception:
+            pass
         trans_timeout = getattr(self.trans_cfg, 'api_timeout', None)
         if trans_timeout:
             return float(trans_timeout)
@@ -99,7 +141,14 @@ class BaseTranslator(abc.ABC, AITaskMixin):
 
     def safe_get_config(self, key: str, default: Any = None) -> Any:
         """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
-        return getattr(self.config, key, default)
+        val = getattr(self.config, key, default)
+        if isinstance(val, str) and (val.startswith("enc:") or val.startswith("ENC:")):
+            try:
+                from core.governance.secret_manager import SecretManager
+                return SecretManager.decrypt(val)
+            except Exception:
+                pass
+        return val
 
     def safe_get_url(self, suffix: str = "") -> str:
         """🛡️ [V68.0] 物理地址卫士：配置 -> DEFAULT_URL -> 保底空值"""
@@ -135,6 +184,18 @@ class BaseTranslator(abc.ABC, AITaskMixin):
     def is_cooling(self) -> bool:
         self._is_cooling = self._is_cooling and time.time() < self._cooling_until
         return self._is_cooling
+
+    def is_available(self) -> bool:
+        """🛡️ 节点就绪态前置感知：检查是否处于冷却期或熔断阻断期"""
+        if self.is_cooling():
+            return False
+        from core.runtime.cli_bootstrap import get_global_engine
+        engine = get_global_engine()
+        if engine and hasattr(engine, 'circuit_breakers'):
+            breaker = engine.circuit_breakers.get("ai")
+            if breaker and hasattr(breaker, 'allow_request') and not breaker.allow_request(self.node_name):
+                return False
+        return True
 
     def trigger_cooling(self, duration: int = 60):
         self._is_cooling = True
@@ -208,15 +269,23 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     engine.health_registry.report_failure(self.node_name)
                 error_msg = str(e).lower()
 
-                # 🛡️ [P4 Rate Limit Shield] 触碰 API 限流错误，触发自适应避险
-                if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
+                is_rate_limit = any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"])
+                if is_rate_limit:
                     self.rate_limiter.record_rate_limit_error()
                 
                 is_fatal = "400" in error_msg
-                is_last_retry = (i == self.max_retries)
+                # 🛡️ 容灾调度感知：若算力中心配置了具备备用节点的容灾策略，在触发 429 限流时快速释放，避免数十秒漫长重试
+                has_failover_support = False
+                if self.trans_cfg and hasattr(self.trans_cfg, 'strategy'):
+                    strat = str(getattr(self.trans_cfg, 'strategy', '')).lower()
+                    if strat in ['fallback', 'smart_routing', 'global_smart'] and getattr(self.trans_cfg, 'fallback_node', None):
+                        has_failover_support = True
+
+                should_fast_failover = is_rate_limit and has_failover_support
+                is_last_retry = (i == self.max_retries) or should_fast_failover
                 
                 if is_fatal or is_last_retry:
-                    if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
+                    if is_rate_limit:
                         # 智能从错误信息中提取重试秒数，保底 30s，最大不超过 60s
                         cool_duration = self._parse_retry_after_from_error(error_msg, error_obj=e)
                         cool_duration = min(60.0, max(1.0, cool_duration))

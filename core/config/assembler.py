@@ -142,6 +142,19 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                 with open(imprint_path, 'r', encoding='utf-8') as f:
                     imprint_cfg = yaml.safe_load(f) or {}
                 
+                # 🛡️ [V114.0] 凭证自愈兼容：暂存版图层凭据，若主配置为默认占位符则安全回填
+                imprint_raw_secrets = {}
+                def extract_imprint_secrets(src, dest, prefix=""):
+                    if not isinstance(src, dict): return
+                    sensitive_patterns = ['api_key', 'api_token', 'secret', 'app_password', 'token', 'cookie', 'sessdata']
+                    for k, v in src.items():
+                        full_k = f"{prefix}.{k}" if prefix else k
+                        if any(p in k.lower() for p in sensitive_patterns) and not any(safe in k.lower() for safe in ['max_tokens', 'token_limit', 'token_count']):
+                            dest[full_k] = v
+                        elif isinstance(v, dict):
+                            extract_imprint_secrets(v, dest, full_k)
+                extract_imprint_secrets(imprint_cfg, imprint_raw_secrets)
+
                 # 🛡️ [V53.1] 物理主权强制脱敏：禁止版图层保存任何物理凭据
                 def scrub_secrets(d):
                     if not isinstance(d, dict): return d
@@ -174,6 +187,23 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                                 target[k] = v
 
                 merge_imprint_sovereign(final_cfg, imprint_cfg)
+
+                # 🚀 [V114.0] 回填未在 local 显式覆盖的占位凭据
+                for sec_path, sec_val in imprint_raw_secrets.items():
+                    parts = sec_path.split('.')
+                    curr = final_cfg
+                    for p in parts[:-1]:
+                        if isinstance(curr, dict) and p in curr:
+                            curr = curr[p]
+                        else:
+                            curr = None
+                            break
+                    if isinstance(curr, dict):
+                        last_p = parts[-1]
+                        existing_val = str(curr.get(last_p, "") or "")
+                        if not existing_val or existing_val.startswith("YOUR_"):
+                            curr[last_p] = sec_val
+
                 tlog.info(f"🎨 [配置引擎] 已根据主权治理矩阵对齐品牌层: {imprint_path}")
             except Exception as e:
                 tlog.warning(f"⚠️ [配置引擎] 加载品牌配置失败: {e}")

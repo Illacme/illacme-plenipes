@@ -6,9 +6,14 @@ route_prefix: showcase
 date: 2026-08-18
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何实现本地 Markdown 原稿向全球 30+ 托管、社交媒体与开发者社区一键多路并发推流。
-tags: [Showcase, Syndication, MultiChannel, Distribution, Automation]
+tags:
+- Showcase
+- Syndication
+- MultiChannel
+- Distribution
+- Automation
+cover: /api/design/assets/covers/cover_5fd71e537bf4.jpg
 ---
-
 # 🛰️ 30+ 渠道全域分发实践案例
 
 > [!TIP]

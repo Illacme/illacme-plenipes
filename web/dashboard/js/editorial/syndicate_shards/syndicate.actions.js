@@ -76,9 +76,9 @@
         });
     };
 
-    window.deleteRemoteArticle = async function (relPath, targetId) {
+    window.deleteRemoteArticle = async function (relPath, targetId, exactLang) {
         const langRadio = document.querySelector('input[name="syndicate_lang"]:checked');
-        const selectedLang = langRadio ? langRadio.value : 'zh';
+        const selectedLang = exactLang || (langRadio ? langRadio.value : 'zh');
 
         const isConfirmed = await window.confirmSovereignAction({
             title: '🗑️ 物理远程下架确认',
@@ -110,9 +110,9 @@
         }
     };
 
-    window.unlinkRemoteArticle = async function (relPath, targetId) {
+    window.unlinkRemoteArticle = async function (relPath, targetId, exactLang) {
         const langRadio = document.querySelector('input[name="syndicate_lang"]:checked');
-        const selectedLang = langRadio ? langRadio.value : 'zh';
+        const selectedLang = exactLang || (langRadio ? langRadio.value : 'zh');
 
         const isConfirmed = await window.confirmSovereignAction({
             title: '🔗 本地物权解绑确认',
@@ -161,21 +161,46 @@
                     target_slot: selectedLang,
                     target_channel: channelId,
                     skip_syndication: false,
-                    clear_cache: false
+                    clear_cache: false,
+                    cover_mode: (window.currentSyndicateCover && window.currentSyndicateCover.mode) || 'global',
+                    cover_image: (window.currentSyndicateCover && window.currentSyndicateCover.url) || '',
+                    cover_offset: (window.currentSyndicateCover && window.currentSyndicateCover.offset) || 0
                 })
             });
 
             if (typeof window.updateSyndicatePlatformCards === 'function') {
                 await window.updateSyndicatePlatformCards(relPath);
             }
-            const resultsEl = document.getElementById('syndicate-results-panel');
-            if (resultsEl) {
-                resultsEl.scrollIntoView({ behavior: 'smooth' });
+            if (typeof window.showToast === 'function') {
+                window.showToast(`✅ [${channelId.toUpperCase()}] 重试推流指令已下发`, 'success');
             }
         } catch (e) {
             if (typeof window.showToast === 'function') {
                 window.showToast(`🛑 单独重试请求失败: ${e}`, 'error');
             }
+        }
+    };
+
+    window.retryAllFailedPlatforms = async function (relPath, failedChannels) {
+        if (!Array.isArray(failedChannels) || failedChannels.length === 0) {
+            if (typeof window.showToast === 'function') window.showToast('✅ 当前无需要重试的失败渠道', 'info');
+            return;
+        }
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(`⚡ 正在批量重试 ${failedChannels.length} 个失败渠道...`, 'info');
+        }
+
+        for (const chanId of failedChannels) {
+            try {
+                await window.retrySinglePlatform(relPath, chanId);
+            } catch (err) {
+                console.warn(`[Batch Retry] Error retrying ${chanId}:`, err);
+            }
+        }
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(`🎉 已触发所有失败渠道的重新推流调度`, 'success');
         }
     };
 })();

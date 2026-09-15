@@ -45,6 +45,7 @@ class LinkedInSyndicator(BaseSyndicator):
     """
     PLUGIN_ID = "linkedin"
     DISPLAY_NAME = "LinkedIn"
+    ICON = "💼"
     VERSION = "V2.0"
     DESCRIPTION = "同步至 LinkedIn 职场社交平台，通过 UGC Posts API v2 将文章链接分享至个人动态，支持 Person/Organization 双模式。"
 
@@ -115,7 +116,7 @@ class LinkedInSyndicator(BaseSyndicator):
 
         return payload
 
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None, **kwargs):
         """执行物理推流到 LinkedIn UGC Posts API"""
         import time
         import random

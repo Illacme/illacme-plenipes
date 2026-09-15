@@ -19,6 +19,7 @@ _medium_lock = threading.Lock()
 class MediumSyndicator(BaseSyndicator):
     PLUGIN_ID = "medium"
     DISPLAY_NAME = "Medium"
+    ICON = "📝"
     VERSION = "V1.1"
     DESCRIPTION = "同步至 Medium 全球创作平台，支持 Markdown 格式化与 Canonical URL 溯源。"
 
@@ -40,7 +41,7 @@ class MediumSyndicator(BaseSyndicator):
             "publishStatus": getattr(self.config, 'publish_status', 'draft') # 默认为草稿模式，安全防呆
         }
 
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None, **kwargs):
         """执行物理推流到 Medium"""
         import time
         import random

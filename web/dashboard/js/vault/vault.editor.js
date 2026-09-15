@@ -31,8 +31,12 @@ window.openEditor = async (docId) => {
         const existingSlug = doc.slug || "";
         window.editorSlugUserEdited = (existingSlug !== "" && existingSlug !== "未命名原稿");
         
-        // 🚀 [V68.0] 动态元数据注入
-        renderDynamicMetadata(doc.frontmatter || {});
+        // 🚀 [V68.0] 动态元数据注入（防御性挂载）
+        if (typeof window.renderDynamicMetadata === 'function') {
+            window.renderDynamicMetadata(doc.frontmatter || {});
+        } else if (typeof renderDynamicMetadata === 'function') {
+            renderDynamicMetadata(doc.frontmatter || {});
+        }
         
         // 🌓 [V87.0] 初始化编辑器模式为源码模式，并预渲染预览内容
         setEditorMode('source');

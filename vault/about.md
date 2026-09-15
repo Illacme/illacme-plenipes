@@ -10,6 +10,7 @@ tags:
 - Mission
 - Philosophy
 categories: About
+cover: /api/design/assets/covers/gen_0bb88c5862c7.jpg
 ---
 # 🌐 关于 Illacme Press 出版团队
 

@@ -55,7 +55,7 @@ class TestGiteePagesPublisher:
         assert masked == "error cloning https://oauth2:***@gitee.com/owner/repo.git"
 
     @patch("subprocess.run")
-    @patch("requests.post")
+    @patch("adapters.egress.publishers.gitee_pages.requests.post")
     def test_push_success(self, mock_post, mock_run):
         from adapters.egress.publishers.gitee_pages import GiteePagesPublisher
         pub = GiteePagesPublisher(config={

@@ -16,8 +16,12 @@ _cnblogs_lock = threading.Lock()
 class CNBlogsSyndicator(BaseSyndicator):
     PLUGIN_ID = "cnblogs"
     DISPLAY_NAME = "博客园"
+    ICON = "🌿"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至博客园 (CNBlogs)，支持原生 Markdown 格式与 MetaWeblog / REST API 规范。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "支持 MetaWeblog 凭据或 Web 认证，受平台接口权限限制。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -39,7 +43,7 @@ class CNBlogsSyndicator(BaseSyndicator):
             "canonicalUrl": canonical_url
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

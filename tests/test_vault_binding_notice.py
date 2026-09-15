@@ -9,7 +9,6 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 from services.api.server import app
-from core.governance.imprint_manager import im
 
 @pytest.fixture
 def client():

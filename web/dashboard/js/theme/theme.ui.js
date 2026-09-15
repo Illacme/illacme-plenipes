@@ -62,7 +62,7 @@ window.ThemeUI = {
             const mockupInner = (window.getThemeVerticalMockupContent ? window.getThemeVerticalMockupContent(t.id) : '');
 
             const previewHtml = previewImage
-                ? `<img src="${previewImage}" alt="${t.id}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transition: transform 0.4s ease;" class="theme-preview-img" />`
+                ? `<img src="${previewImage}" alt="${t.id}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transition: transform 0.4s ease; display:block;" class="theme-preview-img" />`
                 : `<div class="mock-browser-window" style="width: 100%; height: 100%; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
                                 <div class="browser-header-bar" style="height: 16px; background: #222225; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 6px; gap: 4px; flex-shrink: 0; z-index: 2;">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #ff5f56; display: inline-block;"></span>

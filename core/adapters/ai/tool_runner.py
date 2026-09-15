@@ -28,9 +28,28 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
     is_openai = any(c.__name__ == "OpenAICompatibleTranslator" for c in actual_adapter.__class__.__mro__)
     if not is_openai:
         logger.info("⚠️ [Agent Stream] Non-OpenAI adapter detected, falling back to sync path.")
+        cfg = getattr(actual_adapter, 'config', None)
+        model_name = None
+        if cfg:
+            model_name = getattr(cfg, 'model', None) or getattr(cfg, 'model_name', None) or getattr(cfg, 'primary_model', None)
+        if not model_name and hasattr(actual_adapter, 'trans_cfg') and actual_adapter.trans_cfg:
+            tc = actual_adapter.trans_cfg
+            model_name = tc.get('primary_model', None) if isinstance(tc, dict) else getattr(tc, 'primary_model', None)
+        if not model_name or str(model_name).lower() in ["null", "none", ""]:
+            model_name = getattr(actual_adapter, 'node_name', 'gpt-4o')
+
+        sys_parts = [m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "system" and isinstance(m.get("content"), str)]
+        usr_parts = [m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str)]
+        system_text = "\n\n".join(sys_parts)
+        user_text = usr_parts[-1] if usr_parts else ""
+
         payload = {
-            "model": getattr(actual_adapter.trans_cfg, 'primary_model', 'gpt-4o') if hasattr(actual_adapter.trans_cfg, 'primary_model') else 'gpt-4o',
-            "messages": messages, "tools": tools, "params": {"temperature": 0.2}
+            "model": model_name,
+            "messages": messages,
+            "system": system_text,
+            "user": user_text,
+            "tools": tools,
+            "params": {"temperature": 0.2}
         }
         response = actual_adapter.ask_ai_with_retry(payload)
         yield {"type": "final_text", "text": response} if isinstance(response, str) else {"type": "tool_calls", "events": response}
@@ -96,7 +115,16 @@ async def call_llm_stream(ai_adapter, messages: list, tools: list, reasoning_ena
         resp.raise_for_status()
     except Exception as e:
         logger.error(f"🛑 [Agent Stream] HTTP POST failed: {e}, falling back to sync path.")
-        payload = {"model": model_name, "messages": messages, "tools": tools, "params": {"temperature": 0.2}}
+        sys_parts = [m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "system" and isinstance(m.get("content"), str)]
+        usr_parts = [m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str)]
+        payload = {
+            "model": model_name,
+            "messages": messages,
+            "system": "\n\n".join(sys_parts),
+            "user": usr_parts[-1] if usr_parts else "",
+            "tools": tools,
+            "params": {"temperature": 0.2}
+        }
         response = actual_adapter.ask_ai_with_retry(payload)
         yield {"type": "final_text", "text": response} if isinstance(response, str) else {"type": "tool_calls", "events": response}
         return

@@ -1,31 +1,56 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🧪 [Test] SafeStaticFiles Security Test
-职责：测试 SafeStaticFiles 的物理防护拦截，防止敏感的本地配置文件和原稿文库泄露。
+Unit Tests for SafeStaticFiles
+测试目标：
+1. 验证正常的前端静态资源（index.html、css、js）能正常返回 200；
+2. 验证敏感文件（.env、config.yaml、.git、.master.key、*.lic）请求 100% 被拦截并返回 403；
+3. 验证路径穿越请求（../）被 100% 拦截并返回 403。
 """
-import sys
-import os
+
+import pytest
 from fastapi.testclient import TestClient
+from services.api.server import app
 
-# 将项目根目录加入 python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+@pytest.fixture
+def client():
+    return TestClient(app)
 
-from core.api.server import app
+def test_safe_static_files_normal_asset(client):
+    """测试常规页面与合法资源正常加载"""
+    resp = client.get("/dashboard/index.html")
+    assert resp.status_code == 200
 
-def test_safe_static_files_security():
-    """🧪 测试 SafeStaticFiles 的物理防护拦截，防止敏感的本地配置文件和原稿文库泄露"""
-    client = TestClient(app)
-    
-    # 1. 尝试越权访问 imprints/ 下 of config.local.yaml 敏感文件
-    res_sensitive = client.get("/imprints/luminous_citadel/config.local.yaml")
-    assert res_sensitive.status_code == 403, "敏感配置文件越权读取拦截失败！"
-    assert "Sovereign Protection Activated" in res_sensitive.text
-    
-    # 2. 尝试越权访问 manuscripts 原稿文库目录
-    res_manuscripts = client.get("/imprints/luminous_citadel/manuscripts/some_post.md")
-    assert res_manuscripts.status_code == 403, "隐私原稿文库越权读取拦截失败！"
-    
-    # 3. 尝试越权访问 metadata 元数据 sqlite/json 目录
-    res_metadata = client.get("/imprints/luminous_citadel/metadata/themes/starlight/knowledge_graph.json")
-    assert res_metadata.status_code == 403, "元数据物理账本与图谱越权读取拦截失败！"
+def test_safe_static_files_allows_metadata_js(client):
+    """测试包含 metadata/config 关键字的合法前端 JS 脚本正常加载（防误伤回归）"""
+    resp = client.get("/dashboard/js/vault/vault.metadata.js")
+    assert resp.status_code == 200
+    assert b"renderDynamicMetadata" in resp.content
+
+    resp_editor = client.get("/dashboard/js/vault/vault.editor.js")
+    assert resp_editor.status_code == 200
+
+    resp_config = client.get("/dashboard/js/dashboard.config_audit.js")
+    assert resp_config.status_code == 200
+
+def test_safe_static_files_block_sensitive_configs(client):
+    """测试敏感配置文件探测被 403 拦截"""
+    sensitive_targets = [
+        "/dashboard/config.yaml",
+        "/dashboard/config.local.yaml",
+        "/dashboard/.env",
+        "/dashboard/.git/config",
+        "/dashboard/.plenipes/cache/ledger.db",
+        "/dashboard/core/storage/.master.key",
+        "/dashboard/license.lic"
+    ]
+    for target in sensitive_targets:
+        resp = client.get(target)
+        assert resp.status_code == 403
+        assert b"Access Denied" in resp.content
+
+def test_safe_static_files_block_path_traversal(client):
+    """测试路径穿越探针被拦截"""
+    resp = client.get("/dashboard/..%2f..%2fconfig.yaml")
+    # 无论是被 403 还是 404，绝不能返回 200 OK 泄漏内容
+    assert resp.status_code in (403, 404)

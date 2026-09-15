@@ -164,7 +164,7 @@ def build_channels_matrix(
                     syndication_url = "#"
                 elif record_url:
                     syndication_url = record_url
-                elif chan_record.get("remote_article_id"):
+                else:
                     syndication_url = (
                         status_info.get("url")
                         or status_info.get("target_url")
@@ -174,23 +174,30 @@ def build_channels_matrix(
                         or status_info.get("link")
                         or "#"
                     )
-                else:
-                    syndication_url = "#"
 
                 chan_status_clean = (chan_status or "pending").lower()
                 error_reason = status_info.get("error") or ""
                 if chan_record.get("remote_article_id"):
                     if chan_status_clean != "syncing":
-                        chan_status_clean = "published"
+                        if chan_status_clean != "draft":
+                            chan_status_clean = "published"
                         error_reason = ""
                 elif chan_status_clean != "syncing":
-                    if chan_status_clean not in ("failed", "error"):
+                    if chan_status_clean not in ("failed", "error", "draft", "done", "published", "synced"):
                         chan_status_clean = "pending"
 
-                is_syndication_done = chan_status_clean in ("published", "success", "done", "synced", "skipped")
+                is_syndication_done = chan_status_clean in ("published", "success", "done", "synced", "skipped", "draft")
 
                 saved_hash = chan_record.get("content_hash")
                 is_outdated = bool(saved_hash and current_content_hash and saved_hash != current_content_hash)
+
+                diagnosis_info = None
+                if error_reason:
+                    try:
+                        from core.syndication.syndication_diagnostic import diagnose_syndication_error
+                        diagnosis_info = diagnose_syndication_error(chan_id, error_reason)
+                    except Exception:
+                        diagnosis_info = None
 
                 channels_matrix.append({
                     "channel_id": chan_id,
@@ -203,7 +210,8 @@ def build_channels_matrix(
                     "progress": 100 if is_syndication_done else 0,
                     "cache_info": "内容已变更" if is_outdated else "分发渠道",
                     "is_outdated": is_outdated,
-                    "reason": error_reason
+                    "reason": error_reason,
+                    "diagnosis": diagnosis_info
                 })
 
     return channels_matrix

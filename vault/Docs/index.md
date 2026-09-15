@@ -6,10 +6,15 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Editorial Team
 description: Illacme Plenipes 全球私人出版社完整文档导航，涵盖快速上手、文库组织、多品牌管理、治理中心、算力中心、装帧主题及全渠道分发。
-tags: [Docs, Index, Navigation, Guide]
-categories: [Documentation]
+tags:
+- Docs
+- Index
+- Navigation
+- Guide
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_4067c98c67c2.jpg
 ---
-
 # 📚 出版指南与文档中心
 
 欢迎来到 **Illacme Plenipes** 官方出版指南。无论您是初次尝试数字出版的新人创作者，还是拥有多品牌矩阵的资深出版团队，本指南将为您提供全流程的指引。

@@ -7,8 +7,10 @@ Illacme-plenipes Governance - Secret Manager
 """
 
 import os
+from typing import Any
 from cryptography.fernet import Fernet
 from core.utils.tracing import tlog
+
 
 class SecretManager:
     """🚀 [V1.0] 密钥管理器：保护商业核心资产"""
@@ -62,20 +64,74 @@ class SecretManager:
             return "DEC_ERROR"
 
     @classmethod
+    def mask_display(cls, val: str) -> str:
+        """对敏感文本进行视觉脱敏展示，防止截屏或录屏物理泄露"""
+        if not val or not isinstance(val, str):
+            return ""
+        val = val.strip()
+        if val.startswith("enc:") or val.startswith("ENC:"):
+            return "enc:********"
+        if len(val) <= 8:
+            if len(val) <= 4:
+                return "****"
+            return f"{val[:2]}****{val[-2:]}"
+        return f"{val[:4]}****{val[-4:]}"
+
+    @classmethod
+    def encrypt_tree(cls, data: Any, key_name: str = "") -> Any:
+        """🚀 [V102.0] 递归对配置树进行敏感字段扫描并自动执行加密"""
+        sensitive_keys = {
+            'api_key', 'access_key', 'secret_key', 'token', 'password', 'key',
+            'api_token', 'app_password', 'admin_api_key', 'auth_token'
+        }
+        if isinstance(data, dict):
+            return {k: cls.encrypt_tree(v, str(k)) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [cls.encrypt_tree(elem, key_name) for elem in data]
+        elif isinstance(data, str):
+            val_clean = data.strip()
+            if not val_clean or val_clean.startswith("enc:") or val_clean.startswith("ENC:"):
+                return data
+            # 判定键名是否敏感
+            k_lower = key_name.lower()
+            is_sensitive = any(sk in k_lower for sk in sensitive_keys)
+            # 判定值是否包含典型 API 密钥指纹 (sk-..., AIza..., ghp_...)
+            import re
+            key_fingerprints = [r'sk-[a-zA-Z0-9_\-]{12,}', r'AIza[a-zA-Z0-9_\-]{12,}', r'ghp_[a-zA-Z0-9_\-]{12,}']
+            if any(re.search(fp, val_clean) for fp in key_fingerprints):
+                is_sensitive = True
+            
+            # 排除常见非敏感占位符
+            if val_clean.lower() in ("null", "none", "true", "false", "", "your_key", "placeholder"):
+                is_sensitive = False
+
+            if is_sensitive:
+                encrypted = cls.encrypt(data)
+                tlog.info(f"🛡️ [SecretManager] 发现敏感凭据 [{key_name}]，已自动完成主权加密落盘。")
+                return encrypted
+        return data
+
+    @classmethod
+    def decrypt_tree(cls, data: Any) -> Any:
+        """🚀 [V102.0] 递归对配置树中的所有 enc: 密文执行透明解密"""
+        if isinstance(data, dict):
+            return {k: cls.decrypt_tree(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [cls.decrypt_tree(elem) for elem in data]
+        elif isinstance(data, str) and (data.startswith("enc:") or data.startswith("ENC:")):
+            return cls.decrypt(data)
+        return data
+
+    @classmethod
     def mask_dict(cls, data: dict) -> dict:
-        """🚀 [V35.2] 递归脱敏：自动识别并加密敏感字段"""
-        sensitive_keys = {'api_key', 'access_key', 'secret_key', 'token', 'password', 'key'}
-        if not isinstance(data, dict): return data
-        
-        for k, v in data.items():
-            if isinstance(v, dict):
-                cls.mask_dict(v)
-            elif isinstance(v, str) and k.lower() in sensitive_keys:
-                if not v.startswith("enc:") and v.strip() and "PLACEHOLDER" not in v:
-                    data[k] = cls.encrypt(v)
-                    tlog.info(f"🛡️ [SecretManager] 发现敏感字段，已执行物理脱敏: {k}")
+        """保持历史兼容性，委托至 encrypt_tree"""
+        if isinstance(data, dict):
+            encrypted = cls.encrypt_tree(data)
+            data.clear()
+            data.update(encrypted)
         return data
 
 
 # 全局管理器
 secrets = SecretManager
+

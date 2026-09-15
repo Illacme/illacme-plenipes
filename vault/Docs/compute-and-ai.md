@@ -3,10 +3,15 @@ title: 算力中心与 AI 翻译配置指南
 date: 2026-08-11
 author: Illacme AI Architecture Team
 description: 全面解析 29+ AI 算力适配器、本地推理与云端模型无缝切换、段落级影子缓存 (BlockShadowCache) 与容错降级机制。
-tags: [Compute, AI, LLM, Caching]
-categories: [Documentation]
+tags:
+- Compute
+- AI
+- LLM
+- Caching
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_e33a3c992e04.jpg
 ---
-
 # 🧠 算力中心与 AI 翻译配置指南
 
 Illacme Plenipes 拥有业界领先的 **AI 算力大一统网关**。无论是本地部署的开源小模型，还是云端顶尖闭源大模型，都能以统一的协议无缝接入出版流水线。

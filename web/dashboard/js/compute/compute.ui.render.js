@@ -11,7 +11,7 @@ if (!window.ComputeUI) {
 /**
  * 🧱 获取节点类型对应的 Emoji 图标
  */
-window.ComputeUI.getNodeIcon = function(type) {
+window.ComputeUI.getNodeIcon = function (type) {
     const map = {
         'openai': '🌐', 'ollama': '🦙', 'anthropic': '🎭', 'groq': '⚡',
         'deepseek': '🐳', 'google': '💎', 'siliconflow': '🌊', 'lmstudio': '🏠'
@@ -22,7 +22,7 @@ window.ComputeUI.getNodeIcon = function(type) {
 /**
  * 🧱 物理底座层：工业化动力单元渲染实现
  */
-window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
+window.ComputeUI.renderInfrastructureTabImpl = async function (container) {
     // 🚀 [V74.24] 强化感应：始终在切换 Tab 时尝试从服务器拉取最新配置
     try {
         const res = await apiFetch('/api/system/config');
@@ -80,18 +80,18 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
             .map(([id, node]) => `
                     <div class="node-unit ${node.enabled !== false ? 'active' : 'inactive'}" id="node-unit-${id}" style="position: relative; ${isAiDisabled ? 'opacity: 0.5; pointer-events: none;' : ''}">
                         ${(() => {
-                            if (trans.strategy === 'concurrent') {
-                                const concurrentNodes = Array.isArray(trans.concurrent_nodes) && trans.concurrent_nodes.length > 0
-                                    ? trans.concurrent_nodes
-                                    : [trans.primary_node, trans.fallback_node].filter(Boolean);
-                                if (concurrentNodes.includes(id)) {
-                                    return '<div class="role-badge" style="background: linear-gradient(135deg, rgba(255, 183, 0, 0.25), rgba(255, 77, 77, 0.25)); color: #ffb700; border: 1px solid rgba(255, 183, 0, 0.5); font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; position: absolute; top: 12px; right: 12px; letter-spacing: 0.5px; box-shadow: 0 0 8px rgba(255, 183, 0, 0.3);">RACE 竞速</div>';
-                                }
-                            }
-                            if (id === trans.primary_node) return '<div class="role-badge primary">PRIMARY</div>';
-                            if (id === trans.fallback_node && trans.strategy !== 'single') return '<div class="role-badge fallback">FALLBACK</div>';
-                            return '';
-                        })()}
+                    if (trans.strategy === 'concurrent') {
+                        const concurrentNodes = Array.isArray(trans.concurrent_nodes) && trans.concurrent_nodes.length > 0
+                            ? trans.concurrent_nodes
+                            : [trans.primary_node, trans.fallback_node].filter(Boolean);
+                        if (concurrentNodes.includes(id)) {
+                            return '<div class="role-badge" style="background: linear-gradient(135deg, rgba(255, 183, 0, 0.25), rgba(255, 77, 77, 0.25)); color: #ffb700; border: 1px solid rgba(255, 183, 0, 0.5); font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; position: absolute; top: 12px; right: 12px; letter-spacing: 0.5px; box-shadow: 0 0 8px rgba(255, 183, 0, 0.3);">RACE 竞速</div>';
+                        }
+                    }
+                    if (id === trans.primary_node) return '<div class="role-badge primary">PRIMARY</div>';
+                    if (id === trans.fallback_node && trans.strategy !== 'single') return '<div class="role-badge fallback">FALLBACK</div>';
+                    return '';
+                })()}
                         <div class="node-header">
                             <div class="node-identity">
                                 <div class="node-icon-vessel">
@@ -112,51 +112,51 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
                                     <div class="node-model-line">
                                         <div class="model-marquee-vessel">
                                             ${(() => {
-                                                const isEnabled = node.enabled !== false && node.is_enabled !== false;
-                                                const isPrimary = id === trans.primary_node;
-                                                const isFallback = id === trans.fallback_node && trans.strategy !== 'single';
-                                                
-                                                if (!isEnabled) {
-                                                    return `
+                    const isEnabled = node.enabled !== false && node.is_enabled !== false;
+                    const isPrimary = id === trans.primary_node;
+                    const isFallback = id === trans.fallback_node && trans.strategy !== 'single';
+
+                    if (!isEnabled) {
+                        return `
                                                         <span class="node-model-badge disabled-badge" title="算力单元已被禁用" style="opacity: 0.65; background: rgba(255,255,255,0.05); color: var(--text-dim);">
                                                             <span class="brain-icon">⚪</span>
                                                             <span class="model-name">单元未开启</span>
                                                         </span>
                                                     `;
-                                                }
-                                                
-                                                if (node.model) {
-                                                    return `
+                    }
+
+                    if (node.model) {
+                        return `
                                                         <span class="node-model-badge" title="节点专属指定模型: ${node.model}">
                                                             <span class="brain-icon">🧠</span>
                                                             <span class="model-name">${node.model}</span>
                                                         </span>
                                                     `;
-                                                }
+                    }
 
-                                                if (isPrimary) {
-                                                    return `
+                    if (isPrimary) {
+                        return `
                                                         <span class="node-model-badge" title="未指定专属物理模型，自动继承品牌装帧层主力策略">
                                                             <span class="brain-icon">🧠</span>
                                                             <span class="model-name">继承品牌策略 (${trans.primary_model || 'qwen/qwen3.5-9b'})</span>
                                                         </span>
                                                     `;
-                                                } else if (isFallback) {
-                                                    return `
+                    } else if (isFallback) {
+                        return `
                                                         <span class="node-model-badge fallback-badge" title="未指定专属物理模型，自动继承品牌装帧层备用策略">
                                                             <span class="brain-icon">🧠</span>
                                                             <span class="model-name">继承备用策略 (${trans.fallback_model || trans.primary_model || 'qwen/qwen3.5-9b'})</span>
                                                         </span>
                                                     `;
-                                                } else {
-                                                    return `
+                    } else {
+                        return `
                                                         <span class="node-model-badge standby-badge" title="当前节点处于待命状态，未与调度策略绑定" style="opacity: 0.75; background: rgba(255,255,255,0.04);">
                                                             <span class="brain-icon">⚪</span>
                                                             <span class="model-name">待命未连接</span>
                                                         </span>
                                                     `;
-                                                }
-                                            })()}
+                    }
+                })()}
                                         </div>
                                     </div>
                                 </div>
@@ -197,5 +197,5 @@ window.ComputeUI.renderInfrastructureTabImpl = async function(container) {
               </div>
           </div>
       `;
-      container.innerHTML = html;
-  };
+    container.innerHTML = html;
+};

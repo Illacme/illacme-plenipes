@@ -135,11 +135,31 @@ def persist_config_to_disk(
                 os.makedirs(dir_name, exist_ok=True)
             
             save_data = make_yaml_safe(file_data[lvl])
+            # 🛡️ [商业安全加固] 敏感凭据落盘自动加密/解密自愈
+            from core.governance.secret_manager import secrets
+            should_encrypt = True
+            loc_sys = file_data.get("local", {}).get("system", {})
+            if isinstance(loc_sys, dict) and "encrypt_secrets" in loc_sys:
+                should_encrypt = bool(loc_sys["encrypt_secrets"])
+            else:
+                try:
+                    from core.config.config_models import load_config
+                    cur_cfg = load_config()
+                    should_encrypt = getattr(getattr(cur_cfg, "system", None), "encrypt_secrets", True)
+                except Exception:
+                    should_encrypt = True
+
+            if should_encrypt:
+                save_data = secrets.encrypt_tree(save_data)
+            else:
+                save_data = secrets.decrypt_tree(save_data)
+
             from core.utils.common import promote_config_keys
             save_data = promote_config_keys(save_data)
 
             with open(path, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(save_data, f, allow_unicode=True, sort_keys=False)
             tlog.success(f"💾 [物理固化] 已成功同步至 {lvl} 级别配置: {path}")
+
         except Exception as e:
             tlog.error(f"❌ 落盘失败: {path} - {e}")

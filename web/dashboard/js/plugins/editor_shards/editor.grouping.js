@@ -101,7 +101,6 @@
                     path.includes('substack.url') ||
                     path.includes('ghost.url') ||
                     path.includes('wordpress.api_url') ||
-                    path.includes('telegraph.endpoint') ||
                     path.includes('webhook_endpoints.') && path.includes('.url') ||
                     path.includes('webhook_endpoints.') && path.includes('.secret') ||
                     inp.type === 'password'

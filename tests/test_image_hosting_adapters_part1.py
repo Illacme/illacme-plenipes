@@ -8,12 +8,12 @@ import os
 import sys
 import contextlib
 import tempfile
+import pytest
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.abspath('.'))
 
 from adapters.egress.image_hosting.github import GitHubImageHost
-from adapters.egress.image_hosting.sm_ms import SmMsImageHost
 from adapters.egress.image_hosting.imgur import ImgurImageHost
 from adapters.egress.image_hosting.telegraph import TelegraphImageHost
 from adapters.egress.image_hosting.aliyun_oss import AliyunOssImageHost
@@ -72,26 +72,6 @@ class TestImageHostingPluginsPart1(BaseImageHostTest):
                 assert "images/" in url
                 assert url.startswith("https://cdn.my.com")
 
-    def test_sm_ms_image_host(self):
-        host = SmMsImageHost(config={"token": "token-123"})
-        assert host.token == "token-123"
-
-        host_no_conf = SmMsImageHost(config={})
-        assert host_no_conf.upload("fake_path") is None
-
-        with self._temp_image() as img_path:
-            with patch("requests.post") as mock_post:
-                mock_resp = MagicMock()
-                mock_resp.status_code = 200
-                mock_resp.json.return_value = {
-                    "success": True,
-                    "data": {"url": "https://sm.ms/img.png"}
-                }
-                mock_post.return_value = mock_resp
-
-                url = host.upload(img_path)
-                assert url == "https://sm.ms/img.png"
-
     def test_imgur_image_host(self):
         host = ImgurImageHost(config={"client_id": "client-123", "token": "token-123"})
         assert host.client_id == "client-123"
@@ -113,19 +93,27 @@ class TestImageHostingPluginsPart1(BaseImageHostTest):
                 url = host.upload(img_path)
                 assert url == "https://imgur.com/img.png"
 
-    def test_telegraph_image_host(self):
-        host = TelegraphImageHost(config={"endpoint": "https://telegra.ph"})
-        assert host.endpoint == "https://telegra.ph"
+    def test_telegraph_self_hosted_image_host(self):
+        # 1. 官方域名及空域名拦截校验
+        official_host = TelegraphImageHost(config={"endpoint": "https://telegra.ph"})
+        with self._temp_image() as img_path:
+            with pytest.raises(RuntimeError) as exc_info:
+                official_host.upload(img_path)
+            assert "Telegraph 官方已全面关闭" in str(exc_info.value)
+
+        # 2. 自建节点上传测试
+        custom_host = TelegraphImageHost(config={"endpoint": "https://my-img.pages.dev"})
+        assert custom_host.endpoint == "https://my-img.pages.dev"
 
         with self._temp_image() as img_path:
             with patch("requests.post") as mock_post:
                 mock_resp = MagicMock()
                 mock_resp.status_code = 200
-                mock_resp.json.return_value = [{"src": "/file/img.png"}]
+                mock_resp.json.return_value = [{"src": "/file/test.png"}]
                 mock_post.return_value = mock_resp
 
-                url = host.upload(img_path)
-                assert url == "https://telegra.ph/file/img.png"
+                url = custom_host.upload(img_path)
+                assert url == "https://my-img.pages.dev/file/test.png"
 
     def test_aliyun_oss_image_host(self):
         host = AliyunOssImageHost(config={

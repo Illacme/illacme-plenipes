@@ -123,3 +123,69 @@ class ImageUploader:
 
         tlog.warning(f"⚠️ [图床中枢] 无可用图床或独立站外链，跳过图片上云: {local_path}")
         return None
+
+    def upload_cover(self, cover_src: str, doc_dir: str = None) -> str:
+        """
+        🚀 封面图公网转存专用穿透器：
+        支持本地相对路径、设计中心生图资产 (/api/design/assets/covers/gen_xxx.jpg)
+        自动寻址、JIT 自愈并委托图床插件转存为公网直链。
+        若已为外部公网直链 (非 localhost/127.0.0.1) 则直接放行。
+        """
+        if not cover_src:
+            return None
+
+        clean_src = str(cover_src).split('?')[0].split('#')[0].strip()
+
+        # 1. 若已是真正的外部公网 URL，直接放行
+        if clean_src.startswith(("http://", "https://")):
+            lower_url = clean_src.lower()
+            if not ("127.0.0.1" in lower_url or "localhost" in lower_url):
+                return cover_src
+            # 若是本地运行的 127.0.0.1 或 localhost 地址，继续下行转为物理路径寻址
+
+        # 2. 物理直接路径
+        if os.path.isfile(clean_src):
+            return self.upload_image(os.path.abspath(clean_src))
+
+        # 3. 设计中心与 ICMM 生成封面穿透探测与自愈
+        if "/api/design/assets/covers/" in clean_src or clean_src.startswith("covers/") or clean_src.startswith("gen_"):
+            cover_fn = os.path.basename(clean_src)
+            c_paths = [
+                os.path.join(self.vault_root, ".plenipes", "cache", "covers", cover_fn),
+                os.path.join(os.getcwd(), "vault", ".plenipes", "cache", "covers", cover_fn),
+                os.path.join(os.getcwd(), ".plenipes", "cache", "covers", cover_fn),
+            ]
+            if doc_dir:
+                cur = os.path.abspath(doc_dir)
+                while cur and cur != os.path.dirname(cur):
+                    c_paths.extend([os.path.join(cur, ".plenipes", "cache", "covers", cover_fn), os.path.join(cur, "cache", "covers", cover_fn)])
+                    cur = os.path.dirname(cur)
+            for cp in c_paths:
+                if os.path.isfile(cp):
+                    return self.upload_image(cp)
+            try:
+                from services.api.routes.design_shards.cover_asset_healer import serve_cover_asset_or_heal
+                resp = serve_cover_asset_or_heal(cover_fn, vault_root=self.vault_root)
+                if hasattr(resp, "path") and os.path.isfile(resp.path):
+                    return self.upload_image(resp.path)
+            except Exception as e:
+                tlog.warning(f"⚠️ [图床中枢-封面自愈] 唤醒自愈器失败: {e}")
+
+        # 4. 文档目录相对路径寻址
+        if doc_dir:
+            stripped = clean_src.lstrip('/')
+            candidates = [
+                os.path.normpath(os.path.join(doc_dir, clean_src)),
+                os.path.normpath(os.path.join(doc_dir, stripped)),
+                os.path.normpath(os.path.join(doc_dir, "assets", os.path.basename(clean_src))),
+                os.path.normpath(os.path.join(doc_dir, "images", os.path.basename(clean_src))),
+                os.path.normpath(os.path.join(self.vault_root, stripped)),
+                os.path.normpath(os.path.join(self.vault_root, "assets", os.path.basename(clean_src))),
+            ]
+            for cand in candidates:
+                if os.path.isfile(cand):
+                    return self.upload_image(cand)
+
+        tlog.warning(f"⚠️ [图床中枢] 封面物理路径无法解析，保持原样: {cover_src}")
+        return None
+

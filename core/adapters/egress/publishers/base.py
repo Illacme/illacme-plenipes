@@ -22,9 +22,16 @@ class BasePublisher(ABC):
     DESCRIPTION: str = "分发适配器插件"
 
     def __init__(self, config: Dict[str, Any], sys_config: Dict[str, Any] = None):
-        self.config = config
+        # 🛡️ [全域防断链架构兜底] 驱动基座透明解密
+        try:
+            from core.config.assembler import resolve_secrets
+            if isinstance(config, dict):
+                config = resolve_secrets(dict(config))
+        except Exception:
+            pass
+        self.config = config or {}
         self.sys_config = sys_config or {}
-        self.enabled = config.get("enabled", False)
+        self.enabled = self.config.get("enabled", False)
 
     def get_proxy(self) -> Optional[str]:
         """
@@ -91,7 +98,7 @@ class BasePublisher(ABC):
                     return int(self.sys_config.network_timeout)
 
         try:
-            from core.config.config_models import load_config
+            from core.config.config import load_config
             sys_cfg = load_config()
             return getattr(getattr(sys_cfg, "system", None), "network_timeout", default_timeout) or default_timeout
         except Exception:

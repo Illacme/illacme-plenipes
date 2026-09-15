@@ -18,7 +18,7 @@ class GeminiNativeTranslator(GoogleCompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 [V74.9] 从 Google Gemini API 动态感应模型列表"""
-        api_key = self.config.api_key
+        api_key = self.safe_get_config('api_key')
         if not api_key:
             raise ValueError("未填写 API Key 物理密钥")
             

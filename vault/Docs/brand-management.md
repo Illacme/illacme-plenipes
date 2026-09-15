@@ -6,10 +6,15 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Editorial Team
 description: 掌握如何构建多个相互物理隔离的独立出版版图，为不同写作领域定制专属主题、算力与分发矩阵。
-tags: [Imprint, MultiSite, Workspace, Governance]
-categories: [Documentation]
+tags:
+- Imprint
+- MultiSite
+- Workspace
+- Governance
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_91f3a56a2ebd.jpg
 ---
-
 # 🏷️ 品牌版图 (Imprint) 多站点与工作区管理
 
 在 **Illacme Plenipes** 中，每一个出版项目都是一个独立的**“品牌版图 (Imprint)”**。本指南将带您深入了解如何利用多品牌架构实现多站点、多文库与多渠道的绝对物理隔离管理。

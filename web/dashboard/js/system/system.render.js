@@ -346,6 +346,9 @@
                                 max: 120,
                                 description: '控制系统在连接 GitHub、Dev.to、Vercel 等第三方 API 或测试物理链路时的请求超时上限（秒）。推荐在代理环境或高延迟网络下设置为 15~30 秒。'
                             })}
+                            ${renderSettingsItem('敏感机密落盘自动加密', 'system.encrypt_secrets', data.system?.encrypt_secrets ?? true, 'checkbox', {
+                                description: '控制分发渠道 Token、发布密钥与 API Key 在保存写入配置文件时是否自动执行工业对称加密（以 enc: 形式落盘）。<br>· <b>开启（推荐）</b>：对敏感密钥进行物理加密存储，防误传或泄漏；系统运行时全自动透明解密。<br>· <b>关闭</b>：直接以明文保存于 config.local.yaml，保存时将自动把已存密文还原为直观明文，便于外部脚本直接读取。'
+                            }, 'local')}
                             ${renderSettingsItem('启用 HTTP 访问日志', 'system.access_log', data.system?.access_log ?? true, 'checkbox', {
                                 description: '是否记录每一次网页 and API 访问（包含心跳请求）。建议关闭以防终端频繁被 stats 心跳刷屏。'
                             })}

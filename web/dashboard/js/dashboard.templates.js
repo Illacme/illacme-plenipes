@@ -139,6 +139,37 @@ window.viewTemplates = {
             </div>
         </div>
     `,
+    design: `
+        <div id="view-design" class="view-panel" style="gap: 16px;">
+            <div class="view-header" style="flex-direction: column; align-items: stretch; height: auto;">
+                <div class="header-main-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px 0 0px;">
+                    <div class="header-title-area">
+                        <h2>🎨 设计中心 (Design Studio)</h2>
+                    </div>
+                    <div class="header-actions" id="design-header-actions-top" style="gap: 12px; display: flex; align-items: center;">
+                        <span style="font-size: 0.72rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.3);">ICMM 视觉引擎已就绪</span>
+                    </div>
+                </div>
+                <div class="header-nav-row" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px 0 10px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div id="design-nav-tabs-slot" style="display: flex; gap: 8px;">
+                        <button class="tactical-tab-btn active" data-subtab="workspace" onclick="window.switchDesignSubTab('workspace', this)">🖌️ 智能生图</button>
+                        <button class="tactical-tab-btn" data-subtab="providers" onclick="window.switchDesignSubTab('providers', this)">🔌 图源引擎</button>
+                        <button class="tactical-tab-btn" data-subtab="assets" onclick="window.switchDesignSubTab('assets', this)">🗃️ 媒体资产</button>
+                    </div>
+                    <div id="design-nav-actions-slot">
+                        <button type="button" class="mini-btn glow-btn" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 700; background: var(--accent-secondary, #00f2fe); color: #000; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px;" onclick="window.openBatchCoverModal()" title="全库原稿智能巡检与批量配图">
+                            <span>⚡</span> 批量智能配图
+                        </button>
+                    </div>
+                </div>
+                <!-- 🎯 目标文章关联横幅专用槽位 (位于子菜单与工作台外框之间的空白间隔区) -->
+                <div id="design-target-banner-slot" style="display: none; padding: 0 20px 0 10px; margin-top: 12px;"></div>
+            </div>
+            <div class="view-content" id="design-center-root" style="overflow-y: auto; flex: 1; min-height: 0;">
+                <!-- 动态注入三大子页面 -->
+            </div>
+        </div>
+    `,
     plugins: `
         <div id="view-plugins" class="view-panel" style="gap: 16px;">
             <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 6px; margin-bottom: 8px;">

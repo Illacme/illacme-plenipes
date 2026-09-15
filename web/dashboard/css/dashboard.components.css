@@ -618,3 +618,174 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border-color: #00f2fe;
     color: #00f2fe;
 }
+
+/* 🎨 设计中心 - 一级功能标签页切换槽 (#design-nav-tabs-slot & .tactical-tab-btn)
+   根因：设计中心模板采用 .tactical-tab-btn 作为二级子导航，但全局 CSS 从未声明其样式规则，
+   导致激活态与基础态视觉完全无差。此处补齐高规格毛玻璃胶囊卡槽与呼吸发光激活态。 */
+#design-nav-tabs-slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 3px;
+    backdrop-filter: blur(10px);
+}
+
+.tactical-tab-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--text-dim, rgba(255, 255, 255, 0.65));
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    outline: none;
+}
+
+.tactical-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-bright, #fff);
+}
+
+.tactical-tab-btn.active {
+    background: rgba(0, 242, 254, 0.14) !important;
+    border: 1px solid rgba(0, 242, 254, 0.45) !important;
+    color: #00f2fe !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.25) !important;
+}
+
+/* 亮色模式适配 (Light Theme) */
+[data-theme="light"] #design-nav-tabs-slot {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .tactical-tab-btn {
+    color: rgba(0, 0, 0, 0.6);
+}
+[data-theme="light"] .tactical-tab-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #000;
+}
+[data-theme="light"] .tactical-tab-btn.active {
+    background: rgba(0, 160, 220, 0.12) !important;
+    border-color: rgba(0, 160, 220, 0.5) !important;
+    color: #0284c7 !important;
+    box-shadow: 0 0 8px rgba(0, 160, 220, 0.2) !important;
+}
+
+/* 图像工坊提供商二级分类筛选导航条 (Provider Category Filter Capsule & Active State) */
+#provider-category-filter {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 3px 4px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#provider-category-filter .mini-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim, rgba(255, 255, 255, 0.65));
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#provider-category-filter .mini-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-bright, #fff);
+}
+
+#provider-category-filter .mini-btn.active {
+    background: rgba(0, 242, 254, 0.14) !important;
+    border: 1px solid rgba(0, 242, 254, 0.45) !important;
+    color: #00f2fe !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.25) !important;
+}
+
+/* 亮色模式适配 (Light Theme for Category Filter) */
+[data-theme="light"] #provider-category-filter {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] #provider-category-filter .mini-btn {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] #provider-category-filter .mini-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #000;
+}
+
+[data-theme="light"] #provider-category-filter .mini-btn.active {
+    background: rgba(0, 160, 220, 0.12) !important;
+    border-color: rgba(0, 160, 220, 0.5) !important;
+    color: #0284c7 !important;
+    box-shadow: 0 0 8px rgba(0, 160, 220, 0.2) !important;
+}
+
+/* ==========================================================================
+   ⚡ [V60.6] High-Performance Scrolling & GPU Anti-Tile-Missing Engine
+   解决快速上下滚动瓦片掉帧白屏、GPU光栅化过载与解码阻塞
+   ========================================================================== */
+
+/* 1. 流光骨架屏动效 (Skeleton Shimmer) */
+@keyframes shimmer-sweep {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-shimmer {
+    position: relative;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(0, 242, 254, 0.08) 50%, rgba(255, 255, 255, 0.02) 75%) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer-sweep 2s infinite linear;
+}
+
+/* 2. 现代浏览器原生虚拟列表 (Culling & Offscreen Render Skip) */
+#vault-table-body tr,
+.asset-card-item,
+.theme-card-unit,
+.plugin-card-unit,
+.doc-cover-item {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 60px;
+}
+
+.asset-card-item,
+.theme-card-unit {
+    contain-intrinsic-size: auto 240px;
+}
+
+/* 3. 剔除长列表内嵌子卡片多余的 backdrop-filter 嵌套（消除 GPU 离屏卷积瓶颈） */
+.asset-card-item.glass-panel,
+.doc-cover-item.glass-panel,
+#vault-table-body tr {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.asset-card-item.glass-panel:hover {
+    background: rgba(0, 242, 254, 0.04);
+}

@@ -6,10 +6,14 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Onboarding Group
 description: 5 步带您在几分钟内完成从本地环境唤醒、治理中心体验、原稿起草到全网发布的完整流程。
-tags: [QuickStart, Tutorial, Onboarding]
-categories: [Documentation]
+tags:
+- QuickStart
+- Tutorial
+- Onboarding
+categories:
+- Documentation
+cover: /api/design/assets/covers/gen_3f25871606fb.jpg
 ---
-
 # ⚡ 创作者 5 分钟极速上手指南
 
 欢迎使用 **Illacme Plenipes**！跟随以下 5 个简单步骤，您将在几分钟内体验从创作到全网发布的全链路流程。

@@ -19,6 +19,7 @@ _discord_lock = threading.Lock()
 class DiscordSyndicator(BaseSyndicator):
     PLUGIN_ID = "discord"
     DISPLAY_NAME = "Discord 社区频道广播"
+    ICON = "💬"
     VERSION = "V1.0"
     DESCRIPTION = "面向读者的公开发布通道：将新文章的标题、摘要、封面与阅读链接以 Embed 富文本卡片形式广播至 Discord 读者社区。"
     
@@ -52,7 +53,7 @@ class DiscordSyndicator(BaseSyndicator):
             ]
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

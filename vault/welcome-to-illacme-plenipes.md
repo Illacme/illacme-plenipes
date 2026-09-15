@@ -3,10 +3,14 @@ title: 欢迎来到 Illacme Plenipes 全球私人出版社
 date: 2026-08-16
 author: Illacme Editorial Team
 description: 专为海量 Markdown 构筑的 AI 原生全球出版引擎，让灵感在起草室点燃，在文库中沉淀，通过矩阵响彻全球。
-tags: [Illacme, Sovereign, Overview]
-categories: [Guide]
+tags:
+- Illacme
+- Sovereign
+- Overview
+categories:
+- Guide
+cover: /api/design/assets/covers/cover_43adf8891bf7.jpg
 ---
-
 # 🌌 欢迎来到 Illacme Plenipes 全球私人出版社
 
 **Illacme Plenipes** 是一款面向个人创作者与专业出版团队的**工业级 AI 原生全球出版引擎**。它将您的本地 Markdown 文件夹（Obsidian、Logseq、Typora 等）无缝转化为一座功能完备的**“全球私人出版社”**。

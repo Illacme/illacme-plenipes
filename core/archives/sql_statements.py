@@ -107,6 +107,25 @@ INIT_SCHEMA = [
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(rel_path, lang_code, target_id)
     )
+    """,
+    # 9. 🎨 [V122.0] 视觉创作物权资产表 (Visual Assets)
+    """
+    CREATE TABLE IF NOT EXISTS visual_assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rel_path TEXT NOT NULL,
+        asset_type TEXT NOT NULL DEFAULT 'cover',
+        strategy TEXT NOT NULL,
+        source_url TEXT,
+        cdn_url TEXT,
+        media_id TEXT,
+        prompt TEXT,
+        width INTEGER DEFAULT 0,
+        height INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_visual_assets_rel ON visual_assets(rel_path);
     """
 ]
 

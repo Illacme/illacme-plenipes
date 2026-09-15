@@ -91,6 +91,8 @@ class PayloadManager:
         is_local = "localhost" in safe_url or "127.0.0.1" in safe_url
         
         max_tokens = params.get("max_tokens", 4096)
+        if not isinstance(max_tokens, (int, float)):
+            max_tokens = 4096
         safe_system = (system_prompt or "").lower() if isinstance(system_prompt, str) else ""
         if max_tokens > 4096 and "translate" in safe_system:
             audit_path.append("💡 [算力建议] 翻译任务建议压减 max_tokens 以节省开销")

@@ -16,8 +16,12 @@ _sf_lock = threading.Lock()
 class SegmentFaultSyndicator(BaseSyndicator):
     PLUGIN_ID = "segmentfault"
     DISPLAY_NAME = "SegmentFault 思否"
+    ICON = "💡"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至 SegmentFault 思否开发者专栏或草稿箱，触达一线现代技术圈层。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖思否 PHPSESSID Cookie 凭据，需定期检查凭据有效性。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -38,7 +42,7 @@ class SegmentFaultSyndicator(BaseSyndicator):
             "original_url": canonical_url
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

@@ -14,6 +14,7 @@ tags:
 - Sovereign
 - GC
 title: 段落缓存治理中枢 (Block Cache Hub)
+cover: /api/design/assets/covers/cover_7ba061a2d3ab.jpg
 ---
 # 🧱 段落缓存治理中枢 (Block Cache Hub)
 

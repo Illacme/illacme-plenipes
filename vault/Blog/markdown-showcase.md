@@ -3,10 +3,15 @@ title: Markdown 语法与渲染特性全能展示
 date: 2026-08-16
 author: Illacme Test Guild
 description: 全面展示 Illacme Plenipes 支持的全部 Markdown 语法特性，包含 Obsidian Callouts、双链、表格、代码高亮与公式。
-tags: [Markdown, Showcase, Syntax, Features]
-categories: [Tech]
+tags:
+- Markdown
+- Showcase
+- Syntax
+- Features
+categories:
+- Tech
+cover: /api/design/assets/covers/cover_52470306983a.jpg
 ---
-
 # 🎯 Markdown 语法与渲染特性全能展示
 
 本文作为 **Illacme Plenipes** 渲染引擎与静态装帧系统的“活体基准测试”，涵盖了日常写作中所有高级排版元素。

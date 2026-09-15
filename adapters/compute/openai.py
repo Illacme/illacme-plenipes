@@ -7,7 +7,6 @@ Illacme-plenipes Core - OpenAI Adapter
 """
 
 import re
-import requests
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
 
@@ -28,7 +27,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        self._session = requests.Session()
+        self._session = self.init_session()
 
     def get_archetype_params(self) -> Dict[str, Any]:
         """OpenAI 兼容模型的黄金默认参数"""

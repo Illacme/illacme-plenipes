@@ -17,8 +17,12 @@ _xhs_lock = threading.Lock()
 class XiaohongshuSyndicator(BaseSyndicator):
     PLUGIN_ID = "xiaohongshu"
     DISPLAY_NAME = "小红书"
+    ICON = "📕"
     VERSION = "V1.0"
     DESCRIPTION = "将文章智能提炼为图文笔记，自动提取插图轮播与热门话题标签，同步至小红书创作者平台。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖小红书创作者平台 Web Cookie (a1/web_session)，需定期维护登录凭据。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -74,7 +78,7 @@ class XiaohongshuSyndicator(BaseSyndicator):
             "post_type": "normal"  # normal: 图文笔记
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

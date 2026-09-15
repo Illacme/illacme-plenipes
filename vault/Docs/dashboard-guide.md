@@ -3,10 +3,14 @@ title: 治理中心 (Governance Dashboard) 操作指南
 date: 2026-08-11
 author: Illacme Editorial Team
 description: 详尽拆解治理中心四大核心分类与二级子标签功能，涵盖基础配置、版图管理、多语言矩阵与路由映射。
-tags: [Dashboard, Governance, Settings]
-categories: [Documentation]
+tags:
+- Dashboard
+- Governance
+- Settings
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_cfdac86d9feb.jpg
 ---
-
 # 🎛️ 治理中心 (Governance Dashboard) 操作指南
 
 治理中心是 **Illacme Plenipes** 的可视化控制塔。采用现代化高档毛玻璃设计体系，为创作者提供全方位的出版运维中枢。

@@ -69,7 +69,11 @@ window.restoreScratchpadDraft = () => {
         if (mSlug) mSlug.value = draft.slug || "";
         
         if (draft.frontmatter) {
-            renderDynamicMetadata(draft.frontmatter);
+            if (typeof window.renderDynamicMetadata === 'function') {
+                window.renderDynamicMetadata(draft.frontmatter);
+            } else if (typeof renderDynamicMetadata === 'function') {
+                renderDynamicMetadata(draft.frontmatter);
+            }
         }
         
         updateEditorPreview();

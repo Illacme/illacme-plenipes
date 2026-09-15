@@ -20,6 +20,7 @@ _substack_lock = threading.Lock()
 class SubstackSyndicator(BaseSyndicator):
     PLUGIN_ID = "substack"
     DISPLAY_NAME = "Substack"
+    ICON = "📮"
     VERSION = "V1.0"
     DESCRIPTION = "将内容同步分发至 Substack 订阅，支持草稿创建与 Newsletter 邮件推送预备。"
     
@@ -35,7 +36,7 @@ class SubstackSyndicator(BaseSyndicator):
             "write_comment_permissions": "everyone"
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

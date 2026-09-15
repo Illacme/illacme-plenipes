@@ -6,9 +6,14 @@ route_prefix: showcase
 date: 2026-08-18
 author: Illacme Sovereign Press
 description: 探索 Illacme Plenipes 强大的混合算力调度中心与段落影子缓存架构，实现 90%+ 算力节省与零 Token 浪费。
-tags: [Showcase, Compute, AI, ShadowCache, Optimization]
+tags:
+- Showcase
+- Compute
+- AI
+- ShadowCache
+- Optimization
+cover: /api/design/assets/covers/cover_37c1a93c81d8.jpg
 ---
-
 # 🧠 29+ 混合算力调度与段落缓存案例
 
 > [!NOTE]

@@ -19,6 +19,7 @@ _telegram_lock = threading.Lock()
 class TelegramSyndicator(BaseSyndicator):
     PLUGIN_ID = "telegram"
     DISPLAY_NAME = "Telegram 频道广播"
+    ICON = "✈️"
     VERSION = "V1.0"
     DESCRIPTION = "面向读者的公开发布通道：使用 Telegram Bot 将新文章标题、摘要与阅读全文链接自动推送至指定的读者频道或群组。"
     
@@ -45,7 +46,7 @@ class TelegramSyndicator(BaseSyndicator):
             "disable_web_page_preview": False
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

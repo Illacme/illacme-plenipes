@@ -80,6 +80,9 @@ class SQLiteBackend(SQLiteReviewMixin, SQLiteSyndicationMixin, SQLiteMaintenance
                 tlog.warning(f"⚠️ [SQLite] 无法配置 journal_mode: {e}")
         return self._local.conn
 
+    def get_connection(self):
+        return self._get_conn()
+
     def _init_db(self):
         conn = self._get_conn()
         with conn:

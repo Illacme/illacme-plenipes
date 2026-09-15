@@ -27,13 +27,13 @@ class AzureOpenAITranslator(OpenAICompatibleTranslator):
         
         # Azure 使用 api-key Header
         headers = {
-            "api-key": self.config.api_key,
+            "api-key": self.safe_get_config('api_key'),
             "Content-Type": "application/json"
         }
         
         # 转换 Payload (Azure 依然使用 OpenAI 风格的 messages)
         azure_payload = {
-            "messages": [
+            "messages": payload.get("messages") or [
                 {"role": "system", "content": payload.get("system")},
                 {"role": "user", "content": payload.get("user")}
             ],
@@ -43,7 +43,7 @@ class AzureOpenAITranslator(OpenAICompatibleTranslator):
         if "api_version" in azure_payload:
             del azure_payload["api_version"]
             
-        resp = self._session.post(full_url, headers=headers, json=azure_payload, timeout=self.timeout)
+        resp = self._session.post(full_url, headers=headers, json=azure_payload, timeout=self.timeout, proxies=self.get_proxy_dict())
         resp.raise_for_status()
         
         data = resp.json()

@@ -5,10 +5,17 @@ slug: intelligent-slug-seo
 route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
-description: 探索 Illacme Plenipes 如何实现中文拼音、英文智能翻译、哈希与日期多维 Slug 映射，搭配实时演算沙盘与 Google / 百度 Canonical 原创保护。
-tags: [Showcase, SEO, Slug, Permalinks, Routing, Canonical]
+description: 探索 Illacme Plenipes 如何实现中文拼音、英文智能翻译、哈希与日期多维 Slug 映射，搭配实时演算沙盘与 Google
+  / 百度 Canonical 原创保护。
+tags:
+- Showcase
+- SEO
+- Slug
+- Permalinks
+- Routing
+- Canonical
+cover: /api/design/assets/covers/cover_bdfc66003a91.jpg
 ---
-
 # 🧭 智能 Slug 网址沙盘与 SEO 路由矩阵
 
 > [!TIP]

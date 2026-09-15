@@ -1,6 +1,6 @@
 /**
  * ⚙️ [V87.0] Illacme Plenipes Plugins - Image Hosting Platforms Shard
- * 职责：图床与对象存储服务 (S3, GitHub, SM.MS, Imgur, Telegraph, OSS, COS, Kodo, USS, Loli.io, Superbed, Lsky Pro) 的配置表单渲染。
+ * 职责：图床与对象存储服务 (S3, Cloudflare R2, GitHub, ImgBB, Catbox, Imgur, OSS, COS, Kodo, USS, Loli.io, Superbed, Lsky Pro) 的配置表单渲染。
  */
 
 var renderSettingsItem = window.renderSettingsItem || (() => "");
@@ -33,11 +33,12 @@ window.rawRenderImageHostingConfig = (id, cfg) => {
     } else if (id === 'github') {
         return `
             <div class="api-token-helper">
-                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <span>💡 GitHub Token 直达链接</span>
+                <div style="font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                    <span>💡 GitHub 凭证与仓库向导</span>
+                    <button type="button" class="helper-btn" onclick="window.applyCrossPluginCredentials('github_pages', 'github', 'image_hosting', this)" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.35); color: var(--neon-cyan, #00f2fe); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; font-weight: 600;" title="从全站分发的 GitHub Pages 一键同步 Token 与仓库">📋 一键复用 GitHub Pages</button>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 2px;">
-                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=Illacme-Plenipes-Image-Hosting" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 Token 申请</a>
+                <div style="display: flex; gap: 10px; margin-top: 4px;">
+                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=Illacme-Plenipes-Image-Hosting" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 新建专用 Token 申请</a>
                 </div>
             </div>
             ${renderSettingsItem('访问令牌 (Token)', `image_hosting.github.token`, cfg.token, 'password', { placeholder: "GitHub Personal Access Token" })}
@@ -47,21 +48,6 @@ window.rawRenderImageHostingConfig = (id, cfg) => {
             ${window.renderPlatformAdvancedGroup('高级可选参数 (Path / 代理)', `
                 ${renderSettingsItem('存储路径前缀 (Path)', `image_hosting.github.path`, cfg.path || 'images', 'text', { placeholder: "例如: images" })}
                 ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.github.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透 GitHub API 的网络校验。" })}
-            `)}
-        `;
-    } else if (id === 'sm_ms') {
-        return `
-            <div class="api-token-helper">
-                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <span>💡 Token 直达魔术链接</span>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 2px;">
-                    <a href="https://sm.ms/home/apitoken" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达 SM.MS 密钥申请页</a>
-                </div>
-            </div>
-            ${renderSettingsItem('SM.MS 访问密钥 (Token)', `image_hosting.sm_ms.token`, cfg.token, 'password', { placeholder: "请输入 SM.MS Secret Token", description: "登录 SM.MS 官网，在 User -> API Token 中获取。" })}
-            ${window.renderPlatformAdvancedGroup('高级代理参数', `
-                ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.sm_ms.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透 SM.MS API 的校验。" })}
             `)}
         `;
     } else if (id === 'imgur') {
@@ -78,13 +64,6 @@ window.rawRenderImageHostingConfig = (id, cfg) => {
             ${renderSettingsItem('访问令牌 (Access Token)', `image_hosting.imgur.token`, cfg.token, 'password', { placeholder: "Imgur Access Token (可选)", description: "若绑定至个人账户请填写此项。" })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.imgur.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透 Imgur API 的校验。" })}
-            `)}
-        `;
-    } else if (id === 'telegraph') {
-        return `
-            ${renderSettingsItem('API 端点 (Endpoint)', `image_hosting.telegraph.endpoint`, cfg.endpoint || 'https://telegra.ph', 'text', { placeholder: "例如: https://telegra.ph", description: "Telegraph API 基础端点，允许填写反代域名解决连接超时。" })}
-            ${window.renderPlatformAdvancedGroup('高级代理参数', `
-                ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.telegraph.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透 Telegraph 端点的校验。" })}
             `)}
         `;
     } else if (id === 'aliyun_oss') {
@@ -200,6 +179,79 @@ window.rawRenderImageHostingConfig = (id, cfg) => {
             ${window.renderPlatformAdvancedGroup('高级相册与策略参数', `
                 ${renderSettingsItem('存储策略 ID (Strategy ID)', `image_hosting.lsky_pro.strategy_id`, cfg.strategy_id, 'text', { placeholder: "可选，不填为默认存储策略" })}
                 ${renderSettingsItem('相册 ID (Album ID)', `image_hosting.lsky_pro.album_id`, cfg.album_id, 'text', { placeholder: "可选，不填则不归类至相册" })}
+            `)}
+        `;
+    } else if (id === 'cloudflare_r2') {
+        return `
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🟧 Cloudflare R2 开箱即用配置</span>
+                    <a href="https://dash.cloudflare.com/?to=/:account/r2" target="_blank" class="helper-btn" style="color: #f38020;">🔗 打开 R2 控制台</a>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 4px;">每月 10GB 永久免费存储，0 出口流量费。系统自动根据 Account ID 拼装 S3 Endpoint。</div>
+            </div>
+            ${renderSettingsItem('账户 ID (Account ID)', `image_hosting.cloudflare_r2.account_id`, cfg.account_id, 'text', { placeholder: "例如: 8a7c6b5d4e3f2a1b0c9d8e7f6a5b4c3d", description: "在 Cloudflare 控制台右侧获取您的 Account ID。" })}
+            ${renderSettingsItem('访问密钥 ID (Access Key ID)', `image_hosting.cloudflare_r2.access_key_id`, cfg.access_key_id || cfg.access_key, 'text', { placeholder: "R2 API 令牌的 Access Key ID" })}
+            ${renderSettingsItem('私有密钥 (Secret Access Key)', `image_hosting.cloudflare_r2.secret_access_key`, cfg.secret_access_key || cfg.secret_key, 'password', { placeholder: "R2 API 令牌的 Secret Access Key" })}
+            ${renderSettingsItem('存储桶名称 (Bucket)', `image_hosting.cloudflare_r2.bucket`, cfg.bucket, 'text', { placeholder: "例如: my-blog-assets" })}
+            ${renderSettingsItem('公开访问域名 (Public URL)', `image_hosting.cloudflare_r2.public_url`, cfg.public_url, 'text', { placeholder: "例如: https://img.yourdomain.com", description: "在 R2 存储桶设置中绑定的自定义域名或 r2.dev 链接。" })}
+            ${window.renderPlatformAdvancedGroup('高级可选参数', `
+                ${renderSettingsItem('存储路径前缀 (Prefix)', `image_hosting.cloudflare_r2.path_prefix`, cfg.path_prefix || 'images', 'text', { placeholder: "例如: images" })}
+            `)}
+        `;
+    } else if (id === 'imgbb') {
+        return `
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🖼️ ImgBB 免运维公共图床</span>
+                    <a href="https://api.imgbb.com" target="_blank" class="helper-btn" style="color: var(--neon-cyan, #00f2fe);">🔗 免费获取 API Key</a>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 4px;">全球老牌免存储桶图床，单图上限 32MB，只需 1 个 API Key 即可永久直链托管。</div>
+            </div>
+            ${renderSettingsItem('API 访问密钥 (API Key)', `image_hosting.imgbb.api_key`, cfg.api_key || cfg.token, 'password', { placeholder: "请输入 ImgBB API Key" })}
+            ${window.renderPlatformAdvancedGroup('高级代理参数', `
+                ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.imgbb.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透 API 校验。" })}
+            `)}
+        `;
+    } else if (id === 'catbox') {
+        return `
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🐱 Catbox 极客永久图床</span>
+                    <a href="https://catbox.moe/user/manage.php" target="_blank" class="helper-btn" style="color: #a78bfa;">🔗 获取 Userhash</a>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 4px;">单文件上限 200MB，支持匿名直接上传。如需管理图片可填入个人 Userhash。</div>
+            </div>
+            ${renderSettingsItem('用户凭证 (Userhash)', `image_hosting.catbox.userhash`, cfg.userhash || cfg.token, 'password', { placeholder: "可选。留空则以完全匿名模式上传", description: "在 Catbox 个人管理中心获取的识别哈希。" })}
+            ${window.renderPlatformAdvancedGroup('高级代理参数', `
+                ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.catbox.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地代理以穿透连接。" })}
+            `)}
+        `;
+    } else if (id === 'telegraph') {
+        return `
+            <div class="api-token-helper" style="border-color: rgba(255, 170, 0, 0.4); background: rgba(255, 170, 0, 0.05); padding: 12px 14px; border-radius: 8px;">
+                <div style="font-weight: 700; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: #ffaa00; font-size: 0.9rem;">⚡ Telegraph 自建图床新手向导</span>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="https://github.com/cf-pages/Telegraph-Image" target="_blank" class="helper-btn" style="color: #ffaa00; border-color: rgba(255, 170, 0, 0.4); padding: 2px 8px; font-size: 0.75rem;">🔗 开源仓库</a>
+                        <a href="https://dash.cloudflare.com/?to=/:account/pages" target="_blank" class="helper-btn" style="color: #f38020; border-color: rgba(243, 128, 32, 0.4); padding: 2px 8px; font-size: 0.75rem;">☁️ CF 控制台</a>
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;">
+                    <div style="color: #ff6b6b; margin-bottom: 6px; font-size: 0.78rem;">
+                        ⚠️ <b>官方通道失效说明</b>：Telegram 官方已停用匿名接口 (400 报错)，<b>严禁使用官方域名 telegra.ph</b>。
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 6px; border-left: 3px solid #ffaa00;">
+                        <b>🛠️ 3步免服务器极速自建指南（通过 Cloudflare Pages）：</b><br>
+                        1. <b>Fork 仓库</b>：点击上方「开源仓库」，Fork <code>cf-pages/Telegraph-Image</code> 到个人 GitHub。<br>
+                        2. <b>Pages 部署</b>：登录 Cloudflare 控制台，进入 <b>Workers & Pages</b> -&gt; <b>创建应用程序</b> -&gt; <b>Pages</b> -&gt; 连接该仓库，直接点击部署。<br>
+                        3. <b>填入域名</b>：部署成功后，将分配的 <code>https://xxx.pages.dev</code> 域名粘贴到下方即可（支持绑定自定义域名加速国内访问）。
+                    </div>
+                </div>
+            </div>
+            ${renderSettingsItem('自建节点端点 (Endpoint URL)', `image_hosting.telegraph.endpoint`, cfg.endpoint, 'text', { placeholder: "例如: https://my-image.pages.dev (严禁填 telegra.ph)", description: "您的 Cloudflare Pages / Workers 自建节点完整地址，支持自定义独立域名。末尾无需 /upload。" })}
+            ${window.renderPlatformAdvancedGroup('高级网络代理参数', `
+                ${renderSettingsItem('代理地址 (HTTP Proxy)', `image_hosting.telegraph.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:7890 (可选)", description: "可选。配置本地网络代理以加速访问海外自建节点。" })}
             `)}
         `;
     } else {

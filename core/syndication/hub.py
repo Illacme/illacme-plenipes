@@ -90,6 +90,17 @@ class ContentSyndicator:
             uploader = ImageUploader(self.cfg, self.sys_tuning)
             processor = MarkdownASTProcessor()
             content = processor.process_images(content, doc_dir, uploader.upload_image)
+
+            # 🚀 [阶段二.1：全渠道封面公网转存防线]
+            if metadata and isinstance(metadata, dict):
+                raw_cov = metadata.get("cover") or metadata.get("cover_image") or metadata.get("banner")
+                if raw_cov:
+                    uploaded_cov = uploader.upload_cover(raw_cov, doc_dir=doc_dir)
+                    if uploaded_cov:
+                        metadata["cover"] = uploaded_cov
+                        metadata["cover_image"] = uploaded_cov
+                        metadata["banner"] = uploaded_cov
+                        tlog.info(f"✨ [分发引擎] 封面图已成功转存公网直链: {uploaded_cov}")
         except Exception as pe:
             tlog.error(f"🛑 [分发引擎] AST 图片处理异常: {pe}")
 
@@ -117,7 +128,8 @@ class ContentSyndicator:
                 self._dispatch_to_plugin,
                 plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run,
                 priority=TaskPriority.SYNDICATION,
-                task_name=f"Syndicate-{plugin.__class__.__name__}-{slug}"
+                task_name=f"Syndicate-{plugin.__class__.__name__}-{slug}",
+                **kwargs
             )
 
         if not is_dry_run and trigger_global_retry:
@@ -131,7 +143,8 @@ class ContentSyndicator:
         """🛡️ 扁平化重构：原子化执行单平台分发"""
         target_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__)
         try:
-            if not plugin.is_enabled(rel_path, lang_code):
+            force_push = kwargs.get('force_push', False)
+            if not force_push and not plugin.is_enabled(rel_path, lang_code):
                 return
                 
             # 🚀 [V89.4] 物理幂等防重：首发启动前，先从待重试死信队列中将该文的老任务抹除，杜绝对端并发冲突
@@ -198,7 +211,13 @@ class ContentSyndicator:
                     canonical_url = f"{base_url}/posts/{slug}"
 
             payload = plugin.format_payload(title, slug, content, metadata, canonical_url=canonical_url)
-            res = plugin.push(payload, remote_id=remote_id)
+            try:
+                res = plugin.push(payload, remote_id=remote_id)
+            except TypeError as te:
+                if "remote_id" in str(te):
+                    res = plugin.push(payload)
+                else:
+                    raise te
             published_url = None
             is_draft = False
             dashboard_url = None
@@ -210,6 +229,8 @@ class ContentSyndicator:
                 dashboard_url = res.get("dashboard_url")
                 if res.get("remote_id"):
                     res_remote_id = str(res["remote_id"])
+                elif res.get("media_id"):
+                    res_remote_id = str(res["media_id"])
 
             # 🚀 [V120.0] 记录分发成功及物权映射记录
             if not is_dry_run and self.meta and rel_path:
@@ -381,14 +402,17 @@ class ContentSyndicator:
                 "error": f"{target_id} 平台官方 API 不支持远程删除，建议点击右侧「🔗 解绑」并在该平台后台手动处理。"
             }
 
+        actual_lang = rec.get("lang_code") or lang_code
         try:
             success = plugin.delete(remote_id)
             if success:
-                self.meta.delete_syndication_record(rel_path, lang_code, target_id)
+                self.meta.delete_syndication_record(rel_path, actual_lang, target_id)
+                if actual_lang != lang_code:
+                    self.meta.delete_syndication_record(rel_path, lang_code, target_id)
                 if hasattr(self.meta, "update_egress_status"):
                     self.meta.update_egress_status(rel_path, target_id, "pending", url="")
                     self.meta.save()
-                tlog.info(f"🗑️ [物理下架与解绑成功] {rel_path} ({lang_code}) -> {target_id} (ID: {remote_id})")
+                tlog.info(f"🗑️ [物理下架与解绑成功] {rel_path} ({actual_lang}) -> {target_id} (ID: {remote_id})")
                 return {"ok": True, "message": f"文章 (ID: {remote_id}) 已从 {target_id} 成功物理下架。"}
             else:
                 return {"ok": False, "error": f"{target_id} 平台返回下架失败。"}
@@ -404,9 +428,13 @@ class ContentSyndicator:
     def unlink_remote_article(self, rel_path: str, lang_code: str, target_id: str) -> dict:
         """🚀 [V120.0] 本地解绑：仅从 SQLite 账本删除物理映射，不影响对端已发布的文章"""
         if not self.meta: return {"ok": False, "error": "Meta ledger not initialized"}
-        self.meta.delete_syndication_record(rel_path, lang_code, target_id)
+        rec = self.meta.get_syndication_record(rel_path, lang_code, target_id)
+        actual_lang = rec.get("lang_code") if rec else lang_code
+        self.meta.delete_syndication_record(rel_path, actual_lang, target_id)
+        if actual_lang != lang_code:
+            self.meta.delete_syndication_record(rel_path, lang_code, target_id)
         if hasattr(self.meta, "update_egress_status"):
             self.meta.update_egress_status(rel_path, target_id, "pending", url="")
             self.meta.save()
-        tlog.info(f"🔗 [本地解绑成功] {rel_path} ({lang_code}) -> {target_id}")
+        tlog.info(f"🔗 [本地解绑成功] {rel_path} ({actual_lang}) -> {target_id}")
         return {"ok": True, "message": f"已解除 {target_id} 与该文章的本地绑定。"}

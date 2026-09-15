@@ -122,7 +122,7 @@ window.initDashboard = async () => {
                     openMenu();
                     if (typeof window.showView === 'function') {
                         const isGov = (groupId === 'nav-group-governance');
-                        const subViews = isGov ? ['settings', 'compute', 'plugins'] : ['tower', 'analytics'];
+                        const subViews = isGov ? ['settings', 'compute', 'design', 'plugins'] : ['tower', 'analytics'];
                         if (!subViews.includes(window.currentView)) {
                             window.showView(defaultViewId);
                         }

@@ -410,9 +410,18 @@ class Configuration(BaseModel):
             if 'translation' in data and 'compute_nodes' in data['translation']:
                 del data['translation']['compute_nodes']
         
+        # 🛡️ [商业安全加固] 敏感凭据自动落盘加密/解密自愈
+        from core.governance.secret_manager import secrets
+        should_encrypt = getattr(getattr(self, "system", None), "encrypt_secrets", True)
+        if should_encrypt:
+            data = secrets.encrypt_tree(data)
+        else:
+            data = secrets.decrypt_tree(data)
+
         # 🚀 [V66.6] “头部键强力提升 (Key Promotion)”协议
         from core.utils.common import promote_config_keys
         data = promote_config_keys(data)
 
         with open(path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+

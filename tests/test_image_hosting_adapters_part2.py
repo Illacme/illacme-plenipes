@@ -17,6 +17,9 @@ from adapters.egress.image_hosting.upyun_uss import UpyunUssImageHost
 from adapters.egress.image_hosting.loli_io import LoliIoImageHost
 from adapters.egress.image_hosting.superbed import SuperbedImageHost
 from adapters.egress.image_hosting.lsky_pro import LskyProImageHost
+from adapters.egress.image_hosting.imgbb import ImgBBImageHost
+from adapters.egress.image_hosting.catbox import CatboxImageHost
+from adapters.egress.image_hosting.cloudflare_r2 import CloudflareR2ImageHost
 
 
 class BaseImageHostTest:
@@ -173,3 +176,66 @@ class TestImageHostingPluginsPart2(BaseImageHostTest):
 
                 url = host.upload(img_path)
                 assert url == "https://lsky.test.com/storage/img.png"
+
+    def test_imgbb_image_host(self) -> None:
+        host = ImgBBImageHost(config={"api_key": "test-key", "proxy": "http://127.0.0.1:7890"})
+        assert host.api_key == "test-key"
+        assert host.proxy == "http://127.0.0.1:7890"
+
+        host_no_conf = ImgBBImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("requests.post") as mock_post:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.json.return_value = {
+                    "success": True,
+                    "data": {"url": "https://i.ibb.co/abcd/test.png"}
+                }
+                mock_post.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url == "https://i.ibb.co/abcd/test.png"
+
+    def test_catbox_image_host(self) -> None:
+        host = CatboxImageHost(config={"userhash": "my-hash"})
+        assert host.userhash == "my-hash"
+
+        host_anon = CatboxImageHost(config={})
+        assert host_anon.userhash == ""
+
+        with self._temp_image() as img_path:
+            with patch("requests.post") as mock_post:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.text = "https://files.catbox.moe/xyz123.png\n"
+                mock_post.return_value = mock_resp
+
+                url = host.upload(img_path)
+                assert url == "https://files.catbox.moe/xyz123.png"
+
+    def test_cloudflare_r2_image_host(self) -> None:
+        host = CloudflareR2ImageHost(config={
+            "account_id": "acc123",
+            "access_key_id": "ak123",
+            "secret_access_key": "sk123",
+            "bucket": "my-bucket",
+            "public_url": "https://img.myblog.com",
+            "path_prefix": "assets"
+        })
+        assert host.endpoint_url == "https://acc123.r2.cloudflarestorage.com"
+        assert host.public_url == "https://img.myblog.com"
+
+        host_no_conf = CloudflareR2ImageHost(config={})
+        assert host_no_conf.upload("fake_path") is None
+
+        with self._temp_image() as img_path:
+            with patch("boto3.client") as mock_boto:
+                mock_client = MagicMock()
+                mock_boto.return_value = mock_client
+
+                url = host.upload(img_path)
+                assert url is not None
+                assert url.startswith("https://img.myblog.com/assets/")
+                mock_client.upload_fileobj.assert_called_once()

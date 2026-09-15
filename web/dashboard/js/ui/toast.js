@@ -13,7 +13,7 @@
                 position: fixed;
                 top: 24px;
                 right: 24px;
-                z-index: 99999;
+                z-index: 1000005;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;

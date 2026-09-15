@@ -19,6 +19,7 @@ _devto_lock = threading.Lock()
 class DevToSyndicator(BaseSyndicator):
     PLUGIN_ID = "devto"
     DISPLAY_NAME = "Dev.to"
+    ICON = "👩‍💻"
     VERSION = "V1.0"
     DESCRIPTION = "将内容同步分发至全球开发者社区 Dev.to，支持标签映射与原文链接回溯。"
     
@@ -50,17 +51,35 @@ class DevToSyndicator(BaseSyndicator):
         # 🛡️ [V89.3] 极其强顺的公网 Canonical URL 校验
         if canonical_url and (canonical_url.startswith("http://") or canonical_url.startswith("https://")):
             payload["article"]["canonical_url"] = canonical_url
-            
+
+        # 🖼️ 支持 Dev.to 文章顶部大图与主页横幅 (main_image)
+        cover = metadata.get("cover") or metadata.get("cover_image") or metadata.get("image")
+        if cover and (str(cover).startswith("http://") or str(cover).startswith("https://")):
+            payload["article"]["main_image"] = str(cover)
+
         return payload
 
-    def push(self, payload: dict, remote_id: str = None):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 
         api_key = self.config.get('api_key') if isinstance(self.config, dict) else getattr(self.config, 'api_key', None)
+        if isinstance(api_key, str) and (api_key.startswith("enc:") or api_key.startswith("ENC:")):
+            from core.governance.secret_manager import SecretManager
+            api_key = SecretManager.decrypt(api_key)
         if not api_key:
             raise RuntimeError("缺少 API Key，分发自动熔断。")
             
+        proxy = self.config.get("proxy") if isinstance(self.config, dict) else getattr(self.config, "proxy", None)
+        if not proxy:
+            try:
+                from core.config.config_models import load_config
+                sys_cfg = load_config()
+                proxy = getattr(getattr(sys_cfg, "system", None), "global_proxy", "") or getattr(getattr(sys_cfg, "system", None), "proxy", "")
+            except Exception:
+                proxy = ""
+        proxies = {"http": proxy, "https": proxy} if proxy else None
+
         url = f"https://dev.to/api/articles/{remote_id}" if remote_id else "https://dev.to/api/articles"
         headers = {"api-key": api_key, "Content-Type": "application/json"}
         
@@ -82,9 +101,9 @@ class DevToSyndicator(BaseSyndicator):
                 
                 try:
                     if remote_id:
-                        resp = requests.put(url, json=payload, headers=headers, timeout=self.timeout)
+                        resp = requests.put(url, json=payload, headers=headers, proxies=proxies, timeout=self.timeout)
                     else:
-                        resp = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
+                        resp = requests.post(url, json=payload, headers=headers, proxies=proxies, timeout=self.timeout)
                     _last_devto_time = time.time()
                 except requests.exceptions.RequestException as req_err:
                     _last_devto_time = time.time()
@@ -111,7 +130,7 @@ class DevToSyndicator(BaseSyndicator):
                 is_soft_404 = False
                 if publish_url:
                     try:
-                        probe_resp = requests.get(publish_url, timeout=8, headers={"User-Agent": "IllacmePlenipes/1.0"})
+                        probe_resp = requests.get(publish_url, timeout=8, proxies=proxies, headers={"User-Agent": "IllacmePlenipes/1.0"})
                         page_text = probe_resp.text[:3000].lower()
                         if '404' in page_text and 'page not found' in page_text:
                             is_soft_404 = True

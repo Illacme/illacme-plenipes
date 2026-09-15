@@ -6,10 +6,15 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Core Architecture Team
 description: 深度剖析 Illacme Plenipes 的物理主权隔离模型、双相分发管线与四端口微内核架构。
-tags: [Architecture, Sovereign, Security, Core]
-categories: [Documentation]
+tags:
+- Architecture
+- Sovereign
+- Security
+- Core
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_da38e436da84.jpg
 ---
-
 # 🏛️ 物理隔离架构与技术原理
 
 **Illacme Plenipes** 遵循“主权绝对隔离（Sovereign Isolation Architecture）”哲学。本章将详细拆解系统的核心架构、物理数据流向与安全设计。

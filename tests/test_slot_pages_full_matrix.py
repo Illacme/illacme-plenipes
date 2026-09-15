@@ -12,7 +12,6 @@ Illacme Plenipes - Slot Pages Full Matrix Tests
 
 import os
 from unittest.mock import MagicMock
-import pytest
 
 from core.editorial.router import RouteManager
 from adapters.egress.ssg.starlight import StarlightAdapter

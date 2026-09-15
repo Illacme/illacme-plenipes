@@ -36,17 +36,46 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
         // 1. 显式标记了 required 或 data-required
         const isExplicitRequired = input.hasAttribute('required') || input.getAttribute('data-required') === 'true';
 
-        // 2. 属于核心必要凭据字段（如 token, api_token, access_token, secret_key, application_password, admin_api_key 等）
+        // 2. 检查显式或智能可选标记（如 data-optional="true"、说明文字提示可选/二选一）
+        const row = input.closest('.setting-row');
+        const descText = (row ? (row.querySelector('.setting-desc')?.innerText || '') : '').toLowerCase();
+        const placeholderText = (input.placeholder || '').toLowerCase();
+        const isMarkedOptional = input.getAttribute('data-optional') === 'true' ||
+            descText.includes('可选') || descText.includes('可留空') || descText.includes('二选一') ||
+            placeholderText.includes('可选') || placeholderText.includes('二选一');
+
         // 排除明确可选的字段（如 proxy, cname, prefix, acl, public_url, endpoint_url 等）
-        const isOptionalField = path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description');
+        const isOptionalField = isMarkedOptional || path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description');
         
-        const isCoreCredential = !isOptionalField && (
+        let isCoreCredential = !isOptionalField && (
             path.includes('token') || path.includes('api_key') || path.includes('secret_key') ||
             path.includes('application_password') || path.includes('admin_api_key') ||
             (input.type === 'password' && !path.includes('proxy'))
         );
 
-        // 3. 核心平台关键定位字段
+        // 3. 多凭证联动智能判定（Cookie vs Token 互补）
+        // 若当前字段为 token/password，但抽屉内已填写了有效的 Cookie/SESSDATA，则该 token 豁免必填
+        if (isCoreCredential && !isExplicitRequired && (path.includes('token') || path.includes('key') || input.type === 'password')) {
+            const hasFilledCookie = Array.from(drawerBody.querySelectorAll('textarea, input')).some(el => {
+                const p = (el.getAttribute('data-path') || el.name || '').toLowerCase();
+                return (p.includes('cookie') || p.includes('sessdata')) && el.value && el.value.trim().length > 0;
+            });
+            if (hasFilledCookie) {
+                isCoreCredential = false;
+            }
+        }
+        // 反之，若当前字段为 cookie，但已填写了有效的 token/key，则豁免此 cookie
+        if ((path.includes('cookie') || path.includes('sessdata')) && !isExplicitRequired) {
+            const hasFilledToken = Array.from(drawerBody.querySelectorAll('input')).some(el => {
+                const p = (el.getAttribute('data-path') || el.name || '').toLowerCase();
+                return (p.includes('token') || p.includes('key') || p.includes('api_key') || p.includes('secret')) && el.value && el.value.trim().length > 0;
+            });
+            if (hasFilledToken) {
+                continue;
+            }
+        }
+
+        // 4. 核心平台关键定位字段
         const isCorePlatformField = !isOptionalField && (
             (path.includes('.s3.bucket') || path.includes('.s3.access_key') || path.includes('.s3.secret_key')) ||
             (path.includes('.wordpress.api_url') || path.includes('.wordpress.username') || path.includes('.wordpress.application_password')) ||

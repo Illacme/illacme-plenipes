@@ -5,9 +5,12 @@ slug: index
 date: 2026-08-16
 author: Illacme Sovereign Press
 description: 基于物理隔离架构的工业级 AI 原生全球出版引擎，从本地原稿到全球 23 渠道一键分发。
-tags: [Home, Sovereign, Publishing]
+tags:
+- Home
+- Sovereign
+- Publishing
+cover: /api/design/assets/covers/gen_d654c9681d91.jpg
 ---
-
 <div class="home-hero-container" style="text-align: center; padding: 4rem 1rem 3rem; max-width: 1000px; margin: 0 auto;">
     <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 30px; background: rgba(0, 245, 255, 0.08); border: 1px solid rgba(0, 245, 255, 0.25); color: var(--accent-color); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: 0.5px;">
         <span>🧬</span> V50.3 主权全球出版发行中枢已就绪

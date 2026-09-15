@@ -37,14 +37,14 @@
     <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
     <link rel="stylesheet" href="css/views/dispatch.css?v=76.0">
-    <link rel="stylesheet" href="css/dashboard.components.css?v=20260828_step3_compute_dispatch_v39">
+    <link rel="stylesheet" href="css/dashboard.components.css?v=20260912_real_ping_and_active_filter_v1">
     <link rel="stylesheet" href="css/views/tower.css">
     <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <link rel="stylesheet" href="css/components/review.drawer.css">
     <link rel="stylesheet" href="css/components/dashboard.tour.css?v=82.0">
     <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20260828_step3_compute_dispatch_v39">
     <!-- 🛡️ Global Error Boundary -->
-    <script src="js/dashboard.errors.js"></script>
+    <script src="js/dashboard.errors.js?v=20260912_fix_nav_v2"></script>
 
     <!-- [DEV ONLY] Polyfill for require() if missing -->
     <script>
@@ -65,7 +65,8 @@
     <div id="app-container">
         <!-- 🛰️ Header -->
         <header>
-            <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;" title="点击展开/收起出版工作台 (快捷键 I)">
+            <div class="logo-section" onclick="toggleHub()" style="position: relative; cursor: pointer;"
+                title="点击展开/收起出版工作台 (快捷键 I)">
                 <img src="logo.png" alt="Logo">
                 <div class="status-box">
                     <div style="display: flex; align-items: center;">
@@ -83,7 +84,8 @@
             </div>
             <nav id="top-nav">
                 <div class="nav-tabs-wrapper">
-                    <div class="nav-item active" id="nav-overview" data-view="overview" onclick="window.toggleHub('hide'); window.showView('overview')">
+                    <div class="nav-item active" id="nav-overview" data-view="overview"
+                        onclick="window.toggleHub('hide'); window.showView('overview')">
                         <span class="nav-icon">🌌</span><span class="nav-text">知识星谱</span>
                     </div>
                     <div class="nav-item" id="nav-vault" data-view="vault" onclick="window.showView('vault')">
@@ -91,24 +93,36 @@
                     </div>
                     <div class="nav-item nav-group-item" id="nav-group-governance" data-group="governance">
                         <div class="nav-item-main" id="nav-gov-main">
-                            <span class="nav-icon">⚙️</span><span class="nav-text">出版治理</span><span class="nav-caret">▾</span>
+                            <span class="nav-icon">⚙️</span><span class="nav-text">出版治理</span><span
+                                class="nav-caret">▾</span>
                         </div>
                         <div class="nav-dropdown-menu glass-panel">
-                            <div class="nav-dropdown-item" id="nav-settings" data-view="settings" onclick="window.showView('settings')">
+                            <div class="nav-dropdown-item" id="nav-settings" data-view="settings"
+                                onclick="window.showView('settings')">
                                 <span class="dropdown-item-icon">🏷️</span>
                                 <div class="dropdown-item-meta">
                                     <span class="dropdown-item-title">规则装帧与合规</span>
                                     <span class="dropdown-item-desc">品牌身份、存储适配、主题与模式</span>
                                 </div>
                             </div>
-                            <div class="nav-dropdown-item" id="nav-compute" data-view="compute" onclick="window.showView('compute')">
+                            <div class="nav-dropdown-item" id="nav-compute" data-view="compute"
+                                onclick="window.showView('compute')">
                                 <span class="dropdown-item-icon">🧠</span>
                                 <div class="dropdown-item-meta">
                                     <span class="dropdown-item-title">算力基座与模型</span>
                                     <span class="dropdown-item-desc">AI 提供商、密钥配额、上下文网关</span>
                                 </div>
                             </div>
-                            <div class="nav-dropdown-item" id="nav-plugins" data-view="plugins" onclick="window.showView('plugins')">
+                            <div class="nav-dropdown-item" id="nav-design" data-view="design"
+                                onclick="window.showView('design')">
+                                <span class="dropdown-item-icon">🎨</span>
+                                <div class="dropdown-item-meta">
+                                    <span class="dropdown-item-title">设计中心与图库</span>
+                                    <span class="dropdown-item-desc">生图引擎、开源工具、视觉资产物权</span>
+                                </div>
+                            </div>
+                            <div class="nav-dropdown-item" id="nav-plugins" data-view="plugins"
+                                onclick="window.showView('plugins')">
                                 <span class="dropdown-item-icon">🧩</span>
                                 <div class="dropdown-item-meta">
                                     <span class="dropdown-item-title">插件生态与分发</span>
@@ -119,17 +133,20 @@
                     </div>
                     <div class="nav-item nav-group-item" id="nav-group-telemetry" data-group="telemetry">
                         <div class="nav-item-main" id="nav-telem-main">
-                            <span class="nav-icon">📊</span><span class="nav-text">运营遥测</span><span class="nav-caret">▾</span>
+                            <span class="nav-icon">📊</span><span class="nav-text">运营遥测</span><span
+                                class="nav-caret">▾</span>
                         </div>
                         <div class="nav-dropdown-menu glass-panel">
-                            <div class="nav-dropdown-item" id="nav-tower" data-view="tower" onclick="window.showView('tower')">
+                            <div class="nav-dropdown-item" id="nav-tower" data-view="tower"
+                                onclick="window.showView('tower')">
                                 <span class="dropdown-item-icon">🗼</span>
                                 <div class="dropdown-item-meta">
                                     <span class="dropdown-item-title">实时系统遥测</span>
                                     <span class="dropdown-item-desc">服务拓扑、进程健康、链路时延</span>
                                 </div>
                             </div>
-                            <div class="nav-dropdown-item" id="nav-analytics" data-view="analytics" onclick="window.showView('analytics')">
+                            <div class="nav-dropdown-item" id="nav-analytics" data-view="analytics"
+                                onclick="window.showView('analytics')">
                                 <span class="dropdown-item-icon">📈</span>
                                 <div class="dropdown-item-meta">
                                     <span class="dropdown-item-title">内容数据统计</span>
@@ -194,9 +211,9 @@
     <script src="js/theme/theme.ui.js?v=85.0"></script>
     <script src="js/theme/theme.handlers.js?v=85.0"></script>
     <script src="js/dashboard.compute.js?v=75.1"></script>
-    <script src="js/dashboard.templates.js?v=20260828_brand_header_v30"></script>
+    <script src="js/dashboard.templates.js?v=20260912_four_char_tabs_v1"></script>
     <script src="js/dashboard.templates.tower.js"></script>
-    <script src="js/dashboard.views.js?v=75.2"></script>
+    <script src="js/dashboard.views.js?v=20260912_fix_nav_v2"></script>
     <script src="js/ui/fe_bus.js"></script>
     <script src="js/ui/drawers.js?v=110.0"></script>
     <script src="js/ui/modals.js?v=20260904_vault_binding_notice_v1"></script>
@@ -222,7 +239,7 @@
     <script src="js/vault/vault.ops.dir.js"></script>
     <script src="js/vault/vault.ops.js"></script>
     <script src="js/dashboard.vault.js?v=88.0"></script>
-    <script src="js/vault/vault.list.js?v=88.0"></script>
+    <script src="js/vault/vault.list.js?v=20260912_vault_list_v2"></script>
     <script src="js/vault/drawer_shards/vault.drawer.cards.js?v=105.0"></script>
     <script src="js/vault/drawer_shards/vault.drawer.render.js?v=105.0"></script>
     <script src="js/vault/drawer_shards/vault.drawer.lifecycle.js?v=105.0"></script>
@@ -234,21 +251,23 @@
     <script src="js/editorial/syndicate_shards/syndicate.state.js?v=103.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.actions.js?v=103.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.workflow.js?v=103.0"></script>
-    <script src="js/editorial/syndicate_shards/syndicate.preview.js?v=103.0"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.preview.js?v=105.4"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.preview_cover.js?v=1.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.cards.js?v=103.0"></script>
-    <script src="js/editorial/syndicate_shards/syndicate.render.js?v=103.0"></script>
-    <script src="js/editorial/syndicate_shards/syndicate.dispatch.js?v=103.0"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.cover_studio.js?v=20260914_sync_v1"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.render.js?v=105.1"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.dispatch.js?v=20260913_fix_telemetry_v1"></script>
     <script src="js/editorial/article.syndicate.drawer.js?v=103.0"></script>
     <script src="js/plugins/render_shards/plugins.render.fast_test.js?v=87.0"></script>
     <script src="js/plugins/render_shards/plugins.render.diagnostics.js?v=87.0"></script>
     <script src="js/plugins/plugins.render.js"></script>
     <script src="js/plugins/platforms_shards/platforms.links.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.hosting.js?v=87.0"></script>
-    <script src="js/plugins/platforms_shards/platforms.publishers.js?v=87.0"></script>
+    <script src="js/plugins/platforms_shards/platforms.publishers.js?v=88.0"></script>
     <script src="js/plugins/platforms_shards/platforms.image_hosting.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.notifications.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.protocols.js?v=87.0"></script>
-    <script src="js/plugins/platforms_shards/platforms.oauth_handlers.js?v=87.0"></script>
+    <script src="js/plugins/platforms_shards/platforms.oauth_handlers.js?v=88.0"></script>
     <script src="js/plugins/platforms_shards/platforms.sensing_judger.js?v=87.0"></script>
     <script src="js/plugins/platforms_shards/platforms.sensing_handlers.js?v=87.0"></script>
     <script src="js/plugins/plugins.platforms.js?v=80.1"></script>
@@ -275,7 +294,16 @@
     <script src="js/imprints/imprints_shards/imprints.wizard.submit.js?v=74.0"></script>
     <script src="js/imprints/imprints_shards/imprints.wizard.modal.js?v=74.0"></script>
     <script src="js/dashboard.imprints.js?v=20260904_vault_binding_notice_v1"></script>
-    <script src="js/dashboard.modes.js?v=20260828_toast_v4"></script>
+    <script src="js/dashboard.modes.js?v=20260912_icmm_v1"></script>
+    <script src="js/dashboard.image_policy.js?v=20260912_icmm_v1"></script>
+    <script src="js/design/design.studio.js?v=20260914_sync_v1"></script>
+    <script src="js/design/design_shards/design.provider_modal.js?v=20260912_design_assets_v1"></script>
+    <script src="js/design/design_shards/design.assets_panel.js?v=20260912_design_assets_v6"></script>
+    <script src="js/design/design_shards/design.cover_picker.js?v=20260912_picker_v1"></script>
+    <script src="js/design/design_shards/design.doc_cover_modal.js?v=20260914_sync_v1"></script>
+    <script src="js/design/design_shards/design.hosting_modal.js?v=20260912_hosting_v1"></script>
+    <script src="js/design/design_shards/design.upload_modal.js?v=20260912_upload_v1"></script>
+    <script src="js/design/design_shards/design.batch_cover_modal.js?v=20260912_batch_v1"></script>
     <script src="js/localization/render_shards/loc.matrix.render.js?v=106.0"></script>
     <script src="js/localization/render_shards/loc.link_doctor.render.js?v=106.0"></script>
     <script src="js/localization/render_shards/loc.blocks.render.js?v=106.0"></script>
@@ -329,7 +357,7 @@
     <script src="js/dashboard.ai_lessons.js"></script>
     <script src="js/license/license.templates.js"></script>
     <script src="js/license/license.ui.js"></script>
-    <script src="js/system/system.render.js?v=77.0"></script>
+    <script src="js/system/system.render.js?v=77.1"></script>
     <script src="js/system/system.security.js"></script>
     <script src="js/system/system.cache.js?v=77.0"></script>
     <script src="js/dashboard.system.js?v=77.0"></script>
@@ -362,7 +390,7 @@
     <script src="js/tower_shards/tower.syndication.js"></script>
     <script src="js/dashboard.tower.js"></script>
     <script src="js/dashboard.analytics.js"></script>
-    <script src="dashboard.js"></script>
+    <script src="dashboard.js?v=20260912_fix_nav_v2"></script>
     <script src="js/palette/palette.commands.js"></script>
     <script src="js/dashboard.palette.js?v=1.2"></script>
 </body>

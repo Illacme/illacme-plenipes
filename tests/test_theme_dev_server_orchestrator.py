@@ -6,16 +6,12 @@ Tests for Theme DevServer Orchestrator & Process Self-Healing
 """
 
 import os
-import sys
-import time
 import pytest
 from unittest.mock import patch, MagicMock
 
 from core.runtime.infrastructure.theme_orchestrator import (
     ThemeDevServerOrchestrator,
-    PROTECTED_PORTS,
-    ALLOWED_PREVIEW_PORTS,
-    ACCEPTED_HEALTH_STATUS_CODES
+    PROTECTED_PORTS
 )
 
 

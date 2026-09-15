@@ -11,7 +11,6 @@
 
 import os
 import tempfile
-import pytest
 from core.editorial.ast_processor import MarkdownASTProcessor
 from core.syndication.uploader import ImageUploader
 from adapters.egress.image_hosting.github import GitHubImageHost

@@ -3,10 +3,15 @@ title: 发行矩阵与渠道配置 (The Matrix)
 date: 2026-08-11
 author: Illacme Dispatch Team
 description: 详尽列出 11 大全站托管平台与 12 大社交媒体分发渠道的一键免密授权与发布配置指南。
-tags: [Matrix, Distribution, Syndication, Deploy]
-categories: [Documentation]
+tags:
+- Matrix
+- Distribution
+- Syndication
+- Deploy
+categories:
+- Documentation
+cover: /api/design/assets/covers/gen_9fecb76905b0.jpg
 ---
-
 # 🛰️ 发行矩阵与渠道配置 (The Matrix)
 
 **发行矩阵 (The Matrix)** 是 Illacme Plenipes 将创作者内容推向全球的关键通道。系统严格贯彻**“一键化与极简体验标准”**，为所有渠道提供极简接入体验。

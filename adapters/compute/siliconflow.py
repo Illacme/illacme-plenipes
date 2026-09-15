@@ -4,7 +4,6 @@
 Illacme-plenipes AI Plugin - SiliconFlow Adapter
 🛡️ [V67.0]：对正工业级协议感应逻辑。
 """
-import requests
 import asyncio
 from .openai import OpenAICompatibleTranslator
 
@@ -19,7 +18,7 @@ class SiliconFlowTranslator(OpenAICompatibleTranslator):
     
     async def list_models(self) -> list[str]:
         """🚀 SiliconFlow 实时模型感应"""
-        api_key = self.config.api_key
+        api_key = self.safe_get_config('api_key')
         if not api_key:
             raise ValueError("未填写 API Key 物理密钥")
             
@@ -28,7 +27,7 @@ class SiliconFlowTranslator(OpenAICompatibleTranslator):
         headers = {"Authorization": f"Bearer {api_key}"}
         timeout = self.get_network_timeout(default=15.0)
         proxies = self.get_proxy_dict()
-        resp = await loop.run_in_executor(None, lambda: requests.get(url, headers=headers, proxies=proxies, timeout=timeout))
+        resp = await loop.run_in_executor(None, lambda: self._session.get(url, headers=headers, proxies=proxies, timeout=timeout))
         if resp.status_code == 200:
             return [m['id'] for m in resp.json().get('data', [])]
             

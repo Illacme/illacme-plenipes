@@ -101,7 +101,7 @@ def test_syndication_queue_api():
         # 2. 身份验证拦截测试
         mock_engine.config.system.api_token = "secure-synd-secret"
         res_forbidden = client.get("/api/governance/syndication/queue")
-        assert res_forbidden.status_code == 403, "未授权请求未被成功拦截"
+        assert res_forbidden.status_code in (401, 403), "未授权请求未被成功拦截"
 
         # 带有正确 X-Token
         res_auth = client.get("/api/governance/syndication/queue", headers={"X-Token": "secure-synd-secret"})

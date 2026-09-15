@@ -3,10 +3,16 @@ title: 我的第一篇主权出版博文：从灵感到全球共振
 date: 2026-08-11
 author: Illacme Press
 description: 记录使用 Illacme Plenipes 开启全球数字出版的第一步，体验自动化翻译、SEO 提取与全渠道分发的魅力。
-tags: [Blog, Story, FirstPost, Sovereign]
-categories: [Life, Tech]
+tags:
+- Blog
+- Story
+- FirstPost
+- Sovereign
+categories:
+- Life
+- Tech
+cover: /api/design/assets/covers/cover_27f3f7d5d864.jpg
 ---
-
 # 🚀 我的第一篇主权出版博文：从灵感到全球共振
 
 这是在 **Illacme Plenipes** 默认出版版图中自动生成的一篇示范博客文章。

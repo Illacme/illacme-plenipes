@@ -6,9 +6,14 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 欢迎探索由 Illacme Plenipes 驱动的精选出版品牌、8 大装帧主题矩阵、30+ 全渠道分发与 13 大核心工业级特性展厅。
-tags: [Showcase, Themes, Features, Innovations, Gallery]
+tags:
+- Showcase
+- Themes
+- Features
+- Innovations
+- Gallery
+cover: /api/design/assets/covers/cover_62521d7ef65f.jpg
 ---
-
 # 🎨 案例与主题全景展示
 
 欢迎探索由 **Illacme Plenipes** 驱动的精选出版品牌、8 大装帧主题矩阵、全渠道分发与 13 大核心工业级特性展厅。

@@ -6,10 +6,15 @@ route_prefix: blog
 date: 2026-08-16
 author: Illacme Engineering Team
 description: 揭秘 Illacme Plenipes 如何通过哈希切片与 LRU 淘汰机制实现 90%+ 的翻译算力成本节约。
-tags: [Engineering, Cache, Performance, LLM]
-categories: [Blog]
+tags:
+- Engineering
+- Cache
+- Performance
+- LLM
+categories:
+- Blog
+cover: /api/design/assets/covers/cover_e1221748052b.jpg
 ---
-
 # ⚡ 段落级影子缓存与零 Token 浪费架构深度解析
 
 在构建多语言知识库和长文出版系统时，最大的痛点之一在于 **LLM 翻译算力的重复浪费**：哪怕只修改了一篇文章中的一个错别字，传统的整篇翻译管线也需要将整篇文章重新发送给 AI 模型。

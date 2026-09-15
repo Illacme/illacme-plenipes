@@ -6,9 +6,16 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何在多渠道发布完成后，向企业微信、飞书、钉钉、Telegram、Discord、邮件与短信实时推送富文本出版战报。
-tags: [Showcase, Notifications, Webhooks, Telegram, Feishu, DingTalk, Discord]
+tags:
+- Showcase
+- Notifications
+- Webhooks
+- Telegram
+- Feishu
+- DingTalk
+- Discord
+cover: /api/design/assets/covers/cover_c7f1f89bd105.jpg
 ---
-
 # 📢 全网多通道即时通知与出版战报
 
 > [!TIP]

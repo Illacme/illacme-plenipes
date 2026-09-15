@@ -21,7 +21,7 @@
         let selfCfg = {};
         if (['github_pages', 'gitee_pages', 's3'].includes(id)) {
             selfCfg = cfgData.publish_control?.direct_upload?.[id] || {};
-        } else if (['github', 'gitee', 'smms', 'aliyun_oss', 'tencent_cos'].includes(id)) {
+        } else if (['github', 'gitee', 'aliyun_oss', 'tencent_cos'].includes(id)) {
             selfCfg = cfgData.image_hosting?.[id] || {};
         } else {
             selfCfg = cfgData.syndication?.[id] || {};
@@ -39,7 +39,7 @@
                     let otherCfg = {};
                     if (['github_pages', 'gitee_pages', 's3'].includes(otherId)) {
                         otherCfg = cfgData.publish_control?.direct_upload?.[otherId] || {};
-                    } else if (['github', 'gitee', 'smms', 'aliyun_oss', 'tencent_cos'].includes(otherId)) {
+                    } else if (['github', 'gitee', 'aliyun_oss', 'tencent_cos'].includes(otherId)) {
                         otherCfg = cfgData.image_hosting?.[otherId] || {};
                     } else {
                         otherCfg = cfgData.syndication?.[otherId] || {};
@@ -166,7 +166,7 @@
         let srcCfg = {};
         if (['github_pages', 'gitee_pages', 's3'].includes(sourceId)) {
             srcCfg = cfgData.publish_control?.direct_upload?.[sourceId] || {};
-        } else if (['github', 'gitee', 'smms', 'aliyun_oss', 'tencent_cos'].includes(sourceId)) {
+        } else if (['github', 'gitee', 'aliyun_oss', 'tencent_cos'].includes(sourceId)) {
             srcCfg = cfgData.image_hosting?.[sourceId] || {};
         } else {
             srcCfg = cfgData.syndication?.[sourceId] || {};

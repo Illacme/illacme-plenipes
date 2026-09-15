@@ -6,10 +6,16 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Editorial Team
 description: 掌握如何无缝接入 Obsidian、Logseq、Typora 或纯文本文库，规范 Frontmatter 元数据、双向链接与媒体资源引用。
-tags: [Vault, Authoring, Markdown, Obsidian, Frontmatter]
-categories: [Documentation]
+tags:
+- Vault
+- Authoring
+- Markdown
+- Obsidian
+- Frontmatter
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_7ba70b7040e4.jpg
 ---
-
 # ✍️ 原稿文库组织与写作指引
 
 **Illacme Plenipes** 坚持“原稿即主权”的原则。系统将您的物理文件夹作为权威源（Single Source of Truth），您无需放弃原有的写作习惯或笔记软件，即可享受工业级的出版体验。

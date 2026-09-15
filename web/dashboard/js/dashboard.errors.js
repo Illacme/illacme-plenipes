@@ -11,7 +11,19 @@
             });
 
             window.addEventListener('unhandledrejection', (event) => {
-                let error = event.reason;
+                const reason = event.reason;
+                // 🛡️ 过滤浏览器原生 ViewTransition 动画中止与跳过异常
+                const msg = (reason && (reason.message || String(reason))) || '';
+                if (
+                    (reason && reason.name === 'AbortError') ||
+                    msg.includes('Transition was skipped') ||
+                    msg.includes('ViewTransition')
+                ) {
+                    if (typeof event.preventDefault === 'function') event.preventDefault();
+                    return;
+                }
+
+                let error = reason;
                 if (!(error instanceof Error)) {
                     error = new Error(typeof error === 'string' ? error : JSON.stringify(error));
                 }

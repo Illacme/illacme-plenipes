@@ -97,6 +97,7 @@ class SystemSettings(BaseModel):
     typing_idle_threshold: float = Field(0.5, ge=0.1)
     headless: bool = False
     global_proxy: Optional[str] = None
+    encrypt_secrets: bool = Field(True, description="敏感机密落盘自动加密")
     
     index_filenames: List[str] = Field(default_factory=lambda: ["index.md", "readme.md", "index.mdx"])
     allowed_extensions: List[str] = Field(default_factory=lambda: [".md", ".mdx", ".markdown", ".mdown", ".txt"])

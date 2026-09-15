@@ -16,8 +16,12 @@ _csdn_lock = threading.Lock()
 class CSDNSyndicator(BaseSyndicator):
     PLUGIN_ID = "csdn"
     DISPLAY_NAME = "CSDN 博客"
+    ICON = "📑"
     VERSION = "V1.0"
     DESCRIPTION = "将 Markdown 文章同步发表至 CSDN 博客或草稿箱，具备极高搜索引擎收录权重与长尾曝光。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖 CSDN UserToken / Cookie，受平台风控影响，需定期检查。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -43,7 +47,7 @@ class CSDNSyndicator(BaseSyndicator):
             "description": digest
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

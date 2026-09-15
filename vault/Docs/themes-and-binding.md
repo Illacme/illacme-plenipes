@@ -3,10 +3,15 @@ title: 装帧主题与视觉定制 (Themes & Binding)
 date: 2026-08-11
 author: Illacme Design Guild
 description: 探索 Illacme Plenipes 支持的六大 SSG 主题框架，包含 Sovereign 赛博毛玻璃主题特性与视觉定制参数。
-tags: [Themes, SSG, UI, Design]
-categories: [Documentation]
+tags:
+- Themes
+- SSG
+- UI
+- Design
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_468a9e4be84f.jpg
 ---
-
 # 🎨 装帧主题与视觉定制 (Themes & Binding)
 
 在 **Illacme Plenipes** 中，同一份原稿文库可以自由装帧为不同框架风格的现代化静态站点。

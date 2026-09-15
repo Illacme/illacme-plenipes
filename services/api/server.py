@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse, FileResponse
 from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
-from .routes import system, content, governance, ws, compute
+from .routes import system, content, governance, ws, compute, design_routes, syndication_preview
 from .routes import agent
 from .infrastructure.logging import setup_api_logging
 from .infrastructure.middleware import setup_middleware
@@ -48,6 +48,8 @@ app.include_router(content.router, tags=["Content"])
 app.include_router(governance.router, tags=["Governance"])
 app.include_router(ws.router, tags=["Realtime"])
 app.include_router(agent.router, tags=["Agent"])
+app.include_router(design_routes.router, tags=["Design Studio"])
+app.include_router(syndication_preview.router, tags=["Syndication Preview"])
 
 from .schemas import HealthCheckResponse
 from core.runtime.version_sentinel import VersionSentinel
@@ -83,20 +85,44 @@ class SafeStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         """🛡️ 主权防线：过滤并物理隔离任何对敏感文件、原始稿件或元数据账本的请求"""
         norm_path = path.replace("\\", "/").lower()
-        parts = norm_path.split("/")
+        parts = [p.strip() for p in norm_path.split("/") if p.strip()]
         
-        # 严禁访问本地配置、全域配置、原稿文库及元数据目录，纵深防卫 403 拦截
-        sensitive_patterns = ["manuscripts", "metadata", "config.yaml", "config.local.yaml", ".git", ".plenipes", ".env"]
-        if any(p in parts for p in sensitive_patterns) or any(p in norm_path for p in sensitive_patterns):
-            from fastapi.responses import Response
+        from fastapi.responses import Response
+
+        # 1. 拦截路径穿越 (..)
+        if any(p == ".." for p in parts):
+            return Response(status_code=403, content="Access Denied: Path Traversal Prohibited")
+
+        # 2. 严禁访问本地配置、全域配置、原稿文库及元数据目录，纵深防卫 403 拦截
+        sensitive_dirs = {"manuscripts", "metadata"}
+        sensitive_files = {"config.yaml", "config.local.yaml", ".env", ".master.key", "license.lic"}
+
+        # 拦截隐藏系统目录（如 .git, .plenipes 等）
+        if any(p.startswith(".git") or p.startswith(".plenipes") for p in parts):
             return Response(status_code=403, content="Access Denied: Sovereign Protection Activated")
+
+        # 拦截父级路径中包含敏感数据目录（如 manuscripts, metadata 等）
+        if any(p in sensitive_dirs for p in parts[:-1]):
+            return Response(status_code=403, content="Access Denied: Sovereign Protection Activated")
+
+        # 拦截直接请求敏感文件或纯敏感目录本身
+        if parts:
+            filename = parts[-1]
+            if filename in sensitive_files or filename in sensitive_dirs:
+                return Response(status_code=403, content="Access Denied: Sovereign Protection Activated")
             
+        # 3. 拦截高危文件后缀
+        dangerous_extensions = [".key", ".lic", ".db", ".sqlite", ".log", ".env", ".bak", ".swp"]
+        if any(norm_path.endswith(ext) for ext in dangerous_extensions):
+            return Response(status_code=403, content="Access Denied: Sensitive File Extension Prohibited")
+
         return await super().get_response(path, scope)
 
-# 🎨 挂载仪表盘静态页面 (绝对路径自愈锚定)
+# 🎨 挂载仪表盘静态页面 (绝对路径自愈锚定，启用 SafeStaticFiles 物理隔离)
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web", "dashboard"))
 if os.path.exists(static_dir):
-    app.mount("/dashboard", StaticFiles(directory=static_dir, html=True), name="static")
+    app.mount("/dashboard", SafeStaticFiles(directory=static_dir, html=True), name="static")
+
 
 # 🚀 [V68.0] 资产预览代理：挂载物理出版产物目录 (Dispatch Hub Proxy)
 # 🛡️ 物理感应：挂载 imprints 目录以支持多品牌产物预览 (经 SafeStaticFiles 安全过滤)

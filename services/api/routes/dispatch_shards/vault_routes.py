@@ -96,7 +96,10 @@ async def get_syndication_records(doc_id: str, lang_code: str = None):
     engine = get_global_engine()
     if not engine: raise HTTPException(status_code=503, detail="Engine not initialized")
     if hasattr(engine, 'meta') and engine.meta:
-        records = engine.meta.list_syndication_records_for_doc(doc_id, lang_code)
+        clean_lang = (lang_code or '').strip()
+        if clean_lang.lower() in ('auto', 'all', 'any', '*', 'source', ''):
+            clean_lang = None
+        records = engine.meta.list_syndication_records_for_doc(doc_id, clean_lang)
         return {"ok": True, "records": records}
     return {"ok": True, "records": []}
 

@@ -8,9 +8,12 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     """
     🔌 [V74.9] 物理通道连接测试引擎入口
     """
-    plugin_id = payload.get("id")
+    plugin_id = payload.get("id") or payload.get("plugin_id")
     parent_id = payload.get("parentId")
     settings = payload.get("settings", {})
+    from core.config.assembler import resolve_secrets
+    if isinstance(settings, dict):
+        settings = resolve_secrets(dict(settings))
 
     import datetime
     def log(level: str, msg: str) -> dict:
@@ -30,9 +33,9 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     # 实体级凭据握手物理探测
     success = True
     media_plugins = [
-        "github", "sm_ms", "imgur", "telegraph", "s3", "aliyun_oss",
+        "github", "imgur", "telegraph", "s3", "cloudflare_r2", "aliyun_oss",
         "tencent_cos", "qiniu_kodo", "upyun_uss", "loli_io", "superbed",
-        "lsky_pro", "sftp"
+        "lsky_pro", "imgbb", "catbox", "sftp"
     ]
     syndication_plugins = [
         "wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost",

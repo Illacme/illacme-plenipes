@@ -5,10 +5,8 @@ Illacme-plenipes - Version Sentinel & Process Lifecycle Guardian Tests
 模块职责：验证源码指纹与版本漂移感知器、API 端点契约，以及进程热重载自我接力机制。
 """
 
-import os
 import time
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from core.runtime.version_sentinel import VersionSentinel

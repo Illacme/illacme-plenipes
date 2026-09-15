@@ -11,9 +11,8 @@
 6. 真实 index.md 英文整页 HTML 产物端到端清洗验证。
 """
 
-import pytest
 from core.editorial.ast_processor import MarkdownASTProcessor
-from core.editorial.ast_shards import HtmlSanitizer, GfmNormalizer, MetadataSanitizer, LandingPageTransformer
+from core.editorial.ast_shards import HtmlSanitizer, GfmNormalizer, MetadataSanitizer
 
 RAW_FULL_HTML_SAMPLE = """<!DOCTYPE html>
 <html lang="en" data-theme="dark">

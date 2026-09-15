@@ -8,7 +8,7 @@ window.ComputeHandlers = window.ComputeHandlers || {};
 /**
  * 📡 物理节点脉冲探测
  */
-window.ComputeHandlers.probeNode = async function(id) {
+window.ComputeHandlers.probeNode = async function (id) {
     const statusEl = document.getElementById(`probe-status-${id}`);
     const latencyEl = document.getElementById(`latency-${id}`);
     if (statusEl) statusEl.innerHTML = '<span class="pulsing">发射脉冲探测中...</span>';
@@ -43,7 +43,7 @@ window.ComputeHandlers.probeNode = async function(id) {
 /**
  * 📡 全域脉冲同步
  */
-window.ComputeHandlers.probeAllNodes = async function() {
+window.ComputeHandlers.probeAllNodes = async function () {
     const nodes = document.querySelectorAll('.node-unit:not(.hidden)');
     if (nodes.length === 0) return;
 
@@ -61,7 +61,7 @@ window.ComputeHandlers.probeAllNodes = async function() {
 /**
  * 💾 固化算力调度策略
  */
-window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch = false) {
+window.ComputeHandlers.saveComputeStrategy = async function (event, skipRefetch = false) {
     const btn = event?.target || document.querySelector('.strategy-command-deck .primary-btn');
     if (!btn) return;
 
@@ -99,7 +99,7 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
         btn.classList.remove('pulse-alert');
         btn.disabled = true;
         btn.innerHTML = '✅ 配置已保存';
-        
+
         // 🚀 [V74.70] 勋章联动：立即同步并触发成功脉冲
         this.syncStrategyBadge();
         const badge = document.querySelector('.strategy-mode-badge');
@@ -107,7 +107,7 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
             badge.classList.add('pulse-success');
             setTimeout(() => badge.classList.remove('pulse-success'), 2000);
         }
-        
+
         setTimeout(() => {
             btn.innerHTML = originalText;
         }, 2000);
@@ -148,7 +148,7 @@ window.ComputeHandlers.saveComputeStrategy = async function(event, skipRefetch =
 /**
  * 🔄 恢复出厂策略
  */
-window.ComputeHandlers.resetComputeStrategy = async function() {
+window.ComputeHandlers.resetComputeStrategy = async function () {
     if (!confirm("⚠️ 确定要恢复出厂策略吗？\n这将从系统底座拉取默认参数并覆盖当前品牌配置。")) return;
 
     try {
@@ -156,10 +156,10 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         const res = await apiFetch('/api/system/config?level=global');
         const globalConfig = res.config || res;
         const g = globalConfig.translation || {};
-        
+
         window.settingsData.translation = window.settingsData.translation || {};
         const t = window.settingsData.translation;
-        
+
         // 1. 拨乱反正：用系统底座值覆盖内存
         t.llm_concurrency = g.llm_concurrency || 1;
         t.api_timeout = g.api_timeout || 600;
@@ -168,7 +168,7 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         t.strategy = g.strategy || 'single';
         t.enable_thinking = g.enable_thinking !== undefined ? g.enable_thinking : false;
         t.enable_ai = g.enable_ai !== undefined ? g.enable_ai : true;
-        
+
         // 2. 强效视觉同步
         const setVal = (id, val) => {
             const el = document.getElementById(id);
@@ -185,7 +185,7 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         setVal('input-max-chunk-size', t.max_chunk_size);
         setVal('input-enable-thinking', t.enable_thinking ? 'true' : 'false');
         setVal('input-enable-ai', t.enable_ai ? 'true' : 'false');
-        
+
         const strategySelect = document.getElementById('select-compute-strategy');
         if (strategySelect) strategySelect.value = t.strategy;
 
@@ -193,7 +193,7 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
         const viewport = document.getElementById('compute-tab-viewport');
         if (window.ComputeUI && typeof window.ComputeUI.renderStrategyTab === 'function' && viewport) {
             window.ComputeUI.renderStrategyTab(viewport, window.settingsData.translation);
-            
+
             // 强效视觉高亮
             setTimeout(() => {
                 ['llm-concurrency', 'api-timeout', 'max-retries', 'max-chunk-size'].forEach(id => {
@@ -205,10 +205,10 @@ window.ComputeHandlers.resetComputeStrategy = async function() {
                 });
             }, 100);
         }
-        
+
         // 4. 触发固化保存 (带上 skipRefetch 标志)
         this.saveComputeStrategy({ target: document.getElementById('btn-save-compute-strategy') }, true);
-        
+
         if (typeof showNotification === 'function') showNotification('🔄 已成功从系统底座恢复默认策略', 'info');
     } catch (err) {
         console.error("Reset failed:", err);

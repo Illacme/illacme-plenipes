@@ -8,6 +8,7 @@ Illacme-plenipes Core - AI Provider Universal Gateway
 
 import logging
 from typing import Any
+import core.adapters.ai
 from core.adapters.ai.registry import AIProviderRegistry
 # 🚀 导入 ai 包将触发其 __init__.py 中的自发现逻辑
 
@@ -93,10 +94,14 @@ class TranslatorFactory:
             raise ValueError(f"❌ [算力网关] 未能对正物理节点: {node_name}。请先在‘算力底座’中配置。")
             
         tlog.info(f"🛰️ [主权对正] 正在将版图策略注入物理底座: {node_name} (Role: {role})")
-        # 动态决定模型（优先使用节点显式配置的模型；若节点配置为 null/None，则精准继承品牌装帧层的 primary_model / fallback_model 策略）
+        # 动态决定模型（优先使用品牌装帧调度策略 primary_model / fallback_model；若未显式指定，则降级回退至物理节点的默认模型）
         node_model = getattr(physical_node, 'model', None)
         brand_model = getattr(trans_cfg, f"{role}_model", None)
-        target_model = node_model if node_model else (brand_model if brand_model else "qwen/qwen3.5-9b")
+        
+        has_brand_model = brand_model and str(brand_model).strip() and str(brand_model).lower() not in ["null", "none", ""]
+        has_node_model = node_model and str(node_model).strip() and str(node_model).lower() not in ["null", "none", ""]
+        
+        target_model = brand_model if has_brand_model else (node_model if has_node_model else "qwen/qwen3.5-9b")
         
         # 🚀 工业级 Mock：合成符合 BaseTranslator 预期的配置镜像
         node_type = getattr(physical_node, 'type', None) or getattr(physical_node, 'provider', None) or 'openai'
@@ -121,7 +126,14 @@ class TranslatorFactory:
         provider_cls = AIProviderRegistry.get_provider(ptype)
 
         if provider_cls:
-            return provider_cls(node_name, trans_cfg)
+            # 🚀 [V66.5] 注册合成配置镜像，确保 BaseTranslator 初始化及后续读取时能精准对齐装帧调度策略
+            if not hasattr(trans_cfg, '_synced_providers') or not isinstance(trans_cfg._synced_providers, dict):
+                trans_cfg._synced_providers = {}
+            trans_cfg._synced_providers[node_name] = node_cfg
+
+            instance = provider_cls(node_name, trans_cfg)
+            instance.config = node_cfg
+            return instance
 
         raise ValueError(f"❌ [算力网关] 不支持协议类型: {ptype}")
 

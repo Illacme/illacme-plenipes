@@ -5,10 +5,17 @@ slug: block-cache-shadow-translation
 route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
-description: 探索 Illacme Plenipes 独创的 AST 语法树段落切片指纹与影子缓存体系，修改单句仅需毫秒级局部重译，节省 90%+ 算力与 Token。
-tags: [Showcase, BlockCache, Translation, AI, ShadowCache, Innovation]
+description: 探索 Illacme Plenipes 独创的 AST 语法树段落切片指纹与影子缓存体系，修改单句仅需毫秒级局部重译，节省 90%+ 算力与
+  Token。
+tags:
+- Showcase
+- BlockCache
+- Translation
+- AI
+- ShadowCache
+- Innovation
+cover: /api/design/assets/covers/cover_f6d355e9bd71.jpg
 ---
-
 # 🧱 段落级影子缓存与双语审校中枢
 
 > [!TIP]

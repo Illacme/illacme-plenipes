@@ -268,26 +268,15 @@ window.updateSlugSandboxPreview = async function () {
     const targetInfos = targetLangs.filter(l => l !== sourceLang).map(l => computeLangPaths(l, false));
     const allLangInfos = [sourceInfo, ...targetInfos];
 
-    // 语种名称与国旗映射字典
-    const langFlags = {
-        'zh': { flag: '🇨🇳', name: '中文 (母语)' },
-        'en': { flag: '🇺🇸', name: '英文 (English)' },
-        'ja': { flag: '🇯🇵', name: '日文 (日本語)' },
-        'es': { flag: '🇪🇸', name: '西班牙文 (Español)' },
-        'fr': { flag: '🇫🇷', name: '法文 (Français)' },
-        'de': { flag: '🇩🇪', name: '德文 (Deutsch)' },
-        'ru': { flag: '🇷🇺', name: '俄文 (Русский)' },
-        'ko': { flag: '🇰🇷', name: '韩文 (한국어)' },
-        'az': { flag: '🇦🇿', name: '阿塞拜疆文 (Azərbaycan)' },
-        'pt': { flag: '🇵🇹', name: '葡萄牙文 (Português)' }
-    };
-
     // 渲染全息多语种并列 URL 矩阵列表
     const matrixBox = document.getElementById('sandbox-multilingual-matrix');
     if (matrixBox) {
         matrixBox.innerHTML = allLangInfos.map((info, idx) => {
             const codeStr = typeof info.langCode === 'string' ? info.langCode : String(info.langCode || 'en');
-            const langMeta = langFlags[codeStr] || { flag: '🌐', name: codeStr.toUpperCase() };
+            const meta = (typeof window.getLanguageMeta === 'function')
+                ? window.getLanguageMeta(codeStr)
+                : { icon: '🌐', name: codeStr.toUpperCase() };
+            const langMeta = { flag: meta.icon, name: meta.name };
             const isSource = info.isSource;
             const prefixTag = isSource
                 ? (forceDefaultLangPrefix ? '<span style="font-size: 0.65rem; color: #00f2fe; background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🏷️ 强制母语前缀</span>' : '<span style="font-size: 0.65rem; color: #00ff88; background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">👑 默认根路径</span>')

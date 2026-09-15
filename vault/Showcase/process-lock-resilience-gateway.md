@@ -6,9 +6,15 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 探索 Illacme Plenipes 针对后台进程唯一性、FastAPI Web 网关、向导与预览服务划分的 4 端口单例锁体系，以及守护进程故障自动熔断与健康自愈机制。
-tags: [Showcase, SingletonLock, Architecture, HighAvailability, Gateway, Resilience]
+tags:
+- Showcase
+- SingletonLock
+- Architecture
+- HighAvailability
+- Gateway
+- Resilience
+cover: /api/design/assets/covers/cover_1a12955aedda.jpg
 ---
-
 # 🔒 4 端口物理单例锁与高可用容错自愈网关
 
 > [!TIP]

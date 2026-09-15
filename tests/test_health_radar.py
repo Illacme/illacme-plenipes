@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pytest
 from unittest.mock import patch, MagicMock
 from services.api.routes.gov.actions_shards.health_radar_ops import probe_single_url, probe_all_urls_impl
 

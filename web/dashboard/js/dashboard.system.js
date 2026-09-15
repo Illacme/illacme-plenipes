@@ -135,7 +135,7 @@ window.renderSettingsCategory = (cat) => {
 
     window.currentActiveSettingsSubCat = actualCat;
 
-    const layoutCats = ['imprints', 'themes', 'modes'];
+    const layoutCats = ['imprints', 'themes', 'modes', 'image_policy'];
     const locGovCats = ['localization', 'block_rules', 'glossary', 'translation_style'];
     const routingCats = ['slug_settings', 'route_matrix'];
 

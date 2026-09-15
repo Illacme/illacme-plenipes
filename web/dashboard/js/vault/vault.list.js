@@ -118,27 +118,39 @@ window.loadVault = async (query = null, page = null) => {
                     ? (isStale ? '⚠️' : '🔒')
                     : '🌍';
             }
+            const escapedRelPath = (m.rel_path || '').replace(/'/g, "\\'");
             const escapedTitle = (m.title || '').replace(/'/g, "\\'");
+            const escapedCover = (m.cover || '').replace(/'/g, "\\'");
+            const coverThumb = m.cover
+                ? `<div class="skeleton-shimmer" style="width:38px; height:24px; border-radius:4px; overflow:hidden; border:1px solid rgba(0,242,254,0.3); background:#05070f; cursor:pointer; flex-shrink:0;" title="点击更换文章封面" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')"><img src="${m.cover}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" style="width:100%; height:100%; object-fit:cover; transition:transform 0.2s; display:block;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'" /></div>`
+                : `<div style="width:38px; height:24px; border-radius:4px; border:1px dashed rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:rgba(255,255,255,0.02); opacity:0.6; font-size:0.7rem;" title="未设封面，点击快速挑选或生成" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '')">🖼️+</div>`;
             return `
             <tr>
-                <td><div style="font-weight:600; color:var(--text-bright);">${m.title}</div>${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${coverThumb}
+                        <div style="overflow:hidden;">
+                            <div style="font-weight:600; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${m.title}">${m.title}</div>
+                            ${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}
+                        </div>
+                    </div>
+                </td>
                 <td><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
                 <td style="text-align: center;"><span class="mono">${wc.toLocaleString()}</span></td>
                 <td>
                     <div class="vault-actions-grid" style="display: flex; flex-direction: column; gap: 5px; width: fit-content;">
-                        <!-- 🎨 行 1: 原稿创作、迁移、预览与路径复制 -->
                         <div style="display: flex; gap: 5px; align-items: center;">
-                            <button class="mini-action-btn" title="快速编辑原稿 (Edit Markdown)" onclick="openEditor('${m.rel_path}')">📝</button>
+                            <button class="mini-action-btn" title="快速编辑原稿 (Edit Markdown)" onclick="openEditor('${escapedRelPath}')">📝</button>
+                            <button class="mini-action-btn" title="更换文章封面 (Cover Studio)" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️</button>
                             <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
                             <button class="mini-action-btn" title="实时渲染预览 (Live Web Preview)" onclick="window.openArticleLivePreview('${m.rel_path}', '${m.slug || ''}')">👁️</button>
-                            <button class="mini-action-btn" title="复制文章 Slug 路径 / 链接 (Copy Slug & Path)" onclick="window.copyArticleMagicLink('${m.rel_path}', '${m.slug || ''}')">📋</button>
+                            <button class="mini-action-btn" title="复制文章 Slug 路径 / 链接" onclick="window.copyArticleMagicLink('${m.rel_path}', '${m.slug || ''}')">📋</button>
                         </div>
-                        <!-- 🌐 行 2: 译文精校、网页托管发布、社媒渠道分发与物理销毁 -->
                         <div style="display: flex; gap: 5px; align-items: center;">
                             ${isAiEnabled && pubMode === 'global' ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem; filter: grayscale(100%); opacity: 0.4;">🌍</button>`}
-                            <button class="mini-action-btn" title="网页托管发布与全网遥测 (Web Hosting & Publish)" onclick="openVaultDrawer('${m.rel_path}')">🌐</button>
-                            <button class="mini-action-btn" title="社媒渠道分发与多平台推流 (Social Media Syndication)" onclick="window.openArticleSyndicationDrawer('${m.rel_path}', '${escapedTitle}')">📢</button>
-                            <button class="mini-action-btn" title="物理安全销毁 (Physical Destroy)" onclick="window.triggerDirectDocDelete('${m.rel_path}', '${escapedTitle}')" style="color: var(--neon-red, #ff4d4f); border-color: rgba(255, 77, 79, 0.35);">🗑️</button>
+                            <button class="mini-action-btn" title="网页托管发布与全网遥测" onclick="openVaultDrawer('${m.rel_path}')">🌐</button>
+                            <button class="mini-action-btn" title="社媒渠道分发与多平台推流" onclick="window.openArticleSyndicationDrawer('${m.rel_path}', '${escapedTitle}')">📢</button>
+                            <button class="mini-action-btn" title="物理安全销毁" onclick="window.triggerDirectDocDelete('${m.rel_path}', '${escapedTitle}')" style="color: var(--neon-red, #ff4d4f); border-color: rgba(255, 77, 79, 0.35);">🗑️</button>
                         </div>
                     </div>
                 </td>

@@ -75,6 +75,7 @@ class GhostSyndicator(BaseSyndicator):
     """
     PLUGIN_ID = "ghost"
     DISPLAY_NAME = "Ghost"
+    ICON = "👻"
     VERSION = "V2.0"
     DESCRIPTION = "同步至 Ghost 专业出版平台，通过 Admin API v3 + JWT 鉴权实现文章创建与幂等更新。"
 
@@ -122,7 +123,7 @@ class GhostSyndicator(BaseSyndicator):
 
         return {"posts": [post_item]}
 
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None, **kwargs):
         """执行物理推流到 Ghost Admin API"""
         import time
         import random

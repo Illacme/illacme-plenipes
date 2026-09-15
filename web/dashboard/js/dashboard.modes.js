@@ -249,7 +249,8 @@ window.renderLayoutCategory = () => {
     const layoutSubDescs = {
         imprints: `💡 查看与管理旗下所有独立出版品牌，支持一键切换当前激活的品牌。${!isLicensed ? '<span class="community-edition-badge" style="font-size: 0.68rem; color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-left: 8px; white-space: nowrap;">🌱 免费社区版：支持 1 个自定义品牌</span>' : ''}`,
         themes: '💡 为当前出版品牌选用匹配的现代前端视觉装帧主题。',
-        modes: '💡 调节加工深度与出版模式（基础出版 / 全球出版 / 智能母语增强）。'
+        modes: '💡 调节加工深度与出版模式（基础出版 / 全球出版 / 智能母语增强）。',
+        image_policy: '💡 为当前出版品牌配置自动化封面供给、视觉画幅与图像生成策略。'
     };
 
     if (!window.switchLayoutSubTab) {
@@ -260,7 +261,7 @@ window.renderLayoutCategory = () => {
             if (btn) btn.classList.add('active');
             else if (typeof event !== 'undefined' && event.currentTarget) event.currentTarget.classList.add('active');
 
-            const panels = ['imprints', 'themes', 'modes'];
+            const panels = ['imprints', 'themes', 'modes', 'image_policy'];
             panels.forEach(p => {
                 const el = document.getElementById(`layout-panel-${p}`);
                 if (el) el.style.display = (p === subTab) ? 'block' : 'none';
@@ -276,6 +277,7 @@ window.renderLayoutCategory = () => {
                 if (subTab === 'imprints' && typeof window.renderImprintsCategory === 'function') html = window.renderImprintsCategory();
                 else if (subTab === 'themes' && typeof window.renderThemesCategory === 'function') html = window.renderThemesCategory();
                 else if (subTab === 'modes' && typeof window.renderModesCategory === 'function') html = window.renderModesCategory();
+                else if (subTab === 'image_policy' && typeof window.renderImagePolicyCategory === 'function') html = window.renderImagePolicyCategory();
                 panelEl.innerHTML = html;
             }
             if (typeof window.updateSaveButtonVisibility === 'function') window.updateSaveButtonVisibility(subTab);
@@ -295,10 +297,11 @@ window.renderLayoutCategory = () => {
                 </div>
             </div>
 
-            <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+            <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; flex-wrap: wrap;">
                 <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 品牌管理</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎨 装帧主题</button>
                 <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 出版模式</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'image_policy' ? 'active' : ''}" onclick="window.switchLayoutSubTab('image_policy', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🖼️ 图像策略</button>
             </div>
 
             <div id="layout-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
@@ -309,5 +312,6 @@ window.renderLayoutCategory = () => {
             <div id="layout-panel-imprints" style="display: ${currentSub === 'imprints' ? 'block' : 'none'};"></div>
             <div id="layout-panel-themes" style="display: ${currentSub === 'themes' ? 'block' : 'none'};"></div>
             <div id="layout-panel-modes" style="display: ${currentSub === 'modes' ? 'block' : 'none'};"></div>
+            <div id="layout-panel-image_policy" style="display: ${currentSub === 'image_policy' ? 'block' : 'none'};"></div>
         </div>`;
 };

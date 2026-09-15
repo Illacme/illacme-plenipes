@@ -6,9 +6,15 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何将 Obsidian 双向链接与知识网络编译为 3D 力导向宇宙星系全息图谱，并实现链路自动愈合。
-tags: [Showcase, KnowledgeGraph, WikiLinks, Obsidian, Galaxy, Visual]
+tags:
+- Showcase
+- KnowledgeGraph
+- WikiLinks
+- Obsidian
+- Galaxy
+- Visual
+cover: /api/design/assets/covers/cover_67e002ac11d9.jpg
 ---
-
 # 🌌 宇宙星系全息图谱与双链自愈引擎
 
 > [!TIP]

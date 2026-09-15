@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
@@ -6,8 +6,10 @@ import json
 from core.runtime.engine_singleton import get_global_engine
 from core.adapters.ai.agent_loop import AutonomousAgent
 from core.adapters.ai.hitl import active_hitl_sessions
+from .system import verify_token
 
-router = APIRouter(prefix="/api/agent", tags=["agent"])
+router = APIRouter(prefix="/api/agent", tags=["agent"], dependencies=[Depends(verify_token)])
+
 
 class AgentTaskRequest(BaseModel):
     user_prompt: str
@@ -48,8 +50,14 @@ async def get_active_model_info():
     
     # 🕵️ [V76.4] 主权策略层穿透：若采用了 Fallback 或 SmartRouting 等包装策略，则递归穿透至底层物理算力节点
     actual_adapter = ai_adapter
-    while hasattr(actual_adapter, 'primary') and getattr(actual_adapter, 'primary', None) is not None:
-        actual_adapter = actual_adapter.primary
+    _depth = 0
+    while hasattr(actual_adapter, 'primary') and getattr(actual_adapter, 'primary', None) is not None and _depth < 5:
+        next_adapter = getattr(actual_adapter, 'primary')
+        if next_adapter is actual_adapter:
+            break
+        actual_adapter = next_adapter
+        _depth += 1
+
         
     raw_model = getattr(actual_adapter.config, 'model', None) or getattr(actual_adapter.config, 'model_name', None)
     if not raw_model and hasattr(actual_adapter, 'trans_cfg') and actual_adapter.trans_cfg:
@@ -100,7 +108,19 @@ async def execute_agent_task(request: AgentTaskRequest):
                 ):
                     yield "data: " + json.dumps(event) + "\n\n"
             except Exception as inner_e:
-                yield "data: " + json.dumps({"type": "final", "message": f"[Fatal Error] {inner_e}"}) + "\n\n"
+                import re
+                err_str = re.sub(r'key=[a-zA-Z0-9_\-]+', 'key=***', str(inner_e))
+                if any(x in err_str.lower() for x in ["429", "too many requests", "quota exceeded", "resource_exhausted"]):
+                    user_msg = (
+                        f"⚠️ **【算力节点配额/限流拦截 (429)】**\n\n"
+                        f"{err_str}\n\n"
+                        f"💡 **排查与解决建议**：\n"
+                        f"- Google 官方对实验预览模型（如 `gemini-3.8-flash`）的免费请求配额限制极其严格（通常仅 20 次/天）。\n"
+                        f"- 建议前往 **「治理中心 -> 算力底座」** 将当前节点的模型切换为官方正式版 **`gemini-2.5-flash`**（每日免费额度高达 1500 次），即可立即恢复对话。"
+                    )
+                else:
+                    user_msg = f"[Fatal Error] {err_str}"
+                yield "data: " + json.dumps({"type": "final", "message": user_msg}) + "\n\n"
 
         return StreamingResponse(task_generator(), media_type="text/event-stream")
 

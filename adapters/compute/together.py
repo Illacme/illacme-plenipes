@@ -22,7 +22,7 @@ class TogetherTranslator(OpenAICompatibleTranslator):
 
     async def list_models(self) -> list[str]:
         """🚀 Together AI 实时模型感应"""
-        api_key = self.config.api_key
+        api_key = self.safe_get_config('api_key')
         if not api_key:
             raise ValueError("未填写 API Key 物理密钥")
             

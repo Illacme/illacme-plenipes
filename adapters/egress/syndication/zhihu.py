@@ -18,8 +18,12 @@ _zhihu_lock = threading.Lock()
 class ZhihuSyndicator(BaseSyndicator):
     PLUGIN_ID = "zhihu"
     DISPLAY_NAME = "知乎"
+    ICON = "💡"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至指定的知乎专栏，支持 Markdown 内容排版。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖知乎 Web 登录 Cookie (z_c0)，受知乎风控策略影响，建议定期检查凭据有效性。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -36,15 +40,16 @@ class ZhihuSyndicator(BaseSyndicator):
             "state": "draft"  # 默认发布为草稿以保防误触
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 
         token = getattr(self.config, 'token', None) or self.config.get('token')
+        cookie = getattr(self.config, 'cookie', None) or self.config.get('cookie')
         column_id = payload.get("column_id")
 
-        if not token:
-            tlog.warning("⚠️ [知乎专栏] 缺少 token 配置，分发跳过。")
+        if not token and not cookie:
+            tlog.warning("⚠️ [知乎专栏] 缺少 token 或 cookie 配置，分发跳过。")
             return
         if not column_id:
             tlog.warning("⚠️ [知乎专栏] 缺少 column_id 配置，分发跳过。")
@@ -52,10 +57,13 @@ class ZhihuSyndicator(BaseSyndicator):
 
         url = f"https://api.zhihu.com/columns/{column_id}/articles"
         headers = {
-            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "User-Agent": "Illacme-Plenipes-Client"
         }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        if cookie:
+            headers["Cookie"] = cookie
 
         # 🛡️ 指数退避重试循环 (加上临界锁严格防线：每一次尝试发送，都必须串行流控间隔 3.0 秒以上)
         max_attempts = 3

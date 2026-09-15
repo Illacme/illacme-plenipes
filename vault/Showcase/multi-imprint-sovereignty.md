@@ -6,9 +6,14 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何实现单一文库驱动多品牌（Imprints）物理隔离独立出版，按需配置独立装帧主题与分发渠道。
-tags: [Showcase, Imprints, MultiBrand, Sovereignty, Architecture]
+tags:
+- Showcase
+- Imprints
+- MultiBrand
+- Sovereignty
+- Architecture
+cover: /api/design/assets/covers/cover_5663963c5918.jpg
 ---
-
 # 🏷️ 多品牌主权版图矩阵
 
 > [!TIP]

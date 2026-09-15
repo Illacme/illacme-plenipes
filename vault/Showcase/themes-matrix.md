@@ -6,9 +6,15 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 探索 Illacme Plenipes 针对不同应用场景提供的 8 大现代化装帧主题与静态生成引擎全景，一文掌握各主题技术栈、性能指标与选型决策。
-tags: [Showcase, Themes, SSG, Matrix, Selection, DesignSystem]
+tags:
+- Showcase
+- Themes
+- SSG
+- Matrix
+- Selection
+- DesignSystem
+cover: /api/design/assets/covers/cover_7cebcf0e24d5.jpg
 ---
-
 # 🎭 8 大装帧主题全景与选型矩阵
 
 > [!TIP]

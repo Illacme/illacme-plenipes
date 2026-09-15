@@ -6,9 +6,15 @@ route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
 description: 了解 Illacme Plenipes 如何通过双向指纹账本自动清除失效幽灵 HTML 与孤岛资产，杜绝 404 死链并实现 LRU 缓存自愈。
-tags: [Showcase, Janitor, GC, SelfHealing, Ledger, Performance]
+tags:
+- Showcase
+- Janitor
+- GC
+- SelfHealing
+- Ledger
+- Performance
+cover: /api/design/assets/covers/cover_dff017ff23f3.jpg
 ---
-
 # 🧹 Janitor GC 物理清道夫与自愈账本
 
 > [!TIP]

@@ -13,13 +13,30 @@ from core.utils.tracing import tlog
 
 class BaseSyndicator(abc.ABC):
     """所有分发平台插件的抽象基类"""
+    PLUGIN_ID: str = ""
+    DISPLAY_NAME: str = ""
+    ICON: str = "📡"
+
+    # 🛡️ [SLA 治理分级契约]
+    # SLA_TIER: "tier1" (官方开放API/Webhook，高可用稳定性) | "tier2" (Web Cookie/Session 辅助，受制于平台风控)
+    SLA_TIER: str = "tier1"
+    SLA_LABEL: str = "官方直连"
+    SLA_DESC: str = "通过平台官方开放 API 直连分发，具备高可用稳定性与企业级 SLA 保障。"
+
     def __init__(self, config: Any, *args, **kwargs):
+        # 🛡️ [全域防断链架构兜底] 驱动基座透明解密
+        try:
+            from core.config.assembler import resolve_secrets
+            if isinstance(config, dict):
+                config = resolve_secrets(dict(config))
+        except Exception:
+            pass
         self.config = config
         
         # 🚀 [V105.0] 动态感应治理中心网络超时配置 (system.network_timeout)
         default_timeout = 15
         try:
-            from core.config.config_models import load_config
+            from core.config.config import load_config
             sys_cfg = load_config()
             default_timeout = getattr(getattr(sys_cfg, "system", None), "network_timeout", 15) or 15
         except Exception:
@@ -93,3 +110,38 @@ class BaseSyndicator(abc.ABC):
         [Contract] 远程下架接口。如平台 API 不支持，抛出 NotImplementedError。
         """
         raise NotImplementedError(f"{getattr(self, 'DISPLAY_NAME', self.__class__.__name__)} 平台官方 API 不支持远程下架。")
+
+    def validate_preflight(self, title: str, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Contract] 发布前预检校验与防御性修正。
+        返回格式:
+        {
+            "valid": bool,
+            "warnings": List[str],
+            "errors": List[str],
+            "sanitized": {
+                "title": str,
+                "content": str,
+                "metadata": dict
+            }
+        }
+        """
+        errors = []
+        warnings = []
+        clean_title = str(title or "").strip()
+        if not clean_title:
+            errors.append("文章标题不能为空")
+        if not content or not str(content).strip():
+            errors.append("文章正文内容不能为空")
+
+        return {
+            "valid": len(errors) == 0,
+            "warnings": warnings,
+            "errors": errors,
+            "sanitized": {
+                "title": clean_title,
+                "content": content,
+                "metadata": metadata or {}
+            }
+        }
+

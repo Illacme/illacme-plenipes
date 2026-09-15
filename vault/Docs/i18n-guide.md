@@ -6,10 +6,15 @@ route_prefix: docs
 date: 2026-08-16
 author: Illacme Localization Team
 description: 掌握多语种矩阵配置、块级规则保护、术语词库管理与段落重译校对工作流。
-tags: [i18n, Localization, Glossary, BlockRules]
-categories: [Documentation]
+tags:
+- i18n
+- Localization
+- Glossary
+- BlockRules
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_c283c0d7217d.jpg
 ---
-
 # 🌍 多语言矩阵与内容治理实战
 
 **Illacme Plenipes** 提供了企业级的多语言内容治理管线，让您只需专注于用母语起草原稿，系统即可自动完成高保真跨语种编译与发布。

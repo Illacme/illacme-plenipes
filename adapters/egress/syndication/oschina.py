@@ -16,8 +16,12 @@ _oschina_lock = threading.Lock()
 class OSChinaSyndicator(BaseSyndicator):
     PLUGIN_ID = "oschina"
     DISPLAY_NAME = "开源中国"
+    ICON = "🇨🇳"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至开源中国 (OSChina) 博客，触达国内最大开源软件社区与开发者资讯阵地。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖开源中国 oscid Cookie 凭据，需定期检查凭据有效性。"
     
     REQUIRED_PACKAGES = ["requests"]
 
@@ -41,7 +45,7 @@ class OSChinaSyndicator(BaseSyndicator):
             "tags": ",".join(tags[:5])
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

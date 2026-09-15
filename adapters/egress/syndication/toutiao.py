@@ -17,8 +17,12 @@ _toutiao_lock = threading.Lock()
 class ToutiaoSyndicator(BaseSyndicator):
     PLUGIN_ID = "toutiao"
     DISPLAY_NAME = "今日头条"
+    ICON = "⚡"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至今日头条（头条号），支持字节算法大盘分发与草稿/公开发布。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖今日头条 session_id Cookie 凭据，需定期检查有效性。"
     
     REQUIRED_PACKAGES = ["requests", "markdown"]
 
@@ -42,7 +46,7 @@ class ToutiaoSyndicator(BaseSyndicator):
             "save_as_draft": 1 if getattr(self.config, 'save_as_draft', True) else 0
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

@@ -1,7 +1,9 @@
 /**
  * ⚙️ [V87.0] Illacme Plenipes Plugins - OAuth & Sensing Handlers Shard
- * 职责：CLI 唤醒免密授权 (Cloudflare, Netlify, Vercel, Firebase) 与本地凭据感应 (Git, AWS, SFTP) 交互 Handlers。
+ * 职责：CLI 唤醒免密授权 (Cloudflare, Netlify, Vercel, Firebase) 与本地凭据感应 (Git, AWS, SFTP, Chrome Cookie) 交互 Handlers。
  */
+
+const _fetch = window.apiFetch || (async (url, init) => (await fetch(url, init)).json());
 
 window.triggerGithubSSHCheck = async (btn) => {
     if (!btn) return;
@@ -15,13 +17,8 @@ window.triggerGithubSSHCheck = async (btn) => {
     infoEl.style.color = 'var(--neon-cyan)';
     infoEl.innerText = "正在探测您的本地 SSH 与 GitHub 服务的连通情况...";
 
-    const fetchFunc = window.apiFetch || (async (url, init) => {
-        const r = await fetch(url, init);
-        return r.json();
-    });
-
     try {
-        const res = await fetchFunc('/api/plugins/github/ssh-status');
+        const res = await _fetch('/api/plugins/github/ssh-status');
         if (res && res.ssh_ok) {
             infoEl.style.color = '#10B981';
             infoEl.innerHTML = `✅ <b>探测成功！</b>检测到本地 SSH 已打通 GitHub (<span style="color:#fff">账户: ${res.username}</span>)。建议您优先使用 SSH 协议的 Repo URL，此令牌 (Token) 项可留空！`;
@@ -54,22 +51,16 @@ window.triggerFirebaseOAuthLogin = async (btn) => {
     infoEl.style.color = 'var(--neon-cyan)';
     infoEl.innerText = "已尝试在后台拉取 Firebase CLI 登录流，请在浏览器中确认授权...";
 
-    const fetchFunc = window.apiFetch || (async (url, init) => {
-        const r = await fetch(url, init);
-        return r.json();
-    });
-
     try {
-        const res = await fetchFunc('/api/plugins/firebase/oauth-login', { method: 'POST' });
+        const res = await _fetch('/api/plugins/firebase/oauth-login', { method: 'POST' });
         if (res && res.success) {
             let attempts = 0;
             const maxAttempts = 30;
             const interval = setInterval(async () => {
                 attempts++;
                 infoEl.innerText = `⏳ 正在等待本地凭证同步... (已等待 ${attempts * 2}s)`;
-
                 try {
-                    const status = await fetchFunc('/api/plugins/firebase/oauth-status');
+                    const status = await _fetch('/api/plugins/firebase/oauth-status');
                     if (status && status.logged_in) {
                         clearInterval(interval);
                         infoEl.style.color = '#10B981';
@@ -118,22 +109,16 @@ window.triggerCloudflareOAuthLogin = async (btn) => {
     infoEl.style.color = "var(--neon-cyan)";
     infoEl.innerText = "已尝试在后台拉取 Cloudflare OAuth 授权页，请在弹出的系统浏览器中点击「Authorize」完成授权...";
 
-    const fetchFunc = window.apiFetch || (async (url, init) => {
-        const r = await fetch(url, init);
-        return r.json();
-    });
-
     try {
-        const res = await fetchFunc("/api/plugins/cloudflare/oauth-login", { method: "POST" });
+        const res = await _fetch("/api/plugins/cloudflare/oauth-login", { method: "POST" });
         if (res && res.success) {
             let attempts = 0;
             const maxAttempts = 30;
             const interval = setInterval(async () => {
                 attempts++;
                 infoEl.innerText = `⏳ 正在等待浏览器授权确认... (已等待 ${attempts * 2}s)`;
-
                 try {
-                    const status = await fetchFunc("/api/plugins/cloudflare/oauth-status");
+                    const status = await _fetch("/api/plugins/cloudflare/oauth-status");
                     if (status && status.logged_in) {
                         clearInterval(interval);
                         infoEl.style.color = "#10B981";
@@ -216,22 +201,16 @@ window.triggerNetlifyOAuthLogin = async (btn) => {
     infoEl.style.color = "var(--neon-cyan)";
     infoEl.innerText = "已尝试在后台拉起 Netlify OAuth 授权页，请在弹出的系统浏览器中点击「Authorize」完成授权...";
 
-    const fetchFunc = window.apiFetch || (async (url, init) => {
-        const r = await fetch(url, init);
-        return r.json();
-    });
-
     try {
-        const res = await fetchFunc("/api/plugins/netlify/oauth-login", { method: "POST" });
+        const res = await _fetch("/api/plugins/netlify/oauth-login", { method: "POST" });
         if (res && res.success) {
             let attempts = 0;
             const maxAttempts = 30;
             const interval = setInterval(async () => {
                 attempts++;
                 infoEl.innerText = `⏳ 正在等待浏览器授权确认... (已等待 ${attempts * 2}s)`;
-
                 try {
-                    const status = await fetchFunc("/api/plugins/netlify/oauth-status");
+                    const status = await _fetch("/api/plugins/netlify/oauth-status");
                     if (status && status.logged_in) {
                         clearInterval(interval);
                         infoEl.style.color = "#10B981";
@@ -267,3 +246,65 @@ window.triggerNetlifyOAuthLogin = async (btn) => {
         btn.innerText = originalText;
     }
 };
+
+window.autoSniffLocalCookie = async (pluginId = 'juejin', btn = null) => {
+    if (!btn) return;
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "⏳ 正在探测当前浏览器会话...";
+    try {
+        const res = await _fetch("/api/plugins/auto-sniff-cookie", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plugin_id: pluginId })
+        });
+        if (res && res.success) {
+            btn.innerText = "✅ 已自动抓取并绑定会话";
+            btn.style.borderColor = "#10B981";
+            btn.style.background = "rgba(16, 185, 129, 0.2)";
+
+            const fillField = (path, val) => {
+                if (!val) return;
+                const el = document.querySelector(`textarea[data-path="${path}"], input[data-path="${path}"], textarea[name="${path}"], input[name="${path}"]`);
+                if (el) {
+                    el.value = val;
+                    el.dispatchEvent(new Event("input", { bubbles: true }));
+                    el.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                if (typeof window.updateConfigField === 'function') window.updateConfigField(path, val);
+            };
+
+            if (pluginId === 'juejin') {
+                fillField('syndication.juejin.cookie', res.cookie);
+                if (res.api_token) fillField('syndication.juejin.api_token', res.api_token);
+            } else if (pluginId === 'zhihu') {
+                fillField('syndication.zhihu.cookie', res.cookie);
+                if (res.token) fillField('syndication.zhihu.token', res.token);
+            } else if (pluginId === 'bilibili') {
+                fillField('syndication.bilibili.sessdata', res.sessdata);
+                fillField('syndication.bilibili.bili_jct', res.bili_jct);
+                if (res.cookie) fillField('syndication.bilibili.cookie', res.cookie);
+            } else {
+                fillField(`syndication.${pluginId}.cookie`, res.cookie);
+            }
+
+            const userName = res.user_name || "创作者";
+            const uid = res.user_id ? ` (UID: ${res.user_id})` : "";
+            if (window.showToast) window.showToast(res.message || `🎉 会话抓取成功！已自动绑定: ${userName}${uid}`, 'success');
+            setTimeout(() => { if (typeof window.loadPluginsView === 'function') window.loadPluginsView(); }, 800);
+        } else {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            const errMsg = res ? res.error : "未能探测到活跃页面";
+            if (window.showToast) window.showToast(`⚠️ 自动抓取失败: ${errMsg}`, 'error');
+            else alert(`⚠️ 自动抓取失败: ${errMsg}`);
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerText = originalText;
+        if (window.showToast) window.showToast(`❌ 请求异常: ${err.message || err}`, 'error');
+        else alert(`❌ 请求异常: ${err.message || err}`);
+    }
+};
+
+window.autoSniffJuejinCookie = (btn) => window.autoSniffLocalCookie('juejin', btn);

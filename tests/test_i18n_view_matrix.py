@@ -4,9 +4,7 @@ Tests for 50-language I18N View Matrix and UI Localization Decoupling.
 确保全球 50 种语言的前台核心视图与交互标签 100% 具备地道母语翻译，零硬编码分支。
 """
 
-import pytest
 from core.adapters.egress.ssg.base_shards.ssg_slot_matrix import (
-    VIEW_I18N_MATRIX,
     get_i18n_view_label
 )
 from core.utils.language_data import SUPPORTED_MATRIX

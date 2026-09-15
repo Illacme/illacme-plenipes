@@ -5,10 +5,17 @@ slug: preflight-dry-run-probes
 route_prefix: showcase
 date: 2026-08-21
 author: Illacme Sovereign Press
-description: 了解 Illacme Plenipes 如何在跨 30+ 平台发布前发起毫秒级非破坏性 Dry-Run 握手预检，搭配 CLI 一键免密授权向导，实现 100% 零失误推流。
-tags: [Showcase, DryRun, Probes, OneClickAuth, Syndication, Security]
+description: 了解 Illacme Plenipes 如何在跨 30+ 平台发布前发起毫秒级非破坏性 Dry-Run 握手预检，搭配 CLI 一键免密授权向导，实现
+  100% 零失误推流。
+tags:
+- Showcase
+- DryRun
+- Probes
+- OneClickAuth
+- Syndication
+- Security
+cover: /api/design/assets/covers/cover_e452c21b4573.jpg
 ---
-
 # 🧪 全渠道零失误 Dry-Run 沙盘预检与一键免密授权
 
 > [!TIP]

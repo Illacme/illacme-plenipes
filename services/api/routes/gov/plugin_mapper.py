@@ -199,11 +199,16 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         if hasattr(curr_cfg, 'dict'): curr_cfg = curr_cfg.dict()
         t_cls = TARGET_REGISTRY.get(t_id)
         name = getattr(t_cls, "DISPLAY_NAME", t_id.upper())
+        icon = getattr(t_cls, "ICON", "📡")
+        sla_tier = getattr(t_cls, "SLA_TIER", "tier1")
+        sla_label = getattr(t_cls, "SLA_LABEL", "官方直连" if sla_tier == "tier1" else "Cookie辅助")
+        sla_desc = getattr(t_cls, "SLA_DESC", "通过官方开放 API 直连分发，具备企业级稳定性。" if sla_tier == "tier1" else "依赖 Web 登录凭据，建议定期校验有效性。")
         plugins.append({
-            "id": t_id, "name": name, "category": "publisher", "category_name": "🚀 分发渠道",
+            "id": t_id, "name": name, "icon": icon, "category": "publisher", "category_name": "🚀 分发渠道",
             "status": "Active" if is_in_use else "Ready", "is_in_use": is_in_use, "is_enabled": (t_id not in disabled),
             "origin": "core", "version": getattr(t_cls, "VERSION", SYSTEM_TRACK),
-            "description": f"全自动分发插件：支持将出版成品推向 {name} 矩阵。", "cfg": curr_cfg, "is_manageable": True
+            "description": f"全自动分发插件：支持将出版成品推向 {name} 矩阵。", "cfg": curr_cfg, "is_manageable": True,
+            "sla_tier": sla_tier, "sla_label": sla_label, "sla_desc": sla_desc
         })
 
     # 4c. 🔌 图床服务 (Image Hosting)
@@ -232,7 +237,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
                     is_in_use = True
                     current_cfg = h_cfg
 
-        display_name = getattr(host_cls, "DISPLAY_NAME", host_id.upper())
+        fallback_names = {"telegraph": "Telegraph 自建图床", "cloudflare_r2": "Cloudflare R2", "imgbb": "ImgBB", "catbox": "Catbox", "github": "GitHub 图床"}
+        display_name = getattr(host_cls, "DISPLAY_NAME", fallback_names.get(host_id, host_id.upper()))
         description = getattr(host_cls, "DESCRIPTION", f"图床自发现适配器：支持将原稿相对图片上传至 {display_name} 并自动替换 CDN 链接。")
         plugins.append({
             "id": host_id, "name": display_name, "category": "image_hosting", "category_name": "📷 图床存储",

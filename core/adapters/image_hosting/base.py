@@ -15,6 +15,13 @@ class BaseImageHost(abc.ABC):
     所有具体图床实现（S3, GitHub, Imgur 等）必须继承此类并实现核心方法。
     """
     def __init__(self, config: Dict[str, Any], sys_tuning: Dict[str, Any] = None):
+        # 🛡️ [全域防断链架构兜底] 驱动基座透明解密
+        try:
+            from core.config.assembler import resolve_secrets
+            if isinstance(config, dict):
+                config = resolve_secrets(dict(config))
+        except Exception:
+            pass
         self.config = config or {}
         self.sys_tuning = sys_tuning or {}
 

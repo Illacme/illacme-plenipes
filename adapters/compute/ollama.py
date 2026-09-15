@@ -5,7 +5,6 @@ Illacme-plenipes Core - Ollama Adapter
 职责：负责本地 Ollama 服务的适配（原生 + OpenAI 兼容双轨）。
 🛡️ [V67.0]：主权双轨架构实装。
 """
-import requests
 import asyncio
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
@@ -23,7 +22,7 @@ class OllamaNativeTranslator(BaseTranslator):
     
     def __init__(self, node_name, trans_cfg):
         super().__init__(node_name, trans_cfg)
-        self._session = requests.Session()
+        self._session = self.init_session()
 
     async def list_models(self) -> list[str]:
         """获取本地 Ollama 已下载的模型列表"""
@@ -59,7 +58,7 @@ class OllamaNativeTranslator(BaseTranslator):
         params = payload.get("params", {})
         ollama_payload = {
             "model": payload.get("model"),
-            "messages": [
+            "messages": payload.get("messages") or [
                 {"role": "system", "content": payload.get("system")},
                 {"role": "user", "content": payload.get("user")}
             ],

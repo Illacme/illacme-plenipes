@@ -19,8 +19,16 @@ import binascii
 from typing import Dict, Tuple, Optional
 from core.utils.tracing import tlog
 
-# 系统暗号主钥 (用于签名防伪验证)
-SECRET_MASTER_SALT = b"ILLACME-PLENIPES-SOVEREIGN-MASTER-KEY-V100"
+# 官方内置公钥 (用于非对称防伪签名验证)
+RSA_PUBLIC_KEY_PEM = b"""-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1xyrlTwrQ2cpKs1eG5Ab
+v+huOyL0HyoM0XpS1+OU0TNxVGSS/csvpJH9WV7KV47q3DL8rg/Hz7o5HTCBJHZz
+zR42oPHMsiyF1UHg754GQ14IRMkCk3STNk3xPd6gaDOi+Fu95KyAZW3aVewtu+14
+FjDYN4iytGS9N1BZ8DNCajHvkCHJg2oFOO8RXW+oL6aJHsjgAmes8+f3pIg7oQ3U
+JKP+qc+t0mWfqjcYlCwzkr9vbNbprsXq5bErV7oEaSng3adFmLUyWHqn/B5/54FS
+EVkmlninS/CLWzvjz3Nj2zfOHF3xpfJbOAAEHOEU7ZLv6x1tENj4scRM36r4ZvWX
+RQIDAQAB
+-----END PUBLIC KEY-----"""
 
 class LicenseGuard:
     """🚀 [V100.8] 出版准入卫士：执行出版社的“商业宪法”"""
@@ -54,9 +62,32 @@ class LicenseGuard:
         return os.path.abspath(os.path.join(".plenipes", "license.lic"))
 
     @classmethod
+    def _verify_rsa_signature(cls, payload: Dict, sig_str: str) -> bool:
+        """使用内置官方公钥核验 RSA-SHA256 签名"""
+        try:
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric import padding
+            from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
+            pub_key = load_pem_public_key(RSA_PUBLIC_KEY_PEM)
+            sig_bytes = base64.b64decode(sig_str.encode('utf-8'))
+            data_bytes = json.dumps(payload, sort_keys=True).encode('utf-8')
+            
+            pub_key.verify(
+                sig_bytes,
+                data_bytes,
+                padding.PKCS1v15(),
+                hashes.SHA256()
+            )
+            return True
+        except Exception as rsa_err:
+            tlog.debug(f"🛡️ [RSA验签拦截] {rsa_err}")
+            return False
+
+    @classmethod
     def verify_license_data(cls, license_text: str) -> Tuple[bool, str, Dict]:
         """
-        核验许可证字符串的合法性与防伪签名。
+        核验许可证字符串的合法性与防伪签名（纯 RSA-2048 非对称防伪签名）。
         
         :param license_text: 许可证 Base64 编码文本
         :return: (is_valid, reason, payload)
@@ -81,11 +112,15 @@ class LicenseGuard:
 
         payload = envelope["payload"]
         sig = envelope["signature"]
+        alg = str(envelope.get("alg", "")).upper()
 
-        # 1. 签名核验
-        expected_sig = hmac.new(SECRET_MASTER_SALT, json.dumps(payload, sort_keys=True).encode('utf-8'), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected_sig):
-            return False, "签名不匹配，许可证可能已被非法篡改", {}
+        # 1. 签名算法与防伪签名核验 (强制 RSA-2048 非对称签名)
+        if alg not in ("RSA-SHA256", "RSA"):
+            return False, f"不支持或非法的签名算法 [{alg}]，商业版强制要求 RSA-2048 非对称防伪签名", {}
+
+        if not cls._verify_rsa_signature(payload, sig):
+            return False, "RSA 官方防伪签名核验失败，许可证可能已被非法篡改或并非由官方签发", {}
+
 
         # 2. 硬件指纹核验
         target_fp = payload.get("fingerprint", "")
@@ -100,6 +135,7 @@ class LicenseGuard:
             return False, f"许可证已于 {exp_str} 过期", {}
 
         return True, "验证通过", payload
+
 
     @classmethod
     def clear_cache(cls):

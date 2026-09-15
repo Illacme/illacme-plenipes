@@ -26,6 +26,7 @@ const VIEW_GROUP_MAP = {
     settings: 'nav-group-governance',
     compute: 'nav-group-governance',
     plugins: 'nav-group-governance',
+    design: 'nav-group-governance',
     tower: 'nav-group-telemetry',
     analytics: 'nav-group-telemetry'
 };
@@ -71,6 +72,7 @@ window.loadViewData = (viewId, subId) => {
     console.log(`📥 [Views] 开始为视图 ${viewId} 加载数据...`);
     if (viewId === 'vault' && typeof loadVault === 'function') loadVault();
     if (viewId === 'compute' && typeof loadComputeCenter === 'function') loadComputeCenter(subId);
+    if (viewId === 'design' && typeof loadDesignCenter === 'function') loadDesignCenter(subId);
     if (viewId === 'plugins') {
         if (typeof loadPlugins === 'function') {
             loadPlugins(false, subId);
@@ -134,16 +136,28 @@ window.showView = async (id, subId) => {
 
     if (document.startViewTransition) {
         if (typeof window.triggerSystemPulse === 'function') window.triggerSystemPulse();
-        const transition = document.startViewTransition(() => {
+        try {
+            const transition = document.startViewTransition(() => {
+                executeDOMChange();
+            });
+            // 🛡️ 防御：捕获 transition 上的跳过与取消异常，防止浏览器原生跳过动作穿透至全局 ErrorBoundary
+            if (transition.ready) {
+                transition.ready.catch(() => {});
+            }
+            if (transition.updateCallbackDone) {
+                transition.updateCallbackDone.catch(() => {});
+            }
+            transition.finished.then(() => {
+                executeDataLoad();
+            }).catch((err) => {
+                console.warn("⚠️ View transition rejected or cancelled, load data fallback:", err);
+                executeDataLoad();
+            });
+        } catch (e) {
+            console.warn("⚠️ startViewTransition failed, fallback to direct execution:", e);
             executeDOMChange();
-        });
-        // 🛡️ P1 修复：在 View Transition 动画彻底结束（finished）后再触发慢速 API 数据加载
-        transition.finished.then(() => {
             executeDataLoad();
-        }).catch((err) => {
-            console.warn("⚠️ View transition transition.finished rejected or cancelled, load data fallback:", err);
-            executeDataLoad();
-        });
+        }
     } else {
         // 兜底降级：对于不支持的浏览器，继续走老的 setTimeout 动画
         if (container) {
@@ -167,7 +181,7 @@ window._isInitialRouting = true;
 window.handleRouting = async () => {
     const rawHash = window.location.hash.replace('#/', '');
     const [viewId, routeSubId] = rawHash.split('/');
-    const validViews = ['overview', 'vault', 'compute', 'plugins', 'settings', 'tower', 'analytics'];
+    const validViews = ['overview', 'vault', 'compute', 'design', 'plugins', 'settings', 'tower', 'analytics'];
     if (viewId && validViews.includes(viewId)) {
         const subId = routeSubId || window.pendingSubView;
         window.pendingSubView = null;

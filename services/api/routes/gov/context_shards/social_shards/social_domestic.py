@@ -5,8 +5,10 @@
 架构：由 plugin_dry_run_social.py 拆分而来 (SOP-02 模块拆分标准)。
 """
 
+import re
 import requests
 from typing import Dict, Any, List
+from core.config.assembler import resolve_secrets
 
 
 def probe_domestic_social(
@@ -20,24 +22,36 @@ def probe_domestic_social(
     success = True
 
     if plugin_id == "wechat":
-        app_id = settings.get("app_id", "")
-        app_secret = settings.get("app_secret", "")
+        resolved_settings = resolve_secrets(settings) if isinstance(settings, dict) else settings
+        app_id = str(resolved_settings.get("app_id", "") or "").strip()
+        app_secret = str(resolved_settings.get("app_secret", "") or "").strip()
         if not app_id or not app_secret:
             logs.append(log_func("ERROR", "❌ [错误] 微信公众号 AppID 或 AppSecret 尚未配置。"))
             return False
         
+        proxy_val = str(resolved_settings.get("proxy", "") or "").strip()
+        effective_proxies = {"http": None, "https": None} if proxy_val.lower() == "direct" else proxies
+
         logs.append(log_func("INFO", "📡 [探测] 正在连接 微信公众平台 API 端点进行 Access Token 预校验..."))
         url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={app_id}&secret={app_secret}"
         try:
-            resp = requests.get(url, proxies=proxies, timeout=8)
+            resp = requests.get(url, proxies=effective_proxies, timeout=8)
             if resp.status_code == 200:
                 res_data = resp.json()
                 if "access_token" in res_data:
-                    logs.append(log_func("SUCCESS", "🟢 [成功] 微信公众号凭证校验通过，成功握手并换取 Access Token。"))
+                    logs.append(log_func("SUCCESS", "🟢 [成功] 微信公众号凭证校验通过，成功握手并换取 Access Token。草稿箱通道就绪。"))
                 else:
                     err_code = res_data.get("errcode")
                     err_msg = res_data.get("errmsg", "")
-                    logs.append(log_func("ERROR", f"❌ [授权] 微信端返回鉴权失败 (错误码 {err_code}): {err_msg}"))
+                    if err_code == 40164:
+                        ip_match = re.search(r"invalid ip\s+([0-9\.]+)", err_msg)
+                        invalid_ip = ip_match.group(1) if ip_match else "未知"
+                        logs.append(log_func("ERROR", f"❌ [IP白名单拦截 (40164)] 微信端拒绝访问。检测到当前出口 IP 为【{invalid_ip}】。"))
+                        logs.append(log_func("INFO", "💡 [自愈指引] 请前往微信公众平台 (mp.weixin.qq.com) ->【设置与开发】->【基本配置】->【IP白名单】添加此 IP。若已开启全局代理，可设置 proxy: direct 直连。"))
+                    elif err_code in (40001, 40013):
+                        logs.append(log_func("ERROR", f"❌ [凭证无效 (错误码 {err_code})] 微信 AppID 与 AppSecret 不匹配，请核对公众平台基本配置。"))
+                    else:
+                        logs.append(log_func("ERROR", f"❌ [授权] 微信端返回鉴权失败 (错误码 {err_code}): {err_msg}"))
                     success = False
             else:
                 logs.append(log_func("ERROR", f"❌ [错误] 微信 API 返回异常状态码 {resp.status_code}"))
@@ -69,10 +83,40 @@ def probe_domestic_social(
             logs.append(log_func("ERROR", "❌ [错误] 稀土掘金 Cookie 与 API Token 必须至少配置一项。"))
             return False
         
-        logs.append(log_func("INFO", "📡 [探测] 正在校验 掘金 API 连通度..."))
+        logs.append(log_func("INFO", "📡 [探测] 正在校验 掘金 API 连通度与登录身份凭证..."))
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        if cookie:
+            clean_cookie = cookie.strip()
+            if "sessionid" not in clean_cookie and "=" not in clean_cookie and len(clean_cookie) >= 16:
+                clean_cookie = f"sessionid={clean_cookie}"
+            headers["Cookie"] = clean_cookie
+        if api_token:
+            headers["X-Juejin-Token"] = api_token
+
         try:
-            resp = requests.head("https://api.juejin.cn", proxies=proxies, timeout=15)
-            logs.append(log_func("SUCCESS", f"🟢 [成功] 对端掘金 API 服务网络握手正常 (HTTP {resp.status_code})。已完成本地凭据格式匹配。"))
+            user_resp = requests.get(
+                "https://api.juejin.cn/user_api/v1/user/get",
+                headers=headers,
+                proxies=proxies,
+                timeout=12
+            )
+            if user_resp.status_code == 200:
+                res_data = user_resp.json()
+                err_no = res_data.get("err_no")
+                if err_no == 0:
+                    user_info = res_data.get("data") or {}
+                    u_name = user_info.get("user_name") or "创作者"
+                    u_id = user_info.get("user_id") or ""
+                    logs.append(log_func("SUCCESS", f"🟢 [成功] 稀土掘金身份探测通过！已连接创作者: {u_name} (UID: {u_id})。草稿箱就绪。"))
+                elif err_no in (401, 403, 3000):
+                    logs.append(log_func("ERROR", f"❌ [错误] 掘金凭证校验失败 (err_no {err_no}): 登录凭据已过期或无效，请重新提取 Cookie。"))
+                    success = False
+                else:
+                    logs.append(log_func("WARN", f"⚠️ [掘金响应] 接口已连通，凭证返回: {res_data.get('err_msg')} (err_no {err_no})。"))
+            else:
+                logs.append(log_func("WARN", f"⚠️ [网络握手] 掘金接口返回 HTTP {user_resp.status_code}。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立与 掘金 API 端的物理连接: {e}。"))
             success = False

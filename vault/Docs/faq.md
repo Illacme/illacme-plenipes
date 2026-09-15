@@ -3,10 +3,14 @@ title: 常见问题与排错手册 (FAQ)
 date: 2026-08-11
 author: Illacme Support Guild
 description: 汇总创作者在日常使用、端口冲突、AI 翻译、品牌切换与全渠道分发中的高频疑问与官方解决方案。
-tags: [FAQ, Troubleshooting, Help]
-categories: [Documentation]
+tags:
+- FAQ
+- Troubleshooting
+- Help
+categories:
+- Documentation
+cover: /api/design/assets/covers/cover_5b7c638e941b.jpg
 ---
-
 # ❓ 常见问题与排错手册 (FAQ)
 
 本手册整理了创作者在初次上手与日常出版过程中的高频问题与自愈方案。

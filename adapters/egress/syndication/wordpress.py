@@ -21,6 +21,7 @@ _wordpress_lock = threading.Lock()
 class WordPressSyndicator(BaseSyndicator):
     PLUGIN_ID = "wordpress"
     DISPLAY_NAME = "WordPress"
+    ICON = "📰"
     VERSION = "V1.0"
     DESCRIPTION = "通过 WordPress REST API 进行内容同步，支持文章分类、标签映射与 Slug 冲突自愈。"
     
@@ -67,7 +68,7 @@ class WordPressSyndicator(BaseSyndicator):
             
         return payload
 
-    def push(self, payload: Dict[str, Any]):
+    def push(self, payload: Dict[str, Any], remote_id: str = None, **kwargs):
         """执行物理推流"""
         import time
         import random

@@ -17,8 +17,12 @@ _bili_lock = threading.Lock()
 class BilibiliSyndicator(BaseSyndicator):
     PLUGIN_ID = "bilibili"
     DISPLAY_NAME = "Bilibili 专栏"
+    ICON = "📺"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步发表至 Bilibili (B站) 专栏，触达年轻硬核极客与科技知识圈层。"
+    SLA_TIER = "tier2"
+    SLA_LABEL = "Cookie辅助"
+    SLA_DESC = "依赖 B站 SESSDATA / bili_jct 凭据，请定期确认 Cookie 未失效。"
     
     REQUIRED_PACKAGES = ["requests", "markdown"]
 
@@ -47,7 +51,7 @@ class BilibiliSyndicator(BaseSyndicator):
             "original_url": canonical_url
         }
 
-    def push(self, payload: dict):
+    def push(self, payload: dict, remote_id: str = None, **kwargs):
         import time
         import random
 

@@ -49,10 +49,7 @@ window.getPlatformBrandBadge = (id, category = '') => {
 
         // 📷 图床与对象存储 (Image Hosting & Object Storage)
         's3': { icon: '🪣', color: '#ff9900', bg: 'rgba(255, 153, 0, 0.14)', border: 'rgba(255, 153, 0, 0.35)' },
-        'sm_ms': { icon: '🖼️', color: '#1890ff', bg: 'rgba(24, 144, 255, 0.14)', border: 'rgba(24, 144, 255, 0.35)' },
-        'smms': { icon: '🖼️', color: '#1890ff', bg: 'rgba(24, 144, 255, 0.14)', border: 'rgba(24, 144, 255, 0.35)' },
         'imgur': { icon: '🟢', color: '#1bb76e', bg: 'rgba(27, 183, 110, 0.14)', border: 'rgba(27, 183, 110, 0.35)' },
-        'telegraph': { icon: '📰', color: '#999999', bg: 'rgba(255, 255, 255, 0.1)', border: 'rgba(255, 255, 255, 0.25)' },
         'aliyun_oss': { icon: '☁️', color: '#ff6a00', bg: 'rgba(255, 106, 0, 0.14)', border: 'rgba(255, 106, 0, 0.35)' },
         'tencent_cos': { icon: '🐧', color: '#00a4ff', bg: 'rgba(0, 164, 255, 0.14)', border: 'rgba(0, 164, 255, 0.35)' },
         'upyun_uss': { icon: '☁️', color: '#00b7ee', bg: 'rgba(0, 183, 238, 0.14)', border: 'rgba(0, 183, 238, 0.35)' },
@@ -61,6 +58,11 @@ window.getPlatformBrandBadge = (id, category = '') => {
         'qiniu_kodo': { icon: '🔵', color: '#0099ff', bg: 'rgba(0, 153, 255, 0.14)', border: 'rgba(0, 153, 255, 0.35)' },
         'lsky_pro': { icon: '🌌', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)', border: 'rgba(59, 130, 246, 0.35)' },
         'superbed': { icon: '🛏️', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.14)', border: 'rgba(236, 72, 153, 0.35)' },
+        'telegraph': { icon: '⚡', color: '#ffaa00', bg: 'rgba(255, 170, 0, 0.14)', border: 'rgba(255, 170, 0, 0.35)' },
+        'cloudflare_r2': { icon: '🟧', color: '#f38020', bg: 'rgba(243, 128, 32, 0.14)', border: 'rgba(243, 128, 32, 0.35)' },
+        'imgbb': { icon: '🖼️', color: '#2a9d8f', bg: 'rgba(42, 157, 143, 0.14)', border: 'rgba(42, 157, 143, 0.35)' },
+        'catbox': { icon: '🐱', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)', border: 'rgba(139, 92, 246, 0.35)' },
+        'loli_io': { icon: '🌸', color: '#f472b6', bg: 'rgba(244, 114, 182, 0.14)', border: 'rgba(244, 114, 182, 0.35)' },
         'sftp': { icon: '🔒', color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', border: 'rgba(16, 185, 129, 0.35)' },
 
         // 🔔 消息通知 (Notifications)

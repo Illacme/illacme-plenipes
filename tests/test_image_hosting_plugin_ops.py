@@ -25,10 +25,10 @@ class TestImageHostingPluginOps:
     async def test_probe_image_hosting_plugins(self):
         """测试 plugin_ops 中的健康探测逻辑对图床的感应"""
         mock_engine = MagicMock()
-        mock_engine.config.image_hosting = {"provider": "telegraph"}
+        mock_engine.config.image_hosting = {"provider": "imgbb"}
         
         with patch("services.api.routes.gov.context_shards.plugin_ops.get_global_engine", return_value=mock_engine):
-            for provider_id in ["telegraph", "aliyun_oss", "tencent_cos", "qiniu_kodo", "upyun_uss", "loli_io", "superbed", "lsky_pro"]:
+            for provider_id in ["cloudflare_r2", "telegraph", "imgbb", "catbox", "aliyun_oss", "tencent_cos", "qiniu_kodo", "upyun_uss", "loli_io", "superbed", "lsky_pro"]:
                 res = await probe_plugin_impl({"id": provider_id})
                 assert res["success"] is True
                 assert res["healthy"] is True
@@ -37,14 +37,37 @@ class TestImageHostingPluginOps:
     @pytest.mark.anyio
     async def test_dry_run_image_hosting_plugins(self) -> None:
         """测试 plugin_ops 中的 Dry-Run 自检逻辑"""
-        payload_telegraph = {"id": "telegraph", "settings": {"endpoint": "https://telegra.ph"}}
+        # 1. ImgBB 凭据缺失与正常探测测试
+        res_imgbb_fail = await dry_run_plugin_impl({"id": "imgbb", "settings": {"api_key": ""}})
+        assert res_imgbb_fail["success"] is False
+        assert any("未配置 ImgBB API Key" in log["message"] for log in res_imgbb_fail["logs"])
+
         with patch("requests.get") as mock_get:
             mock_resp = MagicMock()
             mock_resp.status_code = 200
             mock_get.return_value = mock_resp
-            res = await dry_run_plugin_impl(payload_telegraph)
-            assert res["success"] is True
-            assert any("Telegraph 属于免配授权图床" in log["message"] for log in res["logs"])
+            res_imgbb_ok = await dry_run_plugin_impl({"id": "imgbb", "settings": {"api_key": "my-key"}})
+            assert res_imgbb_ok["success"] is True
+
+        # 2. Catbox 匿名模式探测测试
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res_catbox = await dry_run_plugin_impl({"id": "catbox", "settings": {}})
+            assert res_catbox["success"] is True
+
+        # 3. Telegraph 自建节点探测测试
+        res_tele_fail = await dry_run_plugin_impl({"id": "telegraph", "settings": {"endpoint": "https://telegra.ph"}})
+        assert res_tele_fail["success"] is False
+        assert any("Telegraph 官方已关闭" in log["message"] for log in res_tele_fail["logs"])
+
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_get.return_value = mock_resp
+            res_tele_ok = await dry_run_plugin_impl({"id": "telegraph", "settings": {"endpoint": "https://my-img.pages.dev"}})
+            assert res_tele_ok["success"] is True
 
         res_oss_fail = await dry_run_plugin_impl({"id": "aliyun_oss", "settings": {"bucket": ""}})
         assert res_oss_fail["success"] is False
@@ -120,7 +143,7 @@ class TestImageHostingPluginOps:
         assert res_fail["success"] is False
         assert "Plugin ID" in res_fail["error"]
 
-        res_none = await install_plugin_deps_impl({"id": "telegraph"})
+        res_none = await install_plugin_deps_impl({"id": "catbox"})
         assert res_none["success"] is True
         assert "不需要外部" in res_none["logs"][0]["message"]
 

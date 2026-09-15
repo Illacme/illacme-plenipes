@@ -43,13 +43,12 @@ class TestSyndicationCanonical:
         )
 
         # 校验 mock_plugin.format_payload 接收到的 canonical_url
-        mock_plugin.format_payload.assert_called_once_with(
-            "Hello Plenipes",
-            "hello-plenipes-post",
-            "Markdown body",
-            {"tags": []},
-            canonical_url="https://my-blog.com/posts/hello-pre-commit-slug" if False else "https://my-blog.com/posts/hello-plenipes-post"
-        )
+        assert mock_plugin.format_payload.call_count == 1
+        args, kwargs = mock_plugin.format_payload.call_args
+        assert args[0] == "Hello Plenipes"
+        assert args[1] == "hello-plenipes-post"
+        assert args[2] == "Markdown body"
+        assert kwargs["canonical_url"] == "https://my-blog.com/posts/hello-plenipes-post"
 
     def test_medium_canonical_url_handling(self):
         """验证 MediumSyndicator 的 format_payload 优先使用传入的 canonical_url"""

@@ -18,65 +18,56 @@
             return;
         }
 
-        const btn = document.getElementById('btn-start-article-syndicate');
+        // 🛡️ [Preflight Guard] 封面图智能防呆拦截 (仅在前台抽屉交互上下文中激活)
+        const hasStudio = !!document.getElementById('syndicate-cover-studio-container');
+        const REQ_COVER_MAP = { 'wechat': '微信公众号', 'xiaohongshu': '小红书', 'bilibili': 'B站专栏', 'toutiao': '今日头条' };
+        const reqTargets = selectedPlatforms.filter(id => REQ_COVER_MAP[id.toLowerCase()]);
+        const strat = window.currentSyndicateCover?.strategy || '';
+        const isAbstractOrEmpty = !window.currentSyndicateCover?.url || strat === 'og_card' || strat === 'minimal_badge';
+
+        if (hasStudio && reqTargets.length > 0 && isAbstractOrEmpty && !window._bypassCoverPreflight) {
+            window.showCoverPreflightModal(relPath, reqTargets.map(id => REQ_COVER_MAP[id.toLowerCase()]));
+            return;
+        }
+        window._bypassCoverPreflight = false;
+
+        // 🚀 1. 切换生命周期到 'running' 执行态
+        if (typeof window.switchSyndicateDrawerStage === 'function') {
+            window.switchSyndicateDrawerStage('running', { lang: selectedLang, platformCount: selectedPlatforms.length });
+        }
+
         const progressPanel = document.getElementById('syndicate-progress-panel');
         const progressTitle = document.getElementById('syndicate-progress-title');
         const progressPercent = document.getElementById('syndicate-progress-percent');
         const progressBar = document.getElementById('syndicate-progress-bar');
         const progressDesc = document.getElementById('syndicate-progress-desc');
 
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-gear">⚙️</span> 分发管线运行中...';
-        }
-
         if (progressPanel) {
             progressPanel.style.display = 'flex';
-            progressTitle.innerText = `⚙️ 正在启动 [${selectedLang.toUpperCase()}] 分发管线...`;
-            progressPercent.innerText = '15%';
-            progressBar.style.width = '15%';
-            progressDesc.innerText = '正在调起后端智能编译与分发中心...';
+            if (progressTitle) progressTitle.innerText = `⚙️ 正在启动 [${selectedLang.toUpperCase()}] 分发管线...`;
+            if (progressPercent) progressPercent.innerText = '15%';
+            if (progressBar) progressBar.style.width = '15%';
+            if (progressDesc) progressDesc.innerText = '正在调起后端智能编译与分发中心...';
         }
 
-        const fetchFunc = window.apiFetch || (async (url, init) => {
-            const r = await fetch(url, init);
-            return r.json();
-        });
-
-        let currentProgress = 20;
-
-        if (window.syndicateProgressTimer) clearInterval(window.syndicateProgressTimer);
-        window.syndicateProgressTimer = setInterval(async () => {
-            try {
-                const statusData = await fetchFunc(`/api/vault/dispatch-status/${encodeURIComponent(relPath)}`);
-                if (statusData && statusData.telemetry && statusData.telemetry.pipeline) {
-                    const pipe = statusData.telemetry.pipeline;
-                    if (pipe.status === 'RUNNING') {
-                        currentProgress = Math.min(90, currentProgress + 10);
-                        if (progressPercent) progressPercent.innerText = `${currentProgress}%`;
-                        if (progressBar) progressBar.style.width = `${currentProgress}%`;
-                        if (progressDesc) progressDesc.innerText = `⚙️ [底层实时日志] ${pipe.stage || '正在处理 AST 结构与外部接口...'}`;
-                    }
-                }
-            } catch (_) {}
-        }, 1200);
-
-        const oldPanel = document.getElementById('syndicate-results-panel');
-        if (oldPanel) oldPanel.remove();
+        const fetchFunc = window.apiFetch || (async (u, i) => { const r = await fetch(u, i); return r.json(); });
 
         for (let i = 0; i < selectedPlatforms.length; i++) {
             const channelId = selectedPlatforms[i];
-            if (progressDesc) progressDesc.innerText = `📡 [${i + 1}/${selectedPlatforms.length}] 正在向 [${channelId.toUpperCase()}] 进行广播推流调度...`;
+            const currentRatio = Math.round(15 + ((i + 1) / selectedPlatforms.length) * 35);
+            if (progressPercent) progressPercent.innerText = `${currentRatio}%`;
+            if (progressBar) progressBar.style.width = `${currentRatio}%`;
+            if (progressDesc) progressDesc.innerText = `📡 [${i + 1}/${selectedPlatforms.length}] 正在向 [${channelId.toUpperCase()}] 进行广播推流...`;
 
             try {
+                const cCov = window.currentSyndicateCover || {};
                 await fetchFunc(`/api/vault/re-dispatch/${encodeURIComponent(relPath)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        target_slot: selectedLang,
-                        target_channel: channelId,
-                        skip_syndication: false,
-                        clear_cache: false
+                        target_slot: selectedLang, target_channel: channelId, skip_syndication: false, clear_cache: false,
+                        cover_mode: cCov.mode || 'global', cover_image: cCov.url || '', cover_offset: cCov.offset || 0,
+                        cover_overrides: cCov.overrides || {}
                     })
                 });
             } catch (e) {
@@ -84,12 +75,6 @@
             }
         }
 
-        if (window.syndicateProgressTimer) {
-            clearInterval(window.syndicateProgressTimer);
-            window.syndicateProgressTimer = null;
-        }
-
-        // 🚀 [V107.0] 物理终态凭证回填：拉取后端最新传感数据并动态渲染渠道直达卡片 (带多周期平滑长轮询与物权对正)
         let cardSuccessCount = 0;
         let cardFailCount = 0;
 
@@ -97,162 +82,215 @@
             try {
                 const timestamp = Date.now();
                 const finalStatus = await fetchFunc(`/api/vault/dispatch-status/${encodeURIComponent(relPath)}?lang_code=${encodeURIComponent(selectedLang)}&_t=${timestamp}`);
-                const syncMatrix = (finalStatus && finalStatus.sync_matrix) ? finalStatus.sync_matrix : [];
+                const syncMatrix = (finalStatus && Array.isArray(finalStatus.sync_matrix)) ? finalStatus.sync_matrix : [];
 
-                // 🚀 实时同步拉取物权账本（精准按 selectedLang 语种物理隔离并防 HTTP 缓存）
                 try {
                     const recordsData = await fetchFunc(`/api/syndication/records/${encodeURIComponent(relPath)}?lang_code=${encodeURIComponent(selectedLang)}&_t=${timestamp}`);
-                    if (recordsData && recordsData.records) {
+                    if (recordsData && Array.isArray(recordsData.records)) {
                         window.currentSyndicationRecords = recordsData.records;
                     }
-                } catch (re) {
-                    console.warn("[Syndicate Drawer] Refresh records failed:", re);
-                }
+                } catch (_) { }
 
+                const cardsHtml = [];
+                const failedChannelsList = [];
                 let allCompleted = true;
                 cardSuccessCount = 0;
                 cardFailCount = 0;
 
-                const platformMetadata = window.platformMetadata || {};
-
-                let resultsHtml = `
-                    <div id="syndicate-results-panel" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--accent-secondary, #00f2fe); background: rgba(0, 242, 255, 0.04); padding: 12px; border-radius: 10px;">
-                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-secondary, #00f2fe); display: flex; align-items: center; justify-content: space-between;">
-                            <span>📡 广播物理凭证终态分布</span>
-                            <span style="font-size: 0.68rem; color: var(--text-dim);">${new Date().toTimeString().split(' ')[0]}</span>
-                        </div>
-                `;
-
                 selectedPlatforms.forEach(chanId => {
-                    const cleanChanId = chanId.toLowerCase().replace(/[_-\s]/g, '');
-                    const chanPlugin = (window.allPlugins || []).find(p => p.id === chanId || p.id.replace(/[_-\s]/g, '') === cleanChanId);
-                    const chanMeta = chanPlugin ? { name: chanPlugin.name || chanId, icon: chanPlugin.icon || '📡' } : { name: chanId.toUpperCase(), icon: '📡' };
-                    const statusItem = syncMatrix.find(m => (m.channel_id || '').toLowerCase().replace(/[_-\s]/g, '') === cleanChanId) || {};
-                    
-                    // 优先从当前选中语种的物权账本中获取真实 remote_url
-                    const langRecord = (window.currentSyndicationRecords || []).find(r => 
-                        (r.target_id || '').toLowerCase().replace(/[_-\s]/g, '') === cleanChanId &&
-                        (r.lang_code || '').toLowerCase() === selectedLang.toLowerCase()
-                    );
-                    
-                    const liveLink = (langRecord && langRecord.remote_url) 
-                        ? langRecord.remote_url 
-                        : (statusItem.artifact_url && statusItem.artifact_url !== '#' ? statusItem.artifact_url : null);
-                    
-                    const statusLower = (statusItem.status || '').toLowerCase();
-                    const isFailed = statusLower === 'failed' || statusLower === 'error' || !!statusItem.reason;
-                    const isSyncing = !isFailed && (statusLower === 'syncing' || statusLower === 'running');
-                    const isDraft = !isFailed && statusLower === 'draft';
-                    const isSkipped = !isFailed && !isSyncing && (statusLower === 'skipped' || statusLower === 'same_content');
-                    const isSuccess = !isFailed && !isSyncing && !isDraft && (isSkipped || statusLower === 'published' || statusLower === 'success' || statusLower === 'synced' || statusLower === 'done' || (!!liveLink && !isFailed));
-                    const errorMsg = statusItem.reason || '网络传输中断或未配置凭据';
+                    const chanMeta = (typeof window.getSyndicateChannelMeta === 'function')
+                        ? window.getSyndicateChannelMeta(chanId)
+                        : ((typeof window.getSyndicatePlatformMeta === 'function') ? window.getSyndicatePlatformMeta(chanId) : { name: chanId, icon: '📡' });
+                    const statusItem = syncMatrix.find(item => {
+                        const cId = (item.channel_id || item.channel || '');
+                        return cId && cId.toLowerCase() === chanId.toLowerCase();
+                    }) || {};
+                    const recordItem = (window.currentSyndicationRecords || []).find(r => {
+                        const cId = (r.channel || r.channel_id || r.target_id || '');
+                        return cId && cId.toLowerCase() === chanId.toLowerCase();
+                    }) || {};
 
-                    // 🚀 智能长轮询收敛：若仍在推流中，或处于刚提交且未达终态的过渡期 (retryCount < 8)，持续轮询
-                    if (isSyncing || (!isFailed && !isSuccess && !isDraft && !isSkipped && retryCount < 8)) {
-                        allCompleted = false;
-                    } else if (isDraft) {
-                        cardSuccessCount++;
-                    } else if (isSuccess) {
-                        cardSuccessCount++;
-                    } else if (isFailed) {
+                    const cleanStatus = (statusItem.status || '').toUpperCase();
+                    const isSyncing = cleanStatus === 'SYNCING' || (cleanStatus === 'PENDING' && retryCount < 3);
+                    const isSuccess = ['SUCCESS', 'PUBLISHED', 'SYNCED', 'DONE'].includes(cleanStatus);
+                    const isFailed = ['FAILED', 'ERROR'].includes(cleanStatus);
+                    const isDraft = ['DRAFT', 'DRAFT_SAVED'].includes(cleanStatus);
+                    const isSkipped = ['SKIPPED', 'SKIPPED_UNMODIFIED'].includes(cleanStatus);
+
+                    if (isSyncing) allCompleted = false;
+                    if (isSuccess || isSkipped || isDraft) cardSuccessCount++;
+                    if (isFailed) {
                         cardFailCount++;
+                        failedChannelsList.push(chanId);
                     }
 
-                    // 🎨 五态渲染：推流中 (青蓝) / 已对正跳过 (青) / 草稿 (琥珀) / 成功 (绿) / 失败 (红)
-                    const cardBg = isSyncing ? 'rgba(0, 242, 255, 0.05)' : (isSkipped ? 'rgba(0, 242, 255, 0.08)' : (isDraft ? 'rgba(255, 193, 7, 0.08)' : (isSuccess ? 'rgba(0, 255, 136, 0.08)' : (isFailed ? 'rgba(255, 77, 77, 0.08)' : 'rgba(255, 255, 255, 0.02)'))));
-                    const cardBorder = isSyncing ? 'rgba(0, 242, 255, 0.25)' : (isSkipped ? 'rgba(0, 242, 255, 0.35)' : (isDraft ? 'rgba(255, 193, 7, 0.35)' : (isSuccess ? 'rgba(0, 255, 136, 0.35)' : (isFailed ? 'rgba(255, 77, 77, 0.35)' : 'rgba(255, 255, 255, 0.1)'))));
-                    const statusColor = isSyncing ? '#00f2fe' : (isSkipped ? '#00f2fe' : (isDraft ? '#ffc107' : (isSuccess ? '#00ff88' : (isFailed ? '#ff4d4d' : '#888'))));
-                    const statusText = isSyncing
-                        ? '⚙️ 正在向平台进行广播推流与物权绑定...'
-                        : (isSkipped
-                            ? '✨ 内容一致自动对正 (已跳过重复网络推流)'
-                            : (isDraft
-                                ? '🟡 已推送，但平台强制降级为草稿（需手动发布）'
-                                : (isSuccess ? '🟢 已成功广播分发' : (isFailed ? `❌ ${errorMsg}` : '⚪ 尚未分发至该渠道'))));
+                    const liveLink = recordItem.remote_url || recordItem.url || statusItem.artifact_url || statusItem.url || '';
+                    const diag = statusItem.diagnosis || statusItem.diagnostic || null;
+                    const errorMsg = statusItem.reason || (diag && diag.friendly_message) || '广播异常';
 
                     let actionHtml = '';
                     if (isSyncing) {
-                        actionHtml = `<span style="font-size: 0.68rem; color: #00f2fe; background: rgba(0, 242, 255, 0.12); border: 1px solid rgba(0, 242, 255, 0.25); padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">⚙️ 推流中...</span>`;
-                    } else if (isSkipped && liveLink) {
-                        actionHtml = `<a href="${liveLink}" target="_blank" style="padding: 6px 12px; font-size: 0.72rem; font-weight: 700; background: rgba(0, 242, 255, 0.2); color: #00f2fe; border: 1px solid rgba(0, 242, 255, 0.4); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);">✨ 保持对正 ↗</a>`;
-                    } else if (isDraft && liveLink) {
-                        actionHtml = `<a href="${liveLink}" target="_blank" style="padding: 6px 12px; font-size: 0.72rem; font-weight: 700; background: #ffc107; color: #000; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);">📝 前往手动发布 ↗</a>`;
-                    } else if (liveLink) {
-                        actionHtml = `<a href="${liveLink}" target="_blank" style="padding: 6px 12px; font-size: 0.72rem; font-weight: 700; background: var(--accent-secondary, #00f2fe); color: #000; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 0 10px rgba(0, 242, 255, 0.4);">🌐 线上文章 ↗</a>`;
-                    } else if (isSkipped) {
-                        actionHtml = `<span style="font-size: 0.68rem; color: #00f2fe; background: rgba(0, 242, 255, 0.12); border: 1px solid rgba(0, 242, 255, 0.25); padding: 4px 8px; border-radius: 4px;">✨ 自动跳过</span>`;
-                    } else if (isSuccess) {
-                        actionHtml = `<span style="font-size: 0.68rem; color: #00ff88; background: rgba(0, 255, 136, 0.12); border: 1px solid rgba(0, 255, 136, 0.25); padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">⚙️ 已发送推流</span>`;
+                        actionHtml = `<span style="font-size:0.68rem;color:#00f2fe;background:rgba(0,242,255,0.12);padding:3px 7px;border-radius:4px;">⚙️ 推流中...</span>`;
+                    } else if ((isSkipped || isSuccess) && liveLink && liveLink !== '#') {
+                        actionHtml = `<a href="${liveLink}" target="_blank" style="padding:4px 10px;font-size:0.72rem;font-weight:700;background:rgba(0,242,255,0.2);color:#00f2fe;border:1px solid rgba(0,242,255,0.4);border-radius:6px;text-decoration:none;">🌐 线上 ↗</a>`;
+                    } else if (isDraft && liveLink && liveLink !== '#') {
+                        actionHtml = `<a href="${liveLink}" target="_blank" style="padding:4px 10px;font-size:0.72rem;font-weight:700;background:#ffc107;color:#000;border-radius:6px;text-decoration:none;">📝 草稿箱 ↗</a>`;
                     } else if (isFailed) {
-                        actionHtml = `<button type="button" onclick="window.retrySinglePlatform('${relPath.replace(/'/g, "\\'")}', '${chanId}')" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; background: rgba(0, 242, 255, 0.15); color: #00f2fe; border: 1px solid rgba(0, 242, 255, 0.35); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">🔄 重试</button>`;
+                        const qId = diag && diag.quick_drawer_id ? diag.quick_drawer_id : '';
+                        actionHtml = `
+                            ${qId ? `<button type="button" onclick="if(window.openPluginConfig)window.openPluginConfig('${qId}','syndicate','syndicate');" style="padding:3px 7px;font-size:0.68rem;background:rgba(0,242,255,0.12);color:#00f2fe;border:1px solid rgba(0,242,255,0.3);border-radius:5px;cursor:pointer;">⚙️ 快速配置</button>` : ''}
+                            <button type="button" onclick="window.retrySinglePlatform('${relPath.replace(/'/g, "\\'")}', '${chanId}')" style="padding:3px 8px;font-size:0.7rem;font-weight:600;background:rgba(0,242,255,0.15);color:#00f2fe;border:1px solid rgba(0,242,255,0.35);border-radius:5px;cursor:pointer;">🔄 重试</button>
+                        `;
                     } else {
-                        actionHtml = `<span style="font-size: 0.68rem; color: #888; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 4px; white-space: nowrap;">⚪ 待分发</span>`;
+                        actionHtml = `<span style="font-size:0.68rem;color:#00ff88;background:rgba(0,255,136,0.12);padding:3px 7px;border-radius:4px;">🟢 推流完成</span>`;
                     }
 
-                    resultsHtml += `
-                        <div style="padding: 10px 12px; border-radius: 8px; background: ${cardBg}; border: 1px solid ${cardBorder}; display: flex; flex-direction: column; gap: 6px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                                    <span style="font-size: 1.1rem; flex-shrink: 0;">${chanMeta.icon}</span>
-                                    <span style="font-size: 0.85rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chanMeta.name}</span>
+                    let diagContentHtml = '';
+                    if (isFailed && diag) {
+                        const qId = diag.quick_drawer_id || '';
+                        diagContentHtml = `
+                            <div style="font-size:0.7rem;color:#ff7875;background:rgba(255,77,79,0.08);border:1px solid rgba(255,77,79,0.25);border-left:3px solid #ff4d4f;border-radius:6px;padding:6px 9px;display:flex;flex-direction:column;gap:3px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="font-weight:700;color:#ff4d4f;">${diag.badge || '❌ 分发失败'}</span>
+                                    ${qId ? `<span style="font-size:0.65rem;color:#00f2fe;cursor:pointer;text-decoration:underline;" onclick="if(window.openPluginConfig)window.openPluginConfig('${qId}','syndicate','syndicate');">直达配置 ↗</span>` : ''}
                                 </div>
-                                <div style="flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
-                                    ${actionHtml}
-                                </div>
+                                <div><strong>归因：</strong>${diag.friendly_message || errorMsg}</div>
+                                ${diag.suggestion ? `<div style="color:#ffd591;font-size:0.66rem;"><strong>建议：</strong>${diag.suggestion}</div>` : ''}
                             </div>
-                            ${isFailed ? `
-                                <div style="font-size: 0.72rem; color: #ff7875; background: rgba(255, 77, 79, 0.08); border: 1px solid rgba(255, 77, 79, 0.25); border-left: 3px solid #ff4d4f; border-radius: 4px; padding: 6px 10px; line-height: 1.45; word-break: break-word;">
-                                    ${statusText}
-                                </div>
-                            ` : (statusText && statusText !== '⚪ 尚未分发至该渠道' && !isSuccess && !isSkipped ? `
-                                <div style="font-size: 0.7rem; color: ${statusColor}; padding-left: 28px; line-height: 1.35;">
-                                    ${statusText}
-                                </div>
-                            ` : '')}
-                        </div>
-                    `;
-                });
-                resultsHtml += `</div>`;
-
-                const oldPanel = document.getElementById('syndicate-results-panel');
-                if (oldPanel) oldPanel.remove();
-
-                const progressPanel = document.getElementById('syndicate-progress-panel');
-                if (progressPanel) {
-                    progressPanel.insertAdjacentHTML('afterend', resultsHtml);
-                    // 🚀 物理自动平滑滚动：确保结果卡片自动拉入可视视口区
-                    const drawerBody = document.getElementById('article-syndicate-drawer');
-                    if (drawerBody) {
-                        drawerBody.scrollTo({ top: drawerBody.scrollHeight, behavior: 'smooth' });
+                        `;
+                    } else if (isFailed && errorMsg) {
+                        diagContentHtml = `
+                            <div style="font-size:0.7rem;color:#ff7875;background:rgba(255,77,79,0.08);border:1px solid rgba(255,77,79,0.25);border-left:3px solid #ff4d4f;border-radius:6px;padding:6px 9px;">
+                                <div><strong>失败原因：</strong>${errorMsg}</div>
+                            </div>
+                        `;
                     }
+
+                    cardsHtml.push(`
+                        <div style="flex-shrink:0;padding:8px 10px;border-radius:8px;background:${isFailed ? 'rgba(255,77,79,0.05)' : 'rgba(255,255,255,0.02)'};border:1px solid ${isFailed ? 'rgba(255,77,79,0.3)' : 'rgba(255,255,255,0.06)'};display:flex;flex-direction:column;gap:6px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                                    <span style="font-size:1rem;flex-shrink:0;">${chanMeta.icon}</span>
+                                    <span style="font-size:0.82rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${chanMeta.name}</span>
+                                </div>
+                                <div style="flex-shrink:0;display:flex;align-items:center;gap:6px;">${actionHtml}</div>
+                            </div>
+                            ${diagContentHtml}
+                        </div>
+                    `);
+                });
+
+                const totalChannels = selectedPlatforms.length;
+                let summaryBadge = cardFailCount > 0
+                    ? `<span style="color:#ff7875;font-size:0.75rem;font-weight:700;">⚠️ ${cardSuccessCount} 成功 · ${cardFailCount} 需注意</span>`
+                    : `<span style="color:#00ff88;font-size:0.75rem;font-weight:700;">🎉 全部 ${totalChannels} 渠道推流完成</span>`;
+
+                let resultsHtml = `
+                    <div id="syndicate-results-panel" style="flex-shrink:0;display:flex;flex-direction:column;gap:8px;border:1px solid ${cardFailCount > 0 ? 'rgba(255,77,79,0.4)' : 'var(--accent-secondary,#00f2fe)'};background:${cardFailCount > 0 ? 'rgba(255,77,79,0.03)' : 'rgba(0,242,255,0.03)'};padding:10px 12px;border-radius:10px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <span style="font-size:0.82rem;font-weight:700;color:#fff;">📡 广播物理凭证终态分布</span>
+                            ${summaryBadge}
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            ${cardsHtml.join('')}
+                        </div>
+                    </div>
+                `;
+
+                const resultsSlot = document.getElementById('syndicate-results-panel-slot');
+                if (resultsSlot) {
+                    resultsSlot.innerHTML = resultsHtml;
                 }
 
-                // 🚀 物理实时刷新 Section 2 渠道选择卡片：实时对正最新 Remote ID 与徽章
-                if (typeof window.updateSyndicatePlatformCards === 'function') {
-                    await window.updateSyndicatePlatformCards(relPath);
-                }
-
-                // 🚀 物理长轮询对正：只要仍有渠道在推流中或尚未获取终态，继续轮询 (最高 20 次 / 25 秒)
-                if (!allCompleted && retryCount < 20) {
-                    setTimeout(() => renderResultsPanel(retryCount + 1), 1200);
+                if (!allCompleted && retryCount < 15) {
+                    const pollProgress = Math.min(95, 50 + retryCount * 4);
+                    if (progressPercent) progressPercent.innerText = `${pollProgress}%`;
+                    if (progressBar) progressBar.style.width = `${pollProgress}%`;
+                    if (progressDesc) progressDesc.innerText = `⚙️ 正在等待各渠道对端服务器确认凭证 (轮询第 ${retryCount + 1} 次)...`;
+                    setTimeout(() => renderResultsPanel(retryCount + 1), 1000);
                 } else {
                     if (progressPercent) progressPercent.innerText = '100%';
                     if (progressBar) progressBar.style.width = '100%';
                     if (progressDesc) {
-                        progressDesc.innerText = cardFailCount > 0 
-                            ? '⚠️ 广播管线已处理完成（含错误告警，详见下方分布卡片）' 
+                        progressDesc.innerText = cardFailCount > 0
+                            ? '⚠️ 广播管线已处理完成（含错误告警，详见下方分布卡片）'
                             : '🎉 广播与自动翻译管线已全部闭环处理完成！';
                     }
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '🚀 重新启动社交广播';
+                    if (typeof window.switchSyndicateDrawerStage === 'function') {
+                        window.switchSyndicateDrawerStage('telemetry', {
+                            failedCount: cardFailCount,
+                            failedChannelsJson: JSON.stringify(failedChannelsList)
+                        });
                     }
                 }
             } catch (e) {
                 console.warn("[Syndication Telemetry Error]:", e);
+                if (typeof window.switchSyndicateDrawerStage === 'function') {
+                    window.switchSyndicateDrawerStage('telemetry', { failedCount: 1, failedChannelsJson: '[]' });
+                }
             }
         };
 
         await renderResultsPanel(0);
+    };
+
+    window.showCoverPreflightModal = function (relPath, channelNames) {
+        let modal = document.getElementById('syndicate-cover-preflight-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'syndicate-cover-preflight-modal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:10005;background:rgba(5,8,16,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:16px;';
+            document.body.appendChild(modal);
+        }
+        const namesStr = (channelNames || []).join('、');
+        modal.innerHTML = `
+            <div class="glass-panel" style="width:460px;max-width:92vw;background:rgba(18,24,38,0.98);border:1px solid rgba(0,242,254,0.25);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,0.7);">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:8px;font-size:0.95rem;font-weight:700;color:var(--accent-secondary,#00f2fe);">
+                        <span>🖼️ 封面视觉增强建议</span>
+                    </div>
+                    <button type="button" onclick="window.closeCoverPreflightModal()" style="background:transparent;border:none;color:var(--text-dim);font-size:1.3rem;cursor:pointer;line-height:1;">×</button>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-main,#e2e8f0);line-height:1.6;background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                    检测到您勾选了 <b style="color:#00f2fe;">【${namesStr}】</b> 等强依赖视觉封面的平台，当前文章尚未配置实体封面（将使用技术抽象卡片保底）。<br><span style="color:var(--text-dim);font-size:0.72rem;">配置精美封面可显著提升读者在社交信息流与会话列表的点击率。</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;">
+                    <button type="button" class="mini-btn glow-btn" onclick="window.triggerAiCoverAndProceed('${(relPath || '').replace(/'/g, "\\'")}')" style="width:100%;padding:9px;background:rgba(0,242,254,0.18);border:1px solid rgba(0,242,254,0.4);color:var(--accent-secondary,#00f2fe);border-radius:8px;cursor:pointer;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                        🤖 一键 AI 意境生图并继续分发
+                    </button>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="mini-btn" onclick="window.closeCoverPreflightModal(); window.openSyndicateAssetPickerModal();" style="flex:1;padding:8px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;border-radius:8px;cursor:pointer;font-size:0.75rem;">
+                            🗄️ 从资产库挑选...
+                        </button>
+                        <button type="button" class="mini-btn" onclick="window.bypassCoverPreflightAndDispatch('${(relPath || '').replace(/'/g, "\\'")}')" style="flex:1;padding:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:var(--text-dim);border-radius:8px;cursor:pointer;font-size:0.75rem;">
+                            🚀 保持现状直接分发
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.closeCoverPreflightModal = function () {
+        const modal = document.getElementById('syndicate-cover-preflight-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.bypassCoverPreflightAndDispatch = function (relPath) {
+        window.closeCoverPreflightModal();
+        window._bypassCoverPreflight = true;
+        window.dispatchArticleSyndication(relPath);
+    };
+
+    window.triggerAiCoverAndProceed = async function (relPath) {
+        const btn = document.querySelector('#syndicate-cover-preflight-modal .glow-btn');
+        if (btn) { btn.innerHTML = '🤖 正在生成 AI 意境封面...'; btn.disabled = true; }
+        if (typeof window.onSyndicateCoverModeChange === 'function') {
+            await window.onSyndicateCoverModeChange('ai_generation');
+        }
+        window.closeCoverPreflightModal();
+        window._bypassCoverPreflight = true;
+        window.dispatchArticleSyndication(relPath);
     };
 })();
