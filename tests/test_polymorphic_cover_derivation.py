@@ -13,7 +13,6 @@ from core.design.cover_engine.cover_deriver import (
     get_channel_aspect_ratio,
     crop_image_bytes,
     derive_cover_asset,
-    CHANNEL_ASPECT_MAP,
     DIMENSION_MAP
 )
 

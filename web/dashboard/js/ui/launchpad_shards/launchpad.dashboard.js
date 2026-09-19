@@ -31,7 +31,7 @@ function _buildStatsStrip(ctx) {
             '<span class="lpdash-stat-value">' + docCount + ' <small>篇</small></span>' +
             '<span class="lpdash-stat-label">' + docLabel + '</span>' +
         '</div>' +
-        '<div class="lpdash-stat-item" onclick="window.toggleHub(\'hide\'); window.showView(\'settings\', \'imprints\');" style="cursor: pointer;" title="点击前往版图管理，查看或切换出版品牌">' +
+        '<div class="lpdash-stat-item" onclick="window.toggleHub(\'hide\'); window.showView(\'settings\', \'imprints\');" style="cursor: pointer;" title="点击前往品牌管理，查看或切换出版品牌">' +
             '<span class="lpdash-stat-icon">🏛️</span>' +
             '<span class="lpdash-stat-value">' + imprints.length + ' <small>个</small></span>' +
             '<span class="lpdash-stat-label">' + imprintLabel + '</span>' +

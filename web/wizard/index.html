@@ -895,7 +895,7 @@
                         <span class="concept-hint" data-tip="您的创作核心区。只需将手稿丢进此目录，出版社就会自动启动流水线。">什么是文库？</span>
                     </label>
                     <div class="input-with-btn">
-                        <input type="text" id="manuscripts_path" placeholder="手稿 Markdown 所在目录">
+                        <input type="text" id="vault_root" placeholder="手稿 Markdown 所在目录">
                         <button class="btn btn-ghost btn-small" onclick="browseFs()">浏览</button>
                     </div>
                     <div id="fs-browser" class="browser-panel"></div>
@@ -1457,11 +1457,11 @@
                 renderProviders(probeData.available_protocols, probeData.recommended);
                 renderLangs(probeData.available_langs);
                 renderNodes(probeData.nodes, probeData.recommended);
-                renderVaultSuggestions(probeData.vault_suggestions, probeData.recommended.vault);
+                renderVaultSuggestions(probeData.vault_suggestions, (probeData.recommended && probeData.recommended.vault_root));
 
                 // 🚀 [V74.9] 初始化方言锁定
-                if (probeData.recommended && probeData.recommended.vault) {
-                    const recVault = probeData.vault_suggestions.find(s => s.path === probeData.recommended.vault);
+                if (probeData.recommended && probeData.recommended.vault_root) {
+                    const recVault = probeData.vault_suggestions.find(s => s.path === probeData.recommended.vault_root);
                     if (recVault && recVault.dialect) {
                         selectedDialect = recVault.dialect;
                     }
@@ -1470,18 +1470,18 @@
                 // 🚀 [V50.0] 智能感应与预填逻辑
                 if (probeData.current_config) {
                     const cfg = probeData.current_config;
-                    const sensedVault = probeData.recommended.vault;
+                    const sensedVault = probeData.recommended && probeData.recommended.vault_root;
 
-                    const sensedName = probeData.recommended.imprint_name;
+                    const sensedName = probeData.recommended && probeData.recommended.imprint_name;
                     // 🚀 [V52.10] 智能预填
                     document.getElementById('imprint_id').value = sensedName || '';
                     document.getElementById('imprint_name').value = sensedName ? (sensedName.charAt(0).toUpperCase() + sensedName.slice(1)).replace('_', ' ') : '';
 
                     // 🚀 [V50.0] 极致感应优先：只要感应到文库且不是默认路径，就强制作为首选
                     if (sensedVault && sensedVault !== './manuscripts') {
-                        document.getElementById('manuscripts_path').value = sensedVault;
+                        document.getElementById('vault_root').value = sensedVault;
                     } else {
-                        document.getElementById('manuscripts_path').value = cfg.manuscripts_path || sensedVault || '';
+                        document.getElementById('vault_root').value = cfg.vault_root || sensedVault || '';
                     }
                     // 🚀 [V50.0] 极致遵从：装帧风格默认强制选第一个
                     if (probeData.available_themes && probeData.available_themes.length > 0) {
@@ -1501,10 +1501,10 @@
                     }
                 } else {
                     // 首次安装，使用推荐值
-                    const recName = probeData.recommended.imprint_name || '';
+                    const recName = (probeData.recommended && probeData.recommended.imprint_name) || '';
                     document.getElementById('imprint_id').value = recName;
                     document.getElementById('imprint_name').value = recName ? (recName.charAt(0).toUpperCase() + recName.slice(1)).replace('_', ' ') : '';
-                    document.getElementById('manuscripts_path').value = probeData.recommended.vault || '';
+                    document.getElementById('vault_root').value = (probeData.recommended && probeData.recommended.vault_root) || '';
                 }
 
                 setTimeout(() => {
@@ -1522,7 +1522,7 @@
 
             // 自动填充推荐路径并联动标识名
             if (recommended) {
-                document.getElementById('manuscripts_path').value = recommended;
+                document.getElementById('vault_root').value = recommended;
             }
 
             container.innerHTML = `
@@ -1900,7 +1900,7 @@
 
             // 如果路径是相对于当前输入的，尝试解析
             if (path === '.') {
-                const current = document.getElementById('manuscripts_path').value;
+                const current = document.getElementById('vault_root').value;
                 if (current && current.startsWith('/')) path = current;
             }
 
@@ -1941,7 +1941,7 @@
 
         function confirmPath(event, path, dialect = 'auto') {
             if (event) event.stopPropagation();
-            document.getElementById('manuscripts_path').value = path;
+            document.getElementById('vault_root').value = path;
             selectedDialect = dialect;
             console.log(`🛡️ [主权对正] 已锁定方言协议: ${dialect}`);
             closeBrowser();
@@ -2279,7 +2279,7 @@
             const payload = {
                 imprint_id: document.getElementById('imprint_id').value.trim(),
                 imprint_name: document.getElementById('imprint_name').value.trim(),
-                manuscripts_path: document.getElementById('manuscripts_path').value.trim(),
+                vault_root: document.getElementById('vault_root').value.trim(),
                 active_theme: selectedTheme || 'default',
                 enable_ai: isToggleOn || aiEnabled || false,
                 ai_provider: document.getElementById('ai_provider') ? document.getElementById('ai_provider').value : 'openai',
@@ -2307,7 +2307,7 @@
 
                     // 🚀 [V65.0] 契约数据填充
                     document.getElementById('final-imprint-info').innerText = `${payload.imprint_name} (${payload.imprint_id})`;
-                    document.getElementById('final-vault-path').innerText = payload.manuscripts_path;
+                    document.getElementById('final-vault-path').innerText = payload.vault_root;
                     document.getElementById('final-theme-name').innerText = themeName;
 
                     goStep(5);
@@ -2397,7 +2397,7 @@
                                 if (enterBtn.style.display !== 'none') enterBtn.click();
                             }, 1500);
                         } else {
-                            // 🚀 [V74.80] 主动触发深度重载：主进程在线但版图不一致时，
+                            // 🚀 [V74.80] 主动触发深度重载：主进程在线但品牌不一致时，
                             // 主动调用切换 API 通知主进程执行引擎热重载。
                             if (!switchRequested && activeId) {
                                 switchRequested = true;

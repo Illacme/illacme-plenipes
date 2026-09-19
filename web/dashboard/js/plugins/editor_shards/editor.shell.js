@@ -6,7 +6,12 @@
 (function () {
     window.closePluginDrawer = () => {
         const drawer = document.getElementById('plugin-drawer');
-        if (drawer) drawer.style.display = 'none';
+        if (drawer) {
+            drawer.classList.remove('is-open');
+            setTimeout(() => {
+                drawer.style.display = 'none';
+            }, 250);
+        }
         window._syndicateReturnContext = null;
         window._vaultReturnContext = null;
         if (typeof window.updateDrawerReturnButtons === 'function') {
@@ -81,6 +86,9 @@
             `;
             body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
             drawer.style.display = 'flex';
+            requestAnimationFrame(() => {
+                drawer.classList.add('is-open');
+            });
 
             if (!window.settingsData || Object.keys(window.settingsData).length === 0 || !window.governanceRules || Object.keys(window.governanceRules).length === 0) {
                 const fetchFunc = window.apiFetch || (async (url) => (await fetch(url)).json());
@@ -203,42 +211,13 @@
                         }
                     });
 
-                    // 🚀 [V105.0] 输入框 Focus 智能反向联动 Step Wizard（仅针对多步发布向导，并声明 skipFocus: true 防止抢焦）
-                    if (p.category !== 'theme') {
-                        input.addEventListener('focus', () => {
-                            const totalSteps = (typeof window.getPluginWizardSteps === 'function') ? window.getPluginWizardSteps(id, p.category).length : 3;
-                            if (input.closest('#wiz-card-step-0')) {
-                                if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(0, id, p.category, null, true);
-                                }
-                            } else if (input.closest('#wiz-card-step-1')) {
-                                if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(1, id, p.category, null, true);
-                                }
-                            } else if (input.closest('#wiz-card-step-2')) {
-                                if (typeof window.handleWizardStepClick === 'function') {
-                                    window.handleWizardStepClick(2, id, p.category, null, true);
-                                }
-                            } else {
-                                const path = (input.getAttribute('data-path') || input.name || '').toLowerCase();
-                                if (path.includes('token') || path.includes('key') || path.includes('pass') || path.includes('user') || path.includes('operator') || input.type === 'password') {
-                                    if (typeof window.handleWizardStepClick === 'function') {
-                                        window.handleWizardStepClick(0, id, p.category, null, true);
-                                    }
-                                } else if (path.includes('proxy') || path.includes('prefix') || path.includes('acl') || path.includes('cname') || path.includes('prod')) {
-                                    if (typeof window.handleWizardStepClick === 'function') {
-                                        window.handleWizardStepClick(totalSteps === 4 ? 2 : 1, id, p.category, null, true);
-                                    }
-                                } else {
-                                    if (typeof window.handleWizardStepClick === 'function') {
-                                        window.handleWizardStepClick(1, id, p.category, null, true);
-                                    }
-                                }
-                            }
-                        });
-                    }
+                    // 🚀 [V105.0] 委托至 editor.focus.js 进行反向联动
                 }
             });
+
+            if (typeof window.bindDrawerInputFocusTracking === 'function') {
+                window.bindDrawerInputFocusTracking(body, id, p.category);
+            }
 
             // 🚀 默认全量激活 Step 0 卡片状态（非 theme 插件，并且 skipFocus: true 绝不抢占首项光标）
             if (p.category !== 'theme') {

@@ -20,8 +20,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 class InitRequest(BaseModel):
     imprint_id: Optional[str] = None
     imprint_name: Optional[str] = None
-    press_name: Optional[str] = None
-    manuscripts_path: str
+    vault_root: str
     active_theme: str = "default"
     enable_ai: bool = False
     ai_provider: str = "openai"

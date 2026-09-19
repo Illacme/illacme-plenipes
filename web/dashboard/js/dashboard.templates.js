@@ -22,22 +22,24 @@ window.viewTemplates = {
             <div class="overview-overlay" id="command-hub-overlay" style="display: ${_initialHubAutoOpen ? 'flex' : 'none'};" onclick="if(event.target===this) window.toggleHub('hide')">
                 <div class="command-hub">
                     <div class="hub-header" style="margin-bottom: 8px;">
-                        <button class="close-btn" onclick="window.toggleHub('hide')" title="关闭出版工作台 (Esc)">×</button>
+                        <button class="close-btn" onclick="window.toggleHub('hide')" title="关闭出版领航仪 (Esc)">×</button>
                         <div class="hub-title-row" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 3px;">
-                            <div class="hub-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 20px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--accent-secondary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">ILLACME PRESS</div>
+                            <div class="hub-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 20px; background: rgba(0, 242, 255, 0.08); border: 1px solid rgba(0, 242, 255, 0.25); color: var(--accent-secondary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">ILLACME PLENIPES</div>
                             <h2 id="hub-title" style="font-size: 1.45rem; margin: 0; letter-spacing: -0.5px; font-weight: 900; line-height: 1.2;">全球私人出版社</h2>
                         </div>
                         <div class="hub-meta-row" style="display: flex; gap: 8px; font-size: 0.76rem; opacity: 0.85; justify-content: center; align-items: center; margin-bottom: 6px;">
-                            <span style="color: var(--accent-secondary); font-weight: 700; letter-spacing: 0.5px;">🚀 出版工作台</span>
+                            <span style="color: var(--accent-secondary); font-weight: 700; letter-spacing: 0.5px;">🚀 出版领航仪</span>
                             <span style="display:none;" id="display-imprint"></span>
                             <span style="display:none;" id="display-theme"></span>
                         </div>
                     </div>
-                    <!-- 🚀 [V80.0] 出版工作台动态内容区 - 由 launchpad.js 的 initLaunchpad() 注入 -->
+                    <!-- 🚀 [V80.0] 出版领航仪动态内容区 - 由 launchpad.js 的 initLaunchpad() 注入 -->
                     <div id="hub-dynamic-area" style="width: 100%;"></div>
                 </div>
             </div>
-            <div class="viewport-hint">🖱️ 旋转 | 滚轮缩放 | 右键平移 · 🚀 按 I 唤起出版工作台</div>
+            <div class="viewport-hint">
+                🖱️ 旋转 | 滚轮缩放 | 右键平移 · 🚀 按 I 唤起出版领航仪
+            </div>
         </div>
     `,
     vault: `

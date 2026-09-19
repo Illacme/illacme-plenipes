@@ -55,6 +55,14 @@ body::before {
     -webkit-text-fill-color: transparent;
 }
 
+[data-theme="light"] .view-header h2 {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: #0f172a !important;
+}
+
 /* 🧬 [V61.0] Technical Blueprint Grid (纯净科技方格，彻底消灭 4px 扫描线对字形与按钮的切割) */
 body::after {
     content: "";

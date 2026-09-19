@@ -49,8 +49,9 @@ class ImprintManager:
     def imprint_root(self, value: str):
         self._custom_imprint_root = value
 
-    def init_sovereign_imprint(self, name: str, manuscripts_path: str, imprint_name: Optional[str] = None, bootstrap_vault: bool = False, theme: Optional[str] = None) -> bool:
+    def init_sovereign_imprint(self, name: str, vault_root: str = "", imprint_name: Optional[str] = None, bootstrap_vault: bool = False, theme: Optional[str] = None, manuscripts_path: Optional[str] = None) -> bool:
         """🚀 [V50.3] 划定一个新的主权出版社品牌 (Imprint)"""
+        vault_root = (vault_root or manuscripts_path or "").strip()
 
         # 1. 准入校验：检查是否有权创建新空间，禁止覆盖已有物理空间
         imprint_path = os.path.join(self.imprint_root, name)
@@ -69,10 +70,10 @@ class ImprintManager:
             pass
         if len(custom_existing) >= max_custom:
             tier_name = LicenseGuard.get_license_info().get("tier_name", "免费社区版")
-            tlog.error(f"🛑 [准入拦截] (权限受限) 当前{tier_name}支持管理 {max_custom} 个自定义独立品牌。请删除已有自定义品牌后再创建，或升级以解锁更多版图。")
+            tlog.error(f"🛑 [准入拦截] (权限受限) 当前{tier_name}支持管理 {max_custom} 个自定义独立品牌。请删除已有自定义品牌后再创建，或升级以解锁更多出版品牌。")
             return False
  
-        tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理版图...")
+        tlog.info(f"🏗️ [品牌划定] (创建出版社) 正在为出版品牌 '{name}' 勘测物理资产目录...")
         
         # 2. 建立物理目录树
         from core.config.constants import DIALECTS_DIR, LOGS_DIR, THEMES_DIR, METADATA_DIR
@@ -81,12 +82,12 @@ class ImprintManager:
             os.makedirs(os.path.join(imprint_path, d), exist_ok=True)
 
         # 3. 镜像分发：分发母本配置与方言
-        self._mirror_mother_templates(imprint_path, manuscripts_path, imprint_name, theme=theme)
+        self._mirror_mother_templates(imprint_path, vault_root, imprint_name, theme=theme)
         
         # 4. 🌱 [V75.6] 空内容金库自愈初始化引导
-        if manuscripts_path:
+        if vault_root:
             try:
-                real_vault_path = os.path.abspath(os.path.expanduser(manuscripts_path))
+                real_vault_path = os.path.abspath(os.path.expanduser(vault_root))
                 os.makedirs(real_vault_path, exist_ok=True)
                 
                 # 若启用演示注入且目标文件夹为空，自动灌入标准结构与各装帧模板演示手稿
@@ -102,14 +103,14 @@ class ImprintManager:
         return True
 
 
-    def _mirror_mother_templates(self, imprint_path: str, manuscripts_path: str, imprint_name: Optional[str] = None, theme: Optional[str] = None):
+    def _mirror_mother_templates(self, imprint_path: str, vault_root: str, imprint_name: Optional[str] = None, theme: Optional[str] = None):
         """从核心母本库镜像初始化配置"""
         # A. 系统基础配置 (🛡️ V50.3 主权定型精简版)
         # 仅固化保留该品牌特有的“物理主权”描述：
         base_config = {
             "imprint_name": imprint_name or os.path.basename(imprint_path),
-            "imprint_description": "这是一个主权出版版图节点。",
-            "vault_root": manuscripts_path,
+            "imprint_description": "这是一个主权出版品牌节点。",
+            "vault_root": vault_root,
             "theme": theme or "sovereign",
             
             "system": {
@@ -179,7 +180,7 @@ class ImprintManager:
                     imprints.append({
                         "id": entry.name,
                         "name": p_name,
-                        "vault": v_path,
+                        "vault_root": v_path,
                         "vault_abs": vault_abs,
                         "active": (entry.name == active_imprint)
                     })
@@ -324,7 +325,7 @@ Welcome to your newly established sovereign imprint workspace! This is the origi
 ## Starting Your Publishing Journey
 
 1. **直接编辑或增删文稿**：在你的原稿文库目录中新建 Markdown 手稿，系统将自动感知并同步更新 3D 知识星系。
-2. **在治理中心切换模板**：前往控制台的【版图装帧与模式】(Layout & Modes) 面板，可随时为当前出版版图无缝切换上述任意装帧模板。
+2. **在治理中心切换模板**：前往控制台的【品牌装帧与模式】(Layout & Modes) 面板，可随时为当前出版品牌无缝切换上述任意装帧模板。
 3. **一键分发同步**：在工作台点击“一键全量分发”，即可自动完成多语种翻译、资产打包并发布上线。
 """
 
@@ -584,16 +585,16 @@ export default defineConfig({{
 
         # 9. 附赠关于手稿: Pages/about.md
         about_doc = f"""---
-title: 关于本出版版图 (About This Imprint)
+title: 关于本出版品牌 (About This Imprint)
 date: {today_str}
 tags: [about, imprint]
-summary: 本出版版图的独立主权说明与创作者介绍。
+summary: 本出版品牌的独立主权说明与创作者介绍。
 ---
 
-# 📖 关于本出版版图
+# 📖 关于本出版品牌
 # About This Imprint
 
-本出版版图由 Illacme Plenipes 主权出版系统驱动，享有独立的版图标识、多语种翻译治理策略与专属 3D 知识星系。
+本出版品牌由 Illacme Plenipes 主权出版系统驱动，享有独立的品牌标识、多语种翻译治理策略与专属 3D 知识星系。
 This imprint is powered by the Illacme Plenipes sovereign publishing system, with independent branding and a dedicated knowledge galaxy.
 
 * 探索装帧模板特性指南：[[welcome-to-illacme|返回数字出版宇宙中心]]
@@ -617,13 +618,13 @@ This imprint is powered by the Illacme Plenipes sovereign publishing system, wit
 
     def delete_imprint(self, name: str) -> bool:
         """🚀 [V50.3] 撤销主权 Imprint：物理删除一个出版品牌的所有资产"""
-        # 🛡️ [安全底线拦截] 严禁物理撤销系统默认版图以及当前正处于活动执行中的活跃版图，防止雪崩卡死
+        # 🛡️ [安全底线拦截] 严禁物理撤销系统默认品牌以及当前正处于活动执行中的活跃品牌，防止雪崩卡死
         if name == "default":
-            tlog.error("🛑 [安全拦截] 严禁物理撤销系统默认主权版图 'default'！")
+            tlog.error("🛑 [安全拦截] 严禁物理撤销系统默认主权品牌 'default'！")
             return False
             
         if name == self.active_imprint:
-            tlog.error(f"🛑 [安全拦截] 严禁物理撤销当前正处于激活状态的版图 '{name}'！请先切换至其他版图后再行操作。")
+            tlog.error(f"🛑 [安全拦截] 严禁物理撤销当前正处于激活状态的品牌 '{name}'！请先切换至其他品牌后再行操作。")
             return False
 
         imprint_path = os.path.join(self.imprint_root, name)

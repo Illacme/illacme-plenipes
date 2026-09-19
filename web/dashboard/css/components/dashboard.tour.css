@@ -12,6 +12,7 @@
     transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
 }
+
 .dashboard-tour-overlay.active {
     opacity: 1;
     pointer-events: auto;
@@ -36,11 +37,13 @@
         border-color: var(--accent-secondary);
         box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.72), 0 0 20px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.35);
     }
+
     100% {
         border-color: var(--accent-primary);
         box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.72), 0 0 35px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.55);
     }
 }
+
 .tour-spotlight-box.pulse {
     animation: tourGlowPulse 2.4s infinite alternate ease-in-out;
 }
@@ -62,9 +65,9 @@
     flex-direction: column;
     gap: 10px;
     transition: top 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                left 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.25s ease,
-                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        left 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     box-sizing: border-box;
     will-change: top, left, transform, opacity;
 }
@@ -76,6 +79,7 @@
     justify-content: space-between;
     gap: 8px;
 }
+
 .tour-step-badge {
     display: inline-flex;
     align-items: center;
@@ -89,6 +93,7 @@
     font-weight: 800;
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
 }
+
 .tour-close-btn {
     background: transparent;
     border: none;
@@ -100,6 +105,7 @@
     border-radius: 4px;
     transition: all 0.2s ease;
 }
+
 .tour-close-btn:hover {
     color: var(--text-bright);
     background: var(--white-10);
@@ -111,6 +117,7 @@
     flex-direction: column;
     gap: 6px;
 }
+
 .tour-title {
     font-size: 1rem;
     font-weight: 800;
@@ -118,6 +125,7 @@
     margin: 0;
     line-height: 1.35;
 }
+
 .tour-desc {
     font-size: 0.78rem;
     color: var(--text-dim);
@@ -138,11 +146,13 @@
     line-height: 1.45;
     margin-top: 2px;
 }
+
 .tour-pro-tip-icon {
     font-size: 0.82rem;
     line-height: 1.2;
     flex-shrink: 0;
 }
+
 .tour-pro-tip-text {
     flex: 1;
     color: var(--accent-secondary);
@@ -160,6 +170,7 @@
     background: var(--white-03);
     border: 1px solid var(--white-08);
 }
+
 .tour-discovery-item {
     display: flex;
     align-items: center;
@@ -174,6 +185,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 .tour-discovery-item:hover {
     background: rgba(var(--accent-primary-rgb, 163, 76, 255), 0.15);
     border-color: rgba(var(--accent-primary-rgb, 163, 76, 255), 0.4);
@@ -190,12 +202,14 @@
     padding-top: 10px;
     border-top: 1px solid var(--white-08);
 }
+
 .tour-skip-group {
     display: flex;
     flex-direction: column;
     gap: 2px;
     align-items: flex-start;
 }
+
 .tour-btn-skip {
     background: transparent;
     border: none;
@@ -206,10 +220,12 @@
     border-radius: 4px;
     transition: all 0.2s ease;
 }
+
 .tour-btn-skip:hover {
     color: var(--text-bright);
     background: var(--white-05);
 }
+
 .tour-keyboard-hint {
     font-size: 0.62rem;
     color: var(--text-dim);
@@ -218,12 +234,14 @@
     white-space: nowrap;
     user-select: none;
 }
+
 .tour-nav-group {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
 }
+
 .tour-btn {
     padding: 6px 14px;
     font-size: 0.76rem;
@@ -237,16 +255,19 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+
 .tour-btn-prev {
     background: var(--white-05);
     border: 1px solid var(--white-15);
     color: var(--text-bright);
 }
+
 .tour-btn-prev:hover {
     background: var(--white-10);
     border-color: var(--white-30);
     transform: translateY(-1px);
 }
+
 .tour-btn-next {
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     border: none;
@@ -254,10 +275,12 @@
     box-shadow: 0 3px 10px rgba(var(--accent-primary-rgb), 0.35);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
+
 .tour-btn-next:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(var(--accent-primary-rgb), 0.5);
 }
+
 .tour-btn-launch {
     background: linear-gradient(135deg, var(--neon-green) 0%, var(--neon-cyan) 100%);
     border: none;
@@ -266,10 +289,53 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     font-weight: 800;
 }
+
 .tour-btn-launch:hover {
     transform: translateY(-2px);
     background: linear-gradient(135deg, var(--neon-green) 0%, var(--accent-secondary) 100%);
     box-shadow: 0 6px 20px rgba(var(--neon-green-rgb), 0.55);
+}
+
+.tour-btn-complete {
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 14px rgba(16, 185, 129, 0.45) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    font-weight: 800 !important;
+}
+
+.tour-btn-complete:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #059669 0%, #0891b2 100%) !important;
+    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.65) !important;
+}
+
+[data-theme="light"] .tour-btn-complete {
+    background: linear-gradient(135deg, #059669 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+}
+
+[data-theme="light"] .tour-btn-complete:hover {
+    background: linear-gradient(135deg, #047857 0%, #0369a1 100%) !important;
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5) !important;
+}
+
+@keyframes inputPulseGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--neon-cyan-rgb, 0, 242, 255), 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.35), 0 0 14px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.6);
+    }
+}
+
+.pulse-glow {
+    animation: inputPulseGlow 1.2s ease-in-out 2 !important;
 }
 
 /* 🔘 顶部流线进度胶囊点 (Progress Pills Bar) */
@@ -282,6 +348,7 @@
     background: var(--white-03);
     border: 1px solid var(--white-08);
 }
+
 .tour-pill {
     width: 6px;
     height: 6px;
@@ -290,14 +357,17 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .tour-pill:hover {
     background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.6);
     transform: scale(1.2);
 }
+
 .tour-pill.passed {
     background: var(--accent-secondary);
     box-shadow: 0 0 6px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.4);
 }
+
 .tour-pill.active {
     width: 18px;
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -311,12 +381,14 @@
         background: var(--white-03);
         box-shadow: none;
     }
+
     35% {
         border-color: var(--accent-secondary);
         background: rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.18);
         box-shadow: 0 0 16px rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.4);
         transform: translateX(4px);
     }
+
     100% {
         border-color: var(--white-10);
         background: var(--white-03);
@@ -324,6 +396,696 @@
         transform: translateX(0);
     }
 }
+
 .pipeline-capsule.tour-cascade-shimmer {
     animation: tourPipelineShimmer 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 🏷️ 步骤 1 引导切换官方示范品牌专有样式与层叠上下文穿透 (Stacking Context Piercing) */
+.tour-btn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.tour-brand-warning-box {
+    background: rgba(var(--neon-amber-rgb, 245, 158, 11), 0.08);
+    border: 1px dashed rgba(var(--neon-amber-rgb, 245, 158, 11), 0.35);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    color: var(--text-bright, #f8fafc);
+    line-height: 1.55;
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+
+.tour-brand-warning-box .guide-arrow {
+    display: inline-block;
+    color: var(--neon-cyan, #00f2fe);
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+/* 🔓 关键物理层叠提升：打破 header 局部 z-index: 5000 囚笼，允许鼠标穿透点击 */
+header.tour-header-interactive {
+    z-index: 9005 !important;
+    pointer-events: none !important;
+}
+
+header.tour-header-interactive .logo-section.tour-interactive {
+    position: relative !important;
+    z-index: 9006 !important;
+    pointer-events: auto !important;
+}
+
+header.tour-header-interactive #imprint-dropdown.tour-interactive {
+    position: absolute !important;
+    z-index: 9007 !important;
+    pointer-events: auto !important;
+}
+
+/* 🌟 左上角整个品牌区域外围高亮框增强态 */
+@keyframes tourGuideSpotlightPulse {
+    0% {
+        border-color: var(--neon-cyan, #00f2fe);
+        box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.76), 0 0 0 2px var(--neon-cyan, #00f2fe), 0 0 25px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.5);
+    }
+
+    50% {
+        border-color: var(--accent-primary, #a855f7);
+        box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.76), 0 0 0 3px var(--accent-primary, #a855f7), 0 0 40px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.75);
+    }
+
+    100% {
+        border-color: var(--neon-cyan, #00f2fe);
+        box-shadow: 0 0 0 9999px rgba(10, 12, 20, 0.76), 0 0 0 2px var(--neon-cyan, #00f2fe), 0 0 25px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.5);
+    }
+}
+
+.tour-spotlight-box.spotlight-active-guide {
+    animation: tourGuideSpotlightPulse 2.2s infinite ease-in-out !important;
+}
+
+/* 🎯 出版品牌下拉列表专属动态呼吸光圈与指引标签 (Target Beacon) */
+@keyframes beaconPulseRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.8), inset 0 0 6px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.4);
+        border-color: var(--neon-cyan, #00f2fe);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0), inset 0 0 12px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.15);
+        border-color: var(--accent-secondary, #00f2fe);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--neon-cyan-rgb, 0, 242, 255), 0), inset 0 0 6px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.4);
+        border-color: var(--neon-cyan, #00f2fe);
+    }
+}
+
+@keyframes beaconBadgeBounceHorizontal {
+
+    0%,
+    100% {
+        transform: translateY(-50%) translateX(0);
+    }
+
+    50% {
+        transform: translateY(-50%) translateX(4px);
+    }
+}
+
+.context-switcher.tour-target-beacon {
+    position: relative !important;
+    border: 1px solid var(--neon-cyan, #00f2fe) !important;
+    animation: beaconPulseRing 1.8s infinite cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.12) !important;
+}
+
+.context-switcher.tour-target-beacon::after {
+    content: '👈 点击切换示范品牌';
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, var(--neon-cyan, #00f2fe), var(--accent-primary, #a855f7));
+    color: #05070f;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 242, 255, 0.4);
+    animation: beaconBadgeBounceHorizontal 1.4s infinite ease-in-out;
+    pointer-events: none;
+    z-index: 9008;
+}
+
+/* 🌈 导览第一步专属：出版品牌选择胶囊 360° 霓虹流光巡游外框 (Capsule Luminescent Shimmer) */
+@keyframes tourCapsuleStreamFlow {
+    0% {
+        background-position: 0% 50%;
+        filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.75)) drop-shadow(0 0 12px rgba(0, 242, 255, 0.35));
+    }
+
+    50% {
+        background-position: 100% 50%;
+        filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) drop-shadow(0 0 16px rgba(168, 85, 247, 0.5));
+    }
+
+    100% {
+        background-position: 200% 50%;
+        filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.75)) drop-shadow(0 0 12px rgba(0, 242, 255, 0.35));
+    }
+}
+
+.context-switcher.tour-shimmer-capsule {
+    position: relative !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.25), inset 0 0 8px rgba(0, 242, 255, 0.15) !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.context-switcher.tour-shimmer-capsule::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: -2px !important;
+    border-radius: 22px !important;
+    padding: 2px !important;
+    background: linear-gradient(90deg,
+            #00f2fe 0%,
+            #a855f7 25%,
+            #3b82f6 50%,
+            #10b981 75%,
+            #00f2fe 100%) !important;
+    background-size: 200% 100% !important;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: tourCapsuleStreamFlow 2.4s linear infinite !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+}
+
+/* 🔒 导览期间默认示范品牌锁定态样式 */
+.context-switcher.tour-brand-locked {
+    cursor: not-allowed !important;
+    opacity: 0.9;
+    border: 1px solid rgba(var(--neon-green-rgb, 16, 185, 129), 0.35) !important;
+    background: rgba(var(--neon-green-rgb, 16, 185, 129), 0.08) !important;
+}
+
+.context-switcher.tour-shimmer-capsule.tour-brand-locked {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.28), inset 0 0 8px rgba(16, 185, 129, 0.18) !important;
+}
+
+.context-switcher.tour-shimmer-capsule.tour-brand-locked::before {
+    background: linear-gradient(90deg,
+            #10b981 0%,
+            #00f2fe 30%,
+            #a855f7 60%,
+            #10b981 100%) !important;
+    background-size: 200% 100% !important;
+}
+
+.context-switcher.tour-brand-locked .context-label::before {
+    content: '🔒 ';
+    font-size: 0.65rem;
+}
+
+/* 🌞 亮色模式 (Light Theme) 莫兰迪清透流光胶囊与高对比度适配 */
+[data-theme="light"] .context-switcher.tour-shimmer-capsule {
+    background: rgba(255, 255, 255, 0.92) !important;
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.2), inset 0 0 8px rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule .context-label {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule #active-imprint-name {
+    color: #0284c7 !important;
+    text-shadow: 0 0 10px rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule .dropdown-arrow {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule::before {
+    background: linear-gradient(90deg,
+            #0284c7 0%,
+            #7c3aed 25%,
+            #2563eb 50%,
+            #059669 75%,
+            #0284c7 100%) !important;
+    background-size: 200% 100% !important;
+    filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.35)) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-brand-locked {
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    background: rgba(240, 253, 244, 0.95) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule.tour-brand-locked {
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.22), inset 0 0 6px rgba(16, 185, 129, 0.12) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule.tour-brand-locked::before {
+    background: linear-gradient(90deg,
+            #059669 0%,
+            #0284c7 35%,
+            #7c3aed 70%,
+            #059669 100%) !important;
+    background-size: 200% 100% !important;
+}
+
+[data-theme="light"] .context-switcher.tour-shimmer-capsule.tour-brand-locked #active-imprint-name {
+    color: #059669 !important;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="light"] .context-switcher.tour-target-beacon::after {
+    background: linear-gradient(135deg, #0284c7, #6366f1) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
+}
+
+@keyframes tourShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20%,
+    60% {
+        transform: translateX(-6px);
+    }
+
+    40%,
+    80% {
+        transform: translateX(6px);
+    }
+}
+
+.tour-tooltip-card.tour-shake {
+    animation: tourShake 0.4s ease-in-out;
+}
+
+@keyframes spotlightAttention {
+    0% {
+        box-shadow: 0 0 0 9999px rgba(5, 7, 15, 0.88), 0 0 0 2px var(--accent-primary), 0 0 24px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 0 9999px rgba(5, 7, 15, 0.88), 0 0 0 3px var(--neon-cyan, #00f2fe), 0 0 36px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.85);
+        transform: scale(1.02);
+    }
+
+    100% {
+        box-shadow: 0 0 0 9999px rgba(5, 7, 15, 0.88), 0 0 0 2px var(--accent-primary), 0 0 24px rgba(var(--accent-primary-rgb, 163, 76, 255), 0.5);
+        transform: scale(1);
+    }
+}
+
+.tour-spotlight-box.attention {
+    animation: spotlightAttention 0.6s ease-in-out;
+}
+
+/* 🤖 Copilot 迎新快捷直达行动按钮美学 */
+.tour-copilot-action-btn {
+    position: relative;
+    overflow: hidden;
+    outline: none;
+    user-select: none;
+}
+
+.tour-copilot-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    filter: brightness(1.1);
+}
+
+.tour-copilot-action-btn:active {
+    transform: translateY(0);
+}
+
+.tour-copilot-action-btn.action-vault:hover {
+    border-color: rgba(168, 85, 247, 0.6) !important;
+    background: rgba(168, 85, 247, 0.16) !important;
+}
+
+.tour-copilot-action-btn.action-tower:hover {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    background: rgba(16, 185, 129, 0.16) !important;
+}
+
+.tour-copilot-action-btn.action-preview:hover {
+    border-color: rgba(0, 242, 255, 0.6) !important;
+    background: rgba(0, 242, 255, 0.16) !important;
+}
+
+[data-theme="light"] .tour-copilot-action-btn.action-vault {
+    background: rgba(147, 51, 234, 0.08) !important;
+    border-color: rgba(147, 51, 234, 0.3) !important;
+    color: #7c3aed !important;
+}
+
+[data-theme="light"] .tour-copilot-action-btn.action-tower {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    color: #059669 !important;
+}
+
+[data-theme="light"] .tour-copilot-action-btn.action-preview {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    color: #0284c7 !important;
+}
+
+/* ==========================================================================
+   🎉 产品专家级：漫游导览完结里程碑弹窗（紧凑精炼尺寸 · 3栏微卡片 · 严格双模态物理隔离）
+   ========================================================================== */
+.tour-milestone-swal-popup {
+    border-radius: 16px !important;
+    padding: 22px 24px !important;
+    width: 500px !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    transition: all 0.25s ease !important;
+}
+
+.tour-milestone-swal-popup .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.tour-milestone-swal-popup .swal2-icon {
+    display: none !important;
+}
+
+/* -------------------------------------------------------------
+   ☀️ 亮色模式弹窗基底（白瓷质感极简设计，绝对杜绝黑底与暗沉）
+   ------------------------------------------------------------- */
+.tour-milestone-swal-popup.theme-light,
+html[data-theme="light"] .tour-milestone-swal-popup {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* 🌙 暗色模式弹窗基底（深空透光磨砂旗舰科技质感） */
+.tour-milestone-swal-popup.theme-dark,
+html:not([data-theme="light"]) .tour-milestone-swal-popup:not(.theme-light) {
+    background: rgba(15, 20, 32, 0.96) !important;
+    color: #f8fafc !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 242, 255, 0.12) !important;
+}
+
+/* 紧凑容器与排版 */
+.tour-milestone-compact-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* 顶部轻量成就胶囊徽标 */
+.milestone-badge-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+.milestone-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.2px;
+}
+.theme-light .milestone-badge,
+html[data-theme="light"] .milestone-badge {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+.theme-dark .milestone-badge,
+html:not([data-theme="light"]) .milestone-badge:not(.theme-light) {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* 弹窗主标题 */
+.milestone-compact-title {
+    margin: 0;
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -0.3px;
+}
+.theme-light .milestone-compact-title,
+html[data-theme="light"] .milestone-compact-title {
+    color: #0f172a !important;
+}
+.theme-dark .milestone-compact-title,
+html:not([data-theme="light"]) .milestone-compact-title:not(.theme-light) {
+    color: #f8fafc !important;
+}
+
+/* 简明引导副标题 */
+.milestone-compact-lead {
+    margin: 0 0 4px 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+.theme-light .milestone-compact-lead,
+html[data-theme="light"] .milestone-compact-lead {
+    color: #475569 !important;
+}
+.theme-dark .milestone-compact-lead,
+html:not([data-theme="light"]) .milestone-compact-lead:not(.theme-light) {
+    color: #94a3b8 !important;
+}
+
+/* 3 栏并排等宽微卡片容器 (3-Column Horizontal Grid - 高度仅约 66px) */
+.milestone-tri-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin: 4px 0;
+    box-sizing: border-box;
+}
+
+.tri-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    gap: 4px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    min-height: 105px;
+    justify-content: flex-start;
+}
+
+/* 亮色卡片 */
+.theme-light .tri-card,
+html[data-theme="light"] .tri-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.theme-light .tri-card:hover,
+html[data-theme="light"] .tri-card:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    transform: translateY(-1px);
+}
+
+/* 暗色卡片 */
+.theme-dark .tri-card,
+html:not([data-theme="light"]) .tri-card:not(.theme-light) {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.theme-dark .tri-card:hover,
+html:not([data-theme="light"]) .tri-card:not(.theme-light):hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(0, 242, 255, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+.tri-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.tri-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+}
+
+.tri-text b {
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.theme-light .tri-text b,
+html[data-theme="light"] .tri-text b {
+    color: #0f172a !important;
+}
+.theme-dark .tri-text b,
+html:not([data-theme="light"]) .tri-text b:not(.theme-light) {
+    color: #f1f5f9 !important;
+}
+
+.tri-text span {
+    font-size: 0.66rem;
+    line-height: 1.38;
+    white-space: normal;
+    word-break: break-word;
+    letter-spacing: -0.1px;
+}
+.theme-light .tri-text span,
+html[data-theme="light"] .tri-text span {
+    color: #64748b !important;
+}
+.theme-dark .tri-text span,
+html:not([data-theme="light"]) .tri-text span:not(.theme-light) {
+    color: #94a3b8 !important;
+}
+
+/* 单行超紧凑建议条 (高度仅约 30px) */
+.milestone-compact-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    box-sizing: border-box;
+    margin-top: 2px;
+}
+.theme-light .milestone-compact-hint,
+html[data-theme="light"] .milestone-compact-hint {
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    color: #0369a1 !important;
+}
+.theme-light .milestone-compact-hint b,
+html[data-theme="light"] .milestone-compact-hint b {
+    color: #0284c7 !important;
+}
+
+.theme-dark .milestone-compact-hint,
+html:not([data-theme="light"]) .milestone-compact-hint:not(.theme-light) {
+    background: rgba(0, 242, 255, 0.08) !important;
+    border: 1px solid rgba(0, 242, 255, 0.2) !important;
+    color: #93c5fd !important;
+}
+.theme-dark .milestone-compact-hint b,
+html:not([data-theme="light"]) .milestone-compact-hint b:not(.theme-light) {
+    color: #38bdf8 !important;
+}
+
+/* 按钮容器 Actions 布局 */
+.tour-swal-actions {
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 16px !important;
+    width: 100% !important;
+    justify-content: center !important;
+}
+
+/* 通用按钮规范（紧凑尺寸，高度 38px） */
+.tour-swal-btn-confirm,
+.tour-swal-btn-cancel {
+    padding: 8px 20px !important;
+    border-radius: 8px !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    outline: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-sizing: border-box !important;
+    letter-spacing: 0.2px !important;
+    height: 38px !important;
+}
+
+/* -------------------------------------------------------------
+   🌙 暗色模式按钮 (Dark Mode Buttons)
+   ------------------------------------------------------------- */
+.theme-dark .tour-swal-btn-confirm,
+html:not([data-theme="light"]) .tour-swal-btn-confirm {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
+    color: #040914 !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(0, 242, 254, 0.35) !important;
+}
+.theme-dark .tour-swal-btn-confirm:hover,
+html:not([data-theme="light"]) .tour-swal-btn-confirm:hover {
+    background: linear-gradient(135deg, #38f9d7 0%, #43e97b 100%) !important;
+    box-shadow: 0 6px 18px rgba(56, 249, 215, 0.5) !important;
+    transform: translateY(-1px) !important;
+}
+
+.theme-dark .tour-swal-btn-cancel,
+html:not([data-theme="light"]) .tour-swal-btn-cancel {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+.theme-dark .tour-swal-btn-cancel:hover,
+html:not([data-theme="light"]) .tour-swal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* -------------------------------------------------------------
+   ☀️ 亮色模式按钮 (Light Mode Buttons - 超清晰对比度)
+   ------------------------------------------------------------- */
+.theme-light .tour-swal-btn-confirm,
+html[data-theme="light"] .tour-swal-btn-confirm {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #0284c7 !important;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.3) !important;
+}
+.theme-light .tour-swal-btn-confirm:hover,
+html[data-theme="light"] .tour-swal-btn-confirm:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+    box-shadow: 0 5px 16px rgba(2, 132, 199, 0.42) !important;
+    transform: translateY(-1px) !important;
+}
+
+.theme-light .tour-swal-btn-cancel,
+html[data-theme="light"] .tour-swal-btn-cancel {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
+}
+.theme-light .tour-swal-btn-cancel:hover,
+html[data-theme="light"] .tour-swal-btn-cancel:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+    transform: translateY(-1px) !important;
 }

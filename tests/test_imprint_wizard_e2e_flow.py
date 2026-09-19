@@ -12,14 +12,26 @@ from unittest.mock import patch
 
 WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODALS_JS = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "ui", "modals.js")
+MODAL_SHARDS_DIR = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "ui", "modal_shards")
 IMPRINTS_JS = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "dashboard.imprints.js")
 LAUNCHPAD_JS = os.path.join(WORKSPACE_ROOT, "web", "dashboard", "js", "ui", "launchpad.js")
 
 
+def _get_modals_content():
+    content = ""
+    with open(MODALS_JS, "r", encoding="utf-8") as f:
+        content += f.read() + "\n"
+    if os.path.isdir(MODAL_SHARDS_DIR):
+        for fname in sorted(os.listdir(MODAL_SHARDS_DIR)):
+            if fname.endswith(".js"):
+                with open(os.path.join(MODAL_SHARDS_DIR, fname), "r", encoding="utf-8") as sf:
+                    content += sf.read() + "\n"
+    return content
+
+
 def test_wizard_modal_dom_topology():
     """断言向导弹窗包含标准的 3 步结构与独立的品牌创建成功就绪确认页组件"""
-    with open(MODALS_JS, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = _get_modals_content()
 
     # 1. 断言向导主容器存在
     assert 'id="imprint-wizard-modal"' in content, "向导弹窗根容器缺少 id='imprint-wizard-modal'"
@@ -51,8 +63,7 @@ def test_wizard_modal_dom_topology():
 
 def test_wizard_all_six_themes_exist_and_sovereign_default():
     """断言向导 Step 2 中 6 大官方装帧主题全部存在且默认选中 Sovereign"""
-    with open(MODALS_JS, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = _get_modals_content()
 
     themes = ["sovereign", "universal", "docusaurus", "starlight", "nextra", "vitepress"]
     for th in themes:
@@ -126,8 +137,7 @@ def test_wizard_vault_isolation_and_picker_guard():
 
     with open(IMPRINTS_JS, "r", encoding="utf-8") as f:
         imprints_content = f.read() + "\n" + shards_content
-    with open(MODALS_JS, "r", encoding="utf-8") as f:
-        modals_content = f.read()
+    modals_content = _get_modals_content()
 
     # 1. 断言 window.pickWizardVaultDirectory 存在且完整实现
     assert "window.pickWizardVaultDirectory = async" in imprints_content, "缺少 pickWizardVaultDirectory 定义"
@@ -145,8 +155,8 @@ async def test_imprint_add_uniqueness_audit():
     from core.governance.imprint_manager import im
 
     mock_existing = [
-        {"id": "press_tech", "name": "极客前沿", "press_name": "极客前沿"},
-        {"id": "press_daily", "name": "每日精选", "press_name": "每日精选"}
+        {"id": "press_tech", "name": "极客前沿", "vault_root": "./manuscripts/tech"},
+        {"id": "press_daily", "name": "每日精选", "vault_root": "./manuscripts/daily"}
     ]
 
     with patch.object(im, "list_imprints", return_value=mock_existing):
@@ -154,7 +164,7 @@ async def test_imprint_add_uniqueness_audit():
         res_dup_id = await add_imprint({
             "imprint_id": "press_tech",
             "imprint_name": "全新的极客品牌",
-            "path": "./manuscripts/test"
+            "vault_root": "./manuscripts/test"
         })
         assert res_dup_id["success"] is False
         assert "已存在" in res_dup_id["error"]
@@ -163,7 +173,7 @@ async def test_imprint_add_uniqueness_audit():
         res_dup_name = await add_imprint({
             "imprint_id": "press_brand_new",
             "imprint_name": "极客前沿",
-            "path": "./manuscripts/test"
+            "vault_root": "./manuscripts/test"
         })
         assert res_dup_name["success"] is False
         assert "已被占用" in res_dup_name["error"]
@@ -171,8 +181,7 @@ async def test_imprint_add_uniqueness_audit():
 
 def test_wizard_step3_dom_topology():
     """断言向导 Step 3 包含渐进式开箱概要与高级自定义配置项 DOM 结构"""
-    with open(MODALS_JS, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = _get_modals_content()
 
     # 1. 渐进式呈现双层容器
     assert 'id="wiz-step3-streamlined-view"' in content
@@ -239,7 +248,7 @@ async def test_wizard_step3_backend_persistence(tmp_path, monkeypatch):
         res = await add_imprint({
             "imprint_id": "press_global_news",
             "imprint_name": "全球科技观察",
-            "path": str(tmp_path / "vault"),
+            "vault_root": str(tmp_path / "vault"),
             "theme": "sovereign",
             "enable_ai": True,
             "ai_provider": "lmstudio",

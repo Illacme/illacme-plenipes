@@ -18,11 +18,9 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
         # 🚀 [V112.0] 物理性能与算力保护解耦：若指定了 target_channel (单篇社交广播)，跳过全站 SSG/AI 翻译管线
         syndication_cfg = getattr(engine.config, "syndication", {}) or {}
         direct_upload = getattr(engine.config.publish_control, "direct_upload", {}) or {}
-        
         is_targeted_syndication = False
         if target_channel and target_channel in syndication_cfg:
             is_targeted_syndication = True
-            
         if not is_targeted_syndication:
             # 仅在非定向社交广播时，才编译生成本地网页与触发 AI 跨语种同步
             engine.sync_document(
@@ -35,7 +33,6 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
             )
         else:
             tlog.info(f"⚡ [单篇社交广播] 定向广播至 {target_channel}，免除全站 SSG 与 LLM AI 翻译管线重编。")
-        
         # 2. 获取编译后的文档最新元数据
         doc_info = engine.meta.get_doc_info(doc_id) or {}
         if not doc_info and os.path.exists(os.path.join(engine.vault_root, doc_id)):
@@ -150,10 +147,12 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
         if not eff_cov:
             try:
                 from core.design.image_hub import image_hub
-                b_id = getattr(engine, "brand_id", "default"); b_name = getattr(engine, "brand_name", "ILLACME SOVEREIGN")
+                b_id = getattr(engine, "brand_id", "default")
+                b_name = getattr(engine, "brand_name", "ILLACME SOVEREIGN")
                 strat = cover_mode if (cover_mode and cover_mode != "global") else "auto"
                 eff_cov, _, _ = image_hub.generate_cover_for_document(doc_id=doc_id, title=broadcast_title, slug=doc_info.get("slug") or "", author=fm.get("author") or "Illacme Plenipes", brand_id=b_id, brand_name=b_name, strategy=strat, offset=cover_offset)
-            except Exception as e: tlog.warning(f"⚠️ [ICMM] 封面兜底异常: {e}")
+            except Exception as e:
+                tlog.warning(f"⚠️ [ICMM] 封面兜底异常: {e}")
         if eff_cov and target_channel:
             c_overrides = cover_overrides or {}
             c_cfg = c_overrides.get(str(target_channel).lower(), {}) if isinstance(c_overrides, dict) else {}
@@ -166,8 +165,10 @@ def _async_redispatch_task(engine, task_path, prefix, src_rel, target_slot, clea
                     d_url, _ = derive_cover_asset(eff_cov, get_channel_aspect_ratio(target_channel), focal_y=_to_f("focal_y", 50), focal_x=_to_f("focal_x", 50), zoom=_to_f("zoom", 100, True), vault_root=getattr(engine, "vault_root", ""))
                     fm["cover"] = fm["image"] = (d_url or eff_cov)
                 except Exception as de:
-                    tlog.warning(f"⚠️ [多态封面派生异常] {de}"); fm["cover"] = fm["image"] = eff_cov
-        elif eff_cov: fm["cover"] = fm["image"] = eff_cov
+                    tlog.warning(f"⚠️ [多态封面派生异常] {de}")
+                    fm["cover"] = fm["image"] = eff_cov
+        elif eff_cov:
+            fm["cover"] = fm["image"] = eff_cov
 
         # 执行分发 (强注入 force_push=True 以绕过 Hash 重复抑制，并显式传入目标语种 lang_code)
         syndicator.syndicate(
@@ -219,7 +220,7 @@ def trigger_re_dispatch_logic(engine, doc_id: str, req: dict) -> dict:
                 check_ai_availability_or_raise(engine)
             except RuntimeError as e:
                 return {"success": False, "message": str(e)}
-        
+
         # 提交至主权线程池以进行异步物理编译，彻底避免对 FastAPI 事件循环的阻塞
         c_mode, c_image, c_offset = req.get("cover_mode"), req.get("cover_image"), int(req.get("cover_offset", 0))
         c_overrides = req.get("cover_overrides") or {}
@@ -240,9 +241,7 @@ def get_pending_syndication_logic(engine) -> dict:
     """
     if not hasattr(engine, "meta"):
         return {"count": 0, "pending_docs": []}
-        
     config = engine.config
-    
     # 提取已启用的分发同步渠道
     syndication_cfg = getattr(config, "syndication", {}) or {}
     if hasattr(syndication_cfg, "model_dump"):

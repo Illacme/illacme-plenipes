@@ -42,7 +42,7 @@ function _copyFallback(text) {
 /**
  * 构建顶栏右侧独立站直达链接 HTML
  */
-function _buildSiteLinkHtml() {
+function _buildSiteLinkHtml(mode) {
     var rawUrl = (window.settingsData && window.settingsData.compliance && window.settingsData.compliance.site_url) ||
                  (window.settingsData && window.settingsData.site_url) || '';
     var isValid = /^https?:\/\/[a-zA-Z0-9\-\.]+(:\d+)?(\/.*)?$/.test(rawUrl);
@@ -53,8 +53,8 @@ function _buildSiteLinkHtml() {
                '</a>' +
                '<button class="lpdash-copy-btn" onclick="window.copySiteUrlSafe(\'' + rawUrl + '\')" title="一键复制独立站公网网址">📋</button>';
     } else {
-        return '<button class="lpdash-site-btn unconfigured" onclick="window.toggleHub(\'hide\'); window.showView(\'settings\', \'compliance\');" title="尚未绑定独立公网域名，点击前往出版合规配置">' +
-               '🌐 未绑定线上域名 (去配置)' +
+        return '<button class="lpdash-site-btn" onclick="window.toggleHub(\'hide\'); window.showView(\'vault\');" title="探索本地 Markdown 原稿文库与双向链接">' +
+               '📖 探索创作者文库 ↗' +
                '</button>';
     }
 }
@@ -62,9 +62,13 @@ function _buildSiteLinkHtml() {
 /**
  * 刷新外链容器
  */
-function _updateSiteLinkContainer() {
+function _updateSiteLinkContainer(mode) {
     var wrap = document.getElementById('hub-site-link-container');
-    if (wrap) wrap.innerHTML = _buildSiteLinkHtml();
+    var currentMode = mode || sessionStorage.getItem('_illacme_launchpad_mode') || 'onboarding';
+    if (wrap) {
+        wrap.innerHTML = _buildSiteLinkHtml(currentMode);
+        wrap.style.display = 'inline-flex';
+    }
 }
 
 /**
@@ -94,13 +98,13 @@ function _mountLaunchpadSkeleton(area, initialMode) {
             '</div>' +
             '<div class="hub-trio-center">' +
                 '<div class="hub-mode-capsule">' +
-                    '<button class="hub-capsule-btn ' + (initialMode === 'onboarding' ? 'active' : '') + '" data-mode="onboarding" onclick="window.switchLaunchpadMode(\'onboarding\')">🌱 创作者起步</button>' +
-                    '<button class="hub-capsule-btn ' + (initialMode === 'dashboard' ? 'active' : '') + '" data-mode="dashboard" onclick="window.switchLaunchpadMode(\'dashboard\')">📊 运行仪表盘</button>' +
+                    '<button class="hub-capsule-btn ' + (initialMode === 'onboarding' ? 'active' : '') + '" data-mode="onboarding" onclick="window.switchLaunchpadMode(\'onboarding\')">🌱 创作者启航</button>' +
+                    '<button class="hub-capsule-btn ' + (initialMode === 'dashboard' ? 'active' : '') + '" data-mode="dashboard" onclick="window.switchLaunchpadMode(\'dashboard\')">🧭 领航仪表盘</button>' +
                 '</div>' +
             '</div>' +
             '<div class="hub-trio-right">' +
-                '<div id="hub-site-link-container" class="hub-site-link-wrap" style="' + (initialMode === 'onboarding' ? 'display:none;' : '') + '">' +
-                    _buildSiteLinkHtml() +
+                '<div id="hub-site-link-container" class="hub-site-link-wrap" style="display:inline-flex;">' +
+                    _buildSiteLinkHtml(initialMode) +
                 '</div>' +
             '</div>' +
         '</div>' +

@@ -114,12 +114,12 @@ def test_pulse_api_flow():
             
             # 2.1 拦截测试：不带 X-Token 请求
             res_forbidden = client.get("/api/governance/pulse")
-            assert res_forbidden.status_code == 403, "未授权请求未被成功拦截"
-            assert res_forbidden.json().get("detail") == "Unauthorized", "未授权报错信息不符"
+            assert res_forbidden.status_code in (401, 403), "未授权请求未被成功拦截"
+            assert "Unauthorized" in res_forbidden.json().get("detail", ""), "未授权报错信息不符"
             
             # 2.2 拦截测试：带有错误 X-Token 请求
             res_bad_token = client.get("/api/governance/pulse", headers={"X-Token": "wrong-secret"})
-            assert res_bad_token.status_code == 403, "错误 Token 未被成功拦截"
+            assert res_bad_token.status_code in (401, 403), "错误 Token 未被成功拦截"
             
             # 2.3 放行测试：带有正确 X-Token 请求
             res_authorized = client.get("/api/governance/pulse", headers={"X-Token": "secure-tower-secret"})

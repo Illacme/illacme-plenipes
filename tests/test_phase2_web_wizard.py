@@ -52,7 +52,7 @@ def test_init_press_enable_ai_injection(tmp_path, monkeypatch):
     req = InitRequest(
         imprint_id="test_ai_imp",
         imprint_name="Test AI Press",
-        manuscripts_path=str(tmp_path),
+        vault_root=str(tmp_path),
         enable_ai=True,
         ai_provider="lmstudio",
         ai_model="qwen/qwen3.5-9b",

@@ -19,7 +19,7 @@ class DocusaurusI18nSynthesizer:
         if not theme_dir or not os.path.exists(theme_dir):
             return False
 
-        # 🛡️ SOP-13: 严禁污染 themes/ 只读母本目录，仅对品牌版图或派生目录执行落盘
+        # 🛡️ SOP-13: 严禁污染 themes/ 只读母本目录，仅对出版品牌或派生目录执行落盘
         norm_dir = os.path.abspath(theme_dir)
         mother_prefix = os.path.abspath(os.path.join(os.getcwd(), "themes"))
         if norm_dir == mother_prefix or (norm_dir.startswith(mother_prefix + os.sep) and "imprints" not in norm_dir):

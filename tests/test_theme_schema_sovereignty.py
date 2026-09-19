@@ -156,18 +156,20 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         # 默认品牌状态下
         from core.governance.imprint_manager import im
         im.active_imprint = "default"
-        LicenseGuard.clear_cache()
-        self.assertEqual(LicenseGuard.get_active_tier(), "LITE")
-        self.assertTrue(LicenseGuard.is_pro_feature_allowed("multi_language"))
-        self.assertTrue(LicenseGuard.is_pro_feature_allowed("subfolder_ingress"))
-        self.assertEqual(LicenseGuard.get_max_custom_imprints(), 1)
-        self.assertEqual(LicenseGuard.get_max_imprints(), 2)
-        self.assertEqual(LicenseGuard.get_max_i18n_targets(), 2)
-        
-        info = LicenseGuard.get_license_info()
-        self.assertEqual(info["tier"], "LITE")
-        self.assertEqual(info["tier_name"], "免费社区版")
-        self.assertFalse(info["is_licensed"])
+        from unittest.mock import patch
+        with patch.object(LicenseGuard, "get_license_file_path", return_value="/non/existent/path"):
+            LicenseGuard.clear_cache()
+            self.assertEqual(LicenseGuard.get_active_tier(), "LITE")
+            self.assertTrue(LicenseGuard.is_pro_feature_allowed("multi_language"))
+            self.assertTrue(LicenseGuard.is_pro_feature_allowed("subfolder_ingress"))
+            self.assertEqual(LicenseGuard.get_max_custom_imprints(), 1)
+            self.assertEqual(LicenseGuard.get_max_imprints(), 2)
+            self.assertEqual(LicenseGuard.get_max_i18n_targets(), 2)
+            
+            info = LicenseGuard.get_license_info()
+            self.assertEqual(info["tier"], "LITE")
+            self.assertEqual(info["tier_name"], "免费社区版")
+            self.assertFalse(info["is_licensed"])
 
     def test_three_tier_quotas(self):
         """🚀 验证 3-Tier（LITE / STANDARD / PRO）配额分级体系与轻量化放行"""
@@ -192,7 +194,24 @@ class TestThemeSchemaSovereignty(unittest.TestCase):
         self.assertEqual(info["max_custom_imprints"], 5)
         self.assertEqual(info["max_imprints"], 6)
         self.assertEqual(info["max_i18n_targets"], 5)
-        
+
+        LicenseGuard.clear_cache()
+        # Mock 高级专业版 (PRO)
+        LicenseGuard._cached_license_result = (True, {"tier": "PRO", "customer": "专业版创作者"})
+
+        self.assertEqual(LicenseGuard.get_active_tier(), "PRO")
+        self.assertEqual(LicenseGuard.get_max_custom_imprints(), 99)
+        self.assertEqual(LicenseGuard.get_max_imprints(), 100)
+        self.assertEqual(LicenseGuard.get_max_i18n_targets(), 55)
+        self.assertTrue(LicenseGuard.is_pro_feature_allowed("multi_language"))
+
+        info_pro = LicenseGuard.get_license_info()
+        self.assertEqual(info_pro["tier"], "PRO")
+        self.assertEqual(info_pro["tier_name"], "高级专业版")
+        self.assertEqual(info_pro["max_custom_imprints"], 99)
+        self.assertEqual(info_pro["max_imprints"], 100)
+        self.assertEqual(info_pro["max_i18n_targets"], 55)
+
         LicenseGuard.clear_cache()
 
 if __name__ == "__main__":

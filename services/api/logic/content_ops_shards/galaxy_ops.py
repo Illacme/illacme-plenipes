@@ -53,6 +53,22 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
                         "is_manual": False,
                         "is_skeleton": True
                     })
+        # 🔗 创作者手动连线具备最高主权，骨架模式同步合并
+        if hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
+            for doc_id, data in engine.knowledge_graph.nodes.items():
+                if not isinstance(data, dict): continue
+                for tid in data.get("manual_connections", {}):
+                    link_id = tuple(sorted([doc_id, tid]))
+                    if link_id not in seen_links:
+                        seen_links.add(link_id)
+                        links_list.append({
+                            "source": doc_id,
+                            "target": tid,
+                            "strength": 1.0,
+                            "type": "semantic",
+                            "is_manual": True,
+                            "is_skeleton": True
+                        })
         return {"nodes": nodes_list, "links": links_list}
 
     # 🪰 [混合渐进式] 全量高维图模式 (合并物理 WikiLinks 与 AI 语义/用户手动连线)
@@ -75,14 +91,46 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
                     nodes_map[rel_path] = {
                         "id": rel_path,
                         "title": title,
+                        "gist": meta.get("gist", ""),
+                        "entities": meta.get("entities", {}),
                         "val": 1.0,
                         "group": "document",
                         "is_skeleton": True
                     }
                 else:
                     nodes_map[rel_path]["is_skeleton"] = True
-                    # 🚀 [V100.0] 双重对齐保险：强制对齐最新物理 title 属性，打破缓存在 full 模式下的遮蔽缺陷
                     nodes_map[rel_path]["title"] = title
+                    if not nodes_map[rel_path].get("gist") and meta.get("gist"):
+                        nodes_map[rel_path]["gist"] = meta["gist"]
+                    if not nodes_map[rel_path].get("entities") and meta.get("entities"):
+                        nodes_map[rel_path]["entities"] = meta["entities"]
+
+        # 🛡️ 物理真理对准 (Physical Truth Alignment)：剔除物理文库中已不存在的历史幽灵孤儿节点
+        vault_root_abs = os.path.abspath(engine.vault_root) if getattr(engine, "vault_root", None) else ""
+        valid_physical_ids = set(engine.link_graph.keys()) if hasattr(engine, "link_graph") and engine.link_graph else set()
+        if valid_physical_ids or vault_root_abs:
+            ghost_ids = [
+                nid for nid in list(nodes_map.keys())
+                if nid not in valid_physical_ids and (not vault_root_abs or not os.path.exists(os.path.join(vault_root_abs, nid)))
+            ]
+            for gid in ghost_ids:
+                nodes_map.pop(gid, None)
+
+            # 🧹 数据库自愈闭环：若图谱内存对象中仍残存幽灵节点，同步剔除并刷盘
+            if ghost_ids and hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
+                try:
+                    with engine.knowledge_graph._lock:
+                        for gid in ghost_ids:
+                            engine.knowledge_graph.nodes.pop(gid, None)
+                            for ndata in engine.knowledge_graph.nodes.values():
+                                if isinstance(ndata, dict):
+                                    if "connections" in ndata and isinstance(ndata["connections"], dict):
+                                        ndata["connections"].pop(gid, None)
+                                    if "manual_connections" in ndata and isinstance(ndata["manual_connections"], dict):
+                                        ndata["manual_connections"].pop(gid, None)
+                    engine.knowledge_graph.save()
+                except Exception:
+                    pass
 
         # 合并连线：物理优先 (wikilink 青色优先，避免被 weak semantic 紫色连线遮蔽)
         links_list = []
@@ -119,6 +167,9 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
         for l in kg_graph.get("links", []):
             src = l["source"]
             tgt = l["target"]
+            # 🛡️ 严格确保连线两端的节点均在有效物理节点集合 nodes_map 中
+            if src not in nodes_map or tgt not in nodes_map:
+                continue
             link_id = tuple(sorted([src, tgt]))
             if link_id not in seen_links:
                 seen_links.add(link_id)
@@ -142,6 +193,8 @@ def rebuild_node_semantics_logic(engine, doc_id: str):
 
     from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
     abs_path = resolve_safe_path(engine, doc_id)
+    from core.utils.tracing import tlog
+    tlog.info(f"🔎 [rebuild_node] target abs_path is: {abs_path}")
     if not abs_path or not os.path.exists(abs_path):
         return {"error": f"Document path invalid or not found: {doc_id}"}
 
@@ -166,7 +219,28 @@ def rebuild_node_semantics_logic(engine, doc_id: str):
     except Exception as e:
         return {"error": f"NLP processing failed: {e}"}
 
-    # 2. 更新图谱节点
+    # 2. 物理原稿真理源同步回写与内存元数据对齐 (Single Source of Truth)
+    try:
+        from core.utils.text import inject_frontmatter
+        from core.utils.io import atomic_write
+        if gist:
+            metadata["gist"] = gist
+        if entities:
+            metadata["entities"] = entities
+        updated_content = inject_frontmatter(pure_content, metadata)
+        atomic_write(abs_path, updated_content)
+        if hasattr(engine, "link_graph") and doc_id in engine.link_graph:
+            engine.link_graph[doc_id].setdefault("metadata", {})
+            engine.link_graph[doc_id]["metadata"]["title"] = title
+            if gist:
+                engine.link_graph[doc_id]["metadata"]["gist"] = gist
+            if entities:
+                engine.link_graph[doc_id]["metadata"]["entities"] = entities
+    except Exception as e:
+        from core.utils.tracing import tlog
+        tlog.error(f"🚨 [rebuild_node] Frontmatter sync failed for {abs_path}: {e}", exc_info=True)
+
+    # 3. 更新图谱节点
     engine.knowledge_graph.upsert_node(doc_id, title, entities=entities, gist=gist)
 
     # 3. 语义向量关联
@@ -216,10 +290,6 @@ def rebuild_node_semantics_logic(engine, doc_id: str):
                     discovery_count += 1
 
     engine.knowledge_graph.save(debounce=False)
-    return {
-        "success": True,
-        "message": f"Successfully analyzed document and discovered {discovery_count} links.",
-        "entities": entities,
-        "gist": gist
-    }
+    msg = f"已完成摘要与实体提炼，并编织了 {discovery_count} 条跨篇概念连线！" if discovery_count > 0 else "已完成摘要与实体提炼（暂未发现达到引力阈值的跨篇概念关联）。"
+    return {"success": True, "message": msg, "entities": entities, "gist": gist}
 

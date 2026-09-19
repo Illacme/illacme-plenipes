@@ -124,7 +124,7 @@ def on_post_sync(engine):
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="0; url={redirect_url}">
-    <title>正在进入发行指挥中心...</title>
+    <title>正在进入治理中心...</title>
     <style>
         body {{
             background-color: #0b0f19;
@@ -170,7 +170,7 @@ def on_post_sync(engine):
     <div class="container">
         <div class="spinner"></div>
         <div class="title">正在加载出版成品...</div>
-        <div class="sub">即将进入指挥中心</div>
+        <div class="sub">即将进入治理中心</div>
     </div>
     <script>
         window.location.replace("{redirect_url}");
@@ -196,7 +196,7 @@ def on_post_sync(engine):
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="0; url={target_rel_url}">
-    <title>正在进入发行指挥中心...</title>
+    <title>正在进入治理中心...</title>
 </head>
 <body>
     <script>window.location.replace("{target_rel_url}");</script>

@@ -29,10 +29,10 @@ def test_token_verification_failure_emits_security_alert():
         with pytest.raises(HTTPException) as excinfo:
             verify_token(x_token="wrong-token")
             
-        assert excinfo.value.status_code == 403
+        assert excinfo.value.status_code == 401
         assert len(alerts) == 1
-        assert alerts[0][0] == "API_TOKEN_EXPIRED"
-        assert "接口访问认证失败" in alerts[0][1]
+        assert alerts[0][0] == "API_TOKEN_INVALID"
+        assert "接口认证失败" in alerts[0][1]
 
 def test_license_guard_no_security_alert_on_feature_check():
     """测试常规功能探测时不再向事件总线误报 SECURITY_ALERT 事件，杜绝前端弹红框"""

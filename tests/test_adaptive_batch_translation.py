@@ -214,7 +214,7 @@ class TestAdaptiveBatchTranslation(unittest.TestCase):
         self.assertEqual(unpack_res.failed_items[0].seg_id, "seg_5")
         self.assertIn("seg_5", unpack_res.missing_seg_ids)
 
-    # 7. 验证多品牌版图专属风格装配与只读代码语境注入
+    # 7. 验证多品牌专属风格装配与只读代码语境注入
     def test_imprint_scoped_context_injection(self):
         batch = TranslationBatch(
             batch_id=0,

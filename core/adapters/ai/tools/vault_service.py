@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 
 def get_secure_vault_path() -> str:
     """
-    🏢 动态获取当前版图的原稿文库（Vault）的物理路径，作为 AI 模块的默认安全沙箱工作目录
+    🏢 动态获取当前品牌的原稿文库（Vault）的物理路径，作为 AI 模块的默认安全沙箱工作目录
     """
     from core.runtime.engine_singleton import get_global_engine
     engine = get_global_engine()

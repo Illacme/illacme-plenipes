@@ -115,3 +115,41 @@ def inject_frontmatter(pure_content: str, metadata: dict) -> str:
         return f"---\n{yaml_block}---\n{pure_content}"
     except Exception:
         return pure_content
+
+
+# 🌐 CJK 表意与表音字符集正则 (含中日韩汉字、日文假名、韩文音节与字母)
+_CJK_REGEX = re.compile(
+    r'[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u30ff\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]'
+)
+# 🌐 全球分词型语言单词匹配正则 (支持 Unicode 变音字符及连字符/单引号复合词，如 state-of-the-art, l'été)
+_WORD_REGEX = re.compile(r"[^\W_]+(?:[-\'][^\W_]+)*", re.UNICODE)
+
+
+def calculate_universal_word_count(text: str) -> int:
+    """
+    🌐 全球全语种通用字数度量引擎 (Universal Multilingual Word Count):
+    1. 剥离 Markdown Frontmatter 元数据头部
+    2. 剥离代码围栏、行内代码与 HTML 标签
+    3. CJK (汉字、日文假名、韩文音节) 按单字符计数
+    4. 全球分词语言 (拉丁/西里尔/希腊语系等) 按 Unicode 单词计数
+    """
+    if not text:
+        return 0
+
+    # 剥离 frontmatter
+    body = re.sub(r'^---[\s\S]*?---\s*', '', text)
+    # 剥离代码围栏与行内代码
+    body = re.sub(r'```[\s\S]*?```', '', body)
+    body = re.sub(r'`[^`\n]*`', '', body)
+    # 剥离 HTML 标签
+    body = re.sub(r'<[^>]+>', ' ', body)
+
+    # 统计 CJK 字符数
+    cjk_count = len(_CJK_REGEX.findall(body))
+    # 将 CJK 字符替换为空格以防与分词语言粘连
+    non_cjk = _CJK_REGEX.sub(' ', body)
+    # 统计分词语言单词数
+    words_count = len(_WORD_REGEX.findall(non_cjk))
+
+    return cjk_count + words_count
+

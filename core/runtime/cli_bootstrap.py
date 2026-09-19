@@ -46,7 +46,7 @@ def parse_args_and_lock():
     parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
     parser.add_argument('--clean', action='store_true', help="🧹 [主权重置] 物理删除所有同步指纹与 AI 影子缓存")
-    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版版图内的所有非法或过期资产")
+    parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版品牌内的所有非法或过期资产")
     parser.add_argument('--sentinel', action='store_true', help="🛡️ [哨兵审计] 立即唤醒项目哨兵，执行健康审计与算力成本上报")
     parser.add_argument('--doctor', '-d', action='store_true', help="🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验")
     parser.add_argument('--heal', action='store_true', help="💊 [物理自愈] 配合 --doctor 使用，自动修复路径缺失与指纹冲突")
@@ -66,13 +66,13 @@ def parse_args_and_lock():
     parser.add_argument('--rollback-to', help="⏪ [高级回滚] 指定回滚的快照名称")
     parser.add_argument('--list-plugins', action='store_true', help="📡 [插件中心] 枚举当前系统中所有已注册的分发插件及其运行时状态")
     parser.add_argument('--shutdown', action='store_true', help="🛑 [远程下线] 向正在运行的实例发送关机指令并安全存档 (需要 API 模式已启动)")
-    parser.add_argument('--imprint', '-i', dest='imprint', default='default', help="🌐 [出版版图选择] 指定当前操作的 Imprint ID (默认: default)")
-    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前版图内的所有敏感凭据")
-    parser.add_argument('--audit-report', action='store_true', help="📊 [账本报告] 导出当前出版版图的商业审计流水账本")
-    parser.add_argument('--imprint-list', action='store_true', help="📜 [版图清单] 枚举当前系统内所有已划定的出版版图 (Imprints)")
-    parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [版图划定] 快速创建一个新的出版版图 (需配合 --vault-path)")
-    parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [版图撤销] 物理抹除一个已有的出版版图及其所有资产")
-    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿文库的物理路径 (用于创建新版图)")
+    parser.add_argument('--imprint', '-i', dest='imprint', default='default', help="🌐 [出版品牌选择] 指定当前操作的 Imprint ID (默认: default)")
+    parser.add_argument('--credentials', action='store_true', help="🔑 [凭据审计] 扫描并脱敏当前品牌内的所有敏感凭据")
+    parser.add_argument('--audit-report', action='store_true', help="📊 [账本报告] 导出当前出版品牌的商业审计流水账本")
+    parser.add_argument('--imprint-list', action='store_true', help="📜 [品牌清单] 枚举当前系统内所有已划定的出版品牌 (Imprints)")
+    parser.add_argument('--imprint-create', metavar='NAME', help="🏗️ [品牌创建] 快速创建一个新的出版品牌 (需配合 --vault-path)")
+    parser.add_argument('--imprint-delete', metavar='NAME', help="🪓 [品牌删除] 物理抹除一个已有的出版品牌及其所有资产")
+    parser.add_argument('--vault-path', metavar='PATH', help="📂 [物理锚定] 指定原稿文库的物理路径 (用于创建新品牌)")
     from core import __version__, __edition__
     parser.add_argument('--wizard', '-W', action='store_true', help="🧙 [引导向导] 启动 Web 端可视化安装与配置向导")
     parser.add_argument('--version', '-v', action='version', version=f'Illacme-plenipes v{__version__} ({__edition__})')
@@ -85,9 +85,9 @@ def parse_args_and_lock():
         example_config = 'config.example.yaml'
         if os.path.exists(example_config):
             if args.imprint_create and args.vault_path:
-                tlog.info(f"🏗️ [自动化初始化] 正在准备出版版图配置: {args.imprint_create}")
+                tlog.info(f"🏗️ [自动化初始化] 正在准备出版品牌配置: {args.imprint_create}")
                 config_data = {
-                    "press_name": args.imprint_create,
+                    "imprint_name": args.imprint_create,
                     "vault_root": args.vault_path,
                     "active_theme": "starlight",
                     "system": {"singleton_port": 43210}

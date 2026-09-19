@@ -41,9 +41,13 @@ def test_frontend_render_runtime_and_dom_integrity():
     };
     global.apiFetch = async () => ({ config: global.window.settingsData });
 
-    // 2. 加载并执行 plugins.render.pod.js
-    const podCode = fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.pod.js', 'utf8');
-    eval(podCode);
+    // 2. 加载并执行 plugins.render.badges.js, plugins.render.pod.js, plugins.render.physics.js
+    eval(fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.badges.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.pod.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.physics.js', 'utf8'));
+    if (typeof window.getPlatformBrandBadge !== 'function' || typeof window.init3DHoverPhysics !== 'function') {
+        throw new Error('Plugins badges or physics shards failed to register functions on window');
+    }
 
     const testProtoPlugin = {
         id: 'lmstudio',
@@ -123,6 +127,80 @@ def test_frontend_render_runtime_and_dom_integrity():
             throw new Error('Legacy source-status-bar should be eliminated');
         }
 
+        // 4.1 加载并执行 route.slug_render.js (Rule 7: 网址路径二级面板与 URL 沙盒断言)
+        const slugRenderCode = fs.readFileSync('web/dashboard/js/route/route_shards/route.slug_render.js', 'utf8');
+        eval(slugRenderCode);
+        const slugHtml = window.renderSlugSettingsCategory();
+        if (!slugHtml || typeof slugHtml !== 'string') {
+            throw new Error('renderSlugSettingsCategory must return valid html string');
+        }
+        if (!slugHtml.includes('slug-dir-card') || !slugHtml.includes('sandbox-file-select')) {
+            throw new Error('Slug settings DOM topology broken: missing slug-dir-card or sandbox playground');
+        }
+
+        // 4.1.1 加载并执行 route.slug_actions.js 与 route.slug.sandbox.js (Rule 7: 模式切换与实时推导)
+        eval(fs.readFileSync('web/dashboard/js/route/route_shards/route.slug_actions.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/route/route.slug.sandbox.js', 'utf8'));
+        if (typeof window.selectSlugDirModeCard !== 'function' || typeof window.updateSlugSandboxPreview !== 'function') {
+            throw new Error('route.slug_actions or sandbox functions not registered on window');
+        }
+        window.selectSlugDirModeCard('nested');
+        await window.updateSlugSandboxPreview();
+
+        // 4.2 加载并执行 core.deploy_summary.js (Rule 7: 全域部署成果卡片与 CDN 健康雷达)
+        global.document.createElement = (tag) => ({
+            tagName: tag.toUpperCase(),
+            style: {},
+            classList: { add: ()=>{}, remove: ()=>{} },
+            innerHTML: '',
+            appendChild: function(c) { this.children = this.children || []; this.children.push(c); },
+            remove: () => {}
+        });
+        const mockTermOutput = {
+            children: [],
+            appendChild: function(child) { this.children.push(child); },
+            querySelector: function(sel) { return null; },
+            scrollTop: 0,
+            scrollHeight: 100
+        };
+        const origGetElem = global.document.getElementById;
+        global.document.getElementById = (id) => {
+            if (id === 'terminal-output') return mockTermOutput;
+            return origGetElem(id);
+        };
+        eval(fs.readFileSync('web/dashboard/js/core/core_shards/core.deploy_summary.js', 'utf8'));
+        window.renderDeploymentSummaryCard({
+            total_channels: 2,
+            channels: [
+                { name: 'GitHub Pages', status: 'success', url: 'https://example.github.io', is_primary: true },
+                { name: 'Vercel', status: 'success', url: 'https://example.vercel.app', is_primary: false }
+            ]
+        });
+        if (mockTermOutput.children.length === 0) {
+            throw new Error('renderDeploymentSummaryCard failed to append card to terminal-output');
+        }
+        const summaryCardHtml = mockTermOutput.children[0].innerHTML;
+        if (!summaryCardHtml.includes('全域发布圆满完成') || !summaryCardHtml.includes('官方主站') || !summaryCardHtml.includes('health-radar-badge')) {
+            throw new Error('Deployment summary card topology broken: missing title, primary badge or health-radar-badge');
+        }
+        global.document.getElementById = origGetElem;
+
+        // 4.3 加载并执行 modals 体系沙箱断言 (Rule 7: 全局弹窗拓扑完备性)
+        eval(fs.readFileSync('web/dashboard/js/ui/modal_shards/modals.system.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/ui/modal_shards/modals.wizard_step3.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/ui/modal_shards/modals.wizard_success.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/ui/modals.js', 'utf8'));
+        const allModalsHtml = window.getUIModalsHTML();
+        if (!allModalsHtml || typeof allModalsHtml !== 'string') {
+            throw new Error('getUIModalsHTML must return valid HTML string');
+        }
+        const requiredModalIds = ['publish-modal', 'editor-modal', 'terminal-modal', 'imprint-wizard-modal', 'wiz-step-3', 'imprint-success-modal'];
+        for (const mid of requiredModalIds) {
+            if (!allModalsHtml.includes(`id="${mid}"`)) {
+                throw new Error(`Modals DOM topology broken: missing id="${mid}"`);
+            }
+        }
+
         // 5. 加载并执行 launchpad.js 引导向导沙箱断言与仪表盘拓扑断言
         global.localStorage = { getItem: () => null, setItem: () => {} };
         global.sessionStorage = { getItem: () => null, setItem: () => {} };
@@ -183,6 +261,8 @@ def test_frontend_render_runtime_and_dom_integrity():
         // 8. 验证 platforms.sensing_judger.js 与 plugins.render.cards.js 凭据判定与算力寻路沙箱
         const judgerCode = fs.readFileSync('web/dashboard/js/plugins/platforms_shards/platforms.sensing_judger.js', 'utf8');
         eval(judgerCode);
+        const statusCode = fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.status.js', 'utf8');
+        eval(statusCode);
         const cardsCode = fs.readFileSync('web/dashboard/js/plugins/render_shards/plugins.render.cards.js', 'utf8');
         eval(cardsCode);
 
@@ -246,7 +326,14 @@ def test_frontend_render_runtime_and_dom_integrity():
         let createdPreviewModal = null;
         global.document.getElementById = (id) => null;
         global.document.createElement = (tag) => {
-            createdPreviewModal = { id: '', style: {}, innerHTML: '', onclick: null };
+            createdPreviewModal = {
+                id: '',
+                style: {},
+                className: '',
+                classList: { add: ()=>{}, remove: ()=>{}, contains: ()=>false },
+                innerHTML: '',
+                onclick: null
+            };
             return createdPreviewModal;
         };
         global.document.body = { appendChild: () => {} };
@@ -377,6 +464,57 @@ def test_frontend_render_runtime_and_dom_integrity():
             throw new Error('dispatchArticleSyndication failed to switch footer to telemetry stage');
         }
 
+        // 🚀 [V122.0] 全域发布任务大厅与成果账本沙箱断言 (Rule 7)
+        eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.templates.js', 'utf8'));
+        if (!window.viewTemplates.tasks.includes('id="view-tasks"')) {
+            throw new Error('viewTemplates.tasks missing id="view-tasks"');
+        }
+        if (!window.viewTemplates.tasks.includes('dispatch-metric-grid') || !window.viewTemplates.tasks.includes('channel-matrix-grid')) {
+            throw new Error('viewTemplates.tasks missing metric or channel matrix grid');
+        }
+
+        eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.indicator.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.popover.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.workbench.js', 'utf8'));
+        eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.ledger.render.js', 'utf8'));
+
+        const mockBodySlot = { innerHTML: '' };
+        const mockLedgerSlot = { innerHTML: '' };
+        const mockDeadletterSlot = { innerHTML: '' };
+        global.document.getElementById = (id) => {
+            if (id === 'dispatch-popover-body') return mockBodySlot;
+            if (id === 'dispatch-ledger-container') return mockLedgerSlot;
+            if (id === 'dispatch-deadletter-container') return mockDeadletterSlot;
+            if (id === 'dispatch-channel-matrix') return { innerHTML: '' };
+            if (id === 'dispatch-active-pipeline-zone') return { innerHTML: '', style: {} };
+            return { style: {}, classList: { add: ()=>{}, remove: ()=>{} }, innerText: '' };
+        };
+
+        const testOverview = {
+            status: 'success',
+            is_publishing: false,
+            summary: { total_syndicated: 12, total_failed: 1, active_count: 0, success_rate: '92.3%' },
+            channel_health: [{ id: 'devto', name: 'Dev.to', icon: '👩‍💻', status: 'healthy', status_msg: '就绪', enabled: true }],
+            dead_letter_tasks: [{ rel_path: 'fail.md', target_id: 'devto', last_error: 'Token error', retry_count: 1 }],
+            recent_records: [{ rel_path: 'article.md', lang_code: 'zh-CN', target_id: 'devto', remote_url: 'https://dev.to/test/123' }]
+        };
+
+        window.updateDispatchIndicator(testOverview);
+        window.renderPopoverContent(testOverview);
+        if (!mockBodySlot.innerHTML.includes('https://dev.to/test/123') || !mockBodySlot.innerHTML.includes('magic-link-mini')) {
+            throw new Error('Popover missing magic-link-mini');
+        }
+
+        window.renderDispatchLedger(testOverview.recent_records);
+        if (!mockLedgerSlot.innerHTML.includes('ledger-table') || !mockLedgerSlot.innerHTML.includes('https://dev.to/test/123')) {
+            throw new Error('Ledger render missing table or remote url');
+        }
+
+        window.renderDispatchDeadLetters(testOverview.dead_letter_tasks);
+        if (!mockDeadletterSlot.innerHTML.includes('deadletter-card') || !mockDeadletterSlot.innerHTML.includes('Token error')) {
+            throw new Error('DeadLetter render missing card or diagnosis');
+        }
+
         console.log('ALL_FRONTEND_RENDER_DOM_VERIFIED_SUCCESS');
     }).catch(err => {
         console.error(err);
@@ -387,3 +525,726 @@ def test_frontend_render_runtime_and_dom_integrity():
     res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
     assert res.returncode == 0, f"Frontend Render Runtime Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
     assert "ALL_FRONTEND_RENDER_DOM_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_review_drawer_render_integrity():
+    """
+    🛡️ 审稿抽屉 (Review Drawer) 渲染函数运行时沙箱与 DOM 拓扑完备性门禁 (Rule 7)
+    断言：
+    1. review.template.js 挂载包含 .review-drawer-overlay 与 .review-drawer-window 语义类
+    2. review.render.body.js 渲染包含 .review-three-cols、.review-progress-track 等结构
+    3. 运行全程 0 ReferenceError、0 未定义变量
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    const elements = {};
+    global.document = {
+        _elements: elements,
+        getElementById(id) {
+            return elements[id] || null;
+        },
+        body: {
+            insertAdjacentHTML(pos, html) {
+                global.insertedHtml = html;
+            }
+        },
+        readyState: 'complete'
+    };
+    global.window = {
+        _reviewState: {
+            docId: 'test-doc.md',
+            activeLang: 'en',
+            showPreview: true,
+            showSource: false,
+            data: {
+                doc_title: 'Test Doc',
+                langs: {
+                    en: { is_missing: false, human_approved: true, reviewed_at: 1700000000 },
+                    ja: { is_missing: true }
+                },
+                source_paragraphs: [
+                    { index: 0, text: 'Hello world', type: 'text' },
+                    { index: 1, text: 'console.log(1)', type: 'code' }
+                ]
+            },
+            edits: {
+                en: {
+                    title: 'Test Doc EN',
+                    desc: 'Test Description',
+                    paragraphs: [
+                        { index: 0, text: 'Hello world translated', type: 'text', _edited: true },
+                        { index: 1, text: 'console.log(1)', type: 'code' }
+                    ]
+                }
+            }
+        },
+        availableLangs: [{ code: 'en', name: 'English', icon: '🌍' }],
+        marked: { parse: (t) => '<p>' + t + '</p>' }
+    };
+
+    // 1. 验证 review.template.js 骨架挂载与语义类
+    const templateCode = fs.readFileSync('web/dashboard/js/localization/review_shards/review.template.js', 'utf8');
+    eval(templateCode);
+
+    if (!global.insertedHtml || !global.insertedHtml.includes('review-drawer-overlay')) {
+        throw new Error('review.template.js failed: missing review-drawer-overlay class');
+    }
+    if (!global.insertedHtml.includes('review-drawer-window')) {
+        throw new Error('review.template.js failed: missing review-drawer-window class');
+    }
+    if (!global.insertedHtml.includes('review-view-toggle')) {
+        throw new Error('review.template.js failed: missing review-view-toggle');
+    }
+
+    // 2. 模拟真实 DOM 节点注入
+    function makeEl(id) {
+        elements[id] = {
+            id,
+            style: {},
+            classList: {
+                _classes: new Set(),
+                add(c) { this._classes.add(c); },
+                remove(c) { this._classes.delete(c); },
+                toggle(c, force) {
+                    if (force !== undefined) {
+                        if (force) this._classes.add(c);
+                        else this._classes.delete(c);
+                        return force;
+                    }
+                    if (this._classes.has(c)) { this._classes.delete(c); return false; }
+                    else { this._classes.add(c); return true; }
+                },
+                contains(c) { return this._classes.has(c); }
+            },
+            innerHTML: '',
+            textContent: ''
+        };
+        return elements[id];
+    }
+    ['review-drawer', 'review-drawer-title', 'review-lang-tabs', 'review-mode-alert', 'review-body', 'btn-view-source', 'btn-view-preview'].forEach(makeEl);
+
+    // 3. 加载前置依赖与主体渲染分片
+    const progressCode = fs.readFileSync('web/dashboard/js/localization/review_shards/review.render.progress.js', 'utf8');
+    eval(progressCode);
+
+    const bodyCode = fs.readFileSync('web/dashboard/js/localization/review_shards/review.render.body.js', 'utf8');
+    eval(bodyCode);
+
+    // 4. 执行渲染断言
+    _reviewRender();
+
+    const reviewBodyEl = global.document.getElementById('review-body');
+    if (!reviewBodyEl.innerHTML.includes('review-three-cols')) {
+        throw new Error('_reviewRender failed: missing review-three-cols');
+    }
+    if (!reviewBodyEl.innerHTML.includes('col-target') || !reviewBodyEl.innerHTML.includes('col-preview')) {
+        throw new Error('_reviewRender failed: missing column containers');
+    }
+
+    console.log('REVIEW_DRAWER_RENDER_DOM_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Review Drawer Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "REVIEW_DRAWER_RENDER_DOM_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_vault_drawer_and_ui_drawers_integrity():
+    """
+    🛡️ 通用抽屉与文库抽屉 (Drawers & Vault Drawer) 渲染函数沙箱与 DOM 拓扑完备性门禁 (Rule 7)
+    断言：
+    1. drawers.js 骨架生成包含 .vault-drawer-backdrop, .vault-drawer-shell, .plugin-drawer-overlay 等语义类
+    2. vault.drawer.cards.js 渲染卡片包含 .hosting-card, .hosting-card-header-row, .vault-preview-link
+    3. 运行全程 0 ReferenceError、0 模板断裂
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    global.window = {
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    };
+
+    // 1. 验证 drawers.js 通用抽屉骨架与语义类
+    const drawersCode = fs.readFileSync('web/dashboard/js/ui/drawers.js', 'utf8');
+    eval(drawersCode);
+
+    const drawersHtml = window.getUIDrawersHTML();
+    if (!drawersHtml || typeof drawersHtml !== 'string') {
+        throw new Error('getUIDrawersHTML failed to return HTML string');
+    }
+    if (!drawersHtml.includes('vault-drawer-backdrop')) {
+        throw new Error('drawers.js missing vault-drawer-backdrop class');
+    }
+    if (!drawersHtml.includes('vault-drawer-shell')) {
+        throw new Error('drawers.js missing vault-drawer-shell class');
+    }
+    if (!drawersHtml.includes('drawer-header-row')) {
+        throw new Error('drawers.js missing drawer-header-row class');
+    }
+    if (!drawersHtml.includes('plugin-drawer-overlay')) {
+        throw new Error('drawers.js missing plugin-drawer-overlay class');
+    }
+    if (!drawersHtml.includes('plugin-drawer-header')) {
+        throw new Error('drawers.js missing plugin-drawer-header class');
+    }
+
+    // 2. 验证 vault.drawer.cards.js 卡片渲染与语义类
+    const cardsCode = fs.readFileSync('web/dashboard/js/vault/drawer_shards/vault.drawer.cards.js', 'utf8');
+    eval(cardsCode);
+
+    const mockLocalDocs = [
+        { status: 'published', locale: '中文原稿', lang_code: 'zh', artifact_url: '/docs/index.html', tokens: 120, last_sync: '2026-09-18' }
+    ];
+    const localHtml = window.renderVaultLocalArtifactsHtml(mockLocalDocs, false, '');
+    if (!localHtml.includes('matrix-item') || !localHtml.includes('vault-preview-link')) {
+        throw new Error('renderVaultLocalArtifactsHtml missing matrix-item or vault-preview-link');
+    }
+
+    const mockHostingList = [
+        { id: 'github_pages', isReady: true, isBrandInUse: true, isChecked: true, name: 'GitHub Pages', icon: '🐙', desc: 'Git 自动化部署', record: null }
+    ];
+    const hostingHtml = window.renderVaultHostingCardsHtml(mockHostingList, 'Docs/index.md');
+    if (!hostingHtml.includes('hosting-card') || !hostingHtml.includes('hosting-card-header-row')) {
+        throw new Error('renderVaultHostingCardsHtml missing hosting-card or hosting-card-header-row');
+    }
+    if (!hostingHtml.includes('vault-hosting-platform-checkbox') || !hostingHtml.includes('hosting-desc-text')) {
+        throw new Error('renderVaultHostingCardsHtml missing checkbox or desc-text class');
+    }
+
+    console.log('VAULT_DRAWER_UI_DRAWERS_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Vault Drawer Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "VAULT_DRAWER_UI_DRAWERS_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_syndicate_drawer_render_integrity():
+    """
+    🛡️ [Rule 7 Gate] 验证社交媒体分发抽屉 (Syndicate Drawer) 渲染 DOM 完备性与样式类规范化契约
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    // 1. 构建 Mock DOM 环境
+    const elementsById = {};
+    const elementsByClass = {};
+    const createdElements = [];
+
+    class MockClassList {
+        constructor() { this.classes = new Set(); }
+        add(...cls) { cls.forEach(c => this.classes.add(c)); }
+        remove(...cls) { cls.forEach(c => this.classes.delete(c)); }
+        contains(c) { return this.classes.has(c); }
+        toggle(c, force) {
+            if (force === undefined) {
+                if (this.classes.has(c)) { this.classes.delete(c); return false; }
+                else { this.classes.add(c); return true; }
+            }
+            if (force) { this.classes.add(c); return true; }
+            else { this.classes.delete(c); return false; }
+        }
+        toString() { return Array.from(this.classes).join(' '); }
+    }
+
+    class MockElement {
+        constructor(tag) {
+            this.tagName = (tag || 'div').toUpperCase();
+            this.id = '';
+            this._className = '';
+            this.classList = new MockClassList();
+            this.style = {};
+            this.innerHTML = '';
+            this.attributes = {};
+            this.children = [];
+            this.parentElement = null;
+        }
+        set className(val) {
+            this._className = val || '';
+            this.classList.classes.clear();
+            if (val) val.split(/\\s+/).filter(Boolean).forEach(c => this.classList.add(c));
+        }
+        get className() {
+            return this.classList.toString();
+        }
+        appendChild(child) {
+            child.parentElement = this;
+            this.children.push(child);
+            return child;
+        }
+        querySelectorAll(selector) {
+            return [];
+        }
+        querySelector(selector) {
+            return null;
+        }
+    }
+
+    const documentMock = {
+        body: new MockElement('body'),
+        getElementById(id) {
+            return elementsById[id] || null;
+        },
+        createElement(tag) {
+            const el = new MockElement(tag);
+            createdElements.push(el);
+            Object.defineProperty(el, 'id', {
+                set: function(val) { this._id = val; elementsById[val] = this; },
+                get: function() { return this._id || ''; }
+            });
+            return el;
+        },
+        querySelectorAll(sel) {
+            return [];
+        },
+        querySelector(sel) {
+            return null;
+        }
+    };
+
+    global.window = {
+        apiFetch: async () => ({ records: [] }),
+        settingsData: {
+            current_brand: 'default',
+            syndication: {},
+            image_policy: { default_strategy: 'auto' }
+        },
+        allPlugins: [
+            { id: 'wechat', name: '微信公众号', category: 'publisher', icon: '🟢', sla_tier: 'tier2' },
+            { id: 'devto', name: 'Dev.to', category: 'publisher', icon: '📝', sla_tier: 'tier1' }
+        ],
+        getAvailableSyndicateLangs: () => [
+            { code: 'zh', name: '中文', icon: '🇨🇳', isSource: true },
+            { code: 'en', name: 'English', icon: '🇺🇸', isSource: false }
+        ]
+    };
+    global.document = documentMock;
+    global.requestAnimationFrame = (cb) => { if (cb) cb(); };
+    global.setTimeout = (cb) => { if (cb) cb(); };
+
+    // 2. 加载 Syndicate 相关分片
+    const cardsCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.cards.js', 'utf8');
+    eval(cardsCode);
+    const coverStudioCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.cover_studio.js', 'utf8');
+    eval(coverStudioCode);
+    const renderCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.render.js', 'utf8');
+    eval(renderCode);
+
+    (async () => {
+        // 3. 执行 openArticleSyndicationDrawer
+        await window.openArticleSyndicationDrawer('docs/guide.md', '用户手册');
+
+        const backdropEl = documentMock.getElementById('article-syndicate-drawer-backdrop');
+        if (!backdropEl) throw new Error('backdrop element not found');
+        if (!backdropEl.classList.contains('syndicate-drawer-backdrop')) {
+            throw new Error('backdrop missing syndicate-drawer-backdrop class');
+        }
+
+        const drawerEl = documentMock.getElementById('article-syndicate-drawer');
+        if (!drawerEl) throw new Error('drawer element not found');
+        if (!drawerEl.classList.contains('syndicate-drawer-shell')) {
+            throw new Error('drawer missing syndicate-drawer-shell class');
+        }
+
+        const html = drawerEl.innerHTML;
+        const requiredClasses = [
+            'syndicate-drawer-header',
+            'syndicate-drawer-title',
+            'drawer-doc-card',
+            'syndicate-drawer-body',
+            'syndicate-stage-view',
+            'syndicate-step-group',
+            'syndicate-step-label',
+            'syndicate-lang-picker',
+            'lang-radio-btn',
+            'syndicate-tip-box',
+            'syndicate-preview-entry',
+            'syndicate-drawer-footer',
+            'syndicate-start-btn'
+        ];
+
+        for (const cls of requiredClasses) {
+            if (!html.includes(cls)) {
+                throw new Error('Syndicate drawer DOM topology missing semantic class: ' + cls);
+            }
+        }
+
+        // 4. 验证关闭生命周期与 CSS 类协调
+        window.closeArticleSyndicationDrawer();
+        if (drawerEl.classList.contains('is-open')) {
+            throw new Error('closeArticleSyndicationDrawer failed to remove is-open from drawer');
+        }
+        if (backdropEl.classList.contains('is-open')) {
+            throw new Error('closeArticleSyndicationDrawer failed to remove is-open from backdrop');
+        }
+
+        console.log('SYNDICATE_DRAWER_VERIFIED_SUCCESS');
+    })().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Syndicate Drawer Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "SYNDICATE_DRAWER_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_syndicate_live_preview_modal_render_integrity():
+    """
+    🛰️ [V105.0] 全渠道排版即时审查弹窗与取景器渲染完整性与 DOM 拓扑门禁测试 (Phase 4 方向 A)
+    验证目标：
+    1. openSyndicateLivePreviewModal 生成的 DOM 具备完整的语义化 CSS 类拓扑，杜绝内联 style。
+    2. renderChannelCoverStudio 取景器工作台具有标准的 CSS 类拓扑（panel, header, viewport, grid, focal-hint）。
+    3. 弹窗打开与关闭生命周期与 is-open 状态类完全联动。
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    // 1. 模拟浏览器运行沙箱
+    const elementsById = {};
+    function createMockElement(tagName) {
+        const classListSet = new Set();
+        return {
+            tagName: (tagName || 'div').toUpperCase(),
+            style: {},
+            children: [],
+            className: '',
+            classList: {
+                add: (c) => classListSet.add(c),
+                remove: (c) => classListSet.delete(c),
+                contains: (c) => classListSet.has(c),
+            },
+            setAttribute: () => {},
+            getAttribute: () => null,
+            appendChild: function(c) { this.children.push(c); return c; },
+            removeChild: function(c) {
+                const idx = this.children.indexOf(c);
+                if (idx !== -1) this.children.splice(idx, 1);
+            },
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            querySelectorAll: () => [],
+            querySelector: () => null
+        };
+    }
+
+    const documentMock = {
+        getElementById: (id) => elementsById[id] || null,
+        createElement: (tag) => createMockElement(tag),
+        body: {
+            appendChild: (el) => {
+                if (el.id) elementsById[el.id] = el;
+                return el;
+            }
+        },
+        querySelectorAll: () => [],
+        querySelector: () => null,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    };
+
+    global.window = {
+        allPlugins: [{ id: 'wechat', name: '微信公众号', category: 'publisher', icon: '💬' }],
+        currentSyndicatingTitle: '测试排版文稿',
+        currentSyndicatingRelPath: 'articles/test.md',
+        currentSyndicateCover: { url: 'https://example.com/cover.png', overrides: {} },
+        showToast: () => {},
+        apiFetch: async () => ({ status: 'success', stats: { word_count: 1200 }, rendered_html: '<p>测试内容</p>' })
+    };
+    global.document = documentMock;
+
+    // 2. 加载 Preview 相关分片
+    const previewCoverCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.preview_cover.js', 'utf8');
+    eval(previewCoverCode);
+    const previewCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.preview.js', 'utf8');
+    eval(previewCode);
+
+    // 3. 执行 openSyndicateLivePreviewModal
+    window.openSyndicateLivePreviewModal();
+
+    const modalEl = documentMock.getElementById('syndicate-live-preview-modal-root');
+    if (!modalEl) throw new Error('Preview modal root not created');
+    if (!modalEl.classList.contains('is-open')) {
+        throw new Error('Preview modal root missing is-open class');
+    }
+    if (!modalEl.className.includes('syndicate-modal-backdrop')) {
+        throw new Error('Preview modal root missing syndicate-modal-backdrop class');
+    }
+
+    const html = modalEl.innerHTML;
+    const requiredModalClasses = [
+        'syndicate-preview-modal-card',
+        'syndicate-modal-header',
+        'syndicate-modal-title-group',
+        'syndicate-modal-title',
+        'syndicate-modal-subtitle',
+        'syndicate-modal-header-actions',
+        'syndicate-modal-tabs',
+        'syndicate-modal-channel-select',
+        'syndicate-modal-close-btn',
+        'syndicate-modal-toolbar',
+        'syndicate-modal-stats',
+        'syndicate-modal-actions',
+        'syndicate-modal-body',
+        'syndicate-card-preview-renderer'
+    ];
+    for (const cls of requiredModalClasses) {
+        if (!html.includes(cls)) {
+            throw new Error('Preview modal DOM topology missing class: ' + cls);
+        }
+    }
+
+    // 4. 验证取景器工作台渲染
+    const dummyStudioContainer = createMockElement('div');
+    window.renderChannelCoverStudio('wechat', dummyStudioContainer, 'https://example.com/cover.jpg');
+    const studioHtml = dummyStudioContainer.innerHTML;
+    const requiredStudioClasses = [
+        'channel-cover-studio-panel',
+        'channel-cover-studio-header',
+        'channel-cover-studio-title-box',
+        'channel-cover-studio-actions',
+        'channel-crop-viewport',
+        'channel-preview-cover-img',
+        'channel-crop-grid-overlay',
+        'channel-crop-focal-hint'
+    ];
+    for (const cls of requiredStudioClasses) {
+        if (!studioHtml.includes(cls)) {
+            throw new Error('Channel cover studio DOM topology missing class: ' + cls);
+        }
+    }
+
+    // 5. 验证关闭模态窗
+    window.closeSyndicateLivePreviewModal();
+    if (modalEl.classList.contains('is-open')) {
+        throw new Error('closeSyndicateLivePreviewModal failed to remove is-open class');
+    }
+
+    console.log('SYNDICATE_LIVE_PREVIEW_MODAL_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Syndicate Preview Modal Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "SYNDICATE_LIVE_PREVIEW_MODAL_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_syndicate_asset_picker_modal_render_integrity():
+    """
+    🛡️ 资产拾取弹窗与大图详情弹窗运行时沙箱与 DOM 拓扑完备性门禁测试 (Rule 7)
+    验证覆盖：
+    1. openSyndicateAssetPickerModal 创建并打开资产选择弹窗，验证 backdrop、card、header、actions、scroll-view、grid 拓扑
+    2. loadAssetsForCoverPicker 加载资产并渲染 item、thumb-box、img、engine-tag、meta-row、pagination 拓扑
+    3. closeSyndicateAssetPickerModal 正确移除 is-open 状态
+    4. showImageModal 创建并打开全屏大图详情弹窗，验证 card、header、viewport、footer、meta、download-btn 拓扑
+    5. closeGlobalImageDetailModal 正确移除 is-open 状态
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    const elementsById = {};
+    function createMockElement(tagName) {
+        const classListSet = new Set();
+        const el = {
+            tagName: (tagName || 'div').toUpperCase(),
+            style: {},
+            children: [],
+            className: '',
+            classList: {
+                add: (c) => classListSet.add(c),
+                remove: (c) => classListSet.delete(c),
+                contains: (c) => classListSet.has(c),
+            },
+            setAttribute: () => {},
+            getAttribute: () => null,
+            appendChild: function(c) { this.children.push(c); return c; },
+            removeChild: function(c) {
+                const idx = this.children.indexOf(c);
+                if (idx !== -1) this.children.splice(idx, 1);
+            },
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            querySelectorAll: () => [],
+            querySelector: () => null
+        };
+        return el;
+    }
+
+    const documentMock = {
+        getElementById: (id) => {
+            if (elementsById[id]) return elementsById[id];
+            // 若子元素包含在某个已挂载父容器的 innerHTML 中，动态创建并记录
+            for (const parent of Object.values(elementsById)) {
+                if (parent.innerHTML && parent.innerHTML.includes(`id="${id}"`)) {
+                    const child = createMockElement('div');
+                    child.id = id;
+                    elementsById[id] = child;
+                    return child;
+                }
+            }
+            return null;
+        },
+        createElement: (tag) => createMockElement(tag),
+        body: {
+            appendChild: (el) => {
+                if (el.id) elementsById[el.id] = el;
+                return el;
+            }
+        },
+        querySelectorAll: () => [],
+        querySelector: () => null,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    };
+
+    global.window = {
+        settingsData: {
+            image_policy: { default_strategy: 'auto' },
+            current_brand: 'default'
+        },
+        showToast: () => {},
+        apiFetch: async (url) => {
+            if (url.includes('/api/design/assets')) {
+                return {
+                    success: true,
+                    total: 2,
+                    total_pages: 1,
+                    assets: [
+                        { url: '/assets/sample1.png', engine: 'flux_schnell', strategy: 'ai_generation', created_at: '2026-09-18 10:00:00' },
+                        { url: '/assets/sample2.png', engine: 'dalle_3', strategy: 'ai_generation', created_at: '2026-09-18 10:05:00' }
+                    ]
+                };
+            }
+            return { success: true };
+        }
+    };
+    global.document = documentMock;
+
+    // 1. 加载 syndicate.cover_studio.js
+    const coverStudioCode = fs.readFileSync('web/dashboard/js/editorial/syndicate_shards/syndicate.cover_studio.js', 'utf8');
+    eval(coverStudioCode);
+
+    // 2. 验证 openSyndicateAssetPickerModal
+    window.openSyndicateAssetPickerModal().then(async () => {
+        const pickerModal = elementsById['syndicate-asset-picker-modal'];
+        if (!pickerModal) throw new Error('Asset picker modal not created in document');
+        if (!pickerModal.classList.contains('is-open')) {
+            throw new Error('Asset picker modal missing is-open class');
+        }
+        if (!pickerModal.className.includes('syndicate-asset-picker-backdrop')) {
+            throw new Error('Asset picker modal missing syndicate-asset-picker-backdrop class');
+        }
+
+        const pickerHtml = pickerModal.innerHTML;
+        const requiredPickerClasses = [
+            'syndicate-asset-picker-card',
+            'syndicate-asset-picker-header',
+            'syndicate-asset-picker-title-group',
+            'syndicate-asset-picker-title',
+            'syndicate-asset-picker-desc',
+            'syndicate-asset-picker-actions',
+            'syndicate-asset-picker-studio-btn',
+            'syndicate-asset-picker-close-btn',
+            'syndicate-asset-picker-scroll-view',
+            'syndicate-asset-picker-grid',
+            'syndicate-asset-picker-pagination'
+        ];
+        for (const cls of requiredPickerClasses) {
+            if (!pickerHtml.includes(cls)) {
+                throw new Error('Asset picker DOM topology missing class: ' + cls);
+            }
+        }
+
+        // 3. 验证 loadAssetsForCoverPicker 渲染的子卡片与分页
+        await window.loadAssetsForCoverPicker(1);
+        const gridEl = elementsById['syndicate-asset-picker-grid'];
+        const gridHtml = gridEl.innerHTML || '';
+        const requiredGridClasses = [
+            'syndicate-asset-item',
+            'syndicate-asset-thumb-box',
+            'syndicate-asset-img',
+            'syndicate-asset-engine-tag',
+            'syndicate-asset-meta-row',
+            'syndicate-asset-engine-name',
+            'syndicate-asset-date'
+        ];
+        for (const cls of requiredGridClasses) {
+            if (!gridHtml.includes(cls)) {
+                throw new Error('Asset grid DOM topology missing class: ' + cls);
+            }
+        }
+
+        const pagEl = elementsById['syndicate-asset-picker-pagination'];
+        const pagHtml = pagEl.innerHTML || '';
+        const requiredPagClasses = [
+            'syndicate-asset-picker-page-info',
+            'syndicate-asset-picker-page-current',
+            'syndicate-asset-picker-page-actions',
+            'syndicate-asset-picker-page-btn'
+        ];
+        for (const cls of requiredPagClasses) {
+            if (!pagHtml.includes(cls)) {
+                throw new Error('Asset pagination DOM topology missing class: ' + cls);
+            }
+        }
+
+        // 4. 验证 closeSyndicateAssetPickerModal
+        window.closeSyndicateAssetPickerModal();
+        if (pickerModal.classList.contains('is-open')) {
+            throw new Error('closeSyndicateAssetPickerModal failed to remove is-open class');
+        }
+
+        // 5. 验证 showImageModal
+        window.showImageModal('https://example.com/original.jpg', '测试封面原图', { ratio: '16:9', strategy: 'ai_generation' });
+        const imgModal = elementsById['global-image-detail-modal'];
+        if (!imgModal) throw new Error('Global image detail modal not created');
+        if (!imgModal.classList.contains('is-open')) {
+            throw new Error('Global image detail modal missing is-open class');
+        }
+        if (!imgModal.className.includes('syndicate-image-detail-backdrop')) {
+            throw new Error('Global image detail modal missing syndicate-image-detail-backdrop class');
+        }
+
+        const imgModalHtml = imgModal.innerHTML;
+        const requiredImgModalClasses = [
+            'syndicate-image-detail-card',
+            'syndicate-image-detail-header',
+            'syndicate-image-detail-title',
+            'syndicate-image-detail-close-btn',
+            'syndicate-image-detail-viewport',
+            'syndicate-image-detail-img',
+            'syndicate-image-detail-footer',
+            'syndicate-image-detail-meta',
+            'syndicate-image-detail-meta-val',
+            'syndicate-image-detail-meta-val--purple',
+            'syndicate-image-detail-actions',
+            'syndicate-image-detail-download-btn',
+            'syndicate-image-detail-btn'
+        ];
+        for (const cls of requiredImgModalClasses) {
+            if (!imgModalHtml.includes(cls)) {
+                throw new Error('Image detail modal DOM topology missing class: ' + cls);
+            }
+        }
+
+        // 6. 验证 closeGlobalImageDetailModal
+        window.closeGlobalImageDetailModal();
+        if (imgModal.classList.contains('is-open')) {
+            throw new Error('closeGlobalImageDetailModal failed to remove is-open class');
+        }
+
+        console.log('SYNDICATE_ASSET_PICKER_AND_IMAGE_DETAIL_MODAL_VERIFIED_SUCCESS');
+    }).catch(e => {
+        console.error(e);
+        process.exit(1);
+    });
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Syndicate Asset Picker & Image Modal Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "SYNDICATE_ASSET_PICKER_AND_IMAGE_DETAIL_MODAL_VERIFIED_SUCCESS" in res.stdout
+
+
+

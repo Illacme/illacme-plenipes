@@ -158,3 +158,11 @@ class SQLiteSyndicationMixin:
                     f"DELETE FROM syndication_records WHERE rel_path IN ({placeholders}) AND target_id = ?",
                     (*candidates, target_id)
                 )
+
+    def list_all_syndication_records(self, limit: int = 200, offset: int = 0) -> list:
+        """🚀 [V121.0] 全局分发账本查询：获取全站所有渠道的历史成功分发物权记录"""
+        rows = self._get_conn().execute(
+            "SELECT * FROM syndication_records ORDER BY id DESC LIMIT ? OFFSET ?",
+            (limit, offset)
+        ).fetchall()
+        return [dict(r) for r in rows]

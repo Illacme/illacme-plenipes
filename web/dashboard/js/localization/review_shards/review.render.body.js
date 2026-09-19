@@ -55,19 +55,13 @@ function _reviewRenderBody() {
     const state = window._reviewState;
     const lc = state.activeLang;
     if (!state.data) return;
-    document.getElementById('review-body').style.padding = '0';
-    document.getElementById('review-body').style.gap = '0';
     const btnSource = document.getElementById('btn-view-source');
     const btnPreview = document.getElementById('btn-view-preview');
     if (btnSource) {
-        btnSource.style.background = state.showSource ? 'rgba(255,255,255,0.1)' : 'transparent';
-        btnSource.style.color = state.showSource ? 'var(--text-bright)' : 'var(--text-dim)';
-        btnSource.style.border = state.showSource ? '1px solid var(--accent-primary)' : '1px solid transparent';
+        btnSource.classList.toggle('active', !!state.showSource);
     }
     if (btnPreview) {
-        btnPreview.style.background = state.showPreview ? 'rgba(255,255,255,0.1)' : 'transparent';
-        btnPreview.style.color = state.showPreview ? 'var(--text-bright)' : 'var(--text-dim)';
-        btnPreview.style.border = state.showPreview ? '1px solid var(--accent-primary)' : '1px solid transparent';
+        btnPreview.classList.toggle('active', !!state.showPreview);
     }
     const ld = state.data.langs[lc] || {};
     const edit = state.edits[lc] || {};
@@ -115,7 +109,7 @@ function _reviewRenderBody() {
                 icon = '⏳ 进行中';
                 style = 'color:var(--accent-primary); font-weight:bold; animation: reviewPulse 1.5s infinite;';
             }
-            return `<div style="display:flex; justify-content:space-between; padding:8px 12px; margin-bottom:8px; border-radius:6px; background:rgba(255,255,255,0.02); font-size:0.85rem; ${style}"><span>${s.name} <small style="opacity:0.8;font-size:0.75rem;">(${s.desc})</small></span><span>${icon}</span></div>`;
+            return `<div class="review-step-item" style="${style}"><span>${s.name} <small style="opacity:0.8;font-size:0.75rem;">(${s.desc})</small></span><span>${icon}</span></div>`;
         }).join('');
 
         targetHtml = `<div style="padding:20px;">
@@ -123,20 +117,20 @@ function _reviewRenderBody() {
                 <span>🌍 全局翻译管线处理中 - ${lc.toUpperCase()}</span>
                 <span id="review-main-progress-percent" style="font-size:0.82rem; color:var(--accent-primary); font-family:monospace;">${progress}%</span>
             </div>
-            <div style="background:rgba(255,255,255,0.05); border-radius:8px; height:8px; width:100%; overflow:hidden; margin-bottom:16px;">
-                <div id="review-main-progress-bar" style="background:linear-gradient(90deg, var(--accent-primary) 0%, #ffc107 100%); width:${progress}%; height:100%; transition:width 0.4s ease;"></div>
+            <div class="review-progress-track">
+                <div id="review-main-progress-bar" class="review-progress-fill" style="width:${progress}%;"></div>
             </div>
 
             <!-- 📊 双轨处理进度卡片 -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
-                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+            <div class="review-progress-card-grid">
+                <div class="review-progress-card">
                     <div style="font-size:0.8rem; font-weight:bold; color:var(--text-bright); margin-bottom:6px;">📄 正文段落翻译</div>
                     <div id="review-para-progress-text" style="font-size:0.78rem; color:var(--text-dim); margin-bottom:8px;">${tParas} / ${totalParas} 段已就绪 (${paraPercent}%)</div>
-                    <div style="background:rgba(255,255,255,0.05); border-radius:4px; height:4px; width:100%; overflow:hidden;">
-                        <div id="review-para-progress-bar" style="background:var(--accent-primary); width:${paraPercent}%; height:100%; transition:width 0.3s ease;"></div>
+                    <div class="review-progress-track mini">
+                        <div id="review-para-progress-bar" class="review-progress-fill primary" style="width:${paraPercent}%;"></div>
                     </div>
                 </div>
-                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+                <div class="review-progress-card">
                     <div style="font-size:0.8rem; font-weight:bold; color:var(--text-bright); margin-bottom:6px;">🏷️ 元数据生成与润色</div>
                     <div id="review-meta-progress-text" style="font-size:0.78rem; ${metaStyle} font-weight:bold; margin-bottom:8px;">${metaStatus}</div>
                     <div style="font-size:0.72rem; color:var(--text-dim);">包含 Title, Description 与 Tags</div>
@@ -228,18 +222,18 @@ function _reviewRenderBody() {
     }
 
     // 3. 构建原文参考分栏 (Source Column)
-    const sourceHtml = `<div style="padding:20px 20px 20px 30px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>📜 原文参考 (Source)</label></div><div class="review-field"><label>📌 原文标题 (Source Title)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5;">${_escapeHtml(state.data.source_title || '无标题')}</div></div><div class="review-field"><label>🏷️ 原文描述 (Source Description)</label><div style="background:rgba(255,255,255,0.02); opacity:0.8; padding:10px 14px; border-radius:6px; font-size:0.84rem; color:var(--text-dim); border:1px solid var(--glass-border); line-height:1.5; white-space:pre-wrap;">${_escapeHtml(state.data.source_desc || '无描述')}</div></div><div class="review-field"><label>📄 原文正文段落 (Source Paragraphs)</label><div class="review-paras-container" id="source-paras-container">${sourceParas.map(sp => (sp.type === 'spacer' || sp.index < 0) ? `<div class="review-para-block spacer-only" style="background:transparent; border:none; margin:4px 0; opacity:0.5;"><div class="review-para-text" style="color:var(--text-dim); font-size:0.8rem; font-family:monospace; margin:0;">${_escapeHtml(sp.text)}</div></div>` : `<div id="source-para-${sp.index}" class="review-para-block source-only" style="background:rgba(255,255,255,0.02); opacity:0.8; margin-bottom:6px; padding:6px 12px; border-radius:6px;"><div class="review-para-top-bar" style="border:none; margin-bottom:2px;"><span class="review-para-num">#${sp.index + 1}</span></div><div class="review-para-text" style="color:var(--text-dim); font-size:0.85rem; line-height:1.6; font-family:inherit; white-space:pre-wrap; margin:0;">${_escapeHtml(sp.text)}</div></div>`).join('')}</div></div></div>`;
+    const sourceHtml = `<div style="padding:20px 20px 20px 30px; display:flex; flex-direction:column; gap:16px;"><div class="review-field" style="margin:0;"><label>📜 原文参考 (Source)</label></div><div class="review-field"><label>📌 原文标题 (Source Title)</label><div class="review-source-readonly-box">${_escapeHtml(state.data.source_title || '无标题')}</div></div><div class="review-field"><label>🏷️ 原文描述 (Source Description)</label><div class="review-source-readonly-box" style="white-space:pre-wrap;">${_escapeHtml(state.data.source_desc || '无描述')}</div></div><div class="review-field"><label>📄 原文正文段落 (Source Paragraphs)</label><div class="review-paras-container" id="source-paras-container">${sourceParas.map(sp => (sp.type === 'spacer' || sp.index < 0) ? `<div class="review-para-block spacer-only" style="background:transparent; border:none; margin:4px 0; opacity:0.5;"><div class="review-para-text" style="color:var(--text-dim); font-size:0.8rem; font-family:monospace; margin:0;">${_escapeHtml(sp.text)}</div></div>` : `<div id="source-para-${sp.index}" class="review-para-block source-only" style="opacity:0.85; margin-bottom:6px; padding:6px 12px; border-radius:6px;"><div class="review-para-top-bar" style="border:none; margin-bottom:2px;"><span class="review-para-num">#${sp.index + 1}</span></div><div class="review-para-text" style="color:var(--text-dim); font-size:0.85rem; line-height:1.6; font-family:inherit; white-space:pre-wrap; margin:0;">${_escapeHtml(sp.text)}</div></div>`).join('')}</div></div></div>`;
 
     const displayPreview = state.showPreview ? 'block' : 'none';
     const displaySource = state.showSource ? 'block' : 'none';
-    const borderTarget = (state.showPreview || state.showSource) ? '1px solid var(--glass-border)' : 'none';
-    const borderPreview = (state.showPreview && state.showSource) ? '1px solid var(--glass-border)' : 'none';
+    const borderTargetClass = (state.showPreview || state.showSource) ? 'bordered' : '';
+    const borderPreviewClass = (state.showPreview && state.showSource) ? 'bordered' : '';
 
     document.getElementById('review-body').innerHTML = `
-        <div style="display:flex; height:100%; width:100%; overflow:hidden;">
-            <div style="flex:1; min-width:0; border-right:${borderTarget}; overflow-y:auto;" id="col-target"></div>
-            <div style="flex:1; min-width:0; border-right:${borderPreview}; overflow-y:auto; display:${displayPreview};" id="col-preview"></div>
-            <div style="flex:1; min-width:0; overflow-y:auto; display:${displaySource};" id="col-source"></div>
+        <div class="review-three-cols">
+            <div class="review-col ${borderTargetClass}" id="col-target"></div>
+            <div class="review-col ${borderPreviewClass}" style="display:${displayPreview};" id="col-preview"></div>
+            <div class="review-col" style="display:${displaySource};" id="col-source"></div>
         </div>
     `;
 

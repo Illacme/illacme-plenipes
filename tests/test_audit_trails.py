@@ -3,7 +3,7 @@
 验证操作审计日志 (Audit Trails) 功能。
 确保在：
 1. 大模型算力节点被调用完成时 (COMPUTE_NODE_CALLED)
-2. 出版版图配置发生切换、添加、删除，以及主备节点配置变更时 (PUBLISH_LAYOUT_CHANGED)
+2. 出版品牌配置发生切换、添加、删除，以及主备节点配置变更时 (PUBLISH_LAYOUT_CHANGED)
 系统能够忠实、合规地在审计账本中写入记录。
 """
 import pytest
@@ -72,7 +72,7 @@ async def test_imprint_changes_audit(monkeypatch):
     monkeypatch.setattr("core.runtime.cli_bootstrap.deep_reload_imprint", lambda x: True)
     
     # 1. 测试创建品牌
-    res_add = await add_imprint({"name": "new_imp", "path": "/path/to/imp", "press_name": "press1"})
+    res_add = await add_imprint({"imprint_id": "new_imp", "vault_root": "/path/to/imp", "imprint_name": "press1"})
     assert res_add["success"] is True
     assert mock_ledger.log.call_count == 1
     assert mock_ledger.log.call_args[1]["event_type"] == "PUBLISH_LAYOUT_CHANGED"
@@ -85,7 +85,7 @@ async def test_imprint_changes_audit(monkeypatch):
     assert res_switch["success"] is True
     assert mock_ledger.log.call_count == 1
     assert mock_ledger.log.call_args[1]["event_type"] == "PUBLISH_LAYOUT_CHANGED"
-    assert "切换当前出版版图" in mock_ledger.log.call_args[1]["details"]
+    assert "切换当前出版品牌" in mock_ledger.log.call_args[1]["details"]
     
     mock_ledger.reset_mock()
     
@@ -95,7 +95,7 @@ async def test_imprint_changes_audit(monkeypatch):
     assert mock_ledger.log.call_count == 1
     assert mock_ledger.log.call_args[1]["event_type"] == "PUBLISH_LAYOUT_CHANGED"
     assert mock_ledger.log.call_args[1]["severity"] == "WARNING"  # 删除行为是 WARNING 级别
-    assert "删除了出版版图" in mock_ledger.log.call_args[1]["details"]
+    assert "删除了出版品牌" in mock_ledger.log.call_args[1]["details"]
 
 @pytest.mark.anyio
 async def test_update_compute_node_audit(monkeypatch):

@@ -54,7 +54,7 @@ async def probe_plugin_impl(payload: dict) -> dict:
             return {
                 "success": True,
                 "healthy": False,
-                "message": f"当前版图尚未配置或启用任何基于 {plugin_id} 协议的算力单元，请先在[算力中心]页面添加并配置节点。"
+                "message": f"当前品牌尚未配置或启用任何基于 {plugin_id} 协议的算力单元，请先在[算力中心]页面添加并配置节点。"
             }
 
         from core.logic.diagnostics.component_monitor import ComponentMonitor
@@ -96,7 +96,7 @@ async def probe_plugin_impl(payload: dict) -> dict:
                 return {
                     "success": True,
                     "healthy": False,
-                    "message": f"当前版图配置 of {plugin_id} 算力单元均处于禁用状态，请在[算力中心]启用它们。"
+                    "message": f"当前品牌配置 of {plugin_id} 算力单元均处于禁用状态，请在[算力中心]启用它们。"
                 }
             msg = "所有配置的算力单元连接失败：\n" + "\n".join(failed_nodes)
             return {"success": True, "healthy": False, "message": msg}

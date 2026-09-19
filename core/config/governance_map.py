@@ -45,7 +45,7 @@ GOVERNANCE_RULES = {
         r"^metadata_dir$",                  # 品牌治理账本目录
         r"^active_theme$",                 # 品牌视觉风格
         r"^site_url$",                     # 品牌发布域名
-        r"^i18n_settings\..*$",            # 品牌多语种版图
+        r"^i18n_settings\..*$",            # 品牌多语种矩阵
         r"^seo_settings\..*$",             # 品牌搜索优化策略
         r"^ingress_settings\..*$",         # 品牌输入感应标准
         r"^image_settings\..*$",           # 品牌资产处理标准

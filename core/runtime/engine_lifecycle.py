@@ -38,12 +38,12 @@ def deep_reload_imprint(imprint_id: str):
         try:
             tlog.info("🐕 [主权迁移] 正在注销旧有的同步守护进程...")
             _GLOBAL_OBSERVER.stop()
-            _GLOBAL_OBSERVER.join(timeout=1.0)
+            _GLOBAL_OBSERVER.join(timeout=0.2)
             set_global_observer(None)
         except: pass
 
     try:
-        # 1. 优先校验并实例化新版图配置与引擎（物理原子性：预检失败则绝不更新 config.local.yaml）
+        # 1. 优先校验并实例化新品牌配置与引擎（物理原子性：预检失败则绝不更新 config.local.yaml）
         from core.config.config import ConfigManager
         config_path = _GLOBAL_ARGS.config
         manager = ConfigManager(config_path, imprint_id=imprint_id)
@@ -58,7 +58,7 @@ def deep_reload_imprint(imprint_id: str):
             tlog.error("🛑 [重载失败] 引擎工厂组装失败。")
             return False
 
-        # 3. 预检与组装全成功后，安全更新 Local 缓存中的激活版图
+        # 3. 预检与组装全成功后，安全更新 Local 缓存中的激活品牌
         try:
             local_path = CONFIG_LOCAL_NAME
             existing_local = {}
@@ -66,23 +66,23 @@ def deep_reload_imprint(imprint_id: str):
                 with open(local_path, "r", encoding="utf-8") as f:
                     existing_local = yaml.safe_load(f) or {}
             
-            # 🚀 [V55.10] 主权迁移保障：确保在消杀前将关键路径固化到版图层
+            # 🚀 [V55.10] 主权迁移保障：确保在消杀前将关键路径固化到品牌层
             if imprint_id != "default":
                 target_imprint_yaml = os.path.join(IMPRINT_DIR, imprint_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
                 if os.path.exists(target_imprint_yaml):
                     with open(target_imprint_yaml, "r", encoding="utf-8") as f:
                         target_cfg = yaml.safe_load(f) or {}
                     
-                    # 如果版图内缺失 vault_root，则从当前 local 补全
+                    # 如果品牌内缺失 vault_root，则从当前 local 补全
                     if not target_cfg.get("vault_root") and existing_local.get("vault_root"):
                         target_cfg["vault_root"] = existing_local["vault_root"]
                         from core.utils.common import promote_config_keys
                         target_cfg = promote_config_keys(target_cfg)
                         with open(target_imprint_yaml, "w", encoding="utf-8") as f:
                             yaml.safe_dump(target_cfg, f, allow_unicode=True)
-                        tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至版图配置: {imprint_id}")
+                        tlog.debug(f"🏗️ [主权固化] 已将金库路径迁移至品牌配置: {imprint_id}")
             else:
-                # 🚀 [V75.7] 切换回 default 版图时的物理自愈对正
+                # 🚀 [V75.7] 切换回 default 品牌时的物理自愈对正
                 if isinstance(existing_local, dict) and not existing_local.get("vault_root"):
                     cur_engine = get_global_engine()
                     if cur_engine and getattr(cur_engine, 'config', None) and getattr(cur_engine.config, 'vault_root', None):
@@ -101,7 +101,7 @@ def deep_reload_imprint(imprint_id: str):
             existing_local = promote_config_keys(existing_local)
             with open(local_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(existing_local, f, allow_unicode=True)
-            tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活版图为 '{imprint_id}'。")
+            tlog.success(f"🛡️ [物理对齐] 已安全更新 Local 缓存中的激活品牌为 '{imprint_id}'。")
         except Exception as ex:
             tlog.warning(f"⚠️ [物理消杀失败] {ex}")
             
@@ -134,14 +134,14 @@ def deep_reload_imprint(imprint_id: str):
             new_observer, _ = start_watchdog(new_engine, _GLOBAL_ARGS, current_files)
             set_global_observer(new_observer)
             
-        # 6. 🚀 [V100.7] 广播配置重载信号，确保事件总线驱动的组件感知到版图切换
+        # 6. 🚀 [V100.7] 广播配置重载信号，确保事件总线驱动的组件感知到品牌切换
         try:
             from core.utils.event_bus import bus
             bus.emit("CONFIG_RELOADED", config=new_engine.config)
         except Exception:
             pass
 
-        tlog.success(f"✅ [迁移完成] 出版版图已成功切换至 '{imprint_id}'，物理主权已全面对正。")
+        tlog.success(f"✅ [迁移完成] 出版品牌已成功切换至 '{imprint_id}'，物理主权已全面对正。")
         return True
         
     except Exception as e:

@@ -24,6 +24,7 @@ from adapters.egress.syndication.wechat_shards.wechat_uploader import (
     transmute_article_images,
     ensure_valid_thumb_media_id,
     generate_default_cover_bytes,
+    clear_thumb_cache,
 )
 from services.api.routes.gov.context_shards.social_shards.social_domestic import probe_domestic_social
 
@@ -31,6 +32,7 @@ from services.api.routes.gov.context_shards.social_shards.social_domestic import
 class TestWeChatSyndicationFlow(unittest.TestCase):
 
     def setUp(self):
+        clear_thumb_cache()
         self.config = {
             "enabled": True,
             "app_id": "wx_unit_test_appid",
@@ -39,6 +41,9 @@ class TestWeChatSyndicationFlow(unittest.TestCase):
             "proxy": "direct",
         }
         self.syndicator = WeChatSyndicator(self.config)
+
+    def tearDown(self):
+        clear_thumb_cache()
 
     # ─────────────────────────────────────────────────────────────
     # 1. Access Token 缓存与 40164 白名单诊断

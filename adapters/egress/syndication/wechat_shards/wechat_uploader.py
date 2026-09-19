@@ -206,6 +206,11 @@ def generate_default_cover_bytes() -> bytes:
 
 _thumb_cache: Dict[str, str] = {}
 
+def clear_thumb_cache() -> None:
+    """清空微信封面永久素材内存缓存"""
+    global _thumb_cache
+    _thumb_cache.clear()
+
 def upload_wechat_thumb(image_bytes: bytes, filename: str, access_token: str, proxy: Optional[str] = None, timeout: int = 15) -> Optional[str]:
     """调用微信官方 material/add_material 接口上传封面永久素材并返回 media_id"""
     if not image_bytes or not access_token:

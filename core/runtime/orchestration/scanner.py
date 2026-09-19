@@ -103,13 +103,10 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                 seo_data = doc_info.get("seo_data") or {}
                 if "word_count" not in seo_data:
                     try:
-                        import re
+                        from core.utils.text import calculate_universal_word_count
                         with open(os.path.join(root, f), 'r', encoding='utf-8') as _fh:
                             _c = _fh.read()
-                            _clean = re.sub(r'[\s\n\t]+', ' ', _c)
-                            _en = len(re.findall(r'[a-zA-Z0-9\-\']+', _clean))
-                            _zh = len(re.findall(r'[\u4e00-\u9fa5]', _c))
-                            seo_data["word_count"] = _en + _zh
+                            seo_data["word_count"] = calculate_universal_word_count(_c)
                     except Exception:
                         seo_data["word_count"] = 0
 

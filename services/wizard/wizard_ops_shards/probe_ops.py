@@ -109,7 +109,7 @@ def probe_nodes_logic():
             "imprint_name": random_id,
             "provider": rec_p,
             "model": rec_m,
-            "vault": vault_suggestions[0]["path"] if vault_suggestions else "./manuscripts"
+            "vault_root": vault_suggestions[0]["path"] if vault_suggestions else "./manuscripts"
         },
         "vault_suggestions": vault_suggestions,
         "github_suggestion": github_suggestion,

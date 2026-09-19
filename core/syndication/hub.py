@@ -114,7 +114,7 @@ class ContentSyndicator:
             target_plugins_lower = None
 
         for plugin in self.plugins:
-            plugin_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__).lower()
+            plugin_id = (getattr(plugin, 'PLUGIN_ID', None) or plugin.__class__.__name__).lower()
             instance_id = getattr(plugin, 'instance_id', plugin_id).lower()
             if target_plugins_lower is not None:
                 if plugin_id not in target_plugins_lower and instance_id not in target_plugins_lower:
@@ -141,7 +141,7 @@ class ContentSyndicator:
 
     def _dispatch_to_plugin(self, plugin, title, slug, content, metadata, rel_path, lang_code, is_dry_run, **kwargs):
         """🛡️ 扁平化重构：原子化执行单平台分发"""
-        target_id = getattr(plugin, 'PLUGIN_ID', plugin.__class__.__name__)
+        target_id = getattr(plugin, 'PLUGIN_ID', None) or plugin.__class__.__name__
         try:
             force_push = kwargs.get('force_push', False)
             if not force_push and not plugin.is_enabled(rel_path, lang_code):

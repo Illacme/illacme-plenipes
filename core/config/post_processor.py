@@ -163,10 +163,10 @@ def smart_normalize_i18n(manager) -> None:
 def validate_paths(manager) -> None:
     """🚀 [V52.10] 物理路径校验：仅在主权已确立的情况下强制拦截"""
     raw_vault = manager.config.vault_root
-    imp_id = getattr(manager, 'imprint_id', None) or manager.config.active_imprint or '当前版图'
+    imp_id = getattr(manager, 'imprint_id', None) or manager.config.active_imprint or '当前品牌'
     if not raw_vault:
         if manager.config.active_imprint:
-            raise ValueError(f"版图 [{imp_id}] 未指定原稿文库路径 (vault_root)。")
+            raise ValueError(f"品牌 [{imp_id}] 未指定原稿文库路径 (vault_root)。")
         return
 
     abs_vault = os.path.abspath(os.path.expanduser(raw_vault))

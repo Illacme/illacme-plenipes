@@ -31,7 +31,7 @@ cover: /api/design/assets/covers/cover_62521d7ef65f.jpg
 
     <a href="./multi-imprint-sovereignty.html" class="card-pioneer">
         <span class="card-tag">品牌矩阵</span>
-        <h3>🏷️ 多品牌主权版图矩阵</h3>
+        <h3>🏷️ 多品牌主权矩阵</h3>
         <p>单一文库物理驱动多品牌独立出版，各品牌独立装帧主题、出版模式与分发渠道。</p>
     </a>
 

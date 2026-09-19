@@ -120,7 +120,7 @@ class ContractGuard:
 
     @staticmethod
     def verify_structure_integrity() -> List[str]:
-        """🚀 [V48.3] 架构指纹审计：锁定物理目录版图"""
+        """🚀 [V48.3] 架构指纹审计：锁定物理目录拓扑架构"""
         violations = []
         baseline_path = ".plenipes/governance/structure.baseline"
         

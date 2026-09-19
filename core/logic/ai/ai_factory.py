@@ -85,7 +85,7 @@ class TranslatorFactory:
 
     @classmethod
     def _build_node(cls, node_name, trans_cfg, role='primary'):
-        """🚀 [V66.5] 核心对正逻辑：物理底座与版图策略的动态合成"""
+        """🚀 [V66.5] 核心对正逻辑：物理底座与品牌策略的动态合成"""
         
         # 1. 强制从新版“物理底座 (compute_nodes)”中提取物理参数
         physical_node = trans_cfg.compute_nodes.get(node_name)
@@ -93,7 +93,7 @@ class TranslatorFactory:
         if not physical_node:
             raise ValueError(f"❌ [算力网关] 未能对正物理节点: {node_name}。请先在‘算力底座’中配置。")
             
-        tlog.info(f"🛰️ [主权对正] 正在将版图策略注入物理底座: {node_name} (Role: {role})")
+        tlog.info(f"🛰️ [主权对正] 正在将品牌策略注入物理底座: {node_name} (Role: {role})")
         # 动态决定模型（优先使用品牌装帧调度策略 primary_model / fallback_model；若未显式指定，则降级回退至物理节点的默认模型）
         node_model = getattr(physical_node, 'model', None)
         brand_model = getattr(trans_cfg, f"{role}_model", None)
@@ -241,7 +241,7 @@ class TranslatorFactory:
             raise ValueError(f"❌ 不支持的分流策略: {strategy}")
 
         except Exception as e:
-            tlog.warning(f"📡 [算力对正] 检测到版图配置缺失或冲突: {e}")
+            tlog.warning(f"📡 [算力对正] 检测到品牌配置缺失或冲突: {e}")
             tlog.info("  └── 🛡️ [主权自愈] 系统已自动挂载“模拟算力”镜像，确保出版管线物理连续。")
             
             # 🚀 [V74.8] 极致降级：通过注册表动态获取 Mock 协议，规避物理路径依赖

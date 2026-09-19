@@ -58,11 +58,11 @@ cover: /api/design/assets/covers/cover_da38e436da84.jpg
 ### 1. 原稿文库只读红线 (Vault Read-Only Sentry)
 系统对创作者的原稿目录（`vault/`）采用只读扫描与哈希索引，**绝不在原稿目录中写入任何临时构建文件或缓存数据库**。
 
-### 2. 品牌版图物理隔离 (Imprint Territory Sovereignty)
+### 2. 出版品牌物理隔离 (Imprint Sovereignty)
 每个品牌拥有独立的文件树（`imprints/{brand}/`），其配置文件、元数据账本（`ledger.db`）、装帧产物及日志均独立隔离，互不干扰。
 
 ### 3. 主题母本只读隔离 (Mother Theme Isolation)
-系统自带的官方主题模板（`themes/`）作为纯净的只读母本（Mother Themes）。所有构建产物和用户静态输出均定向写入版图或全局 `dist/`，严禁污染母本目录。
+系统自带的官方主题模板（`themes/`）作为纯净的只读母本（Mother Themes）。所有构建产物和用户静态输出均定向写入对应品牌目录或全局 `dist/`，严禁污染母本目录。
 
 ### 4. 算力密钥本地加密隔离 (Credential Vault)
 所有 API 密钥在落盘时均经过主权密文加密（`enc:...`），主配置文件中严禁存储明文 Key，杜绝代码提交导致的密钥泄露。

@@ -22,7 +22,6 @@ router.include_router(prompt_router)
 router.include_router(hosting_router)
 router.include_router(upload_router)
 router.include_router(batch_router)
-
 from .system import verify_token
 
 class CoverPreviewRequest(BaseModel):
@@ -32,7 +31,8 @@ class CoverPreviewRequest(BaseModel):
     offset: Optional[int] = 0
     title: Optional[str] = None
     lang_code: Optional[str] = None
-    focal_y: Optional[float] = 0.5; focal_x: Optional[float] = 0.5
+    focal_y: Optional[float] = 0.5
+    focal_x: Optional[float] = 0.5
 
 class ImagePolicyUpdateRequest(BaseModel):
     default_strategy: str = "auto"

@@ -135,7 +135,8 @@ class TestFullChainSovereignty(unittest.TestCase):
                     engine.bus.emit("SYNC_COMPLETED", engine=engine)
                     
                     from core.syndication.publisher import PublisherService
-                    pub_service = PublisherService(engine.config.dict() if hasattr(engine.config, 'dict') else engine.config)
+                    config_data = engine.config.model_dump() if hasattr(engine.config, 'model_dump') else (engine.config.dict() if hasattr(engine.config, 'dict') else engine.config)
+                    pub_service = PublisherService(config_data)
                     pub_service.run_syndication(engine.config.output_paths.get('site_dir') if isinstance(engine.config.output_paths, dict) else getattr(engine.config.output_paths, 'site_dir', ''), {})
         
                     # 6. 终极验证

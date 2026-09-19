@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🧙‍♂️ init_ops.py - 主权点火逻辑：版图初始化、SQLite 库表自愈、本地多维合并配置注入、算力节点去重复用和主题目录物理搬迁
+🧙‍♂️ init_ops.py - 主权点火逻辑：品牌初始化、SQLite 库表自愈、本地多维合并配置注入、算力节点去重复用和主题目录物理搬迁
 """
 
 import os
@@ -15,12 +15,12 @@ from core.governance.license_guard import LicenseGuard
 from core.utils.tracing import tlog
 
 def init_press_logic(req, shutdown_cb=None):
-    imp_id = req.imprint_id or req.press_name
-    imp_name = req.imprint_name or req.press_name or imp_id
+    imp_id = (req.imprint_id or "").strip()
+    imp_name = (req.imprint_name or imp_id).strip()
     if not imp_id:
         raise HTTPException(status_code=400, detail="创建失败：出版品牌 ID 不能为空")
 
-    m_path = os.path.abspath(os.path.expanduser(req.manuscripts_path))
+    m_path = os.path.abspath(os.path.expanduser(req.vault_root))
     
     if not LicenseGuard.is_pro_feature_allowed("multi_imprint"):
         if len(im.list_imprints()) >= 1:
@@ -31,7 +31,7 @@ def init_press_logic(req, shutdown_cb=None):
     
     from core.config.config import CONFIG_IMPRINT_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_LOCAL_NAME
     
-    # 1. 注入版图层配置
+    # 1. 注入品牌层配置
     cfg_p = os.path.join(IMPRINT_DIR, imp_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
     if os.path.exists(cfg_p):
         try:
@@ -238,7 +238,7 @@ def init_press_logic(req, shutdown_cb=None):
         local_data = promote_config_keys(local_data)
         with open(local_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(local_data, f, allow_unicode=True)
-        tlog.success(f"🛡️ [主权锁定] 版图 '{imp_id}' 指纹已强制写入 {local_path}。")
+        tlog.success(f"🛡️ [主权锁定] 品牌 '{imp_id}' 指纹已强制写入 {local_path}。")
     except Exception as e:
         tlog.warning(f"Sovereignty Lock Failed: {e}")
 
@@ -256,7 +256,7 @@ def init_press_logic(req, shutdown_cb=None):
             if os.path.exists(target_theme_path):
                 shutil.rmtree(target_theme_path)
             shutil.copytree(source_theme_path, target_theme_path)
-            tlog.info(f"🎨 [主题对正] 已将主题 '{req.active_theme}' 部署至版图疆域。")
+            tlog.info(f"🎨 [主题对正] 已将主题 '{req.active_theme}' 部署至品牌目录。")
     except Exception as e:
         tlog.warning(f"Theme Deployment Failed: {e}")
 

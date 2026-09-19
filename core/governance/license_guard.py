@@ -166,7 +166,10 @@ class LicenseGuard:
                 cls._cached_license_result = (True, payload)
                 return True
             else:
-                tlog.warning(f"🛡️ [准入拦截] 许可证无效: {reason}")
+                if "不支持或非法的签名算法 []" in reason:
+                    tlog.info("ℹ️ [准入提示] 未检测到有效的 RSA-2048 商业证书，系统自动运行于免费社区版。")
+                else:
+                    tlog.warning(f"🛡️ [准入拦截] 许可证无效: {reason}")
                 cls._cached_license_result = (False, {})
                 return False
         except Exception as ex:
@@ -222,7 +225,7 @@ class LicenseGuard:
     @classmethod
     def get_max_imprints(cls) -> int:
         """
-        获取当前授权允许管理的最大版图总数（含系统自带 default 示范文库）。
+        获取当前授权允许管理的最大品牌总数（含系统自带 default 示范文库）。
         保持向下兼容：自定义上限 + 1
         """
         return cls.get_max_custom_imprints() + 1
@@ -233,10 +236,10 @@ class LicenseGuard:
         获取当前授权允许配置的最大多语言目标语种数量。
         - 免费社区版 (LITE): 2 个目标语种
         - 基础增强版 (STANDARD): 5 个目标语种
-        - 高级专业版 (PRO): 全量语种矩阵任选 (999)
+        - 高级专业版 (PRO): 55 个目标语种 (全量翻译矩阵)
         """
         tier = cls.get_active_tier()
-        if tier == "PRO": return 999
+        if tier == "PRO": return 55
         if tier == "STANDARD": return 5
         return 2
 

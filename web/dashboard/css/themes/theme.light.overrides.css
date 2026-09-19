@@ -1,13 +1,6 @@
 /* 🌞 白天明亮模式特定主题覆盖系统 (SOP-02 模块拆分物理外置) */
 
-/* 🌞 翻译校对工作台白天模式特定适配 */
-[data-theme="light"] #review-drawer-overlay {
-    background: var(--white-30) !important;
-}
-
-[data-theme="light"] #review-drawer {
-    box-shadow: -8px 0 30px var(--white-08) !important;
-}
+/* 🌞 翻译校对工作台白天模式特定适配 (壳体与卡片已在 review.drawer.css 中原生自适应) */
 
 [data-theme="light"] .review-badge.ai {
     background: var(--white-03) !important;
@@ -79,62 +72,259 @@
 
 /* 🌞 分发枢纽白天模式特定双保险覆盖 */
 [data-theme="light"] .dispatch-hub-panel {
-    border-left: 1px solid var(--glass-border) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: -10px 0 35px rgba(15, 23, 42, 0.15) !important;
+    color: #0f172a !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .matrix-item .m-meta {
-    color: var(--text-dim) !important;
+/* 网页托管抽屉 Header */
+[data-theme="light"] .dispatch-hub-panel h3 {
+    color: #0369a1 !important;
+}
+[data-theme="light"] .dispatch-hub-panel div[style*="border-bottom: 1px solid rgba(255, 255, 255"] {
+    border-bottom-color: rgba(0, 0, 0, 0.10) !important;
+}
+[data-theme="light"] .dispatch-hub-panel button[onclick*="closeVaultDrawer"] {
+    color: #64748b !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .matrix-item .m-time {
-    color: var(--text-dim) !important;
+/* 目标原稿卡片 */
+[data-theme="light"] .dispatch-hub-panel div[style*="background: rgba(255, 255, 255, 0.03)"] {
+    background: rgba(15, 23, 42, 0.04) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    color: #475569 !important;
+}
+[data-theme="light"] .dispatch-hub-panel #hub-doc-id {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.2) !important;
+    box-shadow: none !important;
+}
+[data-theme="light"] .dispatch-hub-panel b[style*="color: #fff"],
+[data-theme="light"] .dispatch-hub-panel b[style*="color:#fff"] {
+    color: #0f172a !important;
+}
+
+/* 区段标题 */
+[data-theme="light"] .dispatch-hub-panel .sector-header {
+    color: #0369a1 !important;
+}
+
+/* 按钮组 */
+[data-theme="light"] .dispatch-hub-panel .p-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    color: #ffffff !important;
+}
+
+/* 底部 footer 边框 */
+[data-theme="light"] .dispatch-hub-panel .drawer-footer {
+    border-top-color: rgba(0, 0, 0, 0.10) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 遥测数据值色反转 */
+[data-theme="light"] .dispatch-hub-panel .t-pod .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] .dispatch-hub-panel .t-pod .t-value {
+    color: #0f172a !important;
+}
+
+/* 语种矩阵卡片整体 */
+[data-theme="light"] .dispatch-hub-panel .matrix-item {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 语种名称 */
+[data-theme="light"] .dispatch-hub-panel .m-locale {
+    color: #0f172a !important;
+}
+
+/* 审计状态 */
+[data-theme="light"] .dispatch-hub-panel .audit-badge {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+}
+
+/* Backdrop 遮罩 */
+/* 🧹 [REFACTOR] vault-drawer inline style overrides REMOVED.
+   Original L165–257 contained ~90 lines of [style*="..."] !important rules
+   fighting drawers.js/vault.drawer.cards.js inline colors.
+   Those inline styles have been migrated to CSS classes (.drawer-shell,
+   .hosting-card, .hosting-platform-name, etc.) in dispatch.css using CSS
+   variables that auto-adapt to data-theme="light". */
+
+
+/* --- 本地产物矩阵卡片 (matrix-item with CSS class) --- */
+[data-theme="light"] #vault-drawer .matrix-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item:hover {
+    background: #ffffff !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 语种名称与状态条 */
+[data-theme="light"] #vault-drawer .m-locale,
+[data-theme="light"] #vault-drawer .m-locale-name {
+    color: #0f172a !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-published {
+    border-left: 3.5px solid #10b981 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-success {
+    border-left: 3.5px solid #06b6d4 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-done {
+    border-left: 3.5px solid #8b5cf6 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-syncing {
+    border-left: 3.5px solid #06b6d4 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-failed {
+    border-left: 3.5px solid #ef4444 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-pending {
+    border-left: 3.5px solid #f59e0b !important;
+}
+
+[data-theme="light"] #vault-drawer .status-published .m-status-text {
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #047857 !important;
+}
+[data-theme="light"] #vault-drawer .status-success .m-status-text {
+    background: rgba(6, 182, 212, 0.1) !important;
+    color: #0e7490 !important;
+}
+[data-theme="light"] #vault-drawer .status-failed .m-status-text {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #b91c1c !important;
+}
+[data-theme="light"] #vault-drawer .status-pending .m-status-text {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #b45309 !important;
+}
+
+/* 预览链接 (inline on <a>) */
+[data-theme="light"] #vault-drawer .preview-link {
+    color: #047857 !important;
+    background: rgba(4, 120, 87, 0.08) !important;
+    border-color: rgba(4, 120, 87, 0.3) !important;
+}
+
+/* m-meta 元数据行 */
+[data-theme="light"] #vault-drawer .m-meta {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .m-time {
+    color: #64748b !important;
     font-weight: 500 !important;
 }
-
-[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
-    color: var(--text-dim) !important;
-    background: var(--white-03) !important;
-    border: 1px solid var(--white-08) !important;
+[data-theme="light"] #vault-drawer .m-tokens {
+    color: #64748b !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     font-weight: 500 !important;
 }
-
-[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens[style*="opacity"] {
+[data-theme="light"] #vault-drawer .m-tokens.cache-info {
     opacity: 1 !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .lab-status-row .t-label {
-    color: var(--text-dim) !important;
-}
-
-[data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
-    background: var(--white-05) !important;
-    color: var(--text-dim) !important;
-    border: 1px solid var(--white-08) !important;
+/* locale-code-badge */
+[data-theme="light"] #vault-drawer .locale-code-badge {
+    color: #64748b !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     font-weight: 500 !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .locale-code-badge {
-    color: var(--text-dim) !important;
-    background: var(--white-05) !important;
-    border: 1px solid var(--white-08) !important;
+/* 实验室面板 */
+[data-theme="light"] #vault-drawer .lab-status-row .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .lab-status-row .badge {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #64748b !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     font-weight: 500 !important;
 }
-
-[data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
-    background: var(--white-10) !important;
+[data-theme="light"] #vault-drawer .lab-box {
+    border: 1px dashed rgba(0, 0, 0, 0.12) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .drawer-body {
-    scrollbar-color: var(--white-10) transparent !important;
+/* engine-btn 启动预览引擎按钮 */
+[data-theme="light"] #vault-drawer .engine-btn {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+[data-theme="light"] #vault-drawer .engine-btn:hover {
+    background: #e2e8f0 !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
-    box-shadow: 0 4px 15px var(--white-08) !important;
+/* scrollbar */
+[data-theme="light"] #vault-drawer .drawer-body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] #vault-drawer .drawer-body {
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent !important;
 }
 
-[data-theme="light"] .dispatch-hub-panel .lab-box {
-    border: 1px dashed var(--white-15) !important;
-    background: var(--white-01) !important;
+/* hub-btn 系列操作按钮 */
+[data-theme="light"] #vault-drawer .hub-btn {
+    background: #f1f5f9 !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #vault-drawer .primary-hub-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.3) !important;
+}
+[data-theme="light"] #vault-drawer .warning-hub-btn {
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+    color: #92400e !important;
+}
+[data-theme="light"] #vault-drawer .danger-hub-btn {
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+}
+
+/* 审计状态 */
+[data-theme="light"] #vault-drawer .audit-badge {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+}
+
+/* 审计错误面板 */
+[data-theme="light"] #vault-drawer #hub-audit-error {
+    background: #fef2f2 !important;
+    border-color: rgba(239, 68, 68, 0.2) !important;
+    color: #b91c1c !important;
+}
+
+/* 遥测数据 */
+[data-theme="light"] #vault-drawer .telemetry-grid .t-pod .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .telemetry-grid .t-pod .t-value {
+    color: #0f172a !important;
 }
 
 /* 🪵 物理连通性日志抽屉 (Log Terminal Drawer) 白天亮色模式纯白化覆盖 */
@@ -323,7 +513,7 @@
     color: #475569 !important;
 }
 
-/* 🚀 出版工作台 (Publisher Hub) 白天亮色模式覆盖 */
+/* 🚀 出版领航仪 (Publishing Navigator) 白天亮色模式覆盖 */
 [data-theme="light"] #view-overview .command-hub {
     background: rgba(255, 255, 255, 0.96) !important;
     border: 1px solid #e2e8f0 !important;
@@ -715,24 +905,47 @@
 [data-theme="light"] .syndicate-drawer-overlay h3 {
     color: var(--accent-primary, #00f2fe) !important;
 }
-/* 抽屉内的目标原稿盒 */
-[data-theme="light"] .syndicate-drawer-overlay div[style*="background: rgba(255, 255, 255, 0.03)"] {
-    background: rgba(15, 23, 42, 0.04) !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
+/* 🌞 [Token-Refactor] 社交媒体分发抽屉 - 亮色模式微调 (消灭所有 [style*="..."] 覆盖) */
+[data-theme="light"] .syndicate-drawer-overlay {
+    background: #ffffff;
+    border-left-color: rgba(15, 23, 42, 0.12);
+    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.08);
 }
-/* 抽屉内的"暂无已就绪渠道"等状态色保持主题感知，不反转 */
-[data-theme="light"] #syndicate-channel-status-badge {
-    opacity: 0.95;
+[data-theme="light"] .syndicate-drawer-title {
+    color: #0369a1;
 }
-/* 底部"实时广播卡片视觉预览"外层保持浅色，但内部子组件用 inline 已自适配，无需额外改 */
-[data-theme="light"] #article-syndicate-drawer-backdrop {
-    background: rgba(15, 23, 42, 0.25) !important;
-    backdrop-filter: blur(2px) !important;
+[data-theme="light"] .syndicate-step-label {
+    color: #0369a1;
 }
-
-/* 🌞 [PATCH] 社交媒体分发抽屉 - 语种选择按钮白天模式适配
-   抽屉背景已由上方 .syndicate-drawer-overlay 改白底深字，
-   故按钮配色需同步反转为浅底深字，否则 active 青字会糊在浅底上。 */
+[data-theme="light"] .syndicate-cover-studio {
+    background: #f8fafc !important;
+    border-color: rgba(3, 105, 161, 0.2) !important;
+}
+[data-theme="light"] .syndicate-preview-entry {
+    background: rgba(3, 105, 161, 0.04);
+    border-color: rgba(3, 105, 161, 0.2);
+}
+[data-theme="light"] .syndicate-card {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .syndicate-card--ready {
+    background: rgba(4, 120, 87, 0.04);
+    border-color: rgba(4, 120, 87, 0.25);
+}
+[data-theme="light"] .syndicate-card--published {
+    background: rgba(109, 40, 217, 0.04);
+    border-color: rgba(109, 40, 217, 0.25);
+}
+[data-theme="light"] .syndicate-card--outdated {
+    background: rgba(217, 119, 6, 0.05);
+    border-color: rgba(217, 119, 6, 0.3);
+}
+[data-theme="light"] .syndicate-start-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.3);
+}
 [data-theme="light"] .lang-radio-btn {
     background: rgba(15, 23, 42, 0.05);
     border: 1px solid rgba(15, 23, 42, 0.12);
@@ -747,6 +960,14 @@
     border-color: #0a9bc4;
     color: #0a6b8a;
     box-shadow: 0 0 0 1px rgba(0, 170, 210, 0.25);
+}
+[data-theme="light"] .lang-tag-source {
+    background: rgba(3, 105, 161, 0.1);
+    color: #0369a1;
+}
+[data-theme="light"] .lang-tag-target {
+    background: rgba(124, 58, 237, 0.08);
+    color: #6d28d9;
 }
 
 /* ==========================================================================
@@ -872,40 +1093,8 @@
     color: #4d2d00 !important;
 }
 
-/* 🌞 [PATCH] Dispatch Hub 白天主题浅色叠层 */
-[data-theme="light"] .dispatch-hub-panel .drawer-body::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.40) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .matrix-item {
-    background: rgba(255,255,255,0.55) !important;
-    border: 1px solid rgba(15,23,42,0.08) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
-    background: rgba(255,255,255,0.75) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .t-pod {
-    background: rgba(241,245,249,0.70) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .audit-badge {
-    background: rgba(241,245,249,0.80) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .hub-btn {
-    background: rgba(255,255,255,0.60) !important;
-    border: 1px solid rgba(15,23,42,0.10) !important;
-    color: #0f172a !important;
-}
-[data-theme="light"] .dispatch-hub-panel .lab-box {
-    background: rgba(255,255,255,0.65) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .matrix-item .m-tokens {
-    background: rgba(255,255,255,0.75) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .lab-status-row .badge {
-    background: rgba(255,255,255,0.80) !important;
-}
-[data-theme="light"] .dispatch-hub-panel .locale-code-badge {
-    background: rgba(255,255,255,0.80) !important;
-}
+
+
 
 /* 🌿 [UI 视觉主权] 白天明亮模式：绿色文字与状态指示器全域对比度增强 */
 [data-theme="light"] {
@@ -995,5 +1184,1511 @@
     background: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
     color: #334155 !important;
+}
+
+/* 🚀 [V122.1] 出版全域发布任务管理中心 (Dispatch & Task Center) 亮色模式终极双保险覆盖 */
+[data-theme="light"] .dispatch-indicator-badge {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #1f2937 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge .indicator-pill {
+    background: #f3f4f6 !important;
+    color: #4b5563 !important;
+}
+
+[data-theme="light"] .dispatch-popover {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-close {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-close:hover {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-footer {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .dispatch-popover .btn-open-workbench {
+    background: #f0f9ff !important;
+    border-color: #38bdf8 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-status-box.ready {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-item {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-view-header h2 {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-val {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-channel-strip {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] #view-tasks .ledger-table-wrapper {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 🌟 [V122.2] Onboarding Hero 白天亮色模式覆盖 */
+[data-theme="light"] .lpwiz-hero-title {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 55%, #475569 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+}
+
+[data-theme="light"] .lpwiz-hero-subtitle {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .lpwiz-hero-subtitle .lpwiz-hero-sep {
+    color: #94a3b8 !important;
+}
+
+/* 🌟 [V122.2] Sample Preview 按钮亮色模式覆盖（对齐新半透明暗色基础样式） */
+[data-theme="light"] .lpwiz-btn.sample-preview-btn {
+    background: linear-gradient(135deg, #059669 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(5, 150, 105, 0.5) !important;
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: none !important;
+}
+
+[data-theme="light"] .lpwiz-btn.sample-preview-btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 5px 14px rgba(5, 150, 105, 0.35) !important;
+    border-color: rgba(5, 150, 105, 0.7) !important;
+}
+
+/* 🌟 [V122.2] 全域发布任务大厅 - 补全缺失的亮色子元素覆盖 */
+[data-theme="light"] #view-tasks .dispatch-view-desc {
+    color: #475569 !important;
+}
+
+[data-theme="light"] #view-tasks .channel-strip-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .channel-strip-subtitle {
+    color: #64748b !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-text-link {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-text-link:hover {
+    color: #0369a1 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-header-actions .secondary-btn {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-header-actions .primary-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] #view-tasks #dispatch-search-input {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks #dispatch-search-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] #view-tasks .text-danger-val {
+    color: #dc2626 !important;
+}
+
+[data-theme="light"] #view-tasks .badge-danger-pill {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+[data-theme="light"] #view-tasks .active-pipeline-card {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.06) 0%, rgba(255, 255, 255, 0.5) 100%) !important;
+    border-color: rgba(14, 165, 233, 0.3) !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-channel-strip {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+}
+
+[data-theme="light"] #view-tasks .channel-health-card {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] #view-tasks .channel-health-card:hover {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] #view-tasks .channel-health-card .ch-name {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tabs-bar {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tab-btn {
+    color: #64748b !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tab-btn.active {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tab-btn .badge-pill {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-label {
+    color: #64748b !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-val {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-sub {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #view-tasks .ledger-table th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] #view-tasks .ledger-table td {
+    color: #334155 !important;
+    border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] #view-tasks .ledger-table tr:hover td {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] #view-tasks .platform-pill {
+    background: #f1f5f9 !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .magic-deep-link {
+    background: #f0f9ff !important;
+    border-color: #38bdf8 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #view-tasks .magic-deep-link:hover {
+    background: #e0f2fe !important;
+}
+
+[data-theme="light"] #view-tasks .deadletter-card {
+    background: #fff5f5 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="light"] #view-tasks .deadletter-card .dl-title {
+    color: #dc2626 !important;
+}
+
+[data-theme="light"] #view-tasks .deadletter-card .dl-reason {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+}
+
+/* 🌟 [V122.2] Dispatch Indicator 与 Popover 亮色终极覆盖 */
+[data-theme="light"] .dispatch-indicator-badge {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #1f2937 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    backdrop-filter: none !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge:hover {
+    background: #f9fafb !important;
+    border-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge .indicator-pill {
+    background: #f3f4f6 !important;
+    color: #4b5563 !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-running {
+    background: #e0f7fa !important;
+    border-color: #00bcd4 !important;
+    color: #00838f !important;
+    box-shadow: 0 2px 10px rgba(0, 188, 212, 0.2) !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-running .indicator-pill {
+    background: #00bcd4 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-warning {
+    background: #fff8e1 !important;
+    border-color: #ffb300 !important;
+    color: #b78103 !important;
+    box-shadow: 0 2px 10px rgba(255, 179, 0, 0.2) !important;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-warning .indicator-pill {
+    background: #ffb300 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .dispatch-popover {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-close {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-close:hover {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-footer {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .dispatch-popover .btn-open-workbench {
+    background: #f0f9ff !important;
+    border-color: #38bdf8 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .btn-open-workbench:hover {
+    background: #e0f2fe !important;
+    border-color: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-status-box.ready {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-status-box.running {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-status-box.warning {
+    background: #fffbeb !important;
+    border-color: #fde68a !important;
+}
+
+[data-theme="light"] .dispatch-popover .status-indicator-text.ready {
+    color: #047857 !important;
+}
+
+[data-theme="light"] .dispatch-popover .status-indicator-text.running {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .status-indicator-text.warning {
+    color: #b45309 !important;
+}
+
+[data-theme="light"] .dispatch-popover .pipeline-progress-track {
+    background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .dispatch-popover .pipeline-progress-bar {
+    background: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-status-sub {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-section-title {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-empty-tip {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-item {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-item:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-record-sub {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .magic-link-mini {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dispatch-popover .magic-link-mini:hover {
+    background: #e0f2fe !important;
+}
+
+[data-theme="light"] .dispatch-popover .tag-synced-mini {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-heal-link {
+    color: #b45309 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🌞 [PATCH] 插件配置抽屉 (#plugin-drawer) 白天模式适配
+   根因：plugins 目录下 JS 渲染函数大量内联暗色调硬编码颜色。
+   本区块通过 CSS 选择器 + !important 在亮色调下穿透覆盖。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* --- A. 向导助手卡片 (.api-token-helper) 与助手按钮 (.helper-btn) --- */
+[data-theme="light"] #plugin-drawer .api-token-helper {
+    background: rgba(0, 120, 212, 0.04) !important;
+    border-color: rgba(0, 120, 212, 0.25) !important;
+}
+
+[data-theme="light"] #plugin-drawer .helper-btn,
+[data-theme="light"] #plugin-drawer a.helper-btn {
+    color: #0369a1 !important;
+    background: rgba(0, 120, 212, 0.08) !important;
+    border-color: rgba(0, 120, 212, 0.3) !important;
+}
+
+[data-theme="light"] #plugin-drawer .helper-btn:hover,
+[data-theme="light"] #plugin-drawer a.helper-btn:hover {
+    background: rgba(0, 120, 212, 0.15) !important;
+    color: #0c4a6e !important;
+}
+
+/* 同源复用卡片 (.reuse-helper-card) */
+[data-theme="light"] #plugin-drawer .reuse-helper-card {
+    border-color: rgba(0, 120, 212, 0.2) !important;
+    background: rgba(0, 120, 212, 0.03) !important;
+}
+
+/* 剪贴板捕获卡片 (.clip-sense-card) */
+[data-theme="light"] #plugin-drawer .clip-sense-card {
+    border-color: rgba(5, 150, 105, 0.3) !important;
+    background: rgba(5, 150, 105, 0.04) !important;
+}
+
+[data-theme="light"] #plugin-drawer .clip-sense-card span[style*="color: #00ff88"],
+[data-theme="light"] #plugin-drawer .clip-sense-card span[style*="color:#00ff88"] {
+    color: #047857 !important;
+}
+
+[data-theme="light"] #plugin-drawer .clip-sense-card button {
+    color: #047857 !important;
+    background: rgba(5, 150, 105, 0.1) !important;
+    border-color: rgba(5, 150, 105, 0.35) !important;
+}
+
+/* 卡片内部文本颜色 */
+[data-theme="light"] #plugin-drawer .api-token-helper div[style*="color: var(--text-bright"],
+[data-theme="light"] #plugin-drawer .api-token-helper div[style*="color:var(--text-bright"] {
+    color: #1e293b !important;
+}
+
+/* --- B. AI 模型药丸按钮 (.model-pill-item) --- */
+[data-theme="light"] #plugin-drawer .model-pill-item {
+    color: #1e293b !important;
+    background: rgba(0, 120, 212, 0.06) !important;
+    border-color: rgba(0, 120, 212, 0.2) !important;
+}
+
+[data-theme="light"] #plugin-drawer .model-pill-item:hover {
+    background: rgba(0, 120, 212, 0.14) !important;
+    border-color: rgba(0, 120, 212, 0.4) !important;
+}
+
+/* --- C. 高级参数折叠块 (.advanced-settings-block) --- */
+[data-theme="light"] #plugin-drawer .advanced-settings-block {
+    background: rgba(241, 245, 249, 0.8) !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* --- D. 主题配置分组块 (.theme-config-group-block) --- */
+[data-theme="light"] #plugin-drawer .theme-config-group-block {
+    background: rgba(241, 245, 249, 0.5) !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] #plugin-drawer .theme-config-group-block h5 {
+    border-bottom-color: #e2e8f0 !important;
+}
+
+/* SSG 引擎代码显示块 */
+[data-theme="light"] #plugin-drawer code[style*="background: rgba(0,0,0,0.3)"],
+[data-theme="light"] #plugin-drawer code[style*="background:rgba(0,0,0,0.3)"] {
+    background: rgba(241, 245, 249, 0.9) !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0;
+}
+
+/* --- E. OAuth 账户名白色文字 / <code> 深色背景 --- */
+[data-theme="light"] #plugin-drawer span[style*="color:#fff"],
+[data-theme="light"] #plugin-drawer span[style*="color: #fff"] {
+    color: #0f172a !important;
+}
+
+/* 错误提示文字（红色保留但微调暗度） */
+[data-theme="light"] #plugin-drawer div[style*="color: #ff4d4f"],
+[data-theme="light"] #plugin-drawer div[style*="color:#ff4d4f"] {
+    color: #dc2626 !important;
+}
+
+/* 模型药丸内联 color: #e2e8f0 覆盖 */
+[data-theme="light"] #plugin-drawer button[style*="color: #e2e8f0"],
+[data-theme="light"] #plugin-drawer button[style*="color:#e2e8f0"] {
+    color: #1e293b !important;
+}
+
+/* 剪贴板预览 <code> 标签深色背景 */
+[data-theme="light"] #plugin-drawer code[style*="background: rgba(0,0,0"] {
+    background: #f1f5f9 !important;
+    color: #047857 !important;
+}
+
+/* --- F. JS onmouseenter 硬编码 hover 白色覆盖 --- */
+/* 关闭/收起按钮 (✕) hover 状态 */
+[data-theme="light"] #plugin-drawer button[title="收起模型列表"]:hover,
+[data-theme="light"] #plugin-drawer button[title="关闭提示"]:hover {
+    color: #0f172a !important;
+}
+
+/* 模型发现探测按钮 (.btn-discover-models) hover */
+[data-theme="light"] #plugin-drawer .btn-discover-models:hover {
+    background: rgba(0, 120, 212, 0.15) !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 10px rgba(0, 120, 212, 0.2) !important;
+}
+
+/* --- 插件抽屉外壳与 Header/Footer 白天模式微调 --- */
+[data-theme="light"] #plugin-drawer .drawer-content {
+    background: #ffffff !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: -8px 0 35px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] #plugin-drawer .drawer-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] #plugin-drawer .drawer-footer {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 插件抽屉返回按钮白天模式 */
+[data-theme="light"] .plugin-close-btn.plugin-close-btn--return,
+[data-theme="light"] .plugin-close-btn--return {
+    background: #e0f2fe !important;
+    border-color: #7dd3fc !important;
+    color: #0369a1 !important;
+}
+
+/* 语义化操作按钮白天模式高对比度适配 */
+[data-theme="light"] #plugin-drawer .plugin-btn-reset {
+    color: #dc2626 !important;
+    border-color: rgba(220, 38, 38, 0.35) !important;
+    background: #fef2f2 !important;
+}
+[data-theme="light"] #plugin-drawer .plugin-btn-reset:hover {
+    background: #fee2e2 !important;
+    border-color: #dc2626 !important;
+}
+
+[data-theme="light"] #plugin-drawer .plugin-btn-restore {
+    color: #c2410c !important;
+    border-color: rgba(194, 65, 12, 0.35) !important;
+    background: #fffbeb !important;
+}
+[data-theme="light"] #plugin-drawer .plugin-btn-restore:hover {
+    background: #fef3c7 !important;
+    border-color: #c2410c !important;
+}
+
+[data-theme="light"] #plugin-drawer .plugin-btn-dryrun {
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    background: #f0f9ff !important;
+}
+[data-theme="light"] #plugin-drawer .plugin-btn-dryrun:hover {
+    background: #e0f2fe !important;
+    border-color: #0284c7 !important;
+}
+
+[data-theme="light"] #plugin-drawer .plugin-btn-save {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3) !important;
+}
+
+/* 兼容历史内联样式匹配 */
+[data-theme="light"] #plugin-drawer .drawer-footer .secondary-btn[style*="color: #ff4d4d"] {
+    color: #dc2626 !important;
+    border-color: rgba(220, 38, 38, 0.3) !important;
+    background: rgba(220, 38, 38, 0.04) !important;
+}
+
+[data-theme="light"] #plugin-drawer .drawer-footer .secondary-btn[style*="color: #ff7b00"] {
+    color: #c2410c !important;
+    border-color: rgba(194, 65, 12, 0.3) !important;
+    background: rgba(194, 65, 12, 0.04) !important;
+}
+
+/* --- 未保存指示器 badge --- */
+[data-theme="light"] #plugin-drawer .dirty-indicator-badge {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #b45309 !important;
+}
+
+/* --- 主开关容器 (.master-switch-wrap) 毛玻璃背景调亮 --- */
+[data-theme="light"] #plugin-drawer .master-switch-wrap {
+    background: rgba(241, 245, 249, 0.6) !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🖼️ [Cover Studio & Asset Picker] 亮色高对比度视觉主权适配
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. 资产挑选弹窗底板与外壳 */
+[data-theme="light"] .syndicate-asset-picker-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 120, 212, 0.25) !important;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2) !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-desc {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-close-btn {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
+}
+[data-theme="light"] .syndicate-asset-picker-close-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-scroll-view {
+    background: #ffffff !important;
+}
+
+/* 资产网格卡片 */
+[data-theme="light"] .syndicate-asset-item {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .syndicate-asset-item:hover {
+    border-color: #0284c7 !important;
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.15) !important;
+}
+
+[data-theme="light"] .syndicate-asset-thumb-box {
+    background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .syndicate-asset-meta-row {
+    background: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="light"] .syndicate-asset-engine-name {
+    color: #7c3aed !important;
+}
+
+[data-theme="light"] .syndicate-asset-date {
+    color: #94a3b8 !important;
+}
+
+/* 分页条与按钮 */
+[data-theme="light"] .syndicate-asset-picker-pagination {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-page-info {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .syndicate-asset-picker-page-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+[data-theme="light"] .syndicate-asset-picker-page-btn:hover:not(:disabled) {
+    background: #f1f5f9 !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+/* 2. 大图沉浸审查弹窗 */
+[data-theme="light"] .syndicate-image-detail-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 120, 212, 0.25) !important;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25) !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-viewport {
+    background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-meta-val {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .syndicate-image-detail-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+[data-theme="light"] .syndicate-image-detail-btn:hover {
+    background: #f1f5f9 !important;
+}
+
+/* 3. 渠道取景器面板 */
+[data-theme="light"] .channel-cover-studio-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 120, 212, 0.2) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .channel-cover-studio-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .channel-cover-studio-title-box {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .channel-cover-studio-btn--default {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+[data-theme="light"] .channel-cover-studio-btn--default:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] .channel-crop-viewport {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .channel-crop-focal-hint {
+    background: rgba(15, 23, 42, 0.75) !important;
+    color: #e0f2fe !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🔖 [Brand Flip & Review Drawer] 亮色高对比度集中收拢
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Brand Flip Header */
+[data-theme="light"] .brand-part-main {
+    color: #0f172a !important;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+}
+
+[data-theme="light"] .brand-part-code {
+    color: #6366f1 !important;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-shadow: 0 1px 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-theme="light"] .brand-part-press {
+    background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px;
+    filter: drop-shadow(0 1px 1px rgba(2, 132, 199, 0.15)) !important;
+}
+
+[data-theme="light"] .brand-part-workbench {
+    background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px;
+    filter: drop-shadow(0 1px 1px rgba(37, 99, 235, 0.15)) !important;
+}
+
+[data-theme="light"] .brand-ip-pill {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0284c7 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+/* Review Drawer */
+[data-theme="light"] #review-drawer-overlay,
+[data-theme="light"] .review-drawer-overlay {
+    background: rgba(15, 23, 42, 0.45) !important;
+}
+
+[data-theme="light"] .review-toggle-btn.active {
+    background: rgba(0, 120, 212, 0.12) !important;
+    color: var(--text-bright) !important;
+}
+
+[data-theme="light"] .review-progress-card {
+    background: rgba(241, 245, 249, 0.7) !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .review-step-item {
+    background: rgba(241, 245, 249, 0.5) !important;
+}
+
+[data-theme="light"] .review-source-readonly-box {
+    background: rgba(241, 245, 249, 0.5) !important;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🌞 [PATCH] 全局 rgba(255,255,255,0.xx) 暗色微高亮 → 亮色调反转清理
+   根因：dashboard JS 渲染函数中约 200+ 处使用 rgba(255,255,255,0.02~0.12)
+         作为暗色背景上的微高亮/微边框，亮色调下这些值对白色背景完全不可见，
+         导致卡片/区块/进度条失去视觉结构。
+   策略：全域宽范围属性选择器一次性反转为对应的 rgba(0,0,0,x) 深色微高亮。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* --- 背景：rgba(255,255,255,0.01~0.02) → 极浅灰 --- */
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.02)"],
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.015)"],
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.01)"] {
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* --- 背景：rgba(255,255,255,0.03~0.04) → 浅灰 --- */
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.03)"],
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.04)"],
+[data-theme="light"] div[style*="background:rgba(255,255,255,0.04)"] {
+    background: rgba(0, 0, 0, 0.025) !important;
+}
+
+/* --- 背景：rgba(255,255,255,0.05~0.06) → 进度条槽/badge --- */
+[data-theme="light"] div[style*="background: rgba(255, 255, 255, 0.05)"],
+[data-theme="light"] div[style*="background:rgba(255,255,255,0.05)"],
+[data-theme="light"] span[style*="background: rgba(255,255,255,0.05)"],
+[data-theme="light"] span[style*="background:rgba(255,255,255,0.05)"],
+[data-theme="light"] div[style*="background: rgba(255,255,255,0.06)"],
+[data-theme="light"] div[style*="background:rgba(255,255,255,0.06)"] {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* --- 背景：rgba(255,255,255,0.08~0.1) → 按钮/卡片高亮 --- */
+[data-theme="light"] button[style*="background: rgba(255,255,255,0.05)"],
+[data-theme="light"] button[style*="background:rgba(255,255,255,0.05)"] {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] button[style*="background: rgba(255,255,255,0.08)"],
+[data-theme="light"] button[style*="background:rgba(255,255,255,0.08)"] {
+    background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* --- 边框：rgba(255,255,255,0.04~0.06) → 极浅框线 --- */
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.04)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.04)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.05)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.05)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.06)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.06)"] {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* --- 边框：rgba(255,255,255,0.08~0.12) → 浅灰框线 --- */
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.08)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.08)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.1)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.1)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255,255,255,0.12)"],
+[data-theme="light"] div[style*="border"][style*="rgba(255, 255, 255, 0.12)"] {
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* --- 表格行 header 背景 --- */
+[data-theme="light"] tr[style*="background: rgba(255, 255, 255, 0.03)"] {
+    background: rgba(241, 245, 249, 0.5) !important;
+}
+
+/* --- 链接诊断/治理面板深色底板反转 --- */
+[data-theme="light"] div[style*="background: rgba(0,0,0,0.25)"],
+[data-theme="light"] div[style*="background:rgba(0,0,0,0.25)"] {
+    background: rgba(241, 245, 249, 0.8) !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] div[style*="background: rgba(0,0,0,0.08)"],
+[data-theme="light"] div[style*="background:rgba(0,0,0,0.08)"] {
+    background: rgba(241, 245, 249, 0.5) !important;
+}
+
+/* --- 浏览器模拟窗口边框 --- */
+[data-theme="light"] div[style*="border: 1px solid rgba(255, 255, 255, 0.12)"] {
+    border-color: #e2e8f0 !important;
+}
+
+/* --- 虚线边框 (dashed) --- */
+[data-theme="light"] div[style*="border: 1px dashed rgba(255,255,255,0.18)"],
+[data-theme="light"] div[style*="border:1px dashed rgba(255,255,255,0.18)"] {
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* --- 分发中心看板 (#view-tasks) 亮色模式适配 --- */
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-val {
+    color: #0f172a;
+}
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-sub {
+    color: #0284c7;
+}
+[data-theme="light"] #view-tasks .text-danger-val {
+    color: #dc2626 !important;
+}
+[data-theme="light"] #view-tasks .dispatch-channel-strip {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] #view-tasks .channel-strip-title {
+    color: #0f172a;
+}
+[data-theme="light"] #view-tasks .channel-strip-subtitle {
+    color: #64748b;
+}
+[data-theme="light"] #view-tasks .dispatch-text-link {
+    color: #0284c7;
+}
+[data-theme="light"] #view-tasks .channel-health-card {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] #view-tasks .channel-health-card:hover {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] #view-tasks .channel-health-card .ch-name {
+    color: #0f172a;
+}
+[data-theme="light"] #view-tasks .dispatch-tabs-bar {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] #view-tasks .dispatch-tab-btn {
+    color: #64748b;
+}
+[data-theme="light"] #view-tasks .dispatch-tab-btn.active {
+    color: #0f172a;
+    background: rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] #view-tasks .dispatch-tab-btn .badge-pill {
+    background: rgba(0, 0, 0, 0.08);
+    color: #334155;
+}
+[data-theme="light"] #view-tasks .badge-danger-pill {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+[data-theme="light"] #view-tasks #dispatch-search-input {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #view-tasks .ledger-table-wrapper {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] #view-tasks .ledger-table th {
+    background: #f8fafc;
+    color: #475569;
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] #view-tasks .ledger-table td {
+    color: #334155;
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] #view-tasks .ledger-table tr:hover td {
+    background: #f8fafc;
+}
+[data-theme="light"] #view-tasks .platform-pill {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+}
+[data-theme="light"] #view-tasks .magic-deep-link {
+    background: #f0f9ff;
+    border-color: #38bdf8;
+    color: #0284c7;
+}
+[data-theme="light"] #view-tasks .magic-deep-link:hover {
+    background: #e0f2fe;
+}
+[data-theme="light"] #view-tasks .deadletter-card {
+    background: #fff5f5;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+[data-theme="light"] #view-tasks .deadletter-card .dl-title {
+    color: #dc2626;
+}
+[data-theme="light"] #view-tasks .deadletter-card .dl-reason {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* 1. 顶部指示徽章亮色适配 */
+[data-theme="light"] .dispatch-indicator-badge {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #1f2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .dispatch-indicator-badge:hover {
+    background: #f9fafb;
+    border-color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .dispatch-indicator-badge .indicator-pill {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-running {
+    background: #e0f7fa;
+    border-color: #00bcd4;
+    color: #00838f;
+    box-shadow: 0 2px 10px rgba(0, 188, 212, 0.2);
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-running .indicator-pill {
+    background: #00bcd4;
+    color: #ffffff;
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-warning {
+    background: #fff8e1;
+    border-color: #ffb300;
+    color: #b78103;
+    box-shadow: 0 2px 10px rgba(255, 179, 0, 0.2);
+}
+
+[data-theme="light"] .dispatch-indicator-badge.is-warning .indicator-pill {
+    background: #ffb300;
+    color: #ffffff;
+}
+
+/* 2. 下拉监视小窗亮色适配 */
+[data-theme="light"] .dispatch-popover {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .popover-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .popover-title {
+    color: #0f172a;
+}
+
+[data-theme="light"] .popover-close {
+    color: #64748b;
+}
+
+[data-theme="light"] .popover-close:hover {
+    color: #0f172a;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .popover-footer {
+    border-top-color: rgba(0, 0, 0, 0.08);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .btn-open-workbench {
+    background: #f0f9ff;
+    border-color: #38bdf8;
+    color: #0284c7;
+}
+
+[data-theme="light"] .btn-open-workbench:hover {
+    background: #e0f2fe;
+    border-color: #0284c7;
+}
+
+[data-theme="light"] .popover-status-box.ready {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .popover-status-box.running {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+}
+
+[data-theme="light"] .popover-status-box.warning {
+    background: #fffbeb !important;
+    border-color: #fde68a !important;
+}
+
+[data-theme="light"] .status-indicator-text.ready {
+    color: #047857 !important;
+}
+
+[data-theme="light"] .status-indicator-text.running {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .status-indicator-text.warning {
+    color: #b45309 !important;
+}
+
+[data-theme="light"] .pipeline-progress-track {
+    background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .pipeline-progress-bar {
+    background: #0284c7 !important;
+}
+
+[data-theme="light"] .popover-status-sub {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .popover-section-title {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .popover-empty-tip {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] .popover-record-item {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .popover-record-item:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .popover-record-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .popover-record-sub {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .magic-link-mini {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .magic-link-mini:hover {
+    background: #e0f2fe !important;
+}
+
+[data-theme="light"] .tag-synced-mini {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+}
+
+[data-theme="light"] .popover-heal-link {
+    color: #b45309 !important;
+}
+
+/* 3. 全屏任务大厅亮色适配 */
+[data-theme="light"] #view-tasks .dispatch-view-header h2 {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-hub-tag {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-view-desc {
+    color: #475569 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] #view-tasks .dispatch-metric-card .metric-label {
+    color: #64748b;
+}
+
+/* ==========================================================================
+   👁️ [PATCH] 全渠道高保真排版审查弹窗 (Syndicate Live Preview) 亮色调主题深度适配
+   职责：解除白底套白底 (White on White)、消除脏色灰黑带、构建优雅真机舞台，彻底隔绝底层穿透。
+   ========================================================================== */
+
+/* 1. 遮罩层：柔和高斯模糊，彻底阻断底层 Galaxy 3D 星系网格穿透 */
+[data-theme="light"] .syndicate-modal-backdrop {
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+/* 2. 弹窗主卡片与顶栏 */
+[data-theme="light"] .syndicate-preview-modal-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .syndicate-modal-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .syndicate-modal-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .syndicate-modal-subtitle {
+    color: #64748b !important;
+}
+
+/* 3. 顶部渠道 Tab 胶囊与下拉框 */
+[data-theme="light"] .syndicate-modal-tabs {
+    background: #e2e8f0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .syndicate-modal-tab-btn {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .syndicate-modal-tab-btn:hover {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="light"] .syndicate-modal-tab-btn.is-active,
+[data-theme="light"] .syndicate-modal-tab-btn.active {
+    background: #ffffff !important;
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .syndicate-modal-channel-select {
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .syndicate-modal-channel-select:hover {
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .syndicate-modal-close-btn {
+    background: #e2e8f0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+}
+
+[data-theme="light"] .syndicate-modal-close-btn:hover {
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+    border-color: #fca5a5 !important;
+}
+
+/* 4. 二级工具栏与统计胶囊 */
+[data-theme="light"] .syndicate-modal-toolbar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .syndicate-modal-stats {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .syndicate-stat-badge--cyan {
+    background: #f0f9ff !important;
+    color: #0284c7 !important;
+    border-color: #bae6fd !important;
+}
+
+[data-theme="light"] .syndicate-stat-badge--dim {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .syndicate-stat-badge--green {
+    background: #f0fdf4 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+[data-theme="light"] .syndicate-stat-badge--amber {
+    background: #fffbeb !important;
+    color: #d97706 !important;
+    border: 1px solid #fde68a !important;
+}
+
+[data-theme="light"] .syndicate-stat-badge--purple {
+    background: #faf5ff !important;
+    color: #9333ea !important;
+    border-color: #e9d5ff !important;
+}
+
+/* 视口切换器 */
+[data-theme="light"] .syndicate-viewport-switcher {
+    background: #e2e8f0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .syndicate-viewport-btn {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .syndicate-viewport-btn.is-active {
+    background: #ffffff !important;
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Markdown 复制按钮 */
+[data-theme="light"] .syndicate-copy-markdown-btn {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .syndicate-copy-markdown-btn:hover {
+    background: #f8fafc !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+/* 5. 审查舞台与真机排版底盘（破除 White on White 关键） */
+[data-theme="light"] .syndicate-modal-body {
+    background: #eef2f6 !important;
+}
+
+[data-theme="light"] .preview-viewport-chassis--desktop {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 12px 35px -5px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .preview-viewport-chassis--mobile {
+    background: #ffffff !important;
+    border: 8px solid #1e293b !important;
+    box-shadow: 0 20px 45px -8px rgba(15, 23, 42, 0.22) !important;
+}
+
+[data-theme="light"] .syndicate-compliance-banner {
+    background: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border-left: 4px solid #0284c7 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 6. 封面取景器与微调卡片 */
+[data-theme="light"] .channel-cover-studio-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .channel-cover-studio-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .channel-cover-studio-btn--pick {
+    background: #ffffff !important;
+    color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] .channel-cover-studio-btn--default {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .channel-cover-studio-tag--cyan {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #bae6fd !important;
+}
+
+[data-theme="light"] .channel-cover-studio-tag--purple {
+    background: #f3e8ff !important;
+    color: #7e22ce !important;
+    border-color: #e9d5ff !important;
 }
 

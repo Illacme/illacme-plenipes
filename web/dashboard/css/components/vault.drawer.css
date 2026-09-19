@@ -1,0 +1,809 @@
+/* ==========================================================================
+   🏛️ [V2.0] Illacme Plenipes - Vault & Shared Drawer Component Styles
+   职责：收纳文库网页托管发布抽屉 (#vault-drawer) 全量基础设施、卡片与操作样式。
+   规范：100% 绑定 :root Design Tokens，自动适配亮/暗主题。
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────
+   1. Shared Drawer Shell & Backdrop
+   ────────────────────────────────────────────── */
+
+/* 抽屉全屏半透明遮罩 */
+.vault-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop, rgba(0, 0, 0, 0.45));
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.vault-drawer-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 抽屉主视窗壳体基座 (与社媒分发抽屉 460px 严格对齐) */
+.vault-drawer-shell {
+    position: fixed;
+    top: 0;
+    right: -480px;
+    width: 460px;
+    height: 100vh;
+    z-index: 9999;
+    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 18px 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.96);
+    backdrop-filter: blur(16px);
+    border-left: 1px solid var(--glass-border);
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6);
+    color: var(--text-bright);
+}
+.vault-drawer-shell.is-open {
+    right: 0;
+}
+[data-theme="light"] .vault-drawer-shell {
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 共享抽屉壳体类 */
+.drawer-shell {
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    border-left: 1px solid var(--glass-border) !important;
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6) !important;
+    color: var(--text-bright) !important;
+}
+
+/* ──────────────────────────────────────────────
+   2. Header, Doc Identity & Section Header
+   ────────────────────────────────────────────── */
+
+.drawer-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--white-10);
+    flex-shrink: 0;
+}
+.drawer-header-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+}
+.drawer-close-cross {
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+    color: var(--text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.drawer-close-cross:hover {
+    background: var(--white-08);
+    border-color: var(--white-15);
+    color: var(--text-bright);
+}
+
+/* 目标原稿标识卡片 (紧凑高档微晶卡片) */
+.drawer-doc-card {
+    font-size: 0.76rem;
+    line-height: 1.4;
+    padding: 7px 12px;
+    border-radius: 6px;
+    background: var(--white-02);
+    border: 1px solid var(--white-06);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-shrink: 0;
+}
+.drawer-doc-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+.drawer-doc-id {
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* 区域栏目标题行 */
+.sector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent-primary);
+    margin-bottom: 6px;
+    padding-bottom: 2px;
+}
+
+/* 二级小节标题栏 (用于产物列表与全站平台勾选) */
+.vault-subsector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+.vault-subsector-title {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.vault-subsector-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+/* 全选/反选快捷小按钮 */
+.vault-select-all-btn {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--neon-cyan);
+    background: var(--neon-cyan-08);
+    border: 1px solid var(--neon-cyan-25);
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+}
+.vault-select-all-btn:hover {
+    background: var(--neon-cyan-20);
+    border-color: var(--neon-cyan-40);
+    color: var(--text-bright);
+}
+
+/* ──────────────────────────────────────────────
+   3. Body Scrolling, Sections & Matrix List
+   ────────────────────────────────────────────── */
+
+.vault-drawer-shell .drawer-body,
+.vault-drawer-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 2px 10px 0 !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--white-10) transparent;
+}
+.vault-drawer-shell .drawer-body::-webkit-scrollbar {
+    width: 4px;
+}
+.vault-drawer-shell .drawer-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.vault-drawer-shell .drawer-body::-webkit-scrollbar-thumb {
+    background: var(--white-05);
+    border-radius: 10px;
+}
+.vault-drawer-shell .drawer-body::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+.hub-section {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.matrix-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 🏷️ 本地多语种装帧产物卡片 (.matrix-item) */
+.matrix-item {
+    background: var(--white-02);
+    border: 1px solid var(--white-05);
+    border-radius: 8px;
+    padding: 9px 12px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.matrix-item:hover {
+    background: var(--white-05);
+    border-color: rgba(var(--accent-primary-rgb), 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px var(--black-30);
+}
+
+.matrix-item .m-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.matrix-item .m-locale-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.matrix-item .m-locale-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.matrix-item .m-status-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.matrix-item .m-status-text {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+/* 语种简称微型 Badge */
+.matrix-item .locale-code-badge {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: var(--white-05);
+    border: 1px solid var(--white-08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    vertical-align: middle;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* 产物元数据行 (时间、Token数、缓存段落数) */
+.matrix-item .m-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 0.66rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.matrix-item .m-time {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+.matrix-item .m-tokens {
+    font-size: 0.64rem;
+    color: var(--text-muted);
+    background: var(--white-03);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--white-05);
+}
+
+.matrix-item .m-tokens.cache-info {
+    opacity: 0.9;
+}
+
+/* 产物状态色值与发光侧边条 (3.5px 高亮立条) */
+.matrix-item.status-published .m-status-text { background: rgba(var(--neon-green-rgb), 0.15); color: var(--neon-green); }
+.matrix-item.status-published { border-left: 3.5px solid var(--neon-green); }
+
+.matrix-item.status-success .m-status-text { background: rgba(var(--neon-cyan-rgb), 0.15); color: var(--neon-cyan); }
+.matrix-item.status-success { border-left: 3.5px solid var(--neon-cyan); }
+
+.matrix-item.status-done .m-status-text { background: rgba(var(--accent-primary-rgb), 0.15); color: var(--neon-purple); }
+.matrix-item.status-done { border-left: 3.5px solid var(--neon-purple); }
+
+.matrix-item.status-syncing .m-status-text { background: rgba(var(--neon-cyan-rgb), 0.15); color: var(--neon-cyan); }
+.matrix-item.status-syncing { border-left: 3.5px solid var(--neon-cyan); }
+
+.matrix-item.status-failed .m-status-text { background: rgba(var(--neon-red-rgb), 0.15); color: var(--neon-red); }
+.matrix-item.status-failed { border-left: 3.5px solid var(--neon-red); }
+
+.matrix-item.status-pending .m-status-text { background: rgba(var(--neon-amber-rgb), 0.15); color: var(--neon-amber); }
+.matrix-item.status-pending { border-left: 3.5px solid var(--neon-amber); }
+
+/* ──────────────────────────────────────────────
+   4. Hosting Platform Cards (托管渠道卡片)
+   ────────────────────────────────────────────── */
+
+.hosting-card {
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 6px;
+    background: var(--white-01);
+    border: 1px solid var(--white-05);
+    opacity: 0.7;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hosting-card:hover {
+    background: var(--white-03);
+    border-color: var(--white-10);
+    opacity: 0.95;
+}
+.hosting-card--active {
+    background: var(--neon-cyan-02);
+    border-color: var(--neon-cyan-20);
+    opacity: 1;
+}
+.hosting-card--brand {
+    background: rgba(var(--neon-green-rgb), 0.03);
+    border-color: rgba(var(--neon-green-rgb), 0.25);
+    opacity: 1;
+}
+.hosting-card--brand:hover {
+    background: rgba(var(--neon-green-rgb), 0.06);
+    border-color: rgba(var(--neon-green-rgb), 0.4);
+}
+
+.hosting-card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+.hosting-card-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+.hosting-card-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+.hosting-platform-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.hosting-desc-text {
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+.hosting-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+/* Status labels */
+.hosting-status {
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.hosting-status--enabled { color: var(--neon-green); }
+.hosting-status--ready { color: var(--neon-amber); }
+.hosting-status--unconfigured { color: var(--text-dim); }
+.hosting-status--failed { color: var(--neon-red); }
+
+/* Platform name */
+.hosting-platform-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.hosting-platform-name--active { color: var(--text-bright); }
+.hosting-platform-name--inactive { color: var(--text-dim); }
+
+/* Preview link (本地产物预览) */
+.vault-preview-link {
+    color: var(--neon-green) !important;
+    border: 1px solid rgba(var(--neon-green-rgb), 0.35) !important;
+    background: rgba(var(--neon-green-rgb), 0.1) !important;
+    text-decoration: none;
+    padding: 2px 7px;
+    font-size: 0.66rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 4px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+}
+.vault-preview-link:hover {
+    background: rgba(var(--neon-green-rgb), 0.25) !important;
+    border-color: rgba(var(--neon-green-rgb), 0.55) !important;
+}
+
+/* Hosting platform checkbox */
+.vault-hosting-platform-checkbox {
+    accent-color: var(--accent-secondary);
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.vault-hosting-platform-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Hosting site link button */
+.hosting-link-btn {
+    padding: 2px 7px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--neon-green);
+    border: 1px solid rgba(var(--neon-green-rgb), 0.35);
+    background: rgba(var(--neon-green-rgb), 0.08);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.hosting-link-btn:hover {
+    background: rgba(var(--neon-green-rgb), 0.2);
+    border-color: rgba(var(--neon-green-rgb), 0.5);
+}
+
+/* Dispatch / publish button */
+.hosting-dispatch-btn {
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border-radius: 4px;
+    color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan-35);
+    background: var(--neon-cyan-08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.hosting-dispatch-btn:hover {
+    background: var(--neon-cyan-20);
+    border-color: var(--neon-cyan-50);
+}
+
+/* Settings gear button */
+.hosting-settings-btn {
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    background: var(--white-08);
+    border: 1px solid var(--white-15);
+    color: var(--text-bright);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.hosting-settings-btn:hover {
+    background: var(--white-15);
+    border-color: var(--white-25);
+}
+
+/* "Go configure" button */
+.hosting-config-btn {
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+    background: var(--neon-cyan-15);
+    border: 1px solid var(--neon-cyan-35);
+    color: var(--neon-cyan);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.hosting-config-btn:hover {
+    background: var(--neon-cyan-25);
+    border-color: var(--neon-cyan-50);
+}
+
+.hosting-error-text {
+    font-size: 0.66rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(var(--neon-red-rgb), 0.1);
+    border: 1px solid rgba(var(--neon-red-rgb), 0.25);
+    color: var(--neon-red);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+/* Hosting status badge (in vault.drawer.render.js) */
+.hosting-status-badge--ready { color: var(--neon-green); }
+.hosting-status-badge--empty { color: var(--neon-amber); }
+
+/* ──────────────────────────────────────────────
+   5. Telemetry & Audit Components
+   ────────────────────────────────────────────── */
+
+.telemetry-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+.t-pod {
+    background: var(--white-01) !important;
+    border: 1px solid var(--white-05) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+}
+.t-pod .t-label {
+    font-size: 0.64rem !important;
+    letter-spacing: 0.5px !important;
+    color: var(--white-40) !important;
+    font-weight: 600 !important;
+}
+.t-pod .t-value {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    color: var(--text-bright) !important;
+    font-family: var(--font-mono) !important;
+}
+
+.audit-badge {
+    text-align: center;
+    font-size: 0.72rem !important;
+    padding: 8px 10px !important;
+    background: var(--white-02) !important;
+    border: 1px solid var(--white-06) !important;
+    border-radius: 8px !important;
+    font-family: var(--font-mono);
+    color: var(--text-dim) !important;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.audit-badge.pass {
+    color: var(--neon-green) !important;
+    background: rgba(var(--neon-green-rgb), 0.04) !important;
+    border: 1px solid rgba(var(--neon-green-rgb), 0.18) !important;
+}
+
+/* Error box (审计错误详情) */
+.drawer-error-box {
+    background: rgba(var(--neon-red-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.2) !important;
+    color: var(--neon-red) !important;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+}
+
+/* Dirty indicator badge & Master switch */
+.dirty-indicator-badge {
+    color: var(--neon-amber) !important;
+    background: rgba(var(--neon-amber-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.2) !important;
+}
+.master-switch-wrap {
+    background: var(--white-03) !important;
+    border: 1px solid var(--white-10) !important;
+}
+
+/* ──────────────────────────────────────────────
+   6. Live Preview Engine Box & Action Footer
+   ────────────────────────────────────────────── */
+
+.lab-box {
+    background: var(--white-02);
+    border: 1px solid var(--white-08);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 6px;
+}
+.lab-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.lab-status-row .t-label {
+    font-size: 0.66rem !important;
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+}
+.lab-status-row .badge {
+    font-size: 0.66rem !important;
+    padding: 2px 7px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    background: var(--white-06) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--white-08) !important;
+}
+.lab-status-row .badge.active {
+    background: rgba(var(--neon-green-rgb), 0.15) !important;
+    color: var(--neon-green) !important;
+    border-color: rgba(var(--neon-green-rgb), 0.3) !important;
+    box-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.1) !important;
+}
+.engine-btn {
+    height: 34px !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+.engine-btn.start-mode {
+    background: var(--neon-cyan-10) !important;
+    border: 1px solid var(--neon-cyan-25) !important;
+    color: var(--neon-cyan) !important;
+}
+.engine-btn.start-mode:hover {
+    background: var(--neon-cyan-25) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 15px var(--neon-cyan-25) !important;
+}
+.engine-btn.stop-mode {
+    background: rgba(var(--neon-red-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.25) !important;
+    color: var(--neon-red) !important;
+}
+.engine-btn.stop-mode:hover {
+    background: rgba(var(--neon-red-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.5) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
+}
+
+.vault-drawer-shell .drawer-footer {
+    display: flex !important;
+    padding: 12px 16px !important;
+    border-top: 1px solid var(--white-10) !important;
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    flex-shrink: 0;
+}
+.drawer-footer-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.sovereign-action-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: center !important;
+}
+.hub-btn {
+    flex: 1 !important;
+    height: 38px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    display: inline-flex;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: 1px solid var(--white-10) !important;
+    outline: none !important;
+    cursor: pointer !important;
+    padding: 0 8px !important;
+    background: var(--white-03) !important;
+    color: var(--text-bright) !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+.hub-btn[style*="display: none"] {
+    display: none !important;
+}
+.hub-btn .btn-icon {
+    font-size: 0.85rem !important;
+}
+
+.primary-hub-btn {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.15) 0%, var(--neon-cyan-10) 100%) !important;
+    border: 1px solid rgba(var(--accent-primary-rgb), 0.3) !important;
+    color: var(--accent-primary) !important;
+}
+.primary-hub-btn:hover {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.3) 0%, var(--neon-cyan-20) 100%) !important;
+    border-color: rgba(var(--accent-primary-rgb), 0.6) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.warning-hub-btn {
+    background: rgba(var(--neon-amber-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.25) !important;
+    color: var(--neon-amber) !important;
+}
+.warning-hub-btn:hover {
+    background: rgba(var(--neon-amber-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-amber-rgb), 0.5) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-amber-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.danger-hub-btn {
+    background: rgba(var(--neon-red-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-red-rgb), 0.25) !important;
+    color: var(--neon-red) !important;
+}
+.danger-hub-btn:hover {
+    background: rgba(var(--neon-red-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.5) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+

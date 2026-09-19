@@ -4,16 +4,19 @@
  * 符合 SOP-02 模块拆分协议，行数严格控制在 300 行内。
  */
 
-// 🏷️ 标签 DOM 缓存池 (避免万级节点时全量创建 DOM)
+// 🏷️ 标签 DOM 缓存池与迟滞缓冲记忆
 window._labelPool = new Map(); // id -> DOM element
 window._labelDataMap = new Map(); // id -> { title }
+window._visibleLabelsSet = new Set(); // 上一帧可见标签集合 (用于迟滞排序与粘滞优先级)
+window._labelMissMap = new Map(); // id -> 连续未命中帧数 (用于平滑淡出退场)
 
 window.updateGalaxyLabelElements = (nodes) => {
     // 📝 先填充数据映射表 (不依赖 DOM 容器是否就绪)
     const newIds = new Set();
     nodes.forEach(node => {
-        const rawTitle = node.title || node.id;
-        const cleanTitle = rawTitle.split('/').pop().replace(/\.[^/.]+$/, '');
+        const cleanTitle = (node.title && String(node.title).trim())
+            ? String(node.title).trim()
+            : (node.id ? String(node.id).split('/').pop().replace(/\.[^/.]+$/, '') : '');
         window._labelDataMap.set(node.id, { title: cleanTitle });
         newIds.add(node.id);
     });
@@ -24,6 +27,8 @@ window.updateGalaxyLabelElements = (nodes) => {
             el.remove();
             window._labelPool.delete(id);
             window._labelDataMap.delete(id);
+            window._visibleLabelsSet.delete(id);
+            window._labelMissMap.delete(id);
         }
     }
 };
@@ -42,6 +47,7 @@ function _getOrCreateLabel(id, container) {
         el.style.transform = 'translate(-50%, 15px)';
         el.style.pointerEvents = 'none';
         el.style.willChange = 'transform, opacity'; // GPU 层提升
+        el.style.transition = 'opacity 0.18s ease-out'; // 🌟 平滑过渡，杜绝突兀硬闪
         container.appendChild(el);
         window._labelPool.set(id, el);
     }
@@ -124,16 +130,21 @@ window.syncGalaxyLabels = () => {
         // 5) 视锥裁剪：只剔除完全在容器局部画布外的标签
         if (relativeX < -margin || relativeX > W + margin || relativeY < -margin || relativeY > H + margin) continue;
 
-        scored.push({ node, dist, relativeX, relativeY, isHovered });
+        const holdFrames = window._labelHoldMap ? (window._labelHoldMap.get(node.id) || 0) : 0;
+        scored.push({ node, dist, relativeX, relativeY, isHovered, holdFrames });
     }
 
-    // 🏎️ 重新排序：被 Hover 的节点以及 Imprint 根节点拥有最高显示权，其次按相机距离从近到远排序
+    // 🏎️ 重新排序：被 Hover 节点与 Imprint 根节点拥有最高显示权；
+    // 🛡️ [Hysteresis] 防闪烁迟滞缓冲：上一帧处于可见状态的标签享有 30px 稳态偏置 (Sticky Bias)，
+    // 彻底杜绝相机自转时相邻节点因微米级距离交替翻转而产生的乒乓互斥闪烁！
     scored.sort((a, b) => {
         if (a.isHovered !== b.isHovered) return a.isHovered ? -1 : 1;
         const aIsImprint = a.node.group === 'imprint';
         const bIsImprint = b.node.group === 'imprint';
         if (aIsImprint !== bIsImprint) return aIsImprint ? -1 : 1;
-        return a.dist - b.dist;
+        const aEffectiveDist = a.dist - (a.holdFrames > 0 ? 30 : 0);
+        const bEffectiveDist = b.dist - (b.holdFrames > 0 ? 30 : 0);
+        return aEffectiveDist - bEffectiveDist;
     });
 
     const renderedBoxes = [];
@@ -152,20 +163,20 @@ window.syncGalaxyLabels = () => {
         const titleText = labelData ? labelData.title : (node.title || node.id);
         const charCount = titleText.length;
 
-        // 计算该节点在当前距离下的 LOD 缩放字号
+        // 计算该节点在当前距离下的 LOD 缩放字号（整数像素量化，杜绝浮点字体抖动）
         let fontSize;
         if (isHovered) {
             fontSize = 14;
         } else if (isImprint) {
-            fontSize = 13; // 骨架节点采用固定清晰字号
+            fontSize = 13;
         } else if (dist < perf.LOD_NEAR) {
-            fontSize = Math.max(10, 16 - dist / 100);
+            fontSize = Math.round(Math.max(10, 16 - dist / 100));
         } else if (dist < perf.LOD_MID) {
             const t = (dist - perf.LOD_NEAR) / (perf.LOD_MID - perf.LOD_NEAR);
-            fontSize = Math.max(8, 14 - t * 6);
+            fontSize = Math.round(Math.max(8, 14 - t * 6));
         } else {
             const t = (dist - perf.LOD_MID) / (perf.LOD_FAR - perf.LOD_MID);
-            fontSize = Math.max(6, 8 - t * 2);
+            fontSize = Math.round(Math.max(6, 8 - t * 2));
         }
 
         // 预估 2D 像素盒子大小 (单字符均宽约 0.65 * fontSize，并加入 16px 的左右间距容差)
@@ -206,7 +217,7 @@ window.syncGalaxyLabels = () => {
         if (isHovered) {
             opacity = 1;
         } else if (isImprint) {
-            opacity = 0.95; // 品牌骨架高亮呈现
+            opacity = 0.95;
         } else if (dist < perf.LOD_NEAR) {
             opacity = 1;
         } else if (dist < perf.LOD_MID) {
@@ -218,7 +229,6 @@ window.syncGalaxyLabels = () => {
         }
 
         el.style.display = 'block';
-        // 🚀 GPU 硬件合成层加速：彻底重置 left/top，转为 transform 渲染以消除 Layout 回流 (Reflow)
         el.style.left = '0';
         el.style.top = '0';
         el.style.transform = `translate3d(${relativeX}px, ${relativeY}px, 0) translate(-50%, 15px)`;
@@ -226,12 +236,32 @@ window.syncGalaxyLabels = () => {
         el.style.opacity = opacity;
     }
 
-    // 🧹 隐藏不可见的标签
+    // 🧹 [Hysteresis 退场] 对不可见标签执行平滑阶梯衰减，连续 4 帧未命中才彻底隐藏
     for (const [id, el] of window._labelPool) {
-        if (!visibleSet.has(id)) {
-            el.style.display = 'none';
+        if (visibleSet.has(id)) {
+            window._labelMissMap.delete(id);
+        } else {
+            const misses = (window._labelMissMap.get(id) || 0) + 1;
+            window._labelMissMap.set(id, misses);
+            if (misses >= 4) {
+                el.style.display = 'none';
+                el.style.opacity = '0';
+            } else {
+                const curOp = parseFloat(el.style.opacity) || 0.8;
+                el.style.opacity = (curOp * 0.7).toFixed(2);
+            }
         }
     }
+
+    // 记忆连续可见帧数与可见集合，供下一帧做迟滞稳态决策
+    window._labelHoldMap = window._labelHoldMap || new Map();
+    for (const id of visibleSet) {
+        window._labelHoldMap.set(id, (window._labelHoldMap.get(id) || 0) + 1);
+    }
+    for (const [id] of window._labelPool) {
+        if (!visibleSet.has(id)) window._labelHoldMap.delete(id);
+    }
+    window._visibleLabelsSet = visibleSet;
 };
 
 // 🎛️ [Phase 3] 构建节流标签同步器

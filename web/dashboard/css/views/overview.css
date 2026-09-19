@@ -297,6 +297,16 @@
 }
 
 /* 📐 Physics Controls Horizontal Slide-Out */
+#telemetry-main-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 99px !important;
+    min-height: 99px !important;
+    max-height: 99px !important;
+    box-sizing: border-box;
+}
+
 #galaxy-physics-controls {
     display: flex;
     flex-direction: column;
@@ -312,6 +322,9 @@
 #galaxy-physics-controls.horizontal-collapsed {
     width: 0 !important;
     min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
     border-left: 0px solid transparent !important;
@@ -320,8 +333,10 @@
     overflow: hidden !important;
 }
 #galaxy-physics-controls.horizontal-expanded {
-    width: 160px !important;
-    min-width: 160px !important;
+    width: 210px !important;
+    min-width: 210px !important;
+    height: auto !important;
+    max-height: none !important;
     padding-left: 12px !important;
     padding-right: 12px !important;
     margin-left: 12px !important;
@@ -357,11 +372,11 @@
 
 #view-overview .viewport-hint {
     position: absolute;
-    bottom: 20px;
+    bottom: 56px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 102;
-    pointer-events: none;
+    pointer-events: auto;
     font-size: 0.65rem;
     color: var(--text-dim);
     letter-spacing: 0.5px;
@@ -374,7 +389,7 @@
 
 
 
-/* 出版工作台弹窗尺寸：双模物理锁定等高，视觉韵律紧凑凝聚，彻底消除模块割裂与伸缩跳动 */
+/* 出版领航仪弹窗尺寸：双模物理锁定等高，视觉韵律紧凑凝聚，彻底消除模块割裂与伸缩跳动 */
 #view-overview .command-hub {
     height: min(650px, 86vh);
     min-height: min(650px, 86vh);
@@ -412,9 +427,47 @@
 
 .lpwiz-container {
     flex: 1;
-    display: flex; flex-direction: column; gap: 14px;
+    display: flex; flex-direction: column; gap: 10px;
     justify-content: space-between;
-    padding: 4px 0 2px; width: 100%; text-align: left;
+    padding: 2px 0; width: 100%; text-align: left;
+}
+/* 🌟 Onboarding Hero 居中微光精致流 */
+.lpwiz-hero-section {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 2px 8px 4px;
+    margin: 0;
+}
+.lpwiz-hero-title {
+    margin: 0 0 4px 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 55%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+.lpwiz-hero-subtitle {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--text-dim, #94a3b8);
+    line-height: 1.45;
+    letter-spacing: 1.2px;
+    opacity: 0.88;
+}
+.lpwiz-hero-subtitle .lpwiz-hero-sep {
+    margin: 0 12px;
+    opacity: 0.45;
+    font-weight: 300;
 }
 .lpwiz-welcome {
     text-align: center; padding: 8px 16px;
@@ -565,16 +618,18 @@
     letter-spacing: 0.3px;
 }
 .lpwiz-btn.sample-preview-btn {
-    background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    background: rgba(5, 150, 105, 0.14);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    box-shadow: 0 2px 12px rgba(5, 150, 105, 0.15);
+    backdrop-filter: blur(8px);
 }
 .lpwiz-btn.sample-preview-btn:hover {
     transform: translateY(-2px);
-    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(5, 150, 105, 0.25);
+    color: #6ee7b7;
+    border-color: rgba(52, 211, 153, 0.7);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.35);
 }
 .lpwiz-btn.sample-publish-btn {
     background: var(--white-05); color: var(--text-bright);
@@ -983,4 +1038,98 @@
 @keyframes lpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lpCelebrateGlow { from { box-shadow: 0 0 10px rgba(var(--neon-green-rgb), 0.1); } to { box-shadow: 0 0 25px rgba(var(--neon-green-rgb), 0.25); } }
 @keyframes lpPulsePublish { from { box-shadow: 0 0 5px rgba(var(--neon-cyan-rgb), 0.2); } to { box-shadow: 0 0 16px rgba(var(--neon-cyan-rgb), 0.5); } }
+
+/* 🪐 Galaxy HUD 顶部指标卡片胶囊按钮 */
+.galaxy-hud-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 24px;
+    line-height: 1;
+    font-size: 0.58rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 0 6px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    text-decoration: none;
+    outline: none;
+    background: var(--white-05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+}
+
+.galaxy-hud-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* 暗色模式 - 隔离按钮默认与激活 */
+#btn-focus-connected {
+    background: var(--neon-cyan-05);
+    border: 1px solid var(--neon-cyan-20);
+    color: var(--neon-cyan);
+}
+#btn-focus-connected.active-isolated {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    color: var(--neon-amber, #fbbf24) !important;
+}
+
+/* 暗色模式 - 自转按钮默认与激活 */
+#btn-toggle-rotate {
+    background: var(--white-05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+}
+#btn-toggle-rotate.active-rotating {
+    background: rgba(0, 242, 254, 0.08) !important;
+    border-color: rgba(0, 242, 254, 0.3) !important;
+    color: var(--neon-cyan) !important;
+}
+
+/* ☀️ 亮色调模式专属穿透与高清晰对比度 (Light Mode High Contrast & Sharp Legibility) */
+[data-theme="light"] .galaxy-hud-btn {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .galaxy-hud-btn span {
+    color: inherit !important;
+}
+
+[data-theme="light"] .galaxy-hud-btn:hover {
+    background: #e2e8f0 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #btn-focus-connected {
+    background: rgba(14, 165, 233, 0.08) !important;
+    border-color: rgba(14, 165, 233, 0.3) !important;
+    color: #0369a1 !important;
+}
+
+[data-theme="light"] #btn-focus-connected.active-isolated {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #92400e !important;
+}
+
+[data-theme="light"] #btn-toggle-rotate {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] #btn-toggle-rotate.active-rotating {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+    color: #0284c7 !important;
+}
 

@@ -144,7 +144,7 @@ class FrameworkDevServer:
             # 2. 依赖自愈阶段
             node_modules = os.path.join(self.directory, "node_modules")
             if not os.path.exists(node_modules):
-                # 🚀 [母本依赖秒级共享自愈] 若当前为版图派生主题且母本主题已就绪 node_modules，优先建立绝对物理软链接
+                # 🚀 [母本依赖秒级共享自愈] 若当前为品牌派生主题且母本主题已就绪 node_modules，优先建立绝对物理软链接
                 t_base = os.path.basename(os.path.normpath(self.directory))
                 mother_candidates = [
                     os.path.abspath(os.path.join("themes", t_base, "node_modules")),

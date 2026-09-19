@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes - Knowledge Graph Legacy Migrator
-职责：物理扫描旧版主题知识图谱并无损合并至版图全局单例中。
+职责：物理扫描旧版主题知识图谱并无损合并至品牌全局单例中。
 """
 
 import os
@@ -15,7 +15,7 @@ class KnowledgeGraphMigrator:
 
     @staticmethod
     def migrate_legacy_theme_graphs(graph_path: str, current_nodes: Dict[str, Any]) -> int:
-        """扫描同版图 metadata/themes/*/knowledge_graph_*.json 并无损合并至全局单例"""
+        """扫描同品牌 metadata/themes/*/knowledge_graph_*.json 并无损合并至全局单例"""
         try:
             meta_dir = os.path.dirname(os.path.dirname(graph_path))
             themes_dir = os.path.join(meta_dir, "themes")
@@ -36,7 +36,7 @@ class KnowledgeGraphMigrator:
                     except Exception:
                         pass
             if merged_count > 0:
-                tlog.info(f"🌌 [KnowledgeGraph] 成功从历史主题图谱自愈迁移 {merged_count} 个节点至版图全局单例！")
+                tlog.info(f"🌌 [KnowledgeGraph] 成功从历史主题图谱自愈迁移 {merged_count} 个节点至品牌全局单例！")
             return merged_count
         except Exception as e:
             tlog.warning(f"⚠️ [KnowledgeGraph] 历史主题图谱合并探测忽略: {e}")

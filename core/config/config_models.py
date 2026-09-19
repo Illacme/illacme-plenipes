@@ -207,7 +207,7 @@ class Configuration(BaseModel):
         return os.path.join(self.get_core_metadata_dir(), filename)
 
     def get_knowledge_graph_path(self) -> str:
-        """🌌 获取版图全局唯一的知识图谱路径 (脱耦主题)"""
+        """🌌 获取品牌全局唯一的知识图谱路径 (脱耦主题)"""
         filename = self.system.data_paths.get("knowledge_graph", "knowledge_graph.json")
         return os.path.join(self.get_core_metadata_dir(), filename)
 

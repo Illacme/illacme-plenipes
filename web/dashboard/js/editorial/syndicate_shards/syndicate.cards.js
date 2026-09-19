@@ -49,22 +49,18 @@
             const isOutdated = !!(record && record.is_outdated);
 
             let actionBadgeHtml = '🚀 首次';
-            let actionBadgeBg = 'rgba(0, 242, 255, 0.1)';
-            let actionBadgeColor = '#00f2fe';
+            let actionBadgeClass = 'syndicate-action-badge--first';
 
             if (hasRemoteRecord) {
                 if (isOutdated) {
                     actionBadgeHtml = '⚠️ 变更';
-                    actionBadgeBg = 'rgba(245, 158, 11, 0.12)';
-                    actionBadgeColor = '#f59e0b';
+                    actionBadgeClass = 'syndicate-action-badge--outdated';
                 } else if (noUpdateSupport) {
                     actionBadgeHtml = '⚠️ 新建';
-                    actionBadgeBg = 'rgba(251, 191, 36, 0.1)';
-                    actionBadgeColor = '#fbbf24';
+                    actionBadgeClass = 'syndicate-action-badge--create';
                 } else {
                     actionBadgeHtml = '🔄 更新';
-                    actionBadgeBg = 'rgba(187, 134, 252, 0.12)';
-                    actionBadgeColor = '#bb86fc';
+                    actionBadgeClass = 'syndicate-action-badge--update';
                 }
             }
 
@@ -94,9 +90,9 @@
             let coverBadgeHtml = '';
             if (cov) {
                 if (cov.tier === 'required') {
-                    coverBadgeHtml = `<span title="${cov.tip}" style="cursor:help;font-size:0.62rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.28);font-weight:600;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;flex-shrink:0;">🖼️ ${cov.label}</span>`;
+                    coverBadgeHtml = `<span title="${cov.tip}" class="syndicate-cover-badge syndicate-cover-badge--required">🖼️ ${cov.label}</span>`;
                 } else if (cov.tier === 'recommended') {
-                    coverBadgeHtml = `<span title="${cov.tip}" style="cursor:help;font-size:0.62rem;padding:1px 5px;border-radius:4px;background:rgba(56,189,248,0.1);color:#38bdf8;border:1px solid rgba(56,189,248,0.22);font-weight:500;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;flex-shrink:0;">🖼️ ${cov.label}</span>`;
+                    coverBadgeHtml = `<span title="${cov.tip}" class="syndicate-cover-badge syndicate-cover-badge--recommended">🖼️ ${cov.label}</span>`;
                 }
             }
 
@@ -105,42 +101,44 @@
                 ? `${rawRemoteId.slice(0, 8)}...${rawRemoteId.slice(-6)}`
                 : rawRemoteId;
 
+            const cardStateClass = hasRemoteRecord ? (isOutdated ? 'syndicate-card syndicate-card--outdated' : 'syndicate-card syndicate-card--published') : (p.isReady ? 'syndicate-card syndicate-card--ready' : 'syndicate-card');
+
             return `
-            <div class="glass-panel" style="padding: 8px 12px; border-radius: 8px; border: 1px solid ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.45)' : 'rgba(187, 134, 252, 0.35)') : (p.isReady ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255,255,255,0.06)')}; display: flex; flex-direction: column; gap: 6px; opacity: ${p.isReady ? '1' : '0.78'}; background: ${hasRemoteRecord ? (isOutdated ? 'rgba(245, 158, 11, 0.05)' : 'rgba(187, 134, 252, 0.04)') : (p.isReady ? 'rgba(0, 255, 136, 0.02)' : 'rgba(255,255,255,0.01)')};">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 9px; min-width: 0;">
-                        <input type="checkbox" value="${p.id}" class="syndicate-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'} style="accent-color: var(--accent-secondary); width: 15px; height: 15px; cursor: ${p.isReady ? 'pointer' : 'not-allowed'}; flex-shrink: 0;">
-                        <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: nowrap;">
-                            <span style="font-size: 0.84rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'}; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <div class="glass-panel ${cardStateClass}">
+                <div class="syndicate-card-main-row">
+                    <div class="syndicate-card-left">
+                        <input type="checkbox" value="${p.id}" class="syndicate-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'}>
+                        <div class="syndicate-platform-label">
+                            <span class="${p.isReady ? 'syndicate-platform-name' : 'syndicate-platform-name syndicate-platform-name--inactive'}">
                                 <span>${channelIcon}</span>
                                 <span>${p.name}</span>
                             </span>
-                            <span title="${slaTip}" style="cursor: help; font-size: 0.72rem; line-height: 1; opacity: ${p.isReady ? '0.9' : '0.6'};" flex-shrink: 0;">${slaIcon}</span>
-                            <span title="${credTip}" style="cursor: help; font-size: 0.7rem; line-height: 1; flex-shrink: 0;">${credIcon}</span>
+                            <span title="${slaTip}" class="syndicate-icon-tip" style="opacity: ${p.isReady ? '0.9' : '0.6'};">${slaIcon}</span>
+                            <span title="${credTip}" class="syndicate-icon-tip">${credIcon}</span>
                             ${coverBadgeHtml}
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
                         ${p.isReady ? `
-                            <span title="${actionBadgeHtml}" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; background: ${actionBadgeBg}; color: ${actionBadgeColor}; border: 1px solid ${actionBadgeColor}44; font-weight: 600;">${actionBadgeHtml}</span>
-                            <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="修改渠道凭据或配置" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; border-radius: 5px; padding: 2px 6px; font-size: 0.68rem; cursor: pointer; line-height: 1.2;">⚙️</button>
+                            <span title="${actionBadgeHtml}" class="syndicate-action-badge ${actionBadgeClass}">${actionBadgeHtml}</span>
+                            <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="修改渠道凭据或配置" class="syndicate-settings-btn">⚙️</button>
                         ` : `
-                            <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="${credTip} - 前往配置" style="background: rgba(0, 242, 255, 0.12); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--neon-cyan, #00f2fe); border-radius: 5px; padding: 2px 6px; font-size: 0.68rem; cursor: pointer; line-height: 1.2;">⚙️</button>
+                            <button type="button" onclick="window.goToPluginConfig('${p.id}', 'publisher')" title="${credTip} - 前往配置" class="syndicate-config-btn">⚙️</button>
                         `}
                     </div>
                 </div>
                 ${hasRemoteRecord ? `
-                    <div style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.68rem; color: var(--text-dim); min-width: 0;">
-                        <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; white-space: nowrap;">
+                    <div class="syndicate-record-row">
+                        <div class="syndicate-record-left">
                             <span style="display: inline-flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 <span style="opacity: 0.85;">🆔 ID:</span>
-                                <code title="完整对端 ID: ${rawRemoteId} (点击可复制)" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${rawRemoteId}');if(window.showToast)window.showToast('已复制对端 ID','success');}" style="cursor: pointer; background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px; font-family: monospace; user-select: all; border: 1px solid rgba(255,255,255,0.1);">${displayRemoteId}</code>
+                                <code title="完整对端 ID: ${rawRemoteId} (点击可复制)" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${rawRemoteId}');if(window.showToast)window.showToast('已复制对端 ID','success');}" class="syndicate-remote-id">${displayRemoteId}</code>
                             </span>
-                            ${remoteUrl ? `<a href="${remoteUrl}" target="_blank" style="color: #00f2fe; text-decoration: none; flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px;" title="在新标签页中打开对端文章">🔗 对端文章 ↗</a>` : ''}
+                            ${remoteUrl ? `<a href="${remoteUrl}" target="_blank" class="syndicate-remote-link" title="在新标签页中打开对端文章">🔗 对端文章 ↗</a>` : ''}
                         </div>
                         <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                            <button type="button" onclick="window.deleteRemoteArticle('${relPath.replace(/'/g, "\\'")}', '${p.id}', '${(record?.lang_code || '').replace(/'/g, "\\'")}')" style="background: rgba(255, 77, 79, 0.15); border: 1px solid rgba(255, 77, 79, 0.35); color: #ff4d4f; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; white-space: nowrap; height: 20px; display: inline-flex; align-items: center; line-height: 1;" title="从对端平台下架删除此文章">🗑️ 下架</button>
-                            <button type="button" onclick="window.unlinkRemoteArticle('${relPath.replace(/'/g, "\\'")}', '${p.id}', '${(record?.lang_code || '').replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #aaa; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; white-space: nowrap; height: 20px; display: inline-flex; align-items: center; line-height: 1;" title="仅在本地解绑指纹映射，不删除对端文章">🔗 解绑</button>
+                            <button type="button" onclick="window.deleteRemoteArticle('${relPath.replace(/'/g, "\\'")}', '${p.id}', '${(record?.lang_code || '').replace(/'/g, "\\'")}')" class="syndicate-delete-btn" title="从对端平台下架删除此文章">🗑️ 下架</button>
+                            <button type="button" onclick="window.unlinkRemoteArticle('${relPath.replace(/'/g, "\\'")}', '${p.id}', '${(record?.lang_code || '').replace(/'/g, "\\'")}')" class="syndicate-unlink-btn" title="仅在本地解绑指纹映射，不删除对端文章">🔗 解绑</button>
                         </div>
                     </div>
                 ` : ''}
@@ -167,7 +165,8 @@
         const sourceLangCode = (window.settingsData?.i18n_settings?.source?.lang_code || window.settingsData?.source?.lang_code || 'zh').toLowerCase();
 
         if (selectedLang.toLowerCase() === sourceLangCode) {
-            tipEl.style.cssText = 'font-size: 0.72rem; color: #00ff88; background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.2); padding: 6px 10px; border-radius: 6px; margin-top: 2px;';
+            tipEl.className = 'syndicate-tip-box syndicate-tip-box--source';
+            tipEl.style.cssText = '';
             tipEl.innerHTML = '🟢 当前选中的是原稿母语，无需翻译，启动后可直达社交分发平台。';
         } else {
             const docStatus = window.currentArticleDispatchStatus;
@@ -178,16 +177,16 @@
             const progress = matrixItem?.progress || 0;
             const isReady = statusLower === 'published' || statusLower === 'success' || statusLower === 'synced' || statusLower === 'done' || progress === 100 || (cacheInfo.includes('已缓存') && !cacheInfo.includes(' 0/'));
 
-            const currentTitle = window.currentSyndicatingTitle || relPath || '';
-            const jumpBtnHtml = `<button type="button" onclick="window.jumpToReviewDrawer('${(relPath || '').replace(/'/g, "\\'")}', '${currentTitle.replace(/'/g, "\\'")}')" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 600; background: rgba(187, 134, 252, 0.18); color: #bb86fc; border: 1px solid rgba(187, 134, 252, 0.38); border-radius: 4px; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;">🔍 译文精校 ↗</button>`;
+            const jumpBtnHtml = `<button type="button" class="syndicate-review-jump-btn" onclick="window.jumpToReviewDrawer(window.currentSyndicatingRelPath, window.currentSyndicatingTitle)">🔍 译文精校 ↗</button>`;
 
             if (isReady) {
-                tipEl.style.cssText = 'font-size: 0.72rem; color: #00ff88; background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.2); padding: 6px 10px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
+                tipEl.className = 'syndicate-tip-box syndicate-tip-box--ready';
+                tipEl.style.cssText = '';
                 const detailText = cacheInfo ? ` (${cacheInfo})` : '';
                 tipEl.innerHTML = `<span>🟢 目标语种 [${selectedLang.toUpperCase()}] 译文已就绪${detailText}，启动后直接分发。</span>${jumpBtnHtml}`;
             } else {
-                tipEl.style.cssText = 'font-size: 0.72rem; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); padding: 6px 10px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
-                tipEl.innerHTML = `<span>⚡ 目标语种 [${selectedLang.toUpperCase()}] 译文尚未就绪，启动后将由 AI 自动翻译！</span>${jumpBtnHtml}`;
+                tipEl.className = 'syndicate-tip-box syndicate-tip-box--pending';
+                tipEl.style.cssText = '';
             }
         }
 

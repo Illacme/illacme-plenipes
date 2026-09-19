@@ -18,8 +18,19 @@ from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
 def search_vault_logic(engine, q: str = "", page: int = 1, limit: int = 50, folder: str = ""):
     """🚀 [V55.0] 联邦检索入口：服务于 Dashboard Vault 视图"""
     if not engine: return {"error": "Engine not initialized"}
-    docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q, folder=folder)
     total = engine.meta.sqlite.get_documents_count_filtered(query=q, folder=folder)
+    
+    # 🛡️ 物理真理对正：若账本为空但文库物理存在，执行自愈全量索引重构
+    if total == 0 and getattr(engine, "vault_root", None) and os.path.exists(engine.vault_root):
+        try:
+            from core.editorial.vault_indexer import VaultIndexer
+            if hasattr(engine, 'manuscript_source') and engine.manuscript_source:
+                VaultIndexer.build_indexes(engine.manuscript_source, config=engine.config, ledger=engine.meta)
+                total = engine.meta.sqlite.get_documents_count_filtered(query=q, folder=folder)
+        except Exception:
+            pass
+
+    docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q, folder=folder)
     return {"items": docs, "total": total}
 
 
@@ -41,6 +52,40 @@ def get_document_detail_logic(engine, doc_id: str):
     doc["content"] = pure_content
     doc["frontmatter"] = metadata
     doc["has_frontmatter"] = has_fm
+
+    # 🧠 [深度语义聚合] 优先使用原稿 frontmatter，若原稿中无则无损回填知识图谱中的 AI 派生语义
+    kg_gist = ""
+    kg_entities = {}
+    if hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
+        node_data = engine.knowledge_graph.nodes.get(doc_id)
+        if isinstance(node_data, dict):
+            kg_gist = node_data.get("gist", "")
+            kg_entities = node_data.get("entities", {})
+
+    final_gist = metadata.get("gist") or kg_gist or ""
+    final_entities = metadata.get("entities") or kg_entities or {}
+    doc["gist"] = final_gist
+    doc["entities"] = final_entities
+    if not metadata.get("gist") and final_gist:
+        metadata["gist"] = final_gist
+    if not metadata.get("entities") and final_entities:
+        metadata["entities"] = final_entities
+
+    # 📚 [V105.0] 标准化字数透传：全球全语种通用度量 (Universal Multilingual Word Count)
+    seo_data = doc.get("seo_data")
+    if isinstance(seo_data, str):
+        try:
+            import json
+            seo_data = json.loads(seo_data)
+        except Exception:
+            seo_data = {}
+
+    wc = seo_data.get("word_count") if isinstance(seo_data, dict) else 0
+    if not wc and pure_content:
+        from core.utils.text import calculate_universal_word_count
+        wc = calculate_universal_word_count(pure_content)
+    doc["word_count"] = int(wc or 0)
+
     return doc
 
 
@@ -122,13 +167,10 @@ def save_document_logic(engine, doc_id: str, req: dict):
     except Exception as e:
         return {"error": f"Failed to write physical file: {e}"}
 
-    # 物理计算字数与自愈元数据更新
-    import re
+    # 物理计算字数与自愈元数据更新 (全球全语种通用度量模型)
     try:
-        clean_text = re.sub(r'[\s\n\t]+', ' ', full_content)
-        en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
-        zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', full_content))
-        word_count = en_words + zh_chars
+        from core.utils.text import calculate_universal_word_count
+        word_count = calculate_universal_word_count(full_content)
     except Exception:
         word_count = 0
 

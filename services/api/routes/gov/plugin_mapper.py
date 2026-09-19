@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 from core.runtime.engine_singleton import get_global_engine
 
 def _load_schema(theme_root: str, entry: str) -> dict:
-    """🚀 物理探测并加载主题自描述配置，优先对齐全局母本契约，防卫版图旧假数据"""
+    """🚀 物理探测并加载主题自描述配置，优先对齐全局母本契约，防卫品牌旧假数据"""
     import json
     from core.config.config import THEMES_DIR
     global_root = os.path.join(os.getcwd(), THEMES_DIR)
@@ -66,8 +66,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     norm_active = "sovereign" if (active_theme in ("default", "sovereign", None, "")) else active_theme
 
     for root, loc, status, orig, ver, desc in [
-        (local_theme_root, "local", "Local", "user", "V1.0", "版图专属主题：位于当前版图目录下的物理资产。"),
-        (global_theme_root, "global", "Central", "core", SYSTEM_TRACK, "全局主题中心：位于系统根目录的主题资产库，随时可同步至版图。")
+        (local_theme_root, "local", "Local", "user", "V1.0", "品牌专属主题：位于当前品牌目录下的物理资产。"),
+        (global_theme_root, "global", "Central", "core", SYSTEM_TRACK, "全局主题中心：位于系统根目录的主题资产库，随时可同步至品牌。")
     ]:
         if os.path.exists(root):
             for entry in os.listdir(root):
@@ -198,8 +198,8 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
         is_in_use = curr_cfg.get("enabled", False) if isinstance(curr_cfg, dict) else getattr(curr_cfg, "enabled", False)
         if hasattr(curr_cfg, 'dict'): curr_cfg = curr_cfg.dict()
         t_cls = TARGET_REGISTRY.get(t_id)
-        name = getattr(t_cls, "DISPLAY_NAME", t_id.upper())
-        icon = getattr(t_cls, "ICON", "📡")
+        name = getattr(t_cls, "DISPLAY_NAME", None) or t_id.upper()
+        icon = getattr(t_cls, "ICON", None) or "📡"
         sla_tier = getattr(t_cls, "SLA_TIER", "tier1")
         sla_label = getattr(t_cls, "SLA_LABEL", "官方直连" if sla_tier == "tier1" else "Cookie辅助")
         sla_desc = getattr(t_cls, "SLA_DESC", "通过官方开放 API 直连分发，具备企业级稳定性。" if sla_tier == "tier1" else "依赖 Web 登录凭据，建议定期校验有效性。")

@@ -1,0 +1,542 @@
+/* ==========================================================================
+   🖼️ [V1.0] Illacme Plenipes - Syndicate Live Preview & Cover Studio Styles
+   职责：收纳全渠道排版审查弹窗、真机底盘视口、取景器面板组件样式。
+   规范：100% 绑定 :root Design Tokens，自动适配亮/暗主题。
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────
+   1. Syndicate Live Preview Modal & Studio Viewport
+   ────────────────────────────────────────────── */
+
+/* Root backdrop */
+.syndicate-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(16px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.syndicate-modal-backdrop.is-open {
+    display: flex;
+}
+
+/* Modal Card */
+.syndicate-preview-modal-card {
+    width: 1040px;
+    max-width: 96vw;
+    height: 92vh;
+    max-height: 880px;
+    background: rgba(var(--bg-modal-solid-rgb), 0.98);
+    border: 1px solid var(--white-12);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75);
+}
+
+/* Modal Header */
+.syndicate-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--white-08);
+    background: var(--white-02);
+    gap: 16px;
+    flex-wrap: nowrap;
+}
+.syndicate-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex-shrink: 1;
+}
+.syndicate-modal-title-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.syndicate-modal-title-text {
+    min-width: 0;
+}
+.syndicate-modal-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    white-space: nowrap;
+}
+.syndicate-modal-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+.syndicate-modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Tab capsules container */
+.syndicate-modal-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 3px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--white-08);
+}
+.syndicate-modal-tab-btn {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    background: transparent;
+    color: var(--text-dim);
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+.syndicate-modal-tab-btn:hover {
+    color: var(--text-bright);
+    background: var(--white-05);
+}
+.syndicate-modal-tab-btn.is-active,
+.syndicate-modal-tab-btn.active {
+    background: rgba(var(--neon-cyan-rgb), 0.18);
+    color: var(--neon-cyan);
+    font-weight: 700;
+    border-color: rgba(var(--neon-cyan-rgb), 0.35);
+}
+
+/* Channel select dropdown */
+.syndicate-modal-channel-select {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    background: rgba(var(--neon-cyan-rgb), 0.08);
+    color: var(--neon-cyan);
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.3);
+    border-radius: 7px;
+    cursor: pointer;
+    outline: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Modal close button */
+.syndicate-modal-close-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white-05);
+    border: 1px solid var(--white-10);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    margin-left: 4px;
+}
+.syndicate-modal-close-btn:hover {
+    background: var(--white-10);
+    color: var(--text-bright);
+}
+
+/* Modal Toolbar */
+.syndicate-modal-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid var(--white-06);
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+.syndicate-modal-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+.syndicate-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Modal Body container */
+.syndicate-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    background: radial-gradient(circle at top, rgba(var(--bg-asset-solid-rgb), 0.8), rgba(var(--bg-mode-solid-rgb), 0.95));
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.syndicate-card-preview-renderer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+/* Viewport switcher */
+.syndicate-viewport-switcher {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--white-06);
+    padding: 2px 3px;
+    border-radius: 6px;
+    border: 1px solid var(--white-10);
+}
+.syndicate-viewport-btn {
+    padding: 3px 7px;
+    font-size: 0.68rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-dim);
+    font-weight: 400;
+}
+.syndicate-viewport-btn.is-active {
+    background: rgba(var(--neon-cyan-rgb), 0.22);
+    color: var(--neon-cyan);
+    font-weight: 700;
+}
+
+/* Copy Action Buttons */
+.syndicate-copy-wechat-btn {
+    padding: 5px 12px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    background: var(--callout-tip-color);
+    color: var(--text-bright);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.syndicate-copy-markdown-btn {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    border-radius: 6px;
+    background: var(--white-08);
+    color: var(--text-bright);
+    border: 1px solid var(--white-15);
+    cursor: pointer;
+}
+
+/* Stat badges */
+.syndicate-stat-badge--cyan {
+    background: rgba(var(--neon-cyan-rgb), 0.1);
+    color: var(--neon-cyan);
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.25);
+}
+.syndicate-stat-badge--dim {
+    background: var(--white-05);
+    color: var(--text-dim);
+}
+.syndicate-stat-badge--purple {
+    background: rgba(var(--neon-purple-rgb), 0.12);
+    color: var(--neon-purple);
+    border: 1px solid rgba(var(--neon-purple-rgb), 0.3);
+}
+.syndicate-stat-badge--green {
+    background: rgba(var(--neon-green-rgb), 0.12);
+    color: var(--neon-green);
+}
+.syndicate-stat-badge--amber {
+    background: rgba(var(--neon-amber-rgb), 0.12);
+    color: var(--neon-amber);
+}
+
+/* Compliance Banner */
+.syndicate-compliance-banner {
+    max-width: 100%;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    background: var(--white-03);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-secondary);
+}
+
+/* Loading & Empty states */
+.syndicate-preview-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    color: var(--text-dim);
+    gap: 8px;
+    font-size: 0.82rem;
+}
+.syndicate-preview-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+}
+
+/* Preview Chassis styles */
+.preview-viewport-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 14px;
+}
+.preview-viewport-chassis {
+    max-width: 100%;
+    background: rgba(255, 255, 255, 1);
+    color: rgba(0, 0, 0, 1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.preview-viewport-chassis--mobile {
+    border-radius: 36px;
+    padding: 22px 20px 28px;
+    border: 8px solid rgba(var(--bg-modal-solid-rgb), 1);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65);
+}
+.preview-viewport-chassis--desktop {
+    border-radius: 14px;
+    padding: 28px 36px 40px;
+    border: 1px solid var(--white-10);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.preview-chassis-speaker {
+    width: 70px;
+    height: 4px;
+    background: var(--white-15);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+}
+.preview-chassis-home-bar {
+    width: 110px;
+    height: 4px;
+    background: var(--white-15);
+    border-radius: 2px;
+    margin: 24px auto 0;
+}
+
+/* Channel headers inside preview */
+.preview-wechat-header {
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--white-08);
+    padding-bottom: 12px;
+}
+.preview-wechat-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 1);
+    line-height: 1.4;
+    margin: 0 0 8px;
+}
+.preview-wechat-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666666;
+}
+.preview-wechat-author {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+.preview-wechat-origin-tag {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.preview-xhs-header {
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--white-05);
+    padding-bottom: 10px;
+}
+.preview-xhs-badge {
+    font-size: 12px;
+    color: var(--neon-red);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.preview-xhs-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 1);
+    margin: 0;
+}
+
+.preview-general-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--white-08);
+    padding-bottom: 14px;
+}
+.preview-general-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: rgba(0, 0, 0, 1);
+    line-height: 1.4;
+    margin: 0 0 8px;
+}
+.preview-general-meta {
+    font-size: 13px;
+    color: #666666;
+}
+.preview-rendered-body {
+    line-height: 1.8;
+    word-break: break-word;
+}
+
+/* Channel Cover Studio (取景器面板) */
+.channel-cover-studio-panel {
+    margin-bottom: 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.25);
+    background: rgba(var(--bg-modal-solid-rgb), 0.95);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+.channel-cover-studio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--white-03);
+    border-bottom: 1px solid var(--white-08);
+    gap: 8px;
+}
+.channel-cover-studio-title-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--accent-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.channel-cover-studio-tag--purple {
+    font-size: 0.62rem;
+    color: var(--neon-purple);
+    background: rgba(var(--neon-purple-rgb), 0.18);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.channel-cover-studio-tag--cyan {
+    font-size: 0.62rem;
+    color: var(--neon-cyan);
+    background: rgba(var(--neon-cyan-rgb), 0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.channel-cover-studio-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.channel-cover-studio-btn--pick {
+    padding: 2px 8px;
+    font-size: 0.68rem;
+    background: rgba(var(--neon-cyan-rgb), 0.12);
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.3);
+    color: var(--neon-cyan);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.channel-cover-studio-btn--reset {
+    padding: 2px 8px;
+    font-size: 0.68rem;
+    background: rgba(var(--neon-red-rgb), 0.12);
+    border: 1px solid rgba(var(--neon-red-rgb), 0.3);
+    color: var(--neon-red);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.channel-cover-studio-btn--default {
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    background: var(--white-06);
+    border: 1px solid var(--white-15);
+    color: var(--text-bright);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.channel-crop-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: rgba(var(--bg-dropdown-solid-rgb), 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    user-select: none;
+}
+.channel-preview-cover-img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: none;
+    max-height: none;
+    pointer-events: none;
+    user-select: none;
+    transition: transform 0.04s ease-out;
+    display: block;
+}
+.channel-crop-grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to right, var(--white-06) 1px, transparent 1px) 0 0 / 33.33% 100%,
+                linear-gradient(to bottom, var(--white-06) 1px, transparent 1px) 0 0 / 100% 33.33%;
+    border: 1px dashed rgba(var(--neon-cyan-rgb), 0.25);
+}
+.channel-crop-focal-hint {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    font-size: 0.62rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--neon-cyan);
+    pointer-events: none;
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.25);
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.syndicate-finetune-badge {
+    font-size: 0.64rem;
+    color: var(--neon-cyan);
+    font-weight: 700;
+    background: rgba(var(--neon-cyan-rgb), 0.14);
+    border: 1px solid rgba(var(--neon-cyan-rgb), 0.25);
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+}

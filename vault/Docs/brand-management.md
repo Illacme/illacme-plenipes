@@ -1,11 +1,11 @@
 ---
-title: 品牌版图 (Imprint) 多站点与工作区管理
+title: 品牌管理与多站点 (Imprint)
 layout: docs
 slug: brand-management
 route_prefix: docs
 date: 2026-08-16
 author: Illacme Editorial Team
-description: 掌握如何构建多个相互物理隔离的独立出版版图，为不同写作领域定制专属主题、算力与分发矩阵。
+description: 掌握如何构建多个相互物理隔离的独立出版品牌，为不同写作领域定制专属主题、算力与分发矩阵。
 tags:
 - Imprint
 - MultiSite
@@ -15,17 +15,17 @@ categories:
 - Documentation
 cover: /api/design/assets/covers/cover_91f3a56a2ebd.jpg
 ---
-# 🏷️ 品牌版图 (Imprint) 多站点与工作区管理
+# 🏷️ 品牌管理与多站点 (Imprint)
 
-在 **Illacme Plenipes** 中，每一个出版项目都是一个独立的**“品牌版图 (Imprint)”**。本指南将带您深入了解如何利用多品牌架构实现多站点、多文库与多渠道的绝对物理隔离管理。
+在 **Illacme Plenipes** 中，每一个出版项目都是一个独立的**“出版品牌 (Imprint)”**。本指南将带您深入了解如何利用多品牌架构实现多站点、多文库与多渠道的绝对物理隔离管理。
 
 ---
 
-## 🏛️ 1. 什么是“品牌版图 (Imprint)”？
+## 🏛️ 1. 什么是“出版品牌 (Imprint)”？
 
 当一位创作者同时经营多个领域的内容时（例如：个人技术博客、学术研究专栏、企业产品文档、生活旅行随笔），传统的发布工具往往需要部署多套独立程序或在同一数据库中混杂混乱。
 
-**Illacme Plenipes 的多版图架构**：
+**Illacme Plenipes 的多品牌架构**：
 - **物理隔离存储**：每个品牌拥有专属目录 `imprints/{brand}/`，独立存储配置（`config.imprint.yaml`）、历史账本（`usage_ledger.json`）与同步状态。
 - **独立原稿文库**：品牌 A 可以绑定 `/Vaults/TechDocs`，品牌 B 可以绑定 `/Vaults/DailyLife`。
 - **独立装帧主题**：技术站点可选用 `Docusaurus` 或 `Starlight`，个人博客选用 `Sovereign` 赛博风。
@@ -37,17 +37,17 @@ cover: /api/design/assets/covers/cover_91f3a56a2ebd.jpg
 
 ### 方式一：在治理中心中可视化操作
 1. 打开浏览器进入治理中心：`http://127.0.0.1:43212/dashboard/`
-2. 导航至【版图装帧与模式】&rarr;【版图管理 (imprints)】
-3. 点击「➕ 新建出版版图」按钮，输入品牌代号（如 `tech_weekly`）与展示名称
+2. 导航至【品牌装帧与模式】&rarr;【品牌管理 (imprints)】
+3. 点击「➕ 新建出版品牌」按钮，输入品牌代号（如 `tech_weekly`）与展示名称
 4. 配置该品牌的文库路径、主题风格与分发凭据
 5. 点击「激活并切换」，系统将毫秒级热切换当前工作空间！
 
 ### 方式二：命令行极速操作
 ```bash
-# 1. 唤醒指挥中心
+# 1. 唤醒出版引擎
 python3 plenipes.py
 
-# 2. 在交互菜单中选择 [1] 切换出版版图，或使用参数指定启动：
+# 2. 在交互菜单中选择 [1] 切换出版品牌，或使用参数指定启动：
 python3 plenipes.py --imprint tech_weekly --sync
 ```
 

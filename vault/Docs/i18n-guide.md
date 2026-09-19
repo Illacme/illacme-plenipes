@@ -48,7 +48,7 @@ cover: /api/design/assets/covers/cover_c283c0d7217d.jpg
 glossary:
   "主权出版": "Sovereign Publishing"
   "段落影子缓存": "Block Shadow Cache"
-  "品牌版图": "Imprint"
+  "出版品牌": "Imprint"
   "装帧工厂": "SSG Bindery"
 ```
 

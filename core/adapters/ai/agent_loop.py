@@ -24,7 +24,7 @@ class AutonomousAgent:
         self.max_iterations = max_iterations
         self.registry = ToolRegistry()
         self._repetition_count = 0
-        # 📁 [V75.6] 物理安全沙箱对正：初始化工作目录为当前活跃版图的原稿文库
+        # 📁 [V75.6] 物理安全沙箱对正：初始化工作目录为当前活跃品牌的原稿文库
         import os
         from core.runtime.engine_singleton import get_global_engine
         engine = get_global_engine()

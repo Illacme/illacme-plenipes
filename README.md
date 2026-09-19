@@ -21,13 +21,30 @@ Illacme Plenipes 是一款为高端创作者、机构及极客打造的**高维�
 
 ## 🚀 快速点火 (Quick Start)
 
-```bash
-# 1. 克隆并进入
-git clone https://github.com/your-username/illacme-plenipes.git
-cd illacme-plenipes
+Out-of-the-box launcher matrix for cross-platform environments:
 
-# 2. 一键点火（进入交互式主权引导）
-python plenipes.py
+*   **🍎 macOS**: Double-click **`start.command`** in Finder (auto-detects virtualenv and pops up dashboard).
+*   **🪟 Windows**: Double-click **`start.bat`** (or execute `.\start.ps1` in PowerShell).
+*   **🐧 Linux / POSIX**: Run in terminal:
+    ```bash
+    ./start.sh
+    ```
+*   **🐳 Docker Compose**:
+    ```bash
+    docker compose up -d
+    ```
+
+---
+
+### 💻 Developer CLI Mode
+```bash
+# 1. Clone & Prepare
+git clone https://github.com/illacme/illacme-plenipes.git
+cd illacme-plenipes
+pip install -r requirements.txt
+
+# 2. Ignition (Interactive Governance Console)
+python3 plenipes.py
 ```
 
 ## 🛠️ 架构蓝图 (Sovereign Architecture)

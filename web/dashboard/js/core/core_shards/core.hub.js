@@ -4,8 +4,22 @@
  * 🛡️ [SOP-02 模块拆分 / AEL-Iter-v10.3]
  */
 
+// 辅助检测导览是否真正处于激活态 (严格双重物理校验：内存标志 + DOM 遮罩层)
+const _isTourRealActive = () => {
+    if (typeof window.isTourActive === 'function') return window.isTourActive();
+    return !!(window._isTourActive && document.querySelector('.dashboard-tour-overlay'));
+};
+
 // 1. 核心指挥中枢控制 (全局单例)
 window.toggleHub = (forceState) => {
+    // 🛡️ 导览进行中守护：若处于导览态且非显式隐藏指令，重定向为唤起品牌下拉菜单，防止误唤起领航仪打断导览
+    if (_isTourRealActive() && forceState !== 'hide') {
+        if (typeof window.toggleImprintDropdown === 'function') {
+            window.toggleImprintDropdown();
+        }
+        return;
+    }
+
     const hub = document.getElementById('command-hub-overlay');
     if (!hub) return;
 
@@ -22,7 +36,7 @@ window.toggleHub = (forceState) => {
         willShow = isHidden;
     }
 
-    // 🚀 [V80.0] 每次展开出版工作台时刷新智能内容
+    // 🚀 [V80.0] 每次展开出版领航仪时刷新智能内容
     if (willShow && typeof window.initLaunchpad === 'function') {
         window.initLaunchpad();
     }
@@ -30,6 +44,26 @@ window.toggleHub = (forceState) => {
 
 window.toggleImprintDropdown = (e) => {
     if (e) e.stopPropagation();
+
+    const isTourActive = _isTourRealActive();
+
+    // 🛡️ [退出导览自愈守护] 若导览未激活，确保清理任何遗留的锁定态与流光样式，绝对不阻碍用户操作
+    if (!isTourActive) {
+        const triggerEl = document.getElementById('imprint-selector-trigger');
+        if (triggerEl && (triggerEl.classList.contains('tour-brand-locked') || triggerEl.classList.contains('tour-shimmer-capsule'))) {
+            triggerEl.classList.remove('tour-brand-locked', 'tour-shimmer-capsule', 'tour-target-beacon');
+            triggerEl.removeAttribute('title');
+        }
+    } else if (typeof window._isDefaultBrandActive === 'function' && window._isDefaultBrandActive()) {
+        // 🔒 仅当导览真实物理处于激活态且已对正默认品牌时，才锁定拦截并提示
+        if (typeof window.showToast === 'function') {
+            window.showToast('🧭 导览全流程需基于官方示范品牌「创作者指南」进行，导览期间已锁定当前品牌', 'info');
+        } else if (typeof window.addAudit === 'function') {
+            window.addAudit('ℹ️ 导览进行中，已锁定出版品牌为「创作者指南」。', 'info');
+        }
+        return;
+    }
+
     const dropdown = document.getElementById('imprint-dropdown');
     if (!dropdown) return;
     const isHidden = dropdown.style.display === 'none';
@@ -37,9 +71,9 @@ window.toggleImprintDropdown = (e) => {
     if (isHidden && typeof renderImprintDropdown === 'function') renderImprintDropdown();
 };
 
-// 🛰️ [V55.1] 核级事件委派：确保指挥中心关闭按钮在任何层级冲突下都能被捕获
+// 🛰️ [V55.1] 核级事件委派：确保出版领航仪 (Navigator) 覆盖层关闭按钮在任何层级冲突下都能被捕获
 document.addEventListener('click', (e) => {
-    // 寻找最近的关闭按钮，且必须在指挥中心覆盖层内
+    // 寻找最近的关闭按钮，且必须在出版领航仪覆盖层内
     const closeBtn = e.target.closest('.overview-overlay .close-btn');
     if (closeBtn) {
         e.preventDefault();
@@ -48,7 +82,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 🚀 [V121.0] 出版工作台自动展开偏好持久化与广播控制
+// 🚀 [V121.0] 出版领航仪自动展开偏好持久化与广播控制
 window.shouldAutoOpenLaunchpad = function () {
     try {
         if (typeof localStorage === 'undefined') return true;

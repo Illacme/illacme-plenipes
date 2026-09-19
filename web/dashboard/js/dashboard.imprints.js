@@ -1,6 +1,6 @@
 /**
  * ⚙️ [V74.0] Illacme Plenipes Imprints Management Module (Hub Controller)
- * 职责：出版集团指挥中心、核心品牌意志切换、物理隔离与一键注销。
+ * 职责：出版品牌治理、核心品牌切换、物理隔离与一键注销。
  * 遵循 SOP-02 模块拆分协议，各功能板块已微步物理迁入对应专用分片。
  */
 

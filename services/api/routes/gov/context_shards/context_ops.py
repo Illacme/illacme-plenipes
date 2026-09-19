@@ -82,7 +82,7 @@ def get_system_context_impl():
         warning_msg = "AI 算力总控已关闭，系统运行于纯本地出版模式。"
     elif getattr(engine.translator, 'node_name', '') == 'fallback_mock':
         ai_status = "degraded"
-        warning_msg = "当前版图的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。"
+        warning_msg = "当前品牌的主力算力节点配置缺失，系统已自动切换至模拟/离线模式。"
     else:
         ai_status = "online"
         warning_msg = None

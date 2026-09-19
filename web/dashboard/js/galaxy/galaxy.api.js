@@ -15,12 +15,13 @@ window.refreshGalaxy = async () => {
     const label = document.getElementById('focus-btn-label');
     const card = document.getElementById('btn-focus-connected');
     if (label) {
-        label.innerText = '⚡ 隔离孤立星球';
-        label.style.color = 'var(--neon-cyan, #00f2ff)';
+        label.innerText = '⚡ 隔离星球';
+        label.style.color = '';
     }
     if (card) {
-        card.style.background = 'hsla(183, 100%, 50%, 0.05)';
-        card.style.borderColor = 'hsla(183, 100%, 50%, 0.2)';
+        card.classList.remove('active-isolated');
+        card.style.background = '';
+        card.style.borderColor = '';
     }
 
     // ──── Phase 1: 骨架秒亮 (Skeleton Instant Render) ────
@@ -204,6 +205,9 @@ window.refreshGalaxy = async () => {
             }
             if (typeof window.updateGalaxyLabelElements === 'function') {
                 window.updateGalaxyLabelElements(mergedData.nodes);
+            }
+            if (typeof window.renderConnectionsList === 'function' && window._currentNode) {
+                window.renderConnectionsList(window._currentNode);
             }
             console.log(`🚀 [Phase 2] 全量增量合并完成: ${mergedData.nodes.length} 节点, ${mergedData.links.length} 连线`);
         } else {

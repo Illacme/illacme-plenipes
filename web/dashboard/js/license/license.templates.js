@@ -126,7 +126,7 @@
                                             <td style="padding: 12px 10px;"><b>多语种翻译矩阵</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">多语种并行翻译分发能力</span></td>
                                             <td style="padding: 12px 10px; color: var(--text-muted);">最多 2 个目标语种 (如中->英、日)</td>
                                             <td style="padding: 12px 10px; color: var(--neon-cyan); font-weight: 600;">✓ 5 个目标语种并行</td>
-                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 全量语种矩阵任选</td>
+                                            <td style="padding: 12px 10px;" class="lic-table-pro-feature">✓ 🌐 全量 55 语种矩阵任选</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid var(--glass-border);">
                                             <td style="padding: 12px 10px;"><b>子目录精准收稿映射</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">金库子目录频道路由映射</span></td>
@@ -156,7 +156,7 @@
                                 </table>
                             </div>
                             <div style="margin-top: 16px; text-align: center; border: 1px dashed var(--glass-border); border-radius: 8px; padding: 12px;">
-                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 5~99 个出版品牌或全量语种矩阵？</span>
+                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 5~99 个出版品牌或 55 个全量语种矩阵？</span>
                                 <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="margin-left: 12px; padding: 5px 16px; font-size: 0.82rem;">🔑 立即激活授权</button>
                             </div>
                         </div>

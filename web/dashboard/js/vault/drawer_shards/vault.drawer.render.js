@@ -142,35 +142,62 @@
 
             matrixContainer.innerHTML = `
                 <!-- 1. 本地多语种装帧产物 -->
-                <div style="margin-bottom: 14px;">
-                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--accent-primary, #00f2fe); margin-bottom: 6px;">1. 本地多语种装帧产物</div>
+                <div class="hub-section-block">
+                    <div class="vault-subsector-header">
+                        <span class="vault-subsector-title">1. 本地多语种装帧产物</span>
+                    </div>
                     <div>${localArtifactsHtml}</div>
                 </div>
 
                 <!-- 2. 勾选目标全站托管平台 -->
-                <div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--accent-primary, #00f2fe);">2. 勾选目标全站托管平台</span>
-                        <span id="vault-hosting-status-badge" style="font-size: 0.68rem; color: ${readyCount > 0 ? '#00ff88' : '#f59e0b'}; font-weight: 600;">
-                            ${readyCount > 0 ? `🟢 ${readyCount} 个平台就绪 (当前选中 ${checkedCount} 个)` : '⚠️ 暂无就绪平台，请先激活'}
-                        </span>
+                <div class="hub-section-block">
+                    <div class="vault-subsector-header">
+                        <span class="vault-subsector-title">2. 勾选目标全站托管平台</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            ${readyCount > 0 ? `
+                                <button type="button" class="vault-select-all-btn" id="btn-vault-select-all" onclick="window.toggleVaultHostingSelectAll()">
+                                    ${checkedCount === readyCount && readyCount > 0 ? '取消全选' : '一键全选'}
+                                </button>
+                            ` : ''}
+                            <span id="vault-hosting-status-badge" class="${readyCount > 0 ? 'hosting-status-badge--ready' : 'hosting-status-badge--empty'} vault-subsector-badge">
+                                ${readyCount > 0 ? `🟢 ${readyCount} 个平台就绪 (已选 ${checkedCount})` : '⚠️ 暂无就绪平台，请先激活'}
+                            </span>
+                        </div>
                     </div>
                     <div>${hostingCardsHtml}</div>
                 </div>
             `;
 
+            // 全选 / 取消全选快捷操作
+            window.toggleVaultHostingSelectAll = function () {
+                const checkableBoxes = document.querySelectorAll('.vault-hosting-platform-checkbox:not(:disabled)');
+                if (!checkableBoxes || checkableBoxes.length === 0) return;
+                const allChecked = Array.from(checkableBoxes).every(cb => cb.checked);
+                checkableBoxes.forEach(cb => {
+                    cb.checked = !allChecked;
+                });
+                window.updateVaultHostingSelectionCounter();
+            };
+
             // 联动更新全站托管勾选计数与按钮使能
             window.updateVaultHostingSelectionCounter = function () {
                 const badgeEl = document.getElementById('vault-hosting-status-badge');
+                const selectAllBtn = document.getElementById('btn-vault-select-all');
                 const mainBtn = document.querySelector('.sovereign-action-grid .primary-hub-btn');
+                const checkableBoxes = document.querySelectorAll('.vault-hosting-platform-checkbox:not(:disabled)');
                 const checkedBoxes = document.querySelectorAll('.vault-hosting-platform-checkbox:checked');
                 const currentSelectedCount = checkedBoxes ? checkedBoxes.length : 0;
+                const totalReady = checkableBoxes ? checkableBoxes.length : readyCount;
+
+                if (selectAllBtn) {
+                    selectAllBtn.innerText = currentSelectedCount > 0 && currentSelectedCount === totalReady ? '取消全选' : '一键全选';
+                }
 
                 if (badgeEl) {
-                    badgeEl.innerHTML = readyCount > 0
-                        ? `🟢 ${readyCount} 个平台就绪 (当前选中 ${currentSelectedCount} 个)`
+                    badgeEl.innerHTML = totalReady > 0
+                        ? `🟢 ${totalReady} 个平台就绪 (已选 ${currentSelectedCount})`
                         : '⚠️ 暂无就绪平台，请先激活';
-                    badgeEl.style.color = currentSelectedCount > 0 ? '#00ff88' : '#f59e0b';
+                    badgeEl.className = currentSelectedCount > 0 ? 'hosting-status-badge--ready vault-subsector-badge' : 'hosting-status-badge--empty vault-subsector-badge';
                 }
 
                 if (mainBtn) {

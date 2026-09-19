@@ -85,3 +85,6 @@ sync_stats_*.json
 artifacts/
 metadata/
 MagicMock/
+.workbuddy/
+current_galaxy_labels_state.png
+

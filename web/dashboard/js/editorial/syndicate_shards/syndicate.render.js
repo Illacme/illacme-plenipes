@@ -7,10 +7,14 @@
     window.closeArticleSyndicationDrawer = function () {
         const drawerEl = document.getElementById('article-syndicate-drawer');
         const backdropEl = document.getElementById('article-syndicate-drawer-backdrop');
-        if (drawerEl) drawerEl.style.right = '-480px';
+        if (drawerEl) {
+            drawerEl.classList.remove('is-open');
+            drawerEl.style.right = '';
+        }
         if (backdropEl) {
-            backdropEl.style.opacity = '0';
-            backdropEl.style.pointerEvents = 'none';
+            backdropEl.classList.remove('is-open');
+            backdropEl.style.opacity = '';
+            backdropEl.style.pointerEvents = '';
         }
     };
 
@@ -101,34 +105,19 @@
         if (!backdropEl) {
             backdropEl = document.createElement('div');
             backdropEl.id = 'article-syndicate-drawer-backdrop';
-            backdropEl.style.cssText = `
-                position: fixed; inset: 0;
-                background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px);
-                z-index: 9998; opacity: 0; pointer-events: none;
-                transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            `;
+            backdropEl.className = 'syndicate-drawer-backdrop';
             backdropEl.onclick = () => window.closeArticleSyndicationDrawer();
             document.body.appendChild(backdropEl);
         }
         requestAnimationFrame(() => {
-            backdropEl.style.opacity = '1';
-            backdropEl.style.pointerEvents = 'auto';
+            backdropEl.classList.add('is-open');
         });
 
         let drawerEl = document.getElementById('article-syndicate-drawer');
         if (!drawerEl) {
             drawerEl = document.createElement('div');
             drawerEl.id = 'article-syndicate-drawer';
-            drawerEl.className = 'syndicate-drawer-overlay';
-            drawerEl.style.cssText = `
-                position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
-                background: rgba(15, 17, 26, 0.96); backdrop-filter: blur(16px);
-                border-left: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
-                box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6); z-index: 9999;
-                transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-                padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;
-                color: var(--text-bright, #fff); font-family: system-ui, -apple-system, sans-serif;
-            `;
+            drawerEl.className = 'syndicate-drawer-overlay syndicate-drawer-shell drawer-shell';
             document.body.appendChild(drawerEl);
         }
 
@@ -137,74 +126,74 @@
         const checkedPlatformsCount = activePlatforms.filter(p => p.isChecked).length;
 
         drawerEl.innerHTML = `
-            <div id="article-syndicate-drawer-header" style="flex-shrink:0;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <h3 style="margin:0;font-size:1.05rem;color:var(--accent-secondary,#00f2fe);display:flex;align-items:center;gap:8px;">📢 社交媒体分发</h3>
-                    <button type="button" onclick="window.closeArticleSyndicationDrawer()" style="background:transparent;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
+            <div id="article-syndicate-drawer-header" class="syndicate-drawer-header">
+                <div class="drawer-header-row">
+                    <h3 class="syndicate-drawer-title">📢 社交媒体分发</h3>
+                    <button type="button" class="drawer-close-btn" onclick="window.closeArticleSyndicationDrawer()">×</button>
                 </div>
-                <div style="font-size:0.76rem;color:var(--text-dim);background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    目标原稿：<b style="color:#fff;">${displayTitle}</b>
+                <div class="drawer-doc-card">
+                    目标原稿：<b class="drawer-doc-id">${displayTitle}</b>
                 </div>
             </div>
 
-            <div id="article-syndicate-drawer-body" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:10px 2px 10px 0;display:flex;flex-direction:column;gap:12px;">
-                <div id="syndicate-config-stage-view" style="display:flex;flex-direction:column;gap:12px;width:100%;">
-                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                        <label style="font-size:0.8rem;font-weight:600;color:var(--accent-primary,#00f2fe);display:flex;align-items:center;justify-content:space-between;">
-                            <span>1. 选择广播语种</span><span style="font-size:0.68rem;color:var(--text-dim);">共 ${availableLangs.length} 语种</span>
+            <div id="article-syndicate-drawer-body" class="syndicate-drawer-body">
+                <div id="syndicate-config-stage-view" class="syndicate-stage-view">
+                    <div class="syndicate-step-group">
+                        <label class="syndicate-step-label">
+                            <span>1. 选择广播语种</span><span class="syndicate-step-meta">共 ${availableLangs.length} 语种</span>
                         </label>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="syndicate-lang-picker">
+                        <div class="syndicate-lang-picker" id="syndicate-lang-picker">
                             ${availableLangs.map((l, idx) => `
-                                <label class="lang-radio-btn ${idx === 0 ? 'active' : ''}" style="padding:4px 9px;border-radius:20px;font-size:0.74rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
-                                    <input type="radio" name="syndicate_lang" value="${l.code}" ${idx === 0 ? 'checked' : ''} style="display:none;" onchange="window.onSyndicateLangChange(this, '${relPath}')">
-                                    ${l.icon} ${l.name} ${l.isSource ? '<span class="lang-tag-source" style="font-size:0.6rem;padding:1px 3px;border-radius:3px;">(母语)</span>' : '<span class="lang-tag-target" style="font-size:0.6rem;padding:1px 3px;border-radius:3px;">(译文)</span>'}
+                                <label class="lang-radio-btn ${idx === 0 ? 'active' : ''}">
+                                    <input type="radio" name="syndicate_lang" value="${l.code}" ${idx === 0 ? 'checked' : ''} class="syndicate-radio-hidden" onchange="window.onSyndicateLangChange(this, '${relPath}')">
+                                    ${l.icon} ${l.name} ${l.isSource ? '<span class="lang-tag-source">(母语)</span>' : '<span class="lang-tag-target">(译文)</span>'}
                                 </label>
                             `).join('')}
                         </div>
-                        <div id="syndicate-translation-readiness-tip" style="font-size:0.7rem;padding:4px 8px;border-radius:6px;">🟢 当前选中的是原稿母语，无需翻译，启动后直达平台。</div>
+                        <div id="syndicate-translation-readiness-tip" class="syndicate-tip-box syndicate-tip-box--source">🟢 当前选中的是原稿母语，无需翻译，启动后直达平台。</div>
                     </div>
 
-                    <div id="syndicate-cover-studio-container" class="glass-panel" style="flex-shrink:0;padding:10px 12px;border-radius:8px;border:1px solid rgba(0,242,255,0.15);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:8px;"></div>
+                    <div id="syndicate-cover-studio-container" class="glass-panel syndicate-cover-studio"></div>
 
-                    <div class="syndicate-preview-entry-card" style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(0,242,254,0.04);border:1px solid rgba(0,242,254,0.2);gap:10px;">
-                        <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <div class="syndicate-preview-entry">
+                        <div class="syndicate-preview-info">
                             <span style="font-size:1.1rem;flex-shrink:0;">👁️</span>
                             <div style="min-width:0;">
-                                <div style="font-size:0.78rem;font-weight:700;color:#fff;">全渠道高保真排版审查</div>
-                                <div style="font-size:0.68rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">微信真机 · 知乎 · 掘金 · CSDN · 小红书 · 海外 18 矩阵</div>
+                                <div class="syndicate-preview-title">全渠道高保真排版审查</div>
+                                <div class="syndicate-preview-desc">微信真机 · 知乎 · 掘金 · CSDN · 小红书 · 海外 18 矩阵</div>
                             </div>
                         </div>
-                        <button type="button" class="mini-btn glow-btn" onclick="window.openSyndicateLivePreviewModal()" style="padding:4px 10px;font-size:0.72rem;font-weight:700;background:rgba(0,242,254,0.15);color:#00f2fe;border:1px solid rgba(0,242,254,0.35);border-radius:6px;cursor:pointer;flex-shrink:0;">🖥️ 展开 ↗</button>
+                        <button type="button" class="mini-btn glow-btn syndicate-preview-btn" onclick="window.openSyndicateLivePreviewModal()">🖥️ 展开 ↗</button>
                     </div>
 
-                    <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
-                        <label style="font-size:0.8rem;font-weight:600;color:var(--accent-primary,#00f2fe);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div class="syndicate-step-group">
+                        <label class="syndicate-step-label">
                             <span>2. 勾选目标社媒渠道</span>
-                            <span id="syndicate-channel-status-badge" style="font-size:0.68rem;color:${readyPlatformsCount > 0 ? '#00ff88' : '#f59e0b'};font-weight:600;white-space:nowrap;">
+                            <span id="syndicate-channel-status-badge" class="${readyPlatformsCount > 0 ? 'hosting-status-badge--ready' : 'hosting-status-badge--empty'}">
                                 ${readyPlatformsCount > 0 ? `🟢 ${readyPlatformsCount} 就绪 (已选 ${checkedPlatformsCount})` : '⚠️ 暂无就绪渠道'}
                             </span>
                         </label>
-                        <div style="display:flex;flex-direction:column;gap:8px;" id="syndicate-platform-list-container"></div>
+                        <div class="syndicate-stage-view" id="syndicate-platform-list-container"></div>
                     </div>
                 </div>
 
-                <div id="syndicate-telemetry-stage-view" style="display:none;flex-direction:column;gap:12px;width:100%;">
-                    <div id="syndicate-telemetry-summary-capsule" style="flex-shrink:0;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--text-dim);"><span>正在初始化...</span></div>
-                    <div id="syndicate-progress-panel" style="flex-shrink:0;display:none;padding:10px 12px;background:rgba(0,242,255,0.06);border:1px solid rgba(0,242,255,0.25);border-radius:8px;flex-direction:column;gap:6px;">
-                        <div style="font-size:0.78rem;font-weight:700;color:var(--accent-secondary);display:flex;align-items:center;justify-content:space-between;">
-                            <span id="syndicate-progress-title">⚙️ 正在处理分发管线...</span><span id="syndicate-progress-percent" style="font-size:0.72rem;">0%</span>
+                <div id="syndicate-telemetry-stage-view" class="syndicate-stage-view" style="display:none;">
+                    <div id="syndicate-telemetry-summary-capsule" class="syndicate-telemetry-capsule"><span>正在初始化...</span></div>
+                    <div id="syndicate-progress-panel" class="syndicate-progress-panel" style="display:none;">
+                        <div class="syndicate-progress-header">
+                            <span id="syndicate-progress-title">⚙️ 正在处理分发管线...</span><span id="syndicate-progress-percent">0%</span>
                         </div>
-                        <div style="width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
-                            <div id="syndicate-progress-bar" style="width:0%;height:100%;background:var(--accent-secondary,#00f2fe);transition:width 0.3s ease;"></div>
+                        <div class="syndicate-progress-track">
+                            <div id="syndicate-progress-bar" class="syndicate-progress-bar"></div>
                         </div>
-                        <div id="syndicate-progress-desc" style="font-size:0.68rem;color:var(--text-dim);line-height:1.4;">准备启动任务...</div>
+                        <div id="syndicate-progress-desc" class="syndicate-progress-desc">准备启动任务...</div>
                     </div>
-                    <div id="syndicate-results-panel-slot" style="display:flex;flex-direction:column;gap:10px;width:100%;"></div>
+                    <div id="syndicate-results-panel-slot" class="syndicate-stage-view"></div>
                 </div>
             </div>
 
-            <div id="article-syndicate-drawer-footer" style="flex-shrink:0;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
-                <button type="button" class="mini-btn glow-btn" id="btn-start-article-syndicate" ${readyPlatformsCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="width:100%;padding:10px;font-size:0.86rem;font-weight:700;border-radius:8px;background:var(--accent-secondary,#00f2fe);color:#000;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="window.dispatchArticleSyndication('${relPath.replace(/'/g, "\\'")}')">
+            <div id="article-syndicate-drawer-footer" class="syndicate-drawer-footer">
+                <button type="button" class="mini-btn glow-btn syndicate-start-btn" id="btn-start-article-syndicate" ${readyPlatformsCount === 0 ? 'disabled' : ''} onclick="window.dispatchArticleSyndication('${relPath.replace(/'/g, "\\'")}')">
                     🚀 开始社媒渠道分发
                 </button>
             </div>
@@ -220,13 +209,11 @@
                 badgeEl.innerHTML = readyPlatformsCount > 0
                     ? `🟢 ${readyPlatformsCount} 就绪 (已选 ${selectedCount})`
                     : '⚠️ 暂无就绪渠道';
-                badgeEl.style.color = selectedCount > 0 ? '#00ff88' : '#f59e0b';
+                badgeEl.className = selectedCount > 0 ? 'hosting-status-badge--ready' : 'hosting-status-badge--empty';
             }
 
             if (startBtn) {
                 startBtn.disabled = selectedCount === 0;
-                startBtn.style.opacity = selectedCount === 0 ? '0.5' : '1';
-                startBtn.style.cursor = selectedCount === 0 ? 'not-allowed' : 'pointer';
                 if (selectedCount > 0) {
                     startBtn.innerText = `🚀 开始社媒渠道分发 (已选 ${selectedCount} 个)`;
                 } else {
@@ -253,7 +240,10 @@
             window.initSyndicateCoverStudio(relPath, articleTitle);
         }
 
-        setTimeout(() => { drawerEl.style.right = '0px'; }, 10);
+        setTimeout(() => {
+            drawerEl.classList.add('is-open');
+            drawerEl.style.right = '';
+        }, 10);
     };
 
     window.switchSyndicateDrawerStage = function (stage, ctx = {}) {
@@ -267,15 +257,15 @@
         if (stage === 'config') {
             configView.style.display = 'flex';
             telemetryView.style.display = 'none';
-            footerEl.innerHTML = `<button type="button" class="mini-btn glow-btn" id="btn-start-article-syndicate" style="width:100%;padding:10px;font-size:0.86rem;font-weight:700;border-radius:8px;background:var(--accent-secondary,#00f2fe);color:#000;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="window.dispatchArticleSyndication('${relPath.replace(/'/g, "\\'")}')">🚀 开始社媒渠道分发</button>`;
+            footerEl.innerHTML = `<button type="button" class="mini-btn glow-btn syndicate-start-btn" id="btn-start-article-syndicate" onclick="window.dispatchArticleSyndication('${relPath.replace(/'/g, "\\'")}')">🚀 开始社媒渠道分发</button>`;
             if (typeof window.updateSyndicateSelectionCounter === 'function') window.updateSyndicateSelectionCounter();
         } else if (stage === 'running') {
             configView.style.display = 'none';
             telemetryView.style.display = 'flex';
             if (summaryCapsule) {
-                summaryCapsule.innerHTML = `<div style="display:flex;align-items:center;gap:6px;"><span>🌐 语种: <b style="color:#fff;">${(ctx.lang || 'ZH').toUpperCase()}</b></span><span>·</span><span>目标: <b style="color:#00f2fe;">${ctx.platformCount || 1} 个渠道</b></span></div><span class="badge" style="background:rgba(0,242,254,0.12);color:#00f2fe;">广播调度中</span>`;
+                summaryCapsule.innerHTML = `<div style="display:flex;align-items:center;gap:6px;"><span>🌐 语种: <b class="drawer-doc-id">${(ctx.lang || 'ZH').toUpperCase()}</b></span><span>·</span><span>目标: <b style="color:var(--neon-cyan);">${ctx.platformCount || 1} 个渠道</b></span></div><span class="badge" style="background:var(--neon-cyan-12);color:var(--neon-cyan);">广播调度中</span>`;
             }
-            footerEl.innerHTML = `<button type="button" class="mini-btn" disabled style="width:100%;padding:10px;font-size:0.86rem;font-weight:700;border-radius:8px;background:rgba(255,255,255,0.08);color:#888;border:1px solid rgba(255,255,255,0.1);cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:8px;"><span class="spinner-gear">⚙️</span> 分发管线推流中...</button>`;
+            footerEl.innerHTML = `<button type="button" class="mini-btn syndicate-running-btn" disabled style="width:100%;padding:10px;font-size:0.86rem;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;"><span class="spinner-gear">⚙️</span> 分发管线推流中...</button>`;
         } else if (stage === 'telemetry') {
             configView.style.display = 'none';
             telemetryView.style.display = 'flex';
@@ -283,8 +273,8 @@
             const escapedChannels = (ctx.failedChannelsJson || '[]').replace(/"/g, '&quot;');
             footerEl.innerHTML = `
                 <div style="display:flex;gap:8px;width:100%;">
-                    <button type="button" class="mini-btn" onclick="window.switchSyndicateDrawerStage('config')" style="flex:1;padding:9px;font-size:0.76rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid var(--glass-border);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">↩️ 修改配置</button>
-                    ${hasFailed ? `<button type="button" class="mini-btn glow-btn" onclick="window.retryAllFailedPlatforms('${relPath.replace(/'/g, "\\'")}', ${escapedChannels})" style="flex:1.5;padding:9px;font-size:0.76rem;font-weight:700;border-radius:8px;background:#ff4d4f;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">⚡ 一键重试失败 (${ctx.failedCount})</button>` : `<button type="button" class="mini-btn glow-btn" onclick="window.closeArticleSyndicationDrawer()" style="flex:1.5;padding:9px;font-size:0.76rem;font-weight:700;border-radius:8px;background:#00ff88;color:#000;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">✅ 完成并关闭</button>`}
+                    <button type="button" class="mini-btn syndicate-back-btn" onclick="window.switchSyndicateDrawerStage('config')" style="flex:1;padding:9px;font-size:0.76rem;font-weight:600;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:4px;">↩️ 修改配置</button>
+                    ${hasFailed ? `<button type="button" class="mini-btn glow-btn syndicate-retry-btn" onclick="window.retryAllFailedPlatforms('${relPath.replace(/'/g, "\\'")}', ${escapedChannels})" style="flex:1.5;padding:9px;font-size:0.76rem;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;">⚡ 一键重试失败 (${ctx.failedCount})</button>` : `<button type="button" class="mini-btn glow-btn syndicate-complete-btn" onclick="window.closeArticleSyndicationDrawer()" style="flex:1.5;padding:9px;font-size:0.76rem;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;">✅ 完成并关闭</button>`}
                 </div>
             `;
         }

@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 点击推荐指令直接填入并聚焦
     if (agentFeed) {
         agentFeed.addEventListener('click', (e) => {
+            // 🛡️ 物理守卫：如果点击的是独立交互按钮或导览直达操作，严禁拦截并作为纯文本填入输入框
+            const actionBtn = e.target.closest('button, .tour-copilot-action-btn, [data-tour-action]');
+            if (actionBtn) return;
+
             const codeEl = e.target.closest('.clickable-suggestion');
             if (codeEl && agentInput) {
                 agentInput.value = codeEl.textContent.trim();

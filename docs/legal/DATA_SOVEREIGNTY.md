@@ -46,4 +46,4 @@
 
 ---
 
-*Illacme Plenipes - 让主权照耀创作，让版图横跨全球。*
+*Illacme Plenipes - 让主权照耀创作，让品牌横跨全球。*

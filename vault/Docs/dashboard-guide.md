@@ -2,7 +2,7 @@
 title: 治理中心 (Governance Dashboard) 操作指南
 date: 2026-08-11
 author: Illacme Editorial Team
-description: 详尽拆解治理中心四大核心分类与二级子标签功能，涵盖基础配置、版图管理、多语言矩阵与路由映射。
+description: 详尽拆解治理中心四大核心分类与二级子标签功能，涵盖基础配置、品牌管理、多语言矩阵与路由映射。
 tags:
 - Dashboard
 - Governance
@@ -28,8 +28,8 @@ cover: /api/design/assets/covers/cover_cfdac86d9feb.jpg
 │   ├── 📖 出版合规 (compliance)
 │   ├── 📂 存储适配 (storage)
 │   └── ⚙️ 运行基座 (engine)
-├── 2. 版图装帧与模式 (Layout)
-│   ├── 🏷️ 版图管理 (imprints)
+├── 2. 品牌装帧与模式 (Layout)
+│   ├── 🏷️ 品牌管理 (imprints)
 │   ├── 🎭 装帧主题 (themes)
 │   └── 📋 出版模式 (modes)
 ├── 3. 语言翻译与治理 (Localization)
@@ -53,9 +53,9 @@ cover: /api/design/assets/covers/cover_cfdac86d9feb.jpg
 
 ---
 
-## 2. 版图装帧与模式 (Layout & Publishing Modes)
+## 2. 品牌装帧与模式 (Layout & Publishing Modes)
 
-- **🏷️ 版图管理 (Imprints)**：一览所有独立出版品牌，支持一键切换当前激活的出版版图。
+- **🏷️ 品牌管理 (Imprints)**：一览所有独立出版品牌，支持一键切换当前激活的出版品牌。
 - **🎭 装帧主题 (Themes)**：自由切换站点装帧风格（Sovereign、Docusaurus、Starlight、VitePress、Nextra、Hugo）。
 - **📋 出版模式 (Modes)**：
   - **基础模式 (Basic)**：纯物理拷贝分发，零 AI 算力开销。

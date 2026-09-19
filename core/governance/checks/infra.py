@@ -15,7 +15,7 @@ class InfraChecker:
         res = {"name": "Infrastructure", "status": "PASS", "details": []}
 
         # 1. 检查 Vault
-        vault = paths.get('vault')
+        vault = paths.get('vault_root') or paths.get('vault')
         if not vault or not os.path.exists(vault):
             res['status'] = "FAIL"
             res.get('details').append(f"❌ Vault 路径不存在: {vault}")

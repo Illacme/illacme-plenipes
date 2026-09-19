@@ -15,7 +15,7 @@ cover: /api/design/assets/covers/cover_27f3f7d5d864.jpg
 ---
 # 🚀 我的第一篇主权出版博文：从灵感到全球共振
 
-这是在 **Illacme Plenipes** 默认出版版图中自动生成的一篇示范博客文章。
+这是在 **Illacme Plenipes** 默认出版品牌中自动生成的一篇示范博客文章。
 
 当您在 `./vault/Blog/` 文件夹中起草 Markdown 笔记时，系统会根据路由矩阵（Route Matrix）自动将文章归类至 `/blog/` 频道，并按需启动全自动化出版流。
 

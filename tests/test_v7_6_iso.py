@@ -40,7 +40,7 @@ def test_theme_awareness():
     print(f"  Starlight:  {iso_code} -> {path_star} (Expected: zh-cn)")
 
 def test_imprint_vault_bootstrapping():
-    print("\n🧪 [Test] 版图空文库空间自愈引导（战役二）测试...")
+    print("\n🧪 [Test] 品牌空文库空间自愈引导（战役二）测试...")
     import tempfile
     from core.governance.imprint_manager import im
     
@@ -65,7 +65,7 @@ def test_imprint_vault_bootstrapping():
                     bootstrap_vault=True
                 )
             
-            assert success is True, "❌ 独立版图空间划定失败"
+            assert success is True, "❌ 独立品牌空间划定失败"
             
             # 验证三级子目录与欢迎文稿自愈落地
             for sub in ["Blog", "Docs", "Pages"]:

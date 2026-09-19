@@ -43,6 +43,7 @@ def resolve_engine_paths(engine: Any, config: Any, themes_dir: str) -> Dict[str,
     
     # 动态构建主权路径矩阵
     resolved = {
+        "vault_root": engine.vault_root,
         "vault": engine.vault_root,
         "source_dir": anchor((source_dir or "").replace("{theme}", active_theme) if source_dir else ""),
         "site_dir": anchor((site_dir or "").replace("{theme}", active_theme) if site_dir else ""),

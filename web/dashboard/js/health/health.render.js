@@ -86,12 +86,12 @@ window.renderServiceToolbar = () => {
 
 window.showServiceManager = (service) => {
     if (service === 'preview') {
-        // 🚀 [V55.9] 物理对正：打开全功能 SSG 容器指挥中心
+        // 🚀 [V55.9] 物理对正：打开全功能 SSG 容器控制台
         const modal = document.getElementById('terminal-modal');
         if (modal) {
             modal.style.display = 'flex';
             modal.dataset.context = 'service_preview';
-            document.getElementById('terminal-title').innerText = "🛰️ 预览服务主权指挥中心";
+            document.getElementById('terminal-title').innerText = "🛰️ 预览服务控制台";
             
             const toolbar = document.getElementById('terminal-toolbar');
             if (toolbar) {

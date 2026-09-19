@@ -1,5 +1,5 @@
 /**
- * 🚀 [V120.0] Illacme Plenipes - 出版工作台 (Launchpad) 智能飞行指挥中心 Hub
+ * 🚀 [V120.0] Illacme Plenipes - 出版领航仪 (Publishing Navigator) 核心 Hub
  * 架构职责：判断用户状态与会话偏好，动态调度渲染「首次引导向导」或「智能仪表盘」主 Hub 门面控制器 (SOP-02 物理拆分微步演进)
  * 核心原则：零新轮子——所有操作入口 100% 调用已有全局函数；绝对尊崇文库不可变绑定铁律。
  * 
@@ -58,13 +58,17 @@ window.switchLaunchpadMode = function (mode) {
         }
     });
 
+    if (typeof window._updateSiteLinkContainer === 'function') {
+        window._updateSiteLinkContainer(mode);
+    } else if (siteWrap) {
+        siteWrap.style.display = 'inline-flex';
+    }
+
     if (mode === 'onboarding') {
-        if (siteWrap) siteWrap.style.display = 'none';
         if (subview && typeof window._renderOnboarding === 'function') {
             window._renderOnboarding(subview, window.governanceContext);
         }
     } else {
-        if (siteWrap) siteWrap.style.display = 'inline-flex';
         if (subview && typeof window._renderDashboard === 'function') {
             window._renderDashboard(subview, window.governanceContext);
         }
@@ -104,7 +108,7 @@ window.handleLaunchpadImprintChange = async function (newImprintId) {
 };
 
 /**
- * 每次打开出版工作台时调用，自动装配并判断模式。
+ * 每次打开出版领航仪时调用，自动装配并判断模式。
  */
 window.initLaunchpad = async function () {
     var area = document.getElementById('hub-dynamic-area');

@@ -88,7 +88,7 @@ def build_docs_sidebar(current_slug: str, root_path: str, lang_prefix: str = "",
                     {"title": "📚 文档中心首页", "slug": "index", "stems": ["index"]},
                     {"title": "⚡ 5 分钟上手指南", "slug": "quick-start", "stems": ["quick-start"]},
                     {"title": "✍️ 原稿文库组织指引", "slug": "authoring-and-vault-guide", "stems": ["authoring-and-vault-guide"]},
-                    {"title": "🏷️ 品牌版图多站点管理", "slug": "brand-management", "stems": ["brand-management"]},
+                    {"title": "🏷️ 品牌管理与多站点", "slug": "brand-management", "stems": ["brand-management"]},
                 ]
             },
             {

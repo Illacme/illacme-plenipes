@@ -20,7 +20,7 @@
 
     window.renderVaultLocalArtifactsHtml = function (localDocMatrix, isLabActive, labUrl) {
         return (localDocMatrix || []).map((item, idx) => {
-            let previewClass = 'preview-link local-preview-link';
+            let previewClass = 'preview-link local-preview-link vault-preview-link';
             const statusLower = (item.status || '').toLowerCase();
             const isSuccess = ['published', 'success', 'done', 'synced'].includes(statusLower);
             const hasValidUrl = item.artifact_url && item.artifact_url !== '#' && item.artifact_url !== 'javascript:void(0)';
@@ -44,20 +44,23 @@
             else if (item.status === 'failed') friendlyStatus = '🔴 装帧异常';
 
             return `
-                <div class="matrix-item status-${item.status} ${idx === 0 ? 'source-lang' : 'target-lang'}" style="margin-bottom: 6px;">
+                <div class="matrix-item status-${item.status} ${idx === 0 ? 'source-lang' : 'target-lang'}">
                     <div class="m-info">
-                        <span class="m-locale">
-                            ${item.locale}${item.lang_code ? ` <span class="locale-code-badge">${item.lang_code}</span>` : ''}
+                        <div class="m-locale-group">
+                            <span class="m-locale-name" title="${item.locale}">${item.locale}</span>
+                            ${item.lang_code ? `<span class="locale-code-badge">${item.lang_code}</span>` : ''}
+                        </div>
+                        <div class="m-status-group">
                             ${showPreview && hasValidUrl ? `
-                                <a href="${targetHref}" target="_blank" class="${previewClass}" style="margin-top: 0; margin-left: 8px; padding: 2px 8px; font-size: 0.68rem; font-weight: 600; display: inline-flex !important; align-items: center; gap: 4px; vertical-align: middle; color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.1); border-radius: 4px; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='rgba(0, 255, 136, 0.25)';" onmouseout="this.style.background='rgba(0, 255, 136, 0.1)';">${previewLabel}</a>
+                                <a href="${targetHref}" target="_blank" class="${previewClass}">${previewLabel}</a>
                             ` : ''}
-                        </span>
-                        <span class="m-status-text">${friendlyStatus}</span>
+                            <span class="m-status-text">${friendlyStatus}</span>
+                        </div>
                     </div>
                     <div class="m-meta">
                         <span class="m-time">${item.last_sync || '本地装帧产物'}</span>
                         ${item.tokens ? `<span class="m-tokens">${item.tokens} tokens</span>` : ''}
-                        ${item.cache_info ? `<span class="m-tokens" style="opacity:0.75; margin-left:8px;">${item.cache_info}</span>` : ''}
+                        ${item.cache_info ? `<span class="m-tokens cache-info">${item.cache_info}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -71,40 +74,57 @@
             const targetUrl = rec ? rec.artifact_url : null;
             const hasValidUrl = targetUrl && targetUrl !== '#' && targetUrl !== 'javascript:void(0)';
 
-            let statusTagHtml = p.isReady
-                ? (p.isBrandInUse
-                    ? '<span style="font-size: 0.65rem; color: #00ff88; font-weight: 600;">🟢 已启用</span>'
-                    : '<span style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">🟡 配置就绪 (待启用)</span>')
-                : '<span style="font-size: 0.65rem; color: var(--text-dim);">⚪ 待填凭据</span>';
-            if (isFailed) statusTagHtml = '<span style="font-size: 0.65rem; color: #ff4d4f; font-weight: 600;">🔴 部署异常</span>';
+            // Status tag via CSS class
+            let statusClass = 'hosting-status hosting-status--unconfigured';
+            let statusIcon = '⚪ 待填凭据';
+            if (p.isReady && p.isBrandInUse) {
+                statusClass = 'hosting-status hosting-status--enabled';
+                statusIcon = '🟢 已启用';
+            } else if (p.isReady) {
+                statusClass = 'hosting-status hosting-status--ready';
+                statusIcon = '🟡 配置就绪 (待启用)';
+            }
+            if (isFailed) {
+                statusClass = 'hosting-status hosting-status--failed';
+                statusIcon = '🔴 部署异常';
+            }
+            const statusTagHtml = `<span class="${statusClass}">${statusIcon}</span>`;
+
+            // Card state class
+            let cardStateClass = 'hosting-card';
+            if (p.isReady && p.isBrandInUse) cardStateClass = 'hosting-card hosting-card--brand';
+            else if (p.isReady) cardStateClass = 'hosting-card hosting-card--active';
+
+            // Platform name class
+            const nameClass = p.isReady ? 'hosting-platform-name hosting-platform-name--active' : 'hosting-platform-name hosting-platform-name--inactive';
 
             return `
-                <div class="glass-panel" style="padding: 10px 12px; border-radius: 8px; border: 1px solid ${p.isReady ? (p.isBrandInUse ? 'rgba(0, 255, 136, 0.25)' : 'rgba(0, 242, 254, 0.2)') : 'rgba(255, 255, 255, 0.06)'}; display: flex; flex-direction: column; gap: 8px; opacity: ${p.isReady ? '1' : '0.65'}; background: ${p.isReady ? (p.isBrandInUse ? 'rgba(0, 255, 136, 0.03)' : 'rgba(0, 242, 254, 0.02)') : 'rgba(255, 255, 255, 0.01)'}; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" value="${p.id}" class="vault-hosting-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'} onchange="window.updateVaultHostingSelectionCounter()" style="accent-color: var(--accent-secondary); width: 16px; height: 16px; cursor: ${p.isReady ? 'pointer' : 'not-allowed'};">
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 0.82rem; font-weight: 600; color: ${p.isReady ? '#fff' : 'var(--text-dim)'};">${p.icon} ${p.name}</span>
+                <div class="glass-panel ${cardStateClass}">
+                    <div class="hosting-card-header-row">
+                        <div class="hosting-card-identity">
+                            <input type="checkbox" value="${p.id}" class="vault-hosting-platform-checkbox" ${p.isReady ? (p.isChecked ? 'checked' : '') : 'disabled'} onchange="window.updateVaultHostingSelectionCounter()">
+                            <div class="hosting-card-text-col">
+                                <div class="hosting-platform-title-row">
+                                    <span class="${nameClass}">${p.icon} ${p.name}</span>
                                     ${statusTagHtml}
                                 </div>
-                                <div style="font-size: 0.68rem; color: var(--text-dim);">${p.desc}</div>
+                                <div class="hosting-desc-text" title="${p.desc}">${p.desc}</div>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
+                        <div class="hosting-card-actions">
                             ${p.isReady ? `
                                 ${hasValidUrl ? `
-                                    <a href="${targetUrl}" target="_blank" style="padding: 2px 7px; font-size: 0.65rem; font-weight: 600; color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.1); border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;">🔗 托管站 ↗</a>
+                                    <a href="${targetUrl}" target="_blank" class="hosting-link-btn">🔗 托管站 ↗</a>
                                 ` : ''}
-                                <button type="button" onclick="window.triggerChannelDispatch('${relPath}', '${p.id}')" title="单独重新发布此平台" style="padding: 2px 7px; font-size: 0.65rem; font-weight: 600; color: var(--neon-cyan); border: 1px solid rgba(0, 242, 254, 0.35); background: rgba(0, 242, 254, 0.08); border-radius: 4px; cursor: pointer;">🔄 发布</button>
-                                <button type="button" onclick="window.goToHostingPluginConfig('${p.id}')" title="修改此平台的 Token 密钥或仓库参数" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;">⚙️</button>
+                                <button type="button" onclick="window.triggerChannelDispatch('${relPath}', '${p.id}')" title="单独重新发布此平台" class="hosting-dispatch-btn">🔄 发布</button>
+                                <button type="button" onclick="window.goToHostingPluginConfig('${p.id}')" title="修改此平台的 Token 密钥或仓库参数" class="hosting-settings-btn">⚙️</button>
                             ` : `
-                                <button type="button" onclick="window.goToHostingPluginConfig('${p.id}')" title="前往配置并激活此托管平台" style="background: rgba(0, 242, 255, 0.15); border: 1px solid rgba(0, 242, 255, 0.35); color: var(--neon-cyan, #00f2fe); border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap;">⚙️ 去配置/激活</button>
+                                <button type="button" onclick="window.goToHostingPluginConfig('${p.id}')" title="前往配置并激活此托管平台" class="hosting-config-btn">⚙️ 去配置/激活</button>
                             `}
                         </div>
                     </div>
                     ${rec && rec.status === 'failed' ? `
-                        <div class="error-msg" style="margin-top: 4px;">${rec.reason || '部署超时或凭据无效'}</div>
+                        <div class="error-msg hosting-error-text">${rec.reason || '部署超时或凭据无效'}</div>
                     ` : ''}
                 </div>
             `;

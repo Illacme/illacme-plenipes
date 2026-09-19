@@ -26,7 +26,7 @@ cover: /api/design/assets/covers/cover_4067c98c67c2.jpg
 ### ⚡ 1. 核心入门指引
 - **[[quick-start|⚡ 5 分钟极速上手指南]]**：从启动本地引擎、打开治理中心到发布第一篇文章。
 - **[[authoring-and-vault-guide|✍️ 原稿文库组织与写作指引]]**：Frontmatter 规范、双向链接、图片资源管理与 Obsidian/Logseq 文库无缝接入。
-- **[[brand-management|🏷️ 品牌版图 (Imprint) 多站点管理]]**：创建独立出版品牌、隔离文库路径与专属分发配置。
+- **[[brand-management|🏷️ 品牌管理与多站点 (Imprints)]]**：创建独立出版品牌、隔离文库路径与专属分发配置。
 
 ### 🎛️ 2. 治理中心与运维
 - **[[dashboard-guide|🎛️ 治理中心操作全解]]**：深入探索四大核心模块、二级子标签与实时状态诊断控制塔。

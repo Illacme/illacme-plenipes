@@ -12,29 +12,14 @@ window._currentNode = null;
 
 // 🪐 动态绑定 HUD 知识关联指标
 window.updateGalaxyHUD = (nodes, links) => {
-    // 注入控制 DOM 结构
     injectGalaxyInteractiveDOM();
-    if (typeof window.injectGalaxyDirectorDOM === 'function') {
-        window.injectGalaxyDirectorDOM();
-    }
+    if (typeof window.injectGalaxyDirectorDOM === 'function') window.injectGalaxyDirectorDOM();
 
-    const densityEl = document.getElementById('density-val');
-    const nodeEl = document.getElementById('node-count');
-    const connEl = document.getElementById('conn-count');
-    
-    const N = nodes ? nodes.length : 0;
-    const L = links ? links.length : 0;
-    
-    if (densityEl) {
-        const density = N > 1 ? (2 * L) / (N * (N - 1)) : 0;
-        densityEl.innerText = density.toFixed(2);
-    }
-    if (nodeEl) {
-        nodeEl.innerText = N;
-    }
-    if (connEl) {
-        connEl.innerText = L;
-    }
+    const densityEl = document.getElementById('density-val'), nodeEl = document.getElementById('node-count'), connEl = document.getElementById('conn-count');
+    const N = nodes ? nodes.length : 0, L = links ? links.length : 0;
+    if (densityEl) densityEl.innerText = (N > 1 ? (2 * L) / (N * (N - 1)) : 0).toFixed(2);
+    if (nodeEl) nodeEl.innerText = N;
+    if (connEl) connEl.innerText = L;
 };
 
 // ⚡ 隔离孤立节点交互逻辑
@@ -42,46 +27,31 @@ window._filterConnectedOnly = false;
 window.toggleConnectedNodesOnly = () => {
     if (!window.galaxyGraph || !window._lastGalaxyData) return;
     window._filterConnectedOnly = !window._filterConnectedOnly;
-    const label = document.getElementById('focus-btn-label');
-    const card = document.getElementById('btn-focus-connected');
-    
+    const label = document.getElementById('focus-btn-label'), card = document.getElementById('btn-focus-connected');
     const newTitle = window._filterConnectedOnly
         ? '一键恢复显示所有星球，包含无任何连线的孤立知识点。'
         : '一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。';
 
-    if (card) {
-        if (card.hasAttribute('data-tooltip')) {
-            card.setAttribute('data-tooltip', newTitle);
-        } else {
-            card.setAttribute('title', newTitle);
-        }
-    }
-
+    if (card) card.hasAttribute('data-tooltip') ? card.setAttribute('data-tooltip', newTitle) : card.setAttribute('title', newTitle);
     const activeTooltip = document.querySelector('.custom-glass-tooltip');
-    if (activeTooltip) {
-        activeTooltip.innerText = newTitle;
-    }
+    if (activeTooltip) activeTooltip.innerText = newTitle;
     
     if (window._filterConnectedOnly) {
         const connIds = new Set();
         window._lastGalaxyData.links.forEach(l => {
-            const src = l.source?.id || l.source;
-            const tgt = l.target?.id || l.target;
-            if (src !== undefined && tgt !== undefined) {
-                connIds.add(src); connIds.add(tgt);
-            }
+            const src = l.source?.id || l.source, tgt = l.target?.id || l.target;
+            if (src !== undefined && tgt !== undefined) { connIds.add(src); connIds.add(tgt); }
         });
         const filteredNodes = window._lastGalaxyData.nodes.filter(n => connIds.has(n.id));
         window.galaxyGraph.graphData({ nodes: filteredNodes, links: window._lastGalaxyData.links });
-        if (label) { label.innerText = '🪐 显示全部'; label.style.color = 'var(--neon-amber)'; }
-        if (card) { card.style.background = 'var(--accent-orange-05)'; card.style.borderColor = 'var(--accent-orange-30)'; }
-        setTimeout(() => window.galaxyGraph.zoomToFit(1000, 80), 150);
+        if (label) { label.innerText = '🪐 显示全部'; label.style.color = ''; }
+        if (card) { card.classList.add('active-isolated'); card.style.background = ''; card.style.borderColor = ''; }
     } else {
         window.galaxyGraph.graphData(window._lastGalaxyData);
-        if (label) { label.innerText = '⚡ 隔离星球'; label.style.color = 'var(--neon-cyan)'; }
-        if (card) { card.style.background = 'var(--neon-cyan-05)'; card.style.borderColor = 'var(--neon-cyan-20)'; }
-        setTimeout(() => window.galaxyGraph.zoomToFit(1000, 80), 150);
+        if (label) { label.innerText = '⚡ 隔离星球'; label.style.color = ''; }
+        if (card) { card.classList.remove('active-isolated'); card.style.background = ''; card.style.borderColor = ''; }
     }
+    setTimeout(() => window.galaxyGraph.zoomToFit(1000, 80), 150);
 };
 
 function injectGalaxyInteractiveDOM() {
@@ -113,12 +83,12 @@ function injectGalaxyInteractiveDOM() {
         telDiv.style.cssText = 'padding: 10px 14px; width: auto; border-radius: 12px; display: flex; flex-direction: row; min-width: 0; box-sizing: border-box; animation: none; margin-top: 0;';
         telDiv.innerHTML = `
             <!-- 指标主区域 -->
-            <div id="telemetry-main-section" style="display: flex; flex-direction: column; gap: 8px; width: 180px; flex-shrink: 0; box-sizing: border-box;">
+            <div id="telemetry-main-section" style="display: flex; flex-direction: column; justify-content: space-between; height: 99px; min-height: 99px; width: 180px; flex-shrink: 0; box-sizing: border-box;">
                 <div id="telemetry-title-bar" style="display: flex; justify-content: space-between; align-items: center; user-select: none;">
                     <span style="font-size: 0.52rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px;">📊 实时指标</span>
                     <span id="telemetry-expand-btn" style="font-size: 0.65rem; color: var(--text-dim); transition: transform 0.3s ease; cursor: pointer; margin-right: -2px;" title="动力学参数调节">⚙️</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; margin-top: 6px;">
                     <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; margin-top: 2px;">
                         <div style="flex: 1; text-align: center; cursor: help;" title="当前星图中所包含的活跃知识星球（已加载的笔记节点）总数。">
                             <div class="hud-label" style="font-size: 0.45rem; margin-bottom: 2px; letter-spacing: 0.5px;">神经元</div>
@@ -133,34 +103,55 @@ function injectGalaxyInteractiveDOM() {
                             <div class="hud-value" id="density-val" style="font-size: 0.85rem; line-height: 1;">0.00</div>
                         </div>
                     </div>
-                    <button class="primary-btn glow-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" style="width: 100%; height: 22px; line-height: 12px; font-size: 0.55rem; cursor: pointer; border-radius: 4px; background: var(--neon-cyan-05); border: 1px solid var(--neon-cyan-20); transition: all 0.3s; padding: 0;" title="一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。">
-                        <span id="focus-btn-label" style="color: var(--neon-cyan); letter-spacing: 0.5px; font-size: 0.55rem;">⚡ 隔离星球</span>
-                    </button>
+                    <div style="display: flex; gap: 6px; width: 100%;">
+                        <button class="galaxy-hud-btn" id="btn-focus-connected" onclick="window.toggleConnectedNodesOnly()" title="一键过滤并隐藏所有无连线的孤立星球，聚焦展示有关联的知识网络。">
+                            <span id="focus-btn-label">⚡ 隔离星球</span>
+                        </button>
+                        <button class="galaxy-hud-btn" id="btn-toggle-rotate" onclick="window.toggleGalaxyAutoRotate()" title="一键开启或暂停知识星系平滑轨道自转">
+                            <span id="rotate-btn-label">🪐 开启自转</span>
+                        </button>
+                    </div>
                 </div>
             </div>
             <!-- 物理调节子区域 (内嵌于同一个卡片中) -->
             <div id="galaxy-physics-controls" class="horizontal-collapsed">
-                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.6rem; color: var(--text-dim); width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; gap: 10px; width: 100%; cursor: help;" title="调节星球间连线的默认物理长度。数值越大，星球间距越宽；数值越小，星图越紧凑。">
-                        <span style="flex-shrink: 0; min-width: 30px;">引力:</span>
+                <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.6rem; color: var(--text-dim); width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: help;" title="调节星球间连线的默认物理长度。数值越大，星球间距越宽；数值越小，星图越紧凑。">
+                        <span style="flex-shrink: 0; min-width: 28px;">引力:</span>
                         <input type="range" id="gravity-distance-slider" min="30" max="200" value="80" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px; width: 100%; cursor: help;" title="调节星球之间的排斥力强度。排斥力越强，星团越发散，便于看清密集区域；越弱则越聚拢。">
-                        <span style="flex-shrink: 0; min-width: 30px;">排斥:</span>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: help;" title="调节星球之间的排斥力强度。排斥力越强，星团越发散，便于看清密集区域；越弱则越聚拢。">
+                        <span style="flex-shrink: 0; min-width: 28px;">排斥:</span>
                         <input type="range" id="charge-strength-slider" min="-300" max="-20" value="-120" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 2px; justify-content: space-between; font-size: 0.55rem;">
-                        <label style="display: flex; align-items: center; gap: 3px; cursor: help;" title="显示或隐藏笔记中由您手动书写的显式百科双链（WikiLinks）连线关系。">
-                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 物理
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: help;" title="调节知识星谱平滑自转的角速度倍率 (0.2x ~ 3.0x)">
+                        <span style="flex-shrink: 0; min-width: 28px;">转速:</span>
+                        <input type="range" id="rotate-speed-slider" min="0.2" max="3.0" step="0.1" value="1.0" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
+                        <span id="rotate-speed-val" style="min-width: 24px; text-align: right; font-family: monospace; font-size: 0.52rem; color: var(--accent-secondary);">1.0x</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: help;" title="调节自转轨道的鸟瞰俯仰倾角 (0° ~ 60°，20° 为立体俯瞰视角)">
+                        <span style="flex-shrink: 0; min-width: 28px;">倾角:</span>
+                        <input type="range" id="rotate-incline-slider" min="0" max="60" step="1" value="20" style="flex: 1; min-width: 0; height: 2px; accent-color: var(--accent-secondary); cursor: pointer;" />
+                        <span id="rotate-incline-val" style="min-width: 24px; text-align: right; font-family: monospace; font-size: 0.52rem; color: var(--accent-secondary);">20°</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; margin-top: 2px; font-size: 0.5rem; justify-content: space-between; width: 100%; white-space: nowrap;">
+                        <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="显示或隐藏原稿笔记中手动书写的双向链接（[[WikiLinks]]）">
+                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 文档双链
                         </label>
-                        <label style="display: flex; align-items: center; gap: 3px; cursor: help;" title="显示或隐藏系统根据 AI 语义理解自动匹配推荐的概念关联（隐式概念关联）连线关系。">
-                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 语义
+                        <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="显示或隐藏系统根据 AI 语义分析自动推荐的概念关联连线">
+                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 智能关联
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="开启后自转呈现太空滑行与周期回拉动效；关闭后呈现纯匀速平滑轨道巡航">
+                            <input type="checkbox" id="toggle-rotation-damping" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 旋转阻尼
                         </label>
                     </div>
                 </div>
             </div>
         `;
         leftColumn.appendChild(telDiv);
+        if (typeof window.updateGalaxyRotateUIState === 'function') {
+            window.updateGalaxyRotateUIState(typeof window.isGalaxyAutoRotating === 'function' && window.isGalaxyAutoRotating());
+        }
 
         // 绑定齿轮点击展开右侧物理面板
         const expandBtn = document.getElementById('telemetry-expand-btn');
@@ -170,21 +161,14 @@ function injectGalaxyInteractiveDOM() {
                 const physCtrl = document.getElementById('galaxy-physics-controls');
                 if (physCtrl) {
                     const isCollapsed = physCtrl.classList.contains('horizontal-collapsed');
-                    if (isCollapsed) {
-                        physCtrl.classList.remove('horizontal-collapsed');
-                        physCtrl.classList.add('horizontal-expanded');
-                        expandBtn.style.transform = 'rotate(90deg)';
-                    } else {
-                        physCtrl.classList.remove('horizontal-expanded');
-                        physCtrl.classList.add('horizontal-collapsed');
-                        expandBtn.style.transform = 'rotate(0deg)';
-                    }
+                    physCtrl.classList.toggle('horizontal-collapsed', !isCollapsed);
+                    physCtrl.classList.toggle('horizontal-expanded', isCollapsed);
+                    expandBtn.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
                 }
             };
         }
         setupPhysicsListeners();
     }
-
 }
 
 function setupSearchListeners() {
@@ -204,11 +188,7 @@ function setupSearchListeners() {
             suggs.style.display = 'none';
             return;
         }
-        suggs.innerHTML = matches.map(n => `
-            <div class="galaxy-suggestion-item" data-id="${n.id}">
-                🪐 ${n.title || n.id.split('/').pop()}
-            </div>
-        `).join('');
+        suggs.innerHTML = matches.map(n => `<div class="galaxy-suggestion-item" data-id="${n.id}">🪐 ${n.title || n.id.split('/').pop()}</div>`).join('');
         suggs.style.display = 'flex';
 
         suggs.querySelectorAll('.galaxy-suggestion-item').forEach(el => {
@@ -217,9 +197,7 @@ function setupSearchListeners() {
                 const node = nodes.find(n => n.id === nodeId);
                 if (node && typeof focusNodeIn3D === 'function') {
                     focusNodeIn3D(node);
-                    if (typeof window.showNodeDirector === 'function') {
-                        window.showNodeDirector(node);
-                    }
+                    if (typeof window.showNodeDirector === 'function') window.showNodeDirector(node);
                 }
                 input.value = '';
                 suggs.style.display = 'none';
@@ -229,9 +207,7 @@ function setupSearchListeners() {
 
     document.addEventListener('click', (e) => {
         const container = document.getElementById('galaxy-search-container');
-        if (container && !container.contains(e.target)) {
-            suggs.style.display = 'none';
-        }
+        if (container && !container.contains(e.target)) suggs.style.display = 'none';
     });
 }
 
@@ -262,4 +238,40 @@ function setupPhysicsListeners() {
     if (strengthSlider) strengthSlider.addEventListener('input', updatePhysics);
     if (wikiCheck) wikiCheck.addEventListener('change', updatePhysics);
     if (semanticCheck) semanticCheck.addEventListener('change', updatePhysics);
+
+    const speedSlider = document.getElementById('rotate-speed-slider');
+    const speedVal = document.getElementById('rotate-speed-val');
+    if (speedSlider) {
+        const curSpeed = typeof window.getGalaxyRotateSpeed === 'function' ? window.getGalaxyRotateSpeed() : 1.0;
+        speedSlider.value = curSpeed.toFixed(1);
+        if (speedVal) speedVal.innerText = `${curSpeed.toFixed(1)}x`;
+        speedSlider.addEventListener('input', () => {
+            const val = parseFloat(speedSlider.value) || 1.0;
+            if (speedVal) speedVal.innerText = `${val.toFixed(1)}x`;
+            if (typeof window.setGalaxyRotateSpeed === 'function') window.setGalaxyRotateSpeed(val);
+        });
+    }
+
+    const inclineSlider = document.getElementById('rotate-incline-slider');
+    const inclineVal = document.getElementById('rotate-incline-val');
+    if (inclineSlider) {
+        const curIncline = typeof window.getGalaxyOrbitIncline === 'function' ? window.getGalaxyOrbitIncline() : 20;
+        inclineSlider.value = curIncline;
+        if (inclineVal) inclineVal.innerText = `${curIncline}°`;
+        inclineSlider.addEventListener('input', () => {
+            const val = parseInt(inclineSlider.value) || 0;
+            if (inclineVal) inclineVal.innerText = `${val}°`;
+            if (typeof window.setGalaxyOrbitIncline === 'function') window.setGalaxyOrbitIncline(val);
+        });
+    }
+
+    const dampingChk = document.getElementById('toggle-rotation-damping') || document.getElementById('toggle-anti-flip');
+    if (dampingChk) {
+        const curDamping = typeof window.getGalaxyRotationDamping === 'function' ? window.getGalaxyRotationDamping() : true;
+        dampingChk.checked = curDamping;
+        dampingChk.addEventListener('change', () => {
+            if (typeof window.setGalaxyRotationDamping === 'function') window.setGalaxyRotationDamping(dampingChk.checked);
+        });
+    }
 }
+

@@ -218,3 +218,237 @@
 .review-error {
     color: var(--neon-red);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🏛️ [I5] 审稿抽屉骨架与布局体系 (消除内联样式 / 变量双主题原生自适应)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 抽屉全屏遮罩底板 */
+#review-drawer-overlay,
+.review-drawer-overlay {
+    display: none;
+    opacity: 0;
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    justify-content: flex-end;
+    align-items: stretch;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 抽屉主视窗 */
+#review-drawer,
+.review-drawer-window {
+    width: min(1400px, 85vw);
+    height: 100%;
+    background: rgb(var(--bg-modal-solid-rgb));
+    border-left: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] #review-drawer,
+[data-theme="light"] .review-drawer-window {
+    box-shadow: -8px 0 35px rgba(0, 0, 0, 0.12);
+}
+
+/* 抽屉顶部标题栏 */
+.review-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(var(--bg-modal-solid-rgb), 0.85);
+    flex-shrink: 0;
+}
+
+.review-drawer-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-bright);
+    letter-spacing: 0.3px;
+}
+
+/* 视图切换按钮 (👁️ 预览 / 📜 原文) */
+.review-toggle-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: none;
+    transition: all 0.2s;
+}
+
+.review-toggle-btn:hover {
+    color: var(--text-bright);
+}
+
+.review-toggle-btn.active {
+    background: var(--white-10);
+    color: var(--text-bright);
+    border-color: var(--accent-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* 右上角关闭/返回按钮 */
+.review-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+}
+
+.review-close-btn:hover {
+    color: var(--text-bright);
+}
+
+.review-close-btn.review-close-btn--return,
+.review-close-btn--return {
+    width: auto !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    background: var(--neon-cyan-10) !important;
+    border: 1px solid var(--neon-cyan-35) !important;
+    color: var(--neon-cyan) !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.review-close-btn.review-close-btn--return:hover,
+.review-close-btn--return:hover {
+    background: var(--neon-cyan-20) !important;
+    border-color: var(--neon-cyan-55) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 10px var(--neon-cyan-20) !important;
+}
+
+/* 语言选项卡横栏 */
+.review-lang-tabs-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+}
+
+/* 抽屉主滚动内容区 */
+.review-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 三栏分栏容器 */
+.review-three-cols {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.review-col {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+.review-col.bordered {
+    border-right: 1px solid var(--glass-border);
+}
+
+/* 进度条槽轨 */
+.review-progress-track {
+    background: var(--white-05);
+    border-radius: 8px;
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+[data-theme="light"] .review-progress-track {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.review-progress-track.mini {
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 0;
+}
+
+.review-progress-fill {
+    background: linear-gradient(90deg, var(--accent-primary) 0%, var(--neon-amber) 100%);
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+.review-progress-fill.primary {
+    background: var(--accent-primary);
+    transition: width 0.3s ease;
+}
+
+/* 双轨处理卡片网格 */
+.review-progress-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.review-progress-card {
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* 步骤条目 */
+.review-step-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background: var(--white-02);
+    font-size: 0.85rem;
+}
+
+/* 原文只读参考展示框 */
+.review-source-readonly-box {
+    background: var(--white-02);
+    opacity: 0.85;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    color: var(--text-dim);
+    border: 1px solid var(--glass-border);
+    line-height: 1.5;
+}
+

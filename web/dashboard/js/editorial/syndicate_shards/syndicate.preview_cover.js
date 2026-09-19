@@ -40,24 +40,24 @@
         const isOverridden = !!cfg.override_url;
 
         containerEl.innerHTML = `
-            <div class="channel-cover-studio-panel" style="margin-bottom:18px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,242,254,0.25);background:rgba(18,22,34,0.95);box-shadow:0 8px 30px rgba(0,0,0,0.4);">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);gap:8px;">
-                    <div style="display:flex;align-items:center;gap:6px;font-size:0.76rem;font-weight:700;color:var(--accent-secondary,#00f2fe);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <div class="channel-cover-studio-panel">
+                <div class="channel-cover-studio-header">
+                    <div class="channel-cover-studio-title-box">
                         <span>${meta.icon}</span><span>${meta.label}</span>
-                        ${isOverridden ? '<span style="font-size:0.62rem;color:#c084fc;background:rgba(168,85,247,0.18);padding:1px 6px;border-radius:4px;white-space:nowrap;">已独立配图</span>' : '<span style="font-size:0.62rem;color:#38bdf8;background:rgba(56,189,248,0.12);padding:1px 6px;border-radius:4px;white-space:nowrap;">母图自适应</span>'}
+                        ${isOverridden ? '<span class="channel-cover-studio-tag--purple">已独立配图</span>' : '<span class="channel-cover-studio-tag--cyan">母图自适应</span>'}
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                        <button type="button" class="mini-btn" onclick="window.pickOverrideCoverForChannel('${c}')" style="padding:2px 8px;font-size:0.68rem;background:rgba(0,242,254,0.12);border:1px solid rgba(0,242,254,0.3);color:#00f2fe;border-radius:4px;cursor:pointer;" title="为本平台单独指定封面海报">🖼️ 独立配图</button>
-                        ${isOverridden ? `<button type="button" class="mini-btn" onclick="window.resetChannelCoverOverride('${c}')" style="padding:2px 8px;font-size:0.68rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:4px;cursor:pointer;" title="清除独立覆盖，恢复跟随母图自适应">🔄 还原母图</button>` : ''}
-                        <button type="button" class="mini-btn" onclick="window.resetChannelCropParams('${c}')" style="padding:2px 7px;font-size:0.68rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;cursor:pointer;" title="重置缩放与焦点为默认居中">↺ 重置</button>
+                    <div class="channel-cover-studio-actions">
+                        <button type="button" class="channel-cover-studio-btn--pick" onclick="window.pickOverrideCoverForChannel('${c}')" title="为本平台单独指定封面海报">🖼️ 独立配图</button>
+                        ${isOverridden ? `<button type="button" class="channel-cover-studio-btn--reset" onclick="window.resetChannelCoverOverride('${c}')" title="清除独立覆盖，恢复跟随母图自适应">🔄 还原母图</button>` : ''}
+                        <button type="button" class="channel-cover-studio-btn--default" onclick="window.resetChannelCropParams('${c}')" title="重置缩放与焦点为默认居中">↺ 重置</button>
                     </div>
                 </div>
-                <div id="channel-crop-viewport-${c}" style="position:relative;width:100%;aspect-ratio:${meta.cssRatio};max-height:${meta.maxH};overflow:hidden;background:#090d14;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;" title="鼠标直接拖拽平移取景，滚轮自由缩放变焦">
+                <div id="channel-crop-viewport-${c}" class="channel-crop-viewport" style="aspect-ratio:${meta.cssRatio};max-height:${meta.maxH};" title="鼠标直接拖拽平移取景，滚轮自由缩放变焦">
                     ${activeUrl ? `
-                        <img id="channel-preview-cover-img-${c}" src="${activeUrl}" alt="封面排版" onload="window.updateChannelCoverTransform('${c}')" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:none;max-height:none;pointer-events:none;user-select:none;transition:transform 0.04s ease-out;display:block;" />
-                        <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px) 0 0 / 33.33% 100%, linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px) 0 0 / 100% 33.33%;border:1px dashed rgba(0,242,254,0.25);"></div>
-                        <div id="channel-preview-focal-hint-${c}" style="position:absolute;bottom:8px;right:8px;font-size:0.62rem;padding:2px 7px;border-radius:4px;background:rgba(0,0,0,0.75);color:#00f2fe;pointer-events:none;border:1px solid rgba(0,242,254,0.25);backdrop-filter:blur(4px);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🔍 100% · 按住拖拽 · 滚轮缩放</div>
-                    ` : '<div style="color:var(--text-dim);font-size:0.75rem;">暂无有效封面图片</div>'}
+                        <img id="channel-preview-cover-img-${c}" class="channel-preview-cover-img" src="${activeUrl}" alt="封面排版" onload="window.updateChannelCoverTransform('${c}')" />
+                        <div class="channel-crop-grid-overlay"></div>
+                        <div id="channel-preview-focal-hint-${c}" class="channel-crop-focal-hint">🔍 100% · 按住拖拽 · 滚轮缩放</div>
+                    ` : '<div class="syndicate-preview-empty">暂无有效封面图片</div>'}
                 </div>
             </div>
         `;
@@ -268,7 +268,7 @@
         const slot = document.getElementById('syndicate-finetune-badge-slot');
         if (slot) {
             slot.innerHTML = tunedCount > 0
-                ? `<span style="font-size:0.64rem;color:#00f2fe;font-weight:700;background:rgba(0,242,254,0.14);border:1px solid rgba(0,242,254,0.25);padding:1px 5px;border-radius:4px;white-space:nowrap;">✨ 已精修 ${tunedCount} 端</span>`
+                ? `<span class="syndicate-finetune-badge">✨ 已精修 ${tunedCount} 端</span>`
                 : '';
         }
     };

@@ -28,7 +28,8 @@ const VIEW_GROUP_MAP = {
     plugins: 'nav-group-governance',
     design: 'nav-group-governance',
     tower: 'nav-group-telemetry',
-    analytics: 'nav-group-telemetry'
+    analytics: 'nav-group-telemetry',
+    tasks: 'nav-group-telemetry'
 };
 
 window.switchViewDOM = (viewId) => {
@@ -98,12 +99,18 @@ window.loadViewData = (viewId, subId) => {
     }
     if (viewId === 'tower' && typeof loadTowerCenter === 'function') loadTowerCenter();
     if (viewId === 'analytics' && typeof loadAnalyticsCenter === 'function') loadAnalyticsCenter();
+    if (viewId === 'tasks' && typeof window.loadDispatchCenter === 'function') window.loadDispatchCenter(subId);
 };
 
 // ==========================================
 // 🚀 [V87.0] 统一视图切换入口（使用 View Transitions 解耦数据加载）
 // ==========================================
 window.showView = async (id, subId) => {
+    // 🧭 导览退出自愈守护：若用户在导览进行中主动切换至其他业务视图，自动安全退出导览并彻底解除品牌锁定
+    if (id !== 'overview' && typeof window.closeDashboardTour === 'function' && typeof window.isTourActive === 'function' && window.isTourActive()) {
+        window.closeDashboardTour();
+    }
+
     // 🛡️ [优化点2] 大分类切换拦截：如果是从 settings 切换到其他视图，检查配置是否 dirty
     if (window.currentView === 'settings' && id !== 'settings') {
         if (typeof window.checkSettingsDirtyAndConfirm === 'function') {
@@ -181,7 +188,7 @@ window._isInitialRouting = true;
 window.handleRouting = async () => {
     const rawHash = window.location.hash.replace('#/', '');
     const [viewId, routeSubId] = rawHash.split('/');
-    const validViews = ['overview', 'vault', 'compute', 'design', 'plugins', 'settings', 'tower', 'analytics'];
+    const validViews = ['overview', 'vault', 'compute', 'design', 'plugins', 'settings', 'tower', 'analytics', 'tasks'];
     if (viewId && validViews.includes(viewId)) {
         const subId = routeSubId || window.pendingSubView;
         window.pendingSubView = null;

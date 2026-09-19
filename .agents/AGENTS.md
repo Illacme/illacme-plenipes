@@ -28,12 +28,13 @@
     4.  `engine`（⚙️ 运行基座）：包含日志级别、全局代理、网络超时与遥测采集容量上限。
 *   **交互实现**：必须定义并调用 `window.switchGeneralSubTab(subTab, btn)`，在常规设置中隐藏/显示对应的面板并点亮 Tab 按钮。
 
-## 2. 版图装帧与模式 (Layout & Publishing Modes) 选项卡规则
+## 2. 品牌装帧与模式 (Layout & Publishing Modes) 选项卡规则
 *   **组合渲染入口**：必须在 `dashboard.modes.js` 结尾挂载 `window.renderLayoutCategory`，接收 `layout` 路由并动态按需切换。
-*   **二级子标签（3个）**：
-    1.  `imprints`（🏷️ 版图管理）：调用 `window.renderImprintsCategory()`
-    2.  `themes`（🎭 装帧主题）：调用 `window.renderThemesCategory()`
+*   **二级子标签（4个）**：
+    1.  `imprints`（🚩 品牌管理）：调用 `window.renderImprintsCategory()`
+    2.  `themes`（🎨 装帧主题）：调用 `window.renderThemesCategory()`
     3.  `modes`（📋 出版模式）：调用 `window.renderModesCategory()`
+    4.  `image_policy`（🖼️ 图像策略）：调用 `window.renderImagePolicyCategory()`
 *   **交互实现**：必须提供 `window.switchLayoutSubTab(subTab, btn)` 并支持在初次加载/大类切换时延迟少许自动激活点亮子面板（避免首屏白屏）。
 
 ## 3. 语言翻译与内容治理 (Localization & Content Governance) 选项卡规则
@@ -140,4 +141,11 @@
     1. **原始错误直透红线**：严禁向创作者输出未经查验的泛化假定或敷衍解释（如仅泛泛而谈“可能是网络超时或模型问题”）。
     2. **自查日志先行红线**：只要遭遇中断或创作者询问执行异常，AI 助手必须优先查看底层执行轨迹日志（如 `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript*.jsonl`）及系统错误输出，提取第一手物理异常现场。
     3. **裸错误栈还原呈现**：必须原原本本向创作者展示捕获到的原始状态码（如 HTTP 503 / 429）、错误类型名称及具体原因（例如 `No capacity available for model ...`），彻底拒绝模糊二次封装。
+
+## 17. 出版品牌契约主权统一与零 undefined 铁律 (Imprint Contract Sovereignty & Zero-Undefined Rules)
+*   **适用场景**：所有涉及出版品牌 (Imprint) 数据流转、后端 `list_imprints()` API、前端卡片/下拉菜单渲染及文库路径校验的代码修改与自动化重构。
+*   **物理红线**：
+    1. **拒绝破坏性多键兼容，物理统一唯一标准键名**：产品发布前绝对禁止搞模糊的多键名并存或前端链式 `||` 兜底兼容（如 `im.vault || im.path`）。文库物理路径在底层配置、后端 API 与前端渲染中必须 100% 物理对齐官方唯一标准名称 **`vault_root`**，彻底禁止简写为 `vault` 或通用化为 `path`。
+    2. **前端渲染零 `undefined` 物理门禁**：所有参与渲染前端 HTML 的函数，严禁因字段未定义或拼写错误而向 DOM 注入 `undefined`、`null` 或 `[object Object]` 字符串。
+    3. **自动化守卫门禁**：任何涉及品牌数据与前端渲染的修改，必须强制通过 `pytest tests/test_imprint_contract_sovereignty.py` 自动化回归门禁。
 

@@ -64,3 +64,267 @@
 .plugin-pod-header {
     transition: all 0.2s ease;
 }
+
+/* 🧩 插件配置抽屉 (#plugin-drawer) 现代流式视窗体系 */
+#plugin-drawer.plugin-drawer-overlay,
+.plugin-drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--modal-backdrop, rgba(0, 0, 0, 0.45));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10005;
+    justify-content: flex-end;
+    align-items: stretch;
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+#plugin-drawer.plugin-drawer-overlay.is-open,
+.plugin-drawer-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#plugin-drawer .drawer-content {
+    width: 660px;
+    max-width: 92vw;
+    height: 100vh;
+    border-radius: 16px 0 0 16px;
+    border-left: 1px solid var(--glass-border);
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#plugin-drawer.is-open .drawer-content {
+    transform: translateX(0);
+}
+
+/* 抽屉头部 Header */
+#plugin-drawer .drawer-header,
+.plugin-drawer-header {
+    padding: 14px 20px !important;
+    border-bottom: 1px solid var(--white-10) !important;
+    background: var(--white-02) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.plugin-drawer-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.plugin-drawer-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--accent-secondary);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.plugin-dirty-badge {
+    display: none;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    color: var(--neon-amber);
+    background: rgba(var(--neon-amber-rgb), 0.1);
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.25);
+}
+
+.plugin-drawer-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.plugin-master-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.plugin-toggle-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+/* 抽屉关闭/返回按钮 */
+.plugin-close-btn {
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+    color: var(--text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.plugin-close-btn:hover {
+    background: var(--white-08);
+    border-color: var(--white-15);
+    color: var(--text-bright);
+}
+
+/* ‹‹ 返回按钮模式 */
+.plugin-close-btn.plugin-close-btn--return,
+.plugin-close-btn--return {
+    width: auto !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    background: var(--neon-cyan-10) !important;
+    border: 1px solid var(--neon-cyan-35) !important;
+    color: var(--neon-cyan) !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.plugin-close-btn.plugin-close-btn--return:hover,
+.plugin-close-btn--return:hover {
+    background: var(--neon-cyan-20) !important;
+    border-color: var(--neon-cyan-55) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 10px var(--neon-cyan-20) !important;
+}
+
+/* 抽屉主体 Body */
+#plugin-drawer .drawer-body,
+#p-drawer-body {
+    padding: 16px 20px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--white-10) transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* 抽屉底部 Footer 与操作按钮组 */
+#plugin-drawer .drawer-footer,
+.plugin-drawer-footer {
+    padding: 12px 20px !important;
+    border-top: 1px solid var(--white-10) !important;
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.plugin-drawer-footer button {
+    flex: 1;
+    height: 38px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    margin: 0;
+    outline: none;
+}
+
+/* 🗑️ 清空重置按钮 */
+.plugin-btn-reset {
+    background: rgba(var(--neon-red-rgb), 0.06) !important;
+    border: 1px dashed rgba(var(--neon-red-rgb), 0.35) !important;
+    color: var(--neon-red) !important;
+}
+.plugin-btn-reset:hover {
+    background: rgba(var(--neon-red-rgb), 0.16) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.6) !important;
+    color: var(--text-bright) !important;
+}
+
+/* 🧹 恢复默认按钮 */
+.plugin-btn-restore {
+    background: rgba(var(--neon-amber-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.3) !important;
+    color: var(--neon-amber) !important;
+}
+.plugin-btn-restore:hover {
+    background: rgba(var(--neon-amber-rgb), 0.18) !important;
+    border-color: rgba(var(--neon-amber-rgb), 0.55) !important;
+    color: var(--text-bright) !important;
+}
+
+/* 🔌 测试连接按钮 */
+.plugin-btn-dryrun {
+    background: var(--neon-cyan-08) !important;
+    border: 1px solid var(--neon-cyan-30) !important;
+    color: var(--neon-cyan) !important;
+}
+.plugin-btn-dryrun:hover {
+    background: var(--neon-cyan-20) !important;
+    border-color: var(--neon-cyan-50) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 12px var(--neon-cyan-20) !important;
+}
+
+/* 💾 保存配置按钮 */
+.plugin-btn-save {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.18) 0%, var(--neon-cyan-15) 100%) !important;
+    border: 1px solid rgba(var(--accent-primary-rgb), 0.4) !important;
+    color: var(--accent-primary) !important;
+}
+.plugin-btn-save:hover {
+    background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.35) 0%, var(--neon-cyan-25) 100%) !important;
+    border-color: rgba(var(--accent-primary-rgb), 0.7) !important;
+    color: var(--text-bright) !important;
+    box-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.35) !important;
+    transform: translateY(-1px);
+}

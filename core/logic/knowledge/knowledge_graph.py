@@ -278,6 +278,8 @@ class KnowledgeGraph:
                 nodes_list.append({
                     "id": doc_id,
                     "title": data.get("title", doc_id),
+                    "gist": data.get("gist", ""),
+                    "entities": data.get("entities", {}),
                     "val": 1  # 初始权重
                 })
                 

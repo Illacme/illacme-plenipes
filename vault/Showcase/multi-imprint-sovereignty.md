@@ -1,5 +1,5 @@
 ---
-title: 多品牌主权版图矩阵
+title: 多品牌主权矩阵
 layout: page
 slug: multi-imprint-sovereignty
 route_prefix: showcase
@@ -14,7 +14,7 @@ tags:
 - Architecture
 cover: /api/design/assets/covers/cover_5663963c5918.jpg
 ---
-# 🏷️ 多品牌主权版图矩阵
+# 🏷️ 多品牌主权矩阵
 
 > [!TIP]
 > **一次起草，多元矩阵独立发行**：创作者可以为不同业务线、不同受众或不同语言市场划分完全独立的出版品牌（Imprints）。所有品牌共享底层核心原稿文库，但各自享有物理级隔离的装帧主题、出版模式、分发渠道与品牌合规元数据。
@@ -26,7 +26,7 @@ cover: /api/design/assets/covers/cover_5663963c5918.jpg
 <div class="stats-matrix" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
     <div class="stat-card" style="padding: 1.25rem 1.5rem; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);">
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">🏷️ 出版品牌划分</div>
-        <div style="font-size: 1.15rem; font-weight: 700; color: var(--accent-color);">无限品牌版图 · 物理目录隔离</div>
+        <div style="font-size: 1.15rem; font-weight: 700; color: var(--accent-color);">多出版品牌 · 物理目录隔离</div>
     </div>
     <div class="stat-card" style="padding: 1.25rem 1.5rem; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);">
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">🎭 独立装帧主题</div>

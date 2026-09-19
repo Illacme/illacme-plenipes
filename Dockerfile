@@ -22,9 +22,9 @@ COPY . .
 ENV PLENIPES_DOCKER=1
 ENV PYTHONUNBUFFERED=1
 
-# 暴露主权端口序列
-EXPOSE 43210 43211 43212
+# 暴露主权端口序列 (单例锁: 43210, 向导: 43211, API网关: 43212, 预览: 43213)
+EXPOSE 43210 43211 43212 43213
 
 # 默认启动 API 模式
 ENTRYPOINT ["python", "plenipes.py"]
-CMD ["--api", "--api-port", "43211"]
+CMD ["--api", "--api-port", "43212"]

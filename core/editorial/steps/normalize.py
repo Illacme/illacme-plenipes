@@ -37,12 +37,9 @@ class ReadAndNormalizeStep(PipelineStep):
         raw_ai_sync = ctx.fm_dict.get('ai_sync')
         ctx.is_silent_edit = (str(raw_ai_sync).lower() == 'false') if raw_ai_sync is not None else False
 
-        # 🚀 [V52.13] 字数统计逻辑：在归一化阶段即刻固化，为治理提供物理指标
-        # 针对中英文混合环境优化：英文按单词计，中文按字符计
-        clean_text = re.sub(r'[\s\n\t]+', ' ', ctx.raw_body)
-        en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
-        zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', ctx.raw_body))
-        ctx.seo_data['word_count'] = en_words + zh_chars
+        # 🚀 [V105.0] 字数统计逻辑：全球全语种通用度量 (Universal Multilingual Word Count)
+        from core.utils.text import calculate_universal_word_count
+        ctx.seo_data['word_count'] = calculate_universal_word_count(ctx.raw_body)
 
         # 🚀 [V7.7] 逐文件语种识别 (Per-Document Granular Detection)
         # [V52.13 优化]：优先级：Frontmatter 显式定义 > 动态识别 (if auto) > 全局配置

@@ -19,33 +19,66 @@ async def list_vault_manuscripts():
     if not engine: return {"error": "Engine not initialized"}
     
     vault_root_abs = os.path.abspath(engine.vault_root) if getattr(engine, "vault_root", None) else ""
-    docs = engine.meta.get_documents_snapshot()
+    docs = engine.meta.get_documents_snapshot() if hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot") else {}
     vault_list = []
-    for rel_path, info in docs.items():
-        if not info: continue
-        
-        # 🛡️ 物理真理对正：只返回当前物理 vault_root 目录下真实存在的稿件
-        if vault_root_abs:
-            abs_file_path = os.path.join(vault_root_abs, rel_path)
-            if not os.path.exists(abs_file_path):
-                continue
-        status_map = info.get("publish_status") or {}
-        live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
-        seo_data = info.get("seo_data") or {}
-        translations = info.get("translations") or {}
-        zh_trans = translations.get("zh") or {}
-        
-        vault_list.append({
-            "id": rel_path,
-            "path": rel_path,
-            "title": info.get("title") or os.path.basename(rel_path),
-            "slug": info.get("slug") or "pending",
-            "lang": info.get("source_lang") or zh_trans.get("lang") or "zh",
-            "word_count": seo_data.get("word_count") or 0,
-            "status": "Live" if live_channels else "Draft",
-            "channels": list(status_map.keys()),
-            "last_updated": max([s.get("timestamp", 0) for s in status_map.values() if s] + [0])
-        })
+    seen_paths = set()
+    if isinstance(docs, dict):
+        for rel_path, info in docs.items():
+            if not info: continue
+            
+            # 🛡️ 物理真理对正：只返回当前物理 vault_root 目录下真实存在的稿件
+            if vault_root_abs:
+                abs_file_path = os.path.join(vault_root_abs, rel_path)
+                if not os.path.exists(abs_file_path):
+                    continue
+            status_map = info.get("publish_status") or {}
+            live_channels = [ch for ch, s in status_map.items() if s and str(s.get("status", "")).upper() in ("SUCCESS", "DONE")]
+            seo_data = info.get("seo_data") or {}
+            translations = info.get("translations") or {}
+            zh_trans = translations.get("zh") or {}
+            
+            vault_list.append({
+                "id": rel_path,
+                "path": rel_path,
+                "title": info.get("title") or os.path.basename(rel_path),
+                "slug": info.get("slug") or "pending",
+                "lang": info.get("source_lang") or zh_trans.get("lang") or "zh",
+                "word_count": seo_data.get("word_count") or 0,
+                "status": "Live" if live_channels else "Draft",
+                "channels": list(status_map.keys()),
+                "last_updated": max([s.get("timestamp", 0) for s in status_map.values() if s] + [0])
+            })
+            seen_paths.add(rel_path)
+
+    # 🛡️ 物理真理保底：遍历磁盘真实的物理原稿文件，补充尚未入账或新增的 Markdown 文件
+    if vault_root_abs and os.path.isdir(vault_root_abs):
+        ignored_dirs = {".git", ".obsidian", ".trash", ".plenipes", "node_modules", ".venv", "themes", "dist", "public", "build", "assets", "static", ".github"}
+        for root, dirs, files in os.walk(vault_root_abs):
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d.lower() not in ignored_dirs]
+            for f in files:
+                if f.endswith(('.md', '.markdown')) and not f.startswith('.'):
+                    abs_file = os.path.join(root, f)
+                    rel_file = os.path.relpath(abs_file, vault_root_abs).replace("\\", "/")
+                    if rel_file not in seen_paths:
+                        try:
+                            mtime = int(os.path.getmtime(abs_file))
+                            size = os.path.getsize(abs_file)
+                        except Exception:
+                            mtime = 0
+                            size = 0
+                        vault_list.append({
+                            "id": rel_file,
+                            "path": rel_file,
+                            "title": os.path.splitext(f)[0],
+                            "slug": "pending",
+                            "lang": "zh",
+                            "word_count": max(1, size // 3),
+                            "status": "Draft",
+                            "channels": [],
+                            "last_updated": mtime
+                        })
+                        seen_paths.add(rel_file)
+
     vault_list.sort(key=lambda x: x["last_updated"], reverse=True)
     
     # 🚀 [V87.8] 物理扫描仓库根目录下的真实目录列表，支持显示空目录

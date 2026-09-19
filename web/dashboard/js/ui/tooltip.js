@@ -1,7 +1,21 @@
 /**
  * 🏛️ [V75.2] Illacme Plenipes UI Custom Tooltip Component
- * 职责：全局自愈性高保真 Glassmorphism Tooltip 悬浮框组件 (瞬时响应)。
+ * 职责：全局自愈性高保真 Glassmorphism Tooltip 悬浮框组件 (单例安全、瞬时响应、点击自愈)。
  */
+
+window.dismissCustomTooltip = (suppressMs = 0) => {
+    if (suppressMs > 0) {
+        window._suppressTooltipUntil = Date.now() + suppressMs;
+    }
+    document.querySelectorAll('.custom-glass-tooltip').forEach(el => el.remove());
+    document.querySelectorAll('[data-title-converted]').forEach(target => {
+        const text = target.getAttribute('title') || target.getAttribute('data-tooltip');
+        if (text) target.setAttribute('title', text);
+        target.removeAttribute('data-tooltip');
+        target.removeAttribute('data-title-converted');
+    });
+};
+
 window.initializeCustomTooltip = () => {
     let tooltipEl = null;
 
@@ -38,8 +52,12 @@ window.initializeCustomTooltip = () => {
     }
 
     document.body.addEventListener('mouseover', (e) => {
+        if (Date.now() < (window._suppressTooltipUntil || 0)) return;
         const target = e.target.closest('[title]');
         if (!target) return;
+
+        // 🛡️ 强制单例自愈：创建前先清除页面上任何可能残留的孤儿气泡
+        window.dismissCustomTooltip();
 
         // 1. 获取并备份 title，消除浏览器默认气泡
         const text = target.getAttribute('title');
@@ -57,8 +75,7 @@ window.initializeCustomTooltip = () => {
         // 3. 动态测算坐标
         const rect = target.getBoundingClientRect();
         const tooltipRect = tooltipEl.getBoundingClientRect();
-        
-        // 计算居中 Top 定位
+
         let top = rect.top - tooltipRect.height - 8;
         let left = rect.left + (rect.width - tooltipRect.width) / 2;
 
@@ -71,8 +88,7 @@ window.initializeCustomTooltip = () => {
 
         tooltipEl.style.top = `${top + window.scrollY}px`;
         tooltipEl.style.left = `${left + window.scrollX}px`;
-        
-        // 瞬间淡入
+
         requestAnimationFrame(() => {
             if (tooltipEl) tooltipEl.classList.add('visible');
         });
@@ -81,24 +97,35 @@ window.initializeCustomTooltip = () => {
     document.body.addEventListener('mouseout', (e) => {
         const target = e.target.closest('[data-title-converted]');
         if (target) {
-            // 仅归还真正由 title 转换而来的 data-tooltip
-            const text = target.getAttribute('data-tooltip');
-            if (text) {
-                target.setAttribute('title', text);
-                target.removeAttribute('data-tooltip');
-                target.removeAttribute('data-title-converted');
-            }
+            const currentTitle = target.getAttribute('title');
+            const cachedText = target.getAttribute('data-tooltip');
+            const text = currentTitle || cachedText;
+            if (text) target.setAttribute('title', text);
+            target.removeAttribute('data-tooltip');
+            target.removeAttribute('data-title-converted');
         }
 
-        // 销毁悬浮层
         if (tooltipEl) {
             tooltipEl.remove();
             tooltipEl = null;
         }
     });
+
+    // 🛡️ [死穴自愈 1] 点击任何元素（捕获阶段）均立即销毁悬浮气泡，杜绝 DOM 切换后孤儿悬挂
+    document.addEventListener('pointerdown', () => {
+        window.dismissCustomTooltip();
+        tooltipEl = null;
+    }, true);
+
+    // 🛡️ [死穴自愈 2] 局部或全局容器滚动时即时销毁气泡，防止视觉错位
+    window.addEventListener('scroll', () => {
+        if (tooltipEl) {
+            tooltipEl.remove();
+            tooltipEl = null;
+        }
+    }, true);
 };
 
-// 自动在 DOMContentLoaded 或立即注册
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.initializeCustomTooltip);
 } else {

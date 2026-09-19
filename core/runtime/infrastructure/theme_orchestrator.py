@@ -129,12 +129,17 @@ class ThemeDevServerOrchestrator:
             try: os.symlink(mother_nm, target_nm)
             except Exception: pass
         active_langs = ["zh"]
-        if engine and hasattr(engine, "config") and engine.config.i18n_settings:
-            active_langs = [engine.config.i18n_settings.source.lang_code or "zh"]
-            if engine.config.i18n_settings.enabled and engine.config.i18n_settings.targets:
-                for t in engine.config.i18n_settings.targets:
-                    if t.lang_code and t.lang_code not in active_langs:
-                        active_langs.append(t.lang_code)
+        i18n_cfg = getattr(engine.config, "i18n_settings", None) if engine and hasattr(engine, "config") else None
+        if i18n_cfg:
+            source_cfg = getattr(i18n_cfg, "source", None)
+            src_lang = getattr(source_cfg, "lang_code", "zh") if source_cfg else "zh"
+            active_langs = [src_lang or "zh"]
+            targets = getattr(i18n_cfg, "targets", []) or []
+            if getattr(i18n_cfg, "enabled", False) and targets:
+                for t in targets:
+                    t_lang = getattr(t, "lang_code", None) if hasattr(t, "lang_code") else (t.get("lang_code") if isinstance(t, dict) else None)
+                    if t_lang and t_lang not in active_langs:
+                        active_langs.append(t_lang)
         if "docusaurus" in theme_id.lower():
             legacy_idx = os.path.join(target_cwd, "src/pages/index.md")
             if os.path.exists(legacy_idx) and os.path.exists(os.path.join(target_cwd, "src/pages/index.js")):

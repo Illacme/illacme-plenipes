@@ -49,7 +49,7 @@
         const targets = (i18n.targets || []).map(t => typeof t === 'string' ? t : t.lang_code);
         const isLicensed = window.settingsData?._is_licensed || false;
 
-        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 999 : 2);
+        const maxTargets = window.settingsData?._license_info?.max_i18n_targets || (isLicensed ? 55 : 2);
         // 🚀 [V57.4] 完美支持授权限制：根据许可证上限（社区版最多2个）动态截断激活项
         const activeTargets = (!isLicensed && targets.length > maxTargets) ? targets.slice(0, maxTargets) : targets;
         const availableLangs = window.availableLangs || [];

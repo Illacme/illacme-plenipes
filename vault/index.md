@@ -64,9 +64,9 @@ cover: /api/design/assets/covers/gen_d654c9681d91.jpg
 <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin: 3rem 0;">
     <div class="feature-card" style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; transition: transform 0.3s;">
         <div style="font-size: 2rem; margin-bottom: 1rem;">🏛️</div>
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">全自主品牌版图 (Imprints)</h3>
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">全自主出版品牌 (Imprints)</h3>
         <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin: 0;">
-            支持多出版品牌物理隔离运作，每个版图拥有专属的装帧主题、算力调度策略与全网分发通道。
+            支持多出版品牌物理隔离运作，每个品牌拥有专属的装帧主题、算力调度策略与全网分发通道。
         </p>
     </div>
     <div class="feature-card" style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; transition: transform 0.3s;">

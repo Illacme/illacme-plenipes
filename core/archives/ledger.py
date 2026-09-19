@@ -356,6 +356,9 @@ class MetadataManager:
 
     def list_all_syndication_tasks(self): return self.sqlite.list_all_syndication_tasks()
 
+    def list_all_syndication_records(self, limit=200, offset=0):
+        return self.sqlite.list_all_syndication_records(limit, offset)
+
     def retry_syndication_task(self, rel_path=None, target_id=None):
         with self.lock: self.sqlite.retry_syndication_task(rel_path, target_id)
 

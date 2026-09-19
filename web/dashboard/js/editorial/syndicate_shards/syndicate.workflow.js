@@ -41,10 +41,12 @@
         if (reviewCloseBtn) {
             if (hasReturnContext) {
                 reviewCloseBtn.innerHTML = '‹‹ 返回';
-                reviewCloseBtn.style.cssText = 'padding: 4px 10px; font-size: 0.75rem; font-weight: 600; background: rgba(0, 242, 255, 0.15); color: #00f2fe; border: 1px solid rgba(0, 242, 255, 0.35); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;';
+                reviewCloseBtn.classList.add('review-close-btn--return');
+                reviewCloseBtn.style.cssText = '';
             } else {
                 reviewCloseBtn.innerHTML = '✕';
-                reviewCloseBtn.style.cssText = 'background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;';
+                reviewCloseBtn.classList.remove('review-close-btn--return');
+                reviewCloseBtn.style.cssText = '';
             }
         }
 
@@ -53,10 +55,12 @@
         if (pluginCloseBtn) {
             if (hasReturnContext) {
                 pluginCloseBtn.innerHTML = '‹‹ 返回';
-                pluginCloseBtn.style.cssText = 'padding: 4px 10px; font-size: 0.75rem; font-weight: 600; background: rgba(0, 242, 255, 0.15); color: #00f2fe; border: 1px solid rgba(0, 242, 255, 0.35); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;';
+                pluginCloseBtn.classList.add('plugin-close-btn--return');
+                pluginCloseBtn.style.cssText = '';
             } else {
                 pluginCloseBtn.innerHTML = '×';
-                pluginCloseBtn.style.cssText = 'background: transparent; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;';
+                pluginCloseBtn.classList.remove('plugin-close-btn--return');
+                pluginCloseBtn.style.cssText = '';
             }
         }
     };

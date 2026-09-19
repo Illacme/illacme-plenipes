@@ -177,4 +177,44 @@
             }
         }
     };
+
+    // 🚀 [V105.0] 输入框 Focus 智能反向联动 Step Wizard（仅针对多步发布向导，并声明 skipFocus: true 防止抢焦）
+    window.bindDrawerInputFocusTracking = (body, id, category) => {
+        if (!body || category === 'theme') return;
+        const formInputs = body.querySelectorAll('input, select, textarea');
+        formInputs.forEach(input => {
+            if (input.id === 'drawer-global-driver-toggle') return;
+            input.addEventListener('focus', () => {
+                const totalSteps = (typeof window.getPluginWizardSteps === 'function') ? window.getPluginWizardSteps(id, category).length : 3;
+                if (input.closest('#wiz-card-step-0')) {
+                    if (typeof window.handleWizardStepClick === 'function') {
+                        window.handleWizardStepClick(0, id, category, null, true);
+                    }
+                } else if (input.closest('#wiz-card-step-1')) {
+                    if (typeof window.handleWizardStepClick === 'function') {
+                        window.handleWizardStepClick(1, id, category, null, true);
+                    }
+                } else if (input.closest('#wiz-card-step-2')) {
+                    if (typeof window.handleWizardStepClick === 'function') {
+                        window.handleWizardStepClick(2, id, category, null, true);
+                    }
+                } else {
+                    const path = (input.getAttribute('data-path') || input.name || '').toLowerCase();
+                    if (path.includes('token') || path.includes('key') || path.includes('pass') || path.includes('user') || path.includes('operator') || input.type === 'password') {
+                        if (typeof window.handleWizardStepClick === 'function') {
+                            window.handleWizardStepClick(0, id, category, null, true);
+                        }
+                    } else if (path.includes('proxy') || path.includes('prefix') || path.includes('acl') || path.includes('cname') || path.includes('prod')) {
+                        if (typeof window.handleWizardStepClick === 'function') {
+                            window.handleWizardStepClick(totalSteps === 4 ? 2 : 1, id, category, null, true);
+                        }
+                    } else {
+                        if (typeof window.handleWizardStepClick === 'function') {
+                            window.handleWizardStepClick(1, id, category, null, true);
+                        }
+                    }
+                }
+            });
+        });
+    };
 })();

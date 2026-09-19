@@ -70,12 +70,12 @@ async def health_check() -> HealthCheckResponse:
 
 @app.get("/")
 async def root_redirect() -> RedirectResponse:
-    """自动重定向至指挥中心"""
+    """自动重定向至治理中心"""
     return RedirectResponse(url="/dashboard/")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon() -> FileResponse:
-    """提供全景指挥中心 Favicon 皇家图标以消解浏览器 404 吵闹"""
+    """提供治理中心 Favicon 图标以消解浏览器 404 吵闹"""
     icon_path = os.path.join(static_dir, "logo.png")
     return FileResponse(icon_path)
 

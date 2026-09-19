@@ -180,7 +180,7 @@ def get_translation_snapshot_impl(engine, doc_id: str) -> dict:
     cache_dir = engine.paths.get("cache") if hasattr(engine, "paths") else None
     target_ext = os.path.splitext(doc_id)[1].lower() or ".md"
 
-    # 获取全量目标语种配置（仅使用当前版图配置中激活的语种）
+    # 获取全量目标语种配置（仅使用当前品牌配置中激活的语种）
     # 🛡️ [UI 防污染] 不将 translations 表中的历史過期语种（如旧版本的 PT）并入展示，
     # 只展示当前 i18n_settings.targets 配置的语种，避免用户看到不应展示的 Tab。
     target_codes = []

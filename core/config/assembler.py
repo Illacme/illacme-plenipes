@@ -3,7 +3,7 @@
 """
 Illacme-plenipes Core - Configuration Manager (assembler 拼装合并子模块)
 职责：负责多级配置文件的加载、合并、深层更新、递归环境解析与解密逻辑。
-🛡️ [V53.1] 物理主权强制脱敏：禁止版图层保存任何物理凭据
+🛡️ [V53.1] 物理主权强制脱敏：禁止品牌层保存任何物理凭据
 """
 
 import os
@@ -142,7 +142,7 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                 with open(imprint_path, 'r', encoding='utf-8') as f:
                     imprint_cfg = yaml.safe_load(f) or {}
                 
-                # 🛡️ [V114.0] 凭证自愈兼容：暂存版图层凭据，若主配置为默认占位符则安全回填
+                # 🛡️ [V114.0] 凭证自愈兼容：暂存品牌层凭据，若主配置为默认占位符则安全回填
                 imprint_raw_secrets = {}
                 def extract_imprint_secrets(src, dest, prefix=""):
                     if not isinstance(src, dict): return
@@ -155,19 +155,26 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                             extract_imprint_secrets(v, dest, full_k)
                 extract_imprint_secrets(imprint_cfg, imprint_raw_secrets)
 
-                # 🛡️ [V53.1] 物理主权强制脱敏：禁止版图层保存任何物理凭据
+                # 🛡️ [V53.1] 物理主权强制脱敏：禁止品牌层保存任何物理凭据
+                scrubbed_sensitive_keys = []
+
                 def scrub_secrets(d):
                     if not isinstance(d, dict): return d
                     sensitive_patterns = ['api_key', 'api_token', 'secret', 'app_password', 'token']
                     new_dict = {}
                     for k, v in d.items():
                         if any(p in k.lower() for p in sensitive_patterns) and not any(safe in k.lower() for safe in ['max_tokens', 'token_limit', 'token_count']):
-                            tlog.warning(f"⚠️ [安全治理] 版图层配置文件中发现敏感字段 '{k}'，已根据物理主权原则强制拦截。")
+                            if v not in (None, "", {}, []):
+                                scrubbed_sensitive_keys.append(k)
                             continue
                         new_dict[k] = scrub_secrets(v)
                     return new_dict
-                
+
                 imprint_cfg = scrub_secrets(imprint_cfg)
+                if scrubbed_sensitive_keys:
+                    unique_keys = list(dict.fromkeys(scrubbed_sensitive_keys))
+                    preview = ", ".join(unique_keys[:3]) + ("..." if len(unique_keys) > 3 else "")
+                    tlog.warning(f"⚠️ [安全治理] 品牌层配置中发现 {len(unique_keys)} 项非空敏感凭据字段 ({preview})，已根据物理主权原则强制脱敏拦截。")
                 imprint_cfg = resolve_includes(imprint_cfg, os.path.dirname(imprint_path))
                 
                 # 🚀 遵照 governance_map.py 的三层契约进行字段级精准合并
@@ -245,16 +252,14 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
                 except Exception as err:
                     tlog.warning(f"⚠️ [主权防毒失败] 无法对正主权字段: {err}")
 
-        # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
-        # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
-        # 💡 [V52.14] 物理对齐：如果版图层提供了核心元数据，则忽略 Local 中的陈旧覆盖
+        # 💡 [V52.14] 物理对齐：如果品牌层提供了核心元数据，则忽略 Local 中的陈旧覆盖
         # 这解决了切换回默认品牌或在品牌间切换时，名称/路径无法及时更新的“配置投毒”问题
         if manager.imprint_id == "default":
             # 切换回默认时，强制恢复系统基准名称 (除非 Global Config 另有定义)
             # 我们通过删除 Local 层可能存在的覆盖来实现
             pass # 已经在 deep_reload_imprint 中处理了物理层面的更新
 
-    # 🚀 [V75.7] 默认底座自愈：如果 default 版图或全局底座缺失 vault_root，自动从现存版图中探测继承
+    # 🚀 [V75.7] 默认底座自愈：如果 default 品牌或全局底座缺失 vault_root，自动从现存品牌中探测继承
     if not final_cfg.get('vault_root'):
         found_vault = None
         # 1. 尝试从全局引擎获取
@@ -266,7 +271,7 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
         except Exception:
             pass
 
-        # 2. 从 imprints 目录遍历有效版图
+        # 2. 从 imprints 目录遍历有效品牌
         if not found_vault and os.path.exists(IMPRINT_DIR):
             for entry in os.scandir(IMPRINT_DIR):
                 if entry.is_dir():
@@ -294,7 +299,7 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
 
         if found_vault:
             final_cfg['vault_root'] = found_vault
-            tlog.info(f"🩺 [金库自愈] 探测到全局/default 版图未指定 vault_root，已自愈继承物理文库路径: {found_vault}")
+            tlog.info(f"🩺 [金库自愈] 探测到全局/default 品牌未指定 vault_root，已自愈继承物理文库路径: {found_vault}")
             
             # 物理回写至 config.local.yaml 保障持久性
             try:

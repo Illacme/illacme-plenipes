@@ -30,7 +30,7 @@ cover: /api/design/assets/covers/cover_7ba061a2d3ab.jpg
 ### 物理路由设计
 段落影子缓存采用局部物理隔离存储：
 - **配置文件路径**：`config.yaml` 或 `config.local.yaml` 中定义了缓存中枢策略。
-- **物理持久化库**：对于当前品牌版图，其段落影子缓存持久化落盘在 `imprints/{brand}/cache/block_cache.db` 或 `.cache/` 目录下，与原稿文库完全物理隔离，确保文库纯净。
+- **物理持久化库**：对于当前出版品牌，其段落影子缓存持久化落盘在 `imprints/{brand}/cache/block_cache.db` 或 `.cache/` 目录下，与原稿文库完全物理隔离，确保文库纯净。
 
 ---
 

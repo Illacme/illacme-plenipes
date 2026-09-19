@@ -13,6 +13,6 @@ export const themeOptions = {
   "hero_subtitle": "Vite & Vue powered static site generator. Simple, powerful, and fast.",
   "github_repo": "",
   "last_updated_text": "最后更新时间",
-  "site_description": "这是一个主权出版版图节点。"
+  "site_description": "这是一个主权出版品牌节点。"
 };
 export default themeOptions;

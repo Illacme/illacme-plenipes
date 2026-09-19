@@ -132,13 +132,10 @@ class AISlugAndSEOStep(PipelineStep):
                 if k not in ctx.seo_data or not ctx.seo_data[k]:
                     ctx.seo_data[k] = v
         
-        # 🚀 [V52.13] 物理指标持久化：确保字数等关键参数不被 AI 覆盖逻辑抹除
+        # 🚀 [V105.0] 物理指标持久化：全球全语种通用度量 (Universal Multilingual Word Count)
         if hasattr(ctx, 'seo_data') and 'word_count' not in ctx.seo_data:
-             # 如果之前没算，这里补算一次（通常在 read_normalize 已经算过了）
-             clean_text = re.sub(r'[\s\n\t]+', ' ', ctx.raw_body)
-             en_words = len(re.findall(r'[a-zA-Z0-9\-\']+', clean_text))
-             zh_chars = len(re.findall(r'[\u4e00-\u9fa5]', ctx.raw_body))
-             ctx.seo_data['word_count'] = en_words + zh_chars
+             from core.utils.text import calculate_universal_word_count
+             ctx.seo_data['word_count'] = calculate_universal_word_count(ctx.raw_body)
 
         # 🚀 [V53.0] 出版模式 SEO 策略分流：根据当前治理蓝图调度对应的处理器
         try:
