@@ -52,6 +52,33 @@ def create_document_logic(engine, req: dict):
         return {"error": f"物理磁盘写入失败: {e}"}
 
     engine.meta.register_document(doc_id, title or "未命名原稿", slug=default_slug)
+
+    # 🪐 同步更新内存中的物理双链拓扑与知识图谱节点，确保首页星谱秒级感知中文标题与新节点
+    if hasattr(engine, "link_graph") and isinstance(engine.link_graph, dict):
+        engine.link_graph[doc_id] = {
+            "links": [],
+            "metadata": {
+                "title": title or "未命名原稿",
+                "lang": "zh",
+                "size": len(initial_content),
+                "mtime": os.path.getmtime(abs_path) if os.path.exists(abs_path) else None,
+                "tags": []
+            }
+        }
+    if hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
+        try:
+            with engine.knowledge_graph._lock:
+                if isinstance(engine.knowledge_graph.nodes, dict):
+                    engine.knowledge_graph.nodes[doc_id] = {
+                        "title": title or "未命名原稿",
+                        "connections": {},
+                        "manual_connections": {},
+                        "entities": {},
+                        "gist": ""
+                    }
+        except Exception:
+            pass
+
     return {"success": True, "doc_id": doc_id}
 
 

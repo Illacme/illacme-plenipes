@@ -19,7 +19,18 @@ window._wsHandleGalaxySync = (data) => {
         // 增量合并新节点
         const nodeMap = {};
         currentData.nodes.forEach(n => { nodeMap[n.id] = n; });
-        (batch.nodes || []).forEach(n => { nodeMap[n.id] = { ...nodeMap[n.id], ...n }; });
+        (batch.nodes || []).forEach(n => {
+            const existing = nodeMap[n.id];
+            const baseName = n.id ? n.id.split('/').pop().replace(/\.[^/.]+$/, '') : '';
+            let finalTitle = n.title;
+            // 🛡️ [V106.2] 防止批次中纯文件名或裸路径覆盖已有真实中文标题
+            const isDegraded = !finalTitle || finalTitle === baseName || finalTitle === n.id;
+            const hasExistingGoodTitle = existing && existing.title && existing.title !== baseName && existing.title !== n.id;
+            if (hasExistingGoodTitle && isDegraded) {
+                finalTitle = existing.title;
+            }
+            nodeMap[n.id] = { ...existing, ...n, title: finalTitle };
+        });
 
         // 增量合并新连线
         const linkMap = {};

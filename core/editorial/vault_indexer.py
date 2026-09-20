@@ -176,6 +176,12 @@ class VaultIndexer:
                 if lang_match: meta["lang"] = lang_match.group(1).strip()
                 if tags_match:
                     meta["tags"] = [t.strip(' "\'') for t in tags_match.group(1).split(',')]
+        if not meta["title"] and content:
+            for line in content.splitlines():
+                line_s = line.strip()
+                if line_s.startswith('# '):
+                    meta["title"] = line_s[2:].strip()
+                    break
         return meta
 
     @staticmethod

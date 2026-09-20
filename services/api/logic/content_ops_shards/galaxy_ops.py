@@ -6,12 +6,20 @@
 """
 
 import os
+from services.api.logic.content_ops_shards.galaxy_title_ops import resolve_node_true_title
 
 
 def get_galaxy_graph_logic(engine, mode: str = "full"):
     """🪰 [混合渐进式] 物理优先与高维全量图模式的节点/连线融合算法"""
     if not engine:
         return {"nodes": [], "links": [], "_debug": "no_engine"}
+
+    docs_snapshot = None
+    if hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot"):
+        try:
+            docs_snapshot = engine.meta.get_documents_snapshot()
+        except Exception:
+            pass
 
     # 🪰 [混合渐进式] 静态骨架模式
     if mode == "skeleton":
@@ -24,35 +32,26 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
 
         for rel_path, data in engine.link_graph.items():
             meta = data.get("metadata", {})
+            true_title = resolve_node_true_title(rel_path, meta.get("title"), docs_snapshot, engine)
             nodes_list.append({
                 "id": rel_path,
-                "title": meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0],
+                "title": true_title,
                 "val": 1.0,
                 "group": "document",
                 "is_skeleton": True
             })
             for target in data.get("links", []):
                 resolved = engine.meta.resolve_link(target)
-                if resolved:
-                    target_key = resolved
-                else:
-                    target_key = target
-                    if target not in engine.link_graph:
-                        for k in engine.link_graph:
-                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                                target_key = k
-                                break
+                target_key = resolved or target
+                if not resolved and target not in engine.link_graph:
+                    for k in engine.link_graph:
+                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                            target_key = k
+                            break
                 link_id = tuple(sorted([rel_path, target_key]))
                 if link_id not in seen_links:
                     seen_links.add(link_id)
-                    links_list.append({
-                        "source": rel_path,
-                        "target": target_key,
-                        "strength": 1.0,
-                        "type": "wikilink",
-                        "is_manual": False,
-                        "is_skeleton": True
-                    })
+                    links_list.append({"source": rel_path, "target": target_key, "strength": 1.0, "type": "wikilink", "is_manual": False, "is_skeleton": True})
         # 🔗 创作者手动连线具备最高主权，骨架模式同步合并
         if hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
             for doc_id, data in engine.knowledge_graph.nodes.items():
@@ -86,7 +85,7 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
         if hasattr(engine, "link_graph") and engine.link_graph:
             for rel_path, data in engine.link_graph.items():
                 meta = data.get("metadata", {})
-                title = meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0]
+                title = resolve_node_true_title(rel_path, meta.get("title"), docs_snapshot, engine)
                 if rel_path not in nodes_map:
                     nodes_map[rel_path] = {
                         "id": rel_path,
@@ -104,6 +103,10 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
                         nodes_map[rel_path]["gist"] = meta["gist"]
                     if not nodes_map[rel_path].get("entities") and meta.get("entities"):
                         nodes_map[rel_path]["entities"] = meta["entities"]
+
+        # 🚀 [V106.2 标题真理智能对齐] 全量对齐真理标题，防止未命中 link_graph 的节点残留纯文件名
+        for nid, n in nodes_map.items():
+            n["title"] = resolve_node_true_title(nid, n.get("title"), docs_snapshot, engine)
 
         # 🛡️ 物理真理对准 (Physical Truth Alignment)：剔除物理文库中已不存在的历史幽灵孤儿节点
         vault_root_abs = os.path.abspath(engine.vault_root) if getattr(engine, "vault_root", None) else ""
@@ -138,30 +141,19 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
 
         # 1. 先合并物理 Wikilink 连线
         if hasattr(engine, "link_graph") and engine.link_graph:
-            for rel_path, data in engine.link_graph.items():
                 for target in data.get("links", []):
                     resolved = engine.meta.resolve_link(target)
-                    if resolved:
-                        target_key = resolved
-                    else:
-                        target_key = target
-                        if target not in engine.link_graph:
-                            for k in engine.link_graph:
-                                if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                                    target_key = k
-                                    break
+                    target_key = resolved or target
+                    if not resolved and target not in engine.link_graph:
+                        for k in engine.link_graph:
+                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
+                                target_key = k
+                                break
                     if rel_path in nodes_map and target_key in nodes_map:
                         link_id = tuple(sorted([rel_path, target_key]))
                         if link_id not in seen_links:
                             seen_links.add(link_id)
-                            links_list.append({
-                                "source": rel_path,
-                                "target": target_key,
-                                "strength": 1.0,
-                                "type": "wikilink",
-                                "is_manual": False,
-                                "is_skeleton": True
-                            })
+                            links_list.append({"source": rel_path, "target": target_key, "strength": 1.0, "type": "wikilink", "is_manual": False, "is_skeleton": True})
 
         # 2. 再合并语义与用户手动连线 (如果尚未存在物理连线的话)
         for l in kg_graph.get("links", []):

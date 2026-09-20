@@ -19,6 +19,12 @@ window.updateGalaxyLabelElements = (nodes) => {
             : (node.id ? String(node.id).split('/').pop().replace(/\.[^/.]+$/, '') : '');
         window._labelDataMap.set(node.id, { title: cleanTitle });
         newIds.add(node.id);
+
+        // 🌟 [V106.2 标签 DOM 实时对齐] 同步更新已存在 DOM 的文本，杜绝文本滞后未刷新
+        const existingEl = window._labelPool.get(node.id);
+        if (existingEl && existingEl.innerText !== cleanTitle) {
+            existingEl.innerText = cleanTitle;
+        }
     });
 
     // 清理已移除节点的 DOM 和数据

@@ -9,6 +9,9 @@ from services.api.logic.content_ops_shards.safe_ops import (
     resolve_safe_path as resolve_safe_path,
     get_vault_asset_logic as get_vault_asset_logic
 )
+from services.api.logic.content_ops_shards.galaxy_title_ops import (
+    resolve_node_true_title as resolve_node_true_title
+)
 from services.api.logic.content_ops_shards.galaxy_ops import (
     get_galaxy_graph_logic as get_galaxy_graph_logic,
     rebuild_node_semantics_logic as rebuild_node_semantics_logic

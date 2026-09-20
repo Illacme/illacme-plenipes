@@ -154,11 +154,14 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
         batch_nodes = []
         batch_links = []
         seen_links = set()
+        docs_snapshot = engine.meta.get_documents_snapshot() if hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot") else {}
+        from services.api.logic.content_ops_shards.galaxy_title_ops import resolve_node_true_title
         for rel_path, data in engine.link_graph.items():
             meta = data.get("metadata", {})
+            node_title = resolve_node_true_title(rel_path, meta.get("title"), docs_snapshot, engine)
             batch_nodes.append({
                 "id": rel_path,
-                "title": meta.get("title") or os.path.splitext(os.path.basename(rel_path))[0],
+                "title": node_title,
                 "val": 1.0,
                 "group": "document",
                 "is_skeleton": True
