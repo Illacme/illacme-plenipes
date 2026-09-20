@@ -3,7 +3,7 @@
 """
 Illacme-plenipes Core - AI Base Adapter
 模块职责：定义 AI 适配器的基类、配置解析与协议契约。
-🛡️ [V35.0] 架构轻量化：已将具体出版任务解耦至独立逻辑层。
+🛡️ [SOP-01 & SOP-02]：自底向上物理拆分重构版本，单文件物理行数严格 ≤300 行。
 """
 
 import abc
@@ -16,8 +16,11 @@ from core.logic.ai.model_intelligence import ModelIntelligenceHub
 from .payload_manager import PayloadManager
 from core.logic.ai.task_mixin import AITaskMixin
 from core.utils.tracing import tlog
+from .network_mixin import AINetworkMixin
+from .retry_helper import parse_retry_after, post_process_thinking_tags
 
-class BaseTranslator(abc.ABC, AITaskMixin):
+
+class BaseTranslator(abc.ABC, AITaskMixin, AINetworkMixin):
     """🚀 [V10.0] 智能算力网关适配器基类"""
     PLUGIN_ID: str = "generic"
     DISPLAY_NAME: str = "Generic AI Provider"
@@ -53,7 +56,7 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         engine = get_global_engine()
         self.imprint_id = engine.imprint_id if engine else "default"
 
-        # 🚀 [V105.2] 算力对齐：若 llm_concurrency == 1 或 ai_workers == 1 且为本地节点，物理强约束并发信号量为 1，杜绝多文档并发导致 LM Studio 500
+        # 🚀 [V105.2] 算力对齐：若 llm_concurrency == 1 或 ai_workers == 1 且为本地节点，物理强约束并发信号量为 1
         max_conc = getattr(self.config.limits, 'max_concurrency', 5)
         llm_conc = getattr(trans_cfg, 'llm_concurrency', None)
         base_url = getattr(self.config, 'base_url', '') or ''
@@ -75,92 +78,6 @@ class BaseTranslator(abc.ABC, AITaskMixin):
         self.rate_limiter = RateLimitShield(node_name, self.config.limits, sleep_func=self._sleep)
         # 🛡️ [V105.0] 初始化全局代理自愈 Session
         self._session = self.init_session()
-
-    def init_session(self):
-        """🚀 [V105.0] 初始化具备代理感知与长效连接池的 Session"""
-        import requests
-        session = requests.Session()
-        proxies = self.get_proxy_dict()
-        if proxies:
-            session.proxies.update(proxies)
-        return session
-
-    def get_proxy(self) -> str:
-        """
-        🚀 [V11.2] 获取当前翻译节点的网络代理（支持节点配置、翻译全局代理以及系统全局代理三级降级回退）。
-        """
-        proxy_url = self.safe_get_config('proxy') or getattr(self.trans_cfg, 'global_proxy', None)
-        if not proxy_url:
-            from core.runtime.engine_singleton import get_global_engine
-            engine = get_global_engine()
-            if engine and engine.config and engine.config.system:
-                proxy_url = getattr(engine.config.system, 'global_proxy', None)
-        if not proxy_url:
-            try:
-                from core.config.config import load_config
-                sys_cfg = load_config()
-                proxy_url = getattr(getattr(sys_cfg, 'system', None), 'global_proxy', None)
-            except Exception:
-                pass
-        return proxy_url
-
-    def get_proxy_dict(self) -> Optional[Dict[str, str]]:
-        """🛡️ 获取 requests / aiohttp 适用的代理字典字典映射"""
-        p = self.get_proxy()
-        return {"http": p, "https": p} if p else None
-
-    def get_network_timeout(self, default: float = 15.0) -> float:
-        """
-        🚀 [V11.3] 动态对齐治理中心统一网络超时：
-        优先级：节点独立超时 limits.timeout / timeout -> 治理中心 system.network_timeout -> 翻译全局 api_timeout -> 默认兜底。
-        """
-        limits = getattr(self.config, 'limits', None)
-        if limits and hasattr(limits, 'timeout') and limits.timeout and limits.timeout != 60.0:
-            return float(limits.timeout)
-        node_timeout = self.safe_get_config('timeout')
-        if node_timeout:
-            return float(node_timeout)
-        from core.runtime.engine_singleton import get_global_engine
-        engine = get_global_engine()
-        if engine and engine.config and hasattr(engine.config, 'system'):
-            sys_timeout = getattr(engine.config.system, 'network_timeout', None)
-            if sys_timeout:
-                return float(sys_timeout)
-        try:
-            from core.config.config import load_config
-            sys_cfg = load_config()
-            sys_timeout = getattr(getattr(sys_cfg, 'system', None), 'network_timeout', None)
-            if sys_timeout:
-                return float(sys_timeout)
-        except Exception:
-            pass
-        trans_timeout = getattr(self.trans_cfg, 'api_timeout', None)
-        if trans_timeout:
-            return float(trans_timeout)
-        return default
-
-    def safe_get_config(self, key: str, default: Any = None) -> Any:
-        """🚀 [V53.8] 统一的配置卫士：安全获取节点配置属性"""
-        val = getattr(self.config, key, default)
-        if isinstance(val, str) and (val.startswith("enc:") or val.startswith("ENC:")):
-            try:
-                from core.governance.secret_manager import SecretManager
-                return SecretManager.decrypt(val)
-            except Exception:
-                pass
-        return val
-
-    def safe_get_url(self, suffix: str = "") -> str:
-        """🛡️ [V68.0] 物理地址卫士：配置 -> DEFAULT_URL -> 保底空值"""
-        url_raw = self.safe_get_config('base_url') or self.safe_get_config('url')
-        if not url_raw:
-            url_raw = getattr(self, 'DEFAULT_URL', "")
-        
-        url = (url_raw or "").rstrip("/")
-        if suffix:
-            suffix = suffix.lstrip("/")
-            url = f"{url}/{suffix}"
-        return url
 
     async def list_models(self) -> list[str]:
         """🚀 [V48.3] 算力感应接口：子类应实现此方法以支持动态模型发现"""
@@ -238,7 +155,8 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     if "messages" in payload:
                         for msg in payload["messages"]:
                             content = msg.get("content", "")
-                            if isinstance(content, str): total_chars += len(content)
+                            if isinstance(content, str):
+                                total_chars += len(content)
                     estimated_tokens = max(10, int(total_chars * 0.5)) + 512
                     self.rate_limiter.acquire(estimated_tokens, sleep_func=self._sleep)
                     start_time = time.time()
@@ -274,7 +192,6 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                     self.rate_limiter.record_rate_limit_error()
                 
                 is_fatal = "400" in error_msg
-                # 🛡️ 容灾调度感知：若算力中心配置了具备备用节点的容灾策略，在触发 429 限流时快速释放，避免数十秒漫长重试
                 has_failover_support = False
                 if self.trans_cfg and hasattr(self.trans_cfg, 'strategy'):
                     strat = str(getattr(self.trans_cfg, 'strategy', '')).lower()
@@ -286,7 +203,6 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                 
                 if is_fatal or is_last_retry:
                     if is_rate_limit:
-                        # 智能从错误信息中提取重试秒数，保底 30s，最大不超过 60s
                         cool_duration = self._parse_retry_after_from_error(error_msg, error_obj=e)
                         cool_duration = min(60.0, max(1.0, cool_duration))
                         self.trigger_cooling(duration=cool_duration)
@@ -297,88 +213,31 @@ class BaseTranslator(abc.ABC, AITaskMixin):
                             breaker._thread_local.reported = True
                     break
 
-                # 优先提取 API 携带的重试秒数作为重试延迟，并带入微小抖动
                 wait_time = None
                 if any(x in error_msg for x in ["429", "rate limit", "quota exceeded", "resource exhausted", "resource_exhausted"]):
                     parsed_wait = self._parse_retry_after_from_error(error_msg, error_obj=e)
-                    if parsed_wait != 30.0:  # 成功捕获到了非保底的重试指示
+                    if parsed_wait != 30.0:
                         wait_time = parsed_wait + random.uniform(0.1, 0.5)
 
                 if wait_time is None:
-                    # 引入带有随机噪声的 Full Jitter 指数退避 (最大不超过 15s)
                     wait_time = random.uniform(0, min(15.0, (2 ** i) * 1.5))
                     
                 tlog.warning(f"⚠️ [AI 重试] {self.node_name} 失败 ({i+1}/{self.max_retries})，将在 {wait_time:.2f}s 后进行重试: {e}")
-                
                 self._sleep(wait_time)
-        if last_error: raise last_error
+        if last_error:
+            raise last_error
         return ""
 
     def _sleep(self, seconds: float):
         time.sleep(seconds)  # 支持被 Mock
-    def _parse_retry_after_from_error(self, error_msg: str, error_obj: Exception = None) -> float:
-        """🚀 [V62.0] 智能解析器：提取 429 报错提示的重试时间值，保底 30.0s"""
-        if error_obj is not None:
-            try:
-                if hasattr(error_obj, 'retry_delay'):
-                    rd = getattr(error_obj, 'retry_delay')
-                    if isinstance(rd, (int, float)): return float(rd)
-                    if hasattr(rd, 'seconds'):
-                        return float(getattr(rd, 'seconds', 0.0)) + float(getattr(rd, 'nanos', 0.0)) / 1e9
-                if hasattr(error_obj, 'retry_after') and isinstance(getattr(error_obj, 'retry_after'), (int, float)):
-                    return float(getattr(error_obj, 'retry_after'))
-                if hasattr(error_obj, 'metadata'):
-                    meta = getattr(error_obj, 'metadata')
-                    if isinstance(meta, dict):
-                        for k, v in meta.items():
-                            if 'retry' in str(k).lower() or 'delay' in str(k).lower():
-                                try: return float(v)
-                                except: pass
-                    elif isinstance(meta, (list, tuple)):
-                        for item in meta:
-                            if isinstance(item, (list, tuple)) and len(item) >= 2:
-                                if 'retry' in str(item[0]).lower() or 'delay' in str(item[0]).lower():
-                                    try: return float(item[1])
-                                    except: pass
-            except: pass
 
-        import re
-        msg = error_msg.lower()
-        patterns = [
-            r'retry[-_]?delay\s*\{\s*seconds\s*:\s*([0-9.]+)',
-            r'retry[-_]?delay["\']?\s*[:=]\s*["\']?([0-9.]+)\s*s?\b',
-            r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:seconds|second|secs|sec|s\b)?',
-            r'retry[-_]?after["\']?\s*[:\s]\s*["\']?([0-9.]+)'
-        ]
-        for pat in patterns:
-            m = re.search(pat, msg)
-            if m:
-                try: return float(m.group(1))
-                except ValueError: pass
+    def _parse_retry_after_from_error(self, error_msg: str, error_obj: Optional[Exception] = None) -> float:
+        """🚀 [V62.0] 智能解析器：委托至 retry_helper 模块"""
+        return parse_retry_after(error_msg, error_obj=error_obj)
 
-        m_mins = re.search(r'(?:try again in|retry after|retry in)\s+([0-9.]+)\s*(?:minutes|minute|mins|min|m\b)', msg)
-        if m_mins:
-            try: return float(m_mins.group(1)) * 60.0
-            except ValueError: pass
-
-        return 30.0
-    def _post_process_response(self, content: str, payload: dict) -> str:
+    def _post_process_response(self, content: str, payload: Optional[dict] = None) -> str:
         """🛡️ [Sovereign Guard] 后置处理：自动剥离推理链与思考模板"""
-        if not content or not isinstance(content, str): return content
-        
-        import re
-        
-        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
-        content = re.sub(r'<think>.*$', '', content, flags=re.DOTALL)
-        content = re.sub(r'<thinking>.*?</thinking>', '', content, flags=re.DOTALL)
-        content = re.sub(r'<thinking>.*$', '', content, flags=re.DOTALL)
-        thinking_patterns = [
-            r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.).*?\n\n',
-            r'^\s*(?:thinking process|thinking|thought|思维过程|思考过程)\b[\s\d\.\-]*\s*(?::|\n|\.)\s*',
-        ]
-        for pattern in thinking_patterns:
-            content = re.sub(pattern, '', content, flags=re.DOTALL | re.IGNORECASE)
-        return content.strip()
+        return post_process_thinking_tags(content, payload=payload)
 
     def raw_inference(self, user_prompt, system_prompt=None) -> str:
         payload = PayloadManager.prepare_payload(self, system_prompt or "", user_prompt, is_json=False)

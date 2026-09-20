@@ -99,20 +99,52 @@ def build_task_queue(engine: any, requested_paths: Optional[List[str]] = None) -
                 current_source_files.add(rel_path)
                 
                 # 联动元数据账本与物理字数统计 (V52.13 通用统计逻辑前置)
-                doc_info = engine.meta.get_doc_info(rel_path)
+                doc_info = engine.meta.get_doc_info(rel_path) or {}
                 seo_data = doc_info.get("seo_data") or {}
-                if "word_count" not in seo_data:
+                
+                # 🚀 [主权标题自愈] 优先提取原稿真实的中文标题，彻底杜绝被英文文件名强行覆盖
+                file_full_path = os.path.join(root, f)
+                raw_file_content = ""
+                try:
+                    with open(file_full_path, 'r', encoding='utf-8') as _fh:
+                        raw_file_content = _fh.read()
+                except Exception:
+                    pass
+
+                if "word_count" not in seo_data and raw_file_content:
                     try:
                         from core.utils.text import calculate_universal_word_count
-                        with open(os.path.join(root, f), 'r', encoding='utf-8') as _fh:
-                            _c = _fh.read()
-                            seo_data["word_count"] = calculate_universal_word_count(_c)
+                        seo_data["word_count"] = calculate_universal_word_count(raw_file_content)
                     except Exception:
                         seo_data["word_count"] = 0
 
+                candidate_title = ""
+                base_name_no_ext = os.path.splitext(f)[0]
+                if raw_file_content:
+                    from core.utils import extract_frontmatter
+                    fm, body = extract_frontmatter(raw_file_content)
+                    if fm.get("title"):
+                        candidate_title = str(fm.get("title")).strip()
+                    elif body:
+                        for line in body.splitlines():
+                            line_s = line.strip()
+                            if line_s.startswith("# "):
+                                candidate_title = line_s[2:].strip()
+                                break
+
+                if not candidate_title or candidate_title == base_name_no_ext:
+                    existing_title = doc_info.get("title")
+                    seo_title = seo_data.get("title")
+                    if seo_title and seo_title != base_name_no_ext:
+                        candidate_title = seo_title
+                    elif existing_title and existing_title != base_name_no_ext:
+                        candidate_title = existing_title
+                    else:
+                        candidate_title = base_name_no_ext
+
                 engine.meta.register_document(
                     rel_path,
-                    os.path.splitext(f)[0],
+                    candidate_title,
                     route_prefix=prefix,
                     route_source=src_rel,
                     target_slot=target_slot,

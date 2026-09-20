@@ -11,6 +11,7 @@ import hashlib
 from datetime import datetime
 from core.utils import sanitize_ai_response
 from core.bindery.bindery_unmasker import BinderyUnmasker
+from core.bindery.bindery_writer import physical_write, serialize_frontmatter, NoAliasDumper
 
 from core.utils.tracing import tlog
 
@@ -256,81 +257,13 @@ class BinderyDispatcher:
         return self.ssg_adapter.adapt_metadata(merged_fm, mtime_dt, merged_fm.get('author', 'Illacme Engine'))
 
     def _serialize_frontmatter(self, fm):
-        ordered = {k: fm.pop(k) for k in self.fm_order if k in fm}
-        ordered.update(fm)
-        return "---\n" + yaml.dump(ordered, Dumper=NoAliasDumper, allow_unicode=True, default_flow_style=False, sort_keys=False, width=float("inf")) + "---\n\n"
+        return serialize_frontmatter(self.fm_order, fm)
 
     def _physical_write(self, rel_path, lang, prefix, sub, slug, fm_str, body, is_dry_run, is_sandbox=False, source_type="docs", mode="source"):
-        ext = os.path.splitext(rel_path)[1].lower()
-
-        # 🚀 [V11.2 & V12.0] 后缀与双相适配
-        target_ext = self.ssg_adapter.output_extensions.get(mode)
-        if target_ext is None:
-            target_ext = ext
-
-        if is_sandbox:
-            target_root = self.paths.get('sandbox')
-        else:
-            target_root = self.paths.get('site_dir') if mode == 'static' else self.paths.get('source_dir')
-        
-        if not target_root:
-            tlog.warning(f"⚠️ [分发拦截] 未定义模式 '{mode}' 的根目录，跳过落盘: {rel_path}")
-            return None, None
-
-        dest = self.route_manager.resolve_physical_path(target_root, lang, prefix, sub, slug, target_ext, source_type=source_type)
-        if mode == "source" and dest.replace('\\', '/').endswith("src/pages/index.md"):
-            if os.path.exists(os.path.join(os.path.dirname(dest), "index.js")):
-                tlog.info(f"🛡️ [Docusaurus 物理避让] 检测到原生 React 首页 index.js，安全跳过冲突的 {dest}")
-                return None, None
-        tlog.info(f"💾 [物理落盘] ({mode}) -> {dest}")
-
-        if mode == "source":
-            cache_mirror = self.route_manager.resolve_physical_path(self.paths.get('cache'), lang, prefix, sub, slug, target_ext, source_type=source_type)
-            # 计算主题专属的源文件缓存路径镜像
-            theme_name = getattr(self.ssg_adapter.engine, 'active_theme', 'default') or 'default'
-            theme_cache_dir = self.ssg_adapter.engine.config.get_theme_source_cache_dir(theme_name)
-            theme_source_mirror = self.route_manager.resolve_physical_path(theme_cache_dir, lang, prefix, sub, slug, target_ext, source_type=source_type)
-        else:
-            cache_mirror = None
-            theme_source_mirror = None
-
-        is_markup_content = self.ssg_adapter.supports_frontmatter(target_ext)
-        if not is_markup_content and mode == 'static':
-            full_content = body
-        else:
-            full_content = fm_str + body
-
-        if not is_dry_run:
-            tmp_dest = dest + ".tmp"
-            try:
-                # 写入缓存镜像 (原子化)
-                if cache_mirror:
-                    tmp_cache = cache_mirror + ".tmp"
-                    os.makedirs(os.path.dirname(cache_mirror), exist_ok=True)
-                    with open(tmp_cache, 'w', encoding='utf-8') as f: f.write(full_content)
-                    os.replace(tmp_cache, cache_mirror)
-
-                # 写入主题专属源文件缓存 (原子化)
-                if theme_source_mirror:
-                    tmp_theme_cache = theme_source_mirror + ".tmp"
-                    os.makedirs(os.path.dirname(theme_source_mirror), exist_ok=True)
-                    with open(tmp_theme_cache, 'w', encoding='utf-8') as f: f.write(full_content)
-                    os.replace(tmp_theme_cache, theme_source_mirror)
-
-                # 写入目标路径 (原子化)
-                os.makedirs(os.path.dirname(dest), exist_ok=True)
-                with open(tmp_dest, 'w', encoding='utf-8') as f: f.write(full_content)
-                
-                # 🚀 [V13.0] 系统级原子替换，确保 0 中断风险
-                os.replace(tmp_dest, dest)
-                
-                if not is_sandbox and self.janitor:
-                    self.janitor.mark_as_fresh(dest)
-            except Exception as e:
-                tlog.error(f"🛑 [原子落盘失败] ({mode}): {e}")
-                if os.path.exists(tmp_dest): os.remove(tmp_dest)
-        
-        return hashlib.md5(full_content.encode('utf-8')).hexdigest(), None
+        return physical_write(
+            self, rel_path, lang, prefix, sub, slug, fm_str, body, is_dry_run,
+            is_sandbox=is_sandbox, source_type=source_type, mode=mode
+        )
 
     def _handle_mdx_specifics(self, body):
         import_pattern = re.compile(r'^(import\s+.*?from\s+[\'"].*?[\'"];?)$', re.MULTILINE)
@@ -339,6 +272,3 @@ class BinderyDispatcher:
             body = import_pattern.sub('', body)
             body = '\n'.join(list(dict.fromkeys(imports))) + '\n\n' + body.lstrip()
         return body
-
-class NoAliasDumper(yaml.SafeDumper):
-    def ignore_aliases(self, data): return True

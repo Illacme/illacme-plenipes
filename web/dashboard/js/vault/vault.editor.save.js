@@ -120,3 +120,6 @@ window.saveDocument = async () => {
         }
     }
 };
+
+// 🛡️ [别名兼容] 兼容 saveEditorManuscript 历史/变体调用契约
+window.saveEditorManuscript = window.saveDocument;

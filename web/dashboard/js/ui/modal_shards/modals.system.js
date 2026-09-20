@@ -103,27 +103,28 @@
                         <!-- 🚀 [NEW] 滚动元数据包装区 (V87.2) -->
                         <div id="metadata-scroll-wrapper" style="flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
                             <div class="drawer-item" style="flex-shrink: 0;">
-                                <label>TITLE</label>
-                                <input type="text" id="editor-meta-title" class="drawer-input">
+                                <label class="tiny-label">ASSET TITLE</label>
+                                <input type="text" id="editor-meta-title" class="setting-input">
                             </div>
                             <div class="drawer-item" style="flex-shrink: 0;">
-                                <label>SLUG / IDENTIFIER</label>
-                                <input type="text" id="editor-meta-slug" class="drawer-input">
+                                <label class="tiny-label">PERMALINK SLUG</label>
+                                <input type="text" id="editor-meta-slug" class="setting-input">
+                                <div id="editor-url-preview-box" style="margin-top: 6px; font-size: 0.72rem; color: var(--accent-secondary, #00f2fe); font-family: var(--font-mono, monospace); word-break: break-all; opacity: 0.85; display: flex; align-items: center; gap: 4px;">
+                                    <span style="opacity: 0.6;">🌐</span>
+                                    <span id="editor-url-preview-text">预估: /index.html</span>
+                                </div>
                             </div>
-                            <div class="drawer-item" style="flex-shrink: 0;">
-                                <label>PUBLISH DATE</label>
-                                <input type="datetime-local" id="editor-meta-date" class="drawer-input">
-                            </div>
-                            
+
                             <!-- 🚀 [NEW] 动态元数据容器 (V68.0) -->
-                            <div id="editor-dynamic-meta-container" style="display: flex; flex-direction: column; gap: 15px; border-top: 1px dashed var(--glass-border); padding-top: 15px;">
+                            <div id="dynamic-metadata-container" style="display: flex; flex-direction: column; gap: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; margin-top: 5px;">
                                 <!-- 动态注入项将出现在这里 -->
                             </div>
                         </div>
-
-                        <div class="editor-actions" style="border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: auto; display: flex; gap: 10px;">
-                            <button class="primary-btn glow-btn" onclick="saveEditorManuscript()" style="flex: 1;">SAVE DISK</button>
-                            <button class="secondary-btn" onclick="closeEditor()" style="flex: 1;">DISCARD</button>
+                        
+                        <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                            <div id="save-status" style="font-size:0.7rem; color:var(--accent-secondary); font-family:var(--font-mono); text-align:center;"></div>
+                            <button class="primary-btn glow-btn" id="btn-save-doc" onclick="window.saveDocument()" style="width:100%;">💾 COMMIT CHANGES</button>
+                            <button class="secondary-btn" onclick="closeEditor()" style="width:100%;">CANCEL</button>
                         </div>
                     </div>
                 </div>
@@ -132,45 +133,51 @@
 
         <!-- 🏗️ Terminal Modal for Installation -->
         <div id="terminal-modal" class="modal-overlay" style="display: none;">
-            <div class="glass-panel modal-content terminal-modal-content">
-                <div class="modal-header">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="status-indicator live"></span>
-                        <h2>SYSTEM TERMINAL PIPELINE</h2>
-                    </div>
-                    <div class="terminal-meta">
-                        <span id="terminal-status" class="online">ONLINE</span>
-                        <button class="close-btn" onclick="closeTerminalModal()">×</button>
+            <div class="glass-panel modal-content" style="max-width: 800px; width: 90%; height: 500px; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="terminal-title">🏗️ 正在准备框架依赖环境</h2>
+                    <button class="close-btn" onclick="closeTerminalModal()" style="position: static; margin-left: auto;">×</button>
+                </div>
+                <div class="modal-body" style="padding: 0.5rem 1rem 0 1rem; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="terminal-container" style="flex: 1; background: var(--black-10); border-radius: 8px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; flex-direction: column;">
+                        <div class="terminal-header" style="background: var(--black-20); padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-dim); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between;">
+                            <span>COMMAND CENTER / DIAGNOSTICS</span>
+                            <span id="terminal-status">STANDBY</span>
+                        </div>
+                        <div id="terminal-toolbar" style="padding: 10px 1rem; background: var(--white-05); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; flex-wrap: nowrap !important;">
+                            <button class="mini-action-btn" id="btn-modal-restart" onclick="invokeServiceAction('restart')" style="margin-right: 8px;"><span>🔄</span> 重启服务</button>
+                            <button class="mini-action-btn" id="btn-modal-stop" onclick="invokeServiceAction('stop')" style="border-color: #ff4d4d; color: #ff4d4d; margin-right: 8px;"><span>⏹️</span> 停止服务</button>
+                            <button class="mini-action-btn" id="btn-modal-open" onclick="window.open('http://localhost:43213', '_blank')" style="border-color: #00ff88; color: #00ff88; margin-right: 12px;"><span>🌐</span> 打开预览</button>
+                            <div style="width: 1px; height: 18px; background: var(--glass-border); margin: 0 12px;"></div>
+                            <button class="mini-action-btn" id="btn-modal-reinstall" onclick="invokeServiceAction('install')" style="border-color: #ffaa00; color: #ffaa00; margin-right: 8px;"><span>🏗️</span> 补全依赖</button>
+                            <button class="mini-action-btn" id="btn-modal-upgrade" onclick="invokeServiceAction('upgrade')" style="border-color: var(--neon-cyan); color: var(--neon-cyan); margin-right: 8px;"><span>🆙</span> 升级版本</button>
+                            <button class="mini-action-btn" id="btn-modal-rollback" onclick="invokeServiceAction('rollback')" style="border-color: #ff4d4d; color: #ff4d4d;"><span>⏪</span> 环境复原</button>
+                            <div style="flex: 1;"></div>
+                            <button class="mini-action-btn" onclick="document.getElementById('terminal-output').innerHTML = ''"><span>🗑️</span> 清空屏幕</button>
+                        </div>
+                        <div id="terminal-output" style="flex: 1; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-bright); overflow-y: auto; line-height: 1.4; background: var(--black-10);"></div>
                     </div>
                 </div>
-                <div class="modal-body terminal-modal-body">
-                    <div id="terminal-output" class="terminal-view"></div>
-                </div>
-                
-                <!-- 底部操作与直达栏 -->
-                <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <button class="secondary-btn" id="btn-terminal-clear" onclick="document.getElementById('terminal-output').innerHTML=''" style="padding: 6px 12px; font-size: 0.8rem;">清屏</button>
-                        <button class="secondary-btn" id="btn-terminal-abort" onclick="window.abortActivePublishJob()" style="padding: 6px 14px; font-size: 0.8rem; color: #ff4d4d; border-color: rgba(255,77,77,0.4); display: none;">🛑 紧急终止</button>
-                    </div>
-
+                <div class="modal-footer" style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0.4rem 1.5rem 1rem 1.5rem; gap: 0.8rem;">
                     <!-- ⚡ 强制覆盖选项条（常驻于发布按钮上方，绝不因日志滚动而丢失） -->
-                    <div id="preview-force-sync-bar" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); border-radius: 6px; font-size: 0.75rem; color: #f59e0b;">
-                        <input type="checkbox" id="chk-preview-force-sync" style="accent-color: #f59e0b; cursor: pointer; margin: 0;">
-                        <label for="chk-preview-force-sync" style="cursor: pointer; user-select: none; font-weight: 500;" title="忽略文章时间戳对比，无条件重新翻译并强制覆写所有语种目标文件与资源">强制全量重新翻译并覆盖</label>
+                    <div id="preview-force-sync-bar" style="display: none; width: 100%; max-width: 680px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 8px 14px; align-items: center; justify-content: space-between; box-sizing: border-box;">
+                        <label for="chk-preview-force-sync" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--text-bright); font-weight: 600; margin: 0; user-select: none;">
+                            <input type="checkbox" id="chk-preview-force-sync" style="accent-color: var(--neon-cyan); width: 16px; height: 16px; cursor: pointer; margin: 0;">
+                            <span>⚡ 强制全量覆盖同步 (Force Sync)</span>
+                        </label>
+                        <span style="font-size: 0.74rem; color: var(--text-muted);">
+                            切换装帧主题或重构站点时推荐勾选 (复用已有 AI 译文缓存，0 算力开销)
+                        </span>
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <!-- 重新发布全站按钮（仅在构建失败或完成时动态呼出） -->
-                        <button class="primary-btn glow-btn" id="btn-terminal-republish" onclick="window.triggerRepublishFromTerminal()" style="display:none; padding:6px 16px; font-size:0.8rem; background:linear-gradient(135deg, #ff8c00, #ff0055); border-color:rgba(255,140,0,0.5);">🚀 重新发布全站</button>
-                        <!-- 启动预览服务按钮 -->
-                        <button class="secondary-btn" id="btn-terminal-start-preview" onclick="window.startPreviewServiceFromTerminal()" style="display:none; padding:6px 14px; font-size:0.8rem; color:#00f2fe; border-color:rgba(0,242,254,0.4);">🌐 启动预览服务</button>
-                        <!-- 打开本地预览按钮 -->
-                        <button class="primary-btn glow-btn" id="btn-terminal-open-preview" onclick="window.openPreviewFromTerminal()" style="display:none; padding:6px 16px; font-size:0.8rem;">🌐 打开本地预览</button>
-                        <!-- 立即访问线上主站按钮 -->
-                        <button class="primary-btn glow-btn" id="btn-terminal-visit-site" onclick="window.openPrimaryLiveSite()" style="display:none; padding:6px 18px; font-size:0.82rem; font-weight:700; background:linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); border-color:rgba(0,242,254,0.6); color:#000; box-shadow:0 0 16px rgba(0,242,254,0.4);">🏠 访问主站 ↗</button>
-                        <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()" style="display:none; padding:6px 14px; font-size:0.8rem;">关闭</button>
-                        <button class="primary-btn glow-btn" id="btn-terminal-ok" onclick="closeTerminalModal()" style="display:none; padding:6px 16px; font-size:0.8rem;">完成</button>
+                    <div style="display: flex; justify-content: center; width: 100%; gap: 1rem;">
+                        <button class="primary-btn glow-btn" id="btn-terminal-start-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.startPublishAndPreviewExecution()">⚡ 开始发布</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-open-preview" style="display: none; background: linear-gradient(135deg, #00f0ff 0%, #00ff88 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);" onclick="window.openPreviewSite()">🌐 立即前往预览站点</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-republish" style="display: none; background: var(--neon-cyan); color: #000;" onclick="window.republishFromTerminal()">🔄 重新发布</button>
+                        <button class="secondary-btn" id="btn-terminal-abort" style="display: none; border-color: #ff4d4d; color: #ff4d4d;" onclick="window.abortSync()">🛑 中止同步</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-visit-site" style="display: none; background: linear-gradient(135deg, #00ff88 0%, #00f0ff 100%); color: #000; font-weight: 700; border: none; box-shadow: 0 0 16px rgba(0, 255, 136, 0.4);" onclick="window.openPrimaryLiveSite()">🌐 立即访问线上主站 ↗</button>
+                        <button class="primary-btn glow-btn" id="btn-terminal-ok" style="display: none;" onclick="closeTerminalModal()">关闭</button>
+                        <button class="secondary-btn" id="btn-terminal-close" onclick="closeTerminalModal()">隐藏窗口 (后台继续)</button>
                     </div>
                 </div>
             </div>

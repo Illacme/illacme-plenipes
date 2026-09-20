@@ -7,6 +7,125 @@
     gap: 25px;
     margin-top: 20px;
 }
+
+/* 🎨 装帧主题画廊智能弹性多列布局：上图下文流自适应排布，彻底消除边栏收缩错位 */
+#view-settings #layout-panel-themes .card-gallery,
+#view-settings .theme-card-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    gap: 22px;
+    margin-top: 20px;
+}
+
+/* 🖼️ 主题全宽展示卡片体系 (Theme Showcase Pod) */
+.shield-pod.theme-showcase-pod {
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: var(--bg-card, rgba(var(--bg-modal-solid-rgb), 0.65));
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease;
+}
+
+.shield-pod.theme-showcase-pod:hover {
+    transform: translateY(-4px);
+    border-color: var(--neon-cyan-50);
+    box-shadow: 0 16px 36px var(--shadow-glow), 0 0 20px var(--neon-cyan-15);
+}
+
+.shield-pod.theme-showcase-pod.active-duty {
+    border: 2px solid var(--neon-cyan) !important;
+    box-shadow: 0 0 0 3px var(--neon-cyan-20), 0 16px 40px var(--shadow-glow) !important;
+    background: linear-gradient(180deg, var(--neon-cyan-05) 0%, var(--bg-card) 100%) !important;
+}
+
+/* 🪟 顶部沉浸式视窗舞台 (Theme Stage Viewport) - 保持静态高保真拟真首屏，杜绝滚动眩晕 */
+.theme-stage-viewport {
+    width: 100%;
+    height: 175px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-panel, var(--bg-modal-solid));
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.theme-stage-viewport .mock-browser-window {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-stage-viewport .vertical-page-mockup {
+    width: 100%;
+}
+
+.theme-stage-badge {
+    position: absolute;
+    top: 24px;
+    right: 10px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* 📋 底部呼吸感信息控制栏 (Theme Meta Panel) */
+.theme-meta-panel {
+    padding: 16px 18px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-meta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.theme-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.theme-meta-desc {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    line-height: 1.45;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.theme-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.theme-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 /* 🗺️ Tactical Matrix Table */
 #view-settings .matrix-table {
     background: var(--white-01);
@@ -36,8 +155,13 @@
     transition: background 0.2s;
 }
 
-#view-settings .matrix-row:hover { background: var(--white-02); }
-#view-settings .matrix-row:last-child { border-bottom: none; }
+#view-settings .matrix-row:hover {
+    background: var(--white-02);
+}
+
+#view-settings .matrix-row:last-child {
+    border-bottom: none;
+}
 
 /* 🛡️ License Banner - Sovereign Certificate */
 #view-settings .license-banner {
@@ -51,16 +175,30 @@
     margin-bottom: 25px;
 }
 
-#view-settings .license-info h4 { margin-bottom: 5px; font-size: 1rem; color: var(--text-bright); }
-#view-settings .license-info p { font-size: 0.8rem; color: var(--text-dim); }
+#view-settings .license-info h4 {
+    margin-bottom: 5px;
+    font-size: 1rem;
+    color: var(--text-bright);
+}
+
+#view-settings .license-info p {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
 
 /* 🟢 Neon Badges */
 #view-settings .badge {
-    padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 900;
-    text-transform: uppercase; letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
+
 #view-settings .badge.active {
-    background: rgba(var(--neon-green-rgb), 0.1); color: var(--neon-green);
+    background: rgba(var(--neon-green-rgb), 0.1);
+    color: var(--neon-green);
     border: 1px solid rgba(var(--neon-green-rgb), 0.3);
     box-shadow: 0 0 15px rgba(var(--neon-green-rgb), 0.1);
     animation: neon-glow 2s infinite alternate;
@@ -77,22 +215,19 @@
     box-shadow: 0 0 20px rgba(var(--neon-red-rgb), 0.4) !important;
     background: linear-gradient(135deg, rgba(var(--neon-red-rgb), 0.2), var(--black-60)) !important;
 }
+
 @keyframes pulse-red {
     from { transform: scale(1); box-shadow: 0 0 10px rgba(var(--neon-red-rgb), 0.2); }
     to { transform: scale(1.05); box-shadow: 0 0 25px rgba(var(--neon-red-rgb), 0.5); }
 }
 
 /* 📡 Configuration Auditing Styles */
-.table-row-hover {
-    transition: background-color 0.15s ease;
-}
-.table-row-hover:hover {
-    background: var(--glass-highlight) !important;
-}
+.table-row-hover { transition: background-color 0.15s ease; }
+.table-row-hover:hover { background: var(--glass-highlight) !important; }
+
 @keyframes blink {
-    0% { opacity: 0.6; }
+    0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
-    100% { opacity: 0.6; }
 }
 
 /* 💎 License Feature Pills (Theme Adaptive & Eye Comfort) */

@@ -134,8 +134,8 @@
                                                      onclick="window.toggleI18nTarget(this, '${l.code}')">
                                                     <span style="font-size: 1.15rem; line-height: 1;">${l.icon}</span>
                                                     <div style="display: flex; flex-direction: column; gap: 1px; align-items: center;">
-                                                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-bright, #ffffff); line-height: 1.2;">${l.name}</span>
-                                                        <span style="font-size: 0.6rem; color: var(--text-dim); line-height: 1;">${l.code.toUpperCase()}</span>
+                                                        <span class="lang-name" style="font-size: 0.78rem; font-weight: 600; color: var(--text-bright, #ffffff); line-height: 1.2;">${l.name}</span>
+                                                        <span class="lang-code" style="font-size: 0.6rem; color: var(--text-dim); line-height: 1;">${l.code.toUpperCase()}</span>
                                                     </div>
                                                 </div>`;
                     }).join('')}

@@ -43,13 +43,15 @@ window.setupGalaxyEngine = (elem) => {
         const style = getComputedStyle(document.documentElement);
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         return {
-            purpleRgb: (style.getPropertyValue('--neon-purple-rgb') || style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim(),
-            cyanRgb: (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim(),
+            // 亮色调模式：物理骨干使用高对比深湛青蓝 (3, 105, 161)，语义连线使用优雅紫罗兰 (147, 51, 234)
+            // 暗黑宇宙模式：物理骨干采用极光青 (0, 242, 255)，语义连线采用荧光霓虹紫 (163, 76, 255)
+            wikiRgb: isLight ? '3, 105, 161' : (style.getPropertyValue('--neon-cyan-rgb') || '0, 242, 255').trim(),
+            semanticRgb: isLight ? '147, 51, 234' : (style.getPropertyValue('--neon-purple-rgb') || style.getPropertyValue('--accent-primary-rgb') || '163, 76, 255').trim(),
             isLight
         };
     };
     
-    let { purpleRgb, cyanRgb, isLight } = getColors();
+    let { wikiRgb, semanticRgb, isLight } = getColors();
 
     const graph = ForceGraph3D()(elem)
         .width(elem.clientWidth || window.innerWidth || 1200)
@@ -70,30 +72,31 @@ window.setupGalaxyEngine = (elem) => {
             if (!isWikilink && window._showSemanticLinks === false) return 'rgba(0,0,0,0)';
             const src = link.source?.id || link.source;
             const tgt = link.target?.id || link.target;
+            const colorRgb = isWikilink ? wikiRgb : semanticRgb;
             if (!window._hoveredNode) {
-                // 静默状态：物理连线亮青色，语义连线暗紫色，拉开主次感（白底下适度提升透明度保证对比度）
-                const cyanAlpha = isLight ? 0.45 : 0.35;
-                const purpleAlpha = isLight ? 0.35 : 0.12;
-                return isWikilink ? `rgba(${cyanRgb}, ${cyanAlpha})` : `rgba(${purpleRgb}, ${purpleAlpha})`;
+                // 静默状态：物理双链高对比深青骨架（白底 0.70 / 黑底 0.40），语义连线空灵淡雅紫烟（白底 0.16 / 黑底 0.12）
+                const alpha = isWikilink ? (isLight ? 0.70 : 0.40) : (isLight ? 0.16 : 0.12);
+                return `rgba(${colorRgb}, ${alpha})`;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
             if (isConnected) {
-                // 激活状态下：物理连线极亮，语义连线亮紫以呈现高维交织感
-                const cyanActiveAlpha = isLight ? 0.95 : 0.95;
-                const purpleActiveAlpha = isLight ? 0.85 : 0.75;
-                return isWikilink ? `rgba(${cyanRgb}, ${cyanActiveAlpha})` : `rgba(${purpleRgb}, ${purpleActiveAlpha})`;
+                // 激活状态下：物理连线极度饱满深青（0.95），语义连线高维亮紫（0.85）
+                const activeAlpha = isWikilink ? 0.95 : 0.85;
+                return `rgba(${colorRgb}, ${activeAlpha})`;
             }
-            // 未激活连线：物理和语义均降为极弱半透明，聚焦当前节点网络
-            const cyanDimAlpha = isLight ? 0.04 : 0.02;
-            const purpleDimAlpha = isLight ? 0.03 : 0.01;
-            return isWikilink ? `rgba(${cyanRgb}, ${cyanDimAlpha})` : `rgba(${purpleRgb}, ${purpleDimAlpha})`;
+            // 未激活连线：大幅淡化
+            const dimAlpha = isWikilink ? (isLight ? 0.05 : 0.02) : (isLight ? 0.02 : 0.01);
+            return `rgba(${colorRgb}, ${dimAlpha})`;
         })
+        // 🌟 [几何形态区分]：物理双链笔直刚劲直线 (0)，AI 语义关联赋予 0.18 柔性引力微弧
+        .linkCurvature(link => (link.type === 'wikilink' ? 0 : 0.18))
         .linkWidth(link => {
             const isWikilink = link.type === 'wikilink';
             if (isWikilink && window._showWikilinks === false) return 0;
             if (!isWikilink && window._showSemanticLinks === false) return 0;
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             const scale = window._galaxyScaleMode || 'small';
+            // 物理双链 1.0px，语义连线 0.5px
             let baseWidth = isWikilink ? 1.0 : 0.5;
             if (scale === 'huge') baseWidth *= 0.3;
             else if (scale === 'large') baseWidth *= 0.5;
@@ -109,9 +112,9 @@ window.setupGalaxyEngine = (elem) => {
             if (!isWikilink && window._showSemanticLinks === false) return 0;
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             const scale = window._galaxyScaleMode || 'small';
-            if (scale === 'huge' || scale === 'large') return 0; // 超大或大规模时，强制关闭粒子以防卡顿
+            if (scale === 'huge' || scale === 'large') return 0;
             if (!window._hoveredNode) {
-                // 静默时：物理连线带 2 颗粒子做慢速输运，语义连线带 1 颗幽微的粒子保持默认流动
+                // 静默时：物理连线 2 颗能量光子，语义连线 1 颗幽微粒子
                 return isWikilink ? 2 : 1;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
@@ -121,22 +124,21 @@ window.setupGalaxyEngine = (elem) => {
             const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             if (!window._hoveredNode) {
-                // 静默时：物理连线粒子宽度 1.2，语义连线微弱粒子宽度 0.8
-                return isWikilink ? 1.2 : 0.8;
+                return isWikilink ? (isLight ? 1.6 : 1.2) : 0.7;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
-            return isConnected ? (isWikilink ? 2.0 : 1.2) : 0;
+            return isConnected ? (isWikilink ? 2.4 : 1.2) : 0;
         })
         .linkDirectionalParticleSpeed(link => {
             const isWikilink = link.type === 'wikilink';
             const src = link.source?.id || link.source, tgt = link.target?.id || link.target;
             if (!window._hoveredNode) {
-                // 静默时：物理连线速度 0.008，语义连线慢流速 0.003
                 return isWikilink ? 0.008 : 0.003;
             }
             const isConnected = src === window._hoveredNode.id || tgt === window._hoveredNode.id;
             return isConnected ? (isWikilink ? 0.02 : 0.008) : 0.002;
         })
+        .linkDirectionalParticleColor(link => (link.type === 'wikilink' ? `rgb(${wikiRgb})` : `rgb(${semanticRgb})`))
         .onNodeHover(node => {
             // 🧠 [V86.7] 记录全局 hovered 节点，激活 3D 神经网络高亮并放大 Hit Box
             window._hoveredNode = node;
@@ -214,11 +216,15 @@ window.setupGalaxyEngine = (elem) => {
         console.log("🌌 [LOD] 动态重建标签图层已挂载至 #galaxy-3d");
     }
 
-    // 🌌 配置 d3 排斥力与连线力，确保节点充分散开
+    // 🌌 [力学主权解耦] 配置 d3 排斥力与连线力，彻底消除语义弹力超载导致的塌缩成团
     const chargeForce = graph.d3Force('charge');
-    if (chargeForce) chargeForce.strength(-120);
+    if (chargeForce) chargeForce.strength(-240);
     const linkForce = graph.d3Force('link');
-    if (linkForce) linkForce.distance(80).strength(0.4);
+    if (linkForce) {
+        linkForce
+            .distance(link => (link.type === 'wikilink' ? 80 : 150))
+            .strength(link => (link.type === 'wikilink' ? 0.35 : 0.04));
+    }
 
     // 🌟 [V130.0] 注入 UnrealBloom 辉光后处理管线
     if (window.THREE && window.THREE.UnrealBloomPass) {
@@ -242,8 +248,8 @@ window.setupGalaxyEngine = (elem) => {
     // 🌗 [Theme] 昼夜模式深度联动：实时响应光影切换
     window.addEventListener('themeModeChanged', () => {
         const newColors = getColors();
-        purpleRgb = newColors.purpleRgb;
-        cyanRgb = newColors.cyanRgb;
+        wikiRgb = newColors.wikiRgb;
+        semanticRgb = newColors.semanticRgb;
         isLight = newColors.isLight;
         
         // 🌟 [V130.0] 动态调整 Bloom 参数适配昼夜模式
@@ -252,9 +258,12 @@ window.setupGalaxyEngine = (elem) => {
             window._galaxyBloomPass.threshold = isLight ? 0.4 : 0.1;
         }
 
-        // 强制引擎基于新闭包变量重绘色彩与节点
+        // 强制引擎基于新闭包变量重绘色彩、线宽、粒子与节点
         graph.nodeColor(graph.nodeColor());
         graph.linkColor(graph.linkColor());
+        graph.linkWidth(graph.linkWidth());
+        graph.linkDirectionalParticleColor(graph.linkDirectionalParticleColor());
+        graph.linkDirectionalParticleWidth(graph.linkDirectionalParticleWidth());
     });
 
     return graph;

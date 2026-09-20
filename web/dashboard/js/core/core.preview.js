@@ -62,14 +62,14 @@ window.triggerPublishAndPreview = async function () {
     const closeBtn = document.getElementById('btn-terminal-close');
     const forceBar = document.getElementById('preview-force-sync-bar');
 
-    if (toolbar) {
-        toolbar.style.display = 'flex';
-        toolbar.innerHTML = window.renderPreviewStepperToolbar ? window.renderPreviewStepperToolbar() : '';
-    }
-
     // 🛡️ 重置所有按钮状态，避免单例污染
     if (typeof window.resetTerminalModalFooter === 'function') {
         window.resetTerminalModalFooter();
+    }
+
+    if (toolbar) {
+        toolbar.style.display = 'flex';
+        toolbar.innerHTML = window.renderPreviewStepperToolbar ? window.renderPreviewStepperToolbar() : '';
     }
 
     if (isPublishing) {

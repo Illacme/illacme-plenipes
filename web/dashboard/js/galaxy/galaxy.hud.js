@@ -135,11 +135,13 @@ function injectGalaxyInteractiveDOM() {
                         <span id="rotate-incline-val" style="min-width: 24px; text-align: right; font-family: monospace; font-size: 0.52rem; color: var(--accent-secondary);">20°</span>
                     </div>
                     <div style="display: flex; gap: 6px; margin-top: 2px; font-size: 0.5rem; justify-content: space-between; width: 100%; white-space: nowrap;">
-                        <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="显示或隐藏原稿笔记中手动书写的双向链接（[[WikiLinks]]）">
-                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 文档双链
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: help; white-space: nowrap;" title="显示或隐藏原稿笔记中手动书写的直接双向链接（[[WikiLinks]]，深青直线）">
+                            <input type="checkbox" id="toggle-wikilinks" checked style="accent-color: var(--accent-secondary); cursor: pointer;" />
+                            <span style="display: inline-block; width: 8px; height: 2px; background: var(--accent-secondary); border-radius: 1px; vertical-align: middle;"></span> 文档双链
                         </label>
-                        <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="显示或隐藏系统根据 AI 语义分析自动推荐的概念关联连线">
-                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 智能关联
+                        <label style="display: flex; align-items: center; gap: 3px; cursor: help; white-space: nowrap;" title="显示或隐藏系统根据 AI 语义分析自动推荐的概念关联连线（柔性微弧线）">
+                            <input type="checkbox" id="toggle-semantic-links" checked style="accent-color: var(--neon-purple); cursor: pointer;" />
+                            <span style="display: inline-block; width: 8px; height: 2px; background: var(--neon-purple); border-radius: 50%; vertical-align: middle;"></span> 智能关联
                         </label>
                         <label style="display: flex; align-items: center; gap: 2px; cursor: help; white-space: nowrap;" title="开启后自转呈现太空滑行与周期回拉动效；关闭后呈现纯匀速平滑轨道巡航">
                             <input type="checkbox" id="toggle-rotation-damping" checked style="accent-color: var(--accent-secondary); cursor: pointer;" /> 旋转阻尼

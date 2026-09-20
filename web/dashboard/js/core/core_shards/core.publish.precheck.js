@@ -124,11 +124,11 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
 
         warningDetailsHtml = `
             <br>
-            <details style="text-align: left; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);">
-                <summary style="cursor: pointer; font-weight: bold; color: #3085d6; outline: none; user-select: none;">
+            <details class="precheck-warning-details" style="text-align: left; background: var(--card-subtle-bg, rgba(0, 0, 0, 0.06)); padding: 10px; border-radius: 6px; border: 1px solid var(--glass-border);">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--accent-secondary, #3085d6); outline: none; user-select: none;">
                     查看具体丢失的 ${precheckRes.warnings.length} 处资产清单
                 </summary>
-                <div style="max-height: 120px; overflow-y: auto; margin-top: 8px; font-size: 0.9em; color: #ccc;">
+                <div style="max-height: 120px; overflow-y: auto; margin-top: 8px; font-size: 0.9em; color: var(--text-dim);">
                     ${warningsListHtml}
                 </div>
             </details>
@@ -136,12 +136,12 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
     }
 
     const confirmHtml = `
-        <div style="text-align: left; font-size: 0.95rem; line-height: 1.6; color: #e0e0e0;">
-            <p style="margin-bottom: 12px; color: #aaa;">启动全域全息同步流水线，系统将执行全量静态页面生成，并分发对齐至已启用的第三方渠道：</p>
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px; margin-bottom: 16px; backdrop-filter: blur(10px);">
+        <div style="text-align: left; font-size: 0.95rem; line-height: 1.6; color: var(--text-bright);">
+            <p style="margin-bottom: 12px; color: var(--text-dim);">启动全域全息同步流水线，系统将执行全量静态页面生成，并分发对齐至已启用的第三方渠道：</p>
+            <div class="precheck-info-card" style="background: var(--card-subtle-bg, rgba(255, 255, 255, 0.03)); border: 1px solid var(--glass-border); border-radius: 8px; padding: 14px; margin-bottom: 16px; backdrop-filter: blur(10px);">
                 <div style="margin-bottom: 10px; display: flex; align-items: center;">
                     <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">⚙️ 出版模式:</span>
-                    <span style="color: var(--text-bright, #ffffff); font-weight: 500;">${modeText}</span>
+                    <span style="color: var(--text-bright); font-weight: 500;">${modeText}</span>
                 </div>
                 <div style="margin-bottom: 10px; display: flex; align-items: center;">
                     <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">🛡️ 预检状态:</span>
@@ -149,11 +149,11 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
                 </div>
                 <div style="display: flex; align-items: flex-start;">
                     <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">📡 渠道矩阵:</span>
-                    <span style="color: var(--text-bright, #ffffff); font-weight: 500; flex: 1;">一键发布至已开启的托管平台与社媒分发渠道</span>
+                    <span style="color: var(--text-bright); font-weight: 500; flex: 1;">一键发布至已开启的托管平台与社媒分发渠道</span>
                 </div>
             </div>
             ${warningDetailsHtml}
-            <p style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--text-bright, #ffffff); font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
+            <p style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--text-bright); font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
         </div>
     `;
 

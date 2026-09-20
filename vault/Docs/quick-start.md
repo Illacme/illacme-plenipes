@@ -1,18 +1,80 @@
 ---
-title: 创作者 5 分钟极速上手指南
 layout: docs
-slug: quick-start
 route_prefix: docs
-date: 2026-08-16
+date: '2026-08-16T08:00:00+08:00'
 author: Illacme Onboarding Group
 description: 5 步带您在几分钟内完成从本地环境唤醒、治理中心体验、原稿起草到全网发布的完整流程。
 tags:
 - QuickStart
 - Tutorial
 - Onboarding
-categories:
-- Documentation
+categories: Documentation
 cover: /api/design/assets/covers/gen_3f25871606fb.jpg
+gist: 本指南助您通过五步快速掌握 Illacme Plenipes，实现从创作到全球发布的全链路流程。
+entities:
+  concepts:
+  - Sovereign 赛博主题
+  - 分发路由与网址路径
+  - 基础配置与运维
+  - Markdown 编辑器
+  - 全域发布
+  - 出版模式
+  - 多语种矩阵
+  - 品牌身份
+  - 出版品牌
+  - 本地预览服务
+  - 哈希计算
+  - URL 路径映射
+  - 治理中心
+  - 存储适配
+  - 增量段落切片
+  - 语言翻译与治理
+  - 发行矩阵配置
+  - 品牌版图多站点管理
+  - Imprints
+  - Token 消耗
+  - 语言翻译
+  - Markdown
+  - 版图装帧与模式
+  - 创作者
+  - 出版引擎
+  - 算力缓存
+  - 块级过滤规则
+  - 术语词库
+  - Frontmatter
+  - 发行矩阵
+  - 分发路由
+  - 原稿文库
+  - AI SEO
+  - 出版指挥中心
+  - AI SEO 结构化元数据提取
+  - 算力中心
+  - 静态站点 HTML 产物渲染
+  - 结构化元数据
+  - Frontmatter 规范
+  - 静态站点
+  - 算力缓存清理中枢
+  - 本地文库
+  technologies:
+  - Markdown
+  - Obsidian
+  - Sovereign
+  - Markdown 编辑器
+  - ASCII
+  - Web API
+  - HTML
+  people: []
+  projects:
+  - authoring-and-vault-guide
+  - Sovereign
+  - compute-and-ai
+  - distribution-channels
+  - brand-management
+  - dashboard-guide
+  - Illacme Press
+  - Illacme Plenipes
+title: 创作者 5 分钟极速上手指南
+slug: quick-start
 ---
 # ⚡ 创作者 5 分钟极速上手指南
 

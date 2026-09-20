@@ -34,11 +34,11 @@
                 <div class="glass-panel" style="width:820px; max-width:96vw; max-height:88vh; border-radius:14px; border:1px solid rgba(0,242,254,0.35); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.9);">
                     
                     <!-- 顶栏：标题与巡检进度 -->
-                    <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); display:flex; justify-content:space-between; align-items:center;">
+                    <div class="batch-modal-header" style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:1.3rem;">⚡</span>
                             <div>
-                                <div style="font-weight:700; color:#fff; font-size:0.96rem; letter-spacing:0.3px;">文库原稿批量智能配图中枢</div>
+                                <div class="batch-modal-title" style="font-weight:700; color:var(--text-bright); font-size:0.96rem; letter-spacing:0.3px;">文库原稿批量智能配图中枢</div>
                                 <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">一键全库封面巡检 · 视觉覆盖率看板 · 流水线批量装配</div>
                             </div>
                         </div>
@@ -51,10 +51,10 @@
                     </div>
 
                     <!-- 策略与参数选择栏 -->
-                    <div style="padding:12px 20px; background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:0.75rem;">
+                    <div class="batch-toolbar" style="padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:0.75rem;">
                         <div style="display:flex; align-items:center; gap:6px;">
                             <span style="color:var(--text-dim);">图源策略:</span>
-                            <select id="batch-cover-strategy" style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,242,254,0.3); color:#fff; padding:4px 8px; border-radius:6px; font-size:0.75rem;">
+                            <select id="batch-cover-strategy" class="studio-select batch-select" style="padding:4px 8px; border-radius:6px; font-size:0.75rem;">
                                 <option value="og_card" selected>🎨 极客排版·本地 OG 卡片 (推荐·毫秒级离线)</option>
                                 <option value="minimal_badge">🏷️ 极简艺术徽章 (轻量纯离线)</option>
                                 <option value="brand_presets">🏛️ 品牌母本预置图库 (视觉统一)</option>
@@ -64,7 +64,7 @@
                         </div>
                         <div style="display:flex; align-items:center; gap:6px;">
                             <span style="color:var(--text-dim);">比例:</span>
-                            <select id="batch-cover-ratio" style="background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:4px 8px; border-radius:6px; font-size:0.75rem;">
+                            <select id="batch-cover-ratio" class="studio-select batch-select" style="padding:4px 8px; border-radius:6px; font-size:0.75rem;">
                                 <option value="16:9" selected>16:9 标准横版</option>
                                 <option value="3:2">3:2 胶片画幅</option>
                                 <option value="2:1">2:1 宽屏 Banner</option>
@@ -82,9 +82,9 @@
                     </div>
 
                     <!-- 底部操作栏 -->
-                    <div style="padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); display:flex; justify-content:space-between; align-items:center;">
+                    <div class="batch-footer" style="padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
                         <div id="batch-cover-summary" style="font-size:0.75rem; color:var(--text-dim);">
-                            已勾选 <strong id="batch-selected-count" style="color:#00f2fe;">${_selectedDocIds.size}</strong> 篇原稿
+                            已勾选 <strong id="batch-selected-count" style="color:var(--accent-secondary);">${_selectedDocIds.size}</strong> 篇原稿
                         </div>
                         <div style="display:flex; gap:10px; align-items:center;">
                             <button type="button" class="mini-btn" style="padding:6px 14px; font-size:0.78rem;" onclick="document.getElementById('batch-cover-modal').remove()">关闭</button>
@@ -109,14 +109,14 @@
         const isDone = uncovered === 0;
 
         return `
-            <div style="padding:12px 20px; background:rgba(0,242,254,0.04); border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px;">
+            <div class="batch-progress-bar-slot" style="padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
-                    <span style="color:#fff;">📊 文库视觉装配进度：<strong id="batch-progress-covered-num" style="color:#00f2fe;">${covered}</strong> / ${total} 篇</span>
+                    <span style="color:var(--text-bright);">📊 文库视觉装配进度：<strong id="batch-progress-covered-num" style="color:var(--accent-secondary);">${covered}</strong> / ${total} 篇</span>
                     <span id="batch-progress-status-badge" style="color:${isDone ? '#00ff88' : '#f59e0b'}; font-weight:600;">
                         ${isDone ? '✨ 已 100% 全量覆盖' : `⚠️ 待配图 ${uncovered} 篇 (${percent}%)`}
                     </span>
                 </div>
-                <div style="height:6px; width:100%; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                <div class="batch-progress-track" style="height:6px; width:100%; border-radius:3px; overflow:hidden;">
                     <div id="batch-progress-bar-inner" style="height:100%; width:${percent}%; background:linear-gradient(90deg, #00f2fe, #00ff88); transition:width 0.35s ease;"></div>
                 </div>
             </div>
@@ -145,7 +145,7 @@
             return `
                 <div style="text-align:center; padding:50px 0; color:var(--text-dim);">
                     <div style="font-size:2.4rem; margin-bottom:10px;">🎉</div>
-                    <div style="font-size:0.92rem; color:#fff; font-weight:600;">全库原稿视觉封面已 100% 装配齐全！</div>
+                    <div class="batch-empty-title" style="font-size:0.92rem; color:var(--text-bright); font-weight:600;">全库原稿视觉封面已 100% 装配齐全！</div>
                     <div style="font-size:0.74rem; color:var(--text-dim); margin-top:4px;">无需额外配图，整站文章在独立站与分发渠道均具备精美预览卡片</div>
                 </div>
             `;
@@ -156,11 +156,11 @@
             const safeId = d.doc_id.replace(/"/g, '&quot;');
             const safeCid = d.doc_id.replace(/[^a-zA-Z0-9_-]/g, '_');
             return `
-                <label id="batch-item-row-${safeCid}" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:8px; background:${isChecked ? 'rgba(0,242,254,0.06)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isChecked ? 'rgba(0,242,254,0.3)' : 'rgba(255,255,255,0.06)'}; cursor:pointer; transition:all 0.2s;">
+                <label id="batch-item-row-${safeCid}" class="batch-item-row" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:8px; cursor:pointer; transition:all 0.2s;">
                     <input type="checkbox" id="batch-checkbox-${safeCid}" data-doc-id="${safeId}" ${isChecked ? 'checked' : ''} onchange="window.toggleBatchDocSelect('${safeId}', this.checked)" style="accent-color:#00f2fe; width:15px; height:15px; cursor:pointer;" />
                     <div style="flex:1; overflow:hidden;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-weight:600; color:#fff; font-size:0.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">《${d.title}》</span>
+                            <span class="batch-doc-title" style="font-weight:600; color:var(--text-bright); font-size:0.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">《${d.title}》</span>
                             <span style="font-size:0.65rem; color:#00f2fe; background:rgba(0,242,254,0.1); padding:1px 6px; border-radius:4px;">${d.category || '未分类'}</span>
                         </div>
                         <div style="font-size:0.68rem; color:var(--text-dim); margin-top:2px; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📁 ${d.doc_id}</div>

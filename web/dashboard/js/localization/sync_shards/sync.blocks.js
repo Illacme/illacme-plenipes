@@ -47,6 +47,9 @@ window.handleBlockActionChange = async (key, action) => {
             } else if (typeof renderSettingsCategory === 'function') {
                 renderSettingsCategory('block_rules');
             }
+            if (typeof window.updateLocalizationGovStatusBadge === 'function') {
+                window.updateLocalizationGovStatusBadge('block_rules');
+            }
         }
     } else {
         const errMsg = res ? (res.error || res.message) : '物理链路超时';

@@ -64,7 +64,7 @@
 
         const batchBarHtml = _isBatchManaging ? `
             <div style="display:flex; align-items:center; gap:8px; background:rgba(0,242,254,0.06); padding:4px 10px; border-radius:6px; border:1px solid rgba(0,242,254,0.25); font-size:0.72rem;">
-                <span style="color:#fff;">已选 <strong style="color:#00f2fe;" id="batch-selected-num">${_batchSelectedIds.size}</strong> 项</span>
+                <span style="color:var(--text-bright);">已选 <strong style="color:var(--accent-secondary);" id="batch-selected-num">${_batchSelectedIds.size}</strong> 项</span>
                 <button type="button" class="mini-btn" style="padding:2px 7px; font-size:0.68rem;" onclick="window.toggleSelectAllFilteredAssets(true)">全选</button>
                 <button type="button" class="mini-btn" style="padding:2px 7px; font-size:0.68rem;" onclick="window.toggleSelectAllFilteredAssets(false)">清空</button>
                 <button type="button" class="mini-btn" style="padding:2px 9px; font-size:0.68rem; color:#f87171; border-color:rgba(248,113,113,0.35); background:rgba(248,113,113,0.1);" onclick="window.executeBatchDeleteAssets()">🗑️ 批量删除 (${_batchSelectedIds.size})</button>
@@ -92,7 +92,7 @@
                         <button type="button" class="mini-btn ${_statusFilter === 'used' ? 'active' : ''}" style="padding:3px 9px; font-size:0.7rem; color:${_statusFilter==='used'?'#10b981':'var(--text-dim)'};" onclick="window.filterAssetsStatus('used')">🔗 在用</button>
                         <button type="button" class="mini-btn ${_statusFilter === 'idle' ? 'active' : ''}" style="padding:3px 9px; font-size:0.7rem; color:${_statusFilter==='idle'?'#f59e0b':'var(--text-dim)'};" onclick="window.filterAssetsStatus('idle')">⭕ 闲置</button>
                     </div>
-                    <select style="width:auto !important; min-width:125px; padding:2px 8px; font-size:0.7rem; height:26px; border-radius:6px; background:rgba(18,24,38,0.9); color:var(--text-bright); border:1px solid rgba(255,255,255,0.12); cursor:pointer;" onchange="window.filterAssetsEngine(this.value)">
+                    <select class="studio-select assets-engine-select" style="width:auto !important; min-width:125px; padding:2px 8px; font-size:0.7rem; height:26px; border-radius:6px; cursor:pointer;" onchange="window.filterAssetsEngine(this.value)">
                         <option value="all" ${_activeFilter === 'all' ? 'selected' : ''}>⚙️ 引擎: 全部</option>
                         ${engines.map(eng => `<option value="${eng}" ${_activeFilter === eng ? 'selected' : ''}>${eng === 'og_card' ? '🎨 OG 技术卡片' : '⚙️ ' + eng.toUpperCase()}</option>`).join('')}
                     </select>
@@ -108,7 +108,7 @@
         const paginationHtml = `
             <div class="pagination-container" style="display:flex; justify-content:space-between; align-items:center; padding:18px 0 10px 0; margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); flex-wrap:wrap; gap:12px;">
                 <div style="font-size:0.75rem; color:var(--text-dim);">
-                    第 <span style="color:#00f2fe; font-weight:700;">${_currentPage}</span> / ${_totalPages} 页 · 每页 ${_pageSize} 项 · 共 <strong style="color:var(--text-bright);">${_totalAssets}</strong> 项媒体资产
+                    第 <span style="color:var(--accent-secondary); font-weight:700;">${_currentPage}</span> / ${_totalPages} 页 · 每页 ${_pageSize} 项 · 共 <strong style="color:var(--text-bright);">${_totalAssets}</strong> 项媒体资产
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
                     <button type="button" class="mini-btn" ${_currentPage <= 1 ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : 'onclick="window.changeAssetsPage(1)"'} title="首页">⏮️ 首页</button>
@@ -116,7 +116,7 @@
                     <button type="button" class="mini-btn" ${_currentPage >= _totalPages ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : `onclick="window.changeAssetsPage(${_currentPage + 1})"`} title="下一页">▶️ 下一页</button>
                     <button type="button" class="mini-btn" ${_currentPage >= _totalPages ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : `onclick="window.changeAssetsPage(${_totalPages})"`} title="尾页">⏭️ 尾页</button>
                     <div style="display:flex; align-items:center; gap:4px; margin-left:6px;">
-                        <input type="number" id="assets-go-page-input" min="1" max="${_totalPages}" value="${_currentPage}" style="width:48px; height:24px; text-align:center; font-size:0.72rem; border-radius:4px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:#fff; outline:none;" onkeydown="if(event.key==='Enter')window.jumpAssetsPage()" />
+                        <input type="number" id="assets-go-page-input" class="assets-page-input" min="1" max="${_totalPages}" value="${_currentPage}" style="width:48px; height:24px; text-align:center; font-size:0.72rem; border-radius:4px; outline:none;" onkeydown="if(event.key==='Enter')window.jumpAssetsPage()" />
                         <button type="button" class="mini-btn" style="padding:2px 8px; font-size:0.7rem;" onclick="window.jumpAssetsPage()">跳转</button>
                     </div>
                 </div>
@@ -145,7 +145,7 @@
                         <div class="skeleton-shimmer" style="position:relative; width:100%; height:160px; background:#05070f; cursor:pointer; overflow:hidden;" onclick="${_isBatchManaging ? `window.toggleSingleAssetSelect(${a.id}, !${isSelected})` : `window.openAssetDetailModal(${a.id})`}">
                             <img src="${a.source_url}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" alt="资产" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s; display:block;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
                             ${checkMarkup}
-                            <div style="position:absolute; top:8px; left:${_isBatchManaging ? '40px' : '8px'}; font-size:0.65rem; color:#fff; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); padding:2px 8px; border-radius:4px; border:1px solid rgba(255,255,255,0.15);">
+                            <div class="asset-engine-badge" style="position:absolute; top:8px; left:${_isBatchManaging ? '40px' : '8px'}; font-size:0.65rem; backdrop-filter:blur(4px); padding:2px 8px; border-radius:4px;">
                                 🏷️ ${engLabel}
                             </div>
                             ${renderCdnBadge(a.cdn_url)}

@@ -1,0 +1,195 @@
+/* 🌌 [V135.0] Illacme Plenipes - 3D Brand Cards & Sovereign Badges
+ * 职责：品牌管理领地卡片 3D 悬浮视差、全息随动高光镜面与出版徽章动态质感
+ * 100% 遵循 Stage 2.6 设计系统 Tokens 规范，零硬编码裸色，支持 GPU 硬件加速
+ */
+
+/* 🪟 3D 舞台容器与透视基座 */
+.territory-pod {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    will-change: transform, box-shadow;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s ease;
+}
+
+/* 悬浮倾斜时的空间光影与边界高亮 */
+.territory-pod:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 16px 36px var(--shadow-glow), 0 0 24px var(--neon-cyan-20);
+}
+
+/* 🌟 当前激活的出版品牌：2px 极光立体高光边框与双重光环 */
+.territory-pod.primary-active,
+.territory-pod.active-imprint {
+    border: 2px solid var(--accent-secondary) !important;
+    box-shadow: 0 0 0 3px var(--neon-cyan-20), 0 18px 44px var(--shadow-glow) !important;
+}
+
+.territory-pod.primary-active:hover,
+.territory-pod.active-imprint:hover {
+    border-color: var(--accent-secondary) !important;
+    box-shadow: 0 0 0 3px var(--neon-cyan-30), 0 22px 50px var(--shadow-glow) !important;
+}
+
+/* 🪞 全息随动高光光斑镜面层 (Holographic Glare Layer) */
+.brand-card-glare {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: var(--glare-opacity, 0);
+    background: radial-gradient(
+        circle 220px at var(--glare-x, 50%) var(--glare-y, 50%),
+        var(--neon-cyan-25) 0%,
+        var(--neon-cyan-05) 45%,
+        transparent 75%
+    );
+    mix-blend-mode: screen;
+    transition: opacity 0.35s ease;
+    border-radius: inherit;
+}
+
+/* 👑 品牌专属后景图腾微浮雕 (Theme Crest Silhouette) */
+.brand-crest-silhouette {
+    position: absolute;
+    right: -6px;
+    bottom: -8px;
+    font-size: 5.5rem;
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.10;
+    transform: translateZ(-8px) scale(1) translate(var(--crest-offset-x, 0px), var(--crest-offset-y, 0px));
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease-out, opacity 0.4s ease;
+    filter: drop-shadow(0 0 12px var(--neon-cyan-15));
+    z-index: 1;
+}
+
+.territory-pod:hover .brand-crest-silhouette {
+    opacity: 0.20;
+    transform: translateZ(-8px) scale(1.08) translate(var(--crest-offset-x, 0px), var(--crest-offset-y, 0px));
+}
+
+.territory-pod.primary-active .brand-crest-silhouette {
+    opacity: 0.16;
+    filter: drop-shadow(0 0 18px var(--neon-cyan-30));
+}
+
+/* 📐 多层空间景深分层系统 (Spatial Depth Separation) */
+.territory-pod .shield-status {
+    position: relative;
+    z-index: 3;
+    transform: translateZ(14px);
+    transform-style: preserve-3d;
+}
+
+.territory-pod .shield-body {
+    position: relative;
+    z-index: 3;
+    transform-style: preserve-3d;
+}
+
+.territory-pod .shield-body h4 {
+    transform: translateZ(22px);
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.territory-pod .pod-telemetry {
+    transform: translateZ(12px);
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.territory-pod .path-preview {
+    transform: translateZ(14px);
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, border-color 0.25s ease;
+}
+
+.territory-pod .p-control-group {
+    transform: translateZ(20px);
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+/* 激活生效态下将控制组转为居中弹性布局，让出版徽章水平完美居中 */
+.territory-pod.active-imprint .p-control-group,
+.territory-pod .p-control-group:has(.imprint-active-badge) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 🏷️ 出版主权流光徽章 (Dynamic Sovereign Badge) */
+.imprint-active-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 14px;
+    margin: 0 auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    background: var(--neon-cyan-12);
+    border: 1px solid var(--neon-cyan-40);
+    color: var(--accent-secondary);
+    box-shadow: 0 0 12px var(--neon-cyan-20);
+    overflow: hidden;
+    user-select: none;
+}
+
+/* 扫光光斑 (Shimmer Ray) */
+.imprint-active-badge::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--white-30),
+        transparent
+    );
+    transform: skewX(-20deg);
+    animation: badgeShimmer 3.2s infinite ease-in-out;
+}
+
+@keyframes badgeShimmer {
+    0% { left: -120%; }
+    25%, 100% { left: 160%; }
+}
+
+/* 🟢 当前生效中脉冲指示点 (Breathe Dot) */
+.imprint-breathe-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 6px var(--neon-green);
+    animation: breathePulse 2s infinite ease-in-out;
+    flex-shrink: 0;
+}
+
+@keyframes breathePulse {
+    0%, 100% {
+        transform: scale(0.9);
+        opacity: 0.7;
+        box-shadow: 0 0 4px var(--neon-green);
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+        box-shadow: 0 0 10px var(--neon-green);
+    }
+}

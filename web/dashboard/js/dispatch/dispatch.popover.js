@@ -81,6 +81,47 @@ window.createDispatchPopoverDOM = function () {
 };
 
 /**
+ * 格式化成果发布相对时间与完整绝对时间
+ */
+window.parseDispatchDate = function (raw) {
+    if (!raw) return null;
+    try {
+        let d;
+        if (typeof raw === 'number' || /^\d{10,13}$/.test(String(raw).trim())) {
+            const num = Number(raw);
+            d = new Date(num > 1e11 ? num : num * 1000);
+        } else {
+            let s = String(raw).trim();
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) s = s.replace(' ', 'T') + 'Z';
+            d = new Date(s);
+        }
+        return isNaN(d.getTime()) ? null : d;
+    } catch (e) {
+        return null;
+    }
+};
+
+window.formatDispatchTime = function (raw) {
+    const d = window.parseDispatchDate ? window.parseDispatchDate(raw) : null;
+    if (!d) return String(raw || '');
+    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diffSec < 45) return '刚刚';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}分钟前`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}小时前`;
+    const pad = (n) => String(n).padStart(2, '0');
+    if (diffSec < 86400 * 2) return `昨天 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}天前`;
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+window.formatDispatchFullTime = function (raw) {
+    const d = window.parseDispatchDate ? window.parseDispatchDate(raw) : null;
+    if (!d) return String(raw || '');
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
+/**
  * 填充浮层内部内容
  */
 window.renderPopoverContent = function (data) {
@@ -115,18 +156,25 @@ window.renderPopoverContent = function (data) {
             </div>
         `;
     } else if (deadTasks.length > 0) {
+        const lastErr = (deadTasks[0] && deadTasks[0].last_error) || '';
+        const safeErr = window.escapeHtml ? window.escapeHtml(lastErr) : lastErr;
         html += `
             <div class="popover-status-box warning">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                     <span class="status-indicator-text warning">
                         ⚠️ 存在 ${deadTasks.length} 项分发异常
                     </span>
-                    <a href="#/tasks" class="popover-heal-link" onclick="window.toggleDispatchPopover(false); if(typeof window.showView==='function') window.showView('tasks', 'deadletter');">
-                        一键自愈 ↗
-                    </a>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="popover-retry-btn" id="btn-popover-retry-all" onclick="window.triggerPopoverRetryAll(this)" title="立即将异常任务重新排入分发管线">
+                            <span>🔄</span><span>一键重试</span>
+                        </button>
+                        <a href="#/tasks" class="popover-heal-link" onclick="window.toggleDispatchPopover(false); if(typeof window.showView==='function') window.showView('tasks', 'deadletter');" title="进入任务大厅死信队列">
+                            详情 ↗
+                        </a>
+                    </div>
                 </div>
                 <div class="popover-status-sub" style="margin-top: 4px;">
-                    最近错误：${window.escapeHtml ? window.escapeHtml(deadTasks[0].last_error || '') : deadTasks[0].last_error}
+                    最近错误：${safeErr}
                 </div>
             </div>
         `;
@@ -167,11 +215,16 @@ window.renderPopoverContent = function (data) {
             const relPath = window.escapeHtml ? window.escapeHtml(rec.rel_path) : rec.rel_path;
             const targetId = window.escapeHtml ? window.escapeHtml(rec.target_id) : rec.target_id;
             const langCode = window.escapeHtml ? window.escapeHtml(rec.lang_code || 'all') : (rec.lang_code || 'all');
+            const timeText = window.formatDispatchTime ? window.formatDispatchTime(rec.updated_at) : (rec.updated_at || '');
+            const fullTime = window.formatDispatchFullTime ? window.formatDispatchFullTime(rec.updated_at) : (rec.updated_at || '');
             html += `
                 <div class="popover-record-item">
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px;">
-                        <div class="popover-record-title">${relPath}</div>
-                        <div class="popover-record-sub">${targetId} · ${langCode}</div>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 270px; flex: 1; min-width: 0;">
+                        <div class="popover-record-title" title="${relPath}">${relPath}</div>
+                        <div class="popover-record-sub">
+                            <span>${targetId} · ${langCode}</span>
+                            ${timeText ? `<span class="popover-record-time" title="${fullTime}"> · 🕒 ${timeText}</span>` : ''}
+                        </div>
                     </div>
                     <div>
                         ${rec.remote_url ? `
@@ -191,3 +244,39 @@ window.renderPopoverContent = function (data) {
     html += '</div>';
     body.innerHTML = html;
 };
+
+/**
+ * 浮层内直接就地一键重试全部失败/异常任务
+ */
+window.triggerPopoverRetryAll = async function (btn) {
+    if (typeof apiFetch !== 'function') return;
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span><span>正在重试...</span>';
+    }
+    try {
+        const res = await apiFetch('/api/dispatch/deadletter/retry', {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+        if (typeof showToast === 'function') {
+            showToast((res && res.message) || '已触发后台自愈重试管线', 'success');
+        }
+        if (typeof window.refreshDispatchIndicator === 'function') {
+            await window.refreshDispatchIndicator();
+        }
+        if (typeof window.loadDispatchCenter === 'function' && window._currentView === 'tasks') {
+            window.loadDispatchCenter('deadletter');
+        }
+    } catch (e) {
+        if (typeof showToast === 'function') {
+            showToast('重试请求失败: ' + (e ? e.message : e), 'error');
+        }
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+};
+

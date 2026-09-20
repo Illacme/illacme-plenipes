@@ -50,25 +50,20 @@ window.renderModesCategory = () => {
             ] 
         }
     ];
-    
-    // 🚀 [V74.96] 置顶机制：将当前激活的出版模式移动到模式列表最顶部显示
-    const activeIndex = modeDefinitions.findIndex(m => m.id === currentMode);
-    if (activeIndex > 0) {
-        const [activeMode] = modeDefinitions.splice(activeIndex, 1);
-        modeDefinitions.unshift(activeMode);
-    }
+
+    const currentModeDef = modeDefinitions.find(m => m.id === currentMode) || modeDefinitions[2];
 
     return `
         <div class="full-width fade-in">
-            <!-- 📋 首屏核心业务：出版模式3列横向并排对比矩阵 -->
-            <div class="modes-grid">
+            <!-- 📋 首屏核心业务：出版模式3列横向并排对比矩阵 (位置绝对稳定，空间记忆永不跳跃) -->
+            <div class="modes-grid" style="margin-top: 2px;">
                 ${modeDefinitions.map(m => {
                     const isActive = m.id === currentMode;
                     const isDisabled = (m.id !== 'basic' && !enableAi);
                     const disabledReason = (m.id !== 'basic' && !enableAi) ? '🔒 未开启 AI 算力总控' : '';
 
                     return `<div class="identity-card mode-card ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" style="position: relative; ${isDisabled ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : ''}" onclick="${isDisabled ? '' : `switchPublishingMode('${m.id}')`}">
-                            ${isActive ? '<div class="badge active" style="position: absolute; top: 18px; right: 18px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; padding: 3px 8px; background: rgba(0, 242, 255, 0.15); color: var(--accent-secondary); border: 1px solid rgba(0, 242, 255, 0.35); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);">ACTIVE</div>' : ''}
+                            ${isActive ? '<div class="mode-active-ribbon" style="position: absolute; top: 18px; right: 18px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; font-weight: 800; font-size: 0.68rem; padding: 4px 10px; border-radius: 6px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45); display: flex; align-items: center; gap: 5px; letter-spacing: 0.3px; backdrop-filter: blur(8px);"><span>👑</span> <span>当前生效模式</span></div>' : ''}
                             ${isDisabled ? `<div class="badge error" style="position: absolute; top: 18px; right: 18px; background: rgba(255, 68, 68, 0.15); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); font-size: 0.62rem; padding: 3px 6px; border-radius: 6px;">${disabledReason}</div>` : ''}
                             <div class="card-header">
                                 <div class="card-icon">${m.icon}</div>
@@ -140,6 +135,36 @@ window.renderLayoutCategory = () => {
             const descEl = document.getElementById('layout-sub-tab-desc');
             if (descEl) descEl.innerHTML = layoutSubDescs[subTab] || '';
 
+            // 🎯 [V82.0] 同排右对齐状态指示微标：利用 Tab 栏右侧空白，完全 0 额外垂直占高
+            window.updateLayoutStatusBadge = (targetSub) => {
+                const badgeEl = document.getElementById('layout-header-status-badge');
+                if (!badgeEl) return;
+                const sub = targetSub || window.currentActiveSettingsSubCat;
+                if (sub === 'imprints') {
+                    const activeId = window.settingsData?._active_imprint;
+                    const imprints = window.settingsData?._imprints || [];
+                    const cur = imprints.find(i => i.id === activeId);
+                    const imprintName = cur ? (cur.name || cur.id) : (activeId || '默认品牌');
+                    badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>🚩 当前品牌：</span><b style="color: var(--text-bright); font-weight: 700;">${imprintName}</b></div>`;
+                } else if (sub === 'themes') {
+                    const activeTheme = window.settingsData?.active_theme || 'default';
+                    const themeName = typeof window.getThemeDisplayName === 'function' ? window.getThemeDisplayName(activeTheme) : activeTheme;
+                    badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>👑 当前主题：</span><b style="color: var(--text-bright); font-weight: 700;">${themeName}</b></div>`;
+                } else if (sub === 'modes') {
+                    const currentMode = window.settingsData?.governance?.publishing_mode || 'basic';
+                    const modeMap = { global: '🌍 全球多语言分发', enhanced: '🛰️ 智能母语增强', basic: '📜 基础物理出版' };
+                    badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>👑 当前模式：</span><b style="color: var(--text-bright); font-weight: 700;">${modeMap[currentMode] || '📜 基础物理出版'}</b></div>`;
+                } else if (sub === 'image_policy') {
+                    const policy = window.settingsData?.image_policy || {};
+                    const stratId = policy.default_strategy || 'auto';
+                    const stratNames = { auto: '⚡ 智能阶梯自愈', og_card: '💻 动态 OG 技术卡片', brand_presets: '🎨 品牌母本图库轮巡', minimal_badge: '🏷️ 极简首字文字徽章', unsplash: '📷 Unsplash 免版权摄影', ai_generator: '🔮 AI 智能文生图' };
+                    badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>🖼️ 当前策略：</span><b style="color: var(--text-bright); font-weight: 700;">${stratNames[stratId] || stratId}</b></div>`;
+                } else {
+                    badgeEl.innerHTML = '';
+                }
+            };
+            window.updateLayoutStatusBadge(subTab);
+
             // 渲染对应的子页面
             const panelEl = document.getElementById(`layout-panel-${subTab}`);
             if (panelEl) {
@@ -160,22 +185,26 @@ window.renderLayoutCategory = () => {
     }, 20);
 
     return `
-        <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
+        <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; padding: 12px 18px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🎨 品牌装帧与模式</h2>
+                    <h2 style="margin: 0; font-size: 1.18rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🎨 品牌装帧与模式</h2>
                 </div>
             </div>
 
-            <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; flex-wrap: wrap;">
-                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 品牌管理</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎨 装帧主题</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 出版模式</button>
-                <button type="button" class="sub-tab-btn ${currentSub === 'image_policy' ? 'active' : ''}" onclick="window.switchLayoutSubTab('image_policy', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🖼️ 图像策略</button>
+            <div class="sub-tab-navigation-bar" id="layout-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 4px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; flex-wrap: wrap;">
+                <button type="button" class="sub-tab-btn ${currentSub === 'imprints' ? 'active' : ''}" onclick="window.switchLayoutSubTab('imprints', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🚩 品牌管理</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'themes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('themes', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🎨 装帧主题</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'modes' ? 'active' : ''}" onclick="window.switchLayoutSubTab('modes', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 出版模式</button>
+                <button type="button" class="sub-tab-btn ${currentSub === 'image_policy' ? 'active' : ''}" onclick="window.switchLayoutSubTab('image_policy', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🖼️ 图像策略</button>
             </div>
 
-            <div id="layout-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
-                ${layoutSubDescs[currentSub] || ''}
+            <!-- 💡 功能说明在左，当前激活模式在右 (左右对齐，认知顺畅，0 额外垂直占高) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 4px; min-height: 24px; flex-wrap: wrap;">
+                <div id="layout-sub-tab-desc" style="font-size: 0.8rem; color: var(--text-muted); flex: 1; min-width: 240px;">
+                    ${layoutSubDescs[currentSub] || ''}
+                </div>
+                <div id="layout-header-status-badge" style="display: flex; align-items: center; flex-shrink: 0;"></div>
             </div>
         </div>
 

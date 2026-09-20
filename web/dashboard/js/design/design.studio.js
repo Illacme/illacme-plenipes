@@ -46,7 +46,7 @@
         const isFromSyndicate = window._designTargetDoc.fromSyndicate;
         slot.style.display = 'block';
         if (vH) vH.style.marginBottom = '0px'; if (vD) vD.style.gap = '12px';
-        slot.innerHTML = `<div style="background:linear-gradient(90deg,rgba(0,242,254,0.12) 0%,rgba(99,102,241,0.08) 100%);border:1px solid rgba(0,242,254,0.35);border-radius:6px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;box-shadow:0 4px 15px rgba(0,0,0,0.25);"><div style="display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00f2fe;box-shadow:0 0 8px #00f2fe;flex-shrink:0;"></span><span style="color:#00f2fe;font-weight:700;white-space:nowrap;">🎯 正在为文稿定制封面：</span><span style="color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">《${window._designTargetDoc.title || window._designTargetDoc.relPath}》</span><span style="color:var(--text-dim);font-size:0.68rem;white-space:nowrap;">(${window._designTargetDoc.relPath})</span></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">${isFromSyndicate ? `<button type="button" class="mini-btn glow-btn" style="padding:2px 8px;font-size:0.68rem;font-weight:600;color:#00f2fe;border:1px solid rgba(0,242,254,0.4);background:rgba(0,242,254,0.15);border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:3px;" onclick="window.returnToSyndicateFromStudio()" title="直接返回社媒分发抽屉">↩️ 返回分发</button>` : ''}<button type="button" class="mini-btn" style="padding:2px 8px;font-size:0.68rem;color:var(--text-dim);border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);border-radius:4px;cursor:pointer;" onclick="window.clearStudioTargetDoc()" title="断开关联，切换为全局自由生图模式">取消关联</button></div></div>`;
+        slot.innerHTML = `<div class="studio-target-banner" style="border-radius:6px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;"><div style="display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0;"><span class="banner-pulse-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></span><span class="banner-label" style="font-weight:700;white-space:nowrap;">🎯 正在为文稿定制封面：</span><span class="banner-title" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">《${window._designTargetDoc.title || window._designTargetDoc.relPath}》</span><span class="banner-path" style="font-size:0.68rem;white-space:nowrap;">(${window._designTargetDoc.relPath})</span></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">${isFromSyndicate ? `<button type="button" class="mini-btn glow-btn banner-btn-return" style="padding:2px 8px;font-size:0.68rem;font-weight:600;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:3px;" onclick="window.returnToSyndicateFromStudio()" title="直接返回社媒分发抽屉">↩️ 返回分发</button>` : ''}<button type="button" class="mini-btn banner-btn-cancel" style="padding:2px 8px;font-size:0.68rem;border-radius:4px;cursor:pointer;" onclick="window.clearStudioTargetDoc()" title="断开关联，切换为全局自由生图模式">取消关联</button></div></div>`;
     };
 
     window.buildDesignWorkspaceHtml = function () {
@@ -72,7 +72,7 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.74rem; color: var(--text-dim);">图源与生成引擎</label>
-                        <select id="studio-provider-select" style="width: 100%; padding: 6px 8px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.8rem;">
+                        <select id="studio-provider-select" class="studio-form-control" style="width: 100%; padding: 6px 8px; border-radius: 6px; font-size: 0.8rem;">
                             ${pOptions || '<option value="local_og">🎨 极客排版 · 本地 OG 卡片</option><option value="unsplash">📸 Unsplash 免鉴权商业图库</option>'}
                         </select>
                     </div>
@@ -85,7 +85,7 @@
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label style="font-size: 0.74rem; color: var(--text-dim);">生图提示词 (Prompt)</label>
-                            <button type="button" class="mini-btn" id="studio-refine-prompt-btn" style="font-size: 0.65rem; padding: 2px 8px; color:#00f2fe; border-color:rgba(0,242,254,0.3);" onclick="window.polishStudioPrompt(this)">🪄 意境提炼</button>
+                            <button type="button" class="mini-btn" id="studio-refine-prompt-btn" style="font-size: 0.65rem; padding: 2px 8px;" onclick="window.polishStudioPrompt(this)">🪄 意境提炼</button>
                         </div>
                         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                             ${window._designTargetDoc ? `<button type="button" class="mini-btn glow-btn" style="font-size:0.65rem; padding:1px 6px; color:#000; background:#00f2fe; border:none; font-weight:700;" onclick="window.fillTargetDocPrompt()" title="提取文章标题为提示词">💡 填入标题</button>` : ''}
@@ -96,7 +96,7 @@
                             <button type="button" class="mini-btn" style="font-size:0.65rem; padding:1px 5px;" onclick="window.insertStudioPreset('Cinematic 35mm film photography, natural grain, dramatic moody lighting')">🎞️ 胶片</button>
                             <button type="button" class="mini-btn" style="font-size:0.65rem; padding:1px 5px;" onclick="window.insertStudioPreset('Swiss style graphic design, bold typography, flat vector illustration')">📐 扁平</button>
                         </div>
-                        <textarea id="studio-prompt-input" placeholder="输入意境描述，点击上方风格标签追加词缀，或点击「🪄 意境提炼」自动扩写商业级英文 Prompt..." style="width: 100%; height: 78px; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.8rem; resize: vertical; box-sizing: border-box;"></textarea>
+                        <textarea id="studio-prompt-input" class="studio-form-control" placeholder="输入意境描述，点击上方风格标签追加词缀，或点击「🪄 意境提炼」自动扩写商业级英文 Prompt..." style="width: 100%; height: 78px; padding: 8px; border-radius: 6px; font-size: 0.8rem; resize: vertical; box-sizing: border-box;"></textarea>
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:5px; margin-top:4px;">
@@ -262,7 +262,7 @@
             return `
                     <div class="glass-panel provider-card" data-cat="${p.category}" style="padding:16px; border-radius:10px; display:flex; flex-direction:column; gap:10px; border:1px solid rgba(255,255,255,0.08);">
                         <div style="display:flex; align-items:center; justify-content:space-between;">
-                            <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#fff; font-size:0.9rem;"><span>${p.icon}</span><span>${p.name}</span></div>
+                            <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--text-bright); font-size:0.9rem;"><span>${p.icon}</span><span>${p.name}</span></div>
                             <span style="font-size:0.65rem; color:${b[0]}; background:${b[1]}; padding:2px 6px; border-radius:4px; border:1px solid ${b[2]};">${b[3]}</span>
                         </div>
                         ${p.tag ? `<div style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.08); padding:2px 6px; border-radius:4px; width:fit-content; border:1px solid rgba(56,189,248,0.2);">${p.tag}</div>` : ''}

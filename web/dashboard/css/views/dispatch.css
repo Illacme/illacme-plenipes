@@ -7,14 +7,14 @@
 .dispatch-indicator-badge {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 13px;
+    gap: 6px;
+    padding: 5px 10px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
+    border-radius: 16px;
     cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.76rem;
+    font-weight: 500;
     color: var(--text-bright);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -30,8 +30,8 @@
 }
 
 .dispatch-indicator-badge .indicator-pill {
-    font-size: 0.72rem;
-    padding: 1px 7px;
+    font-size: 0.68rem;
+    padding: 1px 6px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.15);
     color: var(--text-normal);
@@ -43,7 +43,7 @@
     background: var(--neon-cyan-12);
     border-color: var(--neon-cyan-35);
     color: var(--neon-cyan);
-    box-shadow: 0 0 14px var(--neon-cyan-20);
+    box-shadow: 0 0 10px var(--neon-cyan-20);
     animation: dispatchPulse 2s infinite ease-in-out;
 }
 
@@ -54,14 +54,14 @@
 
 /* 状态 B：存在失败死信待修复 */
 .dispatch-indicator-badge.is-warning {
-    background: rgba(var(--neon-amber-rgb), 0.12);
-    border-color: rgba(var(--neon-amber-rgb), 0.4);
+    background: rgba(var(--neon-amber-rgb), 0.08);
+    border-color: rgba(var(--neon-amber-rgb), 0.35);
     color: var(--neon-amber);
-    box-shadow: 0 0 12px rgba(var(--neon-amber-rgb), 0.15);
+    box-shadow: 0 0 6px rgba(var(--neon-amber-rgb), 0.12);
 }
 
 .dispatch-indicator-badge.is-warning .indicator-pill {
-    background: rgba(var(--neon-amber-rgb), 0.3);
+    background: rgba(var(--neon-amber-rgb), 0.25);
     color: var(--text-bright);
 }
 
@@ -242,6 +242,12 @@
     margin-top: 2px;
 }
 
+.popover-record-time {
+    color: var(--text-muted);
+    font-size: 0.70rem;
+    opacity: 0.85;
+}
+
 .magic-link-mini {
     color: var(--neon-cyan);
     background: var(--neon-cyan-10);
@@ -274,6 +280,32 @@
 
 .popover-heal-link:hover {
     text-decoration: underline;
+}
+
+.popover-retry-btn {
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(var(--neon-amber-rgb), 0.16);
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.35);
+    color: var(--neon-amber);
+    transition: all 0.2s ease;
+}
+
+.popover-retry-btn:hover:not(:disabled) {
+    background: rgba(var(--neon-amber-rgb), 0.28);
+    border-color: rgba(var(--neon-amber-rgb), 0.6);
+    color: var(--text-bright);
+}
+
+.popover-retry-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .popover-footer {

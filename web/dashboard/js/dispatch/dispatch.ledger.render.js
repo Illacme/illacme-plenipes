@@ -44,7 +44,9 @@ window.renderDispatchLedger = function (records) {
         const safePath = window.escapeHtml ? window.escapeHtml(rec.rel_path) : rec.rel_path;
         const targetId = window.escapeHtml ? window.escapeHtml(rec.target_id) : rec.target_id;
         const langCode = window.escapeHtml ? window.escapeHtml(rec.lang_code || 'zh-CN') : (rec.lang_code || 'zh-CN');
-        const timeStr = window.escapeHtml ? window.escapeHtml(rec.updated_at || '刚刚') : (rec.updated_at || '刚刚');
+        const rawTime = rec.updated_at;
+        const timeText = window.formatDispatchTime ? window.formatDispatchTime(rawTime) : (rawTime || '刚刚');
+        const fullTime = window.formatDispatchFullTime ? window.formatDispatchFullTime(rawTime) : (rawTime || '刚刚');
 
         html += `
             <tr class="ledger-row" data-path="${safePath.toLowerCase()}" data-target="${targetId.toLowerCase()}">
@@ -65,8 +67,8 @@ window.renderDispatchLedger = function (records) {
                     </span>
                 </td>
                 <td>
-                    <span style="font-size: 0.78rem; color: var(--text-muted, #9ca3af);">
-                        ${timeStr}
+                    <span style="font-size: 0.78rem; color: var(--text-muted, #9ca3af);" title="${fullTime}">
+                        ${timeText || '刚刚'}
                     </span>
                 </td>
                 <td style="text-align: right;">

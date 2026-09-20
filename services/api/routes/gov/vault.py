@@ -37,10 +37,17 @@ async def list_vault_manuscripts():
             translations = info.get("translations") or {}
             zh_trans = translations.get("zh") or {}
             
+            base_name = os.path.splitext(os.path.basename(rel_path))[0]
+            real_title = info.get("title")
+            if (not real_title or real_title == base_name) and seo_data.get("title"):
+                real_title = seo_data.get("title")
+            if not real_title:
+                real_title = base_name
+
             vault_list.append({
                 "id": rel_path,
                 "path": rel_path,
-                "title": info.get("title") or os.path.basename(rel_path),
+                "title": real_title,
                 "slug": info.get("slug") or "pending",
                 "lang": info.get("source_lang") or zh_trans.get("lang") or "zh",
                 "word_count": seo_data.get("word_count") or 0,

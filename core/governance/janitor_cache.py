@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Illacme-plenipes Core - Janitor Engine (Cache & Dist Purge Shard)
+模块职责：清道夫分片 —— 负责算力缓存 (Block Cache) 的 LRU/TTL 清理与分发目录 (Dist) 物理自愈清理。
+🛡️ [SOP-01 & SOP-02]：从主 janitor.py 抽离物理运维逻辑，满足 ≤300 行架构契约。
+"""
+
+import os
+import time
+from core.utils.tracing import tlog
+
+
+class JanitorCacheOpsMixin:
+    """清道夫缓存与产物物理净化 Mixin 扩展"""
+
+    def purge_dist(self, is_dry_run=False):
+        """🚀 [V35.2] 物理自愈清理：强力粉碎 dist 目录中过时的影子资产"""
+        target_root = self.paths.get('site_dir') or self.paths.get('target_base')
+        if not target_root or not os.path.exists(target_root):
+            return
+
+        tlog.info(f"🧹 [物理自愈] 正在扫描并净化分发疆域: {target_root}")
+        
+        # 1. 收集所有待比对的物理资产路径
+        all_files = []
+        for root, _, files in os.walk(target_root):
+            for f in files:
+                if f.startswith('.'):
+                    continue
+                all_files.append(os.path.join(root, f))
+
+        total_files = len(all_files)
+        if total_files == 0:
+            tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            return
+
+        to_remove = []
+        # 2. 预先做快速比对，找出需要清理的文件列表
+        for f_abs in all_files:
+            norm_path = os.path.realpath(f_abs).lower()
+            is_fresh = norm_path in self.fresh_paths
+            is_amnesty = any(term in norm_path for term in [
+                '/static/', '/assets/', 'favicon', 'search_index', 'link_graph',
+                'index.html', 'index.htm', '404.html', 'sitemap.xml', 'robots.txt', 'graph.json'
+            ])
+            
+            if not is_fresh and not is_amnesty:
+                to_remove.append(f_abs)
+
+        total_to_remove = len(to_remove)
+        if total_to_remove == 0:
+            tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            return
+
+        # 3. 逐个执行删除，以清晰的执行进度百分比形式进行打印
+        tlog.info(f"🧹 [物理自愈] 发现 {total_to_remove} 个过时资产需要清理，正在执行净化...")
+        
+        removed_count = 0
+        log_interval = max(1, total_to_remove // 10)
+        
+        for idx, f_abs in enumerate(to_remove):
+            if is_dry_run:
+                if total_to_remove <= 5:
+                    tlog.info(f"    [模拟清理] 过时影子文件: {f_abs}")
+            else:
+                try:
+                    os.remove(f_abs)
+                    removed_count += 1
+                except Exception:
+                    pass
+
+            # 打印执行进度
+            processed = idx + 1
+            if processed % log_interval == 0 or processed == total_to_remove:
+                percent = int(processed * 100 / total_to_remove)
+                tlog.info(f"🧹 [物理自愈] 净化进度: {percent}% ({processed}/{total_to_remove})")
+
+        if not is_dry_run:
+            if removed_count > 0:
+                tlog.info(f"✨ [物理自愈] 已成功清理 {removed_count} 个过时资产。")
+                self._gc_empty_directories(target_root, is_dry_run)
+            else:
+                tlog.info("✨ [物理自愈] 净化完成，未删除任何资产。")
+        else:
+            tlog.info(f"✨ [物理自愈] [模拟清理] 拟清理 {total_to_remove} 个过时资产。")
+
+    def gc_block_cache(self, is_dry_run=False):
+        """🧹 清算大模型段落缓存目录，执行过期与 LRU 清理"""
+        config = self.engine.config if self.engine else self.sys_cfg
+        if not config:
+            return
+            
+        enable_eviction = getattr(config, "enable_cache_eviction", False)
+        if not enable_eviction:
+            return
+            
+        retention_days = getattr(config, "cache_eviction_days", 30)
+        max_size_mb = getattr(config, "cache_max_size_mb", 512)
+        
+        cache_root = getattr(self.engine, "block_cache", None)
+        if not cache_root or not hasattr(cache_root, "root"):
+            return
+        root_dir = cache_root.root
+        if not os.path.exists(root_dir):
+            return
+            
+        tlog.info(f"🧹 [清道夫] 正在审计算力缓存目录: {root_dir} (保留天数: {retention_days}天 | 大小上限: {max_size_mb}MB)")
+        
+        now = time.time()
+        eviction_time_threshold = now - (retention_days * 86400)
+        
+        files_info = []
+        total_size_bytes = 0
+        
+        for root, _, files in os.walk(root_dir):
+            for f in files:
+                if not f.endswith(".txt"):
+                    continue
+                f_abs = os.path.join(root, f)
+                try:
+                    stat = os.stat(f_abs)
+                    size = stat.st_size
+                    mtime = stat.st_mtime
+                    files_info.append({"path": f_abs, "size": size, "mtime": mtime})
+                    total_size_bytes += size
+                except Exception:
+                    pass
+                    
+        # 1. 过期时效物理清理
+        expired_count = 0
+        expired_bytes = 0
+        remaining_files = []
+        
+        for item in files_info:
+            if item["mtime"] < eviction_time_threshold:
+                if not is_dry_run:
+                    try:
+                        os.remove(item["path"])
+                        expired_count += 1
+                        expired_bytes += item["size"]
+                    except Exception:
+                        pass
+                else:
+                    expired_count += 1
+                    expired_bytes += item["size"]
+            else:
+                remaining_files.append(item)
+                
+        if expired_count > 0:
+            tlog.info(f"✨ [清道夫] 清理了 {expired_count} 个过期段落缓存，释放空间: {expired_bytes / 1024 / 1024:.2f} MB")
+            
+        # 2. 空间上限 LRU 淘汰清理
+        max_size_bytes = max_size_mb * 1024 * 1024
+        current_size_bytes = total_size_bytes - expired_bytes
+        
+        if current_size_bytes > max_size_bytes:
+            remaining_files.sort(key=lambda x: x["mtime"])  # 最旧的先淘汰
+            
+            lru_count = 0
+            lru_bytes = 0
+            for item in remaining_files:
+                if current_size_bytes <= max_size_bytes:
+                    break
+                if not is_dry_run:
+                    try:
+                        os.remove(item["path"])
+                        lru_count += 1
+                        lru_bytes += item["size"]
+                        current_size_bytes -= item["size"]
+                    except Exception:
+                        pass
+                else:
+                    lru_count += 1
+                    lru_bytes += item["size"]
+                    current_size_bytes -= item["size"]
+                    
+            if lru_count > 0:
+                tlog.info(f"✨ [清道夫] 已超出大小上限，触发 LRU 淘汰清理了 {lru_count} 个段落缓存，释放空间: {lru_bytes / 1024 / 1024:.2f} MB")
+                
+        # 3. 清理空目录
+        self._gc_empty_directories(root_dir, is_dry_run)

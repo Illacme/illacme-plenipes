@@ -110,6 +110,9 @@ window.generateAndSyncSlug = function (title) {
                 if (slugEl && !window.editorSlugUserEdited) {
                     slugEl.value = res.slug;
                     window.triggerAutoSave();
+                    if (typeof window.updateEditorUrlPreview === 'function') {
+                        window.updateEditorUrlPreview();
+                    }
                 }
             }
         } catch (err) {

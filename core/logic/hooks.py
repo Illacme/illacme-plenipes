@@ -7,6 +7,7 @@ Illacme-plenipes Core - Theme Hook Manager
 """
 
 import os
+import sys
 import importlib.util
 import logging
 
@@ -30,8 +31,19 @@ class ThemeHookManager:
             return None
 
         try:
-            spec = importlib.util.spec_from_file_location("theme_hooks", self.hooks_file)
+            theme_name = getattr(self.engine, 'active_theme', 'default') or 'default'
+            module_name = f"themes.{theme_name}.hooks"
+            spec = importlib.util.spec_from_file_location(
+                module_name,
+                self.hooks_file,
+                submodule_search_locations=[self.theme_path]
+            )
+            if not spec or not spec.loader:
+                return None
+
             module = importlib.util.module_from_spec(spec)
+            module.__package__ = f"themes.{theme_name}"
+            sys.modules[module_name] = module
             spec.loader.exec_module(module)
             self._hook_module = module
             tlog.debug(f"🪝 [钩子引擎] 已成功装载主题钩子: {self.hooks_file}")

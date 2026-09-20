@@ -35,10 +35,10 @@
             const modalId = 'sovereign-confirm-modal-' + Date.now();
             const backdrop = document.createElement('div');
             backdrop.id = modalId;
+            backdrop.className = 'sovereign-confirm-backdrop';
             backdrop.style.cssText = `
                 position: fixed;
                 top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0, 0, 0, 0.82);
                 backdrop-filter: blur(16px);
                 -webkit-backdrop-filter: blur(16px);
                 z-index: 999999;
@@ -48,15 +48,15 @@
             `;
 
             backdrop.innerHTML = `
-                <div class="glass-panel" style="width: 440px; max-width: 90vw; padding: 24px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(18, 19, 30, 0.96); box-shadow: 0 20px 60px rgba(0,0,0,0.9); display: flex; flex-direction: column; gap: 16px;">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <div class="glass-panel sovereign-confirm-card" style="width: 440px; max-width: 90vw; padding: 24px; border-radius: 14px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 16px;">
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-bright); display: flex; align-items: center; gap: 8px;">
                         ${title}
                     </div>
-                    <div style="font-size: 0.88rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6;">
+                    <div style="font-size: 0.88rem; color: var(--text-dim); line-height: 1.6;">
                         ${text}
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-                        <button type="button" id="${modalId}-cancel" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #ccc; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;">${cancelText}</button>
+                        <button type="button" id="${modalId}-cancel" class="secondary-btn" style="padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;">${cancelText}</button>
                         <button type="button" id="${modalId}-confirm" style="background: ${confirmColor}; border: none; color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px ${confirmColor}55;">${confirmText}</button>
                     </div>
                 </div>

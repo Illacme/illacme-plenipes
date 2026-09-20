@@ -21,85 +21,12 @@ from .config_models import Configuration
 from core.governance.secret_manager import secrets
 from core.governance.imprint_manager import im
 
-def deep_update(d: Dict[str, Any], u: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    递归深度更新字典。
-
-    :param d: 待更新的字典
-    :param u: 包含更新内容的字典
-    :return: 更新后的字典
-    """
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = deep_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
-def resolve_secrets(data: Any) -> Any:
-    """
-    递归解析加密的秘密配置字段。
-
-    :param data: 输入的配置数据
-    :return: 解析后的数据
-    """
-    if isinstance(data, str) and data.startswith("enc:"):
-        return secrets.decrypt(data)
-    elif isinstance(data, dict):
-        for k, v in data.items():
-            data[k] = resolve_secrets(v)
-    elif isinstance(data, list):
-        return [resolve_secrets(item) for item in data]
-    return data
-
-def resolve_env_vars(data: Any) -> Any:
-    """
-    递归解析环境变量占位符。
-
-    :param data: 输入的配置数据
-    :return: 替换环境变量后的数据
-    """
-    if isinstance(data, str):
-        pattern = re.compile(r'\$\{(.+?)\}')
-        def replace(match):
-            var_name = match.group(1)
-            return os.getenv(var_name, match.group(0))
-        return pattern.sub(replace, data)
-    elif isinstance(data, dict):
-        for k, v in data.items():
-            data[k] = resolve_env_vars(v)
-    elif isinstance(data, list):
-        return [resolve_env_vars(item) for item in data]
-    return data
-
-def resolve_includes(data: Any, base_dir: str) -> Any:
-    """
-    递归解析 YAML 包含关系。
-
-    :param data: 输入的配置数据
-    :param base_dir: 基准目录
-    :return: 合并包含内容后的数据
-    """
-    if isinstance(data, dict):
-        if "include" in data:
-            include_target = data.pop("include")
-            targets = [include_target] if isinstance(include_target, str) else include_target
-            if isinstance(targets, list):
-                for t in targets:
-                    abs_include = os.path.join(base_dir, t)
-                    if os.path.exists(abs_include):
-                        try:
-                            with open(abs_include, 'r', encoding='utf-8') as f:
-                                included_data = yaml.safe_load(f) or {}
-                            included_data = resolve_includes(included_data, os.path.dirname(abs_include))
-                            data = deep_update(included_data, data)
-                        except Exception as e:
-                            tlog.warning(f"⚠️ 配置文件包含失败 [{t}]: {e}")
-        for k, v in data.items():
-            data[k] = resolve_includes(v, base_dir)
-    elif isinstance(data, list):
-        return [resolve_includes(item, base_dir) for item in data]
-    return data
+from .assembler_resolvers import (
+    deep_update,
+    resolve_secrets,
+    resolve_env_vars,
+    resolve_includes
+)
 
 def load_and_merge(manager: Any) -> Dict[str, Any]:
     """
@@ -259,77 +186,6 @@ def load_and_merge(manager: Any) -> Dict[str, Any]:
             # 我们通过删除 Local 层可能存在的覆盖来实现
             pass # 已经在 deep_reload_imprint 中处理了物理层面的更新
 
-    # 🚀 [V75.7] 默认底座自愈：如果 default 品牌或全局底座缺失 vault_root，自动从现存品牌中探测继承
-    if not final_cfg.get('vault_root'):
-        found_vault = None
-        # 1. 尝试从全局引擎获取
-        try:
-            from core.runtime.engine_singleton import get_global_engine
-            engine = get_global_engine()
-            if engine and getattr(engine, 'config', None) and getattr(engine.config, 'vault_root', None):
-                found_vault = engine.config.vault_root
-        except Exception:
-            pass
-
-        # 2. 从 imprints 目录遍历有效品牌
-        if not found_vault and os.path.exists(IMPRINT_DIR):
-            for entry in os.scandir(IMPRINT_DIR):
-                if entry.is_dir():
-                    cfg_file = os.path.join(entry.path, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-                    if os.path.exists(cfg_file):
-                        try:
-                            with open(cfg_file, 'r', encoding='utf-8') as f:
-                                c = yaml.safe_load(f) or {}
-                                if isinstance(c, dict):
-                                    v = c.get('vault_root')
-                                    if v and os.path.exists(os.path.abspath(os.path.expanduser(v))):
-                                        found_vault = v
-                                        break
-                        except Exception:
-                            pass
-
-        # 3. 探查本地物理目录兜底 (如 ./vault)
-        if not found_vault:
-            fallback_dirs = ["vault", "docs", "manuscripts"]
-            for f_dir in fallback_dirs:
-                abs_f = os.path.abspath(f_dir)
-                if os.path.exists(abs_f):
-                    found_vault = abs_f
-                    break
-
-        if found_vault:
-            final_cfg['vault_root'] = found_vault
-            tlog.info(f"🩺 [金库自愈] 探测到全局/default 品牌未指定 vault_root，已自愈继承物理文库路径: {found_vault}")
-            
-            # 物理回写至 config.local.yaml 保障持久性
-            try:
-                if os.path.exists(CONFIG_LOCAL_NAME):
-                    with open(CONFIG_LOCAL_NAME, 'r', encoding='utf-8') as f:
-                        loc_data = yaml.safe_load(f) or {}
-                    if isinstance(loc_data, dict) and not loc_data.get('vault_root'):
-                        loc_data['vault_root'] = found_vault
-                        with open(CONFIG_LOCAL_NAME, 'w', encoding='utf-8') as f:
-                            yaml.safe_dump(loc_data, f, allow_unicode=True)
-                        tlog.debug(f"💾 [自愈固化] 已将自愈后的 vault_root 写入 {CONFIG_LOCAL_NAME}")
-            except Exception as w_err:
-                tlog.warning(f"⚠️ [自愈固化失败] {w_err}")
-
-    # 🚀 [V65.10] 主权自愈：如果路由矩阵缺失，启动智能探测
-    if not final_cfg.get('route_matrix') and final_cfg.get('vault_root'):
-        try:
-            new_matrix = im._probe_vault_structure(final_cfg['vault_root'])
-            final_cfg['route_matrix'] = new_matrix
-            tlog.info("🩺 [主权自愈] 探测到路由矩阵缺失，已根据金库结构自动生成映射。")
-            
-            # 🚀 [V65.11] 物理持久化回写：确保用户在 YAML 中可见
-            if active_id and active_id != "default":
-                target_path = os.path.join(IMPRINT_DIR, active_id, CONFIG_DIR, CONFIG_IMPRINT_NAME)
-                if os.path.exists(target_path):
-                    # 使用模型进行安全的持久化
-                    temp_model = Configuration(**final_cfg)
-                    temp_model.dump_to_disk(target_path)
-                    tlog.info(f"💾 [主权持久化] 已将自愈后的路由矩阵回写至: {target_path}")
-        except Exception as e:
-            tlog.debug(f"主权自愈持久化跳过: {e}")
-        
-    return final_cfg
+    # 5. 🚀 [V75.7 & V65.10] 默认底座与路由矩阵自愈
+    from .assembler_healer import heal_config
+    return heal_config(final_cfg, active_id)

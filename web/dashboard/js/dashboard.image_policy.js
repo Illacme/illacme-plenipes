@@ -26,7 +26,7 @@
             return `
                 <div class="strategy-option-card glass-panel ${isSelected ? 'active-strategy' : ''}" 
                      onclick="window.selectImageStrategy('${s.id}')"
-                     style="padding: 14px 16px; border-radius: 10px; border: 1px solid ${isSelected ? 'var(--accent-secondary, #00f2fe)' : 'var(--glass-border)'}; background: ${isSelected ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)'}; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px;">
+                     style="padding: 14px 16px; border-radius: 10px; border: ${isSelected ? '2px solid var(--accent-secondary, #00f2fe)' : '1px solid var(--glass-border)'}; background: ${isSelected ? 'rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.08)' : 'rgba(255, 255, 255, 0.02)'}; box-shadow: ${isSelected ? '0 0 0 3px var(--neon-cyan-20), 0 12px 30px var(--shadow-glow)' : 'none'}; cursor: pointer; transition: all 0.25s ease; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <span style="font-size: 0.95rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
                             <span>${s.icon}</span> ${s.name}
@@ -61,7 +61,7 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
                         <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
                             <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">默认画幅基准比例</label>
-                            <select id="select-cover-ratio" class="glass-input" style="padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid var(--glass-border);">
+                            <select id="select-cover-ratio" class="glass-input setting-input" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--glass-border);">
                                 <option value="16:9" ${currentRatio === '16:9' ? 'selected' : ''}>16:9 现代宽屏 (博客 / Dev.to / 知乎专栏)</option>
                                 <option value="2.35:1" ${currentRatio === '2.35:1' ? 'selected' : ''}>2.35:1 微信头条 (900x383 微信官方规范)</option>
                                 <option value="3:4" ${currentRatio === '3:4' ? 'selected' : ''}>3:4 移动海报 (小红书 / 竖屏图文卡片)</option>
@@ -70,7 +70,7 @@
                         </div>
                         <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
                             <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">品牌视觉水印</label>
-                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #fff; cursor: pointer; margin-top: 6px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-bright); cursor: pointer; margin-top: 6px;">
                                 <input type="checkbox" id="check-cover-watermark" ${enableWatermark ? 'checked' : ''} style="cursor: pointer;">
                                 <span>在自动生成的封面右下角叠加品牌专属主权徽标</span>
                             </label>
@@ -100,14 +100,22 @@
         cards.forEach(c => {
             if (c.getAttribute('onclick')?.includes(stratId)) {
                 c.classList.add('active-strategy');
-                c.style.borderColor = 'var(--accent-secondary, #00f2fe)';
-                c.style.background = 'rgba(0, 242, 255, 0.08)';
+                c.style.border = '2px solid var(--accent-secondary, #00f2fe)';
+                c.style.background = 'rgba(var(--accent-secondary-rgb, 0, 242, 255), 0.08)';
+                c.style.boxShadow = '0 0 0 3px var(--neon-cyan-20), 0 12px 30px var(--shadow-glow)';
             } else {
                 c.classList.remove('active-strategy');
-                c.style.borderColor = 'var(--glass-border)';
+                c.style.border = '1px solid var(--glass-border)';
                 c.style.background = 'rgba(255, 255, 255, 0.02)';
+                c.style.boxShadow = 'none';
             }
         });
+        if (!window.settingsData) window.settingsData = {};
+        if (!window.settingsData.image_policy) window.settingsData.image_policy = {};
+        window.settingsData.image_policy.default_strategy = stratId;
+        if (typeof window.updateLayoutStatusBadge === 'function') {
+            window.updateLayoutStatusBadge('image_policy');
+        }
     };
 
     window.saveImagePolicyConfig = async () => {

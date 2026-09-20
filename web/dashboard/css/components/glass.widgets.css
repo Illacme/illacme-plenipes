@@ -475,7 +475,7 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
 /* 🗺️ 路径拓扑实时演算沙盒 (Path Diff Simulator) */
 .path-simulator-box {
     margin-top: 8px; padding: 10px 14px;
-    background: rgba(0, 0, 0, 0.35); border-radius: 8px;
+    background: var(--white-05); border-radius: 8px;
     border: 1px solid rgba(var(--neon-cyan-rgb), 0.2);
     font-family: 'JetBrains Mono', monospace; font-size: 0.76rem;
     color: var(--text-dim); transition: all 0.3s ease;
@@ -519,6 +519,7 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     padding: 0 8px; cursor: pointer; transition: all 0.2s; font-size: 0.75rem;
     white-space: nowrap;
 }
+.vault-actions-grid .mini-action-btn { width: 32px; min-width: 32px; padding: 0; box-sizing: border-box; }
 .mini-action-btn:hover { background: var(--accent-primary); color: var(--color-white); border-color: var(--accent-primary); transform: scale(1.1); }
 .glow-btn { position: relative; overflow: hidden; }
 .glow-btn::after {
@@ -533,3 +534,79 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
 .t-value { font-size: 0.65rem; color: var(--color-white); font-family: var(--font-mono); font-weight: 700; }
 .audit-summary { font-size: 0.7rem; opacity: 0.6; font-style: italic; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status-indicator { font-size: 0.7rem; display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-white); }
+
+/* 📂 Vault More Actions Dropdown */
+.vault-action-wrapper { position: relative; display: inline-flex; align-items: center; }
+.vault-more-btn { font-size: 0.9rem; font-weight: 800; letter-spacing: 1px; }
+.vault-more-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 10100 !important;
+    min-width: 180px; background: rgba(13, 17, 28, 0.98); border: 1px solid var(--glass-border);
+    border-radius: 8px; box-shadow: 0 16px 36px var(--shadow-glow);
+    backdrop-filter: blur(20px); padding: 5px 0; display: none; flex-direction: column;
+}
+.vault-more-menu.show { display: flex; animation: fadeInMenu 0.15s ease-out; }
+.vault-more-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    font-size: 0.76rem; font-weight: 500; color: var(--text-bright); background: transparent;
+    border: none; width: 100%; text-align: left; cursor: pointer; transition: background 0.15s, color 0.15s;
+    box-sizing: border-box; white-space: nowrap;
+}
+.vault-more-item:hover { background: var(--white-08); color: var(--accent-primary); }
+.vault-more-item.danger { color: var(--neon-red); }
+.vault-more-item.danger:hover { background: var(--danger-hover-bg); color: var(--neon-red); }
+.vault-more-divider { height: 1px; background: var(--glass-border); margin: 4px 0; }
+.vault-more-menu.dropup { top: auto; bottom: calc(100% + 6px); box-shadow: 0 -12px 32px var(--shadow-glow); }
+.vault-more-menu.dropup.show { animation: fadeInUpMenu 0.15s ease-out; }
+@keyframes fadeInMenu { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInUpMenu { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 🌐 Global Nav I18N Modal & Popovers */
+.global-nav-i18n-modal {
+    background: rgba(var(--bg-modal-solid-rgb), 0.98);
+    border: 1px solid var(--neon-cyan-35);
+    box-shadow: 0 16px 48px var(--shadow-glow);
+}
+.global-icon-picker-popover {
+    background: rgba(var(--bg-modal-solid-rgb), 0.96);
+    border: 1px solid var(--neon-cyan-30);
+    box-shadow: 0 12px 36px var(--shadow-glow);
+}
+.custom-glass-dropdown {
+    background: rgba(var(--bg-dropdown-solid-rgb), 0.96);
+    border: 1px solid var(--neon-cyan-25);
+    box-shadow: 0 10px 30px var(--shadow-glow);
+}
+
+/* 🩺 Link Doctor & Health Card Component */
+.link-doctor-card {
+    background: rgba(var(--bg-sidebar-solid-rgb), 0.65);
+    border: 1px solid var(--neon-cyan-18);
+    box-shadow: 0 8px 32px var(--shadow-glow);
+}
+.link-doctor-stat-box {
+    background: var(--black-30);
+}
+.link-doctor-issue-item {
+    background: var(--black-30);
+}
+
+/* 🚀 Deploy Summary Card & Channel Items */
+.deploy-summary-card {
+    background: rgba(var(--bg-sidebar-solid-rgb), 0.82);
+    border: 1px solid var(--neon-cyan-40);
+    box-shadow: 0 8px 28px var(--shadow-glow);
+}
+.deploy-channel-item {
+    background: var(--white-03);
+}
+
+/* 🛡️ Sovereign Confirm Modal */
+.sovereign-confirm-backdrop {
+    background: var(--black-80);
+}
+.sovereign-confirm-card {
+    background: rgba(var(--bg-modal-solid-rgb), 0.96);
+    border: 1px solid var(--white-20);
+    box-shadow: 0 20px 60px var(--shadow-glow);
+}
+

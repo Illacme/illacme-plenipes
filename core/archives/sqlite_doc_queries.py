@@ -4,6 +4,7 @@
 职责：文档分页查询、过滤计数与局部元数据注入等高级查询操作。
 """
 import json
+import os
 
 
 class SQLiteDocQueryMixin:
@@ -68,26 +69,54 @@ class SQLiteDocQueryMixin:
             results.append(data)
         return results
 
-    def update_document_metadata(self, rel_path, metadata_updates):
+    @staticmethod
+    def is_slug_conflict(candidate_slug: str, current_path: str, conflict_path: str, dir_mode: str = "nested") -> bool:
+        """
+        判定两个文档是否构成真实的路由与 slug 冲突，深度结合治理中心【网址路径组织形态】(slug_dir_mode)。
+        1. 目录索引页豁免：对于 index / home / readme，不同父目录天然隔离，互不冲突；
+        2. nested (目录树复刻，默认)：最终 URL 包含各自目录层级，只有同父目录下相同 slug 才冲突；
+        3. prefix (智能前缀)：拼接父目录前缀后的完整 slug 相同才冲突；
+        4. flat (极简根目录)：所有普通文档平铺至根目录，跨目录同名普通 slug 构成物理覆盖冲突。
+        """
+        if not candidate_slug or not current_path or not conflict_path:
+            return False
+        
+        c_dir = os.path.dirname(current_path.replace("\\", "/")).strip("/").lower()
+        t_dir = os.path.dirname(conflict_path.replace("\\", "/")).strip("/").lower()
+        
+        # 1. 目录索引页豁免权 (无论哪种模式，频道首页与全站首页均被 RouteManager 语义收敛隔离)
+        if candidate_slug.lower() in ("index", "home", "readme"):
+            return c_dir == t_dir
+
+        # 2. 依据 slug_dir_mode 判定真实 URL 碰撞
+        mode = (dir_mode or "nested").lower()
+        if mode == "nested":
+            return c_dir == t_dir
+        elif mode == "prefix":
+            c_prefix = f"{c_dir.replace('/', '-')}-" if c_dir else ""
+            t_prefix = f"{t_dir.replace('/', '-')}-" if t_dir else ""
+            return f"{c_prefix}{candidate_slug.lower()}" == f"{t_prefix}{candidate_slug.lower()}"
+        else:
+            return True
+
+    def update_document_metadata(self, rel_path, metadata_updates, dir_mode: str = "nested"):
         """🚀 [V52.0] 局部元数据注入：仅更新 metadata_json 中的特定字段"""
         conn = self._get_conn()
         with conn:
             row = conn.execute("SELECT metadata_json FROM documents WHERE rel_path = ?", (rel_path,)).fetchone()
             if not row: return False
 
-            # 🛡️ [Slug 唯一性守卫] 如果本次更新包含 slug，先做全库冲突检测。
-            # slug 是路由层面的唯一标识符（直接映射为 URL 路径），
-            # 两个不同物理路径的文档若共享同一 slug，会导致静态站点路由冲突、
-            # SEO 索引混乱，以及译文缓存命中错误文档等严重问题。
+            # 🛡️ [Slug 唯一性守卫] 结合 slug_dir_mode 进行真实 URL 冲突检测
             if "slug" in metadata_updates:
                 new_slug = metadata_updates["slug"]
-                conflict_row = conn.execute(
+                conflict_rows = conn.execute(
                     "SELECT rel_path FROM documents WHERE slug = ? AND rel_path != ?",
                     (new_slug, rel_path)
-                ).fetchone()
-                if conflict_row:
-                    conflict_path = dict(conflict_row).get("rel_path", "?")
-                    return {"conflict": True, "slug": new_slug, "occupied_by": conflict_path}
+                ).fetchall()
+                for c_row in conflict_rows:
+                    conflict_path = dict(c_row).get("rel_path", "?")
+                    if self.is_slug_conflict(new_slug, rel_path, conflict_path, dir_mode=dir_mode):
+                        return {"conflict": True, "slug": new_slug, "occupied_by": conflict_path}
 
             existing_meta = json.loads(dict(row).get("metadata_json") or "{}")
             existing_meta.update(metadata_updates)

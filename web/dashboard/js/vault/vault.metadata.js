@@ -3,7 +3,7 @@
  */
 
 window.renderDynamicMetadata = (metadata) => {
-    const container = document.getElementById('dynamic-metadata-container');
+    const container = document.getElementById('dynamic-metadata-container') || document.getElementById('editor-dynamic-meta-container');
     if (!container) return;
     container.innerHTML = "";
 

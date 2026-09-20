@@ -26,8 +26,8 @@ window.ThemeHandlers = Object.assign(window.ThemeHandlers || {}, {
         const success = await window.ThemeAPI.switchTheme(themeId);
         
         if (success) {
-            // 重新渲染当前分类以更新 UI 状态
-            window._shouldScrollToTopAfterThemeSwitch = true;
+            // 重新渲染当前分类以更新 UI 状态 (保持用户原位视线，杜绝跳跃)
+            window._shouldScrollToTopAfterThemeSwitch = false;
             if (typeof window.showToast === 'function') window.showToast(`✨ 装帧主题已成功切换为 ${themeName}`, 'success');
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
@@ -73,7 +73,7 @@ window.ThemeHandlers = Object.assign(window.ThemeHandlers || {}, {
         if (success) {
             if (typeof addAudit === 'function') addAudit(`✅ [部署启用] 主题 '${themeName}' 已部署成功并启用。`, "success");
             if (typeof loadPlugins === 'function') await loadPlugins();
-            window._shouldScrollToTopAfterThemeSwitch = true;
+            window._shouldScrollToTopAfterThemeSwitch = false;
             if (typeof renderSettingsCategory === 'function') renderSettingsCategory('themes');
             
             // 🚀 [V80.3 Neon Breath Glow] 延迟触发霓虹呼吸闪烁高亮动效

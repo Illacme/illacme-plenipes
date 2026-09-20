@@ -124,33 +124,34 @@ window.loadVault = async (query = null, page = null) => {
             const coverThumb = m.cover
                 ? `<div class="skeleton-shimmer" style="width:38px; height:24px; border-radius:4px; overflow:hidden; border:1px solid rgba(0,242,254,0.3); background:#05070f; cursor:pointer; flex-shrink:0;" title="点击更换文章封面" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')"><img src="${m.cover}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" style="width:100%; height:100%; object-fit:cover; transition:transform 0.2s; display:block;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'" /></div>`
                 : `<div style="width:38px; height:24px; border-radius:4px; border:1px dashed rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:rgba(255,255,255,0.02); opacity:0.6; font-size:0.7rem;" title="未设封面，点击快速挑选或生成" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '')">🖼️+</div>`;
+            const displayTitle = (m.seo_data && m.seo_data.title && m.seo_data.title !== m.slug) ? m.seo_data.title : (m.title || m.rel_path);
+            const escapedDisplayTitle = displayTitle.replace(/'/g, "\\'");
             return `
             <tr>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                <td style="overflow:hidden;">
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
                         ${coverThumb}
-                        <div style="overflow:hidden;">
-                            <div style="font-weight:600; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${m.title}">${m.title}</div>
-                            ${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4;">/${m.slug}</div>` : ''}
+                        <div style="overflow:hidden; min-width:0; flex:1;">
+                            <div style="font-weight:600; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${displayTitle}">${displayTitle}</div>
+                            ${m.slug && m.slug !== 'null' ? `<div style="font-size:0.7rem; opacity:0.4; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">/${m.slug}</div>` : ''}
                         </div>
                     </div>
                 </td>
-                <td><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
-                <td style="text-align: center;"><span class="mono">${wc.toLocaleString()}</span></td>
-                <td>
-                    <div class="vault-actions-grid" style="display: flex; flex-direction: column; gap: 5px; width: fit-content;">
-                        <div style="display: flex; gap: 5px; align-items: center;">
-                            <button class="mini-action-btn" title="快速编辑原稿 (Edit Markdown)" onclick="openEditor('${escapedRelPath}')">📝</button>
-                            <button class="mini-action-btn" title="更换文章封面 (Cover Studio)" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️</button>
-                            <button class="mini-action-btn" title="重命名与移动原稿 (Rename / Relocate)" onclick="window.triggerMoveDocument('${m.rel_path}')">📤</button>
-                            <button class="mini-action-btn" title="实时渲染预览 (Live Web Preview)" onclick="window.openArticleLivePreview('${m.rel_path}', '${m.slug || ''}')">👁️</button>
-                            <button class="mini-action-btn" title="复制文章 Slug 路径 / 链接" onclick="window.copyArticleMagicLink('${m.rel_path}', '${m.slug || ''}')">📋</button>
-                        </div>
-                        <div style="display: flex; gap: 5px; align-items: center;">
-                            ${isAiEnabled && pubMode === 'global' ? `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem;${transLangs.length === 0 ? ' filter: grayscale(100%); opacity: 0.4;' : ''}">${reviewBtnIcon}</button>` : `<button class="mini-action-btn" title="${reviewBtnTitle}" onclick="window.openTranslationReview('${m.rel_path}')" style="font-size:0.85rem; filter: grayscale(100%); opacity: 0.4;">🌍</button>`}
-                            <button class="mini-action-btn" title="网页托管发布与全网遥测" onclick="openVaultDrawer('${m.rel_path}')">🌐</button>
-                            <button class="mini-action-btn" title="社媒渠道分发与多平台推流" onclick="window.openArticleSyndicationDrawer('${m.rel_path}', '${escapedTitle}')">📢</button>
-                            <button class="mini-action-btn" title="物理安全销毁" onclick="window.triggerDirectDocDelete('${m.rel_path}', '${escapedTitle}')" style="color: var(--neon-red, #ff4d4f); border-color: rgba(255, 77, 79, 0.35);">🗑️</button>
+                <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
+                <td style="text-align:center;"><span class="mono">${wc.toLocaleString()}</span></td>
+                <td style="padding:8px; width:160px; min-width:160px; box-sizing:border-box; text-align:center;">
+                    <div class="vault-action-wrapper" style="display:inline-flex; gap:5px; align-items:center; justify-content:center;">
+                        <button class="mini-action-btn" title="快速编辑原稿 (Markdown 创作工作台)" onclick="openEditor('${escapedRelPath}')">📝</button>
+                        <button class="mini-action-btn" title="实时渲染预览 (独立站真实效果)" onclick="window.openArticleLivePreview('${escapedRelPath}', '${m.slug || ''}')">👁️</button>
+                        <button class="mini-action-btn" title="全域渠道分发与推流 (微信 · 知乎 · B站 · Dev.to 等)" onclick="window.openArticleSyndicationDrawer('${escapedRelPath}', '${escapedTitle}')">📢</button>
+                        <button class="mini-action-btn vault-more-btn" title="更多操作 (独立站发布 · 译文校对 · 封面管理 · 重命名 · 物理销毁)" onclick="window.toggleVaultActionMenu(this, event)">···</button>
+                        <div class="vault-more-menu custom-glass-dropdown">
+                            <button class="vault-more-item" onclick="openVaultDrawer('${escapedRelPath}')">🌐 独立站发布与全网遥测</button>
+                            <button class="vault-more-item" onclick="window.openTranslationReview('${escapedRelPath}')">${reviewBtnIcon} 多语种译文校对</button>
+                            <button class="vault-more-item" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️ 更换或生成文章封面</button>
+                            <button class="vault-more-item" onclick="window.triggerMoveDocument('${escapedRelPath}')">📤 重命名与分类迁移</button>
+                            <div class="vault-more-divider"></div>
+                            <button class="vault-more-item danger" onclick="window.triggerDirectDocDelete('${escapedRelPath}', '${escapedTitle}')">🗑️ 物理安全彻底销毁</button>
                         </div>
                     </div>
                 </td>
@@ -164,54 +165,45 @@ window.loadVault = async (query = null, page = null) => {
     }
 };
 
+// 📂 [单例控制器] 原稿操作更多下拉菜单（支持底部视口智能反向避让 Dropup）
+window.toggleVaultActionMenu = (btn, event) => {
+    event.stopPropagation();
+    const menu = btn.nextElementSibling;
+    const isShow = menu && menu.classList.contains('show');
+    document.querySelectorAll('.vault-more-menu.show').forEach(m => m.classList.remove('show'));
+    if (!isShow && menu) {
+        const rect = btn.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 230) {
+            menu.classList.add('dropup');
+        } else {
+            menu.classList.remove('dropup');
+        }
+        menu.classList.add('show');
+    }
+};
+
+if (!window._vaultMenuListenerBound) {
+    window._vaultMenuListenerBound = true;
+    document.addEventListener('click', () => document.querySelectorAll('.vault-more-menu.show').forEach(m => m.classList.remove('show')));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.vault-more-menu.show').forEach(m => m.classList.remove('show')); });
+}
+
 // 🚀 [快捷动作算子 1] 实时网页渲染预览
 window.openArticleLivePreview = async (relPath, slug) => {
     const previewPort = window.settingsData?.system?.serve_port || 43213;
-    let targetUrl = '';
-    
-    if (slug && slug !== 'null' && slug !== 'undefined') {
-        const cleanSlug = slug.startsWith('/') ? slug.substring(1) : slug;
-        targetUrl = `http://localhost:${previewPort}/${cleanSlug}`;
-    } else {
-        const cleanPath = relPath.replace(/\.md$/, '.html');
-        targetUrl = `http://localhost:${previewPort}/${cleanPath}`;
-    }
-
-    if (typeof window.showToast === 'function') {
-        window.showToast(`🌐 正在打开实时预览: ${relPath}`, 'info');
-    }
+    let targetUrl = (slug && slug !== 'null' && slug !== 'undefined')
+        ? `http://localhost:${previewPort}/${slug.startsWith('/') ? slug.substring(1) : slug}`
+        : `http://localhost:${previewPort}/${relPath.replace(/\.md$/, '.html')}`;
+    if (typeof window.showToast === 'function') window.showToast(`🌐 正在打开实时预览: ${relPath}`, 'info');
     window.open(targetUrl, '_blank');
 };
 
-// 🚀 [快捷动作算子 2] 一键复制 Slug 路径 / 链接
+// 🚀 [快捷动作算子 2] 一键复制文章路径 (兼容桩)
 window.copyArticleMagicLink = async (relPath, slug) => {
-    let copyText = '';
-    if (slug && slug !== 'null' && slug !== 'undefined') {
-        copyText = slug.startsWith('/') ? slug : `/${slug}`;
-    } else {
-        copyText = relPath;
-    }
-
-    try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(copyText);
-        } else {
-            const input = document.createElement('textarea');
-            input.value = copyText;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-        }
-        if (typeof window.showToast === 'function') {
-            window.showToast(`📋 文章路径已复制: ${copyText}`, 'success');
-        }
-    } catch (e) {
-        console.warn('Copy failed:', e);
-        if (typeof window.showToast === 'function') {
-            window.showToast(`📋 复制路径: ${copyText}`, 'info');
-        }
-    }
+    const copyText = (slug && slug !== 'null' && slug !== 'undefined') ? (slug.startsWith('/') ? slug : `/${slug}`) : relPath;
+    if (navigator.clipboard) await navigator.clipboard.writeText(copyText).catch(() => {});
+    if (typeof window.showToast === 'function') window.showToast(`📋 文章路径已复制: ${copyText}`, 'success');
 };
 
 // 🚀 [快捷动作算子 3] 单篇原稿安全快速销毁入口

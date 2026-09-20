@@ -38,9 +38,10 @@ window.openEditor = async (docId) => {
             renderDynamicMetadata(doc.frontmatter || {});
         }
         
-        // 🌓 [V87.0] 初始化编辑器模式为源码模式，并预渲染预览内容
+        // 🌓 [V87.0] 初始化编辑器模式为源码模式，并预渲染预览内容与实时 URL 路径
         setEditorMode('source');
         updateEditorPreview();
+        updateEditorUrlPreview();
         initSyncScroll();
 
         // 💾 物理草稿核查与气泡呈现
@@ -123,6 +124,63 @@ window.closeEditor = () => {
     if (configTabs) configTabs.style.display = 'none';
 };
 
+// 🌐 [V107.0] 实时网址路径推导微端：根据当前治理中心网址组织形态 (slug_dir_mode) 计算预期 URL
+window.updateEditorUrlPreview = () => {
+    const previewEl = document.getElementById('editor-url-preview-text');
+    if (!previewEl) return;
+
+    const docId = window.activeDocId || "";
+    const slugInput = document.getElementById('editor-meta-slug');
+    const slugVal = (slugInput ? slugInput.value.trim() : "") || "index";
+
+    const settingsData = window.settingsData || {};
+    const translation = settingsData.translation || {};
+    const dirMode = (translation.slug_dir_mode || 'nested').toLowerCase();
+
+    const parts = docId.replace(/\\/g, '/').split('/');
+    parts.pop();
+    const subDir = parts.join('/');
+
+    const isGlobalHome = (['', 'index', 'home'].includes(slugVal.toLowerCase()) && !subDir);
+    const isChannelHome = (['', 'index', 'home'].includes(slugVal.toLowerCase()) && !isGlobalHome);
+
+    let path = "";
+    let modeLabel = "目录树复刻";
+
+    if (dirMode === 'flat') {
+        modeLabel = "极简根目录";
+        if (isGlobalHome) {
+            path = "index.html";
+        } else if (isChannelHome) {
+            const channelName = subDir ? subDir.replace(/\//g, '-').toLowerCase() : 'docs';
+            path = `${channelName}.html`;
+        } else {
+            path = `${slugVal}.html`;
+        }
+    } else if (dirMode === 'prefix') {
+        modeLabel = "智能前缀";
+        if (isGlobalHome) {
+            path = "index.html";
+        } else if (isChannelHome) {
+            const prefix = subDir ? `${subDir.replace(/\//g, '-').toLowerCase()}-` : '';
+            path = `${prefix}index.html`;
+        } else {
+            const prefix = subDir ? `${subDir.replace(/\//g, '-').toLowerCase()}-` : '';
+            path = `${prefix}${slugVal}.html`;
+        }
+    } else {
+        modeLabel = "目录树复刻";
+        if (isGlobalHome) {
+            path = "index.html";
+        } else {
+            const nestedSub = subDir ? `${subDir.toLowerCase()}/` : '';
+            path = `${nestedSub}${slugVal}.html`;
+        }
+    }
+
+    previewEl.innerText = `预估: /${path} (${modeLabel})`;
+};
+
 // 💾 全局一次性“零泄露事件委托”总线监听
 setTimeout(() => {
     const modal = document.getElementById('editor-modal');
@@ -140,6 +198,7 @@ setTimeout(() => {
                 } else {
                     window.editorSlugUserEdited = true;
                 }
+                window.updateEditorUrlPreview();
             }
             
             if (id === 'editor-meta-title') {
@@ -147,6 +206,7 @@ setTimeout(() => {
                 if (!window.editorSlugUserEdited) {
                     window.generateAndSyncSlug(titleVal);
                 }
+                window.updateEditorUrlPreview();
             }
 
             if (id === 'editor-wysiwyg') {

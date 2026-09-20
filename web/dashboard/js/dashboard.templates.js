@@ -79,13 +79,13 @@ window.viewTemplates = {
                         <button class="mini-btn" id="btn-delete-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px; background: rgba(220,53,69,0.15); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); display: none; cursor: pointer; transition: all 0.3s;" onclick="window.triggerDeleteDirectory()" title="删除当前选中的空目录">🗑️ 删除目录</button>
                     </div>
                     <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
-                        <table id="vault-table" style="min-width: 600px;">
+                        <table id="vault-table" style="width: 100%; table-layout: fixed; min-width: 680px;">
                             <thead style="position: sticky; top: 0; z-index: 10; background: rgba(var(--bg-modal-solid-rgb), 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--glass-border);">
                                 <tr>
-                                    <th style="width: 35%;">标题</th>
-                                    <th style="width: auto;">物理路径</th>
-                                    <th style="width: 60px; text-align: center;">字数</th>
-                                    <th style="width: 120px;">操作</th>
+                                    <th style="width: 40%; min-width: 180px;">标题</th>
+                                    <th style="width: 32%; min-width: 140px;">物理路径</th>
+                                    <th style="width: 65px; text-align: center;">字数</th>
+                                    <th style="width: 160px; min-width: 160px; text-align: center;">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="vault-list">

@@ -220,5 +220,74 @@ class TestSlugUniqueness(unittest.TestCase):
         step.process(ctx)
         self.assertEqual(ctx.slug, "tech/news/intro-page")
 
+    def test_index_slug_scoping_exemption(self):
+        """测试不同物理子目录下的 index.md 享有作用域豁免权，互不报冲突；同目录下竞争同一 index 则精准拦截"""
+        # 1. 注册 Docs/index.md (slug: index)
+        docs_index_path = "Docs/index.md"
+        os.makedirs(os.path.join(self.vault_root, "Docs"), exist_ok=True)
+        with open(os.path.join(self.vault_root, docs_index_path), 'w', encoding='utf-8') as f:
+            f.write("---\ntitle: Docs Index\nslug: index\n---\n# Docs Home")
+        self.engine.meta.register_document(docs_index_path, "Docs Index", slug="index")
+
+        # 2. 根目录 index.md (slug: index) 存盘保存测试：跨目录天然隔离，准予放行
+        root_index_path = "index.md"
+        req_root = {
+            "content": "# Site Root Home",
+            "frontmatter": {"title": "Site Home", "slug": "index"},
+            "slug": "index"
+        }
+        res_root = save_document_logic(self.engine, root_index_path, req_root)
+        self.assertNotIn("error_code", res_root)
+        self.assertNotIn("Slug 冲突", str(res_root.get("error", "")))
+
+        # 3. 同目录 Docs 下的 Docs/guide.md 试图将 slug 改为 index：同目录碰撞，必须拦截
+        docs_guide_path = "Docs/guide.md"
+        with open(os.path.join(self.vault_root, docs_guide_path), 'w', encoding='utf-8') as f:
+            f.write("---\ntitle: Guide\nslug: guide\n---\n# Guide")
+        self.engine.meta.register_document(docs_guide_path, "Guide", slug="guide")
+
+        req_conflict = {
+            "content": "# Guide modified",
+            "frontmatter": {"title": "Guide", "slug": "index"},
+            "slug": "index"
+        }
+        res_conflict = save_document_logic(self.engine, docs_guide_path, req_conflict)
+        self.assertEqual(res_conflict.get("error_code"), "SLUG_CONFLICT")
+        self.assertIn("已被文档 'Docs/index.md' 占用", res_conflict.get("error", ""))
+
+    def test_slug_dir_mode_conflict_matrix(self):
+        """测试三种不同的 slug_dir_mode (nested/flat/prefix) 下普通多目录文档的冲突判定行为"""
+        doc_a = "Docs/feature.md"
+        doc_b = "Blog/feature.md"
+        os.makedirs(os.path.join(self.vault_root, "Docs"), exist_ok=True)
+        os.makedirs(os.path.join(self.vault_root, "Blog"), exist_ok=True)
+        with open(os.path.join(self.vault_root, doc_a), 'w', encoding='utf-8') as f:
+            f.write("---\ntitle: Feature Docs\nslug: feature\n---\n# Feature in Docs")
+        with open(os.path.join(self.vault_root, doc_b), 'w', encoding='utf-8') as f:
+            f.write("---\ntitle: Feature Blog\nslug: feature-blog\n---\n# Feature in Blog")
+
+        self.engine.meta.register_document(doc_a, "Feature Docs", slug="feature")
+        self.engine.meta.register_document(doc_b, "Feature Blog", slug="feature-blog")
+
+        # 1. 在 nested 模式下：不同目录普通稿件各走各的路径 (/docs/feature vs /blog/feature)，不冲突
+        self.engine.config.translation = type('MockTrans', (object,), {'slug_dir_mode': 'nested'})()
+        req = {"content": "# Blog feature", "slug": "feature", "frontmatter": {"title": "Feature Blog", "slug": "feature"}}
+        res_nested = save_document_logic(self.engine, doc_b, req)
+        self.assertNotIn("error_code", res_nested)
+
+        # 2. 在 flat 模式下：所有普通文章平铺根目录 (/feature.html)，构成真实覆盖冲突
+        self.engine.config.translation.slug_dir_mode = 'flat'
+        res_flat = save_document_logic(self.engine, doc_b, req)
+        self.assertEqual(res_flat.get("error_code"), "SLUG_CONFLICT")
+        self.assertIn("极简根目录", res_flat.get("error", ""))
+
+        # 3. 在 prefix 模式下：前缀自动区分 (docs-feature vs blog-feature)，不冲突
+        self.engine.config.translation.slug_dir_mode = 'prefix'
+        res_prefix = save_document_logic(self.engine, doc_b, req)
+        self.assertNotIn("error_code", res_prefix)
+
+
 if __name__ == '__main__':
     unittest.main()
+
+

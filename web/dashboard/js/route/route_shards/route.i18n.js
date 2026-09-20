@@ -75,17 +75,17 @@
         });
 
         let modalHtml = `
-            <div id="global-nav-i18n-modal" class="glass-panel" style="position: fixed; top: ${modalTop}px; left: ${modalLeft}px; width: 370px; max-height: 460px; overflow-y: auto; z-index: 99999; background: rgba(15, 17, 30, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(0, 242, 255, 0.35); border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.7); padding: 14px; font-family: inherit;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <div id="global-nav-i18n-modal" class="glass-panel global-nav-i18n-modal" style="position: fixed; top: ${modalTop}px; left: ${modalLeft}px; width: 370px; max-height: 460px; overflow-y: auto; z-index: 99999; backdrop-filter: blur(20px); border-radius: 12px; padding: 14px; font-family: inherit;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 1rem;">🌐</span>
                         <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-secondary, #00f2fe);">当前品牌多语种导航定制</span>
                     </div>
-                    <button type="button" onclick="document.getElementById('global-nav-i18n-modal')?.remove();" style="background: none; border: none; color: #888; cursor: pointer; font-size: 0.95rem; padding: 0 4px;">✕</button>
+                    <button type="button" onclick="document.getElementById('global-nav-i18n-modal')?.remove();" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.95rem; padding: 0 4px;">✕</button>
                 </div>
 
                 <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(0, 242, 255, 0.05); padding: 6px 10px; border-radius: 6px; border: 1px dashed rgba(0, 242, 255, 0.25);">
-                    <span style="font-size: 0.72rem; color: var(--text-dim);">默认母语: <b style="color: #fff;">${defaultLabel || '未设置'}</b></span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">默认母语: <b style="color: var(--text-bright);">${defaultLabel || '未设置'}</b></span>
                     <button type="button" id="ai-auto-translate-btn" class="mini-btn ${hasMissingDict ? 'glow-btn' : ''}" onclick="window.autoTranslateNavLabels(event, '${slot}', '${defaultLabel}', '${sourceLang}')" style="font-size: 0.7rem; padding: 4px 9px; background: rgba(0, 242, 255, 0.2); color: #00f2fe; border: 1px solid rgba(0, 242, 255, 0.4); border-radius: 5px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 3px;" title="调用大模型进行多语言翻译并填入各语言文本框">
                         <span class="ai-btn-icon">🤖</span> <span class="ai-btn-text">AI 一键填充</span>
                     </button>

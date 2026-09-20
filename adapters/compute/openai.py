@@ -3,15 +3,14 @@
 """
 Illacme-plenipes Core - OpenAI Adapter
 模块职责：负责 OpenAI 兼容协议的 AI 算力调用与推理卫士实现。
-🛡️ [AEL-Iter-v5.3]：基于 TDR 复健的解耦适配器。
+🛡️ [SOP-01 & SOP-02]：自底向上物理拆分重构版本，单文件物理行数严格 ≤300 行。
 """
 
-import re
 from typing import Dict, Any
 from core.adapters.ai.base import BaseTranslator
-
 from core.utils.tracing import tlog
-from core.adapters.ai.tool_protocol import IllacmeTool, ToolCallEvent
+from core.adapters.ai.tool_protocol import IllacmeTool
+from .openai_response_healer import heal_sync_response
 
 
 class OpenAICompatibleTranslator(BaseTranslator):
@@ -21,7 +20,6 @@ class OpenAICompatibleTranslator(BaseTranslator):
     VERSION = "V10.2"
     DESCRIPTION = "提供 OpenAI 官方协议支持，兼容 GPT-4o、GPT-4-Turbo 等顶级算力节点。"
     PROTOCOL_FAMILY = 'standard'
-    # 🚀 [V53.8] 别名矩阵：兼容用户不同的配置习惯 (v1 对应路径规范, openai-compatible 对应通用描述)
     ALIASES = ['openai-compatible', 'v1']
     DEFAULT_URL = "https://api.openai.com/v1"
     
@@ -39,7 +37,6 @@ class OpenAICompatibleTranslator(BaseTranslator):
     async def list_models(self) -> list[str]:
         """🚀 [V48.3] 从 OpenAI 兼容接口动态获取模型列表"""
         url = self.safe_get_url()
-        # 移除 chat/completions 后缀以获取基础路径
         url = url.replace("/chat/completions", "").replace("/completions", "")
         if not url.endswith("/models"):
             url += "/models"
@@ -55,12 +52,13 @@ class OpenAICompatibleTranslator(BaseTranslator):
         try:
             import asyncio
             loop = asyncio.get_event_loop()
+
             def _fetch():
                 return self._session.get(url, headers=headers, proxies=proxies, timeout=timeout)
+
             resp = await loop.run_in_executor(None, _fetch)
             if resp.status_code == 200:
                 data = resp.json()
-                # 🚀 [V53.8] 强健的模型解析逻辑：支持列表直接返回或 data/models 嵌套
                 items = data if isinstance(data, list) else data.get("data", data.get("models", []))
                 if not isinstance(items, list):
                     tlog.warning(f"⚠️ [OpenAI] 接口返回了非预期的模型列表格式: {type(items)}")
@@ -118,11 +116,8 @@ class OpenAICompatibleTranslator(BaseTranslator):
                 
             return False, f"❌ {guide}"
 
-
     def _ask_ai(self, payload: Dict[str, Any]) -> str:
         """[Protocol] 实现 OpenAI 兼容协议的原子对话 [AEL-Iter-v10.3]"""
-        
-        # 🚀 [V10.3] 协议标准化组装：OpenAI 风格
         messages = payload.get("messages", [])
         if not messages:
             messages = [
@@ -134,7 +129,7 @@ class OpenAICompatibleTranslator(BaseTranslator):
         if not raw_model or str(raw_model).lower() in ["null", "none", ""]:
             raw_model = "qwen/qwen3.5-9b"
 
-        # 🛡️ 顶格强效拦截：若请求被指定关闭思维链，仅向 System Prompt 注入硬约束
+        # 若请求被指定关闭思维链，仅向 System Prompt 注入硬约束
         params = payload.get("params", {})
         if params.get("enable_thinking") is False and messages:
             for m in messages:
@@ -148,13 +143,13 @@ class OpenAICompatibleTranslator(BaseTranslator):
             **params
         }
 
-        # 🏢 [AEL-Iter-v77.12] 算力洗涤：对同步调用载荷进行强制智能参数对准
+        # 算力洗涤：对同步调用载荷进行强制智能参数对准
         from core.adapters.ai.payload_manager import PayloadManager
         openai_payload = PayloadManager.align_and_clean_payload(payload.get("model"), openai_payload, self)
 
         tlog.info(f"🐛 [DEBUG PROMPT] System: {repr(messages[0]['content'] if messages else '')} | User: {repr(messages[1]['content'] if len(messages)>1 else '')}")
 
-        # 🚀 [V75.0] 动态工具网关翻译 (Tool Translation Layer)
+        # 动态工具网关翻译
         tools = payload.get("tools", [])
         if tools:
             openai_tools = []
@@ -169,21 +164,14 @@ class OpenAICompatibleTranslator(BaseTranslator):
                         }
                     })
                 elif isinstance(t, dict):
-                    # 兼容原生传参
                     openai_tools.append(t)
             if openai_tools:
                 openai_payload["tools"] = openai_tools
-
-        # 处理 JSON 模式兼容性 (如果在 Intent 中被标记)
-        if payload.get("is_json"):
-            # 注意：某些模型可能不支持，基类已通过 is_local 预检
-            pass
 
         url = self.safe_get_url()
         if not url.endswith("/chat/completions") and not url.endswith("/completions"):
             url = f"{url.rstrip('/')}/chat/completions"
             
-        # 🛡️ 动态 Header 注入 (支持 OpenRouter 身份标识等)
         headers = {
             "Content-Type": "application/json",
             **payload.get("headers", {})
@@ -192,15 +180,12 @@ class OpenAICompatibleTranslator(BaseTranslator):
         if api_key and api_key not in ["not-needed", "none", "empty"]:
             headers["Authorization"] = f"Bearer {api_key}"
         
-        # 🛡️ 节点级代理支持与降级回退
         proxies = None
         proxy_url = self.get_proxy()
         if proxy_url:
             proxies = {"http": proxy_url, "https": proxy_url}
 
         try:
-            # 🚀 [V34.9] 实时可观测性：在发起物理请求前通报 (附带 PID/TID 审计指纹)
-            # 🚀 [V48.3] 工业级去噪：底层不再输出 PID/TID 冗余信息，统一由调度器接管
             import traceback
             import time
             import threading
@@ -210,12 +195,9 @@ class OpenAICompatibleTranslator(BaseTranslator):
                     f.write(f"Prompt: {openai_payload['messages'][0].get('content', '')[:100]}...\n")
                 traceback.print_stack(file=f)
 
-            
-            # 使用基类统一管理的超时
             resp = self._session.post(url, json=openai_payload, headers=headers, proxies=proxies, timeout=self.timeout)
             
             if resp.status_code != 200:
-                # 🚀 [V6.2.1] 深度诊断：记录完整的错误响应正文
                 tlog.error(f"🛑 [AI API 异常响应] Node: {self.node_name} | Status: {resp.status_code}")
                 tlog.error(f"   └── Body: {resp.text}")
                 
@@ -227,89 +209,8 @@ class OpenAICompatibleTranslator(BaseTranslator):
                 return ""
 
             message = choices[0]["message"]
-            
-            # 🚀 [V75.0] 拦截标准工具调用请求 (Tool Call Interception)
-            tool_calls = message.get("tool_calls", [])
-            if tool_calls:
-                parsed_events = []
-                for tc in tool_calls:
-                    if tc.get("type") == "function":
-                        func = tc.get("function", {})
-                        try:
-                            import json
-                            args_str = func.get("arguments", "{}")
-                            args = json.loads(args_str) if args_str else {}
-                        except json.JSONDecodeError:
-                            args = {}
-                        parsed_events.append(ToolCallEvent(
-                            tool_name=func.get("name"),
-                            arguments=args,
-                            raw_call_id=tc.get("id", "")
-                        ))
-                if parsed_events:
-                    return parsed_events
+            return heal_sync_response(message, payload)
 
-            # 🚀 [自愈自适应] 处理 Qwen 等本地模型在同步模式下将 XML 伪代码误吐在 reasoning_content 中的问题
-            reasoning = message.get("reasoning_content") or ""
-            content = message.get("content") or ""
-            combined_text = reasoning + "\n" + content
-            
-            from core.adapters.ai.xml_parser import parse_xml_tool_calls
-            xml_events = parse_xml_tool_calls(combined_text)
-            if xml_events:
-                valid_events = []
-                for event in xml_events:
-                    # 校验工具调用的参数完整性
-                    if event.name == "read_document" and "relative_path" not in event.arguments:
-                        continue
-                    if event.name == "write_document" and ("relative_path" not in event.arguments or "content" not in event.arguments):
-                        continue
-                    if event.name == "patch_document" and ("relative_path" not in event.arguments or "search_content" not in event.arguments or "replace_content" not in event.arguments):
-                        continue
-                    if event.name == "search_vault" and "keyword" not in event.arguments:
-                        continue
-                    valid_events.append(event)
-                if valid_events:
-                    tlog.info(f"✨ [OpenAI Sync Healer] 从同步响应中成功自愈解析出 {len(valid_events)} 个 XML 工具调用事件")
-                    return valid_events
-
-            # 若 content 为空但 reasoning_content 不为空，进行智能物理提纯解包
-            if not content.strip() and reasoning.strip():
-                is_json_request = payload.get("is_json", False) if isinstance(payload, dict) else False
-                is_translation = payload.get("is_translation", False) if isinstance(payload, dict) else False
-                
-                if is_json_request:
-                    # 🚀 [智能提纯] 尝试从 reasoning_content 中自愈提取完整的 JSON
-                    json_match = re.search(r'(\{.*\}|\[.*\])', reasoning.strip(), re.DOTALL)
-                    if json_match:
-                        candidate = json_match.group(1).strip()
-                        try:
-                            json.loads(candidate)
-                            tlog.info("✨ [OpenAI Sync Healer] 成功从 reasoning_content 中自愈提纯拯救出合法 JSON 载荷！")
-                            return candidate
-                        except Exception:
-                            pass
-                    tlog.warning("⚠️ [OpenAI Sync Healer] is_json 请求检测到 content 为空且无法从 reasoning_content 提纯 JSON，返回空字符串上报。")
-                    return ""
-                
-                if is_translation:
-                    # 🚀 [智能提纯] 检查 reasoning 是否为思维链推导内容，若是则拦截
-                    dirty_keywords = ["reasoning process", "final result", "thinking process", "analyze the input", "analyze the request", "output only"]
-                    if any(kw in reasoning.lower() for kw in dirty_keywords):
-                        tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 reasoning_content 为思维链且 content 为空，拦截返回空字符串。")
-                        return ""
-                    cleaned_reasoning = re.sub(r'Thinking Process:.*?(?=\n\n|\Z)', '', reasoning.strip(), flags=re.DOTALL).strip()
-                    if cleaned_reasoning and len(cleaned_reasoning) > 0:
-                        tlog.info("✨ [OpenAI Sync Healer] 成功从 reasoning_content 中提纯出有效翻译文本。")
-                        return cleaned_reasoning
-                    tlog.warning("⚠️ [OpenAI Sync Healer] 翻译请求检测到 content 为空且无法提纯有效正文，返回空字符串上报。")
-                    return ""
-                
-                tlog.info("✨ [OpenAI Sync Healer] 降级使用 reasoning_content 作为同步回答文本。")
-                return reasoning.strip()
-
-            return content
         except Exception as e:
             tlog.error(f"🛑 [OpenAI API Error]: {e}")
             raise
-

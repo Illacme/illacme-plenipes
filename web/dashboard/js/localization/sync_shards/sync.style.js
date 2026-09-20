@@ -21,6 +21,11 @@ window.updateStylePreview = (styleKey) => {
     const style = window.translationStyles?.[styleKey];
     const descEl = document.getElementById('style-description-box');
 
+    // 🛡️ [V75.8] 将选中的风格预设 key 持久化至 translation.active_style，避免保存后反向匹配失败
+    if (typeof window.updateConfigField === 'function') {
+        window.updateConfigField('translation.active_style', styleKey || 'custom');
+    }
+
     if (!style) {
         // 自定义 Prompt 处理
         if (descEl) {
@@ -100,6 +105,11 @@ window.checkStyleMatch = () => {
     }
 
     selector.value = matchKey;
+
+    // 🛡️ [V75.8] 同步更新持久化的风格 key
+    if (typeof window.updateConfigField === 'function') {
+        window.updateConfigField('translation.active_style', matchKey);
+    }
 
     const descEl = document.getElementById('style-description-box');
     if (descEl) {

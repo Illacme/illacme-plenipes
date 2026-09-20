@@ -1,15 +1,80 @@
 ---
-title: 欢迎来到 Illacme Plenipes 全球私人出版社
-date: 2026-08-16
+date: '2026-08-16T08:00:00+08:00'
 author: Illacme Editorial Team
 description: 专为海量 Markdown 构筑的 AI 原生全球出版引擎，让灵感在起草室点燃，在文库中沉淀，通过矩阵响彻全球。
 tags:
 - Illacme
 - Sovereign
 - Overview
-categories:
-- Guide
+categories: Guide
 cover: /api/design/assets/covers/cover_43adf8891bf7.jpg
+gist: Illacme Plenipes 是工业级 AI 出版引擎，赋予创作者品牌主权、算力切片及全球分发能力。
+entities:
+  concepts:
+  - 治理中心
+  - 全球私人出版社
+  - 算力切片
+  - 数据物理主权
+  - Token 浪费
+  - 全球发行矩阵 (The Matrix)
+  - 算力中心
+  - 算力切片与段落级缓存
+  - 多框架装帧主题
+  - 静态站点生成器 (SSG)
+  - 全球发行矩阵
+  - 影子块缓存 (BlockShadowCache)
+  - 多框架装帧主题 (SSG Bindery)
+  - 零 Token 浪费
+  - 分发渠道
+  - 段落级缓存
+  - 品牌主权 (Imprint Sovereignty)
+  - 工业级 AI 原生全球出版引擎
+  - 托管平台
+  technologies:
+  - xAI
+  - Hashnode
+  - Railway
+  - LMStudio
+  - 知乎
+  - OpenAI
+  - Gemini
+  - 百度千帆
+  - WordPress
+  - Logseq
+  - GitHub Pages
+  - Ollama
+  - DeepSeek
+  - Markdown
+  - Hugo
+  - Cloudflare Pages
+  - 掘金
+  - Docusaurus
+  - 微信公众号
+  - BlockShadowCache
+  - Typora
+  - Netlify
+  - Ghost
+  - Starlight
+  - Sovereign
+  - Nextra
+  - Dev.to
+  - Vercel
+  - Obsidian
+  - Medium
+  - VitePress
+  people: []
+  projects:
+  - quick-start
+  - my-first-post
+  - Sovereign (Default)
+  - themes-and-binding
+  - markdown-showcase
+  - dashboard-guide
+  - compute-and-ai
+  - Illacme Plenipes
+  - distribution-channels
+title: 欢迎来到 Illacme Plenipes 全球私人出版社
+slug: welcome-to-illacme-plenipes-global-private-publishing-house
 ---
 # 🌌 欢迎来到 Illacme Plenipes 全球私人出版社
 

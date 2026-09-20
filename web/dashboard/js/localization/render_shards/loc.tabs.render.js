@@ -7,9 +7,69 @@
 (function () {
     const locSubDescs = {
         localization: '💡 设置文章主出版语种（中文/英文）以及多语言分发的目标语种阵列。',
-        block_rules: '💡 配置段落多段合并翻译、链接与跳转自动对齐，以及各类型正文内容的翻译流控规则。',
+        block_rules: '💡 配置各类型正文内容的分流翻译与忽略规则，以及链接与跳转自动对齐。',
         glossary: '💡 维护品牌专有名词保护词库，AI 翻译前自动屏护，确保关键术语 100% 不被误译。',
         translation_style: '💡 设定大模型翻译输出的行文语气、专业风格基调与自定义 Prompt 微调。'
+    };
+
+    // 🎯 [V82.0] 同排右对齐状态指示微标：利用第三行右侧留白，0 额外垂直占高
+    window.updateLocalizationGovStatusBadge = (targetSub) => {
+        const badgeEl = document.getElementById('loc-gov-status-badge');
+        if (!badgeEl) return;
+        const sub = targetSub || window.currentActiveSettingsSubCat || 'localization';
+        if (sub === 'localization') {
+            const i18n = window.settingsData?.i18n_settings || {};
+            const srcCode = i18n.source?.lang_code || 'auto';
+            const availableLangs = window.availableLangs || [];
+            const foundLang = availableLangs.find(l => l.code === srcCode);
+            const srcName = srcCode === 'auto' ? '✨ 自动探测' : (foundLang ? `${foundLang.name} (${srcCode})` : srcCode);
+            const targetsCount = (i18n.targets || []).length;
+            badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>🌐 源语种：</span><b style="color: var(--text-bright); font-weight: 700;">${srcName}</b><span style="opacity: 0.4;">➔</span><span>目标：</span><b style="color: var(--text-bright); font-weight: 700;">${targetsCount} 项</b></div>`;
+        } else if (sub === 'block_rules') {
+            const enableAi = window.settingsData?.translation?.enable_ai !== false;
+            if (!enableAi) {
+                badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>🧱 块级规则：</span><b style="color: var(--text-dim); font-weight: 700;">🔒 AI 总控离线</b></div>`;
+            } else {
+                const gov = window.settingsData?.translation?.governance || {};
+                const blockRules = gov.block_rules || {};
+                const blockKeys = ['header', 'paragraph', 'table', 'callout', 'code', 'html', 'comment'];
+                let trans = 0;
+                let bypass = 0;
+                let strip = 0;
+                blockKeys.forEach(k => {
+                    const act = blockRules[k]?.action || (k === 'code' || k === 'html' || k === 'comment' ? 'bypass' : 'translate');
+                    if (act === 'translate' || act === 'parse_comments_only') {
+                        trans++;
+                    } else if (act === 'strip') {
+                        strip++;
+                    } else {
+                        bypass++;
+                    }
+                });
+                const summary = `${trans} 翻译 · ${bypass} 跳过` + (strip > 0 ? ` · ${strip} 剔除` : '');
+                badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px; white-space: nowrap;"><span>🧱 语义分流：</span><b style="color: var(--text-bright); font-weight: 700;">${summary}</b></div>`;
+            }
+        } else if (sub === 'translation_style') {
+            const styles = window.translationStyles || {};
+            const savedStyle = window.settingsData?.translation?.active_style || 'default';
+            const activeKey = (savedStyle === 'default' || !savedStyle) ? 'professional'
+                : (styles[savedStyle] ? savedStyle : 'custom');
+            const badgeText = styles[activeKey]?.badge || '自定义';
+            badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>🗣️ 风格预设：</span><b style="color: var(--text-bright); font-weight: 700;">${badgeText}</b></div>`;
+        } else if (sub === 'glossary') {
+            const glossary = window.settingsData?.translation?.governance?.glossary || {};
+            let count = 0;
+            if (typeof glossary === 'object' && !Array.isArray(glossary)) {
+                Object.values(glossary).forEach(langDict => {
+                    if (typeof langDict === 'object' && langDict !== null) {
+                        count += Object.keys(langDict).length;
+                    }
+                });
+            }
+            badgeEl.innerHTML = `<div style="font-size: 0.72rem; padding: 3px 10px; background: rgba(var(--neon-cyan-rgb), 0.08); border: 1px solid var(--neon-cyan-30); border-radius: 16px; color: var(--accent-secondary); display: flex; align-items: center; gap: 5px;"><span>📚 专属术语：</span><b style="color: var(--text-bright); font-weight: 700;">${count} 条就绪</b></div>`;
+        } else {
+            badgeEl.innerHTML = '';
+        }
     };
 
     window.switchLocalizationGovSubTab = (subTab, btn) => {
@@ -34,6 +94,10 @@
 
         const descEl = document.getElementById('loc-gov-sub-tab-desc');
         if (descEl) descEl.innerHTML = locSubDescs[subTab] || '';
+
+        if (typeof window.updateLocalizationGovStatusBadge === 'function') {
+            window.updateLocalizationGovStatusBadge(subTab);
+        }
 
         const panelEl = document.getElementById(`loc-panel-${subTab}`);
         if (panelEl) {
@@ -66,22 +130,26 @@
         }, 20);
 
         return `
-            <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 18px 22px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
+            <div class="category-header-banner" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; padding: 12px 18px; background: rgba(0, 242, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(10px);">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🌍 语言翻译与内容治理</h2>
+                        <h2 style="margin: 0; font-size: 1.18rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.5px;">🌍 语言翻译与内容治理</h2>
                     </div>
                 </div>
 
-                <div class="sub-tab-navigation-bar" id="loc-gov-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
-                    <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('localization', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🌍 语种矩阵</button>
-                    <button type="button" class="sub-tab-btn ${currentSub === 'block_rules' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('block_rules', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🧱 翻译规则</button>
-                    <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('translation_style', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗣️ 译文风格</button>
-                    <button type="button" class="sub-tab-btn ${currentSub === 'glossary' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('glossary', this)" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📚 术语词库</button>
+                <div class="sub-tab-navigation-bar" id="loc-gov-sub-tab-bar" style="display: flex; gap: 8px; margin-top: 4px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; flex-wrap: wrap;">
+                    <button type="button" class="sub-tab-btn ${currentSub === 'localization' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('localization', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🌍 语种矩阵</button>
+                    <button type="button" class="sub-tab-btn ${currentSub === 'block_rules' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('block_rules', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🧱 翻译规则</button>
+                    <button type="button" class="sub-tab-btn ${currentSub === 'translation_style' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('translation_style', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗣️ 译文风格</button>
+                    <button type="button" class="sub-tab-btn ${currentSub === 'glossary' ? 'active' : ''}" onclick="window.switchLocalizationGovSubTab('glossary', this)" style="padding: 5px 13px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📚 术语词库</button>
                 </div>
 
-                <div id="loc-gov-sub-tab-desc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
-                    ${locSubDescs[currentSub] || ''}
+                <!-- 💡 功能说明在左，当前激活状态在右 (左右对齐，认知顺畅，0 额外垂直占高) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 4px; min-height: 24px;">
+                    <div id="loc-gov-sub-tab-desc" style="font-size: 0.8rem; color: var(--text-muted); flex: 1; min-width: 0;">
+                        ${locSubDescs[currentSub] || ''}
+                    </div>
+                    <div id="loc-gov-status-badge" style="display: flex; align-items: center; flex-shrink: 0;"></div>
                 </div>
             </div>
 

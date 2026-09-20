@@ -124,29 +124,37 @@ window.renderTranslationStyleCategory = () => {
     const seos = prompts.seo_system || '';
     const seou = prompts.seo_user || '';
 
-    // 智能反向推导当前属于哪个风格预设
-    let activeStyleKey = 'custom';
-    for (const [key, tpl] of Object.entries(window.translationStyles)) {
-        const isMatch = (
-            tpl.translate_system === ts &&
-            tpl.translate_user === tu &&
-            tpl.title_system === tis &&
-            tpl.title_user === tiu &&
-            tpl.metadata_system === ms &&
-            tpl.metadata_user === mu &&
-            tpl.slug_system === ss &&
-            tpl.slug_user === su &&
-            (tpl.seo_system || '') === seos &&
-            (tpl.seo_user || '') === seou
-        );
-        if (isMatch) {
-            activeStyleKey = key;
-            break;
+    // 🛡️ [V75.8] 优先从持久化的 active_style 字段读取风格 key（由 updateStylePreview 写入）
+    // 仅在 active_style 缺失时回退到模板逐字反向匹配（向后兼容旧数据）
+    const savedStyle = window.settingsData.translation?.active_style || '';
+    let activeStyleKey;
+
+    if (savedStyle && (savedStyle === 'custom' || window.translationStyles[savedStyle])) {
+        activeStyleKey = savedStyle;
+    } else if (savedStyle === 'default' || !savedStyle) {
+        // 后端默认值 'default' 等同于前端 'professional'
+        activeStyleKey = 'professional';
+    } else {
+        // 回退：旧数据无 active_style，尝试反向匹配
+        activeStyleKey = 'custom';
+        for (const [key, tpl] of Object.entries(window.translationStyles)) {
+            const isMatch = (
+                tpl.translate_system === ts &&
+                tpl.translate_user === tu &&
+                tpl.title_system === tis &&
+                tpl.title_user === tiu &&
+                tpl.metadata_system === ms &&
+                tpl.metadata_user === mu &&
+                tpl.slug_system === ss &&
+                tpl.slug_user === su &&
+                (tpl.seo_system || '') === seos &&
+                (tpl.seo_user || '') === seou
+            );
+            if (isMatch) {
+                activeStyleKey = key;
+                break;
+            }
         }
-    }
-    
-    if (!ts && !tis && !ms && !ss && !seos) {
-        activeStyleKey = 'professional'; // 默认值
     }
 
     const currentStyle = window.translationStyles[activeStyleKey] || {
@@ -186,7 +194,7 @@ window.renderTranslationStyleCategory = () => {
                     </div>
                     
                     <!-- 风格详情卡片描述区 -->
-                    <div id="style-description-box" style="padding: 12px 16px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; background: rgba(var(--bg-rgb), 0.2); font-size: 0.8rem; line-height: 1.5; color: var(--text-normal); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease;">
+                    <div id="style-description-box" style="padding: 12px 16px; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--white-02); font-size: 0.8rem; line-height: 1.5; color: var(--text-normal); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease;">
                         <span style="background: var(--accent-secondary, #00f2ff); color: var(--bg-solid, #005); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;">${currentStyle.badge}</span>
                         <p style="margin: 0; font-weight: 500;">${currentStyle.desc}</p>
                     </div>
@@ -195,8 +203,8 @@ window.renderTranslationStyleCategory = () => {
                     <div class="prompt-wrapper" style="display: flex; flex-direction: column; gap: 20px; margin-top: 15px;">
                         
                         <!-- 1. 正文翻译 (Content) -->
-                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1);">
-                            <h4 style="color: #00f2ff; font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: var(--white-03);">
+                            <h4 style="color: var(--neon-cyan); font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 📄 正文翻译 Prompt 策略 (Markdown Content)
                             </h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -212,8 +220,8 @@ window.renderTranslationStyleCategory = () => {
                         </div>
 
                         <!-- 2. 标题翻译 (Title) -->
-                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1);">
-                            <h4 style="color: #00f2ff; font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: var(--white-03);">
+                            <h4 style="color: var(--neon-cyan); font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 📌 标题翻译 Prompt 策略 (Title)
                             </h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -229,8 +237,8 @@ window.renderTranslationStyleCategory = () => {
                         </div>
 
                         <!-- 3. 网页元数据 (Metadata) -->
-                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1);">
-                            <h4 style="color: #00f2ff; font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: var(--white-03);">
+                            <h4 style="color: var(--neon-cyan); font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 🏷️ 网页元数据 Prompt 策略 (Metadata)
                             </h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -246,8 +254,8 @@ window.renderTranslationStyleCategory = () => {
                         </div>
 
                         <!-- 4. AI Slug 生成 (Slug) -->
-                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1);">
-                            <h4 style="color: #00f2ff; font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: var(--white-03);">
+                            <h4 style="color: var(--neon-cyan); font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 🔗 AI Slug 生成 Prompt 策略 (Slug)
                             </h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -263,8 +271,8 @@ window.renderTranslationStyleCategory = () => {
                         </div>
 
                         <!-- 5. AI SEO 增强 (SEO) -->
-                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1);">
-                            <h4 style="color: #00f2ff; font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; background: var(--white-03);">
+                            <h4 style="color: var(--neon-cyan); font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 🚀 AI SEO 增强 Prompt 策略 (SEO)
                             </h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">

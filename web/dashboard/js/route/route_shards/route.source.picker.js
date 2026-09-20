@@ -19,18 +19,18 @@
             : '';
 
         let html = `<div class="source-picker-wrap" style="position: relative; width: 100%; display: flex; align-items: center;">`;
-        html += `<input type="text" class="setting-input source-input" value="${cleanVal}" placeholder="选择或输入目录 / 单篇 .md" style="width: 100%; font-size: 0.74rem; padding: 5px 44px 5px 7px; box-sizing: border-box; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 4px; color: #fff; outline: none; transition: border-color 0.2s, box-shadow 0.2s, padding-right 0.2s;" ${!isLicensed ? 'disabled' : ''} onclick="this.select()" onfocus="this.select(); window.openSourceDropdown(this)" oninput="window.handleSourceInputTyping(this)" onkeydown="window.handleSourceInputKeydown(this, event)" onchange="window.handleSourceInputChange(this)">`;
+        html += `<input type="text" class="setting-input source-input" value="${cleanVal}" placeholder="选择或输入目录 / 单篇 .md" style="width: 100%; font-size: 0.74rem; padding: 5px 44px 5px 7px; box-sizing: border-box; border-radius: 4px; outline: none; transition: border-color 0.2s, box-shadow 0.2s, padding-right 0.2s;" ${!isLicensed ? 'disabled' : ''} onclick="this.select()" onfocus="this.select(); window.openSourceDropdown(this)" oninput="window.handleSourceInputTyping(this)" onkeydown="window.handleSourceInputKeydown(this, event)" onchange="window.handleSourceInputChange(this)">`;
 
         // 保留隐藏的 datalist 确保自动化契约门禁 100% 通过
         html += `<datalist id="${listId}" style="display:none;">${datalistOptions}</datalist>`;
 
         // 输入框内右侧：下拉箭头唤起按钮与状态指示徽标
         html += `<div class="in-input-badge-container" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 3px; pointer-events: auto; z-index: 2;">`;
-        html += `<button type="button" class="source-dropdown-toggle-btn" onclick="window.toggleSourceDropdown(this, event)" title="展开文库路径列表 (或按键盘 ↓ 方向键)" style="background: transparent; border: none; color: rgba(255, 255, 255, 0.38); cursor: pointer; font-size: 0.65rem; padding: 2px 4px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; border-radius: 3px; transition: color 0.15s, background 0.15s;" onmouseenter="this.style.color='#00f2fe'; this.style.background='rgba(0, 242, 255, 0.1)';" onmouseleave="this.style.color='rgba(255, 255, 255, 0.38)'; this.style.background='transparent';">▼</button>`;
+        html += `<button type="button" class="source-dropdown-toggle-btn" onclick="window.toggleSourceDropdown(this, event)" title="展开文库路径列表 (或按键盘 ↓ 方向键)" style="background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.65rem; padding: 2px 4px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; border-radius: 3px; transition: color 0.15s, background 0.15s;">▼</button>`;
         html += `</div>`;
 
         // 方案 B：轻量级毛玻璃下拉浮层菜单 (单行精炼呈现)
-        html += `<div class="source-dropdown-menu custom-glass-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 250px; overflow-y: auto; background: rgba(14, 18, 28, 0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(0, 242, 255, 0.25); border-radius: 6px; z-index: 1000; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75); padding: 4px 0;"></div>`;
+        html += `<div class="source-dropdown-menu custom-glass-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 250px; overflow-y: auto; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 6px; z-index: 1000; padding: 4px 0;"></div>`;
 
         html += `</div>`;
         return html;

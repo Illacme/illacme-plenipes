@@ -64,9 +64,13 @@ window.applyScaleAdaptation = (nodeCount) => {
         scaleMode = 'small';
         window.galaxyGraph.nodeResolution(24);
         window.galaxyGraph.nodeRelSize(5);
-        if (chargeForce) chargeForce.strength(-120);
-        if (linkForce) linkForce.distance(80).strength(0.4);
-        console.log(`🎛️ [LOD] 小规模高品质模式激活: ${nodeCount} 节点`);
+        if (chargeForce) chargeForce.strength(-240);
+        if (linkForce) {
+            linkForce
+                .distance(link => (link.type === 'wikilink' ? 80 : 150))
+                .strength(link => (link.type === 'wikilink' ? 0.35 : 0.04));
+        }
+        console.log(`🎛️ [LOD] 小规模高品质舒展模式激活: ${nodeCount} 节点`);
     }
 
     window._galaxyScaleMode = scaleMode;

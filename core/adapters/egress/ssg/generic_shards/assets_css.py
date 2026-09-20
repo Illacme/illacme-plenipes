@@ -4,10 +4,12 @@ Illacme-plenipes Core - Generic SSG Adapter Assets CSS Shard
 模块职责：提供 Universal 主题与通用 SSG 的标准 CSS 样式表（深浅色主题、毛玻璃质感、Hero 按钮适配、Callouts 提示块与栅格系统）。
 """
 
+from core.adapters.egress.ssg.generic_shards.assets_css_views import get_universal_views_css
+
 
 def get_universal_css() -> str:
     """获取 Universal 主题核心完整 CSS 样式表"""
-    return """
+    base_css = """
         :root {
             --bg-base: #0d1117; --bg-surface: #161b22; --bg-elevated: #21262d;
             --text-primary: #f0f6fc; --text-secondary: #8b949e; --text-muted: #6e7681;
@@ -69,84 +71,47 @@ def get_universal_css() -> str:
             color: var(--text-secondary); text-decoration: none; font-size: 0.92rem; font-weight: 500;
             padding: 6px 12px; border-radius: 6px; transition: all 0.2s;
         }
-        .header-nav-link:hover, .header-nav-link.active { color: var(--text-primary); background: var(--bg-elevated); }
-        .header-nav-link.active { color: var(--accent); font-weight: 600; }
-        .theme-toggle-btn {
+        .header-nav-link:hover, .header-nav-link.active { color: var(--text-primary); background: var(--bg-surface); }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .theme-btn {
             background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary);
-            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 6px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
         }
-        .theme-toggle-btn:hover { border-color: var(--accent); }
+        .theme-btn:hover { background: var(--bg-elevated); border-color: var(--accent); }
 
-        /* 🌐 多语言下拉组件 */
-        .lang-dropdown-wrapper { position: relative; display: inline-block; }
-        .lang-dropdown-btn { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        .lang-dropdown-menu {
-            display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
-            background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 6px;
-            min-width: 150px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000;
-        }
-        .lang-dropdown-menu::before { content: ''; position: absolute; top: -12px; left: 0; right: 0; height: 12px; background: transparent; }
-        .lang-dropdown-wrapper:hover .lang-dropdown-menu, .lang-dropdown-wrapper:focus-within .lang-dropdown-menu { display: block; }
-        .lang-menu-item {
-            display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--text-secondary);
-            text-decoration: none; font-size: 0.88rem; border-radius: 6px; transition: all 0.15s;
-        }
-        .lang-menu-item:hover { color: var(--text-primary); background: var(--bg-elevated); text-decoration: none; }
-        .lang-menu-item.active { color: var(--accent); background: var(--accent-glow); font-weight: 600; }
-
-        /* 布局容器 */
-        .page-container { max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem; min-height: calc(100vh - 140px); }
-        .layout-docs .page-container { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 2.5rem; }
-        .layout-standard .page-container { max-width: 980px; }
-        .layout-showcase .page-container { max-width: 1180px; }
-        .layout-blog .page-container { max-width: 1080px; }
-
-        /* 📂 文档侧边栏 */
+        /* 布局网格 */
+        .layout-container { max-width: 1280px; width: 100%; margin: 0 auto; padding: 2rem 1.5rem; }
+        .layout-docs .page-container { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; }
         .universal-docs-sidebar {
-            position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto;
-            border-right: 1px solid var(--border-subtle); padding-right: 1.5rem;
+            position: sticky; top: 80px; height: calc(100vh - 100px); overflow-y: auto; padding-right: 1rem;
         }
-        .sidebar-group { margin-bottom: 1.5rem; }
-        .sidebar-group-title { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; letter-spacing: 0.5px; }
-        .sidebar-nav-list { list-style: none; padding: 0; margin: 0; }
-        .sidebar-nav-link { display: block; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; padding: 6px 10px; border-radius: 6px; transition: all 0.15s; line-height: 1.4; }
-        .sidebar-nav-link:hover { color: var(--text-primary); background: var(--bg-surface); }
-        .sidebar-nav-link.active { color: var(--accent); background: var(--accent-glow); font-weight: 600; }
-
-        /* 📝 正文排版 */
-        .universal-article { min-width: 0; }
-        .universal-article h1 { font-size: 2.2rem; font-weight: 800; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; margin-top: 0; margin-bottom: 1.5rem; line-height: 1.25; }
-        .universal-article h2 { font-size: 1.6rem; font-weight: 700; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem; margin-top: 2.2rem; margin-bottom: 1rem; }
-        .universal-article h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; }
-        .universal-article hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 2.5rem 0; }
-        .universal-article p { margin: 1rem 0; }
-        .universal-article ul, .universal-article ol { padding-left: 1.5rem; margin: 1rem 0; }
-        .universal-article li { margin-bottom: 0.4rem; }
-        .universal-link { color: var(--accent); text-decoration: none; font-weight: 500; }
-        .universal-link:hover { text-decoration: underline; }
-        .universal-link.wikilink { border-bottom: 1px dashed var(--accent); }
-
-        /* 🎨 Showcase & Blog 卡片栅格系统 */
-        article, .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-        .card-pioneer {
-            display: flex; flex-direction: column; padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-subtle);
-            border-radius: 12px; text-decoration: none; color: var(--text-primary); transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-            position: relative; overflow: hidden;
+        .sidebar-section { margin-bottom: 1.5rem; }
+        .sidebar-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem; }
+        .sidebar-links { list-style: none; margin: 0; padding: 0; }
+        .sidebar-link {
+            display: block; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;
+            padding: 6px 10px; border-radius: 6px; transition: all 0.15s; margin-bottom: 2px;
         }
-        .card-pioneer:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(0,0,0,0.25); text-decoration: none; }
-        .card-tag {
-            align-self: flex-start; display: inline-block; padding: 4px 10px; font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px; border-radius: 20px; background: var(--accent-glow); color: var(--accent); margin-bottom: 0.8rem;
-        }
-        .card-pioneer h3 { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.6rem 0; color: var(--text-primary); line-height: 1.35; }
-        .card-pioneer p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; margin: 0 0 1rem 0; flex-grow: 1; }
-        .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.82rem; color: var(--text-muted); }
-        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-        .card-footer { display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-top: auto; }
+        .sidebar-link:hover { color: var(--text-primary); background: var(--bg-surface); }
+        .sidebar-link.active { color: var(--accent); background: var(--accent-glow); font-weight: 600; }
 
-        /* ✍️ 博客时间轴与工具栏 */
-        .blog-hero-section { margin-bottom: 2rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.5rem; }
-        .list-hero-title { font-size: 2.2rem; font-weight: 800; margin: 0 0 0.5rem 0; }
+        /* 文章容器与排版 */
+        .universal-content { min-width: 0; max-width: 860px; margin: 0 auto; }
+        .universal-content h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-top: 0; margin-bottom: 1rem; color: var(--text-primary); }
+        .universal-content h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.35; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem; }
+        .universal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .universal-content p { margin: 1rem 0; color: var(--text-primary); }
+        .universal-content a { color: var(--accent); text-decoration: none; }
+        .universal-content a:hover { text-decoration: underline; }
+        .universal-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border-subtle); }
+        .universal-content blockquote {
+            border-left: 4px solid var(--border-strong); color: var(--text-secondary);
+            padding-left: 1rem; margin: 1.25rem 0;
+        }
+
+        /* 📚 博客列表页与网格增强 */
+        .list-hero-header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.5rem; }
+        .list-hero-title { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0; }
         .list-hero-desc { font-size: 1.05rem; color: var(--text-secondary); margin: 0 0 1.5rem 0; }
         .blog-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
         .blog-tag-scroller { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 4px; max-width: 70%; }
@@ -162,156 +127,5 @@ def get_universal_css() -> str:
         }
         .view-switch-btn.active { background: var(--bg-elevated); color: var(--accent); font-weight: 600; }
         .view-btn-badge { background: var(--accent-glow); color: var(--accent); padding: 1px 6px; border-radius: 10px; font-size: 0.72rem; }
-
-        /* 时间轴与网格卡片视图控制 */
-        .blog-timeline-view { display: none !important; margin-top: 2rem; }
-        .blog-timeline-view.active { display: block !important; }
-        .blog-grid-view { display: none !important; margin-top: 2rem; }
-        .blog-grid-view.active { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-        .blog-compact-view { display: none !important; margin-top: 2rem; }
-        .blog-compact-view.active { display: block !important; }
-        .compact-table {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 1.5rem;
-        }
-        .compact-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            text-decoration: none;
-            color: var(--text-primary);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            gap: 1.25rem;
-        }
-        .compact-row:hover {
-            background: var(--bg-elevated);
-            border-color: var(--accent);
-            transform: translateX(6px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-            text-decoration: none;
-        }
-        .compact-tags {
-            display: flex;
-            align-items: center;
-            min-width: 90px;
-            flex-shrink: 0;
-        }
-        .compact-tags .tag-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 10px;
-            font-size: 0.74rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            border-radius: 20px;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid rgba(88, 166, 255, 0.25);
-        }
-        .compact-title {
-            flex: 1;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            line-height: 1.4;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            transition: color 0.15s;
-        }
-        .compact-row:hover .compact-title {
-            color: var(--accent);
-        }
-        .compact-date {
-            font-size: 0.84rem;
-            font-variant-numeric: tabular-nums;
-            color: var(--text-muted);
-            white-space: nowrap;
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .compact-date::before {
-            content: "📅";
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-        @media (max-width: 640px) {
-            .compact-row {
-                flex-wrap: wrap;
-                gap: 8px;
-                padding: 12px 14px;
-            }
-            .compact-title {
-                width: 100%;
-                order: 3;
-                white-space: normal;
-            }
-            .compact-tags {
-                order: 1;
-            }
-            .compact-date {
-                order: 2;
-                margin-left: auto;
-            }
-        }
-
-        .timeline-tree { position: relative; padding-left: 2rem; border-left: 2px solid var(--border-subtle); margin-left: 1rem; }
-        .timeline-year-group { margin-bottom: 2.5rem; }
-        .timeline-year-badge { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin-bottom: 1.25rem; }
-        .timeline-item {
-            position: relative; margin-bottom: 1.75rem; background: var(--bg-surface); border: 1px solid var(--border-subtle);
-            border-radius: 10px; padding: 1.25rem 1.5rem; transition: all 0.2s;
-        }
-        .timeline-item:hover { border-color: var(--accent); transform: translateX(4px); }
-        .timeline-node {
-            position: absolute; left: -2.45rem; top: 1.5rem; width: 12px; height: 12px; border-radius: 50%;
-            background: var(--accent); box-shadow: 0 0 0 4px var(--bg-base);
-        }
-        .timeline-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.82rem; color: var(--text-muted); }
-        .timeline-tags { display: flex; gap: 6px; }
-        .timeline-tag { background: var(--accent-glow); color: var(--accent); padding: 1px 8px; border-radius: 12px; font-size: 0.75rem; }
-        .timeline-title { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); text-decoration: none; display: inline-block; margin-bottom: 6px; }
-        .timeline-title:hover { color: var(--accent); }
-        .timeline-desc { font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.5; }
-
-        /* 💡 Callouts */
-        .universal-callout { border-radius: 8px; padding: 12px 16px; margin: 1.25rem 0; border-left: 4px solid var(--accent); background: var(--bg-surface); }
-        .callout-note { border-color: var(--callout-note); background: rgba(56, 139, 253, 0.08); }
-        .callout-tip { border-color: var(--callout-tip); background: rgba(63, 185, 80, 0.08); }
-        .callout-warning { border-color: var(--callout-warn); background: rgba(210, 153, 34, 0.08); }
-        .callout-caution, .callout-danger { border-color: var(--callout-danger); background: rgba(248, 81, 73, 0.08); }
-        .callout-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .callout-body p { margin: 0; }
-
-        /* 代码高亮与 Mermaid */
-        pre, code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; background: var(--bg-surface); border-radius: 6px; }
-        code { padding: 0.2em 0.4em; font-size: 85%; }
-        pre { padding: 1rem; overflow-x: auto; border: 1px solid var(--border-subtle); }
-        pre code { padding: 0; background: transparent; }
-        .universal-mermaid {
-            background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px;
-            padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; text-align: center;
-        }
-
-        /* 底部版权 */
-        .universal-footer {
-            border-top: 1px solid var(--border-subtle); padding: 2rem 1.5rem; text-align: center;
-            color: var(--text-muted); font-size: 0.85rem; margin-top: 3rem;
-        }
-
-        @media (max-width: 768px) {
-            .layout-docs .page-container { grid-template-columns: 1fr; }
-            .universal-docs-sidebar { display: none; }
-            .header-nav { display: none; }
-            .blog-tag-scroller { max-width: 100%; }
-        }
     """
+    return base_css + get_universal_views_css()

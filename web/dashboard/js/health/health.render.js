@@ -91,19 +91,10 @@ window.showServiceManager = (service) => {
         if (modal) {
             modal.style.display = 'flex';
             modal.dataset.context = 'service_preview';
-            document.getElementById('terminal-title').innerText = "🛰️ 预览服务控制台";
-            
-            const toolbar = document.getElementById('terminal-toolbar');
-            if (toolbar) {
-                toolbar.style.display = 'flex';
-                toolbar.innerHTML = window.renderServiceToolbar();
+            const titleEl = document.getElementById('terminal-title');
+            if (titleEl) {
+                titleEl.innerText = "🛰️ 预览服务控制台";
             }
-            
-            const out = document.getElementById('terminal-output');
-            if (out && (modal.dataset.lastContext !== 'service_preview' || out.innerHTML.trim() === "")) {
-                out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
-            }
-            modal.dataset.lastContext = 'service_preview';
             
             // 🛡️ 单例彻底隔离：重置所有页脚控件，只点亮服务管理需要的「关闭」按钮
             if (typeof window.resetTerminalModalFooter === 'function') {
@@ -115,11 +106,26 @@ window.showServiceManager = (service) => {
                 okBtn.innerText = '关闭';
             }
             
+            const toolbar = document.getElementById('terminal-toolbar');
+            if (toolbar) {
+                toolbar.style.display = 'flex';
+                if (typeof window.renderServiceToolbar === 'function') {
+                    toolbar.innerHTML = window.renderServiceToolbar();
+                }
+            }
+            
+            const out = document.getElementById('terminal-output');
+            if (out && (modal.dataset.lastContext !== 'service_preview' || out.innerHTML.trim() === "")) {
+                out.innerHTML = `<div class="term-line" style="color:#888">[${new Date().toLocaleTimeString()}] 控制台已就绪，请选择上方治理指令。</div>`;
+            }
+            modal.dataset.lastContext = 'service_preview';
+            
             // 实时同步当前节点状态至终端状态栏
             const labels = Array.from(document.querySelectorAll('.node-label'));
-            const previewLabel = labels.find(el => el.innerText.includes("预览服务"));
+            const previewLabel = labels.find(el => el && el.innerText && el.innerText.includes("预览服务"));
             const container = previewLabel ? previewLabel.closest('.health-node') : null;
-            const currentStatus = container ? container.querySelector('.node-status').innerText.toUpperCase() : 'OFFLINE';
+            const statusNode = container ? container.querySelector('.node-status') : null;
+            const currentStatus = statusNode && statusNode.innerText ? statusNode.innerText.toUpperCase() : 'OFFLINE';
             
             const statusEl = document.getElementById('terminal-status');
             if (statusEl) statusEl.innerText = currentStatus;

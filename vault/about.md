@@ -1,8 +1,6 @@
 ---
-title: 关于 Illacme Press 出版团队
 layout: page
-slug: about
-date: 2026-08-16
+date: '2026-08-16T08:00:00+08:00'
 author: Illacme Press Core
 description: 了解 Illacme Plenipes 全球私人出版社的诞生背景、核心使命与技术架构哲学。
 tags:
@@ -11,6 +9,66 @@ tags:
 - Philosophy
 categories: About
 cover: /api/design/assets/covers/gen_0bb88c5862c7.jpg
+gist: Illacme Press 赋予创作者物理主权，实现一处起草、全球共振的开放出版生态。
+entities:
+  concepts:
+  - 母语原稿
+  - 中心化内容平台
+  - 全球全渠道矩阵
+  - 创作自由
+  - 物理主权优先
+  - 独立创作者
+  - 开放演进的出版生态
+  - 多国语言
+  - 本地开源小模型
+  - 数据物理主权
+  - CC BY-NC 4.0
+  - 无缝调度
+  - 段落级增量影子缓存
+  - 自动润色
+  - SEO 结构化数据
+  - 一处起草，全球共振
+  - 写作团队
+  - 数字壁垒
+  - 算力民主化
+  - 只读探测
+  - 本地磁盘
+  - 增量同步
+  - 格式兼容
+  - 开源小模型
+  - 学者
+  - GitHub 仓库
+  - 翻译算力成本
+  - BlockShadowCache
+  - 商业大模型
+  technologies:
+  - CC BY-NC 4.0
+  - Mermaid
+  - OpenAI
+  - Gemini
+  - DeepSeek
+  - GitHub
+  - Notion
+  - CommonMark
+  - Logseq
+  - 百度千帆
+  - Markdown
+  - Obsidian
+  - Ollama
+  - LMStudio
+  people: []
+  projects:
+  - Dist
+  - SSG Bindery
+  - Illacme Press
+  - Pipeline
+  - Vault
+  - Illacme Plenipes
+  - i18n Matrix
+  - The Matrix
+  - Compute Hub
+title: 关于 Illacme Press 出版团队
+slug: about
 ---
 # 🌐 关于 Illacme Press 出版团队
 

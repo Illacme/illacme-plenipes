@@ -103,14 +103,11 @@
         if (existing) existing.remove();
 
         const card = document.createElement('div');
-        card.className = 'deploy-summary-card';
+        card.className = 'glass-panel deploy-summary-card';
         card.style.cssText = `
             margin: 16px 0 8px 0;
             padding: 16px 18px;
-            background: rgba(15, 23, 42, 0.82);
-            border: 1px solid rgba(0, 240, 255, 0.4);
             border-radius: 12px;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(12px);
             font-family: inherit;
             text-align: left;
@@ -145,23 +142,23 @@
 
             // 🛰️ [V90.0] 健康雷达动态徽章插槽
             const radarBadge = isSuccess && ch.url
-                ? `<span class="health-radar-badge" data-url="${ch.url}" style="font-size:0.72rem;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;display:inline-flex;align-items:center;gap:4px;transition:all 0.3s;white-space:nowrap;"><span style="display:inline-block;transform:scale(0.85);">🛰️</span> 探测中...</span>`
+                ? `<span class="health-radar-badge" data-url="${ch.url}" style="font-size:0.72rem;padding:2px 8px;border-radius:4px;background:var(--card-subtle-bg, rgba(255,255,255,0.05));border:1px solid var(--glass-border);color:var(--text-dim);display:inline-flex;align-items:center;gap:4px;transition:all 0.3s;white-space:nowrap;"><span style="display:inline-block;transform:scale(0.85);">🛰️</span> 探测中...</span>`
                 : '';
 
             const linkAction = isSuccess && ch.url
-                ? `<a href="${ch.url}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;background:rgba(0,240,255,0.15);border:1px solid rgba(0,240,255,0.4);color:#00f0ff;border-radius:6px;font-size:0.75rem;font-weight:700;text-decoration:none;transition:all 0.15s;white-space:nowrap;" onmouseover="this.style.background='rgba(0,240,255,0.3)'" onmouseout="this.style.background='rgba(0,240,255,0.15)'">打开浏览 ↗</a>`
-                : `<span style="font-size:0.72rem;color:#94a3b8;">${ch.error || '未生成线上地址'}</span>`;
+                ? `<a href="${ch.url}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;background:rgba(0,240,255,0.15);border:1px solid rgba(0,240,255,0.4);color:var(--accent-primary, #00f0ff);border-radius:6px;font-size:0.75rem;font-weight:700;text-decoration:none;transition:all 0.15s;white-space:nowrap;" onmouseover="this.style.background='rgba(0,240,255,0.3)'" onmouseout="this.style.background='rgba(0,240,255,0.15)'">打开浏览 ↗</a>`
+                : `<span style="font-size:0.72rem;color:var(--text-dim);">${ch.error || '未生成线上地址'}</span>`;
 
             const urlDisplay = isSuccess && ch.url
-                ? `<div style="margin-top:5px;font-size:0.75rem;color:#94a3b8;word-break:break-all;font-family:'JetBrains Mono',monospace;"><a href="${ch.url}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:underline;">${ch.url}</a></div>`
+                ? `<div style="margin-top:5px;font-size:0.75rem;color:var(--text-dim);word-break:break-all;font-family:'JetBrains Mono',monospace;"><a href="${ch.url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary, #38bdf8);text-decoration:underline;">${ch.url}</a></div>`
                 : '';
 
             return `
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                <div class="deploy-channel-item" style="border-radius:8px;padding:10px 14px;margin-bottom:8px;border:1px solid var(--glass-border);background:var(--card-subtle-bg, rgba(255,255,255,0.03));">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                             ${roleBadge}
-                            <span style="font-weight:700;font-size:0.85rem;color:var(--text-bright, #fff);">${ch.name}</span>
+                            <span style="font-weight:700;font-size:0.85rem;color:var(--text-bright);">${ch.name}</span>
                             ${statusBadge}
                             ${radarBadge}
                         </div>

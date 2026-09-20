@@ -1640,6 +1640,18 @@
     color: #b45309 !important;
 }
 
+[data-theme="light"] .dispatch-popover .popover-retry-btn {
+    background: #fef3c7 !important;
+    border-color: #fcd34d !important;
+    color: #92400e !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-retry-btn:hover:not(:disabled) {
+    background: #fde68a !important;
+    border-color: #f59e0b !important;
+    color: #78350f !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    🌞 [PATCH] 插件配置抽屉 (#plugin-drawer) 白天模式适配
    根因：plugins 目录下 JS 渲染函数大量内联暗色调硬编码颜色。
@@ -2691,4 +2703,714 @@
     color: #7e22ce !important;
     border-color: #e9d5ff !important;
 }
+
+/* 🌞 原稿操作更多下拉菜单白天明亮模式高对比高清晰度适配 */
+[data-theme="light"] .vault-more-menu {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .vault-more-item {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] .vault-more-item:hover {
+    background: #f1f5f9 !important;
+    color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .vault-more-item.danger {
+    color: #ef4444 !important;
+}
+
+[data-theme="light"] .vault-more-item.danger:hover {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+[data-theme="light"] .vault-more-divider {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .vault-more-menu.dropup {
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15), 0 -2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 🌞 [V112.0] 全站残留内联暗色彻底清零与昼夜自适应高对比度补丁 (SOP-03) */
+
+/* 🌐 全局导航多语言定制弹窗 */
+[data-theme="light"] .global-nav-i18n-modal {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .global-nav-i18n-modal b {
+    color: #0f172a !important;
+}
+[data-theme="light"] .global-nav-i18n-modal .setting-input {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+[data-theme="light"] .global-nav-i18n-modal .setting-input:focus {
+    background: #ffffff !important;
+    border-color: var(--accent-primary) !important;
+}
+
+/* ✨ 导航图标 Emoji 选择器浮层 */
+[data-theme="light"] .global-icon-picker-popover {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .global-icon-picker-popover .emoji-opt-btn {
+    background: #f1f5f9 !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .global-icon-picker-popover .emoji-opt-btn:hover {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+}
+
+/* 📂 文库路径选择轻量级下拉浮层 */
+[data-theme="light"] .custom-glass-dropdown,
+[data-theme="light"] .source-dropdown-menu {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .source-dropdown-menu div,
+[data-theme="light"] .custom-glass-dropdown div {
+    color: #1e293b !important;
+}
+[data-theme="light"] .source-dropdown-menu div:hover,
+[data-theme="light"] .custom-glass-dropdown div:hover {
+    background: #f1f5f9 !important;
+    color: var(--accent-primary) !important;
+}
+
+/* 🩺 跨主题内链健康体检中枢 (Link Doctor) */
+[data-theme="light"] .link-doctor-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .link-doctor-card h4 {
+    color: #0f172a !important;
+}
+[data-theme="light"] .link-doctor-stat-box {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .link-doctor-issue-item {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 🚀 部署终端汇总卡片 */
+[data-theme="light"] .deploy-summary-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .deploy-channel-item {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 🛡️ 全域分发二次确认兜底弹窗 */
+[data-theme="light"] .sovereign-confirm-backdrop {
+    background: rgba(15, 23, 42, 0.45) !important;
+}
+[data-theme="light"] .sovereign-confirm-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2) !important;
+    color: #0f172a !important;
+}
+
+/* 🏛️ 品牌向导创建就绪页信息卡片 */
+[data-theme="light"] .wiz-summary-item {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+
+/* 📋 发布预检信息卡片与丢失清单 */
+[data-theme="light"] .precheck-info-card {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .precheck-warning-details {
+    background: #fef2f2 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+/* 🔑 全局渠道向导按钮高对比度覆盖 (跨越所有抽屉与页面) */
+[data-theme="light"] .helper-btn,
+[data-theme="light"] a.helper-btn {
+    color: #0369a1 !important;
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+}
+[data-theme="light"] .helper-btn:hover,
+[data-theme="light"] a.helper-btn:hover {
+    background: #e0f2fe !important;
+    color: #0c4a6e !important;
+    border-color: #7dd3fc !important;
+}
+
+/* 🏛️ 品牌卡片 3D 悬浮视差与出版徽章亮色模式适配 (Brand Cards 3D Parallax & Badges) */
+[data-theme="light"] .shield-pod.territory-pod {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .shield-pod.territory-pod:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 
+        0 14px 30px rgba(15, 23, 42, 0.08),
+        0 30px 60px rgba(15, 23, 42, 0.05),
+        0 0 0 1px rgba(2, 132, 199, 0.25) !important;
+}
+
+[data-theme="light"] .shield-pod.territory-pod.active-imprint,
+[data-theme="light"] .shield-pod.territory-pod.primary-active {
+    border: 2px solid #0284c7 !important;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.03) 0%, #ffffff 100%) !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] .shield-pod.territory-pod.active-imprint:hover,
+[data-theme="light"] .shield-pod.territory-pod.primary-active:hover {
+    border-color: #0284c7 !important;
+    box-shadow: 
+        0 0 0 3px rgba(2, 132, 199, 0.35),
+        0 18px 40px rgba(2, 132, 199, 0.14),
+        0 35px 70px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .brand-card-glare {
+    background: radial-gradient(
+        circle 320px at var(--glare-x, 50%) var(--glare-y, 50%),
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(2, 132, 199, 0.08) 50%,
+        transparent 75%
+    ) !important;
+    mix-blend-mode: multiply !important;
+}
+
+[data-theme="light"] .brand-crest-silhouette {
+    opacity: 0.04 !important;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05)) !important;
+}
+
+[data-theme="light"] .shield-pod.territory-pod:hover .brand-crest-silhouette {
+    opacity: 0.08 !important;
+}
+
+[data-theme="light"] .imprint-active-badge {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    border: 1px solid #0284c7 !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35) !important;
+}
+
+/* 🎨 装帧主题全宽视窗画廊卡片亮色模式适配 (Theme Showcase Pod Light Mode) */
+[data-theme="light"] .shield-pod.theme-showcase-pod {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .shield-pod.theme-showcase-pod:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 
+        0 14px 30px rgba(15, 23, 42, 0.08),
+        0 30px 60px rgba(15, 23, 42, 0.04),
+        0 0 0 1px rgba(2, 132, 199, 0.25) !important;
+}
+
+[data-theme="light"] .shield-pod.theme-showcase-pod.active-duty {
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.03) 0%, #ffffff 100%) !important;
+}
+
+[data-theme="light"] .theme-stage-viewport {
+    background: #f8fafc !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .theme-stage-viewport .browser-header-bar {
+    background: #f1f5f9 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .theme-control-bar {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 出版模式矩阵与 SEO 策略选择项高对比度适配
+   ========================================================================== */
+[data-theme="light"] #view-settings .mode-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] #view-settings .mode-card:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+[data-theme="light"] #view-settings .mode-card.active {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.03) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] #view-settings .mode-card .mode-desc {
+    color: #475569 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item.active {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.4) !important;
+}
+
+[data-theme="light"] #view-settings .strategy-name {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-settings .strategy-desc {
+    color: #64748b !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 图像策略卡片亮色模式高对比度适配
+   ========================================================================== */
+[data-theme="light"] .strategy-option-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] .strategy-option-card:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .strategy-option-card.active-strategy {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.04) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 14px 32px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] .strategy-option-card span[style*="color: #fff"],
+[data-theme="light"] .strategy-option-card span[style*="color:#fff"] {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .strategy-option-card div[style*="color: var(--text-muted)"] {
+    color: #475569 !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 语种矩阵卡片亮色模式高对比度立体适配
+   ========================================================================== */
+[data-theme="light"] #view-settings .lang-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card:hover {
+    background: #f8fafc !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+[data-theme="light"] #view-settings .lang-card .lang-name {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-settings .lang-card .lang-code {
+    color: #64748b !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.06) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.22), 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active:hover {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.1) 0%, #ffffff 100%) !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.28), 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active .lang-name {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active .lang-code {
+    color: #0284c7 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.locked {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    opacity: 0.55 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.locked .lang-name,
+[data-theme="light"] #view-settings .lang-card.locked .lang-code {
+    color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 设计中心 (Design Studio) 亮色模式全域视觉主权适配
+   ========================================================================== */
+
+/* 1. 顶部 Header 与就绪徽标 */
+[data-theme="light"] #view-design .view-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #view-design .header-nav-row {
+    border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] #design-header-actions-top span {
+    color: #4338ca !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+    font-weight: 600 !important;
+}
+
+/* 2. 目标文章关联横幅 (Target Banner) - 彻底解决浅底白字不可读问题 */
+[data-theme="light"] .studio-target-banner {
+    background: linear-gradient(90deg, rgba(2, 132, 199, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%) !important;
+    border: 1px solid rgba(2, 132, 199, 0.28) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .studio-target-banner .banner-pulse-dot {
+    background: #0284c7 !important;
+    box-shadow: 0 0 6px rgba(2, 132, 199, 0.6) !important;
+}
+[data-theme="light"] .studio-target-banner .banner-label {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+}
+[data-theme="light"] .studio-target-banner .banner-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+[data-theme="light"] .studio-target-banner .banner-path {
+    color: #64748b !important;
+}
+[data-theme="light"] .studio-target-banner .banner-btn-return {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.1) !important;
+    border: 1px solid rgba(2, 132, 199, 0.35) !important;
+}
+[data-theme="light"] .studio-target-banner .banner-btn-return:hover {
+    background: rgba(2, 132, 199, 0.18) !important;
+}
+[data-theme="light"] .studio-target-banner .banner-btn-cancel {
+    color: #475569 !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .studio-target-banner .banner-btn-cancel:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* 3. 左侧工作台与右侧展示卡片 (Glass Panels) */
+[data-theme="light"] #view-design .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] #view-design .glass-panel > div:first-child span:first-child {
+    color: #0369a1 !important;
+}
+
+/* 4. 输入控件与选择器 (Form Controls & Textarea) */
+[data-theme="light"] .studio-form-control,
+[data-theme="light"] #studio-provider-select,
+[data-theme="light"] #studio-prompt-input {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .studio-form-control:focus,
+[data-theme="light"] #studio-provider-select:focus,
+[data-theme="light"] #studio-prompt-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14) !important;
+}
+[data-theme="light"] #studio-prompt-input::placeholder {
+    color: #94a3b8 !important;
+}
+[data-theme="light"] #studio-provider-select optgroup {
+    background: #ffffff !important;
+    color: #64748b !important;
+}
+[data-theme="light"] #studio-provider-select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* 5. 画幅比例单选卡片 (.lang-radio-btn) */
+[data-theme="light"] #view-design label.lang-radio-btn {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+    transition: all 0.2s ease !important;
+}
+[data-theme="light"] #view-design label.lang-radio-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #view-design label.lang-radio-btn.active {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.08) 0%, #ffffff 100%) !important;
+    border: 1.5px solid #0284c7 !important;
+    color: #0369a1 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18), 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+}
+[data-theme="light"] #view-design label.lang-radio-btn.active span {
+    color: #0369a1 !important;
+}
+
+/* 6. 提示词风格预设标签与微动作按钮 */
+[data-theme="light"] #view-design .mini-btn {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    color: #334155 !important;
+}
+[data-theme="light"] #view-design .mini-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(2, 132, 199, 0.4) !important;
+    color: #0284c7 !important;
+}
+[data-theme="light"] #studio-refine-prompt-btn {
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    background: rgba(2, 132, 199, 0.06) !important;
+}
+[data-theme="light"] #studio-refine-prompt-btn:hover {
+    background: rgba(2, 132, 199, 0.14) !important;
+}
+[data-theme="light"] #view-design .mini-btn.glow-btn {
+    color: #000000 !important;
+}
+
+/* 7. 主生图动作按钮 */
+[data-theme="light"] #studio-generate-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+}
+[data-theme="light"] #studio-generate-btn:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35) !important;
+}
+[data-theme="light"] #studio-generate-apply-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #10b981 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* 8. 图源引擎卡片 (Providers Cards) */
+[data-theme="light"] .provider-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+}
+[data-theme="light"] .provider-card:hover {
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+[data-theme="light"] .provider-card div[style*="border-top"] {
+    border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] #provider-category-filter button.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0284c7 !important;
+}
+
+/* 9. 媒体资产库 (Assets Panel & Cards) */
+[data-theme="light"] .asset-card-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+}
+[data-theme="light"] .asset-card-item:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08) !important;
+}
+[data-theme="light"] .asset-card-item .skeleton-shimmer {
+    background: #e2e8f0 !important;
+}
+[data-theme="light"] .asset-engine-badge {
+    background: rgba(15, 23, 42, 0.7) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+[data-theme="light"] select.assets-engine-select,
+[data-theme="light"] select.studio-select {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] input.assets-page-input {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .pagination-container {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #view-design div[style*="background:rgba(255,255,255,0.03)"] {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 10. 设计中心弹窗适配 (Design Modals in Light Mode) */
+[data-theme="light"] #design-provider-modal .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2) !important;
+}
+[data-theme="light"] #design-provider-modal div[style*="border-bottom"] {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #design-provider-modal div[style*="border-top"] {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #design-provider-modal div[style*="color: #fff"] {
+    color: #0f172a !important;
+}
+[data-theme="light"] #design-provider-modal input {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #design-provider-modal input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14) !important;
+}
+
+/* 11. 批量智能配图中枢弹窗亮色适配 (#batch-cover-modal) */
+[data-theme="light"] #batch-cover-modal {
+    background: rgba(15, 23, 42, 0.45) !important;
+}
+[data-theme="light"] #batch-cover-modal .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.15) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-modal-header {
+    background: #ffffff !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-modal-title {
+    color: #0f172a !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-progress-bar-slot {
+    background: rgba(2, 132, 199, 0.04) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-progress-track {
+    background: #e2e8f0 !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-toolbar {
+    background: #f8fafc !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-select {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-select:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14) !important;
+}
+[data-theme="light"] #batch-cover-modal #batch-cover-docs-container {
+    background: #ffffff !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-empty-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-item-row {
+    background: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-item-row:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-doc-title {
+    color: #0f172a !important;
+}
+[data-theme="light"] #batch-cover-modal .batch-footer {
+    background: #f8fafc !important;
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #batch-cover-modal .mini-btn {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #334155 !important;
+}
+[data-theme="light"] #batch-cover-modal .mini-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(2, 132, 199, 0.4) !important;
+    color: #0284c7 !important;
+}
+[data-theme="light"] #batch-cover-modal #batch-execute-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+}
+
+
+
+
+
+
+
+
+
 

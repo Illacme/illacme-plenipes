@@ -5,22 +5,13 @@ Default Theme Hooks
 职责：处理默认主题特有的生命周期逻辑，如博客列表合成。
 """
 
-import sys
 import os
 
-# 🚀 [V1.1] 动态加载主题内部脚本 (实现主权闭环)
-theme_dir = os.path.dirname(__file__)
-scripts_dir = os.path.join(theme_dir, "scripts")
-if scripts_dir not in sys.path:
-    sys.path.append(scripts_dir)
-
-try:
-    from blog_synthesizer import BlogSynthesizer
-except ImportError:
-    # 兼容性兜底
-    from .scripts.blog_synthesizer import BlogSynthesizer
-
+from themes.sovereign.scripts.blog_synthesizer import BlogSynthesizer
 from core.utils.tracing import tlog
+
+THEME_DIR = os.path.dirname(os.path.abspath(__file__))
+theme_dir = THEME_DIR
 
 def on_post_sync(engine):
     """

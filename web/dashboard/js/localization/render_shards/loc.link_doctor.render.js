@@ -63,18 +63,18 @@
 
         return `
             <div id="link-doctor-card-container" class="settings-group" style="margin-bottom: 2rem; position: relative;">
-                <div class="glass-panel" style="padding: 22px 24px; border-radius: 12px; border: 1px solid rgba(0, 245, 255, 0.18); background: rgba(15, 23, 42, 0.65); box-shadow: 0 8px 32px rgba(0,0,0,0.35); backdrop-filter: blur(12px);">
+                <div class="glass-panel link-doctor-card" style="padding: 22px 24px; border-radius: 12px; border: 1px solid var(--glass-border); backdrop-filter: blur(12px);">
                     
                     <!-- 顶部标题与一键体检操作 -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 8px;">
+                                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-bright); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 8px;">
                                     <span>🛰️</span> 跨主题内链健康体检中枢 (Link Doctor)
                                 </h4>
                                 ${statusBadge}
                             </div>
-                            <p class="section-desc" style="margin: 6px 0 0 0; font-size: 0.8rem; color: var(--text-dim, #94a3b8); line-height: 1.5;">
+                            <p class="section-desc" style="margin: 6px 0 0 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;">
                                 深度仿真 6 大主流装帧主题在多语种矩阵下的链接转译结果，帮助创作者在发布前消除 404 与路径失效隐患。
                             </p>
                         </div>
@@ -91,13 +91,13 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 18px;">
                         ${THEMES.map(t => {
                             const isThemeOk = !rawIssues.some(i => i.theme === t.id && (i.level === 'CRITICAL' || i.level === 'ERROR'));
-                            const color = report ? (isThemeOk ? '#00ff88' : '#ff4d4f') : 'var(--text-dim, #94a3b8)';
-                            const bg = report ? (isThemeOk ? 'rgba(0, 255, 136, 0.08)' : 'rgba(255, 77, 79, 0.1)') : 'rgba(255,255,255,0.03)';
+                            const color = report ? (isThemeOk ? '#00ff88' : '#ff4d4f') : 'var(--text-dim)';
+                            const bg = report ? (isThemeOk ? 'rgba(0, 255, 136, 0.08)' : 'rgba(255, 77, 79, 0.1)') : 'var(--card-subtle-bg, rgba(255,255,255,0.03))';
                             return `
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 12px; border-radius: 6px; background: ${bg}; border: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 12px; border-radius: 6px; background: ${bg}; border: 1px solid var(--glass-border); font-size: 0.74rem;">
                                     <div style="display: flex; align-items: center; gap: 6px;">
                                         <span>${t.icon}</span>
-                                        <span style="color: #fff; font-weight: 600;">${t.name}</span>
+                                        <span style="color: var(--text-bright); font-weight: 600;">${t.name}</span>
                                     </div>
                                     <span style="color: ${color}; font-family: monospace; font-weight: 700;">${report ? (isThemeOk ? '✓ 畅通' : '✗ 异常') : '待检'}</span>
                                 </div>
@@ -107,16 +107,16 @@
 
                     <!-- 核心指标统计卡片 -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                        <div style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size: 0.72rem; color: var(--text-dim, #94a3b8);">文库扫描原稿</div>
-                            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">${totalFiles} <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-dim);">篇</span></div>
+                        <div class="link-doctor-stat-box" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.72rem; color: var(--text-dim);">文库扫描原稿</div>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-bright); margin-top: 2px;">${totalFiles} <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-dim);">篇</span></div>
                         </div>
-                        <div style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size: 0.72rem; color: var(--text-dim, #94a3b8);">校验内链总数</div>
+                        <div class="link-doctor-stat-box" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.72rem; color: var(--text-dim);">校验内链总数</div>
                             <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-primary, #00f2ff); margin-top: 2px;">${totalLinks} <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-dim);">条</span></div>
                         </div>
-                        <div style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size: 0.72rem; color: var(--text-dim, #94a3b8);">跨主题健康度</div>
+                        <div class="link-doctor-stat-box" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.72rem; color: var(--text-dim);">跨主题健康度</div>
                             <div style="font-size: 1.25rem; font-weight: 800; color: #00ff88; margin-top: 2px;">${criticals.length === 0 ? '100%' : Math.max(0, 100 - criticals.length * 10) + '%'}</div>
                         </div>
                     </div>
@@ -128,25 +128,25 @@
                             <div style="font-size: 0.82rem; font-weight: 700; color: #00ff88; display: flex; align-items: center; gap: 8px;">
                                 <span>🎉</span> 您的文库内链状态极佳，已通过全系 6 大主题多语言兼容认证！
                             </div>
-                            <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 6px; line-height: 1.6;">
-                                所有相对链接、双向链接与多语言前缀已全部完成虚拟转译断言。无论您切换至 <b>Nextra、Starlight、Docusaurus、VitePress、Universal</b> 还是 <b>Sovereign 原生主题</b>，读者点击超链接均能丝滑跳转，无任何 404 风险。
-                            </div>
+                            <p style="margin: 6px 0 0 0; font-size: 0.74rem; color: var(--text-dim); line-height: 1.5;">
+                                所有文档与内部双链均已达到发布级质量，在各种装帧主题和多语种矩阵下均可完美解析跳转。
+                            </p>
                         </div>
                     ` : `
-                        <!-- 🔴/🟡 发现问题时：亲和、结构化、带修复建议的卡片面板 -->
-                        <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                                <div style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                                    <span>📋</span> 巡检报告详情与优化指引 (${displayedIssues.length}/${rawIssues.length})
+                        <!-- 发现潜在问题时的分级清单 -->
+                        <div style="margin-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-bright);">
+                                    <span>🔍</span> 体检诊断与智能修复指引
                                 </div>
                                 <div style="display: flex; gap: 6px;">
-                                    <button class="control-btn" onclick="window.setLinkDoctorFilter('all')" style="padding: 3px 10px; font-size: 0.72rem; border-radius: 4px; background: ${state.activeFilter === 'all' ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255,255,255,0.05)'}; color: ${state.activeFilter === 'all' ? 'var(--accent-primary, #00f2ff)' : 'var(--text-dim)'}; border: 1px solid ${state.activeFilter === 'all' ? 'var(--accent-primary, #00f2ff)' : 'transparent'}; cursor: pointer;">全部 (${rawIssues.length})</button>
-                                    <button class="control-btn" onclick="window.setLinkDoctorFilter('error')" style="padding: 3px 10px; font-size: 0.72rem; border-radius: 4px; background: ${state.activeFilter === 'error' ? 'rgba(255, 77, 79, 0.2)' : 'rgba(255,255,255,0.05)'}; color: ${state.activeFilter === 'error' ? '#ff4d4f' : 'var(--text-dim)'}; border: 1px solid ${state.activeFilter === 'error' ? '#ff4d4f' : 'transparent'}; cursor: pointer;">死链 (${criticals.length})</button>
-                                    <button class="control-btn" onclick="window.setLinkDoctorFilter('warning')" style="padding: 3px 10px; font-size: 0.72rem; border-radius: 4px; background: ${state.activeFilter === 'warning' ? 'rgba(255, 179, 0, 0.2)' : 'rgba(255,255,255,0.05)'}; color: ${state.activeFilter === 'warning' ? '#ffb300' : 'var(--text-dim)'}; border: 1px solid ${state.activeFilter === 'warning' ? '#ffb300' : 'transparent'}; cursor: pointer;">优化建议 (${warnings.length})</button>
+                                    <button class="mini-btn ${state.activeFilter === 'all' ? 'active' : ''}" onclick="window.filterLinkDoctorIssues('all')" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--glass-border); cursor: pointer;">全部 (${rawIssues.length})</button>
+                                    <button class="mini-btn ${state.activeFilter === 'error' ? 'active' : ''}" onclick="window.filterLinkDoctorIssues('error')" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--glass-border); cursor: pointer; color: #ff4d4f;">死链 (${criticals.length})</button>
+                                    <button class="mini-btn ${state.activeFilter === 'warning' ? 'active' : ''}" onclick="window.filterLinkDoctorIssues('warning')" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--glass-border); cursor: pointer; color: #ffb300;">建议 (${warnings.length})</button>
                                 </div>
                             </div>
 
-                            <div style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 4px;">
                                 ${displayedIssues.map((iss, idx) => {
                                     const isErr = iss.level === 'CRITICAL' || iss.level === 'ERROR';
                                     const borderClr = isErr ? '#ff4d4f' : '#ffb300';
@@ -157,22 +157,22 @@
                                     const suggestion = iss.friendly_suggestion || '请在文稿中核实该超链接书写是否正确。';
 
                                     return `
-                                        <div style="padding: 12px 14px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-left: 4px solid ${borderClr};">
+                                        <div class="link-doctor-issue-item" style="padding: 12px 14px; border-radius: 8px; border: 1px solid var(--glass-border); border-left: 4px solid ${borderClr};">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                                                 <div style="display: flex; align-items: center; gap: 8px;">
                                                     <span style="font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: ${badgeBg}; color: ${borderClr};">${badgeTxt}</span>
-                                                    <span style="font-size: 0.82rem; font-weight: 700; color: #fff;">${title}</span>
+                                                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-bright);">${title}</span>
                                                 </div>
-                                                <div style="font-size: 0.7rem; color: #94a3b8; font-family: monospace;">
+                                                <div style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">
                                                     <span>主题: ${iss.theme}</span> · <span>语种: ${iss.lang}</span>
                                                 </div>
                                             </div>
-                                            <div style="font-size: 0.74rem; color: var(--text-dim, #94a3b8); margin-bottom: 6px;">
-                                                <span>📄 原稿文件: <b style="color: #cbd5e1;">${iss.file || '未指定文稿'}</b></span> · 
-                                                <span>🔗 链接目标: <code style="color: var(--accent-primary, #00f2ff); background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">${iss.alias || iss.url}</code></span>
+                                            <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 6px;">
+                                                <span>📄 原稿文件: <b style="color: var(--text-bright);">${iss.file || '未指定文稿'}</b></span> · 
+                                                <span>🔗 链接目标: <code style="color: var(--accent-primary, #00f2ff); background: var(--bg-code, rgba(0,0,0,0.15)); padding: 1px 4px; border-radius: 3px;">${iss.alias || iss.url}</code></span>
                                             </div>
-                                            <div style="font-size: 0.73rem; color: #e2e8f0; line-height: 1.5; margin-bottom: 6px;">
-                                                <span style="color: #94a3b8;">原因分析：</span>${cause}
+                                            <div style="font-size: 0.73rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 6px;">
+                                                <span style="color: var(--text-dim);">原因分析：</span>${cause}
                                             </div>
                                             <div style="font-size: 0.73rem; color: #00ff88; line-height: 1.5; padding: 6px 10px; background: rgba(0, 255, 136, 0.06); border-radius: 4px;">
                                                 <span style="font-weight: 600;">💡 解决建议：</span>${suggestion}

@@ -37,15 +37,15 @@
 }
 
 #view-settings .lang-card.active {
-    background: linear-gradient(135deg, rgba(var(--neon-cyan-rgb), 0.14) 0%, rgba(var(--neon-cyan-rgb), 0.03) 100%);
-    border: 1px solid var(--accent-secondary);
-    box-shadow: 0 0 12px rgba(var(--neon-cyan-rgb), 0.25), inset 0 0 8px rgba(var(--neon-cyan-rgb), 0.1);
+    background: linear-gradient(135deg, rgba(var(--neon-cyan-rgb), 0.16) 0%, rgba(var(--neon-cyan-rgb), 0.04) 100%) !important;
+    border: 2px solid var(--accent-secondary) !important;
+    box-shadow: 0 0 0 2px var(--neon-cyan-20), 0 8px 24px var(--shadow-glow), inset 0 0 12px rgba(var(--neon-cyan-rgb), 0.15) !important;
 }
 
 #view-settings .lang-card.active:hover {
-    background: linear-gradient(135deg, rgba(var(--neon-cyan-rgb), 0.2) 0%, rgba(var(--neon-cyan-rgb), 0.06) 100%);
-    border-color: var(--neon-cyan);
-    box-shadow: 0 4px 16px rgba(var(--neon-cyan-rgb), 0.35), inset 0 0 12px rgba(var(--neon-cyan-rgb), 0.15);
+    background: linear-gradient(135deg, rgba(var(--neon-cyan-rgb), 0.22) 0%, rgba(var(--neon-cyan-rgb), 0.08) 100%) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 0 2px var(--neon-cyan-20), 0 8px 28px rgba(var(--neon-cyan-rgb), 0.4), inset 0 0 14px rgba(var(--neon-cyan-rgb), 0.2) !important;
     transform: translateY(-2px);
 }
 
