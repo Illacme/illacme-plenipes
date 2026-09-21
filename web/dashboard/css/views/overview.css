@@ -207,14 +207,39 @@
     color: var(--text-bright);
 }
 
-/* 🪐 Node Director Sidebar Panel */
+/* 🪐 Node Director & Right Column Layout */
+#galaxy-right-column {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    bottom: 25px;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 260px;
+    max-height: calc(100% - 50px);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+#galaxy-right-column > * {
+    pointer-events: auto;
+}
+
 #galaxy-node-director {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    box-shadow: -10px 0 40px var(--black-30);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    height: auto;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: calc(100% - 46px);
+    overflow: hidden;
+    box-sizing: border-box;
 }
 @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }

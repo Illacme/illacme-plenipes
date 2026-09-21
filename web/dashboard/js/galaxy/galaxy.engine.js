@@ -199,6 +199,9 @@ window.setupGalaxyEngine = (elem) => {
                     1200                   // 1.2 秒柔和退回
                 );
             }
+            if (typeof window.closeNodeDirector === 'function') {
+                window.closeNodeDirector();
+            }
         })
         .onEngineTick(() => {
             // 🏷️ [Phase 3] 节流同步标签 — 避免每帧都触发 DOM 回流

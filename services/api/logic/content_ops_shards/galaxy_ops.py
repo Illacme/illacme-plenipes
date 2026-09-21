@@ -9,6 +9,24 @@ import os
 from services.api.logic.content_ops_shards.galaxy_title_ops import resolve_node_true_title
 
 
+def _resolve_target_doc_key(engine, target: str) -> str:
+    """辅助解析 WikiLink 目标文档主键，支持全路径、文件名、无扩展名与大小写容错"""
+    if not target or not hasattr(engine, "link_graph") or not engine.link_graph:
+        return target
+    resolved = engine.meta.resolve_link(target) if hasattr(engine, "meta") and hasattr(engine.meta, "resolve_link") else None
+    if resolved:
+        return resolved
+    if target in engine.link_graph:
+        return target
+    clean_t = target.strip("/").lower()
+    for k in engine.link_graph:
+        base = os.path.basename(k)
+        if target in (k, base, os.path.splitext(base)[0], os.path.splitext(k)[0]) or \
+           clean_t in (k.lower(), base.lower(), os.path.splitext(base.lower())[0], os.path.splitext(k.lower())[0]):
+            return k
+    return target
+
+
 def get_galaxy_graph_logic(engine, mode: str = "full"):
     """🪰 [混合渐进式] 物理优先与高维全量图模式的节点/连线融合算法"""
     if not engine:
@@ -41,13 +59,7 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
                 "is_skeleton": True
             })
             for target in data.get("links", []):
-                resolved = engine.meta.resolve_link(target)
-                target_key = resolved or target
-                if not resolved and target not in engine.link_graph:
-                    for k in engine.link_graph:
-                        if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                            target_key = k
-                            break
+                target_key = _resolve_target_doc_key(engine, target)
                 link_id = tuple(sorted([rel_path, target_key]))
                 if link_id not in seen_links:
                     seen_links.add(link_id)
@@ -139,16 +151,12 @@ def get_galaxy_graph_logic(engine, mode: str = "full"):
         links_list = []
         seen_links = set()
 
-        # 1. 先合并物理 Wikilink 连线
+        # 1. 先合并物理 Wikilink 连线 (遍历文库全量原稿物理引用)
         if hasattr(engine, "link_graph") and engine.link_graph:
+            for rel_path, data in engine.link_graph.items():
+                if not isinstance(data, dict): continue
                 for target in data.get("links", []):
-                    resolved = engine.meta.resolve_link(target)
-                    target_key = resolved or target
-                    if not resolved and target not in engine.link_graph:
-                        for k in engine.link_graph:
-                            if os.path.basename(k) == target or os.path.splitext(os.path.basename(k))[0] == target:
-                                target_key = k
-                                break
+                    target_key = _resolve_target_doc_key(engine, target)
                     if rel_path in nodes_map and target_key in nodes_map:
                         link_id = tuple(sorted([rel_path, target_key]))
                         if link_id not in seen_links:

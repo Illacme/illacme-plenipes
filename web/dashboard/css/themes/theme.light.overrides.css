@@ -3405,12 +3405,80 @@
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
 }
 
+/* 🌞 [V121.0] 文稿编辑视窗与富文本工具栏白天明亮模式专属适配 (WYSIWYG Toolbar Light Mode) */
+[data-theme="light"] .wysiwyg-toolbar {
+    background: rgba(241, 245, 249, 0.94) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
 
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn {
+    background: #ffffff !important;
+    border: 1px solid rgba(148, 163, 184, 0.45) !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
 
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn:hover {
+    background: #f8fafc !important;
+    border-color: var(--accent-primary, #0066f5) !important;
+    color: var(--accent-primary, #0066f5) !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 245, 0.18) !important;
+}
 
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn:active {
+    background: #e2e8f0 !important;
+    transform: scale(0.95);
+}
 
+/* 🌞 编辑器模式切换胶囊 (源码 / 视觉 / 阅读 / 分栏) 亮色自适应 */
+[data-theme="light"] .editor-mode-toggle {
+    background: rgba(241, 245, 249, 0.95) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
 
+[data-theme="light"] .editor-mode-toggle .mode-btn {
+    color: #475569 !important;
+}
 
+[data-theme="light"] .editor-mode-toggle .mode-btn:hover {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
 
+[data-theme="light"] .editor-mode-toggle .mode-btn.active {
+    background: var(--accent-primary, #0066f5) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 245, 0.3) !important;
+}
 
+/* 🌞 编辑器视觉编辑区与正文在亮色模式下的对比度与底色对齐 */
+[data-theme="light"] #editor-wysiwyg {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
 
+[data-theme="light"] .tactical-editor {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .tactical-preview {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .editor-matrix {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .editor-sidebar {
+    background: #f1f5f9 !important;
+    border-left-color: rgba(148, 163, 184, 0.25) !important;
+}

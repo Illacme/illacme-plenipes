@@ -75,7 +75,7 @@
                             </div>
                         </div>
                         <!-- 🚀 [V75.7] 紧贴上面横线与下面文章内容区的富文本工具栏 (WYSIWYG Toolbar) -->
-                        <div id="editor-wysiwyg-toolbar" class="wysiwyg-toolbar" style="display: none; flex-wrap: wrap; gap: 4px; padding: 6px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; align-items: center; justify-content: flex-start; width: 100%; height: 36px; margin-top: -35px; margin-bottom: -20px; flex-shrink: 0; position: relative; z-index: 10;">
+                        <div id="editor-wysiwyg-toolbar" class="wysiwyg-toolbar" style="display: none; flex-wrap: wrap; gap: 6px; padding: 0 10px; border-radius: 8px; align-items: center; justify-content: flex-start; width: 100%; height: 36px; margin-top: -35px; margin-bottom: -20px; flex-shrink: 0; position: relative; z-index: 10;">
                             <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('bold')" title="加粗" style="font-weight: bold;">B</button>
                             <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('italic')" title="斜体" style="font-style: italic;">I</button>
                             <button type="button" class="toolbar-btn" onclick="window.execWysiwygCmd('formatBlock', 'h1')" style="font-weight: bold;">H1</button>

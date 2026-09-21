@@ -73,14 +73,42 @@ def get_universal_css() -> str:
         }
         .header-nav-link:hover, .header-nav-link.active { color: var(--text-primary); background: var(--bg-surface); }
         .header-actions { display: flex; align-items: center; gap: 10px; }
-        .theme-btn {
+        .theme-toggle-btn, .theme-btn {
             background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary);
             padding: 6px 12px; border-radius: 6px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 6px; line-height: 1.2;
         }
-        .theme-btn:hover { background: var(--bg-elevated); border-color: var(--accent); }
+        .theme-toggle-btn:hover, .theme-btn:hover { background: var(--bg-elevated); border-color: var(--accent); }
 
-        /* 布局网格 */
-        .layout-container { max-width: 1280px; width: 100%; margin: 0 auto; padding: 2rem 1.5rem; }
+        /* 🌐 多语言毛玻璃下拉面板 */
+        .lang-dropdown-wrapper { position: relative; display: inline-block; }
+        .lang-dropdown-btn { justify-content: space-between; min-width: 100px; }
+        .lang-dropdown-btn .caret { font-size: 0.75rem; opacity: 0.7; transition: transform 0.2s; }
+        .lang-dropdown-wrapper.active .caret, .lang-dropdown-wrapper:hover .caret { transform: rotate(180deg); }
+
+        .lang-dropdown-menu {
+            position: absolute; top: calc(100% + 6px); right: 0; min-width: 150px;
+            background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle); border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); padding: 5px;
+            display: none; flex-direction: column; gap: 3px; z-index: 1000;
+        }
+        .lang-dropdown-menu::before {
+            content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 8px; background: transparent;
+        }
+        .lang-dropdown-wrapper:hover .lang-dropdown-menu,
+        .lang-dropdown-wrapper.active .lang-dropdown-menu { display: flex; }
+
+        .lang-menu-item {
+            display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px;
+            color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.15s;
+        }
+        .lang-menu-item:hover { color: var(--text-primary); background: var(--bg-elevated); transform: translateX(2px); }
+        .lang-menu-item.active { color: var(--accent); background: var(--accent-glow); font-weight: 700; }
+        .lang-flag { font-size: 1rem; }
+
+        /* 布局网格与容器 */
+        .layout-container, .page-container { max-width: 1280px; width: 100%; margin: 0 auto; padding: 2rem 1.5rem; }
         .layout-docs .page-container { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; }
         .universal-docs-sidebar {
             position: sticky; top: 80px; height: calc(100vh - 100px); overflow-y: auto; padding-right: 1rem;
@@ -96,18 +124,19 @@ def get_universal_css() -> str:
         .sidebar-link.active { color: var(--accent); background: var(--accent-glow); font-weight: 600; }
 
         /* 文章容器与排版 */
-        .universal-content { min-width: 0; max-width: 860px; margin: 0 auto; }
-        .universal-content h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-top: 0; margin-bottom: 1rem; color: var(--text-primary); }
-        .universal-content h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.35; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem; }
-        .universal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-        .universal-content p { margin: 1rem 0; color: var(--text-primary); }
-        .universal-content a { color: var(--accent); text-decoration: none; }
-        .universal-content a:hover { text-decoration: underline; }
-        .universal-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border-subtle); }
-        .universal-content blockquote {
+        .universal-content, .universal-article { min-width: 0; max-width: 960px; margin: 0 auto; }
+        .universal-content h1, .universal-article h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-top: 0; margin-bottom: 1rem; color: var(--text-primary); }
+        .universal-content h2, .universal-article h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.35; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem; }
+        .universal-content h3, .universal-article h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .universal-content p, .universal-article p { margin: 1rem 0; color: var(--text-primary); }
+        .universal-content a, .universal-article a { color: var(--accent); text-decoration: none; }
+        .universal-content a:hover, .universal-article a:hover { text-decoration: underline; }
+        .universal-content img, .universal-article img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border-subtle); }
+        .universal-content blockquote, .universal-article blockquote {
             border-left: 4px solid var(--border-strong); color: var(--text-secondary);
             padding-left: 1rem; margin: 1.25rem 0;
         }
+        .universal-content hr, .universal-article hr { border: none; border-top: 1px solid var(--border-subtle); margin: 2rem 0; }
 
         /* 📚 博客列表页与网格增强 */
         .list-hero-header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.5rem; }

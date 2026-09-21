@@ -19,6 +19,10 @@
             clearInterval(window.vaultDrawerTimer);
             window.vaultDrawerTimer = null;
         }
+        // 🪐 [V107.8] 若在知识星谱视图下操作，关闭抽屉后自动平滑复原星球控制仪与 3D 聚焦
+        if (typeof window.restoreGalaxyDirectorIfActive === 'function') {
+            window.restoreGalaxyDirectorIfActive();
+        }
     };
 
     // 🚀 [V105.1] 统一安全的定时器启动器，彻底隔绝由于异步竞态导致的孤儿定时器泄漏

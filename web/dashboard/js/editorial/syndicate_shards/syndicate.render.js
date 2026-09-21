@@ -16,6 +16,10 @@
             backdropEl.style.opacity = '';
             backdropEl.style.pointerEvents = '';
         }
+        // 🪐 [V107.8] 若在知识星谱视图下操作，关闭推流抽屉后自动平滑复原星球控制仪与 3D 聚焦
+        if (typeof window.restoreGalaxyDirectorIfActive === 'function') {
+            window.restoreGalaxyDirectorIfActive();
+        }
     };
 
     window.openArticleSyndicationDrawer = async function (relPath, articleTitle) {

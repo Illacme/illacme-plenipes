@@ -55,8 +55,25 @@ window.initDashboard = async () => {
             if (e.key === 'i' && typeof window.toggleHub === 'function') {
                 window.toggleHub('show');
             }
-            if (e.key === 'Escape' && typeof window.toggleHub === 'function') {
-                window.toggleHub('hide');
+            if (e.key === 'Escape') {
+                const hubOverlay = document.getElementById('command-hub-overlay');
+                if (hubOverlay && hubOverlay.style.display !== 'none') {
+                    if (typeof window.toggleHub === 'function') window.toggleHub('hide');
+                    return;
+                }
+                const moreMenu = document.getElementById('node-dir-more-menu');
+                if (moreMenu && moreMenu.style.display === 'flex') {
+                    moreMenu.style.display = 'none';
+                    return;
+                }
+                const director = document.getElementById('galaxy-node-director');
+                if (director && director.style.display === 'flex') {
+                    if (typeof window.closeNodeDirector === 'function') window.closeNodeDirector(true);
+                    return;
+                }
+                if (typeof window.toggleHub === 'function') {
+                    window.toggleHub('hide');
+                }
             }
             if (e.key === ']') window.toggleSidebar('right');
         };

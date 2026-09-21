@@ -24,11 +24,13 @@ def get_universal_client_js() -> str:
                 if (btn && menu) {
                     btn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        var isShown = menu.style.display === 'block';
-                        menu.style.display = isShown ? '' : 'block';
+                        dropdown.classList.toggle('active');
+                        var isShown = menu.style.display === 'flex';
+                        menu.style.display = isShown ? 'none' : 'flex';
                     });
                     document.addEventListener('click', function(e) {
                         if (!dropdown.contains(e.target)) {
+                            dropdown.classList.remove('active');
                             menu.style.display = '';
                         }
                     });

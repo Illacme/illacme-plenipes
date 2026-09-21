@@ -63,7 +63,7 @@ function injectGalaxyInteractiveDOM() {
     if (!document.getElementById('galaxy-search-container')) {
         const searchDiv = document.createElement('div');
         searchDiv.id = 'galaxy-search-container';
-        searchDiv.style.cssText = 'display: flex; flex-direction: column; width: 100%; padding: 6px 10px; box-sizing: border-box;';
+        searchDiv.style.cssText = 'display: flex; flex-direction: column; width: 100%; padding: 6px 10px; box-sizing: border-box; flex-shrink: 0; pointer-events: auto;';
         searchDiv.innerHTML = `
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.9rem;">🔍</span>

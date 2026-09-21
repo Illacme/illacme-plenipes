@@ -39,10 +39,10 @@ window.openEditor = async (docId) => {
         }
         
         // 🌓 [V87.0] 初始化编辑器模式为源码模式，并预渲染预览内容与实时 URL 路径
-        setEditorMode('source');
-        updateEditorPreview();
-        updateEditorUrlPreview();
-        initSyncScroll();
+        if (typeof window.setEditorMode === 'function') window.setEditorMode('source');
+        if (typeof window.updateEditorPreview === 'function') window.updateEditorPreview();
+        if (typeof window.updateEditorUrlPreview === 'function') window.updateEditorUrlPreview();
+        if (typeof window.initSyncScroll === 'function') window.initSyncScroll();
 
         // 💾 物理草稿核查与气泡呈现
         const draftStr = localStorage.getItem(`illacme_draft_${docId}`);
@@ -122,27 +122,30 @@ window.closeEditor = () => {
     document.getElementById('editor-modal').style.display = 'none';
     const configTabs = document.getElementById('config-tabs');
     if (configTabs) configTabs.style.display = 'none';
+    // 🪐 [V107.8] 若在知识星谱视图下操作，关闭编辑器后自动平滑复原星球控制仪与 3D 聚焦
+    if (typeof window.restoreGalaxyDirectorIfActive === 'function') {
+        window.restoreGalaxyDirectorIfActive();
+    }
 };
 
-// 🌐 [V107.0] 实时网址路径推导微端：根据当前治理中心网址组织形态 (slug_dir_mode) 计算预期 URL
-window.updateEditorUrlPreview = () => {
-    const previewEl = document.getElementById('editor-url-preview-text');
-    if (!previewEl) return;
-
-    const docId = window.activeDocId || "";
-    const slugInput = document.getElementById('editor-meta-slug');
-    const slugVal = (slugInput ? slugInput.value.trim() : "") || "index";
-
+// 🌐 [V107.0] 统一物理/产物路径推演算子：根据当前网址组织形态 (slug_dir_mode) 计算预期 URL 相对路径
+window.calculateDocUrlPath = (relPath, slugVal) => {
+    if (!relPath) return { path: "", modeLabel: "目录树复刻", dirMode: "nested" };
     const settingsData = window.settingsData || {};
     const translation = settingsData.translation || {};
     const dirMode = (translation.slug_dir_mode || 'nested').toLowerCase();
 
-    const parts = docId.replace(/\\/g, '/').split('/');
-    parts.pop();
+    const parts = relPath.replace(/\\/g, '/').split('/');
+    const fileName = parts.pop() || "";
+    const baseSlug = fileName.replace(/\.(md|markdown)$/i, '');
     const subDir = parts.join('/');
 
-    const isGlobalHome = (['', 'index', 'home'].includes(slugVal.toLowerCase()) && !subDir);
-    const isChannelHome = (['', 'index', 'home'].includes(slugVal.toLowerCase()) && !isGlobalHome);
+    const cleanSlug = (slugVal && slugVal !== 'null' && slugVal !== 'undefined' && String(slugVal).trim())
+        ? String(slugVal).trim()
+        : (baseSlug || "index");
+
+    const isGlobalHome = (['', 'index', 'home'].includes(cleanSlug.toLowerCase()) && !subDir);
+    const isChannelHome = (['', 'index', 'home'].includes(cleanSlug.toLowerCase()) && !isGlobalHome);
 
     let path = "";
     let modeLabel = "目录树复刻";
@@ -155,18 +158,17 @@ window.updateEditorUrlPreview = () => {
             const channelName = subDir ? subDir.replace(/\//g, '-').toLowerCase() : 'docs';
             path = `${channelName}.html`;
         } else {
-            path = `${slugVal}.html`;
+            path = `${cleanSlug}.html`;
         }
     } else if (dirMode === 'prefix') {
         modeLabel = "智能前缀";
+        const prefix = subDir ? `${subDir.replace(/\//g, '-').toLowerCase()}-` : '';
         if (isGlobalHome) {
             path = "index.html";
         } else if (isChannelHome) {
-            const prefix = subDir ? `${subDir.replace(/\//g, '-').toLowerCase()}-` : '';
             path = `${prefix}index.html`;
         } else {
-            const prefix = subDir ? `${subDir.replace(/\//g, '-').toLowerCase()}-` : '';
-            path = `${prefix}${slugVal}.html`;
+            path = `${prefix}${cleanSlug}.html`;
         }
     } else {
         modeLabel = "目录树复刻";
@@ -174,10 +176,28 @@ window.updateEditorUrlPreview = () => {
             path = "index.html";
         } else {
             const nestedSub = subDir ? `${subDir.toLowerCase()}/` : '';
-            path = `${nestedSub}${slugVal}.html`;
+            path = `${nestedSub}${cleanSlug}.html`;
         }
     }
+    return { path, modeLabel, dirMode };
+};
 
+// 快捷字符串提取算子
+window.resolveDocUrlString = (relPath, slugVal) => {
+    const res = window.calculateDocUrlPath(relPath, slugVal);
+    return res ? res.path : "";
+};
+
+// 🌐 [V107.0] 实时网址路径推导微端：根据当前治理中心网址组织形态 (slug_dir_mode) 计算预期 URL
+window.updateEditorUrlPreview = () => {
+    const previewEl = document.getElementById('editor-url-preview-text');
+    if (!previewEl) return;
+
+    const docId = window.activeDocId || "";
+    const slugInput = document.getElementById('editor-meta-slug');
+    const slugVal = (slugInput ? slugInput.value.trim() : "");
+
+    const { path, modeLabel } = window.calculateDocUrlPath(docId, slugVal);
     previewEl.innerText = `预估: /${path} (${modeLabel})`;
 };
 

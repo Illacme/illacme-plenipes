@@ -116,6 +116,60 @@ def get_universal_views_css() -> str:
         .timeline-title:hover { color: var(--accent); }
         .timeline-desc { font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.5; }
 
+        /* 🎨 展厅与先锋卡片网格系统 (Showcase Pioneer Grid) */
+        .pioneer-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+            gap: 1.5rem !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 2.5rem !important;
+        }
+        .card-pioneer {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 16px;
+            padding: 1.4rem 1.6rem !important;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        .card-pioneer:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent) !important;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35), 0 0 20px var(--accent-glow) !important;
+            background: var(--bg-elevated);
+        }
+        .card-pioneer h3 {
+            margin: 0 !important;
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
+            line-height: 1.35 !important;
+        }
+        .card-pioneer p {
+            font-size: 0.9rem !important;
+            margin: 0 !important;
+            color: var(--text-secondary) !important;
+            line-height: 1.6 !important;
+        }
+        .card-tag {
+            display: inline-block;
+            align-self: flex-start;
+            padding: 3px 10px;
+            background: var(--accent-glow);
+            color: var(--accent);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
         /* 💡 Callouts */
         .universal-callout { border-radius: 8px; padding: 12px 16px; margin: 1.25rem 0; border-left: 4px solid var(--accent); background: var(--bg-surface); }
         .callout-note { border-color: var(--callout-note); background: rgba(56, 139, 253, 0.08); }

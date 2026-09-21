@@ -16,7 +16,7 @@ window.viewTemplates = {
                 <!-- 动态仪表盘由 galaxy.hud.js 负责统一注入与局部刷新 -->
             </div>
             <!-- 右检索与属性仪列 -->
-            <div id="galaxy-right-column" style="position: absolute; top: 25px; right: 25px; z-index: 101; display: flex; flex-direction: column; gap: 12px; width: 260px;">
+            <div id="galaxy-right-column" style="position: absolute; top: 25px; right: 25px; bottom: 25px; z-index: 101; display: flex; flex-direction: column; gap: 12px; width: 260px; max-height: calc(100% - 50px); pointer-events: none; box-sizing: border-box;">
                 <!-- 动态检索框与星球控制仪由 galaxy.hud.js 注入 -->
             </div>
             <div class="overview-overlay" id="command-hub-overlay" style="display: ${_initialHubAutoOpen ? 'flex' : 'none'};" onclick="if(event.target===this) window.toggleHub('hide')">

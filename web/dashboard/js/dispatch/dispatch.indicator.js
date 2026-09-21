@@ -75,19 +75,52 @@ window.refreshDispatchIndicator = async function () {
 };
 
 /**
- * 初始化指示器轮询定时器
+ * 启动指示器轮询定时器
+ */
+window.startDispatchIndicatorPolling = function () {
+    if (window._dispatchIndicatorTimer) {
+        clearInterval(window._dispatchIndicatorTimer);
+    }
+    window._dispatchIndicatorTimer = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) {
+            return;
+        }
+        window.refreshDispatchIndicator();
+    }, 6000);
+};
+
+/**
+ * 停止指示器轮询定时器
+ */
+window.stopDispatchIndicatorPolling = function () {
+    if (window._dispatchIndicatorTimer) {
+        clearInterval(window._dispatchIndicatorTimer);
+        window._dispatchIndicatorTimer = null;
+    }
+};
+
+/**
+ * 初始化指示器轮询定时器与页面可见性感知
  */
 window.initDispatchIndicator = function () {
     // 首次拉取
     window.refreshDispatchIndicator();
 
-    // 避免重复启动定时器
-    if (window._dispatchIndicatorTimer) {
-        clearInterval(window._dispatchIndicatorTimer);
+    // 启动定时轮询
+    window.startDispatchIndicatorPolling();
+
+    // 页面可见性挂起（节约后台能耗与网络流量）
+    if (typeof document !== 'undefined' && !window._dispatchVisibilityBound) {
+        window._dispatchVisibilityBound = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                window.stopDispatchIndicatorPolling();
+            } else {
+                window.refreshDispatchIndicator();
+                window.startDispatchIndicatorPolling();
+            }
+        });
     }
-    window._dispatchIndicatorTimer = setInterval(() => {
-        window.refreshDispatchIndicator();
-    }, 6000);
 };
 
 // 页面加载完成后挂载自启
@@ -96,3 +129,4 @@ if (typeof document !== 'undefined') {
         setTimeout(window.initDispatchIndicator, 1000);
     });
 }
+

@@ -11,6 +11,12 @@
     let _modalTotal = 0;
     let _modalTotalPages = 1;
 
+    window.closeDocCoverPickerModal = function () {
+        const m = document.getElementById('doc-cover-picker-modal');
+        if (m) m.remove();
+        if (typeof window.restoreGalaxyDirectorIfActive === 'function') window.restoreGalaxyDirectorIfActive();
+    };
+
     window.openDocCoverPickerModal = async function (relPath, title, currentCover) {
         _activeTargetDoc = { relPath, title, currentCover: currentCover || '' };
         _modalCurrentPage = 1;
@@ -23,7 +29,7 @@
         const hasCover = !!(currentCover && currentCover !== 'null' && currentCover !== 'undefined');
 
         const modalHtml = `
-            <div id="doc-cover-picker-modal" class="modal-overlay active" style="z-index:99999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); position:fixed; inset:0;" onclick="if(event.target===this)this.remove()">
+            <div id="doc-cover-picker-modal" class="modal-overlay active" style="z-index:99999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); position:fixed; inset:0;" onclick="if(event.target===this)window.closeDocCoverPickerModal()">
                 <div class="glass-panel" style="width:840px; max-width:94vw; max-height:90vh; border-radius:14px; border:1px solid rgba(0,242,254,0.35); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.85); background:#0b0f19;" onclick="event.stopPropagation()">
                     <!-- 顶栏：目标原稿与操作动作 -->
                     <div style="padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:rgba(0,242,254,0.03);">
@@ -37,7 +43,7 @@
                             </div>
                         </div>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <button type="button" class="mini-btn" style="padding:4px 8px; font-size:0.85rem;" onclick="document.getElementById('doc-cover-picker-modal').remove()">✕</button>
+                            <button type="button" class="mini-btn" style="padding:4px 8px; font-size:0.85rem;" onclick="window.closeDocCoverPickerModal()">✕</button>
                         </div>
                     </div>
 

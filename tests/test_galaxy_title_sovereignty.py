@@ -11,7 +11,6 @@
 
 import os
 import tempfile
-import pytest
 from unittest.mock import MagicMock
 from services.api.logic.content_ops_shards.galaxy_title_ops import resolve_node_true_title
 from services.api.logic.content_ops_shards.galaxy_ops import get_galaxy_graph_logic
@@ -222,3 +221,82 @@ def test_frontend_node_label_and_socket_sync_sandbox():
     )
     assert res.returncode == 0, f"Node.js Sandbox Failed: {res.stderr}\n{res.stdout}"
     assert "SANDBOX_PASSED" in res.stdout
+
+
+def test_get_galaxy_graph_logic_wikilinks_preserved():
+    """🛡️ 验证全量与骨架模式下遍历整个 link_graph 提取物理双链，且双链优先级高于语义连线"""
+    mock_engine = MagicMock()
+    mock_engine.vault_root = "/fake/vault"
+    mock_engine.meta = MagicMock()
+    mock_engine.meta.resolve_link.return_value = None
+    mock_engine.meta.get_documents_snapshot.return_value = {}
+
+    # 构造两对文档：DocA -> DocB (双链), DocC -> DocA (双链)
+    mock_engine.link_graph = {
+        "Docs/quick-start.md": {
+            "links": ["authoring-and-vault-guide", "brand-management"],
+            "metadata": {"title": "极速上手"}
+        },
+        "Docs/authoring-and-vault-guide.md": {
+            "links": [],
+            "metadata": {"title": "文库指引"}
+        },
+        "Docs/brand-management.md": {
+            "links": ["quick-start"],
+            "metadata": {"title": "品牌管理"}
+        },
+        "Docs/orphan.md": {
+            "links": [],
+            "metadata": {"title": "孤儿文档"}
+        }
+    }
+
+    # 模拟知识图谱中为 quick-start 和 authoring-and-vault-guide 也生成了语义弱链接
+    mock_engine.knowledge_graph.get_galaxy_graph.return_value = {
+        "nodes": [
+            {"id": "Docs/quick-start.md", "title": "极速上手"},
+            {"id": "Docs/authoring-and-vault-guide.md", "title": "文库指引"},
+            {"id": "Docs/brand-management.md", "title": "品牌管理"},
+            {"id": "Docs/orphan.md", "title": "孤儿文档"}
+        ],
+        "links": [
+            {"source": "Docs/quick-start.md", "target": "Docs/authoring-and-vault-guide.md", "strength": 0.3, "type": "semantic"},
+            {"source": "Docs/quick-start.md", "target": "Docs/orphan.md", "strength": 0.4, "type": "semantic"}
+        ]
+    }
+
+    # 执行全量模式计算
+    graph = get_galaxy_graph_logic(mock_engine, mode="full")
+    links = graph["links"]
+
+    # 1. 断言物理双链必须存在且数量大于 0 (此前因为漏外层循环，非最后一个文档的双链全部丢失)
+    wikilinks = [l for l in links if l.get("type") == "wikilink"]
+    assert len(wikilinks) >= 2, f"Expected at least 2 wikilinks, got {len(wikilinks)}"
+
+    # 2. quick-start 与 authoring-and-vault-guide 之间的连线必须为 wikilink，而非被 semantic 覆盖
+    qs_author_links = [
+        l for l in links
+        if (l["source"] == "Docs/quick-start.md" and l["target"] == "Docs/authoring-and-vault-guide.md") or
+           (l["source"] == "Docs/authoring-and-vault-guide.md" and l["target"] == "Docs/quick-start.md")
+    ]
+    assert len(qs_author_links) == 1
+    assert qs_author_links[0]["type"] == "wikilink", f"Expected wikilink type, got {qs_author_links[0]['type']}"
+
+    # 3. quick-start 与 brand-management 之间的连线亦为 wikilink
+    qs_brand_links = [
+        l for l in links
+        if (l["source"] == "Docs/quick-start.md" and l["target"] == "Docs/brand-management.md") or
+           (l["source"] == "Docs/brand-management.md" and l["target"] == "Docs/quick-start.md")
+    ]
+    assert len(qs_brand_links) == 1
+    assert qs_brand_links[0]["type"] == "wikilink"
+
+    # 4. 纯语义的 quick-start 与 orphan.md 之间的连线保留为 semantic
+    qs_orphan_links = [
+        l for l in links
+        if (l["source"] == "Docs/quick-start.md" and l["target"] == "Docs/orphan.md") or
+           (l["source"] == "Docs/orphan.md" and l["target"] == "Docs/quick-start.md")
+    ]
+    assert len(qs_orphan_links) == 1
+    assert qs_orphan_links[0]["type"] == "semantic"
+
