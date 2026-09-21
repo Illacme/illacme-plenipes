@@ -213,3 +213,78 @@ def test_epub_colophon_injection():
             ncx_xml = zf.read("OEBPS/toc.ncx").decode("utf-8")
             assert "text/colophon.xhtml" in ncx_xml
             assert "版记 · Colophon" in ncx_xml
+
+
+def test_wikilinks_and_anchor_healing():
+    """验证 Obsidian 双链内链与章节锚点的全场景自愈重写"""
+    route_map = {
+        "chapter-1": "ch_1",
+        "chapter-2": "ch_2",
+        "核心架构篇": "ch_2",
+        "deep-guide": "ch_3"
+    }
+
+    # 1. 跨章节基础跳转（自动追加 #ch_2 锚点以兼容 Apple Books 等阅读器翻章）
+    t1 = BookAssembler._rewrite_wikilinks_to_chapters("[[chapter-2]]", route_map, curr_ch_id="ch_1")
+    assert t1 == "[chapter-2](ch_2.xhtml#ch_2)"
+
+    # 2. 跨章节带别名
+    t2 = BookAssembler._rewrite_wikilinks_to_chapters("[[chapter-2|第二章 实战]]", route_map, curr_ch_id="ch_1")
+    assert t2 == "[第二章 实战](ch_2.xhtml#ch_2)"
+
+    # 2.1 容错匹配：带 Emoji 的双链精准命中章节
+    t2_emoji = BookAssembler._rewrite_wikilinks_to_chapters("[[⚡ 核心架构篇]]", route_map, curr_ch_id="ch_1")
+    assert t2_emoji == "[⚡ 核心架构篇](ch_2.xhtml#ch_2)"
+
+    # 3. 跨章节带锚点跳转
+    t3 = BookAssembler._rewrite_wikilinks_to_chapters("[[chapter-2#核心架构]]", route_map, curr_ch_id="ch_1")
+    assert t3 == "[chapter-2 · 核心架构](ch_2.xhtml#核心架构)"
+
+    # 4. 跨章节带别名与锚点
+    t4 = BookAssembler._rewrite_wikilinks_to_chapters("[[chapter-2#核心架构|查看架构图]]", route_map, curr_ch_id="ch_1")
+    assert t4 == "[查看架构图](ch_2.xhtml#核心架构)"
+
+    # 5. 基于 Frontmatter 中文标题匹配跨章节锚点
+    t5 = BookAssembler._rewrite_wikilinks_to_chapters("[[核心架构篇#2. 原生主权|主权机制]]", route_map, curr_ch_id="ch_1")
+    assert t5 == "[主权机制](ch_2.xhtml#2-原生主权)"
+
+    # 6. 本章内部小节锚点
+    t6 = BookAssembler._rewrite_wikilinks_to_chapters("[[#本章小结]]", route_map, curr_ch_id="ch_1")
+    assert t6 == "[本章小结](#本章小结)"
+
+    t7 = BookAssembler._rewrite_wikilinks_to_chapters("[[#本章小结|快速回顾]]", route_map, curr_ch_id="ch_1")
+    assert t7 == "[快速回顾](#本章小结)"
+
+    # 7. 当前章节自指跨链自动转为页内锚点
+    t8 = BookAssembler._rewrite_wikilinks_to_chapters("[[chapter-1#引言背景|背景说明]]", route_map, curr_ch_id="ch_1")
+    assert t8 == "[背景说明](#引言背景)"
+
+    # 8. 外部不存在的文档优雅降级，防止死链
+    t9 = BookAssembler._rewrite_wikilinks_to_chapters("[[NonExistentDoc|暂未公开文稿]]", route_map, curr_ch_id="ch_1")
+    assert t9 == "暂未公开文稿"
+
+    # 9. 端到端 Markdown 编译断言
+    import markdown
+    from markdown.extensions.toc import slugify_unicode
+    md_converter = markdown.Markdown(
+        extensions=['extra', 'codehilite', 'tables', 'toc'],
+        extension_configs={'toc': {'slugify': slugify_unicode}}
+    )
+    test_md = """
+# 第一章 引言
+
+参考 [[chapter-2#2. 原生主权|第二章主权架构]]，更多请参见 [[#本章小结|文末总结]]。
+
+## 本章小结
+这里是引言小结。
+"""
+    healed = BookAssembler._rewrite_wikilinks_to_chapters(test_md, route_map, curr_ch_id="ch_1")
+    html = md_converter.convert(healed)
+    assert '<a href="ch_2.xhtml#2-原生主权">第二章主权架构</a>' in html
+    assert '<a href="#本章小结">文末总结</a>' in html
+
+    # 10. 原生 HTML 标签与静态相对路径自愈断言 (如首页按钮 ./docs/quick-start.html)
+    raw_btn_html = '<div class="btn-group"><a href="./docs/chapter-2.html" class="theme-btn"><span>⚡ 5 分钟上手</span></a></div>'
+    healed_btn = BookAssembler._heal_html_hrefs(raw_btn_html, route_map, curr_ch_id="ch_1")
+    assert 'href="ch_2.xhtml#ch_2"' in healed_btn
+    assert 'class="theme-btn"' in healed_btn

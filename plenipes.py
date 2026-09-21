@@ -10,7 +10,6 @@ import signal
 import os
 import sys
 import subprocess
-from core.utils.tracing import tlog
 
 def ensure_venv():
     """🚀 [V14.5] 智能环境重定向"""
@@ -29,6 +28,7 @@ def ensure_venv():
 
 ensure_venv()
 
+from core.utils.tracing import tlog
 from core.utils import setup_logger
 from core.runtime.cli_bootstrap import parse_args_and_lock, set_global_engine, set_global_args, set_global_observer
 from core.runtime.orchestrator import prepare_sync_tasks, execute_full_sync

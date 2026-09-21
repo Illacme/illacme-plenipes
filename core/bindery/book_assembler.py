@@ -8,11 +8,12 @@ Illacme Plenipes - Book Assembler (全卷文稿合订编排器)
 import os
 import re
 import yaml
-import markdown
 from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook import EBookRegistry
 from .cover_generator import CoverGenerator
+from .image_packager import ImagePackager
+from .math_packager import MathPackager
 from core.utils.tracing import tlog
 
 
@@ -51,10 +52,8 @@ class BookAssembler:
         if self.engine and hasattr(self.engine, "config"):
             site_name = getattr(self.engine.config, "site_name", site_name)
 
-        cat_label = category if category else "全集"
-        book_title = custom_title or f"{site_name} · {cat_label}"
-        if target_lang != "zh":
-            book_title += f" ({target_lang.upper()} Edition)"
+        book_title = custom_title or f"{site_name} · {category or '全集'}"
+        if target_lang != "zh": book_title += f" ({target_lang.upper()} Edition)"
 
         author = custom_author or "Illacme Editorial Team"
         publisher_name = f"{site_name} Global Private Press"
@@ -137,33 +136,51 @@ class BookAssembler:
         doc_entries.sort(key=sort_key)
 
         chapters = []
-        # 第一阶段：解析所有文件，预建映射
-        slug_to_id = {}
+        parsed_docs = []
+        route_map = {}
         for idx, p in enumerate(doc_entries):
             ch_id = f"ch_{idx + 1}"
-            slug = os.path.splitext(os.path.basename(p))[0].lower()
-            slug_to_id[slug] = ch_id
-
-        # 第二阶段：编译内容与重写内链
-        md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'tables', 'toc'])
-
-        for idx, p in enumerate(doc_entries):
             with open(p, 'r', encoding='utf-8', errors='ignore') as fp:
                 raw_text = fp.read()
-
             fm, body = self._extract_frontmatter(raw_text)
             title = fm.get("title") or os.path.splitext(os.path.basename(p))[0].replace('-', ' ').title()
             slug = fm.get("slug") or os.path.splitext(os.path.basename(p))[0]
+            stem = os.path.splitext(os.path.basename(p))[0]
+            rel_p = os.path.relpath(p, target_dir).replace('\\', '/')
+            rel_no_ext = os.path.splitext(rel_p)[0]
+            parsed_docs.append({"ch_id": ch_id, "title": str(title), "slug": str(slug), "file_path": p, "raw_body": body})
+            for key in (stem.lower(), stem, slug.lower(), slug, str(title).lower(), str(title), rel_p.lower(), rel_no_ext.lower()):
+                if key and key not in route_map: route_map[key] = ch_id
+            for raw_k in (stem, str(title), slug, rel_no_ext):
+                norm_k = re.sub(r'[^\w\u4e00-\u9fa5]+', '', str(raw_k)).lower()
+                if norm_k and norm_k not in route_map: route_map[norm_k] = ch_id
+            parent_dir = os.path.dirname(rel_no_ext).lower()
+            if parent_dir and f"{parent_dir}/index" not in route_map:
+                route_map[f"{parent_dir}/index"] = ch_id
+                route_map[parent_dir] = ch_id
 
-            # 跨语言处理：如果是非中文，尝试获取译文
+        # 第二阶段：编译内容与重写内链锚点
+        import markdown
+        from markdown.extensions.toc import slugify_unicode
+        md_converter = markdown.Markdown(
+            extensions=['extra', 'codehilite', 'tables', 'toc'],
+            extension_configs={'toc': {'slugify': slugify_unicode}}
+        )
+
+        chapters = []
+        for entry in parsed_docs:
+            p, body, ch_id = entry["file_path"], entry["raw_body"], entry["ch_id"]
             if target_lang != "zh":
                 body = self._try_get_translation(p, target_lang) or body
 
-            # 链接自愈：将 Obsidian 双链 [[target|alias]] 重写为电子书相对跳转 <a href="ch_xxx.xhtml">alias</a>
-            healed_body = self._rewrite_wikilinks_to_chapters(body, slug_to_id)
-
+            # 排版自愈：数学公式转译 -> Obsidian 插图转译 -> 跨章内链锚点重写
+            body = MathPackager.heal_latex_formulas(body)
+            body = ImagePackager.heal_obsidian_embedded_images(body)
+            healed_body = self._rewrite_wikilinks_to_chapters(body, route_map, curr_ch_id=ch_id)
             md_converter.reset()
             html_content = md_converter.convert(healed_body)
+            html_content = self._heal_html_hrefs(html_content, route_map, curr_ch_id=ch_id)
+            html_content, assets = ImagePackager.extract_and_heal_images(html_content, p, self.vault_dir)
 
             # Callout 优化：将 > [!TIP] 结构美化为标准的 callout 块
             html_content = re.sub(
@@ -174,25 +191,77 @@ class BookAssembler:
             )
 
             chapters.append({
-                "order": idx + 1,
-                "title": str(title),
-                "slug": str(slug),
+                "order": int(ch_id.split('_')[1]),
+                "title": entry["title"],
+                "slug": entry["slug"],
                 "html_body": html_content,
-                "file_path": p
+                "file_path": p,
+                "assets": assets
             })
 
         return chapters
 
-    def _rewrite_wikilinks_to_chapters(self, body: str, slug_to_id: Dict[str, str]) -> str:
-        """将 Markdown 中的 [[target|alias]] 双链转换为电子书内部相对链接"""
+    @staticmethod
+    def _heal_html_hrefs(html: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
+        """统一自愈 HTML 中的原生 <a> 超链接与静态站点相对路径 (如 ./docs/quick-start.html)"""
+        def repl(m):
+            tag, href = m.group(0), m.group(1).strip()
+            if not href or href.startswith(('http://', 'https://', 'mailto:', 'tel:', 'data:', 'javascript:', '#')):
+                return tag
+            path_part, anchor = href.split('#', 1) if '#' in href else (href, "")
+            clean_path = path_part.replace('\\', '/').lstrip('./').rstrip('/')
+            norm_rel, stem = os.path.splitext(clean_path)[0], os.path.splitext(os.path.basename(clean_path))[0]
+            target_ch = route_map.get(norm_rel.lower()) or route_map.get(norm_rel) or route_map.get(stem.lower()) or route_map.get(stem)
+            if not target_ch and stem:
+                norm_stem = re.sub(r'[^\w\u4e00-\u9fa5]+', '', stem).lower()
+                target_ch = route_map.get(norm_stem)
+                if not target_ch:
+                    for k, v in route_map.items():
+                        if norm_stem and (norm_stem in k or k in norm_stem):
+                            target_ch = v
+                            break
+            if target_ch:
+                new_href = f"#{anchor}" if (target_ch == curr_ch_id and anchor) else f"{target_ch}.xhtml#{anchor or target_ch}"
+                return tag.replace(f'href="{href}"', f'href="{new_href}"').replace(f"href='{href}'", f"href='{new_href}'")
+            return tag
+
+        return re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', repl, html)
+
+    @staticmethod
+    def _rewrite_wikilinks_to_chapters(body: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
+        """将 Markdown 中的 [[target#anchor|alias]] 双链转换为电子书相对跳转锚点"""
+        from markdown.extensions.toc import slugify_unicode
         def repl(match):
-            target = match.group(1).strip().lower()
-            alias = (match.group(2) or match.group(1)).strip()
-            target_slug = os.path.splitext(os.path.basename(target))[0]
-            if target_slug in slug_to_id:
-                target_file = f"{slug_to_id[target_slug]}.xhtml"
-                return f"[{alias}]({target_file})"
-            return alias
+            raw_target = match.group(1).strip()
+            alias = (match.group(2) or "").strip()
+            doc_part, anchor_part = raw_target.split('#', 1) if '#' in raw_target else (raw_target, "")
+            doc_part, anchor_part = doc_part.strip(), anchor_part.strip()
+            anchor_slug = slugify_unicode(anchor_part, '-') if anchor_part else ""
+
+            # 1. 本章内部锚点跳转：[[#小节标题]] 或 [[#小节标题|别名]]
+            if not doc_part:
+                return f"[{alias or anchor_part}](#{anchor_slug})" if anchor_slug else (alias or raw_target)
+
+            # 2. 查找跨章节目标（支持精确匹配与归一化模糊容错）
+            clean_doc = re.sub(r'[^\w\u4e00-\u9fa5]+', '', os.path.splitext(os.path.basename(doc_part))[0]).lower()
+            target_ch = route_map.get(doc_part) or route_map.get(doc_part.lower()) or route_map.get(clean_doc)
+            if not target_ch and clean_doc:
+                for k, v in route_map.items():
+                    if clean_doc in k or k in clean_doc:
+                        target_ch = v
+                        break
+
+            if target_ch:
+                if target_ch == curr_ch_id and anchor_slug:
+                    target_url = f"#{anchor_slug}"
+                else:
+                    # 关键：即使未带特定小节，也附加 #{target_ch} 确保 Apple Books 等阅读器能够触发翻章与定位
+                    target_url = f"{target_ch}.xhtml#{anchor_slug or target_ch}"
+                display = alias or (f"{doc_part} · {anchor_part}" if anchor_part else doc_part)
+                return f"[{display}]({target_url})"
+
+            # 3. 外部未导出文档降级为纯文本，杜绝 404 死链
+            return alias or raw_target
 
         return re.sub(r'\[\[([^\]|]+)(?:\|([^\]]+))?\]\]', repl, body)
 
