@@ -21,7 +21,7 @@ def list_active_plugins_impl() -> dict:
 
 async def probe_plugin_impl(payload: dict) -> dict:
     """🚀 [V74.88] 插件物理主权探测：对不同能力的组件执行差异化健康检查"""
-    plugin_id = payload.get("id")
+    plugin_id = payload.get("id") or payload.get("plugin_id")
     category = payload.get("category")
     engine = get_global_engine()
     if not engine: return {"success": False, "error": "Engine offline"}
@@ -162,6 +162,19 @@ async def probe_plugin_impl(payload: dict) -> dict:
                 "success": True,
                 "healthy": False,
                 "message": f"自检过程抛出异常: {e}"
+            }
+
+    # 4d. 探测数字装订驱动 (EBook Bindery)
+    from core.adapters.egress.ebook import EBookRegistry
+    if (category == "ebook" or (not category and plugin_id in EBookRegistry.get_all_names())) and plugin_id in EBookRegistry.get_all_names():
+        adapter_cls = EBookRegistry.get_adapter(plugin_id)
+        if adapter_cls:
+            name = getattr(adapter_cls, "DISPLAY_NAME", plugin_id.upper())
+            ext = getattr(adapter_cls, "OUTPUT_EXTENSION", "")
+            return {
+                "success": True,
+                "healthy": True,
+                "message": f"📚 {name} 装帧引擎物理就绪，支持输出 {ext} 国际标准格式。"
             }
 
     return {"success": False, "error": "未感应到该能力的物理实体或暂不支持主动探测。"}

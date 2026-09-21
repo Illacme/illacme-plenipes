@@ -66,6 +66,12 @@ class PluginChecker:
             all_violations.extend(ContractGuard.audit_registry(TARGET_REGISTRY, BaseSyndicator, "Syndication"))
         except Exception: pass
 
+        # 5. 🚀 [V125.0] 电子书装订驱动 (EBook Bindery)
+        try:
+            from core.adapters.egress.ebook.base import EBookRegistry, BaseEBookAdapter
+            all_violations.extend(ContractGuard.audit_registry(EBookRegistry._adapters, BaseEBookAdapter, "EBook Bindery"))
+        except Exception: pass
+
         if all_violations:
             filtered = [v for v in all_violations if v]
             if filtered:

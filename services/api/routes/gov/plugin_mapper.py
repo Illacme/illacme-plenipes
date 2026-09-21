@@ -135,6 +135,36 @@ def _normalize_plugin_names(plugins: List[Dict[str, Any]]) -> None:
             p["name"] = p["id"].upper()
 
 
+def _collect_ebook_plugins(engine, disabled: set, system_track: str) -> List[Dict[str, Any]]:
+    """🚀 [V125.0] EBook Bindery Plugins (电子书装订驱动)"""
+    from core.adapters.egress.ebook import EBookRegistry
+    plugins = []
+    for plugin_id in EBookRegistry.get_all_names():
+        adapter_cls = EBookRegistry.get_adapter(plugin_id)
+        if not adapter_cls:
+            continue
+        display_name = getattr(adapter_cls, "DISPLAY_NAME", plugin_id.upper())
+        ext = getattr(adapter_cls, "OUTPUT_EXTENSION", "")
+        desc = getattr(adapter_cls, "DESCRIPTION", f"数字装订驱动：将文库原稿整卷编排导出为 {ext} 便携数字出版物。")
+        ver = getattr(adapter_cls, "VERSION", system_track)
+        plugins.append({
+            "id": plugin_id,
+            "name": display_name,
+            "category": "ebook",
+            "category_name": "📚 数字装订",
+            "status": "Ready",
+            "is_in_use": True,
+            "is_enabled": (plugin_id not in disabled),
+            "origin": "core",
+            "location": "native",
+            "version": ver,
+            "description": desc,
+            "output_extension": ext,
+            "is_manageable": True
+        })
+    return plugins
+
+
 def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     """
     🧠 [V74.72] 物理插件矩阵组装器
@@ -168,6 +198,9 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     # 4. Syndication (分发渠道)
     plugins.extend(collect_syndication_plugins(engine, disabled, system_track))
 
+    # 4b. EBook Bindery (数字装订)
+    plugins.extend(_collect_ebook_plugins(engine, disabled, system_track))
+
     # 4c. Image Hosting (图床服务)
     plugins.extend(collect_image_hosting_plugins(engine, disabled, system_track))
 
@@ -178,3 +211,4 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
     _normalize_plugin_names(plugins)
 
     return plugins
+

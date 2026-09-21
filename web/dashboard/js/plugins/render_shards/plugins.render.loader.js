@@ -75,6 +75,7 @@
             { id: 'image_hosting', name: '📷 图床存储' },
             { id: 'hosting', name: '🌐 全站托管' },
             { id: 'publisher', name: '📢 社媒分发' },
+            { id: 'ebook', name: '📚 数字装订' },
             { id: 'notification', name: '🔔 消息通知' },
             { id: 'editorial', name: '🧬 流程审计' }
         ];

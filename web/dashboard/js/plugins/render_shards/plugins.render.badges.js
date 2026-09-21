@@ -104,7 +104,8 @@
             'exif_scrubber': { icon: '🛡️', color: '#00ff88', bg: 'rgba(0, 255, 136, 0.14)', border: 'rgba(0, 255, 136, 0.35)' },
             'sensitive_filter': { icon: '🚫', color: '#ff4d4d', bg: 'rgba(255, 77, 77, 0.14)', border: 'rgba(255, 77, 77, 0.35)' },
             'ast_processor': { icon: '🧬', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.14)', border: 'rgba(168, 85, 247, 0.35)' },
-            'markdown_normalizer': { icon: '📝', color: '#00f2fe', bg: 'rgba(0, 242, 254, 0.14)', border: 'rgba(0, 242, 254, 0.35)' }
+            'markdown_normalizer': { icon: '📝', color: '#00f2fe', bg: 'rgba(0, 242, 254, 0.14)', border: 'rgba(0, 242, 254, 0.35)' },
+            'epub': { icon: '📖', color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', border: 'rgba(16, 185, 129, 0.35)' }
         };
 
         if (BRAND_DICT[rawId]) return BRAND_DICT[rawId];
@@ -118,6 +119,7 @@
         // 依据大类 fallback
         const CAT_FALLBACKS = {
             'publisher': { icon: '📢', color: '#00f2fe', bg: 'rgba(0, 242, 254, 0.12)', border: 'rgba(0, 242, 254, 0.3)' },
+            'ebook': { icon: '📚', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' },
             'hosting': { icon: '🌐', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', border: 'rgba(56, 189, 248, 0.3)' },
             'image_hosting': { icon: '📷', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)', border: 'rgba(236, 72, 153, 0.3)' },
             'notification': { icon: '🔔', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.12)', border: 'rgba(251, 191, 36, 0.3)' },

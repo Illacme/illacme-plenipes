@@ -96,6 +96,7 @@ window.renderPlugins = () => {
         'image_hosting': '📷 图床存储',
         'hosting': '🌐 全站托管',
         'publisher': '📢 社媒分发',
+        'ebook': '📚 数字装订',
         'notification': '🔔 消息通知',
         'editorial': '🧬 流程审计'
     };
@@ -109,8 +110,9 @@ window.renderPlugins = () => {
         'theme': '定制全站出版物装帧主题、CSS 样式排版与视觉渲染模版引擎。',
         'hosting': '将编译好的静态网站发布至 GitHub Pages、Vercel 等多平台。支持指定一个「首选主站」作为官方主要网址，其余平台作为备用镜像同步容灾，确保全网随时随地流畅访问。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
-        'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
         'publisher': '支持 Dev.to, Medium, WordPress, Ghost, Hashnode, LinkedIn 等第三方社交媒体渠道的内容分发与多平台推流。',
+        'ebook': '提供符合国际出版标准的数字排版与书册装订驱动（如 EPUB 3.0、印刷级 PDF），支持整卷文稿一键合订导出。',
+        'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',
         'editorial': '记录全站稿件版本演化指纹、发布履历与全生命周期审计追溯日志。'
     };
 
@@ -163,7 +165,7 @@ window.renderPlugins = () => {
         `;
     }
 
-    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'image_hosting', 'publisher', 'notification', 'editorial'];
+    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'image_hosting', 'publisher', 'ebook', 'notification', 'editorial'];
 
     const activeSections = categoryOrder.filter(catId => categories[catId] && categories[catId].items.length > 0);
     const hideSectionHeader = window.activePluginCategory !== 'all' && activeSections.length <= 1;

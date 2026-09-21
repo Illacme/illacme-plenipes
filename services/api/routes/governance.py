@@ -6,7 +6,7 @@
 """
 
 from fastapi import APIRouter
-from .gov import context, imprints, config, vault, actions, audit, translation_review, syndication_queue, lessons, license
+from .gov import context, imprints, config, vault, actions, audit, translation_review, syndication_queue, lessons, license, bindery
 from . import dispatch
 
 router = APIRouter()
@@ -23,4 +23,5 @@ router.include_router(translation_review.router)  # 🔒 [I5] 翻译人工校对
 router.include_router(syndication_queue.router)   # 📡 多渠道分发死信/重试队列
 router.include_router(lessons.router)             # 🧠 AI 校验错误教训大盘路由
 router.include_router(license.router)             # 🔑 物理设备准入与许可治理路由
+router.include_router(bindery.router)             # 📚 [V125.0] 数字装订与电子书出版路由
 

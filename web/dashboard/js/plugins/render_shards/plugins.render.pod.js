@@ -26,7 +26,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
     const isTheme = p.category === 'theme';
     const isProtocol = p.category === 'protocol';
     const canConfig = window.isPluginConfigurable(p);
-    const canTest = ['hosting', 'image_hosting', 'publisher', 'notification'].includes(p.category) && p.is_manageable;
+    const canTest = ['hosting', 'image_hosting', 'publisher', 'notification', 'ebook'].includes(p.category) && p.is_manageable;
     const statusBadge = window.checkPluginConfiguredStatus(p);
 
     // 统计当前驱动在算力中心已划定的单元数与节点 ID 列表
@@ -72,11 +72,20 @@ window.buildPluginPodHtml = (p, isPinned) => {
             </div>
         `;
     } else if (!canConfig && canTest) {
-        controlBtnsHtml = `
-            <div class="p-control-group" style="display:grid; grid-template-columns: 1fr; gap:8px;">
-                <button class="action-btn p-btn-test-direct" data-id="${p.id}" data-category="${p.category}" onclick="window.fastTestPluginConnectivity('${p.id}', '${p.category}', this)">⚡ 测试连接</button>
-            </div>
-        `;
+        if (p.category === 'ebook') {
+            controlBtnsHtml = `
+                <div class="p-control-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <button class="action-btn glow-btn" style="border-color: rgba(16,185,129,0.5); color: #10b981; background: rgba(16,185,129,0.12); font-size: 0.75rem;" onclick="if(typeof window.openBinderyModal==='function'){window.openBinderyModal();}else{if(typeof window.showView==='function')window.showView('vault');}">📚 立即装订</button>
+                    <button class="action-btn p-btn-test-direct" data-id="${p.id}" data-category="${p.category}" onclick="window.fastTestPluginConnectivity('${p.id}', '${p.category}', this)" style="font-size: 0.75rem;">⚡ 通道自检</button>
+                </div>
+            `;
+        } else {
+            controlBtnsHtml = `
+                <div class="p-control-group" style="display:grid; grid-template-columns: 1fr; gap:8px;">
+                    <button class="action-btn p-btn-test-direct" data-id="${p.id}" data-category="${p.category}" onclick="window.fastTestPluginConnectivity('${p.id}', '${p.category}', this)">⚡ 测试连接</button>
+                </div>
+            `;
+        }
     } else {
         controlBtnsHtml = `
             <div class="p-control-group" style="display:block; text-align:center; padding: 4px 0;">
