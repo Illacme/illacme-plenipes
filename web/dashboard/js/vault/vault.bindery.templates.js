@@ -175,6 +175,31 @@
                         </div>
                     </div>
 
+                    <!-- 封面装帧区块 -->
+                    <div style="display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius: 10px; padding: 10px 12px; align-items: center;">
+                        <div id="bindery-cover-preview-box" style="width: 72px; height: 110px; border-radius: 6px; overflow: hidden; background: #0b1219; border: 1px solid rgba(16,185,129,0.35); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,0.45);">
+                            <img id="bindery-cover-img" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="Cover" />
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label class="bindery-label" style="margin: 0;">🖼️ 出版装帧封面策略</label>
+                                <span id="bindery-cover-badge" class="bindery-badge" style="font-size: 0.65rem;">✨ 智能排版</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <select id="bindery-select-cover-mode" class="bindery-select" onchange="window.refreshCoverPreview()">
+                                    <option value="auto" selected>✨ 智能自愈 (文库/排版)</option>
+                                    <option value="generated">🎨 强制排版艺术封面</option>
+                                    <option value="none">🚫 禁用封面 (无图)</option>
+                                </select>
+                                <select id="bindery-select-cover-style" class="bindery-select" onchange="window.refreshCoverPreview()">
+                                    <option value="dark_emerald" selected>🌿 黑曜翡翠 (Emerald)</option>
+                                    <option value="classic_navy">🌌 藏青午夜 (Navy)</option>
+                                    <option value="obsidian_gold">👑 黑金雅致 (Gold)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="bindery-label">🖨️ 装订驱动与格式</label>
                         <div style="display: flex; gap: 10px;">

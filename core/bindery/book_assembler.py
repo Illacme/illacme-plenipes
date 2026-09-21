@@ -12,6 +12,7 @@ import markdown
 from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook import EBookRegistry
+from .cover_generator import CoverGenerator
 from core.utils.tracing import tlog
 
 
@@ -29,34 +30,23 @@ class BookAssembler:
         target_lang: str = "zh",
         custom_title: Optional[str] = None,
         custom_author: Optional[str] = None,
+        cover_mode: str = "auto",
+        cover_style: str = "dark_emerald",
         output_dir: str = "dist/books"
     ) -> Optional[str]:
-        """
-        全流程合卷编排与物理装帧封包。
-        
-        Args:
-            category: 选定栏目文件夹 (如 "Docs", "Blog", "Showcase"，留空表示全库)
-            format_type: 电子书插件格式 (默认 "epub")
-            target_lang: 目标语种 (如 "zh", "en", "ja")
-            custom_title: 自定义书名 (留空自动生成)
-            custom_author: 自定义作者
-            output_dir: 产物落盘目录
-            
-        Returns:
-            Optional[str]: 成功时返回最终电子书物理绝对路径，失败返回 None
-        """
+        """执行装订全流程：收集章节、渲染转换、装订封包"""
         adapter_cls = EBookRegistry.get_adapter(format_type)
         if not adapter_cls:
-            tlog.error(f"❌ [装订中枢] 未找到格式为 '{format_type}' 的电子书适配驱动！")
+            tlog.error(f"❌ [数字装订] 未找到格式驱动: {format_type}")
             return None
 
-        # 1. 扫描提取章节
-        chapters = self._collect_chapters(category=category, target_lang=target_lang)
+        # 1. 勘测提取章节
+        chapters = self._collect_chapters(category, target_lang)
         if not chapters:
-            tlog.warning(f"⚠️ [装订中枢] 栏目 '{category}' 下未发现可出版的原稿文稿。")
+            tlog.warning(f"⚠️ [数字装订] 栏目 '{category}' 下无可用 Markdown 章节稿件。")
             return None
 
-        # 2. 组装全局元数据
+        # 2. 组装出版元数据
         site_name = "Illacme Plenipes"
         if self.engine and hasattr(self.engine, "config"):
             site_name = getattr(self.engine.config, "site_name", site_name)
@@ -67,26 +57,45 @@ class BookAssembler:
             book_title += f" ({target_lang.upper()} Edition)"
 
         author = custom_author or "Illacme Editorial Team"
+        publisher_name = f"{site_name} Global Private Press"
         book_meta = {
             "title": book_title,
             "author": author,
-            "publisher": f"{site_name} Global Private Press",
+            "publisher": publisher_name,
             "description": f"由 {site_name} 自动化装订中枢出版的数字出版物。",
             "date": None,
             "language": target_lang
         }
 
-        # 3. 寻找或派生封面
-        cover_path = self._resolve_cover_image(category)
-
-        # 4. 确定输出路径
+        # 3. 确定输出路径与封面解析
         slug_prefix = re.sub(r'[^a-zA-Z0-9_\u4e00-\u9fa5]+', '-', book_title).strip('-').lower()
         ext = getattr(adapter_cls, "OUTPUT_EXTENSION", ".epub")
         os.makedirs(output_dir, exist_ok=True)
         out_filename = f"{slug_prefix}_{target_lang}{ext}"
         out_path = os.path.abspath(os.path.join(output_dir, out_filename))
 
-        # 5. 调用适配驱动执行装订封包
+        cover_path = None
+        if cover_mode != "none":
+            if cover_mode == "auto":
+                cover_path = CoverGenerator.discover_cover(
+                    vault_dir=self.vault_dir,
+                    category=category,
+                    chapters=chapters
+                )
+            # 若 auto 未找到，或显式指定 generated，则自动派生高雅排版艺术封面
+            if not cover_path and cover_mode in ("auto", "generated"):
+                gen_cover_name = f"cover_{slug_prefix}_{cover_style}.png"
+                gen_cover_path = os.path.join(output_dir, gen_cover_name)
+                cover_path = CoverGenerator.render_cover_image(
+                    output_path=gen_cover_path,
+                    title=book_title,
+                    author=author,
+                    publisher=publisher_name,
+                    style_key=cover_style,
+                    lang=target_lang
+                )
+
+        # 4. 调用适配驱动执行装订封包
         adapter = adapter_cls(engine=self.engine)
         success = adapter.bind_book(
             manuscript_tree=chapters,
@@ -204,15 +213,4 @@ class BookAssembler:
             pass
         return None
 
-    def _resolve_cover_image(self, category: str) -> Optional[str]:
-        """寻找适宜的竖版书籍封面"""
-        candidates = [
-            os.path.join(self.vault_dir, "assets", "cover.jpg"),
-            os.path.join(self.vault_dir, "assets", "cover.png"),
-            os.path.join(self.vault_dir, f"{category}.jpg"),
-            os.path.join(self.vault_dir, "cover.jpg"),
-        ]
-        for c in candidates:
-            if os.path.exists(c):
-                return c
-        return None
+

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from core.runtime.engine_singleton import get_global_engine
 from core.bindery.book_assembler import BookAssembler
+from core.bindery.cover_generator import CoverGenerator, COVER_STYLES
 from core.adapters.egress.ebook import EBookRegistry
 from ..system import verify_token
 
@@ -26,7 +27,19 @@ class BinderyBuildPayload(BaseModel):
     lang: str = Field(default="zh", description="目标语言代码")
     title: Optional[str] = Field(default=None, description="自定义书名")
     author: Optional[str] = Field(default=None, description="自定义作者/出版署名")
+    cover_mode: str = Field(default="auto", description="封面策略: auto, generated, none")
+    cover_style: str = Field(default="dark_emerald", description="装帧封面风格")
     output_dir: str = Field(default="dist/books", description="物理落盘相对目录")
+
+
+class CoverPreviewPayload(BaseModel):
+    """封面实时预览请求载荷"""
+    title: Optional[str] = Field(default=None, description="书名")
+    author: Optional[str] = Field(default=None, description="作者")
+    scope: str = Field(default="all", description="栏目范围")
+    style: str = Field(default="dark_emerald", description="风格ID")
+    lang: str = Field(default="zh", description="语种代码")
+    cover_mode: str = Field(default="auto", description="封面模式")
 
 
 @router.get("/api/bindery/scopes", dependencies=[Depends(verify_token)])
@@ -66,13 +79,77 @@ async def get_bindery_scopes() -> Dict[str, Any]:
         elif isinstance(author_cfg, str) and author_cfg:
             default_author = author_cfg
 
+    # 4. 探测文库是否有原生封面图片及风格预设
+    has_native_cover = bool(CoverGenerator.discover_cover(vault_abs))
+    styles_list = [
+        {"id": k, "name": v["name"], "accent": v["accent"]}
+        for k, v in COVER_STYLES.items()
+    ]
+
     return {
         "success": True,
         "site_name": site_name,
         "default_author": default_author,
         "default_lang": default_lang,
+        "has_native_cover": has_native_cover,
+        "cover_styles": styles_list,
         "categories": categories,
         "formats": formats
+    }
+
+
+@router.post("/api/bindery/cover-preview", dependencies=[Depends(verify_token)])
+async def get_cover_preview(payload: CoverPreviewPayload) -> Dict[str, Any]:
+    """🚀 [V125.0] 封面实时预览：毫秒级生成排版封面或提取文库原生封面 DataURL"""
+    engine = get_global_engine()
+    vault_root = getattr(engine, "vault_root", "vault") if engine else "vault"
+    vault_abs = os.path.abspath(vault_root)
+
+    site_name = "Illacme Plenipes"
+    if engine and hasattr(engine, "config"):
+        site_name = getattr(engine.config, "site_name", site_name)
+
+    cat_scope = "" if payload.scope == "all" else payload.scope
+    title = payload.title or f"{site_name} · 数字出版集"
+    author = payload.author or "Illacme Editorial Team"
+    pub_name = f"{site_name} Global Private Press"
+
+    if payload.cover_mode == "none":
+        return {"success": True, "mode": "none", "data_uri": None}
+
+    # 尝试原生封面
+    if payload.cover_mode == "auto":
+        native_p = CoverGenerator.discover_cover(vault_abs, category=cat_scope)
+        if native_p and os.path.exists(native_p):
+            try:
+                import mimetypes
+                import base64
+                mime, _ = mimetypes.guess_type(native_p)
+                mime = mime or "image/jpeg"
+                with open(native_p, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("ascii")
+                return {
+                    "success": True,
+                    "mode": "native",
+                    "filename": os.path.basename(native_p),
+                    "data_uri": f"data:{mime};base64,{b64}"
+                }
+            except Exception:
+                pass
+
+    # 降级或指定生成排版艺术封面
+    data_uri = CoverGenerator.generate_cover_data_uri(
+        title=title,
+        author=author,
+        publisher=pub_name,
+        style_key=payload.style,
+        lang=payload.lang
+    )
+    return {
+        "success": True,
+        "mode": "generated",
+        "style": payload.style,
+        "data_uri": data_uri
     }
 
 
@@ -95,6 +172,8 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         target_lang=payload.lang,
         custom_title=payload.title,
         custom_author=payload.author,
+        cover_mode=payload.cover_mode,
+        cover_style=payload.cover_style,
         output_dir=payload.output_dir
     )
 

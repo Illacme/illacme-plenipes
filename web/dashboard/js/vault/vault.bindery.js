@@ -66,6 +66,89 @@
         const defaultTitle = scopesData.site_name ? `${scopesData.site_name} · 数字出版集` : '数字出版合集';
 
         _binderyModalEl.innerHTML = tpl.buildModalCardHtml(scopesData, currentScope, defaultTitle);
+
+        // 绑定输入与选择防抖联动刷新封面
+        let debounceTimer = null;
+        const triggerDebouncedPreview = () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(window.refreshCoverPreview, 250);
+        };
+
+        const titleInput = document.getElementById('bindery-input-title');
+        const authorInput = document.getElementById('bindery-input-author');
+        const scopeSelect = document.getElementById('bindery-select-scope');
+        const langSelect = document.getElementById('bindery-select-lang');
+
+        if (titleInput) titleInput.addEventListener('input', triggerDebouncedPreview);
+        if (authorInput) authorInput.addEventListener('input', triggerDebouncedPreview);
+        if (scopeSelect) scopeSelect.addEventListener('change', window.refreshCoverPreview);
+        if (langSelect) langSelect.addEventListener('change', window.refreshCoverPreview);
+
+        // 初始拉取封面预览
+        window.refreshCoverPreview();
+    };
+
+    /**
+     * 实时拉取并更新封面预览
+     */
+    window.refreshCoverPreview = async function() {
+        const titleInput = document.getElementById('bindery-input-title');
+        const authorInput = document.getElementById('bindery-input-author');
+        const scopeSelect = document.getElementById('bindery-select-scope');
+        const langSelect = document.getElementById('bindery-select-lang');
+        const modeSelect = document.getElementById('bindery-select-cover-mode');
+        const styleSelect = document.getElementById('bindery-select-cover-style');
+        const imgEl = document.getElementById('bindery-cover-img');
+        const badgeEl = document.getElementById('bindery-cover-badge');
+
+        if (!imgEl) return;
+
+        const payload = {
+            title: titleInput ? titleInput.value.trim() : '',
+            author: authorInput ? authorInput.value.trim() : '',
+            scope: scopeSelect ? scopeSelect.value : 'all',
+            lang: langSelect ? langSelect.value : 'zh',
+            cover_mode: modeSelect ? modeSelect.value : 'auto',
+            style: styleSelect ? styleSelect.value : 'dark_emerald'
+        };
+
+        try {
+            const fetchFunc = window.apiFetch || window.fetch;
+            const res = await fetchFunc('/api/bindery/cover-preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = (res && typeof res.json === 'function') ? await res.json() : res;
+
+            if (data && data.success) {
+                if (data.mode === 'none' || !data.data_uri) {
+                    imgEl.src = '';
+                    imgEl.style.display = 'none';
+                    if (badgeEl) {
+                        badgeEl.textContent = '🚫 禁用封面';
+                        badgeEl.style.color = '#94a3b8';
+                        badgeEl.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+                    }
+                } else {
+                    imgEl.style.display = 'block';
+                    imgEl.src = data.data_uri;
+                    if (badgeEl) {
+                        if (data.mode === 'native') {
+                            badgeEl.textContent = '📂 文库原图';
+                            badgeEl.style.color = '#38bdf8';
+                            badgeEl.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                        } else {
+                            badgeEl.textContent = '✨ 艺术排版';
+                            badgeEl.style.color = '#10b981';
+                            badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[Bindery] 刷新封面预览失败:', e);
+        }
     };
 
     /**
@@ -87,6 +170,8 @@
         const authorInput = document.getElementById('bindery-input-author');
         const scopeSelect = document.getElementById('bindery-select-scope');
         const langSelect = document.getElementById('bindery-select-lang');
+        const modeSelect = document.getElementById('bindery-select-cover-mode');
+        const styleSelect = document.getElementById('bindery-select-cover-style');
         const statusArea = document.getElementById('bindery-status-area');
         const submitBtn = document.getElementById('btn-execute-binding');
 
@@ -97,7 +182,9 @@
             scope: scopeSelect ? scopeSelect.value : 'all',
             lang: langSelect ? langSelect.value : 'zh',
             title: titleInput.value.trim() || undefined,
-            author: authorInput ? authorInput.value.trim() || undefined : undefined
+            author: authorInput ? authorInput.value.trim() || undefined : undefined,
+            cover_mode: modeSelect ? modeSelect.value : 'auto',
+            cover_style: styleSelect ? styleSelect.value : 'dark_emerald'
         };
 
         submitBtn.disabled = true;

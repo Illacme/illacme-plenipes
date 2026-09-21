@@ -107,3 +107,63 @@ def test_bindery_download_security_defense(client):
     # 3. 空参数
     res_empty = client.get("/api/bindery/download?file=")
     assert res_empty.status_code == 400
+
+
+def test_bindery_cover_preview_api(client):
+    """测试封面实时预览接口返回 DataURL 与状态"""
+    # 1. 自动/生成模式
+    res = client.post("/api/bindery/cover-preview", json={
+        "title": "封面测试书",
+        "author": "测试作者",
+        "scope": "all",
+        "style": "dark_emerald",
+        "lang": "zh",
+        "cover_mode": "generated"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data.get("success") is True
+    assert data.get("mode") == "generated"
+    assert data.get("data_uri", "").startswith("data:image/svg+xml;base64,")
+
+    # 2. 禁用封面模式
+    res_none = client.post("/api/bindery/cover-preview", json={
+        "title": "无封面书",
+        "cover_mode": "none"
+    })
+    assert res_none.status_code == 200
+    assert res_none.json().get("mode") == "none"
+    assert res_none.json().get("data_uri") is None
+
+
+def test_bindery_build_with_cover_options(client, setup_mock_vault, monkeypatch):
+    """测试携带装帧封面策略执行 EPUB 编译落盘"""
+    from core.runtime.engine_singleton import get_global_engine
+    engine = get_global_engine()
+    if engine:
+        monkeypatch.setattr(engine, "vault_root", setup_mock_vault)
+
+    payload = {
+        "format": "epub",
+        "scope": "Docs",
+        "lang": "zh",
+        "title": "装帧艺术封面版",
+        "author": "测试作者",
+        "cover_mode": "generated",
+        "cover_style": "obsidian_gold",
+        "output_dir": "dist/books"
+    }
+    res = client.post("/api/bindery/build", json=payload)
+    assert res.status_code == 200
+    b_data = res.json()
+    assert b_data.get("success") is True
+    fn = b_data.get("filename")
+    
+    # 检查 EPUB 内部是否成功封装了 cover
+    import zipfile
+    epub_abs = os.path.abspath(os.path.join("dist/books", fn))
+    with zipfile.ZipFile(epub_abs, "r") as z:
+        namelist = z.namelist()
+        assert "OEBPS/text/cover.xhtml" in namelist
+        assert any(n.startswith("OEBPS/images/cover") for n in namelist)
+
