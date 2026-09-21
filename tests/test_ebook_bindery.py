@@ -152,3 +152,64 @@ def test_book_assembler_vault_end_to_end():
         )
         assert en_book is not None
         assert os.path.exists(en_book)
+
+
+def test_epub_colophon_injection():
+    """验证电子书装订时自动注入末尾版权页 (Colophon) 与物权指纹"""
+    from core.adapters.egress.ebook import ColophonBuilder
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_file = os.path.join(tmpdir, "colophon_test.epub")
+        adapter = EpubAdapter()
+
+        manuscripts = [
+            {
+                "order": 1,
+                "title": "第 1 章 架构总览",
+                "slug": "ch1",
+                "html_body": "<p>这里是架构解析，包含 100 个核心要点与架构设计图。</p>"
+            },
+            {
+                "order": 2,
+                "title": "第 2 章 实战案例",
+                "slug": "ch2",
+                "html_body": "<p>Deep learning and sovereign publishing workflow.</p>"
+            }
+        ]
+
+        book_meta = {
+            "title": "版记验证典籍",
+            "author": "架构委员会",
+            "publisher": "Illacme Press",
+            "license": "CC BY-NC-SA 4.0 国际知识共享协议"
+        }
+
+        success = adapter.bind_book(
+            manuscript_tree=manuscripts,
+            book_metadata=book_meta,
+            target_lang="zh",
+            output_file_path=out_file
+        )
+        assert success is True
+
+        with zipfile.ZipFile(out_file, "r") as zf:
+            namelist = zf.namelist()
+            # 1. 验证版记独立 XHTML 落盘
+            assert "OEBPS/text/colophon.xhtml" in namelist
+
+            # 2. 验证版记内容准确包含各项元数据
+            colophon_html = zf.read("OEBPS/text/colophon.xhtml").decode("utf-8")
+            assert "出版物版记 · COLOPHON" in colophon_html
+            assert "版记验证典籍" in colophon_html
+            assert "架构委员会" in colophon_html
+            assert "CC BY-NC-SA 4.0" in colophon_html
+            assert "篇章节" in colophon_html
+
+            # 3. 验证 nav.xhtml 与 toc.ncx 均包含版记导航
+            nav_html = zf.read("OEBPS/nav.xhtml").decode("utf-8")
+            assert "text/colophon.xhtml" in nav_html
+            assert "版记 · Colophon" in nav_html
+
+            ncx_xml = zf.read("OEBPS/toc.ncx").decode("utf-8")
+            assert "text/colophon.xhtml" in ncx_xml
+            assert "版记 · Colophon" in ncx_xml

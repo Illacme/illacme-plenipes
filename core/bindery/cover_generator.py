@@ -213,6 +213,21 @@ class CoverGenerator:
   </g>
 </svg>"""
 
+    @staticmethod
+    def _load_font(size: int):
+        from PIL import ImageFont
+        candidates = [
+            "/System/Library/Fonts/STHeiti Light.ttc", "/System/Library/Fonts/Supplemental/Songti.ttc",
+            "/System/Library/Fonts/PingFang.ttc", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", "C:/Windows/Fonts/msyh.ttc"
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                try: return ImageFont.truetype(c, size=size)
+                except Exception: pass
+        try: return ImageFont.load_default(size=size)
+        except Exception: return ImageFont.load_default()
+
     @classmethod
     def render_cover_image(
         cls,
@@ -223,42 +238,48 @@ class CoverGenerator:
         style_key: str = "dark_emerald",
         lang: str = "zh"
     ) -> str:
-        """渲染封面图片并落盘，返回物理路径"""
+        """渲染封面图片并落盘，使用超高清出版比例与大字号排版"""
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         svg_content = cls.generate_svg_cover(title, author, publisher, style_key, lang)
-
-        ext = os.path.splitext(output_path)[1].lower()
-        if ext == ".svg":
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
+        if output_path.lower().endswith(".svg"):
+            with open(output_path, "w", encoding="utf-8") as f: f.write(svg_content)
             return output_path
 
-        # 优先使用 PIL 绘制或导出高保真光栅化图像
         try:
-            from PIL import Image, ImageDraw, ImageFont
+            from PIL import Image, ImageDraw
             style = COVER_STYLES.get(style_key, COVER_STYLES["dark_emerald"])
-            # 创建 1600x2560 画布
             img = Image.new("RGB", (1600, 2560), style["bg_top"])
             draw = ImageDraw.Draw(img)
 
-            # 绘制内框装饰线
-            hex_border = style["border"]
-            draw.rectangle([(90, 90), (1510, 2470)], outline=hex_border, width=4)
-            draw.rectangle([(110, 110), (1490, 2450)], outline=hex_border, width=2)
+            # 内外艺术边框
+            draw.rectangle([(90, 90), (1510, 2470)], outline=style["border"], width=4)
+            draw.rectangle([(110, 110), (1490, 2450)], outline=style["border"], width=2)
 
-            # 居中文本（使用内置或默认字体降级）
-            clean_title = title or "数字出版合集"
-            draw.text((800, 1000), clean_title, fill=style["text_main"], anchor="mm")
-            draw.text((800, 1780), f"著 · {author}", fill=style["text_sub"], anchor="mm")
-            draw.text((800, 2220), publisher, fill=style["accent"], anchor="mm")
+            # 顶部徽章
+            draw.rounded_rectangle([(620, 324), (980, 396)], radius=36, fill=style["bg_bottom"], outline=style["accent"], width=2)
+            badge_text = "EDITION · 中文版" if lang == "zh" else f"EDITION · {lang.upper()}"
+            draw.text((800, 360), badge_text, font=cls._load_font(28), fill=style["accent"], anchor="mm")
 
+            # 居中大字号标题 (智能折行)
+            clean_title = (title or "数字出版合集").strip()
+            lines = [clean_title[i:i+10] for i in range(0, len(clean_title), 10)] if len(clean_title) > 12 else [clean_title]
+            start_y = 1060 - ((len(lines) - 1) * 70)
+            for idx, line in enumerate(lines):
+                draw.text((800, start_y + idx * 140), line, font=cls._load_font(98), fill=style["text_main"], anchor="mm")
+
+            # 装饰分割线与圆点
+            draw.line([(500, 1560), (1100, 1560)], fill=style["accent"], width=3)
+            draw.ellipse([(792, 1552), (808, 1568)], fill=style["accent"])
+            # 著作者与出品方
+            draw.text((800, 1750), "AUTHOR / 著", font=cls._load_font(36), fill=style["text_sub"], anchor="mm")
+            draw.text((800, 1830), author or "Illacme Team", font=cls._load_font(58), fill=style["text_main"], anchor="mm")
+            draw.text((800, 2220), publisher or "Illacme Press", font=cls._load_font(36), fill=style["accent"], anchor="mm")
+            draw.text((800, 2270), "DIGITAL LUXURY BINDERY · EPUB 3.0", font=cls._load_font(24), fill=style["text_sub"], anchor="mm")
             img.save(output_path, quality=95)
             return output_path
         except Exception:
-            # 降级：如果 PIL 失败，保存为对应同名 .svg 文件
             svg_fallback_path = os.path.splitext(output_path)[0] + ".svg"
-            with open(svg_fallback_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
+            with open(svg_fallback_path, "w", encoding="utf-8") as f: f.write(svg_content)
             return svg_fallback_path
 
     @classmethod

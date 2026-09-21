@@ -8,12 +8,14 @@ Illacme Plenipes - Native EPUB 3.0 Adapter (原生流式电子书装订驱动)
 import os
 import re
 import uuid
+import html as py_html
 import zipfile
 import datetime
 from typing import Dict, Any, List, Optional
 from xml.sax.saxutils import escape
 
 from .base import BaseEBookAdapter
+from .colophon import ColophonBuilder
 from core.utils.tracing import tlog
 
 
@@ -63,16 +65,34 @@ pre code { background-color: transparent; padding: 0; }
 img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
 .cover-container { text-align: center; margin: 0; padding: 0; }
 .cover-image { max-width: 100%; max-height: 100vh; margin: auto; }
-.colophon-card { border: 1px solid #e1e4e8; padding: 1.5em; border-radius: 8px; margin: 2em 0; }
+.colophon-page { padding: 1.5em 0.8em; }
+.colophon-card { border: 1px solid #e1e4e8; background-color: #fafbfc; padding: 1.5em; border-radius: 8px; margin: 1.5em auto; }
+.colophon-header { font-size: 1.25em; font-weight: 700; border-bottom: 2px solid #00f2fe; padding-bottom: 0.4em; margin-bottom: 1em; text-align: center; }
+.colophon-grid { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+.colophon-grid td { padding: 0.4em 0.5em; border-bottom: 1px dashed #e1e4e8; }
+.colophon-grid td.k { font-weight: 600; color: #555555; width: 32%; }
+.colophon-grid td.v { color: #222222; }
+.colophon-footer { font-size: 0.75em; color: #666666; margin-top: 1.2em; text-align: center; line-height: 1.5; }
 nav ol { list-style-type: decimal; padding-left: 1.5em; }
 nav li { margin: 0.4em 0; }
 nav a { text-decoration: none; color: #0366d6; }
+.callout { margin: 1em 0; padding: 0.8em 1.2em; border-left: 4px solid #00f2fe; background-color: #f8fafc; border-radius: 4px; }
+.callout-tip { border-left-color: #10b981; background-color: #f0fdf4; }
+.callout-note, .callout-info { border-left-color: #0284c7; background-color: #f0f9ff; }
+.callout-warning { border-left-color: #f59e0b; background-color: #fffbeb; }
+.callout-danger { border-left-color: #ef4444; background-color: #fef2f2; }
+.callout-title { font-weight: 700; margin-bottom: 0.3em; }
 @media (prefers-color-scheme: dark) {
     body { background-color: #121212; color: #e0e0e0; }
     h1, h2 { border-bottom-color: #333333; }
     blockquote { background-color: #1e1e1e; color: #aaaaaa; }
     code { background-color: #2d2d2d; color: #f8f8f2; }
     pre { background-color: #1a1a1a; }
+    .colophon-card { border-color: #333333; background-color: #1a1a1a; }
+    .colophon-grid td { border-bottom-color: #2a2a2a; }
+    .colophon-grid td.k { color: #888888; }
+    .colophon-grid td.v { color: #cccccc; }
+    .colophon-footer { color: #777777; }
 }
 """
 
@@ -177,7 +197,24 @@ nav a { text-decoration: none; color: #0366d6; }
       <content src="{ch_filename}"/>
     </navPoint>""")
 
-                # 6. 写入 OEBPS/nav.xhtml (EPUB 3 原生目录)
+                # 6. 写入出版版权页与物权指纹 (Colophon)
+                colophon_data = ColophonBuilder.build_colophon_data(
+                    manuscript_tree=manuscript_tree,
+                    book_metadata=book_metadata,
+                    format_name="EPUB 3.0 (IDPF / W3C 标准流式版式)"
+                )
+                colophon_xhtml = ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang)
+                zf.writestr("OEBPS/text/colophon.xhtml", colophon_xhtml)
+
+                manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
+                spine_items.append('<itemref idref="colophon"/>')
+                nav_ol_items.append('<li><a href="text/colophon.xhtml">版记 · Colophon</a></li>')
+                toc_nav_points.append(f"""    <navPoint id="navPoint-{len(manuscript_tree) + 1}" playOrder="{len(manuscript_tree) + 1}">
+      <navLabel><text>版记 · Colophon</text></navLabel>
+      <content src="text/colophon.xhtml"/>
+    </navPoint>""")
+
+                # 7. 写入 OEBPS/nav.xhtml (EPUB 3 原生目录)
                 nav_xhtml = f"""<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="{iso_lang}">
@@ -239,10 +276,12 @@ nav a { text-decoration: none; color: #0366d6; }
             return False
 
     def _normalize_xhtml(self, html: str) -> str:
-        """确保 HTML 片段符合严格的 XML 自闭合标准"""
-        # 闭合常见单标签
+        """确保 HTML 片段符合严格的 XML 自闭合标准并剔除未声明实体"""
+        # 1. 解码所有命名 HTML4 实体为真实 Unicode 字符，避免 XML 解析器报 "Entity not defined"
+        clean = py_html.unescape(html)
+        # 2. 闭合常见单标签
         for tag in ["img", "br", "hr", "input", "meta", "link"]:
-            html = re.sub(rf'<({tag}[^>/]*)(?<!/)>', r'<\1 />', html, flags=re.IGNORECASE)
-        # 移除可能残留的未闭合转义字符
-        html = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', html)
-        return html
+            clean = re.sub(rf'<({tag}[^>/]*)(?<!/)>', r'<\1 />', clean, flags=re.IGNORECASE)
+        # 3. 规范化转义裸露的 &
+        clean = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', clean)
+        return clean

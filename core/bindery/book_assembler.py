@@ -58,13 +58,18 @@ class BookAssembler:
 
         author = custom_author or "Illacme Editorial Team"
         publisher_name = f"{site_name} Global Private Press"
+        license_decl = "保留所有权利 · All Rights Reserved (基于 Illacme Plenipes 出版体系规范装订)"
+        if self.engine and hasattr(self.engine, "config"):
+            license_decl = getattr(self.engine.config, "license", None) or getattr(self.engine.config, "copyright", license_decl)
+
         book_meta = {
             "title": book_title,
             "author": author,
             "publisher": publisher_name,
             "description": f"由 {site_name} 自动化装订中枢出版的数字出版物。",
             "date": None,
-            "language": target_lang
+            "language": target_lang,
+            "license": license_decl
         }
 
         # 3. 确定输出路径与封面解析
@@ -159,6 +164,14 @@ class BookAssembler:
 
             md_converter.reset()
             html_content = md_converter.convert(healed_body)
+
+            # Callout 优化：将 > [!TIP] 结构美化为标准的 callout 块
+            html_content = re.sub(
+                r'<blockquote>\s*<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][+-]?\s*(.*?)(</p>.*?)</blockquote>',
+                r'<div class="callout callout-\1"><div class="callout-title">💡 \1</div><p>\2\3</div>',
+                html_content,
+                flags=re.DOTALL | re.IGNORECASE
+            )
 
             chapters.append({
                 "order": idx + 1,

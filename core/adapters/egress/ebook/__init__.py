@@ -8,6 +8,7 @@ Illacme Plenipes - EBook Egress Adapters Matrix
 import os
 import sys
 from .base import BaseEBookAdapter, EBookRegistry
+from .colophon import ColophonBuilder
 from core.utils.plugin_loader import discover_and_register
 
 # 1. 扫描并自动注册当前包下的所有内置电子书驱动
@@ -20,4 +21,4 @@ if os.path.exists(global_ebook_path):
         sys.path.append(os.path.abspath("adapters"))
     discover_and_register([global_ebook_path], "adapters.egress.ebook", BaseEBookAdapter, EBookRegistry.register_class)
 
-__all__ = ["BaseEBookAdapter", "EBookRegistry"]
+__all__ = ["BaseEBookAdapter", "EBookRegistry", "ColophonBuilder"]
