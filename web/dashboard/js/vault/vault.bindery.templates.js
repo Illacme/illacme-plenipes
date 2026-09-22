@@ -153,14 +153,16 @@
                         <div>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                                 <label class="bindery-label" style="margin:0;">🌍 出版语种与版本规格</label>
-                                <span id="bindery-lang-hint-badge" class="bindery-badge" style="font-size:0.65rem;">单语言版</span>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span id="bindery-matrix-toggle-btn" style="display:none; cursor:pointer; color:#10b981; font-size:0.65rem; user-select:none; padding:1px 5px; border-radius:4px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25);" onclick="window.toggleAllBinderyMatrixLangs()" title="点击全选/反选">反选</span>
+                                    <span id="bindery-lang-hint-badge" class="bindery-badge" style="font-size:0.65rem;">单语言版</span>
+                                </div>
                             </div>
                             <select id="bindery-select-lang" class="bindery-select" onchange="window.onBinderyLangModeChange(this.value)">${langOptionsHtml}</select>
                             
-                            <!-- 轻巧内嵌的语种勾选行 (仅在多语对照/多本时展现) -->
-                            <div id="bindery-matrix-chips-row" style="display:none; margin-top:6px; align-items:center; justify-content:space-between; gap:4px;">
-                                <div style="display:flex; gap:4px; flex-wrap:wrap;">${matrixChipsHtml}</div>
-                                <span style="cursor:pointer; color:#10b981; font-size:0.68rem; user-select:none; white-space:nowrap;" onclick="window.toggleAllBinderyMatrixLangs()">反选</span>
+                            <!-- 轻巧内嵌的语种勾选行 (独占整行宽度，杜绝多语种拥挤换行) -->
+                            <div id="bindery-matrix-chips-row" style="display:none; margin-top:6px; align-items:center; gap:4px; flex-wrap:wrap;">
+                                ${matrixChipsHtml}
                             </div>
                         </div>
                     </div>

@@ -104,18 +104,22 @@
         const chipsRow = document.getElementById('bindery-matrix-chips-row');
         const badge = document.getElementById('bindery-lang-hint-badge');
         const submitBtn = document.getElementById('btn-execute-binding');
+        const toggleBtn = document.getElementById('bindery-matrix-toggle-btn');
 
         if (val === 'polyglot') {
             if (chipsRow) chipsRow.style.display = 'flex';
+            if (toggleBtn) toggleBtn.style.display = 'inline-block';
             if (badge) { badge.textContent = '📑 多语对照版'; badge.style.color = '#10b981'; }
             if (submitBtn) submitBtn.innerHTML = '<span>📑 制作多语对照电子书</span>';
         } else if (val === 'matrix_batch') {
             if (chipsRow) chipsRow.style.display = 'flex';
+            if (toggleBtn) toggleBtn.style.display = 'inline-block';
             if (badge) { badge.textContent = '📦 多版本并发'; badge.style.color = '#38bdf8'; }
             const count = document.querySelectorAll('.bindery-matrix-cb:checked').length || 3;
             if (submitBtn) submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本)</span>`;
         } else {
             if (chipsRow) chipsRow.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.display = 'none';
             if (badge) { badge.textContent = '单语言版'; badge.style.color = ''; }
             const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
             const langName = langMap[val] || val.toUpperCase();
