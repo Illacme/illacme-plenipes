@@ -79,10 +79,16 @@
                 color: var(--text-bright, #ffffff);
             }
             .bindery-driver-card {
-                flex: 1; background: rgba(16, 185, 129, 0.08);
-                border: 1px solid rgba(16, 185, 129, 0.35);
+                flex: 1; background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
                 border-radius: 8px; padding: 10px 12px;
                 display: flex; align-items: center; justify-content: space-between;
+                cursor: pointer; transition: all 0.2s ease;
+            }
+            .bindery-driver-card:hover { border-color: rgba(16, 185, 129, 0.4); }
+            .bindery-driver-card.active {
+                background: rgba(16, 185, 129, 0.09); border-color: rgba(16, 185, 129, 0.6);
+                box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
             }
             .bindery-driver-title {
                 font-size: 0.85rem; font-weight: 700; color: var(--text-bright, #ffffff);
@@ -95,6 +101,20 @@
                 margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08));
                 padding-top: 14px;
             }
+            .bindery-nav-tab {
+                background: none; border: none; border-bottom: 2px solid transparent;
+                color: var(--text-dim, rgba(255,255,255,0.6)); font-size: 0.85rem; font-weight: 600;
+                padding: 6px 12px; cursor: pointer; transition: all 0.2s;
+            }
+            .bindery-nav-tab:hover { color: var(--text-bright, #fff); }
+            .bindery-nav-tab.active {
+                color: #10b981; border-bottom-color: #10b981;
+            }
+            .bindery-shelf-card:hover {
+                border-color: rgba(16, 185, 129, 0.35) !important;
+                background: rgba(255, 255, 255, 0.05) !important;
+            }
+            .bindery-del-btn:hover { color: #ef4444 !important; }
         `;
         document.head.appendChild(style);
     }
@@ -137,16 +157,24 @@
                     <div>
                         <div class="bindery-title">
                             <span>📚 数字出版装订中枢</span>
-                            <span class="bindery-badge">EPUB 3.0</span>
+                            <span class="bindery-badge">EPUB / WebBook</span>
                         </div>
                         <div class="bindery-subtitle">
-                            将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书。
+                            将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书或独立网页书。
                         </div>
                     </div>
                     <button class="bindery-close-btn" onclick="window.closeBinderyModal()" title="关闭">×</button>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom: 6px;">
+                    <button id="btn-bindery-tab-build" class="bindery-nav-tab active" onclick="window.switchBinderyTab('build')">🖨️ 装订新版</button>
+                    <button id="btn-bindery-tab-shelf" class="bindery-nav-tab" onclick="window.switchBinderyTab('shelf')" style="display:flex; align-items:center; gap:6px;">
+                        <span>📚 典籍货架</span>
+                        <span id="bindery-shelf-badge" class="bindery-badge" style="font-size:0.65rem; padding:1px 6px;">0</span>
+                    </button>
+                </div>
+
+                <div id="bindery-panel-build" style="display: flex; flex-direction: column; gap: 14px;">
                     <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 12px;">
                         <div>
                             <label class="bindery-label-accent">📖 出版物标题 (Title)</label>
@@ -161,9 +189,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
                             <label class="bindery-label">📂 合卷编排范围</label>
-                            <select id="bindery-select-scope" class="bindery-select">
-                                ${categoryOptionsHtml}
-                            </select>
+                            <select id="bindery-select-scope" class="bindery-select">${categoryOptionsHtml}</select>
                         </div>
                         <div>
                             <label class="bindery-label">🌍 导出出版语种</label>
@@ -202,28 +228,45 @@
 
                     <div>
                         <label class="bindery-label">🖨️ 装订驱动与格式</label>
-                        <div style="display: flex; gap: 10px;">
-                            <div class="bindery-driver-card">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="bindery-driver-card active" id="btn-driver-epub" onclick="window.selectBinderyFormat('epub')">
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:1.2rem;">📖</span>
+                                    <span style="font-size:1.1rem;">📖</span>
                                     <div>
-                                        <div class="bindery-driver-title">EPUB 3.0 标准流式版式</div>
-                                        <div class="bindery-driver-desc">适配 Apple Books, 微信读书, Kindle 等</div>
+                                        <div class="bindery-driver-title">EPUB 3.0 流式版式</div>
+                                        <div class="bindery-driver-desc">Apple Books / 微信读书</div>
                                     </div>
                                 </div>
-                                <span style="font-size:0.75rem; color:#10b981; font-weight:700;">● 就绪</span>
+                                <span style="font-size:0.7rem; color:#10b981; font-weight:700;">● 推荐</span>
+                            </div>
+                            <div class="bindery-driver-card" id="btn-driver-webbook" onclick="window.selectBinderyFormat('webbook')">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:1.1rem;">🌐</span>
+                                    <div>
+                                        <div class="bindery-driver-title">单文件网页书 (WebBook)</div>
+                                        <div class="bindery-driver-desc">免阅读器 / 浏览器秒开</div>
+                                    </div>
+                                </div>
+                                <span style="font-size:0.7rem; color:#38bdf8; font-weight:700;">● 独立</span>
                             </div>
                         </div>
                     </div>
+
+                    <div id="bindery-status-area" style="display:none; padding:10px 14px; border-radius:8px; font-size:0.82rem; line-height:1.4;"></div>
+
+                    <div class="bindery-footer">
+                        <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
+                        <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <span>🚀 立即装订导出</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div id="bindery-status-area" style="display:none; padding:10px 14px; border-radius:8px; font-size:0.82rem; line-height:1.4;"></div>
-
-                <div class="bindery-footer">
-                    <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
-                    <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                        <span>🚀 立即装订导出</span>
-                    </button>
+                <div id="bindery-panel-shelf" style="display: none; flex-direction: column; gap: 10px;">
+                    <div id="bindery-shelf-list"></div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top: 14px;">
+                        <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">关闭</button>
+                    </div>
                 </div>
             </div>
         `;

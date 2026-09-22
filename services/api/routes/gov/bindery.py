@@ -7,8 +7,8 @@
 
 import os
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from core.runtime.engine_singleton import get_global_engine
@@ -198,40 +198,69 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
     }
 
 
+def _get_safe_book_path(file: str) -> str:
+    """提取纯文件名并严格断言物理锚定在 dist/books 目录之内"""
+    safe_name = os.path.basename(file.strip())
+    if not safe_name or safe_name != file:
+        raise HTTPException(status_code=400, detail="非法的请求参数。")
+    base_dir = os.path.abspath("dist/books")
+    target_path = os.path.abspath(os.path.join(base_dir, safe_name))
+    if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
+        raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")
+    return target_path
+
+
 @router.get("/api/bindery/download")
 async def download_ebook_publication(file: str = Query(..., description="待下载的装订文件名")):
-    """
-    🚀 [V125.0] 数字出版物安全下载通道
-    🛡️ SOP-04 安全红线：严格防范目录穿越 (Directory Traversal) 与非受权读取。
-    """
-    # 1. 提取纯文件名，杜绝任何路径分割符与 .. 攻击
-    safe_filename = os.path.basename(file.strip())
-    if not safe_filename or safe_filename != file:
-        raise HTTPException(status_code=400, detail="非法的下载请求参数。")
+    """🚀 [V125.0] 数字出版物安全下载通道"""
+    target = _get_safe_book_path(file)
+    ext = os.path.splitext(file)[1].lower()
+    media_map = {".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf"}
+    return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
 
-    # 2. 物理锚定产物白名单目录 (dist/books)
-    base_books_dir = os.path.abspath("dist/books")
-    target_abs_path = os.path.abspath(os.path.join(base_books_dir, safe_filename))
 
-    # 3. 严格断言目标必须在 base_books_dir 之内
-    if not target_abs_path.startswith(base_books_dir + os.sep):
-        raise HTTPException(status_code=403, detail="主权防御：拒绝越权访问。")
+@router.get("/api/bindery/view")
+async def view_ebook_webbook(file: str = Query(..., description="待预览的 WebBook HTML 文件")):
+    """🌐 [V125.1] 单文件 WebBook 在线免下载即开即读"""
+    target = _get_safe_book_path(file)
+    if not file.lower().endswith(".html"):
+        raise HTTPException(status_code=400, detail="仅支持 WebBook HTML 格式在线翻阅。")
+    with open(target, "r", encoding="utf-8") as f:
+        return Response(content=f.read(), media_type="text/html; charset=utf-8")
 
-    if not os.path.isfile(target_abs_path):
-        raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")
 
-    # 4. 根据文件扩展名映射 media_type
-    ext = os.path.splitext(safe_filename)[1].lower()
-    media_map = {
-        ".epub": "application/epub+zip",
-        ".pdf": "application/pdf",
-        ".mobi": "application/x-mobipocket-ebook",
-        ".azw3": "application/vnd.amazon.ebook"
-    }
-    media_type = media_map.get(ext, "application/octet-stream")
+@router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
+async def get_bindery_shelf() -> Dict[str, Any]:
+    """📚 [V125.1] 出版典籍货架：扫描并返回已编译的所有装订产物"""
+    base_dir = os.path.abspath("dist/books")
+    books = []
+    if os.path.exists(base_dir):
+        for fname in sorted(os.listdir(base_dir)):
+            p = os.path.join(base_dir, fname)
+            if os.path.isfile(p) and fname.endswith(('.epub', '.html', '.pdf')):
+                st = os.stat(p)
+                fmt = "webbook" if fname.endswith(".html") else ("epub" if fname.endswith(".epub") else "other")
+                sz_str = f"{st.st_size / 1024:.1f} KB" if st.st_size < 1024 * 1024 else f"{st.st_size / (1024*1024):.2f} MB"
+                books.append({
+                    "filename": fname,
+                    "format": fmt,
+                    "size_bytes": st.st_size,
+                    "size_display": sz_str,
+                    "mtime": st.st_mtime,
+                    "download_url": f"/api/bindery/download?file={fname}",
+                    "preview_url": f"/api/bindery/view?file={fname}" if fmt == "webbook" else None
+                })
+        books.sort(key=lambda x: x["mtime"], reverse=True)
+    return {"success": True, "books": books, "count": len(books)}
 
-    return FileResponse(
-        path=target_abs_path,
-        media_type=media_type,
-        filename=safe_filename
-    )
+
+@router.post("/api/bindery/delete", dependencies=[Depends(verify_token)])
+async def delete_ebook_from_shelf(payload: Dict[str, str] = Body(...)) -> Dict[str, Any]:
+    """🪓 [V125.1] 从出版货架中归档删除指定书籍产物"""
+    file = payload.get("filename", "")
+    target = _get_safe_book_path(file)
+    try:
+        os.remove(target)
+        return {"success": True, "message": f"出版物 {file} 已成功移除。"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除失败: {e}")

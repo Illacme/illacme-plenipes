@@ -167,3 +167,64 @@ def test_bindery_build_with_cover_options(client, setup_mock_vault, monkeypatch)
         assert "OEBPS/text/cover.xhtml" in namelist
         assert any(n.startswith("OEBPS/images/cover") for n in namelist)
 
+
+def test_bindery_shelf_view_and_delete(client):
+    """测试典籍货架扫描、WebBook 在线即时翻阅以及归档删除全流程"""
+    books_dir = os.path.abspath("dist/books")
+    os.makedirs(books_dir, exist_ok=True)
+
+    # 准备测试书籍文件
+    test_html = os.path.join(books_dir, "test_webbook_sample.html")
+    with open(test_html, "w", encoding="utf-8") as f:
+        f.write("<!DOCTYPE html><html><body><h1>WebBook Test</h1></body></html>")
+
+    test_epub = os.path.join(books_dir, "test_dummy_shelf.epub")
+    with open(test_epub, "wb") as f:
+        f.write(b"PK\x03\x04test_epub_binary")
+
+    try:
+        # 1. 测试货架扫描
+        shelf_res = client.get("/api/bindery/shelf")
+        assert shelf_res.status_code == 200
+        shelf_data = shelf_res.json()
+        assert shelf_data.get("success") is True
+        books = shelf_data.get("books", [])
+        assert any(b["filename"] == "test_webbook_sample.html" for b in books)
+        assert any(b["filename"] == "test_dummy_shelf.epub" for b in books)
+
+        sample_webbook = next(b for b in books if b["filename"] == "test_webbook_sample.html")
+        assert sample_webbook["format"] == "webbook"
+        assert "/api/bindery/view" in sample_webbook["preview_url"]
+
+        # 2. 测试 WebBook 在线流式翻阅
+        view_res = client.get("/api/bindery/view?file=test_webbook_sample.html")
+        assert view_res.status_code == 200
+        assert "text/html" in view_res.headers.get("content-type", "")
+        assert "WebBook Test" in view_res.text
+
+        # 3. 测试 view 安全防御与格式校验
+        # 目录穿越
+        assert client.get("/api/bindery/view?file=../../etc/passwd").status_code == 400
+        # 非 html 格式禁止作为网页翻阅
+        assert client.get("/api/bindery/view?file=test_dummy_shelf.epub").status_code == 400
+        # 不存在文件
+        assert client.get("/api/bindery/view?file=not_exist.html").status_code == 404
+
+        # 4. 测试删除文件
+        del_res = client.post("/api/bindery/delete", json={"filename": "test_webbook_sample.html"})
+        assert del_res.status_code == 200
+        assert del_res.json().get("success") is True
+        assert not os.path.exists(test_html)
+
+        # 5. 测试删除安全校验
+        # 穿越拦截
+        assert client.post("/api/bindery/delete", json={"filename": "../../etc/hosts"}).status_code == 400
+        # 不存在文件
+        assert client.post("/api/bindery/delete", json={"filename": "not_exist.epub"}).status_code == 404
+
+    finally:
+        if os.path.exists(test_html):
+            os.remove(test_html)
+        if os.path.exists(test_epub):
+            os.remove(test_epub)
+

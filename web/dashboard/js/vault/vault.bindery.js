@@ -84,8 +84,9 @@
         if (scopeSelect) scopeSelect.addEventListener('change', window.refreshCoverPreview);
         if (langSelect) langSelect.addEventListener('change', window.refreshCoverPreview);
 
-        // 初始拉取封面预览
+        // 初始拉取封面预览与货架
         window.refreshCoverPreview();
+        if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
     };
 
     /**
@@ -162,6 +163,32 @@
     };
 
     /**
+     * 切换装订中枢 Tab (build: 装订新版 / shelf: 典籍货架)
+     */
+    window.switchBinderyTab = function(tab) {
+        const pBuild = document.getElementById('bindery-panel-build');
+        const pShelf = document.getElementById('bindery-panel-shelf');
+        const tBuild = document.getElementById('btn-bindery-tab-build');
+        const tShelf = document.getElementById('btn-bindery-tab-shelf');
+        if (pBuild) pBuild.style.display = tab === 'build' ? 'flex' : 'none';
+        if (pShelf) pShelf.style.display = tab === 'shelf' ? 'flex' : 'none';
+        if (tBuild) tBuild.classList.toggle('active', tab === 'build');
+        if (tShelf) tShelf.classList.toggle('active', tab === 'shelf');
+        if (tab === 'shelf' && typeof window.fetchBinderyShelf === 'function') {
+            window.fetchBinderyShelf();
+        }
+    };
+
+    window._activeBinderyFormat = 'epub';
+    window.selectBinderyFormat = function(fmtId) {
+        window._activeBinderyFormat = fmtId;
+        const e1 = document.getElementById('btn-driver-epub');
+        const e2 = document.getElementById('btn-driver-webbook');
+        if (e1) e1.classList.toggle('active', fmtId === 'epub');
+        if (e2) e2.classList.toggle('active', fmtId === 'webbook');
+    };
+
+    /**
      * 触发异步合卷装订并下载
      */
     window.executeBookBinding = async function() {
@@ -178,7 +205,7 @@
         if (!titleInput || !submitBtn) return;
 
         const payload = {
-            format: 'epub',
+            format: window._activeBinderyFormat || 'epub',
             scope: scopeSelect ? scopeSelect.value : 'all',
             lang: langSelect ? langSelect.value : 'zh',
             title: titleInput.value.trim() || undefined,
@@ -247,7 +274,7 @@
                 document.body.appendChild(dlLink);
                 dlLink.click();
                 setTimeout(() => dlLink.remove(), 1000);
-
+                if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
             } else {
                 throw new Error((result && (result.detail || result.error || result.message)) || '装订返回异常');
             }
