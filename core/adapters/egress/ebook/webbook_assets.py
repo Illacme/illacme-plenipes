@@ -4,10 +4,8 @@ Illacme Plenipes - WebBook Embedded Assets & Runtime Driver
 模块职责：提供单文件离线网页书 (WebBook) 的高质感 CSS 样式、多语言全局无缝切换与对照研读运行时。
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
-
 class WebBookAssets:
     """🎨 WebBook 离线内联资产构建器"""
-
     @staticmethod
     def get_embedded_css() -> str:
         return """:root { --bg-main: #0d1117; --bg-sidebar: #161b22; --bg-card: #1f242c; --text-main: #c9d1d9; --text-dim: #8b949e; --text-title: #f0f6fc; --accent: #10b981; --border: #30363d; --code-bg: #161b22; --font-size: 16px; }
@@ -30,7 +28,9 @@ class WebBookAssets:
 .wb-chapter { margin-bottom: 70px; padding-bottom: 40px; border-bottom: 1px solid var(--border); scroll-margin-top: 95px; } .wb-chapter-badge { font-size: 0.75rem; text-transform: uppercase; color: var(--accent); font-weight: 700; letter-spacing: 0.05em; }
 .wb-chapter-title { font-size: 1.85rem; font-weight: 800; color: var(--text-title); margin: 6px 0 20px; transition: color 0.2s; scroll-margin-top: 95px; } .wb-chapter-body p { margin: 0.8em 0; } .wb-chapter-body h1, .wb-chapter-body h2, .wb-chapter-body h3, .wb-chapter-body h4 { color: var(--text-title); margin: 1.4em 0 0.6em; scroll-margin-top: 95px; }
 .wb-chapter-body blockquote { border-left: 4px solid var(--accent); padding: 0.6em 1em; background: var(--bg-card); color: var(--text-dim); margin: 1.2em 0; border-radius: 0 6px 6px 0; }
-.wb-chapter-body code { font-family: ui-monospace, Menlo, monospace; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 0.9em; } .wb-chapter-body pre { background: var(--code-bg); padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); margin: 1.2em 0; }
+.wb-chapter-body code { font-family: ui-monospace, Menlo, monospace; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 0.9em; }
+.wb-code-wrapper { position: relative; margin: 1.2em 0; } .wb-code-wrapper pre { background: var(--code-bg); padding: 26px 14px 14px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); margin: 0; } .wb-copy-btn { position: absolute; top: 6px; right: 8px; font-size: 0.72rem; padding: 2px 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); cursor: pointer; transition: all 0.2s; user-select: none; z-index: 5; } .wb-copy-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(16,185,129,0.1); } .wb-copy-btn.copied { color: var(--accent); border-color: var(--accent); font-weight: 700; } .wb-table-wrapper { width: 100%; overflow-x: auto; margin: 1.4em 0; -webkit-overflow-scrolling: touch; border-radius: 6px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; } th, td { padding: 8px 12px; border-bottom: 1px solid var(--border); } th { background: var(--bg-card); color: var(--text-title); font-weight: 600; } tr:nth-child(even) td { background: rgba(255,255,255,0.015); } tr:hover td { background: rgba(16,185,129,0.04); }
 .wb-chapter-body img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; border-radius: 6px; border: 1px solid var(--border); } .wb-chapter-body a { color: var(--accent); text-decoration: none; }
 .colophon-card { border: 1px solid var(--border); background: var(--bg-card); padding: 22px; border-radius: 8px; margin: 20px 0; } .colophon-grid { width: 100%; border-collapse: collapse; font-size: 0.88rem; } .colophon-grid td { padding: 6px 8px; border-bottom: 1px dashed var(--border); }
 .wb-polyglot-bar { display: flex; align-items: center; gap: 8px; } .wb-poly-switcher-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .wb-primary-group, .wb-compare-group { display: flex; align-items: center; gap: 6px; } .wb-bar-label { font-size: 0.75rem; color: var(--text-dim); font-weight: 600; white-space: nowrap; } .wb-bar-sep { color: var(--border); font-size: 0.8rem; user-select: none; }
@@ -44,15 +44,15 @@ body.wb-concordance .wb-lang-badge { display: inline-block; font-size: 0.68rem; 
 body.wb-concordance .wb-poly-content { flex: 1; min-width: 0; word-break: break-word; line-height: 1.8; font-size: var(--font-size); color: var(--text-main); } body.wb-concordance .wb-poly-content > *:first-child { margin-top: 0; } body.wb-concordance .wb-poly-content p { margin: 1.1em 0; } body.wb-concordance .wb-poly-content h1, body.wb-concordance .wb-poly-content h2, body.wb-concordance .wb-poly-content h3 { color: var(--text-title); margin: 1.4em 0 0.6em; }
 .wb-poly-hidden { display: none !important; } @media (max-width: 900px) { .wb-sidebar { transform: translateX(-100%); } .wb-sidebar.open { transform: translateX(0); } .wb-main { margin-left: 0; padding: 20px 16px; } body.wb-concordance .wb-polyglot-block { flex-direction: column !important; gap: 24px !important; }
 body.wb-concordance .wb-poly-item:not(:last-child) { border-right: none !important; border-bottom: 1px dashed var(--border) !important; padding-right: 0; padding-bottom: 24px; }
-} @media print { .wb-topbar, .wb-sidebar, .wb-progress-bar, .wb-controls, .wb-polyglot-bar, .wb-btn, .wb-theme-btn, .wb-search-box { display: none !important; } @page { margin: 20mm 15mm; size: auto; } body { background: #fff !important; color: #111 !important; font-size: 11pt !important; line-height: 1.6 !important; }
+} @media print { .wb-topbar, .wb-sidebar, .wb-progress-bar, .wb-controls, .wb-polyglot-bar, .wb-btn, .wb-theme-btn, .wb-search-box, .wb-copy-btn { display: none !important; } @page { margin: 20mm 15mm; size: auto; } body { background: #fff !important; color: #111 !important; font-size: 11pt !important; line-height: 1.6 !important; }
 .wb-main, .wb-layout { margin: 0 !important; padding: 0 !important; width: 100% !important; } .wb-content-wrapper { max-width: 100% !important; } .wb-chapter { page-break-before: always !important; break-before: page !important; margin-bottom: 0 !important; padding-bottom: 24pt !important; border-bottom: none !important; }
 .wb-chapter:first-of-type { page-break-before: avoid !important; break-before: avoid !important; } h1, h2, h3, h4, .wb-chapter-header { page-break-after: avoid !important; break-after: avoid !important; color: #000 !important; }
 p, blockquote { orphans: 3 !important; widows: 3 !important; } blockquote { border-left: 3pt solid #666 !important; background: #f8f8f8 !important; color: #333 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
 pre, code { background: #f5f5f5 !important; color: #111 !important; border: 1px solid #ddd !important; page-break-inside: avoid !important; break-inside: avoid !important; }
 img { max-width: 90% !important; max-height: 200mm !important; page-break-inside: avoid !important; break-inside: avoid !important; } body.wb-concordance .wb-polyglot-block { display: flex !important; gap: 14pt !important; page-break-inside: avoid !important; break-inside: avoid !important; }
 body.wb-concordance .wb-poly-header { position: static !important; box-shadow: none !important; border: 1px solid #ccc !important; } .colophon-card { page-break-before: always !important; break-before: page !important; background: #fafafa !important; }
+.wb-table-wrapper { border: none !important; overflow: visible !important; } th, td { border: 1px solid #ccc !important; color: #000 !important; } th { background: #f0f0f0 !important; }
 }"""
-
     @staticmethod
     def get_embedded_js() -> str:
         return """(function() {
@@ -86,11 +86,10 @@ body.wb-concordance .wb-poly-header { position: static !important; box-shadow: n
     const savedFs = parseInt(localStorage.getItem('wb_fs'), 10);
     if (savedFs >= 13 && savedFs <= 24) { fs = savedFs; document.documentElement.style.setProperty('--font-size', fs + 'px'); }
   } catch(e){}
-  const inc = document.getElementById('wb-font-inc'), dec = document.getElementById('wb-font-dec');
+  const inc = document.getElementById('wb-font-inc'), dec = document.getElementById('wb-font-dec'), prBtn = document.getElementById('wb-print-btn');
   const setFs = (val) => { fs = val; document.documentElement.style.setProperty('--font-size', fs + 'px'); try { localStorage.setItem('wb_fs', fs); } catch(e){} };
   if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
   if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));
-  const prBtn = document.getElementById('wb-print-btn');
   if (prBtn) prBtn.onclick = () => window.print();
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -105,9 +104,7 @@ body.wb-concordance .wb-poly-header { position: static !important; box-shadow: n
       }
     }
   });
-  document.querySelectorAll('.wb-toc-toggle').forEach(t => {
-    t.onclick = (e) => { e.stopPropagation(); const g = t.closest('.wb-toc-group'); if (g) g.classList.toggle('collapsed'); };
-  });
+  document.querySelectorAll('.wb-toc-toggle').forEach(t => { t.onclick = (e) => { e.stopPropagation(); const g = t.closest('.wb-toc-group'); if (g) g.classList.toggle('collapsed'); }; });
   const search = document.getElementById('wb-search'), groups = document.querySelectorAll('.wb-toc-group');
   if (search) {
     search.oninput = (e) => {
@@ -185,12 +182,30 @@ body.wb-concordance .wb-poly-header { position: static !important; box-shadow: n
       }
     });
   });
-  const primaryBtns = document.querySelectorAll('.wb-primary-item');
-  const compareChipsBox = document.getElementById('wb-compare-chips');
+  document.querySelectorAll('.wb-chapter-body pre').forEach(pre => {
+    if (pre.closest('.wb-code-wrapper')) return;
+    const wrap = document.createElement('div'); wrap.className = 'wb-code-wrapper';
+    pre.parentNode.insertBefore(wrap, pre); wrap.appendChild(pre);
+    const cbtn = document.createElement('button'); cbtn.className = 'wb-copy-btn'; cbtn.type = 'button'; cbtn.innerHTML = '📋 复制';
+    cbtn.onclick = async () => {
+      const c = pre.querySelector('code') || pre, txt = c.innerText || c.textContent || '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(txt); }
+        else { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+        cbtn.innerHTML = '✓ 已复制'; cbtn.classList.add('copied');
+        setTimeout(() => { cbtn.innerHTML = '📋 复制'; cbtn.classList.remove('copied'); }, 2000);
+      } catch(e) { cbtn.innerHTML = '复制失败'; }
+    };
+    wrap.appendChild(cbtn); });
+  document.querySelectorAll('.wb-chapter-body table').forEach(tbl => {
+    if (tbl.closest('.wb-table-wrapper')) return;
+    const wrap = document.createElement('div'); wrap.className = 'wb-table-wrapper';
+    tbl.parentNode.insertBefore(wrap, tbl); wrap.appendChild(tbl); });
+  const primaryBtns = document.querySelectorAll('.wb-primary-item'), compareChipsBox = document.getElementById('wb-compare-chips');
   const allLangs = compareChipsBox ? (compareChipsBox.getAttribute('data-all-langs') || 'zh,en,ja').split(',') : ['zh', 'en', 'ja'];
   const langNames = { zh: '🇨🇳 中文', en: '🇬🇧 英语', ja: '🇯🇵 日语', fr: '🇫🇷 法语', de: '🇩🇪 德语', es: '🇪🇸 西语', ru: '🇷🇺 俄语', ko: '🇰🇷 韩语' };
-  let primaryLang = 'zh';
-  const initialActive = document.querySelector('.wb-primary-item.active');
+  
+  let primaryLang = 'zh'; const initialActive = document.querySelector('.wb-primary-item.active');
   if (initialActive) primaryLang = initialActive.getAttribute('data-lang');
   try {
     const savedPri = localStorage.getItem('wb_primary_lang');
@@ -199,8 +214,7 @@ body.wb-concordance .wb-poly-header { position: static !important; box-shadow: n
       primaryBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === primaryLang));
     }
   } catch(e){}
-  const compareLangs = new Set();
-  let hasSavedCompare = false;
+  const compareLangs = new Set(); let hasSavedCompare = false;
   try {
     const savedCmp = localStorage.getItem('wb_compare_langs');
     if (savedCmp !== null) {

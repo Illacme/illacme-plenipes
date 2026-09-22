@@ -117,4 +117,12 @@ def test_webbook_reading_preferences_and_keyboard_shortcuts():
     assert "wb-print-btn" in js
     assert "window.print" in js
 
+    # 7. 代码块悬浮复制与长表格响应式横向滚动
+    assert "wb-code-wrapper" in css
+    assert "wb-copy-btn" in css
+    assert "wb-table-wrapper" in css
+    assert "wb-copy-btn" in js
+    assert "navigator.clipboard" in js
+
+
 
