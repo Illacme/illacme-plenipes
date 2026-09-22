@@ -240,7 +240,7 @@
         const isWb = result.format === 'webbook' || (result.filename && result.filename.endsWith('.html'));
         const pvUrl = result.preview_url || (isWb ? `/api/bindery/view?file=${encodeURIComponent(result.filename)}` : null);
         const pvBtn = pvUrl
-            ? `<a href="${pvUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" style="padding:4px 10px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; border-radius:6px; background:#0284c7; color:#fff;">👁️ 翻阅</a>`
+            ? `<a href="${pvUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff; flex-shrink:0;">👁️</a>`
             : '';
 
         if (result.mode === 'matrix' && Array.isArray(result.results)) {
@@ -248,11 +248,11 @@
                 const sz = formatSize(r.size_bytes || 0);
                 const itemWb = r.format === 'webbook' || (r.filename && r.filename.endsWith('.html'));
                 const itemPv = r.preview_url || (itemWb ? `/api/bindery/view?file=${encodeURIComponent(r.filename)}` : null);
-                const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" style="padding:2px 8px; font-size:0.72rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; gap:2px;">👁️ 翻阅</a>` : '';
+                const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">👁️</a>` : '';
                 const chNum = (r.chapter_count !== undefined && r.chapter_count !== null) ? `${r.chapter_count}篇 / ` : '';
-                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem;">
-                    <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff);"><strong>[${esc(r.language.toUpperCase())}]</strong> ${esc(r.filename)} (${chNum}${sz})</span>
-                    <div style="display:flex; align-items:center; gap:6px;">${itemPvBtn}<a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" style="padding:2px 8px; font-size:0.72rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff;">⬇️ 下载</a></div>
+                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem; gap:8px;">
+                    <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.filename)}"><strong>[${esc(r.language.toUpperCase())}]</strong> ${esc(r.filename)} (${chNum}${sz})</span>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" title="下载典籍" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a></div>
                 </div>`;
             }).join('');
 
@@ -269,11 +269,11 @@
             ? `已收录 <strong>${result.chapter_count}</strong> 篇章节`
             : `已完成编排封装`;
 
-        return `<div style="display:flex; justify-content:space-between; align-items:center;">
-            <div><strong>🎉 装订完成！</strong> ${countText} (${formattedSize})</div>
-            <div style="display:flex; align-items:center; gap:8px;">
+        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><strong>🎉 装订完成！</strong> ${countText} (${formattedSize})</div>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                 ${pvBtn}
-                <a href="${result.download_url}" download="${esc(result.filename)}" class="primary-btn" style="padding:4px 10px; font-size:0.75rem; text-decoration:none; display:inline-block; border-radius:6px; background:#10b981; color:#fff;">⬇️ 下载</a>
+                <a href="${result.download_url}" download="${esc(result.filename)}" class="primary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#10b981; color:#fff; flex-shrink:0;">⬇️</a>
             </div>
         </div>`;
     }

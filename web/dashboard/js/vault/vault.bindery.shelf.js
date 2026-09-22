@@ -80,7 +80,7 @@
                 : '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">EPUB 3.0</span>';
 
             const previewBtn = isWebBook
-                ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" style="padding:4px 10px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; border-radius:6px; background:#0284c7; color:#fff;">👁️ 翻阅</a>`
+                ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff;">👁️</a>`
                 : '';
 
             return `
@@ -100,9 +100,9 @@
                             </div>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; margin-left:12px;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:12px;">
                         ${previewBtn}
-                        <a href="${b.download_url}" download="${b.filename}" class="secondary-btn" style="padding:4px 10px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; border-radius:6px; color:var(--text-bright, #fff);">⬇️ 下载</a>
+                        <a href="${b.download_url}" download="${b.filename}" class="secondary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-bright, #fff);">⬇️</a>
                         <button onclick="window.deleteBookFromShelf('${b.filename}')" class="bindery-del-btn" title="从货架归档删除" style="background:none; border:none; color:var(--text-dim, rgba(255,255,255,0.4)); font-size:0.9rem; cursor:pointer; padding:4px 6px; border-radius:4px; transition:color 0.2s;">🗑️</button>
                     </div>
                 </div>
