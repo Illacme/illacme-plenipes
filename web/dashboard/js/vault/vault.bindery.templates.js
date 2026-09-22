@@ -97,7 +97,7 @@
                 ${singleLangOptions}
             </optgroup>
             <optgroup label="── 多语言综合矩阵 ──">
-                <option value="polyglot">🈳 多语平行合卷版 (单卷内置多栏研读)</option>
+                <option value="polyglot">📑 多语平行合卷版 (单卷内置多栏研读)</option>
                 <option value="matrix_batch">📦 多语套书并发装订 (${availLangs.length} 册独立典籍)</option>
             </optgroup>
         `;

@@ -107,8 +107,8 @@
 
         if (val === 'polyglot') {
             if (chipsRow) chipsRow.style.display = 'flex';
-            if (badge) { badge.textContent = '🈳 多语合卷'; badge.style.color = '#10b981'; }
-            if (submitBtn) submitBtn.innerHTML = '<span>🈳 装订多语合卷研读版</span>';
+            if (badge) { badge.textContent = '📑 多语合卷'; badge.style.color = '#10b981'; }
+            if (submitBtn) submitBtn.innerHTML = '<span>📑 装订多语合卷研读版</span>';
         } else if (val === 'matrix_batch') {
             if (chipsRow) chipsRow.style.display = 'flex';
             if (badge) { badge.textContent = '📦 套书并发'; badge.style.color = '#38bdf8'; }
@@ -144,7 +144,7 @@
         const submitBtn = document.getElementById('btn-execute-binding');
         if (!submitBtn) return;
         if (langVal === 'polyglot') {
-            submitBtn.innerHTML = `<span>🈳 装订多语合卷研读版 (${count} 语并列)</span>`;
+            submitBtn.innerHTML = `<span>📑 装订多语合卷研读版 (${count} 语并列)</span>`;
         } else if (langVal === 'matrix_batch') {
             submitBtn.innerHTML = `<span>🌍 矩阵并发装订 (${count} 册独立典籍)</span>`;
         }
