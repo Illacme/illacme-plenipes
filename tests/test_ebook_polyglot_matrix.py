@@ -109,3 +109,12 @@ def test_webbook_reading_preferences_and_keyboard_shortcuts():
     assert '[data-theme="light"]' in css
     assert '[data-theme="sepia"]' in css
 
+    # 6. 出版级 @media print 印刷排版与打印控制
+    assert "@media print" in css
+    assert "break-before: page" in css
+    assert "orphans: 3" in css
+    assert "widows: 3" in css
+    assert "wb-print-btn" in js
+    assert "window.print" in js
+
+

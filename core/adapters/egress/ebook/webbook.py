@@ -152,6 +152,7 @@ class WebBookAdapter(BaseEBookAdapter):
         cover_block = f'<div class="wb-cover-box"><img src="{cover_uri}" alt="Cover" class="wb-cover-img"/></div>' if cover_uri else ""
         search_ph = "🔍 Search chapters..." if lang == "en" else ("🔍 目次・章を検索..." if lang == "ja" else "🔍 快速查找章节...")
         toggle_title = "Toggle Sidebar" if lang == "en" else ("目次切替" if lang == "ja" else "切换目录")
+        print_title = "Print / Save as PDF" if lang == "en" else ("印刷・PDF保存" if lang == "ja" else "打印或存储为 PDF")
 
         # 多语切换器与多栏并列对照栏控制条 (若为多语合卷版本)
         polyglot_bar = ""
@@ -180,8 +181,6 @@ class WebBookAdapter(BaseEBookAdapter):
                 </div>
             </div>"""
 
-
-
         return f"""<!DOCTYPE html>
 <html lang="{lang}" data-theme="dark">
 <head>
@@ -203,6 +202,7 @@ class WebBookAdapter(BaseEBookAdapter):
         <button class="wb-theme-btn" data-theme="sepia" title="Sepia">☕</button>
         <button id="wb-font-dec" class="wb-btn" title="A-">A-</button>
         <button id="wb-font-inc" class="wb-btn" title="A+">A+</button>
+        <button id="wb-print-btn" class="wb-btn" title="{print_title}">🖨️</button>
     </div>
 </header>
 <div class="wb-layout">
