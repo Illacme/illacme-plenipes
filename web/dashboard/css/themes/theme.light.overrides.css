@@ -3557,3 +3557,13 @@
 [data-theme="light"] .bindery-modal-card .bindery-footer {
     border-top-color: rgba(0, 0, 0, 0.08) !important;
 }
+
+[data-theme="light"] .bindery-matrix-chip {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .bindery-matrix-chip span {
+    color: #1e293b !important;
+}

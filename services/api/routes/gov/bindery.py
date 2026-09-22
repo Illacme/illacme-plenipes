@@ -6,10 +6,12 @@
 """
 
 import os
+import base64
+import mimetypes
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from core.runtime.engine_singleton import get_global_engine
 from core.bindery.book_assembler import BookAssembler
@@ -22,24 +24,26 @@ router = APIRouter()
 
 class BinderyBuildPayload(BaseModel):
     """数字装订编排请求载荷"""
-    format: str = Field(default="epub", description="装订输出格式")
-    scope: str = Field(default="all", description="合卷范围：all 或 具体栏目子目录")
-    lang: str = Field(default="zh", description="目标语言代码")
-    title: Optional[str] = Field(default=None, description="自定义书名")
-    author: Optional[str] = Field(default=None, description="自定义作者/出版署名")
-    cover_mode: str = Field(default="auto", description="封面策略: auto, generated, none")
-    cover_style: str = Field(default="dark_emerald", description="装帧封面风格")
-    output_dir: str = Field(default="dist/books", description="物理落盘相对目录")
+    format: str = "epub"
+    scope: str = "all"
+    lang: str = "zh"
+    languages: Optional[List[str]] = None
+    polyglot_mode: bool = False
+    title: Optional[str] = None
+    author: Optional[str] = None
+    cover_mode: str = "auto"
+    cover_style: str = "dark_emerald"
+    output_dir: str = "dist/books"
 
 
 class CoverPreviewPayload(BaseModel):
     """封面实时预览请求载荷"""
-    title: Optional[str] = Field(default=None, description="书名")
-    author: Optional[str] = Field(default=None, description="作者")
-    scope: str = Field(default="all", description="栏目范围")
-    style: str = Field(default="dark_emerald", description="风格ID")
-    lang: str = Field(default="zh", description="语种代码")
-    cover_mode: str = Field(default="auto", description="封面模式")
+    title: Optional[str] = None
+    author: Optional[str] = None
+    scope: str = "all"
+    style: str = "dark_emerald"
+    lang: str = "zh"
+    cover_mode: str = "auto"
 
 
 @router.get("/api/bindery/scopes", dependencies=[Depends(verify_token)])
@@ -81,16 +85,34 @@ async def get_bindery_scopes() -> Dict[str, Any]:
 
     # 4. 探测文库是否有原生封面图片及风格预设
     has_native_cover = bool(CoverGenerator.discover_cover(vault_abs))
-    styles_list = [
-        {"id": k, "name": v["name"], "accent": v["accent"]}
-        for k, v in COVER_STYLES.items()
-    ]
+    styles_list = [{"id": k, "name": v["name"], "accent": v["accent"]} for k, v in COVER_STYLES.items()]
+
+    # 5. 勘测多语言资产覆盖矩阵
+    avail_langs = [{"code": default_lang, "name": "简体中文", "icon": "🇨🇳", "count": 0, "is_source": True}]
+    if os.path.exists(vault_abs):
+        c_cnt = 0
+        for _, ds, fs in os.walk(vault_abs):
+            ds[:] = [d for d in ds if not d.startswith('.')]
+            c_cnt += sum(1 for f in fs if f.endswith('.md') and not f.startswith('.'))
+        avail_langs[0]["count"] = c_cnt
+    db_p = os.path.join(vault_abs, ".plenipes/cache/ledger.db")
+    L_META = {"en": ("English", "🇬🇧"), "ja": ("日本語", "🇯🇵"), "fr": ("Français", "🇫🇷"), "de": ("Deutsch", "🇩🇪"), "es": ("Español", "🇪🇸"), "ru": ("Русский", "🇷🇺"), "ko": ("한국어", "🇰🇷")}
+    if os.path.exists(db_p):
+        try:
+            import sqlite3
+            with sqlite3.connect(db_p) as c:
+                for lc, cnt in c.execute("SELECT lang_code, count(*) FROM translations WHERE status = 'DONE' GROUP BY lang_code"):
+                    if lc != default_lang:
+                        nm, ic = L_META.get(lc, (lc.upper(), "🌐"))
+                        avail_langs.append({"code": lc, "name": nm, "icon": ic, "count": cnt, "is_source": False})
+        except Exception: pass
 
     return {
         "success": True,
         "site_name": site_name,
         "default_author": default_author,
         "default_lang": default_lang,
+        "available_languages": avail_langs,
         "has_native_cover": has_native_cover,
         "cover_styles": styles_list,
         "categories": categories,
@@ -122,28 +144,15 @@ async def get_cover_preview(payload: CoverPreviewPayload) -> Dict[str, Any]:
         native_p = CoverGenerator.discover_cover(vault_abs, category=cat_scope)
         if native_p and os.path.exists(native_p):
             try:
-                import mimetypes
-                import base64
                 mime, _ = mimetypes.guess_type(native_p)
-                mime = mime or "image/jpeg"
                 with open(native_p, "rb") as f:
                     b64 = base64.b64encode(f.read()).decode("ascii")
-                return {
-                    "success": True,
-                    "mode": "native",
-                    "filename": os.path.basename(native_p),
-                    "data_uri": f"data:{mime};base64,{b64}"
-                }
-            except Exception:
-                pass
+                return {"success": True, "mode": "native", "filename": os.path.basename(native_p), "data_uri": f"data:{mime or 'image/jpeg'};base64,{b64}"}
+            except Exception: pass
 
-    # 降级或指定生成排版艺术封面
     data_uri = CoverGenerator.generate_cover_data_uri(
-        title=title,
-        author=author,
-        publisher=pub_name,
-        style_key=payload.style,
-        lang=payload.lang
+        title=title, author=author, publisher=pub_name,
+        style_key=payload.style, lang=payload.lang
     )
     return {
         "success": True,
@@ -166,35 +175,64 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
     assembler = BookAssembler(engine=engine, vault_dir=vault_abs)
     scope_cat = "" if payload.scope == "all" else payload.scope
 
-    out_path = assembler.assemble_and_bind(
-        category=scope_cat,
-        format_type=payload.format,
-        target_lang=payload.lang,
-        custom_title=payload.title,
-        custom_author=payload.author,
-        cover_mode=payload.cover_mode,
-        cover_style=payload.cover_style,
-        output_dir=payload.output_dir
-    )
+    target_langs = payload.languages if (payload.languages and len(payload.languages) > 0) else [payload.lang]
 
-    if not out_path or not os.path.exists(out_path):
-        raise HTTPException(status_code=500, detail="电子书装订合成失败，未发现有效产物。")
+    if payload.polyglot_mode and len(target_langs) >= 2:
+        out_p = assembler.assemble_and_bind(
+            category=scope_cat, format_type=payload.format, target_lang=target_langs[0],
+            custom_title=payload.title, custom_author=payload.author,
+            cover_mode=payload.cover_mode, cover_style=payload.cover_style,
+            output_dir=payload.output_dir, polyglot_langs=target_langs
+        )
+        if not out_p or not os.path.exists(out_p):
+            raise HTTPException(status_code=500, detail="多语平行对照典籍装订失败，未生成有效产物。")
+        fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
+        return {
+            "success": True, "mode": "polyglot", "filename": fn, "file_size": fs, "format": payload.format,
+            "languages": target_langs, "download_url": f"/api/bindery/download?file={fn}",
+            "message": f"🎉 多语平行对照典籍装订完成！涵盖 {len(target_langs)} 门语言平行矩阵，已封装为高质感 {payload.format.upper()} 出版物。"
+        }
 
-    filename = os.path.basename(out_path)
-    file_size = os.path.getsize(out_path)
+    if len(target_langs) == 1:
+        s_lang = target_langs[0]
+        out_path = assembler.assemble_and_bind(
+            category=scope_cat, format_type=payload.format, target_lang=s_lang,
+            custom_title=payload.title, custom_author=payload.author,
+            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir
+        )
+        if not out_path or not os.path.exists(out_path):
+            raise HTTPException(status_code=500, detail="电子书装订合成失败，未发现有效产物。")
 
-    # 统计章节数
-    chapters = assembler._collect_chapters(category=scope_cat, target_lang=payload.lang)
-    chapter_count = len(chapters)
+        filename, file_size = os.path.basename(out_path), os.path.getsize(out_path)
+        chapters = assembler._collect_chapters(category=scope_cat, target_lang=s_lang)
+        return {
+            "success": True, "filename": filename, "file_size": file_size, "chapter_count": len(chapters),
+            "format": payload.format, "download_url": f"/api/bindery/download?file={filename}",
+            "message": f"数字装订完成！共收录 {len(chapters)} 篇章节，已封装为标准 {payload.format.upper()} 出版物。"
+        }
+
+    # 多语种矩阵模式：批量装订套系丛书
+    matrix_results = []
+    for l_code in target_langs:
+        out_p = assembler.assemble_and_bind(
+            category=scope_cat, format_type=payload.format, target_lang=l_code,
+            custom_title=payload.title, custom_author=payload.author,
+            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir
+        )
+        if out_p and os.path.exists(out_p):
+            fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
+            chs = assembler._collect_chapters(category=scope_cat, target_lang=l_code)
+            matrix_results.append({
+                "lang": l_code, "language": l_code, "filename": fn, "file_size": fs, "size_bytes": fs,
+                "chapter_count": len(chs), "format": payload.format, "download_url": f"/api/bindery/download?file={fn}"
+            })
+
+    if not matrix_results:
+        raise HTTPException(status_code=500, detail="多语种矩阵出版装订失败，未生成有效产物。")
 
     return {
-        "success": True,
-        "filename": filename,
-        "file_size": file_size,
-        "chapter_count": chapter_count,
-        "format": payload.format,
-        "download_url": f"/api/bindery/download?file={filename}",
-        "message": f"数字装订完成！共收录 {chapter_count} 篇章节，已封装为标准 {payload.format.upper()} 出版物。"
+        "success": True, "mode": "matrix", "total_built": len(matrix_results), "results": matrix_results,
+        "format": payload.format, "message": f"🎉 多语种典籍矩阵出版完成！共生成 {len(matrix_results)} 册出版物。"
     }
 
 
@@ -211,8 +249,7 @@ def _get_safe_book_path(file: str) -> str:
 
 
 @router.get("/api/bindery/download")
-async def download_ebook_publication(file: str = Query(..., description="待下载的装订文件名")):
-    """🚀 [V125.0] 数字出版物安全下载通道"""
+async def download_ebook_publication(file: str = Query(..., description="待下载文件名")):
     target = _get_safe_book_path(file)
     ext = os.path.splitext(file)[1].lower()
     media_map = {".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf"}
@@ -220,20 +257,21 @@ async def download_ebook_publication(file: str = Query(..., description="待下�
 
 
 @router.get("/api/bindery/view")
-async def view_ebook_webbook(file: str = Query(..., description="待预览的 WebBook HTML 文件")):
-    """🌐 [V125.1] 单文件 WebBook 在线免下载即开即读"""
+async def view_ebook_webbook(file: str = Query(...)):
     target = _get_safe_book_path(file)
-    if not file.lower().endswith(".html"):
-        raise HTTPException(status_code=400, detail="仅支持 WebBook HTML 格式在线翻阅。")
+    if not file.lower().endswith(".html"): raise HTTPException(status_code=400, detail="仅支持 WebBook HTML 在线翻阅。")
     with open(target, "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="text/html; charset=utf-8")
+        return Response(
+            content=f.read(),
+            media_type="text/html; charset=utf-8",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+        )
 
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
 async def get_bindery_shelf() -> Dict[str, Any]:
-    """📚 [V125.1] 出版典籍货架：扫描并返回已编译的所有装订产物"""
-    base_dir = os.path.abspath("dist/books")
-    books = []
+    """📚 出版典籍货架：扫描并返回已编译的所有装订产物"""
+    base_dir, books = os.path.abspath("dist/books"), []
     if os.path.exists(base_dir):
         for fname in sorted(os.listdir(base_dir)):
             p = os.path.join(base_dir, fname)
@@ -242,13 +280,8 @@ async def get_bindery_shelf() -> Dict[str, Any]:
                 fmt = "webbook" if fname.endswith(".html") else ("epub" if fname.endswith(".epub") else "other")
                 sz_str = f"{st.st_size / 1024:.1f} KB" if st.st_size < 1024 * 1024 else f"{st.st_size / (1024*1024):.2f} MB"
                 books.append({
-                    "filename": fname,
-                    "format": fmt,
-                    "size_bytes": st.st_size,
-                    "size_display": sz_str,
-                    "mtime": st.st_mtime,
-                    "download_url": f"/api/bindery/download?file={fname}",
-                    "preview_url": f"/api/bindery/view?file={fname}" if fmt == "webbook" else None
+                    "filename": fname, "format": fmt, "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
+                    "download_url": f"/api/bindery/download?file={fname}", "preview_url": f"/api/bindery/view?file={fname}" if fmt == "webbook" else None
                 })
         books.sort(key=lambda x: x["mtime"], reverse=True)
     return {"success": True, "books": books, "count": len(books)}
@@ -256,11 +289,11 @@ async def get_bindery_shelf() -> Dict[str, Any]:
 
 @router.post("/api/bindery/delete", dependencies=[Depends(verify_token)])
 async def delete_ebook_from_shelf(payload: Dict[str, str] = Body(...)) -> Dict[str, Any]:
-    """🪓 [V125.1] 从出版货架中归档删除指定书籍产物"""
-    file = payload.get("filename", "")
-    target = _get_safe_book_path(file)
+    """🪓 从出版货架中归档删除指定书籍产物"""
+    target = _get_safe_book_path(payload.get("filename", ""))
     try:
         os.remove(target)
-        return {"success": True, "message": f"出版物 {file} 已成功移除。"}
+        return {"success": True, "message": "出版物已成功移除。"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"删除失败: {e}")
+

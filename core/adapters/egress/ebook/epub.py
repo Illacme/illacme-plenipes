@@ -99,20 +99,19 @@ math { font-size: 1.1em; }
 
         os.makedirs(os.path.dirname(os.path.abspath(output_file_path)), exist_ok=True)
         book_uuid = book_metadata.get("uuid") or str(uuid.uuid4())
+        book_metadata["uuid"] = book_uuid
         book_title = book_metadata.get("title", "未命名作品集")
         author = book_metadata.get("author", "极客创作者")
         publisher = book_metadata.get("publisher", "Illacme Plenipes Global Private Press")
         desc = book_metadata.get("description", "")
         pub_date = book_metadata.get("date") or datetime.date.today().isoformat()
         iso_lang = target_lang if target_lang != "zh" else "zh-CN"
-
         has_cover = bool(cover_image_path and os.path.exists(cover_image_path))
         cover_ext = os.path.splitext(cover_image_path)[1].lower() if has_cover else ".jpg"
         cover_mime = "image/png" if cover_ext == ".png" else "image/jpeg"
 
         try:
             with zipfile.ZipFile(output_file_path, "w") as zf:
-                # 1. 写入 mimetype (必须未压缩保存在包头)
                 zf.writestr("mimetype", b"application/epub+zip", compress_type=zipfile.ZIP_STORED)
 
                 # 2. 写入 META-INF/container.xml
@@ -212,27 +211,28 @@ math { font-size: 1.1em; }
     </navPoint>""")
 
                 # 6. 写入出版版权页与物权指纹 (Colophon)
-                colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "EPUB 3.0 (IDPF / W3C 标准流式版式)")
+                colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "epub")
                 colophon_xhtml = ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang)
                 zf.writestr("OEBPS/text/colophon.xhtml", colophon_xhtml)
 
                 manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
                 spine_items.append('<itemref idref="colophon"/>')
                 ncx_order += 1
-                nav_ol_items.append('<li><a href="text/colophon.xhtml">版记 · Colophon</a></li>')
+                colophon_lbl = ColophonBuilder.get_nav_label(iso_lang)
+                nav_ol_items.append(f'<li><a href="text/colophon.xhtml">{colophon_lbl}</a></li>')
                 toc_nav_points.append(f"""    <navPoint id="navPoint-{ncx_order}" playOrder="{ncx_order}">
-      <navLabel><text>版记 · Colophon</text></navLabel>
+      <navLabel><text>{colophon_lbl}</text></navLabel>
       <content src="text/colophon.xhtml"/>
     </navPoint>""")
 
-                # 7. 写入 OEBPS/nav.xhtml (EPUB 3 原生目录)
+                toc_title = "Table of Contents" if target_lang == "en" else ("目次 · Table of Contents" if target_lang == "ja" else "目录 · Table of Contents")
                 nav_xhtml = f"""<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="{iso_lang}">
-<head><title>目录</title><link rel="stylesheet" href="styles/epub.css"/></head>
+<head><title>{toc_title}</title><link rel="stylesheet" href="styles/epub.css"/></head>
 <body>
   <nav epub:type="toc" id="toc">
-    <h1>目录 · Table of Contents</h1>
+    <h1>{toc_title}</h1>
     <ol>
       {''.join(nav_ol_items)}
     </ol>
@@ -240,8 +240,7 @@ math { font-size: 1.1em; }
 </body>
 </html>"""
                 zf.writestr("OEBPS/nav.xhtml", nav_xhtml)
-
-                # 7. 写入 OEBPS/toc.ncx (EPUB 2 兼容目录)
+                # 8. 写入 OEBPS/toc.ncx (EPUB 2 兼容目录)
                 toc_ncx = f"""<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
   <head>

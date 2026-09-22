@@ -12,109 +12,34 @@
         const style = document.createElement('style');
         style.id = 'bindery-responsive-theme-css';
         style.textContent = `
-            .bindery-modal-backdrop {
-                position: fixed; inset: 0; z-index: 9999;
-                background: rgba(0, 0, 0, 0.7);
-                backdrop-filter: blur(8px);
-                display: flex; align-items: center; justify-content: center;
-                opacity: 0; pointer-events: none;
-                transition: opacity 0.25s ease;
-            }
-            .bindery-modal-card {
-                width: 580px; max-width: 92vw;
-                padding: 24px 28px; border-radius: 16px;
-                background: rgba(var(--bg-modal-solid-rgb, 14, 20, 32), 0.98);
-                border: 1px solid rgba(16, 185, 129, 0.35);
-                box-shadow: 0 25px 60px var(--black-50, rgba(0,0,0,0.6)), 0 0 30px rgba(16, 185, 129, 0.1);
-                display: flex; flex-direction: column; gap: 16px;
-                transition: all 0.3s ease;
-            }
-            .bindery-header {
-                display: flex; justify-content: space-between; align-items: flex-start;
-                border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
-                padding-bottom: 12px;
-            }
-            .bindery-title {
-                font-size: 1.25rem; font-weight: 700; color: var(--text-bright, #ffffff);
-                display: flex; align-items: center; gap: 8px;
-            }
-            .bindery-badge {
-                font-size: 0.7rem; color: #10b981;
-                background: rgba(16, 185, 129, 0.12);
-                border: 1px solid rgba(16, 185, 129, 0.3);
-                padding: 2px 8px; border-radius: 10px; font-weight: 600;
-            }
-            .bindery-subtitle {
-                font-size: 0.8rem; color: var(--text-dim, rgba(255,255,255,0.65));
-                margin-top: 4px;
-            }
-            .bindery-close-btn {
-                background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.5));
-                font-size: 1.4rem; cursor: pointer; padding: 0 4px; line-height: 1;
-                transition: color 0.2s ease;
-            }
+            .bindery-modal-backdrop { position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+            .bindery-modal-card { width: 620px; max-width: 92vw; padding: 24px 28px; border-radius: 16px; background: rgba(var(--bg-modal-solid-rgb, 14, 20, 32), 0.98); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 25px 60px var(--black-50, rgba(0,0,0,0.6)), 0 0 30px rgba(16, 185, 129, 0.1); display: flex; flex-direction: column; gap: 16px; transition: all 0.3s ease; }
+            .bindery-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom: 12px; }
+            .bindery-title { font-size: 1.25rem; font-weight: 700; color: var(--text-bright, #ffffff); display: flex; align-items: center; gap: 8px; }
+            .bindery-badge { font-size: 0.7rem; color: #10b981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+            .bindery-subtitle { font-size: 0.8rem; color: var(--text-dim, rgba(255,255,255,0.65)); margin-top: 4px; }
+            .bindery-close-btn { background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.5)); font-size: 1.4rem; cursor: pointer; padding: 0 4px; line-height: 1; transition: color 0.2s ease; }
             .bindery-close-btn:hover { color: var(--text-bright, #ffffff); }
-            .bindery-label {
-                display: block; font-size: 0.78rem; color: var(--text-dim, rgba(255,255,255,0.7));
-                font-weight: 600; margin-bottom: 5px;
-            }
-            .bindery-label-accent {
-                display: block; font-size: 0.78rem; color: var(--neon-green, #10b981);
-                font-weight: 600; margin-bottom: 5px;
-            }
-            .bindery-input, .bindery-select {
-                width: 100%; box-sizing: border-box;
-                background: var(--white-05, rgba(255,255,255,0.05));
-                border: 1px solid var(--glass-border, rgba(255,255,255,0.15));
-                border-radius: 8px; padding: 7px 10px;
-                color: var(--text-bright, #ffffff); font-size: 0.85rem;
-                outline: none; transition: all 0.2s ease;
-            }
-            .bindery-input:focus, .bindery-select:focus {
-                border-color: #10b981;
-                box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-            }
-            .bindery-select option {
-                background: rgba(var(--bg-dropdown-solid-rgb, 14, 20, 32), 0.98);
-                color: var(--text-bright, #ffffff);
-            }
-            .bindery-driver-card {
-                flex: 1; background: rgba(255, 255, 255, 0.03);
-                border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
-                border-radius: 8px; padding: 10px 12px;
-                display: flex; align-items: center; justify-content: space-between;
-                cursor: pointer; transition: all 0.2s ease;
-            }
+            .bindery-label { display: block; font-size: 0.78rem; color: var(--text-dim, rgba(255,255,255,0.7)); font-weight: 600; margin-bottom: 5px; }
+            .bindery-label-accent { display: block; font-size: 0.78rem; color: var(--neon-green, #10b981); font-weight: 600; margin-bottom: 5px; }
+            .bindery-input, .bindery-select { width: 100%; box-sizing: border-box; background: var(--white-05, rgba(255,255,255,0.05)); border: 1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius: 8px; padding: 7px 10px; color: var(--text-bright, #ffffff); font-size: 0.85rem; outline: none; transition: all 0.2s ease; }
+            .bindery-input:focus, .bindery-select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+            .bindery-select option, .bindery-select optgroup { background: rgba(var(--bg-dropdown-solid-rgb, 14, 20, 32), 0.98); color: var(--text-bright, #ffffff); }
+            .bindery-driver-card { flex: 1; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1)); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease; }
             .bindery-driver-card:hover { border-color: rgba(16, 185, 129, 0.4); }
-            .bindery-driver-card.active {
-                background: rgba(16, 185, 129, 0.09); border-color: rgba(16, 185, 129, 0.6);
-                box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
-            }
-            .bindery-driver-title {
-                font-size: 0.85rem; font-weight: 700; color: var(--text-bright, #ffffff);
-            }
-            .bindery-driver-desc {
-                font-size: 0.72rem; color: var(--text-dim, rgba(255,255,255,0.6));
-            }
-            .bindery-footer {
-                display: flex; justify-content: flex-end; gap: 12px;
-                margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08));
-                padding-top: 14px;
-            }
-            .bindery-nav-tab {
-                background: none; border: none; border-bottom: 2px solid transparent;
-                color: var(--text-dim, rgba(255,255,255,0.6)); font-size: 0.85rem; font-weight: 600;
-                padding: 6px 12px; cursor: pointer; transition: all 0.2s;
-            }
+            .bindery-driver-card.active { background: rgba(16, 185, 129, 0.09); border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 0 12px rgba(16, 185, 129, 0.15); }
+            .bindery-driver-title { font-size: 0.85rem; font-weight: 700; color: var(--text-bright, #ffffff); }
+            .bindery-driver-desc { font-size: 0.72rem; color: var(--text-dim, rgba(255,255,255,0.6)); }
+            .bindery-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top: 14px; }
+            .bindery-nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim, rgba(255,255,255,0.6)); font-size: 0.85rem; font-weight: 600; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
             .bindery-nav-tab:hover { color: var(--text-bright, #fff); }
-            .bindery-nav-tab.active {
-                color: #10b981; border-bottom-color: #10b981;
-            }
-            .bindery-shelf-card:hover {
-                border-color: rgba(16, 185, 129, 0.35) !important;
-                background: rgba(255, 255, 255, 0.05) !important;
-            }
+            .bindery-nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
+            .bindery-shelf-card:hover { border-color: rgba(16, 185, 129, 0.35) !important; background: rgba(255, 255, 255, 0.05) !important; }
             .bindery-del-btn:hover { color: #ef4444 !important; }
+            .bindery-matrix-chip { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-bright, #ffffff); transition: all 0.2s ease; }
+            .bindery-matrix-chip:hover { border-color: rgba(16, 185, 129, 0.5) !important; background: rgba(16, 185, 129, 0.1) !important; }
+            [data-theme="light"] .bindery-matrix-chip { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+            [data-theme="light"] .bindery-matrix-chip span { color: #1e293b !important; }
         `;
         document.head.appendChild(style);
     }
@@ -149,6 +74,35 @@
     function buildModalCardHtml(scopesData, currentScope, defaultTitle) {
         const categoryOptionsHtml = (scopesData.categories || []).map(cat => `
             <option value="${esc(cat.id)}" ${cat.id === currentScope ? 'selected' : ''}>${esc(cat.name)}</option>
+        `).join('');
+
+        const availLangs = scopesData.available_languages || [
+            { code: 'zh', name: '简体中文', icon: '🇨🇳', count: 0, is_source: true },
+            { code: 'en', name: 'English', icon: '🇬🇧', count: 0 },
+            { code: 'ja', name: '日本語', icon: '🇯🇵', count: 0 }
+        ];
+
+        const singleLangOptions = availLangs.map(l => `
+            <option value="${esc(l.code)}" ${l.code === (scopesData.default_lang || 'zh') ? 'selected' : ''}>
+                ${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})
+            </option>
+        `).join('');
+
+        const langOptionsHtml = `
+            <optgroup label="── 单语言独立版本 ──">
+                ${singleLangOptions}
+            </optgroup>
+            <optgroup label="── 多语言综合矩阵 ──">
+                <option value="polyglot" selected>🈳 多语平行合卷版 (单卷内置多栏研读) [推荐]</option>
+                <option value="matrix_batch">📦 多语套书并发装订 (${availLangs.length} 册独立典籍)</option>
+            </optgroup>
+        `;
+
+        const matrixChipsHtml = availLangs.map(l => `
+            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; border-radius:5px; padding:2px 6px; cursor:pointer;">
+                <input type="checkbox" class="bindery-matrix-cb" value="${esc(l.code)}" ${l.count > 0 || l.is_source ? 'checked' : ''} onchange="window.updateMatrixSubmitBtn()" style="accent-color:#10b981;" />
+                <span>${l.icon || '🌐'} ${esc(l.name)}</span>
+            </label>
         `).join('');
 
         return `
@@ -186,18 +140,24 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <!-- 保持原单语种完全对称平衡的两列网格 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;">
                         <div>
                             <label class="bindery-label">📂 合卷编排范围</label>
                             <select id="bindery-select-scope" class="bindery-select">${categoryOptionsHtml}</select>
                         </div>
                         <div>
-                            <label class="bindery-label">🌍 导出出版语种</label>
-                            <select id="bindery-select-lang" class="bindery-select">
-                                <option value="zh" selected>🇨🇳 简体中文 (源文原稿)</option>
-                                <option value="en">🇺🇸 English (已翻译译文)</option>
-                                <option value="ja">🇯🇵 日本語 (已翻译译文)</option>
-                            </select>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                <label class="bindery-label" style="margin:0;">🌍 出版语种与合卷规格</label>
+                                <span id="bindery-lang-hint-badge" class="bindery-badge" style="font-size:0.65rem;">🈳 多语合卷</span>
+                            </div>
+                            <select id="bindery-select-lang" class="bindery-select" onchange="window.onBinderyLangModeChange(this.value)">${langOptionsHtml}</select>
+                            
+                            <!-- 轻巧内嵌的语种勾选行 (仅在多语合卷/套书时轻量展现，高度恒定，绝不破坏网格) -->
+                            <div id="bindery-matrix-chips-row" style="display:flex; margin-top:6px; align-items:center; justify-content:space-between; gap:4px;">
+                                <div style="display:flex; gap:4px; flex-wrap:wrap;">${matrixChipsHtml}</div>
+                                <span style="cursor:pointer; color:#10b981; font-size:0.68rem; user-select:none; white-space:nowrap;" onclick="window.toggleAllBinderyMatrixLangs()">反选</span>
+                            </div>
                         </div>
                     </div>
 
@@ -257,7 +217,7 @@
                     <div class="bindery-footer">
                         <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
                         <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                            <span>🚀 立即装订导出</span>
+                            <span>🈳 装订多语合卷研读版</span>
                         </button>
                     </div>
                 </div>
@@ -273,6 +233,36 @@
     }
 
     function buildSuccessStatusHtml(result, formattedSize) {
+        if (result.mode === 'matrix' && Array.isArray(result.results)) {
+            const itemsHtml = result.results.map(r => {
+                const sz = formatSize(r.size_bytes || 0);
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem;">
+                        <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff);">
+                            <strong>[${esc(r.language.toUpperCase())}]</strong> ${esc(r.filename)} (${r.chapter_count}篇 / ${sz})
+                        </span>
+                        <a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" style="padding:2px 8px; font-size:0.72rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff;">⬇️ 下载</a>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong>🎉 多语种矩阵装订完成！</strong> 共并发装订 <strong>${result.total_built}</strong> 册典籍
+                        </div>
+                        <button onclick="window.switchBinderyTab('shelf')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">
+                            📚 查看货架
+                        </button>
+                    </div>
+                    <div style="max-height:120px; overflow-y:auto;">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         return `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>

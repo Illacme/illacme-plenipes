@@ -173,30 +173,61 @@ class TocBuilder:
         idx: int,
         ch_id: str,
         ch_title: str,
-        headings: List[Dict[str, Any]]
+        headings: List[Dict[str, Any]],
+        titles_by_lang: Optional[Dict[str, str]] = None,
+        headings_by_lang: Optional[Dict[str, List[Dict[str, Any]]]] = None
     ) -> str:
         """
-        渲染 WebBook 侧边栏的章节层级条目组（含展开/折叠控件与多级小节链接）
+        渲染 WebBook 侧边栏的章节层级条目组（含展开/折叠控件、多语言响应与多级小节链接）
         """
         escaped_title = escape(ch_title)
         has_sub = bool(headings)
         toggle_btn = '<button class="wb-toc-toggle" aria-label="展开/折叠章节目录" title="展开/折叠">▾</button>' if has_sub else ''
 
+        data_attrs = ""
+        if titles_by_lang:
+            for l, t in titles_by_lang.items():
+                data_attrs += f' data-title-{l}="{escape(t)}"'
+
         sub_items = []
         if has_sub:
-            for h in headings:
+            h_by_lang = headings_by_lang or {}
+            for h_idx, h in enumerate(headings):
                 h_id = h.get("id", "")
                 h_title = escape(h.get("title", ""))
+                sub_attrs = ""
+                link_lang_ids = ""
+                for l, tree in h_by_lang.items():
+                    if h_idx < len(tree):
+                        t_l = tree[h_idx].get("title", "")
+                        id_l = tree[h_idx].get("id", "")
+                        if t_l: sub_attrs += f' data-title-{l}="{escape(t_l)}"'
+                        if id_l: link_lang_ids += f' data-id-{l}="{escape(id_l)}"'
+
                 sub_items.append(
-                    f'<a href="#{h_id}" class="wb-toc-subitem wb-toc-h2" data-id="{h_id}">'
-                    f'<span class="wb-toc-bullet">▪</span> {h_title}</a>'
+                    f'<a href="#{h_id}" class="wb-toc-subitem wb-toc-h2" data-id="{h_id}"'
+                    f' data-ch-id="{ch_id}" data-level="2" data-h-idx="{h_idx}"{link_lang_ids}>'
+                    f'<span class="wb-toc-bullet">▪</span> <span class="wb-toc-text"{sub_attrs}>{h_title}</span></a>'
                 )
-                for sub in h.get("children", []):
+                for s_idx, sub in enumerate(h.get("children", [])):
                     s_id = sub.get("id", "")
                     s_title = escape(sub.get("title", ""))
+                    s_attrs = ""
+                    s_lang_ids = ""
+                    for l, tree in h_by_lang.items():
+                        if h_idx < len(tree):
+                            parent_l = tree[h_idx]
+                            subs_l = parent_l.get("children", [])
+                            if s_idx < len(subs_l):
+                                t_s = subs_l[s_idx].get("title", "")
+                                id_s = subs_l[s_idx].get("id", "")
+                                if t_s: s_attrs += f' data-title-{l}="{escape(t_s)}"'
+                                if id_s: s_lang_ids += f' data-id-{l}="{escape(id_s)}"'
+
                     sub_items.append(
-                        f'<a href="#{s_id}" class="wb-toc-subitem wb-toc-h3" data-id="{s_id}">'
-                        f'<span class="wb-toc-bullet">▫</span> {s_title}</a>'
+                        f'<a href="#{s_id}" class="wb-toc-subitem wb-toc-h3" data-id="{s_id}"'
+                        f' data-ch-id="{ch_id}" data-level="3" data-h-idx="{h_idx}" data-s-idx="{s_idx}"{s_lang_ids}>'
+                        f'<span class="wb-toc-bullet">▫</span> <span class="wb-toc-text"{s_attrs}>{s_title}</span></a>'
                     )
 
         sub_container = f'<div class="wb-toc-sub">{"".join(sub_items)}</div>' if sub_items else ''
@@ -204,9 +235,10 @@ class TocBuilder:
         return f"""<div class="wb-toc-group{" has-sub" if has_sub else ""}" data-ch-id="{ch_id}">
   <div class="wb-toc-row">
     <a href="#{ch_id}" class="wb-toc-item wb-toc-chapter" data-id="{ch_id}">
-      <span class="wb-toc-num">{idx + 1}.</span> {escaped_title}
+      <span class="wb-toc-num">{idx + 1}.</span> <span class="wb-toc-text"{data_attrs}>{escaped_title}</span>
     </a>
     {toggle_btn}
   </div>
   {sub_container}
 </div>"""
+

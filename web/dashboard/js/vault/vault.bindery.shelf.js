@@ -139,4 +139,151 @@
             alert(`删除失败: ${e.message}`);
         }
     };
+
+    function _getTemplates() {
+        return window.BinderyTemplates || {
+            ensureStyles: () => {},
+            esc: s => s || '',
+            formatSize: b => `${b} B`,
+            buildLoadingHtml: () => '<div>正在加载...</div>',
+            buildModalCardHtml: () => '<div>装订面板</div>',
+            buildSuccessStatusHtml: () => '<div>装订成功</div>'
+        };
+    }
+
+    /**
+     * 触发异步合卷装订并下载
+     */
+    window.executeBookBinding = async function() {
+        const tpl = _getTemplates();
+        const titleInput = document.getElementById('bindery-input-title');
+        const authorInput = document.getElementById('bindery-input-author');
+        const scopeSelect = document.getElementById('bindery-select-scope');
+        const langSelect = document.getElementById('bindery-select-lang');
+        const modeSelect = document.getElementById('bindery-select-cover-mode');
+        const styleSelect = document.getElementById('bindery-select-cover-style');
+        const statusArea = document.getElementById('bindery-status-area');
+        const submitBtn = document.getElementById('btn-execute-binding');
+
+        if (!titleInput || !submitBtn) return;
+
+        const payload = {
+            format: window._activeBinderyFormat || 'epub',
+            scope: scopeSelect ? scopeSelect.value : 'all',
+            title: titleInput.value.trim() || undefined,
+            author: authorInput ? authorInput.value.trim() || undefined : undefined,
+            cover_mode: modeSelect ? modeSelect.value : 'auto',
+            cover_style: styleSelect ? styleSelect.value : 'dark_emerald'
+        };
+
+        const langMode = langSelect ? langSelect.value : 'zh';
+        if (langMode === 'polyglot' || langMode === 'matrix_batch') {
+            const cbs = document.querySelectorAll('.bindery-matrix-cb:checked');
+            const selectedLangs = Array.from(cbs).map(cb => cb.value);
+            if (selectedLangs.length === 0) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('请至少勾选一个目标语种', 'warning');
+                }
+                return;
+            }
+            payload.languages = selectedLangs;
+            if (langMode === 'polyglot') {
+                payload.polyglot_mode = true;
+            }
+        } else {
+            payload.lang = langMode;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.innerHTML = payload.polyglot_mode
+            ? `<span>⚙️ 正在装订多语平行合卷...</span>`
+            : (payload.languages ? `<span>⚙️ 正在并发装订 (${payload.languages.length} 册)...</span>` : `<span>⚙️ 正在装订...</span>`);
+
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+        if (statusArea) {
+            statusArea.style.display = 'block';
+            statusArea.style.background = isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(0, 242, 254, 0.08)';
+            statusArea.style.border = isLight ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid rgba(0, 242, 254, 0.25)';
+            statusArea.style.color = isLight ? '#0284c7' : '#00f2fe';
+            statusArea.innerHTML = payload.polyglot_mode
+                ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语平行对照矩阵并封装 WebBook...`
+                : (payload.languages
+                    ? `⏳ 正在并发装订 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语种丛书矩阵...`
+                    : `⏳ 正在遍历文库章节、提取 Frontmatter 并编译出版物实体...`);
+        }
+
+        if (typeof window.addAudit === 'function') {
+            const desc = window._binderyMatrixMode ? `多语种矩阵[${payload.languages.join(',')}]` : payload.lang;
+            window.addAudit(`📚 开始执行数字装订: [${payload.title || '默认书名'}] (${desc})`);
+        }
+
+        try {
+            const fetchFunc = window.apiFetch || window.fetch;
+            const res = await fetchFunc('/api/bindery/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            let result = (res && typeof res.json === 'function') ? await res.json() : res;
+
+            if (result && result.success) {
+                const formattedSize = tpl.formatSize(result.file_size || 0);
+
+                if (statusArea) {
+                    statusArea.style.background = isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)';
+                    statusArea.style.border = isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)';
+                    statusArea.style.color = isLight ? '#047857' : '#10b981';
+                    statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.innerHTML = `<span>✨ 装订成功</span>`;
+
+                if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
+
+                if (result.mode === 'matrix' && Array.isArray(result.results)) {
+                    const count = result.total_built || result.results.length;
+                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 多语种矩阵丛书落盘成功: 共 ${count} 册`);
+                    if (typeof window.showToast === 'function') window.showToast(`🎉 成功装订 ${count} 册多语种典籍！`, 'success');
+                    if (result.results.length > 0 && result.results[0].download_url) {
+                        const first = result.results[0];
+                        const dlLink = document.createElement('a');
+                        dlLink.href = first.download_url;
+                        dlLink.download = first.filename;
+                        document.body.appendChild(dlLink);
+                        dlLink.click();
+                        setTimeout(() => dlLink.remove(), 1000);
+                    }
+                } else {
+                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 电子书已落盘: ${result.filename} (${formattedSize})`);
+                    if (typeof window.showToast === 'function') window.showToast(`电子书 ${result.filename} 装订成功！`, 'success');
+                    const dlLink = document.createElement('a');
+                    dlLink.href = result.download_url;
+                    dlLink.download = result.filename;
+                    document.body.appendChild(dlLink);
+                    dlLink.click();
+                    setTimeout(() => dlLink.remove(), 1000);
+                }
+            } else {
+                throw new Error((result && (result.detail || result.error || result.message)) || '装订返回异常');
+            }
+        } catch (err) {
+            console.error('[Bindery] 装订流程异常:', err);
+            if (statusArea) {
+                statusArea.style.display = 'block';
+                statusArea.style.background = isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)';
+                statusArea.style.border = isLight ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)';
+                statusArea.style.color = isLight ? '#dc2626' : '#ff6b6b';
+                statusArea.innerHTML = `❌ 装订失败：${tpl.esc(err.message || '系统内部异常')}`;
+            }
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.innerHTML = `<span>重新装订</span>`;
+        }
+    };
 })();
+

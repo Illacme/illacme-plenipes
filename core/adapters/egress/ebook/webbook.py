@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes - Single-File Interactive WebBook Adapter
-模块职责：将文库全卷编排导出为单个自包含、免阅读器依赖的高清离线网页书 (HTML)。
+模块职责：将文库全卷编排导出为单个自包含、免阅读器依赖的高清离线网页书 (HTML)，支持多语对照矩阵。
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
@@ -13,18 +13,19 @@ from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook.base import BaseEBookAdapter
 from core.adapters.egress.ebook.colophon import ColophonBuilder
+from core.adapters.egress.ebook.webbook_assets import WebBookAssets
 from core.bindery.toc_builder import TocBuilder
 from core.utils.tracing import tlog
 
 
 class WebBookAdapter(BaseEBookAdapter):
-    """🌐 单文件交互式网页书驱动（100% 离线自包含，零外部依赖）"""
+    """🌐 单文件交互式网页书驱动（100% 离线自包含，支持多语对照研读矩阵）"""
     PLUGIN_ID = "webbook"
     DISPLAY_NAME = "单文件网页书 (WebBook)"
     OUTPUT_EXTENSION = ".html"
     MIME_TYPE = "text/html; charset=utf-8"
-    VERSION = "V1.0"
-    DESCRIPTION = "零阅读器依赖，单文件内置沉浸式侧边目录、三模主题与即时搜索的高清离线电子书。"
+    VERSION = "V2.0"
+    DESCRIPTION = "零阅读器依赖，内置侧边目录、多语对照矩阵、三模主题与即时搜索的高清离线电子书。"
 
     def bind_book(
         self,
@@ -43,8 +44,9 @@ class WebBookAdapter(BaseEBookAdapter):
             book_title = book_metadata.get("title", "未命名作品集")
             author = book_metadata.get("author", "极客创作者")
             iso_lang = target_lang if target_lang != "zh" else "zh-CN"
+            polyglot_langs: List[str] = book_metadata.get("polyglot_langs", [])
 
-            # 1. 抽取并内联封面图片
+            # 1. 抽取并内联封面图片为 Data URI
             cover_data_uri = ""
             if cover_image_path and os.path.exists(cover_image_path):
                 ext = os.path.splitext(cover_image_path)[1].lower()
@@ -59,12 +61,15 @@ class WebBookAdapter(BaseEBookAdapter):
                     t_name = asset.get("target_name")
                     s_path = asset.get("src_path") or asset.get("abs_path")
                     if t_name and s_path and t_name not in asset_map and os.path.exists(s_path):
-                        m_type = asset.get("mime_type", "image/png")
-                        with open(s_path, "rb") as af:
-                            b64_str = base64.b64encode(af.read()).decode('utf-8')
-                            asset_map[t_name] = f"data:{m_type};base64,{b64_str}"
+                        a_ext = os.path.splitext(s_path)[1].lower()
+                        a_mime = asset.get("mime_type") or ("image/png" if a_ext == ".png" else "image/jpeg")
+                        try:
+                            with open(s_path, "rb") as af:
+                                asset_map[t_name] = f"data:{a_mime};base64,{base64.b64encode(af.read()).decode('utf-8')}"
+                        except Exception:
+                            pass
 
-            # 3. 组装各章节 HTML 与侧边栏目录
+            # 3. 编排章节正文与侧边目录
             toc_items = []
             chapters_html = []
 
@@ -82,31 +87,55 @@ class WebBookAdapter(BaseEBookAdapter):
                     return m.group(0)
 
                 body_with_images = re.sub(r'<img\s+[^>]*src=["\']([^"\']+)["\'][^>]*>', repl_img, raw_body)
-                # 自愈跨文件跳转为本单页锚点 (如 ch_2.xhtml#anchor -> #ch_2 或 #anchor)
                 healed_body = re.sub(r'href="ch_\d+\.xhtml#(.*?)"', r'href="#\1"', body_with_images)
                 healed_body = re.sub(r'href="(ch_\d+)\.xhtml"', r'href="#\1"', healed_body)
 
+                sub_titles_html = ch.get("sub_titles_html", "")
+                sub_title_block = f'<div class="wb-poly-subtitles">{sub_titles_html}</div>' if sub_titles_html else ""
+
+                titles_by_lang = ch.get("titles_by_lang", {})
+                data_attrs = "".join([f' data-title-{l}="{escape(t)}"' for l, t in titles_by_lang.items()])
+
                 headings = TocBuilder.get_or_extract_headings(ch)
-                toc_items.append(TocBuilder.render_webbook_toc_group(idx, ch_id, ch_title, headings))
+                headings_by_lang = ch.get("headings_by_lang", {})
+                toc_items.append(TocBuilder.render_webbook_toc_group(
+                    idx, ch_id, ch_title, headings,
+                    titles_by_lang=titles_by_lang,
+                    headings_by_lang=headings_by_lang
+                ))
                 chapters_html.append(f"""
                 <article id="{ch_id}" class="wb-chapter" data-title="{ch_title}">
                     <header class="wb-chapter-header">
                         <span class="wb-chapter-badge">Chapter {idx + 1}</span>
-                        <h2 class="wb-chapter-title">{ch_title}</h2>
+                        <h2 class="wb-chapter-title"{data_attrs}>{ch_title}</h2>
+                        {sub_title_block}
                     </header>
                     <div class="wb-chapter-body">{healed_body}</div>
                 </article>""")
 
-            # 4. 版记 Colophon 组装
-            colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "WebBook (单文件离线交互式典籍)")
-            colophon_body = ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang)
-            colophon_match = re.search(r'<body[^>]*>(.*?)</body>', colophon_body, flags=re.DOTALL)
-            clean_colophon = colophon_match.group(1) if colophon_match else colophon_body
-            toc_items.append('<div class="wb-toc-group" data-ch-id="colophon"><div class="wb-toc-row"><a href="#colophon" class="wb-toc-item wb-toc-chapter" data-id="colophon"><span class="wb-toc-num">✦</span> 版记 · Colophon</a></div></div>')
-            chapters_html.append(f'<article id="colophon" class="wb-chapter">{clean_colophon}</article>')
+            # 4. 版记 Colophon 组装 (支持多语版记无缝变脸)
+            colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "webbook")
+            colophon_nav_attrs = ""
+            colophon_cards = []
+            active_langs = polyglot_langs if polyglot_langs else [target_lang]
+            for l in active_langs:
+                c_iso = l if l != "zh" else "zh-CN"
+                c_lbl = ColophonBuilder.get_nav_label(c_iso)
+                colophon_nav_attrs += f' data-title-{l}="{escape(c_lbl)}"'
+                c_body = ColophonBuilder.render_xhtml(colophon_data, iso_lang=c_iso)
+                c_match = re.search(r'<body[^>]*>(.*?)</body>', c_body, flags=re.DOTALL)
+                colophon_cards.append(f'<div class="wb-poly-item wb-colophon-card" data-lang="{l}">{c_match.group(1) if c_match else c_body}</div>')
+
+            nav_lbl = ColophonBuilder.get_nav_label(iso_lang)
+            toc_items.append(f'<div class="wb-toc-group" data-ch-id="colophon"><div class="wb-toc-row"><a href="#colophon" class="wb-toc-item wb-toc-chapter" data-id="colophon"><span class="wb-toc-num">✦</span> <span class="wb-toc-text"{colophon_nav_attrs}>{nav_lbl}</span></a></div></div>')
+            chapters_html.append(f'<article id="colophon" class="wb-chapter"><div class="wb-polyglot-block">{"".join(colophon_cards)}</div></article>')
 
             # 5. 渲染整卷完整自包含 WebBook
-            full_html = self._render_full_document(book_title, author, iso_lang, cover_data_uri, ''.join(toc_items), ''.join(chapters_html))
+            full_html = self._render_full_document(
+                book_title, author, iso_lang, cover_data_uri,
+                ''.join(toc_items), ''.join(chapters_html),
+                polyglot_langs=polyglot_langs
+            )
             with open(output_file_path, "w", encoding="utf-8") as out_f:
                 out_f.write(full_html)
 
@@ -116,34 +145,70 @@ class WebBookAdapter(BaseEBookAdapter):
             tlog.error(f"❌ [WebBook 装订异常] 封包失败: {e}")
             return False
 
-    def _render_full_document(self, title: str, author: str, lang: str, cover_uri: str, toc_html: str, content_html: str) -> str:
+    def _render_full_document(
+        self, title: str, author: str, lang: str, cover_uri: str,
+        toc_html: str, content_html: str, polyglot_langs: List[str] = None
+    ) -> str:
         cover_block = f'<div class="wb-cover-box"><img src="{cover_uri}" alt="Cover" class="wb-cover-img"/></div>' if cover_uri else ""
+        search_ph = "🔍 Search chapters..." if lang == "en" else ("🔍 目次・章を検索..." if lang == "ja" else "🔍 快速查找章节...")
+        toggle_title = "Toggle Sidebar" if lang == "en" else ("目次切替" if lang == "ja" else "切换目录")
+
+        # 多语切换器与多栏并列对照栏控制条 (若为多语合卷版本)
+        polyglot_bar = ""
+        if polyglot_langs and len(polyglot_langs) >= 2:
+            lang_names = {"zh": "🇨🇳 简体中文", "en": "🇬🇧 English", "ja": "🇯🇵 日本語", "fr": "🇫🇷 Français", "de": "🇩🇪 Deutsch"}
+            capsules = []
+            for l in polyglot_langs:
+                active_cls = " active" if (l == lang or (l == "zh" and lang == "zh-CN")) else ""
+                lbl = lang_names.get(l, l.upper())
+                capsules.append(f'<button type="button" class="wb-primary-item{active_cls}" data-lang="{l}">{lbl}</button>')
+
+            polyglot_bar = f"""
+            <div class="wb-polyglot-bar">
+                <div class="wb-poly-switcher-group">
+                    <div class="wb-primary-group">
+                        <span class="wb-bar-label">主语言:</span>
+                        <div class="wb-segmented-capsule" role="tablist" aria-label="全书主语言切换">
+                            {''.join(capsules)}
+                        </div>
+                    </div>
+                    <span class="wb-bar-sep">|</span>
+                    <div class="wb-compare-group">
+                        <span class="wb-bar-label">+ 对照栏:</span>
+                        <div id="wb-compare-chips" class="wb-compare-chips" data-all-langs="{','.join(polyglot_langs)}"></div>
+                    </div>
+                </div>
+            </div>"""
+
+
+
         return f"""<!DOCTYPE html>
 <html lang="{lang}" data-theme="dark">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{escape(title)}</title>
-<style>{self._get_embedded_css()}</style>
+<style>{WebBookAssets.get_embedded_css()}</style>
 </head>
 <body>
 <div id="wb-progress" class="wb-progress-bar"></div>
 <header class="wb-topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-        <button id="wb-toggle-sidebar" class="wb-btn" title="切换目录">☰</button>
+        <button id="wb-toggle-sidebar" class="wb-btn" title="{toggle_title}">☰</button>
         <span class="wb-book-title">{escape(title)}</span>
     </div>
+    {polyglot_bar}
     <div class="wb-controls">
-        <button class="wb-theme-btn" data-theme="light" title="羊皮纸明亮">☀️</button>
-        <button class="wb-theme-btn active" data-theme="dark" title="黑曜极夜">🌙</button>
-        <button class="wb-theme-btn" data-theme="sepia" title="柔和护眼">☕</button>
-        <button id="wb-font-dec" class="wb-btn" title="减小字号">A-</button>
-        <button id="wb-font-inc" class="wb-btn" title="增大字号">A+</button>
+        <button class="wb-theme-btn" data-theme="light" title="Light">☀️</button>
+        <button class="wb-theme-btn active" data-theme="dark" title="Dark">🌙</button>
+        <button class="wb-theme-btn" data-theme="sepia" title="Sepia">☕</button>
+        <button id="wb-font-dec" class="wb-btn" title="A-">A-</button>
+        <button id="wb-font-inc" class="wb-btn" title="A+">A+</button>
     </div>
 </header>
 <div class="wb-layout">
     <aside id="wb-sidebar" class="wb-sidebar">
         {cover_block}
-        <div class="wb-search-box"><input type="text" id="wb-search" placeholder="🔍 快速查找章节..." /></div>
+        <div class="wb-search-box"><input type="text" id="wb-search" placeholder="{search_ph}" /></div>
         <nav class="wb-toc" id="wb-toc-nav">{toc_html}</nav>
         <div class="wb-sidebar-footer">© {escape(author)} · Illacme Press</div>
     </aside>
@@ -151,137 +216,5 @@ class WebBookAdapter(BaseEBookAdapter):
         <div class="wb-content-wrapper">{content_html}</div>
     </main>
 </div>
-<script>{self._get_embedded_js()}</script>
+<script>{WebBookAssets.get_embedded_js()}</script>
 </body></html>"""
-
-    @staticmethod
-    def _get_embedded_css() -> str:
-        return """:root {
-  --bg-main: #0d1117; --bg-sidebar: #161b22; --bg-card: #1f242c; --text-main: #c9d1d9; --text-dim: #8b949e;
-  --text-title: #f0f6fc; --accent: #10b981; --border: #30363d; --code-bg: #161b22; --font-size: 16px;
-}
-[data-theme="light"] {
-  --bg-main: #ffffff; --bg-sidebar: #f6f8fa; --bg-card: #f8fafc; --text-main: #24292f; --text-dim: #57606a;
-  --text-title: #0f172a; --accent: #059669; --border: #e1e4e8; --code-bg: #f6f8fa;
-}
-[data-theme="sepia"] {
-  --bg-main: #fbf0d9; --bg-sidebar: #f4e3c1; --bg-card: #efe0bc; --text-main: #433422; --text-dim: #7f6e5d;
-  --text-title: #2b1f14; --accent: #b45309; --border: #dfcaa7; --code-bg: #f5e7cd;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: var(--font-size); background: var(--bg-main); color: var(--text-main); line-height: 1.75; }
-.wb-progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; z-index: 1000; transition: width 0.1s; }
-.wb-topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 16px; z-index: 900; }
-.wb-book-title { font-weight: 700; font-size: 0.95rem; color: var(--text-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50vw; }
-.wb-btn { background: none; border: 1px solid var(--border); color: var(--text-main); border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.85rem; }
-.wb-controls { display: flex; gap: 6px; align-items: center; }
-.wb-theme-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
-.wb-theme-btn.active { border-color: var(--accent); background: rgba(16,185,129,0.15); }
-.wb-layout { display: flex; margin-top: 48px; min-height: calc(100vh - 48px); }
-.wb-sidebar { width: 300px; background: var(--bg-sidebar); border-right: 1px solid var(--border); position: fixed; top: 48px; bottom: 0; left: 0; display: flex; flex-direction: column; overflow: hidden; z-index: 800; transition: transform 0.3s; }
-.wb-sidebar.collapsed { transform: translateX(-100%); }
-.wb-cover-box { text-align: center; padding: 14px 10px 4px; }
-.wb-cover-img { max-height: 140px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid var(--border); }
-.wb-search-box { padding: 10px 14px; }
-.wb-search-box input { width: 100%; padding: 6px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.85rem; }
-.wb-toc { flex: 1; overflow-y: auto; padding: 4px 8px; }
-.wb-toc-group { margin-bottom: 2px; }
-.wb-toc-row { display: flex; align-items: center; justify-content: space-between; border-radius: 6px; }
-.wb-toc-row:hover { background: rgba(16,185,129,0.08); }
-.wb-toc-item { flex: 1; display: block; padding: 6px 8px; text-decoration: none; color: var(--text-main); font-size: 0.88rem; border-radius: 6px; }
-.wb-toc-item:hover { color: var(--accent); }
-.wb-toc-item.active { background: var(--accent); color: #fff; font-weight: 600; }
-.wb-toc-item.active-ch { color: var(--accent); font-weight: 600; }
-.wb-toc-toggle { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px; font-size: 0.78rem; transition: transform 0.2s; border-radius: 4px; }
-.wb-toc-toggle:hover { color: var(--accent); background: rgba(16,185,129,0.12); }
-.wb-toc-group.collapsed .wb-toc-toggle { transform: rotate(-90deg); }
-.wb-toc-group.collapsed .wb-toc-sub { display: none; }
-.wb-toc-sub { margin-left: 10px; padding-left: 8px; border-left: 1px solid var(--border); margin-top: 1px; margin-bottom: 3px; }
-.wb-toc-subitem { display: block; padding: 3px 6px; text-decoration: none; color: var(--text-dim); font-size: 0.81rem; border-radius: 4px; line-height: 1.4; }
-.wb-toc-subitem:hover { color: var(--accent); background: rgba(16,185,129,0.06); }
-.wb-toc-subitem.active { color: var(--accent); font-weight: 600; background: rgba(16,185,129,0.12); }
-.wb-toc-h3 { margin-left: 8px; font-size: 0.76rem; opacity: 0.88; }
-.wb-toc-bullet { opacity: 0.5; margin-right: 4px; font-size: 0.7rem; }
-.wb-toc-num { opacity: 0.65; margin-right: 4px; }
-.wb-sidebar-footer { font-size: 0.72rem; color: var(--text-dim); text-align: center; padding: 8px; border-top: 1px solid var(--border); }
-.wb-main { flex: 1; margin-left: 300px; padding: 30px 40px 100px; transition: margin 0.3s; }
-.wb-sidebar.collapsed ~ .wb-main { margin-left: 0; }
-.wb-content-wrapper { max-width: 820px; margin: 0 auto; }
-.wb-chapter { margin-bottom: 70px; padding-bottom: 40px; border-bottom: 1px solid var(--border); }
-.wb-chapter-badge { font-size: 0.75rem; text-transform: uppercase; color: var(--accent); font-weight: 700; letter-spacing: 0.05em; }
-.wb-chapter-title { font-size: 1.85rem; font-weight: 800; color: var(--text-title); margin: 6px 0 20px; }
-.wb-chapter-body p { margin: 1em 0; }
-.wb-chapter-body h1, .wb-chapter-body h2, .wb-chapter-body h3 { color: var(--text-title); margin: 1.4em 0 0.6em; }
-.wb-chapter-body blockquote { border-left: 4px solid var(--accent); padding: 0.6em 1em; background: var(--bg-card); color: var(--text-dim); margin: 1.2em 0; }
-.wb-chapter-body code { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 0.9em; }
-.wb-chapter-body pre { background: var(--code-bg); padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); margin: 1.2em 0; }
-.wb-chapter-body pre code { background: transparent; padding: 0; }
-.wb-chapter-body img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; border-radius: 6px; border: 1px solid var(--border); }
-.wb-chapter-body a { color: var(--accent); }
-.codehilite { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin: 1.2em 0; overflow-x: auto; }
-.math-block { display: flex; justify-content: center; margin: 1.4em 0; overflow-x: auto; }
-math { font-size: 1.1em; color: var(--text-title); }
-.colophon-card { border: 1px solid var(--border); background: var(--bg-card); padding: 20px; border-radius: 8px; margin: 20px 0; }
-.colophon-grid { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.colophon-grid td { padding: 6px 8px; border-bottom: 1px dashed var(--border); }
-@media (max-width: 768px) {
-  .wb-sidebar { transform: translateX(-100%); }
-  .wb-sidebar.open { transform: translateX(0); }
-  .wb-main { margin-left: 0; padding: 20px 16px; }
-}"""
-
-    @staticmethod
-    def _get_embedded_js() -> str:
-        return """(function() {
-  const sb = document.getElementById('wb-sidebar'), btn = document.getElementById('wb-toggle-sidebar');
-  btn.onclick = () => { if (window.innerWidth <= 768) { sb.classList.toggle('open'); } else { sb.classList.toggle('collapsed'); } };
-  document.querySelectorAll('.wb-theme-btn').forEach(b => {
-    b.onclick = () => {
-      document.querySelectorAll('.wb-theme-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      document.documentElement.setAttribute('data-theme', b.getAttribute('data-theme'));
-    };
-  });
-  let fs = 16;
-  document.getElementById('wb-font-inc').onclick = () => { fs = Math.min(24, fs + 1); document.documentElement.style.setProperty('--font-size', fs + 'px'); };
-  document.getElementById('wb-font-dec').onclick = () => { fs = Math.max(13, fs - 1); document.documentElement.style.setProperty('--font-size', fs + 'px'); };
-  document.querySelectorAll('.wb-toc-toggle').forEach(t => {
-    t.onclick = (e) => { e.stopPropagation(); const g = t.closest('.wb-toc-group'); if (g) g.classList.toggle('collapsed'); };
-  });
-  const search = document.getElementById('wb-search'), groups = document.querySelectorAll('.wb-toc-group');
-  search.oninput = (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    groups.forEach(g => {
-      if (!q) { g.style.display = ''; g.querySelectorAll('.wb-toc-subitem').forEach(s => s.style.display = ''); return; }
-      const ch = g.querySelector('.wb-toc-chapter'), subs = g.querySelectorAll('.wb-toc-subitem');
-      let chM = ch && ch.textContent.toLowerCase().includes(q), subM = 0;
-      subs.forEach(s => { const m = s.textContent.toLowerCase().includes(q); s.style.display = m ? '' : 'none'; if (m) subM++; });
-      if (chM || subM > 0) { g.style.display = ''; g.classList.remove('collapsed'); } else { g.style.display = 'none'; }
-    });
-  };
-  window.onscroll = () => {
-    const s = document.documentElement.scrollTop, h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    document.getElementById('wb-progress').style.width = (h ? (s / h * 100) : 0) + '%';
-  };
-  const targets = document.querySelectorAll('.wb-chapter, .wb-chapter-body h2[id], .wb-chapter-body h3[id]');
-  const allLinks = document.querySelectorAll('.wb-toc-item, .wb-toc-subitem');
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const id = e.target.id;
-        const matched = document.querySelector(`.wb-toc-subitem[data-id="${id}"], .wb-toc-item[data-id="${id}"]`);
-        if (matched) {
-          allLinks.forEach(l => l.classList.remove('active', 'active-ch'));
-          matched.classList.add('active');
-          const grp = matched.closest('.wb-toc-group');
-          if (grp) {
-            grp.classList.remove('collapsed');
-            const chLink = grp.querySelector('.wb-toc-chapter');
-            if (chLink && chLink !== matched) chLink.classList.add('active-ch');
-          }
-        }
-      }
-    });
-  }, { rootMargin: '-10% 0px -75% 0px' });
-  targets.forEach(t => obs.observe(t));
-})();"""

@@ -85,9 +85,71 @@
         if (langSelect) langSelect.addEventListener('change', window.refreshCoverPreview);
 
         // 初始拉取封面预览与货架
+        window._binderyMatrixMode = false;
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
+
+        // 监听矩阵复选框变动
+        const cbs = document.querySelectorAll('.bindery-matrix-cb');
+        cbs.forEach(cb => {
+            cb.addEventListener('change', window.updateMatrixSubmitBtn);
+        });
     };
+
+    /**
+    /**
+     * 切换出版语种模式（单语 / 多语合卷 / 多语套书）
+     */
+    window.onBinderyLangModeChange = function(val) {
+        const chipsRow = document.getElementById('bindery-matrix-chips-row');
+        const badge = document.getElementById('bindery-lang-hint-badge');
+        const submitBtn = document.getElementById('btn-execute-binding');
+
+        if (val === 'polyglot') {
+            if (chipsRow) chipsRow.style.display = 'flex';
+            if (badge) { badge.textContent = '🈳 多语合卷'; badge.style.color = '#10b981'; }
+            if (submitBtn) submitBtn.innerHTML = '<span>🈳 装订多语合卷研读版</span>';
+        } else if (val === 'matrix_batch') {
+            if (chipsRow) chipsRow.style.display = 'flex';
+            if (badge) { badge.textContent = '📦 套书并发'; badge.style.color = '#38bdf8'; }
+            const count = document.querySelectorAll('.bindery-matrix-cb:checked').length || 3;
+            if (submitBtn) submitBtn.innerHTML = `<span>🌍 矩阵并发装订 (${count} 册)</span>`;
+        } else {
+            if (chipsRow) chipsRow.style.display = 'none';
+            if (badge) { badge.textContent = '单语典籍'; badge.style.color = ''; }
+            const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
+            const langName = langMap[val] || val.toUpperCase();
+            if (submitBtn) submitBtn.innerHTML = `<span>🚀 立即装订 (${langName})</span>`;
+        }
+        if (typeof window.refreshCoverPreview === 'function') window.refreshCoverPreview();
+    };
+
+    /**
+     * 全选/反选矩阵语种
+     */
+    window.toggleAllBinderyMatrixLangs = function() {
+        const cbs = document.querySelectorAll('.bindery-matrix-cb');
+        if (!cbs.length) return;
+        const allChecked = Array.from(cbs).every(cb => cb.checked);
+        cbs.forEach(cb => { cb.checked = !allChecked; });
+        window.updateMatrixSubmitBtn();
+    };
+
+    /**
+     * 联动更新提交装订按钮文案
+     */
+    window.updateMatrixSubmitBtn = function() {
+        const langVal = document.getElementById('bindery-select-lang')?.value;
+        const count = document.querySelectorAll('.bindery-matrix-cb:checked').length;
+        const submitBtn = document.getElementById('btn-execute-binding');
+        if (!submitBtn) return;
+        if (langVal === 'polyglot') {
+            submitBtn.innerHTML = `<span>🈳 装订多语合卷研读版 (${count} 语并列)</span>`;
+        } else if (langVal === 'matrix_batch') {
+            submitBtn.innerHTML = `<span>🌍 矩阵并发装订 (${count} 册独立典籍)</span>`;
+        }
+    };
+
 
     /**
      * 实时拉取并更新封面预览
@@ -187,110 +249,5 @@
         if (e1) e1.classList.toggle('active', fmtId === 'epub');
         if (e2) e2.classList.toggle('active', fmtId === 'webbook');
     };
-
-    /**
-     * 触发异步合卷装订并下载
-     */
-    window.executeBookBinding = async function() {
-        const tpl = _getTemplates();
-        const titleInput = document.getElementById('bindery-input-title');
-        const authorInput = document.getElementById('bindery-input-author');
-        const scopeSelect = document.getElementById('bindery-select-scope');
-        const langSelect = document.getElementById('bindery-select-lang');
-        const modeSelect = document.getElementById('bindery-select-cover-mode');
-        const styleSelect = document.getElementById('bindery-select-cover-style');
-        const statusArea = document.getElementById('bindery-status-area');
-        const submitBtn = document.getElementById('btn-execute-binding');
-
-        if (!titleInput || !submitBtn) return;
-
-        const payload = {
-            format: window._activeBinderyFormat || 'epub',
-            scope: scopeSelect ? scopeSelect.value : 'all',
-            lang: langSelect ? langSelect.value : 'zh',
-            title: titleInput.value.trim() || undefined,
-            author: authorInput ? authorInput.value.trim() || undefined : undefined,
-            cover_mode: modeSelect ? modeSelect.value : 'auto',
-            cover_style: styleSelect ? styleSelect.value : 'dark_emerald'
-        };
-
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.7';
-        submitBtn.innerHTML = `<span>⚙️ 正在装订...</span>`;
-
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-
-        if (statusArea) {
-            statusArea.style.display = 'block';
-            statusArea.style.background = isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(0, 242, 254, 0.08)';
-            statusArea.style.border = isLight ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid rgba(0, 242, 254, 0.25)';
-            statusArea.style.color = isLight ? '#0284c7' : '#00f2fe';
-            statusArea.innerHTML = `⏳ 正在遍历文库章节、提取 Frontmatter 并编译 EPUB 3.0 实体...`;
-        }
-
-        if (typeof window.addAudit === 'function') {
-            window.addAudit(`📚 开始执行数字装订: [${payload.title || '默认书名'}] (${payload.scope})`);
-        }
-
-        try {
-            const fetchFunc = window.apiFetch || window.fetch;
-            const res = await fetchFunc('/api/bindery/build', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            let result = null;
-            if (res && typeof res.json === 'function') {
-                result = await res.json();
-            } else {
-                result = res;
-            }
-
-            if (result && result.success) {
-                const formattedSize = tpl.formatSize(result.file_size);
-
-                if (statusArea) {
-                    statusArea.style.background = isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)';
-                    statusArea.style.border = isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)';
-                    statusArea.style.color = isLight ? '#047857' : '#10b981';
-                    statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
-                }
-
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-                submitBtn.innerHTML = `<span>✨ 装订成功</span>`;
-
-                if (typeof window.addAudit === 'function') {
-                    window.addAudit(`✅ 电子书已落盘: ${result.filename} (${formattedSize})`);
-                }
-                if (typeof window.showToast === 'function') {
-                    window.showToast(`电子书 ${result.filename} 装订成功！`, 'success');
-                }
-
-                const dlLink = document.createElement('a');
-                dlLink.href = result.download_url;
-                dlLink.download = result.filename;
-                document.body.appendChild(dlLink);
-                dlLink.click();
-                setTimeout(() => dlLink.remove(), 1000);
-                if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
-            } else {
-                throw new Error((result && (result.detail || result.error || result.message)) || '装订返回异常');
-            }
-        } catch (err) {
-            console.error('[Bindery] 装订流程异常:', err);
-            if (statusArea) {
-                statusArea.style.display = 'block';
-                statusArea.style.background = isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)';
-                statusArea.style.border = isLight ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)';
-                statusArea.style.color = isLight ? '#dc2626' : '#ff6b6b';
-                statusArea.innerHTML = `❌ 装订失败：${tpl.esc(err.message || '系统内部异常')}`;
-            }
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.innerHTML = `<span>重新装订</span>`;
-        }
-    };
-
 })();
+

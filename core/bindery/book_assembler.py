@@ -7,6 +7,7 @@ Illacme Plenipes - Book Assembler (全卷文稿合订编排器)
 
 import os
 import re
+import uuid
 import yaml
 from typing import Dict, Any, List, Optional
 
@@ -14,7 +15,9 @@ from core.adapters.egress.ebook import EBookRegistry
 from .cover_generator import CoverGenerator
 from .image_packager import ImagePackager
 from .math_packager import MathPackager
+from .polyglot_aligner import PolyglotAligner
 from .toc_builder import TocBuilder
+from .translation_resolver import TranslationResolver
 from core.utils.tracing import tlog
 
 
@@ -34,16 +37,21 @@ class BookAssembler:
         custom_author: Optional[str] = None,
         cover_mode: str = "auto",
         cover_style: str = "dark_emerald",
-        output_dir: str = "dist/books"
+        output_dir: str = "dist/books",
+        polyglot_langs: Optional[List[str]] = None
     ) -> Optional[str]:
-        """执行装订全流程：收集章节、渲染转换、装订封包"""
+        """执行章节收集、多语对照合成、封面注入并委托格式驱动编译输出"""
         adapter_cls = EBookRegistry.get_adapter(format_type)
         if not adapter_cls:
-            tlog.error(f"❌ [数字装订] 未找到格式驱动: {format_type}")
+            tlog.error(f"❌ [BookAssembler] 未找到对应格式的装订驱动: {format_type}")
             return None
 
-        # 1. 勘测提取章节
-        chapters = self._collect_chapters(category, target_lang)
+        is_polyglot = bool(polyglot_langs and len(polyglot_langs) >= 2)
+        if is_polyglot:
+            chapters = PolyglotAligner.build_polyglot_chapters(self, category, polyglot_langs)
+        else:
+            TranslationResolver.warm_up(target_lang)
+            chapters = self._collect_chapters(category=category, target_lang=target_lang)
         if not chapters:
             tlog.warning(f"⚠️ [数字装订] 栏目 '{category}' 下无可用 Markdown 章节稿件。")
             return None
@@ -53,8 +61,18 @@ class BookAssembler:
         if self.engine and hasattr(self.engine, "config"):
             site_name = getattr(self.engine.config, "site_name", site_name)
 
-        book_title = custom_title or f"{site_name} · {category or '全集'}"
-        if target_lang != "zh": book_title += f" ({target_lang.upper()} Edition)"
+        is_default_title = not custom_title or any(kw in custom_title for kw in ("数字出版集", "数字出版合集", "全集"))
+        if is_polyglot and is_default_title:
+            lang_tags = "-".join([l.upper() for l in polyglot_langs])
+            book_title = f"{site_name} · 多语对照典籍 ({lang_tags} Polyglot Edition)"
+        elif is_default_title and target_lang == "en":
+            book_title = f"{site_name} · Digital Publication Collection (EN Edition)"
+        elif is_default_title and target_lang == "ja":
+            book_title = f"{site_name} · デジタル出版全集 (JA Edition)"
+        else:
+            book_title = custom_title or f"{site_name} · {category or '全集'}"
+            if target_lang != "zh" and not is_polyglot and f"({target_lang.upper()} Edition)" not in book_title:
+                book_title += f" ({target_lang.upper()} Edition)"
 
         author = custom_author or "Illacme Editorial Team"
         publisher_name = f"{site_name} Global Private Press"
@@ -62,38 +80,43 @@ class BookAssembler:
         if self.engine and hasattr(self.engine, "config"):
             license_decl = getattr(self.engine.config, "license", None) or getattr(self.engine.config, "copyright", license_decl)
 
+        desc = f"由 {site_name} 自动化装订中枢出版的数字出版物。"
+        if is_polyglot:
+            desc = f"Multilingual polyglot edition produced by {site_name} Automated Bindery Hub."
+        elif target_lang == "en":
+            desc = f"Digital publication produced by {site_name} Automated Bindery Hub."
+        elif target_lang == "ja":
+            desc = f"{site_name} 自動製本ハブにより発行されたデジタル出版物。"
+
         book_meta = {
             "title": book_title,
             "author": author,
             "publisher": publisher_name,
-            "description": f"由 {site_name} 自动化装订中枢出版的数字出版物。",
+            "description": desc,
             "date": None,
-            "language": target_lang,
-            "license": license_decl
+            "language": "mul" if is_polyglot else target_lang,
+            "license": license_decl,
+            "uuid": f"urn:uuid:{uuid.uuid4()}",
+            "polyglot_langs": polyglot_langs if is_polyglot else []
         }
 
         # 3. 确定输出路径与封面解析
         slug_prefix = re.sub(r'[^a-zA-Z0-9_\u4e00-\u9fa5]+', '-', book_title).strip('-').lower()
         ext = getattr(adapter_cls, "OUTPUT_EXTENSION", ".epub")
         os.makedirs(output_dir, exist_ok=True)
-        out_filename = f"{slug_prefix}_{target_lang}{ext}"
+        lang_suffix = "polyglot" if is_polyglot else target_lang
+        out_filename = f"{slug_prefix}_{lang_suffix}{ext}"
         out_path = os.path.abspath(os.path.join(output_dir, out_filename))
 
         cover_path = None
         if cover_mode != "none":
             if cover_mode == "auto":
                 cover_path = CoverGenerator.discover_cover(vault_dir=self.vault_dir, category=category, chapters=chapters)
-            # 若 auto 未找到，或显式指定 generated，则自动派生高雅排版艺术封面
             if not cover_path and cover_mode in ("auto", "generated"):
-                gen_cover_name = f"cover_{slug_prefix}_{cover_style}.png"
-                gen_cover_path = os.path.join(output_dir, gen_cover_name)
+                gen_cover = os.path.join(output_dir, f"cover_{slug_prefix}_{cover_style}.png")
                 cover_path = CoverGenerator.render_cover_image(
-                    output_path=gen_cover_path,
-                    title=book_title,
-                    author=author,
-                    publisher=publisher_name,
-                    style_key=cover_style,
-                    lang=target_lang
+                    output_path=gen_cover, title=book_title, author=author,
+                    publisher=publisher_name, style_key=cover_style, lang=target_lang
                 )
 
         # 4. 调用适配驱动执行装订封包
@@ -145,16 +168,19 @@ class BookAssembler:
             stem = os.path.splitext(os.path.basename(p))[0]
             rel_p = os.path.relpath(p, target_dir).replace('\\', '/')
             rel_no_ext = os.path.splitext(rel_p)[0]
-            parsed_docs.append({"ch_id": ch_id, "title": str(title), "slug": str(slug), "file_path": p, "raw_body": body})
-            for key in (stem.lower(), stem, slug.lower(), slug, str(title).lower(), str(title), rel_p.lower(), rel_no_ext.lower()):
+            # 🌐 目标语种标题与正文高保真解析
+            ch_title, ch_body = TranslationResolver.resolve_chapter(
+                file_path=p, target_lang=target_lang, fallback_title=str(title),
+                fallback_body=body, vault_dir=self.vault_dir
+            )
+            parsed_docs.append({"ch_id": ch_id, "title": str(ch_title), "slug": str(slug), "file_path": p, "raw_body": ch_body})
+            for key in (stem.lower(), stem, slug.lower(), slug, str(title).lower(), str(title), str(ch_title).lower(), str(ch_title), rel_p.lower(), rel_no_ext.lower()):
                 if key and key not in route_map: route_map[key] = ch_id
-            for raw_k in (stem, str(title), slug, rel_no_ext):
+            for raw_k in (stem, str(title), str(ch_title), slug, rel_no_ext):
                 norm_k = re.sub(r'[^\w\u4e00-\u9fa5]+', '', str(raw_k)).lower()
                 if norm_k and norm_k not in route_map: route_map[norm_k] = ch_id
-            parent_dir = os.path.dirname(rel_no_ext).lower()
-            if parent_dir and f"{parent_dir}/index" not in route_map:
-                route_map[f"{parent_dir}/index"] = ch_id
-                route_map[parent_dir] = ch_id
+            p_dir = os.path.dirname(rel_no_ext).lower()
+            if p_dir: route_map[f"{p_dir}/index"] = route_map[p_dir] = ch_id
 
         # 第二阶段：编译内容与重写内链锚点
         import markdown
@@ -167,8 +193,6 @@ class BookAssembler:
         chapters = []
         for entry in parsed_docs:
             p, body, ch_id = entry["file_path"], entry["raw_body"], entry["ch_id"]
-            if target_lang != "zh":
-                body = self._try_get_translation(p, target_lang) or body
 
             # 排版自愈：数学公式转译 -> Obsidian 插图转译 -> 跨章内链锚点重写
             body = MathPackager.heal_latex_formulas(body)
@@ -269,30 +293,7 @@ class BookAssembler:
         m = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', text, re.DOTALL)
         if m:
             try:
-                fm = yaml.safe_load(m.group(1)) or {}
-                return fm, m.group(2)
+                return (yaml.safe_load(m.group(1)) or {}), m.group(2)
             except Exception:
                 pass
         return {}, text
-
-    def _try_get_translation(self, file_path: str, lang: str) -> Optional[str]:
-        """从 SQLite 账本或缓存提取已翻译正文"""
-        try:
-            import sqlite3
-            import json
-            db_path = os.path.join(self.vault_dir, ".plenipes/cache/ledger.db")
-            if not os.path.exists(db_path): return None
-            rel_p = os.path.relpath(file_path, self.vault_dir).replace('\\', '/')
-            with sqlite3.connect(db_path) as conn:
-                row = conn.execute(
-                    "SELECT result_json FROM translations WHERE rel_path = ? AND lang_code = ? AND status = 'DONE'",
-                    (rel_p, lang)
-                ).fetchone()
-                if row and row[0]:
-                    data = json.loads(row[0])
-                    return data.get("translated_content") or data.get("content")
-        except Exception:
-            pass
-        return None
-
-

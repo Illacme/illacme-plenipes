@@ -4,6 +4,7 @@ from .math_packager import MathPackager
 from .book_assembler import BookAssembler
 from .cover_generator import CoverGenerator
 from .toc_builder import TocBuilder
+from .polyglot_aligner import PolyglotAligner
 
-__all__ = ["ImagePackager", "MathPackager", "BookAssembler", "CoverGenerator", "TocBuilder"]
+__all__ = ["ImagePackager", "MathPackager", "BookAssembler", "CoverGenerator", "TocBuilder", "PolyglotAligner"]
 
