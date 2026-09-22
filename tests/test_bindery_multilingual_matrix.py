@@ -212,3 +212,62 @@ def test_translation_resolver_content_fidelity():
     assert "出版チーム" in ja_title
     assert "創作の自由" in ja_body
     assert "母语中文正文" not in ja_body
+
+
+def test_bindery_shelf_filtering_and_rebind_js_integrity():
+    """验证书架资产管理 JS 沙箱运行、格式胶囊过滤、关键词检索与 Re-bind 重新装订功能"""
+    import subprocess
+    runner = """
+    const fs = require('fs');
+    let shelfInner = '';
+    global.window = {};
+    global.document = {
+        getElementById: (id) => {
+            if (id === 'bindery-shelf-list') {
+                return {
+                    get innerHTML() { return shelfInner; },
+                    set innerHTML(val) { shelfInner = val; }
+                };
+            }
+            if (id === 'bindery-shelf-badge') return { textContent: '' };
+            if (id === 'bindery-input-title') return { value: '' };
+            if (id === 'bindery-select-lang') return { value: '', querySelector: () => ({ value: 'ja' }), dispatchEvent: () => {} };
+            return null;
+        }
+    };
+    global.Event = class {};
+    eval(fs.readFileSync('web/dashboard/js/vault/vault.bindery.shelf.js', 'utf8'));
+
+    if (typeof window.renderBinderyShelfHtml !== 'function') throw new Error('renderBinderyShelfHtml not registered');
+    if (typeof window.setBinderyShelfFilter !== 'function') throw new Error('setBinderyShelfFilter not registered');
+    if (typeof window.rebindBookFromShelf !== 'function') throw new Error('rebindBookFromShelf not registered');
+
+    // 1. 模拟渲染带多格式的书架数据
+    const mockBooks = [
+        { filename: 'illacme-press-指南-zh.html', format: 'webbook', size_display: '120 KB', mtime: 1700000000, preview_url: '/preview/zh.html', download_url: '/dl/zh.html' },
+        { filename: 'illacme-press-指南-en.epub', format: 'epub', size_display: '250 KB', mtime: 1700000000, preview_url: null, download_url: '/dl/en.epub' }
+    ];
+    window.renderBinderyShelfHtml(mockBooks);
+
+    if (!shelfInner.includes('全部 (2)')) throw new Error('缺少 全部 (2) 筛选胶囊');
+    if (!shelfInner.includes('网页书 (1)')) throw new Error('缺少 网页书 (1) 筛选胶囊');
+    if (!shelfInner.includes('电子书 (1)')) throw new Error('缺少 电子书 (1) 筛选胶囊');
+    if (!shelfInner.includes('🔄')) throw new Error('缺少 重新装订 🔄 按钮');
+    if (!shelfInner.includes('window.rebindBookFromShelf')) throw new Error('缺少 rebindBookFromShelf 绑定');
+
+    // 2. 格式过滤测试
+    window.setBinderyShelfFilter('webbook');
+    if (!shelfInner.includes('illacme-press-指南-zh.html')) throw new Error('WebBook 过滤应包含 html');
+    if (shelfInner.includes('illacme-press-指南-en.epub')) throw new Error('WebBook 过滤不应包含 epub');
+
+    // 3. 关键词过滤测试
+    window.setBinderyShelfFilter('all');
+    window.setBinderyShelfQuery('not_exist_book');
+    if (!shelfInner.includes('未找到匹配的电子书')) throw new Error('未命中时应提示未找到匹配');
+
+    console.log('SHELF_JS_INTEGRITY_OK');
+    """
+    res = subprocess.run(['node', '-e', runner], capture_output=True, text=True)
+    assert res.returncode == 0, f"Node 执行失败: {res.stderr}"
+    assert "SHELF_JS_INTEGRITY_OK" in res.stdout
+
