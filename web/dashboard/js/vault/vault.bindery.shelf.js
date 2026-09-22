@@ -30,7 +30,7 @@
         shelfContainer.innerHTML = `
             <div style="text-align:center; padding:30px; color:var(--text-dim, rgba(255,255,255,0.6)); font-size:0.85rem;">
                 <span class="pulse-spin" style="display:inline-block; font-size:1.2rem; margin-bottom:8px;">⏳</span>
-                <div>正在盘点典籍货架...</div>
+                <div>正在加载我的书架...</div>
             </div>
         `;
 
@@ -40,7 +40,7 @@
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
 
             if (!data || !data.success) {
-                shelfContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444; font-size:0.85rem;">❌ 获取货架失败</div>`;
+                shelfContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444; font-size:0.85rem;">❌ 获取书架失败</div>`;
                 return;
             }
 
@@ -49,8 +49,8 @@
 
             window.renderBinderyShelfHtml(data.books || []);
         } catch (e) {
-            console.error('[BinderyShelf] 拉取货架异常:', e);
-            shelfContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444; font-size:0.85rem;">⚠️ 加载货架网络异常</div>`;
+            console.error('[BinderyShelf] 拉取书架异常:', e);
+            shelfContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444; font-size:0.85rem;">⚠️ 加载书架网络异常</div>`;
         }
     };
 
@@ -65,8 +65,8 @@
             shelfContainer.innerHTML = `
                 <div style="text-align:center; padding:40px 20px; color:var(--text-dim, rgba(255,255,255,0.55)); font-size:0.85rem;">
                     <div style="font-size:2rem; margin-bottom:10px; opacity:0.7;">📚</div>
-                    <div style="font-weight:600; color:var(--text-bright, #fff); margin-bottom:4px;">货架尚无已装订典籍</div>
-                    <div style="font-size:0.75rem;">切换至上方「装订新版」生成第一部数字出版物！</div>
+                    <div style="font-weight:600; color:var(--text-bright, #fff); margin-bottom:4px;">书架上暂无已制作的电子书</div>
+                    <div style="font-size:0.75rem;">切换至上方「装订新版」生成第一本电子书！</div>
                 </div>
             `;
             return;
@@ -103,7 +103,7 @@
                     <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:12px;">
                         ${previewBtn}
                         <a href="${b.download_url}" download="${b.filename}" class="secondary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-bright, #fff);">⬇️</a>
-                        <button onclick="window.deleteBookFromShelf('${b.filename}')" class="bindery-del-btn" title="从货架归档删除" style="background:none; border:none; color:var(--text-dim, rgba(255,255,255,0.4)); font-size:0.9rem; cursor:pointer; padding:4px 6px; border-radius:4px; transition:color 0.2s;">🗑️</button>
+                        <button onclick="window.deleteBookFromShelf('${b.filename}')" class="bindery-del-btn" title="从书架中删除" style="background:none; border:none; color:var(--text-dim, rgba(255,255,255,0.4)); font-size:0.9rem; cursor:pointer; padding:4px 6px; border-radius:4px; transition:color 0.2s;">🗑️</button>
                     </div>
                 </div>
             `;
@@ -116,7 +116,7 @@
      * 从货架删除指定书籍
      */
     window.deleteBookFromShelf = async function(filename) {
-        if (!confirm(`确定要从出版货架中归档删除 "${filename}" 吗？此操作不可撤销。`)) {
+        if (!confirm(`确定要从书架中删除 "${filename}" 吗？此操作不可撤销。`)) {
             return;
         }
 
@@ -197,8 +197,8 @@
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.7';
         submitBtn.innerHTML = payload.polyglot_mode
-            ? `<span>⚙️ 正在装订多语平行合卷...</span>`
-            : (payload.languages ? `<span>⚙️ 正在并发装订 (${payload.languages.length} 册)...</span>` : `<span>⚙️ 正在装订...</span>`);
+            ? `<span>⚙️ 正在制作多语对照电子书...</span>`
+            : (payload.languages ? `<span>⚙️ 正在并发制作 (${payload.languages.length} 本)...</span>` : `<span>⚙️ 正在制作...</span>`);
 
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
@@ -208,15 +208,15 @@
             statusArea.style.border = isLight ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid rgba(0, 242, 254, 0.25)';
             statusArea.style.color = isLight ? '#0284c7' : '#00f2fe';
             statusArea.innerHTML = payload.polyglot_mode
-                ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语平行对照矩阵并封装 WebBook...`
+                ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语对照内容并生成 WebBook...`
                 : (payload.languages
-                    ? `⏳ 正在并发装订 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语种丛书矩阵...`
-                    : `⏳ 正在遍历文库章节、提取 Frontmatter 并编译出版物实体...`);
+                    ? `⏳ 正在并发制作 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语言电子书...`
+                    : `⏳ 正在遍历文库章节、提取元数据并生成电子书...`);
         }
 
         if (typeof window.addAudit === 'function') {
-            const desc = window._binderyMatrixMode ? `多语种矩阵[${payload.languages.join(',')}]` : payload.lang;
-            window.addAudit(`📚 开始执行数字装订: [${payload.title || '默认书名'}] (${desc})`);
+            const desc = window._binderyMatrixMode ? `多语言[${payload.languages.join(',')}]` : payload.lang;
+            window.addAudit(`📚 开始制作电子书: [${payload.title || '默认书名'}] (${desc})`);
         }
 
         try {
@@ -241,14 +241,14 @@
 
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = '1';
-                submitBtn.innerHTML = `<span>✨ 装订成功</span>`;
+                submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
 
                 if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
                 if (result.mode === 'matrix' && Array.isArray(result.results)) {
                     const count = result.total_built || result.results.length;
-                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 多语种矩阵丛书落盘成功: 共 ${count} 册`);
-                    if (typeof window.showToast === 'function') window.showToast(`🎉 成功装订 ${count} 册多语种典籍！`, 'success');
+                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 多语言电子书制作完成: 共 ${count} 本`);
+                    if (typeof window.showToast === 'function') window.showToast(`🎉 成功制作 ${count} 本多语言电子书！`, 'success');
                     if (result.results.length > 0 && result.results[0].download_url) {
                         const first = result.results[0];
                         const dlLink = document.createElement('a');

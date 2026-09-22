@@ -107,19 +107,19 @@
 
         if (val === 'polyglot') {
             if (chipsRow) chipsRow.style.display = 'flex';
-            if (badge) { badge.textContent = '📑 多语合卷'; badge.style.color = '#10b981'; }
-            if (submitBtn) submitBtn.innerHTML = '<span>📑 装订多语合卷研读版</span>';
+            if (badge) { badge.textContent = '📑 多语对照版'; badge.style.color = '#10b981'; }
+            if (submitBtn) submitBtn.innerHTML = '<span>📑 制作多语对照电子书</span>';
         } else if (val === 'matrix_batch') {
             if (chipsRow) chipsRow.style.display = 'flex';
-            if (badge) { badge.textContent = '📦 套书并发'; badge.style.color = '#38bdf8'; }
+            if (badge) { badge.textContent = '📦 多版本并发'; badge.style.color = '#38bdf8'; }
             const count = document.querySelectorAll('.bindery-matrix-cb:checked').length || 3;
-            if (submitBtn) submitBtn.innerHTML = `<span>🌍 矩阵并发装订 (${count} 册)</span>`;
+            if (submitBtn) submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本)</span>`;
         } else {
             if (chipsRow) chipsRow.style.display = 'none';
-            if (badge) { badge.textContent = '单语典籍'; badge.style.color = ''; }
+            if (badge) { badge.textContent = '单语言版'; badge.style.color = ''; }
             const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
             const langName = langMap[val] || val.toUpperCase();
-            if (submitBtn) submitBtn.innerHTML = `<span>🚀 立即装订 (${langName})</span>`;
+            if (submitBtn) submitBtn.innerHTML = `<span>🚀 立即制作 (${langName})</span>`;
         }
         if (typeof window.refreshCoverPreview === 'function') window.refreshCoverPreview();
     };
@@ -144,9 +144,9 @@
         const submitBtn = document.getElementById('btn-execute-binding');
         if (!submitBtn) return;
         if (langVal === 'polyglot') {
-            submitBtn.innerHTML = `<span>📑 装订多语合卷研读版 (${count} 语并列)</span>`;
+            submitBtn.innerHTML = `<span>📑 制作多语对照电子书 (${count} 语并列)</span>`;
         } else if (langVal === 'matrix_batch') {
-            submitBtn.innerHTML = `<span>🌍 矩阵并发装订 (${count} 册独立典籍)</span>`;
+            submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本独立版本)</span>`;
         }
     };
 

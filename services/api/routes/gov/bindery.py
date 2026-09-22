@@ -185,14 +185,14 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             output_dir=payload.output_dir, polyglot_langs=target_langs
         )
         if not out_p or not os.path.exists(out_p):
-            raise HTTPException(status_code=500, detail="多语平行对照典籍装订失败，未生成有效产物。")
+            raise HTTPException(status_code=500, detail="多语言对照电子书制作失败，未生成有效产物。")
         fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
         chs = assembler._collect_chapters(category=scope_cat, target_lang=target_langs[0])
         pv = f"/api/bindery/view?file={fn}" if payload.format == "webbook" else None
         return {
             "success": True, "mode": "polyglot", "filename": fn, "file_size": fs, "format": payload.format,
             "chapter_count": len(chs), "languages": target_langs, "download_url": f"/api/bindery/download?file={fn}",
-            "preview_url": pv, "message": f"🎉 多语平行对照典籍装订完成！涵盖 {len(target_langs)} 门语言平行矩阵。"
+            "preview_url": pv, "message": f"🎉 多语言对照电子书制作完成！涵盖 {len(target_langs)} 种语言对照。"
         }
 
     if len(target_langs) == 1:
@@ -203,7 +203,7 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir
         )
         if not out_path or not os.path.exists(out_path):
-            raise HTTPException(status_code=500, detail="电子书装订合成失败，未发现有效产物。")
+            raise HTTPException(status_code=500, detail="电子书制作失败，未生成有效产物。")
 
         filename, file_size = os.path.basename(out_path), os.path.getsize(out_path)
         chapters = assembler._collect_chapters(category=scope_cat, target_lang=s_lang)
@@ -211,7 +211,7 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         return {
             "success": True, "filename": filename, "file_size": file_size, "chapter_count": len(chapters),
             "format": payload.format, "download_url": f"/api/bindery/download?file={filename}",
-            "preview_url": pv, "message": f"数字装订完成！共收录 {len(chapters)} 篇章节，已封装为标准 {payload.format.upper()} 出版物。"
+            "preview_url": pv, "message": f"电子书制作完成！共收录 {len(chapters)} 篇章节，已生成标准 {payload.format.upper()} 文件。"
         }
 
     # 多语种矩阵模式：批量装订套系丛书
@@ -233,11 +233,11 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             })
 
     if not matrix_results:
-        raise HTTPException(status_code=500, detail="多语种矩阵出版装订失败，未生成有效产物。")
+        raise HTTPException(status_code=500, detail="多语言电子书制作失败，未生成有效产物。")
 
     return {
         "success": True, "mode": "matrix", "total_built": len(matrix_results), "results": matrix_results,
-        "format": payload.format, "message": f"🎉 多语种典籍矩阵出版完成！共生成 {len(matrix_results)} 册出版物。"
+        "format": payload.format, "message": f"🎉 多语言电子书制作完成！共生成 {len(matrix_results)} 本电子书。"
     }
 
 
