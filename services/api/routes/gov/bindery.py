@@ -187,10 +187,12 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         if not out_p or not os.path.exists(out_p):
             raise HTTPException(status_code=500, detail="多语平行对照典籍装订失败，未生成有效产物。")
         fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
+        chs = assembler._collect_chapters(category=scope_cat, target_lang=target_langs[0])
+        pv = f"/api/bindery/view?file={fn}" if payload.format == "webbook" else None
         return {
             "success": True, "mode": "polyglot", "filename": fn, "file_size": fs, "format": payload.format,
-            "languages": target_langs, "download_url": f"/api/bindery/download?file={fn}",
-            "message": f"🎉 多语平行对照典籍装订完成！涵盖 {len(target_langs)} 门语言平行矩阵，已封装为高质感 {payload.format.upper()} 出版物。"
+            "chapter_count": len(chs), "languages": target_langs, "download_url": f"/api/bindery/download?file={fn}",
+            "preview_url": pv, "message": f"🎉 多语平行对照典籍装订完成！涵盖 {len(target_langs)} 门语言平行矩阵。"
         }
 
     if len(target_langs) == 1:
@@ -205,10 +207,11 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
 
         filename, file_size = os.path.basename(out_path), os.path.getsize(out_path)
         chapters = assembler._collect_chapters(category=scope_cat, target_lang=s_lang)
+        pv = f"/api/bindery/view?file={filename}" if payload.format == "webbook" else None
         return {
             "success": True, "filename": filename, "file_size": file_size, "chapter_count": len(chapters),
             "format": payload.format, "download_url": f"/api/bindery/download?file={filename}",
-            "message": f"数字装订完成！共收录 {len(chapters)} 篇章节，已封装为标准 {payload.format.upper()} 出版物。"
+            "preview_url": pv, "message": f"数字装订完成！共收录 {len(chapters)} 篇章节，已封装为标准 {payload.format.upper()} 出版物。"
         }
 
     # 多语种矩阵模式：批量装订套系丛书
@@ -222,9 +225,11 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         if out_p and os.path.exists(out_p):
             fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
             chs = assembler._collect_chapters(category=scope_cat, target_lang=l_code)
+            pv = f"/api/bindery/view?file={fn}" if payload.format == "webbook" else None
             matrix_results.append({
                 "lang": l_code, "language": l_code, "filename": fn, "file_size": fs, "size_bytes": fs,
-                "chapter_count": len(chs), "format": payload.format, "download_url": f"/api/bindery/download?file={fn}"
+                "chapter_count": len(chs), "format": payload.format, "download_url": f"/api/bindery/download?file={fn}",
+                "preview_url": pv
             })
 
     if not matrix_results:
@@ -250,8 +255,7 @@ def _get_safe_book_path(file: str) -> str:
 
 @router.get("/api/bindery/download")
 async def download_ebook_publication(file: str = Query(..., description="待下载文件名")):
-    target = _get_safe_book_path(file)
-    ext = os.path.splitext(file)[1].lower()
+    target, ext = _get_safe_book_path(file), os.path.splitext(file)[1].lower()
     media_map = {".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf"}
     return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
 
@@ -261,11 +265,8 @@ async def view_ebook_webbook(file: str = Query(...)):
     target = _get_safe_book_path(file)
     if not file.lower().endswith(".html"): raise HTTPException(status_code=400, detail="仅支持 WebBook HTML 在线翻阅。")
     with open(target, "r", encoding="utf-8") as f:
-        return Response(
-            content=f.read(),
-            media_type="text/html; charset=utf-8",
-            headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
-        )
+        return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+
 
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
@@ -285,11 +286,8 @@ async def get_bindery_shelf() -> Dict[str, Any]:
                 })
         books.sort(key=lambda x: x["mtime"], reverse=True)
     return {"success": True, "books": books, "count": len(books)}
-
-
 @router.post("/api/bindery/delete", dependencies=[Depends(verify_token)])
 async def delete_ebook_from_shelf(payload: Dict[str, str] = Body(...)) -> Dict[str, Any]:
-    """🪓 从出版货架中归档删除指定书籍产物"""
     target = _get_safe_book_path(payload.get("filename", ""))
     try:
         os.remove(target)
