@@ -16,6 +16,7 @@ from xml.sax.saxutils import escape
 
 from .base import BaseEBookAdapter
 from .colophon import ColophonBuilder
+from core.bindery.toc_builder import TocBuilder
 from core.utils.tracing import tlog
 
 
@@ -56,18 +57,13 @@ nav li { margin: 0.4em 0; }
 a { color: #0284c7; text-decoration: underline; text-decoration-color: rgba(2, 132, 199, 0.35); text-underline-offset: 3px; }
 nav a { text-decoration: none; color: #0366d6; }
 .callout { margin: 1em 0; padding: 0.8em 1.2em; border-left: 4px solid #00f2fe; background-color: #f8fafc; border-radius: 4px; }
-.callout-tip { border-left-color: #10b981; background-color: #f0fdf4; }
-.callout-note, .callout-info { border-left-color: #0284c7; background-color: #f0f9ff; }
-.callout-warning { border-left-color: #f59e0b; background-color: #fffbeb; }
-.callout-danger { border-left-color: #ef4444; background-color: #fef2f2; }
+.callout-tip { border-left-color: #10b981; background-color: #f0fdf4; } .callout-warning { border-left-color: #f59e0b; background-color: #fffbeb; }
+.callout-note, .callout-info { border-left-color: #0284c7; background-color: #f0f9ff; } .callout-danger { border-left-color: #ef4444; background-color: #fef2f2; }
 .callout-title { font-weight: 700; margin-bottom: 0.3em; }
 .codehilite { background-color: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 0.8em 1em; margin: 1.2em 0; overflow-x: auto; }
 .codehilite pre { margin: 0; padding: 0; background: transparent; border: none; }
-.codehilite .k, .codehilite .o { color: #d73a49; font-weight: 600; }
-.codehilite .s, .codehilite .s1, .codehilite .s2 { color: #032f62; }
-.codehilite .nf, .codehilite .nc { color: #6f42c1; }
-.codehilite .c, .codehilite .c1 { color: #6a737d; font-style: italic; }
-.codehilite .mi, .codehilite .mf { color: #005cc5; }
+.codehilite .k, .codehilite .o { color: #d73a49; font-weight: 600; } .codehilite .s, .codehilite .s1, .codehilite .s2 { color: #032f62; }
+.codehilite .nf, .codehilite .nc { color: #6f42c1; } .codehilite .c, .codehilite .c1 { color: #6a737d; font-style: italic; } .codehilite .mi, .codehilite .mf { color: #005cc5; }
 .math-block { display: flex; justify-content: center; align-items: center; margin: 1.2em auto; overflow-x: auto; }
 math { font-size: 1.1em; }
 @media (prefers-color-scheme: dark) {
@@ -83,11 +79,8 @@ math { font-size: 1.1em; }
     .colophon-grid td.v { color: #ccc; }
     .colophon-footer { color: #777; }
     .codehilite { background-color: #161b22; border-color: #30363d; }
-    .codehilite .k, .codehilite .o { color: #ff7b72; }
-    .codehilite .s, .codehilite .s1, .codehilite .s2 { color: #a5d6ff; }
-    .codehilite .nf, .codehilite .nc { color: #d2a8ff; }
-    .codehilite .c, .codehilite .c1 { color: #8b949e; }
-    .codehilite .mi, .codehilite .mf { color: #79c0ff; }
+    .codehilite .k, .codehilite .o { color: #ff7b72; } .codehilite .s, .codehilite .s1, .codehilite .s2 { color: #a5d6ff; }
+    .codehilite .nf, .codehilite .nc { color: #d2a8ff; } .codehilite .c, .codehilite .c1 { color: #8b949e; } .codehilite .mi, .codehilite .mf { color: #79c0ff; }
     .math-block math { color: #e6edf3; fill: #e6edf3; }
 }
 """
@@ -165,6 +158,7 @@ math { font-size: 1.1em; }
                 toc_nav_points = []
                 nav_ol_items = []
                 packaged_assets = set()
+                ncx_order = 0
 
                 for idx, ch in enumerate(manuscript_tree):
                     ch_id = f"ch_{idx + 1}"
@@ -202,10 +196,19 @@ math { font-size: 1.1em; }
                     manifest_items.append(f'<item id="{ch_id}" href="{ch_filename}" media-type="application/xhtml+xml"{m_prop}/>')
                     spine_items.append(f'<itemref idref="{ch_id}"/>')
 
-                    nav_ol_items.append(f'<li><a href="{ch_filename}">{ch_title}</a></li>')
-                    toc_nav_points.append(f"""    <navPoint id="navPoint-{idx + 1}" playOrder="{idx + 1}">
+                    # 提取多级标题树并渲染层级大纲
+                    headings = TocBuilder.get_or_extract_headings(ch)
+                    ch_nav_ol = TocBuilder.render_epub_nav_ol(headings, ch_filename)
+                    nav_ol_items.append(f'<li><a href="{ch_filename}">{ch_title}</a>{ch_nav_ol}</li>')
+
+                    ncx_order += 1
+                    ch_play_order = ncx_order
+                    ncx_point_id = f"navPoint-{ch_play_order}"
+                    child_ncx, ncx_order = TocBuilder.render_epub_ncx_navpoints(headings, ch_filename, ncx_order)
+                    child_ncx_block = ("\n" + child_ncx) if child_ncx else ""
+                    toc_nav_points.append(f"""    <navPoint id="{ncx_point_id}" playOrder="{ch_play_order}">
       <navLabel><text>{ch_title}</text></navLabel>
-      <content src="{ch_filename}"/>
+      <content src="{ch_filename}"/>{child_ncx_block}
     </navPoint>""")
 
                 # 6. 写入出版版权页与物权指纹 (Colophon)
@@ -215,8 +218,9 @@ math { font-size: 1.1em; }
 
                 manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
                 spine_items.append('<itemref idref="colophon"/>')
+                ncx_order += 1
                 nav_ol_items.append('<li><a href="text/colophon.xhtml">版记 · Colophon</a></li>')
-                toc_nav_points.append(f"""    <navPoint id="navPoint-{len(manuscript_tree) + 1}" playOrder="{len(manuscript_tree) + 1}">
+                toc_nav_points.append(f"""    <navPoint id="navPoint-{ncx_order}" playOrder="{ncx_order}">
       <navLabel><text>版记 · Colophon</text></navLabel>
       <content src="text/colophon.xhtml"/>
     </navPoint>""")
@@ -242,7 +246,7 @@ math { font-size: 1.1em; }
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
   <head>
     <meta name="dtb:uid" content="urn:uuid:{book_uuid}"/>
-    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:depth" content="3"/>
     <meta name="dtb:totalPageCount" content="0"/>
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>

@@ -14,6 +14,7 @@ from core.adapters.egress.ebook import EBookRegistry
 from .cover_generator import CoverGenerator
 from .image_packager import ImagePackager
 from .math_packager import MathPackager
+from .toc_builder import TocBuilder
 from core.utils.tracing import tlog
 
 
@@ -81,11 +82,7 @@ class BookAssembler:
         cover_path = None
         if cover_mode != "none":
             if cover_mode == "auto":
-                cover_path = CoverGenerator.discover_cover(
-                    vault_dir=self.vault_dir,
-                    category=category,
-                    chapters=chapters
-                )
+                cover_path = CoverGenerator.discover_cover(vault_dir=self.vault_dir, category=category, chapters=chapters)
             # 若 auto 未找到，或显式指定 generated，则自动派生高雅排版艺术封面
             if not cover_path and cover_mode in ("auto", "generated"):
                 gen_cover_name = f"cover_{slug_prefix}_{cover_style}.png"
@@ -179,6 +176,8 @@ class BookAssembler:
             healed_body = self._rewrite_wikilinks_to_chapters(body, route_map, curr_ch_id=ch_id)
             md_converter.reset()
             html_content = md_converter.convert(healed_body)
+            raw_toc_tokens = getattr(md_converter, "toc_tokens", [])
+            headings = TocBuilder.extract_heading_tree(raw_toc_tokens, chapter_title=entry["title"])
             html_content = self._heal_html_hrefs(html_content, route_map, curr_ch_id=ch_id)
             html_content, assets = ImagePackager.extract_and_heal_images(html_content, p, self.vault_dir)
 
@@ -196,7 +195,8 @@ class BookAssembler:
                 "slug": entry["slug"],
                 "html_body": html_content,
                 "file_path": p,
-                "assets": assets
+                "assets": assets,
+                "headings": headings
             })
 
         return chapters

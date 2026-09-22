@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook.base import BaseEBookAdapter
 from core.adapters.egress.ebook.colophon import ColophonBuilder
+from core.bindery.toc_builder import TocBuilder
 from core.utils.tracing import tlog
 
 
@@ -85,7 +86,8 @@ class WebBookAdapter(BaseEBookAdapter):
                 healed_body = re.sub(r'href="ch_\d+\.xhtml#(.*?)"', r'href="#\1"', body_with_images)
                 healed_body = re.sub(r'href="(ch_\d+)\.xhtml"', r'href="#\1"', healed_body)
 
-                toc_items.append(f'<a href="#{ch_id}" class="wb-toc-item" data-id="{ch_id}"><span class="wb-toc-num">{idx + 1}.</span> {ch_title}</a>')
+                headings = TocBuilder.get_or_extract_headings(ch)
+                toc_items.append(TocBuilder.render_webbook_toc_group(idx, ch_id, ch_title, headings))
                 chapters_html.append(f"""
                 <article id="{ch_id}" class="wb-chapter" data-title="{ch_title}">
                     <header class="wb-chapter-header">
@@ -100,7 +102,7 @@ class WebBookAdapter(BaseEBookAdapter):
             colophon_body = ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang)
             colophon_match = re.search(r'<body[^>]*>(.*?)</body>', colophon_body, flags=re.DOTALL)
             clean_colophon = colophon_match.group(1) if colophon_match else colophon_body
-            toc_items.append('<a href="#colophon" class="wb-toc-item" data-id="colophon"><span class="wb-toc-num">✦</span> 版记 · Colophon</a>')
+            toc_items.append('<div class="wb-toc-group" data-ch-id="colophon"><div class="wb-toc-row"><a href="#colophon" class="wb-toc-item wb-toc-chapter" data-id="colophon"><span class="wb-toc-num">✦</span> 版记 · Colophon</a></div></div>')
             chapters_html.append(f'<article id="colophon" class="wb-chapter">{clean_colophon}</article>')
 
             # 5. 渲染整卷完整自包含 WebBook
@@ -182,10 +184,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .wb-cover-img { max-height: 140px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid var(--border); }
 .wb-search-box { padding: 10px 14px; }
 .wb-search-box input { width: 100%; padding: 6px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.85rem; }
-.wb-toc { flex: 1; overflow-y: auto; padding: 4px 10px; }
-.wb-toc-item { display: block; padding: 7px 10px; text-decoration: none; color: var(--text-main); font-size: 0.88rem; border-radius: 6px; margin-bottom: 3px; }
-.wb-toc-item:hover { background: rgba(16,185,129,0.1); color: var(--accent); }
+.wb-toc { flex: 1; overflow-y: auto; padding: 4px 8px; }
+.wb-toc-group { margin-bottom: 2px; }
+.wb-toc-row { display: flex; align-items: center; justify-content: space-between; border-radius: 6px; }
+.wb-toc-row:hover { background: rgba(16,185,129,0.08); }
+.wb-toc-item { flex: 1; display: block; padding: 6px 8px; text-decoration: none; color: var(--text-main); font-size: 0.88rem; border-radius: 6px; }
+.wb-toc-item:hover { color: var(--accent); }
 .wb-toc-item.active { background: var(--accent); color: #fff; font-weight: 600; }
+.wb-toc-item.active-ch { color: var(--accent); font-weight: 600; }
+.wb-toc-toggle { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px; font-size: 0.78rem; transition: transform 0.2s; border-radius: 4px; }
+.wb-toc-toggle:hover { color: var(--accent); background: rgba(16,185,129,0.12); }
+.wb-toc-group.collapsed .wb-toc-toggle { transform: rotate(-90deg); }
+.wb-toc-group.collapsed .wb-toc-sub { display: none; }
+.wb-toc-sub { margin-left: 10px; padding-left: 8px; border-left: 1px solid var(--border); margin-top: 1px; margin-bottom: 3px; }
+.wb-toc-subitem { display: block; padding: 3px 6px; text-decoration: none; color: var(--text-dim); font-size: 0.81rem; border-radius: 4px; line-height: 1.4; }
+.wb-toc-subitem:hover { color: var(--accent); background: rgba(16,185,129,0.06); }
+.wb-toc-subitem.active { color: var(--accent); font-weight: 600; background: rgba(16,185,129,0.12); }
+.wb-toc-h3 { margin-left: 8px; font-size: 0.76rem; opacity: 0.88; }
+.wb-toc-bullet { opacity: 0.5; margin-right: 4px; font-size: 0.7rem; }
 .wb-toc-num { opacity: 0.65; margin-right: 4px; }
 .wb-sidebar-footer { font-size: 0.72rem; color: var(--text-dim); text-align: center; padding: 8px; border-top: 1px solid var(--border); }
 .wb-main { flex: 1; margin-left: 300px; padding: 30px 40px 100px; transition: margin 0.3s; }
@@ -229,22 +245,43 @@ math { font-size: 1.1em; color: var(--text-title); }
   let fs = 16;
   document.getElementById('wb-font-inc').onclick = () => { fs = Math.min(24, fs + 1); document.documentElement.style.setProperty('--font-size', fs + 'px'); };
   document.getElementById('wb-font-dec').onclick = () => { fs = Math.max(13, fs - 1); document.documentElement.style.setProperty('--font-size', fs + 'px'); };
-  const search = document.getElementById('wb-search'), tocItems = document.querySelectorAll('.wb-toc-item');
+  document.querySelectorAll('.wb-toc-toggle').forEach(t => {
+    t.onclick = (e) => { e.stopPropagation(); const g = t.closest('.wb-toc-group'); if (g) g.classList.toggle('collapsed'); };
+  });
+  const search = document.getElementById('wb-search'), groups = document.querySelectorAll('.wb-toc-group');
   search.oninput = (e) => {
     const q = e.target.value.toLowerCase().trim();
-    tocItems.forEach(item => { item.style.display = (!q || item.textContent.toLowerCase().includes(q)) ? 'block' : 'none'; });
+    groups.forEach(g => {
+      if (!q) { g.style.display = ''; g.querySelectorAll('.wb-toc-subitem').forEach(s => s.style.display = ''); return; }
+      const ch = g.querySelector('.wb-toc-chapter'), subs = g.querySelectorAll('.wb-toc-subitem');
+      let chM = ch && ch.textContent.toLowerCase().includes(q), subM = 0;
+      subs.forEach(s => { const m = s.textContent.toLowerCase().includes(q); s.style.display = m ? '' : 'none'; if (m) subM++; });
+      if (chM || subM > 0) { g.style.display = ''; g.classList.remove('collapsed'); } else { g.style.display = 'none'; }
+    });
   };
   window.onscroll = () => {
-    const winScroll = document.documentElement.scrollTop, height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    document.getElementById('wb-progress').style.width = (height ? (winScroll / height * 100) : 0) + '%';
+    const s = document.documentElement.scrollTop, h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById('wb-progress').style.width = (h ? (s / h * 100) : 0) + '%';
   };
+  const targets = document.querySelectorAll('.wb-chapter, .wb-chapter-body h2[id], .wb-chapter-body h3[id]');
+  const allLinks = document.querySelectorAll('.wb-toc-item, .wb-toc-subitem');
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         const id = e.target.id;
-        tocItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-id') === id));
+        const matched = document.querySelector(`.wb-toc-subitem[data-id="${id}"], .wb-toc-item[data-id="${id}"]`);
+        if (matched) {
+          allLinks.forEach(l => l.classList.remove('active', 'active-ch'));
+          matched.classList.add('active');
+          const grp = matched.closest('.wb-toc-group');
+          if (grp) {
+            grp.classList.remove('collapsed');
+            const chLink = grp.querySelector('.wb-toc-chapter');
+            if (chLink && chLink !== matched) chLink.classList.add('active-ch');
+          }
+        }
       }
     });
-  }, { rootMargin: '-20% 0px -70% 0px' });
-  document.querySelectorAll('.wb-chapter').forEach(ch => obs.observe(ch));
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  targets.forEach(t => obs.observe(t));
 })();"""
