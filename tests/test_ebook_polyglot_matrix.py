@@ -79,3 +79,33 @@ def test_polyglot_webbook_export_and_dom_integrity():
         # 3. 版记数字物权标识
         assert "urn:uuid:" in content
         assert "N/A" not in content[content.find("urn:uuid:"):content.find("urn:uuid:") + 100]
+
+
+def test_webbook_reading_preferences_and_keyboard_shortcuts():
+    """验证 WebBook 沉浸翻阅全套偏好记忆与键盘快捷翻章运行时"""
+    from core.adapters.egress.ebook.webbook_assets import WebBookAssets
+    js = WebBookAssets.get_embedded_js()
+    css = WebBookAssets.get_embedded_css()
+
+    # 1. 主题与字号偏好
+    assert "wb_theme" in js
+    assert "wb_fs" in js
+    assert "wb-theme-btn" in js
+
+    # 2. 侧边栏折叠与阅读进度滚动恢复
+    assert "wb_sb_collapsed" in js
+    assert "wb_scroll_pos" in js
+
+    # 3. 主语言与多栏对照矩阵记忆
+    assert "wb_primary_lang" in js
+    assert "wb_compare_langs" in js
+
+    # 4. 键盘左右方向键与 J/K 平滑翻章
+    assert "ArrowLeft" in js
+    assert "ArrowRight" in js
+    assert "window.scrollTo" in js
+
+    # 5. CSS 主题变量完备性
+    assert '[data-theme="light"]' in css
+    assert '[data-theme="sepia"]' in css
+
