@@ -98,7 +98,7 @@ def test_launch_native_window_fallback():
 def test_desktop_packager_assemble_args():
     """验证 PyInstaller 打包参数组装规范与关键隐藏依赖"""
     args = DesktopPackager.assemble_build_args(output_dir="dist/test_app")
-    assert "pyinstaller" in args[0]
+    assert "pyinstaller" in " ".join(args[:3]).lower()
     assert "--windowed" in args
     assert "--name=Illacme-Plenipes" in args
     assert any("--distpath=dist/test_app" in a for a in args)

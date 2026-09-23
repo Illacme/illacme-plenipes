@@ -56,17 +56,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller pywebview pillow
+          pip install pyinstaller pillow
 
       - name: 🔨 启动自动化打包流水线
         run: |
           python scripts/build_desktop.py
 
+      - name: 🔍 检查编译产物拓扑
+        shell: bash
+        run: |
+          echo "=== 产物目录结构 ==="
+          ls -la dist/desktop/
+
       - name: 🗜️ 压缩归档打包产物 (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/desktop/* -DestinationPath ${{ matrix.artifact-name }}
+          Compress-Archive -Path dist/desktop/* -DestinationPath ${{ matrix.artifact-name }} -Force
           Get-Item ${{ matrix.artifact-name }} | Select-Object Name, Length
 
       - name: 🗜️ 压缩归档打包产物 (macOS)

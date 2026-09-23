@@ -32,7 +32,9 @@ class DesktopPackager:
         ]
 
         args = [
-            "pyinstaller",
+            sys.executable,
+            "-m",
+            "PyInstaller",
             "--noconfirm",
             "--clean",
             "--windowed",
@@ -93,13 +95,13 @@ class DesktopPackager:
             if system == "Darwin":
                 iconset_dir = os.path.join(out_dir, "AppIcon.iconset")
                 os.makedirs(iconset_dir, exist_ok=True)
-                sizes = [16, 32, 64, 128, 256, 512]
+                # 严格对齐 Apple 官方 iconutil 5 大标准规格 (16/32/128/256/512 @1x & @2x)
+                sizes = [16, 32, 128, 256, 512]
                 for s in sizes:
                     resized = img.resize((s, s), Image.Resampling.LANCZOS)
                     resized.save(os.path.join(iconset_dir, f"icon_{s}x{s}.png"))
-                    if s <= 256:
-                        resized_2x = img.resize((s * 2, s * 2), Image.Resampling.LANCZOS)
-                        resized_2x.save(os.path.join(iconset_dir, f"icon_{s}x{s}@2x.png"))
+                    resized_2x = img.resize((s * 2, s * 2), Image.Resampling.LANCZOS)
+                    resized_2x.save(os.path.join(iconset_dir, f"icon_{s}x{s}@2x.png"))
                 icns_path = os.path.join(out_dir, "AppIcon.icns")
                 if shutil.which("iconutil"):
                     subprocess.run(["iconutil", "-c", "icns", iconset_dir, "-o", icns_path], check=True)
@@ -118,11 +120,13 @@ class DesktopPackager:
     def execute_build(cls, dry_run: bool = False, output_dir: str = "dist/desktop") -> bool:
         """执行完整打包流程"""
         tlog.info("🔨 [打包工坊] 启动 Illacme Plenipes 独立桌面客户端构建...")
-        
-        pyinstaller_bin = shutil.which("pyinstaller")
-        if not pyinstaller_bin and not dry_run:
-            tlog.error("❌ 未检测到 pyinstaller，请先安装: pip install pyinstaller pywebview pillow")
-            return False
+
+        if not dry_run:
+            try:
+                import PyInstaller  # noqa: F401
+            except ImportError:
+                tlog.error("❌ 未检测到 PyInstaller，请先安装: pip install pyinstaller pillow")
+                return False
 
         icon_path = cls.generate_icon()
         if icon_path:
@@ -135,6 +139,7 @@ class DesktopPackager:
             tlog.info("🧪 [Dry-Run] 校验完成，构建配置合法严谨。")
             return True
 
+        os.makedirs(output_dir, exist_ok=True)
         try:
             res = subprocess.run(cmd, check=True)
             if res.returncode == 0:
