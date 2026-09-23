@@ -1,6 +1,6 @@
 /**
  * Illacme Plenipes - Vault Bindery Shelf Manager
- * 模块职责：管理已编排出版物货架 (Book Shelf)，支持在线即时翻阅、下载、沿用配置重新装订与归档删除。
+ * 模块职责：管理已编排出版物货架 (Book Shelf)，支持在线即时翻阅、下载、系统定位、沿用配置重新装订、归档删除与优雅分页控制。
  * 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
  */
 (function() {
@@ -9,6 +9,8 @@
     window._binderyShelfBooks = [];
     window._binderyShelfFilter = 'all';
     window._binderyShelfQuery = '';
+    window._binderyShelfPage = 1;
+    window._binderyShelfPageSize = 5;
 
     function formatTime(mtime) {
         if (!mtime) return '刚刚';
@@ -43,11 +45,18 @@
 
     window.setBinderyShelfFilter = function(filter) {
         window._binderyShelfFilter = filter || 'all';
+        window._binderyShelfPage = 1;
         window.renderBinderyShelfHtml();
     };
 
     window.setBinderyShelfQuery = function(query) {
         window._binderyShelfQuery = (query || '').trim().toLowerCase();
+        window._binderyShelfPage = 1;
+        window.renderBinderyShelfHtml();
+    };
+
+    window.changeBinderyShelfPage = function(newPage) {
+        window._binderyShelfPage = Math.max(1, newPage);
         window.renderBinderyShelfHtml();
     };
 
@@ -95,7 +104,17 @@
             return;
         }
 
-        const itemsHtml = filtered.map(b => {
+        const totalItems = filtered.length;
+        const pageSize = window._binderyShelfPageSize || 5;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (window._binderyShelfPage > totalPages) window._binderyShelfPage = totalPages;
+        if (window._binderyShelfPage < 1) window._binderyShelfPage = 1;
+        const currentPage = window._binderyShelfPage;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const pagedBooks = filtered.slice(startIdx, startIdx + pageSize);
+
+        const itemsHtml = pagedBooks.map(b => {
             const isWb = b.format === 'webbook', isPdf = b.format === 'pdf';
             const icon = isWb ? '🌐' : (isPdf ? '📄' : '📖');
             let fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">EPUB 3.0</span>';
@@ -132,7 +151,21 @@
             `;
         }).join('');
 
-        shelfContainer.innerHTML = toolbarHtml + `<div style="max-height:330px; overflow-y:auto; padding-right:4px;">${itemsHtml}</div>`;
+        const paginationHtml = `
+            <div class="pagination-container" style="display:flex; justify-content:space-between; align-items:center; padding:10px 4px 4px 4px; margin-top:8px; border-top:1px solid var(--glass-border, rgba(255,255,255,0.08)); font-size:0.75rem;">
+                <div style="color:var(--text-dim, rgba(255,255,255,0.55));">
+                    第 <span style="color:var(--accent, #10b981); font-weight:700;">${currentPage}</span> / ${totalPages} 页 · 共 <strong style="color:var(--text-bright, #fff);">${totalItems}</strong> 本出版物
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button type="button" class="mini-btn" ${currentPage <= 1 ? 'disabled style="opacity:0.35; cursor:not-allowed; padding:3px 7px; font-size:0.72rem;"' : 'onclick="window.changeBinderyShelfPage(1)" style="padding:3px 7px; font-size:0.72rem; cursor:pointer;"'} title="首页">⏮️ 首页</button>
+                    <button type="button" class="mini-btn" ${currentPage <= 1 ? 'disabled style="opacity:0.35; cursor:not-allowed; padding:3px 7px; font-size:0.72rem;"' : `onclick="window.changeBinderyShelfPage(${currentPage - 1})" style="padding:3px 7px; font-size:0.72rem; cursor:pointer;"`} title="上一页">◀️ 上一页</button>
+                    <button type="button" class="mini-btn" ${currentPage >= totalPages ? 'disabled style="opacity:0.35; cursor:not-allowed; padding:3px 7px; font-size:0.72rem;"' : `onclick="window.changeBinderyShelfPage(${currentPage + 1})" style="padding:3px 7px; font-size:0.72rem; cursor:pointer;"`} title="下一页">▶️ 下一页</button>
+                    <button type="button" class="mini-btn" ${currentPage >= totalPages ? 'disabled style="opacity:0.35; cursor:not-allowed; padding:3px 7px; font-size:0.72rem;"' : `onclick="window.changeBinderyShelfPage(${totalPages})" style="padding:3px 7px; font-size:0.72rem; cursor:pointer;"`} title="尾页">⏭️ 尾页</button>
+                </div>
+            </div>
+        `;
+
+        shelfContainer.innerHTML = toolbarHtml + `<div style="max-height:330px; overflow-y:auto; padding-right:4px;">${itemsHtml}</div>` + paginationHtml;
     };
 
     window.rebindBookFromShelf = function(filename) {
@@ -184,107 +217,6 @@
         } catch (e) {
             console.error('[BinderyShelf] 删除异常:', e);
             alert(`删除失败: ${e.message}`);
-        }
-    };
-
-    function _getTemplates() {
-        return window.BinderyTemplates || {
-            ensureStyles: () => {}, esc: s => s || '', formatSize: b => `${b} B`,
-            buildLoadingHtml: () => '<div>正在加载...</div>', buildModalCardHtml: () => '<div>装订面板</div>', buildSuccessStatusHtml: () => '<div>装订成功</div>'
-        };
-    }
-
-    window.executeBookBinding = async function() {
-        const tpl = _getTemplates(), titleInput = document.getElementById('bindery-input-title');
-        const authorInput = document.getElementById('bindery-input-author'), scopeSelect = document.getElementById('bindery-select-scope');
-        const langSelect = document.getElementById('bindery-select-lang'), modeSelect = document.getElementById('bindery-select-cover-mode');
-        const styleSelect = document.getElementById('bindery-select-cover-style'), statusArea = document.getElementById('bindery-status-area');
-        const submitBtn = document.getElementById('btn-execute-binding');
-        if (!titleInput || !submitBtn) return;
-
-        const payload = {
-            format: window._activeBinderyFormat || 'epub', scope: scopeSelect ? scopeSelect.value : 'all',
-            title: titleInput.value.trim() || undefined, author: authorInput ? authorInput.value.trim() || undefined : undefined,
-            cover_mode: modeSelect ? modeSelect.value : 'auto', cover_style: styleSelect ? styleSelect.value : 'dark_emerald'
-        };
-        const langMode = langSelect ? langSelect.value : 'zh';
-        if (langMode === 'polyglot' || langMode === 'matrix_batch') {
-            const selectedLangs = Array.from(document.querySelectorAll('.bindery-matrix-cb:checked')).map(cb => cb.value);
-            if (selectedLangs.length === 0) {
-                if (typeof window.showToast === 'function') window.showToast('请至少勾选一个目标语种', 'warning');
-                return;
-            }
-            payload.languages = selectedLangs;
-            if (langMode === 'polyglot') payload.polyglot_mode = true;
-        } else {
-            payload.lang = langMode;
-        }
-
-        submitBtn.disabled = true; submitBtn.style.opacity = '0.7';
-        submitBtn.innerHTML = payload.polyglot_mode ? `<span>⚙️ 正在制作多语对照电子书...</span>` : (payload.languages ? `<span>⚙️ 正在并发制作 (${payload.languages.length} 本)...</span>` : `<span>⚙️ 正在制作...</span>`);
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-
-        if (statusArea) {
-            statusArea.style.display = 'block';
-            statusArea.style.background = isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(0, 242, 254, 0.08)';
-            statusArea.style.border = isLight ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid rgba(0, 242, 254, 0.25)';
-            statusArea.style.color = isLight ? '#0284c7' : '#00f2fe';
-            statusArea.innerHTML = payload.polyglot_mode ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语对照内容并生成 WebBook...` : (payload.languages ? `⏳ 正在并发制作 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语言电子书...` : `⏳ 正在遍历文库章节、提取元数据并生成电子书...`);
-        }
-
-        if (typeof window.addAudit === 'function') {
-            const desc = window._binderyMatrixMode ? `多语言[${payload.languages.join(',')}]` : payload.lang;
-            window.addAudit(`📚 开始制作电子书: [${payload.title || '默认书名'}] (${desc})`);
-        }
-
-        try {
-            const fetchFunc = window.apiFetch || window.fetch;
-            const res = await fetchFunc('/api/bindery/build', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            let result = (res && typeof res.json === 'function') ? await res.json() : res;
-
-            if (result && result.success) {
-                const formattedSize = tpl.formatSize(result.file_size || 0);
-                if (statusArea) {
-                    Object.assign(statusArea.style, { background: isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)', border: isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)', color: isLight ? '#047857' : '#10b981' });
-                    statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
-                }
-                submitBtn.disabled = true; submitBtn.style.opacity = '0.85'; submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
-                const cancelBtn = document.getElementById('btn-bindery-cancel');
-                if (cancelBtn) cancelBtn.textContent = '关闭';
-                if (window._binderySuccessTimer) clearTimeout(window._binderySuccessTimer);
-                window._binderySuccessTimer = setTimeout(() => {
-                    const btn = document.getElementById('btn-execute-binding');
-                    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = `<span>🔄 重新装订</span>`; }
-                }, 1800);
-                if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
-
-                if (result.mode === 'matrix' && Array.isArray(result.results)) {
-                    const count = result.total_built || result.results.length;
-                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 多语言电子书制作完成: 共 ${count} 本`);
-                    if (typeof window.showToast === 'function') window.showToast(`🎉 成功制作 ${count} 本多语言电子书！`, 'success');
-                    if (result.results.length > 0 && result.results[0].download_url) {
-                        const first = result.results[0], dlLink = document.createElement('a');
-                        dlLink.href = first.download_url; dlLink.download = first.filename;
-                        document.body.appendChild(dlLink); dlLink.click(); setTimeout(() => dlLink.remove(), 1000);
-                    }
-                } else {
-                    if (typeof window.addAudit === 'function') window.addAudit(`✅ 电子书已落盘: ${result.filename} (${formattedSize})`);
-                    if (typeof window.showToast === 'function') window.showToast(`电子书 ${result.filename} 装订成功！`, 'success');
-                    const dlLink = document.createElement('a');
-                    dlLink.href = result.download_url; dlLink.download = result.filename;
-                    document.body.appendChild(dlLink); dlLink.click(); setTimeout(() => dlLink.remove(), 1000);
-                }
-            } else {
-                throw new Error((result && (result.detail || result.error || result.message)) || '装订返回异常');
-            }
-        } catch (err) {
-            console.error('[Bindery] 装订流程异常:', err);
-            if (statusArea) {
-                statusArea.style.display = 'block';
-                Object.assign(statusArea.style, { background: isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)', border: isLight ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)', color: isLight ? '#dc2626' : '#ff6b6b' });
-                statusArea.innerHTML = `❌ 装订失败：${tpl.esc(err.message || '系统内部异常')}`;
-            }
-            submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.innerHTML = `<span>重新装订</span>`;
         }
     };
 })();
