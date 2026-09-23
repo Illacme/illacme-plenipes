@@ -28,11 +28,17 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            os-name: Windows
+            os-name: Windows (x64)
             artifact-name: Illacme-Plenipes-Windows-x64.zip
-          - os: macos-latest
-            os-name: macOS
-            artifact-name: Illacme-Plenipes-macOS.zip
+          - os: macos-14
+            os-name: macOS (Apple Silicon arm64)
+            artifact-name: Illacme-Plenipes-macOS-AppleSilicon-arm64.zip
+          - os: macos-13
+            os-name: macOS (Intel x64)
+            artifact-name: Illacme-Plenipes-macOS-Intel-x64.zip
+          - os: ubuntu-latest
+            os-name: Linux (x64)
+            artifact-name: Illacme-Plenipes-Linux-x64.tar.gz
 
     permissions:
       contents: write
@@ -78,6 +84,12 @@ jobs:
           cd dist/desktop
           zip -r -y ../../${{ matrix.artifact-name }} Illacme-Plenipes.app
           cd ../..
+          ls -lh ${{ matrix.artifact-name }}
+
+      - name: 🗜️ 压缩归档打包产物 (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          tar -czf ${{ matrix.artifact-name }} -C dist/desktop Illacme-Plenipes
           ls -lh ${{ matrix.artifact-name }}
 
       - name: 📤 上传构建产物 (GitHub Actions Artifacts)
