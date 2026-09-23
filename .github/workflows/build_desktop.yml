@@ -82,21 +82,34 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd dist/desktop
-          zip -r -y ../../${{ matrix.artifact-name }} Illacme-Plenipes.app
+          zip -r -y ../../${{ matrix.artifact-name }} Illacme-Plenipes.app README_使用说明.txt
           cd ../..
           ls -lh ${{ matrix.artifact-name }}
 
       - name: 🗜️ 压缩归档打包产物 (Linux)
         if: runner.os == 'Linux'
         run: |
-          tar -czf ${{ matrix.artifact-name }} -C dist/desktop Illacme-Plenipes
+          tar -czf ${{ matrix.artifact-name }} -C dist/desktop Illacme-Plenipes README_使用说明.txt
           ls -lh ${{ matrix.artifact-name }}
+
+      - name: 🔏 计算发布产物 SHA256 校验和
+        shell: bash
+        run: |
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${{ matrix.artifact-name }}" > "${{ matrix.artifact-name }}.sha256"
+          elif command -v shasum >/dev/null 2>&1; then
+            shasum -a 256 "${{ matrix.artifact-name }}" > "${{ matrix.artifact-name }}.sha256"
+          fi
+          echo "=== SHA256 校验和 ==="
+          cat "${{ matrix.artifact-name }}.sha256"
 
       - name: 📤 上传构建产物 (GitHub Actions Artifacts)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: ${{ matrix.artifact-name }}
+          path: |
+            ${{ matrix.artifact-name }}
+            ${{ matrix.artifact-name }}.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -118,7 +131,9 @@ jobs:
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: "Illacme Plenipes ${{ steps.vars.outputs.tag }}"
-          files: ${{ matrix.artifact-name }}
+          files: |
+            ${{ matrix.artifact-name }}
+            ${{ matrix.artifact-name }}.sha256
           draft: false
           prerelease: false
           generate_release_notes: true

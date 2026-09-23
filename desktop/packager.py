@@ -140,11 +140,44 @@ class DesktopPackager:
         try:
             res = subprocess.run(cmd, check=True)
             if res.returncode == 0:
+                cls.write_quickstart_guide(output_dir)
                 tlog.info(f"🎉 [打包成功] 桌面应用已编译输出至: {os.path.abspath(output_dir)}")
                 return True
         except subprocess.CalledProcessError as e:
             tlog.error(f"❌ [打包失败] PyInstaller 编译异常中断: {e}")
         return False
+
+    @classmethod
+    def write_quickstart_guide(cls, output_dir: str):
+        """生成客户端快速启动与各操作系统指引文档"""
+        guide_content = """============================================================
+Illacme Plenipes · 全球私人出版社桌面客户端
+============================================================
+
+【快速启动指引】
+1. Windows:
+   - 双击直接运行 Illacme-Plenipes.exe，无需安装任何 Python 运行环境。
+2. macOS:
+   - 将 Illacme-Plenipes.app 移动至“应用程序 (Applications)”目录；
+   - 首次启动若提示“无法打开”或“未知开发者”，请打开“系统设置 -> 隐私与安全性”，点击“仍要打开”；
+   - 或在终端执行: sudo xattr -cr /Applications/Illacme-Plenipes.app
+3. Linux:
+   - 在解压目录下赋予执行权限并启动:
+     chmod +x Illacme-Plenipes && ./Illacme-Plenipes
+
+【系统网络与端口规范】
+- 出版社核心网关: http://127.0.0.1:43212
+- 单例守护端口: 43210 (防止多实例冲突)
+- 若已有实例运行，新打开客户端将自动无缝激活浏览器控制台。
+
+祝您出版愉快！
+"""
+        try:
+            guide_path = os.path.join(output_dir, "README_使用说明.txt")
+            with open(guide_path, "w", encoding="utf-8") as f:
+                f.write(guide_content)
+        except Exception:
+            pass
 
 
 def main():
