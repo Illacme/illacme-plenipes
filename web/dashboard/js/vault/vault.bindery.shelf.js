@@ -124,6 +124,7 @@
                     <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:12px;">
                         ${previewBtn}
                         <a href="${b.download_url}" download="${b.filename}" class="secondary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-bright, #fff);">⬇️</a>
+                        <button onclick="window.revealBookInFolder('${b.filename}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:4px 8px; font-size:0.85rem; border:1px solid var(--glass-border, rgba(255,255,255,0.12)); display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-bright, #fff); cursor:pointer;">📂</button>
                         <button onclick="window.rebindBookFromShelf('${b.filename}')" class="secondary-btn" title="沿用此配置重新装订" style="padding:4px 8px; font-size:0.85rem; border:1px solid var(--glass-border, rgba(255,255,255,0.12)); display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--text-bright, #fff); cursor:pointer;">🔄</button>
                         <button onclick="window.deleteBookFromShelf('${b.filename}')" class="bindery-del-btn" title="从书架中删除" style="background:none; border:none; color:var(--text-dim, rgba(255,255,255,0.4)); font-size:0.9rem; cursor:pointer; padding:4px 6px; border-radius:4px; transition:color 0.2s;">🗑️</button>
                     </div>
@@ -244,24 +245,16 @@
             if (result && result.success) {
                 const formattedSize = tpl.formatSize(result.file_size || 0);
                 if (statusArea) {
-                    statusArea.style.background = isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)';
-                    statusArea.style.border = isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)';
-                    statusArea.style.color = isLight ? '#047857' : '#10b981';
+                    Object.assign(statusArea.style, { background: isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)', border: isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)', color: isLight ? '#047857' : '#10b981' });
                     statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
                 }
-                submitBtn.disabled = true;
-                submitBtn.style.opacity = '0.85';
-                submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
+                submitBtn.disabled = true; submitBtn.style.opacity = '0.85'; submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
                 const cancelBtn = document.getElementById('btn-bindery-cancel');
                 if (cancelBtn) cancelBtn.textContent = '关闭';
                 if (window._binderySuccessTimer) clearTimeout(window._binderySuccessTimer);
                 window._binderySuccessTimer = setTimeout(() => {
                     const btn = document.getElementById('btn-execute-binding');
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.innerHTML = `<span>🔄 重新装订</span>`;
-                    }
+                    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = `<span>🔄 重新装订</span>`; }
                 }, 1800);
                 if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
@@ -288,9 +281,7 @@
             console.error('[Bindery] 装订流程异常:', err);
             if (statusArea) {
                 statusArea.style.display = 'block';
-                statusArea.style.background = isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)';
-                statusArea.style.border = isLight ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)';
-                statusArea.style.color = isLight ? '#dc2626' : '#ff6b6b';
+                Object.assign(statusArea.style, { background: isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)', border: isLight ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)', color: isLight ? '#dc2626' : '#ff6b6b' });
                 statusArea.innerHTML = `❌ 装订失败：${tpl.esc(err.message || '系统内部异常')}`;
             }
             submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.innerHTML = `<span>重新装订</span>`;

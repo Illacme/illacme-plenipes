@@ -155,3 +155,47 @@ async def pick_directory_logic() -> Dict[str, Any]:
             return {"success": False, "error": str(e)}
     
     return {"success": False, "unsupported": True, "message": "当前服务器环境暂无图形界面，请直接手动输入绝对路径"}
+
+
+def reveal_file_logic(target_path: str) -> Dict[str, Any]:
+    """📂 [V126.0] 在操作系统文件管理器中高亮定位物理文件 (Show in Finder / Explorer)"""
+    if not target_path or not isinstance(target_path, str):
+        return {"success": False, "error": "无效的文件路径参数"}
+
+    abs_path = os.path.abspath(target_path.strip())
+    if not os.path.exists(abs_path):
+        return {"success": False, "error": f"文件不存在或已被移除: {os.path.basename(abs_path)}"}
+
+    # 安全白名单校验 (SOP-04 & Rule #10)
+    allowed_roots = [
+        os.path.abspath("dist"),
+        os.path.abspath("workspace"),
+        os.path.abspath("content-vault"),
+        os.path.abspath("."),
+    ]
+    engine = _get_engine()
+    if engine and hasattr(engine, "vault_root") and engine.vault_root:
+        allowed_roots.append(os.path.abspath(engine.vault_root))
+
+    is_safe = any(abs_path == r or abs_path.startswith(r + os.sep) for r in allowed_roots)
+    if not is_safe:
+        return {"success": False, "error": "禁止跨越主权安全边界访问非受信任系统路径"}
+
+    system = sys.platform
+    try:
+        if system == "darwin":
+            subprocess.run(["open", "-R", abs_path], check=True)
+            return {"success": True, "message": "已在访达 (Finder) 中定位文件", "path": abs_path}
+        elif system == "win32":
+            subprocess.run(["explorer", f"/select,{abs_path}"], check=True)
+            return {"success": True, "message": "已在资源管理器中定位文件", "path": abs_path}
+        else:
+            import shutil
+            parent_dir = os.path.dirname(abs_path)
+            if shutil.which("nautilus"):
+                subprocess.Popen(["nautilus", "--select", abs_path])
+            elif shutil.which("xdg-open"):
+                subprocess.Popen(["xdg-open", parent_dir])
+            return {"success": True, "message": "已在文件管理器中打开所在目录", "path": abs_path}
+    except Exception as e:
+        return {"success": False, "error": f"唤起文件管理器失败: {e}"}

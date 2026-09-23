@@ -15,6 +15,7 @@ from .system_health_ops import (
     get_health_matrix_logic,
     get_supported_languages_logic,
     pick_directory_logic,
+    reveal_file_logic,
 )
 from .preview_ops import (
     SwitchAndLaunchPreviewRequest,
@@ -52,6 +53,7 @@ __all__ = [
     "get_health_matrix_logic",
     "get_supported_languages_logic",
     "pick_directory_logic",
+    "reveal_file_logic",
     "SwitchAndLaunchPreviewRequest",
     "switch_and_launch_preview_logic",
     "restart_preview_logic",

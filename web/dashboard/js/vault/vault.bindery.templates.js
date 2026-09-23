@@ -258,7 +258,7 @@
                 const chNum = (r.chapter_count !== undefined && r.chapter_count !== null) ? `${r.chapter_count}篇 / ` : '';
                 return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem; gap:8px;">
                     <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.filename)}"><strong>[${esc(r.language.toUpperCase())}]</strong> ${esc(r.filename)} (${chNum}${sz})</span>
-                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" title="下载电子书" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a></div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<button type="button" onclick="window.revealBookInFolder('${esc(r.filename)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📂</button><a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" title="下载电子书" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a></div>
                 </div>`;
             }).join('');
 
@@ -279,6 +279,7 @@
             <div style="min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><strong>🎉 装订完成！</strong> ${countText} (${formattedSize})</div>
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                 ${pvBtn}
+                <button type="button" onclick="window.revealBookInFolder('${esc(result.filename)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📂</button>
                 <a href="${result.download_url}" download="${esc(result.filename)}" class="primary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#10b981; color:#fff; flex-shrink:0;">⬇️</a>
             </div>
         </div>`;

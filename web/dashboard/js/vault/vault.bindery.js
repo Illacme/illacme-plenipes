@@ -82,21 +82,16 @@
                 if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
             }, 250);
         };
-
-        const titleInput = document.getElementById('bindery-input-title');
-        const authorInput = document.getElementById('bindery-input-author');
-        const scopeSelect = document.getElementById('bindery-select-scope');
-        const langSelect = document.getElementById('bindery-select-lang');
-
-        if (titleInput) titleInput.addEventListener('input', triggerDebouncedPreview);
-        if (authorInput) authorInput.addEventListener('input', triggerDebouncedPreview);
-        if (scopeSelect) scopeSelect.addEventListener('change', () => {
-            window.refreshCoverPreview();
-            if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+        ['bindery-input-title', 'bindery-input-author'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', triggerDebouncedPreview);
         });
-        if (langSelect) langSelect.addEventListener('change', () => {
-            window.refreshCoverPreview();
-            if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+        ['bindery-select-scope', 'bindery-select-lang'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => {
+                window.refreshCoverPreview();
+                if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+            });
         });
 
         // 初始拉取封面预览与货架
@@ -108,9 +103,7 @@
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
-        // 监听矩阵复选框变动
-        const cbs = document.querySelectorAll('.bindery-matrix-cb');
-        cbs.forEach(cb => {
+        document.querySelectorAll('.bindery-matrix-cb').forEach(cb => {
             cb.addEventListener('change', () => {
                 window.updateMatrixSubmitBtn();
                 if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
@@ -118,10 +111,7 @@
         });
     };
 
-    /**
-    /**
-     * 切换出版语种模式（单语 / 多语合卷 / 多语套书）
-     */
+    /** 切换出版语种模式（单语 / 多语合卷 / 多语套书） */
     window.onBinderyLangModeChange = function(val) {
         const chipsRow = document.getElementById('bindery-matrix-chips-row');
         const badge = document.getElementById('bindery-lang-hint-badge');
@@ -161,44 +151,29 @@
         window.updateMatrixSubmitBtn();
     };
 
-    /**
-     * 联动更新提交装订按钮文案
-     */
+    /** 联动更新提交装订按钮文案 */
     window.updateMatrixSubmitBtn = function() {
         const langVal = document.getElementById('bindery-select-lang')?.value;
         const count = document.querySelectorAll('.bindery-matrix-cb:checked').length;
         const submitBtn = document.getElementById('btn-execute-binding');
         if (!submitBtn) return;
-        if (langVal === 'polyglot') {
-            submitBtn.innerHTML = `<span>📑 制作多语对照电子书 (${count} 语并列)</span>`;
-        } else if (langVal === 'matrix_batch') {
-            submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本独立版本)</span>`;
-        }
+        if (langVal === 'polyglot') submitBtn.innerHTML = `<span>📑 制作多语对照电子书 (${count} 语并列)</span>`;
+        else if (langVal === 'matrix_batch') submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本独立版本)</span>`;
     };
 
-
-    /**
-     * 实时拉取并更新封面预览
-     */
+    /** 实时拉取并更新封面预览 */
     window.refreshCoverPreview = async function() {
-        const titleInput = document.getElementById('bindery-input-title');
-        const authorInput = document.getElementById('bindery-input-author');
-        const scopeSelect = document.getElementById('bindery-select-scope');
-        const langSelect = document.getElementById('bindery-select-lang');
-        const modeSelect = document.getElementById('bindery-select-cover-mode');
-        const styleSelect = document.getElementById('bindery-select-cover-style');
         const imgEl = document.getElementById('bindery-cover-img');
-        const badgeEl = document.getElementById('bindery-cover-badge');
-
         if (!imgEl) return;
-
+        const badgeEl = document.getElementById('bindery-cover-badge');
+        const gVal = id => document.getElementById(id)?.value || '';
         const payload = {
-            title: titleInput ? titleInput.value.trim() : '',
-            author: authorInput ? authorInput.value.trim() : '',
-            scope: scopeSelect ? scopeSelect.value : 'all',
-            lang: langSelect ? langSelect.value : 'zh',
-            cover_mode: modeSelect ? modeSelect.value : 'auto',
-            style: styleSelect ? styleSelect.value : 'dark_emerald'
+            title: gVal('bindery-input-title').trim(),
+            author: gVal('bindery-input-author').trim(),
+            scope: gVal('bindery-select-scope') || 'all',
+            lang: gVal('bindery-select-lang') || 'zh',
+            cover_mode: gVal('bindery-select-cover-mode') || 'auto',
+            style: gVal('bindery-select-cover-style') || 'dark_emerald'
         };
 
         try {
@@ -250,20 +225,38 @@
         }
     };
 
-    /**
-     * 切换装订中枢 Tab (build: 装订新版 / shelf: 典籍货架)
-     */
     window.switchBinderyTab = function(tab) {
-        const pBuild = document.getElementById('bindery-panel-build');
-        const pShelf = document.getElementById('bindery-panel-shelf');
-        const tBuild = document.getElementById('btn-bindery-tab-build');
-        const tShelf = document.getElementById('btn-bindery-tab-shelf');
+        const pBuild = document.getElementById('bindery-panel-build'), pShelf = document.getElementById('bindery-panel-shelf');
+        const tBuild = document.getElementById('btn-bindery-tab-build'), tShelf = document.getElementById('btn-bindery-tab-shelf');
         if (pBuild) pBuild.style.display = tab === 'build' ? 'flex' : 'none';
         if (pShelf) pShelf.style.display = tab === 'shelf' ? 'flex' : 'none';
         if (tBuild) tBuild.classList.toggle('active', tab === 'build');
         if (tShelf) tShelf.classList.toggle('active', tab === 'shelf');
-        if (tab === 'shelf' && typeof window.fetchBinderyShelf === 'function') {
-            window.fetchBinderyShelf();
+        if (tab === 'shelf' && typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
+    };
+
+    /** 📂 在操作系统文件管理器中高亮定位物理文件 (Show in Finder / Explorer) */
+    window.revealBookInFolder = async function(filename) {
+        if (!filename) return;
+        const targetPath = filename.startsWith('dist/') ? filename : `dist/books/${filename}`;
+        try {
+            const fetchFunc = window.apiFetch || window.fetch;
+            const res = await fetchFunc('/api/system/reveal-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: targetPath })
+            });
+            const data = (res && typeof res.json === 'function') ? await res.json() : res;
+            if (data && data.success) {
+                if (typeof window.showToast === 'function') window.showToast(data.message || '📂 已在系统文件管理器中定位', 'success');
+            } else {
+                const err = (data && data.error) ? data.error : '未能打开系统所在文件夹';
+                if (typeof window.showToast === 'function') window.showToast(`⚠️ ${err}`, 'warning');
+                else alert(err);
+            }
+        } catch (e) {
+            console.error('[Bindery] 唤起文件管理器异常:', e);
+            if (typeof window.showToast === 'function') window.showToast('⚠️ 唤起系统文件管理器失败', 'error');
         }
     };
 

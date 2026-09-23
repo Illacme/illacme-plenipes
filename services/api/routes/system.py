@@ -6,7 +6,7 @@
 """
 
 from typing import Dict, Any, List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from core.runtime.engine_singleton import get_global_engine
 from services.api.schemas import SystemHealthResponse, HealthMatrixResponse
 
@@ -21,6 +21,7 @@ from .system_shards import (
     get_health_matrix_logic,
     get_supported_languages_logic,
     pick_directory_logic,
+    reveal_file_logic,
     SwitchAndLaunchPreviewRequest,
     switch_and_launch_preview_logic,
     restart_preview_logic,
@@ -204,6 +205,19 @@ async def stop_wizard() -> Dict[str, str]:
     return await stop_wizard_logic()
 
 
+# 5. 原生系统桌面与文件交互端点
+@router.post("/api/system/pick-directory", dependencies=[Depends(verify_token)])
+async def pick_directory() -> Dict[str, Any]:
+    """📂 [V75.6] 唤起操作系统原生文件夹拾取器"""
+    return await pick_directory_logic()
+
+
+@router.post("/api/system/reveal-file", dependencies=[Depends(verify_token)])
+def reveal_file(payload: Dict[str, str] = Body(...)) -> Dict[str, Any]:
+    """📂 [V126.0] 在操作系统文件管理器中高亮定位物理文件 (Show in Finder / Explorer)"""
+    return reveal_file_logic(payload.get("path", ""))
+
+
 __all__ = [
     "router",
     "verify_token",
@@ -227,6 +241,7 @@ __all__ = [
     "start_wizard",
     "stop_wizard",
     "pick_directory",
+    "reveal_file",
     "precheck_sync",
     "suspend_watchdog",
     "resume_watchdog",
