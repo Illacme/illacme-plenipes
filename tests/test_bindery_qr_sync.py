@@ -173,7 +173,12 @@ def test_bindery_qr_frontend_in_node_sandbox():
     };
     global.requestAnimationFrame = (cb) => { cb(); };
 
-    // 1. 加载并执行 vault.bindery.qr.js
+    // 1. 加载并执行 vault.bindery.qr_engine.js 与 vault.bindery.qr.js
+    eval(fs.readFileSync('web/dashboard/js/vault/vault.bindery.qr_engine.js', 'utf8'));
+    if (typeof window.generateBinderyQrSvg !== 'function') throw new Error('缺少 generateBinderyQrSvg 函数');
+    const testSvg = window.generateBinderyQrSvg('http://example.com/download', 200);
+    if (!testSvg.startsWith('<svg') || !testSvg.includes('</svg>')) throw new Error('SVG 二维码生成异常');
+
     eval(fs.readFileSync('web/dashboard/js/vault/vault.bindery.qr.js', 'utf8'));
 
     if (typeof window.openBinderyQrModal !== 'function') throw new Error('缺少 openBinderyQrModal 函数');

@@ -108,9 +108,13 @@
 
             const isWb = filename.endsWith('.html');
             const targetTip = isWb ? '手机 / 平板扫码可直接在线全屏翻阅' : 'iPhone / iPad (Books)、Android、Kindle 扫码即刻下载导入';
-            const qrBlockHtml = data.qr_data_uri
-                ? `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 6px 20px rgba(0,0,0,0.3); margin-bottom:14px;"><img src="${data.qr_data_uri}" alt="扫码下载" style="width:200px; height:200px; display:block;" /></div>`
-                : `<div style="background:rgba(255,255,255,0.04); border:1px dashed var(--glass-border, rgba(255,255,255,0.18)); border-radius:12px; padding:22px 14px; margin-bottom:14px;"><div style="font-size:2rem; margin-bottom:6px;">📡</div><div style="font-size:0.85rem; font-weight:600; color:var(--text-bright, #fff); margin-bottom:4px;">局域网直连链路就绪</div><div style="font-size:0.72rem; color:var(--text-dim, rgba(255,255,255,0.6));">移动设备连接同一 Wi-Fi 后，直接在浏览器中打开下方直链即可</div><div style="margin-top:10px; font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:4px 8px; border-radius:4px; display:inline-block;">💡 提示：终端运行 pip install qrcode 即可启用图形二维码扫码</div></div>`;
+            let qrBlockHtml = '';
+            if (data.qr_data_uri) {
+                qrBlockHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 6px 20px rgba(0,0,0,0.3); margin-bottom:14px;"><img src="${data.qr_data_uri}" alt="扫码下载" style="width:200px; height:200px; display:block;" /></div>`;
+            } else if (typeof window.generateBinderyQrSvg === 'function') {
+                const svgCode = window.generateBinderyQrSvg(data.url, 200);
+                qrBlockHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 6px 20px rgba(0,0,0,0.3); margin-bottom:14px;">${svgCode}</div>`;
+            }
 
             contentEl.innerHTML = `
                 ${qrBlockHtml}

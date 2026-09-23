@@ -64,6 +64,7 @@ class DesktopPackager:
             "yaml",
             "markdown",
             "latex2mathml",
+            "qrcode",
         ]
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
