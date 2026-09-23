@@ -186,27 +186,19 @@
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
 
             if (data && data.success) {
+                const phEl = document.getElementById('bindery-cover-none-ph');
                 if (data.mode === 'none' || !data.data_uri) {
-                    imgEl.src = '';
-                    imgEl.style.display = 'none';
-                    if (badgeEl) {
-                        badgeEl.textContent = '🚫 禁用封面';
-                        badgeEl.style.color = '#94a3b8';
-                        badgeEl.style.borderColor = 'rgba(148, 163, 184, 0.3)';
-                    }
+                    imgEl.src = ''; imgEl.style.display = 'none';
+                    if (phEl) phEl.style.display = 'block';
+                    if (badgeEl) { badgeEl.textContent = '📰 纯净免封'; badgeEl.style.color = '#38bdf8'; badgeEl.style.borderColor = 'rgba(56, 189, 248, 0.4)'; }
                 } else {
-                    imgEl.style.display = 'block';
-                    imgEl.src = data.data_uri;
+                    if (phEl) phEl.style.display = 'none';
+                    imgEl.style.display = 'block'; imgEl.src = data.data_uri;
                     if (badgeEl) {
-                        if (data.mode === 'native') {
-                            badgeEl.textContent = '📂 文库原图';
-                            badgeEl.style.color = '#38bdf8';
-                            badgeEl.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-                        } else {
-                            badgeEl.textContent = '✨ 艺术排版';
-                            badgeEl.style.color = '#10b981';
-                            badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                        }
+                        const isNat = data.mode === 'native';
+                        badgeEl.textContent = isNat ? '📂 文库原图' : '✨ 艺术排版';
+                        badgeEl.style.color = isNat ? '#38bdf8' : '#10b981';
+                        badgeEl.style.borderColor = isNat ? 'rgba(56, 189, 248, 0.4)' : 'rgba(16, 185, 129, 0.4)';
                     }
                 }
             }

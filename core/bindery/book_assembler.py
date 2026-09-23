@@ -91,7 +91,8 @@ class BookAssembler:
             "description": desc, "date": None, "language": "mul" if is_polyglot else target_lang,
             "license": license_decl, "uuid": f"urn:uuid:{uuid.uuid4()}",
             "polyglot_langs": polyglot_langs if is_polyglot else [],
-            "is_single_article": bool(single_file or len(chapters) <= 1)
+            "is_single_article": bool(single_file or len(chapters) <= 1),
+            "cover_mode": cover_mode
         }
 
         # 3. 确定输出路径与封面解析

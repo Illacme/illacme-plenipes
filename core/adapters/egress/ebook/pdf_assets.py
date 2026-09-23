@@ -64,10 +64,14 @@ a.pdf-unlinked { color: inherit; text-decoration: none; pointer-events: none; }
 
 /* 章节正文与章眉章脚 */
 .chapter-page { break-before: page; padding-top: 2mm; margin-bottom: 10mm; }
+body > .chapter-page:first-of-type { break-before: auto; }
 .chapter-nav-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5pt solid #e2e8f0; padding-bottom: 2mm; margin-bottom: 8mm; font-size: 8pt; color: #94a3b8; letter-spacing: 0.5px; }
 .chapter-nav-brand { font-weight: 600; color: #059669; }
 .chapter-nav-title { font-weight: 500; }
-.chapter-heading { font-size: 18pt; font-weight: 800; color: #0f172a; border-bottom: 1.5pt solid #10b981; padding-bottom: 4mm; margin-bottom: 8mm; }
+.chapter-heading { font-size: 18pt; font-weight: 800; color: #0f172a; border-bottom: 1.5pt solid #10b981; padding-bottom: 4mm; margin-bottom: 6mm; }
+.article-meta-header { display: flex; align-items: center; gap: 14px; font-size: 8.5pt; color: #64748b; margin-top: -3mm; margin-bottom: 7mm; padding-bottom: 3mm; border-bottom: 0.5pt solid #f1f5f9; }
+.article-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+.article-meta-badge { font-weight: 600; color: #059669; }
 .chapter-body p { margin: 0 0 1em; line-height: 1.7; }
 .chapter-body img { max-width: 100%; height: auto; display: block; margin: 6mm auto; border-radius: 4px; }
 

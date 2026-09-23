@@ -80,21 +80,18 @@ class PDFBookAdapter(BaseEBookAdapter):
         publisher = escape(meta.get("publisher", "Illacme Press"))
         iso_lang = lang if lang != "zh" else "zh-CN"
 
+        is_single = meta.get("is_single_article") or len(manuscript_tree) <= 1
+        cover_mode = meta.get("cover_mode", "auto")
+
         cover_img_tag = ""
-        if cover_path and os.path.exists(cover_path):
-            with open(cover_path, "rb") as cf:
-                b64 = base64.b64encode(cf.read()).decode("ascii")
-            mime = "image/png" if cover_path.endswith(".png") else "image/jpeg"
-            cover_img_tag = f'<section class="cover-page"><img src="data:{mime};base64,{b64}" class="cover-art" alt="Cover" /></section>'
-        else:
-            cover_img_tag = f'''
-            <section class="cover-page cover-fallback">
-                <div class="cover-inner">
-                    <div class="cover-pub">{publisher}</div>
-                    <h1 class="cover-title">{title}</h1>
-                    <div class="cover-author">著 / {author}</div>
-                </div>
-            </section>'''
+        if cover_mode != "none":
+            if cover_path and os.path.exists(cover_path):
+                with open(cover_path, "rb") as cf:
+                    b64 = base64.b64encode(cf.read()).decode("ascii")
+                mime = "image/png" if cover_path.endswith(".png") else "image/jpeg"
+                cover_img_tag = f'<section class="cover-page"><img src="data:{mime};base64,{b64}" class="cover-art" alt="Cover" /></section>'
+            elif not is_single:
+                cover_img_tag = f'''<section class="cover-page cover-fallback"><div class="cover-inner"><div class="cover-pub">{publisher}</div><h1 class="cover-title">{title}</h1><div class="cover-author">著 / {author}</div></div></section>'''
 
         # 内联正文插图为 Base64，杜绝无头浏览器网络挂起
         asset_map = {}
@@ -139,10 +136,10 @@ class PDFBookAdapter(BaseEBookAdapter):
 
             ch_body = re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', _heal_rel_href, ch_body)
             nav_hdr = f'<div class="chapter-nav-header"><span class="chapter-nav-brand">{publisher}</span><span class="chapter-nav-title">{ch_title}</span></div>'
-            ch_sections.append(f'<section class="chapter-page" id="{ch_id}">{nav_hdr}<h1 class="chapter-heading">{ch_title}</h1><div class="chapter-body">{ch_body}</div></section>')
+            art_meta = f'<div class="article-meta-header"><span class="article-meta-item">✍️ <strong class="article-meta-badge">{author}</strong></span><span class="article-meta-item">🏢 {publisher}</span></div>' if (is_single and not cover_img_tag and idx == 0) else ""
+            ch_sections.append(f'<section class="chapter-page" id="{ch_id}">{nav_hdr}<h1 class="chapter-heading">{ch_title}</h1>{art_meta}<div class="chapter-body">{ch_body}</div></section>')
 
         # 3. 末尾出版版权页 (Colophon，单篇文章导出自动抑制)
-        is_single = meta.get("is_single_article") or len(manuscript_tree) <= 1
         colophon_tag = ""
         if not is_single:
             colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, meta, format_name="pdf")

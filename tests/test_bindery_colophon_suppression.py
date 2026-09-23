@@ -132,25 +132,28 @@ def test_pdf_colophon_suppression(monkeypatch, tmp_path, sample_single_manuscrip
     monkeypatch.setattr("subprocess.run", mock_subprocess_run)
     monkeypatch.setattr(PDFBookAdapter, "_find_chrome", staticmethod(lambda: "/usr/bin/mock-chrome"))
 
-    # 1. 单篇导出测试
+    # 1. 单篇导出测试 (默认免大封面流)
     single_out = str(tmp_path / "single_test.pdf")
     adapter.bind_book(
         manuscript_tree=sample_single_manuscript,
-        book_metadata={"title": "单篇测试", "author": "作者", "is_single_article": True},
+        book_metadata={"title": "单篇测试", "author": "作者", "is_single_article": True, "cover_mode": "none"},
         output_file_path=single_out
     )
     assert len(captured_htmls) == 1
     assert 'id="print-colophon"' not in captured_htmls[0]
+    assert 'class="cover-page' not in captured_htmls[0]
+    assert 'article-meta-header' in captured_htmls[0]
 
-    # 2. 多章导出测试
+    # 2. 多章导出测试 (默认无图时仍提供图书 fallback 封面)
     multi_out = str(tmp_path / "multi_test.pdf")
     adapter.bind_book(
         manuscript_tree=sample_multi_manuscript,
-        book_metadata={"title": "多章合集", "author": "作者", "is_single_article": False},
+        book_metadata={"title": "多章合集", "author": "作者", "is_single_article": False, "cover_mode": "auto"},
         output_file_path=multi_out
     )
     assert len(captured_htmls) == 2
     assert 'id="print-colophon"' in captured_htmls[1]
+    assert 'cover-fallback' in captured_htmls[1]
 
 
 def test_assembler_single_article_flag(tmp_path):
@@ -163,9 +166,11 @@ def test_assembler_single_article_flag(tmp_path):
         category="",
         format_type="webbook",
         single_file="test.md",
+        cover_mode="none",
         output_dir=str(tmp_path / "out")
     )
     assert out and os.path.exists(out)
     with open(out, 'r', encoding='utf-8') as f:
         html = f.read()
         assert 'id="colophon"' not in html
+        assert 'alt="Cover"' not in html
