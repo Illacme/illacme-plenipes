@@ -23,24 +23,13 @@ router = APIRouter()
 
 
 class BinderyBuildPayload(BaseModel):
-    format: str = "epub"
-    scope: str = "all"
-    lang: str = "zh"
-    languages: Optional[List[str]] = None
-    polyglot_mode: bool = False
-    title: Optional[str] = None
-    author: Optional[str] = None
-    cover_mode: str = "auto"
-    cover_style: str = "dark_emerald"
-    output_dir: str = "dist/books"
+    format: str = "epub"; scope: str = "all"; lang: str = "zh"; languages: Optional[List[str]] = None
+    polyglot_mode: bool = False; title: Optional[str] = None; author: Optional[str] = None
+    cover_mode: str = "auto"; cover_style: str = "dark_emerald"; output_dir: str = "dist/books"
 
 class CoverPreviewPayload(BaseModel):
-    title: Optional[str] = None
-    author: Optional[str] = None
-    scope: str = "all"
-    style: str = "dark_emerald"
-    lang: str = "zh"
-    cover_mode: str = "auto"
+    title: Optional[str] = None; author: Optional[str] = None; scope: str = "all"
+    style: str = "dark_emerald"; lang: str = "zh"; cover_mode: str = "auto"
 
 
 @router.get("/api/bindery/scopes", dependencies=[Depends(verify_token)])
@@ -271,8 +260,8 @@ async def view_ebook_webbook(file: str = Query(...)):
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
 async def get_bindery_shelf() -> Dict[str, Any]:
-    """📚 出版典籍货架：扫描并返回已编译的所有装订产物"""
-    base_dir, books = os.path.abspath("dist/books"), []
+    """📚 出版典籍货架：扫描并返回已编译的所有装订产物与物理磁盘占用"""
+    base_dir, books, total_bytes = os.path.abspath("dist/books"), [], 0
     if os.path.exists(base_dir):
         for fname in sorted(os.listdir(base_dir)):
             p = os.path.join(base_dir, fname)
@@ -280,19 +269,24 @@ async def get_bindery_shelf() -> Dict[str, Any]:
                 st = os.stat(p)
                 fmt = "webbook" if fname.endswith(".html") else ("pdf" if fname.endswith(".pdf") else "epub")
                 sz_str = f"{st.st_size / 1024:.1f} KB" if st.st_size < 1024 * 1024 else f"{st.st_size / (1024*1024):.2f} MB"
+                total_bytes += st.st_size
                 books.append({
                     "filename": fname, "format": fmt, "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
                     "download_url": f"/api/bindery/download?file={fname}", "preview_url": f"/api/bindery/view?file={fname}" if fmt == "webbook" else None
                 })
         books.sort(key=lambda x: x["mtime"], reverse=True)
-    return {"success": True, "books": books, "count": len(books)}
+    tot_str = f"{total_bytes / 1024:.1f} KB" if total_bytes < 1024 * 1024 else f"{total_bytes / (1024*1024):.2f} MB"
+    return {"success": True, "books": books, "count": len(books), "total_size_bytes": total_bytes, "total_size_display": tot_str}
 
 @router.post("/api/bindery/delete", dependencies=[Depends(verify_token)])
-async def delete_ebook_from_shelf(payload: Dict[str, str] = Body(...)) -> Dict[str, Any]:
-    target = _get_safe_book_path(payload.get("filename", ""))
-    try:
-        os.remove(target)
-        return {"success": True, "message": "出版物已成功移除。"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"删除失败: {e}")
+async def delete_ebook_from_shelf(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+    raw_files = payload.get("filenames") or ([payload["filename"]] if "filename" in payload else [])
+    if not raw_files: raise HTTPException(status_code=400, detail="未指定待删除的文件。")
+    targets = [_get_safe_book_path(fn) for fn in raw_files]
+    deleted = []
+    for t, fn in zip(targets, raw_files):
+        if os.path.exists(t):
+            os.remove(t)
+            deleted.append(fn)
+    return {"success": True, "deleted": deleted, "count": len(deleted), "message": f"成功移除 {len(deleted)} 本出版物。"}
 

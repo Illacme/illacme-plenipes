@@ -1,6 +1,6 @@
 /**
  * Illacme Plenipes - Vault Bindery Shelf Manager
- * 模块职责：管理已编排出版物货架 (Book Shelf)，支持在线即时翻阅、下载、系统定位、沿用配置重新装订、归档删除与优雅分页控制。
+ * 模块职责：管理已编排出版物货架 (Book Shelf)，支持在线即时翻阅、下载、系统定位、沿用配置重新装订、归档删除、优雅分页与多选批量管理控制。
  * 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
  */
 (function() {
@@ -11,6 +11,9 @@
     window._binderyShelfQuery = '';
     window._binderyShelfPage = 1;
     window._binderyShelfPageSize = 5;
+    window._binderyShelfBatchMode = false;
+    window._binderyShelfSelected = new Set();
+    window._binderyShelfTotalSize = '';
 
     function formatTime(mtime) {
         if (!mtime) return '刚刚';
@@ -36,6 +39,7 @@
             const badgeCount = document.getElementById('bindery-shelf-badge');
             if (badgeCount) badgeCount.textContent = String(data.count || 0);
             window._binderyShelfBooks = data.books || [];
+            window._binderyShelfTotalSize = data.total_size_display || '';
             window.renderBinderyShelfHtml();
         } catch (e) {
             console.error('[BinderyShelf] 拉取书架异常:', e);
@@ -57,6 +61,27 @@
 
     window.changeBinderyShelfPage = function(newPage) {
         window._binderyShelfPage = Math.max(1, newPage);
+        window.renderBinderyShelfHtml();
+    };
+
+    window.toggleBinderyShelfBatchMode = function() {
+        window._binderyShelfBatchMode = !window._binderyShelfBatchMode;
+        if (!window._binderyShelfBatchMode) window._binderyShelfSelected.clear();
+        window.renderBinderyShelfHtml();
+    };
+
+    window.toggleBinderyShelfSelect = function(filename, checked) {
+        if (checked) window._binderyShelfSelected.add(filename);
+        else window._binderyShelfSelected.delete(filename);
+        window.renderBinderyShelfHtml();
+    };
+
+    window.toggleAllBinderyShelfSelect = function(pageFilenames) {
+        const allChecked = pageFilenames.every(f => window._binderyShelfSelected.has(f));
+        pageFilenames.forEach(f => {
+            if (allChecked) window._binderyShelfSelected.delete(f);
+            else window._binderyShelfSelected.add(f);
+        });
         window.renderBinderyShelfHtml();
     };
 
@@ -83,26 +108,7 @@
         });
 
         const activeFl = window._binderyShelfFilter || 'all';
-        const chipStyle = (isActive) => `padding:3px 9px; font-size:0.75rem; border-radius:6px; cursor:pointer; border:1px solid ${isActive ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.12))'}; background:${isActive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'}; color:${isActive ? 'var(--accent, #10b981)' : 'var(--text-dim, rgba(255,255,255,0.6))'}; font-weight:${isActive ? '700' : '500'}; transition:all 0.2s;`;
-
-        const toolbarHtml = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-                <div style="display:flex; gap:6px; align-items:center;">
-                    <button type="button" onclick="window.setBinderyShelfFilter('all')" style="${chipStyle(activeFl === 'all')}">全部 (${all.length})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('webbook')" style="${chipStyle(activeFl === 'webbook')}">🌐 网页书 (${wbCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF 印本 (${pdfCount})</button>
-                </div>
-                <div style="min-width:140px; flex:1; max-width:200px;">
-                    <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
-                </div>
-            </div>
-        `;
-
-        if (filtered.length === 0) {
-            shelfContainer.innerHTML = toolbarHtml + `<div style="text-align:center; padding:30px; color:var(--text-dim, rgba(255,255,255,0.5)); font-size:0.8rem;">🔍 未找到匹配的电子书或出版物</div>`;
-            return;
-        }
+        const chipStyle = (isActive) => `padding:3px 8px; font-size:0.75rem; border-radius:6px; cursor:pointer; border:1px solid ${isActive ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.12))'}; background:${isActive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'}; color:${isActive ? 'var(--accent, #10b981)' : 'var(--text-dim, rgba(255,255,255,0.6))'}; font-weight:${isActive ? '700' : '500'}; transition:all 0.2s;`;
 
         const totalItems = filtered.length;
         const pageSize = window._binderyShelfPageSize || 5;
@@ -113,6 +119,44 @@
 
         const startIdx = (currentPage - 1) * pageSize;
         const pagedBooks = filtered.slice(startIdx, startIdx + pageSize);
+        const isBatch = window._binderyShelfBatchMode;
+        const selectedCount = window._binderyShelfSelected.size;
+        const sizeBadge = window._binderyShelfTotalSize ? `<span style="font-size:0.7rem; color:var(--text-dim, rgba(255,255,255,0.55)); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; border:1px solid var(--glass-border, rgba(255,255,255,0.1));" title="已编译出版物物理占用磁盘总容量">💾 占用 ${window._binderyShelfTotalSize}</span>` : '';
+        const batchToggleBtn = `<button type="button" onclick="window.toggleBinderyShelfBatchMode()" style="padding:3px 8px; font-size:0.72rem; border-radius:6px; cursor:pointer; border:1px solid ${isBatch ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.14))'}; background:${isBatch ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}; color:${isBatch ? 'var(--accent, #10b981)' : 'var(--text-bright, #fff)'}; font-weight:600;">${isBatch ? '✖️ 退出批量' : '☑️ 批量管理'}</button>`;
+
+        const pagedFnamesJson = JSON.stringify(pagedBooks.map(b => b.filename)).replace(/"/g, '&quot;');
+
+        const toolbarHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" onclick="window.setBinderyShelfFilter('all')" style="${chipStyle(activeFl === 'all')}">全部 (${all.length})</button>
+                    <button type="button" onclick="window.setBinderyShelfFilter('webbook')" style="${chipStyle(activeFl === 'webbook')}">🌐 网页书 (${wbCount})</button>
+                    <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
+                    <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF 印本 (${pdfCount})</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; min-width:240px; justify-content:flex-end; flex:1;">
+                    ${sizeBadge}
+                    ${batchToggleBtn}
+                    <div style="min-width:110px; max-width:150px; flex:1;">
+                        <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
+                    </div>
+                </div>
+            </div>
+            ${isBatch ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; margin-bottom:8px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:6px; font-size:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button type="button" onclick="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" style="background:rgba(255,255,255,0.08); border:1px solid var(--glass-border, rgba(255,255,255,0.15)); color:#fff; border-radius:4px; padding:2px 8px; font-size:0.72rem; cursor:pointer;">☑️ 全选/取消当前页</button>
+                        <span style="color:var(--text-dim, rgba(255,255,255,0.7));">已选 <strong style="color:var(--accent, #10b981);">${selectedCount}</strong> 本</span>
+                    </div>
+                    <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>
+                </div>
+            ` : ''}
+        `;
+
+        if (filtered.length === 0) {
+            shelfContainer.innerHTML = toolbarHtml + `<div style="text-align:center; padding:30px; color:var(--text-dim, rgba(255,255,255,0.5)); font-size:0.8rem;">🔍 未找到匹配的电子书或出版物</div>`;
+            return;
+        }
 
         const itemsHtml = pagedBooks.map(b => {
             const isWb = b.format === 'webbook', isPdf = b.format === 'pdf';
@@ -126,9 +170,15 @@
                 ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff;">👁️</a>`
                 : '';
 
+            const isSelected = window._binderyShelfSelected.has(b.filename);
+            const checkboxHtml = isBatch
+                ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.toggleBinderyShelfSelect('${b.filename}', this.checked)" style="accent-color:#10b981; width:15px; height:15px; cursor:pointer; flex-shrink:0; margin-right:4px;" />`
+                : '';
+
             return `
-                <div class="bindery-shelf-card" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border, rgba(255,255,255,0.09)); border-radius:8px; padding:10px 14px; margin-bottom:8px; transition:all 0.2s ease;">
-                    <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+                <div class="bindery-shelf-card" style="display:flex; justify-content:space-between; align-items:center; background:${isSelected ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isSelected ? 'rgba(16,185,129,0.35)' : 'var(--glass-border, rgba(255,255,255,0.09))'}; border-radius:8px; padding:10px 14px; margin-bottom:8px; transition:all 0.2s ease;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                        ${checkboxHtml}
                         <span style="font-size:1.4rem; flex-shrink:0;">${icon}</span>
                         <div style="min-width:0; flex:1;">
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; min-width:0;">
@@ -218,6 +268,28 @@
         } catch (e) {
             console.error('[BinderyShelf] 删除异常:', e);
             alert(`删除失败: ${e.message}`);
+        }
+    };
+
+    window.deleteBatchBooksFromShelf = async function() {
+        const files = Array.from(window._binderyShelfSelected);
+        if (!files.length) return window.showToast?.('请先勾选需要清理的出版物', 'warning');
+        if (!confirm(`确定要批量永久删除选中的 ${files.length} 本出版物吗？此操作不可撤销。`)) return;
+        try {
+            const fetchFunc = window.apiFetch || window.fetch;
+            const res = await fetchFunc('/api/bindery/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filenames: files }) });
+            const data = (res && typeof res.json === 'function') ? await res.json() : res;
+            if (data && data.success) {
+                window._binderyShelfSelected.clear();
+                window._binderyShelfBatchMode = false;
+                window.fetchBinderyShelf();
+                if (typeof window.showToast === 'function') window.showToast(`已成功批量清理 ${data.count || files.length} 本出版物`, 'success');
+            } else {
+                alert(`批量删除失败: ${(data && data.detail) || '未知错误'}`);
+            }
+        } catch (e) {
+            console.error('[BinderyShelf] 批量删除异常:', e);
+            alert(`批量删除异常: ${e.message}`);
         }
     };
 })();
