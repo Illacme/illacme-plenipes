@@ -77,12 +77,21 @@ class TunnelHub:
             "uptime_seconds": uptime,
         }
 
+    @classmethod
+    def _cleanup_zombies(cls):
+        """清理历史残留的孤儿 Pinggy SSH 穿透进程，防止霸占连接配额"""
+        try:
+            subprocess.run(["pkill", "-f", "qr@a.pinggy.io"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
     def start_tunnel(self, port: int = 43212, timeout_seconds: int = 15) -> Dict[str, Any]:
         """唤醒临时公网隧道 (优先 Cloudflare Quick Tunnel，备选 Native SSH)"""
         if self._process and self._process.poll() is None and self._public_url:
             return self.get_status()
 
         self.stop_tunnel()
+        self._cleanup_zombies()
         last_error = ""
 
         # 1. 尝试 Cloudflare Quick Tunnel
@@ -153,9 +162,10 @@ class TunnelHub:
         return {"is_running": False, "error": "Cloudflare 隧道启动超时或网络未连通"}
 
     def _spawn_ssh_tunnel(self, bin_path: str, port: int, timeout: int) -> Dict[str, Any]:
-        """利用原生 OpenSSH 拉起零安装快速穿透"""
+        """利用原生 OpenSSH 拉起零安装快速穿透 (-T 禁用伪终端，强制纯文本流)"""
         cmd = [
             bin_path, "-p", "443",
+            "-T",
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
             "-o", "LogLevel=ERROR",
@@ -163,8 +173,18 @@ class TunnelHub:
             "-R", f"0:localhost:{port}",
             "qr@a.pinggy.io"
         ]
+        sub_env = dict(os.environ)
+        sub_env["TERM"] = "dumb"
         try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            p = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=sub_env,
+                preexec_fn=os.setsid
+            )
             self._process = p
             self._provider = "pinggy_ssh"
 
@@ -204,14 +224,15 @@ class TunnelHub:
         """关闭并注销当前公网隧道，收缩回局域网隔离状态"""
         if self._process:
             try:
-                self._process.terminate()
+                os.killpg(os.getpgid(self._process.pid), 15)
                 self._process.wait(timeout=2)
             except Exception:
                 try:
-                    self._process.kill()
+                    os.killpg(os.getpgid(self._process.pid), 9)
                 except Exception:
                     pass
             self._process = None
+        self._cleanup_zombies()
         self._public_url = None
         self._provider = None
         self._start_time = 0
