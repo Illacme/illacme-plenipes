@@ -105,7 +105,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
-          name: "Illacme Plenipes 独立桌面客户端 ${{ steps.vars.outputs.tag }}"
+          name: "Illacme Plenipes ${{ steps.vars.outputs.tag }}"
           files: ${{ matrix.artifact-name }}
           draft: false
           prerelease: false
