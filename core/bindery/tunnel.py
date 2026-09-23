@@ -83,6 +83,7 @@ class TunnelHub:
             return self.get_status()
 
         self.stop_tunnel()
+        last_error = ""
 
         # 1. 尝试 Cloudflare Quick Tunnel
         cf_bin = shutil.which("cloudflared")
@@ -95,6 +96,7 @@ class TunnelHub:
             res = self._spawn_cloudflare(cf_bin, port, timeout_seconds)
             if res.get("is_running"):
                 return res
+            last_error = res.get("error", "")
 
         # 2. 备选方案：尝试原生系统 OpenSSH 反向代理 (Pinggy / Localhost.run)
         ssh_bin = shutil.which("ssh")
@@ -102,10 +104,12 @@ class TunnelHub:
             res = self._spawn_ssh_tunnel(ssh_bin, port, timeout_seconds)
             if res.get("is_running"):
                 return res
+            last_error = res.get("error", "") or last_error
 
+        err_msg = last_error or "未能在本机找到可用的公网穿透组件 (可安装 cloudflared 获取最佳体验)"
         return {
             "is_running": False,
-            "error": "未能在本机找到可用的公网穿透组件 (可安装 cloudflared 获取最佳体验)",
+            "error": err_msg,
         }
 
     def _spawn_cloudflare(self, bin_path: str, port: int, timeout: int) -> Dict[str, Any]:
@@ -116,13 +120,15 @@ class TunnelHub:
             self._process = p
             self._provider = "cloudflare"
 
-            # 监听 stderr 正则捕获 https://*.trycloudflare.com
             found_url = []
+            err_lines = []
             deadline = time.time() + timeout
 
             def _read_err():
-                nonlocal found_url
+                nonlocal found_url, err_lines
                 for line in iter(p.stderr.readline, ''):
+                    if len(err_lines) < 5 and line.strip():
+                        err_lines.append(line.strip())
                     m = re.search(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", line)
                     if m:
                         found_url.append(m.group(0))
@@ -141,14 +147,18 @@ class TunnelHub:
                 time.sleep(0.2)
         except Exception as e:
             tlog.warning(f"⚠️ [公网隧道] 调起 Cloudflare 失败: {e}")
+            self.stop_tunnel()
+            return {"is_running": False, "error": f"调起 Cloudflare 异常: {e}"}
         self.stop_tunnel()
-        return {"is_running": False}
+        return {"is_running": False, "error": "Cloudflare 隧道启动超时或网络未连通"}
 
     def _spawn_ssh_tunnel(self, bin_path: str, port: int, timeout: int) -> Dict[str, Any]:
         """利用原生 OpenSSH 拉起零安装快速穿透"""
         cmd = [
             bin_path, "-p", "443",
             "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            "-o", "LogLevel=ERROR",
             "-o", "ServerAliveInterval=30",
             "-R", f"0:localhost:{port}",
             "qr@a.pinggy.io"
@@ -159,11 +169,14 @@ class TunnelHub:
             self._provider = "pinggy_ssh"
 
             found_url = []
+            out_lines = []
             deadline = time.time() + timeout
 
             def _read_out():
-                nonlocal found_url
+                nonlocal found_url, out_lines
                 for line in iter(p.stdout.readline, ''):
+                    if len(out_lines) < 5 and line.strip():
+                        out_lines.append(line.strip())
                     m = re.search(r"https://[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]*(?:pinggy\.net|pinggy-free\.link|pinggy\.link|localhost\.run)", line)
                     if m and not found_url:
                         found_url.append(m.group(0))
@@ -182,8 +195,10 @@ class TunnelHub:
                 time.sleep(0.2)
         except Exception as e:
             tlog.warning(f"⚠️ [公网隧道] 调起 SSH 隧道失败: {e}")
+            self.stop_tunnel()
+            return {"is_running": False, "error": f"调起 SSH 隧道异常: {e}"}
         self.stop_tunnel()
-        return {"is_running": False}
+        return {"is_running": False, "error": "SSH 穿透建立超时 (请检查 Pinggy 443 端口网络访问)"}
 
     def stop_tunnel(self) -> Dict[str, Any]:
         """关闭并注销当前公网隧道，收缩回局域网隔离状态"""

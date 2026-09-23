@@ -143,31 +143,36 @@
         const tip = isWb ? '手机 / 平板扫码直接在线翻阅 WebBook' : 'iPhone / iPad (Books)、Android、Kindle 扫码即刻下载导入';
         let qrHtml = '';
         if (data.qr_data_uri) {
-            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 6px 20px rgba(0,0,0,0.3); margin-bottom:12px;"><img src="${data.qr_data_uri}" alt="扫码直传" style="width:190px; height:190px; display:block;" /></div>`;
+            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.35); margin-bottom:12px;"><img src="${data.qr_data_uri}" alt="扫码直传" style="width:190px; height:190px; display:block;" /></div>`;
         } else if (typeof window.generateBinderyQrSvg === 'function') {
             const svg = window.generateBinderyQrSvg(data.url, 190);
-            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 6px 20px rgba(0,0,0,0.3); margin-bottom:12px;">${svg}</div>`;
+            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.35); margin-bottom:12px;">${svg}</div>`;
         }
         const badge = mode === 'public'
-            ? `<div style="display:inline-flex; align-items:center; gap:6px; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.35); border-radius:12px; padding:2px 10px; font-size:0.7rem; color:#a78bfa; margin-bottom:8px;"><span>⚡ 全球公网访问</span><span>·</span><span>⏳ 凭证30分钟内有效</span></div>`
-            : `<div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:2px 10px; font-size:0.7rem; color:#10b981; margin-bottom:8px;"><span>📶 局域网极速直连 (${esc(data.lan_ip)})</span></div>`;
+            ? `<div style="display:inline-flex; align-items:center; gap:6px; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.35); border-radius:12px; padding:3px 12px; font-size:0.7rem; color:#a78bfa; margin-bottom:10px;"><span>⚡ 全球公网访问</span><span>·</span><span>⏳ 凭证30分钟内有效</span></div>`
+            : `<div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:3px 12px; font-size:0.7rem; color:#10b981; margin-bottom:10px;"><span>📶 局域网极速直连 (${esc(data.lan_ip)})</span></div>`;
 
         const stopBtn = mode === 'public'
-            ? `<button type="button" onclick="window.stopBinderyTunnel()" class="mini-btn" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:3px 8px; font-size:0.7rem; border-radius:5px; cursor:pointer;" title="立即断开公网暴露">🔌 断开公网隧道</button>`
+            ? `<button type="button" onclick="window.stopBinderyTunnel()" class="mini-btn" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:3px 10px; font-size:0.72rem; border-radius:5px; cursor:pointer;" title="立即断开公网暴露">🔌 断开公网隧道</button>`
             : '';
 
         contentEl.innerHTML = `
-            ${badge}
-            <div>${qrHtml}</div>
-            <div style="font-size:0.85rem; font-weight:600; color:var(--text-bright, #fff); margin-bottom:3px; word-break:break-all;">${esc(data.filename)}</div>
-            <div style="font-size:0.72rem; color:var(--accent, #10b981); margin-bottom:10px;">✨ ${tip}</div>
-            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); border-radius:8px; padding:6px 10px; display:flex; align-items:center; gap:8px; margin-bottom:12px; text-align:left;">
-                <div style="font-size:0.7rem; color:var(--text-dim, rgba(255,255,255,0.6)); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--font-mono, monospace);">${esc(data.url)}</div>
-                <button type="button" onclick="window.copyBinderyQrUrl('${esc(data.url)}', this)" class="mini-btn" style="padding:3px 7px; font-size:0.7rem; border-radius:4px; border:1px solid var(--glass-border, rgba(255,255,255,0.15)); background:rgba(255,255,255,0.08); color:var(--text-bright, #fff); cursor:pointer; flex-shrink:0;">📋 复制</button>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-dim, rgba(255,255,255,0.5)); border-top:1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top:10px;">
-                ${stopBtn || `<span>节点: <strong style="color:var(--text-bright, #fff);">${esc(data.lan_ip)}:${esc(data.port)}</strong></span>`}
-                <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent, #38bdf8); text-decoration:none; display:inline-flex; align-items:center; gap:3px;">在新标签打开 ↗</a>
+            <div style="text-align:center;">
+                ${badge}
+                <div>${qrHtml}</div>
+                <div style="font-size:0.92rem; font-weight:700; color:var(--text-bright, #fff); margin-bottom:4px; word-break:break-all; text-align:center; padding:0 8px;">${esc(data.filename)}</div>
+                <div style="font-size:0.74rem; color:var(--accent, #10b981); margin-bottom:12px; text-align:center;">✨ ${tip}</div>
+                <div style="display:flex; justify-content:center; margin-bottom:14px;">
+                    <div style="background:rgba(0,0,0,0.3); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); border-radius:8px; padding:5px 8px 5px 12px; display:inline-flex; align-items:center; gap:8px; max-width:100%; box-sizing:border-box;">
+                        <div style="font-size:0.72rem; color:var(--text-dim, rgba(255,255,255,0.65)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px; font-family:var(--font-mono, monospace);">${esc(data.url)}</div>
+                        <button type="button" onclick="window.copyBinderyQrUrl('${esc(data.url)}', this)" class="mini-btn" style="padding:3px 8px; font-size:0.7rem; border-radius:5px; border:1px solid var(--glass-border, rgba(255,255,255,0.15)); background:rgba(255,255,255,0.08); color:var(--text-bright, #fff); cursor:pointer; flex-shrink:0;">📋 复制</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:14px; font-size:0.72rem; color:var(--text-dim, rgba(255,255,255,0.5)); border-top:1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top:11px;">
+                    ${stopBtn ? `<span>${stopBtn}</span>` : `<span>节点: <strong style="color:var(--text-bright, #fff);">${esc(data.lan_ip)}:${esc(data.port)}</strong></span>`}
+                    <span style="opacity:0.3;">|</span>
+                    <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent, #38bdf8); text-decoration:none; display:inline-flex; align-items:center; gap:3px;">在新标签打开 ↗</a>
+                </div>
             </div>
         `;
     }

@@ -5,6 +5,7 @@
 规范：遵循工业主权架构，单文件行数严格 ≤ 300 行。
 """
 
+import asyncio
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Query, Depends, HTTPException, Request
 
@@ -45,7 +46,7 @@ async def get_tunnel_status() -> Dict[str, Any]:
 async def start_tunnel(request: Request) -> Dict[str, Any]:
     """一键唤醒零配置临时公网隧道 (优先 Cloudflare，备选 Native SSH)"""
     hub = get_tunnel_hub()
-    status = hub.start_tunnel(port=43212)
+    status = await asyncio.to_thread(hub.start_tunnel, 43212)
     if not status.get("is_running"):
         raise HTTPException(
             status_code=500,
@@ -58,7 +59,7 @@ async def start_tunnel(request: Request) -> Dict[str, Any]:
 async def stop_tunnel() -> Dict[str, Any]:
     """注销并切断临时公网隧道，安全收缩回局域网保护模式"""
     hub = get_tunnel_hub()
-    res = hub.stop_tunnel()
+    res = await asyncio.to_thread(hub.stop_tunnel)
     return {"success": True, **res}
 
 
