@@ -223,11 +223,14 @@
     window.switchBinderyTab = function(tab) {
         const pBuild = document.getElementById('bindery-panel-build'), pShelf = document.getElementById('bindery-panel-shelf');
         const tBuild = document.getElementById('btn-bindery-tab-build'), tShelf = document.getElementById('btn-bindery-tab-shelf');
+        const hActions = document.getElementById('bindery-shelf-header-actions');
         if (pBuild) pBuild.style.display = tab === 'build' ? 'flex' : 'none';
         if (pShelf) pShelf.style.display = tab === 'shelf' ? 'flex' : 'none';
         if (tBuild) tBuild.classList.toggle('active', tab === 'build');
         if (tShelf) tShelf.classList.toggle('active', tab === 'shelf');
+        if (hActions) hActions.style.display = tab === 'shelf' ? 'flex' : 'none';
         if (tab === 'shelf' && typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
+        if (tab === 'build' && window._binderyShelfBatchMode && typeof window.toggleBinderyShelfBatchMode === 'function') window.toggleBinderyShelfBatchMode();
     };
 
     /** 📂 在操作系统文件管理器中高亮定位物理文件 (Show in Finder / Explorer) */

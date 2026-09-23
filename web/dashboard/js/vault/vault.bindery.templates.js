@@ -127,12 +127,12 @@
                     <button class="bindery-close-btn" onclick="window.closeBinderyModal()" title="关闭">×</button>
                 </div>
 
-                <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom: 6px;">
-                    <button id="btn-bindery-tab-build" class="bindery-nav-tab active" onclick="window.switchBinderyTab('build')">🖨️ 装订新版</button>
-                    <button id="btn-bindery-tab-shelf" class="bindery-nav-tab" onclick="window.switchBinderyTab('shelf')" style="display:flex; align-items:center; gap:6px;">
-                        <span>📚 我的书架</span>
-                        <span id="bindery-shelf-badge" class="bindery-badge" style="font-size:0.65rem; padding:1px 6px;">0</span>
-                    </button>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom:6px;">
+                    <div style="display:flex; gap:8px;">
+                        <button id="btn-bindery-tab-build" class="bindery-nav-tab active" onclick="window.switchBinderyTab('build')">🖨️ 装订新版</button>
+                        <button id="btn-bindery-tab-shelf" class="bindery-nav-tab" onclick="window.switchBinderyTab('shelf')" style="display:flex; align-items:center; gap:6px;"><span>📚 我的书架</span><span id="bindery-shelf-badge" class="bindery-badge" style="font-size:0.65rem; padding:1px 6px;">0</span></button>
+                    </div>
+                    <div id="bindery-shelf-header-actions" style="display:none; align-items:center; gap:8px;"></div>
                 </div>
 
                 <div id="bindery-panel-build" style="display: flex; flex-direction: column; gap: 14px;">

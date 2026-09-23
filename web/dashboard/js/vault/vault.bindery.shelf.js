@@ -121,8 +121,13 @@
         const pagedBooks = filtered.slice(startIdx, startIdx + pageSize);
         const isBatch = window._binderyShelfBatchMode;
         const selectedCount = window._binderyShelfSelected.size;
-        const sizeBadge = window._binderyShelfTotalSize ? `<span style="font-size:0.7rem; color:var(--text-dim, rgba(255,255,255,0.55)); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; border:1px solid var(--glass-border, rgba(255,255,255,0.1));" title="已编译出版物物理占用磁盘总容量">💾 占用 ${window._binderyShelfTotalSize}</span>` : '';
-        const batchToggleBtn = `<button type="button" onclick="window.toggleBinderyShelfBatchMode()" style="padding:3px 8px; font-size:0.72rem; border-radius:6px; cursor:pointer; border:1px solid ${isBatch ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.14))'}; background:${isBatch ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}; color:${isBatch ? 'var(--accent, #10b981)' : 'var(--text-bright, #fff)'}; font-weight:600;">${isBatch ? '✖️ 退出批量' : '☑️ 批量管理'}</button>`;
+
+        const hActions = document.getElementById('bindery-shelf-header-actions');
+        if (hActions) {
+            const szBadge = window._binderyShelfTotalSize ? `<span style="font-size:0.7rem; color:var(--text-dim, rgba(255,255,255,0.6)); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; border:1px solid var(--glass-border, rgba(255,255,255,0.1));" title="已编译出版物物理占用磁盘总容量">💾 占用 ${window._binderyShelfTotalSize}</span>` : '';
+            const bBtn = `<button type="button" onclick="window.toggleBinderyShelfBatchMode()" style="padding:2px 8px; font-size:0.72rem; border-radius:6px; cursor:pointer; border:1px solid ${isBatch ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.14))'}; background:${isBatch ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}; color:${isBatch ? 'var(--accent, #10b981)' : 'var(--text-bright, #fff)'}; font-weight:600;">${isBatch ? '✖️ 退出批量' : '☑️ 批量管理'}</button>`;
+            hActions.innerHTML = `${szBadge}${bBtn}`;
+        }
 
         const pagedFnamesJson = JSON.stringify(pagedBooks.map(b => b.filename)).replace(/"/g, '&quot;');
 
@@ -134,12 +139,8 @@
                     <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
                     <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF 印本 (${pdfCount})</button>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px; min-width:240px; justify-content:flex-end; flex:1;">
-                    ${sizeBadge}
-                    ${batchToggleBtn}
-                    <div style="min-width:110px; max-width:150px; flex:1;">
-                        <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
-                    </div>
+                <div style="min-width:140px; max-width:200px;">
+                    <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
                 </div>
             </div>
             ${isBatch ? `

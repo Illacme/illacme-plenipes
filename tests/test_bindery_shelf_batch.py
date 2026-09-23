@@ -68,9 +68,14 @@ def test_bindery_shelf_batch_mode_in_node_sandbox():
     const fs = require('fs');
 
     let shelfInner = '';
+    let headerActionsInner = '';
     const mockShelfList = {
         set innerHTML(val) { shelfInner = val; },
         get innerHTML() { return shelfInner; }
+    };
+    const mockHeaderActions = {
+        set innerHTML(val) { headerActionsInner = val; },
+        get innerHTML() { return headerActionsInner; }
     };
 
     global.window = {
@@ -80,6 +85,7 @@ def test_bindery_shelf_batch_mode_in_node_sandbox():
         document: {
             getElementById: (id) => {
                 if (id === 'bindery-shelf-list') return mockShelfList;
+                if (id === 'bindery-shelf-header-actions') return mockHeaderActions;
                 if (id === 'bindery-shelf-badge') return { textContent: '' };
                 return null;
             }
@@ -97,17 +103,17 @@ def test_bindery_shelf_batch_mode_in_node_sandbox():
     window._binderyShelfTotalSize = '1.7 MB';
     window.renderBinderyShelfHtml(mockBooks);
 
-    if (!shelfInner.includes('💾 占用 1.7 MB')) {
-        throw new Error('未能在工具栏中渲染磁盘占用总容量');
+    if (!headerActionsInner.includes('💾 占用 1.7 MB')) {
+        throw new Error('未能在 Tab 头部右侧渲染磁盘占用总容量');
     }
-    if (!shelfInner.includes('☑️ 批量管理')) {
-        throw new Error('未能在工具栏中渲染批量管理按钮');
+    if (!headerActionsInner.includes('☑️ 批量管理')) {
+        throw new Error('未能在 Tab 头部右侧渲染批量管理按钮');
     }
 
     // 2. 开启批量管理模式
     window.toggleBinderyShelfBatchMode();
     if (!window._binderyShelfBatchMode) throw new Error('批量模式切换失败');
-    if (!shelfInner.includes('✖️ 退出批量')) throw new Error('批量激活态按钮未更新');
+    if (!headerActionsInner.includes('✖️ 退出批量')) throw new Error('批量激活态按钮未更新');
     if (!shelfInner.includes('☑️ 全选/取消当前页')) throw new Error('缺少全选当前页操作');
     if (!shelfInner.includes('type="checkbox"')) throw new Error('卡片中缺少多选框');
 
