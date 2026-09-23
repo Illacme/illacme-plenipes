@@ -1,34 +1,20 @@
-name: Illacme AI Sync & Publish Pipeline
-
-# 触发条件：只有当推送到 main 分支，且修改了笔记库或核心配置时才触发
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'content-vault/**'
-      - 'core/**'
-      - 'config.yaml'
-      - 'plenipes.py'
-      - 'package.json'
 name: 🚀 Illacme-Plenipes 云原生自动发布管线
 
 # =======================================================
 # 🎯 触发器配置 (管线点火条件)
 # =======================================================
 on:
-  # 场景一：单体仓库模式下，当有人向 main 分支推送代码或笔记时触发
+  # 支持在 GitHub Actions 页面随时手动触发
+  workflow_dispatch:
+
+  # 仅当向 main 分支推送笔记库内容时才自动触发发布
   push:
     branches:
       - main
-    # 物理屏蔽：忽略纯说明类文件的修改，避免浪费 GitHub Actions 免费运行额度
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
-      - 'LICENSE'
-      
+    paths:
+      - 'content-vault/**'
+
   # 场景二：分离式架构下，接收外部独立笔记仓库发送的“跨仓唤醒信号”
-  # 即使你在单体仓库下使用，此预留配置也不会有任何副作用
   repository_dispatch:
     types: [trigger-sync-and-build]
 
