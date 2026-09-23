@@ -210,17 +210,16 @@ math { font-size: 1.1em; }
       <content src="{ch_filename}"/>{child_ncx_block}
     </navPoint>""")
 
-                # 6. 写入出版版权页与物权指纹 (Colophon)
-                colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "epub")
-                colophon_xhtml = ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang)
-                zf.writestr("OEBPS/text/colophon.xhtml", colophon_xhtml)
-
-                manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
-                spine_items.append('<itemref idref="colophon"/>')
-                ncx_order += 1
-                colophon_lbl = ColophonBuilder.get_nav_label(iso_lang)
-                nav_ol_items.append(f'<li><a href="text/colophon.xhtml">{colophon_lbl}</a></li>')
-                toc_nav_points.append(f"""    <navPoint id="navPoint-{ncx_order}" playOrder="{ncx_order}">
+                # 6. 写入出版版权页与物权指纹 (Colophon，单篇文章导出自动抑制)
+                if not (book_metadata.get("is_single_article") or len(manuscript_tree) <= 1):
+                    colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "epub")
+                    zf.writestr("OEBPS/text/colophon.xhtml", ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang))
+                    manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
+                    spine_items.append('<itemref idref="colophon"/>')
+                    ncx_order += 1
+                    colophon_lbl = ColophonBuilder.get_nav_label(iso_lang)
+                    nav_ol_items.append(f'<li><a href="text/colophon.xhtml">{colophon_lbl}</a></li>')
+                    toc_nav_points.append(f"""    <navPoint id="navPoint-{ncx_order}" playOrder="{ncx_order}">
       <navLabel><text>{colophon_lbl}</text></navLabel>
       <content src="text/colophon.xhtml"/>
     </navPoint>""")

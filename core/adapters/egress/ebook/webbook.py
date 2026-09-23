@@ -113,22 +113,24 @@ class WebBookAdapter(BaseEBookAdapter):
                     <div class="wb-chapter-body">{healed_body}</div>
                 </article>""")
 
-            # 4. 版记 Colophon 组装 (支持多语版记无缝变脸)
-            colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "webbook")
-            colophon_nav_attrs = ""
-            colophon_cards = []
-            active_langs = polyglot_langs if polyglot_langs else [target_lang]
-            for l in active_langs:
-                c_iso = l if l != "zh" else "zh-CN"
-                c_lbl = ColophonBuilder.get_nav_label(c_iso)
-                colophon_nav_attrs += f' data-title-{l}="{escape(c_lbl)}"'
-                c_body = ColophonBuilder.render_xhtml(colophon_data, iso_lang=c_iso)
-                c_match = re.search(r'<body[^>]*>(.*?)</body>', c_body, flags=re.DOTALL)
-                colophon_cards.append(f'<div class="wb-poly-item wb-colophon-card" data-lang="{l}">{c_match.group(1) if c_match else c_body}</div>')
+            # 4. 版记 Colophon 组装 (单篇文章导出自动抑制)
+            is_single = book_metadata.get("is_single_article") or len(manuscript_tree) <= 1
+            if not is_single:
+                colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "webbook")
+                colophon_nav_attrs = ""
+                colophon_cards = []
+                active_langs = polyglot_langs if polyglot_langs else [target_lang]
+                for l in active_langs:
+                    c_iso = l if l != "zh" else "zh-CN"
+                    c_lbl = ColophonBuilder.get_nav_label(c_iso)
+                    colophon_nav_attrs += f' data-title-{l}="{escape(c_lbl)}"'
+                    c_body = ColophonBuilder.render_xhtml(colophon_data, iso_lang=c_iso)
+                    c_match = re.search(r'<body[^>]*>(.*?)</body>', c_body, flags=re.DOTALL)
+                    colophon_cards.append(f'<div class="wb-poly-item wb-colophon-card" data-lang="{l}">{c_match.group(1) if c_match else c_body}</div>')
 
-            nav_lbl = ColophonBuilder.get_nav_label(iso_lang)
-            toc_items.append(f'<div class="wb-toc-group" data-ch-id="colophon"><div class="wb-toc-row"><a href="#colophon" class="wb-toc-item wb-toc-chapter" data-id="colophon"><span class="wb-toc-num">✦</span> <span class="wb-toc-text"{colophon_nav_attrs}>{nav_lbl}</span></a></div></div>')
-            chapters_html.append(f'<article id="colophon" class="wb-chapter"><div class="wb-polyglot-block">{"".join(colophon_cards)}</div></article>')
+                nav_lbl = ColophonBuilder.get_nav_label(iso_lang)
+                toc_items.append(f'<div class="wb-toc-group" data-ch-id="colophon"><div class="wb-toc-row"><a href="#colophon" class="wb-toc-item wb-toc-chapter" data-id="colophon"><span class="wb-toc-num">✦</span> <span class="wb-toc-text"{colophon_nav_attrs}>{nav_lbl}</span></a></div></div>')
+                chapters_html.append(f'<article id="colophon" class="wb-chapter"><div class="wb-polyglot-block">{"".join(colophon_cards)}</div></article>')
 
             # 5. 渲染整卷完整自包含 WebBook
             full_html = self._render_full_document(

@@ -141,9 +141,12 @@ class PDFBookAdapter(BaseEBookAdapter):
             nav_hdr = f'<div class="chapter-nav-header"><span class="chapter-nav-brand">{publisher}</span><span class="chapter-nav-title">{ch_title}</span></div>'
             ch_sections.append(f'<section class="chapter-page" id="{ch_id}">{nav_hdr}<h1 class="chapter-heading">{ch_title}</h1><div class="chapter-body">{ch_body}</div></section>')
 
-        # 3. 末尾出版版权页 (Colophon)
-        colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, meta, format_name="pdf")
-        colophon_tag = PDFAssets.render_colophon_html(colophon_data, lang=lang)
+        # 3. 末尾出版版权页 (Colophon，单篇文章导出自动抑制)
+        is_single = meta.get("is_single_article") or len(manuscript_tree) <= 1
+        colophon_tag = ""
+        if not is_single:
+            colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, meta, format_name="pdf")
+            colophon_tag = PDFAssets.render_colophon_html(colophon_data, lang=lang)
 
         raw_html = f'''<!DOCTYPE html>
 <html lang="{iso_lang}">

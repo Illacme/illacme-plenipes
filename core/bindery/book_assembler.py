@@ -87,15 +87,11 @@ class BookAssembler:
         desc = f"Multilingual polyglot edition produced by {site_name} Automated Bindery Hub." if is_polyglot else desc_map.get(target_lang, desc_map["zh"])
 
         book_meta = {
-            "title": book_title,
-            "author": author,
-            "publisher": publisher_name,
-            "description": desc,
-            "date": None,
-            "language": "mul" if is_polyglot else target_lang,
-            "license": license_decl,
-            "uuid": f"urn:uuid:{uuid.uuid4()}",
-            "polyglot_langs": polyglot_langs if is_polyglot else []
+            "title": book_title, "author": author, "publisher": publisher_name,
+            "description": desc, "date": None, "language": "mul" if is_polyglot else target_lang,
+            "license": license_decl, "uuid": f"urn:uuid:{uuid.uuid4()}",
+            "polyglot_langs": polyglot_langs if is_polyglot else [],
+            "is_single_article": bool(single_file or len(chapters) <= 1)
         }
 
         # 3. 确定输出路径与封面解析
