@@ -35,6 +35,7 @@ __pycache__/
 # 📊 付印产物与影子库 (Production & Shadows)
 dist/
 build/
+*.spec
 .docusaurus/
 .astro/
 .next/

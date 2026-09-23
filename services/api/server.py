@@ -118,8 +118,9 @@ class SafeStaticFiles(StaticFiles):
 
         return await super().get_response(path, scope)
 
-# 🎨 挂载仪表盘静态页面 (绝对路径自愈锚定，启用 SafeStaticFiles 物理隔离)
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web", "dashboard"))
+# 🎨 挂载仪表盘静态页面 (经 FrozenPathResolver 物理自愈锚定，启用 SafeStaticFiles 物理隔离)
+from core.utils.frozen_paths import FrozenPathResolver
+static_dir = FrozenPathResolver.get_dashboard_dir()
 if os.path.exists(static_dir):
     app.mount("/dashboard", SafeStaticFiles(directory=static_dir, html=True), name="static")
 
