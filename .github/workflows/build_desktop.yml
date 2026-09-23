@@ -1,4 +1,4 @@
-name: 🖥️ Build Desktop Application
+name: Build Desktop Application
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
 
       - name: 🔨 启动自动化打包流水线
         run: |
-          python scripts/build_desktop.py
+          python -c "from desktop.packager import DesktopPackager; import sys; sys.exit(0 if DesktopPackager.execute_build() else 1)"
 
       - name: 🔍 检查编译产物拓扑
         shell: bash

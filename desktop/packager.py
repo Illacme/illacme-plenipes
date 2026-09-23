@@ -58,15 +58,12 @@ class DesktopPackager:
             "uvicorn.protocols.http.auto",
             "uvicorn.protocols.websockets",
             "uvicorn.protocols.websockets.auto",
-            "uvicorn.lifespans",
-            "uvicorn.lifespans.on",
+            "uvicorn.lifespan.on",
             "fastapi",
             "cryptography",
             "yaml",
             "markdown",
             "latex2mathml",
-            "reportlab",
-            "engineio.async_drivers.asgi",
         ]
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
@@ -148,3 +145,18 @@ class DesktopPackager:
         except subprocess.CalledProcessError as e:
             tlog.error(f"❌ [打包失败] PyInstaller 编译异常中断: {e}")
         return False
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Illacme Plenipes 桌面独立客户端构建流水线")
+    parser.add_argument("--dry-run", action="store_true", help="仅执行参数与资源依赖合规性校验，不执行实际耗时编译")
+    parser.add_argument("--output-dir", default="dist/desktop", help="打包产物输出目录 (默认: dist/desktop)")
+    args = parser.parse_args()
+
+    success = DesktopPackager.execute_build(dry_run=args.dry_run, output_dir=args.output_dir)
+    sys.exit(0 if success else 1)
+
+
+if __name__ == "__main__":
+    main()
