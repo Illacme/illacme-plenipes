@@ -141,4 +141,23 @@ def test_cloudflare_token_mode_behavior():
         assert "press.mycustomdomain.com" in probe_res_installed["message"]
 
 
+def test_tunnel_plugin_dry_run_endpoint(client):
+    """验证 /api/plugins/dry-run 能够对 Cloudflare 和 Pinggy 发起沙盒测试"""
+    res = client.post("/api/plugins/dry-run", json={
+        "id": "cloudflare",
+        "settings": {
+            "tunnel_token": "eyJh_dry_run_token_mock",
+            "hostname": "press.dryrun.com"
+        }
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "logs" in data
+    messages = [log["message"] for log in data["logs"]]
+    assert any("穿透链路探测" in m for m in messages)
+    assert any("Cloudflare Tunnel Token" in m for m in messages)
+
+
+
 

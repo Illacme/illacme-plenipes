@@ -93,6 +93,37 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
             logs.append(log("ERROR", f"❌ [探测失败] 对端服务返回异常: {err_msg}"))
             success = False
 
+    # 🛰️ [Tunnel] 公网与网络穿透驱动物理连通性仿真测试
+    elif plugin_id in ("cloudflare", "pinggy"):
+        from core.adapters.tunnel import TunnelRegistry
+        adapter_cls = TunnelRegistry.get(plugin_id)
+        if adapter_cls:
+            adapter = adapter_cls(config=settings)
+            logs.append(log("INFO", f"🛰️ [穿透链路探测] 启动 {adapter.DISPLAY_NAME} 探针自检..."))
+            token = settings.get("tunnel_token", "").strip()
+            hostname = settings.get("hostname", "").strip()
+            if plugin_id == "cloudflare":
+                if token:
+                    masked = token[:6] + "..." + token[-4:] if len(token) > 10 else "****"
+                    logs.append(log("INFO", f"🔑 [授权层] 已载入 Cloudflare Tunnel Token: {masked}"))
+                    if hostname:
+                        logs.append(log("INFO", f"🌐 [域名路由] 绑定专属公网域名: https://{hostname}"))
+                else:
+                    logs.append(log("INFO", "💡 [免密模式] 未检测到 Tunnel Token，将以 Quick Tunnel 临时免密通道运行。"))
+            probe_res = adapter.probe()
+            if probe_res.get("healthy"):
+                logs.append(log("SUCCESS", f"🟢 [探针握手] {probe_res.get('message', '连通测试正常')}"))
+                success = True
+            elif probe_res.get("success"):
+                logs.append(log("WARN", f"⚠️ [环境提示] {probe_res.get('message', '边缘网关可达，但底层组件需就绪')}"))
+                success = True
+            else:
+                logs.append(log("ERROR", f"❌ [探测失败] {probe_res.get('message', '边缘连接失败')}"))
+                success = False
+        else:
+            logs.append(log("ERROR", f"❌ [未找到驱动] 穿透驱动注册表中未发现 ID: {plugin_id}"))
+            success = False
+
     # 📧 📱 📲 [Notice & Webhook] 邮件、短信、App推送与机器人通道连通性探测
     elif plugin_id in ("email", "sms", "app_push") or plugin_id in notification_plugins or parent_id == "webhook_gateway":
         from .plugin_dry_run_notice import run_notice_plugin_dry_run

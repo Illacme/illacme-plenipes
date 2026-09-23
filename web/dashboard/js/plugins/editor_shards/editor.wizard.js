@@ -94,7 +94,11 @@
             'wework': ['1. 企业微信 Webhook 地址', '2. 生命周期事件订阅 (可选)', '3. 连通测试与保存'],
             'wechat_work': ['1. 企业微信 Webhook 地址', '2. 生命周期事件订阅 (可选)', '3. 连通测试与保存'],
             'generic_webhook': ['1. 物理 Webhook 与签名 Secret', '2. 生命周期事件订阅 (可选)', '3. 连通测试与保存'],
-            'webhook_dispatch': ['1. CI/CD 触发 Hook 地址', '2. 信号验证密钥与策略 (可选)', '3. 连通测试与保存']
+            'webhook_dispatch': ['1. CI/CD 触发 Hook 地址', '2. 信号验证密钥与策略 (可选)', '3. 连通测试与保存'],
+
+            // === 网络穿透 (Tunnel) ===
+            'cloudflare': ['1. 隧道令牌 (Tunnel Token)', '2. 专属域名与网络策略 (选填)', '3. 连通测试与保存'],
+            'pinggy': ['1. 零配置免密穿透', '2. 本地服务端口', '3. 连通测试与保存']
         };
 
         let steps = specificStepsMap[pid];
@@ -103,6 +107,8 @@
                 steps = ['1. 平台 API Token 凭据', '2. 目标仓库与项目绑定', '3. 高级参数 (可选)', '4. 连通测试与保存'];
             } else if (cat === 'notification') {
                 steps = ['1. 消息端点与授权凭据', '2. 生命周期事件订阅 (可选)', '3. 连通测试与保存'];
+            } else if (cat === 'tunnel') {
+                steps = ['1. 穿透凭据与令牌', '2. 域名与网络策略 (可选)', '3. 连通测试与保存'];
             } else if (cat === 'protocol' || pid.includes('ai') || pid.includes('llm')) {
                 steps = ['1. API Key 与服务端点', '2. 目标模型与降级策略', '3. 采样调参 (可选)', '4. 校验模型与保存'];
             } else if (cat === 'ssg' || cat === 'theme') {

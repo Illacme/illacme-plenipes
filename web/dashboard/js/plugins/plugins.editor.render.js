@@ -77,7 +77,7 @@ window.buildPluginConfigFormHtml = (p) => {
         const tunnelCfg = window.settingsData?.tunnel?.[id] || {};
         if (id === 'cloudflare') {
             html += `
-                <div class="channel-console-header" style="margin-bottom: 1.2rem; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.18); border-radius: 10px; padding: 14px 16px;">
+                <div class="channel-console-header api-token-helper" style="margin-bottom: 1.2rem; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.18); border-radius: 10px; padding: 14px 16px;">
                     <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                         <div>
                             <h4 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">

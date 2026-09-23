@@ -102,7 +102,7 @@
             // 🚀 控制底部“🧪 沙盘演练 (测试连接)”按钮的显示与绑定
             const dryRunBtn = document.getElementById('btn-dry-run-plugin');
             if (dryRunBtn) {
-                if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol')) {
+                if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol' || p.category === 'tunnel')) {
                     dryRunBtn.style.display = 'block';
                     dryRunBtn.setAttribute('onclick', `triggerPluginDryRun('${id}')`);
                 } else {
@@ -145,7 +145,7 @@
             }
 
             // 🚀 [V105.0] 恢复三步/四步极简向导 Tab Header
-            if (['hosting', 'image_hosting', 'publisher', 'notification', 'protocol'].includes(p.category) && p.is_manageable) {
+            if (['hosting', 'image_hosting', 'publisher', 'notification', 'protocol', 'tunnel'].includes(p.category) && p.is_manageable) {
                 if (typeof window.renderPluginStepWizardHeader === 'function') {
                     html += window.renderPluginStepWizardHeader(id, p.category);
                 }
@@ -163,7 +163,7 @@
                 `;
             }
 
-            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol')) {
+            if (p && (p.category === 'publisher' || p.category === 'hosting' || p.category === 'image_hosting' || p.category === 'notification' || p.category === 'protocol' || p.category === 'tunnel')) {
                 html += `
                     <div id="sandbox-console-wrapper" style="display: none; margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                         <label class="tiny-label" style="color: var(--accent-secondary); margin-bottom: 8px; display: block; font-weight: 700; font-size: 0.7rem;">🧪 物理沙盒仿真演练终端 (Sandbox Emulation Terminal)</label>
