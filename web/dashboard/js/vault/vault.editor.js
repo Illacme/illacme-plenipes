@@ -269,3 +269,28 @@ setTimeout(() => {
         console.info("💾 [Scratchpad] Zero-Leak Event Delegation registered successfully.");
     }
 }, 500);
+
+window.binderyExportCurrentEditorDoc = function() {
+    const docId = window.activeDocId;
+    if (!docId) return window.showToast?.('当前无正在编辑的原稿', 'warning');
+    const title = document.getElementById('editor-meta-title')?.value?.trim() || '';
+    if (typeof window.quickBindSingleDoc === 'function') {
+        window.quickBindSingleDoc(docId, title);
+    } else if (typeof window.openBinderyModal === 'function') {
+        window.openBinderyModal(`single:${docId}`, { rel_path: docId, title: title || docId });
+    }
+};
+
+// ⌨️ 全域 Cmd+B / Ctrl+B 装订快捷键
+window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+        const modal = document.getElementById('editor-modal');
+        if (modal && modal.style.display !== 'none') {
+            e.preventDefault();
+            window.binderyExportCurrentEditorDoc();
+        } else if (typeof window.openBinderyModal === 'function') {
+            e.preventDefault();
+            window.openBinderyModal();
+        }
+    }
+});

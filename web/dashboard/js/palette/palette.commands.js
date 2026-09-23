@@ -248,6 +248,32 @@
                         window.location.reload();
                     }, 400);
                 }
+            },
+            {
+                id: 'bindery_open',
+                title: '🖨️ 数字装订：合卷排版与导出出版物 (Digital Bindery)',
+                icon: '🖨️',
+                shortcut: 'Cmd+B',
+                action: () => {
+                    if (typeof window.openBinderyModal === 'function') {
+                        window.openBinderyModal();
+                    } else {
+                        notify('装订中心模块未就绪', 'error');
+                    }
+                }
+            },
+            {
+                id: 'bindery_export_doc',
+                title: '⚡ 单篇导出：极速装订当前原稿 (Export Current Document)',
+                icon: '⚡',
+                shortcut: 'Cmd+B',
+                action: () => {
+                    if (typeof window.binderyExportCurrentEditorDoc === 'function') {
+                        window.binderyExportCurrentEditorDoc();
+                    } else {
+                        notify('当前未在编辑器中或未就绪', 'warning');
+                    }
+                }
             }
         ];
     };

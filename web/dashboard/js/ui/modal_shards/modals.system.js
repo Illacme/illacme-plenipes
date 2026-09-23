@@ -47,7 +47,10 @@
                         <span style="font-size:1.2rem;">📝</span>
                         <h2 id="editor-title" style="margin:0;">EDITOR</h2>
                     </div>
-                    <button class="close-btn" onclick="closeEditor()">×</button>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="mini-action-btn glow-btn" id="btn-editor-export-doc" onclick="window.binderyExportCurrentEditorDoc()" title="极速装订当前文档为出版物 (快捷键: Cmd/Ctrl + B)" style="border-color: rgba(16,185,129,0.5); color: #10b981; background: rgba(16,185,129,0.12); font-size: 0.74rem; padding: 3px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">🖨️ 导出出版物 (Cmd+B)</button>
+                        <button class="close-btn" onclick="closeEditor()">×</button>
+                    </div>
                 </div>
                 
                 <!-- 💾 物理自动草稿自愈与保活挂载条 -->
