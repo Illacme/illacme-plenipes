@@ -8,7 +8,7 @@
 import io
 import socket
 import base64
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 try:
     import qrcode
 except ImportError:
@@ -57,13 +57,25 @@ def generate_qr_data_uri(content: str) -> str:
         return ""
 
 
-def build_mobile_sync_payload(filename: str, port: int = 43212, action: str = "download") -> Dict[str, Any]:
-    """组装移动端扫码同步所需的目标 URL 与二维码载荷"""
+def build_mobile_sync_payload(
+    filename: str,
+    port: int = 43212,
+    action: str = "download",
+    base_url: Optional[str] = None,
+    token: Optional[str] = None
+) -> Dict[str, Any]:
+    """组装移动端扫码同步所需的目标 URL 与二维码载荷 (支持局域网直连或公网隧道)"""
     lan_ip = get_lan_ip()
     endpoint = "/api/bindery/view" if action == "view" and filename.endswith(".html") else "/api/bindery/download"
-    target_url = f"http://{lan_ip}:{port}{endpoint}?file={filename}"
-    qr_data_uri = generate_qr_data_uri(target_url)
+    if base_url:
+        token_param = f"&token={token}" if token else ""
+        target_url = f"{base_url.rstrip('/')}{endpoint}?file={filename}{token_param}"
+        is_public = True
+    else:
+        target_url = f"http://{lan_ip}:{port}{endpoint}?file={filename}"
+        is_public = False
 
+    qr_data_uri = generate_qr_data_uri(target_url)
     fmt = "webbook" if filename.endswith(".html") else ("pdf" if filename.endswith(".pdf") else "epub")
     return {
         "success": True,
@@ -75,4 +87,7 @@ def build_mobile_sync_payload(filename: str, port: int = 43212, action: str = "d
         "url": target_url,
         "qr_data_uri": qr_data_uri,
         "has_qr_engine": bool(qr_data_uri),
+        "is_public": is_public,
+        "token": token,
+        "expires_in": 1800 if token else None,
     }

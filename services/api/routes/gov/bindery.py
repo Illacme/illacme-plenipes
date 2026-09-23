@@ -247,13 +247,13 @@ def _get_safe_book_path(file: str) -> str:
 
 
 @router.get("/api/bindery/download")
-async def download_ebook_publication(file: str = Query(..., description="待下载文件名")):
+async def download_ebook_publication(file: str = Query(..., description="待下载文件名"), token: Optional[str] = Query(None)):
     target, ext = _get_safe_book_path(file), os.path.splitext(file)[1].lower()
     media_map = {".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf"}
     return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
 
 @router.get("/api/bindery/view")
-async def view_ebook_webbook(file: str = Query(...)):
+async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Query(None)):
     target = _get_safe_book_path(file)
     if not file.lower().endswith(".html"): raise HTTPException(status_code=400, detail="仅支持 WebBook HTML 在线翻阅。")
     with open(target, "r", encoding="utf-8") as f:
@@ -290,9 +290,3 @@ async def delete_ebook_from_shelf(payload: Dict[str, Any] = Body(...)) -> Dict[s
             os.remove(t)
             deleted.append(fn)
     return {"success": True, "deleted": deleted, "count": len(deleted), "message": f"成功移除 {len(deleted)} 本出版物。"}
-
-@router.get("/api/bindery/qr")
-async def get_publication_qr_code(file: str = Query(..., description="文件名"), action: str = Query("download")):
-    _get_safe_book_path(file)
-    return build_mobile_sync_payload(file, action=action)
-
