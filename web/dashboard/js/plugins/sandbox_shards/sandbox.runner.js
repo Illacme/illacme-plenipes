@@ -157,13 +157,17 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
 };
 
 window.installPluginDependencies = async (id) => {
-    const btn = document.getElementById('btn-install-dep');
+    const btn = document.getElementById('btn-install-dep') || document.querySelector(`[onclick*="installPluginDependencies('${id}')"]`);
     const container = document.getElementById('dep-install-container');
+    const terminalWrapper = document.getElementById('sandbox-console-wrapper');
     const terminal = document.getElementById('sandbox-console-terminal');
-    if (!btn || !terminal) return;
+    if (terminalWrapper) terminalWrapper.style.display = 'block';
+    if (!terminal) return;
 
-    btn.disabled = true;
-    btn.innerText = '⏳ 正在安装中...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ 正在安装中...';
+    }
     
     const addLogLine = (msg, level = 'INFO') => {
         const line = document.createElement('div');

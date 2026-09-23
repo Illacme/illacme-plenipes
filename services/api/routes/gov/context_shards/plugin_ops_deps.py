@@ -24,6 +24,11 @@ async def install_plugin_deps_impl(payload: dict) -> dict:
         now = datetime.datetime.now().strftime("%H:%M:%S")
         return {"time": now, "level": level, "message": msg}
 
+    # ── 系统级 CLI 依赖（Cloudflare Tunnel - cloudflared）自愈 ──────────
+    if plugin_id in ("cloudflare", "cloudflared"):
+        from .deps_binary_installer import install_cloudflared_binary
+        return install_cloudflared_binary(log)
+
     # ── 系统级 CLI 依赖（Git）自愈 ──────────────────────────
     if plugin_id == "github_pages":
         import shutil

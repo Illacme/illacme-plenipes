@@ -87,9 +87,14 @@ window.buildPluginConfigFormHtml = (p) => {
                                 💡 <b>双模通道模式</b>：若下方 Token <b>留空</b>，系统全自动唤醒 <b>Quick Tunnel</b> 临时免密公网通道；若填入 <b>Tunnel Token</b>，即可绑定专属自定义域名并享受全球 Anycast 边缘加速。
                             </p>
                         </div>
-                        <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="action-btn glow-btn" style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(0, 242, 255, 0.4); color: var(--accent-secondary); display: inline-flex; align-items: center; gap: 4px;">
-                            <span>☁️ 打开 Cloudflare Zero Trust ↗</span>
-                        </a>
+                        <div style="display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="action-btn glow-btn" onclick="window.installPluginDependencies('${id}')" style="font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(16, 185, 129, 0.4); color: #10b981; background: rgba(16, 185, 129, 0.08); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <span>⚡ 一键安装 cloudflared</span>
+                            </button>
+                            <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="action-btn" style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(0, 242, 255, 0.4); color: var(--accent-secondary); display: inline-flex; align-items: center; gap: 4px;">
+                                <span>☁️ 控制台 ↗</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="settings-grid">
