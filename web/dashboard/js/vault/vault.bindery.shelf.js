@@ -56,7 +56,9 @@
         if (!shelfContainer) return;
         if (books && Array.isArray(books)) window._binderyShelfBooks = books;
         const all = window._binderyShelfBooks || [];
-        const wbCount = all.filter(b => b.format === 'webbook').length, epubCount = all.filter(b => b.format === 'epub').length;
+        const wbCount = all.filter(b => b.format === 'webbook').length;
+        const epubCount = all.filter(b => b.format === 'epub').length;
+        const pdfCount = all.filter(b => b.format === 'pdf').length;
 
         if (all.length === 0) {
             shelfContainer.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-dim, rgba(255,255,255,0.55)); font-size:0.85rem;"><div style="font-size:2rem; margin-bottom:10px; opacity:0.7;">📚</div><div style="font-weight:600; color:var(--text-bright, #fff); margin-bottom:4px;">书架上暂无已制作的电子书</div><div style="font-size:0.75rem;">切换至上方「装订新版」生成第一本电子书！</div></div>`;
@@ -66,6 +68,7 @@
         const filtered = all.filter(b => {
             if (window._binderyShelfFilter === 'webbook' && b.format !== 'webbook') return false;
             if (window._binderyShelfFilter === 'epub' && b.format !== 'epub') return false;
+            if (window._binderyShelfFilter === 'pdf' && b.format !== 'pdf') return false;
             if (window._binderyShelfQuery && !b.filename.toLowerCase().includes(window._binderyShelfQuery)) return false;
             return true;
         });
@@ -79,6 +82,7 @@
                     <button type="button" onclick="window.setBinderyShelfFilter('all')" style="${chipStyle(activeFl === 'all')}">全部 (${all.length})</button>
                     <button type="button" onclick="window.setBinderyShelfFilter('webbook')" style="${chipStyle(activeFl === 'webbook')}">🌐 网页书 (${wbCount})</button>
                     <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
+                    <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF 印本 (${pdfCount})</button>
                 </div>
                 <div style="min-width:140px; flex:1; max-width:200px;">
                     <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
@@ -87,18 +91,18 @@
         `;
 
         if (filtered.length === 0) {
-            shelfContainer.innerHTML = toolbarHtml + `<div style="text-align:center; padding:30px; color:var(--text-dim, rgba(255,255,255,0.5)); font-size:0.8rem;">🔍 未找到匹配的电子书</div>`;
+            shelfContainer.innerHTML = toolbarHtml + `<div style="text-align:center; padding:30px; color:var(--text-dim, rgba(255,255,255,0.5)); font-size:0.8rem;">🔍 未找到匹配的电子书或出版物</div>`;
             return;
         }
 
         const itemsHtml = filtered.map(b => {
-            const isWebBook = b.format === 'webbook';
-            const icon = isWebBook ? '🌐' : '📖';
-            const fmtBadge = isWebBook
-                ? '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-weight:700;">WebBook</span>'
-                : '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">EPUB 3.0</span>';
+            const isWb = b.format === 'webbook', isPdf = b.format === 'pdf';
+            const icon = isWb ? '🌐' : (isPdf ? '📄' : '📖');
+            let fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">EPUB 3.0</span>';
+            if (isWb) fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-weight:700;">WebBook</span>';
+            if (isPdf) fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3); font-weight:700;">PDF 印本</span>';
 
-            const previewBtn = isWebBook
+            const previewBtn = isWb
                 ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff;">👁️</a>`
                 : '';
 
@@ -132,8 +136,9 @@
 
     window.rebindBookFromShelf = function(filename) {
         if (!filename) return;
-        const fmt = filename.endsWith('.html') ? 'webbook' : 'epub';
-        if (typeof window.switchBinderyModalTab === 'function') window.switchBinderyModalTab('build');
+        const fmt = filename.endsWith('.html') ? 'webbook' : (filename.endsWith('.pdf') ? 'pdf' : 'epub');
+        if (typeof window.switchBinderyTab === 'function') window.switchBinderyTab('build');
+        else if (typeof window.switchBinderyModalTab === 'function') window.switchBinderyModalTab('build');
         if (typeof window.selectBinderyFormat === 'function') window.selectBinderyFormat(fmt);
 
         let clean = filename.replace(/\.(html|epub|pdf|md)$/i, '');
@@ -144,12 +149,23 @@
 
         let title = clean.replace(/^illacme-press-/i, '').replace(/-polyglot-edition.*$/i, '').replace(/-[a-z]{2,5}-edition.*$/i, '').replace(/_[a-z]{2,5}$/i, '');
         const titleInput = document.getElementById('bindery-input-title'), langSelect = document.getElementById('bindery-select-lang');
+        const scopeSelect = document.getElementById('bindery-select-scope');
         if (titleInput && title) titleInput.value = title;
         if (langSelect) {
             langSelect.value = isPoly ? 'polyglot' : (langSelect.querySelector(`option[value="${lang}"]`) ? lang : 'zh');
             langSelect.dispatchEvent(new Event('change'));
         }
-        if (typeof window.showToast === 'function') window.showToast(`已载入「${title || filename}」的历史装订配置`, 'info');
+        if (scopeSelect && title) {
+            for (let opt of scopeSelect.options) {
+                if (opt.value !== 'all' && (opt.text.includes(title) || opt.value.toLowerCase() === title.toLowerCase())) {
+                    scopeSelect.value = opt.value; break;
+                }
+            }
+        }
+        if (typeof window.showToast === 'function') window.showToast(`正在沿用历史配置重新装订「${title || filename}」...`, 'info');
+        setTimeout(() => {
+            if (typeof window.executeBookBinding === 'function') window.executeBookBinding();
+        }, 150);
     };
 
     window.deleteBookFromShelf = async function(filename) {
@@ -233,7 +249,20 @@
                     statusArea.style.color = isLight ? '#047857' : '#10b981';
                     statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
                 }
-                submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.85';
+                submitBtn.innerHTML = `<span>✨ 制作成功</span>`;
+                const cancelBtn = document.getElementById('btn-bindery-cancel');
+                if (cancelBtn) cancelBtn.textContent = '关闭';
+                if (window._binderySuccessTimer) clearTimeout(window._binderySuccessTimer);
+                window._binderySuccessTimer = setTimeout(() => {
+                    const btn = document.getElementById('btn-execute-binding');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = `<span>🔄 重新装订</span>`;
+                    }
+                }, 1800);
                 if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
                 if (result.mode === 'matrix' && Array.isArray(result.results)) {

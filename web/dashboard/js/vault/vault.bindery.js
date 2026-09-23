@@ -1,6 +1,6 @@
 /**
  * 📚 [V125.0] Illacme Plenipes Vault - Book Bindery Modal Controller Shard
- * 职责：数字出版物全卷装订弹窗控制器、范围探测、EPUB 3.0 打包与安全流式下载。
+ * 职责：数字出版物全卷装订弹窗控制器、范围探测、EPUB / WebBook / PDF 多格式打包与安全流式下载。
  * 规范：100% 遵守 SOP-03 前端视觉主权与双主题自适应规范，模板由 BinderyTemplates 分离承载。
  */
 
@@ -24,7 +24,7 @@
      * 唤醒数字装订对话框
      * @param {string} preselectedScope 预选栏目 (可选，如 'Docs', 'Blog' 或 'all')
      */
-    window.openBinderyModal = async function(preselectedScope = 'all') {
+    window.openBinderyModal = async function(preselectedScope = 'all', singleDoc = null) {
         const tpl = _getTemplates();
         tpl.ensureStyles();
 
@@ -63,15 +63,24 @@
         }
 
         const currentScope = preselectedScope || 'all';
-        const defaultTitle = scopesData.site_name ? `${scopesData.site_name} · 数字出版集` : '数字出版合集';
+        if (singleDoc) {
+            scopesData.single_doc = singleDoc;
+        } else if (currentScope.startsWith('single:')) {
+            const relPath = currentScope.slice(7);
+            scopesData.single_doc = { rel_path: relPath, title: relPath };
+        }
+        const defaultTitle = (scopesData.single_doc && scopesData.single_doc.title) ? scopesData.single_doc.title : (scopesData.site_name ? `${scopesData.site_name} · 数字出版集` : '数字出版合集');
 
         _binderyModalEl.innerHTML = tpl.buildModalCardHtml(scopesData, currentScope, defaultTitle);
 
-        // 绑定输入与选择防抖联动刷新封面
+        // 绑定输入与选择防抖联动刷新封面与重置按钮状态
         let debounceTimer = null;
         const triggerDebouncedPreview = () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(window.refreshCoverPreview, 250);
+            debounceTimer = setTimeout(() => {
+                window.refreshCoverPreview();
+                if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+            }, 250);
         };
 
         const titleInput = document.getElementById('bindery-input-title');
@@ -81,18 +90,31 @@
 
         if (titleInput) titleInput.addEventListener('input', triggerDebouncedPreview);
         if (authorInput) authorInput.addEventListener('input', triggerDebouncedPreview);
-        if (scopeSelect) scopeSelect.addEventListener('change', window.refreshCoverPreview);
-        if (langSelect) langSelect.addEventListener('change', window.refreshCoverPreview);
+        if (scopeSelect) scopeSelect.addEventListener('change', () => {
+            window.refreshCoverPreview();
+            if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+        });
+        if (langSelect) langSelect.addEventListener('change', () => {
+            window.refreshCoverPreview();
+            if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+        });
 
         // 初始拉取封面预览与货架
         window._binderyMatrixMode = false;
+        if (window._binderySuccessTimer) {
+            clearTimeout(window._binderySuccessTimer);
+            window._binderySuccessTimer = null;
+        }
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
         // 监听矩阵复选框变动
         const cbs = document.querySelectorAll('.bindery-matrix-cb');
         cbs.forEach(cb => {
-            cb.addEventListener('change', window.updateMatrixSubmitBtn);
+            cb.addEventListener('change', () => {
+                window.updateMatrixSubmitBtn();
+                if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+            });
         });
     };
 
@@ -248,10 +270,31 @@
     window._activeBinderyFormat = 'epub';
     window.selectBinderyFormat = function(fmtId) {
         window._activeBinderyFormat = fmtId;
-        const e1 = document.getElementById('btn-driver-epub');
-        const e2 = document.getElementById('btn-driver-webbook');
-        if (e1) e1.classList.toggle('active', fmtId === 'epub');
-        if (e2) e2.classList.toggle('active', fmtId === 'webbook');
+        ['epub', 'webbook', 'pdf'].forEach(f => {
+            const el = document.getElementById(`btn-driver-${f}`);
+            if (el) el.classList.toggle('active', fmtId === f);
+        });
+        if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
+    };
+
+    window.resetBinderySubmitBtn = function() {
+        if (window._binderySuccessTimer) {
+            clearTimeout(window._binderySuccessTimer);
+            window._binderySuccessTimer = null;
+        }
+        const submitBtn = document.getElementById('btn-execute-binding');
+        const cancelBtn = document.getElementById('btn-bindery-cancel');
+        if (cancelBtn) cancelBtn.textContent = '取消';
+        if (!submitBtn) return;
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        const langVal = document.getElementById('bindery-select-lang')?.value || 'zh';
+        if (langVal === 'polyglot' || langVal === 'matrix_batch') {
+            window.updateMatrixSubmitBtn();
+        } else {
+            const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
+            submitBtn.innerHTML = `<span>🚀 立即装订 (${langMap[langVal] || langVal.toUpperCase()})</span>`;
+        }
     };
 })();
 

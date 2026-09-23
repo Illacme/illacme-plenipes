@@ -31,6 +31,7 @@ COLOPHON_I18N = {
         "footer": "Compiled with ♥ by Illacme Plenipes Bindery Engine",
         "epub_format": "EPUB 3.0 (IDPF / W3C 标准流式版式)",
         "webbook_format": "WebBook (单文件离线交互式典籍)",
+        "pdf_format": "PDF 印本 (固定版式印刷典籍)",
         "nav_label": "版记 · Colophon"
     },
     "en": {
@@ -50,6 +51,7 @@ COLOPHON_I18N = {
         "footer": "Compiled with ♥ by Illacme Plenipes Bindery Engine",
         "epub_format": "EPUB 3.0 (IDPF / W3C Flowable Standard)",
         "webbook_format": "WebBook (Interactive Single-File Edition)",
+        "pdf_format": "PDF Print Edition (Fixed-Layout Publication)",
         "nav_label": "Colophon"
     },
     "ja": {
@@ -69,6 +71,7 @@ COLOPHON_I18N = {
         "footer": "Compiled with ♥ by Illacme Plenipes Bindery Engine",
         "epub_format": "EPUB 3.0 (IDPF / W3C 標準リフロー版)",
         "webbook_format": "WebBook (対話型スタンドアロン電子典籍)",
+        "pdf_format": "PDF 製本 (固定レイアウト印刷典籍)",
         "nav_label": "奥付 · Colophon"
     }
 }
@@ -152,6 +155,8 @@ class ColophonBuilder:
             resolved_fmt = i18n["webbook_format"]
         elif "epub" in fmt_lower:
             resolved_fmt = i18n["epub_format"]
+        elif "pdf" in fmt_lower:
+            resolved_fmt = i18n.get("pdf_format", "PDF 印本")
         else:
             resolved_fmt = format_name
 
@@ -196,6 +201,8 @@ class ColophonBuilder:
             resolved_fmt = i18n["webbook_format"]
         elif "epub" in fmt_raw:
             resolved_fmt = i18n["epub_format"]
+        elif "pdf" in fmt_raw:
+            resolved_fmt = i18n.get("pdf_format", "PDF 印本")
         else:
             resolved_fmt = data.get("format_name") or fmt_raw
 
@@ -217,15 +224,15 @@ class ColophonBuilder:
   <div class="colophon-card">
     <div class="colophon-header">{escape(i18n['header'])}</div>
     <table class="colophon-grid">
-      <tr><td class="k">{escape(i18n['title'])}</td><td class="v"><strong>{escape(str(data['title']))}</strong></td></tr>
-      <tr><td class="k">{escape(i18n['author'])}</td><td class="v">{escape(str(data['author']))}</td></tr>
-      <tr><td class="k">{escape(i18n['publisher'])}</td><td class="v">{escape(str(data['publisher']))}</td></tr>
+      <tr><td class="k">{escape(i18n['title'])}</td><td class="v"><strong>{escape(str(data.get('title', '')))}</strong></td></tr>
+      <tr><td class="k">{escape(i18n['author'])}</td><td class="v">{escape(str(data.get('author', '')))}</td></tr>
+      <tr><td class="k">{escape(i18n['publisher'])}</td><td class="v">{escape(str(data.get('publisher', '')))}</td></tr>
       <tr><td class="k">{escape(i18n['format'])}</td><td class="v">{escape(str(resolved_fmt))}</td></tr>
       <tr><td class="k">{escape(i18n['chapters'])}</td><td class="v">{escape(ch_val)}</td></tr>
       <tr><td class="k">{escape(i18n['words'])}</td><td class="v">{escape(w_val)}</td></tr>
-      <tr><td class="k">{escape(i18n['build_time'])}</td><td class="v">{escape(str(data['build_time']))}</td></tr>
-      <tr><td class="k">{escape(i18n['fingerprint'])}</td><td class="v"><code>{escape(str(data['git_hash']))}</code></td></tr>
-      <tr><td class="k">{escape(i18n['uuid'])}</td><td class="v"><small style="font-family:monospace; color:#38bdf8;">{escape(str(data['uuid']))}</small></td></tr>
+      <tr><td class="k">{escape(i18n['build_time'])}</td><td class="v">{escape(str(data.get('build_time', '')))}</td></tr>
+      <tr><td class="k">{escape(i18n['fingerprint'])}</td><td class="v"><code>{escape(str(data.get('git_hash', '')))}</code></td></tr>
+      <tr><td class="k">{escape(i18n['uuid'])}</td><td class="v"><small style="font-family:monospace; color:#38bdf8;">{escape(str(data.get('uuid', '')))}</small></td></tr>
     </table>
     <div class="colophon-footer">
       <p>{escape(str(license_text))}</p>

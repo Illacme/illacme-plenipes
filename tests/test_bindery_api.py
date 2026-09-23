@@ -5,7 +5,6 @@
 """
 
 import os
-import shutil
 import pytest
 from fastapi.testclient import TestClient
 
@@ -227,4 +226,154 @@ def test_bindery_shelf_view_and_delete(client):
             os.remove(test_html)
         if os.path.exists(test_epub):
             os.remove(test_epub)
+
+
+def test_bindery_single_document_flow(client, setup_mock_vault):
+    """🚀 测试单篇 Markdown 文稿极速装订 (EPUB / WebBook / PDF)"""
+    from core.runtime.engine_singleton import get_global_engine, set_global_engine
+    old_engine = get_global_engine()
+    mock_engine = type("MockEngine", (), {"vault_root": setup_mock_vault, "config": None})()
+    set_global_engine(mock_engine)
+
+    try:
+        # 1. 测试单篇 EPUB 极速装订
+        single_rel = "Docs/01_intro.md"
+        payload_epub = {
+            "format": "epub",
+            "scope": f"single:{single_rel}",
+            "lang": "zh",
+            "title": "单篇系统引言独立出版物",
+            "output_dir": "dist/books"
+        }
+        res = client.post("/api/bindery/build", json=payload_epub)
+        assert res.status_code == 200
+        data = res.json()
+        assert data.get("success") is True
+        assert data.get("chapter_count") == 1
+        fn = data.get("filename")
+        assert fn.endswith(".epub")
+
+        epub_abs = os.path.abspath(os.path.join("dist/books", fn))
+        assert os.path.exists(epub_abs)
+        assert os.path.getsize(epub_abs) > 0
+
+        # 2. 测试单篇 WebBook 极速装订
+        payload_wb = {
+            "format": "webbook",
+            "scope": f"single:{single_rel}",
+            "lang": "zh",
+            "output_dir": "dist/books"
+        }
+        res_wb = client.post("/api/bindery/build", json=payload_wb)
+        assert res_wb.status_code == 200
+        wb_data = res_wb.json()
+        assert wb_data.get("success") is True
+        assert wb_data.get("chapter_count") == 1
+        assert wb_data.get("preview_url") is not None
+        wb_fn = wb_data.get("filename")
+        assert wb_fn.endswith(".html")
+    finally:
+        set_global_engine(old_engine)
+
+
+def test_bindery_pdf_export_flow(client, setup_mock_vault):
+    """🚀 测试独立单文件 PDF 印刷典籍装订全流程（含全卷、单篇、安全下载与书架检索）"""
+    from core.runtime.engine_singleton import get_global_engine, set_global_engine
+    old_engine = get_global_engine()
+    mock_engine = type("MockEngine", (), {"vault_root": setup_mock_vault, "config": None})()
+    set_global_engine(mock_engine)
+
+    try:
+        # 1. 测试栏目分卷 PDF 装订
+        payload_pdf = {
+            "format": "pdf",
+            "scope": "Docs",
+            "lang": "zh",
+            "title": "精装印刷典籍测试版",
+            "author": "Illacme Master Team",
+            "output_dir": "dist/books"
+        }
+        res = client.post("/api/bindery/build", json=payload_pdf)
+        assert res.status_code == 200
+        data = res.json()
+        assert data.get("success") is True
+        assert data.get("format") == "pdf"
+        assert data.get("chapter_count") >= 2
+        fn = data.get("filename")
+        assert fn.endswith(".pdf")
+
+        pdf_abs = os.path.abspath(os.path.join("dist/books", fn))
+        assert os.path.exists(pdf_abs)
+        assert os.path.getsize(pdf_abs) > 0
+        with open(pdf_abs, "rb") as f:
+            header = f.read(5)
+            assert header == b"%PDF-"
+
+        # 2. 测试二进制流式安全下载
+        dl_res = client.get(f"/api/bindery/download?file={fn}")
+        assert dl_res.status_code == 200
+        assert "application/pdf" in dl_res.headers.get("content-type", "")
+        assert len(dl_res.content) == os.path.getsize(pdf_abs)
+
+        # 3. 测试单篇 Markdown 极速装订为 PDF
+        single_rel = "Docs/02_guide.md"
+        payload_single_pdf = {
+            "format": "pdf",
+            "scope": f"single:{single_rel}",
+            "lang": "zh",
+            "title": "单篇指南精美印本",
+            "output_dir": "dist/books"
+        }
+        res_single = client.post("/api/bindery/build", json=payload_single_pdf)
+        assert res_single.status_code == 200
+        single_data = res_single.json()
+        assert single_data.get("success") is True
+        assert single_data.get("chapter_count") == 1
+        s_fn = single_data.get("filename")
+        assert s_fn.endswith(".pdf")
+
+        # 4. 验证书架扫描感知到了刚编译的 PDF 文件
+        shelf_res = client.get("/api/bindery/shelf")
+        assert shelf_res.status_code == 200
+        books = shelf_res.json().get("books", [])
+        pdf_books = [b for b in books if b["format"] == "pdf"]
+        # 5. 验证 PDF 驱动内部渲染逻辑：确保跨章超链接全部自愈为同文档内部锚点 #ch_X，杜绝 FileLinkedNotAvail 外部文件报错
+        from core.adapters.egress.ebook.pdf import PDFBookAdapter
+        adapter = PDFBookAdapter()
+        mock_tree = [
+            {"title": "首页", "html_body": '<p><a href="ch_2.xhtml#ch_2">前往第二章</a> 和 <a href="./docs/other.html">外部相对链接</a></p>'},
+            {"title": "第二章", "html_body": '<p>这是第二章内容</p>'}
+        ]
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp_pdf:
+            out_pdf_p = tmp_pdf.name
+        res_ok = adapter.bind_book(mock_tree, {"title": "测试双链"}, None, "zh", out_pdf_p)
+        assert res_ok is True
+        assert os.path.exists(out_pdf_p) and os.path.getsize(out_pdf_p) > 0
+        with open(out_pdf_p, "rb") as f:
+            pdf_raw = f.read()
+        # 严格断言：生成的 PDF 二进制中绝对不得出现 .xhtml 外部相对文件死链
+        assert b".xhtml" not in pdf_raw
+        # 6. 验证前置目录 (TOC) 与末尾版权页 (Colophon) 在多章节 PDF 中已成功注入
+        from core.adapters.egress.ebook.pdf_assets import PDFAssets
+        from core.adapters.egress.ebook.colophon import ColophonBuilder
+        toc_html = PDFAssets.render_toc_html(mock_tree, lang="zh")
+        assert 'id="print-toc"' in toc_html
+        assert "目  录" in toc_html
+        assert 'href="#ch_2"' in toc_html
+        # 验证单篇模式下不冗余生成全书大目录
+        assert PDFAssets.render_toc_html([mock_tree[0]], lang="zh") == ""
+        # 验证版权页数据包含 PDF 规格
+        c_data = ColophonBuilder.build_colophon_data(mock_tree, {"title": "测试双链"}, format_name="pdf")
+        assert "PDF 印本" in c_data["format_name"]
+        colo_html = PDFAssets.render_colophon_html(c_data, lang="zh")
+        assert 'id="print-colophon"' in colo_html
+        assert "物权编码" in colo_html
+
+        if os.path.exists(out_pdf_p):
+            try: os.remove(out_pdf_p)
+            except Exception: pass
+
+    finally:
+        set_global_engine(old_engine)
 

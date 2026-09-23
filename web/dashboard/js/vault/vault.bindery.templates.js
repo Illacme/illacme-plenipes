@@ -72,7 +72,10 @@
     }
 
     function buildModalCardHtml(scopesData, currentScope, defaultTitle) {
-        const categoryOptionsHtml = (scopesData.categories || []).map(cat => `
+        const isSingle = currentScope && currentScope.startsWith('single:');
+        const singleDocTitle = (scopesData.single_doc && scopesData.single_doc.title) || (isSingle ? currentScope.slice(7) : '');
+        let categoryOptionsHtml = isSingle ? `<option value="${esc(currentScope)}" selected>📄 单篇: ${esc(singleDocTitle)}</option>` : '';
+        categoryOptionsHtml += (scopesData.categories || []).map(cat => `
             <option value="${esc(cat.id)}" ${cat.id === currentScope ? 'selected' : ''}>${esc(cat.name)}</option>
         `).join('');
 
@@ -115,10 +118,10 @@
                     <div>
                         <div class="bindery-title">
                             <span>📚 数字出版装订中枢</span>
-                            <span class="bindery-badge">EPUB / WebBook</span>
+                            <span class="bindery-badge">EPUB / WebBook / PDF</span>
                         </div>
                         <div class="bindery-subtitle">
-                            将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书或独立网页书。
+                            将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书、独立网页书或精致 PDF 印本。
                         </div>
                     </div>
                     <button class="bindery-close-btn" onclick="window.closeBinderyModal()" title="关闭">×</button>
@@ -194,26 +197,27 @@
 
                     <div>
                         <label class="bindery-label">🖨️ 装订驱动与格式</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="bindery-driver-card active" id="btn-driver-epub" onclick="window.selectBinderyFormat('epub')">
-                                <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                            <div class="bindery-driver-card active" id="btn-driver-epub" onclick="window.selectBinderyFormat('epub')" style="padding: 7px 10px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.1rem;">📖</span>
-                                    <div>
-                                        <div class="bindery-driver-title">EPUB 3.0 流式版式</div>
-                                        <div class="bindery-driver-desc">Apple Books / 微信读书</div>
-                                    </div>
+                                    <div><div class="bindery-driver-title">EPUB 3.0</div><div class="bindery-driver-desc">流式重排研读</div></div>
                                 </div>
-                                <span style="font-size:0.7rem; color:#10b981; font-weight:700;">● 推荐</span>
+                                <span style="font-size:0.68rem; color:#10b981; font-weight:700;">● 推荐</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-webbook" onclick="window.selectBinderyFormat('webbook')">
-                                <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="bindery-driver-card" id="btn-driver-webbook" onclick="window.selectBinderyFormat('webbook')" style="padding: 7px 10px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.1rem;">🌐</span>
-                                    <div>
-                                        <div class="bindery-driver-title">单文件网页书 (WebBook)</div>
-                                        <div class="bindery-driver-desc">免阅读器 / 浏览器秒开</div>
-                                    </div>
+                                    <div><div class="bindery-driver-title">WebBook</div><div class="bindery-driver-desc">离线独立网页</div></div>
                                 </div>
-                                <span style="font-size:0.7rem; color:#38bdf8; font-weight:700;">● 独立</span>
+                                <span style="font-size:0.68rem; color:#38bdf8; font-weight:700;">● 独立</span>
+                            </div>
+                            <div class="bindery-driver-card" id="btn-driver-pdf" onclick="window.selectBinderyFormat('pdf')" style="padding: 7px 10px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="font-size:1.1rem;">📄</span>
+                                    <div><div class="bindery-driver-title">PDF 印本</div><div class="bindery-driver-desc">固定版式印刷</div></div>
+                                </div>
+                                <span style="font-size:0.68rem; color:#a855f7; font-weight:700;">● 印本</span>
                             </div>
                         </div>
                     </div>
@@ -221,7 +225,7 @@
                     <div id="bindery-status-area" style="display:none; padding:10px 14px; border-radius:8px; font-size:0.82rem; line-height:1.4;"></div>
 
                     <div class="bindery-footer">
-                        <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
+                        <button id="btn-bindery-cancel" class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
                         <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
                             <span>🚀 立即装订 (${esc(sourceLangLabel)})</span>
                         </button>

@@ -134,6 +134,7 @@ window.loadVault = async (query = null, page = null) => {
                             <button class="vault-more-item" onclick="window.openTranslationReview('${escapedRelPath}')">${reviewBtnIcon} 多语种译文校对</button>
                             <button class="vault-more-item" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️ 更换或生成文章封面</button>
                             <button class="vault-more-item" onclick="window.triggerMoveDocument('${escapedRelPath}')">📤 重命名与分类迁移</button>
+                            <button class="vault-more-item" onclick="window.quickBindSingleDoc('${escapedRelPath}', '${escapedDisplayTitle}')">⚡ 单篇极速装订 (EPUB / WebBook / PDF)</button>
                             <div class="vault-more-divider"></div>
                             <button class="vault-more-item danger" onclick="window.triggerDirectDocDelete('${escapedRelPath}', '${escapedTitle}')">🗑️ 物理安全彻底销毁</button>
                         </div>
@@ -281,4 +282,13 @@ window.goVaultPage = () => {
         return;
     }
     window.loadVault(null, val);
+};
+
+window.quickBindSingleDoc = (relPath, title) => {
+    document.querySelectorAll('.vault-more-menu.show').forEach(m => m.classList.remove('show'));
+    if (typeof window.openBinderyModal === 'function') {
+        window.openBinderyModal(`single:${relPath}`, { rel_path: relPath, title: title || relPath });
+    } else {
+        window.showToast?.('装订模块正在加载中...', 'info');
+    }
 };

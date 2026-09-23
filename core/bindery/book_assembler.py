@@ -38,7 +38,8 @@ class BookAssembler:
         cover_mode: str = "auto",
         cover_style: str = "dark_emerald",
         output_dir: str = "dist/books",
-        polyglot_langs: Optional[List[str]] = None
+        polyglot_langs: Optional[List[str]] = None,
+        single_file: Optional[str] = None
     ) -> Optional[str]:
         """执行章节收集、多语对照合成、封面注入并委托格式驱动编译输出"""
         adapter_cls = EBookRegistry.get_adapter(format_type)
@@ -51,7 +52,7 @@ class BookAssembler:
             chapters = PolyglotAligner.build_polyglot_chapters(self, category, polyglot_langs)
         else:
             TranslationResolver.warm_up(target_lang)
-            chapters = self._collect_chapters(category=category, target_lang=target_lang)
+            chapters = self._collect_chapters(category=category, target_lang=target_lang, single_file=single_file)
         if not chapters:
             tlog.warning(f"⚠️ [数字装订] 栏目 '{category}' 下无可用 Markdown 章节稿件。")
             return None
@@ -65,6 +66,8 @@ class BookAssembler:
         if is_polyglot and is_default_title:
             lang_tags = "-".join([l.upper() for l in polyglot_langs])
             book_title = f"{site_name} · 多语对照典籍 ({lang_tags} Polyglot Edition)"
+        elif is_default_title and single_file and chapters:
+            book_title = custom_title or chapters[0]["title"]
         elif is_default_title and target_lang == "en":
             book_title = f"{site_name} · Digital Publication Collection (EN Edition)"
         elif is_default_title and target_lang == "ja":
@@ -80,13 +83,8 @@ class BookAssembler:
         if self.engine and hasattr(self.engine, "config"):
             license_decl = getattr(self.engine.config, "license", None) or getattr(self.engine.config, "copyright", license_decl)
 
-        desc = f"由 {site_name} 自动化装订中枢出版的数字出版物。"
-        if is_polyglot:
-            desc = f"Multilingual polyglot edition produced by {site_name} Automated Bindery Hub."
-        elif target_lang == "en":
-            desc = f"Digital publication produced by {site_name} Automated Bindery Hub."
-        elif target_lang == "ja":
-            desc = f"{site_name} 自動製本ハブにより発行されたデジタル出版物。"
+        desc_map = {"zh": f"由 {site_name} 自动化装订中枢出版的数字出版物。", "en": f"Digital publication produced by {site_name} Automated Bindery Hub.", "ja": f"{site_name} 自動製本ハブにより発行されたデジタル出版物。"}
+        desc = f"Multilingual polyglot edition produced by {site_name} Automated Bindery Hub." if is_polyglot else desc_map.get(target_lang, desc_map["zh"])
 
         book_meta = {
             "title": book_title,
@@ -103,17 +101,18 @@ class BookAssembler:
         # 3. 确定输出路径与封面解析
         slug_prefix = re.sub(r'[^a-zA-Z0-9_\u4e00-\u9fa5]+', '-', book_title).strip('-').lower()
         ext = getattr(adapter_cls, "OUTPUT_EXTENSION", ".epub")
-        os.makedirs(output_dir, exist_ok=True)
+        out_dir = output_dir or "dist/books"
+        os.makedirs(out_dir, exist_ok=True)
         lang_suffix = "polyglot" if is_polyglot else target_lang
         out_filename = f"{slug_prefix}_{lang_suffix}{ext}"
-        out_path = os.path.abspath(os.path.join(output_dir, out_filename))
+        out_path = os.path.abspath(os.path.join(out_dir, out_filename))
 
         cover_path = None
         if cover_mode != "none":
             if cover_mode == "auto":
                 cover_path = CoverGenerator.discover_cover(vault_dir=self.vault_dir, category=category, chapters=chapters)
             if not cover_path and cover_mode in ("auto", "generated"):
-                gen_cover = os.path.join(output_dir, f"cover_{slug_prefix}_{cover_style}.png")
+                gen_cover = os.path.join(out_dir, f"cover_{slug_prefix}_{cover_style}.png")
                 cover_path = CoverGenerator.render_cover_image(
                     output_path=gen_cover, title=book_title, author=author,
                     publisher=publisher_name, style_key=cover_style, lang=target_lang
@@ -131,20 +130,20 @@ class BookAssembler:
 
         return out_path if success else None
 
-    def _collect_chapters(self, category: str, target_lang: str) -> List[Dict[str, Any]]:
+    def _collect_chapters(self, category: str, target_lang: str, single_file: Optional[str] = None) -> List[Dict[str, Any]]:
         """遍历文库提取按文件名与元数据排序的章节列表"""
         target_dir = os.path.join(self.vault_dir, category) if category else self.vault_dir
-        if not os.path.exists(target_dir):
+        if single_file:
+            single_p = os.path.abspath(os.path.join(self.vault_dir, single_file))
+            doc_entries = [single_p] if os.path.exists(single_p) else []
+        elif os.path.exists(target_dir):
+            doc_entries = []
+            for r, ds, fs in os.walk(target_dir):
+                ds[:] = [d for d in ds if not d.startswith('.') and d not in ('dist', 'build', 'node_modules', '.plenipes', '.obsidian', '.trash')]
+                doc_entries.extend(os.path.join(r, f) for f in sorted(fs) if f.endswith('.md') and not f.startswith('.'))
+        else:
             return []
-
-        # 建立 slug 到章节索引的映射表，便于双链内链重写
-        doc_entries = []
-        for root, dirs, files in os.walk(target_dir):
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
-            for f in sorted(files):
-                if f.endswith('.md') and not f.startswith('.'):
-                    full_p = os.path.join(root, f)
-                    doc_entries.append(full_p)
+        if not doc_entries: return []
 
         # 排序：优先 index.md / quick-start.md，其余字母排序
         def sort_key(p):
