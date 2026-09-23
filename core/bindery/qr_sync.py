@@ -9,7 +9,10 @@ import io
 import socket
 import base64
 from typing import Dict, Any
-import qrcode
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 
 
 def get_lan_ip() -> str:
@@ -32,21 +35,26 @@ def get_lan_ip() -> str:
 
 
 def generate_qr_data_uri(content: str) -> str:
-    """将文本或 URL 编码为黑白高对比度二维码 PNG 的 Base64 Data URI"""
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=8,
-        border=2,
-    )
-    qr.add_data(content)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
+    """将文本或 URL 编码为黑白高对比度二维码 PNG 的 Base64 Data URI (支持零依赖平稳降级)"""
+    if qrcode is None:
+        return ""
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(content)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
 
-    buf = io.BytesIO()
-    img.save(buf)
-    b64_data = base64.b64encode(buf.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{b64_data}"
+        buf = io.BytesIO()
+        img.save(buf)
+        b64_data = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return f"data:image/png;base64,{b64_data}"
+    except Exception:
+        return ""
 
 
 def build_mobile_sync_payload(filename: str, port: int = 43212, action: str = "download") -> Dict[str, Any]:
@@ -66,4 +74,5 @@ def build_mobile_sync_payload(filename: str, port: int = 43212, action: str = "d
         "port": port,
         "url": target_url,
         "qr_data_uri": qr_data_uri,
+        "has_qr_engine": bool(qr_data_uri),
     }

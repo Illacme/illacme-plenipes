@@ -53,6 +53,21 @@ def test_qr_sync_core_functions():
     assert "/api/bindery/view?file=anthology.html" in payload_wb["url"]
 
 
+def test_qr_sync_fallback_when_qrcode_missing(monkeypatch):
+    """测试当宿主机缺少 qrcode 依赖时，系统平稳降级零崩溃"""
+    import core.bindery.qr_sync as qr_module
+    monkeypatch.setattr(qr_module, "qrcode", None)
+
+    uri = qr_module.generate_qr_data_uri("http://example.com")
+    assert uri == ""
+
+    payload = qr_module.build_mobile_sync_payload("anthology.epub")
+    assert payload["success"] is True
+    assert payload["has_qr_engine"] is False
+    assert payload["qr_data_uri"] == ""
+    assert "http://" in payload["url"]
+
+
 def test_bindery_qr_api_path_traversal_defense(client):
     """测试 /api/bindery/qr 接口防路径穿越防御"""
     res = client.get("/api/bindery/qr", params={"file": "../../../etc/passwd"})
