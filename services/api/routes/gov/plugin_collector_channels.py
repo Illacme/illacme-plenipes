@@ -172,3 +172,44 @@ def collect_image_hosting_plugins(engine, disabled: set, system_track: str) -> L
             "is_manageable": True
         })
     return plugins
+
+
+def collect_tunnel_plugins(engine, disabled: set, system_track: str) -> List[Dict[str, Any]]:
+    """🚀 [V126.0] 收集网络穿透能力 (Tunnel & Public Remote Access)"""
+    from core.adapters.tunnel import TunnelRegistry
+
+    tunnel_root = getattr(engine.config, "tunnel", {}) if engine and hasattr(engine, "config") else {}
+    if hasattr(tunnel_root, "__dict__"):
+        tunnel_dict = tunnel_root.__dict__
+    elif isinstance(tunnel_root, dict):
+        tunnel_dict = tunnel_root
+    else:
+        tunnel_dict = {}
+
+    default_driver = TunnelRegistry.get_default_driver_id()
+    plugins = []
+    for p_id, cls in TunnelRegistry.list_all().items():
+        current_cfg = tunnel_dict.get(p_id, {}) if isinstance(tunnel_dict, dict) else {}
+        is_active = (p_id == default_driver)
+        name = getattr(cls, "DISPLAY_NAME", p_id.upper())
+        has_cfg = getattr(cls, "HAS_CONFIG", False)
+        desc = getattr(cls, "DESCRIPTION", "网络穿透驱动：建立指向本地服务的高可用远程隧道通道。")
+        ver = getattr(cls, "VERSION", system_track)
+
+        plugins.append({
+            "id": p_id,
+            "name": name,
+            "category": "tunnel",
+            "category_name": "🛰️ 网络穿透",
+            "status": "In-Use" if is_active else "Ready",
+            "is_in_use": is_active,
+            "is_enabled": (p_id not in disabled),
+            "origin": "core",
+            "version": ver,
+            "description": desc,
+            "has_config": has_cfg,
+            "is_configurable": has_cfg,
+            "cfg": current_cfg,
+            "is_manageable": True
+        })
+    return plugins

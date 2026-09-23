@@ -1,0 +1,103 @@
+# -*- coding: utf-8 -*-
+"""
+🛰️ [V126.0] Illacme Plenipes - Tunnel Plugins Test Suite
+测试职责：验证网络穿透插件注册表、Pinggy/Cloudflare 驱动契约、矩阵映射与探针连通性。
+🛡️ [SOP-01]：单文件严格 ≤ 300 行。
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from core.adapters.tunnel import TunnelRegistry, BaseTunnelAdapter
+from core.adapters.tunnel.pinggy import PinggyTunnelAdapter
+from core.adapters.tunnel.cloudflare import CloudflareTunnelAdapter
+from services.api.routes.gov.plugin_collector_channels import collect_tunnel_plugins
+from services.api.routes.gov.plugin_mapper import assemble_plugin_matrix
+from services.api.routes.gov.context_shards.plugin_ops import probe_plugin_impl
+from core.runtime.engine_singleton import get_global_engine
+from services.api.server import app
+from services.api.routes.system import verify_token
+
+
+@pytest.fixture(scope="module")
+def client():
+    app.dependency_overrides[verify_token] = lambda: True
+    yield TestClient(app)
+    app.dependency_overrides.pop(verify_token, None)
+
+
+def test_tunnel_registry_auto_discovery():
+    """验证驱动中枢自动扫描并注册了内置驱动"""
+    drivers = TunnelRegistry.list_all()
+    assert "pinggy" in drivers
+    assert "cloudflare" in drivers
+    assert issubclass(drivers["pinggy"], BaseTunnelAdapter)
+    assert issubclass(drivers["cloudflare"], BaseTunnelAdapter)
+
+
+def test_pinggy_driver_contracts():
+    """验证 Pinggy 驱动的属性契约与基本生命周期"""
+    adapter = PinggyTunnelAdapter()
+    assert adapter.PLUGIN_ID == "pinggy"
+    assert adapter.CATEGORY == "tunnel"
+    assert adapter.HAS_CONFIG is False
+    status = adapter.get_status()
+    assert status["is_running"] is False
+    assert status["provider"] == "pinggy"
+
+    # 执行连通性探测 (probe)
+    probe_res = adapter.probe()
+    assert "success" in probe_res
+    assert "message" in probe_res
+
+
+def test_cloudflare_driver_contracts():
+    """验证 Cloudflare 驱动的属性契约与配置支持"""
+    adapter = CloudflareTunnelAdapter(config={"tunnel_token": "mock-token-xyz"})
+    assert adapter.PLUGIN_ID == "cloudflare"
+    assert adapter.CATEGORY == "tunnel"
+    assert adapter.HAS_CONFIG is True
+    assert adapter.config.get("tunnel_token") == "mock-token-xyz"
+
+    probe_res = adapter.probe()
+    assert "success" in probe_res
+    assert "healthy" in probe_res
+
+
+def test_collect_tunnel_plugins_matrix(client):
+    """验证全域插件矩阵收集器正确收集了 tunnel 驱动"""
+    engine = get_global_engine()
+    plugins = collect_tunnel_plugins(engine, disabled=set(), system_track="V24.0")
+    assert len(plugins) >= 2
+    cat_ids = [p["category"] for p in plugins]
+    assert all(cat == "tunnel" for cat in cat_ids)
+    plugin_ids = [p["id"] for p in plugins]
+    assert "pinggy" in plugin_ids
+    assert "cloudflare" in plugin_ids
+
+
+def test_assemble_plugin_matrix_includes_tunnels():
+    """验证全局组装器包含 tunnel 类别"""
+    from unittest.mock import MagicMock, patch
+    engine_mock = MagicMock()
+    engine_mock.config.tunnel = {}
+    engine_mock.config.plugins.disabled_plugins = []
+    engine_mock.config.active_theme = "default"
+
+    with patch("services.api.routes.gov.plugin_mapper.get_global_engine", return_value=engine_mock):
+        matrix = assemble_plugin_matrix()
+
+    tunnel_plugins = [p for p in matrix if p.get("category") == "tunnel"]
+    assert len(tunnel_plugins) >= 2
+
+
+@pytest.mark.anyio
+async def test_probe_plugin_impl_tunnel():
+    """验证 /api/plugins/probe 接口能成功路由并探测网络穿透驱动"""
+    from unittest.mock import MagicMock, patch
+    with patch("services.api.routes.gov.context_shards.plugin_ops.get_global_engine", return_value=MagicMock()):
+        res = await probe_plugin_impl({"id": "pinggy", "category": "tunnel"})
+    assert "success" in res
+    assert "message" in res
+
+

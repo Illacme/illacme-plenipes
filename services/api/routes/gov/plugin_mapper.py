@@ -18,6 +18,7 @@ from .plugin_collector_channels import (
     collect_notification_plugins,
     collect_syndication_plugins,
     collect_image_hosting_plugins,
+    collect_tunnel_plugins,
 )
 from .plugin_collector_pipeline import (
     collect_compute_and_protocol_plugins,
@@ -203,6 +204,9 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
 
     # 4c. Image Hosting (图床服务)
     plugins.extend(collect_image_hosting_plugins(engine, disabled, system_track))
+
+    # 4d. Network Tunnels (网络穿透)
+    plugins.extend(collect_tunnel_plugins(engine, disabled, system_track))
 
     # 6-9. Ingress, Transformers, Maskers, Pipeline Steps (流水线)
     plugins.extend(collect_ingress_and_editorial_plugins(engine, system_track))

@@ -12,7 +12,7 @@
         if (p.has_config === false || p.is_configurable === false) return false;
         if (p.is_manageable === false) return false;
 
-        const configurableCategories = ['hosting', 'image_hosting', 'notification', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source'];
+        const configurableCategories = ['hosting', 'image_hosting', 'notification', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source', 'tunnel'];
         if (configurableCategories.includes(p.category)) {
             return true;
         }
@@ -50,6 +50,8 @@
             settings = cfgData.image_hosting?.[p.id] || cfgData.publish_control?.direct_upload?.[p.id] || {};
         } else if (p.category === 'notification') {
             settings = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
+        } else if (p.category === 'tunnel') {
+            settings = cfgData.tunnel?.[p.id] || {};
         } else if (p.category === 'protocol' || p.category === 'compute') {
             const nodes = Object.values(cfgData.translation?.compute_nodes || {});
             const matched = nodes.find(n => n && (n.type === p.id || n.provider === p.id || n.id === p.id));

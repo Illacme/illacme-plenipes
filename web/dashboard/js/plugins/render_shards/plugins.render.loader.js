@@ -76,6 +76,7 @@
             { id: 'hosting', name: '🌐 全站托管' },
             { id: 'publisher', name: '📢 社媒分发' },
             { id: 'ebook', name: '📚 数字装订' },
+            { id: 'tunnel', name: '🛰️ 网络穿透' },
             { id: 'notification', name: '🔔 消息通知' },
             { id: 'editorial', name: '🧬 流程审计' }
         ];
