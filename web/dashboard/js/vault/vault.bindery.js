@@ -24,7 +24,7 @@
      * 唤醒数字装订对话框
      * @param {string} preselectedScope 预选栏目 (可选，如 'Docs', 'Blog' 或 'all')
      */
-    window.openBinderyModal = async function(preselectedScope = 'all', singleDoc = null) {
+    window.openBinderyModal = async function(preselectedScope = 'all', singleDoc = null, initialFormat = null) {
         const tpl = _getTemplates();
         tpl.ensureStyles();
 
@@ -99,6 +99,9 @@
         if (window._binderySuccessTimer) {
             clearTimeout(window._binderySuccessTimer);
             window._binderySuccessTimer = null;
+        }
+        if (initialFormat && ['epub', 'webbook', 'pdf'].includes(initialFormat)) {
+            window.selectBinderyFormat(initialFormat);
         }
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();

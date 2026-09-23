@@ -75,7 +75,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
         if (p.category === 'ebook') {
             controlBtnsHtml = `
                 <div class="p-control-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <button class="action-btn glow-btn" style="border-color: rgba(16,185,129,0.5); color: #10b981; background: rgba(16,185,129,0.12); font-size: 0.75rem;" onclick="if(typeof window.openBinderyModal==='function'){window.openBinderyModal();}else{if(typeof window.showView==='function')window.showView('vault');}">📚 立即装订</button>
+                    <button class="action-btn glow-btn" style="border-color: rgba(16,185,129,0.5); color: #10b981; background: rgba(16,185,129,0.12); font-size: 0.75rem;" onclick="if(typeof window.openBinderyModal==='function'){window.openBinderyModal('all', null, '${p.id}');}else{if(typeof window.showView==='function')window.showView('vault');}">📚 立即装订</button>
                     <button class="action-btn p-btn-test-direct" data-id="${p.id}" data-category="${p.category}" onclick="window.fastTestPluginConnectivity('${p.id}', '${p.category}', this)" style="font-size: 0.75rem;">⚡ 通道自检</button>
                 </div>
             `;
