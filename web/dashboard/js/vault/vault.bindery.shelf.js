@@ -117,9 +117,10 @@
         const itemsHtml = pagedBooks.map(b => {
             const isWb = b.format === 'webbook', isPdf = b.format === 'pdf';
             const icon = isWb ? '🌐' : (isPdf ? '📄' : '📖');
-            let fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">EPUB 3.0</span>';
-            if (isWb) fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-weight:700;">WebBook</span>';
-            if (isPdf) fmtBadge = '<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3); font-weight:700;">PDF 印本</span>';
+            const badgeBase = 'font-size:0.68rem; padding:2px 6px; border-radius:4px; font-weight:700; white-space:nowrap; flex-shrink:0; display:inline-flex; align-items:center;';
+            let fmtBadge = `<span style="${badgeBase} background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">EPUB 3.0</span>`;
+            if (isWb) fmtBadge = `<span style="${badgeBase} background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">WebBook</span>`;
+            if (isPdf) fmtBadge = `<span style="${badgeBase} background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3);">PDF 印本</span>`;
 
             const previewBtn = isWb
                 ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff;">👁️</a>`
@@ -130,8 +131,8 @@
                     <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
                         <span style="font-size:1.4rem; flex-shrink:0;">${icon}</span>
                         <div style="min-width:0; flex:1;">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                                <div style="font-size:0.88rem; font-weight:700; color:var(--text-bright, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${b.filename}">${b.filename}</div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; min-width:0;">
+                                <div style="font-size:0.88rem; font-weight:700; color:var(--text-bright, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; max-width:calc(100% - 85px);" title="${b.filename}">${b.filename}</div>
                                 ${fmtBadge}
                             </div>
                             <div style="font-size:0.72rem; color:var(--text-dim, rgba(255,255,255,0.55)); display:flex; gap:12px;">
