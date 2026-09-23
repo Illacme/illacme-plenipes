@@ -17,6 +17,7 @@ from core.runtime.engine_singleton import get_global_engine
 from core.bindery.book_assembler import BookAssembler
 from core.bindery.cover_generator import CoverGenerator, COVER_STYLES
 from core.adapters.egress.ebook import EBookRegistry
+from core.bindery.qr_sync import build_mobile_sync_payload
 from ..system import verify_token
 
 router = APIRouter()
@@ -289,4 +290,9 @@ async def delete_ebook_from_shelf(payload: Dict[str, Any] = Body(...)) -> Dict[s
             os.remove(t)
             deleted.append(fn)
     return {"success": True, "deleted": deleted, "count": len(deleted), "message": f"成功移除 {len(deleted)} 本出版物。"}
+
+@router.get("/api/bindery/qr")
+async def get_publication_qr_code(file: str = Query(..., description="文件名"), action: str = Query("download")):
+    _get_safe_book_path(file)
+    return build_mobile_sync_payload(file, action=action)
 
