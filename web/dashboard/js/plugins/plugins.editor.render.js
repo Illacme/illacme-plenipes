@@ -100,11 +100,13 @@ window.buildPluginConfigFormHtml = (p) => {
                 <div class="settings-grid">
                     ${renderSettingsItem('Tunnel Token 隧道运行令牌', `tunnel.${id}.tunnel_token`, tunnelCfg.tunnel_token || '', 'password', {
                         description: 'Cloudflare Zero Trust 控制台生成的 Tunnel Token (eyJh...)。留空则自动降级为 Quick 临时免密通道。',
-                        placeholder: '留空使用 Quick 临时通道，或粘贴专属 Token...'
+                        placeholder: '留空使用 Quick 临时通道，或粘贴专属 Token...',
+                        optional: true
                     })}
                     ${renderSettingsItem('专属公网域名 (Hostname)', `tunnel.${id}.hostname`, tunnelCfg.hostname || '', 'text', {
                         description: '在 Cloudflare Tunnel Public Hostname 绑定的自定义完整域名（留空使用 trycloudflare.com 临时域名）。',
-                        placeholder: '例如: press.yourdomain.com'
+                        placeholder: '例如: press.yourdomain.com',
+                        optional: true
                     })}
                 </div>
             `;

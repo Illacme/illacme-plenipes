@@ -36,16 +36,16 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
         // 1. 显式标记了 required 或 data-required
         const isExplicitRequired = input.hasAttribute('required') || input.getAttribute('data-required') === 'true';
 
-        // 2. 检查显式或智能可选标记（如 data-optional="true"、说明文字提示可选/二选一）
+        // 2. 检查显式或智能可选标记（如 data-optional="true"、说明文字提示可选/留空/二选一）
         const row = input.closest('.setting-row');
         const descText = (row ? (row.querySelector('.setting-desc')?.innerText || '') : '').toLowerCase();
         const placeholderText = (input.placeholder || '').toLowerCase();
         const isMarkedOptional = input.getAttribute('data-optional') === 'true' ||
-            descText.includes('可选') || descText.includes('可留空') || descText.includes('二选一') ||
-            placeholderText.includes('可选') || placeholderText.includes('二选一');
+            descText.includes('可选') || descText.includes('可留空') || descText.includes('留空') || descText.includes('二选一') ||
+            placeholderText.includes('可选') || placeholderText.includes('留空') || placeholderText.includes('二选一');
 
-        // 排除明确可选的字段（如 proxy, cname, prefix, acl, public_url, endpoint_url 等）
-        const isOptionalField = isMarkedOptional || path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description');
+        // 排除明确可选的字段（如 proxy, cname, prefix, acl, public_url, endpoint_url, tunnel 等）
+        const isOptionalField = isMarkedOptional || path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description') || path.startsWith('tunnel.') || path.includes('tunnel_token') || path.includes('hostname');
         
         let isCoreCredential = !isOptionalField && (
             path.includes('token') || path.includes('api_key') || path.includes('secret_key') ||
@@ -90,23 +90,23 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
             (path.includes('.lsky_pro.api_url') || path.includes('.lsky_pro.token') || path.includes('.lsky_pro.api_token'))
         );
 
-        // 特殊豁免 1：本地 AI 协议与内网私有化算力节点（lmstudio, ollama, localai 或 localhost/127.0.0.1）允许 API Key 为空
+        // 特殊豁免 1：本地 AI 协议与内网私有化算力节点允许 API Key 为空
         const isLocalAIProto = ['ollama', 'lmstudio', 'localai'].includes(activePluginId) || (
             drawerBody && (
                 (drawerBody.querySelector('[data-path*="base_url"]')?.value || '').includes('localhost') ||
                 (drawerBody.querySelector('[data-path*="base_url"]')?.value || '').includes('127.0.0.1')
             )
         );
-        if (isLocalAIProto && path.includes('api_key')) {
-            continue;
-        }
+        if (isLocalAIProto && path.includes('api_key')) continue;
 
         // 特殊豁免 2：github_pages / gitee_pages / gitlab_pages 使用 SSH 探测免密时，token 允许为空
         if ((path.includes('github_pages') || path.includes('gitee_pages') || path.includes('gitlab_pages')) && path.includes('token')) {
-            if (window.githubSSHPassState === true || window.giteeSSHPassState === true || window.gitlabSSHPassState === true) {
-                continue;
-            }
+            if (window.githubSSHPassState === true || window.giteeSSHPassState === true || window.gitlabSSHPassState === true) continue;
         }
+
+        // 特殊豁免 3：公网穿透插件 (cloudflare / pinggy 等 tunnel 插件) 均为双模/免密运行模式，Token 与 Hostname 允许留空
+        const isTunnelProto = ['cloudflare', 'pinggy'].includes(activePluginId) || path.startsWith('tunnel.') || path.includes('tunnel_token') || path.includes('hostname');
+        if (isTunnelProto && !isExplicitRequired) continue;
 
         const isRequired = isExplicitRequired || isCoreCredential || isCorePlatformField;
 
@@ -152,23 +152,16 @@ window.savePluginSettingsAndClose = async () => {
             }
         }
 
-        // 高亮错误输入框与发光边框
         check.input.style.border = '1px solid #ff4d4f';
         check.input.style.boxShadow = '0 0 10px rgba(255, 77, 79, 0.5)';
         check.input.style.background = 'rgba(255, 77, 79, 0.08)';
         check.input.focus();
-        if (typeof check.input.scrollIntoView === 'function') {
-            check.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (typeof check.input.scrollIntoView === 'function') check.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
         check.input.addEventListener('input', () => {
-            check.input.style.border = '';
-            check.input.style.boxShadow = '';
-            check.input.style.background = '';
+            check.input.style.border = ''; check.input.style.boxShadow = ''; check.input.style.background = '';
         }, { once: true });
 
-        if (typeof window.showToast === 'function') {
-            window.showToast(`⚠️ 请先填写必填字段 [${check.label}]`, 'warning');
-        }
+        if (typeof window.showToast === 'function') window.showToast(`⚠️ 请先填写必填字段 [${check.label}]`, 'warning');
         return;
     }
 
@@ -182,10 +175,11 @@ window.savePluginSettingsAndClose = async () => {
             (drawerBody.querySelector('[data-path*="base_url"]')?.value || '').includes('127.0.0.1')
         )
     );
+    const isTunnelProto = ['cloudflare', 'pinggy'].includes(activePluginId) || (pluginObj && pluginObj.category === 'tunnel');
 
-    if (drawerBody && !isLocalAIProto) {
+    if (drawerBody && !isLocalAIProto && !isTunnelProto) {
         const tokenInput = drawerBody.querySelector('input[name*="token"], input[name*="api_key"], input[name*="access_token"], input[name*="secret_key"], input[name*="integration_token"], input[name*="password"], input[data-path*="token"], input[data-path*="api_key"], input[data-path*="secret_key"]');
-        if (tokenInput && tokenInput.value.trim() === '') {
+        if (tokenInput && tokenInput.getAttribute('data-optional') !== 'true' && tokenInput.value.trim() === '') {
             tokenWasCleared = true;
         }
     }

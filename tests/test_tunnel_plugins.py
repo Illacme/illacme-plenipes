@@ -159,5 +159,50 @@ def test_tunnel_plugin_dry_run_endpoint(client):
     assert any("Cloudflare Tunnel Token" in m for m in messages)
 
 
+def test_tunnel_plugin_drawer_validation_optional_token():
+    """验证前端表单校验对 Cloudflare Tunnel 的 tunnel_token 留空予以豁免通过"""
+    import subprocess
+    js_code = """
+    const fs = require('fs');
+    global.window = {};
+    eval(fs.readFileSync('web/dashboard/js/plugins/sandbox_shards/sandbox.saver.js', 'utf8'));
 
+    const mockInput = {
+        disabled: false,
+        type: 'password',
+        classList: { contains: () => false },
+        closest: (sel) => {
+            if (sel === '.setting-row') {
+                return {
+                    querySelector: (s) => {
+                        if (s === '.setting-label') return { innerText: 'Tunnel Token 隧道运行令牌' };
+                        if (s === '.setting-desc') return { innerText: '留空则自动降级为 Quick 临时免密通道。' };
+                        return null;
+                    }
+                };
+            }
+            return null;
+        },
+        getAttribute: (attr) => {
+            if (attr === 'data-path') return 'tunnel.cloudflare.tunnel_token';
+            if (attr === 'data-optional') return 'true';
+            return null;
+        },
+        hasAttribute: () => false,
+        placeholder: '留空使用 Quick 临时通道...',
+        value: ''
+    };
 
+    const mockDrawerBody = {
+        querySelectorAll: () => [mockInput],
+        querySelector: () => null
+    };
+
+    const result = window.validatePluginDrawerForm(mockDrawerBody, 'cloudflare');
+    if (!result.valid) {
+        process.exit(1);
+    }
+    process.exit(0);
+    """
+    res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+    assert res.returncode == 0, f"Validation failed with error: {res.stderr}"
