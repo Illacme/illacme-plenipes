@@ -16,12 +16,24 @@ except ImportError:
 
 
 def get_lan_ip() -> str:
-    """通过探测出站路由网关获取本机真实的物理局域网 IP 地址"""
+    """获取本机真实的物理局域网 IP 地址 (优先排除点对点虚拟 VPN / 代理网卡)"""
+    try:
+        import subprocess, re
+        out = subprocess.check_output(["ifconfig"], text=True, stderr=subprocess.DEVNULL)
+        matches = re.findall(r"inet\s+(\d+\.\d+\.\d+\.\d+)\s+netmask\s+\S+\s+broadcast\s+(\d+\.\d+\.\d+\.\d+)", out)
+        for ip, _ in matches:
+            if ip.startswith("192.168.") or ip.startswith("10.") or (ip.startswith("172.") and not ip.startswith("172.18.")):
+                return ip
+        for ip, _ in matches:
+            if not ip.startswith("127."):
+                return ip
+    except Exception:
+        pass
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("8.8.8.8", 80))
             ip = s.getsockname()[0]
-            if ip and not ip.startswith("127."):
+            if ip and not ip.startswith("127.") and not ip.startswith("172.18."):
                 return ip
     except Exception:
         pass

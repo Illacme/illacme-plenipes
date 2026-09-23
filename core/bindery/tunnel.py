@@ -154,7 +154,7 @@ class TunnelHub:
             "qr@a.pinggy.io"
         ]
         try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
             self._process = p
             self._provider = "pinggy_ssh"
 
@@ -164,8 +164,8 @@ class TunnelHub:
             def _read_out():
                 nonlocal found_url
                 for line in iter(p.stdout.readline, ''):
-                    m = re.search(r"https://[a-zA-Z0-9-]+\.a\.pinggy\.link", line)
-                    if m:
+                    m = re.search(r"https://[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]*(?:pinggy\.net|pinggy-free\.link|pinggy\.link|localhost\.run)", line)
+                    if m and not found_url:
                         found_url.append(m.group(0))
                         break
 
