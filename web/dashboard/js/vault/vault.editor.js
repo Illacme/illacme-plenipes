@@ -282,15 +282,17 @@ window.binderyExportCurrentEditorDoc = function() {
 };
 
 // ⌨️ 全域 Cmd+B / Ctrl+B 装订快捷键
-window.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
-        const modal = document.getElementById('editor-modal');
-        if (modal && modal.style.display !== 'none') {
-            e.preventDefault();
-            window.binderyExportCurrentEditorDoc();
-        } else if (typeof window.openBinderyModal === 'function') {
-            e.preventDefault();
-            window.openBinderyModal();
+if (typeof window.addEventListener === 'function') {
+    window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+            const modal = document.getElementById('editor-modal');
+            if (modal && modal.style.display !== 'none') {
+                e.preventDefault();
+                window.binderyExportCurrentEditorDoc();
+            } else if (typeof window.openBinderyModal === 'function') {
+                e.preventDefault();
+                window.openBinderyModal();
+            }
         }
-    }
-});
+    });
+}

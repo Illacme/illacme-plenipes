@@ -73,6 +73,53 @@ window.buildPluginConfigFormHtml = (p) => {
         html += `<div class="settings-grid">${window.renderImageHostingConfig ? window.renderImageHostingConfig(id, cfg) : renderImageHostingConfig(id, cfg)}</div>`;
     } else if (p.category === 'protocol') {
         html += `<div class="settings-grid">${window.renderAIProtocolConfig ? window.renderAIProtocolConfig(id, p) : rawRenderAIProtocolConfig(id, p)}</div>`;
+    } else if (p.category === 'tunnel') {
+        const tunnelCfg = window.settingsData?.tunnel?.[id] || {};
+        if (id === 'cloudflare') {
+            html += `
+                <div class="channel-console-header" style="margin-bottom: 1.2rem; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.18); border-radius: 10px; padding: 14px 16px;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <h4 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <span>⚡ Cloudflare Argo 双模加速通道</span>
+                            </h4>
+                            <p style="margin: 0; font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;">
+                                💡 <b>双模通道模式</b>：若下方 Token <b>留空</b>，系统全自动唤醒 <b>Quick Tunnel</b> 临时免密公网通道；若填入 <b>Tunnel Token</b>，即可绑定专属自定义域名并享受全球 Anycast 边缘加速。
+                            </p>
+                        </div>
+                        <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="action-btn glow-btn" style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(0, 242, 255, 0.4); color: var(--accent-secondary); display: inline-flex; align-items: center; gap: 4px;">
+                            <span>☁️ 打开 Cloudflare Zero Trust ↗</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="settings-grid">
+                    ${renderSettingsItem('Tunnel Token 隧道运行令牌', `tunnel.${id}.tunnel_token`, tunnelCfg.tunnel_token || '', 'password', {
+                        description: 'Cloudflare Zero Trust 控制台生成的 Tunnel Token (eyJh...)。留空则自动降级为 Quick 临时免密通道。',
+                        placeholder: '留空使用 Quick 临时通道，或粘贴专属 Token...'
+                    })}
+                    ${renderSettingsItem('专属公网域名 (Hostname)', `tunnel.${id}.hostname`, tunnelCfg.hostname || '', 'text', {
+                        description: '在 Cloudflare Tunnel Public Hostname 绑定的自定义完整域名（留空使用 trycloudflare.com 临时域名）。',
+                        placeholder: '例如: press.yourdomain.com'
+                    })}
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="channel-console-header" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 16px; margin-bottom: 1.2rem;">
+                    <h4 style="margin: 0 0 8px 0; color: #10b981; font-size: 0.92rem; font-weight: 700;">
+                        <span>⚡ 原生 OpenSSH 零配置极速穿透</span>
+                    </h4>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.6;">
+                        Pinggy 依托系统底层原生 OpenSSH 客户端与端口反向转发通道，<b>无需任何账号凭证、API Key 或 Token</b>。启动时系统会自动分配安全临时公网 URL，开箱即用。
+                    </p>
+                </div>
+                <div style="text-align: center; padding: 20px 0;">
+                    <button class="action-btn glow-btn" onclick="window.fastTestPluginConnectivity('${id}', '${p.category}', this)" style="padding: 8px 20px; font-size: 0.85rem;">
+                        ⚡ 立即发起通道自检探针
+                    </button>
+                </div>
+            `;
+        }
     } else if (p.category === 'theme') {
         const schema = p.schema || {};
         const properties = schema.properties || {};

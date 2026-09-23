@@ -182,7 +182,9 @@ async def probe_plugin_impl(payload: dict) -> dict:
     if (category == "tunnel" or (not category and plugin_id in TunnelRegistry.list_all())) and plugin_id in TunnelRegistry.list_all():
         adapter_cls = TunnelRegistry.get(plugin_id)
         if adapter_cls:
-            adapter_instance = adapter_cls()
+            tunnel_cfg = getattr(engine.config, "tunnel", {}) if engine and hasattr(engine, "config") else {}
+            curr_cfg = tunnel_cfg.get(plugin_id, {}) if isinstance(tunnel_cfg, dict) else {}
+            adapter_instance = adapter_cls(config=curr_cfg)
             return adapter_instance.probe()
 
     return {"success": False, "error": "未感应到该能力的物理实体或暂不支持主动探测。"}

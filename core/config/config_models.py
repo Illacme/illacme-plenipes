@@ -112,6 +112,7 @@ class Configuration(ConfigurationPathsMixin, BaseModel):
     syndication: Dict[str, Any] = Field(default_factory=dict)
     timeline: TimelineSettings = Field(default_factory=TimelineSettings)
     plugins: PluginSettings = Field(default_factory=PluginSettings)
+    tunnel: Dict[str, Any] = Field(default_factory=dict)
     governance: GovernanceSettings = Field(default_factory=GovernanceSettings)
 
     # 🚀 [V24.0] 增强审计字段

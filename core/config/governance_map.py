@@ -34,6 +34,7 @@ GOVERNANCE_RULES = {
         r"^system\.encrypt_secrets$",      # 本地敏感凭据落盘自动加密开关
         r"^system\.watchdog_settings\..*$", # 本地监控轮询策略
         r"^plugins\.disabled_plugins$",    # 本机禁用的插件列表
+        r"^tunnel\..*$",                   # 本地网络穿透驱动配置与敏感凭据 (如 Cloudflare Tunnel Token/Hostname)
         r"^active_imprint$",               # 本机当前活跃品牌 ID
     ],
     

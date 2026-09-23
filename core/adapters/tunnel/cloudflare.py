@@ -130,8 +130,14 @@ class CloudflareTunnelAdapter(BaseTunnelAdapter):
                 msg = f"Cloudflare Anycast 边缘网关连接正常 (时延: {latency}ms)"
                 if not cf_bin:
                     msg += "，但尚未安装本地 cloudflared 二进制组件。"
+                    if token:
+                        msg += " (已预先配置专属 Tunnel Token)"
+                elif token:
+                    custom_host = self.config.get("hostname", "").strip()
+                    host_info = f" -> {custom_host}" if custom_host else ""
+                    msg += f"，已配置专属 Tunnel Token{host_info}，企业级 Anycast 节点就绪。"
                 else:
-                    msg += "，且本地 cloudflared 已就绪。"
+                    msg += "，且本地 cloudflared 已就绪 (未配置 Token，将使用 Quick 临时通道)。"
                 return {
                     "success": True,
                     "healthy": bool(cf_bin),
@@ -139,6 +145,7 @@ class CloudflareTunnelAdapter(BaseTunnelAdapter):
                     "details": {
                         "bin_path": cf_bin,
                         "has_token": bool(token),
+                        "hostname": self.config.get("hostname", "").strip(),
                         "latency_ms": latency
                     }
                 }

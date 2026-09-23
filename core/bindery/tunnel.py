@@ -100,10 +100,15 @@ class TunnelHub:
         self.stop_tunnel()
         last_error = ""
 
+        from core.config.config import ConfigManager
+        cfg_mgr = ConfigManager.get_instance()
+        tunnel_cfg = getattr(cfg_mgr.config, "tunnel", {}) if cfg_mgr and hasattr(cfg_mgr, "config") else {}
+
         # 1. 尝试 Cloudflare Argo Tunnel
         cf_cls = TunnelRegistry.get("cloudflare")
         if cf_cls:
-            cf_adapter = cf_cls()
+            cf_cfg = tunnel_cfg.get("cloudflare", {}) if isinstance(tunnel_cfg, dict) else {}
+            cf_adapter = cf_cls(config=cf_cfg)
             probe_res = cf_adapter.probe()
             # 若本地已存在 cloudflared 组件，优先使用
             if probe_res.get("healthy"):
@@ -117,7 +122,8 @@ class TunnelHub:
         # 2. 备选方案：尝试 Pinggy 原生 OpenSSH 反向代理
         pinggy_cls = TunnelRegistry.get("pinggy")
         if pinggy_cls:
-            pinggy_adapter = pinggy_cls()
+            pinggy_cfg = tunnel_cfg.get("pinggy", {}) if isinstance(tunnel_cfg, dict) else {}
+            pinggy_adapter = pinggy_cls(config=pinggy_cfg)
             res = pinggy_adapter.start_tunnel(local_port=port, timeout_seconds=timeout_seconds)
             if res.get("is_running"):
                 self._active_adapter = pinggy_adapter

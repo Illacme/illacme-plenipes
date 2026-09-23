@@ -101,3 +101,44 @@ async def test_probe_plugin_impl_tunnel():
     assert "message" in res
 
 
+def test_configuration_tunnel_field_and_governance_routing():
+    """验证 Configuration 模型中存在 tunnel 属性，且凭据正确归属于 local 治理层级"""
+    from core.config.config_models import Configuration
+    from core.config.governance_map import resolve_governance_level
+
+    cfg = Configuration()
+    assert hasattr(cfg, "tunnel")
+    assert isinstance(cfg.tunnel, dict)
+
+    # 验证治理层级解析至 local (config.local.yaml)
+    assert resolve_governance_level("tunnel.cloudflare.tunnel_token") == "local"
+    assert resolve_governance_level("tunnel.cloudflare.hostname") == "local"
+
+
+def test_cloudflare_token_mode_behavior():
+    """验证配置了自建 Tunnel Token 与 Hostname 后的 Cloudflare 驱动行为"""
+    from unittest.mock import patch
+
+    adapter = CloudflareTunnelAdapter(config={
+        "tunnel_token": "eyJh_mock_token_123",
+        "hostname": "press.mycustomdomain.com"
+    })
+
+    # 1. 模拟未安装 cloudflared 组件场景
+    with patch.object(adapter, "_locate_bin", return_value=None):
+        probe_res = adapter.probe()
+        assert probe_res["success"] is True
+        assert "专属 Tunnel Token" in probe_res["message"]
+        assert probe_res["details"]["has_token"] is True
+        assert probe_res["details"]["hostname"] == "press.mycustomdomain.com"
+
+    # 2. 模拟已安装 cloudflared 组件场景
+    with patch.object(adapter, "_locate_bin", return_value="/usr/local/bin/cloudflared"):
+        probe_res_installed = adapter.probe()
+        assert probe_res_installed["success"] is True
+        assert probe_res_installed["healthy"] is True
+        assert "企业级 Anycast 节点就绪" in probe_res_installed["message"]
+        assert "press.mycustomdomain.com" in probe_res_installed["message"]
+
+
+
