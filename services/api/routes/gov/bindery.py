@@ -6,6 +6,7 @@
 """
 
 import os
+import urllib.parse
 import base64
 import mimetypes
 from typing import Optional, Dict, Any, List
@@ -248,7 +249,7 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
         with open(target, "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
     if ext == ".pdf":
-        return FileResponse(path=target, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{file}"', "Cache-Control": "no-cache, no-store"})
+        return FileResponse(path=target, media_type="application/pdf", filename=file, content_disposition_type="inline", headers={"Cache-Control": "no-cache, no-store"})
     raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML) 或 PDF 格式在线翻阅。")
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
@@ -265,7 +266,7 @@ async def get_bindery_shelf() -> Dict[str, Any]:
                 total_bytes += st.st_size
                 books.append({
                     "filename": fname, "format": fmt, "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
-                    "download_url": f"/api/bindery/download?file={fname}", "preview_url": f"/api/bindery/view?file={fname}" if fmt in ("webbook", "pdf") else None
+                    "download_url": f"/api/bindery/download?file={urllib.parse.quote(fname)}", "preview_url": f"/api/bindery/view?file={urllib.parse.quote(fname)}" if fmt in ("webbook", "pdf") else None
                 })
         books.sort(key=lambda x: x["mtime"], reverse=True)
     tot_str = f"{total_bytes / 1024:.1f} KB" if total_bytes < 1024 * 1024 else f"{total_bytes / (1024*1024):.2f} MB"

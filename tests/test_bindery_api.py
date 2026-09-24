@@ -177,7 +177,7 @@ def test_bindery_shelf_view_and_delete(client):
     with open(test_html, "w", encoding="utf-8") as f:
         f.write("<!DOCTYPE html><html><body><h1>WebBook Test</h1></body></html>")
 
-    test_pdf = os.path.join(books_dir, "test_sample_shelf.pdf")
+    test_pdf = os.path.join(books_dir, "test_中文典籍_sample.pdf")
     with open(test_pdf, "wb") as f:
         f.write(b"%PDF-1.4 mock_pdf_content")
 
@@ -193,16 +193,16 @@ def test_bindery_shelf_view_and_delete(client):
         assert shelf_data.get("success") is True
         books = shelf_data.get("books", [])
         assert any(b["filename"] == "test_webbook_sample.html" for b in books)
-        assert any(b["filename"] == "test_sample_shelf.pdf" for b in books)
+        assert any(b["filename"] == "test_中文典籍_sample.pdf" for b in books)
         assert any(b["filename"] == "test_dummy_shelf.epub" for b in books)
 
         sample_webbook = next(b for b in books if b["filename"] == "test_webbook_sample.html")
         assert sample_webbook["format"] == "webbook"
         assert "/api/bindery/view" in sample_webbook["preview_url"]
 
-        sample_pdf = next(b for b in books if b["filename"] == "test_sample_shelf.pdf")
+        sample_pdf = next(b for b in books if b["filename"] == "test_中文典籍_sample.pdf")
         assert sample_pdf["format"] == "pdf"
-        assert "/api/bindery/view?file=test_sample_shelf.pdf" in sample_pdf["preview_url"]
+        assert "/api/bindery/view?file=" in sample_pdf["preview_url"]
 
         sample_epub = next(b for b in books if b["filename"] == "test_dummy_shelf.epub")
         assert sample_epub["preview_url"] is None
@@ -213,8 +213,8 @@ def test_bindery_shelf_view_and_delete(client):
         assert "text/html" in view_res.headers.get("content-type", "")
         assert "WebBook Test" in view_res.text
 
-        # 2.1 测试 PDF 在线内联阅览
-        pdf_res = client.get("/api/bindery/view?file=test_sample_shelf.pdf")
+        # 2.1 测试中文名称 PDF 在线内联阅览与 RFC 5987 编码安全响应
+        pdf_res = client.get(sample_pdf["preview_url"])
         assert pdf_res.status_code == 200
         assert "application/pdf" in pdf_res.headers.get("content-type", "")
         assert "inline" in pdf_res.headers.get("content-disposition", "")
