@@ -184,7 +184,14 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
   column-width: auto;
   column-gap: 72px;
 }
-[data-read-mode="paginated"] .er-chapter-card { break-inside: avoid-column; margin-bottom: 24px; padding-bottom: 16px; }
+[data-read-mode="paginated"] .er-chapter-card { break-inside: auto; margin-bottom: 0; padding-bottom: 20px; }
+[data-read-mode="paginated"] .er-chapter-card + .er-chapter-card { break-before: column; }
+[data-read-mode="paginated"] .er-cover-card { padding: 10px 0; border-bottom: none; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+[data-read-mode="paginated"] .er-cover-wrapper { max-width: 90%; }
+[data-read-mode="paginated"] .er-cover-img { max-height: calc(100vh - 200px); width: auto; max-width: 100%; object-fit: contain; margin-bottom: 10px; }
+[data-read-mode="paginated"] .er-cover-title { font-size: 1.35rem; }
+[data-read-mode="paginated"] .er-chapter-card h1, [data-read-mode="paginated"] .er-chapter-card h2 { break-after: avoid-column; }
+[data-read-mode="paginated"] .er-chapter-card pre, [data-read-mode="paginated"] .er-chapter-card blockquote { break-inside: avoid-column; }
 [data-read-mode="paginated"] .er-page-arrow {
   display: flex; position: absolute; top: calc(50% - 18px); transform: translateY(-50%);
   z-index: 600; width: 40px; height: 72px; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px);
