@@ -12,10 +12,11 @@ import mimetypes
 import zipfile
 import html
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 from .epub_reader_css import get_epub_reader_css
 from .epub_reader_js import get_epub_reader_js
+from .epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
 
 
 def _extract_body_html(xhtml_content: str) -> str:
@@ -172,13 +173,13 @@ def render_epub_reader_html(epub_path: str) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <title>{html.escape(book_title)} - EPUB 在线翻阅</title>
-  <style>{get_epub_reader_css()}</style>
+  <style>{get_epub_reader_css()}\\n{get_epub_annotator_css()}</style>
 </head>
 <body>
   <div class="er-progress-bar" id="er-progress-bar"></div>
   <header class="er-topbar">
     <div class="er-topbar-left">
-      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起目录">☰ 目录</button>
+      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰ 目录/笔记</button>
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
@@ -196,8 +197,20 @@ def render_epub_reader_html(epub_path: str) -> str:
 
   <div class="er-layout">
     <aside class="er-sidebar" id="er-sidebar">
-      <div class="er-sidebar-title">典籍分级目录</div>
-      {final_toc_html}
+      <div class="er-sidebar-tabs">
+        <button type="button" class="er-stab-btn active" id="er-stab-toc">📑 目录</button>
+        <button type="button" class="er-stab-btn" id="er-stab-notes">🔖 划线笔记 <span class="er-badge" id="er-notes-count">0</span></button>
+      </div>
+      <div class="er-sidebar-pane active" id="er-pane-toc">
+        {final_toc_html}
+      </div>
+      <div class="er-sidebar-pane" id="er-pane-notes">
+        <div class="er-notes-toolbar">
+          <button type="button" class="er-btn er-btn-sm er-btn-primary" id="er-export-notes-btn">📥 导出笔记</button>
+          <button type="button" class="er-btn er-btn-sm" id="er-clear-notes-btn">🗑️ 清空</button>
+        </div>
+        <div class="er-notes-list" id="er-notes-list"></div>
+      </div>
     </aside>
     <div class="er-backdrop" id="er-backdrop"></div>
     <main class="er-main" id="er-main">
@@ -217,6 +230,54 @@ def render_epub_reader_html(epub_path: str) -> str:
     </main>
   </div>
 
+  <!-- 🎈 划选浮动工具栏 -->
+  <div class="er-floating-bar" id="er-floating-bar">
+    <button type="button" class="er-fbtn" data-color="yellow" title="黄荧光划线"><span class="er-fdot dot-yellow"></span> 划线</button>
+    <button type="button" class="er-fbtn" data-color="emerald" title="翠绿高亮"><span class="er-fdot dot-emerald"></span></button>
+    <button type="button" class="er-fbtn" data-color="pink" title="胭脂粉高亮"><span class="er-fdot dot-pink"></span></button>
+    <div class="er-fsep"></div>
+    <button type="button" class="er-fbtn" id="er-fbtn-note" title="随手批注">💭 批注</button>
+    <button type="button" class="er-fbtn" id="er-fbtn-card" title="生成金句卡片">🖼️ 金句卡片</button>
+    <button type="button" class="er-fbtn" id="er-fbtn-copy" title="复制纯文本">📋 复制</button>
+  </div>
+
+  <!-- 🖼️ 金句卡片模态窗 -->
+  <div class="er-modal-backdrop" id="er-card-modal">
+    <div class="er-card-box">
+      <div class="er-quote-card" id="er-quote-card">
+        <div class="er-card-quote-mark">“</div>
+        <div class="er-card-quote-text" id="er-card-text"></div>
+        <div class="er-card-quote-mark-end">”</div>
+        <div class="er-card-meta">
+          <div>
+            <div class="er-card-book-title" id="er-card-book"></div>
+            <div class="er-card-chapter" id="er-card-chap"></div>
+          </div>
+          <div class="er-card-brand">Illacme Plenipes</div>
+        </div>
+      </div>
+      <div class="er-card-actions">
+        <button type="button" class="er-btn" id="er-card-close-btn">关闭</button>
+        <button type="button" class="er-btn" id="er-card-copy-btn">📋 复制金句文本</button>
+        <button type="button" class="er-btn er-btn-primary" id="er-card-save-btn">🖼️ 分享海报文本</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✍️ 随手批注模态窗 -->
+  <div class="er-modal-backdrop" id="er-note-modal">
+    <div class="er-note-box">
+      <div class="er-note-box-title">✍️ 记录随笔思考</div>
+      <div class="er-note-target-text" id="er-note-target-text"></div>
+      <textarea class="er-note-input" id="er-note-input" rows="3" placeholder="在此写下对本段文字的灵感、考据或思考..."></textarea>
+      <div class="er-note-actions">
+        <button type="button" class="er-btn" id="er-note-cancel-btn">取消</button>
+        <button type="button" class="er-btn er-btn-primary" id="er-note-save-btn">保存批注</button>
+      </div>
+    </div>
+  </div>
+
   <script>{get_epub_reader_js()}</script>
+  <script>{get_epub_annotator_js()}</script>
 </body>
 </html>"""

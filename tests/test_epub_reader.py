@@ -119,6 +119,17 @@ def test_render_epub_reader_html_core(mock_epub_file):
     assert 'data-spread="auto"' in html_output
     assert 'data-font="sans"' in html_output
 
+    # 验证划词高亮、侧边栏双 Tab、笔记面板与金句卡片
+    assert 'id="er-floating-bar"' in html_output
+    assert 'id="er-stab-toc"' in html_output
+    assert 'id="er-stab-notes"' in html_output
+    assert 'id="er-pane-notes"' in html_output
+    assert 'id="er-export-notes-btn"' in html_output
+    assert 'id="er-card-modal"' in html_output
+    assert 'id="er-note-modal"' in html_output
+    assert 'er-quote-card' in html_output
+
+
 
 def test_api_bindery_view_epub(client, mock_epub_file):
     """测试通过 /api/bindery/view 路由发起在线翻阅请求"""
