@@ -287,6 +287,26 @@ def test_frontend_render_runtime_and_dom_integrity():
         const rProto = window.checkPluginConfiguredStatus({ id: 'deepseek', category: 'protocol', is_enabled: true });
         if (!rProto.label.includes('就绪')) throw new Error('Protocol compute node status routing failed');
 
+        // 8.5 网络穿透驱动双模凭据感知 (Cloudflare Tunnel: Quick 免配即用 vs 专属通道就绪, Pinggy SSH: 免配即用)
+        const rPinggy = window.isPluginCredentialReady('pinggy', 'tunnel', {});
+        if (!rPinggy.ready || rPinggy.label !== '免配即用') throw new Error('Pinggy tunnel readiness failed');
+
+        const rCFTemp = window.isPluginCredentialReady('cloudflare', 'tunnel', {});
+        if (!rCFTemp.ready || rCFTemp.label !== '免配即用' || rCFTemp.mode !== 'quick') throw new Error('Cloudflare tunnel quick readiness failed');
+
+        const rCFTok = window.isPluginCredentialReady('cloudflare', 'tunnel', { tunnel_token: 'cf-secret-token' });
+        if (!rCFTok.ready || rCFTok.label !== '专属通道就绪' || rCFTok.mode !== 'token') throw new Error('Cloudflare tunnel token readiness failed');
+
+        // 8.6 网络穿透插件卡片徽标判定 (checkPluginConfiguredStatus)
+        window.settingsData.tunnel = {};
+        const cfStatusQuick = window.checkPluginConfiguredStatus({ id: 'cloudflare', category: 'tunnel', is_enabled: true, is_manageable: true, has_config: true });
+        if (cfStatusQuick.label !== '⚡ 免配即用') throw new Error(`Expected '⚡ 免配即用' for unconfigured Cloudflare Tunnel, got: ${cfStatusQuick.label}`);
+
+        window.settingsData.tunnel = { cloudflare: { tunnel_token: 'cf-token-abc' } };
+        const cfStatusToken = window.checkPluginConfiguredStatus({ id: 'cloudflare', category: 'tunnel', is_enabled: true, is_manageable: true, has_config: true });
+        if (cfStatusToken.label !== '🟢 专属通道就绪') throw new Error(`Expected '🟢 专属通道就绪' for configured Cloudflare Tunnel, got: ${cfStatusToken.label}`);
+
+
         // 9. 验证 design.studio.js 提供商渲染与分类过滤器真实调用 (Rule 7)
         const designStudioCode = fs.readFileSync('web/dashboard/js/design/design.studio.js', 'utf8');
         eval(designStudioCode);

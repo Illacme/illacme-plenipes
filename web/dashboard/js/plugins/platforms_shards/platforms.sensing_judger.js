@@ -147,16 +147,8 @@ window.isPluginCredentialReady = (pluginId, category, cfg) => {
         if (!v || typeof v !== 'string') return true;
         const t = v.trim();
         if (!t) return true;
-        return (
-            /^YOUR[_\-]/i.test(t) ||
-            /^your[_\-]/i.test(t) ||
-            /^REPLACE/i.test(t) ||
-            /^TOKEN_HERE$/i.test(t) ||
-            /^<.+>$/.test(t) ||
-            /^\{.+\}$/.test(t) ||
-            /^EXAMPLE[_\-]/i.test(t) ||
-            /^PLACEHOLDER/i.test(t)
-        );
+        return /^YOUR[_\-]/i.test(t) || /^your[_\-]/i.test(t) || /^REPLACE/i.test(t) || /^TOKEN_HERE$/i.test(t) ||
+               /^<.+>$/.test(t) || /^\{.+\}$/.test(t) || /^EXAMPLE[_\-]/i.test(t) || /^PLACEHOLDER/i.test(t);
     };
 
     // 提取可能的仓库地址/URL (兼容 repo_url, repo, repository, git_url, url)
@@ -202,8 +194,17 @@ window.isPluginCredentialReady = (pluginId, category, cfg) => {
         return { ready: false, mode: 'missing', label: '待填 Access Key' };
     }
 
-    // 4. Vercel / Netlify / Cloudflare (CLI / OAuth 免密)
-    if (['vercel', 'netlify', 'cloudflare_pages', 'cloudflare'].includes(pluginId)) {
+    // 0. 网络穿透驱动 (Tunnel: Pinggy SSH / Cloudflare Tunnel)
+    if (category === 'tunnel' || pluginId === 'pinggy') {
+        if (pluginId === 'pinggy') return { ready: true, mode: 'zero_config', label: '免配即用' };
+        if (pluginId === 'cloudflare') {
+            const hasToken = Boolean(pCfg.tunnel_token && !isPlaceholderValue(pCfg.tunnel_token));
+            return hasToken ? { ready: true, mode: 'token', label: '专属通道就绪' } : { ready: true, mode: 'quick', label: '免配即用' };
+        }
+    }
+
+    // 4. Vercel / Netlify / Cloudflare Pages (CLI / OAuth 免密)
+    if (['vercel', 'netlify', 'cloudflare_pages'].includes(pluginId) || (pluginId === 'cloudflare' && category !== 'tunnel')) {
         // 逐个检查，排除占位默认值
         const cfToken = [pCfg.token, pCfg.api_token, pCfg.api_key, pCfg.auth_token].find(v => v && !isPlaceholderValue(v));
         if (cfToken) return { ready: true, mode: 'token', label: 'Token 就绪' };

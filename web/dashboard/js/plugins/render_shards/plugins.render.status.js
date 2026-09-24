@@ -51,7 +51,7 @@
         } else if (p.category === 'notification') {
             settings = cfgData.publish_control?.webhook_endpoints?.[p.id] || {};
         } else if (p.category === 'tunnel') {
-            settings = cfgData.tunnel?.[p.id] || {};
+            settings = cfgData.tunnel?.[p.id] || p.cfg || {};
         } else if (p.category === 'protocol' || p.category === 'compute') {
             const nodes = Object.values(cfgData.translation?.compute_nodes || {});
             const matched = nodes.find(n => n && (n.type === p.id || n.provider === p.id || n.id === p.id));
@@ -75,16 +75,37 @@
             return s.length > 0 && !_isPlaceholder(s);
         });
 
+        // 优先研判插件凭据/开箱状态 (支持免配即用 / 匿名上传 / Quick 临时通道)
+        if (window.isPluginCredentialReady) {
+            const cred = window.isPluginCredentialReady(p.id, p.category, settings);
+            if (cred && cred.ready) {
+                if (cred.mode === 'quick' || cred.mode === 'anonymous' || cred.mode === 'zero_config' || cred.label === '免配即用') {
+                    return {
+                        label: '⚡ 免配即用',
+                        class: 'info',
+                        style: 'background: rgba(0, 242, 254, 0.08); color: var(--accent-secondary, #00f2fe); border: 1px solid rgba(0, 242, 254, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;'
+                    };
+                }
+                return {
+                    label: `🟢 ${cred.label || '配置齐全'}`,
+                    class: 'info',
+                    style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;'
+                };
+            }
+        }
+
         if (!hasAnyUserInput) {
             return { label: '─ 待配置', class: 'info', style: 'color: var(--text-dim); opacity: 0.55; font-weight: 500; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);' };
         }
 
         if (window.isPluginCredentialReady) {
             const cred = window.isPluginCredentialReady(p.id, p.category, settings);
-            if (cred.ready) {
-                return { label: `🟢 ${cred.label || '配置齐全'}`, class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
-            } else {
-                return { label: `⚠️ ${cred.label || '待填凭据'}`, class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important;' };
+            if (cred) {
+                if (cred.ready) {
+                    return { label: `🟢 ${cred.label || '配置齐全'}`, class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+                } else {
+                    return { label: `⚠️ ${cred.label || '待填凭据'}`, class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+                }
             }
         }
 
