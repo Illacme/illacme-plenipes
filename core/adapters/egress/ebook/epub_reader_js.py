@@ -11,47 +11,52 @@ def get_epub_reader_js() -> str:
     return """(function() {
   'use strict';
   const sb = document.getElementById('er-sidebar'), btn = document.getElementById('er-toggle-sidebar'), bDrop = document.getElementById('er-backdrop');
-  function closeSidebar() {
-    if (sb) { sb.classList.remove('open'); sb.classList.add('collapsed'); }
-    if (bDrop) bDrop.style.display = 'none';
-  }
-  function openSidebar() {
-    if (sb) { sb.classList.add('open'); sb.classList.remove('collapsed'); }
-    if (bDrop) bDrop.style.display = 'block';
-  }
+  const setSidebar = (open) => {
+    if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); }
+    if (bDrop) bDrop.style.display = open ? 'block' : 'none';
+  };
   function toggleSidebar() {
-    const isMob = window.innerWidth <= 900;
-    if (isMob) { if (sb && sb.classList.contains('open')) closeSidebar(); else openSidebar(); }
+    if (window.innerWidth <= 900) setSidebar(!sb.classList.contains('open'));
     else if (sb) { sb.classList.toggle('collapsed'); try { localStorage.setItem('er_sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch(e){} }
   }
   if (btn) btn.onclick = toggleSidebar;
-  if (bDrop) bDrop.onclick = closeSidebar;
+  if (bDrop) bDrop.onclick = () => setSidebar(false);
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
-  const vp = document.getElementById('er-viewport');
-  const bContent = document.getElementById('er-book-content');
-  const fChap = document.getElementById('er-footer-chapter');
-  const fPage = document.getElementById('er-footer-page');
-  const prevBtn = document.getElementById('er-page-prev');
-  const nextBtn = document.getElementById('er-page-next');
-  const modeBtn = document.getElementById('er-mode-toggle');
+  const vp = document.getElementById('er-viewport'), bContent = document.getElementById('er-book-content');
+  const fChap = document.getElementById('er-footer-chapter'), fPage = document.getElementById('er-footer-page');
+  const prevBtn = document.getElementById('er-page-prev'), nextBtn = document.getElementById('er-page-next');
+  const modeBtn = document.getElementById('er-mode-toggle'), spreadBtn = document.getElementById('er-spread-toggle');
+  const fontBtn = document.getElementById('er-font-family'), fsBtn = document.getElementById('er-fullscreen');
   const pBar = document.getElementById('er-progress-bar');
-  const chapters = document.querySelectorAll('.er-chapter-card');
-  const tocLinks = document.querySelectorAll('.er-sidebar a');
+  const chapters = document.querySelectorAll('.er-chapter-card'), tocLinks = document.querySelectorAll('.er-sidebar a');
 
   let curPage = 0, totalPages = 1;
+  let spreadMode = localStorage.getItem('er_spread_mode') || 'auto';
+
+  function isSpreadActive() {
+    if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return false;
+    if (spreadMode === 'double') return window.innerWidth >= 900;
+    if (spreadMode === 'single') return false;
+    return window.innerWidth >= 1150;
+  }
 
   function getStep() {
     if (!vp || !bContent) return window.innerWidth;
-    const style = window.getComputedStyle(bContent);
-    const gap = parseFloat(style.columnGap) || 64;
+    const isSpread = isSpreadActive();
     const padL = parseFloat(window.getComputedStyle(vp).paddingLeft) || 0;
     const padR = parseFloat(window.getComputedStyle(vp).paddingRight) || 0;
-    return (vp.clientWidth - padL - padR) + gap;
+    const vpW = vp.clientWidth - padL - padR;
+    if (isSpread) return vpW + 72;
+    const gap = parseFloat(window.getComputedStyle(bContent).columnGap) || 64;
+    return vpW + gap;
   }
 
   function updatePagination() {
     if (document.documentElement.getAttribute('data-read-mode') !== 'paginated' || !bContent) return;
+    const isSpread = isSpreadActive();
+    if (vp) vp.classList.toggle('spread-active', isSpread);
+    if (spreadBtn) spreadBtn.textContent = isSpread ? '📑 双页' : '📄 单页';
     const step = getStep();
     if (step <= 0) return;
     totalPages = Math.max(1, Math.ceil(bContent.scrollWidth / step));
@@ -62,7 +67,9 @@ def get_epub_reader_js() -> str:
   function renderPage() {
     const step = getStep();
     bContent.style.transform = `translateX(-${curPage * step}px)`;
-    if (fPage) fPage.textContent = `${curPage + 1} / ${totalPages}`;
+    const isSpread = isSpreadActive();
+    const pageLabel = isSpread ? `${curPage * 2 + 1}-${Math.min(totalPages * 2, curPage * 2 + 2)} / ${totalPages * 2}` : `${curPage + 1} / ${totalPages}`;
+    if (fPage) fPage.textContent = pageLabel;
     if (pBar) pBar.style.width = `${Math.min(100, Math.max(0, ((curPage + 1) / totalPages) * 100))}%`;
     syncActiveSection(curPage * step + step * 0.4);
   }
@@ -79,6 +86,7 @@ def get_epub_reader_js() -> str:
       modeBtn.textContent = mode === 'paginated' ? '📖 翻页' : '📜 卷轴';
       modeBtn.title = mode === 'paginated' ? '当前：左右翻页模式 (点击切换为卷轴)' : '当前：连续卷轴模式 (点击切换为翻页)';
     }
+    if (spreadBtn) spreadBtn.style.display = mode === 'paginated' ? 'inline-flex' : 'none';
     try { localStorage.setItem('er_read_mode', mode); } catch(e){}
     if (mode === 'paginated') {
       window.scrollTo({ top: 0 });
@@ -95,6 +103,35 @@ def get_epub_reader_js() -> str:
       applyReadMode(cur === 'paginated' ? 'scroll' : 'paginated');
     };
   }
+
+  if (spreadBtn) {
+    spreadBtn.onclick = () => {
+      spreadMode = isSpreadActive() ? 'single' : 'double';
+      try { localStorage.setItem('er_spread_mode', spreadMode); } catch(e){}
+      updatePagination();
+    };
+  }
+
+  // 🔤 字体库切换引擎
+  const FONTS = [{k:'sans', n:'🔤 黑体'}, {k:'serif', n:'📖 宋体'}, {k:'kai', n:'✍️ 楷体'}];
+  let fontIdx = Math.max(0, FONTS.findIndex(x => x.k === (localStorage.getItem('er_font') || 'sans')));
+  function applyFont(idx) {
+    fontIdx = idx % FONTS.length;
+    const f = FONTS[fontIdx];
+    document.documentElement.setAttribute('data-font', f.k);
+    if (fontBtn) fontBtn.textContent = f.n;
+    try { localStorage.setItem('er_font', f.k); } catch(e){}
+    setTimeout(updatePagination, 50);
+  }
+  if (fontBtn) fontBtn.onclick = () => applyFont(fontIdx + 1);
+  applyFont(fontIdx);
+
+  // ⛶ 全屏沉浸阅读
+  function toggleFs() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen().catch(()=>{});
+  }
+  if (fsBtn) fsBtn.onclick = toggleFs;
 
   function syncActiveSection(offsetOrScrollY) {
     let actId = '', actTitle = '';
@@ -195,7 +232,7 @@ def get_epub_reader_js() -> str:
     }
   }, { passive: true });
 
-  // 3. 键盘按键监听
+  // 3. 键盘快捷键监听
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
@@ -205,6 +242,8 @@ def get_epub_reader_js() -> str:
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
       if (isPag) prevPage();
       else window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFs();
     }
   });
 
@@ -235,12 +274,7 @@ def get_epub_reader_js() -> str:
 
   let fs = 16;
   const inc = document.getElementById('er-font-inc'), dec = document.getElementById('er-font-dec');
-  const setFs = (val) => {
-    fs = val;
-    document.documentElement.style.setProperty('--font-size', fs + 'px');
-    try { localStorage.setItem('er_fs', fs); } catch(e){}
-    setTimeout(updatePagination, 50);
-  };
+  const setFs = (val) => { fs = val; document.documentElement.style.setProperty('--font-size', fs + 'px'); try { localStorage.setItem('er_fs', fs); } catch(e){} setTimeout(updatePagination, 50); };
   try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) setFs(sfs); } catch(e){}
   if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
   if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));

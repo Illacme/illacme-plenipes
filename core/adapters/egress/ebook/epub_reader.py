@@ -167,7 +167,7 @@ def render_epub_reader_html(epub_path: str) -> str:
     ])
 
     return f"""<!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark" data-read-mode="paginated">
+<html lang="zh-CN" data-theme="dark" data-read-mode="paginated" data-spread="auto" data-font="sans">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
@@ -182,12 +182,15 @@ def render_epub_reader_html(epub_path: str) -> str:
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
+      <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑 双页</button>
+      <button type="button" class="er-btn" id="er-font-family" title="切换字体：黑体 / 宋体 / 楷体">🔤 黑体</button>
       <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖 翻页</button>
       <button type="button" class="er-btn" id="er-font-dec" title="缩小字号">A-</button>
       <button type="button" class="er-btn" id="er-font-inc" title="放大字号">A+</button>
       <button type="button" class="er-theme-btn active" data-theme="dark" title="暗黑翠玉">🌙</button>
       <button type="button" class="er-theme-btn" data-theme="light" title="高亮纯净">☀️</button>
       <button type="button" class="er-theme-btn" data-theme="sepia" title="复古羊皮纸">📜</button>
+      <button type="button" class="er-btn" id="er-fullscreen" title="全屏沉浸阅读 (快捷键 F)">⛶</button>
     </div>
   </header>
 

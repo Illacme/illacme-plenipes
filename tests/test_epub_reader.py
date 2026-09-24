@@ -108,11 +108,16 @@ def test_render_epub_reader_html_core(mock_epub_file):
     assert 'er-toggle-sidebar' in html_output
     # 验证翻页仿真模式与双模切换组件
     assert 'id="er-mode-toggle"' in html_output
+    assert 'id="er-spread-toggle"' in html_output
+    assert 'id="er-font-family"' in html_output
+    assert 'id="er-fullscreen"' in html_output
     assert 'id="er-viewport"' in html_output
     assert 'id="er-page-prev"' in html_output
     assert 'id="er-page-next"' in html_output
     assert 'id="er-paginated-footer"' in html_output
     assert 'data-read-mode="paginated"' in html_output
+    assert 'data-spread="auto"' in html_output
+    assert 'data-font="sans"' in html_output
 
 
 def test_api_bindery_view_epub(client, mock_epub_file):

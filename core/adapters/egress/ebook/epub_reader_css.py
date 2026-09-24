@@ -133,6 +133,17 @@ body {
 .er-cover-title { font-size: 1.6rem; font-weight: 800; color: var(--text-title); margin-bottom: 8px; }
 .er-cover-author { font-size: 0.95rem; color: var(--text-dim); font-weight: 500; }
 
+/* 🔤 印刷级排版字体库切换 */
+[data-font="sans"] body, [data-font="sans"] .er-main {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+[data-font="serif"] body, [data-font="serif"] .er-main {
+  font-family: "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", SimSun, "STSong", "Georgia", serif;
+}
+[data-font="kai"] body, [data-font="kai"] .er-main {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "BiauKai", "FZKai-Z03S", serif;
+}
+
 /* 📖 仿真左右分页模式核心样式 */
 html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100vh; overflow: hidden; }
 [data-read-mode="paginated"] .er-layout { height: calc(100vh - 50px); margin-top: 50px; overflow: hidden; min-height: 0; }
@@ -143,8 +154,22 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
 [data-read-mode="paginated"] .er-sidebar.collapsed ~ .er-main { margin-left: 0; }
 [data-read-mode="paginated"] .er-viewport {
   flex: 1; height: calc(100% - 36px); overflow: hidden; position: relative; width: 100%;
-  padding: 14px 54px; box-sizing: border-box; cursor: pointer;
+  padding: 14px 54px; box-sizing: border-box; cursor: pointer; max-width: 1440px; margin: 0 auto;
 }
+
+/* 📑 宽屏仿真双页对开与书脊阴影折痕 */
+.er-viewport.spread-active::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 44px;
+  transform: translateX(-50%); pointer-events: none; z-index: 550;
+  background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0) 100%);
+}
+[data-theme="sepia"] .er-viewport.spread-active::after {
+  background: linear-gradient(to right, rgba(67,52,34,0) 0%, rgba(67,52,34,0.22) 50%, rgba(67,52,34,0) 100%);
+}
+[data-theme="light"] .er-viewport.spread-active::after {
+  background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0) 100%);
+}
+
 [data-read-mode="paginated"] .er-book-content {
   height: 100%;
   column-width: var(--page-width, 760px);
@@ -153,6 +178,11 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
   box-sizing: border-box;
   transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
+}
+[data-read-mode="paginated"] .er-viewport.spread-active .er-book-content {
+  column-count: 2;
+  column-width: auto;
+  column-gap: 72px;
 }
 [data-read-mode="paginated"] .er-chapter-card { break-inside: avoid-column; margin-bottom: 24px; padding-bottom: 16px; }
 [data-read-mode="paginated"] .er-page-arrow {
@@ -186,7 +216,7 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
   .er-sidebar.open { transform: translateX(0); }
   .er-sidebar.open ~ .er-backdrop { display: block; }
   .er-main { margin-left: 0 !important; padding: 20px 16px 80px; }
-  .er-book-title { max-width: 40vw; }
+  .er-book-title { max-width: 35vw; }
   [data-read-mode="paginated"] .er-main { margin-left: 0 !important; padding: 0; }
   [data-read-mode="paginated"] .er-viewport { padding: 12px 14px; }
   [data-read-mode="paginated"] .er-page-arrow { display: none; }
