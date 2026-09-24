@@ -206,3 +206,36 @@ def test_tunnel_plugin_drawer_validation_optional_token():
     """
     res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
     assert res.returncode == 0, f"Validation failed with error: {res.stderr}"
+
+
+def test_ebook_plugins_native_engine_attributes():
+    """验证数字装订驱动作为原生引擎，is_manageable 必须为 False"""
+    from services.api.routes.gov.plugin_mapper import _collect_ebook_plugins
+    plugins = _collect_ebook_plugins(None, set(), "1.0.0")
+    assert len(plugins) > 0
+    for p in plugins:
+        assert p["category"] == "ebook"
+        assert p["is_manageable"] is False
+        assert p["status"] == "Native"
+        assert p["is_in_use"] is True
+
+
+def test_tunnel_plugin_user_config_activation():
+    """验证 collect_tunnel_plugins 准确尊重用户显式配置的 enabled 状态"""
+    from services.api.routes.gov.plugin_collector_channels import collect_tunnel_plugins
+    from unittest.mock import MagicMock
+
+    engine = MagicMock()
+    # 模拟用户显式配置 cloudflare 启用，pinggy 禁用
+    engine.config.tunnel = {
+        "cloudflare": {"enabled": True},
+        "pinggy": {"enabled": False}
+    }
+    plugins = collect_tunnel_plugins(engine, set(), "1.0.0")
+    cf = next(p for p in plugins if p["id"] == "cloudflare")
+    pg = next(p for p in plugins if p["id"] == "pinggy")
+    assert cf["is_in_use"] is True
+    assert pg["is_in_use"] is False
+    assert cf["is_manageable"] is True
+    assert pg["is_manageable"] is True
+

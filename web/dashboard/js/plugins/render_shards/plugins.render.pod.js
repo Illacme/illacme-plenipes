@@ -263,11 +263,9 @@ window.buildPluginPodHtml = (p, isPinned) => {
                     </label>
                 </div>
                 `;
-
-
         })() : `
               <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center; white-space:nowrap;">
-                  ${p.is_in_use ? '<span class="tiny-label" style="color:var(--neon-green); display:flex; align-items:center; gap:6px; white-space:nowrap;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green); width:6px; height:6px;"></span>品牌已绑定</span>' : '<span class="tiny-label" style="color:var(--text-dim); white-space:nowrap;">系统基础节点</span>'}
+                  ${p.is_in_use ? `<span class="tiny-label" style="color:var(--neon-green); display:flex; align-items:center; gap:6px; white-space:nowrap;"><span class="heartbeat-indicator pulsing" style="background:var(--neon-green); width:6px; height:6px;"></span>${p.category === 'ebook' ? '内置装订引擎' : '品牌已绑定'}</span>` : '<span class="tiny-label" style="color:var(--text-dim); white-space:nowrap;">系统基础节点</span>'}
               </div>
             `))}
 

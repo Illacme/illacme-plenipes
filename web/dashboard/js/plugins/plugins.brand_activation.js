@@ -18,6 +18,8 @@
                 path = `image_hosting.${id}.enabled`;
             } else if (category === 'notification') {
                 path = `publish_control.webhook_endpoints.${id}.enabled`;
+            } else if (category === 'tunnel') {
+                path = `tunnel.${id}.enabled`;
             } else {
                 return;
             }
@@ -25,7 +27,7 @@
             // 🔒 [V80.2] 品牌激活探针守卫：与全局驱动启用门槛一致
             // 需要先通过「测试连接」确认配置有效，才允许品牌激活
             if (checked) {
-                const needsProbe = ['hosting', 'publisher', 'image_hosting', 'notification'].includes(category);
+                const needsProbe = ['hosting', 'publisher', 'image_hosting', 'notification', 'tunnel'].includes(category);
                 const isPassed = !!(window.probePassState && window.probePassState[id] === true);
                 if (needsProbe && !isPassed) {
                     // 回滚 checkbox 状态
@@ -170,6 +172,15 @@
             const payload = {
                 [path]: checked
             };
+            if (category === 'tunnel') {
+                if (checked) {
+                    payload['tunnel.active_driver'] = id;
+                    if (typeof window.updateConfigField === 'function') window.updateConfigField('tunnel.active_driver', id);
+                } else if (window.settingsData?.tunnel?.active_driver === id) {
+                    payload['tunnel.active_driver'] = '';
+                    if (typeof window.updateConfigField === 'function') window.updateConfigField('tunnel.active_driver', '');
+                }
+            }
             
             const response = await apiFetch('/api/config/update', {
                 method: 'POST',

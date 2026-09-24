@@ -153,7 +153,7 @@ def _collect_ebook_plugins(engine, disabled: set, system_track: str) -> List[Dic
             "name": display_name,
             "category": "ebook",
             "category_name": "📚 数字装订",
-            "status": "Ready",
+            "status": "Native",
             "is_in_use": True,
             "is_enabled": (plugin_id not in disabled),
             "origin": "core",
@@ -161,7 +161,7 @@ def _collect_ebook_plugins(engine, disabled: set, system_track: str) -> List[Dic
             "version": ver,
             "description": desc,
             "output_extension": ext,
-            "is_manageable": True
+            "is_manageable": False
         })
     return plugins
 

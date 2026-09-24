@@ -186,11 +186,17 @@ def collect_tunnel_plugins(engine, disabled: set, system_track: str) -> List[Dic
     else:
         tunnel_dict = {}
 
+    active_driver = tunnel_dict.get("active_driver", "") if isinstance(tunnel_dict, dict) else ""
     default_driver = TunnelRegistry.get_default_driver_id()
     plugins = []
     for p_id, cls in TunnelRegistry.list_all().items():
         current_cfg = tunnel_dict.get(p_id, {}) if isinstance(tunnel_dict, dict) else {}
-        is_active = (p_id == default_driver)
+        if isinstance(current_cfg, dict) and "enabled" in current_cfg:
+            is_active = bool(current_cfg.get("enabled", False))
+        elif active_driver:
+            is_active = (p_id == active_driver)
+        else:
+            is_active = (p_id == default_driver)
         name = getattr(cls, "DISPLAY_NAME", p_id.upper())
         has_cfg = getattr(cls, "HAS_CONFIG", False)
         desc = getattr(cls, "DESCRIPTION", "网络穿透驱动：建立指向本地服务的高可用远程隧道通道。")
