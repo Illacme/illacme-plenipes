@@ -45,7 +45,7 @@ async def get_tunnel_drivers() -> Dict[str, Any]:
     hub = get_tunnel_hub()
     drivers = hub.list_available_drivers()
     cur_status = hub.get_status()
-    active_driver = cur_status.get("provider") or next((d["id"] for d in drivers if d.get("is_preferred")), (drivers[0]["id"] if drivers else "cloudflare"))
+    active_driver = cur_status.get("provider") or next((d["id"] for d in drivers if d.get("is_preferred")), (drivers[0]["id"] if drivers else "pinggy"))
     return {
         "success": True,
         "drivers": drivers,

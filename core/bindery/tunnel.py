@@ -139,6 +139,8 @@ class TunnelHub:
                 "is_enabled": is_enabled,
                 "is_preferred": is_pref,
             })
+        order_priority = {"pinggy": 0, "cloudflare": 1}
+        drivers.sort(key=lambda d: order_priority.get(d["id"], 99))
         return drivers
 
     def start_tunnel(self, port: int = 43212, timeout_seconds: int = 15, driver: Optional[str] = None) -> Dict[str, Any]:
@@ -165,7 +167,7 @@ class TunnelHub:
             active_driver = tunnel_cfg.get("active_driver", "")
             if active_driver and active_driver in TunnelRegistry.list_all():
                 candidates.append(active_driver)
-            for d in ["cloudflare", "pinggy"]:
+            for d in ["pinggy", "cloudflare"]:
                 if d in TunnelRegistry.list_all() and d not in candidates:
                     candidates.append(d)
             for d in TunnelRegistry.list_all().keys():

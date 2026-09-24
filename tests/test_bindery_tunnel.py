@@ -209,8 +209,11 @@ def test_tunnel_drivers_endpoint(client):
     assert "active_driver" in data
     # 验证驱动列表结构
     driver_ids = [d["id"] for d in data["drivers"]]
-    assert "cloudflare" in driver_ids
     assert "pinggy" in driver_ids
+    assert "cloudflare" in driver_ids
+    # 验证排序首项为无依赖的 pinggy，且默认首选 active_driver 为 pinggy
+    assert data["drivers"][0]["id"] == "pinggy"
+    assert data["active_driver"] == "pinggy"
     for d in data["drivers"]:
         assert "name" in d
         assert "icon" in d

@@ -117,8 +117,12 @@
                     const dRes = await fetchFunc('/api/bindery/tunnel/drivers');
                     const dData = (dRes && typeof dRes.json === 'function') ? await dRes.json() : dRes;
                     drivers = (dData && dData.drivers) || [];
+                    drivers.sort((a, b) => {
+                        const order = { 'pinggy': 0, 'cloudflare': 1 };
+                        return (order[a.id] ?? 99) - (order[b.id] ?? 99);
+                    });
                     if (!window._binderyQrSelectedDriver || !drivers.some(d => d.id === window._binderyQrSelectedDriver)) {
-                        window._binderyQrSelectedDriver = dData.active_driver || drivers[0]?.id || 'cloudflare';
+                        window._binderyQrSelectedDriver = dData.active_driver || drivers[0]?.id || 'pinggy';
                     }
                 } catch (_) {}
                 window._binderyQrDrivers = drivers;

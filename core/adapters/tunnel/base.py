@@ -88,11 +88,9 @@ class TunnelRegistry:
 
     @classmethod
     def get_default_driver_id(cls) -> str:
-        """获取系统首选穿透驱动 ID (优先 cloudflare，备选 pinggy)"""
-        if "cloudflare" in cls._registry:
-            import shutil, os
-            if shutil.which("cloudflared") or os.path.exists(os.path.expanduser("~/.plenipes/bin/cloudflared")):
-                return "cloudflare"
+        """获取系统首选穿透驱动 ID (优先零依赖原生 SSH 的 pinggy，备选 cloudflare)"""
         if "pinggy" in cls._registry:
             return "pinggy"
+        if "cloudflare" in cls._registry:
+            return "cloudflare"
         return next(iter(cls._registry.keys()), "")
