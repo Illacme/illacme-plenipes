@@ -128,6 +128,7 @@ def test_bindery_qr_dual_mode_in_node_sandbox():
         getElementById: (id) => {
             return createdElements.find(e => e.id === id) || null;
         },
+        querySelectorAll: (sel) => [],
         body: {
             children: [],
             appendChild: (child) => { mockDoc.body.children.push(child); child.parentNode = mockDoc.body; },
@@ -181,8 +182,69 @@ def test_bindery_qr_dual_mode_in_node_sandbox():
     window.switchBinderyQrNetworkMode('lan');
     if (window._binderyQrNetworkMode !== 'lan') throw new Error('网络模式未切换回 lan');
 
+    // 5. 模拟通道选择函数
+    if (typeof window.selectBinderyTunnelDriver !== 'function') throw new Error('缺少 selectBinderyTunnelDriver');
+    window._binderyQrDrivers = [
+        { id: 'cloudflare', name: 'Cloudflare', icon: '☁️' },
+        { id: 'pinggy', name: 'Pinggy', icon: '⚡' }
+    ];
+    window.selectBinderyTunnelDriver('pinggy');
+    if (window._binderyQrSelectedDriver !== 'pinggy') throw new Error('驱动未选中 pinggy');
+
     console.log('PASS');
     """
     proc = subprocess.run(["node", "-e", runner], capture_output=True, text=True)
     assert proc.returncode == 0, f"Node 沙箱执行失败: {proc.stderr}"
     assert "PASS" in proc.stdout
+
+
+def test_tunnel_drivers_endpoint(client):
+    """测试获取可用穿透通道列表接口 GET /api/bindery/tunnel/drivers"""
+    res = client.get("/api/bindery/tunnel/drivers")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "drivers" in data
+    assert isinstance(data["drivers"], list)
+    assert "active_driver" in data
+    # 验证驱动列表结构
+    driver_ids = [d["id"] for d in data["drivers"]]
+    assert "cloudflare" in driver_ids
+    assert "pinggy" in driver_ids
+    for d in data["drivers"]:
+        assert "name" in d
+        assert "icon" in d
+        assert "is_enabled" in d
+
+
+def test_tunnel_start_with_specified_driver(client, monkeypatch):
+    """测试指定 driver 参数触发启动"""
+    hub = get_tunnel_hub()
+    called_driver = []
+
+    def mock_start_tunnel(port=43212, timeout_seconds=15, driver=None):
+        called_driver.append(driver)
+        return {
+            "is_running": True,
+            "url": "https://test.trycloudflare.com",
+            "provider": driver or "cloudflare",
+            "provider_name": "Cloudflare Anycast"
+        }
+
+    monkeypatch.setattr(hub, "start_tunnel", mock_start_tunnel)
+
+    # 1. 传递 driver=pinggy
+    res1 = client.post("/api/bindery/tunnel/start", json={"driver": "pinggy"})
+    assert res1.status_code == 200
+    assert called_driver[-1] == "pinggy"
+
+    # 2. 传递 driver=cloudflare
+    res2 = client.post("/api/bindery/tunnel/start", json={"driver": "cloudflare"})
+    assert res2.status_code == 200
+    assert called_driver[-1] == "cloudflare"
+
+    # 3. 不传 driver (默认自动队列)
+    res3 = client.post("/api/bindery/tunnel/start")
+    assert res3.status_code == 200
+    assert called_driver[-1] is None
+

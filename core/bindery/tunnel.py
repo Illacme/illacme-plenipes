@@ -68,10 +68,13 @@ class TunnelHub:
         # 兼容旧版及单测直接注入 _process / _public_url
         if self._process and getattr(self._process, "poll", lambda: None)() is None and self._public_url:
             uptime = int(time.time() - self._start_time)
+            prov = self._provider or "tunnel"
+            prov_name = "Cloudflare Tunnel" if prov == "cloudflare" else ("Pinggy OpenSSH" if prov == "pinggy" else prov.upper())
             return {
                 "is_running": True,
                 "public_url": self._public_url,
-                "provider": self._provider or "tunnel",
+                "provider": prov,
+                "provider_name": prov_name,
                 "uptime_seconds": uptime,
             }
         if not self._active_adapter:
@@ -79,59 +82,119 @@ class TunnelHub:
                 "is_running": False,
                 "public_url": None,
                 "provider": None,
+                "provider_name": None,
                 "uptime_seconds": 0,
             }
         status = self._active_adapter.get_status()
         is_alive = status.get("is_running", False)
         uptime = int(time.time() - self._start_time) if is_alive else 0
+        prov = status.get("provider") if is_alive else None
+        prov_name = ""
+        if prov:
+            cls = TunnelRegistry.get(prov)
+            prov_name = getattr(cls, "DISPLAY_NAME", prov.upper()) if cls else prov.upper()
         return {
             "is_running": is_alive,
             "public_url": status.get("public_url") if is_alive else None,
-            "provider": status.get("provider") if is_alive else None,
+            "provider": prov,
+            "provider_name": prov_name,
             "uptime_seconds": uptime,
         }
 
-    def start_tunnel(self, port: int = 43212, timeout_seconds: int = 15) -> Dict[str, Any]:
-        """唤醒临时公网隧道 (委托给当前已注册的首选穿透驱动)"""
+    @staticmethod
+    def _get_tunnel_config() -> dict:
+        """安全读取当前系统配置中的 tunnel 段落"""
+        try:
+            from core.config.config_models import load_config
+            sys_cfg = load_config()
+            raw_t = getattr(sys_cfg, "tunnel", {})
+            if isinstance(raw_t, dict):
+                return raw_t
+            if hasattr(raw_t, "model_dump"):
+                return raw_t.model_dump()
+        except Exception:
+            pass
+        return {}
+
+    def list_available_drivers(self) -> list:
+        """获取当前系统中所有已注册且已启用的穿透驱动"""
+        tunnel_cfg = self._get_tunnel_config()
+        active_driver = tunnel_cfg.get("active_driver", "")
+        default_driver = TunnelRegistry.get_default_driver_id()
+
+        drivers = []
+        for p_id, cls in TunnelRegistry.list_all().items():
+            cfg = tunnel_cfg.get(p_id, {}) if isinstance(tunnel_cfg, dict) else {}
+            # 判断是否启用：显式为 False 时才过滤，默认 True
+            is_enabled = bool(cfg.get("enabled", True))
+            name = getattr(cls, "DISPLAY_NAME", p_id.upper())
+            desc = "Anycast 边缘加速 · 支持自定义域名" if p_id == "cloudflare" else "原生 SSH 免密直连 · 零配置即开即用"
+            icon = "☁️" if "cloudflare" in p_id else "⚡"
+            is_pref = (p_id == active_driver) or (not active_driver and p_id == default_driver)
+            drivers.append({
+                "id": p_id,
+                "name": name,
+                "desc": desc,
+                "icon": icon,
+                "is_enabled": is_enabled,
+                "is_preferred": is_pref,
+            })
+        return drivers
+
+    def start_tunnel(self, port: int = 43212, timeout_seconds: int = 15, driver: Optional[str] = None) -> Dict[str, Any]:
+        """唤醒临时公网隧道 (支持指定驱动或按配置优先级自动调度)"""
         cur = self.get_status()
         if cur.get("is_running") and cur.get("public_url"):
-            return cur
+            if driver and cur.get("provider") != driver:
+                self.stop_tunnel()
+            else:
+                return cur
 
         self.stop_tunnel()
         last_error = ""
 
-        from core.config.config import ConfigManager
-        cfg_mgr = ConfigManager.get_instance()
-        tunnel_cfg = getattr(cfg_mgr.config, "tunnel", {}) if cfg_mgr and hasattr(cfg_mgr, "config") else {}
+        tunnel_cfg = self._get_tunnel_config()
 
-        # 1. 尝试 Cloudflare Argo Tunnel
-        cf_cls = TunnelRegistry.get("cloudflare")
-        if cf_cls:
-            cf_cfg = tunnel_cfg.get("cloudflare", {}) if isinstance(tunnel_cfg, dict) else {}
-            cf_adapter = cf_cls(config=cf_cfg)
-            probe_res = cf_adapter.probe()
-            # 若本地已存在 cloudflared 组件，优先使用
-            if probe_res.get("healthy"):
-                res = cf_adapter.start_tunnel(local_port=port, timeout_seconds=timeout_seconds)
-                if res.get("is_running"):
-                    self._active_adapter = cf_adapter
-                    self._start_time = time.time()
-                    return self.get_status()
-                last_error = res.get("error", "")
+        candidates = []
+        if driver:
+            if driver in TunnelRegistry.list_all():
+                candidates = [driver]
+            else:
+                return {"is_running": False, "error": f"未知的网络穿透驱动: {driver}"}
+        else:
+            active_driver = tunnel_cfg.get("active_driver", "")
+            if active_driver and active_driver in TunnelRegistry.list_all():
+                candidates.append(active_driver)
+            for d in ["cloudflare", "pinggy"]:
+                if d in TunnelRegistry.list_all() and d not in candidates:
+                    candidates.append(d)
+            for d in TunnelRegistry.list_all().keys():
+                if d not in candidates:
+                    candidates.append(d)
 
-        # 2. 备选方案：尝试 Pinggy 原生 OpenSSH 反向代理
-        pinggy_cls = TunnelRegistry.get("pinggy")
-        if pinggy_cls:
-            pinggy_cfg = tunnel_cfg.get("pinggy", {}) if isinstance(tunnel_cfg, dict) else {}
-            pinggy_adapter = pinggy_cls(config=pinggy_cfg)
-            res = pinggy_adapter.start_tunnel(local_port=port, timeout_seconds=timeout_seconds)
+        for d_id in candidates:
+            cls = TunnelRegistry.get(d_id)
+            if not cls:
+                continue
+            d_cfg = tunnel_cfg.get(d_id, {}) if isinstance(tunnel_cfg, dict) else {}
+            if not driver and "enabled" in d_cfg and not d_cfg.get("enabled"):
+                continue
+
+            adapter = cls(config=d_cfg)
+            if d_id == "cloudflare":
+                probe_res = adapter.probe()
+                if not probe_res.get("healthy"):
+                    last_error = probe_res.get("message", "本地环境缺少 cloudflared 组件")
+                    continue
+
+            res = adapter.start_tunnel(local_port=port, timeout_seconds=timeout_seconds)
             if res.get("is_running"):
-                self._active_adapter = pinggy_adapter
+                self._active_adapter = adapter
                 self._start_time = time.time()
                 return self.get_status()
             last_error = res.get("error", "") or last_error
 
-        err_msg = last_error or "未能在本机找到可用的公网穿透组件 (可安装 cloudflared 获取最佳体验)"
+        err_msg = last_error or "未能在本机成功建立公网穿透通道"
         return {
             "is_running": False,
             "error": err_msg,

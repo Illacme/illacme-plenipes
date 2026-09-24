@@ -9,11 +9,16 @@ import asyncio
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Query, Depends, HTTPException, Request
 
+from pydantic import BaseModel
 from core.bindery.tunnel import get_tunnel_hub
 from core.bindery.qr_sync import build_mobile_sync_payload
 from services.api.routes.system import verify_token
 
 router = APIRouter(tags=["bindery_tunnel"])
+
+
+class TunnelStartPayload(BaseModel):
+    driver: Optional[str] = None
 
 
 def _check_safe_book(file: str) -> None:
@@ -34,6 +39,20 @@ async def get_publication_qr_code(
     return build_mobile_sync_payload(file, action=action)
 
 
+@router.get("/api/bindery/tunnel/drivers")
+async def get_tunnel_drivers() -> Dict[str, Any]:
+    """获取所有可用且就绪的临时公网穿透驱动列表"""
+    hub = get_tunnel_hub()
+    drivers = hub.list_available_drivers()
+    cur_status = hub.get_status()
+    active_driver = cur_status.get("provider") or next((d["id"] for d in drivers if d.get("is_preferred")), (drivers[0]["id"] if drivers else "cloudflare"))
+    return {
+        "success": True,
+        "drivers": drivers,
+        "active_driver": active_driver
+    }
+
+
 @router.get("/api/bindery/tunnel/status")
 async def get_tunnel_status() -> Dict[str, Any]:
     """查询当前临时公网隧道的存活状态与分配的公网 URL"""
@@ -43,10 +62,21 @@ async def get_tunnel_status() -> Dict[str, Any]:
 
 
 @router.post("/api/bindery/tunnel/start", dependencies=[Depends(verify_token)])
-async def start_tunnel(request: Request) -> Dict[str, Any]:
-    """一键唤醒零配置临时公网隧道 (优先 Cloudflare，备选 Native SSH)"""
+async def start_tunnel(request: Request, payload: Optional[TunnelStartPayload] = None) -> Dict[str, Any]:
+    """一键唤醒零配置临时公网隧道 (支持指定驱动)"""
+    driver = None
+    if payload and payload.driver:
+        driver = payload.driver.strip().lower()
+    else:
+        try:
+            body = await request.json()
+            if isinstance(body, dict) and body.get("driver"):
+                driver = str(body["driver"]).strip().lower()
+        except Exception:
+            pass
+
     hub = get_tunnel_hub()
-    status = await asyncio.to_thread(hub.start_tunnel, 43212)
+    status = await asyncio.to_thread(hub.start_tunnel, 43212, 15, driver)
     if not status.get("is_running"):
         raise HTTPException(
             status_code=500,
