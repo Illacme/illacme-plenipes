@@ -6,14 +6,9 @@
 (function() {
     'use strict';
 
-    window._binderyShelfBooks = [];
-    window._binderyShelfFilter = 'all';
-    window._binderyShelfQuery = '';
-    window._binderyShelfPage = 1;
-    window._binderyShelfPageSize = 5;
-    window._binderyShelfBatchMode = false;
-    window._binderyShelfSelected = new Set();
-    window._binderyShelfTotalSize = '';
+    window._binderyShelfBooks = []; window._binderyShelfFilter = 'all'; window._binderyShelfQuery = '';
+    window._binderyShelfPage = 1; window._binderyShelfPageSize = 5; window._binderyShelfBatchMode = false;
+    window._binderyShelfSelected = new Set(); window._binderyShelfTotalSize = '';
 
     function formatTime(mtime) {
         if (!mtime) return '刚刚';
@@ -167,8 +162,10 @@
             if (isWb) fmtBadge = `<span style="${badgeBase} background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">WebBook</span>`;
             if (isPdf) fmtBadge = `<span style="${badgeBase} background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3);">PDF 印本</span>`;
 
-            const previewBtn = isWb
-                ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff;">👁️</a>`
+            const previewTitle = isPdf ? '在线阅览 (PDF)' : '在线翻阅 (WebBook)';
+            const previewBg = isPdf ? 'var(--neon-purple, #9333ea)' : 'var(--neon-blue, #0284c7)';
+            const previewBtn = ((isWb || isPdf) && b.preview_url)
+                ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${previewTitle}" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:${previewBg}; color:var(--text-bright, #fff);">👁️</a>`
                 : '';
 
             const isSelected = window._binderyShelfSelected.has(b.filename);

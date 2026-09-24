@@ -168,7 +168,7 @@ def test_bindery_build_with_cover_options(client, setup_mock_vault, monkeypatch)
 
 
 def test_bindery_shelf_view_and_delete(client):
-    """测试典籍货架扫描、WebBook 在线即时翻阅以及归档删除全流程"""
+    """测试典籍货架扫描、WebBook 与 PDF 在线即时翻阅以及归档删除全流程"""
     books_dir = os.path.abspath("dist/books")
     os.makedirs(books_dir, exist_ok=True)
 
@@ -176,6 +176,10 @@ def test_bindery_shelf_view_and_delete(client):
     test_html = os.path.join(books_dir, "test_webbook_sample.html")
     with open(test_html, "w", encoding="utf-8") as f:
         f.write("<!DOCTYPE html><html><body><h1>WebBook Test</h1></body></html>")
+
+    test_pdf = os.path.join(books_dir, "test_sample_shelf.pdf")
+    with open(test_pdf, "wb") as f:
+        f.write(b"%PDF-1.4 mock_pdf_content")
 
     test_epub = os.path.join(books_dir, "test_dummy_shelf.epub")
     with open(test_epub, "wb") as f:
@@ -189,11 +193,19 @@ def test_bindery_shelf_view_and_delete(client):
         assert shelf_data.get("success") is True
         books = shelf_data.get("books", [])
         assert any(b["filename"] == "test_webbook_sample.html" for b in books)
+        assert any(b["filename"] == "test_sample_shelf.pdf" for b in books)
         assert any(b["filename"] == "test_dummy_shelf.epub" for b in books)
 
         sample_webbook = next(b for b in books if b["filename"] == "test_webbook_sample.html")
         assert sample_webbook["format"] == "webbook"
         assert "/api/bindery/view" in sample_webbook["preview_url"]
+
+        sample_pdf = next(b for b in books if b["filename"] == "test_sample_shelf.pdf")
+        assert sample_pdf["format"] == "pdf"
+        assert "/api/bindery/view?file=test_sample_shelf.pdf" in sample_pdf["preview_url"]
+
+        sample_epub = next(b for b in books if b["filename"] == "test_dummy_shelf.epub")
+        assert sample_epub["preview_url"] is None
 
         # 2. 测试 WebBook 在线流式翻阅
         view_res = client.get("/api/bindery/view?file=test_webbook_sample.html")
@@ -201,10 +213,17 @@ def test_bindery_shelf_view_and_delete(client):
         assert "text/html" in view_res.headers.get("content-type", "")
         assert "WebBook Test" in view_res.text
 
+        # 2.1 测试 PDF 在线内联阅览
+        pdf_res = client.get("/api/bindery/view?file=test_sample_shelf.pdf")
+        assert pdf_res.status_code == 200
+        assert "application/pdf" in pdf_res.headers.get("content-type", "")
+        assert "inline" in pdf_res.headers.get("content-disposition", "")
+        assert pdf_res.content == b"%PDF-1.4 mock_pdf_content"
+
         # 3. 测试 view 安全防御与格式校验
         # 目录穿越
         assert client.get("/api/bindery/view?file=../../etc/passwd").status_code == 400
-        # 非 html 格式禁止作为网页翻阅
+        # EPUB 格式不支持作为网页翻阅
         assert client.get("/api/bindery/view?file=test_dummy_shelf.epub").status_code == 400
         # 不存在文件
         assert client.get("/api/bindery/view?file=not_exist.html").status_code == 404
@@ -222,10 +241,9 @@ def test_bindery_shelf_view_and_delete(client):
         assert client.post("/api/bindery/delete", json={"filename": "not_exist.epub"}).status_code == 404
 
     finally:
-        if os.path.exists(test_html):
-            os.remove(test_html)
-        if os.path.exists(test_epub):
-            os.remove(test_epub)
+        for p in (test_html, test_pdf, test_epub):
+            if os.path.exists(p):
+                os.remove(p)
 
 
 def test_bindery_single_document_flow(client, setup_mock_vault):
