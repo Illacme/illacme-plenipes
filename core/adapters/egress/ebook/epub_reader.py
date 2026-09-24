@@ -167,7 +167,7 @@ def render_epub_reader_html(epub_path: str) -> str:
     ])
 
     return f"""<!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="dark" data-read-mode="paginated">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
@@ -182,6 +182,7 @@ def render_epub_reader_html(epub_path: str) -> str:
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
+      <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖 翻页</button>
       <button type="button" class="er-btn" id="er-font-dec" title="缩小字号">A-</button>
       <button type="button" class="er-btn" id="er-font-inc" title="放大字号">A+</button>
       <button type="button" class="er-theme-btn active" data-theme="dark" title="暗黑翠玉">🌙</button>
@@ -196,8 +197,20 @@ def render_epub_reader_html(epub_path: str) -> str:
       {final_toc_html}
     </aside>
     <div class="er-backdrop" id="er-backdrop"></div>
-    <main class="er-main">
-      {chapters_html}
+    <main class="er-main" id="er-main">
+      <button type="button" class="er-page-arrow er-page-prev" id="er-page-prev" title="上一页 (←)">‹</button>
+      <button type="button" class="er-page-arrow er-page-next" id="er-page-next" title="下一页 (→)">›</button>
+      
+      <div class="er-viewport" id="er-viewport">
+        <div class="er-book-content" id="er-book-content">
+          {chapters_html}
+        </div>
+      </div>
+
+      <footer class="er-paginated-footer" id="er-paginated-footer">
+        <div class="er-footer-chapter" id="er-footer-chapter"></div>
+        <div class="er-footer-page" id="er-footer-page">1 / 1</div>
+      </footer>
     </main>
   </div>
 

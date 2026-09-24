@@ -28,6 +28,94 @@ def get_epub_reader_js() -> str:
   if (bDrop) bDrop.onclick = closeSidebar;
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
+  const vp = document.getElementById('er-viewport');
+  const bContent = document.getElementById('er-book-content');
+  const fChap = document.getElementById('er-footer-chapter');
+  const fPage = document.getElementById('er-footer-page');
+  const prevBtn = document.getElementById('er-page-prev');
+  const nextBtn = document.getElementById('er-page-next');
+  const modeBtn = document.getElementById('er-mode-toggle');
+  const pBar = document.getElementById('er-progress-bar');
+  const chapters = document.querySelectorAll('.er-chapter-card');
+  const tocLinks = document.querySelectorAll('.er-sidebar a');
+
+  let curPage = 0, totalPages = 1;
+
+  function getStep() {
+    if (!vp || !bContent) return window.innerWidth;
+    const style = window.getComputedStyle(bContent);
+    const gap = parseFloat(style.columnGap) || 64;
+    const padL = parseFloat(window.getComputedStyle(vp).paddingLeft) || 0;
+    const padR = parseFloat(window.getComputedStyle(vp).paddingRight) || 0;
+    return (vp.clientWidth - padL - padR) + gap;
+  }
+
+  function updatePagination() {
+    if (document.documentElement.getAttribute('data-read-mode') !== 'paginated' || !bContent) return;
+    const step = getStep();
+    if (step <= 0) return;
+    totalPages = Math.max(1, Math.ceil(bContent.scrollWidth / step));
+    curPage = Math.max(0, Math.min(curPage, totalPages - 1));
+    renderPage();
+  }
+
+  function renderPage() {
+    const step = getStep();
+    bContent.style.transform = `translateX(-${curPage * step}px)`;
+    if (fPage) fPage.textContent = `${curPage + 1} / ${totalPages}`;
+    if (pBar) pBar.style.width = `${Math.min(100, Math.max(0, ((curPage + 1) / totalPages) * 100))}%`;
+    syncActiveSection(curPage * step + step * 0.4);
+  }
+
+  function nextPage() { if (curPage < totalPages - 1) { curPage++; renderPage(); } }
+  function prevPage() { if (curPage > 0) { curPage--; renderPage(); } }
+
+  if (prevBtn) prevBtn.onclick = prevPage;
+  if (nextBtn) nextBtn.onclick = nextPage;
+
+  function applyReadMode(mode) {
+    document.documentElement.setAttribute('data-read-mode', mode);
+    if (modeBtn) {
+      modeBtn.textContent = mode === 'paginated' ? '📖 翻页' : '📜 卷轴';
+      modeBtn.title = mode === 'paginated' ? '当前：左右翻页模式 (点击切换为卷轴)' : '当前：连续卷轴模式 (点击切换为翻页)';
+    }
+    try { localStorage.setItem('er_read_mode', mode); } catch(e){}
+    if (mode === 'paginated') {
+      window.scrollTo({ top: 0 });
+      setTimeout(updatePagination, 60);
+    } else {
+      if (bContent) bContent.style.transform = '';
+      if (pBar) pBar.style.width = '0%';
+    }
+  }
+
+  if (modeBtn) {
+    modeBtn.onclick = () => {
+      const cur = document.documentElement.getAttribute('data-read-mode') || 'paginated';
+      applyReadMode(cur === 'paginated' ? 'scroll' : 'paginated');
+    };
+  }
+
+  function syncActiveSection(offsetOrScrollY) {
+    let actId = '', actTitle = '';
+    const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
+    chapters.forEach(c => {
+      const pos = isPag ? c.offsetLeft : (c.getBoundingClientRect().top + window.scrollY);
+      if (pos <= offsetOrScrollY + (isPag ? 40 : 140)) {
+        actId = c.id;
+        const h = c.querySelector('h1, h2, h3');
+        actTitle = h ? h.textContent.trim() : (c.classList.contains('er-cover-card') ? '典籍封面与扉页' : '');
+      }
+    });
+    if (fChap && actTitle) fChap.textContent = actTitle;
+    if (actId) {
+      tocLinks.forEach(link => {
+        const h = link.getAttribute('href') || '';
+        link.classList.toggle('active', h === '#' + actId || h.endsWith(actId));
+      });
+    }
+  }
+
   // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found)
   function navigateToTarget(rawTarget) {
     if (!rawTarget) return;
@@ -47,8 +135,17 @@ def get_epub_reader_js() -> str:
     }
 
     if (targetEl) {
-      const topOffset = targetEl.getBoundingClientRect().top + window.scrollY - 65;
-      window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+      const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
+      if (isPag) {
+        const step = getStep();
+        if (step > 0) {
+          curPage = Math.max(0, Math.min(totalPages - 1, Math.floor(targetEl.offsetLeft / step)));
+          renderPage();
+        }
+      } else {
+        const topOffset = targetEl.getBoundingClientRect().top + window.scrollY - 65;
+        window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+      }
       if (window.innerWidth <= 900) closeSidebar();
     }
   }
@@ -63,13 +160,70 @@ def get_epub_reader_js() -> str:
       a.setAttribute('rel', 'noopener noreferrer');
       return;
     }
-    
-    // 拦截所有内部相对链接或锚点
     e.preventDefault();
     navigateToTarget(href);
   });
 
-  // 2. 三模主题切换
+  // 2. 视口点击与触控手势翻页
+  if (vp) {
+    vp.addEventListener('click', (e) => {
+      if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
+      if (e.target.closest('a, button, pre, code')) return;
+      const rect = vp.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      if (x < rect.width * 0.28) prevPage();
+      else if (x > rect.width * 0.72) nextPage();
+    });
+  }
+
+  let touchStartX = 0, touchStartY = 0;
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+  window.addEventListener('touchend', (e) => {
+    if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
+    if (e.changedTouches.length === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        if (dx < 0) nextPage();
+        else prevPage();
+      }
+    }
+  }, { passive: true });
+
+  // 3. 键盘按键监听
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      if (isPag) nextPage();
+      else window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      if (isPag) prevPage();
+      else window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
+    }
+  });
+
+  // 4. 连续卷轴滚动高亮监听
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (document.documentElement.getAttribute('data-read-mode') === 'paginated') return;
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        if (pBar && h > 0) pBar.style.width = Math.min(100, Math.max(0, (window.scrollY / h) * 100)) + '%';
+        syncActiveSection(window.scrollY);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // 5. 主题与字号
   const themeBtns = document.querySelectorAll('.er-theme-btn');
   const applyTheme = (th) => {
     document.documentElement.setAttribute('data-theme', th);
@@ -79,51 +233,25 @@ def get_epub_reader_js() -> str:
   themeBtns.forEach(b => { b.onclick = () => applyTheme(b.getAttribute('data-theme')); });
   try { const savedTh = localStorage.getItem('er_theme'); if (savedTh) applyTheme(savedTh); } catch(e){}
 
-  // 3. 字号缩放
   let fs = 16;
   const inc = document.getElementById('er-font-inc'), dec = document.getElementById('er-font-dec');
-  const setFs = (val) => { fs = val; document.documentElement.style.setProperty('--font-size', fs + 'px'); try { localStorage.setItem('er_fs', fs); } catch(e){} };
+  const setFs = (val) => {
+    fs = val;
+    document.documentElement.style.setProperty('--font-size', fs + 'px');
+    try { localStorage.setItem('er_fs', fs); } catch(e){}
+    setTimeout(updatePagination, 50);
+  };
   try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) setFs(sfs); } catch(e){}
   if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
   if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));
 
-  // 4. 阅读进度条与目录高亮联动
-  const pBar = document.getElementById('er-progress-bar');
-  const chapters = document.querySelectorAll('.er-chapter-card');
-  const tocLinks = document.querySelectorAll('.er-sidebar a');
-  
-  let ticking = false;
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        const h = document.documentElement.scrollHeight - window.innerHeight;
-        if (pBar && h > 0) pBar.style.width = Math.min(100, Math.max(0, (window.scrollY / h) * 100)) + '%';
-        let currentCardId = '';
-        chapters.forEach(c => {
-          const rect = c.getBoundingClientRect();
-          if (rect.top <= 140 && rect.bottom >= 140) currentCardId = c.id;
-        });
-        if (currentCardId) {
-          tocLinks.forEach(link => {
-            const h = link.getAttribute('href') || '';
-            const isActive = h === '#' + currentCardId || h.endsWith(currentCardId);
-            link.classList.toggle('active', isActive);
-          });
-        }
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }, { passive: true });
-
-  // 5. 键盘快捷翻页
-  window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-      window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
-    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
-    }
+  window.addEventListener('resize', () => {
+    if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination();
   });
+
+  // 启动模式初始化
+  const savedMode = localStorage.getItem('er_read_mode') || 'paginated';
+  applyReadMode(savedMode);
+  setTimeout(updatePagination, 100);
 })();
 """

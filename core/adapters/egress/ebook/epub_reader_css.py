@@ -94,6 +94,11 @@ body {
   font-size: 0.74rem; color: var(--text-dim);
 }
 
+.er-mode-btn { font-weight: 600; color: var(--accent); border-color: var(--accent); }
+.er-viewport { width: 100%; position: relative; }
+.er-book-content { width: 100%; }
+.er-page-arrow, .er-paginated-footer { display: none; }
+
 .er-main {
   flex: 1; margin-left: 310px; padding: 36px 48px 100px; max-width: 920px;
   transition: margin-left 0.25s ease;
@@ -128,12 +133,62 @@ body {
 .er-cover-title { font-size: 1.6rem; font-weight: 800; color: var(--text-title); margin-bottom: 8px; }
 .er-cover-author { font-size: 0.95rem; color: var(--text-dim); font-weight: 500; }
 
+/* 📖 仿真左右分页模式核心样式 */
+html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100vh; overflow: hidden; }
+[data-read-mode="paginated"] .er-layout { height: calc(100vh - 50px); margin-top: 50px; overflow: hidden; min-height: 0; }
+[data-read-mode="paginated"] .er-main {
+  height: 100%; padding: 0; margin-left: 310px; display: flex; flex-direction: column;
+  overflow: hidden; position: relative; max-width: none;
+}
+[data-read-mode="paginated"] .er-sidebar.collapsed ~ .er-main { margin-left: 0; }
+[data-read-mode="paginated"] .er-viewport {
+  flex: 1; height: calc(100% - 36px); overflow: hidden; position: relative; width: 100%;
+  padding: 14px 54px; box-sizing: border-box; cursor: pointer;
+}
+[data-read-mode="paginated"] .er-book-content {
+  height: 100%;
+  column-width: var(--page-width, 760px);
+  column-gap: var(--page-gap, 64px);
+  column-fill: auto;
+  box-sizing: border-box;
+  transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+[data-read-mode="paginated"] .er-chapter-card { break-inside: avoid-column; margin-bottom: 24px; padding-bottom: 16px; }
+[data-read-mode="paginated"] .er-page-arrow {
+  display: flex; position: absolute; top: calc(50% - 18px); transform: translateY(-50%);
+  z-index: 600; width: 40px; height: 72px; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 8px; font-size: 28px; line-height: 1;
+  color: var(--text-dim); align-items: center; justify-content: center; cursor: pointer;
+  opacity: 0.35; transition: all 0.2s; user-select: none;
+}
+[data-read-mode="paginated"] .er-page-arrow:hover {
+  opacity: 1; color: var(--accent); background: var(--bg-card); border-color: var(--accent);
+}
+[data-read-mode="paginated"] .er-page-prev { left: 8px; }
+[data-read-mode="paginated"] .er-page-next { right: 8px; }
+[data-read-mode="paginated"] .er-paginated-footer {
+  height: 36px; background: var(--bg-sidebar); border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+  font-size: 0.78rem; color: var(--text-dim); user-select: none; z-index: 650;
+}
+[data-read-mode="paginated"] .er-footer-chapter {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;
+  color: var(--text-title); font-weight: 600;
+}
+[data-read-mode="paginated"] .er-footer-page {
+  font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
 @media (max-width: 900px) {
   .er-sidebar { width: 85vw; max-width: 320px; }
   .er-sidebar:not(.open) { transform: translateX(-100%); }
   .er-sidebar.open { transform: translateX(0); }
   .er-sidebar.open ~ .er-backdrop { display: block; }
   .er-main { margin-left: 0 !important; padding: 20px 16px 80px; }
-  .er-book-title { max-width: 50vw; }
+  .er-book-title { max-width: 40vw; }
+  [data-read-mode="paginated"] .er-main { margin-left: 0 !important; padding: 0; }
+  [data-read-mode="paginated"] .er-viewport { padding: 12px 14px; }
+  [data-read-mode="paginated"] .er-page-arrow { display: none; }
 }
 """
