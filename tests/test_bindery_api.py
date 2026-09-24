@@ -205,7 +205,7 @@ def test_bindery_shelf_view_and_delete(client):
         assert "/api/bindery/view?file=" in sample_pdf["preview_url"]
 
         sample_epub = next(b for b in books if b["filename"] == "test_dummy_shelf.epub")
-        assert sample_epub["preview_url"] is None
+        assert "/api/bindery/view?file=" in sample_epub["preview_url"]
 
         # 2. 测试 WebBook 在线流式翻阅
         view_res = client.get("/api/bindery/view?file=test_webbook_sample.html")
@@ -223,7 +223,7 @@ def test_bindery_shelf_view_and_delete(client):
         # 3. 测试 view 安全防御与格式校验
         # 目录穿越
         assert client.get("/api/bindery/view?file=../../etc/passwd").status_code == 400
-        # EPUB 格式不支持作为网页翻阅
+        # 损坏或非法的 EPUB 格式安全校验返回 400
         assert client.get("/api/bindery/view?file=test_dummy_shelf.epub").status_code == 400
         # 不存在文件
         assert client.get("/api/bindery/view?file=not_exist.html").status_code == 404

@@ -162,9 +162,9 @@
             if (isWb) fmtBadge = `<span style="${badgeBase} background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">WebBook</span>`;
             if (isPdf) fmtBadge = `<span style="${badgeBase} background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3);">PDF 印本</span>`;
 
-            const previewTitle = isPdf ? '在线阅览 (PDF)' : '在线翻阅 (WebBook)';
-            const previewBg = isPdf ? 'var(--neon-purple, #9333ea)' : 'var(--neon-blue, #0284c7)';
-            const previewBtn = ((isWb || isPdf) && b.preview_url)
+            const previewTitle = isPdf ? '在线阅览 (PDF)' : (isWb ? '在线翻阅 (WebBook)' : '在线研读 (EPUB 3.0)');
+            const previewBg = isPdf ? 'var(--neon-purple, #9333ea)' : (isWb ? 'var(--neon-blue, #0284c7)' : 'var(--neon-green, #10b981)');
+            const previewBtn = b.preview_url
                 ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${previewTitle}" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:${previewBg}; color:var(--text-bright, #fff);">👁️</a>`
                 : '';
 
