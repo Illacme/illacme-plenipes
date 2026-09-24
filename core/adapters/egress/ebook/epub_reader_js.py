@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes - EPUB Embedded Reader Runtime JavaScript
-模块职责：提供 EPUB 浏览器流式阅读器的目录折叠、进度监听、主题切换与触控交互。
+模块职责：提供 EPUB 浏览器流式阅读器的全局相对链接拦截、平滑定位、目录联动与主题字号控制。
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
@@ -28,7 +28,48 @@ def get_epub_reader_js() -> str:
   if (bDrop) bDrop.onclick = closeSidebar;
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
-  // 1. 三模主题切换
+  // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found)
+  function navigateToTarget(rawTarget) {
+    if (!rawTarget) return;
+    let targetEl = null;
+    let anchor = rawTarget;
+    if (anchor.includes('#')) {
+      const parts = anchor.split('#');
+      const hashId = parts[1];
+      targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`);
+      if (!targetEl && parts[0]) {
+        const base = parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
+        targetEl = document.getElementById('er-doc-' + base);
+      }
+    } else {
+      const base = anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
+      targetEl = document.getElementById('er-doc-' + base);
+    }
+
+    if (targetEl) {
+      const topOffset = targetEl.getBoundingClientRect().top + window.scrollY - 65;
+      window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+      if (window.innerWidth <= 900) closeSidebar();
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    const a = e.target.closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (!href) return;
+    if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('data:')) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+      return;
+    }
+    
+    // 拦截所有内部相对链接或锚点
+    e.preventDefault();
+    navigateToTarget(href);
+  });
+
+  // 2. 三模主题切换
   const themeBtns = document.querySelectorAll('.er-theme-btn');
   const applyTheme = (th) => {
     document.documentElement.setAttribute('data-theme', th);
@@ -38,7 +79,7 @@ def get_epub_reader_js() -> str:
   themeBtns.forEach(b => { b.onclick = () => applyTheme(b.getAttribute('data-theme')); });
   try { const savedTh = localStorage.getItem('er_theme'); if (savedTh) applyTheme(savedTh); } catch(e){}
 
-  // 2. 字号缩放
+  // 3. 字号缩放
   let fs = 16;
   const inc = document.getElementById('er-font-inc'), dec = document.getElementById('er-font-dec');
   const setFs = (val) => { fs = val; document.documentElement.style.setProperty('--font-size', fs + 'px'); try { localStorage.setItem('er_fs', fs); } catch(e){} };
@@ -46,45 +87,34 @@ def get_epub_reader_js() -> str:
   if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
   if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));
 
-  // 3. 阅读进度条与当前章节目录高亮
+  // 4. 阅读进度条与目录高亮联动
   const pBar = document.getElementById('er-progress-bar');
   const chapters = document.querySelectorAll('.er-chapter-card');
-  const tocItems = document.querySelectorAll('.er-toc-item');
+  const tocLinks = document.querySelectorAll('.er-sidebar a');
   
+  let ticking = false;
   window.addEventListener('scroll', () => {
-    const h = document.documentElement.scrollHeight - window.innerHeight;
-    if (pBar && h > 0) pBar.style.width = Math.min(100, Math.max(0, (window.scrollY / h) * 100)) + '%';
-    let currentId = '';
-    chapters.forEach(c => {
-      const rect = c.getBoundingClientRect();
-      if (rect.top <= 120 && rect.bottom >= 120) currentId = c.id;
-    });
-    if (currentId) {
-      tocItems.forEach(item => {
-        const a = item.querySelector('a');
-        if (a && a.getAttribute('href') === '#' + currentId) item.classList.add('active');
-        else item.classList.remove('active');
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        if (pBar && h > 0) pBar.style.width = Math.min(100, Math.max(0, (window.scrollY / h) * 100)) + '%';
+        let currentCardId = '';
+        chapters.forEach(c => {
+          const rect = c.getBoundingClientRect();
+          if (rect.top <= 140 && rect.bottom >= 140) currentCardId = c.id;
+        });
+        if (currentCardId) {
+          tocLinks.forEach(link => {
+            const h = link.getAttribute('href') || '';
+            const isActive = h === '#' + currentCardId || h.endsWith(currentCardId);
+            link.classList.toggle('active', isActive);
+          });
+        }
+        ticking = false;
       });
+      ticking = true;
     }
   }, { passive: true });
-
-  // 4. 目录项平滑滚动与手机侧栏自动收拢
-  tocItems.forEach(item => {
-    const a = item.querySelector('a');
-    if (a) {
-      a.onclick = (e) => {
-        const href = a.getAttribute('href');
-        if (href && href.startsWith('#')) {
-          e.preventDefault();
-          const target = document.querySelector(href);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth <= 900) closeSidebar();
-          }
-        }
-      };
-    }
-  });
 
   // 5. 键盘快捷翻页
   window.addEventListener('keydown', (e) => {

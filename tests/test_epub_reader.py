@@ -43,18 +43,47 @@ def mock_epub_file(tmp_path):
   </metadata>
   <manifest>
     <item id="cover-img" href="images/cover.png" media-type="image/png" properties="cover-image"/>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="ch1" href="text/ch1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ch2" href="text/ch2.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine>
     <itemref idref="ch1"/>
+    <itemref idref="ch2"/>
   </spine>
 </package>"""
         )
         z.writestr("OEBPS/images/cover.png", b"\x89PNG\r\n\x1a\n\x00mock_image_bytes")
         z.writestr(
+            "OEBPS/nav.xhtml",
+            """<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>导航目录</title></head>
+<body>
+<nav epub:type="toc">
+  <h1>目录</h1>
+  <ol>
+    <li><a href="text/ch1.xhtml">第一章 觉醒</a>
+      <ol>
+        <li><a href="text/ch1.xhtml#sec-1">1.1 星辰之光</a></li>
+        <li><a href="text/ch1.xhtml#sec-2">1.2 虚空行者</a></li>
+      </ol>
+    </li>
+    <li><a href="text/ch2.xhtml">第二章 远征</a></li>
+  </ol>
+</nav>
+</body></html>"""
+        )
+        z.writestr(
             "OEBPS/text/ch1.xhtml",
             """<!DOCTYPE html><html><head><title>第一章 觉醒</title></head><body>
-<div class="chap"><img src="../images/cover.png" alt="Cover"/><h1>第一章 觉醒</h1><p>星辰在大地之上闪烁，微型装订器启动中。</p></div>
+<div class="chap"><img src="../images/cover.png" alt="Cover"/><h1>第一章 觉醒</h1><p>星辰在大地之上闪烁，微型装订器启动中。<a href="text/ch2.xhtml">前往下一章</a></p><h2 id="sec-1">1.1 星辰之光</h2><p>第一节详情</p></div>
+</body></html>"""
+        )
+        z.writestr(
+            "OEBPS/text/ch2.xhtml",
+            """<!DOCTYPE html><html><head><title>第二章 远征</title></head><body>
+<div class="chap"><h1>第二章 远征</h1><p>穿越光年的跋涉。<a href="ch1.xhtml#sec-1">返回第一节</a></p></div>
 </body></html>"""
         )
     return str(epub_file)
@@ -70,9 +99,12 @@ def test_render_epub_reader_html_core(mock_epub_file):
     # 验证内部相对图片路径已成功内联转换为 Base64
     assert 'data:image/png;base64,' in html_output
     assert "../images/cover.png" not in html_output
-    # 验证目录项生成
-    assert '📖 第一章 觉醒' in html_output
-    # 验证交互脚本注入
+    # 验证多级目录结构解析与生成
+    assert 'class="er-toc-tree"' in html_output
+    assert '1.1 星辰之光' in html_output
+    assert '1.2 虚空行者' in html_output
+    # 验证正文内部跨章节/节超链接已重写为页内锚点，不再是相对路径
+    assert 'href="#er-doc-ch2_xhtml"' in html_output
     assert 'er-toggle-sidebar' in html_output
 
 
