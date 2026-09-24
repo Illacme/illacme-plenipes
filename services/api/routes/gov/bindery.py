@@ -11,26 +11,15 @@ import mimetypes
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel
 
 from core.runtime.engine_singleton import get_global_engine
 from core.bindery.book_assembler import BookAssembler
 from core.bindery.cover_generator import CoverGenerator, COVER_STYLES
 from core.adapters.egress.ebook import EBookRegistry
-from core.bindery.qr_sync import build_mobile_sync_payload
 from ..system import verify_token
+from .bindery_models import BinderyBuildPayload, CoverPreviewPayload
 
 router = APIRouter()
-
-
-class BinderyBuildPayload(BaseModel):
-    format: str = "epub"; scope: str = "all"; lang: str = "zh"; languages: Optional[List[str]] = None
-    polyglot_mode: bool = False; title: Optional[str] = None; author: Optional[str] = None
-    cover_mode: str = "auto"; cover_style: str = "dark_emerald"; output_dir: str = "dist/books"
-
-class CoverPreviewPayload(BaseModel):
-    title: Optional[str] = None; author: Optional[str] = None; scope: str = "all"
-    style: str = "dark_emerald"; lang: str = "zh"; cover_mode: str = "auto"
 
 
 @router.get("/api/bindery/scopes", dependencies=[Depends(verify_token)])

@@ -31,7 +31,8 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
             ...(window.settingsData.publish_control?.direct_upload?.[id] || {}),
             ...(window.settingsData.publish_control?.webhook_endpoints?.[id] || {}),
             ...(window.settingsData.syndication?.[id] || {}),
-            ...(window.settingsData.translation?.compute_nodes?.[id] || {})
+            ...(window.settingsData.translation?.compute_nodes?.[id] || {}),
+            ...(window.settingsData.tunnel?.[id] || {})
         };
     }
 
@@ -91,7 +92,23 @@ window.fastTestPluginConnectivity = async (id, category, btn) => {
                 window.showToast(`🟢 [${id.toUpperCase()}] 物理连接测试成功！已全自动保存配置。`, 'success');
             }
         } else {
-            const errMsg = (res && (res.error || res.message || res.detail || (Array.isArray(res.logs) && res.logs.length ? res.logs.filter(l => typeof l === 'string' && (l.includes('ERROR') || l.includes('WARN'))).pop() : null))) || "物理通道无法连通，请检查凭据或代理参数。";
+            let extractedErr = "";
+            if (Array.isArray(res?.logs)) {
+                const errLogs = res.logs.filter(l => {
+                    if (typeof l === 'string') return l.includes('ERROR') || l.includes('❌') || l.includes('失败');
+                    if (l && typeof l === 'object') {
+                        const lvl = String(l.level || '').toUpperCase();
+                        const msg = String(l.message || l.msg || '');
+                        return lvl === 'ERROR' || msg.includes('ERROR') || msg.includes('❌') || msg.includes('失败');
+                    }
+                    return false;
+                });
+                if (errLogs.length > 0) {
+                    const lastErr = errLogs[errLogs.length - 1];
+                    extractedErr = typeof lastErr === 'object' ? (lastErr.message || lastErr.msg || '') : String(lastErr);
+                }
+            }
+            const errMsg = (res && (res.error || res.message || res.detail || extractedErr)) || "物理通道无法连通，请检查凭据或代理参数。";
 
             if (res && res.logs) {
                 window.lastTestLogs = window.lastTestLogs || {};

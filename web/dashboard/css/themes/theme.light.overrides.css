@@ -3542,16 +3542,38 @@
 }
 
 [data-theme="light"] .bindery-driver-card {
-    background: rgba(16, 185, 129, 0.06) !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme="light"] .bindery-driver-card:hover {
+    border-color: #cbd5e1 !important;
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .bindery-driver-card.active {
+    background: rgba(16, 185, 129, 0.09) !important;
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(16, 185, 129, 0.12) !important;
 }
 
 [data-theme="light"] .bindery-driver-title {
     color: #0f172a !important;
 }
 
+[data-theme="light"] .bindery-driver-card.active .bindery-driver-title {
+    color: #047857 !important;
+    font-weight: 700 !important;
+}
+
 [data-theme="light"] .bindery-driver-desc {
     color: #64748b !important;
+}
+
+[data-theme="light"] .bindery-driver-card.active .bindery-driver-desc {
+    color: #065f46 !important;
 }
 
 [data-theme="light"] .bindery-modal-card .bindery-footer {
@@ -3566,4 +3588,117 @@
 
 [data-theme="light"] .bindery-matrix-chip span {
     color: #1e293b !important;
+}
+
+/* 🌞 移动端扫码同步弹窗 (Mobile Sync) 亮色调模式适配 */
+[data-theme="light"] .bindery-qr-backdrop {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .bindery-qr-card {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .bindery-qr-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .bindery-qr-close-btn {
+    color: #64748b !important;
+}
+[data-theme="light"] .bindery-qr-close-btn:hover {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .bindery-qr-nav {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .bindery-qr-tab-btn {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .bindery-qr-tab-btn.active-lan {
+    background: #059669 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .bindery-qr-tab-btn.active-public {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .bindery-qr-lead-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .bindery-qr-lead-desc {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .bindery-qr-tunnel-selector-label {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .bindery-tunnel-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .bindery-tunnel-card:hover {
+    border-color: #0284c7 !important;
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .bindery-tunnel-card.active {
+    border-color: #0284c7 !important;
+    background: #f0f9ff !important;
+    box-shadow: 0 0 0 1px #0284c7 !important;
+}
+
+[data-theme="light"] .bindery-tunnel-card .driver-title {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .bindery-tunnel-card.active .driver-title {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .bindery-tunnel-card .driver-desc {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .bindery-qr-url-box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .bindery-qr-url-text {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .bindery-qr-copy-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .bindery-qr-copy-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] .bindery-qr-footer {
+    color: #64748b !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .bindery-qr-footer strong {
+    color: #0f172a !important;
 }

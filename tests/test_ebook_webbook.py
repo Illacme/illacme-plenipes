@@ -140,3 +140,94 @@ def test_book_assembler_webbook_end_to_end():
             c = rf.read()
             assert "极速开始" in c
             assert "wb-layout" in c
+
+
+def test_webbook_mobile_immersive_interactions():
+    """验证移动端 WebBook 沉浸式阅读交互体验：手势翻页、遮罩抽屉、章节卡片与安全区适配"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_file = os.path.join(tmpdir, "mobile_test.html")
+        adapter = WebBookAdapter()
+        manuscript = [
+            {"order": 1, "title": "第一节：移动端交互设计", "html_body": "<p>移动端手势流畅度优化。</p>"},
+            {"order": 2, "title": "第二节：沉浸式触控翻页", "html_body": "<p>左右滑动手势翻章。</p>"},
+            {"order": 3, "title": "第三节：全屏无扰阅读", "html_body": "<p>目录自愈收拢遮罩体验。</p>"}
+        ]
+        meta = {"title": "移动端交互手册", "author": "Illacme 移动端体验组"}
+
+        success = adapter.bind_book(
+            manuscript_tree=manuscript,
+            book_metadata=meta,
+            target_lang="zh",
+            output_file_path=out_file
+        )
+        assert success is True
+        assert os.path.exists(out_file)
+
+        with open(out_file, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # 1. 移动端毛玻璃半透明遮罩与底部手势胶囊 DOM 断言
+        assert 'id="wb-backdrop"' in html
+        assert 'class="wb-backdrop"' in html
+        assert 'id="wb-toast-capsule"' in html
+        assert 'class="wb-toast-capsule"' in html
+
+        # 2. 章节末尾上一节 / 下一节宽幅磁吸导航卡片断言
+        assert 'class="wb-chapter-footer"' in html
+        assert 'class="wb-nav-card prev"' in html
+        assert 'class="wb-nav-card next"' in html
+        assert 'href="#ch_1"' in html
+        assert 'href="#ch_2"' in html
+        assert 'href="#ch_3"' in html
+        assert "第一节：移动端交互设计" in html
+        assert "第二节：沉浸式触控翻页" in html
+        assert "第三节：全屏无扰阅读" in html
+
+        # 3. 触屏手势翻页与遮罩自愈脚本契约断言
+        assert "touchstart" in html
+        assert "touchend" in html
+        assert "wb-toast-capsule" in html
+        assert "bDrop.classList.remove('active')" in html
+        assert "closeSidebar()" in html
+
+        # 4. 移动端响应式样式与 iPhone 安全区契约断言
+        assert "@media (max-width: 900px)" in html
+        assert "#wb-print-btn { display: none !important; }" in html
+        assert "safe-area-inset-bottom" in html
+
+        # 5. 移动端章节导航防挤压与全宽磁吸契约断言
+        assert ".wb-ch-nav { flex-direction: column;" in html
+        assert ".wb-nav-card { width: 100%; box-sizing: border-box; }" in html
+        assert ".wb-nav-card.next { margin-left: 0; text-align: right; }" in html
+
+        # 6. 移动端目录切换按钮触控优化与抽屉绝对层级契约断言
+        assert "#wb-toggle-sidebar { min-width: 38px; min-height: 38px;" in html
+        assert "touch-action: manipulation" in html
+        assert ".wb-backdrop { z-index: 950 !important; }" in html
+        assert "z-index: 960 !important;" in html
+        assert "onToggleTrigger" in html
+
+
+def test_webbook_multi_viewport_overflow_prevention():
+    """验证 WebBook 全局及多分辨率下无横向溢出规则契约（手机/平板/桌面三端防溢出）"""
+    from core.adapters.egress.ebook.webbook_css import get_webbook_css
+    css = get_webbook_css()
+
+    # 1. 全局视口防溢出断言
+    assert "html, body { overflow-x: hidden; max-width: 100vw; }" in css
+    assert "width: 100%; max-width: 100vw; overflow-x: hidden;" in css
+
+    # 2. 桌面/平板断点计算主屏宽度防右侧挤压溢出
+    assert "min-width: 0;" in css
+    assert "width: calc(100% - 290px);" in css
+    assert "max-width: calc(100% - 290px);" in css
+
+    # 3. 模板 Hero/网格容器弹性收缩约束
+    assert ".home-hero-container, [class*=\"hero\"] { max-width: 100% !important;" in css
+    assert "box-sizing: border-box !important;" in css
+
+    # 4. 移动端媒体查询覆写
+    assert "grid-template-columns: 1fr !important;" in css
+    assert ".wb-main { margin-left: 0 !important; width: 100% !important; max-width: 100% !important;" in css
+
+

@@ -77,55 +77,59 @@ window.buildPluginConfigFormHtml = (p) => {
         const tunnelCfg = window.settingsData?.tunnel?.[id] || {};
         if (id === 'cloudflare') {
             html += `
-                <div class="channel-console-header api-token-helper" style="margin-bottom: 1.2rem; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.18); border-radius: 10px; padding: 14px 16px;">
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                        <div>
-                            <h4 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                                <span>⚡ Cloudflare Argo 双模加速通道</span>
-                            </h4>
-                            <p style="margin: 0; font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;">
-                                💡 <b>双模通道模式</b>：若下方 Token <b>留空</b>，系统全自动唤醒 <b>Quick Tunnel</b> 临时免密公网通道；若填入 <b>Tunnel Token</b>，即可绑定专属自定义域名并享受全球 Anycast 边缘加速。
-                            </p>
-                        </div>
-                        <div style="display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <button type="button" class="action-btn glow-btn" onclick="window.installPluginDependencies('${id}')" style="font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(16, 185, 129, 0.4); color: #10b981; background: rgba(16, 185, 129, 0.08); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                                <span>⚡ 一键安装 cloudflared</span>
-                            </button>
-                            <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="action-btn" style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; white-space: nowrap; border-color: rgba(0, 242, 255, 0.4); color: var(--accent-secondary); display: inline-flex; align-items: center; gap: 4px;">
-                                <span>☁️ 控制台 ↗</span>
-                            </a>
-                        </div>
-                    </div>
+                <div class="channel-console-header api-token-helper" style="margin-bottom:1.2rem; background:rgba(0,242,255,0.04); border:1px solid rgba(0,242,255,0.18); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><h4 style="margin:0 0 4px; color:var(--accent-secondary); font-size:0.9rem; font-weight:700;">⚡ Cloudflare Argo 双模通道</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">Token 留空自动降级为 Quick 免密通道；填入 Token 享受专属域名加速。</p></div>
+                    <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="action-btn" style="text-decoration:none; font-size:0.72rem; padding:4px 10px; color:var(--accent-secondary); border-color:rgba(0,242,255,0.4);">控制台 ↗</a>
                 </div>
                 <div class="settings-grid">
-                    ${renderSettingsItem('Tunnel Token 隧道运行令牌', `tunnel.${id}.tunnel_token`, tunnelCfg.tunnel_token || '', 'password', {
-                        description: 'Cloudflare Zero Trust 控制台生成的 Tunnel Token (eyJh...)。留空则自动降级为 Quick 临时免密通道。',
-                        placeholder: '留空使用 Quick 临时通道，或粘贴专属 Token...',
-                        optional: true
-                    })}
-                    ${renderSettingsItem('专属公网域名 (Hostname)', `tunnel.${id}.hostname`, tunnelCfg.hostname || '', 'text', {
-                        description: '在 Cloudflare Tunnel Public Hostname 绑定的自定义完整域名（留空使用 trycloudflare.com 临时域名）。',
-                        placeholder: '例如: press.yourdomain.com',
-                        optional: true
-                    })}
-                </div>
-            `;
-        } else {
+                    ${renderSettingsItem('Tunnel Token 运行令牌', `tunnel.${id}.tunnel_token`, tunnelCfg.tunnel_token || '', 'password', { description: 'Cloudflare Zero Trust Token。留空自动使用 Quick 免密通道。', placeholder: '留空使用 Quick 临时通道，或粘贴专属 Token...', optional: true })}
+                    ${renderSettingsItem('专属公网域名 (Hostname)', `tunnel.${id}.hostname`, tunnelCfg.hostname || '', 'text', { description: '绑定的自定义完整域名（留空使用临时域名）。', placeholder: '例如: press.yourdomain.com', optional: true })}
+                </div>`;
+        } else if (id === 'frp') {
             html += `
-                <div class="channel-console-header" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 16px; margin-bottom: 1.2rem;">
-                    <h4 style="margin: 0 0 8px 0; color: #10b981; font-size: 0.92rem; font-weight: 700;">
-                        <span>⚡ 原生 OpenSSH 零配置极速穿透</span>
-                    </h4>
-                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.6;">
-                        Pinggy 依托系统底层原生 OpenSSH 客户端与端口反向转发通道，<b>无需任何账号凭证、API Key 或 Token</b>。启动时系统会自动分配安全临时公网 URL，开箱即用。
-                    </p>
+                <div class="channel-console-header" style="margin-bottom:1.2rem; background:rgba(59,130,246,0.05); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px 14px;"><h4 style="margin:0 0 4px; color:#60a5fa; font-size:0.9rem; font-weight:700;">🛡️ FRP 自建高性能反向代理</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">支持国内 VPS 自建服务端，独享物理带宽与自定义域名。</p></div>
+                <div class="settings-grid">
+                    ${renderSettingsItem('FRP 服务端地址 (server_addr)', `tunnel.${id}.server_addr`, tunnelCfg.server_addr || '', 'text', { description: '自建 FRP 服务器的公网 IP 或域名。', placeholder: '例如: frp.yourdomain.com 或 123.45.67.89', required: true })}
+                    ${renderSettingsItem('服务端通信端口 (server_port)', `tunnel.${id}.server_port`, tunnelCfg.server_port || 7000, 'number', { description: 'FRP 服务端 bind_port 端口，默认 7000。', placeholder: '7000', required: true })}
+                    ${renderSettingsItem('鉴权令牌 (Token)', `tunnel.${id}.token`, tunnelCfg.token || '', 'password', { description: 'FRP 服务端通信安全凭证 (auth.token)。', placeholder: '留空或填入密码...', optional: true })}
+                    ${renderSettingsItem('自定义访问域名 (custom_domain)', `tunnel.${id}.custom_domain`, tunnelCfg.custom_domain || '', 'text', { description: 'HTTP 穿透绑定的独立域名。', placeholder: '例如: press.yourdomain.com', optional: true })}
+                </div>`;
+        } else if (id === 'cpolar') {
+            html += `
+                <div class="channel-console-header" style="margin-bottom:1.2rem; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><h4 style="margin:0 0 4px; color:#fbbf24; font-size:0.9rem; font-weight:700;">🚀 cpolar 极点云国内极速穿透</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">针对国内多线网络优化，支持免费临时隧道或绑定专属二级域名。</p></div>
+                    <a href="https://dashboard.cpolar.com/" target="_blank" rel="noopener noreferrer" class="action-btn" style="text-decoration:none; font-size:0.72rem; padding:4px 10px; color:#fbbf24; border-color:rgba(245,158,11,0.4);">控制台 ↗</a>
                 </div>
-                <div style="text-align: center; padding: 20px 0;">
-                    <button class="action-btn glow-btn" onclick="window.fastTestPluginConnectivity('${id}', '${p.category}', this)" style="padding: 8px 20px; font-size: 0.85rem;">
-                        ⚡ 立即发起通道自检探针
-                    </button>
+                <div class="settings-grid">
+                    ${renderSettingsItem('Authtoken 认证令牌', `tunnel.${id}.authtoken`, tunnelCfg.authtoken || '', 'password', { description: 'cpolar 仪表盘分配的 Authtoken。留空使用免密通道。', placeholder: '粘贴 cpolar Authtoken...', optional: true })}
+                    ${renderSettingsItem('专属二级子域名 (Subdomain)', `tunnel.${id}.subdomain`, tunnelCfg.subdomain || '', 'text', { description: '保留的专属二级子域（仅限高级/专业版生效）。', placeholder: '例如: mypress', optional: true })}
+                </div>`;
+        } else if (id === 'ngrok') {
+            html += `
+                <div class="channel-console-header" style="margin-bottom:1.2rem; background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><h4 style="margin:0 0 4px; color:#818cf8; font-size:0.9rem; font-weight:700;">🌍 ngrok 全球开发者隧道</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">国际标准反代平台，全球多边缘接入节点，需配置个人 Authtoken。</p></div>
+                    <a href="https://dashboard.ngrok.com/get-started/your-authtoken" target="_blank" rel="noopener noreferrer" class="action-btn" style="text-decoration:none; font-size:0.72rem; padding:4px 10px; color:#818cf8; border-color:rgba(99,102,241,0.4);">获取 Token ↗</a>
                 </div>
-            `;
+                <div class="settings-grid">
+                    ${renderSettingsItem('ngrok Authtoken', `tunnel.${id}.authtoken`, tunnelCfg.authtoken || '', 'password', { description: 'ngrok 控制台分配的个人 Authtoken (必填)。', placeholder: '粘贴 ngrok Authtoken...', required: true })}
+                    ${renderSettingsItem('静态公网域名 (Domain)', `tunnel.${id}.domain`, tunnelCfg.domain || '', 'text', { description: '在 ngrok 控制台绑定的免费静态域名或自定义域名。', placeholder: '例如: myapp.ngrok-free.app', optional: true })}
+                </div>`;
+        } else if (id === 'serveo') {
+            html += `
+                <div class="channel-console-header" style="background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:10px; padding:12px 14px; margin-bottom:1.2rem;"><h4 style="margin:0 0 4px; color:#10b981; font-size:0.9rem; font-weight:700;">🔗 Serveo SSH 端口转发穿透</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">依托系统原生 OpenSSH，零安装免客户端，可选用指定个性化子域名。</p></div>
+                <div class="settings-grid">${renderSettingsItem('自定义子域名 (Subdomain)', `tunnel.${id}.subdomain`, tunnelCfg.subdomain || '', 'text', { description: '向 Serveo 请求的自定义前缀。', placeholder: '留空自动分配随机域...', optional: true })}</div>`;
+        } else if (id === 'tailscale') {
+            html += `
+                <div class="channel-console-header" style="background:rgba(139,92,246,0.05); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:12px 14px; margin-bottom:1.2rem;"><h4 style="margin:0 0 4px; color:#a78bfa; font-size:0.9rem; font-weight:700;">🔒 Tailscale Funnel / Serve 安全网格端点</h4><p style="margin:0; font-size:0.76rem; color:var(--text-dim);">依托本地 Tailscale 客户端与节点证书，支持公网 Funnel 或 Tailnet 设备间直连。</p></div>
+                <div class="settings-grid">${renderSettingsItem('发布模式 (Funnel / Serve)', `tunnel.${id}.funnel_mode`, tunnelCfg.funnel_mode || 'funnel', 'select', { description: 'funnel 模式可供公网手机扫码访问；serve 模式仅限已加入您 Tailnet 的设备访问。', options: [{ value: 'funnel', label: '🌐 公网 Funnel (全网移动端扫码秒开)' }, { value: 'serve', label: '🔒 私网 Serve (仅限 Tailnet 网格内设备)' }] })}</div>`;
+        } else {
+            const driverTitle = id === 'localhost_run' ? 'Localhost.run SSH 免密穿透' : 'Pinggy SSH 极速穿透';
+            html += `
+                <div class="channel-console-header" style="background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:10px; padding:14px; margin-bottom:1.2rem;">
+                    <h4 style="margin:0 0 6px; color:#10b981; font-size:0.9rem; font-weight:700;"><span>⚡ ${driverTitle}</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:var(--text-dim); line-height:1.5;">依托系统底层原生 OpenSSH 客户端与端口反向转发通道，<b>无需任何账号凭证或 Token</b>，开箱即用。</p>
+                </div>
+                <div style="text-align:center; padding:16px 0;"><button class="action-btn glow-btn" onclick="window.fastTestPluginConnectivity('${id}', '${p.category}', this)" style="padding:8px 20px; font-size:0.85rem;">⚡ 立即发起通道自检探针</button></div>`;
         }
     } else if (p.category === 'theme') {
         const schema = p.schema || {};

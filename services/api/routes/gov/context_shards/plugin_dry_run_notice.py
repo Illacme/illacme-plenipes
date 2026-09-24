@@ -109,7 +109,8 @@ def run_notice_plugin_dry_run(
                 if resp.status_code in (200, 201, 202, 204):
                     logs.append(log("INFO", f"🟢 [推送成功] 对端服务响应 HTTP {resp.status_code} OK。移动端设备应已收到提示！"))
                 else:
-                    logs.append(log("WARN", f"⚠️ [响应异常] 推送服务器返回 HTTP {resp.status_code}: {resp.text[:120]}"))
+                    logs.append(log("ERROR", f"❌ [响应异常] 推送服务器返回 HTTP {resp.status_code}: {resp.text[:120]}"))
+                    success = False
             except Exception as e:
                 logs.append(log("ERROR", f"❌ [推送失败] 无法连通推送服务器: {e}"))
                 success = False
@@ -194,9 +195,29 @@ def run_notice_plugin_dry_run(
 
                 resp = requests.post(target_url, json=driver_payload, headers=headers, timeout=8)
                 if resp.status_code in (200, 201, 202, 204):
-                    logs.append(log("INFO", f"🟢 [成功] 第三方 API 物理服务响应 HTTP {resp.status_code} OK。链路与凭据校验圆满成功！"))
+                    # 🛡️ [Rule 16] 深度业务状态码穿透检查（钉钉/飞书/企业微信在 HTTP 200 下也会包含错误码）
+                    biz_ok = True
+                    try:
+                        data = resp.json() if hasattr(resp, "json") else {}
+                        if isinstance(data, dict):
+                            errcode = data.get("errcode")
+                            if errcode is not None and errcode != 0:
+                                logs.append(log("ERROR", f"❌ [业务错误 (代码 {errcode})] {data.get('errmsg', '签名或凭证无效')}"))
+                                biz_ok = False
+                            code = data.get("code")
+                            if code is not None and code != 0:
+                                logs.append(log("ERROR", f"❌ [业务错误 (代码 {code})] {data.get('msg', '签名或凭据无效')}"))
+                                biz_ok = False
+                    except Exception:
+                        pass
+
+                    if biz_ok:
+                        logs.append(log("INFO", f"🟢 [成功] 第三方 API 物理服务响应 HTTP {resp.status_code} OK。链路与凭据校验圆满成功！"))
+                    else:
+                        success = False
                 else:
-                    logs.append(log("WARN", f"⚠️ [响应异常] 对端 API 返回非 20x 状态码: HTTP {resp.status_code} | 响应体: {resp.text[:120]}"))
+                    logs.append(log("ERROR", f"❌ [响应异常] 对端 API 返回非 20x 状态码: HTTP {resp.status_code} | 响应体: {resp.text[:140]}"))
+                    success = False
             except Exception as e:
                 logs.append(log("ERROR", f"❌ [网络错误] API 物理可达性异常或超时: {e}"))
                 success = False

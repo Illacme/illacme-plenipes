@@ -46,11 +46,22 @@ def test_qr_sync_core_functions():
     assert "/api/bindery/download?file=anthology.epub" in payload_dl["url"]
     assert payload_dl["qr_data_uri"].startswith("data:image/png;base64,")
 
-    # 测试 payload 构建 (WebBook 在线查看)
+    # 测试 payload 构建 (WebBook 在线查看 - 默认缺省 action 自动提升为 view)
+    payload_wb_default = build_mobile_sync_payload("anthology.html", port=43212)
+    assert payload_wb_default["success"] is True
+    assert payload_wb_default["action"] == "view"
+    assert "/api/bindery/view?file=anthology.html" in payload_wb_default["url"]
+
+    # 测试 payload 构建 (WebBook 显式 view)
     payload_wb = build_mobile_sync_payload("anthology.html", port=43212, action="view")
     assert payload_wb["success"] is True
     assert payload_wb["action"] == "view"
     assert "/api/bindery/view?file=anthology.html" in payload_wb["url"]
+
+    # 测试 payload 构建 (WebBook 强制下载参数 force_download)
+    payload_wb_force = build_mobile_sync_payload("anthology.html", port=43212, action="force_download")
+    assert payload_wb_force["action"] == "download"
+    assert "/api/bindery/download?file=anthology.html" in payload_wb_force["url"]
 
 
 def test_qr_sync_fallback_when_qrcode_missing(monkeypatch):

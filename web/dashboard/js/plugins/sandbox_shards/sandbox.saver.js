@@ -44,11 +44,12 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
             descText.includes('可选') || descText.includes('可留空') || descText.includes('留空') || descText.includes('二选一') ||
             placeholderText.includes('可选') || placeholderText.includes('留空') || placeholderText.includes('二选一');
 
-        // 排除明确可选的字段（如 proxy, cname, prefix, acl, public_url, endpoint_url, tunnel 等）
-        const isOptionalField = isMarkedOptional || path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description') || path.startsWith('tunnel.') || path.includes('tunnel_token') || path.includes('hostname');
+        // 排除明确可选的字段（如 proxy, cname, prefix, acl, public_url, endpoint_url, subdomain 等）
+        const isOptionalField = isMarkedOptional || path.includes('proxy') || path.includes('cname') || path.includes('prefix') || path.includes('acl') || path.includes('public_url') || path.includes('endpoint_url') || path.includes('git_user_name') || path.includes('git_user_email') || path.includes('description') || path.includes('subdomain') || path.includes('domain') || path.includes('tunnel_token') || path.includes('hostname');
         
         let isCoreCredential = !isOptionalField && (
             path.includes('token') || path.includes('api_key') || path.includes('secret_key') ||
+            path.includes('authtoken') || path.includes('server_addr') || path.includes('server_port') ||
             path.includes('application_password') || path.includes('admin_api_key') ||
             (input.type === 'password' && !path.includes('proxy'))
         );
@@ -60,9 +61,7 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
                 const p = (el.getAttribute('data-path') || el.name || '').toLowerCase();
                 return (p.includes('cookie') || p.includes('sessdata')) && el.value && el.value.trim().length > 0;
             });
-            if (hasFilledCookie) {
-                isCoreCredential = false;
-            }
+            if (hasFilledCookie) isCoreCredential = false;
         }
         // 反之，若当前字段为 cookie，但已填写了有效的 token/key，则豁免此 cookie
         if ((path.includes('cookie') || path.includes('sessdata')) && !isExplicitRequired) {
@@ -70,9 +69,7 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
                 const p = (el.getAttribute('data-path') || el.name || '').toLowerCase();
                 return (p.includes('token') || p.includes('key') || p.includes('api_key') || p.includes('secret')) && el.value && el.value.trim().length > 0;
             });
-            if (hasFilledToken) {
-                continue;
-            }
+            if (hasFilledToken) continue;
         }
 
         // 4. 核心平台关键定位字段
@@ -104,21 +101,18 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
             if (window.githubSSHPassState === true || window.giteeSSHPassState === true || window.gitlabSSHPassState === true) continue;
         }
 
-        // 特殊豁免 3：公网穿透插件 (cloudflare / pinggy 等 tunnel 插件) 均为双模/免密运行模式，Token 与 Hostname 允许留空
-        const isTunnelProto = ['cloudflare', 'pinggy'].includes(activePluginId) || path.startsWith('tunnel.') || path.includes('tunnel_token') || path.includes('hostname');
-        if (isTunnelProto && !isExplicitRequired) continue;
+        // 特殊豁免 3：免配或双模隧道专属 Token 允许留空
+        if (['localhost_run', 'serveo', 'catbox', 'tailscale'].includes(activePluginId) && !isExplicitRequired) continue;
+        if (['cloudflare', 'pinggy', 'cpolar'].includes(activePluginId) && (path.includes('tunnel_token') || path.includes('hostname') || path.includes('subdomain') || (path.includes('authtoken') && activePluginId === 'cpolar')) && !isExplicitRequired) {
+            continue;
+        }
 
         const isRequired = isExplicitRequired || isCoreCredential || isCorePlatformField;
 
         if (isRequired) {
             const val = (input.value || '').trim();
             if (val === '') {
-                return {
-                    valid: false,
-                    input: input,
-                    label: label,
-                    path: path
-                };
+                return { valid: false, input: input, label: label, path: path };
             }
         }
     }
@@ -128,21 +122,22 @@ window.validatePluginDrawerForm = (drawerBody, activePluginId) => {
 
 // 🚀 [V75.5] 100% 物理自愈：专门针对插件/通道抽屉配置设计的“强力同步保存并关闭”算子
 window.savePluginSettingsAndClose = async () => {
+    const drawer = document.getElementById('plugin-drawer');
     const drawerBody = document.getElementById('p-drawer-body');
+    const drawerTitle = document.getElementById('p-drawer-title');
 
     // 获取当前正在编辑的插件定义对象
-    const drawerTitle = document.getElementById('p-drawer-title');
-    let activePluginId = null;
-    if (drawerTitle && drawerTitle.innerText) {
-        const match = drawerTitle.innerText.match(/⚙️ 配置(?:能力|节点|插件):?\s*(.*)/);
-        if (match) activePluginId = match[1].toLowerCase().replace(/^[^\w]+/, '');
+    let activePluginId = drawer?.getAttribute('data-active-plugin-id') || window._activeEditingPlugin?.id || null;
+    if (!activePluginId && drawerTitle && drawerTitle.innerText) {
+        const rawText = drawerTitle.innerText.trim();
+        const pFound = (window.allPlugins || []).find(p => p.name === rawText || p.id === rawText.toLowerCase() || rawText.includes(p.name));
+        if (pFound) activePluginId = pFound.id;
     }
     const pluginObj = (window.allPlugins && activePluginId) ? window.allPlugins.find(p => p.id === activePluginId || (p.name && p.name.toLowerCase() === activePluginId)) : null;
 
     // 🛡️ 必填字段校验拦截：无值时禁止保存并高亮提示
     const check = window.validatePluginDrawerForm(drawerBody, activePluginId);
     if (!check.valid && check.input) {
-        // 自动展开对应的 Step 区域
         const path = check.path || '';
         if (typeof window.handleWizardStepClick === 'function' && pluginObj) {
             if (path.includes('token') || path.includes('key') || check.input.type === 'password') {
@@ -152,16 +147,24 @@ window.savePluginSettingsAndClose = async () => {
             }
         }
 
-        check.input.style.border = '1px solid #ff4d4f';
-        check.input.style.boxShadow = '0 0 10px rgba(255, 77, 79, 0.5)';
-        check.input.style.background = 'rgba(255, 77, 79, 0.08)';
+        check.input.style.border = '2px solid #ff4d4f';
+        check.input.style.boxShadow = '0 0 12px rgba(255, 77, 79, 0.6)';
+        check.input.style.background = 'rgba(255, 77, 79, 0.1)';
         check.input.focus();
         if (typeof check.input.scrollIntoView === 'function') check.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
         check.input.addEventListener('input', () => {
             check.input.style.border = ''; check.input.style.boxShadow = ''; check.input.style.background = '';
         }, { once: true });
 
-        if (typeof window.showToast === 'function') window.showToast(`⚠️ 请先填写必填字段 [${check.label}]`, 'warning');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '请填写必填参数 ⚠️',
+                html: `<div style="text-align:left; line-height:1.75; font-size:0.92rem; color:var(--text-bright);"><p style="margin:0 0 10px 0;">配置项 <b style="color:#ff4d4f;">[${check.label}]</b> 为核心必填字段，当前内容为空。</p><div style="background:rgba(255,77,79,0.08); border:1px solid rgba(255,77,79,0.25); border-radius:8px; padding:10px 14px;"><span style="color:var(--text-dim);">请在红框高亮处输入有效参数后再点击保存，避免因缺少凭据导致服务无法启动。</span></div></div>`,
+                icon: 'warning', confirmButtonText: '我知道了', background: 'var(--card-bg)', color: 'var(--text-bright)', confirmButtonColor: 'var(--accent-secondary)'
+            });
+        } else if (typeof window.showToast === 'function') {
+            window.showToast(`⚠️ 请先填写必填字段 [${check.label}]`, 'warning');
+        }
         return;
     }
 

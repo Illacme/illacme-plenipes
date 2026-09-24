@@ -92,8 +92,8 @@ def test_tunnel_active_public_qr_flow(client, monkeypatch):
     assert pub_data["is_public"] is True
     assert pub_data["filename"] == "anthology.epub"
     assert pub_data["token"] is not None
-    assert "token=" in pub_data["url"]
-    assert "https://mystic-pub.trycloudflare.com/api/bindery/download?file=anthology.epub&token=" in pub_data["url"]
+    assert "/api/bindery/download/" in pub_data["url"]
+    assert "anthology.epub?file=anthology.epub&token=" in pub_data["url"]
 
     # 3. 校验该生成的 token 确实已被注册在内存令牌池
     assert hub.verify_token("anthology.epub", pub_data["token"]) is True
@@ -208,12 +208,14 @@ def test_tunnel_drivers_endpoint(client):
     assert isinstance(data["drivers"], list)
     assert "active_driver" in data
     # 验证驱动列表结构
+    # 验证默认启用的驱动列表包含 localhost_run 与 serveo
     driver_ids = [d["id"] for d in data["drivers"]]
+    assert "localhost_run" in driver_ids
+    assert "serveo" in driver_ids
     assert "pinggy" in driver_ids
-    assert "cloudflare" in driver_ids
-    # 验证排序首项为无依赖的 pinggy，且默认首选 active_driver 为 pinggy
-    assert data["drivers"][0]["id"] == "pinggy"
-    assert data["active_driver"] == "pinggy"
+    # 验证排序首项为零过度页免依赖的 localhost_run，且默认首选 active_driver 为 localhost_run
+    assert data["drivers"][0]["id"] == "localhost_run"
+    assert data["active_driver"] == "localhost_run"
     for d in data["drivers"]:
         assert "name" in d
         assert "icon" in d
@@ -250,4 +252,29 @@ def test_tunnel_start_with_specified_driver(client, monkeypatch):
     res3 = client.post("/api/bindery/tunnel/start")
     assert res3.status_code == 200
     assert called_driver[-1] is None
+
+
+def test_webbook_public_qr_view_flow(client, monkeypatch):
+    """测试 WebBook HTML 文件公网扫码时自动对齐 view 动作与纯路径在线翻阅路由"""
+    hub = get_tunnel_hub()
+    monkeypatch.setattr(hub, "_public_url", "https://mystic-pub.trycloudflare.com")
+    monkeypatch.setattr(hub, "_provider", "cloudflare")
+    monkeypatch.setattr(hub, "_start_time", time.time())
+
+    class DummyProc:
+        def poll(self): return None
+        def terminate(self): pass
+        def wait(self, timeout=None): pass
+    monkeypatch.setattr(hub, "_process", DummyProc())
+
+    res = client.get("/api/bindery/qr/public", params={"file": "guide.html"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert data["action"] == "view"
+    assert data["format"] == "webbook"
+    assert "/api/bindery/view/" in data["url"]
+    assert "token=" in data["url"]
+    assert hub.verify_token("guide.html", data["token"]) is True
+
 

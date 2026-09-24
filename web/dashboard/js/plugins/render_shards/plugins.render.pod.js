@@ -235,21 +235,19 @@ window.buildPluginPodHtml = (p, isPinned) => {
                     </span>
                 </div>
             ` : (p.is_manageable ? (() => {
-            let dotColor = 'rgba(255, 255, 255, 0.35)';
-            let statusText = '当前品牌未启用';
-            let textColor = 'var(--text-dim)';
-            let glowEffect = '';
+            let dotColor = 'rgba(255, 255, 255, 0.35)', statusText = '当前品牌未启用', textColor = 'var(--text-dim)', glowEffect = '';
+            const isCredReady = (typeof window.isPluginCredentialReady === 'function') ? !!window.isPluginCredentialReady(p.id, p.category, p.cfg)?.ready : true;
+            const effectiveInUse = Boolean(p.is_in_use && isCredReady);
 
             if (!p.is_enabled) {
-                dotColor = '#ff4d4d';
-                statusText = '全局已禁用';
-                textColor = '#ff4d4d';
-            } else if (p.is_in_use) {
-                dotColor = 'var(--neon-green)';
-                statusText = '当前品牌已启用';
-                textColor = 'var(--neon-green)';
+                dotColor = '#ff4d4d'; statusText = '全局已禁用'; textColor = '#ff4d4d';
+            } else if (!isCredReady) {
+                dotColor = 'rgba(255, 255, 255, 0.25)'; statusText = '未配置凭据'; textColor = 'var(--text-dim)';
+            } else if (effectiveInUse) {
+                dotColor = 'var(--neon-green)'; statusText = '当前品牌已启用'; textColor = 'var(--neon-green)';
                 glowEffect = 'box-shadow: 0 0 8px rgba(var(--neon-green-rgb), 0.6);';
             }
+            const toggleTitle = !p.is_enabled ? '需先在顶部全局启用该插件' : (!isCredReady ? '需先点击 CONFIG 配置凭据后方可启用' : (effectiveInUse ? '在当前品牌停用' : '在当前品牌启用'));
 
             return `
                 <div class="pod-telemetry" style="margin-bottom:15px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; white-space:nowrap; gap:6px; ${!p.is_enabled ? 'opacity:0.55; filter:grayscale(0.8); cursor:not-allowed;' : ''}">
@@ -257,8 +255,8 @@ window.buildPluginPodHtml = (p, isPinned) => {
                         <span style="background:${dotColor}; width:7px; height:7px; min-width:7px; border-radius:50%; display:inline-block; ${glowEffect}"></span>
                         ${statusText}
                     </span>
-                    <label class="switch-toggle" style="margin:0;" onclick="event.stopPropagation();" title="${!p.is_enabled ? '需先在顶部全局启用该插件' : (p.is_in_use ? '在当前品牌停用' : '在当前品牌启用')}">
-                        <input type="checkbox" id="chk-use-${p.category}-${p.id}" ${p.is_in_use ? 'checked' : ''} ${!p.is_enabled ? 'disabled' : ''} onchange="window.toggleBrandActivation('${p.id}', this.checked, '${p.category}')">
+                    <label class="switch-toggle" style="margin:0;" onclick="event.stopPropagation();" title="${toggleTitle}">
+                        <input type="checkbox" id="chk-use-${p.category}-${p.id}" ${effectiveInUse ? 'checked' : ''} ${!p.is_enabled ? 'disabled' : ''} onchange="window.toggleBrandActivation('${p.id}', this.checked, '${p.category}')">
                         <span class="slider round"></span>
                     </label>
                 </div>

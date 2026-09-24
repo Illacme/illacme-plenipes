@@ -269,22 +269,28 @@
     };
 
     window.resetBinderySubmitBtn = function() {
-        if (window._binderySuccessTimer) {
-            clearTimeout(window._binderySuccessTimer);
-            window._binderySuccessTimer = null;
-        }
+        if (window._binderySuccessTimer) { clearTimeout(window._binderySuccessTimer); window._binderySuccessTimer = null; }
         const submitBtn = document.getElementById('btn-execute-binding');
         const cancelBtn = document.getElementById('btn-bindery-cancel');
         if (cancelBtn) cancelBtn.textContent = '取消';
         if (!submitBtn) return;
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-        const langVal = document.getElementById('bindery-select-lang')?.value || 'zh';
+        submitBtn.disabled = false; submitBtn.style.opacity = '1';
+        const langSelect = document.getElementById('bindery-select-lang');
+        const langVal = langSelect?.value || 'zh';
         if (langVal === 'polyglot' || langVal === 'matrix_batch') {
             window.updateMatrixSubmitBtn();
         } else {
-            const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
-            submitBtn.innerHTML = `<span>🚀 立即装订 (${langMap[langVal] || langVal.toUpperCase()})</span>`;
+            let langLabel = '';
+            const opt = langSelect?.selectedOptions?.[0];
+            if (opt) {
+                const raw = (opt.textContent || '').replace(/^[^\w\u4e00-\u9fa5\u3040-\u30ff]+/u, '').replace(/\s*\(.*?\)\s*$/, '').trim();
+                if (raw) langLabel = raw.includes('版') ? raw : raw + '版';
+            }
+            if (!langLabel) {
+                const langMap = { 'zh': '简体中文版', 'zh-hans': '简体中文版', 'zh-hant': '繁体中文版', 'en': 'English版', 'ja': '日本語版' };
+                langLabel = langMap[langVal] || (langVal.toUpperCase() + '版');
+            }
+            submitBtn.innerHTML = `<span>🚀 立即装订 (${langLabel})</span>`;
         }
     };
 })();

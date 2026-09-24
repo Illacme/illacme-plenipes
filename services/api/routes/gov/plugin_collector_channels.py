@@ -9,6 +9,41 @@ Illacme-plenipes Core - Plugin Matrix Channels Collector Shard
 from typing import List, Dict, Any
 
 
+def is_plugin_config_ready(category: str, p_id: str, cfg: Dict[str, Any]) -> bool:
+    """🛡️ 严格凭据就绪校验：若必要凭据缺失，禁止在品牌中标记为启用"""
+    if not isinstance(cfg, dict):
+        return False
+
+    def _val(k):
+        v = cfg.get(k)
+        if not v or not isinstance(v, str):
+            return bool(v)
+        t = v.strip()
+        if not t or t.startswith(("YOUR_", "REPLACE_", "<", "{", "EXAMPLE_", "PLACEHOLDER")):
+            return False
+        return True
+
+    if category == "tunnel":
+        if p_id in ["localhost_run", "serveo", "tailscale", "cloudflare", "cpolar", "pinggy"]:
+            return True
+        if p_id == "ngrok":
+            return _val("authtoken")
+        if p_id == "frp":
+            return _val("server_addr")
+        return True
+    if category == "hosting":
+        return any(_val(k) for k in ["token", "access_token", "api_token", "repo_url", "repo", "access_key_id", "project_name", "host"])
+    if category == "publisher":
+        return any(_val(k) for k in ["token", "api_token", "api_key", "access_token", "cookie", "sessdata", "webhook", "webhook_url"])
+    if category == "image_hosting":
+        if p_id == "catbox":
+            return True
+        return any(_val(k) for k in ["token", "api_token", "api_key", "access_token", "secret_key", "access_key_id", "endpoint", "repo"])
+    if category == "notification":
+        return any(_val(k) for k in ["webhook_url", "url", "webhook", "token", "bot_token", "host", "smtp_host", "sendkey"])
+    return True
+
+
 def collect_hosting_plugins(engine, disabled: set, system_track: str) -> List[Dict[str, Any]]:
     """收集全站托管能力 (Hosting)"""
     from core.adapters.egress.publishers.base import PublisherRegistry
@@ -30,11 +65,13 @@ def collect_hosting_plugins(engine, disabled: set, system_track: str) -> List[Di
         elif hasattr(hosting_root, "get"):
             current_cfg = hosting_root.get(p_id, {})
             
-        is_active = (
+        raw_active = (
             current_cfg.get("enabled", False) if isinstance(current_cfg, dict) else (
                 getattr(current_cfg, "enabled", False) if hasattr(current_cfg, "enabled") else False
             )
         )
+        is_ready = is_plugin_config_ready("hosting", p_id, current_cfg if isinstance(current_cfg, dict) else {})
+        is_active = bool(raw_active and is_ready)
         name = getattr(cls, "DISPLAY_NAME", p_id.upper())
         plugins.append({
             "id": p_id, "name": name, "category": "hosting", "category_name": "🌐 全站托管",
@@ -79,20 +116,13 @@ def collect_notification_plugins(engine, disabled: set) -> List[Dict[str, Any]]:
         if not isinstance(n_cfg, dict):
             n_cfg = {}
         
-        is_in_use = bool(n_cfg.get("enabled", False))
+        raw_enabled = bool(n_cfg.get("enabled", False))
+        is_ready = is_plugin_config_ready("notification", n_id, n_cfg)
+        is_in_use = bool(raw_enabled and is_ready)
         plugins.append({
-            "id": n_id,
-            "name": notif["name"],
-            "category": "notification",
-            "category_name": "📢 消息通知",
-            "status": "Active" if is_in_use else "Ready",
-            "is_in_use": is_in_use,
-            "is_enabled": (n_id not in disabled),
-            "origin": "core",
-            "version": "V1.0",
-            "description": notif["desc"],
-            "cfg": n_cfg,
-            "is_manageable": True
+            "id": n_id, "name": notif["name"], "category": "notification", "category_name": "📢 消息通知",
+            "status": "Active" if is_in_use else "Ready", "is_in_use": is_in_use, "is_enabled": (n_id not in disabled),
+            "origin": "core", "version": "V1.0", "description": notif["desc"], "cfg": n_cfg, "is_manageable": True
         })
     return plugins
 
@@ -106,9 +136,11 @@ def collect_syndication_plugins(engine, disabled: set, system_track: str) -> Lis
     for t_id in TARGET_REGISTRY.keys():
         targets = getattr(synd_cfg, "targets", synd_cfg) if synd_cfg else {}
         curr_cfg = targets.get(t_id, {}) if isinstance(targets, dict) else getattr(targets, t_id, {})
-        is_in_use = curr_cfg.get("enabled", False) if isinstance(curr_cfg, dict) else getattr(curr_cfg, "enabled", False)
+        raw_enabled = curr_cfg.get("enabled", False) if isinstance(curr_cfg, dict) else getattr(curr_cfg, "enabled", False)
         if hasattr(curr_cfg, 'dict'):
             curr_cfg = curr_cfg.dict()
+        is_ready = is_plugin_config_ready("publisher", t_id, curr_cfg if isinstance(curr_cfg, dict) else {})
+        is_in_use = bool(raw_enabled and is_ready)
         t_cls = TARGET_REGISTRY.get(t_id)
         name = getattr(t_cls, "DISPLAY_NAME", None) or t_id.upper()
         icon = getattr(t_cls, "ICON", None) or "📡"
@@ -154,6 +186,9 @@ def collect_image_hosting_plugins(engine, disabled: set, system_track: str) -> L
                     is_in_use = True
                     current_cfg = h_cfg
 
+        is_ready = is_plugin_config_ready("image_hosting", host_id, current_cfg if isinstance(current_cfg, dict) else {})
+        is_in_use = bool(is_in_use and is_ready)
+
         fallback_names = {
             "telegraph": "Telegraph 自建图床", "cloudflare_r2": "Cloudflare R2",
             "imgbb": "ImgBB", "catbox": "Catbox", "github": "GitHub 图床"
@@ -162,14 +197,9 @@ def collect_image_hosting_plugins(engine, disabled: set, system_track: str) -> L
         description = getattr(host_cls, "DESCRIPTION", f"图床自发现适配器：支持将原稿相对图片上传至 {display_name} 并自动替换 CDN 链接。")
         plugins.append({
             "id": host_id, "name": display_name, "category": "image_hosting", "category_name": "📷 图床存储",
-            "status": "Active" if is_in_use else "Ready",
-            "is_in_use": is_in_use,
-            "is_enabled": (host_id not in disabled),
-            "origin": "core" if host_id == "s3" else "extension",
-            "version": getattr(host_cls, "VERSION", system_track),
-            "description": description,
-            "cfg": current_cfg,
-            "is_manageable": True
+            "status": "Active" if is_in_use else "Ready", "is_in_use": is_in_use, "is_enabled": (host_id not in disabled),
+            "origin": "core" if host_id == "s3" else "extension", "version": getattr(host_cls, "VERSION", system_track),
+            "description": description, "cfg": current_cfg, "is_manageable": True
         })
     return plugins
 
@@ -179,43 +209,35 @@ def collect_tunnel_plugins(engine, disabled: set, system_track: str) -> List[Dic
     from core.adapters.tunnel import TunnelRegistry
 
     tunnel_root = getattr(engine.config, "tunnel", {}) if engine and hasattr(engine, "config") else {}
-    if hasattr(tunnel_root, "__dict__"):
-        tunnel_dict = tunnel_root.__dict__
-    elif isinstance(tunnel_root, dict):
-        tunnel_dict = tunnel_root
-    else:
-        tunnel_dict = {}
-
+    tunnel_dict = tunnel_root.__dict__ if hasattr(tunnel_root, "__dict__") else (tunnel_root if isinstance(tunnel_root, dict) else {})
     active_driver = tunnel_dict.get("active_driver", "") if isinstance(tunnel_dict, dict) else ""
-    default_driver = TunnelRegistry.get_default_driver_id()
+    if active_driver:
+        act_cfg = tunnel_dict.get(active_driver, {}) if isinstance(tunnel_dict, dict) else {}
+        if not is_plugin_config_ready("tunnel", active_driver, act_cfg):
+            active_driver = ""
+
     plugins = []
     for p_id, cls in TunnelRegistry.list_all().items():
         current_cfg = tunnel_dict.get(p_id, {}) if isinstance(tunnel_dict, dict) else {}
+        is_ready = is_plugin_config_ready("tunnel", p_id, current_cfg)
         if isinstance(current_cfg, dict) and "enabled" in current_cfg:
-            is_active = bool(current_cfg.get("enabled", False))
+            is_active = bool(current_cfg.get("enabled", False)) and is_ready
+        elif p_id in ["localhost_run", "serveo", "pinggy"]:
+            is_active = True
         elif active_driver:
-            is_active = (p_id == active_driver)
+            is_active = (p_id == active_driver) and is_ready
         else:
-            is_active = (p_id == default_driver)
+            is_active = False
+
         name = getattr(cls, "DISPLAY_NAME", p_id.upper())
         has_cfg = getattr(cls, "HAS_CONFIG", False)
-        desc = getattr(cls, "DESCRIPTION", "网络穿透驱动：建立指向本地服务的高可用远程隧道通道。")
-        ver = getattr(cls, "VERSION", system_track)
-
         plugins.append({
-            "id": p_id,
-            "name": name,
-            "category": "tunnel",
-            "category_name": "🛰️ 网络穿透",
-            "status": "In-Use" if is_active else "Ready",
-            "is_in_use": is_active,
-            "is_enabled": (p_id not in disabled),
-            "origin": "core",
-            "version": ver,
-            "description": desc,
-            "has_config": has_cfg,
-            "is_configurable": has_cfg,
-            "cfg": current_cfg,
-            "is_manageable": True
+            "id": p_id, "name": name, "category": "tunnel", "category_name": "🛰️ 网络穿透",
+            "status": "In-Use" if is_active else "Ready", "is_in_use": is_active, "is_enabled": (p_id not in disabled),
+            "origin": "core", "version": getattr(cls, "VERSION", system_track),
+            "description": getattr(cls, "DESCRIPTION", "网络穿透驱动：建立指向本地服务的高可用远程隧道通道。"),
+            "has_config": has_cfg, "is_configurable": has_cfg, "cfg": current_cfg, "is_manageable": True
         })
+    order_priority = {"localhost_run": 0, "serveo": 1, "cloudflare": 2, "pinggy": 3, "cpolar": 4, "ngrok": 5, "frp": 6, "tailscale": 7}
+    plugins.sort(key=lambda p: order_priority.get(p["id"], 99))
     return plugins

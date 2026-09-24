@@ -235,7 +235,7 @@
             const qr = new QRCodeModel(type);
             qr.addData(text);
             qr.make();
-            const count = qr.getModuleCount(), margin = 2, total = count + margin * 2, cellSize = size / total;
+            const count = qr.getModuleCount(), margin = 4, total = count + margin * 2, cellSize = size / total;
             let d = '';
             for (let r = 0; r < count; r++) {
                 for (let c = 0; c < count; c++) {

@@ -22,6 +22,10 @@ class BaseTunnelAdapter(ABC):
     CATEGORY: str = "tunnel"
     # 版本标识
     VERSION: str = "V1.0"
+    # 插件图形图标 (如 "⚡", "☁️")
+    ICON: str = "⚡"
+    # 短描述信息 (用于移动端扫码下载弹窗卡片快速展示)
+    SHORT_DESC: str = ""
     # 是否支持通过表单或抽屉进行配置 (若为 False 则为免配置开箱即用型)
     HAS_CONFIG: bool = False
 
@@ -88,9 +92,13 @@ class TunnelRegistry:
 
     @classmethod
     def get_default_driver_id(cls) -> str:
-        """获取系统首选穿透驱动 ID (优先零依赖原生 SSH 的 pinggy，备选 cloudflare)"""
-        if "pinggy" in cls._registry:
-            return "pinggy"
+        """获取系统首选穿透驱动 ID (优先零安装零过度页的 localhost_run，备选 serveo, cloudflare)"""
+        if "localhost_run" in cls._registry:
+            return "localhost_run"
+        if "serveo" in cls._registry:
+            return "serveo"
         if "cloudflare" in cls._registry:
             return "cloudflare"
+        if "pinggy" in cls._registry:
+            return "pinggy"
         return next(iter(cls._registry.keys()), "")

@@ -1,0 +1,161 @@
+/**
+ * Illacme Plenipes - Bindery QR Diagnostic & Auto-Heal Styles
+ * 模块职责：移动端扫码诊断徽章、呼吸灯、多网卡切换药丸与链路自愈卡片样式。
+ * 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
+ * 🌞 [SOP-03 规范]：深色与亮色自适应支持，全面对齐主控设计系统变量。
+ */
+
+.qr-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.qr-pulse-dot.online {
+    background: var(--neon-green, rgba(255, 255, 255, 1));
+    box-shadow: 0 0 8px var(--shadow-neon-green, rgba(255, 255, 255, 0.7));
+    animation: qr-pulse-green 2s infinite ease-in-out;
+}
+
+.qr-pulse-dot.warning {
+    background: var(--neon-amber, rgba(255, 255, 255, 1));
+    box-shadow: 0 0 8px var(--shadow-neon-amber, rgba(255, 255, 255, 0.7));
+    animation: qr-pulse-amber 1.5s infinite ease-in-out;
+}
+
+.qr-pulse-dot.error {
+    background: var(--neon-red, rgba(255, 255, 255, 1));
+    box-shadow: 0 0 8px var(--shadow-neon-red, rgba(255, 255, 255, 0.7));
+}
+
+@keyframes qr-pulse-green {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(1.15); }
+}
+
+@keyframes qr-pulse-amber {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.mini-heal-btn {
+    background: linear-gradient(135deg, var(--neon-purple, rgba(255, 255, 255, 1)) 0%, var(--accent-primary, rgba(0, 0, 0, 1)) 100%);
+    color: var(--text-bright, rgba(255, 255, 255, 1)) !important;
+    border: none;
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px var(--accent-primary-20, rgba(255, 255, 255, 0.35));
+    transition: all 0.2s ease;
+}
+
+.mini-heal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px var(--accent-primary-20, rgba(255, 255, 255, 0.5));
+}
+
+.bindery-qr-diag-panel {
+    background: var(--glass-bg, rgba(0, 0, 0, 0.65));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 8px 0 14px;
+}
+
+.qr-diag-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.qr-diag-title {
+    font-weight: 700;
+    color: var(--text-bright, rgba(255, 255, 255, 1));
+    font-size: 0.76rem;
+}
+
+.qr-ip-pill {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    color: var(--text-dim, rgba(255, 255, 255, 0.7));
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.qr-ip-pill:hover {
+    background: var(--neon-green-08, rgba(255, 255, 255, 0.1));
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+}
+
+.qr-ip-pill.active {
+    background: var(--neon-green-15, rgba(255, 255, 255, 0.2));
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+    font-weight: 700;
+}
+
+.qr-metric-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.qr-metric-card .label {
+    color: var(--text-dim, rgba(255, 255, 255, 0.7));
+}
+
+.qr-diag-tips {
+    background: var(--accent-orange-05, rgba(255, 255, 255, 0.08));
+    border-left: 3px solid var(--neon-amber);
+    padding: 6px 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.7rem;
+    color: var(--text-normal, rgba(255, 255, 255, 0.9));
+}
+
+/* 亮色模式适配 */
+[data-theme="light"] .bindery-qr-diag-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .qr-diag-title {
+    color: var(--color-black, rgba(0, 0, 0, 1));
+}
+
+[data-theme="light"] .qr-ip-pill {
+    background: rgba(255, 255, 255, 1);
+    border-color: var(--glass-border, rgba(0, 0, 0, 0.15));
+    color: var(--text-muted, rgba(102, 102, 102, 1));
+}
+
+[data-theme="light"] .qr-metric-card {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .qr-metric-card .label {
+    color: var(--text-muted, rgba(102, 102, 102, 1));
+}
+
+[data-theme="light"] .qr-diag-tips {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-black, rgba(0, 0, 0, 1));
+}

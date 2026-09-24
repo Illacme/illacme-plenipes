@@ -84,7 +84,9 @@
                     <span>${p.name || id}</span>
                 </div>
             `;
-            body.innerHTML = '<div class="loading">正在提取插件治理元数据...</div>';
+            drawer.setAttribute('data-active-plugin-id', p.id);
+            drawer.setAttribute('data-active-plugin-category', p.category || '');
+            window._activeEditingPlugin = p;
             drawer.style.display = 'flex';
             requestAnimationFrame(() => {
                 drawer.classList.add('is-open');

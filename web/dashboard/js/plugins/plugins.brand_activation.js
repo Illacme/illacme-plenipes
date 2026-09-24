@@ -24,18 +24,61 @@
                 return;
             }
 
+            // 🛡️ [V127.0] 凭据就绪首道物理门禁：未填必要参数严禁在品牌中启用
+            const p = window.allPlugins ? window.allPlugins.find(x => x.id === id) : null;
+            const pluginName = p?.name || id;
+
+            let credState = { ready: true };
+            if (typeof window.isPluginCredentialReady === 'function') {
+                credState = window.isPluginCredentialReady(id, category, p?.cfg) || { ready: true };
+            }
+
+            if (checked && !credState.ready) {
+                const el = document.querySelector(`input[id="chk-use-${category}-${id}"]`) || document.querySelector(`input[onchange*="toggleBrandActivation('${id}'"]`);
+                if (el) el.checked = false;
+                setTimeout(() => {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '请先完成参数配置 ⚙️',
+                            html: `
+                                <div style="text-align:left; line-height:1.75; font-size:0.92rem; color:var(--text-bright);">
+                                    <p style="margin:0 0 12px 0;"><b>${pluginName}</b> 尚未配置必要密钥或连接参数（<span style="color:#ffb86c; font-weight:600;">${credState.label || '待配置'}</span>），无法在当前品牌中启用。</p>
+                                    <div style="background:rgba(255,184,108,0.08); border:1px solid rgba(255,184,108,0.25); border-radius:8px; padding:10px 14px;">
+                                        <b style="color:#ffb86c;">💡 规范流程：</b>
+                                        <span style="color:var(--text-dim);">请先点击该插件卡片下方的 <b>[⚙️ CONFIG]</b> 填入必要凭据，保存并验证通过后即可一键启用。</span>
+                                    </div>
+                                </div>`,
+                            icon: 'warning',
+                            confirmButtonText: '⚙️ 立即前往配置',
+                            showCancelButton: true,
+                            cancelButtonText: '稍后再说',
+                            background: 'var(--card-bg)',
+                            color: 'var(--text-bright)',
+                        }).then((res) => {
+                            if (res.isConfirmed) {
+                                if (typeof window.openPluginConfig === 'function') {
+                                    window.openPluginConfig(id, category);
+                                }
+                            }
+                        });
+                    } else if (window.showToast) {
+                        window.showToast(`请先点击 [CONFIG] 配置 ${pluginName} 后再启用`, 'warning');
+                    }
+                }, 50);
+                return;
+            }
+
             // 🔒 [V80.2] 品牌激活探针守卫：与全局驱动启用门槛一致
-            // 需要先通过「测试连接」确认配置有效，才允许品牌激活
-            if (checked) {
+            // 免密零依赖驱动（如 localhost_run / serveo / pinggy / catbox / tailscale 或 zero_config 模式）直接激活；其余需通过探针测试
+            const isZeroConfig = ['localhost_run', 'serveo', 'pinggy', 'catbox', 'tailscale'].includes(id) || credState?.mode === 'zero_config';
+            if (checked && !isZeroConfig) {
                 const needsProbe = ['hosting', 'publisher', 'image_hosting', 'notification', 'tunnel'].includes(category);
                 const isPassed = !!(window.probePassState && window.probePassState[id] === true);
                 if (needsProbe && !isPassed) {
                     // 回滚 checkbox 状态
-                    const el = document.querySelector(`input[onchange*="toggleBrandActivation('${id}'"]`);
+                    const el = document.querySelector(`input[id="chk-use-${category}-${id}"]`) || document.querySelector(`input[onchange*="toggleBrandActivation('${id}'"]`);
                     if (el) el.checked = false;
                     setTimeout(() => {
-                        const p = window.allPlugins ? window.allPlugins.find(x => x.id === id) : null;
-                        const pluginName = p?.name || id;
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 title: '先验证一下配置 🔌',
@@ -209,6 +252,12 @@
         } catch (e) {
             console.error("Brand toggle error:", e);
             if (typeof loadPlugins === 'function') await loadPlugins(true);
+        }
+    };
+
+    window.openPluginDrawer = (id, category = null) => {
+        if (typeof window.openPluginConfig === 'function') {
+            window.openPluginConfig(id, category);
         }
     };
 

@@ -103,6 +103,23 @@ class WebBookAdapter(BaseEBookAdapter):
                     titles_by_lang=titles_by_lang,
                     headings_by_lang=headings_by_lang
                 ))
+
+                # 沉浸式上一节/下一节导航卡片
+                footer_html = ""
+                total_chs = len(manuscript_tree)
+                if total_chs > 1:
+                    p_card, n_card = "", ""
+                    if idx > 0:
+                        p_t = escape(manuscript_tree[idx - 1].get("title", f"第 {idx} 节"))
+                        p_tag = "PREVIOUS" if iso_lang.startswith("en") else ("前の一節" if iso_lang.startswith("ja") else "上一节")
+                        p_card = f'<a href="#ch_{idx}" class="wb-nav-card prev"><span class="wb-nav-tag">← {p_tag}</span><span class="wb-nav-name">{p_t}</span></a>'
+                    if idx < total_chs - 1:
+                        n_t = escape(manuscript_tree[idx + 1].get("title", f"第 {idx + 2} 节"))
+                        n_tag = "NEXT" if iso_lang.startswith("en") else ("次の一節" if iso_lang.startswith("ja") else "下一节")
+                        n_card = f'<a href="#ch_{idx + 2}" class="wb-nav-card next"><span class="wb-nav-tag">{n_tag} →</span><span class="wb-nav-name">{n_t}</span></a>'
+                    if p_card or n_card:
+                        footer_html = f'<footer class="wb-chapter-footer"><div class="wb-ch-nav">{p_card}{n_card}</div></footer>'
+
                 chapters_html.append(f"""
                 <article id="{ch_id}" class="wb-chapter" data-title="{ch_title}">
                     <header class="wb-chapter-header">
@@ -111,6 +128,7 @@ class WebBookAdapter(BaseEBookAdapter):
                         {sub_title_block}
                     </header>
                     <div class="wb-chapter-body">{healed_body}</div>
+                    {footer_html}
                 </article>""")
 
             # 4. 版记 Colophon 组装 (单篇文章导出自动抑制)
@@ -191,9 +209,11 @@ class WebBookAdapter(BaseEBookAdapter):
 <style>{WebBookAssets.get_embedded_css()}</style>
 </head>
 <body>
+<div id="wb-backdrop" class="wb-backdrop"></div>
 <div id="wb-progress" class="wb-progress-bar"></div>
+<div id="wb-toast-capsule" class="wb-toast-capsule"></div>
 <header class="wb-topbar">
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="wb-topbar-left">
         <button id="wb-toggle-sidebar" class="wb-btn" title="{toggle_title}">☰</button>
         <span class="wb-book-title">{escape(title)}</span>
     </div>

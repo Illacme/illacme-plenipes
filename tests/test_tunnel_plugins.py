@@ -27,12 +27,54 @@ def client():
 
 
 def test_tunnel_registry_auto_discovery():
-    """验证驱动中枢自动扫描并注册了内置驱动"""
+    """验证驱动中枢自动扫描并注册了全部 8 种内置驱动"""
     drivers = TunnelRegistry.list_all()
-    assert "pinggy" in drivers
-    assert "cloudflare" in drivers
-    assert issubclass(drivers["pinggy"], BaseTunnelAdapter)
-    assert issubclass(drivers["cloudflare"], BaseTunnelAdapter)
+    expected = ["pinggy", "cloudflare", "localhost_run", "serveo", "cpolar", "frp", "ngrok", "tailscale"]
+    for d in expected:
+        assert d in drivers, f"Driver {d} should be registered in TunnelRegistry"
+        assert issubclass(drivers[d], BaseTunnelAdapter)
+
+
+def test_new_tunnel_drivers_contracts():
+    """验证新增驱动 (localhost_run, serveo, cpolar, frp, ngrok, tailscale) 的契约完整性"""
+    from core.adapters.tunnel.localhost_run import LocalhostRunTunnelAdapter
+    from core.adapters.tunnel.serveo import ServeoTunnelAdapter
+    from core.adapters.tunnel.cpolar import CpolarTunnelAdapter
+    from core.adapters.tunnel.frp import FrpTunnelAdapter
+    from core.adapters.tunnel.ngrok import NgrokTunnelAdapter
+    from core.adapters.tunnel.tailscale import TailscaleTunnelAdapter
+    from core.bindery.tunnel import get_tunnel_hub
+
+    adapters = [
+        LocalhostRunTunnelAdapter(),
+        ServeoTunnelAdapter(config={"subdomain": "testbook"}),
+        CpolarTunnelAdapter(config={"authtoken": "cp_test"}),
+        FrpTunnelAdapter(config={"server_addr": "127.0.0.1", "server_port": 7000}),
+        NgrokTunnelAdapter(config={"authtoken": "ng_test"}),
+        TailscaleTunnelAdapter(config={"funnel_mode": "funnel"})
+    ]
+    for adp in adapters:
+        assert adp.CATEGORY == "tunnel"
+        assert hasattr(adp, "ICON")
+        assert hasattr(adp, "SHORT_DESC")
+        status = adp.get_status()
+        assert status["is_running"] is False
+        assert status["provider"] == adp.PLUGIN_ID
+        probe_res = adp.probe()
+        assert "success" in probe_res
+
+    hub = get_tunnel_hub()
+    available = hub.list_available_drivers()
+    driver_ids = [d["id"] for d in available]
+    assert driver_ids[0] == "localhost_run"
+    assert driver_ids[1] == "serveo"
+    assert driver_ids[2] == "cloudflare"
+
+    # 验证 only_enabled=True 默认包含 localhost_run 与 serveo
+    enabled_drivers = hub.list_available_drivers(only_enabled=True)
+    enabled_ids = [d["id"] for d in enabled_drivers]
+    assert "localhost_run" in enabled_ids
+    assert "serveo" in enabled_ids
 
 
 def test_pinggy_driver_contracts():

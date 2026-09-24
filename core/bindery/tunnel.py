@@ -63,13 +63,14 @@ class TunnelHub:
         for k in expired:
             self._tokens.pop(k, None)
 
-    def get_status(self) -> Dict[str, Any]:
-        """获取当前公网隧道状态"""
+    def get_status(self, verify_alive: bool = False) -> Dict[str, Any]:
+        """获取当前公网隧道状态 (支持活性校验)"""
         # 兼容旧版及单测直接注入 _process / _public_url
         if self._process and getattr(self._process, "poll", lambda: None)() is None and self._public_url:
             uptime = int(time.time() - self._start_time)
             prov = self._provider or "tunnel"
-            prov_name = "Cloudflare Tunnel" if prov == "cloudflare" else ("Pinggy OpenSSH" if prov == "pinggy" else prov.upper())
+            cls = TunnelRegistry.get(prov)
+            prov_name = getattr(cls, "DISPLAY_NAME", prov.upper()) if cls else prov.upper()
             return {
                 "is_running": True,
                 "public_url": self._public_url,
@@ -87,6 +88,10 @@ class TunnelHub:
             }
         status = self._active_adapter.get_status()
         is_alive = status.get("is_running", False)
+        if is_alive and verify_alive and hasattr(self._active_adapter, "check_liveness"):
+            if not self._active_adapter.check_liveness():
+                self.stop_tunnel()
+                is_alive = False
         uptime = int(time.time() - self._start_time) if is_alive else 0
         prov = status.get("provider") if is_alive else None
         prov_name = ""
@@ -105,7 +110,7 @@ class TunnelHub:
     def _get_tunnel_config() -> dict:
         """安全读取当前系统配置中的 tunnel 段落"""
         try:
-            from core.config.config_models import load_config
+            from core.config.config import load_config
             sys_cfg = load_config()
             raw_t = getattr(sys_cfg, "tunnel", {})
             if isinstance(raw_t, dict):
@@ -116,8 +121,8 @@ class TunnelHub:
             pass
         return {}
 
-    def list_available_drivers(self) -> list:
-        """获取当前系统中所有已注册且已启用的穿透驱动"""
+    def list_available_drivers(self, only_enabled: bool = False) -> list:
+        """获取当前系统中所有已注册且已启用的穿透驱动 (支持按当前品牌启用状态过滤)"""
         tunnel_cfg = self._get_tunnel_config()
         active_driver = tunnel_cfg.get("active_driver", "")
         default_driver = TunnelRegistry.get_default_driver_id()
@@ -125,12 +130,28 @@ class TunnelHub:
         drivers = []
         for p_id, cls in TunnelRegistry.list_all().items():
             cfg = tunnel_cfg.get(p_id, {}) if isinstance(tunnel_cfg, dict) else {}
-            # 判断是否启用：显式为 False 时才过滤，默认 True
-            is_enabled = bool(cfg.get("enabled", True))
+            # 🛡️ 凭据就绪校验：若缺少核心参数（如 ngrok token、frp 域名），强制视为未启用
+            is_ready = True
+            if p_id == "ngrok":
+                is_ready = bool((cfg.get("authtoken") or "").strip())
+            elif p_id == "frp":
+                is_ready = bool((cfg.get("server_addr") or "").strip())
+
+            if not is_ready:
+                is_enabled = False
+            elif "enabled" in cfg:
+                is_enabled = bool(cfg.get("enabled"))
+            else:
+                is_enabled = (p_id in ["localhost_run", "serveo", "pinggy"])
+
+            if only_enabled and not is_enabled:
+                continue
+
             name = getattr(cls, "DISPLAY_NAME", p_id.upper())
-            desc = "Anycast 边缘加速 · 支持自定义域名" if p_id == "cloudflare" else "原生 SSH 免密直连 · 零配置即开即用"
-            icon = "☁️" if "cloudflare" in p_id else "⚡"
-            is_pref = (p_id == active_driver) or (not active_driver and p_id == default_driver)
+            desc = getattr(cls, "SHORT_DESC", "") or getattr(cls, "DESCRIPTION", "网络穿透通道")
+            icon = getattr(cls, "ICON", "⚡")
+            pref_driver = active_driver if (active_driver and (active_driver not in ["ngrok", "frp"] or bool(tunnel_cfg.get(active_driver, {}).get("authtoken" if active_driver == "ngrok" else "server_addr")))) else default_driver
+            is_pref = (p_id == pref_driver)
             drivers.append({
                 "id": p_id,
                 "name": name,
@@ -139,13 +160,25 @@ class TunnelHub:
                 "is_enabled": is_enabled,
                 "is_preferred": is_pref,
             })
-        order_priority = {"pinggy": 0, "cloudflare": 1}
+        order_priority = {
+            "localhost_run": 0,
+            "serveo": 1,
+            "cloudflare": 2,
+            "pinggy": 3,
+            "cpolar": 4,
+            "ngrok": 5,
+            "frp": 6,
+            "tailscale": 7,
+        }
         drivers.sort(key=lambda d: order_priority.get(d["id"], 99))
+        if only_enabled and not drivers:
+            # 兜底：若所有驱动被停用，至少保留首选驱动
+            return self.list_available_drivers(only_enabled=False)[:1]
         return drivers
 
     def start_tunnel(self, port: int = 43212, timeout_seconds: int = 15, driver: Optional[str] = None) -> Dict[str, Any]:
         """唤醒临时公网隧道 (支持指定驱动或按配置优先级自动调度)"""
-        cur = self.get_status()
+        cur = self.get_status(verify_alive=True)
         if cur.get("is_running") and cur.get("public_url"):
             if driver and cur.get("provider") != driver:
                 self.stop_tunnel()
@@ -157,6 +190,17 @@ class TunnelHub:
 
         tunnel_cfg = self._get_tunnel_config()
 
+        order_priority = {
+            "localhost_run": 0,
+            "serveo": 1,
+            "cloudflare": 2,
+            "pinggy": 3,
+            "cpolar": 4,
+            "ngrok": 5,
+            "frp": 6,
+            "tailscale": 7,
+        }
+
         candidates = []
         if driver:
             if driver in TunnelRegistry.list_all():
@@ -167,10 +211,8 @@ class TunnelHub:
             active_driver = tunnel_cfg.get("active_driver", "")
             if active_driver and active_driver in TunnelRegistry.list_all():
                 candidates.append(active_driver)
-            for d in ["pinggy", "cloudflare"]:
-                if d in TunnelRegistry.list_all() and d not in candidates:
-                    candidates.append(d)
-            for d in TunnelRegistry.list_all().keys():
+            all_drivers = sorted(TunnelRegistry.list_all().keys(), key=lambda x: order_priority.get(x, 99))
+            for d in all_drivers:
                 if d not in candidates:
                     candidates.append(d)
 
@@ -179,14 +221,16 @@ class TunnelHub:
             if not cls:
                 continue
             d_cfg = tunnel_cfg.get(d_id, {}) if isinstance(tunnel_cfg, dict) else {}
-            if not driver and "enabled" in d_cfg and not d_cfg.get("enabled"):
-                continue
+            if not driver:
+                d_enabled = d_cfg.get("enabled", True if d_id in ["localhost_run", "serveo", "pinggy"] else False)
+                if not d_enabled:
+                    continue
 
             adapter = cls(config=d_cfg)
-            if d_id == "cloudflare":
+            if not driver and d_id in ["cloudflare", "cpolar", "frp", "ngrok", "tailscale"]:
                 probe_res = adapter.probe()
                 if not probe_res.get("healthy"):
-                    last_error = probe_res.get("message", "本地环境缺少 cloudflared 组件")
+                    last_error = probe_res.get("message", f"驱动 [{d_id}] 环境未就绪")
                     continue
 
             res = adapter.start_tunnel(local_port=port, timeout_seconds=timeout_seconds)

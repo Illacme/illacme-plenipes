@@ -6,29 +6,70 @@
 
 async def dry_run_plugin_impl(payload: dict) -> dict:
     """
-    🔌 [V74.9] 物理通道连接测试引擎入口
+    🔌 [V74.92] 物理通道连接测试引擎入口
+    强化沙箱防御隔离与异常原始现场透传 (符合 SOP-01, Rule 8, Rule 16)。
     """
-    plugin_id = payload.get("id") or payload.get("plugin_id")
-    parent_id = payload.get("parentId")
-    settings = payload.get("settings", {})
-    from core.config.assembler import resolve_secrets
-    if isinstance(settings, dict):
-        settings = resolve_secrets(dict(settings))
-
     import datetime
     def log(level: str, msg: str) -> dict:
         now = datetime.datetime.now().strftime("%H:%M:%S")
         return {"time": now, "level": level, "message": msg}
 
     logs = []
-    logs.append(log("INFO", f"⚙️ 启动物理通道连接测试管线... (目标能力: {plugin_id or parent_id})"))
-    logs.append(log("INFO", "📥 [方言解析层] 自动装载系统样本原稿 (draft_emulation.md)..."))
-    
-    # 模拟加工转换层
-    logs.append(log("INFO", "🧠 [加工层] 物理格式识别：检测到 Standard Markdown 指纹。"))
-    logs.append(log("INFO", "🛠️ [加工层] HTML/Markdown 逆向渲染树生成成功。"))
-    logs.append(log("INFO", "🛡️ [安全层] 执行 Image Masker 隐私过滤：未检测到敏感图片或地理标记指纹。"))
-    logs.append(log("INFO", "🔑 [授权层] 路由解析：物理凭据寻址完成。"))
+
+    # 🛡️ [Rule 8] 防御性数据解包：杜绝非 dict 导致的 AttributeError (500 错误)
+    if not isinstance(payload, dict):
+        payload = {}
+    plugin_id = str(payload.get("id") or payload.get("plugin_id") or "").strip()
+    parent_id = str(payload.get("parentId") or "").strip()
+    raw_settings = payload.get("settings")
+    settings = raw_settings if isinstance(raw_settings, dict) else {}
+
+    from core.config.assembler import resolve_secrets
+    try:
+        settings = resolve_secrets(dict(settings))
+    except Exception:
+        pass
+
+    # 🛡️ [Rule 16] 原始异常穿透分析器：提取真实 HTTP 状态码、错误类型与底层上下文
+    def format_raw_exception(exc: Exception) -> str:
+        exc_type = type(exc).__name__
+        status_code = None
+        resp_text = ""
+        resp = getattr(exc, "response", None)
+        if resp is not None:
+            status_code = getattr(resp, "status_code", None)
+            try:
+                raw_t = getattr(resp, "text", "")
+                if raw_t:
+                    resp_text = raw_t[:160].replace("\n", " ").strip()
+            except Exception:
+                pass
+        parts = [f"类型: {exc_type}"]
+        if status_code:
+            parts.append(f"HTTP 状态码: {status_code}")
+        parts.append(f"原始原因: {str(exc) or '未提供详细原因'}")
+        if resp_text:
+            parts.append(f"响应片段: {resp_text}")
+        return " | ".join(parts)
+
+    logs.append(log("INFO", f"⚙️ 启动物理通道连接测试管线... (目标能力: {plugin_id or parent_id or '未指定'})"))
+
+    if not plugin_id and not parent_id:
+        logs.append(log("ERROR", "❌ [参数缺失] 缺少有效的插件标识 (id / plugin_id) 或分类 (parentId)。"))
+        logs.append(log("ERROR", "🔴 [失败] 物理链路存在断点，连接测试终止。请核对上方的错误日志并修正配置。"))
+        return {"success": False, "logs": logs, "error": "Plugin ID is required"}
+
+    from core.adapters.tunnel import TunnelRegistry
+    is_tunnel_plugin = (parent_id == "tunnel") or bool(TunnelRegistry.get(plugin_id or ""))
+    from core.adapters.ai.registry import AIProviderRegistry
+    ai_protocols = AIProviderRegistry.get_all_protocols()
+
+    if not is_tunnel_plugin and plugin_id not in ai_protocols:
+        logs.append(log("INFO", "📥 [方言解析层] 自动装载系统样本原稿 (draft_emulation.md)..."))
+        logs.append(log("INFO", "🧠 [加工层] 物理格式识别：检测到 Standard Markdown 指纹。"))
+        logs.append(log("INFO", "🛠️ [加工层] HTML/Markdown 逆向渲染树生成成功。"))
+        logs.append(log("INFO", "🛡️ [安全层] 执行 Image Masker 隐私过滤：未检测到敏感图片或地理标记指纹。"))
+        logs.append(log("INFO", "🔑 [授权层] 路由解析：物理凭据寻址完成。"))
 
     # 实体级凭据握手物理探测
     success = True
@@ -43,9 +84,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     ]
     hosting_plugins = ["cloudflare_pages", "github_pages", "gitee_pages", "gitlab_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
     notification_plugins = ["feishu", "dingtalk", "wecom", "telegram", "discord", "generic_webhook", "generic", "webhook_dispatch", "email", "sms", "app_push"]
-
-    from core.adapters.ai.registry import AIProviderRegistry
-    ai_protocols = AIProviderRegistry.get_all_protocols()
 
     # 🧠 [AI Protocol] AI 算力协议独立物理探测与模型资产感应
     if plugin_id in ai_protocols:
@@ -74,95 +112,134 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
             logs.append(log("INFO", f"🔑 [授权] 物理 API Key 凭据已装载 ({masked})。"))
 
         logs.append(log("INFO", f"📡 [探测] 正在向端点 {target_url} 发起物理连通性握手与模型资产感应..."))
-        from core.logic.diagnostics.component_monitor import ComponentMonitor
-        res = await ComponentMonitor.validate_ai_connectivity(
-            provider=plugin_id,
-            model=model,
-            api_key=api_key,
-            base_url=target_url
-        )
-        if res.get("status") == "success":
-            msg = res.get("message", "连通成功")
-            models = res.get("models", [])
-            logs.append(log("INFO", f"🟢 [成功] 对端服务响应正常！{msg}"))
-            if models:
-                preview_models = ", ".join(models[:5]) + ("..." if len(models) > 5 else "")
-                logs.append(log("INFO", f"🤖 [可用模型] 已探测到模型资产: {preview_models}"))
-        else:
-            err_msg = res.get("message", "未知错误")
-            logs.append(log("ERROR", f"❌ [探测失败] 对端服务返回异常: {err_msg}"))
+        try:
+            from core.logic.diagnostics.component_monitor import ComponentMonitor
+            res = await ComponentMonitor.validate_ai_connectivity(
+                provider=plugin_id,
+                model=model,
+                api_key=api_key,
+                base_url=target_url
+            )
+            if res.get("status") == "success":
+                msg = res.get("message", "连通成功")
+                models = res.get("models", [])
+                logs.append(log("INFO", f"🟢 [成功] 对端服务响应正常！{msg}"))
+                if models:
+                    preview_models = ", ".join(models[:5]) + ("..." if len(models) > 5 else "")
+                    logs.append(log("INFO", f"🤖 [可用模型] 已探测到模型资产: {preview_models}"))
+            else:
+                err_msg = res.get("message", "未知错误")
+                raw_code = res.get("code") or res.get("status_code")
+                code_info = f" (HTTP {raw_code})" if raw_code else ""
+                logs.append(log("ERROR", f"❌ [探测失败] 对端算力服务返回异常{code_info}: {err_msg}"))
+                success = False
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [算力探测异常] {format_raw_exception(exc)}"))
             success = False
 
     # 🛰️ [Tunnel] 公网与网络穿透驱动物理连通性仿真测试
-    elif plugin_id in ("cloudflare", "pinggy"):
-        from core.adapters.tunnel import TunnelRegistry
-        adapter_cls = TunnelRegistry.get(plugin_id)
-        if adapter_cls:
-            adapter = adapter_cls(config=settings)
-            logs.append(log("INFO", f"🛰️ [穿透链路探测] 启动 {adapter.DISPLAY_NAME} 探针自检..."))
-            token = settings.get("tunnel_token", "").strip()
-            hostname = settings.get("hostname", "").strip()
-            if plugin_id == "cloudflare":
-                if token:
-                    masked = token[:6] + "..." + token[-4:] if len(token) > 10 else "****"
-                    logs.append(log("INFO", f"🔑 [授权层] 已载入 Cloudflare Tunnel Token: {masked}"))
+    elif is_tunnel_plugin:
+        try:
+            adapter_cls = TunnelRegistry.get(plugin_id)
+            if adapter_cls:
+                adapter = adapter_cls(config=settings)
+                logs.append(log("INFO", f"🛰️ [穿透链路探测] 启动 {adapter.DISPLAY_NAME} 探针自检..."))
+                token = settings.get("tunnel_token") or settings.get("token") or settings.get("authtoken") or ""
+                hostname = settings.get("hostname") or settings.get("custom_domain") or settings.get("domain") or settings.get("subdomain") or ""
+                if plugin_id == "cloudflare":
+                    if token:
+                        masked = token[:6] + "..." + token[-4:] if len(token) > 10 else "****"
+                        logs.append(log("INFO", f"🔑 [授权层] 已载入 Cloudflare Tunnel Token: {masked}"))
+                        if hostname:
+                            logs.append(log("INFO", f"🌐 [域名路由] 绑定专属公网域名: https://{hostname}"))
+                    else:
+                        logs.append(log("INFO", "💡 [免密模式] 未检测到 Tunnel Token，将以 Quick Tunnel 临时免密通道运行。"))
+                elif token:
+                    masked = str(token)[:6] + "..." + str(token)[-4:] if len(str(token)) > 10 else "****"
+                    logs.append(log("INFO", f"🔑 [授权层] 已载入穿透授权凭据: {masked}"))
                     if hostname:
-                        logs.append(log("INFO", f"🌐 [域名路由] 绑定专属公网域名: https://{hostname}"))
+                        logs.append(log("INFO", f"🌐 [域名路由] 绑定专属公网域名: {hostname}"))
+                elif not getattr(adapter_cls, "HAS_CONFIG", False):
+                    logs.append(log("INFO", "💡 [免密模式] 零配置免密穿透通道，开箱即用。"))
+
+                probe_res = adapter.probe()
+                if probe_res.get("healthy"):
+                    logs.append(log("SUCCESS", f"🟢 [探针握手] {probe_res.get('message', '连通测试正常')}"))
+                    success = True
+                elif probe_res.get("success"):
+                    logs.append(log("WARN", f"⚠️ [环境提示] {probe_res.get('message', '边缘网关可达，但底层组件需就绪')}"))
+                    success = True
                 else:
-                    logs.append(log("INFO", "💡 [免密模式] 未检测到 Tunnel Token，将以 Quick Tunnel 临时免密通道运行。"))
-            probe_res = adapter.probe()
-            if probe_res.get("healthy"):
-                logs.append(log("SUCCESS", f"🟢 [探针握手] {probe_res.get('message', '连通测试正常')}"))
-                success = True
-            elif probe_res.get("success"):
-                logs.append(log("WARN", f"⚠️ [环境提示] {probe_res.get('message', '边缘网关可达，但底层组件需就绪')}"))
-                success = True
+                    logs.append(log("ERROR", f"❌ [探测失败] {probe_res.get('message', '边缘连接失败')}"))
+                    success = False
             else:
-                logs.append(log("ERROR", f"❌ [探测失败] {probe_res.get('message', '边缘连接失败')}"))
+                logs.append(log("ERROR", f"❌ [未找到驱动] 穿透驱动注册表中未发现 ID: {plugin_id}"))
                 success = False
-        else:
-            logs.append(log("ERROR", f"❌ [未找到驱动] 穿透驱动注册表中未发现 ID: {plugin_id}"))
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [穿透探针异常] {format_raw_exception(exc)}"))
             success = False
 
     # 📧 📱 📲 [Notice & Webhook] 邮件、短信、App推送与机器人通道连通性探测
     elif plugin_id in ("email", "sms", "app_push") or plugin_id in notification_plugins or parent_id == "webhook_gateway":
         from .plugin_dry_run_notice import run_notice_plugin_dry_run
-        success = run_notice_plugin_dry_run(plugin_id, parent_id, settings, logs, log)
+        try:
+            success = run_notice_plugin_dry_run(plugin_id, parent_id, settings, logs, log)
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [通知网关异常] {format_raw_exception(exc)}"))
+            success = False
 
     elif plugin_id in media_plugins:
         import asyncio
         from .plugin_dry_run_media import run_media_plugin_dry_run
         try:
-            asyncio.get_running_loop()
             success = await asyncio.to_thread(run_media_plugin_dry_run, plugin_id, settings, logs, log)
-        except Exception:
-            success = run_media_plugin_dry_run(plugin_id, settings, logs, log)
+        except RuntimeError:
+            try:
+                success = run_media_plugin_dry_run(plugin_id, settings, logs, log)
+            except Exception as exc:
+                logs.append(log("ERROR", f"❌ [存储介质异常] {format_raw_exception(exc)}"))
+                success = False
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [存储介质异常] {format_raw_exception(exc)}"))
+            success = False
+
     elif plugin_id in syndication_plugins:
         import asyncio
         from .plugin_dry_run_social import run_social_plugin_dry_run
         try:
-            asyncio.get_running_loop()
             success = await asyncio.to_thread(run_social_plugin_dry_run, plugin_id, settings, logs, log)
-        except Exception:
-            success = run_social_plugin_dry_run(plugin_id, settings, logs, log)
+        except RuntimeError:
+            try:
+                success = run_social_plugin_dry_run(plugin_id, settings, logs, log)
+            except Exception as exc:
+                logs.append(log("ERROR", f"❌ [分发渠道异常] {format_raw_exception(exc)}"))
+                success = False
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [分发渠道异常] {format_raw_exception(exc)}"))
+            success = False
+
     elif plugin_id in hosting_plugins:
         import asyncio
         from .plugin_dry_run_hosting import run_hosting_plugin_dry_run
         try:
-            asyncio.get_running_loop()
             success = await asyncio.to_thread(run_hosting_plugin_dry_run, plugin_id, settings, logs, log)
-        except Exception:
-            success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
+        except RuntimeError:
+            try:
+                success = run_hosting_plugin_dry_run(plugin_id, settings, logs, log)
+            except Exception as exc:
+                logs.append(log("ERROR", f"❌ [全站托管异常] {format_raw_exception(exc)}"))
+                success = False
+        except Exception as exc:
+            logs.append(log("ERROR", f"❌ [全站托管异常] {format_raw_exception(exc)}"))
+            success = False
 
     else:
-        # 获取需要验证的字段（向下兼容多平台定制的个性化参数映射）
         url = settings.get("url") or settings.get("api_url") or ""
         api_key = settings.get("api_key") or settings.get("application_password") or settings.get("integration_token") or ""
         secret = settings.get("secret") or ""
         token = settings.get("token") or ""
         app_password = settings.get("app_password") or ""
 
-        # 进行真实的凭据校验模拟
         target_key = api_key or token or app_password or secret
         target_url = url
 
@@ -174,13 +251,11 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
             else:
                 logs.append(log("INFO", "🟢 [探测] TCP 三次握手成功，对端物理网络可达。"))
         else:
-            # 如果是某些没有配置 URL 的插件，模拟默认连接
             logs.append(log("INFO", "📡 [探测] 正在连接至云端默认出版网关端点..."))
             logs.append(log("INFO", "🟢 [探测] 网络隧道建立成功。"))
 
         if success:
             if target_key:
-                # 校验是否为默认占位符或无效密钥
                 if any(placeholder in str(target_key).lower() for placeholder in ["your_", "placeholder", "undefined", "null", "bucket_name"]):
                     logs.append(log("ERROR", f"❌ [错误] 检测到访问密钥或凭据使用默认占位符/未定义: '{target_key}'"))
                     success = False
@@ -189,7 +264,6 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
                     logs.append(log("INFO", f"🔑 [授权] 物理指纹校验：凭据 {masked_key} 校验通过。"))
                     logs.append(log("INFO", "🟢 [探测] 对端 API 授权会话建立成功！"))
             else:
-                # 如果是有凭据要求的通道但未提供
                 logs.append(log("ERROR", "❌ [错误] 未提供授权密钥 (Key/Token/Secret)，对端服务器拒绝连接。"))
                 success = False
 

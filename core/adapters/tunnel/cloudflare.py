@@ -25,6 +25,8 @@ class CloudflareTunnelAdapter(BaseTunnelAdapter):
     DISPLAY_NAME = "Cloudflare Tunnel"
     DESCRIPTION = "基于 Cloudflare 全球 Anycast 网络的工业级穿透驱动。支持免密临时通道，或配置自建 Tunnel Token 享受专属域名加速。"
     VERSION = "V1.0"
+    ICON = "☁️"
+    SHORT_DESC = "Anycast 边缘加速 · 支持自定义域名"
     HAS_CONFIG = True
 
     def _locate_bin(self) -> Optional[str]:

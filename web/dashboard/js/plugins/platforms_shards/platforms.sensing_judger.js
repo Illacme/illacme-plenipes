@@ -194,13 +194,14 @@ window.isPluginCredentialReady = (pluginId, category, cfg) => {
         return { ready: false, mode: 'missing', label: '待填 Access Key' };
     }
 
-    // 0. 网络穿透驱动 (Tunnel: Pinggy SSH / Cloudflare Tunnel)
+    // 0. 网络穿透驱动 (Tunnel: Pinggy / Localhost.run / Serveo / Cloudflare / cpolar / FRP / ngrok / Tailscale)
     if (category === 'tunnel' || pluginId === 'pinggy') {
-        if (pluginId === 'pinggy') return { ready: true, mode: 'zero_config', label: '免配即用' };
-        if (pluginId === 'cloudflare') {
-            const hasToken = Boolean(pCfg.tunnel_token && !isPlaceholderValue(pCfg.tunnel_token));
-            return hasToken ? { ready: true, mode: 'token', label: '专属通道就绪' } : { ready: true, mode: 'quick', label: '免配即用' };
-        }
+        if (['pinggy', 'localhost_run', 'serveo', 'tailscale'].includes(pluginId)) return { ready: true, mode: 'zero_config', label: '免配即用' };
+        if (pluginId === 'cloudflare') return (pCfg.tunnel_token && !isPlaceholderValue(pCfg.tunnel_token)) ? { ready: true, mode: 'token', label: '专属通道就绪' } : { ready: true, mode: 'quick', label: '免配即用' };
+        if (pluginId === 'cpolar') return (pCfg.authtoken && !isPlaceholderValue(pCfg.authtoken)) ? { ready: true, mode: 'token', label: 'Token 就绪' } : { ready: true, mode: 'quick', label: '免配即用' };
+        if (pluginId === 'ngrok') return (pCfg.authtoken && !isPlaceholderValue(pCfg.authtoken)) ? { ready: true, mode: 'token', label: 'Token 就绪' } : { ready: false, mode: 'missing', label: '待填 Token' };
+        if (pluginId === 'frp') return (pCfg.server_addr && !isPlaceholderValue(pCfg.server_addr)) ? { ready: true, mode: 'config', label: '自建节点就绪' } : { ready: false, mode: 'missing', label: '待配服务器' };
+        return { ready: true, mode: 'ready', label: '就绪' };
     }
 
     // 4. Vercel / Netlify / Cloudflare Pages (CLI / OAuth 免密)

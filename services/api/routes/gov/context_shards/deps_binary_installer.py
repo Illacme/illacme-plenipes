@@ -110,7 +110,7 @@ def install_cloudflared_binary(log_fn) -> Dict[str, Any]:
         f"https://mirror.ghproxy.com/https://github.com/cloudflare/cloudflared/releases/latest/download/{pkg_name}"
     ]
 
-    _log("INFO", f"🌐 [网络拉取] 正在从官方及加速源拉取静态组件 (约 15~35MB)...")
+    _log("INFO", "🌐 [网络拉取] 正在从官方及加速源拉取静态组件 (约 15~35MB)...")
     content = download_binary_stream(urls, timeout=60)
     if not content:
         _log("ERROR", "❌ [下载失败] 连接官方 Releases 及加速镜像源均超时，请检查外网连接。")
