@@ -203,9 +203,10 @@
     function renderQrView(data, mode, status = null) {
         const contentEl = document.getElementById('bindery-qr-content');
         if (!contentEl) return;
-        const curAct = data.act_type || window._binderyQrAction || 'view';
+        const isWb = data.filename.endsWith('.html');
+        const curAct = isWb ? 'view' : (data.act_type || window._binderyQrAction || 'view');
         const isView = curAct === 'view';
-        const tip = isView ? '手机 / 平板扫码立即开启沉浸翻阅体验' : '手机 / 平板扫码即刻下载原件并导入本地阅读器';
+        const tip = isWb ? '手机 / 平板扫码立即开启 WebBook 全景翻阅体验' : (isView ? '手机 / 平板扫码立即开启沉浸翻阅体验' : '手机 / 平板扫码即刻下载原件并导入本地阅读器');
         let qrHtml = '';
         if (data.qr_data_uri) {
             qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.18); margin-bottom:10px;"><img src="${data.qr_data_uri}" alt="扫码直达" style="width:190px; height:190px; display:block; image-rendering:pixelated;" /></div>`;
@@ -224,12 +225,9 @@
         const isServeo = (status && (status.provider === 'serveo' || (status.public_url && status.public_url.indexOf('serveousercontent') !== -1))) || (data && data.url && data.url.indexOf('serveousercontent') !== -1);
         const serveoNotice = isServeo ? `<div style="font-size:0.7rem; color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:4px 8px; margin:0 auto 10px; max-width:320px; line-height:1.4;">💡 Serveo 官方防钓鱼拦截：手机打开后请轻触【Continue to Site】按钮即可直达。</div>` : '';
 
-        const modeSelector = `
-            <div style="display:inline-flex; background:rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:2px; margin-bottom:8px;">
-                <button type="button" onclick="window.switchBinderyQrAction('view')" style="border:none; background:${isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">👁️ 扫码即读</button>
-                <button type="button" onclick="window.switchBinderyQrAction('download')" style="border:none; background:${!isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${!isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">⬇️ 扫码下载</button>
-            </div>
-        `;
+        const modeSelector = isWb
+            ? `<div style="display:inline-flex; align-items:center; gap:4px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:8px; padding:3px 10px; font-size:0.72rem; color:var(--accent, #10b981); font-weight:600; margin-bottom:8px;"><span>🌐 WebBook 扫码即读</span></div>`
+            : `<div style="display:inline-flex; background:rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:2px; margin-bottom:8px;"><button type="button" onclick="window.switchBinderyQrAction('view')" style="border:none; background:${isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">👁️ 扫码即读</button><button type="button" onclick="window.switchBinderyQrAction('download')" style="border:none; background:${!isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${!isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">⬇️ 扫码下载</button></div>`;
         contentEl.innerHTML = `
             <div style="text-align:center;">
                 <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">${badge}${modeSelector}</div>
@@ -245,7 +243,7 @@
                 <div class="bindery-qr-footer">
                     ${actionBtns ? `<span>${actionBtns}</span>` : `<span>节点: <strong>${esc(data.lan_ip)}:${esc(data.port)}</strong></span>`}
                     <span style="opacity:0.3;">|</span>
-                    <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary, #0284c7); text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:500;">在新标签${isView ? '翻阅' : '下载'} ↗</a>
+                    <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary, #0284c7); text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:500;">在新标签${(isWb || isView) ? '翻阅' : '下载'} ↗</a>
                 </div>
             </div>
         `;
