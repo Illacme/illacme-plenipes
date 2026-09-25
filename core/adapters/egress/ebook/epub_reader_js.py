@@ -91,8 +91,8 @@ def get_epub_reader_js() -> str:
       window.scrollTo({ top: 0 });
       setTimeout(updatePagination, 60);
     } else {
-      if (bContent) bContent.style.transform = '';
-      if (pBar) pBar.style.width = '0%';
+      if (vp) vp.classList.remove('spread-active');
+      if (bContent) bContent.style.transform = ''; if (pBar) pBar.style.width = '0%';
     }
   }
 

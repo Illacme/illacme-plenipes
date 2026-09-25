@@ -157,18 +157,19 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
   padding: 14px 54px; box-sizing: border-box; cursor: pointer; max-width: 1440px; margin: 0 auto;
 }
 
-/* 📑 宽屏仿真双页对开与书脊阴影折痕 */
-.er-viewport.spread-active::after {
+/* 📑 宽屏仿真双页对开与书脊阴影折痕 (仅在翻页仿真模式下呈现) */
+[data-read-mode="paginated"] .er-viewport.spread-active::after {
   content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 44px;
   transform: translateX(-50%); pointer-events: none; z-index: 550;
   background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0) 100%);
 }
-[data-theme="sepia"] .er-viewport.spread-active::after {
+[data-read-mode="paginated"][data-theme="sepia"] .er-viewport.spread-active::after {
   background: linear-gradient(to right, rgba(67,52,34,0) 0%, rgba(67,52,34,0.22) 50%, rgba(67,52,34,0) 100%);
 }
-[data-theme="light"] .er-viewport.spread-active::after {
+[data-read-mode="paginated"][data-theme="light"] .er-viewport.spread-active::after {
   background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0) 100%);
 }
+[data-read-mode="scroll"] .er-viewport::after { display: none !important; }
 
 [data-read-mode="paginated"] .er-book-content {
   height: 100%;
