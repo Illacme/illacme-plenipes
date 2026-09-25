@@ -7,8 +7,6 @@ Illacme Plenipes - EPUB Embedded Reader Engine
 
 import os
 import re
-import base64
-import mimetypes
 import zipfile
 import html
 import xml.etree.ElementTree as ET
@@ -17,78 +15,13 @@ from typing import Dict, List, Any
 from .epub_reader_css import get_epub_reader_css
 from .epub_reader_js import get_epub_reader_js
 from .epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
-
-
-def _extract_body_html(xhtml_content: str) -> str:
-    """提取 XHTML 中的 body 内部 HTML 节点"""
-    body_match = re.search(r"<body[^>]*>(.*?)</body>", xhtml_content, re.DOTALL | re.IGNORECASE)
-    return body_match.group(1).strip() if body_match else xhtml_content.strip()
-
-
-def _resolve_zip_images(z: zipfile.ZipFile, chapter_dir: str, content: str) -> str:
-    """将 XHTML 中的相对图片路径自动替换为 base64 DataURL"""
-    def replacer(match):
-        orig_tag = match.group(0)
-        src = match.group(1)
-        if src.startswith(("data:", "http://", "https://")):
-            return orig_tag
-        rel_path = os.path.normpath(os.path.join(chapter_dir, src)).replace("\\", "/")
-        if rel_path in z.namelist():
-            img_bytes = z.read(rel_path)
-            mime = mimetypes.guess_type(rel_path)[0] or "image/png"
-            b64_data = base64.b64encode(img_bytes).decode("ascii")
-            return orig_tag.replace(src, f"data:{mime};base64,{b64_data}")
-        return orig_tag
-
-    return re.sub(r'<img[^>]+src=["\']([^"\']+)["\']', replacer, content, flags=re.IGNORECASE)
-
-
-def _rewrite_internal_links(content: str) -> str:
-    """重写正文内的相对章节跳转，杜绝 404 Not Found"""
-    def replacer(m):
-        full_tag = m.group(0)
-        raw_href = m.group(1)
-        if raw_href.startswith(("http://", "https://", "mailto:", "data:", "#")):
-            return full_tag
-        if "#" in raw_href:
-            target = "#" + raw_href.split("#", 1)[1]
-        else:
-            base = os.path.basename(raw_href)
-            target = "#er-doc-" + re.sub(r"[^a-zA-Z0-9_-]", "_", base)
-        return full_tag.replace(f'href="{raw_href}"', f'href="{target}" data-epub-href="{raw_href}"').replace(f"href='{raw_href}'", f'href="{target}" data-epub-href="{raw_href}"')
-
-    return re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\']', replacer, content, flags=re.IGNORECASE)
-
-
-def _parse_hierarchical_toc(z: zipfile.ZipFile, manifest: Dict[str, Dict[str, str]]) -> str:
-    """从 nav.xhtml 或 toc.ncx 中解析具有完整缩进层次的多级目录树"""
-    nav_item = next((v for v in manifest.values() if "nav" in v.get("properties", "") or v["href"].endswith(("nav.xhtml", "nav.html"))), None)
-    if nav_item and nav_item["href"] in z.namelist():
-        nav_xml = z.read(nav_item["href"]).decode("utf-8", errors="ignore")
-        match = re.search(r"<nav[^>]*epub:type=[\"']toc[\"'][^>]*>(.*?)</nav>", nav_xml, re.DOTALL | re.IGNORECASE)
-        if not match:
-            match = re.search(r"<nav[^>]*>(.*?)</nav>", nav_xml, re.DOTALL | re.IGNORECASE)
-        if match:
-            inner = re.sub(r"<h[1-6][^>]*>.*?</h[1-6]>", "", match.group(1), flags=re.DOTALL | re.IGNORECASE)
-            
-            def link_sub(m):
-                raw_href = m.group(1)
-                text = m.group(2)
-                if "#" in raw_href:
-                    target = "#" + raw_href.split("#", 1)[1]
-                else:
-                    base = os.path.basename(raw_href)
-                    target = "#er-doc-" + re.sub(r"[^a-zA-Z0-9_-]", "_", base)
-                return f'<a href="{target}" data-epub-href="{raw_href}">{text}</a>'
-
-            res = re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', link_sub, inner, flags=re.DOTALL | re.IGNORECASE).strip()
-            if re.search(r"^<ol\b", res, re.IGNORECASE):
-                res = re.sub(r"^<ol\b[^>]*>", '<ol class="er-toc-tree">', res, count=1, flags=re.IGNORECASE)
-            else:
-                res = f'<ol class="er-toc-tree">{res}</ol>'
-            return res
-
-    return ""
+from .epub_reader_search import get_epub_search_css, get_epub_search_js
+from .epub_reader_parser import (
+    extract_body_html,
+    resolve_zip_images,
+    rewrite_internal_links,
+    parse_hierarchical_toc,
+)
 
 
 def render_epub_reader_html(epub_path: str) -> str:
@@ -109,8 +42,6 @@ def render_epub_reader_html(epub_path: str) -> str:
 
         title_el = opf_root.find(".//dc:title", ns)
         book_title = title_el.text if title_el is not None and title_el.text else os.path.splitext(os.path.basename(epub_path))[0]
-        creator_el = opf_root.find(".//dc:creator", ns)
-        book_author = creator_el.text if creator_el is not None and creator_el.text else "佚名"
 
         manifest: Dict[str, Dict[str, str]] = {}
         for item in opf_root.findall(".//opf:manifest/opf:item", ns):
@@ -119,7 +50,7 @@ def render_epub_reader_html(epub_path: str) -> str:
             manifest[i_id] = {"href": i_href, "media-type": item.attrib.get("media-type", ""), "properties": item.attrib.get("properties", "")}
 
         spine_ids = [ref.attrib["idref"] for ref in opf_root.findall(".//opf:spine/opf:itemref", ns)]
-        toc_tree_html = _parse_hierarchical_toc(z, manifest)
+        toc_tree_html = parse_hierarchical_toc(z, manifest)
 
         chapters: List[Dict[str, Any]] = []
         fallback_toc: List[Dict[str, str]] = []
@@ -134,9 +65,9 @@ def render_epub_reader_html(epub_path: str) -> str:
             card_id = f"er-doc-{clean_base}"
 
             raw_content = z.read(href).decode("utf-8", errors="replace")
-            processed_html = _resolve_zip_images(z, os.path.dirname(href), raw_content)
-            body_html = _extract_body_html(processed_html)
-            body_html = _rewrite_internal_links(body_html)
+            processed_html = resolve_zip_images(z, os.path.dirname(href), raw_content)
+            body_html = extract_body_html(processed_html)
+            body_html = rewrite_internal_links(body_html)
 
             is_cover = "cover" in base_fn.lower() or "cover-image" in item.get("properties", "")
             if is_cover:
@@ -173,13 +104,13 @@ def render_epub_reader_html(epub_path: str) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <title>{html.escape(book_title)} - EPUB 在线翻阅</title>
-  <style>{get_epub_reader_css()}\\n{get_epub_annotator_css()}</style>
+  <style>{get_epub_reader_css()}\n{get_epub_annotator_css()}\n{get_epub_search_css()}</style>
 </head>
 <body>
   <div class="er-progress-bar" id="er-progress-bar"></div>
   <header class="er-topbar">
     <div class="er-topbar-left">
-      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰ 目录/笔记</button>
+      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰ 目录/检索</button>
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
@@ -198,8 +129,9 @@ def render_epub_reader_html(epub_path: str) -> str:
   <div class="er-layout">
     <aside class="er-sidebar" id="er-sidebar">
       <div class="er-sidebar-tabs">
-        <button type="button" class="er-stab-btn active" id="er-stab-toc">📑 目录</button>
-        <button type="button" class="er-stab-btn" id="er-stab-notes">🔖 划线笔记 <span class="er-badge" id="er-notes-count">0</span></button>
+        <button type="button" class="er-stab-btn active" id="er-stab-toc" data-tab="er-pane-toc">📑 目录</button>
+        <button type="button" class="er-stab-btn" id="er-stab-notes" data-tab="er-pane-notes">🔖 划线 <span class="er-badge" id="er-notes-count">0</span></button>
+        <button type="button" class="er-stab-btn" id="er-stab-search" data-tab="er-pane-search">🔍 检索 <span class="er-badge" id="er-search-count">0</span></button>
       </div>
       <div class="er-sidebar-pane active" id="er-pane-toc">
         {final_toc_html}
@@ -210,6 +142,17 @@ def render_epub_reader_html(epub_path: str) -> str:
           <button type="button" class="er-btn er-btn-sm" id="er-clear-notes-btn">🗑️ 清空</button>
         </div>
         <div class="er-notes-list" id="er-notes-list"></div>
+      </div>
+      <div class="er-sidebar-pane" id="er-pane-search">
+        <div class="er-search-box">
+          <span class="er-search-icon">🔍</span>
+          <input type="text" class="er-search-input" id="er-search-input" placeholder="输入关键词检索全书..." autocomplete="off"/>
+          <span class="er-search-kbd">⌘K</span>
+        </div>
+        <div class="er-search-meta" id="er-search-meta">输入关键词检索全书典籍</div>
+        <div class="er-search-results" id="er-search-results">
+          <div class="er-search-empty">输入关键词，即可秒级全文检索所有章节与段落。</div>
+        </div>
       </div>
     </aside>
     <div class="er-backdrop" id="er-backdrop"></div>
@@ -279,5 +222,6 @@ def render_epub_reader_html(epub_path: str) -> str:
 
   <script>{get_epub_reader_js()}</script>
   <script>{get_epub_annotator_js()}</script>
+  <script>{get_epub_search_js()}</script>
 </body>
 </html>"""

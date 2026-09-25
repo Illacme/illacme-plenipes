@@ -244,22 +244,22 @@ def get_epub_annotator_js() -> str:
     };
   }
 
-  // 8. 侧边栏 Tab 切换
-  const tBtn = document.getElementById('er-stab-toc');
-  const nBtn = document.getElementById('er-stab-notes');
-  const tPane = document.getElementById('er-pane-toc');
-  const nPane = document.getElementById('er-pane-notes');
-  if (tBtn && nBtn && tPane && nPane) {
-    tBtn.onclick = () => {
-      tBtn.classList.add('active'); nBtn.classList.remove('active');
-      tPane.classList.add('active'); nPane.classList.remove('active');
+  // 8. 侧边栏通用 Tab 切换
+  document.querySelectorAll('.er-stab-btn').forEach(btn => {
+    btn.onclick = () => {
+      const targetPaneId = btn.getAttribute('data-tab');
+      document.querySelectorAll('.er-stab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.er-sidebar-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const pane = document.getElementById(targetPaneId);
+      if (pane) pane.classList.add('active');
+      if (targetPaneId === 'er-pane-notes') renderNotesList();
+      if (targetPaneId === 'er-pane-search') {
+        const sin = document.getElementById('er-search-input');
+        if (sin) setTimeout(() => { sin.focus(); sin.select(); }, 60);
+      }
     };
-    nBtn.onclick = () => {
-      nBtn.classList.add('active'); tBtn.classList.remove('active');
-      nPane.classList.add('active'); tPane.classList.remove('active');
-      renderNotesList();
-    };
-  }
+  });
 
   renderNotesList();
 })();
