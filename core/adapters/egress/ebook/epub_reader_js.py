@@ -27,8 +27,7 @@ def get_epub_reader_js() -> str:
   const fChap = document.getElementById('er-footer-chapter'), fPage = document.getElementById('er-footer-page');
   const prevBtn = document.getElementById('er-page-prev'), nextBtn = document.getElementById('er-page-next');
   const modeBtn = document.getElementById('er-mode-toggle'), spreadBtn = document.getElementById('er-spread-toggle');
-  const fontBtn = document.getElementById('er-font-family'), fsBtn = document.getElementById('er-fullscreen');
-  const pBar = document.getElementById('er-progress-bar');
+  const fontBtn = document.getElementById('er-font-family'), fsBtn = document.getElementById('er-fullscreen'), pBar = document.getElementById('er-progress-bar');
   const chapters = document.querySelectorAll('.er-chapter-card'), tocLinks = document.querySelectorAll('.er-sidebar a');
 
   let curPage = 0, totalPages = 1;
@@ -116,8 +115,7 @@ def get_epub_reader_js() -> str:
   const FONTS = [{k:'sans', n:'🔤 黑体'}, {k:'serif', n:'📖 宋体'}, {k:'kai', n:'✍️ 楷体'}];
   let fontIdx = Math.max(0, FONTS.findIndex(x => x.k === (localStorage.getItem('er_font') || 'sans')));
   function applyFont(idx) {
-    fontIdx = idx % FONTS.length;
-    const f = FONTS[fontIdx];
+    fontIdx = idx % FONTS.length; const f = FONTS[fontIdx];
     document.documentElement.setAttribute('data-font', f.k);
     if (fontBtn) fontBtn.textContent = f.n;
     try { localStorage.setItem('er_font', f.k); } catch(e){}
@@ -153,22 +151,26 @@ def get_epub_reader_js() -> str:
     }
   }
 
-  // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found)
+  // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found，支持选择器与 DOM 元素精准定位)
   function navigateToTarget(rawTarget) {
     if (!rawTarget) return;
     let targetEl = null;
-    let anchor = rawTarget;
-    if (anchor.includes('#')) {
-      const parts = anchor.split('#');
-      const hashId = parts[1];
-      targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`);
-      if (!targetEl && parts[0]) {
-        const base = parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (typeof rawTarget === 'object' && rawTarget.nodeType) {
+      targetEl = rawTarget;
+    } else if (typeof rawTarget === 'string') {
+      let anchor = rawTarget;
+      if (anchor.includes('#')) {
+        const parts = anchor.split('#');
+        const hashId = parts[1];
+        targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`);
+        if (!targetEl && parts[0]) {
+          const base = parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
+          targetEl = document.getElementById('er-doc-' + base);
+        }
+      } else {
+        const base = anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
         targetEl = document.getElementById('er-doc-' + base);
       }
-    } else {
-      const base = anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
-      targetEl = document.getElementById('er-doc-' + base);
     }
 
     if (targetEl) {
@@ -176,7 +178,12 @@ def get_epub_reader_js() -> str:
       if (isPag) {
         const step = getStep();
         if (step > 0) {
-          curPage = Math.max(0, Math.min(totalPages - 1, Math.floor(targetEl.offsetLeft / step)));
+          let left = 0, curr = targetEl;
+          while (curr && curr !== bContent && curr !== document.body) {
+            left += curr.offsetLeft;
+            curr = curr.offsetParent;
+          }
+          curPage = Math.max(0, Math.min(totalPages - 1, Math.floor(left / step)));
           renderPage();
         }
       } else {
@@ -186,6 +193,7 @@ def get_epub_reader_js() -> str:
       if (window.innerWidth <= 900) closeSidebar();
     }
   }
+  window.navigateToTarget = navigateToTarget;
 
   document.addEventListener('click', function(e) {
     const a = e.target.closest('a');

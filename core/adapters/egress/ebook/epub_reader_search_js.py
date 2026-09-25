@@ -109,11 +109,8 @@ def get_epub_search_js() -> str:
     });
   }
 
-  // 3. 目标章节跳转与聚焦脉冲动画
+  // 3. 目标章节精准跳转与聚焦脉冲动画
   function jumpAndHighlight(chapId, query) {
-    if (window.navigateToTarget) {
-      window.navigateToTarget('#' + chapId);
-    }
     const card = document.getElementById(chapId);
     if (!card) return;
 
@@ -128,6 +125,7 @@ def get_epub_search_js() -> str:
     const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT, null, false);
     let node;
     const lowerQuery = query.toLowerCase();
+    let targetSpan = null;
 
     while ((node = walker.nextNode())) {
       const idx = node.nodeValue.toLowerCase().indexOf(lowerQuery);
@@ -141,13 +139,7 @@ def get_epub_search_js() -> str:
         node.parentNode.insertBefore(span, afterText);
 
         activeFocusMark = span;
-
-        // 如果是卷轴模式，顺畅滚动到聚焦元素中心
-        if (document.documentElement.getAttribute('data-read-mode') === 'scroll') {
-          setTimeout(() => {
-            span.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 80);
-        }
+        targetSpan = span;
 
         setTimeout(() => {
           if (span && span.parentNode) {
@@ -156,9 +148,13 @@ def get_epub_search_js() -> str:
             p.normalize();
             if (activeFocusMark === span) activeFocusMark = null;
           }
-        }, 3800);
+        }, 4000);
         break;
       }
+    }
+
+    if (window.navigateToTarget) {
+      window.navigateToTarget(targetSpan || card);
     }
   }
 
