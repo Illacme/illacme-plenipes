@@ -202,7 +202,7 @@ def render_epub_reader_html(epub_path: str) -> str:
       <div class="er-card-actions">
         <button type="button" class="er-btn" id="er-card-close-btn">关闭</button>
         <button type="button" class="er-btn" id="er-card-copy-btn">📋 复制金句文本</button>
-        <button type="button" class="er-btn er-btn-primary" id="er-card-save-btn">🖼️ 分享海报文本</button>
+        <button type="button" class="er-btn er-btn-primary" id="er-card-save-btn">🖼️ 保存卡片海报</button>
       </div>
     </div>
   </div>

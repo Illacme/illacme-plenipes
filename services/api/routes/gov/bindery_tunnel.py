@@ -176,7 +176,7 @@ async def download_ebook_by_pure_path(token: str, file: str):
 async def view_ebook_by_pure_path(token: str, file: str):
     """纯路径公网在线阅读端点 (彻底免疫防钓鱼页面丢弃 Query 参数的情况)"""
     import os
-    from fastapi.responses import Response
+    from fastapi.responses import Response, FileResponse
     _check_safe_book(file)
     hub = get_tunnel_hub()
     if not hub.verify_token(file, token):
@@ -185,7 +185,19 @@ async def view_ebook_by_pure_path(token: str, file: str):
     target_path = os.path.abspath(os.path.join(base_dir, file))
     if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")
-    with open(target_path, "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+
+    ext = os.path.splitext(file)[1].lower()
+    if ext == ".html":
+        with open(target_path, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+    if ext == ".pdf":
+        return FileResponse(path=target_path, media_type="application/pdf", filename=file, content_disposition_type="inline", headers={"Cache-Control": "no-cache, no-store"})
+    if ext == ".epub":
+        from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
+        try:
+            return Response(content=render_epub_reader_html(target_path), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"EPUB 电子书解析失败: {e}")
+    raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF 或 EPUB 格式在线翻阅。")
 
 

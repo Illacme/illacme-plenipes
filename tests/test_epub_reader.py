@@ -128,6 +128,8 @@ def test_render_epub_reader_html_core(mock_epub_file):
     assert 'id="er-card-modal"' in html_output
     assert 'id="er-note-modal"' in html_output
     assert 'er-quote-card' in html_output
+    assert 'window.generateQuotePoster' in html_output
+    assert '📱 手机扫码直达翻阅' in html_output
 
     # 验证全书全文检索与关键词穿透聚焦组件
     assert 'id="er-stab-search"' in html_output

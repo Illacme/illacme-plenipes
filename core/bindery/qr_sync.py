@@ -73,10 +73,13 @@ def build_mobile_sync_payload(
     lan_ip = custom_ip.strip() if custom_ip and custom_ip.strip() else (candidates[0]["ip"] if candidates else get_lan_ip())
 
     is_html = filename.endswith(".html")
+    is_viewable = filename.endswith((".html", ".epub", ".pdf"))
     if is_html and action != "force_download":
         act_type = "view"
+    elif action == "view" and is_viewable:
+        act_type = "view"
     else:
-        act_type = "view" if action == "view" and is_html else "download"
+        act_type = "download"
 
     endpoint = f"/api/bindery/{act_type}"
     enc_file = urllib.parse.quote(filename)

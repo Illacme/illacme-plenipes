@@ -162,10 +162,18 @@ def get_epub_annotator_js() -> str:
     cardSave.onclick = () => {
       const t = document.getElementById('er-card-text');
       const b = document.getElementById('er-card-book');
-      const textToShare = `═════════════════════════\\n  ${b ? b.textContent : '典籍'} · 经典摘录\\n═════════════════════════\\n\\n“${t ? t.textContent : ''}”\\n\\n── 出自 Illacme Plenipes 数字典籍`;
-      navigator.clipboard.writeText(textToShare).catch(()=>{});
-      cardSave.textContent = '✅ 海报文本已复制';
-      setTimeout(() => { cardSave.textContent = '🖼️ 保存卡片海报'; }, 1500);
+      const c = document.getElementById('er-card-chap');
+      const text = t ? t.textContent.trim() : '';
+      const book = b ? b.textContent.replace(/[《》]/g, '').trim() : '';
+      const chap = c ? c.textContent.trim() : '';
+      if (typeof window.generateQuotePoster === 'function') {
+        window.generateQuotePoster(text, book, chap);
+      } else {
+        const textToShare = `═════════════════════════\\n  ${book} · 经典摘录\\n═════════════════════════\\n\\n“${text}”\\n\\n── 出自 Illacme Plenipes 数字典籍`;
+        navigator.clipboard.writeText(textToShare).catch(()=>{});
+        cardSave.textContent = '✅ 海报文本已复制';
+        setTimeout(() => { cardSave.textContent = '🖼️ 保存卡片海报'; }, 1500);
+      }
     };
   }
 

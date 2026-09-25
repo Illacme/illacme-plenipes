@@ -1,6 +1,6 @@
 /**
  * Illacme Plenipes - Vault Bindery QR Mobile Sync
- * 模块职责：移动端/平板设备扫码传输（双模支持：局域网直传 + 零配置临时公网穿透），集成链路诊断探针与自愈接入。
+ * 模块职责：移动端/平板设备扫码传输（双模支持：局域网直传 + 零配置临时公网穿透，支持扫码即读与原件下载双态）。
  * 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
  * 🌞 [SOP-03 规范]：完整支持深色/亮色自适应主题与无缝切换。
  */
@@ -9,6 +9,7 @@
 
     window._binderyQrCurrentFile = '';
     window._binderyQrNetworkMode = 'lan'; // 'lan' | 'public'
+    window._binderyQrAction = 'view'; // 'view' | 'download'
     window._binderyQrSelectedDriver = '';
     window._binderyQrDrivers = [];
 
@@ -17,9 +18,7 @@
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    function onKeydown(e) {
-        if (e.key === 'Escape') window.closeBinderyQrModal();
-    }
+    function onKeydown(e) { if (e.key === 'Escape') window.closeBinderyQrModal(); }
 
     window.closeBinderyQrModal = function() {
         const root = document.getElementById('bindery-qr-modal-root');
@@ -36,9 +35,7 @@
         const bDrop = document.querySelector('.bindery-modal-backdrop');
         if (bDrop) { bDrop.style.opacity = '0'; bDrop.style.pointerEvents = 'none'; }
         if (typeof window.showView === 'function') window.showView('plugins');
-        setTimeout(() => {
-            if (typeof window.filterPluginCategory === 'function') window.filterPluginCategory('tunnel');
-        }, 150);
+        setTimeout(() => { if (typeof window.filterPluginCategory === 'function') window.filterPluginCategory('tunnel'); }, 150);
     };
 
     window.copyBinderyQrUrl = function(url, btn) {
@@ -51,9 +48,7 @@
                 setTimeout(() => { btn.innerHTML = orig; btn.style.borderColor = ''; btn.style.color = ''; }, 1500);
             }
             if (typeof window.showToast === 'function') window.showToast('📋 直链已复制到剪贴板', 'success');
-        }).catch(() => {
-            if (typeof window.showToast === 'function') window.showToast('❌ 复制失败，请手动选择复制', 'error');
-        });
+        }).catch(() => { if (typeof window.showToast === 'function') window.showToast('❌ 复制失败，请手动选择复制', 'error'); });
     };
 
     window.switchBinderyQrNetworkMode = function(mode) {
@@ -70,6 +65,14 @@
         else window.loadBinderyPublicQr(file);
     };
 
+    window.switchBinderyQrAction = function(action) {
+        window._binderyQrAction = action;
+        const file = window._binderyQrCurrentFile;
+        if (!file) return;
+        if (window._binderyQrNetworkMode === 'lan') window.loadBinderyLanQr(file);
+        else window.loadBinderyPublicQr(file);
+    };
+
     window.loadBinderyLanQr = async function(filename, ipOverride) {
         const contentEl = document.getElementById('bindery-qr-content');
         if (!contentEl) return;
@@ -77,8 +80,8 @@
         try {
             const fetchFunc = window.apiFetch || window.fetch;
             const ipParam = ipOverride ? `&ip=${encodeURIComponent(ipOverride)}` : '';
-            const actionParam = filename.endsWith('.html') ? '&action=view' : '';
-            const res = await fetchFunc(`/api/bindery/qr?file=${encodeURIComponent(filename)}${actionParam}${ipParam}`);
+            const actParam = `&action=${encodeURIComponent(window._binderyQrAction || 'view')}`;
+            const res = await fetchFunc(`/api/bindery/qr?file=${encodeURIComponent(filename)}${actParam}${ipParam}`);
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
             if (!data || !data.success) throw new Error((data && data.detail) || '无法探测局域网');
             renderQrView(data, 'lan');
@@ -107,8 +110,8 @@
             const statusRes = await fetchFunc('/api/bindery/tunnel/status');
             const status = (statusRes && typeof statusRes.json === 'function') ? await statusRes.json() : statusRes;
             if (status && status.is_running && status.public_url) {
-                const actionParam = filename.endsWith('.html') ? '&action=view' : '';
-                const qrRes = await fetchFunc(`/api/bindery/qr/public?file=${encodeURIComponent(filename)}${actionParam}`);
+                const actParam = `&action=${encodeURIComponent(window._binderyQrAction || 'view')}`;
+                const qrRes = await fetchFunc(`/api/bindery/qr/public?file=${encodeURIComponent(filename)}${actParam}`);
                 const qrData = (qrRes && typeof qrRes.json === 'function') ? await qrRes.json() : qrRes;
                 if (!qrData || !qrData.success) throw new Error((qrData && qrData.detail) || '公网令牌签发失败');
                 renderQrView(qrData, 'public', status);
@@ -139,23 +142,14 @@
                             <div style="margin-bottom:16px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 2px;">
                                     <div class="bindery-qr-tunnel-selector-label" style="margin-bottom:0;">📡 选择公网穿透通道:</div>
-                                    <a href="javascript:void(0)" onclick="window.navigateToTunnelPlugins()" style="font-size:0.72rem; color:var(--accent-secondary, #0284c7); text-decoration:none; font-weight:600; cursor:pointer;" title="配置穿透驱动">
-                                        <span>⚙️ 穿透插件</span><span>↗</span>
-                                    </a>
+                                    <a href="javascript:void(0)" onclick="window.navigateToTunnelPlugins()" style="font-size:0.72rem; color:var(--accent-secondary, #0284c7); text-decoration:none; font-weight:600; cursor:pointer;" title="配置穿透驱动"><span>⚙️ 穿透插件</span><span>↗</span></a>
                                 </div>
                                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; max-width:440px; margin:0 auto; max-height:190px; overflow-y:auto; padding:2px;">
-                                    ${drivers.map(d => `
-                                        <div class="bindery-tunnel-card ${d.id === window._binderyQrSelectedDriver ? 'active' : ''}" data-driver="${d.id}" onclick="window.selectBinderyTunnelDriver('${d.id}')">
-                                            <div class="driver-title">${d.icon} ${esc(d.name)}</div>
-                                            <div class="driver-desc">${esc(d.desc)}</div>
-                                        </div>
-                                    `).join('')}
+                                    ${drivers.map(d => `<div class="bindery-tunnel-card ${d.id === window._binderyQrSelectedDriver ? 'active' : ''}" data-driver="${d.id}" onclick="window.selectBinderyTunnelDriver('${d.id}')"><div class="driver-title">${d.icon} ${esc(d.name)}</div><div class="driver-desc">${esc(d.desc)}</div></div>`).join('')}
                                 </div>
                             </div>
                         ` : ''}
-                        <button type="button" id="bindery-tunnel-start-btn" onclick="window.startBinderyTunnel()" class="primary-btn glow-btn" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color:#fff; border:none; padding:8px 22px; font-size:0.85rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                            🚀 开启 ${esc(curDriverName)} 直链
-                        </button>
+                        <button type="button" id="bindery-tunnel-start-btn" onclick="window.startBinderyTunnel()" class="primary-btn glow-btn" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color:#fff; border:none; padding:8px 22px; font-size:0.85rem; border-radius:8px; cursor:pointer; font-weight:600;">🚀 开启 ${esc(curDriverName)} 直链</button>
                     </div>
                 `;
             }
@@ -181,8 +175,8 @@
             if (!data || !data.success) throw new Error((data && data.detail) || '隧道唤醒失败');
             if (typeof window.showToast === 'function') window.showToast(`🌐 [${data.provider_name || dName}] 隧道已就绪！`, 'success');
             if (data && data.is_running && data.public_url) {
-                const act = window._binderyQrCurrentFile.endsWith('.html') ? '&action=view' : '';
-                const qrRes = await fetchFunc(`/api/bindery/qr/public?file=${encodeURIComponent(window._binderyQrCurrentFile)}${act}`);
+                const actParam = `&action=${encodeURIComponent(window._binderyQrAction || 'view')}`;
+                const qrRes = await fetchFunc(`/api/bindery/qr/public?file=${encodeURIComponent(window._binderyQrCurrentFile)}${actParam}`);
                 const qrData = (qrRes && typeof qrRes.json === 'function') ? await qrRes.json() : qrRes;
                 if (qrData && qrData.success) { renderQrView(qrData, 'public', data); return; }
             }
@@ -198,9 +192,7 @@
             await fetchFunc('/api/bindery/tunnel/stop', { method: 'POST' });
             if (!silent && typeof window.showToast === 'function') window.showToast('🔒 公网通道已切断，已收缩至局域网', 'info');
             if (!silent) window.switchBinderyQrNetworkMode('lan');
-        } catch (e) {
-            console.error('关闭隧道异常:', e);
-        }
+        } catch (e) { console.error('关闭隧道异常:', e); }
     };
 
     window.switchBinderyTunnelDriver = async function() {
@@ -211,13 +203,14 @@
     function renderQrView(data, mode, status = null) {
         const contentEl = document.getElementById('bindery-qr-content');
         if (!contentEl) return;
-        const isWb = data.filename.endsWith('.html');
-        const tip = isWb ? '手机 / 平板扫码直接在线翻阅 WebBook' : 'iPhone / iPad (Books)、Android、Kindle 扫码即刻下载导入';
+        const curAct = data.act_type || window._binderyQrAction || 'view';
+        const isView = curAct === 'view';
+        const tip = isView ? '手机 / 平板扫码立即开启沉浸翻阅体验' : '手机 / 平板扫码即刻下载原件并导入本地阅读器';
         let qrHtml = '';
         if (data.qr_data_uri) {
-            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:14px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.18); margin-bottom:12px;"><img src="${data.qr_data_uri}" alt="扫码直传" style="width:200px; height:200px; display:block; image-rendering:pixelated;" /></div>`;
+            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.18); margin-bottom:10px;"><img src="${data.qr_data_uri}" alt="扫码直达" style="width:190px; height:190px; display:block; image-rendering:pixelated;" /></div>`;
         } else if (typeof window.generateBinderyQrSvg === 'function') {
-            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:14px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.18); margin-bottom:12px;">${window.generateBinderyQrSvg(data.url, 200)}</div>`;
+            qrHtml = `<div style="background:#ffffff; border-radius:12px; padding:12px; display:inline-block; box-shadow:0 8px 24px rgba(0,0,0,0.18); margin-bottom:10px;">${window.generateBinderyQrSvg(data.url, 190)}</div>`;
         }
         const providerName = (status && status.provider_name) || (status && status.provider === 'cloudflare' ? 'Cloudflare Anycast' : (status && status.provider === 'pinggy' ? 'Pinggy OpenSSH' : '全球公网访问'));
         const badge = mode === 'public'
@@ -231,32 +224,33 @@
         const isServeo = (status && (status.provider === 'serveo' || (status.public_url && status.public_url.indexOf('serveousercontent') !== -1))) || (data && data.url && data.url.indexOf('serveousercontent') !== -1);
         const serveoNotice = isServeo ? `<div style="font-size:0.7rem; color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:4px 8px; margin:0 auto 10px; max-width:320px; line-height:1.4;">💡 Serveo 官方防钓鱼拦截：手机打开后请轻触【Continue to Site】按钮即可直达。</div>` : '';
 
+        const modeSelector = `
+            <div style="display:inline-flex; background:rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:2px; margin-bottom:8px;">
+                <button type="button" onclick="window.switchBinderyQrAction('view')" style="border:none; background:${isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">👁️ 扫码即读</button>
+                <button type="button" onclick="window.switchBinderyQrAction('download')" style="border:none; background:${!isView ? 'var(--accent, #10b981)' : 'transparent'}; color:${!isView ? '#fff' : 'inherit'}; padding:3px 12px; font-size:0.72rem; font-weight:600; border-radius:6px; cursor:pointer;">⬇️ 扫码下载</button>
+            </div>
+        `;
         contentEl.innerHTML = `
             <div style="text-align:center;">
-                ${badge}
-                <div id="bindery-qr-health-badge" class="bindery-qr-health-badge" style="margin-bottom:8px; min-height:22px; font-size:0.74rem; display:flex; justify-content:center; align-items:center;"></div>
-                <div id="bindery-qr-diag-panel" class="bindery-qr-diag-panel" style="display:none; margin:8px 0 12px; text-align:left;"><div id="bindery-qr-diag-body"></div></div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">${badge}${modeSelector}</div>
+                <div id="bindery-qr-health-badge" class="bindery-qr-health-badge" style="margin-bottom:6px; min-height:20px; font-size:0.74rem; display:flex; justify-content:center; align-items:center;"></div>
+                <div id="bindery-qr-diag-panel" class="bindery-qr-diag-panel" style="display:none; margin:6px 0 10px; text-align:left;"><div id="bindery-qr-diag-body"></div></div>
                 <div>${qrHtml}</div>
                 <div class="bindery-qr-lead-title" style="word-break:break-all; text-align:center; padding:0 8px;">${esc(data.filename)}</div>
                 <div style="font-size:0.74rem; color:var(--accent, #10b981); margin-bottom:8px; text-align:center; font-weight:500;">✨ ${tip}</div>
                 ${serveoNotice}
-                <div style="display:flex; justify-content:center; margin-bottom:14px;">
-                    <div class="bindery-qr-url-box">
-                        <div class="bindery-qr-url-text">${esc(data.url)}</div>
-                        <button type="button" onclick="window.copyBinderyQrUrl('${esc(data.url)}', this)" class="bindery-qr-copy-btn">📋 复制</button>
-                    </div>
+                <div style="display:flex; justify-content:center; margin-bottom:12px;">
+                    <div class="bindery-qr-url-box"><div class="bindery-qr-url-text">${esc(data.url)}</div><button type="button" onclick="window.copyBinderyQrUrl('${esc(data.url)}', this)" class="bindery-qr-copy-btn">📋 复制</button></div>
                 </div>
                 <div class="bindery-qr-footer">
                     ${actionBtns ? `<span>${actionBtns}</span>` : `<span>节点: <strong>${esc(data.lan_ip)}:${esc(data.port)}</strong></span>`}
                     <span style="opacity:0.3;">|</span>
-                    <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary, #0284c7); text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:500;">在新标签${isWb ? '翻阅' : '打开'} ↗</a>
+                    <a href="${esc(data.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary, #0284c7); text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:500;">在新标签${isView ? '翻阅' : '下载'} ↗</a>
                 </div>
             </div>
         `;
 
-        if (typeof window.probeBinderyQrHealth === 'function') {
-            window.probeBinderyQrHealth(mode, data.url);
-        }
+        if (typeof window.probeBinderyQrHealth === 'function') window.probeBinderyQrHealth(mode, data.url);
     }
 
     window.openBinderyQrModal = async function(filename) {
