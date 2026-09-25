@@ -55,7 +55,7 @@ def get_epub_reader_js() -> str:
     if (document.documentElement.getAttribute('data-read-mode') !== 'paginated' || !bContent) return;
     const isSpread = isSpreadActive();
     if (vp) vp.classList.toggle('spread-active', isSpread);
-    if (spreadBtn) spreadBtn.textContent = isSpread ? '📑 双页' : '📄 单页';
+    if (spreadBtn) spreadBtn.innerHTML = isSpread ? '📑<span class="er-btn-text"> 双页</span>' : '📄<span class="er-btn-text"> 单页</span>';
     const step = getStep();
     if (step <= 0) return;
     totalPages = Math.max(1, Math.ceil(bContent.scrollWidth / step));
@@ -82,7 +82,7 @@ def get_epub_reader_js() -> str:
   function applyReadMode(mode) {
     document.documentElement.setAttribute('data-read-mode', mode);
     if (modeBtn) {
-      modeBtn.textContent = mode === 'paginated' ? '📖 翻页' : '📜 卷轴';
+      modeBtn.innerHTML = mode === 'paginated' ? '📖<span class="er-btn-text"> 翻页</span>' : '📜<span class="er-btn-text"> 卷轴</span>';
       modeBtn.title = mode === 'paginated' ? '当前：左右翻页模式 (点击切换为卷轴)' : '当前：连续卷轴模式 (点击切换为翻页)';
     }
     if (spreadBtn) spreadBtn.style.display = mode === 'paginated' ? 'inline-flex' : 'none';
@@ -112,12 +112,12 @@ def get_epub_reader_js() -> str:
   }
 
   // 🔤 字体库切换引擎
-  const FONTS = [{k:'sans', n:'🔤 黑体'}, {k:'serif', n:'📖 宋体'}, {k:'kai', n:'✍️ 楷体'}];
+  const FONTS = [{k:'sans', i:'🔤', n:'黑体'}, {k:'serif', i:'📖', n:'宋体'}, {k:'kai', i:'✍️', n:'楷体'}];
   let fontIdx = Math.max(0, FONTS.findIndex(x => x.k === (localStorage.getItem('er_font') || 'sans')));
   function applyFont(idx) {
     fontIdx = idx % FONTS.length; const f = FONTS[fontIdx];
     document.documentElement.setAttribute('data-font', f.k);
-    if (fontBtn) fontBtn.textContent = f.n;
+    if (fontBtn) fontBtn.innerHTML = `${f.i}<span class="er-btn-text"> ${f.n}</span>`;
     try { localStorage.setItem('er_font', f.k); } catch(e){}
     setTimeout(updatePagination, 50);
   }

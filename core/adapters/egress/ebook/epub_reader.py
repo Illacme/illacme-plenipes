@@ -110,13 +110,13 @@ def render_epub_reader_html(epub_path: str) -> str:
   <div class="er-progress-bar" id="er-progress-bar"></div>
   <header class="er-topbar">
     <div class="er-topbar-left">
-      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰ 目录/检索</button>
+      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰<span class="er-btn-text"> 目录/检索</span></button>
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
-      <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑 双页</button>
-      <button type="button" class="er-btn" id="er-font-family" title="切换字体：黑体 / 宋体 / 楷体">🔤 黑体</button>
-      <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖 翻页</button>
+      <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑<span class="er-btn-text"> 双页</span></button>
+      <button type="button" class="er-btn" id="er-font-family" title="切换字体：黑体 / 宋体 / 楷体">🔤<span class="er-btn-text"> 黑体</span></button>
+      <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖<span class="er-btn-text"> 翻页</span></button>
       <button type="button" class="er-btn" id="er-font-dec" title="缩小字号">A-</button>
       <button type="button" class="er-btn" id="er-font-inc" title="放大字号">A+</button>
       <button type="button" class="er-theme-btn active" data-theme="dark" title="暗黑翠玉">🌙</button>
