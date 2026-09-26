@@ -97,20 +97,8 @@ def get_epub_reader_js() -> str:
     }
   }
 
-  if (modeBtn) {
-    modeBtn.onclick = () => {
-      const cur = document.documentElement.getAttribute('data-read-mode') || 'paginated';
-      applyReadMode(cur === 'paginated' ? 'scroll' : 'paginated');
-    };
-  }
-
-  if (spreadBtn) {
-    spreadBtn.onclick = () => {
-      spreadMode = isSpreadActive() ? 'single' : 'double';
-      try { localStorage.setItem('er_spread_mode', spreadMode); } catch(e){}
-      updatePagination();
-    };
-  }
+  if (modeBtn) modeBtn.onclick = () => applyReadMode((document.documentElement.getAttribute('data-read-mode') || 'paginated') === 'paginated' ? 'scroll' : 'paginated');
+  if (spreadBtn) spreadBtn.onclick = () => { spreadMode = isSpreadActive() ? 'single' : 'double'; try { localStorage.setItem('er_spread_mode', spreadMode); } catch(e){} updatePagination(); };
 
   // 🔤 字体库切换引擎
   const FONTS = [{k:'sans', i:'🔤', n:'黑体'}, {k:'serif', i:'📖', n:'宋体'}, {k:'kai', i:'✍️', n:'楷体'}];
@@ -145,12 +133,32 @@ def get_epub_reader_js() -> str:
       }
     });
     if (fChap && actTitle) fChap.textContent = actTitle;
-    if (actId) {
-      tocLinks.forEach(link => {
-        const h = link.getAttribute('href') || '';
-        link.classList.toggle('active', h === '#' + actId || h.endsWith(actId));
-      });
-    }
+    if (actId) tocLinks.forEach(link => { const h = link.getAttribute('href') || ''; link.classList.toggle('active', h === '#' + actId || h.endsWith(actId)); });
+  }
+
+  // 🎯 链接精准跳转与翻页感知反馈反馈器
+  function showJumpCue(el) {
+    if (!el) return;
+    document.querySelectorAll('.er-jump-target').forEach(x => x.classList.remove('er-jump-target'));
+    el.classList.add('er-jump-target');
+    setTimeout(() => el.classList.remove('er-jump-target'), 2000);
+    const title = el.querySelector('h1, h2, h3')?.textContent.trim() || el.textContent.trim().slice(0, 18) || '指定章节';
+    const old = document.querySelector('.er-jump-toast'); if (old) old.remove();
+    const toast = document.createElement('div');
+    toast.className = 'er-jump-toast';
+    toast.innerHTML = `<span style="font-size:1.1rem">🎯</span> 定位到：<b>${title}</b>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1600);
+  }
+
+  function showTurnCue(isNext, cx, cy) {
+    const t = document.createElement('div');
+    t.className = 'er-turn-cue ' + (isNext ? 'er-turn-next' : 'er-turn-prev');
+    t.innerHTML = isNext ? '<span class="er-cue-icon">›</span> 下一页' : '<span class="er-cue-icon">‹</span> 上一页';
+    t.style.left = (cx || (isNext ? window.innerWidth - 65 : 65)) + 'px';
+    t.style.top = (cy || window.innerHeight / 2) + 'px';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 380);
   }
 
   // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found，支持选择器与 DOM 元素精准定位)
@@ -182,8 +190,7 @@ def get_epub_reader_js() -> str:
         if (step > 0) {
           let left = 0, curr = targetEl;
           while (curr && curr !== bContent && curr !== document.body) {
-            left += curr.offsetLeft;
-            curr = curr.offsetParent;
+            left += curr.offsetLeft; curr = curr.offsetParent;
           }
           curPage = Math.max(0, Math.min(totalPages - 1, Math.floor(left / step)));
           renderPage();
@@ -193,6 +200,7 @@ def get_epub_reader_js() -> str:
         window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
       }
       if (window.innerWidth <= 900) closeSidebar();
+      showJumpCue(targetEl);
     }
   }
   window.navigateToTarget = navigateToTarget;
@@ -215,28 +223,23 @@ def get_epub_reader_js() -> str:
     vp.addEventListener('click', (e) => {
       if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
       if (e.target.closest('a, button, pre, code')) return;
-      const rect = vp.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      if (x < rect.width * 0.28) prevPage();
-      else if (x > rect.width * 0.72) nextPage();
+      const rect = vp.getBoundingClientRect(), x = e.clientX - rect.left;
+      if (x < rect.width * 0.28) { showTurnCue(false, e.clientX, e.clientY); prevPage(); }
+      else if (x > rect.width * 0.72) { showTurnCue(true, e.clientX, e.clientY); nextPage(); }
     });
   }
 
   let touchStartX = 0, touchStartY = 0;
   window.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    }
+    if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
   }, { passive: true });
   window.addEventListener('touchend', (e) => {
     if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
     if (e.changedTouches.length === 1) {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
+      const dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx < 0) nextPage();
-        else prevPage();
+        if (dx < 0) { showTurnCue(true); nextPage(); }
+        else { showTurnCue(false); prevPage(); }
       }
     }
   }, { passive: true });
@@ -246,10 +249,10 @@ def get_epub_reader_js() -> str:
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-      if (isPag) nextPage();
+      if (isPag) { showTurnCue(true); nextPage(); }
       else window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      if (isPag) prevPage();
+      if (isPag) { showTurnCue(false); prevPage(); }
       else window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
     } else if (e.key === 'f' || e.key === 'F') {
       toggleFs();
@@ -273,11 +276,7 @@ def get_epub_reader_js() -> str:
 
   // 5. 主题与字号
   const themeBtns = document.querySelectorAll('.er-theme-btn');
-  const applyTheme = (th) => {
-    document.documentElement.setAttribute('data-theme', th);
-    themeBtns.forEach(x => x.classList.toggle('active', x.getAttribute('data-theme') === th));
-    try { localStorage.setItem('er_theme', th); } catch(e){}
-  };
+  const applyTheme = (th) => { document.documentElement.setAttribute('data-theme', th); themeBtns.forEach(x => x.classList.toggle('active', x.getAttribute('data-theme') === th)); try { localStorage.setItem('er_theme', th); } catch(e){} };
   themeBtns.forEach(b => { b.onclick = () => applyTheme(b.getAttribute('data-theme')); });
   try { const savedTh = localStorage.getItem('er_theme'); if (savedTh) applyTheme(savedTh); } catch(e){}
 

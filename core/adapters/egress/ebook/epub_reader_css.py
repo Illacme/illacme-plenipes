@@ -67,38 +67,21 @@ body {
   transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 800;
 }
 .er-sidebar.collapsed { transform: translateX(-100%); }
-.er-sidebar-title {
-  font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--text-dim); margin: 0 0 12px 8px;
-}
-
-/* 多级分级目录树核心排版 */
+.er-sidebar-title { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 0 0 12px 8px; }
 .er-sidebar ol, .er-sidebar ul { list-style: none; padding-left: 0; margin: 0; }
 .er-sidebar > ol > li, .er-sidebar > ul > li { margin-bottom: 6px; }
-.er-sidebar a {
-  display: block; padding: 6px 10px; border-radius: 6px; color: var(--text-main);
-  text-decoration: none; font-size: 0.82rem; line-height: 1.4; transition: all 0.15s;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.er-sidebar a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--text-main); text-decoration: none; font-size: 0.82rem; line-height: 1.4; transition: all 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .er-sidebar a:hover { background: var(--bg-card); color: var(--accent); }
 .er-sidebar a.active { background: var(--accent-glow); color: var(--accent); font-weight: 700; }
 .er-sidebar li > a { font-weight: 600; color: var(--text-title); }
-.er-sidebar ol ol, .er-sidebar ul ul {
-  padding-left: 14px; margin: 3px 0 6px; border-left: 1px solid var(--border);
-}
-.er-sidebar ol ol a, .er-sidebar ul ul a {
-  font-size: 0.78rem; font-weight: 400; color: var(--text-main); padding: 4px 8px;
-}
-.er-sidebar ol ol ol, .er-sidebar ul ul ul {
-  padding-left: 12px; border-left: 1px dashed var(--border);
-}
-.er-sidebar ol ol ol a, .er-sidebar ul ul ul a {
-  font-size: 0.74rem; color: var(--text-dim);
-}
+.er-sidebar ol ol, .er-sidebar ul ul { padding-left: 14px; margin: 3px 0 6px; border-left: 1px solid var(--border); }
+.er-sidebar ol ol a, .er-sidebar ul ul a { font-size: 0.78rem; font-weight: 400; color: var(--text-main); padding: 4px 8px; }
+.er-sidebar ol ol ol, .er-sidebar ul ul ul { padding-left: 12px; border-left: 1px dashed var(--border); }
+.er-sidebar ol ol ol a, .er-sidebar ul ul ol a { font-size: 0.74rem; color: var(--text-dim); }
 
 .er-mode-btn { font-weight: 600; color: var(--accent); border-color: var(--accent); }
-.er-viewport { width: 100%; max-width: 100%; min-width: 0 !important; position: relative; box-sizing: border-box; }
-.er-book-content { width: 100%; max-width: 100%; min-width: 0 !important; box-sizing: border-box; }
+.er-viewport, .er-book-content { width: 100%; max-width: 100%; min-width: 0 !important; box-sizing: border-box; }
+.er-viewport { position: relative; }
 .er-page-arrow, .er-paginated-footer { display: none; }
 
 .er-main {
@@ -139,6 +122,54 @@ body {
 .er-cover-img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.4); margin-bottom: 20px; }
 .er-cover-title { font-size: 1.6rem; font-weight: 800; color: var(--text-title); margin-bottom: 8px; }
 .er-cover-author { font-size: 0.95rem; color: var(--text-dim); font-weight: 500; }
+
+/* 🎯 链接点击与精准跳转呼吸脉冲反馈 */
+.er-chapter-card a:active, .er-sidebar a:active { transform: scale(0.97); opacity: 0.85; transition: transform 0.1s; }
+.er-jump-target {
+  animation: erTargetPulse 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px;
+}
+@keyframes erTargetPulse {
+  0% { background: var(--accent-glow); box-shadow: 0 0 20px var(--accent-glow); }
+  60% { background: var(--accent-glow); }
+  100% { background: transparent; outline-color: transparent; }
+}
+
+/* 🎯 顶部跳转感知胶囊 Toast */
+.er-jump-toast {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-card); border: 1px solid var(--accent);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 12px var(--accent-glow);
+  color: var(--text-title); padding: 6px 16px; border-radius: 20px;
+  font-size: 0.82rem; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;
+  z-index: 950; pointer-events: none; animation: erToastAnim 1.6s ease forwards;
+  white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+}
+.er-jump-toast b { color: var(--accent); font-weight: 700; }
+@keyframes erToastAnim {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.9); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.95); }
+}
+
+/* 📖 页面点击翻页方向性微波纹反馈 */
+.er-turn-cue {
+  position: fixed; pointer-events: none; z-index: 999;
+  transform: translate(-50%, -50%) scale(0.85);
+  background: rgba(16, 185, 129, 0.22); border: 1px solid var(--accent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: var(--text-title); padding: 6px 14px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+  animation: erCueFade 0.38s ease-out forwards;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.er-turn-cue .er-cue-icon { font-size: 1.2rem; line-height: 1; color: var(--accent); }
+@keyframes erCueFade {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  35% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08); }
+}
 
 /* 🔤 印刷级排版字体库切换 */
 [data-font="sans"] body, [data-font="sans"] .er-main {
