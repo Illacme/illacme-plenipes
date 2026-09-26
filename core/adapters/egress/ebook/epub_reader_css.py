@@ -27,7 +27,7 @@ def get_epub_reader_css() -> str:
   --border: #dfcaa7; --code-bg: #f5e7cd;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { overflow-x: hidden; max-width: 100vw; scroll-behavior: smooth; }
+html, body { overflow-x: hidden; max-width: 100vw; width: 100%; scroll-behavior: smooth; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: var(--font-size); background: var(--bg-main); color: var(--text-main);
@@ -60,7 +60,7 @@ body {
   white-space: nowrap !important; flex-shrink: 0;
 }
 .er-theme-btn.active { border-color: var(--accent); background: var(--accent-glow); }
-.er-layout { display: flex; margin-top: 50px; min-height: calc(100vh - 50px); }
+.er-layout { display: flex; margin-top: 50px; min-height: calc(100vh - 50px); max-width: 100vw; overflow-x: hidden; }
 .er-sidebar {
   width: 310px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
   position: fixed; top: 50px; bottom: 0; left: 0; overflow-y: auto; padding: 18px 12px;
@@ -97,12 +97,13 @@ body {
 }
 
 .er-mode-btn { font-weight: 600; color: var(--accent); border-color: var(--accent); }
-.er-viewport { width: 100%; position: relative; }
-.er-book-content { width: 100%; }
+.er-viewport { width: 100%; max-width: 100%; min-width: 0 !important; position: relative; box-sizing: border-box; }
+.er-book-content { width: 100%; max-width: 100%; min-width: 0 !important; box-sizing: border-box; }
 .er-page-arrow, .er-paginated-footer { display: none; }
 
 .er-main {
   flex: 1; margin-left: 310px; padding: 36px 48px 100px; max-width: 920px;
+  min-width: 0 !important; width: 100%; box-sizing: border-box;
   transition: margin-left 0.25s ease;
 }
 .er-sidebar.collapsed ~ .er-main { margin-left: auto; margin-right: auto; }
@@ -112,25 +113,29 @@ body {
 }
 .er-chapter-card {
   margin-bottom: 60px; padding-bottom: 40px; border-bottom: 1px dashed var(--border);
+  min-width: 0 !important; max-width: 100% !important; box-sizing: border-box;
+  overflow-wrap: break-word; word-break: break-word;
 }
+.er-chapter-card * { max-width: 100%; box-sizing: border-box; }
 .er-chapter-card:last-child { border-bottom: none; }
-.er-chapter-card h1 { font-size: 1.8rem; font-weight: 800; color: var(--text-title); margin: 24px 0 16px; }
-.er-chapter-card h2 { font-size: 1.35rem; font-weight: 700; color: var(--text-title); margin: 24px 0 12px; }
+.er-chapter-card h1 { font-size: 1.8rem; font-weight: 800; color: var(--text-title); margin: 24px 0 16px; line-height: 1.35; }
+.er-chapter-card h2 { font-size: 1.35rem; font-weight: 700; color: var(--text-title); margin: 24px 0 12px; line-height: 1.4; }
 .er-chapter-card h3 { font-size: 1.12rem; font-weight: 600; color: var(--text-title); margin: 20px 0 10px; }
 .er-chapter-card p { margin-bottom: 14px; text-align: justify; word-break: break-word; }
 .er-chapter-card a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
 .er-chapter-card a:hover { border-bottom-style: solid; }
-.er-chapter-card img { max-width: 100%; height: auto; border-radius: 8px; margin: 16px auto; display: block; }
-.er-chapter-card pre {
+.er-chapter-card img, .cover-image, .er-cover-img { max-width: 100% !important; height: auto !important; border-radius: 8px; margin: 16px auto; display: block; object-fit: contain; }
+.er-chapter-card pre, .codehilite, .codehilite pre {
   background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 14px 16px; overflow-x: auto; margin: 16px 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.85rem;
+  padding: 14px 16px; overflow-x: auto; margin: 16px 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.85rem; max-width: 100% !important;
 }
+.er-chapter-card table { display: block; overflow-x: auto; max-width: 100%; width: 100%; border-collapse: collapse; margin: 16px 0; }
 .er-chapter-card blockquote {
   border-left: 4px solid var(--accent); padding: 8px 16px; margin: 16px 0;
   background: var(--bg-card); border-radius: 0 6px 6px 0; color: var(--text-dim);
 }
 .er-cover-card { text-align: center; padding: 40px 0 60px; border-bottom: 2px solid var(--border); }
-.er-cover-wrapper { display: inline-block; max-width: 380px; }
+.er-cover-wrapper { display: inline-block; max-width: 380px; width: 100%; }
 .er-cover-img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.4); margin-bottom: 20px; }
 .er-cover-title { font-size: 1.6rem; font-weight: 800; color: var(--text-title); margin-bottom: 8px; }
 .er-cover-author { font-size: 0.95rem; color: var(--text-dim); font-weight: 500; }
@@ -236,7 +241,7 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
 @media (max-width: 680px) {
   .er-topbar { padding: 0 8px; height: 44px; }
   .er-topbar-left { gap: 6px; }
-  .er-book-title, #er-spread-toggle, #er-fullscreen { display: none !important; }
+  .er-book-title, #er-spread-toggle { display: none !important; }
   .er-btn-text { display: none !important; }
   .er-controls { gap: 4px; }
   .er-btn, .er-theme-btn {
@@ -246,5 +251,14 @@ html[data-read-mode="paginated"], body[data-read-mode="paginated"] { height: 100
   .er-theme-btn { min-width: 28px !important; height: 28px !important; font-size: 0.74rem !important; }
   .er-layout { margin-top: 44px; min-height: calc(100vh - 44px); }
   .er-sidebar { top: 44px; }
+  .er-main { padding: 16px 12px 60px !important; margin: 0 !important; max-width: 100vw !important; width: 100% !important; }
+  .er-cover-card { padding: 16px 0 24px !important; }
+  .cover-image, .er-cover-img { max-height: 65vh !important; }
+  .er-chapter-card h1, .hero-main-title { font-size: 1.55rem !important; line-height: 1.3 !important; }
+  .er-chapter-card h2 { font-size: 1.25rem !important; }
+  .hero-subtext { font-size: 0.95rem !important; }
+  .stats-matrix, .features-grid, [style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .hero-cta-group { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+  .hero-cta-group a, .hero-cta-group button { justify-content: center !important; width: 100% !important; }
 }
 """

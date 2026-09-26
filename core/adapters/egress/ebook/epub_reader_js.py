@@ -15,12 +15,13 @@ def get_epub_reader_js() -> str:
     if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); }
     if (bDrop) bDrop.style.display = open ? 'block' : 'none';
   };
+  const closeSidebar = () => setSidebar(false);
   function toggleSidebar() {
     if (window.innerWidth <= 900) setSidebar(!sb.classList.contains('open'));
     else if (sb) { sb.classList.toggle('collapsed'); try { localStorage.setItem('er_sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch(e){} }
   }
   if (btn) btn.onclick = toggleSidebar;
-  if (bDrop) bDrop.onclick = () => setSidebar(false);
+  if (bDrop) bDrop.onclick = closeSidebar;
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
   const vp = document.getElementById('er-viewport'), bContent = document.getElementById('er-book-content');
@@ -126,8 +127,9 @@ def get_epub_reader_js() -> str:
 
   // ⛶ 全屏沉浸阅读
   function toggleFs() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-    else document.exitFullscreen().catch(()=>{});
+    const el = document.documentElement, isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFs) { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) r.call(el).catch(()=>{}); }
+    else { const e = document.exitFullscreen || document.webkitExitFullscreen; if (e) e.call(document).catch(()=>{}); }
   }
   if (fsBtn) fsBtn.onclick = toggleFs;
 
@@ -201,12 +203,11 @@ def get_epub_reader_js() -> str:
     const href = a.getAttribute('href');
     if (!href) return;
     if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('data:')) {
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
-      return;
+      a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); return;
     }
     e.preventDefault();
     navigateToTarget(href);
+    if (window.innerWidth <= 900 && a.closest('#er-sidebar')) closeSidebar();
   });
 
   // 2. 视口点击与触控手势翻页
@@ -286,10 +287,7 @@ def get_epub_reader_js() -> str:
   try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) setFs(sfs); } catch(e){}
   if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
   if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));
-
-  window.addEventListener('resize', () => {
-    if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination();
-  });
+  window.addEventListener('resize', () => { if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination(); });
 
   // 启动模式初始化
   const savedMode = localStorage.getItem('er_read_mode') || 'paginated';
