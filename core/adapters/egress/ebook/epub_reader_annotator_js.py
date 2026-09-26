@@ -81,12 +81,31 @@ def get_epub_annotator_js() -> str:
       comment: comment,
       time: new Date().toLocaleDateString()
     };
+    if (currentSelection.range && typeof window.wrapRangeWithHighlight === 'function') {
+      window.wrapRangeWithHighlight(currentSelection.range, item);
+    }
     annotations.unshift(item);
     saveAnnotations();
     renderNotesList();
     if (fBar) fBar.style.display = 'none';
     window.getSelection().removeAllRanges();
   }
+
+  // 划线管理联动 API
+  window.getAnnotationById = (id) => annotations.find(x => x.id === id);
+  window.updateAnnotationColor = (id, color) => {
+    const a = annotations.find(x => x.id === id);
+    if (a) { a.color = color; saveAnnotations(); renderNotesList(); }
+  };
+  window.updateAnnotationComment = (id, comment) => {
+    const a = annotations.find(x => x.id === id);
+    if (a) { a.comment = comment; saveAnnotations(); renderNotesList(); }
+  };
+  window.deleteAnnotationById = (id) => {
+    annotations = annotations.filter(x => x.id !== id);
+    saveAnnotations();
+    renderNotesList();
+  };
 
   document.querySelectorAll('.er-fbtn[data-color]').forEach(btn => {
     btn.onclick = () => addHighlight(btn.getAttribute('data-color'));
@@ -190,7 +209,7 @@ def get_epub_annotator_js() -> str:
       return;
     }
     notesList.innerHTML = annotations.map(item => `
-      <div class="er-note-item" data-chap="${item.chapterId}">
+      <div class="er-note-item" data-chap="${item.chapterId}" data-id="${item.id}">
         <div class="er-note-quote" style="border-left-color: ${item.color === 'pink' ? '#ec4899' : (item.color === 'emerald' ? '#10b981' : '#f59e0b')}">
           ${item.text}
         </div>
@@ -205,8 +224,14 @@ def get_epub_annotator_js() -> str:
     notesList.querySelectorAll('.er-note-item').forEach(el => {
       el.onclick = (e) => {
         if (e.target.classList.contains('er-note-del')) return;
-        const chapId = el.getAttribute('data-chap');
-        if (chapId && window.navigateToTarget) window.navigateToTarget('#' + chapId);
+        const hlId = el.getAttribute('data-id');
+        const mark = document.querySelector(`mark[data-hl-id="${hlId}"]`);
+        if (mark && window.navigateToTarget) {
+          window.navigateToTarget(mark);
+        } else {
+          const chapId = el.getAttribute('data-chap');
+          if (chapId && window.navigateToTarget) window.navigateToTarget('#' + chapId);
+        }
       };
     });
 
@@ -217,27 +242,22 @@ def get_epub_annotator_js() -> str:
         annotations = annotations.filter(x => x.id !== id);
         saveAnnotations();
         renderNotesList();
+        if (typeof window.removeHighlightMark === 'function') window.removeHighlightMark(id);
       };
     });
   }
 
-  // 7. 导出 Markdown
+  // 7. 导出与清空
   const exportBtn = document.getElementById('er-export-notes-btn');
   if (exportBtn) {
     exportBtn.onclick = () => {
       if (!annotations.length) return alert('当前没有划线笔记可导出');
       const bookName = document.title.split(' - ')[0] || '典籍';
-      let md = `# 《${bookName}》读书笔记与高亮摘录\\n\\n`;
-      md += `> 导出时间：${new Date().toLocaleString()} · 共 ${annotations.length} 条划线\\n\\n---\\n\\n`;
+      let md = `# 《${bookName}》读书笔记与高亮摘录\\n\\n> 导出时间：${new Date().toLocaleString()} · 共 ${annotations.length} 条划线\\n\\n---\\n\\n`;
       annotations.forEach((a, idx) => {
-        md += `### ${idx + 1}. [${a.chapterTitle}]\\n\\n`;
-        md += `> ${a.text}\\n\\n`;
-        if (a.comment) md += `**批注**：${a.comment}\\n\\n`;
-        md += `*记录于 ${a.time}*\\n\\n---\\n\\n`;
+        md += `### ${idx + 1}. [${a.chapterTitle}]\\n\\n> ${a.text}\\n\\n${a.comment ? `**批注**：${a.comment}\\n\\n` : ''}*记录于 ${a.time}*\\n\\n---\\n\\n`;
       });
-      navigator.clipboard.writeText(md).then(() => {
-        alert('🎉 已将整书 Markdown 格式笔记复制到剪贴板，可直接粘贴入 Obsidian 或文库！');
-      }).catch(()=>{});
+      navigator.clipboard.writeText(md).then(() => alert('🎉 已将整书 Markdown 格式笔记复制到剪贴板！')).catch(()=>{});
     };
   }
 
@@ -245,6 +265,7 @@ def get_epub_annotator_js() -> str:
   if (clearBtn) {
     clearBtn.onclick = () => {
       if (confirm('确定要清空全书的所有划线与批注吗？')) {
+        annotations.forEach(a => { if (typeof window.removeHighlightMark === 'function') window.removeHighlightMark(a.id); });
         annotations = [];
         saveAnnotations();
         renderNotesList();
@@ -270,5 +291,8 @@ def get_epub_annotator_js() -> str:
   });
 
   renderNotesList();
+  if (typeof window.rehydrateAnnotations === 'function') {
+    setTimeout(() => window.rehydrateAnnotations(annotations), 60);
+  }
 })();
 """

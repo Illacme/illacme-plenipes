@@ -17,6 +17,31 @@ mark.er-hl-yellow { background: rgba(245,158,11,0.28); color: inherit; text-deco
 mark.er-hl-emerald { background: rgba(16,185,129,0.28); color: inherit; text-decoration-color: #10b981; }
 mark.er-hl-pink { background: rgba(236,72,153,0.28); color: inherit; text-decoration-color: #ec4899; }
 mark.er-hl:hover { filter: brightness(1.15); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+mark[data-has-comment="true"]::after { content: " 💭"; font-size: 0.72em; opacity: 0.85; vertical-align: super; }
+
+/* 💬 正文划线就地悬浮气泡 */
+.er-mark-popover {
+  position: fixed; display: none; z-index: 1050; width: 280px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45); padding: 10px 12px;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: erPop 0.15s ease-out; transform: translateY(-100%);
+}
+.er-mark-popover.open { display: block; }
+.er-pop-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.er-pop-colors { display: flex; gap: 6px; align-items: center; }
+.er-pop-color { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s; }
+.er-pop-color:hover { transform: scale(1.15); }
+.er-pop-color.active { border-color: var(--accent); transform: scale(1.2); }
+.er-pop-actions { display: flex; gap: 6px; align-items: center; }
+.er-pop-btn { background: none; border: none; color: var(--text-dim); font-size: 0.76rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+.er-pop-btn:hover { background: var(--bg-sidebar); color: var(--text-title); }
+.er-pop-del { color: #ef4444 !important; }
+.er-pop-comment { font-size: 0.78rem; background: var(--bg-sidebar); border-radius: 6px; padding: 6px 8px; color: var(--text-main); margin-bottom: 8px; line-height: 1.4; word-break: break-word; }
+.er-pop-input-box { display: flex; gap: 6px; }
+.er-pop-input { flex: 1; min-width: 0; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.78rem; color: var(--text-main); outline: none; }
+.er-pop-input:focus { border-color: var(--accent); }
+.er-pop-save-note { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; cursor: pointer; }
 
 /* 🎈 悬浮划词气泡工具栏 */
 .er-floating-bar {

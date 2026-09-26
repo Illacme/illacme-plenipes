@@ -187,6 +187,27 @@ def render_epub_reader_html(epub_path: str) -> str:
     <button type="button" class="er-fbtn" id="er-fbtn-copy" title="复制纯文本">📋 复制</button>
   </div>
 
+  <!-- 💬 正文划线就地悬浮气泡 -->
+  <div class="er-mark-popover" id="er-mark-popover">
+    <div class="er-pop-row">
+      <div class="er-pop-colors">
+        <span class="er-pop-color dot-yellow" data-color="yellow" title="黄荧光"></span>
+        <span class="er-pop-color dot-emerald" data-color="emerald" title="翠绿"></span>
+        <span class="er-pop-color dot-pink" data-color="pink" title="胭脂粉"></span>
+      </div>
+      <div class="er-pop-actions">
+        <button type="button" class="er-pop-btn er-pop-copy" title="复制">📋 复制</button>
+        <button type="button" class="er-pop-btn er-pop-card" title="金句卡片">🖼️ 卡片</button>
+        <button type="button" class="er-pop-btn er-pop-del" title="删除划线">🗑️ 删除</button>
+      </div>
+    </div>
+    <div class="er-pop-comment" style="display:none;"></div>
+    <div class="er-pop-input-box">
+      <input type="text" class="er-pop-input" placeholder="输入或修改随手批注..." maxlength="200" />
+      <button type="button" class="er-pop-save-note">保存</button>
+    </div>
+  </div>
+
   <!-- 🖼️ 金句卡片模态窗 -->
   <div class="er-modal-backdrop" id="er-card-modal">
     <div class="er-card-box">
