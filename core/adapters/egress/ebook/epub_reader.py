@@ -83,22 +83,24 @@ def render_epub_reader_html(epub_path: str) -> str:
             chapters.append({"id": card_id, "title": chap_title, "content": body_html, "class": card_class})
             fallback_toc.append({"id": card_id, "title": chap_title})
 
-    # 目录拼接：优先采用从 nav.xhtml 提取的完整分级树，并在最顶部置顶封面
+    try:
+        from core.bindery.qr_sync import generate_qr_data_uri, get_lan_ip
+        import urllib.parse
+        lan_ip = get_lan_ip()
+        file_param = urllib.parse.quote(os.path.basename(epub_path))
+        lan_url = f"http://{lan_ip}:43212/api/bindery/view?file={file_param}"
+        qr_data_uri = generate_qr_data_uri(lan_url)
+    except Exception:
+        lan_url, qr_data_uri = "", ""
+
     cover_item = next((c for c in chapters if "cover" in c["id"]), None)
     cover_nav_html = f'<li class="er-toc-cover"><a href="#{cover_item["id"]}" class="er-toc-link">📕 典籍封面与扉页</a></li>\n' if cover_item else ''
-    
     if toc_tree_html:
-        if '<ol class="er-toc-tree">' in toc_tree_html and cover_nav_html:
-            final_toc_html = toc_tree_html.replace('<ol class="er-toc-tree">', f'<ol class="er-toc-tree">\n  {cover_nav_html}', 1)
-        else:
-            final_toc_html = f'<ol class="er-toc-tree">\n{cover_nav_html}</ol>\n{toc_tree_html}' if cover_nav_html else toc_tree_html
+        final_toc_html = toc_tree_html.replace('<ol class="er-toc-tree">', f'<ol class="er-toc-tree">\n  {cover_nav_html}', 1) if ('<ol class="er-toc-tree">' in toc_tree_html and cover_nav_html) else (f'<ol class="er-toc-tree">\n{cover_nav_html}</ol>\n{toc_tree_html}' if cover_nav_html else toc_tree_html)
     else:
         final_toc_html = f'<ol class="er-toc-tree">\n{cover_nav_html}' + "\n".join([f'  <li><a href="#{c["id"]}" class="er-toc-link">📖 {html.escape(c["title"])}</a></li>' for c in fallback_toc if "cover" not in c["id"]]) + '\n</ol>'
 
-    chapters_html = "\n".join([
-        f'<article class="{c["class"]}" id="{c["id"]}">{c["content"]}</article>'
-        for c in chapters
-    ])
+    chapters_html = "\n".join([f'<article class="{c["class"]}" id="{c["id"]}">{c["content"]}</article>' for c in chapters])
 
     return f"""<!DOCTYPE html>
 <html lang="zh-CN" data-theme="dark" data-read-mode="paginated" data-spread="auto" data-font="sans">
@@ -243,6 +245,7 @@ def render_epub_reader_html(epub_path: str) -> str:
       </div>
     </div>
   </div>
+  <img id="er-qr-source" src="{qr_data_uri}" data-lan-url="{lan_url}" style="display:none;" alt="QR"/>
 
   <!-- 🎨 Aa 排版与主题定制抽屉 -->
   <div class="er-prefs-drawer" id="er-prefs-drawer">

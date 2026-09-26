@@ -11,34 +11,24 @@ def get_epub_poster_js() -> str:
     return """(function() {
   'use strict';
 
-  // 极简纯客户端二维码矩阵引擎 (支持 Byte 编码，用于海报扫码直链)
-  function makeQR(text) {
-    const len = text.length;
-    let type = len <= 14 ? 1 : (len <= 26 ? 2 : (len <= 42 ? 3 : (len <= 62 ? 4 : (len <= 84 ? 5 : (len <= 106 ? 6 : (len <= 122 ? 7 : (len <= 150 ? 8 : 10)))))));
-    const count = type * 4 + 17;
-    const modules = Array.from({length: count}, () => Array(count).fill(null));
-    function mark(r, c, v) { modules[r][c] = v; }
-    function finder(row, col) {
-      for (let r = -1; r <= 7; r++) {
-        for (let c = -1; c <= 7; c++) {
-          if (row + r < 0 || count <= row + r || col + c < 0 || count <= col + c) continue;
-          mark(row + r, col + c, (0 <= r && r <= 6 && (c == 0 || c == 6)) || (0 <= c && c <= 6 && (r == 0 || r == 6)) || (2 <= r && r <= 4 && 2 <= c && c <= 4));
-        }
+  // 真实高清移动端扫码即读二维码绘制引擎
+  function drawRealQR(ctx, qrX, qrY, qrSize, onDone) {
+    const qrEl = document.getElementById('er-qr-source');
+    if (qrEl && qrEl.src && qrEl.src.startsWith('data:image')) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+        if (onDone) onDone();
+      };
+      img.onerror = () => { if (onDone) onDone(); };
+      img.src = qrEl.src;
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+        if (onDone) onDone();
       }
+    } else {
+      if (onDone) onDone();
     }
-    finder(0, 0); finder(0, count - 7); finder(count - 7, 0);
-    for (let i = 8; i < count - 8; i++) { if (modules[i][6] === null) mark(i, 6, i % 2 === 0); if (modules[6][i] === null) mark(6, i, i % 2 === 0); }
-    // 简易散列填充兜底（确保移动端扫码直达）
-    let seed = 0; for (let i = 0; i < len; i++) seed = (seed * 31 + text.charCodeAt(i)) & 0xffffffff;
-    for (let r = 0; r < count; r++) {
-      for (let c = 0; c < count; c++) {
-        if (modules[r][c] === null) {
-          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-          modules[r][c] = (seed % 3 === 0);
-        }
-      }
-    }
-    return { count, isDark: (r, c) => !!modules[r][c] };
   }
 
   // 优雅中英混排智能换行
@@ -187,16 +177,28 @@ def get_epub_poster_js() -> str:
     ctx.lineWidth = 1;
     ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
 
-    // 绘制二维码矩阵 (指向当前阅读器全屏页面)
-    const viewUrl = window.location.href;
-    const qr = makeQR(viewUrl);
-    const cellSize = qrSize / qr.count;
-    ctx.fillStyle = '#0f172a';
-    for (let r = 0; r < qr.count; r++) {
-      for (let c = 0; c < qr.count; c++) {
-        if (qr.isDark(r, c)) {
-          ctx.fillRect(qrX + c * cellSize, qrY + r * cellSize, cellSize + 0.4, cellSize + 0.4);
+    // 导出高清 PNG 并自动触发下载
+    function exportPoster() {
+      try {
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        const link = document.createElement('a');
+        const safeBookName = (book || '金句海报').replace(/[^a-zA-Z0-9_\\u4e00-\\u9fa5]/g, '_');
+        link.download = `金句卡片_${safeBookName}_${Date.now()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        const cardSave = document.getElementById('er-card-save-btn');
+        if (cardSave) {
+          const orig = cardSave.innerHTML;
+          cardSave.innerHTML = '<span>✅ 高清海报已保存</span>';
+          cardSave.style.background = '#10b981'; cardSave.style.borderColor = '#10b981';
+          setTimeout(() => { cardSave.innerHTML = orig; cardSave.style.background = ''; cardSave.style.borderColor = ''; }, 2000);
         }
+      } catch (err) {
+        console.error('[QuotePoster] 海报生成下载异常:', err);
+        alert('生成高清海报失败，请稍后重试: ' + (err.message || err));
       }
     }
 
@@ -206,28 +208,8 @@ def get_epub_poster_js() -> str:
     ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.fillText('📱 手机扫码直达翻阅', qrX + qrSize / 2, qrY + qrSize + 30);
 
-    // 9. 导出高清 PNG 并自动触发下载
-    try {
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      const link = document.createElement('a');
-      const safeBookName = (book || '金句海报').replace(/[^a-zA-Z0-9_\\u4e00-\\u9fa5]/g, '_');
-      link.download = `金句卡片_${safeBookName}_${Date.now()}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      const cardSave = document.getElementById('er-card-save-btn');
-      if (cardSave) {
-        const orig = cardSave.innerHTML;
-        cardSave.innerHTML = '<span>✅ 高清海报已保存</span>';
-        cardSave.style.background = '#10b981'; cardSave.style.borderColor = '#10b981';
-        setTimeout(() => { cardSave.innerHTML = orig; cardSave.style.background = ''; cardSave.style.borderColor = ''; }, 2000);
-      }
-    } catch (err) {
-      console.error('[QuotePoster] 海报生成下载异常:', err);
-      alert('生成高清海报失败，请稍后重试: ' + (err.message || err));
-    }
+    // 绘制真实物理局域网/公网二维码
+    drawRealQR(ctx, qrX, qrY, qrSize, exportPoster);
   };
 })();
 """
