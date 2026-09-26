@@ -199,10 +199,53 @@ def get_epub_prefs_js() -> str:
     setTimeout(() => toast.remove(), 2600);
   }
 
-  // 键盘快捷键扩展 (i: 沉浸模式, p: 打开排版)
+  // 顶部悬停唤回顶栏
+  window.addEventListener('mousemove', (e) => {
+    if (!isImmersive) return;
+    if (e.clientY <= 36) {
+      document.body.classList.add('er-topbar-hover');
+    } else if (e.clientY > 70) {
+      document.body.classList.remove('er-topbar-hover');
+    }
+  });
+
+  // ⛶ 全屏沉浸深度联动
+  const fsBtn = document.getElementById('er-fullscreen');
+  function toggleFsAndImmersive() {
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const el = document.documentElement;
+    if (!isFs) {
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) req.call(el).catch(() => {});
+      toggleImmersive(true);
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document).catch(() => {});
+      toggleImmersive(false);
+    }
+  }
+  if (fsBtn) {
+    fsBtn.onclick = toggleFsAndImmersive;
+  }
+
+  function syncFsBtnState() {
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (fsBtn) {
+      fsBtn.innerHTML = isFs ? '🗗' : '⛶';
+      fsBtn.title = isFs ? '退出全屏沉浸 (快捷键 F 或 Esc)' : '全屏沉浸阅读 (快捷键 F)';
+    }
+    if (!isFs && isImmersive) {
+      toggleImmersive(false);
+    }
+  }
+  document.addEventListener('fullscreenchange', syncFsBtnState);
+  document.addEventListener('webkitfullscreenchange', syncFsBtnState);
+
+  // 键盘快捷键扩展 (i/f: 沉浸全屏, p: 打开排版)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'i' || e.key === 'I') toggleImmersive();
+    else if (e.key === 'f' || e.key === 'F') toggleFsAndImmersive();
     else if (e.key === 'p' || e.key === 'P') openPrefsDrawer();
     else if (e.key === 'Escape') {
       if (pDrawer && pDrawer.classList.contains('open')) closePrefsDrawer();

@@ -223,8 +223,6 @@ def render_epub_reader_html(epub_path: str) -> str:
     </div>
   </div>
 
-  <div class="er-immersive-indicator" onclick="window.toggleImmersive(false)" title="轻触退出沉浸全屏"><span>✨ 沉浸中</span><span>✕</span></div>
-
   <!-- 🎨 Aa 排版与主题定制抽屉 -->
   <div class="er-prefs-drawer" id="er-prefs-drawer">
     <div class="er-prefs-header">

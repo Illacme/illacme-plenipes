@@ -156,15 +156,11 @@ body.er-immersive .er-viewport {
   100% { opacity: 0; transform: translateX(-50%) translateY(-6px); pointer-events: none; }
 }
 
-/* 💡 沉浸模式快捷操作指示 */
-.er-immersive-indicator {
-  position: fixed; top: 12px; right: 14px;
-  background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px); border-radius: 20px; padding: 4px 10px;
-  font-size: 0.72rem; color: rgba(255, 255, 255, 0.75);
-  display: inline-flex; align-items: center; gap: 5px; z-index: 910;
-  cursor: pointer; opacity: 0; transition: opacity 0.3s;
+/* 💡 沉浸模式下鼠标移至顶部区域平滑唤出顶栏供读者操作 */
+body.er-immersive.er-topbar-hover .er-topbar,
+body.er-immersive .er-topbar:hover {
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
-body.er-immersive .er-immersive-indicator { opacity: 0.75; }
-body.er-immersive .er-immersive-indicator:hover { opacity: 1; }
 """

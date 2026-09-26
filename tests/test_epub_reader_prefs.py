@@ -30,7 +30,7 @@ def test_prefs_css_and_template_injection():
         assert 'id="er-prefs-drawer"' in html_out
         assert 'data-th="mint"' in html_out
         assert 'data-th="oled"' in html_out
-        assert 'er-immersive-indicator' in html_out
+        assert 'id="er-fullscreen"' in html_out
 
 
 def test_prefs_js_in_node_sandbox():
