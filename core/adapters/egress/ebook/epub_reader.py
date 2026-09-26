@@ -16,6 +16,8 @@ from .epub_reader_css import get_epub_reader_css
 from .epub_reader_js import get_epub_reader_js
 from .epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
 from .epub_reader_search import get_epub_search_css, get_epub_search_js
+from .epub_reader_prefs_css import get_epub_prefs_css
+from .epub_reader_prefs_js import get_epub_prefs_js
 from .epub_reader_parser import (
     extract_body_html,
     resolve_zip_images,
@@ -104,7 +106,7 @@ def render_epub_reader_html(epub_path: str) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <title>{html.escape(book_title)} - EPUB 在线翻阅</title>
-  <style>{get_epub_reader_css()}\n{get_epub_annotator_css()}\n{get_epub_search_css()}</style>
+  <style>{get_epub_reader_css()}\n{get_epub_annotator_css()}\n{get_epub_search_css()}\n{get_epub_prefs_css()}</style>
 </head>
 <body>
   <div class="er-progress-bar" id="er-progress-bar"></div>
@@ -114,6 +116,7 @@ def render_epub_reader_html(epub_path: str) -> str:
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
     <div class="er-controls">
+      <button type="button" class="er-btn" id="er-btn-prefs" title="排版与主题定制 (P)">🎨<span class="er-btn-text"> 排版</span></button>
       <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑<span class="er-btn-text"> 双页</span></button>
       <button type="button" class="er-btn" id="er-font-family" title="切换字体：黑体 / 宋体 / 楷体">🔤<span class="er-btn-text"> 黑体</span></button>
       <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖<span class="er-btn-text"> 翻页</span></button>
@@ -220,8 +223,49 @@ def render_epub_reader_html(epub_path: str) -> str:
     </div>
   </div>
 
+  <div class="er-immersive-indicator" onclick="window.toggleImmersive(false)" title="轻触退出沉浸全屏"><span>✨ 沉浸中</span><span>✕</span></div>
+
+  <!-- 🎨 Aa 排版与主题定制抽屉 -->
+  <div class="er-prefs-drawer" id="er-prefs-drawer">
+    <div class="er-prefs-header">
+      <div class="er-prefs-title">🎨 排版与沉浸偏好</div>
+      <button type="button" class="er-prefs-close" id="er-prefs-close" title="收起抽屉">✕</button>
+    </div>
+    <div class="er-prefs-row">
+      <span class="er-prefs-label">字号大小</span>
+      <div class="er-prefs-group">
+        <button type="button" class="er-pbtn" id="er-pfs-dec">A- 缩小</button>
+        <span id="er-pfs-val" style="font-weight:700; min-width:42px; text-align:center; font-size:0.78rem;">16px</span>
+        <button type="button" class="er-pbtn" id="er-pfs-inc">A+ 放大</button>
+      </div>
+    </div>
+    <div class="er-prefs-row">
+      <span class="er-prefs-label">阅读行距</span>
+      <div class="er-prefs-group">
+        <button type="button" class="er-pbtn er-lh-btn" data-lh="compact">紧凑</button>
+        <button type="button" class="er-pbtn er-lh-btn active" data-lh="normal">标准</button>
+        <button type="button" class="er-pbtn er-lh-btn" data-lh="relaxed">宽松</button>
+      </div>
+    </div>
+    <div class="er-prefs-row">
+      <span class="er-prefs-label">五色纸质</span>
+      <div class="er-theme-swatches">
+        <button type="button" class="er-swatch-btn swatch-dark active" data-th="dark" title="暗黑翠玉">🌙</button>
+        <button type="button" class="er-swatch-btn swatch-light" data-th="light" title="纯净日光">☀️</button>
+        <button type="button" class="er-swatch-btn swatch-sepia" data-th="sepia" title="暖阳麦香">📜</button>
+        <button type="button" class="er-swatch-btn swatch-mint" data-th="mint" title="水墨薄荷护眼绿">🌿</button>
+        <button type="button" class="er-swatch-btn swatch-oled" data-th="oled" title="深空极黑纯黑 OLED">🌑</button>
+      </div>
+    </div>
+    <div class="er-prefs-row" style="margin-bottom:4px; padding-top:6px; border-top:1px dashed var(--border);">
+      <span class="er-prefs-label">沉浸手势</span>
+      <span style="font-size:0.72rem; color:var(--text-dim);">轻触屏幕正中央，可随时全屏沉浸阅读</span>
+    </div>
+  </div>
+
   <script>{get_epub_reader_js()}</script>
   <script>{get_epub_annotator_js()}</script>
   <script>{get_epub_search_js()}</script>
+  <script>{get_epub_prefs_js()}</script>
 </body>
 </html>"""
