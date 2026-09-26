@@ -157,6 +157,14 @@
                                 onchange: `window.updateConfigField('ingress_settings.hard_line_break', this.value === 'true')`,
                                 description: '控制原稿文库编辑器预览区和译文校对工作台中的换行渲染方式。<br>· <b>标准模式</b>：Markdown 原生行为，段落内换行不生效，需空行分段；适合有 Markdown 经验的专业用户。<br>· <b>直觉模式</b>：按 Enter 即换行，预览效果与编辑区完全对齐；适合从其他编辑器迁移或习惯"所见即所得"的用户。<br><span style="color: var(--text-dim); font-size: 0.8em;">⚠️ 修改后需保存配置，刷新页面后生效。</span>'
                             })}
+                            ${renderSettingsItem('EPUB 在线翻阅引擎模式', 'epub_reader_engine', data.epub_reader_engine || 'python', 'select', {
+                                items: [
+                                    {value: 'python', text: '⚡ 服务端预解析 (Python 引擎 · 默认推荐)'},
+                                    {value: 'client_js', text: '🌐 纯前端离线解析 (Client-Side JS 引擎 · 静态发布)'}
+                                ],
+                                onchange: `window.updateConfigField('epub_reader_engine', this.value)`,
+                                description: '控制装订工坊导出的 EPUB 在线翻阅内核。<br>· <b>⚡ 服务端预解析 (Python)</b>：服务端实时解包直出轻量 HTML。首屏秒开、零客户端算力消耗，适合日常写作、排版调试、内网穿透及独立服务器环境。<br>· <b>🌐 纯前端离线解析 (Client-Side JS)</b>：基于本地化解压库在浏览器内存中解包渲染，100% 脱离服务端。适合部署至 GitHub Pages、Vercel 等静态托管平台，实现零服务器成本、永久域名公网扫码畅读。<br><span style="color: var(--text-dim); font-size: 0.8em;">💡 纯 JS 驱动已 100% 部署在本地 (web/dashboard/vendor/)，完全脱网可用，不依赖任何第三方 CDN。</span>'
+                            })}
                             ${renderSettingsItem('段落缓存存储目录', 'block_cache_dir', data.block_cache_dir || '', 'text', {
                                 placeholder: '默认为空（自愈退避至项目根目录下的隐藏目录 .plenipes/blocks/）',
                                 description: '跨品牌共享段落缓存物理存储根目录。支持自定义重定向以实现在任意品牌和任意 SSG 主题之间共用。'

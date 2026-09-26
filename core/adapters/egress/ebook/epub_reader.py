@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes - EPUB Embedded Reader Engine
-模块职责：将已编译的 EPUB 3.0 电子书在内存中以流式方式重构为多级树状目录与高质感网页书卷阅读器。
+模块职责：调度 EPUB 电子书翻阅内核，支持 Python 服务端预解析与纯客户端 JS 离线解包双模。
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
@@ -9,15 +9,12 @@ import os
 import re
 import zipfile
 import html
+import urllib.parse
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
-from .epub_reader_css import get_epub_reader_css
-from .epub_reader_js import get_epub_reader_js
-from .epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
-from .epub_reader_search import get_epub_search_css, get_epub_search_js
-from .epub_reader_prefs_css import get_epub_prefs_css
-from .epub_reader_prefs_js import get_epub_prefs_js
+from .epub_reader_template import build_epub_reader_shell
+from .epub_reader_client_js import get_epub_client_loader_css, get_epub_client_engine_js
 from .epub_reader_parser import (
     extract_body_html,
     resolve_zip_images,
@@ -26,11 +23,68 @@ from .epub_reader_parser import (
 )
 
 
-def render_epub_reader_html(epub_path: str) -> str:
-    """将物理 EPUB 文件渲染为高质感自包含在线翻阅 HTML 视界"""
-    if not os.path.isfile(epub_path):
-        raise FileNotFoundError(f"EPUB 文件不存在: {epub_path}")
+def _get_qr_metadata(epub_path: str) -> Dict[str, str]:
+    """安全解析自适应二维码元数据"""
+    try:
+        from core.bindery.qr_sync import resolve_adaptive_qr_payload
+        qr_info = resolve_adaptive_qr_payload(os.path.basename(epub_path), action="view")
+        return {
+            "qr_data_uri": qr_info.get("qr_data_uri", ""),
+            "qr_url": qr_info.get("url", ""),
+            "qr_tier": qr_info.get("tier", "lan"),
+            "qr_tip": qr_info.get("tip_text", "📱 手机扫码直达翻阅"),
+        }
+    except Exception:
+        return {
+            "qr_data_uri": "", "qr_url": "", "qr_tier": "lan",
+            "qr_tip": "📱 手机扫码直达翻阅"
+        }
 
+
+def _render_client_js_mode(epub_path: str, base_fn: str, qr_meta: Dict[str, str]) -> str:
+    """🌐 [Client-Side JS Engine] 纯前端离线客户端解析阅读器渲染"""
+    book_title = os.path.splitext(base_fn)[0]
+    enc_fn = urllib.parse.quote(base_fn)
+    source_url = f"/api/bindery/download?file={enc_fn}"
+
+    # 读取本地化的 JSZip 核心库 (严格遵循 SOP-03 供应链本土化)
+    jszip_vendor_path = os.path.abspath("web/dashboard/vendor/jszip.min.js")
+    jszip_script = ""
+    if os.path.isfile(jszip_vendor_path):
+        try:
+            with open(jszip_vendor_path, "r", encoding="utf-8") as f:
+                jszip_script = f"<script>{f.read()}</script>\n"
+        except Exception:
+            jszip_script = '<script src="/dashboard/vendor/jszip.min.js"></script>\n'
+    else:
+        jszip_script = '<script src="/dashboard/vendor/jszip.min.js"></script>\n'
+
+    client_scripts = f"{jszip_script}<script>{get_epub_client_engine_js()}</script>"
+
+    loader_html = """
+    <div class="er-client-loader" id="er-client-loader">
+      <div class="er-loader-spinner">⏳</div>
+      <div class="er-loader-title">正在载入纯 JS 典籍引擎...</div>
+      <div class="er-loader-desc">100% 浏览器前端内存解包，脱离 Python 服务端运行。</div>
+    </div>
+    """
+
+    return build_epub_reader_shell(
+        book_title=book_title,
+        toc_html="",
+        content_html=loader_html,
+        qr_data_uri=qr_meta["qr_data_uri"],
+        qr_url=qr_meta["qr_url"],
+        qr_tier=qr_meta["qr_tier"],
+        qr_tip=qr_meta["qr_tip"],
+        source_url=source_url,
+        client_scripts_html=client_scripts,
+        extra_css=get_epub_client_loader_css()
+    )
+
+
+def _render_python_mode(epub_path: str, qr_meta: Dict[str, str]) -> str:
+    """⚡ [Python Server-Side Engine] 服务端极速预解析直出 HTML 渲染"""
     with zipfile.ZipFile(epub_path, "r") as z:
         container_xml = z.read("META-INF/container.xml")
         rootfile = ET.fromstring(container_xml).find(".//{urn:oasis:names:tc:opendocument:xmlns:container}rootfile")
@@ -83,16 +137,6 @@ def render_epub_reader_html(epub_path: str) -> str:
             chapters.append({"id": card_id, "title": chap_title, "content": body_html, "class": card_class})
             fallback_toc.append({"id": card_id, "title": chap_title})
 
-    try:
-        from core.bindery.qr_sync import resolve_adaptive_qr_payload
-        qr_info = resolve_adaptive_qr_payload(os.path.basename(epub_path), action="view")
-        qr_data_uri = qr_info.get("qr_data_uri", "")
-        qr_url = qr_info.get("url", "")
-        qr_tier = qr_info.get("tier", "lan")
-        qr_tip = qr_info.get("tip_text", "📱 手机扫码直达翻阅")
-    except Exception:
-        qr_data_uri, qr_url, qr_tier, qr_tip = "", "", "lan", "📱 手机扫码直达翻阅"
-
     cover_item = next((c for c in chapters if "cover" in c["id"]), None)
     cover_nav_html = f'<li class="er-toc-cover"><a href="#{cover_item["id"]}" class="er-toc-link">📕 典籍封面与扉页</a></li>\n' if cover_item else ''
     if toc_tree_html:
@@ -102,192 +146,35 @@ def render_epub_reader_html(epub_path: str) -> str:
 
     chapters_html = "\n".join([f'<article class="{c["class"]}" id="{c["id"]}">{c["content"]}</article>' for c in chapters])
 
-    return f"""<!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark" data-read-mode="paginated" data-spread="auto" data-font="sans">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
-  <title>{html.escape(book_title)} - EPUB 在线翻阅</title>
-  <style>{get_epub_reader_css()}\n{get_epub_annotator_css()}\n{get_epub_search_css()}\n{get_epub_prefs_css()}</style>
-</head>
-<body>
-  <div class="er-progress-bar" id="er-progress-bar"></div>
-  <header class="er-topbar">
-    <div class="er-topbar-left">
-      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰<span class="er-btn-text"> 目录/检索</span></button>
-      <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
-    </div>
-    <div class="er-controls">
-      <button type="button" class="er-btn" id="er-btn-prefs" title="排版与主题定制 (P)">🎨<span class="er-btn-text"> 排版</span></button>
-      <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑<span class="er-btn-text"> 双页</span></button>
-      <button type="button" class="er-btn" id="er-font-family" title="切换字体：黑体 / 宋体 / 楷体">🔤<span class="er-btn-text"> 黑体</span></button>
-      <button type="button" class="er-btn er-mode-btn" id="er-mode-toggle" title="切换阅读模式：左右翻页 / 连续卷轴">📖<span class="er-btn-text"> 翻页</span></button>
-      <button type="button" class="er-btn" id="er-font-dec" title="缩小字号">A-</button>
-      <button type="button" class="er-btn" id="er-font-inc" title="放大字号">A+</button>
-      <button type="button" class="er-theme-btn active" data-theme="dark" title="暗黑翠玉">🌙</button>
-      <button type="button" class="er-theme-btn" data-theme="light" title="高亮纯净">☀️</button>
-      <button type="button" class="er-theme-btn" data-theme="sepia" title="复古羊皮纸">📜</button>
-      <button type="button" class="er-btn" id="er-fullscreen" title="全屏沉浸阅读 (快捷键 F)">⛶</button>
-    </div>
-  </header>
+    return build_epub_reader_shell(
+        book_title=book_title,
+        toc_html=final_toc_html,
+        content_html=chapters_html,
+        qr_data_uri=qr_meta["qr_data_uri"],
+        qr_url=qr_meta["qr_url"],
+        qr_tier=qr_meta["qr_tier"],
+        qr_tip=qr_meta["qr_tip"]
+    )
 
-  <div class="er-layout">
-    <aside class="er-sidebar" id="er-sidebar">
-      <div class="er-sidebar-tabs">
-        <button type="button" class="er-stab-btn active" id="er-stab-toc" data-tab="er-pane-toc">📑 目录</button>
-        <button type="button" class="er-stab-btn" id="er-stab-notes" data-tab="er-pane-notes">🔖 划线 <span class="er-badge" id="er-notes-count">0</span></button>
-        <button type="button" class="er-stab-btn" id="er-stab-search" data-tab="er-pane-search">🔍 检索 <span class="er-badge" id="er-search-count">0</span></button>
-      </div>
-      <div class="er-sidebar-pane active" id="er-pane-toc">
-        {final_toc_html}
-      </div>
-      <div class="er-sidebar-pane" id="er-pane-notes">
-        <div class="er-notes-toolbar">
-          <button type="button" class="er-btn er-btn-sm er-btn-primary" id="er-export-notes-btn">📥 导出笔记</button>
-          <button type="button" class="er-btn er-btn-sm" id="er-clear-notes-btn">🗑️ 清空</button>
-        </div>
-        <div class="er-notes-list" id="er-notes-list"></div>
-      </div>
-      <div class="er-sidebar-pane" id="er-pane-search">
-        <div class="er-search-box">
-          <span class="er-search-icon">🔍</span>
-          <input type="text" class="er-search-input" id="er-search-input" placeholder="输入关键词检索全书..." autocomplete="off"/>
-          <span class="er-search-kbd">⌘K</span>
-        </div>
-        <div class="er-search-meta" id="er-search-meta">输入关键词检索全书典籍</div>
-        <div class="er-search-results" id="er-search-results">
-          <div class="er-search-empty">输入关键词，即可秒级全文检索所有章节与段落。</div>
-        </div>
-      </div>
-    </aside>
-    <div class="er-backdrop" id="er-backdrop"></div>
-    <main class="er-main" id="er-main">
-      <button type="button" class="er-page-arrow er-page-prev" id="er-page-prev" title="上一页 (←)">‹</button>
-      <button type="button" class="er-page-arrow er-page-next" id="er-page-next" title="下一页 (→)">›</button>
-      
-      <div class="er-viewport" id="er-viewport">
-        <div class="er-book-content" id="er-book-content">
-          {chapters_html}
-        </div>
-      </div>
 
-      <footer class="er-paginated-footer" id="er-paginated-footer">
-        <div class="er-footer-chapter" id="er-footer-chapter"></div>
-        <div class="er-footer-page" id="er-footer-page">1 / 1</div>
-      </footer>
-    </main>
-  </div>
+def render_epub_reader_html(epub_path: str, engine: Optional[str] = None) -> str:
+    """🎯 双模智能调度：将物理 EPUB 渲染为在线翻阅 HTML 视界 (Python / Client-Side JS)"""
+    if not os.path.isfile(epub_path):
+        raise FileNotFoundError(f"EPUB 文件不存在: {epub_path}")
 
-  <!-- 🎈 划选浮动工具栏 -->
-  <div class="er-floating-bar" id="er-floating-bar">
-    <button type="button" class="er-fbtn" data-color="yellow" title="黄荧光划线"><span class="er-fdot dot-yellow"></span> 划线</button>
-    <button type="button" class="er-fbtn" data-color="emerald" title="翠绿高亮"><span class="er-fdot dot-emerald"></span></button>
-    <button type="button" class="er-fbtn" data-color="pink" title="胭脂粉高亮"><span class="er-fdot dot-pink"></span></button>
-    <div class="er-fsep"></div>
-    <button type="button" class="er-fbtn" id="er-fbtn-note" title="随手批注">💭 批注</button>
-    <button type="button" class="er-fbtn" id="er-fbtn-card" title="生成金句卡片">🖼️ 金句卡片</button>
-    <button type="button" class="er-fbtn" id="er-fbtn-copy" title="复制纯文本">📋 复制</button>
-  </div>
+    # 1. 解析活跃翻阅引擎 (优先显式入参，次选全局配置，默认 python)
+    active_engine = (engine or "").strip().lower()
+    if not active_engine:
+        try:
+            from core.config.config import load_config
+            cfg = load_config()
+            active_engine = getattr(cfg, "epub_reader_engine", "python") or "python"
+        except Exception:
+            active_engine = "python"
 
-  <!-- 💬 正文划线就地悬浮气泡 -->
-  <div class="er-mark-popover" id="er-mark-popover">
-    <div class="er-pop-row">
-      <div class="er-pop-colors">
-        <span class="er-pop-color dot-yellow" data-color="yellow" title="黄荧光"></span>
-        <span class="er-pop-color dot-emerald" data-color="emerald" title="翠绿"></span>
-        <span class="er-pop-color dot-pink" data-color="pink" title="胭脂粉"></span>
-      </div>
-      <div class="er-pop-actions">
-        <button type="button" class="er-pop-btn er-pop-copy" title="复制">📋 复制</button>
-        <button type="button" class="er-pop-btn er-pop-card" title="金句卡片">🖼️ 卡片</button>
-        <button type="button" class="er-pop-btn er-pop-del" title="删除划线">🗑️ 删除</button>
-      </div>
-    </div>
-    <div class="er-pop-comment" style="display:none;"></div>
-    <div class="er-pop-input-box">
-      <input type="text" class="er-pop-input" placeholder="输入或修改随手批注..." maxlength="200" />
-      <button type="button" class="er-pop-save-note">保存</button>
-    </div>
-  </div>
+    qr_meta = _get_qr_metadata(epub_path)
+    base_fn = os.path.basename(epub_path)
 
-  <!-- 🖼️ 金句卡片模态窗 -->
-  <div class="er-modal-backdrop" id="er-card-modal">
-    <div class="er-card-box">
-      <div class="er-quote-card" id="er-quote-card">
-        <div class="er-card-quote-mark">“</div>
-        <div class="er-card-quote-text" id="er-card-text"></div>
-        <div class="er-card-quote-mark-end">”</div>
-        <div class="er-card-meta">
-          <div>
-            <div class="er-card-book-title" id="er-card-book"></div>
-            <div class="er-card-chapter" id="er-card-chap"></div>
-          </div>
-          <div class="er-card-brand">Illacme Plenipes</div>
-        </div>
-      </div>
-      <div class="er-card-actions">
-        <button type="button" class="er-btn" id="er-card-close-btn">关闭</button>
-        <button type="button" class="er-btn" id="er-card-copy-btn">📋 复制金句文本</button>
-        <button type="button" class="er-btn er-btn-primary" id="er-card-save-btn">🖼️ 保存卡片海报</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✍️ 随手批注模态窗 -->
-  <div class="er-modal-backdrop" id="er-note-modal">
-    <div class="er-note-box">
-      <div class="er-note-box-title">✍️ 记录随笔思考</div>
-      <div class="er-note-target-text" id="er-note-target-text"></div>
-      <textarea class="er-note-input" id="er-note-input" rows="3" placeholder="在此写下对本段文字的灵感、考据或思考..."></textarea>
-      <div class="er-note-actions">
-        <button type="button" class="er-btn" id="er-note-cancel-btn">取消</button>
-        <button type="button" class="er-btn er-btn-primary" id="er-note-save-btn">保存批注</button>
-      </div>
-    </div>
-  </div>
-  <img id="er-qr-source" src="{qr_data_uri}" data-url="{qr_url}" data-tier="{qr_tier}" data-tip-text="{qr_tip}" style="display:none;" alt="QR"/>
-
-  <!-- 🎨 Aa 排版与主题定制抽屉 -->
-  <div class="er-prefs-drawer" id="er-prefs-drawer">
-    <div class="er-prefs-header">
-      <div class="er-prefs-title">🎨 排版与沉浸偏好</div>
-      <button type="button" class="er-prefs-close" id="er-prefs-close" title="收起抽屉">✕</button>
-    </div>
-    <div class="er-prefs-row">
-      <span class="er-prefs-label">字号大小</span>
-      <div class="er-prefs-group">
-        <button type="button" class="er-pbtn" id="er-pfs-dec">A- 缩小</button>
-        <span id="er-pfs-val" style="font-weight:700; min-width:42px; text-align:center; font-size:0.78rem;">16px</span>
-        <button type="button" class="er-pbtn" id="er-pfs-inc">A+ 放大</button>
-      </div>
-    </div>
-    <div class="er-prefs-row">
-      <span class="er-prefs-label">阅读行距</span>
-      <div class="er-prefs-group">
-        <button type="button" class="er-pbtn er-lh-btn" data-lh="compact">紧凑</button>
-        <button type="button" class="er-pbtn er-lh-btn active" data-lh="normal">标准</button>
-        <button type="button" class="er-pbtn er-lh-btn" data-lh="relaxed">宽松</button>
-      </div>
-    </div>
-    <div class="er-prefs-row">
-      <span class="er-prefs-label">五色纸质</span>
-      <div class="er-theme-swatches">
-        <button type="button" class="er-swatch-btn swatch-dark active" data-th="dark" title="暗黑翠玉">🌙</button>
-        <button type="button" class="er-swatch-btn swatch-light" data-th="light" title="纯净日光">☀️</button>
-        <button type="button" class="er-swatch-btn swatch-sepia" data-th="sepia" title="暖阳麦香">📜</button>
-        <button type="button" class="er-swatch-btn swatch-mint" data-th="mint" title="水墨薄荷护眼绿">🌿</button>
-        <button type="button" class="er-swatch-btn swatch-oled" data-th="oled" title="深空极黑纯黑 OLED">🌑</button>
-      </div>
-    </div>
-    <div class="er-prefs-row" style="margin-bottom:4px; padding-top:6px; border-top:1px dashed var(--border);">
-      <span class="er-prefs-label">沉浸手势</span>
-      <span style="font-size:0.72rem; color:var(--text-dim);">轻触屏幕正中央，可随时全屏沉浸阅读</span>
-    </div>
-  </div>
-
-  <script>{get_epub_reader_js()}</script>
-  <script>{get_epub_annotator_js()}</script>
-  <script>{get_epub_search_js()}</script>
-  <script>{get_epub_prefs_js()}</script>
-</body>
-</html>"""
+    if active_engine == "client_js":
+        return _render_client_js_mode(epub_path, base_fn, qr_meta)
+    return _render_python_mode(epub_path, qr_meta)

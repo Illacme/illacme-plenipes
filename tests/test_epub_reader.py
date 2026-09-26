@@ -174,6 +174,61 @@ def test_api_bindery_view_epub(client, mock_epub_file):
 
         # 3. 验证未找到文件时的安全 404
         assert client.get("/api/bindery/view?file=ghost_file.epub").status_code == 404
+
+        # 4. 验证 ?engine=client_js 显式指定客户端纯 JS 翻阅引擎
+        view_client = client.get(f"/api/bindery/view?file={dst_name}&engine=client_js")
+        assert view_client.status_code == 200
+        assert "initClientEpubReader" in view_client.text
+        assert "er-client-loader" in view_client.text
+        assert f"/api/bindery/download?file={dst_name}" in view_client.text
+
+        # 5. 验证 ?engine=python 显式指定服务端预解析引擎
+        view_py = client.get(f"/api/bindery/view?file={dst_name}&engine=python")
+        assert view_py.status_code == 200
+        assert "第一章 觉醒" in view_py.text
     finally:
         if os.path.exists(dst_path):
             os.remove(dst_path)
+
+
+def test_render_epub_reader_html_client_js_mode(mock_epub_file):
+    """测试客户端纯 JS 模式自包含阅读器 HTML 生成"""
+    html_output = render_epub_reader_html(mock_epub_file, engine="client_js")
+    assert "initClientEpubReader" in html_output
+    assert "er-client-loader" in html_output
+    assert 'data-source-url=' in html_output
+    assert 'id="er-book-content"' in html_output
+    assert 'id="er-toc-tree"' in html_output
+    assert 'id="er-qr-source"' in html_output
+
+
+def test_client_js_in_node_sandbox():
+    """在 Node 沙箱中真实验证纯前端 EPUB 解析引擎脚本的语法与挂载"""
+    import subprocess
+    from core.adapters.egress.ebook.epub_reader_client_js import get_epub_client_engine_js
+
+    js_code = get_epub_client_engine_js()
+    runner = f"""
+    global.window = {{}};
+    global.document = {{
+        getElementById: () => ({{ set innerHTML(v) {{}}, get innerHTML() {{ return ''; }} }}),
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener: () => {{}}
+    }};
+    global.DOMParser = class {{
+        parseFromString(str, type) {{
+            return {{ querySelector: () => null, querySelectorAll: () => [] }};
+        }}
+    }};
+
+    {js_code}
+
+    if (typeof window.initClientEpubReader !== 'function') {{
+        throw new Error('缺少 window.initClientEpubReader 函数定义');
+    }}
+    console.log('CLIENT_JS_PASS');
+    """
+    proc = subprocess.run(["node", "-e", runner], capture_output=True, text=True)
+    assert proc.returncode == 0, f"Node 执行失败: {proc.stderr}"
+    assert "CLIENT_JS_PASS" in proc.stdout

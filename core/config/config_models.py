@@ -85,6 +85,7 @@ class Configuration(ConfigurationPathsMixin, BaseModel):
     enable_cache_eviction: bool = False  # 🚀 是否启用算力缓存垃圾回收
     cache_eviction_days: int = Field(default=30, ge=1, description="缓存保留天数")
     cache_max_size_mb: int = Field(default=512, ge=10, description="缓存容量上限 (MB)")
+    epub_reader_engine: str = Field(default="python", description="EPUB 在线翻阅引擎模式: python (服务端预解析) | client_js (纯客户端离线解析)")
 
     # 🎨 Sovereign Global Branding & Compliance (Promoted settings)
     site_name: Optional[str] = Field(default=None, description="全局网站展示标题 (多主题共享)")

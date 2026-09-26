@@ -243,7 +243,7 @@ async def download_ebook_publication(file: str = Query(..., description="待下�
     return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
 
 @router.get("/api/bindery/view")
-async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Query(None)):
+async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Query(None), engine: Optional[str] = Query(None)):
     target, ext = _get_safe_book_path(file), os.path.splitext(file)[1].lower()
     if ext == ".html":
         with open(target, "r", encoding="utf-8") as f:
@@ -253,7 +253,7 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".epub":
         from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
         try:
-            return Response(content=render_epub_reader_html(target), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+            return Response(content=render_epub_reader_html(target, engine=engine), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"EPUB 电子书解析失败: {e}")
     raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF 或 EPUB 格式在线翻阅。")
