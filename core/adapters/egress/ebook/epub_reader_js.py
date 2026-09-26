@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Illacme Plenipes - EPUB Embedded Reader Runtime JavaScript
-模块职责：提供 EPUB 浏览器流式阅读器的全局相对链接拦截、平滑定位、目录联动与主题字号控制。
+模块职责：提供 EPUB 浏览器流式阅读器的全局相对链接拦截、首视口段落锚定重排、目录联动与排版控制。
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
@@ -11,29 +11,23 @@ def get_epub_reader_js() -> str:
     return """(function() {
   'use strict';
   const sb = document.getElementById('er-sidebar'), btn = document.getElementById('er-toggle-sidebar'), bDrop = document.getElementById('er-backdrop');
-  const setSidebar = (open) => {
-    if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); }
-    if (bDrop) bDrop.style.display = open ? 'block' : 'none';
-  };
+  const setSidebar = (open) => { if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); } if (bDrop) bDrop.style.display = open ? 'block' : 'none'; };
   const closeSidebar = () => setSidebar(false);
   function toggleSidebar() {
     if (window.innerWidth <= 900) setSidebar(!sb.classList.contains('open'));
     else if (sb) { sb.classList.toggle('collapsed'); try { localStorage.setItem('er_sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch(e){} }
   }
-  if (btn) btn.onclick = toggleSidebar;
-  if (bDrop) bDrop.onclick = closeSidebar;
+  if (btn) btn.onclick = toggleSidebar; if (bDrop) bDrop.onclick = closeSidebar;
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
   const vp = document.getElementById('er-viewport'), bContent = document.getElementById('er-book-content');
   const fChap = document.getElementById('er-footer-chapter'), fPage = document.getElementById('er-footer-page');
   const prevBtn = document.getElementById('er-page-prev'), nextBtn = document.getElementById('er-page-next');
   const modeBtn = document.getElementById('er-mode-toggle'), spreadBtn = document.getElementById('er-spread-toggle');
-  const fontBtn = document.getElementById('er-font-family'), fsBtn = document.getElementById('er-fullscreen'), pBar = document.getElementById('er-progress-bar');
+  const fontBtn = document.getElementById('er-font-family'), pBar = document.getElementById('er-progress-bar');
   const chapters = document.querySelectorAll('.er-chapter-card'), tocLinks = document.querySelectorAll('.er-sidebar a');
 
-  let curPage = 0, totalPages = 1;
-  let spreadMode = localStorage.getItem('er_spread_mode') || 'auto';
-
+  let curPage = 0, totalPages = 1, spreadMode = localStorage.getItem('er_spread_mode') || 'auto';
   function isSpreadActive() {
     if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return false;
     if (spreadMode === 'double') return window.innerWidth >= 900;
@@ -43,13 +37,9 @@ def get_epub_reader_js() -> str:
 
   function getStep() {
     if (!vp || !bContent) return window.innerWidth;
-    const isSpread = isSpreadActive();
-    const padL = parseFloat(window.getComputedStyle(vp).paddingLeft) || 0;
-    const padR = parseFloat(window.getComputedStyle(vp).paddingRight) || 0;
+    const isSpread = isSpreadActive(), padL = parseFloat(window.getComputedStyle(vp).paddingLeft) || 0, padR = parseFloat(window.getComputedStyle(vp).paddingRight) || 0;
     const vpW = vp.clientWidth - padL - padR;
-    if (isSpread) return vpW + 72;
-    const gap = parseFloat(window.getComputedStyle(bContent).columnGap) || 64;
-    return vpW + gap;
+    return isSpread ? vpW + 72 : vpW + (parseFloat(window.getComputedStyle(bContent).columnGap) || 64);
   }
 
   function updatePagination() {
@@ -68,58 +58,79 @@ def get_epub_reader_js() -> str:
     const step = getStep();
     bContent.style.transform = `translateX(-${curPage * step}px)`;
     const isSpread = isSpreadActive();
-    const pageLabel = isSpread ? `${curPage * 2 + 1}-${Math.min(totalPages * 2, curPage * 2 + 2)} / ${totalPages * 2}` : `${curPage + 1} / ${totalPages}`;
-    if (fPage) fPage.textContent = pageLabel;
+    if (fPage) fPage.textContent = isSpread ? `${curPage * 2 + 1}-${Math.min(totalPages * 2, curPage * 2 + 2)} / ${totalPages * 2}` : `${curPage + 1} / ${totalPages}`;
     if (pBar) pBar.style.width = `${Math.min(100, Math.max(0, ((curPage + 1) / totalPages) * 100))}%`;
     syncActiveSection(curPage * step + step * 0.4);
   }
 
   function nextPage() { if (curPage < totalPages - 1) { curPage++; renderPage(); } }
   function prevPage() { if (curPage > 0) { curPage--; renderPage(); } }
-
   if (prevBtn) prevBtn.onclick = prevPage;
   if (nextBtn) nextBtn.onclick = nextPage;
 
-  function applyReadMode(mode) {
-    document.documentElement.setAttribute('data-read-mode', mode);
-    if (modeBtn) {
-      modeBtn.innerHTML = mode === 'paginated' ? '📖<span class="er-btn-text"> 翻页</span>' : '📜<span class="er-btn-text"> 卷轴</span>';
-      modeBtn.title = mode === 'paginated' ? '当前：左右翻页模式 (点击切换为卷轴)' : '当前：连续卷轴模式 (点击切换为翻页)';
+  // 🎯 首视口段落锚定引擎 (First Visible Element Anchoring · 微信读书方案)
+  function getFirstVisibleBlock() {
+    if (!vp || !bContent) return null;
+    const vpRect = vp.getBoundingClientRect();
+    const pts = [{ x: vpRect.left + 50, y: vpRect.top + 60 }, { x: vpRect.left + 50, y: vpRect.top + 140 }, { x: vpRect.left + 80, y: vpRect.top + 200 }];
+    for (const pt of pts) {
+      const el = document.elementFromPoint(pt.x, pt.y);
+      const b = el ? el.closest('p, h1, h2, h3, h4, h5, li, blockquote') : null;
+      if (b && bContent.contains(b)) return b;
     }
-    if (spreadBtn) spreadBtn.style.display = mode === 'paginated' ? 'inline-flex' : 'none';
-    try { localStorage.setItem('er_read_mode', mode); } catch(e){}
-    if (mode === 'paginated') {
-      window.scrollTo({ top: 0 });
-      setTimeout(updatePagination, 60);
-    } else {
-      if (vp) vp.classList.remove('spread-active');
-      if (bContent) bContent.style.transform = ''; if (pBar) pBar.style.width = '0%';
+    const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
+    const blocks = bContent.querySelectorAll('p, h1, h2, h3, h4, li, blockquote');
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i], r = b.getBoundingClientRect();
+      if (isPag ? (r.right > vpRect.left + 15 && r.left < vpRect.right - 15 && r.bottom > vpRect.top) : (r.bottom > 80 && r.top < window.innerHeight)) return b;
     }
+    return null;
   }
 
+  function withContentAnchoring(fn) {
+    const anchor = getFirstVisibleBlock();
+    fn();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updatePagination();
+        if (anchor) navigateToTarget(anchor, { silent: true, instant: true });
+      });
+    });
+  }
+  window.withContentAnchoring = withContentAnchoring;
+  window.updatePagination = updatePagination;
+
+  function applyReadMode(mode) {
+    withContentAnchoring(() => {
+      document.documentElement.setAttribute('data-read-mode', mode);
+      if (modeBtn) {
+        modeBtn.innerHTML = mode === 'paginated' ? '📖<span class="er-btn-text"> 翻页</span>' : '📜<span class="er-btn-text"> 卷轴</span>';
+        modeBtn.title = mode === 'paginated' ? '当前：左右翻页模式 (点击切换为卷轴)' : '当前：连续卷轴模式 (点击切换为翻页)';
+      }
+      if (spreadBtn) spreadBtn.style.display = mode === 'paginated' ? 'inline-flex' : 'none';
+      try { localStorage.setItem('er_read_mode', mode); } catch(e){}
+      if (mode === 'paginated') window.scrollTo({ top: 0 });
+      else { if (vp) vp.classList.remove('spread-active'); if (bContent) bContent.style.transform = ''; if (pBar) pBar.style.width = '0%'; }
+    });
+  }
   if (modeBtn) modeBtn.onclick = () => applyReadMode((document.documentElement.getAttribute('data-read-mode') || 'paginated') === 'paginated' ? 'scroll' : 'paginated');
-  if (spreadBtn) spreadBtn.onclick = () => { spreadMode = isSpreadActive() ? 'single' : 'double'; try { localStorage.setItem('er_spread_mode', spreadMode); } catch(e){} updatePagination(); };
+  if (spreadBtn) spreadBtn.onclick = () => { withContentAnchoring(() => { spreadMode = isSpreadActive() ? 'single' : 'double'; try { localStorage.setItem('er_spread_mode', spreadMode); } catch(e){} }); };
 
   // 🔤 字体库切换引擎
   const FONTS = [{k:'sans', i:'🔤', n:'黑体'}, {k:'serif', i:'📖', n:'宋体'}, {k:'kai', i:'✍️', n:'楷体'}];
   let fontIdx = Math.max(0, FONTS.findIndex(x => x.k === (localStorage.getItem('er_font') || 'sans')));
-  function applyFont(idx) {
+  function applyFont(idx, skipAnchor = false) {
     fontIdx = idx % FONTS.length; const f = FONTS[fontIdx];
-    document.documentElement.setAttribute('data-font', f.k);
-    if (fontBtn) fontBtn.innerHTML = `${f.i}<span class="er-btn-text"> ${f.n}</span>`;
-    try { localStorage.setItem('er_font', f.k); } catch(e){}
-    setTimeout(updatePagination, 50);
+    const doChange = () => {
+      document.documentElement.setAttribute('data-font', f.k);
+      if (fontBtn) fontBtn.innerHTML = `${f.i}<span class="er-btn-text"> ${f.n}</span>`;
+      try { localStorage.setItem('er_font', f.k); } catch(e){}
+    };
+    if (skipAnchor) { doChange(); setTimeout(updatePagination, 50); }
+    else withContentAnchoring(doChange);
   }
   if (fontBtn) fontBtn.onclick = () => applyFont(fontIdx + 1);
-  applyFont(fontIdx);
-
-  // ⛶ 全屏沉浸阅读
-  function toggleFs() {
-    const el = document.documentElement, isFs = document.fullscreenElement || document.webkitFullscreenElement;
-    if (!isFs) { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) r.call(el).catch(()=>{}); }
-    else { const e = document.exitFullscreen || document.webkitExitFullscreen; if (e) e.call(document).catch(()=>{}); }
-  }
-  if (fsBtn) fsBtn.onclick = toggleFs;
+  applyFont(fontIdx, true);
 
   function syncActiveSection(offsetOrScrollY) {
     let actId = '', actTitle = '';
@@ -136,7 +147,7 @@ def get_epub_reader_js() -> str:
     if (actId) tocLinks.forEach(link => { const h = link.getAttribute('href') || ''; link.classList.toggle('active', h === '#' + actId || h.endsWith(actId)); });
   }
 
-  // 🎯 链接精准跳转与翻页感知反馈反馈器
+  // 🎯 链接跳转与翻页反馈
   function showJumpCue(el) {
     if (!el) return;
     document.querySelectorAll('.er-jump-target').forEach(x => x.classList.remove('er-jump-target'));
@@ -161,46 +172,35 @@ def get_epub_reader_js() -> str:
     setTimeout(() => t.remove(), 380);
   }
 
-  // 1. 全局内部链接无缝拦截器 (彻底拦截 404 Not Found，支持选择器与 DOM 元素精准定位)
-  function navigateToTarget(rawTarget) {
+  // 全局内部链接与锚点定位引擎 (支持 silent 模式供重排无感归位)
+  function navigateToTarget(rawTarget, opts = {}) {
     if (!rawTarget) return;
     let targetEl = null;
-    if (typeof rawTarget === 'object' && rawTarget.nodeType) {
-      targetEl = rawTarget;
-    } else if (typeof rawTarget === 'string') {
+    if (typeof rawTarget === 'object' && rawTarget.nodeType) targetEl = rawTarget;
+    else if (typeof rawTarget === 'string') {
       let anchor = rawTarget;
       if (anchor.includes('#')) {
-        const parts = anchor.split('#');
-        const hashId = parts[1];
+        const parts = anchor.split('#'), hashId = parts[1];
         targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`);
-        if (!targetEl && parts[0]) {
-          const base = parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
-          targetEl = document.getElementById('er-doc-' + base);
-        }
-      } else {
-        const base = anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_');
-        targetEl = document.getElementById('er-doc-' + base);
-      }
+        if (!targetEl && parts[0]) targetEl = document.getElementById('er-doc-' + parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_'));
+      } else targetEl = document.getElementById('er-doc-' + anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_'));
     }
-
     if (targetEl) {
       const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
       if (isPag) {
         const step = getStep();
         if (step > 0) {
-          let left = 0, curr = targetEl;
-          while (curr && curr !== bContent && curr !== document.body) {
-            left += curr.offsetLeft; curr = curr.offsetParent;
-          }
-          curPage = Math.max(0, Math.min(totalPages - 1, Math.floor(left / step)));
+          const tRect = targetEl.getBoundingClientRect(), bRect = bContent.getBoundingClientRect();
+          const dist = (tRect && bRect) ? (tRect.left - bRect.left) : (targetEl.offsetLeft || 0);
+          curPage = Math.max(0, Math.min(totalPages - 1, Math.floor((dist + 10) / step)));
           renderPage();
         }
       } else {
         const topOffset = targetEl.getBoundingClientRect().top + window.scrollY - 65;
-        window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+        window.scrollTo({ top: Math.max(0, topOffset), behavior: opts.instant ? 'instant' : 'smooth' });
       }
       if (window.innerWidth <= 900) closeSidebar();
-      showJumpCue(targetEl);
+      if (!opts.silent) showJumpCue(targetEl);
     }
   }
   window.navigateToTarget = navigateToTarget;
@@ -218,7 +218,6 @@ def get_epub_reader_js() -> str:
     if (window.innerWidth <= 900 && a.closest('#er-sidebar')) closeSidebar();
   });
 
-  // 2. 视口点击与触控手势翻页
   if (vp) {
     vp.addEventListener('click', (e) => {
       if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
@@ -230,36 +229,27 @@ def get_epub_reader_js() -> str:
   }
 
   let touchStartX = 0, touchStartY = 0;
-  window.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
-  }, { passive: true });
+  window.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; } }, { passive: true });
   window.addEventListener('touchend', (e) => {
     if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
     if (e.changedTouches.length === 1) {
       const dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx < 0) { showTurnCue(true); nextPage(); }
-        else { showTurnCue(false); prevPage(); }
+        if (dx < 0) { showTurnCue(true); nextPage(); } else { showTurnCue(false); prevPage(); }
       }
     }
   }, { passive: true });
 
-  // 3. 键盘快捷键监听
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-      if (isPag) { showTurnCue(true); nextPage(); }
-      else window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+      if (isPag) { showTurnCue(true); nextPage(); } else window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      if (isPag) { showTurnCue(false); prevPage(); }
-      else window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
-    } else if (e.key === 'f' || e.key === 'F') {
-      toggleFs();
+      if (isPag) { showTurnCue(false); prevPage(); } else window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
     }
   });
 
-  // 4. 连续卷轴滚动高亮监听
   let ticking = false;
   window.addEventListener('scroll', () => {
     if (document.documentElement.getAttribute('data-read-mode') === 'paginated') return;
@@ -274,7 +264,6 @@ def get_epub_reader_js() -> str:
     }
   }, { passive: true });
 
-  // 5. 主题与字号
   const themeBtns = document.querySelectorAll('.er-theme-btn');
   const applyTheme = (th) => { document.documentElement.setAttribute('data-theme', th); themeBtns.forEach(x => x.classList.toggle('active', x.getAttribute('data-theme') === th)); try { localStorage.setItem('er_theme', th); } catch(e){} };
   themeBtns.forEach(b => { b.onclick = () => applyTheme(b.getAttribute('data-theme')); });
@@ -282,13 +271,20 @@ def get_epub_reader_js() -> str:
 
   let fs = 16;
   const inc = document.getElementById('er-font-inc'), dec = document.getElementById('er-font-dec');
-  const setFs = (val) => { fs = val; document.documentElement.style.setProperty('--font-size', fs + 'px'); try { localStorage.setItem('er_fs', fs); } catch(e){} setTimeout(updatePagination, 50); };
-  try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) setFs(sfs); } catch(e){}
-  if (inc) inc.onclick = () => setFs(Math.min(24, fs + 1));
-  if (dec) dec.onclick = () => setFs(Math.max(13, fs - 1));
+  const setFs = (val) => {
+    withContentAnchoring(() => {
+      fs = Math.max(13, Math.min(24, val));
+      document.documentElement.style.setProperty('--font-size', fs + 'px');
+      try { localStorage.setItem('er_fs', fs); } catch(e){}
+      const lbl = document.getElementById('er-pfs-val'); if (lbl) lbl.textContent = fs + 'px';
+    });
+  };
+  window.setReaderFontSize = setFs;
+  try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) fs = sfs; document.documentElement.style.setProperty('--font-size', fs + 'px'); } catch(e){}
+  if (inc) inc.onclick = () => setFs(fs + 1);
+  if (dec) dec.onclick = () => setFs(fs - 1);
   window.addEventListener('resize', () => { if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination(); });
 
-  // 启动模式初始化
   const savedMode = localStorage.getItem('er_read_mode') || 'paginated';
   applyReadMode(savedMode);
   setTimeout(updatePagination, 100);

@@ -74,6 +74,7 @@ def get_epub_prefs_js() -> str:
   };
   if (pClose) pClose.onclick = closePrefsDrawer;
 
+  if (pDrawer) pDrawer.addEventListener('click', (e) => e.stopPropagation());
   document.addEventListener('click', (e) => {
     if (pDrawer && pDrawer.classList.contains('open') && !pDrawer.contains(e.target) && (!pBtn || !pBtn.contains(e.target))) {
       closePrefsDrawer();
@@ -86,31 +87,41 @@ def get_epub_prefs_js() -> str:
   function updateFsUI(val) {
     if (fsLabel) fsLabel.textContent = val + 'px';
   }
-  if (pDec) pDec.onclick = () => {
+  if (pDec) pDec.onclick = (e) => {
+    e.stopPropagation();
     const cur = parseInt(localStorage.getItem('er_fs') || '16', 10);
     const n = Math.max(13, cur - 1);
-    document.getElementById('er-font-dec')?.click();
-    updateFsUI(n);
+    if (typeof window.setReaderFontSize === 'function') window.setReaderFontSize(n);
+    else updateFsUI(n);
   };
-  if (pInc) pInc.onclick = () => {
+  if (pInc) pInc.onclick = (e) => {
+    e.stopPropagation();
     const cur = parseInt(localStorage.getItem('er_fs') || '16', 10);
     const n = Math.min(24, cur + 1);
-    document.getElementById('er-font-inc')?.click();
-    updateFsUI(n);
+    if (typeof window.setReaderFontSize === 'function') window.setReaderFontSize(n);
+    else updateFsUI(n);
   };
 
-  // 行距切换
+  // 行距切换 (接入首视口段落锚定)
   const lhBtns = document.querySelectorAll('.er-lh-btn');
-  function applyLineHeight(lh) {
-    document.documentElement.setAttribute('data-line-height', lh);
-    lhBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lh') === lh));
-    try { localStorage.setItem('er_lh', lh); } catch(e){}
+  function applyLineHeight(lh, skipAnchor = false) {
+    const doChange = () => {
+      document.documentElement.setAttribute('data-line-height', lh);
+      lhBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lh') === lh));
+      try { localStorage.setItem('er_lh', lh); } catch(e){}
+    };
+    if (skipAnchor || typeof window.withContentAnchoring !== 'function') {
+      doChange();
+      if (typeof window.updatePagination === 'function') setTimeout(window.updatePagination, 50);
+    } else {
+      window.withContentAnchoring(doChange);
+    }
   }
   lhBtns.forEach(b => {
     b.onclick = () => applyLineHeight(b.getAttribute('data-lh'));
   });
   const savedLh = localStorage.getItem('er_lh') || 'normal';
-  applyLineHeight(savedLh);
+  applyLineHeight(savedLh, true);
 
   // 5色护眼主题切换
   const swatches = document.querySelectorAll('.er-swatch-btn');
