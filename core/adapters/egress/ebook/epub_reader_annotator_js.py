@@ -10,13 +10,9 @@ def get_epub_annotator_js() -> str:
     """获取划词高亮、批注记录与金句卡片核心前端引擎 JavaScript"""
     return """(function() {
   'use strict';
-  const fBar = document.getElementById('er-floating-bar');
-  const cardModal = document.getElementById('er-card-modal');
-  const noteModal = document.getElementById('er-note-modal');
-  const noteInput = document.getElementById('er-note-input');
-  const noteTargetText = document.getElementById('er-note-target-text');
-  const notesList = document.getElementById('er-notes-list');
-  const notesCountBadge = document.getElementById('er-notes-count');
+  const fBar = document.getElementById('er-floating-bar'), cardModal = document.getElementById('er-card-modal');
+  const noteModal = document.getElementById('er-note-modal'), noteInput = document.getElementById('er-note-input');
+  const noteTargetText = document.getElementById('er-note-target-text'), notesList = document.getElementById('er-notes-list'), notesCountBadge = document.getElementById('er-notes-count');
 
   const bookId = 'er_notes_' + (document.title.split(' - ')[0] || 'book').replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, '_');
   let annotations = [];
@@ -27,22 +23,13 @@ def get_epub_annotator_js() -> str:
   // 1. 划选监听与浮动菜单定位
   function handleSelection() {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.rangeCount) {
-      if (fBar) fBar.style.display = 'none';
-      return;
-    }
+    if (!sel || sel.isCollapsed || !sel.rangeCount) { if (fBar) fBar.style.display = 'none'; return; }
     const text = sel.toString().trim();
-    if (text.length < 2) {
-      if (fBar) fBar.style.display = 'none';
-      return;
-    }
+    if (text.length < 2) { if (fBar) fBar.style.display = 'none'; return; }
     const range = sel.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const parentCard = (container.nodeType === 1 ? container : container.parentElement).closest('.er-chapter-card');
-    if (!parentCard) {
-      if (fBar) fBar.style.display = 'none';
-      return;
-    }
+    if (!parentCard) { if (fBar) fBar.style.display = 'none'; return; }
 
     const rect = range.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -55,9 +42,16 @@ def get_epub_annotator_js() -> str:
     };
 
     if (fBar) {
-      fBar.style.left = Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)) + 'px';
-      fBar.style.top = Math.max(60, rect.top) + 'px';
       fBar.style.display = 'flex';
+      const halfW = (fBar.offsetWidth || 380) / 2;
+      const pad = 16;
+      const minX = halfW + pad;
+      const maxX = Math.max(minX, window.innerWidth - halfW - pad);
+      const cx = rect.left + rect.width / 2;
+      fBar.style.left = Math.round(Math.max(minX, Math.min(maxX, cx))) + 'px';
+      const isNearTop = rect.top < 65;
+      fBar.style.top = isNearTop ? (rect.bottom + 12) + 'px' : Math.max(56, rect.top) + 'px';
+      fBar.classList.toggle('pop-below', isNearTop);
     }
   }
 

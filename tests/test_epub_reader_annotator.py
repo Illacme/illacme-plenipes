@@ -22,6 +22,9 @@ def test_annotator_css_and_dom_template():
     assert 'mark.er-hl-pink' in css
     assert '.er-mark-popover' in css
     assert 'mark[data-has-comment="true"]' in css
+    assert 'white-space: nowrap' in css
+    assert 'width: max-content' in css
+    assert '.er-floating-bar.pop-below' in css
 
     sample_epub = "imprints/default/books/illacme-press-数字出版集_zh.epub"
     if os.path.exists(sample_epub):
