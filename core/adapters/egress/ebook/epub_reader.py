@@ -84,14 +84,14 @@ def render_epub_reader_html(epub_path: str) -> str:
             fallback_toc.append({"id": card_id, "title": chap_title})
 
     try:
-        from core.bindery.qr_sync import generate_qr_data_uri, get_lan_ip
-        import urllib.parse
-        lan_ip = get_lan_ip()
-        file_param = urllib.parse.quote(os.path.basename(epub_path))
-        lan_url = f"http://{lan_ip}:43212/api/bindery/view?file={file_param}"
-        qr_data_uri = generate_qr_data_uri(lan_url)
+        from core.bindery.qr_sync import resolve_adaptive_qr_payload
+        qr_info = resolve_adaptive_qr_payload(os.path.basename(epub_path), action="view")
+        qr_data_uri = qr_info.get("qr_data_uri", "")
+        qr_url = qr_info.get("url", "")
+        qr_tier = qr_info.get("tier", "lan")
+        qr_tip = qr_info.get("tip_text", "📱 手机扫码直达翻阅")
     except Exception:
-        lan_url, qr_data_uri = "", ""
+        qr_data_uri, qr_url, qr_tier, qr_tip = "", "", "lan", "📱 手机扫码直达翻阅"
 
     cover_item = next((c for c in chapters if "cover" in c["id"]), None)
     cover_nav_html = f'<li class="er-toc-cover"><a href="#{cover_item["id"]}" class="er-toc-link">📕 典籍封面与扉页</a></li>\n' if cover_item else ''
@@ -245,7 +245,7 @@ def render_epub_reader_html(epub_path: str) -> str:
       </div>
     </div>
   </div>
-  <img id="er-qr-source" src="{qr_data_uri}" data-lan-url="{lan_url}" style="display:none;" alt="QR"/>
+  <img id="er-qr-source" src="{qr_data_uri}" data-url="{qr_url}" data-tier="{qr_tier}" data-tip-text="{qr_tip}" style="display:none;" alt="QR"/>
 
   <!-- 🎨 Aa 排版与主题定制抽屉 -->
   <div class="er-prefs-drawer" id="er-prefs-drawer">

@@ -113,3 +113,65 @@ def build_mobile_sync_payload(
         "expires_in": 1800 if token else None,
     }
 
+
+def resolve_adaptive_qr_payload(
+    filename: str,
+    port: int = 43212,
+    action: str = "view",
+    custom_ip: Optional[str] = None
+) -> Dict[str, Any]:
+    """🎯 [V126.1] 三级智能自适应二维码直达引擎 (永久公网 -> 临时穿透 -> 局域网回退)"""
+    enc_file = urllib.parse.quote(filename)
+    endpoint = f"/api/bindery/{action}?file={enc_file}"
+
+    # Level 1: 探测系统主权永久公网/发布域名 (Canonical Host)
+    try:
+        from core.config.config import load_config
+        cfg = load_config()
+        site_url = getattr(cfg, "site_url", "") or ""
+        if site_url and (site_url.startswith("http://") or site_url.startswith("https://")):
+            parsed = urllib.parse.urlparse(site_url)
+            host = (parsed.hostname or "").lower()
+            if host and not host.startswith("127.") and host != "localhost":
+                target_url = f"{site_url.rstrip('/')}{endpoint}"
+                return {
+                    "url": target_url,
+                    "qr_data_uri": generate_qr_data_uri(target_url),
+                    "tier": "canonical",
+                    "tier_name": "永久公网",
+                    "tip_text": "🌐 官方正版典籍 · 扫码畅读",
+                }
+    except Exception:
+        pass
+
+    # Level 2: 探测活跃公网临时穿透隧道 (Tunnel Active)
+    try:
+        from core.bindery.tunnel import get_tunnel_hub
+        hub = get_tunnel_hub()
+        t_status = hub.get_status(verify_alive=False)
+        if t_status.get("is_running") and t_status.get("public_url"):
+            p_url = t_status["public_url"].rstrip("/")
+            target_url = f"{p_url}{endpoint}"
+            return {
+                "url": target_url,
+                "qr_data_uri": generate_qr_data_uri(target_url),
+                "tier": "tunnel",
+                "tier_name": f"公网隧道 ({t_status.get('provider_name') or 'Tunnel'})",
+                "tip_text": "⚡ 临时云端试读 · 限时畅读",
+            }
+    except Exception:
+        pass
+
+    # Level 3: 本地活跃物理局域网 IP 回退 (LAN Fallback)
+    from core.bindery.tunnel_diagnostic import get_lan_candidates
+    candidates = get_lan_candidates()
+    lan_ip = custom_ip.strip() if custom_ip and custom_ip.strip() else (candidates[0]["ip"] if candidates else get_lan_ip())
+    target_url = f"http://{lan_ip}:{port}{endpoint}"
+    return {
+        "url": target_url,
+        "qr_data_uri": generate_qr_data_uri(target_url),
+        "tier": "lan",
+        "tier_name": "本地局域网",
+        "tip_text": "📶 同一Wi-Fi直连 · 扫码即读",
+    }
+

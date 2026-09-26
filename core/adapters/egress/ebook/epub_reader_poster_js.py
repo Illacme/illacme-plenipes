@@ -202,11 +202,15 @@ def get_epub_poster_js() -> str:
       }
     }
 
-    // 扫码即读提示语
+    // 扫码即读提示语与自适应网络状态徽标
+    const qrEl = document.getElementById('er-qr-source');
+    const tipText = (qrEl && qrEl.getAttribute('data-tip-text')) || '📱 手机扫码直达翻阅';
+    const tier = (qrEl && qrEl.getAttribute('data-tier')) || 'lan';
+    const tipColor = tier === 'canonical' ? '#059669' : (tier === 'tunnel' ? '#d97706' : '#0284c7');
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#0284c7';
-    ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText('📱 手机扫码直达翻阅', qrX + qrSize / 2, qrY + qrSize + 30);
+    ctx.fillStyle = tipColor;
+    ctx.font = '600 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(tipText || '📱 手机扫码直达翻阅', qrX + qrSize / 2, qrY + qrSize + 28);
 
     // 绘制真实物理局域网/公网二维码
     drawRealQR(ctx, qrX, qrY, qrSize, exportPoster);

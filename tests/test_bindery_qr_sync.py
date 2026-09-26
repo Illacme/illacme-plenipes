@@ -209,3 +209,46 @@ def test_bindery_qr_frontend_in_node_sandbox():
     proc = subprocess.run(["node", "-e", runner], capture_output=True, text=True)
     assert proc.returncode == 0, f"Node 沙箱执行失败: {proc.stderr}"
     assert "PASS" in proc.stdout
+
+
+def test_resolve_adaptive_qr_payload(monkeypatch):
+    """测试三级自适应二维码生成逻辑（官方正版公网 -> 临时穿透 -> 局域网）"""
+    from core.bindery.qr_sync import resolve_adaptive_qr_payload
+    import core.config.config as config_mod
+    import core.bindery.tunnel as tunnel_mod
+
+    # 1. 模拟局域网回退 (无 site_url，无 active tunnel)
+    class DummyConfigEmpty:
+        site_url = ""
+    class DummyHubInactive:
+        def get_status(self, verify_alive=False):
+            return {"is_running": False, "public_url": None}
+
+    monkeypatch.setattr(config_mod, "load_config", lambda: DummyConfigEmpty())
+    monkeypatch.setattr(tunnel_mod, "get_tunnel_hub", lambda: DummyHubInactive())
+
+    payload_lan = resolve_adaptive_qr_payload("sample.epub", port=43212, action="view")
+    assert payload_lan["tier"] == "lan"
+    assert "同一Wi-Fi直连" in payload_lan["tip_text"]
+    assert payload_lan["qr_data_uri"].startswith("data:image/png;base64,")
+
+    # 2. 模拟活跃临时穿透隧道
+    class DummyHubActive:
+        def get_status(self, verify_alive=False):
+            return {"is_running": True, "public_url": "https://quick-rabbit-42.loca.lt", "provider_name": "LocalTunnel"}
+
+    monkeypatch.setattr(tunnel_mod, "get_tunnel_hub", lambda: DummyHubActive())
+    payload_tunnel = resolve_adaptive_qr_payload("sample.epub", port=43212, action="view")
+    assert payload_tunnel["tier"] == "tunnel"
+    assert "https://quick-rabbit-42.loca.lt/api/bindery/view?file=sample.epub" == payload_tunnel["url"]
+    assert "限时畅读" in payload_tunnel["tip_text"]
+
+    # 3. 模拟官方发布站点 site_url (Canonical)
+    class DummyConfigCanonical:
+        site_url = "https://press.example.com"
+
+    monkeypatch.setattr(config_mod, "load_config", lambda: DummyConfigCanonical())
+    payload_official = resolve_adaptive_qr_payload("sample.epub", port=43212, action="view")
+    assert payload_official["tier"] == "canonical"
+    assert "https://press.example.com/api/bindery/view?file=sample.epub" == payload_official["url"]
+    assert "官方正版典籍" in payload_official["tip_text"]
