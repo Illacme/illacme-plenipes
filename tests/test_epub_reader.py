@@ -91,7 +91,7 @@ def mock_epub_file(tmp_path):
 
 def test_render_epub_reader_html_core(mock_epub_file):
     """测试 EPUB 解析引擎直接输出完整的自包含阅读器 HTML"""
-    html_output = render_epub_reader_html(mock_epub_file)
+    html_output = render_epub_reader_html(mock_epub_file, engine="python")
     assert "<title>微型幻想典籍 - EPUB 在线翻阅</title>" in html_output
     assert "er-chapter-card" in html_output
     assert "第一章 觉醒" in html_output

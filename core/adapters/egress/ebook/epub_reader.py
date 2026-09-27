@@ -44,6 +44,17 @@ def _get_qr_metadata(epub_path: str) -> Dict[str, str]:
 def _render_client_js_mode(epub_path: str, base_fn: str, qr_meta: Dict[str, str]) -> str:
     """🌐 [Client-Side JS Engine] 纯前端离线客户端解析阅读器渲染"""
     book_title = os.path.splitext(base_fn)[0]
+    try:
+        with zipfile.ZipFile(epub_path, "r") as z:
+            c_xml = z.read("META-INF/container.xml")
+            rf = ET.fromstring(c_xml).find(".//{urn:oasis:names:tc:opendocument:xmlns:container}rootfile")
+            if rf is not None and "full-path" in rf.attrib:
+                opf_data = z.read(rf.attrib["full-path"])
+                t_el = ET.fromstring(opf_data).find(".//{http://purl.org/dc/elements/1.1/}title")
+                if t_el is not None and t_el.text:
+                    book_title = t_el.text.strip()
+    except Exception:
+        pass
     enc_fn = urllib.parse.quote(base_fn)
     source_url = f"/api/bindery/download?file={enc_fn}"
 

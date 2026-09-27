@@ -11,13 +11,21 @@ def get_epub_reader_js() -> str:
     return """(function() {
   'use strict';
   const sb = document.getElementById('er-sidebar'), btn = document.getElementById('er-toggle-sidebar'), bDrop = document.getElementById('er-backdrop');
-  const setSidebar = (open) => { if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); } if (bDrop) bDrop.style.display = open ? 'block' : 'none'; };
+  function triggerLayoutSync() { if (document.documentElement.getAttribute('data-read-mode') === 'paginated') withContentAnchoring(updatePagination); }
+  const setSidebar = (open) => {
+    withContentAnchoring(() => { if (sb) { sb.classList.toggle('open', open); sb.classList.toggle('collapsed', !open); } if (bDrop) bDrop.style.display = open ? 'block' : 'none'; });
+    setTimeout(triggerLayoutSync, 280);
+  };
   const closeSidebar = () => setSidebar(false);
   function toggleSidebar() {
-    if (window.innerWidth <= 900) setSidebar(!sb.classList.contains('open'));
-    else if (sb) { sb.classList.toggle('collapsed'); try { localStorage.setItem('er_sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch(e){} }
+    withContentAnchoring(() => {
+      if (window.innerWidth <= 900) setSidebar(!sb.classList.contains('open'));
+      else if (sb) { sb.classList.toggle('collapsed'); try { localStorage.setItem('er_sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch(e){} }
+    });
+    setTimeout(triggerLayoutSync, 280);
   }
   if (btn) btn.onclick = toggleSidebar; if (bDrop) bDrop.onclick = closeSidebar;
+  if (sb) sb.addEventListener('transitionend', (e) => { if (e.propertyName === 'transform') triggerLayoutSync(); });
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
   const vp = document.getElementById('er-viewport'), bContent = document.getElementById('er-book-content');
@@ -169,12 +177,9 @@ def get_epub_reader_js() -> str:
     let targetEl = null;
     if (typeof rawTarget === 'object' && rawTarget.nodeType) targetEl = rawTarget;
     else if (typeof rawTarget === 'string') {
-      let anchor = rawTarget;
-      if (anchor.includes('#')) {
-        const parts = anchor.split('#'), hashId = parts[1];
-        targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`);
-        if (!targetEl && parts[0]) targetEl = document.getElementById('er-doc-' + parts[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_'));
-      } else targetEl = document.getElementById('er-doc-' + anchor.split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_'));
+      const p = rawTarget.split('#'), hashId = p[1], baseId = p[0] ? ('er-doc-' + p[0].split('/').pop().replace(/[^a-zA-Z0-9_-]/g, '_')) : '';
+      if (hashId) targetEl = document.getElementById(hashId) || document.querySelector(`[id="${CSS.escape(hashId)}"]`) || (baseId ? document.getElementById(baseId) : null);
+      else if (baseId) targetEl = document.getElementById(baseId);
     }
     if (targetEl) {
       const isPag = document.documentElement.getAttribute('data-read-mode') === 'paginated';
@@ -204,8 +209,7 @@ def get_epub_reader_js() -> str:
     if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('data:')) {
       a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); return;
     }
-    e.preventDefault();
-    navigateToTarget(href);
+    e.preventDefault(); navigateToTarget(href);
     if (window.innerWidth <= 900 && a.closest('#er-sidebar')) closeSidebar();
   });
 
@@ -234,12 +238,10 @@ def get_epub_reader_js() -> str:
   let touchStartX = 0, touchStartY = 0;
   window.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; } }, { passive: true });
   window.addEventListener('touchend', (e) => {
-    if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
-    if (e.changedTouches.length === 1) {
-      const dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY;
-      if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx < 0) { showTurnCue(true); nextPage(); } else { showTurnCue(false); prevPage(); }
-      }
+    if (document.documentElement.getAttribute('data-read-mode') !== 'paginated' || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0) { showTurnCue(true); nextPage(); } else { showTurnCue(false); prevPage(); }
     }
   }, { passive: true });
 
@@ -285,10 +287,12 @@ def get_epub_reader_js() -> str:
   window.setReaderFontSize = setFs;
   try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) fs = sfs; document.documentElement.style.setProperty('--font-size', fs + 'px'); } catch(e){}
   if (inc) inc.onclick = () => setFs(fs + 1); if (dec) dec.onclick = () => setFs(fs - 1);
-  window.addEventListener('resize', () => { if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination(); });
-
-  const savedMode = localStorage.getItem('er_read_mode') || 'paginated';
-  applyReadMode(savedMode);
+  window.addEventListener('resize', triggerLayoutSync);
+  if (window.ResizeObserver && vp) {
+    let rTimer = null;
+    new ResizeObserver(() => { clearTimeout(rTimer); rTimer = setTimeout(triggerLayoutSync, 60); }).observe(vp);
+  }
+  applyReadMode(localStorage.getItem('er_read_mode') || 'paginated');
   setTimeout(updatePagination, 100);
 })();
 """
