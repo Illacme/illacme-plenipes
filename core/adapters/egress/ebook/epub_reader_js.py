@@ -21,10 +21,8 @@ def get_epub_reader_js() -> str:
   try { if (localStorage.getItem('er_sb_collapsed') === '1' && window.innerWidth > 900 && sb) sb.classList.add('collapsed'); } catch(e){}
 
   const vp = document.getElementById('er-viewport'), bContent = document.getElementById('er-book-content');
-  const fChap = document.getElementById('er-footer-chapter'), fPage = document.getElementById('er-footer-page');
-  const prevBtn = document.getElementById('er-page-prev'), nextBtn = document.getElementById('er-page-next');
-  const modeBtn = document.getElementById('er-mode-toggle'), spreadBtn = document.getElementById('er-spread-toggle');
-  const fontBtn = document.getElementById('er-font-family'), pBar = document.getElementById('er-progress-bar');
+  const fChap = document.getElementById('er-footer-chapter'), fPage = document.getElementById('er-footer-page'), prevBtn = document.getElementById('er-page-prev'), nextBtn = document.getElementById('er-page-next');
+  const modeBtn = document.getElementById('er-mode-toggle'), spreadBtn = document.getElementById('er-spread-toggle'), fontBtn = document.getElementById('er-font-family'), pBar = document.getElementById('er-progress-bar');
   const chapters = document.querySelectorAll('.er-chapter-card'), tocLinks = document.querySelectorAll('.er-sidebar a');
 
   let curPage = 0, totalPages = 1, spreadMode = localStorage.getItem('er_spread_mode') || 'auto';
@@ -126,8 +124,7 @@ def get_epub_reader_js() -> str:
       if (fontBtn) fontBtn.innerHTML = `${f.i}<span class="er-btn-text"> ${f.n}</span>`;
       try { localStorage.setItem('er_font', f.k); } catch(e){}
     };
-    if (skipAnchor) { doChange(); setTimeout(updatePagination, 50); }
-    else withContentAnchoring(doChange);
+    if (skipAnchor) { doChange(); setTimeout(updatePagination, 50); } else withContentAnchoring(doChange);
   }
   if (fontBtn) fontBtn.onclick = () => applyFont(fontIdx + 1);
   applyFont(fontIdx, true);
@@ -151,25 +148,19 @@ def get_epub_reader_js() -> str:
   function showJumpCue(el) {
     if (!el) return;
     document.querySelectorAll('.er-jump-target').forEach(x => x.classList.remove('er-jump-target'));
-    el.classList.add('er-jump-target');
-    setTimeout(() => el.classList.remove('er-jump-target'), 2000);
+    el.classList.add('er-jump-target'); setTimeout(() => el.classList.remove('er-jump-target'), 2000);
     const title = el.querySelector('h1, h2, h3')?.textContent.trim() || el.textContent.trim().slice(0, 18) || '指定章节';
     const old = document.querySelector('.er-jump-toast'); if (old) old.remove();
-    const toast = document.createElement('div');
-    toast.className = 'er-jump-toast';
+    const toast = document.createElement('div'); toast.className = 'er-jump-toast';
     toast.innerHTML = `<span style="font-size:1.1rem">🎯</span> 定位到：<b>${title}</b>`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1600);
+    document.body.appendChild(toast); setTimeout(() => toast.remove(), 1600);
   }
-
   function showTurnCue(isNext, cx, cy) {
     const t = document.createElement('div');
     t.className = 'er-turn-cue ' + (isNext ? 'er-turn-next' : 'er-turn-prev');
     t.innerHTML = isNext ? '<span class="er-cue-icon">›</span> 下一页' : '<span class="er-cue-icon">‹</span> 上一页';
-    t.style.left = (cx || (isNext ? window.innerWidth - 65 : 65)) + 'px';
-    t.style.top = (cy || window.innerHeight / 2) + 'px';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 380);
+    t.style.left = (cx || (isNext ? window.innerWidth - 65 : 65)) + 'px'; t.style.top = (cy || window.innerHeight / 2) + 'px';
+    document.body.appendChild(t); setTimeout(() => t.remove(), 380);
   }
 
   // 全局内部链接与锚点定位引擎 (支持 silent 模式供重排无感归位)
@@ -218,10 +209,22 @@ def get_epub_reader_js() -> str:
     if (window.innerWidth <= 900 && a.closest('#er-sidebar')) closeSidebar();
   });
 
+  // 🛡️ 翻页防误触中枢：三重防御拦截选词圈选与拖拽引发的误翻页
   if (vp) {
+    let downX = 0, downY = 0, downTime = 0, hasDragged = false;
+    vp.addEventListener('mousedown', (e) => {
+      downX = e.clientX; downY = e.clientY; downTime = Date.now(); hasDragged = false;
+    });
+    vp.addEventListener('mousemove', (e) => {
+      if (downTime && !hasDragged && Math.hypot(e.clientX - downX, e.clientY - downY) > 8) hasDragged = true;
+    });
     vp.addEventListener('click', (e) => {
       if (document.documentElement.getAttribute('data-read-mode') !== 'paginated') return;
-      if (e.target.closest('a, button, pre, code')) return;
+      if (e.target.closest('a, button, pre, code, .er-floating-bar, .er-mark-popover, .er-card-modal')) return;
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return; // 1. 选区拦截
+      if (hasDragged) { hasDragged = false; return; } // 2. 拖拽位移拦截 (>8px)
+      if (Date.now() - downTime > 400) return; // 3. 长按时间窗拦截 (>400ms)
       const rect = vp.getBoundingClientRect(), x = e.clientX - rect.left;
       if (x < rect.width * 0.28) { showTurnCue(false, e.clientX, e.clientY); prevPage(); }
       else if (x > rect.width * 0.72) { showTurnCue(true, e.clientX, e.clientY); nextPage(); }
@@ -281,8 +284,7 @@ def get_epub_reader_js() -> str:
   };
   window.setReaderFontSize = setFs;
   try { const sfs = parseInt(localStorage.getItem('er_fs'), 10); if (sfs >= 13 && sfs <= 24) fs = sfs; document.documentElement.style.setProperty('--font-size', fs + 'px'); } catch(e){}
-  if (inc) inc.onclick = () => setFs(fs + 1);
-  if (dec) dec.onclick = () => setFs(fs - 1);
+  if (inc) inc.onclick = () => setFs(fs + 1); if (dec) dec.onclick = () => setFs(fs - 1);
   window.addEventListener('resize', () => { if (document.documentElement.getAttribute('data-read-mode') === 'paginated') updatePagination(); });
 
   const savedMode = localStorage.getItem('er_read_mode') || 'paginated';
