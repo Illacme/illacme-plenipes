@@ -16,6 +16,7 @@ from xml.sax.saxutils import escape
 
 from .base import BaseEBookAdapter
 from .colophon import ColophonBuilder
+from .epub_assets import DEFAULT_EPUB_CSS, build_cover_xhtml, build_nav_xhtml, build_colophon_xhtml, LANG_NAMES
 from core.bindery.toc_builder import TocBuilder
 from core.utils.tracing import tlog
 
@@ -28,62 +29,8 @@ class EpubAdapter(BaseEBookAdapter):
     MIME_TYPE = "application/epub+zip"
     VERSION = "V1.0"
     DESCRIPTION = "符合 W3C EPUB 3.0 国际规范的标准流式电子书驱动，深度适配主流阅读器。"
+    DEFAULT_CSS = DEFAULT_EPUB_CSS
 
-    DEFAULT_CSS = """
-@charset "utf-8";
-body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; line-height: 1.75; margin: 1em 1.2em; color: #222; }
-h1, h2, h3, h4 { font-weight: 700; line-height: 1.3; margin-top: 1.4em; margin-bottom: 0.6em; }
-h1 { font-size: 1.75em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
-h2 { font-size: 1.4em; border-bottom: 1px solid #eaecef; padding-bottom: 0.25em; }
-h3 { font-size: 1.2em; }
-p { margin: 0.8em 0; text-align: justify; }
-blockquote { margin: 1em 0; padding: 0.5em 1em; color: #555; border-left: 4px solid #00f2fe; background-color: #f8f9fa; }
-code { font-family: "Courier New", Courier, monospace; font-size: 0.9em; background-color: #f1f3f5; padding: 0.2em 0.4em; border-radius: 3px; }
-pre { background-color: #f6f8fa; padding: 1em; overflow-x: auto; border-radius: 6px; }
-pre code { background-color: transparent; padding: 0; }
-img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
-.cover-container { text-align: center; margin: 0; padding: 0; }
-.cover-image { max-width: 100%; max-height: 100vh; margin: auto; }
-.colophon-page { padding: 1.5em 0.8em; }
-.colophon-card { border: 1px solid #e1e4e8; background-color: #fafbfc; padding: 1.5em; border-radius: 8px; margin: 1.5em auto; }
-.colophon-header { font-size: 1.25em; font-weight: 700; border-bottom: 2px solid #00f2fe; padding-bottom: 0.4em; margin-bottom: 1em; text-align: center; }
-.colophon-grid { width: 100%; border-collapse: collapse; font-size: 0.88em; }
-.colophon-grid td { padding: 0.4em 0.5em; border-bottom: 1px dashed #e1e4e8; }
-.colophon-grid td.k { font-weight: 600; color: #555555; width: 32%; }
-.colophon-grid td.v { color: #222222; }
-.colophon-footer { font-size: 0.75em; color: #666666; margin-top: 1.2em; text-align: center; line-height: 1.5; }
-nav ol { list-style-type: decimal; padding-left: 1.5em; }
-nav li { margin: 0.4em 0; }
-a { color: #0284c7; text-decoration: underline; text-decoration-color: rgba(2, 132, 199, 0.35); text-underline-offset: 3px; }
-nav a { text-decoration: none; color: #0366d6; }
-.callout { margin: 1em 0; padding: 0.8em 1.2em; border-left: 4px solid #00f2fe; background-color: #f8fafc; border-radius: 4px; }
-.callout-tip { border-left-color: #10b981; background-color: #f0fdf4; } .callout-warning { border-left-color: #f59e0b; background-color: #fffbeb; }
-.callout-note, .callout-info { border-left-color: #0284c7; background-color: #f0f9ff; } .callout-danger { border-left-color: #ef4444; background-color: #fef2f2; }
-.callout-title { font-weight: 700; margin-bottom: 0.3em; }
-.codehilite { background-color: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 0.8em 1em; margin: 1.2em 0; overflow-x: auto; }
-.codehilite pre { margin: 0; padding: 0; background: transparent; border: none; }
-.codehilite .k, .codehilite .o { color: #d73a49; font-weight: 600; } .codehilite .s, .codehilite .s1, .codehilite .s2 { color: #032f62; }
-.codehilite .nf, .codehilite .nc { color: #6f42c1; } .codehilite .c, .codehilite .c1 { color: #6a737d; font-style: italic; } .codehilite .mi, .codehilite .mf { color: #005cc5; }
-.math-block { display: flex; justify-content: center; align-items: center; margin: 1.2em auto; overflow-x: auto; }
-math { font-size: 1.1em; }
-@media (prefers-color-scheme: dark) {
-    body { background-color: #121212; color: #e0e0e0; }
-    a { color: #38bdf8; text-decoration-color: rgba(56, 189, 248, 0.4); }
-    h1, h2 { border-bottom-color: #333; }
-    blockquote { background-color: #1e1e1e; color: #aaa; }
-    code { background-color: #2d2d2d; color: #f8f8f2; }
-    pre { background-color: #1a1a1a; }
-    .colophon-card { border-color: #333; background-color: #1a1a1a; }
-    .colophon-grid td { border-bottom-color: #2a2a2a; }
-    .colophon-grid td.k { color: #888; }
-    .colophon-grid td.v { color: #ccc; }
-    .colophon-footer { color: #777; }
-    .codehilite { background-color: #161b22; border-color: #30363d; }
-    .codehilite .k, .codehilite .o { color: #ff7b72; } .codehilite .s, .codehilite .s1, .codehilite .s2 { color: #a5d6ff; }
-    .codehilite .nf, .codehilite .nc { color: #d2a8ff; } .codehilite .c, .codehilite .c1 { color: #8b949e; } .codehilite .mi, .codehilite .mf { color: #79c0ff; }
-    .math-block math { color: #e6edf3; fill: #e6edf3; }
-}
-"""
 
     def bind_book(
         self,
@@ -106,6 +53,8 @@ math { font-size: 1.1em; }
         desc = book_metadata.get("description", "")
         pub_date = book_metadata.get("date") or datetime.date.today().isoformat()
         iso_lang = target_lang if target_lang != "zh" else "zh-CN"
+        polyglot_langs = book_metadata.get("polyglot_langs") or []
+        is_polyglot = bool(polyglot_langs and len(polyglot_langs) >= 2)
         has_cover = bool(cover_image_path and os.path.exists(cover_image_path))
         cover_ext = os.path.splitext(cover_image_path)[1].lower() if has_cover else ".jpg"
         cover_mime = "image/png" if cover_ext == ".png" else "image/jpeg"
@@ -130,14 +79,27 @@ math { font-size: 1.1em; }
                 if has_cover:
                     with open(cover_image_path, "rb") as cf:
                         zf.writestr(f"OEBPS/images/cover{cover_ext}", cf.read())
-                    cover_xhtml = f"""<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="{iso_lang}">
-<head><title>封面</title><link rel="stylesheet" href="../styles/epub.css"/></head>
-<body class="cover-container">
-  <img src="../images/cover{cover_ext}" alt="Cover" class="cover-image"/>
-</body>
-</html>"""
+                    if is_polyglot and polyglot_langs:
+                        from core.bindery.cover_generator import CoverGenerator
+                        for clang in polyglot_langs[1:]:
+                            c_title = (book_metadata or {}).get("titles_by_lang", {}).get(clang)
+                            if not c_title:
+                                from core.bindery.translation_resolver import TranslationResolver
+                                raw_title = (book_metadata or {}).get("title") or "Digital Publication"
+                                c_title = TranslationResolver.resolve_book_title(raw_title, clang)
+                            c_author = (book_metadata or {}).get("author", "Illacme Editorial Team")
+                            c_pub = (book_metadata or {}).get("publisher", "Illacme Plenipes Global Press")
+                            c_svg = CoverGenerator.generate_svg_cover(
+                                title=c_title, author=c_author, publisher=c_pub, style_key="dark_emerald", lang=clang
+                            )
+                            zf.writestr(f"OEBPS/images/cover_{clang}.svg", c_svg.encode("utf-8"))
+                    cover_xhtml = build_cover_xhtml(
+                        iso_lang=iso_lang,
+                        cover_ext=cover_ext,
+                        is_polyglot=is_polyglot,
+                        polyglot_langs=polyglot_langs,
+                        book_metadata=book_metadata
+                    )
                     zf.writestr("OEBPS/text/cover.xhtml", cover_xhtml)
 
                 # 5. 写入各章节 XHTML
@@ -146,6 +108,9 @@ math { font-size: 1.1em; }
 
                 if has_cover:
                     manifest_items.append(f'<item id="cover-img" href="images/cover{cover_ext}" media-type="{cover_mime}" properties="cover-image"/>')
+                    if is_polyglot and polyglot_langs:
+                        for clang in polyglot_langs[1:]:
+                            manifest_items.append(f'<item id="cover-img-{clang}" href="images/cover_{clang}.svg" media-type="image/svg+xml"/>')
                     manifest_items.append('<item id="cover-page" href="text/cover.xhtml" media-type="application/xhtml+xml"/>')
                     spine_items.append('<itemref idref="cover-page"/>')
 
@@ -211,33 +176,38 @@ math { font-size: 1.1em; }
     </navPoint>""")
 
                 # 6. 写入出版版权页与物权指纹 (Colophon，单篇文章导出自动抑制)
-                if not (book_metadata.get("is_single_article") or len(manuscript_tree) <= 1):
+                has_colophon = not (book_metadata.get("is_single_article") or len(manuscript_tree) <= 1)
+                colophon_lbl = ""
+                if has_colophon:
                     colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, book_metadata, "epub")
-                    zf.writestr("OEBPS/text/colophon.xhtml", ColophonBuilder.render_xhtml(colophon_data, iso_lang=iso_lang))
+                    colophon_lbl = ColophonBuilder.get_nav_label(iso_lang)
+                    colophon_xhtml = build_colophon_xhtml(
+                        colophon_data=colophon_data,
+                        iso_lang=iso_lang,
+                        is_polyglot=is_polyglot,
+                        polyglot_langs=polyglot_langs,
+                        colophon_lbl=colophon_lbl
+                    )
+                    zf.writestr("OEBPS/text/colophon.xhtml", colophon_xhtml)
                     manifest_items.append('<item id="colophon" href="text/colophon.xhtml" media-type="application/xhtml+xml"/>')
                     spine_items.append('<itemref idref="colophon"/>')
                     ncx_order += 1
-                    colophon_lbl = ColophonBuilder.get_nav_label(iso_lang)
                     nav_ol_items.append(f'<li><a href="text/colophon.xhtml">{colophon_lbl}</a></li>')
                     toc_nav_points.append(f"""    <navPoint id="navPoint-{ncx_order}" playOrder="{ncx_order}">
       <navLabel><text>{colophon_lbl}</text></navLabel>
       <content src="text/colophon.xhtml"/>
     </navPoint>""")
 
-                toc_title = "Table of Contents" if target_lang == "en" else ("目次 · Table of Contents" if target_lang == "ja" else "目录 · Table of Contents")
-                nav_xhtml = f"""<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="{iso_lang}">
-<head><title>{toc_title}</title><link rel="stylesheet" href="styles/epub.css"/></head>
-<body>
-  <nav epub:type="toc" id="toc">
-    <h1>{toc_title}</h1>
-    <ol>
-      {''.join(nav_ol_items)}
-    </ol>
-  </nav>
-</body>
-</html>"""
+                nav_xhtml = build_nav_xhtml(
+                    iso_lang=iso_lang,
+                    target_lang=target_lang,
+                    is_polyglot=is_polyglot,
+                    polyglot_langs=polyglot_langs,
+                    manuscript_tree=manuscript_tree,
+                    nav_ol_items=nav_ol_items,
+                    has_colophon=has_colophon,
+                    colophon_lbl=colophon_lbl
+                )
                 zf.writestr("OEBPS/nav.xhtml", nav_xhtml)
                 # 8. 写入 OEBPS/toc.ncx (EPUB 2 兼容目录)
                 toc_ncx = f"""<?xml version="1.0" encoding="UTF-8"?>

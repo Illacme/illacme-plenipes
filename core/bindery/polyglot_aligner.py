@@ -71,28 +71,45 @@ class PolyglotAligner:
             "de": "🇩🇪 Deutsche Übersetzung"
         }
 
+        base_ch = chapter_by_lang.get(primary_lang) or next(iter(chapter_by_lang.values()), {})
+        base_raw_body = base_ch.get("html_body", "").strip()
+
         # 每个语种作为整章贯通的完整分栏呈现，完美保持主语言原貌与视觉流
         columns_html = []
         for l in ordered_langs:
             ch_data = chapter_by_lang.get(l) or {}
-            raw_body = ch_data.get("html_body", "").strip() or "<p></p>"
+            raw_body = ch_data.get("html_body", "").strip()
             tag_label = l.upper()
             lang_name = lang_titles.get(l, f"{tag_label} Edition")
+            is_untranslated = (l != primary_lang) and (not raw_body or raw_body == base_raw_body or ch_data.get("is_pending"))
+            if not raw_body:
+                raw_body = base_raw_body or "<p></p>"
+
+            if is_untranslated:
+                content_html = (
+                    f'  <div class="wb-poly-pending">\n'
+                    f'    <span class="wb-poly-pending-icon">⏳</span>\n'
+                    f'    <span>该章节 {lang_name} 对照译文待生成，暂显原文供研读参考。</span>\n'
+                    f'  </div>\n'
+                    f'  <div class="wb-poly-content wb-poly-untranslated" style="opacity:0.75;">{raw_body}</div>'
+                )
+            else:
+                content_html = f'  <div class="wb-poly-content">{raw_body}</div>'
+
             columns_html.append(
                 f'<div class="wb-poly-item wb-poly-column" data-lang="{l}">\n'
                 f'  <div class="wb-poly-header">\n'
                 f'    <span class="wb-lang-badge">{tag_label}</span>\n'
                 f'    <span class="wb-poly-lang-name">{lang_name}</span>\n'
                 f'  </div>\n'
-                f'  <div class="wb-poly-content">{raw_body}</div>\n'
+                f'{content_html}\n'
                 f'</div>'
             )
 
         full_body_html = f'<div class="wb-polyglot-block wb-polyglot-columns">\n{"".join(columns_html)}\n</div>'
 
         # 综合主标题与多语辅助标题
-        primary_ch = chapter_by_lang.get(primary_lang) or next(iter(chapter_by_lang.values()), {})
-        main_title = primary_ch.get("title", "未命名章节")
+        main_title = base_ch.get("title", "未命名章节")
 
         sub_titles = []
         for l in ordered_langs:
@@ -101,7 +118,7 @@ class PolyglotAligner:
                 if t and t != main_title:
                     sub_titles.append(f'<span class="wb-poly-subtitle" data-lang="{l}">[{l.upper()}] {t}</span>')
 
-        titles_by_lang = {l: chapter_by_lang[l].get("title", main_title) for l in ordered_langs}
+        titles_by_lang = {l: (chapter_by_lang.get(l) or {}).get("title", main_title) for l in ordered_langs}
         return {
             "title": main_title,
             "titles_by_lang": titles_by_lang,
@@ -116,7 +133,8 @@ class PolyglotAligner:
         cls,
         assembler: Any,
         category: str,
-        polyglot_langs: List[str]
+        polyglot_langs: List[str],
+        single_file: str = None
     ) -> List[Dict[str, Any]]:
         """调度收集多个语种章节并逐章通过全局绝对文件路径精准对齐，彻底消除 slug 冲突"""
         from .translation_resolver import TranslationResolver
@@ -126,11 +144,11 @@ class PolyglotAligner:
 
         lang_chapter_maps: Dict[str, Dict[str, Dict[str, Any]]] = {}
         primary_lang = polyglot_langs[0]
-        base_chapters = assembler._collect_chapters(category=category, target_lang=primary_lang)
+        base_chapters = assembler._collect_chapters(category=category, target_lang=primary_lang, single_file=single_file)
 
         # 核心保障：必须使用绝对物理文件路径 file_path 建立映射，彻底杜绝 slug 重复导致的章节错位
         for l in polyglot_langs:
-            chs = base_chapters if l == primary_lang else assembler._collect_chapters(category=category, target_lang=l)
+            chs = base_chapters if l == primary_lang else assembler._collect_chapters(category=category, target_lang=l, single_file=single_file)
             lang_chapter_maps[l] = {ch.get("file_path", str(idx)): ch for idx, ch in enumerate(chs)}
 
         polyglot_tree: List[Dict[str, Any]] = []

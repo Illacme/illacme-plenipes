@@ -11,8 +11,7 @@
         if (document.getElementById('bindery-responsive-theme-css')) return;
         const style = document.createElement('style');
         style.id = 'bindery-responsive-theme-css';
-        style.textContent = `
-            .bindery-modal-backdrop { position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        style.textContent = `.bindery-modal-backdrop { position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
             .bindery-modal-card { width: 620px; max-width: 92vw; padding: 24px 28px; border-radius: 16px; background: rgba(var(--bg-modal-solid-rgb, 14, 20, 32), 0.98); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 25px 60px var(--black-50, rgba(0,0,0,0.6)), 0 0 30px rgba(16, 185, 129, 0.1); display: flex; flex-direction: column; gap: 16px; transition: all 0.3s ease; }
             .bindery-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom: 12px; }
             .bindery-title { font-size: 1.25rem; font-weight: 700; color: var(--text-bright, #ffffff); display: flex; align-items: center; gap: 8px; }
@@ -32,34 +31,18 @@
             .bindery-driver-desc { font-size: 0.72rem; color: var(--text-dim, rgba(255,255,255,0.6)); }
             .bindery-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top: 14px; }
             .bindery-nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim, rgba(255,255,255,0.6)); font-size: 0.85rem; font-weight: 600; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
-            .bindery-nav-tab:hover { color: var(--text-bright, #fff); }
-            .bindery-nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
+            .bindery-nav-tab:hover { color: var(--text-bright, #fff); } .bindery-nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
             .bindery-shelf-card:hover { border-color: rgba(16, 185, 129, 0.35) !important; background: rgba(255, 255, 255, 0.05) !important; }
             .bindery-del-btn:hover { color: #ef4444 !important; }
             .bindery-matrix-chip { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-bright, #ffffff); transition: all 0.2s ease; }
             .bindery-matrix-chip:hover { border-color: rgba(16, 185, 129, 0.5) !important; background: rgba(16, 185, 129, 0.1) !important; }
             [data-theme="light"] .bindery-matrix-chip { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
-            [data-theme="light"] .bindery-matrix-chip span { color: #1e293b !important; }
-        `;
+            [data-theme="light"] .bindery-matrix-chip span { color: #1e293b !important; }`;
         document.head.appendChild(style);
     }
 
-    function esc(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    function formatSize(bytes) {
-        if (!bytes || bytes <= 0) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
-    }
+    function esc(str) { return !str ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+    function formatSize(b) { if (!b || b <= 0) return '0 B'; const u = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(b) / Math.log(1024)); return (b / Math.pow(1024, i)).toFixed(1) + ' ' + u[i]; }
 
     function buildLoadingHtml() {
         return `
@@ -89,16 +72,10 @@
         const sourceLangObj = availLangs.find(l => l.code === sourceLang) || availLangs[0] || { code: 'zh', name: '简体中文' };
         const sourceLangLabel = sourceLangObj.name ? (sourceLangObj.name.includes('版') ? sourceLangObj.name : sourceLangObj.name + '版') : '单语言版';
 
-        const singleLangOptions = availLangs.map(l => `
-            <option value="${esc(l.code)}" ${l.code === sourceLang ? 'selected' : ''}>
-                ${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})
-            </option>
-        `).join('');
+        const singleLangOptions = availLangs.map(l => `<option value="${esc(l.code)}" ${l.code === sourceLang ? 'selected' : ''}>${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})</option>`).join('');
 
         const langOptionsHtml = `
-            <optgroup label="── 单语言独立版本 ──">
-                ${singleLangOptions}
-            </optgroup>
+            <optgroup label="── 单语言独立版本 ──">${singleLangOptions}</optgroup>
             <optgroup label="── 多语言综合矩阵 ──">
                 <option value="polyglot">📑 双语/多语对照版 (单本内置多栏对照研读)</option>
                 <option value="matrix_batch">📦 多语言单行本并发制作 (${availLangs.length} 本独立电子书)</option>
@@ -106,9 +83,16 @@
         `;
 
         const matrixChipsHtml = availLangs.map(l => `
-            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; border-radius:5px; padding:2px 6px; cursor:pointer;">
+            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);">
                 <input type="checkbox" class="bindery-matrix-cb" value="${esc(l.code)}" ${l.count > 0 || l.is_source ? 'checked' : ''} onchange="window.updateMatrixSubmitBtn()" style="accent-color:#10b981;" />
                 <span>${l.icon || '🌐'} ${esc(l.name)}</span>
+            </label>
+        `).join('');
+
+        const polyChipsHtml = availLangs.map((l, idx) => `
+            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);">
+                <input type="checkbox" class="bindery-poly-cb" value="${esc(l.code)}" ${l.code === sourceLang || l.code === 'en' ? 'checked' : ''} onchange="window.updatePolyglotSubmitBtn()" style="accent-color:#10b981;" />
+                <span>${l.icon || '🌐'} ${esc(l.name)}${l.code === sourceLang ? ' (主)' : ''}</span>
             </label>
         `).join('');
 
@@ -116,17 +100,11 @@
             <div class="glass-panel bindery-modal-card">
                 <div class="bindery-header">
                     <div>
-                        <div class="bindery-title">
-                            <span>📚 数字出版装订中枢</span>
-                            <span class="bindery-badge">EPUB / WebBook / PDF</span>
-                        </div>
-                        <div class="bindery-subtitle">
-                            将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书、独立网页书或精致 PDF 印本。
-                        </div>
+                        <div class="bindery-title"><span>📚 数字出版装订中枢</span><span class="bindery-badge">EPUB / WebBook / PDF</span></div>
+                        <div class="bindery-subtitle">将文库原稿整卷编排、自愈双链跳转，并封装为国际标准流式电子书、独立网页书或精致 PDF 印本。</div>
                     </div>
                     <button class="bindery-close-btn" onclick="window.closeBinderyModal()" title="关闭">×</button>
                 </div>
-
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-bottom:6px;">
                     <div style="display:flex; gap:8px;">
                         <button id="btn-bindery-tab-build" class="bindery-nav-tab active" onclick="window.switchBinderyTab('build')">🖨️ 装订新版</button>
@@ -134,7 +112,6 @@
                     </div>
                     <div id="bindery-shelf-header-actions" style="display:none; align-items:center; gap:8px;"></div>
                 </div>
-
                 <div id="bindery-panel-build" style="display: flex; flex-direction: column; gap: 14px;">
                     <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 12px;">
                         <div>
@@ -146,8 +123,6 @@
                             <input type="text" id="bindery-input-author" class="bindery-input" value="${esc(scopesData.default_author)}" placeholder="作者或制作团队..." />
                         </div>
                     </div>
-
-                    <!-- 保持原单语种完全对称平衡的两列网格 -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;">
                         <div>
                             <label class="bindery-label">📂 章节收录范围</label>
@@ -162,19 +137,17 @@
                                 </div>
                             </div>
                             <select id="bindery-select-lang" class="bindery-select" onchange="window.onBinderyLangModeChange(this.value)">${langOptionsHtml}</select>
-                            
-                            <!-- 轻巧内嵌的语种勾选行 (独占整行宽度，杜绝多语种拥挤换行) -->
-                            <div id="bindery-matrix-chips-row" style="display:none; margin-top:6px; align-items:center; gap:4px; flex-wrap:wrap;">
-                                ${matrixChipsHtml}
-                            </div>
+                            <div id="bindery-matrix-chips-row" style="display:none; margin-top:5px; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${matrixChipsHtml}</div>
+                            <div id="bindery-poly-chips-row" style="display:none; margin-top:5px; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${polyChipsHtml}</div>
                         </div>
                     </div>
 
                     <!-- 封面装帧区块 -->
                     <div style="display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border, rgba(255,255,255,0.1)); border-radius: 10px; padding: 10px 12px; align-items: center;">
-                        <div id="bindery-cover-preview-box" style="width: 72px; height: 110px; border-radius: 6px; overflow: hidden; background: #0b1219; border: 1px solid rgba(16,185,129,0.35); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,0.45); position:relative;">
+                        <div id="bindery-cover-preview-box" onclick="document.getElementById('bindery-cover-file-input')?.click()" style="width: 72px; height: 110px; border-radius: 6px; overflow: hidden; background: #0b1219; border: 1px solid rgba(16,185,129,0.35); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,0.45); position:relative; cursor:pointer;" title="点击上传自定义封面图片">
                             <img id="bindery-cover-img" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="Cover" />
                             <div id="bindery-cover-none-ph" style="display:none; text-align:center; color:var(--text-dim, #94a3b8); font-size:0.75rem; line-height:1.4;">📰<br/><span style="font-size:0.62rem; color:#38bdf8;">纯净免封</span></div>
+                            <input type="file" id="bindery-cover-file-input" accept="image/*" style="display:none;" onchange="window.handleBinderyCoverUpload(this.files[0])" />
                         </div>
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -186,12 +159,14 @@
                                     <option value="none" ${isSingle ? 'selected' : ''}>📰 纯净正文流 (免大封面)</option>
                                     <option value="auto" ${!isSingle ? 'selected' : ''}>✨ 智能自愈 (文库/排版)</option>
                                     <option value="generated">🎨 艺术装帧大封面</option>
+                                    <option value="custom">📁 自定义上传封面...</option>
                                 </select>
                                 <select id="bindery-select-cover-style" class="bindery-select" onchange="window.refreshCoverPreview()">
                                     <option value="dark_emerald" selected>🌿 黑曜翡翠 (Emerald)</option>
                                     <option value="classic_navy">🌌 藏青午夜 (Navy)</option>
                                     <option value="obsidian_gold">👑 黑金雅致 (Gold)</option>
                                 </select>
+                                <button id="btn-bindery-upload-cover" type="button" class="secondary-btn" onclick="document.getElementById('bindery-cover-file-input')?.click()" style="display:none; padding:7px 10px; font-size:0.75rem; border-radius:8px; align-items:center; justify-content:center; gap:4px; border:1px solid rgba(16,185,129,0.4); color:#10b981; cursor:pointer; background:rgba(16,185,129,0.08);">📤 选择本地图片</button>
                             </div>
                         </div>
                     </div>
@@ -227,39 +202,39 @@
 
                     <div class="bindery-footer">
                         <button id="btn-bindery-cancel" class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">取消</button>
-                        <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                            <span>🚀 立即装订 (${esc(sourceLangLabel)})</span>
-                        </button>
+                        <button id="btn-execute-binding" class="primary-btn glow-btn" onclick="window.executeBookBinding()" style="padding: 7px 22px; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;"><span>🚀 立即装订 (${esc(sourceLangLabel)})</span></button>
                     </div>
                 </div>
 
                 <div id="bindery-panel-shelf" style="display: none; flex-direction: column; gap: 10px;">
                     <div id="bindery-shelf-list"></div>
-                    <div style="display: flex; justify-content: flex-end; margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top: 14px;">
-                        <button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">关闭</button>
-                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 6px; border-top: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding-top: 14px;"><button class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; cursor:pointer;">关闭</button></div>
                 </div>
             </div>
         `;
     }
 
     function buildSuccessStatusHtml(result, formattedSize) {
+        const isPdf = result.format === 'pdf' || (result.filename && result.filename.endsWith('.pdf'));
         const isWb = result.format === 'webbook' || (result.filename && result.filename.endsWith('.html'));
-        const pvUrl = result.preview_url || (isWb ? `/api/bindery/view?file=${encodeURIComponent(result.filename)}` : null);
-        const pvBtn = pvUrl
-            ? `<a href="${pvUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff; flex-shrink:0;">👁️</a>`
-            : '';
+        const pvTitle = isPdf ? '在线阅览 (PDF 印本)' : (isWb ? '在线翻阅 (WebBook)' : '在线翻阅 (EPUB 3.0)');
+        const pvUrl = result.preview_url || (result.filename ? `/api/bindery/view?file=${encodeURIComponent(result.filename)}` : null);
+        const pvBtn = pvUrl ? `<a href="${pvUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${pvTitle}" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#0284c7; color:#fff; flex-shrink:0;">👁️</a>` : '';
+        const dlUrl = result.download_url || (result.filename ? `/api/bindery/download?file=${encodeURIComponent(result.filename)}` : '#');
 
         if (result.mode === 'matrix' && Array.isArray(result.results)) {
             const itemsHtml = result.results.map(r => {
-                const sz = formatSize(r.size_bytes || 0);
-                const itemWb = r.format === 'webbook' || (r.filename && r.filename.endsWith('.html'));
-                const itemPv = r.preview_url || (itemWb ? `/api/bindery/view?file=${encodeURIComponent(r.filename)}` : null);
-                const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="在线翻阅 (WebBook)" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">👁️</a>` : '';
+                const sz = formatSize(r.size_bytes || 0), fn = r.filename || '';
+                const rIsPdf = r.format === 'pdf' || fn.endsWith('.pdf');
+                const rIsWb = r.format === 'webbook' || fn.endsWith('.html');
+                const rTitle = rIsPdf ? '在线阅览 (PDF)' : (rIsWb ? '在线翻阅 (WebBook)' : '在线翻阅 (EPUB)');
+                const itemPv = r.preview_url || (fn ? `/api/bindery/view?file=${encodeURIComponent(fn)}` : null);
+                const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${rTitle}" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">👁️</a>` : '';
+                const itemDlUrl = r.download_url || (fn ? `/api/bindery/download?file=${encodeURIComponent(fn)}` : '#');
                 const chNum = (r.chapter_count !== undefined && r.chapter_count !== null) ? `${r.chapter_count}篇 / ` : '';
                 return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem; gap:8px;">
-                    <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.filename)}"><strong>[${esc(r.language.toUpperCase())}]</strong> ${esc(r.filename)} (${chNum}${sz})</span>
-                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<button type="button" onclick="window.revealBookInFolder('${esc(r.filename)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📂</button><button type="button" onclick="window.openBinderyQrModal('${esc(r.filename)}')" class="secondary-btn" title="📱 扫码传输" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📱</button><a href="${r.download_url}" download="${esc(r.filename)}" class="primary-btn" title="下载电子书" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a></div>
+                    <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(fn)}"><strong>[${esc((r.language || r.lang || '').toUpperCase())}]</strong> ${esc(fn)} (${chNum}${sz})</span>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<a href="${itemDlUrl}" download="${esc(fn)}" class="primary-btn" title="下载出版物" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a><button type="button" onclick="window.revealBookInFolder('${esc(fn)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📂</button><button type="button" onclick="window.openBinderyQrModal('${esc(fn)}')" class="secondary-btn" title="扫码同步至移动设备 (手机/平板/Kindle)" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📱</button></div>
                 </div>`;
             }).join('');
 
@@ -272,17 +247,14 @@
             </div>`;
         }
 
-        const countText = (result.chapter_count !== undefined && result.chapter_count !== null)
-            ? `已收录 <strong>${result.chapter_count}</strong> 篇章节`
-            : `已完成编排封装`;
-
+        const countText = (result.chapter_count !== undefined && result.chapter_count !== null) ? `已收录 <strong>${result.chapter_count}</strong> 篇章节` : `已完成编排封装`;
         return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <div style="min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><strong>🎉 装订完成！</strong> ${countText} (${formattedSize})</div>
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                 ${pvBtn}
+                <a href="${dlUrl}" download="${esc(result.filename)}" class="primary-btn glow-btn" title="下载保存出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#10b981; color:#fff; flex-shrink:0;">⬇️</a>
                 <button type="button" onclick="window.revealBookInFolder('${esc(result.filename)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📂</button>
-                <button type="button" onclick="window.openBinderyQrModal('${esc(result.filename)}')" class="secondary-btn" title="📱 扫码传输至移动设备" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📱</button>
-                <a href="${result.download_url}" download="${esc(result.filename)}" class="primary-btn" title="下载出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#10b981; color:#fff; flex-shrink:0;">⬇️</a>
+                <button type="button" onclick="window.openBinderyQrModal('${esc(result.filename)}')" class="secondary-btn" title="扫码同步至移动设备 (手机/平板/Kindle)" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📱</button>
             </div>
         </div>`;
     }

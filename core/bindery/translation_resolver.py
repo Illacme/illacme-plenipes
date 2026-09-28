@@ -10,7 +10,7 @@ import re
 import sqlite3
 import json
 import yaml
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, Any
 
 
 class TranslationResolver:
@@ -80,8 +80,9 @@ class TranslationResolver:
         target_lang: str,
         fallback_title: str,
         fallback_body: str,
-        vault_dir: str = "vault"
-    ) -> Tuple[str, str]:
+        vault_dir: str = "vault",
+        is_parallel: bool = False
+    ) -> Tuple[str, Optional[str]]:
         """
         根据原稿相对路径与目标语种，高保真解析目标语言标题与正文。
         优先级：
@@ -113,8 +114,11 @@ class TranslationResolver:
 
         # 1. 优先检查创作者人工校对锁定表
         rev_title, rev_body = cls._get_from_review_table(vault_dir, rel_p, t_lang)
-        if rev_body:
-            return (rev_title or fallback_title), rev_body
+        if rev_body: return (rev_title or fallback_title), rev_body
+
+        # 1.5 检查 translations 自动化多语言记录表
+        trans_title, trans_body = cls._get_from_translations_table(vault_dir, rel_p, t_lang)
+        if trans_body: return (trans_title or fallback_title), trans_body
 
         # 2. 预热目标语种文件索引
         cls.warm_up(t_lang)
@@ -128,8 +132,7 @@ class TranslationResolver:
         slug_cands = []
         if doc_slug:
             sl = doc_slug.lower()
-            if doc_dir:
-                slug_cands.extend([f"{doc_dir}/{sl}.md", f"{doc_dir}/{sl}"])
+            if doc_dir: slug_cands.extend([f"{doc_dir}/{sl}.md", f"{doc_dir}/{sl}"])
             slug_cands.extend([f"{sl}.md", sl])
 
         # 物理寻址探针顺序（全相对路径与 slug 路径优先，绝不允许跨目录乱匹配 index.md）
@@ -156,11 +159,12 @@ class TranslationResolver:
                     if parsed_title:
                         parsed_title = re.sub(r"^[🌐\s]+", "", str(parsed_title)).strip()
                     return (parsed_title or fallback_title), parsed_body
-            except Exception:
-                pass
+            except Exception: pass
 
-        # 3. 降级：如果仅有 i18n 标题而正文未翻译，使用 i18n 标题 + 原正文
+        # 3. 降级：若在平行对照模式下无真实译文，返回 None 正文以便呈现待译提示；单语模式降级原正文
         final_title = i18n_title or fallback_title
+        if is_parallel:
+            return final_title, None
         return final_title, fallback_body
 
     @classmethod
@@ -179,6 +183,25 @@ class TranslationResolver:
                     return row[0], row[1]
         except Exception:
             pass
+        return None, None
+
+    @classmethod
+    def _get_from_translations_table(cls, vault_dir: str, rel_path: str, lang: str) -> Tuple[Optional[str], Optional[str]]:
+        """从 SQLite translations 提取自动化翻译结果"""
+        try:
+            db_path = os.path.join(vault_dir, ".plenipes/cache/ledger.db")
+            if not os.path.exists(db_path): return None, None
+            with sqlite3.connect(db_path) as conn:
+                row = conn.execute(
+                    "SELECT result_json FROM translations WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE AND status = 'DONE'",
+                    (rel_path, lang)
+                ).fetchone()
+                if row and row[0]:
+                    data = json.loads(row[0])
+                    t = data.get("title")
+                    b = data.get("body") or data.get("content") or data.get("markdown")
+                    if b: return t, b
+        except Exception: pass
         return None, None
 
     @classmethod
@@ -204,3 +227,48 @@ class TranslationResolver:
         except Exception:
             pass
         return None, None
+
+    @classmethod
+    def resolve_book_title(cls, title: str, target_lang: str, engine: Any = None) -> str:
+        """为装订书籍标题解析或生成高质量多语种对应版本，严禁凭空自造标题替换用户书名"""
+        t = (title or "").strip()
+        if not t: return "Untitled"
+        t_lang = (target_lang or "").strip().lower()
+        if t_lang in ("zh", "zh-hans", "zh-cn"):
+            return t
+
+        if engine and hasattr(engine, "ai") and getattr(engine.ai, "translate_title", None):
+            try:
+                res = engine.ai.translate_title(t, t_lang)
+                if res and isinstance(res, str) and res.strip():
+                    return res.strip()
+            except Exception: pass
+
+        lex_map = {
+            "en": [
+                ("多语对照典籍", "Polyglot Concordance"), ("多语对照", "Polyglot"), ("多语", "Polyglot"),
+                ("艺术", "Artistic"), ("双封面", "Dual-Cover"), ("双面", "Dual-Sided"), ("典籍", "Classics"),
+                ("全集", "Complete Works"), ("合集", "Collection"), ("手册", "Handbook"),
+                ("指南", "Guide"), ("文档", "Documentation"), ("教程", "Tutorial"),
+            ],
+            "ja": [
+                ("多语对照典籍", "多言語対照典籍"), ("多语对照", "多言語対照"), ("多语", "多言語"),
+                ("艺术", "芸術"), ("双封面", "ダブル表紙"), ("典籍", "典籍"), ("全集", "全集"),
+                ("合集", "合集"), ("手册", "ハンドブック"), ("指南", "ガイド"),
+                ("文档", "ドキュメント"), ("教程", "チュートリアル"),
+            ]
+        }
+        if t_lang in lex_map:
+            translated = t
+            for src_kw, dst_kw in lex_map[t_lang]:
+                if src_kw in translated:
+                    translated = translated.replace(src_kw, f" {dst_kw} ")
+            translated = re.sub(r'\s+', ' ', translated).strip()
+            if t_lang == "ja":
+                translated = translated.replace(" ", "")
+                return translated
+            if re.search(r'[\u4e00-\u9fa5]', translated):
+                return f"{translated} (English Edition)"
+            return translated
+
+        return f"{t} ({t_lang.upper()} Edition)"

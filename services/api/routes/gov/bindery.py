@@ -116,6 +116,8 @@ async def get_cover_preview(payload: CoverPreviewPayload) -> Dict[str, Any]:
 
     if payload.cover_mode == "none":
         return {"success": True, "mode": "none", "data_uri": None}
+    if payload.cover_mode == "custom":
+        return {"success": True, "mode": "custom", "data_uri": payload.custom_cover_image}
 
     # 尝试原生封面
     if payload.cover_mode == "auto":
@@ -162,16 +164,17 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             category=scope_cat, format_type=payload.format, target_lang=target_langs[0],
             custom_title=payload.title, custom_author=payload.author,
             cover_mode=payload.cover_mode, cover_style=payload.cover_style,
-            output_dir=payload.output_dir, polyglot_langs=target_langs, single_file=single_f
+            output_dir=payload.output_dir, polyglot_langs=target_langs, single_file=single_f,
+            custom_cover_image=payload.custom_cover_image
         )
         if not out_p or not os.path.exists(out_p):
             raise HTTPException(status_code=500, detail="多语言对照电子书制作失败，未生成有效产物。")
         fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
         chs = assembler._collect_chapters(category=scope_cat, target_lang=target_langs[0], single_file=single_f)
-        pv = f"/api/bindery/view?file={fn}" if payload.format == "webbook" else None
+        pv = f"/api/bindery/view?file={urllib.parse.quote(fn)}"
         return {
             "success": True, "mode": "polyglot", "filename": fn, "file_size": fs, "format": payload.format,
-            "chapter_count": len(chs), "languages": target_langs, "download_url": f"/api/bindery/download?file={fn}",
+            "chapter_count": len(chs), "languages": target_langs, "download_url": f"/api/bindery/download?file={urllib.parse.quote(fn)}",
             "preview_url": pv, "message": f"🎉 多语言对照电子书制作完成！涵盖 {len(target_langs)} 种语言对照。"
         }
 
@@ -181,18 +184,18 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             category=scope_cat, format_type=payload.format, target_lang=s_lang,
             custom_title=payload.title, custom_author=payload.author,
             cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir,
-            single_file=single_f
+            single_file=single_f, custom_cover_image=payload.custom_cover_image
         )
         if not out_path or not os.path.exists(out_path):
             raise HTTPException(status_code=500, detail="电子书制作失败，未生成有效产物。")
 
         filename, file_size = os.path.basename(out_path), os.path.getsize(out_path)
         chapters = assembler._collect_chapters(category=scope_cat, target_lang=s_lang, single_file=single_f)
-        pv = f"/api/bindery/view?file={filename}" if payload.format == "webbook" else None
+        pv = f"/api/bindery/view?file={urllib.parse.quote(filename)}"
         msg = f"单篇出版物制作完成！已封装为标准 {payload.format.upper()}。" if is_single else f"电子书制作完成！共收录 {len(chapters)} 篇章节，已生成标准 {payload.format.upper()} 文件。"
         return {
             "success": True, "filename": filename, "file_size": file_size, "chapter_count": len(chapters),
-            "format": payload.format, "download_url": f"/api/bindery/download?file={filename}",
+            "format": payload.format, "download_url": f"/api/bindery/download?file={urllib.parse.quote(filename)}",
             "preview_url": pv, "message": msg
         }
 
@@ -203,15 +206,15 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             category=scope_cat, format_type=payload.format, target_lang=l_code,
             custom_title=payload.title, custom_author=payload.author,
             cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir,
-            single_file=single_f
+            single_file=single_f, custom_cover_image=payload.custom_cover_image
         )
         if out_p and os.path.exists(out_p):
             fn, fs = os.path.basename(out_p), os.path.getsize(out_p)
             chs = assembler._collect_chapters(category=scope_cat, target_lang=l_code, single_file=single_f)
-            pv = f"/api/bindery/view?file={fn}" if payload.format == "webbook" else None
+            pv = f"/api/bindery/view?file={urllib.parse.quote(fn)}"
             matrix_results.append({
                 "lang": l_code, "language": l_code, "filename": fn, "file_size": fs, "size_bytes": fs,
-                "chapter_count": len(chs), "format": payload.format, "download_url": f"/api/bindery/download?file={fn}",
+                "chapter_count": len(chs), "format": payload.format, "download_url": f"/api/bindery/download?file={urllib.parse.quote(fn)}",
                 "preview_url": pv
             })
 
@@ -251,6 +254,10 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".pdf":
         return FileResponse(path=target, media_type="application/pdf", filename=file, content_disposition_type="inline", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".epub":
+        import importlib
+        import sys
+        for m in ("core.adapters.egress.ebook.epub_reader_polyglot_css", "core.adapters.egress.ebook.epub_reader_polyglot_js", "core.adapters.egress.ebook.epub_reader_js", "core.adapters.egress.ebook.epub_reader_template", "core.adapters.egress.ebook.epub_reader"):
+            if m in sys.modules: importlib.reload(sys.modules[m])
         from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
         try:
             return Response(content=render_epub_reader_html(target, engine=engine), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})

@@ -9,12 +9,17 @@ import html
 from typing import Optional
 
 from .epub_reader_css import get_epub_reader_css
+from .epub_reader_polyglot_css import get_epub_polyglot_css
 from .epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
 from .epub_reader_search import get_epub_search_css, get_epub_search_js
 from .epub_reader_prefs_css import get_epub_prefs_css
 from .epub_reader_prefs_js import get_epub_prefs_js
 from .epub_reader_js import get_epub_reader_js
+from .epub_reader_polyglot_js import get_epub_reader_polyglot_js
+from .epub_reader_polyglot_sync_js import get_epub_reader_polyglot_sync_js
 from .epub_reader_poster_js import get_epub_poster_js
+from .epub_reader_pager_css import get_epub_pager_css
+from .epub_reader_pager_js import get_epub_pager_js
 
 
 def build_epub_reader_shell(
@@ -37,18 +42,21 @@ def build_epub_reader_shell(
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <title>{html.escape(book_title)} - EPUB 在线翻阅</title>
   <style>{get_epub_reader_css()}
+{get_epub_polyglot_css()}
 {get_epub_annotator_css()}
 {get_epub_search_css()}
 {get_epub_prefs_css()}
+{get_epub_pager_css()}
 {extra_css}</style>
 </head>
 <body>
   <div class="er-progress-bar" id="er-progress-bar"></div>
   <header class="er-topbar">
     <div class="er-topbar-left">
-      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起侧边栏">☰<span class="er-btn-text"> 目录/检索</span></button>
+      <button type="button" class="er-btn" id="er-toggle-sidebar" title="展开/收起目录导航树 (快捷键 M)">☰<span class="er-btn-text"> 目录/检索</span></button>
       <div class="er-book-title" title="{html.escape(book_title)}">{html.escape(book_title)}</div>
     </div>
+    <div class="er-topbar-polyglot" id="er-topbar-polyglot"></div>
     <div class="er-controls">
       <button type="button" class="er-btn" id="er-btn-prefs" title="排版与主题定制 (P)">🎨<span class="er-btn-text"> 排版</span></button>
       <button type="button" class="er-btn" id="er-spread-toggle" title="切换排版：单页 / 双页对开">📑<span class="er-btn-text"> 双页</span></button>
@@ -105,7 +113,19 @@ def build_epub_reader_shell(
 
       <footer class="er-paginated-footer" id="er-paginated-footer">
         <div class="er-footer-chapter" id="er-footer-chapter"></div>
-        <div class="er-footer-page" id="er-footer-page">1 / 1</div>
+        <div class="er-footer-nav" id="er-footer-nav">
+          <button type="button" class="er-footer-btn er-nav-first" id="er-nav-first" title="跳转至首页 (Home 或 1)">⇤ 首页</button>
+          <button type="button" class="er-footer-btn er-nav-prev-footer" id="er-nav-prev-footer" title="上一页 (←)">‹</button>
+          <div class="er-footer-page-box" id="er-footer-page-box" title="点击可直接输入目标页码跳转 (快捷键 G)">
+            <span class="er-footer-page er-footer-page-text" id="er-footer-page">1 / 1</span>
+            <div class="er-footer-page-jump" id="er-footer-page-jump" style="display:none;">
+              <input type="number" class="er-page-jump-input" id="er-page-jump-input" min="1" placeholder="页码" />
+              <span class="er-page-jump-total" id="er-page-jump-total" style="font-size:0.75rem; color:var(--text-dim, #94a3b8); font-family:monospace;">/ 1</span>
+            </div>
+          </div>
+          <button type="button" class="er-footer-btn er-nav-next-footer" id="er-nav-next-footer" title="下一页 (→)">›</button>
+          <button type="button" class="er-footer-btn er-nav-last" id="er-nav-last" title="跳转至尾页 (End)">尾页 ⇥</button>
+        </div>
       </footer>
     </main>
   </div>
@@ -219,9 +239,12 @@ def build_epub_reader_shell(
 
   {client_scripts_html}
   <script>{get_epub_reader_js()}</script>
+  <script>{get_epub_reader_polyglot_js()}</script>
+  <script>{get_epub_reader_polyglot_sync_js()}</script>
   <script>{get_epub_annotator_js()}</script>
   <script>{get_epub_search_js()}</script>
   <script>{get_epub_prefs_js()}</script>
   <script>{get_epub_poster_js()}</script>
+  <script>{get_epub_pager_js()}</script>
 </body>
 </html>"""

@@ -117,3 +117,56 @@ def test_epub_and_webbook_colophon_integration():
             assert "Digital Identifier (UUID)" in wb_raw
             assert "urn:uuid:" in wb_raw
             assert "N/A" not in wb_raw[wb_raw.find("Digital Identifier"):wb_raw.find("Digital Identifier")+150]
+
+
+def test_epub_polyglot_colophon_parallel_columns():
+    """验证多语对照模式下，EPUB 版记页生成包含各语言平行分栏与译本，杜绝单语缺失"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        manuscripts = [
+            {
+                "title": "第 1 卷 哲学纲领",
+                "slug": "ch-1",
+                "html_body": "<div class=\"wb-polyglot-block wb-polyglot-columns\"><div class=\"wb-poly-column\" data-lang=\"zh\"><p>中文内容</p></div><div class=\"wb-poly-column\" data-lang=\"en\"><p>English Content</p></div><div class=\"wb-poly-column\" data-lang=\"ja\"><p>日本語内容</p></div></div>",
+                "titles_by_lang": {"zh": "第 1 卷 哲学纲领", "en": "Vol 1 Philosophy", "ja": "第 1 巻 哲学綱領"}
+            },
+            {
+                "title": "第 2 卷 实践规范",
+                "slug": "ch-2",
+                "html_body": "<div class=\"wb-polyglot-block wb-polyglot-columns\"><div class=\"wb-poly-column\" data-lang=\"zh\"><p>中文内容2</p></div><div class=\"wb-poly-column\" data-lang=\"en\"><p>English Content 2</p></div><div class=\"wb-poly-column\" data-lang=\"ja\"><p>日本語内容2</p></div></div>",
+                "titles_by_lang": {"zh": "第 2 卷 实践规范", "en": "Vol 2 Practice", "ja": "第 2 巻 実践規範"}
+            }
+        ]
+        meta = {
+            "title": "多语艺术双封面典籍",
+            "author": "Illacme Master",
+            "publisher": "Illacme Press",
+            "language": "zh",
+            "polyglot_langs": ["zh", "en", "ja"]
+        }
+
+        epub_path = os.path.join(tmpdir, "polyglot_test.epub")
+        epub_adapter = EpubAdapter()
+        ok = epub_adapter.bind_book(
+            manuscripts,
+            meta,
+            target_lang="polyglot",
+            output_file_path=epub_path
+        )
+        assert ok is True
+        assert os.path.exists(epub_path)
+
+        with zipfile.ZipFile(epub_path, "r") as zf:
+            colophon_raw = zf.read("OEBPS/text/colophon.xhtml").decode("utf-8")
+            # 1. 验证外层多语对照分栏容器
+            assert "wb-polyglot-columns" in colophon_raw
+            # 2. 验证包含全部三种语言的分栏
+            assert '<div class="wb-poly-column" data-lang="zh">' in colophon_raw
+            assert '<div class="wb-poly-column" data-lang="en">' in colophon_raw
+            assert '<div class="wb-poly-column" data-lang="ja">' in colophon_raw
+            # 3. 验证各自分栏中呈现的地道译本标题与版权字段
+            assert "出版物版记" in colophon_raw
+            assert "COLOPHON" in colophon_raw
+            assert "奥付" in colophon_raw
+            assert "Title" in colophon_raw
+            assert "作品名" in colophon_raw
+            assert "Digital Identifier (UUID)" in colophon_raw

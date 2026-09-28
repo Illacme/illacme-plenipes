@@ -20,6 +20,7 @@ class BinderyBuildPayload(BaseModel):
     author: Optional[str] = None
     cover_mode: str = "auto"
     cover_style: str = "dark_emerald"
+    custom_cover_image: Optional[str] = None
     output_dir: str = "dist/books"
 
 
@@ -31,3 +32,4 @@ class CoverPreviewPayload(BaseModel):
     style: str = "dark_emerald"
     lang: str = "zh"
     cover_mode: str = "auto"
+    custom_cover_image: Optional[str] = None

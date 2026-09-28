@@ -38,7 +38,11 @@ def get_epub_client_engine_js() -> str:
   }
 
   const toCardId = (href) => 'er-doc-' + (href.split('#')[0].split('/').pop() || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const toTarget = (href) => !href ? '#' : (href.includes('#') ? ('#' + href.split('#')[1]) : ('#' + toCardId(href)));
+  const toTarget = (href) => {
+    if (!href) return '#';
+    const parts = href.split('#'), baseId = toCardId(parts[0]);
+    return (parts.length > 1 && parts[1]) ? `#${baseId}#${parts[1]}` : ('#' + baseId);
+  };
 
   async function parseClientToc(zip, manifest, spineItems) {
     const navItem = Object.values(manifest).find(v => (v.properties || '').includes('nav') || v.href.endsWith('nav.xhtml') || v.href.endsWith('nav.html'));
@@ -83,9 +87,14 @@ def get_epub_client_engine_js() -> str:
         }
       } catch (e) { console.warn('toc.ncx parse error:', e); }
     }
+    let chCount = 0;
     return '<ol class="er-toc-tree">' + spineItems.map((item, idx) => {
-      const cid = toCardId(item.href);
-      return `<li><a href="#${cid}" class="er-toc-link">📖 第 ${idx + 1} 卷</a></li>`;
+      const cid = toCardId(item.href), href = (item.href || '').toLowerCase();
+      if (href.includes('cover')) return `<li><a href="#${cid}" class="er-toc-link">📕 典籍封面与扉页</a></li>`;
+      if (href.includes('nav')) return `<li><a href="#${cid}" class="er-toc-link">📑 全书目录索引</a></li>`;
+      if (href.includes('colophon')) return `<li><a href="#${cid}" class="er-toc-link">📜 出版版权与版记</a></li>`;
+      chCount++;
+      return `<li><a href="#${cid}" class="er-toc-link">📖 第 ${chCount} 卷</a></li>`;
     }).join('') + '</ol>';
   }
 
@@ -138,7 +147,11 @@ def get_epub_client_engine_js() -> str:
         const item = manifest[id];
         if (item.mediaType.startsWith('image/')) {
           const zf = zip.file(item.href);
-          if (zf) { const b = await zf.async('blob'); blobUrlMap[item.href] = URL.createObjectURL(b); }
+          if (zf) {
+            const ab = await zf.async('arraybuffer');
+            const b = new Blob([ab], { type: item.mediaType || 'image/png' });
+            blobUrlMap[item.href] = URL.createObjectURL(b);
+          }
         }
       }
 
@@ -156,7 +169,12 @@ def get_epub_client_engine_js() -> str:
         const rawHtml = await cFile.async('text');
         const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
         const hEl = doc.querySelector('h1, h2, h3, title');
-        const cTitle = (hEl && hEl.textContent) ? hEl.textContent.trim() : ('第 ' + (idx + 1) + ' 章');
+        const sHref = (sItem.href || '').toLowerCase();
+        const isCover = sHref.includes('cover') || (sItem.properties || '').includes('cover');
+        const isNav = sHref.includes('nav');
+        const isColophon = sHref.includes('colophon') || sHref.includes('copyright');
+        const fallbackTitle = isCover ? '典籍封面与扉页' : (isNav ? '全书目录索引' : (isColophon ? '出版版权与版记' : ('第 ' + (idx + 1) + ' 章')));
+        const cTitle = (hEl && hEl.textContent) ? hEl.textContent.trim() : fallbackTitle;
         const chapterId = toCardId(sItem.href);
         const chapDir = sItem.href.includes('/') ? sItem.href.substring(0, sItem.href.lastIndexOf('/')) : '';
 
@@ -168,8 +186,7 @@ def get_epub_client_engine_js() -> str:
           }
         });
 
-        const isCover = sItem.href.toLowerCase().includes('cover') || (sItem.properties || '').includes('cover');
-        const cardClass = isCover ? 'er-chapter-card er-cover-card' : 'er-chapter-card';
+        const cardClass = isCover ? 'er-chapter-card er-cover-card' : (isNav ? 'er-chapter-card er-nav-card' : (isColophon ? 'er-chapter-card er-colophon-card' : 'er-chapter-card'));
         const bodyContent = doc.body ? doc.body.innerHTML : rawHtml;
         chapterCards.push(
           '<article class="' + cardClass + '" id="' + chapterId + '" data-chapter-index="' + idx + '" data-chapter-title="' + cTitle.replace(/"/g, '&quot;') + '">' +
@@ -189,6 +206,7 @@ def get_epub_client_engine_js() -> str:
       if (tocTree) tocTree.innerHTML = tocHtml;
 
       // 触发周边生态初始化
+      if (typeof window.initPolyglotBar === 'function') window.initPolyglotBar();
       if (typeof window.updatePagination === 'function') window.updatePagination();
       if (typeof window.initPagination === 'function') window.initPagination();
       if (typeof window.rebuildSearchIndex === 'function') window.rebuildSearchIndex();

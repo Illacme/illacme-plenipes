@@ -137,9 +137,17 @@ def _render_python_mode(epub_path: str, qr_meta: Dict[str, str]) -> str:
             body_html = rewrite_internal_links(body_html)
 
             is_cover = "cover" in base_fn.lower() or "cover-image" in item.get("properties", "")
+            is_colophon = "colophon" in base_fn.lower() or "copyright" in base_fn.lower()
+            is_nav = "nav" in base_fn.lower() or "toc" in base_fn.lower()
             if is_cover:
                 chap_title = "封面扉页"
                 card_class = "er-chapter-card er-cover-card"
+            elif is_colophon:
+                chap_title = "出版版权与版记"
+                card_class = "er-chapter-card er-colophon-card"
+            elif is_nav:
+                chap_title = "全书目录索引"
+                card_class = "er-chapter-card er-nav-card"
             else:
                 t_match = re.search(r"<h[1-3][^>]*>(.*?)</h[1-3]>", body_html, re.DOTALL | re.IGNORECASE)
                 chap_title = re.sub(r"<[^>]+>", "", t_match.group(1)).strip() if t_match else f"第 {idx + 1} 卷"
@@ -172,6 +180,8 @@ def render_epub_reader_html(epub_path: str, engine: Optional[str] = None) -> str
     """🎯 双模智能调度：将物理 EPUB 渲染为在线翻阅 HTML 视界 (Python / Client-Side JS)"""
     if not os.path.isfile(epub_path):
         raise FileNotFoundError(f"EPUB 文件不存在: {epub_path}")
+    if not zipfile.is_zipfile(epub_path):
+        raise ValueError(f"非法的 EPUB 文件格式，非有效 ZIP 容器: {epub_path}")
 
     # 1. 解析活跃翻阅引擎 (优先显式入参，次选全局配置，默认 python)
     active_engine = (engine or "").strip().lower()

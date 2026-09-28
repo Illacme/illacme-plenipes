@@ -9,6 +9,7 @@ import os
 import re
 import uuid
 import yaml
+import base64
 from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook import EBookRegistry
@@ -18,6 +19,7 @@ from .math_packager import MathPackager
 from .polyglot_aligner import PolyglotAligner
 from .toc_builder import TocBuilder
 from .translation_resolver import TranslationResolver
+from .bindery_asset_syncer import BinderyAssetSyncer
 from core.utils.tracing import tlog
 
 
@@ -29,17 +31,11 @@ class BookAssembler:
         self.vault_dir = vault_dir
 
     def assemble_and_bind(
-        self,
-        category: str = "Docs",
-        format_type: str = "epub",
-        target_lang: str = "zh",
-        custom_title: Optional[str] = None,
-        custom_author: Optional[str] = None,
-        cover_mode: str = "auto",
-        cover_style: str = "dark_emerald",
-        output_dir: str = "dist/books",
-        polyglot_langs: Optional[List[str]] = None,
-        single_file: Optional[str] = None
+        self, category: str = "Docs", format_type: str = "epub", target_lang: str = "zh",
+        custom_title: Optional[str] = None, custom_author: Optional[str] = None,
+        cover_mode: str = "auto", cover_style: str = "dark_emerald", output_dir: str = "dist/books",
+        polyglot_langs: Optional[List[str]] = None, single_file: Optional[str] = None,
+        custom_cover_image: Optional[str] = None
     ) -> Optional[str]:
         """执行章节收集、多语对照合成、封面注入并委托格式驱动编译输出"""
         adapter_cls = EBookRegistry.get_adapter(format_type)
@@ -49,7 +45,7 @@ class BookAssembler:
 
         is_polyglot = bool(polyglot_langs and len(polyglot_langs) >= 2)
         if is_polyglot:
-            chapters = PolyglotAligner.build_polyglot_chapters(self, category, polyglot_langs)
+            chapters = PolyglotAligner.build_polyglot_chapters(self, category, polyglot_langs, single_file=single_file)
         else:
             TranslationResolver.warm_up(target_lang)
             chapters = self._collect_chapters(category=category, target_lang=target_lang, single_file=single_file)
@@ -63,9 +59,25 @@ class BookAssembler:
             site_name = getattr(self.engine.config, "site_name", site_name)
 
         is_default_title = not custom_title or any(kw in custom_title for kw in ("数字出版集", "数字出版合集", "全集"))
-        if is_polyglot and is_default_title:
+        titles_by_lang = {}
+        if is_polyglot:
             lang_tags = "-".join([l.upper() for l in polyglot_langs])
-            book_title = f"{site_name} · 多语对照典籍 ({lang_tags} Polyglot Edition)"
+            book_title = f"{site_name} · 多语对照典籍 ({lang_tags} Polyglot Edition)" if is_default_title else custom_title
+            if custom_title:
+                titles_by_lang = {
+                    l: TranslationResolver.resolve_book_title(custom_title, l, self.engine)
+                    for l in polyglot_langs
+                }
+            elif single_file and chapters and chapters[0].get("titles_by_lang"):
+                titles_by_lang = dict(chapters[0]["titles_by_lang"])
+            else:
+                titles_by_lang = {
+                    "zh": f"{site_name} · 多语对照典籍 ({lang_tags} 对照版)",
+                    "en": f"{site_name} · Polyglot Concordance ({lang_tags} Edition)",
+                    "ja": f"{site_name} · 多言語対照典籍 ({lang_tags} 版)",
+                    "de": f"{site_name} · Mehrsprachige Konkordanz ({lang_tags} Edition)",
+                    "fr": f"{site_name} · Concordance Multilingue (Édition {lang_tags})"
+                }
         elif is_default_title and single_file and chapters:
             book_title = custom_title or chapters[0]["title"]
         elif is_default_title and target_lang == "en":
@@ -91,6 +103,7 @@ class BookAssembler:
             "description": desc, "date": None, "language": "mul" if is_polyglot else target_lang,
             "license": license_decl, "uuid": f"urn:uuid:{uuid.uuid4()}",
             "polyglot_langs": polyglot_langs if is_polyglot else [],
+            "titles_by_lang": titles_by_lang,
             "is_single_article": bool(single_file or len(chapters) <= 1),
             "cover_mode": cover_mode
         }
@@ -106,7 +119,16 @@ class BookAssembler:
 
         cover_path = None
         if cover_mode != "none":
-            if cover_mode == "auto":
+            if (cover_mode == "custom" or custom_cover_image) and custom_cover_image:
+                cover_path = BinderyAssetSyncer.sync_custom_cover(
+                    custom_cover_data=custom_cover_image,
+                    vault_dir=self.vault_dir,
+                    slug_prefix=slug_prefix,
+                    out_dir=out_dir,
+                    engine=self.engine,
+                    book_title=book_title
+                )
+            if not cover_path and cover_mode == "auto":
                 cover_path = CoverGenerator.discover_cover(vault_dir=self.vault_dir, category=category, chapters=chapters)
             if not cover_path and cover_mode in ("auto", "generated"):
                 gen_cover = os.path.join(out_dir, f"cover_{slug_prefix}_{cover_style}.png")
@@ -223,7 +245,7 @@ class BookAssembler:
 
     @staticmethod
     def _heal_html_hrefs(html: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
-        """统一自愈 HTML 中的原生 <a> 超链接与静态站点相对路径 (如 ./docs/quick-start.html)"""
+        """统一自愈 HTML 中的原生 <a> 超链接与静态站点相对路径"""
         def repl(m):
             tag, href = m.group(0), m.group(1).strip()
             if not href or href.startswith(('http://', 'https://', 'mailto:', 'tel:', 'data:', 'javascript:', '#')):
@@ -234,17 +256,11 @@ class BookAssembler:
             target_ch = route_map.get(norm_rel.lower()) or route_map.get(norm_rel) or route_map.get(stem.lower()) or route_map.get(stem)
             if not target_ch and stem:
                 norm_stem = re.sub(r'[^\w\u4e00-\u9fa5]+', '', stem).lower()
-                target_ch = route_map.get(norm_stem)
-                if not target_ch:
-                    for k, v in route_map.items():
-                        if norm_stem and (norm_stem in k or k in norm_stem):
-                            target_ch = v
-                            break
+                target_ch = route_map.get(norm_stem) or next((v for k, v in route_map.items() if norm_stem and (norm_stem in k or k in norm_stem)), None)
             if target_ch:
                 new_href = f"#{anchor}" if (target_ch == curr_ch_id and anchor) else f"{target_ch}.xhtml#{anchor or target_ch}"
                 return tag.replace(f'href="{href}"', f'href="{new_href}"').replace(f"href='{href}'", f"href='{new_href}'")
             return tag
-
         return re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', repl, html)
 
     @staticmethod
@@ -252,37 +268,19 @@ class BookAssembler:
         """将 Markdown 中的 [[target#anchor|alias]] 双链转换为电子书相对跳转锚点"""
         from markdown.extensions.toc import slugify_unicode
         def repl(match):
-            raw_target = match.group(1).strip()
-            alias = (match.group(2) or "").strip()
+            raw_target, alias = match.group(1).strip(), (match.group(2) or "").strip()
             doc_part, anchor_part = raw_target.split('#', 1) if '#' in raw_target else (raw_target, "")
             doc_part, anchor_part = doc_part.strip(), anchor_part.strip()
             anchor_slug = slugify_unicode(anchor_part, '-') if anchor_part else ""
-
-            # 1. 本章内部锚点跳转：[[#小节标题]] 或 [[#小节标题|别名]]
-            if not doc_part:
-                return f"[{alias or anchor_part}](#{anchor_slug})" if anchor_slug else (alias or raw_target)
-
-            # 2. 查找跨章节目标（支持精确匹配与归一化模糊容错）
+            if not doc_part: return f"[{alias or anchor_part}](#{anchor_slug})" if anchor_slug else (alias or raw_target)
             clean_doc = re.sub(r'[^\w\u4e00-\u9fa5]+', '', os.path.splitext(os.path.basename(doc_part))[0]).lower()
             target_ch = route_map.get(doc_part) or route_map.get(doc_part.lower()) or route_map.get(clean_doc)
             if not target_ch and clean_doc:
-                for k, v in route_map.items():
-                    if clean_doc in k or k in clean_doc:
-                        target_ch = v
-                        break
-
+                target_ch = next((v for k, v in route_map.items() if clean_doc in k or k in clean_doc), None)
             if target_ch:
-                if target_ch == curr_ch_id and anchor_slug:
-                    target_url = f"#{anchor_slug}"
-                else:
-                    # 关键：即使未带特定小节，也附加 #{target_ch} 确保 Apple Books 等阅读器能够触发翻章与定位
-                    target_url = f"{target_ch}.xhtml#{anchor_slug or target_ch}"
-                display = alias or (f"{doc_part} · {anchor_part}" if anchor_part else doc_part)
-                return f"[{display}]({target_url})"
-
-            # 3. 外部未导出文档降级为纯文本，杜绝 404 死链
+                target_url = f"#{anchor_slug}" if (target_ch == curr_ch_id and anchor_slug) else f"{target_ch}.xhtml#{anchor_slug or target_ch}"
+                return f"[{alias or (f'{doc_part} · {anchor_part}' if anchor_part else doc_part)}]({target_url})"
             return alias or raw_target
-
         return re.sub(r'\[\[([^\]|]+)(?:\|([^\]]+))?\]\]', repl, body)
 
     def _extract_frontmatter(self, text: str):

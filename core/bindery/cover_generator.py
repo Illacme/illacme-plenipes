@@ -14,42 +14,9 @@ from xml.sax.saxutils import escape
 
 # 预设高档装帧排版配色与设计矩阵
 COVER_STYLES = {
-    "dark_emerald": {
-        "id": "dark_emerald",
-        "name": "黑曜翡翠",
-        "bg_top": "#0b1219",
-        "bg_bottom": "#030708",
-        "accent": "#10b981",
-        "accent_glow": "rgba(16, 185, 129, 0.4)",
-        "accent_sub": "#059669",
-        "text_main": "#ffffff",
-        "text_sub": "#94a3b8",
-        "border": "#10b981"
-    },
-    "classic_navy": {
-        "id": "classic_navy",
-        "name": "藏青午夜",
-        "bg_top": "#0f172a",
-        "bg_bottom": "#020617",
-        "accent": "#38bdf8",
-        "accent_glow": "rgba(56, 189, 248, 0.4)",
-        "accent_sub": "#0284c7",
-        "text_main": "#f8fafc",
-        "text_sub": "#94a3b8",
-        "border": "#38bdf8"
-    },
-    "obsidian_gold": {
-        "id": "obsidian_gold",
-        "name": "黑金雅致",
-        "bg_top": "#181411",
-        "bg_bottom": "#090706",
-        "accent": "#f59e0b",
-        "accent_glow": "rgba(245, 158, 11, 0.4)",
-        "accent_sub": "#d97706",
-        "text_main": "#fef3c7",
-        "text_sub": "#a8a29e",
-        "border": "#f59e0b"
-    }
+    "dark_emerald": {"id": "dark_emerald", "name": "黑曜翡翠", "bg_top": "#0b1219", "bg_bottom": "#030708", "accent": "#10b981", "accent_glow": "rgba(16, 185, 129, 0.4)", "accent_sub": "#059669", "text_main": "#ffffff", "text_sub": "#94a3b8", "border": "#10b981"},
+    "classic_navy": {"id": "classic_navy", "name": "藏青午夜", "bg_top": "#0f172a", "bg_bottom": "#020617", "accent": "#38bdf8", "accent_glow": "rgba(56, 189, 248, 0.4)", "accent_sub": "#0284c7", "text_main": "#f8fafc", "text_sub": "#94a3b8", "border": "#38bdf8"},
+    "obsidian_gold": {"id": "obsidian_gold", "name": "黑金雅致", "bg_top": "#181411", "bg_bottom": "#090706", "accent": "#f59e0b", "accent_glow": "rgba(245, 158, 11, 0.4)", "accent_sub": "#d97706", "text_main": "#fef3c7", "text_sub": "#a8a29e", "border": "#f59e0b"}
 }
 
 
@@ -150,7 +117,10 @@ class CoverGenerator:
             title_tspans.append(f'<tspan x="800" y="{y_pos:.0f}">{escape(line)}</tspan>')
 
         title_block = "\n    ".join(title_tspans)
-        lang_badge = "EDITION · 中文版" if lang == "zh" else f"EDITION · {lang.upper()}"
+        badges = {"zh": "EDITION · 中文版", "en": "EDITION · ENGLISH", "ja": "EDITION · 日本語", "de": "EDITION · DEUTSCH", "fr": "ÉDITION · FRANÇAIS"}
+        lang_badge = badges.get(lang, f"EDITION · {lang.upper()}")
+        author_labels = {"zh": "AUTHOR / 著", "en": "WRITTEN BY / AUTHOR", "ja": "著者 / AUTHOR", "de": "VERFASSER / AUTOR", "fr": "AUTEUR / PAR"}
+        author_label = author_labels.get(lang, "AUTHOR")
 
         return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2560" width="1600" height="2560">
   <defs>
@@ -202,7 +172,7 @@ class CoverGenerator:
 
   <!-- 著者署名 -->
   <g transform="translate(800, 1780)" text-anchor="middle" font-family="-apple-system, 'PingFang SC', sans-serif">
-    <text y="0" font-size="36" font-weight="400" fill="{style['text_sub']}" letter-spacing="6">AUTHOR / 著</text>
+    <text y="0" font-size="36" font-weight="400" fill="{style['text_sub']}" letter-spacing="6">{author_label}</text>
     <text y="70" font-size="64" font-weight="700" fill="{style['text_main']}" letter-spacing="3">{escape(clean_author)}</text>
   </g>
 

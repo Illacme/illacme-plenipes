@@ -33,24 +33,36 @@
 
         if (!titleInput || !submitBtn) return;
 
+        if (modeSelect && modeSelect.value === 'custom' && !window._binderyCustomCoverDataUri) {
+            if (typeof window.showToast === 'function') window.showToast('请先选择或拖拽上传自定义封面图片', 'warning');
+            return;
+        }
+
         const payload = {
             format: window._activeBinderyFormat || 'epub',
             scope: scopeSelect ? scopeSelect.value : 'all',
             title: titleInput.value.trim() || undefined,
             author: authorInput ? authorInput.value.trim() || undefined : undefined,
             cover_mode: modeSelect ? modeSelect.value : 'auto',
-            cover_style: styleSelect ? styleSelect.value : 'dark_emerald'
+            cover_style: styleSelect ? styleSelect.value : 'dark_emerald',
+            custom_cover_image: (modeSelect && modeSelect.value === 'custom') ? window._binderyCustomCoverDataUri : undefined
         };
 
         const langMode = langSelect ? langSelect.value : 'zh';
-        if (langMode === 'polyglot' || langMode === 'matrix_batch') {
+        if (langMode === 'polyglot') {
+            let checkedLangs = Array.from(document.querySelectorAll('.bindery-poly-cb:checked')).map(cb => cb.value);
+            if (!checkedLangs.length) checkedLangs = ['zh', 'en'];
+            else if (checkedLangs.length === 1) checkedLangs.push(checkedLangs[0] === 'zh' ? 'en' : 'zh');
+            payload.languages = checkedLangs;
+            payload.polyglot_mode = true;
+            payload.target_lang = checkedLangs[0];
+        } else if (langMode === 'matrix_batch') {
             const selectedLangs = Array.from(document.querySelectorAll('.bindery-matrix-cb:checked')).map(cb => cb.value);
             if (selectedLangs.length === 0) {
                 if (typeof window.showToast === 'function') window.showToast('请至少勾选一个目标语种', 'warning');
                 return;
             }
             payload.languages = selectedLangs;
-            if (langMode === 'polyglot') payload.polyglot_mode = true;
         } else {
             payload.lang = langMode;
         }
@@ -117,24 +129,9 @@
                     const count = result.total_built || result.results.length;
                     if (typeof window.addAudit === 'function') window.addAudit(`✅ 多语言电子书制作完成: 共 ${count} 本`);
                     if (typeof window.showToast === 'function') window.showToast(`🎉 成功制作 ${count} 本多语言电子书！`, 'success');
-                    if (result.results.length > 0 && result.results[0].download_url) {
-                        const first = result.results[0];
-                        const dlLink = document.createElement('a');
-                        dlLink.href = first.download_url;
-                        dlLink.download = first.filename;
-                        document.body.appendChild(dlLink);
-                        dlLink.click();
-                        setTimeout(() => dlLink.remove(), 1000);
-                    }
                 } else {
                     if (typeof window.addAudit === 'function') window.addAudit(`✅ 电子书已落盘: ${result.filename} (${formattedSize})`);
                     if (typeof window.showToast === 'function') window.showToast(`电子书 ${result.filename} 装订成功！`, 'success');
-                    const dlLink = document.createElement('a');
-                    dlLink.href = result.download_url;
-                    dlLink.download = result.filename;
-                    document.body.appendChild(dlLink);
-                    dlLink.click();
-                    setTimeout(() => dlLink.remove(), 1000);
                 }
             } else {
                 throw new Error((result && (result.detail || result.error || result.message)) || '装订返回异常');
