@@ -20,11 +20,11 @@ from core.utils.tracing import tlog
 class MarkdownBundleAdapter(BaseEBookAdapter):
     """📝 长篇 Markdown 合卷驱动（标题层级自适应顺延、TOC 大纲聚合与元数据封包）"""
     PLUGIN_ID = "markdown"
-    DISPLAY_NAME = "Markdown 合卷"
+    DISPLAY_NAME = "Markdown 合集"
     OUTPUT_EXTENSION = ".md"
     MIME_TYPE = "text/markdown"
     VERSION = "V1.0"
-    DESCRIPTION = "长篇 Markdown 合卷：全书标题降级折叠、目录 TOC 聚合、元数据 Frontmatter 封装，专供知识库 RAG 与长文研读。"
+    DESCRIPTION = "长篇 Markdown 合集：全书标题降级折叠、目录 TOC 聚合、元数据 Frontmatter 封装，专供知识库 RAG 与长文研读。"
 
     def bind_book(
         self,

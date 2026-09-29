@@ -21,7 +21,7 @@ from core.utils.tracing import tlog
 class WebBookAdapter(BaseEBookAdapter):
     """🌐 单文件交互式网页书驱动（100% 离线自包含，支持多语对照研读矩阵）"""
     PLUGIN_ID = "webbook"
-    DISPLAY_NAME = "单文件网页书 (WebBook)"
+    DISPLAY_NAME = "WebBook 单文件网页书"
     OUTPUT_EXTENSION = ".html"
     MIME_TYPE = "text/html; charset=utf-8"
     VERSION = "V2.0"

@@ -24,7 +24,7 @@ from core.utils.tracing import tlog
 class PDFBookAdapter(BaseEBookAdapter):
     """📄 独立精致单文件 PDF 印本驱动（支持印刷级版式与纯 Python 优雅自愈）"""
     PLUGIN_ID = "pdf"
-    DISPLAY_NAME = "精致印刷典籍 (PDF 印本)"
+    DISPLAY_NAME = "PDF 精致印本"
     OUTPUT_EXTENSION = ".pdf"
     MIME_TYPE = "application/pdf"
     VERSION = "V1.0"
