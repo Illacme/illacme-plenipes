@@ -1,13 +1,35 @@
 /**
  * 📚 [V125.0] Illacme Plenipes Vault - Book Bindery Modal Controller Shard
  * 职责：数字出版物全卷装订弹窗控制器、范围探测、EPUB / WebBook / PDF 多格式打包与安全流式下载。
- * 规范：100% 遵守 SOP-03 前端视觉主权与双主题自适应规范，模板由 BinderyTemplates 分离承载。
+ * 规范：100% 遵守 SOP-03 前端视觉主权与双主题自适应规范，严守 300 行架构门禁。
  */
 
 (function() {
     'use strict';
 
     let _binderyModalEl = null;
+    const STICKY_KEY = 'illacme_bindery_sticky_settings';
+
+    function _loadSticky(p = {}) {
+        let s = {};
+        try { s = JSON.parse(localStorage.getItem(STICKY_KEY) || '{}'); } catch(e) {}
+        return {
+            format: s.format || p.format || 'epub',
+            cover_mode: s.cover_mode || p.cover_mode || 'auto',
+            cover_style: s.cover_style || p.cover_style || 'dark_emerald',
+            lang: s.lang || p.lang || '',
+            author: s.author || p.author || ''
+        };
+    }
+
+    function _saveSticky(k, v) {
+        if (!k || v === undefined) return;
+        try {
+            const s = JSON.parse(localStorage.getItem(STICKY_KEY) || '{}');
+            s[k] = v;
+            localStorage.setItem(STICKY_KEY, JSON.stringify(s));
+        } catch(e) {}
+    }
 
     function _getTemplates() {
         return window.BinderyTemplates || {
@@ -24,13 +46,10 @@
         tpl.ensureStyles();
 
         if (!_binderyModalEl) {
-            _binderyModalEl = document.getElementById('bindery-modal-root');
-            if (!_binderyModalEl) {
-                _binderyModalEl = document.createElement('div');
-                _binderyModalEl.id = 'bindery-modal-root';
-                _binderyModalEl.className = 'modal-backdrop bindery-modal-backdrop';
-                document.body.appendChild(_binderyModalEl);
-            }
+            _binderyModalEl = document.getElementById('bindery-modal-root') || document.createElement('div');
+            _binderyModalEl.id = 'bindery-modal-root';
+            _binderyModalEl.className = 'modal-backdrop bindery-modal-backdrop';
+            if (!_binderyModalEl.parentElement) document.body.appendChild(_binderyModalEl);
         }
 
         _binderyModalEl.style.opacity = '1';
@@ -52,12 +71,19 @@
             console.warn('[Bindery] 获取装订范围失败，降级使用预设:', e);
         }
 
+        const sticky = _loadSticky(scopesData.presets || {});
+        if (initialFormat && ['epub', 'webbook', 'pdf', 'docx', 'markdown', 'txt'].includes(initialFormat)) {
+            sticky.format = initialFormat;
+            _saveSticky('format', initialFormat);
+        }
+        window._activeBinderyFormat = sticky.format || 'epub';
+
         const currentScope = preselectedScope || 'all';
         if (singleDoc) scopesData.single_doc = singleDoc;
         else if (currentScope.startsWith('single:')) scopesData.single_doc = { rel_path: currentScope.slice(7), title: currentScope.slice(7) };
         const defaultTitle = (scopesData.single_doc && scopesData.single_doc.title) ? scopesData.single_doc.title : (scopesData.site_name ? `${scopesData.site_name} · 数字出版集` : '数字出版合集');
 
-        _binderyModalEl.innerHTML = tpl.buildModalCardHtml(scopesData, currentScope, defaultTitle);
+        _binderyModalEl.innerHTML = tpl.buildModalCardHtml(scopesData, currentScope, defaultTitle, sticky);
 
         let debounceTimer = null;
         const triggerDebouncedPreview = () => {
@@ -67,13 +93,16 @@
                 if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn();
             }, 250);
         };
-        ['bindery-input-title', 'bindery-input-author'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.addEventListener('input', triggerDebouncedPreview);
-        });
-        ['bindery-select-scope', 'bindery-select-lang'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('change', () => { window.refreshCoverPreview(); if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn(); });
-        });
+        const bindInput = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('input', fn); };
+        const bindChange = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('change', fn); };
+
+        bindInput('bindery-input-title', triggerDebouncedPreview);
+        bindInput('bindery-input-author', triggerDebouncedPreview);
+        bindChange('bindery-input-author', e => _saveSticky('author', e.target.value.trim()));
+        bindChange('bindery-select-scope', () => { window.refreshCoverPreview(); if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn(); });
+        bindChange('bindery-select-lang', e => { _saveSticky('lang', e.target.value); window.refreshCoverPreview(); if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn(); });
+        bindChange('bindery-select-cover-mode', e => { _saveSticky('cover_mode', e.target.value); window.refreshCoverPreview(); if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn(); });
+        bindChange('bindery-select-cover-style', e => { _saveSticky('cover_style', e.target.value); window.refreshCoverPreview(); if (typeof window.resetBinderySubmitBtn === 'function') window.resetBinderySubmitBtn(); });
 
         const coverBox = document.getElementById('bindery-cover-preview-box');
         if (coverBox) {
@@ -87,7 +116,8 @@
 
         window._binderyMatrixMode = false;
         if (window._binderySuccessTimer) { clearTimeout(window._binderySuccessTimer); window._binderySuccessTimer = null; }
-        if (initialFormat && ['epub', 'webbook', 'pdf', 'docx', 'markdown'].includes(initialFormat)) window.selectBinderyFormat(initialFormat);
+        window.selectBinderyFormat(sticky.format);
+        if (sticky.lang) window.onBinderyLangModeChange(sticky.lang);
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
@@ -96,22 +126,16 @@
         });
     };
 
-    /** 切换出版语种模式（单语 / 多语对照 / 多语批量） */
     window.onBinderyLangModeChange = function(val) {
         val = val || document.getElementById('bindery-select-lang')?.value || 'zh';
-        const chipsRow = document.getElementById('bindery-matrix-chips-row'), polyChipsRow = document.getElementById('bindery-poly-chips-row');
-        const badge = document.getElementById('bindery-lang-hint-badge'), submitBtn = document.getElementById('btn-execute-binding');
-        const toggleBtn = document.getElementById('bindery-matrix-toggle-btn');
+        const chipsRow = document.getElementById('bindery-matrix-chips-row'), polyChipsRow = document.getElementById('bindery-poly-chips-row'), badge = document.getElementById('bindery-lang-hint-badge'), submitBtn = document.getElementById('btn-execute-binding'), toggleBtn = document.getElementById('bindery-matrix-toggle-btn');
         if (chipsRow) chipsRow.style.display = val === 'matrix_batch' ? 'flex' : 'none';
         if (polyChipsRow) polyChipsRow.style.display = val === 'polyglot' ? 'flex' : 'none';
         if (toggleBtn) toggleBtn.style.display = val === 'matrix_batch' ? 'inline-block' : 'none';
-
-        if (val === 'polyglot') {
-            window.updatePolyglotSubmitBtn();
-        } else if (val === 'matrix_batch') {
+        if (val === 'polyglot') window.updatePolyglotSubmitBtn();
+        else if (val === 'matrix_batch') {
             if (badge) { badge.textContent = '📦 多版本并发'; badge.style.color = '#38bdf8'; }
-            const count = document.querySelectorAll('.bindery-matrix-cb:checked').length || 3;
-            if (submitBtn) submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本)</span>`;
+            if (submitBtn) submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${document.querySelectorAll('.bindery-matrix-cb:checked').length || 3} 本)</span>`;
         } else {
             if (badge) { badge.textContent = '单语言版'; badge.style.color = ''; }
             const langMap = { 'zh': '中文版', 'en': '英文版', 'ja': '日文版' };
@@ -120,7 +144,6 @@
         if (typeof window.refreshCoverPreview === 'function') window.refreshCoverPreview();
     };
 
-    /** 联动更新多语对照复选芯片与提交按钮文案 */
     window.updatePolyglotSubmitBtn = function() {
         const checkedLangs = Array.from(document.querySelectorAll('.bindery-poly-cb:checked')).map(cb => cb.value);
         const badge = document.getElementById('bindery-lang-hint-badge'), submitBtn = document.getElementById('btn-execute-binding');
@@ -129,12 +152,9 @@
             else if (checkedLangs.length === 2) { badge.textContent = `双语对照 (${checkedLangs.join(' ⇋ ').toUpperCase()})`; badge.style.color = '#10b981'; }
             else { badge.textContent = `多语对照 (${checkedLangs.length} 语并列)`; badge.style.color = '#10b981'; }
         }
-        if (submitBtn && document.getElementById('bindery-select-lang')?.value === 'polyglot') {
-            submitBtn.innerHTML = `<span>📑 制作多语对照电子书 (${Math.max(2, checkedLangs.length)} 栏并列)</span>`;
-        }
+        if (submitBtn && document.getElementById('bindery-select-lang')?.value === 'polyglot') submitBtn.innerHTML = `<span>📑 制作多语对照电子书 (${Math.max(2, checkedLangs.length)} 栏并列)</span>`;
     };
 
-    /** 全选/反选矩阵语种 */
     window.toggleAllBinderyMatrixLangs = function() {
         const cbs = document.querySelectorAll('.bindery-matrix-cb'); if (!cbs.length) return;
         const allChecked = Array.from(cbs).every(cb => cb.checked);
@@ -142,16 +162,13 @@
         window.updateMatrixSubmitBtn();
     };
 
-    /** 联动更新提交装订按钮文案 */
     window.updateMatrixSubmitBtn = function() {
-        const langVal = document.getElementById('bindery-select-lang')?.value;
-        const count = document.querySelectorAll('.bindery-matrix-cb:checked').length;
-        const submitBtn = document.getElementById('btn-execute-binding');
+        const langVal = document.getElementById('bindery-select-lang')?.value, submitBtn = document.getElementById('btn-execute-binding');
         if (!submitBtn) return;
-        if (langVal === 'polyglot') { if (typeof window.updatePolyglotSubmitBtn === 'function') window.updatePolyglotSubmitBtn(); }
-        else if (langVal === 'matrix_batch') submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${count} 本独立版本)</span>`;
+        if (langVal === 'polyglot') window.updatePolyglotSubmitBtn?.();
+        else if (langVal === 'matrix_batch') submitBtn.innerHTML = `<span>🌍 并发制作多语电子书 (${document.querySelectorAll('.bindery-matrix-cb:checked').length} 本独立版本)</span>`;
     };
-    window.updatePolyglotColumnsUI = function() { if (typeof window.updatePolyglotSubmitBtn === 'function') window.updatePolyglotSubmitBtn(); };
+    window.updatePolyglotColumnsUI = function() { window.updatePolyglotSubmitBtn?.(); };
 
     /** 实时拉取并更新封面预览与自定义封面联动 */
     window.refreshCoverPreview = async function() {
@@ -166,26 +183,16 @@
             if (uploadBtn) uploadBtn.style.display = 'inline-flex';
             const hasC = Boolean(window._binderyCustomCoverDataUri);
             if (phEl) { phEl.style.display = hasC ? 'none' : 'block'; if (!hasC) phEl.innerHTML = '📁<br/><span style="font-size:0.62rem; color:#10b981;">待上传</span>'; }
-            imgEl.style.display = hasC ? 'block' : 'none';
-            imgEl.src = hasC ? window._binderyCustomCoverDataUri : '';
+            imgEl.style.display = hasC ? 'block' : 'none'; imgEl.src = hasC ? window._binderyCustomCoverDataUri : '';
             if (badgeEl) { badgeEl.textContent = hasC ? '📁 自定义封面' : '📁 待选图片'; badgeEl.style.color = hasC ? '#10b981' : '#f59e0b'; badgeEl.style.borderColor = hasC ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'; }
             return;
         }
-
         if (styleSel) styleSel.style.display = 'block';
         if (uploadBtn) uploadBtn.style.display = 'none';
-
-        const payload = {
-            title: gVal('bindery-input-title').trim(), author: gVal('bindery-input-author').trim(),
-            scope: gVal('bindery-select-scope') || 'all', lang: gVal('bindery-select-lang') || 'zh',
-            cover_mode: coverMode, style: gVal('bindery-select-cover-style') || 'dark_emerald'
-        };
-
+        const payload = { title: gVal('bindery-input-title').trim(), author: gVal('bindery-input-author').trim(), scope: gVal('bindery-select-scope') || 'all', lang: gVal('bindery-select-lang') || 'zh', cover_mode: coverMode, style: gVal('bindery-select-cover-style') || 'dark_emerald' };
         try {
             const fetchFunc = window.apiFetch || window.fetch;
-            const res = await fetchFunc('/api/bindery/cover-preview', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            });
+            const res = await fetchFunc('/api/bindery/cover-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
             if (data && data.success) {
                 if (data.mode === 'none' || !data.data_uri) {
@@ -196,10 +203,9 @@
                     if (phEl) phEl.style.display = 'none';
                     imgEl.style.display = 'block'; imgEl.src = data.data_uri;
                     if (badgeEl) {
-                        const isNat = data.mode === 'native';
-                        badgeEl.textContent = isNat ? '📂 文库原图' : '✨ 艺术排版';
-                        badgeEl.style.color = isNat ? '#38bdf8' : '#10b981';
-                        badgeEl.style.borderColor = isNat ? 'rgba(56, 189, 248, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+                        badgeEl.textContent = data.mode === 'native' ? '📂 文库原图' : '✨ 艺术排版';
+                        badgeEl.style.color = data.mode === 'native' ? '#38bdf8' : '#10b981';
+                        badgeEl.style.borderColor = data.mode === 'native' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(16, 185, 129, 0.4)';
                     }
                 }
             }
@@ -217,18 +223,14 @@
             window._binderyCustomCoverDataUri = e.target.result;
             const modeSel = document.getElementById('bindery-select-cover-mode');
             if (modeSel) modeSel.value = 'custom';
+            _saveSticky('cover_mode', 'custom');
             window.refreshCoverPreview();
             if (typeof window.showToast === 'function') window.showToast(`已加载自定义封面: ${file.name}`, 'success');
             try {
-                const fd = new FormData();
-                fd.append('file', file);
-                fd.append('prompt', `装订工坊自定义封面: ${file.name}`);
-                const fetchFunc = window.authFetch || window.apiFetch || window.fetch;
-                fetchFunc('/api/design/assets/upload', { method: 'POST', body: fd })
-                    .then(r => r.json()).then(d => {
-                        if (d?.success && typeof window.refreshDesignAssets === 'function') window.refreshDesignAssets();
-                    }).catch(err => console.warn('[Bindery] 媒体资产预检:', err));
-            } catch (err) { console.warn('[Bindery] 媒体资产异步入库:', err); }
+                const fd = new FormData(); fd.append('file', file); fd.append('prompt', `装订工坊自定义封面: ${file.name}`);
+                (window.authFetch || window.apiFetch || window.fetch)('/api/design/assets/upload', { method: 'POST', body: fd })
+                    .then(r => r.json()).then(d => { if (d?.success && typeof window.refreshDesignAssets === 'function') window.refreshDesignAssets(); }).catch(err => console.warn('[Bindery] 资产预检:', err));
+            } catch (err) { console.warn('[Bindery] 资产入库:', err); }
         };
         reader.readAsDataURL(file);
     };
@@ -254,9 +256,7 @@
         const targetPath = filename.startsWith('dist/') ? filename : `dist/books/${filename}`;
         try {
             const fetchFunc = window.apiFetch || window.fetch;
-            const res = await fetchFunc('/api/system/reveal-file', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: targetPath })
-            });
+            const res = await fetchFunc('/api/system/reveal-file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: targetPath }) });
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
             if (data?.success && typeof window.showToast === 'function') window.showToast(data.message || '📂 已在系统文件管理器中定位', 'success');
             else if (typeof window.showToast === 'function') window.showToast(`⚠️ ${data?.error || '未能打开系统所在文件夹'}`, 'warning');
@@ -269,7 +269,8 @@
     window._activeBinderyFormat = 'epub';
     window.selectBinderyFormat = function(fmtId) {
         window._activeBinderyFormat = fmtId;
-        ['epub', 'webbook', 'pdf', 'docx', 'markdown'].forEach(f => {
+        _saveSticky('format', fmtId);
+        ['epub', 'webbook', 'pdf', 'docx', 'markdown', 'txt'].forEach(f => {
             const el = document.getElementById(`btn-driver-${f}`);
             if (el) el.classList.toggle('active', fmtId === f);
         });
@@ -295,4 +296,3 @@
         submitBtn.innerHTML = `<span>🚀 立即装订 (${langLabel})</span>`;
     };
 })();
-

@@ -55,7 +55,7 @@
         `;
     }
 
-    function buildModalCardHtml(scopesData, currentScope, defaultTitle) {
+    function buildModalCardHtml(scopesData, currentScope, defaultTitle, sticky = {}) {
         const isSingle = currentScope && currentScope.startsWith('single:');
         const singleDocTitle = (scopesData.single_doc && scopesData.single_doc.title) || (isSingle ? currentScope.slice(7) : '');
         let categoryOptionsHtml = isSingle ? `<option value="${esc(currentScope)}" selected>📄 单篇: ${esc(singleDocTitle)}</option>` : '';
@@ -70,16 +70,17 @@
         ];
 
         const sourceLang = (availLangs.find(l => l.is_source) || {}).code || scopesData.default_lang || 'zh';
-        const sourceLangObj = availLangs.find(l => l.code === sourceLang) || availLangs[0] || { code: 'zh', name: '简体中文' };
+        const effectiveLang = sticky.lang || sourceLang;
+        const sourceLangObj = availLangs.find(l => l.code === effectiveLang) || availLangs.find(l => l.code === sourceLang) || availLangs[0] || { code: 'zh', name: '简体中文' };
         const sourceLangLabel = sourceLangObj.name ? (sourceLangObj.name.includes('版') ? sourceLangObj.name : sourceLangObj.name + '版') : '单语言版';
 
-        const singleLangOptions = availLangs.map(l => `<option value="${esc(l.code)}" ${l.code === sourceLang ? 'selected' : ''}>${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})</option>`).join('');
+        const singleLangOptions = availLangs.map(l => `<option value="${esc(l.code)}" ${l.code === effectiveLang ? 'selected' : ''}>${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})</option>`).join('');
 
         const langOptionsHtml = `
             <optgroup label="── 单语言独立版本 ──">${singleLangOptions}</optgroup>
             <optgroup label="── 多语言综合矩阵 ──">
-                <option value="polyglot">📑 双语/多语对照版 (单本内置多栏对照研读)</option>
-                <option value="matrix_batch">📦 多语言单行本并发制作 (${availLangs.length} 本独立电子书)</option>
+                <option value="polyglot" ${effectiveLang === 'polyglot' ? 'selected' : ''}>📑 双语/多语对照版 (单本内置多栏对照研读)</option>
+                <option value="matrix_batch" ${effectiveLang === 'matrix_batch' ? 'selected' : ''}>📦 多语言单行本并发制作 (${availLangs.length} 本独立电子书)</option>
             </optgroup>
         `;
 
@@ -121,7 +122,7 @@
                         </div>
                         <div>
                             <label class="bindery-label">✍️ 著作者/出版署名</label>
-                            <input type="text" id="bindery-input-author" class="bindery-input" value="${esc(scopesData.default_author)}" placeholder="作者或制作团队..." />
+                            <input type="text" id="bindery-input-author" class="bindery-input" value="${esc(sticky.author || scopesData.default_author || 'Illacme Editorial Team')}" placeholder="作者或制作团队..." />
                         </div>
                     </div>
 
@@ -140,15 +141,15 @@
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                     <select id="bindery-select-cover-mode" class="bindery-select" onchange="window.refreshCoverPreview()">
-                                        <option value="none" ${isSingle ? 'selected' : ''}>📰 纯净正文流 (免大封面)</option>
-                                        <option value="auto" ${!isSingle ? 'selected' : ''}>✨ 智能自愈 (文库/排版)</option>
-                                        <option value="generated">🎨 艺术装帧大封面</option>
-                                        <option value="custom">📁 自定义上传封面...</option>
+                                        <option value="none" ${(sticky.cover_mode || (isSingle ? 'none' : 'auto')) === 'none' ? 'selected' : ''}>📰 纯净正文流 (免大封面)</option>
+                                        <option value="auto" ${(sticky.cover_mode || (isSingle ? 'none' : 'auto')) === 'auto' ? 'selected' : ''}>✨ 智能自愈 (文库/排版)</option>
+                                        <option value="generated" ${sticky.cover_mode === 'generated' ? 'selected' : ''}>🎨 艺术装帧大封面</option>
+                                        <option value="custom" ${sticky.cover_mode === 'custom' ? 'selected' : ''}>📁 自定义上传封面...</option>
                                     </select>
                                     <select id="bindery-select-cover-style" class="bindery-select" onchange="window.refreshCoverPreview()">
-                                        <option value="dark_emerald" selected>🌿 黑曜翡翠 (Emerald)</option>
-                                        <option value="classic_navy">🌌 藏青午夜 (Navy)</option>
-                                        <option value="obsidian_gold">👑 黑金雅致 (Gold)</option>
+                                        <option value="dark_emerald" ${(sticky.cover_style || 'dark_emerald') === 'dark_emerald' ? 'selected' : ''}>🌿 黑曜翡翠 (Emerald)</option>
+                                        <option value="classic_navy" ${sticky.cover_style === 'classic_navy' ? 'selected' : ''}>🌌 藏青午夜 (Navy)</option>
+                                        <option value="obsidian_gold" ${sticky.cover_style === 'obsidian_gold' ? 'selected' : ''}>👑 黑金雅致 (Gold)</option>
                                     </select>
                                     <button id="btn-bindery-upload-cover" type="button" class="secondary-btn" onclick="document.getElementById('bindery-cover-file-input')?.click()" style="display:none; padding:5px 8px; font-size:0.75rem; border-radius:6px; align-items:center; justify-content:center; gap:4px; border:1px solid rgba(16,185,129,0.4); color:#10b981; cursor:pointer; background:rgba(16,185,129,0.08);">📤 选择本地图片</button>
                                 </div>
@@ -178,42 +179,42 @@
                     <div>
                         <label class="bindery-label" style="margin-bottom:4px;">🖨️ 装订驱动与格式</label>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;">
-                            <div class="bindery-driver-card active" id="btn-driver-epub" onclick="window.selectBinderyFormat('epub')">
+                            <div class="bindery-driver-card ${(sticky.format || 'epub') === 'epub' ? 'active' : ''}" id="btn-driver-epub" onclick="window.selectBinderyFormat('epub')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📖</span>
                                     <div><div class="bindery-driver-title">EPUB 3.0</div><div class="bindery-driver-desc">流式重排</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#10b981; font-weight:700;">● 推荐</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-webbook" onclick="window.selectBinderyFormat('webbook')">
+                            <div class="bindery-driver-card ${sticky.format === 'webbook' ? 'active' : ''}" id="btn-driver-webbook" onclick="window.selectBinderyFormat('webbook')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">🌐</span>
                                     <div><div class="bindery-driver-title">WebBook</div><div class="bindery-driver-desc">离线网页</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#38bdf8; font-weight:700;">● 独立</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-pdf" onclick="window.selectBinderyFormat('pdf')">
+                            <div class="bindery-driver-card ${sticky.format === 'pdf' ? 'active' : ''}" id="btn-driver-pdf" onclick="window.selectBinderyFormat('pdf')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📄</span>
                                     <div><div class="bindery-driver-title">PDF 印本</div><div class="bindery-driver-desc">固定印刷</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#a855f7; font-weight:700;">● 印本</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-docx" onclick="window.selectBinderyFormat('docx')">
+                            <div class="bindery-driver-card ${sticky.format === 'docx' ? 'active' : ''}" id="btn-driver-docx" onclick="window.selectBinderyFormat('docx')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📑</span>
                                     <div><div class="bindery-driver-title">Word 文档</div><div class="bindery-driver-desc">出版投稿</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#f59e0b; font-weight:700;">● 文档</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-markdown" onclick="window.selectBinderyFormat('markdown')">
+                            <div class="bindery-driver-card ${sticky.format === 'markdown' ? 'active' : ''}" id="btn-driver-markdown" onclick="window.selectBinderyFormat('markdown')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📝</span>
                                     <div><div class="bindery-driver-title">Markdown 合集</div><div class="bindery-driver-desc">长篇归档</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#06b6d4; font-weight:700;">● RAG</span>
                             </div>
-                            <div class="bindery-driver-card" id="btn-driver-txt" onclick="window.selectBinderyFormat('txt')">
+                            <div class="bindery-driver-card ${sticky.format === 'txt' ? 'active' : ''}" id="btn-driver-txt" onclick="window.selectBinderyFormat('txt')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📜</span>
                                     <div><div class="bindery-driver-title">TXT 便携</div><div class="bindery-driver-desc">极简文本</div></div>

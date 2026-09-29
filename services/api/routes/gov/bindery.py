@@ -47,13 +47,17 @@ async def get_bindery_scopes() -> Dict[str, Any]:
         ext = getattr(cls_, "OUTPUT_EXTENSION", f".{fmt_id}")
         formats.append({"id": fmt_id, "name": name, "ext": ext, "recommended": (fmt_id == "epub")})
 
-    # 3. 提取品牌预设出版元数据
+    # 3. 提取品牌预设出版元数据与偏好
     site_name, default_author, default_lang = "Illacme Plenipes", "Illacme Editorial Team", "zh"
+    presets: Dict[str, Any] = {}
     if engine and hasattr(engine, "config"):
         site_name = getattr(engine.config, "site_name", site_name)
         author_cfg = getattr(engine.config, "author", None)
         if isinstance(author_cfg, dict): default_author = author_cfg.get("name") or default_author
         elif isinstance(author_cfg, str) and author_cfg: default_author = author_cfg
+        b_cfg = getattr(engine.config, "bindery", {})
+        if isinstance(b_cfg, dict):
+            presets = {k: v for k, v in {"format": b_cfg.get("default_format"), "cover_mode": b_cfg.get("default_cover_mode"), "cover_style": b_cfg.get("default_cover_style"), "author": b_cfg.get("default_author"), "lang": b_cfg.get("default_lang")}.items() if v}
 
     # 4. 探测文库是否有原生封面图片及风格预设
     has_native_cover = bool(CoverGenerator.discover_cover(vault_abs))
@@ -88,7 +92,8 @@ async def get_bindery_scopes() -> Dict[str, Any]:
         "has_native_cover": has_native_cover,
         "cover_styles": styles_list,
         "categories": categories,
-        "formats": formats
+        "formats": formats,
+        "presets": presets
     }
 
 
@@ -252,11 +257,9 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".docx":
         return FileResponse(path=target, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename=file)
     if ext == ".epub":
-        import importlib
-        import sys
+        import sys, importlib
         for m in ("core.adapters.egress.ebook.epub_reader_polyglot_css", "core.adapters.egress.ebook.epub_reader_polyglot_js", "core.adapters.egress.ebook.epub_reader_js", "core.adapters.egress.ebook.epub_reader_template", "core.adapters.egress.ebook.epub_reader"):
-            if m in sys.modules:
-                importlib.reload(sys.modules[m])
+            if m in sys.modules: importlib.reload(sys.modules[m])
         from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
         try:
             return Response(content=render_epub_reader_html(target, engine=engine), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
@@ -276,10 +279,7 @@ async def get_bindery_shelf() -> Dict[str, Any]:
                 st = os.stat(p)
                 sz_str = f"{st.st_size / 1024:.1f} KB" if st.st_size < 1024 * 1024 else f"{st.st_size / (1024*1024):.2f} MB"
                 total_bytes += st.st_size
-                books.append({
-                    "filename": fname, "format": ext_map[ext], "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
-                    "download_url": f"/api/bindery/download?file={urllib.parse.quote(fname)}", "preview_url": f"/api/bindery/view?file={urllib.parse.quote(fname)}"
-                })
+                books.append({"filename": fname, "format": ext_map[ext], "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime, "download_url": f"/api/bindery/download?file={urllib.parse.quote(fname)}", "preview_url": f"/api/bindery/view?file={urllib.parse.quote(fname)}"})
         books.sort(key=lambda x: x["mtime"], reverse=True)
     tot_str = f"{total_bytes / 1024:.1f} KB" if total_bytes < 1024 * 1024 else f"{total_bytes / (1024*1024):.2f} MB"
     return {"success": True, "books": books, "count": len(books), "total_size_bytes": total_bytes, "total_size_display": tot_str}
@@ -288,10 +288,5 @@ async def get_bindery_shelf() -> Dict[str, Any]:
 async def delete_ebook_from_shelf(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     raw_files = payload.get("filenames") or ([payload["filename"]] if "filename" in payload else [])
     if not raw_files: raise HTTPException(status_code=400, detail="未指定待删除的文件。")
-    targets = [_get_safe_book_path(fn) for fn in raw_files]
-    deleted = []
-    for t, fn in zip(targets, raw_files):
-        if os.path.exists(t):
-            os.remove(t)
-            deleted.append(fn)
+    deleted = [fn for t, fn in [(_get_safe_book_path(f), f) for f in raw_files] if os.path.exists(t) and (os.remove(t) is None or True)]
     return {"success": True, "deleted": deleted, "count": len(deleted), "message": f"成功移除 {len(deleted)} 本出版物。"}
