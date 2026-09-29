@@ -17,3 +17,4 @@ psutil>=5.9.0  # 🛡️ [守卫] 资源自适应削峰核心驱动
 cryptography>=41.0.0  # 🛡️ [准入] 商业版许可证 RSA-2048 防伪签名校验
 qrcode>=7.4.2  # 📱 [装订] 移动端局域网扫码直传二维码生成引擎
 reportlab>=3.6.0  # 📄 [装订] 纯 Python 无头印刷级 PDF 兜底渲染引擎
+httpx>=0.24.0   # 🧪 [测试/API] FastAPI TestClient 与异步网络传输核心
