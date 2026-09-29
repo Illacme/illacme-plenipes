@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest anyio ruff
+          pip install pytest anyio ruff reportlab
 
       - name: 🔍 核心引擎代码规范审计 (Ruff Linting)
         run: |
