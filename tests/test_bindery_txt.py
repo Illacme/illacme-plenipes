@@ -12,7 +12,6 @@ Illacme Plenipes - Test Suite for Plain Text (.txt) EBook Adapter & Endpoints
 """
 
 import os
-import zipfile
 import pytest
 from fastapi.testclient import TestClient
 

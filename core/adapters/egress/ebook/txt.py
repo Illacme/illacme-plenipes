@@ -192,7 +192,7 @@ class TxtBookAdapter(BaseEBookAdapter):
             f"典籍名称 ：{colophon_dict.get('title', '数字出版物')}",
             f"责任作者 ：{colophon_dict.get('author', 'Illacme Editorial Team')}",
             f"出版机构 ：{colophon_dict.get('publisher', 'Illacme Plenipes Global Press')}",
-            f"技术驱动 ：Illacme Plenipes Sovereign Digital Bindery Hub",
+            "技术驱动 ：Illacme Plenipes Sovereign Digital Bindery Hub",
             f"版权规范 ：{colophon_dict.get('license', 'All Rights Reserved')}",
             sep
         ]
