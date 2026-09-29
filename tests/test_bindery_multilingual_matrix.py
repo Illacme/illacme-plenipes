@@ -9,7 +9,6 @@
 """
 
 import os
-import shutil
 import sqlite3
 import pytest
 from fastapi.testclient import TestClient
@@ -192,14 +191,30 @@ def test_build_multilingual_matrix_webbook(client, setup_multilingual_vault, mon
             os.remove(p)
 
 
-def test_translation_resolver_content_fidelity():
+def test_translation_resolver_content_fidelity(tmp_path):
     """测试 TranslationResolver 真实提取目标语种标题与正文，杜绝母语混杂"""
     from core.bindery.translation_resolver import TranslationResolver
     TranslationResolver.reset_cache()
 
+    # 构建独立的沙箱译文目录环境
+    mock_imprints = tmp_path / "imprints"
+    en_file = mock_imprints / "default" / "themes" / "starlight" / "src" / "content" / "docs" / "en" / "about.md"
+    en_file.parent.mkdir(parents=True, exist_ok=True)
+    en_file.write_text(
+        "---\ntitle: 'About Us'\n---\n# About\n\nIllacme Press is dedicated to breaking down digital barriers on centralized content platforms.\n",
+        encoding="utf-8"
+    )
+
+    ja_file = mock_imprints / "default" / "themes" / "starlight" / "src" / "content" / "docs" / "ja" / "about.md"
+    ja_file.parent.mkdir(parents=True, exist_ok=True)
+    ja_file.write_text(
+        "---\ntitle: '出版チームについて'\n---\n# 出版チーム\n\n創作の自由を取り戻す。\n",
+        encoding="utf-8"
+    )
+
     # 1. 英文版正文与标题断言
     en_title, en_body = TranslationResolver.resolve_chapter(
-        "about.md", "en", fallback_title="关于", fallback_body="母语中文正文", vault_dir="vault"
+        "about.md", "en", fallback_title="关于", fallback_body="母语中文正文", vault_dir="vault", base_dir=str(mock_imprints)
     )
     assert "About" in en_title
     assert "is dedicated to breaking down digital barriers" in en_body
@@ -207,7 +222,7 @@ def test_translation_resolver_content_fidelity():
 
     # 2. 日文版正文与标题断言
     ja_title, ja_body = TranslationResolver.resolve_chapter(
-        "about.md", "ja", fallback_title="关于", fallback_body="母语中文正文", vault_dir="vault"
+        "about.md", "ja", fallback_title="关于", fallback_body="母语中文正文", vault_dir="vault", base_dir=str(mock_imprints)
     )
     assert "出版チーム" in ja_title
     assert "創作の自由" in ja_body

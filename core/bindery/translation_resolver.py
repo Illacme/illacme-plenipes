@@ -81,7 +81,8 @@ class TranslationResolver:
         fallback_title: str,
         fallback_body: str,
         vault_dir: str = "vault",
-        is_parallel: bool = False
+        is_parallel: bool = False,
+        base_dir: str = "imprints"
     ) -> Tuple[str, Optional[str]]:
         """
         根据原稿相对路径与目标语种，高保真解析目标语言标题与正文。
@@ -121,7 +122,7 @@ class TranslationResolver:
         if trans_body: return (trans_title or fallback_title), trans_body
 
         # 2. 预热目标语种文件索引
-        cls.warm_up(t_lang)
+        cls.warm_up(t_lang, base_dir=base_dir)
         path_map = cls._path_cache.get(t_lang, {})
         stem_map = cls._stem_cache.get(t_lang, {})
 
