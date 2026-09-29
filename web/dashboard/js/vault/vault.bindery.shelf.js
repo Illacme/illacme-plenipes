@@ -120,12 +120,12 @@
         const hActions = document.getElementById('bindery-shelf-header-actions');
         if (hActions) {
             const szBadge = window._binderyShelfTotalSize ? `<span style="font-size:0.7rem; color:var(--text-dim, rgba(255,255,255,0.6)); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; border:1px solid var(--glass-border, rgba(255,255,255,0.1));" title="已编译出版物物理占用磁盘总容量">💾 占用 ${window._binderyShelfTotalSize}</span>` : '';
+            const allBtn = all.length > 0 ? `<button type="button" onclick="window.exportBatchBooksAsZip('all')" style="padding:2px 8px; font-size:0.72rem; border-radius:6px; cursor:pointer; border:1px solid var(--glass-border, rgba(255,255,255,0.14)); background:rgba(255,255,255,0.06); color:var(--text-bright, #fff); font-weight:600;" title="一键将书架上的全部出版物打包导出为 ZIP 合辑">📦 导出全架</button>` : '';
             const bBtn = `<button type="button" onclick="window.toggleBinderyShelfBatchMode()" style="padding:2px 8px; font-size:0.72rem; border-radius:6px; cursor:pointer; border:1px solid ${isBatch ? 'var(--accent, #10b981)' : 'var(--glass-border, rgba(255,255,255,0.14))'}; background:${isBatch ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}; color:${isBatch ? 'var(--accent, #10b981)' : 'var(--text-bright, #fff)'}; font-weight:600;">${isBatch ? '✖️ 退出批量' : '☑️ 批量管理'}</button>`;
-            hActions.innerHTML = `${szBadge}${bBtn}`;
+            hActions.innerHTML = `${szBadge}${allBtn}${bBtn}`;
         }
 
         const pagedFnamesJson = JSON.stringify(pagedBooks.map(b => b.filename)).replace(/"/g, '&quot;');
-
         const toolbarHtml = `
             <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
                 <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
@@ -146,7 +146,10 @@
                         <button type="button" onclick="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" style="background:rgba(255,255,255,0.08); border:1px solid var(--glass-border, rgba(255,255,255,0.15)); color:#fff; border-radius:4px; padding:2px 8px; font-size:0.72rem; cursor:pointer;">☑️ 全选/取消当前页</button>
                         <span style="color:var(--text-dim, rgba(255,255,255,0.7));">已选 <strong style="color:var(--accent, #10b981);">${selectedCount}</strong> 本</span>
                     </div>
-                    <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button type="button" onclick="window.exportBatchBooksAsZip()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(16,185,129,0.25); border:1px solid var(--accent, #10b981); color:#10b981; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>📦 打包导出 (${selectedCount})</button>
+                        <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>
+                    </div>
                 </div>
             ` : ''}
         `;
@@ -229,31 +232,30 @@
         else if (typeof window.switchBinderyModalTab === 'function') window.switchBinderyModalTab('build');
         if (typeof window.selectBinderyFormat === 'function') window.selectBinderyFormat(fmt);
 
-        let clean = filename.replace(/\.(html|epub|pdf|md|docx)$/i, '');
-        const isPoly = clean.includes('-polyglot') || clean.includes('多语');
-        let lang = 'zh';
+        let clean = filename.replace(/\.(html|epub|pdf|md|docx)$/i, ''), isPoly = clean.includes('-polyglot') || clean.includes('多语'), lang = 'zh';
         const m = clean.match(/_([a-z]{2,5})$/i) || clean.match(/-([a-z]{2,5})-edition/i);
         if (m && !isPoly) lang = m[1].toLowerCase();
 
         let title = clean.replace(/^illacme-press-/i, '').replace(/-polyglot-edition.*$/i, '').replace(/-[a-z]{2,5}-edition.*$/i, '').replace(/_[a-z]{2,5}$/i, '');
-        const titleInput = document.getElementById('bindery-input-title'), langSelect = document.getElementById('bindery-select-lang');
-        const scopeSelect = document.getElementById('bindery-select-scope');
+        const titleInput = document.getElementById('bindery-input-title'), langSelect = document.getElementById('bindery-select-lang'), scopeSelect = document.getElementById('bindery-select-scope');
         if (titleInput && title) titleInput.value = title;
-        if (langSelect) {
-            langSelect.value = isPoly ? 'polyglot' : (langSelect.querySelector(`option[value="${lang}"]`) ? lang : 'zh');
-            langSelect.dispatchEvent(new Event('change'));
-        }
+        if (langSelect) { langSelect.value = isPoly ? 'polyglot' : (langSelect.querySelector(`option[value="${lang}"]`) ? lang : 'zh'); langSelect.dispatchEvent(new Event('change')); }
         if (scopeSelect && title) {
-            for (let opt of scopeSelect.options) {
-                if (opt.value !== 'all' && (opt.text.includes(title) || opt.value.toLowerCase() === title.toLowerCase())) {
-                    scopeSelect.value = opt.value; break;
-                }
-            }
+            for (let opt of scopeSelect.options) { if (opt.value !== 'all' && (opt.text.includes(title) || opt.value.toLowerCase() === title.toLowerCase())) { scopeSelect.value = opt.value; break; } }
         }
         if (typeof window.showToast === 'function') window.showToast(`正在沿用历史配置重新装订「${title || filename}」...`, 'info');
-        setTimeout(() => {
-            if (typeof window.executeBookBinding === 'function') window.executeBookBinding();
-        }, 150);
+        setTimeout(() => { if (typeof window.executeBookBinding === 'function') window.executeBookBinding(); }, 150);
+    };
+
+    window.exportBatchBooksAsZip = function(scope) {
+        const files = Array.from(window._binderyShelfSelected || []);
+        if (scope !== 'all' && !files.length) return window.showToast?.('请先勾选需要打包导出的出版物', 'warning');
+        const token = localStorage.getItem('illacme_auth_token') || '';
+        const url = (scope === 'all')
+            ? `/api/bindery/export-zip?scope=all&token=${encodeURIComponent(token)}`
+            : `/api/bindery/export-zip?files=${encodeURIComponent(files.join(','))}&token=${encodeURIComponent(token)}`;
+        window.showToast?.(scope === 'all' ? '正在打包全书架出版物为 ZIP...' : `正在打包选中的 ${files.length} 本出版物...`, 'info');
+        const a = document.createElement('a'); a.href = url; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     };
 
     window.deleteBookFromShelf = async function(filename) {
@@ -265,9 +267,7 @@
             if (data && data.success) {
                 window.fetchBinderyShelf();
                 if (typeof window.showToast === 'function') window.showToast(`已从书架移除: ${filename}`, 'success');
-            } else {
-                alert(`删除失败: ${(data && data.detail) || '未知错误'}`);
-            }
+            } else alert(`删除失败: ${(data && data.detail) || '未知错误'}`);
         } catch (e) {
             console.error('[BinderyShelf] 删除异常:', e);
             alert(`删除失败: ${e.message}`);
@@ -287,9 +287,7 @@
                 window._binderyShelfBatchMode = false;
                 window.fetchBinderyShelf();
                 if (typeof window.showToast === 'function') window.showToast(`已成功批量清理 ${data.count || files.length} 本出版物`, 'success');
-            } else {
-                alert(`批量删除失败: ${(data && data.detail) || '未知错误'}`);
-            }
+            } else alert(`批量删除失败: ${(data && data.detail) || '未知错误'}`);
         } catch (e) {
             console.error('[BinderyShelf] 批量删除异常:', e);
             alert(`批量删除异常: ${e.message}`);
