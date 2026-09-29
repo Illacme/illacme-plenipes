@@ -125,32 +125,30 @@
 
         const pagedFnamesJson = JSON.stringify(pagedBooks.map(b => b.filename)).replace(/"/g, '&quot;');
         const toolbarHtml = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
-                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
-                    <button type="button" onclick="window.setBinderyShelfFilter('all')" style="${chipStyle(activeFl === 'all')}">全部 (${all.length})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('webbook')" style="${chipStyle(activeFl === 'webbook')}">🌐 网页书 (${wbCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF (${pdfCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('docx')" style="${chipStyle(activeFl === 'docx')}">📑 Word (${docxCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('markdown')" style="${chipStyle(activeFl === 'markdown')}">📝 MD (${mdCount})</button>
-                    <button type="button" onclick="window.setBinderyShelfFilter('txt')" style="${chipStyle(activeFl === 'txt')}">📜 TXT (${txtCount})</button>
+            <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:7px;">
+                <button type="button" onclick="window.setBinderyShelfFilter('all')" style="${chipStyle(activeFl === 'all')}">全部 (${all.length})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('epub')" style="${chipStyle(activeFl === 'epub')}">📖 电子书 (${epubCount})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('webbook')" style="${chipStyle(activeFl === 'webbook')}">🌐 网页书 (${wbCount})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('pdf')" style="${chipStyle(activeFl === 'pdf')}">📄 PDF (${pdfCount})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('docx')" style="${chipStyle(activeFl === 'docx')}">📑 Word (${docxCount})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('markdown')" style="${chipStyle(activeFl === 'markdown')}">📝 MD (${mdCount})</button>
+                <button type="button" onclick="window.setBinderyShelfFilter('txt')" style="${chipStyle(activeFl === 'txt')}">📜 TXT (${txtCount})</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; min-height:26px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                    ${isBatch ? `
+                        <div class="bindery-shelf-batch-bar" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:0.75rem;">
+                            <button type="button" onclick="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" class="secondary-btn" style="border:1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius:5px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">☑️ 全选/取消当前页</button>
+                            <span style="color:var(--text-dim, rgba(255,255,255,0.7)); font-size:0.72rem; white-space:nowrap;">已选 <strong style="color:var(--accent, #10b981);">${selectedCount}</strong> 本</span>
+                            <button type="button" onclick="window.exportBatchBooksAsZip()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(16,185,129,0.25); border:1px solid var(--accent, #10b981); color:#10b981; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>📦 打包导出 (${selectedCount})</button>
+                            <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>
+                        </div>
+                    ` : ''}
                 </div>
-                <div style="min-width:130px; max-width:180px;">
-                    <input type="text" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
+                <div style="width:160px; flex-shrink:0;">
+                    <input type="text" class="bindery-shelf-search-input" placeholder="🔍 过滤书名/语言..." value="${window._binderyShelfQuery || ''}" oninput="window.setBinderyShelfQuery(this.value)" style="width:100%; box-sizing:border-box; padding:4px 8px; font-size:0.75rem; background:rgba(0,0,0,0.22); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); border-radius:6px; color:#fff; outline:none;" />
                 </div>
             </div>
-            ${isBatch ? `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; margin-bottom:8px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:6px; font-size:0.75rem;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <button type="button" onclick="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" style="background:rgba(255,255,255,0.08); border:1px solid var(--glass-border, rgba(255,255,255,0.15)); color:#fff; border-radius:4px; padding:2px 8px; font-size:0.72rem; cursor:pointer;">☑️ 全选/取消当前页</button>
-                        <span style="color:var(--text-dim, rgba(255,255,255,0.7));">已选 <strong style="color:var(--accent, #10b981);">${selectedCount}</strong> 本</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button type="button" onclick="window.exportBatchBooksAsZip()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(16,185,129,0.25); border:1px solid var(--accent, #10b981); color:#10b981; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>📦 打包导出 (${selectedCount})</button>
-                        <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:4px; padding:2px 10px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>
-                    </div>
-                </div>
-            ` : ''}
         `;
 
         if (filtered.length === 0) {
