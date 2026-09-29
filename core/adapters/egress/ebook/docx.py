@@ -19,7 +19,7 @@ from core.utils.tracing import tlog
 class DocxBookAdapter(BaseEBookAdapter):
     """📑 出版级 Word 审校印本驱动（多级标题映射、扉页元数据排版与出版版权页）"""
     PLUGIN_ID = "docx"
-    DISPLAY_NAME = "Word 审校本"
+    DISPLAY_NAME = "Word 文档"
     OUTPUT_EXTENSION = ".docx"
     MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     VERSION = "V1.0"

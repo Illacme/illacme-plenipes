@@ -202,9 +202,9 @@
                             <div class="bindery-driver-card" id="btn-driver-docx" onclick="window.selectBinderyFormat('docx')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📑</span>
-                                    <div><div class="bindery-driver-title">Word 审校</div><div class="bindery-driver-desc">出版投稿</div></div>
+                                    <div><div class="bindery-driver-title">Word 文档</div><div class="bindery-driver-desc">出版投稿</div></div>
                                 </div>
-                                <span style="font-size:0.65rem; color:#f59e0b; font-weight:700;">● 审校</span>
+                                <span style="font-size:0.65rem; color:#f59e0b; font-weight:700;">● 文档</span>
                             </div>
                             <div class="bindery-driver-card" id="btn-driver-markdown" onclick="window.selectBinderyFormat('markdown')">
                                 <div style="display:flex; align-items:center; gap:6px;">

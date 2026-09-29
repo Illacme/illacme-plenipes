@@ -157,9 +157,9 @@ class ColophonBuilder:
         elif "pdf" in fmt_lower:
             resolved_fmt = i18n.get("pdf_format", "PDF 印本")
         elif "docx" in fmt_lower:
-            resolved_fmt = i18n.get("docx_format", "Word 审校本 (DOCX 典籍)")
+            resolved_fmt = i18n.get("docx_format", "Word 文档 (DOCX 典籍)")
         elif "markdown" in fmt_lower or "md" in fmt_lower:
-            resolved_fmt = i18n.get("markdown_format", "Markdown 合卷 (单文件长篇全集)")
+            resolved_fmt = i18n.get("markdown_format", "Markdown 合集 (单文件长篇全集)")
         else:
             resolved_fmt = format_name
 
