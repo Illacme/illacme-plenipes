@@ -37,8 +37,23 @@
             .bindery-del-btn:hover { color: #ef4444 !important; }
             .bindery-matrix-chip { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-bright, #ffffff); transition: all 0.2s ease; }
             .bindery-matrix-chip:hover { border-color: rgba(16, 185, 129, 0.5) !important; background: rgba(16, 185, 129, 0.1) !important; }
+            .bindery-status-item { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:6px; margin-top:4px; font-size:0.75rem; gap:8px; transition:all 0.2s; }
+            .bindery-status-item:hover { background:rgba(255,255,255,0.08); border-color:rgba(16,185,129,0.3); }
+            .bindery-status-item-text { font-family:var(--font-mono, monospace); color:var(--text-bright, #ffffff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .bindery-status-item-text strong { color:#34d399; font-weight:700; }
+            .bindery-shelf-quick-btn { background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer; transition:all 0.2s; }
+            .bindery-shelf-quick-btn:hover { background:rgba(56,189,248,0.25); color:#7dd3fc; }
+            .bindery-sub-action-btn { padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06); transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; }
+            .bindery-sub-action-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
             [data-theme="light"] .bindery-matrix-chip { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
-            [data-theme="light"] .bindery-matrix-chip span { color: #1e293b !important; }`;
+            [data-theme="light"] .bindery-matrix-chip span { color: #1e293b !important; }
+            [data-theme="light"] .bindery-status-item { background: #ffffff !important; border-color: rgba(16,185,129,0.35) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; }
+            [data-theme="light"] .bindery-status-item-text { color: #1e293b !important; }
+            [data-theme="light"] .bindery-status-item-text strong { color: #047857 !important; }
+            [data-theme="light"] .bindery-shelf-quick-btn { background: #e0f2fe !important; color: #0369a1 !important; border-color: #7dd3fc !important; font-weight:600 !important; }
+            [data-theme="light"] .bindery-shelf-quick-btn:hover { background: #bae6fd !important; color: #0284c7 !important; }
+            [data-theme="light"] .bindery-sub-action-btn { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+            [data-theme="light"] .bindery-sub-action-btn:hover { background: #e2e8f0 !important; color: #0f172a !important; border-color: #94a3b8 !important; }`;
         document.head.appendChild(style);
     }
 
@@ -46,22 +61,17 @@
     function formatSize(b) { if (!b || b <= 0) return '0 B'; const u = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(b) / Math.log(1024)); return (b / Math.pow(1024, i)).toFixed(1) + ' ' + u[i]; }
 
     function buildLoadingHtml() {
-        return `
-            <div class="glass-panel bindery-modal-card" style="width: 480px; text-align: center; padding: 32px 24px;">
-                <div class="spinner" style="display:inline-block; width:36px; height:36px; border:3px solid rgba(16,185,129,0.2); border-top-color:#10b981; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:15px;"></div>
-                <div style="font-size:0.95rem; color:var(--text-bright, #fff); font-weight:600;">正在勘测文库章节与出版版式...</div>
-            </div>
-            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-        `;
+        return `<div class="glass-panel bindery-modal-card" style="width: 480px; text-align: center; padding: 32px 24px;">
+            <div class="spinner" style="display:inline-block; width:36px; height:36px; border:3px solid rgba(16,185,129,0.2); border-top-color:#10b981; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:15px;"></div>
+            <div style="font-size:0.95rem; color:var(--text-bright, #fff); font-weight:600;">正在勘测文库章节与出版版式...</div>
+        </div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>`;
     }
 
     function buildModalCardHtml(scopesData, currentScope, defaultTitle, sticky = {}) {
         const isSingle = currentScope && currentScope.startsWith('single:');
         const singleDocTitle = (scopesData.single_doc && scopesData.single_doc.title) || (isSingle ? currentScope.slice(7) : '');
         let categoryOptionsHtml = isSingle ? `<option value="${esc(currentScope)}" selected>📄 单篇: ${esc(singleDocTitle)}</option>` : '';
-        categoryOptionsHtml += (scopesData.categories || []).map(cat => `
-            <option value="${esc(cat.id)}" ${cat.id === currentScope ? 'selected' : ''}>${esc(cat.name)}</option>
-        `).join('');
+        categoryOptionsHtml += (scopesData.categories || []).map(cat => `<option value="${esc(cat.id)}" ${cat.id === currentScope ? 'selected' : ''}>${esc(cat.name)}</option>`).join('');
 
         const availLangs = scopesData.available_languages || [
             { code: 'zh', name: '简体中文', icon: '🇨🇳', count: 0, is_source: true },
@@ -75,28 +85,10 @@
         const sourceLangLabel = sourceLangObj.name ? (sourceLangObj.name.includes('版') ? sourceLangObj.name : sourceLangObj.name + '版') : '单语言版';
 
         const singleLangOptions = availLangs.map(l => `<option value="${esc(l.code)}" ${l.code === effectiveLang ? 'selected' : ''}>${l.icon || '🌐'} ${esc(l.name)} (${l.is_source ? '源稿 ' + l.count + ' 篇' : '译文 ' + l.count + ' 篇'})</option>`).join('');
+        const langOptionsHtml = `<optgroup label="── 单语言独立版本 ──">${singleLangOptions}</optgroup><optgroup label="── 多语言综合矩阵 ──"><option value="polyglot" ${effectiveLang === 'polyglot' ? 'selected' : ''}>📑 双语/多语对照版 (单本内置多栏对照研读)</option><option value="matrix_batch" ${effectiveLang === 'matrix_batch' ? 'selected' : ''}>📦 多语言单行本并发制作 (${availLangs.length} 本独立电子书)</option></optgroup>`;
 
-        const langOptionsHtml = `
-            <optgroup label="── 单语言独立版本 ──">${singleLangOptions}</optgroup>
-            <optgroup label="── 多语言综合矩阵 ──">
-                <option value="polyglot" ${effectiveLang === 'polyglot' ? 'selected' : ''}>📑 双语/多语对照版 (单本内置多栏对照研读)</option>
-                <option value="matrix_batch" ${effectiveLang === 'matrix_batch' ? 'selected' : ''}>📦 多语言单行本并发制作 (${availLangs.length} 本独立电子书)</option>
-            </optgroup>
-        `;
-
-        const matrixChipsHtml = availLangs.map(l => `
-            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);">
-                <input type="checkbox" class="bindery-matrix-cb" value="${esc(l.code)}" ${l.count > 0 || l.is_source ? 'checked' : ''} onchange="window.updateMatrixSubmitBtn()" style="accent-color:#10b981;" />
-                <span>${l.icon || '🌐'} ${esc(l.name)}</span>
-            </label>
-        `).join('');
-
-        const polyChipsHtml = availLangs.map(l => `
-            <label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);">
-                <input type="checkbox" class="bindery-poly-cb" value="${esc(l.code)}" ${l.code === sourceLang || l.code === 'en' ? 'checked' : ''} onchange="window.updatePolyglotSubmitBtn()" style="accent-color:#10b981;" />
-                <span>${l.icon || '🌐'} ${esc(l.name)}${l.code === sourceLang ? ' (主)' : ''}</span>
-            </label>
-        `).join('');
+        const matrixChipsHtml = availLangs.map(l => `<label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input type="checkbox" class="bindery-matrix-cb" value="${esc(l.code)}" ${l.count > 0 || l.is_source ? 'checked' : ''} onchange="window.updateMatrixSubmitBtn()" style="accent-color:#10b981;" /><span>${l.icon || '🌐'} ${esc(l.name)}</span></label>`).join('');
+        const polyChipsHtml = availLangs.map(l => `<label class="bindery-matrix-chip" style="display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; border-radius:4px; padding:1px 6px; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input type="checkbox" class="bindery-poly-cb" value="${esc(l.code)}" ${l.code === sourceLang || l.code === 'en' ? 'checked' : ''} onchange="window.updatePolyglotSubmitBtn()" style="accent-color:#10b981;" /><span>${l.icon || '🌐'} ${esc(l.name)}${l.code === sourceLang ? ' (主)' : ''}</span></label>`).join('');
 
         return `
             <div class="glass-panel bindery-modal-card">
@@ -258,16 +250,16 @@
                 const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${rTitle}" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">👁️</a>` : '';
                 const itemDlUrl = r.download_url || (fn ? `/api/bindery/download?file=${encodeURIComponent(fn)}` : '#');
                 const chNum = (r.chapter_count !== undefined && r.chapter_count !== null) ? `${r.chapter_count}篇 / ` : '';
-                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:4px; font-size:0.75rem; gap:8px;">
-                    <span style="font-family:var(--font-mono, monospace); color:var(--text-main, #fff); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(fn)}"><strong>[${esc((r.language || r.lang || '').toUpperCase())}]</strong> ${esc(fn)} (${chNum}${sz})</span>
-                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<a href="${itemDlUrl}" download="${esc(fn)}" class="primary-btn" title="下载出版物" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a><button type="button" onclick="window.revealBookInFolder('${esc(fn)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📂</button><button type="button" onclick="window.openBinderyQrModal('${esc(fn)}')" class="secondary-btn" title="扫码同步至移动设备 (手机/平板/Kindle)" style="padding:2px 6px; font-size:0.75rem; border-radius:4px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.12)); cursor:pointer; background:rgba(255,255,255,0.06);">📱</button></div>
+                return `<div class="bindery-status-item">
+                    <span class="bindery-status-item-text" title="${esc(fn)}"><strong>[${esc((r.language || r.lang || '').toUpperCase())}]</strong> ${esc(fn)} (${chNum}${sz})</span>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">${itemPvBtn}<a href="${itemDlUrl}" download="${esc(fn)}" class="primary-btn" title="下载出版物" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; border-radius:4px; background:#10b981; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">⬇️</a><button type="button" onclick="window.revealBookInFolder('${esc(fn)}')" class="secondary-btn bindery-sub-action-btn" title="在系统文件夹中显示">📂</button><button type="button" onclick="window.openBinderyQrModal('${esc(fn)}')" class="secondary-btn bindery-sub-action-btn" title="扫码同步至移动设备 (手机/平板/Kindle)">📱</button></div>
                 </div>`;
             }).join('');
 
             return `<div style="display:flex; flex-direction:column; gap:6px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div><strong>🎉 多语言电子书制作完成！</strong> 共并发生成 <strong>${result.total_built || result.results.length}</strong> 本电子书</div>
-                    <button onclick="window.switchBinderyTab('shelf')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">📚 查看书架</button>
+                    <button class="bindery-shelf-quick-btn" onclick="window.switchBinderyTab('shelf')">📚 查看书架</button>
                 </div>
                 <div style="max-height:115px; overflow-y:auto; scrollbar-width:thin;">${itemsHtml}</div>
             </div>`;
@@ -279,8 +271,8 @@
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                 ${pvBtn}
                 <a href="${dlUrl}" download="${esc(result.filename)}" class="primary-btn glow-btn" title="下载保存出版物" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#10b981; color:#fff; flex-shrink:0;">⬇️</a>
-                <button type="button" onclick="window.revealBookInFolder('${esc(result.filename)}')" class="secondary-btn" title="在系统文件夹中显示" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📂</button>
-                <button type="button" onclick="window.openBinderyQrModal('${esc(result.filename)}')" class="secondary-btn" title="扫码同步至移动设备 (手机/平板/Kindle)" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; color:var(--text-bright, #fff); border:1px solid var(--glass-border, rgba(255,255,255,0.14)); cursor:pointer; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center;">📱</button>
+                <button type="button" onclick="window.revealBookInFolder('${esc(result.filename)}')" class="secondary-btn bindery-sub-action-btn" title="在系统文件夹中显示" style="padding:4px 8px; font-size:0.85rem;">📂</button>
+                <button type="button" onclick="window.openBinderyQrModal('${esc(result.filename)}')" class="secondary-btn bindery-sub-action-btn" title="扫码同步至移动设备 (手机/平板/Kindle)" style="padding:4px 8px; font-size:0.85rem;">📱</button>
             </div>
         </div>`;
     }

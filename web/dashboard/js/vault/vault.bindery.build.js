@@ -103,9 +103,9 @@
                 const formattedSize = tpl.formatSize(result.file_size || 0);
                 if (statusArea) {
                     Object.assign(statusArea.style, {
-                        background: isLight ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.12)',
-                        border: isLight ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)',
-                        color: isLight ? '#047857' : '#10b981'
+                        background: isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.12)',
+                        border: isLight ? '1px solid #86efac' : '1px solid rgba(16, 185, 129, 0.35)',
+                        color: isLight ? '#15803d' : '#10b981'
                     });
                     statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
                 }
