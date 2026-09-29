@@ -114,6 +114,7 @@
         const pagedBooks = filtered.slice(startIdx, startIdx + pageSize);
         const isBatch = window._binderyShelfBatchMode;
         const selectedCount = window._binderyShelfSelected.size;
+        const isAllChecked = pagedBooks.length > 0 && pagedBooks.every(b => window._binderyShelfSelected.has(b.filename));
 
         const hActions = document.getElementById('bindery-shelf-header-actions');
         if (hActions) {
@@ -138,7 +139,10 @@
                 <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
                     ${isBatch ? `
                         <div class="bindery-shelf-batch-bar" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:0.75rem;">
-                            <button type="button" onclick="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" class="secondary-btn" style="border:1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius:5px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">☑️ 全选/取消当前页</button>
+                            <label class="secondary-btn" style="display:inline-flex; align-items:center; gap:5px; border:1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius:5px; padding:3px 8px; font-size:0.72rem; cursor:pointer; user-select:none;">
+                                <input type="checkbox" ${isAllChecked ? 'checked' : ''} onchange="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" style="accent-color:#10b981; width:13px; height:13px; cursor:pointer; margin:0;" />
+                                <span>${isAllChecked ? '取消全选' : '全选当前页'}</span>
+                            </label>
                             <span style="color:var(--text-dim, rgba(255,255,255,0.7)); font-size:0.72rem; white-space:nowrap;">已选 <strong style="color:var(--accent, #10b981);">${selectedCount}</strong> 本</span>
                             <button type="button" onclick="window.exportBatchBooksAsZip()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(16,185,129,0.25); border:1px solid var(--accent, #10b981); color:#10b981; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>📦 打包导出 (${selectedCount})</button>
                             <button type="button" onclick="window.deleteBatchBooksFromShelf()" ${selectedCount === 0 ? 'disabled style="opacity:0.4; cursor:not-allowed; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700;"' : 'style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:5px; padding:3px 8px; font-size:0.72rem; font-weight:700; cursor:pointer;"'}>🗑️ 批量清理 (${selectedCount})</button>

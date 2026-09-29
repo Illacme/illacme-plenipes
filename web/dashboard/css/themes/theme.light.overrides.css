@@ -3754,13 +3754,15 @@
     border-color: #94a3b8 !important;
 }
 
-[data-theme="light"] .bindery-shelf-batch-bar button {
+[data-theme="light"] .bindery-shelf-batch-bar button,
+[data-theme="light"] .bindery-shelf-batch-bar label {
     color: #1e293b !important;
     background: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
 }
 
-[data-theme="light"] .bindery-shelf-batch-bar button:hover {
+[data-theme="light"] .bindery-shelf-batch-bar button:hover,
+[data-theme="light"] .bindery-shelf-batch-bar label:hover {
     background: #e2e8f0 !important;
 }
 
