@@ -19,3 +19,4 @@ qrcode>=7.4.2  # 📱 [装订] 移动端局域网扫码直传二维码生成引�
 reportlab>=3.6.0  # 📄 [装订] 纯 Python 无头印刷级 PDF 兜底渲染引擎
 httpx>=0.24.0   # 🧪 [测试/API] FastAPI TestClient 与异步网络传输核心
 python-docx>=1.1.0  # 📑 [装订] Word 出版审校本 (.docx) 导出排版引擎
+mathml2omml>=0.0.2  # 📐 [装订] Word 审校本数学公式转译引擎 (MathML to OMML)

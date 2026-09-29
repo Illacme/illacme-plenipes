@@ -54,13 +54,12 @@ class MathPackager:
         return healed_text
 
     @classmethod
-    def _latex_to_mathml(cls, latex: str, display: str = "inline") -> Optional[str]:
+    def latex_to_mathml(cls, latex: str, display: str = "inline") -> Optional[str]:
         """将 LaTeX 字符串编译为标准 MathML，具备异常优雅降级"""
         try:
             from latex2mathml.converter import convert
             clean_latex = latex.replace(r'\,', ' ').strip()
             mathml = convert(clean_latex, display=display)
-            # 确保 XML 兼容自闭合与实体标准
             return mathml.strip()
         except ImportError:
             tlog.debug("ℹ️ [数学公式] 未检测到 latex2mathml，保留 LaTeX 源码排版")
@@ -68,3 +67,30 @@ class MathPackager:
         except Exception as e:
             tlog.debug(f"⚠️ [数学公式] 公式编译容错跳过 ({latex[:30]}...): {e}")
             return None
+
+    @classmethod
+    def _latex_to_mathml(cls, latex: str, display: str = "inline") -> Optional[str]:
+        return cls.latex_to_mathml(latex, display=display)
+
+    @classmethod
+    def latex_to_omml(cls, latex: str, display: str = "inline") -> Optional[str]:
+        """将 LaTeX 字符串编译为 Microsoft Word 原生矢量可编辑数学公式 (OMML)"""
+        mathml = cls.latex_to_mathml(latex, display=display)
+        if not mathml:
+            return None
+        try:
+            import mathml2omml
+            omml = mathml2omml.convert(mathml)
+            if not omml:
+                return None
+            ns_decl = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
+            if 'xmlns:m=' not in omml:
+                omml = omml.replace('<m:oMath', f'<m:oMath {ns_decl}')
+            return omml.strip()
+        except ImportError:
+            tlog.debug("ℹ️ [数学公式] 未检测到 mathml2omml，Word 导出保留 LaTeX 源码排版")
+            return None
+        except Exception as e:
+            tlog.debug(f"⚠️ [数学公式] OMML 编译容错跳过 ({latex[:30]}...): {e}")
+            return None
+

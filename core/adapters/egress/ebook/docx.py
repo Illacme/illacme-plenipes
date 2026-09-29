@@ -135,63 +135,136 @@ class DocxBookAdapter(BaseEBookAdapter):
             return False
 
     def _render_markdown_to_docx(self, doc: Any, markdown_text: str):
-        """将 Markdown 语法解析并映射为 Word 段落与原生层级样式"""
+        """将 Markdown 语法解析并映射为 Word 段落、原生层级与可编辑数学公式"""
         lines = markdown_text.splitlines()
-        in_code_block = False
+        in_code_block, in_math_block = False, False
         code_lines: List[str] = []
+        math_lines: List[str] = []
 
         for line in lines:
             stripped = line.strip()
 
-            # 代码块处理
+            # 1. 多行代码块处理
             if stripped.startswith("```"):
                 if in_code_block:
                     in_code_block = False
                     p_code = doc.add_paragraph("\n".join(code_lines))
                     p_code.paragraph_format.left_indent = 180000  # EMU
-                    for r in p_code.runs:
-                        r.font.name = 'Courier New'
+                    for r in p_code.runs: r.font.name = 'Courier New'
                     code_lines.clear()
                 else:
                     in_code_block = True
                     code_lines.clear()
                 continue
-
             if in_code_block:
                 code_lines.append(line)
                 continue
 
-            # 空行跳过
+            # 2. 块级独立数学公式处理 ($$...$$)
+            if stripped.startswith("$$") and stripped.endswith("$$") and len(stripped) > 2:
+                formula = stripped[2:-2].strip()
+                self._add_block_formula(doc, formula)
+                continue
+            if stripped == "$$" or stripped.startswith("$$"):
+                if in_math_block:
+                    in_math_block = False
+                    if stripped != "$$": math_lines.append(stripped[:-2])
+                    self._add_block_formula(doc, "\n".join(math_lines).strip())
+                    math_lines.clear()
+                else:
+                    in_math_block = True
+                    math_lines.clear()
+                    if len(stripped) > 2: math_lines.append(stripped[2:])
+                continue
+            if in_math_block:
+                if stripped.endswith("$$"):
+                    in_math_block = False
+                    math_lines.append(stripped[:-2])
+                    self._add_block_formula(doc, "\n".join(math_lines).strip())
+                    math_lines.clear()
+                else:
+                    math_lines.append(line)
+                continue
+
             if not stripped:
                 continue
 
-            # 标题映射
+            # 3. 标题映射
             m_h = re.match(r'^(#{1,6})\s+(.*)$', stripped)
             if m_h:
                 level = min(4, len(m_h.group(1)) + 1)
                 doc.add_heading(m_h.group(2).strip(), level=level)
                 continue
 
-            # 引用块 Callout 映射
+            # 4. 引用块 Callout 映射
             if stripped.startswith(">"):
                 quote_text = re.sub(r'^>\s*(\[!.*\])?\s*', '', stripped).strip()
-                p_quote = doc.add_paragraph(quote_text)
+                p_quote = doc.add_paragraph()
                 p_quote.paragraph_format.left_indent = 180000  # 约 14.1 pt
-                for r in p_quote.runs:
-                    r.font.italic = True
+                self._append_runs_with_math(p_quote, quote_text, is_italic=True)
                 continue
 
-            # 列表项映射
+            # 5. 列表项映射
             if stripped.startswith(("- ", "* ", "+ ")):
-                item_text = stripped[2:].strip()
-                doc.add_paragraph(item_text, style='List Bullet' if 'List Bullet' in doc.styles else None)
+                p_item = doc.add_paragraph(style='List Bullet' if 'List Bullet' in doc.styles else None)
+                self._append_runs_with_math(p_item, stripped[2:].strip())
                 continue
 
             m_num = re.match(r'^\d+\.\s+(.*)$', stripped)
             if m_num:
-                doc.add_paragraph(m_num.group(1).strip(), style='List Number' if 'List Number' in doc.styles else None)
+                p_item = doc.add_paragraph(style='List Number' if 'List Number' in doc.styles else None)
+                self._append_runs_with_math(p_item, m_num.group(1).strip())
                 continue
 
-            # 普通段落（清除多余 Markdown 格式符）
-            clean_text = re.sub(r'[*_`]', '', stripped)
-            doc.add_paragraph(clean_text)
+            # 6. 普通段落（支持行内 LaTeX 数学公式原生转译）
+            p_para = doc.add_paragraph()
+            self._append_runs_with_math(p_para, stripped)
+
+    def _add_block_formula(self, doc: Any, latex: str):
+        """将块级 LaTeX 公式编译为 Word 原生居中 OMML 数学对象"""
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from core.bindery.math_packager import MathPackager
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        omml = MathPackager.latex_to_omml(latex, display="block")
+        if omml:
+            try:
+                from docx.oxml import parse_xml
+                p._p.append(parse_xml(omml))
+                return
+            except Exception as e:
+                tlog.debug(f"⚠️ [Word 公式] 块级 OMML XML 解析降级: {e}")
+        r = p.add_run(f"$${latex}$$")
+        r.font.name = 'Cambria Math'
+        r.font.italic = True
+
+    def _append_runs_with_math(self, p: Any, text: str, is_italic: bool = False):
+        """将文本按行内公式切分，普通文本加 Run，公式转译为 OMML 嵌入"""
+        if '$' not in text:
+            clean = re.sub(r'[*_`]', '', text)
+            if clean:
+                r = p.add_run(clean)
+                if is_italic: r.font.italic = True
+            return
+
+        from core.bindery.math_packager import MathPackager
+        parts = re.split(r'((?<![\w\\\$])\$(?!\s|\d)[^\$\n]+?(?<!\s)\$(?![\w\$]))', text)
+        for part in parts:
+            if not part: continue
+            if part.startswith("$") and part.endswith("$") and len(part) > 2 and not re.match(r'^\$\s*[\d,]+(?:\.\d+)?\s*\$$', part):
+                latex = part[1:-1].strip()
+                omml = MathPackager.latex_to_omml(latex, display="inline")
+                if omml:
+                    try:
+                        from docx.oxml import parse_xml
+                        p._p.append(parse_xml(omml))
+                        continue
+                    except Exception: pass
+                r = p.add_run(part)
+                if is_italic: r.font.italic = True
+            else:
+                clean = re.sub(r'[*_`]', '', part)
+                if clean:
+                    r = p.add_run(clean)
+                    if is_italic: r.font.italic = True
+
