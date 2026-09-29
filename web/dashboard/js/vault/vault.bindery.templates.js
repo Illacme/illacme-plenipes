@@ -216,7 +216,7 @@
                         </div>
                     </div>
 
-                    <div id="bindery-status-area" style="display:none; max-height:92px; overflow:hidden; padding:5px 8px; border-radius:7px; font-size:0.78rem; line-height:1.3;"></div>
+                    <div id="bindery-status-area" style="display:none; max-height:126px; overflow:hidden; padding:5px 8px; border-radius:7px; font-size:0.78rem; line-height:1.3;"></div>
 
                     <div class="bindery-footer">
                         <button id="btn-bindery-cancel" class="secondary-btn" onclick="window.closeBinderyModal()" style="padding: 5px 14px; font-size: 0.82rem; border-radius: 7px; cursor:pointer;">取消</button>
@@ -260,7 +260,7 @@
                     <div><strong>🎉 多语言制作完成！</strong> 共并发生成 <strong>${result.total_built || result.results.length}</strong> 本电子书</div>
                     <button class="bindery-shelf-quick-btn" onclick="window.switchBinderyTab('shelf')">📚 查看书架</button>
                 </div>
-                <div style="max-height:58px; overflow-y:auto; scrollbar-width:thin; padding-right:2px;">${itemsHtml}</div>
+                <div style="max-height:86px; overflow-y:auto; scrollbar-width:thin; padding-right:2px;">${itemsHtml}</div>
             </div>`;
         }
 
