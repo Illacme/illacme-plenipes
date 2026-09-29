@@ -222,7 +222,7 @@
             </div>
         `;
 
-        shelfContainer.innerHTML = toolbarHtml + `<div style="max-height:330px; overflow-y:auto; padding-right:4px;">${itemsHtml}</div>` + paginationHtml;
+        shelfContainer.innerHTML = toolbarHtml + `<div class="bindery-shelf-items-scroll" style="max-height:385px; overflow-y:auto; scrollbar-width:thin; padding-right:4px;">${itemsHtml}</div>` + paginationHtml;
     };
 
     window.rebindBookFromShelf = function(filename) {

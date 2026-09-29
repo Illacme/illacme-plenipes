@@ -34,6 +34,7 @@
             .bindery-nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim, rgba(255,255,255,0.6)); font-size: 0.82rem; font-weight: 600; padding: 4px 10px; cursor: pointer; transition: all 0.2s; }
             .bindery-nav-tab:hover { color: var(--text-bright, #fff); } .bindery-nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
             .bindery-shelf-card:hover { border-color: rgba(16, 185, 129, 0.35) !important; background: rgba(255, 255, 255, 0.05) !important; }
+            .bindery-shelf-items-scroll::-webkit-scrollbar { width: 5px; } .bindery-shelf-items-scroll::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 4px; }
             .bindery-del-btn:hover { color: #ef4444 !important; }
             .bindery-matrix-chip { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-bright, #ffffff); transition: all 0.2s ease; }
             .bindery-matrix-chip:hover { border-color: rgba(16, 185, 129, 0.5) !important; background: rgba(16, 185, 129, 0.1) !important; }
