@@ -149,7 +149,6 @@ class ColophonBuilder:
             raw_uuid = f"urn:uuid:{raw_uuid}"
         book_metadata["uuid"] = raw_uuid
 
-        # 格式规格名称多语言适配
         fmt_lower = str(format_name).lower()
         if "webbook" in fmt_lower:
             resolved_fmt = i18n["webbook_format"]
@@ -157,6 +156,10 @@ class ColophonBuilder:
             resolved_fmt = i18n["epub_format"]
         elif "pdf" in fmt_lower:
             resolved_fmt = i18n.get("pdf_format", "PDF 印本")
+        elif "docx" in fmt_lower:
+            resolved_fmt = i18n.get("docx_format", "Word 审校本 (DOCX 典籍)")
+        elif "markdown" in fmt_lower or "md" in fmt_lower:
+            resolved_fmt = i18n.get("markdown_format", "Markdown 合卷 (单文件长篇全集)")
         else:
             resolved_fmt = format_name
 

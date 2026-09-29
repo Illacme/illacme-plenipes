@@ -87,7 +87,7 @@
 
         window._binderyMatrixMode = false;
         if (window._binderySuccessTimer) { clearTimeout(window._binderySuccessTimer); window._binderySuccessTimer = null; }
-        if (initialFormat && ['epub', 'webbook', 'pdf'].includes(initialFormat)) window.selectBinderyFormat(initialFormat);
+        if (initialFormat && ['epub', 'webbook', 'pdf', 'docx', 'markdown'].includes(initialFormat)) window.selectBinderyFormat(initialFormat);
         window.refreshCoverPreview();
         if (typeof window.fetchBinderyShelf === 'function') window.fetchBinderyShelf();
 
@@ -269,7 +269,7 @@
     window._activeBinderyFormat = 'epub';
     window.selectBinderyFormat = function(fmtId) {
         window._activeBinderyFormat = fmtId;
-        ['epub', 'webbook', 'pdf'].forEach(f => {
+        ['epub', 'webbook', 'pdf', 'docx', 'markdown'].forEach(f => {
             const el = document.getElementById(`btn-driver-${f}`);
             if (el) el.classList.toggle('active', fmtId === f);
         });

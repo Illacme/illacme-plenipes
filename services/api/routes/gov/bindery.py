@@ -22,10 +22,9 @@ from .bindery_models import BinderyBuildPayload, CoverPreviewPayload
 
 router = APIRouter()
 
-
 @router.get("/api/bindery/scopes", dependencies=[Depends(verify_token)])
 async def get_bindery_scopes() -> Dict[str, Any]:
-    """🚀 [V125.0] 装订范围勘测：获取当前文库可供合订的目录栏目与默认出版元数据"""
+    """🚀 装订范围勘测：获取当前文库可供合订的目录栏目与默认出版元数据"""
     engine = get_global_engine()
     vault_root = getattr(engine, "vault_root", "vault") if engine else "vault"
     vault_abs = os.path.abspath(vault_root)
@@ -49,16 +48,12 @@ async def get_bindery_scopes() -> Dict[str, Any]:
         formats.append({"id": fmt_id, "name": name, "ext": ext, "recommended": (fmt_id == "epub")})
 
     # 3. 提取品牌预设出版元数据
-    site_name = "Illacme Plenipes"
-    default_author = "Illacme Editorial Team"
-    default_lang = "zh"
+    site_name, default_author, default_lang = "Illacme Plenipes", "Illacme Editorial Team", "zh"
     if engine and hasattr(engine, "config"):
         site_name = getattr(engine.config, "site_name", site_name)
         author_cfg = getattr(engine.config, "author", None)
-        if isinstance(author_cfg, dict):
-            default_author = author_cfg.get("name") or default_author
-        elif isinstance(author_cfg, str) and author_cfg:
-            default_author = author_cfg
+        if isinstance(author_cfg, dict): default_author = author_cfg.get("name") or default_author
+        elif isinstance(author_cfg, str) and author_cfg: default_author = author_cfg
 
     # 4. 探测文库是否有原生封面图片及风格预设
     has_native_cover = bool(CoverGenerator.discover_cover(vault_abs))
@@ -134,13 +129,7 @@ async def get_cover_preview(payload: CoverPreviewPayload) -> Dict[str, Any]:
         title=title, author=author, publisher=pub_name,
         style_key=payload.style, lang=payload.lang
     )
-    return {
-        "success": True,
-        "mode": "generated",
-        "style": payload.style,
-        "data_uri": data_uri
-    }
-
+    return {"success": True, "mode": "generated", "style": payload.style, "data_uri": data_uri}
 
 @router.post("/api/bindery/build", dependencies=[Depends(verify_token)])
 async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any]:
@@ -242,7 +231,11 @@ def _get_safe_book_path(file: str) -> str:
 @router.get("/api/bindery/download")
 async def download_ebook_publication(file: str = Query(..., description="待下载文件名"), token: Optional[str] = Query(None)):
     target, ext = _get_safe_book_path(file), os.path.splitext(file)[1].lower()
-    media_map = {".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf"}
+    media_map = {
+        ".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf",
+        ".md": "text/markdown; charset=utf-8",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    }
     return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
 
 @router.get("/api/bindery/view")
@@ -251,34 +244,40 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".html":
         with open(target, "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+    if ext == ".md":
+        with open(target, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/plain; charset=utf-8", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".pdf":
         return FileResponse(path=target, media_type="application/pdf", filename=file, content_disposition_type="inline", headers={"Cache-Control": "no-cache, no-store"})
+    if ext == ".docx":
+        return FileResponse(path=target, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename=file)
     if ext == ".epub":
         import importlib
         import sys
         for m in ("core.adapters.egress.ebook.epub_reader_polyglot_css", "core.adapters.egress.ebook.epub_reader_polyglot_js", "core.adapters.egress.ebook.epub_reader_js", "core.adapters.egress.ebook.epub_reader_template", "core.adapters.egress.ebook.epub_reader"):
-            if m in sys.modules: importlib.reload(sys.modules[m])
+            if m in sys.modules:
+                importlib.reload(sys.modules[m])
         from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
         try:
             return Response(content=render_epub_reader_html(target, engine=engine), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"EPUB 电子书解析失败: {e}")
-    raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF 或 EPUB 格式在线翻阅。")
+    raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF、Markdown、DOCX 或 EPUB 格式在线翻阅。")
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
 async def get_bindery_shelf() -> Dict[str, Any]:
     """📚 出版典籍货架：扫描并返回已编译的所有装订产物与物理磁盘占用"""
     base_dir, books, total_bytes = os.path.abspath("dist/books"), [], 0
+    ext_map = {".html": "webbook", ".pdf": "pdf", ".md": "markdown", ".docx": "docx", ".epub": "epub"}
     if os.path.exists(base_dir):
         for fname in sorted(os.listdir(base_dir)):
-            p = os.path.join(base_dir, fname)
-            if os.path.isfile(p) and fname.endswith(('.epub', '.html', '.pdf')):
+            p, ext = os.path.join(base_dir, fname), os.path.splitext(fname)[1].lower()
+            if os.path.isfile(p) and ext in ext_map:
                 st = os.stat(p)
-                fmt = "webbook" if fname.endswith(".html") else ("pdf" if fname.endswith(".pdf") else "epub")
                 sz_str = f"{st.st_size / 1024:.1f} KB" if st.st_size < 1024 * 1024 else f"{st.st_size / (1024*1024):.2f} MB"
                 total_bytes += st.st_size
                 books.append({
-                    "filename": fname, "format": fmt, "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
+                    "filename": fname, "format": ext_map[ext], "size_bytes": st.st_size, "size_display": sz_str, "mtime": st.st_mtime,
                     "download_url": f"/api/bindery/download?file={urllib.parse.quote(fname)}", "preview_url": f"/api/bindery/view?file={urllib.parse.quote(fname)}"
                 })
         books.sort(key=lambda x: x["mtime"], reverse=True)
