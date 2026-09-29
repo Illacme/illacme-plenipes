@@ -108,6 +108,8 @@
                         color: isLight ? '#15803d' : '#10b981'
                     });
                     statusArea.innerHTML = tpl.buildSuccessStatusHtml(result, formattedSize);
+                    const bCard = document.querySelector('.bindery-modal-card');
+                    if (bCard) bCard.scrollTop = 0;
                 }
                 submitBtn.disabled = true;
                 submitBtn.style.opacity = '0.85';
