@@ -18,7 +18,7 @@ from ..system import verify_token
 
 router = APIRouter()
 
-SUPPORTED_EXTS = {".epub", ".pdf", ".html", ".md", ".docx"}
+SUPPORTED_EXTS = {".epub", ".pdf", ".html", ".md", ".docx", ".txt"}
 
 
 def _get_safe_book_path(file: str) -> str:

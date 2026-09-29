@@ -233,7 +233,7 @@ async def download_ebook_publication(file: str = Query(..., description="待下�
     target, ext = _get_safe_book_path(file), os.path.splitext(file)[1].lower()
     media_map = {
         ".epub": "application/epub+zip", ".html": "text/html", ".pdf": "application/pdf",
-        ".md": "text/markdown; charset=utf-8",
+        ".md": "text/markdown; charset=utf-8", ".txt": "text/plain; charset=utf-8",
         ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     }
     return FileResponse(path=target, media_type=media_map.get(ext, "application/octet-stream"), filename=file)
@@ -244,7 +244,7 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".html":
         with open(target, "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
-    if ext == ".md":
+    if ext in (".md", ".txt"):
         with open(target, "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/plain; charset=utf-8", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".pdf":
@@ -262,13 +262,13 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
             return Response(content=render_epub_reader_html(target, engine=engine), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"EPUB 电子书解析失败: {e}")
-    raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF、Markdown、DOCX 或 EPUB 格式在线翻阅。")
+    raise HTTPException(status_code=400, detail="仅支持 WebBook (HTML)、PDF、Markdown、DOCX、TXT 或 EPUB 格式在线翻阅。")
 
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
 async def get_bindery_shelf() -> Dict[str, Any]:
     """📚 出版典籍货架：扫描并返回已编译的所有装订产物与物理磁盘占用"""
     base_dir, books, total_bytes = os.path.abspath("dist/books"), [], 0
-    ext_map = {".html": "webbook", ".pdf": "pdf", ".md": "markdown", ".docx": "docx", ".epub": "epub"}
+    ext_map = {".html": "webbook", ".pdf": "pdf", ".md": "markdown", ".docx": "docx", ".epub": "epub", ".txt": "txt"}
     if os.path.exists(base_dir):
         for fname in sorted(os.listdir(base_dir)):
             p, ext = os.path.join(base_dir, fname), os.path.splitext(fname)[1].lower()

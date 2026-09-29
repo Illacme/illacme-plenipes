@@ -209,6 +209,13 @@
                                 </div>
                                 <span style="font-size:0.65rem; color:#06b6d4; font-weight:700;">● RAG</span>
                             </div>
+                            <div class="bindery-driver-card" id="btn-driver-txt" onclick="window.selectBinderyFormat('txt')" style="padding: 6px 8px;">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <span style="font-size:1rem;">📜</span>
+                                    <div><div class="bindery-driver-title">TXT 便携</div><div class="bindery-driver-desc">极简文本</div></div>
+                                </div>
+                                <span style="font-size:0.65rem; color:#8b5cf6; font-weight:700;">● 便携</span>
+                            </div>
                         </div>
                     </div>
 
