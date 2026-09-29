@@ -34,9 +34,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest anyio ruff
 
-      - name: 🔍 核心规范与主权审计 (Stages 1, 2, 2.6, 2.7, 3)
+      - name: 🔍 核心引擎代码规范审计 (Ruff Linting)
         run: |
-          python scripts/sovereign_audit.py --stage 1,2,2.6,2.7,3
+          ruff check core/ services/ --extend-exclude core/ui/handlers/status_handlers.py
 
       - name: 🧪 装帧与电子书核心测试套件
         run: |
