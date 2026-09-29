@@ -1,0 +1,43 @@
+name: Sovereign CI Gate
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit-and-test:
+    name: 🛡️ 主权合规审计与测试门禁
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 挂载 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: 📦 安装核心依赖与测试套件
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest anyio ruff
+
+      - name: 🔍 核心规范与主权审计 (Stages 1, 2, 2.6, 2.7, 3)
+        run: |
+          python scripts/sovereign_audit.py --stage 1,2,2.6,2.7,3
+
+      - name: 🧪 装帧与电子书核心测试套件
+        run: |
+          pytest tests/test_ebook_*.py tests/test_bindery_*.py
