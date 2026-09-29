@@ -133,24 +133,6 @@
                             <input type="file" id="bindery-cover-file-input" accept="image/*" style="display:none;" onchange="window.handleBinderyCoverUpload(this.files[0])" />
                         </div>
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">
-                                <div>
-                                    <label class="bindery-label" style="margin-bottom:3px;">📂 章节收录范围</label>
-                                    <select id="bindery-select-scope" class="bindery-select">${categoryOptionsHtml}</select>
-                                </div>
-                                <div>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-                                        <label class="bindery-label" style="margin:0;">🌍 出版语种与规格</label>
-                                        <div style="display:flex; align-items:center; gap:4px;">
-                                            <span id="bindery-matrix-toggle-btn" style="display:none; cursor:pointer; color:#10b981; font-size:0.62rem; user-select:none; padding:1px 4px; border-radius:3px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25);" onclick="window.toggleAllBinderyMatrixLangs()" title="点击全选/反选">反选</span>
-                                            <span id="bindery-lang-hint-badge" class="bindery-badge" style="font-size:0.62rem; padding:1px 5px;">单语言版</span>
-                                        </div>
-                                    </div>
-                                    <select id="bindery-select-lang" class="bindery-select" onchange="window.onBinderyLangModeChange(this.value)">${langOptionsHtml}</select>
-                                    <div id="bindery-matrix-chips-row" style="display:none; margin-top:4px; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${matrixChipsHtml}</div>
-                                    <div id="bindery-poly-chips-row" style="display:none; margin-top:4px; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${polyChipsHtml}</div>
-                                </div>
-                            </div>
                             <div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:3px;">
                                     <label class="bindery-label" style="margin: 0;">🖼️ 出版装帧封面策略</label>
@@ -169,6 +151,24 @@
                                         <option value="obsidian_gold">👑 黑金雅致 (Gold)</option>
                                     </select>
                                     <button id="btn-bindery-upload-cover" type="button" class="secondary-btn" onclick="document.getElementById('bindery-cover-file-input')?.click()" style="display:none; padding:5px 8px; font-size:0.75rem; border-radius:6px; align-items:center; justify-content:center; gap:4px; border:1px solid rgba(16,185,129,0.4); color:#10b981; cursor:pointer; background:rgba(16,185,129,0.08);">📤 选择本地图片</button>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">
+                                <div>
+                                    <label class="bindery-label" style="margin-bottom:3px;">📂 章节收录范围</label>
+                                    <select id="bindery-select-scope" class="bindery-select">${categoryOptionsHtml}</select>
+                                </div>
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                                        <label class="bindery-label" style="margin:0;">🌍 出版语种与规格</label>
+                                        <div style="display:flex; align-items:center; gap:4px;">
+                                            <span id="bindery-matrix-toggle-btn" style="display:none; cursor:pointer; color:#10b981; font-size:0.62rem; user-select:none; padding:1px 4px; border-radius:3px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25);" onclick="window.toggleAllBinderyMatrixLangs()" title="点击全选/反选">反选</span>
+                                            <span id="bindery-lang-hint-badge" class="bindery-badge" style="font-size:0.62rem; padding:1px 5px;">单语言版</span>
+                                        </div>
+                                    </div>
+                                    <select id="bindery-select-lang" class="bindery-select" onchange="window.onBinderyLangModeChange(this.value)">${langOptionsHtml}</select>
+                                    <div id="bindery-matrix-chips-row" style="display:none; margin-top:4px; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${matrixChipsHtml}</div>
+                                    <div id="bindery-poly-chips-row" style="display:none; margin-top:4px; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;">${polyChipsHtml}</div>
                                 </div>
                             </div>
                         </div>
