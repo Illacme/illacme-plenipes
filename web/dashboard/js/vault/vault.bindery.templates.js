@@ -209,7 +209,7 @@
                             <div class="bindery-driver-card" id="btn-driver-markdown" onclick="window.selectBinderyFormat('markdown')">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="font-size:1.05rem;">📝</span>
-                                    <div><div class="bindery-driver-title">MD 合卷</div><div class="bindery-driver-desc">长篇归档</div></div>
+                                    <div><div class="bindery-driver-title">Markdown 合集</div><div class="bindery-driver-desc">长篇归档</div></div>
                                 </div>
                                 <span style="font-size:0.65rem; color:#06b6d4; font-weight:700;">● RAG</span>
                             </div>

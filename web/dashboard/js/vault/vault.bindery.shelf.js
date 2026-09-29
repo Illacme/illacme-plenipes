@@ -166,7 +166,7 @@
             if (isWb) fmtBadge = `<span style="${badgeBase} background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">WebBook</span>`;
             else if (isPdf) fmtBadge = `<span style="${badgeBase} background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3);">PDF 印本</span>`;
             else if (isDocx) fmtBadge = `<span style="${badgeBase} background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">Word 审校</span>`;
-            else if (isMd) fmtBadge = `<span style="${badgeBase} background:rgba(6,182,212,0.15); color:#06b6d4; border:1px solid rgba(6,182,212,0.3);">MD 合卷</span>`;
+            else if (isMd) fmtBadge = `<span style="${badgeBase} background:rgba(6,182,212,0.15); color:#06b6d4; border:1px solid rgba(6,182,212,0.3);">Markdown 合集</span>`;
             else if (isTxt) fmtBadge = `<span style="${badgeBase} background:rgba(139,92,246,0.15); color:#a78bfa; border:1px solid rgba(139,92,246,0.3);">TXT 便携</span>`;
 
             const previewTitle = isPdf ? '在线阅览 (PDF)' : (isWb ? '在线翻阅 (WebBook)' : (isMd ? '在线阅览 (Markdown)' : (isDocx ? '下载审校本 (DOCX)' : (isTxt ? '在线阅览 (TXT)' : '在线研读 (EPUB 3.0)'))));
