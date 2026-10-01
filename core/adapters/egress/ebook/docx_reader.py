@@ -203,13 +203,9 @@ def _render_single_page(items: List[Tuple[str, Any]], page_num: int, total_pages
                 b_badge = html.escape(raw_lines[0]) if raw_lines else ""
                 b_title = html.escape(raw_lines[1]) if len(raw_lines) > 1 else (b_badge or "数字典籍")
                 b_desc = html.escape(" ".join(raw_lines[2:])) if len(raw_lines) > 2 else ""
-                cols_html.append(
-                    f'<div class="doc-cover-col">'
-                    f'{f"<span class=\"doc-cover-badge\">{b_badge}</span>" if b_badge else ""}'
-                    f'<h1 class="doc-cover-col-title">{b_title}</h1>'
-                    f'{f"<p class=\"doc-cover-col-desc\">{b_desc}</p>" if b_desc else ""}'
-                    f'</div>'
-                )
+                col_badge = f'<span class="doc-cover-badge">{b_badge}</span>' if b_badge else ""
+                col_desc = f'<p class="doc-cover-col-desc">{b_desc}</p>' if b_desc else ""
+                cols_html.append(f'<div class="doc-cover-col">{col_badge}<h1 class="doc-cover-col-title">{b_title}</h1>{col_desc}</div>')
             return f"""<article class="doc-page doc-cover-page" id="page-{page_num}">
   <div class="doc-cover-inner"><div class="doc-cover-brand">{brand}</div><div class="doc-cover-poly-grid">{"".join(cols_html)}</div><div class="doc-cover-divider"></div>{f'<div class="doc-cover-meta">{meta}</div>' if meta else ""}</div>
   <div class="doc-page-footer">典籍印本 · 双语扉页</div>
@@ -287,8 +283,9 @@ def _render_single_page(items: List[Tuple[str, Any]], page_num: int, total_pages
                 table_rows.append(f'<tr>{"".join(cells_rendered)}</tr>')
             if table_rows: parts.append(f'<div class="doc-table-wrap">{tbl_tag}{"".join(table_rows)}</table></div>')
 
+    content_body = "\n    ".join(parts)
     return f"""<article class="doc-page" id="page-{page_num}">
-  <div class="doc-page-content">{"\n    ".join(parts)}</div>
+  <div class="doc-page-content">{content_body}</div>
   <div class="doc-page-footer">第 {page_num} 页 · 共 {total_pages} 页</div>
 </article>"""
 

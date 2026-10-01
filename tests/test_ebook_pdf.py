@@ -135,7 +135,7 @@ def test_pdf_render_via_headless_mock():
             args, kwargs = mock_run.call_args
             cmd = args[0]
             assert cmd[0] == "/usr/bin/mock-chrome"
-            assert "--headless" in cmd
+            assert any(arg.startswith("--headless") for arg in cmd)
             assert f"--print-to-pdf={out_pdf}" in cmd
     finally:
         if os.path.exists(out_pdf):
