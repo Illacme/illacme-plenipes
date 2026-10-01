@@ -236,7 +236,8 @@
     function buildSuccessStatusHtml(result, formattedSize) {
         const isPdf = result.format === 'pdf' || (result.filename && result.filename.endsWith('.pdf'));
         const isWb = result.format === 'webbook' || (result.filename && result.filename.endsWith('.html'));
-        const pvTitle = isPdf ? '在线阅览 (PDF 印本)' : (isWb ? '在线翻阅 (WebBook)' : '在线翻阅 (EPUB 3.0)');
+        const isDocx = result.format === 'docx' || (result.filename && result.filename.endsWith('.docx'));
+        const pvTitle = isPdf ? '在线阅览 (PDF 印本)' : (isWb ? '在线翻阅 (WebBook)' : (isDocx ? '在线审阅 (Word 文档)' : '在线翻阅 (EPUB 3.0)'));
         const pvUrl = result.preview_url || (result.filename ? `/api/bindery/view?file=${encodeURIComponent(result.filename)}` : null);
         const pvBtn = pvUrl ? `<a href="${pvUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${pvTitle}" style="padding:2px 6px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; background:#0284c7; color:#fff; flex-shrink:0;">👁️</a>` : '';
         const dlUrl = result.download_url || (result.filename ? `/api/bindery/download?file=${encodeURIComponent(result.filename)}` : '#');
@@ -244,8 +245,8 @@
         if (result.mode === 'matrix' && Array.isArray(result.results)) {
             const itemsHtml = result.results.map(r => {
                 const sz = formatSize(r.size_bytes || 0), fn = r.filename || '';
-                const rIsPdf = r.format === 'pdf' || fn.endsWith('.pdf'), rIsWb = r.format === 'webbook' || fn.endsWith('.html');
-                const rTitle = rIsPdf ? '在线阅览 (PDF)' : (rIsWb ? '在线翻阅 (WebBook)' : '在线翻阅 (EPUB)');
+                const rIsPdf = r.format === 'pdf' || fn.endsWith('.pdf'), rIsWb = r.format === 'webbook' || fn.endsWith('.html'), rIsDocx = r.format === 'docx' || fn.endsWith('.docx');
+                const rTitle = rIsPdf ? '在线阅览 (PDF)' : (rIsWb ? '在线翻阅 (WebBook)' : (rIsDocx ? '在线审阅 (Word 文档)' : '在线翻阅 (EPUB)'));
                 const itemPv = r.preview_url || (fn ? `/api/bindery/view?file=${encodeURIComponent(fn)}` : null);
                 const itemPvBtn = itemPv ? `<a href="${itemPv}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${rTitle}" style="padding:1px 5px; font-size:0.7rem; text-decoration:none; border-radius:4px; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">👁️</a>` : '';
                 const itemDlUrl = r.download_url || (fn ? `/api/bindery/download?file=${encodeURIComponent(fn)}` : '#');

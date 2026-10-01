@@ -39,7 +39,9 @@ async def get_publication_qr_code(
 ) -> Dict[str, Any]:
     """获取移动端局域网直连二维码载荷 (支持多网卡候选 IP 切换)"""
     _check_safe_book(file)
-    return build_mobile_sync_payload(file, action=action, custom_ip=ip)
+    action_str = action if isinstance(action, str) else "download"
+    ip_str = ip if isinstance(ip, str) else None
+    return build_mobile_sync_payload(file, action=action_str, custom_ip=ip_str)
 
 
 @router.get("/api/bindery/tunnel/drivers")
@@ -109,10 +111,11 @@ async def get_public_qr_code(
         raise HTTPException(status_code=400, detail="临时公网隧道未启动或已失效，请重新开启公网通道。")
 
     token = hub.issue_token(file, ttl_seconds=1800)
+    action_str = action if isinstance(action, str) else "download"
     payload = build_mobile_sync_payload(
         filename=file,
         port=43212,
-        action=action,
+        action=action_str,
         base_url=status["public_url"],
         token=token
     )

@@ -61,7 +61,12 @@ class TxtBookAdapter(BaseEBookAdapter):
                 ch_title = ch.get("title", f"第 {idx} 章")
                 raw_body = ch.get("raw_body") or ""
                 if not raw_body and ch.get("content"):
-                    raw_body = re.sub(r'<[^>]+>', '', ch["content"])
+                    raw_body = ch["content"]
+                if not raw_body and ch.get("html_body"):
+                    raw_body = ch["html_body"]
+
+                from core.bindery.html_sanitizer import HtmlSanitizer
+                raw_body = HtmlSanitizer.sanitize_to_markdown(raw_body)
 
                 ch_text = self._format_chapter(idx, ch_title, raw_body)
                 sections.append(ch_text)

@@ -67,11 +67,21 @@
             payload.lang = langMode;
         }
 
+        const formatMap = {
+            epub: 'EPUB',
+            webbook: 'WebBook',
+            pdf: 'PDF 印本',
+            docx: 'Word 文档',
+            markdown: 'Markdown 合集',
+            txt: 'TXT 便携文本'
+        };
+        const currentFmtName = formatMap[payload.format] || (payload.format ? payload.format.toUpperCase() : '电子书');
+
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.7';
         submitBtn.innerHTML = payload.polyglot_mode 
-            ? `<span>⚙️ 正在制作多语对照电子书...</span>` 
-            : (payload.languages ? `<span>⚙️ 正在并发制作 (${payload.languages.length} 本)...</span>` : `<span>⚙️ 正在制作...</span>`);
+            ? `<span>⚙️ 正在制作多语对照${currentFmtName}...</span>` 
+            : (payload.languages ? `<span>⚙️ 正在并发制作 (${payload.languages.length} 本)...</span>` : `<span>⚙️ 正在制作 ${currentFmtName}...</span>`);
 
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
@@ -81,13 +91,13 @@
             statusArea.style.border = isLight ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid rgba(0, 242, 254, 0.25)';
             statusArea.style.color = isLight ? '#0284c7' : '#00f2fe';
             statusArea.innerHTML = payload.polyglot_mode 
-                ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语对照内容并生成 WebBook...` 
-                : (payload.languages ? `⏳ 正在并发制作 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语言电子书...` : `⏳ 正在遍历文库章节、提取元数据并生成电子书...`);
+                ? `⏳ 正在按整篇并列对齐 ${payload.languages.map(l => l.toUpperCase()).join(' ⇋ ')} 多语对照内容并生成 ${currentFmtName}...` 
+                : (payload.languages ? `⏳ 正在并发制作 ${payload.languages.map(l => l.toUpperCase()).join(', ')} 多语言${currentFmtName}...` : `⏳ 正在遍历文库章节、提取元数据并生成 ${currentFmtName}...`);
         }
 
         if (typeof window.addAudit === 'function') {
             const desc = window._binderyMatrixMode ? `多语言[${payload.languages.join(',')}]` : payload.lang;
-            window.addAudit(`📚 开始制作电子书: [${payload.title || '默认书名'}] (${desc})`);
+            window.addAudit(`📚 开始制作${currentFmtName}: [${payload.title || '默认书名'}] (${desc})`);
         }
 
         try {

@@ -139,7 +139,7 @@
                 <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
                     ${isBatch ? `
                         <div class="bindery-shelf-batch-bar" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:0.75rem;">
-                            <label class="secondary-btn" style="display:inline-flex; align-items:center; gap:5px; border:1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius:5px; padding:3px 8px; font-size:0.72rem; cursor:pointer; user-select:none;">
+                            <label class="secondary-btn" title="☑️ 全选/取消当前页" style="display:inline-flex; align-items:center; gap:5px; border:1px solid var(--glass-border, rgba(255,255,255,0.15)); border-radius:5px; padding:3px 8px; font-size:0.72rem; cursor:pointer; user-select:none;">
                                 <input type="checkbox" ${isAllChecked ? 'checked' : ''} onchange="window.toggleAllBinderyShelfSelect(${pagedFnamesJson})" style="accent-color:#10b981; width:13px; height:13px; cursor:pointer; margin:0;" />
                                 <span>${isAllChecked ? '取消全选' : '全选当前页'}</span>
                             </label>
@@ -171,7 +171,7 @@
             else if (isMd) fmtBadge = `<span style="${badgeBase} background:rgba(6,182,212,0.15); color:#06b6d4; border:1px solid rgba(6,182,212,0.3);">Markdown 合集</span>`;
             else if (isTxt) fmtBadge = `<span style="${badgeBase} background:rgba(139,92,246,0.15); color:#a78bfa; border:1px solid rgba(139,92,246,0.3);">TXT 便携</span>`;
 
-            const previewTitle = isPdf ? '在线阅览 (PDF)' : (isWb ? '在线翻阅 (WebBook)' : (isMd ? '在线阅览 (Markdown)' : (isDocx ? '下载文档 (DOCX)' : (isTxt ? '在线阅览 (TXT)' : '在线研读 (EPUB 3.0)'))));
+            const previewTitle = isPdf ? '在线阅览 (PDF)' : (isWb ? '在线翻阅 (WebBook)' : (isMd ? '在线阅览 (Markdown)' : (isDocx ? '在线审阅 (Word 文档)' : (isTxt ? '在线阅览 (TXT)' : '在线研读 (EPUB 3.0)'))));
             const previewBg = isPdf ? 'var(--neon-purple, #9333ea)' : (isWb ? 'var(--neon-blue, #0284c7)' : (isMd ? '#0891b2' : (isDocx ? '#d97706' : (isTxt ? '#7c3aed' : 'var(--neon-green, #10b981)'))));
             const previewBtn = b.preview_url
                 ? `<a href="${b.preview_url}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" title="${previewTitle}" style="padding:4px 8px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:${previewBg}; color:var(--text-bright, #fff);">👁️</a>`

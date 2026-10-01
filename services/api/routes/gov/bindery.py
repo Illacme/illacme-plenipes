@@ -255,7 +255,8 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
     if ext == ".pdf":
         return FileResponse(path=target, media_type="application/pdf", filename=file, content_disposition_type="inline", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".docx":
-        return FileResponse(path=target, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename=file)
+        from core.adapters.egress.ebook.docx_reader import render_docx_reader_html
+        return Response(content=render_docx_reader_html(target, filename=file), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".epub":
         import sys, importlib
         for m in ("core.adapters.egress.ebook.epub_reader_polyglot_css", "core.adapters.egress.ebook.epub_reader_polyglot_js", "core.adapters.egress.ebook.epub_reader_js", "core.adapters.egress.ebook.epub_reader_template", "core.adapters.egress.ebook.epub_reader"):

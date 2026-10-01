@@ -74,16 +74,24 @@ class PolyglotAligner:
         base_ch = chapter_by_lang.get(primary_lang) or next(iter(chapter_by_lang.values()), {})
         base_raw_body = base_ch.get("html_body", "").strip()
 
-        # 每个语种作为整章贯通的完整分栏呈现，完美保持主语言原貌与视觉流
+        # 综合主标题与各语种标题字典
+        main_title = base_ch.get("title", "未命名章节")
+        titles_by_lang = {l: (chapter_by_lang.get(l) or {}).get("title", main_title) for l in ordered_langs}
+
+        # 每个语种作为整章贯通的完整分栏呈现，并将各语种标题归位于分栏内
         columns_html = []
         for l in ordered_langs:
             ch_data = chapter_by_lang.get(l) or {}
             raw_body = ch_data.get("html_body", "").strip()
             tag_label = l.upper()
             lang_name = lang_titles.get(l, f"{tag_label} Edition")
+            l_title = titles_by_lang.get(l, main_title)
             is_untranslated = (l != primary_lang) and (not raw_body or raw_body == base_raw_body or ch_data.get("is_pending"))
             if not raw_body:
                 raw_body = base_raw_body or "<p></p>"
+
+            # 剥离正文首行重复的 h1 标签
+            cleaned_body = re.sub(r'^\s*<h1\b[^>]*>.*?</h1>\s*', '', raw_body, flags=re.DOTALL | re.IGNORECASE)
 
             if is_untranslated:
                 content_html = (
@@ -91,25 +99,24 @@ class PolyglotAligner:
                     f'    <span class="wb-poly-pending-icon">⏳</span>\n'
                     f'    <span>该章节 {lang_name} 对照译文待生成，暂显原文供研读参考。</span>\n'
                     f'  </div>\n'
-                    f'  <div class="wb-poly-content wb-poly-untranslated" style="opacity:0.75;">{raw_body}</div>'
+                    f'  <div class="wb-poly-content wb-poly-untranslated" style="opacity:0.75;">{cleaned_body}</div>'
                 )
             else:
-                content_html = f'  <div class="wb-poly-content">{raw_body}</div>'
+                content_html = f'  <div class="wb-poly-content">{cleaned_body}</div>'
 
+            title_html = f'  <h2 class="wb-poly-col-title">{l_title}</h2>\n' if l_title else ""
             columns_html.append(
                 f'<div class="wb-poly-item wb-poly-column" data-lang="{l}">\n'
                 f'  <div class="wb-poly-header">\n'
                 f'    <span class="wb-lang-badge">{tag_label}</span>\n'
                 f'    <span class="wb-poly-lang-name">{lang_name}</span>\n'
                 f'  </div>\n'
+                f'{title_html}'
                 f'{content_html}\n'
                 f'</div>'
             )
 
         full_body_html = f'<div class="wb-polyglot-block wb-polyglot-columns">\n{"".join(columns_html)}\n</div>'
-
-        # 综合主标题与多语辅助标题
-        main_title = base_ch.get("title", "未命名章节")
 
         sub_titles = []
         for l in ordered_langs:
@@ -118,12 +125,28 @@ class PolyglotAligner:
                 if t and t != main_title:
                     sub_titles.append(f'<span class="wb-poly-subtitle" data-lang="{l}">[{l.upper()}] {t}</span>')
 
+        # 生成适合文档/Markdown/TXT 的多语对照 Markdown 正文
+        poly_md_sections = []
+        for l in ordered_langs:
+            ch_data = chapter_by_lang.get(l) or {}
+            l_body = (ch_data.get("raw_body") or "").strip()
+            if not l_body and l == primary_lang:
+                l_body = (base_ch.get("raw_body") or "").strip()
+            tag_label = l.upper()
+            lang_name = lang_titles.get(l, f"{tag_label} Edition")
+            if l_body:
+                poly_md_sections.append(f"### {lang_name} ({tag_label})\n\n{l_body}")
+            else:
+                poly_md_sections.append(f"### {lang_name} ({tag_label})\n\n*(待生成对照译文)*")
+        full_body_markdown = "\n\n---\n\n".join(poly_md_sections)
+
         titles_by_lang = {l: (chapter_by_lang.get(l) or {}).get("title", main_title) for l in ordered_langs}
         return {
             "title": main_title,
             "titles_by_lang": titles_by_lang,
             "sub_titles_html": " ".join(sub_titles),
             "html_body": full_body_html,
+            "raw_body": full_body_markdown,
             "languages": ordered_langs,
             "block_count": 1
         }
@@ -161,8 +184,10 @@ class PolyglotAligner:
             merged_ch["titles_by_lang"] = aligned["titles_by_lang"]
             merged_ch["sub_titles_html"] = aligned["sub_titles_html"]
             merged_ch["html_body"] = aligned["html_body"]
+            merged_ch["raw_body"] = aligned.get("raw_body") or base_ch.get("raw_body", "")
             merged_ch["languages"] = aligned["languages"]
             merged_ch["headings_by_lang"] = {l: chapter_by_lang[l].get("headings", []) for l in polyglot_langs}
+            merged_ch["chapter_by_lang"] = chapter_by_lang
             polyglot_tree.append(merged_ch)
 
         return polyglot_tree

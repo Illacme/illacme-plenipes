@@ -5,13 +5,7 @@ Illacme Plenipes - Single-File Print-Ready PDF Book Adapter
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os
-import re
-import shutil
-import base64
-import tempfile
-import time
-import subprocess
+import os, re, shutil, base64, tempfile, subprocess
 from html import escape
 from typing import Dict, Any, List, Optional
 
@@ -19,7 +13,6 @@ from core.adapters.egress.ebook.base import BaseEBookAdapter
 from core.adapters.egress.ebook.colophon import ColophonBuilder
 from core.adapters.egress.ebook.pdf_assets import PDFAssets
 from core.utils.tracing import tlog
-
 
 class PDFBookAdapter(BaseEBookAdapter):
     """📄 独立精致单文件 PDF 印本驱动（支持印刷级版式与纯 Python 优雅自愈）"""
@@ -50,8 +43,21 @@ class PDFBookAdapter(BaseEBookAdapter):
             # 1. 首选引擎：通过 Headless Chrome 与 CSS Paged Media 规范输出出版级精致印本
             if chrome_bin:
                 try:
-                    success = self._render_via_headless(chrome_bin, manuscript_tree, book_metadata, cover_image_path, target_lang, output_file_path)
+                    has_cov = bool(cover_image_path or book_metadata.get("cover_mode") != "none")
+                    page_map = None
+                    if len(manuscript_tree) > 1:
+                        from core.adapters.egress.ebook.pdf_folio_stamp import PDFFolioStamp
+                        probe_pdf = f"{output_file_path}.probe.pdf"
+                        if self._render_via_headless(chrome_bin, manuscript_tree, book_metadata, cover_image_path, target_lang, probe_pdf):
+                            ch_titles = [ch.get("title", "") for ch in manuscript_tree]
+                            page_map = PDFFolioStamp.detect_chapter_pages(probe_pdf, len(manuscript_tree), has_cover=has_cov, chapter_titles=ch_titles)
+                            try: os.remove(probe_pdf)
+                            except OSError: pass
+
+                    success = self._render_via_headless(chrome_bin, manuscript_tree, book_metadata, cover_image_path, target_lang, output_file_path, page_map=page_map)
                     if success and os.path.exists(output_file_path) and os.path.getsize(output_file_path) > 0:
+                        from core.adapters.egress.ebook.pdf_folio_stamp import PDFFolioStamp
+                        PDFFolioStamp.stamp_folios(output_file_path, has_cover=has_cov)
                         tlog.info(f"✨ [PDF 装订] 已通过印刷级渲染引擎成功导出: {os.path.basename(output_file_path)}")
                         return True
                 except Exception as ce:
@@ -72,7 +78,8 @@ class PDFBookAdapter(BaseEBookAdapter):
         meta: Dict[str, Any],
         cover_path: Optional[str],
         lang: str,
-        out_pdf: str
+        out_pdf: str,
+        page_map: Optional[Dict[int, int]] = None
     ) -> bool:
         """基于 W3C CSS Paged Media 规范构建高保真 HTML 并调用无头打印"""
         title = escape(meta.get("title", "数字出版物"))
@@ -83,15 +90,39 @@ class PDFBookAdapter(BaseEBookAdapter):
         is_single = meta.get("is_single_article") or len(manuscript_tree) <= 1
         cover_mode = meta.get("cover_mode", "auto")
 
+        # 🌐 多语对照版检测：3 语以上自动切换 A4 横版以确保每栏可读宽度
+        polyglot_langs = meta.get("polyglot_langs") or []
+        is_polyglot = bool(polyglot_langs and len(polyglot_langs) >= 2)
+        polyglot_landscape_css = ""
+        if is_polyglot and len(polyglot_langs) >= 3:
+            polyglot_landscape_css = "@page { size: A4 landscape; }"
+
         cover_img_tag = ""
         if cover_mode != "none":
-            if cover_path and os.path.exists(cover_path):
-                with open(cover_path, "rb") as cf:
-                    b64 = base64.b64encode(cf.read()).decode("ascii")
+            # 1. 自定义上传封面 或 显式艺术大封面：优先直接渲染高保真封面大图
+            has_valid_img = bool(cover_path and os.path.exists(cover_path))
+            if has_valid_img and (cover_mode in ("custom", "generated") or meta.get("custom_cover_image")):
+                with open(cover_path, "rb") as cf: b64 = base64.b64encode(cf.read()).decode("ascii")
                 mime = "image/png" if cover_path.endswith(".png") else "image/jpeg"
                 cover_img_tag = f'<section class="cover-page"><img src="data:{mime};base64,{b64}" class="cover-art" alt="Cover" /></section>'
+            # 2. 智能自愈模式 (auto)：多语对照版默认采用全画幅双语对称排版文字封面
+            elif is_polyglot and not is_single:
+                titles_by_lang = meta.get("titles_by_lang", {})
+                cover_cols = []
+                for pl in polyglot_langs:
+                    l_t = escape(titles_by_lang.get(pl, title))
+                    cover_cols.append(f'<div class="wb-poly-column" style="text-align:center;"><div class="wb-poly-header" style="justify-content:center;"><span class="wb-lang-badge">{pl.upper()}</span></div><h1 class="cover-title">{l_t}</h1><div class="cover-author">{author}</div></div>')
+                cover_footer = f'<div class="cover-author" style="margin-top:auto; font-size:8.5pt; opacity:0.65; letter-spacing:1px;">{publisher} · ALL RIGHTS RESERVED</div>'
+                cover_img_tag = f'<section class="cover-page cover-fallback"><div class="cover-pub">{publisher}</div><div class="wb-polyglot-block wb-polyglot-columns">{chr(10).join(cover_cols)}</div>{cover_footer}</section>'
+            # 3. 单语版有封面图时使用封面图
+            elif has_valid_img:
+                with open(cover_path, "rb") as cf: b64 = base64.b64encode(cf.read()).decode("ascii")
+                mime = "image/png" if cover_path.endswith(".png") else "image/jpeg"
+                cover_img_tag = f'<section class="cover-page"><img src="data:{mime};base64,{b64}" class="cover-art" alt="Cover" /></section>'
+            # 4. 单语版无封面图 fallback
             elif not is_single:
-                cover_img_tag = f'''<section class="cover-page cover-fallback"><div class="cover-inner"><div class="cover-pub">{publisher}</div><h1 class="cover-title">{title}</h1><div class="cover-author">著 / {author}</div></div></section>'''
+                cover_footer = f'<div class="cover-author" style="margin-top:auto; font-size:8.5pt; opacity:0.65; letter-spacing:1px;">{publisher} · ALL RIGHTS RESERVED</div>'
+                cover_img_tag = f'<section class="cover-page cover-fallback"><div class="cover-pub">{publisher}</div><div><h1 class="cover-title">{title}</h1><div class="cover-author">著 / {author}</div></div>{cover_footer}</section>'
 
         # 内联正文插图为 Base64，杜绝无头浏览器网络挂起
         asset_map = {}
@@ -106,86 +137,73 @@ class PDFBookAdapter(BaseEBookAdapter):
                     except Exception: pass
 
         # 1. 前置目录索引页 (Print TOC)
-        toc_tag = PDFAssets.render_toc_html(manuscript_tree, lang=lang)
+        toc_tag = PDFAssets.render_toc_html(
+            manuscript_tree,
+            lang=lang,
+            polyglot_langs=polyglot_langs if is_polyglot else None,
+            page_map=page_map
+        )
 
-        # 2. 章节正文编排（自愈跨章锚点与品牌章眉）
-        ch_sections = []
-        for idx, ch in enumerate(manuscript_tree):
-            ch_id = f"ch_{idx + 1}"
-            ch_title = escape(ch.get("title", f"第 {idx + 1} 章"))
-            ch_body = ch.get("html_body", "<p></p>")
-            for t_n, b64_u in asset_map.items():
-                ch_body = ch_body.replace(f"../images/{t_n}", b64_u)
-
-            # 🎨 清洗可能触发 Blink 排版死锁的非安全内联样式与栅格化死穴
-            ch_body = re.sub(r"-webkit-text-fill-color:\s*transparent;?", "color: #0f172a;", ch_body)
-            ch_body = re.sub(r"(-webkit-)?background-clip:\s*text;?", "", ch_body)
-            ch_body = ch_body.replace("border-collapse: collapse;", "border-collapse: separate; border-spacing: 0;")
-            ch_body = re.sub(r"display:\s*grid;?", "display: block;", ch_body)
-
-            # 🌐 链接自愈：将 EPUB 式 ch_X.xhtml 链接转为 PDF 单文件同文档内部锚点 #ch_X
-            ch_body = re.sub(r'href=["\']ch_\d+\.xhtml#(.*?)["\']', r'href="#\1"', ch_body)
-            ch_body = re.sub(r'href=["\'](ch_\d+)\.xhtml["\']', r'href="#\1"', ch_body)
-
-            # 清洗未匹配到内部章节的相对文件死链，杜绝 PDF 阅读器弹出 FileLinkedNotAvail 系统错误
-            def _heal_rel_href(m):
-                tag, h = m.group(0), m.group(1).strip()
-                if h.startswith(('http://', 'https://', 'mailto:', 'tel:', '#')):
-                    return tag
-                return tag.replace(f'href="{h}"', 'class="pdf-unlinked"').replace(f"href='{h}'", 'class="pdf-unlinked"')
-
-            ch_body = re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', _heal_rel_href, ch_body)
-            nav_hdr = f'<div class="chapter-nav-header"><span class="chapter-nav-brand">{publisher}</span><span class="chapter-nav-title">{ch_title}</span></div>'
-            art_meta = f'<div class="article-meta-header"><span class="article-meta-item">✍️ <strong class="article-meta-badge">{author}</strong></span><span class="article-meta-item">🏢 {publisher}</span></div>' if (is_single and not cover_img_tag and idx == 0) else ""
-            ch_sections.append(f'<section class="chapter-page" id="{ch_id}">{nav_hdr}<h1 class="chapter-heading">{ch_title}</h1>{art_meta}<div class="chapter-body">{ch_body}</div></section>')
+        # 2. 章节正文编排（默认 100% 呈现经典多栏并列对照研读矩阵，双开面对开作为扩展模式）
+        facing_mode = meta.get("facing_pages_mode", False)
+        if is_polyglot and len(polyglot_langs) == 2 and facing_mode:
+            from core.adapters.egress.ebook.pdf_facing_pages import PDFFacingPagesBuilder
+            ch_sections = PDFFacingPagesBuilder.render_facing_chapters(manuscript_tree, polyglot_langs, asset_map, publisher, author, is_single)
+        else:
+            ch_sections = []
+            for idx, ch in enumerate(manuscript_tree):
+                ch_id, ch_title, ch_body = f"ch_{idx + 1}", escape(ch.get("title", f"第 {idx + 1} 章")), ch.get("html_body", "<p></p>")
+                for t_n, b64_u in asset_map.items(): ch_body = ch_body.replace(f"../images/{t_n}", b64_u)
+                ch_body = re.sub(r"-webkit-text-fill-color:\s*transparent;?", "color: #0f172a;", ch_body)
+                ch_body = re.sub(r"(-webkit-)?background-clip:\s*text;?", "", ch_body)
+                ch_body = ch_body.replace("border-collapse: collapse;", "border-collapse: separate; border-spacing: 0;")
+                ch_body = re.sub(r'(?<!polyglot["\s])display:\s*grid;?', 'display: block;', ch_body)
+                ch_body = re.sub(r'var\(--border-color\)', '#cbd5e1', ch_body)
+                ch_body = re.sub(r'var\(--bg-elevated\)', '#f8fafc', ch_body)
+                ch_body = re.sub(r'var\(--[a-zA-Z0-9_-]+\)', 'inherit', ch_body)
+                ch_body = re.sub(r'(<(?:table|thead|tbody|tr|th|td)\b[^>]*?)\s+style="[^"]*"', r'\1', ch_body)
+                ch_body = re.sub(r'href=["\']ch_\d+\.xhtml#(.*?)["\']', r'href="#\1"', ch_body)
+                ch_body = re.sub(r'href=["\'](ch_\d+)\.xhtml["\']', r'href="#\1"', ch_body)
+                def _heal_rel_href(m):
+                    tag, h = m.group(0), m.group(1).strip()
+                    return tag if h.startswith(('http://', 'https://', 'mailto:', 'tel:', '#')) else tag.replace(f'href="{h}"', 'class="pdf-unlinked"').replace(f"href='{h}'", 'class="pdf-unlinked"')
+                ch_body = re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', _heal_rel_href, ch_body)
+                nav_hdr = f'<div class="chapter-nav-header"><span class="chapter-nav-brand">{publisher}</span><span class="chapter-nav-title">第 {idx + 1} 章 · {ch_title}</span></div>'
+                art_meta = f'<div class="article-meta-header"><span class="article-meta-item">✍️ <strong class="article-meta-badge">{author}</strong></span><span class="article-meta-item">🏢 {publisher}</span></div>' if (is_single and not cover_img_tag and idx == 0) else ""
+                heading_html = "" if is_polyglot else f'<h1 class="chapter-heading">{ch_title}</h1>'
+                ch_table = (
+                    f'<table class="chapter-table"><thead><tr><th>{nav_hdr}</th></tr></thead>'
+                    f'<tfoot><tr><td style="height: 12mm; border: none !important; padding: 0 !important;"></td></tr></tfoot>'
+                    f'<tbody><tr><td>{heading_html}{art_meta}<div class="chapter-body">{ch_body}</div></td></tr></tbody></table>'
+                )
+                ch_sections.append(f'<section class="chapter-page" id="{ch_id}">{ch_table}</section>')
 
         # 3. 末尾出版版权页 (Colophon，单篇文章导出自动抑制)
         colophon_tag = ""
         if not is_single:
             colophon_data = ColophonBuilder.build_colophon_data(manuscript_tree, meta, format_name="pdf")
-            colophon_tag = PDFAssets.render_colophon_html(colophon_data, lang=lang)
+            colophon_tag = PDFAssets.render_colophon_html(colophon_data, lang=lang, polyglot_langs=polyglot_langs if is_polyglot else None)
 
-        raw_html = f'''<!DOCTYPE html>
-<html lang="{iso_lang}">
-<head>
-<meta charset="utf-8">
-<title>{title}</title>
-<style>{PDFAssets.get_print_css()}</style>
-</head>
-<body>
-{cover_img_tag}
-{toc_tag}
-{''.join(ch_sections)}
-{colophon_tag}
-</body>
-</html>'''
+        head_html = f'<!DOCTYPE html><html lang="{iso_lang}"><head><meta charset="utf-8"><title>{title}</title><style>{PDFAssets.get_print_css()}\n{polyglot_landscape_css}</style></head><body>\n'
+        tail_html = "\n</body></html>"
 
-        # 📖 正规图书印刷规范：剥离 4 字节彩色位图 Emoji，防止长文档多页矢量流溢出致 Chromium 挂起
-        html = re.sub(r'[\U00010000-\U0010ffff]', '', raw_html)
+        all_sections = []
+        if cover_img_tag: all_sections.append(cover_img_tag)
+        if toc_tag: all_sections.append(toc_tag)
+        all_sections.extend(ch_sections)
+        if colophon_tag: all_sections.append(colophon_tag)
 
-        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8") as tf:
-            tf.write(html)
-            tmp_html = tf.name
+        # 剥离 4 字节 Emoji 防矢量流溢出
+        clean_sections = [re.sub(r'[\U00010000-\U0010ffff]', '', s) for s in all_sections]
 
-        try:
-            cmd = [
-                chrome_bin, "--headless", "--disable-gpu",
-                "--no-pdf-header-footer", "--no-first-run",
-                "--disable-background-networking", "--disable-default-apps",
-                "--disable-extensions", "--disable-sync", "--disable-translate",
-                "--disable-features=OptimizationHints,OptimizationGuideModelDownloading",
-                f"--print-to-pdf={out_pdf}", tmp_html
-            ]
-            t_limit = max(45, min(180, len(manuscript_tree) * 2))
-            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=t_limit)
-            return os.path.exists(out_pdf) and os.path.getsize(out_pdf) > 200
-        except Exception as e:
-            tlog.warning(f"⚠️ [PDF 装订] 无头打印调用异常: {e}")
-            return False
-        finally:
-            if os.path.exists(tmp_html):
-                try: os.remove(tmp_html)
-                except Exception: pass
+        from core.adapters.egress.ebook.pdf_chunk_printer import PDFChunkPrinter
+        return PDFChunkPrinter.render_and_merge(
+            chrome_bin=chrome_bin,
+            head_html=head_html,
+            sections=clean_sections,
+            tail_html=tail_html,
+            out_pdf=out_pdf
+        )
 
     def _render_via_reportlab(
         self,
@@ -263,10 +281,8 @@ class PDFBookAdapter(BaseEBookAdapter):
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "/Applications/Chromium.app/Contents/MacOS/Chromium",
             "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-            shutil.which("google-chrome-stable"),
-            shutil.which("google-chrome"),
-            shutil.which("chromium"),
-            shutil.which("chromium-browser"),
+            shutil.which("google-chrome-stable") or shutil.which("google-chrome"),
+            shutil.which("chromium") or shutil.which("chromium-browser"),
         ]
         for c in candidates:
             if c and os.path.exists(c) and os.access(c, os.X_OK):

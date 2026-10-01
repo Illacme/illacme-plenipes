@@ -119,8 +119,8 @@ def test_pdf_colophon_suppression(monkeypatch, tmp_path, sample_single_manuscrip
 
     import subprocess
     def mock_subprocess_run(cmd, *args, **kwargs):
-        # cmd[-1] 是 tmp_html 路径，cmd[-2] 是 --print-to-pdf=out_pdf
-        tmp_html = cmd[-1]
+        # cmd[-1] 是 tmp_html 路径（支持 file:// 前缀），cmd[-2] 是 --print-to-pdf=out_pdf
+        tmp_html = cmd[-1].replace("file://", "")
         out_pdf = cmd[-2].split("=", 1)[1]
         if os.path.exists(tmp_html):
             with open(tmp_html, "r", encoding="utf-8") as f:
@@ -144,16 +144,16 @@ def test_pdf_colophon_suppression(monkeypatch, tmp_path, sample_single_manuscrip
     assert 'class="cover-page' not in captured_htmls[0]
     assert 'article-meta-header' in captured_htmls[0]
 
-    # 2. 多章导出测试 (默认无图时仍提供图书 fallback 封面)
+    # 2. 多章导出测试 (默认无图时仍提供图书 fallback 封面，多章启用 Two-Pass 真实页码对齐)
     multi_out = str(tmp_path / "multi_test.pdf")
     adapter.bind_book(
         manuscript_tree=sample_multi_manuscript,
         book_metadata={"title": "多章合集", "author": "作者", "is_single_article": False, "cover_mode": "auto"},
         output_file_path=multi_out
     )
-    assert len(captured_htmls) == 2
-    assert 'id="print-colophon"' in captured_htmls[1]
-    assert 'cover-fallback' in captured_htmls[1]
+    assert len(captured_htmls) >= 2
+    assert any('id="print-colophon"' in h for h in captured_htmls[1:])
+    assert any('cover-fallback' in h for h in captured_htmls[1:])
 
 
 def test_assembler_single_article_flag(tmp_path):

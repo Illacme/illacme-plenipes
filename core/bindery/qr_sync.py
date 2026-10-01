@@ -70,10 +70,12 @@ def build_mobile_sync_payload(
     """组装移动端扫码同步所需的目标 URL 与二维码载荷 (支持局域网直连或公网隧道)"""
     from core.bindery.tunnel_diagnostic import get_lan_candidates
     candidates = get_lan_candidates()
-    lan_ip = custom_ip.strip() if custom_ip and custom_ip.strip() else (candidates[0]["ip"] if candidates else get_lan_ip())
+    lan_ip = custom_ip.strip() if (isinstance(custom_ip, str) and custom_ip.strip()) else (candidates[0]["ip"] if candidates else get_lan_ip())
 
-    is_html = filename.endswith(".html")
-    is_viewable = filename.endswith((".html", ".epub", ".pdf"))
+    import os
+    ext = os.path.splitext(filename)[1].lower()
+    is_html = ext == ".html"
+    is_viewable = ext in (".html", ".epub", ".pdf", ".docx", ".md", ".txt")
     if is_html and action != "force_download":
         act_type = "view"
     elif action == "view" and is_viewable:
@@ -96,12 +98,14 @@ def build_mobile_sync_payload(
         is_public = False
 
     qr_data_uri = generate_qr_data_uri(target_url)
-    fmt = "webbook" if filename.endswith(".html") else ("pdf" if filename.endswith(".pdf") else "epub")
+    fmt_map = {".html": "webbook", ".pdf": "pdf", ".epub": "epub", ".docx": "docx", ".md": "markdown", ".txt": "txt"}
+    fmt = fmt_map.get(ext, "epub")
     return {
         "success": True,
         "filename": filename,
         "format": fmt,
         "action": act_type,
+        "act_type": act_type,
         "lan_ip": lan_ip,
         "lan_candidates": candidates,
         "port": port,

@@ -168,7 +168,11 @@ def test_build_and_shelf_markdown_and_docx(client, tmp_path, monkeypatch):
     assert md_data.get("success") is True
     md_filename = md_data.get("filename")
     assert md_filename.endswith(".md")
-    assert os.path.isfile(os.path.join(out_dir, md_filename))
+    md_real_p = os.path.join(out_dir, md_filename)
+    assert os.path.isfile(md_real_p)
+    with open(md_real_p, "r", encoding="utf-8") as f:
+        md_text = f.read()
+        assert "这是合卷测试稿件" in md_text, "Markdown 合卷必须包含真实章节正文！"
 
     # 2. 装订 Docx 审校本
     res_docx = client.post("/api/bindery/build", json={
@@ -183,9 +187,32 @@ def test_build_and_shelf_markdown_and_docx(client, tmp_path, monkeypatch):
     assert docx_data.get("success") is True
     docx_filename = docx_data.get("filename")
     assert docx_filename.endswith(".docx")
-    assert os.path.isfile(os.path.join(out_dir, docx_filename))
+    docx_real_p = os.path.join(out_dir, docx_filename)
+    assert os.path.isfile(docx_real_p)
+    import docx
+    d = docx.Document(docx_real_p)
+    all_paras = [p.text for p in d.paragraphs if p.text.strip()]
+    assert any("这是合卷测试稿件" in p for p in all_paras), "Docx 必须包含真实章节正文！"
 
-    # 3. 验证货架接口正确识别 formats
+    # 3. 装订 TXT 便携文本
+    res_txt = client.post("/api/bindery/build", json={
+        "format": "txt",
+        "scope": "all",
+        "lang": "zh",
+        "title": "Auto Test TXT Book",
+        "cover_mode": "none"
+    })
+    assert res_txt.status_code == 200
+    txt_data = res_txt.json()
+    assert txt_data.get("success") is True
+    txt_filename = txt_data.get("filename")
+    txt_real_p = os.path.join(out_dir, txt_filename)
+    assert os.path.isfile(txt_real_p)
+    with open(txt_real_p, "r", encoding="utf-8") as f:
+        txt_text = f.read()
+        assert "这是合卷测试稿件" in txt_text, "TXT 便携本必须包含真实章节正文！"
+
+    # 4. 验证货架接口正确识别 formats
     res_shelf = client.get("/api/bindery/shelf")
     assert res_shelf.status_code == 200
     shelf_data = res_shelf.json()
@@ -194,8 +221,10 @@ def test_build_and_shelf_markdown_and_docx(client, tmp_path, monkeypatch):
     assert book_items[md_filename]["format"] == "markdown"
     assert docx_filename in book_items
     assert book_items[docx_filename]["format"] == "docx"
+    assert txt_filename in book_items
+    assert book_items[txt_filename]["format"] == "txt"
 
-    # 4. 验证在线查看 / 下载
+    # 5. 验证在线查看 / 下载
     res_view_md = client.get(f"/api/bindery/view?file={md_filename}")
     assert res_view_md.status_code == 200
     assert "text/plain" in res_view_md.headers.get("content-type", "")
@@ -204,7 +233,60 @@ def test_build_and_shelf_markdown_and_docx(client, tmp_path, monkeypatch):
     assert res_dl_docx.status_code == 200
 
     # 清理测试产物
-    for fn in (md_filename, docx_filename):
+    for fn in (md_filename, docx_filename, txt_filename):
         p = os.path.join(out_dir, fn)
         if os.path.exists(p):
             os.remove(p)
+
+
+def test_polyglot_build_more_formats(client, tmp_path, monkeypatch):
+    """测试多语对照模式 (polyglot_mode) 下装订 Docx 与 Markdown 并验证双语对齐正文写入"""
+    vault_dir = tmp_path / "poly_vault"
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    (vault_dir / "01_guide.md").write_text("# 研造指南\n\n主语言正文内容段落。\n", encoding="utf-8")
+    (vault_dir / "01_guide.en.md").write_text("# Guide\n\nEnglish translation body content.\n", encoding="utf-8")
+
+    mock_engine = type("MockEngine", (), {
+        "vault_root": str(vault_dir),
+        "site_name": "Polyglot Formats Press",
+        "author": "Polyglot Team"
+    })()
+    monkeypatch.setattr("services.api.routes.gov.bindery.get_global_engine", lambda: mock_engine)
+
+    out_dir = os.path.abspath("dist/books")
+    os.makedirs(out_dir, exist_ok=True)
+
+    # 1. 多语 Markdown
+    res_md = client.post("/api/bindery/build", json={
+        "format": "markdown", "scope": "all", "polyglot_mode": True,
+        "languages": ["zh", "en"], "title": "Bilingual MD", "cover_mode": "none"
+    })
+    assert res_md.status_code == 200
+    fn_md = res_md.json().get("filename")
+    with open(os.path.join(out_dir, fn_md), encoding="utf-8") as f:
+        c = f.read()
+        assert "主语言正文内容段落" in c
+        assert "ZH)" in c and "EN)" in c
+
+    # 2. 多语 Docx
+    res_docx = client.post("/api/bindery/build", json={
+        "format": "docx", "scope": "all", "polyglot_mode": True,
+        "languages": ["zh", "en"], "title": "Bilingual Docx", "cover_mode": "none"
+    })
+    assert res_docx.status_code == 200
+    fn_docx = res_docx.json().get("filename")
+    import docx
+    d = docx.Document(os.path.join(out_dir, fn_docx))
+    all_texts = [p.text for p in d.paragraphs if p.text.strip()]
+    for tbl in d.tables:
+        for row in tbl.rows:
+            for cell in row.cells:
+                all_texts.extend([p.text for p in cell.paragraphs if p.text.strip()])
+    assert any("主语言正文内容段落" in t for t in all_texts)
+    assert len(d.tables) >= 1
+
+    # 清理
+    for fn in (fn_md, fn_docx):
+        p = os.path.join(out_dir, fn)
+        if os.path.exists(p): os.remove(p)
+

@@ -86,8 +86,12 @@ class MarkdownBundleAdapter(BaseEBookAdapter):
 
                 body = ch.get("raw_body") or ""
                 if not body and ch.get("content"):
-                    # 备用：从 HTML 转纯文本兜底
-                    body = re.sub(r'<[^>]+>', '', ch["content"])
+                    body = ch["content"]
+                if not body and ch.get("html_body"):
+                    body = ch["html_body"]
+
+                from core.bindery.html_sanitizer import HtmlSanitizer
+                body = HtmlSanitizer.sanitize_to_markdown(body)
 
                 # 智能降级正文内标题，确保文档拓扑严格遵循 H2 章节 -> H3/H4 小节
                 demoted_body = self._demote_headings(body)

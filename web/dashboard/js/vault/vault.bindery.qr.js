@@ -204,7 +204,7 @@
         const contentEl = document.getElementById('bindery-qr-content');
         if (!contentEl) return;
         const isWb = data.filename.endsWith('.html');
-        const curAct = isWb ? 'view' : (data.act_type || window._binderyQrAction || 'view');
+        const curAct = isWb ? 'view' : (data.action || data.act_type || window._binderyQrAction || 'view');
         const isView = curAct === 'view';
         const tip = isWb ? '手机 / 平板扫码立即开启 WebBook 全景翻阅体验' : (isView ? '手机 / 平板扫码立即开启沉浸翻阅体验' : '手机 / 平板扫码即刻下载原件并导入本地阅读器');
         let qrHtml = '';

@@ -5,11 +5,7 @@ Illacme Plenipes - Book Assembler (全卷文稿合订编排器)
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os
-import re
-import uuid
-import yaml
-import base64
+import os, re, json, uuid, yaml, base64
 from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook import EBookRegistry
@@ -71,13 +67,7 @@ class BookAssembler:
             elif single_file and chapters and chapters[0].get("titles_by_lang"):
                 titles_by_lang = dict(chapters[0]["titles_by_lang"])
             else:
-                titles_by_lang = {
-                    "zh": f"{site_name} · 多语对照典籍 ({lang_tags} 对照版)",
-                    "en": f"{site_name} · Polyglot Concordance ({lang_tags} Edition)",
-                    "ja": f"{site_name} · 多言語対照典籍 ({lang_tags} 版)",
-                    "de": f"{site_name} · Mehrsprachige Konkordanz ({lang_tags} Edition)",
-                    "fr": f"{site_name} · Concordance Multilingue (Édition {lang_tags})"
-                }
+                titles_by_lang = {"zh": f"{site_name} · 多语对照典籍 ({lang_tags} 对照版)", "en": f"{site_name} · Polyglot Concordance ({lang_tags} Edition)", "ja": f"{site_name} · 多言語対照典籍 ({lang_tags} 版)", "de": f"{site_name} · Mehrsprachige Konkordanz ({lang_tags} Edition)", "fr": f"{site_name} · Concordance Multilingue (Édition {lang_tags})"}
         elif is_default_title and single_file and chapters:
             book_title = custom_title or chapters[0]["title"]
         elif is_default_title and target_lang == "en":
@@ -173,18 +163,15 @@ class BookAssembler:
 
         doc_entries.sort(key=sort_key)
 
-        chapters = []
-        parsed_docs = []
-        route_map = {}
+        chapters, parsed_docs, route_map = [], [], {}
         for idx, p in enumerate(doc_entries):
             ch_id = f"ch_{idx + 1}"
             with open(p, 'r', encoding='utf-8', errors='ignore') as fp:
                 raw_text = fp.read()
             fm, body = self._extract_frontmatter(raw_text)
-            title = fm.get("title") or os.path.splitext(os.path.basename(p))[0].replace('-', ' ').title()
-            slug = fm.get("slug") or os.path.splitext(os.path.basename(p))[0]
             stem = os.path.splitext(os.path.basename(p))[0]
-            rel_p = os.path.relpath(p, target_dir).replace('\\', '/')
+            title = fm.get("title") or stem.replace('-', ' ').title()
+            slug, rel_p = fm.get("slug") or stem, os.path.relpath(p, target_dir).replace('\\', '/')
             rel_no_ext = os.path.splitext(rel_p)[0]
             # 🌐 目标语种标题与正文高保真解析
             ch_title, ch_body = TranslationResolver.resolve_chapter(
@@ -198,7 +185,15 @@ class BookAssembler:
                 norm_k = re.sub(r'[^\w\u4e00-\u9fa5]+', '', str(raw_k)).lower()
                 if norm_k and norm_k not in route_map: route_map[norm_k] = ch_id
             p_dir = os.path.dirname(rel_no_ext).lower()
-            if p_dir: route_map[f"{p_dir}/index"] = route_map[p_dir] = ch_id
+            if p_dir and p_dir not in route_map: route_map[p_dir] = ch_id
+            meta_f = os.path.join(self.vault_dir, ".plenipes", "cache", "metadata", f"{rel_no_ext}.json")
+            if os.path.exists(meta_f):
+                try:
+                    with open(meta_f, "r", encoding="utf-8") as jf: md_dat = json.load(jf)
+                    ms, mp = md_dat.get("slug"), md_dat.get("route_prefix")
+                    if ms: route_map[ms.lower()] = ch_id
+                    if ms and mp: route_map[f"{mp}/{ms}".lower()] = ch_id
+                except Exception: pass
 
         # 第二阶段：编译内容与重写内链锚点
         import markdown
@@ -213,9 +208,8 @@ class BookAssembler:
             p, body, ch_id = entry["file_path"], entry["raw_body"], entry["ch_id"]
 
             # 排版自愈：数学公式转译 -> Obsidian 插图转译 -> 跨章内链锚点重写
-            body = MathPackager.heal_latex_formulas(body)
-            body = ImagePackager.heal_obsidian_embedded_images(body)
-            healed_body = self._rewrite_wikilinks_to_chapters(body, route_map, curr_ch_id=ch_id)
+            body = MathPackager.heal_latex_formulas(ImagePackager.heal_obsidian_embedded_images(body))
+            healed_body = self._heal_md_hrefs(self._heal_html_hrefs(self._rewrite_wikilinks_to_chapters(body, route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id)
             md_converter.reset()
             html_content = md_converter.convert(healed_body)
             raw_toc_tokens = getattr(md_converter, "toc_tokens", [])
@@ -235,6 +229,7 @@ class BookAssembler:
                 "order": int(ch_id.split('_')[1]),
                 "title": entry["title"],
                 "slug": entry["slug"],
+                "raw_body": healed_body,
                 "html_body": html_content,
                 "file_path": p,
                 "assets": assets,
@@ -243,25 +238,39 @@ class BookAssembler:
 
         return chapters
 
-    @staticmethod
-    def _heal_html_hrefs(html: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
+    @classmethod
+    def _resolve_route_target(cls, href: str, route_map: Dict[str, str], curr_ch_id: str = "", txt: str = "") -> Optional[str]:
+        if not href or href.startswith(('http://', 'https://', 'mailto:', 'tel:', 'data:', 'javascript:', '#')): return None
+        path_part, anchor = href.split('#', 1) if '#' in href else (href, "")
+        clean_path = path_part.replace('\\', '/').lstrip('./').rstrip('/')
+        p_tokens = clean_path.split('/')
+        if p_tokens and len(p_tokens[0]) <= 3 and p_tokens[0].lower() in ('en', 'zh', 'ja', 'fr', 'de', 'es', 'ru'):
+            clean_path = '/'.join(p_tokens[1:])
+        norm_rel, stem = os.path.splitext(clean_path)[0], os.path.splitext(os.path.basename(clean_path))[0]
+        target_ch = route_map.get(norm_rel.lower()) or route_map.get(norm_rel) or route_map.get(stem.lower()) or route_map.get(stem)
+        if not target_ch and txt: target_ch = route_map.get(txt.lower()) or route_map.get(txt)
+        if not target_ch and stem:
+            norm_stem = re.sub(r'[^\w\u4e00-\u9fa5]+', '', stem).lower()
+            target_ch = route_map.get(norm_stem) or next((v for k, v in route_map.items() if norm_stem and (norm_stem in k or k in norm_stem)), None)
+        return (f"#{anchor}" if (target_ch == curr_ch_id and anchor) else f"{target_ch}.xhtml#{anchor or target_ch}") if target_ch else None
+
+    @classmethod
+    def _heal_html_hrefs(cls, html: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
         """统一自愈 HTML 中的原生 <a> 超链接与静态站点相对路径"""
         def repl(m):
             tag, href = m.group(0), m.group(1).strip()
-            if not href or href.startswith(('http://', 'https://', 'mailto:', 'tel:', 'data:', 'javascript:', '#')):
-                return tag
-            path_part, anchor = href.split('#', 1) if '#' in href else (href, "")
-            clean_path = path_part.replace('\\', '/').lstrip('./').rstrip('/')
-            norm_rel, stem = os.path.splitext(clean_path)[0], os.path.splitext(os.path.basename(clean_path))[0]
-            target_ch = route_map.get(norm_rel.lower()) or route_map.get(norm_rel) or route_map.get(stem.lower()) or route_map.get(stem)
-            if not target_ch and stem:
-                norm_stem = re.sub(r'[^\w\u4e00-\u9fa5]+', '', stem).lower()
-                target_ch = route_map.get(norm_stem) or next((v for k, v in route_map.items() if norm_stem and (norm_stem in k or k in norm_stem)), None)
-            if target_ch:
-                new_href = f"#{anchor}" if (target_ch == curr_ch_id and anchor) else f"{target_ch}.xhtml#{anchor or target_ch}"
-                return tag.replace(f'href="{href}"', f'href="{new_href}"').replace(f"href='{href}'", f"href='{new_href}'")
-            return tag
+            nh = cls._resolve_route_target(href, route_map, curr_ch_id)
+            return tag.replace(f'href="{href}"', f'href="{nh}"').replace(f"href='{href}'", f"href='{nh}'") if nh else tag
         return re.sub(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>', repl, html)
+
+    @classmethod
+    def _heal_md_hrefs(cls, body: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
+        """自愈 Markdown 中的 [text](url) 相对路径为内部章节锚点"""
+        def repl(m):
+            txt, href = m.group(1), m.group(2).strip()
+            nh = cls._resolve_route_target(href, route_map, curr_ch_id, txt=txt)
+            return f"[{txt}]({nh})" if nh else m.group(0)
+        return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', repl, body)
 
     @staticmethod
     def _rewrite_wikilinks_to_chapters(body: str, route_map: Dict[str, str], curr_ch_id: str = "") -> str:
@@ -286,8 +295,6 @@ class BookAssembler:
     def _extract_frontmatter(self, text: str):
         m = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', text, re.DOTALL)
         if m:
-            try:
-                return (yaml.safe_load(m.group(1)) or {}), m.group(2)
-            except Exception:
-                pass
+            try: return (yaml.safe_load(m.group(1)) or {}), m.group(2)
+            except Exception: pass
         return {}, text
