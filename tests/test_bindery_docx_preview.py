@@ -62,12 +62,15 @@ def sample_meta():
 def test_docx_hyperlinks_and_pagination(tmp_path, sample_manuscript, sample_meta):
     out_docx = str(tmp_path / "test_book.docx")
     adapter = DocxBookAdapter()
-    success = adapter.bind_book(
-        manuscript_tree=sample_manuscript,
-        book_metadata=sample_meta,
-        target_lang="zh",
-        output_file_path=out_docx
-    )
+    from unittest.mock import patch
+    fake_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    with patch("core.bindery.mermaid_renderer.MermaidRenderer.render_to_png", return_value=fake_png):
+        success = adapter.bind_book(
+            manuscript_tree=sample_manuscript,
+            book_metadata=sample_meta,
+            target_lang="zh",
+            output_file_path=out_docx
+        )
     assert success is True
     assert os.path.exists(out_docx)
 
@@ -141,3 +144,28 @@ def test_docx_hyperlinks_and_pagination(tmp_path, sample_manuscript, sample_meta
     assert 'class="viewer-pagination"' in html_out
     assert '@media (max-width: 768px)' in html_out
     assert '@media (max-width: 480px)' in html_out
+
+
+def test_docx_mermaid_fallback_to_code_card(tmp_path, sample_manuscript, sample_meta):
+    """验证无无头渲染引擎环境时，Mermaid 平滑降级为 Word 代码卡片"""
+    from unittest.mock import patch
+    out_docx = str(tmp_path / "fallback_book.docx")
+    adapter = DocxBookAdapter()
+    with patch("core.bindery.mermaid_renderer.MermaidRenderer.render_to_png", return_value=None):
+        success = adapter.bind_book(
+            manuscript_tree=sample_manuscript,
+            book_metadata=sample_meta,
+            target_lang="zh",
+            output_file_path=out_docx
+        )
+    assert success is True
+    import docx
+    doc = docx.Document(out_docx)
+    # 降级模式下：1 个 python 代码卡片 + 1 个 mermaid 降级代码卡片 + 1 个 markdown 数据表格 = 3
+    assert len(doc.tables) == 3
+    code_cards = [t for t in doc.tables if len(t.rows) == 1 and len(t.columns) == 1]
+    assert len(code_cards) == 2
+    # 无原生 drawing 图片
+    drawings = [p for p in doc.paragraphs if p._p.xpath(".//w:drawing")]
+    assert len(drawings) == 0
+
