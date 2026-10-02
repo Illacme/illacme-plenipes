@@ -277,6 +277,7 @@
                             })}
                         </div>
                     </div>
+                    ${typeof window.renderEngineUpdateWidget === 'function' ? window.renderEngineUpdateWidget() : ''}
                 </div>
             </div>
         `;

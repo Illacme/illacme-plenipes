@@ -60,7 +60,10 @@ window.ensureMainFooterMounted = function () {
                     <span id="ws-status" class="status-val online">CONNECTED</span>
                 </div>
             </div>
-            <div class="version-tag tiny">v50.3_STABLE</div>
+            <div class="version-tag tiny" id="footer-version-display" style="cursor: pointer;" onclick="if(window.checkSystemUpdate) window.checkSystemUpdate(true)" title="点击检查云端新版本">v1.2.1</div>
+            <div id="footer-update-badge" style="display: none; cursor: pointer; background: hsla(180, 100%, 50%, 0.15); border: 1px solid hsla(180, 100%, 50%, 0.5); color: var(--accent-primary, #00f2ff); font-size: 0.65rem; padding: 2px 8px; border-radius: 12px; margin-left: 6px; align-items: center; gap: 4px; transition: all 0.3s; animation: pulse 2s infinite;" onclick="if(window.openUpdateModal) window.openUpdateModal()" title="发现云端新版本，点击查看">
+                <span>✨ 发现新版</span>
+            </div>
             <select id="theme-mode-select"
                 style="margin-left: 10px; font-size: 0.65rem; padding: 2px 24px 2px 8px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--white-05); color: var(--text-bright); outline: none; cursor: pointer; transition: all 0.3s;"
                 onchange="if(window.ThemeModeManager) ThemeModeManager.applySetting(this.value)" title="Theme Mode">
@@ -135,3 +138,9 @@ window.restartSystemKernel = async function () {
     }, 600);
 };
 
+// 页面加载完成后延迟静默探测云端版本
+setTimeout(() => {
+    if (typeof window.checkSystemUpdate === 'function') {
+        window.checkSystemUpdate(false);
+    }
+}, 2500);

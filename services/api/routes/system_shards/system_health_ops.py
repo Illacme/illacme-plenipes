@@ -199,3 +199,10 @@ def reveal_file_logic(target_path: str) -> Dict[str, Any]:
             return {"success": True, "message": "已在文件管理器中打开所在目录", "path": abs_path}
     except Exception as e:
         return {"success": False, "error": f"唤起文件管理器失败: {e}"}
+
+
+def check_update_logic(force: bool = False) -> Dict[str, Any]:
+    """🚀 [Auto-Update] 检查云端 GitHub Releases 最新发版与宿主专属安装包"""
+    from core.runtime.update_checker import UpdateChecker
+    return UpdateChecker.check_update(force=force)
+

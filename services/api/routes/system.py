@@ -22,6 +22,7 @@ from .system_shards import (
     get_supported_languages_logic,
     pick_directory_logic,
     reveal_file_logic,
+    check_update_logic,
     SwitchAndLaunchPreviewRequest,
     switch_and_launch_preview_logic,
     restart_preview_logic,
@@ -98,6 +99,12 @@ def get_supported_languages() -> Dict[str, List[Any]]:
 async def pick_directory() -> Dict[str, Any]:
     """📂 [V75.6] 唤起操作系统原生文件夹拾取器，返回绝对路径"""
     return await pick_directory_logic()
+
+
+@router.get("/api/system/check_update")
+def check_system_update(force: bool = False) -> Dict[str, Any]:
+    """🛰️ [Auto-Update] 检查云端 GitHub Releases 最新发版状态与当前系统推荐安装包"""
+    return check_update_logic(force=force)
 
 
 # 2. 本地实时预览全生命周期编排端点
