@@ -112,27 +112,75 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  publish-release:
+    name: 🚀 聚合发布至 GitHub Releases
+    needs: [build-desktop]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: 🏷️ 计算 Release 标签
         id: vars
         shell: bash
         run: |
           if [ -n "${{ github.event.inputs.release_tag }}" ]; then
-            echo "tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+            TAG="${{ github.event.inputs.release_tag }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            TAG="${GITHUB_REF#refs/tags/}"
           else
-            echo "tag=v$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+            TAG="v$(date +'%Y.%m.%d')"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: 📥 下载全平台构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets/
+          merge-multiple: true
+
+      - name: 📝 自动提取并生成结构化更新日志 (Changelog)
+        shell: bash
+        run: |
+          TAG="${{ steps.vars.outputs.tag }}"
+          PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || "")
+
+          echo "### 📦 资产下载与完整性校验" > release_body.md
+          echo "" >> release_body.md
+          echo "| 操作系统平台 | 安装包名称 | SHA256 校验文件 |" >> release_body.md
+          echo "| :--- | :--- | :--- |" >> release_body.md
+          echo "| 🪟 Windows (x64) | \`Illacme-Plenipes-Windows-x64.zip\` | \`Illacme-Plenipes-Windows-x64.zip.sha256\` |" >> release_body.md
+          echo "| 🍎 macOS (Apple Silicon) | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip\` | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip.sha256\` |" >> release_body.md
+          echo "| 🐧 Linux (x64) | \`Illacme-Plenipes-Linux-x64.tar.gz\` | \`Illacme-Plenipes-Linux-x64.tar.gz.sha256\` |" >> release_body.md
+          echo "" >> release_body.md
+          echo "### ✨ 本次更新内容 (What's New)" >> release_body.md
+          echo "" >> release_body.md
+
+          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+            git log --pretty=format:"* %s (%h)" "$PREV_TAG..$TAG" >> release_body.md
+            echo "" >> release_body.md
+            echo "" >> release_body.md
+            echo "**完整变更对比**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}" >> release_body.md
+          else
+            git log -n 25 --pretty=format:"* %s (%h)" "$TAG" >> release_body.md
           fi
 
-      - name: 🚀 发布至 GitHub Releases
-        if: github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/v')
+          echo "=== 预览 RELEASE 说明 ==="
+          cat release_body.md
+
+      - name: 🚀 统一发布 Release 资产
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: "Illacme Plenipes ${{ steps.vars.outputs.tag }}"
+          body_path: release_body.md
           files: |
-            ${{ matrix.artifact-name }}
-            ${{ matrix.artifact-name }}.sha256
+            release_assets/*
           draft: false
           prerelease: false
-          generate_release_notes: true
