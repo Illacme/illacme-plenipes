@@ -31,13 +31,10 @@ jobs:
         include:
           - os: windows-latest
             os-name: Windows (x64)
-            artifact-name: Illacme-Plenipes-Windows-x64.zip
           - os: macos-14
             os-name: macOS (Apple Silicon arm64)
-            artifact-name: Illacme-Plenipes-macOS-AppleSilicon-arm64.zip
           - os: ubuntu-latest
             os-name: Linux (x64)
-            artifact-name: Illacme-Plenipes-Linux-x64.tar.gz
 
     permissions:
       contents: write
@@ -70,45 +67,75 @@ jobs:
           echo "=== 产物目录结构 ==="
           ls -la dist/desktop/
 
-      - name: 🗜️ 压缩归档打包产物 (Windows)
+      - name: 🗜️ 制作发布产物 (Windows 便携包 & 原生安装向导)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/desktop/* -DestinationPath ${{ matrix.artifact-name }} -Force
-          Get-Item ${{ matrix.artifact-name }} | Select-Object Name, Length
+          # 1. 便携压缩包 (ZIP)
+          Compress-Archive -Path dist/desktop/* -DestinationPath Illacme-Plenipes-Windows-x64.zip -Force
+          Get-Item Illacme-Plenipes-Windows-x64.zip | Select-Object Name, Length
+          
+          # 2. 原生 Inno Setup 安装向导 (Setup.exe)
+          try {
+            choco install innosetup -y --no-progress
+            $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+            if (Test-Path $isccPath) {
+              & $isccPath desktop/inno_setup.iss
+              if (Test-Path dist/installer/Illacme-Plenipes-Windows-x64-Setup.exe) {
+                Move-Item -Path dist/installer/Illacme-Plenipes-Windows-x64-Setup.exe -Destination . -Force
+                Get-Item Illacme-Plenipes-Windows-x64-Setup.exe | Select-Object Name, Length
+              }
+            }
+          } catch {
+            Write-Warning "Inno Setup installer compilation skipped: $_"
+          }
 
-      - name: 🗜️ 压缩归档打包产物 (macOS)
+      - name: 🗜️ 制作发布产物 (macOS 便携包 & 原生 DMG 镜像)
         if: runner.os == 'macOS'
         run: |
+          # 1. 便携压缩包 (ZIP)
           cd dist/desktop
-          zip -r -y ../../${{ matrix.artifact-name }} Illacme-Plenipes.app README_使用说明.txt
+          zip -r -y ../../Illacme-Plenipes-macOS-AppleSilicon-arm64.zip Illacme-Plenipes.app README_使用说明.txt
           cd ../..
-          ls -lh ${{ matrix.artifact-name }}
+          ls -lh Illacme-Plenipes-macOS-AppleSilicon-arm64.zip
+          
+          # 2. 原生 DMG 拖拽安装镜像 (hdiutil)
+          echo "=== 制作 macOS 原生 DMG 镜像 ==="
+          mkdir -p dmg_root
+          cp -R dist/desktop/Illacme-Plenipes.app dmg_root/
+          ln -s /Applications dmg_root/Applications
+          cp dist/desktop/README_使用说明.txt dmg_root/
+          hdiutil create -volname "Illacme Plenipes" -srcfolder dmg_root -ov -format UDZO Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg
+          rm -rf dmg_root
+          ls -lh Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg
 
-      - name: 🗜️ 压缩归档打包产物 (Linux)
+      - name: 🗜️ 制作发布产物 (Linux 原生归档)
         if: runner.os == 'Linux'
         run: |
-          tar -czf ${{ matrix.artifact-name }} -C dist/desktop Illacme-Plenipes README_使用说明.txt
-          ls -lh ${{ matrix.artifact-name }}
+          tar -czf Illacme-Plenipes-Linux-x64.tar.gz -C dist/desktop Illacme-Plenipes README_使用说明.txt
+          ls -lh Illacme-Plenipes-Linux-x64.tar.gz
 
       - name: 🔏 计算发布产物 SHA256 校验和
         shell: bash
         run: |
-          if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum "${{ matrix.artifact-name }}" > "${{ matrix.artifact-name }}.sha256"
-          elif command -v shasum >/dev/null 2>&1; then
-            shasum -a 256 "${{ matrix.artifact-name }}" > "${{ matrix.artifact-name }}.sha256"
-          fi
-          echo "=== SHA256 校验和 ==="
-          cat "${{ matrix.artifact-name }}.sha256"
+          for f in Illacme-Plenipes-*; do
+            if [ -f "$f" ] && [[ "$f" != *.sha256 ]]; then
+              if command -v sha256sum >/dev/null 2>&1; then
+                sha256sum "$f" > "$f.sha256"
+              elif command -v shasum >/dev/null 2>&1; then
+                shasum -a 256 "$f" > "$f.sha256"
+              fi
+              echo "=== $f.sha256 ==="
+              cat "$f.sha256"
+            fi
+          done
 
       - name: 📤 上传构建产物 (GitHub Actions Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact-name }}
+          name: artifacts-${{ matrix.os }}
           path: |
-            ${{ matrix.artifact-name }}
-            ${{ matrix.artifact-name }}.sha256
+            Illacme-Plenipes-*
           if-no-files-found: error
           retention-days: 14
 
@@ -151,13 +178,17 @@ jobs:
           TAG="${{ steps.vars.outputs.tag }}"
           PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || "")
 
-          echo "### 📦 资产下载与完整性校验" > release_body.md
+          echo "### 📦 官方客户端下载与安装方式" > release_body.md
           echo "" >> release_body.md
-          echo "| 操作系统平台 | 安装包名称 | SHA256 校验文件 |" >> release_body.md
-          echo "| :--- | :--- | :--- |" >> release_body.md
-          echo "| 🪟 Windows (x64) | \`Illacme-Plenipes-Windows-x64.zip\` | \`Illacme-Plenipes-Windows-x64.zip.sha256\` |" >> release_body.md
-          echo "| 🍎 macOS (Apple Silicon) | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip\` | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip.sha256\` |" >> release_body.md
-          echo "| 🐧 Linux (x64) | \`Illacme-Plenipes-Linux-x64.tar.gz\` | \`Illacme-Plenipes-Linux-x64.tar.gz.sha256\` |" >> release_body.md
+          echo "| 操作系统平台 | 安装格式 | 下载文件 | 推荐场景 |" >> release_body.md
+          echo "| :--- | :--- | :--- | :--- |" >> release_body.md
+          echo "| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg\` | **首选**：挂载后直接拖入 Applications |" >> release_body.md
+          echo "| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip\` | 免挂载直接解压使用 |" >> release_body.md
+          echo "| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | \`Illacme-Plenipes-Windows-x64-Setup.exe\` | **首选**：标准向导安装、自动创建桌面快捷方式 |" >> release_body.md
+          echo "| 🪟 Windows (x64) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-Windows-x64.zip\` | 免安装纯便携版，解压即用 |" >> release_body.md
+          echo "| 🐧 **Linux (x64)** | 原生独立可执行归档 | \`Illacme-Plenipes-Linux-x64.tar.gz\` | Linux 桌面与服务器直接运行 |" >> release_body.md
+          echo "" >> release_body.md
+          echo "> 💡 **完整性保障**：每个安装文件均附带对应的 \`.sha256\` 签名校验文件。" >> release_body.md
           echo "" >> release_body.md
           echo "### ✨ 本次更新内容 (What's New)" >> release_body.md
           echo "" >> release_body.md
