@@ -33,6 +33,11 @@ class FrozenPathResolver:
         return cls._cached_root
 
     @classmethod
+    def resolve(cls, relative_path: str) -> str:
+        """解析相对于应用程序包根目录的物理路径"""
+        return os.path.abspath(os.path.join(cls.get_bundle_root(), relative_path))
+
+    @classmethod
     def get_dashboard_dir(cls) -> str:
         """获取仪表盘前端静态资源目录 (web/dashboard)"""
         bundle_root = cls.get_bundle_root()

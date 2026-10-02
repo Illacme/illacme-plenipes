@@ -16,6 +16,7 @@ from typing import Optional
 
 from core.utils.tracing import tlog
 from core.utils.frozen_paths import FrozenPathResolver
+from desktop.tray import SystemTrayManager
 
 # 遵从 Rule #6 系统默认端口规划
 SINGLETON_PORT = 43210
@@ -26,6 +27,8 @@ HEALTH_URL = f"http://127.0.0.1:{API_PORT}/health"
 _lock_socket: Optional[socket.socket] = None
 _server_thread: Optional[threading.Thread] = None
 _should_exit = threading.Event()
+_window_instance: Optional[object] = None
+_tray_manager: Optional[SystemTrayManager] = None
 
 
 def acquire_singleton_lock(port: int = SINGLETON_PORT) -> bool:
@@ -81,8 +84,39 @@ def _run_server_background() -> None:
         tlog.error(f"❌ [桌面网关] 启动异常: {e}")
 
 
+def _focus_or_open_window() -> None:
+    """聚焦唤起主窗口或在浏览器中打开"""
+    global _window_instance
+    if _window_instance:
+        try:
+            if hasattr(_window_instance, "restore"):
+                _window_instance.restore()
+            if hasattr(_window_instance, "show"):
+                _window_instance.show()
+            return
+        except Exception as e:
+            tlog.debug(f"⚠️ [原生窗口] 唤起失败，回退至浏览器: {e}")
+    webbrowser.open(API_URL)
+
+
+def _graceful_quit() -> None:
+    """优雅退出桌面应用"""
+    _should_exit.set()
+    global _tray_manager, _window_instance
+    if _tray_manager:
+        _tray_manager.stop()
+    if _window_instance:
+        try:
+            _window_instance.destroy()
+        except Exception:
+            pass
+    release_singleton_lock()
+    sys.exit(0)
+
+
 def _launch_native_window(target_url: str) -> bool:
     """尝试使用 pywebview 打开独立的毛玻璃高质感原生窗口"""
+    global _window_instance
     try:
         import webview
         tlog.info("🖥️ [桌面应用] 正在唤起系统原生 WebKit/WebView2 窗口...")
@@ -100,6 +134,7 @@ def _launch_native_window(target_url: str) -> bool:
             min_size=(960, 600),
             background_color="#0b1219"
         )
+        _window_instance = window
         window.events.closed += _on_closed
         webview.start(debug=False)
         return True
@@ -113,6 +148,7 @@ def _launch_native_window(target_url: str) -> bool:
 
 def run_desktop_app() -> int:
     """桌面应用程序主函数"""
+    global _tray_manager
     tlog.info("🚀 [桌面应用] 正在启动 Illacme Plenipes 独立桌面工作台...")
 
     # 1. 单例进程检测 (Rule #6 端口规划)
@@ -123,9 +159,7 @@ def run_desktop_app() -> int:
 
     # 2. 注册系统退出信号监听
     def _sig_handler(signum, frame):
-        _should_exit.set()
-        release_singleton_lock()
-        sys.exit(0)
+        _graceful_quit()
 
     signal.signal(signal.SIGINT, _sig_handler)
     signal.signal(signal.SIGTERM, _sig_handler)
@@ -143,7 +177,14 @@ def run_desktop_app() -> int:
 
         tlog.info(f"✨ [桌面应用] 出版社网关已就绪: {API_URL}")
 
-        # 5. 双模呈现：优先原生独立窗口，降级浏览器标签页
+        # 5. 挂载后台系统托盘 (System Tray / 菜单栏图标)
+        _tray_manager = SystemTrayManager(api_url=API_URL)
+        _tray_manager.start_in_thread(
+            on_open=_focus_or_open_window,
+            on_quit=_graceful_quit
+        )
+
+        # 6. 双模呈现：优先原生独立窗口，降级浏览器标签页
         native_success = _launch_native_window(API_URL)
         if not native_success:
             webbrowser.open(API_URL)
@@ -157,7 +198,7 @@ def run_desktop_app() -> int:
         tlog.info("🛑 [桌面应用] 接收到退出中断信号。")
         return 0
     finally:
-        release_singleton_lock()
+        _graceful_quit()
 
 
 if __name__ == "__main__":

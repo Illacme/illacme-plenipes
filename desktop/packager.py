@@ -65,6 +65,11 @@ class DesktopPackager:
             "markdown",
             "latex2mathml",
             "qrcode",
+            "pystray",
+            "pystray._darwin",
+            "pystray._win32",
+            "pystray._xorg",
+            "webview",
         ]
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
