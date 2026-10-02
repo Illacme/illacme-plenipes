@@ -15,12 +15,11 @@ from desktop.tray import SystemTrayManager
 
 def test_system_tray_fallback_when_dependency_missing():
     """测试在缺失 pystray 依赖时能够 100% 优雅降级且不抛出异常"""
-    with patch("desktop.tray._PYSTRAY_AVAILABLE", False):
+    with patch("desktop.tray._get_pystray", return_value=None):
         tray = SystemTrayManager(api_url="http://127.0.0.1:43212")
         assert tray.is_supported() is False
         assert tray.start_in_thread() is False
         assert tray.build_menu() is None
-        assert tray._generate_icon_image() is None
         # stop 调用不报错
         tray.stop()
 
@@ -28,12 +27,10 @@ def test_system_tray_fallback_when_dependency_missing():
 def test_system_tray_icon_generation_with_pil():
     """测试使用 PIL 能在内存中成功合成科技风托盘微标"""
     tray = SystemTrayManager()
-    # 无论有无 pystray，只要 PIL 可用，测试图像生成
-    with patch("desktop.tray._PYSTRAY_AVAILABLE", True):
-        img = tray._generate_icon_image()
-        if img is not None:
-            assert img.size == (64, 64)
-            assert img.mode == "RGBA"
+    img = tray._generate_icon_image()
+    if img is not None:
+        assert img.size == (64, 64)
+        assert img.mode == "RGBA"
 
 
 def test_system_tray_actions_dispatch():
@@ -76,8 +73,7 @@ def test_system_tray_lifecycle_with_mocked_pystray():
     mock_icon_instance = MagicMock()
     mock_pystray.Icon.return_value = mock_icon_instance
 
-    with patch("desktop.tray._PYSTRAY_AVAILABLE", True), \
-         patch("desktop.tray.pystray", mock_pystray), \
+    with patch("desktop.tray._get_pystray", return_value=mock_pystray), \
          patch.object(SystemTrayManager, "is_supported", return_value=True), \
          patch.object(SystemTrayManager, "_generate_icon_image", return_value=MagicMock()):
 
@@ -92,3 +88,4 @@ def test_system_tray_lifecycle_with_mocked_pystray():
         tray.stop()
         assert tray._icon is None
         mock_icon_instance.stop.assert_called_once()
+

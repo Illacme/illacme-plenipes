@@ -17,16 +17,23 @@ import json
 from core.utils.tracing import tlog
 from core.utils.frozen_paths import FrozenPathResolver
 
-# 防御性检测 pystray 与 PIL 依赖
+# 防御性检测 PIL 依赖与动态加载 pystray
 try:
-    import pystray
     from PIL import Image, ImageDraw
-    _PYSTRAY_AVAILABLE = True
+    _PIL_AVAILABLE = True
 except ImportError:
-    pystray = None
     Image = None
     ImageDraw = None
-    _PYSTRAY_AVAILABLE = False
+    _PIL_AVAILABLE = False
+
+
+def _get_pystray():
+    """安全动态加载 pystray 模块 (防 PyInstaller 跨系统静态分析误爆)"""
+    try:
+        import importlib
+        return importlib.import_module("pystray")
+    except Exception:
+        return None
 
 
 class SystemTrayManager:
@@ -42,7 +49,8 @@ class SystemTrayManager:
     @classmethod
     def is_supported(cls) -> bool:
         """检查当前运行环境是否支持系统托盘"""
-        if not _PYSTRAY_AVAILABLE:
+        pystray = _get_pystray()
+        if not pystray or not _PIL_AVAILABLE:
             return False
         # 无图形界面的 Linux (CI 或纯服务器终端) 优雅跳过
         if sys.platform.startswith("linux") and not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
@@ -51,7 +59,7 @@ class SystemTrayManager:
 
     def _generate_icon_image(self) -> Optional[object]:
         """生成或加载托盘图标 (64x64 RGBA)"""
-        if not _PYSTRAY_AVAILABLE:
+        if not _PIL_AVAILABLE:
             return None
 
         # 1. 尝试从打包或本地路径读取网站 Logo
@@ -164,7 +172,8 @@ class SystemTrayManager:
 
     def build_menu(self):
         """构建托盘上下文菜单"""
-        if not _PYSTRAY_AVAILABLE:
+        pystray = _get_pystray()
+        if not pystray:
             return None
         return pystray.Menu(
             pystray.MenuItem("🌐 打开出版工作台", self._action_open, default=True),
@@ -184,6 +193,10 @@ class SystemTrayManager:
         """在独立后台线程中挂载常驻系统托盘"""
         if not self.is_supported():
             tlog.info("ℹ️ [系统托盘] 当前运行环境无需或未启用系统托盘，优雅跳过。")
+            return False
+
+        pystray = _get_pystray()
+        if not pystray:
             return False
 
         self._on_open = on_open

@@ -16,7 +16,6 @@ from typing import Optional
 
 from core.utils.tracing import tlog
 from core.utils.frozen_paths import FrozenPathResolver
-from desktop.tray import SystemTrayManager
 
 # 遵从 Rule #6 系统默认端口规划
 SINGLETON_PORT = 43210
@@ -28,7 +27,7 @@ _lock_socket: Optional[socket.socket] = None
 _server_thread: Optional[threading.Thread] = None
 _should_exit = threading.Event()
 _window_instance: Optional[object] = None
-_tray_manager: Optional[SystemTrayManager] = None
+_tray_manager: Optional[object] = None
 
 
 def acquire_singleton_lock(port: int = SINGLETON_PORT) -> bool:
@@ -177,12 +176,17 @@ def run_desktop_app() -> int:
 
         tlog.info(f"✨ [桌面应用] 出版社网关已就绪: {API_URL}")
 
-        # 5. 挂载后台系统托盘 (System Tray / 菜单栏图标)
-        _tray_manager = SystemTrayManager(api_url=API_URL)
-        _tray_manager.start_in_thread(
-            on_open=_focus_or_open_window,
-            on_quit=_graceful_quit
-        )
+        # 5. 挂载后台系统托盘 (System Tray / 菜单栏图标，仅在环境支持时唤起)
+        try:
+            from desktop.tray import SystemTrayManager
+            if SystemTrayManager.is_supported():
+                _tray_manager = SystemTrayManager(api_url=API_URL)
+                _tray_manager.start_in_thread(
+                    on_open=_focus_or_open_window,
+                    on_quit=_graceful_quit
+                )
+        except Exception as e:
+            tlog.debug(f"ℹ️ [系统托盘] 托盘未挂载或当前环境不支持: {e}")
 
         # 6. 双模呈现：优先原生独立窗口，降级浏览器标签页
         native_success = _launch_native_window(API_URL)
