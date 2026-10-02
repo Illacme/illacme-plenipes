@@ -33,7 +33,7 @@ jobs:
             os-name: Windows (x64)
           - os: macos-14
             os-name: macOS (Apple Silicon arm64)
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             os-name: Linux (x64)
 
     permissions:
@@ -145,7 +145,7 @@ jobs:
   publish-release:
     name: 🚀 聚合发布至 GitHub Releases
     needs: [build-desktop]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
