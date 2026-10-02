@@ -65,12 +65,30 @@ class DesktopPackager:
             "markdown",
             "latex2mathml",
             "qrcode",
-            "pystray",
-            "pystray._darwin",
-            "pystray._win32",
-            "pystray._xorg",
-            "webview",
         ]
+
+        # 动态探测已安装的桌面图形库并按系统隔离注入隐式依赖 (防跨系统分析报错)
+        cur_sys = platform.system()
+        try:
+            import importlib.util
+            if importlib.util.find_spec("pystray") is not None:
+                hidden_imports.append("pystray")
+                if cur_sys == "Darwin":
+                    hidden_imports.append("pystray._darwin")
+                elif cur_sys == "Windows":
+                    hidden_imports.append("pystray._win32")
+                elif cur_sys == "Linux":
+                    hidden_imports.append("pystray._xorg")
+        except Exception:
+            pass
+
+        try:
+            import importlib.util
+            if importlib.util.find_spec("webview") is not None:
+                hidden_imports.append("webview")
+        except Exception:
+            pass
+
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
 
