@@ -87,7 +87,18 @@ if (document.readyState === 'loading') {
  */
 window.restartSystemKernel = async function () {
     if (window._isRestartingKernel) return;
-    const ok = confirm("⚡ 检测到本地核心代码已更新。\n\n是否立即平滑热重启内核？重启将在 1 秒内完成。");
+    let ok = false;
+    if (typeof window.confirmSovereignAction === 'function') {
+        ok = await window.confirmSovereignAction({
+            title: '⚡ 平滑热重启系统内核',
+            text: '检测到本地核心代码已更新。<br>是否立即平滑热重启内核？重启将在 1 秒内完成。',
+            icon: 'info',
+            confirmText: '立即平滑重启',
+            confirmColor: '#38bdf8'
+        });
+    } else {
+        ok = confirm("⚡ 检测到本地核心代码已更新。\n\n是否立即平滑热重启内核？重启将在 1 秒内完成。");
+    }
     if (!ok) return;
     window._isRestartingKernel = true;
     const badge = document.getElementById('footer-version-badge');

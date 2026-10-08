@@ -130,3 +130,39 @@ class LedgerExtensionsMixin:
     def delete_syndication_task(self, rel_path=None, target_id=None):
         with self.lock:
             self.sqlite.delete_syndication_task(rel_path, target_id)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 🌐 [V125.0] 全站托管部署流水记录表账本代理
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def create_hosting_deploy_batch(self, batch_id, trigger_source="workbench",
+                                    imprint_id="default", theme="default",
+                                    pages_count=0, bundle_size_kb=0.0,
+                                    targets_json=None, overall_status="RUNNING"):
+        with self.lock:
+            return self.sqlite.create_hosting_deploy_batch(
+                batch_id=batch_id, trigger_source=trigger_source,
+                imprint_id=imprint_id, theme=theme,
+                pages_count=pages_count, bundle_size_kb=bundle_size_kb,
+                targets_json=targets_json, overall_status=overall_status
+            )
+
+    def update_hosting_deploy_batch(self, batch_id, overall_status=None,
+                                    duration_sec=None, targets_json=None,
+                                    logs_excerpt=None):
+        with self.lock:
+            self.sqlite.update_hosting_deploy_batch(
+                batch_id=batch_id, overall_status=overall_status,
+                duration_sec=duration_sec, targets_json=targets_json,
+                logs_excerpt=logs_excerpt
+            )
+
+    def list_hosting_deploy_batches(self, imprint_id=None, limit=50, offset=0):
+        return self.sqlite.list_hosting_deploy_batches(imprint_id=imprint_id, limit=limit, offset=offset)
+
+    def get_hosting_deploy_batch(self, batch_id):
+        return self.sqlite.get_hosting_deploy_batch(batch_id)
+
+    def delete_hosting_deploy_batch(self, batch_id):
+        with self.lock:
+            self.sqlite.delete_hosting_deploy_batch(batch_id)

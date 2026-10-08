@@ -48,14 +48,34 @@
     };
 
     window.retryAllSyndicationTasks = async function () {
-        if (!confirm("是否确认一键重试所有失败的分发任务？")) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🔄 一键重试分发',
+                text: '是否确认一键重试所有失败的分发任务？',
+                icon: 'question',
+                confirmText: '立即重试',
+                confirmColor: '#00f2fe'
+            });
+            if (!ok) return;
+        } else if (!confirm("是否确认一键重试所有失败的分发任务？")) return;
+
         const res = await apiFetch('/api/governance/syndication/queue/retry', { method: 'POST', body: JSON.stringify({}) });
         if (res?.success) { showToast("🔄 所有任务已重置并在后台拉起...", "success"); window.refreshSyndicationQueue(); }
         else showToast("重置失败", "error");
     };
 
     window.deleteSyndicationTask = async function (relPath, targetId) {
-        if (!confirm(`确定丢弃 ${targetId} 渠道的分发任务？`)) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 丢弃分发任务',
+                text: `确定丢弃【${targetId}】渠道的分发任务吗？`,
+                icon: 'warning',
+                confirmText: '确定丢弃',
+                confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定丢弃 ${targetId} 渠道的分发任务？`)) return;
+
         const res = await apiFetch('/api/governance/syndication/queue/delete', {
             method: 'POST', body: JSON.stringify({ rel_path: relPath, target_id: targetId })
         });
@@ -63,7 +83,17 @@
     };
 
     window.clearFailedSyndicationTasks = async function () {
-        if (!confirm("⚠️ 确定要清空所有 FAILED 状态的分发任务吗？")) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🧹 清空失败任务',
+                text: '确定要清空队列中所有处于 FAILED 状态的分发任务吗？',
+                icon: 'warning',
+                confirmText: '立即清空',
+                confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm("⚠️ 确定要清空所有 FAILED 状态的分发任务吗？")) return;
+
         const res = await apiFetch('/api/governance/syndication/queue/delete', { method: 'POST', body: JSON.stringify({}) });
         if (res?.success) { showToast("🗑️ 已清空失败任务", "success"); window.refreshSyndicationQueue(); }
     };

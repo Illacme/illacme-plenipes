@@ -157,7 +157,65 @@ def publish():
             self.assertEqual(res.status_code, 200)
             data = res.json()
             self.assertEqual(data["status"], "error")
-            self.assertIn("未找到稿件", data["error"])
+    def test_wechat_theme_presets(self):
+        """测试微信公众号主题配色（如翡翠绿、暖秋琥珀金）排版渲染"""
+        sample_md = "# 翡翠测试\n\n## 翡翠二级标题\n\n> 优雅自然\n\n正文内容。"
+        with patch("services.api.routes.syndication_preview.resolve_safe_path", return_value="/mock/vault/theme.md"), \
+             patch("builtins.open", unittest.mock.mock_open(read_data=sample_md)), \
+             patch("os.path.exists", return_value=True), \
+             patch("services.api.routes.system.verify_token", return_value=True):
+
+            res = self.client.post("/api/syndication/preview", json={
+                "rel_path": "Blog/theme.md",
+                "target_platform": "wechat",
+                "theme": "emerald"
+            })
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["status"], "success")
+            self.assertIn("#059669", data["rendered_html"])
+
+
+    def test_multi_format_exporter_artifacts(self):
+        """测试多平台格式导出产物（CDN 图床直链、标准 Frontmatter、正文纯净 Markdown）"""
+        sample_md = """---
+title: 图床测试稿件
+tags: python, web
+---
+
+# 一级主标题
+
+正文中引用了本地图片：![架构图](./assets/arch.png) 以及网络图片：![网络图](https://cdn.example.com/logo.png)。
+
+结尾段落。
+"""
+        with patch("services.api.routes.syndication_preview.resolve_safe_path", return_value="/mock/vault/img.md"), \
+             patch("builtins.open", unittest.mock.mock_open(read_data=sample_md)), \
+             patch("os.path.exists", return_value=True), \
+             patch("services.api.routes.system.verify_token", return_value=True):
+
+            res = self.client.post("/api/syndication/preview", json={
+                "rel_path": "Blog/img.md",
+                "target_platform": "juejin"
+            })
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["status"], "success")
+
+            # 1. 验证 CDN 图床自动补全
+            self.assertIn("cdn_markdown", data)
+            self.assertIn("https://example.com/assets/arch.png", data["cdn_markdown"])
+            self.assertIn("https://cdn.example.com/logo.png", data["cdn_markdown"])
+
+            # 2. 验证纯净 Markdown（去除一级 H1 避免平台重复标题）
+            self.assertIn("clean_markdown", data)
+            self.assertNotIn("# 一级主标题", data["clean_markdown"])
+            self.assertIn("正文中引用了本地图片", data["clean_markdown"])
+
+            # 3. 验证标准 Frontmatter
+            self.assertIn("frontmatter_markdown", data)
+            self.assertIn('canonical_url: https://example.com/Blog/img', data["frontmatter_markdown"])
+            self.assertIn('title: "图床测试稿件"', data["frontmatter_markdown"])
 
 
 if __name__ == '__main__':

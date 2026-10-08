@@ -41,6 +41,27 @@ INLINE_STYLES = {
     "img": "max-width: 100%; border-radius: 8px; margin: 16px auto; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.06);"
 }
 
+THEME_PALETTES = {
+    "emerald": ("#059669", "#10b981", "#ecfdf5"),
+    "nature_green": ("#059669", "#10b981", "#ecfdf5"),
+    "amber": ("#d97706", "#f59e0b", "#fffbeb"),
+    "warm_autumn": ("#d97706", "#f59e0b", "#fffbeb"),
+    "minimal": ("#0f172a", "#64748b", "#f8fafc"),
+    "monochrome": ("#0f172a", "#64748b", "#f8fafc"),
+}
+
+
+def get_theme_inline_styles(theme: str = "default") -> Dict[str, str]:
+    """根据主题预设动态调整主色调与引用色"""
+    styles = dict(INLINE_STYLES)
+    t_key = (theme or "default").lower()
+    if t_key in THEME_PALETTES:
+        pri, sec, bg = THEME_PALETTES[t_key]
+        styles["h1"] = styles["h1"].replace("#2563eb", pri)
+        styles["h2"] = styles["h2"].replace("#2563eb", pri)
+        styles["blockquote"] = styles["blockquote"].replace("#3b82f6", sec).replace("#f8fafc", bg)
+    return styles
+
 
 def is_external_link(url: str) -> bool:
     """判断是否为需要转换的非微信外链"""
@@ -115,27 +136,28 @@ def build_footnotes_section(footnotes: List[Dict[str, str]]) -> str:
     return section_html
 
 
-def apply_inline_styles(html: str) -> str:
+def apply_inline_styles(html: str, theme: str = "default") -> str:
     """为常用的 HTML 标签注入优雅内联 CSS 样式"""
+    styles = get_theme_inline_styles(theme)
     # 替换各种容器和排版标签
     replacements = [
-        (r'<h1>', f'<h1 style="{INLINE_STYLES["h1"]}">'),
-        (r'<h2>', f'<h2 style="{INLINE_STYLES["h2"]}">'),
-        (r'<h3>', f'<h3 style="{INLINE_STYLES["h3"]}">'),
-        (r'<h4>', f'<h4 style="{INLINE_STYLES["h4"]}">'),
-        (r'<p>', f'<p style="{INLINE_STYLES["p"]}">'),
-        (r'<blockquote>', f'<blockquote style="{INLINE_STYLES["blockquote"]}">'),
-        (r'<hr\s*/?>', f'<hr style="{INLINE_STYLES["hr"]}">'),
-        (r'<strong>', f'<strong style="{INLINE_STYLES["strong"]}">'),
-        (r'<b>', f'<b style="{INLINE_STYLES["strong"]}">'),
-        (r'<em>', f'<em style="{INLINE_STYLES["em"]}">'),
-        (r'<ul>', f'<ul style="{INLINE_STYLES["ul"]}">'),
-        (r'<ol>', f'<ol style="{INLINE_STYLES["ol"]}">'),
-        (r'<li>', f'<li style="{INLINE_STYLES["li"]}">'),
-        (r'<table>', f'<table style="{INLINE_STYLES["table"]}">'),
-        (r'<th>', f'<th style="{INLINE_STYLES["th"]}">'),
-        (r'<td>', f'<td style="{INLINE_STYLES["td"]}">'),
-        (r'<img([^>]*)>', f'<img\\1 style="{INLINE_STYLES["img"]}">'),
+        (r'<h1>', f'<h1 style="{styles["h1"]}">'),
+        (r'<h2>', f'<h2 style="{styles["h2"]}">'),
+        (r'<h3>', f'<h3 style="{styles["h3"]}">'),
+        (r'<h4>', f'<h4 style="{styles["h4"]}">'),
+        (r'<p>', f'<p style="{styles["p"]}">'),
+        (r'<blockquote>', f'<blockquote style="{styles["blockquote"]}">'),
+        (r'<hr\s*/?>', f'<hr style="{styles["hr"]}">'),
+        (r'<strong>', f'<strong style="{styles["strong"]}">'),
+        (r'<b>', f'<b style="{styles["strong"]}">'),
+        (r'<em>', f'<em style="{styles["em"]}">'),
+        (r'<ul>', f'<ul style="{styles["ul"]}">'),
+        (r'<ol>', f'<ol style="{styles["ol"]}">'),
+        (r'<li>', f'<li style="{styles["li"]}">'),
+        (r'<table>', f'<table style="{styles["table"]}">'),
+        (r'<th>', f'<th style="{styles["th"]}">'),
+        (r'<td>', f'<td style="{styles["td"]}">'),
+        (r'<img([^>]*)>', f'<img\\1 style="{styles["img"]}">'),
     ]
 
     # 特殊处理 code 和 pre：区分代码块与行内代码
@@ -153,7 +175,7 @@ def apply_inline_styles(html: str) -> str:
 
     html = re.sub(
         r'<pre[^>]*>(?:\s*<span></span>\s*)?<code(?:\s+class="([^"]*)")?>',
-        f'<div style="{pre_wrapper_style}">{mac_header}<pre style="{INLINE_STYLES["pre"]}; margin: 0; border-radius: 0;"><code style="{INLINE_STYLES["code_block"]}">',
+        f'<div style="{pre_wrapper_style}">{mac_header}<pre style="{styles["pre"]}; margin: 0; border-radius: 0;"><code style="{styles["code_block"]}">',
         html
     )
     html = re.sub(r'</code></pre>(?:\s*</div>)?', '</code></pre></div>', html)
@@ -161,7 +183,7 @@ def apply_inline_styles(html: str) -> str:
     # 处理未被 pre 包裹的行内 code
     def replace_inline_code(match):
         content = match.group(1)
-        return f'<code style="{INLINE_STYLES["code_inline"]}">{content}</code>'
+        return f'<code style="{styles["code_inline"]}">{content}</code>'
 
     # 使用分步替换保护代码块内部
     code_blocks = []
@@ -177,16 +199,17 @@ def apply_inline_styles(html: str) -> str:
     for pattern, repl in replacements:
         html = re.sub(pattern, repl, html)
 
-    return f'<section style="{INLINE_STYLES["container"]}">{html}</section>'
+    return f'<section style="{styles["container"]}">{html}</section>'
 
 
 def render_wechat_html(content: str, config: Dict[str, Any] = None) -> str:
     """
     将原始 Markdown 渲染为专为微信公众号定制的高保真富文本 HTML。
-    可配置 convert_footnotes（默认为 True）。
+    可配置 convert_footnotes（默认为 True）与 theme（默认 default）。
     """
     config = config or {}
     convert_footnotes = config.get("convert_footnotes", True)
+    theme = config.get("theme", "default")
 
     # 剥离 Markdown 顶部的 YAML Frontmatter（避免元数据污染微信正文）
     if content.startswith("---"):
@@ -203,7 +226,7 @@ def render_wechat_html(content: str, config: Dict[str, Any] = None) -> str:
     raw_html = markdown.markdown(content, extensions=md_extensions)
 
     # 注入内联 CSS
-    styled_html = apply_inline_styles(raw_html)
+    styled_html = apply_inline_styles(raw_html, theme=theme)
 
     # 追加文末脚注卡片
     if footnotes:

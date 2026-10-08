@@ -16,7 +16,7 @@ _last_juejin_time = 0.0
 class JuejinSyndicator(BaseSyndicator):
     PLUGIN_ID = "juejin"
     DISPLAY_NAME = "稀土掘金"
-    ICON = "🧱"
+    ICON = "💎"
     VERSION = "V1.0"
     DESCRIPTION = "将文章同步保存至稀土掘金的草稿箱，支持 Cookie 或 API Token 验证。"
     SLA_TIER = "tier2"

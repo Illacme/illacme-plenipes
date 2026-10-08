@@ -124,7 +124,7 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
         wechat_body = re.sub(r'^\s*#\s+.*$', '', body, count=1, flags=re.MULTILINE).strip()
         _, f_list = transmute_footnotes(wechat_body)
         footnotes_count = len(f_list)
-        rendered_html = render_wechat_html(wechat_body, {"convert_footnotes": req.convert_footnotes})
+        rendered_html = render_wechat_html(wechat_body, {"convert_footnotes": req.convert_footnotes, "theme": req.theme})
         compliance["platform_rules"] = "微信要求全局内联 CSS，非白名单外链已转换为文末脚注上标"
 
     elif platform in ("zhihu", "bilibili", "toutiao"):
@@ -178,6 +178,41 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
         rendered_html = markdown.markdown(body, extensions=['extra', 'codehilite'])
         compliance["platform_rules"] = f"{platform.upper()} 通用排版：采用标准 CommonMark 与代码高亮渲染"
 
+    # 🌐 生成通用图床绝对外链与标准 Frontmatter 导出产物
+    site_url = getattr(engine.config.compliance, "site_url", "") if hasattr(engine.config, "compliance") else ""
+    if not site_url and hasattr(engine.config, "site") and hasattr(engine.config.site, "url"):
+        site_url = getattr(engine.config.site, "url", "") or ""
+    site_url = str(site_url).rstrip('/')
+
+    clean_body = re.sub(r'^\s*#\s+.*$', '', body, count=1, flags=re.MULTILINE).strip()
+    clean_markdown = clean_body
+
+    cdn_markdown = body
+    if site_url:
+        def _replace_img(m):
+            alt, src = m.group(1), m.group(2)
+            if not src.startswith(('http://', 'https://', 'data:')):
+                return f"![{alt}]({site_url}/{src.lstrip('./').lstrip('/')})"
+            return m.group(0)
+        cdn_markdown = re.sub(r'!\[(.*?)\]\((.*?)\)', _replace_img, body)
+
+    tags = fm_dict.get("tags") or []
+    if isinstance(tags, str): tags = [t.strip() for t in tags.split(',')]
+    tags_str = ", ".join(f'"{t}"' for t in tags[:5]) if tags else '"tech", "notes"'
+    slug = os.path.splitext(req.rel_path)[0].replace('\\', '/')
+    canonical_url = f"{site_url}/{slug}" if site_url else f"https://your-domain.com/{slug}"
+
+    frontmatter_markdown = f"""---
+title: "{clean_title}"
+description: "{digest}"
+tags: [{tags_str}]
+canonical_url: {canonical_url}
+published: true
+---
+
+{body.strip()}
+"""
+
     return {
         "status": "success",
         "platform": platform,
@@ -187,6 +222,9 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
         "cover_url": cover_url,
         "rendered_html": rendered_html,
         "rendered_markdown": rendered_markdown,
+        "clean_markdown": clean_markdown,
+        "cdn_markdown": cdn_markdown,
+        "frontmatter_markdown": frontmatter_markdown,
         "stats": {
             "word_count": metrics["word_count"],
             "reading_time_min": metrics["reading_time_min"],

@@ -9,7 +9,18 @@ window.invokeServiceAction = async (action) => {
     if (action === 'restart') {
         // 🚀 [V55.9] 内部确认逻辑
         if (statusEl && (statusEl.innerText === 'ONLINE' || statusEl.innerText === 'RUNNING')) {
-            const confirmed = confirm("⚠️ 预览服务器正在运行中。重启将强制中断当前的预览会话，是否继续？");
+            let confirmed = false;
+            if (typeof window.confirmSovereignAction === 'function') {
+                confirmed = await window.confirmSovereignAction({
+                    title: '🔄 重启预览服务器',
+                    text: '⚠️ 预览服务器正在运行中。<br>重启将强制中断当前的实时预览会话，是否继续？',
+                    icon: 'warning',
+                    confirmText: '立即重启',
+                    confirmColor: '#eab308'
+                });
+            } else {
+                confirmed = confirm("⚠️ 预览服务器正在运行中。重启将强制中断当前的预览会话，是否继续？");
+            }
             if (!confirmed) return;
         }
 

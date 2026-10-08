@@ -489,8 +489,8 @@ def test_frontend_render_runtime_and_dom_integrity():
         if (!window.viewTemplates.tasks.includes('id="view-tasks"')) {
             throw new Error('viewTemplates.tasks missing id="view-tasks"');
         }
-        if (!window.viewTemplates.tasks.includes('dispatch-metric-grid') || !window.viewTemplates.tasks.includes('channel-matrix-grid')) {
-            throw new Error('viewTemplates.tasks missing metric or channel matrix grid');
+        if (!window.viewTemplates.tasks.includes('dispatch-metric-grid') || !window.viewTemplates.tasks.includes('metric-channels-card')) {
+            throw new Error('viewTemplates.tasks missing metric grid or metric-channels-card');
         }
 
         eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.indicator.js', 'utf8'));
@@ -1265,6 +1265,61 @@ def test_syndicate_asset_picker_modal_render_integrity():
     res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
     assert res.returncode == 0, f"Syndicate Asset Picker & Image Modal Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
     assert "SYNDICATE_ASSET_PICKER_AND_IMAGE_DETAIL_MODAL_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_dispatch_hosting_render_integrity():
+    """
+    🛡️ [V125.0] 全站托管部署大盘前端渲染函数运行时沙箱与 DOM 拓扑完备性门禁测试 (Rule 7)
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    global.window = global;
+    global.document = {
+        getElementById: (id) => ({
+            id,
+            classList: { toggle: () => {}, contains: () => true },
+            style: {},
+            innerHTML: '',
+            innerText: ''
+        })
+    };
+    global.escapeHtml = (s) => s;
+
+    // 加载目标脚本
+    eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.templates.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.hosting.render.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.workbench.js', 'utf8'));
+
+    // 1. 拓扑容器断言
+    const tpl = window.viewTemplates.tasks;
+    if (!tpl.includes('dispatch-tactical-tabs')) throw new Error('Missing dispatch-tactical-tabs');
+    if (!tpl.includes('dispatch-hosting-view')) throw new Error('Missing dispatch-hosting-view');
+    if (!tpl.includes('dispatch-social-view')) throw new Error('Missing dispatch-social-view');
+    if (!tpl.includes('hosting-control-console')) throw new Error('Missing hosting-control-console');
+    if (!tpl.includes('hosting-fleet-container')) throw new Error('Missing hosting-fleet-container');
+    if (!tpl.includes('hosting-batch-container')) throw new Error('Missing hosting-batch-container');
+
+    // 2. 真实渲染函数无异常执行
+    window.renderHostingControlCenter({ theme: 'default', bundle_exists: true, pages_count: 10, bundle_size_formatted: '2 MB' }, 3, 11);
+    window.renderHostingFleetGrid([
+        { id: 'cloudflare_pages', name: 'Cloudflare Pages', icon: '☁️', enabled: true, site_url: 'https://cf.example.com' },
+        { id: 'github_pages', name: 'GitHub Pages', icon: '🐱', enabled: false }
+    ]);
+    window.renderHostingBatchLedger([
+        { batch_id: 'deploy_test_1', started_at: '2026-10-04 10:00:00', theme: 'default', pages_count: 10, overall_status: 'SUCCESS', targets: { cloudflare_pages: { status: 'SUCCESS' } } }
+    ]);
+
+    // 3. 模式切换
+    window.switchDispatchMode('hosting');
+    window.switchDispatchMode('social');
+
+    console.log('DISPATCH_HOSTING_RENDER_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Dispatch Hosting Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "DISPATCH_HOSTING_RENDER_VERIFIED_SUCCESS" in res.stdout
 
 
 

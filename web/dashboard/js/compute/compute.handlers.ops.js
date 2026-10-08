@@ -149,7 +149,16 @@ window.ComputeHandlers.saveComputeStrategy = async function (event, skipRefetch 
  * 🔄 恢复出厂策略
  */
 window.ComputeHandlers.resetComputeStrategy = async function () {
-    if (!confirm("⚠️ 确定要恢复出厂策略吗？\n这将从系统底座拉取默认参数并覆盖当前品牌配置。")) return;
+    if (typeof window.confirmSovereignAction === 'function') {
+        const ok = await window.confirmSovereignAction({
+            title: '⚠️ 恢复出厂策略',
+            text: '确定要恢复出厂策略吗？<br>这将从系统底座拉取默认参数并覆盖当前品牌配置。',
+            icon: 'warning',
+            confirmText: '恢复默认',
+            confirmColor: '#eab308'
+        });
+        if (!ok) return;
+    } else if (!confirm("⚠️ 确定要恢复出厂策略吗？\n这将从系统底座拉取默认参数并覆盖当前品牌配置。")) return;
 
     try {
         // 🚀 [V74.85] 权威溯源：从后端获取全局底座配置，而非在前端硬编码

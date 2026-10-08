@@ -42,41 +42,21 @@
         }
     };
 
-    window.setBinderyShelfFilter = function(filter) {
-        window._binderyShelfFilter = filter || 'all';
-        window._binderyShelfPage = 1;
-        window.renderBinderyShelfHtml();
-    };
-
-    window.setBinderyShelfQuery = function(query) {
-        window._binderyShelfQuery = (query || '').trim().toLowerCase();
-        window._binderyShelfPage = 1;
-        window.renderBinderyShelfHtml();
-    };
-
-    window.changeBinderyShelfPage = function(newPage) {
-        window._binderyShelfPage = Math.max(1, newPage);
-        window.renderBinderyShelfHtml();
-    };
-
+    window.setBinderyShelfFilter = function(filter) { window._binderyShelfFilter = filter || 'all'; window._binderyShelfPage = 1; window.renderBinderyShelfHtml(); };
+    window.setBinderyShelfQuery = function(query) { window._binderyShelfQuery = (query || '').trim().toLowerCase(); window._binderyShelfPage = 1; window.renderBinderyShelfHtml(); };
+    window.changeBinderyShelfPage = function(newPage) { window._binderyShelfPage = Math.max(1, newPage); window.renderBinderyShelfHtml(); };
     window.toggleBinderyShelfBatchMode = function() {
         window._binderyShelfBatchMode = !window._binderyShelfBatchMode;
         if (!window._binderyShelfBatchMode) window._binderyShelfSelected.clear();
         window.renderBinderyShelfHtml();
     };
-
     window.toggleBinderyShelfSelect = function(filename, checked) {
-        if (checked) window._binderyShelfSelected.add(filename);
-        else window._binderyShelfSelected.delete(filename);
+        if (checked) window._binderyShelfSelected.add(filename); else window._binderyShelfSelected.delete(filename);
         window.renderBinderyShelfHtml();
     };
-
     window.toggleAllBinderyShelfSelect = function(pageFilenames) {
         const allChecked = pageFilenames.every(f => window._binderyShelfSelected.has(f));
-        pageFilenames.forEach(f => {
-            if (allChecked) window._binderyShelfSelected.delete(f);
-            else window._binderyShelfSelected.add(f);
-        });
+        pageFilenames.forEach(f => { if (allChecked) window._binderyShelfSelected.delete(f); else window._binderyShelfSelected.add(f); });
         window.renderBinderyShelfHtml();
     };
 
@@ -261,38 +241,58 @@
     };
 
     window.deleteBookFromShelf = async function(filename) {
-        if (!confirm(`确定要从书架中删除 "${filename}" 吗？此操作不可撤销。`)) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 删除出版物', text: `确定要从书架中删除【${filename}】吗？此操作不可撤销。`,
+                icon: 'warning', confirmText: '确定删除', confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定要从书架中删除 "${filename}" 吗？此操作不可撤销。`)) return;
+
         try {
             const fetchFunc = window.apiFetch || window.fetch;
             const res = await fetchFunc('/api/bindery/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename }) });
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
-            if (data && data.success) {
+            if (data?.success) {
                 window.fetchBinderyShelf();
-                if (typeof window.showToast === 'function') window.showToast(`已从书架移除: ${filename}`, 'success');
-            } else alert(`删除失败: ${(data && data.detail) || '未知错误'}`);
+                window.showToast ? window.showToast(`已从书架移除: ${filename}`, 'success') : null;
+            } else {
+                const msg = `删除失败: ${(data && data.detail) || '未知错误'}`;
+                window.showToast ? window.showToast(msg, 'error') : alert(msg);
+            }
         } catch (e) {
             console.error('[BinderyShelf] 删除异常:', e);
-            alert(`删除失败: ${e.message}`);
+            window.showToast ? window.showToast(`删除失败: ${e.message}`, 'error') : alert(`删除失败: ${e.message}`);
         }
     };
 
     window.deleteBatchBooksFromShelf = async function() {
-        const files = Array.from(window._binderyShelfSelected);
+        const files = Array.from(window._binderyShelfSelected || []);
         if (!files.length) return window.showToast?.('请先勾选需要清理的出版物', 'warning');
-        if (!confirm(`确定要批量永久删除选中的 ${files.length} 本出版物吗？此操作不可撤销。`)) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 批量删除出版物', text: `确定要批量永久删除选中的 ${files.length} 本出版物吗？此操作不可撤销。`,
+                icon: 'warning', confirmText: '批量删除', confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定要批量永久删除选中的 ${files.length} 本出版物吗？此操作不可撤销。`)) return;
+
         try {
-            const fetchFunc = window.apiFetch || window.fetch;
+            const fetchFunc = window.apiFunc || window.fetch;
             const res = await fetchFunc('/api/bindery/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filenames: files }) });
             const data = (res && typeof res.json === 'function') ? await res.json() : res;
-            if (data && data.success) {
+            if (data?.success) {
                 window._binderyShelfSelected.clear();
                 window._binderyShelfBatchMode = false;
                 window.fetchBinderyShelf();
-                if (typeof window.showToast === 'function') window.showToast(`已成功批量清理 ${data.count || files.length} 本出版物`, 'success');
-            } else alert(`批量删除失败: ${(data && data.detail) || '未知错误'}`);
+                window.showToast ? window.showToast(`已成功批量清理 ${data.count || files.length} 本出版物`, 'success') : null;
+            } else {
+                const msg = `批量删除失败: ${(data && data.detail) || '未知错误'}`;
+                window.showToast ? window.showToast(msg, 'error') : alert(msg);
+            }
         } catch (e) {
             console.error('[BinderyShelf] 批量删除异常:', e);
-            alert(`批量删除异常: ${e.message}`);
+            window.showToast ? window.showToast(`批量删除异常: ${e.message}`, 'error') : alert(`批量删除异常: ${e.message}`);
         }
     };
 })();

@@ -1248,13 +1248,6 @@
     color: #0f172a !important;
 }
 
-[data-theme="light"] #view-tasks .dispatch-view-header h2 {
-    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    color: #0f172a !important;
-}
 
 [data-theme="light"] #view-tasks .dispatch-metric-card {
     background: #ffffff !important;
@@ -1392,6 +1385,8 @@
 
 [data-theme="light"] #view-tasks .dispatch-tabs-bar {
     border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 [data-theme="light"] #view-tasks .dispatch-tab-btn {
@@ -2258,10 +2253,45 @@
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
-[data-theme="light"] #view-tasks .ledger-table th {
-    background: #f8fafc;
-    color: #475569;
-    border-bottom-color: rgba(0, 0, 0, 0.08);
+[data-theme="light"] #view-tasks .ledger-table thead,
+[data-theme="light"] #view-tasks .dispatch-ledger-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+[data-theme="light"] #view-tasks .ledger-table th,
+[data-theme="light"] #view-tasks .dispatch-ledger-table th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] #view-tasks .dispatch-ledger-pagination-dock {
+    background: #ffffff !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] #view-tasks .dispatch-status-badge.is-success {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+    color: #166534 !important;
+}
+[data-theme="light"] #view-tasks .dispatch-status-badge.is-failed {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #991b1b !important;
+}
+[data-theme="light"] #view-tasks .ledger-diag-card {
+    background: #fff1f2 !important;
+    border-color: #fecdd3 !important;
+    box-shadow: none !important;
+}
+[data-theme="light"] #view-tasks .ledger-error-pre {
+    background: #ffffff !important;
+    color: #991b1b !important;
+    border: 1px solid #fee2e2 !important;
+}
+[data-theme="light"] #view-tasks .dispatch-stream-title {
+    color: #0f172a !important;
 }
 [data-theme="light"] #view-tasks .ledger-table td {
     color: #334155;
@@ -2294,6 +2324,74 @@
     background: #fee2e2;
     color: #991b1b;
 }
+
+/* 战区三：整站部署流水亮色适配 */
+[data-theme="light"] .dispatch-ledger-table.hosting-table-compact th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .batch-short-code {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+[data-theme="light"] .batch-short-code:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #0284c7;
+}
+
+[data-theme="light"] .ledger-badge.badge-success {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+    color: #166534 !important;
+}
+
+[data-theme="light"] .ledger-badge.badge-running {
+    background: #e0f2fe !important;
+    border-color: #7dd3fc !important;
+    color: #0369a1 !important;
+}
+
+[data-theme="light"] .ledger-badge.badge-warning {
+    background: #fef3c7 !important;
+    border-color: #fde68a !important;
+    color: #92400e !important;
+}
+
+[data-theme="light"] .ledger-badge.badge-failed {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #991b1b !important;
+}
+
+[data-theme="light"] .ledger-badge.badge-idle {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+}
+
+[data-theme="light"] .target-res-tag.ok {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+    border-color: #86efac !important;
+}
+
+[data-theme="light"] .target-res-tag.err {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border-color: #fca5a5 !important;
+}
+
+[data-theme="light"] .target-res-tag.muted {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+}
+
 
 /* 1. 顶部指示徽章亮色适配 */
 [data-theme="light"] .dispatch-indicator-badge {
@@ -2464,13 +2562,6 @@
 }
 
 /* 3. 全屏任务大厅亮色适配 */
-[data-theme="light"] #view-tasks .dispatch-view-header h2 {
-    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    color: #0f172a !important;
-}
 
 [data-theme="light"] #view-tasks .dispatch-hub-tag {
     background: #f0f9ff !important;
@@ -2628,18 +2719,50 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Markdown 复制按钮 */
+/* 微信公众号富文本复制按钮 */
+[data-theme="light"] .syndicate-copy-wechat-btn {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(5, 150, 105, 0.3) !important;
+}
+
+[data-theme="light"] .syndicate-copy-wechat-btn:hover {
+    background: #047857 !important;
+}
+
+/* Markdown 与多格式导出按钮 */
 [data-theme="light"] .syndicate-copy-markdown-btn {
     background: #ffffff !important;
     color: #1e293b !important;
-    border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
 }
 
 [data-theme="light"] .syndicate-copy-markdown-btn:hover {
     background: #f8fafc !important;
     border-color: #0284c7 !important;
     color: #0284c7 !important;
+}
+
+/* 多格式导出下拉菜单（亮色主题毛玻璃卡片） */
+[data-theme="light"] .syndicate-export-dropdown {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .export-dropdown-item:hover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+}
+
+[data-theme="light"] .export-dropdown-item .item-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .export-dropdown-item .item-desc {
+    color: #64748b !important;
 }
 
 /* 5. 审查舞台与真机排版底盘（破除 White on White 关键） */

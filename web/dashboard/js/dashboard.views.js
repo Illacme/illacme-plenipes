@@ -61,6 +61,10 @@ window.switchViewDOM = (viewId) => {
         if (parentGroup) parentGroup.classList.add('active');
     }
     
+    if (viewId !== 'tasks' && typeof window.stopDispatchLedgerPolling === 'function') {
+        window.stopDispatchLedgerPolling();
+    }
+
     if (typeof window.addAudit === 'function') {
         window.addAudit(`📡 导航: ${viewId.toUpperCase()}`);
     }

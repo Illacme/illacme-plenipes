@@ -242,8 +242,20 @@
         }
     };
 
-    window.resetDrawerConfig = (id) => {
-        if (confirm(`确认擦除重置 [${id.toUpperCase()}] 渠道当前的所有文本配置？`)) {
+    window.resetDrawerConfig = async (id) => {
+        let ok = false;
+        if (typeof window.confirmSovereignAction === 'function') {
+            ok = await window.confirmSovereignAction({
+                title: '🧹 擦除重置配置',
+                text: `确认擦除重置 <b>[${id.toUpperCase()}]</b> 渠道当前的所有文本配置？<br>已输入的 API 密钥与表单参数将被清空。`,
+                icon: 'warning',
+                confirmText: '确认清空',
+                confirmColor: '#ff4d4f'
+            });
+        } else {
+            ok = confirm(`确认擦除重置 [${id.toUpperCase()}] 渠道当前的所有文本配置？`);
+        }
+        if (ok) {
             const drawer = document.getElementById('plugin-drawer');
             if (!drawer) return;
             drawer.querySelectorAll('input[type="text"], input[type="password"], textarea').forEach(input => {

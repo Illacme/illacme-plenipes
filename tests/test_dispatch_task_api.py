@@ -50,6 +50,11 @@ class MockMeta:
     def list_all_syndication_records(self, limit=100, offset=0):
         return self.records
 
+    def get_documents_snapshot(self):
+        return {
+            "published.md": {"title": "主权出版之光", "slug": "published"}
+        }
+
     def retry_syndication_task(self, rel_path=None, target_id=None):
         for t in self.tasks:
             if t["rel_path"] == rel_path and t["target_id"] == target_id:
@@ -85,11 +90,15 @@ def test_dispatch_overview_api():
     assert data.get("status") == "success"
     assert "summary" in data
     assert "channel_health" in data
-    assert "dead_letter_tasks" in data
-    assert "recent_records" in data
     assert len(data["recent_records"]) == 1
     assert len(data["dead_letter_tasks"]) == 1
+    assert data["recent_records"][0]["title"] == "主权出版之光"
     assert data["recent_records"][0]["remote_url"] == "https://dev.to/article/12345"
+    task = data["dead_letter_tasks"][0]
+    assert "diagnostic" in task
+    assert "badge" in task["diagnostic"]
+    assert "suggestion" in task["diagnostic"]
+    assert "friendly_message" in task["diagnostic"]
 
 
 def test_dispatch_active_tasks_api():

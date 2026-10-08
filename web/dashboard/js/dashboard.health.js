@@ -8,7 +8,18 @@
  * 职责：向核心引擎发起 SIGINT 信号，安全关闭所有出版管线并停机。
  */
 window.shutdownSystem = async () => {
-    const confirmed = confirm("⚠️ 警告：正在执行物理级紧急关机指令！\n\n这将立即中断所有正在进行的出版任务、同步进程和 API 服务。是否继续？");
+    let confirmed = false;
+    if (typeof window.confirmSovereignAction === 'function') {
+        confirmed = await window.confirmSovereignAction({
+            title: '🛑 物理级紧急关机指令',
+            text: '⚠️ <b>严重警告</b>：这将立即向核心引擎发起 SIGINT 信号，中断所有正在进行的出版任务、同步进程和 API 服务。<br><br>是否确认强制停机？',
+            icon: 'warning',
+            confirmText: '立即关机',
+            confirmColor: '#ff4d4f'
+        });
+    } else {
+        confirmed = confirm("⚠️ 警告：正在执行物理级紧急关机指令！\n\n这将立即中断所有正在进行的出版任务、同步进程和 API 服务。是否继续？");
+    }
     if (!confirmed) return;
 
     try {

@@ -4,19 +4,67 @@
  */
 
 (function () {
-    // 真实 10 大全站托管平台元数据字典 (与后端 PublisherRegistry 100% 物理对齐)
-    window.vaultHostingPlatformMetadata = {
-        'github_pages': { name: 'GitHub Pages', icon: '🐙', desc: 'GitHub 官方静态网页托管 (Git 自动化部署)' },
-        'cloudflare_pages': { name: 'Cloudflare Pages', icon: '⚡', desc: 'Cloudflare 全球边缘 CDN 静态托管加速' },
-        'vercel': { name: 'Vercel', icon: '▲', desc: '全球前端云平台 (现代 SSG 极速部署)' },
-        'netlify': { name: 'Netlify', icon: '🌐', desc: '专业静态站点托管平台 (全自动 CI/CD)' },
-        'firebase': { name: 'FIREBASE', icon: '🌐', desc: '全站静态站点托管发布平台' },
-        'sftp': { name: 'SFTP 物理主机', icon: '🖥️', desc: 'Linux / VPS 自建服务器物理部署' },
-        'render': { name: 'Render', icon: '🚀', desc: '云端全栈静态站点部署平台' },
-        'railway': { name: 'Railway', icon: '🚂', desc: 'Railway 云服务自动化部署 Hook' },
-        'zeabur': { name: 'Zeabur', icon: '⚡', desc: '无服务器容器化托管平台' },
-        'gitee_pages': { name: 'Gitee Pages', icon: '🔴', desc: '国内 Gitee 代码托管平台 Pages 静态服务' }
+    /**
+     * 🛰️ 全站托管平台元数据解析算子 (100% 溯源自插件矩阵与品牌徽章字典)
+     */
+    window.getVaultHostingMeta = function (id) {
+        const tid = String(id || '').trim().toLowerCase();
+        const cleanId = tid.replace(/[_-\s]/g, '');
+
+        // 1. 优先从全局插件中心智库 window.allPlugins 中精准匹配
+        let pluginObj = null;
+        if (Array.isArray(window.allPlugins) && window.allPlugins.length > 0) {
+            pluginObj = window.allPlugins.find(p => {
+                const pid = (p.id || '').toLowerCase();
+                return pid === tid || pid.replace(/[_-\s]/g, '') === cleanId;
+            });
+        }
+
+        // 2. 调取平台专属品牌徽章字典 (getPlatformBrandBadge)
+        const brand = (typeof window.getPlatformBrandBadge === 'function')
+            ? window.getPlatformBrandBadge(tid, 'hosting')
+            : null;
+
+        let name = (pluginObj && pluginObj.name);
+        if (!name || name === tid) {
+            const fallbackNames = {
+                'github_pages': 'GitHub Pages',
+                'cloudflare_pages': 'Cloudflare Pages',
+                'gitee_pages': 'Gitee Pages',
+                'gitlab_pages': 'GitLab Pages',
+                'sftp': 'SFTP / SSH',
+                'firebase': 'Firebase Hosting',
+                'vercel': 'Vercel',
+                'netlify': 'Netlify',
+                'render': 'Render',
+                'railway': 'Railway',
+                'zeabur': 'Zeabur'
+            };
+            name = fallbackNames[tid] || tid.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        let icon = (brand && brand.icon && brand.icon !== '🌐') ? brand.icon : null;
+        if (!icon && pluginObj && pluginObj.icon && pluginObj.icon !== '🌐') {
+            icon = pluginObj.icon;
+        }
+        if (!icon) {
+            icon = (brand && brand.icon) || '🌐';
+        }
+
+        const desc = (pluginObj && (pluginObj.description || pluginObj.desc)) || `全站静态站点托管发布平台 (${name})`;
+
+        return { name, icon, desc };
     };
+
+    // 兼容历史调用：代理到动态解析器以防外部未更新脚本报错
+    window.vaultHostingPlatformMetadata = new Proxy({}, {
+        get: (target, prop) => {
+            if (typeof prop === 'string') {
+                return window.getVaultHostingMeta(prop);
+            }
+            return target[prop];
+        }
+    });
 
     window.renderVaultLocalArtifactsHtml = function (localDocMatrix, isLabActive, labUrl) {
         return (localDocMatrix || []).map((item, idx) => {
@@ -68,7 +116,8 @@
     };
 
     window.renderVaultHostingCardsHtml = function (hostingPlatformsList, relPath) {
-        return (hostingPlatformsList || []).map(p => {
+        const list = Array.isArray(hostingPlatformsList) ? hostingPlatformsList : [];
+        return list.map(p => {
             const rec = p.record;
             const isFailed = !!(rec && rec.status === 'failed');
             const targetUrl = rec ? rec.artifact_url : null;

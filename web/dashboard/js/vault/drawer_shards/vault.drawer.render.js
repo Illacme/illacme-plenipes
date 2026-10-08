@@ -70,27 +70,45 @@
                 return code !== 'HOSTING' && code !== 'SYNDICATION';
             });
 
-            // 2. 提取全量托管平台并精准匹配当前品牌启用与就绪状态 (严格 10 个已注册托管平台)
-            const exact10HostingKeys = [
-                'sftp', 'vercel', 'render', 'railway', 'gitee_pages',
-                'github_pages', 'netlify', 'firebase', 'zeabur', 'cloudflare_pages'
+            // 2. 动态从插件中心提取全量托管平台驱动 (SSOT 物理对齐)
+            const allHostingKeys = [
+                'cloudflare_pages', 'github_pages', 'gitee_pages', 'gitlab_pages',
+                'vercel', 'netlify', 'zeabur', 'render', 'railway', 'firebase', 'sftp'
             ];
 
-            const hostingPlatformMetadata = window.vaultHostingPlatformMetadata || {};
+            // 竞态兜底：若全域插件底座未预热，静默触发异步拉取
+            if (!window.allPlugins || window.allPlugins.length === 0) {
+                const fetchApi = window.apiFetch || (async (url, opts) => (await fetch(url, opts)).json());
+                fetchApi('/api/plugins/list').then(res => {
+                    if (res && Array.isArray(res.plugins)) {
+                        window.allPlugins = res.plugins;
+                    }
+                }).catch(() => {});
+            }
+
             const hostingPlugins = (window.allPlugins || []).filter(p => p.category === 'hosting');
             const activeHostingPlugins = hostingPlugins.length > 0
                 ? hostingPlugins
-                : exact10HostingKeys.map(k => ({
-                    id: k,
-                    name: hostingPlatformMetadata[k]?.name || k.toUpperCase(),
-                    category: 'hosting',
-                    is_in_use: false,
-                    is_enabled: true
-                }));
+                : allHostingKeys.map(k => {
+                    const meta = (typeof window.getVaultHostingMeta === 'function')
+                        ? window.getVaultHostingMeta(k)
+                        : (window.vaultHostingPlatformMetadata?.[k] || {});
+                    return {
+                        id: k,
+                        name: meta.name || k.toUpperCase(),
+                        icon: meta.icon || '🌐',
+                        description: meta.desc || '',
+                        category: 'hosting',
+                        is_in_use: false,
+                        is_enabled: true
+                    };
+                });
 
             const hostingPlatformsList = activeHostingPlugins.map(pluginDef => {
                 const key = pluginDef.id;
-                const pMeta = hostingPlatformMetadata[key] || { name: pluginDef.name || key.toUpperCase(), icon: '🌐', desc: '全站静态站点托管发布平台' };
+                const pMeta = (typeof window.getVaultHostingMeta === 'function')
+                    ? window.getVaultHostingMeta(key)
+                    : (window.vaultHostingPlatformMetadata?.[key] || { name: pluginDef.name || key.toUpperCase(), icon: '🌐', desc: '全站静态站点托管发布平台' });
 
                 // 查找后端返回的当前平台同步记录
                 const hostingRecord = (data.sync_matrix || []).find(item => {

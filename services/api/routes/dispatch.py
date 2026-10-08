@@ -44,6 +44,9 @@ from .dispatch_shards.sensing_routes import (
 # 4. 引入并挂载 全域发布任务管理与大盘分片
 from .dispatch_shards.task_routes import router as task_router
 
+# 5. 引入并挂载 全站托管部署与渠道舰队分片
+from .dispatch_shards.hosting_routes import router as hosting_router
+
 router = APIRouter()
 
 # 聚合子路由树
@@ -51,6 +54,7 @@ router.include_router(vault_router)
 router.include_router(platform_oauth_router)
 router.include_router(sensing_router)
 router.include_router(task_router)
+router.include_router(hosting_router)
 
 __all__ = [
     "router",

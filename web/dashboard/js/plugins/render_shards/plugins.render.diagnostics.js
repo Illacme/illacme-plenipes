@@ -25,7 +25,20 @@ window.importConfigBackup = (event) => {
             const parsed = JSON.parse(e.target.result);
             if (!parsed || typeof parsed !== 'object') throw new Error("无效的 JSON 配置格式");
 
-            if (confirm("确认使用导入的文件恢复全站插件与平台配置？这将覆盖当前保存数据！")) {
+            let ok = false;
+            if (typeof window.confirmSovereignAction === 'function') {
+                ok = await window.confirmSovereignAction({
+                    title: '📥 恢复配置备份',
+                    text: '确认使用导入的文件恢复全站插件与平台配置？<br><span style="color:#ff4d4f; font-weight:600;">⚠️ 这将完全覆盖当前保存的全部配置数据！</span>',
+                    icon: 'warning',
+                    confirmText: '确认恢复覆盖',
+                    confirmColor: '#ff4d4f'
+                });
+            } else {
+                ok = confirm("确认使用导入的文件恢复全站插件与平台配置？这将覆盖当前保存数据！");
+            }
+
+            if (ok) {
                 const fetchFunc = window.apiFetch || (async (url, init) => {
                     const r = await fetch(url, init);
                     return r.json();
@@ -40,11 +53,13 @@ window.importConfigBackup = (event) => {
                     if (window.loadPlugins) await window.loadPlugins(true);
                     if (window.showToast) window.showToast("🟢 成功导入配置备份！全站配置已自动同步。", "success");
                 } else {
-                    alert("导入保存失败: " + (res ? (res.error || res.message) : "未知错误"));
+                    const errMsg = "导入保存失败: " + (res ? (res.error || res.message) : "未知错误");
+                    window.showToast ? window.showToast(errMsg, 'error') : alert(errMsg);
                 }
             }
         } catch (err) {
-            alert("解析配置文件失败: " + err.message);
+            const errMsg = "解析配置文件失败: " + err.message;
+            window.showToast ? window.showToast(errMsg, 'error') : alert(errMsg);
         }
     };
     reader.readAsText(file);

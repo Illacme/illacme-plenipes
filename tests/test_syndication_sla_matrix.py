@@ -98,7 +98,7 @@ class TestSyndicationSLAMatrix(unittest.TestCase):
         self.assertEqual(pub_map["zhihu"]["name"], "知乎")
         self.assertEqual(pub_map["zhihu"]["icon"], "💡")
         self.assertEqual(pub_map["juejin"]["name"], "稀土掘金")
-        self.assertEqual(pub_map["juejin"]["icon"], "🧱")
+        self.assertEqual(pub_map["juejin"]["icon"], "💎")
 
     def test_syndication_ledger_wildcard_and_lifecycle(self):
         """测试物权账本在 auto/all/source 及多语种前缀下的查询与删除稳固性"""

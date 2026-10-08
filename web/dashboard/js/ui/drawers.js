@@ -114,8 +114,20 @@ window.getUIDrawersHTML = () => {
     `;
 };
 
-window.resetCurrentDrawerFields = () => {
-    if (confirm("确认擦除当前配置抽屉中填写的所有文本框？")) {
+window.resetCurrentDrawerFields = async () => {
+    let ok = false;
+    if (typeof window.confirmSovereignAction === 'function') {
+        ok = await window.confirmSovereignAction({
+            title: '🧹 擦除抽屉配置',
+            text: '确认擦除当前配置抽屉中填写的所有文本框？<br>已输入的草稿参数将被清空。',
+            icon: 'warning',
+            confirmText: '确认清空',
+            confirmColor: '#ff4d4f'
+        });
+    } else {
+        ok = confirm("确认擦除当前配置抽屉中填写的所有文本框？");
+    }
+    if (ok) {
         const body = document.getElementById('p-drawer-body');
         if (!body) return;
         body.querySelectorAll('input[type="text"], input[type="password"], textarea').forEach(input => {

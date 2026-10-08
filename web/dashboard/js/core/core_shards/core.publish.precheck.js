@@ -180,6 +180,18 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
                 try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch (e) {}
                 return { proceed: false, precheckRes };
             }
+        } else if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🚀 确认执行全域同步',
+                text: `全域同步准备完毕。模式: <b>${modeText}</b>。确定要执行发布吗？`,
+                icon: 'question',
+                confirmText: '立即执行',
+                confirmColor: '#3085d6'
+            });
+            if (!ok) {
+                try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch (e) {}
+                return { proceed: false, precheckRes };
+            }
         } else {
             const ok = confirm(`全域同步准备完毕。模式: ${modeText}。确定要执行发布吗？`);
             if (!ok) {

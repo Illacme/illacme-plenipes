@@ -255,20 +255,24 @@ window.triggerDirectDocDelete = (relPath, title) => {
                 window.showToast?.(`❌ 销毁失败: ${res ? res.detail || res.message : '销毁失败'}`, 'error');
             }
         });
+    } else if (typeof window.confirmSovereignAction === 'function') {
+        window.confirmSovereignAction({
+            title: '🔥 确认销毁原稿',
+            text: `将物理抹除磁盘源文件 <b>${displayTitle}</b> 及其全网所有出版产物。<br><br><span style="color:#ff6b6b; font-size:0.82rem;">⚠️ 此物理销毁操作不可撤销！</span>`,
+            icon: 'warning', confirmText: '🔥 确认销毁', confirmColor: '#ff4d4f'
+        }).then(ok => { if (ok) window.confirmPhysicalDelete?.(); });
     } else if (confirm(`确认物理销毁 [${displayTitle}] 吗？不可撤销！`)) {
         window.confirmPhysicalDelete?.();
     }
 };
 
 window.changeVaultPage = (delta) => {
-    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
-    const newPage = window.vaultCurrentPage + delta;
+    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), newPage = window.vaultCurrentPage + delta;
     if (newPage >= 1 && newPage <= totalPages) window.loadVault(null, newPage);
 };
 
 window.changeVaultPageDirect = (page) => {
-    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
-    const targetPage = (page === -1) ? totalPages : page;
+    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), targetPage = (page === -1) ? totalPages : page;
     if (targetPage >= 1 && targetPage <= totalPages) window.loadVault(null, targetPage);
 };
 

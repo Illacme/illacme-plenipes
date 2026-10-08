@@ -69,6 +69,14 @@
                 target: document.getElementById('review-drawer') || document.body
             });
             confirmed = res.isConfirmed;
+        } else if (typeof window.confirmSovereignAction === 'function') {
+            confirmed = await window.confirmSovereignAction({
+                title: titleMsg,
+                text: textMsg,
+                icon: 'warning',
+                confirmText: '🔓 确认解除保护',
+                confirmColor: '#ff4d4f'
+            });
         } else {
             confirmed = confirm(`${titleMsg}\n\n${textMsg}`);
         }

@@ -287,6 +287,7 @@ window.savePluginSettingsAndClose = async () => {
         if (typeof loadPlugins === 'function') await loadPlugins(true);
         else if (typeof renderPlugins === 'function') renderPlugins();
         if (typeof refreshGovernanceContext === 'function') await refreshGovernanceContext();
+        if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     } else {
         const errMsg = res ? res.error : '物理链路异常';
         if (typeof addAudit === 'function') addAudit(`❌ 插件配置保存失败: ${errMsg}`, 'error');

@@ -58,7 +58,7 @@
 
         const renderCdnBadge = (url) => {
             if (!url) return '';
-            let label = url.includes('r2') ? '🟧 R2' : (url.includes('catbox') ? '🐱 Catbox' : (url.includes('github') ? '🐙 GitHub' : '☁️ CDN'));
+            let label = url.includes('r2') ? '☁️ R2' : (url.includes('catbox') ? '📦 Catbox' : (url.includes('github') ? '🐱 GitHub' : '🌐 CDN'));
             return `<div style="position:absolute; top:8px; left:80px; font-size:0.65rem; color:#38bdf8; background:rgba(56,189,248,0.2); backdrop-filter:blur(4px); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.4); font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); navigator.clipboard.writeText('${url}'); if(window.showToast) window.showToast('📋 已复制 ${label} 直链', 'success');" title="点击复制 CDN 直链">${label} 📋</div>`;
         };
 
@@ -208,11 +208,17 @@
         if (count === 0) { if (window.showToast) window.showToast('⚠️ 请至少勾选一项待删除资产', 'warning'); return; }
         const selected = _assetsList.filter(a => _batchSelectedIds.has(a.id));
         const usedCount = selected.filter(a => (a.reference_count || (a.references && a.references.length) || 0) > 0).length;
-        let msg = `确定要彻底物理删除选中的 ${count} 项媒体资产吗？\n\n落盘文件将被物理清除，账本记录同步注销。`;
+        let msg = `确定要彻底物理删除选中的 ${count} 项媒体资产吗？落盘文件将被物理清除，账本记录同步注销。`;
         if (usedCount > 0) {
-            msg += `\n\n⚠️ 检测到有 ${usedCount} 项图片正被文库原稿设为封面！\n系统将自动从对应原稿 Frontmatter 中解绑清空封面，彻底清理残留。`;
+            msg += `<br><br><span style="color:#ff4d4f; font-weight:600;">⚠️ 检测到有 ${usedCount} 项图片正被文库原稿设为封面！</span><br>系统将自动从对应原稿 Frontmatter 中解绑清空封面，彻底清理残留。`;
         }
-        if (!confirm(msg)) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 批量删除媒体资产', text: msg, icon: 'warning', confirmText: '彻底删除', confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定要彻底物理删除选中的 ${count} 项媒体资产吗？`)) return;
+
         const fetchApi = window.apiFetch || (async (u, o) => (await fetch(u, o)).json());
         try {
             const res = await fetchApi('/api/design/assets/batch-delete', {
@@ -232,7 +238,15 @@
     window.cleanupIdleVisualAssets = async function () {
         const idleCount = _assetsList.filter(a => (a.reference_count || (a.references && a.references.length) || 0) === 0).length;
         if (idleCount === 0) { if (window.showToast) window.showToast('✅ 当前暂无闲置资产', 'info'); return; }
-        if (!confirm(`🧹 安全清理确认：\n\n检测到当前有 ${idleCount} 项闲置资产（0 引用）。\n确定彻底清理这 ${idleCount} 项闲置资产吗？`)) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🧹 安全清理闲置资产',
+                text: `检测到当前有 <b>${idleCount}</b> 项闲置资产（0 引用）。<br>确定彻底物理清理这 ${idleCount} 项闲置资产吗？`,
+                icon: 'warning', confirmText: '彻底清理', confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定彻底清理这 ${idleCount} 项闲置资产吗？`)) return;
+
         const fetchApi = window.apiFetch || (async (u, o) => (await fetch(u, o)).json());
         try {
             const res = await fetchApi('/api/design/assets/cleanup-idle', { method: 'POST' });
@@ -252,8 +266,14 @@
         const a = _assetsList.find(x => x.id === assetId);
         const refCount = a && (a.reference_count || (a.references && a.references.length) || 0);
         let confirmMsg = `确定要永久删除媒体资产 #${assetId} 吗？`;
-        if (refCount > 0) confirmMsg = `⚠️ 严重安全警示：该图片正被 ${refCount} 篇文库原稿引用！\n删除后将自动解绑封面，确定删除吗？`;
-        if (!confirm(confirmMsg)) return;
+        if (refCount > 0) confirmMsg = `<span style="color:#ff4d4f; font-weight:600;">⚠️ 该图片正被 ${refCount} 篇文库原稿引用！</span><br>删除后将自动从对应 Frontmatter 中解绑封面，确定删除吗？`;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 删除媒体资产', text: confirmMsg, icon: 'warning', confirmText: '确定删除', confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm(`确定要永久删除媒体资产 #${assetId} 吗？`)) return;
+
         const fetchApi = window.apiFetch || (async (u, o) => (await fetch(u, o)).json());
         try {
             const res = await fetchApi('/api/design/assets/batch-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ asset_ids: [assetId], remove_from_docs: true }) });

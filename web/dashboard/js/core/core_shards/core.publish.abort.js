@@ -6,25 +6,33 @@
 
 // 🛡️ [Abort] 全局中止同步交互逻辑
 window.abortSync = async () => {
-    if (!window.Swal) {
-        // 退回降级保护机制
-        const confirmAbort = confirm("确定要中止当前的全域同步任务吗？这会取消所有排队中的任务。");
-        if (!confirmAbort) return;
-        return window.executeAbortAction();
+    let confirmed = false;
+    if (window.Swal) {
+        const result = await window.Swal.fire({
+            title: '🛑 确定要中止同步吗？',
+            text: '这会立即清空调度池任务并中止所有排队中的翻译/同步管线。',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '确定中止',
+            cancelButtonText: '继续同步',
+            confirmButtonColor: '#ff4d4d',
+            cancelButtonColor: '#3085d6'
+        });
+        confirmed = result.isConfirmed;
+    } else if (typeof window.confirmSovereignAction === 'function') {
+        confirmed = await window.confirmSovereignAction({
+            title: '🛑 确定要中止同步吗？',
+            text: '这会立即清空调度池任务并中止所有排队中的翻译/同步管线。',
+            icon: 'warning',
+            confirmText: '确定中止',
+            confirmColor: '#ff4d4d',
+            cancelText: '继续同步'
+        });
+    } else {
+        confirmed = confirm("确定要中止当前的全域同步任务吗？这会取消所有排队中的任务。");
     }
 
-    const result = await window.Swal.fire({
-        title: '🛑 确定要中止同步吗？',
-        text: '这会立即清空调度池任务并中止所有排队中的翻译/同步管线。',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: '确定中止',
-        cancelButtonText: '继续同步',
-        confirmButtonColor: '#ff4d4d',
-        cancelButtonColor: '#3085d6'
-    });
-
-    if (result.isConfirmed) {
+    if (confirmed) {
         return window.executeAbortAction();
     }
 };

@@ -40,16 +40,16 @@
     <link rel="stylesheet" href="css/views/governance.strategies.css?v=20260828_balanced2_v5">
     <link rel="stylesheet" href="css/views/governance.localization.css">
     <link rel="stylesheet" href="css/views/governance.css?v=75.0">
-    <link rel="stylesheet" href="css/views/dispatch.css?v=20260917_light_v2">
+    <link rel="stylesheet" href="css/views/dispatch.css?v=20261007_th_center_v8">
     <link rel="stylesheet" href="css/views/tower.css">
     <link rel="stylesheet" href="css/components/dashboard.palette.css">
     <link rel="stylesheet" href="css/components/review.drawer.css">
     <link rel="stylesheet" href="css/components/vault.drawer.css?v=20260918_v4">
     <link rel="stylesheet" href="css/components/syndicate.drawer.css?v=20260918_v1">
-    <link rel="stylesheet" href="css/components/syndicate.preview.css?v=20260918_v1">
+    <link rel="stylesheet" href="css/components/syndicate.preview.css?v=20261002_v2">
     <link rel="stylesheet" href="css/components/syndicate.modals.css?v=20260918_v1">
     <link rel="stylesheet" href="css/components/dashboard.tour.css?v=20260917_studio_v18">
-    <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20260918_v3">
+    <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20261007_ledger_fit_v1">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js?v=20260912_fix_nav_v2"></script>
 
@@ -175,8 +175,8 @@
                                 onclick="window.showView('tasks')">
                                 <span class="dropdown-item-icon">🚀</span>
                                 <div class="dropdown-item-meta">
-                                    <span class="dropdown-item-title">发布任务账本</span>
-                                    <span class="dropdown-item-desc">全渠道分发、成果物权、死信自愈</span>
+                                    <span class="dropdown-item-title">发布中心</span>
+                                    <span class="dropdown-item-desc">全站发布、社媒分发与状态管理</span>
                                 </div>
                             </div>
                         </div>
@@ -251,7 +251,7 @@
     <script src="js/dashboard.templates.js?v=20260917_clean_rotate_v1"></script>
     <script src="js/dashboard.templates.tower.js"></script>
     <script src="js/dashboard.templates.analytics.js"></script>
-    <script src="js/dispatch/dispatch.templates.js"></script>
+    <script src="js/dispatch/dispatch.templates.js?v=20261007_publishing_hub_v1"></script>
     <script src="js/dashboard.views.js?v=20260916_imprint_guard_v6"></script>
     <script src="js/ui/fe_bus.js"></script>
     <script src="js/ui/drawers.js?v=110.0"></script>
@@ -293,7 +293,7 @@
     <script src="js/vault/drawer_shards/vault.drawer.hosting.js?v=105.0"></script>
     <script src="js/vault/vault.drawer.js?v=105.0"></script>
     <script src="js/vault/vault.bindery.templates.js?v=125.0"></script>
-    <script src="js/vault/vault.bindery.shelf.js?v=125.3"></script>
+    <script src="js/vault/vault.bindery.shelf.js?v=125.4"></script>
     <script src="js/vault/vault.bindery.build.js?v=125.3"></script>
     <script src="js/vault/vault.bindery.qr_engine.js?v=125.3"></script>
     <script src="js/vault/vault.bindery.qr_diagnostic.js?v=126.0"></script>
@@ -308,7 +308,8 @@
     <script src="js/editorial/syndicate_shards/syndicate.state.js?v=103.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.actions.js?v=103.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.workflow.js?v=103.0"></script>
-    <script src="js/editorial/syndicate_shards/syndicate.preview.js?v=105.4"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.preview.js?v=105.5"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.exporter.js?v=105.5"></script>
     <script src="js/editorial/syndicate_shards/syndicate.preview_cover.js?v=1.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.cards.js?v=103.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.cover_studio.js?v=20260914_sync_v1"></script>
@@ -361,7 +362,7 @@
     <script src="js/dashboard.image_policy.js?v=20260912_icmm_v1"></script>
     <script src="js/design/design.studio.js?v=20260914_sync_v1"></script>
     <script src="js/design/design_shards/design.provider_modal.js?v=20260912_design_assets_v1"></script>
-    <script src="js/design/design_shards/design.assets_panel.js?v=20260912_design_assets_v6"></script>
+    <script src="js/design/design_shards/design.assets_panel.js?v=20261008_assets_modal_v1"></script>
     <script src="js/design/design_shards/design.assets_detail.js?v=20260919_assets_detail_v1"></script>
     <script src="js/design/design_shards/design.cover_picker.js?v=20260912_picker_v1"></script>
     <script src="js/design/design_shards/design.doc_cover_modal.js?v=20260914_sync_v1"></script>
@@ -463,10 +464,12 @@
     <script src="js/dashboard.tower.js"></script>
     <script src="js/dashboard.analytics.js"></script>
     <!-- 🚀 全域发布任务大厅与成果账本 (V122.0) -->
-    <script src="js/dispatch/dispatch.indicator.js?v=20260917_v2"></script>
-    <script src="js/dispatch/dispatch.popover.js?v=20260917_v2"></script>
-    <script src="js/dispatch/dispatch.workbench.js?v=20260917_v2"></script>
-    <script src="js/dispatch/dispatch.ledger.render.js?v=20260917_v2"></script>
+    <script src="js/dispatch/dispatch.indicator.js?v=20261002_v3"></script>
+    <script src="js/dispatch/dispatch.popover.js?v=20261002_v3"></script>
+    <script src="js/dispatch/dispatch.workbench.js?v=20261007_publishing_hub_v1"></script>
+    <script src="js/dispatch/dispatch.ledger.pagination.js?v=20261002_v3"></script>
+    <script src="js/dispatch/dispatch.ledger.render.js?v=20261002_v3"></script>
+    <script src="js/dispatch/dispatch.hosting.render.js?v=20261008_sovereign_modal_v1"></script>
     <script src="dashboard.js?v=20260912_fix_nav_v2"></script>
     <script src="js/palette/palette.commands.js"></script>
     <script src="js/dashboard.palette.js?v=1.2"></script>

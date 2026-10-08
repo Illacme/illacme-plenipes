@@ -14,18 +14,12 @@
         const publisherPlugins = (window.allPlugins || []).filter(p => p.category === 'publisher');
         if (publisherPlugins.length > 0) {
             return publisherPlugins.map(p => {
-                const meta = (typeof window.getSyndicateChannelMeta === 'function')
-                    ? window.getSyndicateChannelMeta(p.id)
-                    : { name: p.name || p.id, icon: p.icon || '📡' };
+                const meta = (typeof window.getSyndicateChannelMeta === 'function') ? window.getSyndicateChannelMeta(p.id) : { name: p.name || p.id, icon: p.icon || '📡' };
                 const id = p.id.toLowerCase();
                 let group = '国内专栏';
-                if (['devto', 'medium', 'hashnode', 'substack', 'ghost', 'wordpress'].includes(id)) {
-                    group = '海外发布';
-                } else if (['telegram', 'discord'].includes(id)) {
-                    group = '社交渠道';
-                } else if (['xiaohongshu', 'red'].includes(id)) {
-                    group = '短图文';
-                }
+                if (['devto', 'medium', 'hashnode', 'substack', 'ghost', 'wordpress'].includes(id)) group = '海外发布';
+                else if (['telegram', 'discord'].includes(id)) group = '社交渠道';
+                else if (['xiaohongshu', 'red'].includes(id)) group = '短图文';
                 return { id: p.id, name: meta.name, icon: meta.icon, group };
             });
         }
@@ -39,7 +33,11 @@
         ];
     }
 
-    window.openSyndicateLivePreviewModal = function () {
+    window.openSyndicateLivePreviewModal = function (relPath = null, targetPlatform = null, customTitle = null) {
+        if (relPath) {
+            window.currentSyndicatingRelPath = relPath;
+            window.currentSyndicatingTitle = customTitle || relPath;
+        }
         let modalEl = document.getElementById('syndicate-live-preview-modal-root');
         if (!modalEl) {
             modalEl = document.createElement('div');
@@ -51,8 +49,11 @@
         const title = window.currentSyndicatingTitle || window.currentSyndicatingRelPath || '未命名文稿';
         const checkedBoxes = document.querySelectorAll('.syndicate-platform-checkbox:checked');
         let sensedTargets = Array.from(checkedBoxes).map(cb => cb.value.toLowerCase());
+        if (targetPlatform) {
+            if (!sensedTargets.includes(targetPlatform.toLowerCase())) sensedTargets.unshift(targetPlatform.toLowerCase());
+        }
         if (!sensedTargets.length) sensedTargets = ['wechat', 'zhihu', 'juejin', 'devto'];
-        const initialTarget = sensedTargets[0] || 'wechat';
+        const initialTarget = targetPlatform ? targetPlatform.toLowerCase() : (sensedTargets[0] || 'wechat');
         window.currentSyndicatePreviewTarget = initialTarget;
         window._sensedPreviewTargets = sensedTargets.slice(0, 4);
 
@@ -149,15 +150,21 @@
         window.renderSyndicateCardPreview(target);
     };
 
+    window.switchSyndicateTheme = function (th) {
+        window._currentSyndicateTheme = th;
+        window.renderSyndicateCardPreview();
+    };
+
     window.fetchSyndicatePreviewData = async function (relPath, platform, lang) {
-        const cacheKey = `${relPath}_${platform}_${lang}`;
+        const theme = window._currentSyndicateTheme || 'default';
+        const cacheKey = `${relPath}_${platform}_${lang}_${theme}`;
         if (window._syndicatePreviewCache[cacheKey]) return window._syndicatePreviewCache[cacheKey];
         try {
             const fetchFn = window.apiFetch || (async (u, o) => { const r = await fetch(u, o); return r.json(); });
             const res = await fetchFn('/api/syndication/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rel_path: relPath, target_platform: platform, lang: lang, convert_footnotes: true })
+                body: JSON.stringify({ rel_path: relPath, target_platform: platform, lang: lang, convert_footnotes: true, theme: theme })
             });
             if (res && res.status === 'success') {
                 window._syndicatePreviewCache[cacheKey] = res;
@@ -197,6 +204,11 @@
 
         window._currentRenderedHtml = data.rendered_html || '';
         window._currentRenderedMarkdown = data.rendered_markdown || '';
+        window._currentCleanMarkdown = data.clean_markdown || '';
+        window._currentCdnMarkdown = data.cdn_markdown || '';
+        window._currentFrontmatterMarkdown = data.frontmatter_markdown || '';
+        window._currentPreviewTitle = data.clean_title || data.title || '';
+        window._currentPreviewDigest = data.digest || '';
 
         if (statsSlot) {
             statsSlot.innerHTML = `
@@ -209,18 +221,36 @@
 
         window._previewViewport = window._previewViewport || 'auto';
         const isForceMobile = window._previewViewport === 'mobile';
-        const isForceDesktop = window._previewViewport === 'desktop';
         const activeMobile = isForceMobile || (window._previewViewport === 'auto' && isMobile);
+        const curTheme = window._currentSyndicateTheme || 'default';
 
         if (actionsSlot) {
-            actionsSlot.innerHTML = `
-                <div class="syndicate-viewport-switcher">
-                    <button type="button" class="syndicate-viewport-btn ${activeMobile ? 'is-active' : ''}" onclick="window._previewViewport='mobile';window.renderSyndicateCardPreview()">📱 手机</button>
-                    <button type="button" class="syndicate-viewport-btn ${!activeMobile ? 'is-active' : ''}" onclick="window._previewViewport='desktop';window.renderSyndicateCardPreview()">💻 宽屏</button>
-                </div>
-                ${isWechat ? `<button type="button" class="syndicate-copy-wechat-btn glow-btn" onclick="window.copyWeChatRichText()">📋 复制公众号富文本</button>` : ''}
-                <button type="button" class="syndicate-copy-markdown-btn" onclick="window.copyPlatformMarkdown()">📑 复制适配 Markdown</button>
-            `;
+            if (typeof window.renderSyndicateActionsToolbar === 'function') {
+                actionsSlot.innerHTML = window.renderSyndicateActionsToolbar(target, curTheme, activeMobile);
+            } else {
+                actionsSlot.innerHTML = `
+                    <div class="syndicate-viewport-switcher" style="white-space: nowrap; flex-shrink: 0;">
+                        <button type="button" class="syndicate-viewport-btn ${activeMobile ? 'is-active' : ''}" style="white-space: nowrap;" onclick="window._previewViewport='mobile';window.renderSyndicateCardPreview()">📱 手机</button>
+                        <button type="button" class="syndicate-viewport-btn ${!activeMobile ? 'is-active' : ''}" style="white-space: nowrap;" onclick="window._previewViewport='desktop';window.renderSyndicateCardPreview()">💻 宽屏</button>
+                    </div>
+                    ${isWechat ? `
+                    <select class="syndicate-viewport-btn" style="width: auto !important; max-width: 105px !important; flex: 0 0 auto !important; padding: 4px 8px; font-size: 0.78rem; outline: none; border-radius: 6px; white-space: nowrap; flex-shrink: 0;" onchange="window.switchSyndicateTheme(this.value)" title="选择微信公众号专属配色矩阵">
+                        <option value="default" ${curTheme === 'default' ? 'selected' : ''}>🎨 科技蓝</option>
+                        <option value="emerald" ${curTheme === 'emerald' ? 'selected' : ''}>🌿 翡翠绿</option>
+                        <option value="amber" ${curTheme === 'amber' ? 'selected' : ''}>🍂 暖秋金</option>
+                        <option value="minimal" ${curTheme === 'minimal' ? 'selected' : ''}>🌙 极简灰</option>
+                    </select>
+                    <button type="button" class="syndicate-copy-wechat-btn glow-btn" style="white-space: nowrap; flex-shrink: 0;" onclick="window.copyWeChatRichText()" title="一键复制微信公众号富文本">
+                        <span>📋 复制公众号富文本</span>
+                    </button>
+                    ` : ''}
+                    <div class="syndicate-export-menu-wrapper" style="position: relative; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0;">
+                        <button type="button" class="syndicate-copy-markdown-btn" onclick="window.toggleSyndicateExportMenu ? window.toggleSyndicateExportMenu() : window.copyPlatformMarkdown()" style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;" title="选择不同平台的发布格式导出">
+                            <span>📦 多格式导出 ▾</span>
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         const chassisWidth = activeMobile ? (isXhs ? '390px' : '440px') : '780px';
@@ -237,61 +267,15 @@
                 <div class="preview-viewport-chassis ${chassisClass}" style="width:${chassisWidth};">
                     ${activeMobile ? `<div class="preview-chassis-speaker"></div>` : ''}
                     ${feedCardHtml}
-                    ${isWechat ? `
-                    <div class="preview-wechat-header">
-                        <h2 class="preview-wechat-title">${_esc(data.clean_title || data.title)}</h2>
-                        <div class="preview-wechat-meta"><span class="preview-wechat-author">创作者文库</span><span>·</span><span>今天</span><span>·</span><span class="preview-wechat-origin-tag">原创</span></div>
-                    </div>` : ''}
-                    ${isXhs ? `
-                    <div class="preview-xhs-header">
-                        <div class="preview-xhs-badge">📕 小红书竖屏图文</div>
-                        <h3 class="preview-xhs-title">${_esc(data.clean_title || data.title)}</h3>
-                    </div>` : ''}
-                    ${!isWechat && !isXhs ? `
-                    <div class="preview-general-header">
-                        <h1 class="preview-general-title">${_esc(data.clean_title || data.title)}</h1>
-                        <div class="preview-general-meta">专栏预览模式 · ${target.toUpperCase()} 渠道自适应排版</div>
-                    </div>` : ''}
-                    <div class="preview-rendered-body" id="preview-rendered-body-slot">
-                        ${displayHtml}
-                    </div>
+                    ${isWechat ? `<div class="preview-wechat-header"><h2 class="preview-wechat-title">${_esc(data.clean_title || data.title)}</h2><div class="preview-wechat-meta"><span class="preview-wechat-author">创作者文库</span><span>·</span><span>今天</span><span>·</span><span class="preview-wechat-origin-tag">原创</span></div></div>` : ''}
+                    ${isXhs ? `<div class="preview-xhs-header"><div class="preview-xhs-badge">📕 小红书竖屏图文</div><h3 class="preview-xhs-title">${_esc(data.clean_title || data.title)}</h3></div>` : ''}
+                    ${!isWechat && !isXhs ? `<div class="preview-general-header"><h1 class="preview-general-title">${_esc(data.clean_title || data.title)}</h1><div class="preview-general-meta">专栏预览模式 · ${target.toUpperCase()} 渠道自适应排版</div></div>` : ''}
+                    <div class="preview-rendered-body" id="preview-rendered-body-slot">${displayHtml}</div>
                     ${activeMobile ? `<div class="preview-chassis-home-bar"></div>` : ''}
                 </div>
-            </div>
-        `;
+            </div>`;
         const fSlot = document.getElementById('syndicate-feed-card-slot');
-        if (fSlot && typeof window.renderChannelCoverStudio === 'function') {
-            window.renderChannelCoverStudio(target, fSlot, coverImgUrl);
-        }
-    };
-
-    window.copyWeChatRichText = async function () {
-        const html = window._currentRenderedHtml;
-        if (!html) return;
-        const notify = (typeof window.showToast === 'function') ? window.showToast : alert;
-        try {
-            if (navigator.clipboard && window.ClipboardItem) {
-                const plainText = document.getElementById('preview-rendered-body-slot')?.innerText || html;
-                await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([plainText], { type: 'text/plain' }) })]);
-            } else {
-                const ta = document.createElement('textarea'); ta.value = html; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-            }
-            notify('📋 公众号富文本已复制！可直接在公众号后台粘贴 (Cmd+V)', 'success');
-        } catch (err) {
-            notify('🛑 复制失败，请手动选取复制', 'error');
-        }
-    };
-
-    window.copyPlatformMarkdown = async function () {
-        const md = window._currentRenderedMarkdown;
-        if (!md) return;
-        const notify = (typeof window.showToast === 'function') ? window.showToast : alert;
-        try {
-            if (navigator.clipboard) await navigator.clipboard.writeText(md);
-            notify('📑 渠道适配 Markdown 已复制！', 'success');
-        } catch (err) {
-            notify('🛑 复制失败', 'error');
-        }
+        if (fSlot && typeof window.renderChannelCoverStudio === 'function') window.renderChannelCoverStudio(target, fSlot, coverImgUrl);
     };
 })();
 

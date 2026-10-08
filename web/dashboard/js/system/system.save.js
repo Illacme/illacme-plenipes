@@ -69,6 +69,14 @@
                             if (result.isConfirmed) {
                                 migrateCache = true;
                             }
+                        } else if (typeof window.confirmSovereignAction === 'function') {
+                            migrateCache = await window.confirmSovereignAction({
+                                title: '⚠️ 检测到缓存配置变更',
+                                text: '是否在保存的同时物理迁移已有缓存文件？<br>【确定】：迁移并保存<br>【取消】：仅保存配置（原缓存可能失效）',
+                                icon: 'warning',
+                                confirmText: '🚚 迁移并保存',
+                                cancelText: '仅保存配置'
+                            });
                         } else {
                             migrateCache = confirm("⚠️ 检测到段落缓存配置变更。是否在保存的同时物理迁移已有缓存文件？\n\n【确定】：迁移并保存\n【取消】：仅保存配置（原缓存会失效）");
                         }

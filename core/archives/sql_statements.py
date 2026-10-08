@@ -126,6 +126,30 @@ INIT_SCHEMA = [
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_visual_assets_rel ON visual_assets(rel_path);
+    """,
+    # 10. 🌐 [V125.0] 全站托管部署流水记录表 (Hosting Deploy Records)
+    """
+    CREATE TABLE IF NOT EXISTS hosting_deploy_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id TEXT UNIQUE NOT NULL,
+        trigger_source TEXT DEFAULT 'workbench',
+        imprint_id TEXT NOT NULL DEFAULT 'default',
+        theme TEXT,
+        pages_count INTEGER DEFAULT 0,
+        bundle_size_kb REAL DEFAULT 0,
+        targets_json TEXT,
+        overall_status TEXT DEFAULT 'PENDING',
+        started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME,
+        duration_sec REAL DEFAULT 0,
+        logs_excerpt TEXT
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_hosting_deploy_imprint ON hosting_deploy_records(imprint_id);
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_hosting_deploy_batch ON hosting_deploy_records(batch_id);
     """
 ]
 

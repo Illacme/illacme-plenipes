@@ -14,8 +14,9 @@ from .sqlite_review import SQLiteReviewMixin
 from .sqlite_syndication import SQLiteSyndicationMixin
 from .sqlite_maintenance import SQLiteMaintenanceMixin
 from .sqlite_doc_queries import SQLiteDocQueryMixin
+from .sqlite_hosting import SQLiteHostingMixin
 
-class SQLiteBackend(SQLiteReviewMixin, SQLiteSyndicationMixin, SQLiteMaintenanceMixin, SQLiteDocQueryMixin):
+class SQLiteBackend(SQLiteReviewMixin, SQLiteSyndicationMixin, SQLiteMaintenanceMixin, SQLiteDocQueryMixin, SQLiteHostingMixin):
     """🚀 [V48.3] 工业级元数据存储方案"""
     
     def __init__(self, db_path, engine=None):

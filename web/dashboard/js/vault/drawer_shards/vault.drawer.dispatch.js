@@ -42,6 +42,14 @@
                     cancelButtonColor: 'hsla(0, 0%, 27%, 1)'
                 });
                 isConfirmed = confirmSwitch.isConfirmed;
+            } else if (typeof window.confirmSovereignAction === 'function') {
+                isConfirmed = await window.confirmSovereignAction({
+                    title: '🌐 升级多语言出版模式',
+                    text: '强制重新 AI 翻译正文需要将出版模式设置为全球多语言分发模式 (global)。是否自动升级？',
+                    icon: 'info',
+                    confirmText: '一键升级模式',
+                    confirmColor: '#38bdf8'
+                });
             } else {
                 isConfirmed = confirm("🌐 强制重新 AI 翻译正文需要将出版模式设置为全球多语言分发模式 (global)。是否自动升级？");
             }

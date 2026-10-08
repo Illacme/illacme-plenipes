@@ -83,6 +83,15 @@ window.checkSettingsDirtyAndConfirm = async () => {
                 }
             });
             return result.isConfirmed;
+        } else if (typeof window.confirmSovereignAction === 'function') {
+            return await window.confirmSovereignAction({
+                title: '⚠️ 检测到未保存的配置',
+                text: '您当前已修改了配置且尚未保存。如果继续操作，这些修改将被覆盖丢失。是否继续？',
+                icon: 'warning',
+                confirmText: '丢弃并继续',
+                confirmColor: '#ff4d4f',
+                cancelText: '先去保存'
+            });
         } else {
             return confirm("⚠️ 检测到有未保存的配置改动。继续此操作将丢失改动。是否继续？");
         }

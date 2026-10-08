@@ -178,7 +178,17 @@
     };
 
     window.clearDocCover = async function (relPath) {
-        if (!confirm('确定要清空该文章的封面设置吗？\n清空后将移除原稿 Frontmatter 中的 cover 属性。')) return;
+        if (typeof window.confirmSovereignAction === 'function') {
+            const ok = await window.confirmSovereignAction({
+                title: '🗑️ 清空文章封面',
+                text: '确定要清空该文章的封面设置吗？<br>清空后将从原稿 Frontmatter 中移除 cover 属性。',
+                icon: 'warning',
+                confirmText: '确定清空',
+                confirmColor: '#ff4d4f'
+            });
+            if (!ok) return;
+        } else if (!confirm('确定要清空该文章的封面设置吗？\n清空后将移除原稿 Frontmatter 中的 cover 属性。')) return;
+
         const fetchApi = window.apiFetch || (async (u, o) => (await fetch(u, o)).json());
         try {
             const res = await fetchApi('/api/design/assets/apply-cover', {
@@ -190,9 +200,7 @@
                 if (typeof window.showToast === 'function') window.showToast('🗑️ 封面已成功清空', 'success');
                 const modal = document.getElementById('doc-cover-picker-modal');
                 if (modal) modal.remove();
-                if (typeof window.loadVault === 'function') {
-                    window.loadVault(null, window.vaultCurrentPage || 1);
-                }
+                if (typeof window.loadVault === 'function') window.loadVault(null, window.vaultCurrentPage || 1);
             }
         } catch (e) {
             if (typeof window.showToast === 'function') window.showToast(`🛑 清除失败: ${e.message}`, 'error');
@@ -200,26 +208,13 @@
     };
 
     window.jumpToStudioFromDocModal = async function (title, relPath, fromSyndicate = false) {
-        const targetDoc = {
-            title: title || _activeTargetDoc?.title || '',
-            relPath: relPath || _activeTargetDoc?.relPath || '',
-            fromSyndicate: !!fromSyndicate
-        };
+        const targetDoc = { title: title || _activeTargetDoc?.title || '', relPath: relPath || _activeTargetDoc?.relPath || '', fromSyndicate: !!fromSyndicate };
         window._designTargetDoc = targetDoc;
-
         const modal = document.getElementById('doc-cover-picker-modal');
         if (modal) modal.remove();
-
-        if (typeof window.showView === 'function') {
-            await window.showView('design');
-        } else {
-            window.location.hash = '#/design';
-        }
-
-        if (typeof window.switchDesignSubTab === 'function') {
-            window.switchDesignSubTab('workspace');
-        }
-
+        if (typeof window.showView === 'function') await window.showView('design');
+        else window.location.hash = '#/design';
+        if (typeof window.switchDesignSubTab === 'function') window.switchDesignSubTab('workspace');
         let attempts = 0;
         const checkAndFill = () => {
             const ipt = document.getElementById('studio-prompt-input');
