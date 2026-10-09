@@ -190,7 +190,7 @@
      */
     window.renderEngineUpdateWidget = function () {
         const info = window._latestUpdateInfo;
-        const curVer = info ? info.current_version : 'v1.4.0';
+        const curVer = info ? info.current_version : 'v1.5.0';
         return `
             <div class="settings-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; padding: 18px; margin-top: 16px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">

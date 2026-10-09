@@ -60,7 +60,7 @@ window.ensureMainFooterMounted = function () {
                     <span id="ws-status" class="status-val online">CONNECTED</span>
                 </div>
             </div>
-            <div class="version-tag tiny" id="footer-version-display" style="cursor: pointer;" onclick="if(window.checkSystemUpdate) window.checkSystemUpdate(true)" title="点击检查云端新版本">v1.4.0</div>
+            <div class="version-tag tiny" id="footer-version-display" style="cursor: pointer;" onclick="if(window.checkSystemUpdate) window.checkSystemUpdate(true)" title="点击检查云端新版本">v1.5.0</div>
             <div id="footer-update-badge" style="display: none; cursor: pointer; background: hsla(180, 100%, 50%, 0.15); border: 1px solid hsla(180, 100%, 50%, 0.5); color: var(--accent-primary, #00f2ff); font-size: 0.65rem; padding: 2px 8px; border-radius: 12px; margin-left: 6px; align-items: center; gap: 4px; transition: all 0.3s; animation: pulse 2s infinite;" onclick="if(window.openUpdateModal) window.openUpdateModal()" title="发现云端新版本，点击查看">
                 <span>✨ 发现新版</span>
             </div>

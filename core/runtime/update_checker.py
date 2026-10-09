@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional, Tuple
 from core.utils.tracing import tlog
 
 # 当前客户端发版真理源 (发版时随 build 自动对齐)
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 GITHUB_REPO = "Illacme/illacme-plenipes"
 CACHE_TTL_SECONDS = 600.0  # 10 分钟内存缓存，防御 GitHub 速率限制
 
