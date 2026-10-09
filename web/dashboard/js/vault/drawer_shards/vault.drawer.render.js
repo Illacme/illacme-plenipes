@@ -28,11 +28,6 @@
 
         const pubMode = window.settingsData?.governance?.publishing_mode || 'basic';
 
-        // 动态调整 Global Sync Matrix 标题和按钮布局
-        const matrixTitle = document.querySelector('.dispatch-hub-panel .sector-header');
-        if (matrixTitle) {
-            matrixTitle.innerText = pubMode === 'global' ? 'GLOBAL SYNC MATRIX' : 'LOCAL SYNC MATRIX';
-        }
 
         const reDispatchBtn = document.querySelector('.sovereign-action-grid .primary-hub-btn');
         const forceReTranslateBtn = document.querySelector('.sovereign-action-grid .warning-hub-btn');
@@ -70,45 +65,14 @@
                 return code !== 'HOSTING' && code !== 'SYNDICATION';
             });
 
-            // 2. 动态从插件中心提取全量托管平台驱动 (SSOT 物理对齐)
-            const allHostingKeys = [
-                'cloudflare_pages', 'github_pages', 'gitee_pages', 'gitlab_pages',
-                'vercel', 'netlify', 'zeabur', 'render', 'railway', 'firebase', 'sftp'
-            ];
-
-            // 竞态兜底：若全域插件底座未预热，静默触发异步拉取
-            if (!window.allPlugins || window.allPlugins.length === 0) {
-                const fetchApi = window.apiFetch || (async (url, opts) => (await fetch(url, opts)).json());
-                fetchApi('/api/plugins/list').then(res => {
-                    if (res && Array.isArray(res.plugins)) {
-                        window.allPlugins = res.plugins;
-                    }
-                }).catch(() => {});
-            }
-
+            // 2. 动态从插件中心统一提取全量托管平台驱动 (SSOT 物理对齐，杜绝四处硬编码)
             const hostingPlugins = (window.allPlugins || []).filter(p => p.category === 'hosting');
-            const activeHostingPlugins = hostingPlugins.length > 0
-                ? hostingPlugins
-                : allHostingKeys.map(k => {
-                    const meta = (typeof window.getVaultHostingMeta === 'function')
-                        ? window.getVaultHostingMeta(k)
-                        : (window.vaultHostingPlatformMetadata?.[k] || {});
-                    return {
-                        id: k,
-                        name: meta.name || k.toUpperCase(),
-                        icon: meta.icon || '🌐',
-                        description: meta.desc || '',
-                        category: 'hosting',
-                        is_in_use: false,
-                        is_enabled: true
-                    };
-                });
 
-            const hostingPlatformsList = activeHostingPlugins.map(pluginDef => {
+            const hostingPlatformsList = hostingPlugins.map(pluginDef => {
                 const key = pluginDef.id;
                 const pMeta = (typeof window.getVaultHostingMeta === 'function')
                     ? window.getVaultHostingMeta(key)
-                    : (window.vaultHostingPlatformMetadata?.[key] || { name: pluginDef.name || key.toUpperCase(), icon: '🌐', desc: '全站静态站点托管发布平台' });
+                    : { name: pluginDef.name, icon: pluginDef.icon || '🌐', desc: pluginDef.description || '全站静态站点托管发布平台' };
 
                 // 查找后端返回的当前平台同步记录
                 const hostingRecord = (data.sync_matrix || []).find(item => {
@@ -116,36 +80,40 @@
                     return code === 'HOSTING' && (item.channel_id === key || (item.locale || '').toLowerCase().includes(key));
                 });
 
-                // 1. 获取当前品牌与全局配置对象
+                // 1. 获取当前品牌与全局配置对象 (以插件中心 pluginDef.cfg 为基准合并品牌配置)
                 const cfgData = window.settingsData || {};
                 const hostingCfg = cfgData.publish_control?.direct_upload?.[key] || pluginDef.cfg || {};
 
-                // 2. 检测关键配置是否已填入
-                const hasConfiguredKeys = Object.entries(hostingCfg).some(([k, v]) => {
-                    if (['enabled', 'proxy', 'force_push', 'git_user_name', 'git_user_email', 'branch'].includes(k)) return false;
-                    return v !== undefined && v !== null && String(v).trim().length > 0;
-                });
+                // 2. 🎯 核心对齐：调用插件中心统一凭据状态中央判决算子 (SSOT)
+                const credState = (typeof window.isPluginCredentialReady === 'function')
+                    ? window.isPluginCredentialReady(key, 'hosting', hostingCfg)
+                    : { ready: false, mode: 'missing', label: '待填凭据' };
 
                 const isGloballyEnabled = pluginDef.is_enabled !== false;
                 const isBrandInUse = !!(pluginDef.is_in_use || pluginDef.status === 'In-Use' || hostingCfg.enabled === true);
 
-                // 3. 🎯 真正的主权与就绪判定
-                const isReady = isGloballyEnabled && (hasConfiguredKeys || isBrandInUse || !!hostingRecord);
+                // 3. 🎯 真正的主权就绪判定：全局已启用 且 凭据算子断言真实就绪
+                const isReady = isGloballyEnabled && Boolean(credState && credState.ready);
                 const isChecked = isReady && isBrandInUse;
 
                 return {
                     id: key,
-                    name: pMeta.name,
-                    icon: pMeta.icon,
-                    desc: pMeta.desc,
+                    name: pMeta.name || pluginDef.name,
+                    icon: pMeta.icon || pluginDef.icon || '🌐',
+                    desc: pMeta.desc || pluginDef.description || '',
                     isReady: isReady,
                     isChecked: isChecked,
                     isBrandInUse: isBrandInUse,
-                    hasConfiguredKeys: hasConfiguredKeys,
+                    credState: credState,
+                    credLabel: credState ? credState.label : '待填凭据',
                     record: hostingRecord,
                     status: hostingRecord ? hostingRecord.status : (isReady ? 'ready' : 'unconfigured')
                 };
             });
+
+            const priId = (window.settingsData?.publish_control?.primary_hosting_id || window.settingsData?.publish_control?.direct_upload?.primary_hosting_id || '').toLowerCase();
+            hostingPlatformsList.forEach(p => { p.isPrimary = Boolean(priId && p.id.toLowerCase() === priId); });
+            hostingPlatformsList.sort((a, b) => (a.isPrimary && !b.isPrimary ? -1 : (!a.isPrimary && b.isPrimary ? 1 : (a.isBrandInUse && !b.isBrandInUse ? -1 : (!a.isBrandInUse && b.isBrandInUse ? 1 : 0)))));
 
             const readyCount = hostingPlatformsList.filter(p => p.isReady).length;
             const checkedCount = hostingPlatformsList.filter(p => p.isChecked).length;
@@ -235,77 +203,24 @@
 
             window.updateVaultHostingSelectionCounter();
         }
-        // 填充遥测数据
-        const costEl = document.getElementById('hub-cost');
-        if (costEl && data.telemetry) costEl.innerText = data.telemetry.total_cost;
-        const nodeEl = document.getElementById('hub-node');
-        if (nodeEl && data.telemetry) nodeEl.innerText = data.telemetry.node;
-        // 🚀 [V68.0] 环境自感应：实验室模式
-        const labBadge = document.getElementById('hub-lab-badge');
-        const labBtn = document.getElementById('btn-toggle-lab');
-        if (data.environment) {
-            window.isLivePreviewActive = data.environment.is_lab_active;
-            if (data.environment.is_lab_active) {
-                if (labBadge) {
-                    labBadge.innerText = "ACTIVE (LIVE)";
-                    labBadge.className = "badge active";
-                }
-                if (labBtn) {
-                    labBtn.innerText = "🛑 关闭实时预览引擎";
-                    labBtn.className = "engine-btn stop-mode";
-                }
-            } else {
-                if (labBadge) {
-                    labBadge.innerText = "OFFLINE";
-                    labBadge.className = "badge";
-                }
-                if (labBtn) {
-                    labBtn.innerText = "🔌 启动实时预览引擎 (LIVE PREVIEW)";
-                    labBtn.className = "engine-btn start-mode";
-                }
-            }
-        }
-
-        const auditBadge = document.getElementById('hub-audit-status');
-        const auditError = document.getElementById('hub-audit-error');
-        if (auditBadge && data.telemetry) {
-            if (data.telemetry.pipeline && data.telemetry.pipeline.status === 'RUNNING') {
-                const pStage = data.telemetry.pipeline.stage || '正在处理分发管线...';
-                auditBadge.className = 'pipeline-stage-box';
-                auditBadge.innerHTML = `<span class="spinner-gear">⚙️</span> <span id="hub-pipeline-text">${pStage}</span>`;
-
-                // 🚀 [V75.7] 若管线在运行，前端也自动给所有未完成的目标语种卡片继续保持流光呼吸状态
-                document.querySelectorAll('.matrix-item.target-lang').forEach(item => {
-                    const isMatch = item.innerHTML.includes('无需翻译');
-                    const progressText = item.querySelector('.m-status-text')?.innerText || '';
-                    const hasFinished = progressText.includes('100%') || item.classList.contains('status-published');
-                    if (!isMatch && !hasFinished) {
-                        item.classList.add('redispatching');
-                    }
-                });
-            } else {
-                if (data.telemetry.last_audit === 'FAIL') {
-                    const errMsg = data.telemetry.error_detail || '文档存在格式或资源问题';
-                    auditBadge.innerText = `❌ 校验失败：${errMsg}`;
-                    auditBadge.className = 'audit-badge fail';
-                } else if (data.telemetry.last_audit === 'PASS') {
-                    auditBadge.innerText = `✅ 校验通过：文档及资源完整`;
-                    auditBadge.className = 'audit-badge pass';
-                } else if (data.telemetry.last_audit === 'PENDING') {
-                    auditBadge.innerText = `🔍 尚未分发：等待首次发布`;
-                    auditBadge.className = 'audit-badge pending';
-                } else {
-                    auditBadge.innerText = `AUDIT: ${data.telemetry.last_audit}`;
-                    auditBadge.className = `audit-badge ${data.telemetry.last_audit ? data.telemetry.last_audit.toLowerCase() : ''}`;
-                }
-            }
-        }
-        if (auditError) {
-            auditError.style.display = 'none';
-        }
-
         // 🚀 [V89.2] 智能流控自感应：检测是否还有未完工的后台发布与翻译任务
         const pipelineRunning = data.telemetry?.pipeline?.status === 'RUNNING';
+        if (pipelineRunning) {
+            // 管线在后台运行中，保持未完成语种卡片的流光呼吸状态
+            document.querySelectorAll('.matrix-item.target-lang').forEach(item => {
+                const isMatch = item.innerHTML.includes('无需翻译');
+                const progressText = item.querySelector('.m-status-text')?.innerText || '';
+                const hasFinished = progressText.includes('100%') || item.classList.contains('status-published');
+                if (!isMatch && !hasFinished) {
+                    item.classList.add('redispatching');
+                }
+            });
+        }
+
+        if (data.environment) {
+            window.isLivePreviewActive = Boolean(data.environment.is_lab_active);
+        }
+
         const anySyncing = data.sync_matrix && data.sync_matrix.some(item => {
             const st = (item.status || '').toLowerCase();
             return st === 'syncing';

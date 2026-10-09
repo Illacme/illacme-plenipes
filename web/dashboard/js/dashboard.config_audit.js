@@ -124,9 +124,9 @@ window.renderConfigAuditTopology = (data, container) => {
         renderPage();
     };
 
-    searchInput.addEventListener('input', updateFilter);
-    sourceFilter.addEventListener('change', updateFilter);
-    securityFilter.addEventListener('change', updateFilter);
+    if (searchInput) searchInput.addEventListener('input', updateFilter);
+    if (sourceFilter) sourceFilter.addEventListener('change', updateFilter);
+    if (securityFilter) securityFilter.addEventListener('change', updateFilter);
 
     // 行渲染逻辑
     const renderRows = (items) => {
@@ -232,38 +232,43 @@ window.renderConfigAuditTopology = (data, container) => {
             </div>
         `;
 
-        // 绑定第一页/上一页/下一页/尾页事件
-        document.getElementById('audit-first-btn').addEventListener('click', () => {
+        // 🛡️ 安全绑定分页与跳转事件 (防御性规避 null 引起的异步链路中断)
+        const safeBind = (id, event, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, fn);
+        };
+
+        safeBind('audit-first-btn', 'click', () => {
             if (currentPage !== 1) {
                 currentPage = 1;
                 renderPage();
             }
         });
 
-        document.getElementById('audit-prev-btn').addEventListener('click', () => {
+        safeBind('audit-prev-btn', 'click', () => {
             if (currentPage > 1) {
                 currentPage--;
                 renderPage();
             }
         });
 
-        document.getElementById('audit-next-btn').addEventListener('click', () => {
+        safeBind('audit-next-btn', 'click', () => {
             if (currentPage < totalPages) {
                 currentPage++;
                 renderPage();
             }
         });
 
-        document.getElementById('audit-last-btn').addEventListener('click', () => {
+        safeBind('audit-last-btn', 'click', () => {
             if (currentPage !== totalPages) {
                 currentPage = totalPages;
                 renderPage();
             }
         });
 
-        // 绑定跳转事件
         const goPage = () => {
             const input = document.getElementById('audit-go-page-input');
+            if (!input) return;
             const targetPage = parseInt(input.value);
             if (targetPage >= 1 && targetPage <= totalPages) {
                 currentPage = targetPage;
@@ -271,11 +276,9 @@ window.renderConfigAuditTopology = (data, container) => {
             }
         };
 
-        document.getElementById('audit-go-page-btn').addEventListener('click', goPage);
-        document.getElementById('audit-go-page-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                goPage();
-            }
+        safeBind('audit-go-page-btn', 'click', goPage);
+        safeBind('audit-go-page-input', 'keydown', (e) => {
+            if (e.key === 'Enter') goPage();
         });
     };
 

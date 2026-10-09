@@ -138,27 +138,34 @@ class LedgerExtensionsMixin:
     def create_hosting_deploy_batch(self, batch_id, trigger_source="workbench",
                                     imprint_id="default", theme="default",
                                     pages_count=0, bundle_size_kb=0.0,
-                                    targets_json=None, overall_status="RUNNING"):
+                                    targets_json=None, overall_status="RUNNING",
+                                    started_at=None, logs_excerpt=None):
         with self.lock:
             return self.sqlite.create_hosting_deploy_batch(
                 batch_id=batch_id, trigger_source=trigger_source,
                 imprint_id=imprint_id, theme=theme,
                 pages_count=pages_count, bundle_size_kb=bundle_size_kb,
-                targets_json=targets_json, overall_status=overall_status
+                targets_json=targets_json, overall_status=overall_status,
+                started_at=started_at, logs_excerpt=logs_excerpt
             )
 
     def update_hosting_deploy_batch(self, batch_id, overall_status=None,
                                     duration_sec=None, targets_json=None,
-                                    logs_excerpt=None):
+                                    logs_excerpt=None, pages_count=None,
+                                    bundle_size_kb=None, **kwargs):
         with self.lock:
             self.sqlite.update_hosting_deploy_batch(
                 batch_id=batch_id, overall_status=overall_status,
                 duration_sec=duration_sec, targets_json=targets_json,
-                logs_excerpt=logs_excerpt
+                logs_excerpt=logs_excerpt, pages_count=pages_count,
+                bundle_size_kb=bundle_size_kb
             )
 
     def list_hosting_deploy_batches(self, imprint_id=None, limit=50, offset=0):
         return self.sqlite.list_hosting_deploy_batches(imprint_id=imprint_id, limit=limit, offset=offset)
+
+    def count_hosting_deploy_batches(self, imprint_id=None):
+        return self.sqlite.count_hosting_deploy_batches(imprint_id=imprint_id)
 
     def get_hosting_deploy_batch(self, batch_id):
         return self.sqlite.get_hosting_deploy_batch(batch_id)

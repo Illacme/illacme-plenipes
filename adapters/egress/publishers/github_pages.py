@@ -122,7 +122,10 @@ class GitHubPagesPublisher(BasePublisher):
                 self._auto_create_github_repo()
 
         if not self.repo_url:
-            return {"status": "skipped", "message": "GitHub Pages repo_url not configured."}
+            err_msg = "GitHub Pages repo_url not configured."
+            if self.token:
+                err_msg = "GitHub Pages repo_url not configured (零配置网络探测超时且本地无匹配，建议在发布设置中显式填写 repo_url)."
+            return {"status": "skipped", "message": err_msg}
 
         if not os.path.isdir(bundle_path):
             return {"status": "error", "message": f"Bundle path does not exist: {bundle_path}"}

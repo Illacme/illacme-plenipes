@@ -1289,6 +1289,7 @@ def test_dispatch_hosting_render_integrity():
     // 加载目标脚本
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.templates.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.hosting.render.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.hosting.history.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.workbench.js', 'utf8'));
 
     // 1. 拓扑容器断言

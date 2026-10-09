@@ -15,32 +15,21 @@ from core.governance.license_guard import LicenseGuard
 from core.adapters.egress.publishers.base import BasePublisher, PublisherRegistry
 import core.adapters.egress.publishers # Trigger loading
 
+import time
+
 @contextmanager
 def apply_publisher_proxy(proxy: str = None):
-    old_env = {
-        "HTTP_PROXY": os.environ.get("HTTP_PROXY"),
-        "HTTPS_PROXY": os.environ.get("HTTPS_PROXY"),
-        "http_proxy": os.environ.get("http_proxy"),
-        "https_proxy": os.environ.get("https_proxy")
-    }
-    if proxy:
-        os.environ["HTTP_PROXY"] = proxy
-        os.environ["HTTPS_PROXY"] = proxy
-        os.environ["http_proxy"] = proxy
-        os.environ["https_proxy"] = proxy
-    else:
-        os.environ.pop("HTTP_PROXY", None)
-        os.environ.pop("HTTPS_PROXY", None)
-        os.environ.pop("http_proxy", None)
-        os.environ.pop("https_proxy", None)
+    keys = ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]
+    old_env = {k: os.environ.get(k) for k in keys}
+    for k in keys:
+        if proxy: os.environ[k] = proxy
+        else: os.environ.pop(k, None)
     try:
         yield
     finally:
         for k, v in old_env.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+            if v is None: os.environ.pop(k, None)
+            else: os.environ[k] = v
 
 class DeploymentManager:
     """🚀 [V35.0] 发布编排器：指挥全渠道分发战役"""
@@ -143,39 +132,60 @@ class DeploymentManager:
         self._sort_publishers_by_primary()
         primary_hosting_id = self._get_primary_hosting_id()
 
-        tlog.info(f"🚀 [分发中心] 正在向 {len(self.publishers)} 个渠道投递出版资产 (官方主站优先)...")
+        t_start = time.time()
+        t0_str = time.strftime("%H:%M:%S", time.localtime(t_start))
         results = {"status": "success", "channels": {}}
-        
+        target_ids = [getattr(p, "PLUGIN_ID", p.__class__.__name__.lower().replace("publisher", "")) for p in self.publishers]
+        process_logs = [
+            f"[{t0_str}] [INIT] 全域发布驱动整站部署任务启动...",
+            f"[{t0_str}] [ROUTING] 目标平台队列: {', '.join(target_ids)}"
+        ]
         fail_count = 0
         for pub in self.publishers:
             pub_name = pub.__class__.__name__
             plugin_id = getattr(pub, "PLUGIN_ID", pub_name.lower().replace("publisher", "").replace("plugin", ""))
             is_primary = (plugin_id == primary_hosting_id) or (len(self.publishers) == 1)
 
-            # 注入渠道角色元数据
             chan_meta = dict(metadata) if isinstance(metadata, dict) else {}
-            chan_meta["is_primary"] = is_primary
-            chan_meta["channel_role"] = "primary" if is_primary else "mirror"
+            chan_meta["is_primary"], chan_meta["channel_role"] = is_primary, ("primary" if is_primary else "mirror")
+
+            t_ch_start = time.time()
+            now_str = time.strftime("%H:%M:%S", time.localtime(t_ch_start))
+            process_logs.append(f"[{now_str}] [PUSH] 正在向平台 [{plugin_id}] 推送静态网站产物...")
 
             try:
-                # 执行物理发布（应用代理沙盒，保障 CLI/SDK/Requests 代理优先级全部对齐）
                 with apply_publisher_proxy(pub.get_proxy()):
                     res = pub.push(bundle_path, chan_meta)
+                ch_dur = round(time.time() - t_ch_start, 2)
+                ch_end = time.strftime("%H:%M:%S")
+
                 if isinstance(res, dict) and res.get("status") == "error":
                     err_msg = res.get("message", "未知错误")
                     tlog.error(f"  └── ❌ 渠道 {pub_name} 投递失败: {err_msg}")
-                    results["channels"][pub_name] = {"status": "error", "message": err_msg}
+                    results["channels"][pub_name] = {"status": "error", "message": err_msg, "duration_sec": ch_dur, "deployed_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+                    process_logs.append(f"[{ch_end}] [ERROR] 平台 [{plugin_id}] 推送失败: {err_msg} (耗时 {ch_dur}s)")
                     fail_count += 1
                 else:
-                    results["channels"][pub_name] = {"status": "success", "response": res}
+                    results["channels"][pub_name] = {"status": "success", "response": res, "duration_sec": ch_dur, "deployed_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+                    u_val = (res.get("url") if isinstance(res, dict) else "") or ""
+                    u_tip = f" -> 线上地址: {u_val}" if u_val else ""
+                    process_logs.append(f"[{ch_end}] [SUCCESS] 平台 [{plugin_id}] 部署完成{u_tip} (耗时 {ch_dur}s)")
                     tlog.success(f"  └── ✅ 渠道 {pub_name} 投递成功。")
             except Exception as e:
+                ch_dur = round(time.time() - t_ch_start, 2)
+                ch_end = time.strftime("%H:%M:%S")
                 tlog.error(f"  └── ❌ 渠道 {pub_name} 投递异常: {e}")
-                results["channels"][pub_name] = {"status": "error", "message": str(e)}
+                results["channels"][pub_name] = {"status": "error", "message": str(e), "duration_sec": ch_dur, "deployed_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+                process_logs.append(f"[{ch_end}] [ERROR] 平台 [{plugin_id}] 部署中断: {e} (耗时 {ch_dur}s)")
                 fail_count += 1
-        
+
+        total_dur = round(time.time() - t_start, 2)
         if fail_count > 0:
             results["status"] = "partial_success" if fail_count < len(self.publishers) else "failed"
+
+        process_logs.append(f"[{time.strftime('%H:%M:%S')}] [FINISH] 全域部署完成，总状态: {results['status'].upper()}，总耗时: {total_dur}s")
+        results["process_logs"] = process_logs
+        results["duration_sec"] = total_dur
 
         # 📊 [V90.0] 组织全域分发汇总报告与站点直达链接
         summary = self._build_deployment_summary(results)
@@ -261,12 +271,11 @@ class DeploymentManager:
             display_name = name_map.get(plugin_id, plugin_id.replace("_", " ").title())
 
             summary_channels.append({
-                "id": plugin_id,
-                "name": display_name,
-                "status": status,
-                "is_primary": is_primary,
-                "url": url,
-                "error": ch_data.get("message") if status == "error" else ""
+                "id": plugin_id, "name": display_name, "status": status,
+                "is_primary": is_primary, "url": url,
+                "error": ch_data.get("message") if status == "error" else "",
+                "duration_sec": ch_data.get("duration_sec", 0.0),
+                "deployed_at": ch_data.get("deployed_at", "")
             })
 
         # 主站优先排在前面，成功渠道靠前

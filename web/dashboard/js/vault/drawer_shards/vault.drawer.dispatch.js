@@ -133,23 +133,31 @@
         showToast(`🔄 正在向渠道 ${channelId} 进行单篇物理同步部署...`, "info");
 
         const fetchFunc = typeof apiFetch === 'function' ? apiFetch : (async (url, init) => (await fetch(url, init)).json());
-        const res = await fetchFunc(`/api/vault/re-dispatch/${encodeURIComponent(relPath)}`, {
+        const res = await fetchFunc('/api/dispatch/hosting/deploy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target_channel: channelId })
+            body: JSON.stringify({
+                target_channel: channelId,
+                trigger_source: 'vault_drawer',
+                doc_id: relPath
+            })
         });
 
-        if (res && res.success) {
-            showToast(`✅ 已向渠道 ${channelId} 完成物理同步部署！`, "success");
-
-            // 自动拉起重调度追踪定时器，监控状态变更
+        if (res && res.status === 'success') {
+            showToast(`✅ 已向渠道 ${channelId} 触发部署 (${res.batch_id})！`, "success");
+            if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
+            if (typeof window.startHostingDeployPolling === 'function') window.startHostingDeployPolling();
             if (typeof window.safeStartDrawerTimer === 'function') window.safeStartDrawerTimer(relPath);
 
             setTimeout(() => {
                 if (typeof window.refreshVaultDrawerStatus === 'function') window.refreshVaultDrawerStatus(relPath);
-            }, 1000);
+                if (btn) {
+                    btn.style.opacity = '1';
+                    btn.innerText = "🔄 发布";
+                }
+            }, 1500);
         } else {
-            const errorMsg = res ? (res.message || res.reason || "未知异常") : "网络连接或系统异常";
+            const errorMsg = res ? (res.detail || res.message || res.reason || "未知异常") : "网络连接或系统异常";
             showToast(`❌ 渠道同步失败: ${errorMsg}`, "error");
             if (btn) {
                 btn.style.opacity = '1';

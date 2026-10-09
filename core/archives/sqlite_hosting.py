@@ -21,20 +21,24 @@ class SQLiteHostingMixin:
         pages_count: int = 0,
         bundle_size_kb: float = 0.0,
         targets_json: Any = None,
-        overall_status: str = "RUNNING"
+        overall_status: str = "RUNNING",
+        started_at: Optional[str] = None,
+        logs_excerpt: Optional[str] = None
     ) -> str:
         """创建新的整站部署批次流水"""
         tjson = json.dumps(targets_json or {}) if not isinstance(targets_json, str) else targets_json
+        now_str = started_at or time.strftime("%Y-%m-%d %H:%M:%S")
         with self._get_conn() as conn:
             conn.execute("""
                 INSERT INTO hosting_deploy_records (
                     batch_id, trigger_source, imprint_id, theme,
                     pages_count, bundle_size_kb, targets_json,
-                    overall_status, started_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    overall_status, started_at, logs_excerpt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 batch_id, trigger_source, imprint_id, theme,
-                pages_count, bundle_size_kb, tjson, overall_status
+                pages_count, bundle_size_kb, tjson, overall_status,
+                now_str, logs_excerpt
             ))
         return batch_id
 
@@ -44,7 +48,9 @@ class SQLiteHostingMixin:
         overall_status: Optional[str] = None,
         duration_sec: Optional[float] = None,
         targets_json: Any = None,
-        logs_excerpt: Optional[str] = None
+        logs_excerpt: Optional[str] = None,
+        pages_count: Optional[int] = None,
+        bundle_size_kb: Optional[float] = None
     ) -> None:
         """更新整站部署批次状态与渠道结果"""
         updates = []
@@ -53,10 +59,17 @@ class SQLiteHostingMixin:
             updates.append("overall_status = ?")
             params.append(overall_status)
             if overall_status in ("SUCCESS", "FAILED", "PARTIAL_SUCCESS"):
-                updates.append("completed_at = CURRENT_TIMESTAMP")
+                updates.append("completed_at = ?")
+                params.append(time.strftime("%Y-%m-%d %H:%M:%S"))
         if duration_sec is not None:
             updates.append("duration_sec = ?")
             params.append(duration_sec)
+        if pages_count is not None:
+            updates.append("pages_count = ?")
+            params.append(pages_count)
+        if bundle_size_kb is not None:
+            updates.append("bundle_size_kb = ?")
+            params.append(bundle_size_kb)
         if targets_json is not None:
             tjson = json.dumps(targets_json) if not isinstance(targets_json, str) else targets_json
             updates.append("targets_json = ?")
@@ -102,6 +115,20 @@ class SQLiteHostingMixin:
                 d["targets"] = {}
             results.append(d)
         return results
+
+    def count_hosting_deploy_batches(self, imprint_id: Optional[str] = None) -> int:
+        """查询整站部署流水总条数"""
+        conn = self._get_conn()
+        if imprint_id:
+            row = conn.execute(
+                "SELECT COUNT(*) as total FROM hosting_deploy_records WHERE imprint_id = ?",
+                (imprint_id,)
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT COUNT(*) as total FROM hosting_deploy_records"
+            ).fetchone()
+        return row["total"] if row else 0
 
     def get_hosting_deploy_batch(self, batch_id: str) -> Optional[Dict[str, Any]]:
         """获取单个部署批次详情"""

@@ -10,6 +10,10 @@ import urllib.request
 from core.utils.tracing import tlog
 
 
+# 全局进程级 Token 用户名缓存，避免单文档高频发布时重复发起 GitHub API 网络探测
+_CACHED_TOKEN_USER: dict[str, str] = {}
+
+
 def parse_owner_repo_impl(repo_url: str, token: str = "", proxy: str = "") -> tuple[str, str]:
     """解析 GitHub 仓库的 Owner 与 Name (支持完整的 HTTPS/SSH 链接、'owner/repo' 简写及 Token 自动解析与零配置推导)"""
     url = (repo_url or "").strip()
@@ -29,8 +33,11 @@ def parse_owner_repo_impl(repo_url: str, token: str = "", proxy: str = "") -> tu
         if len(parts) == 2 and parts[0] and parts[1]:
             return parts[0], parts[1]
     elif token:
-        # 仓库名为空或仅填了简写仓库名，利用 Token 调 API 获取当前登录用户名并推导仓库名
+        # 仓库名为空或仅填了简写仓库名，优先检查内存缓存，避免重复网络调用与超时
         repo_name = url if url else "illacme-press"
+        if token in _CACHED_TOKEN_USER:
+            return _CACHED_TOKEN_USER[token], repo_name
+
         try:
             if proxy:
                 proxy_support = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
@@ -45,9 +52,31 @@ def parse_owner_repo_impl(repo_url: str, token: str = "", proxy: str = "") -> tu
                 if resp.status == 200:
                     user_login = json.loads(resp.read().decode("utf-8")).get("login", "")
                     if user_login:
+                        _CACHED_TOKEN_USER[token] = user_login
                         return user_login, repo_name
         except Exception as e:
-            tlog.debug(f"ℹ️ [GitHub Pages] 自动解析 Token 所属用户退避: {e}")
+            tlog.warning(f"⚠️ [GitHub Pages] 自动解析 Token 所属用户网络请求退避 ({e})，尝试本地上下文兜底...")
+
+        # 本地 fallback 兜底：若网络超时/受限，尝试从本地 git remote 提取 owner
+        try:
+            import subprocess
+            res = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True, text=True, timeout=2
+            )
+            git_url = (res.stdout or "").strip()
+            if "github.com" in git_url:
+                clean_git = git_url.replace(".git", "")
+                delim = "github.com/" if "github.com/" in clean_git else "github.com:"
+                if delim in clean_git:
+                    raw_owner = clean_git.split(delim)[1].split("/")[0]
+                    # 去除形如 Illacme@github.com 中的前缀或特殊符号
+                    candidate_owner = raw_owner.split("@")[-1]
+                    if candidate_owner:
+                        _CACHED_TOKEN_USER[token] = candidate_owner
+                        tlog.info(f"✨ [GitHub Pages] 命中本地 Git 上下文兜底：成功提取 Owner '{candidate_owner}' 并缓存")
+                        return candidate_owner, repo_name
+        except Exception:
             pass
     return "", ""
 

@@ -136,6 +136,7 @@ core/bindery/docx_polyglot_scaffold.py
 core/bindery/docx_syntax_highlighter.py
 core/bindery/docx_text_parser.py
 core/bindery/garden_exporter.py
+core/bindery/hosting_record_bridge.py
 core/bindery/html_sanitizer.py
 core/bindery/image_packager.py
 core/bindery/math_packager.py
@@ -439,6 +440,7 @@ services/api/routes/design_shards/design_upload_routes.py
 services/api/routes/dispatch.py
 services/api/routes/dispatch_shards/__init__.py
 services/api/routes/dispatch_shards/hosting_routes.py
+services/api/routes/dispatch_shards/hosting_diagnostic_routes.py
 services/api/routes/dispatch_shards/platform_oauth_routes.py
 services/api/routes/dispatch_shards/sensing_routes.py
 services/api/routes/dispatch_shards/task_routes.py

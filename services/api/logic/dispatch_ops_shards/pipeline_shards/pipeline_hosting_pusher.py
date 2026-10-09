@@ -7,6 +7,8 @@
 """
 
 import os
+import time
+import uuid
 from core.utils.tracing import tlog
 
 def push_to_hosting_channel(engine, doc_id: str, doc_info: dict, target_channel: str, direct_upload: dict) -> None:
@@ -65,6 +67,11 @@ def push_to_hosting_channel(engine, doc_id: str, doc_info: dict, target_channel:
             ]
             bundle_path = next((p for p in candidates if os.path.exists(p)), candidates[1] if os.path.exists(candidates[1]) else candidates[0])
         
+        t_start = time.time()
+        start_ts = time.strftime("%H:%M:%S", time.localtime(t_start))
+        started_at = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t_start))
+        batch_id = f"deploy_{int(t_start)}_{uuid.uuid4().hex[:6]}"
+
         try:
             metadata = {
                 "rel_path": doc_id,
@@ -81,9 +88,58 @@ def push_to_hosting_channel(engine, doc_id: str, doc_info: dict, target_channel:
             deploy_url = res.get("url") if isinstance(res, dict) else None
             engine.meta.update_egress_status(doc_id, target_channel, "SUCCESS", url=deploy_url)
             engine.meta.save()
+
+            # 📜 [V125.4] 同步将单渠道推送成果沉淀至网站发布历史批次账本
+            ch_dur = round(time.time() - t_start, 2)
+            try:
+                from core.bindery.hosting_record_bridge import _inspect_bundle
+                pages_cnt, sz_kb, sz_fmt = _inspect_bundle(bundle_path)
+                imprint_id = getattr(engine.config, "active_imprint", "default") or "default"
+                theme = getattr(engine.config, "active_theme", "default") or "default"
+                now_s = time.strftime("%H:%M:%S")
+                logs_excerpt = "\n".join([
+                    f"[{start_ts}] [INIT] 原稿文库定向托管部署任务启动 (批次: #{batch_id.split('_')[-1]})",
+                    f"[{start_ts}] [BUNDLE] 物理产物就绪: 主题={theme}, 页面数={pages_cnt}, 体积={sz_fmt}",
+                    f"[{start_ts}] [PUSH] 正在向平台 [{target_channel}] 推送静态网站产物 (关联原稿: {doc_id})...",
+                    f"[{now_s}] [SUCCESS] 平台 [{target_channel}] 部署完成 -> 线上地址: {deploy_url or '已同步'} (耗时 {ch_dur}s)",
+                    f"[{now_s}] [FINISH] 托管部署完成，总状态: SUCCESS，总耗时: {ch_dur}s"
+                ])
+                if hasattr(engine.meta, "create_hosting_deploy_batch"):
+                    t_json = {target_channel: {"status": "SUCCESS", "url": deploy_url or "", "duration_sec": ch_dur, "deployed_at": time.strftime("%Y-%m-%d %H:%M:%S")}}
+                    engine.meta.create_hosting_deploy_batch(
+                        batch_id=batch_id, trigger_source="vault_drawer", imprint_id=imprint_id,
+                        theme=theme, pages_count=pages_cnt, bundle_size_kb=sz_kb,
+                        targets_json=t_json, overall_status="SUCCESS", started_at=started_at, logs_excerpt=logs_excerpt
+                    )
+                    if hasattr(engine.meta, "update_hosting_deploy_batch"):
+                        engine.meta.update_hosting_deploy_batch(batch_id=batch_id, overall_status="SUCCESS", duration_sec=ch_dur, targets_json=t_json, logs_excerpt=logs_excerpt)
+            except Exception as be:
+                tlog.warning(f"⚠️ [分发中枢] 同步网站发布历史批次异常: {be}")
         except Exception as pe:
+            ch_dur = round(time.time() - t_start, 2)
             tlog.error(f"❌ [分发中枢] 定向托管物理部署失败: {pe}")
             engine.meta.update_egress_status(doc_id, target_channel, "FAILED", error=str(pe))
             engine.meta.save()
+            try:
+                from core.bindery.hosting_record_bridge import _inspect_bundle
+                pages_cnt, sz_kb, sz_fmt = _inspect_bundle(bundle_path)
+                imprint_id = getattr(engine.config, "active_imprint", "default") or "default"
+                theme = getattr(engine.config, "active_theme", "default") or "default"
+                now_s = time.strftime("%H:%M:%S")
+                logs_excerpt = "\n".join([
+                    f"[{start_ts}] [INIT] 原稿文库定向托管部署任务启动 (批次: #{batch_id.split('_')[-1]})",
+                    f"[{start_ts}] [BUNDLE] 物理产物就绪: 主题={theme}, 页面数={pages_cnt}, 体积={sz_fmt}",
+                    f"[{start_ts}] [PUSH] 正在向平台 [{target_channel}] 推送静态网站产物 (关联原稿: {doc_id})...",
+                    f"[{now_s}] [ERROR] 平台 [{target_channel}] 部署失败: {pe} (耗时 {ch_dur}s)",
+                    f"[{now_s}] [FINISH] 托管部署完成，总状态: FAILED，总耗时: {ch_dur}s"
+                ])
+                if hasattr(engine.meta, "create_hosting_deploy_batch"):
+                    t_json = {target_channel: {"status": "FAILED", "error": str(pe), "duration_sec": ch_dur, "deployed_at": time.strftime("%Y-%m-%d %H:%M:%S")}}
+                    engine.meta.create_hosting_deploy_batch(
+                        batch_id=batch_id, trigger_source="vault_drawer", imprint_id=imprint_id,
+                        theme=theme, pages_count=pages_cnt, bundle_size_kb=sz_kb,
+                        targets_json=t_json, overall_status="FAILED", started_at=started_at, logs_excerpt=logs_excerpt
+                    )
+            except Exception: pass
     else:
         tlog.warning(f"⚠️ [分发中枢] 未能找到已激活的托管通道: {target_channel}")

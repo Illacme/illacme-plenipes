@@ -199,19 +199,25 @@
                 }
             });
 
-            panel.querySelector('#review-confirm-cancel').addEventListener('click', () => {
-                window._closeReviewLocked = false;
-                panel.remove();
-            });
+            const cancelBtn = panel.querySelector('#review-confirm-cancel');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    window._closeReviewLocked = false;
+                    panel.remove();
+                });
+            }
 
-            panel.querySelector('#review-confirm-discard').addEventListener('click', () => {
-                if (state.data && state.data.langs) {
-                    Object.keys(state.data.langs).forEach(lc => {
-                        window.clearReviewDraft?.(lc);
-                    });
-                }
-                _doClose();
-            });
+            const discardBtn = panel.querySelector('#review-confirm-discard');
+            if (discardBtn) {
+                discardBtn.addEventListener('click', () => {
+                    if (state.data && state.data.langs) {
+                        Object.keys(state.data.langs).forEach(lc => {
+                            window.clearReviewDraft?.(lc);
+                        });
+                    }
+                    _doClose();
+                });
+            }
 
             document.body.appendChild(panel);
             return;

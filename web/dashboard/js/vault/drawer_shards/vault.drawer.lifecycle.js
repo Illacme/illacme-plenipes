@@ -19,6 +19,9 @@
             clearInterval(window.vaultDrawerTimer);
             window.vaultDrawerTimer = null;
         }
+        if (typeof window.stopVaultHostingLiveTracking === 'function') {
+            window.stopVaultHostingLiveTracking();
+        }
         // 🪐 [V107.8] 若在知识星谱视图下操作，关闭抽屉后自动平滑复原星球控制仪与 3D 聚焦
         if (typeof window.restoreGalaxyDirectorIfActive === 'function') {
             window.restoreGalaxyDirectorIfActive();
@@ -61,6 +64,12 @@
         }
 
         window.currentDocId = relPath;
+        if (window._lastVaultHostingDoc !== relPath) {
+            window._lastVaultHostingDoc = relPath;
+            if (typeof window.resetVaultHostingLivePod === 'function') {
+                window.resetVaultHostingLivePod();
+            }
+        }
         const drawer = document.getElementById('vault-drawer');
         const backdrop = document.getElementById('vault-drawer-backdrop');
         const hubDocId = document.getElementById('hub-doc-id');

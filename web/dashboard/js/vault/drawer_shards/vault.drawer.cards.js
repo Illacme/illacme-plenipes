@@ -11,7 +11,7 @@
         const tid = String(id || '').trim().toLowerCase();
         const cleanId = tid.replace(/[_-\s]/g, '');
 
-        // 1. 优先从全局插件中心智库 window.allPlugins 中精准匹配
+        // 1. 唯一溯源自插件中心智库 (window.allPlugins)
         let pluginObj = null;
         if (Array.isArray(window.allPlugins) && window.allPlugins.length > 0) {
             pluginObj = window.allPlugins.find(p => {
@@ -20,37 +20,15 @@
             });
         }
 
-        // 2. 调取平台专属品牌徽章字典 (getPlatformBrandBadge)
+        // 2. 调取平台专属品牌徽章算子 (getPlatformBrandBadge)
         const brand = (typeof window.getPlatformBrandBadge === 'function')
             ? window.getPlatformBrandBadge(tid, 'hosting')
             : null;
 
-        let name = (pluginObj && pluginObj.name);
-        if (!name || name === tid) {
-            const fallbackNames = {
-                'github_pages': 'GitHub Pages',
-                'cloudflare_pages': 'Cloudflare Pages',
-                'gitee_pages': 'Gitee Pages',
-                'gitlab_pages': 'GitLab Pages',
-                'sftp': 'SFTP / SSH',
-                'firebase': 'Firebase Hosting',
-                'vercel': 'Vercel',
-                'netlify': 'Netlify',
-                'render': 'Render',
-                'railway': 'Railway',
-                'zeabur': 'Zeabur'
-            };
-            name = fallbackNames[tid] || tid.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        }
-
-        let icon = (brand && brand.icon && brand.icon !== '🌐') ? brand.icon : null;
-        if (!icon && pluginObj && pluginObj.icon && pluginObj.icon !== '🌐') {
-            icon = pluginObj.icon;
-        }
-        if (!icon) {
-            icon = (brand && brand.icon) || '🌐';
-        }
-
+        const name = (pluginObj && pluginObj.name) || tid.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const icon = (pluginObj && pluginObj.icon && pluginObj.icon !== '🌐')
+            ? pluginObj.icon
+            : ((brand && brand.icon) || '🌐');
         const desc = (pluginObj && (pluginObj.description || pluginObj.desc)) || `全站静态站点托管发布平台 (${name})`;
 
         return { name, icon, desc };
@@ -125,10 +103,16 @@
 
             // Status tag via CSS class
             let statusClass = 'hosting-status hosting-status--unconfigured';
-            let statusIcon = '⚪ 待填凭据';
-            if (p.isReady && p.isBrandInUse) {
+            let statusIcon = p.credLabel ? `⚪ ${p.credLabel}` : '⚪ 待填凭据';
+            if (p.isPrimary && p.isBrandInUse && p.isReady) {
                 statusClass = 'hosting-status hosting-status--enabled';
-                statusIcon = '🟢 已启用';
+                statusIcon = '🏠 官方主站';
+            } else if (p.isPrimary && p.isBrandInUse) {
+                statusClass = 'hosting-status hosting-status--unconfigured';
+                statusIcon = `🏠 主站 (${p.credLabel || '待填凭据'})`;
+            } else if (p.isReady && p.isBrandInUse) {
+                statusClass = 'hosting-status hosting-status--enabled';
+                statusIcon = '🟢 备用镜像';
             } else if (p.isReady) {
                 statusClass = 'hosting-status hosting-status--ready';
                 statusIcon = '🟡 配置就绪 (待启用)';

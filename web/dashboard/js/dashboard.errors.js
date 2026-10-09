@@ -42,6 +42,10 @@
 
         handleAsyncError(error) {
             console.warn('[Plenipes Sovereign Guard] Intercepted Async Rejection:', error);
+            window.__lastAsyncError = error;
+            if (error && error.stack) {
+                console.error('[Plenipes Sovereign Guard] Async Rejection Stack:', error.stack);
+            }
             const message = error.message || '网络或数据流通道发生异常';
             
             if (typeof Swal !== 'undefined') {

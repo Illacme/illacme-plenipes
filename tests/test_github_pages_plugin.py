@@ -405,11 +405,13 @@ class TestGitHubPagesPublisher:
     def test_zero_config_auto_derive_repo_url(self):
         """验证 GitHubPagesPublisher 在零配置 (未填 repo_url 但有 token) 下自动推导并绑定仓库"""
         from adapters.egress.publishers.github_pages import GitHubPagesPublisher
+        from adapters.egress.publishers.github_pages_shards.cloud_api_ops import _CACHED_TOKEN_USER
         from unittest.mock import patch, MagicMock
         import json
 
+        _CACHED_TOKEN_USER.clear()
         pub = GitHubPagesPublisher(config={
-            "token": "ghp_mock_token"
+            "token": "ghp_mock_auto_derive_token"
         })
         assert pub.repo_url == ""
 

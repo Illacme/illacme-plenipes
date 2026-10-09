@@ -7,6 +7,7 @@ Illacme-plenipes Service - Post-Sync Registry & Lifecycle Manager
 """
 
 import abc
+import time
 import traceback
 from typing import List, Any, Dict
 from core.utils.tracing import tlog
@@ -252,13 +253,20 @@ class SovereignDeploymentPlugin(PostSyncTask):
         }
 
         # 4. 执行全渠道事务分发
+        t_deploy_start = time.perf_counter()
         results = engine.deployment_manager.deploy_all(bundle_path, deployment_meta)
-        
-        # 5. 记录分发凭证至注册簿 (Registry)
+        deploy_duration = time.perf_counter() - t_deploy_start
+
+        # 5. 记录分发凭证至注册簿 (Registry) 与网站发布批次历史账本
         engine.ledger.log("GLOBAL_DEPLOY", f"全渠道分发完成，状态: {(results or {}).get('status')}",
                           imprint_id=engine.imprint_id, metadata=results)
-        # 🚀 [V90.0] 挂载至 engine 实例，供 API 和生命周期广播快速调用
         engine.last_deployment_results = results
+
+        try:
+            from core.bindery.hosting_record_bridge import record_global_deploy_batch
+            record_global_deploy_batch(engine, bundle_path, results, duration_sec=deploy_duration)
+        except Exception as bridge_err:
+            tlog.warning(f"⚠️ [Hosting Bridge] 同步发布历史失败: {bridge_err}")
 
 
 class BlogIndexGeneratorPlugin(PostSyncTask):
@@ -270,7 +278,6 @@ class BlogIndexGeneratorPlugin(PostSyncTask):
         try:
             adapter = getattr(engine, 'ssg_adapter', None)
             if adapter and adapter.is_framework_engine():
-                # 独立外部框架 SSG (Docusaurus/VitePress/Astro/Nextra) 自治
                 return
             from core.adapters.egress.ssg.generic_templates import generate_dynamic_blog_archive
             generate_dynamic_blog_archive(engine, snapshot=snapshot)
@@ -279,15 +286,7 @@ class BlogIndexGeneratorPlugin(PostSyncTask):
 
 
 # 🚀 自动注册内置插件 (注意顺序：Janitor 清理在前，分发在后)
-LifecycleManager.register(GraphExportPlugin())
-LifecycleManager.register(SearchIndexPlugin())
-LifecycleManager.register(SyncStatsPlugin())
-LifecycleManager.register(AssetAuditPlugin())
-LifecycleManager.register(BlogIndexGeneratorPlugin())
-LifecycleManager.register(JanitorPlugin())
-LifecycleManager.register(DigitalGardenPlugin())
-LifecycleManager.register(SovereignDeploymentPlugin())
-
-
-import time
+for p in [GraphExportPlugin(), SearchIndexPlugin(), SyncStatsPlugin(), AssetAuditPlugin(),
+         BlogIndexGeneratorPlugin(), JanitorPlugin(), DigitalGardenPlugin(), SovereignDeploymentPlugin()]:
+    LifecycleManager.register(p)
 

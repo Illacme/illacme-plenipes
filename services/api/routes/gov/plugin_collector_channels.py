@@ -78,9 +78,10 @@ def collect_hosting_plugins(engine, disabled: set, system_track: str) -> List[Di
             "status": "In-Use" if is_active else "Ready", "is_in_use": is_active, "is_enabled": (p_id not in disabled),
             "is_primary": bool(is_active and p_id == primary_hosting_id),
             "origin": "core", "version": getattr(cls, "VERSION", system_track),
-            "description": getattr(cls, "DESCRIPTION", f"托管适配器插件：负责将出版物物理同步至 {name}。"),
             "cfg": hosting_root.get(p_id, {}) if isinstance(hosting_root, dict) else {}, "is_manageable": True
         })
+    # 🏠 [主权对齐] 官方主站稳定排在首位，其余渠道紧随其后
+    plugins.sort(key=lambda p: 0 if p.get("is_primary") else 1)
     return plugins
 
 

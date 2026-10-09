@@ -720,13 +720,14 @@
 
 .vault-drawer-shell .drawer-footer {
     display: flex !important;
-    padding: 12px 16px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 10px 0 0 0 !important;
     border-top: 1px solid var(--white-10) !important;
-    background: rgba(var(--bg-dropdown-solid-rgb), 0.95) !important;
-    backdrop-filter: blur(15px) !important;
+    background: transparent !important;
     box-sizing: border-box !important;
     width: 100% !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
 }
 .drawer-footer-row {
     display: flex;
@@ -806,4 +807,128 @@
     box-shadow: 0 0 15px rgba(var(--neon-red-rgb), 0.3) !important;
     transform: translateY(-1px) !important;
 }
+
+/* 📡 [V126.0] 原稿抽屉专属：全站托管实时发布态势卡片 (Live Deploy Pod) */
+.vault-live-deploy-pod {
+    width: 100% !important;
+    background: linear-gradient(135deg, rgba(var(--bg-card-rgb), 0.85) 0%, rgba(var(--bg-card-rgb), 0.95) 100%) !important;
+    border: 1px solid var(--white-10) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    animation: fadeInPod 0.25s ease-out;
+}
+@keyframes fadeInPod {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.vault-live-deploy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    gap: 8px;
+}
+.vault-live-deploy-status-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.vault-live-deploy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+.vault-live-deploy-badge.running {
+    background: rgba(var(--neon-amber-rgb), 0.15);
+    color: var(--neon-amber);
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.35);
+    animation: podBreathe 2s infinite ease-in-out;
+}
+@keyframes podBreathe {
+    0%, 100% { box-shadow: 0 0 0 rgba(var(--neon-amber-rgb), 0); }
+    50% { box-shadow: 0 0 8px rgba(var(--neon-amber-rgb), 0.4); }
+}
+.vault-live-deploy-badge.success {
+    background: rgba(var(--neon-emerald-rgb), 0.15);
+    color: var(--neon-emerald);
+    border: 1px solid rgba(var(--neon-emerald-rgb), 0.35);
+}
+.vault-live-deploy-badge.failed {
+    background: rgba(var(--neon-red-rgb), 0.15);
+    color: var(--neon-red);
+    border: 1px solid rgba(var(--neon-red-rgb), 0.35);
+}
+.vault-live-deploy-code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+.vault-live-deploy-dur {
+    font-size: 0.72rem;
+    color: var(--text-bright);
+    font-weight: 500;
+}
+.vault-live-deploy-btn-log {
+    background: var(--white-05);
+    border: 1px solid var(--white-10);
+    color: var(--accent-primary);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.vault-live-deploy-btn-log:hover {
+    background: rgba(var(--accent-primary-rgb), 0.2);
+    border-color: rgba(var(--accent-primary-rgb), 0.5);
+    color: var(--text-bright);
+}
+.vault-live-deploy-targets-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+}
+.vault-live-target-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--white-03);
+    border: 1px solid var(--white-08);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.vault-live-target-pill.link-ready {
+    background: rgba(var(--neon-cyan-rgb), 0.12);
+    border-color: rgba(var(--neon-cyan-rgb), 0.35);
+    color: var(--neon-cyan);
+    cursor: pointer;
+    font-weight: 500;
+}
+.vault-live-target-pill.link-ready:hover {
+    background: rgba(var(--neon-cyan-rgb), 0.25);
+    border-color: rgba(var(--neon-cyan-rgb), 0.6);
+    color: var(--text-bright);
+    box-shadow: 0 0 8px rgba(var(--neon-cyan-rgb), 0.35);
+    transform: translateY(-1px);
+}
+
 

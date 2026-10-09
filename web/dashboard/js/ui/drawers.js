@@ -23,49 +23,20 @@ window.getUIDrawersHTML = () => {
             </div>
             
             <div class="drawer-body vault-drawer-body">
-                <!-- 🌐 Section 1: 全站托管与多语种网页装帧产物 (已剥离社媒，纯净全站托管) -->
+                <!-- 🌐 全站托管与多语种网页装帧产物 -->
                 <div class="hub-section">
                     <div class="sector-header">
-                        <span>HOSTING & STATIC SITES</span>
+                        <span>🌐 网页装帧产物与全站托管平台 (HOSTING & STATIC SITES)</span>
                         <button id="btn-sync-all-channels" class="p-btn" style="display: none;" onclick="window.triggerSyncAllChannels()">🚀 发布全站托管</button>
                     </div>
                     <div id="hub-sync-matrix" class="matrix-list">
                         <!-- 矩阵通道动态列表将注入此处 -->
                     </div>
                 </div>
-
-                <!-- 📊 Section 2: 资产遥测与算力审计 -->
-                <div class="hub-section">
-                    <div class="sector-header">ASSET TELEMETRY & AUDIT</div>
-                    <div class="telemetry-grid">
-                        <div class="t-pod">
-                            <span class="t-label">ACCUMULATED COST</span>
-                            <span id="hub-cost" class="t-value mono">--</span>
-                        </div>
-                        <div class="t-pod">
-                            <span class="t-label">COMPUTE CORE</span>
-                            <span id="hub-node" class="t-value">--</span>
-                        </div>
-                    </div>
-                    <div id="hub-audit-status" class="audit-badge" style="margin-top: 10px;">⏳ 正在等待状态反馈...</div>
-                    <div id="hub-audit-error" class="drawer-error-box" style="display: none;"></div>
-                </div>
-
-                <!-- ⚡ Section 3: 本地实时预览服务 -->
-                <div class="hub-section">
-                    <div class="sector-header">LIVE PREVIEW ENGINE</div>
-                    
-                    <div id="lab-control-panel" class="lab-box">
-                        <div class="lab-status-row">
-                            <span class="t-label">LOCAL PREVIEW ENGINE</span>
-                            <span id="hub-lab-badge" class="badge">OFFLINE</span>
-                        </div>
-                        <button id="btn-toggle-lab" class="engine-btn start-mode" onclick="toggleThemeLab()">🔌 启动实时预览引擎 (LIVE PREVIEW)</button>
-                    </div>
-                </div>
             </div>
 
-            <div class="drawer-footer hub-footer drawer-footer-row">
+            <div class="drawer-footer hub-footer">
+                <div id="vault-hosting-live-deploy-pod" class="vault-live-deploy-pod" style="display: none;"></div>
                 <div class="sovereign-action-grid">
                     <button class="hub-btn primary-hub-btn" style="flex: 1;" onclick="if (typeof window.dispatchVaultHostingSelection === 'function') { window.dispatchVaultHostingSelection(window.currentDocId); } else { triggerReDispatch('all', false); }" title="一键向已勾选的全站托管平台发布更新">
                         <span class="btn-icon">🚀</span> 开始全站托管发布

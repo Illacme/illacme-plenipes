@@ -2,6 +2,155 @@
 
 这里记录了我们在系统的物理迭代和开发过程里，所沉淀下的最为关键的架构缺陷自检与教训（Lessons），以防止后续开发在相同的物理逻辑上发生脑裂或回退。
 
+## 📅 2026-10-09: 托管批次账本中间层参数失配导致状态挂死自愈治理 (Hosting Deploy Ledger Mixin Signature Parity & Silent Pass Elimination)
+*   **现象与需求描述**：
+    1.  单文档发布时，控制台日志流水抽屉与历史表格长时间停留在“⏳ 正在发布”，两个平台显示为“⏸️ 准备中”，执行用时持续累加到 260s+ 假死卡住；
+    2.  创作者询问：为什么一直卡在这里，发布是遇到什么问题了吗？
+*   **物理现场自查与根因剖析 (Rule 16 裸错误栈穿透)**：
+    1.  **物理发布真实耗时仅 38 秒且 100% 成功**：
+        - 查阅 `plenipes.log` 物理日志，在 `14:58:23` GitHub Pages 已部署成功（耗时 25.0s），`14:58:38` Vercel 已部署成功（耗时 14.3s），两平台实际已 100% 部署上线；
+    2.  **死穴根因：中间层契约失配与 TypeError 静默被吞**：
+        - 底层 `SQLiteHostingMixin.update_hosting_deploy_batch` 支持 `pages_count` 与 `bundle_size_kb` 参数；
+        - 但中介层 `LedgerExtensionsMixin.update_hosting_deploy_batch` 签名仅声明了 `(self, batch_id, overall_status=None, duration_sec=None, targets_json=None, logs_excerpt=None)`，漏传了度量参数；
+        - 当 `hosting_routes.py` 内部调用时，Python 运行时直接抛出 `TypeError: LedgerExtensionsMixin.update_hosting_deploy_batch() got an unexpected keyword argument 'pages_count'`；
+        - 最致命的是原代码中存在 `except Exception: pass`，将该核心异常静默吞掉，导致推流完成后向数据库写回 `SUCCESS` 状态失败，账本永久停留在最初始的 `RUNNING / PENDING` 态，引发前端轮询器无休止转圈与计时累加。
+*   **工程设计与修复闭环**：
+    1.  **参数契约物理对齐 (`ledger_extensions.py`)**：在 `LedgerExtensionsMixin.update_hosting_deploy_batch` 中补齐 `pages_count=None, bundle_size_kb=None, **kwargs` 并在加锁后透传至底层 SQLite 引擎；
+    2.  **彻底消灭静默吞错 (`hosting_routes.py`)**：移除 `pass`，接入规范 logger 输出，杜绝任何未感知的异常逃逸；
+    3.  **既有批次实时自愈**：将卡住的批次 `#d9492e` 基于真实物理完成时间和对端 URL 写入账本，前端即时收敛至 `SUCCESS`。
+
+## 📅 2026-10-09: 全站托管与单文档发布“主站优先首发投递、备用镜像随后”全链路对齐治理 (Hosting Primary-First Dispatch & UI Sequence Sovereignty)
+*   **现象与需求描述**：
+    1.  在单文档发布时，原稿抽屉与大盘历史记录中托管平台的顺序一度出现 `Vercel` 在前、`GitHub Pages` 在后；
+    2.  创作者敏锐指出：当前品牌中 GitHub Pages 是官方主站，Vercel 是备用镜像，顺序明显不对，必须严格遵循“先官方主站，再备用镜像”的物理次序。
+*   **根因剖析与工程设计**：
+    1.  **后端动态派发主权守卫 (`hosting_routes.py`)**：
+        - 根因：后端在接收到抽屉前端上报的 `target_channels` 时，未依据品牌 `primary_hosting_id` 进行拓扑重排，直接以数组接收顺序串行下发；
+        - 改造：实现 `_resolve_ordered_hosting_channels`，无论调用来源或前端顺序如何，强制根据官方主站配置执行优先级稳定排序（主站稳定首发投递，备用镜像随后），推流日志与入库数据字典键名严格保证主站在前；
+    2.  **抽屉卡片列表置顶与主站身份点亮 (`vault.drawer.render.js` & `vault.drawer.cards.js`)**：
+        - 抽屉生成 10 大平台时，自动感应当前品牌的 `primary_hosting_id`，赋予 `isPrimary` 属性并强制置顶至首位；
+        - 卡片状态标签清晰分流：官方主站显示 `🏠 官方主站`，备用镜像显示 `🟢 备用镜像`，创作者一眼可见、层次分明；
+        - DOM 排布自然收敛，使勾选收集到的 `selectedChannels` 天然就是主站在前；
+    3.  **大盘历史记录保底展示排序 (`dispatch.hosting.history.js`)**：
+        - 渲染发布历史记录标签时，对 `targetKeys` 按主站优先重排，确保当前、未来以及既往历史批次均规整对齐为 `GitHub Pages ↗` 先、`Vercel ↗` 后的工业级秩序。
+
+## 📅 2026-10-09: 网站发布历史操作列纯图标化与大盘表格列宽黄金分割治理 (Hosting History Pure Icon Actions & Table Grid Balance)
+*   **现象与需求描述**：
+    1.  原网站发布历史记录操作列展示为 `📋 日志` 与 `🔄 再次发布` 两个中文字符按钮，占据了 16% (120px) 的宽度；
+    2.  在整体表格 9 列空间竞争中，操作列占用过宽，导致“发布平台”列（原 16%）在多渠道或带长标签时出现折行挤压；
+    3.  创作者要求操作列功能按钮也只保留功能图标，不再显示文字，追求极致精干整洁的工业仪表盘交互。
+*   **根因剖析与工程设计**：
+    1.  **操作列按钮纯图标化与微按钮体系 (`.hosting-action-icon-btn`)**：
+        - 彻底去除“日志”、“再次发布”等冗余汉字，仅保留直观的操作图标（`📋` 与 `🔄`）；
+        - 在 `dispatch.css` 中定制 26px × 26px 微型方形操作按钮，配合 4px 圆角与柔和毛玻璃底色，hover 触发青色辉光（Neon-Cyan Drop-Shadow）与微动效（`translateY(-0.5px)`）；
+        - 操作列内容纯图标化，而通过精细化的 `title` 浮层提示保留完整语义（整站提示“重新发布整站至 xx”，单文档提示“重新发布该文档至 xx”，查看日志提示“查看部署流水与控制台日志”）；
+    2.  **全表列宽黄金分割与空间释放**：
+        - 操作列由 16% (120px) 精确收窄至 10% (75px)；
+        - 将省出的宝贵 6% 宽度全量回拨给“发布平台”列，由 16% 拓宽至 22% (130px)；
+        - 多平台外链标签（如 GitHub Pages ↗、Vercel ↗ 等）得以大方舒展平铺，彻底终结紧凑拥挤感；
+        - 全表 9 列宽度精准归一化为 100.0%（12% + 12% + 12% + 8.5% + 8.5% + 9% + 6% + 22% + 10% = 100%）；
+    3.  **门禁审计与工业主权守卫**：
+        - `dispatch.hosting.history.js`（197 行 $\le 300$ 行）通过 `node -c` 语法检查与真实 Node DOM 沙箱断言；
+        - 通过 `pytest` 前端完整性测试与托管 API 门禁，通过全套主权治理审计。
+
+## 📅 2026-10-09: 网站发布历史编号列单行水平微胶囊重构与行高规整化治理 (Hosting History Horizontal Scope Badge & Table Grid Sovereignty)
+*   **现象与需求描述**：
+    1.  此前单文档发布通过在编号列纵向堆叠小文本框（`flex-direction: column`）显示截断的文件名（`multi-chann...`），导致该行高度被生硬撑大，整表高低凹凸不齐，视觉零碎且体验割裂；
+    2.  创作者要求优化显示方案，使其更美观、更友好、更具工业级质感。
+*   **根因剖析与工程设计**：
+    1.  **左侧微型态势图标体系与真实文章标题浮层 (`.hosting-scope-icon`)**：
+        - 彻底去除“单篇/全站”等多余文字，仅保留纯粹轻巧的态势图标，并置于**批次编号左侧**（单篇：`📄 #d90b05`，全站：`🌐 #b535b4`）；
+        - 单篇图标融入青色微光辉光（Neon-Cyan Drop-Shadow）与平滑呼吸动效；
+        - **真实文章标题智能回填**：后端通过 `resolve_doc_title` 物理提取 Markdown Frontmatter 中的真实标题（如“30+ 渠道全域分发实践案例”），鼠标悬停在 `📄` 图标上时，第一行醒目高亮展示文章标题，第二行展示物理路径，点击直接唤出详细流水抽屉；
+    2.  **表格垂直节律与列宽防溢出（Table Grid & Column Width Sovereignty）**：
+        - 科学重构 `hosting-table-compact` 的 9 列宽度分配体系：将编号列从过窄的 `8% / 58px` 拓宽至 `13% / 110px`，并同步优化各列比例至 100%；
+        - 微调胶囊与编号紧凑度（`0.65rem`，内边距 `1px 5px`，居中对齐），彻底根除胶囊溢出并重叠到“发布时间”列的布局缺陷；
+        - 全表每一行高度完全一致，恢复顶级 DevOps 仪表盘的严整秩序感与高档毛玻璃美学；
+    3.  **代码合规与门禁审计**：
+        - `dispatch.css` 与 `dispatch.hosting.history.js` 严格保持在 $\le 300$ 行之内，通过 CSS 变量合规与 `pytest` 前端完整性回归。
+
+## 📅 2026-10-09: 原稿文库单文档托管发布原地实时态势卡片、长效轮询收敛与公网外链闭环治理 (Vault Drawer Live Deploy Pod & Direct URLs Integrity)
+*   **现象与需求描述**：
+    1.  **弱提示与过程盲区**：在原稿文库单文档抽屉中触发全站托管发布时，界面仅弹出一个持续 3 秒即消失的 Toast 提示，随后抽屉内毫无动静，长达数十秒的物理构建与上传进度完全不可见；
+    2.  **成果断层**：发布成功后生成的线上真实页面 URL（如 `https://.../doc.html`）无法在当前抽屉直达，创作者必须退出抽屉、跨页面跳转到发布中心历史列表才能查看，路径冗长割裂。
+*   **根因剖析与工程设计**：
+    1.  **抽屉底板内嵌高档毛玻璃「实时部署态势卡片」(`.vault-live-deploy-pod`)**：
+        - 在抽屉底部主操作按钮上方，嵌入专属动态态势卡片；
+        - **运行中态 (RUNNING)**：展示金色呼吸微光徽章 `⏳ 正在部署`、批次短码（如 `#4528f4`）、秒级累加耗时 `⏱️ 14s`，并列出各选定平台的执行中状态标签；
+        - **完成态 (SUCCESS)**：自动变更为绿色辉光徽章 `✅ 部署完成`，精准回填最终总耗时，**直接动态生成各平台的公网直达胶囊按钮**（如 `🐱 GitHub Pages ↗`、`▲ Vercel ↗`），点击新标签页秒级访问真实线上页面；
+    2.  **一键穿透控制台流水**：
+        - 态势卡片常驻 `📋 控制台流水` 按钮，一键无缝唤起全屏部署流水抽屉，查看 STDOUT 打字机实时日志；
+    3.  **自愈式轻量轮询器与生命周期安全销毁**：
+        - 触发发布时启动 1.5s 周期短轮询 `startVaultHostingLiveTracking`，获取最新批次状态与公网 URL；
+        - 状态稳定后自动平滑收敛停止；在抽屉关闭 (`closeVaultDrawer`) 或切换原稿时自动彻底销毁，确保 0 孤儿定时器泄漏；
+    4.  **抽屉 Footer Flex 垂直节律与 Toast 去遮挡治理**：
+        - 根因：`.vault-drawer-shell .drawer-footer` 原先缺少 `flex-direction: column !important`，导致态势卡片与操作按钮水平并排横向溢出，态势卡片被挤出屏幕左边界（仅露出一截灰白框），按钮被挤变形；且 SweetAlert 带按钮时破坏 toast 模式并在屏幕中央形成巨大白色遮罩；
+        - 修复：强制 `.drawer-footer` 为垂直列排布（`flex-direction: column; width: 100%`），态势卡片在上、操作按钮在下，两层垂直自适应；彻底剔除 SweetAlert 侵入式大按钮，恢复极简右上角 Toast，并在白天模式下注入高清晰度对比样式。
+    5.  **批次 API 解包契约修正与抽屉底板通栏等宽对齐治理 (Batch Unpacking & Width Parity)**：
+        - **状态定格根因**：后端 `/api/dispatch/hosting/batch/{id}` 返回封装结构 `{ status: 'success', batch: { ... } }`，前端轮询器误按拍平结构读取导致 `res.batch_id` 为 `undefined`，轮询被静默拦截，态势卡片定格在初始 `0s` / `正在部署` 无法更新；修复为防御性解包 `const batchData = res.batch || res;`，成功打通物理状态与真实公网 URL 流转；
+        - **等宽对齐根因**：`.drawer-footer` 自身带有 `padding: 12px 16px`，叠加抽屉外层 `padding: 18px 20px` 造成内缩，导致底部的态势模块与按钮比上方模块窄一圈；将 `.drawer-footer` 左右内边距清零（`padding: 10px 0 0 0`），态势卡片内边距对齐上方 `.hosting-card`（`8px 12px`），实现全抽屉垂直边缘 100% 严整对齐。
+    6.  **SOP-02 与主权门禁**：
+        - 样式 100% 遵照设计系统变量（0 硬编码颜色），相关 JS 模块严格保持在 $\le 300$ 行以内，通过 V8 静态编译与 pytest 回归门禁。
+
+## 📅 2026-10-09: GitHub Pages 零配置推导高频网络超时根因治理、进程级缓存与本地 Git 上下文兜底自愈 (GitHub Pages Zero-Config Inference Caching & Git Context Fallback)
+*   **现象与需求描述**：
+    1.  **偶发性发布失败与 10 秒超时**：在单文档发布时，用户在配置未做任何变动的情况下，出现 GitHub Pages 渠道发布失败，耗时精准为 10.01 秒，控制台报错 `[ERROR] 平台 [github_pages] 推送失败: GitHub Pages repo_url not configured. (耗时 10.01s)`；
+    2.  **配置完备性与认知割裂**：用户配置中填有合法的 GitHub Token，但未显式填写 `repo_url`。此前发布能成功，但本次由于国内网络直连 GitHub 官方接口遭遇抖动，触发了 10 秒的硬性超时保护后静默退避返回空，导致用户困惑为何配置未动却报错。
+*   **根因剖析与工程设计**：
+    1.  **GitHub REST API 探测的网络脆弱性与无缓存缺陷**：
+        - 系统设计有“零配置自动推导”机制：若未配置 `repo_url`，每次发布前调用 `urllib.request` 访问 `https://api.github.com/user` 请求解析当前登录用户名（以推导为 `https://github.com/<owner>/illacme-press.git`）；
+        - 在未配代理的国内网络环境下直连 GitHub API 延迟高且抖动频繁（单次握手常超 4~5 秒）。一旦触发 `timeout=10` 超时保护，`parse_owner_repo_impl` 静默捕获异常并返回空元组，导致系统判定为无仓库地址；
+        - 且每次单文档发布都重复发起该网络探测，无任何缓存，极度浪费时间且不稳定；
+    2.  **进程级 Token 用户名缓存 (`_CACHED_TOKEN_USER`)**：
+        - 引入内存字典缓存已解析的 Token 对应 `user_login`，同进程内多次发布 0 毫秒秒级命中缓存，彻底消除高频重复调用与网络超时风险；
+    3.  **本地 Git 上下文 (`git remote.origin.url`) 离线兜底自愈**：
+        - 在网络探测遇到超时或网络隔离时，物理探测本地仓库的 Git Remote 配置（`remote.origin.url`），自动提取仓库 Owner（如 `Illacme`）并推导绑定默认仓库，实现 100% 离线自愈，网络波动下依然能够顺畅发布；
+    4.  **清晰透明的错误信息穿透与诊断建议**：
+        - 在无法推导时，向日志输出准确的超时成因并给出明确操作建议（在发布设置中显式指定 `repo_url` 或配置网络代理），杜绝信息模糊。
+
+## 📅 2026-10-09: 网页托管单文档多语言版本物理真实测算、零假数据硬编码与账本闭环治理 (True Multi-Language Hosting Artifact Metrics & Zero-Mock Ledger Integrity)
+*   **现象与需求描述**：
+    1.  **单文档页面数量与体积认知失真**：在原稿列表抽屉触发单文档发布后，发布历史记录一度显示为整站“121 页、6.9 MB”，后经初步修复为硬编码的“1 页”；
+    2.  **多语言版本度量脱节**：实际上该原稿已翻译为中、英、日等多个语种并在静态装帧产物中生成了 3 个独立的 HTML 页面（合计 38.67 KB），若强行将页面数写死为 1 页，导致“页面数 (1) 与全语种体积 (38.67 KB)”数字失调，并让创作者产生“是否未发布多语言版本”的疑虑；
+    3.  **绝对拒绝造假原则**：创作者严肃强调所有环节必须务必真实准确计算出来，绝对不能弄虚作假、写死假数据或伪造底数。
+*   **根因剖析与工程设计**：
+    1.  **物理真实测算取代假数据硬编码 (`inspect_doc_bundle_artifact`)**：
+        - 彻底剔除 `pages_count = 1` 与 `size_kb = 1.0` 等任何人工伪造底数；
+        - 真实遍历物理产物目录，收集原稿对应的全部语言版本 HTML 文件（中文默认 + `en/` + `ja/` 等），以实际物理文件总数作为真实 `pages_count`（如 3 个页面）；
+        - 精确累加各个物理 HTML 的真实文件字节数，计算真实 `size_kb`（如 38.67 KB），两者物理自洽，100% 真实客观；
+    2.  **批次入库与历史数据自愈对齐 (`normalize_batch_for_doc`)**：
+        - 动态纠偏历史批次时，基于真实扫描物理结果更新 `pages_count` 与 `bundle_size_kb`，并写入 SQLite 账本；
+    3.  **日志与界面真实透明呈现**：
+        - 控制台日志 `format_deploy_process_logs` 在检测到单文档多语言产物时，明确打印 `对应网页=3 个网页 (含多语言版本)`，打消创作者疑虑；
+        - 历史表格悬浮提示精准标注 `原稿 [xxx] 编译生成 3 个网页 (含多语言版本)`；
+    4.  **端到端单测与主权门禁**：
+        - `test_dispatch_hosting_api.py` 在沙箱中真实创建多语言 HTML 产物并断言真实页面数与真实体积，通过全部测试与主权审计。
+
+## 📅 2026-10-08: 全站托管发布全生命周期实时流水推流、解耦自愈轮询与时钟主权治理 (Hosting Live Streaming Logs & Decoupled Polling Architecture)
+*   **现象与需求描述**：
+    1.  **控制台日志单句死锁**：打开部署日志抽屉仅显示“已部署至 1 个渠道，耗时 28.88s”，缺少真实分步执行过程与终端高亮流水；
+    2.  **列表页状态永远停滞在“⏳ 发布中”**：部署完成后历史表格状态不更新，用户必须手动按 F5 刷新才能看到成功状态；
+    3.  **时间戳跳变 8 小时与逻辑失真**：发布过程中抽屉日志前 3 行显示 UTC 时间（`[07:00:37]`），第 4 行突变成本地时间（`[15:00:48]`）；且在发布进行中时误打印“目标发布渠道队列: 无就绪渠道”并提前谎报“部署执行完毕，总状态: RUNNING，总耗时 0.0s”；
+    4.  **历史列表直接直达链接**：历史记录中发布平台仅为普通文本，缺乏一键进入线上站点的直达链接。
+*   **根因剖析与工程设计**：
+    1.  **分步终端流水生成器与全生命周期流式推流 (True Streaming Push)**：
+        - 后端在批次创建瞬间即解析真实目标渠道队列（如 `github_pages`），将 `targets_json` 初始化为 `PENDING` 并写入前导结构化日志；
+        - 在 `_execute_hosting_deploy_sync` 执行推流的生命周期中，在推流前将渠道标记为 `RUNNING` 并追加 `[PUSH]` 日志实时刷库，推流完成后记录单渠道真实耗时与线上 URL，全部完成时正式收敛输出 `[FINISH]`；
+        - 彻底消除任务进行态中输出假 `[FINISH]` 完结行的逻辑缺陷，严格输出 `[PROGRESS]` 实时动态；
+    2.  **物理时钟统一对齐 (Local Clock Sovereignty)**：
+        - 修改 `sqlite_hosting.py` 与 `ledger_extensions.py`，彻底废除 SQLite 默认的 UTC `CURRENT_TIMESTAMP`，入库与完成时全部统一使用 `time.strftime('%Y-%m-%d %H:%M:%S')` 本地时间，彻底消除了 8 小时的时钟断层；
+    3.  **全站托管专属解耦轮询 Shard (`dispatch.hosting.poll.js`)**：
+        - 根因：此前借用了社媒发布轮询器，而社媒轮询器在 3 秒后判定“非社媒发布”便触发自杀逻辑杀死了轮询，导致耗时 24s 的托管部署无法被前端感知；
+        - 解决：独立抽离 72 行轻量轮询器 `startHostingDeployPolling`，以 2.5s 周期无感拉取大盘，检测到批次运行完毕后自动平滑收敛，实现列表页 0 刷新全自动更新状态与耗时；
+    4.  **前端卡片动态呼吸动效与公网直达外链**：
+        - 抽屉内平台卡片支持 `RUNNING` 态（金色微光呼吸动效 `⏳ 推送中`）、`PENDING`（`⏸️ 准备中`）与 `SUCCESS`（`✅ 就绪`）；
+        - 运行中执行耗时基于 `started_at` 结合本地时钟实时动态累加（如 `12s (运行中)`），不再停滞在 `0s`；
+        - 历史表格发布平台渲染带跳转箭头的公网直达标签（如 `GitHub Pages ↗`）；
+    5.  **工业治理与契约守卫 (SOP-02 & Baseline Integrity)**：
+        - 严格遵守 SOP-02，所有涉及修改的文件（`hosting_routes.py` 265 行、`hosting_diagnostic_routes.py` 262 行、`dispatch.hosting.logs.js` 246 行、`dispatch.hosting.poll.js` 72 行）均控制在 `< 300` 行之内；
+        - 保持物理目录拓扑结构完全符合 `.plenipes/governance/structure.baseline` 架构基准；
+        - 通过 `pytest`（13/13 绿灯）与 `python3 scripts/sovereign_audit.py --quick` 100% 工业主权审计。
+
 ## 📅 2026-10-08: 全站托管访问 URL 智能嗅探回填与全站原生弹窗主权毛玻璃模态化重构 (Sovereign Glassmorphism Confirm & Hosting Auto-Discovery)
 *   **现象与需求描述**：
     1.  **全站托管卡片访问网址缺失**：GitHub Pages、Vercel 等托管平台在完成发布演练后，卡片未展示用户访问网址，需创作者手动寻找；且发布表头列未居中，视觉体验缺乏精致感；
@@ -697,4 +846,111 @@
        - `core.terminal.js` 自动将日志流中的所有公网 URL 转为带安全属性 (`target="_blank" rel="noopener noreferrer"`) 的高亮点击链接；
        - 弹窗输出流末尾渲染「🎉 全域发布圆满完成 · 站点已上线」毛玻璃看板，区分「🏠 官方主站」与「🔄 容灾镜像」，提供各渠道专属「打开浏览 ↗」按钮及「📋 复制全部链接」功能；
        - 弹窗底部操作栏点亮翡翠绿色核心 CTA 按钮「🌐 立即访问线上主站 ↗」，点击直达官方主站。
+
+## 📅 2026-10-08: 网站发布历史批次全链路打通与物理真实时间轴日志治理 (Hosting Deployment Audit & Timeline Parity)
+*   **现象描述**：
+    1. 网站发布管理模块（Hosting）历史批次列表缺乏分页，且分页样式与社交媒体分发页面不统一；
+    2. 页面右上角“全域发布”执行后，并未在“网站发布历史记录”列表中产生对应的部署记录；
+    3. 全域发布历史记录被桥接后，其部署日志详情中的所有时间戳均锁定在同一秒（如 `[18:36:13]`），即使全域发布整体耗时数十秒，日志依然缺乏物理执行时间推移感和各渠道真实耗时。
+*   **根因剖析**：
+    1. `hosting_routes.py` 与前端 `dispatch.hosting.render.js` 之前未接入分页参数与统一分页组件；
+    2. 全域发布由 `post_sync.py` 调起 `deployment_manager.deploy_all()` 执行，未建立与 SQLite `hosting_deploy_records` 账本的回填桥接；
+    3. 早期桥接日志构建时，简单使用了当秒的 `now_str` 一次性拼接文本，导致所有终端日志行具有完全相同的时间戳，破坏了真实部署的时间推移体验。
+*   **防线策略与沉淀**：
+    1. **全域发布账本桥接器 (`core/bindery/hosting_record_bridge.py`)**：物理扫描构建产物页面数与体积，将全域发布成果完整存证进 SQLite，实现一处发布、全域留痕。
+    2. **物理推流真实时间戳推进体系**：在 `deployment_manager.py` 的物理推流阶段，在各渠道开始与完成的真实瞬间通过 `time.time()` 实时记录 `[PUSH]` 与 `[SUCCESS]` 日志，计算并存储单平台真实耗时与完成时间戳，彻底消灭事后拼接的静态伪造日志。
+    3. **端到端测试与全域审计 100% 闭环**：在 `tests/test_dispatch_hosting_api.py` 中增加断言日志时间推移与渠道耗时的测试用例，所有测试及 `python scripts/sovereign_audit.py` 规范审计 100% 通过。
+
+## 📅 2026-10-08: 原稿文库托管发布抽屉与全站发布历史账本全链路打通 (Vault Hosting Drawer & Batch Records Parity)
+*   **现象描述**：创作者在原稿文库列表页打开「🌐 网页托管发布」抽屉，点击单平台「🔄 发布」或底部「🚀 开始全站托管发布 (N 个平台)」后，虽然完成了物理推送，但「网站发布历史记录」列表中完全没有任何该次发布的记录与流水。
+*   **根因剖析**：
+    1. 前端文库抽屉未调用标准托管部署接口 `/api/dispatch/hosting/deploy`，而是通过循环调用 `/api/vault/re-dispatch/{path}` 发起并发请求；
+    2. 后端底层推流器 `pipeline_hosting_pusher.py` 在执行推送后，仅调用了 `update_egress_status` 更新单篇文档的出境状态（用于抽屉卡片显示），未向 `hosting_deploy_records` 实体表写入部署批次。
+*   **防线策略与沉淀**：
+    1. **多渠道部署协议扩充 (`HostingDeployPayload`)**：在 `hosting_routes.py` 中原生支持 `target_channels` 批量列表与 `doc_id` 关联原稿，统一作为全站托管部署的标准调度中心。
+    2. **双向回填机制**：部署完成时，既向 `hosting_deploy_records` 写入完整批次、产物扫描统计与终端流水，又将部署上线 URL 自动回填给目标文档的 `egress_status`，使得文库抽屉卡片与全域发布历史双向闭环。
+    3. **双重防御性保障**：在 `pipeline_hosting_pusher.py` 中也增加批次自动落盘兜底逻辑，确保任何路径触发的托管推流都 100% 留痕。
+    4. **端到端自动化测试**：新增 `test_trigger_hosting_deploy_from_vault_drawer` 自动化测试，并通过 `sovereign_audit.py` 100% 规范审计。
+
+## 📅 2026-10-08: 原稿文档托管发布触发上下文透传与控制台日志精准语义治理 (Document Trigger Context & Hosting Log Sovereignty)
+*   **现象描述**：创作者在原稿文库列表针对某篇具体原稿文档（如 `notes/xxx.md`）打开网页托管发布抽屉并点击发布后，查看部署控制台流水发现日志直接显示为“启动全站托管部署任务”、“校验静态网站产物: 页面数=128, 构建体积=15.4 MB”，未体现任何当前触发的原稿文件名，引发创作者“是否点错或系统误跑全站”的严重困惑。
+*   **根因剖析**：
+    1. **静态托管物理机理与社交分发的客观差异**：社交分发为单篇 REST API 投递；而静态托管（GitHub Pages、Vercel 等）依赖整包静态构建产物（Bundle）推流以同步全站目录树、搜索倒排索引与翻页导航，底层物理操作必须推流整站静态包。
+    2. **日志与元数据渲染缺乏触发上下文感知**：前端虽然向 `/api/dispatch/hosting/deploy` 传递了 `doc_id`，但后端日志格式化模板（`format_deploy_process_logs`）写死了“全站托管部署任务”文本，未接收 `doc_id` 参数；同时部署记录元数据与前端抽屉均未展示触发原稿，造成语义和认知上的严重割裂。
+*   **防线策略与沉淀**：
+    1. **后端上下文全链路透传与日志精准标定 (`hosting_diagnostic_routes.py` / `hosting_routes.py`)**：
+        - `format_deploy_process_logs` 接入 `doc_id` 语义感知：当由原稿触发时，终端日志首部打印 `[INIT] 启动单篇文档托管同步任务`，并紧随高亮输出 `[SOURCE] 触发原稿: [{doc_id}] (联动整站静态包推流以同步全站索引与导航)`，向创作者完全透明底层推流机理。
+        - 批次流水存证时，将 `trigger_source` 标定为 `vault_drawer:{doc_id}`，并在批次详情 API 中准确解包挂载 `doc_id`。
+    2. **前端日志抽屉与历史大盘原稿标签联动 (`dispatch.hosting.logs.js` / `dispatch.hosting.history.js`)**：
+        - 控制台抽屉顶部 Meta 栏新增 `📄 触发原稿: {doc_id}` 属性展示，终端日志以天蓝色高亮 `[SOURCE]` 行，并且“再次发布”按钮自动按原稿语境微调（如 `🔄 再次同步原稿`）。
+        - 网站发布历史记录表格中，为单篇触发批次注入 `📄 原稿同步` 专属徽章与悬浮气泡，彻底区分全域发布与单篇同步。
+    3. **自动化测试守卫**：
+        - 更新 `tests/test_dispatch_hosting_api.py`，断言 `trigger_source`、`[SOURCE]` 日志行及 `_trigger_doc` 元数据完整性。
+        - 全套测试与 `python scripts/sovereign_audit.py` 8 项主权审计 100% 绿灯通过。
+
+## 📅 2026-10-08: 单文件托管发布度量精准化与公网文章直达链接治理 (Single-Doc Hosting Metrics & Direct Article URLs)
+*   **现象描述**：创作者在对单篇原稿执行网页托管发布后，「网站发布历史记录」表格中：
+    1. 页面数量依然显示为整站的 `121 页`，未体现这是 1 页的单篇发布；
+    2. 打包体积显示为整站 bundle 的 `6.9 MB`，而非该单篇文档 HTML 的真实产物体积；
+    3. 发布平台徽章（Vercel ↗ / GitHub Pages ↗）点击后跳转的是整站首页根地址，而非该单篇文档的具体线上文章阅读地址。
+*   **根因剖析**：
+    1. `trigger_hosting_deploy` 无论是由单文件触发还是全域触发，均无差别取用了整站全局 `bundle_stats` 中的 `pages_count` (121) 和 `bundle_size_kb` (6.9 MB) 写入批次账本；
+    2. `_execute_hosting_deploy_sync` 写入 `targets_result[ch]["url"]` 时直接使用了托管驱动返回的主站根域名（如 `https://illacme-press.vercel.app`），未根据 `doc_id` 物理计算该单文档在站点内的相对 HTML 路由以合成具体的文章线上链接；
+    3. 前端表格体积渲染未兼容小于 1 MB 的 KB 显示逻辑（直接按 MB 换算展示为粗糙的数值），且链接气泡文案未做单文档/主站的语境区分。
+*   **防线策略与沉淀**：
+    1. **单文档构建产物物理精确探测 (`core/bindery/hosting_record_bridge.py`)**：
+        - 实现 `inspect_doc_bundle_artifact(bundle_path, doc_id, theme, imprint_id)`：扫描静态站产物树，精确定位该文档对应的 HTML 文件（含各语言副本），将逻辑页面数标定为 **1 页**，真实体积按单文档产物字节数精确计算（如 `38.7 KB`），并提取主语言的相对访问路径 `web_rel_path`（如 `showcase/multi-channel-syndication.html`）。
+    2. **单文档线上文章公网直达链接合成**：
+        - 实现 `resolve_doc_channel_url(base_site_url, web_rel_path)`，将各平台根地址与单文档相对路由严密拼接为直接可访问的文章 URL（如 `https://illacme-press.vercel.app/showcase/multi-channel-syndication.html`），并将直达链接同步存入批次结果与 `update_egress_status`。
+    3. **历史批次自愈纠偏机制 (`normalize_batch_for_doc`)**：
+        - 在拉取大盘概览与批次历史时，自动识别由单文档触发但残留整站统计的旧批次，原地自愈纠偏为 1 页、单文档精确体积及文章直达链接，并回写 SQLite 数据库账本，彻底消除历史脏数据困扰。
+    4. **前端历史表格与控制台全景自适应 (`dispatch.hosting.history.js` / `dispatch.hosting.logs.js`)**：
+        - 体积展示实现 KB / MB 智能自适应切换（小于 1024 KB 友好展示为 `xx.x KB`，不再粗糙呈现为 MB）；
+        - 发布平台徽章悬停气泡与日志抽屉跳转按钮自动切换为「📄 原稿文章公网地址」与「访问文章 ↗」。
+    5. **自动化测试守卫**：
+        - `test_trigger_hosting_deploy_from_vault_drawer` 显式断言 `pages_count == 1`、单文档体积合法性；
+        - 全套测试与 `python scripts/sovereign_audit.py` 8 项主权审计 100% 绿灯全部通过。
+
+## 📅 2026-10-09: 单文档托管发布抽屉冗余模块精简、状态轮询自愈与全屏视觉等宽对齐 (Vault Drawer Trimming & Layout Realignment)
+*   **现象描述**：
+    1. 创作者在原稿文库对单篇文档执行“网页托管发布”后，抽屉底部部署态势卡片一直显示“正在部署”，未随发布成功而自动切换为“发布成功”及展示线上链接；
+    2. 底部部署态势卡片左右内边距与上方的托管平台卡片不一致，产生“窄了一圈”的视觉凹凸感；
+    3. 抽屉内历史遗留的 Section 2（`ASSET TELEMETRY & AUDIT`，资产遥测与算力审计）与 Section 3（`LIVE PREVIEW ENGINE`，本地实时预览引擎）在单篇托管发布场景下信息严重冗余（遥测在算子中心已有全景展示，预览已有语种卡片独立按钮），且充斥全大写英文标题，占用约 260px 垂直高度，导致整个抽屉充斥拥塞滚动条。
+*   **根因剖析**：
+    1. 前端轮询状态解包结构脱节：后端 API `/api/dispatch/hosting/batch-status` 包装了一层 `{ success: true, batch: {...} }`，而前端代码此前直接取 `res.status`，导致解包为空，无法流转到 `SUCCESS` 状态分支；同时耗时字段取用了 `duration` 而非 `duration_sec`；
+    2. `.drawer-footer` 附带了额外的左右内边距，叠加在 `.vault-live-deploy-pod` 上导致总宽度缩进；
+    3. 抽屉骨架混杂了早期实验性质的遥测网格与预览开关，造成高频业务场景视觉重心偏离。
+*   **防线策略与沉淀**：
+    1. **批次状态解包双模兼容与计时格式化 (`vault.drawer.hosting.js`)**：
+        - 引入防御性解包 `const batchData = (res && res.batch) ? res.batch : res;`，让批次完成状态与各平台真实线上直链 100% 实时穿透并渲染完成态；
+        - 补充 `durationSec` 格式化，消除 `NaN` 困扰。
+    2. **抽屉底部等宽对齐与间距归一 (`vault.drawer.css`)**：
+        - 对 `.vault-drawer-shell .drawer-footer` 实行左右内边距清零（`padding: 10px 0 0 0 !important`），态势卡片左右内边距严格对齐 `.hosting-card`（`8px 12px`），宽度保持 100%，消除错位。
+    3. **物理剔除冗余模块与代码瘦身归一 (`drawers.js` / `vault.drawer.render.js`)**：
+        - 从抽屉骨架彻底移除 Section 2 与 Section 3，标题重塑为更加亲和专业的 `🌐 网页装帧产物与全站托管平台 (HOSTING & STATIC SITES)`；
+        - 彻底清理前端对 `hub-cost`、`hub-node`、`hub-lab-badge`、`hub-audit-status` 等已移除 DOM 的赋值逻辑，保留后台流光呼吸感应；
+        - `vault.drawer.render.js` 物理行数由超标的 320 行骤降至 266 行，完美回归 SOP-02（≤ 300 行）工程红线。
+    4. **自动化测试守卫**：
+        - `test_dispatch_hosting_api.py` 与 `test_frontend_render_integrity.py` 全绿通过；
+        - Node.js 沙箱真实执行与 DOM 拓扑断言通过，无头浏览器真机实测 100% 验收，主权审计 0 违规。
+
+## 📅 2026-10-09: 全站托管插件动态统一源 (SSOT) 与中央凭据状态算子契约大一统 (Hosting Plugins SSOT & Central Sensing Alignment)
+*   **现象描述**：
+    1. 在插件中心中，“SFTP / SSH”插件因为未填写主机地址（`host` 为空），状态准确显示为「待配置主机」；但在原稿文库的“网页托管发布”抽屉中，却错误显示为「🟡 配置就绪 (待启用)」，且复选框允许勾选；
+    2. 抽屉页内部维护了一套硬编码的托管平台列表（`allHostingKeys`）与私有名称字典（`fallbackNames`），且自建了一套粗糙的配置键遍历判定逻辑，导致系统在不同面板间产生状态脑裂与私有硬编码泛滥。
+*   **根因剖析**：
+    1. 判定逻辑分化脱节：插件中心调用的是系统的中央凭据判决算子 `isPluginCredentialReady(id, category, cfg)`，对 SFTP 明确要求必须配置 `host` 才算就绪；而抽屉页此前自建了 `hasConfiguredKeys` 遍历，将 SFTP 默认配置字典中包含的 `"port": 22` 误当作用户已填写的有效业务凭据，引发假就绪；
+    2. 数据源未严格归一：抽屉页未能 100% 消费插件中心（`/api/plugins/list` / `window.allPlugins`）下发的数据，而在本地私自维护硬编码数组与兜底映射。
+*   **防线策略与沉淀**：
+    1. **插件数据源 100% 统一收口至插件中心 (SSOT)**：
+        - 彻底从 [vault.drawer.render.js](file:///Volumes/Notebook/omni-hub/illacme-plenipes/web/dashboard/js/vault/drawer_shards/vault.drawer.render.js) 剔除私有硬编码数组 `allHostingKeys`，全站托管平台列表唯一动态来源于 `(window.allPlugins || []).filter(p => p.category === 'hosting')`；
+        - 彻底从 [vault.drawer.cards.js](file:///Volumes/Notebook/omni-hub/illacme-plenipes/web/dashboard/js/vault/drawer_shards/vault.drawer.cards.js) 剔除私有 `fallbackNames` 字典，所有名称、图标与描述 100% 唯一溯源自插件矩阵定义及全局品牌徽章算子。
+    2. **就绪判定唯一复用中央凭据状态判决算子 (`isPluginCredentialReady`)**：
+        - 彻底废除抽屉页私有配置遍历逻辑，100% 接入中央算子 `window.isPluginCredentialReady(key, 'hosting', hostingCfg)`；
+        - 未就绪状态标签动态消费算子返回的精准原因（如 `⚪ 待配置主机`、`⚪ 待填凭据`、`⚪ 待授权 / 待填项目名`），未就绪时复选框严格置灰禁用，操作按钮自动转换为「⚙️ 去配置/激活」并一键直达插件中心配置抽屉。
+    3. **物理代码合规与自动化守卫**：
+        - [vault.drawer.render.js](file:///Volumes/Notebook/omni-hub/illacme-plenipes/web/dashboard/js/vault/drawer_shards/vault.drawer.render.js) 收敛至 **230 行**，[vault.drawer.cards.js](file:///Volumes/Notebook/omni-hub/illacme-plenipes/web/dashboard/js/vault/drawer_shards/vault.drawer.cards.js) 收敛至 **166 行**，均远低于 SOP-02（≤ 300 行）工程门禁；
+        - `pytest` 与 `sovereign_audit.py` 全阶段大审计 100% 绿灯；
+        - 无头浏览器真机实测断言：SFTP 成功呈现为「⚪ 待配置主机」，复选框已正确禁用，操作按钮为「⚙️ 去配置/激活」，实机截图存证闭环。
+
 

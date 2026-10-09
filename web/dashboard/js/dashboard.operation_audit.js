@@ -101,9 +101,9 @@ window.renderOperationAuditLogs = (logs, container) => {
         renderPage();
     };
 
-    searchInput.addEventListener('input', updateFilter);
-    typeFilter.addEventListener('change', updateFilter);
-    severityFilter.addEventListener('change', updateFilter);
+    if (searchInput) searchInput.addEventListener('input', updateFilter);
+    if (typeFilter) typeFilter.addEventListener('change', updateFilter);
+    if (severityFilter) severityFilter.addEventListener('change', updateFilter);
 
     const renderRows = (pageLogs) => {
         const tbody = document.getElementById('op-table-body');
@@ -213,28 +213,34 @@ window.renderOperationAuditLogs = (logs, container) => {
             </div>
         `;
 
-        document.getElementById('op-first-btn').addEventListener('click', () => {
+        // 🛡️ 安全绑定分页与跳转事件 (防御性规避 null 引起的异步链路中断)
+        const safeBind = (id, event, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, fn);
+        };
+
+        safeBind('op-first-btn', 'click', () => {
             if (currentPage !== 1) {
                 currentPage = 1;
                 renderPage();
             }
         });
 
-        document.getElementById('op-prev-btn').addEventListener('click', () => {
+        safeBind('op-prev-btn', 'click', () => {
             if (currentPage > 1) {
                 currentPage--;
                 renderPage();
             }
         });
 
-        document.getElementById('op-next-btn').addEventListener('click', () => {
+        safeBind('op-next-btn', 'click', () => {
             if (currentPage < totalPages) {
                 currentPage++;
                 renderPage();
             }
         });
 
-        document.getElementById('op-last-btn').addEventListener('click', () => {
+        safeBind('op-last-btn', 'click', () => {
             if (currentPage !== totalPages) {
                 currentPage = totalPages;
                 renderPage();
@@ -243,6 +249,7 @@ window.renderOperationAuditLogs = (logs, container) => {
 
         const goPage = () => {
             const input = document.getElementById('op-go-page-input');
+            if (!input) return;
             const targetPage = parseInt(input.value);
             if (targetPage >= 1 && targetPage <= totalPages) {
                 currentPage = targetPage;
@@ -250,11 +257,9 @@ window.renderOperationAuditLogs = (logs, container) => {
             }
         };
 
-        document.getElementById('op-go-page-btn').addEventListener('click', goPage);
-        document.getElementById('op-go-page-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                goPage();
-            }
+        safeBind('op-go-page-btn', 'click', goPage);
+        safeBind('op-go-page-input', 'keydown', (e) => {
+            if (e.key === 'Enter') goPage();
         });
     };
 
