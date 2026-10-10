@@ -212,6 +212,7 @@ window.triggerFullHostingDeploy = async function (targetChannel = null, options 
             if (typeof showToast === 'function') showToast(`✅ 网站发布任务已启动 (${res.batch_id})`, 'success');
             window.loadHostingDeployCenter();
             if (typeof window.startHostingDeployPolling === 'function') window.startHostingDeployPolling();
+            if (typeof window.refreshDispatchIndicator === 'function') window.refreshDispatchIndicator();
             if (window._currentHostingLogBatchId && typeof window.openHostingDeployLogDrawer === 'function') {
                 window.openHostingDeployLogDrawer(res.batch_id);
             }

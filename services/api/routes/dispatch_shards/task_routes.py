@@ -13,9 +13,8 @@ from pydantic import BaseModel
 
 from core.runtime.engine_singleton import get_global_engine
 from core.runtime.orchestrator import _is_publishing, _pending_sync_queue
-from core.syndication.syndication_diagnostic import diagnose_syndication_error
 from core.utils.language_data import SUPPORTED_MATRIX
-from .dispatch_overview_aggregator import collect_unified_recent_records
+from .dispatch_overview_aggregator import collect_unified_recent_records, collect_unified_dead_letter_tasks
 from ..system import verify_token
 
 
@@ -120,28 +119,10 @@ async def get_dispatch_overview() -> Dict[str, Any]:
     docs_snapshot = engine.meta.get_documents_snapshot() if hasattr(engine.meta, "get_documents_snapshot") else {}
     channel_map = _get_channel_registry_map()
 
-    # 1. 查询死信与待重试任务
-    raw_tasks = engine.meta.list_all_syndication_tasks() if hasattr(engine.meta, "list_all_syndication_tasks") else []
-    dead_letter_tasks = []
-    if isinstance(raw_tasks, list):
-        for item in raw_tasks:
-            if isinstance(item, dict):
-                tid = item.get("target_id", "")
-                rel_p = item.get("rel_path", "")
-                l_code = item.get("lang_code", "zh-CN")
-                lerr = item.get("last_error", "未知网络或认证异常")
-                diag = diagnose_syndication_error(tid, lerr) if tid else {}
-                real_title = item.get("title") or _extract_doc_title(engine, rel_p, docs_snapshot)
-                ch_info = channel_map.get(tid, {})
-                l_info = _resolve_lang_meta(l_code)
-                dead_letter_tasks.append({
-                    "id": item.get("id"), "rel_path": rel_p, "target_id": tid,
-                    "target_type": ch_info.get("type", "social"), "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
-                    "title": real_title, "slug": item.get("slug", ""), "lang_code": l_code,
-                    "lang_name": l_info.get("name", l_code), "lang_icon": l_info.get("icon", "🌐"),
-                    "status": item.get("status", "FAILED"), "last_error": lerr,
-                    "retry_count": item.get("retry_count", 0), "next_retry_time": item.get("next_retry_time", 0), "diagnostic": diag
-                })
+    # 1. 查询全域死信与异常待自愈任务 (包含社交媒体分发与全站托管部署)
+    dead_letter_tasks = collect_unified_dead_letter_tasks(
+        engine, docs_snapshot=docs_snapshot, channel_map=channel_map, limit=100
+    )
 
     # 2. 查询全域历史成功分发与托管发布物权记录
     recent_records = collect_unified_recent_records(

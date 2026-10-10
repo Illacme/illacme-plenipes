@@ -150,3 +150,50 @@ def test_dispatch_deadletter_actions():
     clear_res = client.request("DELETE", "/api/dispatch/deadletter/clear", json={"rel_path": "test.md", "target_id": "devto"})
     assert clear_res.status_code == 200
     assert clear_res.json().get("status") == "success"
+
+
+def test_dispatch_overview_with_hosting_failure():
+    """测试当网站托管发布失败时，/api/dispatch/overview 能够自动将其纳入死信任务并降低成功率"""
+    mock_eng = singleton.get_global_engine()
+    # 模拟新增一次 github_pages 部署失败批次
+    mock_eng.meta.list_hosting_deploy_batches = lambda imprint_id=None, limit=50, offset=0: [
+        {
+            "batch_id": "deploy_failed_999",
+            "trigger_source": "workbench",
+            "doc_title": "全站静态站点",
+            "overall_status": "FAILED",
+            "started_at": "2026-10-10 21:18:27",
+            "targets": {
+                "github_pages": {
+                    "status": "FAILED",
+                    "error": "Authentication failed for git push",
+                    "deployed_at": "2026-10-10 21:19:00"
+                }
+            }
+        }
+    ]
+
+    response = client.get("/api/dispatch/overview")
+    assert response.status_code == 200
+    data = response.json()
+
+    # 死信任务应包含原社媒失败 1 个 + 托管失败 1 个 = 2 个
+    dead_targets = [t["target_id"] for t in data["dead_letter_tasks"]]
+    assert "github_pages" in dead_targets
+    assert "devto" in dead_targets
+
+    # 找到 github_pages 死信任务并验证字段与诊断
+    gh_task = next(t for t in data["dead_letter_tasks"] if t["target_id"] == "github_pages")
+    assert gh_task["target_type"] == "hosting"
+    assert gh_task["status"] == "FAILED"
+    assert "Authentication failed" in gh_task["last_error"]
+    assert gh_task["diagnostic"]["action"] == "redeploy"
+
+    # 渠道健康度矩阵中 github_pages 状态应由 healthy 变为 error
+    gh_health = next(c for c in data["channel_health"] if c["id"] == "github_pages")
+    assert gh_health["status"] == "error"
+    assert "存在推送失败任务" in gh_health["status_msg"]
+
+    # 成功率计算应真实下降（非 100%）
+    assert data["summary"]["total_failed"] >= 2
+    assert data["summary"]["success_rate"] != "100.0%"

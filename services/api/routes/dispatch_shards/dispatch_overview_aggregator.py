@@ -135,3 +135,159 @@ def _resolve_rec_doc_title(
         if t:
             return str(t)
     return resolve_doc_title(rel_path, vault_root)
+
+
+def collect_unified_dead_letter_tasks(
+    engine: Any,
+    docs_snapshot: Optional[Dict[str, Any]] = None,
+    channel_map: Optional[Dict[str, Dict[str, str]]] = None,
+    limit: int = 100
+) -> List[Dict[str, Any]]:
+    """
+    🎯 全域死信大聚合：无缝融合社交媒体分发失败与网站托管部署失败
+    返回包含诊断建议的标准失败任务列表
+    """
+    channel_map = channel_map or {}
+    meta = getattr(engine, "meta", None)
+    if not meta:
+        return []
+
+    vault_root = getattr(engine, "vault_root", "") or (
+        getattr(engine.config, "vault_root", "") if hasattr(engine, "config") else ""
+    )
+    dead_letters: List[Dict[str, Any]] = []
+
+    # 1. 解包社交媒体分发死信任务 (Syndication Tasks)
+    if hasattr(meta, "list_all_syndication_tasks"):
+        try:
+            from core.syndication.syndication_diagnostic import diagnose_syndication_error
+        except Exception:
+            diagnose_syndication_error = None
+
+        try:
+            raw_tasks = meta.list_all_syndication_tasks()
+            if isinstance(raw_tasks, list):
+                for item in raw_tasks:
+                    if not isinstance(item, dict) or item.get("status") != "FAILED":
+                        continue
+                    tid = str(item.get("target_id") or "")
+                    rel_p = str(item.get("rel_path") or "")
+                    l_code = str(item.get("lang_code") or "zh-CN")
+                    lerr = str(item.get("last_error") or "未知网络或认证异常")
+                    diag = diagnose_syndication_error(tid, lerr) if (diagnose_syndication_error and tid) else {}
+                    real_title = item.get("title") or _resolve_rec_doc_title(engine, rel_p, docs_snapshot, vault_root)
+                    ch_info = channel_map.get(tid, {})
+                    dead_letters.append({
+                        "id": item.get("id"),
+                        "rel_path": rel_p,
+                        "target_id": tid,
+                        "target_type": ch_info.get("type", "social"),
+                        "target_name": ch_info.get("name", tid),
+                        "target_icon": ch_info.get("icon", "🏷️"),
+                        "title": real_title,
+                        "slug": item.get("slug", ""),
+                        "lang_code": l_code,
+                        "lang_name": l_code.upper(),
+                        "lang_icon": "🌐",
+                        "status": "FAILED",
+                        "last_error": lerr,
+                        "retry_count": item.get("retry_count", 0),
+                        "next_retry_time": item.get("next_retry_time", 0),
+                        "diagnostic": diag,
+                        "updated_at": str(item.get("updated_at") or "")
+                    })
+        except Exception:
+            pass
+
+    # 2. 解包网站托管部署异常批次 (Hosting Deploy Batches)
+    if hasattr(meta, "list_hosting_deploy_batches"):
+        try:
+            raw_batches = meta.list_hosting_deploy_batches(limit=limit)
+            if isinstance(raw_batches, list):
+                seen_targets = set()
+                for b in raw_batches:
+                    if not isinstance(b, dict):
+                        continue
+                    bid = str(b.get("batch_id") or "")
+                    overall_status = b.get("overall_status")
+                    started_at = str(b.get("started_at") or "")
+                    targets = b.get("targets") or b.get("targets_json") or {}
+                    if isinstance(targets, str):
+                        try: targets = json.loads(targets)
+                        except Exception: targets = {}
+
+                    doc_id = b.get("doc_id") or (targets.get("_trigger_doc") if isinstance(targets, dict) else None)
+                    trig = str(b.get("trigger_source") or "")
+                    if not doc_id and trig.startswith("vault_drawer:"):
+                        doc_id = trig.split("vault_drawer:", 1)[1]
+                    r_path = doc_id or "全站发布 (整站)"
+                    rec_title = b.get("doc_title") or _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
+
+                    if isinstance(targets, dict) and targets:
+                        for tid, tinfo in targets.items():
+                            if not tid or tid.startswith("_") or not isinstance(tinfo, dict):
+                                continue
+                            if tid in seen_targets:
+                                continue
+                            seen_targets.add(tid)
+
+                            t_status = tinfo.get("status")
+                            if t_status == "FAILED" or (t_status != "SUCCESS" and overall_status == "FAILED"):
+                                ch_info = channel_map.get(tid, {})
+                                raw_err = tinfo.get("error") or b.get("logs_excerpt") or "全站部署推流失败"
+                                first_err = str(raw_err).strip().split("\n")[0][:120]
+                                dead_letters.append({
+                                    "id": f"hosting_{bid}_{tid}",
+                                    "batch_id": bid,
+                                    "rel_path": r_path,
+                                    "target_id": tid,
+                                    "target_type": "hosting",
+                                    "target_name": ch_info.get("name", tid.upper()),
+                                    "target_icon": ch_info.get("icon", "🌐"),
+                                    "title": rec_title,
+                                    "slug": "",
+                                    "lang_code": "all",
+                                    "lang_name": "多语种全站",
+                                    "lang_icon": "🌐",
+                                    "status": "FAILED",
+                                    "last_error": first_err,
+                                    "retry_count": 1,
+                                    "next_retry_time": 0,
+                                    "diagnostic": {
+                                        "category": "hosting_deploy_failure",
+                                        "suggestion": f"请检查 {ch_info.get('name', tid)} 的 Token 授权或网络连通性后在托管面板点击重新发布",
+                                        "action": "redeploy"
+                                    },
+                                    "updated_at": str(tinfo.get("deployed_at") or started_at)
+                                })
+                    elif overall_status == "FAILED" and bid not in seen_targets:
+                        seen_targets.add(bid)
+                        ch_name = "全站托管"
+                        dead_letters.append({
+                            "id": f"hosting_{bid}",
+                            "batch_id": bid,
+                            "rel_path": r_path,
+                            "target_id": "hosting",
+                            "target_type": "hosting",
+                            "target_name": ch_name,
+                            "target_icon": "🌐",
+                            "title": rec_title,
+                            "slug": "",
+                            "lang_code": "all",
+                            "lang_name": "多语种全站",
+                            "lang_icon": "🌐",
+                            "status": "FAILED",
+                            "last_error": str(b.get("logs_excerpt") or "全站构建或部署失败").strip().split("\n")[0][:120],
+                            "retry_count": 1,
+                            "next_retry_time": 0,
+                            "diagnostic": {
+                                "category": "hosting_batch_failure",
+                                "suggestion": "请查看部署日志详情排查构建错误",
+                                "action": "redeploy"
+                            },
+                            "updated_at": started_at
+                        })
+        except Exception:
+            pass
+
+    return dead_letters[:limit]

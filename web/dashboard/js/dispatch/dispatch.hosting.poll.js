@@ -53,6 +53,9 @@ window.startHostingDeployPolling = function () {
             );
             if (!hasActiveDeploy) {
                 window.stopHostingDeployPolling();
+                if (typeof window.refreshDispatchIndicator === 'function') {
+                    window.refreshDispatchIndicator();
+                }
             }
         } catch (e) {
             console.warn('[Hosting Poll] Skipped due to error:', e);
