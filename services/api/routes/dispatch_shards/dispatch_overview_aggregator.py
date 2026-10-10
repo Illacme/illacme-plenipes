@@ -46,18 +46,11 @@ def collect_unified_recent_records(
                     rec_title = _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
 
                     unified.append({
-                        "id": str(rec.get("id") or f"syn_{tid}_{r_path}"),
-                        "rel_path": r_path,
-                        "title": rec_title or r_path,
-                        "lang_code": l_code,
-                        "lang_name": l_code.upper(),
-                        "lang_icon": "🌐",
-                        "target_id": tid,
-                        "target_type": ch_info.get("type", "social"),
-                        "target_name": ch_info.get("name", tid),
-                        "target_icon": ch_info.get("icon", "🏷️"),
-                        "remote_article_id": rec.get("remote_article_id", ""),
-                        "remote_url": rec.get("remote_url", ""),
+                        "id": str(rec.get("id") or f"syn_{tid}_{r_path}"), "rel_path": r_path,
+                        "title": rec_title or r_path, "lang_code": l_code, "lang_name": l_code.upper(), "lang_icon": "🌐",
+                        "target_id": tid, "target_type": ch_info.get("type", "social"),
+                        "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
+                        "remote_article_id": rec.get("remote_article_id", ""), "remote_url": rec.get("remote_url", ""),
                         "updated_at": str(rec.get("updated_at") or "")
                     })
         except Exception:
@@ -69,18 +62,15 @@ def collect_unified_recent_records(
             raw_batches = meta.list_hosting_deploy_batches(limit=limit)
             if isinstance(raw_batches, list):
                 for b in raw_batches:
-                    if not isinstance(b, dict):
-                        continue
+                    if not isinstance(b, dict): continue
                     bid = str(b.get("batch_id") or "")
                     targets = b.get("targets") or b.get("targets_json") or {}
                     if isinstance(targets, str):
-                        try:
-                            targets = json.loads(targets)
-                        except Exception:
-                            targets = {}
+                        try: targets = json.loads(targets)
+                        except Exception: targets = {}
 
                     trig = str(b.get("trigger_source") or "")
-                    doc_id = b.get("doc_id") or targets.get("_trigger_doc")
+                    doc_id = b.get("doc_id") or (targets.get("_trigger_doc") if isinstance(targets, dict) else None)
                     if not doc_id and trig.startswith("vault_drawer:"):
                         doc_id = trig.split("vault_drawer:", 1)[1]
 
@@ -88,30 +78,20 @@ def collect_unified_recent_records(
                     rec_title = b.get("doc_title") or _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
                     started_at = str(b.get("started_at") or "")
 
-                    for tid, tinfo in targets.items():
-                        if not tid or tid.startswith("_") or not isinstance(tinfo, dict):
-                            continue
-                        if tinfo.get("status") != "SUCCESS":
-                            continue
+                    for tid, tinfo in (targets.items() if isinstance(targets, dict) else []):
+                        if not tid or tid.startswith("_") or not isinstance(tinfo, dict): continue
+                        if tinfo.get("status") != "SUCCESS": continue
 
                         ch_info = channel_map.get(tid, {})
                         t_url = tinfo.get("url") or tinfo.get("site_url") or ""
                         t_at = str(tinfo.get("deployed_at") or started_at)
 
                         unified.append({
-                            "id": f"hosting_{bid}_{tid}",
-                            "rel_path": r_path,
-                            "title": rec_title or r_path,
-                            "lang_code": "all",
-                            "lang_name": "多语种全站",
-                            "lang_icon": "🌐",
-                            "target_id": tid,
-                            "target_type": "hosting",
-                            "target_name": ch_info.get("name", tid.upper()),
-                            "target_icon": ch_info.get("icon", "🌐"),
-                            "remote_article_id": bid,
-                            "remote_url": t_url,
-                            "updated_at": t_at
+                            "id": f"hosting_{bid}_{tid}", "rel_path": r_path, "title": rec_title or r_path,
+                            "lang_code": "all", "lang_name": "多语种全站", "lang_icon": "🌐",
+                            "target_id": tid, "target_type": "hosting",
+                            "target_name": ch_info.get("name", tid.upper()), "target_icon": ch_info.get("icon", "🌐"),
+                            "remote_article_id": bid, "remote_url": t_url, "updated_at": t_at
                         })
         except Exception:
             pass
@@ -149,8 +129,7 @@ def collect_unified_dead_letter_tasks(
     """
     channel_map = channel_map or {}
     meta = getattr(engine, "meta", None)
-    if not meta:
-        return []
+    if not meta: return []
 
     vault_root = getattr(engine, "vault_root", "") or (
         getattr(engine.config, "vault_root", "") if hasattr(engine, "config") else ""
@@ -168,8 +147,7 @@ def collect_unified_dead_letter_tasks(
             raw_tasks = meta.list_all_syndication_tasks()
             if isinstance(raw_tasks, list):
                 for item in raw_tasks:
-                    if not isinstance(item, dict) or item.get("status") != "FAILED":
-                        continue
+                    if not isinstance(item, dict) or item.get("status") != "FAILED": continue
                     tid = str(item.get("target_id") or "")
                     rel_p = str(item.get("rel_path") or "")
                     l_code = str(item.get("lang_code") or "zh-CN")
@@ -178,23 +156,12 @@ def collect_unified_dead_letter_tasks(
                     real_title = item.get("title") or _resolve_rec_doc_title(engine, rel_p, docs_snapshot, vault_root)
                     ch_info = channel_map.get(tid, {})
                     dead_letters.append({
-                        "id": item.get("id"),
-                        "rel_path": rel_p,
-                        "target_id": tid,
-                        "target_type": ch_info.get("type", "social"),
-                        "target_name": ch_info.get("name", tid),
-                        "target_icon": ch_info.get("icon", "🏷️"),
-                        "title": real_title,
-                        "slug": item.get("slug", ""),
-                        "lang_code": l_code,
-                        "lang_name": l_code.upper(),
-                        "lang_icon": "🌐",
-                        "status": "FAILED",
-                        "last_error": lerr,
-                        "retry_count": item.get("retry_count", 0),
-                        "next_retry_time": item.get("next_retry_time", 0),
-                        "diagnostic": diag,
-                        "updated_at": str(item.get("updated_at") or "")
+                        "id": item.get("id"), "rel_path": rel_p, "target_id": tid,
+                        "target_type": ch_info.get("type", "social"), "target_name": ch_info.get("name", tid),
+                        "target_icon": ch_info.get("icon", "🏷️"), "title": real_title, "slug": item.get("slug", ""),
+                        "lang_code": l_code, "lang_name": l_code.upper(), "lang_icon": "🌐", "status": "FAILED",
+                        "last_error": lerr, "retry_count": item.get("retry_count", 0), "next_retry_time": item.get("next_retry_time", 0),
+                        "diagnostic": diag, "updated_at": str(item.get("updated_at") or "")
                     })
         except Exception:
             pass
@@ -206,8 +173,7 @@ def collect_unified_dead_letter_tasks(
             if isinstance(raw_batches, list):
                 seen_targets = set()
                 for b in raw_batches:
-                    if not isinstance(b, dict):
-                        continue
+                    if not isinstance(b, dict): continue
                     bid = str(b.get("batch_id") or "")
                     overall_status = b.get("overall_status")
                     started_at = str(b.get("started_at") or "")
@@ -225,10 +191,8 @@ def collect_unified_dead_letter_tasks(
 
                     if isinstance(targets, dict) and targets:
                         for tid, tinfo in targets.items():
-                            if not tid or tid.startswith("_") or not isinstance(tinfo, dict):
-                                continue
-                            if tid in seen_targets:
-                                continue
+                            if not tid or tid.startswith("_") or not isinstance(tinfo, dict): continue
+                            if tid in seen_targets: continue
                             seen_targets.add(tid)
 
                             t_status = tinfo.get("status")
@@ -237,21 +201,11 @@ def collect_unified_dead_letter_tasks(
                                 raw_err = tinfo.get("error") or b.get("logs_excerpt") or "全站部署推流失败"
                                 first_err = str(raw_err).strip().split("\n")[0][:120]
                                 dead_letters.append({
-                                    "id": f"hosting_{bid}_{tid}",
-                                    "batch_id": bid,
-                                    "rel_path": r_path,
-                                    "target_id": tid,
-                                    "target_type": "hosting",
-                                    "target_name": ch_info.get("name", tid.upper()),
-                                    "target_icon": ch_info.get("icon", "🌐"),
-                                    "title": rec_title,
-                                    "slug": "",
-                                    "lang_code": "all",
-                                    "lang_name": "多语种全站",
-                                    "lang_icon": "🌐",
-                                    "status": "FAILED",
-                                    "last_error": first_err,
-                                    "retry_count": 1,
+                                    "id": f"hosting_{bid}_{tid}", "batch_id": bid, "rel_path": r_path,
+                                    "target_id": tid, "target_type": "hosting",
+                                    "target_name": ch_info.get("name", tid.upper()), "target_icon": ch_info.get("icon", "🌐"),
+                                    "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站",
+                                    "lang_icon": "🌐", "status": "FAILED", "last_error": first_err, "retry_count": 1,
                                     "next_retry_time": 0,
                                     "diagnostic": {
                                         "category": "hosting_deploy_failure",
@@ -264,26 +218,15 @@ def collect_unified_dead_letter_tasks(
                         seen_targets.add(bid)
                         ch_name = "全站托管"
                         dead_letters.append({
-                            "id": f"hosting_{bid}",
-                            "batch_id": bid,
-                            "rel_path": r_path,
-                            "target_id": "hosting",
-                            "target_type": "hosting",
-                            "target_name": ch_name,
-                            "target_icon": "🌐",
-                            "title": rec_title,
-                            "slug": "",
-                            "lang_code": "all",
-                            "lang_name": "多语种全站",
-                            "lang_icon": "🌐",
-                            "status": "FAILED",
+                            "id": f"hosting_{bid}", "batch_id": bid, "rel_path": r_path, "target_id": "hosting",
+                            "target_type": "hosting", "target_name": ch_name, "target_icon": "🌐",
+                            "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站",
+                            "lang_icon": "🌐", "status": "FAILED",
                             "last_error": str(b.get("logs_excerpt") or "全站构建或部署失败").strip().split("\n")[0][:120],
-                            "retry_count": 1,
-                            "next_retry_time": 0,
+                            "retry_count": 1, "next_retry_time": 0,
                             "diagnostic": {
                                 "category": "hosting_batch_failure",
-                                "suggestion": "请查看部署日志详情排查构建错误",
-                                "action": "redeploy"
+                                "suggestion": "请查看部署日志详情排查构建错误", "action": "redeploy"
                             },
                             "updated_at": started_at
                         })
@@ -291,3 +234,20 @@ def collect_unified_dead_letter_tasks(
             pass
 
     return dead_letters[:limit]
+
+
+def is_any_hosting_deploying(engine: Any) -> bool:
+    """🌐 [全域感知] 检查是否有全站/单篇托管部署批次正处于 RUNNING 或 PENDING 活跃推流态"""
+    meta = getattr(engine, "meta", None)
+    if not meta or not hasattr(meta, "list_hosting_deploy_batches"):
+        return False
+    try:
+        batches = meta.list_hosting_deploy_batches(limit=1)
+        if batches and isinstance(batches, list):
+            b = batches[0]
+            if isinstance(b, dict):
+                return str(b.get("overall_status") or "").upper() in ("RUNNING", "PENDING")
+    except Exception:
+        pass
+    return False
+

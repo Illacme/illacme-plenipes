@@ -237,3 +237,57 @@ def test_dispatch_deadletter_retry_with_hosting_failure(monkeypatch):
     assert res_data.get("status") == "success"
     assert "github_pages" in res_data.get("message", "").lower()
     assert "github_pages" in called_channels
+
+
+def test_dispatch_overview_and_active_with_hosting_running(monkeypatch):
+    """测试当全站托管部署正处于 RUNNING 态时，overview 与 active 接口均能感知全域进行中状态"""
+    mock_eng = singleton.get_global_engine()
+    mock_eng.meta.list_hosting_deploy_batches = lambda imprint_id=None, limit=50, offset=0: [
+        {
+            "batch_id": "deploy_running_123",
+            "trigger_source": "workbench",
+            "overall_status": "RUNNING",
+            "started_at": "2026-10-11 07:40:00",
+            "targets": {"github_pages": {"status": "RUNNING"}}
+        }
+    ]
+
+    res = client.get("/api/dispatch/overview")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["is_publishing"] is True
+    assert data["summary"]["active_count"] >= 1
+
+    active_res = client.get("/api/dispatch/tasks/active")
+    assert active_res.status_code == 200
+    active_data = active_res.json()
+    assert active_data["is_publishing"] is True
+    assert "全站托管" in active_data["active_pipeline"]["current_stage"]
+
+
+def test_dispatch_deadletter_retry_hosting_error_passthrough(monkeypatch):
+    """测试当托管重试抛出异常时，错误原因能被捕获并不崩服透传"""
+    from services.api.routes.dispatch_shards import hosting_routes
+
+    mock_eng = singleton.get_global_engine()
+    mock_eng.meta.list_hosting_deploy_batches = lambda imprint_id=None, limit=50, offset=0: [
+        {
+            "batch_id": "deploy_failed_111",
+            "trigger_source": "workbench",
+            "overall_status": "FAILED",
+            "targets": {"github_pages": {"status": "FAILED", "error": "Mock fail"}}
+        }
+    ]
+
+    def mock_fail_launch(*args, **kwargs):
+        raise RuntimeError("测试托管拉起异常：静态产物包损坏")
+
+    monkeypatch.setattr(hosting_routes, "launch_hosting_deploy_job", mock_fail_launch)
+
+    res = client.post("/api/dispatch/deadletter/retry", json={})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "warning"
+    assert "静态产物包损坏" in data["message"]
+
+

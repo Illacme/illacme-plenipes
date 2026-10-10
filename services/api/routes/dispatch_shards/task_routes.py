@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from core.runtime.engine_singleton import get_global_engine
 from core.runtime.orchestrator import _is_publishing, _pending_sync_queue
 from core.utils.language_data import SUPPORTED_MATRIX
-from .dispatch_overview_aggregator import collect_unified_recent_records, collect_unified_dead_letter_tasks
+from .dispatch_overview_aggregator import collect_unified_recent_records, collect_unified_dead_letter_tasks, is_any_hosting_deploying
 from ..system import verify_token
 
 
@@ -161,10 +161,12 @@ async def get_dispatch_overview() -> Dict[str, Any]:
         else: status, msg = "disabled", "未配置启用"
         channel_health.append({**ch, "status": status, "status_msg": msg, "enabled": enabled})
 
-    active_count = (1 if _is_publishing else 0) + len(_pending_sync_queue)
+    hosting_running = is_any_hosting_deploying(engine)
+    is_publishing = bool(_is_publishing or hosting_running)
+    active_count = (1 if _is_publishing else 0) + len(_pending_sync_queue) + (1 if hosting_running else 0)
 
     return {
-        "status": "success", "is_publishing": _is_publishing,
+        "status": "success", "is_publishing": is_publishing,
         "summary": {
             "total_syndicated": len(recent_records), "total_failed": len(dead_letter_tasks), "active_count": active_count,
             "success_rate": f"{round((len(recent_records) / max(len(recent_records) + len(dead_letter_tasks), 1)) * 100, 1)}%"
@@ -176,6 +178,9 @@ async def get_dispatch_overview() -> Dict[str, Any]:
 @router.get("/api/dispatch/tasks/active", dependencies=[Depends(verify_token)])
 async def get_active_dispatch_tasks() -> Dict[str, Any]:
     """🚀 [V122.0] 查询当前正在活跃执行与排队的发布作业"""
+    engine = get_global_engine()
+    hosting_running = is_any_hosting_deploying(engine) if engine else False
+    is_publishing = bool(_is_publishing or hosting_running)
     pending = []
     for idx, item in enumerate(_pending_sync_queue):
         if isinstance(item, dict):
@@ -184,11 +189,11 @@ async def get_active_dispatch_tasks() -> Dict[str, Any]:
                 "target_langs": item.get("target_langs") or ["全部语种"], "dry_run": item.get("dry_run", False)
             })
 
+    stage = "全站托管编译与多渠道推流部署" if hosting_running else ("多渠道并发推送与成果验证" if _is_publishing else "IDLE")
     return {
-        "is_publishing": _is_publishing,
+        "is_publishing": is_publishing,
         "active_pipeline": {
-            "current_stage": "多渠道并发推送与成果验证" if _is_publishing else "IDLE",
-            "progress_percent": 75 if _is_publishing else 100, "can_abort": _is_publishing
+            "current_stage": stage, "progress_percent": 75 if is_publishing else 100, "can_abort": is_publishing
         },
         "pending_queue": pending
     }
@@ -198,21 +203,16 @@ async def get_active_dispatch_tasks() -> Dict[str, Any]:
 async def abort_dispatch_task() -> Dict[str, Any]:
     """🛑 [V122.0] 紧急中止当前正在运行的发布流水线"""
     engine = get_global_engine()
-    if not engine:
-        raise HTTPException(status_code=500, detail="引擎未就绪")
-    
+    if not engine: raise HTTPException(status_code=500, detail="引擎未就绪")
     engine.abort_sync = True
-    try:
-        _pending_sync_queue.clear()
-    except Exception:
-        pass
+    try: _pending_sync_queue.clear()
+    except Exception: pass
 
     try:
         from core.logic.orchestration.task_orchestrator import global_executor, ai_executor
         global_executor.cancel_all_pending()
         ai_executor.cancel_all_pending()
-    except Exception:
-        pass
+    except Exception: pass
 
     return {"status": "aborted", "message": "全域发布作业与排队队列已全量中止。"}
 
@@ -229,7 +229,7 @@ async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
     dead_tasks = collect_unified_dead_letter_tasks(engine, docs_snapshot=docs_snapshot, channel_map=channel_map)
 
     # 1. 识别并触发托管发布失败渠道重新部署
-    triggered_hosting = []
+    triggered_hosting, hosting_warn = [], ""
     from .hosting_routes import launch_hosting_deploy_job, _HOSTING_ICON_MAP
     hosting_targets_to_retry = {
         t["target_id"] for t in dead_tasks
@@ -240,14 +240,12 @@ async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
 
     if hosting_targets_to_retry:
         try:
-            launch_hosting_deploy_job(
-                engine,
-                target_channels=list(hosting_targets_to_retry),
-                trigger_source="deadletter_retry"
-            )
+            launch_hosting_deploy_job(engine, target_channels=list(hosting_targets_to_retry), trigger_source="deadletter_retry")
             triggered_hosting = list(hosting_targets_to_retry)
-        except Exception:
-            pass
+        except Exception as he:
+            import logging
+            logging.getLogger("Main").warning(f"⚠️ [托管重试调度异常] {he}")
+            hosting_warn = str(he)
 
     # 2. 社交媒体死信任务状态重置
     engine.meta.retry_syndication_task(payload.rel_path, payload.target_id)
@@ -255,17 +253,11 @@ async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
     if payload.rel_path and payload.target_id and payload.target_id not in _HOSTING_ICON_MAP:
         try:
             from services.api.logic.dispatch_ops import trigger_re_dispatch_facade
-            req = {
-                "target_channel": payload.target_id,
-                "target_slot": payload.lang_code or "zh-CN",
-                "skip_syndication": False,
-                "clear_cache": False
-            }
+            req = {"target_channel": payload.target_id, "target_slot": payload.lang_code or "zh-CN", "skip_syndication": False, "clear_cache": False}
             res = trigger_re_dispatch_facade(engine, payload.rel_path, req)
             if isinstance(res, dict) and res.get("success") is True:
                 return {"status": "success", "message": f"已成功为 {payload.target_id.upper()} 下发重新发布任务。"}
-        except Exception:
-            pass
+        except Exception: pass
 
     # 3. 社媒调度服务异步重试兜底
     try:
@@ -279,11 +271,15 @@ async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
     except Exception as e:
         if triggered_hosting:
             return {"status": "success", "message": f"已触发托管渠道 ({', '.join(triggered_hosting)}) 重新发布，社媒告警: {str(e)}"}
+        if hosting_warn:
+            return {"status": "warning", "message": f"社媒重置告警: {str(e)}；托管重试受阻: {hosting_warn}"}
         return {"status": "success", "message": f"任务已重置为待重试状态，调度器告警: {str(e)}"}
 
     if triggered_hosting:
         names = ", ".join(t.upper() for t in triggered_hosting)
         return {"status": "success", "message": f"已为全站托管 ({names}) 与待自愈分发任务触发后台重试管线。"}
+    if hosting_warn:
+        return {"status": "warning", "message": f"社媒任务已重置，但托管重试受阻: {hosting_warn}"}
     return {"status": "success", "message": "已将任务重置并触发后台重试管线。"}
 
 
