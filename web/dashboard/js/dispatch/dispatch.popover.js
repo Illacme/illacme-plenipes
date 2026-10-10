@@ -50,7 +50,7 @@ window.createDispatchPopoverDOM = function () {
     el.innerHTML = `
         <div class="popover-header">
             <span class="popover-title">
-                <span>🚀 出版调度实时监视器</span>
+                <span>🚀 发布任务与进度</span>
             </span>
             <button class="popover-close" onclick="window.toggleDispatchPopover(false)">×</button>
         </div>
@@ -61,7 +61,7 @@ window.createDispatchPopoverDOM = function () {
         </div>
         <div class="popover-footer">
             <button class="btn-open-workbench" onclick="window.toggleDispatchPopover(false); if(typeof window.showView==='function') window.showView('tasks');">
-                🚀 进入完整发布任务大厅与历史账本 ↗
+                🚀 前往发布中心大盘 ↗
             </button>
         </div>
     `;
@@ -168,7 +168,7 @@ window.renderPopoverContent = function (data) {
                         <button class="popover-retry-btn" id="btn-popover-retry-all" onclick="window.triggerPopoverRetryAll(this)" title="立即将异常任务重新排入分发管线">
                             <span>🔄</span><span>一键重试</span>
                         </button>
-                        <a href="#/tasks" class="popover-heal-link" onclick="window.toggleDispatchPopover(false); if(typeof window.showView==='function') window.showView('tasks', 'deadletter');" title="进入任务大厅死信队列">
+                        <a href="#/tasks" class="popover-heal-link" onclick="window.toggleDispatchPopover(false); if(typeof window.showView==='function') window.showView('tasks', 'deadletter');" title="进入发布中心死信队列">
                             详情 ↗
                         </a>
                     </div>

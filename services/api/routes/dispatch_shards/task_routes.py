@@ -15,6 +15,7 @@ from core.runtime.engine_singleton import get_global_engine
 from core.runtime.orchestrator import _is_publishing, _pending_sync_queue
 from core.syndication.syndication_diagnostic import diagnose_syndication_error
 from core.utils.language_data import SUPPORTED_MATRIX
+from .dispatch_overview_aggregator import collect_unified_recent_records
 from ..system import verify_token
 
 
@@ -142,21 +143,10 @@ async def get_dispatch_overview() -> Dict[str, Any]:
                     "retry_count": item.get("retry_count", 0), "next_retry_time": item.get("next_retry_time", 0), "diagnostic": diag
                 })
 
-    # 2. 查询历史成功分发物权记录
-    raw_records = engine.meta.list_all_syndication_records(limit=100) if hasattr(engine.meta, "list_all_syndication_records") else []
-    recent_records = []
-    if isinstance(raw_records, list):
-        for rec in raw_records:
-            if isinstance(rec, dict):
-                r_path, tid, l_code = rec.get("rel_path", ""), rec.get("target_id", ""), rec.get("lang_code", "zh-CN")
-                rec_title = _extract_doc_title(engine, r_path, docs_snapshot)
-                ch_info, l_info = channel_map.get(tid, {}), _resolve_lang_meta(l_code)
-                recent_records.append({
-                    "id": rec.get("id"), "rel_path": r_path, "title": rec_title or r_path,
-                    "lang_code": l_code, "lang_name": l_info.get("name", l_code), "lang_icon": l_info.get("icon", "🌐"),
-                    "target_id": tid, "target_type": ch_info.get("type", "social"), "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
-                    "remote_article_id": rec.get("remote_article_id", ""), "remote_url": rec.get("remote_url", ""), "updated_at": rec.get("updated_at", "")
-                })
+    # 2. 查询全域历史成功分发与托管发布物权记录
+    recent_records = collect_unified_recent_records(
+        engine, docs_snapshot=docs_snapshot, channel_map=channel_map, limit=100
+    )
 
     # 3. 统计全渠道连通性健康矩阵
     syndication_cfg = getattr(engine.config, "syndication", None) or {}

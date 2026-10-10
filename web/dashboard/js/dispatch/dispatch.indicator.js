@@ -48,10 +48,10 @@ window.updateDispatchIndicator = function (overviewData) {
         pill.style.display = 'inline-block';
         btn.title = `探测到 ${failedCount} 项分发异常，点击进入自愈站`;
     } else {
-        label.innerText = '任务大厅';
+        label.innerText = '发布任务';
         pill.innerText = summary.total_syndicated ? String(summary.total_syndicated) : '0';
         pill.style.display = 'inline-block';
-        btn.title = '点击展开出版任务即时监视器';
+        btn.title = '点击展开发布任务与即时进度';
     }
 };
 

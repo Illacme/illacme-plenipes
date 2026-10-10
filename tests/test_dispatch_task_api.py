@@ -50,6 +50,24 @@ class MockMeta:
     def list_all_syndication_records(self, limit=100, offset=0):
         return self.records
 
+    def list_hosting_deploy_batches(self, imprint_id=None, limit=50, offset=0):
+        return [
+            {
+                "batch_id": "deploy_1791550990_test",
+                "trigger_source": "vault_drawer:Showcase/test-doc.md",
+                "doc_title": "测试托管文档",
+                "overall_status": "SUCCESS",
+                "started_at": "2026-10-09 21:03:10",
+                "targets": {
+                    "github_pages": {
+                        "status": "SUCCESS",
+                        "url": "https://example.github.io/test-doc.html",
+                        "deployed_at": "2026-10-09 21:04:17"
+                    }
+                }
+            }
+        ]
+
     def get_documents_snapshot(self):
         return {
             "published.md": {"title": "主权出版之光", "slug": "published"}
@@ -83,17 +101,26 @@ client = TestClient(app)
 
 
 def test_dispatch_overview_api():
-    """测试 /api/dispatch/overview 能够防御性返回大盘数据"""
+    """测试 /api/dispatch/overview 能够防御性返回大盘数据，并正确聚合托管与分发成果"""
     response = client.get("/api/dispatch/overview")
     assert response.status_code == 200
     data = response.json()
     assert data.get("status") == "success"
     assert "summary" in data
     assert "channel_health" in data
-    assert len(data["recent_records"]) == 1
+    assert len(data["recent_records"]) == 2
     assert len(data["dead_letter_tasks"]) == 1
-    assert data["recent_records"][0]["title"] == "主权出版之光"
-    assert data["recent_records"][0]["remote_url"] == "https://dev.to/article/12345"
+
+    # 第 1 条应为最新的托管成果 (2026-10-09)
+    assert data["recent_records"][0]["title"] == "测试托管文档"
+    assert data["recent_records"][0]["target_id"] == "github_pages"
+    assert data["recent_records"][0]["target_type"] == "hosting"
+    assert data["recent_records"][0]["remote_url"] == "https://example.github.io/test-doc.html"
+
+    # 第 2 条为历史社媒成果 (2026-09-17)
+    assert data["recent_records"][1]["title"] == "主权出版之光"
+    assert data["recent_records"][1]["remote_url"] == "https://dev.to/article/12345"
+
     task = data["dead_letter_tasks"][0]
     assert "diagnostic" in task
     assert "badge" in task["diagnostic"]
