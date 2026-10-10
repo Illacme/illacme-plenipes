@@ -165,7 +165,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             const retryCount = rec.retry_count || 0;
             statusBadgeHtml = `<span class="dispatch-status-badge is-failed" title="${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''}</span>`;
         } else {
-            statusBadgeHtml = `<span class="dispatch-status-badge is-success" title="已成功发布上线并完成物权存证">✓ 成功</span>`;
+            statusBadgeHtml = `<span class="dispatch-status-badge is-success" title="已成功发布上线">✓ 成功</span>`;
         }
 
         // 操作区渲染

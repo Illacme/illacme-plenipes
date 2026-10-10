@@ -187,9 +187,6 @@ window.renderPopoverContent = function (data) {
                         历史累计已推送 ${summary.total_syndicated || 0} 篇次成果
                     </div>
                 </div>
-                <button class="mini-btn glow-btn primary-btn" onclick="window.toggleDispatchPopover(false); if(typeof window.triggerPublish==='function') window.triggerPublish(false);" style="padding: 4px 10px; font-size: 0.74rem;">
-                    🚀 触发发布
-                </button>
             </div>
         `;
     }
@@ -217,6 +214,7 @@ window.renderPopoverContent = function (data) {
             const langCode = window.escapeHtml ? window.escapeHtml(rec.lang_code || 'all') : (rec.lang_code || 'all');
             const timeText = window.formatDispatchTime ? window.formatDispatchTime(rec.updated_at) : (rec.updated_at || '');
             const fullTime = window.formatDispatchFullTime ? window.formatDispatchFullTime(rec.updated_at) : (rec.updated_at || '');
+            const linkTitle = rec.target_type === 'hosting' ? '在新窗口访问在线网页 ↗' : '在新窗口查看平台文章 ↗';
             html += `
                 <div class="popover-record-item">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 270px; flex: 1; min-width: 0;">
@@ -228,7 +226,7 @@ window.renderPopoverContent = function (data) {
                     </div>
                     <div>
                         ${rec.remote_url ? `
-                            <a href="${rec.remote_url}" target="_blank" class="magic-link-mini" title="直达线上物权">
+                            <a href="${rec.remote_url}" target="_blank" class="magic-link-mini" title="${linkTitle}">
                                 🔗 访问
                             </a>
                         ` : `
