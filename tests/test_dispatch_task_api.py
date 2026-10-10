@@ -197,3 +197,43 @@ def test_dispatch_overview_with_hosting_failure():
     # 成功率计算应真实下降（非 100%）
     assert data["summary"]["total_failed"] >= 2
     assert data["summary"]["success_rate"] != "100.0%"
+
+
+def test_dispatch_deadletter_retry_with_hosting_failure(monkeypatch):
+    """测试当存在托管失败任务时，调用 /api/dispatch/deadletter/retry 能够自动触发托管重试"""
+    from services.api.routes.dispatch_shards import hosting_routes
+
+    mock_eng = singleton.get_global_engine()
+    mock_eng.meta.list_hosting_deploy_batches = lambda imprint_id=None, limit=50, offset=0: [
+        {
+            "batch_id": "deploy_failed_999",
+            "trigger_source": "workbench",
+            "doc_title": "全站静态站点",
+            "overall_status": "FAILED",
+            "started_at": "2026-10-10 21:18:27",
+            "targets": {
+                "github_pages": {
+                    "status": "FAILED",
+                    "error": "Authentication failed for git push",
+                    "deployed_at": "2026-10-10 21:19:00"
+                }
+            }
+        }
+    ]
+
+    called_channels = []
+    def mock_launch_hosting(eng, target_channel=None, target_channels=None, doc_id=None, trigger_source="workbench"):
+        if target_channels:
+            called_channels.extend(target_channels)
+        elif target_channel:
+            called_channels.append(target_channel)
+        return {"status": "success", "batch_id": "deploy_mock_retry"}
+
+    monkeypatch.setattr(hosting_routes, "launch_hosting_deploy_job", mock_launch_hosting)
+
+    retry_res = client.post("/api/dispatch/deadletter/retry", json={})
+    assert retry_res.status_code == 200
+    res_data = retry_res.json()
+    assert res_data.get("status") == "success"
+    assert "github_pages" in res_data.get("message", "").lower()
+    assert "github_pages" in called_channels

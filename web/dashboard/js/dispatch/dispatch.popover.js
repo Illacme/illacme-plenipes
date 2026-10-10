@@ -272,6 +272,8 @@ window.triggerPopoverRetryAll = async function (btn) {
     try {
         const res = await apiFetch('/api/dispatch/deadletter/retry', { method: 'POST', body: JSON.stringify({}) });
         if (typeof showToast === 'function') showToast((res && res.message) || '已触发后台自愈重试管线', 'success');
+        if (typeof window.startHostingDeployPolling === 'function') window.startHostingDeployPolling();
+        if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
         if (typeof window.refreshDispatchIndicator === 'function') await window.refreshDispatchIndicator();
         if (typeof window.loadDispatchCenter === 'function' && window._currentView === 'tasks') {
             window.loadDispatchCenter('deadletter');

@@ -219,16 +219,40 @@ async def abort_dispatch_task() -> Dict[str, Any]:
 
 @router.post("/api/dispatch/deadletter/retry", dependencies=[Depends(verify_token)])
 async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
-    """🔄 [V122.0] 重试指定死信任务，或重试当前所有失败任务"""
+    """🔄 [V122.0] 重试指定死信任务，或重试当前所有失败任务 (全域覆盖托管与社媒)"""
     engine = get_global_engine()
     if not engine or not hasattr(engine, "meta") or not engine.meta:
         return {"status": "warning", "message": "引擎元数据暂不可用"}
 
-    # 1. 首先在元数据库中重置该任务为待重试状态
+    channel_map = _get_channel_registry_map()
+    docs_snapshot = engine.meta.get_documents_snapshot() if hasattr(engine.meta, "get_documents_snapshot") else {}
+    dead_tasks = collect_unified_dead_letter_tasks(engine, docs_snapshot=docs_snapshot, channel_map=channel_map)
+
+    # 1. 识别并触发托管发布失败渠道重新部署
+    triggered_hosting = []
+    from .hosting_routes import launch_hosting_deploy_job, _HOSTING_ICON_MAP
+    hosting_targets_to_retry = {
+        t["target_id"] for t in dead_tasks
+        if t.get("target_type") == "hosting" and t.get("target_id") in _HOSTING_ICON_MAP
+    }
+    if payload.target_id and payload.target_id in _HOSTING_ICON_MAP:
+        hosting_targets_to_retry.add(payload.target_id)
+
+    if hosting_targets_to_retry:
+        try:
+            launch_hosting_deploy_job(
+                engine,
+                target_channels=list(hosting_targets_to_retry),
+                trigger_source="deadletter_retry"
+            )
+            triggered_hosting = list(hosting_targets_to_retry)
+        except Exception:
+            pass
+
+    # 2. 社交媒体死信任务状态重置
     engine.meta.retry_syndication_task(payload.rel_path, payload.target_id)
 
-    # 2. 定向单个任务重发 (支持托管发布与社媒广播统一调度)
-    if payload.rel_path and payload.target_id:
+    if payload.rel_path and payload.target_id and payload.target_id not in _HOSTING_ICON_MAP:
         try:
             from services.api.logic.dispatch_ops import trigger_re_dispatch_facade
             req = {
@@ -253,8 +277,13 @@ async def retry_deadletter_tasks(payload: TaskActionPayload) -> Dict[str, Any]:
         syndicator = ContentSyndicator(syndication_cfg=syndication_cfg, site_url=site_url, sys_tuning_cfg=sys_tuning, meta=engine.meta)
         syndicator.process_pending_retries()
     except Exception as e:
+        if triggered_hosting:
+            return {"status": "success", "message": f"已触发托管渠道 ({', '.join(triggered_hosting)}) 重新发布，社媒告警: {str(e)}"}
         return {"status": "success", "message": f"任务已重置为待重试状态，调度器告警: {str(e)}"}
 
+    if triggered_hosting:
+        names = ", ".join(t.upper() for t in triggered_hosting)
+        return {"status": "success", "message": f"已为全站托管 ({names}) 与待自愈分发任务触发后台重试管线。"}
     return {"status": "success", "message": "已将任务重置并触发后台重试管线。"}
 
 

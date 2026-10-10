@@ -6,11 +6,9 @@
 🛡️ [SOP-02 模块拆分 / AEL-Iter] 单文件严格保持在 300 行以内。
 """
 
-import os
-import time
-import uuid
+import os, time, uuid, threading
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.runtime.engine_singleton import get_global_engine
@@ -34,8 +32,8 @@ class HostingDeployPayload(BaseModel):
 
 
 _HOSTING_ICON_MAP = {
-    "cloudflare_pages": "☁️", "github_pages": "🐱", "gitee_pages": "🚩", "gitlab_pages": "🦊",
-    "vercel": "▲", "netlify": "💠", "zeabur": "⛵", "render": "🟣", "railway": "🚂", "firebase": "🔥", "sftp": "🖥️"
+    "cloudflare_pages": "☁️", "github_pages": "🐱", "gitee_pages": "🚩", "gitlab_pages": "🦊", "vercel": "▲",
+    "netlify": "💠", "zeabur": "⛵", "render": "🟣", "railway": "🚂", "firebase": "🔥", "sftp": "🖥️"
 }
 
 
@@ -76,6 +74,18 @@ def _collect_fleet_status(engine: Any, last_batches: List[Dict[str, Any]]) -> Li
     return fleet
 
 
+def _fetch_paged_batches(engine: Any, imprint_id: str, limit: int, offset: int):
+    batches, total = [], 0
+    if hasattr(engine, "meta"):
+        if hasattr(engine.meta, "list_hosting_deploy_batches"):
+            try: batches = engine.meta.list_hosting_deploy_batches(imprint_id=imprint_id, limit=limit, offset=offset)
+            except Exception: batches = []
+        if hasattr(engine.meta, "count_hosting_deploy_batches"):
+            try: total = engine.meta.count_hosting_deploy_batches(imprint_id=imprint_id)
+            except Exception: total = len(batches)
+    return batches, total
+
+
 @router.get("/api/dispatch/hosting/overview")
 async def get_hosting_overview(
     page: int = 1, page_size: int = 10,
@@ -88,15 +98,7 @@ async def get_hosting_overview(
     imprint_id = getattr(engine.config, "active_imprint", "default") or "default" if hasattr(engine, "config") else "default"
     bundle_stats = _get_bundle_stats(engine)
     limit, offset = max(1, min(100, page_size)), max(0, (page - 1) * max(1, min(100, page_size)))
-    batches, total_batches = [], 0
-    if hasattr(engine, "meta"):
-        if hasattr(engine.meta, "list_hosting_deploy_batches"):
-            try: batches = engine.meta.list_hosting_deploy_batches(imprint_id=imprint_id, limit=limit, offset=offset)
-            except Exception: batches = []
-        if hasattr(engine.meta, "count_hosting_deploy_batches"):
-            try: total_batches = engine.meta.count_hosting_deploy_batches(imprint_id=imprint_id)
-            except Exception: total_batches = len(batches)
-
+    batches, total_batches = _fetch_paged_batches(engine, imprint_id, limit, offset)
     batches = [normalize_batch_for_doc(engine, b, bundle_stats["bundle_path"]) for b in batches]
     fleet = _collect_fleet_status(engine, batches)
     total_pages = max(1, (total_batches + limit - 1) // limit)
@@ -118,14 +120,7 @@ async def list_hosting_batches(
     imprint_id = getattr(engine.config, "active_imprint", "default") or "default" if hasattr(engine, "config") else "default"
     bundle_stats = _get_bundle_stats(engine)
     limit, offset = max(1, min(100, page_size)), max(0, (page - 1) * max(1, min(100, page_size)))
-    batches, total_batches = [], 0
-    if hasattr(engine, "meta"):
-        if hasattr(engine.meta, "list_hosting_deploy_batches"):
-            try: batches = engine.meta.list_hosting_deploy_batches(imprint_id=imprint_id, limit=limit, offset=offset)
-            except Exception: batches = []
-        if hasattr(engine.meta, "count_hosting_deploy_batches"):
-            try: total_batches = engine.meta.count_hosting_deploy_batches(imprint_id=imprint_id)
-            except Exception: total_batches = len(batches)
+    batches, total_batches = _fetch_paged_batches(engine, imprint_id, limit, offset)
     batches = [normalize_batch_for_doc(engine, b, bundle_stats["bundle_path"]) for b in batches]
     total_pages = max(1, (total_batches + limit - 1) // limit)
     return {
@@ -168,16 +163,11 @@ def _execute_hosting_deploy_sync(engine: Any, batch_id: str, target_channel: Opt
     targets_result = {ch: {"status": "PENDING"} for ch in channels_to_push}
     if doc_id: targets_result["_trigger_doc"] = doc_id
 
-    pages_to_rec = bundle_stats["pages_count"]
-    size_to_rec = bundle_stats["bundle_size_kb"]
-    size_fmt_to_rec = bundle_stats["bundle_size_formatted"]
+    pages_to_rec, size_to_rec, size_fmt_to_rec = bundle_stats["pages_count"], bundle_stats["bundle_size_kb"], bundle_stats["bundle_size_formatted"]
     doc_web_rel = ""
     if doc_id:
         doc_stat = inspect_doc_bundle_artifact(bundle_path, doc_id)
-        doc_web_rel = doc_stat.get("web_rel_path") or ""
-        pages_to_rec = doc_stat["pages_count"]
-        size_to_rec = doc_stat["size_kb"]
-        size_fmt_to_rec = doc_stat["size_formatted"]
+        doc_web_rel, pages_to_rec, size_to_rec, size_fmt_to_rec = doc_stat.get("web_rel_path") or "", doc_stat["pages_count"], doc_stat["size_kb"], doc_stat["size_formatted"]
 
     def _save_realtime(status_str="RUNNING", dur=0.0):
         if hasattr(engine, "meta") and hasattr(engine.meta, "update_hosting_deploy_batch"):
@@ -186,13 +176,11 @@ def _execute_hosting_deploy_sync(engine: Any, batch_id: str, target_channel: Opt
                     batch_id=batch_id, theme=bundle_stats.get("theme", "default"),
                     pages_count=pages_to_rec, bundle_size_formatted=size_fmt_to_rec,
                     channels=channels_to_push, targets_result=targets_result, overall_status=status_str,
-                    duration=dur, start_time_str=time.strftime("%H:%M:%S", time.localtime(start_time)),
-                    doc_id=doc_id
+                    duration=dur, start_time_str=time.strftime("%H:%M:%S", time.localtime(start_time)), doc_id=doc_id
                 )
                 engine.meta.update_hosting_deploy_batch(
                     batch_id=batch_id, overall_status=status_str, duration_sec=dur,
-                    targets_json=targets_result, logs_excerpt=logs_str,
-                    pages_count=pages_to_rec, bundle_size_kb=size_to_rec
+                    targets_json=targets_result, logs_excerpt=logs_str, pages_count=pages_to_rec, bundle_size_kb=size_to_rec
                 )
             except Exception as e:
                 import logging; logging.getLogger("Main").error(f"❌ [批次更新异常] {e}")
@@ -241,57 +229,67 @@ def _execute_hosting_deploy_sync(engine: Any, batch_id: str, target_channel: Opt
     _save_realtime(overall, duration)
 
 
-@router.post("/api/dispatch/hosting/deploy")
-async def trigger_hosting_deploy(
-    payload: HostingDeployPayload,
-    background_tasks: BackgroundTasks,
-    token: str = Depends(verify_token)
+def launch_hosting_deploy_job(
+    engine: Any,
+    target_channel: Optional[str] = None,
+    target_channels: Optional[List[str]] = None,
+    doc_id: Optional[str] = None,
+    trigger_source: str = "workbench"
 ) -> Dict[str, Any]:
-    """🚀 触发全站托管部署（支持一键全量并发推流、勾选多平台或定向单渠道部署）"""
-    engine = get_global_engine()
-    if not engine: raise HTTPException(status_code=503, detail="出版发行引擎正在初始化")
-
+    """统一创建整站托管部署批次并启动后台执行线程"""
     bundle_stats = _get_bundle_stats(engine)
     if not bundle_stats["bundle_exists"]:
-        raise HTTPException(status_code=400, detail=f"静态发布产物包不存在或未构建（路径：{bundle_stats['bundle_path']}），请先执行装帧构建。")
+        raise RuntimeError(f"静态发布产物包不存在或未构建（路径：{bundle_stats['bundle_path']}），请先执行装帧构建。")
 
     batch_id = f"deploy_{int(time.time())}_{uuid.uuid4().hex[:6]}"
-    imprint_id = bundle_stats["imprint_id"]
-    theme = bundle_stats["theme"]
-    direct_upload = _extract_direct_upload(engine)
-
-    channels_to_push = _resolve_ordered_hosting_channels(engine, direct_upload, payload.target_channel, payload.target_channels)
+    channels_to_push = _resolve_ordered_hosting_channels(engine, _extract_direct_upload(engine), target_channel, target_channels)
     init_targets = {ch: {"status": "PENDING"} for ch in channels_to_push}
-    if payload.doc_id:
-        init_targets["_trigger_doc"] = payload.doc_id
+    if doc_id: init_targets["_trigger_doc"] = doc_id
 
-    pages_to_rec = bundle_stats["pages_count"]
-    size_to_rec = bundle_stats["bundle_size_kb"]
-    size_fmt_to_rec = bundle_stats["bundle_size_formatted"]
-    if payload.doc_id:
-        doc_stat = inspect_doc_bundle_artifact(bundle_stats["bundle_path"], payload.doc_id)
-        pages_to_rec = doc_stat["pages_count"]
-        size_to_rec = doc_stat["size_kb"]
-        size_fmt_to_rec = doc_stat["size_formatted"]
+    pages_to_rec, size_to_rec, size_fmt_to_rec = bundle_stats["pages_count"], bundle_stats["bundle_size_kb"], bundle_stats["bundle_size_formatted"]
+    if doc_id:
+        doc_stat = inspect_doc_bundle_artifact(bundle_stats["bundle_path"], doc_id)
+        pages_to_rec, size_to_rec, size_fmt_to_rec = doc_stat["pages_count"], doc_stat["size_kb"], doc_stat["size_formatted"]
 
     init_logs = format_deploy_process_logs(
-        batch_id=batch_id, theme=theme, pages_count=pages_to_rec,
+        batch_id=batch_id, theme=bundle_stats["theme"], pages_count=pages_to_rec,
         bundle_size_formatted=size_fmt_to_rec, channels=channels_to_push,
         targets_result=init_targets, overall_status="RUNNING", duration=0.0,
-        start_time_str=time.strftime("%H:%M:%S"), doc_id=payload.doc_id
+        start_time_str=time.strftime("%H:%M:%S"), doc_id=doc_id
     )
-
-    trigger_src = f"vault_drawer:{payload.doc_id}" if payload.doc_id else payload.trigger_source
+    trigger_src = f"vault_drawer:{doc_id}" if doc_id else trigger_source
     if hasattr(engine, "meta") and hasattr(engine.meta, "create_hosting_deploy_batch"):
         try:
             engine.meta.create_hosting_deploy_batch(
-                batch_id=batch_id, trigger_source=trigger_src, imprint_id=imprint_id,
-                theme=theme, pages_count=pages_to_rec, bundle_size_kb=size_to_rec,
+                batch_id=batch_id, trigger_source=trigger_src, imprint_id=bundle_stats["imprint_id"],
+                theme=bundle_stats["theme"], pages_count=pages_to_rec, bundle_size_kb=size_to_rec,
                 targets_json=init_targets, overall_status="RUNNING", started_at=time.strftime("%Y-%m-%d %H:%M:%S"),
                 logs_excerpt=init_logs
             )
         except Exception: pass
 
-    background_tasks.add_task(_execute_hosting_deploy_sync, engine, batch_id, payload.target_channel, payload.target_channels, payload.doc_id)
-    msg = f"原稿 [{payload.doc_id}] 托管同步任务已进入执行队列" if payload.doc_id else "整站托管部署任务已进入执行队列"
+    threading.Thread(
+        target=_execute_hosting_deploy_sync,
+        args=(engine, batch_id, target_channel, target_channels, doc_id),
+        daemon=True, name=f"HostingDeploy-{batch_id}"
+    ).start()
+    msg = f"原稿 [{doc_id}] 托管同步任务已进入执行队列" if doc_id else "整站托管部署任务已进入执行队列"
     return {"status": "success", "batch_id": batch_id, "message": msg, "bundle": bundle_stats}
+
+
+@router.post("/api/dispatch/hosting/deploy")
+async def trigger_hosting_deploy(
+    payload: HostingDeployPayload,
+    token: str = Depends(verify_token)
+) -> Dict[str, Any]:
+    """🚀 触发全站托管部署（支持一键全量并发推流、勾选多平台或定向单渠道部署）"""
+    engine = get_global_engine()
+    if not engine: raise HTTPException(status_code=503, detail="出版发行引擎正在初始化")
+    try:
+        return launch_hosting_deploy_job(
+            engine, target_channel=payload.target_channel,
+            target_channels=payload.target_channels, doc_id=payload.doc_id,
+            trigger_source=payload.trigger_source
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
