@@ -179,13 +179,26 @@ window.renderPopoverContent = function (data) {
             </div>
         `;
     } else {
+        const total = summary.total_syndicated || 0;
+        const channelList = (data && data.channel_health) || [];
+        const enabledCount = channelList.filter(c => c && c.enabled).length;
+        const channelText = enabledCount > 0 ? ` · 已连接 ${enabledCount} 个发布渠道` : '';
+        const successRate = summary.success_rate || '100%';
         html += `
             <div class="popover-status-box ready">
-                <div>
-                    <div class="status-indicator-text ready">🟢 全网分发就绪 · 待命状态</div>
-                    <div class="popover-status-sub" style="margin-top: 2px;">
-                        历史累计已推送 ${summary.total_syndicated || 0} 篇次成果
+                <div style="min-width: 0; flex: 1; margin-right: 10px;">
+                    <div class="status-indicator-text ready">🟢 发布流水线就绪</div>
+                    <div class="popover-status-sub" style="margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        累计发布 ${total} 篇次成果${channelText}
                     </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <span class="popover-kpi-badge" title="全域发布历史成功率: ${successRate}">
+                        ${successRate} 成功率
+                    </span>
+                    <button class="popover-refresh-btn" onclick="window.triggerPopoverManualRefresh(this)" title="立即刷新发布状态与成果">
+                        <span>🔄</span>
+                    </button>
                 </div>
             </div>
         `;
@@ -249,32 +262,28 @@ window.renderPopoverContent = function (data) {
 window.triggerPopoverRetryAll = async function (btn) {
     if (typeof apiFetch !== 'function') return;
     const origHtml = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span>⏳</span><span>正在重试...</span>';
-    }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳</span><span>正在重试...</span>'; }
     try {
-        const res = await apiFetch('/api/dispatch/deadletter/retry', {
-            method: 'POST',
-            body: JSON.stringify({})
-        });
-        if (typeof showToast === 'function') {
-            showToast((res && res.message) || '已触发后台自愈重试管线', 'success');
-        }
-        if (typeof window.refreshDispatchIndicator === 'function') {
-            await window.refreshDispatchIndicator();
-        }
+        const res = await apiFetch('/api/dispatch/deadletter/retry', { method: 'POST', body: JSON.stringify({}) });
+        if (typeof showToast === 'function') showToast((res && res.message) || '已触发后台自愈重试管线', 'success');
+        if (typeof window.refreshDispatchIndicator === 'function') await window.refreshDispatchIndicator();
         if (typeof window.loadDispatchCenter === 'function' && window._currentView === 'tasks') {
             window.loadDispatchCenter('deadletter');
         }
     } catch (e) {
-        if (typeof showToast === 'function') {
-            showToast('重试请求失败: ' + (e ? e.message : e), 'error');
-        }
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = origHtml;
-        }
+        if (typeof showToast === 'function') showToast('重试请求失败: ' + (e ? e.message : e), 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
     }
 };
 
+/**
+ * 浮层内态势看板手动触发即时刷新
+ */
+window.triggerPopoverManualRefresh = async function (btn) {
+    if (btn) btn.classList.add('is-spinning');
+    try {
+        if (typeof window.refreshDispatchIndicator === 'function') await window.refreshDispatchIndicator();
+    } finally {
+        if (btn) setTimeout(() => btn.classList.remove('is-spinning'), 400);
+    }
+};

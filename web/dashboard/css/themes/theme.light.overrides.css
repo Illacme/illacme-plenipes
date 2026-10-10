@@ -1263,6 +1263,22 @@
     border-color: #e2e8f0 !important;
 }
 
+[data-theme="light"] .dispatch-popover .popover-kpi-badge {
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #059669 !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-refresh-btn {
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+[data-theme="light"] .dispatch-popover .popover-refresh-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
 [data-theme="light"] .dispatch-popover .popover-record-item {
     background: #ffffff !important;
     border-color: #e2e8f0 !important;
