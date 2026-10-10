@@ -181,18 +181,24 @@ window.renderPopoverContent = function (data) {
     } else {
         const total = summary.total_syndicated || 0;
         const channelList = (data && data.channel_health) || [];
-        const enabledCount = channelList.filter(c => c && c.enabled).length;
-        const channelText = enabledCount > 0 ? ` · 已连接 ${enabledCount} 个发布渠道` : '';
+        const enabledChannels = channelList.filter(c => c && c.enabled);
+        const enabledCount = enabledChannels.length;
+        const hostingCount = enabledChannels.filter(c => c.type === 'hosting').length;
+        const socialCount = enabledChannels.filter(c => c.type !== 'hosting').length;
+        const channelTip = enabledCount > 0
+            ? `已连接 ${enabledCount} 个发布渠道（包含 ${hostingCount} 个全站托管与 ${socialCount} 个社交分发）`
+            : '暂未连接发布渠道';
+        const channelText = enabledCount > 0 ? ` · ${enabledCount} 个渠道就绪` : '';
         const successRate = summary.success_rate || '100%';
         html += `
             <div class="popover-status-box ready">
-                <div style="min-width: 0; flex: 1; margin-right: 10px;">
+                <div style="min-width: 0; flex: 1; margin-right: 8px;">
                     <div class="status-indicator-text ready">🟢 发布流水线就绪</div>
-                    <div class="popover-status-sub" style="margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        累计发布 ${total} 篇次成果${channelText}
+                    <div class="popover-status-sub" style="margin-top: 3px; font-size: 0.73rem; line-height: 1.3;" title="${channelTip}">
+                        累计全域发布 ${total} 次${channelText}
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
                     <span class="popover-kpi-badge" title="全域发布历史成功率: ${successRate}">
                         ${successRate} 成功率
                     </span>
