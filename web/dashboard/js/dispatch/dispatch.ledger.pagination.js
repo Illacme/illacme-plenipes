@@ -299,6 +299,9 @@ window.initDispatchLedgerPagination = function (records) {
         return true;
     });
 
+    // 缓存当前已过滤的结果集（供全量报表导出等操作使用）
+    window._dispatchLedgerCurrentFiltered = filtered;
+
     // 动态显隐【一键重试所有失败】按钮
     if (btnBatchRetry) {
         const hasFailedInFiltered = filtered.some(r => r.status === 'failed' || Boolean(r.error));

@@ -669,3 +669,93 @@ window.filterDispatchLedger = function () {
         c.style.display = match ? 'flex' : 'none';
     });
 };
+
+/**
+ * 📥 [V123.0] 导出当前分发成果总账报表 (CSV 格式，UTF-8 带 BOM)
+ */
+window.exportDispatchLedgerCsv = function () {
+    const list = window._dispatchLedgerCurrentFiltered || window._dispatchLedgerCachedRecords || [];
+    if (!Array.isArray(list) || list.length === 0) {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ 当前无分发成果记录可供导出', 'warning');
+        }
+        return;
+    }
+
+    // 1. 构建标准 CSV 表头
+    const headers = [
+        '稿件标题',
+        '相对路径',
+        '发布语种代码',
+        '发布语种名称',
+        '目标分发渠道ID',
+        '目标分发渠道名称',
+        '发布状态',
+        '线上文章链接',
+        '发布时间',
+        '异常排查信息'
+    ];
+
+    // CSV 安全转义处理
+    const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return `"${str}"`;
+    };
+
+    // 2. 逐行填充数据
+    const rows = [headers.map(h => `"${h}"`).join(',')];
+
+    list.forEach(rec => {
+        const isFailed = (rec.status === 'failed' || Boolean(rec.error || rec.last_error));
+        const statusText = isFailed ? '异常待自愈' : '成功已发布';
+        const langMeta = (typeof _resolveLedgerLang === 'function')
+            ? _resolveLedgerLang(rec.lang_code, rec.lang_name, rec.lang_icon)
+            : { name: rec.lang_name || rec.lang_code, code: rec.lang_code };
+        const chMeta = (typeof _resolveLedgerChannel === 'function')
+            ? _resolveLedgerChannel(rec.target_id, rec.target_name, rec.target_icon)
+            : { name: rec.target_name || rec.target_id };
+
+        const row = [
+            escapeCsv(rec.title || rec.rel_path || ''),
+            escapeCsv(rec.rel_path || ''),
+            escapeCsv(langMeta.code || rec.lang_code || ''),
+            escapeCsv(langMeta.name || rec.lang_name || ''),
+            escapeCsv(rec.target_id || ''),
+            escapeCsv(chMeta.name || rec.target_name || ''),
+            escapeCsv(statusText),
+            escapeCsv(rec.remote_url || ''),
+            escapeCsv(rec.display_time || rec.updated_at || rec.failed_at || ''),
+            escapeCsv(rec.error || rec.last_error || '')
+        ];
+        rows.push(row.join(','));
+    });
+
+    // 3. 生成带 UTF-8 BOM 的 CSV 字符串 (解决 Windows Excel 中文乱码)
+    const csvContent = '\uFEFF' + rows.join('\r\n');
+    if (typeof Blob === 'function' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // 生成带时间戳的文件名
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const dateStr = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        const filename = `illacme_syndication_ledger_${dateStr}.csv`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`✅ 已成功导出 ${list.length} 条分发总账记录至 CSV 报表！`, 'success');
+    }
+};
