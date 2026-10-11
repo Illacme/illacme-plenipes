@@ -125,6 +125,11 @@ class HubDispatcherMixin:
 
         except Exception as e:
             tlog.error(f"❌ [分发失败] {target_id}: {e}")
+            try:
+                from services.api.logic.dispatch_ops_shards.pipeline_shards.pipeline_rate_limiter import clear_rate_limit
+                clear_rate_limit(rel_path, target_id)
+            except Exception:
+                pass
             if not is_dry_run and getattr(self, "meta", None) and rel_path:
                 try:
                     self.meta.update_egress_status(rel_path, target_id, "FAILED", error=str(e))

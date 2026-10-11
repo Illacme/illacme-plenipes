@@ -15,6 +15,7 @@ from .pipeline_task_runner import (
 from .pipeline_rate_limiter import (
     check_and_acquire_rate_limit,
     get_channel_rate_limit_status,
+    clear_rate_limit,
     reset_rate_limit_history,
     get_channel_cooldown_seconds
 )
@@ -28,6 +29,7 @@ __all__ = [
     "get_pending_syndication_logic",
     "check_and_acquire_rate_limit",
     "get_channel_rate_limit_status",
+    "clear_rate_limit",
     "reset_rate_limit_history",
     "get_channel_cooldown_seconds"
 ]

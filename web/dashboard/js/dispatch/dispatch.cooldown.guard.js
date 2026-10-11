@@ -141,6 +141,25 @@
         },
 
         /**
+         * 立即解除单篇文档在目标渠道的冷却状态 (失败自愈)
+         */
+        clearCooldown(relPath, targetId) {
+            if (!relPath || !targetId) return;
+            const taskKey = `${relPath}::${targetId}`;
+            _cooldownMap.delete(taskKey);
+            _saveToStorage();
+            const targets = document.querySelectorAll(`[data-cooldown-task="${taskKey}"]`);
+            targets.forEach(el => {
+                el.classList.remove('is-cooling-btn');
+                el.disabled = false;
+                if (el.classList.contains('ledger-icon-btn')) {
+                    el.innerHTML = '<span>📡</span>';
+                    el.title = '向此渠道重新广播推流';
+                }
+            });
+        },
+
+        /**
          * 获取剩余冷却秒数 (0 代表未处于冷却中)
          */
         getRemaining(relPath, targetId) {

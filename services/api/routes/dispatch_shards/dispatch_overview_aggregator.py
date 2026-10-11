@@ -85,6 +85,20 @@ def collect_unified_recent_records(
                     up_ts = _to_ts(rec.get("updated_at") or rec.get("published_at"))
                     is_stale = bool(f_mtime and up_ts and (f_mtime > up_ts + 2.0))
 
+                    doc_meta = meta.get_doc_info(r_path) if hasattr(meta, "get_doc_info") else {}
+                    egress_map = doc_meta.get("publish_status", {}) if isinstance(doc_meta, dict) else {}
+                    egress_info = egress_map.get(tid, {}) if isinstance(egress_map, dict) else {}
+                    raw_status = str(egress_info.get("status") or "").lower()
+                    raw_error = egress_info.get("error")
+                    status_val = "failed" if (raw_status == "failed" or raw_error) else ("success" if raw_status in ("done", "draft", "success") else "idle")
+                    diag = {}
+                    if raw_error:
+                        try:
+                            from core.syndication.syndication_diagnostic import diagnose_syndication_error
+                            diag = diagnose_syndication_error(tid, str(raw_error))
+                        except Exception:
+                            diag = {"friendly_message": str(raw_error), "suggestion": "请检查渠道配置或网络环境后重试。"}
+
                     l_code, l_name, l_icon = _resolve_unified_lang_meta(rec.get("lang_code", "zh-CN"))
                     ch_info = channel_map.get(tid, {})
                     rec_title = _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
@@ -96,10 +110,10 @@ def collect_unified_recent_records(
                         "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
                         "remote_article_id": rec.get("remote_article_id", ""), "remote_url": rec.get("remote_url", ""),
                         "content_hash": saved_hash, "is_stale": is_stale,
+                        "status": status_val, "error": raw_error, "last_error": raw_error, "diagnostic": diag,
                         "updated_at": str(rec.get("updated_at") or "")
                     })
-        except Exception:
-            pass
+        except Exception: pass
 
     # 2. 解包全站与单文档托管发布历史 (Hosting Deploy Batches)
     if hasattr(meta, "list_hosting_deploy_batches"):
@@ -198,18 +212,16 @@ def collect_unified_dead_letter_tasks(
                     l_code, l_name, l_icon = _resolve_unified_lang_meta(item.get("lang_code", "zh-CN"))
                     lerr = str(item.get("last_error") or "未知网络或认证异常")
                     diag = diagnose_syndication_error(tid, lerr) if (diagnose_syndication_error and tid) else {}
-                    real_title = item.get("title") or _resolve_rec_doc_title(engine, rel_p, docs_snapshot, vault_root)
                     ch_info = channel_map.get(tid, {})
                     dead_letters.append({
                         "id": item.get("id"), "rel_path": rel_p, "target_id": tid,
                         "target_type": ch_info.get("type", "social"), "target_name": ch_info.get("name", tid),
-                        "target_icon": ch_info.get("icon", "🏷️"), "title": real_title, "slug": item.get("slug", ""),
-                        "lang_code": l_code, "lang_name": l_name, "lang_icon": l_icon, "status": "FAILED",
+                        "target_icon": ch_info.get("icon", "🏷️"), "title": item.get("title") or _resolve_rec_doc_title(engine, rel_p, docs_snapshot, vault_root),
+                        "slug": item.get("slug", ""), "lang_code": l_code, "lang_name": l_name, "lang_icon": l_icon, "status": "FAILED",
                         "last_error": lerr, "retry_count": item.get("retry_count", 0), "next_retry_time": item.get("next_retry_time", 0),
                         "diagnostic": diag, "updated_at": str(item.get("updated_at") or "")
                     })
-        except Exception:
-            pass
+        except Exception: pass
 
     # 2. 解包网站托管部署异常批次 (Hosting Deploy Batches)
     if hasattr(meta, "list_hosting_deploy_batches"):
@@ -219,27 +231,22 @@ def collect_unified_dead_letter_tasks(
                 seen_targets = set()
                 for b in raw_batches:
                     if not isinstance(b, dict): continue
-                    bid = str(b.get("batch_id") or "")
-                    overall_status = b.get("overall_status")
+                    bid, overall_status = str(b.get("batch_id") or ""), b.get("overall_status")
                     started_at = str(b.get("started_at") or "")
                     targets = b.get("targets") or b.get("targets_json") or {}
                     if isinstance(targets, str):
                         try: targets = json.loads(targets)
                         except Exception: targets = {}
-
                     doc_id = b.get("doc_id") or (targets.get("_trigger_doc") if isinstance(targets, dict) else None)
                     trig = str(b.get("trigger_source") or "")
-                    if not doc_id and trig.startswith("vault_drawer:"):
-                        doc_id = trig.split("vault_drawer:", 1)[1]
+                    if not doc_id and trig.startswith("vault_drawer:"): doc_id = trig.split("vault_drawer:", 1)[1]
                     r_path = doc_id or "全站发布 (整站)"
                     rec_title = b.get("doc_title") or _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
 
                     if isinstance(targets, dict) and targets:
                         for tid, tinfo in targets.items():
-                            if not tid or tid.startswith("_") or not isinstance(tinfo, dict): continue
-                            if tid in seen_targets: continue
+                            if not tid or tid.startswith("_") or not isinstance(tinfo, dict) or tid in seen_targets: continue
                             seen_targets.add(tid)
-
                             t_status = tinfo.get("status")
                             if t_status == "FAILED" or (t_status != "SUCCESS" and overall_status == "FAILED"):
                                 ch_info = channel_map.get(tid, {})
@@ -247,36 +254,23 @@ def collect_unified_dead_letter_tasks(
                                 first_err = str(raw_err).strip().split("\n")[0][:120]
                                 dead_letters.append({
                                     "id": f"hosting_{bid}_{tid}", "batch_id": bid, "rel_path": r_path,
-                                    "target_id": tid, "target_type": "hosting",
-                                    "target_name": ch_info.get("name", tid.upper()), "target_icon": ch_info.get("icon", "🌐"),
-                                    "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站",
-                                    "lang_icon": "🌐", "status": "FAILED", "last_error": first_err, "retry_count": 1,
-                                    "next_retry_time": 0,
-                                    "diagnostic": {
-                                        "category": "hosting_deploy_failure",
-                                        "suggestion": f"请检查 {ch_info.get('name', tid)} 的 Token 授权或网络连通性后在托管面板点击重新发布",
-                                        "action": "redeploy"
-                                    },
+                                    "target_id": tid, "target_type": "hosting", "target_name": ch_info.get("name", tid.upper()), "target_icon": ch_info.get("icon", "🌐"),
+                                    "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站", "lang_icon": "🌐", "status": "FAILED",
+                                    "last_error": first_err, "retry_count": 1, "next_retry_time": 0,
+                                    "diagnostic": {"category": "hosting_deploy_failure", "suggestion": f"请检查 {ch_info.get('name', tid)} 的 Token 授权或网络连通性后在托管面板点击重新发布", "action": "redeploy"},
                                     "updated_at": str(tinfo.get("deployed_at") or started_at)
                                 })
                     elif overall_status == "FAILED" and bid not in seen_targets:
                         seen_targets.add(bid)
-                        ch_name = "全站托管"
                         dead_letters.append({
                             "id": f"hosting_{bid}", "batch_id": bid, "rel_path": r_path, "target_id": "hosting",
-                            "target_type": "hosting", "target_name": ch_name, "target_icon": "🌐",
-                            "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站",
-                            "lang_icon": "🌐", "status": "FAILED",
-                            "last_error": str(b.get("logs_excerpt") or "全站构建或部署失败").strip().split("\n")[0][:120],
-                            "retry_count": 1, "next_retry_time": 0,
-                            "diagnostic": {
-                                "category": "hosting_batch_failure",
-                                "suggestion": "请查看部署日志详情排查构建错误", "action": "redeploy"
-                            },
+                            "target_type": "hosting", "target_name": "全站托管", "target_icon": "🌐",
+                            "title": rec_title, "slug": "", "lang_code": "all", "lang_name": "多语种全站", "lang_icon": "🌐", "status": "FAILED",
+                            "last_error": str(b.get("logs_excerpt") or "全站构建或部署失败").strip().split("\n")[0][:120], "retry_count": 1, "next_retry_time": 0,
+                            "diagnostic": {"category": "hosting_batch_failure", "suggestion": "请查看部署日志详情排查构建错误", "action": "redeploy"},
                             "updated_at": started_at
                         })
-        except Exception:
-            pass
+        except Exception: pass
 
     return dead_letters[:limit]
 

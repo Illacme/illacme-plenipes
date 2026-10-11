@@ -22,21 +22,8 @@ CHANNEL_COOLDOWN_MAP: Dict[str, int] = {
     "default": 10       # 默认通用渠道防抖间隔：10 秒
 }
 
-# 渠道级并发短时节流保护 (秒)
-CHANNEL_GLOBAL_THROTTLE_MAP: Dict[str, int] = {
-    "wechat": 5,
-    "weixin": 5,
-    "mp": 5,
-    "zhihu": 5,
-    "xiaohongshu": 5,
-    "default": 3
-}
-
 # 内存账本：记录 (doc_id::target_channel) 的最近下发时间戳
 _doc_channel_push_history: Dict[str, float] = {}
-
-# 内存账本：记录 (target_channel) 全局通道的最近下发时间戳
-_channel_global_push_history: Dict[str, float] = {}
 
 
 def _resolve_channel_key(target_channel: str) -> str:
@@ -67,35 +54,21 @@ def check_and_acquire_rate_limit(doc_id: str, target_channel: str) -> Tuple[bool
     task_key = f"{doc_id}::{chan_key}"
 
     cooldown_total = get_channel_cooldown_seconds(target_channel)
-    global_throttle = CHANNEL_GLOBAL_THROTTLE_MAP.get(chan_key, CHANNEL_GLOBAL_THROTTLE_MAP["default"])
 
-    # 1. 检查同一篇文章在同一渠道的冷却期
+    # 1. 检查同一篇文章在同一渠道的冷却期 (彻底杜绝跨文档误拦)
     last_doc_time = _doc_channel_push_history.get(task_key, 0.0)
     elapsed_doc = now - last_doc_time
     if elapsed_doc < cooldown_total:
         remaining = int(cooldown_total - elapsed_doc) + 1
         return (
             False,
-            f"🛡️ 平台安全频控护栏生效中：【{target_channel.upper()}】建议更新间隔 ≥ {cooldown_total} 秒，请等待 {remaining} 秒后再试以避免平台限频拦截。",
+            f"🛡️ 平台安全频控护栏生效中：【{target_channel.upper()}】建议单篇更新间隔 ≥ {cooldown_total} 秒，请等待 {remaining} 秒后再试以避免平台限频拦截。",
             remaining,
             cooldown_total
         )
 
-    # 2. 检查全局渠道防抖（避免同一渠道短时间高频并发）
-    last_chan_time = _channel_global_push_history.get(chan_key, 0.0)
-    elapsed_chan = now - last_chan_time
-    if elapsed_chan < global_throttle:
-        remaining = int(global_throttle - elapsed_chan) + 1
-        return (
-            False,
-            f"🛡️ 通道防抖拦截：该渠道刚刚下发过推流任务，请等待 {remaining} 秒再发起下一篇以防接口突发熔断。",
-            remaining,
-            global_throttle
-        )
-
-    # 3. 校验通过，登记当前推流时间戳
+    # 2. 校验通过，登记当前文章在目标渠道的推流时间戳
     _doc_channel_push_history[task_key] = now
-    _channel_global_push_history[chan_key] = now
     return True, "", 0, cooldown_total
 
 
@@ -122,15 +95,21 @@ def get_channel_rate_limit_status(doc_id: str, target_channel: str) -> Dict[str,
     }
 
 
+def clear_rate_limit(doc_id: str, target_channel: str) -> None:
+    """
+    💊 失败自愈即时解冻：当发布遭遇错误时立即抹除冷却，允许创作者修正后即刻重试
+    """
+    chan_key = _resolve_channel_key(target_channel)
+    task_key = f"{doc_id}::{chan_key}"
+    _doc_channel_push_history.pop(task_key, None)
+
+
 def reset_rate_limit_history(doc_id: Optional[str] = None, target_channel: Optional[str] = None) -> None:
     """自愈或测试辅助：重置频控记录"""
-    global _doc_channel_push_history, _channel_global_push_history
+    global _doc_channel_push_history
     if not doc_id and not target_channel:
         _doc_channel_push_history.clear()
-        _channel_global_push_history.clear()
         return
 
     if doc_id and target_channel:
-        chan_key = _resolve_channel_key(target_channel)
-        task_key = f"{doc_id}::{chan_key}"
-        _doc_channel_push_history.pop(task_key, None)
+        clear_rate_limit(doc_id, target_channel)

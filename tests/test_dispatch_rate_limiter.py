@@ -58,8 +58,8 @@ def test_single_doc_rate_limit_interception():
     assert status["cooldown_seconds"] == 30
 
 
-def test_channel_global_concurrency_throttle():
-    """验证不同稿件在同一渠道下的短时通道防抖保护"""
+def test_different_docs_independent_rate_limit():
+    """验证不同稿件在同一渠道下的独立频控，杜绝全局粗暴拦截导致首点被误阻"""
     doc_1 = "docs/first.md"
     doc_2 = "docs/second.md"
     channel = "wechat"
@@ -68,8 +68,27 @@ def test_channel_global_concurrency_throttle():
     allowed, _, _, _ = check_and_acquire_rate_limit(doc_1, channel)
     assert allowed is True
 
-    # 紧接着（短于 5 秒内）推流第二篇不同文档，应当触发通道级防抖拦截
-    allowed_second, msg_second, retry_second, _ = check_and_acquire_rate_limit(doc_2, channel)
-    assert allowed_second is False
-    assert "通道防抖拦截" in msg_second
-    assert retry_second > 0
+    # 紧接着推流第二篇不同文档，不应受到第一篇的粗暴干扰阻断（独立频控）
+    allowed_second, _, _, _ = check_and_acquire_rate_limit(doc_2, channel)
+    assert allowed_second is True
+
+def test_clear_rate_limit_instant_unfreeze():
+    """验证推流失败或自愈时的频控即时解冻契约"""
+    from services.api.logic.dispatch_ops_shards.pipeline_shards.pipeline_rate_limiter import clear_rate_limit
+    doc = "docs/failed_article.md"
+    channel = "wechat"
+
+    # 首次触发
+    allowed, _, _, _ = check_and_acquire_rate_limit(doc, channel)
+    assert allowed is True
+
+    # 重复触发被拦截
+    allowed_blocked, _, _, _ = check_and_acquire_rate_limit(doc, channel)
+    assert allowed_blocked is False
+
+    # 模拟管线失败即时解冻
+    clear_rate_limit(doc, channel)
+
+    # 解冻后应可立即重新触发
+    allowed_retry, _, _, _ = check_and_acquire_rate_limit(doc, channel)
+    assert allowed_retry is True
