@@ -414,6 +414,7 @@ services/api/logic/dispatch_ops_shards/pipeline_ops.py
 services/api/logic/dispatch_ops_shards/pipeline_shards/__init__.py
 services/api/logic/dispatch_ops_shards/pipeline_shards/pipeline_destroy_ops.py
 services/api/logic/dispatch_ops_shards/pipeline_shards/pipeline_hosting_pusher.py
+services/api/logic/dispatch_ops_shards/pipeline_shards/pipeline_rate_limiter.py
 services/api/logic/dispatch_ops_shards/pipeline_shards/pipeline_syndicate_loader.py
 services/api/logic/dispatch_ops_shards/pipeline_shards/pipeline_task_runner.py
 services/api/logic/dispatch_ops_shards/telemetry_ops.py

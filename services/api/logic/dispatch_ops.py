@@ -10,7 +10,9 @@ from .dispatch_ops_shards.daemon_ops import toggle_lab_logic
 from .dispatch_ops_shards.pipeline_ops import (
     trigger_re_dispatch_logic,
     destroy_artifact_logic,
-    get_pending_syndication_logic
+    get_pending_syndication_logic,
+    check_and_acquire_rate_limit,
+    get_channel_rate_limit_status
 )
 
 def get_dispatch_status_facade(engine, doc_id: str, lang_code: str = None) -> dict:
@@ -32,3 +34,12 @@ def destroy_artifact_facade(engine, doc_id: str) -> dict:
 def get_pending_syndication_facade(engine) -> dict:
     """获取待同步至分发渠道的稿件信息门面中介"""
     return get_pending_syndication_logic(engine)
+
+def check_channel_rate_limit_facade(doc_id: str, target_channel: str) -> tuple:
+    """平台级社交渠道频控门禁中介"""
+    return check_and_acquire_rate_limit(doc_id, target_channel)
+
+def get_channel_rate_limit_status_facade(doc_id: str, target_channel: str) -> dict:
+    """社交渠道频控状态查询中介"""
+    return get_channel_rate_limit_status(doc_id, target_channel)
+

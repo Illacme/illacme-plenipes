@@ -216,12 +216,19 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 </div>
             `;
         } else {
-            const republishTitle = rec.is_stale ? '本地原稿已发生修改，点击立即向此渠道广播推流更新' : '向此渠道重新广播推流';
-            const republishClass = `secondary-btn ledger-icon-btn is-republish-btn ${rec.is_stale ? 'is-stale-republish' : ''}`;
+            const remCooldown = (window.DispatchCooldownManager && window.DispatchCooldownManager.getRemaining(rec.rel_path, rec.target_id)) || 0;
+            const isCooling = remCooldown > 0;
+            const republishTitle = isCooling
+                ? `🛡️ 平台安全频控保护中：建议间隔等待，剩余 ${remCooldown}s`
+                : (rec.is_stale ? '本地原稿已发生修改，点击立即向此渠道广播推流更新' : '向此渠道重新广播推流');
+            const republishClass = `secondary-btn ledger-icon-btn is-republish-btn ${isCooling ? 'is-cooling-btn' : (rec.is_stale ? 'is-stale-republish' : '')}`;
+            const republishContent = isCooling ? `<span>🛡️ ${remCooldown}s</span>` : '<span>📡</span>';
+            const republishDisabled = isCooling ? 'disabled' : '';
+
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
-                    <button class="${republishClass}" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="${republishTitle}"><span>📡</span></button>
+                    <button class="${republishClass}" id="${retryBtnId}" ${republishDisabled} data-cooldown-task="${taskKey}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="${republishTitle}">${republishContent}</button>
                     ${hasUrl ? `<a href="${rec.remote_url}" target="_blank" rel="noopener noreferrer" class="magic-deep-link ledger-icon-btn" title="在新标签页中访问线上真实文章"><span>🌐</span></a>` : '<span class="ledger-online-badge" title="已成功发布上线">✓</span>'}
                 </div>
             `;
@@ -525,8 +532,31 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
             })
         });
 
+        if (res && res.rate_limited) {
+            if (window._dispatchActiveRunningSet) {
+                window._dispatchActiveRunningSet.delete(taskKey);
+            }
+            if (row) row.classList.remove('is-running-row');
+            if (badgeEl) {
+                badgeEl.className = 'dispatch-status-badge is-stale';
+                badgeEl.innerHTML = '🟡 待更新 🔍';
+            }
+            if (window.DispatchCooldownManager) {
+                window.DispatchCooldownManager.startCooldown(relPath, targetId, res.retry_after || 30);
+            }
+            if (typeof showToast === 'function') {
+                showToast(res.message || '触发平台安全频控保护，请稍候重试', 'warning');
+            }
+            return;
+        }
+
         if (res && res.success === false) {
             throw new Error(res.message || '重推请求未被受理');
+        }
+
+        // 🛡️ [V127.0] 启动平台级频控安全冷却中枢
+        if (window.DispatchCooldownManager) {
+            window.DispatchCooldownManager.startCooldown(relPath, targetId, res.cooldown_total || null);
         }
 
         // 2. 调度成功反馈与延时平滑流转
@@ -551,7 +581,7 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
                 row.classList.remove('is-running-row');
                 row.classList.add('ledger-row--success-glow');
             }
-            if (btn) {
+            if (btn && (!window.DispatchCooldownManager || !window.DispatchCooldownManager.isCooling(relPath, targetId))) {
                 btn.disabled = false;
                 btn.innerHTML = '<span>📡</span>';
                 btn.title = '向此渠道重新广播推流';

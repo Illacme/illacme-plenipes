@@ -15,7 +15,9 @@ from services.api.logic.dispatch_ops import (
     toggle_lab_facade,
     trigger_re_dispatch_facade,
     destroy_artifact_facade,
-    get_pending_syndication_facade
+    get_pending_syndication_facade,
+    check_channel_rate_limit_facade,
+    get_channel_rate_limit_status_facade
 )
 
 router = APIRouter()
@@ -47,11 +49,32 @@ async def trigger_re_dispatch(doc_id: str, req: dict):
     """
     ♻️ 主权调度中心：强制推入出版管线
     委派给 pipeline_ops 分片完成，提交任务至异步线程池。
+    🛡️ [V127.0] 针对社交渠道执行前置平台级防抖与频控拦截保护。
     """
     engine = get_global_engine()
     if not engine:
         raise HTTPException(status_code=503, detail="Engine not initialized")
+
+    target_channel = req.get("target_channel")
+    if target_channel:
+        allowed, msg, retry_after, cd_total = check_channel_rate_limit_facade(doc_id, target_channel)
+        if not allowed:
+            return {
+                "success": False,
+                "rate_limited": True,
+                "message": msg,
+                "retry_after": retry_after,
+                "cooldown_total": cd_total
+            }
+
     return trigger_re_dispatch_facade(engine, doc_id, req)
+
+@router.get("/api/dispatch/rate-limit/status", dependencies=[Depends(verify_token)])
+async def get_dispatch_rate_limit_status(doc_id: str = Query(...), target_channel: str = Query(...)):
+    """
+    🛡️ 查询指定稿件在目标渠道的平台安全频控冷却状态
+    """
+    return get_channel_rate_limit_status_facade(doc_id, target_channel)
 
 @router.delete("/api/vault/destroy/{doc_id:path}", dependencies=[Depends(verify_token)])
 async def destroy_artifact(doc_id: str):

@@ -12,11 +12,22 @@ from .pipeline_task_runner import (
     get_pending_syndication_logic
 )
 
+from .pipeline_rate_limiter import (
+    check_and_acquire_rate_limit,
+    get_channel_rate_limit_status,
+    reset_rate_limit_history,
+    get_channel_cooldown_seconds
+)
+
 __all__ = [
     "push_to_hosting_channel",
     "load_syndication_content_and_metadata",
     "destroy_artifact_logic",
     "_async_redispatch_task",
     "trigger_re_dispatch_logic",
-    "get_pending_syndication_logic"
+    "get_pending_syndication_logic",
+    "check_and_acquire_rate_limit",
+    "get_channel_rate_limit_status",
+    "reset_rate_limit_history",
+    "get_channel_cooldown_seconds"
 ]

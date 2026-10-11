@@ -10,12 +10,20 @@ from .pipeline_shards import (
     _async_redispatch_task,
     trigger_re_dispatch_logic,
     destroy_artifact_logic,
-    get_pending_syndication_logic
+    get_pending_syndication_logic,
+    check_and_acquire_rate_limit,
+    get_channel_rate_limit_status,
+    reset_rate_limit_history,
+    get_channel_cooldown_seconds
 )
 
 __all__ = [
     "_async_redispatch_task",
     "trigger_re_dispatch_logic",
     "destroy_artifact_logic",
-    "get_pending_syndication_logic"
+    "get_pending_syndication_logic",
+    "check_and_acquire_rate_limit",
+    "get_channel_rate_limit_status",
+    "reset_rate_limit_history",
+    "get_channel_cooldown_seconds"
 ]

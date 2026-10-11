@@ -1080,6 +1080,44 @@
     gap: 8px;
 }
 
+/* 🛡️ [V127.0] 社交渠道安全频控与防封冷却动效规范 */
+.is-cooling-btn {
+    border-color: rgba(var(--neon-amber-rgb), 0.5) !important;
+    background: rgba(var(--neon-amber-rgb), 0.08) !important;
+    color: var(--neon-amber) !important;
+    cursor: not-allowed !important;
+    font-family: var(--font-mono, monospace) !important;
+    box-shadow: 0 0 8px rgba(var(--neon-amber-rgb), 0.2) !important;
+    transition: all 0.3s ease;
+}
+
+.ledger-icon-btn.is-cooling-btn {
+    width: auto !important;
+    min-width: 58px !important;
+    padding: 0 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+}
+
+.decision-cooling-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(var(--neon-amber-rgb), 0.12);
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.3);
+    color: var(--neon-amber);
+    font-size: 0.7rem;
+    font-family: var(--font-mono, monospace);
+    font-weight: 600;
+}
+
 .dispatch-diff-empty-state, .dispatch-diff-loading {
     display: flex;
     flex-direction: column;

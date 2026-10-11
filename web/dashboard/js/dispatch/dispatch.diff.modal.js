@@ -99,6 +99,14 @@
         const safeTargetName = _esc(targetName || data.target_name || targetId);
         const safePath = _esc(relPath);
 
+        // 🛡️ [V127.0] 频控与安全冷却状态感知
+        const remCooldown = (window.DispatchCooldownManager && window.DispatchCooldownManager.getRemaining(relPath, targetId)) || 0;
+        const isCooling = remCooldown > 0;
+        const taskKey = `${relPath}::${targetId}`;
+        const republishBtnText = isCooling ? `🛡️ 平台安全冷却中 (${remCooldown}s)` : `📡 立即向 [${safeTargetName}] 推流更新`;
+        const republishDisabled = isCooling ? 'disabled' : '';
+        const republishClass = `primary-btn glow-btn ${isCooling ? 'is-cooling-btn' : ''}`;
+
         // 构建 Diff 行级可视化
         let diffViewHtml = '';
         if (data.has_diff && Array.isArray(data.diff_lines) && data.diff_lines.length > 0) {
@@ -161,6 +169,7 @@
                 <div class="dispatch-diff-decision-bar">
                     <div class="decision-hint">
                         <span>💡 审阅建议：若包含重要内容或代码修正，建议立即推流覆盖；若仅为微小排版微调可暂缓。</span>
+                        ${isCooling ? `<div class="decision-cooling-badge"><span>🛡️ 平台频控保护：已开启 ${safeTargetName} 防封冷却 (剩 ${remCooldown}s)</span></div>` : ''}
                     </div>
                     <div class="decision-actions">
                         <button type="button" class="secondary-btn" onclick="window.closeDispatchDiffModal()">
@@ -169,8 +178,8 @@
                         <button type="button" class="secondary-btn" onclick="window.closeDispatchDiffModal(); if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${_esc(targetId)}');">
                             <span>👁️ 前置排版工坊</span>
                         </button>
-                        <button type="button" class="primary-btn glow-btn" id="diff-modal-republish-btn" onclick="handleDiffModalRepublish('${safePath}', '${_esc(targetId)}', '${_esc(langCode)}')">
-                            <span>📡 立即向 [${safeTargetName}] 推流更新</span>
+                        <button type="button" class="${republishClass}" id="diff-modal-republish-btn" ${republishDisabled} data-cooldown-task="${taskKey}" onclick="handleDiffModalRepublish('${safePath}', '${_esc(targetId)}', '${_esc(langCode)}')">
+                            <span>${republishBtnText}</span>
                         </button>
                     </div>
                 </div>
