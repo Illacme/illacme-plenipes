@@ -113,17 +113,17 @@ window.populateDispatchFilters = function (records) {
     const langMap = new Map();
     const chMap = new Map();
 
-    // 1. 优先从全局渠道健康矩阵中收集所有已启用的渠道（100% 走插件矩阵元数据解析）
+    // 1. 优先从全局渠道健康矩阵中收集所有已启用的社媒渠道（排除全站托管）
     const overview = window._lastDispatchOverview || {};
     const health = overview.channel_health || [];
     health.forEach(c => {
-        if (c.id) {
+        if (c.id && c.type !== 'hosting') {
             const meta = _resolvePluginChannelMeta(c.id, c.type, c.name, c.icon);
             chMap.set(c.id, meta);
         }
     });
 
-    // 2. 从分发成果记录中提取语种与渠道（严格执行标准代码归一化去重与插件矩阵对齐）
+    // 2. 从分发成果记录中提取语种与渠道（严格排除全站托管）
     const all = Array.isArray(records) ? records : (window._dispatchLedgerCachedRecords || []);
     all.forEach(r => {
         if (r.lang_code) {
@@ -137,13 +137,13 @@ window.populateDispatchFilters = function (records) {
                 langMap.set(canonicalKey, { code: canonicalKey, name, icon });
             }
         }
-        if (r.target_id && !chMap.has(r.target_id)) {
+        if (r.target_id && r.target_type !== 'hosting' && !chMap.has(r.target_id)) {
             const meta = _resolvePluginChannelMeta(r.target_id, r.target_type, r.target_name, r.target_icon);
             chMap.set(r.target_id, meta);
         }
     });
 
-    // 3. 从死信任务中补充提取语种与渠道
+    // 3. 从死信任务中补充提取语种与社媒渠道
     const deadLetters = overview.dead_letter_tasks || [];
     deadLetters.forEach(d => {
         if (d.lang_code) {
@@ -155,7 +155,7 @@ window.populateDispatchFilters = function (records) {
                 langMap.set(canonicalKey, { code: canonicalKey, name, icon });
             }
         }
-        if (d.target_id && !chMap.has(d.target_id)) {
+        if (d.target_id && d.target_type !== 'hosting' && !chMap.has(d.target_id)) {
             const meta = _resolvePluginChannelMeta(d.target_id, d.target_type, d.target_name, d.target_icon);
             chMap.set(d.target_id, meta);
         }
@@ -218,8 +218,14 @@ window.populateDispatchFilters = function (records) {
  */
 window.initDispatchLedgerPagination = function (records) {
     if (Array.isArray(records)) {
-        window._dispatchLedgerCachedRecords = records;
-        window.populateDispatchFilters(records);
+        window._dispatchLedgerCachedRecords = records.filter(r => {
+            if (!r) return false;
+            if (r.target_type === 'hosting') return false;
+            const tid = String(r.target_id || '').trim().toLowerCase();
+            if (HOSTING_TARGET_IDS.has(tid)) return false;
+            return true;
+        });
+        window.populateDispatchFilters(window._dispatchLedgerCachedRecords);
     }
     const all = window._dispatchLedgerCachedRecords || [];
     

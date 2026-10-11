@@ -7,6 +7,13 @@
 window.currentDispatchMode = window.currentDispatchMode || 'hosting';
 window.currentDispatchSubTab = 'ledger';
 
+const _isHostingTarget = (t) => {
+    if (!t) return false;
+    if (t.target_type === 'hosting' || t.type === 'hosting') return true;
+    const tid = String(t.target_id || t.id || '').trim().toLowerCase();
+    return ['github_pages', 'cloudflare_pages', 'vercel', 'netlify', 'sftp', 'render', 'railway', 'zeabur', 'supabase', 'aws_s3', 'oss', 'cos', 'upyun_uss', 'gitee_pages', 'gitlab_pages', 'coding_pages', 'firebase'].includes(tid);
+};
+
 // ==========================================
 // 🌊 流式呼吸感知与自动无感轮询中枢
 // ==========================================
@@ -91,11 +98,11 @@ window.loadDispatchCenter = async function (subTab) {
             window.renderActivePipelineZone(res);
             if (typeof window.updateDispatchIndicator === 'function') window.updateDispatchIndicator(res);
 
-            // 更新社媒徽章数字
+            // 更新社媒徽章数字 (严格仅统计社媒物权分发任务总数)
             const badgeSocial = document.getElementById('badge-social-tasks');
             if (badgeSocial) {
-                const totalSocial = ((res.recent_records || []).length) + ((res.dead_letter_tasks || []).length);
-                badgeSocial.innerText = `${totalSocial}`;
+                const sTotal = (res.recent_records || []).filter(r => !_isHostingTarget(r)).length + (res.dead_letter_tasks || []).filter(d => !_isHostingTarget(d)).length;
+                badgeSocial.innerText = `${sTotal}`;
             }
 
             // 保持当前模式渲染（确保初次进入托管模式能自动加载全站部署中心数据）
@@ -144,39 +151,32 @@ window.switchDispatchMode = function (mode, reloadHosting = true) {
     }
 
     if (isHosting) {
-        if (reloadHosting && typeof window.loadHostingDeployCenter === 'function') {
-            window.loadHostingDeployCenter();
-        }
+        if (reloadHosting && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     } else {
         const unified = window.buildUnifiedDispatchTasks(window._lastDispatchOverview);
-        if (typeof window.renderDispatchLedger === 'function') {
-            window.renderDispatchLedger(unified);
-        }
+        if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
     }
 };
 
 window.refreshCurrentDispatchView = function () {
-    if (window.currentDispatchMode === 'hosting' && typeof window.loadHostingDeployCenter === 'function') {
-        window.loadHostingDeployCenter();
-    }
+    if (window.currentDispatchMode === 'hosting' && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     window.loadDispatchCenter();
 };
 
 window.onDispatchPrimaryAction = function () {
     if (window.currentDispatchMode === 'hosting') {
-        if (typeof window.triggerFullHostingDeploy === 'function') {
-            window.triggerFullHostingDeploy();
-        }
+        if (typeof window.triggerFullHostingDeploy === 'function') window.triggerFullHostingDeploy();
     } else {
-        if (typeof window.triggerPublish === 'function') {
-            window.triggerPublish(false);
-        }
+        if (typeof window.triggerPublish === 'function') window.triggerPublish(false);
     }
 };
 
 window.buildUnifiedDispatchTasks = function (overview) {
-    const successList = (overview && Array.isArray(overview.recent_records)) ? overview.recent_records : [];
-    const deadList = (overview && Array.isArray(overview.dead_letter_tasks)) ? overview.dead_letter_tasks : [];
+    const rawSuccess = (overview && Array.isArray(overview.recent_records)) ? overview.recent_records : [];
+    const rawDead = (overview && Array.isArray(overview.dead_letter_tasks)) ? overview.dead_letter_tasks : [];
+    // 🛡️ 严格领域隔离：社交媒体大表 100% 仅消费社媒分发物权记录，排除全站静态托管部署
+    const successList = rawSuccess.filter(s => !_isHostingTarget(s));
+    const deadList = rawDead.filter(d => !_isHostingTarget(d));
     const unified = [
         ...deadList.map(d => ({ ...d, status: 'failed', time_sort: d.failed_at || d.updated_at || '', display_time: d.failed_at || d.updated_at || '' })),
         ...successList.map(s => ({ ...s, status: 'success', time_sort: s.updated_at || '', display_time: s.updated_at || '' }))
@@ -194,9 +194,15 @@ window.quickFilterDispatchStatus = function (status) {
 };
 
 window.renderDispatchMetrics = function (data) {
-    const summary = (data && data.summary) || {};
+    const rawSuccess = (data && Array.isArray(data.recent_records)) ? data.recent_records : [];
+    const rawDead = (data && Array.isArray(data.dead_letter_tasks)) ? data.dead_letter_tasks : [];
+    // 🛡️ 社交媒体分发专区指标卡：仅统计社媒物权维度，排除全站托管
+    const sRecords = rawSuccess.filter(r => !_isHostingTarget(r)), sDeads = rawDead.filter(d => !_isHostingTarget(d));
+    const totalSyndicated = sRecords.length, totalFailed = sDeads.length;
+    const successRate = (totalSyndicated + totalFailed > 0) ? `${((totalSyndicated / (totalSyndicated + totalFailed)) * 100).toFixed(1)}%` : '100.0%';
+
     const channelHealth = (data && data.channel_health) || [];
-    const enabledChannels = channelHealth.filter(c => c.enabled);
+    const socialChannels = channelHealth.filter(c => !_isHostingTarget(c)), enabledChannels = socialChannels.filter(c => c.enabled);
 
     const elSyndicated = document.getElementById('metric-total-syndicated');
     const elRate = document.getElementById('metric-success-rate');
@@ -207,22 +213,22 @@ window.renderDispatchMetrics = function (data) {
     const elChannels = document.getElementById('metric-channels-count');
     const elChannelsSub = document.getElementById('metric-channels-sub');
 
-    if (elSyndicated) elSyndicated.innerText = summary.total_syndicated ?? 0;
-    if (elRate) elRate.innerText = `分发成功率 ${summary.success_rate || '100%'}`;
-    if (elActive) elActive.innerText = summary.active_count ?? 0;
+    if (elSyndicated) elSyndicated.innerText = totalSyndicated;
+    if (elRate) elRate.innerText = `分发成功率 ${successRate}`;
+    if (elActive) elActive.innerText = (data && data.is_publishing) ? 1 : 0;
     if (elActiveSub) {
         elActiveSub.innerText = data.is_publishing ? '正在并发分发中' : '管线就绪待命';
         elActiveSub.style.color = data.is_publishing ? 'var(--neon-cyan)' : 'var(--text-muted)';
     }
-    if (elFailed) elFailed.innerText = summary.total_failed ?? 0;
+    if (elFailed) elFailed.innerText = totalFailed;
     if (elFailedSub) {
-        elFailedSub.innerText = (summary.total_failed > 0) ? '需前往自愈修复' : '0 待修死信';
-        elFailedSub.style.color = (summary.total_failed > 0) ? 'var(--text-danger)' : 'var(--neon-green)';
+        elFailedSub.innerText = (totalFailed > 0) ? '需前往自愈修复' : '0 待修死信';
+        elFailedSub.style.color = (totalFailed > 0) ? 'var(--text-danger)' : 'var(--neon-green)';
     }
-    if (elChannels) elChannels.innerText = `${enabledChannels.length} / ${channelHealth.length}`;
+    if (elChannels) elChannels.innerText = `${enabledChannels.length} / ${socialChannels.length}`;
     if (elChannelsSub) elChannelsSub.innerText = `已激活 ${enabledChannels.length} 个渠道 · 点击配置 ↗`;
 
-    // 动态同步更新算力中心风格的顶部态势勋章
+    // 动态同步更新顶部态势勋章
     const liveBadge = document.getElementById('dispatch-live-badge');
     if (liveBadge) {
         if (data.is_publishing) {
