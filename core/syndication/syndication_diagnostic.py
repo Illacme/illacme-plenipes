@@ -63,6 +63,20 @@ def diagnose_syndication_error(target_id: str, error_msg: Optional[str]) -> Dict
                 "suggestion": "系统已启用 8 字符智能安全清洗，请点击重试。",
                 "quick_drawer_id": "wechat"
             }
+        if "40164" in err_lower or "whitelist" in err_lower or "白名单" in err_lower:
+            ip_match = re.search(r"(\b(?:\d{1,3}\.){3}\d{1,3}\b)", clean_err)
+            extracted_ip = ip_match.group(1) if ip_match else ""
+            ip_desc = f" [{extracted_ip}]" if extracted_ip else ""
+            return {
+                "category": "WHITELIST",
+                "code": "WECHAT_IP_NOT_IN_WHITELIST",
+                "badge": "🛡️ 出口 IP 未加白",
+                "badge_color": "#f59e0b",
+                "friendly_message": f"微信官方服务器拦截 (40164)：检测到当前请求出口 IP{ip_desc} 未配置在微信公众平台白名单中。",
+                "suggestion": f"请登录微信公众平台【设置与开发 -> 基本配置 -> IP白名单】添加此出口 IP{ip_desc}；配置完成后点击右侧‘🔄 立即重发此任务’。",
+                "extracted_ip": extracted_ip,
+                "quick_drawer_id": "wechat"
+            }
         if "41039" in err_lower or "invalid content_source_url" in err_lower:
             return {
                 "category": "PAYLOAD",
@@ -87,7 +101,7 @@ def diagnose_syndication_error(target_id: str, error_msg: Optional[str]) -> Dict
 
     # ── 2. 🔑 认证与凭据失效类诊断 ────────────────────────────
     auth_patterns = [
-        r"401", r"403", r"40001", r"40013", r"unauthorized", r"forbidden",
+        r"\b401\b", r"\b403\b", r"40001", r"40013", r"unauthorized", r"forbidden",
         r"invalid credential", r"invalid token", r"invalid api key", r"bad credentials",
         r"缺少\s*(api_key|token|cookie|secret|integration_token|app_id)",
         r"凭据", r"未配置", r"认证失败", r"授权失败", r"登录过期", r"not authenticated"
@@ -109,7 +123,7 @@ def diagnose_syndication_error(target_id: str, error_msg: Optional[str]) -> Dict
             "badge": "⚠️ 凭据失效/未授权",
             "badge_color": "#ef4444",
             "friendly_message": tip,
-            "suggestion": "点击右侧‘⚙️ 快速配置’，重新填入有效凭据或唤醒一键自动嗅探重新授权。",
+            "suggestion": "点击右侧‘🔑 检查渠道授权’，重新填入有效凭据或唤醒一键自动嗅探重新授权。",
             "quick_drawer_id": target_lower
         }
 

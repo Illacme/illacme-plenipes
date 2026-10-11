@@ -267,6 +267,14 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
 
         // 失败项的就地折叠展开诊断抽屉行
         if (isFailed) {
+            const ipMatch = (diag.extracted_ip) || (safeError && safeError.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/) ? safeError.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)[0] : '');
+            const ipChipHtml = ipMatch ? `
+                <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; font-size: 0.76rem;">
+                    <span style="color: var(--neon-cyan); font-weight: 700;">📡 出口 IP:</span>
+                    <code style="color: var(--text-bright); font-family: var(--font-mono, monospace); font-weight: 700;">${ipMatch}</code>
+                    <button class="secondary-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${ipMatch}');} if(typeof showToast==='function') showToast('✅ 已复制出口 IP: ${ipMatch}', 'success');" style="padding: 2px 8px; font-size: 0.70rem; line-height: 1.2;">📋 一键复制</button>
+                </div>` : '';
+
             html += `
                 <tr id="${diagRowId}" class="ledger-diagnostic-row" style="display: none;">
                     <td colspan="6" style="padding: 0;">
@@ -278,13 +286,14 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 3px 10px; font-size: 0.74rem;"><span>🔑 检查渠道授权</span></button>
-                                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}')" style="padding: 3px 10px; font-size: 0.74rem;"><span>🗑️ 移出队列</span></button>
+                                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}'); if(typeof window.toggleLedgerDiagnostic==='function') window.toggleLedgerDiagnostic('${diagRowId}');" title="清除并忽略当前异常状态" style="padding: 3px 10px; font-size: 0.74rem;"><span>🧹 忽略异常</span></button>
                                     <button class="primary-btn glow-btn" id="diag-${retryBtnId}" onclick="window.retrySingleLedgerTask('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}', '${diagRowId}')" style="padding: 3px 12px; font-size: 0.74rem; font-weight: 700;"><span>🔄 立即重发此任务</span></button>
                                 </div>
                             </div>
                             <div class="ledger-diag-body">
                                 <div><strong style="color: var(--neon-red);">故障归因:</strong> ${friendlyMsg}</div>
                                 <div style="color: var(--neon-cyan); margin-top: 4px;"><strong style="font-weight: 700;">💡 自愈建议:</strong> ${suggestion}</div>
+                                ${ipChipHtml}
                                 <details style="margin-top: 6px; font-size: 0.72rem; color: var(--text-muted, #9ca3af);">
                                     <summary style="cursor: pointer; opacity: 0.85;">查看底层原始错误栈</summary>
                                     <pre class="ledger-error-pre">${safeError}</pre>
@@ -339,6 +348,13 @@ window.renderDispatchDeadLetters = function (tasks) {
         const badgeColor = diag.badge_color || '#ff6b6b';
         const friendlyMsg = window.escapeHtml ? window.escapeHtml(diag.friendly_message || safeError) : (diag.friendly_message || safeError);
         const suggestion = window.escapeHtml ? window.escapeHtml(diag.suggestion || '请检查渠道密钥配置并重新触发。') : (diag.suggestion || '请检查渠道密钥配置并重新触发。');
+        const ipMatch = (diag.extracted_ip) || (safeError && safeError.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/) ? safeError.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)[0] : '');
+        const ipChipHtml = ipMatch ? `
+            <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; font-size: 0.76rem;">
+                <span style="color: var(--neon-cyan); font-weight: 700;">📡 出口 IP:</span>
+                <code style="color: var(--text-bright); font-family: var(--font-mono, monospace); font-weight: 700;">${ipMatch}</code>
+                <button class="secondary-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${ipMatch}');} if(typeof showToast==='function') showToast('✅ 已复制出口 IP: ${ipMatch}', 'success');" style="padding: 2px 8px; font-size: 0.70rem; line-height: 1.2;">📋 一键复制</button>
+            </div>` : '';
         const cardId = `dl-card-${idx}`, btnRetryId = `dl-retry-btn-${idx}`;
         return `
             <div class="deadletter-card" id="${cardId}" data-title="${safeTitle.toLowerCase()}" data-path="${safePath.toLowerCase()}" data-target="${targetId.toLowerCase()}" data-target-name="${chMeta.name.toLowerCase()}" data-lang="${langMeta.name.toLowerCase()} ${(t.lang_code || '').toLowerCase()}">
@@ -356,6 +372,7 @@ window.renderDispatchDeadLetters = function (tasks) {
                 <div class="dl-reason" style="display: flex; flex-direction: column; gap: 4px; line-height: 1.45;">
                     <div><span style="color: var(--neon-red); font-weight: 700;">故障归因:</span> ${friendlyMsg}</div>
                     <div style="color: var(--neon-cyan); font-size: 0.78rem;"><span style="font-weight: 700;">💡 自愈建议:</span> ${suggestion}</div>
+                    ${ipChipHtml}
                     <details style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted, #9ca3af);">
                         <summary style="cursor: pointer; opacity: 0.8;">查看底层原始错误栈</summary>
                         <pre style="margin-top: 4px; padding: 6px 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-mono, monospace); white-space: pre-wrap; word-break: break-all;">${safeError}</pre>
@@ -364,7 +381,7 @@ window.renderDispatchDeadLetters = function (tasks) {
                 <div class="dl-actions">
                     <button class="secondary-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" style="padding: 5px 12px; font-size: 0.78rem;"><span>👁️ 预览排版</span></button>
                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🔑 检查渠道授权</span></button>
-                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🗑️ 移出队列</span></button>
+                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🗑️ 移出死信</span></button>
                     <button class="primary-btn glow-btn" id="${btnRetryId}" onclick="window.retrySingleDeadLetterTask('${safePath}', '${targetId}', '${btnRetryId}', '${cardId}', '${t.lang_code || "zh-CN"}')" style="padding: 5px 14px; font-size: 0.78rem;"><span>🔄 立即重试</span></button>
                 </div>
             </div>`;

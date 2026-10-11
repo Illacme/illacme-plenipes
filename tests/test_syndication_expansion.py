@@ -606,3 +606,13 @@ class TestSyndicationDiagnostic:
         assert diag["badge"] == "⚡ 网络连接超时"
         assert "代理" in diag["suggestion"]
 
+    def test_diagnose_wechat_ip_whitelist(self):
+        from core.syndication.syndication_diagnostic import diagnose_syndication_error
+        err = "微信公众号 IP 白名单拦截 (40164)：检测到当前请求出口 IP 为 [183.199.48.113]。请登录微信公众平台添加此 IP"
+        diag = diagnose_syndication_error("wechat", err)
+        assert diag["code"] == "WECHAT_IP_NOT_IN_WHITELIST"
+        assert diag["badge"] == "🛡️ 出口 IP 未加白"
+        assert diag["extracted_ip"] == "183.199.48.113"
+        assert "183.199.48.113" in diag["friendly_message"]
+        assert "IP白名单" in diag["suggestion"]
+
