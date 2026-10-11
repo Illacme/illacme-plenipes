@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🧪 [V123.0] Tests for Dispatch Stale Content Detection & Hash Diff
+🧪 [V123.0] Tests for Dispatch Stale Content Detection
 """
 
-import hashlib
+import os
+from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
 from services.api.server import app
@@ -46,17 +47,20 @@ client = TestClient(app)
 
 
 def test_dispatch_stale_content_detection(tmp_path):
-    """测试当本地文库原稿 MD5 与记录保存的 content_hash 不一致时，输出 is_stale=True"""
+    """测试原稿在发布后被编辑修改时输出 is_stale=True，未被修改时输出 is_stale=False"""
     doc_path = tmp_path / "article.md"
-    doc_path.write_text("# Updated Article Content\n\nNew edits.", encoding="utf-8")
-    cur_hash = hashlib.md5(doc_path.read_bytes()).hexdigest()
-    old_hash = "deadbeef1234567890abcdef"
+    doc_path.write_text("# Article Content\n\nInitial version.", encoding="utf-8")
+    
+    # 模拟文件物理 mtime 设为 2026-10-10 12:00:00
+    file_ts = datetime.fromisoformat("2026-10-10T12:00:00").timestamp()
+    os.utime(str(doc_path), (file_ts, file_ts))
 
     old_engine = singleton.get_global_engine()
     mock_eng = MockEngine(str(tmp_path))
     singleton.set_global_engine(mock_eng)
 
     try:
+        # 1. 模拟早于修改时间的发布记录（2026-10-10 10:00:00 < 12:00:00），原稿已发生新修改 -> is_stale=True
         mock_eng.meta.records = [
             {
                 "id": 1,
@@ -65,7 +69,7 @@ def test_dispatch_stale_content_detection(tmp_path):
                 "target_id": "devto",
                 "remote_article_id": "999",
                 "remote_url": "https://dev.to/test",
-                "content_hash": old_hash,
+                "content_hash": "dummy_hash",
                 "updated_at": "2026-10-10 10:00:00"
             }
         ]
@@ -75,12 +79,9 @@ def test_dispatch_stale_content_detection(tmp_path):
         data = res.json()
         recs = data.get("recent_records", [])
         assert len(recs) == 1
-        rec = recs[0]
-        assert rec["content_hash"] == old_hash
-        assert rec["current_hash"] == cur_hash
-        assert rec["is_stale"] is True
+        assert recs[0]["is_stale"] is True
 
-        # 如果文库内容哈希一致，则 is_stale 为 False
+        # 2. 模拟晚于修改时间的发布记录（2026-10-10 14:00:00 > 12:00:00），刚刚推流最新 -> is_stale=False
         mock_eng.meta.records = [
             {
                 "id": 1,
@@ -88,13 +89,13 @@ def test_dispatch_stale_content_detection(tmp_path):
                 "lang_code": "zh-CN",
                 "target_id": "devto",
                 "remote_article_id": "999",
-                "content_hash": cur_hash,
-                "updated_at": "2026-10-10 10:00:00"
+                "remote_url": "https://dev.to/test",
+                "content_hash": "dummy_hash",
+                "updated_at": "2026-10-10 14:00:00"
             }
         ]
         res2 = client.get("/api/dispatch/overview")
         assert res2.status_code == 200
-        rec2 = res2.json()["recent_records"][0]
-        assert rec2["is_stale"] is False
+        assert res2.json()["recent_records"][0]["is_stale"] is False
     finally:
         singleton.set_global_engine(old_engine)
