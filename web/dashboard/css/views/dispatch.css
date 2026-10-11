@@ -854,6 +854,15 @@
     background: rgba(var(--neon-amber-rgb), 0.12);
     border: 1px solid rgba(var(--neon-amber-rgb), 0.35);
     color: var(--neon-amber);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dispatch-status-badge.is-stale:hover {
+    background: rgba(var(--neon-amber-rgb), 0.22);
+    border-color: rgba(var(--neon-amber-rgb), 0.65);
+    box-shadow: 0 0 8px rgba(var(--neon-amber-rgb), 0.3);
+    transform: translateY(-1px);
 }
 
 .ledger-stale-badge {
