@@ -6,18 +6,46 @@
 
 const _resolveLedgerLang = (c, n, i) => {
     const clean = String(c || '').trim().toLowerCase();
-    if (clean === 'docs' || clean === 'doc') {
-        return { name: '简体中文', icon: '🇨🇳', code: 'zh-hans' };
+    if (!clean || clean === 'docs' || clean === 'doc') {
+        return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
     }
-    if (n && n !== c) return { name: n, icon: i || '🌐', code: c };
-    const canonical = (['zh', 'zh-hans', 'zh-cn', 'zh-sg', 'cmn'].includes(clean)) ? 'zh-hans' : clean;
+    // 归一化简体中文
+    if (['zh', 'zh-hans', 'zh-cn', 'zh-sg', 'cmn', 'cmn-hans'].includes(clean)) {
+        return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
+    }
+    // 归一化繁体中文
+    if (['zh-hant', 'zh-tw', 'zh-hk', 'cmn-hant'].includes(clean)) {
+        return { name: '繁體中文', icon: '🇭🇰', code: 'zh-Hant' };
+    }
+
+    // 只有当传入的名称不是单纯的大写代码、且不等于 code 时，才视作显式自定义母语名称
+    const isCodeLike = n && (String(n).trim().toLowerCase() === clean || String(n).trim().toLowerCase() === clean.replace(/[-_]/g, ''));
+    if (n && n !== c && !isCodeLike && i && i !== '🌐') {
+        return { name: n, icon: i, code: c };
+    }
+
+    // 权威语种库查询 (SSOT)
     if (typeof window.getLanguageMeta === 'function') {
-        const m = window.getLanguageMeta(canonical);
-        if (m && m.name && m.name !== canonical) return m;
+        const m = window.getLanguageMeta(clean);
+        if (m && m.name && m.name.toLowerCase() !== clean) {
+            return { name: m.name, icon: m.icon || '🌐', code: m.code || c };
+        }
     }
-    const base = canonical.split(/[-_]/)[0];
-    const matched = (window.availableLangs || []).find(l => (l.code || '').toLowerCase() === canonical || (l.code || '').toLowerCase() === base);
-    return matched ? { name: matched.name, icon: matched.icon || '🌐', code: c } : { name: String(c || 'zh-Hans').toUpperCase(), icon: '🌐', code: c };
+
+    const base = clean.split(/[-_]/)[0];
+    const matched = (window.availableLangs || []).find(l => {
+        const lc = (l.code || '').toLowerCase();
+        return lc === clean || lc === base;
+    });
+    if (matched) {
+        return { name: matched.name, icon: matched.icon || '🌐', code: matched.code || c };
+    }
+
+    return {
+        name: (n && !isCodeLike) ? n : clean.toUpperCase(),
+        icon: (i && i !== '🌐') ? i : '🌐',
+        code: c
+    };
 };
 
 const _resolveLedgerChannel = (id, n, i) => {
@@ -189,7 +217,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
-                    <button class="secondary-btn ledger-icon-btn is-republish-btn" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="将此稿件重新推送到此渠道"><span>🚀</span></button>
+                    <button class="secondary-btn ledger-icon-btn is-republish-btn" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="向此渠道重新广播推流"><span>📡</span></button>
                     ${hasUrl ? `<a href="${rec.remote_url}" target="_blank" rel="noopener noreferrer" class="magic-deep-link ledger-icon-btn" title="在新标签页中访问线上真实文章"><span>🌐</span></a>` : '<span class="ledger-online-badge" title="已成功发布上线">✓</span>'}
                 </div>
             `;
@@ -209,9 +237,9 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 ${!isPathOnly ? `<div style="font-size: 0.72rem; color: var(--text-muted, #9ca3af); font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 4px; opacity: 0.85;" title="${safePath}"><span>📄</span><span>${safePath}</span></div>` : ''}
             </td>
             <td style="white-space: nowrap;">
-                <div style="display: flex; flex-direction: column; gap: 2px;" title="${langMeta.name} (${langCode})">
+                <div style="display: flex; flex-direction: column; gap: 2px;" title="${langMeta.name} (${langMeta.code || langCode})">
                     <div style="display: flex; align-items: center; gap: 5px;"><span style="font-size: 0.95rem; line-height: 1;">${langMeta.icon}</span><span style="font-weight: 600; color: var(--text-bright, #ffffff); font-size: 0.82rem; line-height: 1.2;">${langMeta.name}</span></div>
-                    <div style="font-family: var(--font-mono, monospace); font-size: 0.70rem; color: var(--text-muted, #9ca3af); opacity: 0.8; padding-left: 2px; line-height: 1;">${langCode}</div>
+                    <div style="font-family: var(--font-mono, monospace); font-size: 0.70rem; color: var(--text-muted, #9ca3af); opacity: 0.8; padding-left: 2px; line-height: 1;">${langMeta.code || langCode}</div>
                 </div>
             </td>
             <td style="white-space: nowrap;"><span class="platform-pill" title="渠道标识: ${targetId}"><span>${chMeta.icon}</span><span style="font-weight: 600;">${chMeta.name}</span></span></td>
@@ -478,7 +506,7 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
     }
 
     if (typeof showToast === 'function') {
-        showToast(`🚀 已下发 [${(targetId || '').toUpperCase()}] 定向重新推送任务，正在调起分发管线...`, 'info');
+        showToast(`📡 已下发 [${(targetId || '').toUpperCase()}] 定向广播推流任务，正在调起分发管线...`, 'info');
     }
 
     try {
@@ -521,11 +549,11 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
             }
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<span>🚀</span>';
-                btn.title = '将此稿件重新推送到此渠道';
+                btn.innerHTML = '<span>📡</span>';
+                btn.title = '向此渠道重新广播推流';
             }
             if (typeof showToast === 'function') {
-                showToast(`✅ [${(targetId || '').toUpperCase()}] 推送完成，最新账本已同步！`, 'success');
+                showToast(`✅ [${(targetId || '').toUpperCase()}] 广播推流完成，最新账本已同步！`, 'success');
             }
             // 平滑静默刷新最新总账大盘数据
             if (typeof window.loadDispatchCenter === 'function') {
@@ -539,8 +567,8 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
         }
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<span>🚀</span>';
-            btn.title = '将此稿件重新推送到此渠道';
+            btn.innerHTML = '<span>📡</span>';
+            btn.title = '向此渠道重新广播推流';
         }
         if (badgeEl) {
             badgeEl.className = 'dispatch-status-badge is-failed';

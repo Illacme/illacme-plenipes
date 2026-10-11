@@ -6,8 +6,29 @@
 """
 
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from core.bindery.hosting_record_bridge import resolve_doc_title
+
+
+def _resolve_unified_lang_meta(code: str) -> Tuple[str, str, str]:
+    """🚀 [V123.0] 权威语种归一化解析：统一代码规范、母语官方名称与国旗图标"""
+    clean = str(code or "").strip().lower()
+    if not clean or clean in ("docs", "doc", "zh", "zh-hans", "zh-cn", "zh-sg", "cmn", "cmn-hans"):
+        return "zh-Hans", "简体中文", "🇨🇳"
+    if clean in ("zh-hant", "zh-tw", "zh-hk", "cmn-hant"):
+        return "zh-Hant", "繁體中文", "🇭🇰"
+    if clean in ("all", "*", "any"):
+        return "all", "多语种全站", "🌐"
+    try:
+        from core.utils.language_hub import LanguageHub
+        base = clean.split("-")[0].split("_")[0]
+        for item in LanguageHub.get_supported_matrix():
+            c = (item.get("code") or "").lower()
+            if c == clean or c == base:
+                return item.get("code", clean), item.get("name", clean.upper()), item.get("icon", "🌐")
+    except Exception:
+        pass
+    return clean, clean.upper(), "🌐"
 
 
 def collect_unified_recent_records(
@@ -41,13 +62,13 @@ def collect_unified_recent_records(
                         continue
                     r_path = rec.get("rel_path", "")
                     tid = rec.get("target_id", "")
-                    l_code = rec.get("lang_code", "zh-CN")
+                    l_code, l_name, l_icon = _resolve_unified_lang_meta(rec.get("lang_code", "zh-CN"))
                     ch_info = channel_map.get(tid, {})
                     rec_title = _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
 
                     unified.append({
                         "id": str(rec.get("id") or f"syn_{tid}_{r_path}"), "rel_path": r_path,
-                        "title": rec_title or r_path, "lang_code": l_code, "lang_name": l_code.upper(), "lang_icon": "🌐",
+                        "title": rec_title or r_path, "lang_code": l_code, "lang_name": l_name, "lang_icon": l_icon,
                         "target_id": tid, "target_type": ch_info.get("type", "social"),
                         "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
                         "remote_article_id": rec.get("remote_article_id", ""), "remote_url": rec.get("remote_url", ""),
@@ -150,7 +171,7 @@ def collect_unified_dead_letter_tasks(
                     if not isinstance(item, dict) or item.get("status") != "FAILED": continue
                     tid = str(item.get("target_id") or "")
                     rel_p = str(item.get("rel_path") or "")
-                    l_code = str(item.get("lang_code") or "zh-CN")
+                    l_code, l_name, l_icon = _resolve_unified_lang_meta(item.get("lang_code", "zh-CN"))
                     lerr = str(item.get("last_error") or "未知网络或认证异常")
                     diag = diagnose_syndication_error(tid, lerr) if (diagnose_syndication_error and tid) else {}
                     real_title = item.get("title") or _resolve_rec_doc_title(engine, rel_p, docs_snapshot, vault_root)
@@ -159,7 +180,7 @@ def collect_unified_dead_letter_tasks(
                         "id": item.get("id"), "rel_path": rel_p, "target_id": tid,
                         "target_type": ch_info.get("type", "social"), "target_name": ch_info.get("name", tid),
                         "target_icon": ch_info.get("icon", "🏷️"), "title": real_title, "slug": item.get("slug", ""),
-                        "lang_code": l_code, "lang_name": l_code.upper(), "lang_icon": "🌐", "status": "FAILED",
+                        "lang_code": l_code, "lang_name": l_name, "lang_icon": l_icon, "status": "FAILED",
                         "last_error": lerr, "retry_count": item.get("retry_count", 0), "next_retry_time": item.get("next_retry_time", 0),
                         "diagnostic": diag, "updated_at": str(item.get("updated_at") or "")
                     })
