@@ -101,6 +101,9 @@
                         el.title = '立即执行推流';
                     }
                 });
+                if (typeof window.loadDispatchCenter === 'function') {
+                    window.loadDispatchCenter('ledger');
+                }
             }
         });
 

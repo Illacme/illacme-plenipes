@@ -182,7 +182,10 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
 
         // 🌊 智能流式感知：判断任务是否处于正在重新发布中，或刚刚自愈完成
         const taskKey = `${rec.rel_path}::${rec.target_id}`;
-        const isRunning = Boolean(window._dispatchActiveRunningSet && window._dispatchActiveRunningSet.has(taskKey));
+        const isRunning = Boolean(
+            (window._dispatchActiveRunningSet && window._dispatchActiveRunningSet.has(taskKey)) ||
+            rec.status === 'syncing'
+        );
         const isJustCompleted = Boolean(window._dispatchRecentlyCompletedSet && window._dispatchRecentlyCompletedSet.has(taskKey));
 
         // 状态徽标渲染
@@ -427,41 +430,21 @@ window.retrySingleLedgerTask = async function (relPath, targetId, langCode = 'zh
             throw new Error(res.message || '重发请求未被接受');
         }
 
-        // 2. 就地自愈成功流转
+        // 2. 调度受理与持续流式跟踪
+        if (window._dispatchTaskStartTimes) {
+            window._dispatchTaskStartTimes.set(taskKey, Date.now());
+        }
+        if (typeof window.startDispatchLedgerPolling === 'function') {
+            window.startDispatchLedgerPolling();
+        }
+        if (typeof showToast === 'function') {
+            showToast(`🚀 [${(targetId || '').toUpperCase()}] 自愈任务已受理，正在执行重推...`, 'info');
+        }
         setTimeout(async () => {
-            if (window._dispatchActiveRunningSet) {
-                window._dispatchActiveRunningSet.delete(taskKey);
-            }
-            if (window._dispatchRecentlyCompletedSet) {
-                window._dispatchRecentlyCompletedSet.add(taskKey);
-                setTimeout(() => {
-                    if (window._dispatchRecentlyCompletedSet) {
-                        window._dispatchRecentlyCompletedSet.delete(taskKey);
-                    }
-                }, 4000);
-            }
-
-            if (badgeEl) {
-                badgeEl.className = 'dispatch-status-badge is-success';
-                badgeEl.innerHTML = '✓ 成功';
-            }
-            if (row) {
-                row.classList.remove('is-failed-row');
-                row.classList.remove('is-running-row');
-                row.classList.add('ledger-row--success-glow');
-            }
-            if (diagRowId) {
-                const diagRow = document.getElementById(diagRowId);
-                if (diagRow) diagRow.style.display = 'none';
-            }
-            if (typeof showToast === 'function') {
-                showToast(`✅ [${(targetId || '').toUpperCase()}] 重发任务已下发并在账本中更新！`, 'success');
-            }
-            // 平滑静默刷新最新总账大盘数据
             if (typeof window.loadDispatchCenter === 'function') {
                 await window.loadDispatchCenter('ledger');
             }
-        }, 1500);
+        }, 500);
     } catch (err) {
         console.error('[Retry Ledger Task Error]:', err);
         if (window._dispatchActiveRunningSet) {
@@ -562,21 +545,18 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
             window.DispatchCooldownManager.startCooldown(relPath, targetId, res.cooldown_total || null);
         }
 
-        // 2. 调度受理与平滑感知
+        // 2. 调度受理与持续流式跟踪
+        if (window._dispatchTaskStartTimes) {
+            window._dispatchTaskStartTimes.set(taskKey, Date.now());
+        }
+        if (typeof window.startDispatchLedgerPolling === 'function') {
+            window.startDispatchLedgerPolling();
+        }
         setTimeout(async () => {
-            if (window._dispatchActiveRunningSet) {
-                window._dispatchActiveRunningSet.delete(taskKey);
-            }
-            if (btn && (!window.DispatchCooldownManager || !window.DispatchCooldownManager.isCooling(relPath, targetId))) {
-                btn.disabled = false;
-                btn.innerHTML = '<span>📡</span>';
-                btn.title = '向此渠道重新广播推流';
-            }
-            // 平滑静默刷新最新总账大盘数据，以真实管线执行结果渲染
             if (typeof window.loadDispatchCenter === 'function') {
                 await window.loadDispatchCenter('ledger');
             }
-        }, 1500);
+        }, 500);
     } catch (err) {
         console.error('[Republish Single Syndication Error]:', err);
         if (window._dispatchActiveRunningSet) {

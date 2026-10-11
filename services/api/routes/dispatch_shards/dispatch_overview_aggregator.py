@@ -90,7 +90,8 @@ def collect_unified_recent_records(
                     egress_info = egress_map.get(tid, {}) if isinstance(egress_map, dict) else {}
                     raw_status = str(egress_info.get("status") or "").lower()
                     raw_error = egress_info.get("error")
-                    status_val = "failed" if (raw_status == "failed" or raw_error) else ("success" if raw_status in ("done", "draft", "success") else "idle")
+                    status_val = "failed" if (raw_status == "failed" or raw_error) else ("syncing" if raw_status == "syncing" else ("success" if raw_status in ("done", "draft", "success") else "idle"))
+                    is_stale = is_stale if status_val not in ("failed", "syncing") else False
                     diag = {}
                     if raw_error:
                         try:
