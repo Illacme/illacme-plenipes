@@ -905,6 +905,10 @@
     flex-direction: column;
 }
 
+.dispatch-diff-modal-card .syndicate-modal-subtitle {
+    max-width: 680px !important;
+}
+
 .dispatch-diff-layout {
     display: flex;
     flex-direction: column;

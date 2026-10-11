@@ -94,8 +94,8 @@
         const adds = data.additions || 0;
         const dels = data.deletions || 0;
         const timeDelta = data.time_delta_human || '已检测到更新';
-        const pubTime = data.published_at || '历史发布';
-        const modTime = data.modified_at || '当前版本';
+        const displayPub = (window.formatDispatchFullTime && data.published_at) ? window.formatDispatchFullTime(data.published_at) : (data.published_at || '历史发布');
+        const displayMod = (window.formatDispatchFullTime && data.modified_at) ? window.formatDispatchFullTime(data.modified_at) : (data.modified_at || '当前版本');
         const safeTargetName = _esc(targetName || data.target_name || targetId);
         const safePath = _esc(relPath);
 
@@ -107,7 +107,7 @@
                 const lineType = line.type || 'context';
                 const safeText = _esc(line.text || '');
                 if (lineType === 'header') {
-                    diffViewHtml += `<div class="dispatch-diff-line is-header"><span class="diff-sign">@@</span><span class="diff-content">${safeText}</span></div>`;
+                    diffViewHtml += `<div class="dispatch-diff-line is-header"><span class="diff-sign"></span><span class="diff-content">${safeText}</span></div>`;
                 } else if (lineType === 'addition') {
                     diffViewHtml += `<div class="dispatch-diff-line is-addition"><span class="diff-sign">+</span><span class="diff-content">${safeText}</span></div>`;
                 } else if (lineType === 'deletion') {
@@ -135,12 +135,12 @@
                 <div class="dispatch-diff-meta-bar">
                     <div class="dispatch-diff-meta-item">
                         <span class="meta-label">上次发布:</span>
-                        <span class="meta-val">${_esc(pubTime)}</span>
+                        <span class="meta-val">${_esc(displayPub)}</span>
                     </div>
                     <div class="dispatch-diff-arrow">➔</div>
                     <div class="dispatch-diff-meta-item">
                         <span class="meta-label">原稿修订:</span>
-                        <span class="meta-val">${_esc(modTime)}</span>
+                        <span class="meta-val">${_esc(displayMod)}</span>
                     </div>
                     <div class="dispatch-diff-badge-pill is-time-delta">
                         <span>⏱️</span>

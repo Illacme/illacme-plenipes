@@ -165,13 +165,14 @@ async def get_dispatch_ledger_doc_diff(
     # 2. 获取当前文件最后修改时间
     f_stat = os.stat(abs_file)
     f_mtime = f_stat.st_mtime
-    from datetime import datetime
+    from datetime import datetime, timezone
     f_mtime_str = datetime.fromtimestamp(f_mtime).strftime("%Y-%m-%d %H:%M:%S")
 
     pub_ts = None
     if published_at:
         try:
-            pub_ts = datetime.fromisoformat(published_at.replace(" ", "T")).timestamp()
+            pub_dt = datetime.fromisoformat(published_at.replace(" ", "T")).replace(tzinfo=timezone.utc)
+            pub_ts = pub_dt.timestamp()
         except Exception:
             pub_ts = None
 
