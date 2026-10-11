@@ -192,6 +192,8 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
         } else if (isFailed) {
             const retryCount = rec.retry_count || 0;
             statusBadgeHtml = `<span class="dispatch-status-badge is-failed" title="${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''}</span>`;
+        } else if (rec.is_stale) {
+            statusBadgeHtml = `<span class="dispatch-status-badge is-stale" title="当前渠道文章已滞后，本地原稿有新修改">🟡 待更新</span>`;
         } else {
             statusBadgeHtml = `<span class="dispatch-status-badge is-success" title="已成功发布上线">✓ 成功</span>`;
         }
@@ -214,10 +216,12 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 </div>
             `;
         } else {
+            const republishTitle = rec.is_stale ? '本地原稿已发生修改，点击立即向此渠道广播推流更新' : '向此渠道重新广播推流';
+            const republishClass = `secondary-btn ledger-icon-btn is-republish-btn ${rec.is_stale ? 'is-stale-republish' : ''}`;
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
-                    <button class="secondary-btn ledger-icon-btn is-republish-btn" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="向此渠道重新广播推流"><span>📡</span></button>
+                    <button class="${republishClass}" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="${republishTitle}"><span>📡</span></button>
                     ${hasUrl ? `<a href="${rec.remote_url}" target="_blank" rel="noopener noreferrer" class="magic-deep-link ledger-icon-btn" title="在新标签页中访问线上真实文章"><span>🌐</span></a>` : '<span class="ledger-online-badge" title="已成功发布上线">✓</span>'}
                 </div>
             `;
@@ -230,9 +234,10 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
 
         html += `<tr id="${rowId}" class="ledger-row ${rowStateClass}" data-title="${safeTitle.toLowerCase()}" data-path="${safePath.toLowerCase()}" data-target="${targetId.toLowerCase()}" data-target-name="${chMeta.name.toLowerCase()}" data-lang="${langMeta.name.toLowerCase()} ${langCode.toLowerCase()}">
             <td>
-                <div style="font-weight: 700; color: var(--text-bright, #ffffff); font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px; display: flex; align-items: center; gap: 6px;" title="${safeTitle}">
+                <div style="font-weight: 700; color: var(--text-bright, #ffffff); font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" title="${safeTitle}">
                     ${isFailed ? '<span style="font-size: 0.85rem;" title="发布异常">⚠️</span>' : ''}
                     <span>${safeTitle}</span>
+                    ${rec.is_stale ? '<span class="ledger-stale-badge" title="本地原稿内容已更新（与当前线上已发版本不一致），建议点击右侧 📡 广播推流更新">🟡 原稿有更新</span>' : ''}
                 </div>
                 ${!isPathOnly ? `<div style="font-size: 0.72rem; color: var(--text-muted, #9ca3af); font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 4px; opacity: 0.85;" title="${safePath}"><span>📄</span><span>${safePath}</span></div>` : ''}
             </td>
@@ -691,6 +696,7 @@ window.exportDispatchLedgerCsv = function () {
         '目标分发渠道ID',
         '目标分发渠道名称',
         '发布状态',
+        '原稿更新状态',
         '线上文章链接',
         '发布时间',
         '异常排查信息'
@@ -711,7 +717,8 @@ window.exportDispatchLedgerCsv = function () {
 
     list.forEach(rec => {
         const isFailed = (rec.status === 'failed' || Boolean(rec.error || rec.last_error));
-        const statusText = isFailed ? '异常待自愈' : '成功已发布';
+        const statusText = isFailed ? '异常待自愈' : (rec.is_stale ? '待更新(原稿有新改动)' : '成功已发布');
+        const staleText = rec.is_stale ? '本地原稿有更新' : '与原稿一致';
         const langMeta = (typeof _resolveLedgerLang === 'function')
             ? _resolveLedgerLang(rec.lang_code, rec.lang_name, rec.lang_icon)
             : { name: rec.lang_name || rec.lang_code, code: rec.lang_code };
@@ -727,6 +734,7 @@ window.exportDispatchLedgerCsv = function () {
             escapeCsv(rec.target_id || ''),
             escapeCsv(chMeta.name || rec.target_name || ''),
             escapeCsv(statusText),
+            escapeCsv(staleText),
             escapeCsv(rec.remote_url || ''),
             escapeCsv(rec.display_time || rec.updated_at || rec.failed_at || ''),
             escapeCsv(rec.error || rec.last_error || '')

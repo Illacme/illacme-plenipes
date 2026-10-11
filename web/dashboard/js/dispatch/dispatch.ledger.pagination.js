@@ -248,10 +248,14 @@ window.initDispatchLedgerPagination = function (records) {
     if (statusSelect) statusSelect.classList.toggle('is-active', Boolean(selStatus));
     
     const filtered = all.filter(r => {
-        // 1. 发布状态过滤（success / failed）
+        // 1. 发布状态过滤（success / failed / stale）
         if (selStatus) {
-            const rStatus = (r.status || (r.error ? 'failed' : 'success')).toLowerCase();
-            if (rStatus !== selStatus) return false;
+            if (selStatus === 'stale') {
+                if (!r.is_stale) return false;
+            } else {
+                const rStatus = (r.status || (r.error ? 'failed' : 'success')).toLowerCase();
+                if (rStatus !== selStatus) return false;
+            }
         }
 
         // 2. 语种精准或前缀匹配（引入归一化双向兼容，兼容历史 zh / zh-hans / zh-cn 数据）

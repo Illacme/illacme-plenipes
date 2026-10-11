@@ -149,6 +149,7 @@ window.viewTemplates.tasks = `
                         <select id="dispatch-filter-status" class="dispatch-filter-select" onchange="if(typeof window.filterDispatchLedger==='function') window.filterDispatchLedger();" title="按发布状态筛选">
                             <option value="">📊 全部状态</option>
                             <option value="success">✅ 仅看成功</option>
+                            <option value="stale">🟡 仅看原稿已更新</option>
                             <option value="failed">⚠️ 仅看异常待自愈</option>
                         </select>
                     </div>

@@ -5,7 +5,9 @@
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
+import os
 import json
+import hashlib
 from typing import Dict, Any, List, Optional, Tuple
 from core.bindery.hosting_record_bridge import resolve_doc_title
 
@@ -51,6 +53,7 @@ def collect_unified_recent_records(
     )
 
     unified: List[Dict[str, Any]] = []
+    file_hash_cache: Dict[str, Optional[str]] = {}
 
     # 1. 解包社交媒体分发历史 (Syndication Ledger)
     if hasattr(meta, "list_all_syndication_records"):
@@ -62,6 +65,23 @@ def collect_unified_recent_records(
                         continue
                     r_path = rec.get("rel_path", "")
                     tid = rec.get("target_id", "")
+                    saved_hash = rec.get("content_hash")
+
+                    # 动态感知原稿内容是否已在文库中发生修改 (Stale Diff)
+                    if r_path and r_path not in file_hash_cache:
+                        abs_p = os.path.join(vault_root, r_path) if vault_root else r_path
+                        if os.path.isfile(abs_p):
+                            try:
+                                with open(abs_p, "rb") as f:
+                                    file_hash_cache[r_path] = hashlib.md5(f.read()).hexdigest()
+                            except Exception:
+                                file_hash_cache[r_path] = None
+                        else:
+                            file_hash_cache[r_path] = None
+
+                    cur_hash = file_hash_cache.get(r_path)
+                    is_stale = bool(saved_hash and cur_hash and saved_hash != cur_hash)
+
                     l_code, l_name, l_icon = _resolve_unified_lang_meta(rec.get("lang_code", "zh-CN"))
                     ch_info = channel_map.get(tid, {})
                     rec_title = _resolve_rec_doc_title(engine, r_path, docs_snapshot, vault_root)
@@ -72,6 +92,7 @@ def collect_unified_recent_records(
                         "target_id": tid, "target_type": ch_info.get("type", "social"),
                         "target_name": ch_info.get("name", tid), "target_icon": ch_info.get("icon", "🏷️"),
                         "remote_article_id": rec.get("remote_article_id", ""), "remote_url": rec.get("remote_url", ""),
+                        "content_hash": saved_hash, "current_hash": cur_hash, "is_stale": is_stale,
                         "updated_at": str(rec.get("updated_at") or "")
                     })
         except Exception:
