@@ -193,7 +193,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             const retryCount = rec.retry_count || 0;
             statusBadgeHtml = `<span class="dispatch-status-badge is-failed" title="${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''}</span>`;
         } else if (rec.is_stale) {
-            statusBadgeHtml = `<span class="dispatch-status-badge is-stale" title="当前渠道文章已滞后，本地原稿有新修改">🟡 待更新</span>`;
+            statusBadgeHtml = `<span class="dispatch-status-badge is-stale" onclick="if(typeof window.openDispatchDiffModal==='function') window.openDispatchDiffModal('${safePath}', '${targetId}', '${langCode}', '${chMeta.name}');" style="cursor: pointer;" title="当前渠道文章已滞后，点击查看原稿改动差异与决策">🟡 待更新</span>`;
         } else {
             statusBadgeHtml = `<span class="dispatch-status-badge is-success" title="已成功发布上线">✓ 成功</span>`;
         }
@@ -237,7 +237,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 <div style="font-weight: 700; color: var(--text-bright, #ffffff); font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" title="${safeTitle}">
                     ${isFailed ? '<span style="font-size: 0.85rem;" title="发布异常">⚠️</span>' : ''}
                     <span>${safeTitle}</span>
-                    ${rec.is_stale ? '<span class="ledger-stale-badge" title="本地原稿内容已更新（与当前线上已发版本不一致），建议点击右侧 📡 广播推流更新">🟡 原稿有更新</span>' : ''}
+                    ${rec.is_stale ? `<span class="ledger-stale-badge" onclick="if(typeof window.openDispatchDiffModal==='function') window.openDispatchDiffModal('${safePath}', '${targetId}', '${langCode}', '${chMeta.name}');" title="本地原稿内容已更新（与上次发布版本不一致），点击查看改动差异与决策">🟡 原稿有更新 🔍</span>` : ''}
                 </div>
                 ${!isPathOnly ? `<div style="font-size: 0.72rem; color: var(--text-muted, #9ca3af); font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 4px; opacity: 0.85;" title="${safePath}"><span>📄</span><span>${safePath}</span></div>` : ''}
             </td>

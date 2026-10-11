@@ -440,6 +440,7 @@ services/api/routes/design_shards/design_upload_routes.py
 services/api/routes/dispatch.py
 services/api/routes/dispatch_shards/__init__.py
 services/api/routes/dispatch_shards/dispatch_overview_aggregator.py
+services/api/routes/dispatch_shards/dispatch_diff_routes.py
 services/api/routes/dispatch_shards/hosting_routes.py
 services/api/routes/dispatch_shards/hosting_diagnostic_routes.py
 services/api/routes/dispatch_shards/platform_oauth_routes.py

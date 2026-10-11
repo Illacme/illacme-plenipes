@@ -869,12 +869,211 @@
     border: 1px solid rgba(var(--neon-amber-rgb), 0.35);
     color: var(--neon-amber);
     white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.ledger-stale-badge:hover {
+    background: rgba(var(--neon-amber-rgb), 0.22);
+    border-color: rgba(var(--neon-amber-rgb), 0.65);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(var(--neon-amber-rgb), 0.25);
 }
 
 .is-stale-republish {
     border-color: rgba(var(--neon-amber-rgb), 0.6) !important;
     color: var(--neon-amber) !important;
     box-shadow: 0 0 6px rgba(var(--neon-amber-rgb), 0.25);
+}
+
+/* 🔍 [V126.0] 单篇改动差异透视与决策中枢模态窗规范 */
+.dispatch-diff-modal-card {
+    max-width: 880px !important;
+    width: 92vw !important;
+    max-height: 85vh !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.dispatch-diff-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    min-height: 400px;
+}
+
+.dispatch-diff-meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: rgba(var(--white-rgb, 255, 255, 255), 0.03);
+    border: 1px solid rgba(var(--white-rgb, 255, 255, 255), 0.08);
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+
+.dispatch-diff-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dispatch-diff-meta-item .meta-label {
+    color: var(--text-muted);
+}
+
+.dispatch-diff-meta-item .meta-val {
+    font-family: var(--font-mono);
+    color: var(--text-bright);
+    font-weight: 600;
+}
+
+.dispatch-diff-arrow {
+    color: var(--neon-cyan);
+    font-size: 0.82rem;
+}
+
+.dispatch-diff-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.dispatch-diff-badge-pill.is-time-delta {
+    background: rgba(var(--neon-amber-rgb), 0.15);
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.4);
+    color: var(--neon-amber);
+}
+
+.dispatch-diff-stats-group {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diff-stat-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.diff-stat-tag.addition {
+    background: rgba(var(--neon-green-rgb), 0.15);
+    border: 1px solid rgba(var(--neon-green-rgb), 0.4);
+    color: var(--neon-green);
+}
+
+.diff-stat-tag.deletion {
+    background: rgba(var(--neon-red-rgb), 0.15);
+    border: 1px solid rgba(var(--neon-red-rgb), 0.4);
+    color: var(--neon-red);
+}
+
+.dispatch-diff-content-slot {
+    flex: 1;
+    min-height: 260px;
+    max-height: 480px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(var(--white-rgb, 255, 255, 255), 0.08);
+    border-radius: 6px;
+    padding: 8px 0;
+}
+
+.dispatch-diff-code-window {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.dispatch-diff-line {
+    display: flex;
+    align-items: flex-start;
+    padding: 1px 12px;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+.dispatch-diff-line .diff-sign {
+    width: 20px;
+    flex-shrink: 0;
+    user-select: none;
+    font-weight: 700;
+}
+
+.dispatch-diff-line.is-header {
+    background: rgba(var(--neon-cyan-rgb), 0.08);
+    color: var(--neon-cyan);
+    font-weight: 600;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top: 1px solid rgba(var(--neon-cyan-rgb), 0.15);
+    border-bottom: 1px solid rgba(var(--neon-cyan-rgb), 0.15);
+}
+
+.dispatch-diff-line.is-addition {
+    background: rgba(var(--neon-green-rgb), 0.12);
+    color: var(--neon-green);
+}
+
+.dispatch-diff-line.is-addition .diff-sign {
+    color: var(--neon-green);
+}
+
+.dispatch-diff-line.is-deletion {
+    background: rgba(var(--neon-red-rgb), 0.12);
+    color: var(--neon-red);
+}
+
+.dispatch-diff-line.is-deletion .diff-sign {
+    color: var(--neon-red);
+}
+
+.dispatch-diff-line.is-context {
+    color: rgba(var(--white-rgb, 255, 255, 255), 0.7);
+}
+
+.dispatch-diff-decision-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(var(--white-rgb, 255, 255, 255), 0.08);
+    flex-wrap: wrap;
+}
+
+.decision-hint {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    flex: 1;
+    min-width: 260px;
+}
+
+.decision-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dispatch-diff-empty-state, .dispatch-diff-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
 }
 
 .ledger-row.is-failed-row td {
