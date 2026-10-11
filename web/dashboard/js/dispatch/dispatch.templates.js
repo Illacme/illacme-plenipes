@@ -36,7 +36,7 @@ window.viewTemplates.tasks = `
                 </div>
             </div>
             <div class="header-nav-actions" style="display: flex; gap: 10px; align-items: center;">
-                <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('plugins', 'hosting');" style="padding: 4px 10px; font-size: 0.74rem;">
+                <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('plugins', (window.currentDispatchMode === 'social' ? 'publisher' : 'hosting'));" style="padding: 4px 10px; font-size: 0.74rem;">
                     <span>⚙️ 平台账号配置 ↗</span>
                 </button>
                 <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 10px; font-size: 0.74rem;">
@@ -119,7 +119,7 @@ window.viewTemplates.tasks = `
                     <span class="metric-val text-danger-val" id="metric-total-failed">--</span>
                     <span class="metric-sub text-danger-val" id="metric-failed-sub">死信队列就绪</span>
                 </div>
-                <div class="dispatch-metric-card interactive" id="metric-channels-card" onclick="if(typeof window.showView==='function') window.showView('plugins', 'hosting');" title="点击直达渠道凭证与驱动配置" style="cursor: pointer;">
+                <div class="dispatch-metric-card interactive" id="metric-channels-card" onclick="if(typeof window.showView==='function') window.showView('plugins', 'publisher');" title="点击直达渠道凭证与驱动配置" style="cursor: pointer;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span class="metric-label">全渠道健康度</span>
                         <span style="font-size: 0.72rem; color: var(--neon-cyan); opacity: 0.85;">管理 ↗</span>

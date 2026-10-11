@@ -189,6 +189,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
+                    <button class="secondary-btn ledger-icon-btn is-republish-btn" id="${retryBtnId}" onclick="window.republishSingleSyndicationDoc('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}')" title="将此稿件重新推送到此渠道"><span>🚀</span></button>
                     ${hasUrl ? `<a href="${rec.remote_url}" target="_blank" rel="noopener noreferrer" class="magic-deep-link ledger-icon-btn" title="在新标签页中访问线上真实文章"><span>🌐</span></a>` : '<span class="ledger-online-badge" title="已成功发布上线">✓</span>'}
                 </div>
             `;
@@ -441,6 +442,115 @@ window.retrySingleLedgerTask = async function (relPath, targetId, langCode = 'zh
         }
         if (typeof showToast === 'function') {
             showToast('重发失败: ' + (err.message || '网络异常'), 'error');
+        }
+    }
+};
+
+/**
+ * 🚀 [V123.0] 单篇稿件重新推送到指定社交媒体渠道 (定向重推)
+ */
+window.republishSingleSyndicationDoc = async function (relPath, targetId, langCode = 'zh-CN', btnId = null, rowId = null) {
+    const fetchFunc = typeof apiFetch === 'function' ? apiFetch : (async (u, i) => (await fetch(u, i)).json());
+    const btn = btnId ? document.getElementById(btnId) : null;
+    const row = rowId ? document.getElementById(rowId) : null;
+    const badgeEl = row ? row.querySelector('.dispatch-status-badge') : null;
+
+    const taskKey = `${relPath}::${targetId}`;
+    if (window._dispatchActiveRunningSet) {
+        window._dispatchActiveRunningSet.add(taskKey);
+    }
+    if (typeof window.startDispatchLedgerPolling === 'function') {
+        window.startDispatchLedgerPolling();
+    }
+
+    // 1. 瞬态交互反馈 (禁用按钮、显示齿轮转圈与推流中状态)
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-gear">⚙️</span>';
+        btn.title = '正在重新发布推流中...';
+    }
+    if (badgeEl) {
+        badgeEl.className = 'dispatch-status-badge is-running';
+        badgeEl.innerHTML = '<span class="spinner-gear">⚙️</span> 正在推送...';
+    }
+    if (row) {
+        row.classList.add('is-running-row');
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`🚀 已下发 [${(targetId || '').toUpperCase()}] 定向重新推送任务，正在调起分发管线...`, 'info');
+    }
+
+    try {
+        const res = await fetchFunc(`/api/vault/re-dispatch/${encodeURIComponent(relPath)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                target_channel: targetId,
+                target_slot: langCode,
+                skip_syndication: false,
+                clear_cache: false
+            })
+        });
+
+        if (res && res.success === false) {
+            throw new Error(res.message || '重推请求未被受理');
+        }
+
+        // 2. 调度成功反馈与延时平滑流转
+        setTimeout(async () => {
+            if (window._dispatchActiveRunningSet) {
+                window._dispatchActiveRunningSet.delete(taskKey);
+            }
+            if (window._dispatchRecentlyCompletedSet) {
+                window._dispatchRecentlyCompletedSet.add(taskKey);
+                setTimeout(() => {
+                    if (window._dispatchRecentlyCompletedSet) {
+                        window._dispatchRecentlyCompletedSet.delete(taskKey);
+                    }
+                }, 4000);
+            }
+
+            if (badgeEl) {
+                badgeEl.className = 'dispatch-status-badge is-success';
+                badgeEl.innerHTML = '✓ 成功';
+            }
+            if (row) {
+                row.classList.remove('is-running-row');
+                row.classList.add('ledger-row--success-glow');
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🚀</span>';
+                btn.title = '将此稿件重新推送到此渠道';
+            }
+            if (typeof showToast === 'function') {
+                showToast(`✅ [${(targetId || '').toUpperCase()}] 推送完成，最新账本已同步！`, 'success');
+            }
+            // 平滑静默刷新最新总账大盘数据
+            if (typeof window.loadDispatchCenter === 'function') {
+                await window.loadDispatchCenter('ledger');
+            }
+        }, 1800);
+    } catch (err) {
+        console.error('[Republish Single Syndication Error]:', err);
+        if (window._dispatchActiveRunningSet) {
+            window._dispatchActiveRunningSet.delete(taskKey);
+        }
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span>🚀</span>';
+            btn.title = '将此稿件重新推送到此渠道';
+        }
+        if (badgeEl) {
+            badgeEl.className = 'dispatch-status-badge is-failed';
+            badgeEl.innerHTML = '⚠️ 推送失败';
+        }
+        if (row) {
+            row.classList.remove('is-running-row');
+        }
+        if (typeof showToast === 'function') {
+            showToast('重新推送失败: ' + (err.message || '网络异常'), 'error');
         }
     }
 };
