@@ -233,7 +233,7 @@ window.renderDispatchMetrics = function (data) {
     setTxt('metric-active-count', (data && data.is_publishing) ? 1 : 0);
     setTxt('metric-total-failed', totalFailed);
     setTxt('metric-channels-count', `${enabledChannels.length} / ${socialChannels.length}`);
-    setTxt('metric-channels-sub', `已激活 ${enabledChannels.length} 个渠道 · 点击配置 ↗`);
+    setTxt('metric-channels-sub', `已激活 ${enabledChannels.length} 个渠道在线`);
 
     const elActiveSub = document.getElementById('metric-active-sub');
     if (elActiveSub) {

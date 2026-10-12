@@ -1461,10 +1461,34 @@
     color: #0284c7 !important;
 }
 
+[data-theme="light"] #view-tasks .metric-filter-hint {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] #view-tasks .metric-filter-hint.text-danger-val {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #dc2626 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tool-btn.is-batch-retry-btn {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    color: #b45309 !important;
+}
+
+[data-theme="light"] #view-tasks .dispatch-tool-btn.is-batch-retry-btn:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.22) !important;
+    border-color: #d97706 !important;
+}
+
 [data-theme="light"] #view-tasks .ledger-table th {
     background: #f8fafc !important;
     color: #475569 !important;
     border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    white-space: nowrap !important;
 }
 
 [data-theme="light"] #view-tasks .ledger-table td {

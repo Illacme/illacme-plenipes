@@ -147,11 +147,11 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
     let html = `<table class="ledger-table">
         <thead>
             <tr>
-                <th style="width: 36%;">稿件标题与路径</th>
-                <th style="width: 12%;">发布语种</th>
-                <th style="width: 14%;">目标分发渠道</th>
-                <th style="width: 14%;">发布状态</th>
-                <th style="width: 12%;">发布时间</th>
+                <th style="width: 36%; white-space: nowrap;">稿件标题与路径</th>
+                <th style="width: 12%; white-space: nowrap;">发布语种</th>
+                <th style="width: 14%; white-space: nowrap;">目标分发渠道</th>
+                <th style="width: 13%; white-space: nowrap;">发布状态</th>
+                <th style="width: 13%; white-space: nowrap;">发布时间</th>
                 <th style="width: 12%; text-align: right; white-space: nowrap;">操作</th>
             </tr>
         </thead>
@@ -635,13 +635,13 @@ window.retryAllFailedTasks = async function () {
     if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ 正在全量重试...</span>'; }
     try {
         await apiFetch('/api/dispatch/deadletter/retry', { method: 'POST', body: JSON.stringify({}) });
-        if (typeof showToast === 'function') showToast('已加入全量重试队列，正在调度...', 'info');
+        if (typeof showToast === 'function') showToast('已加入全量自愈队列，正在调度...', 'info');
         setTimeout(async () => {
             if (typeof window.loadDispatchCenter === 'function') await window.loadDispatchCenter('deadletter');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄 一键重试所有失败</span>'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 一键自愈失败</span>'; }
         }, 1500);
     } catch (e) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄 一键重试所有失败</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 一键自愈失败</span>'; }
         if (typeof showToast === 'function') showToast('批量重试请求失败: ' + e.message, 'error');
     }
 };

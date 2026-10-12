@@ -306,10 +306,14 @@ window.initDispatchLedgerPagination = function (records) {
     // 缓存当前已过滤的结果集（供全量报表导出等操作使用）
     window._dispatchLedgerCurrentFiltered = filtered;
 
-    // 动态显隐【一键重试所有失败】按钮
+    // 动态显隐与格式化【一键自愈失败】按钮 (精炼单行，精确显示异常任务数)
     if (btnBatchRetry) {
-        const hasFailedInFiltered = filtered.some(r => r.status === 'failed' || Boolean(r.error));
-        btnBatchRetry.style.display = hasFailedInFiltered ? 'inline-flex' : 'none';
+        const failedCount = filtered.filter(r => r.status === 'failed' || Boolean(r.error)).length;
+        btnBatchRetry.style.display = failedCount > 0 ? 'inline-flex' : 'none';
+        const txtEl = document.getElementById('btn-batch-retry-text');
+        if (txtEl) {
+            txtEl.innerText = `🔄 一键自愈失败 (${failedCount})`;
+        }
     }
 
     const totalItems = filtered.length;

@@ -10,40 +10,40 @@ if (!window.viewTemplates) {
 
 window.viewTemplates.tasks = `
 <div id="view-tasks" class="view-panel">
-    <!-- 1. 顶部 Header 与即时刷新动作 (1:1 像素级物理对齐数据统计 Analytics Hub 视觉范式) -->
+    <!-- 1. 顶部 Header 与即时刷新动作 (解耦系统就绪状态至标题右侧) -->
     <div class="view-header" style="margin-bottom: 0; padding-bottom: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-        <h2>🚀 发布中心 (Publishing Hub)</h2>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">🚀 发布中心 (Publishing Hub)</h2>
+            <div id="dispatch-pipeline-status-badge-slot">
+                <div class="dispatch-mode-badge badge active" id="dispatch-live-badge">● 系统就绪</div>
+            </div>
+        </div>
         <div class="header-actions">
             <button class="primary-btn glow-btn" id="btn-refresh-dispatch" onclick="if(typeof window.refreshCurrentDispatchView==='function') window.refreshCurrentDispatchView();" style="padding: 5px 12px; font-size: 0.75rem; height: 28px; line-height: 14px;">🔄 刷新状态</button>
         </div>
     </div>
 
-    <!-- 2. 下层矩阵: 导航切换与即时态势勋章 (对齐算力中心 Tactical Tabs) -->
+    <!-- 2. 下层矩阵: 导航切换与快捷入口 (纯粹的一级视图 Tab) -->
     <div class="header-nav-row" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--glass-border); margin-top: 0; width: 100%; box-sizing: border-box; flex-shrink: 0;">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <nav class="tactical-tabs dispatch-tactical-tabs">
-                    <button class="t-tab active" id="tab-dispatch-hosting" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('hosting');">
-                        <span class="t-icon">🌐</span> 网站托管发布
-                        <span class="tab-badge" id="badge-hosting-ready">--</span>
-                    </button>
-                    <button class="t-tab" id="tab-dispatch-social" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('social');">
-                        <span class="t-icon">📡</span> 社交媒体分发
-                        <span class="tab-badge" id="badge-social-tasks">--</span>
-                    </button>
-                </nav>
-                <div id="dispatch-pipeline-status-badge-slot">
-                    <div class="dispatch-mode-badge badge active" id="dispatch-live-badge">● 系统就绪</div>
-                </div>
-            </div>
-            <div class="header-nav-actions" style="display: flex; gap: 10px; align-items: center;">
-                <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('plugins', (window.currentDispatchMode === 'social' ? 'publisher' : 'hosting'));" style="padding: 4px 10px; font-size: 0.74rem;">
-                    <span>⚙️ 平台账号配置 ↗</span>
-                </button>
-                <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 10px; font-size: 0.74rem;">
-                    <span>🎨 装帧主题 ↗</span>
-                </button>
-            </div>
+        <nav class="tactical-tabs dispatch-tactical-tabs">
+            <button class="t-tab active" id="tab-dispatch-hosting" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('hosting');">
+                <span class="t-icon">🌐</span> 网站托管发布
+                <span class="tab-badge" id="badge-hosting-ready">--</span>
+            </button>
+            <button class="t-tab" id="tab-dispatch-social" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('social');">
+                <span class="t-icon">📡</span> 社交媒体分发
+                <span class="tab-badge" id="badge-social-tasks">--</span>
+            </button>
+        </nav>
+        <div class="header-nav-actions" style="display: flex; gap: 10px; align-items: center;">
+            <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('plugins', (window.currentDispatchMode === 'social' ? 'publisher' : 'hosting'));" style="padding: 4px 10px; font-size: 0.74rem;">
+                <span>⚙️ 平台账号配置 ↗</span>
+            </button>
+            <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 10px; font-size: 0.74rem;">
+                <span>🎨 装帧主题 ↗</span>
+            </button>
         </div>
+    </div>
 
     <!-- 2. 独立内容滚动视区 (Header 物理固定，仅内容区向下平滑滚动) -->
     <div class="view-content scroll-container dispatch-content-scroll" id="dispatch-scroll-viewport">
@@ -105,17 +105,23 @@ window.viewTemplates.tasks = `
             <!-- 四大核心指标卡片 (社媒分发专属态势感知，支持点击一键状态过滤) -->
             <div class="dispatch-metric-grid" id="dispatch-metric-container">
                 <div class="dispatch-metric-card interactive" onclick="if(typeof window.quickFilterDispatchStatus==='function') { window.switchDispatchMode('social'); window.quickFilterDispatchStatus('success'); }" title="点击仅看成功分发成果">
-                    <span class="metric-label">已成功分发成果</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="metric-label">已成功分发成果</span>
+                        <span class="metric-filter-hint" title="点击筛选此状态">过滤 🔍</span>
+                    </div>
                     <span class="metric-val" id="metric-total-syndicated">--</span>
                     <span class="metric-sub" id="metric-success-rate">成功率 --%</span>
                 </div>
                 <div class="dispatch-metric-card">
                     <span class="metric-label">当前活跃作业</span>
                     <span class="metric-val" id="metric-active-count">--</span>
-                    <span class="metric-sub" id="metric-active-sub">空闲中</span>
+                    <span class="metric-sub" id="metric-active-sub">管线就绪待命</span>
                 </div>
                 <div class="dispatch-metric-card interactive" onclick="if(typeof window.quickFilterDispatchStatus==='function') { window.switchDispatchMode('social'); window.quickFilterDispatchStatus('failed'); }" title="点击仅看异常待自愈任务">
-                    <span class="metric-label">异常待自愈任务</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="metric-label">异常待自愈任务</span>
+                        <span class="metric-filter-hint text-danger-val" title="点击筛选此状态">过滤 🔍</span>
+                    </div>
                     <span class="metric-val text-danger-val" id="metric-total-failed">--</span>
                     <span class="metric-sub text-danger-val" id="metric-failed-sub">死信队列就绪</span>
                 </div>
@@ -125,7 +131,7 @@ window.viewTemplates.tasks = `
                         <span style="font-size: 0.72rem; color: var(--neon-cyan); opacity: 0.85;">管理 ↗</span>
                     </div>
                     <span class="metric-val" id="metric-channels-count">--</span>
-                    <span class="metric-sub" id="metric-channels-sub">已连接渠道 · 点击配置 ↗</span>
+                    <span class="metric-sub" id="metric-channels-sub">已连接渠道</span>
                 </div>
             </div>
 
@@ -158,11 +164,11 @@ window.viewTemplates.tasks = `
                 <div class="dispatch-tabs-tools">
                     <input type="text" id="dispatch-search-input" placeholder="搜索原稿或渠道..." 
                         oninput="if(typeof window.filterDispatchLedger==='function') window.filterDispatchLedger();" />
-                    <button class="secondary-btn" id="btn-export-dispatch-ledger" onclick="if(typeof window.exportDispatchLedgerCsv==='function') window.exportDispatchLedgerCsv();" title="导出当前分发成果总账报表 (CSV)" style="white-space: nowrap; padding: 5px 12px; font-size: 0.78rem;">
-                        <span>📥 导出 CSV</span>
+                    <button class="secondary-btn dispatch-tool-btn" id="btn-export-dispatch-ledger" onclick="if(typeof window.exportDispatchLedgerCsv==='function') window.exportDispatchLedgerCsv();" title="导出当前分发成果总账报表 (CSV)">
+                        <span>📊 导出 CSV</span>
                     </button>
-                    <button class="secondary-btn" id="btn-batch-retry-all" onclick="if(typeof window.retryAllFailedTasks==='function') window.retryAllFailedTasks();" style="display: none;">
-                        <span>🔄 一键重试所有失败</span>
+                    <button class="secondary-btn dispatch-tool-btn is-batch-retry-btn" id="btn-batch-retry-all" onclick="if(typeof window.retryAllFailedTasks==='function') window.retryAllFailedTasks();" style="display: none;" title="一键重发当前筛选范围内的异常任务">
+                        <span id="btn-batch-retry-text">🔄 一键自愈失败</span>
                     </button>
                 </div>
             </div>

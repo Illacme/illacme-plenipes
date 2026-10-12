@@ -492,6 +492,36 @@
     margin-left: auto;
 }
 
+.dispatch-tool-btn {
+    height: 33px !important;
+    line-height: 1 !important;
+    padding: 0 12px !important;
+    font-size: 0.78rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+}
+
+.dispatch-tool-btn.is-batch-retry-btn {
+    background: rgba(var(--neon-amber-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--neon-amber-rgb), 0.4) !important;
+    color: var(--neon-amber) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dispatch-tool-btn.is-batch-retry-btn:hover:not(:disabled) {
+    background: rgba(var(--neon-amber-rgb), 0.22) !important;
+    border-color: var(--neon-amber) !important;
+    box-shadow: 0 0 10px rgba(var(--neon-amber-rgb), 0.3) !important;
+    transform: translateY(-1px);
+}
+
 .dispatch-filter-group {
     display: flex;
     align-items: center;
@@ -699,6 +729,35 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.metric-filter-hint {
+    font-size: 0.68rem;
+    color: var(--neon-cyan);
+    opacity: 0.7;
+    background: rgba(var(--neon-cyan-rgb, 0, 240, 255), 0.08);
+    border: 1px solid rgba(var(--neon-cyan-rgb, 0, 240, 255), 0.25);
+    border-radius: 4px;
+    padding: 1px 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+    line-height: 1.2;
+}
+
+.metric-filter-hint.text-danger-val {
+    color: var(--neon-red);
+    background: rgba(var(--neon-red-rgb), 0.08);
+    border-color: rgba(var(--neon-red-rgb), 0.25);
+}
+
+.dispatch-metric-card.interactive:hover .metric-filter-hint {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 0 6px rgba(var(--neon-cyan-rgb, 0, 240, 255), 0.3);
+}
+
+.dispatch-metric-card.interactive:hover .metric-filter-hint.text-danger-val {
+    box-shadow: 0 0 6px rgba(var(--neon-red-rgb), 0.3);
 }
 
 .dispatch-metric-card .metric-val {
@@ -1305,6 +1364,7 @@
     color: var(--text-muted);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    white-space: nowrap !important;
 }
 
 .ledger-table th:first-child {
