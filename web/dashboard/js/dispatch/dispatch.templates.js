@@ -165,10 +165,10 @@ window.viewTemplates.tasks = `
                     <input type="text" id="dispatch-search-input" placeholder="搜索原稿或渠道..." 
                         oninput="if(typeof window.filterDispatchLedger==='function') window.filterDispatchLedger();" />
                     <button class="secondary-btn dispatch-tool-btn" id="btn-export-dispatch-ledger" onclick="if(typeof window.exportDispatchLedgerCsv==='function') window.exportDispatchLedgerCsv();" title="导出当前分发成果总账报表 (CSV)">
-                        <span>📊 导出 CSV</span>
+                        <span>📊 导出</span>
                     </button>
                     <button class="secondary-btn dispatch-tool-btn is-batch-retry-btn" id="btn-batch-retry-all" onclick="if(typeof window.retryAllFailedTasks==='function') window.retryAllFailedTasks();" style="display: none;" title="一键重发当前筛选范围内的异常任务">
-                        <span id="btn-batch-retry-text">🔄 一键自愈失败</span>
+                        <span id="btn-batch-retry-text">🔄 自愈</span>
                     </button>
                 </div>
             </div>

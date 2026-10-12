@@ -312,7 +312,7 @@ window.initDispatchLedgerPagination = function (records) {
         btnBatchRetry.style.display = failedCount > 0 ? 'inline-flex' : 'none';
         const txtEl = document.getElementById('btn-batch-retry-text');
         if (txtEl) {
-            txtEl.innerText = `🔄 一键自愈失败 (${failedCount})`;
+            txtEl.innerText = `🔄 自愈 (${failedCount})`;
         }
     }
 

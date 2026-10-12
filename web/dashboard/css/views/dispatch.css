@@ -486,21 +486,22 @@
 /* 全屏任务大厅 - 检索工具栏与多维组合筛选系统 (右对齐紧凑布局) */
 .dispatch-tabs-tools {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     flex-wrap: nowrap;
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .dispatch-tool-btn {
     height: 33px !important;
     line-height: 1 !important;
-    padding: 0 12px !important;
+    padding: 0 10px !important;
     font-size: 0.78rem !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
+    gap: 5px !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
     border-radius: 8px !important;
@@ -525,7 +526,7 @@
 .dispatch-filter-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -553,15 +554,16 @@
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 6px 24px 6px 10px;
-    font-size: 0.80rem;
+    padding: 6px 20px 6px 8px;
+    font-size: 0.78rem;
     color: var(--text-bright);
     cursor: pointer;
     outline: none;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     height: 33px;
     box-sizing: border-box;
-    max-width: 140px;
+    max-width: 115px;
+    min-width: 85px;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
@@ -645,12 +647,15 @@
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 0.82rem;
+    padding: 6px 10px;
+    font-size: 0.80rem;
     color: var(--text-bright);
     outline: none;
     transition: all 0.2s;
-    min-width: 180px;
+    width: 130px;
+    min-width: 90px;
+    max-width: 170px;
+    flex: 1 1 auto;
     height: 33px;
     box-sizing: border-box;
 }
@@ -855,6 +860,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding: 6px 4px 12px 4px;
     margin-top: 0;

@@ -638,10 +638,10 @@ window.retryAllFailedTasks = async function () {
         if (typeof showToast === 'function') showToast('已加入全量自愈队列，正在调度...', 'info');
         setTimeout(async () => {
             if (typeof window.loadDispatchCenter === 'function') await window.loadDispatchCenter('deadletter');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 一键自愈失败</span>'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 自愈</span>'; }
         }, 1500);
     } catch (e) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 一键自愈失败</span>'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span id="btn-batch-retry-text">🔄 自愈</span>'; }
         if (typeof showToast === 'function') showToast('批量重试请求失败: ' + e.message, 'error');
     }
 };
