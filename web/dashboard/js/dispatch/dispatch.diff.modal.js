@@ -37,7 +37,7 @@
                 </div>
                 <div id="dispatch-diff-modal-body" class="syndicate-modal-body dispatch-diff-modal-body">
                     <div class="dispatch-diff-loading">
-                        <span class="spinner-gear">⚙️</span>
+                        <span class="spinner-spin">🔄</span>
                         <span>正在检索原稿在上次发布时的 Git 快照并计算增量差异...</span>
                     </div>
                 </div>
@@ -191,7 +191,7 @@
         const btn = document.getElementById('diff-modal-republish-btn');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-gear">⚙️</span> 正在推流中...';
+            btn.innerHTML = '<span class="spinner-spin">🔄</span> 正在推流中...';
         }
         if (typeof showToast === 'function') {
             showToast(`🚀 已针对 [${targetId.toUpperCase()}] 下发原地更新推流指令...`, 'info');

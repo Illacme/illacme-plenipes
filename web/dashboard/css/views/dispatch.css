@@ -1169,6 +1169,20 @@
     animation: ledgerRunningPulse 2s ease-in-out infinite;
 }
 
+/* 旋转刷新动效 (Spinning Refresh Indicator) */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinner-spin,
+.spinner-gear {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    transform-origin: center center;
+    vertical-align: middle;
+}
+
 /* 就地展开的异常自愈诊断抽屉卡片 */
 .ledger-diagnostic-row td {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;

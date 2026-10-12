@@ -191,7 +191,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
         // 状态徽标渲染
         let statusBadgeHtml = '';
         if (isRunning) {
-            statusBadgeHtml = `<span class="dispatch-status-badge is-running"><span class="spinner-gear">⚙️</span> 正在发布...</span>`;
+            statusBadgeHtml = `<span class="dispatch-status-badge is-running"><span class="spinner-spin">🔄</span> 正在发布...</span>`;
         } else if (isFailed) {
             if (window.DispatchCooldownManager) {
                 window.DispatchCooldownManager.clearCooldown(rec.rel_path, rec.target_id);
@@ -211,7 +211,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
                     <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
-                    <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" disabled title="正在重新发布推流中..."><span class="spinner-gear">⚙️</span></button>
+                    <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" disabled title="正在重新发布推流中..."><span class="spinner-spin">🔄</span></button>
                 </div>
             `;
         } else if (isFailed) {
@@ -418,16 +418,16 @@ window.retrySingleLedgerTask = async function (relPath, targetId, langCode = 'zh
     // 1. 瞬态交互反馈 (禁用按钮、显示转圈与重发态)
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-gear">⚙️</span>';
+        btn.innerHTML = '<span class="spinner-spin">🔄</span>';
         btn.title = '正在重新发布中...';
     }
     if (diagBtn) {
         diagBtn.disabled = true;
-        diagBtn.innerHTML = '<span class="spinner-gear">⚙️</span> 正在发布...';
+        diagBtn.innerHTML = '<span class="spinner-spin">🔄</span> 正在发布...';
     }
     if (badgeEl) {
         badgeEl.className = 'dispatch-status-badge is-running';
-        badgeEl.innerHTML = '<span class="spinner-gear">⚙️</span> 正在重发...';
+        badgeEl.innerHTML = '<span class="spinner-spin">🔄</span> 正在重发...';
     }
     if (row) {
         row.classList.add('is-running-row');
@@ -506,15 +506,15 @@ window.republishSingleSyndicationDoc = async function (relPath, targetId, langCo
         window.startDispatchLedgerPolling();
     }
 
-    // 1. 瞬态交互反馈 (禁用按钮、显示齿轮转圈与推流中状态)
+    // 1. 瞬态交互反馈 (禁用按钮、显示旋转刷新与推流中状态)
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-gear">⚙️</span>';
+        btn.innerHTML = '<span class="spinner-spin">🔄</span>';
         btn.title = '正在重新发布推流中...';
     }
     if (badgeEl) {
         badgeEl.className = 'dispatch-status-badge is-running';
-        badgeEl.innerHTML = '<span class="spinner-gear">⚙️</span> 正在推送...';
+        badgeEl.innerHTML = '<span class="spinner-spin">🔄</span> 正在推送...';
     }
     if (row) {
         row.classList.add('is-running-row');
