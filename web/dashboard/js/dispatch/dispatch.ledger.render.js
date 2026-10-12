@@ -197,7 +197,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 window.DispatchCooldownManager.clearCooldown(rec.rel_path, rec.target_id);
             }
             const retryCount = rec.retry_count || 0;
-            statusBadgeHtml = `<span class="dispatch-status-badge is-failed" title="${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''}</span>`;
+            statusBadgeHtml = `<span class="dispatch-status-badge is-failed" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" style="cursor: pointer;" title="发布受阻，点击就地展开故障诊断与自愈指南：${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''} 🔍</span>`;
         } else if (rec.is_stale) {
             statusBadgeHtml = `<span class="dispatch-status-badge is-stale" onclick="if(typeof window.openDispatchDiffModal==='function') window.openDispatchDiffModal('${safePath}', '${targetId}', '${langCode}', '${chMeta.name}');" style="cursor: pointer;" title="本地原稿有新修改，点击查看改动差异与决策">🟡 待更新 🔍</span>`;
         } else {
@@ -209,6 +209,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
         if (isRunning) {
             actionsHtml = `
                 <div class="ledger-actions-cell">
+                    <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
                     <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
                     <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" disabled title="正在重新发布推流中..."><span class="spinner-gear">⚙️</span></button>
                 </div>
@@ -216,8 +217,8 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
         } else if (isFailed) {
             actionsHtml = `
                 <div class="ledger-actions-cell">
-                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
+                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
                     <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" onclick="window.retrySingleLedgerTask('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}', '${diagRowId}')" title="立即自愈重发当前任务"><span>🔄</span></button>
                 </div>
             `;
