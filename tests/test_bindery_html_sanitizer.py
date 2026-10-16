@@ -11,7 +11,6 @@ Illacme Plenipes - Test Suite for Bindery HTML Sanitizer & Container Unwrapper
 """
 
 import os
-import pytest
 from core.bindery.html_sanitizer import HtmlSanitizer
 from core.adapters.egress.ebook.docx import DocxBookAdapter
 

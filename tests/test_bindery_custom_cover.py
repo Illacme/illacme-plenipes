@@ -4,7 +4,6 @@
 验证自定义封面上传接口、解码注入电子书管线，以及阅读器 M 快捷键展开/收起目录导航树。
 """
 
-import base64
 import os
 import pytest
 from fastapi.testclient import TestClient

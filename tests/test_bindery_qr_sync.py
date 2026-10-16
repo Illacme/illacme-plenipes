@@ -9,7 +9,6 @@
 4. 前端 vault.bindery.qr.js 在 Node 沙箱中的真实 DOM 拓扑与交互闭环
 """
 
-import os
 import subprocess
 import pytest
 from fastapi.testclient import TestClient

@@ -1,4 +1,4 @@
-window.currentDispatchMode = window.currentDispatchMode || 'hosting';
+window.currentDispatchMode = window.currentDispatchMode || 'shelf';
 window.currentDispatchSubTab = 'ledger';
 const _isHostingTarget = (t) => {
     if (!t) return false;
@@ -66,16 +66,9 @@ window.startDispatchLedgerPolling = function () {
                             window._dispatchActiveRunningSet.delete(key);
                             window._dispatchTaskStartTimes.delete(key);
                             window._dispatchRecentlyCompletedSet.add(key);
-                            setTimeout(() => {
-                                if (window._dispatchRecentlyCompletedSet) {
-                                    window._dispatchRecentlyCompletedSet.delete(key);
-                                }
-                            }, 4000);
-                            if (typeof showToast === 'function') {
-                                showToast(`✅ [${(r.target_id || '').toUpperCase()}] 广播推流完成，账本已同步！`, 'success');
-                            }
+                            setTimeout(() => { if (window._dispatchRecentlyCompletedSet) window._dispatchRecentlyCompletedSet.delete(key); }, 4000);
+                            if (typeof showToast === 'function') showToast(`✅ [${(r.target_id || '').toUpperCase()}] 广播推流完成，账本已同步！`, 'success');
                         } else if (elapsed > 40000) {
-                            // 超时 40 秒安全保底解冻
                             window._dispatchActiveRunningSet.delete(key);
                             window._dispatchTaskStartTimes.delete(key);
                         }
@@ -93,32 +86,32 @@ window.startDispatchLedgerPolling = function () {
 
             if (window.currentDispatchMode === 'hosting') {
                 if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
-            } else {
+            } else if (window.currentDispatchMode === 'social') {
                 const unified = window.buildUnifiedDispatchTasks(res);
                 if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
             }
 
-            if (!isPublishing && window._dispatchActiveRunningSet.size === 0) {
-                window.stopDispatchLedgerPolling();
-            }
-        } catch (e) {
-            console.warn('[Dispatch Polling] Skipped:', e);
-        }
+            if (!isPublishing && window._dispatchActiveRunningSet.size === 0) window.stopDispatchLedgerPolling();
+        } catch (e) { console.warn('[Dispatch Polling] Skipped:', e); }
     }, 2000);
 };
 
 window.stopDispatchLedgerPolling = function () {
-    if (window._dispatchLedgerPollingTimer) {
-        clearInterval(window._dispatchLedgerPollingTimer);
-        window._dispatchLedgerPollingTimer = null;
-    }
+    if (window._dispatchLedgerPollingTimer) { clearInterval(window._dispatchLedgerPollingTimer); window._dispatchLedgerPollingTimer = null; }
 };
 
 /**
  * 核心加载入口：供 window.loadViewData('tasks') 调用
  */
 window.loadDispatchCenter = async function (subTab) {
-    if (subTab) window.currentDispatchSubTab = subTab;
+    if (subTab) {
+        if (subTab === 'shelf' || subTab === 'hosting') window.currentDispatchMode = subTab;
+        else if (subTab === 'social' || subTab === 'dispatch') window.currentDispatchMode = 'social';
+        else if (subTab === 'deadletter' || subTab === 'ledger') {
+            window.currentDispatchMode = 'social';
+            window.currentDispatchSubTab = subTab;
+        }
+    }
     const container = document.getElementById('view-tasks');
     if (!container) return;
 
@@ -138,15 +131,19 @@ window.loadDispatchCenter = async function (subTab) {
                 badgeSocial.innerText = `${sTotal}`;
             }
 
-            // 保持当前模式渲染（确保初次进入托管模式能自动加载全站部署中心数据）
-            const targetMode = window.currentDispatchMode || 'hosting';
+            // 更新网站托管徽章数字 (无论先进入哪个 Tab，均统一直观展示全站发布批次总次数)
+            const badgeHosting = document.getElementById('badge-hosting-ready');
+            if (badgeHosting) {
+                if (typeof res.hosting_total === 'number') badgeHosting.innerText = String(res.hosting_total);
+                else if (typeof window.updateHostingBadge === 'function') window.updateHostingBadge();
+            }
+
+            // 保持目标模式渲染（确保外部跳转子 Tab 时能准确切换并加载对应中心数据）
+            const targetMode = window.currentDispatchMode || 'shelf';
             window.switchDispatchMode(targetMode, targetMode === 'hosting');
 
-            if (res.is_publishing || window._dispatchActiveRunningSet.size > 0) {
-                window.startDispatchLedgerPolling();
-            } else {
-                window.stopDispatchLedgerPolling();
-            }
+            if (res.is_publishing || window._dispatchActiveRunningSet.size > 0) window.startDispatchLedgerPolling();
+            else window.stopDispatchLedgerPolling();
         }
     } catch (err) {
         console.error("🛑 加载全域发布大厅失败:", err);
@@ -154,48 +151,63 @@ window.loadDispatchCenter = async function (subTab) {
 };
 
 /**
- * 切换全站托管部署 / 社交媒体分发双模式
+ * 切换书架出版物 / 全站托管部署 / 社交媒体分发三模式
  */
 window.switchDispatchMode = function (mode, reloadHosting = true) {
-    window.currentDispatchMode = mode || 'hosting';
+    if (mode === 'dispatch') mode = 'social';
+    window.currentDispatchMode = mode || 'shelf';
+    const isShelf = (window.currentDispatchMode === 'shelf');
     const isHosting = (window.currentDispatchMode === 'hosting');
-    const tabH = document.getElementById('tab-dispatch-hosting') || document.getElementById('pill-dispatch-hosting');
-    const tabS = document.getElementById('tab-dispatch-social') || document.getElementById('pill-dispatch-social');
-    if (tabH) tabH.classList.toggle('active', isHosting);
-    if (tabS) tabS.classList.toggle('active', !isHosting);
+    const isSocial = (window.currentDispatchMode === 'social');
 
-    const viewH = document.getElementById('dispatch-hosting-view'), viewS = document.getElementById('dispatch-social-view');
+    const tabB = document.getElementById('tab-dispatch-shelf');
+    const tabH = document.getElementById('tab-dispatch-hosting');
+    const tabS = document.getElementById('tab-dispatch-social');
+    if (tabB) tabB.classList.toggle('active', isShelf);
+    if (tabH) tabH.classList.toggle('active', isHosting);
+    if (tabS) tabS.classList.toggle('active', isSocial);
+
+    const viewB = document.getElementById('dispatch-shelf-view');
+    const viewH = document.getElementById('dispatch-hosting-view');
+    const viewS = document.getElementById('dispatch-social-view');
+    if (viewB) viewB.style.display = isShelf ? 'block' : 'none';
     if (viewH) viewH.style.display = isHosting ? 'block' : 'none';
-    if (viewS) viewS.style.display = !isHosting ? 'block' : 'none';
+    if (viewS) viewS.style.display = isSocial ? 'block' : 'none';
 
     const metricGrid = document.getElementById('dispatch-metric-container');
-    if (metricGrid) metricGrid.style.display = isHosting ? 'none' : 'grid';
+    if (metricGrid) metricGrid.style.display = isSocial ? 'grid' : 'none';
 
     const dock = document.getElementById('dispatch-pagination-dock');
-    if (dock) dock.style.display = (!isHosting && window._dispatchPagination && window._dispatchPagination.total > 0) ? 'flex' : 'none';
+    if (dock) dock.style.display = (isSocial && window._dispatchPagination && window._dispatchPagination.total > 0) ? 'flex' : 'none';
 
-    const btnAct = document.getElementById('btn-dispatch-primary-action');
-    if (btnAct) btnAct.innerHTML = isHosting ? '<span class="btn-icon">🚀</span> 部署当前整站' : '<span class="btn-icon">🚀</span> 触发全域发布';
-
-    if (isHosting) {
+    if (isShelf) {
+        if (typeof window.loadDispatchShelfCenter === 'function') window.loadDispatchShelfCenter();
+    } else if (isHosting) {
         if (reloadHosting && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     } else {
         const unified = window.buildUnifiedDispatchTasks(window._lastDispatchOverview);
         if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
+        if (window.currentDispatchSubTab && typeof window.switchDispatchSubTab === 'function') {
+            window.switchDispatchSubTab(window.currentDispatchSubTab);
+        }
     }
 };
 
 window.refreshCurrentDispatchView = function () {
+    if (window.currentDispatchMode === 'shelf' && typeof window.loadDispatchShelfCenter === 'function') window.loadDispatchShelfCenter();
     if (window.currentDispatchMode === 'hosting' && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     window.loadDispatchCenter();
 };
 
 window.onDispatchPrimaryAction = function () {
-    if (window.currentDispatchMode === 'hosting') {
-        if (typeof window.triggerFullHostingDeploy === 'function') window.triggerFullHostingDeploy();
-    } else if (typeof window.triggerPublish === 'function') {
-        window.triggerPublish(false);
-    }
+    if (window.currentDispatchMode === 'hosting' && typeof window.triggerFullHostingDeploy === 'function') window.triggerFullHostingDeploy();
+    else if (typeof window.triggerPublish === 'function') window.triggerPublish(false);
+};
+
+window.onDispatchPluginConfig = function () {
+    const mode = window.currentDispatchMode || 'shelf';
+    const targetCat = mode === 'hosting' ? 'hosting' : (mode === 'social' ? 'publisher' : 'ebook');
+    if (typeof window.showView === 'function') window.showView('plugins', targetCat);
 };
 
 window.buildUnifiedDispatchTasks = function (overview) {
@@ -261,25 +273,21 @@ window.renderActivePipelineZone = function (data) {
         return;
     }
     zone.style.display = 'block';
-    zone.innerHTML = `
-        <div class="active-pipeline-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.1rem; animation: dispatchPulse 1.5s infinite;">⚡</span>
-                    <div>
-                        <span style="font-weight: 800; font-size: 0.95rem; color: var(--neon-cyan);">发布任务正在执行中</span>
-                        <span style="font-size: 0.76rem; color: var(--text-muted); margin-left: 8px;">(多渠道内容正在同步推送)</span>
-                    </div>
-                </div>
-                <button class="secondary-btn danger" onclick="if(typeof window.abortSync==='function') window.abortSync();" style="padding: 5px 14px; font-size: 0.8rem;">🛑 紧急中止当前发布</button>
+    zone.innerHTML = `<div class="active-pipeline-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.1rem; animation: dispatchPulse 1.5s infinite;">⚡</span>
+                <div><span style="font-weight: 800; font-size: 0.95rem; color: var(--neon-cyan);">发布任务正在执行中</span><span style="font-size: 0.76rem; color: var(--text-muted); margin-left: 8px;">(多渠道内容正在同步推送)</span></div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
-                <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 1. 原稿排版与清洗</div>
-                <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 2. AI 译文与词库对齐</div>
-                <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 3. 静态装帧主题构建</div>
-                <div style="background: rgba(0, 240, 255, 0.22); border: 1px solid var(--neon-cyan); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--neon-cyan); font-weight: 700; animation: dispatchPulse 2s infinite;">⏳ 4. 全渠道并发推送中...</div>
-            </div>
-        </div>`;
+            <button class="secondary-btn danger" onclick="if(typeof window.abortSync==='function') window.abortSync();" style="padding: 5px 14px; font-size: 0.8rem;">🛑 紧急中止当前发布</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
+            <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 1. 原稿排版与清洗</div>
+            <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 2. AI 译文与词库对齐</div>
+            <div style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--text-main);">✅ 3. 静态装帧主题构建</div>
+            <div style="background: rgba(0, 240, 255, 0.22); border: 1px solid var(--neon-cyan); border-radius: 6px; padding: 8px 10px; font-size: 0.76rem; color: var(--neon-cyan); font-weight: 700; animation: dispatchPulse 2s infinite;">⏳ 4. 全渠道并发推送中...</div>
+        </div>
+    </div>`;
 };
 
 window.switchDispatchSubTab = function (tabName) {

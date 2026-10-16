@@ -187,3 +187,60 @@ window.triggerDeleteDirectory = async () => {
         }
     });
 };
+
+// 🖼️ [文库封面悬停微端大图预检] 浮动毛玻璃大图控制器
+let _vaultCoverHoverTimer = null;
+let _vaultCoverHoverPopover = null;
+
+window.showVaultCoverHoverPreview = function (triggerEl, coverUrl, title) {
+    if (!coverUrl) return;
+    clearTimeout(_vaultCoverHoverTimer);
+    _vaultCoverHoverTimer = setTimeout(() => {
+        if (!_vaultCoverHoverPopover) {
+            _vaultCoverHoverPopover = document.createElement('div');
+            _vaultCoverHoverPopover.id = 'vault-cover-hover-popover';
+            _vaultCoverHoverPopover.className = 'vault-cover-hover-popover';
+            document.body.appendChild(_vaultCoverHoverPopover);
+        }
+        const safeTitle = (title || '文章封面').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        _vaultCoverHoverPopover.innerHTML = `
+            <div class="hover-popover-media">
+                <img src="${coverUrl}" alt="封面大图" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" />
+                <span class="hover-popover-badge">✨ 封面大图预览</span>
+            </div>
+            <div class="hover-popover-footer">
+                <div class="hover-popover-title" title="${safeTitle}">${safeTitle}</div>
+                <div class="hover-popover-meta">
+                    <span>💡 点击缩略图可更换或生成封面</span>
+                    <span class="meta-tag">16:9 比例</span>
+                </div>
+            </div>
+        `;
+        const rect = triggerEl.getBoundingClientRect();
+        const popoverWidth = 280;
+        const popoverHeight = 210;
+        
+        let left = rect.right + 14;
+        if (left + popoverWidth > window.innerWidth - 16) {
+            left = Math.max(16, rect.left - popoverWidth - 14);
+        }
+        
+        let top = rect.top - 20;
+        if (top + popoverHeight > window.innerHeight - 16) {
+            top = Math.max(16, window.innerHeight - popoverHeight - 16);
+        }
+        if (top < 16) top = 16;
+        
+        _vaultCoverHoverPopover.style.left = `${left}px`;
+        _vaultCoverHoverPopover.style.top = `${top}px`;
+        _vaultCoverHoverPopover.classList.add('visible');
+    }, 120);
+};
+
+window.hideVaultCoverHoverPreview = function () {
+    clearTimeout(_vaultCoverHoverTimer);
+    if (_vaultCoverHoverPopover) _vaultCoverHoverPopover.classList.remove('visible');
+};
+window.addEventListener('scroll', () => window.hideVaultCoverHoverPreview(), true);
+window.addEventListener('hashchange', () => window.hideVaultCoverHoverPreview());
+

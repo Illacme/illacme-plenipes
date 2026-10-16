@@ -10,17 +10,14 @@ import os
 import sys
 import socket
 import tempfile
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import patch
 
 from core.utils.frozen_paths import FrozenPathResolver
 from desktop.app import (
     acquire_singleton_lock,
     release_singleton_lock,
     wait_for_api_ready,
-    _launch_native_window,
-    SINGLETON_PORT,
-    API_PORT
+    _launch_native_window
 )
 from desktop.packager import DesktopPackager
 

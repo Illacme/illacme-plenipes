@@ -7,9 +7,8 @@ EPUB 阅读器真实 DOM 划线、就地悬浮操作气泡、笔记重现还原�
 
 import os
 import subprocess
-import pytest
 from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
-from core.adapters.egress.ebook.epub_reader_annotator import get_epub_annotator_css, get_epub_annotator_js
+from core.adapters.egress.ebook.epub_reader_annotator import get_epub_annotator_css
 from core.adapters.egress.ebook.epub_reader_annotator_dom_js import get_epub_annotator_dom_js
 
 

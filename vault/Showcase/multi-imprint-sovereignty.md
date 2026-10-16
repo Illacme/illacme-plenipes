@@ -12,7 +12,7 @@ tags:
 - MultiBrand
 - Sovereignty
 - Architecture
-cover: /api/design/assets/covers/cover_5663963c5918.jpg
+cover: /api/design/assets/covers/gen_f2aa844df89c_16x9.jpg
 ---
 # 🏷️ 多品牌主权矩阵
 

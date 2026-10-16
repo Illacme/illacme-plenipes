@@ -8,11 +8,9 @@ import os
 import zipfile
 import tempfile
 import xml.etree.ElementTree as ET
-import pytest
 
 from core.bindery.image_packager import ImagePackager
 from core.bindery.book_assembler import BookAssembler
-from core.adapters.egress.ebook.epub import EpubAdapter
 
 
 def test_obsidian_image_syntax_healing():
@@ -94,7 +92,7 @@ def test_html_extract_and_heal_images():
         with open(img_file, "wb") as f:
             f.write(b"PNG_DATA")
 
-        html_in = f'<p>架构设计图如下：</p><p><img src="architecture.png" alt="Arch" /></p>'
+        html_in = '<p>架构设计图如下：</p><p><img src="architecture.png" alt="Arch" /></p>'
         healed_html, assets = ImagePackager.extract_and_heal_images(html_in, doc_path, vault_dir)
 
         assert len(assets) == 1

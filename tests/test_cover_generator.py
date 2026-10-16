@@ -6,7 +6,6 @@
 
 import os
 import tempfile
-import pytest
 from core.bindery.cover_generator import CoverGenerator, COVER_STYLES
 
 

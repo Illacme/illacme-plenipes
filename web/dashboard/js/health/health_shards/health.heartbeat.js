@@ -19,15 +19,19 @@ window.refreshGovernanceContext = async () => {
         if (!data || data.error) {
             heartbeat.classList.add('blocked');
             heartbeat.title = "系统体征：断开或阻塞 (Blocked / Offline)";
+            heartbeat.setAttribute('data-tip', '系统基座：断开或阻塞 (异常)');
         } else if (data.onboarding_required) {
             heartbeat.classList.add('warning');
             heartbeat.title = "系统体征：文库未对正 (Warning: Onboarding Required)";
+            heartbeat.setAttribute('data-tip', '系统基座：文库未对正 (待配置)');
         } else if (data.ai && data.ai.status === 'degraded') {
             heartbeat.classList.add('warning');
             heartbeat.title = "系统体征：算力降级 (Warning: AI Degraded)";
+            heartbeat.setAttribute('data-tip', '系统基座：算力降级 (离线模拟)');
         } else {
             heartbeat.classList.add('healthy');
             heartbeat.title = "系统体征：健康 (Healthy)";
+            heartbeat.setAttribute('data-tip', '系统基座：健康守护中 (点击配置)');
         }
     }
 

@@ -4,7 +4,6 @@
 🧪 [V126.0] Tests for Dispatch Ledger Doc Diff API
 """
 
-import os
 from fastapi.testclient import TestClient
 from services.api.server import app
 import core.runtime.engine_singleton as singleton

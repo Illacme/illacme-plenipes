@@ -6,11 +6,9 @@ Illacme Plenipes - Polyglot Matrix WebBook Test Suite
 
 import os
 import tempfile
-import pytest
 
 from core.bindery.polyglot_aligner import PolyglotAligner
 from core.bindery.book_assembler import BookAssembler
-from core.adapters.egress.ebook.webbook import WebBookAdapter
 
 
 def test_polyglot_aligner_block_split():

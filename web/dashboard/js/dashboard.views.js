@@ -29,7 +29,7 @@ const VIEW_GROUP_MAP = {
     design: 'nav-group-governance',
     tower: 'nav-group-telemetry',
     analytics: 'nav-group-telemetry',
-    tasks: 'nav-group-telemetry'
+    tasks: null
 };
 
 window.switchViewDOM = (viewId) => {

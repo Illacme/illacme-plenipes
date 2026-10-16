@@ -22,8 +22,69 @@
     color: var(--text-bright) !important;
 }
 
-.swal2-html-container {
+.swal2-html-container,
+.sovereign-confirm-msg {
     color: var(--text-dim) !important;
+}
+
+/* 🛡️ 全局 SweetAlert2 统一行动按钮 (Actions & Cancel Button) 主题与明暗自适应 */
+.swal2-actions {
+    gap: 12px !important;
+    margin-top: 18px !important;
+}
+
+.swal2-popup .swal2-cancel.sovereign-swal-cancel-btn,
+.swal2-popup .swal2-cancel.swal2-styled {
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: var(--text-bright, #334155) !important;
+    border: 1px solid var(--glass-border, rgba(148, 163, 184, 0.3)) !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    padding: 9px 22px !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.swal2-popup .swal2-cancel.sovereign-swal-cancel-btn:hover,
+.swal2-popup .swal2-cancel.swal2-styled:hover {
+    background: rgba(148, 163, 184, 0.25) !important;
+    color: var(--text-bright, #0f172a) !important;
+    border-color: var(--glass-border, rgba(148, 163, 184, 0.5)) !important;
+    transform: translateY(-1px);
+}
+
+.swal2-popup .swal2-confirm.sovereign-swal-confirm-btn,
+.swal2-popup .swal2-confirm.swal2-styled {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    padding: 9px 22px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme="light"] .swal2-popup .swal2-cancel.sovereign-swal-cancel-btn,
+[data-theme="light"] .swal2-popup .swal2-cancel.swal2-styled {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .swal2-popup .swal2-cancel.sovereign-swal-cancel-btn:hover,
+[data-theme="light"] .swal2-popup .swal2-cancel.swal2-styled:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] .sovereign-confirm-msg,
+[data-theme="light"] .swal2-html-container {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .swal2-popup .swal2-title {
+    color: #0f172a !important;
 }
 
 .swal2-backdrop {

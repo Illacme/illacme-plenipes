@@ -201,8 +201,8 @@
             <div class="glass-panel syndicate-asset-picker-card">
                 <div class="syndicate-asset-picker-header">
                     <div class="syndicate-asset-picker-title-group">
-                        <div class="syndicate-asset-picker-title">🗄️ 挑选视觉物权资产为封面</div>
-                        <div class="syndicate-asset-picker-desc">点击任意历史生成或沉淀的图像资产，即时绑定为本篇分发封面。</div>
+                        <div class="syndicate-asset-picker-title">🗄️ 挑选封面图片</div>
+                        <div class="syndicate-asset-picker-desc">点击任意图库图片，即可一键设为分发封面。</div>
                     </div>
                     <div class="syndicate-asset-picker-actions">
                         <button type="button" class="mini-btn syndicate-asset-picker-studio-btn" onclick="window.jumpToStudioFromSyndicate()">🪄 前往生图定制</button>
@@ -211,7 +211,7 @@
                 </div>
                 <div class="syndicate-asset-picker-scroll-view" id="syndicate-asset-picker-scroll-view">
                     <div id="syndicate-asset-picker-grid" class="syndicate-asset-picker-grid">
-                        <div class="syndicate-asset-picker-loading">正在加载资产账本...</div>
+                        <div class="syndicate-asset-picker-loading">正在加载媒体图库...</div>
                     </div>
                 </div>
                 <div id="syndicate-asset-picker-pagination" class="syndicate-asset-picker-pagination"></div>
@@ -232,19 +232,19 @@
             const totalPages = (res && typeof res.total_pages === 'number') ? res.total_pages : Math.max(1, Math.ceil(total / pageSize));
 
             if (assets.length === 0) {
-                grid.innerHTML = `<div class="syndicate-asset-picker-empty"><div class="syndicate-asset-picker-empty-icon">📭</div><div class="syndicate-asset-picker-empty-title">视觉资产库暂无已沉淀内容</div><div class="syndicate-asset-picker-empty-desc">前往设计中心生成或上传海报，沉淀后即可在此一键复用为各平台封面。</div><button type="button" class="mini-btn syndicate-asset-picker-empty-btn" onclick="window.closeSyndicateAssetPickerModal();window.jumpToStudioFromSyndicate();">🪄 前往生图工作台定制</button></div>`;
+                grid.innerHTML = `<div class="syndicate-asset-picker-empty"><div class="syndicate-asset-picker-empty-icon">📭</div><div class="syndicate-asset-picker-empty-title">媒体图库暂无封面图片</div><div class="syndicate-asset-picker-empty-desc">前往设计中心生成或上传图片，即可在此设为封面。</div><button type="button" class="mini-btn syndicate-asset-picker-empty-btn" onclick="window.closeSyndicateAssetPickerModal();window.jumpToStudioFromSyndicate();">🪄 前往生图工作台定制</button></div>`;
                 if (pag) pag.innerHTML = '';
                 return;
             }
             grid.innerHTML = assets.map(a => {
-                const eng = ((a.engine || a.strategy || '物权').replace(/^ai_/, '')).toUpperCase();
+                const eng = ((a.engine || a.strategy || '图库').replace(/^ai_/, '')).toUpperCase();
                 return `<div class="glass-panel syndicate-asset-item doc-cover-item" onclick="window.onSelectAssetForCover('${a.url}','${a.engine}',this)">
                     <div class="skeleton-shimmer syndicate-asset-thumb-box">
                         <img src="${a.url}" class="syndicate-asset-img" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" />
                         <div class="syndicate-asset-engine-tag">${eng}</div>
                     </div>
                     <div class="syndicate-asset-meta-row">
-                        <span class="syndicate-asset-engine-name" title="${_esc(a.engine || '视觉物权')}">${_esc(a.engine || '视觉物权')}</span>
+                        <span class="syndicate-asset-engine-name" title="${_esc(a.engine || '媒体图库')}">${_esc(a.engine || '媒体图库')}</span>
                         <span class="syndicate-asset-date">${(a.created_at || '').substring(5, 16)}</span>
                     </div>
                 </div>`;
@@ -271,13 +271,13 @@
         _currentCoverUrl = assetUrl; _currentMode = 'custom';
         if (window.currentSyndicateCover) {
             window.currentSyndicateCover.url = assetUrl; window.currentSyndicateCover.mode = 'custom';
-            window.currentSyndicateCover.strategy = `资产库 (${engineName || '物权'})`; window.currentSyndicateCover.offset = 0;
+            window.currentSyndicateCover.strategy = `图库 (${engineName || '默认'})`; window.currentSyndicateCover.offset = 0;
             window.currentSyndicateCover.aspect_ratio = _currentAspectRatio;
         }
         const imgEl = document.getElementById('syndicate-cover-thumb-img'), loadingEl = document.getElementById('syndicate-cover-loading');
         if (imgEl) { imgEl.src = `${assetUrl}?t=${Date.now()}`; if (loadingEl) loadingEl.style.display = 'none'; imgEl.style.display = 'block'; }
         const badgeEl = document.getElementById('syndicate-cover-badge'), picker = document.getElementById('syndicate-cover-mode-picker');
-        if (badgeEl) badgeEl.innerText = `生效: 资产库 (${engineName || '物权'})`;
+        if (badgeEl) badgeEl.innerText = `生效: 图库 (${engineName || '默认'})`;
         if (picker) picker.value = 'asset_picker';
         window.closeSyndicateAssetPickerModal();
         if (typeof window.showToast === 'function') window.showToast(`已选定资产作为本篇封面`, 'success');

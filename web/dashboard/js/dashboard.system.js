@@ -6,7 +6,8 @@
  */
 
 const getParentCat = (cat) => {
-    if (['imprints', 'themes', 'modes'].includes(cat)) return 'layout';
+    if (['imprints', 'themes', 'modes', 'image_policy'].includes(cat)) return 'layout';
+    if (['identity', 'compliance', 'storage', 'engine'].includes(cat)) return 'general';
     if (['localization', 'block_rules', 'glossary', 'translation_style'].includes(cat)) return 'localization_gov';
     if (['slug_settings', 'route_matrix'].includes(cat)) return 'dissemination_routing';
     if (['security', 'guardrails'].includes(cat)) return 'security_audit';
@@ -103,7 +104,7 @@ window.loadSettings = async (targetCat = 'layout') => {
     }
 
     renderSettingsCategory(targetCat);
-    if (targetCat === 'general' && typeof window.refreshCacheStats === 'function') {
+    if ((targetCat === 'general' || targetCat === 'storage') && typeof window.refreshCacheStats === 'function') {
         window.refreshCacheStats();
     }
     if (window.feBus) {
@@ -127,7 +128,12 @@ window.renderSettingsCategory = (cat) => {
 
     let actualCat = cat;
     if (cat === 'layout') actualCat = 'imprints';
-    else if (cat === 'general' || ['identity', 'compliance', 'storage', 'engine'].includes(cat)) actualCat = 'general';
+    else if (['identity', 'compliance', 'storage', 'engine'].includes(cat)) {
+        window.currentActiveGeneralSubTab = cat;
+        actualCat = 'general';
+    } else if (cat === 'general') {
+        actualCat = 'general';
+    }
     else if (cat === 'localization_gov' || cat === 'i18n_routing') actualCat = 'localization';
     else if (cat === 'dissemination_routing') actualCat = 'slug_settings';
     else if (cat === 'security_audit') actualCat = 'security';
@@ -184,6 +190,21 @@ window.renderSettingsCategory = (cat) => {
         const btn = document.querySelector(`#general-sub-tab-bar .sub-tab-btn[onclick*="${activeSub}"]`);
         if (typeof window.switchGeneralSubTab === 'function') {
             window.switchGeneralSubTab(activeSub, btn);
+        }
+        if (activeSub === 'storage') {
+            setTimeout(() => {
+                const scrollContainer = document.querySelector('#view-settings .tab-content-area');
+                const cacheHub = document.querySelector('#granular-cache-hub-panel') || document.querySelector('.settings-group.mt-large');
+                if (scrollContainer && cacheHub) {
+                    const cRect = scrollContainer.getBoundingClientRect();
+                    const hRect = cacheHub.getBoundingClientRect();
+                    const offset = hRect.top - cRect.top;
+                    scrollContainer.scrollTo({
+                        top: Math.max(0, scrollContainer.scrollTop + offset - 20),
+                        behavior: 'smooth'
+                    });
+                }
+            }, 320);
         }
     } else if (actualCat === 'security') {
         let activeSub = window.currentActiveSecuritySubTab || 'policy';

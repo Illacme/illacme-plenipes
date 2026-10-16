@@ -874,3 +874,138 @@ input[type="range"]::-webkit-slider-thumb:hover {
     transform-origin: center center;
     vertical-align: middle;
 }
+
+/* ==========================================================================
+   🖼️ 视觉物权封面选择与检视弹窗 (Doc Cover Picker & Studio Detail Modal Base)
+   ========================================================================== */
+.doc-cover-modal-backdrop {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+}
+.doc-cover-modal-card {
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+    background: #0b0f19;
+}
+.doc-cover-modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 242, 254, 0.03);
+}
+.doc-cover-modal-title {
+    color: #ffffff;
+}
+.doc-cover-status-bar {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.doc-cover-thumb-wrap {
+    background: #05070f;
+}
+.doc-cover-pagination {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.studio-detail-modal-backdrop {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+}
+.studio-detail-modal-card {
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95);
+    background: #0c1017;
+}
+.studio-detail-modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+}
+.studio-detail-modal-title {
+    color: #ffffff;
+}
+.studio-detail-modal-body {
+    background: radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.05), transparent 70%);
+}
+.studio-detail-modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* ==========================================================================
+   🖼️ 原稿列表封面悬浮大图浮窗 (Vault Cover Hover Popover Base)
+   ========================================================================== */
+.vault-cover-hover-popover {
+    position: fixed;
+    z-index: 100001;
+    pointer-events: none;
+    width: 280px;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(11, 15, 25, 0.96);
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 242, 254, 0.15);
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vault-cover-hover-popover.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.vault-cover-hover-popover .hover-popover-media {
+    width: 100%;
+    height: 156px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    background: #05070f;
+}
+
+.vault-cover-hover-popover .hover-popover-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.vault-cover-hover-popover .hover-popover-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #00f2fe;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+}
+
+.vault-cover-hover-popover .hover-popover-footer {
+    padding: 8px 4px 2px;
+}
+
+.vault-cover-hover-popover .hover-popover-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #ffffff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vault-cover-hover-popover .hover-popover-meta {
+    margin-top: 3px;
+    font-size: 0.66rem;
+    color: var(--text-dim, rgba(255, 255, 255, 0.5));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vault-cover-hover-popover .meta-tag {
+    color: #00f2fe;
+    font-size: 0.64rem;
+}

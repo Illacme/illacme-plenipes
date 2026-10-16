@@ -7,8 +7,6 @@ Illacme Plenipes - Single-File WebBook EBook Test Suite
 import os
 import tempfile
 import base64
-import pytest
-from fastapi.testclient import TestClient
 
 from core.adapters.egress.ebook import EBookRegistry, BaseEBookAdapter
 from core.adapters.egress.ebook.webbook import WebBookAdapter
@@ -46,7 +44,7 @@ def test_webbook_adapter_self_contained_packaging():
                 "order": 1,
                 "title": "第一章：数字出版主权",
                 "slug": "chapter-1",
-                "html_body": f'<p>正文内容如下：</p><p><img src="../images/img_test_diagram.png" alt="图示" /></p>',
+                "html_body": '<p>正文内容如下：</p><p><img src="../images/img_test_diagram.png" alt="图示" /></p>',
                 "assets": [
                     {
                         "target_name": "img_test_diagram.png",

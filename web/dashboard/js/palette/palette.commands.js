@@ -41,7 +41,7 @@
             },
             {
                 id: 'publish',
-                title: '🚀 全域发布 (Trigger Full Syndication)',
+                title: '🚀 全站发布 (Trigger Full Site Publish)',
                 icon: '🚀',
                 shortcut: 'Enter',
                 action: () => {

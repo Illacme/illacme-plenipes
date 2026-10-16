@@ -13,11 +13,20 @@
  */
 function _buildStatsStrip(ctx) {
     var imprints  = (window.settingsData && window.settingsData._imprints) || [];
-    var docCount  = (ctx && ctx.vault && typeof ctx.vault.doc_count === 'number') ? ctx.vault.doc_count : 0;
-    var langCount = (ctx && ctx.i18n && Array.isArray(ctx.i18n.targets)) ? ctx.i18n.targets.length : 0;
+    var docCount  = (ctx && ctx.vault && typeof ctx.vault.doc_count === 'number')
+        ? ctx.vault.doc_count
+        : ((window.settingsData && Array.isArray(window.settingsData._vault_files)) ? window.settingsData._vault_files.length : 0);
+    var langCount = (ctx && ctx.i18n && Array.isArray(ctx.i18n.targets))
+        ? ctx.i18n.targets.length
+        : ((window.settingsData && window.settingsData.i18n_settings && Array.isArray(window.settingsData.i18n_settings.target_languages))
+            ? window.settingsData.i18n_settings.target_languages.length
+            : 0);
     var activeId  = (window.settingsData && window.settingsData._active_imprint) || 'default';
     var syncDone  = localStorage.getItem('sync_completed_' + activeId) === 'true' || localStorage.getItem('sync_completed') === 'true';
-    var lastPubTime = localStorage.getItem('_illacme_last_pub_' + activeId) || '今天 15:42';
+    var storedTime = localStorage.getItem('_illacme_last_pub_' + activeId) || localStorage.getItem('_illacme_last_pub');
+    var lastPubLabel = storedTime
+        ? ('上次发布: ' + storedTime)
+        : (syncDone ? '近期已完成同步' : '尚未全网发布');
 
     var docLabel = docCount === 0 ? '<span style="color: var(--neon-amber);">暂无稿件 (点击放入)</span>' : '篇原稿已就绪';
     var docClick = 'onclick="window.toggleHub(\'hide\'); window.showView(\'vault\');" style="cursor: pointer;"';
@@ -41,10 +50,10 @@ function _buildStatsStrip(ctx) {
             '<span class="lpdash-stat-value">' + langCount + ' <small>语种</small></span>' +
             '<span class="lpdash-stat-label">' + langLabel + '</span>' +
         '</div>' +
-        '<div class="lpdash-stat-item ' + (window._isPublishing ? 'is-publishing' : '') + '" onclick="window.toggleHub(\'hide\'); window.showView(\'plugins\', \'publisher\');" style="cursor: pointer;" title="点击前往全网分发渠道查看部署与同步状态">' +
+        '<div class="lpdash-stat-item ' + (window._isPublishing ? 'is-publishing' : '') + '" onclick="window.toggleHub(\'hide\'); window.showView(\'tasks\', \'hosting\');" style="cursor: pointer;" title="点击前往全网分发中心，查看网站托管与社媒同步状态">' +
             '<span class="lpdash-stat-icon">' + (window._isPublishing ? '⏳' : (syncDone ? '✅' : '📡')) + '</span>' +
             '<span class="lpdash-stat-value">' + (window._isPublishing ? '发布中' : (syncDone ? '已同步' : '待同步')) + '</span>' +
-            '<span class="lpdash-stat-label">上次发布: ' + lastPubTime + '</span>' +
+            '<span class="lpdash-stat-label">' + lastPubLabel + '</span>' +
         '</div>' +
     '</div>';
 }
@@ -101,12 +110,12 @@ function _buildQuickActions() {
                 '<p class="lpdash-action-desc">先在本机预览完整网站效果，检查排版后再正式发布。</p>' +
             '</div>' +
         '</div>' +
-        // [2] 一键全域发布 (Primary Core CTA 发光高亮)
+        // [2] 一键全站发布 (Primary Core CTA，悬停反馈)
         '<div class="lpdash-action-card primary-cta" onclick="window.toggleHub(\'hide\'); window.triggerPublish();">' +
-            '<span class="lpdash-action-icon pulse-glow">🚀</span>' +
+            '<span class="lpdash-action-icon">🚀</span>' +
             '<div class="lpdash-action-body">' +
-                '<div class="lpdash-action-title">全域发布 <span class="hot-badge">核心</span></div>' +
-                '<p class="lpdash-action-desc">一键启动完整出版流水线：翻译、构建、托管与社媒。</p>' +
+                '<div class="lpdash-action-title">全站发布 <span class="hot-badge">核心</span></div>' +
+                '<p class="lpdash-action-desc">一键启动全站出版流水线：翻译、静态构建并推流部署。</p>' +
             '</div>' +
         '</div>' +
         // [3] 原稿文库管理
@@ -152,6 +161,7 @@ function _renderDashboard(area, ctx) {
     var pipeHtml    = (typeof window._buildPipelineRow === 'function') ? window._buildPipelineRow(ctx) : '';
     var suggestHtml = (typeof window._buildSuggestions === 'function') ? window._buildSuggestions(ctx) : '';
     var actionsHtml = _buildQuickActions();
+    var pipeTitle   = (typeof window.getPipelineTitle === 'function') ? window.getPipelineTitle() : '📊 流水线透视与诊断';
 
     var autoOpen = (typeof window.shouldAutoOpenLaunchpad === 'function') ? window.shouldAutoOpenLaunchpad() : true;
 
@@ -160,7 +170,7 @@ function _renderDashboard(area, ctx) {
             statsHtml +
             '<div class="lpdash-grid-split">' +
                 '<div class="lpdash-col-diag">' +
-                    '<div class="lpdash-section-title">📊 流水线透视与诊断</div>' +
+                    '<div class="lpdash-section-title">' + pipeTitle + '</div>' +
                     '<div class="lpdash-diag-grid">' +
                         pipeHtml +
                         suggestHtml +

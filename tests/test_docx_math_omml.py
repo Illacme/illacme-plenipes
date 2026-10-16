@@ -10,9 +10,7 @@ Illacme Plenipes - Test Suite for Docx Math OMML Conversion & Academic Equations
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os
 import zipfile
-import pytest
 
 from core.bindery.math_packager import MathPackager
 from core.adapters.egress.ebook.docx import DocxBookAdapter

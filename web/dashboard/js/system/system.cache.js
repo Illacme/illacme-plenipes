@@ -237,6 +237,8 @@
                 const activeId = window.settingsData?._active_imprint || 'default';
                 localStorage.removeItem('sync_completed');
                 localStorage.removeItem(`sync_completed_${activeId}`);
+                localStorage.removeItem(`_illacme_last_pub_${activeId}`);
+                localStorage.removeItem('_illacme_last_pub');
                 await window.refreshCacheStats();
             } else {
                 Swal.fire('重置失败', res ? (res.message || res.detail) : '未知原因', 'error');

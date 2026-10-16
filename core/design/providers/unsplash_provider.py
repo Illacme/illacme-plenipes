@@ -21,6 +21,35 @@ class UnsplashProvider(BaseImageProvider):
         self.access_key = self.config.get("access_key", "").strip()
         self.timeout = int(self.config.get("timeout", 20))
 
+    @classmethod
+    def sanitize_keywords(cls, prompt: str) -> str:
+        """
+        🛡️ 防御性提炼：将长提示词或中文摘要提炼为适合 Unsplash 摄影检索的英文关键词。
+        """
+        if not prompt or not prompt.strip():
+            return "technology minimal"
+        import re
+        raw = prompt.strip()
+        words = re.findall(r'[A-Za-z0-9_-]+', raw)
+        if words:
+            clean_words = [w for w in words if w.lower() not in ("8k", "4k", "uhd", "hd", "prompt", "masterpiece", "octane", "render", "vivid")]
+            if clean_words:
+                return " ".join(clean_words[:3])
+
+        # 中文主题语义映射
+        topic_map = [
+            (r'多语言|国际化|全球|矩阵|i18n', "global technology network"),
+            (r'架构|设计|治理|系统|工程', "modern architecture structure"),
+            (r'代码|开发|编程|算法|前端|后端', "software technology code"),
+            (r'设计|艺术|视觉|装帧|封面', "minimal graphic design abstract"),
+            (r'安全|合规|密码|防御|守卫', "cybersecurity digital security"),
+            (r'数据|分析|星谱|知识|账本', "data visualization abstract"),
+        ]
+        for pat, kw in topic_map:
+            if re.search(pat, raw, re.IGNORECASE):
+                return kw
+        return "minimal technology"
+
     def generate_image(
         self,
         prompt: str,
@@ -28,9 +57,8 @@ class UnsplashProvider(BaseImageProvider):
         style: str = "vivid",
         **kwargs
     ) -> Tuple[Optional[bytes], Optional[str]]:
-        # 关键词提炼
-        keywords = prompt.split()[:3] if prompt else ["technology", "minimal"]
-        query = " ".join(keywords)
+        # 🛡️ 智能提炼关键词
+        query = self.sanitize_keywords(prompt)
         orientation = "landscape" if aspect_ratio in ("16:9", "2.35:1", "4:3") else "portrait"
 
         # 优先官方 API
@@ -50,12 +78,30 @@ class UnsplashProvider(BaseImageProvider):
             except Exception as e:
                 tlog.warning(f"⚠️ [Unsplash API] 请求异常: {e}")
 
-        # 免 Key 智能降级拉取 Source 图片
+        # 免 Key 智能降级拉取 Source 图片（支持按文章语义与相移滚动的高清多样性图池）
         try:
-            # 使用公共可靠镜像源
             dims = {"16:9": (1280, 720), "1:1": (800, 800), "2.35:1": (1200, 510)}
             w, h = dims.get(aspect_ratio, (1280, 720))
-            fallback_url = f"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w={w}&h={h}&fit=crop&auto=format&q=80"
+            offset = int(kwargs.get("offset") or 0)
+            curated_pool = [
+                "photo-1618005182384-a83a8bd57fbe",  # 抽象流体光影
+                "photo-1518770660439-4636190af475",  # 科技芯片硬件
+                "photo-1451187580459-43490279c0fa",  # 全球数字化网络
+                "photo-1526374965328-7f61d4dc18c5",  # 矩阵黑客二进制
+                "photo-1507238691740-187a5b1d37b8",  # 现代极简设计工作台
+                "photo-1550751827-4bd374c3f58b",  # 赛博朋克极简暗调
+                "photo-1486406146926-c627a92ad1ab",  # 现代几何建筑
+                "photo-1519681393784-d120267933ba",  # 极简星空山川
+                "photo-1504384308090-c894fdcc538d",  # 科技服务器阵列
+                "photo-1498050108023-c5249f4df085",  # 现代代码工作空间
+                "photo-1558494949-ef010cbdcc31",  # 云端数据中心流光
+                "photo-1534972195531-a756b1126f24",  # 极简自然绿植光影
+            ]
+            import hashlib
+            base_idx = int(hashlib.md5(query.encode('utf-8')).hexdigest()[:6], 16)
+            seed_idx = (base_idx + offset) % len(curated_pool)
+            photo_id = curated_pool[seed_idx]
+            fallback_url = f"https://images.unsplash.com/{photo_id}?w={w}&h={h}&fit=crop&auto=format&q=80"
             resp = requests.get(fallback_url, timeout=15)
             if resp.status_code == 200:
                 return resp.content, None

@@ -243,6 +243,23 @@ window.resetTerminalModalFooter = () => {
     if (closeBtn) closeBtn.style.display = 'none';
 };
 
+window.setTerminalCompletedFooter = () => {
+    window.resetTerminalModalFooter();
+    const okBtn = document.getElementById('btn-terminal-ok');
+    if (okBtn) {
+        okBtn.style.display = 'inline-flex';
+        okBtn.innerText = '关闭';
+    }
+    const republishBtn = document.getElementById('btn-terminal-republish');
+    if (republishBtn) republishBtn.style.display = 'inline-flex';
+    const closeBtn = document.getElementById('btn-terminal-close');
+    if (closeBtn) closeBtn.style.display = 'none';
+    if (window._latestPrimaryLiveUrl) {
+        const visitSiteBtn = document.getElementById('btn-terminal-visit-site');
+        if (visitSiteBtn) visitSiteBtn.style.display = 'inline-flex';
+    }
+};
+
 window.closeTerminalModal = () => {
     const modal = document.getElementById('terminal-modal');
     if (modal) {

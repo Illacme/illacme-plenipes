@@ -192,6 +192,7 @@ class ImageGenerateRequest(BaseModel):
     aspect_ratio: str = "16:9"
     style: str = "vivid"
     doc_id: Optional[str] = ""
+    offset: Optional[int] = 0
     config: Optional[Dict[str, Any]] = None
 
 class ProviderSaveConfigRequest(BaseModel):
@@ -212,11 +213,7 @@ async def list_image_providers():
 async def get_providers_config(provider_id: str = "openai"):
     """获取已持久化的生图驱动配置与算力基座智能候选"""
     from core.design.providers.provider_config_manager import ProviderConfigManager
-    return {
-        "success": True,
-        "configs": ProviderConfigManager.get_all_configs(mask_secrets=True),
-        "suggested": ProviderConfigManager.detect_suggested_credentials(provider_id)
-    }
+    return {"success": True, "configs": ProviderConfigManager.get_all_configs(mask_secrets=True), "suggested": ProviderConfigManager.detect_suggested_credentials(provider_id)}
 
 @router.post("/api/design/providers/config", dependencies=[Depends(verify_token)])
 async def save_provider_config(req: ProviderSaveConfigRequest):
@@ -240,8 +237,7 @@ async def sync_provider_from_compute(req: ProviderSyncComputeRequest):
 async def test_image_provider(req: ProviderTestRequest):
     """测试生图驱动连通性与鉴权"""
     from core.design.providers import ProviderRegistry
-    res = ProviderRegistry.test_provider_connection(req.provider_id, req.config)
-    return res
+    return ProviderRegistry.test_provider_connection(req.provider_id, req.config)
 
 @router.post("/api/design/generate", dependencies=[Depends(verify_token)])
 async def generate_image_asset(req: ImageGenerateRequest):
@@ -260,9 +256,7 @@ async def generate_image_asset(req: ImageGenerateRequest):
         raise HTTPException(status_code=400, detail=f"不支持的生图驱动: {req.provider_id}")
 
     img_bytes, err = provider.generate_image(
-        prompt=req.prompt,
-        aspect_ratio=req.aspect_ratio,
-        style=req.style
+        prompt=req.prompt, aspect_ratio=req.aspect_ratio, style=req.style, offset=req.offset or 0
     )
     if err or not img_bytes:
         return {"success": False, "message": err or "生图失败"}

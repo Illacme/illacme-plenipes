@@ -67,13 +67,13 @@ async def list_visual_assets(page: int = 1, limit: int = 60, provider: Optional[
         conn = engine.meta.sqlite.get_connection()
         cur = conn.cursor()
 
-        # 1. 计算总条数 (Total Count)
+        # 1. 计算总条数 (Total Count - 按 source_url 去重)
         if provider and provider != 'all':
             strat = f"ai_{provider}"
-            cur.execute("SELECT COUNT(*) FROM visual_assets WHERE strategy = ?", (strat,))
+            cur.execute("SELECT COUNT(DISTINCT source_url) FROM visual_assets WHERE strategy = ?", (strat,))
             total = cur.fetchone()[0]
         else:
-            cur.execute("SELECT COUNT(*) FROM visual_assets")
+            cur.execute("SELECT COUNT(DISTINCT source_url) FROM visual_assets")
             total = cur.fetchone()[0]
 
         # 2. 分页偏移计算 (Pagination Offset)
@@ -82,16 +82,16 @@ async def list_visual_assets(page: int = 1, limit: int = 60, provider: Optional[
         page = max(1, min(page, total_pages)) if total > 0 else 1
         offset = (page - 1) * limit
 
-        # 3. 分页查询记录 (Slice Query)
+        # 3. 分页查询记录 (Slice Query - 按 source_url 聚合取最新记录)
         if provider and provider != 'all':
             cur.execute(
-                "SELECT id, rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt, created_at "
-                "FROM visual_assets WHERE strategy = ? ORDER BY id DESC LIMIT ? OFFSET ?", (strat, limit, offset)
+                "SELECT MAX(id), rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt, MAX(created_at) "
+                "FROM visual_assets WHERE strategy = ? GROUP BY source_url ORDER BY MAX(id) DESC LIMIT ? OFFSET ?", (strat, limit, offset)
             )
         else:
             cur.execute(
-                "SELECT id, rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt, created_at "
-                "FROM visual_assets ORDER BY id DESC LIMIT ? OFFSET ?", (limit, offset)
+                "SELECT MAX(id), rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt, MAX(created_at) "
+                "FROM visual_assets GROUP BY source_url ORDER BY MAX(id) DESC LIMIT ? OFFSET ?", (limit, offset)
             )
         rows = cur.fetchall()
         assets = []

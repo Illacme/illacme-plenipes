@@ -258,7 +258,8 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
         from core.adapters.egress.ebook.docx_reader import render_docx_reader_html
         return Response(content=render_docx_reader_html(target, filename=file), media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-cache, no-store"})
     if ext == ".epub":
-        import sys, importlib
+        import sys
+        import importlib
         for m in ("core.adapters.egress.ebook.epub_reader_polyglot_css", "core.adapters.egress.ebook.epub_reader_polyglot_js", "core.adapters.egress.ebook.epub_reader_js", "core.adapters.egress.ebook.epub_reader_template", "core.adapters.egress.ebook.epub_reader"):
             if m in sys.modules: importlib.reload(sys.modules[m])
         from core.adapters.egress.ebook.epub_reader import render_epub_reader_html

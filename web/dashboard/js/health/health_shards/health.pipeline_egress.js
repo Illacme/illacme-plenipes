@@ -111,6 +111,7 @@
                 }
 
                 if (pipeCapHosting) {
+                    pipeCapHosting.setAttribute('data-tip', `5. 托管 (${primaryPlatform.name})`);
                     const readyCount = activeHostingPlatforms.filter(p => p.isReady).length;
                     if (activeHostingPlatforms.length === 1) {
                         pipeCapHosting.title = `🌐 5. 独立站托管 (Static Site Hosting)\n────────────────────────\n• 官方主站 (主)：${primaryPlatform.name}\n• 鉴权状态：${primaryPlatform.isReady ? `✅ ${primaryPlatform.credLabel}` : '⚠️ 待填凭据 (请补全 Token 或仓库配置)'}\n${primaryPlatform.detail ? `• ${primaryPlatform.detail}\n` : ''}\n💡 点击一键直达独立站全站托管与部署配置`;
@@ -132,6 +133,7 @@
                 pipeValHosting.innerText = '未开启独立站托管';
                 if (pipeDotHosting) pipeDotHosting.className = 'pipe-dot offline';
                 if (pipeCapHosting) {
+                    pipeCapHosting.setAttribute('data-tip', '5. 托管 (未开启)');
                     pipeCapHosting.title = `🌐 5. 独立站托管 (Static Site Hosting)\n────────────────────────\n• 平台状态：暂未开启任何主站托管服务\n• 能力说明：开启后，系统在编译完成后自动将全语种独立站同步发布至云端。\n\n💡 点击一键前往插件中心开启托管平台`;
                 }
             }
@@ -159,7 +161,9 @@
             Object.keys(platformNames).forEach(k => {
                 const pCfg = synd[k];
                 if (pCfg && pCfg.enabled === true) {
-                    const hasToken = Boolean(pCfg.api_key || pCfg.token || pCfg.access_token);
+                    const hasToken = typeof window.judgePlatformReadiness === 'function'
+                        ? window.judgePlatformReadiness(k, pCfg).ready
+                        : Boolean(pCfg.api_key || pCfg.token || pCfg.access_token || pCfg.cookie || pCfg.api_token || pCfg.app_password || pCfg.admin_api_key || pCfg.sessdata);
                     activePlatforms.push({ id: k, name: platformNames[k], ready: hasToken });
                 }
             });
@@ -168,15 +172,22 @@
             if (Array.isArray(data.plugins)) {
                 data.plugins.filter(p => p.category === 'publisher' && p.is_in_use === true).forEach(p => {
                     if (!activePlatforms.some(a => a.id === p.id)) {
-                        activePlatforms.push({ id: p.id, name: p.name || platformNames[p.id] || p.id, ready: p.status === 'READY' || Boolean(p.cfg?.token || p.cfg?.api_key) });
+                        const pluginReady = p.status === 'READY' ||
+                            (typeof window.judgePlatformReadiness === 'function' && p.cfg ? window.judgePlatformReadiness(p.id, p.cfg).ready : false) ||
+                            Boolean(p.cfg?.token || p.cfg?.api_key || p.cfg?.cookie || p.cfg?.api_token || p.cfg?.access_token || p.cfg?.sessdata);
+                        activePlatforms.push({ id: p.id, name: p.name || platformNames[p.id] || p.id, ready: pluginReady });
                     }
                 });
             }
 
             if (activePlatforms.length > 0) {
                 const names = activePlatforms.map(p => p.name).join(', ');
+                const readyCount = activePlatforms.filter(p => p.ready).length;
                 const allReady = activePlatforms.every(p => p.ready);
-                pipeValSyndication.innerText = `${names} (${activePlatforms.length} 渠道就绪)`;
+                const countLabel = allReady
+                    ? `(${activePlatforms.length} 渠道就绪)`
+                    : `(${readyCount}/${activePlatforms.length} 凭据齐备)`;
+                pipeValSyndication.innerText = `${names} ${countLabel}`;
                 if (pipeDotSyndication) pipeDotSyndication.className = allReady ? 'pipe-dot healthy' : 'pipe-dot warning';
             } else {
                 pipeValSyndication.innerText = '未开启社交分发';
@@ -186,8 +197,10 @@
             if (pipeCapSyndication) {
                 if (activePlatforms.length > 0) {
                     const readyCount = activePlatforms.filter(p => p.ready).length;
+                    pipeCapSyndication.setAttribute('data-tip', `6. 社交分发 (${activePlatforms.length}渠道)`);
                     pipeCapSyndication.title = `🚀 6. 社交平台同步 (Social Media Syndication)\n────────────────────────\n• 已启用平台：${activePlatforms.map(p => p.name).join(', ')} (共 ${activePlatforms.length} 个)\n• 凭据齐备数：${readyCount} / ${activePlatforms.length} 个渠道\n• 同步策略：Canonical 原创版权保护 + 社交平台自动化广播\n\n💡 点击一键唤起多平台社交媒体同步与广播中枢`;
                 } else {
+                    pipeCapSyndication.setAttribute('data-tip', '6. 社交分发 (未开启)');
                     pipeCapSyndication.title = `🚀 6. 社交平台同步 (Social Media Syndication)\n────────────────────────\n• 渠道状态：暂未开启任何社交媒体同步渠道\n• 能力说明：开启后，单篇文稿可一键多语言分发至 Dev.to / Medium / 知乎等社交平台。\n\n💡 点击一键前往插件中心开启社交分发平台`;
                 }
             }

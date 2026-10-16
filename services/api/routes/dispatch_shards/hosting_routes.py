@@ -6,7 +6,10 @@
 🛡️ [SOP-02 模块拆分 / AEL-Iter] 单文件严格保持在 300 行以内。
 """
 
-import os, time, uuid, threading
+import os
+import time
+import uuid
+import threading
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel

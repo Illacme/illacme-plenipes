@@ -8,7 +8,6 @@
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 import subprocess
-import pytest
 
 from core.adapters.egress.ebook.epub_reader_polyglot_css import get_epub_polyglot_css
 from core.adapters.egress.ebook.epub_reader_polyglot_sync_js import get_epub_reader_polyglot_sync_js

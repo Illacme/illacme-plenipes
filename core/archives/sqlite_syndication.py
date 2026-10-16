@@ -166,3 +166,9 @@ class SQLiteSyndicationMixin:
             (limit, offset)
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def count_all_syndication_records(self) -> int:
+        """🚀 统计全站所有渠道的历史成功分发物权记录总数"""
+        row = self._get_conn().execute("SELECT COUNT(*) FROM syndication_records").fetchone()
+        return int(row[0]) if row else 0
+

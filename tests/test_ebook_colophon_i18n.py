@@ -5,15 +5,12 @@ Illacme Plenipes - Colophon Multilingual & Property Rights Test Suite
 """
 
 import os
-import re
 import zipfile
 import tempfile
-import pytest
 
 from core.adapters.egress.ebook.colophon import ColophonBuilder
 from core.adapters.egress.ebook.epub import EpubAdapter
 from core.adapters.egress.ebook.webbook import WebBookAdapter
-from core.bindery.book_assembler import BookAssembler
 
 
 def test_colophon_uuid_auto_healing():

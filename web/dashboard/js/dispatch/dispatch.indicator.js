@@ -21,7 +21,8 @@ window.updateDispatchIndicator = function (overviewData) {
     if (!btn || !label || !pill) return;
 
     const summary = (overviewData && overviewData.summary) || {};
-    const isPublishing = Boolean(overviewData && overviewData.is_publishing);
+    const fullSiteState = window._fullSitePublishState || {};
+    const isPublishing = Boolean(overviewData && overviewData.is_publishing) || Boolean(fullSiteState.isPublishing) || Boolean(window._isPublishPreviewActive);
     const failedCount = Number(summary.total_failed || 0);
     const activeCount = Number(summary.active_count || 0);
 
@@ -37,21 +38,29 @@ window.updateDispatchIndicator = function (overviewData) {
 
     if (isPublishing) {
         btn.classList.add('is-running');
-        label.innerText = '正在分发';
-        pill.innerText = activeCount > 0 ? `${activeCount} 篇` : '进行中';
+        label.innerText = fullSiteState.isPublishing ? '全站发布中' : '正在分发';
+        pill.className = 'indicator-pill';
+        if (fullSiteState.isPublishing && fullSiteState.stage > 0 && fullSiteState.stage <= 4) {
+            pill.innerText = `步骤 ${fullSiteState.stage}/4`;
+        } else {
+            pill.innerText = activeCount > 0 ? `${activeCount} 篇` : '进行中';
+        }
         pill.style.display = 'inline-block';
-        btn.title = '全域发布正在执行中，点击查看实时流水线';
+        btn.title = '全站发布正在执行中，点击查看实时流水线与步骤进度';
     } else if (failedCount > 0) {
         btn.classList.add('is-warning');
         label.innerText = '分发待自愈';
+        pill.className = 'indicator-pill';
         pill.innerText = `${failedCount} 项`;
         pill.style.display = 'inline-block';
         btn.title = `探测到 ${failedCount} 项分发异常，点击进入自愈站`;
     } else {
-        label.innerText = '发布任务';
-        pill.innerText = summary.total_syndicated ? String(summary.total_syndicated) : '0';
+        label.innerText = '任务进度';
+        pill.className = 'indicator-pill ready-dot';
+        pill.innerText = '';
         pill.style.display = 'inline-block';
-        btn.title = '点击展开发布任务与即时进度';
+        const total = summary.total_syndicated ? Number(summary.total_syndicated) : 0;
+        btn.title = `分发管线就绪，已累计交付 ${total} 项成果 (点击查看流水明细)`;
     }
 };
 
@@ -61,13 +70,32 @@ window.updateDispatchIndicator = function (overviewData) {
 window.refreshDispatchIndicator = async function () {
     try {
         if (typeof apiFetch !== 'function') return;
-        const res = await apiFetch('/api/dispatch/overview');
+        const [res, syncRes] = await Promise.all([
+            apiFetch('/api/dispatch/overview').catch(() => null),
+            apiFetch('/api/system/sync/status').catch(() => null)
+        ]);
+
+        if (syncRes && syncRes.is_publishing) {
+            if (!window._fullSitePublishState) window._fullSitePublishState = {};
+            window._fullSitePublishState.isPublishing = true;
+            if (!window._fullSitePublishState.stage || window._fullSitePublishState.stage === 0) {
+                window._fullSitePublishState.stage = 2;
+                window._fullSitePublishState.stageName = '正在编译';
+            }
+        } else if (syncRes && !syncRes.is_publishing && window._fullSitePublishState?.isPublishing) {
+            window._fullSitePublishState.isPublishing = false;
+            window._fullSitePublishState.stage = 5;
+            window._fullSitePublishState.stageName = '发布完成';
+        }
+
         if (res && res.status === 'success') {
             window._lastDispatchOverview = res;
             window.updateDispatchIndicator(res);
             if (typeof window.renderPopoverContent === 'function' && window._isPopoverOpen) {
                 window.renderPopoverContent(res);
             }
+        } else if (window._fullSitePublishState?.isPublishing) {
+            window.updateDispatchIndicator({});
         }
     } catch (e) {
         console.warn("⚠️ 刷新分发指示器跳过:", e);

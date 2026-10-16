@@ -88,10 +88,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 全局快捷键 Cmd+K / Ctrl+K 唤醒
     document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
             e.preventDefault();
             if (agentInput && agentInput.disabled) return;
-            if (rightSidebar && rightSidebar.classList.contains('collapsed')) rightSidebar.classList.remove('collapsed');
+            const appContainer = document.getElementById('app-container');
+            if (appContainer && appContainer.classList.contains('right-collapsed')) {
+                if (typeof window.toggleSidebar === 'function') {
+                    window.toggleSidebar('right');
+                } else {
+                    appContainer.classList.remove('right-collapsed');
+                    const btn = document.getElementById('toggle-right');
+                    if (btn) btn.innerText = '▶';
+                }
+            }
             if (agentInput) agentInput.focus();
             if (agentPod) {
                 agentPod.style.boxShadow = 'inset 0 0 30px rgba(0, 242, 255, 0.4)';
@@ -114,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🛡️ 初始化人类在环 (HITL) 决策收集器并建立粘合回调
     sa.hitl.init(async (hitlId, decision) => {
         sa.render.appendMessage(`[HITL] Human decision: ${decision.toUpperCase()}`, 'system-msg');
+        if (typeof window.syncRightToggleState === 'function') window.syncRightToggleState('busy');
         try {
             await sa.api.sendHitlDecision(hitlId, decision);
         } catch (err) {
@@ -129,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         agentInput.value = ''; agentInput.disabled = true; agentInput.placeholder = 'AI 助手思考中...';
         if (agentPod) agentPod.classList.add('processing');
         if (agentStatus) { agentStatus.textContent = '⚡ 运算中'; agentStatus.style.color = 'var(--neon-amber)'; }
+        if (typeof window.syncRightToggleState === 'function') window.syncRightToggleState('busy');
 
         sa.render.appendMessage(`> ${command}`, 'user-msg');
         
@@ -179,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             agentInput.placeholder = '输入指令，如“系统状态” (Cmd+K)...';
             if (agentPod) agentPod.classList.remove('processing');
             if (agentStatus) { agentStatus.textContent = '🟢 待命'; agentStatus.style.color = ''; }
+            if (typeof window.syncRightToggleState === 'function') window.syncRightToggleState('idle');
             agentInput.focus();
             isExecuting = false; // 🌟 优雅解锁，允许下一次安全提交
         }
@@ -221,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else if (data.type === 'hitl_required') {
             sa.render.appendMessage(data.message, 'system-msg');
+            if (typeof window.syncRightToggleState === 'function') window.syncRightToggleState('hitl');
             sa.hitl.showDialog(data);
         }
     }

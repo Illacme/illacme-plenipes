@@ -62,8 +62,8 @@
     }
 
     function handleGlobalKeydown(e) {
-        // Listen for Cmd+P / Cmd+K or Ctrl+P / Ctrl+K
-        if ((e.metaKey || e.ctrlKey) && (e.key === 'p' || e.key === 'k')) {
+        // ⌨️ Cmd+P / Ctrl+P 专属于全局命令面板，与 AI 伴随助手唤醒快捷键 (Cmd+K) 严格物理解耦防冲突
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'p' || e.key === 'P')) {
             e.preventDefault();
             togglePalette();
         }

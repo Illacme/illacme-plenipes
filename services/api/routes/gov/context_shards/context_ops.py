@@ -108,6 +108,78 @@ def get_system_context_impl():
         except Exception:
             pass
 
+    # 📚 统计书架出版物数量与物理文件体积 (dist/books 下的已编译出版物)
+    shelf_books_count = 0
+    shelf_size_bytes = 0
+    try:
+        shelf_dir = os.path.abspath("dist/books")
+        ext_set = {".html", ".pdf", ".md", ".docx", ".epub", ".txt"}
+        if os.path.exists(shelf_dir):
+            for f in os.listdir(shelf_dir):
+                fp = os.path.join(shelf_dir, f)
+                if os.path.isfile(fp) and os.path.splitext(f)[1].lower() in ext_set:
+                    shelf_books_count += 1
+                    shelf_size_bytes += os.path.getsize(fp)
+    except Exception:
+        shelf_books_count = 0
+        shelf_size_bytes = 0
+
+    if shelf_size_bytes < 1024:
+        shelf_size_display = f"{shelf_size_bytes} B"
+    elif shelf_size_bytes < 1024 * 1024:
+        shelf_size_display = f"{shelf_size_bytes / 1024:.1f} KB"
+    else:
+        shelf_size_display = f"{shelf_size_bytes / (1024 * 1024):.1f} MB"
+
+    # 🌐 统计网站托管发布批次数与部署成功率
+    hosting_deploy_count = 0
+    hosting_success_rate = "100%"
+    try:
+        if hasattr(engine, "meta"):
+            if hasattr(engine.meta, "sqlite") and hasattr(engine.meta.sqlite, "_get_conn"):
+                rows = engine.meta.sqlite._get_conn().execute(
+                    "SELECT overall_status, COUNT(*) as cnt FROM hosting_deploy_records GROUP BY overall_status"
+                ).fetchall()
+                total_h, succ_h = 0, 0
+                for r in rows:
+                    st = str(r["overall_status"] or "").upper()
+                    c = int(r["cnt"] or 0)
+                    total_h += c
+                    if st in ("SUCCESS", "PARTIAL_SUCCESS"):
+                        succ_h += c
+                hosting_deploy_count = total_h
+                if total_h > 0:
+                    hosting_success_rate = f"{round((succ_h / total_h) * 100, 1)}%"
+            elif hasattr(engine.meta, "count_hosting_deploy_batches"):
+                hosting_deploy_count = engine.meta.count_hosting_deploy_batches(imprint_id=active_imprint)
+    except Exception:
+        hosting_deploy_count = 0
+        hosting_success_rate = "100%"
+
+    # 📡 统计社交媒体分发成功记录数与分发成功率
+    syndication_count = 0
+    syndication_success_rate = "100%"
+    try:
+        if hasattr(engine, "meta"):
+            if hasattr(engine.meta, "sqlite") and hasattr(engine.meta.sqlite, "_get_conn"):
+                row_succ = engine.meta.sqlite._get_conn().execute("SELECT COUNT(*) FROM syndication_records").fetchone()
+                succ_s = int(row_succ[0]) if row_succ else 0
+                fail_s = 0
+                try:
+                    row_fail = engine.meta.sqlite._get_conn().execute("SELECT COUNT(*) FROM dlq_tasks").fetchone()
+                    fail_s = int(row_fail[0]) if row_fail else 0
+                except Exception:
+                    pass
+                syndication_count = succ_s
+                tot_s = succ_s + fail_s
+                if tot_s > 0:
+                    syndication_success_rate = f"{round((succ_s / tot_s) * 100, 1)}%"
+            elif hasattr(engine.meta, "list_all_syndication_records"):
+                syndication_count = len(engine.meta.list_all_syndication_records(limit=1000))
+    except Exception:
+        syndication_count = 0
+        syndication_success_rate = "100%"
+
     return {
         "version": DisplayDelegate.get_system_version(engine.config),
         "imprint": active_imprint,
@@ -119,6 +191,15 @@ def get_system_context_impl():
             "root": engine.vault_root,
             "dialect": dialect_display,
             "doc_count": vault_doc_count
+        },
+        "stats": {
+            "shelf_books_count": shelf_books_count,
+            "shelf_size_bytes": shelf_size_bytes,
+            "shelf_size_display": shelf_size_display,
+            "hosting_deploy_count": hosting_deploy_count,
+            "hosting_success_rate": hosting_success_rate,
+            "syndication_count": syndication_count,
+            "syndication_success_rate": syndication_success_rate
         },
         "ai": {
             "provider": active_provider,

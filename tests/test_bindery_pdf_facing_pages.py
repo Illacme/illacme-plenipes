@@ -4,7 +4,6 @@ Tests for PDF Facing Pages Concordance (洛布古典丛书级双开面对照 PDF
 """
 
 import os
-import pytest
 from core.adapters.egress.ebook.pdf import PDFBookAdapter
 from core.adapters.egress.ebook.pdf_facing_pages import PDFFacingPagesBuilder
 

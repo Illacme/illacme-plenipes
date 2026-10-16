@@ -10,7 +10,7 @@ tags:
 - Deploy
 categories:
 - Documentation
-cover: /api/design/assets/covers/gen_9fecb76905b0.jpg
+cover: /api/design/assets/covers/gen_3f457a87a088.jpg
 ---
 # 🛰️ 发行矩阵与渠道配置 (The Matrix)
 

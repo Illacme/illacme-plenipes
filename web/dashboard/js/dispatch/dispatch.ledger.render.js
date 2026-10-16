@@ -139,7 +139,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             <div style="padding: 40px 20px; text-align: center; color: var(--text-muted, #9ca3af);">
                 <div style="font-size: 2rem; margin-bottom: 8px;">${query ? '🔍' : '📖'}</div>
                 <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-bright, #ffffff);">${query ? '未检索到匹配的分发作业' : '尚无分发任务记录'}</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">${query ? '请尝试调整筛选条件或搜索关键词。' : '点击右上角【全域发布】或在文库中选择笔记即可发起分发。'}</div>
+                <div style="font-size: 0.8rem; margin-top: 4px;">${query ? '请尝试调整筛选条件或搜索关键词。' : '点击右上角【全站发布】或在文库中选择笔记即可发起分发。'}</div>
             </div>`;
         return;
     }

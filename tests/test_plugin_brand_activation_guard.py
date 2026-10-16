@@ -5,15 +5,10 @@
 硬性准则：缺少关键配置/未就绪的插件，绝对禁止被标记为启用 (is_in_use) 或允许在未配置时被开启。
 """
 
-import pytest
 from types import SimpleNamespace
 from services.api.routes.gov.plugin_collector_channels import (
     is_plugin_config_ready,
-    collect_tunnel_plugins,
-    collect_hosting_plugins,
-    collect_syndication_plugins,
-    collect_image_hosting_plugins,
-    collect_notification_plugins
+    collect_tunnel_plugins
 )
 from core.bindery.tunnel import get_tunnel_hub
 

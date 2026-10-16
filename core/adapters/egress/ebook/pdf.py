@@ -5,7 +5,12 @@ Illacme Plenipes - Single-File Print-Ready PDF Book Adapter
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os, re, shutil, base64, tempfile, subprocess
+import os
+import re
+import shutil
+import base64
+import tempfile
+import subprocess
 from html import escape
 from typing import Dict, Any, List, Optional
 

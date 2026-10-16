@@ -12,7 +12,7 @@ tags:
 - Features
 - Innovations
 - Gallery
-cover: /api/design/assets/covers/cover_62521d7ef65f.jpg
+cover: /api/design/assets/covers/gen_c309d4b1eb37_16x9.jpg
 ---
 # 🎨 案例与主题全景展示
 

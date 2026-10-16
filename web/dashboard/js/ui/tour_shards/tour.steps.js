@@ -53,7 +53,7 @@
         {
             selector: '.header-actions-group',
             title: '⚡ 预览发布总控',
-            desc: '这里是全站出版的操作中枢，包含<strong>「⚡ 发布预览」</strong>与<strong>「🚀 全域发布」</strong>双重出口。<br><br>💡 <strong>本地预览指引</strong>：在正式发布前，您可以随时点击上方高亮指示的<strong>【⚡ 发布预览】</strong>按钮，即可在本地秒级预览完整的编译排版与多语言网页效果；确认无误后再执行全域发布。',
+            desc: '这里是全站出版的操作中枢，包含<strong>「⚡ 发布预览」</strong>与<strong>「🚀 全站发布」</strong>双重出口。<br><br>💡 <strong>本地预览指引</strong>：在正式发布前，您可以随时点击上方高亮指示的<strong>【⚡ 发布预览】</strong>按钮，即可在本地秒级预览完整的编译排版与多语言网页效果；确认无误后再执行全站发布。',
             proTip: '💡 启航指引：点击下方「完成导览」即可进入工作台，右侧 AI 助手已就绪为您服务！',
             placement: 'bottom-end',
             padding: 4,

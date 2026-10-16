@@ -9,7 +9,6 @@ import zipfile
 import tempfile
 import xml.etree.ElementTree as ET
 import markdown
-import pytest
 
 from core.bindery.math_packager import MathPackager
 from core.bindery.book_assembler import BookAssembler

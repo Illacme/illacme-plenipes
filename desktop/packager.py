@@ -40,7 +40,7 @@ class DesktopPackager:
             "--windowed",
             f"--name={cls.APP_NAME}",
             f"--distpath={output_dir}",
-            f"--workpath=build/desktop",
+            "--workpath=build/desktop",
         ]
 
         # 1. 注入静态资源数据

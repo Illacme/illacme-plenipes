@@ -152,7 +152,7 @@ def _collect_ebook_plugins(engine, disabled: set, system_track: str) -> List[Dic
             "id": plugin_id,
             "name": display_name,
             "category": "ebook",
-            "category_name": "📚 数字装订",
+            "category_name": "📚 电子出版",
             "status": "Native",
             "is_in_use": True,
             "is_enabled": (plugin_id not in disabled),

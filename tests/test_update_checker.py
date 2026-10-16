@@ -9,9 +9,7 @@ Illacme Plenipes - Test Suite for Auto-Update Sentinel & Release Checker
 🛡️ [SOP-01 规范]：单文件行数严格 ≤ 300 行。
 """
 
-import io
 import json
-import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 

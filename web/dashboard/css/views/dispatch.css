@@ -38,6 +38,17 @@
     font-family: var(--font-mono);
 }
 
+.dispatch-indicator-badge .indicator-pill.ready-dot {
+    width: 7px;
+    height: 7px;
+    min-width: 7px;
+    padding: 0;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 /* 状态 A：执行中动态呼吸 */
 .dispatch-indicator-badge.is-running {
     background: var(--neon-cyan-12);
@@ -770,11 +781,15 @@
     font-weight: 800;
     color: var(--text-bright);
     font-family: var(--font-mono);
+    min-height: 38px;
+    display: flex;
+    align-items: baseline;
 }
 
 .dispatch-metric-card .metric-sub {
     font-size: 0.74rem;
     color: var(--neon-cyan);
+    margin-top: auto;
 }
 
 /* 全渠道连通性健康矩阵 */

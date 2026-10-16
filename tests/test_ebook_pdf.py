@@ -9,7 +9,6 @@ Illacme Plenipes - EBook PDF Adapter & Print Assets Test Suite
 import os
 import tempfile
 from unittest.mock import patch, MagicMock
-import pytest
 
 from core.adapters.egress.ebook.base import EBookRegistry
 from core.adapters.egress.ebook.pdf import PDFBookAdapter

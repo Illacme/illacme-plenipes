@@ -7,6 +7,21 @@
 window._lastHostingOverview = null;
 
 /**
+ * 独立轻量更新网站托管发布徽章（无论处于哪个子 Tab 均可按需预载）
+ */
+window.updateHostingBadge = async function () {
+    const badgeReady = document.getElementById('badge-hosting-ready');
+    if (!badgeReady) return;
+    try {
+        if (typeof apiFetch !== 'function') return;
+        const res = await apiFetch('/api/dispatch/hosting/batches?page=1&page_size=1');
+        if (res && res.status === 'success' && res.pagination) {
+            badgeReady.innerText = String(res.pagination.total || 0);
+        }
+    } catch (_) {}
+};
+
+/**
  * 加载并渲染全站托管大盘数据
  */
 window.loadHostingDeployCenter = async function () {
@@ -21,9 +36,9 @@ window.loadHostingDeployCenter = async function () {
 
         window._lastHostingOverview = res;
 
-        // 更新顶部胶囊徽章与三大战区
+        // 更新顶部胶囊徽章与三大战区（Tab 徽章统一展示全站历史发布批次次数）
         const badgeReady = document.getElementById('badge-hosting-ready');
-        if (badgeReady) badgeReady.innerText = `${res.ready_channels || 0}/${res.total_channels || 11}`;
+        if (badgeReady) badgeReady.innerText = String((res.pagination && res.pagination.total) || 0);
         if (consoleBox) window.renderHostingControlCenter(res.bundle || {}, res.ready_channels || 0, res.total_channels || 11);
         if (fleetBox) window.renderHostingFleetGrid(res.fleet || []);
         if (batchBox && typeof window.renderHostingBatchLedger === 'function') {
@@ -184,7 +199,16 @@ window.triggerFullHostingDeploy = async function (targetChannel = null, options 
     const actionVerb = isRedeploy ? '再次发布' : '发布';
     const iconEmoji = isRedeploy ? '🔄' : '🚀';
 
-    if (window.Swal && typeof window.Swal.fire === 'function') {
+    if (typeof window.confirmSovereignAction === 'function') {
+        const ok = await window.confirmSovereignAction({
+            title: `${iconEmoji} 确认${actionVerb}网站`,
+            text: `确认将全站内容${actionVerb}到【${channelName}】吗？`,
+            icon: 'question',
+            confirmText: `${iconEmoji} 立即${actionVerb}`,
+            confirmColor: '#4f46e5'
+        });
+        if (!ok) return;
+    } else if (window.Swal && typeof window.Swal.fire === 'function') {
         const confirmRes = await window.Swal.fire({
             title: `${iconEmoji} 确认${actionVerb}网站`,
             text: `确认将全站内容${actionVerb}到【${channelName}】吗？`,

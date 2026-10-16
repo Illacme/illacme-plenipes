@@ -27,25 +27,28 @@ window.initializeCustomTooltip = () => {
             .custom-glass-tooltip {
                 position: absolute;
                 z-index: 999999;
-                padding: 6px 12px;
-                font-size: 0.75rem;
+                padding: 10px 14px;
+                font-size: 0.76rem;
                 font-family: inherit;
                 font-weight: 500;
                 color: var(--text-bright);
-                background: rgba(var(--bg-modal-solid-rgb), 0.92);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
+                background: rgba(var(--bg-modal-solid-rgb), 0.94);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
                 border: 1px solid var(--glass-border);
-                border-radius: 6px;
-                box-shadow: 0 4px 15px var(--black-50);
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
                 pointer-events: none;
                 opacity: 0;
-                transform: translateY(2px);
+                white-space: pre-line;
+                line-height: 1.55;
+                max-width: 380px;
+                transform: translateX(4px);
                 transition: opacity 0.12s cubic-bezier(0.4, 0, 0.2, 1), transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .custom-glass-tooltip.visible {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
         `;
         document.head.appendChild(style);
@@ -71,19 +74,51 @@ window.initializeCustomTooltip = () => {
         tooltipEl.className = 'custom-glass-tooltip';
         tooltipEl.innerText = text;
         document.body.appendChild(tooltipEl);
+        document.body.classList.add('has-custom-tooltip');
 
-        // 3. 动态测算坐标
+        // 3. 动态智能测算坐标 (彻底解决窄边栏遮挡按钮问题)
         const rect = target.getBoundingClientRect();
         const tooltipRect = tooltipEl.getBoundingClientRect();
 
-        let top = rect.top - tooltipRect.height - 8;
-        let left = rect.left + (rect.width - tooltipRect.width) / 2;
+        const leftSidebar = target.closest('#left-sidebar');
+        const rightSidebar = target.closest('#right-sidebar');
+        const rightToggle = target.closest('.sidebar-toggle.right, #toggle-right');
+        const leftToggle = target.closest('.sidebar-toggle.left, #toggle-left');
 
-        // 防溢出边界
-        if (top < 8) top = rect.bottom + 8;
-        if (left < 8) left = 8;
-        if (left + tooltipRect.width > window.innerWidth - 8) {
-            left = window.innerWidth - tooltipRect.width - 8;
+        let top = 0;
+        let left = 0;
+
+        if (leftSidebar || leftToggle) {
+            // 🎯【窄边栏 / 左侧边栏及手柄避让铁律】：
+            // 说明框严格放置在左边栏或左侧手柄最右边缘之外 (+12px)，绝不遮挡这一排任何按钮！
+            const anchorRect = leftSidebar ? leftSidebar.getBoundingClientRect() : rect;
+            left = anchorRect.right + 12;
+            top = rect.top + (rect.height - tooltipRect.height) / 2;
+
+            // 垂直智能防溢出：避免超出视口上下界
+            const maxTop = window.innerHeight - tooltipRect.height - 12;
+            if (top < 12) top = 12;
+            if (top > maxTop) top = maxTop;
+        } else if (rightSidebar || rightToggle) {
+            // 🎯【右侧边栏与右侧手柄避让铁律】：说明框强制放置在元素最左边缘之外 (-12px)
+            const anchorRect = rightSidebar ? rightSidebar.getBoundingClientRect() : rect;
+            left = anchorRect.left - tooltipRect.width - 12;
+            top = rect.top + (rect.height - tooltipRect.height) / 2;
+
+            const maxTop = window.innerHeight - tooltipRect.height - 12;
+            if (top < 12) top = 12;
+            if (top > maxTop) top = maxTop;
+        } else {
+            // 默认元素（主视口内普通按钮/标签）：
+            top = rect.top - tooltipRect.height - 8;
+            left = rect.left + (rect.width - tooltipRect.width) / 2;
+
+            // 防溢出边界
+            if (top < 8) top = rect.bottom + 8;
+            if (left < 8) left = 8;
+            if (left + tooltipRect.width > window.innerWidth - 8) {
+                left = window.innerWidth - tooltipRect.width - 8;
+            }
         }
 
         tooltipEl.style.top = `${top + window.scrollY}px`;
@@ -109,6 +144,7 @@ window.initializeCustomTooltip = () => {
             tooltipEl.remove();
             tooltipEl = null;
         }
+        document.body.classList.remove('has-custom-tooltip');
     });
 
     // 🛡️ [死穴自愈 1] 点击任何元素（捕获阶段）均立即销毁悬浮气泡，杜绝 DOM 切换后孤儿悬挂

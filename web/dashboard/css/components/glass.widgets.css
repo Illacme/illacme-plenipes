@@ -128,24 +128,24 @@
 .heartbeat-indicator { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s ease; }
 .heartbeat-indicator.pulsing { animation: heartbeat 2s infinite; }
 .heartbeat-indicator.healthy {
-    background: var(--neon-cyan) !important;
-    box-shadow: 0 0 8px var(--neon-cyan) !important;
+    background: var(--neon-green, #10b981) !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6) !important;
 }
 .heartbeat-indicator.warning,
 .heartbeat-indicator.status-standby {
-    background: var(--neon-amber) !important;
-    box-shadow: 0 0 8px var(--neon-amber) !important;
+    background: var(--neon-amber, #f59e0b) !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
 }
 .heartbeat-indicator.blocked {
-    background: var(--neon-red) !important;
-    box-shadow: 0 0 8px var(--neon-red) !important;
+    background: var(--neon-red, #ef4444) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
 }
 .heartbeat-indicator.status-offline {
     background: var(--text-dim) !important;
     box-shadow: none !important;
 }
 @keyframes heartbeat {
-    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 var(--neon-cyan-40); }
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
     70% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 0 6px transparent; }
     100% { transform: scale(1); opacity: 1; }
 }

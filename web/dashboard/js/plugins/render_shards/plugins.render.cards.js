@@ -94,9 +94,9 @@ window.renderPlugins = () => {
         'protocol': '🧠 算力渠道',
         'theme': '🎨 视觉装帧',
         'image_hosting': '📷 图床存储',
+        'ebook': '📚 电子出版',
         'hosting': '🌐 全站托管',
         'publisher': '📢 社媒分发',
-        'ebook': '📚 数字装订',
         'tunnel': '🛰️ 网络穿透',
         'notification': '🔔 消息通知',
         'editorial': '🧬 流程审计'
@@ -167,7 +167,7 @@ window.renderPlugins = () => {
         `;
     }
 
-    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'hosting', 'image_hosting', 'publisher', 'ebook', 'tunnel', 'notification', 'editorial'];
+    const categoryOrder = ['ingress_source', 'ingress_dialect', 'transformer', 'masker', 'protocol', 'theme', 'image_hosting', 'ebook', 'hosting', 'publisher', 'tunnel', 'notification', 'editorial'];
     Object.keys(categories).forEach(catId => {
         if (!categoryOrder.includes(catId)) {
             categoryOrder.push(catId);

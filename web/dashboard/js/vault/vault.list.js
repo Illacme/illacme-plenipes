@@ -100,14 +100,14 @@ window.loadVault = async (query = null, page = null) => {
                 reviewBtnTitle = transLangs.length > 0 ? '译文校对工作台' : '译文校对工作台 (未初始化 AI 译文)';
                 reviewBtnIcon = humanLocked ? (isStale ? '⚠️' : '🔒') : '🌍';
             }
+            const displayTitle = (m.seo_data && m.seo_data.title && m.seo_data.title !== m.slug) ? m.seo_data.title : (m.title || m.rel_path);
+            const escapedDisplayTitle = displayTitle.replace(/'/g, "\\'");
             const escapedRelPath = (m.rel_path || '').replace(/'/g, "\\'");
             const escapedTitle = (m.title || '').replace(/'/g, "\\'");
             const escapedCover = (m.cover || '').replace(/'/g, "\\'");
             const coverThumb = m.cover
-                ? `<div class="skeleton-shimmer" style="width:38px; height:24px; border-radius:4px; overflow:hidden; border:1px solid rgba(0,242,254,0.3); background:#05070f; cursor:pointer; flex-shrink:0;" title="点击更换文章封面" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')"><img src="${m.cover}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" style="width:100%; height:100%; object-fit:cover; transition:transform 0.2s; display:block;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'" /></div>`
+                ? `<div class="skeleton-shimmer" style="width:38px; height:24px; border-radius:4px; overflow:hidden; border:1px solid rgba(0,242,254,0.3); background:#05070f; cursor:pointer; flex-shrink:0;" title="点击更换文章封面 (悬停预览大图)" onmouseenter="window.showVaultCoverHoverPreview(this, '${escapedCover}', '${escapedDisplayTitle}')" onmouseleave="window.hideVaultCoverHoverPreview()" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')"><img src="${m.cover}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/api/design/assets/default-cover.jpg';" style="width:100%; height:100%; object-fit:cover; transition:transform 0.2s; display:block;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'" /></div>`
                 : `<div style="width:38px; height:24px; border-radius:4px; border:1px dashed rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:rgba(255,255,255,0.02); opacity:0.6; font-size:0.7rem;" title="未设封面，点击快速挑选或生成" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '')">🖼️+</div>`;
-            const displayTitle = (m.seo_data && m.seo_data.title && m.seo_data.title !== m.slug) ? m.seo_data.title : (m.title || m.rel_path);
-            const escapedDisplayTitle = displayTitle.replace(/'/g, "\\'");
             const docUrl = (typeof window.resolveDocUrlString === 'function') ? window.resolveDocUrlString(m.rel_path, m.slug) : (m.slug || m.rel_path.replace(/\.(md|markdown)$/i, '.html'));
             const slugHint = (m.slug && m.slug !== 'null' && m.slug !== 'undefined') ? ` (Slug: ${m.slug})` : '';
             return `
@@ -122,19 +122,19 @@ window.loadVault = async (query = null, page = null) => {
                     </div>
                 </td>
                 <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
-                <td style="text-align:center;"><span class="mono">${wc.toLocaleString()}</span></td>
+                <td style="text-align:center; padding:12px 8px; white-space:nowrap;"><span class="mono">${wc.toLocaleString()}</span></td>
                 <td style="padding:8px; width:160px; min-width:160px; box-sizing:border-box; text-align:center;">
                     <div class="vault-action-wrapper" style="display:inline-flex; gap:5px; align-items:center; justify-content:center;">
                         <button class="mini-action-btn" title="快速编辑原稿 (Markdown 创作工作台)" onclick="openEditor('${escapedRelPath}')">📝</button>
                         <button class="mini-action-btn" title="实时渲染预览 (独立站真实效果)" onclick="window.openArticleLivePreview('${escapedRelPath}', '${m.slug || ''}')">👁️</button>
                         <button class="mini-action-btn" title="全域渠道分发与推流 (微信 · 知乎 · B站 · Dev.to 等)" onclick="window.openArticleSyndicationDrawer('${escapedRelPath}', '${escapedTitle}')">📢</button>
-                        <button class="mini-action-btn vault-more-btn" title="更多操作 (独立站发布 · 译文校对 · 封面管理 · 重命名 · 物理销毁)" onclick="window.toggleVaultActionMenu(this, event)">···</button>
+                        <button class="mini-action-btn vault-more-btn" title="更多操作 (网页托管发布 · 译文校对 · 封面管理 · 重命名 · 单篇极速装订导出 · 物理销毁)" onclick="window.toggleVaultActionMenu(this, event)">···</button>
                         <div class="vault-more-menu custom-glass-dropdown">
-                            <button class="vault-more-item" onclick="openVaultDrawer('${escapedRelPath}')">🌐 独立站发布与全网遥测</button>
+                            <button class="vault-more-item" onclick="openVaultDrawer('${escapedRelPath}')">🌐 网页托管发布</button>
                             <button class="vault-more-item" onclick="window.openTranslationReview('${escapedRelPath}')">${reviewBtnIcon} 多语种译文校对</button>
                             <button class="vault-more-item" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️ 更换或生成文章封面</button>
                             <button class="vault-more-item" onclick="window.triggerMoveDocument('${escapedRelPath}')">📤 重命名与分类迁移</button>
-                            <button class="vault-more-item" onclick="window.quickBindSingleDoc('${escapedRelPath}', '${escapedDisplayTitle}')">⚡ 单篇极速装订 (EPUB / WebBook / PDF)</button>
+                            <button class="vault-more-item" onclick="window.quickBindSingleDoc('${escapedRelPath}', '${escapedDisplayTitle}')">📚 单篇极速装订导出</button>
                             <div class="vault-more-divider"></div>
                             <button class="vault-more-item danger" onclick="window.triggerDirectDocDelete('${escapedRelPath}', '${escapedTitle}')">🗑️ 物理安全彻底销毁</button>
                         </div>

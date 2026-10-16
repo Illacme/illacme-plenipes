@@ -13,7 +13,7 @@ tags:
 - BlockRules
 categories:
 - Documentation
-cover: /api/design/assets/covers/cover_c283c0d7217d.jpg
+cover: /api/design/assets/covers/gen_9fecb76905b0_2_35x1.jpg
 ---
 # 🌍 多语言矩阵与内容治理实战
 

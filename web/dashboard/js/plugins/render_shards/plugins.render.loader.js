@@ -73,9 +73,9 @@
             { id: 'protocol', name: '🧠 算力渠道' },
             { id: 'theme', name: '🎨 视觉装帧' },
             { id: 'image_hosting', name: '📷 图床存储' },
+            { id: 'ebook', name: '📚 电子出版' },
             { id: 'hosting', name: '🌐 全站托管' },
             { id: 'publisher', name: '📢 社媒分发' },
-            { id: 'ebook', name: '📚 数字装订' },
             { id: 'tunnel', name: '🛰️ 网络穿透' },
             { id: 'notification', name: '🔔 消息通知' },
             { id: 'editorial', name: '🧬 流程审计' }

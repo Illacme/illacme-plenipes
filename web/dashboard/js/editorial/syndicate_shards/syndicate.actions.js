@@ -18,15 +18,19 @@
             const swalInst = window.Swal || Swal;
             const res = await swalInst.fire({
                 title: title,
-                html: `<div style="font-size: 0.9rem; color: rgba(255,255,255,0.85); margin-top: 8px; line-height: 1.6;">${text}</div>`,
+                html: `<div class="sovereign-confirm-msg" style="font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">${text}</div>`,
                 icon: icon,
                 showCancelButton: true,
                 confirmButtonColor: confirmColor,
-                cancelButtonColor: 'rgba(255, 255, 255, 0.15)',
                 confirmButtonText: confirmText,
                 cancelButtonText: cancelText,
-                background: '#12131e',
-                color: '#ffffff'
+                customClass: {
+                    popup: 'sovereign-confirm-swal-popup',
+                    title: 'sovereign-swal-title',
+                    htmlContainer: 'sovereign-swal-html',
+                    confirmButton: 'sovereign-swal-confirm-btn',
+                    cancelButton: 'sovereign-swal-cancel-btn'
+                }
             });
             return res.isConfirmed;
         }

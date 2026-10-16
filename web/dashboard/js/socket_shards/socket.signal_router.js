@@ -32,12 +32,18 @@ window._wsRouteSignal = (data) => {
             if (modal.dataset.context === 'publish_preview' && typeof window.updatePreviewStepperFromLog === 'function') {
                 // 发布预览模式：由专用过滤器输出精简友好的创作者日志
                 window.updatePreviewStepperFromLog(msg);
-            } else if (typeof window.appendTerminalLog === 'function') {
-                // 全网发布/通用模式：输出详细工程日志
-                let color = null;
-                if (level === 'ERROR' || level === 'CRITICAL') color = '#ff4d4d';
-                else if (level === 'WARNING') color = '#ffaa00';
-                window.appendTerminalLog(`[${level}] ${msg}`, color);
+            } else {
+                if (modal.dataset.context === 'publish' && typeof window.updatePublishStepperFromLog === 'function') {
+                    // 全站发布模式：同步驱动 Stepper 步骤状态机
+                    window.updatePublishStepperFromLog(msg);
+                }
+                if (typeof window.appendTerminalLog === 'function') {
+                    // 全站发布/通用模式：输出详细工程日志
+                    let color = null;
+                    if (level === 'ERROR' || level === 'CRITICAL') color = '#ff4d4d';
+                    else if (level === 'WARNING') color = '#ffaa00';
+                    window.appendTerminalLog(`[${level}] ${msg}`, color);
+                }
             }
         }
         return true;

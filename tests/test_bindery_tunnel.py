@@ -14,7 +14,7 @@ import subprocess
 import pytest
 from fastapi.testclient import TestClient
 
-from core.bindery.tunnel import get_tunnel_hub, TunnelHub
+from core.bindery.tunnel import get_tunnel_hub
 from services.api.server import app
 from services.api.routes.system import verify_token
 

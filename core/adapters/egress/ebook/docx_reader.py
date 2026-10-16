@@ -6,7 +6,10 @@ Illacme Plenipes - Word Document (.docx) Interactive Web Reviewer
 🛡️ [SOP-01 规范]：单文件严格 <= 300 行。
 """
 
-import os, re, html, base64
+import os
+import re
+import html
+import base64
 from typing import Optional, List, Tuple, Any
 from core.adapters.egress.ebook.docx_reader_template import assemble_docx_template
 

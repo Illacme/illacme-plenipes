@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from services.api.server import app
 from services.api.routes.system import verify_token
-from core.bindery.tunnel_diagnostic import get_lan_candidates, probe_lan_health, probe_public_tunnel, auto_heal_public_tunnel
+from core.bindery.tunnel_diagnostic import get_lan_candidates, probe_public_tunnel, auto_heal_public_tunnel
 
 
 @pytest.fixture(scope="module")

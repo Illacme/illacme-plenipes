@@ -10,11 +10,11 @@
     <title>Illacme Plenipes | 出版发行工作台</title>
     <!-- 🏛️ Asset Loading (V74.0) -->
     <link rel="stylesheet" href="css/dashboard.tokens.css">
-    <link rel="stylesheet" href="css/dashboard.base.css?v=75.1">
+    <link rel="stylesheet" href="css/dashboard.base.css?v=76.6">
     <link rel="stylesheet" href="css/dashboard.components.css?v=20260912_real_ping_and_active_filter_v1">
-    <link rel="stylesheet" href="css/components/glass.css?v=76.0">
-    <link rel="stylesheet" href="css/components/glass.layout.css?v=76.2">
-    <link rel="stylesheet" href="css/components/glass.widgets.css?v=76.1">
+    <link rel="stylesheet" href="css/components/glass.css?v=76.1">
+    <link rel="stylesheet" href="css/components/glass.layout.css?v=77.1">
+    <link rel="stylesheet" href="css/components/glass.widgets.css?v=76.2">
     <link rel="stylesheet" href="css/components/glass.sovereign.css?v=76.2">
     <link rel="stylesheet" href="css/components/glass.editor.css?v=76.0">
     <link rel="stylesheet" href="css/components/brand.flip.css?v=130.0">
@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="css/components/dashboard.agent.patch.css?v=76.8">
     <link rel="stylesheet" href="css/components/dashboard.agent.markdown.css?v=75.1">
     <link rel="stylesheet" href="css/components/dashboard.agent.widescreen.css?v=76.0">
-    <link rel="stylesheet" href="css/views/overview.css?v=20260917_incline_v4">
+    <link rel="stylesheet" href="css/views/overview.css?v=20261016_equal_cta_v1">
     <link rel="stylesheet" href="css/views/compute.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.telemetry.css?v=75.0">
     <link rel="stylesheet" href="css/views/compute.header.css?v=75.0">
@@ -49,7 +49,7 @@
     <link rel="stylesheet" href="css/components/syndicate.preview.css?v=20261002_v2">
     <link rel="stylesheet" href="css/components/syndicate.modals.css?v=20260918_v1">
     <link rel="stylesheet" href="css/components/dashboard.tour.css?v=20260917_studio_v18">
-    <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20261007_ledger_fit_v1">
+    <link rel="stylesheet" href="css/themes/theme.light.overrides.css?v=20261016_equal_cta_v1">
     <!-- 🛡️ Global Error Boundary -->
     <script src="js/dashboard.errors.js?v=20260912_fix_nav_v2"></script>
 
@@ -109,6 +109,9 @@
                     <div class="nav-item" id="nav-vault" data-view="vault" onclick="window.showView('vault')">
                         <span class="nav-icon">📂</span><span class="nav-text">原稿文库</span>
                     </div>
+                    <div class="nav-item" id="nav-tasks" data-view="tasks" onclick="window.showView('tasks')">
+                        <span class="nav-icon">🚀</span><span class="nav-text">发布中心</span>
+                    </div>
                     <div class="nav-item nav-group-item" id="nav-group-governance" data-group="governance">
                         <div class="nav-item-main" id="nav-gov-main">
                             <span class="nav-icon">⚙️</span><span class="nav-text">出版治理</span><span
@@ -155,14 +158,6 @@
                                 class="nav-caret">▾</span>
                         </div>
                         <div class="nav-dropdown-menu glass-panel">
-                            <div class="nav-dropdown-item" id="nav-tower" data-view="tower"
-                                onclick="window.showView('tower')">
-                                <span class="dropdown-item-icon">🗼</span>
-                                <div class="dropdown-item-meta">
-                                    <span class="dropdown-item-title">系统遥测</span>
-                                    <span class="dropdown-item-desc">服务拓扑、进程健康、链路时延</span>
-                                </div>
-                            </div>
                             <div class="nav-dropdown-item" id="nav-analytics" data-view="analytics"
                                 onclick="window.showView('analytics')">
                                 <span class="dropdown-item-icon">📊</span>
@@ -171,12 +166,12 @@
                                     <span class="dropdown-item-desc">词频资产、读者画像、知识网络</span>
                                 </div>
                             </div>
-                            <div class="nav-dropdown-item" id="nav-tasks" data-view="tasks"
-                                onclick="window.showView('tasks')">
-                                <span class="dropdown-item-icon">🚀</span>
+                            <div class="nav-dropdown-item" id="nav-tower" data-view="tower"
+                                onclick="window.showView('tower')">
+                                <span class="dropdown-item-icon">🗼</span>
                                 <div class="dropdown-item-meta">
-                                    <span class="dropdown-item-title">发布中心</span>
-                                    <span class="dropdown-item-desc">全站发布、社媒分发与状态管理</span>
+                                    <span class="dropdown-item-title">系统遥测</span>
+                                    <span class="dropdown-item-desc">服务拓扑、进程健康、链路时延</span>
                                 </div>
                             </div>
                         </div>
@@ -186,31 +181,31 @@
                     <div class="dispatch-indicator-badge" id="btn-dispatch-center"
                         onclick="window.toggleDispatchPopover()">
                         <span class="indicator-icon">📋</span>
-                        <span class="indicator-label" id="dispatch-indicator-text">发布任务</span>
-                        <span class="indicator-pill" id="dispatch-indicator-pill">0</span>
+                        <span class="indicator-label" id="dispatch-indicator-text">任务进度</span>
+                        <span class="indicator-pill ready-dot" id="dispatch-indicator-pill"></span>
                     </div>
                     <button class="secondary-btn glow-btn" id="btn-preview" onclick="window.triggerPublishAndPreview()">
                         <span class="btn-icon">⚡</span><span class="btn-text">发布预览</span>
                     </button>
                     <button class="primary-btn glow-btn" id="btn-publish">
-                        <span class="btn-icon">🚀</span><span class="btn-text">全域发布</span>
+                        <span class="btn-icon">🚀</span><span class="btn-text">全站发布</span>
                     </button>
                 </div>
             </nav>
         </header>
 
-        <button class="sidebar-toggle left" id="toggle-left">◀</button>
-        <button class="sidebar-toggle right" id="toggle-right">▶</button>
+        <button class="sidebar-toggle left" id="toggle-left" title="收起左侧导航 ([)">◀</button>
+        <button class="sidebar-toggle right" id="toggle-right" title="收起 Sovereign Copilot (])">▶</button>
 
         <!-- 🧪 Left Sidebar: System Identity Strip -->
-        <aside class="glass-panel sidebar" id="left-sidebar"></aside>
+        <aside class="sidebar" id="left-sidebar"></aside>
 
         <main id="main-viewport"></main>
 
         <!-- 🛡️ Right Sidebar: Audit Radar -->
-        <aside class="glass-panel sidebar" id="right-sidebar"></aside>
+        <aside class="sidebar" id="right-sidebar"></aside>
 
-        <footer id="main-footer" class="glass-panel"></footer>
+        <footer id="main-footer"></footer>
     </div>
 
     <!-- 🏗️ Modular Identity Control (V57.0) -->
@@ -229,6 +224,7 @@
     <script src="js/core/core_shards/core.hub.js?v=20260916_imprint_guard_v8"></script>
     <script src="js/core/core_shards/core.publish.precheck.js"></script>
     <script src="js/core/core_shards/core.publish.abort.js"></script>
+    <script src="js/core/core_shards/core.publish.stepper.js"></script>
     <script src="js/dashboard.core.js"></script>
     <script src="js/compute/compute.api.js"></script>
     <script src="js/compute/compute.ui.js?v=20260828_workstation_v5"></script>
@@ -248,7 +244,7 @@
     <script src="js/theme/theme.handlers.js?v=85.0"></script>
     <script src="js/theme/theme_shards/theme.preview_orchestrator.js?v=20260919_v1"></script>
     <script src="js/dashboard.compute.js?v=75.1"></script>
-    <script src="js/dashboard.templates.js?v=20260917_clean_rotate_v1"></script>
+    <script src="js/dashboard.templates.js?v=20261013_vault_center_v1"></script>
     <script src="js/dashboard.templates.tower.js"></script>
     <script src="js/dashboard.templates.analytics.js"></script>
     <script src="js/dispatch/dispatch.templates.js?v=20261007_publishing_hub_v1"></script>
@@ -261,14 +257,14 @@
     <script src="js/ui/modals.js?v=20260919_v1"></script>
     <script src="js/ui/launchpad_shards/launchpad.onboarding.js?v=20260916_vault_link_v12"></script>
     <script src="js/ui/launchpad_shards/launchpad.skeleton.js?v=20260916_vault_link_v12"></script>
-    <script src="js/ui/launchpad_shards/launchpad.pipeline.js?v=20260916_vault_link_v12"></script>
-    <script src="js/ui/launchpad_shards/launchpad.dashboard.js?v=20260916_vault_link_v12"></script>
+    <script src="js/ui/launchpad_shards/launchpad.pipeline.js?v=20261014_deliverables_v6"></script>
+    <script src="js/ui/launchpad_shards/launchpad.dashboard.js?v=20261016_equal_cta_v1"></script>
     <script src="js/ui/launchpad.js?v=20260916_vault_link_v12"></script>
     <script src="js/ui/tour_shards/tour.steps.js"></script>
     <script src="js/ui/tour_shards/tour.render.js"></script>
     <script src="js/ui/tour_shards/tour.milestone.js"></script>
     <script src="js/ui/dashboard.tour.js?v=20260917_studio_v20"></script>
-    <script src="js/ui/tooltip.js?v=20260917_fix_sync"></script>
+    <script src="js/ui/tooltip.js?v=20261016_right_toggle_v1"></script>
     <script src="js/ui/toast.js"></script>
     <script src="js/ui/alerter.js"></script>
     <script src="js/dashboard.ui.js?v=75.1"></script>
@@ -283,9 +279,9 @@
     <script src="js/vault/vault.ops.doc.ops.js"></script>
     <script src="js/vault/vault.ops.doc.js"></script>
     <script src="js/vault/vault.ops.dir.js"></script>
-    <script src="js/vault/vault.ops.js"></script>
+    <script src="js/vault/vault.ops.js?v=20261013_autohide_v1"></script>
     <script src="js/dashboard.vault.js?v=88.0"></script>
-    <script src="js/vault/vault.list.js?v=20260912_vault_list_v2"></script>
+    <script src="js/vault/vault.list.js?v=20261013_vault_table_v1"></script>
     <script src="js/vault/drawer_shards/vault.drawer.cards.js?v=20260918_v2"></script>
     <script src="js/vault/drawer_shards/vault.drawer.render.js?v=105.0"></script>
     <script src="js/vault/drawer_shards/vault.drawer.lifecycle.js?v=105.0"></script>
@@ -312,7 +308,7 @@
     <script src="js/editorial/syndicate_shards/syndicate.exporter.js?v=105.5"></script>
     <script src="js/editorial/syndicate_shards/syndicate.preview_cover.js?v=1.0"></script>
     <script src="js/editorial/syndicate_shards/syndicate.cards.js?v=103.0"></script>
-    <script src="js/editorial/syndicate_shards/syndicate.cover_studio.js?v=20260914_sync_v1"></script>
+    <script src="js/editorial/syndicate_shards/syndicate.cover_studio.js?v=20261012_friendly_v1"></script>
     <script src="js/editorial/syndicate_shards/syndicate.render.js?v=105.1"></script>
     <script src="js/editorial/syndicate_shards/syndicate.dispatch.js?v=20260913_fix_telemetry_v1"></script>
     <script src="js/editorial/article.syndicate.drawer.js?v=103.0"></script>
@@ -360,12 +356,12 @@
     <script src="js/modes_shards/modes.controller.js"></script>
     <script src="js/dashboard.modes.js?v=20260912_icmm_v1"></script>
     <script src="js/dashboard.image_policy.js?v=20260912_icmm_v1"></script>
-    <script src="js/design/design.studio.js?v=20260914_sync_v1"></script>
+    <script src="js/design/design.studio.js?v=20261013_engine_adapt_tristate_v4"></script>
     <script src="js/design/design_shards/design.provider_modal.js?v=20260912_design_assets_v1"></script>
     <script src="js/design/design_shards/design.assets_panel.js?v=20261008_assets_modal_v1"></script>
     <script src="js/design/design_shards/design.assets_detail.js?v=20260919_assets_detail_v1"></script>
     <script src="js/design/design_shards/design.cover_picker.js?v=20260912_picker_v1"></script>
-    <script src="js/design/design_shards/design.doc_cover_modal.js?v=20260914_sync_v1"></script>
+    <script src="js/design/design_shards/design.doc_cover_modal.js?v=20261013_quick_cover_v2_shuffle"></script>
     <script src="js/design/design_shards/design.hosting_modal.js?v=20260912_hosting_v1"></script>
     <script src="js/design/design_shards/design.upload_modal.js?v=20260912_upload_v1"></script>
     <script src="js/design/design_shards/design.batch_cover_modal.js?v=20260912_batch_v1"></script>
@@ -448,7 +444,7 @@
     <script src="js/agent/agent.render.js?v=7"></script>
     <script src="js/agent/agent.hitl.js?v=7"></script>
     <script src="js/agent/agent.widescreen.js?v=7"></script>
-    <script src="js/dashboard.agent.js?v=8"></script>
+    <script src="js/dashboard.agent.js?v=9"></script>
     <!-- 🌌 三维星系图引擎子模块物理分片 (符合 SOP-02 300行复杂度硬约束) -->
     <script src="js/galaxy/galaxy.scale.js?v=100.0"></script>
     <script src="js/galaxy/galaxy.labels.js?v=103.0"></script>
@@ -466,7 +462,8 @@
     <!-- 🚀 全域发布任务大厅与成果账本 (V122.0) -->
     <script src="js/dispatch/dispatch.indicator.js?v=20261002_v3"></script>
     <script src="js/dispatch/dispatch.popover.js?v=20261002_v3"></script>
-    <script src="js/dispatch/dispatch.workbench.js?v=20261007_publishing_hub_v1"></script>
+    <script src="js/dispatch/dispatch.workbench.js?v=20261014_shelf_hub_v4"></script>
+    <script src="js/dispatch/dispatch.shelf.render.js?v=20261014_shelf_hub_v4"></script>
     <script src="js/dispatch/dispatch.ledger.pagination.js?v=20261002_v3"></script>
     <script src="js/dispatch/dispatch.cooldown.guard.js?v=20261011_v1"></script>
     <script src="js/dispatch/dispatch.ledger.render.js?v=20261002_v3"></script>
@@ -476,9 +473,9 @@
     <script src="js/dispatch/dispatch.hosting.ping.js?v=20261008_v1"></script>
     <script src="js/dispatch/dispatch.hosting.logs.js?v=20261008_v1"></script>
     <script src="js/dispatch/dispatch.hosting.poll.js?v=20261008_v1"></script>
-    <script src="dashboard.js?v=20260912_fix_nav_v2"></script>
+    <script src="dashboard.js?v=20261016_right_toggle_v1"></script>
     <script src="js/palette/palette.commands.js"></script>
-    <script src="js/dashboard.palette.js?v=1.2"></script>
+    <script src="js/dashboard.palette.js?v=1.3"></script>
 </body>
 
 </html>

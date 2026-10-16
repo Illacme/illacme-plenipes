@@ -6,7 +6,6 @@
 
 import os
 from datetime import datetime
-import pytest
 from fastapi.testclient import TestClient
 from services.api.server import app
 import core.runtime.engine_singleton as singleton

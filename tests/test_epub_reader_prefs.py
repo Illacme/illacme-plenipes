@@ -7,7 +7,6 @@ EPUB 阅读器沉浸全屏手势、Aa 排版定制抽屉与五色护眼主题自
 
 import os
 import subprocess
-import pytest
 from core.adapters.egress.ebook.epub_reader import render_epub_reader_html
 from core.adapters.egress.ebook.epub_reader_prefs_css import get_epub_prefs_css
 from core.adapters.egress.ebook.epub_reader_prefs_js import get_epub_prefs_js

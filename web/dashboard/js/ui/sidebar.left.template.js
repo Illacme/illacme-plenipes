@@ -13,7 +13,7 @@ window.ensureLeftSidebarMounted = function () {
         <div class="sidebar-pod identity-pod">
             <div class="pod-header">
                 <span class="pod-title">PRESS IDENTITY</span>
-                <div class="heartbeat-indicator pulsing healthy"></div>
+                <div class="heartbeat-indicator pulsing healthy" id="sidebar-heartbeat" data-tip="系统基座：健康守护中 (点击配置)" title="全站运行基座：健康守护中&#10;点击直达系统运行基座与网络配置" onclick="window.showView('settings', 'engine')"></div>
             </div>
             <div class="identity-badge-group" style="display: flex; flex-direction: column; gap: 8px;">
                 <div class="identity-item" style="display: flex; align-items: center; gap: 6px;">
@@ -37,7 +37,7 @@ window.ensureLeftSidebarMounted = function () {
             </div>
             <div id="publishing-pipeline-matrix" class="pipeline-matrix">
                 <!-- 阶段 1: 原稿文库 -->
-                <div class="pipeline-capsule" id="pipe-cap-vault" onclick="window.showView('vault')"
+                <div class="pipeline-capsule" id="pipe-cap-vault" data-tip="1. 原稿文库" onclick="window.showView('vault')"
                     title="点击一键直达原稿文库列表与文稿管理">
                     <div class="pipe-icon">📂</div>
                     <div class="pipe-data">
@@ -48,7 +48,7 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 2: 多语言翻译 -->
-                <div class="pipeline-capsule" id="pipe-cap-i18n" onclick="window.showView('settings', 'localization')"
+                <div class="pipeline-capsule" id="pipe-cap-i18n" data-tip="2. 多语言翻译" onclick="window.showView('settings', 'localization')"
                     title="点击一键直达多语言翻译治理与目标语种配置">
                     <div class="pipe-icon">🌍</div>
                     <div class="pipe-data">
@@ -59,7 +59,7 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 3: 网站主题 -->
-                <div class="pipeline-capsule" id="pipe-cap-theme" onclick="window.showView('settings', 'themes')"
+                <div class="pipeline-capsule" id="pipe-cap-theme" data-tip="3. 网站主题" onclick="window.showView('settings', 'themes')"
                     title="点击一键直达网站视觉主题与出版模式选择">
                     <div class="pipe-icon">🎭</div>
                     <div class="pipe-data">
@@ -70,7 +70,7 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 4: 网址路径 -->
-                <div class="pipeline-capsule" id="pipe-cap-routing" onclick="window.showView('settings', 'slug_settings')"
+                <div class="pipeline-capsule" id="pipe-cap-routing" data-tip="4. 网址路径" onclick="window.showView('settings', 'slug_settings')"
                     title="点击一键直达网址访问路径与 Slug 沙盒定制">
                     <div class="pipe-icon">🧭</div>
                     <div class="pipe-data">
@@ -81,7 +81,7 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 5: 独立站托管 (优先于社媒) -->
-                <div class="pipeline-capsule" id="pipe-cap-hosting" onclick="window.showView('plugins', 'hosting')"
+                <div class="pipeline-capsule" id="pipe-cap-hosting" data-tip="5. 独立站托管" onclick="window.showView('plugins', 'hosting')"
                     title="点击一键直达独立站全站托管与云端部署配置">
                     <div class="pipe-icon">🌐</div>
                     <div class="pipe-data">
@@ -92,7 +92,7 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 6: 社交平台同步 (独立站上线后全网广播) -->
-                <div class="pipeline-capsule" id="pipe-cap-syndication" onclick="if(typeof window.openDispatchHub==='function'){window.openDispatchHub();}else{window.showView('plugins', 'publisher');}"
+                <div class="pipeline-capsule" id="pipe-cap-syndication" data-tip="6. 社交平台同步" onclick="if(typeof window.openDispatchHub==='function'){window.openDispatchHub();}else{window.showView('plugins', 'publisher');}"
                     title="点击一键唤起多平台社交媒体同步与广播中枢">
                     <div class="pipe-icon">🚀</div>
                     <div class="pipe-data">
@@ -119,17 +119,34 @@ window.ensureLeftSidebarMounted = function () {
             <div class="pod-header">
                 <span class="pod-title">OPERATIONS</span>
             </div>
-            <div class="control-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <button class="mini-btn glow-btn" onclick="location.reload()" title="重新加载当前管理面板状态"
-                    style="flex: 1;">🔄 刷新面板</button>
-                <button class="mini-btn glow-btn" id="btn-system-gc" onclick="window.triggerSystemGC()"
-                    title="物理清洗底层已失效的幽灵路由与冗余资产"
-                    style="flex: 1; background: rgba(0, 242, 255, 0.1); border-color: rgba(0, 242, 255, 0.3);">🧹
-                    清洗路由</button>
-            </div>
-            <div class="control-row">
-                <button class="mini-btn danger-btn full-width" id="master-shutdown-btn" onclick="shutdownSystem()"
-                    title="安全关闭后端的 Illacme Plenipes 引擎服务">⏻ 关闭服务</button>
+            <div class="op-btn-group">
+                <div class="op-row-dual">
+                    <button class="mini-btn op-btn glow-btn" id="btn-sidebar-reload" data-tip="刷新工作台面板" onclick="location.reload()" title="重新加载当前管理面板状态">
+                        <svg class="op-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        <span class="op-text">刷新面板</span>
+                    </button>
+                    <button class="mini-btn op-btn glow-btn" id="btn-system-gc" data-tip="清洗幽灵路由缓存" onclick="window.triggerSystemGC()" title="物理清洗底层已失效的幽灵路由与冗余资产">
+                        <svg class="op-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 4l4 4-8.5 8.5H7.5V12.5L16 4z"></path>
+                            <path d="M5 20h14"></path>
+                            <path d="M3 20l2-2"></path>
+                        </svg>
+                        <span class="op-text">清洗路由</span>
+                    </button>
+                </div>
+                <div class="op-row-single">
+                    <button class="mini-btn op-btn danger-btn full-width" id="master-shutdown-btn" data-tip="安全关闭服务引擎" onclick="shutdownSystem()" title="安全关闭后端的 Illacme Plenipes 引擎服务">
+                        <svg class="op-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                        <span class="op-text">关闭服务</span>
+                    </button>
+                </div>
             </div>
         </div>
     `;

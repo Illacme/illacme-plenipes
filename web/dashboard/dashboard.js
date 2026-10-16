@@ -8,6 +8,33 @@
 
 
 // 1. 全局交互逻辑 (Sidebar)
+window._copilotCurrentState = 'idle';
+
+window.syncRightToggleState = (state = null, customTooltip = null) => {
+    if (state !== null) window._copilotCurrentState = state;
+    const currentState = window._copilotCurrentState || 'idle';
+    const btn = document.getElementById('toggle-right');
+    const app = document.getElementById('app-container');
+    if (!btn || !app) return;
+    const isCollapsed = app.classList.contains('right-collapsed');
+
+    btn.classList.remove('agent-busy', 'agent-hitl');
+    if (currentState === 'busy') btn.classList.add('agent-busy');
+    else if (currentState === 'hitl') btn.classList.add('agent-hitl');
+
+    if (isCollapsed) {
+        if (currentState === 'busy') {
+            btn.title = customTooltip || '⚡ Sovereign Copilot 正在执行任务 · 点击展开查看 (Cmd+K / ])';
+        } else if (currentState === 'hitl') {
+            btn.title = customTooltip || '⚠️ Sovereign Copilot 等待人工审批 · 点击展开确认 (Cmd+K / ])';
+        } else {
+            btn.title = customTooltip || '🧠 Sovereign Copilot (待命) · 点击展开 (Cmd+K / ])';
+        }
+    } else {
+        btn.title = '收起 Sovereign Copilot 面板 (])';
+    }
+};
+
 window.toggleSidebar = (side) => {
     const app = document.getElementById('app-container');
     const className = side === 'left' ? 'left-collapsed' : 'right-collapsed';
@@ -17,8 +44,13 @@ window.toggleSidebar = (side) => {
     const btn = document.getElementById(`toggle-${side}`);
     const isCollapsed = app.classList.contains(className);
     if (btn) {
-        if (side === 'left') btn.innerText = isCollapsed ? '▶' : '◀';
-        else btn.innerText = isCollapsed ? '◀' : '▶';
+        if (side === 'left') {
+            btn.innerText = isCollapsed ? '▶' : '◀';
+            btn.title = isCollapsed ? '展开左侧导航 ([)' : '收起左侧导航 ([)';
+        } else {
+            btn.innerText = isCollapsed ? '◀' : '▶';
+            window.syncRightToggleState();
+        }
     }
     if (typeof addAudit === 'function') addAudit(`🛰️ 视图对正: ${side === 'left' ? '左舷' : '右舷'}面板已${isCollapsed ? '收纳' : '展开'}`);
 };
@@ -46,6 +78,7 @@ window.initDashboard = async () => {
         }
         if (document.getElementById('toggle-right')) {
             document.getElementById('toggle-right').onclick = () => window.toggleSidebar('right');
+            window.syncRightToggleState('idle');
         }
 
         // 全局快捷键
@@ -149,7 +182,7 @@ window.initDashboard = async () => {
         };
 
         setupNavGroup('nav-group-governance', 'settings');
-        setupNavGroup('nav-group-telemetry', 'tower');
+        setupNavGroup('nav-group-telemetry', 'analytics');
 
         // 点击页面任意外部空白区域，自动关闭所有展开的下拉菜单
         document.addEventListener('click', (e) => {

@@ -15,10 +15,15 @@ window._wsHandlePublishComplete = (data) => {
     if (typeof window.addAudit === 'function') {
         window.addAudit('网站发布流程已全部完成！', 'success');
     }
-    // 🚀 [V10.4] 记录已完成发布状态，用于防重入提示及重新发布选项
+    // 🚀 [V10.4] 记录已完成发布状态与真实时间戳，用于防重入提示及重新发布选项
     const activeId = window.settingsData?._active_imprint || 'default';
     localStorage.setItem(`sync_completed_${activeId}`, 'true');
     localStorage.setItem('sync_completed', 'true');
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const pubDateStr = `今天 ${timeStr}`;
+    localStorage.setItem(`_illacme_last_pub_${activeId}`, pubDateStr);
+    localStorage.setItem('_illacme_last_pub', pubDateStr);
 
     if (typeof window.refreshGalaxy === 'function') {
         window.refreshGalaxy();
@@ -29,6 +34,9 @@ window._wsHandlePublishComplete = (data) => {
         if ((modal.dataset.context === 'publish_preview' || modal.dataset.context === 'preview') && typeof window.handlePreviewSyncCompleted === 'function') {
             window.handlePreviewSyncCompleted();
         } else {
+            if (typeof window.markAllPublishStepsCompleted === 'function') {
+                window.markAllPublishStepsCompleted();
+            }
             if (typeof window.appendTerminalLog === 'function') {
                 window.appendTerminalLog('✅ 同步流水线执行完毕，资产已全量生成！', '#00ff88');
             }
@@ -44,18 +52,18 @@ window._wsHandlePublishComplete = (data) => {
                     }).catch(() => {});
                 }
             }
-            const okBtn = document.getElementById('btn-terminal-ok');
-            if (okBtn) okBtn.style.display = 'block';
-
-            const republishBtn = document.getElementById('btn-terminal-republish');
-            if (republishBtn) republishBtn.style.display = 'none';
-
-            const openPreviewBtn = document.getElementById('btn-terminal-open-preview');
-            if (openPreviewBtn) openPreviewBtn.style.display = 'none';
-
-            // 🛡️ [Abort] 隐藏中止按钮
-            const abortBtn = document.getElementById('btn-terminal-abort');
-            if (abortBtn) abortBtn.style.display = 'none';
+            if (typeof window.setTerminalCompletedFooter === 'function') {
+                window.setTerminalCompletedFooter();
+            } else {
+                const okBtn = document.getElementById('btn-terminal-ok');
+                if (okBtn) { okBtn.style.display = 'inline-flex'; okBtn.innerText = '关闭'; }
+                const republishBtn = document.getElementById('btn-terminal-republish');
+                if (republishBtn) republishBtn.style.display = 'inline-flex';
+                const closeBtn = document.getElementById('btn-terminal-close');
+                if (closeBtn) closeBtn.style.display = 'none';
+                const abortBtn = document.getElementById('btn-terminal-abort');
+                if (abortBtn) abortBtn.style.display = 'none';
+            }
 
             const statusEl = document.getElementById('terminal-status');
             if (statusEl) {

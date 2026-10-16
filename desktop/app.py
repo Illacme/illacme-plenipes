@@ -5,7 +5,6 @@ Illacme Plenipes - Desktop Application Launcher
 🛡️ [SOP-01 规范]：单文件行数严格 ≤ 300 行。
 """
 
-import os
 import sys
 import time
 import socket
@@ -15,7 +14,6 @@ import webbrowser
 from typing import Optional
 
 from core.utils.tracing import tlog
-from core.utils.frozen_paths import FrozenPathResolver
 
 # 遵从 Rule #6 系统默认端口规划
 SINGLETON_PORT = 43210

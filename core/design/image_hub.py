@@ -89,13 +89,33 @@ class ImageHub:
         try:
             conn = meta_manager.sqlite.get_connection()
             with conn:
-                conn.execute(
-                    """
-                    INSERT INTO visual_assets (rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt)
-                )
+                cur = conn.cursor()
+                if source_url:
+                    cur.execute("SELECT id FROM visual_assets WHERE source_url = ?", (source_url,))
+                    row = cur.fetchone()
+                else:
+                    row = None
+
+                if row:
+                    cur.execute(
+                        """
+                        UPDATE visual_assets
+                        SET rel_path = ?, asset_type = ?, strategy = ?,
+                            cdn_url = COALESCE(NULLIF(?, ''), cdn_url),
+                            media_id = COALESCE(NULLIF(?, ''), media_id),
+                            prompt = COALESCE(NULLIF(?, ''), prompt)
+                        WHERE id = ?
+                        """,
+                        (rel_path, asset_type, strategy, cdn_url, media_id, prompt, row[0])
+                    )
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO visual_assets (rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (rel_path, asset_type, strategy, source_url, cdn_url, media_id, prompt)
+                    )
             tlog.info(f"📊 [ImageHub] 视觉资产物权已登记: {rel_path} -> {strategy} (MediaID: {media_id or 'N/A'})")
             return True
         except Exception as e:

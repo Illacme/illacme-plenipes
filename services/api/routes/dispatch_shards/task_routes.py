@@ -28,17 +28,8 @@ class TaskActionPayload(BaseModel):
 
 
 _HOSTING_ICON_MAP = {
-    "cloudflare_pages": "☁️",
-    "github_pages": "🐱",
-    "gitee_pages": "🚩",
-    "gitlab_pages": "🦊",
-    "vercel": "▲",
-    "netlify": "💠",
-    "zeabur": "⛵",
-    "render": "🟣",
-    "railway": "🚂",
-    "firebase": "🔥",
-    "sftp": "🖥️",
+    "cloudflare_pages": "☁️", "github_pages": "🐱", "gitee_pages": "🚩", "gitlab_pages": "🦊",
+    "vercel": "▲", "netlify": "💠", "zeabur": "⛵", "render": "🟣", "railway": "🚂", "firebase": "🔥", "sftp": "🖥️"
 }
 
 
@@ -113,7 +104,8 @@ async def get_dispatch_overview() -> Dict[str, Any]:
             "summary": {"total_syndicated": 0, "total_failed": 0, "active_count": 0},
             "channel_health": [],
             "dead_letter_tasks": [],
-            "recent_records": []
+            "recent_records": [],
+            "hosting_total": 0
         }
 
     docs_snapshot = engine.meta.get_documents_snapshot() if hasattr(engine.meta, "get_documents_snapshot") else {}
@@ -165,13 +157,20 @@ async def get_dispatch_overview() -> Dict[str, Any]:
     is_publishing = bool(_is_publishing or hosting_running)
     active_count = (1 if _is_publishing else 0) + len(_pending_sync_queue) + (1 if hosting_running else 0)
 
+    imprint_id = getattr(engine.config, "active_imprint", "default") or "default" if hasattr(engine, "config") else "default"
+    hosting_total = 0
+    if hasattr(engine, "meta") and hasattr(engine.meta, "count_hosting_deploy_batches"):
+        try: hosting_total = engine.meta.count_hosting_deploy_batches(imprint_id=imprint_id)
+        except Exception: hosting_total = 0
+
     return {
         "status": "success", "is_publishing": is_publishing,
         "summary": {
             "total_syndicated": len(recent_records), "total_failed": len(dead_letter_tasks), "active_count": active_count,
             "success_rate": f"{round((len(recent_records) / max(len(recent_records) + len(dead_letter_tasks), 1)) * 100, 1)}%"
         },
-        "channel_health": channel_health, "dead_letter_tasks": dead_letter_tasks, "recent_records": recent_records
+        "channel_health": channel_health, "dead_letter_tasks": dead_letter_tasks,
+        "recent_records": recent_records, "hosting_total": hosting_total
     }
 
 

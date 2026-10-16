@@ -5,11 +5,8 @@ Tests for Desktop System Tray Hub (tests/test_desktop_tray.py)
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import sys
-import threading
 from unittest.mock import MagicMock, patch
 
-import pytest
 from desktop.tray import SystemTrayManager
 
 

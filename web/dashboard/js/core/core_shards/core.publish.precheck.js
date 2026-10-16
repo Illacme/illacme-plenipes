@@ -54,14 +54,20 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
                 if (modal) {
                     modal.style.display = 'flex';
                     const title = document.getElementById('terminal-title');
-                    if (title) title.innerText = '🚀 全域全息同步 (已完成)';
+                    if (title) title.innerText = '🚀 全站发布流水线 (最新版本已就绪)';
                     const toolbar = document.getElementById('terminal-toolbar');
-                    if (toolbar) toolbar.style.display = 'none';
+                    if (toolbar) {
+                        toolbar.style.display = 'flex';
+                        toolbar.innerHTML = window.renderPublishStepperToolbar ? window.renderPublishStepperToolbar() : '';
+                    }
+                    if (typeof window.markAllPublishStepsCompleted === 'function') {
+                        window.markAllPublishStepsCompleted();
+                    }
 
                     const out = document.getElementById('terminal-output');
                     if (out) {
                         out.innerHTML = '';
-                        modal.dataset.context = 'republish_prompt';
+                        modal.dataset.context = 'publish';
                     }
 
                     if (typeof window.appendTerminalLog === 'function') {
@@ -137,7 +143,7 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
 
     const confirmHtml = `
         <div style="text-align: left; font-size: 0.95rem; line-height: 1.6; color: var(--text-bright);">
-            <p style="margin-bottom: 12px; color: var(--text-dim);">启动全域全息同步流水线，系统将执行全量静态页面生成，并分发对齐至已启用的第三方渠道：</p>
+            <p style="margin-bottom: 12px; color: var(--text-dim);">启动全站发布流水线，系统将执行全量静态页面生成，并分发对齐至已启用的第三方渠道：</p>
             <div class="precheck-info-card" style="background: var(--card-subtle-bg, rgba(255, 255, 255, 0.03)); border: 1px solid var(--glass-border); border-radius: 8px; padding: 14px; margin-bottom: 16px; backdrop-filter: blur(10px);">
                 <div style="margin-bottom: 10px; display: flex; align-items: center;">
                     <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">⚙️ 出版模式:</span>
@@ -149,18 +155,18 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
                 </div>
                 <div style="display: flex; align-items: flex-start;">
                     <span style="color: #00ff88; font-weight: bold; width: 90px; display: inline-block;">📡 渠道矩阵:</span>
-                    <span style="color: var(--text-bright); font-weight: 500; flex: 1;">一键发布至已开启的托管平台与社媒分发渠道</span>
+                    <span style="color: var(--text-bright); font-weight: 500; flex: 1;">一键编译全站并推送至已开启的网站托管平台</span>
                 </div>
             </div>
             ${warningDetailsHtml}
-            <p style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--text-bright); font-size: 1.05rem;">🚀 确定要启动全域发布点火吗？</p>
+            <p style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--text-bright); font-size: 1.05rem;">🚀 确定要启动全站发布点火吗？</p>
         </div>
     `;
 
     if (!force) {
         if (window.Swal) {
             const result = await window.Swal.fire({
-                title: '🚀 全域全息发布就绪预检',
+                title: '🚀 全站全息发布就绪预检',
                 html: confirmHtml,
                 icon: hasWarnings ? 'warning' : 'info',
                 showCancelButton: true,
@@ -176,7 +182,7 @@ window.runPublishPrecheck = async function (force = false, activeId = 'default',
             });
 
             if (!result.isConfirmed) {
-                if (typeof window.addAudit === 'function') window.addAudit('已取消全域发布。', 'info');
+                if (typeof window.addAudit === 'function') window.addAudit('已取消全站发布。', 'info');
                 try { await apiFetch('/api/system/watchdog/resume', { method: 'POST' }); } catch (e) {}
                 return { proceed: false, precheckRes };
             }

@@ -5,7 +5,6 @@
 验证社交媒体单篇推流平台级频控限流、通道级防抖拦截与倒计时计算
 """
 
-import time
 import pytest
 from services.api.logic.dispatch_ops_shards.pipeline_shards.pipeline_rate_limiter import (
     check_and_acquire_rate_limit,

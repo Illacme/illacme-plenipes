@@ -19,7 +19,7 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             throw new Error('apiFetch 核心未加载完毕');
         }
 
-        // 🚀 [V10.4] 100% 发布状态检测：按当前活跃品牌 (active_imprint) 维度精准判定，避免跨品牌幽灵判定
+        // 🚀 [V10.5] 100% 发布状态检测：统一直接投射终端流水线视窗并展示关键业务步骤 (全完成态)
         const activeId = window.settingsData?._active_imprint || 'default';
         const isCompletedForActiveImprint = localStorage.getItem(`sync_completed_${activeId}`) === 'true' || localStorage.getItem('sync_completed') === 'true';
 
@@ -27,44 +27,52 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             const modal = document.getElementById('terminal-modal');
             if (modal) {
                 modal.style.display = 'flex';
+                modal.dataset.context = 'publish';
                 const title = document.getElementById('terminal-title');
-                if (title) title.innerText = '🚀 全域全息同步 (已完成)';
+                if (title) title.innerText = '🚀 全站发布流水线 (最新版本已就绪)';
+
                 const toolbar = document.getElementById('terminal-toolbar');
-                if (toolbar) toolbar.style.display = 'none';
-
-                const out = document.getElementById('terminal-output');
-                if (out) {
-                    out.innerHTML = '';
-                    modal.dataset.context = 'republish_prompt';
+                if (toolbar) {
+                    toolbar.style.display = 'flex';
+                    toolbar.innerHTML = window.renderPublishStepperToolbar ? window.renderPublishStepperToolbar() : '';
                 }
 
-                if (typeof window.appendTerminalLog === 'function') {
-                    window.appendTerminalLog('📡 [系统] 检测到当前同步已 100% 完成。', '#00ff88');
-                    window.appendTerminalLog('💡 您可以点击下方按钮选择“重新发布”以强行重新生成和分发所有资产。', '#38bdf8');
+                if (typeof window.markAllPublishStepsCompleted === 'function') {
+                    window.markAllPublishStepsCompleted();
                 }
 
-                // 🛡️ 单例隔离
-                if (typeof window.resetTerminalModalFooter === 'function') {
+                if (typeof window.setTerminalCompletedFooter === 'function') {
+                    window.setTerminalCompletedFooter();
+                } else if (typeof window.resetTerminalModalFooter === 'function') {
                     window.resetTerminalModalFooter();
                 }
 
-                const republishBtn = document.getElementById('btn-terminal-republish');
-                if (republishBtn) republishBtn.style.display = 'inline-flex';
-
-                const okBtn = document.getElementById('btn-terminal-ok');
-                if (okBtn) {
-                    okBtn.style.display = 'inline-flex';
-                    okBtn.innerText = '关闭';
-                }
+                const forceBar = document.getElementById('preview-force-sync-bar');
+                if (forceBar) forceBar.style.display = 'flex';
 
                 const statusEl = document.getElementById('terminal-status');
                 if (statusEl) {
-                    statusEl.innerText = 'COMPLETED';
+                    statusEl.innerText = 'READY';
                     statusEl.className = 'online';
                 }
-            }
-            if (typeof window.addAudit === 'function') {
-                window.addAudit('网站已处于100%发布状态，已弹出重新发布选项。', 'info');
+
+                const out = document.getElementById('terminal-output');
+                if (out && !out.querySelector('.deploy-summary-card')) {
+                    if (typeof window.appendTerminalLog === 'function') {
+                        out.innerHTML = '';
+                        window.appendTerminalLog('========================================================================', '#00f0ff');
+                        window.appendTerminalLog('🎉 全站已处于最新发布状态，所有文库原稿与静态页面均已编译就绪。', '#00ff88');
+                        window.appendTerminalLog('💡 如需更新文库新原稿或重新编译推流，请点击下方「🔄 重新发布」。', '#d1d5db');
+                        window.appendTerminalLog('========================================================================', '#00f0ff');
+                    }
+                    if (typeof window.apiFetch === 'function' && typeof window.renderDeploymentSummaryCard === 'function') {
+                        window.apiFetch('/api/governance/deployment-summary').then(res => {
+                            if (res && res.status === 'success' && res.summary) {
+                                window.renderDeploymentSummaryCard(res.summary);
+                            }
+                        }).catch(() => {});
+                    }
+                }
             }
             return;
         }
@@ -80,10 +88,18 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             const modal = document.getElementById('terminal-modal');
             if (modal) {
                 modal.style.display = 'flex';
+                modal.dataset.context = 'publish';
                 const title = document.getElementById('terminal-title');
-                if (title) title.innerText = '🚀 全域全息同步流水线 (恢复视图)';
+                if (title) title.innerText = '🚀 全站发布流水线 (恢复视图)';
                 const toolbar = document.getElementById('terminal-toolbar');
-                if (toolbar) toolbar.style.display = 'none';
+                if (toolbar) {
+                    toolbar.style.display = 'flex';
+                    toolbar.innerHTML = window.renderPublishStepperToolbar ? window.renderPublishStepperToolbar() : '';
+                }
+                if (typeof window.setPublishStepState === 'function') {
+                    window.setPublishStepState(1, 'completed');
+                    window.setPublishStepState(2, 'active');
+                }
 
                 if (typeof window.resetTerminalModalFooter === 'function') {
                     window.resetTerminalModalFooter();
@@ -152,10 +168,17 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
             const modal = document.getElementById('terminal-modal');
             if (modal) {
                 modal.style.display = 'flex';
+                modal.dataset.context = 'publish';
                 const title = document.getElementById('terminal-title');
-                if (title) title.innerText = '🚀 全域全息同步流水线';
+                if (title) title.innerText = '🚀 全站发布流水线';
                 const toolbar = document.getElementById('terminal-toolbar');
-                if (toolbar) toolbar.style.display = 'none';
+                if (toolbar) {
+                    toolbar.style.display = 'flex';
+                    toolbar.innerHTML = window.renderPublishStepperToolbar ? window.renderPublishStepperToolbar() : '';
+                }
+                if (typeof window.resetPublishStepper === 'function') {
+                    window.resetPublishStepper();
+                }
 
                 const out = document.getElementById('terminal-output');
                 if (out && modal.dataset.context !== 'publish') {
@@ -185,7 +208,7 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                     const modeText = currentMode === 'basic' ? '基础模式 (Basic)' :
                                      currentMode === 'enhanced' ? '增强模式 (Enhanced)' : '全球出版模式 (Global)';
                     window.appendTerminalLog(`📡 [点火] 当前出版模式: ${modeText}`, '#a29bfe');
-                    window.appendTerminalLog('🚀 正在启动全域全息同步流水线...', '#00ff88');
+                    window.appendTerminalLog('🚀 正在启动全站发布流水线...', '#00ff88');
                 }
             }
 
@@ -205,14 +228,21 @@ window.triggerPublish = async function (force = false, bypassCompletedCheck = fa
                 window.addAudit('已有同步任务正在运行，已自动投射实时日志终端。', 'warning');
             }
 
-            // 🚀 [V79.0] 恢复显示后台同步终端视图
             const modal = document.getElementById('terminal-modal');
             if (modal) {
                 modal.style.display = 'flex';
+                modal.dataset.context = 'publish';
                 const title = document.getElementById('terminal-title');
-                if (title) title.innerText = '🚀 全域全息同步流水线 (恢复视图)';
+                if (title) title.innerText = '🚀 全站发布流水线 (恢复视图)';
                 const toolbar = document.getElementById('terminal-toolbar');
-                if (toolbar) toolbar.style.display = 'none';
+                if (toolbar) {
+                    toolbar.style.display = 'flex';
+                    toolbar.innerHTML = window.renderPublishStepperToolbar ? window.renderPublishStepperToolbar() : '';
+                }
+                if (typeof window.setPublishStepState === 'function') {
+                    window.setPublishStepState(1, 'completed');
+                    window.setPublishStepState(2, 'active');
+                }
 
                 const okBtn = document.getElementById('btn-terminal-ok');
                 if (okBtn) okBtn.style.display = 'none';

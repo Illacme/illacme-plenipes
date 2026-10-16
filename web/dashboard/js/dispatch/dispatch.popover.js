@@ -50,7 +50,7 @@ window.createDispatchPopoverDOM = function () {
     el.innerHTML = `
         <div class="popover-header">
             <span class="popover-title">
-                <span>🚀 发布任务与进度</span>
+                <span>📋 任务进度与状态</span>
             </span>
             <button class="popover-close" onclick="window.toggleDispatchPopover(false)">×</button>
         </div>
@@ -86,19 +86,12 @@ window.createDispatchPopoverDOM = function () {
 window.parseDispatchDate = function (raw) {
     if (!raw) return null;
     try {
-        let d;
-        if (typeof raw === 'number' || /^\d{10,13}$/.test(String(raw).trim())) {
-            const num = Number(raw);
-            d = new Date(num > 1e11 ? num : num * 1000);
-        } else {
-            let s = String(raw).trim();
-            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) s = s.replace(' ', 'T') + 'Z';
-            d = new Date(s);
-        }
+        let s = String(raw).trim();
+        if (/^\d{10,13}$/.test(s)) return new Date(Number(s) > 1e11 ? Number(s) : Number(s) * 1000);
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) s = s.replace(' ', 'T') + 'Z';
+        const d = new Date(s);
         return isNaN(d.getTime()) ? null : d;
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 };
 
 window.formatDispatchTime = function (raw) {
@@ -128,30 +121,44 @@ window.renderPopoverContent = function (data) {
     const body = document.getElementById('dispatch-popover-body');
     if (!body) return;
 
-    const isPublishing = Boolean(data && data.is_publishing);
+    const fullState = window._fullSitePublishState || {};
+    const isPublishing = Boolean(data && data.is_publishing) || Boolean(fullState.isPublishing) || Boolean(window._isPublishPreviewActive);
+    const stage = fullState.stage || (isPublishing ? 2 : 0);
+    const stageName = fullState.stageName || (isPublishing ? '编译中' : '待命');
     const summary = (data && data.summary) || {};
     const deadTasks = (data && data.dead_letter_tasks) || [];
     const recentRecords = (data && data.recent_records) || [];
 
     let html = '';
 
-    // 1. 活跃状态专区
+    // 1. 活跃状态专区 (支持全站发布 4 步 Stepper 进度与终端直达)
     if (isPublishing) {
         html += `
-            <div class="popover-status-box running">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span class="status-indicator-text running">
-                        <span>⏳ 全域流水线正在运行...</span>
+            <div class="popover-status-box running" style="padding: 10px 12px; background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span class="status-indicator-text running" style="font-weight: 700; color: #00f0ff; font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
+                        <span>⏳ 全站发布执行中</span>
                     </span>
-                    <button class="mini-btn danger" onclick="if(typeof window.abortSync==='function') window.abortSync();" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; cursor: pointer;">
-                        ⏹️ 中止发布
+                    <span style="font-size: 0.7rem; color: #00ff88; background: rgba(0,255,136,0.12); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.25);">
+                        ${stageName}
+                    </span>
+                </div>
+                <div class="preview-stepper-bar" style="margin: 6px 0; padding: 4px 6px; font-size: 0.68rem; background: rgba(0,0,0,0.3);">
+                    <div class="step-item ${stage >= 1 ? (stage === 1 ? 'active' : 'completed') : ''}"><span class="step-icon">🔍</span> 预检</div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item ${stage >= 2 ? (stage === 2 ? 'active' : 'completed') : ''}"><span class="step-icon">🌐</span> 排版</div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item ${stage >= 3 ? (stage === 3 ? 'active' : 'completed') : ''}"><span class="step-icon">🎨</span> 装配</div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item ${stage >= 4 ? (stage === 4 ? 'active' : 'completed') : ''}"><span class="step-icon">🚀</span> 部署</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 6px;">
+                    <button class="primary-btn glow-btn" onclick="window.toggleDispatchPopover(false); if(typeof window.triggerPublish==='function') window.triggerPublish();" style="flex: 1; padding: 4px 8px; font-size: 0.75rem; background: var(--neon-cyan); color: #000; font-weight: 700; border: none; border-radius: 4px; cursor: pointer;">
+                        🖥️ 恢复日志视窗
                     </button>
-                </div>
-                <div class="pipeline-progress-track">
-                    <div class="pipeline-progress-bar"></div>
-                </div>
-                <div class="popover-status-sub">
-                    正在执行：多语种翻译、静态排版编译与多渠道并发推送
+                    <button class="mini-btn danger" onclick="if(typeof window.abortSync==='function') window.abortSync();" style="padding: 4px 8px; font-size: 0.72rem; border-radius: 4px; cursor: pointer;">
+                        🛑 中止
+                    </button>
                 </div>
             </div>
         `;
@@ -195,12 +202,15 @@ window.renderPopoverContent = function (data) {
                 <div style="min-width: 0; flex: 1; margin-right: 8px;">
                     <div class="status-indicator-text ready">🟢 发布流水线就绪</div>
                     <div class="popover-status-sub" style="margin-top: 3px; font-size: 0.73rem; line-height: 1.3;" title="${channelTip}">
-                        累计全域发布 ${total} 次${channelText}
+                        累计全站发布 ${total} 次${channelText}
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                    <span class="popover-kpi-badge" title="全域发布历史成功率: ${successRate}">
-                        ${successRate} 成功率
+                    <button class="popover-heal-link" onclick="window.toggleDispatchPopover(false); if(typeof window.triggerPublish==='function') window.triggerPublish();" style="border: none; background: transparent; cursor: pointer; color: var(--neon-cyan); font-size: 0.74rem;" title="打开白盒发布终端视窗">
+                        🖥️ 日志
+                    </button>
+                    <span class="popover-kpi-badge" title="全站发布历史成功率: ${successRate}">
+                        ${successRate}
                     </span>
                     <button class="popover-refresh-btn" onclick="window.triggerPopoverManualRefresh(this)" title="立即刷新发布状态与成果">
                         <span>🔄</span>
@@ -236,7 +246,7 @@ window.renderPopoverContent = function (data) {
             const linkTitle = rec.target_type === 'hosting' ? '在新窗口访问在线网页 ↗' : '在新窗口查看平台文章 ↗';
             html += `
                 <div class="popover-record-item">
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 270px; flex: 1; min-width: 0;">
+                    <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:270px;flex:1;min-width:0;">
                         <div class="popover-record-title" title="${relPath}">${relPath}</div>
                         <div class="popover-record-sub">
                             <span>${targetId} · ${langCode}</span>
@@ -244,13 +254,7 @@ window.renderPopoverContent = function (data) {
                         </div>
                     </div>
                     <div>
-                        ${rec.remote_url ? `
-                            <a href="${rec.remote_url}" target="_blank" class="magic-link-mini" title="${linkTitle}">
-                                🔗 访问
-                            </a>
-                        ` : `
-                            <span class="tag-synced-mini">已同步</span>
-                        `}
+                        ${rec.remote_url ? `<a href="${rec.remote_url}" target="_blank" class="magic-link-mini" title="${linkTitle}">🔗 访问</a>` : `<span class="tag-synced-mini">已同步</span>`}
                     </div>
                 </div>
             `;
@@ -275,9 +279,7 @@ window.triggerPopoverRetryAll = async function (btn) {
         if (typeof window.startHostingDeployPolling === 'function') window.startHostingDeployPolling();
         if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
         if (typeof window.refreshDispatchIndicator === 'function') await window.refreshDispatchIndicator();
-        if (typeof window.loadDispatchCenter === 'function' && window._currentView === 'tasks') {
-            window.loadDispatchCenter('deadletter');
-        }
+        if (typeof window.loadDispatchCenter === 'function' && window._currentView === 'tasks') window.loadDispatchCenter('deadletter');
     } catch (e) {
         if (typeof showToast === 'function') showToast('重试请求失败: ' + (e ? e.message : e), 'error');
         if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }

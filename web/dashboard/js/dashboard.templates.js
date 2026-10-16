@@ -83,10 +83,10 @@ window.viewTemplates = {
                         <table id="vault-table" style="width: 100%; table-layout: fixed; min-width: 680px;">
                             <thead style="position: sticky; top: 0; z-index: 10; background: rgba(var(--bg-modal-solid-rgb), 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--glass-border);">
                                 <tr>
-                                    <th style="width: 40%; min-width: 180px;">标题</th>
-                                    <th style="width: 32%; min-width: 140px;">物理路径</th>
-                                    <th style="width: 65px; text-align: center;">字数</th>
-                                    <th style="width: 160px; min-width: 160px; text-align: center;">操作</th>
+                                    <th style="width: 40%; min-width: 180px; padding: 12px 16px; text-align: center; white-space: nowrap;">标题</th>
+                                    <th style="width: 32%; min-width: 140px; padding: 12px 16px; text-align: center; white-space: nowrap;">物理路径</th>
+                                    <th style="width: 80px; min-width: 80px; padding: 12px 8px; text-align: center; white-space: nowrap;">字数</th>
+                                    <th style="width: 160px; min-width: 160px; padding: 12px 8px; text-align: center; white-space: nowrap;">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="vault-list">
@@ -201,9 +201,9 @@ window.viewTemplates = {
                         <div class="tab-item cap-tab" data-cat="protocol"><span class="tab-icon">🧠</span> 算力渠道</div>
                         <div class="tab-item cap-tab" data-cat="theme"><span class="tab-icon">🎨</span> 视觉装帧</div>
                         <div class="tab-item cap-tab" data-cat="image_hosting"><span class="tab-icon">📷</span> 图床存储</div>
+                        <div class="tab-item cap-tab" data-cat="ebook"><span class="tab-icon">📚</span> 电子出版</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>
                         <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">📢</span> 社媒分发</div>
-                        <div class="tab-item cap-tab" data-cat="ebook"><span class="tab-icon">📚</span> 数字装订</div>
                         <div class="tab-item cap-tab" data-cat="notification"><span class="tab-icon">🔔</span> 消息通知</div>
                         <div class="tab-item cap-tab" data-cat="editorial"><span class="tab-icon">🧬</span> 流程审计</div>
                     </aside>

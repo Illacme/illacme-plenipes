@@ -25,9 +25,10 @@
                     const btns = container.querySelectorAll('.sub-tab-btn');
                     btns.forEach(b => b.classList.remove('active'));
                 }
-                if (btn) {
-                    btn.classList.add('active');
-                } else if (event) {
+                const targetBtn = btn || (container ? container.querySelector(`.sub-tab-btn[onclick*="${subTab}"]`) : null);
+                if (targetBtn) {
+                    targetBtn.classList.add('active');
+                } else if (typeof event !== 'undefined' && event && event.currentTarget) {
                     event.currentTarget.classList.add('active');
                 }
 

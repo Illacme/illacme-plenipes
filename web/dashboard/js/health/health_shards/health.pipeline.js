@@ -26,6 +26,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         pipeValVault.innerText = hasVault ? (docCount > 0 ? `${docCount} 篇原稿` : '文库空空如也') : '未配置文库';
         if (pipeDotVault) pipeDotVault.className = hasVault && docCount > 0 ? 'pipe-dot healthy' : (hasVault ? 'pipe-dot warning' : 'pipe-dot offline');
         if (pipeCapVault) {
+            pipeCapVault.setAttribute('data-tip', `1. 原稿文库 (${docCount}篇)`);
             pipeCapVault.title = `📂 1. 原稿文库 (Manuscript Library)\n────────────────────────\n• 收录原稿：${docCount} 篇 Markdown 文稿\n• 解析方言：${data.vault.dialect || 'Standard CommonMark'}\n• 物理文库：${data.vault.root || '暂未绑定'}\n\n💡 点击一键直达文库管理与原稿创作`;
         }
     }
@@ -52,6 +53,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         }
 
         if (pipeCapI18n) {
+            pipeCapI18n.setAttribute('data-tip', `2. 多语言 (${targets.length > 0 ? targets.length + '语种' : '单语'})`);
             pipeCapI18n.title = `🌍 2. 多语言翻译 (Multilingual Translation)\n────────────────────────\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• 母语言：${sourceLang.toUpperCase()}\n• 目标语种：${targets.length > 0 ? targets.join(', ').toUpperCase() : '未配置目标语种 (仅母语出版)'}\n• 算力基座：${aiProvider} (${isAiOnline ? '🟢 在线' : '🟡 待命'})\n\n💡 点击一键直达多语种治理与翻译风格配置`;
         }
     }
@@ -80,6 +82,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         const strategyDesc = strategyLabels[seoStrategy] || seoStrategy;
 
         if (pipeCapTheme) {
+            pipeCapTheme.setAttribute('data-tip', `3. 主题 (${cleanThemeName})`);
             pipeCapTheme.title = `🎭 3. 网站主题 (Visual Theme & Layout)\n────────────────────────\n• 装帧主题：${cleanThemeName} ${rawTheme.toLowerCase().includes('default') ? '(系统默认)' : ''}\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• SEO 策略：${strategyDesc}\n\n💡 点击一键直达视觉主题与出版模式设置`;
         }
     }
@@ -96,6 +99,7 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         pipeValRouting.innerText = `${dirLabels[dirMode] || '极简根目录'} · ${slugLabels[slugMode] || 'AI 语义'}`;
         if (pipeDotRouting) pipeDotRouting.className = 'pipe-dot healthy';
         if (pipeCapRouting) {
+            pipeCapRouting.setAttribute('data-tip', `4. 网址路径 (${slugLabels[slugMode] || '规范化'})`);
             const sampleUrl = dirMode === 'prefix' ? '/en/hello-world' : '/hello-world';
             pipeCapRouting.title = `🧭 4. 网址路径 (URL Routing & Slug)\n────────────────────────\n• 路径结构：${dirLabels[dirMode] || dirMode}\n• 生成法则：${slugLabels[slugMode] || slugMode}\n• 访问范例：https://yourdomain.com${sampleUrl}\n\n💡 点击一键直达网址路径定制与全息沙盒`;
         }

@@ -5,7 +5,6 @@ Illacme Plenipes - EPUB Reader Pager & Quick Jump Tests
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import pytest
 from core.adapters.egress.ebook.epub_reader_template import build_epub_reader_shell
 from core.adapters.egress.ebook.epub_reader_pager_css import get_epub_pager_css
 from core.adapters.egress.ebook.epub_reader_pager_js import get_epub_pager_js

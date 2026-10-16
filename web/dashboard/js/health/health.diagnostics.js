@@ -5,9 +5,15 @@
 
 window.triggerSystemGC = async () => {
     const btn = document.getElementById('btn-system-gc');
+    const textSpan = btn ? btn.querySelector('.op-text') : null;
     if (btn) {
         btn.disabled = true;
-        btn.innerText = "🧹 清洗中...";
+        btn.classList.add('is-loading');
+        if (textSpan) {
+            textSpan.innerText = "清洗中...";
+        } else {
+            btn.innerText = "🧹 清洗中...";
+        }
     }
 
     addAudit("🧹 正在发起 [清洗路由] 指令，物理回收失效资产...", "info");
@@ -37,7 +43,12 @@ window.triggerSystemGC = async () => {
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerText = "🧹 清洗路由";
+            btn.classList.remove('is-loading');
+            if (textSpan) {
+                textSpan.innerText = "清洗路由";
+            } else {
+                btn.innerText = "🧹 清洗路由";
+            }
         }
     }
 };

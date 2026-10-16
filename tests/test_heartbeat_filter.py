@@ -5,7 +5,6 @@ Illacme Plenipes - Heartbeat Filter Test Suite
 """
 
 import logging
-import pytest
 from services.api.infrastructure.logging import HeartbeatFilter
 
 def test_heartbeat_filter_blocks_polling_endpoints():

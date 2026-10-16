@@ -156,7 +156,6 @@ def test_book_assembler_vault_end_to_end():
 
 def test_epub_colophon_injection():
     """验证电子书装订时自动注入末尾版权页 (Colophon) 与物权指纹"""
-    from core.adapters.egress.ebook import ColophonBuilder
 
     with tempfile.TemporaryDirectory() as tmpdir:
         out_file = os.path.join(tmpdir, "colophon_test.epub")

@@ -9,7 +9,7 @@
 
     window.renderGranularCacheHub = function () {
         return `
-            <div class="settings-group mt-large">
+            <div class="settings-group mt-large" id="granular-cache-hub-panel">
                 <h4>🧰 分层缓存与双轨容灾治理中枢 (Granular Cache Hub)</h4>
                 <p class="section-desc" style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 16px;">细粒度独立管理大模型算力资产、文件指纹账本与构建产物缓存，支持 0 算力开销全量重编与物理冷备自愈。</p>
                 

@@ -5,8 +5,6 @@ Illacme Plenipes - Test PDF Chunked Printer & Instant Merger
 """
 
 import os
-import tempfile
-import pytest
 from core.adapters.egress.ebook.pdf_chunk_printer import PDFChunkPrinter
 
 

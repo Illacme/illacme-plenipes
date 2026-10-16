@@ -5,7 +5,6 @@ tests/test_bindery_shelf_pagination.py
 """
 
 import subprocess
-import pytest
 
 
 def test_bindery_shelf_pagination_in_node_sandbox():

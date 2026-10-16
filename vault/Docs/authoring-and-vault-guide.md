@@ -14,7 +14,7 @@ tags:
 - Frontmatter
 categories:
 - Documentation
-cover: /api/design/assets/covers/cover_7ba70b7040e4.jpg
+cover: /api/design/assets/covers/gen_7b22378d18d8.jpg
 ---
 # ✍️ 原稿文库组织与写作指引
 

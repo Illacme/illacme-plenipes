@@ -6,7 +6,6 @@ Illacme Plenipes - System Reveal File Unit Tests
 """
 
 import os
-import sys
 from unittest.mock import patch, MagicMock
 
 import pytest

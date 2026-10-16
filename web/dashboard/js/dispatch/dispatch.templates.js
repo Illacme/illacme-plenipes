@@ -26,7 +26,11 @@ window.viewTemplates.tasks = `
     <!-- 2. 下层矩阵: 导航切换与快捷入口 (纯粹的一级视图 Tab) -->
     <div class="header-nav-row" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--glass-border); margin-top: 0; width: 100%; box-sizing: border-box; flex-shrink: 0;">
         <nav class="tactical-tabs dispatch-tactical-tabs">
-            <button class="t-tab active" id="tab-dispatch-hosting" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('hosting');">
+            <button class="t-tab active" id="tab-dispatch-shelf" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('shelf');">
+                <span class="t-icon">📚</span> 电子出版书架
+                <span class="tab-badge" id="badge-shelf-books">--</span>
+            </button>
+            <button class="t-tab" id="tab-dispatch-hosting" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('hosting');">
                 <span class="t-icon">🌐</span> 网站托管发布
                 <span class="tab-badge" id="badge-hosting-ready">--</span>
             </button>
@@ -36,8 +40,8 @@ window.viewTemplates.tasks = `
             </button>
         </nav>
         <div class="header-nav-actions" style="display: flex; gap: 10px; align-items: center;">
-            <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('plugins', (window.currentDispatchMode === 'social' ? 'publisher' : 'hosting'));" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>⚙️ 平台账号配置 ↗</span>
+            <button class="secondary-btn btn-sm" id="btn-dispatch-nav-plugins" onclick="if(typeof window.onDispatchPluginConfig==='function') window.onDispatchPluginConfig();" style="padding: 4px 10px; font-size: 0.74rem;">
+                <span>⚙️ 插件配置 ↗</span>
             </button>
             <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 10px; font-size: 0.74rem;">
                 <span>🎨 装帧主题 ↗</span>
@@ -48,9 +52,37 @@ window.viewTemplates.tasks = `
     <!-- 2. 独立内容滚动视区 (Header 物理固定，仅内容区向下平滑滚动) -->
     <div class="view-content scroll-container dispatch-content-scroll" id="dispatch-scroll-viewport">
         <!-- ========================================== -->
-        <!-- 模式一：🌐 网站托管发布专区 (Site Hosting) -->
+        <!-- 模式一：📚 电子出版书架专区 (Book Shelf Releases) -->
         <!-- ========================================== -->
-        <div id="dispatch-hosting-view" class="dispatch-subview-panel">
+        <div id="dispatch-shelf-view" class="dispatch-subview-panel">
+            <!-- 战区一：电子出版书架四大态势感知卡片 -->
+            <div class="shelf-control-console" id="dispatch-shelf-console" style="margin-bottom: 14px;">
+                <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.86rem;">
+                    正在调取电子出版书架态势...
+                </div>
+            </div>
+
+            <!-- 战区二：已出版电子书目货架列表区 -->
+            <div class="shelf-fleet-section" style="background: var(--white-03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; box-sizing: border-box;">
+                <div class="shelf-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                    <div class="section-title" style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 700; color: var(--text-bright);">
+                        <span class="title-icon">📚</span> 已出版电子书目货架 (Cataloged Book Releases)
+                        <span class="section-sub-tag" id="dispatch-shelf-subtag" style="font-size: 0.7rem; font-weight: 500; color: var(--accent); background: var(--white-05); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px;">EPUB / WebBook / PDF / DOCX</span>
+                    </div>
+                    <div class="section-actions" id="dispatch-shelf-header-actions" style="display: flex; gap: 8px; align-items: center;"></div>
+                </div>
+                <div id="dispatch-shelf-list-container">
+                    <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.86rem;">
+                        正在调取电子书架资产...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 模式二：🌐 网站托管发布专区 (Site Hosting) -->
+        <!-- ========================================== -->
+        <div id="dispatch-hosting-view" class="dispatch-subview-panel" style="display: none;">
             <!-- 战区一：整站编译态势与并发调度总控台 -->
             <div class="hosting-control-console" id="hosting-control-console">
                 <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.86rem;">

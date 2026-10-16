@@ -30,6 +30,45 @@ class LocalOGProvider(BaseImageProvider):
         self.default_category = (self.config.get("category") or "Engineering").strip()
         self.render_mode = (self.config.get("mode") or "og_card").strip()
 
+    @classmethod
+    def sanitize_prompt_for_title(cls, prompt: str) -> str:
+        """
+        🛡️ 防御性清洗：将传入的生图意境描述或复杂 Prompt 清洗为卡片居中正规主标题。
+        """
+        if not prompt or not prompt.strip():
+            return "Illacme Plenipes 技术出版"
+        import re
+        raw = prompt.strip()
+
+        # 1. 优先提取书名号中的物理文章名
+        book_match = re.search(r'[《<]([^》>]+)[》>]', raw)
+        if book_match and book_match.group(1).strip():
+            return book_match.group(1).strip()
+
+        # 2. 匹配 "为文章 xxx 创作" 或 "文章 xxx：" 等前缀模式
+        prefix_match = re.search(r'(?:为文章|关于文章|文章)\s*[:：]?\s*([^，。：\n]+)', raw)
+        if prefix_match and prefix_match.group(1).strip():
+            return prefix_match.group(1).strip()
+
+        # 3. 剔除常见的 AI 生图意境词缀与风格修饰短语
+        cleaned = raw
+        ai_noise_patterns = [
+            r'(?:，|。|、|\s)*(?:极简(?:现代)?科技意境|电影级光影(?:构图)?|8[kK](?:高清细节)?|现代装帧质感|视觉震撼|富有未来感|高分辨率|科技现代风格封面|创作科技现代风格封面|极简光影|masterpiece|best quality|photorealistic|cinematic lighting|8k resolution).*',
+            r'^(?:为|生成|制作|创作).*?(?:封面|海报|插图)[，,：:\s]*',
+        ]
+        for pattern in ai_noise_patterns:
+            cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
+        cleaned = cleaned.strip("，。、：: ,.-_ \t\n")
+
+        # 4. 若有多句（冒号/句号/换行隔开），提取核心第一段
+        parts = re.split(r'[：:。\n]', cleaned)
+        if parts and parts[0].strip():
+            candidate = parts[0].strip()
+            if len(candidate) <= 45:
+                return candidate
+
+        return cleaned[:40].strip() if cleaned else "Illacme Plenipes 技术出版"
+
     def generate_image(
         self,
         prompt: str,
@@ -40,11 +79,13 @@ class LocalOGProvider(BaseImageProvider):
         """
         利用本地原生排版算法生成技术卡片封面
         """
-        title = (prompt or "Illacme Plenipes 技术出版").strip()
+        # 🛡️ 启用防御性清洗，提取纯净卡片标题
+        title = self.sanitize_prompt_for_title(prompt)
         author = kwargs.get("author") or self.default_author
         category = kwargs.get("category") or self.default_category
         brand_name = kwargs.get("brand_name") or self.default_brand
         mode = "minimal_badge" if style in ("badge", "minimal") or self.render_mode == "minimal_badge" else "og_card"
+        offset = int(kwargs.get("offset") or 0)
 
         try:
             start_t = time.time()
@@ -60,7 +101,8 @@ class LocalOGProvider(BaseImageProvider):
                     author=author,
                     category=category,
                     brand_name=brand_name,
-                    aspect_ratio=aspect_ratio
+                    aspect_ratio=aspect_ratio,
+                    offset=offset
                 )
             cost_ms = int((time.time() - start_t) * 1000)
             if data:

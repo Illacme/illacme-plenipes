@@ -1288,6 +1288,7 @@ def test_dispatch_hosting_render_integrity():
 
     // 加载目标脚本
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.templates.js', 'utf8'));
+    eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.shelf.render.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.hosting.render.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.hosting.history.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/dispatch/dispatch.workbench.js', 'utf8'));
@@ -1295,13 +1296,26 @@ def test_dispatch_hosting_render_integrity():
     // 1. 拓扑容器断言
     const tpl = window.viewTemplates.tasks;
     if (!tpl.includes('dispatch-tactical-tabs')) throw new Error('Missing dispatch-tactical-tabs');
+    if (!tpl.includes('tab-dispatch-shelf')) throw new Error('Missing tab-dispatch-shelf');
+    if (!tpl.includes('dispatch-shelf-view')) throw new Error('Missing dispatch-shelf-view');
     if (!tpl.includes('dispatch-hosting-view')) throw new Error('Missing dispatch-hosting-view');
     if (!tpl.includes('dispatch-social-view')) throw new Error('Missing dispatch-social-view');
     if (!tpl.includes('hosting-control-console')) throw new Error('Missing hosting-control-console');
     if (!tpl.includes('hosting-fleet-container')) throw new Error('Missing hosting-fleet-container');
     if (!tpl.includes('hosting-batch-container')) throw new Error('Missing hosting-batch-container');
+    if (!tpl.includes('btn-dispatch-nav-plugins') || !tpl.includes('插件配置')) throw new Error('Missing 插件配置 button');
+    if (tpl.includes('装订新版 ↗')) throw new Error('Tab bar should not contain 装订新版 button');
 
     // 2. 真实渲染函数无异常执行
+    window.renderDispatchShelfConsole({
+        count: 43,
+        total_size_display: '40.78 MB',
+        books: [
+            { filename: 'test.epub', format: 'epub', size_display: '300 KB', mtime: 1790600000, download_url: '#', preview_url: '#' },
+            { filename: 'test.html', format: 'webbook', size_display: '500 KB', mtime: 1790600000, download_url: '#', preview_url: '#' }
+        ]
+    });
+    window.renderDispatchShelfList();
     window.renderHostingControlCenter({ theme: 'default', bundle_exists: true, pages_count: 10, bundle_size_formatted: '2 MB' }, 3, 11);
     window.renderHostingFleetGrid([
         { id: 'cloudflare_pages', name: 'Cloudflare Pages', icon: '☁️', enabled: true, site_url: 'https://cf.example.com' },
@@ -1311,9 +1325,21 @@ def test_dispatch_hosting_render_integrity():
         { batch_id: 'deploy_test_1', started_at: '2026-10-04 10:00:00', theme: 'default', pages_count: 10, overall_status: 'SUCCESS', targets: { cloudflare_pages: { status: 'SUCCESS' } } }
     ]);
 
-    // 3. 模式切换
+    // 3. 模式切换与插件配置动态跳转测试
+    let lastView = null, lastSub = null;
+    window.showView = (v, s) => { lastView = v; lastSub = s; };
+
+    window.switchDispatchMode('shelf');
+    window.onDispatchPluginConfig();
+    if (lastView !== 'plugins' || lastSub !== 'ebook') throw new Error('Shelf mode should route to plugins/ebook');
+
     window.switchDispatchMode('hosting');
+    window.onDispatchPluginConfig();
+    if (lastView !== 'plugins' || lastSub !== 'hosting') throw new Error('Hosting mode should route to plugins/hosting');
+
     window.switchDispatchMode('social');
+    window.onDispatchPluginConfig();
+    if (lastView !== 'plugins' || lastSub !== 'publisher') throw new Error('Social mode should route to plugins/publisher');
 
     console.log('DISPATCH_HOSTING_RENDER_VERIFIED_SUCCESS');
     """
@@ -1321,6 +1347,82 @@ def test_dispatch_hosting_render_integrity():
     res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
     assert res.returncode == 0, f"Dispatch Hosting Render Gate Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
     assert "DISPATCH_HOSTING_RENDER_VERIFIED_SUCCESS" in res.stdout
+
+
+def test_launchpad_pipeline_render_and_i18n_integrity():
+    """
+    🛡️ 流水线透视横排与多语言国际化渲染完备性门禁测试 (Rule 7)
+    断言点：
+    1. launchpad.pipeline.js 加载 0 异常，导出 _buildPipelineRow, _buildSuggestions, getPipelineTitle, PIPELINE_I18N
+    2. 中文模式 (zh) 输出标准 6 节点原稿/翻译/主题/网址/托管/分发与分隔符 .lpdash-pipe-separator
+    3. 英文模式 (en) 输出标准 6 节点 Source/Translate/Themes/Routing/Hosting/Dispatch
+    4. 节点结构完整性断言 (.lpdash-pipeline-card, .lpdash-pipe-node, .lpdash-pipe-label, .lpdash-pipe-dot)
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    global.window = {
+        settingsData: {
+            vault_root: '/test/vault',
+            theme: 'default'
+        },
+        toggleHub: () => {},
+        showView: () => {}
+    };
+    global.sessionStorage = {
+        getItem: () => null
+    };
+
+    // 载入脚本
+    eval(fs.readFileSync('web/dashboard/js/ui/launchpad_shards/launchpad.pipeline.js', 'utf8'));
+
+    if (typeof window._buildPipelineRow !== 'function') throw new Error('Missing _buildPipelineRow');
+    if (typeof window._buildSuggestions !== 'function') throw new Error('Missing _buildSuggestions');
+    if (typeof window.getPipelineTitle !== 'function') throw new Error('Missing getPipelineTitle');
+    if (!window.PIPELINE_I18N) throw new Error('Missing PIPELINE_I18N');
+
+    const ctx = {
+        vault: { root: '/test/vault', doc_count: 5 },
+        ai_status: 'online'
+    };
+
+    // 1. 中文出版产出与发行成果矩阵渲染测试 (书架出版物数量与体积、网站托管发布次数与成功率、社交媒体分发次数与成功率)
+    const zhHtml = window._buildPipelineRow(ctx, 'zh');
+    if (!zhHtml.includes('lpdash-delta-card')) throw new Error('zhHtml missing lpdash-delta-card');
+    if (!zhHtml.includes('lpdash-delta-grid')) throw new Error('zhHtml missing lpdash-delta-grid');
+    if (!zhHtml.includes('lpdash-delta-pill')) throw new Error('zhHtml missing lpdash-delta-pill');
+    if (!zhHtml.includes('lpdash-delta-val')) throw new Error('zhHtml missing lpdash-delta-val');
+    if (!zhHtml.includes('lpdash-delta-lbl')) throw new Error('zhHtml missing lpdash-delta-lbl');
+    if (!zhHtml.includes('本出版物') || !zhHtml.includes('次网站发布') || !zhHtml.includes('次社媒分发')) {
+        throw new Error('zhHtml missing Chinese deliverables labels');
+    }
+    if (!zhHtml.includes('体积') || !zhHtml.includes('成功率')) {
+        throw new Error('zhHtml missing size or success rate labels');
+    }
+
+    // 2. 英文国际化出版产出与发行成果矩阵渲染测试
+    const enHtml = window._buildPipelineRow(ctx, 'en');
+    if (!enHtml.includes('Publications') || !enHtml.includes('Hosted Deploys') || !enHtml.includes('Social Dispatches')) {
+        throw new Error('enHtml missing English deliverables labels');
+    }
+    if (!enHtml.includes('Size:') || !enHtml.includes('Success:')) {
+        throw new Error('enHtml missing English size or success labels');
+    }
+
+    // 3. 智能待办与诊断卡片测试
+    const sugHtml = window._buildSuggestions(ctx);
+    if (!sugHtml || typeof sugHtml !== 'string') throw new Error('Invalid sugHtml');
+    if (!sugHtml.includes('lpdash-ready-item') && !sugHtml.includes('lpdash-suggest-item')) {
+        throw new Error('sugHtml missing items');
+    }
+
+    console.log('PIPELINE_HORIZONTAL_I18N_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Pipeline Render Integrity Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "PIPELINE_HORIZONTAL_I18N_VERIFIED_SUCCESS" in res.stdout
+
 
 
 
