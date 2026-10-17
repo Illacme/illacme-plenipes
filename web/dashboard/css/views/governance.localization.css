@@ -575,4 +575,56 @@
     background: var(--white-05);
 }
 
+/* ==========================================================================
+   🧭 [Route Redirect Banner] 高级频道映射引流横幅基准样式
+   ========================================================================== */
+.route-redirect-banner {
+    background: var(--white-02, rgba(255, 255, 255, 0.02));
+    border: 1px dashed var(--white-10, rgba(255, 255, 255, 0.1));
+    color: var(--text-dim);
+    transition: all 0.2s ease;
+}
+
+.route-redirect-text {
+    line-height: 1.5;
+}
+
+.route-redirect-btn {
+    color: var(--neon-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 14px;
+    background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.3);
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.route-redirect-btn:hover {
+    background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.2);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.3);
+}
+
+.theme-compat-banner {
+    background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.04);
+    border: 1px solid rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.15);
+    color: var(--text-dim);
+}
+
+.slug-sandbox-container {
+    background: rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.03);
+    border: 1px dashed rgba(var(--neon-cyan-rgb, 0, 242, 255), 0.2);
+}
+
+.slug-sandbox-container h4 {
+    color: var(--accent-secondary);
+}
+
+
 

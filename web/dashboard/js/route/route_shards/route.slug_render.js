@@ -106,7 +106,7 @@
                     </div>
 
                     <!-- 架构兼容性与第三方框架建议提示卡片 -->
-                    <div style="margin-top: 12px; padding: 12px 16px; background: rgba(0, 242, 255, 0.04); border: 1px solid rgba(0, 242, 255, 0.15); border-radius: 8px; font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;">
+                    <div class="theme-compat-banner" style="margin-top: 12px; padding: 12px 16px; border-radius: 8px; font-size: 0.78rem; line-height: 1.5;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                             <span style="font-size: 0.95rem;">🛡️</span>
                             <strong style="color: var(--text-bright, #ffffff);">主题架构兼容性提示 (Theme Architecture Compatibility)</strong>
@@ -123,9 +123,9 @@
                 </div>
 
                 <!-- 3. 实时 URL 沙盒模拟器 -->
-                <div style="margin-bottom: 25px; padding: 20px; background: rgba(0, 242, 255, 0.03); border: 1px dashed rgba(0, 242, 255, 0.2); border-radius: 12px; position: relative;">
+                <div class="slug-sandbox-container" style="margin-bottom: 25px; padding: 20px; border-radius: 12px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h4 style="font-size: 0.95rem; color: var(--accent-secondary, #00f2fe); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
                             🧪 实时 URL 沙盒模拟器 (Live URL Playground)
                         </h4>
                         <span style="font-size: 0.72rem; color: var(--text-dim);">随选随变 · 即时计算推导</span>
@@ -166,12 +166,12 @@
                 </div>
 
                 <!-- 4. 高级频道重定向引流提示 -->
-                <div style="padding: 15px 20px; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 0.82rem; color: var(--text-dim); display: flex; align-items: center; justify-content: space-between;">
+                <div class="route-redirect-banner" style="padding: 15px 20px; border-radius: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 1.1rem;">🎯</span>
-                        <span>需要把特定文件夹（如 <code>vault/journal</code>）单独映射为特定 Web 频道（如 <code>/blog/</code>）并指定模板？</span>
+                        <span class="route-redirect-text">需要把特定文件夹（如 <code>vault/journal</code>）单独映射为特定 Web 频道（如 <code>/blog/</code>）并指定模板？</span>
                     </div>
-                    <a href="javascript:void(0)" onclick="if(typeof window.switchDisseminationRoutingSubTab==='function'){window.switchDisseminationRoutingSubTab('route_matrix', this);}else if(typeof window.switchI18nRoutingSubTab==='function'){window.switchI18nRoutingSubTab('route_matrix', this);}" style="color: #00f2fe; text-decoration: none; font-weight: 600; padding: 6px 14px; background: rgba(0, 242, 255, 0.1); border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.3); font-size: 0.78rem;">
+                    <a href="javascript:void(0)" onclick="if(typeof window.switchDisseminationRoutingSubTab==='function'){window.switchDisseminationRoutingSubTab('route_matrix', this);}else if(typeof window.switchI18nRoutingSubTab==='function'){window.switchI18nRoutingSubTab('route_matrix', this);}" class="route-redirect-btn">
                         🧭 打开频道映射矩阵 ➔
                     </a>
                 </div>
