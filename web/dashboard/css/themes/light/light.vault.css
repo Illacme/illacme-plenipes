@@ -445,4 +445,73 @@
     color: #0284c7 !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   📄 [V125.3] 原稿文库与校对抽屉 Markdown 预览 & 代码块优雅浅色高亮
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Markdown 预览容器与正文 */
+[data-theme="light"] .markdown-body {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .markdown-body h1,
+[data-theme="light"] .markdown-body h2,
+[data-theme="light"] .markdown-body h3 {
+    color: #0f172a !important;
+    border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+/* 2. 行内代码 (Inline Code) */
+[data-theme="light"] .markdown-body code:not(pre code),
+[data-theme="light"] .agent-inline-code,
+[data-theme="light"] .review-para-text code {
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+    padding: 2px 5px !important;
+    border-radius: 4px !important;
+}
+
+/* 3. 多行代码块 (Code Blocks / Pre) - 雅白低反光卡片 */
+[data-theme="light"] .markdown-body pre,
+[data-theme="light"] .agent-code-block,
+[data-theme="light"] .review-para-block.code-block {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-left: 3px solid #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .markdown-body pre code,
+[data-theme="light"] .agent-code-block code {
+    background: transparent !important;
+    color: #334155 !important;
+    border: none !important;
+}
+
+/* 4. 引用块 (Blockquotes) */
+[data-theme="light"] .markdown-body blockquote {
+    border-left-color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.03) !important;
+    color: #475569 !important;
+    padding: 10px 16px !important;
+    border-radius: 0 8px 8px 0 !important;
+}
+
+/* 5. 校对抽屉段落对比块 (Review Paragraphs) */
+[data-theme="light"] .preview-para-item {
+    color: #1e293b !important;
+    border-left-color: transparent !important;
+}
+
+[data-theme="light"] .preview-para-item:hover {
+    background: rgba(2, 132, 199, 0.04) !important;
+}
+
+[data-theme="light"] .preview-para-item.linked-hover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-left-color: #0284c7 !important;
+}
+
 
