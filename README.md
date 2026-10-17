@@ -111,8 +111,8 @@ If you have cloned the repository, use our automatic cross-platform double-click
 > 💡 **Dashboard Access**: Workbench UI runs at `http://127.0.0.1:43212`.
 
 > ⌨️ **Keyboard Shortcuts**:
-> * `Cmd+K` / `Cmd+P`: Open Command Palette (Publishing Navigator);
-> * `]`: Toggle Sovereign Copilot sidebar;
+> * `Cmd+P` (`Ctrl+P` on Windows/Linux): Open Command Palette (Publishing Navigator / In-App Cookbooks);
+> * `Cmd+K` (`Ctrl+K` on Windows/Linux) or `]`: Summon Sovereign Copilot AI assistant (focus instruction prompt);
 > * `[`: Toggle left navigation sidebar.
 
 <details>

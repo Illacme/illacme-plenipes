@@ -111,8 +111,8 @@ Illacme Plenipes 将传统属于大型出版传媒集团的翻译、排版、装
 > 💡 **启动后访问**：工作台控制台服务监听于 `http://127.0.0.1:43212`，开箱即用。
 
 > ⌨️ **极客高频快捷键**：
-> * `Cmd+K` / `Cmd+P`：唤起全功能命令面板（出版领航仪）；
-> * `]`：唤起 / 收起 Sovereign Copilot 自主编排助手；
+> * `Cmd+P` (Windows/Linux 为 `Ctrl+P`)：唤起全功能命令面板（出版领航仪 / 功能与实战手册极速直达）；
+> * `Cmd+K` (Windows/Linux 为 `Ctrl+K`) 或 `]`：唤起 Sovereign Copilot AI 助手（直接聚焦指令输入框）；
 > * `[`：展开 / 收起左侧系统导航栏。
 
 <details>
