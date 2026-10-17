@@ -38,7 +38,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     with _publish_lock:
         if _is_publishing:
-            tlog.info(f"⏳ [排队追加] 探测到已有出版任务在运行，已将 requested_paths={requested_paths}, target_langs={target_langs} 压入排队队列...")
+            tlog.info(f"⏳ [排队等待] 当前已有出版任务在进行中，新任务已加入等待队列...")
             _pending_sync_queue.append({
                 'dry_run': dry_run, 'force': force, 'sandbox': sandbox,
                 'requested_paths': requested_paths, 'target_langs': target_langs,
@@ -85,13 +85,13 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                             )
                             if os.path.exists(cache_mirror):
                                 bak_file = cache_mirror + ".bak"
-                                tlog.info(f"🧹 [主线程缓存保护] 创建旧快照备份: {cache_mirror} -> {bak_file}")
+                                tlog.debug(f"🧹 [缓存保护] 创建历史快照备份: {cache_mirror} -> {bak_file}")
                                 os.replace(cache_mirror, bak_file)
                                 cleaned_bak_files.append((cache_mirror, bak_file))
                         except Exception as ce:
-                            tlog.warning(f"⚠️ [主线程清理缓存失败] {src_rel} / {lang}: {ce}")
+                            tlog.warning(f"⚠️ [清理缓存失败] {src_rel} / {lang}: {ce}")
         except Exception as qe:
-            tlog.warning(f"⚠️ [主线程清理缓存构建队列失败]: {qe}")
+            tlog.warning(f"⚠️ [清理缓存构建队列失败]: {qe}")
 
     # 2. 定义后台执行逻辑 (使用闭包保持对 engine 的引用)
     def _background_job():
@@ -99,10 +99,10 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
         with _publish_lock:
             try:
                 _is_publishing = True
-                tlog.info(f"⚡ [异步出版] 正在启动后台出版流水线 (DryRun: {dry_run}, Sandbox: {sandbox}, Paths: {requested_paths})...")
+                tlog.info(f"⚡ [出版工序] 正在启动文稿排版与发布流程...")
                 task_queue, current_source_files = build_task_queue(engine, requested_paths)
                 perform_sync(engine, args, task_queue, current_source_files)
-                tlog.info("✅ [异步出版] 后台流水线任务已全量闭环。")
+                tlog.info("✅ [出版工序] 后台出版任务已全部完成。")
                 # 任务成功闭环，物理删除旧快照备份
                 import os
                 for orig_file, bak_file in cleaned_bak_files:
@@ -112,27 +112,27 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
             except Exception as e:
                 import traceback
                 import os
-                tlog.error(f"❌ [异步出版] 流水线溃决: {str(e)}\n{traceback.format_exc()}")
+                tlog.error(f"❌ [出版工序] 出版流程发生异常: {str(e)}")
                 # 🚀 发生异常时，自动回滚恢复原快照，避免物理 missing 死锁
                 for orig_file, bak_file in cleaned_bak_files:
                     if os.path.exists(bak_file) and not os.path.exists(orig_file):
                         try:
                             os.replace(bak_file, orig_file)
-                            tlog.info(f"🛡️ [灾难自愈] 自动还原崩溃前快照: {orig_file}")
+                            tlog.info(f"🛡️ [安全保护] 已自动恢复先前快照: {orig_file}")
                         except Exception: pass
                 from core.logic.notification_hub import send_sync_lifecycle_notification
-                send_sync_lifecycle_notification(engine, "FAIL", "异步出版流水线异常崩溃", str(e))
+                send_sync_lifecycle_notification(engine, "FAIL", "出版流程异常中断", str(e))
             finally:
                 _is_publishing = False
                 # 🚀 [V78.6] 安全兜底：流水线跑完后，强制唤醒可能被挂起的监控狗
                 if hasattr(engine, 'is_watchdog_suspended') and engine.is_watchdog_suspended:
                     engine.is_watchdog_suspended = False
-                    tlog.info("🐕 [后台闭环] 已强行唤醒处于休眠状态的监控狗。")
+                    tlog.info("🔄 [实时同步] 自动同步监听已恢复就绪。")
 
                 # 🚀 自动消费排队队列中的下一个翻译任务
                 if _pending_sync_queue:
                     next_item = _pending_sync_queue.pop(0)
-                    tlog.info(f"🔄 [排队自动接力] 正在为排队任务启动点火: {next_item['requested_paths']} / {next_item['target_langs']}")
+                    tlog.info(f"🔄 [任务接力] 正在开始处理排队任务...")
                     start_asynchronous_sync(
                         engine,
                         dry_run=next_item.get('dry_run', False),

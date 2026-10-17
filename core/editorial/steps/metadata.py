@@ -120,7 +120,7 @@ class MetadataAndHashStep(PipelineStep):
                                         # 只有当中文汉字比例超过 40% 时，才判定为未翻译的假译正文
                                         if (chinese_chars / total_chars) > 0.40:
                                             from core.utils.tracing import tlog
-                                            tlog.warning(f"⚠️ [物理污染防御] 探测到 {lang} 物理缓存镜像主要包含未翻译的中文母语正文 ({chinese_chars}/{total_chars})，强行作废并触发重新翻译: {cache_mirror}")
+                                            tlog.warning(f"⚠️ [翻译校验] 检测到 {lang} 缓存内容包含较多未翻译原文 ({chinese_chars}/{total_chars})，已自动触发重新翻译: {cache_mirror}")
                                             all_cached = False
                                             break
                     except Exception:

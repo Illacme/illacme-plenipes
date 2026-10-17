@@ -135,7 +135,7 @@ def build_i18n_matrix(
         cache_info = ""
         
         if is_source_match:
-            cache_info = "无需翻译 (主权透传)"
+            cache_info = "无需翻译 (源语言)"
             progress = 100
         elif total_blocks > 0 and hasattr(engine, "block_cache"):
             route_style = None

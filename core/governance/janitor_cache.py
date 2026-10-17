@@ -20,7 +20,7 @@ class JanitorCacheOpsMixin:
         if not target_root or not os.path.exists(target_root):
             return
 
-        tlog.info(f"🧹 [物理自愈] 正在扫描并净化分发疆域: {target_root}")
+        tlog.info(f"🧹 [静态清理] 正在扫描并整理出版目录: {target_root}")
         
         # 1. 收集所有待比对的物理资产路径
         all_files = []
@@ -32,7 +32,7 @@ class JanitorCacheOpsMixin:
 
         total_files = len(all_files)
         if total_files == 0:
-            tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            tlog.info("✨ [静态清理] 出版目录已是最新状态，无需清理。")
             return
 
         to_remove = []
@@ -50,11 +50,11 @@ class JanitorCacheOpsMixin:
 
         total_to_remove = len(to_remove)
         if total_to_remove == 0:
-            tlog.info("✨ [物理自愈] 分发疆域已是洁净状态。")
+            tlog.info("✨ [静态清理] 出版目录已是最新状态，无需清理。")
             return
 
         # 3. 逐个执行删除，以清晰的执行进度百分比形式进行打印
-        tlog.info(f"🧹 [物理自愈] 发现 {total_to_remove} 个过时资产需要清理，正在执行净化...")
+        tlog.info(f"🧹 [静态清理] 发现 {total_to_remove} 个历史无用文件，正在自动清理...")
         
         removed_count = 0
         log_interval = max(1, total_to_remove // 10)
@@ -62,7 +62,7 @@ class JanitorCacheOpsMixin:
         for idx, f_abs in enumerate(to_remove):
             if is_dry_run:
                 if total_to_remove <= 5:
-                    tlog.info(f"    [模拟清理] 过时影子文件: {f_abs}")
+                    tlog.info(f"    [模拟清理] 历史无用文件: {f_abs}")
             else:
                 try:
                     os.remove(f_abs)
@@ -74,16 +74,16 @@ class JanitorCacheOpsMixin:
             processed = idx + 1
             if processed % log_interval == 0 or processed == total_to_remove:
                 percent = int(processed * 100 / total_to_remove)
-                tlog.info(f"🧹 [物理自愈] 净化进度: {percent}% ({processed}/{total_to_remove})")
+                tlog.info(f"🧹 [静态清理] 清理进度: {percent}% ({processed}/{total_to_remove})")
 
         if not is_dry_run:
             if removed_count > 0:
-                tlog.info(f"✨ [物理自愈] 已成功清理 {removed_count} 个过时资产。")
+                tlog.info(f"✨ [静态清理] 已成功清理 {removed_count} 个历史文件。")
                 self._gc_empty_directories(target_root, is_dry_run)
             else:
-                tlog.info("✨ [物理自愈] 净化完成，未删除任何资产。")
+                tlog.info("✨ [静态清理] 整理完成，未删除任何文件。")
         else:
-            tlog.info(f"✨ [物理自愈] [模拟清理] 拟清理 {total_to_remove} 个过时资产。")
+            tlog.info(f"✨ [静态清理] [模拟清理] 拟清理 {total_to_remove} 个历史文件。")
 
     def gc_block_cache(self, is_dry_run=False):
         """🧹 清算大模型段落缓存目录，执行过期与 LRU 清理"""

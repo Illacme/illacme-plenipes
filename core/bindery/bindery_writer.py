@@ -63,15 +63,15 @@ def physical_write(
         target_root = dispatcher.paths.get('site_dir') if mode == 'static' else dispatcher.paths.get('source_dir')
     
     if not target_root:
-        tlog.warning(f"⚠️ [分发拦截] 未定义模式 '{mode}' 的根目录，跳过落盘: {rel_path}")
+        tlog.warning(f"⚠️ [跳过生成] 未指定模式 '{mode}' 根目录，跳过生成: {rel_path}")
         return None, None
 
     dest = dispatcher.route_manager.resolve_physical_path(target_root, lang, prefix, sub, slug, target_ext, source_type=source_type)
     if mode == "source" and dest.replace('\\', '/').endswith("src/pages/index.md"):
         if os.path.exists(os.path.join(os.path.dirname(dest), "index.js")):
-            tlog.info(f"🛡️ [Docusaurus 物理避让] 检测到原生 React 首页 index.js，安全跳过冲突的 {dest}")
+            tlog.info(f"🛡️ [避免冲突] 检测到原生主题首页文件 index.js，跳过覆盖: {dest}")
             return None, None
-    tlog.info(f"💾 [物理落盘] ({mode}) -> {dest}")
+    tlog.info(f"💾 [生成文件] ({mode}) -> {dest}")
 
     if mode == "source":
         cache_mirror = dispatcher.route_manager.resolve_physical_path(dispatcher.paths.get('cache'), lang, prefix, sub, slug, target_ext, source_type=source_type)
@@ -119,7 +119,7 @@ def physical_write(
             if not is_sandbox and dispatcher.janitor:
                 dispatcher.janitor.mark_as_fresh(dest)
         except Exception as e:
-            tlog.error(f"🛑 [原子落盘失败] ({mode}): {e}")
+            tlog.error(f"🛑 [写入文件失败] ({mode}): {e}")
             if os.path.exists(tmp_dest):
                 os.remove(tmp_dest)
     

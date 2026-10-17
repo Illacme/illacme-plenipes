@@ -51,7 +51,7 @@ def process_config_sync(
                         break
             if has_nodes:
                 req["translation.enable_ai"] = True
-                tlog.info(f"🚀 [自愈激活] 检测到出版模式切换至 {m_enum.value}，已自动激活 AI 算力总控开关")
+                tlog.info(f"🚀 [自动启用] 检测到出版模式切换至 {m_enum.value}，已自动启用 AI 智能排版开关")
 
     # Phase 2: 获取当前配置状态并计算目标状态
     current_enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
@@ -66,15 +66,15 @@ def process_config_sync(
         if not target_enable_ai:
             req["governance.publishing_mode"] = PublishingMode.BASIC.value
             req["i18n_settings.enabled"] = False
-            tlog.info(f"🔄 [自动联动] AI 算力总控关闭，出版模式自动对齐为 {PublishingMode.BASIC.value}，多语言矩阵关闭")
+            tlog.info(f"🔄 [模式联动] AI 辅助已停用，出版模式已调整为 {PublishingMode.BASIC.value}，多语言翻译关闭")
         # 2. 若 AI 算力总控处于开启状态 -> 根据多语言矩阵开关自愈升降阶出版模式
         else:
             if target_i18n_enabled:
                 req["governance.publishing_mode"] = PublishingMode.GLOBAL.value
-                tlog.info(f"🔄 [自动联动] AI 算力总控开启且多语言矩阵开启，出版模式选择为 {PublishingMode.GLOBAL.value}")
+                tlog.info(f"🔄 [模式联动] AI 辅助与多语言已启用，出版模式设为 {PublishingMode.GLOBAL.value}")
             else:
                 req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
-                tlog.info(f"🔄 [自动联动] AI 算力总控开启且多语言矩阵关闭，出版模式选择为 {PublishingMode.ENHANCED.value}")
+                tlog.info(f"🔄 [模式联动] AI 辅助已启用，出版模式设为 {PublishingMode.ENHANCED.value}")
     else:
         requested_mode = req["governance.publishing_mode"]
         if isinstance(requested_mode, str):
@@ -87,13 +87,13 @@ def process_config_sync(
             # AI 算力关闭 -> 禁止选择 global / enhanced -> 强制为 basic
             if requested_mode in (PublishingMode.ENHANCED, PublishingMode.GLOBAL):
                 req["governance.publishing_mode"] = PublishingMode.BASIC.value
-                tlog.info(f"🛡️ [禁止选择拦截] AI 算力关闭，禁止选择 {requested_mode.value}，强制重置为 {PublishingMode.BASIC.value}")
+                tlog.info(f"🛡️ [配置保护] AI 辅助未开启，无法启用 {requested_mode.value}，已自动调整为 {PublishingMode.BASIC.value}")
         else:
             if not target_i18n_enabled:
                 # AI 开启且 i18n 关闭 -> 禁止选择 global -> 强制为 enhanced
                 if requested_mode == PublishingMode.GLOBAL:
                     req["governance.publishing_mode"] = PublishingMode.ENHANCED.value
-                    tlog.info(f"🛡️ [禁止选择拦截] AI 开启且多语言矩阵关闭，禁止选择 global，强制重置为 {PublishingMode.ENHANCED.value}")
+                    tlog.info(f"🛡️ [配置保护] 多语言未开启，无法设为全球模式，已自动调整为 {PublishingMode.ENHANCED.value}")
     
     # 🚚 [BlockCache] 自适应物理迁移拦截
     if migrate_cache and hasattr(engine, 'block_cache') and engine.block_cache:
@@ -118,7 +118,7 @@ def process_config_sync(
             if not s_enum or not validate_mode_strategy(m_enum, s_enum):
                 req["governance.seo_strategy"] = get_default_strategy(m_enum).value
         except Exception as e:
-            tlog.warning(f"⚠️ [模式策略联动自愈失败]: {e}")
+            tlog.warning(f"⚠️ [模式策略联动校验异常]: {e}")
 
     from core.config.governance_map import resolve_governance_level
     routing_groups = {"local": {}, "imprint": {}, "global": {}}
@@ -162,7 +162,7 @@ def process_config_sync(
                             max_targets = LicenseGuard.get_max_i18n_targets()
                             if len(value) > max_targets:
                                 tier_name = LicenseGuard.get_license_info().get("tier_name", "社区版")
-                                return None, {"status": "error", "error": f"🛡️ [主权拦截] {tier_name}仅支持最多 {max_targets} 个目标语种。"}
+                                return None, {"status": "error", "error": f"🛡️ [功能配额] {tier_name}仅支持最多 {max_targets} 个目标语种。"}
                             from core.config.config_models import I18nTarget
                             from core.utils.language_hub import LanguageHub
                             new_targets = []

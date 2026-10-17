@@ -32,7 +32,7 @@ class AISlugAndSEOStep(PipelineStep):
         is_homepage = clean_rel.lower() in ('index.md', 'index.mdx', 'readme.md', 'readme.mdx')
         if is_homepage:
             slug_raw = "index"
-            tlog.info(f"🏠 [首页防护] 强制将根首页 {ctx.rel_path} 的 Slug 锁定为 'index'")
+            tlog.info(f"🏠 [首页锁定] 根首页 {ctx.rel_path} 的网址路径已锁定为 'index'")
         elif slug_raw == "index":
             # 🛡️ 防撞锁：仅在 flat/prefix 模式下才需要把子频道 index 重命名为频道名，防止根路由霸占
             slug_dir_mode = getattr(ctx.engine.config.translation, 'slug_dir_mode', 'nested')
@@ -40,7 +40,7 @@ class AISlugAndSEOStep(PipelineStep):
                 parent_dir = os.path.basename(os.path.dirname(clean_rel))
                 if parent_dir:
                     slug_raw = parent_dir.lower()
-                    tlog.info(f"🧭 [子频道索引] flat模式将非全站首页 {ctx.rel_path} 的 Slug 纠偏为频道名 '{slug_raw}'，杜绝根路由霸占")
+                    tlog.info(f"🧭 [频道索引] flat 模式已将子频道首页 {ctx.rel_path} 的网址路径规范为频道名 '{slug_raw}'")
                 else:
                     slug_raw = None
             else:
@@ -49,7 +49,7 @@ class AISlugAndSEOStep(PipelineStep):
 
         # 🚀 [V26.5] 显性重构支持：如果开启了 --re-slug，强制重置非首页的 Slug
         if getattr(ctx.engine, 'args', None) and getattr(ctx.engine.args, 're_slug', False) and not is_homepage and not explicit_slug:
-            tlog.info(f"🔄 [Slug 重塑] 检测到 --re-slug 标志，正在强制重新生成 {ctx.rel_path} 的 URL...")
+            tlog.info(f"🔄 [网址重新生成] 检测到 --re-slug 参数，正在重新生成 {ctx.rel_path} 的网址路径...")
             slug_raw = None
 
         if slug_raw and not explicit_slug:
@@ -57,7 +57,7 @@ class AISlugAndSEOStep(PipelineStep):
             # 🛡️ 拆分基本文件名部分校验，避免嵌套路径长度防错误杀
             slug_leaf = os.path.basename(slug_raw)
             if is_json_leak or len(slug_leaf) > 80 or '%' in slug_raw or bool(re.search(r'[\u4e00-\u9fa5]', slug_raw)):
-                tlog.warning(f"⚠️ [Slug 拦截] 侦测到非法 Slug: {slug_raw[:30]}... 已强制重置")
+                tlog.warning(f"⚠️ [网址修正] 网址路径包含非法字符: {slug_raw[:30]}... 已自动规范化重置")
                 slug_raw = None
 
         # 计算映射后的子目录路径以用于 Slug 路径增强

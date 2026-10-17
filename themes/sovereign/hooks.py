@@ -19,21 +19,21 @@ def on_post_sync(engine):
     """
     args = getattr(engine, 'args', None)
     if args and getattr(args, 'dry_run', False):
-        tlog.info("🧪 [主题钩子] 处于演练模式，跳过默认主题博客列表合成与重定向生成。")
+        tlog.info("🧪 [页面排版] 处于演练模式，跳过默认主题博客列表与首页重定向生成。")
         return
 
     # 🛡️ [跨主题越权防护] 严禁 Sovereign 专属钩子篡改其他主题（如 universal, docusaurus, vitepress 等）的编译产物
     active_theme = (getattr(engine, 'active_theme', '') or '').lower()
     if active_theme and active_theme not in ("sovereign", "default"):
-        tlog.debug(f"🤫 [Sovereign 钩子] 当前活跃主题为 {active_theme}，豁免 Sovereign 专属资产合成与重定向。")
+        tlog.debug(f"🤫 [页面排版] 当前活跃主题为 {active_theme}，豁免默认主题专属资产合成与重定向。")
         return
 
-    tlog.info("🎨 [主题钩子] 默认主题正在执行资产合成...")
+    tlog.info("🎨 [页面排版] 默认主题正在生成博客列表与页面导航...")
     
     # 🚀 [V1.2] 获取动态品牌输出路径
     dist_dir = engine.paths.get('site_dir') or engine.paths.get('target_base')
     if not dist_dir:
-        tlog.error("❌ [主题钩子] 无法解析输出根目录 site_dir 或 target_base！")
+        tlog.error("❌ [页面排版] 无法解析输出根目录！")
         return
         
     # 调用主题私有合成器
@@ -103,12 +103,12 @@ def on_post_sync(engine):
                 # 判定是否为真正的内容首页（带有主权引擎样式结构，而非跳转脚手架）
                 if ("sovereign-engine" in content or "glass-header" in content) and "http-equiv=\"refresh\"" not in content:
                     has_real_index = True
-                    tlog.info("🏠 [主题钩子] 侦测到物理主权真实首页 (index.html)，保留内容，豁免重定向覆盖。")
+                    tlog.info("🏠 [页面排版] 检测到站点首页 (index.html)，保留现有内容。")
         except Exception:
             pass
 
     if not has_real_index:
-        tlog.info(f"✨ [主题钩子] 自动锚定站点首选着陆页: {redirect_url}")
+        tlog.info(f"✨ [页面排版] 自动设置站点首页导航目标: {redirect_url}")
         # 生成高大上赛博风格重定向文件
         redirect_html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -173,9 +173,9 @@ def on_post_sync(engine):
             os.makedirs(os.path.dirname(index_file), exist_ok=True)
             with open(index_file, 'w', encoding='utf-8') as f:
                 f.write(redirect_html)
-            tlog.info(f"✨ [主题钩子] 已自动生成根目录重定向文件: {index_file} -> {redirect_url}")
+            tlog.info(f"✨ [页面排版] 已生成站点入口引导: {index_file} -> {redirect_url}")
         except Exception as e:
-            tlog.error(f"❌ [主题钩子] 自动生成重定向文件失败: {e}")
+            tlog.error(f"❌ [页面排版] 生成重定向入口失败: {e}")
 
     # 🛡️ 递归为所有缺少 index.html 的子目录生成自愈重定向，彻底杜绝 Directory listing
     for root, dirs, files in os.walk(dist_dir):
@@ -228,8 +228,8 @@ def on_post_sync(engine):
             content_404 = content_404.replace("{{ t_footer_slogan }}", "主权私有出版引擎")
             with open(dist_404, 'w', encoding='utf-8') as f:
                 f.write(content_404)
-            tlog.info(f"✨ [主题钩子] 已生成全站智能 404 自愈寻路页面: {dist_404}")
+            tlog.info(f"✨ [页面排版] 已生成全站 404 引导页面: {dist_404}")
         except Exception as e:
-            tlog.error(f"❌ [主题钩子] 生成 404 页面失败: {e}")
+            tlog.error(f"❌ [页面排版] 生成 404 页面失败: {e}")
 
 

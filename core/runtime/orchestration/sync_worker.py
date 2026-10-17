@@ -63,7 +63,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
 
     # 2. 发布启动事件
     bus.emit("ENGINE_STARTED", mode="sync", dry_run=args.dry_run)
-    tlog.info(f"🚀 [系统点火] 核心引擎启动 | 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    tlog.info(f"🚀 [出版启动] 核心出版引擎已就绪 | 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     stats = {"UPDATED": 0, "SKIP": 0, "OFFLINE": 0, "DEGRADED": 0, "ERROR": 0}
     total_tasks = len(task_queue)
@@ -71,7 +71,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
     # 3. 触发主题钩子与 AI 预处理
     engine.theme_hooks.trigger("pre_sync")
     if not engine.no_ai:
-        tlog.info("🏎️ [预处理] 正在检测缺失元数据的资产...")
+        tlog.info("🏎️ [内容预检] 正在检查文稿元数据与发布配置...")
         engine.ai_batcher.batch_generate_seo(task_queue)
 
     # 4. 进度管理与任务分发
@@ -94,7 +94,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
             )
             future_to_task[future] = task_path
 
-    tlog.info(f"📡 [调度中心] 已分发 {total_tasks} 个同步任务，正在等待算力集群响应...")
+    tlog.info(f"📡 [任务调度] 已分配 {total_tasks} 篇文稿同步任务，正在排版处理...")
 
     def _on_task_done(future):
         bus.emit("UI_PROGRESS_ADVANCE", amount=1)
@@ -106,7 +106,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
     for future in as_completed(future_to_task):
         # 🛡️ [Abort] 协同中止检测
         if getattr(engine, "abort_sync", False):
-            tlog.warning("🛑 [同步中止] 感应到用户手动中止指令，正在紧急取消后续任务...")
+            tlog.warning("🛑 [任务中止] 收到中止指令，正在安全取消剩余任务...")
             for f in future_to_task:
                 if not f.done():
                     f.cancel()
@@ -122,12 +122,12 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
             if getattr(engine, "abort_sync", False):
                 break
             bus.emit("UI_ERROR", path=task_path, error=str(e))
-            tlog.error(f"❌ 文章处理故障 ({os.path.basename(task_path)}): {traceback.format_exc()}")
+            tlog.error(f"❌ 文稿排版异常 ({os.path.basename(task_path)}): {e}")
             stats["ERROR"] += 1
 
     # 🛡️ [Abort] 若已触发中止，立即物理熔断退出，绝不执行后续 AI 收割、图谱重建及分发插件
     if getattr(engine, "abort_sync", False):
-        tlog.warning("🛑 [同步中止] 发布流水线已被用户手动中止，跳过残留算力收割与全息图谱重建。")
+        tlog.warning("🛑 [任务中止] 出版流程已由用户中止，已跳过后续处理。")
         bus.emit("UI_PROGRESS_STOP")
         bus.emit("UI_TERMINAL_DATA", type="LOG", data="🛑 [同步中止] 发布流水线已成功停止，后续所有任务与大模型调用已全部取消。")
         send_sync_lifecycle_notification(engine, "WARN", "同步任务已中止", "用户手动中止了同步流程。")
@@ -148,7 +148,7 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
         engine.md_index, engine.asset_index, engine.link_graph = VaultIndexer.build_indexes(
             engine.manuscript_source, config=engine.config, ledger=engine.meta
         )
-        tlog.info(f"🌌 [混合图谱] 物理双链自愈扫描完成，当前物理节点数: {len(engine.link_graph)}")
+        tlog.info(f"🌌 [知识图谱] 文档双链关联分析完成，当前节点数: {len(engine.link_graph)}")
 
         # 🪐 [混合渐进式] 构建增量星系数据并通过 EventBus 推送至 Dashboard
         batch_nodes = []
@@ -193,9 +193,9 @@ def _perform_sync_internal(engine, args, task_queue, current_source_files):
                  total_batches=1,
                  nodes=batch_nodes,
                  links=batch_links)
-        tlog.info(f"📡 [混合图谱] 已推送 KNOWLEDGE_BATCH_READY: {len(batch_nodes)} 节点, {len(batch_links)} 连线")
+        tlog.info(f"📡 [知识图谱] 知识星系数据已推送: {len(batch_nodes)} 个节点, {len(batch_links)} 条连线")
     except Exception as ex:
-        tlog.error(f"❌ [混合图谱] 物理双链自愈扫描失败: {ex}")
+        tlog.error(f"❌ [知识图谱] 双向链接分析失败: {ex}")
 
     # 7. 性能审计与下游生命周期
     elapsed_seconds = time.perf_counter() - start_perf

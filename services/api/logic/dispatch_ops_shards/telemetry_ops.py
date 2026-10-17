@@ -141,7 +141,7 @@ def get_dispatch_status_logic(engine, doc_id: str, lang_code: str = None) -> dic
             if failed_langs:
                 audit_status = "FAIL"
                 health_status = "Degraded"
-                error_detail = f"翻译完整性审计未通过：语种 [{', '.join(failed_langs)}] 的翻译结果存在故障或被主权盾牌拦截。"
+                error_detail = f"翻译完整性检查未通过：语种 [{', '.join(failed_langs)}] 的翻译结果存在异常或未能生成有效内容。"
             else:
                 audit_status = "PASS"
                 health_status = "Active"

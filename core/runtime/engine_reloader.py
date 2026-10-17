@@ -11,17 +11,17 @@ from core.utils.tracing import tlog
 
 def reload_engine_config(engine, config=None, **kwargs):
     """⚡ [V55.12] 深度主权对齐：响应配置变更，同步全量运行时参数"""
-    tlog.info("⚡ [Engine] 接收到配置变更信号，正在执行全量参数对齐...")
+    tlog.info("⚡ [系统配置] 检测到配置更新，正在生效新配置...")
     
     if config is None:
         try:
             from core.config.config import load_config
             config = load_config()
         except Exception as cfg_err:
-            tlog.error(f"❌ [Engine] 加载物理配置失败: {cfg_err}")
+            tlog.error(f"❌ [系统配置] 读取新配置失败: {cfg_err}")
             config = None
     if not config:
-        tlog.error("❌ [Engine] 热重载配置失败，新的配置为空！物理拒绝覆盖当前有效配置。")
+        tlog.error("❌ [系统配置] 配置更新失败，新配置为空，已保持现有配置。")
         return
     was_onboarding = engine.onboarding_required
     
@@ -93,21 +93,21 @@ def reload_engine_config(engine, config=None, **kwargs):
     
     if enable_ai_val:
         if not getattr(engine, 'no_ai', False):
-            tlog.info("📡 [算力热加载] 检测到 AI 算力总控已启用，正在热加载/更新翻译官组件...")
+            tlog.info("📡 [AI 辅助] 已启用 AI 智能排版与翻译组件...")
             engine.translator = TranslatorFactory.create(config.translation)
             if engine.translator:
                 engine.translator.api_timeout = config.translation.api_timeout
         else:
             engine.translator = None
     else:
-        tlog.info("🔌 [算力热卸载] 检测到 AI 算力总控已关闭，正在热卸载翻译官组件...")
+        tlog.info("🔌 [AI 辅助] 已停用 AI 智能排版与翻译组件...")
         engine.translator = None
 
     if hasattr(engine, 'route_manager') and engine.route_manager:
         engine.route_manager.translator = engine.translator
         
-    # 6. 记录主权对齐日志
-    tlog.info(f"✅ [Engine] 物理参数已全量对齐: Theme={engine.active_theme} | Vault={engine.vault_root}")
+    # 6. 记录配置生效日志
+    tlog.info(f"✅ [系统配置] 配置已生效: 装帧主题={engine.active_theme} | 文库路径={engine.vault_root}")
     engine.ledger.log("CONFIG_RELOADED", "主权参数全量原子对齐完成", imprint_id=engine.imprint_id)
 
     # ⚡ [V74.96] 主题选项配置变动实时热编译对正
@@ -115,22 +115,22 @@ def reload_engine_config(engine, config=None, **kwargs):
         try:
             engine.ssg_adapter.compile_theme_options()
         except Exception as compile_err:
-            tlog.warning(f"⚠️ [Engine] 实时对正主题 CSS 变量失败: {compile_err}")
+            tlog.warning(f"⚠️ [装帧主题] 更新主题样式变量失败: {compile_err}")
 
     # 🚀 [V74.9] 零重启热自愈：若状态从 Onboarding 状态复苏至就绪状态
     if was_onboarding and not engine.onboarding_required:
-        tlog.info("🚀 [Onboarding 自愈] 检测到文库路径配置已生效！正在启动物理金库首次全量索引扫描...")
+        tlog.info("🚀 [文库引导] 文库路径已生效，正在执行首次索引扫描...")
         try:
             # 重新执行首次全量索引重构，充填内存
             from core.editorial.vault_indexer import VaultIndexer
             VaultIndexer.build_indexes(engine.manuscript_source, config=engine.config, ledger=engine.ledger)
-            tlog.info("✅ [Onboarding 自愈] 物理索引热扫描已完成！")
+            tlog.info("✅ [文库引导] 文库索引扫描完成！")
         except Exception as e:
-            tlog.error(f"❌ [Onboarding 自愈] 物理索引扫描失败: {e}")
+            tlog.error(f"❌ [文库引导] 文库索引扫描失败: {e}")
         
         # 若启动参数包含 --watch，则实时唤醒/点火守护进程
         if getattr(engine, 'args', None) and getattr(engine.args, 'watch', False):
-            tlog.info("🐕 [Onboarding 自愈] 正在实时点火 Watchdog 本地热更监听线程...")
+            tlog.info("🔄 [文库联动] 正在启动原稿自动同步服务...")
             try:
                 from core.runtime.daemon import start_watchdog
                 from core.runtime.engine_singleton import get_global_observer, set_global_observer
@@ -140,6 +140,6 @@ def reload_engine_config(engine, config=None, **kwargs):
                     current_source_files = list(engine.manuscript_source.list_files())
                     new_observer, _ = start_watchdog(engine, engine.args, current_source_files)
                     set_global_observer(new_observer)
-                    tlog.info("✅ [Onboarding 自愈] Watchdog 实时热更新探针启动成功！")
+                    tlog.info("✅ [文库联动] 原稿自动同步服务已就绪！")
             except Exception as e:
-                tlog.error(f"❌ [Onboarding 自愈] 实时热更点火失败: {e}")
+                tlog.error(f"❌ [文库联动] 启动自动同步服务失败: {e}")

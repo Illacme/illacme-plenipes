@@ -153,7 +153,7 @@ class BasePublisher(ABC):
         if importlib.util.find_spec(pkg_name) is not None:
             return True
 
-        tlog.info(f"🧬 [物理自愈] 检测到 Python 依赖 '{pkg_name}' 缺失，正在为您自动进行静默安装...")
+        tlog.info(f"📦 [环境准备] 检测到 Python 依赖 '{pkg_name}' 缺失，正在为您自动安装...")
         import platform
         is_windows = (platform.system() == "Windows")
         try:
@@ -171,11 +171,11 @@ class BasePublisher(ABC):
             process = subprocess.run(cmd, capture_output=True, text=True, timeout=90, shell=is_windows)
             if process.returncode == 0:
                 if importlib.util.find_spec(pkg_name) is not None:
-                    tlog.success(f"🟢 [物理自愈] Python 依赖 '{pkg_name}' 自动装载成功！")
+                    tlog.success(f"🟢 [环境准备] Python 依赖 '{pkg_name}' 安装成功！")
                     return True
-            tlog.error(f"❌ [物理自愈] Python 依赖 '{pkg_name}' 自动安装未闭环: {process.stderr or process.stdout}")
+            tlog.error(f"❌ [环境准备] Python 依赖 '{pkg_name}' 自动安装失败: {process.stderr or process.stdout}")
         except Exception as e:
-            tlog.error(f"❌ [物理自愈] 自动执行依赖安装异常: {e}")
+            tlog.error(f"❌ [环境准备] 执行依赖安装异常: {e}")
             
         return False
 
@@ -194,10 +194,10 @@ class BasePublisher(ABC):
         if os.path.exists(local_bin_path) or shutil.which(pkg_name) is not None:
             return True
 
-        tlog.info(f"🧬 [物理自愈] 检测到 npm 依赖工具 '{pkg_name}' 缺失，正在为您自动进行静默安装...")
+        tlog.info(f"📦 [环境准备] 检测到 npm 工具 '{pkg_name}' 缺失，正在为您自动安装...")
         npm_path = shutil.which("npm")
         if not npm_path:
-            tlog.error("❌ [物理自愈] 失败：宿主机未检测到 Node.js/npm 运行环境，无法自动安装依赖。")
+            tlog.error("❌ [环境准备] 安装失败：未检测到 Node.js/npm 运行环境，无法自动安装依赖。")
             return False
 
         is_windows = (platform.system() == "Windows")
@@ -211,11 +211,11 @@ class BasePublisher(ABC):
             
             process = subprocess.run(cmd, env=env, cwd=project_root, capture_output=True, text=True, timeout=15, shell=is_windows)
             if process.returncode == 0:
-                tlog.success(f"🟢 [物理自愈] npm 依赖工具 '{pkg_name}' 自动装载成功！")
+                tlog.success(f"🟢 [环境准备] npm 工具 '{pkg_name}' 安装成功！")
                 return True
-            tlog.error(f"❌ [物理自愈] npm 依赖工具 '{pkg_name}' 自动安装未闭环: {process.stderr or process.stdout}")
+            tlog.error(f"❌ [环境准备] npm 工具 '{pkg_name}' 安装失败: {process.stderr or process.stdout}")
         except Exception as e:
-            tlog.error(f"❌ [物理自愈] 自动执行 npm 安装异常: {e}")
+            tlog.error(f"❌ [环境准备] 执行 npm 安装异常: {e}")
             
         return False
 

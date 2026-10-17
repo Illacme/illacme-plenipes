@@ -52,7 +52,7 @@ class VaultIndexer:
         try:
             all_files = list(source.list_files())
         except Exception as e:
-            tlog.error(f"❌ [索引器] 无法获取稿件清单: {e}")
+            tlog.error(f"❌ [文库扫描] 无法读取文稿清单: {e}")
             return md_index, asset_index, link_graph
 
         # 🚀 [V35.1] 解析 Ingress Rules (授权版功能)
@@ -152,13 +152,13 @@ class VaultIndexer:
                         )
                         
                 except Exception as e:
-                    tlog.warning(f"⚠️ [索引器] 处理稿件失败 {rel_path}: {e}")
+                    tlog.warning(f"⚠️ [文库扫描] 解析文稿元数据异常 {rel_path}: {e}")
             else:
                 # 资产索引处理
                 if filename not in asset_index: asset_index[filename] = []
                 asset_index[filename].append(rel_path)
 
-        tlog.info(f"📊 [索引器] 主权审计完成：发现 {len(md_index)} 份合规稿件，{len(asset_index)} 项出版资产。")
+        tlog.info(f"📊 [文库扫描] 文库扫描完成：共发现 {len(md_index)} 份文稿，{len(asset_index)} 项媒体素材。")
         return md_index, asset_index, link_graph
 
     @staticmethod
@@ -206,9 +206,9 @@ class VaultIndexer:
             import json
             content = json.dumps({"nodes": nodes, "links": links}, indent=2, ensure_ascii=False)
             atomic_write(output_path, content)
-            tlog.info(f"📊 [索引器] 已导出全息关系图谱: {len(nodes)} 节点")
+            tlog.info(f"📊 [知识图谱] 已导出双链关系图谱: {len(nodes)} 个节点")
         except Exception as e:
-            tlog.error(f"❌ [索引器] 导出图谱失败: {e}")
+            tlog.error(f"❌ [知识图谱] 导出图谱失败: {e}")
 
     @staticmethod
     def export_search_index_v2(all_docs_snapshot: Dict[str, Any], output_path: str, engine: Any = None):
@@ -256,5 +256,5 @@ class VaultIndexer:
                     os.makedirs(os.path.dirname(static_idx), exist_ok=True)
                     atomic_write(static_idx, json_payload)
         except Exception as e:
-            tlog.warning(f"⚠️ [索引器] 导出搜索索引异常: {e}")
+            tlog.warning(f"⚠️ [搜索索引] 导出全站搜索索引异常: {e}")
 

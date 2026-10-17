@@ -133,7 +133,7 @@ async def websocket_endpoint(websocket: WebSocket):
         # 初始握手包
         await websocket.send_json({
             "type": "SYSTEM_CONNECTED",
-            "message": "主权实时链路已建立",
+            "message": "出版工作台实时连接已建立",
             "timestamp": time.time(),
             "server_instance_id": server_start_time
         })
@@ -145,7 +145,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 with buffer_lock:
                     replay_msgs = [msg for msg in message_buffer if msg["msg_id"] > last_id]
                 if replay_msgs:
-                    tlog.info(f"🔄 [WS] 正在为重连链路重放 {len(replay_msgs)} 条离线消息...")
+                    tlog.info(f"🔄 [实时通信] 正在为工作台重放 {len(replay_msgs)} 条历史消息...")
                     await websocket.send_json({
                         "type": "REPLAY_EVENTS",
                         "events": replay_msgs,
@@ -161,5 +161,5 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:
-        tlog.error(f"❌ [WS] 链路异常: {e}")
+        tlog.error(f"❌ [实时通信] 连接异常: {e}")
         manager.disconnect(websocket)

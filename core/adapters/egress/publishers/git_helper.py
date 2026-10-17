@@ -71,7 +71,7 @@ class GitPushMixin:
         if any(kw in err_msg.lower() for kw in network_keywords):
             return (
                 f"{err_msg}\n\n"
-                "💡 [自愈建议] 检测到本地网络在直连 Git 托管服务时超时或 SSL 握手失败。\n"
+                "💡 [网络排查建议] 检测到本地网络连接 Git 托管服务时超时或 SSL 握手失败。\n"
                 "1. 检查本地代理：如果使用了代理工具，请在终端尝试配置 Git 代理，例如：\n"
                 "   git config --global http.proxy http://127.0.0.1:您的代理端口\n"
                 "2. 切换 SSH 协议：如果您已配置 SSH Key，强烈建议将仓库 URL 更改为 SSH 格式：\n"

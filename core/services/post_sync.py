@@ -35,16 +35,16 @@ class LifecycleManager:
     @classmethod
     def execute_all(cls, engine, stats, snapshot, args):
         """⚡ 按顺序执行所有已注册的插件 (具备异常隔离能力)"""
-        tlog.info(f"⚡ [Lifecycle] 正在点火 {len(cls._tasks)} 个下游插件...")
+        tlog.info(f"⚡ [出版工序] 正在执行 {len(cls._tasks)} 个后续处理插件...")
         
         for task in cls._tasks:
             try:
                 start_time = time.perf_counter()
                 task.run(engine, stats, snapshot, args)
                 elapsed = time.perf_counter() - start_time
-                tlog.info(f"✅ [Plugin] {task.name} 执行完毕 | 耗时: {elapsed:.3f}s")
+                tlog.info(f"✅ [插件处理] {task.name} 执行完毕 | 耗时: {elapsed:.3f}s")
             except Exception as e:
-                tlog.error(f"🚨 [Plugin Error] {task.name} 发生故障: {e}")
+                tlog.error(f"🚨 [插件异常] {task.name} 执行故障: {e}")
                 tlog.debug(traceback.format_exc())
 
 # 🚀 [V1.0] 内置付印插件定义
@@ -182,7 +182,7 @@ class JanitorPlugin(PostSyncTask):
     def run(self, engine, stats, snapshot, args):
         no_changes = (stats.get("UPDATED", 0) == 0 and stats.get("ERROR", 0) == 0 and not args.force)
         if not no_changes:
-            tlog.info("🧹 [Lifecycle] 检测到变更，正在启动 Janitor 清洗...")
+            tlog.info("🧹 [目录整理] 检测到文件变更，正在整理历史临时产物...")
             engine.janitor.gc_orphans(set(snapshot.keys()), is_dry_run=args.dry_run)
             engine.janitor.gc_ghost_nodes(is_dry_run=args.dry_run)
             
@@ -199,7 +199,7 @@ class DigitalGardenPlugin(PostSyncTask):
         # 🚀 [V34.9] 只有在有变更或非强制模式下才执行昂贵的导出
         has_changes = not (stats.get("UPDATED", 0) == 0 and stats.get("ERROR", 0) == 0 and not (args and args.force))
         if not has_changes:
-            tlog.info("✨ [Plugin] 数字花园数据无变更，跳过导出。")
+            tlog.info("✨ [知识图谱] 图谱数据无变更，跳过重复导出。")
             return
 
         from core.bindery.garden_exporter import export_digital_garden
@@ -213,13 +213,13 @@ class SovereignDeploymentPlugin(PostSyncTask):
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         # 1. 只有在非 dry_run、非 local_only 且有实际产出（或强制模式）时执行
         if getattr(args, 'local_only', False):
-            tlog.info("ℹ️ [Deployment] 当前处于发布预览模式 (local_only)，已完成本地静态装帧，跳过全网外部渠道推流。")
+            tlog.info("ℹ️ [发布渠道] 当前处于本地预览模式，已完成静态排版装帧，跳过全网外部渠道发布。")
             bus.emit("UI_TERMINAL_DATA", type="LOG", data="⚡ [发布预览] 本地装帧与静态编译已就绪，跳过全网外部渠道推流。")
             return
 
         has_output = stats.get("UPDATED", 0) > 0 or (args and args.force)
         if (args and args.dry_run) or not has_output:
-            tlog.info("ℹ️ [Deployment] 无新增产出或处于演练模式，跳过渠道投递。")
+            tlog.info("ℹ️ [发布渠道] 无新增内容变动或处于演练模式，跳过渠道发布。")
             return
 
         if not hasattr(engine, 'deployment_manager') or not engine.deployment_manager:
@@ -241,7 +241,7 @@ class SovereignDeploymentPlugin(PostSyncTask):
                 themes_root = (engine.paths or {}).get('themes') or os.path.join(os.getcwd(), "themes")
                 theme_dist = os.path.join(themes_root, engine.active_theme or "default", "dist")
                 if os.path.exists(theme_dist) and os.path.exists(os.path.join(theme_dist, "index.html")):
-                    tlog.warning(f"⚠️ [物理纠偏] 侦测到发布源路径 {bundle_path} 异常（缺少网页入口或指向源码目录），系统已智能自动将其重定向至主题静态成品目录: {theme_dist}")
+                    tlog.warning(f"⚠️ [路径校准] 发布源路径 {bundle_path} 未包含网页入口，已自动切换至主题静态产物目录: {theme_dist}")
                     bundle_path = theme_dist
 
         # 3. 准备全局分发元数据

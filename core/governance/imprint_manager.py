@@ -103,13 +103,13 @@ class ImprintManager(ImprintQueryMixin):
                 os.makedirs(real_vault_path, exist_ok=True)
 
                 if bootstrap_vault and not os.listdir(real_vault_path):
-                    tlog.info(f"📂 [文库自愈] 创作者已启用演示资源注入，开始为每种装帧模板生成特性演示手稿: {real_vault_path}")
+                    tlog.info(f"📂 [演示模板] 已启用示例内容注入，正在生成演示稿件与图谱: {real_vault_path}")
                     inject_template_showcase_manuscripts(real_vault_path, press_name=imprint_name or name)
-                    tlog.success("✅ [文库自愈完成] 全套装帧模板特性演示手稿与双链星系拓扑已物理落盘！")
+                    tlog.success("✅ [演示模板] 示例稿件与知识星系图谱已生成完毕！")
             except Exception as bootstrap_err:
-                tlog.error(f"❌ [文库初始化失败] 无法自愈注入文件结构: {bootstrap_err}")
+                tlog.error(f"❌ [文库初始化失败] 写入示例文件结构失败: {bootstrap_err}")
 
-        tlog.success(f"✅ [品牌落成] (出版社已就绪) 出版品牌 '{name}' 物理主权已确立。")
+        tlog.success(f"✅ [品牌创建成功] 出版品牌 '{name}' 已完成初始化配置。")
         return True
 
     def _mirror_mother_templates(self, imprint_path: str, vault_root: str, imprint_name: Optional[str] = None, theme: Optional[str] = None):
