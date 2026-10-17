@@ -93,7 +93,7 @@ class TranslatorFactory:
         if not physical_node:
             raise ValueError(f"❌ [算力网关] 未能对正物理节点: {node_name}。请先在‘算力底座’中配置。")
             
-        tlog.info(f"🛰️ [主权对正] 正在将品牌策略注入物理底座: {node_name} (Role: {role})")
+        tlog.info(f"🛰️ [节点绑定] 正在将策略关联至算力底座: {node_name} (Role: {role})")
         # 动态决定模型（优先使用品牌装帧调度策略 primary_model / fallback_model；若未显式指定，则降级回退至物理节点的默认模型）
         node_model = getattr(physical_node, 'model', None)
         brand_model = getattr(trans_cfg, f"{role}_model", None)
@@ -242,7 +242,7 @@ class TranslatorFactory:
 
         except Exception as e:
             tlog.warning(f"📡 [算力对正] 检测到品牌配置缺失或冲突: {e}")
-            tlog.info("  └── 🛡️ [主权自愈] 系统已自动挂载“模拟算力”镜像，确保出版管线物理连续。")
+            tlog.info("  └── 🛡️ [自动降级] 系统已自动挂载“模拟算力”镜像，确保出版管线正常运转。")
             
             # 🚀 [V74.8] 极致降级：通过注册表动态获取 Mock 协议，规避物理路径依赖
             try:

@@ -22,10 +22,10 @@ def deep_reload_imprint(imprint_id: str):
     _GLOBAL_OBSERVER = get_global_observer()
     
     if not _GLOBAL_ARGS:
-        tlog.error("🛑 [重载失败] 无法定位原始启动参数，主权迁移中止。")
+        tlog.error("🛑 [重载失败] 无法定位原始启动参数，品牌切换中止。")
         return False
         
-    tlog.info(f"🛰️ [主权迁移] 正在启动深度重载流水线 (Target Imprint: {imprint_id})...")
+    tlog.info(f"🛰️ [品牌切换] 正在启动深度重载流水线 (目标品牌: {imprint_id})...")
     
     # 🚀 [V65.6] 物理闭环：在重载前，必须先强制注销旧引擎的所有治理守卫 (特别是哨兵)
     if _GLOBAL_ENGINE and hasattr(_GLOBAL_ENGINE, 'governance'):
@@ -36,7 +36,7 @@ def deep_reload_imprint(imprint_id: str):
     # 🚀 [V65.8] 同步注销：销毁全局文件监控器，防止幽灵同步
     if _GLOBAL_OBSERVER:
         try:
-            tlog.info("🐕 [主权迁移] 正在注销旧有的同步守护进程...")
+            tlog.info("🐕 [后台服务] 正在重启文件同步守护进程...")
             _GLOBAL_OBSERVER.stop()
             _GLOBAL_OBSERVER.join(timeout=0.2)
             set_global_observer(None)

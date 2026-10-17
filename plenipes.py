@@ -80,7 +80,7 @@ if __name__ == "__main__":
         chosen = im.get_most_recent_imprint()
         if chosen:
             config.active_imprint = chosen
-            tlog.info(f"✨ [主权自愈] 自动探测并对正最新活动物理品牌: '{chosen}'")
+            tlog.info(f"✨ [自动校准] 自动载入最近使用的出版品牌: '{chosen}'")
             try:
                 import yaml
                 local_p = "config.local.yaml"
@@ -179,7 +179,7 @@ if __name__ == "__main__":
                     tlog.success("🎉 [安全审计通过] 所有敏感凭据均已加密，安全红线状态已解除。")
         # 🧪 [V50.3] 主权体检特权指令
         if args.doctor:
-            tlog.info("🩺 [主权体检] 正在启动全链路深度诊断中心...")
+            tlog.info("🩺 [系统诊断] 正在启动全链路深度健康诊断...")
             report = engine.doctor.run_full_check()
             from core.ui.mediator import UIMediator
             UIMediator.show_doctor_report(report)

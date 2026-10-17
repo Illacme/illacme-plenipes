@@ -79,7 +79,7 @@ def heal_config(final_cfg: Dict[str, Any], active_id: Optional[str] = None) -> D
         try:
             new_matrix = im._probe_vault_structure(final_cfg['vault_root'])
             final_cfg['route_matrix'] = new_matrix
-            tlog.info("🩺 [主权自愈] 探测到路由矩阵缺失，已根据金库结构自动生成映射。")
+            tlog.info("🩺 [自动校准] 探测到路由矩阵缺失，已根据文库目录结构自动生成映射。")
             
             # 🚀 [V65.11] 物理持久化回写：确保用户在 YAML 中可见
             if active_id and active_id != "default":
@@ -88,8 +88,8 @@ def heal_config(final_cfg: Dict[str, Any], active_id: Optional[str] = None) -> D
                     # 使用模型进行安全的持久化
                     temp_model = Configuration(**final_cfg)
                     temp_model.dump_to_disk(target_path)
-                    tlog.info(f"💾 [主权持久化] 已将自愈后的路由矩阵回写至: {target_path}")
+                    tlog.info(f"💾 [配置保存] 已将自动校准的路由矩阵回写至: {target_path}")
         except Exception as e:
-            tlog.debug(f"主权自愈持久化跳过: {e}")
+            tlog.debug(f"自动校准持久化跳过: {e}")
 
     return final_cfg

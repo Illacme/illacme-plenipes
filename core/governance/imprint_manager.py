@@ -147,7 +147,7 @@ class ImprintManager(ImprintQueryMixin):
             return
 
         self.active_imprint = imprint_id
-        tlog.info(f"🔄 [主权激活] (切换出版社) 出版品牌已切换至: {imprint_id}")
+        tlog.info(f"🔄 [品牌切换] 出版品牌已切换至: {imprint_id}")
 
     def get_active_imprint(self) -> str:
         return self.active_imprint

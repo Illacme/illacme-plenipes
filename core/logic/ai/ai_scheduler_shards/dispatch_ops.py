@@ -147,7 +147,7 @@ class AISchedulerDispatchOps:
                             target_slot=getattr(ctx, 'target_slot', 'docs')
                         )
                     else:
-                        tlog.warning(f"🛑 [主权护盾] 语种 {t_code} 翻译有故障块，拦截物理分发，防止污染。")
+                        tlog.warning(f"🛑 [安全防护] 语种 {t_code} 翻译存在异常内容，拦截分发，防止污染网站。")
             except Exception as e:
                 import traceback
                 tlog.error(f"🚨 [语种调度故障] {rel_path}: {e}\n{traceback.format_exc()}")

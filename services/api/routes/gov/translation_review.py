@@ -52,7 +52,7 @@ async def get_review_snapshot(doc_id: str):
     # 🛡️ [安全拦截] AI 算力关闭时，禁止访问译文校对接口
     enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     if not enable_ai:
-        raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态，译文校对工作台不可用。")
+        raise HTTPException(status_code=400, detail="🛡️ [功能受限] AI 算力当前处于关闭状态，译文校对工作台不可用。")
 
     result = get_translation_snapshot_impl(engine, doc_id)
     if "error" in result:
@@ -74,7 +74,7 @@ async def save_review(req: SaveReviewRequest):
     # 🛡️ [安全拦截] AI 算力关闭时，禁止访问译文校对接口
     enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     if not enable_ai:
-        raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态，译文校对工作台不可用。")
+        raise HTTPException(status_code=400, detail="🛡️ [功能受限] AI 算力当前处于关闭状态，译文校对工作台不可用。")
 
     result = save_human_review_impl(
         engine,
@@ -101,7 +101,7 @@ async def unlock_review(req: UnlockReviewRequest):
     
     enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     if not enable_ai:
-        raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态，译文校对工作台不可用。")
+        raise HTTPException(status_code=400, detail="🛡️ [功能受限] AI 算力当前处于关闭状态，译文校对工作台不可用。")
 
     result = unlock_human_review_impl(engine, doc_id=req.doc_id, lang_code=req.lang_code)
     if not result.get("ok"):
@@ -128,7 +128,7 @@ async def retranslate_paragraph(req: RetranslateParagraphRequest):
     
     enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
     if not enable_ai:
-        raise HTTPException(status_code=400, detail="🛡️ [主权拦截] AI 算力当前处于关闭状态。")
+        raise HTTPException(status_code=400, detail="🛡️ [功能受限] AI 算力当前处于关闭状态。")
 
     from .context_shards.review_ops import retranslate_paragraph_impl
     result = retranslate_paragraph_impl(

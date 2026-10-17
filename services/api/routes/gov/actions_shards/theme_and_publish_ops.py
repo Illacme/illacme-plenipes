@@ -147,7 +147,7 @@ async def apply_translation_style_impl(req: StyleRequest, request: Request) -> D
     if engine:
         enable_ai = getattr(engine.config.translation, "enable_ai", False) if engine.config.translation else False
         if not enable_ai:
-            return {"status": "error", "message": "🛡️ [主权拦截] AI 算力当前处于关闭状态，无法应用翻译风格"}
+            return {"status": "error", "message": "🛡️ [功能受限] AI 算力当前处于关闭状态，无法应用翻译风格"}
 
     from core.governance.imprint_manager import im
     from core.config.config import IMPRINT_DIR, CONFIG_IMPRINT_NAME

@@ -45,10 +45,10 @@ def parse_args_and_lock():
     parser.add_argument('--no-ai', action='store_true', help="[离线/节流模式] 禁用所有 AI 任务 (翻译/SEO/Slug)，仅执行本地排版加工")
     parser.add_argument('--port', type=int, help="[多开模式] 物理覆盖 singleton_port，允许同一份配置运行多个实例")
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="[诊断模式] 手动覆盖配置文件的终端日志级别")
-    parser.add_argument('--clean', action='store_true', help="🧹 [主权重置] 物理删除所有同步指纹与 AI 影子缓存")
+    parser.add_argument('--clean', action='store_true', help="🧹 [重置缓存] 清除所有同步指纹与 AI 缓存")
     parser.add_argument('--purge', action='store_true', help="🪠 [资产净化] 立即唤醒清道夫 (Janitor)，抹除出版品牌内的所有非法或过期资产")
     parser.add_argument('--sentinel', action='store_true', help="🛡️ [哨兵审计] 立即唤醒项目哨兵，执行健康审计与算力成本上报")
-    parser.add_argument('--doctor', '-d', action='store_true', help="🩺 [主权体检] 启动诊断中心，执行账本一致性审计与路径映射校验")
+    parser.add_argument('--doctor', '-d', action='store_true', help="🩺 [系统诊断] 启动诊断中心，执行文库一致性审计与路径映射校验")
     parser.add_argument('--heal', action='store_true', help="💊 [物理自愈] 配合 --doctor 使用，自动修复路径缺失与指纹冲突")
     parser.add_argument('--sandbox', action='store_true', help="📦 [仿真沙盒模式] 同步任务仅分发至演习场，不触动生产环境")
     parser.add_argument('--audit', action='store_true', help="📊 [差异审计] 自动比对沙盒预览与生产环境的差异，生成全息质量简报")
@@ -158,9 +158,9 @@ def parse_args_and_lock():
         from tests.sovereignty_guard import TestSovereigntyGuard
         import unittest
         suite = unittest.TestLoader().loadTestsFromTestCase(TestSovereigntyGuard)
-        tlog.info("🛡️ [主权治理自检] 核心红线验证通过。")
+        tlog.info("🛡️ [系统规范自检] 核心规范校验通过。")
     except Exception as e:
-        tlog.warning(f"⚠️ [主权治理自检] 检查异常: {e}")
+        tlog.warning(f"⚠️ [系统规范自检] 校验异常: {e}")
 
     is_service = any([getattr(args, 'api', False), getattr(args, 'watch', False), getattr(args, 'serve', False), getattr(args, 'wizard', False)])
     acquire_singleton_lock(lock_port, is_service=is_service)
