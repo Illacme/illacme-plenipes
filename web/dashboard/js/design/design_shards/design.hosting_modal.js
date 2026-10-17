@@ -14,10 +14,10 @@
             <div id="asset-hosting-modal" class="modal-overlay active" style="z-index:10000; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); position:fixed; inset:0;">
                 <div class="glass-panel" style="width:580px; max-width:92vw; max-height:86vh; border-radius:14px; border:1px solid rgba(0,242,254,0.35); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.85);">
                     <!-- 顶栏 -->
-                    <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-weight:700; color:#fff; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+                    <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; color:var(--text-bright); font-size:0.95rem; display:flex; align-items:center; gap:8px;">
                             <span>☁️ 媒体资产图床托管</span>
-                            <span style="font-size:0.7rem; color:#00f2fe; background:rgba(0,242,254,0.1); padding:2px 8px; border-radius:4px;">${badgeText}</span>
+                            <span style="font-size:0.7rem; color:var(--neon-cyan); background:rgba(var(--neon-cyan-rgb),0.1); padding:2px 8px; border-radius:4px;">${badgeText}</span>
                         </div>
                         <button type="button" class="mini-btn" style="padding:4px 8px; font-size:0.8rem;" onclick="document.getElementById('asset-hosting-modal').remove()">✕</button>
                     </div>
@@ -37,8 +37,8 @@
                         </div>
 
                         <!-- 同步替换勾选 -->
-                        <div style="background:rgba(0,242,254,0.05); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,242,254,0.2); display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" id="hosting-sync-ref-checkbox" checked style="cursor:pointer; accent-color:#00f2fe; width:15px; height:15px;" />
+                        <div style="background:rgba(var(--neon-cyan-rgb),0.05); padding:10px 14px; border-radius:8px; border:1px solid rgba(var(--neon-cyan-rgb),0.2); display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="hosting-sync-ref-checkbox" checked style="cursor:pointer; accent-color:var(--neon-cyan); width:15px; height:15px;" />
                             <label for="hosting-sync-ref-checkbox" style="font-size:0.75rem; color:var(--text-bright); cursor:pointer;">
                                 🔄 上传成功后，自动将引用此图片的原稿封面替换为公网 CDN URL
                             </label>
@@ -46,7 +46,7 @@
                     </div>
 
                     <!-- 底栏操作 -->
-                    <div style="padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.3); display:flex; justify-content:flex-end; gap:10px;">
+                    <div style="padding:14px 20px; border-top:1px solid var(--border-subtle); background:var(--surface-secondary); display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" class="mini-btn" style="padding:6px 14px; font-size:0.76rem;" onclick="document.getElementById('asset-hosting-modal').remove()">取消</button>
                         <button type="button" class="mini-btn glow-btn" id="btn-do-upload-hosting" style="padding:6px 18px; font-size:0.78rem; background:var(--accent-secondary, #00f2fe); color:#000; font-weight:700; border:none;" onclick="window.dispatchAssetUploadHosting(${assetId || 'null'}, '${sourceUrl || ''}')">
                             🚀 立即上传托管
@@ -72,16 +72,16 @@
             }
             container.innerHTML = targets.map((t, idx) => {
                 const isChecked = idx === 0 ? 'checked' : '';
-                const badgeColor = t.is_ready ? '#00ff88' : 'var(--text-dim)';
-                const badgeBg = t.is_ready ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.05)';
-                const badgeBorder = t.is_ready ? 'rgba(0,255,136,0.3)' : 'rgba(255,255,255,0.1)';
+                const badgeColor = t.is_ready ? 'var(--neon-green)' : 'var(--text-dim)';
+                const badgeBg = t.is_ready ? 'rgba(var(--neon-green-rgb),0.1)' : 'var(--white-05)';
+                const badgeBorder = t.is_ready ? 'rgba(var(--neon-green-rgb),0.3)' : 'var(--border-subtle)';
                 return `
-                    <label style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08); cursor:pointer; transition:all 0.15s;"
-                           onmouseover="this.style.borderColor='rgba(0,242,254,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--white-03); border-radius:8px; border:1px solid var(--border-subtle); cursor:pointer; transition:all 0.15s;"
+                           onmouseover="this.style.borderColor='rgba(var(--neon-cyan-rgb),0.4)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="radio" name="asset_hosting_provider" value="${t.id}" ${isChecked} style="accent-color:#00f2fe; cursor:pointer;" />
+                            <input type="radio" name="asset_hosting_provider" value="${t.id}" ${isChecked} style="accent-color:var(--neon-cyan); cursor:pointer;" />
                             <div style="display:flex; flex-direction:column; gap:2px;">
-                                <span style="font-size:0.8rem; font-weight:600; color:#fff;">${t.icon} ${t.name}</span>
+                                <span style="font-size:0.8rem; font-weight:600; color:var(--text-bright);">${t.icon} ${t.name}</span>
                                 <span style="font-size:0.68rem; color:var(--text-dim);">${t.desc}</span>
                             </div>
                         </div>
