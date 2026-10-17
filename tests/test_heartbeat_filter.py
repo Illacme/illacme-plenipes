@@ -68,3 +68,21 @@ def test_heartbeat_filter_allows_business_endpoints():
             exc_info=None
         )
         assert h_filter.filter(record) is True, f"业务日志不应被过滤: {msg}"
+
+
+def test_websocket_noise_filter():
+    """断言 WebSocket 底层握手与连接生命周期日志被静默过滤"""
+    from services.api.infrastructure.logging import WebSocketNoiseFilter
+    ws_filter = WebSocketNoiseFilter()
+
+    blocked = [
+        '127.0.0.1:55073 - "WebSocket /api/ws?last_msg_id=39" [accepted]',
+        'connection open',
+        'connection closed'
+    ]
+    for msg in blocked:
+        rec = logging.LogRecord("uvicorn.error", logging.INFO, "", 0, msg, (), None)
+        assert ws_filter.filter(rec) is False, f"应过滤但放行: {msg}"
+
+    allowed_rec = logging.LogRecord("uvicorn.error", logging.INFO, "", 0, "Application startup complete.", (), None)
+    assert ws_filter.filter(allowed_rec) is True
