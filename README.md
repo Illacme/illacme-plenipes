@@ -3,7 +3,7 @@
 > **Industrial-grade digital publishing & distribution workbench built for sovereign creators.**  
 > Native Markdown Vault ➔ Polyglot AI Translation ➔ Professional Typesetting ➔ Static Web Hosting & 30+ Social Media Syndication.
 
-![Brand Visual Banner](./illacme_imprinting_hero_1777097616124.png)
+![Brand Visual Banner](./docs/assets/hero_banner.png)
 
 [![Version](https://img.shields.io/badge/version-v50.3--Industrial--Sovereignty-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)

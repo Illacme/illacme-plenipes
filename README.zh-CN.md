@@ -3,7 +3,7 @@
 > **专为主权创作者打造的工业级数字出版发行工作台。**  
 > 一套本土 Markdown 原稿 ➔ 多语言智能翻译 ➔ 商业级装帧排版 ➔ 全网静态托管与 30+ 社交媒体矩阵一键同步。
 
-![品牌视觉 Banner](./illacme_imprinting_hero_1777097616124.png)
+![品牌视觉 Banner](./docs/assets/hero_banner.png)
 
 [![Version](https://img.shields.io/badge/version-v50.3--Industrial--Sovereignty-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
