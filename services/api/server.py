@@ -150,13 +150,13 @@ def start_api_server(host: str = "0.0.0.0", port: int = 43212, blocking: bool = 
     engine = get_global_engine()
     
     uvicorn_log_level = "info"
-    uvicorn_access_log = True
+    uvicorn_access_log = False
     
     if engine and hasattr(engine, 'config') and hasattr(engine.config, 'system'):
         sys_cfg = engine.config.system
         # 兼容小写转换以匹配 uvicorn 规范
         uvicorn_log_level = getattr(sys_cfg, 'log_level', 'INFO').lower()
-        uvicorn_access_log = getattr(sys_cfg, 'access_log', True)
+        uvicorn_access_log = getattr(sys_cfg, 'access_log', False)
 
     def run_with_retry() -> None:
         """端口接力保障：支持自愈式启动"""

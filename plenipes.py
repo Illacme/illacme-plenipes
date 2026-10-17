@@ -277,12 +277,12 @@ if __name__ == "__main__":
                 setattr(sys, '_plenipes_in_loop', False)
             
             # 脱离信号上下文的安全退出流程，物理级避免 Lock 锁死
-            if (logger): logger.warning("\n⚠️ 收到停止指令！正在尝试安全导出系统快照并关闭数字出版中心...")
+            if (logger): logger.info("🛑 [安全停机] 收到停止指令，正在安全导出系统快照并归档出版数据...")
             if global_observer: global_observer.stop()
             if global_engine and hasattr(global_engine, 'meta'):
                 try:
                     global_engine.meta.force_save()
-                    if logger: logger.info("  └── 🏁 出版进度已 100% 安全存档。")
+                    if logger: logger.info("  └── 🏁 出版快照与运行时数据已 100% 安全归档，控制台已正常退出。")
                 except: pass
             os._exit(0)
         else:

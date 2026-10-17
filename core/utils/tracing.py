@@ -102,11 +102,14 @@ def emit_tlog(msg, level="INFO"):
     # 🚀 [双轨分流]
     # 1. UI 轨道：负责即时视觉反馈 (注入 IO 容错防止 Errno 5 击穿系统)
     try:
+        clean_msg = msg.lstrip("\r\n")
+        if msg.startswith(("\r", "\n")):
+            print()
         if _CONSOLE_OUTPUT:
             style = "green" if level == "INFO" else "yellow" if level == "WARNING" else "bold red"
-            _CONSOLE_OUTPUT.print(f"[{timestamp_str}] {level}: {msg}", style=style)
+            _CONSOLE_OUTPUT.print(f"[{timestamp_str}] {level}: {clean_msg}", style=style)
         else:
-            print(f"[{timestamp_str}] {level}: {msg}")
+            print(f"[{timestamp_str}] {level}: {clean_msg}")
     except (IOError, OSError):
         # 🛡️ [V55.9] 物理静默：如果控制台/管道不可用 (如 Errno 5)，忽略它以保证业务连续性
         pass
@@ -154,8 +157,13 @@ class Tracer:
 
     @staticmethod
     def format_msg(msg: str) -> str:
-        """为日志消息注入 Trace-ID 装饰器"""
-        tid = Tracer.get_id() or "Main"
+        """为日志消息注入 Trace-ID 装饰器，若已自带直观业务标签则避免重复附加 [Main]"""
+        tid = Tracer.get_id()
+        if not tid or tid == "Main":
+            s_msg = msg.lstrip("\r\n").strip()
+            if s_msg.startswith(('[', '✨', '🚀', '🔍', '🔌', '🛑', '⚠️', '✅', '🏁', '🌐', '🐕', '📁', '💡', '🏷️', '📖')):
+                return msg
+            return f"[系统] {msg}"
         return f"[{tid}] {msg}"
 
     @staticmethod
