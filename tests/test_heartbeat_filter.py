@@ -17,6 +17,8 @@ def test_heartbeat_filter_blocks_polling_endpoints():
         '127.0.0.1:49603 - "GET /api/system/health HTTP/1.1" 200 OK',
         '127.0.0.1:49603 - "GET /api/galaxy/graph HTTP/1.1" 200 OK',
         '127.0.0.1:49603 - "GET /api/billing/stats HTTP/1.1" 200 OK',
+        '127.0.0.1:61861 - "GET /api/system/sync/status HTTP/1.1" 200 OK',
+        '127.0.0.1:61880 - "GET /api/system/preview/status HTTP/1.1" 200 OK',
     ]
     
     for msg in blocked_messages:
@@ -30,6 +32,18 @@ def test_heartbeat_filter_blocks_polling_endpoints():
             exc_info=None
         )
         assert h_filter.filter(record) is False, f"应被过滤但放行了: {msg}"
+
+    # 同时断言真实的 Uvicorn tuple args 格式被拦截
+    uvicorn_record = logging.LogRecord(
+        name="uvicorn.access",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=10,
+        msg='%s - "%s %s HTTP/%s" %d',
+        args=('127.0.0.1:61861', 'GET', '/api/system/sync/status', '1.1', 200),
+        exc_info=None
+    )
+    assert h_filter.filter(uvicorn_record) is False, "真实 Uvicorn 元组参数应被静默拦截"
 
 def test_heartbeat_filter_allows_business_endpoints():
     """断言核心业务操作日志正常放行"""

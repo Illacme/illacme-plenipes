@@ -8,8 +8,25 @@
 import logging
 
 class HeartbeatFilter(logging.Filter):
-    """🚀 静默心跳过滤器：物理过滤掉高频的同步请求日志"""
+    """🚀 静默心跳过滤器：物理过滤掉高频的系统同步/状态轮询与心跳日志"""
     
+    IGNORED_ENDPOINTS = (
+        "/health",
+        "/api/system/health",
+        "/api/system/sync/status",
+        "/api/system/preview/status",
+        "/api/system/update/progress",
+        "/api/system/check_update",
+        "/api/system/stats",
+        "/api/system/health/matrix",
+        "/api/system/context",
+        "/api/imprints",
+        "/api/billing/stats",
+        "/api/galaxy/graph",
+        "/api/translation/review",
+        "/api/dispatch/overview",
+    )
+
     def filter(self, record: logging.LogRecord) -> bool:
         """
         执行日志过滤判定。
@@ -20,21 +37,16 @@ class HeartbeatFilter(logging.Filter):
         Returns:
             bool: 是否允许该日志记录通过
         """
+        # 1. 优先从 uvicorn access log 的 record.args 中快速匹配 URL 路径
+        if record.args and len(record.args) >= 3 and isinstance(record.args[2], str):
+            path = record.args[2]
+            if any(endpoint in path for endpoint in self.IGNORED_ENDPOINTS):
+                return False
+
+        # 2. 兜底回退匹配完整格式化消息文本
         msg = record.getMessage()
-        # 屏蔽仪表盘的高频数据轮询与心跳日志，防止污染控制台
-        ignored_endpoints = [
-            "/health",
-            "/api/system/health",
-            "/api/system/stats",
-            "/api/system/health/matrix",
-            "/api/system/context",
-            "/api/imprints",
-            "/api/billing/stats",
-            "/api/galaxy/graph",
-            "/api/translation/review",
-            "/api/dispatch/overview"
-        ]
-        return not any(endpoint in msg for endpoint in ignored_endpoints)
+        return not any(endpoint in msg for endpoint in self.IGNORED_ENDPOINTS)
+
 
 def setup_api_logging(logger_name: str = "uvicorn.access") -> None:
     """
@@ -44,4 +56,5 @@ def setup_api_logging(logger_name: str = "uvicorn.access") -> None:
         logger_name: 目标日志记录器名称，默认为 uvicorn 访问日志。
     """
     logger = logging.getLogger(logger_name)
-    logger.addFilter(HeartbeatFilter())
+    if not any(isinstance(f, HeartbeatFilter) for f in logger.filters):
+        logger.addFilter(HeartbeatFilter())
