@@ -25,10 +25,10 @@
     }
 
     window.getPaletteCommandsList = function() {
-        return [
+        const baseCommands = [
             {
                 id: 'preview_site',
-                title: '🌐 本地预览 (Open Local Preview Site)',
+                title: '本地预览 (Open Local Preview Site)',
                 icon: '🌐',
                 shortcut: 'Enter',
                 action: () => {
@@ -41,7 +41,7 @@
             },
             {
                 id: 'publish',
-                title: '🚀 全站发布 (Trigger Full Site Publish)',
+                title: '全站发布 (Trigger Full Site Publish)',
                 icon: '🚀',
                 shortcut: 'Enter',
                 action: () => {
@@ -54,7 +54,7 @@
             },
             {
                 id: 'open_dispatch_hub',
-                title: '📡 打开分发枢纽 (Open Dispatch Hub Drawer)',
+                title: '打开分发枢纽 (Open Dispatch Hub Drawer)',
                 icon: '📡',
                 shortcut: 'Enter',
                 action: () => {
@@ -68,7 +68,7 @@
             },
             {
                 id: 'subtab_identity',
-                title: '📛 基础运维 ➔ 身份标识 (Imprint & Site Identity)',
+                title: '基础运维 ➔ 身份标识 (Imprint & Site Identity)',
                 icon: '📛',
                 shortcut: 'Tab 2-1',
                 action: () => {
@@ -80,7 +80,7 @@
             },
             {
                 id: 'subtab_compliance',
-                title: '⚖️ 基础运维 ➔ 出版合规 (Publishing Compliance & Metadata)',
+                title: '基础运维 ➔ 出版合规 (Publishing Compliance & Metadata)',
                 icon: '⚖️',
                 shortcut: 'Tab 2-2',
                 action: () => {
@@ -92,7 +92,7 @@
             },
             {
                 id: 'subtab_storage',
-                title: '📂 基础运维 ➔ 存储适配 (Storage & Adaptations)',
+                title: '基础运维 ➔ 存储适配 (Storage & Adaptations)',
                 icon: '📂',
                 shortcut: 'Tab 2-3',
                 action: () => {
@@ -104,7 +104,7 @@
             },
             {
                 id: 'subtab_engine',
-                title: '⚙️ 基础运维 ➔ 运行基座 (Runtime Engine & Logs)',
+                title: '基础运维 ➔ 运行基座 (Runtime Engine & Logs)',
                 icon: '⚙️',
                 shortcut: 'Tab 2-4',
                 action: () => {
@@ -116,7 +116,7 @@
             },
             {
                 id: 'subtab_imprints',
-                title: '🚩 品牌外观 ➔ 品牌管理 (Imprints Management)',
+                title: '品牌外观 ➔ 品牌管理 (Imprints Management)',
                 icon: '🚩',
                 shortcut: 'Tab 1-1',
                 action: () => {
@@ -128,7 +128,7 @@
             },
             {
                 id: 'subtab_themes',
-                title: '🎨 品牌外观 ➔ 装帧主题 (Themes Gallery)',
+                title: '品牌外观 ➔ 装帧主题 (Themes Gallery)',
                 icon: '🎨',
                 shortcut: 'Tab 1-2',
                 action: () => {
@@ -140,7 +140,7 @@
             },
             {
                 id: 'subtab_modes',
-                title: '📋 品牌外观 ➔ 出版模式 (Publishing Modes)',
+                title: '品牌外观 ➔ 出版模式 (Publishing Modes)',
                 icon: '📋',
                 shortcut: 'Tab 1-3',
                 action: () => {
@@ -152,7 +152,7 @@
             },
             {
                 id: 'subtab_localization',
-                title: '🌍 多语路由 ➔ 翻译矩阵 (Localization Matrix)',
+                title: '多语路由 ➔ 翻译矩阵 (Localization Matrix)',
                 icon: '🌍',
                 shortcut: 'Tab 3-1',
                 action: () => {
@@ -164,7 +164,7 @@
             },
             {
                 id: 'subtab_translation_style',
-                title: '🗣️ 多语路由 ➔ 翻译风格 (Translation Style)',
+                title: '多语路由 ➔ 翻译风格 (Translation Style)',
                 icon: '🗣️',
                 shortcut: 'Tab 3-2',
                 action: () => {
@@ -176,7 +176,7 @@
             },
             {
                 id: 'subtab_slug_settings',
-                title: '📝 多语路由 ➔ 网址路径 (Slug Settings)',
+                title: '多语路由 ➔ 网址路径 (Slug Settings)',
                 icon: '📝',
                 shortcut: 'Tab 3-3',
                 action: () => {
@@ -188,7 +188,7 @@
             },
             {
                 id: 'subtab_route_matrix',
-                title: '🧭 多语路由 ➔ 频道映射 (Route Matrix)',
+                title: '多语路由 ➔ 频道映射 (Route Matrix)',
                 icon: '🧭',
                 shortcut: 'Tab 3-4',
                 action: () => {
@@ -200,7 +200,7 @@
             },
             {
                 id: 'toggle_preview',
-                title: '👁️ 开启预览服务 (Live Preview Engine)',
+                title: '开启预览服务 (Live Preview Engine)',
                 icon: '👁️',
                 shortcut: 'Enter',
                 action: () => {
@@ -214,7 +214,7 @@
             },
             {
                 id: 'clean_orphans',
-                title: '🧹 清理段落与临时缓存 (Clean Janitor Cache)',
+                title: '清理段落与临时缓存 (Clean Janitor Cache)',
                 icon: '🧹',
                 shortcut: 'Enter',
                 action: () => {
@@ -237,7 +237,7 @@
             },
             {
                 id: 'heal_and_reload',
-                title: '🏥 一键环境自愈并软重载 (Auto-Heal & Reload System)',
+                title: '一键环境自愈并软重载 (Auto-Heal & Reload System)',
                 icon: '🏥',
                 shortcut: 'Shift+R',
                 action: () => {
@@ -251,7 +251,7 @@
             },
             {
                 id: 'bindery_open',
-                title: '🖨️ 数字装订：合卷排版与导出出版物 (Digital Bindery)',
+                title: '数字装订：合卷排版与导出出版物 (Digital Bindery)',
                 icon: '🖨️',
                 shortcut: 'Cmd+B',
                 action: () => {
@@ -264,7 +264,7 @@
             },
             {
                 id: 'bindery_export_doc',
-                title: '⚡ 单篇导出：极速装订当前原稿 (Export Current Document)',
+                title: '单篇导出：极速装订当前原稿 (Export Current Document)',
                 icon: '⚡',
                 shortcut: 'Cmd+B',
                 action: () => {
@@ -276,5 +276,7 @@
                 }
             }
         ];
+        const extra = typeof window.getCookbookCommands === 'function' ? window.getCookbookCommands() : [];
+        return baseCommands.concat(extra);
     };
 })();

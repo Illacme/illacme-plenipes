@@ -128,12 +128,16 @@
 
     function renderList(query) {
         query = query.toLowerCase().trim();
+        const allCmds = (typeof window.getPaletteCommandsList === 'function') 
+            ? window.getPaletteCommandsList() 
+            : commands;
+
         if (!query) {
-            filteredCommands = [...commands];
+            filteredCommands = [...allCmds];
         } else {
-            filteredCommands = commands.filter(cmd => 
-                cmd.title.toLowerCase().includes(query) || 
-                cmd.id.toLowerCase().includes(query)
+            filteredCommands = allCmds.filter(cmd => 
+                (cmd.title && cmd.title.toLowerCase().includes(query)) || 
+                (cmd.id && cmd.id.toLowerCase().includes(query))
             );
         }
 
@@ -145,10 +149,18 @@
             li.className = 'palette-item';
             if (index === 0) li.classList.add('selected');
             
+            // 🛡️ [自愈治理] 清理 title 首部可能与 icon 重复的 emoji 前缀，彻底终结双图标问题
+            let cleanTitle = cmd.title || '';
+            if (cmd.icon && cleanTitle.startsWith(cmd.icon)) {
+                cleanTitle = cleanTitle.slice(cmd.icon.length).trim();
+            } else {
+                cleanTitle = cleanTitle.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\u20E3]+\s*/u, '').trim();
+            }
+
             li.innerHTML = `
-                <span class="palette-item-icon">${cmd.icon}</span>
-                <span class="palette-item-title">${cmd.title}</span>
-                <span class="palette-item-shortcut">${cmd.shortcut}</span>
+                <span class="palette-item-icon">${cmd.icon || '⚡'}</span>
+                <span class="palette-item-title">${cleanTitle || cmd.title}</span>
+                <span class="palette-item-shortcut">${cmd.shortcut || ''}</span>
             `;
             
             // Allow click to execute

@@ -19,7 +19,7 @@
     -webkit-mask-composite: destination-out; mask-composite: exclude;
     pointer-events: none;
 }
-.glass-panel:not(.sidebar):not(#left-sidebar):not(#right-sidebar):not(#main-footer):not(#header):hover {
+.glass-panel:not(.sidebar):not(#left-sidebar):not(#right-sidebar):not(#main-footer):not(#header):not(#main-header):not(header *):not(.nav-dropdown-menu):not(.dropdown-menu):hover {
     transform: translateY(-5px) scale(1.01);
     box-shadow: 0 30px 80px var(--black-60), 0 0 20px rgba(163, 76, 255, 0.3);
 }

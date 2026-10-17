@@ -465,11 +465,12 @@ h1 {
 }
 
 .nav-group-item:hover .nav-dropdown-menu,
-.nav-group-item.open .nav-dropdown-menu {
+.nav-group-item.open .nav-dropdown-menu,
+.nav-dropdown-menu:hover {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(0) !important;
 }
 
 .nav-dropdown-item {
@@ -725,8 +726,9 @@ h1 {
         transform: translateY(-6px);
     }
 
-    .nav-group-item:hover .nav-dropdown-menu {
-        transform: translateY(0);
+    .nav-group-item:hover .nav-dropdown-menu,
+    .nav-dropdown-menu:hover {
+        transform: translateY(0) !important;
     }
 
     .header-actions-group button {

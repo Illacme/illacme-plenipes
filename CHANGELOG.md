@@ -4,6 +4,13 @@
 
 > **版本号对齐说明（2026-08-30）**：自本条目起，CHANGELOG 版本号与引擎全局版本真理源 `core/__init__.py::__version__`（即终端启动横幅显示的版本）保持一致，历史条目保留原始编号不作改写。
 
+## [v50.4-Documentation-Sovereignty] - 2026-10-16
+### 📖 创作者体验与全景产品文档体系重塑 (Creator Experience & Docs Architecture)
+- **双语门面场景化重塑**：重构 [README.zh-CN.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/README.zh-CN.md) 与 [README.md](file:///Volumes/Notebook/omni-hub/illacme-plenipes/README.md)，以创作者最关心的“痛点与收益”为导向，全面展示 30+ 社交渠道、10 大托管平台、DOCX/PDF 印刷级排版与 Sovereign Copilot HITL 人类审查等全景能力。
+- **创作者场景实战手册 (Cookbook) 落地**：新建 `docs/cookbook/`，涵盖《Obsidian 快速发布独立博客》、《单篇长文一键分发微信公众号/知乎/Dev.to》及《双语对照版 DOCX/PDF/EPUB 电子书装帧导出》三大高频实战场景。
+- **全景功能速查手册 (User Manual) 完备化**：新建 `docs/manual/` 8 大功能中心指南（知识星谱、原稿文库、出版装帧、发布中心、治理与校对、算力底座、设计中心、插件生态），提供字段级参数说明与常见排错自愈指引。
+- **全站托管发布体验闭环**：单文档托管发布精确至 1 页与真实 KB 产物体积、公网真实阅读文章直达链接自动回填、状态轮询器生命周期自愈销毁与控制台日志精准语义穿透。
+
 ## [v50.3-Industrial-Sovereignty] - 2026-08-30
 自 v6.4.0（2026-06-05）以来累计 **246 次提交**，本条目按主题域汇总至引擎全局版本 v50.3（工业主权版，Production-Ready）。
 
