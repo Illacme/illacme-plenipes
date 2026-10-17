@@ -173,19 +173,19 @@ window.updateSlugSandboxPreview = async function () {
                 : '<span style="font-size: 0.65rem; color: #a34cff; background: rgba(163,76,255,0.12); border: 1px solid rgba(163,76,255,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 600;">🌍 目标语种译本</span>';
 
             return `
-                <div style="background: ${idx === 0 ? 'rgba(0, 242, 254, 0.04)' : 'rgba(255, 255, 255, 0.015)'}; border: 1px solid ${idx === 0 ? 'rgba(0, 242, 254, 0.25)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; transition: all 0.2s;">
+                <div class="slug-matrix-card ${idx === 0 ? 'is-source' : ''}">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 0.82rem; font-weight: 600; color: #fff;">${langMeta.flag} ${langMeta.name}</span>
+                            <span class="slug-matrix-lang-name">${langMeta.flag} ${langMeta.name}</span>
                             ${prefixTag}
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <a href="${info.fullWebUrl}" target="_blank" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 600; color: var(--neon-cyan, #00f2fe); border: 1px solid rgba(0, 242, 254, 0.35); background: rgba(0, 242, 254, 0.08); border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;" title="在浏览器新标签页访问此语种线上网页">🔗 访问 ↗</a>
-                            <a href="${info.githubFileUrl}" target="_blank" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 600; color: #00ffaa; border: 1px solid rgba(0, 255, 170, 0.35); background: rgba(0, 255, 170, 0.08); border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;" title="在 GitHub 云端仓库 gh-pages 分支直接查看此物理文件">☁️ GitHub ↗</a>
-                            <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${info.localDiskPath}')" style="padding: 2px 8px; font-size: 0.68rem; font-weight: 500; color: var(--text-dim, #aaa); border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); border-radius: 4px; text-decoration: none; cursor: pointer;" title="物理唤醒 Mac Finder / 资源管理器高亮选中该文件">📂 Finder</a>
+                            <a href="${info.fullWebUrl}" target="_blank" class="slug-tool-btn visit-btn" title="在浏览器新标签页访问此语种线上网页">🔗 访问 ↗</a>
+                            <a href="${info.githubFileUrl}" target="_blank" class="slug-tool-btn github-btn" title="在 GitHub 云端仓库 gh-pages 分支直接查看此物理文件">☁️ GitHub ↗</a>
+                            <a href="javascript:void(0)" onclick="window.openLocalWorkspaceFolder('${info.localDiskPath}')" class="slug-tool-btn finder-btn" title="物理唤醒 Mac Finder / 资源管理器高亮选中该文件">📂 Finder</a>
                         </div>
                     </div>
-                    <div style="font-family: monospace; font-size: 0.76rem; color: ${idx === 0 ? 'var(--neon-cyan, #00f2fe)' : '#d0d8e8'}; word-break: break-all; line-height: 1.4;">
+                    <div class="slug-matrix-url">
                         ${info.fullWebUrl}
                     </div>
                 </div>
@@ -199,7 +199,7 @@ window.updateSlugSandboxPreview = async function () {
     }
     const cloudEl = document.getElementById('sandbox-preview-cloud-path');
     if (cloudEl) {
-        cloudEl.innerHTML = `<a href="${sourceInfo.githubFileUrl}" target="_blank" style="color: #00ffaa; font-weight: 600; text-decoration: underline;">☁️ gh-pages / ${sourceInfo.relativeWebPath}</a>`;
+        cloudEl.innerHTML = `<a href="${sourceInfo.githubFileUrl}" target="_blank" style="color: #10b981; font-weight: 600; text-decoration: underline;">☁️ gh-pages / ${sourceInfo.relativeWebPath}</a>`;
     }
     if (previewDiskPath) {
         previewDiskPath.innerHTML = `
@@ -218,11 +218,11 @@ window.updateSlugSandboxPreview = async function () {
 
         diagnosticBox.innerHTML = `
             <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.68rem; margin-top: 8px;">
-                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${routeHint}</span>
-                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">📝 命名: ${modeLabels[dirMode] || dirMode} (${slugMode === 'ai' ? 'AI 语义' : '文件名'})</span>
-                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">🎭 主题: ${activeTheme}</span>
-                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${prefixHint}</span>
-                <span style="background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.25); padding: 2px 8px; border-radius: 4px; color: #00ff88;">🌍 多语矩阵: ${1 + targetInfos.length} 个版本实时同步</span>
+                <span class="slug-diagnostic-pill" style="background: var(--white-05, rgba(255,255,255,0.05)); border: 1px solid var(--white-10, rgba(255,255,255,0.1)); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${routeHint}</span>
+                <span class="slug-diagnostic-pill" style="background: var(--white-05, rgba(255,255,255,0.05)); border: 1px solid var(--white-10, rgba(255,255,255,0.1)); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">📝 命名: ${modeLabels[dirMode] || dirMode} (${slugMode === 'ai' ? 'AI 语义' : '文件名'})</span>
+                <span class="slug-diagnostic-pill" style="background: var(--white-05, rgba(255,255,255,0.05)); border: 1px solid var(--white-10, rgba(255,255,255,0.1)); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">🎭 主题: ${activeTheme}</span>
+                <span class="slug-diagnostic-pill" style="background: var(--white-05, rgba(255,255,255,0.05)); border: 1px solid var(--white-10, rgba(255,255,255,0.1)); padding: 2px 8px; border-radius: 4px; color: var(--text-dim);">${prefixHint}</span>
+                <span class="slug-diagnostic-pill is-matrix-count" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); padding: 2px 8px; border-radius: 4px; color: #10b981;">🌍 多语矩阵: ${1 + targetInfos.length} 个版本实时同步</span>
             </div>
         `;
     }
