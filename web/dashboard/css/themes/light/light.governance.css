@@ -1,0 +1,627 @@
+/* 🌞 [SOP-02 物理分片] 治理中心各 Sub-Tab、URL 沙盒与频道路由矩阵亮色适配 */
+
+/* ==========================================================================
+   🌞 [Light Mode] 治理中心网址路径与 URL 沙盒高对比度适配
+   ========================================================================== */
+[data-theme="light"] .slug-dir-card {
+    background: #ffffff !important;
+    border: 1.5px solid #d0d7de !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .slug-dir-card:hover {
+    border-color: #0969da !important;
+    background: #f6f8fa !important;
+    box-shadow: 0 4px 12px rgba(9, 105, 218, 0.1) !important;
+    transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .slug-dir-card.active {
+    border: 2.5px solid #0969da !important;
+    background: #f0f7ff !important;
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2), 0 4px 14px rgba(9, 105, 218, 0.12) !important;
+}
+
+[data-theme="light"] .slug-radio-indicator {
+    border: 1.5px solid #8c959f !important;
+    background: #f6f8fa !important;
+}
+
+[data-theme="light"] .slug-dir-card.active .slug-radio-indicator {
+    border-color: #0969da !important;
+    background: #0969da !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 6px rgba(9, 105, 218, 0.4) !important;
+}
+
+[data-theme="light"] .slug-corner-badge.badge-nested {
+    background: #0969da !important;
+    color: #ffffff !important;
+    border: 1px solid #0550ae !important;
+    border-top: none !important;
+    box-shadow: 0 2px 6px rgba(9, 105, 218, 0.3) !important;
+}
+
+[data-theme="light"] .slug-corner-badge.badge-flat {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid #15803d !important;
+    border-top: none !important;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25) !important;
+}
+
+[data-theme="light"] .slug-corner-badge.badge-prefix {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    border: 1px solid #6d28d9 !important;
+    border-top: none !important;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25) !important;
+}
+
+[data-theme="light"] .slug-corner-badge.badge-locked {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border: 1px solid #b45309 !important;
+    border-top: none !important;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25) !important;
+}
+
+[data-theme="light"] .slug-dir-card.disabled {
+    opacity: 0.48 !important;
+    background: #f6f8fa !important;
+    border-color: #d0d7de !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    filter: grayscale(0.65);
+}
+
+[data-theme="light"] .slug-dir-card.disabled:hover {
+    border-color: #d0d7de !important;
+    background: #f6f8fa !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+[data-theme="light"] .slug-dir-card .sample-url-box {
+    background: #f6f8fa !important;
+    color: #0969da !important;
+    border: 1px solid #d0d7de !important;
+}
+
+/* 🧪 实时 URL 沙盒模拟器亮色主题覆写 */
+[data-theme="light"] div[style*="font-family: monospace"][style*="margin-bottom: 12px"] {
+    background: #f6f8fa !important;
+    border: 1px solid #d0d7de !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] #sandbox-preview-web-url {
+    color: #0969da !important;
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+}
+
+[data-theme="light"] #sandbox-preview-cloud-path {
+    color: #1a7f37 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] #sandbox-preview-disk-path {
+    color: #57606a !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] div[style*="font-family: monospace"] span:not([id]) {
+    color: #24292f !important;
+    font-weight: 600 !important;
+}
+
+/* 🚀 提醒卡片高对比度 */
+[data-theme="light"] #sandbox-preview-status-box > div {
+    background: #fff8c5 !important;
+    border: 1.5px solid #d4a72c !important;
+    color: #4d2d00 !important;
+}
+
+
+
+
+/* 🌿 [UI 视觉主权] 白天明亮模式：绿色文字与状态指示器全域对比度增强 */
+[data-theme="light"] {
+    --neon-green: #059669 !important; /* 翡翠绿 (Emerald 600)，白底对比度超过 4.5:1 (WCAG AA 规范) */
+    --neon-green-rgb: 5, 150, 105 !important;
+}
+
+/* 插件卡片与顶栏徽章对比度增强 */
+[data-theme="light"] .plugin-pod .shield-status .log-tag,
+[data-theme="light"] .shield-status .log-tag {
+    font-weight: 700 !important;
+    background: rgba(5, 150, 105, 0.12) !important;
+    color: #047857 !important;
+    border: 1px solid rgba(5, 150, 105, 0.35) !important;
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.08) !important;
+}
+
+/* 品牌激活开关与指示灯文本 */
+[data-theme="light"] .plugin-pod .pod-telemetry .tiny-label,
+[data-theme="light"] .shield-pod .pod-telemetry .tiny-label {
+    color: #047857 !important;
+    font-weight: 700 !important;
+}
+
+/* 主站提示条与辅助说明文字 */
+[data-theme="light"] .hosting-canonical-tip {
+    color: #334155 !important; /* 稳重的石板蓝灰，对比度 > 7:1 (AAA级) */
+    font-weight: 600 !important;
+    opacity: 0.9 !important;
+}
+
+[data-theme="light"] .plugin-pod span[style*="color:#00ff88"],
+[data-theme="light"] .plugin-pod span[style*="color: #00ff88"],
+[data-theme="light"] [style*="color:#00ff88"],
+[data-theme="light"] [style*="color: #00ff88"] {
+    color: #047857 !important;
+}
+
+[data-theme="light"] span[style*="rgba(0,255,136"],
+[data-theme="light"] span[style*="rgba(0, 255, 136"] {
+    color: #475569 !important; /* 转为高对比度石板灰，彻底解决看不清 */
+    font-weight: 500 !important;
+}
+
+/* 托管主站 Banner */
+[data-theme="light"] .hosting-role-banner {
+    background: rgba(5, 150, 105, 0.08) !important;
+    border-color: rgba(5, 150, 105, 0.3) !important;
+}
+[data-theme="light"] .hosting-role-banner div[style*="color:#00ff88"],
+[data-theme="light"] .hosting-role-banner div[style*="color: #00ff88"],
+[data-theme="light"] .hosting-role-banner div[style*="color:var(--neon-green)"] {
+    color: #047857 !important;
+}
+
+
+/* ==========================================================================
+   🌞 [Light Mode] 出版模式矩阵与 SEO 策略选择项高对比度适配
+   ========================================================================== */
+[data-theme="light"] #view-settings .mode-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] #view-settings .mode-card:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+[data-theme="light"] #view-settings .mode-card.active {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.03) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] #view-settings .mode-card .mode-desc {
+    color: #475569 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] #view-settings .strategy-item.active {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.4) !important;
+}
+
+[data-theme="light"] #view-settings .strategy-name {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-settings .strategy-desc {
+    color: #64748b !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 图像策略卡片亮色模式高对比度适配
+   ========================================================================== */
+[data-theme="light"] .strategy-option-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] .strategy-option-card:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .strategy-option-card.active-strategy {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.04) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 14px 32px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] .strategy-option-card span[style*="color: #fff"],
+[data-theme="light"] .strategy-option-card span[style*="color:#fff"] {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .strategy-option-card div[style*="color: var(--text-muted)"] {
+    color: #475569 !important;
+}
+
+/* ==========================================================================
+   🌞 [Light Mode] 语种矩阵卡片亮色模式高对比度立体适配
+   ========================================================================== */
+[data-theme="light"] #view-settings .lang-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card:hover {
+    background: #f8fafc !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+[data-theme="light"] #view-settings .lang-card .lang-name {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] #view-settings .lang-card .lang-code {
+    color: #64748b !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.06) 0%, #ffffff 100%) !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.22), 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active:hover {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.1) 0%, #ffffff 100%) !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.28), 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active .lang-name {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.active .lang-code {
+    color: #0284c7 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.locked {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    opacity: 0.55 !important;
+}
+
+[data-theme="light"] #view-settings .lang-card.locked .lang-name,
+[data-theme="light"] #view-settings .lang-card.locked .lang-code {
+    color: #94a3b8 !important;
+}
+
+
+/* ==========================================================================
+   🌞 [Light Mode] 治理中心 (Governance) 全域高对比度立体视觉覆盖
+   ========================================================================== */
+
+/* 1. 治理中心左侧侧边栏导航 (.side-tabs) */
+[data-theme="light"] #view-settings .side-tabs {
+    padding-right: 4px;
+}
+
+[data-theme="light"] #view-settings .side-tabs .tab-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-theme="light"] #view-settings .side-tabs .tab-item:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] #view-settings .side-tabs .tab-item.active {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%) !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    font-weight: 800 !important;
+    transform: translateX(6px) !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.14) !important;
+}
+
+[data-theme="light"] #view-settings .side-tabs .tab-item.active::before {
+    background: #0284c7 !important;
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.6) !important;
+}
+
+/* 2. 治理中心二级子选项卡 (.sub-tab-btn, .tactical-tabs) */
+[data-theme="light"] #view-settings .security-sub-tab-bar,
+[data-theme="light"] #view-settings .tactical-tabs-dock,
+[data-theme="light"] #view-settings .tactical-tabs {
+    border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] #view-settings .sub-tab-btn,
+[data-theme="light"] #view-settings .tactical-tabs .t-tab {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] #view-settings .sub-tab-btn:hover,
+[data-theme="light"] #view-settings .tactical-tabs .t-tab:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] #view-settings .sub-tab-btn.active,
+[data-theme="light"] #view-settings .tactical-tabs .t-tab.active {
+    background: #f0f9ff !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18) !important;
+}
+
+/* 3. 治理中心顶部保存配置按钮 */
+[data-theme="light"] #btn-save-settings {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border: 1px solid #0369a1 !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25) !important;
+}
+
+[data-theme="light"] #btn-save-settings:disabled {
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+}
+
+/* 4. 网址分发与多语种沙盒推导矩阵卡片 (.slug-matrix-card) */
+[data-theme="light"] .slug-matrix-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .slug-matrix-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .slug-matrix-card.is-source {
+    background: #f0f9ff !important;
+    border: 1.5px solid #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15), 0 4px 12px rgba(2, 132, 199, 0.08) !important;
+}
+
+[data-theme="light"] .slug-matrix-lang-name {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="light"] .slug-matrix-card:not(.is-source) .slug-matrix-lang-name {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .slug-matrix-url {
+    color: #334155 !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .slug-matrix-card.is-source .slug-matrix-url {
+    color: #0284c7 !important;
+    font-weight: 600 !important;
+}
+
+/* 沙盒卡片内右侧操作按钮 */
+[data-theme="light"] .slug-tool-btn.finder-btn {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+[data-theme="light"] .slug-tool-btn.finder-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] .slug-tool-btn.visit-btn {
+    background: #f0f9ff !important;
+    border: 1px solid rgba(2, 132, 199, 0.35) !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .slug-tool-btn.github-btn {
+    background: #ecfdf5 !important;
+    border: 1px solid rgba(5, 150, 105, 0.35) !important;
+    color: #059669 !important;
+}
+
+/* 沙盒诊断条胶囊 */
+[data-theme="light"] .slug-diagnostic-pill {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] .slug-diagnostic-pill.is-matrix-count {
+    background: #ecfdf5 !important;
+    border: 1px solid rgba(5, 150, 105, 0.3) !important;
+    color: #047857 !important;
+}
+
+/* 沙盒输入框与选择框 */
+[data-theme="light"] #sandbox-file-select,
+[data-theme="light"] #sandbox-custom-input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] #sandbox-file-select:focus,
+[data-theme="light"] #sandbox-custom-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* 5. 频道映射矩阵表格 (.matrix-table, .matrix-header, .matrix-row) */
+[data-theme="light"] .matrix-table {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .matrix-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="light"] .matrix-row {
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="light"] .matrix-row:hover {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .matrix-row input.setting-input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    border-radius: 4px !important;
+}
+
+[data-theme="light"] .matrix-row input.setting-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+}
+
+[data-theme="light"] .matrix-row select.setting-select {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    border-radius: 4px !important;
+}
+
+[data-theme="light"] .order-controls .move-up-btn,
+[data-theme="light"] .order-controls .move-down-btn {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] .order-controls .move-up-btn:disabled,
+[data-theme="light"] .order-controls .move-down-btn:disabled {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #94a3b8 !important;
+}
+
+/* 6. 全平台向导辅助魔术链接与按钮 (.helper-btn) */
+[data-theme="light"] .helper-btn {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] .helper-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+[data-theme="light"] a.helper-btn {
+    color: #0369a1 !important;
+}
+
+[data-theme="light"] a.helper-btn:hover {
+    color: #0284c7 !important;
+}
+
+/* 7. 高级频道重定向引流横幅与按钮 (.route-redirect-banner, .route-redirect-btn) */
+[data-theme="light"] .route-redirect-banner {
+    background: #ffffff !important;
+    border: 1.5px dashed #cbd5e1 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] .route-redirect-banner code {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0284c7 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] .route-redirect-btn {
+    background: #f0f9ff !important;
+    border: 1.5px solid #0284c7 !important;
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+[data-theme="light"] .route-redirect-btn:hover {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0369a1 !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 8. 架构兼容性提示横幅与沙盒外层容器 */
+[data-theme="light"] .theme-compat-banner {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] .slug-sandbox-container {
+    background: #f8fafc !important;
+    border: 1.5px dashed #cbd5e1 !important;
+}
+
+[data-theme="light"] .slug-sandbox-container h4 {
+    color: #0284c7 !important;
+}
+
+
+

@@ -24,8 +24,10 @@ def check_hardcoded_colors(filepath):
         'glass.editor.css', 'modals.base.css', 'dispatch.css',
         'dashboard.tour.css', 'modals.discovery.css', 'dashboard.components.css',
         'theme.light.overrides.css', 'compute.header.css', 'compute.strategy.css', 'overview.css',
+        'light.base.css', 'light.vault.css', 'light.dispatch.css', 'light.governance.css',
+        'light.design.css', 'light.components.css',
     )
-    if filepath.endswith(EXEMPT_CSS_SUFFIXES):
+    if filepath.endswith(EXEMPT_CSS_SUFFIXES) or 'themes/light/' in filepath:
         return []
     
     violations = []

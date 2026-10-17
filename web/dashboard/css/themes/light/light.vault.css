@@ -1,0 +1,448 @@
+/* 🌞 [SOP-02 物理分片] 原稿文库双模工作台、校对抽屉与富文本编辑亮色适配 */
+
+/* 🌞 白天明亮模式特定主题覆盖系统 (SOP-02 模块拆分物理外置) */
+
+/* 🌞 翻译校对工作台白天模式特定适配 (壳体与卡片已在 review.drawer.css 中原生自适应) */
+
+[data-theme="light"] .review-badge.ai {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-para-block {
+    background: var(--white-02) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-para-block:hover {
+    background: var(--white-05) !important;
+}
+
+[data-theme="light"] .review-para-block.code-block {
+    background: rgba(var(--neon-amber-rgb), 0.03) !important;
+    border-color: rgba(var(--neon-amber-rgb), 0.2) !important;
+    color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .review-input {
+    background: #fff !important;
+    border-color: var(--white-10) !important;
+    color: var(--text-bright) !important;
+}
+
+[data-theme="light"] .review-input:focus {
+    border-color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .review-btn.unlock {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] .review-btn.unlock:hover {
+    background: rgba(var(--neon-red-rgb), 0.06) !important;
+    border-color: rgba(var(--neon-red-rgb), 0.3) !important;
+    color: var(--neon-red) !important;
+}
+
+[data-theme="light"] .review-view-toggle {
+    background: var(--white-03) !important;
+    border-color: var(--white-08) !important;
+}
+
+[data-theme="light"] .review-dirty-dot {
+    color: var(--neon-amber) !important;
+}
+
+[data-theme="light"] #col-source .review-field>div {
+    background: var(--white-02) !important;
+    opacity: 1 !important;
+    border-color: var(--white-08) !important;
+    color: var(--text-dim) !important;
+}
+
+[data-theme="light"] #col-source .review-para-block.source-only {
+    background: var(--white-02) !important;
+    opacity: 1 !important;
+}
+
+[data-theme="light"] #col-source .review-para-block.source-only .review-para-text {
+    color: var(--text-dim) !important;
+}
+
+
+/* 🌞 白天模式部署态势卡片 */
+[data-theme="light"] .vault-live-deploy-pod {
+    background: rgba(248, 250, 252, 0.95) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .vault-live-deploy-code {
+    color: #64748b !important;
+}
+[data-theme="light"] .vault-live-deploy-dur {
+    color: #0f172a !important;
+}
+[data-theme="light"] .vault-live-deploy-btn-log {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0284c7 !important;
+}
+[data-theme="light"] .vault-live-target-pill {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #475569 !important;
+}
+
+
+/* 遥测数据值色反转 */
+[data-theme="light"] .dispatch-hub-panel .t-pod .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] .dispatch-hub-panel .t-pod .t-value {
+    color: #0f172a !important;
+}
+
+/* 语种矩阵卡片整体 */
+[data-theme="light"] .dispatch-hub-panel .matrix-item {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .dispatch-hub-panel .matrix-item:hover {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 语种名称 */
+[data-theme="light"] .dispatch-hub-panel .m-locale {
+    color: #0f172a !important;
+}
+
+/* 审计状态 */
+[data-theme="light"] .dispatch-hub-panel .audit-badge {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+}
+
+/* Backdrop 遮罩 */
+/* 🧹 [REFACTOR] vault-drawer inline style overrides REMOVED.
+   Original L165–257 contained ~90 lines of [style*="..."] !important rules
+   fighting drawers.js/vault.drawer.cards.js inline colors.
+   Those inline styles have been migrated to CSS classes (.drawer-shell,
+   .hosting-card, .hosting-platform-name, etc.) in dispatch.css using CSS
+   variables that auto-adapt to data-theme="light". */
+
+
+/* --- 本地产物矩阵卡片 (matrix-item with CSS class) --- */
+[data-theme="light"] #vault-drawer .matrix-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item:hover {
+    background: #ffffff !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 语种名称与状态条 */
+[data-theme="light"] #vault-drawer .m-locale,
+[data-theme="light"] #vault-drawer .m-locale-name {
+    color: #0f172a !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-published {
+    border-left: 3.5px solid #10b981 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-success {
+    border-left: 3.5px solid #06b6d4 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-done {
+    border-left: 3.5px solid #8b5cf6 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-syncing {
+    border-left: 3.5px solid #06b6d4 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-failed {
+    border-left: 3.5px solid #ef4444 !important;
+}
+[data-theme="light"] #vault-drawer .matrix-item.status-pending {
+    border-left: 3.5px solid #f59e0b !important;
+}
+
+[data-theme="light"] #vault-drawer .status-published .m-status-text {
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #047857 !important;
+}
+[data-theme="light"] #vault-drawer .status-success .m-status-text {
+    background: rgba(6, 182, 212, 0.1) !important;
+    color: #0e7490 !important;
+}
+[data-theme="light"] #vault-drawer .status-failed .m-status-text {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #b91c1c !important;
+}
+[data-theme="light"] #vault-drawer .status-pending .m-status-text {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #b45309 !important;
+}
+
+/* 预览链接 (inline on <a>) */
+[data-theme="light"] #vault-drawer .preview-link {
+    color: #047857 !important;
+    background: rgba(4, 120, 87, 0.08) !important;
+    border-color: rgba(4, 120, 87, 0.3) !important;
+}
+
+/* m-meta 元数据行 */
+[data-theme="light"] #vault-drawer .m-meta {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .m-time {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+[data-theme="light"] #vault-drawer .m-tokens {
+    color: #64748b !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    font-weight: 500 !important;
+}
+[data-theme="light"] #vault-drawer .m-tokens.cache-info {
+    opacity: 1 !important;
+}
+
+/* locale-code-badge */
+[data-theme="light"] #vault-drawer .locale-code-badge {
+    color: #64748b !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    font-weight: 500 !important;
+}
+
+/* 实验室面板 */
+[data-theme="light"] #vault-drawer .lab-status-row .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .lab-status-row .badge {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #64748b !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    font-weight: 500 !important;
+}
+[data-theme="light"] #vault-drawer .lab-box {
+    border: 1px dashed rgba(0, 0, 0, 0.12) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* engine-btn 启动预览引擎按钮 */
+[data-theme="light"] #vault-drawer .engine-btn {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+[data-theme="light"] #vault-drawer .engine-btn:hover {
+    background: #e2e8f0 !important;
+}
+
+/* scrollbar */
+[data-theme="light"] #vault-drawer .drawer-body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] #vault-drawer .drawer-body {
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent !important;
+}
+
+/* hub-btn 系列操作按钮 */
+[data-theme="light"] #vault-drawer .hub-btn {
+    background: #f1f5f9 !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] #vault-drawer .primary-hub-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.3) !important;
+}
+[data-theme="light"] #vault-drawer .warning-hub-btn {
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+    color: #92400e !important;
+}
+[data-theme="light"] #vault-drawer .danger-hub-btn {
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+}
+
+/* 审计状态 */
+[data-theme="light"] #vault-drawer .audit-badge {
+    background: #f8fafc !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #475569 !important;
+}
+
+/* 审计错误面板 */
+[data-theme="light"] #vault-drawer #hub-audit-error {
+    background: #fef2f2 !important;
+    border-color: rgba(239, 68, 68, 0.2) !important;
+    color: #b91c1c !important;
+}
+
+/* 遥测数据 */
+[data-theme="light"] #vault-drawer .telemetry-grid .t-pod .t-label {
+    color: #64748b !important;
+}
+[data-theme="light"] #vault-drawer .telemetry-grid .t-pod .t-value {
+    color: #0f172a !important;
+}
+
+
+/* 🌞 原稿操作更多下拉菜单白天明亮模式高对比高清晰度适配 */
+[data-theme="light"] .vault-more-menu {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .vault-more-item {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] .vault-more-item:hover {
+    background: #f1f5f9 !important;
+    color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .vault-more-item.danger {
+    color: #ef4444 !important;
+}
+
+[data-theme="light"] .vault-more-item.danger:hover {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+[data-theme="light"] .vault-more-divider {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .vault-more-menu.dropup {
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15), 0 -2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+
+/* 🌞 [V121.0] 文稿编辑视窗与富文本工具栏白天明亮模式专属适配 (WYSIWYG Toolbar Light Mode) */
+[data-theme="light"] .wysiwyg-toolbar {
+    background: rgba(241, 245, 249, 0.94) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn {
+    background: #ffffff !important;
+    border: 1px solid rgba(148, 163, 184, 0.45) !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn:hover {
+    background: #f8fafc !important;
+    border-color: var(--accent-primary, #0066f5) !important;
+    color: var(--accent-primary, #0066f5) !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 245, 0.18) !important;
+}
+
+[data-theme="light"] .wysiwyg-toolbar .toolbar-btn:active {
+    background: #e2e8f0 !important;
+    transform: scale(0.95);
+}
+
+/* 🌞 编辑器模式切换胶囊 (源码 / 视觉 / 阅读 / 分栏) 亮色自适应 */
+[data-theme="light"] .editor-mode-toggle {
+    background: rgba(241, 245, 249, 0.95) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+
+[data-theme="light"] .editor-mode-toggle .mode-btn {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .editor-mode-toggle .mode-btn:hover {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .editor-mode-toggle .mode-btn.active {
+    background: var(--accent-primary, #0066f5) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 245, 0.3) !important;
+}
+
+/* 🌞 编辑器视觉编辑区与正文在亮色模式下的对比度与底色对齐 */
+[data-theme="light"] #editor-wysiwyg {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .tactical-editor {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .tactical-preview {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .editor-matrix {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .editor-sidebar {
+    background: #f1f5f9 !important;
+    border-left-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+
+/* 🌞 [V125.2] 原稿列表封面悬浮大图浮窗亮色模式适配 */
+[data-theme="light"] .vault-cover-hover-popover {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(0, 180, 216, 0.45) !important;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.16), 0 0 20px rgba(0, 180, 216, 0.1) !important;
+}
+
+[data-theme="light"] .vault-cover-hover-popover .hover-popover-media {
+    background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .vault-cover-hover-popover .hover-popover-badge {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] .vault-cover-hover-popover .hover-popover-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .vault-cover-hover-popover .hover-popover-meta {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .vault-cover-hover-popover .meta-tag {
+    color: #0284c7 !important;
+}
+
+
