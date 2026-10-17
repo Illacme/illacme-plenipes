@@ -30,14 +30,14 @@ class ConnectionManager:
         is_first = len(self.active_connections) == 0
         self.active_connections.append(websocket)
         if is_first:
-            tlog.info("🔌 [实时通信] 仪表盘控制台已建立连接。")
+            tlog.info("🔌 [实时通信] 出版工作台已建立连接。")
         else:
-            tlog.debug(f"🔌 [实时通信] 仪表盘新窗口已连接 (活跃连接: {len(self.active_connections)})")
+            tlog.debug(f"🔌 [实时通信] 出版工作台新窗口已连接 (活跃连接: {len(self.active_connections)})")
 
     def disconnect(self, websocket: WebSocket):
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-            tlog.debug(f"🔌 [实时通信] 仪表盘连接已断开 (剩余连接: {len(self.active_connections)})")
+            tlog.debug(f"🔌 [实时通信] 出版工作台连接已断开 (剩余连接: {len(self.active_connections)})")
 
     async def broadcast(self, message: dict):
         # 批量广播
