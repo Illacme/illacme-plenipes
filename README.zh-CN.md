@@ -70,18 +70,43 @@ Illacme Plenipes 将传统属于大型出版传媒集团的翻译、排版、装
 
 ### 🚀 极简快速点火 (Quick Start)
 
-针对不同操作系统提供开箱即用的**双击启动器**（自动探测虚拟环境并在启动后自动唤起工作台）：
+#### 📦 1. 桌面客户端官方下载 (推荐)
+
+前往 **[GitHub Releases 官方发版页](https://github.com/Illacme/illacme-plenipes/releases/latest)** 下载已编译的跨平台原生客户端（开箱即用）：
+
+| 操作系统 | 安装格式 | 下载文件 | 推荐场景 |
+| :--- | :--- | :--- | :--- |
+| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | `Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg` | **首选推荐**：挂载后直接拖入「应用程序」 |
+| 🍎 macOS (Apple Silicon) | 免挂载 ZIP 压缩包 | `Illacme-Plenipes-macOS-AppleSilicon-arm64.zip` | 解压即用 |
+| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | `Illacme-Plenipes-Windows-x64-Setup.exe` | **首选推荐**：标准向导安装、自动生成桌面图标 |
+| 🪟 Windows (x64) | 绿色便携 ZIP 压缩包 | `Illacme-Plenipes-Windows-x64.zip` | 免安装纯便携版，解压即用 |
+| 🐧 **Linux (x64)** | 原生可执行归档 | `Illacme-Plenipes-Linux-x64.tar.gz` | Linux 桌面与服务器直接运行 |
+
+> [!IMPORTANT]
+> ### 🛡️ 首次运行安全信任与避坑指南 (消除首发阻力)
+> 由于本软件为独立开源客户端，尚未向商业机构购买昂贵签名证书，操作系统可能会触发安全拦截。请依照以下指引秒级解锁：
+>
+> * **🍎 macOS 首次运行提示“已损坏，无法打开”或“无法验证开发者”**：
+>   * **方案 A（一行命令秒解，推荐）**：打开「终端 (Terminal)」，粘贴并执行以下命令解除隔离属性：
+>     ```bash
+>     xattr -cr /Applications/Illacme-Plenipes.app
+>     ```
+>   * **方案 B（图形界面免命令行）**：在「访达 (Finder) -> 应用程序」中，**按住键盘 `Control` 键并右键点击** `Illacme-Plenipes.app`，在弹出菜单中选择「打开」，并在弹窗中再次点击「打开」即可永久信任。
+>
+> * **🪟 Windows Defender SmartScreen 蓝色警告窗口“Windows 已保护你的电脑”**：
+>   * 点击弹窗左侧的 **「更多信息 (More info)」**；
+>   * 在右下角出现的按钮中点击 **「仍要运行 (Run anyway)」**，即可顺利启动并自动记住信任。
+
+---
+
+#### 💻 2. 源码免安装双击启动器
+
+若您直接克隆了本仓库，根目录提供了无需手动配置环境的**自动探测启动器**：
 
 *   **🍎 macOS 用户**：在 Finder 中直接双击根目录 **`start.command`**（免敲终端，浏览器秒级自动弹出）。
 *   **🪟 Windows 用户**：直接双击根目录 **`start.bat`**（或在 PowerShell 中运行 `.\start.ps1`）。
-*   **🐧 Linux / 服务器用户**：终端运行：
-    ```bash
-    ./start.sh
-    ```
-*   **🐳 Docker 容器化部署**：
-    ```bash
-    docker compose up -d
-    ```
+*   **🐧 Linux / 服务器用户**：终端运行 `./start.sh`。
+*   **🐳 Docker 容器化部署**：运行 `docker compose up -d`。
 
 > 💡 **启动后访问**：工作台控制台服务监听于 `http://127.0.0.1:43212`，开箱即用。
 

@@ -70,18 +70,43 @@ As an independent writer, overseas team, or technical blogger, writing is pure, 
 
 ### 🚀 Quick Start (Zero-Configuration)
 
-Out-of-the-box cross-platform launchers with automatic virtualenv detection:
+#### 📦 1. Official Desktop Releases (Recommended)
+
+Download the ready-to-run compiled desktop clients from **[GitHub Releases](https://github.com/Illacme/illacme-plenipes/releases/latest)**:
+
+| Operating System | Package Format | Binary Asset | Recommended Scenario |
+| :--- | :--- | :--- | :--- |
+| 🍎 **macOS (Apple Silicon)** | **Native DMG Image** | `Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg` | **Recommended**: Mount and drag into Applications |
+| 🍎 macOS (Apple Silicon) | Portable ZIP | `Illacme-Plenipes-macOS-AppleSilicon-arm64.zip` | Extract and run directly |
+| 🪟 **Windows (x64)** | **Setup Installer (.exe)** | `Illacme-Plenipes-Windows-x64-Setup.exe` | **Recommended**: Standard installer with desktop shortcuts |
+| 🪟 Windows (x64) | Portable ZIP | `Illacme-Plenipes-Windows-x64.zip` | Standalone portable bundle, no installation needed |
+| 🐧 **Linux (x64)** | Native Tarball | `Illacme-Plenipes-Linux-x64.tar.gz` | Run on Linux desktop and server distributions |
+
+> [!IMPORTANT]
+> ### 🛡️ First-Run Security Trust Guide (Eliminating Onboarding Friction)
+> As an independent open-source publication client without corporate EV code signing certificates, your OS may trigger security warnings on initial launch. Follow these simple steps to unlock:
+>
+> * **🍎 macOS prompts "App is damaged and can't be opened" or "Unverified developer"**:
+>   * **Option A (One-line Terminal fix, recommended)**: Open Terminal and run the command to strip the quarantine attribute:
+>     ```bash
+>     xattr -cr /Applications/Illacme-Plenipes.app
+>     ```
+>   * **Option B (GUI bypass without Terminal)**: In Finder -> Applications, **hold the `Control` key and right-click** `Illacme-Plenipes.app`, click **Open** in the context menu, then click **Open** again in the security dialogue.
+>
+> * **🪟 Windows Defender SmartScreen blue dialog ("Windows protected your PC")**:
+>   * Click the **"More info"** link in the dialog text;
+>   * Click the **"Run anyway"** button that appears in the lower-right corner.
+
+---
+
+#### 💻 2. Zero-Config Launchers (Source Mode)
+
+If you have cloned the repository, use our automatic cross-platform double-click launchers:
 
 *   **🍎 macOS**: Double-click **`start.command`** in Finder (zero CLI needed; browser pops up automatically).
 *   **🪟 Windows**: Double-click **`start.bat`** (or run `.\start.ps1` in PowerShell).
-*   **🐧 Linux / Server**: Run in terminal:
-    ```bash
-    ./start.sh
-    ```
-*   **🐳 Docker Compose**:
-    ```bash
-    docker compose up -d
-    ```
+*   **🐧 Linux / Server**: Run `./start.sh`.
+*   **🐳 Docker Compose**: Run `docker compose up -d`.
 
 > 💡 **Dashboard Access**: Workbench UI runs at `http://127.0.0.1:43212`.
 
