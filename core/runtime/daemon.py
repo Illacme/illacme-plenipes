@@ -26,10 +26,10 @@ def start_watchdog(engine, args, current_source_files, dev_server=None):
 
     import os
     if not engine.vault_root or not os.path.exists(engine.vault_root):
-        tlog.warning(f"⚠️ [守护进程] 文件夹不存在: '{engine.vault_root}'。监听已被安全挂起 (等待用户通过 Onboarding 界面配置)。")
+        tlog.warning(f"⚠️ [文库配置] 创作者文库目录不存在: '{engine.vault_root}'。自动同步已暂缓，可在工作台设置中指定。")
         return None, None
 
-    tlog.info(f"👀 正在监听文件夹: {engine.vault_root}")
+    tlog.info(f"📁 [文库联动] 已连接创作者原稿目录: {engine.vault_root}")
 
     watch_pool = ThreadPoolExecutor(max_workers=engine.max_workers)
     handler = ChangeHandler(engine, args, current_source_files, watch_pool, dev_server=dev_server)

@@ -229,7 +229,7 @@ if __name__ == "__main__":
             execute_full_sync(engine, args, task_queue, current_source_files)
             
         if args.watch:
-            tlog.info("🐕 [后台守护] (环境监控) 系统监听已进入全时工作模式...")
+            tlog.info("🔄 [实时同步] 原稿变更自动同步服务已就绪（文库修改后将自动排版同步）...")
             global_observer, _ = start_watchdog(engine, args, current_source_files)
         set_global_observer(global_observer)
 
