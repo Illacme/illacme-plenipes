@@ -76,7 +76,7 @@
             margin: 0;
             font-size: 0.8rem;
             line-height: 1.5;
-            color: rgba(255,255,255,0.85);
+            color: var(--text-normal, rgba(255,255,255,0.85));
         }
     `;
     document.head.appendChild(styleEl);
@@ -106,7 +106,7 @@
                 <h5 style="color: ${type === 'restore' ? '#34c759' : '#ff4d4d'};">
                     ${type === 'restore' ? '🟢' : '🚨'} ${title}
                 </h5>
-                <button onclick="window.dismissDynamicAlert(this.closest('.active-alert-card'))" style="background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 4px; transition: color 0.2s; outline: none;">&times;</button>
+                <button onclick="window.dismissDynamicAlert(this.closest('.active-alert-card'))" style="background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.4)); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 4px; transition: color 0.2s; outline: none;">&times;</button>
             </div>
             <p>${message}</p>
         `;
