@@ -206,3 +206,24 @@ def check_update_logic(force: bool = False) -> Dict[str, Any]:
     from core.runtime.update_checker import UpdateChecker
     return UpdateChecker.check_update(force=force)
 
+
+def start_download_update_logic(download_url: str, version: str = "") -> Dict[str, Any]:
+    """🚀 [Auto-Update] 启动后台静默下载"""
+    if not download_url:
+        return {"success": False, "message": "缺少下载地址"}
+    from core.runtime.update_installer import UpdateInstaller
+    return UpdateInstaller.start_download(download_url=download_url, version=version)
+
+
+def get_update_progress_logic() -> Dict[str, Any]:
+    """🚀 [Auto-Update] 轮询当前静默升级包下载状态与进度"""
+    from core.runtime.update_installer import UpdateInstaller
+    return UpdateInstaller.get_progress()
+
+
+def apply_update_and_restart_logic() -> Dict[str, Any]:
+    """🚀 [Auto-Update] 执行静默替换并自动重启客户端"""
+    from core.runtime.update_installer import UpdateInstaller
+    return UpdateInstaller.apply_and_restart()
+
+

@@ -17,6 +17,9 @@ from .system_health_ops import (
     pick_directory_logic,
     reveal_file_logic,
     check_update_logic,
+    start_download_update_logic,
+    get_update_progress_logic,
+    apply_update_and_restart_logic,
 )
 from .preview_ops import (
     SwitchAndLaunchPreviewRequest,
@@ -56,6 +59,9 @@ __all__ = [
     "pick_directory_logic",
     "reveal_file_logic",
     "check_update_logic",
+    "start_download_update_logic",
+    "get_update_progress_logic",
+    "apply_update_and_restart_logic",
     "SwitchAndLaunchPreviewRequest",
     "switch_and_launch_preview_logic",
     "restart_preview_logic",

@@ -23,6 +23,9 @@ from .system_shards import (
     pick_directory_logic,
     reveal_file_logic,
     check_update_logic,
+    start_download_update_logic,
+    get_update_progress_logic,
+    apply_update_and_restart_logic,
     SwitchAndLaunchPreviewRequest,
     switch_and_launch_preview_logic,
     restart_preview_logic,
@@ -105,6 +108,26 @@ async def pick_directory() -> Dict[str, Any]:
 def check_system_update(force: bool = False) -> Dict[str, Any]:
     """🛰️ [Auto-Update] 检查云端 GitHub Releases 最新发版状态与当前系统推荐安装包"""
     return check_update_logic(force=force)
+
+
+@router.post("/api/system/update/download")
+def start_silent_download(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """🛰️ [Auto-Update] 启动后台静默下载推荐安装包"""
+    url = payload.get("download_url", "")
+    version = payload.get("version", "")
+    return start_download_update_logic(download_url=url, version=version)
+
+
+@router.get("/api/system/update/progress")
+def get_silent_update_progress() -> Dict[str, Any]:
+    """🛰️ [Auto-Update] 轮询当前静默升级包下载状态与进度"""
+    return get_update_progress_logic()
+
+
+@router.post("/api/system/update/apply")
+def apply_silent_update_and_restart() -> Dict[str, Any]:
+    """🚀 [Auto-Update] 一键应用已就绪的升级包并在释放单例锁后自重启"""
+    return apply_update_and_restart_logic()
 
 
 # 2. 本地实时预览全生命周期编排端点
