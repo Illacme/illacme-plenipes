@@ -1,6 +1,17 @@
 # 📚 出版发行工作台功能速查手册 (User Manual)
 
-本手册涵盖 Illacme Plenipes 工作台全景 8 大功能中心的详细操作、参数配置与进阶技巧。
+本手册涵盖 Illacme Plenipes **出版发行工作台 (The Sovereign Publishing Workbench)** 全景 8 大功能中心的详细操作、参数配置与进阶技巧。
+
+![出版发行工作台全景](../../docs/assets/workbench_overview.png)
+
+### 🧭 工作台全域界面拓扑 (Layout & Controls)
+
+工作台采用现代暗黑毛玻璃（Glassmorphism）极客工作站架构，主要分为五大物理操控区域：
+1. **顶栏导航中枢 (Top Navigation Bar)**：快速切换 8 大核心中心（知识星谱、原稿文库、发布中心、出版治理、运营遥测），以及全局任务进度、发布预览与全站一键点火；
+2. **左侧主权流水线 (Publishing Pipeline)**：实时展示品牌身份（Press Identity）与 6 大出版工序（原稿文库 ➔ 多语言智能翻译 ➔ 网站主题 ➔ 网址路径 ➔ 独立站托管 ➔ 社交平台同步）的连通态；
+3. **中央作业大厅 (Central Stage)**：承载 3D 知识星谱视口、双模文库编辑器、发布大厅或治理面板；
+4. **右侧 Sovereign Copilot 领航员**：常驻 AI 协作者（支持快捷键 `]` 展开/收起），支持流式思考链（CoT）、全局知识检索与自愈式代码/配置 Patch；
+5. **底栏状态遥测台 (Telemetry Status Bar)**：实时监测引擎通信信号、CPU/内存负载、AI Token 消耗、并发席位与云端版本更新状态。
 
 ---
 

@@ -13,6 +13,45 @@
 
 ---
 
+### 🖥️ Meet The Sovereign Publishing Workbench
+
+> **“Say goodbye to scattered terminal scripts and fragile pipelines. Digital publishing is now an inspiring visual symphony.”**
+
+Illacme Plenipes transforms the industrial publishing capabilities typically reserved for premier media enterprises into an elegant, dark-mode glassmorphic **desktop workbench**.
+
+#### 🌌 1. 3D Galaxy Knowledge Graph & Pipeline Director
+How does a single manuscript radiate across the globe? The workbench opens with an interactive **3D force-directed knowledge graph** and an end-to-end **six-stage publishing pipeline**.
+
+![Publishing Workbench Overview](./docs/assets/workbench_overview.png)
+
+* **3D Force-Directed Constellation**: Real-time gravitational link calculations; click any planetary node to drill down into the underlying manuscript.
+* **Live Six-Stage Pipeline**: `Vault Origin ➔ Polyglot AI Translation ➔ Web Theme ➔ URL Routing ➔ Web Hosting ➔ Social Syndication` with real-time status pulses.
+* **Persistent Sovereign Copilot**: Dedicated AI coordinator with streaming Chain-of-Thought (CoT) reasoning, vault semantic search, and autonomous patch generation.
+
+---
+
+#### 📂 2. Manuscript Vault & Direct Publishing Drawer
+Designed for pure, distraction-free writing and editorial control.
+
+![Manuscript Vault Workbench](./docs/assets/workbench_vault.png)
+
+* **100% Local Vault Integrity**: Connect directly to your local Obsidian or Markdown folder with zero remote cloud leakage.
+* **Lifecycle Audit**: Word counts, slug path cleanups, and multi-language alignment matrix at a glance.
+* **Single-Doc Publishing Drawer**: Deploy or syndicate individual documents with precise incremental builds.
+
+---
+
+#### 🚀 3. Omni-Channel Dispatch Hub & Cataloged Bookshelf
+Deliver your thoughts to worldwide audiences in every prestigious format.
+
+![Publishing Hub & Digital Bookshelf](./docs/assets/workbench_dispatch.png)
+
+* **📚 Cataloged Book Releases**: Generate side-by-side polyglot **DOCX (with OMML math equations)**, **print-ready PDF books**, **EPUB 3.0**, and **hyperlinked WebBooks** with built-in instant reading and export.
+* **🌐 Static Web Hosting Matrix**: One-click deployment across 10 static platforms (GitHub Pages, Vercel, Netlify, Cloudflare Pages, etc.) with **automatic live URL backfilling**.
+* **🛰️ 30+ Social Media Syndication**: Instant push to WeChat Official Account, Zhihu, Juejin, Dev.to, Hashnode, Medium, Ghost, and Substack with asset localization and anti-hotlinking protection.
+
+---
+
 ### 💡 Why Illacme Plenipes?
 
 As an independent writer, overseas team, or technical blogger, writing is pure, but distribution is tedious:
