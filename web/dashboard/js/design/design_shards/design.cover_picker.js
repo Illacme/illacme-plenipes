@@ -40,11 +40,11 @@
                 <div class="glass-panel" style="width:780px; max-width:96vw; max-height:90vh; border-radius:14px; border:1px solid rgba(0,242,254,0.35); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.9);">
                     
                     <!-- Header -->
-                    <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+                    <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; background:var(--white-02);">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:1.1rem;">🖼️</span>
                             <div>
-                                <div style="font-weight:700; color:#fff; font-size:0.95rem; letter-spacing:0.3px;">文库原稿封面注入中枢</div>
+                                <div style="font-weight:700; color:var(--text-bright); font-size:0.95rem; letter-spacing:0.3px;">文库原稿封面注入中枢</div>
                                 <div style="font-size:0.72rem; color:var(--text-dim); margin-top:1px;">海量原稿即时过滤检索 · 状态感知 · 一键写回 Frontmatter</div>
                             </div>
                         </div>
@@ -52,11 +52,11 @@
                     </div>
 
                     <!-- 拟注入资产预览卡片 -->
-                    <div style="padding:12px 20px; background:rgba(0,0,0,0.35); border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:14px;">
+                    <div style="padding:12px 20px; background:var(--surface-secondary); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:14px;">
                         <img src="${coverUrl}" style="width:110px; height:62px; object-fit:cover; border-radius:6px; border:1px solid rgba(0,242,254,0.4); box-shadow:0 4px 12px rgba(0,0,0,0.4);" />
                         <div style="flex:1; overflow:hidden; font-size:0.74rem;">
                             <div style="color:var(--text-dim); margin-bottom:3px;">拟注入新封面资产:</div>
-                            <div style="color:#00f2fe; font-family:monospace; font-size:0.78rem; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+                            <div style="color:var(--neon-cyan); font-family:monospace; font-size:0.78rem; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
                                 ${coverUrl.split('/').pop()}
                             </div>
                             <div style="color:var(--text-dim); font-size:0.7rem; margin-top:2px;">
@@ -66,13 +66,13 @@
                     </div>
 
                     <!-- 搜索与筛选工具栏 -->
-                    <div style="padding:12px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:rgba(255,255,255,0.015); border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div style="padding:12px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--white-01); border-bottom:1px solid var(--border-subtle);">
                         <div style="position:relative; flex:1; min-width:220px;">
                             <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:var(--text-dim);">🔍</span>
                             <input type="text" id="cover-picker-search-input" 
                                 placeholder="输入文章标题、路径、关键词快速搜索..." 
-                                style="width:100%; padding:7px 10px 7px 32px; border-radius:6px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:0.78rem; outline:none; transition:border-color 0.2s;"
-                                onfocus="this.style.borderColor='#00f2fe'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'"
+                                style="width:100%; padding:7px 10px 7px 32px; border-radius:6px; background:var(--surface-primary); border:1px solid var(--border-strong); color:var(--text-bright); font-size:0.78rem; outline:none; transition:border-color 0.2s;"
+                                onfocus="this.style.borderColor='var(--neon-cyan)'" onblur="this.style.borderColor='var(--border-strong)'"
                                 oninput="window.filterCoverPickerDocs(this.value)" />
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;" id="cover-picker-filter-group">
@@ -88,15 +88,15 @@
                     </div>
 
                     <!-- 选中文档与对比提示 Footer -->
-                    <div style="padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="padding:14px 20px; border-top:1px solid var(--border-subtle); background:var(--surface-secondary); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div style="font-size:0.75rem; color:var(--text-dim); display:flex; align-items:center; gap:6px; flex:1; min-width:260px;">
                             <span>目标原稿:</span>
-                            <span id="cover-picker-selected-hint" style="color:#00f2fe; font-weight:600; font-family:monospace;">未选择文档 (请在上方列表点击选中)</span>
+                            <span id="cover-picker-selected-hint" style="color:var(--neon-cyan); font-weight:600; font-family:monospace;">未选择文档 (请在上方列表点击选中)</span>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="mini-btn" style="padding:6px 14px; font-size:0.76rem;" onclick="document.getElementById('apply-cover-modal').remove()">取消</button>
                             <button type="button" class="mini-btn" id="confirm-apply-cover-btn" 
-                                style="padding:6px 20px; font-size:0.76rem; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.15); color:var(--text-dim); cursor:not-allowed;" 
+                                style="padding:6px 20px; font-size:0.76rem; background:var(--white-05); border-color:var(--border-strong); color:var(--text-dim); cursor:not-allowed;" 
                                 disabled onclick="window.submitApplyCover('${coverUrl}')">
                                 确认注入封面
                             </button>
@@ -128,8 +128,8 @@
             const title = (d.seo_data && d.seo_data.title) || d.title || relPath;
             const hasCover = !!d.cover;
             const isSelected = _selectedDocId === relPath;
-            const borderStyle = isSelected ? '1px solid #00f2fe' : '1px solid rgba(255,255,255,0.08)';
-            const bgStyle = isSelected ? 'background:rgba(0,242,254,0.12); box-shadow:0 0 12px rgba(0,242,254,0.25);' : 'background:rgba(255,255,255,0.03);';
+            const borderStyle = isSelected ? '1px solid var(--neon-cyan)' : '1px solid var(--border-subtle)';
+            const bgStyle = isSelected ? 'background:rgba(var(--neon-cyan-rgb),0.12); box-shadow:0 0 12px rgba(var(--neon-cyan-rgb),0.25);' : 'background:var(--white-03);';
             const badge = hasCover 
                 ? `<span style="font-size:0.68rem; color:#f59e0b; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px;">🖼️ 已有封面</span>`
                 : `<span style="font-size:0.68rem; color:#10b981; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); padding:2px 6px; border-radius:4px;">⬜ 待设封面</span>`;
@@ -137,15 +137,15 @@
             return `
                 <div class="cover-picker-item" onclick="window.selectCoverPickerDoc('${relPath.replace(/'/g, "\\'")}')"
                     style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; ${borderStyle} ${bgStyle} cursor:pointer; transition:all 0.15s ease;"
-                    onmouseover="if('${_selectedDocId}' !== '${relPath}') this.style.borderColor='rgba(0,242,254,0.4)'"
-                    onmouseout="if('${_selectedDocId}' !== '${relPath}') this.style.borderColor='rgba(255,255,255,0.08)'">
+                    onmouseover="if('${_selectedDocId}' !== '${relPath}') this.style.borderColor='rgba(var(--neon-cyan-rgb),0.4)'"
+                    onmouseout="if('${_selectedDocId}' !== '${relPath}') this.style.borderColor='var(--border-subtle)'">
                     <div style="display:flex; flex-direction:column; gap:3px; overflow:hidden; flex:1; margin-right:12px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-weight:600; color:#fff; font-size:0.84rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">《${title}》</span>
+                            <span style="font-weight:600; color:var(--text-bright); font-size:0.84rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">《${title}》</span>
                             ${badge}
                         </div>
                         <div style="font-size:0.7rem; color:var(--text-dim); display:flex; gap:10px; align-items:center;">
-                            <span style="font-family:monospace; color:rgba(255,255,255,0.6);">📁 ${relPath}</span>
+                            <span style="font-family:monospace; color:var(--text-muted);">📁 ${relPath}</span>
                             ${d.last_updated ? `<span>🕒 ${d.last_updated}</span>` : ''}
                         </div>
                     </div>
