@@ -28,6 +28,14 @@
     --bg-compute-card-rgb: 20, 20, 35;
     --bg-compute-grid-rgb: 30, 30, 45;
 
+    /* 🏛️ Dual-Mode Semantic Surface Tokens (SSOT) */
+    --surface-primary: rgba(13, 14, 28, 0.75);
+    --surface-secondary: rgba(20, 20, 35, 0.7);
+    --surface-elevated: rgba(15, 23, 42, 0.95);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    --tour-spotlight-shadow: rgba(10, 12, 20, 0.72);
+
     /* 🎨 Core Accent Colors (HSL & RGB Channels for JS/WebGL) */
     --accent-primary: hsl(267, 100%, 65%);
     --accent-primary-rgb: 163, 76, 255;
@@ -213,6 +221,14 @@
     --bg-mode-solid-rgb: 255, 255, 255;
     --bg-compute-card-rgb: 255, 255, 255;
     --bg-compute-grid-rgb: 248, 250, 252;
+
+    /* 🏛️ Dual-Mode Semantic Surface Tokens (SSOT - Light) */
+    --surface-primary: rgba(255, 255, 255, 0.92);
+    --surface-secondary: rgba(241, 245, 249, 0.9);
+    --surface-elevated: rgba(255, 255, 255, 0.98);
+    --border-subtle: rgba(15, 23, 42, 0.08);
+    --border-strong: rgba(15, 23, 42, 0.15);
+    --tour-spotlight-shadow: rgba(15, 23, 42, 0.32);
 
     --color-white: #000000;
     --color-black: #ffffff;
