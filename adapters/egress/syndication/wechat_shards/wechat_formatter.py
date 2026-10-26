@@ -101,6 +101,8 @@ def transmute_footnotes(content: str) -> Tuple[str, List[Dict[str, str]]]:
             idx = len(footnotes) + 1
             seen_urls[url] = idx
             footnotes.append({"index": idx, "text": text, "url": url})
+        sup_style = "color: #2563eb; font-weight: 600; font-size: 11px; margin-left: 2px;"
+        return f'{text}<sup style="{sup_style}">[{idx}]</sup>'
 
     new_content = link_pattern.sub(replace_link, content)
 
