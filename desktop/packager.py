@@ -5,12 +5,11 @@ Illacme Plenipes - Desktop Application Packager Core
 🛡️ [SOP-01 规范]：单文件行数严格 ≤ 300 行。
 """
 
-import os
-import sys
-import shutil
-import platform
-import subprocess
+import os, sys, shutil, platform, subprocess
 from typing import List, Optional
+
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
 
 from core.utils.tracing import tlog
 
@@ -22,6 +21,20 @@ class DesktopPackager:
     MAIN_ENTRY = os.path.join("desktop", "app.py")
 
     @classmethod
+    def stage_assets(cls) -> str:
+        """物理清洗并暂存主题模板与静态资源 (剔除 node_modules, 构建产物与临时文件)"""
+        stage_dir = os.path.join("build", "desktop", "staged_themes")
+        if os.path.exists(stage_dir):
+            shutil.rmtree(stage_dir, ignore_errors=True)
+        os.makedirs(os.path.dirname(stage_dir), exist_ok=True)
+        shutil.copytree(
+            "themes", stage_dir,
+            ignore=shutil.ignore_patterns("node_modules", ".next", ".astro", ".docusaurus", "dist", "build", ".temp", ".git", "__pycache__", ".DS_Store")
+        )
+        tlog.info(f"🧬 [资产暂存] 主题母本已物理纯净剥离并暂存至: {stage_dir}")
+        return stage_dir
+
+    @classmethod
     def assemble_build_args(
         cls,
         output_dir: str = "dist/desktop",
@@ -30,25 +43,15 @@ class DesktopPackager:
     ) -> List[str]:
         """组装全量 PyInstaller 编译参数 (支持 macOS target_arch: universal2 / arm64 / x86_64)"""
         sep = ";" if platform.system() == "Windows" else ":"
-        data_mappings = [
-            ("web/dashboard", "web/dashboard"),
-            ("themes", "themes"),
-            ("configs", "configs"),
-        ]
+        staged_themes = os.path.join("build", "desktop", "staged_themes")
+        themes_src = staged_themes if os.path.exists(staged_themes) else "themes"
+        data_mappings = [("web/dashboard", "web/dashboard"), (themes_src, "themes"), ("configs", "configs")]
 
         args = [
-            sys.executable,
-            "-m",
-            "PyInstaller",
-            "--noconfirm",
-            "--clean",
-            "--windowed",
-            f"--name={cls.APP_NAME}",
-            f"--distpath={output_dir}",
-            "--workpath=build/desktop",
+            sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed",
+            f"--name={cls.APP_NAME}", f"--distpath={output_dir}", "--workpath=build/desktop",
         ]
 
-        # 0. macOS 架构支持 (Universal 2 / arm64 / x86_64)
         if platform.system() == "Darwin" and target_arch:
             arch_norm = target_arch.strip().lower()
             if arch_norm in ("universal2", "arm64", "x86_64"):
@@ -56,60 +59,38 @@ class DesktopPackager:
             else:
                 tlog.warning(f"⚠️ [打包工坊] 未知 macOS 架构 '{target_arch}'，将使用系统默认架构")
 
-        # 1. 注入静态资源数据
         for src, dst in data_mappings:
             if os.path.exists(src):
                 args.append(f"--add-data={src}{sep}{dst}")
 
-        # 2. 注入隐式动态导入依赖
         hidden_imports = [
-            "uvicorn.logging",
-            "uvicorn.loops",
-            "uvicorn.loops.auto",
-            "uvicorn.protocols",
-            "uvicorn.protocols.http",
-            "uvicorn.protocols.http.auto",
-            "uvicorn.protocols.websockets",
-            "uvicorn.protocols.websockets.auto",
-            "uvicorn.lifespan.on",
-            "fastapi",
-            "cryptography",
-            "yaml",
-            "markdown",
-            "latex2mathml",
-            "qrcode",
+            "uvicorn.logging", "uvicorn.loops", "uvicorn.loops.auto", "uvicorn.protocols",
+            "uvicorn.protocols.http", "uvicorn.protocols.http.auto", "uvicorn.protocols.websockets",
+            "uvicorn.protocols.websockets.auto", "uvicorn.lifespan.on", "fastapi", "cryptography",
+            "yaml", "markdown", "latex2mathml", "qrcode",
         ]
 
-        # 动态探测已安装的桌面图形库并按系统隔离注入隐式依赖 (防跨系统分析报错)
         cur_sys = platform.system()
         try:
             import importlib.util
             if importlib.util.find_spec("pystray") is not None:
                 hidden_imports.append("pystray")
-                if cur_sys == "Darwin":
-                    hidden_imports.append("pystray._darwin")
-                elif cur_sys == "Windows":
-                    hidden_imports.append("pystray._win32")
-                elif cur_sys == "Linux":
-                    hidden_imports.append("pystray._xorg")
-        except Exception:
-            pass
+                sub_pkg = {"Darwin": "pystray._darwin", "Windows": "pystray._win32", "Linux": "pystray._xorg"}.get(cur_sys)
+                if sub_pkg: hidden_imports.append(sub_pkg)
+        except Exception: pass
 
         try:
             import importlib.util
             if importlib.util.find_spec("webview") is not None:
                 hidden_imports.append("webview")
-        except Exception:
-            pass
+        except Exception: pass
 
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
 
-        # 3. 平台专属图标
         if icon_path and os.path.exists(icon_path):
             args.append(f"--icon={icon_path}")
 
-        # 4. 入口文件
         args.append(cls.MAIN_ENTRY)
         return args
 
@@ -155,9 +136,12 @@ class DesktopPackager:
         cls,
         dry_run: bool = False,
         output_dir: str = "dist/desktop",
-        target_arch: Optional[str] = None
+        target_arch: Optional[str] = None,
+        create_dmg: bool = False
     ) -> bool:
-        """执行完整打包流程 (支持 macOS 双架构与 Universal 2 编译)"""
+        """执行完整打包流程 (支持 macOS 双架构与 Universal 2 编译及 DMG 生成)"""
+        import logging
+        if tlog.getEffectiveLevel() > logging.INFO: tlog.setLevel(logging.INFO)
         tlog.info("🔨 [打包工坊] 启动 Illacme Plenipes 独立桌面客户端构建...")
         if target_arch and platform.system() == "Darwin":
             tlog.info(f"🎯 [目标架构] macOS 编译目标架构已锁定: [{target_arch}]")
@@ -168,10 +152,10 @@ class DesktopPackager:
             except ImportError:
                 tlog.error("❌ 未检测到 PyInstaller，请先安装: pip install pyinstaller pillow")
                 return False
+            cls.stage_assets()
 
         icon_path = cls.generate_icon()
-        if icon_path:
-            tlog.info(f"🎨 [打包工坊] 已就绪应用图标: {icon_path}")
+        if icon_path: tlog.info(f"🎨 [打包工坊] 已就绪应用图标: {icon_path}")
 
         cmd = cls.assemble_build_args(output_dir=output_dir, icon_path=icon_path, target_arch=target_arch)
         tlog.info(f"⚙️ [打包命令] {' '.join(cmd[:6])} ... ({len(cmd)} 个参数)")
@@ -187,6 +171,8 @@ class DesktopPackager:
                 cls.write_quickstart_guide(output_dir)
                 if platform.system() == "Darwin":
                     cls.write_macos_fix_script(output_dir)
+                    if create_dmg:
+                        cls.build_macos_dmg(output_dir)
                 tlog.info(f"🎉 [打包成功] 桌面应用已编译输出至: {os.path.abspath(output_dir)}")
                 return True
         except subprocess.CalledProcessError as e:
@@ -194,15 +180,41 @@ class DesktopPackager:
         return False
 
     @classmethod
+    def build_macos_dmg(cls, output_dir: str, dmg_path: Optional[str] = None) -> Optional[str]:
+        """使用 macOS 原生 hdiutil 将打包产物制作为便携式 .dmg 磁盘镜像"""
+        if platform.system() != "Darwin" or not shutil.which("hdiutil"):
+            return None
+        app_path = os.path.join(output_dir, f"{cls.APP_NAME}.app")
+        if not os.path.exists(app_path):
+            tlog.warning(f"⚠️ [DMG 工坊] 未在 {output_dir} 找到 {cls.APP_NAME}.app，跳过 DMG 制作。")
+            return None
+        if not dmg_path:
+            from core import __version__
+            dmg_path = os.path.join(output_dir, f"{cls.APP_NAME}-v{__version__}.dmg")
+        tlog.info(f"💿 [DMG 工坊] 正在生成 macOS 安装镜像: {dmg_path} ...")
+        try:
+            app_link = os.path.join(output_dir, "Applications")
+            if not os.path.exists(app_link):
+                try: os.symlink("/Applications", app_link)
+                except Exception: pass
+            cmd = ["hdiutil", "create", "-volname", "Illacme Plenipes", "-srcfolder", output_dir, "-ov", "-format", "UDZO", dmg_path]
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            if os.path.islink(app_link):
+                try: os.unlink(app_link)
+                except Exception: pass
+            tlog.info(f"✨ [DMG 工坊] 安装镜像制作成功: {dmg_path}")
+            return dmg_path
+        except Exception as e:
+            tlog.warning(f"⚠️ [DMG 工坊] DMG 镜像生成容错跳过: {e}")
+            return None
+
+    @classmethod
     def write_macos_fix_script(cls, output_dir: str):
         """生成 macOS 一键解除隔离 Gatekeeper 修复脚本 (双击即可运行)"""
         script_content = (
-            "#!/bin/bash\n"
-            "# Illacme Plenipes · macOS 一键解除应用安全隔离 (消除首次打开损坏提示)\n"
-            "TARGET_APP=\"/Applications/Illacme-Plenipes.app\"\n"
-            "DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" >/dev/null 2>&1 && pwd )\"\n"
-            "LOCAL_APP=\"$DIR/Illacme-Plenipes.app\"\n"
-            "clear\n"
+            "#!/bin/bash\n# Illacme Plenipes · macOS 一键解除应用安全隔离 (消除首次打开损坏提示)\n"
+            "TARGET_APP=\"/Applications/Illacme-Plenipes.app\"\nDIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" >/dev/null 2>&1 && pwd )\"\n"
+            "LOCAL_APP=\"$DIR/Illacme-Plenipes.app\"\nclear\n"
             "echo \"============================================================\"\n"
             "echo \"  Illacme Plenipes · macOS 应用信任与隔离修复工具\"\n"
             "echo \"============================================================\"\n"
@@ -214,12 +226,8 @@ class DesktopPackager:
             "    echo \"正在为镜像内的 Illacme Plenipes 解除隔离...\"\n"
             "    xattr -cr \"$LOCAL_APP\" 2>/dev/null\n"
             "    echo \"✅ 修复完成！请将应用拖入右侧 Applications 目录即可。\"\n"
-            "else\n"
-            "    echo \"⚠️ 未在 /Applications 找到应用，请先将应用拖入 Applications 文件夹。\"\n"
-            "fi\n"
-            "echo \"\"\n"
-            "read -n 1 -s -r -p \"按任意键退出窗口...\"\n"
-            "exit 0\n"
+            "else\n    echo \"⚠️ 未在 /Applications 找到应用，请先将应用拖入 Applications 文件夹。\"\nfi\n"
+            "echo \"\"\nread -n 1 -s -r -p \"按任意键退出窗口...\"\nexit 0\n"
         )
         try:
             cmd_path = os.path.join(output_dir, "双击修复无法打开.command")
@@ -267,6 +275,7 @@ def main():
     parser = argparse.ArgumentParser(description="Illacme Plenipes 桌面独立客户端构建流水线")
     parser.add_argument("--dry-run", action="store_true", help="仅执行参数与资源依赖合规性校验，不执行实际耗时编译")
     parser.add_argument("--output-dir", default="dist/desktop", help="打包产物输出目录 (默认: dist/desktop)")
+    parser.add_argument("--dmg", action="store_true", help="构建完成后自动制作 macOS .dmg 安装镜像")
     parser.add_argument(
         "--target-arch",
         choices=["universal2", "arm64", "x86_64"],
@@ -278,7 +287,8 @@ def main():
     success = DesktopPackager.execute_build(
         dry_run=args.dry_run,
         output_dir=args.output_dir,
-        target_arch=args.target_arch
+        target_arch=args.target_arch,
+        create_dmg=args.dmg
     )
     sys.exit(0 if success else 1)
 

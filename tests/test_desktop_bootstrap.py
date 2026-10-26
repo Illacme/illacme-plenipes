@@ -162,3 +162,33 @@ def test_desktop_packager_write_macos_fix_script():
         assert os.access(script_file, os.X_OK)
 
 
+def test_desktop_packager_stage_assets():
+    """验证主题模板物理清洗与暂存逻辑 (剔除 node_modules 与构建产物)"""
+    staged = DesktopPackager.stage_assets()
+    assert os.path.exists(staged)
+    assert os.path.exists(os.path.join(staged, "sovereign"))
+    assert os.path.exists(os.path.join(staged, "docusaurus"))
+    assert not os.path.exists(os.path.join(staged, "docusaurus", "node_modules"))
+
+
+def test_desktop_packager_build_macos_dmg():
+    """验证 macOS DMG 镜像打包流程与容错分支"""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        assert DesktopPackager.build_macos_dmg(tmp_dir) is None
+
+        fake_app = os.path.join(tmp_dir, f"{DesktopPackager.APP_NAME}.app")
+        os.makedirs(fake_app, exist_ok=True)
+        with patch("platform.system", return_value="Darwin"), \
+             patch("shutil.which", return_value="/usr/bin/hdiutil"), \
+             patch("subprocess.run") as mock_run:
+            dmg_file = DesktopPackager.build_macos_dmg(tmp_dir)
+            assert dmg_file is not None
+            assert dmg_file.endswith(".dmg")
+            mock_run.assert_called_once()
+            call_cmd = mock_run.call_args[0][0]
+            assert "hdiutil" in call_cmd
+            assert "create" in call_cmd
+            assert "UDZO" in call_cmd
+
+
+
