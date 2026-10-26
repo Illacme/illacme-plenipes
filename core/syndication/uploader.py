@@ -7,6 +7,7 @@ Illacme-plenipes Core - Syndication Image Uploader (分发图片上传中枢)
 """
 
 import os
+import urllib.parse
 from core.utils.tracing import tlog
 from core.adapters.image_hosting.targets import IMAGE_HOST_REGISTRY
 
@@ -15,6 +16,7 @@ class ImageUploader:
         self.cfg = syndication_cfg or {}
         self.sys_tuning = sys_tuning or {}
         self.host_instance = None
+        self._upload_cache = {}
         self.site_url = (self.sys_tuning.get("site_url") or "").rstrip("/")
         self.asset_base_url = (self.sys_tuning.get("asset_base_url") or self.cfg.get("asset_base_url") or "").rstrip("/")
         self.vault_root = self.sys_tuning.get("vault_root") or os.getcwd()
@@ -96,11 +98,19 @@ class ImageUploader:
         """
         委托图床驱动物理上传图片，若未配置则智能回退至独立站原生托管 CDN 外链
         """
+        if not local_path:
+            return None
+
+        abs_key = os.path.abspath(local_path) if os.path.exists(local_path) else str(local_path)
+        if abs_key in self._upload_cache:
+            return self._upload_cache[abs_key]
+
         # 1. 优先调用已挂载的第三方图床插件
         if self.host_instance:
             try:
                 res = self.host_instance.upload(local_path)
                 if res:
+                    self._upload_cache[abs_key] = res
                     return res
             except Exception as e:
                 tlog.error(f"🛑 [图床中枢] 第三方图床上传失败: {e}")
@@ -117,8 +127,10 @@ class ImageUploader:
                     rel = os.path.basename(local_path)
                     rel = f"assets/{rel}"
                 rel_url = rel.replace(os.sep, '/').lstrip('/')
-                cdn_url = f"{base_domain}/{rel_url}"
+                encoded_rel = urllib.parse.quote(rel_url, safe="/:@&=+$,")
+                cdn_url = f"{base_domain}/{encoded_rel}"
                 tlog.info(f"🌐 [图床中枢-CDN回退] 自动映射公网资产外链: {cdn_url}")
+                self._upload_cache[abs_key] = cdn_url
                 return cdn_url
             except Exception as fe:
                 tlog.warning(f"⚠️ [图床中枢-CDN回退] 计算资产 URL 失败: {fe}")

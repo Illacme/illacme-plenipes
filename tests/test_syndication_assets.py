@@ -177,5 +177,54 @@ class TestSyndicationAssets(unittest.TestCase):
         self.assertIn("https://cdn.style-b.com/cdn/images/", result_content)
         self.assertIn("test_pic_", result_content)
 
+    def test_uploader_url_encoding_and_cache(self):
+        """测试中文/空格图片路径的 RFC 3986 编码与内存复用缓存"""
+        from core.syndication.uploader import ImageUploader
+        
+        # 创建一个含中文与空格的文件
+        chinese_img = os.path.join(self.test_dir, "assets", "系统 架构 设计.png")
+        with open(chinese_img, "wb") as f:
+            f.write(b"\x89PNG\r\n\x1a\n")
+
+        uploader = ImageUploader(
+            syndication_cfg={"asset_base_url": "https://assets.my-blog.com"},
+            sys_tuning={"vault_root": self.test_dir}
+        )
+
+        # 首次上传应被 quote 编码
+        res1 = uploader.upload_image(chinese_img)
+        self.assertIsNotNone(res1)
+        self.assertTrue(res1.startswith("https://assets.my-blog.com/assets/"))
+        # 确认空格与中文字符已被 URL 编码 (%20 及 %E7 等)
+        self.assertIn("%20", res1)
+        self.assertIn("%", res1)
+        self.assertNotIn(" ", res1)
+
+        # 二次调用应直接命中内存缓存
+        self.assertIn(os.path.abspath(chinese_img), uploader._upload_cache)
+        res2 = uploader.upload_image(chinese_img)
+        self.assertEqual(res1, res2)
+
+    def test_wechat_media_card_transmutation(self):
+        """测试微信富文本格式化器对外链 iframe 媒体自动降级为内联卡片并归集至脚注"""
+        from adapters.egress.syndication.wechat_shards.wechat_formatter import render_wechat_html
+        
+        md_text = (
+            "# 微信文章测试\n\n"
+            "视频演示：\n"
+            '<div class="responsive-video-container"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe></div>\n\n'
+            "背景音乐：\n"
+            '<iframe src="https://music.163.com/outchain/player?id=12345"></iframe>\n'
+        )
+        
+        html = render_wechat_html(md_text)
+        # 断言原 iframe 已被转换为优雅卡片，防止微信直接过滤
+        self.assertNotIn("<iframe", html)
+        self.assertIn("YouTube 视频", html)
+        self.assertIn("网易云音乐", html)
+        self.assertIn("参考资料", html)
+        self.assertIn("https://www.youtube.com/embed/dQw4w9WgXcQ", html)
+        self.assertIn("https://music.163.com/outchain/player?id=12345", html)
+
 if __name__ == "__main__":
     unittest.main()

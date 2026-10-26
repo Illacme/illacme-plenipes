@@ -217,6 +217,36 @@ def apply_inline_styles(html: str, theme: str = "default") -> str:
     return f'<section style="{styles["container"]}">{html}</section>'
 
 
+def transmute_rich_media_cards(html: str, footnotes: List[Dict[str, str]]) -> str:
+    """将微信富文本不支持的 iframe/外链多媒体自动降级为高质感卡片并接入文末脚注"""
+    pattern = re.compile(
+        r'(?:<div class="responsive-video-container">)?\s*<iframe[^>]*src=["\']([^"\']+)["\'][^>]*>.*?</iframe>\s*(?:</div>)?',
+        re.DOTALL | re.IGNORECASE
+    )
+    def repl(m):
+        src = m.group(1).strip()
+        name, emoji = "在线多媒体资源", "🔗"
+        if "bilibili" in src: name, emoji = "哔哩哔哩视频", "📺"
+        elif "youtube" in src or "youtu.be" in src: name, emoji = "YouTube 视频", "▶️"
+        elif "vimeo" in src: name, emoji = "Vimeo 视频", "🎬"
+        elif "qq.com" in src: name, emoji = "腾讯视频", "🎥"
+        elif "music.163.com" in src: name, emoji = "网易云音乐", "🎵"
+        elif "spotify" in src: name, emoji = "Spotify 音乐", "🎧"
+        elif "codepen" in src: name, emoji = "CodePen 代码演示", "💻"
+
+        idx = len(footnotes) + 1
+        footnotes.append({"index": idx, "text": f"{name}（在线体验）", "url": src})
+        card_css = "margin: 20px 0; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;"
+        return (
+            f'<section style="{card_css}">'
+            f'<div style="font-weight: 600; color: #1e293b;">{emoji} {name}</div>'
+            f'<div style="font-size: 12.5px; color: #64748b; margin-top: 4px;">微信端暂不支持直接内嵌播放，请查看文末参考资料 <b>[{idx}]</b> 直达原始页面。</div>'
+            f'</section>'
+        )
+
+    return pattern.sub(repl, html)
+
+
 def render_wechat_html(content: str, config: Dict[str, Any] = None) -> str:
     """
     将原始 Markdown 渲染为专为微信公众号定制的高保真富文本 HTML。
@@ -242,6 +272,9 @@ def render_wechat_html(content: str, config: Dict[str, Any] = None) -> str:
 
     # 注入内联 CSS
     styled_html = apply_inline_styles(raw_html, theme=theme)
+
+    # 优雅转换微信不支持的 iframe 多媒体为内联卡片并归集至脚注
+    styled_html = transmute_rich_media_cards(styled_html, footnotes)
 
     # 追加文末脚注卡片
     if footnotes:

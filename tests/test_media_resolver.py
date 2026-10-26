@@ -197,3 +197,21 @@ def test_additional_rich_media_platforms():
     assert 'codepen.io/geoffgraham/embed/dyGaZq' in resolved
 
 
+def test_media_resolver_query_parameters():
+    """测试多媒体解析对 B站分P 与 YouTube 起始时间戳的透传"""
+    raw_md = (
+        "B站多P教程：\n"
+        "https://www.bilibili.com/video/BV1xx411c7mD?p=3\n\n"
+        "YouTube 进度视频：\n"
+        "https://youtu.be/dQw4w9WgXcQ?t=150s\n"
+    )
+
+    resolved = SSGMediaResolver.resolve_media_content(raw_md)
+
+    # 验证 B 站分 P 透传
+    assert "player.bilibili.com/player.html?bvid=BV1xx411c7mD&page=3" in resolved
+    # 验证 YouTube 起始时间戳透传
+    assert "youtube-nocookie.com/embed/dQw4w9WgXcQ?start=150" in resolved
+
+
+

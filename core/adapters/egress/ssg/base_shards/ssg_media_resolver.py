@@ -91,19 +91,27 @@ class SSGMediaResolver:
         return protected_body
 
     @classmethod
-    def _render_bilibili_container(cls, bvid: str) -> str:
+    def _render_bilibili_container(cls, bvid: str, query: str = "") -> str:
+        page = "1"
+        if query:
+            p_match = re.search(r'[?&](?:p|page)=([0-9]+)', str(query), re.I)
+            if p_match: page = p_match.group(1)
         return (
             f'\n<div class="video-container responsive-video bilibili-embed">\n'
-            f'  <iframe src="//player.bilibili.com/player.html?bvid={bvid}&page=1&high_quality=1&as_wide=1" '
+            f'  <iframe src="//player.bilibili.com/player.html?bvid={bvid}&page={page}&high_quality=1&as_wide=1" '
             f'scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>\n'
             f'</div>\n'
         )
 
     @classmethod
-    def _render_youtube_container(cls, video_id: str) -> str:
+    def _render_youtube_container(cls, video_id: str, query: str = "") -> str:
+        extra = ""
+        if query:
+            t_match = re.search(r'[?&](?:t|start)=([0-9]+)s?', str(query), re.I)
+            if t_match: extra = f"?start={t_match.group(1)}"
         return (
             f'\n<div class="video-container responsive-video youtube-embed">\n'
-            f'  <iframe src="https://www.youtube-nocookie.com/embed/{video_id}" '
+            f'  <iframe src="https://www.youtube-nocookie.com/embed/{video_id}{extra}" '
             f'title="YouTube video player" frameborder="0" '
             f'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" '
             f'allowfullscreen></iframe>\n'
@@ -139,26 +147,26 @@ class SSGMediaResolver:
 
     @classmethod
     def _resolve_bilibili(cls, text: str) -> str:
-        def _repl(m: re.Match) -> str: return cls._render_bilibili_container(m.group(1))
-        text = re.sub(r'!\[\[(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)[^\]]*\]\]', _repl, text, flags=re.I)
-        text = re.sub(r'!\[\[bilibili:(BV[a-zA-Z0-9]+)\]\]', _repl, text, flags=re.I)
-        text = re.sub(r'!\[[^\]]*\]\((?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)[^)]*\)', _repl, text, flags=re.I)
+        def _repl(m: re.Match) -> str: return cls._render_bilibili_container(m.group(1), m.group(2) if len(m.groups()) >= 2 else "")
+        text = re.sub(r'!\[\[(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)([^\]]*)\]\]', _repl, text, flags=re.I)
+        text = re.sub(r'!\[\[bilibili:(BV[a-zA-Z0-9]+)([^\]]*)\]\]', _repl, text, flags=re.I)
+        text = re.sub(r'!\[[^\]]*\]\((?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)([^)]*)\)', _repl, text, flags=re.I)
 
-        def _standalone(m: re.Match) -> str: return f"{m.group(1)}{cls._render_bilibili_container(m.group(2))}"
-        text = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
-        text = re.sub(r'(^|\n)(?:https?:\/\/)?b23\.tv\/(BV[a-zA-Z0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
+        def _standalone(m: re.Match) -> str: return f"{m.group(1)}{cls._render_bilibili_container(m.group(2), m.group(3) if len(m.groups()) >= 3 else '')}"
+        text = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)(\?[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
+        text = re.sub(r'(^|\n)(?:https?:\/\/)?b23\.tv\/(BV[a-zA-Z0-9]+)(\?[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
         return text
 
     @classmethod
     def _resolve_youtube(cls, text: str) -> str:
-        def _repl(m: re.Match) -> str: return cls._render_youtube_container(m.group(1))
-        text = re.sub(r'!\[\[(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\]]*\]\]', _repl, text, flags=re.I)
-        text = re.sub(r'!\[\[youtube:([a-zA-Z0-9_-]{11})\]\]', _repl, text, flags=re.I)
-        text = re.sub(r'!\[[^\]]*\]\((?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^)]*\)', _repl, text, flags=re.I)
+        def _repl(m: re.Match) -> str: return cls._render_youtube_container(m.group(1), m.group(2) if len(m.groups()) >= 2 else "")
+        text = re.sub(r'!\[\[(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\]]*)\]\]', _repl, text, flags=re.I)
+        text = re.sub(r'!\[\[youtube:([a-zA-Z0-9_-]{11})([^\]]*)\]\]', _repl, text, flags=re.I)
+        text = re.sub(r'!\[[^\]]*\]\((?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^)]*)\)', _repl, text, flags=re.I)
 
-        def _standalone(m: re.Match) -> str: return f"{m.group(1)}{cls._render_youtube_container(m.group(2))}"
-        text = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
-        text = re.sub(r'(^|\n)(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
+        def _standalone(m: re.Match) -> str: return f"{m.group(1)}{cls._render_youtube_container(m.group(2), m.group(3) if len(m.groups()) >= 3 else '')}"
+        text = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(\?[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
+        text = re.sub(r'(^|\n)(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]{11})(\?[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
         return text
 
     @classmethod
