@@ -104,7 +104,7 @@ jobs:
         run: |
           # 1. 便携压缩包 (ZIP)
           cd dist/desktop
-          zip -r -y ../../Illacme-Plenipes-${{ matrix.asset-suffix }}.zip Illacme-Plenipes.app README_使用说明.txt
+          zip -r -y ../../Illacme-Plenipes-${{ matrix.asset-suffix }}.zip Illacme-Plenipes.app README_使用说明.txt 双击修复无法打开.command 2>/dev/null || zip -r -y ../../Illacme-Plenipes-${{ matrix.asset-suffix }}.zip Illacme-Plenipes.app README_使用说明.txt
           cd ../..
           ls -lh Illacme-Plenipes-${{ matrix.asset-suffix }}.zip
           
@@ -114,6 +114,10 @@ jobs:
           cp -R dist/desktop/Illacme-Plenipes.app dmg_root/
           ln -s /Applications dmg_root/Applications
           cp dist/desktop/README_使用说明.txt dmg_root/
+          if [ -f dist/desktop/双击修复无法打开.command ]; then
+            cp dist/desktop/双击修复无法打开.command dmg_root/
+            chmod +x dmg_root/双击修复无法打开.command
+          fi
           hdiutil create -volname "Illacme Plenipes" -srcfolder dmg_root -ov -format UDZO Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
           rm -rf dmg_root
           ls -lh Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
@@ -201,8 +205,9 @@ jobs:
           echo "### 🛡️ 首次运行安全信任与避坑指南 (消除首次安装阻力)" >> release_body.md
           echo "" >> release_body.md
           echo "* **🍎 macOS 首次运行提示“已损坏，无法打开”或“未经验证的开发者”**：" >> release_body.md
-          echo "  * **方案 A（命令行秒解）**：将应用拖入 Applications 目录后，打开终端运行 \`xattr -cr /Applications/Illacme-Plenipes.app\` 即可永久解除隔离。" >> release_body.md
-          echo "  * **方案 B（访达免命令行）**：在 Applications 目录中，**按住 Control 键并右键点击** \`Illacme-Plenipes.app\`，选择「打开」，弹窗中再次点击「打开」。" >> release_body.md
+          echo "  * **方案 A（极简首选）**：在 DMG 镜像或解压包中直接**双击运行「双击修复无法打开.command」**，即可全自动解除隔离。" >> release_body.md
+          echo "  * **方案 B（命令行直达）**：将应用拖入 Applications 目录后，打开终端运行 \`xattr -cr /Applications/Illacme-Plenipes.app\` 即可。" >> release_body.md
+          echo "  * **方案 C（访达免命令行）**：在 Applications 目录中，**按住 Control 键并右键点击** \`Illacme-Plenipes.app\`，选择「打开」，弹窗中再次点击「打开」。" >> release_body.md
           echo "* **🪟 Windows Defender SmartScreen 蓝色警告窗口**：" >> release_body.md
           echo "  * 点击弹窗中的「更多信息 (More info)」链接，并选择「仍要运行 (Run anyway)」即可正常启动。" >> release_body.md
           echo "" >> release_body.md

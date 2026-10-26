@@ -185,11 +185,49 @@ class DesktopPackager:
             res = subprocess.run(cmd, check=True)
             if res.returncode == 0:
                 cls.write_quickstart_guide(output_dir)
+                if platform.system() == "Darwin":
+                    cls.write_macos_fix_script(output_dir)
                 tlog.info(f"🎉 [打包成功] 桌面应用已编译输出至: {os.path.abspath(output_dir)}")
                 return True
         except subprocess.CalledProcessError as e:
             tlog.error(f"❌ [打包失败] PyInstaller 编译异常中断: {e}")
         return False
+
+    @classmethod
+    def write_macos_fix_script(cls, output_dir: str):
+        """生成 macOS 一键解除隔离 Gatekeeper 修复脚本 (双击即可运行)"""
+        script_content = (
+            "#!/bin/bash\n"
+            "# Illacme Plenipes · macOS 一键解除应用安全隔离 (消除首次打开损坏提示)\n"
+            "TARGET_APP=\"/Applications/Illacme-Plenipes.app\"\n"
+            "DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" >/dev/null 2>&1 && pwd )\"\n"
+            "LOCAL_APP=\"$DIR/Illacme-Plenipes.app\"\n"
+            "clear\n"
+            "echo \"============================================================\"\n"
+            "echo \"  Illacme Plenipes · macOS 应用信任与隔离修复工具\"\n"
+            "echo \"============================================================\"\n"
+            "if [ -d \"$TARGET_APP\" ]; then\n"
+            "    echo \"正在为应用程序目录中的 Illacme Plenipes 解除隔离...\"\n"
+            "    xattr -cr \"$TARGET_APP\" 2>/dev/null || sudo xattr -cr \"$TARGET_APP\"\n"
+            "    echo \"✅ 修复完成！您现在可以直接打开 Illacme Plenipes 了。\"\n"
+            "elif [ -d \"$LOCAL_APP\" ]; then\n"
+            "    echo \"正在为镜像内的 Illacme Plenipes 解除隔离...\"\n"
+            "    xattr -cr \"$LOCAL_APP\" 2>/dev/null\n"
+            "    echo \"✅ 修复完成！请将应用拖入右侧 Applications 目录即可。\"\n"
+            "else\n"
+            "    echo \"⚠️ 未在 /Applications 找到应用，请先将应用拖入 Applications 文件夹。\"\n"
+            "fi\n"
+            "echo \"\"\n"
+            "read -n 1 -s -r -p \"按任意键退出窗口...\"\n"
+            "exit 0\n"
+        )
+        try:
+            cmd_path = os.path.join(output_dir, "双击修复无法打开.command")
+            with open(cmd_path, "w", encoding="utf-8") as f:
+                f.write(script_content)
+            os.chmod(cmd_path, 0o755)
+        except Exception as e:
+            tlog.warning(f"⚠️ [打包工坊] 生成修复脚本跳过: {e}")
 
     @classmethod
     def write_quickstart_guide(cls, output_dir: str):
@@ -203,7 +241,7 @@ Illacme Plenipes · 全球私人出版社桌面客户端
    - 双击直接运行 Illacme-Plenipes.exe，无需安装任何 Python 运行环境。
 2. macOS:
    - 将 Illacme-Plenipes.app 移动至“应用程序 (Applications)”目录；
-   - 首次启动若提示“无法打开”或“未知开发者”，请打开“系统设置 -> 隐私与安全性”，点击“仍要打开”；
+   - 首次启动若提示“无法打开”或“未知开发者”，可直接双击运行「双击修复无法打开.command」；
    - 或在终端执行: sudo xattr -cr /Applications/Illacme-Plenipes.app
 3. Linux:
    - 在解压目录下赋予执行权限并启动:

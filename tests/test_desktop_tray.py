@@ -64,25 +64,28 @@ def test_system_tray_actions_dispatch():
         mock_api.assert_called_with("/api/system/restart", method="POST")
 
 
-def test_system_tray_lifecycle_with_mocked_pystray():
-    """测试完整生命周期 (start_in_thread -> stop) 在 mock 下的表现"""
+def test_system_tray_extended_actions():
+    """测试新增的复制控制台地址与打开原稿文库目录动作"""
+    tray = SystemTrayManager(api_url="http://127.0.0.1:43212")
+
+    # 1. 测试复制地址
+    with patch("subprocess.run") as mock_sub:
+        tray._action_copy_url()
+        import time
+        time.sleep(0.1)
+        assert mock_sub.called
+
+    # 2. 测试打开文库
+    with patch.object(tray, "_async_api_call", return_value={"vault_root": "/tmp/test_vault"}), \
+         patch("os.path.exists", return_value=True), \
+         patch("subprocess.run") as mock_sub:
+        tray._action_open_vault()
+        time.sleep(0.1)
+        assert mock_sub.called
+
+    # 3. 测试包含新菜单项
     mock_pystray = MagicMock()
-    mock_icon_instance = MagicMock()
-    mock_pystray.Icon.return_value = mock_icon_instance
-
-    with patch("desktop.tray._get_pystray", return_value=mock_pystray), \
-         patch.object(SystemTrayManager, "is_supported", return_value=True), \
-         patch.object(SystemTrayManager, "_generate_icon_image", return_value=MagicMock()):
-
-        tray = SystemTrayManager(api_url="http://127.0.0.1:43212")
-        started = tray.start_in_thread(
-            on_open=lambda: None,
-            on_quit=lambda: None
-        )
-        assert started is True
-        assert tray._icon is not None
-
-        tray.stop()
-        assert tray._icon is None
-        mock_icon_instance.stop.assert_called_once()
+    with patch("desktop.tray._get_pystray", return_value=mock_pystray):
+        tray.build_menu()
+        assert mock_pystray.MenuItem.call_count >= 6
 

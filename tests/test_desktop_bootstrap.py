@@ -147,3 +147,18 @@ def test_desktop_packager_dry_run_universal():
         res = DesktopPackager.execute_build(dry_run=True, output_dir="dist/desktop_u2", target_arch="universal2")
         assert res is True
 
+
+def test_desktop_packager_write_macos_fix_script():
+    """验证 macOS 一键隔离修复脚本成功写入且赋予可执行权限"""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        DesktopPackager.write_macos_fix_script(tmp_dir)
+        script_file = os.path.join(tmp_dir, "双击修复无法打开.command")
+        assert os.path.exists(script_file)
+        with open(script_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            assert "xattr -cr" in content
+            assert "TARGET_APP=" in content
+        # 验证具有可执行权限
+        assert os.access(script_file, os.X_OK)
+
+

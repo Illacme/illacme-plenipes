@@ -8,6 +8,7 @@ Illacme Plenipes - Desktop System Tray Hub
 
 import os
 import sys
+import subprocess
 import threading
 import webbrowser
 from typing import Callable, Optional
@@ -118,6 +119,45 @@ class SystemTrayManager:
                 tlog.warning(f"⚠️ [系统托盘] 唤起主窗口异常: {e}")
         webbrowser.open(self.api_url)
 
+    def _action_copy_url(self, icon=None, item=None):
+        """复制本地控制台/API 端口地址至系统剪贴板"""
+        def _worker():
+            try:
+                system = sys.platform
+                if system == "darwin":
+                    subprocess.run(["pbcopy"], input=self.api_url.encode("utf-8"), check=True)
+                elif system == "win32":
+                    subprocess.run(["clip"], input=self.api_url.encode("utf-8"), check=True)
+                else:
+                    if subprocess.run(["which", "xclip"], capture_output=True).returncode == 0:
+                        subprocess.run(["xclip", "-selection", "clipboard"], input=self.api_url.encode("utf-8"), check=True)
+                if icon and hasattr(icon, "notify"):
+                    icon.notify(f"已复制本地网关地址至剪贴板: {self.api_url}", "📋 地址已复制")
+            except Exception as e:
+                tlog.warning(f"⚠️ [系统托盘] 复制地址失败: {e}")
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _action_open_vault(self, icon=None, item=None):
+        """快速在访达/资源管理器中打开原稿文库目录"""
+        def _worker():
+            try:
+                res = self._async_api_call("/api/vault/overview", method="GET")
+                vault_path = res.get("vault_root") if res else None
+                if not vault_path:
+                    vault_path = os.path.abspath("workspace")
+                if os.path.exists(vault_path):
+                    if sys.platform == "darwin":
+                        subprocess.run(["open", vault_path], check=True)
+                    elif sys.platform == "win32":
+                        subprocess.run(["explorer", vault_path], check=True)
+                    else:
+                        subprocess.run(["xdg-open", vault_path], check=True)
+                elif icon and hasattr(icon, "notify"):
+                    icon.notify("未探测到有效的原稿文库路径", "⚠️ 存储提示")
+            except Exception as e:
+                tlog.warning(f"⚠️ [系统托盘] 打开文库目录失败: {e}")
+        threading.Thread(target=_worker, daemon=True).start()
+
     def _action_publish(self, icon=None, item=None):
         """触发全域一键发布"""
         def _worker():
@@ -177,6 +217,8 @@ class SystemTrayManager:
             return None
         return pystray.Menu(
             pystray.MenuItem("🌐 打开出版工作台", self._action_open, default=True),
+            pystray.MenuItem("📋 复制控制台地址", self._action_copy_url),
+            pystray.MenuItem("📂 打开原稿文库目录", self._action_open_vault),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("🚀 全域一键发布", self._action_publish),
             pystray.MenuItem("🛰️ 检查云端新版", self._action_check_update),
