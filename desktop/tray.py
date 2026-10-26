@@ -8,6 +8,7 @@ Illacme Plenipes - Desktop System Tray Hub
 
 import os
 import sys
+import time
 import subprocess
 import threading
 import webbrowser
@@ -258,6 +259,17 @@ class SystemTrayManager:
 
             def _run():
                 try:
+                    # 启动 5 秒后静默检查一次云端更新
+                    def _auto_check():
+                        time.sleep(5)
+                        try:
+                            res = self._async_api_call("/api/system/check_update?force=false", method="GET")
+                            if res and res.get("has_update") and self._icon and hasattr(self._icon, "notify"):
+                                latest = res.get("latest_version", "新版本")
+                                self._icon.notify(f"发现全新版本 {latest}！点击工作台查看更新详情", "✨ 客户端更新提示")
+                        except Exception:
+                            pass
+                    threading.Thread(target=_auto_check, daemon=True, name="TrayUpdateCheck").start()
                     self._icon.run()
                 except Exception as e:
                     tlog.warning(f"⚠️ [系统托盘] 托盘事件循环异常退出: {e}")
