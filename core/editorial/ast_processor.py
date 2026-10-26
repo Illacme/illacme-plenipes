@@ -111,7 +111,8 @@ class MarkdownASTProcessor:
                         return f"![{caption.strip()}]({final_url})"
                 except Exception:
                     pass
-            return full_tag
+            # 🚀 [降级自愈] 若未能定位到物理图片或未配置图床，转换为标准 Markdown 语法以兼容所有第三方平台
+            return f"![{caption.strip()}]({rel_path})"
 
         content = self.wiki_img_pattern.sub(replace_wiki_img, content)
         return content

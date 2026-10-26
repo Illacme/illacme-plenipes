@@ -5,6 +5,7 @@ Illacme-plenipes Core - Content Syndicator Dispatcher Mixin
 职责：提供单插件分发调度、幂等查重、AST 格式适配、账本写入与失败死信队列重试调度。
 """
 
+import os
 import hashlib
 from core.editorial.ast_processor import MarkdownASTProcessor
 from core.utils.tracing import tlog
@@ -35,6 +36,20 @@ class HubDispatcherMixin:
 
             try:
                 processor = MarkdownASTProcessor()
+                vault_root = getattr(self, "vault_root", None) or (self.sys_tuning.get("vault_root") if hasattr(self, "sys_tuning") else None) or os.getcwd()
+                doc_dir = os.path.dirname(os.path.join(vault_root, rel_path)) if (vault_root and rel_path) else os.getcwd()
+                from core.syndication.uploader import ImageUploader
+                uploader = ImageUploader(getattr(self, "cfg", {}), getattr(self, "sys_tuning", {}))
+                content = processor.process_images(content, doc_dir, uploader.upload_image)
+                if metadata and isinstance(metadata, dict):
+                    raw_cov = metadata.get("cover") or metadata.get("cover_image") or metadata.get("banner")
+                    if raw_cov:
+                        uploaded_cov = uploader.upload_cover(raw_cov, doc_dir=doc_dir)
+                        if uploaded_cov:
+                            metadata["cover"] = uploaded_cov
+                            metadata["cover_image"] = uploaded_cov
+                            metadata["banner"] = uploaded_cov
+
                 content = processor.adapt_format(
                     content,
                     target_platform=getattr(plugin, 'PLUGIN_ID', target_id),

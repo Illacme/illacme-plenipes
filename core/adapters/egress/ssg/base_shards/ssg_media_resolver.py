@@ -69,9 +69,14 @@ class SSGMediaResolver:
         protected_body = re.sub(r'```[\s\S]*?```', _stash_code, body)
         protected_body = re.sub(r'`[^`\n]+`', _stash_code, protected_body)
 
-        # 2. 📺 解析在线流媒体
+        # 2. 📺 解析在线流媒体与交互平台
         protected_body = cls._resolve_bilibili(protected_body)
         protected_body = cls._resolve_youtube(protected_body)
+        protected_body = cls._resolve_vimeo(protected_body)
+        protected_body = cls._resolve_qq_video(protected_body)
+        protected_body = cls._resolve_netease_music(protected_body)
+        protected_body = cls._resolve_spotify(protected_body)
+        protected_body = cls._resolve_codepen(protected_body)
 
         # 3. 🎬 解析本地视频与音频
         protected_body = cls._resolve_obsidian_video(protected_body)
@@ -155,6 +160,70 @@ class SSGMediaResolver:
         text = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
         text = re.sub(r'(^|\n)(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone, text, flags=re.I)
         return text
+
+    @classmethod
+    def _resolve_vimeo(cls, text: str) -> str:
+        def _render(vid: str) -> str:
+            return (
+                f'\n<div class="video-container responsive-video vimeo-embed" style="position:relative;width:100%;aspect-ratio:16/9;margin:14px 0;">\n'
+                f'  <iframe src="https://player.vimeo.com/video/{vid}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;"></iframe>\n'
+                f'</div>\n'
+            )
+        text = re.sub(r'!\[\[(?:https?:\/\/)?(?:www\.)?vimeo\.com\/([0-9]+)[^\]]*\]\]', lambda m: _render(m.group(1)), text, flags=re.I)
+        text = re.sub(r'!\[[^\]]*\]\((?:https?:\/\/)?(?:www\.)?vimeo\.com\/([0-9]+)[^)]*\)', lambda m: _render(m.group(1)), text, flags=re.I)
+        return re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?vimeo\.com\/([0-9]+)(?:[^\s\n]*)?(?=$|\n)', lambda m: f"{m.group(1)}{_render(m.group(2))}", text, flags=re.I)
+
+    @classmethod
+    def _resolve_qq_video(cls, text: str) -> str:
+        def _render(vid: str) -> str:
+            return (
+                f'\n<div class="video-container responsive-video qq-video-embed" style="position:relative;width:100%;aspect-ratio:16/9;margin:14px 0;">\n'
+                f'  <iframe src="https://v.qq.com/txp/iframe/player.html?vid={vid}" allowFullScreen="true" frameborder="0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;"></iframe>\n'
+                f'</div>\n'
+            )
+        patt = r'(?:https?:\/\/)?v\.qq\.com\/x\/(?:cover\/[a-zA-Z0-9]+\/|page\/)([a-zA-Z0-9]+)\.html'
+        text = re.sub(rf'!\[\[{patt}[^\]]*\]\]', lambda m: _render(m.group(1)), text, flags=re.I)
+        text = re.sub(rf'!\[[^\]]*\]\({patt}[^)]*\)', lambda m: _render(m.group(1)), text, flags=re.I)
+        return re.sub(rf'(^|\n){patt}(?:[^\s\n]*)?(?=$|\n)', lambda m: f"{m.group(1)}{_render(m.group(2))}", text, flags=re.I)
+
+    @classmethod
+    def _resolve_netease_music(cls, text: str) -> str:
+        def _render(song_id: str) -> str:
+            return (
+                f'\n<div class="audio-container netease-music-embed" style="margin:14px 0;">\n'
+                f'  <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="86" src="//music.163.com/outchain/player?type=2&id={song_id}&auto=0&height=66"></iframe>\n'
+                f'</div>\n'
+            )
+        patt = r'(?:https?:\/\/)?music\.163\.com\/(?:#\/)?song\?id=([0-9]+)'
+        text = re.sub(rf'!\[\[{patt}[^\]]*\]\]', lambda m: _render(m.group(1)), text, flags=re.I)
+        text = re.sub(rf'!\[[^\]]*\]\({patt}[^)]*\)', lambda m: _render(m.group(1)), text, flags=re.I)
+        return re.sub(rf'(^|\n){patt}(?:[^\s\n]*)?(?=$|\n)', lambda m: f"{m.group(1)}{_render(m.group(2))}", text, flags=re.I)
+
+    @classmethod
+    def _resolve_spotify(cls, text: str) -> str:
+        def _render(m_type: str, m_id: str) -> str:
+            return (
+                f'\n<div class="audio-container spotify-embed" style="margin:14px 0;">\n'
+                f'  <iframe style="border-radius:12px;border:none;" src="https://open.spotify.com/embed/{m_type}/{m_id}" width="100%" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>\n'
+                f'</div>\n'
+            )
+        patt = r'(?:https?:\/\/)?open\.spotify\.com\/(track|episode|album)\/([a-zA-Z0-9]+)'
+        text = re.sub(rf'!\[\[{patt}[^\]]*\]\]', lambda m: _render(m.group(1), m.group(2)), text, flags=re.I)
+        text = re.sub(rf'!\[[^\]]*\]\({patt}[^)]*\)', lambda m: _render(m.group(1), m.group(2)), text, flags=re.I)
+        return re.sub(rf'(^|\n){patt}(?:[^\s\n]*)?(?=$|\n)', lambda m: f"{m.group(1)}{_render(m.group(2), m.group(3))}", text, flags=re.I)
+
+    @classmethod
+    def _resolve_codepen(cls, text: str) -> str:
+        def _render(user: str, pen_id: str) -> str:
+            return (
+                f'\n<div class="embed-container codepen-embed" style="margin:14px 0;">\n'
+                f'  <iframe height="360" style="width:100%;border-radius:8px;border:none;" scrolling="no" title="CodePen Embed" src="https://codepen.io/{user}/embed/{pen_id}?default-tab=result" frameborder="no" loading="lazy" allowtransparency="true" allowfullscreen="true"></iframe>\n'
+                f'</div>\n'
+            )
+        patt = r'(?:https?:\/\/)?codepen\.io\/([a-zA-Z0-9_-]+)\/pen\/([a-zA-Z0-9_-]+)'
+        text = re.sub(rf'!\[\[{patt}[^\]]*\]\]', lambda m: _render(m.group(1), m.group(2)), text, flags=re.I)
+        text = re.sub(rf'!\[[^\]]*\]\({patt}[^)]*\)', lambda m: _render(m.group(1), m.group(2)), text, flags=re.I)
+        return re.sub(rf'(^|\n){patt}(?:[^\s\n]*)?(?=$|\n)', lambda m: f"{m.group(1)}{_render(m.group(2), m.group(3))}", text, flags=re.I)
 
     @classmethod
     def _resolve_obsidian_video(cls, text: str) -> str:

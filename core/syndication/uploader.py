@@ -16,6 +16,7 @@ class ImageUploader:
         self.sys_tuning = sys_tuning or {}
         self.host_instance = None
         self.site_url = (self.sys_tuning.get("site_url") or "").rstrip("/")
+        self.asset_base_url = (self.sys_tuning.get("asset_base_url") or self.cfg.get("asset_base_url") or "").rstrip("/")
         self.vault_root = self.sys_tuning.get("vault_root") or os.getcwd()
         self._initialize_host()
 
@@ -104,8 +105,9 @@ class ImageUploader:
             except Exception as e:
                 tlog.error(f"🛑 [图床中枢] 第三方图床上传失败: {e}")
 
-        # 2. 🚀 [Hosting CDN Fallback] 独立站原生静态资产外链智能回退
-        if self.site_url and os.path.exists(local_path):
+        # 2. 🚀 [Hosting CDN Fallback] 独立站原生静态资产外链智能回退与专属 CDN 基址
+        base_domain = getattr(self, "asset_base_url", None) or self.site_url
+        if base_domain and os.path.exists(local_path):
             try:
                 norm_local = os.path.abspath(local_path)
                 norm_vault = os.path.abspath(self.vault_root)
@@ -115,13 +117,13 @@ class ImageUploader:
                     rel = os.path.basename(local_path)
                     rel = f"assets/{rel}"
                 rel_url = rel.replace(os.sep, '/').lstrip('/')
-                cdn_url = f"{self.site_url}/{rel_url}"
-                tlog.info(f"🌐 [图床中枢-CDN回退] 自动映射独立站资产外链: {cdn_url}")
+                cdn_url = f"{base_domain}/{rel_url}"
+                tlog.info(f"🌐 [图床中枢-CDN回退] 自动映射公网资产外链: {cdn_url}")
                 return cdn_url
             except Exception as fe:
-                tlog.warning(f"⚠️ [图床中枢-CDN回退] 计算独立站资产 URL 失败: {fe}")
+                tlog.warning(f"⚠️ [图床中枢-CDN回退] 计算资产 URL 失败: {fe}")
 
-        tlog.warning(f"⚠️ [图床中枢] 无可用图床或独立站外链，跳过图片上云: {local_path}")
+        tlog.warning(f"⚠️ [图床中枢] 无可用图床或公网外链，跳过图片上云: {local_path}")
         return None
 
     def upload_cover(self, cover_src: str, doc_dir: str = None) -> str:

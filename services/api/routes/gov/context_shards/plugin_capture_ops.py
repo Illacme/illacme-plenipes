@@ -16,6 +16,8 @@ async def auto_capture_cookie_impl(payload: Dict[str, Any]) -> Dict[str, Any]:
     🔌 接收浏览器一键推送的 Cookie/Token，自动核验身份并更新本地配置
     """
     plugin_id = (payload.get("plugin_id") or payload.get("id") or "").lower().strip()
+    if plugin_id == "red":
+        plugin_id = "xiaohongshu"
     cookie = (payload.get("cookie") or "").strip()
     api_token = (payload.get("api_token") or payload.get("token") or "").strip()
 
@@ -162,7 +164,10 @@ async def auto_capture_cookie_impl(payload: Dict[str, Any]) -> Dict[str, Any]:
         if api_token: cfg_req[f"syndication.{plugin_id}.token"] = api_token
         await update_config(cfg_req)
         tlog.info(f"🪄 [渠道 {plugin_id} 凭据自动回填成功]")
-        return {"success": True, "plugin_id": plugin_id, "message": f"渠道 [{plugin_id}] 凭据已自动同步并保存。"}
+        return {
+            "success": True, "plugin_id": plugin_id, "cookie": cookie, "token": api_token,
+            "message": f"渠道 [{plugin_id}] 凭据已自动同步并保存。"
+        }
     except Exception as e:
         return {"success": False, "error": f"持久化凭据失败: {e}"}
 
@@ -177,6 +182,8 @@ async def auto_sniff_local_browser_impl(payload: Dict[str, Any] = None) -> Dict[
 
     payload = payload or {}
     plugin_id = (payload.get("plugin_id") or payload.get("id") or "juejin").lower().strip()
+    if plugin_id == "red":
+        plugin_id = "xiaohongshu"
 
     SNIFF_PLATFORMS = {
         "juejin": {
@@ -193,6 +200,11 @@ async def auto_sniff_local_browser_impl(payload: Dict[str, Any] = None) -> Dict[
             "name": "Bilibili", "domains": ["bilibili.com"],
             "urls": ["https://www.bilibili.com", "https://api.bilibili.com"],
             "key_cookie": "SESSDATA"
+        },
+        "xiaohongshu": {
+            "name": "小红书", "domains": ["xiaohongshu.com"],
+            "urls": ["https://creator.xiaohongshu.com", "https://www.xiaohongshu.com"],
+            "key_cookie": "a1"
         }
     }
 

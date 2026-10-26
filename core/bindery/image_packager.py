@@ -113,11 +113,32 @@ class ImagePackager:
             return (
                 f'{pfx}<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
                 f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
-                f'🎬 <b>在线视频 (YouTube)</b>: <code>{vid}</code>'
+                f'🎬 <b>在线视频 (YouTube)</b>: <code>{vid}</code> '
+                f'<span style="font-size:0.85rem;color:#64748b;">(🔗 <a href="https://youtu.be/{vid}" style="color:#2563eb;text-decoration:underline;">点击观看</a>)</span>'
                 f'</div>'
             )
         healed = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone_yt, healed, flags=re.I)
         healed = re.sub(r'(^|\n)(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone_yt, healed, flags=re.I)
+
+        # 📺 Vimeo
+        def _standalone_vimeo(m):
+            return f'{m.group(1)}<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">🎬 <b>在线视频 (Vimeo)</b>: <code>{m.group(2)}</code> <span style="font-size:0.85rem;color:#64748b;">(🔗 <a href="https://vimeo.com/{m.group(2)}" style="color:#2563eb;text-decoration:underline;">点击观看</a>)</span></div>'
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?vimeo\.com\/([0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone_vimeo, healed, flags=re.I)
+
+        # 📺 腾讯视频
+        def _standalone_qq(m):
+            return f'{m.group(1)}<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">🎬 <b>在线视频 (腾讯视频)</b>: <code>{m.group(2)}</code></div>'
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?v\.qq\.com\/x\/(?:cover\/[a-zA-Z0-9]+\/|page\/)([a-zA-Z0-9]+)\.html(?:[^\s\n]*)?(?=$|\n)', _standalone_qq, healed, flags=re.I)
+
+        # 🎵 网易云音乐
+        def _standalone_netease(m):
+            return f'{m.group(1)}<div class="media-audio-placeholder" style="margin: 1rem 0; padding: 12px 16px; border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">🎵 <b>网易云音乐</b>: <code>ID: {m.group(2)}</code> <span style="font-size:0.85rem;color:#64748b;">(🔗 <a href="https://music.163.com/song?id={m.group(2)}" style="color:#2563eb;text-decoration:underline;">点击试听</a>)</span></div>'
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?music\.163\.com\/(?:#\/)?song\?id=([0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone_netease, healed, flags=re.I)
+
+        # 🎧 Spotify
+        def _standalone_spotify(m):
+            return f'{m.group(1)}<div class="media-audio-placeholder" style="margin: 1rem 0; padding: 12px 16px; border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">🎧 <b>Spotify 音频</b>: <code>{m.group(2)}/{m.group(3)}</code> <span style="font-size:0.85rem;color:#64748b;">(🔗 <a href="https://open.spotify.com/{m.group(2)}/{m.group(3)}" style="color:#2563eb;text-decoration:underline;">点击收听</a>)</span></div>'
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?open\.spotify\.com\/(track|episode|album)\/([a-zA-Z0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone_spotify, healed, flags=re.I)
 
         return healed
 

@@ -13,9 +13,13 @@
             return `
                 <div class="api-token-helper">
                     <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <span>💡 小红书创作者服务平台直达</span>
+                        <span>💡 小红书免密嗅探与创作者平台直达</span>
                     </div>
-                    <div style="display: flex; gap: 10px; margin-top: 2px;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                        若本地 Chrome 已登录小红书创作者中心，点击下方免密嗅探可全自动提取会话 Cookie！
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                        <button type="button" class="helper-btn" onclick="window.autoSniffLocalCookie('xiaohongshu', this)" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10B981; font-weight: 600;">🔑 本地 Chrome 免密嗅探并填入</button>
                         <a href="https://creator.xiaohongshu.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达小红书创作者平台</a>
                     </div>
                 </div>

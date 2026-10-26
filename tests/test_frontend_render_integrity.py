@@ -1482,6 +1482,26 @@ def test_rich_media_preview_integrity():
         throw new Error('formatMediaHtml failed to render YouTube iframe: ' + yHtml);
     }
 
+    const vimeoHtml = window.formatMediaHtml('https://vimeo.com/12345678');
+    if (!vimeoHtml.includes('preview-vimeo') || !vimeoHtml.includes('12345678')) {
+        throw new Error('formatMediaHtml failed to render Vimeo: ' + vimeoHtml);
+    }
+
+    const neteaseHtml = window.formatMediaHtml('https://music.163.com/song?id=186016');
+    if (!neteaseHtml.includes('preview-netease') || !neteaseHtml.includes('186016')) {
+        throw new Error('formatMediaHtml failed to render Netease: ' + neteaseHtml);
+    }
+
+    const spotifyHtml = window.formatMediaHtml('https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT');
+    if (!spotifyHtml.includes('preview-spotify') || !spotifyHtml.includes('4cOdK2wGLETKBW3PvgPWqT')) {
+        throw new Error('formatMediaHtml failed to render Spotify: ' + spotifyHtml);
+    }
+
+    const codepenHtml = window.formatMediaHtml('https://codepen.io/chriscoyier/pen/bGwZyPO');
+    if (!codepenHtml.includes('preview-codepen') || !codepenHtml.includes('bGwZyPO')) {
+        throw new Error('formatMediaHtml failed to render CodePen: ' + codepenHtml);
+    }
+
     const vHtml = window.formatMediaHtml('/api/vault-assets/demo.mp4', '演示视频');
     if (!vHtml.includes('<video controls') || !vHtml.includes('/api/vault-assets/demo.mp4') || !vHtml.includes('演示视频')) {
         throw new Error('formatMediaHtml failed to render video controls: ' + vHtml);

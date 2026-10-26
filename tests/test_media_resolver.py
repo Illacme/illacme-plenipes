@@ -168,3 +168,32 @@ def test_bindery_image_packager_audio_fallback():
     assert '<div class="media-audio-placeholder"' in healed
     assert '🎵 <b>音频资源</b>: <code>interview_record.mp3</code>' in healed
 
+
+def test_additional_rich_media_platforms():
+    """测试 Vimeo、腾讯视频、网易云音乐、Spotify、CodePen 的全语法嵌入"""
+    raw_md = (
+        "Vimeo 视频：\nhttps://vimeo.com/98765432\n\n"
+        "腾讯视频：\nhttps://v.qq.com/x/cover/mzc00200/u00431234.html\n\n"
+        "网易云音乐：\nhttps://music.163.com/#/song?id=654321\n\n"
+        "Spotify 播放：\nhttps://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp\n\n"
+        "CodePen 沙盒：\nhttps://codepen.io/geoffgraham/pen/dyGaZq\n"
+    )
+
+    resolved = SSGMediaResolver.resolve_media_content(raw_md)
+
+    assert '<div class="video-container responsive-video vimeo-embed"' in resolved
+    assert 'player.vimeo.com/video/98765432' in resolved
+
+    assert '<div class="video-container responsive-video qq-video-embed"' in resolved
+    assert 'v.qq.com/txp/iframe/player.html?vid=u00431234' in resolved
+
+    assert '<div class="audio-container netease-music-embed"' in resolved
+    assert 'music.163.com/outchain/player?type=2&id=654321' in resolved
+
+    assert '<div class="audio-container spotify-embed"' in resolved
+    assert 'open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp' in resolved
+
+    assert '<div class="embed-container codepen-embed"' in resolved
+    assert 'codepen.io/geoffgraham/embed/dyGaZq' in resolved
+
+

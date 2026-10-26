@@ -124,3 +124,29 @@ def test_github_image_host_repo_auto_resolution():
     resolved = host._resolve_repo()
     assert resolved == "Illacme/illacme-press"
     assert host.repo == "Illacme/illacme-press"
+
+
+def test_xiaohongshu_image_extraction_and_hydration():
+    """测试小红书适配器从 Markdown 及 HTML 标签中精准提取多图轮播，以及 asset_base_url 升水"""
+    from adapters.egress.syndication.xiaohongshu import XiaohongshuSyndicator
+
+    syn = XiaohongshuSyndicator(config={"token": "mock"}, site_url="https://press.example.com")
+    content = """
+# 标题
+正文内容测试。
+![图1](https://cdn.example.com/p1.jpg)
+中间段落说明。
+<img src="https://cdn.example.com/p2.png" alt="图2">
+![图3](https://cdn.example.com/p3.webp?v=1)
+"""
+    meta = {"cover": "https://cdn.example.com/cover.png", "tags": ["科技", "AI"]}
+    payload = syn.format_payload("测试文章标题", "test-slug", content, meta)
+
+    assert "images" in payload
+    assert payload["images"][0] == "https://cdn.example.com/cover.png"
+    assert "https://cdn.example.com/p1.jpg" in payload["images"]
+    assert "https://cdn.example.com/p2.png" in payload["images"]
+    assert "https://cdn.example.com/p3.webp?v=1" in payload["images"]
+    assert len(payload["images"]) == 4
+    assert "#科技#" in payload["content"]
+

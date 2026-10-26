@@ -30,17 +30,19 @@ class XiaohongshuSyndicator(BaseSyndicator):
         if not canonical_url:
             canonical_url = f"{self.site_url}/{slug}".replace('//', '/').replace(':/', '://')
         
-        # 1. 提取所有 Markdown 图像 URL 作为笔记卡片轮播图 (最多 9 张)
+        # 1. 提取所有图像 URL 作为笔记卡片轮播图 (最多 9 张)
         image_urls = []
-        cover = metadata.get("cover") or metadata.get("image")
-        if cover:
-            image_urls.append(cover)
+        cover = metadata.get("cover") or metadata.get("image") or metadata.get("banner")
+        if cover and str(cover).startswith("http"):
+            image_urls.append(str(cover).strip())
         
-        # 正则提取正文图片: ![alt](url)
-        img_matches = re.findall(r'!\[.*?\]\((https?://[^\s\)]+)\)', content)
-        for img in img_matches:
-            if img not in image_urls:
-                image_urls.append(img)
+        # 兼容提取 Markdown 语法与 HTML 语法中的公网图像
+        md_imgs = re.findall(r'!\[.*?\]\((https?://[^\s\)\"\']+)', content)
+        html_imgs = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', content)
+        for img in (md_imgs + html_imgs):
+            clean_img = img.strip()
+            if clean_img not in image_urls:
+                image_urls.append(clean_img)
                 if len(image_urls) >= 9:
                     break
 

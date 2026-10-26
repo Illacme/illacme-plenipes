@@ -45,6 +45,9 @@
                     fillField('syndication.bilibili.sessdata', res.sessdata);
                     fillField('syndication.bilibili.bili_jct', res.bili_jct);
                     if (res.cookie) fillField('syndication.bilibili.cookie', res.cookie);
+                } else if (pluginId === 'xiaohongshu' || pluginId === 'red') {
+                    fillField('syndication.xiaohongshu.cookie', res.cookie);
+                    if (res.token) fillField('syndication.xiaohongshu.token', res.token);
                 } else {
                     fillField(`syndication.${pluginId}.cookie`, res.cookie);
                 }
