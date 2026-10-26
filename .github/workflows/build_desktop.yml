@@ -190,41 +190,47 @@ jobs:
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
           PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || "")
+          RELEASE_DOC="docs/releases/${TAG}.md"
 
-          echo "### 📦 官方客户端下载与安装方式" > release_body.md
-          echo "" >> release_body.md
-          echo "| 操作系统平台 | 安装格式 | 下载文件 | 推荐场景 |" >> release_body.md
-          echo "| :--- | :--- | :--- | :--- |" >> release_body.md
-          echo "| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS.dmg\` | **首选**：Apple Silicon (M1/M2/M3/M4) 架构 Mac |" >> release_body.md
-          echo "| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS.zip\` | 免挂载直接解压使用 |" >> release_body.md
-          echo "| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | \`Illacme-Plenipes-Windows-x64-Setup.exe\` | **首选**：标准向导安装、自动创建桌面快捷方式 |" >> release_body.md
-          echo "| 🪟 Windows (x64) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-Windows-x64.zip\` | 免安装纯便携版，解压即用 |" >> release_body.md
-          echo "| 🐧 **Linux (x64)** | 原生独立可执行归档 | \`Illacme-Plenipes-Linux-x64.tar.gz\` | Linux 桌面与服务器直接运行 |" >> release_body.md
-          echo "> 💡 **完整性保障**：每个安装文件均附带对应的 \`.sha256\` 签名校验文件。" >> release_body.md
-          echo "" >> release_body.md
-          echo "### 🛡️ 首次运行安全信任与避坑指南 (消除首次安装阻力)" >> release_body.md
-          echo "" >> release_body.md
-          echo "* **🍎 macOS 首次运行提示“已损坏，无法打开”或“未经验证的开发者”**：" >> release_body.md
-          echo "  * **方案 A（极简首选）**：在 DMG 镜像或解压包中直接**双击运行「双击修复无法打开.command」**，即可全自动解除隔离。" >> release_body.md
-          echo "  * **方案 B（命令行直达）**：将应用拖入 Applications 目录后，打开终端运行 \`xattr -cr /Applications/Illacme-Plenipes.app\` 即可。" >> release_body.md
-          echo "  * **方案 C（访达免命令行）**：在 Applications 目录中，**按住 Control 键并右键点击** \`Illacme-Plenipes.app\`，选择「打开」，弹窗中再次点击「打开」。" >> release_body.md
-          echo "* **🪟 Windows Defender SmartScreen 蓝色警告窗口**：" >> release_body.md
-          echo "  * 点击弹窗中的「更多信息 (More info)」链接，并选择「仍要运行 (Run anyway)」即可正常启动。" >> release_body.md
-          echo "" >> release_body.md
-          echo "### ✨ 本次更新内容 (What's New)" >> release_body.md
-          echo "" >> release_body.md
-
-          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
-            git log --pretty=format:"* %s (%h)" "$PREV_TAG..$TAG" >> release_body.md
-            echo "" >> release_body.md
-            echo "" >> release_body.md
-            echo "**完整变更对比**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}" >> release_body.md
+          if [ -f "$RELEASE_DOC" ]; then
+            echo "📄 发现专属发版通告文档: $RELEASE_DOC，正在作为 Release 正文..."
+            cp "$RELEASE_DOC" release_body.md
           else
-            git log -n 25 --pretty=format:"* %s (%h)" "$TAG" >> release_body.md
+            echo "### 📦 官方客户端下载与安装方式" > release_body.md
+            echo "" >> release_body.md
+            echo "| 操作系统平台 | 安装格式 | 下载文件 | 推荐场景 |" >> release_body.md
+            echo "| :--- | :--- | :--- | :--- |" >> release_body.md
+            echo "| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS.dmg\` | **首选**：Apple Silicon (M1/M2/M3/M4) 架构 Mac |" >> release_body.md
+            echo "| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS.zip\` | 免挂载直接解压使用 |" >> release_body.md
+            echo "| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | \`Illacme-Plenipes-Windows-x64-Setup.exe\` | **首选**：标准向导安装、自动创建桌面快捷方式 |" >> release_body.md
+            echo "| 🪟 Windows (x64) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-Windows-x64.zip\` | 免安装纯便携版，解压即用 |" >> release_body.md
+            echo "| 🐧 **Linux (x64)** | 原生独立可执行归档 | \`Illacme-Plenipes-Linux-x64.tar.gz\` | Linux 桌面与服务器直接运行 |" >> release_body.md
+            echo "> 💡 **完整性保障**：每个安装文件均附带对应的 \`.sha256\` 签名校验文件。" >> release_body.md
+            echo "" >> release_body.md
+            echo "### 🛡️ 首次运行安全提示 (消除首次安装阻力)" >> release_body.md
+            echo "" >> release_body.md
+            echo "* **🍎 macOS 首次运行提示“已损坏，无法打开”**：" >> release_body.md
+            echo "  * **方案 A（极简首选）**：在 DMG 镜像中直接**双击运行「双击修复无法打开.command」**即可自动解除隔离。" >> release_body.md
+            echo "  * **方案 B（终端一键直达）**：在终端运行 \`xattr -cr /Applications/Illacme-Plenipes.app\`。" >> release_body.md
+            echo "* **🪟 Windows 蓝色保护警告**：" >> release_body.md
+            echo "  * 点击「更多信息」，再点击「仍要运行」即可正常启动。" >> release_body.md
+            echo "" >> release_body.md
+            echo "### ✨ 本次更新内容 (What's New)" >> release_body.md
+            echo "" >> release_body.md
+
+            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+              git log --pretty=format:"* %s (%h)" "$PREV_TAG..$TAG" >> release_body.md
+              echo "" >> release_body.md
+              echo "" >> release_body.md
+              echo "**完整变更对比**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}" >> release_body.md
+            else
+              git log -n 25 --pretty=format:"* %s (%h)" "$TAG" >> release_body.md
+            fi
           fi
 
           echo "=== 预览 RELEASE 说明 ==="
           cat release_body.md
+
 
       - name: 🚀 统一发布 Release 资产
         uses: softprops/action-gh-release@v2
