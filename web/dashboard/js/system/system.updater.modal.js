@@ -60,6 +60,12 @@
             .replace(/\*\s*(.*)/g, '<li style="margin-left:16px;margin-bottom:4px;color:var(--text-main);font-size:0.8rem;line-height:1.5;">$1</li>')
             .replace(/\n\n/g, '<br>') : '无详细更新说明。';
 
+        const sourceModeBanner = info.is_source_mode ? `
+            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#10B981;">
+                <span>🌿</span>
+                <span>检测到当前以 <b>Python 源码开发模式</b> 运行，建议在终端执行 <code>git pull</code> 获取最新提交；亦可下载下方独立客户端体验。</span>
+            </div>` : '';
+
         modal.innerHTML = `
             <div style="background:var(--glass-bg,#0b1219);border:1px solid var(--glass-border,rgba(255,255,255,0.12));border-radius:16px;max-width:620px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:modalFadeIn 0.25s cubic-bezier(0.16,1,0.3,1);">
                 <div style="padding:18px 24px;border-bottom:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;">
@@ -73,6 +79,7 @@
                     <button type="button" onclick="window.closeUpdateModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:4px;border-radius:6px;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
                 </div>
                 <div style="padding:20px 24px;overflow-y:auto;flex:1;">
+                    ${sourceModeBanner}
                     ${assetHtml}
                     <div style="margin-top:14px;">
                         <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px;">✨ 本次版本更新内容</div>
@@ -80,7 +87,7 @@
                     </div>
                 </div>
                 <div style="padding:14px 24px;border-top:1px solid var(--glass-border);background:var(--white-05);display:flex;align-items:center;justify-content:space-between;">
-                    <a href="${info.html_url}" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem;color:var(--text-muted);text-decoration:underline;cursor:pointer;">🔗 前往 GitHub Releases 查看全部资产 (${info.assets_count || 0})</a>
+                    <a href="${info.html_url || 'https://github.com/Illacme/illacme-plenipes/releases'}" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem;color:var(--text-muted);text-decoration:underline;cursor:pointer;">🔗 前往 GitHub Releases 查看全部资产 (${info.assets_count || 0})</a>
                     <button type="button" onclick="window.closeUpdateModal()" style="background:var(--white-10);border:1px solid var(--glass-border);color:var(--text-main);font-size:0.82rem;padding:6px 14px;border-radius:8px;cursor:pointer;">稍后再说</button>
                 </div>
             </div>`;

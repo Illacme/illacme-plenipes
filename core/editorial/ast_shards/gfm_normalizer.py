@@ -67,6 +67,50 @@ class GfmNormalizer:
 
         t = html_fragment
 
+        # 0. 转换视频与音频嵌入 iframe 为高亲和性 Markdown 链接引用卡片
+        def _iframe_to_md_link(match):
+            src = match.group(1).strip()
+            orig_url = src
+            name, emoji = "在线演示与多媒体资源", "🔗"
+            if "player.bilibili.com" in src or "bilibili.com" in src:
+                bvid_m = re.search(r'bvid=(BV[a-zA-Z0-9]+)', src)
+                if bvid_m: orig_url = f"https://www.bilibili.com/video/{bvid_m.group(1)}"
+                name, emoji = "哔哩哔哩视频演示", "📺"
+            elif "youtube" in src:
+                yt_m = re.search(r'embed/([a-zA-Z0-9_-]{11})', src)
+                if yt_m: orig_url = f"https://www.youtube.com/watch?v={yt_m.group(1)}"
+                name, emoji = "YouTube 视频演示", "▶️"
+            elif "vimeo.com" in src:
+                vim_m = re.search(r'video/([0-9]+)', src)
+                if vim_m: orig_url = f"https://vimeo.com/{vim_m.group(1)}"
+                name, emoji = "Vimeo 视频演示", "🎬"
+            elif "v.qq.com" in src:
+                qq_m = re.search(r'vid=([a-zA-Z0-9]+)', src)
+                if qq_m: orig_url = f"https://v.qq.com/x/cover/{qq_m.group(1)}.html"
+                name, emoji = "腾讯视频演示", "🎥"
+            elif "music.163.com" in src:
+                ne_m = re.search(r'id=([0-9]+)', src)
+                if ne_m: orig_url = f"https://music.163.com/song?id={ne_m.group(1)}"
+                name, emoji = "网易云音乐", "🎵"
+            elif "spotify" in src:
+                sp_m = re.search(r'track/([a-zA-Z0-9]+)', src)
+                if sp_m: orig_url = f"https://open.spotify.com/track/{sp_m.group(1)}"
+                name, emoji = "Spotify 音乐", "🎧"
+            elif "codepen.io" in src:
+                name, emoji = "CodePen 交互代码演示", "💻"
+
+            if orig_url.startswith("//"):
+                orig_url = "https:" + orig_url
+
+            return f"\n\n> {emoji} **[{name}：点击直达原网页播放与体验]({orig_url})**\n\n"
+
+        t = re.sub(
+            r'<iframe[^>]*?src=["\']([^"\']+)["\'][^>]*>.*?</iframe>',
+            _iframe_to_md_link,
+            t,
+            flags=re.IGNORECASE | re.DOTALL
+        )
+
         # 1. 转换 h1 ~ h6
         for i in range(6, 0, -1):
             pattern = re.compile(rf'<h{i}\b[^>]*>(.*?)</h{i}>', re.IGNORECASE | re.DOTALL)

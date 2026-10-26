@@ -139,3 +139,20 @@ def test_end_to_end_adapt_format_for_devto():
     )
     assert clean_fm["canonical_url"] == "https://illacme.org/en/index.html"
     assert clean_fm["tags"] == ["home", "sovereign"]
+
+
+def test_gfm_normalizer_iframe_to_markdown_link():
+    raw_md = (
+        "# 媒体外链测试\n\n"
+        '<iframe src="//player.bilibili.com/player.html?bvid=BV1xx411c7mD" width="600" height="400"></iframe>\n\n'
+        '<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>\n\n'
+        '<iframe src="https://player.vimeo.com/video/12345678"></iframe>\n\n'
+        '<iframe src="https://music.163.com/outchain/player?type=2&id=186016"></iframe>\n'
+    )
+    normalized = GfmNormalizer.html_to_clean_markdown(raw_md)
+    assert "<iframe" not in normalized
+    assert "📺 **[哔哩哔哩视频演示：点击直达原网页播放与体验](https://www.bilibili.com/video/BV1xx411c7mD)**" in normalized
+    assert "▶️ **[YouTube 视频演示：点击直达原网页播放与体验](https://www.youtube.com/watch?v=dQw4w9WgXcQ)**" in normalized
+    assert "🎬 **[Vimeo 视频演示：点击直达原网页播放与体验](https://vimeo.com/12345678)**" in normalized
+    assert "🎵 **[网易云音乐：点击直达原网页播放与体验](https://music.163.com/song?id=186016)**" in normalized
+

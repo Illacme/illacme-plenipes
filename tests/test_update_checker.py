@@ -94,6 +94,7 @@ def test_update_checker_api_success():
                 assert res["current_version"] == "v1.2.1"
                 assert res["latest_version"] == "v9.9.9"
                 assert res["has_update"] is True
+                assert res["is_source_mode"] is True
                 assert res["recommended_asset"]["name"] == "Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg"
 
 
@@ -104,6 +105,7 @@ def test_update_checker_offline_fallback():
         res = UpdateChecker.check_update(force=True)
         assert res["status"] == "offline_fallback"
         assert res["has_update"] is False
+        assert res["is_source_mode"] is True
         assert "离线" in res["release_notes"]
 
 

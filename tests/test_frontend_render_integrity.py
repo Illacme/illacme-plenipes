@@ -1465,10 +1465,11 @@ def test_rich_media_preview_integrity():
         use: () => {}
     };
 
-    // 1. 加载并执行 vault.parser.js
+    // 1. 加载并执行 vault.media.js 与 vault.parser.js
+    eval(fs.readFileSync('web/dashboard/js/vault/vault.media.js', 'utf8'));
     eval(fs.readFileSync('web/dashboard/js/vault/vault.parser.js', 'utf8'));
     if (typeof window.formatMediaHtml !== 'function' || typeof window.updateEditorPreview !== 'function') {
-        throw new Error('vault.parser.js failed to register window.formatMediaHtml or updateEditorPreview');
+        throw new Error('vault.media.js or vault.parser.js failed to register window.formatMediaHtml or updateEditorPreview');
     }
 
     // 1.1 formatMediaHtml 独立单体断言
