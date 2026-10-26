@@ -278,8 +278,7 @@ class BookAssembler:
         from markdown.extensions.toc import slugify_unicode
         def repl(match):
             raw_target, alias = match.group(1).strip(), (match.group(2) or "").strip()
-            doc_part, anchor_part = raw_target.split('#', 1) if '#' in raw_target else (raw_target, "")
-            doc_part, anchor_part = doc_part.strip(), anchor_part.strip()
+            doc_part, _, anchor_part = [p.strip() for p in raw_target.partition('#')]
             anchor_slug = slugify_unicode(anchor_part, '-') if anchor_part else ""
             if not doc_part: return f"[{alias or anchor_part}](#{anchor_slug})" if anchor_slug else (alias or raw_target)
             clean_doc = re.sub(r'[^\w\u4e00-\u9fa5]+', '', os.path.splitext(os.path.basename(doc_part))[0]).lower()

@@ -5,7 +5,7 @@
 
 ![Brand Visual Banner](./docs/assets/hero_banner.png)
 
-[![Version](https://img.shields.io/badge/version-v50.3--Industrial--Sovereignty-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
+[![Version](https://img.shields.io/badge/version-v1.8.0-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Release](https://img.shields.io/github/v/release/Illacme/illacme-plenipes?color=emerald&label=Client%20Release)](https://github.com/Illacme/illacme-plenipes/releases/latest)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
