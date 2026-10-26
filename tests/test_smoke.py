@@ -595,7 +595,7 @@ def test_telemetry_audit_status_logic():
         mock_engine.config.i18n_settings.enabled = True
         res_enabled = get_dispatch_status_logic(mock_engine, "test.md")
         assert res_enabled["telemetry"]["last_audit"] == "FAIL"
-        assert "翻译完整性审计未通过" in res_enabled["telemetry"]["error_detail"]
+        assert "翻译完整性检查未通过" in res_enabled["telemetry"]["error_detail"]
         assert "EN" in res_enabled["telemetry"]["error_detail"]
         
         # 场景二：多语言矩阵关闭 (enabled = False)

@@ -22,8 +22,13 @@ class DesktopPackager:
     MAIN_ENTRY = os.path.join("desktop", "app.py")
 
     @classmethod
-    def assemble_build_args(cls, output_dir: str = "dist/desktop", icon_path: Optional[str] = None) -> List[str]:
-        """组装全量 PyInstaller 编译参数"""
+    def assemble_build_args(
+        cls,
+        output_dir: str = "dist/desktop",
+        icon_path: Optional[str] = None,
+        target_arch: Optional[str] = None
+    ) -> List[str]:
+        """组装全量 PyInstaller 编译参数 (支持 macOS target_arch: universal2 / arm64 / x86_64)"""
         sep = ";" if platform.system() == "Windows" else ":"
         data_mappings = [
             ("web/dashboard", "web/dashboard"),
@@ -42,6 +47,14 @@ class DesktopPackager:
             f"--distpath={output_dir}",
             "--workpath=build/desktop",
         ]
+
+        # 0. macOS 架构支持 (Universal 2 / arm64 / x86_64)
+        if platform.system() == "Darwin" and target_arch:
+            arch_norm = target_arch.strip().lower()
+            if arch_norm in ("universal2", "arm64", "x86_64"):
+                args.append(f"--target-arch={arch_norm}")
+            else:
+                tlog.warning(f"⚠️ [打包工坊] 未知 macOS 架构 '{target_arch}'，将使用系统默认架构")
 
         # 1. 注入静态资源数据
         for src, dst in data_mappings:
@@ -138,9 +151,16 @@ class DesktopPackager:
         return None
 
     @classmethod
-    def execute_build(cls, dry_run: bool = False, output_dir: str = "dist/desktop") -> bool:
-        """执行完整打包流程"""
+    def execute_build(
+        cls,
+        dry_run: bool = False,
+        output_dir: str = "dist/desktop",
+        target_arch: Optional[str] = None
+    ) -> bool:
+        """执行完整打包流程 (支持 macOS 双架构与 Universal 2 编译)"""
         tlog.info("🔨 [打包工坊] 启动 Illacme Plenipes 独立桌面客户端构建...")
+        if target_arch and platform.system() == "Darwin":
+            tlog.info(f"🎯 [目标架构] macOS 编译目标架构已锁定: [{target_arch}]")
 
         if not dry_run:
             try:
@@ -153,7 +173,7 @@ class DesktopPackager:
         if icon_path:
             tlog.info(f"🎨 [打包工坊] 已就绪应用图标: {icon_path}")
 
-        cmd = cls.assemble_build_args(output_dir=output_dir, icon_path=icon_path)
+        cmd = cls.assemble_build_args(output_dir=output_dir, icon_path=icon_path, target_arch=target_arch)
         tlog.info(f"⚙️ [打包命令] {' '.join(cmd[:6])} ... ({len(cmd)} 个参数)")
 
         if dry_run:
@@ -209,9 +229,19 @@ def main():
     parser = argparse.ArgumentParser(description="Illacme Plenipes 桌面独立客户端构建流水线")
     parser.add_argument("--dry-run", action="store_true", help="仅执行参数与资源依赖合规性校验，不执行实际耗时编译")
     parser.add_argument("--output-dir", default="dist/desktop", help="打包产物输出目录 (默认: dist/desktop)")
+    parser.add_argument(
+        "--target-arch",
+        choices=["universal2", "arm64", "x86_64"],
+        default=None,
+        help="目标编译架构 (仅 macOS: universal2, arm64, x86_64)"
+    )
     args = parser.parse_args()
 
-    success = DesktopPackager.execute_build(dry_run=args.dry_run, output_dir=args.output_dir)
+    success = DesktopPackager.execute_build(
+        dry_run=args.dry_run,
+        output_dir=args.output_dir,
+        target_arch=args.target_arch
+    )
     sys.exit(0 if success else 1)
 
 

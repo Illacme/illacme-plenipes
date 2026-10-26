@@ -353,6 +353,7 @@ core/runtime/orchestration/scanner.py
 core/runtime/orchestration/sync_worker.py
 core/runtime/orchestrator.py
 core/runtime/update_checker.py
+core/runtime/update_installer.py
 core/runtime/version_sentinel.py
 core/services/__init__.py
 core/services/daemon_handler.py

@@ -114,3 +114,36 @@ def test_desktop_packager_dry_run():
     """验证打包工坊 Dry-Run 校验流水线顺利通过"""
     res = DesktopPackager.execute_build(dry_run=True, output_dir="dist/desktop_test")
     assert res is True
+
+
+def test_desktop_packager_macos_target_arch():
+    """验证 macOS 专属 target_arch (universal2, arm64, x86_64) 参数规范注入"""
+    with patch("platform.system", return_value="Darwin"):
+        # 1. universal2
+        u_args = DesktopPackager.assemble_build_args(target_arch="universal2")
+        assert "--target-arch=universal2" in u_args
+
+        # 2. x86_64
+        x_args = DesktopPackager.assemble_build_args(target_arch="x86_64")
+        assert "--target-arch=x86_64" in x_args
+
+        # 3. arm64
+        a_args = DesktopPackager.assemble_build_args(target_arch="arm64")
+        assert "--target-arch=arm64" in a_args
+
+        # 4. 非法架构优雅忽略
+        inv_args = DesktopPackager.assemble_build_args(target_arch="invalid_arch")
+        assert not any("--target-arch" in a for a in inv_args)
+
+    with patch("platform.system", return_value="Windows"):
+        # Windows 环境下不应注入 macOS target-arch
+        w_args = DesktopPackager.assemble_build_args(target_arch="universal2")
+        assert not any("--target-arch" in a for a in w_args)
+
+
+def test_desktop_packager_dry_run_universal():
+    """验证 Universal 2 模式下的 Dry-Run 构建通过"""
+    with patch("platform.system", return_value="Darwin"):
+        res = DesktopPackager.execute_build(dry_run=True, output_dir="dist/desktop_u2", target_arch="universal2")
+        assert res is True
+

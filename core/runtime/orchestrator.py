@@ -38,7 +38,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
     
     with _publish_lock:
         if _is_publishing:
-            tlog.info(f"⏳ [排队等待] 当前已有出版任务在进行中，新任务已加入等待队列...")
+            tlog.info("⏳ [排队等待] 当前已有出版任务在进行中，新任务已加入等待队列...")
             _pending_sync_queue.append({
                 'dry_run': dry_run, 'force': force, 'sandbox': sandbox,
                 'requested_paths': requested_paths, 'target_langs': target_langs,
@@ -99,7 +99,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
         with _publish_lock:
             try:
                 _is_publishing = True
-                tlog.info(f"⚡ [出版工序] 正在启动文稿排版与发布流程...")
+                tlog.info("⚡ [出版工序] 正在启动文稿排版与发布流程...")
                 task_queue, current_source_files = build_task_queue(engine, requested_paths)
                 perform_sync(engine, args, task_queue, current_source_files)
                 tlog.info("✅ [出版工序] 后台出版任务已全部完成。")
@@ -132,7 +132,7 @@ def start_asynchronous_sync(engine: Any, dry_run: bool = False, force: bool = Fa
                 # 🚀 自动消费排队队列中的下一个翻译任务
                 if _pending_sync_queue:
                     next_item = _pending_sync_queue.pop(0)
-                    tlog.info(f"🔄 [任务接力] 正在开始处理排队任务...")
+                    tlog.info("🔄 [任务接力] 正在开始处理排队任务...")
                     start_asynchronous_sync(
                         engine,
                         dry_run=next_item.get('dry_run', False),

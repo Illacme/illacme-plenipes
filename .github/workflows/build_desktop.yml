@@ -31,10 +31,20 @@ jobs:
         include:
           - os: windows-latest
             os-name: Windows (x64)
+            asset-suffix: Windows-x64
+            target-arch: ''
           - os: macos-14
             os-name: macOS (Apple Silicon arm64)
+            asset-suffix: macOS-AppleSilicon-arm64
+            target-arch: arm64
+          - os: macos-13
+            os-name: macOS (Intel x86_64)
+            asset-suffix: macOS-Intel-x86_64
+            target-arch: x86_64
           - os: ubuntu-24.04
             os-name: Linux (x64)
+            asset-suffix: Linux-x64
+            target-arch: ''
 
     permissions:
       contents: write
@@ -63,7 +73,7 @@ jobs:
 
       - name: 🔨 启动自动化打包流水线
         run: |
-          python -c "from desktop.packager import DesktopPackager; import sys; sys.exit(0 if DesktopPackager.execute_build() else 1)"
+          python -c "from desktop.packager import DesktopPackager; import sys; arch = '${{ matrix.target-arch }}' or None; sys.exit(0 if DesktopPackager.execute_build(target_arch=arch) else 1)"
 
       - name: 🔍 检查编译产物拓扑
         shell: bash
@@ -98,19 +108,19 @@ jobs:
         run: |
           # 1. 便携压缩包 (ZIP)
           cd dist/desktop
-          zip -r -y ../../Illacme-Plenipes-macOS-AppleSilicon-arm64.zip Illacme-Plenipes.app README_使用说明.txt
+          zip -r -y ../../Illacme-Plenipes-${{ matrix.asset-suffix }}.zip Illacme-Plenipes.app README_使用说明.txt
           cd ../..
-          ls -lh Illacme-Plenipes-macOS-AppleSilicon-arm64.zip
+          ls -lh Illacme-Plenipes-${{ matrix.asset-suffix }}.zip
           
           # 2. 原生 DMG 拖拽安装镜像 (hdiutil)
-          echo "=== 制作 macOS 原生 DMG 镜像 ==="
+          echo "=== 制作 macOS 原生 DMG 镜像 (${{ matrix.asset-suffix }}) ==="
           mkdir -p dmg_root
           cp -R dist/desktop/Illacme-Plenipes.app dmg_root/
           ln -s /Applications dmg_root/Applications
           cp dist/desktop/README_使用说明.txt dmg_root/
-          hdiutil create -volname "Illacme Plenipes" -srcfolder dmg_root -ov -format UDZO Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg
+          hdiutil create -volname "Illacme Plenipes" -srcfolder dmg_root -ov -format UDZO Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
           rm -rf dmg_root
-          ls -lh Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg
+          ls -lh Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
 
       - name: 🗜️ 制作发布产物 (Linux 原生归档)
         if: runner.os == 'Linux'
@@ -185,8 +195,10 @@ jobs:
           echo "" >> release_body.md
           echo "| 操作系统平台 | 安装格式 | 下载文件 | 推荐场景 |" >> release_body.md
           echo "| :--- | :--- | :--- | :--- |" >> release_body.md
-          echo "| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg\` | **首选**：挂载后直接拖入 Applications |" >> release_body.md
-          echo "| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip\` | 免挂载直接解压使用 |" >> release_body.md
+          echo "| 🍎 **macOS (Apple Silicon M系列)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg\` | **首选**：Apple Silicon (M1/M2/M3/M4) 架构 Mac |" >> release_body.md
+          echo "| 🍎 macOS (Apple Silicon M系列) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS-AppleSilicon-arm64.zip\` | 免挂载直接解压使用 |" >> release_body.md
+          echo "| 🍎 **macOS (Intel x86_64 老机型)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS-Intel-x86_64.dmg\` | **首选**：Intel 处理器架构 Mac 电脑 |" >> release_body.md
+          echo "| 🍎 macOS (Intel x86_64 老机型) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS-Intel-x86_64.zip\` | 免挂载直接解压使用 |" >> release_body.md
           echo "| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | \`Illacme-Plenipes-Windows-x64-Setup.exe\` | **首选**：标准向导安装、自动创建桌面快捷方式 |" >> release_body.md
           echo "| 🪟 Windows (x64) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-Windows-x64.zip\` | 免安装纯便携版，解压即用 |" >> release_body.md
           echo "| 🐧 **Linux (x64)** | 原生独立可执行归档 | \`Illacme-Plenipes-Linux-x64.tar.gz\` | Linux 桌面与服务器直接运行 |" >> release_body.md
