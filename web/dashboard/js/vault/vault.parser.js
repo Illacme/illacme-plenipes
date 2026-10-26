@@ -3,6 +3,37 @@
  * 职责：Obsidian 双链、Wiki 联动路径对齐、Markdown 渲染及编辑器同步滚动。
  */
 
+// 🎬 [V88.0] 多媒体预览格式化引擎 (支持 Video/Audio/Image 与在线视频 iframe)
+const PREVIEW_VIDEO_EXTS = new Set(['mp4', 'webm', 'mov', 'm4v', 'ogv']);
+const PREVIEW_AUDIO_EXTS = new Set(['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus']);
+
+window.formatMediaHtml = (url, alt = '', extra = '', onErr = '') => {
+    const cleanUrl = (url || '').trim();
+    // 1. 在线视频平台识别 (B站 / YouTube)
+    const bMatch = cleanUrl.match(/(?:bilibili\.com\/video\/|b23\.tv\/)(BV[a-zA-Z0-9]+)/i);
+    if (bMatch) {
+        return `<div class="preview-media-container preview-bilibili" style="position:relative;width:100%;max-width:720px;aspect-ratio:16/9;margin:12px 0;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:#000;"><iframe src="//player.bilibili.com/player.html?bvid=${bMatch[1]}&page=1&high_quality=1&as_wide=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"></iframe></div>`;
+    }
+    const yMatch = cleanUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+    if (yMatch) {
+        return `<div class="preview-media-container preview-youtube" style="position:relative;width:100%;max-width:720px;aspect-ratio:16/9;margin:12px 0;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:#000;"><iframe src="https://www.youtube-nocookie.com/embed/${yMatch[1]}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"></iframe></div>`;
+    }
+    // 2. 音视频与图片扩展名判定
+    const target = cleanUrl.split('?')[0].toLowerCase();
+    const altTarget = (alt || '').toLowerCase();
+    const ext = target.split('.').pop() || altTarget.split('.').pop() || '';
+    if (PREVIEW_VIDEO_EXTS.has(ext)) {
+        return `<div class="preview-media-container preview-video" style="margin:12px 0;"><video controls preload="metadata" style="max-width:100%;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.15);background:#000;" src="${cleanUrl}"></video>${alt ? `<div style="font-size:12px;color:var(--text-muted,#888);margin-top:4px;">📹 ${alt}</div>` : ''}</div>`;
+    }
+    if (PREVIEW_AUDIO_EXTS.has(ext)) {
+        return `<div class="preview-media-container preview-audio" style="margin:12px 0;"><audio controls preload="metadata" style="width:100%;max-width:540px;" src="${cleanUrl}"></audio>${alt ? `<div style="font-size:12px;color:var(--text-muted,#888);margin-top:4px;">🎵 ${alt}</div>` : ''}</div>`;
+    }
+    // 3. 常规图片渲染
+    const errAttr = onErr ? ` onerror="${onErr}"` : '';
+    const widthAttr = (extra && !isNaN(extra.trim())) ? ` width="${extra.trim()}"` : '';
+    return `<img src="${cleanUrl}" alt="${alt}" loading="lazy"${widthAttr}${errAttr} style="max-width:100%;border-radius:6px;" />`;
+};
+
 window.updateEditorPreview = () => {
     const body = document.getElementById('editor-body');
     const preview = document.getElementById('editor-preview');
@@ -20,15 +51,17 @@ window.updateEditorPreview = () => {
         return placeholder;
     });
 
-    // 1. 物理资源解析：替换 Obsidian 双链图片 ![[image.png]] 或 ![[image.png|width]]
+    // 0. 在线视频独立直链解析 (B站/YouTube 单独成行)
+    const standaloneVideoReg = /(^|\n)(https?:\/\/(?:(?:www\.)?bilibili\.com\/video\/BV[a-zA-Z0-9]+|(?:www\.)?youtube\.com\/watch\?v=[a-zA-Z0-9_-]{11}|youtu\.be\/[a-zA-Z0-9_-]{11})[^\s\n]*)(?=$|\n)/gi;
+    mdContent = mdContent.replace(standaloneVideoReg, (m, pfx, url) => {
+        return pfx + window.formatMediaHtml(url);
+    });
+
+    // 1. 物理资源解析：替换 Obsidian 双链媒体 ![[media.ext]] 或 ![[media.ext|extra]]
     mdContent = mdContent.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, path, extra) => {
         const cleanPath = decodeURIComponent(path.trim());
-        const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
-        const alt = cleanPath;
-        if (extra && !isNaN(extra.trim())) {
-            return `<img src="${url}" alt="${alt}" width="${extra.trim()}" />`;
-        }
-        return `![${alt}](${url})`;
+        const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId || '')}`;
+        return window.formatMediaHtml(url, cleanPath, extra);
     });
 
     // 2. 物理资源解析：替换 Obsidian 双链普通附件 [[file.pdf]] 或 [[file.pdf|display]] (排除了带 ! 前缀的情况)
@@ -37,7 +70,7 @@ window.updateEditorPreview = () => {
         const displayName = (display || cleanPath).trim();
         const extMatch = cleanPath.match(/\.([a-zA-Z0-9]+)$/);
         if (extMatch && !['md', 'mdx', 'markdown'].includes(extMatch[1].toLowerCase())) {
-            const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
+            const url = `/api/vault-assets/${encodeURIComponent(cleanPath)}?relative_to=${encodeURIComponent(window.activeDocId || '')}`;
             return `<a href="${url}" target="_blank" class="attachment-link">📎 ${displayName}</a>`;
         } else {
             const cleanDocPath = cleanPath.replace(/\.mdx?$/, '');
@@ -45,15 +78,15 @@ window.updateEditorPreview = () => {
         }
     });
 
-    // 3. 物理资源解析：替换标准 Markdown 图片 ![alt](path)
+    // 3. 物理资源解析：替换标准 Markdown 图片与多媒体 ![alt](path)
     mdContent = mdContent.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
         const cleanUrl = url.trim();
         if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:')) {
-            return match;
+            return window.formatMediaHtml(cleanUrl, alt);
         }
         const decodedUrl = decodeURIComponent(cleanUrl);
-        const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(window.activeDocId)}`;
-        return `![${alt}](${resolvedUrl})`;
+        const resolvedUrl = `/api/vault-assets/${encodeURIComponent(decodedUrl)}?relative_to=${encodeURIComponent(window.activeDocId || '')}`;
+        return window.formatMediaHtml(resolvedUrl, alt);
     });
 
     // 4. 物理资源解析：替换标准 Markdown 链接 [text](path) (排除了带 ! 前缀的图片链接，防止二次污染)

@@ -1424,5 +1424,140 @@ def test_launchpad_pipeline_render_and_i18n_integrity():
     assert "PIPELINE_HORIZONTAL_I18N_VERIFIED_SUCCESS" in res.stdout
 
 
+def test_rich_media_preview_integrity():
+    """
+    🛡️ 原稿预览与译文校对工作台全媒体内嵌渲染沙箱门禁测试 (Rule 7)
+    断言场景：
+    1. vault.parser.js 具备 formatMediaHtml 格式化引擎，智能分流 Video / Audio / Image / B站 / YouTube
+    2. updateEditorPreview() 在 DOM 中正确渲染 <video>, <audio>, <iframe> 结构，0 破损裂图
+    3. _reviewRewriteMarkdown() 正确对齐双链与标准 Markdown 媒体路径，输出原生音视频组件
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    let previewContent = '';
+    const mockBody = { value: '' };
+    const mockPreview = {
+        set innerHTML(val) { previewContent = val; },
+        get innerHTML() { return previewContent; },
+        addEventListener: () => {}
+    };
+
+    global.document = {
+        getElementById: (id) => {
+            if (id === 'editor-body') return mockBody;
+            if (id === 'editor-preview') return mockPreview;
+            return { style: {}, classList: { add: ()=>{}, remove: ()=>{} } };
+        },
+        querySelectorAll: () => [],
+        querySelector: () => null,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    };
+    global.window = {
+        activeDocId: 'guides/tutorial.md',
+        settingsData: { ingress_settings: { hard_line_break: false } }
+    };
+
+    // 引入 marked mock
+    global.marked = {
+        parse: (md) => md,
+        use: () => {}
+    };
+
+    // 1. 加载并执行 vault.parser.js
+    eval(fs.readFileSync('web/dashboard/js/vault/vault.parser.js', 'utf8'));
+    if (typeof window.formatMediaHtml !== 'function' || typeof window.updateEditorPreview !== 'function') {
+        throw new Error('vault.parser.js failed to register window.formatMediaHtml or updateEditorPreview');
+    }
+
+    // 1.1 formatMediaHtml 独立单体断言
+    const bHtml = window.formatMediaHtml('https://www.bilibili.com/video/BV1xx411c7mD');
+    if (!bHtml.includes('preview-bilibili') || !bHtml.includes('BV1xx411c7mD') || !bHtml.includes('<iframe')) {
+        throw new Error('formatMediaHtml failed to render B站 iframe: ' + bHtml);
+    }
+
+    const yHtml = window.formatMediaHtml('https://youtu.be/dQw4w9WgXcQ');
+    if (!yHtml.includes('preview-youtube') || !yHtml.includes('dQw4w9WgXcQ') || !yHtml.includes('<iframe')) {
+        throw new Error('formatMediaHtml failed to render YouTube iframe: ' + yHtml);
+    }
+
+    const vHtml = window.formatMediaHtml('/api/vault-assets/demo.mp4', '演示视频');
+    if (!vHtml.includes('<video controls') || !vHtml.includes('/api/vault-assets/demo.mp4') || !vHtml.includes('演示视频')) {
+        throw new Error('formatMediaHtml failed to render video controls: ' + vHtml);
+    }
+
+    const aHtml = window.formatMediaHtml('/api/vault-assets/sound.mp3', '背景配乐');
+    if (!aHtml.includes('<audio controls') || !aHtml.includes('/api/vault-assets/sound.mp3') || !aHtml.includes('背景配乐')) {
+        throw new Error('formatMediaHtml failed to render audio controls: ' + aHtml);
+    }
+
+    const imgHtml = window.formatMediaHtml('/api/vault-assets/photo.png', '风景图', '300');
+    if (!imgHtml.includes('<img src=') || !imgHtml.includes('width="300"') || imgHtml.includes('<video')) {
+        throw new Error('formatMediaHtml failed to render normal image: ' + imgHtml);
+    }
+
+    // 1.2 updateEditorPreview 集成渲染断言
+    mockBody.value = `
+# 媒体综合测试文档
+
+Obsidian 双链视频：
+![[clips/presentation.mp4]]
+
+Obsidian 双链音频：
+![[podcasts/episode1.mp3]]
+
+Markdown 标准视频：
+![外部视频](https://example.com/assets/intro.webm)
+
+独立在线视频直链：
+https://www.bilibili.com/video/BV1test12345
+`;
+    window.updateEditorPreview();
+    if (!previewContent.includes('<video controls') || !previewContent.includes('presentation.mp4')) {
+        throw new Error('updateEditorPreview failed to render obsidian video: ' + previewContent);
+    }
+    if (!previewContent.includes('<audio controls') || !previewContent.includes('episode1.mp3')) {
+        throw new Error('updateEditorPreview failed to render obsidian audio: ' + previewContent);
+    }
+    if (!previewContent.includes('preview-bilibili') || !previewContent.includes('BV1test12345')) {
+        throw new Error('updateEditorPreview failed to render standalone B站 link: ' + previewContent);
+    }
+
+    // 2. 加载并执行 localization.review.markdown.js
+    eval(fs.readFileSync('web/dashboard/js/localization/localization.review.markdown.js', 'utf8'));
+    if (typeof _reviewRewriteMarkdown !== 'function') {
+        throw new Error('localization.review.markdown.js failed to define _reviewRewriteMarkdown');
+    }
+
+    // 2.1 译文预览媒体重写断言
+    const reviewInput = `
+这是译文内容：
+![[media/feature.mov]]
+音频指南：
+![[speech.m4a]]
+在线外链：
+https://youtu.be/abcdefghijk
+`;
+    const rewritten = _reviewRewriteMarkdown(reviewInput, 'chapter1.md', '');
+    if (!rewritten.includes('<video controls') || !rewritten.includes('feature.mov')) {
+        throw new Error('_reviewRewriteMarkdown failed to render video: ' + rewritten);
+    }
+    if (!rewritten.includes('<audio controls') || !rewritten.includes('speech.m4a')) {
+        throw new Error('_reviewRewriteMarkdown failed to render audio: ' + rewritten);
+    }
+    if (!rewritten.includes('preview-youtube') || !rewritten.includes('abcdefghijk')) {
+        throw new Error('_reviewRewriteMarkdown failed to render YouTube iframe: ' + rewritten);
+    }
+
+    console.log('RICH_MEDIA_PREVIEW_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Rich Media Preview Integrity Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "RICH_MEDIA_PREVIEW_VERIFIED_SUCCESS" in res.stdout
+
+
+
 
 
