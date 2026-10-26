@@ -72,7 +72,7 @@ for mod in ['yaml', 'fastapi', 'uvicorn', 'cryptography']:
 if [ -n "$MISSING_DEP" ]; then
     echo -e "${YELLOW}⚠️ 探测到缺少运行依赖模块: ${MISSING_DEP}${RESET}"
     echo -e "${CYAN}📦 正在尝试自动安装依赖 (pip install -r requirements.txt)...${RESET}"
-    $PY_CMD -m pip install -r requirements.txt
+    $PY_CMD -m pip install --disable-pip-version-check -r requirements.txt
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ 依赖安装失败，请手动检查网络连接或执行: pip install -r requirements.txt${RESET}"
         read -p "按回车键退出..."
@@ -96,3 +96,10 @@ echo ""
 
 # 6. 正式拉起主进程 (传递所有参数)
 $PY_CMD ./plenipes.py "$@"
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo -e "${RED}⚠️ 程序异常退出 (退出码: $EXIT_CODE)${RESET}"
+    read -p "按回车键退出..."
+fi
+exit $EXIT_CODE

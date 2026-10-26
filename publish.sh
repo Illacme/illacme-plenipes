@@ -1,16 +1,38 @@
 #!/bin/bash
+# ==============================================================================
+# 🚀 Illacme Plenipes - 命令行一键同步与出版发布脚本 (One-Click Publish Script)
+# 职责：检测 Python 环境并自动执行 plenipes.py --sync 内容同步与静态出版管线。
+# ==============================================================================
 
-# 确保脚本有执行权限: chmod +x publish.sh
+cd "$(dirname "$0")" || exit 1
 
-echo "🌉 Step 1: 运行 Bridge Pro 进行内容同步与 AI 处理..."
-python3 bridge.py --sync
+PY_CMD=""
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+    PY_CMD="python3"
+elif [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    PY_CMD="python3"
+else
+    if command -v python3 &>/dev/null; then
+        PY_CMD="python3"
+    elif command -v python &>/dev/null; then
+        PY_CMD="python"
+    fi
+fi
 
-echo "🏗️ Step 2: 启动 Starlight (Astro) 静态构建..."
-# 确保你在模板库根目录运行
-npm run build
+if [ -z "$PY_CMD" ]; then
+    echo "❌ 未检测到 Python 运行环境！请先安装 Python 3.10+"
+    exit 1
+fi
 
-echo "🚀 Step 3: 推送网页库至 GitHub Pages..."
-# 需要先安装: npm install gh-pages --save-dev
-npx gh-pages -d dist -t true --message "Site updated: $(date +'%Y-%m-%d %H:%M:%S')"
+echo "🌉 正在运行 Illacme Plenipes 全球出版引擎执行全量同步 (--sync)..."
+$PY_CMD ./plenipes.py --sync "$@"
+EXIT_CODE=$?
 
-echo "✅ 发布流程已全部完成！你的站点正在上线中..."
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ 同步出版流程执行完毕！"
+else
+    echo "⚠️ 同步出版流程退出，退出码: $EXIT_CODE"
+fi
+exit $EXIT_CODE
