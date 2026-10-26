@@ -23,10 +23,9 @@ class DisplayDelegate:
         return mode_str
 
     @staticmethod
-    def get_system_version(config) -> str:
-        """从配置中提取并格式化版本号"""
+    def get_system_version(config=None) -> str:
+        """从内核单点真理源提取并格式化版本号 (严格遵循 SemVer v1.8.x)"""
         from core import __version__
-        sys_version = getattr(config, 'version', f"V{__version__}")
-        if not sys_version.startswith('V'):
-            sys_version = f"V{sys_version}"
-        return sys_version
+        cfg_ver = getattr(config, 'version', None) if config else None
+        raw_ver = cfg_ver if (cfg_ver and cfg_ver not in ("24.0", "50.3")) else __version__
+        return f"v{raw_ver.lstrip('vV')}"

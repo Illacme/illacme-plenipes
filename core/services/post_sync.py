@@ -91,10 +91,11 @@ class SyncStatsPlugin(PostSyncTask):
         # 🚀 [V7.0] 从注册簿 (The Registry) 获取权威财务数据，确保每一分算力都有据可查
         historical_cost = engine.ledger.get_total_cost(imprint_id=engine.imprint_id)
         
+        from core import __version__
         sync_data = {
             "total_vault_files": len(snapshot),
             "processed_timestamp": datetime.now().isoformat(),
-            "engine_version": "V50.3",
+            "engine_version": f"v{__version__}",
             "imprint": engine.imprint_id,
             "usage": {
                 "session_cost": round((engine.meter.stats.get("session", {}).get("cost", 0.0)), 4),

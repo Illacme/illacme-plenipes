@@ -13,8 +13,8 @@ from . import archives as archives
 from . import editorial as editorial
 from . import logic as engine
 
-# 🚀 [V50.3] 全局版本真理源
-__version__ = "50.3"
+# 🚀 [真理源对正] 全局版本真理源 (遵循 SemVer 语义化发版规范)
+__version__ = "1.8.0"
 __edition__ = "Industrial-Sovereignty (工业主权版)"
 __status__ = "Production-Ready"
 

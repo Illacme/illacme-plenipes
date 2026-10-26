@@ -69,7 +69,7 @@ __all__ = [
 class Configuration(ConfigurationPathsMixin, BaseModel):
     """💎 [Illacme Plenipes] 全局配置模型总纲"""
 
-    version: str = "24.0"
+    version: str = "1.8.0"
 
     # 核心物理基础设施
     imprint_name: str = Field(default="Illacme Press", alias="press_name")

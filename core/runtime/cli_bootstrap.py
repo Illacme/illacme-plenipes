@@ -33,7 +33,8 @@ __all__ = [
 
 def parse_args_and_lock():
     """解析命令行参数，执行配置文件自检，并激活防抖锁"""
-    parser = argparse.ArgumentParser(description="🛡️ Illacme-plenipes [V50.3]: 全球私人出版社主权操作系统 - 负责从原稿摄取到全量分发的全生命周期治理")
+    from core import __version__
+    parser = argparse.ArgumentParser(description=f"🛡️ Illacme-plenipes [v{__version__}]: 全球私人出版社主权操作系统 - 负责从原稿摄取到全量分发的全生命周期治理")
 
     parser.add_argument('--config', '-c', default='config.yaml', help="指定 YAML 配置文件路径 (默认: config.yaml)")
     parser.add_argument('--sync', '-s', action='store_true', help="🚀 [分发演习] 发起单次全库阵列资产分发演习")

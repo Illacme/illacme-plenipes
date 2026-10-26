@@ -149,3 +149,11 @@
     2. **前端渲染零 `undefined` 物理门禁**：所有参与渲染前端 HTML 的函数，严禁因字段未定义或拼写错误而向 DOM 注入 `undefined`、`null` 或 `[object Object]` 字符串。
     3. **自动化守卫门禁**：任何涉及品牌数据与前端渲染的修改，必须强制通过 `pytest tests/test_imprint_contract_sovereignty.py` 自动化回归门禁。
 
+## 18. 产品语义化版本唯一真理源铁律 (Semantic Versioning Single Source of Truth Rules)
+*   **适用场景**：所有涉及版本号定义、更新检测、终端 Banner 渲染、仪表盘页脚及主题模板展示的代码修改。
+*   **物理红线**：
+    1. **单点真理源绝对统一**：全域产品版本号必须以 `core.__version__` 为物理唯一真理源，严格对齐产品语义化发布版本（SemVer: `vMAJOR.MINOR.PATCH`，如 `v1.8.0`），严禁在不同子模块中硬编码不一致的离散版本号。
+    2. **彻底杜绝内部版本代号虚高通胀**：历史注释中的 `[V50.3]` 等仅作为演进历史锚点保留；严禁在新增代码、注释或 Docstring 中继续自增虚高的内部代号（如 `[V122.0]`）。增量修改一律采用功能语义标签（如 `[Feature: WeChat Syndication]`、`[Fix: Hosting Mixin Signature]`）或标准 SemVer 补丁标签（如 `[v1.8.x]`）。
+    3. **静态模板严禁硬编码历史死版本**：主题母本（`themes/`）与示例页面中严禁硬编码具体的历史版本号，必须动态绑定版本变量或采用通用主权文案。
+
+

@@ -9,7 +9,7 @@ import styles from './index.module.css';
 const I18N_CONTENT = {
   zh: {
     tagline: '基于物理隔离架构的工业级 AI 原生全球出版引擎，从本地原稿到全球 23 渠道一键分发。',
-    badge: 'V50.3 主权全球出版发行中枢已就绪',
+    badge: '主权全球出版发行中枢已就绪',
     ctaPrimary: '⚡ 5 分钟极速上手',
     ctaDocs: '📚 查阅官方文档',
     ctaBlog: '📰 浏览博客文章',
@@ -52,7 +52,7 @@ const I18N_CONTENT = {
   },
   ja: {
     tagline: '物理的隔離アーキテクチャに基づく産業グレード AI ネイティブ出版エンジン。ローカル原稿から世界 23+ チャネルへワンクリック配信。',
-    badge: 'V50.3 グローバル自律出版ハブ稼働中',
+    badge: 'グローバル自律出版ハブ稼働中',
     ctaPrimary: '⚡ 5 分で始めるクイックスタート',
     ctaDocs: '📚 公式ドキュメント',
     ctaBlog: '📰 ブログ記事を読む',
@@ -95,7 +95,7 @@ const I18N_CONTENT = {
   },
   en: {
     tagline: 'Industrial-grade AI-native global publishing engine built on physical isolation. Distribute from local vault to 23+ channels with one click.',
-    badge: 'V50.3 Sovereign Global Publishing Hub Ready',
+    badge: 'Sovereign Global Publishing Hub Ready',
     ctaPrimary: '⚡ 5-Min Quick Start',
     ctaDocs: '📚 Explore Documentation',
     ctaBlog: '📰 Read the Blog',

@@ -15,10 +15,11 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional, Tuple
 
+from core import __version__
 from core.utils.tracing import tlog
 
-# 当前客户端发版真理源 (发版时随 build 自动对齐)
-APP_VERSION = "1.8.0"
+# 当前客户端发版真理源 (严格对齐 core.__version__)
+APP_VERSION = __version__
 GITHUB_REPO = "Illacme/illacme-plenipes"
 CACHE_TTL_SECONDS = 600.0  # 10 分钟内存缓存，防御 GitHub 速率限制
 
@@ -26,6 +27,7 @@ CACHE_TTL_SECONDS = 600.0  # 10 分钟内存缓存，防御 GitHub 速率限制
 class UpdateChecker:
     """🛰️ 云端版本探测与客户端升级中枢"""
 
+    APP_VERSION: str = APP_VERSION
     _cache_payload: Optional[Dict[str, Any]] = None
     _last_checked_time: float = 0.0
 

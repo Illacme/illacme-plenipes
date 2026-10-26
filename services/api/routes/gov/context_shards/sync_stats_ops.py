@@ -150,10 +150,11 @@ def get_sync_stats_impl():
         isolated_penalty = (isolated_nodes / total_nodes) * 30
         health_score = max(0, min(100, int(100 - broken_penalty - isolated_penalty)))
 
+    from core import __version__
     enriched_stats = {
         "imprint": engine.imprint_id,
         "processed_timestamp": sync_data.get("processed_timestamp", datetime.now().isoformat()),
-        "engine_version": sync_data.get("engine_version", "V50.3"),
+        "engine_version": sync_data.get("engine_version", f"v{__version__}"),
         "documents": {
             "total_count": total_docs,
             "total_word_count": total_words,
