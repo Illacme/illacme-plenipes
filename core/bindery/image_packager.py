@@ -25,12 +25,13 @@ class ImagePackager:
     }
 
     VIDEO_EXTENSIONS = (".mp4", ".webm", ".mov", ".m4v", ".ogv", ".mkv")
+    AUDIO_EXTENSIONS = (".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac")
 
     @classmethod
     def heal_obsidian_embedded_images(cls, markdown_text: str) -> str:
         """
         将 Obsidian 特有的 ![[image.png]] 或 ![[image.png|300]] 语法
-        转译为标准 Markdown / HTML 图像语法；并将视频 ![[video.mp4]] 转换为电子书媒体占位块
+        转译为标准 Markdown / HTML 图像语法；并将视频与音频转换为出版物媒体占位块
         """
         def repl(m):
             raw_target = m.group(1).strip()
@@ -68,6 +69,16 @@ class ImagePackager:
                     f'</div>'
                 )
 
+            # 🎵 本地音频文件转译为出版物媒体占位块
+            if ext in cls.AUDIO_EXTENSIONS:
+                alt_name = os.path.basename(media_file)
+                return (
+                    f'<div class="media-audio-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                    f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                    f'🎵 <b>音频资源</b>: <code>{alt_name}</code>'
+                    f'</div>'
+                )
+
             if ext not in cls.MIME_MAP:
                 return m.group(0)
 
@@ -81,7 +92,34 @@ class ImagePackager:
             alt_text = os.path.splitext(os.path.basename(media_file))[0]
             return f'<img src="{media_file}" alt="{alt_text}"{width_style} />'
 
-        return re.sub(r'!\[\[([^\]]+)\]\]', repl, markdown_text)
+        healed = re.sub(r'!\[\[([^\]]+)\]\]', repl, markdown_text)
+
+        # 📺 独立行 Bilibili / YouTube 链接转为出版物占位块
+        def _standalone_bv(m):
+            pfx = m.group(1)
+            bvid = m.group(2)
+            return (
+                f'{pfx}<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                f'🎬 <b>在线视频 (Bilibili)</b>: <code>{bvid}</code>'
+                f'</div>'
+            )
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone_bv, healed, flags=re.I)
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?b23\.tv\/(BV[a-zA-Z0-9]+)(?:[^\s\n]*)?(?=$|\n)', _standalone_bv, healed, flags=re.I)
+
+        def _standalone_yt(m):
+            pfx = m.group(1)
+            vid = m.group(2)
+            return (
+                f'{pfx}<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                f'🎬 <b>在线视频 (YouTube)</b>: <code>{vid}</code>'
+                f'</div>'
+            )
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone_yt, healed, flags=re.I)
+        healed = re.sub(r'(^|\n)(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[^\s\n]*)?(?=$|\n)', _standalone_yt, healed, flags=re.I)
+
+        return healed
 
     @classmethod
     def locate_local_image(cls, raw_src: str, doc_path: str, vault_dir: str) -> Optional[str]:

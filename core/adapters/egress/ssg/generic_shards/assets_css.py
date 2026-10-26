@@ -169,5 +169,9 @@ def get_universal_css() -> str:
         .video-container.local-video video {
             max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); outline: none;
         }
+
+        /* 🎵 本地音频播放器容器增强 */
+        .audio-container { margin: 1.25rem 0; width: 100%; text-align: center; }
+        .audio-container.local-audio audio { width: 100%; max-width: 520px; outline: none; }
     """
     return base_css + get_universal_views_css()

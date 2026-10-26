@@ -102,10 +102,25 @@ def transmute_footnotes(content: str) -> Tuple[str, List[Dict[str, str]]]:
             seen_urls[url] = idx
             footnotes.append({"index": idx, "text": text, "url": url})
 
-        sup_style = "color: #2563eb; font-weight: 600; font-size: 11px; margin-left: 2px;"
-        return f'{text}<sup style="{sup_style}">[{idx}]</sup>'
-
     new_content = link_pattern.sub(replace_link, content)
+
+    # 处理独立行外链 (裸 URL)
+    raw_url_pattern = re.compile(r'(^|\n)(https?://[^\s\n<>"\']+)(?=$|\n)')
+    def replace_raw_url(match):
+        pfx = match.group(1)
+        url = match.group(2).strip()
+        if not is_external_link(url):
+            return match.group(0)
+        if url in seen_urls:
+            idx = seen_urls[url]
+        else:
+            idx = len(footnotes) + 1
+            seen_urls[url] = idx
+            footnotes.append({"index": idx, "text": url, "url": url})
+        sup_style = "color: #2563eb; font-weight: 600; font-size: 11px; margin-left: 2px;"
+        return f'{pfx}<span style="color: #2563eb; text-decoration: underline; word-break: break-all;">{url}</span><sup style="{sup_style}">[{idx}]</sup>'
+
+    new_content = raw_url_pattern.sub(replace_raw_url, new_content)
     return new_content, footnotes
 
 

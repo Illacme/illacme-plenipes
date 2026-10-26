@@ -142,3 +142,29 @@ def test_bindery_image_packager_video_fallback():
     assert '🎬 <b>视频资源</b>: <code>lecture_demo.mp4</code>' in healed
     # 在线视频优雅转译为在线视频占位块
     assert '🎬 <b>在线视频 (Bilibili)</b>: <code>BV1xx411c7mD</code>' in healed
+
+
+def test_obsidian_and_markdown_audio_embedding():
+    """测试 Obsidian 与 Markdown 本地音频嵌入语法"""
+    raw_md = (
+        "## 音频节目\n\n"
+        "![[podcast_ep01.mp3]]\n\n"
+        "![配乐](soundtrack.wav)\n"
+    )
+
+    resolved = SSGMediaResolver.resolve_media_content(raw_md)
+
+    assert '<div class="audio-container local-audio">' in resolved
+    assert '<source src="podcast_ep01.mp3" type="audio/mpeg">' in resolved
+    assert '<source src="soundtrack.wav" type="audio/wav">' in resolved
+    assert '<audio controls preload="metadata">' in resolved
+
+
+def test_bindery_image_packager_audio_fallback():
+    """测试 Bindery 电子书对音频语法的排版占位降级"""
+    raw_md = "![[interview_record.mp3]]"
+    healed = ImagePackager.heal_obsidian_embedded_images(raw_md)
+
+    assert '<div class="media-audio-placeholder"' in healed
+    assert '🎵 <b>音频资源</b>: <code>interview_record.mp3</code>' in healed
+
