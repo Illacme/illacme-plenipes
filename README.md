@@ -6,10 +6,27 @@
 ![Brand Visual Banner](./docs/assets/hero_banner.png)
 
 [![Version](https://img.shields.io/badge/version-v50.3--Industrial--Sovereignty-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
+[![Release](https://img.shields.io/github/v/release/Illacme/illacme-plenipes?color=emerald&label=Client%20Release)](https://github.com/Illacme/illacme-plenipes/releases/latest)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | [🇬🇧 English](./README.md) | [📖 Cookbooks](./docs/cookbook/) | [📚 User Manual](./docs/manual/)
+
+---
+
+### ⚡ Quick Start Desktop Client (Zero-Configuration)
+
+> **No Python environment required. Packaged with native system tray, multi-language typesetting engine, and offline local publishing console.**
+
+| Operating System | Recommended Format | Direct Download (Latest Stable) | Notes & First-Run Guide |
+| :--- | :--- | :--- | :--- |
+| 🍎 **macOS (Apple Silicon)** | **Native DMG Image (Preferred)** | [📥 **Illacme-Plenipes-macOS.dmg**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.dmg) | Drag to Applications. If prompted with damage warning, double-click bundled `双击修复无法打开.command` |
+| 🍎 macOS (Apple Silicon) | Portable ZIP Archive | [📥 `Illacme-Plenipes-macOS.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.zip) | Extract and run directly, includes bundled quarantine healer script |
+| 🪟 **Windows (x64)** | **One-Click Setup Wizard (Preferred)** | [📥 **Illacme-Plenipes-Windows-x64-Setup.exe**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64-Setup.exe) | Standard installer with desktop shortcuts and uninstaller support |
+| 🪟 Windows (x64) | Portable ZIP Archive | [📥 `Illacme-Plenipes-Windows-x64.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64.zip) | Portable release; extract and double-click `Illacme-Plenipes.exe` |
+| 🐧 **Linux (x64)** | Native Standalone Binary | [📥 `Illacme-Plenipes-Linux-x64.tar.gz`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Linux-x64.tar.gz) | Extract and run `./Illacme-Plenipes`, headless server mode supported |
+
+> 💡 **Release Notes & SHA256 Verification**: Visit the official **[GitHub Releases Hub](https://github.com/Illacme/illacme-plenipes/releases)** for complete changelogs and integrity signatures.
 
 ---
 

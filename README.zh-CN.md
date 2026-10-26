@@ -6,10 +6,27 @@
 ![品牌视觉 Banner](./docs/assets/hero_banner.png)
 
 [![Version](https://img.shields.io/badge/version-v50.3--Industrial--Sovereignty-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
+[![Release](https://img.shields.io/github/v/release/Illacme/illacme-plenipes?color=emerald&label=Client%20Release)](https://github.com/Illacme/illacme-plenipes/releases/latest)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 [🇨🇳 简体中文](./README.zh-CN.md) | [🇬🇧 English](./README.md) | [📖 场景实战手册](./docs/cookbook/) | [📚 功能速查手册](./docs/manual/)
+
+---
+
+### ⚡ 官方独立客户端快速下载 (Quick Start Desktop)
+
+> **免配 Python 环境，解压即用。内置全功能系统托盘、多语言排版引擎与离线出版控制台。**
+
+| 操作系统 | 推荐安装格式 | 直接下载链接 (最新稳定版) | 说明与避坑指南 |
+| :--- | :--- | :--- | :--- |
+| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像 (首选)** | [📥 **Illacme-Plenipes-macOS.dmg**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.dmg) | 拖拽至 Applications。若提示已损坏，双击运行包内 `双击修复无法打开.command` |
+| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-macOS.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.zip) | 免挂载解压即用，内含快捷修复脚本 |
+| 🪟 **Windows (x64)** | **一键安装向导 (首选)** | [📥 **Illacme-Plenipes-Windows-x64-Setup.exe**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64-Setup.exe) | 标准安装向导，自动创建桌面快捷方式与卸载项 |
+| 🪟 Windows (x64) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-Windows-x64.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64.zip) | 纯绿色便携版，解压后双击 `Illacme-Plenipes.exe` |
+| 🐧 **Linux (x64)** | 原生独立执行归档 | [📥 `Illacme-Plenipes-Linux-x64.tar.gz`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Linux-x64.tar.gz) | 解压后执行 `./Illacme-Plenipes`，支持无头服务器模式 |
+
+> 💡 **历史版本与 SHA256 校验**：请访问 **[GitHub Releases 发行大厅](https://github.com/Illacme/illacme-plenipes/releases)** 查看详细更新日志与校验签名。
 
 ---
 
