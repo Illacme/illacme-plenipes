@@ -182,10 +182,19 @@ class NetlifyPublisher(BasePublisher):
     # 内部实现
     # ==========================================
 
+    def _resolve_executable(self) -> list:
+        """自愈解析 Netlify CLI 可执行命令，优先使用指定路径，缺失时自动降级到 npx -y netlify-cli"""
+        import shutil
+        if shutil.which(self.netlify_path):
+            return [self.netlify_path]
+        local_bin = os.path.join(os.getcwd(), "node_modules", ".bin", "netlify")
+        if os.path.exists(local_bin) and os.access(local_bin, os.X_OK):
+            return [local_bin]
+        return ["npx", "-y", "netlify-cli"]
+
     def _build_netlify_command(self, bundle_path: str, metadata: Dict[str, Any]) -> list:
         """组装 netlify deploy 命令参数"""
-        cmd = [
-            self.netlify_path,
+        cmd = self._resolve_executable() + [
             "deploy",
             f"--dir={bundle_path}",
             f"--site={self.site_id}",
