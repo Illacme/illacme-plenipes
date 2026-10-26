@@ -94,7 +94,8 @@
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                                 <textarea id="license-text-input" class="setting-input" rows="4" placeholder="请粘贴官方 .lic 密钥内容，或拖拽 .lic 文件到此处..." style="width: 100%; box-sizing: border-box; font-family: monospace; resize: vertical; padding: 12px; border-style: dashed; border-width: 1.5px; transition: all 0.25s;"></textarea>
-                                <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+                                    <div style="font-size: 0.78rem; color: var(--text-muted);">尚未取得商业授权？<a href="mailto:wqbyc@msn.com?subject=Illacme%20Plenipes%20获取商业授权许可证" style="color: var(--neon-cyan); text-decoration: underline;">联系商务定制与发卡 (wqbyc@msn.com)</a></div>
                                     <button type="button" class="primary-btn glow-btn" id="btn-activate-license" onclick="window.submitLicenseActivation()" style="padding: 8px 22px; font-size: 0.85rem; font-weight: bold;">🚀 验证并激活</button>
                                 </div>
                             </div>
@@ -155,9 +156,15 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div style="margin-top: 16px; text-align: center; border: 1px dashed var(--glass-border); border-radius: 8px; padding: 12px;">
-                                <span style="font-size: 0.85rem; color: var(--text-main);">需要解锁 5~99 个出版品牌或 55 个全量语种矩阵？</span>
-                                <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="margin-left: 12px; padding: 5px 16px; font-size: 0.82rem;">🔑 立即激活授权</button>
+                            <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border: 1px dashed var(--glass-border); border-radius: 10px; padding: 14px 18px; background: rgba(0, 242, 255, 0.02);">
+                                <div>
+                                    <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-main);">需要解锁 5~99 个出版品牌或 55 个全量语种矩阵？</div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">支持企业 EULA 采购、团队定制及个人创作者终身席位许可证。</div>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <a href="mailto:wqbyc@msn.com?subject=Illacme%20Plenipes%20商业授权申请" class="action-btn" style="text-decoration: none; padding: 6px 14px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">✉️ 商业咨询</a>
+                                    <button type="button" class="primary-btn glow-btn" onclick="window.switchLicenseSubTab('activation')" style="padding: 6px 16px; font-size: 0.82rem;">🔑 立即激活授权</button>
+                                </div>
                             </div>
                         </div>
                     </div>
