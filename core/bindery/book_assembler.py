@@ -207,29 +207,30 @@ class BookAssembler:
         for entry in parsed_docs:
             p, body, ch_id = entry["file_path"], entry["raw_body"], entry["ch_id"]
 
-            # 排版自愈：数学公式转译 -> Obsidian 插图转译 -> 跨章内链锚点重写
-            body = MathPackager.heal_latex_formulas(ImagePackager.heal_obsidian_embedded_images(body))
-            healed_body = self._heal_md_hrefs(self._heal_html_hrefs(self._rewrite_wikilinks_to_chapters(body, route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id)
+            # 排版自愈：优先转译 Obsidian 嵌入图片语法，再重写跨章锚点与公式
+            md_body = ImagePackager.heal_obsidian_embedded_images(body)
+            clean_raw_body = self._heal_md_hrefs(self._rewrite_wikilinks_to_chapters(md_body, route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id)
+            html_in = MathPackager.heal_latex_formulas(clean_raw_body)
+            healed_html_in = self._heal_md_hrefs(self._heal_html_hrefs(html_in, route_map, curr_ch_id=ch_id), route_map, curr_ch_id=ch_id)
             md_converter.reset()
-            html_content = md_converter.convert(healed_body)
+            html_content = md_converter.convert(healed_html_in)
             raw_toc_tokens = getattr(md_converter, "toc_tokens", [])
             headings = TocBuilder.extract_heading_tree(raw_toc_tokens, chapter_title=entry["title"])
             html_content = self._heal_html_hrefs(html_content, route_map, curr_ch_id=ch_id)
             html_content, assets = ImagePackager.extract_and_heal_images(html_content, p, self.vault_dir)
 
-            # Callout 优化：将 > [!TIP] 结构美化为标准的 callout 块
+            # Callout 优化：美化为 callout 块
             html_content = re.sub(
                 r'<blockquote>\s*<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][+-]?\s*(.*?)(</p>.*?)</blockquote>',
                 r'<div class="callout callout-\1"><div class="callout-title">💡 \1</div><p>\2\3</div>',
-                html_content,
-                flags=re.DOTALL | re.IGNORECASE
+                html_content, flags=re.DOTALL | re.IGNORECASE
             )
 
             chapters.append({
                 "order": int(ch_id.split('_')[1]),
                 "title": entry["title"],
                 "slug": entry["slug"],
-                "raw_body": healed_body,
+                "raw_body": clean_raw_body,
                 "html_body": html_content,
                 "file_path": p,
                 "assets": assets,
