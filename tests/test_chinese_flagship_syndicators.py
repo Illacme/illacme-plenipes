@@ -144,5 +144,47 @@ class TestChineseFlagshipSyndicators(unittest.TestCase):
 
         self.assertGreaterEqual(mock_post.call_count, 7)
 
+    def test_xiaohongshu_advanced_media_and_styling(self):
+        """测试小红书维基图片提取、相对路径补全与移动端 Emoji 标题微排版"""
+        syn = XiaohongshuSyndicator(config={}, site_url="https://mypublish.org")
+        content = (
+            "## 核心架构设计\n"
+            "这是一篇前沿技术解析。\n\n"
+            "![[architecture_wiki.png]]\n\n"
+            '<img src="/static/chart.png" alt="图表" />\n\n'
+            "### 避坑指南\n"
+            "注意不要死锁。\n\n"
+            "```python\ndef run():\n    pass\n```"
+        )
+        meta = {
+            "cover": "assets/cover.jpg",
+            "tags": ["#独立开发者", "AI架构#", "Python"]
+        }
+
+        payload = syn.format_payload("小红书深度技术拆解", "slug-demo", content, meta)
+
+        # 断言图片提取与补全
+        expected_cover = "https://mypublish.org/assets/cover.jpg"
+        expected_wiki = "https://mypublish.org/architecture_wiki.png"
+        expected_html = "https://mypublish.org/static/chart.png"
+        self.assertIn(expected_cover, payload["images"])
+        self.assertIn(expected_wiki, payload["images"])
+        self.assertIn(expected_html, payload["images"])
+
+        # 断言 Emoji 微排版
+        self.assertIn("📌 核心架构设计", payload["content"])
+        self.assertIn("💡 避坑指南", payload["content"])
+        self.assertNotIn("## 核心架构设计", payload["content"])
+
+        # 断言代码块降级
+        self.assertIn("[💻 核心代码实现请查阅全文链接]", payload["content"])
+
+        # 断言话题标签规范化
+        self.assertIn("#独立开发者#", payload["content"])
+        self.assertIn("#AI架构#", payload["content"])
+        self.assertIn("#Python#", payload["content"])
+
+
 if __name__ == "__main__":
     unittest.main()
+
