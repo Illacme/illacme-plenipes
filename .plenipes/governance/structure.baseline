@@ -73,6 +73,7 @@ core/adapters/egress/ssg/base_shards/docusaurus_i18n_synthesizer.py
 core/adapters/egress/ssg/base_shards/nextra_content_hydrator.py
 core/adapters/egress/ssg/base_shards/nextra_meta_synthesizer.py
 core/adapters/egress/ssg/base_shards/ssg_link_healer.py
+core/adapters/egress/ssg/base_shards/ssg_media_resolver.py
 core/adapters/egress/ssg/base_shards/ssg_nav_synthesizer.py
 core/adapters/egress/ssg/base_shards/ssg_slot_matrix.py
 core/adapters/egress/ssg/base_shards/ssg_theme_compiler.py

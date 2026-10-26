@@ -156,5 +156,18 @@ def get_universal_css() -> str:
         }
         .view-switch-btn.active { background: var(--bg-elevated); color: var(--accent); font-weight: 600; }
         .view-btn-badge { background: var(--accent-glow); color: var(--accent); padding: 1px 6px; border-radius: 10px; font-size: 0.72rem; }
+
+        /* 🎬 响应式视频容器与本地 HTML5 播放器增强 */
+        .video-container { margin: 1.5rem 0; width: 100%; text-align: center; }
+        .video-container.responsive-video {
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+            max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .video-container.responsive-video iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+        .video-container.local-video video {
+            max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); outline: none;
+        }
     """
     return base_css + get_universal_views_css()

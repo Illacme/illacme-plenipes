@@ -24,17 +24,50 @@ class ImagePackager:
         ".bmp": "image/bmp"
     }
 
+    VIDEO_EXTENSIONS = (".mp4", ".webm", ".mov", ".m4v", ".ogv", ".mkv")
+
     @classmethod
     def heal_obsidian_embedded_images(cls, markdown_text: str) -> str:
         """
         将 Obsidian 特有的 ![[image.png]] 或 ![[image.png|300]] 语法
-        转译为标准 Markdown / HTML 图像语法
+        转译为标准 Markdown / HTML 图像语法；并将视频 ![[video.mp4]] 转换为电子书媒体占位块
         """
         def repl(m):
             raw_target = m.group(1).strip()
             parts = raw_target.split('|')
-            img_file = parts[0].strip()
-            ext = os.path.splitext(img_file)[1].lower()
+            media_file = parts[0].strip()
+
+            # 📺 Bilibili / YouTube 在线视频链接内嵌处理
+            bv_match = re.search(r'(?:bilibili\.com\/video\/|b23\.tv\/|bilibili:)(BV[a-zA-Z0-9]+)', media_file, re.I)
+            if bv_match:
+                return (
+                    f'<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                    f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                    f'🎬 <b>在线视频 (Bilibili)</b>: <code>{bv_match.group(1)}</code>'
+                    f'</div>'
+                )
+
+            yt_match = re.search(r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube:)([a-zA-Z0-9_-]{11})', media_file, re.I)
+            if yt_match:
+                return (
+                    f'<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                    f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                    f'🎬 <b>在线视频 (YouTube)</b>: <code>{yt_match.group(1)}</code>'
+                    f'</div>'
+                )
+
+            ext = os.path.splitext(media_file)[1].lower()
+
+            # 🎬 本地视频文件转译为出版物媒体占位块
+            if ext in cls.VIDEO_EXTENSIONS:
+                alt_name = os.path.basename(media_file)
+                return (
+                    f'<div class="media-video-placeholder" style="margin: 1rem 0; padding: 12px 16px; '
+                    f'border: 1px dashed #94a3b8; border-radius: 6px; background-color: #f8fafc; color: #334155; font-size: 0.95rem;">'
+                    f'🎬 <b>视频资源</b>: <code>{alt_name}</code>'
+                    f'</div>'
+                )
+
             if ext not in cls.MIME_MAP:
                 return m.group(0)
 
@@ -45,8 +78,8 @@ class ImagePackager:
                 if w_match:
                     width_style = f' style="max-width: {w_match.group(1)}px;"'
 
-            alt_text = os.path.splitext(os.path.basename(img_file))[0]
-            return f'<img src="{img_file}" alt="{alt_text}"{width_style} />'
+            alt_text = os.path.splitext(os.path.basename(media_file))[0]
+            return f'<img src="{media_file}" alt="{alt_text}"{width_style} />'
 
         return re.sub(r'!\[\[([^\]]+)\]\]', repl, markdown_text)
 

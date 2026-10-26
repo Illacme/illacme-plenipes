@@ -131,8 +131,9 @@ def test_pdf_render_via_headless_mock():
             )
             assert res is True
             assert mock_run.called
-            args, kwargs = mock_run.call_args
-            cmd = args[0]
+            chrome_calls = [c for c in mock_run.call_args_list if c[0] and c[0][0] and c[0][0][0] == "/usr/bin/mock-chrome"]
+            assert len(chrome_calls) > 0, f"Expected Chrome invocation, but got calls: {mock_run.call_args_list}"
+            cmd = chrome_calls[0][0][0]
             assert cmd[0] == "/usr/bin/mock-chrome"
             assert any(arg.startswith("--headless") for arg in cmd)
             assert f"--print-to-pdf={out_pdf}" in cmd

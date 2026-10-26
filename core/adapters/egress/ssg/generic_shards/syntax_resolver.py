@@ -192,3 +192,10 @@ def resolve_mermaids(body: str) -> Tuple[str, list]:
 
     processed = mermaid_pattern.sub(_collect, body)
     return processed, mermaids
+
+
+def resolve_videos(body: str) -> str:
+    """提取并预解析本地视频与在线视频 (Bilibili/YouTube) 嵌入"""
+    from ..base_shards.ssg_media_resolver import SSGMediaResolver
+    return SSGMediaResolver.resolve_media_content(body)
+

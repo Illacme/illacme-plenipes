@@ -31,7 +31,7 @@ class GenericSSGAdapter(BaseSSGAdapter):
         """通用渲染逻辑：完整解析 Markdown 方言（WikiLinks/Callouts/Mermaid）并注入现代自适应 HTML 页面外壳"""
         import re
         import markdown
-        from .generic_templates import resolve_wikilinks, resolve_callouts, resolve_mermaids, render_html_page
+        from .generic_templates import resolve_wikilinks, resolve_callouts, resolve_mermaids, resolve_videos, render_html_page
         
         if seo_data:
             fm = self.inject_seo(fm, seo_data)
@@ -48,6 +48,9 @@ class GenericSSGAdapter(BaseSSGAdapter):
         # 3. 预解析 Callouts 提示块与 Mermaid 图表
         processed_body, callouts = resolve_callouts(clean_body)
         processed_body, mermaids = resolve_mermaids(processed_body)
+
+        # 3.1 预解析富媒体与视频 (Obsidian 本地视频、Bilibili、YouTube)
+        processed_body = resolve_videos(processed_body)
 
         # 4. 解析 Obsidian 双向链接 [[target|alias]]
         processed_body = resolve_wikilinks(processed_body, root_path=root_path, sub_path=sub_clean, engine=self.engine)

@@ -12,6 +12,8 @@ import os
 import re
 from typing import Any
 
+from .ssg_media_resolver import SSGMediaResolver
+
 
 class SSGLinkHealer:
     """SSG 链接自愈与 Markdown 规范化处理器"""
@@ -20,6 +22,9 @@ class SSGLinkHealer:
     def normalize_markdown_content(adapter: Any, body: str, sub_path: str = "", target_lang: str = "zh", clean_url: bool = None) -> str:
         if clean_url is None:
             clean_url = getattr(adapter, 'IS_CLEAN_URL', False)
+
+        # 🎬 [Rich Media & Video Healing] 优先解析并自愈多媒体/视频语法 (Obsidian, Bilibili, YouTube)
+        body = SSGMediaResolver.resolve_media_content(body)
 
         try:
             from core.adapters.egress.ssg.generic_shards.navigation_builder import get_doc_slug_map

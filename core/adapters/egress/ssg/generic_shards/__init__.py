@@ -3,7 +3,7 @@
 Illacme-plenipes Core - Generic SSG Adapter Shards Package
 """
 
-from .syntax_resolver import resolve_wikilinks, resolve_callouts, resolve_mermaids
+from .syntax_resolver import resolve_wikilinks, resolve_callouts, resolve_mermaids, resolve_videos
 from .navigation_builder import build_docs_sidebar, get_doc_slug_map, build_language_switcher
 from .assets_bundle import get_universal_css, get_universal_client_js
 from .page_renderer import render_html_page
@@ -13,6 +13,7 @@ __all__ = [
     "resolve_wikilinks",
     "resolve_callouts",
     "resolve_mermaids",
+    "resolve_videos",
     "build_docs_sidebar",
     "get_doc_slug_map",
     "build_language_switcher",
