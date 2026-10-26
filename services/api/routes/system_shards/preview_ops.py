@@ -142,26 +142,30 @@ async def stop_preview_logic() -> Dict[str, str]:
 def get_preview_logs_logic() -> Dict[str, Any]:
     """📋 [Orchestrator 桥接] 获取预览服务最新采样日志"""
     from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
+    engine = _get_engine()
     return {
         "status": "success",
         "logs": list(theme_orchestrator.log_ring_buffer),
         "theme": theme_orchestrator.active_theme,
         "port": theme_orchestrator.active_port,
-        "is_alive": bool(theme_orchestrator.active_process and theme_orchestrator.active_process.poll() is None)
+        "is_alive": theme_orchestrator.is_alive(engine)
     }
 
 
 def get_preview_status_logic() -> Dict[str, Any]:
     """🔍 [Orchestrator 桥接] 查询本地预览服务实时运行状态与拓扑元数据"""
+    import os
     from core.runtime.infrastructure.theme_orchestrator import theme_orchestrator
-    is_alive = bool(theme_orchestrator.active_process and theme_orchestrator.active_process.poll() is None)
+    engine = _get_engine()
+    is_alive = theme_orchestrator.is_alive(engine)
     port = theme_orchestrator.active_port or 43213
     theme_id = theme_orchestrator.active_theme or "default"
+    pid = theme_orchestrator.active_process.pid if (theme_orchestrator.active_process and theme_orchestrator.active_process.poll() is None) else (os.getpid() if is_alive else None)
     return {
         "status": "online" if is_alive else "offline",
         "theme": theme_id,
         "port": port,
         "is_alive": is_alive,
-        "pid": theme_orchestrator.active_process.pid if (is_alive and theme_orchestrator.active_process) else None,
+        "pid": pid,
         "url": f"http://localhost:{port}" if is_alive else None
     }

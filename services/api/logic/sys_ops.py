@@ -156,7 +156,7 @@ def run_precheck_logic(engine: Any) -> Dict[str, Any]:
     
     if not os.path.exists(theme_dir):
         result["critical_errors"].append(f"主题环境丢失：未找到激活的主题 '{engine.active_theme}' 对应的物理目录。")
-    elif engine.active_theme not in ['default'] and not os.path.exists(os.path.join(theme_dir, "package.json")):
+    elif engine.active_theme not in ['default', 'sovereign'] and not os.path.exists(os.path.join(theme_dir, "package.json")):
         result["critical_errors"].append(f"核心清单丢失：在主题 '{engine.active_theme}' 下未找到 package.json 文件。")
 
     # 2. 从本地 SQLite 数据库中提取所有已解析资产并执行存在性审计 (Physical Existence)

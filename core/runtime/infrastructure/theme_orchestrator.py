@@ -36,29 +36,47 @@ class ThemeDevServerOrchestrator:
 
     def __init__(self):
         self.active_process: Optional[subprocess.Popen] = None
+        self.active_server: Optional[Any] = None
         self.active_theme: str = "sovereign"
         self.active_port: int = 43213
         self.log_ring_buffer: deque = deque(maxlen=100)
         self._is_launching: bool = False
         atexit.register(self.shutdown_all)
 
+    def _terminate_active_process(self) -> None:
+        if self.active_process:
+            try:
+                os.killpg(os.getpgid(self.active_process.pid), signal.SIGTERM)
+                time.sleep(0.2)
+                if self.active_process.poll() is None:
+                    os.killpg(os.getpgid(self.active_process.pid), signal.SIGKILL)
+            except Exception: pass
+            self.active_process = None
+
+    def is_alive(self, engine: Any = None) -> bool:
+        """多形态统一探活：检查进程活跃态、内嵌 DevServer 线程或本地端口连通性"""
+        if self.active_process and self.active_process.poll() is None: return True
+        if self.active_server and getattr(self.active_server, 'httpd', None): return True
+        if engine and getattr(engine, 'preview_server', None) and getattr(engine.preview_server, 'httpd', None): return True
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.15)
+                return s.connect_ex(("127.0.0.1", self.active_port)) == 0
+        except Exception: return False
+
     def resolve_authoritative_port(self, requested_port: Optional[int] = None, engine: Any = None) -> int:
         """优先级：请求参数 > 环境变量 > 配置项 > 默认 43213"""
-        if requested_port and requested_port not in PROTECTED_PORTS:
-            return requested_port
+        if requested_port and requested_port not in PROTECTED_PORTS: return requested_port
         env_p = os.environ.get("ILLACME_PREVIEW_PORT")
-        if env_p and env_p.isdigit() and int(env_p) not in PROTECTED_PORTS:
-            return int(env_p)
+        if env_p and env_p.isdigit() and int(env_p) not in PROTECTED_PORTS: return int(env_p)
         if engine and hasattr(engine, "config") and hasattr(engine.config, "system"):
             cfg_p = getattr(engine.config.system, "serve_port", 43213)
-            if cfg_p not in PROTECTED_PORTS:
-                return cfg_p
+            if cfg_p not in PROTECTED_PORTS: return cfg_p
         return 43213
 
     def reclaim_port(self, port: int) -> bool:
         """端口安全白名单收割与幽灵杀手：仅收割允许范围且画像命中的进程"""
-        if port in PROTECTED_PORTS:
-            raise PermissionError(f"🚨 [安全拦截] 物理保护端口 {port} 严禁任何收割操作！")
+        if port in PROTECTED_PORTS: raise PermissionError(f"🚨 [安全拦截] 物理保护端口 {port} 严禁任何收割操作！")
         if port not in ALLOWED_PREVIEW_PORTS:
             tlog.warning(f"⚠️ [收割防线] 端口 {port} 未在允许预览端口列表内，跳过收割。")
             return False
@@ -72,14 +90,12 @@ class ThemeDevServerOrchestrator:
             except Exception: pids = []
         my_pid = os.getpid()
         for pid in pids:
-            if pid == my_pid:
-                continue
+            if pid == my_pid: continue
             try:
                 ps_info = subprocess.check_output(["ps", "-p", str(pid), "-o", "comm=,args="], text=True).lower()
                 if any(fp in ps_info for fp in ALLOWED_PROCESS_FINGERPRINTS):
                     tlog.info(f"🧹 [幽灵收割] 正在终止端口 {port} 上的进程 PID {pid}...")
-                    try:
-                        os.killpg(os.getpgid(pid), signal.SIGTERM)
+                    try: os.killpg(os.getpgid(pid), signal.SIGTERM)
                     except Exception:
                         try: os.kill(pid, signal.SIGTERM)
                         except Exception: pass
@@ -88,30 +104,25 @@ class ThemeDevServerOrchestrator:
                         os.kill(pid, 0)
                         os.killpg(os.getpgid(pid), signal.SIGKILL)
                     except Exception: pass
-                else:
-                    tlog.warning(f"⚠️ [画像拒绝] PID {pid} 未命中预览白名单画像，安全跳过。")
+                else: tlog.warning(f"⚠️ [画像拒绝] PID {pid} 未命中预览白名单画像，安全跳过。")
             except Exception: pass
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 s.bind(("", port))
                 return True
-            except OSError:
-                return False
+            except OSError: return False
 
     def check_node_runtime(self) -> Tuple[bool, str, str]:
         """Node.js 运行时探针：检测版本是否 >= 18.0.0"""
         node_bin = shutil.which("node")
-        if not node_bin:
-            return False, "", "本地未检测到 Node.js 运行时，无法运行前端 SSG 框架。"
+        if not node_bin: return False, "", "本地未检测到 Node.js 运行时，无法运行前端 SSG 框架。"
         try:
             raw_v = subprocess.check_output([node_bin, "--version"], text=True, stderr=subprocess.DEVNULL).strip()
             v_num = int(raw_v.lstrip("v").split(".")[0])
-            if v_num < 18:
-                return False, raw_v, f"Node.js 版本 {raw_v} 过低 (需要 >= 18.0.0)。"
+            if v_num < 18: return False, raw_v, f"Node.js 版本 {raw_v} 过低 (需要 >= 18.0.0)。"
             return True, raw_v, ""
-        except Exception as e:
-            return False, "", f"Node.js 探针执行失败: {e}"
+        except Exception as e: return False, "", f"Node.js 探针执行失败: {e}"
 
     def ensure_content_readiness(self, theme_id: str, imprint_id: str, engine: Any = None) -> str:
         """冷启动内容预装配守卫 (SOP-13 隔离)：确保派生目录具有最小多语言脚手架"""
@@ -214,13 +225,11 @@ class ThemeDevServerOrchestrator:
         """一键点火总入口：收割、探针、预装配、异构点火与深度探活全生命周期闭环"""
         self._is_launching = True
         self.log_ring_buffer.clear()
-        if self.active_process:
-            try:
-                os.killpg(os.getpgid(self.active_process.pid), signal.SIGTERM)
-                time.sleep(0.2)
-                if self.active_process.poll() is None: os.killpg(os.getpgid(self.active_process.pid), signal.SIGKILL)
+        self._terminate_active_process()
+        if self.active_server:
+            try: self.active_server.stop()
             except Exception: pass
-            self.active_process = None
+            self.active_server = None
         if engine and getattr(engine, "preview_server", None):
             try: engine.preview_server.stop()
             except Exception: pass
@@ -236,10 +245,8 @@ class ThemeDevServerOrchestrator:
                 return self.launch_dev_server("sovereign", imprint_id, target_port, engine)
         target_cwd = self.ensure_content_readiness(theme_id, imprint_id, engine)
         if engine and hasattr(engine, 'ssg_adapter') and engine.ssg_adapter:
-            try:
-                engine.ssg_adapter.compile_theme_options()
-            except Exception as opt_err:
-                tlog.warning(f"⚠️ [Orchestrator] 启动前热编译主题选项容错: {opt_err}")
+            try: engine.ssg_adapter.compile_theme_options()
+            except Exception as opt_err: tlog.warning(f"⚠️ [Orchestrator] 启动前热编译主题选项容错: {opt_err}")
         if is_node_framework:
             bus.emit("UI_TERMINAL_DATA", type="LOG", data=f"⚡ [Orchestrator] 正在以 PTY 模式点火 {theme_id}: {cmd}")
             try:
@@ -270,21 +277,18 @@ class ThemeDevServerOrchestrator:
             preview_dir = getattr(engine, "paths", {}).get("site_dir", target_cwd) if engine else target_cwd
             srv = DevServer(directory=preview_dir, port=target_port)
             srv.start(blocking=False)
-            if engine:
-                engine.preview_server = srv
+            if engine: engine.preview_server = srv
+            self.active_server = srv
             self.active_theme, self.active_port, self._is_launching = theme_id, target_port, False
             return {"status": "success", "theme": theme_id, "port": target_port, "url": f"http://localhost:{target_port}", "mode": "static"}
 
     def shutdown_all(self) -> None:
         """主进程退出或全局收割钩子"""
-        if self.active_process:
-            try:
-                os.killpg(os.getpgid(self.active_process.pid), signal.SIGTERM)
-                time.sleep(0.3)
-                if self.active_process.poll() is None:
-                    os.killpg(os.getpgid(self.active_process.pid), signal.SIGKILL)
+        self._terminate_active_process()
+        if self.active_server:
+            try: self.active_server.stop()
             except Exception: pass
-            self.active_process = None
+            self.active_server = None
         if self.active_port:
             try: self.reclaim_port(self.active_port)
             except Exception: pass

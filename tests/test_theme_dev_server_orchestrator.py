@@ -268,3 +268,28 @@ async def test_trigger_publish_local_only_passthrough():
                 assert mock_sync.call_args.kwargs["local_only"] is True
 
 
+def test_orchestrator_is_alive_and_sovereign_precheck():
+    """用例 14: 验证 is_alive 多态判定及 sovereign 主题 precheck 免 package.json 规范"""
+    from core.runtime.infrastructure.theme_orchestrator import ThemeDevServerOrchestrator
+    from services.api.logic.sys_ops import run_precheck_logic
+    orch = ThemeDevServerOrchestrator()
+    mock_server = MagicMock()
+    mock_server.httpd = MagicMock()
+    orch.active_server = mock_server
+    assert orch.is_alive() is True
+
+    orch.active_server = None
+    mock_proc = MagicMock()
+    mock_proc.poll.return_value = None
+    orch.active_process = mock_proc
+    assert orch.is_alive() is True
+
+    mock_engine = MagicMock()
+    mock_engine.active_theme = "sovereign"
+    mock_engine.vault_root = ""
+    mock_engine.paths = {"themes": "themes"}
+    res = run_precheck_logic(mock_engine)
+    assert not any("package.json" in err for err in res["critical_errors"])
+
+
+
