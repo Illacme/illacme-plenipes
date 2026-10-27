@@ -74,7 +74,7 @@ jobs:
           if [ -n "${{ matrix.target-arch }}" ]; then
             ARGS="--target-arch ${{ matrix.target-arch }}"
           fi
-          python scripts/build_desktop.py $ARGS
+          python desktop/packager.py $ARGS
 
       - name: 🔍 检查编译产物拓扑
         shell: bash
