@@ -198,46 +198,14 @@ jobs:
         shell: bash
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
-          PREV_TAG=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || "")
           RELEASE_DOC="docs/releases/${TAG}.md"
 
           if [ -f "$RELEASE_DOC" ]; then
-            echo "📄 发现专属发版通告文档: $RELEASE_DOC，正在作为 Release 正文..."
+            echo "📄 发现仓库已存在专属发版文档: $RELEASE_DOC，直接作为 Release 正文..."
             cp "$RELEASE_DOC" release_body.md
           else
-            echo "### 📦 官方客户端下载与安装方式 / Official Downloads" > release_body.md
-            echo "" >> release_body.md
-            echo "| 操作系统平台 / OS | 安装格式 / Format | 下载文件 / Asset | 推荐场景 / Best For |" >> release_body.md
-            echo "| :--- | :--- | :--- | :--- |" >> release_body.md
-            echo "| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | \`Illacme-Plenipes-macOS.dmg\` | **首选 / Recommended**：Apple Silicon (M1/M2/M3/M4) Mac |" >> release_body.md
-            echo "| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-macOS.zip\` | 免挂载解压即用 / Portable archive |" >> release_body.md
-            echo "| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | \`Illacme-Plenipes-Windows-x64-Setup.exe\` | **首选 / Recommended**：标准向导安装、自动创建桌面图标 |" >> release_body.md
-            echo "| 🪟 Windows (x64) | 便携 ZIP 压缩包 | \`Illacme-Plenipes-Windows-x64.zip\` | 免安装纯便携版 / Portable archive |" >> release_body.md
-            echo "| 🐧 **Linux (x64)** | 原生独立可执行归档 | \`Illacme-Plenipes-Linux-x64.tar.gz\` | Linux 桌面与服务器直接运行 / Linux desktop & server |" >> release_body.md
-            echo "" >> release_body.md
-            echo "> 💡 **完整性保障 / Integrity**：每个安装文件均附带对应的 \`.sha256\` 校验文件。" >> release_body.md
-            echo "" >> release_body.md
-            echo "### 🛡️ 首次运行安全提示 / First-Run Security Unlock (3 Seconds)" >> release_body.md
-            echo "" >> release_body.md
-            echo "* **🍎 macOS 首次运行提示“已损坏，无法打开” / \"App is damaged\"**：" >> release_body.md
-            echo "  * **方案 A（一键自动修复，推荐）**：在安装包中直接**双击运行「双击修复无法打开.command」**脚本即可自动解除隔离。" >> release_body.md
-            echo "  * **Option A (Auto-fix)**: Double-click the bundled \`双击修复无法打开.command\` script in the package." >> release_body.md
-            echo "  * **方案 B（终端一键直达）**：在终端运行 \`xattr -cr /Applications/Illacme-Plenipes.app\`。" >> release_body.md
-            echo "* **🪟 Windows 蓝色保护警告 / Windows Defender SmartScreen**：" >> release_body.md
-            echo "  * 点击「更多信息」，再点击「仍要运行」即可正常启动。" >> release_body.md
-            echo "  * Click \"More info\", then click \"Run anyway\"." >> release_body.md
-            echo "" >> release_body.md
-            echo "### ✨ 本次更新内容 / What's New" >> release_body.md
-            echo "" >> release_body.md
-
-            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
-              git log --pretty=format:"* %s (%h)" "$PREV_TAG..$TAG" >> release_body.md
-              echo "" >> release_body.md
-              echo "" >> release_body.md
-              echo "**完整变更对比**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}" >> release_body.md
-            else
-              git log -n 25 --pretty=format:"* %s (%h)" "$TAG" >> release_body.md
-            fi
+            echo "🤖 未检测到手写发版文档，正在触发 ReleaseNotesBuilder 自动化生成面向创作者的 Markdown..."
+            python desktop/release_notes_builder.py --version "$TAG" --output release_body.md
           fi
 
           echo "=== 预览 RELEASE 说明 ==="

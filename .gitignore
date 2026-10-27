@@ -58,6 +58,7 @@ logs/
 htmlcov/
 .pytest_cache/
 scripts/
+!scripts/generate_release_notes.py
 dashboard/public/data/engine_pulse_*.json
 
 # 🚀 临时资产与自愈脚本
