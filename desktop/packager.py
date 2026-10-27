@@ -102,37 +102,31 @@ class DesktopPackager:
 
     @classmethod
     def generate_icon(cls, base_logo_path: str = "web/dashboard/logo.png") -> Optional[str]:
-        """从网站 Logo 生成系统原生图标"""
-        if not os.path.exists(base_logo_path):
-            return None
+        """从预置专属资产或网站 Logo 生成系统原生图标"""
+        system = platform.system()
+        asset_icns, asset_ico = os.path.join("desktop", "assets", "icon.icns"), os.path.join("desktop", "assets", "icon.ico")
+        if system == "Darwin" and os.path.exists(asset_icns): return asset_icns
+        if system == "Windows" and os.path.exists(asset_ico): return asset_ico
+        if not os.path.exists(base_logo_path): return None
         out_dir = os.path.join("build", "desktop", "icons")
         os.makedirs(out_dir, exist_ok=True)
-
-        system = platform.system()
         try:
             from PIL import Image
             img = Image.open(base_logo_path)
-
             if system == "Darwin":
                 iconset_dir = os.path.join(out_dir, "AppIcon.iconset")
                 os.makedirs(iconset_dir, exist_ok=True)
-                # 严格对齐 Apple 官方 iconutil 5 大标准规格 (16/32/128/256/512 @1x & @2x)
-                sizes = [16, 32, 128, 256, 512]
-                for s in sizes:
-                    resized = img.resize((s, s), Image.Resampling.LANCZOS)
-                    resized.save(os.path.join(iconset_dir, f"icon_{s}x{s}.png"))
-                    resized_2x = img.resize((s * 2, s * 2), Image.Resampling.LANCZOS)
-                    resized_2x.save(os.path.join(iconset_dir, f"icon_{s}x{s}@2x.png"))
+                for s in [16, 32, 128, 256, 512]:
+                    img.resize((s, s), Image.Resampling.LANCZOS).save(os.path.join(iconset_dir, f"icon_{s}x{s}.png"))
+                    img.resize((s * 2, s * 2), Image.Resampling.LANCZOS).save(os.path.join(iconset_dir, f"icon_{s}x{s}@2x.png"))
                 icns_path = os.path.join(out_dir, "AppIcon.icns")
                 if shutil.which("iconutil"):
                     subprocess.run(["iconutil", "-c", "icns", iconset_dir, "-o", icns_path], check=True)
                     return icns_path
-
             elif system == "Windows":
                 ico_path = os.path.join(out_dir, "AppIcon.ico")
                 img.save(ico_path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
                 return ico_path
-
         except Exception as e:
             tlog.warning(f"⚠️ [图标生成] 跳过定制图标: {e}")
         return None
@@ -199,6 +193,12 @@ class DesktopPackager:
             dmg_path = os.path.join(output_dir, f"{cls.APP_NAME}-v{__version__}.dmg")
         tlog.info(f"💿 [DMG 工坊] 正在生成 macOS 安装镜像: {dmg_path} ...")
         try:
+            # 注入 DMG 品牌卷标图标
+            asset_icns = os.path.join("desktop", "assets", "icon.icns")
+            if os.path.exists(asset_icns):
+                try: shutil.copy(asset_icns, os.path.join(output_dir, ".VolumeIcon.icns"))
+                except Exception: pass
+
             app_link = os.path.join(output_dir, "Applications")
             if not os.path.exists(app_link):
                 try: os.symlink("/Applications", app_link)
