@@ -54,6 +54,8 @@
         }
 
         const isUpToDate = !info.has_update;
+        const isSourceMode = Boolean(info.is_source_mode);
+        const isDownloadOnly = isUpToDate || isSourceMode;
         const modalIcon = isUpToDate ? '🎉' : '🚀';
         const modalTitle = isUpToDate 
             ? `当前已是最新正式版本 ${info.current_version}` 
@@ -63,7 +65,7 @@
             : `当前运行版本: ${info.current_version} · 发布于: ${info.published_at ? info.published_at.slice(0, 10) : '近期'}`;
 
         const asset = info.recommended_asset;
-        const btnText = isUpToDate ? '📥 重新下载/备份安装包' : '⚡ 一键静默升级';
+        const btnText = isDownloadOnly ? '📥 重新下载/备份安装包' : '⚡ 一键静默升级';
         const tagText = isUpToDate ? '当前系统专属安装包' : '专属推荐安装包';
         const assetHtml = asset ? `
             <div id="updater-card-box" class="updater-asset-card">
@@ -75,7 +77,7 @@
                         </div>
                         <div class="updater-asset-meta">格式: ${asset.format_desc} · 产物体积: ${asset.size_mb} MB</div>
                     </div>
-                    <button type="button" id="btn-silent-update-action" class="updater-asset-btn" onclick="window.startSilentUpdate('${asset.download_url}', '${info.latest_version}')">
+                    <button type="button" id="btn-silent-update-action" class="updater-asset-btn" onclick="window.startSilentUpdate('${asset.download_url}', '${info.latest_version}', ${isDownloadOnly})">
                        ${btnText}
                     </button>
                 </div>
@@ -150,9 +152,23 @@
     };
 
     /**
-     * ⚡ 一键后台静默更新：无需用户动手，自动在后台下载并在就绪后静默替换自重启
+     * 📂 在访达或资源管理器中高亮定位已下载文件
      */
-    window.startSilentUpdate = async function (downloadUrl, targetVersion) {
+    window.revealDownloadedAsset = async function (filePath) {
+        if (!filePath) return;
+        try {
+            await fetch('/api/system/reveal-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: filePath })
+            });
+        } catch (_) {}
+    };
+
+    /**
+     * ⚡ 一键后台静默更新 / 纯下载备份：支持源码安全模式与访达直接定位
+     */
+    window.startSilentUpdate = async function (downloadUrl, targetVersion, isDownloadOnly = false) {
         const actionBtn = document.getElementById('btn-silent-update-action');
         const progressBox = document.getElementById('updater-progress-wrapper');
         const statusText = document.getElementById('updater-progress-status-text');
@@ -162,7 +178,7 @@
         if (actionBtn) {
             actionBtn.disabled = true;
             actionBtn.style.opacity = '0.6';
-            actionBtn.innerHTML = '⏳ 正在点火后台静默更新...';
+            actionBtn.innerHTML = isDownloadOnly ? '⏳ 正在下载安装包...' : '⏳ 正在点火后台静默更新...';
         }
         if (progressBox) progressBox.style.display = 'flex';
 
@@ -192,12 +208,28 @@
                         if (actionBtn) actionBtn.innerHTML = `⏳ 下载中 ${prog.percent || 0}%`;
                     } else if (prog.status === 'ready' || prog.is_ready) {
                         clearInterval(pollTimer);
-                        if (statusText) statusText.textContent = '🚀 下载完成，正在静默替换并自动重启...';
                         if (barFill) barFill.style.width = '100%';
                         if (percentText) percentText.textContent = '100%';
+
+                        // 🛡️ 纯下载备份或源码模式：仅在访达中定位，绝不杀死当前运行进程
+                        if (isDownloadOnly) {
+                            if (statusText) statusText.textContent = '🎉 安装包已下载就绪！已为您在系统访达中定位。';
+                            if (actionBtn) {
+                                actionBtn.disabled = false;
+                                actionBtn.style.opacity = '1';
+                                actionBtn.innerHTML = '📂 在访达中查看安装包';
+                                actionBtn.onclick = () => window.revealDownloadedAsset(prog.file_path);
+                            }
+                            if (prog.file_path) {
+                                window.revealDownloadedAsset(prog.file_path);
+                            }
+                            return;
+                        }
+
+                        // 🚀 独立打包升级模式：触发自动静默替换与自重启
+                        if (statusText) statusText.textContent = '🚀 下载完成，正在静默替换并自动重启...';
                         if (actionBtn) actionBtn.innerHTML = '⚡ 正在自重启...';
 
-                        // 自动触发静默替换与自重启
                         const applyResp = await fetch('/api/system/update/apply', { method: 'POST' });
                         const applyData = await applyResp.json();
                         if (applyData.success) {
@@ -227,7 +259,7 @@
                     if (actionBtn) {
                         actionBtn.disabled = false;
                         actionBtn.style.opacity = '1';
-                        actionBtn.innerHTML = '⚡ 重试静默升级';
+                        actionBtn.innerHTML = isDownloadOnly ? '📥 重新下载安装包' : '⚡ 重试静默升级';
                     }
                 }
             }, 800);
@@ -238,7 +270,7 @@
             if (actionBtn) {
                 actionBtn.disabled = false;
                 actionBtn.style.opacity = '1';
-                actionBtn.innerHTML = '⚡ 重试静默升级';
+                actionBtn.innerHTML = isDownloadOnly ? '📥 重新下载安装包' : '⚡ 重试静默升级';
             }
         }
     };

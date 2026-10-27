@@ -171,10 +171,32 @@ class UpdateInstaller:
             file_path = cls._downloaded_file_path
 
         os_type = platform.system()
-        tlog.info(f"🔄 [静默更新] 准备执行宿主系统升级自重启 ({os_type}): {file_path}")
+        is_source_mode = not getattr(sys, "frozen", False)
+        tlog.info(f"🔄 [静默更新] 准备执行宿主系统升级 ({os_type}, 源码模式: {is_source_mode}): {file_path}")
+
+        # 🛡️ 源码运行保护：当前若在 Python 开发环境中运行，绝不强行杀掉进程，仅在访达/资源管理器中定位
+        if is_source_mode:
+            try:
+                if os_type == "Darwin":
+                    subprocess.Popen(["open", "-R", file_path])
+                elif os_type == "Windows":
+                    subprocess.Popen(["explorer", f"/select,{file_path}"])
+                elif shutil.which("xdg-open"):
+                    subprocess.Popen(["xdg-open", os.path.dirname(file_path)])
+            except Exception as e:
+                tlog.warning(f"⚠️ [静默更新] 打开系统文件管理器失败: {e}")
+
+            with cls._lock:
+                cls._status = "ready"
+            return {
+                "success": True,
+                "is_source_mode": True,
+                "message": f"当前为源码开发模式，已在文件管理器中为您定位安装包: {os.path.basename(file_path)}",
+                "file_path": file_path
+            }
 
         try:
-            # 1. Windows 环境静默安装与重启流水线
+            # 1. Windows 环境静默安装与自重启流水线
             if os_type == "Windows" and file_path.lower().endswith(".exe"):
                 bat_script = os.path.join(cls.get_cache_dir(), "apply_update.bat")
                 current_pid = os.getpid()
@@ -189,34 +211,31 @@ del "%~f0"
                 with open(bat_script, "w", encoding="gbk") as f:
                     f.write(bat_content)
 
-                # 以完全分离的子进程拉起
                 subprocess.Popen(["cmd.exe", "/c", bat_script], creationflags=0x00000008 | 0x00000200)
                 cls._schedule_exit(1.0)
                 return {"success": True, "message": "正在执行静默升级并自重启，客户端即将就绪..."}
 
-            # 2. macOS 环境下 DMG 挂载与静默覆盖或应用拉起
+            # 2. macOS 环境下 DMG 挂载、动态识别 App 名称与无缝替换
             elif os_type == "Darwin":
                 sh_script = os.path.join(cls.get_cache_dir(), "apply_update.sh")
-                current_app = "/Applications/Illacme Plenipes.app"
                 
                 sh_content = f"""#!/bin/sh
 sleep 1
-# 探测是否为 DMG 并执行挂载
 if echo "{file_path}" | grep -q "\\.dmg$"; then
     MOUNT_POINT=$(hdiutil attach "{file_path}" -nobrowse -readonly | grep -o '/Volumes/.*' | head -n 1)
     if [ -n "$MOUNT_POINT" ]; then
         APP_SRC=$(find "$MOUNT_POINT" -maxdepth 1 -name "*.app" | head -n 1)
         if [ -n "$APP_SRC" ]; then
+            APP_NAME=$(basename "$APP_SRC")
             cp -R "$APP_SRC" "/Applications/"
             hdiutil detach "$MOUNT_POINT" -force > /dev/null 2>&1
-            open -a "{current_app}"
+            open "/Applications/$APP_NAME"
             rm -f "$0"
             exit 0
         fi
         hdiutil detach "$MOUNT_POINT" -force > /dev/null 2>&1
     fi
 fi
-# 兜底回退：若非 DMG 或挂载失败，调用系统 open 打开
 open "{file_path}"
 rm -f "$0"
 """
