@@ -116,7 +116,15 @@ class SafeStaticFiles(StaticFiles):
         if any(norm_path.endswith(ext) for ext in dangerous_extensions):
             return Response(status_code=403, content="Access Denied: Sensitive File Extension Prohibited")
 
-        return await super().get_response(path, scope)
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            # HTML 页面禁用强缓存，确保发版后新界面即时刷新
+            if norm_path == "" or norm_path.endswith(".html"):
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            # 静态脚本/样式/图标开启 24 小时智能强缓存，消解 270+ 静态资源首屏串行阻塞
+            elif any(norm_path.endswith(ext) for ext in [".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"]):
+                response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+        return response
 
 # 🎨 挂载仪表盘静态页面 (经 FrozenPathResolver 物理自愈锚定，启用 SafeStaticFiles 物理隔离)
 from core.utils.frozen_paths import FrozenPathResolver

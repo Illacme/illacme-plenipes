@@ -7,6 +7,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 def setup_middleware(app: FastAPI) -> None:
     """
@@ -15,6 +16,9 @@ def setup_middleware(app: FastAPI) -> None:
     Args:
         app: 目标 FastAPI 应用实例。
     """
+    # ⚡ 启用 Gzip 流式压缩 (针对 > 1KB 的静态资源与 API 响应大幅降低首屏传输时间)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+
     # 🔓 允许全域跨域（CORS）
     app.add_middleware(
         CORSMiddleware,
