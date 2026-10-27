@@ -8,6 +8,12 @@ Illacme Plenipes - Desktop Application Packager Core
 import os, sys, shutil, platform, subprocess
 from typing import List, Optional
 
+if sys.platform == "win32":
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try: stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception: pass
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
 
@@ -273,23 +279,13 @@ Illacme Plenipes · 全球私人出版社桌面客户端
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Illacme Plenipes 桌面独立客户端构建流水线")
-    parser.add_argument("--dry-run", action="store_true", help="仅执行参数与资源依赖合规性校验，不执行实际耗时编译")
-    parser.add_argument("--output-dir", default="dist/desktop", help="打包产物输出目录 (默认: dist/desktop)")
-    parser.add_argument("--dmg", action="store_true", help="构建完成后自动制作 macOS .dmg 安装镜像")
-    parser.add_argument(
-        "--target-arch",
-        choices=["universal2", "arm64", "x86_64"],
-        default=None,
-        help="目标编译架构 (仅 macOS: universal2, arm64, x86_64)"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="仅校验配置，不执行编译")
+    parser.add_argument("--output-dir", default="dist/desktop", help="产物输出目录")
+    parser.add_argument("--dmg", action="store_true", help="构建完成后制作 macOS .dmg 镜像")
+    parser.add_argument("--target-arch", choices=["universal2", "arm64", "x86_64"], default=None, help="目标架构")
     args = parser.parse_args()
 
-    success = DesktopPackager.execute_build(
-        dry_run=args.dry_run,
-        output_dir=args.output_dir,
-        target_arch=args.target_arch,
-        create_dmg=args.dmg
-    )
+    success = DesktopPackager.execute_build(dry_run=args.dry_run, output_dir=args.output_dir, target_arch=args.target_arch, create_dmg=args.dmg)
     sys.exit(0 if success else 1)
 
 
