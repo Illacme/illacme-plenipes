@@ -8,10 +8,29 @@
     window._latestUpdateInfo = null;
     window._isCheckingUpdate = false;
 
+    // 🚀 0ms 启动预热：尝试从本地会话缓存即时预充填，实现冷启动瞬间秒开
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const cached = sessionStorage.getItem('illacme_latest_update_info');
+            if (cached) {
+                window._latestUpdateInfo = JSON.parse(cached);
+            }
+        }
+    } catch (_) {}
+
     /**
-     * 🛰️ 请求后端 API 检查最新版本
+     * 🛰️ 请求后端 API 检查最新版本 (支持 0 延迟秒开弹窗与智能缓存)
      */
-    window.checkSystemUpdate = async function (interactive = false) {
+    window.checkSystemUpdate = async function (interactive = false, forceRefresh = false) {
+        // 🚀 0 延迟体验优化：交互点击时若已有数据立刻秒开真实弹窗，否则立刻秒开流光骨架屏
+        if (interactive) {
+            if (window._latestUpdateInfo) {
+                window.openUpdateModal(false);
+            } else if (typeof window.openUpdateModal === 'function') {
+                window.openUpdateModal(true); // 打开流光骨架屏秒开态
+            }
+        }
+
         if (window._isCheckingUpdate) return;
         window._isCheckingUpdate = true;
 
@@ -22,10 +41,17 @@
         }
 
         try {
-            const resp = await fetch(`/api/system/check_update?force=${interactive ? 'true' : 'false'}`);
+            const resp = await fetch(`/api/system/check_update?force=${forceRefresh ? 'true' : 'false'}`);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
             window._latestUpdateInfo = data;
+
+            // 存入会话持久化，加速后续秒开
+            try {
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem('illacme_latest_update_info', JSON.stringify(data));
+                }
+            } catch (_) {}
 
             // 1. 更新全局版本号显示胶囊
             const verPill = document.getElementById('footer-version-display');

@@ -347,3 +347,269 @@
     padding-top: 11px;
 }
 
+/* 🛰️ [SOP-03] 系统更新与发版向导弹窗组件体系 (System Updater Modal Shard) */
+.updater-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(4, 8, 14, 0.78);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: opacity 0.25s ease;
+}
+
+.updater-modal-card {
+    background: var(--glass-bg, #0b1219);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    border-radius: 16px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.updater-modal-header {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.updater-modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted, #94a3b8);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.updater-modal-close-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.updater-modal-body {
+    padding: 18px 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.updater-source-banner {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: #10B981;
+}
+
+.updater-asset-card {
+    background: rgba(0, 240, 255, 0.06);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.updater-asset-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(0, 240, 255, 0.2);
+    color: var(--neon-cyan, #00f0ff);
+    font-weight: 700;
+}
+
+.updater-asset-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main, #f8fafc);
+    font-family: var(--font-mono, monospace);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.updater-asset-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+}
+
+.updater-asset-btn {
+    background: linear-gradient(135deg, var(--neon-cyan, #00f0ff), #00a8ff);
+    color: #04080e;
+    font-weight: 800;
+    font-size: 0.82rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 240, 255, 0.25);
+    transition: all 0.2s;
+}
+.updater-asset-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 240, 255, 0.35);
+}
+
+.updater-notes-rich {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 16px 18px;
+    max-height: 360px;
+    overflow-y: auto;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-main, #e2e8f0);
+}
+
+.updater-notes-rich h1,
+.updater-notes-rich h2,
+.updater-notes-rich h3,
+.updater-notes-rich h4 {
+    margin: 14px 0 6px;
+    color: var(--neon-cyan, #00f0ff);
+    font-weight: 700;
+}
+.updater-notes-rich h1:first-child,
+.updater-notes-rich h2:first-child,
+.updater-notes-rich h3:first-child {
+    margin-top: 0;
+}
+.updater-notes-rich p {
+    margin: 6px 0;
+}
+.updater-notes-rich ul,
+.updater-notes-rich ol {
+    margin: 6px 0;
+    padding-left: 20px;
+}
+.updater-notes-rich li {
+    margin-bottom: 4px;
+}
+.updater-notes-rich table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.78rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.updater-notes-rich th {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--neon-cyan, #00f0ff);
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.updater-notes-rich td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-main, #cbd5e1);
+}
+.updater-notes-rich tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.02);
+}
+.updater-notes-rich code {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.76rem;
+    color: var(--neon-cyan, #00f0ff);
+}
+.updater-notes-rich blockquote {
+    margin: 8px 0;
+    padding: 8px 14px;
+    border-left: 3px solid var(--neon-cyan, #00f0ff);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-muted, #94a3b8);
+}
+.updater-notes-rich hr {
+    border: none;
+    border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    margin: 14px 0;
+}
+
+.updater-modal-footer {
+    padding: 12px 22px;
+    border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    background: var(--white-05, rgba(255, 255, 255, 0.02));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.updater-footer-link {
+    font-size: 0.78rem;
+    color: var(--neon-cyan, #00f0ff);
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+}
+.updater-footer-link:hover {
+    opacity: 0.85;
+}
+
+.updater-footer-close-btn {
+    background: var(--white-10, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    color: var(--text-main, #f8fafc);
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.updater-footer-close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 🦴 流光骨架屏样式 (Skeleton Loader) */
+.updater-skeleton-box {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: updaterSkeletonLoading 1.5s infinite;
+    border-radius: 8px;
+}
+.updater-skeleton-line {
+    height: 14px;
+    margin: 8px 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: updaterSkeletonLoading 1.5s infinite;
+}
+@keyframes updaterSkeletonLoading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+

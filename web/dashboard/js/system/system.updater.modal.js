@@ -8,24 +8,49 @@
     'use strict';
 
     /**
-     * 🚀 渲染并弹出高档毛玻璃更新向导弹窗 (支持新版本升级与当前最新版特性速览)
+     * 🚀 渲染并弹出高档毛玻璃更新向导弹窗 (支持秒开骨架屏、新版本升级与当前最新版特性速览)
      */
-    window.openUpdateModal = function () {
-        const info = window._latestUpdateInfo;
-        if (!info) {
-            if (typeof window.checkSystemUpdate === 'function') {
-                window.checkSystemUpdate(true);
-            }
-            return;
-        }
-
+    window.openUpdateModal = function (isSkeleton = false) {
         let modal = document.getElementById('system-update-modal');
         if (!modal) {
             modal = document.createElement('div');
             modal.id = 'system-update-modal';
-            modal.className = 'glass-modal-backdrop';
-            modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(4,8,14,0.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.3s ease;';
+            modal.className = 'updater-modal-backdrop';
+            modal.onclick = (e) => { if (e.target === modal) window.closeUpdateModal(); };
             document.body.appendChild(modal);
+        }
+
+        const info = window._latestUpdateInfo;
+
+        // 骨架屏秒开态：若无数据或显式指定骨架态，0ms 立即展现流光加载
+        if (!info || isSkeleton) {
+            modal.innerHTML = `
+                <div class="updater-modal-card">
+                    <div class="updater-modal-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🛰️</span>
+                            <div>
+                                <h3 style="margin:0;font-size:1.05rem;font-weight:800;letter-spacing:0.5px;">正在同步云端发版状态...</h3>
+                                <div style="font-size:0.72rem;margin-top:2px;">正在连接 GitHub Releases 官方同步中枢 · 请稍候</div>
+                            </div>
+                        </div>
+                        <button type="button" class="updater-modal-close-btn" onclick="window.closeUpdateModal()" title="关闭">✕</button>
+                    </div>
+                    <div class="updater-modal-body">
+                        <div class="updater-skeleton-box" style="height:64px;margin-bottom:12px;"></div>
+                        <div class="updater-skeleton-line" style="width:35%;margin-bottom:10px;"></div>
+                        <div class="updater-skeleton-box" style="height:220px;border-radius:10px;"></div>
+                    </div>
+                    <div class="updater-modal-footer">
+                        <span style="font-size:0.76rem;color:var(--text-muted);">正在极速同步中...</span>
+                        <button type="button" class="updater-footer-close-btn" onclick="window.closeUpdateModal()">关闭</button>
+                    </div>
+                </div>`;
+            modal.style.display = 'flex';
+            if (!info && typeof window.checkSystemUpdate === 'function') {
+                window.checkSystemUpdate(true);
+            }
+            return;
         }
 
         const isUpToDate = !info.has_update;
@@ -41,17 +66,16 @@
         const btnText = isUpToDate ? '📥 重新下载/备份安装包' : '⚡ 一键静默升级';
         const tagText = isUpToDate ? '当前系统专属安装包' : '专属推荐安装包';
         const assetHtml = asset ? `
-            <div id="updater-card-box" style="background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.25);border-radius:12px;padding:12px 18px;margin:12px 0;display:flex;flex-direction:column;gap:10px;">
+            <div id="updater-card-box" class="updater-asset-card">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div style="display:flex;flex-direction:column;gap:3px;overflow:hidden;">
+                    <div style="display:flex;flex-direction:column;gap:4px;overflow:hidden;">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            <span style="font-size:0.72rem;padding:2px 8px;border-radius:6px;background:rgba(0,240,255,0.2);color:var(--neon-cyan);font-weight:700;">${tagText}</span>
-                            <span style="font-size:0.85rem;font-weight:700;color:var(--text-main);font-family:var(--font-mono);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">${asset.name}</span>
+                            <span class="updater-asset-badge">${tagText}</span>
+                            <span class="updater-asset-name">${asset.name}</span>
                         </div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">格式: ${asset.format_desc} · 产物体积: ${asset.size_mb} MB</div>
+                        <div class="updater-asset-meta">格式: ${asset.format_desc} · 产物体积: ${asset.size_mb} MB</div>
                     </div>
-                    <button type="button" id="btn-silent-update-action" onclick="window.startSilentUpdate('${asset.download_url}', '${info.latest_version}')"
-                       style="background:linear-gradient(135deg, var(--neon-cyan), #00a8ff);color:#04080e;font-weight:800;font-size:0.82rem;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px rgba(0,240,255,0.25);transition:all 0.2s;">
+                    <button type="button" id="btn-silent-update-action" class="updater-asset-btn" onclick="window.startSilentUpdate('${asset.download_url}', '${info.latest_version}')">
                        ${btnText}
                     </button>
                 </div>
@@ -73,30 +97,30 @@
             } else {
                 notesHtml = info.release_notes
                     .replace(/###\s*(.*)/g, '<h4 style="margin:8px 0 4px;color:var(--neon-cyan);font-size:0.88rem;">$1</h4>')
-                    .replace(/\*\s*(.*)/g, '<li style="margin-left:16px;margin-bottom:3px;color:var(--text-main);font-size:0.8rem;">$1</li>')
+                    .replace(/\*\s*(.*)/g, '<li style="margin-left:16px;margin-bottom:3px;font-size:0.8rem;">$1</li>')
                     .replace(/\n\n/g, '<br>');
             }
         }
 
         const sourceModeBanner = info.is_source_mode ? `
-            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#10B981;">
+            <div class="updater-source-banner">
                 <span>🌿</span>
                 <span>当前以 <b>Python 源码模式</b> 运行，终端执行 <code>git pull</code> 即可同步最新代码；亦可直接下载体验右侧独立客户端。</span>
             </div>` : '';
 
         modal.innerHTML = `
-            <div style="background:var(--glass-bg,#0b1219);border:1px solid var(--glass-border,rgba(255,255,255,0.12));border-radius:16px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:modalFadeIn 0.25s cubic-bezier(0.16,1,0.3,1);">
-                <div style="padding:16px 22px;border-bottom:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;">
+            <div class="updater-modal-card">
+                <div class="updater-modal-header">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="font-size:1.4rem;">${modalIcon}</span>
                         <div>
-                            <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--text-main);letter-spacing:0.5px;">${modalTitle}</h3>
-                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">${modalSub}</div>
+                            <h3 style="margin:0;font-size:1.05rem;font-weight:800;letter-spacing:0.5px;">${modalTitle}</h3>
+                            <div style="font-size:0.72rem;margin-top:2px;">${modalSub}</div>
                         </div>
                     </div>
-                    <button type="button" onclick="window.closeUpdateModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:4px;border-radius:6px;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                    <button type="button" class="updater-modal-close-btn" onclick="window.closeUpdateModal()" title="关闭">✕</button>
                 </div>
-                <div style="padding:18px 22px;overflow-y:auto;flex:1;">
+                <div class="updater-modal-body">
                     ${sourceModeBanner}
                     ${assetHtml}
                     <div style="margin-top:12px;">
@@ -104,14 +128,14 @@
                             <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;">✨ 官方正式发版说明 (Release Notes)</div>
                             <span style="font-size:0.72rem;color:var(--text-muted);">中英双语 · 创作者指南</span>
                         </div>
-                        <div class="updater-notes-rich" style="background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:10px;padding:16px 18px;max-height:360px;overflow-y:auto;font-family:var(--font-sans);font-size:0.82rem;line-height:1.6;color:var(--text-main);">
+                        <div class="updater-notes-rich">
                             ${notesHtml}
                         </div>
                     </div>
                 </div>
-                <div style="padding:12px 22px;border-top:1px solid var(--glass-border);background:var(--white-05);display:flex;align-items:center;justify-content:space-between;">
-                    <a href="${info.html_url || 'https://github.com/Illacme/illacme-plenipes/releases'}" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem;color:var(--neon-cyan);text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🔗 前往 GitHub Releases 查看全部资产 (${info.assets_count || 10})</a>
-                    <button type="button" onclick="window.closeUpdateModal()" style="background:var(--white-10);border:1px solid var(--glass-border);color:var(--text-main);font-size:0.82rem;padding:6px 16px;border-radius:8px;cursor:pointer;">关闭</button>
+                <div class="updater-modal-footer">
+                    <a href="${info.html_url || 'https://github.com/Illacme/illacme-plenipes/releases'}" target="_blank" rel="noopener noreferrer" class="updater-footer-link">🔗 前往 GitHub Releases 查看全部资产 (${info.assets_count || 10})</a>
+                    <button type="button" class="updater-footer-close-btn" onclick="window.closeUpdateModal()">关闭</button>
                 </div>
             </div>`;
         modal.style.display = 'flex';

@@ -1614,7 +1614,14 @@ def test_system_updater_modal_render_integrity():
         throw new Error('system.updater.modal.js failed to define window.openUpdateModal');
     }
 
-    // 3. 测试场景 A: 当前已是最新版 (v1.8.0 成果速览)
+    // 3. 测试场景 A: 骨架屏秒开态 (isSkeleton=true 或冷启动无数据时 0ms 瞬间反馈)
+    window._latestUpdateInfo = null;
+    window.openUpdateModal(true);
+    if (!appendedModal || !appendedModal.innerHTML.includes('updater-skeleton-box') || !appendedModal.innerHTML.includes('正在同步云端发版状态')) {
+        throw new Error('Modal failed to render skeleton loading state: ' + (appendedModal ? appendedModal.innerHTML : 'null'));
+    }
+
+    // 4. 测试场景 B: 当前已是最新版 (v1.8.0 成果速览与全语义化样式断言)
     window._latestUpdateInfo = {
         has_update: false,
         current_version: 'v1.8.0',
@@ -1637,8 +1644,14 @@ def test_system_updater_modal_render_integrity():
     if (!appendedModal.innerHTML.includes('updater-notes-rich') || !appendedModal.innerHTML.includes('Illacme-Plenipes-macOS.dmg')) {
         throw new Error('Modal missing rich notes or asset info');
     }
+    if (!appendedModal.innerHTML.includes('updater-modal-card') || !appendedModal.innerHTML.includes('updater-asset-card')) {
+        throw new Error('Modal missing semantic css classes for light/dark theme adaptation');
+    }
+    if (appendedModal.innerHTML.includes('background:rgba(0,0,0,0.3)')) {
+        throw new Error('Hardcoded dark background rgba(0,0,0,0.3) must be removed for light theme support');
+    }
 
-    // 4. 测试场景 B: 发现更高版本 (v1.9.0 升级模式)
+    // 5. 测试场景 C: 发现更高版本 (v1.9.0 升级模式)
     window._latestUpdateInfo.has_update = true;
     window._latestUpdateInfo.latest_version = 'v1.9.0';
     window.openUpdateModal();
