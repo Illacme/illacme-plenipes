@@ -127,6 +127,10 @@ jobs:
             cp dist/desktop/双击修复无法打开.command dmg_root/
             chmod +x dmg_root/双击修复无法打开.command
           fi
+          if [ -f desktop/assets/icon.icns ]; then
+            cp desktop/assets/icon.icns dmg_root/.VolumeIcon.icns
+            command -v SetFile >/dev/null 2>&1 && SetFile -a C dmg_root || true
+          fi
           hdiutil create -volname "Illacme Plenipes" -srcfolder dmg_root -ov -format UDZO Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
           rm -rf dmg_root
           ls -lh Illacme-Plenipes-${{ matrix.asset-suffix }}.dmg
@@ -134,7 +138,7 @@ jobs:
       - name: 🗜️ 制作发布产物 (Linux 原生归档)
         if: runner.os == 'Linux'
         run: |
-          tar -czf Illacme-Plenipes-Linux-x64.tar.gz -C dist/desktop Illacme-Plenipes README_使用说明.txt
+          tar -czf Illacme-Plenipes-Linux-x64.tar.gz -C dist/desktop .
           ls -lh Illacme-Plenipes-Linux-x64.tar.gz
 
       - name: 🔏 计算发布产物 SHA256 校验和

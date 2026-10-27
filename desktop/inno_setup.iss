@@ -1,7 +1,7 @@
 ; Illacme Plenipes - Windows Inno Setup Script
 #define MyAppName "Illacme Plenipes"
 #ifndef AppVersion
-  #define MyAppVersion "1.1.2"
+  #define MyAppVersion "1.8.1"
 #else
   #define MyAppVersion AppVersion
 #endif
@@ -28,6 +28,12 @@ ArchitecturesInstallIn64BitMode=x64
 DisableProgramGroupPage=yes
 SetupIconFile=..\desktop\assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoCopyright=Copyright (C) 2026 Illacme Plenipes
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

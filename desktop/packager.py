@@ -105,8 +105,10 @@ class DesktopPackager:
         """从预置专属资产或网站 Logo 生成系统原生图标"""
         system = platform.system()
         asset_icns, asset_ico = os.path.join("desktop", "assets", "icon.icns"), os.path.join("desktop", "assets", "icon.ico")
+        asset_png = os.path.join("desktop", "assets", "icon.png")
         if system == "Darwin" and os.path.exists(asset_icns): return asset_icns
         if system == "Windows" and os.path.exists(asset_ico): return asset_ico
+        if system == "Linux" and os.path.exists(asset_png): return asset_png
         if not os.path.exists(base_logo_path): return None
         out_dir = os.path.join("build", "desktop", "icons")
         os.makedirs(out_dir, exist_ok=True)
@@ -171,8 +173,9 @@ class DesktopPackager:
                 cls.write_quickstart_guide(output_dir)
                 if platform.system() == "Darwin":
                     cls.write_macos_fix_script(output_dir)
-                    if create_dmg:
-                        cls.build_macos_dmg(output_dir)
+                    if create_dmg: cls.build_macos_dmg(output_dir)
+                elif platform.system() == "Linux":
+                    cls.write_linux_desktop_entry(output_dir)
                 tlog.info(f"🎉 [打包成功] 桌面应用已编译输出至: {os.path.abspath(output_dir)}")
                 return True
         except subprocess.CalledProcessError as e:
@@ -246,34 +249,36 @@ class DesktopPackager:
     @classmethod
     def write_quickstart_guide(cls, output_dir: str):
         """生成客户端快速启动与各操作系统指引文档"""
-        guide_content = """============================================================
-Illacme Plenipes · 全球私人出版社桌面客户端
-============================================================
-
-【快速启动指引】
-1. Windows:
-   - 双击直接运行 Illacme-Plenipes.exe，无需安装任何 Python 运行环境。
-2. macOS:
-   - 将 Illacme-Plenipes.app 移动至“应用程序 (Applications)”目录；
-   - 首次启动若提示“无法打开”或“未知开发者”，可直接双击运行「双击修复无法打开.command」；
-   - 或在终端执行: sudo xattr -cr /Applications/Illacme-Plenipes.app
-3. Linux:
-   - 在解压目录下赋予执行权限并启动:
-     chmod +x Illacme-Plenipes && ./Illacme-Plenipes
-
-【系统网络与端口规范】
-- 出版社核心网关: http://127.0.0.1:43212
-- 单例守护端口: 43210 (防止多实例冲突)
-- 若已有实例运行，新打开客户端将自动无缝激活浏览器控制台。
-
-祝您出版愉快！
-"""
+        guide_content = (
+            "============================================================\n"
+            "Illacme Plenipes · 全球私人出版社桌面客户端\n"
+            "============================================================\n\n"
+            "【快速启动指引】\n"
+            "1. Windows: 双击直接运行 Illacme-Plenipes.exe，无需安装任何 Python 运行环境。\n"
+            "2. macOS: 将 Illacme-Plenipes.app 拖入 Applications；如提示未知开发者可双击运行「双击修复无法打开.command」。\n"
+            "3. Linux: 赋予执行权限并启动: chmod +x Illacme-Plenipes && ./Illacme-Plenipes (或双击 Illacme-Plenipes.desktop)。\n\n"
+            "【系统网络与端口规范】\n"
+            "- 出版社核心网关: http://127.0.0.1:43212 | 单例守护端口: 43210\n"
+            "- 若已有实例运行，新打开客户端将自动无缝激活浏览器控制台。\n\n祝您出版愉快！\n"
+        )
         try:
-            guide_path = os.path.join(output_dir, "README_使用说明.txt")
-            with open(guide_path, "w", encoding="utf-8") as f:
+            with open(os.path.join(output_dir, "README_使用说明.txt"), "w", encoding="utf-8") as f:
                 f.write(guide_content)
-        except Exception:
-            pass
+        except Exception: pass
+
+    @classmethod
+    def write_linux_desktop_entry(cls, output_dir: str):
+        """生成 Linux 标准 XDG 桌面项与图标"""
+        entry = (
+            f"[Desktop Entry]\nType=Application\nName=Illacme Plenipes\nComment=全球私人出版社桌面客户端\n"
+            f"Exec=./{cls.APP_NAME}\nIcon=icon\nTerminal=false\nCategories=Office;Publishing;\n"
+        )
+        try:
+            with open(os.path.join(output_dir, f"{cls.APP_NAME}.desktop"), "w", encoding="utf-8") as f:
+                f.write(entry)
+            icon_src = os.path.join("desktop", "assets", "icon.png")
+            if os.path.exists(icon_src): shutil.copy(icon_src, os.path.join(output_dir, "icon.png"))
+        except Exception: pass
 
 
 def main():

@@ -227,7 +227,9 @@ if echo "{file_path}" | grep -q "\\.dmg$"; then
         APP_SRC=$(find "$MOUNT_POINT" -maxdepth 1 -name "*.app" | head -n 1)
         if [ -n "$APP_SRC" ]; then
             APP_NAME=$(basename "$APP_SRC")
+            rm -rf "/Applications/$APP_NAME"
             cp -R "$APP_SRC" "/Applications/"
+            xattr -cr "/Applications/$APP_NAME" 2>/dev/null || true
             hdiutil detach "$MOUNT_POINT" -force > /dev/null 2>&1
             open "/Applications/$APP_NAME"
             rm -f "$0"
