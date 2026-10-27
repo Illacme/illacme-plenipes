@@ -30,108 +30,105 @@
 
 ---
 
-### 🖥️ Meet The Sovereign Publishing Workbench
+### 🖥️ Meet The Sovereign Publishing Workbench: Your Personal Publishing Studio
 
-> **“Say goodbye to scattered terminal scripts and fragile pipelines. Digital publishing is now an inspiring visual symphony.”**
+> **“Say goodbye to complicated terminal commands and scattered scripts. Here, publishing is an inspiring, visual creative journey.”**
 
-Illacme Plenipes transforms the industrial publishing capabilities typically reserved for premier media enterprises into an elegant, dark-mode glassmorphic **desktop workbench**.
+Illacme Plenipes condenses the capabilities traditionally reserved for large publishing houses—translation, typesetting, formatting, and multi-channel distribution—into an elegant, easy-to-use **desktop publishing studio**.
 
-#### 🌌 1. 3D Galaxy Knowledge Graph & Pipeline Director
-How does a single manuscript radiate across the globe? The workbench opens with an interactive **3D force-directed knowledge graph** and an end-to-end **six-stage publishing pipeline**.
+#### 🌌 1. 3D Knowledge Galaxy & Visual Pipeline
+How does a single draft reach readers around the globe? The workbench opens with an interactive **3D Dynamic Knowledge Galaxy** and a real-time **six-step publishing progress board**.
 
 ![Publishing Workbench Overview](./docs/assets/workbench_overview.png)
 
-* **3D Force-Directed Constellation**: Real-time gravitational link calculations; click any planetary node to drill down into the underlying manuscript.
-* **Live Six-Stage Pipeline**: `Vault Origin ➔ Polyglot AI Translation ➔ Web Theme ➔ URL Routing ➔ Web Hosting ➔ Social Syndication` with real-time status pulses.
-* **Persistent Sovereign Copilot**: Dedicated AI coordinator with streaming Chain-of-Thought (CoT) reasoning, vault semantic search, and autonomous patch generation.
+* **3D Knowledge Galaxy**: Your articles shine like stars in a personal constellation. Click any planetary node to explore article details and translations.
+* **Six-Step Publishing Pipeline**: `Vault Origin ➔ Multi-Language Translation ➔ Website Style ➔ URL Paths ➔ Free Web Hosting ➔ Social Media Syndication`, with progress clearly visible at each step.
+* **Caring AI Writing Companion**: Chat on the right sidebar anytime for library-wide knowledge search, chapter translation, or one-click polishing and proofreading.
 
 ---
 
-#### 📂 2. Manuscript Vault & Direct Publishing Drawer
-Designed for pure, distraction-free writing and editorial control.
+#### 📂 2. Manuscript Vault & Instant Publishing Drawer
+Designed for pure, distraction-free writing and peace of mind.
 
 ![Manuscript Vault Workbench](./docs/assets/workbench_vault.png)
 
-* **100% Local Vault Integrity**: Connect directly to your local Obsidian or Markdown folder with zero remote cloud leakage.
-* **Lifecycle Audit**: Word counts, slug path cleanups, and multi-language alignment matrix at a glance.
-* **Single-Doc Publishing Drawer**: Deploy or syndicate individual documents with precise incremental builds.
+* **100% Local on Your Computer**: Connect directly to your local Obsidian or Markdown folder. No drafts are ever uploaded to cloud servers without your consent.
+* **Clear Article Status**: Word counts, online web addresses, and multi-language translation status are visible at a single glance.
+* **Instant Single-Article Drawer**: Want to push a fresh article to your personal site, Xiaohongshu, or WeChat without rebuilding the entire site? Click the drawer to publish instantly.
 
 ---
 
-#### 🚀 3. Omni-Channel Dispatch Hub & Cataloged Bookshelf
-Deliver your thoughts to worldwide audiences in every prestigious format.
+#### 🚀 3. Omni-Channel Dispatch Hub & Digital Bookshelf
+Present your work to readers worldwide in multiple publication-grade formats.
 
 ![Publishing Hub & Digital Bookshelf](./docs/assets/workbench_dispatch.png)
 
-* **📚 Cataloged Book Releases**: Generate side-by-side polyglot **DOCX (with OMML math equations)**, **print-ready PDF books**, **EPUB 3.0**, and **hyperlinked WebBooks** with built-in instant reading and export.
-* **🌐 Static Web Hosting Matrix**: One-click deployment across 10 static platforms (GitHub Pages, Vercel, Netlify, Cloudflare Pages, etc.) with **automatic live URL backfilling**.
-* **🛰️ 30+ Social Media Syndication**: Instant push to WeChat Official Account, Zhihu, Juejin, Dev.to, Hashnode, Medium, Ghost, and Substack with asset localization and anti-hotlinking protection.
+* **📚 Digital Bookshelf**: One-click assembly of high-quality **Word documents (equations can be double-clicked to edit in Microsoft Word)**, **print-ready PDFs**, **universal EPUB eBooks**, and **web books**, ready for instant preview and download.
+* **🌐 Free Personal Website Launch**: Deploy to GitHub Pages, Vercel, or Netlify with zero server costs. **Real online access links appear automatically upon completion.**
+* **🛰️ 30+ Social Platforms at Once**: Instant one-click syndication to WeChat, Xiaohongshu, Zhihu, Juejin, Dev.to, Medium, and Substack, with automatic image re-hosting to prevent broken pictures.
 
 ---
 
-### 💡 Why Illacme Plenipes?
+### 💡 Why Choose Illacme Plenipes?
 
-As an independent writer, overseas team, or technical blogger, writing is pure, but distribution is tedious:
-1. **Repetitive Formatting**: Copy-pasting across WeChat Official Account, Zhihu, Dev.to, Medium, and wrestling with hotlinking images.
-2. **Polyglot Synchronization**: Translating articles manually leads to drift, and keeping multiple language versions updated is daunting.
-3. **Complex Web Hosting**: Setting up and deploying full-fledged multi-language static websites (Docusaurus, Starlight, VitePress) requires heavy Node.js and CI/CD maintenance.
+As an independent writer, overseas team, educator, or blogger, you often face these daily frustrations:
+1. **Repetitive Formatting Work**: Pasting content platform by platform (WeChat, Medium, Dev.to, Substack) and fixing broken image links over and over again.
+2. **Hard to Keep Multi-Language Versions in Sync**: Manually translating and maintaining separate files often leads to outdated or conflicting content.
+3. **High Barriers to Personal Websites**: Want a beautiful personal documentation or blog site, but don't want to learn coding or server configuration.
 
-**Illacme Plenipes** automates the entire distribution lifecycle:
-* 🌍 **Local Origin, Global Resonance**: Maintain a single local Markdown vault (fully compatible with Obsidian / Logseq). AI handles context-aware sentence slicing, translation, and self-healing review.
-* 🌐 **Static Web Hosting Matrix**: Deploy across 10 static hosting drivers (GitHub Pages, Vercel, Netlify, Cloudflare Pages, SFTP, etc.) with primary & backup mirror routing.
-* 🛰️ **30+ Social Media Syndication**: Push one-click to WeChat Official Account, Zhihu, Juejin, Dev.to, Hashnode, Medium, Ghost, Substack, etc., with automatic image asset re-hosting.
-* 📚 **Press-Grade Typesetting**: Assemble side-by-side polyglot **DOCX (with OMML math), print-ready PDF, and EPUB** books with deep TOCs.
-* 🛡️ **Absolute Sovereign Integrity**: Vault stays 100% local. Physical imprint data isolation. Support for local offline models (Ollama, LM Studio).
+**Illacme Plenipes** lets you focus entirely on creating:
+* 🌍 **Write Locally, Share Globally**: Maintain just one Markdown file on your laptop (fully compatible with Obsidian / Logseq). AI handles natural paragraph translations.
+* 🌐 **Free Personal Website in One Click**: Deploy to 10 top static hosting platforms (GitHub Pages, Vercel, Netlify, etc.) to showcase your multi-language library.
+* 🛰️ **30+ Social Channels at Once**: Push to WeChat, Xiaohongshu, Medium, Dev.to, Substack, etc., with images automatically optimized and uploaded.
+* 📚 **Publisher-Grade Book Export**: Automatically create bilingual **Word (.docx) files with editable formulas, print-ready PDFs, and EPUB eBooks** with clean multi-level tables of contents.
+* 🛡️ **Absolute Privacy & Data Ownership**: Your drafts stay 100% on your local hard drive. Works completely offline with local AI models (like Ollama).
 
 ---
 
-### 🚀 Quick Start (Zero-Configuration)
+### 🚀 Quick Start (Zero Configuration)
 
 #### 📦 1. Official Desktop Releases (Recommended)
 
-Download the ready-to-run compiled desktop clients from **[GitHub Releases](https://github.com/Illacme/illacme-plenipes/releases/latest)**:
+Download the ready-to-run desktop clients from **[GitHub Releases](https://github.com/Illacme/illacme-plenipes/releases/latest)**:
 
-| Operating System | Package Format | Binary Asset | Recommended Scenario |
+| Operating System | Package Format | Download File | Recommended For |
 | :--- | :--- | :--- | :--- |
-| 🍎 **macOS (Apple Silicon)** | **Native DMG Image** | `Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg` | **Recommended**: Mount and drag into Applications |
-| 🍎 macOS (Apple Silicon) | Portable ZIP | `Illacme-Plenipes-macOS-AppleSilicon-arm64.zip` | Extract and run directly |
-| 🪟 **Windows (x64)** | **Setup Installer (.exe)** | `Illacme-Plenipes-Windows-x64-Setup.exe` | **Recommended**: Standard installer with desktop shortcuts |
-| 🪟 Windows (x64) | Portable ZIP | `Illacme-Plenipes-Windows-x64.zip` | Standalone portable bundle, no installation needed |
-| 🐧 **Linux (x64)** | Native Tarball | `Illacme-Plenipes-Linux-x64.tar.gz` | Run on Linux desktop and server distributions |
+| 🍎 **macOS (Apple Silicon)** | **Native DMG Image** | `Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg` | **Top Choice**: Open and drag directly into "Applications" |
+| 🍎 macOS (Apple Silicon) | Portable ZIP Archive | `Illacme-Plenipes-macOS-AppleSilicon-arm64.zip` | Extract and run without installation |
+| 🪟 **Windows (x64)** | **Setup Installer (.exe)** | `Illacme-Plenipes-Windows-x64-Setup.exe` | **Top Choice**: Standard installer with desktop shortcuts |
+| 🪟 Windows (x64) | Portable ZIP Archive | `Illacme-Plenipes-Windows-x64.zip` | Green portable edition, extract and run |
+| 🐧 **Linux (x64)** | Standalone Archive | `Illacme-Plenipes-Linux-x64.tar.gz` | Linux desktops and cloud servers |
 
 > [!IMPORTANT]
-> ### 🛡️ First-Run Security Trust Guide (Eliminating Onboarding Friction)
-> As an independent open-source publication client without corporate EV code signing certificates, your OS may trigger security warnings on initial launch. Follow these simple steps to unlock:
+> ### 🛡️ First-Run Security Prompts? Unlock in 3 Seconds
+> As an independent open-source client without expensive corporate certificates, macOS and Windows may show initial safety warnings. The app **runs 100% locally on your computer with zero privacy uploads**:
 >
-> * **🍎 macOS prompts "App is damaged and can't be opened" or "Unverified developer"**:
->   * **Option A (One-line Terminal fix, recommended)**: Open Terminal and run the command to strip the quarantine attribute:
->     ```bash
->     xattr -cr /Applications/Illacme-Plenipes.app
->     ```
->   * **Option B (GUI bypass without Terminal)**: In Finder -> Applications, **hold the `Control` key and right-click** `Illacme-Plenipes.app`, click **Open** in the context menu, then click **Open** again in the security dialogue.
+> * **🍎 macOS shows "App is damaged and can't be opened" or "Unverified developer"**:
+>   * **Option A (One-click auto fix, recommended)**: Double-click the bundled **`双击修复无法打开.command`** script in the package. It removes the system quarantine automatically without requiring terminal commands.
+>   * **Option B (Right-click bypass in Finder)**: In Finder -> Applications, **hold the `Control` key and right-click** `Illacme-Plenipes.app`, select **Open**, and click **Open** again in the confirmation prompt.
 >
-> * **🪟 Windows Defender SmartScreen blue dialog ("Windows protected your PC")**:
->   * Click the **"More info"** link in the dialog text;
+> * **🪟 Windows Defender shows blue alert "Windows protected your PC"**:
+>   * Click the underlined text **"More info"**;
 >   * Click the **"Run anyway"** button that appears in the lower-right corner.
 
 ---
 
 #### 💻 2. Zero-Config Launchers (Source Mode)
 
-If you have cloned the repository, use our automatic cross-platform double-click launchers:
+If you cloned this repository, use our quick double-click launchers:
 
-*   **🍎 macOS**: Double-click **`start.command`** in Finder (zero CLI needed; browser pops up automatically).
+*   **🍎 macOS**: Double-click **`start.command`** in Finder (no terminal commands needed; browser opens automatically).
 *   **🪟 Windows**: Double-click **`start.bat`** (or run `.\start.ps1` in PowerShell).
 *   **🐧 Linux / Server**: Run `./start.sh`.
 *   **🐳 Docker Compose**: Run `docker compose up -d`.
 
 > 💡 **Dashboard Access**: Workbench UI runs at `http://127.0.0.1:43212`.
 
-> ⌨️ **Keyboard Shortcuts**:
-> * `Cmd+P` (`Ctrl+P` on Windows/Linux): Open Command Palette (Feature navigation & In-App Cookbooks);
-> * `Cmd+K` (`Ctrl+K` on Windows/Linux) or `]`: Summon Sovereign Copilot AI assistant (focus instruction prompt);
-> * `I` (or click top-left Logo): Toggle Publishing Navigator launchpad;
-> * `[`: Toggle left navigation sidebar.
+> ⌨️ **Convenient Shortcuts**:
+> * `Cmd+P` (`Ctrl+P` on Windows/Linux): Open Command Palette & Guidebooks;
+> * `Cmd+K` (`Ctrl+K` on Windows/Linux) or `]`: Summon AI Companion;
+> * `I` (or click top-left Logo): Open Core Navigator;
+> * `[`: Expand / collapse left sidebar.
 
 <details>
 <summary><b>📝 Click to expand: Minimal Markdown Sample (Obsidian Compatible)</b></summary>
@@ -153,7 +150,7 @@ You can freely use standard Markdown, LaTeX math, and Obsidian wiki-links:
 * Block math equation:
 $$E = mc^2$$
 
-The engine automatically sanitizes and renders native blocks across all destination targets!
+The engine automatically cleanses syntax and renders native blocks cleanly on all target platforms!
 ```
 </details>
 
@@ -163,28 +160,28 @@ The engine automatically sanitizes and renders native blocks across all destinat
 
 ```mermaid
 graph LR
-    A["1️⃣ Link Vault<br/>(Point to local Markdown folder)"] --> B["2️⃣ Choose Theme & Languages<br/>(Select SSG theme & target languages)"]
+    A["1️⃣ Link Vault<br/>(Choose local notes folder)"] --> B["2️⃣ Choose Theme & AI<br/>(Pick website style & AI model)"]
     B --> C["3️⃣ One-Click Dispatch<br/>(Publish to website & social channels)"]
 ```
 
-1. **Step 1: Link Manuscript Vault**: Configure `vault_root` in Governance Settings. The engine parses the hierarchy tree, links, and draft states.
-2. **Step 2: Theme & Compute Setup**: Pick a mother theme (Docusaurus, Starlight, VitePress, etc.) and AI provider (OpenAI, Gemini, DeepSeek, Claude, or local Ollama).
-3. **Step 3: Multi-Channel Egress**: Click deploy inside the document drawer to trigger static hosting push and social syndication with real-time logs.
+1. **Step 1: Link Notes Vault**: Select your local Markdown notes folder (like an Obsidian vault) in Settings. The app automatically builds your knowledge galaxy.
+2. **Step 2: Choose Theme & AI Model**: Pick your favorite website presentation style (documentation, modern blog, knowledge base) and enter your AI API key (OpenAI, Gemini, DeepSeek, Claude, or local Ollama).
+3. **Step 3: One-Click Dispatch**: Click "Deploy Website" or "Social Syndication" in the drawer to monitor progress and receive the live web address instantly.
 
 ---
 
 ### 🧩 Core Feature Matrix
 
-| Hub Module | Capabilities | Documentation |
+| Hub Module | Capabilities | Practical Guide |
 | :--- | :--- | :--- |
-| **🌌 Galaxy Overview** | 3D force-directed knowledge graph, UnrealBloom pass, multi-dimensional filters, HUD Director | [Galaxy Guide](./docs/manual/01_overview_galaxy.md) |
-| **📂 Content Vault** | Markdown / WYSIWYG dual-mode editor, Frontmatter parsing, asset localization | [Vault Guide](./docs/manual/02_vault_management.md) |
-| **📖 Bindery Bookshelf** | Polyglot parallel typesetting, DOCX / PDF / EPUB export, dynamic QR diagnostic | [Bindery Guide](./docs/manual/03_bindery_publishing.md) |
-| **🚀 Dispatch Hub** | Multi-channel publishing hall, SQLite deploy ledger, single-doc & site pushes, live URLs | [Dispatch Guide](./docs/manual/04_dispatch_and_hosting.md) |
-| **⚙️ Governance** | Physical imprint isolation, 6 SSG mother themes, block translation rules, Review Workbench | [Governance Guide](./docs/manual/05_governance_and_review.md) |
-| **🧠 Compute Engine** | 25+ AI providers, auto-failover, Sovereign Copilot autonomous coordinator with HITL review | [Compute Guide](./docs/manual/06_compute_and_copilot.md) |
-| **🎨 Design Studio** | AI image generation (DALL-E/Imagen/Midjourney), local OG card renderer, cover batch rotation | [Design Guide](./docs/manual/07_design_studio.md) |
-| **🧩 Plugins Hub** | 10 hosting drivers + 20+ social channels + 14 image hosts, central credential sensing (SSOT) | [Plugins Guide](./docs/manual/08_plugins_ecosystem.md) |
+| **🌌 Knowledge Galaxy** | 3D interactive knowledge constellation, category filters, and publishing progress overview | [Galaxy Guide](./docs/manual/01_overview_galaxy.md) |
+| **📂 Content Vault** | WYSIWYG & Markdown dual-mode editing, automatic tag organization, and local image asset management | [Vault Guide](./docs/manual/02_vault_management.md) |
+| **📖 Bindery Bookshelf** | Bilingual parallel typesetting, Word with editable math equations / print-ready PDF / EPUB export, mobile QR preview | [Bindery Guide](./docs/manual/03_bindery_publishing.md) |
+| **🚀 Dispatch Hub** | Visual publishing hall, complete deployment history, single-doc & whole-site publishing, live web URLs | [Dispatch Guide](./docs/manual/04_dispatch_and_hosting.md) |
+| **⚙️ Publishing Governance** | Independent brand profiles, switchable website themes, translation rules, and human review workbench | [Governance Guide](./docs/manual/05_governance_and_review.md) |
+| **🧠 AI Assistant** | Integrates with 25+ major AI models (ChatGPT, Claude, DeepSeek, local Ollama), helping with translation & proofreading | [Compute Guide](./docs/manual/06_compute_and_copilot.md) |
+| **🎨 Design Studio** | AI cover generation, social media banner design, and automated book cover styling | [Design Guide](./docs/manual/07_design_studio.md) |
+| **🧩 Channels & Plugins** | Supports 10 free website hosts + 20+ social media channels + image hosts, with clear connection status | [Plugins Guide](./docs/manual/08_plugins_ecosystem.md) |
 
 ---
 
