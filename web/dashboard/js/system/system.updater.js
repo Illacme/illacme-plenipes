@@ -57,12 +57,9 @@
 
             // 4. 交互式点击响应
             if (interactive) {
-                if (data.has_update) {
-                    window.openUpdateModal();
-                } else if (typeof window.showToast === 'function') {
+                window.openUpdateModal();
+                if (!data.has_update && typeof window.showToast === 'function') {
                     window.showToast(`✨ 当前已是最新正式版本 (${data.current_version})`, 'success');
-                } else {
-                    alert(`✨ 当前已是最新版本 (${data.current_version})`);
                 }
             }
 

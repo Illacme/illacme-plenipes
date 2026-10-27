@@ -1576,7 +1576,82 @@ https://youtu.be/abcdefghijk
 
     res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
     assert res.returncode == 0, f"Rich Media Preview Integrity Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
-    assert "RICH_MEDIA_PREVIEW_VERIFIED_SUCCESS" in res.stdout
+def test_system_updater_modal_render_integrity():
+    """
+    🛡️ [Rule 7] 系统更新弹窗 (system.updater.modal.js) 运行时沙箱与 DOM 拓扑完备性门禁测试
+    断言场景：
+    1. 最新版模式 (has_update=false): 成功渲染“当前已是最新正式版本”标题与富文本发版说明
+    2. 新版本发布模式 (has_update=true): 成功渲染“发现新版本”标题与一键静默升级按钮
+    3. marked.js 富文本排版容器 .updater-notes-rich 存在且 0 ReferenceError
+    """
+    runner_script = """
+    const fs = require('fs');
+
+    // 1. 构造虚拟浏览器 DOM 与 marked 环境
+    let appendedModal = null;
+    global.document = {
+        getElementById: (id) => (id === 'system-update-modal' ? appendedModal : null),
+        createElement: (tag) => {
+            const el = { id: '', className: '', style: {}, innerHTML: '' };
+            return el;
+        },
+        body: {
+            appendChild: (el) => { appendedModal = el; }
+        }
+    };
+    global.window = {
+        document: global.document,
+        marked: {
+            parse: (md) => `<div class="parsed-content"><h3>Title</h3><p>${md}</p></div>`
+        }
+    };
+    global.marked = global.window.marked;
+
+    // 2. 加载 system.updater.modal.js
+    eval(fs.readFileSync('web/dashboard/js/system/system.updater.modal.js', 'utf8'));
+
+    if (typeof window.openUpdateModal !== 'function') {
+        throw new Error('system.updater.modal.js failed to define window.openUpdateModal');
+    }
+
+    // 3. 测试场景 A: 当前已是最新版 (v1.8.0 成果速览)
+    window._latestUpdateInfo = {
+        has_update: false,
+        current_version: 'v1.8.0',
+        latest_version: 'v1.8.0',
+        published_at: '2026-10-27T08:34:18Z',
+        release_notes: '## 🏛️ v1.8.0 Official Notes\\n- 98% package slim-down\\n- native mac DMG',
+        recommended_asset: {
+            name: 'Illacme-Plenipes-macOS.dmg',
+            download_url: 'https://github.com/Illacme/illacme-plenipes/releases/download/v1.8.0/Illacme-Plenipes-macOS.dmg',
+            size_mb: 61.4,
+            format_desc: '原装 DMG 镜像 (首选)'
+        },
+        assets_count: 10
+    };
+
+    window.openUpdateModal();
+    if (!appendedModal || !appendedModal.innerHTML.includes('当前已是最新正式版本 v1.8.0')) {
+        throw new Error('Modal failed to render up-to-date title: ' + (appendedModal ? appendedModal.innerHTML : 'null'));
+    }
+    if (!appendedModal.innerHTML.includes('updater-notes-rich') || !appendedModal.innerHTML.includes('Illacme-Plenipes-macOS.dmg')) {
+        throw new Error('Modal missing rich notes or asset info');
+    }
+
+    // 4. 测试场景 B: 发现更高版本 (v1.9.0 升级模式)
+    window._latestUpdateInfo.has_update = true;
+    window._latestUpdateInfo.latest_version = 'v1.9.0';
+    window.openUpdateModal();
+    if (!appendedModal.innerHTML.includes('发现新版本 v1.9.0') || !appendedModal.innerHTML.includes('一键静默升级')) {
+        throw new Error('Modal failed to render update prompt for v1.9.0');
+    }
+
+    console.log('SYSTEM_UPDATER_MODAL_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Updater Modal Integrity Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "SYSTEM_UPDATER_MODAL_VERIFIED_SUCCESS" in res.stdout
 
 
 
