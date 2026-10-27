@@ -68,8 +68,13 @@ jobs:
           fi
 
       - name: 🔨 启动自动化打包流水线
+        shell: bash
         run: |
-          python -c "from desktop.packager import DesktopPackager; import sys; arch = '${{ matrix.target-arch }}' or None; sys.exit(0 if DesktopPackager.execute_build(target_arch=arch) else 1)"
+          ARGS=""
+          if [ -n "${{ matrix.target-arch }}" ]; then
+            ARGS="--target-arch ${{ matrix.target-arch }}"
+          fi
+          python scripts/build_desktop.py $ARGS
 
       - name: 🔍 检查编译产物拓扑
         shell: bash
