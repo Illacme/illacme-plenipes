@@ -158,7 +158,8 @@ header {
     content: url("../logo-light.png") !important;
 }
 
-h1 {
+.logo-section h1,
+.brand-title-flip {
     font-size: 1.05rem;
     letter-spacing: 0.5px;
     font-weight: 300;

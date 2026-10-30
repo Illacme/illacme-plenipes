@@ -13,6 +13,7 @@ from core.runtime.engine_singleton import get_global_engine
 from ..system import verify_token
 from core.config.config import CONFIG_NAME, CONFIG_LOCAL_NAME, IMPRINT_DIR, CONFIG_DIR, CONFIG_IMPRINT_NAME
 from core.utils.tracing import tlog
+from core.utils.network_sniffer import detect_outbound_ip
 from .config_shards.config_sync_ops import process_config_sync
 from .config_shards.config_persistence_ops import persist_config_to_disk
 from .config_shards.config_reload_ops import live_reload_engine_config
@@ -82,3 +83,11 @@ async def update_config(req: dict, imprint_id: Optional[str] = None, migrate_cac
     live_reload_engine_config(engine, req, imprint_id)
 
     return {"status": "success", "active_config": engine.config.model_dump()}
+
+
+@router.get("/api/system/outbound-ip", dependencies=[Depends(verify_token)])
+def get_system_outbound_ip(proxy: Optional[str] = None, scope: str = "domestic") -> dict:
+    """🌐 获取当前服务节点的物理出口 IP 与运营商信息，供微信白名单与网络诊断使用。"""
+    res = detect_outbound_ip(proxy=proxy, scope=scope)
+    return res
+

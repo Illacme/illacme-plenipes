@@ -11,7 +11,9 @@ import shutil
 import urllib.request
 import json
 import ssl
-from typing import Optional, List
+import hashlib
+import requests
+from typing import Optional, List, Dict, Any
 from core.utils.tracing import tlog
 
 
@@ -180,3 +182,97 @@ def emit_cloudflare_timeout_diagnostics(custom_proxy: Optional[str] = None) -> N
     tlog.warning(f"   1. 检查当前注入的网络代理: {custom_proxy or '未配置(直连)'}。若该代理端口未开启，Node.js 握手会无限期卡死。")
     tlog.warning("      建议在卡片配置中设置 proxy: 'direct' 强制使用物理网络直连测试。")
     tlog.warning("   2. 检查 Cloudflare API 令牌是否具有编辑与部署该 Pages 项目的完整权限。")
+
+
+def deploy_via_direct_api(publisher_inst, bundle_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    🚀 Cloudflare Pages 原生零 CLI (Zero-CLI) Direct Deploy REST API 直传引擎。
+    通过官方 OpenAPI 直接部署静态资产至 Cloudflare Edge 网络。
+    彻底摆脱对 Node.js、npm 及 wrangler CLI 外部宿主依赖。
+    """
+    account_id = publisher_inst.account_id
+    project_name = publisher_inst.project_name
+    token = publisher_inst.token or os.environ.get("CLOUDFLARE_API_TOKEN", "")
+    branch = publisher_inst.branch or "production"
+
+    tlog.info(f"🛸 [Cloudflare Direct API] 正在以分支 '{branch}' 执行原生纯 HTTP 直传部署...")
+
+    # 1. 扫描计算资产哈希清单与二进制载荷
+    manifest = {}
+    file_map = {}
+    file_count = 0
+    total_bytes = 0
+
+    try:
+        for root, _, files in os.walk(bundle_path):
+            for f in files:
+                full_p = os.path.join(root, f)
+                rel_p = "/" + os.path.relpath(full_p, bundle_path).replace("\\", "/").lstrip("/")
+                with open(full_p, "rb") as fp:
+                    content = fp.read()
+                file_hash = hashlib.sha1(content).hexdigest()
+                manifest[rel_p] = file_hash
+                file_map[file_hash] = content
+                file_count += 1
+                total_bytes += len(content)
+
+        tlog.info(f"📦 [Cloudflare Direct API] 资产哈希清单就绪：共 {file_count} 个文件 ({total_bytes / 1024:.1f} KB)")
+    except Exception as pe:
+        err = f"资产哈希计算异常: {pe}"
+        tlog.error(f"❌ [Cloudflare Direct API] {err}")
+        return {"status": "error", "message": err}
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    proxy = publisher_inst.get_proxy()
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+    timeout = publisher_inst.get_timeout(default_timeout=180)
+
+    try:
+        # 2. 探查并上传缺失资产 (Check missing assets)
+        check_url = "https://api.cloudflare.com/client/v4/pages/assets/check-missing"
+        check_resp = requests.post(check_url, json={"hashes": list(file_map.keys())}, headers=headers, proxies=proxies, timeout=timeout)
+        jwt = ""
+        missing_hashes = []
+        if check_resp.status_code == 200:
+            cdata = check_resp.json()
+            missing_hashes = cdata.get("result", [])
+            jwt = cdata.get("jwt") or check_resp.headers.get("x-amz-cf-jwt") or ""
+        else:
+            missing_hashes = list(file_map.keys())
+
+        if missing_hashes:
+            upload_url = "https://api.cloudflare.com/client/v4/pages/assets/upload"
+            up_headers = {"Authorization": f"Bearer {token}"}
+            if jwt:
+                up_headers["jwt"] = jwt
+            for h in missing_hashes:
+                if h in file_map:
+                    requests.post(upload_url, data=file_map[h], headers=up_headers, proxies=proxies, timeout=timeout)
+
+        # 3. 创建部署 (Create Deployment via Manifest)
+        deploy_url_api = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/{project_name}/deployments"
+        deploy_payload = {"manifest": manifest, "branch": branch}
+        deploy_resp = requests.post(deploy_url_api, json=deploy_payload, headers=headers, proxies=proxies, timeout=timeout)
+
+        if deploy_resp.status_code not in (200, 201):
+            err_text = deploy_resp.text.strip()
+            emit_cloudflare_error_diagnostics(err_text)
+            return {"status": "error", "message": f"Cloudflare API deploy failed ({deploy_resp.status_code}): {err_text[:200]}"}
+
+        ddata = deploy_resp.json().get("result", {})
+        live_url = ddata.get("url") or f"https://{project_name}.pages.dev"
+        tlog.success(f"✅ [Cloudflare Direct API] 零依赖部署成功！访问地址: {live_url}")
+        return {
+            "status": "success",
+            "project": project_name,
+            "branch": branch,
+            "url": live_url,
+            "message": "Deployed via Cloudflare Native Direct HTTP API (Zero-CLI 自闭环)"
+        }
+    except Exception as e:
+        err_msg = str(e)
+        emit_cloudflare_error_diagnostics(err_msg)
+        return {"status": "error", "message": err_msg}

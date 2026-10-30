@@ -6,12 +6,14 @@ Illacme-plenipes Core - Xiaohongshu (RED) Syndicator
 🛡️ [SOP-01] 物理行数限制：保持在 300 行以内。
 """
 
+import os
 import re
 import time
 import random
+import hashlib
 import requests
 import threading
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from urllib.parse import urljoin
 
 from core.adapters.syndication.base import BaseSyndicator
@@ -86,6 +88,42 @@ class XiaohongshuSyndicator(BaseSyndicator):
 
         return image_urls
 
+    def _ensure_xhs_3x4_cover(self, title: str, slug: str, content: str, metadata: dict, site_url: str, existing_images: List[str]) -> List[str]:
+        """🛡️ 结合设计中心 (Cover Engine)，确保小红书图文笔记至少拥有一张 3:4 比例的黄金画幅封面图"""
+        if existing_images:
+            return existing_images
+
+        # 文章完全零插图，启动设计中心自愈保底：派生 3:4 极光毛玻璃海报
+        try:
+            from core.design.cover_engine.cover_resolver import CoverResolver
+            clean_title = title.replace("#", "").replace("*", "").strip()
+            img_bytes, strategy = CoverResolver.resolve_cover(
+                title=clean_title,
+                slug=slug,
+                author=metadata.get("author") or "创作者",
+                category=metadata.get("category") or "小红书笔记",
+                brand_name="小红书精选",
+                strategy="auto",
+                aspect_ratio="3:4"
+            )
+            if img_bytes:
+                file_hash = hashlib.md5(img_bytes).hexdigest()[:12]
+                filename = f"xhs_derived_{file_hash}_3x4.jpg"
+                out_dir = os.path.join(os.getcwd(), ".plenipes", "cache", "covers")
+                os.makedirs(out_dir, exist_ok=True)
+                save_path = os.path.join(out_dir, filename)
+                with open(save_path, "wb") as f:
+                    f.write(img_bytes)
+
+                rel_url = f"/api/design/assets/covers/{filename}"
+                full_cover_url = f"{site_url.rstrip('/')}{rel_url}" if site_url else rel_url
+                tlog.info(f"🎨 [小红书] 稿件零插图，已结合设计中心自动派生 3:4 竖图封面 ({strategy}): {filename}")
+                return [full_cover_url]
+        except Exception as e:
+            tlog.warning(f"⚠️ [小红书] 设计中心 3:4 封面自愈派生异常: {e}")
+
+        return existing_images
+
     def format_payload(self, title: str, slug: str, content: str, metadata: dict, canonical_url: str = None) -> dict:
         site_url = self.site_url.rstrip('/') if self.site_url else ""
         if not canonical_url:
@@ -95,6 +133,8 @@ class XiaohongshuSyndicator(BaseSyndicator):
 
         # 1. 提取所有图像 URL 作为小红书卡片轮播图 (最多 9 张)
         image_urls = self.extract_images(content, metadata, site_url)
+        # 结合设计中心自愈保底：确保零插图时拥有 3:4 竖屏封面
+        image_urls = self._ensure_xhs_3x4_cover(title, slug, content, metadata, site_url, image_urls)
 
         # 2. 格式化热门话题标签 (Hashtags)
         raw_tags = metadata.get("tags") or []
@@ -150,8 +190,9 @@ class XiaohongshuSyndicator(BaseSyndicator):
         cookie = getattr(self.config, 'cookie', None) or (self.config.get('cookie') if isinstance(self.config, dict) else None)
 
         if not token and not cookie:
-            tlog.warning("⚠️ [小红书] 缺少 token 或 cookie 凭据配置，分发跳过。")
-            return
+            err = "小红书分发失败: 缺少 token 或 cookie 凭据配置，请在渠道抽屉中录入登录 Cookie。"
+            tlog.warning(f"⚠️ [小红书] {err}")
+            raise RuntimeError(err)
 
         api_endpoint = (
             getattr(self.config, 'api_endpoint', None)
@@ -171,7 +212,6 @@ class XiaohongshuSyndicator(BaseSyndicator):
         global _last_xhs_time
 
         for attempt in range(max_attempts):
-            # 精细化锁区间：仅在计算平滑流控时间戳时持有锁，网络请求在锁外执行
             with _xhs_lock:
                 now = time.time()
                 elapsed = now - _last_xhs_time
@@ -191,11 +231,32 @@ class XiaohongshuSyndicator(BaseSyndicator):
                     continue
                 else:
                     tlog.error(f"🛑 [小红书分发] 请求异常: {req_err}")
-                    return
+                    raise RuntimeError(f"小红书分发网络异常: {req_err}")
 
             if resp.status_code in [200, 201]:
-                tlog.info(f"✅ [小红书] 图文笔记《{payload.get('title')}》成功同步分发！")
-                return
+                data = {}
+                try:
+                    res_raw = resp.json()
+                    data = res_raw if isinstance(res_raw, dict) else {}
+                except Exception:
+                    data = {}
+
+                code = data.get("code")
+                msg = str(data.get("msg") or data.get("message") or "")
+                success = data.get("success")
+
+                if (isinstance(code, int) and code != 0) or success is False:
+                    lower_msg = msg.lower()
+                    if "verify" in lower_msg or "验证" in msg or "滑块" in msg or "安全" in msg or code in (-100, 300012, 300015):
+                        raise RuntimeError(f"小红书触发滑块安全验证 (code {code}): {msg}，请在创作者平台完成滑动验证后重试。")
+                    raise RuntimeError(f"小红书发布业务异常 (code {code}): {msg}")
+
+                note_id = str((data.get("data") or {}).get("id") or (data.get("data") or {}).get("note_id") or int(time.time()))
+                tlog.info(f"✅ [小红书] 图文笔记《{payload.get('title')}》成功同步分发！(ID: {note_id})")
+                return {"success": True, "note_id": note_id, "url": f"https://www.xiaohongshu.com/explore/{note_id}"}
+            elif resp.status_code in (401, 403):
+                raise RuntimeError(f"小红书认证失败 (HTTP {resp.status_code}): 登录 Cookie (web_session/a1) 已过期或失效，请在抽屉中更新凭据。")
+            elif resp.status_code == 429:
+                raise RuntimeError("小红书发文频次受限 (HTTP 429): 短时间内请求过于频繁，请稍后重试。")
             else:
-                tlog.warning(f"⚠️ [小红书] 服务端返回状态码 {resp.status_code}: {resp.text}")
-                return
+                raise RuntimeError(f"小红书 API 报错 (HTTP {resp.status_code}): {resp.text}")

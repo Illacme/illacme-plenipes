@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-📣 [V74.97] Domestic Social & Media Channel Dry Run Shard
-职责：微信公众号, 知乎, 掘金, 小红书, 头条, CSDN, 博客园, B站, 思否, 开源中国 的真实网络握手与凭证校验。
-架构：由 plugin_dry_run_social.py 拆分而来 (SOP-02 模块拆分标准)。
+📣 [V74.98] Domestic Social & Media Channel Dry Run Shard
+职责：微信公众号, 知乎, 掘金, 小红书, 头条, CSDN, 博客园, B站, 思否, 开源中国 的真实网络握手与凭证健康校验。
+架构：由 plugin_dry_run_social.py 拆分而来 (SOP-02 模块拆分标准)，深度集成 cookie_prober 与 network_sniffer。
+🛡️ [SOP-01 规范]：单文件物理行数严格 ≤ 300 行。
 """
 
 import re
 import requests
 from typing import Dict, Any, List
 from core.config.assembler import resolve_secrets
+from core.utils.network_sniffer import detect_outbound_ip, format_wechat_whitelist_card
+from .cookie_prober import (
+    probe_xiaohongshu,
+    probe_zhihu,
+    probe_bilibili,
+    probe_toutiao,
+    probe_csdn,
+)
 
 
 def probe_domestic_social(
@@ -18,7 +27,7 @@ def probe_domestic_social(
     log_func: Any,
     proxies: Dict[str, str]
 ) -> bool:
-    """执行国内主流自媒体与技术社区平台的网络连通性与凭证格式探测。"""
+    """执行国内主流自媒体与技术社区平台的网络连通性、Cookie 深度健康与出口 IP 嗅探。"""
     success = True
 
     if plugin_id == "wechat":
@@ -46,8 +55,12 @@ def probe_domestic_social(
                     if err_code == 40164:
                         ip_match = re.search(r"invalid ip\s+([0-9\.]+)", err_msg)
                         invalid_ip = ip_match.group(1) if ip_match else "未知"
-                        logs.append(log_func("ERROR", f"❌ [IP白名单拦截 (40164)] 微信端拒绝访问。检测到当前出口 IP 为【{invalid_ip}】。"))
-                        logs.append(log_func("INFO", "💡 [自愈指引] 请前往微信公众平台 (mp.weixin.qq.com) ->【设置与开发】->【基本配置】->【IP白名单】添加此 IP。若已开启全局代理，可设置 proxy: direct 直连。"))
+                        detected_info = detect_outbound_ip(proxy=proxy_val, timeout=2.5)
+                        detected_ip = detected_info.get("ip")
+                        card_lines = format_wechat_whitelist_card(invalid_ip, detected_ip, proxy_val=proxy_val)
+                        for line in card_lines:
+                            level = "ERROR" if line.startswith("❌") else ("WARN" if line.startswith("⚠️") else "INFO")
+                            logs.append(log_func(level, line))
                     elif err_code in (40001, 40013):
                         logs.append(log_func("ERROR", f"❌ [凭证无效 (错误码 {err_code})] 微信 AppID 与 AppSecret 不匹配，请核对公众平台基本配置。"))
                     else:
@@ -61,20 +74,19 @@ def probe_domestic_social(
             success = False
 
     elif plugin_id == "zhihu":
-        token = settings.get("token", "")
-        column_id = settings.get("column_id", "")
-        if not token or not column_id:
-            logs.append(log_func("ERROR", "❌ [错误] 知乎专栏 Token 或 专栏 ID 尚未配置。"))
-            return False
-        
-        logs.append(log_func("INFO", "🔑 [授权] 知乎授权凭证格式校验通过。"))
-        logs.append(log_func("INFO", "📡 [探测] 正在测试 知乎 API 连通性: api.zhihu.com..."))
-        try:
-            resp = requests.get("https://api.zhihu.com", proxies=proxies, timeout=15)
-            logs.append(log_func("INFO", f"🟢 [探测] 对端知乎 API 服务网络握手正常 (HTTP {resp.status_code})。"))
-        except Exception as e:
-            logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立与 知乎 API 端点的物理连接: {e}。"))
-            success = False
+        return probe_zhihu(settings, logs, log_func, proxies)
+
+    elif plugin_id in ["xiaohongshu", "red"]:
+        return probe_xiaohongshu(settings, logs, log_func, proxies)
+
+    elif plugin_id == "bilibili":
+        return probe_bilibili(settings, logs, log_func, proxies)
+
+    elif plugin_id == "toutiao":
+        return probe_toutiao(settings, logs, log_func, proxies)
+
+    elif plugin_id == "csdn":
+        return probe_csdn(settings, logs, log_func, proxies)
 
     elif plugin_id == "juejin":
         cookie = settings.get("cookie", "")
@@ -121,51 +133,6 @@ def probe_domestic_social(
             logs.append(log_func("WARN", f"⚠️ [警告] 无法直接建立与 掘金 API 端的物理连接: {e}。"))
             success = False
 
-    elif plugin_id in ["xiaohongshu", "red"]:
-        token = settings.get("token") or ""
-        cookie = settings.get("cookie") or ""
-        if not token and not cookie:
-            logs.append(log_func("ERROR", "❌ [错误] 小红书 Token 与 Cookie 必须至少配置一项。"))
-            return False
-
-        logs.append(log_func("INFO", "📡 [探测] 正在探测小红书创作者服务网络握手与凭证格式..."))
-        try:
-            resp = requests.head("https://creator.xiaohongshu.com", proxies=proxies, timeout=10)
-            logs.append(log_func("SUCCESS", f"🟢 [成功] 小红书创作者平台网络握手正常 (HTTP {resp.status_code})。凭证格式校验通过。"))
-        except Exception as e:
-            logs.append(log_func("WARN", f"⚠️ [警告] 连接小红书创作者网络端点异常: {e}。"))
-            success = False
-
-    elif plugin_id == "toutiao":
-        access_token = settings.get("access_token") or settings.get("token") or ""
-        cookie = settings.get("cookie") or ""
-        if not access_token and not cookie:
-            logs.append(log_func("ERROR", "❌ [错误] 今日头条 Access Token 与 Cookie 必须至少配置一项。"))
-            return False
-
-        logs.append(log_func("INFO", "📡 [探测] 正在探测今日头条 (头条号) 平台连通性..."))
-        try:
-            resp = requests.head("https://mp.toutiao.com", proxies=proxies, timeout=10)
-            logs.append(log_func("SUCCESS", f"🟢 [成功] 今日头条发布服务网络连接通畅 (HTTP {resp.status_code})。"))
-        except Exception as e:
-            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至今日头条端点: {e}。"))
-            success = False
-
-    elif plugin_id == "csdn":
-        token = settings.get("token") or ""
-        cookie = settings.get("cookie") or ""
-        if not token and not cookie:
-            logs.append(log_func("ERROR", "❌ [错误] CSDN Token 或 Cookie 凭据必须至少配置一项。"))
-            return False
-
-        logs.append(log_func("INFO", "📡 [探测] 正在探测 CSDN 博客控制台 API 连通度..."))
-        try:
-            resp = requests.head("https://mp.csdn.net", proxies=proxies, timeout=10)
-            logs.append(log_func("SUCCESS", f"🟢 [成功] CSDN 创作中心网络通道畅通 (HTTP {resp.status_code})。"))
-        except Exception as e:
-            logs.append(log_func("WARN", f"⚠️ [警告] 无法直接连接 CSDN 创作者服务器: {e}。"))
-            success = False
-
     elif plugin_id == "cnblogs":
         token = settings.get("token") or settings.get("bearer_token") or ""
         if not token:
@@ -178,22 +145,6 @@ def probe_domestic_social(
             logs.append(log_func("SUCCESS", f"🟢 [成功] 博客园 API 服务端点连接正常 (HTTP {resp.status_code})。已装载授权令牌。"))
         except Exception as e:
             logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至博客园 API 服务: {e}。"))
-            success = False
-
-    elif plugin_id == "bilibili":
-        sessdata = settings.get("sessdata") or ""
-        cookie = settings.get("cookie") or ""
-        token = settings.get("token") or ""
-        if not (sessdata or cookie or token):
-            logs.append(log_func("ERROR", "❌ [错误] Bilibili 专栏 SESSDATA / Cookie 凭证缺失。"))
-            return False
-
-        logs.append(log_func("INFO", "📡 [探测] 正在校验 Bilibili 专栏服务握手状态..."))
-        try:
-            resp = requests.get("https://api.bilibili.com/x/web-interface/nav", proxies=proxies, timeout=10)
-            logs.append(log_func("SUCCESS", f"🟢 [成功] Bilibili 接口网络通道通畅 (HTTP {resp.status_code})。"))
-        except Exception as e:
-            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接至 Bilibili API 服务: {e}。"))
             success = False
 
     elif plugin_id == "segmentfault":

@@ -241,7 +241,7 @@ def test_frontend_render_runtime_and_dom_integrity():
         if (!dashHtml.includes('lpdash-container') || !dashHtml.includes('lpdash-stats-strip') || !dashHtml.includes('primary-cta') || !dashHtml.includes('lpdash-quick-actions')) {
             throw new Error('Launchpad dashboard DOM missing lpdash-container, stats, primary-cta, or quick-actions');
         }
-        if (!dashHtml.includes('点击刷新检测') || !dashHtml.includes('按 Esc 关闭工作台')) {
+        if (!dashHtml.includes('点击刷新检测') || (!dashHtml.includes('按 Esc 关闭出版领航仪') && !dashHtml.includes('按 Esc 关闭工作台'))) {
             throw new Error('Launchpad dashboard missing streamlined footer actions');
         }
         // 7. 验证 loc.link_doctor.render.js 与 loc.blocks.render.js (Link Doctor 跨主题体检沙箱)

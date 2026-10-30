@@ -14,7 +14,7 @@ from . import editorial as editorial
 from . import logic as engine
 
 # 🚀 [真理源对正] 全局版本真理源 (遵循 SemVer 语义化发版规范)
-__version__ = "1.8.1"
+__version__ = "1.8.2"
 __edition__ = "Industrial-Sovereignty (工业主权版)"
 __status__ = "Production-Ready"
 

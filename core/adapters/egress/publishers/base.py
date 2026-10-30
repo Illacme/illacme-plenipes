@@ -153,6 +153,11 @@ class BasePublisher(ABC):
         if importlib.util.find_spec(pkg_name) is not None:
             return True
 
+        # 🛡️ [自闭环防护] 在独立封装客户端环境中，跳过 pip 子进程防止重入
+        if getattr(sys, "frozen", False):
+            tlog.warning(f"⚠️ [环境准备] 当前处于独立封装客户端环境，未内置依赖 '{pkg_name}'。已安全跳过 pip 调用。")
+            return False
+
         tlog.info(f"📦 [环境准备] 检测到 Python 依赖 '{pkg_name}' 缺失，正在为您自动安装...")
         import platform
         is_windows = (platform.system() == "Windows")
@@ -194,11 +199,18 @@ class BasePublisher(ABC):
         if os.path.exists(local_bin_path) or shutil.which(pkg_name) is not None:
             return True
 
-        tlog.info(f"📦 [环境准备] 检测到 npm 工具 '{pkg_name}' 缺失，正在为您自动安装...")
+        # 2. 尝试探测系统内置便携目录
+        for p_dir in [os.path.join(project_root, ".plenipes", "tools", "bin"), os.path.join(project_root, "desktop", "tools", "bin")]:
+            p_bin = os.path.join(p_dir, pkg_name)
+            if os.path.exists(p_bin) and os.access(p_bin, os.X_OK):
+                return True
+
         npm_path = shutil.which("npm")
         if not npm_path:
-            tlog.error("❌ [环境准备] 安装失败：未检测到 Node.js/npm 运行环境，无法自动安装依赖。")
+            tlog.warning("ℹ️ [环境感知] 宿主机未检测到 Node.js/npm 环境。系统将优先启用原生自闭环引擎（Zero-CLI 纯 HTTP / 主权直出模式）。")
             return False
+
+        tlog.info(f"📦 [环境准备] 检测到 npm 工具 '{pkg_name}' 缺失，正在为您自动安装...")
 
         is_windows = (platform.system() == "Windows")
         try:

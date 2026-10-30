@@ -139,9 +139,9 @@
         // ⚡ 静默刷新全局设置数据，保证刚在插件抽屉保存的凭据立即生效
         try {
             const fetchApi = window.apiFetch || (async (url, opts) => (await fetch(url, opts)).json());
-            const cfgRes = await fetchApi('/api/settings/get');
-            if (cfgRes && cfgRes.config) {
-                window.settingsData = cfgRes.config;
+            const cfgRes = await fetchApi('/api/system/config');
+            if (cfgRes) {
+                window.settingsData = cfgRes.config || cfgRes;
             }
         } catch (_) {}
 

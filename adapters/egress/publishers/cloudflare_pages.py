@@ -27,6 +27,7 @@ from adapters.egress.publishers.cloudflare_utils import (
     auto_fetch_account_id,
     emit_cloudflare_error_diagnostics,
     emit_cloudflare_timeout_diagnostics,
+    deploy_via_direct_api,
 )
 
 
@@ -85,6 +86,16 @@ class CloudflarePagesPublisher(BasePublisher):
         if not os.path.isdir(bundle_path):
             return {"status": "error", "message": f"Bundle path does not exist: {bundle_path}"}
 
+        # ── 关键依赖自闭环决策：若无本地 CLI，自动走纯 Python Direct API 直传 ────
+        if not self._has_cli():
+            tlog.info("📡 [Cloudflare Pages] 未检测到 Wrangler CLI 外部工具链，已自闭环激活【原生 Direct REST API 直传引擎】...")
+            token = self.token or os.environ.get("CLOUDFLARE_API_TOKEN", "")
+            if not self.account_id and token and not any(ph in token.lower() for ph in ["your_token", "placeholder", "undefined"]):
+                fetched_id = self._auto_fetch_account_id(token)
+                if fetched_id:
+                    self.account_id = fetched_id
+            return deploy_via_direct_api(self, bundle_path, metadata)
+
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         is_testing = "PYTEST_CURRENT_TEST" in os.environ
         local_wrangler_bin = os.path.join(project_root, "node_modules", ".bin", "wrangler")
@@ -127,8 +138,8 @@ class CloudflarePagesPublisher(BasePublisher):
         except subprocess.TimeoutExpired as e:
             return self._handle_timeout_expired(e, custom_proxy)
         except FileNotFoundError:
-            tlog.error(f"❌ [Cloudflare Pages] 找不到 Wrangler CLI: '{self.wrangler_path}'")
-            return {"status": "error", "message": f"Wrangler CLI not found: '{self.wrangler_path}'"}
+            tlog.info(f"💡 [Cloudflare Pages] 未找到 CLI '{self.wrangler_path}'，自动激活【原生零依赖 Direct API 直传引擎】...")
+            return deploy_via_direct_api(self, bundle_path, metadata)
         except Exception as e:
             masked_err = self._mask_token(str(e))
             tlog.error(f"❌ [Cloudflare Pages] 部署异常: {masked_err}")
@@ -198,18 +209,20 @@ class CloudflarePagesPublisher(BasePublisher):
             )
         }
 
-    def is_healthy(self) -> bool:
-        """检查 Wrangler CLI 可用性与自愈"""
-        self.ensure_npm_dependency("wrangler")
+    def _has_cli(self) -> bool:
+        """检测宿主机是否存在可用 Wrangler CLI"""
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-        for bin_name in [self.wrangler_path, os.path.join(project_root, "node_modules", ".bin", "wrangler"), "npx"]:
-            try:
-                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "-y", "wrangler", "--version"]
-                res = subprocess.run(cmd, capture_output=True, text=True, timeout=self.health_check_timeout)
-                if res.returncode == 0:
-                    return True
-            except Exception:
-                continue
+        local_wrangler = os.path.join(project_root, "node_modules", ".bin", "wrangler")
+        return bool(shutil.which(self.wrangler_path) or (os.path.exists(local_wrangler) and os.access(local_wrangler, os.X_OK)))
+
+    def is_healthy(self) -> bool:
+        """检查 Cloudflare Pages 发布通道健康度（CLI 或 Direct API 双模就绪均视为可用）"""
+        if self._has_cli():
+            return True
+        # 🛡️ [依赖自闭环] 宿主机即使未安装 Node/npm/CLI，配置完整即可走原生 Direct API 直传
+        token = self.token or os.environ.get("CLOUDFLARE_API_TOKEN", "")
+        if self.project_name and token:
+            return True
         return False
 
     def validate_config(self) -> List[str]:

@@ -6,9 +6,12 @@ Illacme Plenipes — Vercel Publisher Plugin Utilities
 🛡️ [SOP-01 & SOP-02]：从 vercel.py 拆解的独立辅助分片。
 """
 
+import os
 import re
+import base64
 import subprocess
-from typing import Optional
+import requests
+from typing import Optional, Dict, Any
 from core.utils.tracing import tlog
 
 
@@ -97,3 +100,125 @@ def auto_create_project(executable: list, project_name: str, token: str, org_id:
     except Exception as e:
         tlog.warning(f"⚠️ [Vercel] 远端项目自动创建异常: {e}")
     return False
+
+
+def deploy_via_direct_api(publisher_inst, bundle_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    🚀 Vercel 原生零 CLI (Zero-CLI) Direct Deploy REST API 直传引擎。
+    将本地静态构建目录转译为多文件载荷，通过官方 OpenAPI 直接部署至 Vercel Edge Network。
+    彻底摆脱对 Node.js、npm 及 vercel CLI 外部宿主依赖。
+    """
+    token = publisher_inst.token
+    project_name = publisher_inst.project_name or "sovereign-press"
+    mode_label = "生产" if publisher_inst.prod else "预览"
+
+    tlog.info(f"🛸 [Vercel Direct API] 正在以 {mode_label} 模式执行原生纯 HTTP 直传部署...")
+
+    # 1. 扫描并打包文件清单
+    text_exts = {".html", ".css", ".js", ".mjs", ".json", ".svg", ".xml", ".txt", ".md", ".map"}
+    files_payload = []
+    file_count = 0
+    total_bytes = 0
+
+    try:
+        for root, _, files in os.walk(bundle_path):
+            for f in files:
+                full_p = os.path.join(root, f)
+                rel_p = os.path.relpath(full_p, bundle_path).replace("\\", "/")
+                ext = os.path.splitext(f)[1].lower()
+                is_text = ext in text_exts
+
+                with open(full_p, "rb") as fp:
+                    raw_bytes = fp.read()
+                total_bytes += len(raw_bytes)
+                file_count += 1
+
+                if is_text:
+                    try:
+                        content_str = raw_bytes.decode("utf-8")
+                        files_payload.append({
+                            "file": rel_p,
+                            "data": content_str,
+                            "encoding": "utf-8"
+                        })
+                    except UnicodeDecodeError:
+                        files_payload.append({
+                            "file": rel_p,
+                            "data": base64.b64encode(raw_bytes).decode("ascii"),
+                            "encoding": "base64"
+                        })
+                else:
+                    files_payload.append({
+                        "file": rel_p,
+                        "data": base64.b64encode(raw_bytes).decode("ascii"),
+                        "encoding": "base64"
+                    })
+
+        tlog.info(f"📦 [Vercel Direct API] 文件载荷就绪：共 {file_count} 个文件 ({total_bytes / 1024:.1f} KB)")
+    except Exception as pe:
+        err = f"产物读取转译异常: {pe}"
+        tlog.error(f"❌ [Vercel Direct API] {err}")
+        return {"status": "error", "message": err}
+
+    # 2. 构造 REST API 请求
+    api_url = "https://api.vercel.com/v13/deployments"
+    if publisher_inst.org_id:
+        api_url += f"?teamId={publisher_inst.org_id}"
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "name": project_name,
+        "projectSettings": {"framework": None},
+        "files": files_payload
+    }
+    if publisher_inst.prod:
+        body["target"] = "production"
+
+    proxy = publisher_inst.get_proxy()
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+    timeout = publisher_inst.get_timeout(default_timeout=180)
+
+    try:
+        resp = requests.post(
+            api_url,
+            json=body,
+            headers=headers,
+            proxies=proxies,
+            timeout=timeout
+        )
+
+        if resp.status_code not in (200, 201):
+            err_text = resp.text.strip()
+            healed = add_autotherapy_suggestion(err_text)
+            tlog.error(f"❌ [Vercel Direct API] 部署失败 ({resp.status_code}): {healed[:200]}")
+            return {
+                "status": "error",
+                "message": f"Vercel API deploy failed ({resp.status_code}): {healed}"
+            }
+
+        data = resp.json()
+        deploy_url = f"https://{data.get('url')}" if data.get("url") else None
+        canonical_url = f"https://{project_name}.vercel.app" if project_name else ""
+        live_url = canonical_url if (publisher_inst.prod and canonical_url) else (deploy_url or canonical_url)
+
+        tlog.success(f"✅ [Vercel Direct API] 零依赖部署成功！访问地址: {live_url}")
+        return {
+            "status": "success",
+            "project": project_name,
+            "mode": "production" if publisher_inst.prod else "preview",
+            "url": live_url,
+            "deployment_url": deploy_url,
+            "message": "Deployed via Vercel Native Direct HTTP API (Zero-CLI 自闭环)"
+        }
+
+    except requests.exceptions.Timeout:
+        tlog.error("❌ [Vercel Direct API] 部署请求超时 (>180s)")
+        return {"status": "error", "message": "Vercel API deployment timed out after 180 seconds"}
+    except Exception as e:
+        healed = add_autotherapy_suggestion(str(e))
+        tlog.error(f"❌ [Vercel Direct API] 网络通信异常: {healed}")
+        return {"status": "error", "message": healed}

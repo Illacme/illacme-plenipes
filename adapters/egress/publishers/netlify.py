@@ -28,6 +28,7 @@ from typing import Dict, Any, Optional, List
 
 from core.adapters.egress.publishers.base import BasePublisher
 from core.utils.tracing import tlog
+from .netlify_utils import deploy_via_direct_api, add_autotherapy_suggestion
 
 
 class NetlifyPublisher(BasePublisher):
@@ -83,19 +84,26 @@ class NetlifyPublisher(BasePublisher):
         if not os.path.isdir(bundle_path):
             return {"status": "error", "message": f"Bundle path does not exist: {bundle_path}"}
 
+        # ── 2. 依赖自闭环决策：若显式开启 direct_api 或宿主机完全无 CLI 与 npx 时走原生 Direct API ────
+        import shutil
+        use_direct = getattr(self, "direct_api", False) or (self.config.get("direct_api") if isinstance(self.config, dict) else False)
+        if use_direct or (not self._has_cli() and not shutil.which("npx")):
+            tlog.info("📡 [Netlify] 已激活【原生 Direct REST API 直传引擎】...")
+            return deploy_via_direct_api(self, bundle_path, metadata)
+
         mode_label = "生产" if self.prod else "草稿"
         tlog.info(f"🚀 [Netlify] 正在以 {mode_label} 模式部署至站点 '{self.site_id}'...")
 
         try:
-            # ── 2. 组装命令 ──────────────────────────────
+            # ── 3. 组装命令 ──────────────────────────────
             cmd = self._build_netlify_command(bundle_path, metadata)
             tlog.debug(f"📋 [Netlify] 执行命令: {' '.join(cmd)}")
 
-            # ── 3. 准备安全环境变量 ──────────────────────
+            # ── 4. 准备安全环境变量 ──────────────────────
             env = os.environ.copy()
             env["NETLIFY_AUTH_TOKEN"] = self.auth_token
 
-            # ── 4. 执行部署 ──────────────────────────────
+            # ── 5. 执行部署 ──────────────────────────────
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True,
@@ -109,7 +117,7 @@ class NetlifyPublisher(BasePublisher):
                 tlog.error(f"❌ [Netlify] 部署失败: {healed_err}")
                 return {"status": "error", "message": f"Netlify deploy failed: {healed_err}"}
 
-            # ── 5. 解析部署 URL ──────────────────────────
+            # ── 6. 解析部署 URL ──────────────────────────
             live_url = self._extract_url(result.stdout, "Website URL" if self.prod else "Website draft URL")
             deploy_url = self._extract_url(result.stdout, "Unique Deploy URL")
 
@@ -127,40 +135,32 @@ class NetlifyPublisher(BasePublisher):
             tlog.error("❌ [Netlify] 部署超时 (>300s)。")
             return {"status": "error", "message": "Netlify deploy timed out after 300 seconds."}
         except FileNotFoundError:
-            tlog.error(f"❌ [Netlify] 找不到 Netlify CLI: '{self.netlify_path}'")
-            return {"status": "error", "message": f"Netlify CLI not found: '{self.netlify_path}'"}
+            tlog.info(f"💡 [Netlify] 未找到 CLI '{self.netlify_path}'，自动激活【原生零依赖 Direct API 直传引擎】...")
+            return deploy_via_direct_api(self, bundle_path, metadata)
         except Exception as e:
             healed_err = self._add_autotherapy_suggestion(str(e))
             tlog.error(f"❌ [Netlify] 部署异常: {healed_err}")
             return {"status": "error", "message": healed_err}
 
     def _add_autotherapy_suggestion(self, err_msg: str) -> str:
-        """
-        💡 为 Netlify 错误注入友好免密授权物理自愈提示。
-        """
-        if not err_msg:
-            return err_msg
+        """💡 为 Netlify 错误注入友好免密授权物理自愈提示"""
+        return add_autotherapy_suggestion(err_msg)
 
-        auth_keywords = ["unauthorized", "authentication", "expired", "token", "unrecognized token"]
-        if any(kw in err_msg.lower() for kw in auth_keywords):
-            return (
-                f"{err_msg}\n\n"
-                "💡 [自愈建议] Netlify 授权 Token 无效或已过期。\n"
-                "推荐操作：请在治理中心配置中，点击「🔑 本地一键免密授权」，系统将后台唤醒授权浏览器并自动回填密钥，免去手动获取的麻烦！"
-            )
-        return err_msg
+    def _has_cli(self) -> bool:
+        """检测宿主机是否存在可用 Netlify CLI"""
+        import shutil
+        for bin_name in [self.netlify_path, os.path.join(os.getcwd(), "node_modules", ".bin", "netlify")]:
+            if shutil.which(bin_name):
+                return True
+        return False
 
     def is_healthy(self) -> bool:
-        """检查 Netlify CLI 可用性与自愈"""
-        self.ensure_npm_dependency("netlify-cli")
-        for bin_name in [self.netlify_path, os.path.join(os.getcwd(), "node_modules", ".bin", "netlify"), "npx"]:
-            try:
-                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "-y", "netlify", "--version"]
-                res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-                if res.returncode == 0:
-                    return True
-            except Exception:
-                continue
+        """检查 Netlify 发布通道健康度（CLI 或 Direct API 双模就绪均视为可用）"""
+        if self._has_cli():
+            return True
+        # 🛡️ [依赖自闭环] 宿主机即使未安装 Node/npm/CLI，配置完整即可走原生 Direct API 直传
+        if self.site_id and self.auth_token:
+            return True
         return False
 
     def validate_config(self) -> List[str]:

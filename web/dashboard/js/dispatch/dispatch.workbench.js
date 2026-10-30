@@ -1,5 +1,5 @@
 window.currentDispatchMode = window.currentDispatchMode || 'shelf';
-window.currentDispatchSubTab = 'ledger';
+window.currentDispatchSubTab = window.currentDispatchSubTab || 'all';
 const _isHostingTarget = (t) => {
     if (!t) return false;
     if (t.target_type === 'hosting' || t.type === 'hosting') return true;
@@ -65,16 +65,15 @@ window.startDispatchLedgerPolling = function () {
                         } else if (r.status === 'success' && !r.is_stale) {
                             window._dispatchActiveRunningSet.delete(key);
                             window._dispatchTaskStartTimes.delete(key);
+                            if (window._expandedDiagnosticKeys) window._expandedDiagnosticKeys.delete(key);
                             window._dispatchRecentlyCompletedSet.add(key);
                             setTimeout(() => { if (window._dispatchRecentlyCompletedSet) window._dispatchRecentlyCompletedSet.delete(key); }, 4000);
                             if (typeof showToast === 'function') showToast(`✅ [${(r.target_id || '').toUpperCase()}] 广播推流完成，账本已同步！`, 'success');
                         } else if (elapsed > 40000) {
-                            window._dispatchActiveRunningSet.delete(key);
-                            window._dispatchTaskStartTimes.delete(key);
+                            window._dispatchActiveRunningSet.delete(key); window._dispatchTaskStartTimes.delete(key);
                         }
                     } else if (elapsed > 40000) {
-                        window._dispatchActiveRunningSet.delete(key);
-                        window._dispatchTaskStartTimes.delete(key);
+                        window._dispatchActiveRunningSet.delete(key); window._dispatchTaskStartTimes.delete(key);
                     }
                 }
             }
@@ -88,7 +87,11 @@ window.startDispatchLedgerPolling = function () {
                 if (typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
             } else if (window.currentDispatchMode === 'social') {
                 const unified = window.buildUnifiedDispatchTasks(res);
-                if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
+                const uKey = JSON.stringify(unified);
+                if (window._lastUnifiedSocialKey !== uKey) {
+                    window._lastUnifiedSocialKey = uKey;
+                    if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
+                }
             }
 
             if (!isPublishing && window._dispatchActiveRunningSet.size === 0) window.stopDispatchLedgerPolling();
@@ -160,19 +163,13 @@ window.switchDispatchMode = function (mode, reloadHosting = true) {
     const isHosting = (window.currentDispatchMode === 'hosting');
     const isSocial = (window.currentDispatchMode === 'social');
 
-    const tabB = document.getElementById('tab-dispatch-shelf');
-    const tabH = document.getElementById('tab-dispatch-hosting');
-    const tabS = document.getElementById('tab-dispatch-social');
-    if (tabB) tabB.classList.toggle('active', isShelf);
-    if (tabH) tabH.classList.toggle('active', isHosting);
-    if (tabS) tabS.classList.toggle('active', isSocial);
-
-    const viewB = document.getElementById('dispatch-shelf-view');
-    const viewH = document.getElementById('dispatch-hosting-view');
-    const viewS = document.getElementById('dispatch-social-view');
-    if (viewB) viewB.style.display = isShelf ? 'block' : 'none';
-    if (viewH) viewH.style.display = isHosting ? 'block' : 'none';
-    if (viewS) viewS.style.display = isSocial ? 'block' : 'none';
+    window._lastUnifiedSocialKey = null;
+    [['tab-dispatch-shelf', isShelf], ['tab-dispatch-hosting', isHosting], ['tab-dispatch-social', isSocial]].forEach(([id, act]) => {
+        const el = document.getElementById(id); if (el) el.classList.toggle('active', act);
+    });
+    [['dispatch-shelf-view', isShelf], ['dispatch-hosting-view', isHosting], ['dispatch-social-view', isSocial]].forEach(([id, act]) => {
+        const el = document.getElementById(id); if (el) el.style.display = act ? 'block' : 'none';
+    });
 
     const metricGrid = document.getElementById('dispatch-metric-container');
     if (metricGrid) metricGrid.style.display = isSocial ? 'grid' : 'none';
@@ -194,6 +191,7 @@ window.switchDispatchMode = function (mode, reloadHosting = true) {
 };
 
 window.refreshCurrentDispatchView = function () {
+    window._lastUnifiedSocialKey = null;
     if (window.currentDispatchMode === 'shelf' && typeof window.loadDispatchShelfCenter === 'function') window.loadDispatchShelfCenter();
     if (window.currentDispatchMode === 'hosting' && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
     window.loadDispatchCenter();
@@ -291,8 +289,8 @@ window.renderActivePipelineZone = function (data) {
 };
 
 window.switchDispatchSubTab = function (tabName) {
-    window.currentDispatchSubTab = tabName;
-    if (tabName === 'deadletter') window.quickFilterDispatchStatus('failed');
-    else if (tabName === 'ledger') window.quickFilterDispatchStatus('success');
+    window.currentDispatchSubTab = tabName || 'all';
+    if (tabName === 'deadletter' || tabName === 'failed') window.quickFilterDispatchStatus('failed');
+    else if (tabName === 'success') window.quickFilterDispatchStatus('success');
     else window.quickFilterDispatchStatus('');
 };

@@ -18,7 +18,7 @@ class TestChinesePluginDryRun(unittest.TestCase):
     def test_dry_run_chinese_platforms(self, mock_get, mock_head):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {"code": 0, "data": {}}
+        mock_resp.json.return_value = {"code": 0, "data": {"isLogin": True, "uname": "TestUP", "mid": "123456"}}
         mock_head.return_value = mock_resp
         mock_get.return_value = mock_resp
 

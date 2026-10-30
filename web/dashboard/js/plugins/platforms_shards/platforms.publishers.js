@@ -100,10 +100,14 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
         return `
             <div class="api-token-helper">
                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <span>💡 微信公众平台开发者页面</span>
+                    <span>💡 微信公众平台开发者设置与 IP 白名单</span>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 2px;">
-                    <a href="https://mp.weixin.qq.com/cgi-bin/settingpage?t=setting/index&action=index" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达微信公众平台设置页</a>
+                <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                    微信 API 严格校验调用方 IP。点击下方按钮可一键探测并复制当前机器的公网出口 IP！
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                    <button type="button" class="helper-btn" onclick="window.fetchAndCopyOutboundIp(this)" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10B981; font-weight: 600;">🌐 探测并复制当前公网 IP (微信白名单)</button>
+                    <a href="https://mp.weixin.qq.com/cgi-bin/settingpage?t=setting/index&action=index" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达微信公众号后台</a>
                 </div>
             </div>
             ${renderSettingsItem('开发者 AppID', `syndication.wechat.app_id`, cfg.app_id, 'text', { placeholder: "请输入微信公众号开发者 ID (AppID)" })}
@@ -119,19 +123,20 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
         return `
             <div class="api-token-helper">
                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <span>💡 知乎专栏直达与免密嗅探说明</span>
+                    <span>💡 知乎专栏直达与智能解析说明</span>
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
-                    知乎同步支持通过专栏发布文章。若本地 Chrome 已登录知乎，点击下方免密嗅探可全自动提取凭据并绑定！
+                    知乎同步支持通过专栏发布文章。点击下方智能解析，粘贴整段 Cookie 或请求头即可自动提取 z_c0 并回填！
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                    <button type="button" class="helper-btn" onclick="window.promptSmartPasteCookie('zhihu')" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.4); color: #00f2fe; font-weight: 600;">🪄 智能粘贴解析 Headers/Cookie</button>
                     <button type="button" class="helper-btn" onclick="window.autoSniffLocalCookie('zhihu', this)" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10B981; font-weight: 600;">🔑 本地 Chrome 免密嗅探并填入</button>
                     <a href="https://www.zhihu.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达知乎首页</a>
                 </div>
             </div>
-            ${renderSettingsItem('专栏 ID (Column ID)', `syndication.zhihu.column_id`, cfg.column_id, 'text', { placeholder: "例如: column-id 或专栏后缀路径", description: "知乎专栏链接中的唯一英文/拼音标识（如 zhihu.com/column/xxx 中的 xxx）。" })}
-            ${renderSettingsItem('用户令牌 (Token)', `syndication.zhihu.token`, cfg.token, 'password', { placeholder: "请输入知乎个人访问令牌或 z_c0 (二选一)", description: "用于安全鉴权与知乎专栏草稿/正式发布的访问令牌。", optional: true })}
-            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.zhihu.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入知乎登录 Cookie (二选一，可通过免密嗅探自动填入)", rows: 2, description: "网页端登录知乎后的 Cookie 字符串凭据（包含 z_c0）。", optional: true })}
+            ${renderSettingsItem('专栏 ID (Column ID)', `syndication.zhihu.column_id`, cfg.column_id, 'text', { placeholder: "例如: column-id 或专栏链接 (自动识别)", oninput: "window.handleZhihuColumnInputAutoClean(this)", description: "知乎专栏链接中的唯一标识（如 zhihu.com/column/xxx 中的 xxx，直接粘贴链接自动提取）。" })}
+            ${renderSettingsItem('用户令牌 (Token)', `syndication.zhihu.token`, cfg.token, 'password', { placeholder: "请输入知乎个人访问令牌或 z_c0 (二选一)", description: "用于安全鉴权与知乎专栏草稿/正式发布的访问令牌 (可由下方 Cookie 自动提取)。", optional: true })}
+            ${renderSettingsItem('登录 Cookie (Cookie)', `syndication.zhihu.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入知乎登录 Cookie (可直接粘贴整段 Headers，系统自动提取 z_c0)", rows: 2, oninput: "window.handleCookieInputAutoClean('zhihu', this)", description: "网页端登录知乎后的 Cookie 字符串凭据（包含 z_c0）。", optional: true })}
             ${window.renderPlatformAdvancedGroup('高级代理参数', `
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.zhihu.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}

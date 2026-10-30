@@ -110,14 +110,27 @@ window.renderDispatchLedger = function (records) {
     window.renderDispatchLedgerTable(paged, all.length, page, totalPages);
 };
 
+// 全局持久化已展开诊断抽屉的任务主键集合（跨轮询重绘持久保持）
+window._expandedDiagnosticKeys = window._expandedDiagnosticKeys || new Set();
+
 /**
  * 切换展开或收起失败任务的折叠诊断面板
+ * 无论后台轮询重绘多么频繁，均通过 _expandedDiagnosticKeys 保持展开态
  */
-window.toggleLedgerDiagnostic = function (id) {
+window.toggleLedgerDiagnostic = function (id, taskKey) {
     const row = document.getElementById(id);
     if (!row) return;
+    const resolvedKey = taskKey || row.getAttribute('data-task-key');
     const isHidden = (row.style.display === 'none' || !row.style.display);
-    row.style.display = isHidden ? 'table-row' : 'none';
+    const willShow = isHidden;
+    row.style.display = willShow ? 'table-row' : 'none';
+    if (resolvedKey) {
+        if (willShow) {
+            window._expandedDiagnosticKeys.add(resolvedKey);
+        } else {
+            window._expandedDiagnosticKeys.delete(resolvedKey);
+        }
+    }
 };
 
 /**
@@ -190,6 +203,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
 
         // 状态徽标渲染
         let statusBadgeHtml = '';
+        const safeTaskKey = window.escapeHtml ? window.escapeHtml(taskKey) : taskKey;
         if (isRunning) {
             statusBadgeHtml = `<span class="dispatch-status-badge is-running"><span class="spinner-spin">🔄</span> 正在发布...</span>`;
         } else if (isFailed) {
@@ -197,7 +211,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                 window.DispatchCooldownManager.clearCooldown(rec.rel_path, rec.target_id);
             }
             const retryCount = rec.retry_count || 0;
-            statusBadgeHtml = `<span class="dispatch-status-badge is-failed" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" style="cursor: pointer;" title="发布受阻，点击就地展开故障诊断与自愈指南：${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''} 🔍</span>`;
+            statusBadgeHtml = `<span class="dispatch-status-badge is-failed" onclick="window.toggleLedgerDiagnostic('${diagRowId}', '${safeTaskKey}')" style="cursor: pointer;" title="发布受阻，点击就地展开故障诊断与自愈指南：${friendlyMsg}">⚠️ 待自愈${retryCount > 0 ? ` (${retryCount}次)` : ''} 🔍</span>`;
         } else if (rec.is_stale) {
             statusBadgeHtml = `<span class="dispatch-status-badge is-stale" onclick="if(typeof window.openDispatchDiffModal==='function') window.openDispatchDiffModal('${safePath}', '${targetId}', '${langCode}', '${chMeta.name}');" style="cursor: pointer;" title="本地原稿有新修改，点击查看改动差异与决策">🟡 待更新 🔍</span>`;
         } else {
@@ -210,7 +224,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
-                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
+                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}', '${safeTaskKey}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
                     <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" disabled title="正在重新发布推流中..."><span class="spinner-spin">🔄</span></button>
                 </div>
             `;
@@ -218,7 +232,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
             actionsHtml = `
                 <div class="ledger-actions-cell">
                     <button class="secondary-btn ledger-icon-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" title="前置排版工坊与一键复制"><span>👁️</span></button>
-                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
+                    <button class="secondary-btn ledger-icon-btn is-diag-btn" onclick="window.toggleLedgerDiagnostic('${diagRowId}', '${safeTaskKey}')" title="查看自愈建议与故障诊断"><span>🩺</span></button>
                     <button class="primary-btn glow-btn ledger-icon-btn is-retry-btn" id="${retryBtnId}" onclick="window.retrySingleLedgerTask('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}', '${diagRowId}')" title="立即自愈重发当前任务"><span>🔄</span></button>
                 </div>
             `;
@@ -275,9 +289,16 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                     <code style="color: var(--text-bright); font-family: var(--font-mono, monospace); font-weight: 700;">${ipMatch}</code>
                     <button class="secondary-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${ipMatch}');} if(typeof showToast==='function') showToast('✅ 已复制出口 IP: ${ipMatch}', 'success');" style="padding: 2px 8px; font-size: 0.70rem; line-height: 1.2;">📋 一键复制</button>
                 </div>` : '';
+            const magicUrl = diag.magic_url ? (window.escapeHtml ? window.escapeHtml(diag.magic_url) : diag.magic_url) : '';
+            const magicBtnHtml = magicUrl ? `
+                <a href="${magicUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" style="padding: 3px 10px; font-size: 0.74rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%); border-color: #ff2442; color: #ffffff;" title="在新标签页中打开官方平台完成验证"><span>🔗 直达平台完成验证</span></a>
+            ` : '';
+
+            const isDiagExpanded = Boolean(window._expandedDiagnosticKeys && window._expandedDiagnosticKeys.has(taskKey));
+            const diagDisplay = isDiagExpanded ? 'table-row' : 'none';
 
             html += `
-                <tr id="${diagRowId}" class="ledger-diagnostic-row" style="display: none;">
+                <tr id="${diagRowId}" data-task-key="${safeTaskKey}" class="ledger-diagnostic-row" style="display: ${diagDisplay};">
                     <td colspan="6" style="padding: 0;">
                         <div class="ledger-diag-card">
                             <div class="ledger-diag-header">
@@ -286,8 +307,9 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                                     <span style="font-weight: 700; color: var(--neon-red);">分发异常诊断与自愈中枢</span>
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
+                                    ${magicBtnHtml}
                                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 3px 10px; font-size: 0.74rem;"><span>🔑 检查渠道授权</span></button>
-                                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}'); if(typeof window.toggleLedgerDiagnostic==='function') window.toggleLedgerDiagnostic('${diagRowId}');" title="清除并忽略当前异常状态" style="padding: 3px 10px; font-size: 0.74rem;"><span>🧹 忽略异常</span></button>
+                                    <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}'); if(typeof window.toggleLedgerDiagnostic==='function') window.toggleLedgerDiagnostic('${diagRowId}', '${safeTaskKey}');" title="清除并忽略当前异常状态" style="padding: 3px 10px; font-size: 0.74rem;"><span>🧹 忽略异常</span></button>
                                     <button class="primary-btn glow-btn" id="diag-${retryBtnId}" onclick="window.retrySingleLedgerTask('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}', '${diagRowId}')" style="padding: 3px 12px; font-size: 0.74rem; font-weight: 700;"><span>🔄 立即重发此任务</span></button>
                                 </div>
                             </div>
@@ -356,6 +378,10 @@ window.renderDispatchDeadLetters = function (tasks) {
                 <code style="color: var(--text-bright); font-family: var(--font-mono, monospace); font-weight: 700;">${ipMatch}</code>
                 <button class="secondary-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${ipMatch}');} if(typeof showToast==='function') showToast('✅ 已复制出口 IP: ${ipMatch}', 'success');" style="padding: 2px 8px; font-size: 0.70rem; line-height: 1.2;">📋 一键复制</button>
             </div>` : '';
+        const magicUrl = diag.magic_url ? (window.escapeHtml ? window.escapeHtml(diag.magic_url) : diag.magic_url) : '';
+        const magicBtnHtml = magicUrl ? `
+            <a href="${magicUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn glow-btn" style="padding: 5px 12px; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%); border-color: #ff2442; color: #ffffff;" title="在新标签页中打开官方平台完成验证"><span>🔗 直达平台完成验证</span></a>
+        ` : '';
         const cardId = `dl-card-${idx}`, btnRetryId = `dl-retry-btn-${idx}`;
         return `
             <div class="deadletter-card" id="${cardId}" data-title="${safeTitle.toLowerCase()}" data-path="${safePath.toLowerCase()}" data-target="${targetId.toLowerCase()}" data-target-name="${chMeta.name.toLowerCase()}" data-lang="${langMeta.name.toLowerCase()} ${(t.lang_code || '').toLowerCase()}">
@@ -380,6 +406,7 @@ window.renderDispatchDeadLetters = function (tasks) {
                     </details>
                 </div>
                 <div class="dl-actions">
+                    ${magicBtnHtml}
                     <button class="secondary-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" style="padding: 5px 12px; font-size: 0.78rem;"><span>👁️ 预览排版</span></button>
                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🔑 检查渠道授权</span></button>
                     <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🗑️ 移出死信</span></button>
@@ -648,6 +675,8 @@ window.retryAllFailedTasks = async function () {
 
 window.clearSingleDeadLetterTask = async function (relPath, targetId) {
     if (typeof apiFetch !== 'function') return;
+    const taskKey = `${relPath}::${targetId}`;
+    if (window._expandedDiagnosticKeys) window._expandedDiagnosticKeys.delete(taskKey);
     try {
         await apiFetch('/api/dispatch/deadletter/clear', {
             method: 'DELETE', body: JSON.stringify({ rel_path: relPath, target_id: targetId })

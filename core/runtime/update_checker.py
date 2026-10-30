@@ -39,22 +39,8 @@ class UpdateChecker:
         if env_ver:
             return env_ver.lstrip("v").strip()
 
-        # 2. 若在源码开发环境中，尝试从 Git Tag 读取真实标签
-        try:
-            import subprocess
-            res = subprocess.run(
-                ["git", "describe", "--tags", "--abbrev=0"],
-                capture_output=True,
-                text=True,
-                timeout=1.5,
-                cwd=os.path.dirname(os.path.abspath(__file__))
-            )
-            if res.returncode == 0 and res.stdout.strip():
-                return res.stdout.strip().lstrip("v")
-        except Exception:
-            pass
-
-        return APP_VERSION.lstrip("v")
+        # 2. 严格以 core.__version__ (APP_VERSION) 为全局语义化唯一真理源 (Rule 18)
+        return cls.APP_VERSION.lstrip("v")
 
     @classmethod
     def parse_semver(cls, ver_str: str) -> Tuple[int, int, int]:

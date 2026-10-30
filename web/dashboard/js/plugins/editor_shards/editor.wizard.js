@@ -57,8 +57,8 @@
                 'wechat': ['1. 公众号 AppID/Secret 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
                 'juejin': ['1. Cookie 或 API Token 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
                 'bilibili': ['1. SESSDATA 与 bili_jct 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
-                'xiaohongshu': ['1. Access Token 或 Cookie 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
-                'red': ['1. Access Token 或 Cookie 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
+                'xiaohongshu': ['1. 创作者登录 Cookie (推荐)', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
+                'red': ['1. 创作者登录 Cookie (推荐)', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
                 'discord': ['1. 社区频道 Webhook 地址', '2. 独立代理参数 (可选)', '3. 连通测试与保存']
             };
             if (publisherMap[pid]) return publisherMap[pid];

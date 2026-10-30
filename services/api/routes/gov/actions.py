@@ -138,13 +138,50 @@ async def get_deployment_summary() -> Dict[str, Any]:
         return {"status": "success", "summary": last_results["summary"]}
 
     # 尝试从 ledger 读取最近一次 GLOBAL_DEPLOY 记录
-    if hasattr(engine, "ledger"):
+    if hasattr(engine, "ledger") and engine.ledger:
         try:
             logs = engine.ledger.get_recent_logs(category="GLOBAL_DEPLOY", limit=1)
-            if logs and isinstance(logs[0].get("metadata"), dict) and "summary" in logs[0]["metadata"]:
-                return {"status": "success", "summary": logs[0]["metadata"]["summary"]}
+            if logs and isinstance(logs, list) and isinstance(logs[0], dict):
+                meta = logs[0].get("metadata")
+                if isinstance(meta, dict) and "summary" in meta and meta["summary"]:
+                    return {"status": "success", "summary": meta["summary"]}
         except Exception:
             pass
+
+    # 尝试从 SQLite 托管批次账本恢复最近一次部署成果
+    if hasattr(engine, "meta") and hasattr(engine.meta, "list_hosting_deploy_batches"):
+        try:
+            batches = engine.meta.list_hosting_deploy_batches(limit=1)
+            if batches and isinstance(batches, list) and isinstance(batches[0], dict):
+                b = batches[0]
+                targets = b.get("targets")
+                if isinstance(targets, dict) and targets:
+                    channels = []
+                    for cid, t_info in targets.items():
+                        if isinstance(t_info, dict):
+                            st_upper = str(t_info.get("status") or "").upper()
+                            channels.append({
+                                "id": cid,
+                                "name": cid.upper(),
+                                "status": "success" if st_upper == "SUCCESS" else "error",
+                                "url": t_info.get("url") or "",
+                                "is_primary": cid in ("github", "vercel", "github_pages"),
+                                "error": t_info.get("error") or "",
+                                "duration_sec": t_info.get("duration_sec", 0.0),
+                                "deployed_at": t_info.get("deployed_at") or b.get("started_at")
+                            })
+                    if channels:
+                        summary = {
+                            "total_channels": len(channels),
+                            "success_count": sum(1 for c in channels if c["status"] == "success"),
+                            "fail_count": sum(1 for c in channels if c["status"] != "success"),
+                            "channels": channels
+                        }
+                        return {"status": "success", "summary": summary}
+        except Exception:
+            pass
+
+    return {"status": "empty", "summary": None, "message": "尚无全域部署记录"}
 
 from .actions_shards.health_radar_ops import HealthRadarRequest, probe_all_urls_impl
 

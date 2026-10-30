@@ -1821,12 +1821,12 @@
 .hosting-console-card {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     background: rgba(255, 255, 255, 0.025);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 18px 22px;
-    margin-top: 16px;
+    padding: 16px 20px;
+    margin-top: 14px;
     margin-bottom: 20px;
     backdrop-filter: blur(12px);
     gap: 20px;
@@ -1840,19 +1840,26 @@
 
 .hosting-console-card .console-left {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .console-title-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: nowrap;
 }
 
 .console-title {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-bright);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
 }
 
 [data-theme="light"] .console-title {
@@ -1861,9 +1868,11 @@
 
 .tag-status {
     font-size: 0.72rem;
-    padding: 2px 8px;
+    padding: 2px 10px;
     border-radius: 12px;
     font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .tag-status.success {
@@ -1878,61 +1887,212 @@
     border: 1px solid rgba(var(--neon-red-rgb), 0.3);
 }
 
-.console-meta-grid {
+/* 4-Stat Metric Tiles */
+.console-metrics-strip {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px 24px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
 }
 
-.console-meta-grid .meta-item {
-    font-size: 0.78rem;
+.console-metric-tile {
+    background: var(--white-03, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--white-06, rgba(255, 255, 255, 0.06));
+    border-radius: 8px;
+    padding: 8px 10px;
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
 }
 
-.console-meta-grid .meta-item.full-width {
-    grid-column: 1 / -1;
+[data-theme="light"] .console-metric-tile {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
 }
 
-.console-meta-grid .meta-k {
+.console-metric-tile .tile-label {
+    font-size: 0.68rem;
     color: var(--text-muted);
-}
-
-.console-meta-grid .meta-v {
-    color: var(--text-normal);
     font-weight: 500;
+    white-space: nowrap;
 }
 
-.console-meta-grid .meta-v.highlight {
-    color: var(--neon-cyan);
+.console-metric-tile .tile-value {
+    font-size: 0.84rem;
     font-weight: 700;
+    color: var(--text-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
 }
 
-[data-theme="light"] .console-meta-grid .meta-v.highlight {
-    color: var(--accent-primary);
+[data-theme="light"] .console-metric-tile .tile-value {
+    color: var(--text-normal);
 }
 
-.console-meta-grid .meta-v.code-path {
-    font-family: var(--font-mono, monospace);
-    font-size: 0.72rem;
+.console-metric-tile .tile-sub {
+    font-size: 0.68rem;
     color: var(--text-muted);
-    max-width: 500px;
+    font-weight: 400;
+}
+
+.theme-interactive-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--white-06, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--white-12, rgba(255, 255, 255, 0.12));
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--neon-cyan);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 100%;
+}
+
+.theme-interactive-pill:hover {
+    background: var(--white-12, rgba(255, 255, 255, 0.12));
+    border-color: var(--neon-cyan);
+    transform: translateY(-1px);
+    box-shadow: 0 0 8px rgba(var(--neon-cyan-rgb, 0, 240, 255), 0.25);
+}
+
+.theme-pill-name {
+    color: var(--text-bright);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.console-right-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end;
+.theme-interactive-pill:hover .theme-pill-name {
+    color: var(--neon-cyan);
 }
 
-.console-action-subrow {
+.theme-pill-arrow {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.theme-interactive-pill:hover .theme-pill-arrow {
+    color: var(--neon-cyan);
+}
+
+.console-path-row {
     display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.70rem;
+    color: var(--text-muted);
+    min-width: 0;
+}
+
+.console-path-row .path-label {
+    flex-shrink: 0;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.console-path-row .path-code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    background: var(--white-03, rgba(255, 255, 255, 0.03));
+    padding: 1px 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid var(--white-06, rgba(255, 255, 255, 0.06));
+}
+
+/* Right Action Pod */
+.console-action-pod {
+    flex-shrink: 0;
+    width: 290px;
+    background: var(--bg-glass-input, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--white-08, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+[data-theme="light"] .console-action-pod {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.07);
+}
+
+.console-hero-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 7px 14px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.console-hero-caption {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.console-republish-divider {
+    height: 1px;
+    background: var(--white-06, rgba(255, 255, 255, 0.06));
+    margin: 2px 0;
+}
+
+[data-theme="light"] .console-republish-divider {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.console-republish-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
+}
+
+.republish-hint {
+    font-size: 0.70rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.republish-btn-sm {
+    background: var(--white-03, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--white-10, rgba(255, 255, 255, 0.1));
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-normal);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.republish-btn-sm:hover {
+    background: var(--white-08, rgba(255, 255, 255, 0.08));
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    transform: translateY(-1px);
 }
 
 /* 3. 战区二：11 大全站托管平台渠道舰队网格 */

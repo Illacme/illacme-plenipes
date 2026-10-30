@@ -146,10 +146,18 @@ class WeChatTokenCache:
                 errmsg = data.get("errmsg", "")
                 ip_match = re.search(r"invalid ip\s+([0-9\.]+)", errmsg)
                 invalid_ip = ip_match.group(1) if ip_match else "未知"
-                raise RuntimeError(
-                    f"微信公众号 IP 白名单拦截 (40164)：检测到当前请求出口 IP 为 [{invalid_ip}]。"
-                    f"请登录微信公众平台【设置与开发 -> 基本配置 -> IP白名单】添加此 IP。若已配置全局代理，可设置 proxy: direct 尝试直连。"
-                )
+                try:
+                    from core.utils.network_sniffer import detect_outbound_ip, format_wechat_whitelist_card
+                    detected_info = detect_outbound_ip(proxy=proxy, timeout=2.5)
+                    detected_ip = detected_info.get("ip")
+                    card_lines = format_wechat_whitelist_card(invalid_ip, detected_ip, proxy_val=proxy or "")
+                    guide_msg = "\n".join(card_lines)
+                except Exception:
+                    guide_msg = (
+                        f"微信公众号 IP 白名单拦截 (40164)：检测到当前请求出口 IP 为 [{invalid_ip}]。"
+                        f"请登录微信公众平台【设置与开发 -> 基本配置 -> IP白名单】添加此 IP。若已配置全局代理，可设置 proxy: direct 尝试直连。"
+                    )
+                raise RuntimeError(guide_msg)
             elif errcode in (40013, 40001):
                 raise RuntimeError("微信公众号授权失败：AppID 或 AppSecret 不正确，请检查插件配置。")
             elif errcode == 45009:

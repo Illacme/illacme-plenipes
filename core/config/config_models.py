@@ -9,6 +9,7 @@ Illacme-plenipes Core - Configuration Models (Facade)
 import os
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import List, Dict, Optional, Any
+from core import __version__
 
 # 🚀 导入模块化后的子配置
 from .models.base import LogFormat, ProviderType, StrategyType
@@ -69,7 +70,7 @@ __all__ = [
 class Configuration(ConfigurationPathsMixin, BaseModel):
     """💎 [Illacme Plenipes] 全局配置模型总纲"""
 
-    version: str = "1.8.0"
+    version: str = Field(default=__version__)
 
     # 核心物理基础设施
     imprint_name: str = Field(default="Illacme Press", alias="press_name")

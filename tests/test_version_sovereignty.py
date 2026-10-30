@@ -18,7 +18,7 @@ from core.config.config_models import Configuration
 
 def test_core_version_is_semver_truth():
     """验证 core.__version__ 满足语义化版本格式且与发版中枢完全对齐"""
-    assert __version__ == "1.8.0"
+    assert __version__ == "1.8.2"
     assert UpdateChecker.APP_VERSION == __version__
     assert UpdateChecker.get_current_version() == __version__
 

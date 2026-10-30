@@ -191,4 +191,48 @@ def test_desktop_packager_build_macos_dmg():
             assert "UDZO" in call_cmd
 
 
+def test_desktop_packager_direct_api_and_sniffer_hidden_imports():
+    """验证新一代纯 Python Direct API 与网络嗅探分片均纳入隐藏导入清单"""
+    args = DesktopPackager.assemble_build_args()
+    arg_str = " ".join(args)
+    # 断言三巨头 Direct API 模块
+    assert "adapters.egress.publishers.netlify_utils" in arg_str
+    assert "adapters.egress.publishers.vercel_utils" in arg_str
+    assert "adapters.egress.publishers.cloudflare_utils" in arg_str
+    # 断言 IP 反射嗅探与 Cookie 深度健康探针
+    assert "core.utils.network_sniffer" in arg_str
+    assert "services.api.routes.gov.context_shards.social_shards.cookie_prober" in arg_str
+
+
+def test_desktop_frozen_theme_sovereign_assembly():
+    """验证在 sys.frozen 模拟沙箱中，主权原生主题 (Sovereign Theme) 可被纯净解析与装载"""
+    with tempfile.TemporaryDirectory() as fake_meipass:
+        mock_themes = os.path.join(fake_meipass, "themes")
+        mock_sov = os.path.join(mock_themes, "sovereign")
+        os.makedirs(mock_sov, exist_ok=True)
+        # 创建最小必要的主题配置与母本标记
+        with open(os.path.join(mock_sov, "theme.yaml"), "w", encoding="utf-8") as f:
+            f.write("name: sovereign\nversion: 1.0.0\nzero_external_dependency: true\n")
+
+        with patch.object(sys, "frozen", True, create=True), \
+             patch.object(sys, "_MEIPASS", fake_meipass, create=True):
+            resolved_themes_dir = FrozenPathResolver.get_themes_dir()
+            assert resolved_themes_dir == os.path.abspath(mock_themes)
+            assert os.path.exists(os.path.join(resolved_themes_dir, "sovereign", "theme.yaml"))
+
+
+def test_desktop_frozen_pip_reentry_sandbox_lock():
+    """验证独立应用运行时 (sys.frozen) 绝对禁止执行 pip 重入污染宿主系统"""
+    from core.adapters.egress.publishers.base import BasePublisher
+
+    class LocalDummyPub(BasePublisher):
+        PLUGIN_ID = "local_dummy"
+        def push(self, b, m): return {}
+
+    pub = LocalDummyPub({})
+    with patch.object(sys, "frozen", True, create=True):
+        res = pub.ensure_python_dependency("some_missing_fake_module_xyz")
+        assert res is False, "sys.frozen 下必须拦截 pip 安装进程重入！"
+
+
 

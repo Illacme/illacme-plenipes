@@ -99,6 +99,40 @@ def diagnose_syndication_error(target_id: str, error_msg: Optional[str]) -> Dict
             "quick_drawer_id": "juejin"
         }
 
+    # 📕 小红书 (Xiaohongshu) 专属风控与凭据诊断
+    if target_lower in ("xiaohongshu", "red", "rednote", "xhs"):
+        if any(k in err_lower for k in ["滑块", "验证", "安全", "verify", "slider", "captcha", "-100", "300012", "300015"]):
+            return {
+                "category": "SECURITY_VERIFY",
+                "code": "XHS_SLIDER_CAPTCHA",
+                "badge": "🛡️ 触发滑块风控",
+                "badge_color": "#f59e0b",
+                "friendly_message": "小红书安全风控系统拦截：检测到异常网络环境或发文频次，需要进行创作者安全滑块验证。",
+                "suggestion": "请点击下方‘🔗 直达平台完成验证’在浏览器中完成滑块验证，验证成功后点击‘🔄 立即重试’即可恢复发布。",
+                "magic_url": "https://creator.xiaohongshu.com",
+                "quick_drawer_id": "xiaohongshu"
+            }
+        if any(k in err_lower for k in ["缺少 token", "缺少 cookie", "cookie", "凭据", "401", "403", "登录过期", "web_session", "a1"]):
+            return {
+                "category": "AUTH",
+                "code": "XHS_COOKIE_EXPIRED",
+                "badge": "🔑 会话凭据失效",
+                "badge_color": "#ef4444",
+                "friendly_message": "小红书登录 Cookie (web_session/a1) 已过期失效或未配置。",
+                "suggestion": "请打开小红书渠道抽屉，重新粘贴最新 Cookie 或使用嗅探功能重新授权。",
+                "quick_drawer_id": "xiaohongshu"
+            }
+        if any(k in err_lower for k in ["429", "频次", "过于频繁", "rate limit", "throttled"]):
+            return {
+                "category": "RATE_LIMIT",
+                "code": "XHS_RATE_LIMITED",
+                "badge": "⏳ 发文频次受限",
+                "badge_color": "#f59e0b",
+                "friendly_message": "小红书图文发布过于频繁，触发了官方接口限频保护机制。",
+                "suggestion": "系统已启用平滑退避机制，建议等待 3~5 分钟后点击‘🔄 立即重发’。",
+                "quick_drawer_id": "xiaohongshu"
+            }
+
     # ── 2. 🔑 认证与凭据失效类诊断 ────────────────────────────
     auth_patterns = [
         r"\b401\b", r"\b403\b", r"40001", r"40013", r"unauthorized", r"forbidden",
@@ -111,6 +145,10 @@ def diagnose_syndication_error(target_id: str, error_msg: Optional[str]) -> Dict
             "wechat": "微信 AppID 或 AppSecret 配置错误或已在公众平台重置。",
             "juejin": "稀土掘金 Cookie 已过期失效，请使用嗅探功能重新捕获。",
             "zhihu": "知乎 Cookie 或 z_c0 凭据已失效，请重新复制或嗅探。",
+            "xiaohongshu": "小红书登录 Cookie (web_session/a1) 已过期失效，请重新提取或登录。",
+            "red": "小红书登录 Cookie (web_session/a1) 已过期失效，请重新提取或登录。",
+            "rednote": "小红书登录 Cookie (web_session/a1) 已过期失效，请重新提取或登录。",
+            "xhs": "小红书登录 Cookie (web_session/a1) 已过期失效，请重新提取或登录。",
             "bilibili": "哔哩哔哩 SESSDATA / bili_jct 凭据已过期，请重新获取。",
             "devto": "Dev.to API Key 无效或未开放权限。",
             "medium": "Medium Integration Token 无效或账号已被冻结。",

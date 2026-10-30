@@ -219,45 +219,58 @@
             `;
         }
 
-        window._previewViewport = window._previewViewport || 'auto';
-        const isForceMobile = window._previewViewport === 'mobile';
-        const activeMobile = isForceMobile || (window._previewViewport === 'auto' && isMobile);
+        const dev = window._previewDevice || (isMobile ? 'iphone' : 'desktop');
+        window._previewDevice = dev;
         const curTheme = window._currentSyndicateTheme || 'default';
+        const fontSz = window._syndicateFontSize || 'medium';
+        const fontPx = window._syndicateFontSizePx || '16px';
 
-        if (actionsSlot) {
-            if (typeof window.renderSyndicateActionsToolbar === 'function') {
-                actionsSlot.innerHTML = window.renderSyndicateActionsToolbar(target, curTheme, activeMobile);
-            } else {
-                actionsSlot.innerHTML = `
-                    <div class="syndicate-viewport-switcher" style="white-space: nowrap; flex-shrink: 0;">
-                        <button type="button" class="syndicate-viewport-btn ${activeMobile ? 'is-active' : ''}" style="white-space: nowrap;" onclick="window._previewViewport='mobile';window.renderSyndicateCardPreview()">📱 手机</button>
-                        <button type="button" class="syndicate-viewport-btn ${!activeMobile ? 'is-active' : ''}" style="white-space: nowrap;" onclick="window._previewViewport='desktop';window.renderSyndicateCardPreview()">💻 宽屏</button>
-                    </div>
-                    ${isWechat ? `
-                    <select class="syndicate-viewport-btn" style="width: auto !important; max-width: 105px !important; flex: 0 0 auto !important; padding: 4px 8px; font-size: 0.78rem; outline: none; border-radius: 6px; white-space: nowrap; flex-shrink: 0;" onchange="window.switchSyndicateTheme(this.value)" title="选择微信公众号专属配色矩阵">
-                        <option value="default" ${curTheme === 'default' ? 'selected' : ''}>🎨 科技蓝</option>
-                        <option value="emerald" ${curTheme === 'emerald' ? 'selected' : ''}>🌿 翡翠绿</option>
-                        <option value="amber" ${curTheme === 'amber' ? 'selected' : ''}>🍂 暖秋金</option>
-                        <option value="minimal" ${curTheme === 'minimal' ? 'selected' : ''}>🌙 极简灰</option>
-                    </select>
-                    <button type="button" class="syndicate-copy-wechat-btn glow-btn" style="white-space: nowrap; flex-shrink: 0;" onclick="window.copyWeChatRichText()" title="一键复制微信公众号富文本">
-                        <span>📋 复制公众号富文本</span>
-                    </button>
-                    ` : ''}
-                    <div class="syndicate-export-menu-wrapper" style="position: relative; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                        <button type="button" class="syndicate-copy-markdown-btn" onclick="window.toggleSyndicateExportMenu ? window.toggleSyndicateExportMenu() : window.copyPlatformMarkdown()" style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;" title="选择不同平台的发布格式导出">
-                            <span>📦 多格式导出 ▾</span>
-                        </button>
-                    </div>
-                `;
-            }
+        if (actionsSlot && typeof window.renderSyndicateActionsToolbar === 'function') {
+            actionsSlot.innerHTML = window.renderSyndicateActionsToolbar(target, curTheme, dev, fontSz);
         }
 
-        const chassisWidth = activeMobile ? (isXhs ? '390px' : '440px') : '780px';
-        const chassisClass = activeMobile ? 'preview-viewport-chassis--mobile' : 'preview-viewport-chassis--desktop';
-        let displayHtml = (data.rendered_html || '').replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '').trim();
+        let chassisWidth = '780px', chassisClass = 'preview-viewport-chassis--desktop', deviceHeaderHtml = '', deviceFooterHtml = '';
+        if (dev === 'iphone') {
+            chassisWidth = isXhs ? '390px' : '393px';
+            chassisClass = 'preview-viewport-chassis--mobile preview-viewport-chassis--iphone';
+            deviceHeaderHtml = `
+                <div class="preview-chassis-ios-statusbar">
+                    <span class="ios-status-time">09:41</span>
+                    <div class="ios-dynamic-island" title="iPhone 16 Pro 灵动岛"></div>
+                    <div class="ios-status-icons"><span>5G</span><span>📶</span><span>100%</span></div>
+                </div>
+            `;
+            deviceFooterHtml = `<div class="preview-chassis-home-bar"></div>`;
+        } else if (dev === 'android') {
+            chassisWidth = '390px';
+            chassisClass = 'preview-viewport-chassis--mobile preview-viewport-chassis--android';
+            deviceHeaderHtml = `
+                <div class="preview-chassis-android-statusbar">
+                    <span class="android-status-time">10:30</span>
+                    <div class="android-camera-hole" title="Android 旗舰居中超微孔"></div>
+                    <div class="android-status-icons"><span>5G</span><span>📶</span><span>92%</span></div>
+                </div>
+            `;
+            deviceFooterHtml = `<div class="preview-chassis-home-bar" style="width: 70px;"></div>`;
+        } else if (dev === 'pad') {
+            chassisWidth = '560px';
+            chassisClass = 'preview-viewport-chassis--mobile preview-viewport-chassis--pad';
+            deviceHeaderHtml = `<div class="preview-chassis-speaker" style="width: 60px;"></div>`;
+            deviceFooterHtml = `<div class="preview-chassis-home-bar" style="width: 140px;"></div>`;
+        } else {
+            chassisWidth = '780px';
+            chassisClass = 'preview-viewport-chassis--desktop';
+            deviceHeaderHtml = `
+                <div class="preview-chassis-mac-controls">
+                    <span class="mac-dot mac-dot--red"></span>
+                    <span class="mac-dot mac-dot--yellow"></span>
+                    <span class="mac-dot mac-dot--green"></span>
+                    <span class="mac-window-title">${_esc(target.toUpperCase())} 桌面审查视窗</span>
+                </div>
+            `;
+        }
 
-        // 🖼️ 动态模拟社交媒体信息流大图卡片与真机封面微调工作台
+        let displayHtml = (data.rendered_html || '').replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '').trim();
         const coverImgUrl = (window.currentSyndicateCover && window.currentSyndicateCover.url) || data.cover_url || '';
         const feedCardHtml = '<div id="syndicate-feed-card-slot" style="width:100%;"></div>';
 
@@ -265,13 +278,13 @@
             <div class="preview-viewport-wrapper">
                 ${compliance.platform_rules ? `<div class="syndicate-compliance-banner" style="width:${chassisWidth};">💡 <b>${target.toUpperCase()} 规则</b>：${_esc(compliance.platform_rules)}</div>` : ''}
                 <div class="preview-viewport-chassis ${chassisClass}" style="width:${chassisWidth};">
-                    ${activeMobile ? `<div class="preview-chassis-speaker"></div>` : ''}
+                    ${deviceHeaderHtml}
                     ${feedCardHtml}
                     ${isWechat ? `<div class="preview-wechat-header"><h2 class="preview-wechat-title">${_esc(data.clean_title || data.title)}</h2><div class="preview-wechat-meta"><span class="preview-wechat-author">创作者文库</span><span>·</span><span>今天</span><span>·</span><span class="preview-wechat-origin-tag">原创</span></div></div>` : ''}
                     ${isXhs ? `<div class="preview-xhs-header"><div class="preview-xhs-badge">📕 小红书竖屏图文</div><h3 class="preview-xhs-title">${_esc(data.clean_title || data.title)}</h3></div>` : ''}
                     ${!isWechat && !isXhs ? `<div class="preview-general-header"><h1 class="preview-general-title">${_esc(data.clean_title || data.title)}</h1><div class="preview-general-meta">专栏预览模式 · ${target.toUpperCase()} 渠道自适应排版</div></div>` : ''}
-                    <div class="preview-rendered-body" id="preview-rendered-body-slot">${displayHtml}</div>
-                    ${activeMobile ? `<div class="preview-chassis-home-bar"></div>` : ''}
+                    <div class="preview-rendered-body" id="preview-rendered-body-slot" style="--preview-body-font-size: ${fontPx}; font-size: ${fontPx};">${displayHtml}</div>
+                    ${deviceFooterHtml}
                 </div>
             </div>`;
         const fSlot = document.getElementById('syndicate-feed-card-slot');

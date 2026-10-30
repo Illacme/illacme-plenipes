@@ -63,34 +63,64 @@ window.renderHostingControlCenter = function (bundle, readyChannels, totalChanne
     const exists = Boolean(bundle.bundle_exists);
     const themeName = (window.getThemeDisplayName ? window.getThemeDisplayName(bundle.theme) : bundle.theme) || 'Sovereign';
     const statusTag = exists
-        ? `<span class="tag-status success">● 网站已就绪，可随时发布</span>`
-        : `<span class="tag-status failed">● 尚未生成网站内容</span>`;
+        ? `<span class="tag-status success">● 本地就绪 · 可随时上线</span>`
+        : `<span class="tag-status failed">● 尚未生成静态产物</span>`;
+    const timeDisplay = (bundle.last_built_at || '--').replace(/^\d{4}-/, '');
 
     box.innerHTML = `
         <div class="hosting-console-card">
             <div class="console-left">
                 <div class="console-title-row">
-                    <span class="console-title">📦 待发布网站内容 (Website Content)</span>
+                    <span class="console-title">📦 静态整站产物</span>
                     ${statusTag}
                 </div>
-                <div class="console-meta-grid">
-                    <div class="meta-item"><span class="meta-k">网站主题:</span><span class="meta-v highlight">${window.escapeHtml ? window.escapeHtml(themeName) : themeName}</span></div>
-                    <div class="meta-item"><span class="meta-k">包含页面:</span><span class="meta-v" title="编译生成 ${bundle.pages_count ?? 0} 个静态网页产物">${bundle.pages_count ?? 0} 个网页 <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: normal;">(共 ${bundle.total_files || bundle.pages_count || 0} 个资源)</span></span></div>
-                    <div class="meta-item"><span class="meta-k">内容大小:</span><span class="meta-v">${bundle.bundle_size_formatted || '0 KB'}</span></div>
-                    <div class="meta-item"><span class="meta-k">生成时间:</span><span class="meta-v">${bundle.last_built_at || '--'}</span></div>
-                    <div class="meta-item full-width"><span class="meta-k">存储状态:</span><span class="meta-v code-path" title="${bundle.bundle_path || ''}">本地已就绪 (可随时发布)</span></div>
+                <div class="console-metrics-strip">
+                    <div class="console-metric-tile">
+                        <span class="tile-label">装帧主题</span>
+                        <div class="tile-value">
+                            <button type="button" class="theme-interactive-pill" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" title="当前装帧主题，点击前往更换">
+                                <span class="theme-pill-name">🎨 ${window.escapeHtml ? window.escapeHtml(themeName) : themeName}</span>
+                                <span class="theme-pill-arrow">↗</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="console-metric-tile">
+                        <span class="tile-label">包含页面</span>
+                        <div class="tile-value">
+                            ${bundle.pages_count ?? 0} <span class="tile-sub">页 (${bundle.total_files || bundle.pages_count || 0} 资源)</span>
+                        </div>
+                    </div>
+                    <div class="console-metric-tile">
+                        <span class="tile-label">打包体积</span>
+                        <div class="tile-value">
+                            ${bundle.bundle_size_formatted || '0 KB'}
+                        </div>
+                    </div>
+                    <div class="console-metric-tile">
+                        <span class="tile-label">生成时间</span>
+                        <div class="tile-value" title="${bundle.last_built_at || '--'}">
+                            ${timeDisplay}
+                        </div>
+                    </div>
+                </div>
+                <div class="console-path-row" title="${bundle.bundle_path || ''}">
+                    <span class="path-label">📂 产物路径:</span>
+                    <code class="path-code">${bundle.bundle_path || '本地已就绪 (可随时发布)'}</code>
                 </div>
             </div>
-            <div class="console-right-actions">
-                <button class="primary-btn glow-btn" onclick="window.triggerFullHostingDeploy();" ${exists ? '' : 'disabled'} title="${exists ? `一键向全部 ${readyChannels} 个已就绪平台发布网站内容` : '网站内容未就绪，请先生成网站'}">
-                    <span class="btn-icon">🚀</span> 一键发布到所有平台 (${readyChannels} 个平台已就绪)
+            <div class="console-action-pod">
+                <button class="primary-btn glow-btn console-hero-btn" onclick="window.triggerFullHostingDeploy();" ${exists ? '' : 'disabled'} title="${exists ? `一键将本地现成网页同步部署到全部 ${readyChannels} 个就绪平台 (秒级生效，无需等待 AI 翻译与排版)` : '本地静态网页尚未编译，请先点击「从文库全量发布」'}">
+                    <span class="btn-icon">🚀</span> 一键同步上线 (${readyChannels})
                 </button>
-                <div class="console-action-subrow">
-                    <button class="secondary-btn" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');"><span>🎨 装帧主题 ↗</span></button>
-                    <button class="secondary-btn" onclick="if(typeof window.triggerPublish==='function') window.triggerPublish(false);"><span>⚡ 重新生成网站</span></button>
+                <div class="console-hero-caption">
+                    ⚡ 秒级同步现有网页 · 无需等待 AI 翻译与排版
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-dim); text-align: center; margin-top: 4px;">
-                    💡 直接发布当前网站内容，极速上线无需重新排版与翻译
+                <div class="console-republish-divider"></div>
+                <div class="console-republish-row">
+                    <span class="republish-hint">文库有更新？</span>
+                    <button type="button" class="republish-btn-sm" onclick="if(typeof window.triggerPublish==='function') window.triggerPublish(false);" title="重新扫描文库、AI 增量翻译并全量排版部署上线 (与右上角【全站发布】一致)">
+                        <span>🔄 从文库全量发布</span>
+                    </button>
                 </div>
             </div>
         </div>

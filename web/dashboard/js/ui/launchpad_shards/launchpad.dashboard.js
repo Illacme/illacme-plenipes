@@ -184,7 +184,7 @@ function _renderDashboard(area, ctx) {
             '<div class="lpwiz-footer-note" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; gap: 16px; flex-wrap: wrap;">' +
                 '<div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem;">' +
                     '已在外部完成配置？<a href="#" onclick="event.preventDefault(); window.governanceContext=null; window.initLaunchpad();" style="color: var(--accent-secondary); font-weight: 600;">点击刷新检测</a> · ' +
-                    '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\');" style="color: var(--text-dim);">按 Esc 关闭工作台 (快捷键 I 随时唤起)</a>' +
+                    '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\');" style="color: var(--text-dim);">按 Esc 关闭出版领航仪 (快捷键 I 随时唤起)</a>' +
                 '</div>' +
                 '<label class="lp-auto-open-toggle" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-dim); user-select: none;">' +
                     '<input type="checkbox" class="chk-auto-open-launchpad" onchange="window.setLaunchpadAutoOpenPreference(this.checked)" ' + (autoOpen ? 'checked' : '') + ' style="cursor: pointer; accent-color: var(--accent-secondary, #00f2fe);" />' +

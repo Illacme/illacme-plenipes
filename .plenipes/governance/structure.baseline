@@ -390,6 +390,7 @@ core/utils/frozen_paths.py
 core/utils/io.py
 core/utils/language_data.py
 core/utils/language_hub.py
+core/utils/network_sniffer.py
 core/utils/plugin_loader.py
 core/utils/secret_sentinel.py
 core/utils/terminal_wizard.py
@@ -487,6 +488,7 @@ services/api/routes/gov/context_shards/review_actions.py
 services/api/routes/gov/context_shards/review_ops.py
 services/api/routes/gov/context_shards/review_parser.py
 services/api/routes/gov/context_shards/social_shards/__init__.py
+services/api/routes/gov/context_shards/social_shards/cookie_prober.py
 services/api/routes/gov/context_shards/social_shards/social_domestic.py
 services/api/routes/gov/context_shards/social_shards/social_global.py
 services/api/routes/gov/context_shards/sync_stats_ops.py

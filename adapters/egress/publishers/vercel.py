@@ -18,6 +18,7 @@ from .vercel_utils import (
     sanitize_cmd_for_log,
     extract_deploy_url,
     auto_create_project,
+    deploy_via_direct_api,
 )
 
 
@@ -51,6 +52,14 @@ class VercelPublisher(BasePublisher):
         is_primary = metadata.get("is_primary", False) if isinstance(metadata, dict) else False
         role_tag = " [官方主站]" if is_primary else (" [备用镜像]" if isinstance(metadata, dict) and "is_primary" in metadata else "")
         mode_label = "生产" if self.prod else "预览"
+
+        # ── 关键依赖自闭环决策：若显式开启 direct_api 或宿主机完全无 CLI 与 npx 时走原生 Direct API ────
+        import shutil
+        use_direct = getattr(self, "direct_api", False) or (self.config.get("direct_api") if isinstance(self.config, dict) else False)
+        if use_direct or (not self._has_cli() and not shutil.which("npx")):
+            tlog.info("📡 [Vercel] 已激活【原生 Direct REST API 直传引擎】...")
+            return deploy_via_direct_api(self, bundle_path, metadata)
+
         tlog.info(f"🚀 [Vercel]{role_tag} 正在以 {mode_label} 模式部署...")
 
         # 自动增强静态路由（Clean URL 友好支持）
@@ -124,8 +133,8 @@ class VercelPublisher(BasePublisher):
             tlog.error("❌ [Vercel] 部署超时 (>300s)。")
             return {"status": "error", "message": "Vercel deploy timed out after 300 seconds."}
         except FileNotFoundError:
-            tlog.error(f"❌ [Vercel] 找不到 Vercel CLI: '{self.vercel_path}'")
-            return {"status": "error", "message": f"Vercel CLI not found: '{self.vercel_path}'"}
+            tlog.info(f"💡 [Vercel] 未找到 CLI '{self.vercel_path}'，自动激活【原生零依赖 Direct API 直传引擎】...")
+            return deploy_via_direct_api(self, bundle_path, metadata)
         except Exception as e:
             healed_err = self._add_autotherapy_suggestion(str(e))
             tlog.error(f"❌ [Vercel] 部署异常: {healed_err}")
@@ -135,17 +144,21 @@ class VercelPublisher(BasePublisher):
         """💡 为 Vercel 错误注入友好免密授权物理自愈提示。"""
         return add_autotherapy_suggestion(err_msg)
 
+    def _has_cli(self) -> bool:
+        """检测宿主机是否存在可用 Vercel CLI"""
+        import shutil
+        if shutil.which(self.vercel_path):
+            return True
+        local_bin = os.path.join(os.getcwd(), "node_modules", ".bin", "vercel")
+        return bool(os.path.exists(local_bin) and os.access(local_bin, os.X_OK))
+
     def is_healthy(self) -> bool:
-        """检查 Vercel CLI 可用性与自愈"""
-        self.ensure_npm_dependency("vercel")
-        for bin_name in [self.vercel_path, os.path.join(os.getcwd(), "node_modules", ".bin", "vercel"), "npx"]:
-            try:
-                cmd = [bin_name, "--version"] if bin_name != "npx" else ["npx", "-y", "vercel", "--version"]
-                res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-                if res.returncode == 0:
-                    return True
-            except Exception:
-                continue
+        """检查 Vercel 发布通道健康度（CLI 或 Direct API 双模就绪均视为可用）"""
+        if self._has_cli():
+            return True
+        # 🛡️ [依赖自闭环] 宿主机即使未安装 Node/npm/CLI，配置完整即可走原生 Direct API 直传
+        if self.token:
+            return True
         return False
 
     def validate_config(self) -> List[str]:

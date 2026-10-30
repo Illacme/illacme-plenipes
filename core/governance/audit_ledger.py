@@ -116,6 +116,40 @@ class AuditLedger:
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_recent_logs(self, category: str = None, event_type: str = None, limit: int = 10, imprint_id: str = None) -> list:
+        """获取最近的审计日志记录 (支持 category/event_type 别名与自动 JSON 解包)"""
+        target_event = event_type or category
+        with self._db_lock:
+            query = "SELECT * FROM audit_logs"
+            params = []
+            conditions = []
+            if imprint_id:
+                conditions.append("imprint_id = ?")
+                params.append(imprint_id)
+            if target_event:
+                conditions.append("event_type = ?")
+                params.append(target_event)
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+            query += " ORDER BY id DESC LIMIT ?"
+            params.append(limit)
+            
+            conn = self._get_conn()
+            cursor = conn.execute(query, params)
+            rows = []
+            for r in cursor.fetchall():
+                d = dict(r)
+                meta_raw = d.get("metadata")
+                if isinstance(meta_raw, str):
+                    try:
+                        d["metadata"] = json.loads(meta_raw)
+                    except Exception:
+                        d["metadata"] = {}
+                elif not isinstance(meta_raw, dict):
+                    d["metadata"] = {}
+                rows.append(d)
+            return rows
+
     def get_total_cost(self, imprint_id: str = None) -> float:
         """从审计流水中聚合累计开销 (财务级数据)"""
         with self._db_lock:

@@ -18,6 +18,10 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
 
 from core.utils.tracing import tlog
+try:
+    from .packager_manifest import get_hidden_imports, get_data_mappings
+except ImportError:
+    from desktop.packager_manifest import get_hidden_imports, get_data_mappings
 
 
 class DesktopPackager:
@@ -51,7 +55,7 @@ class DesktopPackager:
         sep = ";" if platform.system() == "Windows" else ":"
         staged_themes = os.path.join("build", "desktop", "staged_themes")
         themes_src = staged_themes if os.path.exists(staged_themes) else "themes"
-        data_mappings = [("web/dashboard", "web/dashboard"), (themes_src, "themes"), ("configs", "configs")]
+        data_mappings = get_data_mappings(themes_src)
 
         args = [
             sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed",
@@ -69,28 +73,7 @@ class DesktopPackager:
             if os.path.exists(src):
                 args.append(f"--add-data={src}{sep}{dst}")
 
-        hidden_imports = [
-            "uvicorn.logging", "uvicorn.loops", "uvicorn.loops.auto", "uvicorn.protocols",
-            "uvicorn.protocols.http", "uvicorn.protocols.http.auto", "uvicorn.protocols.websockets",
-            "uvicorn.protocols.websockets.auto", "uvicorn.lifespan.on", "fastapi", "cryptography",
-            "yaml", "markdown", "latex2mathml", "qrcode",
-        ]
-
-        cur_sys = platform.system()
-        try:
-            import importlib.util
-            if importlib.util.find_spec("pystray") is not None:
-                hidden_imports.append("pystray")
-                sub_pkg = {"Darwin": "pystray._darwin", "Windows": "pystray._win32", "Linux": "pystray._xorg"}.get(cur_sys)
-                if sub_pkg: hidden_imports.append(sub_pkg)
-        except Exception: pass
-
-        try:
-            import importlib.util
-            if importlib.util.find_spec("webview") is not None:
-                hidden_imports.append("webview")
-        except Exception: pass
-
+        hidden_imports = get_hidden_imports(platform.system())
         for h in hidden_imports:
             args.append(f"--hidden-import={h}")
 
