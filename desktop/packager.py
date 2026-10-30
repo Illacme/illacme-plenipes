@@ -61,6 +61,8 @@ class DesktopPackager:
             sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed",
             f"--name={cls.APP_NAME}", f"--distpath={output_dir}", "--workpath=build/desktop",
         ]
+        for exc in ["lz4", "pytest", "IPython", "nbconvert", "notebook", "jupyter", "jupyter_core", "jupyter_client"]:
+            args.append(f"--exclude-module={exc}")
 
         if platform.system() == "Darwin" and target_arch:
             arch_norm = target_arch.strip().lower()
