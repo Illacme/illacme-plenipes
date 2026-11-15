@@ -5,7 +5,11 @@ Illacme Plenipes - Desktop Application Packager Core
 🛡️ [SOP-01 规范]：单文件行数严格 ≤ 300 行。
 """
 
-import os, sys, shutil, platform, subprocess
+import os
+import sys
+import shutil
+import platform
+import subprocess
 from typing import List, Optional
 
 if sys.platform == "win32":

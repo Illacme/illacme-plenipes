@@ -136,6 +136,48 @@
                     ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.oschina.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
                 `)}
             `;
+        } else if (id === 'jike') {
+            return `
+                <div class="api-token-helper">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 即刻凭据向导与多图轮播</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                        支持使用即刻个人访问令牌 (x-access-token / app-token) 或登录 Cookie。自动装配 3:4 与 1:1 知识卡片多图轮播（至多 9 张）！
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                        <button type="button" class="helper-btn" onclick="window.promptSmartPasteCookie('jike')" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.4); color: #00f2fe; font-weight: 600;">🪄 智能粘贴解析 Headers/Token</button>
+                        <a href="https://web.okjike.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 一键直达即刻网页端</a>
+                    </div>
+                </div>
+                ${renderSettingsItem('访问令牌 (x-access-token)', `syndication.jike.token`, cfg.token || cfg.app_token, 'password', { placeholder: "请输入即刻 x-access-token 或 app-token 凭据", description: "用于动态发布的核心授权 Token。打开 web.okjike.com 网络请求头即可提取。" })}
+                ${renderSettingsItem('发布目标圈子 (Topic ID)', `syndication.jike.topic_id`, cfg.topic_id, 'text', { placeholder: "可选。例如 553870... (留空则默认发布为个人动态)", description: "可选。指定发布的即刻圈子/话题 ID，留空表示发布为个人动态并同步到个人主页。", optional: true })}
+                ${renderSettingsItem('登录 Cookie 兜底 (Cookie)', `syndication.jike.cookie`, cfg.cookie, 'textarea', { placeholder: "可选。如填写了上述 Token 则无需填写 Cookie", rows: 2, optional: true })}
+                ${window.renderPlatformAdvancedGroup('高级代理参数', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.jike.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
+            `;
+        } else if (id === 'weibo') {
+            return `
+                <div class="api-token-helper">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 微博九宫格图集与凭据向导</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                        支持微博开放平台 Access Token 直连或创作者登录 Cookie (SUB 凭据)。自动装配 1:1 方形或 3:4 知识卡片九宫格图集！
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                        <button type="button" class="helper-btn" onclick="window.promptSmartPasteCookie('weibo')" style="background: rgba(0, 242, 254, 0.15); border: 1px solid rgba(0, 242, 254, 0.4); color: #00f2fe; font-weight: 600;">🪄 智能粘贴解析 Headers/Cookie</button>
+                        <a href="https://open.weibo.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 微博开放平台</a>
+                        <a href="https://weibo.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 微博主站</a>
+                    </div>
+                </div>
+                ${renderSettingsItem('开放平台访问令牌 (Access Token)', `syndication.weibo.access_token`, cfg.access_token || cfg.token, 'password', { placeholder: "请输入微博开放平台 Access Token (二选一)", description: "微博开放平台授权获得的 API Access Token。", optional: true })}
+                ${renderSettingsItem('网页端 Cookie (含 SUB 凭据)', `syndication.weibo.cookie`, cfg.cookie, 'textarea', { placeholder: "请输入微博登录 Cookie (二选一，包含 SUB 与 SUBP)", rows: 2, description: "网页登录 weibo.com 后包含 SUB 的 Cookie 字符串凭据。", optional: true })}
+                ${window.renderPlatformAdvancedGroup('高级代理参数', `
+                    ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.weibo.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
+                `)}
+            `;
         }
         return '';
     };

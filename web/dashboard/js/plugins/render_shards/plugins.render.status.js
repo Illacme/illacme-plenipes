@@ -12,7 +12,7 @@
         if (p.has_config === false || p.is_configurable === false) return false;
         if (p.is_manageable === false) return false;
 
-        const configurableCategories = ['hosting', 'image_hosting', 'notification', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source', 'tunnel'];
+        const configurableCategories = ['hosting', 'image_hosting', 'notification', 'publisher', 'theme', 'protocol', 'masker', 'ingress_source', 'tunnel', 'podcast'];
         if (configurableCategories.includes(p.category)) {
             return true;
         }
@@ -56,6 +56,8 @@
             const nodes = Object.values(cfgData.translation?.compute_nodes || {});
             const matched = nodes.find(n => n && (n.type === p.id || n.provider === p.id || n.id === p.id));
             settings = matched || {};
+        } else if (p.category === 'podcast') {
+            settings = cfgData.podcast?.[p.id] || p.cfg || {};
         } else {
             settings = cfgData.syndication?.[p.id] || {};
         }
@@ -74,6 +76,33 @@
             const s = String(v ?? '').trim();
             return s.length > 0 && !_isPlaceholder(s);
         });
+
+        // 🎙️ 播客全模态状态智能判决
+        if (p.category === 'podcast') {
+            if (p.id === 'podcast_hub') {
+                const hasHubCustom = ['title', 'description', 'author', 'email', 'cover_url'].some(k => settings[k] && !_isPlaceholder(settings[k]));
+                if (hasHubCustom) {
+                    return { label: '🟢 专辑已定制', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+                }
+                return { label: '⚡ 免配即用', class: 'info', style: 'background: rgba(0, 242, 254, 0.08); color: var(--accent-secondary, #00f2fe); border: 1px solid rgba(0, 242, 254, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+            }
+            if (p.id === 'podcast_r2_storage') {
+                const hasR2 = Boolean(settings.bucket && (settings.access_key_id || settings.access_key));
+                if (hasR2) {
+                    return { label: '🟢 CDN 已就绪', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+                }
+                return hasAnyUserInput
+                    ? { label: '⚠️ 待填密钥', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' }
+                    : { label: '─ 待配置', class: 'info', style: 'color: var(--text-dim); opacity: 0.55; font-weight: 500; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);' };
+            }
+            const hasPodId = Boolean(settings.token || settings.podcast_id || settings.apple_id || settings.show_id || settings.podcast_url || settings.show_url);
+            if (hasPodId) {
+                return { label: '🟢 配置齐全', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
+            }
+            return hasAnyUserInput
+                ? { label: '⚠️ 待填节目ID', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' }
+                : { label: '─ 待配置', class: 'info', style: 'color: var(--text-dim); opacity: 0.55; font-weight: 500; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);' };
+        }
 
         // 优先研判插件凭据/开箱状态 (支持免配即用 / 匿名上传 / Quick 临时通道)
         if (window.isPluginCredentialReady) {

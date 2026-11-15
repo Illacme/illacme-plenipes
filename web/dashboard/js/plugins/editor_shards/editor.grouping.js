@@ -98,6 +98,8 @@
                     path.includes('application_password') ||
                     path.includes('base_url') ||
                     // 平台特定连接端点（作为鉴权连接第一步的核心）：
+                    path.includes('podcast_id') || path.includes('apple_id') || path.includes('show_id') ||
+                    path.includes('podcast_hub.title') || path.includes('podcast_hub.author') || path.includes('podcast_hub.email') ||
                     path.includes('substack.url') ||
                     path.includes('ghost.url') ||
                     path.includes('wordpress.api_url') ||

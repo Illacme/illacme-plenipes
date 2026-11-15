@@ -68,6 +68,9 @@ window.buildPluginConfigFormHtml = (p) => {
                 ? (window.settingsData?.publish_control?.webhook_endpoints?.[id] || {})
                 : (window.settingsData?.syndication?.[id] || {}));
         html += `<div class="settings-grid">${window.renderPlatformConfig ? window.renderPlatformConfig(id, cfg, p.category) : renderPlatformConfig(id, cfg, p.category)}</div>`;
+    } else if (p.category === 'podcast') {
+        const cfg = window.settingsData?.podcast?.[id] || {};
+        html += `<div class="settings-grid">${window.renderPodcastPlatformConfig ? window.renderPodcastPlatformConfig(id, cfg) : ''}</div>`;
     } else if (p.category === 'image_hosting') {
         const cfg = window.settingsData?.image_hosting?.[id] || {};
         html += `<div class="settings-grid">${window.renderImageHostingConfig ? window.renderImageHostingConfig(id, cfg) : renderImageHostingConfig(id, cfg)}</div>`;

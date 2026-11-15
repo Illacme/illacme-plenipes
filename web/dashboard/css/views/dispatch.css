@@ -1721,10 +1721,11 @@
     border-radius: 8px;
     padding: 3px;
     backdrop-filter: blur(10px);
+    flex-shrink: 0;
 }
 
 #view-tasks .dispatch-tactical-tabs .t-tab {
-    padding: 5px 14px;
+    padding: 5px 12px;
     font-size: 0.8rem;
     font-weight: 500;
     height: 30px;
@@ -1739,6 +1740,8 @@
     transition: all 0.2s ease;
     user-select: none;
     outline: none;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 #view-tasks .dispatch-tactical-tabs .t-tab:hover {

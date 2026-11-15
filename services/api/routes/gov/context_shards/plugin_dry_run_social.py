@@ -20,7 +20,9 @@ DOMESTIC_SOCIAL_PLUGINS = {
     "cnblogs",
     "bilibili",
     "segmentfault",
-    "oschina"
+    "oschina",
+    "jike",
+    "weibo"
 }
 
 

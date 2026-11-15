@@ -34,5 +34,6 @@ class ASTAndPurifyStep(PipelineStep):
 
         if is_empty or is_draft:
             if ctx.engine.meta.get_doc_info(ctx.rel_path):
-                ctx.engine.janitor.gc_node(ctx.rel_path, ctx.route_prefix, ctx.route_source, ctx.is_dry_run)
+                # 🛡️ 草稿或空内容仅拔除静态输出产物，严禁抹除原稿账本元数据
+                ctx.engine.janitor.gc_node(ctx.rel_path, ctx.route_prefix, ctx.route_source, ctx.is_dry_run, clean_ledger=False)
             ctx.is_aborted = True

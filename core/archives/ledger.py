@@ -84,9 +84,24 @@ class MetadataManager(LedgerExtensionsMixin):
             
             # 🚀 [V23.0] 智能属性对齐 (深度合并已存在的所有元数据与缓存字段，防止增量缓存丢失)
             doc_data = dict(existing)
+            effective_title = title if (title and title.strip() and title.strip().lower() != "unknown") else existing.get("title")
+            if not effective_title or effective_title.strip().lower() == "unknown":
+                try:
+                    abs_path = os.path.join(getattr(self.engine, "vault_root", ""), rel_path)
+                    if os.path.isfile(abs_path):
+                        from core.utils.text import parse_frontmatter
+                        with open(abs_path, "r", encoding="utf-8") as f:
+                            fm, _, _ = parse_frontmatter(f.read())
+                            effective_title = fm.get("title")
+                except Exception:
+                    pass
+            if not effective_title or effective_title.strip().lower() == "unknown":
+                effective_title = os.path.splitext(os.path.basename(rel_path))[0]
+
             doc_data.update({
-                "title": title if title and title.strip() else existing.get("title", title),
+                "title": effective_title,
                 "slug": kwargs.get("slug") if kwargs.get("slug") is not None else existing.get("slug"),
+                "cover": kwargs.get("cover") if kwargs.get("cover") is not None else existing.get("cover"),
                 "source_hash": kwargs.get("source_hash") if kwargs.get("source_hash") is not None else existing.get("source_hash"),
                 "shadow_hash": kwargs.get("shadow_hash") if kwargs.get("shadow_hash") is not None else existing.get("shadow_hash"),
                 "seo_data": kwargs.get("seo_data") if kwargs.get("seo_data") is not None else existing.get("seo_data"),
@@ -194,7 +209,10 @@ class MetadataManager(LedgerExtensionsMixin):
                 "stage": stage,
                 "url": target_url
             }
-            self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=status_map)
+            safe_title = existing.get("title")
+            if not safe_title or safe_title.strip().lower() == "unknown":
+                safe_title = os.path.splitext(os.path.basename(rel_path))[0]
+            self.register_document(rel_path, safe_title, publish_status=status_map)
             tlog.info(f"📊 [账本] 渠道 {channel_id} 状态更新: {status} ({stage}) | 文档: {rel_path} | URL: {target_url}")
 
 

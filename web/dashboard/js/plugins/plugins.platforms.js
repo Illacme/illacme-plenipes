@@ -22,6 +22,7 @@
         'rawRenderNotificationConfig',
         'rawRenderImageHostingConfig',
         'renderImageHostingConfig',
+        'renderPodcastPlatformConfig',
         'triggerGithubSSHCheck',
         'triggerFirebaseOAuthLogin',
         'triggerCloudflareOAuthLogin',

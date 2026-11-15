@@ -150,7 +150,7 @@ def apply_template(adapter, content_html: str, fm: Dict[str, Any], lang: str, su
         # 🛡️ 仅文档 (docs) 与博客单篇详情页 (blog) 渲染面包屑与阅读元数据，关于页 (page/about) 与案例页 (showcase) 保持纯净单页
         if slug and slug != "index" and layout_type not in ("page", "showcase", "home") and slug != "about":
             breadcrumbs_html = build_breadcrumbs(effective_lang, prefix, sub_path, doc_title, root_path, nav_lang_prefix=nav_lang_prefix)
-            article_meta_html = build_article_meta(fm, effective_lang, reading_meta)
+            article_meta_html = build_article_meta(fm, effective_lang, reading_meta, adapter=adapter, root_path=root_path)
 
         # 🎨 案例页多视图自适应包装 (排除博客聚合中心)
         if (layout_type == "showcase" or "card-pioneer" in content_html) and "card-pioneer" in content_html and "blog-app" not in content_html and layout_type != "blog":

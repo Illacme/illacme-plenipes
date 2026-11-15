@@ -202,6 +202,47 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
     slug = os.path.splitext(req.rel_path)[0].replace('\\', '/')
     canonical_url = f"{site_url}/{slug}" if site_url else f"https://your-domain.com/{slug}"
 
+    # 🎧 读者消费闭环：伴读音频 / 播客探测
+    imprint_id = getattr(engine, "imprint_id", "default") or "default"
+    audio_info = {"has_audio": False}
+    cache_dir = os.path.join(".plenipes", "cache", "podcasts", imprint_id)
+    doc_slug = os.path.splitext(os.path.basename(req.rel_path))[0]
+    if os.path.isdir(cache_dir):
+        matched_file, detected_style = None, "tech_deep"
+        for st in ("tech_deep", "casual_brief", "debate", "solo_read"):
+            candidate = f"{doc_slug}_{target_lang}_{st}.mp3"
+            if os.path.exists(os.path.join(cache_dir, candidate)):
+                matched_file, detected_style = candidate, st
+                break
+        if not matched_file:
+            cand_legacy = f"{doc_slug}_{target_lang}.mp3"
+            if os.path.exists(os.path.join(cache_dir, cand_legacy)):
+                matched_file = cand_legacy
+        if not matched_file:
+            for f in os.listdir(cache_dir):
+                if f.startswith(f"{doc_slug}_") and f.endswith(".mp3"):
+                    matched_file = f
+                    break
+        if matched_file:
+            style_names = {
+                "tech_deep": "深度剖析", "casual_brief": "通俗快讯",
+                "debate": "观点交锋", "solo_read": "单人沉浸伴读"
+            }
+            fsize = 0
+            try:
+                fsize = os.path.getsize(os.path.join(cache_dir, matched_file))
+            except Exception:
+                pass
+            audio_info = {
+                "has_audio": True,
+                "audio_url": f"/api/podcast/audio/{imprint_id}/{matched_file}",
+                "filename": matched_file,
+                "style": detected_style,
+                "style_name": style_names.get(detected_style, "技术播客"),
+                "file_size": fsize,
+                "rss_url": f"/api/podcast/feed/{imprint_id}?lang={target_lang}"
+            }
+
     frontmatter_markdown = f"""---
 title: "{clean_title}"
 description: "{digest}"
@@ -225,6 +266,7 @@ published: true
         "clean_markdown": clean_markdown,
         "cdn_markdown": cdn_markdown,
         "frontmatter_markdown": frontmatter_markdown,
+        "audio": audio_info,
         "stats": {
             "word_count": metrics["word_count"],
             "reading_time_min": metrics["reading_time_min"],

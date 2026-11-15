@@ -17,7 +17,6 @@ from core.logic.ai.ai_logic_shards.ai_masker_ops import mask_block, unmask_block
 from core.bindery.image_packager import ImagePackager
 from core.adapters.egress.ssg.generic import GenericSSGAdapter
 from core.adapters.egress.ssg.base_shards.ssg_link_healer import SSGLinkHealer
-from core.editorial.ast_processor import MarkdownASTProcessor
 from adapters.egress.syndication.wechat_shards.wechat_formatter import render_wechat_html
 from adapters.egress.syndication.devto import DevToSyndicator
 

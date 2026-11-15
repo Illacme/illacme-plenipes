@@ -14,7 +14,7 @@ from core.runtime.engine_singleton import get_global_engine
 from core.design.image_hub import image_hub
 from core.utils.tracing import tlog
 
-from .design_shards import assets_router, prompt_router, hosting_router, upload_router, batch_router
+from .design_shards import assets_router, prompt_router, hosting_router, upload_router, batch_router, deck_router
 
 router = APIRouter()
 router.include_router(assets_router)
@@ -22,6 +22,7 @@ router.include_router(prompt_router)
 router.include_router(hosting_router)
 router.include_router(upload_router)
 router.include_router(batch_router)
+router.include_router(deck_router)
 from .system import verify_token
 
 class CoverPreviewRequest(BaseModel):

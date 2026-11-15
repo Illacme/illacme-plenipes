@@ -6,7 +6,6 @@ Illacme Plenipes - Critical Dependency Self-Closure Test Suite
 
 import os
 import sys
-import pytest
 from unittest.mock import patch, MagicMock
 
 # 确保项目根目录在 sys.path
@@ -17,7 +16,7 @@ if _ROOT not in sys.path:
 from desktop.packager_manifest import get_hidden_imports, get_data_mappings
 from core.adapters.egress.publishers.base import BasePublisher
 from adapters.egress.publishers.netlify import NetlifyPublisher
-from adapters.egress.publishers.netlify_utils import deploy_via_direct_api, probe_site_api
+from adapters.egress.publishers.netlify_utils import probe_site_api
 from adapters.egress.publishers.vercel import VercelPublisher
 from adapters.egress.publishers.cloudflare_pages import CloudflarePagesPublisher
 from themes.sovereign.adapters.sovereign import SovereignSSGAdapter

@@ -167,7 +167,10 @@
                                 <div class="syndicate-preview-desc">微信真机 · 知乎 · 掘金 · CSDN · 小红书 · 海外 18 矩阵</div>
                             </div>
                         </div>
-                        <button type="button" class="mini-btn glow-btn syndicate-preview-btn" onclick="window.openSyndicateLivePreviewModal()">🖥️ 展开 ↗</button>
+                        <div style="display:flex;gap:8px;flex-shrink:0;">
+                            <button type="button" class="mini-btn syndicate-preview-btn" onclick="window.openKnowledgeCardDeckModal()" title="多画幅移动端知识海报生成与ZIP下载" style="background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.35);color:#f472b6;">📑 卡片工坊</button>
+                            <button type="button" class="mini-btn glow-btn syndicate-preview-btn" onclick="window.openSyndicateLivePreviewModal()">🖥️ 排版审查 ↗</button>
+                        </div>
                     </div>
 
                     <div class="syndicate-step-group">

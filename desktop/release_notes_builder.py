@@ -6,7 +6,6 @@
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os
 import re
 import sys
 import argparse
@@ -79,10 +78,10 @@ class ReleaseNotesBuilder:
         except Exception:
             pass
         return [
-            f"feat(ui): 全面优化白天浅色模式视觉对比度与温润微拟态",
-            f"feat(system): 支持版本更新向导 0ms 流光骨架屏秒开体验",
-            f"perf(bindery): 提升大型文库多语种付印与电子书导出效率",
-            f"fix(desktop): 完善全平台原生打包与运行环境自动探测",
+            "feat(ui): 全面优化白天浅色模式视觉对比度与温润微拟态",
+            "feat(system): 支持版本更新向导 0ms 流光骨架屏秒开体验",
+            "perf(bindery): 提升大型文库多语种付印与电子书导出效率",
+            "fix(desktop): 完善全平台原生打包与运行环境自动探测",
         ]
 
     def categorize_commits(self, commits: List[str]) -> Dict[str, List[str]]:
@@ -135,7 +134,7 @@ class ReleaseNotesBuilder:
 
     def render_download_table(self, is_en: bool = False) -> str:
         """渲染全平台安装包速查表格"""
-        base_url = f"https://github.com/Illacme/illacme-plenipes/releases/latest/download"
+        base_url = "https://github.com/Illacme/illacme-plenipes/releases/latest/download"
         if not is_en:
             return (
                 f"| 您的电脑系统 | 推荐下载文件 | 安装与使用方法 | 适合场景 |\n"

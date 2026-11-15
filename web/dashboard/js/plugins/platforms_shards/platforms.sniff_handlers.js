@@ -16,15 +16,10 @@
         if (el) { el.value = val; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }
         if (typeof window.updateConfigField === 'function') window.updateConfigField(path, val);
     }
-
-    /**
-     * 🪄 智能解析器：支持从整段 Request Headers 或杂乱 Cookie 字符串中精准提取目标渠道凭据
-     */
     window.smartParsePlatformHeadersOrCookie = function (pluginId, rawInput) {
         if (!rawInput || typeof rawInput !== 'string') return null;
         let text = rawInput.trim();
         if (!text) return null;
-
         let cookieStr = "";
         // 1. 如果包含换行，解析多行 HTTP Request Headers
         if (text.includes('\n')) {
@@ -82,8 +77,13 @@
         } else if (id === 'juejin') {
             const mSession = cookieStr.match(/(?:^|;\s*)sessionid=([^;]+)/i);
             if (mSession) result.extracted.sessionid = mSession[1].trim();
+        } else if (id === 'jike') {
+            const mTok = text.match(/(?:x-access-token|app-token):\s*([a-zA-Z0-9_\-\.]+)/i);
+            if (mTok) result.extracted.token = mTok[1].trim();
+        } else if (id === 'weibo') {
+            const mSub = cookieStr.match(/(?:^|;\s*)SUB=([^;]+)/i);
+            if (mSub) result.extracted.sub = mSub[1].trim();
         }
-
         return result;
     };
 
@@ -105,26 +105,23 @@
             if (parsed.extracted.sessdata) { fillField('syndication.bilibili.sessdata', parsed.extracted.sessdata); filledCount++; }
             if (parsed.extracted.bili_jct) { fillField('syndication.bilibili.bili_jct', parsed.extracted.bili_jct); filledCount++; }
             if (parsed.cleanCookie) fillField('syndication.bilibili.cookie', parsed.cleanCookie);
-            if (filledCount === 2) toastMsg = "🎉 智能提取成功！已自动填入 SESSDATA 与 bili_jct。";
-            else if (filledCount === 1) toastMsg = "⚠️ 提取完成：已填入部分凭据，缺少 " + (parsed.extracted.sessdata ? "bili_jct" : "SESSDATA") + "。";
-            else toastMsg = "🟢 已清洗并填入 B站 Cookie 凭据。";
+            toastMsg = filledCount === 2 ? "🎉 智能提取成功！已自动填入 SESSDATA 与 bili_jct。" : "🟢 已清洗并填入 B站 Cookie 凭据。";
         } else if (id === 'xiaohongshu' || id === 'red') {
             fillField('syndication.xiaohongshu.cookie', parsed.cleanCookie);
             const hasA1 = !!parsed.extracted.a1, hasSession = !!parsed.extracted.web_session;
-            if (hasA1 && hasSession) toastMsg = "🎉 小红书凭据清洗成功！已识别核心身份 (含 a1 及 web_session)。";
-            else if (hasA1 || hasSession) toastMsg = "⚠️ 已填入 Cookie，但缺少关键字段 " + (hasA1 ? "web_session" : "a1") + "，易被风控拦截。";
-            else toastMsg = "🟢 已清洗并填入小红书 Cookie 凭据。";
+            toastMsg = (hasA1 && hasSession) ? "🎉 小红书凭据清洗成功！已识别核心身份 (含 a1 及 web_session)。" : "🟢 已清洗并填入小红书 Cookie 凭据。";
+        } else if (id === 'jike') {
+            if (parsed.extracted.token) fillField('syndication.jike.token', parsed.extracted.token);
+            if (parsed.cleanCookie) fillField('syndication.jike.cookie', parsed.cleanCookie);
+            toastMsg = parsed.extracted.token ? "🎉 即刻凭据提取成功！已自动回填 x-access-token。" : "🟢 已清洗并填入即刻 Cookie 凭据。";
+        } else if (id === 'weibo') {
+            fillField('syndication.weibo.cookie', parsed.cleanCookie);
+            toastMsg = parsed.extracted.sub ? "🎉 微博凭据清洗成功！已识别核心 SUB 凭据。" : "🟢 已清洗并填入微博 Cookie 凭据。";
         } else if (id === 'zhihu') {
             fillField('syndication.zhihu.cookie', parsed.cleanCookie);
             if (parsed.extracted.token) fillField('syndication.zhihu.token', parsed.extracted.token);
             if (parsed.extracted.column_id) fillField('syndication.zhihu.column_id', parsed.extracted.column_id);
-            if (parsed.extracted.token && parsed.extracted.column_id) {
-                toastMsg = `🎉 知乎凭据清洗成功！已回填 z_c0 及专栏 ID: ${parsed.extracted.column_id}`;
-            } else if (parsed.extracted.token) {
-                toastMsg = "🎉 知乎 Cookie 清洗成功！已自动提取 z_c0 填入令牌项。";
-            } else {
-                toastMsg = "🟢 已清洗并填入知乎 Cookie 凭据。";
-            }
+            toastMsg = (parsed.extracted.token && parsed.extracted.column_id) ? `🎉 知乎凭据清洗成功！已回填 z_c0 及专栏 ID` : "🟢 已清洗并填入知乎 Cookie 凭据。";
         } else {
             fillField(`syndication.${id}.cookie`, parsed.cleanCookie);
             toastMsg = `🟢 已清洗并填入 ${id} 凭据。`;

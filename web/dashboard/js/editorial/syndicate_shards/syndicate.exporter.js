@@ -228,6 +228,13 @@
                             <span class="item-desc">全局内联 CSS 与外链脚注，直接粘贴微信</span>
                         </div>
                     </div>` : ''}
+                    <div class="export-dropdown-item" onclick="window.openKnowledgeCardDeckModal();window.toggleSyndicateExportMenu();">
+                        <span class="item-icon">📑</span>
+                        <div class="item-meta">
+                            <span class="item-title">知识卡片海报 (多画幅切片 & ZIP)</span>
+                            <span class="item-desc">支持 3:4/1:1/16:9 多比例切片与全套导出</span>
+                        </div>
+                    </div>
                     ${!isZhihu ? `
                     <div class="export-dropdown-item" onclick="window.copyZhihuRichText();window.toggleSyndicateExportMenu();">
                         <span class="item-icon">知</span>

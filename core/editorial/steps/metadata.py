@@ -41,6 +41,9 @@ class MetadataAndHashStep(PipelineStep):
         }
         if ctx.explicit_slug:
             register_kwargs["slug"] = ctx.explicit_slug
+        explicit_cover = ctx.base_fm.get('cover') or ctx.fm_dict.get('cover') or ctx.base_fm.get('image') or ctx.fm_dict.get('image')
+        if explicit_cover:
+            register_kwargs["cover"] = str(explicit_cover).strip()
         ctx.engine.meta.register_document(ctx.rel_path, ctx.title, **register_kwargs)
         ctx.doc_info = ctx.engine.meta.get_doc_info(ctx.rel_path)
 

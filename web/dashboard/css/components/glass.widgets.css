@@ -610,3 +610,120 @@ input:checked + .p-slider:before { transform: translateX(24px); background-color
     box-shadow: 0 20px 60px var(--shadow-glow);
 }
 
+/* 🏷️ Vault Frontmatter Micro Pills */
+.vault-pills-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.vault-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border-radius: 99px;
+    border: 1px solid var(--border-subtle);
+    background: var(--white-03);
+    color: var(--text-dim);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+.vault-pill-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--shadow-glow);
+}
+.vault-pill-badge .pill-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* 🎧 Podcast Pill Variants */
+.vault-pill-badge.pill-podcast.active {
+    background: var(--callout-important-bg);
+    border-color: var(--callout-important-color);
+    color: var(--callout-important-title);
+}
+.vault-pill-badge.pill-podcast.active .pill-dot {
+    background: var(--callout-important-title);
+    box-shadow: 0 0 6px var(--callout-important-title);
+}
+.vault-pill-badge.pill-podcast.disabled {
+    background: var(--black-30);
+    border-color: var(--border-subtle);
+    color: var(--text-dim);
+    opacity: 0.65;
+}
+.vault-pill-badge.pill-podcast.disabled .pill-dot {
+    background: var(--text-dim);
+}
+.vault-pill-badge.pill-podcast.pending {
+    background: var(--callout-note-bg);
+    border-color: var(--callout-note-color);
+    color: var(--callout-note-title);
+}
+.vault-pill-badge.pill-podcast.pending .pill-dot {
+    background: var(--callout-note-title);
+    box-shadow: 0 0 6px var(--callout-note-title);
+}
+.vault-pill-badge.pill-podcast.unconfigured {
+    background: transparent;
+    border: 1px dashed var(--border-subtle);
+    color: var(--text-dim);
+    opacity: 0.75;
+}
+.vault-pill-badge.pill-podcast.unconfigured:hover {
+    border-color: var(--callout-important-color);
+    color: var(--callout-important-title);
+    opacity: 1;
+}
+
+/* 📝 Draft Pill Variants */
+.vault-pill-badge.pill-draft.published {
+    background: var(--callout-tip-bg);
+    border-color: var(--callout-tip-color);
+    color: var(--callout-tip-title);
+}
+.vault-pill-badge.pill-draft.published .pill-dot {
+    background: var(--callout-tip-title);
+    box-shadow: 0 0 6px var(--callout-tip-title);
+}
+.vault-pill-badge.pill-draft.draft {
+    background: var(--callout-warning-bg);
+    border-color: var(--callout-warning-color);
+    color: var(--callout-warning-title);
+}
+.vault-pill-badge.pill-draft.draft .pill-dot {
+    background: var(--callout-warning-title);
+    box-shadow: 0 0 6px var(--callout-warning-title);
+}
+
+/* ⭐ Featured Pill Variants */
+.vault-pill-badge.pill-featured.active {
+    background: var(--callout-warning-bg);
+    border-color: var(--callout-warning-color);
+    color: var(--callout-warning-title);
+    font-weight: 700;
+}
+.vault-pill-badge.pill-featured.normal {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-dim);
+    opacity: 0.7;
+}
+.vault-pill-badge.pill-featured.normal:hover {
+    border-color: var(--callout-warning-color);
+    color: var(--callout-warning-title);
+    opacity: 1;
+}
+

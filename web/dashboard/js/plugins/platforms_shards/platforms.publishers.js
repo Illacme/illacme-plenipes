@@ -255,6 +255,26 @@ window.rawRenderPublisherConfig = (id, cfg, category = 'publisher') => {
                 ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.devto.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "可选。针对当前渠道配置独立代理，填写 direct 表示强制直连。" })}
             `)}
         `;
+    } else if (id === 'twitter' || id === 'x') {
+        return `
+            <div class="api-token-helper">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 Twitter / X Developer Portal 直达</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted, #94a3b8); margin-top: 4px; line-height: 1.45;">
+                    支持 Twitter API v2 Bearer Token 或 OAuth 1.0a 凭据。自动装配 16:9 宽屏或 1:1 知识卡片海报（至多 4 张推文图集）！
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                    <a href="https://developer.x.com/en/portal/dashboard" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 Twitter Developer Portal</a>
+                    <a href="https://x.com" target="_blank" class="helper-btn" onmouseover="this.style.background='rgba(0, 242, 254, 0.3)'" onmouseout="this.style.background='rgba(0, 242, 254, 0.15)'">🔗 打开 X (Twitter)</a>
+                </div>
+            </div>
+            ${renderSettingsItem('访问令牌 (Bearer Token)', `syndication.twitter.bearer_token`, cfg.bearer_token || cfg.token, 'password', { placeholder: "请输入 Twitter API v2 Bearer Token", description: "在 Developer Portal -> Projects & Apps -> Keys and Tokens 中获取。" })}
+            ${renderSettingsItem('应用密钥 (API Key)', `syndication.twitter.api_key`, cfg.api_key, 'password', { placeholder: "可选。OAuth 1.0a Consumer Key", description: "可选。仅在需要特定写入或自建代理时填写。", optional: true })}
+            ${window.renderPlatformAdvancedGroup('高级代理参数', `
+                ${renderSettingsItem('独立代理地址 (Proxy)', `syndication.twitter.proxy`, cfg.proxy, 'text', { placeholder: "例如: http://127.0.0.1:10809 或 direct", description: "针对当前渠道配置独立代理，中国大陆用户请填写本地代理地址。" })}
+            `)}
+        `;
     } else {
         if (typeof window.renderDomesticPublisherConfig === 'function') {
             const domHtml = window.renderDomesticPublisherConfig(id, cfg);

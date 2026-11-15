@@ -76,6 +76,9 @@
             const COVER_POLICY_MAP = {
                 'wechat': { tier: 'required', label: '必配封面', tip: '微信公众号草稿箱接口强制要求永久封面素材 (thumb_media_id)，强烈建议在上方配置专属封面' },
                 'xiaohongshu': { tier: 'required', label: '必配首图', tip: '小红书图文笔记机制首图即封面，必须至少包含 1 张图片方可发布' },
+                'jike': { tier: 'recommended', label: '卡片轮播', tip: '即刻短动态优先装配 3:4 / 1:1 知识卡片海报多图轮播（至多 9 张）' },
+                'weibo': { tier: 'recommended', label: '九宫格', tip: '微博优先装配 1:1 / 3:4 知识卡片海报九宫格图集（至多 9 张）' },
+                'twitter': { tier: 'recommended', label: '16:9 轮播', tip: 'Twitter/X 优先装配 16:9 宽屏或 1:1 知识卡片海报（至多 4 张推文图集）' },
                 'bilibili': { tier: 'required', label: '必配头图', tip: 'B站专栏文章投稿要求必须提供封面头图 (banner_url)' },
                 'toutiao': { tier: 'required', label: '必配封面', tip: '今日头条文章/微头条推荐流强依赖封面卡片 (cover_url)' },
                 'devto': { tier: 'recommended', label: '推荐题图', tip: 'Dev.to 支持文章主图 (main_image)，在主页与顶部以长幅横幅展示' },

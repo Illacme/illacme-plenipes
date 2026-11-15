@@ -168,11 +168,120 @@
     }
 
     /**
+     * 🎧 读者消费闭环：伴读播放条 (Blog Reader Audio Widget)
+     */
+    function initAudioPlayers() {
+        const players = document.querySelectorAll('.sovereign-audio-player');
+        if (!players.length) return;
+        const SPEEDS = [1.0, 1.25, 1.5, 2.0, 0.75];
+
+        function fmt(sec) {
+            if (!sec || isNaN(sec) || sec < 0) return '0:00';
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        players.forEach(card => {
+            const audio = card.querySelector('.audio-native');
+            const playBtn = card.querySelector('.audio-play-btn');
+            const scrub = card.querySelector('.audio-scrub');
+            const fill = card.querySelector('.audio-track-fill');
+            const curTime = card.querySelector('.audio-cur-time');
+            const totalTime = card.querySelector('.audio-total-time');
+            const speedBtn = card.querySelector('.audio-speed-btn');
+            const muteBtn = card.querySelector('.audio-mute-btn');
+            const pills = card.querySelectorAll('.chapter-pill');
+            if (!audio || !playBtn) return;
+            let spdIdx = 0;
+
+            pills.forEach(p => p.addEventListener('click', () => {
+                const t = parseFloat(p.getAttribute('data-time') || '0');
+                audio.currentTime = t;
+                audio.play().catch(e => console.warn('音频跳转播放受阻:', e));
+            }));
+
+            playBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                    audio.play().catch(e => console.warn('音频播放受阻:', e));
+                } else {
+                    audio.pause();
+                }
+            });
+
+            audio.addEventListener('play', () => {
+                playBtn.innerHTML = '⏸';
+                card.classList.add('is-playing');
+            });
+
+            audio.addEventListener('pause', () => {
+                playBtn.innerHTML = '▶';
+                card.classList.remove('is-playing');
+            });
+
+            audio.addEventListener('loadedmetadata', () => {
+                if (audio.duration && !isNaN(audio.duration)) totalTime.textContent = fmt(audio.duration);
+            });
+
+            audio.addEventListener('timeupdate', () => {
+                const cur = audio.currentTime, dur = audio.duration;
+                curTime.textContent = fmt(cur);
+                if (dur && !isNaN(dur) && dur > 0) {
+                    const pct = (cur / dur) * 100;
+                    scrub.value = pct;
+                    if (fill) fill.style.width = `${pct}%`;
+                    totalTime.textContent = fmt(dur);
+                }
+                if (pills.length) {
+                    let active = null;
+                    pills.forEach(p => {
+                        if (cur >= parseFloat(p.getAttribute('data-time') || '0')) active = p;
+                        p.classList.remove('active');
+                    });
+                    if (active) active.classList.add('active');
+                }
+            });
+
+            audio.addEventListener('ended', () => {
+                playBtn.innerHTML = '▶';
+                card.classList.remove('is-playing');
+                scrub.value = 0;
+                if (fill) fill.style.width = '0%';
+                curTime.textContent = '0:00';
+            });
+
+            scrub.addEventListener('input', () => {
+                const dur = audio.duration;
+                if (dur && !isNaN(dur) && dur > 0) {
+                    audio.currentTime = (scrub.value / 100) * dur;
+                    if (fill) fill.style.width = `${scrub.value}%`;
+                }
+            });
+
+            if (speedBtn) {
+                speedBtn.addEventListener('click', () => {
+                    spdIdx = (spdIdx + 1) % SPEEDS.length;
+                    audio.playbackRate = SPEEDS[spdIdx];
+                    speedBtn.textContent = `${SPEEDS[spdIdx]}x`;
+                });
+            }
+
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    audio.muted = !audio.muted;
+                    muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+                });
+            }
+        });
+    }
+
+    /**
      * 总入口
      */
     function initCustomRenderers() {
         initMermaidRenderers();
         initMathRenderers();
+        initAudioPlayers();
     }
 
     // 挂载至全局 window 状态总线

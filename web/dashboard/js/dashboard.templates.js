@@ -83,8 +83,8 @@ window.viewTemplates = {
                         <table id="vault-table" style="width: 100%; table-layout: fixed; min-width: 680px;">
                             <thead style="position: sticky; top: 0; z-index: 10; background: rgba(var(--bg-modal-solid-rgb), 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--glass-border);">
                                 <tr>
-                                    <th style="width: 40%; min-width: 180px; padding: 12px 16px; text-align: center; white-space: nowrap;">标题</th>
-                                    <th style="width: 32%; min-width: 140px; padding: 12px 16px; text-align: center; white-space: nowrap;">物理路径</th>
+                                    <th style="width: 40%; min-width: 180px; padding: 12px 16px; text-align: center; white-space: nowrap;">标题与属性</th>
+                                    <th style="width: 32%; min-width: 140px; padding: 12px 16px; text-align: center; white-space: nowrap;">物理路径 / 网页路径</th>
                                     <th style="width: 80px; min-width: 80px; padding: 12px 8px; text-align: center; white-space: nowrap;">字数</th>
                                     <th style="width: 160px; min-width: 160px; padding: 12px 8px; text-align: center; white-space: nowrap;">操作</th>
                                 </tr>

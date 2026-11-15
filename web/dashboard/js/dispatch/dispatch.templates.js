@@ -27,24 +27,28 @@ window.viewTemplates.tasks = `
     <div class="header-nav-row" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--glass-border); margin-top: 0; width: 100%; box-sizing: border-box; flex-shrink: 0;">
         <nav class="tactical-tabs dispatch-tactical-tabs">
             <button class="t-tab active" id="tab-dispatch-shelf" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('shelf');">
-                <span class="t-icon">📚</span> 电子出版书架
+                <span class="t-icon">📚</span> 电子出版
                 <span class="tab-badge" id="badge-shelf-books">--</span>
             </button>
             <button class="t-tab" id="tab-dispatch-hosting" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('hosting');">
-                <span class="t-icon">🌐</span> 网站托管发布
+                <span class="t-icon">🌐</span> 全站托管
                 <span class="tab-badge" id="badge-hosting-ready">--</span>
             </button>
             <button class="t-tab" id="tab-dispatch-social" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('social');">
-                <span class="t-icon">📡</span> 社交媒体分发
+                <span class="t-icon">📢</span> 社媒分发
                 <span class="tab-badge" id="badge-social-tasks">--</span>
             </button>
-        </nav>
-        <div class="header-nav-actions" style="display: flex; gap: 10px; align-items: center;">
-            <button class="secondary-btn btn-sm" id="btn-dispatch-nav-plugins" onclick="if(typeof window.onDispatchPluginConfig==='function') window.onDispatchPluginConfig();" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>⚙️ 插件配置 ↗</span>
+            <button class="t-tab" id="tab-dispatch-podcast" onclick="if(typeof window.switchDispatchMode==='function') window.switchDispatchMode('podcast');">
+                <span class="t-icon">🎙️</span> 播客平台
+                <span class="tab-badge" id="badge-podcast-episodes">--</span>
             </button>
-            <button class="secondary-btn btn-sm" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>🎨 装帧主题 ↗</span>
+        </nav>
+        <div class="header-nav-actions" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+            <button class="secondary-btn btn-sm icon-nav-btn" id="btn-dispatch-nav-plugins" onclick="if(typeof window.onDispatchPluginConfig==='function') window.onDispatchPluginConfig();" style="padding: 4px 8px; font-size: 0.85rem; height: 28px; width: 32px; display: inline-flex; align-items: center; justify-content: center;" title="插件配置：管理当前分类的分发插件与密钥">
+                <span>⚙️</span>
+            </button>
+            <button class="secondary-btn btn-sm icon-nav-btn" onclick="if(typeof window.showView==='function') window.showView('settings', 'themes');" style="padding: 4px 8px; font-size: 0.85rem; height: 28px; width: 32px; display: inline-flex; align-items: center; justify-content: center;" title="装帧主题：切换或定制网站装帧主题">
+                <span>🎨</span>
             </button>
         </div>
     </div>
@@ -213,6 +217,16 @@ window.viewTemplates.tasks = `
                     </div>
                 </div>
                 <div id="dispatch-deadletter-container" style="display: none; flex-direction: column; gap: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 模式四：🎙️ 播客音频分发专区 (Podcast Syndication) -->
+        <div id="dispatch-podcast-view" style="display: none; width: 100%;">
+            <div id="dispatch-podcast-container">
+                <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.86rem;">
+                    正在调取播客全网发行态势与节目单...
+                </div>
             </div>
         </div>
     </div>

@@ -19,6 +19,7 @@ from .plugin_collector_channels import (
     collect_syndication_plugins,
     collect_image_hosting_plugins,
     collect_tunnel_plugins,
+    collect_podcast_plugins,
 )
 from .plugin_collector_pipeline import (
     collect_compute_and_protocol_plugins,
@@ -207,6 +208,9 @@ def assemble_plugin_matrix() -> List[Dict[str, Any]]:
 
     # 4d. Network Tunnels (网络穿透)
     plugins.extend(collect_tunnel_plugins(engine, disabled, system_track))
+
+    # 4e. Podcast Platforms (播客平台)
+    plugins.extend(collect_podcast_plugins(engine, disabled, system_track))
 
     # 6-9. Ingress, Transformers, Maskers, Pipeline Steps (流水线)
     plugins.extend(collect_ingress_and_editorial_plugins(engine, system_track))

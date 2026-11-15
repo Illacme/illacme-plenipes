@@ -5,7 +5,12 @@ Illacme Plenipes - Book Assembler (全卷文稿合订编排器)
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
-import os, re, json, uuid, yaml, base64
+import os
+import re
+import json
+import uuid
+import yaml
+import base64
 from typing import Dict, Any, List, Optional
 
 from core.adapters.egress.ebook import EBookRegistry
@@ -111,12 +116,8 @@ class BookAssembler:
         if cover_mode != "none":
             if (cover_mode == "custom" or custom_cover_image) and custom_cover_image:
                 cover_path = BinderyAssetSyncer.sync_custom_cover(
-                    custom_cover_data=custom_cover_image,
-                    vault_dir=self.vault_dir,
-                    slug_prefix=slug_prefix,
-                    out_dir=out_dir,
-                    engine=self.engine,
-                    book_title=book_title
+                    custom_cover_data=custom_cover_image, vault_dir=self.vault_dir,
+                    slug_prefix=slug_prefix, out_dir=out_dir, engine=self.engine, book_title=book_title
                 )
             if not cover_path and cover_mode == "auto":
                 cover_path = CoverGenerator.discover_cover(vault_dir=self.vault_dir, category=category, chapters=chapters)
@@ -130,11 +131,8 @@ class BookAssembler:
         # 4. 调用适配驱动执行装订封包
         adapter = adapter_cls(engine=self.engine)
         success = adapter.bind_book(
-            manuscript_tree=chapters,
-            book_metadata=book_meta,
-            cover_image_path=cover_path,
-            target_lang=target_lang,
-            output_file_path=out_path
+            manuscript_tree=chapters, book_metadata=book_meta,
+            cover_image_path=cover_path, target_lang=target_lang, output_file_path=out_path
         )
 
         return out_path if success else None

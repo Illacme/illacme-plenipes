@@ -20,7 +20,7 @@ class RouteJanitor:
         self.route_manager = service.route_manager
         self.i18n = service.i18n
 
-    def gc_node(self, rel_path, route_prefix, route_source, is_dry_run=False):
+    def gc_node(self, rel_path, route_prefix, route_source, is_dry_run=False, clean_ledger=True):
         """精准拔除单篇失效文章及其各语种路由"""
         doc_info = self.meta.get_doc_info(rel_path)
         slug = doc_info.get("slug") or os.path.splitext(os.path.basename(rel_path))[0]
@@ -85,7 +85,7 @@ class RouteJanitor:
                             except Exception as e:
                                 tlog.error(f"回收{label}失败 {target_path}: {e}")
 
-        if not is_dry_run: self.meta.remove_document(rel_path)
+        if not is_dry_run and clean_ledger: self.meta.remove_document(rel_path)
 
     def fast_tombstone(self, rel_path, route_prefix, route_source):
         """原子墓碑化与错峰删除"""

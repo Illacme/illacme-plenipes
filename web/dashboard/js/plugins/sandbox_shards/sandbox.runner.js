@@ -38,7 +38,8 @@ window.triggerPluginDryRun = async (id, parentId = null) => {
             ...(window.settingsData.publish_control?.webhook_endpoints?.[id] || {}),
             ...(window.settingsData.syndication?.[id] || {}),
             ...(window.settingsData.translation?.compute_nodes?.[id] || {}),
-            ...(window.settingsData.tunnel?.[id] || {})
+            ...(window.settingsData.tunnel?.[id] || {}),
+            ...(window.settingsData.podcast?.[id] || {})
         };
     }
 

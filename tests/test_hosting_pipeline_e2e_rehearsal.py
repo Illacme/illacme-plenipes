@@ -12,7 +12,6 @@ import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 
-from core.adapters.egress.publishers.base import PublisherRegistry
 from adapters.egress.publishers.github_pages import GitHubPagesPublisher
 from adapters.egress.publishers.vercel import VercelPublisher
 from adapters.egress.publishers.netlify import NetlifyPublisher
@@ -20,7 +19,7 @@ from services.api.routes.dispatch_shards.hosting_diagnostic_routes import (
     resolve_hosting_site_url, get_bundle_stats, format_deploy_process_logs
 )
 from services.api.routes.dispatch_shards.hosting_routes import (
-    _resolve_ordered_hosting_channels, _collect_fleet_status, launch_hosting_deploy_job
+    _resolve_ordered_hosting_channels
 )
 
 

@@ -9,7 +9,6 @@ Illacme Plenipes - Launcher Ecosystem Consistency Tests
 
 import os
 import re
-import pytest
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 

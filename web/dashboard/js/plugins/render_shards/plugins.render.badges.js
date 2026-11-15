@@ -15,6 +15,8 @@
             // 📢 社交媒体与分发平台 (Publishers & Syndication)
             'xiaohongshu': { icon: '📕', color: '#ff2442', bg: 'rgba(255, 36, 66, 0.14)', border: 'rgba(255, 36, 66, 0.35)' },
             'red': { icon: '📕', color: '#ff2442', bg: 'rgba(255, 36, 66, 0.14)', border: 'rgba(255, 36, 66, 0.35)' },
+            'jike': { icon: '🟡', color: '#ffe411', bg: 'rgba(255, 228, 17, 0.16)', border: 'rgba(255, 228, 17, 0.38)' },
+            'weibo': { icon: '🔴', color: '#e6162d', bg: 'rgba(230, 22, 45, 0.14)', border: 'rgba(230, 22, 45, 0.35)' },
             'toutiao': { icon: '⚡', color: '#ed4040', bg: 'rgba(237, 64, 64, 0.14)', border: 'rgba(237, 64, 64, 0.35)' },
             'csdn': { icon: '📑', color: '#fc5531', bg: 'rgba(252, 85, 49, 0.14)', border: 'rgba(252, 85, 49, 0.35)' },
             'cnblogs': { icon: '🌿', color: '#2b73af', bg: 'rgba(43, 115, 175, 0.14)', border: 'rgba(43, 115, 175, 0.35)' },
@@ -34,6 +36,8 @@
             'telegram': { icon: '✈️', color: '#24a1de', bg: 'rgba(36, 161, 222, 0.14)', border: 'rgba(36, 161, 222, 0.35)' },
             'discord': { icon: '🎮', color: '#5865f2', bg: 'rgba(88, 101, 242, 0.14)', border: 'rgba(88, 101, 242, 0.35)' },
             'linkedin': { icon: '💼', color: '#0a66c2', bg: 'rgba(10, 102, 194, 0.14)', border: 'rgba(10, 102, 194, 0.35)' },
+            'twitter': { icon: '𝕏', color: '#ffffff', bg: 'rgba(255, 255, 255, 0.14)', border: 'rgba(255, 255, 255, 0.35)' },
+            'x': { icon: '𝕏', color: '#ffffff', bg: 'rgba(255, 255, 255, 0.14)', border: 'rgba(255, 255, 255, 0.35)' },
 
             // 🌐 全站托管 (Hosting Platforms)
             'cloudflare_pages': { icon: '☁️', color: '#f38020', bg: 'rgba(243, 128, 32, 0.14)', border: 'rgba(243, 128, 32, 0.35)' },

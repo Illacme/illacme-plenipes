@@ -268,7 +268,7 @@ window.isPluginCredentialReady = (pluginId, category, cfg) => {
             pCfg.application_password, pCfg.url, pCfg.webhook, pCfg.webhook_url,
             pCfg.access_key_id, pCfg.access_key_secret, pCfg.secret_id, pCfg.operator,
             pCfg.password, pCfg.client_id, pCfg.access_key, pCfg.smtp_pass, pCfg.device_key,
-            pCfg.app_secret, pCfg.bearer_token, pCfg.sendkey, pCfg.base_url
+            pCfg.app_secret, pCfg.bearer_token, pCfg.sendkey, pCfg.base_url, pCfg.podcast_id, pCfg.apple_id, pCfg.show_id, pCfg.bucket
         ].find(v => v && !isPlaceholderValue(v))
     );
     return { ready: hasSecret, mode: hasSecret ? 'secret' : 'missing', label: hasSecret ? '凭据就绪' : '待填凭据' };

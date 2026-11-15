@@ -36,6 +36,8 @@ window.PLATFORM_PORTAL_LINKS = {
     // 社交媒体与分发平台 (Publishers)
     'xiaohongshu': { name: '小红书', home: 'https://creator.xiaohongshu.com', token: 'https://creator.xiaohongshu.com' },
     'red': { name: '小红书', home: 'https://creator.xiaohongshu.com', token: 'https://creator.xiaohongshu.com' },
+    'jike': { name: '即刻', home: 'https://web.okjike.com', token: 'https://web.okjike.com' },
+    'weibo': { name: '微博', home: 'https://weibo.com', token: 'https://open.weibo.com' },
     'toutiao': { name: '今日头条', home: 'https://mp.toutiao.com', token: 'https://mp.toutiao.com/profile_v4/graphic/publish' },
     'csdn': { name: 'CSDN 博客', home: 'https://blog.csdn.net', token: 'https://mp.csdn.net' },
     'cnblogs': { name: '博客园', home: 'https://www.cnblogs.com', token: 'https://i.cnblogs.com/settings' },
@@ -55,10 +57,19 @@ window.PLATFORM_PORTAL_LINKS = {
     'telegram': { name: 'Telegram', home: 'https://telegram.org', token: 'https://t.me/BotFather' },
     'discord': { name: 'Discord', home: 'https://discord.com', token: 'https://discord.com/developers/applications' },
     'linkedin': { name: 'LinkedIn', home: 'https://www.linkedin.com', token: 'https://www.linkedin.com/developers/apps' },
+    'twitter': { name: 'Twitter / X', home: 'https://x.com', token: 'https://developer.x.com/en/portal/dashboard' },
+    'x': { name: 'Twitter / X', home: 'https://x.com', token: 'https://developer.x.com/en/portal/dashboard' },
 
     // 消息通知与告警 (Notifications & Webhooks)
     'feishu': { name: '飞书开放平台', home: 'https://open.feishu.cn', token: 'https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot' },
     'dingtalk': { name: '钉钉开放平台', home: 'https://open.dingtalk.com', token: 'https://open.dingtalk.com/document/robots/custom-robot-access' },
+
+    // 播客平台 (Podcast Platforms)
+    'podcast_hub': { name: '播客全网发行 (Podcast Hub)', home: 'https://podcastsconnect.apple.com', token: 'https://podcasters.spotify.com' },
+    'podcast_xiaoyuzhou': { name: '小宇宙 Studio', home: 'https://podcaster.xiaoyuzhoufm.com', token: 'https://podcaster.xiaoyuzhoufm.com' },
+    'podcast_apple': { name: 'Apple Podcasts Connect', home: 'https://podcastsconnect.apple.com', token: 'https://podcastsconnect.apple.com' },
+    'podcast_spotify': { name: 'Spotify for Podcasters', home: 'https://podcasters.spotify.com', token: 'https://podcasters.spotify.com' },
+    'podcast_r2_storage': { name: 'Cloudflare R2 音频存储', home: 'https://dash.cloudflare.com', token: 'https://dash.cloudflare.com/?to=/:account/r2' },
     'wecom': { name: '企业微信', home: 'https://work.weixin.qq.com', token: 'https://work.weixin.qq.com/api/doc/90000/90136/91770' },
     'email': { name: 'SMTP 邮件服务', home: 'https://support.google.com/mail/answer/7126229', token: 'https://myaccount.google.com/apppasswords' },
     'sms': { name: '短信服务网关', home: 'https://www.aliyun.com/product/sms', token: 'https://dysms.console.aliyun.com' },

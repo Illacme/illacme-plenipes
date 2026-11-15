@@ -5,7 +5,7 @@
  */
 
 // 2. 稿件仓库加载器
-window.loadVault = async (query = null, page = null) => {
+window.loadVault = async (query = null, page = null, options = {}) => {
     if (query !== null) {
         window.vaultCurrentQuery = query;
         if (page === null) window.vaultCurrentPage = 1; // 新搜索默认回到第一页
@@ -17,13 +17,8 @@ window.loadVault = async (query = null, page = null) => {
     const toggleBtn = document.getElementById('toggle-vault-sidebar-btn');
     if (sidebar && toggleBtn) {
         const wasCollapsed = localStorage.getItem('vaultSidebarCollapsed') === 'true';
-        if (wasCollapsed) {
-            sidebar.classList.add('collapsed');
-            toggleBtn.innerHTML = '📑 展开侧栏';
-        } else {
-            sidebar.classList.remove('collapsed');
-            toggleBtn.innerHTML = '📑 隐藏侧栏';
-        }
+        sidebar.classList.toggle('collapsed', wasCollapsed);
+        toggleBtn.innerHTML = wasCollapsed ? '📑 展开侧栏' : '📑 隐藏侧栏';
     }
 
     if (!window.vaultTreeInitialized) {
@@ -32,20 +27,20 @@ window.loadVault = async (query = null, page = null) => {
     const listEl = document.getElementById('vault-list');
     if (!listEl) return;
 
+    const scrollContainer = listEl.closest('.table-container') || document.querySelector('#vault-main-content .table-container');
+    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+    const isSilent = !!(options && options.silent);
+    const keepScroll = !!(options && (options.keepScroll || options.silent)) || (query === null && page === null);
+
     // 预更新分页 UI
     const pageInfo = document.getElementById('vault-page-info');
     if (pageInfo) pageInfo.innerText = `第 ${window.vaultCurrentPage} 页`;
     ['vault-first-btn', 'vault-prev-btn', 'vault-next-btn', 'vault-last-btn'].forEach(id => {
         const b = document.getElementById(id); if (b) b.disabled = true;
     });
-    listEl.innerHTML = Array(5).fill(0).map(() => `
-        <tr>
-            <td><div class="skeleton" style="width: 140px; height: 20px;"></div></td>
-            <td><div class="skeleton" style="width: 200px; height: 20px;"></div></td>
-            <td><div class="skeleton" style="width: 60px; height: 20px;"></div></td>
-            <td><div class="skeleton" style="width: 80px; height: 30px;"></div></td>
-        </tr>
-    `).join('');
+    if (!isSilent) {
+        listEl.innerHTML = Array(5).fill(0).map(() => `<tr><td><div class="skeleton" style="width:140px;height:20px;"></div></td><td><div class="skeleton" style="width:200px;height:20px;"></div></td><td><div class="skeleton" style="width:60px;height:20px;"></div></td><td><div class="skeleton" style="width:80px;height:30px;"></div></td></tr>`).join('');
+    }
     try {
         // 🚀 [V74.8] 物理检索：利用后端索引引擎进行全量过滤，带分页与文件夹过滤参数
         const res = await apiFetch(`/api/vault/search?q=${encodeURIComponent(window.vaultCurrentQuery)}&limit=${window.vaultPageSize}&page=${window.vaultCurrentPage}&folder=${encodeURIComponent(window.vaultActiveFolder || '')}&_t=${Date.now()}`);
@@ -55,6 +50,7 @@ window.loadVault = async (query = null, page = null) => {
             return;
         }
         const manuscripts = res.items;
+        window.vaultCurrentManuscripts = manuscripts;
 
         window.vaultTotalItems = res.total || 0;
         const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
@@ -110,26 +106,43 @@ window.loadVault = async (query = null, page = null) => {
                 : `<div style="width:38px; height:24px; border-radius:4px; border:1px dashed rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:rgba(255,255,255,0.02); opacity:0.6; font-size:0.7rem;" title="未设封面，点击快速挑选或生成" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '')">🖼️+</div>`;
             const docUrl = (typeof window.resolveDocUrlString === 'function') ? window.resolveDocUrlString(m.rel_path, m.slug) : (m.slug || m.rel_path.replace(/\.(md|markdown)$/i, '.html'));
             const slugHint = (m.slug && m.slug !== 'null' && m.slug !== 'undefined') ? ` (Slug: ${m.slug})` : '';
+            const pillsHtml = (typeof window.buildVaultPillsHtml === 'function')
+                ? window.buildVaultPillsHtml(m, escapedRelPath)
+                : '';
             return `
-            <tr>
-                <td style="overflow:hidden;">
-                    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <tr data-rel-path="${escapedRelPath}">
+                <td style="overflow:hidden; padding: 10px 14px;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                         ${coverThumb}
                         <div style="overflow:hidden; min-width:0; flex:1;">
-                            <div style="font-weight:600; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${displayTitle}">${displayTitle}</div>
-                            ${docUrl ? `<div style="font-size:0.7rem; opacity:0.45; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-family:var(--font-mono, monospace);" title="预估网页路径: /${docUrl}${slugHint}">/${docUrl}</div>` : ''}
+                            <div style="font-weight:600; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-bottom:4px;" title="${displayTitle}">${displayTitle}</div>
+                            <div class="vault-pills-row" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow:hidden;">
+                                ${pillsHtml}
+                            </div>
                         </div>
                     </div>
                 </td>
-                <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><code class="path-tag" title="${m.rel_path}">${m.rel_path.length > 40 ? '...' + m.rel_path.slice(-37) : m.rel_path}</code></td>
+                <td style="overflow:hidden; padding: 10px 14px;">
+                    <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:4px; min-width:0;">
+                            <code class="path-tag" title="物理文件路径: ${m.rel_path}">${m.rel_path.length > 36 ? '...' + m.rel_path.slice(-33) : m.rel_path}</code>
+                        </div>
+                        ${docUrl ? `
+                        <div style="font-size:0.71rem; opacity:0.72; font-family:var(--font-mono, monospace); display:flex; align-items:center; gap:4px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="预估网页公开路径: /${docUrl}${slugHint}">
+                            <span style="opacity:0.5; font-size:0.75rem;">🌐</span>
+                            <span style="color:var(--accent-primary, #00f2fe);">/${docUrl}</span>
+                        </div>` : ''}
+                    </div>
+                </td>
                 <td style="text-align:center; padding:12px 8px; white-space:nowrap;"><span class="mono">${wc.toLocaleString()}</span></td>
                 <td style="padding:8px; width:160px; min-width:160px; box-sizing:border-box; text-align:center;">
                     <div class="vault-action-wrapper" style="display:inline-flex; gap:5px; align-items:center; justify-content:center;">
                         <button class="mini-action-btn" title="快速编辑原稿 (Markdown 创作工作台)" onclick="openEditor('${escapedRelPath}')">📝</button>
                         <button class="mini-action-btn" title="实时渲染预览 (独立站真实效果)" onclick="window.openArticleLivePreview('${escapedRelPath}', '${m.slug || ''}')">👁️</button>
                         <button class="mini-action-btn" title="全域渠道分发与推流 (微信 · 知乎 · B站 · Dev.to 等)" onclick="window.openArticleSyndicationDrawer('${escapedRelPath}', '${escapedTitle}')">📢</button>
-                        <button class="mini-action-btn vault-more-btn" title="更多操作 (网页托管发布 · 译文校对 · 封面管理 · 重命名 · 单篇极速装订导出 · 物理销毁)" onclick="window.toggleVaultActionMenu(this, event)">···</button>
+                        <button class="mini-action-btn vault-more-btn" title="更多操作 (网页托管发布 · 播客工坊 · 译文校对 · 封面管理 · 重命名 · 单篇极速装订导出 · 物理销毁)" onclick="window.toggleVaultActionMenu(this, event)">···</button>
                         <div class="vault-more-menu custom-glass-dropdown">
+                            <button class="vault-more-item" onclick="window.openPodcastStudioModal('${escapedRelPath}')">🎙️ 双人技术播客工坊</button>
                             <button class="vault-more-item" onclick="openVaultDrawer('${escapedRelPath}')">🌐 网页托管发布</button>
                             <button class="vault-more-item" onclick="window.openTranslationReview('${escapedRelPath}')">${reviewBtnIcon} 多语种译文校对</button>
                             <button class="vault-more-item" onclick="window.openDocCoverPickerModal('${escapedRelPath}', '${escapedTitle}', '${escapedCover}')">🖼️ 更换或生成文章封面</button>
@@ -143,7 +156,9 @@ window.loadVault = async (query = null, page = null) => {
             </tr>
             `;
         }).join('');
-
+        if (keepScroll && scrollContainer) {
+            scrollContainer.scrollTop = prevScrollTop;
+        }
     } catch (e) {
         console.error("Vault load error:", e);
         listEl.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--accent-primary);">🚨 物理链路异常: ${e.message}</td></tr>`;
@@ -266,33 +281,16 @@ window.triggerDirectDocDelete = (relPath, title) => {
     }
 };
 
-window.changeVaultPage = (delta) => {
-    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), newPage = window.vaultCurrentPage + delta;
-    if (newPage >= 1 && newPage <= totalPages) window.loadVault(null, newPage);
-};
-
-window.changeVaultPageDirect = (page) => {
-    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), targetPage = (page === -1) ? totalPages : page;
-    if (targetPage >= 1 && targetPage <= totalPages) window.loadVault(null, targetPage);
-};
-
+window.changeVaultPage = (d) => { const tp = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), p = window.vaultCurrentPage + d; if (p >= 1 && p <= tp) window.loadVault(null, p); };
+window.changeVaultPageDirect = (p) => { const tp = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize)), t = (p === -1) ? tp : p; if (t >= 1 && t <= tp) window.loadVault(null, t); };
 window.goVaultPage = () => {
-    const goInput = document.getElementById('vault-go-page-input');
-    if (!goInput) return;
-    const val = parseInt(goInput.value, 10);
-    const totalPages = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
-    if (isNaN(val) || val < 1 || val > totalPages) {
-        window.Swal?.fire({ title: '无效的页码', text: `请输入 1 至 ${totalPages} 之间的有效页码`, icon: 'warning', timer: 2000, showConfirmButton: false });
-        return;
-    }
-    window.loadVault(null, val);
+    const inp = document.getElementById('vault-go-page-input'); if (!inp) return;
+    const v = parseInt(inp.value, 10), tp = Math.max(1, Math.ceil(window.vaultTotalItems / window.vaultPageSize));
+    if (isNaN(v) || v < 1 || v > tp) { window.Swal?.fire({ title: '无效的页码', text: `请输入 1 至 ${tp} 之间的有效页码`, icon: 'warning', timer: 2000, showConfirmButton: false }); return; }
+    window.loadVault(null, v);
 };
-
-window.quickBindSingleDoc = (relPath, title) => {
+window.quickBindSingleDoc = (r, t) => {
     document.querySelectorAll('.vault-more-menu.show').forEach(m => m.classList.remove('show'));
-    if (typeof window.openBinderyModal === 'function') {
-        window.openBinderyModal(`single:${relPath}`, { rel_path: relPath, title: title || relPath });
-    } else {
-        window.showToast?.('装订模块正在加载中...', 'info');
-    }
+    if (typeof window.openBinderyModal === 'function') window.openBinderyModal(`single:${r}`, { rel_path: r, title: t || r });
+    else window.showToast?.('装订模块正在加载中...', 'info');
 };

@@ -12,6 +12,7 @@ categories:
 - Life
 - Tech
 cover: /api/design/assets/covers/cover_27f3f7d5d864.jpg
+draft: false
 ---
 # 🚀 我的第一篇主权出版博文：从灵感到全球共振
 

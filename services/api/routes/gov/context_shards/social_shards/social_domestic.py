@@ -176,4 +176,34 @@ def probe_domestic_social(
             logs.append(log_func("WARN", f"⚠️ [警告] 连接开源中国 OpenAPI 异常: {e}。"))
             success = False
 
+    elif plugin_id == "jike":
+        token = settings.get("token") or settings.get("app_token") or ""
+        cookie = settings.get("cookie") or ""
+        if not token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] 即刻 (Jike) Token 与 Cookie 必须至少配置一项。"))
+            return False
+        topic_id = settings.get("topic_id") or ""
+        logs.append(log_func("INFO", f"📡 [探测] 正在连接即刻服务端 (发布目标: {topic_id or '个人动态'})..."))
+        try:
+            resp = requests.head("https://web.okjike.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 即刻网络通道握手正常 (HTTP {resp.status_code})，多图轮播动态发布就绪。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接即刻服务器: {e}。"))
+            success = False
+
+    elif plugin_id == "weibo":
+        access_token = settings.get("access_token") or settings.get("token") or ""
+        cookie = settings.get("cookie") or ""
+        if not access_token and not cookie:
+            logs.append(log_func("ERROR", "❌ [错误] 微博 Access Token 与登录 Cookie 必须至少配置一项。"))
+            return False
+        mode_str = "开放平台 API 直连" if access_token else "创作者 Cookie 凭据"
+        logs.append(log_func("INFO", f"📡 [探测] 正在校验微博服务连通性 (模式: {mode_str})..."))
+        try:
+            resp = requests.head("https://weibo.com", proxies=proxies, timeout=10)
+            logs.append(log_func("SUCCESS", f"🟢 [成功] 微博网络通道握手正常 (HTTP {resp.status_code})，九宫格图集发布就绪。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [警告] 无法连接微博服务器: {e}。"))
+            success = False
+
     return success

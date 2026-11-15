@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse, FileResponse
 from contextlib import asynccontextmanager
 
 # 🚀 导入分片后的路由器与基础设施
-from .routes import system, content, governance, ws, compute, design_routes, syndication_preview
+from .routes import system, content, governance, ws, compute, design_routes, syndication_preview, podcast_routes, podcast_storage_routes
 from .routes import agent
 from .infrastructure.logging import setup_api_logging
 from .infrastructure.middleware import setup_middleware
@@ -50,6 +50,8 @@ app.include_router(ws.router, tags=["Realtime"])
 app.include_router(agent.router, tags=["Agent"])
 app.include_router(design_routes.router, tags=["Design Studio"])
 app.include_router(syndication_preview.router, tags=["Syndication Preview"])
+app.include_router(podcast_routes.router, tags=["Podcast Engine"])
+app.include_router(podcast_storage_routes.router, tags=["Podcast Storage"])
 
 from .schemas import HealthCheckResponse
 from core.runtime.version_sentinel import VersionSentinel

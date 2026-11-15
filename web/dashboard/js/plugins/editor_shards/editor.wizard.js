@@ -59,13 +59,30 @@
                 'bilibili': ['1. SESSDATA 与 bili_jct 凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
                 'xiaohongshu': ['1. 创作者登录 Cookie (推荐)', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
                 'red': ['1. 创作者登录 Cookie (推荐)', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
+                'jike': ['1. 访问 Token 或 Cookie 凭据', '2. 目标圈子与代理 (可选)', '3. 连通测试与保存'],
+                'weibo': ['1. 开放平台 Token 或 Cookie', '2. 独立代理参数 (可选)', '3. 连通测试与保存'],
+                'twitter': ['1. Bearer Token 或 API Key', '2. 独立代理参数 (海外必填)', '3. 连通测试与保存'],
+                'x': ['1. Bearer Token 或 API Key', '2. 独立代理参数 (海外必填)', '3. 连通测试与保存'],
                 'discord': ['1. 社区频道 Webhook 地址', '2. 独立代理参数 (可选)', '3. 连通测试与保存']
             };
             if (publisherMap[pid]) return publisherMap[pid];
             return ['1. 访问 Token/密钥凭据', '2. 独立代理参数 (可选)', '3. 连通测试与保存'];
         }
 
-        // 3. 全局通用与全站托管映射
+        // 3. 播客平台专属映射 (Podcast)
+        if (cat === 'podcast') {
+            const podcastMap = {
+                'podcast_hub': ['1. Show 专辑元数据与署名', '2. 分类目录与封面视觉', '3. RSS 订阅流与测试验证'],
+                'podcast_xiaoyuzhou': ['1. 小宇宙凭据与节目绑定', '2. Show Notes 自动同步偏好', '3. 连通测试与保存'],
+                'podcast_apple': ['1. Apple ID 与公开主页直达', '2. 目录收录状态与合规', '3. 连通测试与保存'],
+                'podcast_spotify': ['1. Spotify Show ID 与主页绑定', '2. 节目单同步偏好', '3. 连通测试与保存'],
+                'podcast_r2_storage': ['1. 存储服务商与 AK/SK 凭据', '2. 存储空间 (Bucket) 与 CDN 域名', '3. 路径前缀与自动转储 (可选)', '4. 连通测试与保存']
+            };
+            if (podcastMap[pid]) return podcastMap[pid];
+            return ['1. 播客平台凭据与 ID', '2. 节目单与同步偏好', '3. 连通测试与保存'];
+        }
+
+        // 4. 全局通用与全站托管映射
         const specificStepsMap = {
             // === 全站托管 (Hosting) ===
             'github_pages': ['1. 访问令牌 (只需填 Token)', '2. 目标仓库与分支 (选填)', '3. 高级参数 (可选)', '4. 连通测试与保存'],

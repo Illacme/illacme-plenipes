@@ -108,7 +108,7 @@ window.stopDispatchLedgerPolling = function () {
  */
 window.loadDispatchCenter = async function (subTab) {
     if (subTab) {
-        if (subTab === 'shelf' || subTab === 'hosting') window.currentDispatchMode = subTab;
+        if (subTab === 'shelf' || subTab === 'hosting' || subTab === 'podcast') window.currentDispatchMode = subTab;
         else if (subTab === 'social' || subTab === 'dispatch') window.currentDispatchMode = 'social';
         else if (subTab === 'deadletter' || subTab === 'ledger') {
             window.currentDispatchMode = 'social';
@@ -140,6 +140,7 @@ window.loadDispatchCenter = async function (subTab) {
                 if (typeof res.hosting_total === 'number') badgeHosting.innerText = String(res.hosting_total);
                 else if (typeof window.updateHostingBadge === 'function') window.updateHostingBadge();
             }
+            if (typeof window.updatePodcastBadge === 'function') window.updatePodcastBadge();
 
             // 保持目标模式渲染（确保外部跳转子 Tab 时能准确切换并加载对应中心数据）
             const targetMode = window.currentDispatchMode || 'shelf';
@@ -154,20 +155,18 @@ window.loadDispatchCenter = async function (subTab) {
 };
 
 /**
- * 切换书架出版物 / 全站托管部署 / 社交媒体分发三模式
+ * 切换书架出版物 / 全站托管部署 / 社交媒体分发 / 播客音频分发模式
  */
 window.switchDispatchMode = function (mode, reloadHosting = true) {
     if (mode === 'dispatch') mode = 'social';
     window.currentDispatchMode = mode || 'shelf';
-    const isShelf = (window.currentDispatchMode === 'shelf');
-    const isHosting = (window.currentDispatchMode === 'hosting');
-    const isSocial = (window.currentDispatchMode === 'social');
+    const isShelf = (window.currentDispatchMode === 'shelf'), isHosting = (window.currentDispatchMode === 'hosting'), isSocial = (window.currentDispatchMode === 'social'), isPodcast = (window.currentDispatchMode === 'podcast');
 
     window._lastUnifiedSocialKey = null;
-    [['tab-dispatch-shelf', isShelf], ['tab-dispatch-hosting', isHosting], ['tab-dispatch-social', isSocial]].forEach(([id, act]) => {
+    [['tab-dispatch-shelf', isShelf], ['tab-dispatch-hosting', isHosting], ['tab-dispatch-social', isSocial], ['tab-dispatch-podcast', isPodcast]].forEach(([id, act]) => {
         const el = document.getElementById(id); if (el) el.classList.toggle('active', act);
     });
-    [['dispatch-shelf-view', isShelf], ['dispatch-hosting-view', isHosting], ['dispatch-social-view', isSocial]].forEach(([id, act]) => {
+    [['dispatch-shelf-view', isShelf], ['dispatch-hosting-view', isHosting], ['dispatch-social-view', isSocial], ['dispatch-podcast-view', isPodcast]].forEach(([id, act]) => {
         const el = document.getElementById(id); if (el) el.style.display = act ? 'block' : 'none';
     });
 
@@ -181,6 +180,8 @@ window.switchDispatchMode = function (mode, reloadHosting = true) {
         if (typeof window.loadDispatchShelfCenter === 'function') window.loadDispatchShelfCenter();
     } else if (isHosting) {
         if (reloadHosting && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
+    } else if (isPodcast) {
+        if (typeof window.loadDispatchPodcastCenter === 'function') window.loadDispatchPodcastCenter();
     } else {
         const unified = window.buildUnifiedDispatchTasks(window._lastDispatchOverview);
         if (typeof window.renderDispatchLedger === 'function') window.renderDispatchLedger(unified);
@@ -194,6 +195,7 @@ window.refreshCurrentDispatchView = function () {
     window._lastUnifiedSocialKey = null;
     if (window.currentDispatchMode === 'shelf' && typeof window.loadDispatchShelfCenter === 'function') window.loadDispatchShelfCenter();
     if (window.currentDispatchMode === 'hosting' && typeof window.loadHostingDeployCenter === 'function') window.loadHostingDeployCenter();
+    if (window.currentDispatchMode === 'podcast' && typeof window.loadDispatchPodcastCenter === 'function') window.loadDispatchPodcastCenter();
     window.loadDispatchCenter();
 };
 
@@ -204,7 +206,7 @@ window.onDispatchPrimaryAction = function () {
 
 window.onDispatchPluginConfig = function () {
     const mode = window.currentDispatchMode || 'shelf';
-    const targetCat = mode === 'hosting' ? 'hosting' : (mode === 'social' ? 'publisher' : 'ebook');
+    const targetCat = mode === 'hosting' ? 'hosting' : (mode === 'social' ? 'publisher' : (mode === 'podcast' ? 'podcast' : 'ebook'));
     if (typeof window.showView === 'function') window.showView('plugins', targetCat);
 };
 

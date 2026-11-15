@@ -13,7 +13,8 @@ from services.api.logic.content_ops import (search_vault_logic,
     save_document_logic, create_document_logic,
     create_directory_logic, delete_directory_logic,
     move_document_logic, get_galaxy_graph_logic, get_vault_asset_logic,
-    upload_asset_logic, rebuild_node_semantics_logic, generate_slug_logic)
+    upload_asset_logic, rebuild_node_semantics_logic, generate_slug_logic,
+    patch_frontmatter_logic)
 
 router = APIRouter()
 
@@ -61,6 +62,11 @@ async def delete_directory(req: dict):
 async def update_document_metadata(doc_id: str, req: dict):
     engine = get_global_engine()
     return update_document_metadata_logic(engine, doc_id, req)
+
+@router.post("/api/vault/patch-frontmatter", dependencies=[Depends(verify_token)])
+async def patch_frontmatter_route(req: dict):
+    engine = get_global_engine()
+    return patch_frontmatter_logic(engine, req)
 
 @router.post("/ledger/document/move", dependencies=[Depends(verify_token)])
 async def move_document(req: dict):

@@ -222,4 +222,30 @@ def probe_global_social(
             logs.append(log_func("WARN", f"⚠️ [网络] 无法连接 Ghost 站点: {e}。"))
             success = False
 
+    elif plugin_id in ["twitter", "x"]:
+        bearer_token = settings.get("bearer_token") or settings.get("token") or ""
+        api_key = settings.get("api_key") or ""
+        if not bearer_token and not api_key:
+            logs.append(log_func("ERROR", "❌ [错误] Twitter / X Bearer Token 或 API Key 尚未配置。"))
+            return False
+
+        logs.append(log_func("INFO", "📡 [探测] 正在连接 Twitter / X API v2 校验凭证连通性..."))
+        headers = {"User-Agent": "Illacme-Plenipes-Syndication/1.0"}
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+        try:
+            resp = requests.get("https://api.twitter.com/2/users/me", headers=headers, proxies=proxies, timeout=8)
+            if resp.status_code == 200:
+                user_info = resp.json().get("data", {})
+                username = user_info.get("username", "已认证账号")
+                logs.append(log_func("SUCCESS", f"🟢 [成功] Twitter / X 凭据验证通过！成功匹配账号: @{username}，多图轮播推文就绪。"))
+            elif resp.status_code in [401, 403]:
+                logs.append(log_func("ERROR", f"❌ [鉴权失败] Twitter API 返回 HTTP {resp.status_code}，请核对 Bearer Token 权限。"))
+                success = False
+            else:
+                logs.append(log_func("SUCCESS", f"🟢 [成功] Twitter / X 网络端点响应正常 (HTTP {resp.status_code})。"))
+        except Exception as e:
+            logs.append(log_func("WARN", f"⚠️ [网络] 无法连接 Twitter / X 接口: {e}。若在中国大陆，请配置代理地址。"))
+            success = False
+
     return success

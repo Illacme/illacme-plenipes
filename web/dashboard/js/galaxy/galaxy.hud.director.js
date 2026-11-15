@@ -67,6 +67,7 @@ window.injectGalaxyDirectorDOM = () => {
                 <button class="primary-btn glow-btn" id="node-dir-btn-more" style="height: 26px; width: 34px; font-size: 0.75rem; padding: 0; background: var(--white-03); border-color: var(--glass-border); color: var(--text-dim);" title="更多原稿操作 (译文校对 · 文章封面 · 重命名 · 物理销毁)">···</button>
                 <!-- 更多操作下拉菜单 (采用 vault-more-menu 竖向抽屉样式，向上展开且层级顶置) -->
                 <div id="node-dir-more-menu" class="vault-more-menu dropup custom-glass-dropdown" style="display: none; flex-direction: column; position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 10200; min-width: 180px; background: rgba(13, 17, 28, 0.98); border: 1px solid var(--neon-cyan-30); border-radius: 8px; padding: 5px 0; box-shadow: 0 -12px 36px rgba(0,0,0,0.85), 0 0 15px rgba(0,242,255,0.15);">
+                    <button class="vault-more-item" id="node-dir-more-podcast">🎙️ 双人技术播客工坊</button>
                     <button class="vault-more-item" id="node-dir-more-review">🌍 多语种译文校对</button>
                     <button class="vault-more-item" id="node-dir-more-cover">🖼️ 更换或生成封面</button>
                     <button class="vault-more-item" id="node-dir-more-move">📤 重命名与分类迁移</button>
@@ -150,6 +151,7 @@ window.showNodeDirector = async (node) => {
         if (moreMenu) moreMenu.style.display = (moreMenu.style.display === 'none' || !moreMenu.style.display) ? 'flex' : 'none';
     };
     const closeMoreAndRun = (fn) => { if (moreMenu) moreMenu.style.display = 'none'; hideAndRun(fn); };
+    document.getElementById('node-dir-more-podcast').onclick = () => closeMoreAndRun(() => window.openPodcastStudioModal?.(node.id));
     document.getElementById('node-dir-more-review').onclick = () => closeMoreAndRun(() => window.openTranslationReview?.(node.id));
     document.getElementById('node-dir-more-cover').onclick = () => closeMoreAndRun(() => window.openDocCoverPickerModal?.(node.id, titleStr, docCover));
     document.getElementById('node-dir-more-move').onclick = () => { if (moreMenu) moreMenu.style.display = 'none'; window.triggerMoveDocument?.(node.id); };

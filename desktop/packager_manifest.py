@@ -5,7 +5,6 @@ Illacme Plenipes - Desktop Application Packager Manifest
 🛡️ [SOP-01 规范]：单文件行数严格 ≤ 300 行。
 """
 
-import os
 import platform
 from typing import List, Tuple
 

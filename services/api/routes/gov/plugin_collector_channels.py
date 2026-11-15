@@ -41,6 +41,12 @@ def is_plugin_config_ready(category: str, p_id: str, cfg: Dict[str, Any]) -> boo
         return any(_val(k) for k in ["token", "api_token", "api_key", "access_token", "secret_key", "access_key_id", "endpoint", "repo"])
     if category == "notification":
         return any(_val(k) for k in ["webhook_url", "url", "webhook", "token", "bot_token", "host", "smtp_host", "sendkey"])
+    if category == "podcast":
+        if p_id == "podcast_hub":
+            return True
+        if p_id == "podcast_r2_storage":
+            return any(_val(k) for k in ["bucket"]) and any(_val(k) for k in ["access_key_id", "access_key"])
+        return any(_val(k) for k in ["token", "cookie", "auth_token", "podcast_id", "apple_id", "show_id"])
     return True
 
 
@@ -241,4 +247,30 @@ def collect_tunnel_plugins(engine, disabled: set, system_track: str) -> List[Dic
         })
     order_priority = {"localhost_run": 0, "serveo": 1, "cloudflare": 2, "pinggy": 3, "cpolar": 4, "ngrok": 5, "frp": 6, "tailscale": 7}
     plugins.sort(key=lambda p: order_priority.get(p["id"], 99))
+    return plugins
+
+
+def collect_podcast_plugins(engine, disabled: set, system_track: str) -> List[Dict[str, Any]]:
+    """🎙️ 收集播客平台发行能力 (Podcast Platforms)"""
+    podcast_cfg = getattr(engine.config, "podcast", {}) or {}
+    podcast_defs = [
+        ("podcast_hub", "播客全网发行 (Podcast Hub)", "基于开放 RSS 2.0 规范，提供标准音频流、Show 级专辑元数据与全网播客客户端分发订阅。", True),
+        ("podcast_xiaoyuzhou", "小宇宙 (Xiaoyuzhou)", "主流中文播客平台，支持绑定托管 RSS、同步单集节目 Show Notes 与分段收听直达。", False),
+        ("podcast_apple", "Apple Podcasts", "全球主流播客分发目录，通过 Apple Podcasts Connect 提交 RSS 源，触达 iOS/macOS 听众。", False),
+        ("podcast_spotify", "Spotify for Podcasters", "通过 Spotify for Podcasters 认领与同步 RSS 节目单，覆盖 Spotify 全球多端音频受众。", False),
+        ("podcast_r2_storage", "音频 CDN 托管 (Audio Storage)", "为大体积播客 MP3 提供专用对象存储与 CDN 边缘加速（支持 Cloudflare R2、AWS S3、COS、OSS 等），免除源站带宽压力并享 0 出口流量费。", False),
+    ]
+    plugins = []
+    for p_id, name, desc, def_active in podcast_defs:
+        cfg = podcast_cfg.get(p_id, {}) if isinstance(podcast_cfg, dict) else {}
+        is_ready = is_plugin_config_ready("podcast", p_id, cfg)
+        is_active = bool(cfg.get("enabled", def_active)) and is_ready
+        plugins.append({
+            "id": p_id, "name": name, "category": "podcast", "category_name": "🎙️ 播客平台",
+            "status": "In-Use" if is_active else ("Configured" if cfg else "Ready"),
+            "is_in_use": is_active, "is_enabled": (p_id not in disabled),
+            "origin": "core", "location": "native", "version": system_track,
+            "description": desc, "is_manageable": True, "is_configurable": True,
+            "has_config": True, "cfg": cfg
+        })
     return plugins

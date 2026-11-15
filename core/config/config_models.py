@@ -112,6 +112,7 @@ class Configuration(ConfigurationPathsMixin, BaseModel):
     image_hosting: Dict[str, Any] = Field(default_factory=dict)
     publish_control: PublishControl = Field(default_factory=PublishControl)
     syndication: Dict[str, Any] = Field(default_factory=dict)
+    podcast: Dict[str, Any] = Field(default_factory=dict)
     timeline: TimelineSettings = Field(default_factory=TimelineSettings)
     plugins: PluginSettings = Field(default_factory=PluginSettings)
     tunnel: Dict[str, Any] = Field(default_factory=dict)

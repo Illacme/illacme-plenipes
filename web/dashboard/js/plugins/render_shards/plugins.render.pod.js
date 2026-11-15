@@ -25,8 +25,10 @@ window.buildPluginPodHtml = (p, isPinned) => {
 
     const isTheme = p.category === 'theme';
     const isProtocol = p.category === 'protocol';
+    const isPublisher = p.category === 'publisher';
+    const isDeckPublisher = ['xiaohongshu', 'red', 'jike', 'weibo', 'twitter', 'x'].includes(rawId);
     const canConfig = window.isPluginConfigurable(p);
-    const canTest = ['hosting', 'image_hosting', 'publisher', 'notification', 'ebook', 'tunnel'].includes(p.category) && p.is_manageable;
+    const canTest = ['hosting', 'image_hosting', 'publisher', 'notification', 'ebook', 'tunnel', 'podcast'].includes(p.category) && p.is_manageable;
     const statusBadge = window.checkPluginConfiguredStatus(p);
 
     // 统计当前驱动在算力中心已划定的单元数与节点 ID 列表
@@ -187,6 +189,7 @@ window.buildPluginPodHtml = (p, isPinned) => {
                 ${homeUrl ? `<a href="${homeUrl}" target="_blank" onclick="event.stopPropagation()" title="访问 ${p.name || p.id} 官方主页 / API 密钥申请控制台 ↗" class="plugin-home-link" style="font-size:0.75rem; color:var(--neon-cyan); text-decoration:none; opacity:0.85; font-weight:700; border:1px solid rgba(0, 242, 255, 0.25); padding:1px 6px; border-radius:4px; background:rgba(0, 242, 254, 0.06); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; margin-right: 0 !important; line-height:1.2; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,242,255,0.2)'; this.style.borderColor='var(--neon-cyan)';" onmouseout="this.style.background='rgba(0,242,255,0.06)'; this.style.borderColor='rgba(0, 242, 255, 0.25)';">↗</a>` : ''}
             </div>
             <p style="margin-bottom:10px; flex:1; font-size:0.75rem; color:var(--text-dim); line-height:1.45;">${p.description || 'Capability syncing...'}</p>
+            ${isPublisher ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;font-size:0.68rem;">${isDeckPublisher ? `<span style="background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.3);color:#f472b6;padding:2px 7px;border-radius:4px;font-weight:600;">🎠 多图轮播 ${['twitter', 'x'].includes(rawId) ? '(16:9 / 4图)' : '(3:4 / 1:1)'}</span>` : '<span style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8;padding:2px 7px;border-radius:4px;font-weight:600;">📄 专栏长文 (Markdown)</span>'}</div>` : ''}
             
             ${isProtocol ? (() => {
                 let hostLabel = '';
@@ -239,14 +242,9 @@ window.buildPluginPodHtml = (p, isPinned) => {
             const isCredReady = (typeof window.isPluginCredentialReady === 'function') ? !!window.isPluginCredentialReady(p.id, p.category, p.cfg)?.ready : true;
             const effectiveInUse = Boolean(p.is_in_use && isCredReady);
 
-            if (!p.is_enabled) {
-                dotColor = '#ff4d4d'; statusText = '全局已禁用'; textColor = '#ff4d4d';
-            } else if (!isCredReady) {
-                dotColor = 'rgba(255, 255, 255, 0.25)'; statusText = '未配置凭据'; textColor = 'var(--text-dim)';
-            } else if (effectiveInUse) {
-                dotColor = 'var(--neon-green)'; statusText = '当前品牌已启用'; textColor = 'var(--neon-green)';
-                glowEffect = 'box-shadow: 0 0 8px rgba(var(--neon-green-rgb), 0.6);';
-            }
+            if (!p.is_enabled) { dotColor = '#ff4d4d'; statusText = '全局已禁用'; textColor = '#ff4d4d'; }
+            else if (!isCredReady) { dotColor = 'rgba(255, 255, 255, 0.25)'; statusText = '未配置凭据'; textColor = 'var(--text-dim)'; }
+            else if (effectiveInUse) { dotColor = 'var(--neon-green)'; statusText = '当前品牌已启用'; textColor = 'var(--neon-green)'; glowEffect = 'box-shadow: 0 0 8px rgba(var(--neon-green-rgb), 0.6);'; }
             const toggleTitle = !p.is_enabled ? '需先在顶部全局启用该插件' : (!isCredReady ? '需先点击 CONFIG 配置凭据后方可启用' : (effectiveInUse ? '在当前品牌停用' : '在当前品牌启用'));
 
             return `

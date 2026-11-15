@@ -41,7 +41,7 @@ class JanitorCacheOpsMixin:
             norm_path = os.path.realpath(f_abs).lower()
             is_fresh = norm_path in self.fresh_paths
             is_amnesty = any(term in norm_path for term in [
-                '/static/', '/assets/', 'favicon', 'search_index', 'link_graph',
+                '/static/', '/assets/', '/podcasts/', 'podcast-feed.xml', 'favicon', 'search_index', 'link_graph',
                 'index.html', 'index.htm', '404.html', 'sitemap.xml', 'robots.txt', 'graph.json'
             ])
             

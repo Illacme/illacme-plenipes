@@ -28,3 +28,6 @@ from services.api.logic.content_ops_shards.vault_ops import (
     upload_asset_logic as upload_asset_logic,
     generate_slug_logic as generate_slug_logic
 )
+from services.api.logic.content_ops_shards.vault_patch_ops import (
+    patch_frontmatter_logic as patch_frontmatter_logic
+)

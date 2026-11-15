@@ -80,10 +80,11 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     ]
     syndication_plugins = [
         "wechat", "zhihu", "juejin", "substack", "telegram", "discord", "dev_to", "devto", "hashnode", "medium", "wordpress", "ghost",
-        "xiaohongshu", "red", "toutiao", "csdn", "cnblogs", "bilibili", "segmentfault", "oschina"
+        "xiaohongshu", "red", "toutiao", "csdn", "cnblogs", "bilibili", "segmentfault", "oschina", "jike", "weibo", "twitter", "x"
     ]
     hosting_plugins = ["cloudflare_pages", "github_pages", "gitee_pages", "gitlab_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
     notification_plugins = ["feishu", "dingtalk", "wecom", "telegram", "discord", "generic_webhook", "generic", "webhook_dispatch", "email", "sms", "app_push"]
+    podcast_plugins = ["podcast_hub", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify", "podcast_r2_storage"]
 
     # 🧠 [AI Protocol] AI 算力协议独立物理探测与模型资产感应
     if plugin_id in ai_protocols:
@@ -232,6 +233,10 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
         except Exception as exc:
             logs.append(log("ERROR", f"❌ [全站托管异常] {format_raw_exception(exc)}"))
             success = False
+
+    elif plugin_id in podcast_plugins or parent_id == "podcast":
+        from .plugin_dry_run_podcast import run_podcast_plugin_dry_run
+        success = run_podcast_plugin_dry_run(plugin_id, settings, logs, log)
 
     else:
         url = settings.get("url") or settings.get("api_url") or ""

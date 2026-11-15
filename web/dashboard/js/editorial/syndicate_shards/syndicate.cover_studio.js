@@ -32,7 +32,8 @@
                     <div class="syndicate-sz-btn-group">
                         <button type="button" class="sz-btn active" data-mode="none" onclick="window.setCoverSafeZone('none',this,true)">全画幅</button>
                         <button type="button" class="sz-btn" data-mode="wechat" onclick="window.setCoverSafeZone('wechat',this,true)" title="对齐微信公众号首条列表 2.35:1 画幅">微信2.35:1</button>
-                        <button type="button" class="sz-btn" data-mode="square" onclick="window.setCoverSafeZone('square',this,true)" title="小红书/Instagram 方形封面">方形1:1</button>
+                        <button type="button" class="sz-btn" data-mode="portrait" onclick="window.setCoverSafeZone('portrait',this,true)" title="小红书官方推荐 3:4 黄金画幅">竖图3:4</button>
+                        <button type="button" class="sz-btn" data-mode="square" onclick="window.setCoverSafeZone('square',this,true)" title="Instagram/方形封面">方形1:1</button>
                     </div>
                 </div>
                 <div class="syndicate-cover-controls-col syndicate-cover-meta-col">
@@ -44,8 +45,7 @@
                         <option value="brand_presets">🎭 品牌母本轮巡</option>
                         <option value="minimal_badge">🔤 极简首字文字徽章</option>
                         <option value="first_image">🖼️ 优先提取正文首图</option>
-                        <option value="ai_generation">🤖 AI 智能生图</option>
-                    </select>
+                        <option value="ai_generation">🤖 AI 智能生图</option></select>
                     <div class="syndicate-cover-actions">
                         <button type="button" class="mini-btn syndicate-cover-btn-shuffle" onclick="window.shuffleSyndicateCover()" title="根据相移轮巡色彩或概念">🔄 换一张</button>
                         <button type="button" class="mini-btn syndicate-cover-btn-studio" onclick="window.jumpToStudioFromSyndicate()" title="前往智能生图工作台精细调试模型、画幅与Prompt">🪄 生图工作台</button>
@@ -67,6 +67,10 @@
             _currentAspectRatio = '2.35:1';
             if (wrapper) { wrapper.style.width = '140px'; wrapper.style.height = '60px'; }
             if (szEl) { szEl.style.display = 'block'; szEl.innerHTML = `<span class="syndicate-sz-tag syndicate-sz-tag--wechat">2.35:1</span>`; }
+        } else if (mode === 'portrait') {
+            _currentAspectRatio = '3:4';
+            if (wrapper) { wrapper.style.width = '60px'; wrapper.style.height = '80px'; }
+            if (szEl) { szEl.style.display = 'block'; szEl.innerHTML = `<span class="syndicate-sz-tag syndicate-sz-tag--portrait">3:4</span>`; }
         } else if (mode === 'square') {
             _currentAspectRatio = '1:1';
             if (wrapper) { wrapper.style.width = '80px'; wrapper.style.height = '80px'; }
@@ -85,7 +89,7 @@
         const onlyWechat = checkedPlatformIds.length === 1 && checkedPlatformIds[0] === 'wechat';
         const onlyXhs = checkedPlatformIds.length === 1 && (checkedPlatformIds[0] === 'xiaohongshu' || checkedPlatformIds[0] === 'rednote');
         if (onlyWechat && _currentAspectRatio !== '2.35:1') window.setCoverSafeZone('wechat', null, false);
-        else if (onlyXhs && _currentAspectRatio !== '1:1') window.setCoverSafeZone('square', null, false);
+        else if (onlyXhs && _currentAspectRatio !== '3:4') window.setCoverSafeZone('portrait', null, false);
         else if (!onlyWechat && !onlyXhs && _currentAspectRatio !== '16:9') window.setCoverSafeZone('none', null, false);
     };
 
@@ -93,12 +97,10 @@
         _currentLangCode = langCode || 'auto';
         if (_currentMode !== 'custom') window.loadSyndicateCoverPreview();
     };
-
     window.loadSyndicateCoverPreview = async function () {
         const loadingEl = document.getElementById('syndicate-cover-loading'), imgEl = document.getElementById('syndicate-cover-thumb-img');
         if (loadingEl) loadingEl.style.display = 'flex';
         if (imgEl) imgEl.style.display = 'none';
-
         const fetchApi = window.apiFetch || (async (u, o) => (await fetch(u, o)).json());
         const activeBrand = (window.settingsData && window.settingsData.current_brand) || 'default';
         const payload = {
@@ -165,7 +167,6 @@
             setTimeout(() => { if (m && !m.classList.contains('is-open')) m.style.display = 'none'; }, 220);
         }
     }
-
     window.showImageModal = function (imgUrl, title, meta = {}) {
         const modal = _getOrCreateModal('global-image-detail-modal', 'syndicate-image-detail-backdrop', window.closeGlobalImageDetailModal);
         const displayTitle = title || '封面图片详情', ratio = meta.ratio || _currentAspectRatio || '16:9', strat = meta.strategy || (_currentMode === 'global' ? '智能矩阵' : _currentMode);

@@ -4,7 +4,6 @@ Illacme Plenipes - Tests for Media & Video Syntax Resolver
 测试富媒体与视频语法的解析、自愈与出版物降级保护。
 """
 
-import pytest
 from core.adapters.egress.ssg.base_shards.ssg_media_resolver import SSGMediaResolver
 from core.adapters.egress.ssg.base_shards.ssg_link_healer import SSGLinkHealer
 from core.bindery.image_packager import ImagePackager

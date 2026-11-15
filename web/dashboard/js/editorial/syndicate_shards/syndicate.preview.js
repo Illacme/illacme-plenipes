@@ -19,7 +19,7 @@
                 let group = '国内专栏';
                 if (['devto', 'medium', 'hashnode', 'substack', 'ghost', 'wordpress'].includes(id)) group = '海外发布';
                 else if (['telegram', 'discord'].includes(id)) group = '社交渠道';
-                else if (['xiaohongshu', 'red'].includes(id)) group = '短图文';
+                else if (['xiaohongshu', 'red', 'jike', 'weibo', 'twitter', 'x'].includes(id)) group = '短图文';
                 return { id: p.id, name: meta.name, icon: meta.icon, group };
             });
         }
@@ -202,13 +202,12 @@
         const isXhs = target === 'xiaohongshu';
         const isMobile = isWechat || isXhs;
 
-        window._currentRenderedHtml = data.rendered_html || '';
-        window._currentRenderedMarkdown = data.rendered_markdown || '';
-        window._currentCleanMarkdown = data.clean_markdown || '';
-        window._currentCdnMarkdown = data.cdn_markdown || '';
-        window._currentFrontmatterMarkdown = data.frontmatter_markdown || '';
-        window._currentPreviewTitle = data.clean_title || data.title || '';
-        window._currentPreviewDigest = data.digest || '';
+        Object.assign(window, {
+            _currentRenderedHtml: data.rendered_html || '', _currentRenderedMarkdown: data.rendered_markdown || '',
+            _currentCleanMarkdown: data.clean_markdown || '', _currentCdnMarkdown: data.cdn_markdown || '',
+            _currentFrontmatterMarkdown: data.frontmatter_markdown || '', _currentPreviewTitle: data.clean_title || data.title || '',
+            _currentPreviewDigest: data.digest || ''
+        });
 
         if (statsSlot) {
             statsSlot.innerHTML = `
@@ -283,12 +282,15 @@
                     ${isWechat ? `<div class="preview-wechat-header"><h2 class="preview-wechat-title">${_esc(data.clean_title || data.title)}</h2><div class="preview-wechat-meta"><span class="preview-wechat-author">创作者文库</span><span>·</span><span>今天</span><span>·</span><span class="preview-wechat-origin-tag">原创</span></div></div>` : ''}
                     ${isXhs ? `<div class="preview-xhs-header"><div class="preview-xhs-badge">📕 小红书竖屏图文</div><h3 class="preview-xhs-title">${_esc(data.clean_title || data.title)}</h3></div>` : ''}
                     ${!isWechat && !isXhs ? `<div class="preview-general-header"><h1 class="preview-general-title">${_esc(data.clean_title || data.title)}</h1><div class="preview-general-meta">专栏预览模式 · ${target.toUpperCase()} 渠道自适应排版</div></div>` : ''}
+                    <div id="syndicate-audio-companion-slot" style="width:100%;"></div>
                     <div class="preview-rendered-body" id="preview-rendered-body-slot" style="--preview-body-font-size: ${fontPx}; font-size: ${fontPx};">${displayHtml}</div>
                     ${deviceFooterHtml}
                 </div>
             </div>`;
         const fSlot = document.getElementById('syndicate-feed-card-slot');
         if (fSlot && typeof window.renderChannelCoverStudio === 'function') window.renderChannelCoverStudio(target, fSlot, coverImgUrl);
+        const aSlot = document.getElementById('syndicate-audio-companion-slot');
+        if (aSlot && typeof window.renderSyndicateAudioBar === 'function') window.renderSyndicateAudioBar(data.audio, aSlot);
     };
 })();
 

@@ -219,6 +219,8 @@ class BinderyDispatcher:
         merged_fm['route_prefix'] = route_prefix
         merged_fm['route_source'] = route_source
         merged_fm['mapped_sub_dir'] = mapped_sub_dir
+        merged_fm['rel_path'] = rel_path
+        merged_fm['file_slug'] = os.path.splitext(os.path.basename(rel_path))[0]
         theme_id = getattr(getattr(self.ssg_adapter, 'theme_settings', None), 'name', '') or getattr(self.route_manager, 'active_theme', '')
         if (route_prefix == 'docs' or 'docs' in str(rel_path).lower()) and slug == 'index' and not mapped_sub_dir and 'docusaurus' in str(theme_id).lower():
             merged_fm['slug'] = '/'

@@ -14,6 +14,7 @@ tags:
 categories:
 - Blog
 cover: /api/design/assets/covers/cover_b8e27d51822c.jpg
+podcast: true
 ---
 # 🌌 AI 原生全球私人出版社的技术哲学与演进
 

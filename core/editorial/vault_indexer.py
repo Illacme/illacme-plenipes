@@ -140,15 +140,20 @@ class VaultIndexer:
                     link_graph[rel_path] = {"links": links, "metadata": meta}
                     
                     if ledger:
+                        reg_kwargs = {
+                            "mtime": mtime,
+                            "links": links,
+                            "detected_lang": detected_lang,
+                            "source_lang": detected_lang,
+                            "size": meta["size"],
+                            "tags": meta.get("tags", [])
+                        }
+                        if meta.get("slug"): reg_kwargs["slug"] = meta["slug"]
+                        if meta.get("cover"): reg_kwargs["cover"] = meta["cover"]
                         ledger.register_document(
                             rel_path,
                             title=meta.get("title") or os.path.splitext(filename)[0],
-                            mtime=mtime,
-                            links=links,
-                            detected_lang=detected_lang,
-                            source_lang=detected_lang,
-                            size=meta["size"],
-                            tags=meta.get("tags", [])
+                            **reg_kwargs
                         )
                         
                 except Exception as e:
@@ -172,8 +177,12 @@ class VaultIndexer:
                 title_match = re.search(r'title:\s*(.*)', fm)
                 lang_match = re.search(r'lang:\s*(\w+)', fm)
                 tags_match = re.search(r'tags:[\s\n]*\[(.*?)\]', fm)
+                cover_match = re.search(r'(?:cover|image|banner):\s*(.*)', fm)
+                slug_match = re.search(r'slug:\s*(.*)', fm)
                 if title_match: meta["title"] = title_match.group(1).strip(' "\'')
                 if lang_match: meta["lang"] = lang_match.group(1).strip()
+                if cover_match: meta["cover"] = cover_match.group(1).strip(' "\'')
+                if slug_match: meta["slug"] = slug_match.group(1).strip(' "\'')
                 if tags_match:
                     meta["tags"] = [t.strip(' "\'') for t in tags_match.group(1).split(',')]
         if not meta["title"] and content:

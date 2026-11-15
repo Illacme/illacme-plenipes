@@ -39,6 +39,32 @@ def on_post_sync(engine):
     # 调用主题私有合成器
     BlogSynthesizer.synthesize(engine, dist_dir)
 
+    # 🎧 读者消费闭环：同步伴读音频与播客 RSS 到静态站点
+    try:
+        import shutil
+        imprint_id = getattr(engine, 'imprint_id', 'default') or 'default'
+        base_cache = getattr(engine, "cache_dir", None) or os.path.join(os.getcwd(), ".plenipes", "cache")
+        cache_dir = os.path.join(base_cache, "podcasts", imprint_id)
+        if os.path.isdir(cache_dir):
+            out_podcasts = os.path.join(dist_dir, "podcasts")
+            os.makedirs(out_podcasts, exist_ok=True)
+            for fname in os.listdir(cache_dir):
+                if fname.endswith((".mp3", ".chapters.json")):
+                    src_f, dst_f = os.path.join(cache_dir, fname), os.path.join(out_podcasts, fname)
+                    if not os.path.exists(dst_f) or os.path.getsize(src_f) != os.path.getsize(dst_f):
+                        shutil.copy2(src_f, dst_f)
+            from core.podcast.podcast_rss_generator import generate_podcast_rss
+            site_url = getattr(getattr(engine.config, "compliance", None), "site_url", "http://localhost:43213")
+            def_lang_obj = getattr(getattr(engine.config, 'i18n_settings', None), 'source', None)
+            cur_default_code = getattr(def_lang_obj, 'lang_code', 'zh') if def_lang_obj else 'zh'
+            if not cur_default_code or cur_default_code == "auto":
+                cur_default_code = "zh"
+            rss_xml = generate_podcast_rss(imprint_id=imprint_id, base_url=site_url, lang=cur_default_code, podcast_dir=cache_dir, engine=engine)
+            with open(os.path.join(dist_dir, "podcast-feed.xml"), "w", encoding="utf-8") as rf:
+                rf.write(rss_xml)
+    except Exception as e:
+        tlog.warning(f"⚠️ [伴读音频同步] 复制音频产物异常: {e}")
+
     # 🚀 [V1.3] 动态扫描真实存在的静态文档，自动推导最佳首页入口
     all_html_files = []
     for root, _, files in os.walk(dist_dir):

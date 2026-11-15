@@ -4,6 +4,7 @@ Illacme-plenipes Core - Ledger Extensions
 模块职责：承载 MetadataManager 的扩展能力混入（人工校对锁回流与多渠道分发重试/物权记录）。
 """
 
+import os
 import time
 from core.utils.tracing import tlog
 
@@ -115,7 +116,10 @@ class LedgerExtensionsMixin:
         existing = self.sqlite.get_document(rel_path) or {}
         publish_status = existing.get("publish_status", {})
         publish_status[target_id] = {"status": "DONE", "hash": source_hash, "timestamp": int(time.time())}
-        self.register_document(rel_path, existing.get("title", "Unknown"), publish_status=publish_status)
+        safe_title = existing.get("title")
+        if not safe_title or safe_title.strip().lower() == "unknown":
+            safe_title = os.path.splitext(os.path.basename(rel_path))[0]
+        self.register_document(rel_path, safe_title, publish_status=publish_status)
 
     def list_all_syndication_tasks(self):
         return self.sqlite.list_all_syndication_tasks()

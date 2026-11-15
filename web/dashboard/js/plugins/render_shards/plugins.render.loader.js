@@ -76,6 +76,7 @@
             { id: 'ebook', name: '📚 电子出版' },
             { id: 'hosting', name: '🌐 全站托管' },
             { id: 'publisher', name: '📢 社媒分发' },
+            { id: 'podcast', name: '🎙️ 播客平台' },
             { id: 'tunnel', name: '🛰️ 网络穿透' },
             { id: 'notification', name: '🔔 消息通知' },
             { id: 'editorial', name: '🧬 流程审计' }

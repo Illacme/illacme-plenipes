@@ -124,6 +124,26 @@ class XiaohongshuSyndicator(BaseSyndicator):
 
         return existing_images
 
+    def _resolve_deck_images(self, slug: str, site_url: str) -> List[str]:
+        """优先嗅探由卡片工坊派生的 3:4 / 1:1 知识卡片海报图集 (小红书黄金多图轮播)"""
+        clean_slug = "".join([c if c.isalnum() or c in ("-", "_") else "_" for c in (slug or "")])
+        if not clean_slug:
+            return []
+        candidates = [f"{clean_slug}_3x4", clean_slug, f"{clean_slug}_1x1"]
+        target_dir, folder_name = None, clean_slug
+        for cand in candidates:
+            d = os.path.join(os.getcwd(), ".plenipes", "cache", "cards", cand)
+            if os.path.isdir(d):
+                target_dir, folder_name = d, cand
+                break
+        if not target_dir:
+            return []
+        files = sorted([f for f in os.listdir(target_dir) if f.startswith("card_") and f.endswith(".jpg")])
+        urls = [f"{site_url.rstrip('/')}/api/design/assets/cards/{folder_name}/{fn}" if site_url else f"/api/design/assets/cards/{folder_name}/{fn}" for fn in files]
+        if urls:
+            tlog.info(f"📑 [小红书] 自动装配知识卡片轮播图集 ({len(urls)} 张): {folder_name}")
+        return urls
+
     def format_payload(self, title: str, slug: str, content: str, metadata: dict, canonical_url: str = None) -> dict:
         site_url = self.site_url.rstrip('/') if self.site_url else ""
         if not canonical_url:
@@ -131,10 +151,13 @@ class XiaohongshuSyndicator(BaseSyndicator):
 
         metadata = metadata or {}
 
-        # 1. 提取所有图像 URL 作为小红书卡片轮播图 (最多 9 张)
-        image_urls = self.extract_images(content, metadata, site_url)
-        # 结合设计中心自愈保底：确保零插图时拥有 3:4 竖屏封面
-        image_urls = self._ensure_xhs_3x4_cover(title, slug, content, metadata, site_url, image_urls)
+        # 1. 优先提取 3:4 知识卡片 Deck，若无则提取正文插图与保底封面 (最多 9 张)
+        deck_imgs = self._resolve_deck_images(slug, site_url)
+        if deck_imgs:
+            image_urls = deck_imgs[:9]
+        else:
+            image_urls = self.extract_images(content, metadata, site_url)
+            image_urls = self._ensure_xhs_3x4_cover(title, slug, content, metadata, site_url, image_urls)
 
         # 2. 格式化热门话题标签 (Hashtags)
         raw_tags = metadata.get("tags") or []

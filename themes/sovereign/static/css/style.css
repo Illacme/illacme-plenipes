@@ -2299,3 +2299,205 @@ body.lightbox-open {
     overflow-y: hidden;
     padding: 0.75rem 0;
 }
+
+/* ------------------------------------------
+ * 15. 读者消费闭环：伴读播放条 (Blog Reader Audio Widget)
+ * ------------------------------------------ */
+.sovereign-audio-player {
+    margin: 1.25rem 0 0.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sovereign-audio-player.is-playing {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.18);
+}
+.audio-player-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.audio-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--accent-color);
+}
+.audio-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+    animation: syn-pulse-anim 2s infinite ease-in-out;
+}
+.audio-actions {
+    display: flex;
+    gap: 8px;
+}
+.audio-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+.audio-chip:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+    background: rgba(0, 245, 255, 0.08);
+}
+.audio-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.audio-play-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-color);
+    background: rgba(0, 245, 255, 0.12);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: transform 0.15s, box-shadow 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+}
+.audio-play-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(0, 245, 255, 0.4);
+}
+.sovereign-audio-player.is-playing .audio-play-btn {
+    background: rgba(0, 245, 255, 0.28);
+}
+.audio-cur-time, .audio-total-time {
+    font-size: 0.78rem;
+    font-family: var(--font-mono, monospace);
+    color: var(--text-primary);
+    min-width: 32px;
+    text-align: center;
+}
+.audio-total-time {
+    color: var(--text-secondary);
+}
+.audio-slider-wrap {
+    flex: 1;
+    position: relative;
+    height: 18px;
+    display: flex;
+    align-items: center;
+}
+.audio-scrub {
+    width: 100%;
+    height: 5px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    z-index: 2;
+    position: relative;
+}
+.audio-scrub::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    box-shadow: 0 0 6px var(--accent-color);
+    cursor: pointer;
+}
+.audio-track-fill {
+    position: absolute;
+    left: 0;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent-color), #a855f7);
+    pointer-events: none;
+    z-index: 1;
+    width: 0%;
+}
+.audio-speed-btn, .audio-mute-btn {
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--font-mono, monospace);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.audio-speed-btn:hover, .audio-mute-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* ⏱️ 播客章节横向平滑时间轴与毛玻璃药丸 */
+.audio-chapters-scroll {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.audio-chapters-scroll::-webkit-scrollbar {
+    display: none;
+}
+.chapter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+}
+.chapter-pill .pill-time {
+    font-family: var(--font-mono, monospace);
+    color: var(--accent-color);
+    font-weight: 600;
+    opacity: 0.85;
+}
+.chapter-pill:hover {
+    background: rgba(0, 245, 255, 0.08);
+    border-color: rgba(0, 245, 255, 0.4);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+.chapter-pill.active {
+    background: rgba(0, 245, 255, 0.16);
+    border-color: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.35);
+}

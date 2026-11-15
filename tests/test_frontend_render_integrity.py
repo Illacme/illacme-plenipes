@@ -1667,6 +1667,79 @@ def test_system_updater_modal_render_integrity():
     assert "SYSTEM_UPDATER_MODAL_VERIFIED_SUCCESS" in res.stdout
 
 
+def test_vault_pills_render_integrity():
+    """🛡️ [SOP-03] 验证 Vault Frontmatter 微胶囊药丸 (vault.pills.js) 渲染拓扑与作用域断言"""
+    runner_script = """
+    const fs = require('fs');
+    const window = {};
+    eval(fs.readFileSync('web/dashboard/js/vault/vault.pills.js', 'utf8'));
+
+    if (typeof window.buildVaultPillsHtml !== 'function') {
+        throw new Error('vault.pills.js failed to define window.buildVaultPillsHtml');
+    }
+
+    // 1. 案例橱窗 (showcase) 绝不渲染播客开关
+    const htmlShowcase = window.buildVaultPillsHtml({
+        rel_path: 'Showcase/janitor-gc-self-healing.md',
+        target_slot: 'showcase',
+        route_prefix: 'showcase',
+        draft: false
+    }, 'Showcase/janitor-gc-self-healing.md');
+    if (htmlShowcase.includes('pill-podcast') || htmlShowcase.includes('伴读工坊')) {
+        throw new Error('Showcase document must NOT contain podcast pill or redundant workshop launcher');
+    }
+
+    // 2. 独立单页 (pages/about) 绝不渲染播客开关
+    const htmlPage = window.buildVaultPillsHtml({
+        rel_path: 'about.md',
+        target_slot: 'pages',
+        route_prefix: 'src/pages',
+        draft: false
+    }, 'about.md');
+    if (htmlPage.includes('pill-podcast') || htmlPage.includes('伴读工坊')) {
+        throw new Error('Static page must NOT contain podcast pill');
+    }
+
+    // 3. 文档 (Docs) 默认未开启时呈现纯净关闭开关
+    const htmlDocsOff = window.buildVaultPillsHtml({
+        rel_path: 'Docs/guide.md',
+        target_slot: 'docs',
+        route_prefix: 'docs',
+        draft: false
+    }, 'Docs/guide.md');
+    if (!htmlDocsOff.includes('pill-podcast disabled') || !htmlDocsOff.includes('播客已关')) {
+        throw new Error('Docs unconfigured must render 🚫 播客已关 toggle');
+    }
+
+    // 4. 博客 (Blog) 已有音频时呈现开启状态，且顺序严格对齐：发布开关 -> 精选 -> 播客开关
+    const htmlBlogOn = window.buildVaultPillsHtml({
+        rel_path: 'Blog/post.md',
+        target_slot: 'blog',
+        route_prefix: 'blog',
+        has_podcast_audio: true,
+        draft: false
+    }, 'Blog/post.md');
+    if (!htmlBlogOn.includes('pill-podcast active') || !htmlBlogOn.includes('🎧 播客已开')) {
+        throw new Error('Blog with audio must render 🎧 播客已开 toggle');
+    }
+
+    // 5. 排列顺序主权断言：发布开关、精选、播客开关
+    const idxDraft = htmlBlogOn.indexOf('pill-draft');
+    const idxFeatured = htmlBlogOn.indexOf('pill-featured');
+    const idxPodcast = htmlBlogOn.indexOf('pill-podcast');
+    if (idxDraft === -1 || idxFeatured === -1 || idxPodcast === -1 || !(idxDraft < idxFeatured && idxFeatured < idxPodcast)) {
+        throw new Error(`Pills ordering violation: expected Draft < Featured < Podcast, got draft=${idxDraft}, featured=${idxFeatured}, podcast=${idxPodcast}`);
+    }
+
+    console.log('VAULT_PILLS_VERIFIED_SUCCESS');
+    """
+
+    res = subprocess.run(["node", "-e", runner_script], capture_output=True, text=True, cwd=str(Path(__file__).parent.parent))
+    assert res.returncode == 0, f"Vault Pills Integrity Failed: Stderr: {res.stderr} | Stdout: {res.stdout}"
+    assert "VAULT_PILLS_VERIFIED_SUCCESS" in res.stdout
+
+
+
 
 
 

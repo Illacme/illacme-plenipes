@@ -97,6 +97,7 @@ window.renderPlugins = () => {
         'ebook': '📚 电子出版',
         'hosting': '🌐 全站托管',
         'publisher': '📢 社媒分发',
+        'podcast': '🎙️ 播客平台',
         'tunnel': '🛰️ 网络穿透',
         'notification': '🔔 消息通知',
         'editorial': '🧬 流程审计'
@@ -112,6 +113,7 @@ window.renderPlugins = () => {
         'hosting': '将编译好的静态网站发布至 GitHub Pages、Vercel 等多平台。支持指定一个「首选主站」作为官方主要网址，其余平台作为备用镜像同步容灾，确保全网随时随地流畅访问。',
         'image_hosting': '集成 AWS S3, 七牛云, 又拍云, Lsky Pro 等公共与自建图床上传与外链转换。',
         'publisher': '支持 Dev.to, Medium, WordPress, Ghost, Hashnode, LinkedIn 等第三方社交媒体渠道的内容分发与多平台推流。',
+        'podcast': '基于开放标准 RSS 2.0 规范，向 Apple Podcasts、Spotify、小宇宙等全网客户端提供标准音频流、Show 级专辑元数据与分发订阅。',
         'ebook': '提供符合国际出版标准的数字排版与书册装订驱动（如 EPUB 3.0、印刷级 PDF），支持整卷文稿一键合订导出。',
         'tunnel': '提供公网与异地设备远程访问通道，支持一键免密临时隧道与自建 Cloudflare Token 加速。',
         'notification': '聚合飞书, 钉钉, 企业微信, Telegram 与通用 Webhook，负责出版生命周期事件广播与失败告警 Hook。',

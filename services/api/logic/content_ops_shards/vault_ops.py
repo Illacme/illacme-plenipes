@@ -52,13 +52,43 @@ def search_vault_logic(engine, q: str = "", page: int = 1, limit: int = 50, fold
             pass
 
     docs = engine.meta.sqlite.list_documents_paginated(page, limit, query=q, folder=folder)
-    # 🚀 [V106.1 标题真理智能回填] 优先使用真实中文标题，防止纯文件名覆盖
+    imprint_id = getattr(engine, "imprint_id", "default") or "default"
+    base_cache = getattr(engine, "cache_dir", None) or os.path.join(os.getcwd(), ".plenipes", "cache")
+    podcast_dir = os.path.join(base_cache, "podcasts", imprint_id)
+    cached_audios = set(os.listdir(podcast_dir)) if os.path.isdir(podcast_dir) else set()
+
+    # 🚀 [V106.1 标题真理智能回填与播客伴读状态探测]
     for d in docs:
-        base_name = os.path.splitext(os.path.basename(d.get("rel_path", "")))[0]
+        rp = d.get("rel_path", "")
+        base_name = os.path.splitext(os.path.basename(rp))[0]
         curr_title = d.get("title", "")
         seo_title = (d.get("seo_data") or {}).get("title")
-        if (not curr_title or curr_title == base_name) and seo_title and seo_title != base_name:
+        if (not curr_title or curr_title == base_name or curr_title == "Unknown") and seo_title and seo_title != base_name:
             d["title"] = seo_title
+        elif not curr_title or curr_title == "Unknown":
+            d["title"] = base_name
+
+        # 🖼️ 封面与标题兜底自愈：若缺失则快速从物理文稿提取
+        if not d.get("cover") or d.get("title") == "Unknown" or not d.get("title"):
+            abs_p = resolve_safe_path(engine, rp)
+            if abs_p and os.path.isfile(abs_p):
+                try:
+                    with open(abs_p, "r", encoding="utf-8") as f:
+                        fm, _, _ = parse_frontmatter(f.read())
+                    if (not d.get("title") or d.get("title") == "Unknown") and fm.get("title"):
+                        d["title"] = fm["title"]
+                    cov = fm.get("cover") or fm.get("image") or fm.get("banner")
+                    if not d.get("cover") and cov:
+                        d["cover"] = cov
+                        if hasattr(engine, "meta") and hasattr(engine.meta, "sqlite"):
+                            engine.meta.sqlite.update_document_metadata(rp, {"cover": cov})
+                except Exception: pass
+
+        cand_prefixes = [s for s in (d.get("slug"), base_name) if s]
+        d["has_podcast_audio"] = any(
+            f.endswith(".mp3") and any(f.startswith(f"{p}_") for p in cand_prefixes)
+            for f in cached_audios
+        )
     return {"items": docs, "total": total}
 
 
@@ -256,9 +286,7 @@ def _sync_indexer_and_knowledge_graph(engine, doc_id: str, abs_path: str, full_c
         detected_lang = LanguageSentinel.detect_language(full_content, os.path.basename(doc_id))
         links = VaultIndexer.extract_links(full_content)
         meta = VaultIndexer._quick_parse_meta(full_content)
-        meta["size"] = len(full_content)
-        meta["mtime"] = mtime
-        meta["lang"] = detected_lang
+        meta.update({"size": len(full_content), "mtime": mtime, "lang": detected_lang})
 
         if hasattr(engine, "link_graph"):
             engine.link_graph[doc_id] = {"links": links, "metadata": meta}
