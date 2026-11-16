@@ -83,24 +83,15 @@ class PodcastTTSEngine:
         proxy: Optional[str] = None,
         tts_provider: str = "edge",
     ) -> bytes:
-        """单个台词回合的语音合成（支持 edge-tts 与 OpenAI 兼容 /audio/speech 路由）"""
-        if (tts_provider or "edge").lower() == "openai":
-            api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-            if api_key:
-                try:
-                    import httpx
-                    base_url = (os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
-                    oa_voice = "nova" if any(k in (voice or "").lower() for k in ("xiaoxiao", "jenny", "nanami", "nova", "shimmer")) else "onyx"
-                    async with httpx.AsyncClient(timeout=45.0) as client:
-                        resp = await client.post(
-                            f"{base_url}/audio/speech",
-                            headers={"Authorization": f"Bearer {api_key}"},
-                            json={"model": os.environ.get("OPENAI_TTS_MODEL", "tts-1"), "input": text, "voice": oa_voice, "response_format": "mp3"},
-                        )
-                        if resp.status_code == 200 and resp.content:
-                            return resp.content
-                except Exception as oa_err:
-                    tlog.warning(f"⚠️ [OpenAI TTS 降级] 回退至 edge-tts: {oa_err}")
+        """单个台词回合的语音合成（支持 edge-tts 及 OpenAI / ElevenLabs / Fish Audio / CosyVoice 多引擎路由）"""
+        if (tts_provider or "edge").lower() != "edge":
+            try:
+                from .podcast_models import synthesize_external_tts
+                ext_bytes = await synthesize_external_tts(text, voice, tts_provider)
+                if ext_bytes:
+                    return ext_bytes
+            except Exception as ext_err:
+                tlog.warning(f"⚠️ [{tts_provider} TTS 降级] 回退至 edge-tts: {ext_err}")
 
         import edge_tts
         proxy_url = proxy or os.environ.get("https_proxy") or os.environ.get("http_proxy")
