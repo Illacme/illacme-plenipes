@@ -27,7 +27,12 @@ except ImportError:
     np = None
     HAS_NUMPY = False
 
-from pydub import AudioSegment
+try:
+    from pydub import AudioSegment
+    HAS_PYDUB = True
+except ImportError:
+    AudioSegment = Any  # type: ignore[misc,assignment]
+    HAS_PYDUB = False
 
 from core.utils.tracing import tlog
 
@@ -162,9 +167,9 @@ class PodcastBGMMixer:
         return AudioSegment(samples.tobytes(), frame_rate=sr, sample_width=2, channels=1)
 
     @classmethod
-    def get_bgm_track(cls, style: str, duration_ms: int) -> Optional[AudioSegment]:
+    def get_bgm_track(cls, style: str, duration_ms: int) -> Optional["AudioSegment"]:
         """获取或生成指定时长的背景垫乐"""
-        if not style or style == "none":
+        if not HAS_PYDUB or not style or style == "none":
             return None
 
         dur_sec = duration_ms / 1000.0 + 1.0
@@ -185,13 +190,13 @@ class PodcastBGMMixer:
     @classmethod
     def mix_with_smart_ducking(
         cls,
-        voice_audio: AudioSegment,
+        voice_audio: "AudioSegment",
         style: str = "cyber_ambient",
         duck_volume_db: float = -22.0,
         normal_volume_db: float = -14.0,
         intro_ms: int = 1800,
         outro_ms: int = 2500
-    ) -> AudioSegment:
+    ) -> "AudioSegment":
         """
         🎧 商业级自适应闪避混音核心流水线 (Smart Audio Ducking)
         
@@ -203,7 +208,7 @@ class PodcastBGMMixer:
             intro_ms: 片头纯垫乐先导时长 (默认 1.8 秒)
             outro_ms: 片尾余音衰减时长 (默认 2.5 秒)
         """
-        if not style or style == "none":
+        if not HAS_PYDUB or not style or style == "none":
             return voice_audio
 
         voice_len = len(voice_audio)
