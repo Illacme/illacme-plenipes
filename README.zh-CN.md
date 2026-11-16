@@ -1,219 +1,149 @@
-# 🏛️ Illacme-plenipes: 全球私人出版社 (Global Private Press)
+# 🏛️ Illacme Plenipes: 全球私人出版社 (Global Private Press)
 
-> **专为主权创作者打造的工业级数字出版发行工作台。**  
-> 一套本土 Markdown 原稿 ➔ 多语言智能翻译 ➔ 商业级装帧排版 ➔ 全网静态托管与 30+ 社交媒体矩阵一键同步。
+> **专为主权创作者打造的一站式数字出版发行工作台。**  
+> 一份本地 Markdown 原稿 ➔ 多语种翻译与人工校对锁 ➔ 双人伴读播客 & 多画幅封面 ➔ 多语对照电子书（EPUB / PDF / Word / WebBook）➔ 免费独立官网与 30+ 社媒矩阵同步 ➔ 开放 MCP 协议的 AI 出版主编协同。
 
 ![品牌视觉 Banner](./docs/assets/hero_banner.png)
 
-[![Version](https://img.shields.io/badge/version-v1.8.0-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
+[![Version](https://img.shields.io/badge/version-v1.9.0-cyan.svg)](https://github.com/Illacme/illacme-plenipes)
 [![Release](https://img.shields.io/github/v/release/Illacme/illacme-plenipes?color=emerald&label=Client%20Release)](https://github.com/Illacme/illacme-plenipes/releases/latest)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
-[🇨🇳 简体中文](./README.zh-CN.md) | [🇬🇧 English](./README.md) | [📖 场景实战手册](./docs/cookbook/) | [📚 功能速查手册](./docs/manual/)
+[🇨🇳 简体中文](./README.zh-CN.md) | [🇬🇧 English](./README.md) | [📖 场景实战手册](./docs/cookbook/) | [📚 功能速查手册](./docs/manual/) | [📝 v1.9.0 发版说明](./docs/releases/v1.9.0.md)
 
 ---
 
-### ⚡ 官方独立客户端快速下载 (Quick Start Desktop)
+### 💡 创作者痛点与破局方案：为什么选择 Illacme Plenipes？
 
-> **免配 Python 环境，解压即用。内置全功能系统托盘、多语言排版引擎与离线出版控制台。**
+作为独立作者、技术博主、学者或出海团队，日常内容生产常被“写作之外的杂活”拖垮：
 
-| 操作系统 | 推荐安装格式 | 直接下载链接 (最新稳定版) | 说明与避坑指南 |
+| 常见创作与分发痛点 | Illacme Plenipes 的解决之道 |
+| :--- | :--- |
+| **1. 多平台重复搬运、图床防盗链破图** | 写完一篇文章，不再手动复制粘贴到公众号、小红书、知乎、Dev.to、Medium。工作台自动完成跨平台排版清洗、外链转脚注与图片自动转存，并支持死信队列重试与自愈诊断。 |
+| **2. 封面画幅各异（横版 / 微信首图 / 小红书竖图）** | 内置 **Cover Studio 封面工坊**，支持按渠道自适应安全区裁切（`16:9`、`2.35:1` 微信首图、`3:4` 小红书竖图、`1:1` 方形），支持技术卡片、首图提取、品牌预设与 AI 生图。 |
+| **3. 想做播客扩大传播，却没时间录音剪辑** | 内置 **🎙️ 双人伴读播客引擎**：从原稿一键提炼双人对谈剧本、合成带 BGM 自适应闪避混音的高清 MP3、生成章节时间轴与合规 RSS 2.0 订阅源（适配小宇宙 / Apple / Spotify），并自动嵌入网站与电子书。 |
+| **4. 多语种版本难以同步，精修译文易被覆盖** | 只需维护一份本地母语 Markdown，AI 自动按段落增量翻译并支持**人工校对锁（Human Review Lock）**——手动精修锁定后，后续全站重译绝不覆盖您的心血。 |
+| **5. 想把专栏沉淀成书，却受困于格式排版** | 内置 **📚 数字装订中枢**：一键合订导出**多语平行对照 WebBook**、**EPUB 3**、**带可双击编辑公式的 Word (.docx)** 与 **印刷级 PDF**，按出版品牌物理隔离书架。 |
+| **6. 数据被云平台绑架、多专栏项目互相串台** | 文库 100% 留存本地硬盘（完美兼容 Obsidian 双链），支持**多出版品牌（Multi-Imprint）**独立运行；同时提供开放 **MCP 协议**，可让 Cursor / Claude Desktop / Antigravity 直接协助出版。 |
+
+---
+
+### ⚡ 快速开始：下载即用桌面客户端（零环境配置）
+
+> **无需安装 Python 或任何开发工具。** 下载对应系统安装包即可启动本地出版发行工作台（首次启动内置演示品牌 **「创作者指南」** 供即开即用演练）。
+
+| 操作系统 | 推荐格式 | 直接下载（最新稳定版 `v1.9.0`） | 安装与使用说明 |
 | :--- | :--- | :--- | :--- |
-| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像 (首选)** | [📥 **Illacme-Plenipes-macOS.dmg**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.dmg) | 拖拽至 Applications。若提示已损坏，双击运行包内 `双击修复无法打开.command` |
-| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-macOS.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.zip) | 免挂载解压即用，内含快捷修复脚本 |
-| 🪟 **Windows (x64)** | **一键安装向导 (首选)** | [📥 **Illacme-Plenipes-Windows-x64-Setup.exe**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64-Setup.exe) | 标准安装向导，自动创建桌面快捷方式与卸载项 |
-| 🪟 Windows (x64) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-Windows-x64.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64.zip) | 纯绿色便携版，解压后双击 `Illacme-Plenipes.exe` |
-| 🐧 **Linux (x64)** | 原生独立执行归档 | [📥 `Illacme-Plenipes-Linux-x64.tar.gz`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Linux-x64.tar.gz) | 解压后执行 `./Illacme-Plenipes`，支持无头服务器模式 |
-
-> 💡 **历史版本与 SHA256 校验**：请访问 **[GitHub Releases 发行大厅](https://github.com/Illacme/illacme-plenipes/releases)** 查看详细更新日志与校验签名。
-
----
-
-### 🖥️ 走进「出版发行工作台」：为每位创作者而生的数字工作室
-
-> **“告别散乱复杂的命令行与代码。在这里，个人出版是一场赏心悦目的视觉创作体验。”**
-
-Illacme Plenipes 将传统属于大型出版社的翻译、排版、装订、格式转换与多平台分发工作，凝练为一套界面精美、交互流畅、人人都能轻松使用的**现代数字出版工作台**。
-
-#### 🌌 1. 3D 知识星空与出版流程总览 (Galaxy & Pipeline)
-一套原稿如何向全球多渠道传递？工作台首页直观呈现整座文库的 **3D 动态知识星空图谱** 与 **六大工序实时出版看板**。
-
-![出版发行工作台全景](./docs/assets/workbench_overview.png)
-
-* **3D 知识星空**：文章如星辰般相互辉映，点击任意星球即可查看该篇文章的详细信息与多语对照；
-* **六大工序流水线看板**：`原稿文库 ➔ 多语言翻译 ➔ 网站风格 ➔ 网址路径 ➔ 个人网站托管 ➔ 社交媒体同步`，全流程进度与状态一目了然；
-* **贴身 AI 创作领航员**：在右侧随时对话，无论是整座文库的知识搜寻、章节翻译、还是润色与错别字修改，都能轻松协同。
-
----
-
-#### 📂 2. 原稿文库与即时出版抽屉 (Sovereign Vault & Editor)
-专注于极致纯粹的写作与稿件管理。
-
-![原稿文库双模工作台](./docs/assets/workbench_vault.png)
-
-* **文稿 100% 留存在本地电脑**：直接连接您电脑上的 Obsidian 或普通笔记文件夹，没有任何云端隐私泄露风险；
-* **稿件状态一览无余**：字数统计、在线访问网址、多语种翻译对照进度一清二楚；
-* **单篇即时发布抽屉**：无论是想更新整座网站，还是只想把刚刚写好的一篇单独发布到微信公众号或小红书，点击抽屉即可单独发布。
-
----
-
-#### 🚀 3. 全域发布大厅与电子出版本书架 (Publishing & Dispatch Hub)
-让每一次创作都能以多种精美媒介呈现在读者面前。
-
-![发布中心与电子出版本书架](./docs/assets/workbench_dispatch.png)
-
-* **📚 电子出版本书架**：一键装订导出高品质 **Word 文档（公式可在 Word 中直接双击编辑）**、**精装排版 PDF**、**通用 EPUB 电子书** 与 **网页电子书**，支持在线即时翻阅与下载；
-* **🌐 个人独立网站免费上线**：支持 GitHub Pages、Vercel、Netlify 等各大免服务器平台，一键完成编译与上线，**发布完成后公网访问网址自动呈现**；
-* **🛰️ 30+ 社交媒体一键同步**：微信公众号、小红书、知乎、稀土掘金、Dev.to、Medium、Substack 等一键直达，文章插图自动转存，彻底解决平台防盗链破图问题。
-
----
-
-### 💡 为什么选择 Illacme Plenipes？
-
-作为独立写作者、知识博主、出海团队或学者，你是否经常遇到这些烦恼：
-1. **多平台重复排版搬运**：每次写完文章，要在微信公众号、小红书、知乎、Medium 等平台挨个复制粘贴、手动排版、处理图片破图防盗链；
-2. **多语言更新容易错漏**：面向全球读者需要双语甚至多语种，但手动翻译和维护两份文档容易内容不一致，更新起来非常繁琐；
-3. **想做个人独立网站却门槛高**：想搭建属于自己的知识主站（如 Docusaurus、Starlight 等精美文档站），却要面对复杂的代码构建配置与云部署。
-
-**Illacme Plenipes** 让创作彻底回归写作本身：
-* 🌍 **本土写作，全球传播**：日常只维护一份本地 Markdown 笔记（完美兼容 Obsidian / Logseq 语法），AI 自动完成高质量段落翻译与中英对照。
-* 🌐 **个人网站一键免费上线**：支持 10 大免费静态网站托管平台（GitHub Pages、Vercel、Netlify 等），一键生成属于自己的多语言官方博客与知识库。
-* 🛰️ **30+ 社交平台一键直达**：微信公众号、小红书、知乎、掘金、Dev.to、Medium 等一键同步，文章配图自动优化上传。
-* 📚 **出版级装帧与电子书导出**：自动排版生成带多级目录的双语对照版 **Word (.docx)、印刷级 PDF、EPUB 电子书**，数学公式可双击编辑，代码高亮清晰工整。
-* 🛡️ **数据与隐私绝对自主**：稿件 100% 存放在您自己的电脑硬盘上，不强求网络云端绑定，支持连接本地离线大模型（如 Ollama）。
-
----
-
-### 🚀 极简快速点火 (Quick Start)
-
-#### 📦 1. 桌面客户端官方下载 (推荐)
-
-前往 **[GitHub Releases 官方发版页](https://github.com/Illacme/illacme-plenipes/releases/latest)** 下载已编译的跨平台原生客户端（开箱即用）：
-
-| 操作系统 | 安装格式 | 下载文件 | 推荐场景 |
-| :--- | :--- | :--- | :--- |
-| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像** | `Illacme-Plenipes-macOS-AppleSilicon-arm64.dmg` | **首选推荐**：挂载后直接拖入「应用程序」 |
-| 🍎 macOS (Apple Silicon) | 免挂载 ZIP 压缩包 | `Illacme-Plenipes-macOS-AppleSilicon-arm64.zip` | 解压即用 |
-| 🪟 **Windows (x64)** | **一键安装向导 (Setup)** | `Illacme-Plenipes-Windows-x64-Setup.exe` | **首选推荐**：标准向导安装、自动生成桌面图标 |
-| 🪟 Windows (x64) | 绿色便携 ZIP 压缩包 | `Illacme-Plenipes-Windows-x64.zip` | 免安装纯便携版，解压即用 |
-| 🐧 **Linux (x64)** | 原生可执行归档 | `Illacme-Plenipes-Linux-x64.tar.gz` | Linux 桌面与服务器直接运行 |
-
-> [!IMPORTANT]
-> ### 🛡️ 首次运行安全提示与快速解决指南
-> 由于本软件为独立开源客户端，尚未向商业机构购买昂贵签名证书，苹果与微软系统在首次打开时可能会弹出提示。软件 **100% 运行在您的本地电脑上，无任何隐私上传，安全可靠**：
->
-> * **🍎 macOS 首次运行提示“无法打开”或“已损坏”**：
->   * **方法 A（一键自动修复，推荐）**：在安装包中直接**双击运行「双击修复无法打开.command」**脚本，即可秒级自动解除拦截，无需输入代码。
->   * **方法 B（图形界面免命令行）**：在「访达 (Finder) -> 应用程序」中，**按住键盘 `Control` 键并右键点击** `Illacme-Plenipes.app`，在弹出菜单中选择「打开」，并在弹窗中再次点击「打开」即可永久信任。
->
-> * **🪟 Windows Defender 提示“Windows 已保护你的电脑”**：
->   * 点击弹窗左侧的 **「更多信息」**；
->   * 在右下角出现的按钮中点击 **「仍要运行」**，即可顺利启动并自动记住信任。
-
----
-
-#### 💻 2. 源码免安装双击启动器
-
-若您直接克隆了本仓库，根目录提供了无需手动配置环境的**双击快速启动器**：
-
-*   **🍎 macOS 用户**：在 Finder 中直接双击根目录 **`start.command`**（无需开启终端敲代码，浏览器自动弹出）。
-*   **🪟 Windows 用户**：直接双击根目录 **`start.bat`**（或在 PowerShell 中运行 `.\start.ps1`）。
-*   **🐧 Linux / 服务器用户**：终端运行 `./start.sh`。
-*   **🐳 Docker 容器化部署**：运行 `docker compose up -d`。
-
-> 💡 **启动后访问**：工作台控制台服务监听于 `http://127.0.0.1:43212`，开箱即用。
-
-> ⌨️ **常用高频快捷键**：
-> * `Cmd+P` (Windows/Linux 为 `Ctrl+P`)：唤起功能命令面板与实战手册；
-> * `Cmd+K` (Windows/Linux 为 `Ctrl+K`) 或 `]`：唤起 AI 领航助手；
-> * `I` (或点击顶栏左上角 Logo)：查看核心导览；
-> * `[`：展开 / 收起左侧导航栏。
+| 🍎 **macOS (Apple Silicon)** | **原装 DMG 镜像（首选）** | [📥 **Illacme-Plenipes-macOS.dmg**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.dmg) | 拖入“应用程序”即可；首次若遇安全拦截，双击包内 `双击修复无法打开.command` |
+| 🍎 macOS (Apple Silicon) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-macOS.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-macOS.zip) | 免安装解压即用，内置一键放行脚本 |
+| 🪟 **Windows (x64)** | **一键安装向导（首选）** | [📥 **Illacme-Plenipes-Windows-x64-Setup.exe**](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64-Setup.exe) | 标准安装向导，自动创建桌面快捷方式 |
+| 🪟 Windows (x64) | 便携 ZIP 压缩包 | [📥 `Illacme-Plenipes-Windows-x64.zip`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Windows-x64.zip) | 绿色便携版，解压后双击 `Illacme-Plenipes.exe` |
+| 🐧 **Linux (x64)** | 独立可执行归档 | [📥 `Illacme-Plenipes-Linux-x64.tar.gz`](https://github.com/Illacme/illacme-plenipes/releases/latest/download/Illacme-Plenipes-Linux-x64.tar.gz) | 解压后运行 `./Illacme-Plenipes`，支持桌面与无头服务器模式 |
 
 <details>
-<summary><b>📝 点击展开：最简 Markdown 原稿规范示例（完美兼容 Obsidian）</b></summary>
+<summary><b>🛡️ 首次运行遇到系统安全提示？3 秒无命令行放行方法</b></summary>
 
-```markdown
----
-title: "我的第一篇主权出版物"
-description: "本文介绍如何通过 Illacme Plenipes 实现全域多语言出版与同步分发。"
-tags: ["Publishing", "Markdown", "OpenSource"]
-categories: ["Tech"]
-draft: false
-cover: "assets/covers/hero.png" # 可留空，由设计中心自动生成
----
+由于本软件为独立开源客户端，未购买高昂的商业签名证书，软件 **100% 运行在本地硬盘，无任何隐私上传**：
+* **🍎 macOS 提示“无法打开”或“已损坏”**：
+  * **方法 A（推荐）**：直接双击安装包内的 **`双击修复无法打开.command`**，自动解除隔离属性。
+  * **方法 B**：在「访达 -> 应用程序」中**按住 `Control` 键右键点击** `Illacme-Plenipes.app` $\rightarrow$ 选择「打开」。
+* **🪟 Windows Defender 蓝色提示** ：点击 **「更多信息」** $\rightarrow$ 点击右下角 **「仍要运行」**。
 
-# 欢迎来到主权出版时代
+</details>
 
-你可以自由使用标准 Markdown、LaTeX 数学公式以及 Obsidian 双链语法：
-* 双链引用：参见另一篇笔记 [[architecture-overview]]。
-* 独立数学公式：
-$$E = mc^2$$
+<details>
+<summary><b>💻 源码双击启动与常用快捷键（开发者/Docker 用户）</b></summary>
 
-系统在同步发布时会自动解析并清洗此类语法，并在目标平台原生渲染！
-```
+* **macOS**：双击根目录 `start.command`；**Windows**：双击 `start.bat`（或 `.\start.ps1`）；**Linux**：`./start.sh`；**Docker**：`docker compose up -d`。
+* 工作台控制台地址：`http://127.0.0.1:43212`
+* **高频快捷键**：
+  * `I`（或点击左上角 Logo）：呼出/关闭中央 **「出版领航仪」**（全景指标与 6 阶段直达）
+  * `Cmd+K` / `Ctrl+K`（或 `]`）：唤起右侧 **Sovereign Copilot** 主编智能体
+  * `Cmd+P` / `Ctrl+P`：打开命令面板与实战手册
+  * `[`：展开 / 收起左侧导航栏
+
 </details>
 
 ---
 
-### 🎯 创作者 3 步核心旅程
+### 🖥️ 走进「出版发行工作台」五大主权功能区
 
-```mermaid
-graph LR
-    A["1️⃣ 关联文库<br/>（选择本地笔记文件夹）"] --> B["2️⃣ 装帧与翻译<br/>（选择主题、设定目标语种）"]
-    B --> C["3️⃣ 一键分发<br/>（推送到官网与社交平台）"]
-```
+#### 🌌 1. 知识星谱 (`Overview`) & 出版领航仪 (`Navigator`)
+![出版发行工作台全景](./docs/assets/workbench_overview.png)
+* **3D 动态知识星谱**：自动解析 Obsidian `[[双链]]` 与实体关联，将文库渲染为可交互的 3D 知识星图；移动或重命名原稿时自动同步图谱连线。
+* **出版领航仪（快捷键 `I`）**：以六大出版阶段（`原稿文库 ➔ 多语言翻译 ➔ 装帧主题 ➔ 网址路径 ➔ 网站托管 ➔ 社媒分发`）直观展示全站进度与交付物直达入口（电子书架 / 播客电台）。
 
-1. **第一步：关联原稿文库**  
-   在设置中选择您在电脑上的本地 Markdown 笔记文件夹（如 Obsidian 目录），系统自动读取目录结构并建立知识星系。
-2. **第二步：配置网站风格与 AI 助手**  
-   选择心仪的网站展示风格（内置精美文档、现代博客、极简知识库等多种主题），填入 AI 密钥（支持 OpenAI、Gemini、DeepSeek、Claude 或本地 Ollama）。
-3. **第三步：一键全域分发**  
-   在文库抽屉中点击「网页托管发布」或「社交媒体分发」，实时查看发布进度并直接获取上线后的公网访问链接。
+#### 📂 2. 原稿文库 (`Vault`) & 单篇出版抽屉
+![原稿文库双模工作台](./docs/assets/workbench_vault.png)
+* **所见即所得与 Markdown 双模编辑**：无缝兼容 Obsidian / Logseq、LaTeX 公式与本地图片附件管理，文档改名/迁移/销毁原子级同步账本与静态产物。
+* **单篇即时抽屉**：无需整站重编，单篇文章即可就地预览、更换多画幅封面、合成双人播客或推送至微信公众号、小红书等社媒平台。
+
+#### 🚀 3. 发布中心 (`Dispatch`)：全站托管、电子书架、播客电台与社媒矩阵
+![发布中心与电子出版本书架](./docs/assets/workbench_dispatch.png)
+* **🌐 个人独立站免费托管**：一键编译并部署至 GitHub Pages、Cloudflare Pages、Vercel、Netlify 等平台，完成后自动回传真实公网链接。
+* **📚 数字装订与独立书架**：一键生成 **WebBook**、**EPUB 3**、**印刷级 PDF** 与 **可编辑公式 DOCX**，支持多语平行对照排版与品牌级书架隔离（`dist/books/{imprint_id}`）。
+* **🎙️ 播客工坊与电台发行**：支持深度剖析 / 通俗快讯 / 观点交锋 / 单人伴读四种风格，一键生成章节时间轴、合规 `podcast-feed.xml` 并转储至 R2 / S3 / OSS / COS CDN。
+* **🛰️ 30+ 社媒矩阵与自愈账本**：支持微信公众号、小红书、知乎、掘金、Dev.to、Medium、Substack 等；分发失败时可一键重试或直接唤起 Copilot 诊断修复。
+
+#### ⚙️ 4. 治理中心 (`Governance`) & 🎨 设计工坊
+* **多品牌（Multi-Imprint）主权治理**：单工作台管理多个独立品牌，各自隔离文库路径、主题皮肤、网址路径矩阵（`route_matrix`）、多语翻译规则与人工校对工作台。
+* **Cover Studio 与资产图库**：统一管理文章封面与品牌图库，支持跨平台安全区预览与一键应用。
+
+#### 🧠 5. 算力中心 (`Compute`) & 🤖 主编智能体 + MCP 开放协议
+* **25+ 模型算力调度**：自由接入 OpenAI、Gemini、Claude、DeepSeek 或本地离线模型（Ollama / LM Studio），支持段落缓存（Block Cache）大幅降低重复翻译成本。
+* **Sovereign Copilot 主编智能体**：内置 14 项出版自治工具（星谱检索、选题成书、封面生成、播客合成、死信诊断与重试），支持按品牌持久化多轮对话、人类审批（HITL）与写前快照一键回滚。
+* **标准 MCP Server（`Tools` + `Resources` + `Prompts`）**：点击 Copilot 面板 **`🔌 MCP 协议`** 徽章即可复制配置，让 Cursor、Claude Desktop 或 Antigravity 直接读取本地文库与知识星谱协同出版。
 
 ---
 
-### 🧩 核心功能矩阵一览
+### 🎯 3 步开启您的全球私人出版社
 
-| 模块中心 | 核心能力 | 实战指引 |
-| :--- | :--- | :--- |
-| **🌌 知识星空 (Overview)** | 3D 动态知识星系图、文章分类筛选与出版进度看板 | [星谱导航指引](./docs/manual/01_overview_galaxy.md) |
-| **📂 原稿文库 (Vault)** | 所见即所得与 Markdown 双模编辑、文章标签智能整理、文稿配图自动下载管理 | [文库管理指南](./docs/manual/02_vault_management.md) |
-| **📖 装帧书架 (Bindery)** | 双语对照排版、可编辑公式 Word/印刷级 PDF/EPUB 电子书一键导出、手机扫码预览 | [印刷装帧实战](./docs/manual/03_bindery_publishing.md) |
-| **🚀 发布中心 (Dispatch)** | 可视化发布大厅、完整发布历史记录、单篇与整站一键发布、公网网址自动呈现 | [全域发布实战](./docs/manual/04_dispatch_and_hosting.md) |
-| **⚙️ 出版治理 (Governance)** | 独立品牌管理、多种网站展示风格随心换、多语种翻译规则与人工校对工作台 | [治理与校对指南](./docs/manual/05_governance_and_review.md) |
-| **🧠 AI 助手 (Compute)** | 支持 25+ 种国内外主流与本地大模型（ChatGPT、Claude、DeepSeek、Ollama 等）、智能辅助润色翻译 | [算力配置指南](./docs/manual/06_compute_and_copilot.md) |
-| **🎨 设计中心 (Design)** | AI 封面生成、社交媒体分享大图自动排版、批量精装封面设计 | [封面设计指引](./docs/manual/07_design_studio.md) |
-| **🧩 平台与渠道 (Plugins)** | 支持 10 大网站免费托管 + 20+ 主流社交媒体 + 多种稳定图床，账号连接状态清晰可见 | [插件生态矩阵](./docs/manual/08_plugins_ecosystem.md) |
+```mermaid
+graph LR
+    A["1️⃣ 关联本地文库<br/>（兼容 Obsidian 文件夹）"] --> B["2️⃣ 选定主题与算力<br/>（多语策略与封面/播客偏好）"]
+    B --> C["3️⃣ 一键全域出版<br/>（网站 + 电子书 + 播客 + 社媒）"]
+```
+
+<details>
+<summary><b>📝 点击展开：兼容 Obsidian 与伴读播客的极简原稿示例</b></summary>
+
+```markdown
+---
+title: "我的第一篇主权出版物"
+description: "通过 Illacme Plenipes 实现多语站点、伴读播客与电子书一体化发行。"
+tags: ["Publishing", "Markdown"]
+podcast: true   # 开启后全站发布或播客工坊将自动衍生双人对谈音频
+cover: ""       # 可留空，由 Cover Studio 自动生成或从资产库绑定
+---
+
+# 欢迎来到主权出版时代
+
+支持标准 Markdown、LaTeX 数学公式（$$E = mc^2$$）与 Obsidian 双链（[[architecture-overview]]）。
+```
+</details>
 
 ---
 
 ### 💻 开发者命令行模式 (CLI)
 
 ```bash
-# 1. 克隆与依赖安装
 git clone https://github.com/Illacme/illacme-plenipes.git
 cd illacme-plenipes
 pip install -r requirements.txt
 
-# 2. 唤醒交互式治理控制台
-python3 plenipes.py 
-
-# 3. 命令行执行全量同步与构建
-python3 plenipes.py --sync --force
-
-# 4. 开启文件变更毫秒级守护监控
-python3 plenipes.py --watch
+python3 plenipes.py                 # 启动交互式控制台与 Web 工作台 (http://127.0.0.1:43212)
+python3 plenipes.py --sync --force  # 命令行执行全量同步与多媒介构建
+python3 plenipes.py --watch         # 开启文库变更毫秒级守护监听
 ```
 
 ---
 
 ### 📜 治理协议与商业许可 (Licensing & Governance)
 
-*   **开源非商业许可**：开源版本采用 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 协议，供个人创作与学术研究等非商业用途免费使用。
-*   **商业授权 (Commercial EULA)**：任何用于商业运营、团队协同分发或企业部署的场景，须取得版权所有者书面授权，详见 **[商业授权说明](./COMMERCIAL_LICENSE.md)** 与 **[商业最终用户许可协议 (EULA)](./docs/legal/EULA.md)**（商务联系：`wqbyc@msn.com`）。
-*   **数据主权承诺**：恪守“本地为真源、文库不上传”承诺，详见 **[数据主权协议](./docs/legal/DATA_SOVEREIGNTY.md)**。
-*   **免责与第三方致谢**：详见 **[第三方凭据免责声明](./docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[第三方开源致谢](./docs/legal/THIRD_PARTY_NOTICES.md)**。
+* **开源非商业许可**：采用 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 协议，个人创作与学术研究免费使用。
+* **商业授权 (Commercial EULA)**：商业运营、团队协同或企业部署须取得书面授权，详见 **[商业授权说明](./COMMERCIAL_LICENSE.md)** 与 **[EULA](./docs/legal/EULA.md)**（商务联系：`wqbyc@msn.com`）。
+* **数据主权与免责**：详见 **[数据主权协议](./docs/legal/DATA_SOVEREIGNTY.md)**、**[第三方凭据免责声明](./docs/legal/THIRD_PARTY_DISCLAIMER.md)** 与 **[第三方开源致谢](./docs/legal/THIRD_PARTY_NOTICES.md)**。
 
 ---
 
