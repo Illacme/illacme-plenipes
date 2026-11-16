@@ -86,40 +86,26 @@ class PodcastChapter:
     description: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "title": self.title,
-            "start_seconds": self.start_seconds,
-            "start_time": self.start_time,
-            "description": self.description
-        }
+        return {"title": self.title, "start_seconds": self.start_seconds, "start_time": self.start_time, "description": self.description}
 
     @staticmethod
     def format_vtt_timestamp(ms: int) -> str:
         """毫秒转 WebVTT 标准 HH:MM:SS.mmm 格式"""
         total_ms = max(0, int(ms))
-        h, rem = divmod(total_ms, 3600000)
-        m, rem = divmod(rem, 60000)
-        s, millis = divmod(rem, 1000)
+        h, rem = divmod(total_ms, 3600000); m, rem = divmod(rem, 60000); s, millis = divmod(rem, 1000)
         return f"{h:02d}:{m:02d}:{s:02d}.{millis:03d}"
 
     @staticmethod
     def format_timestamp(seconds: int) -> str:
         """秒数转标准 mm:ss 格式"""
         sec = max(0, int(seconds))
-        m = sec // 60
-        s = sec % 60
-        return f"{m:02d}:{s:02d}"
+        return f"{sec // 60:02d}:{sec % 60:02d}"
 
     @classmethod
     def format_shownotes_timeline(cls, chapters: List["PodcastChapter"]) -> str:
         """生成小宇宙、Apple、Spotify 标准识别的 Show Notes 时间轴文本"""
-        if not chapters:
-            return ""
-        lines = ["⏱️ 节目时间轴 (Chapters):"]
-        for c in chapters:
-            t = c.start_time or cls.format_timestamp(c.start_seconds)
-            lines.append(f"{t} {c.title}")
-        return "\n".join(lines)
+        if not chapters: return ""
+        return "\n".join(["⏱️ 节目时间轴 (Chapters):"] + [f"{c.start_time or cls.format_timestamp(c.start_seconds)} {c.title}" for c in chapters])
 
 
 @dataclass
@@ -218,8 +204,7 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
         def_url, def_model, def_va, def_vb, req_key = _OPENAI_COMPAT_SPECS[p]
         ep = p.upper()
         api_key = _cfg(f"{p}_api_key", f"{ep}_API_KEY", "" if req_key else "local")
-        if req_key and not api_key:
-            return None
+        if req_key and not api_key: return None
         base_url = _cfg(f"{p}_base_url", f"{ep}_BASE_URL", def_url).rstrip("/")
         model = _cfg(f"{p}_model", f"{ep}_TTS_MODEL", def_model)
         c_voice = _cfg(f"{p}_voice_a" if is_f else f"{p}_voice_b", f"{ep}_VOICE_A" if is_f else f"{ep}_VOICE_B", def_va if is_f else def_vb)
@@ -229,8 +214,7 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
 
     if p == "minimax":
         api_key = _cfg("minimax_api_key", "MINIMAX_API_KEY")
-        if not api_key:
-            return None
+        if not api_key: return None
         gid = _cfg("minimax_group_id", "MINIMAX_GROUP_ID")
         vid = _cfg("minimax_voice_a" if is_f else "minimax_voice_b", "MINIMAX_VOICE_A" if is_f else "MINIMAX_VOICE_B") or ("Chinese (Mandarin)_Warm_Girl" if is_f else "male-qn-jingying")
         url = f"https://api.minimaxi.chat/v1/t2a_v2?GroupId={gid}" if gid else "https://api.minimaxi.chat/v1/t2a_v2"
@@ -242,8 +226,7 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
 
     if p == "volcengine":
         app_id, tok = _cfg("volcengine_app_id", "VOLCENGINE_TTS_APP_ID"), _cfg("volcengine_access_token", "VOLCENGINE_TTS_ACCESS_TOKEN")
-        if not app_id or not tok:
-            return None
+        if not app_id or not tok: return None
         vid = _cfg("volcengine_voice_a" if is_f else "volcengine_voice_b", "VOLCENGINE_VOICE_A" if is_f else "VOLCENGINE_VOICE_B") or ("zh_female_cancan_mars_bigtts" if is_f else "zh_male_yangguangqingnian_moon_bigtts")
         payload = {"app": {"appid": app_id, "token": tok, "cluster": _cfg("volcengine_cluster", "VOLCENGINE_TTS_CLUSTER", "volcano_tts")}, "user": {"uid": "illacme_podcast"}, "audio": {"voice_type": vid, "encoding": "mp3", "speed_ratio": 1.0}, "request": {"reqid": uuid.uuid4().hex, "text": text, "operation": "query"}}
         async with httpx.AsyncClient(timeout=45.0) as client:
@@ -253,8 +236,7 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
 
     if p == "gemini":
         api_key = _cfg("gemini_api_key", "GEMINI_API_KEY")
-        if not api_key:
-            return None
+        if not api_key: return None
         model = _cfg("gemini_model", "GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
         vid = _cfg("gemini_voice_a" if is_f else "gemini_voice_b", "GEMINI_VOICE_A" if is_f else "GEMINI_VOICE_B") or ("Kore" if is_f else "Charon")
         payload = {"contents": [{"parts": [{"text": text}]}], "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": vid}}}}}
@@ -272,8 +254,7 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
 
     if p == "elevenlabs":
         api_key = _cfg("elevenlabs_api_key", "ELEVENLABS_API_KEY")
-        if not api_key:
-            return None
+        if not api_key: return None
         vid = _cfg("elevenlabs_voice_a" if is_f else "elevenlabs_voice_b", "ELEVENLABS_VOICE_A" if is_f else "ELEVENLABS_VOICE_B") or ("21m00Tcm4TlvDq8ikWAM" if is_f else "TxGEqnHWrfWFTfGW9XjX")
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}", headers={"xi-api-key": api_key}, json={"text": text, "model_id": "eleven_multilingual_v2"})
@@ -281,14 +262,30 @@ async def synthesize_external_tts(text: str, voice: str, provider: str, engine: 
 
     if p == "fish_audio":
         api_key = _cfg("fish_audio_api_key", "FISH_AUDIO_API_KEY")
-        if not api_key:
-            return None
+        if not api_key: return None
         payload: Dict[str, Any] = {"text": text, "format": "mp3"}
         ref_id = _cfg("fish_audio_ref_a" if is_f else "fish_audio_ref_b", "FISH_AUDIO_REF_A" if is_f else "FISH_AUDIO_REF_B")
-        if ref_id:
-            payload["reference_id"] = ref_id
+        if ref_id: payload["reference_id"] = ref_id
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post("https://api.fish.audio/v1/tts", headers={"Authorization": f"Bearer {api_key}"}, json=payload)
             return r.content if (r.status_code == 200 and r.content) else None
-
     return None
+
+
+def probe_ready_tts_providers(engine: Any = None) -> List[str]:
+    """零配置快速探测本机已启动的开源 TTS 端口与已配置密钥的商业 TTS 引擎"""
+    import socket, urllib.parse
+    p_cfg = (getattr(getattr(engine, "config", None), "podcast", None) or {}) if engine else {}
+    t_cfg = p_cfg.get("podcast_tts_engines", {}) if isinstance(p_cfg, dict) and isinstance(p_cfg.get("podcast_tts_engines"), dict) else {}
+    ready = ["edge"]
+    for p, (def_url, _, _, _, req_key) in _OPENAI_COMPAT_SPECS.items():
+        if req_key:
+            if t_cfg.get(f"{p}_api_key") or os.environ.get(f"{p.upper()}_API_KEY"): ready.append(p)
+        else:
+            u = urllib.parse.urlparse(str(t_cfg.get(f"{p}_base_url") or os.environ.get(f"{p.upper()}_BASE_URL") or def_url))
+            try:
+                with socket.create_connection((u.hostname or "127.0.0.1", u.port or 80), timeout=0.05): ready.append(p)
+            except Exception: pass
+    for p, k, ek in [("minimax", "minimax_api_key", "MINIMAX_API_KEY"), ("volcengine", "volcengine_access_token", "VOLCENGINE_TTS_ACCESS_TOKEN"), ("gemini", "gemini_api_key", "GEMINI_API_KEY"), ("elevenlabs", "elevenlabs_api_key", "ELEVENLABS_API_KEY"), ("fish_audio", "fish_audio_api_key", "FISH_AUDIO_API_KEY")]:
+        if t_cfg.get(k) or os.environ.get(ek): ready.append(p)
+    return ready

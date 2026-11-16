@@ -5,7 +5,7 @@
  */
 
 (function () {
-    let _currentRelPath = '', _currentScript = null, _currentAudioInfo = null, _availableLangs = new Set();
+    let _currentRelPath = '', _currentScript = null, _currentAudioInfo = null, _availableLangs = new Set(), _probedProviders = false;
     let _selectedLang = 'zh', _selectedStyle = 'tech_deep', _selectedBgm = 'cyber_ambient', _isProcessing = false;
 
     const _esc = (s) => (s === null || s === undefined ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
@@ -24,6 +24,7 @@
         if (!_currentRelPath) return typeof window.showToast === 'function' && window.showToast('请先选择一篇文库稿件', 'warning');
         _ensureModalDom();
         _renderPodcastLangSelector();
+        _probeReadyTtsProviders();
         const savedProv = window.settingsData?.podcast?.podcast_tts_engines?.default_provider;
         const provSel = document.getElementById('podcast-tts-provider');
         if (provSel && savedProv && provSel.querySelector(`option[value="${savedProv}"]`)) provSel.value = savedProv;
@@ -213,6 +214,19 @@
         const el = document.getElementById('podcast-modal-body');
         if (el) el.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div style="font-size:2rem;margin-bottom:12px;">⚠️</div><div style="color:#ef4444;font-size:0.9rem;margin-bottom:16px;">${_esc(msg)}</div><button type="button" class="mini-btn" onclick="window.openPodcastStudioModal('${_esc(_currentRelPath)}')">重试</button></div>`;
     }
+    async function _probeReadyTtsProviders() {
+        if (_probedProviders) return; _probedProviders = true;
+        try {
+            const d = await fetch('/api/podcast/voices').then((r) => r.json());
+            const ready = new Set(Array.isArray(d?.ready_providers) ? d.ready_providers : []);
+            document.getElementById('podcast-tts-provider')?.querySelectorAll('option').forEach((opt) => {
+                const base = opt.getAttribute('data-base-label') || opt.textContent;
+                opt.setAttribute('data-base-label', base);
+                opt.textContent = ready.has(opt.value) && opt.value !== 'edge' ? `${base} 🟢` : base;
+            });
+        } catch (_) {}
+    }
+
     function _renderPodcastLangSelector() {
         const box = document.getElementById('podcast-lang-pills');
         if (!box) return;

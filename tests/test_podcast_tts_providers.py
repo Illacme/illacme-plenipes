@@ -149,3 +149,22 @@ def test_extended_language_voice_mapping_and_script_lang(lang, expected_voice_a)
     assert PodcastTTSEngine.get_voice_for_role(lang, "host_a") == expected_voice_a
     script = PodcastScriptEngine.extract_script("# Title\n\nBody paragraph for multi-language podcast.", lang=lang)
     assert script.lang == lang.lower()
+
+
+def test_probe_ready_tts_providers_detects_local_port_and_keys():
+    import socket
+    from core.podcast.podcast_models import probe_ready_tts_providers
+
+    eng = _make_engine({"minimax_api_key": "mm-123", "kokoro_base_url": "http://127.0.0.1:8880/v1"})
+    def _fake_conn(addr, timeout=0.05):
+        if addr == ("127.0.0.1", 8880):
+            return MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+        raise OSError("closed")
+
+    with patch.object(socket, "create_connection", side_effect=_fake_conn):
+        ready = probe_ready_tts_providers(eng)
+
+    assert "edge" in ready
+    assert "kokoro" in ready
+    assert "minimax" in ready
+    assert "chattts" not in ready

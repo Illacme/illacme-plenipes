@@ -96,9 +96,9 @@ def _resolve_localized_content(engine, rel_path: str, target_lang: str, safe_pat
 
 @router.get("/api/podcast/voices")
 async def get_podcast_voices() -> Dict[str, Any]:
-    """获取系统支持的官方神经语音角色矩阵与 TTS 引擎清单"""
-    from core.podcast.podcast_models import SUPPORTED_TTS_PROVIDERS
-    return {"status": "success", "data": DEFAULT_VOICE_MAP, "providers": SUPPORTED_TTS_PROVIDERS}
+    """获取系统支持的官方神经语音角色矩阵与 TTS 引擎清单（含本机实时就绪探测）"""
+    from core.podcast.podcast_models import SUPPORTED_TTS_PROVIDERS, probe_ready_tts_providers
+    return {"status": "success", "data": DEFAULT_VOICE_MAP, "providers": SUPPORTED_TTS_PROVIDERS, "ready_providers": probe_ready_tts_providers(get_global_engine())}
 
 
 @router.post("/api/podcast/script/extract", dependencies=[Depends(verify_token)])
