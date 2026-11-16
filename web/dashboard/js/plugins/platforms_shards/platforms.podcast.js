@@ -27,6 +27,27 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
     const activeImprint = window.currentImprintId || 'default';
     const feedUrl = `${origin}/api/podcast/feed/${activeImprint}?lang=zh`;
 
+    if (id === 'podcast_tts_engines') {
+        return `
+            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.05);">
+                <h4 style="margin: 0; color: #c084fc;">🎙️ 播客语音合成引擎配置 (TTS Engines)</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
+                    默认使用 <b>Edge TTS (免费免配)</b>；按需在此填入 OpenAI / ElevenLabs / Fish Audio 密钥或本地 CosyVoice 服务地址，播客工坊与自动补合流水线将直接生效。
+                </p>
+            </div>
+            ${renderSettingsItem('默认语音引擎 (Default Provider)', 'podcast.podcast_tts_engines.default_provider', cfg.default_provider || 'edge', 'select', { options: [{ value: 'edge', label: 'Edge TTS (免费免配)' }, { value: 'openai', label: 'OpenAI TTS' }, { value: 'elevenlabs', label: 'ElevenLabs' }, { value: 'fish_audio', label: 'Fish Audio' }, { value: 'cosyvoice', label: '本地 CosyVoice / 克隆' }] })}
+            ${renderSettingsItem('OpenAI TTS API Key', 'podcast.podcast_tts_engines.openai_api_key', cfg.openai_api_key || '', 'password', { placeholder: 'sk-...' })}
+            ${renderSettingsItem('OpenAI TTS 接口地址 (Base URL)', 'podcast.podcast_tts_engines.openai_base_url', cfg.openai_base_url || 'https://api.openai.com/v1', 'text', { placeholder: 'https://api.openai.com/v1' })}
+            ${renderSettingsItem('ElevenLabs API Key', 'podcast.podcast_tts_engines.elevenlabs_api_key', cfg.elevenlabs_api_key || '', 'password', { placeholder: 'xi-api-key...' })}
+            ${renderSettingsItem('ElevenLabs 主讲/搭档 Voice ID', 'podcast.podcast_tts_engines.elevenlabs_voice_a', cfg.elevenlabs_voice_a || '', 'text', { placeholder: '女声 Voice ID (留空使用官方默认)' })}
+            ${renderSettingsItem('ElevenLabs 搭档 Voice ID B', 'podcast.podcast_tts_engines.elevenlabs_voice_b', cfg.elevenlabs_voice_b || '', 'text', { placeholder: '男声 Voice ID (留空使用官方默认)' })}
+            ${renderSettingsItem('Fish Audio API Key', 'podcast.podcast_tts_engines.fish_audio_api_key', cfg.fish_audio_api_key || '', 'password', { placeholder: 'Fish Audio Token' })}
+            ${renderSettingsItem('Fish Audio 音色参考 ID A / B', 'podcast.podcast_tts_engines.fish_audio_ref_a', cfg.fish_audio_ref_a || '', 'text', { placeholder: '主讲人 Reference ID (可选)' })}
+            ${renderSettingsItem('Fish Audio 音色参考 ID B', 'podcast.podcast_tts_engines.fish_audio_ref_b', cfg.fish_audio_ref_b || '', 'text', { placeholder: '搭档 Reference ID (可选)' })}
+            ${renderSettingsItem('本地 CosyVoice 兼容地址', 'podcast.podcast_tts_engines.cosyvoice_base_url', cfg.cosyvoice_base_url || 'http://127.0.0.1:9880/v1', 'text', { placeholder: 'http://127.0.0.1:9880/v1' })}
+        `;
+    }
+
     if (id === 'podcast_hub') {
         return `
             <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.05);">

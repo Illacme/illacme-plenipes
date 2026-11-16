@@ -179,36 +179,41 @@ SUPPORTED_TTS_PROVIDERS = [
 ]
 
 
-async def synthesize_external_tts(text: str, voice: str, provider: str) -> Optional[bytes]:
-    """路由至第三方/本地 TTS 服务（OpenAI / ElevenLabs / Fish Audio / CosyVoice），未配置或失败返回 None 触发兜底"""
+async def synthesize_external_tts(text: str, voice: str, provider: str, engine: Any = None) -> Optional[bytes]:
+    """路由至第三方/本地 TTS 服务（优先读取 config.podcast.podcast_tts_engines，回退环境变量）"""
     import httpx
+    p_cfg = (getattr(getattr(engine, "config", None), "podcast", None) or {}) if engine else {}
+    t_cfg = p_cfg.get("podcast_tts_engines", {}) if isinstance(p_cfg, dict) and isinstance(p_cfg.get("podcast_tts_engines"), dict) else {}
+    def _cfg(k: str, env_k: str, default: str = "") -> str:
+        return str(t_cfg.get(k) or os.environ.get(env_k) or default).strip()
+
     p = (provider or "edge").strip().lower()
     is_female = any(k in (voice or "").lower() for k in ("xiaoxiao", "jenny", "nanami", "nova", "shimmer"))
     if p in ("openai", "cosyvoice"):
-        api_key = os.environ.get("OPENAI_API_KEY", "").strip() if p == "openai" else (os.environ.get("COSYVOICE_API_KEY") or "local")
+        api_key = _cfg("openai_api_key", "OPENAI_API_KEY") if p == "openai" else (_cfg("cosyvoice_api_key", "COSYVOICE_API_KEY", "local"))
         if p == "openai" and not api_key:
             return None
         default_url = "https://api.openai.com/v1" if p == "openai" else "http://127.0.0.1:9880/v1"
-        base_url = (os.environ.get("COSYVOICE_BASE_URL" if p == "cosyvoice" else "OPENAI_BASE_URL") or default_url).rstrip("/")
+        base_url = _cfg("cosyvoice_base_url" if p == "cosyvoice" else "openai_base_url", "COSYVOICE_BASE_URL" if p == "cosyvoice" else "OPENAI_BASE_URL", default_url).rstrip("/")
         oa_voice = "nova" if is_female else "onyx"
-        model = os.environ.get("COSYVOICE_MODEL" if p == "cosyvoice" else "OPENAI_TTS_MODEL", "cosyvoice" if p == "cosyvoice" else "tts-1")
+        model = _cfg("cosyvoice_model" if p == "cosyvoice" else "openai_model", "COSYVOICE_MODEL" if p == "cosyvoice" else "OPENAI_TTS_MODEL", "cosyvoice" if p == "cosyvoice" else "tts-1")
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post(f"{base_url}/audio/speech", headers={"Authorization": f"Bearer {api_key}"}, json={"model": model, "input": text, "voice": oa_voice, "response_format": "mp3"})
             return r.content if (r.status_code == 200 and r.content) else None
     if p == "elevenlabs":
-        api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+        api_key = _cfg("elevenlabs_api_key", "ELEVENLABS_API_KEY")
         if not api_key:
             return None
-        vid = os.environ.get("ELEVENLABS_VOICE_A" if is_female else "ELEVENLABS_VOICE_B") or ("21m00Tcm4TlvDq8ikWAM" if is_female else "TxGEqnHWrfWFTfGW9XjX")
+        vid = _cfg("elevenlabs_voice_a" if is_female else "elevenlabs_voice_b", "ELEVENLABS_VOICE_A" if is_female else "ELEVENLABS_VOICE_B") or ("21m00Tcm4TlvDq8ikWAM" if is_female else "TxGEqnHWrfWFTfGW9XjX")
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}", headers={"xi-api-key": api_key}, json={"text": text, "model_id": "eleven_multilingual_v2"})
             return r.content if (r.status_code == 200 and r.content) else None
     if p == "fish_audio":
-        api_key = os.environ.get("FISH_AUDIO_API_KEY", "").strip()
+        api_key = _cfg("fish_audio_api_key", "FISH_AUDIO_API_KEY")
         if not api_key:
             return None
         payload: Dict[str, Any] = {"text": text, "format": "mp3"}
-        ref_id = os.environ.get("FISH_AUDIO_REF_A" if is_female else "FISH_AUDIO_REF_B", "").strip()
+        ref_id = _cfg("fish_audio_ref_a" if is_female else "fish_audio_ref_b", "FISH_AUDIO_REF_A" if is_female else "FISH_AUDIO_REF_B")
         if ref_id:
             payload["reference_id"] = ref_id
         async with httpx.AsyncClient(timeout=45.0) as client:

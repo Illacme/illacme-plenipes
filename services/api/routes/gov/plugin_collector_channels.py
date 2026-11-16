@@ -42,7 +42,7 @@ def is_plugin_config_ready(category: str, p_id: str, cfg: Dict[str, Any]) -> boo
     if category == "notification":
         return any(_val(k) for k in ["webhook_url", "url", "webhook", "token", "bot_token", "host", "smtp_host", "sendkey"])
     if category == "podcast":
-        if p_id == "podcast_hub":
+        if p_id in ("podcast_hub", "podcast_tts_engines"):
             return True
         if p_id == "podcast_r2_storage":
             return any(_val(k) for k in ["bucket"]) and any(_val(k) for k in ["access_key_id", "access_key"])
@@ -255,6 +255,7 @@ def collect_podcast_plugins(engine, disabled: set, system_track: str) -> List[Di
     podcast_cfg = getattr(engine.config, "podcast", {}) or {}
     podcast_defs = [
         ("podcast_hub", "播客全网发行 (Podcast Hub)", "基于开放 RSS 2.0 规范，提供标准音频流、Show 级专辑元数据与全网播客客户端分发订阅。", True),
+        ("podcast_tts_engines", "播客语音引擎 (TTS Engines)", "配置 OpenAI TTS、ElevenLabs、Fish Audio 与本地 CosyVoice 克隆语音引擎的 API 密钥、端点与角色音色 ID。", True),
         ("podcast_xiaoyuzhou", "小宇宙 (Xiaoyuzhou)", "主流中文播客平台，支持绑定托管 RSS、同步单集节目 Show Notes 与分段收听直达。", False),
         ("podcast_apple", "Apple Podcasts", "全球主流播客分发目录，通过 Apple Podcasts Connect 提交 RSS 源，触达 iOS/macOS 听众。", False),
         ("podcast_spotify", "Spotify for Podcasters", "通过 Spotify for Podcasters 认领与同步 RSS 节目单，覆盖 Spotify 全球多端音频受众。", False),

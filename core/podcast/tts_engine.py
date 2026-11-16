@@ -82,12 +82,13 @@ class PodcastTTSEngine:
         pitch: str = "+0Hz",
         proxy: Optional[str] = None,
         tts_provider: str = "edge",
+        engine: Any = None,
     ) -> bytes:
         """单个台词回合的语音合成（支持 edge-tts 及 OpenAI / ElevenLabs / Fish Audio / CosyVoice 多引擎路由）"""
         if (tts_provider or "edge").lower() != "edge":
             try:
                 from .podcast_models import synthesize_external_tts
-                ext_bytes = await synthesize_external_tts(text, voice, tts_provider)
+                ext_bytes = await synthesize_external_tts(text, voice, tts_provider, engine=engine)
                 if ext_bytes:
                     return ext_bytes
             except Exception as ext_err:
@@ -116,6 +117,7 @@ class PodcastTTSEngine:
         imprint_name: str = "SOVEREIGN PRESS",
         bgm_style: Optional[str] = "cyber_ambient",
         tts_provider: str = "edge",
+        engine: Any = None,
     ) -> AudioResult:
         """将完整剧本并发合成为单轨播客 MP3 音频，并同步导出章节与逐句字幕 Sidecar"""
         os.makedirs(os.path.dirname(os.path.abspath(output_file_path)), exist_ok=True)
@@ -130,7 +132,7 @@ class PodcastTTSEngine:
             voice = v_a if turn.speaker == "host_a" else v_b
             async with sem:
                 try:
-                    return await cls.synthesize_turn_audio(text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy, tts_provider=tts_provider)
+                    return await cls.synthesize_turn_audio(text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy, tts_provider=tts_provider, engine=engine)
                 except Exception as e:
                     tlog.error(f"🚨 [播客合成] 第 {idx + 1} 轮合成失败 ({voice}): {e}")
                     raise

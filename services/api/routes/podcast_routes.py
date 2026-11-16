@@ -195,7 +195,7 @@ async def synthesize_podcast(req: PodcastSynthesizeRequest) -> Dict[str, Any]:
         res = await PodcastTTSEngine.synthesize_script(
             script=script, output_file_path=target_path, voice_a=req.voice_a, voice_b=req.voice_b,
             pause_ms=req.pause_ms or 400, rate=req.rate or "+0%", pitch=req.pitch or "+0Hz",
-            imprint_name=brand_name, bgm_style=req.bgm_style or "cyber_ambient", tts_provider=req.tts_provider or "edge"
+            imprint_name=brand_name, bgm_style=req.bgm_style or "cyber_ambient", tts_provider=req.tts_provider or "edge", engine=engine
         )
     except Exception as e:
         tlog.error(f"🚨 播客语音合成失败: {e}", exc_info=True)

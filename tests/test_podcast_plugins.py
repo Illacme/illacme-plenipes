@@ -32,10 +32,11 @@ def test_assemble_plugin_matrix_contains_podcast_category():
         matrix = assemble_plugin_matrix()
 
     podcast_plugins = [p for p in matrix if p.get("category") == "podcast"]
-    assert len(podcast_plugins) == 8
+    assert len(podcast_plugins) == 9
 
     p_ids = [p["id"] for p in podcast_plugins]
     assert "podcast_hub" in p_ids
+    assert "podcast_tts_engines" in p_ids
     assert "podcast_xiaoyuzhou" in p_ids
     assert "podcast_apple" in p_ids
     assert "podcast_spotify" in p_ids
@@ -90,9 +91,10 @@ def test_api_plugins_list_endpoint():
     data = resp.json()
     assert "plugins" in data
     podcasts = [p for p in data["plugins"] if p.get("category") == "podcast"]
-    assert len(podcasts) == 8
+    assert len(podcasts) == 9
+    assert any(p["id"] == "podcast_tts_engines" for p in podcasts)
     ids = {p["id"] for p in podcasts}
-    assert ids == {"podcast_hub", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify", "podcast_youtube", "podcast_netease", "podcast_ximalaya", "podcast_r2_storage"}
+    assert ids == {"podcast_hub", "podcast_tts_engines", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify", "podcast_youtube", "podcast_netease", "podcast_ximalaya", "podcast_r2_storage"}
 
 
 def test_api_plugins_probe_endpoint():
