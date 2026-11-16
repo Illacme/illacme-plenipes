@@ -75,7 +75,7 @@ Because this open-source client runs **100% locally with zero telemetry uploads*
 ![Publishing Hub & Digital Bookshelf](./docs/assets/workbench_dispatch.png)
 * **🌐 Free Static Site Hosting**: One-click deployment to GitHub Pages, Cloudflare Pages, Vercel, Netlify, and more with live URLs returned directly.
 * **📚 Digital Bindery & Isolated Bookshelf**: Export **WebBooks**, **EPUB 3**, **print-ready PDFs**, and **DOCX with editable equations**, including polyglot parallel editions isolated per imprint (`dist/books/{imprint_id}`).
-* **🎙️ Podcast Studio & RSS 2.0 Feed**: Synthesize dual-host episodes across 4 dialogue styles with chapter timelines, `podcast-feed.xml`, and R2/S3/OSS/COS CDN offloading.
+* **🎙️ Podcast Studio & RSS 2.0 Feed**: Synthesize dual-host episodes across 4 dialogue styles with **Focus Guidance**, **custom host names & speech rate**, **ZH/EN/JA multi-language batch generation**, and **11 free open-source & commercial TTS engines** (`Edge TTS` zero-config default, `Kokoro`, `ChatTTS`, `CosyVoice`, `Piper`, plus `OpenAI`-compatible/SiliconFlow preset, `MiniMax`, `Volcengine`, `Gemini`, `ElevenLabs`, `Fish Audio` with inline voice testing & transparent fallback), generating chapter timelines, `podcast-feed.xml`, and R2/S3/OSS/COS CDN offloading.
 * **🛰️ 30+ Social Channels & Self-Healing Ledger**: Track live results and retry or invoke Copilot diagnostics on dead-letter failures in one click.
 
 #### ⚙️ 4. Governance (`Governance`) & 🎨 Cover Studio

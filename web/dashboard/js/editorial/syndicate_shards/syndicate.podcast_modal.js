@@ -65,7 +65,7 @@
             const token = localStorage.getItem('token') || '';
             const resp = await fetch('/api/podcast/synthesize', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ rel_path: _currentRelPath, title: _currentScript.title || '技术对谈播客', turns: _currentScript.turns, lang: _selectedLang, style: _selectedStyle, bgm_style: _selectedBgm, pause_ms: 380, tts_provider: (document.getElementById('podcast-tts-provider') || {}).value || 'edge' })
+                body: JSON.stringify({ rel_path: _currentRelPath, title: _currentScript.title || '技术对谈播客', turns: _currentScript.turns, lang: _selectedLang, style: _selectedStyle, bgm_style: _selectedBgm, pause_ms: 380, rate: (document.getElementById('podcast-rate-select') || {}).value || '+0%', tts_provider: (document.getElementById('podcast-tts-provider') || {}).value || 'edge' })
             });
             const data = await resp.json();
             if (!resp.ok || data.status !== 'success') throw new Error(data.detail || '音频合成失败');
@@ -90,24 +90,16 @@
 
     window.syncPodcastToCloud = async function (btn) {
         if (!_currentAudioInfo || !_currentAudioInfo.filename) return;
-        const orig = btn.innerText;
-        btn.innerText = '☁️ 转储中...';
-        btn.disabled = true;
+        const orig = btn.innerText; btn.innerText = '☁️ 转储中...'; btn.disabled = true;
         try {
-            const token = localStorage.getItem('token') || '';
-            const resp = await fetch('/api/podcast/storage/sync', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ filename: _currentAudioInfo.filename, rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle })
-            });
+            const resp = await fetch('/api/podcast/storage/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }, body: JSON.stringify({ filename: _currentAudioInfo.filename, rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle }) });
             const data = await resp.json();
             if (!resp.ok || data.status !== 'success') throw new Error(data.detail || '云端转储失败');
-            _currentAudioInfo.cdn_url = data.data?.cdn_url;
-            btn.innerText = '✅ 已加速';
+            _currentAudioInfo.cdn_url = data.data?.cdn_url; btn.innerText = '✅ 已加速';
             if (typeof window.showToast === 'function') window.showToast(`☁️ 播客已成功转储至 CDN：${data.data?.cdn_url || ''}`, 'success');
             _renderPlayerArea();
         } catch (err) {
-            btn.innerText = orig;
-            btn.disabled = false;
+            btn.innerText = orig; btn.disabled = false;
             if (typeof window.showToast === 'function') window.showToast(err.message, 'error');
         }
     };
@@ -118,10 +110,11 @@
         try {
             const token = localStorage.getItem('token') || '';
             const focusVal = ((document.getElementById('podcast-focus-input') || {}).value || '').trim();
+            const hostA = ((document.getElementById('podcast-host-a') || {}).value || '').trim();
+            const hostB = ((document.getElementById('podcast-host-b') || {}).value || '').trim();
             const scriptReq = fetch('/api/podcast/script/extract', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle, max_turns: 10, use_ai: !!useAi, focus_prompt: focusVal || null })
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle, max_turns: 10, use_ai: !!useAi, focus_prompt: focusVal || null, host_a_name: hostA || null, host_b_name: hostB || null })
             });
             const audioReq = useAi ? Promise.resolve(null) : fetch(`/api/podcast/info?rel_path=${encodeURIComponent(_currentRelPath)}&lang=${_selectedLang}&style=${_selectedStyle}`).then((r) => r.json()).catch(() => null);
 
@@ -283,6 +276,7 @@
                     <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">语种:</span><div id="podcast-lang-pills" style="display:flex;gap:4px;">${lPills}</div></div>
                     <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">风格:</span><div id="podcast-style-pills" style="display:flex;gap:4px;">${sPills}</div></div>
                     <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">垫乐:</span><div id="podcast-bgm-pills" style="display:flex;gap:4px;">${bPills}</div></div>
+                    <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">语速:</span><select id="podcast-rate-select" class="podcast-input" style="width:auto;padding:3px 8px;"><option value="-10%">0.9x</option><option value="+0%" selected>1.0x</option><option value="+15%">1.15x</option><option value="+25%">1.25x</option></select><span class="podcast-sub" style="font-size:0.75rem;margin-left:4px;">主播:</span><input id="podcast-host-a" class="podcast-input" type="text" placeholder="主讲名(默认)" style="width:86px;padding:3px 7px;" onchange="window.extractScriptRule()"><input id="podcast-host-b" class="podcast-input" type="text" placeholder="搭档名(默认)" style="width:86px;padding:3px 7px;" onchange="window.extractScriptRule()"></div>
                     <div style="display:flex;align-items:center;gap:8px;width:100%;padding-top:6px;border-top:1px dashed var(--border-subtle,rgba(148,163,184,0.25));flex-wrap:nowrap;">
                         <span class="podcast-sub" style="font-size:0.74rem;white-space:nowrap;flex-shrink:0;">🎯 聚焦引导:</span>
                         <input id="podcast-focus-input" class="podcast-input" type="text" placeholder="可选：如“面向初学者科普”或“重点辩论架构取舍”..." style="flex:1 1 240px;min-width:180px;">

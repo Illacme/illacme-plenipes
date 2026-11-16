@@ -225,14 +225,19 @@
         if (btn) { btn.disabled = true; btn.innerText = '🌐 多语联产中 (zh/en/ja)...'; }
         const token = localStorage.getItem('token') || '';
         const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        const ttsProvider = (document.getElementById('podcast-tts-provider') || {}).value || window.settingsData?.podcast?.podcast_tts_engines?.default_provider || 'edge';
+        const rate = (document.getElementById('podcast-rate-select') || {}).value || '+0%';
+        const focusPrompt = ((document.getElementById('podcast-focus-input') || {}).value || '').trim() || null;
+        const hostA = ((document.getElementById('podcast-host-a') || {}).value || '').trim() || null;
+        const hostB = ((document.getElementById('podcast-host-b') || {}).value || '').trim() || null;
         let okLangs = [];
         try {
             for (const lg of ['zh', 'en', 'ja']) {
                 if (btn) btn.innerText = `🌐 正在衍生 ${lg.toUpperCase()}...`;
-                const sResp = await fetch('/api/podcast/script/extract', { method: 'POST', headers, body: JSON.stringify({ rel_path: relPath, lang: lg, style, max_turns: 10, use_ai: false }) });
+                const sResp = await fetch('/api/podcast/script/extract', { method: 'POST', headers, body: JSON.stringify({ rel_path: relPath, lang: lg, style, max_turns: 10, use_ai: false, focus_prompt: focusPrompt, host_a_name: hostA, host_b_name: hostB }) });
                 const sData = await sResp.json();
                 if (!sResp.ok || sData.status !== 'success') continue;
-                const synResp = await fetch('/api/podcast/synthesize', { method: 'POST', headers, body: JSON.stringify({ rel_path: relPath, title: sData.data.title || 'Podcast', turns: sData.data.turns, lang: lg, style, bgm_style: bgm, pause_ms: 380 }) });
+                const synResp = await fetch('/api/podcast/synthesize', { method: 'POST', headers, body: JSON.stringify({ rel_path: relPath, title: sData.data.title || 'Podcast', turns: sData.data.turns, lang: lg, style, bgm_style: bgm, pause_ms: 380, rate, tts_provider: ttsProvider }) });
                 const synData = await synResp.json();
                 if (synResp.ok && synData.status === 'success') okLangs.push(lg.toUpperCase());
             }
