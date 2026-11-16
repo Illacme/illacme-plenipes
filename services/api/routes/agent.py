@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, Union, List
 import json
 
+from core import __version__
 from core.runtime.engine_singleton import get_global_engine
 from core.adapters.ai.agent_loop import AutonomousAgent
+from core.adapters.ai.tool_registry import ToolRegistry
 from core.adapters.ai.hitl import active_hitl_sessions
 from .system import verify_token
 
@@ -13,12 +16,25 @@ router = APIRouter(prefix="/api/agent", tags=["agent"], dependencies=[Depends(ve
 
 class AgentTaskRequest(BaseModel):
     user_prompt: str
-    system_prompt: str = "You are the Sovereign Copilot, an advanced AI coordinator operating within the sovereign engine Illacme Plenipes. Always be professional, extremely concise, direct, and action-oriented. Avoid repeating generic greetings, boilerplate descriptions, or introductions (such as '你好！我是 Illacme Plenipes 中的 AI 助手') unless explicitly requested by the user. You MUST always respond in the same language as the user's input (e.g., respond in Chinese if the input is Chinese, and in English if the input is in English), unless explicitly instructed otherwise."
+    system_prompt: str = (
+        "You are the Sovereign Copilot & Editorial Chief operating within Illacme Plenipes. "
+        "Always be professional, extremely concise, direct, and action-oriented. "
+        "You have full access to vault reading/search/patching tools as well as Editorial Chief publishing tools: "
+        "'inspect_publishing_readiness' (audit vault, pending podcasts, bound books, and AI tasks), "
+        "'curate_topic_collection' (discover topic clusters to bind into books or podcast series), "
+        "'synthesize_article_podcast' (generate dual-host MP3 podcast in zh/en/ja), "
+        "'bind_digital_book' (compile categories or articles into webbook/epub/pdf/docx), "
+        "'generate_article_cover' (generate 16:9/2.35:1/3:4 cover and bind to Frontmatter), and "
+        "'diagnose_dispatch_failures' (inspect and heal dead-letter syndication/hosting failures). "
+        "Respond in the same language as the user's input unless instructed otherwise."
+    )
     max_iterations: int = 10
     reasoning_enabled: bool = False
     reasoning_effort: str = "medium"
     autopilot_enabled: bool = False
     stream_enabled: bool = True
+    history: List[Dict[str, str]] = Field(default_factory=list)
+    workspace_context: Optional[Dict[str, Any]] = None
 
 class AgentAuthorizeRequest(BaseModel):
     hitl_id: str
@@ -104,7 +120,9 @@ async def execute_agent_task(request: AgentTaskRequest):
                     reasoning_enabled=request.reasoning_enabled,
                     reasoning_effort=request.reasoning_effort,
                     autopilot_enabled=request.autopilot_enabled,
-                    stream_enabled=request.stream_enabled
+                    stream_enabled=request.stream_enabled,
+                    history=request.history,
+                    workspace_context=request.workspace_context,
                 ):
                     yield "data: " + json.dumps(event) + "\n\n"
             except Exception as inner_e:
@@ -161,10 +179,31 @@ async def rollback_agent_patch(request: AgentRollbackRequest):
     search_content = patch["search_content"]
     replace_content = patch["replace_content"]
     
-    from core.adapters.ai.tools.vault_service import get_secure_vault_path, fuzzy_match_document, verify_sandbox_path
-    
+    from core.adapters.ai.tools.vault_service import get_secure_vault_path, fuzzy_match_document, verify_sandbox_path, sync_document_to_engine
+    import os
+
     try:
         vault_path = get_secure_vault_path()
+        if patch.get("mode") == "snapshot":
+            full_path, resolved_rel, err_msg = fuzzy_match_document(vault_path, rel_path)
+            if err_msg or not full_path:
+                full_path = os.path.abspath(os.path.join(vault_path, rel_path))
+                resolved_rel = rel_path
+            if not verify_sandbox_path(vault_path, full_path):
+                raise Exception("Access denied. Path traversal blocked.")
+            if patch.get("existed"):
+                prev = patch.get("previous_content", "")
+                with open(full_path, "w", encoding="utf-8") as f:
+                    f.write(prev)
+                sync_document_to_engine(vault_path, full_path, prev)
+            elif os.path.isfile(full_path):
+                os.remove(full_path)
+                engine = get_global_engine()
+                if engine and hasattr(engine, "meta") and hasattr(engine.meta, "remove_document"):
+                    engine.meta.remove_document(resolved_rel)
+            del active_patches[request.patch_id]
+            return {"status": "success", "message": f"已通过快照回滚 '{resolved_rel}' 至操作前状态！"}
+
         full_path, resolved_rel, err_msg = fuzzy_match_document(vault_path, rel_path)
         if err_msg or not full_path:
             raise Exception(err_msg or "无法定位该原稿文件。")
@@ -198,3 +237,29 @@ async def rollback_agent_patch(request: AgentRollbackRequest):
     except Exception as e:
         logger.error(f"❌ [Rollback Error] Failed to rollback patch {request.patch_id}: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+class MCPJsonRpcRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    id: Optional[Union[str, int]] = 1
+    method: str
+    params: Optional[Dict[str, Any]] = None
+
+
+@router.get("/mcp/tools")
+async def list_mcp_tools() -> Dict[str, Any]:
+    """🔌 [Feature: MCP Publishing Protocol] 暴露标准 MCP 工具发现清单，供外部智能体直接挂载"""
+    registry = ToolRegistry()
+    return {
+        "protocolVersion": "2024-11-05",
+        "serverInfo": {"name": "illacme-plenipes-editorial-mcp", "version": __version__},
+        "tools": registry.export_mcp_tools(),
+    }
+
+
+@router.post("/mcp/rpc")
+async def handle_mcp_jsonrpc(req: MCPJsonRpcRequest) -> Dict[str, Any]:
+    """🔌 [Feature: MCP Publishing Protocol] 标准 JSON-RPC 2.0 端点 (支持 tools, resources, prompts)"""
+    from core.adapters.ai.tool_protocol import dispatch_mcp_jsonrpc
+    return await dispatch_mcp_jsonrpc(req.id, req.method, req.params or {})
+

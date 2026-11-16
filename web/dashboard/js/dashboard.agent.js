@@ -12,8 +12,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 🌟 引入状态执行锁与物理时序计数器，防止并发提交并支持大屏双轨还原排序 (SOP-01 Compliant)
+    // 🌟 引入状态执行锁、多轮会话记忆与物理时序计数器，防止并发提交并支持上下文感知 (SOP-01 Compliant)
     let isExecuting = false, messageOrderCounter = 0;
+    const conversationHistory = [];
+    let lastImprintCtx = window.currentImprintId || '';
+
+    function collectWorkspaceContext() {
+        const activeNav = document.querySelector('.nav-item.active');
+        const activeView = activeNav ? (activeNav.getAttribute('data-view') || activeNav.id || '') : '';
+        const activeDoc = window.currentEditingDocId || window.currentSelectedDocId || '';
+        const imprintId = window.currentImprintId || '';
+        if (imprintId && imprintId !== lastImprintCtx) {
+            conversationHistory.length = 0;
+            lastImprintCtx = imprintId;
+        }
+        return { active_view: activeView, active_document: activeDoc, imprint_id: imprintId };
+    }
 
     const agentInput = document.getElementById('agent-command-input'), agentFeed = document.getElementById('agent-feed');
     const agentPod = document.querySelector('.agent-pod'), agentStatus = document.getElementById('agent-status-tag');
@@ -165,6 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxIterations = maxIterSelect ? parseInt(maxIterSelect.value, 10) : 10;
 
         let activeThinkingDiv = null, activeThinkingDetails = null;
+        let lastFinalMessage = '';
+        const wsCtx = collectWorkspaceContext();
 
         try {
             const response = await sa.api.submitTask({
@@ -173,13 +189,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 reasoning_enabled: isReasoningEnabled,
                 reasoning_effort: selectedReasoningEffort,
                 autopilot_enabled: isAutopilotEnabled,
-                stream_enabled: isStreamEnabled
+                stream_enabled: isStreamEnabled,
+                history: conversationHistory.slice(-8),
+                workspace_context: wsCtx
             });
 
             // 投喂给渲染层打字机 SSE 解析器进行流式刷新
-            const result = await sa.render.renderStream(response, thinkingId, renderStreamEvent);
+            const result = await sa.render.renderStream(response, thinkingId, (ev) => {
+                if (ev && ev.type === 'final' && ev.message) lastFinalMessage = ev.message;
+                renderStreamEvent(ev);
+            });
             activeThinkingDiv = result.activeThinkingDiv;
             activeThinkingDetails = result.activeThinkingDetails;
+            conversationHistory.push({ role: 'user', content: command });
+            if (lastFinalMessage) conversationHistory.push({ role: 'assistant', content: lastFinalMessage });
+            if (conversationHistory.length > 16) conversationHistory.splice(0, conversationHistory.length - 16);
 
         } catch (error) {
             sa.render.appendMessage(`[ERROR] 脑裂链路中断: ${error.message}`, 'system-msg');
@@ -223,6 +247,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 🔌 MCP 一键接入配置向导
+    const mcpBadge = document.getElementById('badge-mcp');
+    if (mcpBadge) {
+        mcpBadge.addEventListener('click', async () => {
+            const mcpUrl = `${window.location.origin}/api/agent/mcp/rpc`;
+            const snippet = JSON.stringify({ mcpServers: { 'illacme-plenipes': { url: mcpUrl, transport: 'http' } } }, null, 2);
+            try { if (navigator.clipboard) await navigator.clipboard.writeText(snippet); } catch (_) {}
+            sa.render.appendMessage(`🔌 **MCP 出版协议接入配置**（已尝试复制至剪贴板）\n\n\`\`\`json\n${snippet}\n\`\`\`\n可用资源: \`illacme://vault/index\`, \`illacme://graph/knowledge\`, \`illacme://imprint/config\``, 'system-msg');
+        });
+    }
+
+    // 暴露外部触发入口供发布中心死信诊断联动调用
+    window.SovereignAgent.submitPrompt = submitAgentTask;
+
     // 渲染流式状态机事件
     function renderStreamEvent(data) {
         if (data.type === 'status') sa.render.appendMessage(data.message, 'system-msg');
@@ -230,6 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (data.type === 'final') sa.render.appendMessage(data.message, 'final-msg');
         else if (data.type === 'patch_applied') {
             sa.render.renderPatchDiff(data);
+        }
+        else if (data.type === 'artifact_created' && typeof sa.render.renderArtifactCard === 'function') {
+            sa.render.renderArtifactCard(data);
         }
         else if (data.type === 'hitl_required') {
             sa.render.appendMessage(data.message, 'system-msg');

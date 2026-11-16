@@ -16,7 +16,13 @@ from core.logic.ai.model_intelligence import ModelIntelligenceHub
 from .payload_manager import PayloadManager
 from core.logic.ai.task_mixin import AITaskMixin
 from core.utils.tracing import tlog
-from .network_mixin import AINetworkMixin
+from .network_mixin import (
+    AINetworkMixin,
+    register_ai_call,
+    unregister_ai_call,
+    check_ai_abort_or_raise,
+    is_ai_aborted,
+)
 from .retry_helper import parse_retry_after, post_process_thinking_tags
 
 
@@ -138,13 +144,16 @@ class BaseTranslator(abc.ABC, AITaskMixin, AINetworkMixin):
 
         last_error = None
         for i in range(self.max_retries + 1):
+            call_id = None
             try:
+                check_ai_abort_or_raise(engine)
                 wait_timeout = 3600
                 if engine and hasattr(engine, 'config') and hasattr(engine.config, 'translation'):
                     wait_timeout = getattr(engine.config.translation, 'ai_semaphore_timeout', 3600)
                 if not self.semaphore.acquire(timeout=wait_timeout):
                     raise RuntimeError(f"AI_SEMAPHORE_TIMEOUT: {self.node_name} after {wait_timeout}s")
                 try:
+                    check_ai_abort_or_raise(engine)
                     if engine and hasattr(engine, 'governance'):
                         breaker = engine.circuit_breakers.get("ai")
                         if breaker and not breaker.allow_request(self.node_name):
@@ -159,8 +168,11 @@ class BaseTranslator(abc.ABC, AITaskMixin, AINetworkMixin):
                                 total_chars += len(content)
                     estimated_tokens = max(10, int(total_chars * 0.5)) + 512
                     self.rate_limiter.acquire(estimated_tokens, sleep_func=self._sleep)
+                    check_ai_abort_or_raise(engine)
                     start_time = time.time()
+                    call_id = register_ai_call(self, payload)
                     response = self._ask_ai(payload)
+                    check_ai_abort_or_raise(engine, call_id)
                     latency = time.time() - start_time
                     if engine:
                         engine.health_registry.report_success(self.node_name, latency)
@@ -180,8 +192,11 @@ class BaseTranslator(abc.ABC, AITaskMixin, AINetworkMixin):
                              provider_config=self.config)
                     return result
                 finally:
+                    unregister_ai_call(call_id)
                     self.semaphore.release()
             except Exception as e:
+                if "AI_ABORTED_BY_USER" in str(e) or is_ai_aborted(engine, call_id):
+                    raise RuntimeError("AI_ABORTED_BY_USER: 算力请求已被用户手动紧急熔断") from e
                 last_error = e
                 if engine:
                     engine.health_registry.report_failure(self.node_name)

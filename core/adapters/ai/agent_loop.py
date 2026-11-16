@@ -2,6 +2,7 @@ import logging
 import json
 import uuid
 import asyncio
+import anyio
 from typing import Dict, Any, List, Optional
 from core.adapters.ai.tool_protocol import ToolCallEvent
 from core.adapters.ai.tool_registry import ToolRegistry
@@ -31,18 +32,24 @@ class AutonomousAgent:
         self.working_dir = os.path.abspath(engine.config.vault_root) if engine and hasattr(engine, 'config') and getattr(engine.config, 'vault_root', None) else os.path.abspath("./vault")
         logger.info(f"📁 [Agent Sandbox] AI module default working directory locked to: {self.working_dir}")
 
-    async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = False, reasoning_effort: str = "medium", autopilot_enabled: bool = False, stream_enabled: bool = True):
+    async def execute_task_stream(self, system_prompt: str, user_content: str, reasoning_enabled: bool = False, reasoning_effort: str = "medium", autopilot_enabled: bool = False, stream_enabled: bool = True, history: Optional[List[Dict[str, str]]] = None, workspace_context: Optional[Dict[str, Any]] = None):
         """
         异步流式生成器，执行任务并抛出关键节点的状态。
         """
         effective_system_prompt = system_prompt
+        if isinstance(workspace_context, dict) and workspace_context:
+            ctx_parts = [f"{k}={v}" for k, v in workspace_context.items() if v]
+            if ctx_parts:
+                effective_system_prompt += f"\n\n[Active Workspace Context]: {', '.join(ctx_parts)}"
         if not reasoning_enabled:
             effective_system_prompt += "\nIMPORTANT: Do NOT output any <think> tags or internal reasoning steps. Provide ONLY the final answer directly and concisely."
 
-        messages = [
-            {"role": "system", "content": effective_system_prompt},
-            {"role": "user", "content": user_content}
-        ]
+        messages: List[Dict[str, Any]] = [{"role": "system", "content": effective_system_prompt}]
+        if isinstance(history, list):
+            for h in history[-8:]:
+                if isinstance(h, dict) and h.get("role") in ("user", "assistant") and isinstance(h.get("content"), str) and h["content"].strip():
+                    messages.append({"role": h["role"], "content": h["content"][:4000]})
+        messages.append({"role": "user", "content": user_content})
         
         iteration = 0
         logger.info("🤖 [Agent Loop] Booting autonomous core & interrogating ToolRegistry")
@@ -118,9 +125,23 @@ class AutonomousAgent:
                 for event in response:
                     logger.info(f"🛠️ [Agent Loop] Executing Tool: {event.name} with {event.arguments}")
                     yield {"type": "step", "message": f"[🔧 CALL: {event.name}]\n"}
+
+                    pre_snapshot = None
+                    if event.name in ("write_document", "generate_article_cover") and isinstance(event.arguments, dict) and event.arguments.get("relative_path"):
+                        try:
+                            from core.adapters.ai.tools.vault_service import get_secure_vault_path, fuzzy_match_document
+                            vp = get_secure_vault_path()
+                            fp, r_rel, err_m = fuzzy_match_document(vp, str(event.arguments["relative_path"]))
+                            if not err_m and fp:
+                                with open(fp, "r", encoding="utf-8") as sf:
+                                    pre_snapshot = {"existed": True, "rel_path": r_rel, "content": sf.read()}
+                            else:
+                                pre_snapshot = {"existed": False, "rel_path": str(event.arguments["relative_path"]), "content": ""}
+                        except Exception:
+                            pre_snapshot = None
                     
-                    # HITL 拦截逻辑 (仅当未开启 autopilot 且属于高危工具时拦截)
-                    if not autopilot_enabled and event.name in ["write_document", "git_commit"]:
+                    # HITL 拦截逻辑 (仅当未开启 autopilot 且属于高危/外部变更工具时拦截)
+                    if not autopilot_enabled and event.name in ["write_document", "generate_article_cover", "retry_dispatch_failures", "git_commit"]:
                         hitl_id = str(uuid.uuid4())
                         resume_event = asyncio.Event()
                         session_state = {"status": "pending", "event": resume_event, "tool_name": event.name, "args": event.arguments}
@@ -141,35 +162,51 @@ class AutonomousAgent:
                         del active_hitl_sessions[hitl_id]
                         
                         if decision == "approve":
-                            result_str = self.registry.execute_tool(event.name, event.arguments)
+                            result_str = await anyio.to_thread.run_sync(self.registry.execute_tool, event.name, event.arguments)
                         else:
                             result_str = "Error: Execution blocked by human override."
                     else:
-                        result_str = self.registry.execute_tool(event.name, event.arguments)
+                        result_str = await anyio.to_thread.run_sync(self.registry.execute_tool, event.name, event.arguments)
                     
-                    # 🌟 捕获成功执行的 patch_document 并抛出包含 UUID 的 patch_applied 事件，用于前台可视化 Diff 与一键撤回
+                    # 🌟 捕获成功执行的写盘类操作并抛出包含 UUID 的 patch_applied 事件，支持 Diff 展示与一键撤回
                     if event.name == "patch_document" and result_str and result_str.startswith("Successfully patched"):
                         patch_id = str(uuid.uuid4())
                         relative_path = event.arguments.get("relative_path")
                         search_content = event.arguments.get("search_content")
                         replace_content = event.arguments.get("replace_content")
-                        
-                        # 写入全局缓存供 API 回退接口调用
                         active_patches[patch_id] = {
-                            "relative_path": relative_path,
-                            "search_content": search_content,
-                            "replace_content": replace_content
+                            "mode": "patch", "relative_path": relative_path,
+                            "search_content": search_content, "replace_content": replace_content
                         }
-                        
-                        # 特殊 yield 给 SSE 状态机
                         yield {
-                            "type": "patch_applied",
-                            "patch_id": patch_id,
-                            "relative_path": relative_path,
-                            "search_content": search_content,
-                            "replace_content": replace_content,
-                            "message": result_str
+                            "type": "patch_applied", "patch_id": patch_id, "relative_path": relative_path,
+                            "search_content": search_content, "replace_content": replace_content, "message": result_str
                         }
+                    elif pre_snapshot is not None and result_str and not result_str.startswith("Error"):
+                        patch_id = str(uuid.uuid4())
+                        active_patches[patch_id] = {
+                            "mode": "snapshot", "relative_path": pre_snapshot["rel_path"],
+                            "existed": pre_snapshot["existed"], "previous_content": pre_snapshot["content"]
+                        }
+                        old_hint = "(原稿存在，已保留写前快照)" if pre_snapshot["existed"] else "(新建文件)"
+                        new_hint = f"[{event.name}] 已写入并同步至知识星谱"
+                        yield {
+                            "type": "patch_applied", "patch_id": patch_id, "relative_path": pre_snapshot["rel_path"],
+                            "search_content": old_hint, "replace_content": new_hint, "message": result_str
+                        }
+
+                    # 🎨 [Feature: Rich Editorial Artifact Cards] 捕获播客/电子书/封面生成成功结果，向前端推送富媒体交互卡片
+                    if event.name in ("synthesize_article_podcast", "bind_digital_book", "generate_article_cover") and result_str and result_str.strip().startswith("{"):
+                        try:
+                            artifact_data = json.loads(result_str)
+                            if isinstance(artifact_data, dict) and artifact_data.get("status") == "success":
+                                yield {
+                                    "type": "artifact_created",
+                                    "tool": event.name,
+                                    "artifact": artifact_data,
+                                }
+                        except Exception:
+                            pass
                     
                     logger.debug(f"🛠️ [Agent Loop] Result: {result_str[:100]}...")
                     messages.append({"role": "tool", "tool_call_id": event.id, "name": event.name, "content": result_str})

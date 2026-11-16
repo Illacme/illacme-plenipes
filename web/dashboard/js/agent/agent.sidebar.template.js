@@ -37,11 +37,12 @@ window.ensureRightSidebarMounted = function () {
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                         <span id="badge-cot" class="cap-badge disabled" title="支持原生思维链逻辑或深度推理 (Reasoning CoT)"><span
                                 class="dot"></span>CoT 推理</span>
-                        <span id="badge-tools" class="cap-badge disabled" title="已打通本地文件读写、指令执行等工具权限"><span
+                        <span id="badge-tools" class="cap-badge disabled" title="已打通本地文件读写、播客合成、数字装订与 MCP 出版协议权限"><span
                                 class="dot"></span>工具自治</span>
                         <span id="badge-stream" class="cap-badge disabled" title="支持高吞吐、零延迟 SSE 流式响应"><span
                                 class="dot"></span>流式极速</span>
                         <span id="badge-vision" class="cap-badge disabled" title="当前模型不支持图像或多模态输入">视觉模态</span>
+                        <span id="badge-mcp" class="cap-badge" title="点击复制标准 MCP 客户端接入配置 (/api/agent/mcp/rpc)" style="border-color: var(--neon-cyan-30); color: var(--accent-secondary); cursor: pointer;">🔌 MCP 协议</span>
                     </div>
                 </div>
                 <div class="settings-row"
@@ -106,6 +107,30 @@ window.ensureRightSidebarMounted = function () {
                         <span
                             style="display: block; font-weight: bold; color: var(--neon-amber); font-size: 0.68rem;">💡
                             点击推荐指令直接交互：</span>
+
+                        <div>
+                            <span
+                                style="display: block; font-weight: 700; color: var(--text-bright); margin-bottom: 2px;">🎙️
+                                出版主编与选题策展 (Editorial Chief)：</span>
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">巡检当前全站出版与播客就绪度</code>
+                            (调用 inspect_publishing_readiness)<br />
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">分析文库知识星谱并推荐可汇编成书的专题与播客选题</code>
+                            (调用 curate_topic_collection)<br />
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">将 Docs 栏目装订为一本离线 WebBook 网页书</code>
+                            (调用 bind_digital_book)<br />
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">为 Blog/block-cache-deep-dive.md 合成一期中文深度播客</code>
+                            (调用 synthesize_article_podcast)<br />
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">为 README.md 生成一张 16:9 技术卡片封面并绑定</code>
+                            (调用 generate_article_cover)<br />
+                            • <code class="clickable-suggestion"
+                                style="color: var(--accent-secondary); background: var(--neon-cyan-06); padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--neon-cyan-12); font-size: 0.62rem; display: inline-block; margin: 2px 0; transition: all 0.2s ease;">扫描并诊断发布中心死信异常</code>
+                            (调用 diagnose_dispatch_failures)
+                        </div>
 
                         <div>
                             <span

@@ -5,7 +5,8 @@ from core.adapters.ai.tool_protocol import IllacmeTool
 from core.adapters.ai.tools.vault_service import (
     get_secure_vault_path,
     verify_sandbox_path,
-    fuzzy_match_document
+    fuzzy_match_document,
+    sync_document_to_engine,
 )
 
 class ReadDocumentTool(IllacmeTool):
@@ -155,6 +156,7 @@ class WriteDocumentTool(IllacmeTool):
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(content)
+            sync_document_to_engine(vault_path, full_path, content)
             return f"Successfully wrote {len(content)} characters to '{relative_path}'."
         except Exception as e:
             return f"Error writing file: {str(e)}"
@@ -225,8 +227,71 @@ class PatchDocumentTool(IllacmeTool):
             new_content = content.replace(search_content, replace_content, 1)
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
-                
+            sync_document_to_engine(vault_path, full_path, new_content)
             return f"Successfully patched '{resolved_rel}'. Replaced {len(search_content)} characters with {len(replace_content)} characters."
         except Exception as e:
             return f"Error patching file: {str(e)}"
+
+
+class GenerateArticleCoverTool(IllacmeTool):
+    """🖼️ [Feature: Editorial Chief Agent] 文章封面视觉生成与 Frontmatter 绑定工具"""
+    name = "generate_article_cover"
+    description = "Generate a visual cover image for a vault Markdown document (strategies: 'auto', 'og_card', 'brand_presets', 'minimal_badge', 'first_image'; ratios: '16:9', '2.35:1', '3:4', '1:1') and optionally bind it into Frontmatter."
+
+    def __init__(self):
+        super().__init__(name=self.name, description=self.description, parameters=self.get_parameters_schema())
+
+    @classmethod
+    def get_parameters_schema(cls) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "relative_path": {"type": "string", "description": "Relative path of the Markdown file in vault (e.g. 'Blog/block-cache-deep-dive.md')."},
+                "strategy": {"type": "string", "description": "Cover strategy: 'auto', 'og_card', 'brand_presets', 'minimal_badge', or 'first_image'. Default 'og_card'."},
+                "aspect_ratio": {"type": "string", "description": "Aspect ratio: '16:9', '2.35:1', '3:4', or '1:1'. Default '16:9'."},
+                "apply_to_frontmatter": {"type": "boolean", "description": "Whether to write the generated cover URL into the document's Frontmatter 'cover' field. Default true."}
+            },
+            "required": ["relative_path"]
+        }
+
+    def execute(self, relative_path: str, strategy: str = "og_card", aspect_ratio: str = "16:9", apply_to_frontmatter: bool = True) -> str:
+        try:
+            import json
+            from core.runtime.engine_singleton import get_global_engine
+            from core.utils.text import parse_frontmatter, inject_frontmatter
+            from core.design.image_hub import image_hub
+
+            engine = get_global_engine()
+            vault_path = get_secure_vault_path()
+            full_path, resolved_rel, err_msg = fuzzy_match_document(vault_path, relative_path)
+            if err_msg or not full_path:
+                return f"Error: {err_msg or f'Document {relative_path} not found.'}"
+
+            with open(full_path, "r", encoding="utf-8") as f:
+                raw_content = f.read()
+            fm, pure_body, _ = parse_frontmatter(raw_content)
+            meta = fm if isinstance(fm, dict) else {}
+            title = str(meta.get("title") or os.path.splitext(os.path.basename(resolved_rel))[0])
+            brand_id = getattr(engine, "imprint_id", "default") if engine else "default"
+
+            rel_url, _, used_strat = image_hub.generate_cover_for_document(
+                doc_id=resolved_rel, title=title, brand_id=brand_id,
+                strategy=strategy or "og_card", aspect_ratio=aspect_ratio or "16:9"
+            )
+            if engine and hasattr(engine, "meta"):
+                image_hub.record_visual_asset(engine.meta, resolved_rel, "cover", used_strat, source_url=rel_url)
+
+            if apply_to_frontmatter:
+                meta["cover"] = rel_url
+                with open(full_path, "w", encoding="utf-8") as f:
+                    f.write(inject_frontmatter(pure_body, meta))
+
+            return json.dumps({
+                "status": "success", "artifact_type": "cover", "document": resolved_rel,
+                "title": title, "cover_url": rel_url, "strategy": used_strat,
+                "aspect_ratio": aspect_ratio or "16:9", "applied_to_frontmatter": bool(apply_to_frontmatter)
+            }, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return f"Error generating cover: {str(e)}"
+
 

@@ -1,4 +1,3 @@
-import inspect
 import json
 import logging
 from typing import Dict, List, Optional, Type, Any
@@ -27,15 +26,41 @@ class ToolRegistry:
         🚀 自动发现并注册 core/adapters/ai/tools 目录下的所有内置工具
         """
         try:
-            from core.adapters.ai.tools.vault_tools import ReadDocumentTool, SearchVaultTool, WriteDocumentTool, PatchDocumentTool
-            from core.adapters.ai.tools.system_tools import CheckHealthTool, GitStatusTool
+            from core.adapters.ai.tools.vault_tools import (
+                ReadDocumentTool,
+                SearchVaultTool,
+                WriteDocumentTool,
+                PatchDocumentTool,
+                GenerateArticleCoverTool,
+            )
+            from core.adapters.ai.tools.system_tools import (
+                CheckHealthTool,
+                GitStatusTool,
+                InspectPublishingReadinessTool,
+                CurateTopicCollectionTool,
+                SynthesizePodcastTool,
+                BindDigitalBookTool,
+                DiagnoseDispatchFailuresTool,
+            )
+            from core.adapters.ai.tools.vault_service import (
+                RetryDispatchFailuresTool,
+                SearchKnowledgeGraphTool,
+            )
             
             self.register(ReadDocumentTool)
             self.register(SearchVaultTool)
             self.register(WriteDocumentTool)
             self.register(PatchDocumentTool)
+            self.register(GenerateArticleCoverTool)
             self.register(CheckHealthTool)
             self.register(GitStatusTool)
+            self.register(InspectPublishingReadinessTool)
+            self.register(CurateTopicCollectionTool)
+            self.register(SynthesizePodcastTool)
+            self.register(BindDigitalBookTool)
+            self.register(DiagnoseDispatchFailuresTool)
+            self.register(RetryDispatchFailuresTool)
+            self.register(SearchKnowledgeGraphTool)
         except Exception as e:
             logger.error(f"❌ Failed to auto-register built-in tools: {e}")
 
@@ -88,3 +113,17 @@ class ToolRegistry:
                 "function": tool_instance.to_openai_schema()
             })
         return schemas
+
+    def export_mcp_tools(self) -> List[Dict[str, Any]]:
+        """
+        导出标准 MCP (Model Context Protocol) 兼容的工具定义列表 (tools/list)。
+        """
+        mcp_tools = []
+        for tool_name, tool_instance in self._tool_instances.items():
+            schema = tool_instance.to_openai_schema()
+            mcp_tools.append({
+                "name": schema.get("name", tool_name),
+                "description": schema.get("description", ""),
+                "inputSchema": schema.get("parameters", {"type": "object", "properties": {}}),
+            })
+        return mcp_tools
