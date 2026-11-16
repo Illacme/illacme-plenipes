@@ -141,6 +141,19 @@ def test_sovereign_audio_widget_rendering():
         assert no_widget == ""
         clean_meta = build_article_meta(fm_no_audio, "zh", reading_meta, adapter=MockAdapter())
         assert "sovereign-audio-player" not in clean_meta
+
+        # 4. 存在 .transcript.json 时自动挂载音文同步伴读字幕属性与面板
+        test_tr = os.path.join(cache_dir, "sov_widget_doc_zh_tech_deep.transcript.json")
+        with open(test_tr, "w", encoding="utf-8") as tf:
+            tf.write('{"turns":[{"speaker_name":"晓晓","text":"你好","start_ms":0,"end_ms":1500}]}')
+        try:
+            sync_html = build_audio_player_widget(MockAdapter(), fm, "zh", root_path="../")
+            assert 'data-transcript-src="../podcasts/sov_widget_doc_zh_tech_deep.transcript.json"' in sync_html
+            assert "audio-transcript-btn" in sync_html
+            assert "audio-transcript-panel" in sync_html
+        finally:
+            if os.path.exists(test_tr):
+                os.remove(test_tr)
     finally:
         if os.path.exists(test_audio):
             os.remove(test_audio)

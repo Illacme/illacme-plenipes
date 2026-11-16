@@ -223,22 +223,31 @@
                 if (audio.duration && !isNaN(audio.duration)) totalTime.textContent = fmt(audio.duration);
             });
 
+            const trBtn = card.querySelector('.audio-transcript-btn'), trPanel = card.querySelector('.audio-transcript-panel');
+            let trLines = [], trLoaded = false;
+            if (trBtn && trPanel && card.dataset.transcriptSrc) {
+                trBtn.addEventListener('click', async () => {
+                    trPanel.hidden = !trPanel.hidden; trBtn.classList.toggle('active', !trPanel.hidden);
+                    if (trLoaded || trPanel.hidden) return;
+                    trPanel.innerHTML = '<div class="audio-tr-empty">加载伴读字幕中...</div>';
+                    try {
+                        const data = await fetch(card.dataset.transcriptSrc).then(r => r.json());
+                        trLoaded = true; const turns = Array.isArray(data.turns) ? data.turns : [];
+                        trPanel.innerHTML = turns.length ? turns.map(t => `<div class="audio-tr-line" data-start="${(t.start_ms || 0) / 1000}" data-end="${(t.end_ms || 0) / 1000}"><span class="audio-tr-speaker">${t.speaker_name || ''}</span><span class="audio-tr-text">${t.text || ''}</span></div>`).join('') : '<div class="audio-tr-empty">暂无字幕</div>';
+                        trLines = Array.from(trPanel.querySelectorAll('.audio-tr-line'));
+                        trLines.forEach(el => el.addEventListener('click', () => { audio.currentTime = parseFloat(el.dataset.start || '0'); audio.play().catch(() => {}); }));
+                    } catch (_) { trPanel.innerHTML = '<div class="audio-tr-empty">字幕加载失败</div>'; }
+                });
+            }
             audio.addEventListener('timeupdate', () => {
                 const cur = audio.currentTime, dur = audio.duration;
                 curTime.textContent = fmt(cur);
-                if (dur && !isNaN(dur) && dur > 0) {
-                    const pct = (cur / dur) * 100;
-                    scrub.value = pct;
-                    if (fill) fill.style.width = `${pct}%`;
-                    totalTime.textContent = fmt(dur);
-                }
-                if (pills.length) {
-                    let active = null;
-                    pills.forEach(p => {
-                        if (cur >= parseFloat(p.getAttribute('data-time') || '0')) active = p;
-                        p.classList.remove('active');
-                    });
-                    if (active) active.classList.add('active');
+                if (dur && !isNaN(dur) && dur > 0) { const pct = (cur / dur) * 100; scrub.value = pct; if (fill) fill.style.width = `${pct}%`; totalTime.textContent = fmt(dur); }
+                if (pills.length) { let active = null; pills.forEach(p => { if (cur >= parseFloat(p.getAttribute('data-time') || '0')) active = p; p.classList.remove('active'); }); if (active) active.classList.add('active'); }
+                if (trLines.length && trPanel && !trPanel.hidden) {
+                    let act = null;
+                    trLines.forEach(el => { const s = parseFloat(el.dataset.start || '0'), e = parseFloat(el.dataset.end || '0'); const hit = cur >= s && (e <= s || cur <= e); el.classList.toggle('active', hit); if (hit) act = el; });
+                    if (act) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
                 }
             });
 
@@ -258,20 +267,8 @@
                 }
             });
 
-            if (speedBtn) {
-                speedBtn.addEventListener('click', () => {
-                    spdIdx = (spdIdx + 1) % SPEEDS.length;
-                    audio.playbackRate = SPEEDS[spdIdx];
-                    speedBtn.textContent = `${SPEEDS[spdIdx]}x`;
-                });
-            }
-
-            if (muteBtn) {
-                muteBtn.addEventListener('click', () => {
-                    audio.muted = !audio.muted;
-                    muteBtn.textContent = audio.muted ? '🔇' : '🔊';
-                });
-            }
+            if (speedBtn) speedBtn.addEventListener('click', () => { spdIdx = (spdIdx + 1) % SPEEDS.length; audio.playbackRate = SPEEDS[spdIdx]; speedBtn.textContent = `${SPEEDS[spdIdx]}x`; });
+            if (muteBtn) muteBtn.addEventListener('click', () => { audio.muted = !audio.muted; muteBtn.textContent = audio.muted ? '🔇' : '🔊'; });
         });
     }
 

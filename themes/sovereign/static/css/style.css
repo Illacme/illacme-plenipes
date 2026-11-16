@@ -2501,3 +2501,14 @@ body.lightbox-open {
     color: #fff;
     box-shadow: 0 0 10px rgba(0, 245, 255, 0.35);
 }
+.audio-transcript-btn.active { background: rgba(0, 245, 255, 0.15); border-color: var(--accent-color); color: var(--accent-color); }
+.audio-transcript-panel {
+    margin-top: 10px; padding: 10px 12px; max-height: 220px; overflow-y: auto;
+    border-top: 1px dashed rgba(148, 163, 184, 0.25); display: flex; flex-direction: column; gap: 6px;
+}
+.audio-transcript-panel[hidden] { display: none; }
+.audio-tr-line { display: flex; gap: 10px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.84rem; line-height: 1.5; color: var(--text-secondary); transition: background 0.2s, color 0.2s; }
+.audio-tr-line:hover { background: rgba(148, 163, 184, 0.12); color: var(--text-primary); }
+.audio-tr-line.active { background: rgba(0, 245, 255, 0.14); color: var(--text-primary); border-left: 3px solid var(--accent-color); font-weight: 500; }
+.audio-tr-speaker { flex-shrink: 0; font-weight: 600; color: var(--accent-color); min-width: 48px; }
+.audio-tr-empty { font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 12px; }

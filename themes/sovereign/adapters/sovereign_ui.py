@@ -165,8 +165,15 @@ def build_audio_player_widget(adapter: Any, fm: Dict[str, Any], lang: str, root_
         except Exception:
             pass
 
+    tr_file = (os.path.splitext(matched_file)[0] + ".transcript.json") if matched_file else None
+    tr_path = os.path.join(cache_dir, tr_file) if (tr_file and os.path.isdir(cache_dir)) else None
+    has_tr = bool(tr_path and os.path.exists(tr_path))
+    tr_attr = f' data-transcript-src="{root_path}podcasts/{tr_file}"' if has_tr else ''
+    tr_btn = '<button type="button" class="audio-chip audio-transcript-btn" title="展开/收起音文同步字幕">📝 伴读字幕</button>' if has_tr else ''
+    tr_panel = '<div class="audio-transcript-panel" hidden></div>' if has_tr else ''
+
     return f"""
-    <div class="sovereign-audio-player" data-audio-src="{audio_src}">
+    <div class="sovereign-audio-player" data-audio-src="{audio_src}"{tr_attr}>
         <div class="audio-player-top">
             <div class="audio-badge">
                 <span class="audio-pulse-dot"></span>
@@ -174,6 +181,7 @@ def build_audio_player_widget(adapter: Any, fm: Dict[str, Any], lang: str, root_
                 <span class="audio-label">AI 伴读播客 · <b>{style_label}</b></span>
             </div>
             <div class="audio-actions">
+                {tr_btn}
                 <a href="{rss_url}" target="_blank" class="audio-chip" title="订阅播客 RSS">📻 播客订阅</a>
                 <a href="{audio_src}" download class="audio-chip audio-download" title="下载原版 MP3">⬇️ 下载</a>
             </div>
@@ -190,6 +198,7 @@ def build_audio_player_widget(adapter: Any, fm: Dict[str, Any], lang: str, root_
             <button type="button" class="audio-mute-btn" title="静音切换">🔊</button>
         </div>
         {chapters_html}
+        {tr_panel}
         <audio class="audio-native" preload="metadata" src="{audio_src}"></audio>
     </div>
     """

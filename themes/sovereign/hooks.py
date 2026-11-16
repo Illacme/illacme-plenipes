@@ -49,7 +49,7 @@ def on_post_sync(engine):
             out_podcasts = os.path.join(dist_dir, "podcasts")
             os.makedirs(out_podcasts, exist_ok=True)
             for fname in os.listdir(cache_dir):
-                if fname.endswith((".mp3", ".chapters.json")):
+                if fname.endswith((".mp3", ".chapters.json", ".transcript.json", ".vtt")):
                     src_f, dst_f = os.path.join(cache_dir, fname), os.path.join(out_podcasts, fname)
                     if not os.path.exists(dst_f) or os.path.getsize(src_f) != os.path.getsize(dst_f):
                         shutil.copy2(src_f, dst_f)
