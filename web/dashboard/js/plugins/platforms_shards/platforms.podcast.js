@@ -208,41 +208,16 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
     }
 
     if (id === 'podcast_netease') {
-        return `
-            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(225, 29, 72, 0.4); background: rgba(225, 29, 72, 0.05);">
-                <h4 style="margin: 0; color: #fb7185;">🎵 网易云音乐播客 (创作者中心) 认领向导</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
-                    国内年轻一代与技术人文核心音频阵地。在网易云音乐创作者中心选择「主播电台 -> RSS 托管认领」，填入本站 RSS 源即可自动同步更新。
-                </p>
-                <div style="margin-top: 10px;">
-                    <a href="https://music.163.com/st/creator" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #e11d48; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                        🔗 前往网易云音乐创作者中心
-                    </a>
-                </div>
-            </div>
+        return `<div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(225, 29, 72, 0.4); background: rgba(225, 29, 72, 0.05);"><h4 style="margin: 0; color: #fb7185;">🎵 网易云音乐播客 (创作者中心) 认领向导</h4><p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">国内年轻一代与技术人文核心音频阵地。在网易云音乐创作者中心选择「主播电台 -> RSS 托管认领」，填入本站 RSS 源即可自动同步更新。</p><div style="margin-top: 10px;"><a href="https://music.163.com/st/creator" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #e11d48; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 前往网易云音乐创作者中心</a></div></div>
             ${renderSettingsItem('启用网易云音乐播客', 'podcast.podcast_netease.enabled', !!cfg.enabled, 'checkbox', { description: "激活网易云音乐播客分发通道。" })}
             ${renderSettingsItem('网易云播客电台 ID (Radio ID)', 'podcast.podcast_netease.radio_id', cfg.radio_id || '', 'text', { placeholder: "例如: 796001234", description: "网易云音乐分配的播客电台唯一数字编号。" })}
-            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_netease.token', cfg.token || '', 'password', { placeholder: "可选：MUSIC_U Cookie 或开放凭证", description: "用于状态核验与单集介绍同步（RSS 托管模式下可选填）。" })}
-        `;
+            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_netease.token', cfg.token || '', 'password', { placeholder: "可选：MUSIC_U Cookie 或开放凭证", description: "用于状态核验与单集介绍同步（RSS 托管模式下可选填）。" })}`;
     }
-
     if (id === 'podcast_ximalaya') {
-        return `
-            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05);">
-                <h4 style="margin: 0; color: #fb923c;">📻 喜马拉雅 (主播工作台) 接入向导</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
-                    国内综合体量最大的音频流媒体网络。支持在喜马拉雅主播工作台创建有声专辑并通过 RSS 订阅源或音频直传分发。
-                </p>
-                <div style="margin-top: 10px;">
-                    <a href="https://studio.ximalaya.com" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #ea580c; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                        🔗 前往喜马拉雅主播工作台
-                    </a>
-                </div>
-            </div>
+        return `<div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05);"><h4 style="margin: 0; color: #fb923c;">📻 喜马拉雅 (主播工作台) 接入向导</h4><p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">国内综合体量最大的音频流媒体网络。支持在喜马拉雅主播工作台创建有声专辑并通过 RSS 订阅源或音频直传分发。</p><div style="margin-top: 10px;"><a href="https://studio.ximalaya.com" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #ea580c; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 前往喜马拉雅主播工作台</a></div></div>
             ${renderSettingsItem('启用喜马拉雅渠道', 'podcast.podcast_ximalaya.enabled', !!cfg.enabled, 'checkbox', { description: "激活喜马拉雅播客专辑分发追踪。" })}
             ${renderSettingsItem('喜马拉雅专辑 ID (Album ID)', 'podcast.podcast_ximalaya.album_id', cfg.album_id || '', 'text', { placeholder: "例如: 51234567", description: "喜马拉雅主播后台分配的专辑唯一 ID。" })}
-            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_ximalaya.token', cfg.token || '', 'password', { placeholder: "可选：喜马拉雅创作者授权 Cookie", description: "用于专辑状态追踪与 Show Notes 同步。" })}
-        `;
+            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_ximalaya.token', cfg.token || '', 'password', { placeholder: "可选：喜马拉雅创作者授权 Cookie", description: "用于专辑状态追踪与 Show Notes 同步。" })}`;
     }
 
     return '';
@@ -267,9 +242,32 @@ window.refreshPodcastInlineEngineConfig = function (provider) {
     const p = provider || (document.getElementById('podcast-tts-provider') || {}).value || 'edge';
     const fields = _TTS_ENGINE_FIELDS[p];
     const tCfg = (((window.settingsData || {}).podcast || {}).podcast_tts_engines) || {};
-    if (!fields) { panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="podcast-sub" style="font-size:0.78rem;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;white-space:nowrap;">收起</button></div>`; return; }
+    if (!fields) { panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="podcast-sub" style="font-size:0.78rem;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><div style="display:flex;gap:6px;"><button type="button" class="mini-btn" onclick="window.testPodcastInlineEngine('edge',this)" style="font-size:0.74rem;white-space:nowrap;">🔊 试听</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;white-space:nowrap;">收起</button></div></div>`; return; }
+    const presetBtn = p === 'openai' ? `<button type="button" class="mini-btn" onclick="window.applySiliconFlowPodcastPreset()" title="一键填入硅基流动云端 CosyVoice2 免费额度接口" style="padding:5px 10px;font-size:0.74rem;white-space:nowrap;">🚀 硅基流动预设</button>` : '';
     const inputs = fields.map(([k, lbl, tp, ph]) => `<label style="display:flex;flex-direction:column;gap:3px;min-width:170px;flex:1;"><span class="podcast-sub" style="font-size:0.7rem;">${lbl}</span><input class="podcast-input" data-tts-key="${k}" type="${tp}" value="${String(tCfg[k] || '').replace(/"/g, '&quot;')}" placeholder="${ph || ''}"></label>`).join('');
-    panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}<button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;white-space:nowrap;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;white-space:nowrap;">收起</button></div>`;
+    panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}${presetBtn}<button type="button" class="mini-btn" onclick="window.testPodcastInlineEngine('${p}',this)" style="padding:5px 10px;font-size:0.75rem;white-space:nowrap;">🔊 试听</button><button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;white-space:nowrap;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;white-space:nowrap;">收起</button></div>`;
+};
+
+window.applySiliconFlowPodcastPreset = function () {
+    const panel = document.getElementById('podcast-engine-inline-config'); if (!panel) return;
+    const setVal = (k, v) => { const el = panel.querySelector(`input[data-tts-key="${k}"]`); if (el) el.value = v; };
+    setVal('openai_base_url', 'https://api.siliconflow.cn/v1'); setVal('openai_model', 'FunAudioLLM/CosyVoice2-0.5B');
+    if (typeof window.showToast === 'function') window.showToast('已填入硅基流动 CosyVoice2 地址与模型，填写 API Key 即可试听', 'info');
+};
+
+window.testPodcastInlineEngine = async function (provider, btn) {
+    const panel = document.getElementById('podcast-engine-inline-config');
+    const overrides = {};
+    if (panel) panel.querySelectorAll('input[data-tts-key]').forEach((i) => { if (i.value.trim()) overrides[i.getAttribute('data-tts-key')] = i.value.trim(); });
+    const orig = btn ? btn.textContent : ''; if (btn) { btn.disabled = true; btn.textContent = '⏳ 试听中...'; }
+    try {
+        const r = await fetch('/api/podcast/tts/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }, body: JSON.stringify({ tts_provider: provider, overrides }) });
+        const d = await r.json();
+        if (!r.ok || d.status !== 'success' || !d.audio_base64) throw new Error(d.detail || `HTTP ${r.status}`);
+        new Audio(`data:${d.mime || 'audio/mpeg'};base64,${d.audio_base64}`).play().catch(() => {});
+        if (typeof window.showToast === 'function') window.showToast(`🔊 ${provider} 连通性正常，正在播放试听片段`, 'success');
+    } catch (e) { if (typeof window.showToast === 'function') window.showToast(`试听失败: ${e.message}`, 'error'); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
 };
 
 window.togglePodcastInlineEngineConfig = function () {

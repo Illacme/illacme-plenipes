@@ -14,6 +14,9 @@
         _currentRelPath = relPath || window.currentSyndicatingRelPath || (window.currentPreviewDoc && window.currentPreviewDoc.rel_path) || '';
         if (!_currentRelPath) return typeof window.showToast === 'function' && window.showToast('请先选择一篇文库稿件', 'warning');
         _ensureModalDom();
+        const savedProv = window.settingsData?.podcast?.podcast_tts_engines?.default_provider;
+        const provSel = document.getElementById('podcast-tts-provider');
+        if (provSel && savedProv && provSel.querySelector(`option[value="${savedProv}"]`)) provSel.value = savedProv;
         const backdrop = document.getElementById('syndicate-podcast-modal-backdrop');
         if (backdrop) backdrop.style.display = 'flex';
         await _extractScript(false);
@@ -67,7 +70,10 @@
             const data = await resp.json();
             if (!resp.ok || data.status !== 'success') throw new Error(data.detail || '音频合成失败');
             _currentAudioInfo = data.data;
-            if (typeof window.showToast === 'function') window.showToast('🎉 播客单轨音频合成成功！', 'success');
+            if (typeof window.showToast === 'function') {
+                if (data.data?.fallback_reason) window.showToast(`⚠️ ${data.data.fallback_reason}`, 'warning');
+                else window.showToast(`🎉 播客单轨音频合成成功 (${data.data?.actual_provider || 'edge'})！`, 'success');
+            }
             _renderPlayerArea();
         } catch (err) {
             if (typeof window.showToast === 'function') window.showToast(`合成失败: ${err.message}`, 'error');

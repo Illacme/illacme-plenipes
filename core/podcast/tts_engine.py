@@ -49,6 +49,8 @@ class AudioResult:
     lang: str
     voices_used: Dict[str, str]
     chapters: List[Dict[str, Any]] = field(default_factory=list)
+    actual_provider: str = "edge"
+    fallback_reason: Optional[str] = None
 
 
 class PodcastTTSEngine:
@@ -83,16 +85,21 @@ class PodcastTTSEngine:
         proxy: Optional[str] = None,
         tts_provider: str = "edge",
         engine: Any = None,
+        fallback_tracker: Optional[List[str]] = None,
     ) -> bytes:
-        """单个台词回合的语音合成（支持 edge-tts 及 OpenAI / ElevenLabs / Fish Audio / CosyVoice 多引擎路由）"""
+        """单个台词回合的语音合成（支持多引擎路由，失败时记录降级原因并回退 edge-tts）"""
         if (tts_provider or "edge").lower() != "edge":
             try:
                 from .podcast_models import synthesize_external_tts
                 ext_bytes = await synthesize_external_tts(text, voice, tts_provider, engine=engine)
                 if ext_bytes:
                     return ext_bytes
+                if fallback_tracker is not None:
+                    fallback_tracker.append(f"{tts_provider} 未配置有效密钥或服务返回空响应，已自动回退 Edge TTS")
             except Exception as ext_err:
                 tlog.warning(f"⚠️ [{tts_provider} TTS 降级] 回退至 edge-tts: {ext_err}")
+                if fallback_tracker is not None:
+                    fallback_tracker.append(f"{tts_provider} 调用异常 ({ext_err})，已自动回退 Edge TTS")
 
         import edge_tts
         proxy_url = proxy or os.environ.get("https_proxy") or os.environ.get("http_proxy")
@@ -128,11 +135,12 @@ class PodcastTTSEngine:
 
         # 1. 信号量并发合成各回合音频片段并保持顺序
         sem = asyncio.Semaphore(4)
+        fallback_notes: List[str] = []
         async def _synth_one(idx: int, turn: DialogueTurn) -> bytes:
             voice = v_a if turn.speaker == "host_a" else v_b
             async with sem:
                 try:
-                    return await cls.synthesize_turn_audio(text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy, tts_provider=tts_provider, engine=engine)
+                    return await cls.synthesize_turn_audio(text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy, tts_provider=tts_provider, engine=engine, fallback_tracker=fallback_notes)
                 except Exception as e:
                     tlog.error(f"🚨 [播客合成] 第 {idx + 1} 轮合成失败 ({voice}): {e}")
                     raise
@@ -186,6 +194,7 @@ class PodcastTTSEngine:
         file_size = os.path.getsize(output_file_path)
         tlog.info(f"🎙️ [播客合成完毕] {output_file_path} | 体积: {file_size} 字节 | 时长: {duration_ms}ms")
 
+        actual_p = "edge" if fallback_notes else (tts_provider or "edge").lower()
         return AudioResult(
             output_path=output_file_path,
             file_size_bytes=file_size,
@@ -193,7 +202,9 @@ class PodcastTTSEngine:
             turn_count=len(script.turns),
             lang=script.lang,
             voices_used={"host_a": v_a, "host_b": v_b},
-            chapters=chapters_data
+            chapters=chapters_data,
+            actual_provider=actual_p,
+            fallback_reason=fallback_notes[0] if fallback_notes else None,
         )
 
     @classmethod

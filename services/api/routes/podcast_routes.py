@@ -15,14 +15,8 @@ from core.runtime.engine_singleton import get_global_engine
 from core.utils.tracing import tlog
 from core.utils.text import parse_frontmatter
 from core.podcast import (
-    PodcastScriptEngine,
-    DialogueTurn,
-    PodcastScript,
-    PodcastChapter,
-    PodcastTTSEngine,
-    DEFAULT_VOICE_MAP,
-    ScriptExtractRequest,
-    PodcastSynthesizeRequest
+    PodcastScriptEngine, DialogueTurn, PodcastScript, PodcastChapter,
+    PodcastTTSEngine, DEFAULT_VOICE_MAP, ScriptExtractRequest, PodcastSynthesizeRequest
 )
 from services.api.logic.content_ops_shards.safe_ops import resolve_safe_path
 from .system import verify_token
@@ -141,16 +135,9 @@ async def extract_podcast_script(req: ScriptExtractRequest) -> Dict[str, Any]:
 
     try:
         script = PodcastScriptEngine.extract_script(
-            content=raw_content,
-            metadata=metadata,
-            lang=target_lang,
-            style=req.style or "tech_deep",
-            max_turns=req.max_turns or 10,
-            use_ai=bool(req.use_ai),
-            engine=engine,
-            focus_prompt=req.focus_prompt,
-            host_a_name=req.host_a_name,
-            host_b_name=req.host_b_name,
+            content=raw_content, metadata=metadata, lang=target_lang, style=req.style or "tech_deep",
+            max_turns=req.max_turns or 10, use_ai=bool(req.use_ai), engine=engine,
+            focus_prompt=req.focus_prompt, host_a_name=req.host_a_name, host_b_name=req.host_b_name,
         )
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
@@ -160,16 +147,12 @@ async def extract_podcast_script(req: ScriptExtractRequest) -> Dict[str, Any]:
 
     chaps = [c.to_dict() for c in script.chapters] if getattr(script, "chapters", None) else []
     shownotes = PodcastChapter.format_shownotes_timeline(script.chapters) if getattr(script, "chapters", None) else ""
-    return {
-        "status": "success",
-        "data": {
-            "title": script.title, "topic": script.topic, "lang": script.lang,
-            "style": script.style, "summary": script.summary,
-            "estimated_duration_sec": script.estimated_duration_sec,
-            "turns": [{"speaker": t.speaker, "speaker_name": t.speaker_name, "text": t.text, "intent": t.intent} for t in script.turns],
-            "chapters": chaps, "shownotes_formatted": shownotes
-        }
-    }
+    return {"status": "success", "data": {
+        "title": script.title, "topic": script.topic, "lang": script.lang,
+        "style": script.style, "summary": script.summary, "estimated_duration_sec": script.estimated_duration_sec,
+        "turns": [{"speaker": t.speaker, "speaker_name": t.speaker_name, "text": t.text, "intent": t.intent} for t in script.turns],
+        "chapters": chaps, "shownotes_formatted": shownotes
+    }}
 
 
 @router.post("/api/podcast/synthesize", dependencies=[Depends(verify_token)])
@@ -206,6 +189,7 @@ async def synthesize_podcast(req: PodcastSynthesizeRequest) -> Dict[str, Any]:
         "filename": filename, "audio_url": audio_url, "file_size_bytes": res.file_size_bytes,
         "duration_ms": res.duration_ms, "turn_count": res.turn_count, "lang": res.lang,
         "voices_used": res.voices_used, "bgm_style": req.bgm_style or "cyber_ambient",
+        "actual_provider": res.actual_provider, "fallback_reason": res.fallback_reason,
         "chapters": res.chapters, "shownotes_formatted": shownotes,
         "transcript_url": f"/api/podcast/audio/{imprint_id}/{os.path.splitext(filename)[0]}.vtt"
     }}
@@ -263,14 +247,11 @@ async def get_podcast_info(rel_path: str, lang: str = "zh", style: str = "tech_d
 
     if os.path.isfile(target_path):
         chaps, shownotes = _load_sidecar_info(target_path)
-        return {
-            "status": "success", "exists": True,
-            "data": {
-                "filename": filename, "audio_url": f"/api/podcast/audio/{imprint_id}/{filename}",
-                "file_size_bytes": os.path.getsize(target_path), "lang": lang, "style": style_key,
-                "chapters": chaps, "shownotes_formatted": shownotes
-            }
-        }
+        return {"status": "success", "exists": True, "data": {
+            "filename": filename, "audio_url": f"/api/podcast/audio/{imprint_id}/{filename}",
+            "file_size_bytes": os.path.getsize(target_path), "lang": lang, "style": style_key,
+            "chapters": chaps, "shownotes_formatted": shownotes
+        }}
     return {"status": "success", "exists": False, "data": None}
 
 
@@ -281,19 +262,36 @@ async def get_podcast_bgm_options() -> Dict[str, Any]:
     return {"status": "success", "options": PodcastBGMMixer.get_supported_styles()}
 
 
+@router.post("/api/podcast/tts/test", dependencies=[Depends(verify_token)])
+async def test_podcast_tts_provider(body: Dict[str, Any]) -> Dict[str, Any]:
+    """单句试听与连通性测试（不降级掩盖错误，直接返回实际可用性）"""
+    import base64
+    from types import SimpleNamespace
+    from core.podcast.podcast_models import synthesize_external_tts
+    provider = str(body.get("tts_provider") or "edge").strip().lower()
+    lang = str(body.get("lang") or "zh").strip().lower()
+    sample = str(body.get("text") or ("你好，这是播客语音引擎连通性试听测试。" if lang == "zh" else "Hello, this is a podcast TTS engine connectivity test.")).strip()
+    v_a = PodcastTTSEngine.get_voice_for_role(lang, "host_a")
+    if provider == "edge":
+        audio_bytes = await PodcastTTSEngine.synthesize_turn_audio(text=sample, voice=v_a, tts_provider="edge")
+    else:
+        eng = get_global_engine()
+        base_pod = dict(getattr(getattr(eng, "config", None), "podcast", None) or {})
+        merged_tts = dict(base_pod.get("podcast_tts_engines") or {})
+        if isinstance(body.get("overrides"), dict):
+            merged_tts.update({k: v for k, v in body["overrides"].items() if v not in (None, "")})
+        proxy_eng = SimpleNamespace(config=SimpleNamespace(podcast={"podcast_tts_engines": merged_tts}))
+        audio_bytes = await synthesize_external_tts(sample, v_a, provider, engine=proxy_eng)
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail=f"{provider} 引擎未返回有效音频，请检查密钥、模型名或本地服务地址是否已启动")
+    return {"status": "success", "provider": provider, "audio_base64": base64.b64encode(audio_bytes).decode("ascii"), "mime": "audio/mpeg"}
+
+
 @router.get("/api/podcast/feed/{imprint_id}")
 async def get_podcast_rss_feed(request: Request, imprint_id: str, lang: str = "zh") -> Response:
     """生成并提供标准 Podcast RSS 2.0 XML 订阅源（联动原稿元数据与播客主控台配置）"""
     from core.podcast.podcast_rss_generator import generate_podcast_rss
     engine = get_global_engine()
     podcast_dir = _get_audio_cache_dir(engine, imprint_id)
-    base_url = str(request.base_url).rstrip("/")
-    xml_str = generate_podcast_rss(
-        imprint_id=imprint_id,
-        base_url=base_url,
-        lang=lang,
-        podcast_dir=podcast_dir,
-        engine=engine,
-        use_api_audio_route=True
-    )
+    xml_str = generate_podcast_rss(imprint_id=imprint_id, base_url=str(request.base_url).rstrip("/"), lang=lang, podcast_dir=podcast_dir, engine=engine, use_api_audio_route=True)
     return Response(content=xml_str, media_type="application/xml")

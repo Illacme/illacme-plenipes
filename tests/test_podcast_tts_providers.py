@@ -97,3 +97,33 @@ def test_gemini_tts_mp3_decoding():
 def test_supported_tts_providers_includes_all_11_engines():
     ids = {item["id"] for item in SUPPORTED_TTS_PROVIDERS}
     assert ids == {"edge", "kokoro", "chattts", "cosyvoice", "piper", "openai", "minimax", "volcengine", "gemini", "elevenlabs", "fish_audio"}
+
+
+def test_synthesize_turn_records_fallback_reason():
+    from core.podcast.tts_engine import PodcastTTSEngine
+
+    tracker = []
+    with patch("core.podcast.podcast_models.synthesize_external_tts", AsyncMock(return_value=None)), \
+         patch("edge_tts.Communicate") as mock_comm:
+        async def _fake_stream():
+            yield {"type": "audio", "data": b"EDGE-FALLBACK"}
+        mock_comm.return_value.stream = _fake_stream
+        out = asyncio.run(PodcastTTSEngine.synthesize_turn_audio("你好", "zh-CN-XiaoxiaoNeural", tts_provider="kokoro", fallback_tracker=tracker))
+
+    assert out == b"EDGE-FALLBACK"
+    assert tracker and "kokoro" in tracker[0]
+
+
+def test_tts_test_endpoint_returns_base64_and_handles_missing_config():
+    from fastapi import HTTPException
+    from services.api.routes.podcast_routes import test_podcast_tts_provider
+
+    with patch("core.podcast.podcast_models.synthesize_external_tts", AsyncMock(return_value=b"TEST-MP3")):
+        res = asyncio.run(test_podcast_tts_provider({"tts_provider": "minimax", "overrides": {"minimax_api_key": "k"}}))
+    assert res["status"] == "success"
+    assert base64.b64decode(res["audio_base64"]) == b"TEST-MP3"
+
+    with patch("core.podcast.podcast_models.synthesize_external_tts", AsyncMock(return_value=None)):
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(test_podcast_tts_provider({"tts_provider": "minimax"}))
+    assert exc.value.status_code == 400
