@@ -7,18 +7,10 @@
 var renderSettingsItem = window.renderSettingsItem || (() => "");
 
 window.copyPodcastFeedUrl = function (btn) {
-    const origin = (window.location && window.location.origin) ? window.location.origin : '';
-    const activeImprint = window.currentImprintId || 'default';
-    const feedUrl = `${origin}/api/podcast/feed/${activeImprint}?lang=zh`;
+    const feedUrl = `${(window.location && window.location.origin) || ''}/api/podcast/feed/${window.currentImprintId || 'default'}?lang=zh`;
     navigator.clipboard?.writeText(feedUrl).then(() => {
-        if (typeof window.showToast === 'function') {
-            window.showToast('📋 标准播客 RSS 2.0 订阅链接已复制至剪贴板！', 'success');
-        }
-        if (btn) {
-            const orig = btn.innerText;
-            btn.innerText = '✅ 已复制';
-            setTimeout(() => { btn.innerText = orig; }, 1800);
-        }
+        if (typeof window.showToast === 'function') window.showToast('📋 标准播客 RSS 2.0 订阅链接已复制至剪贴板！', 'success');
+        if (btn) { const orig = btn.innerText; btn.innerText = '✅ 已复制'; setTimeout(() => { btn.innerText = orig; }, 1800); }
     });
 };
 
@@ -28,23 +20,17 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
     const feedUrl = `${origin}/api/podcast/feed/${activeImprint}?lang=zh`;
 
     if (id === 'podcast_tts_engines') {
+        const grp = (title, open, body) => `<details ${open ? 'open' : ''} style="margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;background:rgba(255,255,255,0.02);"><summary style="cursor:pointer;font-size:0.84rem;font-weight:600;color:#e2e8f0;">${title}</summary><div style="margin-top:8px;">${body}</div></details>`;
         return `
-            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.05);">
-                <h4 style="margin: 0; color: #c084fc;">🎙️ 播客语音合成引擎配置 (TTS Engines)</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
-                    默认使用 <b>Edge TTS (免费免配)</b>；按需在此填入 OpenAI / ElevenLabs / Fish Audio 密钥或本地 CosyVoice 服务地址，播客工坊与自动补合流水线将直接生效。
-                </p>
+            <div class="api-token-helper" style="margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; border: 1px dashed rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.05);">
+                <h4 style="margin: 0; color: #c084fc;">🎙️ 播客语音合成引擎配置 (按引擎分组)</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-dim);">默认使用 <b>Edge TTS (免费免配)</b>；展开对应引擎按需填写凭据即可。</p>
             </div>
-            ${renderSettingsItem('默认语音引擎 (Default Provider)', 'podcast.podcast_tts_engines.default_provider', cfg.default_provider || 'edge', 'select', { options: [{ value: 'edge', label: 'Edge TTS (免费免配)' }, { value: 'openai', label: 'OpenAI TTS' }, { value: 'elevenlabs', label: 'ElevenLabs' }, { value: 'fish_audio', label: 'Fish Audio' }, { value: 'cosyvoice', label: '本地 CosyVoice / 克隆' }] })}
-            ${renderSettingsItem('OpenAI TTS API Key', 'podcast.podcast_tts_engines.openai_api_key', cfg.openai_api_key || '', 'password', { placeholder: 'sk-...' })}
-            ${renderSettingsItem('OpenAI TTS 接口地址 (Base URL)', 'podcast.podcast_tts_engines.openai_base_url', cfg.openai_base_url || 'https://api.openai.com/v1', 'text', { placeholder: 'https://api.openai.com/v1' })}
-            ${renderSettingsItem('ElevenLabs API Key', 'podcast.podcast_tts_engines.elevenlabs_api_key', cfg.elevenlabs_api_key || '', 'password', { placeholder: 'xi-api-key...' })}
-            ${renderSettingsItem('ElevenLabs 主讲/搭档 Voice ID', 'podcast.podcast_tts_engines.elevenlabs_voice_a', cfg.elevenlabs_voice_a || '', 'text', { placeholder: '女声 Voice ID (留空使用官方默认)' })}
-            ${renderSettingsItem('ElevenLabs 搭档 Voice ID B', 'podcast.podcast_tts_engines.elevenlabs_voice_b', cfg.elevenlabs_voice_b || '', 'text', { placeholder: '男声 Voice ID (留空使用官方默认)' })}
-            ${renderSettingsItem('Fish Audio API Key', 'podcast.podcast_tts_engines.fish_audio_api_key', cfg.fish_audio_api_key || '', 'password', { placeholder: 'Fish Audio Token' })}
-            ${renderSettingsItem('Fish Audio 音色参考 ID A / B', 'podcast.podcast_tts_engines.fish_audio_ref_a', cfg.fish_audio_ref_a || '', 'text', { placeholder: '主讲人 Reference ID (可选)' })}
-            ${renderSettingsItem('Fish Audio 音色参考 ID B', 'podcast.podcast_tts_engines.fish_audio_ref_b', cfg.fish_audio_ref_b || '', 'text', { placeholder: '搭档 Reference ID (可选)' })}
-            ${renderSettingsItem('本地 CosyVoice 兼容地址', 'podcast.podcast_tts_engines.cosyvoice_base_url', cfg.cosyvoice_base_url || 'http://127.0.0.1:9880/v1', 'text', { placeholder: 'http://127.0.0.1:9880/v1' })}
+            ${renderSettingsItem('默认语音引擎', 'podcast.podcast_tts_engines.default_provider', cfg.default_provider || 'edge', 'select', { options: [{ value: 'edge', label: 'Edge TTS (免费免配)' }, { value: 'openai', label: 'OpenAI TTS' }, { value: 'elevenlabs', label: 'ElevenLabs' }, { value: 'fish_audio', label: 'Fish Audio' }, { value: 'cosyvoice', label: '本地 CosyVoice / 克隆' }] })}
+            ${grp('🤖 OpenAI TTS', cfg.default_provider === 'openai', renderSettingsItem('API Key', 'podcast.podcast_tts_engines.openai_api_key', cfg.openai_api_key || '', 'password', { placeholder: 'sk-...' }) + renderSettingsItem('Base URL', 'podcast.podcast_tts_engines.openai_base_url', cfg.openai_base_url || 'https://api.openai.com/v1', 'text'))}
+            ${grp('✨ ElevenLabs', cfg.default_provider === 'elevenlabs', renderSettingsItem('API Key', 'podcast.podcast_tts_engines.elevenlabs_api_key', cfg.elevenlabs_api_key || '', 'password', { placeholder: 'xi-api-key...' }) + renderSettingsItem('主讲 Voice ID (女)', 'podcast.podcast_tts_engines.elevenlabs_voice_a', cfg.elevenlabs_voice_a || '', 'text') + renderSettingsItem('搭档 Voice ID (男)', 'podcast.podcast_tts_engines.elevenlabs_voice_b', cfg.elevenlabs_voice_b || '', 'text'))}
+            ${grp('🐟 Fish Audio', cfg.default_provider === 'fish_audio', renderSettingsItem('API Key', 'podcast.podcast_tts_engines.fish_audio_api_key', cfg.fish_audio_api_key || '', 'password') + renderSettingsItem('参考音色 ID A', 'podcast.podcast_tts_engines.fish_audio_ref_a', cfg.fish_audio_ref_a || '', 'text') + renderSettingsItem('参考音色 ID B', 'podcast.podcast_tts_engines.fish_audio_ref_b', cfg.fish_audio_ref_b || '', 'text'))}
+            ${grp('🏠 本地 CosyVoice / 克隆', cfg.default_provider === 'cosyvoice', renderSettingsItem('服务地址 (Base URL)', 'podcast.podcast_tts_engines.cosyvoice_base_url', cfg.cosyvoice_base_url || 'http://127.0.0.1:9880/v1', 'text'))}
         `;
     }
 
@@ -260,4 +246,53 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
     }
 
     return '';
+};
+
+const _TTS_ENGINE_FIELDS = {
+    openai: [['openai_api_key', 'OpenAI API Key', 'password', 'sk-...'], ['openai_base_url', 'Base URL', 'text', 'https://api.openai.com/v1']],
+    elevenlabs: [['elevenlabs_api_key', 'ElevenLabs API Key', 'password', 'xi-api-key...'], ['elevenlabs_voice_a', '主讲 Voice ID (女)', 'text', '可选'], ['elevenlabs_voice_b', '搭档 Voice ID (男)', 'text', '可选']],
+    fish_audio: [['fish_audio_api_key', 'Fish Audio API Key', 'password', 'Token...'], ['fish_audio_ref_a', '参考音色 ID A', 'text', '可选'], ['fish_audio_ref_b', '参考音色 ID B', 'text', '可选']],
+    cosyvoice: [['cosyvoice_base_url', 'CosyVoice 服务地址', 'text', 'http://127.0.0.1:9880/v1']]
+};
+
+window.refreshPodcastInlineEngineConfig = function (provider) {
+    const panel = document.getElementById('podcast-engine-inline-config');
+    if (!panel || panel.style.display === 'none') return;
+    const p = provider || (document.getElementById('podcast-tts-provider') || {}).value || 'edge';
+    const fields = _TTS_ENGINE_FIELDS[p];
+    const tCfg = (((window.settingsData || {}).podcast || {}).podcast_tts_engines) || {};
+    if (!fields) {
+        panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:0.78rem;color:#94a3b8;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;">收起</button></div>`;
+        return;
+    }
+    const inputs = fields.map(([k, lbl, tp, ph]) => `<label style="display:flex;flex-direction:column;gap:3px;min-width:170px;flex:1;"><span style="font-size:0.7rem;color:#94a3b8;">${lbl}</span><input data-tts-key="${k}" type="${tp}" value="${String(tCfg[k] || '').replace(/"/g, '&quot;')}" placeholder="${ph || ''}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:5px 8px;color:#f8fafc;font-size:0.76rem;"></label>`).join('');
+    panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}<button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;">收起</button></div>`;
+};
+
+window.togglePodcastInlineEngineConfig = function () {
+    const panel = document.getElementById('podcast-engine-inline-config');
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none' || !panel.style.display;
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) window.refreshPodcastInlineEngineConfig();
+};
+
+window.savePodcastInlineEngineConfig = async function (provider) {
+    const panel = document.getElementById('podcast-engine-inline-config');
+    if (!panel) return;
+    const payload = { 'podcast.podcast_tts_engines.default_provider': provider };
+    window.settingsData = window.settingsData || {};
+    window.settingsData.podcast = window.settingsData.podcast || {};
+    window.settingsData.podcast.podcast_tts_engines = window.settingsData.podcast.podcast_tts_engines || { default_provider: provider };
+    panel.querySelectorAll('input[data-tts-key]').forEach((inp) => {
+        const k = inp.getAttribute('data-tts-key'), v = inp.value.trim();
+        payload[`podcast.podcast_tts_engines.${k}`] = v;
+        window.settingsData.podcast.podcast_tts_engines[k] = v;
+    });
+    try {
+        const r = await fetch('/api/config/update', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }, body: JSON.stringify(payload) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (typeof window.showToast === 'function') window.showToast(`✅ ${provider} 引擎配置已保存，可继续合成播客`, 'success');
+        panel.style.display = 'none';
+    } catch (e) { if (typeof window.showToast === 'function') window.showToast(`保存失败: ${e.message}`, 'error'); }
 };
