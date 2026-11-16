@@ -12,19 +12,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 🌟 引入状态执行锁、多轮会话记忆与物理时序计数器，防止并发提交并支持上下文感知 (SOP-01 Compliant)
+    // 🌟 引入状态执行锁、持久化多轮会话记忆与物理时序计数器 (SOP-01 Compliant)
     let isExecuting = false, messageOrderCounter = 0;
-    const conversationHistory = [];
-    let lastImprintCtx = window.currentImprintId || '';
+    let lastImprintCtx = window.currentImprintId || 'default';
+    const historyKey = (imp) => `illacme_agent_history_${imp || 'default'}`;
+    const loadHistory = (imp) => {
+        try {
+            const raw = localStorage.getItem(historyKey(imp));
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed.slice(-16) : [];
+        } catch (_) { return []; }
+    };
+    const saveHistory = (imp, arr) => {
+        try { localStorage.setItem(historyKey(imp), JSON.stringify(arr.slice(-16))); } catch (_) {}
+    };
+    let conversationHistory = loadHistory(lastImprintCtx);
 
     function collectWorkspaceContext() {
         const activeNav = document.querySelector('.nav-item.active');
         const activeView = activeNav ? (activeNav.getAttribute('data-view') || activeNav.id || '') : '';
         const activeDoc = window.currentEditingDocId || window.currentSelectedDocId || '';
-        const imprintId = window.currentImprintId || '';
-        if (imprintId && imprintId !== lastImprintCtx) {
-            conversationHistory.length = 0;
+        const imprintId = window.currentImprintId || 'default';
+        if (imprintId !== lastImprintCtx) {
             lastImprintCtx = imprintId;
+            conversationHistory = loadHistory(imprintId);
         }
         return { active_view: activeView, active_document: activeDoc, imprint_id: imprintId };
     }
@@ -148,6 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🚀 主执行流程胶合控制
     async function submitAgentTask(command) {
         if (isExecuting) return; // 🌟 物理防御：防止因高频敲击或并发流引起执行实例重叠
+        if (command === '/clear' || command === '/reset') {
+            conversationHistory.length = 0;
+            saveHistory(lastImprintCtx, []);
+            sa.render.appendMessage('🧹 已清空当前品牌的 Copilot 会话记忆。', 'system-msg');
+            agentInput.value = '';
+            return;
+        }
         isExecuting = true;
 
         agentInput.value = ''; agentInput.disabled = true; agentInput.placeholder = 'AI 助手思考中...';
@@ -204,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             conversationHistory.push({ role: 'user', content: command });
             if (lastFinalMessage) conversationHistory.push({ role: 'assistant', content: lastFinalMessage });
             if (conversationHistory.length > 16) conversationHistory.splice(0, conversationHistory.length - 16);
+            saveHistory(wsCtx.imprint_id, conversationHistory);
 
         } catch (error) {
             sa.render.appendMessage(`[ERROR] 脑裂链路中断: ${error.message}`, 'system-msg');

@@ -87,7 +87,8 @@ class InspectPublishingReadinessTool(IllacmeTool):
                             pending_podcasts.append(rel_p)
                     except Exception:
                         pass
-            books_dir = os.path.join(os.getcwd(), "dist", "books")
+            from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+            books_dir = resolve_imprint_books_dir(engine)
             books_count = len([f for f in os.listdir(books_dir) if not f.startswith(".")]) if os.path.isdir(books_dir) else 0
             return json.dumps({
                 "status": "ready", "imprint_id": imprint_id, "vault_total_docs": total_docs,
@@ -242,11 +243,14 @@ class BindDigitalBookTool(IllacmeTool):
             from core.runtime.engine_singleton import get_global_engine
             from core.adapters.ai.tools.vault_service import get_secure_vault_path
             from core.bindery.book_assembler import BookAssembler
+            from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
 
-            assembler = BookAssembler(engine=get_global_engine(), vault_dir=get_secure_vault_path())
+            eng = get_global_engine()
+            assembler = BookAssembler(engine=eng, vault_dir=get_secure_vault_path())
             out_file = assembler.assemble_and_bind(
                 category=category or "Docs", format_type=(format_type or "webbook").lower(),
-                target_lang=(target_lang or "zh").lower(), single_file=single_file.strip() or None
+                target_lang=(target_lang or "zh").lower(), output_dir=resolve_imprint_books_dir(eng),
+                single_file=single_file.strip() or None
             )
             if not out_file:
                 return f"Error: No chapters found or failed to bind '{category}' as {format_type}."

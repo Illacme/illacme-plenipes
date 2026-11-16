@@ -118,26 +118,17 @@ async def get_cover_preview(payload: CoverPreviewPayload) -> Dict[str, Any]:
     author = payload.author or "Illacme Editorial Team"
     pub_name = f"{site_name} Global Private Press"
 
-    if payload.cover_mode == "none":
-        return {"success": True, "mode": "none", "data_uri": None}
-    if payload.cover_mode == "custom":
-        return {"success": True, "mode": "custom", "data_uri": payload.custom_cover_image}
-
-    # 尝试原生封面
+    if payload.cover_mode == "none": return {"success": True, "mode": "none", "data_uri": None}
+    if payload.cover_mode == "custom": return {"success": True, "mode": "custom", "data_uri": payload.custom_cover_image}
     if payload.cover_mode == "auto":
         native_p = CoverGenerator.discover_cover(vault_abs, category=cat_scope)
         if native_p and os.path.exists(native_p):
             try:
                 mime, _ = mimetypes.guess_type(native_p)
-                with open(native_p, "rb") as f:
-                    b64 = base64.b64encode(f.read()).decode("ascii")
+                with open(native_p, "rb") as f: b64 = base64.b64encode(f.read()).decode("ascii")
                 return {"success": True, "mode": "native", "filename": os.path.basename(native_p), "data_uri": f"data:{mime or 'image/jpeg'};base64,{b64}"}
             except Exception: pass
-
-    data_uri = CoverGenerator.generate_cover_data_uri(
-        title=title, author=author, publisher=pub_name,
-        style_key=payload.style, lang=payload.lang
-    )
+    data_uri = CoverGenerator.generate_cover_data_uri(title=title, author=author, publisher=pub_name, style_key=payload.style, lang=payload.lang)
     return {"success": True, "mode": "generated", "style": payload.style, "data_uri": data_uri}
 
 @router.post("/api/bindery/build", dependencies=[Depends(verify_token)])
@@ -155,6 +146,9 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
     single_f = payload.scope[7:].strip() if is_single else None
     scope_cat = "" if (payload.scope == "all" or is_single) else payload.scope
 
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+    out_dir_resolved = resolve_imprint_books_dir(engine, payload.output_dir)
+
     target_langs = payload.languages if (payload.languages and len(payload.languages) > 0) else [payload.lang]
 
     if payload.polyglot_mode and len(target_langs) >= 2:
@@ -162,7 +156,7 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
             category=scope_cat, format_type=payload.format, target_lang=target_langs[0],
             custom_title=payload.title, custom_author=payload.author,
             cover_mode=payload.cover_mode, cover_style=payload.cover_style,
-            output_dir=payload.output_dir, polyglot_langs=target_langs, single_file=single_f,
+            output_dir=out_dir_resolved, polyglot_langs=target_langs, single_file=single_f,
             custom_cover_image=payload.custom_cover_image
         )
         if not out_p or not os.path.exists(out_p):
@@ -181,7 +175,7 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         out_path = assembler.assemble_and_bind(
             category=scope_cat, format_type=payload.format, target_lang=s_lang,
             custom_title=payload.title, custom_author=payload.author,
-            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir,
+            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=out_dir_resolved,
             single_file=single_f, custom_cover_image=payload.custom_cover_image
         )
         if not out_path or not os.path.exists(out_path):
@@ -203,7 +197,7 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
         out_p = assembler.assemble_and_bind(
             category=scope_cat, format_type=payload.format, target_lang=l_code,
             custom_title=payload.title, custom_author=payload.author,
-            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=payload.output_dir,
+            cover_mode=payload.cover_mode, cover_style=payload.cover_style, output_dir=out_dir_resolved,
             single_file=single_f, custom_cover_image=payload.custom_cover_image
         )
         if out_p and os.path.exists(out_p):
@@ -226,11 +220,12 @@ async def build_ebook_publication(payload: BinderyBuildPayload) -> Dict[str, Any
 
 
 def _get_safe_book_path(file: str) -> str:
-    """提取纯文件名并严格断言物理锚定在 dist/books 目录之内"""
+    """提取纯文件名并严格断言物理锚定在当前品牌书架目录之内"""
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
     safe_name = os.path.basename(file.strip())
     if not safe_name or safe_name != file:
         raise HTTPException(status_code=400, detail="非法的请求参数。")
-    base_dir = os.path.abspath("dist/books")
+    base_dir = resolve_imprint_books_dir(get_global_engine())
     target_path = os.path.abspath(os.path.join(base_dir, safe_name))
     if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")
@@ -276,7 +271,8 @@ async def view_ebook_webbook(file: str = Query(...), token: Optional[str] = Quer
 @router.get("/api/bindery/shelf", dependencies=[Depends(verify_token)])
 async def get_bindery_shelf() -> Dict[str, Any]:
     """📚 出版典籍货架：扫描并返回已编译的所有装订产物与物理磁盘占用"""
-    base_dir, books, total_bytes = os.path.abspath("dist/books"), [], 0
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+    base_dir, books, total_bytes = resolve_imprint_books_dir(get_global_engine()), [], 0
     ext_map = {".html": "webbook", ".pdf": "pdf", ".md": "markdown", ".docx": "docx", ".epub": "epub", ".txt": "txt"}
     if os.path.exists(base_dir):
         for fname in sorted(os.listdir(base_dir)):

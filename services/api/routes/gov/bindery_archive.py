@@ -22,14 +22,15 @@ SUPPORTED_EXTS = {".epub", ".pdf", ".html", ".md", ".docx", ".txt"}
 
 
 def _get_safe_book_path(file: str) -> str:
-    """严格断言文件名物理锚定在 dist/books 目录之内"""
+    """严格断言文件名物理锚定在当前品牌书架目录之内"""
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
     safe_name = os.path.basename(file.strip())
     if not safe_name or safe_name != file:
         raise HTTPException(status_code=400, detail=f"非法的书籍文件名: {file}")
     ext = os.path.splitext(safe_name)[1].lower()
     if ext not in SUPPORTED_EXTS:
         raise HTTPException(status_code=400, detail=f"不支持打包的文件格式: {ext}")
-    base_dir = os.path.abspath("dist/books")
+    base_dir = resolve_imprint_books_dir(get_global_engine())
     target_path = os.path.abspath(os.path.join(base_dir, safe_name))
     if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail=f"出版物文件未找到: {safe_name}")
@@ -87,7 +88,8 @@ def _create_zip_stream(files_with_paths: List[tuple], publisher: str) -> io.Byte
 
 def _resolve_books_to_pack(filenames: Optional[List[str]], scope: Optional[str]) -> List[tuple]:
     """统一解析待打包的书籍列表"""
-    base_dir = os.path.abspath("dist/books")
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+    base_dir = resolve_imprint_books_dir(get_global_engine())
     if not os.path.exists(base_dir):
         raise HTTPException(status_code=400, detail="出版物存储目录 dist/books 尚不存在。")
 

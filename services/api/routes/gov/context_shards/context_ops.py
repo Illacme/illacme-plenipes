@@ -108,11 +108,12 @@ def get_system_context_impl():
         except Exception:
             pass
 
-    # 📚 统计书架出版物数量与物理文件体积 (dist/books 下的已编译出版物)
+    # 📚 统计书架出版物数量与物理文件体积 (按当前品牌隔离)
     shelf_books_count = 0
     shelf_size_bytes = 0
     try:
-        shelf_dir = os.path.abspath("dist/books")
+        from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+        shelf_dir = resolve_imprint_books_dir(engine)
         ext_set = {".html", ".pdf", ".md", ".docx", ".epub", ".txt"}
         if os.path.exists(shelf_dir):
             for f in os.listdir(shelf_dir):

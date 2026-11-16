@@ -166,7 +166,9 @@ async def download_ebook_by_pure_path(token: str, file: str):
     hub = get_tunnel_hub()
     if not hub.verify_token(file, token):
         raise HTTPException(status_code=403, detail="安全访问凭据已失效或已过期。")
-    base_dir = os.path.abspath("dist/books")
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+    from core.runtime.engine_singleton import get_global_engine
+    base_dir = resolve_imprint_books_dir(get_global_engine())
     target_path = os.path.abspath(os.path.join(base_dir, file))
     if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")
@@ -184,7 +186,9 @@ async def view_ebook_by_pure_path(token: str, file: str):
     hub = get_tunnel_hub()
     if not hub.verify_token(file, token):
         raise HTTPException(status_code=403, detail="安全访问凭据已失效或已过期。")
-    base_dir = os.path.abspath("dist/books")
+    from core.bindery.bindery_asset_syncer import resolve_imprint_books_dir
+    from core.runtime.engine_singleton import get_global_engine
+    base_dir = resolve_imprint_books_dir(get_global_engine())
     target_path = os.path.abspath(os.path.join(base_dir, file))
     if not target_path.startswith(base_dir + os.sep) or not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail="请求的出版物文件未找到或已被清理。")

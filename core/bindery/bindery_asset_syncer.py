@@ -135,3 +135,16 @@ class BinderyAssetSyncer:
         except Exception as e:
             tlog.warning(f"⚠️ [BinderySyncer] 登记 SQLite 视觉资产账本异常: {e}")
             return False
+
+
+def resolve_imprint_books_dir(engine: Any = None, requested_dir: str = "") -> str:
+    """解析按品牌隔离的电子书物理输出目录（default 品牌及空配置兼容 dist/books）"""
+    req = (requested_dir or "").strip()
+    if req and req.replace("\\", "/").rstrip("/") != "dist/books":
+        return os.path.abspath(req)
+    imp_id = getattr(engine, "imprint_id", None) if engine else None
+    if isinstance(imp_id, str):
+        clean_imp = os.path.basename(imp_id.strip())
+        if clean_imp and clean_imp != "default":
+            return os.path.abspath(os.path.join("dist", "books", clean_imp))
+    return os.path.abspath("dist/books")
