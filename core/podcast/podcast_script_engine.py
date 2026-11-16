@@ -44,8 +44,16 @@ class PodcastScriptEngine:
 
     DEFAULT_NAMES = {
         "zh": {"host_a": "晓晓", "host_b": "云希"},
+        "zh-tw": {"host_a": "曉臻", "host_b": "雲哲"},
         "en": {"host_a": "Jenny", "host_b": "Guy"},
-        "ja": {"host_a": "七海", "host_b": "圭太"}
+        "ja": {"host_a": "七海", "host_b": "圭太"},
+        "ko": {"host_a": "선히", "host_b": "인준"},
+        "fr": {"host_a": "Denise", "host_b": "Henri"},
+        "de": {"host_a": "Katja", "host_b": "Conrad"},
+        "es": {"host_a": "Elvira", "host_b": "Alvaro"},
+        "pt": {"host_a": "Francisca", "host_b": "Antonio"},
+        "ru": {"host_a": "Светлана", "host_b": "Дмитрий"},
+        "ar": {"host_a": "Zariyah", "host_b": "Hamed"},
     }
 
     @classmethod
@@ -64,9 +72,9 @@ class PodcastScriptEngine:
     ) -> PodcastScript:
         """主入口：从 Markdown 提取双人对话剧本（支持极速规则或大模型深度编剧）"""
         meta = metadata or {}
-        lang_code = lang.lower() if lang else "zh"
-        if not lang_code.startswith(("zh", "en", "ja")):
-            lang_code = "zh" if any('\u4e00' <= c <= '\u9fff' for c in content[:500]) else "en"
+        raw_lang = (lang or "").strip().lower().replace("_", "-")
+        lang_code = raw_lang or ("zh" if any('\u4e00' <= c <= '\u9fff' for c in content[:500]) else "en")
+        tpl_lang = "zh" if lang_code.startswith("zh") else ("ja" if lang_code.startswith("ja") else "en")
 
         if use_ai and engine:
             from .podcast_ai_writer import PodcastAIWriter
@@ -75,34 +83,35 @@ class PodcastScriptEngine:
                 max_turns=max_turns, focus_prompt=focus_prompt, host_a_name=host_a_name, host_b_name=host_b_name
             )
 
-        names = dict(cls.DEFAULT_NAMES.get(lang_code, cls.DEFAULT_NAMES["en"]))
+        base_lang = lang_code if lang_code in cls.DEFAULT_NAMES else lang_code.split("-")[0]
+        names = dict(cls.DEFAULT_NAMES.get(base_lang, cls.DEFAULT_NAMES["en"]))
         if host_a_name and host_a_name.strip():
             names["host_a"] = host_a_name.strip()
         if host_b_name and host_b_name.strip():
             names["host_b"] = host_b_name.strip()
-        title = meta.get("title") or cls._extract_title(content) or ("技术前沿探索" if lang_code == "zh" else "Tech Insights")
+        title = meta.get("title") or cls._extract_title(content) or ("技术前沿探索" if tpl_lang == "zh" else "Tech Insights")
         summary = meta.get("description") or meta.get("summary") or ""
 
         # 解析正文结构（自动剔除表格与代码块）
-        sections = cls._parse_markdown_sections(content, lang=lang_code)
+        sections = cls._parse_markdown_sections(content, lang=tpl_lang)
         turns: List[DialogueTurn] = []
 
         # 1. 开场白 (Intro)
-        turns.extend(cls._build_intro(title, summary, lang_code, style, names))
+        turns.extend(cls._build_intro(title, summary, tpl_lang, style, names))
         if focus_prompt and focus_prompt.strip() and turns:
-            focus_note = f" 本期我们特别聚焦：{focus_prompt.strip()}。" if lang_code == "zh" else f" Today we focus on: {focus_prompt.strip()}."
+            focus_note = f" 本期我们特别聚焦：{focus_prompt.strip()}。" if tpl_lang == "zh" else f" Today we focus on: {focus_prompt.strip()}."
             turns[0].text = turns[0].text.rstrip() + focus_note
 
         # 2. 章节交替深度探讨 (Discussion turns)
-        turns.extend(cls._build_discussion(sections, lang_code, style, names, max_turns - 4))
+        turns.extend(cls._build_discussion(sections, tpl_lang, style, names, max_turns - 4))
 
         # 3. 总结收尾 (Outro)
-        turns.extend(cls._build_outro(title, lang_code, style, names))
+        turns.extend(cls._build_outro(title, tpl_lang, style, names))
 
         # 估算朗读时长 (中文 ~3.5 字/秒，英文 ~2.5 词/秒)
         total_len = sum(len(t.text) for t in turns)
-        est_sec = max(30, int(total_len / (3.5 if lang_code == "zh" else 2.5)))
-        default_topic = TOPIC_MAP.get(style, TOPIC_MAP["tech_deep"]).get(lang_code, "Engineering")
+        est_sec = max(30, int(total_len / (3.5 if tpl_lang == "zh" else 2.5)))
+        default_topic = TOPIC_MAP.get(style, TOPIC_MAP["tech_deep"]).get(tpl_lang, "Engineering")
 
         chapters = cls.build_chapters(turns, sections, lang=lang_code)
 

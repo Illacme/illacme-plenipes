@@ -24,18 +24,17 @@ from .podcast_script_engine import DialogueTurn, PodcastScript
 
 # 官方认证的高品质微软神经声线矩阵
 DEFAULT_VOICE_MAP: Dict[str, Dict[str, Dict[str, str]]] = {
-    "zh": {
-        "host_a": {"voice": "zh-CN-XiaoxiaoNeural", "name": "晓晓", "gender": "female", "role": "沉稳主讲"},
-        "host_b": {"voice": "zh-CN-YunxiNeural", "name": "云希", "gender": "male", "role": "敏锐搭档"},
-    },
-    "en": {
-        "host_a": {"voice": "en-US-JennyNeural", "name": "Jenny", "gender": "female", "role": "Host"},
-        "host_b": {"voice": "en-US-GuyNeural", "name": "Guy", "gender": "male", "role": "Co-Host"},
-    },
-    "ja": {
-        "host_a": {"voice": "ja-JP-NanamiNeural", "name": "七海", "gender": "female", "role": "メイン解説"},
-        "host_b": {"voice": "ja-JP-KeitaNeural", "name": "圭太", "gender": "male", "role": "聞き手"},
-    }
+    "zh": {"host_a": {"voice": "zh-CN-XiaoxiaoNeural", "name": "晓晓", "gender": "female", "role": "沉稳主讲"}, "host_b": {"voice": "zh-CN-YunxiNeural", "name": "云希", "gender": "male", "role": "敏锐搭档"}},
+    "zh-tw": {"host_a": {"voice": "zh-TW-HsiaoChenNeural", "name": "曉臻", "gender": "female", "role": "主講人"}, "host_b": {"voice": "zh-TW-YunJheNeural", "name": "雲哲", "gender": "male", "role": "搭檔"}},
+    "en": {"host_a": {"voice": "en-US-JennyNeural", "name": "Jenny", "gender": "female", "role": "Host"}, "host_b": {"voice": "en-US-GuyNeural", "name": "Guy", "gender": "male", "role": "Co-Host"}},
+    "ja": {"host_a": {"voice": "ja-JP-NanamiNeural", "name": "七海", "gender": "female", "role": "メイン解説"}, "host_b": {"voice": "ja-JP-KeitaNeural", "name": "圭太", "gender": "male", "role": "聞き手"}},
+    "ko": {"host_a": {"voice": "ko-KR-SunHiNeural", "name": "선히", "gender": "female", "role": "Host"}, "host_b": {"voice": "ko-KR-InJoonNeural", "name": "인준", "gender": "male", "role": "Co-Host"}},
+    "fr": {"host_a": {"voice": "fr-FR-DeniseNeural", "name": "Denise", "gender": "female", "role": "Host"}, "host_b": {"voice": "fr-FR-HenriNeural", "name": "Henri", "gender": "male", "role": "Co-Host"}},
+    "de": {"host_a": {"voice": "de-DE-KatjaNeural", "name": "Katja", "gender": "female", "role": "Host"}, "host_b": {"voice": "de-DE-ConradNeural", "name": "Conrad", "gender": "male", "role": "Co-Host"}},
+    "es": {"host_a": {"voice": "es-ES-ElviraNeural", "name": "Elvira", "gender": "female", "role": "Host"}, "host_b": {"voice": "es-ES-AlvaroNeural", "name": "Alvaro", "gender": "male", "role": "Co-Host"}},
+    "pt": {"host_a": {"voice": "pt-BR-FranciscaNeural", "name": "Francisca", "gender": "female", "role": "Host"}, "host_b": {"voice": "pt-BR-AntonioNeural", "name": "Antonio", "gender": "male", "role": "Co-Host"}},
+    "ru": {"host_a": {"voice": "ru-RU-SvetlanaNeural", "name": "Светлана", "gender": "female", "role": "Host"}, "host_b": {"voice": "ru-RU-DmitryNeural", "name": "Дмитрий", "gender": "male", "role": "Co-Host"}},
+    "ar": {"host_a": {"voice": "ar-SA-ZariyahNeural", "name": "Zariyah", "gender": "female", "role": "Host"}, "host_b": {"voice": "ar-SA-HamedNeural", "name": "Hamed", "gender": "male", "role": "Co-Host"}},
 }
 
 
@@ -68,9 +67,8 @@ class PodcastTTSEngine:
         """获取指定角色声线"""
         if custom_voice:
             return custom_voice
-        lang_code = lang.lower() if lang else "zh"
-        if not lang_code.startswith(("zh", "en", "ja")):
-            lang_code = "en"
+        raw = (lang or "zh").strip().lower().replace("_", "-")
+        lang_code = raw if raw in DEFAULT_VOICE_MAP else (raw.split("-")[0] if raw.split("-")[0] in DEFAULT_VOICE_MAP else "en")
         role_map = DEFAULT_VOICE_MAP.get(lang_code, DEFAULT_VOICE_MAP["en"])
         role_info = role_map.get(speaker, role_map.get("host_a"))
         return role_info["voice"]

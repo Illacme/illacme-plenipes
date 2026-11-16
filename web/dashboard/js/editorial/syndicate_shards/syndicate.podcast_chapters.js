@@ -230,9 +230,13 @@
         const focusPrompt = ((document.getElementById('podcast-focus-input') || {}).value || '').trim() || null;
         const hostA = ((document.getElementById('podcast-host-a') || {}).value || '').trim() || null;
         const hostB = ((document.getElementById('podcast-host-b') || {}).value || '').trim() || null;
-        let okLangs = [];
+        const langs = typeof window.getEnabledPodcastLangs === 'function' ? window.getEnabledPodcastLangs() : ['zh', 'en', 'ja'];
+        let okLangs = [], skippedLangs = [];
         try {
-            for (const lg of ['zh', 'en', 'ja']) {
+            for (const lg of langs) {
+                if (btn) btn.innerText = `🌐 检查 ${lg.toUpperCase()}...`;
+                const info = await fetch(`/api/podcast/info?rel_path=${encodeURIComponent(relPath)}&lang=${encodeURIComponent(lg)}&style=${encodeURIComponent(style)}`).then((r) => r.json()).catch(() => null);
+                if (info && info.exists) { skippedLangs.push(lg.toUpperCase()); continue; }
                 if (btn) btn.innerText = `🌐 正在衍生 ${lg.toUpperCase()}...`;
                 const sResp = await fetch('/api/podcast/script/extract', { method: 'POST', headers, body: JSON.stringify({ rel_path: relPath, lang: lg, style, max_turns: 10, use_ai: false, focus_prompt: focusPrompt, host_a_name: hostA, host_b_name: hostB }) });
                 const sData = await sResp.json();
@@ -241,7 +245,8 @@
                 const synData = await synResp.json();
                 if (synResp.ok && synData.status === 'success') okLangs.push(lg.toUpperCase());
             }
-            if (typeof window.showToast === 'function') window.showToast(`🎉 多语种播客联产完成！已生成: ${okLangs.join(' / ')}`, 'success');
+            const summary = [okLangs.length ? `新生成: ${okLangs.join('/')}` : '', skippedLangs.length ? `已跳过已有: ${skippedLangs.join('/')}` : ''].filter(Boolean).join(' · ') || '无新增语种';
+            if (typeof window.showToast === 'function') window.showToast(`🎉 批量联产完成！${summary}`, 'success');
             if (typeof window.openPodcastStudioModal === 'function') await window.openPodcastStudioModal(relPath);
         } catch (e) {
             if (typeof window.showToast === 'function') window.showToast('多语联产异常: ' + (e.message || e), 'error');

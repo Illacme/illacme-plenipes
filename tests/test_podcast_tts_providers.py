@@ -127,3 +127,25 @@ def test_tts_test_endpoint_returns_base64_and_handles_missing_config():
         with pytest.raises(HTTPException) as exc:
             asyncio.run(test_podcast_tts_provider({"tts_provider": "minimax"}))
     assert exc.value.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "lang,expected_voice_a",
+    [
+        ("zh-TW", "zh-TW-HsiaoChenNeural"),
+        ("ko", "ko-KR-SunHiNeural"),
+        ("fr", "fr-FR-DeniseNeural"),
+        ("de", "de-DE-KatjaNeural"),
+        ("es", "es-ES-ElviraNeural"),
+        ("pt", "pt-BR-FranciscaNeural"),
+        ("ru", "ru-RU-SvetlanaNeural"),
+        ("ar", "ar-SA-ZariyahNeural"),
+    ],
+)
+def test_extended_language_voice_mapping_and_script_lang(lang, expected_voice_a):
+    from core.podcast.tts_engine import PodcastTTSEngine
+    from core.podcast.podcast_script_engine import PodcastScriptEngine
+
+    assert PodcastTTSEngine.get_voice_for_role(lang, "host_a") == expected_voice_a
+    script = PodcastScriptEngine.extract_script("# Title\n\nBody paragraph for multi-language podcast.", lang=lang)
+    assert script.lang == lang.lower()
