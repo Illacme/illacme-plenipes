@@ -171,52 +171,124 @@ class PodcastSynthesizeRequest(BaseModel):
 
 
 SUPPORTED_TTS_PROVIDERS = [
-    {"id": "edge", "name": "Edge TTS (免费免配)"},
-    {"id": "openai", "name": "OpenAI TTS"},
-    {"id": "elevenlabs", "name": "ElevenLabs"},
-    {"id": "fish_audio", "name": "Fish Audio"},
-    {"id": "cosyvoice", "name": "本地 CosyVoice / 克隆"},
+    {"id": "edge", "name": "Edge TTS (免费免配 · 默认)", "tier": "free"},
+    {"id": "kokoro", "name": "Kokoro TTS (开源 82M 本地)", "tier": "free"},
+    {"id": "chattts", "name": "ChatTTS (开源对话拟真)", "tier": "free"},
+    {"id": "cosyvoice", "name": "CosyVoice / 音色克隆 (本地)", "tier": "free"},
+    {"id": "piper", "name": "Piper TTS (开源离线极轻)", "tier": "free"},
+    {"id": "openai", "name": "OpenAI TTS (及兼容接口)", "tier": "commercial"},
+    {"id": "minimax", "name": "MiniMax Speech (海螺中文旗舰)", "tier": "commercial"},
+    {"id": "volcengine", "name": "火山引擎 · 豆包语音", "tier": "commercial"},
+    {"id": "gemini", "name": "Google Gemini TTS", "tier": "commercial"},
+    {"id": "elevenlabs", "name": "ElevenLabs (多语旗舰)", "tier": "commercial"},
+    {"id": "fish_audio", "name": "Fish Audio", "tier": "commercial"},
 ]
 
 
+_OPENAI_COMPAT_SPECS: Dict[str, tuple] = {
+    "openai": ("https://api.openai.com/v1", "tts-1", "nova", "onyx", True),
+    "kokoro": ("http://127.0.0.1:8880/v1", "kokoro", "af_heart", "am_michael", False),
+    "chattts": ("http://127.0.0.1:9966/v1", "chattts", "female", "male", False),
+    "cosyvoice": ("http://127.0.0.1:9880/v1", "cosyvoice", "nova", "onyx", False),
+    "piper": ("http://127.0.0.1:5000/v1", "piper", "nova", "onyx", False),
+}
+
+
+def _pcm_to_mp3(pcm_bytes: bytes, sample_rate: int = 24000) -> bytes:
+    """将 Gemini TTS 返回的 16-bit PCM 裸流封装为 128k MP3"""
+    import io
+    from pydub import AudioSegment
+    buf = io.BytesIO()
+    AudioSegment(data=pcm_bytes, sample_width=2, frame_rate=sample_rate, channels=1).export(buf, format="mp3", bitrate="128k")
+    return buf.getvalue()
+
+
 async def synthesize_external_tts(text: str, voice: str, provider: str, engine: Any = None) -> Optional[bytes]:
-    """路由至第三方/本地 TTS 服务（优先读取 config.podcast.podcast_tts_engines，回退环境变量）"""
-    import httpx
+    """路由至第三方云端或本地开源 TTS 服务（支持 11 种主流引擎，未配置或异常返回 None 以便回退 Edge TTS）"""
+    import base64, uuid, httpx
     p_cfg = (getattr(getattr(engine, "config", None), "podcast", None) or {}) if engine else {}
     t_cfg = p_cfg.get("podcast_tts_engines", {}) if isinstance(p_cfg, dict) and isinstance(p_cfg.get("podcast_tts_engines"), dict) else {}
     def _cfg(k: str, env_k: str, default: str = "") -> str:
         return str(t_cfg.get(k) or os.environ.get(env_k) or default).strip()
 
     p = (provider or "edge").strip().lower()
-    is_female = any(k in (voice or "").lower() for k in ("xiaoxiao", "jenny", "nanami", "nova", "shimmer"))
-    if p in ("openai", "cosyvoice"):
-        api_key = _cfg("openai_api_key", "OPENAI_API_KEY") if p == "openai" else (_cfg("cosyvoice_api_key", "COSYVOICE_API_KEY", "local"))
-        if p == "openai" and not api_key:
+    is_f = any(k in (voice or "").lower() for k in ("xiaoxiao", "jenny", "nanami", "nova", "shimmer", "heart", "kore"))
+
+    if p in _OPENAI_COMPAT_SPECS:
+        def_url, def_model, def_va, def_vb, req_key = _OPENAI_COMPAT_SPECS[p]
+        ep = p.upper()
+        api_key = _cfg(f"{p}_api_key", f"{ep}_API_KEY", "" if req_key else "local")
+        if req_key and not api_key:
             return None
-        default_url = "https://api.openai.com/v1" if p == "openai" else "http://127.0.0.1:9880/v1"
-        base_url = _cfg("cosyvoice_base_url" if p == "cosyvoice" else "openai_base_url", "COSYVOICE_BASE_URL" if p == "cosyvoice" else "OPENAI_BASE_URL", default_url).rstrip("/")
-        oa_voice = "nova" if is_female else "onyx"
-        model = _cfg("cosyvoice_model" if p == "cosyvoice" else "openai_model", "COSYVOICE_MODEL" if p == "cosyvoice" else "OPENAI_TTS_MODEL", "cosyvoice" if p == "cosyvoice" else "tts-1")
+        base_url = _cfg(f"{p}_base_url", f"{ep}_BASE_URL", def_url).rstrip("/")
+        model = _cfg(f"{p}_model", f"{ep}_TTS_MODEL", def_model)
+        c_voice = _cfg(f"{p}_voice_a" if is_f else f"{p}_voice_b", f"{ep}_VOICE_A" if is_f else f"{ep}_VOICE_B", def_va if is_f else def_vb)
         async with httpx.AsyncClient(timeout=45.0) as client:
-            r = await client.post(f"{base_url}/audio/speech", headers={"Authorization": f"Bearer {api_key}"}, json={"model": model, "input": text, "voice": oa_voice, "response_format": "mp3"})
+            r = await client.post(f"{base_url}/audio/speech", headers={"Authorization": f"Bearer {api_key}"}, json={"model": model, "input": text, "voice": c_voice, "response_format": "mp3"})
             return r.content if (r.status_code == 200 and r.content) else None
+
+    if p == "minimax":
+        api_key = _cfg("minimax_api_key", "MINIMAX_API_KEY")
+        if not api_key:
+            return None
+        gid = _cfg("minimax_group_id", "MINIMAX_GROUP_ID")
+        vid = _cfg("minimax_voice_a" if is_f else "minimax_voice_b", "MINIMAX_VOICE_A" if is_f else "MINIMAX_VOICE_B") or ("Chinese (Mandarin)_Warm_Girl" if is_f else "male-qn-jingying")
+        url = f"https://api.minimaxi.chat/v1/t2a_v2?GroupId={gid}" if gid else "https://api.minimaxi.chat/v1/t2a_v2"
+        payload = {"model": _cfg("minimax_model", "MINIMAX_TTS_MODEL", "speech-02-hd"), "text": text, "stream": False, "voice_setting": {"voice_id": vid, "speed": 1.0, "vol": 1.0, "pitch": 0}, "audio_setting": {"sample_rate": 32000, "bitrate": 128000, "format": "mp3"}}
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            r = await client.post(url, headers={"Authorization": f"Bearer {api_key}"}, json=payload)
+            hx = (r.json().get("data") or {}).get("audio") if r.status_code == 200 else None
+            return bytes.fromhex(hx) if hx else None
+
+    if p == "volcengine":
+        app_id, tok = _cfg("volcengine_app_id", "VOLCENGINE_TTS_APP_ID"), _cfg("volcengine_access_token", "VOLCENGINE_TTS_ACCESS_TOKEN")
+        if not app_id or not tok:
+            return None
+        vid = _cfg("volcengine_voice_a" if is_f else "volcengine_voice_b", "VOLCENGINE_VOICE_A" if is_f else "VOLCENGINE_VOICE_B") or ("zh_female_cancan_mars_bigtts" if is_f else "zh_male_yangguangqingnian_moon_bigtts")
+        payload = {"app": {"appid": app_id, "token": tok, "cluster": _cfg("volcengine_cluster", "VOLCENGINE_TTS_CLUSTER", "volcano_tts")}, "user": {"uid": "illacme_podcast"}, "audio": {"voice_type": vid, "encoding": "mp3", "speed_ratio": 1.0}, "request": {"reqid": uuid.uuid4().hex, "text": text, "operation": "query"}}
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            r = await client.post("https://openspeech.bytedance.com/api/v1/tts", headers={"Authorization": f"Bearer;{tok}"}, json=payload)
+            b64 = r.json().get("data") if r.status_code == 200 else None
+            return base64.b64decode(b64) if b64 else None
+
+    if p == "gemini":
+        api_key = _cfg("gemini_api_key", "GEMINI_API_KEY")
+        if not api_key:
+            return None
+        model = _cfg("gemini_model", "GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+        vid = _cfg("gemini_voice_a" if is_f else "gemini_voice_b", "GEMINI_VOICE_A" if is_f else "GEMINI_VOICE_B") or ("Kore" if is_f else "Charon")
+        payload = {"contents": [{"parts": [{"text": text}]}], "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": vid}}}}}
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            r = await client.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}", json=payload)
+            if r.status_code == 200:
+                parts = ((r.json().get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+                inline = (parts[0] if parts else {}).get("inlineData") or {}
+                b64 = inline.get("data")
+                if not b64:
+                    return None
+                raw = base64.b64decode(b64)
+                return raw if any(x in (inline.get("mimeType") or "").lower() for x in ("mp3", "mpeg")) else _pcm_to_mp3(raw)
+        return None
+
     if p == "elevenlabs":
         api_key = _cfg("elevenlabs_api_key", "ELEVENLABS_API_KEY")
         if not api_key:
             return None
-        vid = _cfg("elevenlabs_voice_a" if is_female else "elevenlabs_voice_b", "ELEVENLABS_VOICE_A" if is_female else "ELEVENLABS_VOICE_B") or ("21m00Tcm4TlvDq8ikWAM" if is_female else "TxGEqnHWrfWFTfGW9XjX")
+        vid = _cfg("elevenlabs_voice_a" if is_f else "elevenlabs_voice_b", "ELEVENLABS_VOICE_A" if is_f else "ELEVENLABS_VOICE_B") or ("21m00Tcm4TlvDq8ikWAM" if is_f else "TxGEqnHWrfWFTfGW9XjX")
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}", headers={"xi-api-key": api_key}, json={"text": text, "model_id": "eleven_multilingual_v2"})
             return r.content if (r.status_code == 200 and r.content) else None
+
     if p == "fish_audio":
         api_key = _cfg("fish_audio_api_key", "FISH_AUDIO_API_KEY")
         if not api_key:
             return None
         payload: Dict[str, Any] = {"text": text, "format": "mp3"}
-        ref_id = _cfg("fish_audio_ref_a" if is_female else "fish_audio_ref_b", "FISH_AUDIO_REF_A" if is_female else "FISH_AUDIO_REF_B")
+        ref_id = _cfg("fish_audio_ref_a" if is_f else "fish_audio_ref_b", "FISH_AUDIO_REF_A" if is_f else "FISH_AUDIO_REF_B")
         if ref_id:
             payload["reference_id"] = ref_id
         async with httpx.AsyncClient(timeout=45.0) as client:
             r = await client.post("https://api.fish.audio/v1/tts", headers={"Authorization": f"Bearer {api_key}"}, json=payload)
             return r.content if (r.status_code == 200 and r.content) else None
+
     return None

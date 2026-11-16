@@ -249,10 +249,16 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
 };
 
 const _TTS_ENGINE_FIELDS = {
-    openai: [['openai_api_key', 'OpenAI API Key', 'password', 'sk-...'], ['openai_base_url', 'Base URL', 'text', 'https://api.openai.com/v1']],
-    elevenlabs: [['elevenlabs_api_key', 'ElevenLabs API Key', 'password', 'xi-api-key...'], ['elevenlabs_voice_a', '主讲 Voice ID (女)', 'text', '可选'], ['elevenlabs_voice_b', '搭档 Voice ID (男)', 'text', '可选']],
-    fish_audio: [['fish_audio_api_key', 'Fish Audio API Key', 'password', 'Token...'], ['fish_audio_ref_a', '参考音色 ID A', 'text', '可选'], ['fish_audio_ref_b', '参考音色 ID B', 'text', '可选']],
-    cosyvoice: [['cosyvoice_base_url', 'CosyVoice 服务地址', 'text', 'http://127.0.0.1:9880/v1']]
+    kokoro: [['kokoro_base_url', 'Kokoro 服务地址', 'text', 'http://127.0.0.1:8880/v1'], ['kokoro_voice_a', '主讲音色', 'text', 'af_heart'], ['kokoro_voice_b', '搭档音色', 'text', 'am_michael']],
+    chattts: [['chattts_base_url', 'ChatTTS 服务地址', 'text', 'http://127.0.0.1:9966/v1'], ['chattts_voice_a', '主讲音色', 'text', 'female'], ['chattts_voice_b', '搭档音色', 'text', 'male']],
+    cosyvoice: [['cosyvoice_base_url', 'CosyVoice 地址', 'text', 'http://127.0.0.1:9880/v1'], ['cosyvoice_model', '模型名', 'text', 'cosyvoice']],
+    piper: [['piper_base_url', 'Piper 服务地址', 'text', 'http://127.0.0.1:5000/v1'], ['piper_voice_a', '主讲音色', 'text', 'nova'], ['piper_voice_b', '搭档音色', 'text', 'onyx']],
+    openai: [['openai_api_key', 'OpenAI API Key', 'password', 'sk-...'], ['openai_base_url', 'Base URL', 'text', 'https://api.openai.com/v1'], ['openai_model', '模型名', 'text', 'tts-1']],
+    minimax: [['minimax_api_key', 'MiniMax API Key', 'password', 'Bearer Token...'], ['minimax_group_id', 'GroupId (可选)', 'text', 'GroupId'], ['minimax_voice_a', '女声音色 ID', 'text', 'Chinese (Mandarin)_Warm_Girl'], ['minimax_voice_b', '男声音色 ID', 'text', 'male-qn-jingying']],
+    volcengine: [['volcengine_app_id', 'App ID', 'text', '火山 AppID'], ['volcengine_access_token', 'Access Token', 'password', 'Token...'], ['volcengine_voice_a', '主讲 Voice Type', 'text', 'zh_female_cancan_mars_bigtts'], ['volcengine_voice_b', '搭档 Voice Type', 'text', 'zh_male_yangguangqingnian_moon_bigtts']],
+    gemini: [['gemini_api_key', 'Gemini API Key', 'password', 'AIza...'], ['gemini_voice_a', '主讲音色', 'text', 'Kore'], ['gemini_voice_b', '搭档音色', 'text', 'Charon']],
+    elevenlabs: [['elevenlabs_api_key', 'ElevenLabs API Key', 'password', 'xi-api-key...'], ['elevenlabs_voice_a', '主讲 Voice ID', 'text', '可选'], ['elevenlabs_voice_b', '搭档 Voice ID', 'text', '可选']],
+    fish_audio: [['fish_audio_api_key', 'Fish Audio API Key', 'password', 'Token...'], ['fish_audio_ref_a', '参考音色 ID A', 'text', '可选'], ['fish_audio_ref_b', '参考音色 ID B', 'text', '可选']]
 };
 
 window.refreshPodcastInlineEngineConfig = function (provider) {
@@ -261,33 +267,26 @@ window.refreshPodcastInlineEngineConfig = function (provider) {
     const p = provider || (document.getElementById('podcast-tts-provider') || {}).value || 'edge';
     const fields = _TTS_ENGINE_FIELDS[p];
     const tCfg = (((window.settingsData || {}).podcast || {}).podcast_tts_engines) || {};
-    if (!fields) {
-        panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="podcast-sub" style="font-size:0.78rem;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;white-space:nowrap;">收起</button></div>`;
-        return;
-    }
+    if (!fields) { panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="podcast-sub" style="font-size:0.78rem;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;white-space:nowrap;">收起</button></div>`; return; }
     const inputs = fields.map(([k, lbl, tp, ph]) => `<label style="display:flex;flex-direction:column;gap:3px;min-width:170px;flex:1;"><span class="podcast-sub" style="font-size:0.7rem;">${lbl}</span><input class="podcast-input" data-tts-key="${k}" type="${tp}" value="${String(tCfg[k] || '').replace(/"/g, '&quot;')}" placeholder="${ph || ''}"></label>`).join('');
     panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}<button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;white-space:nowrap;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;white-space:nowrap;">收起</button></div>`;
 };
 
 window.togglePodcastInlineEngineConfig = function () {
-    const panel = document.getElementById('podcast-engine-inline-config');
-    if (!panel) return;
+    const panel = document.getElementById('podcast-engine-inline-config'); if (!panel) return;
     const isHidden = panel.style.display === 'none' || !panel.style.display;
-    panel.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) window.refreshPodcastInlineEngineConfig();
+    panel.style.display = isHidden ? 'block' : 'none'; if (isHidden) window.refreshPodcastInlineEngineConfig();
 };
 
 window.savePodcastInlineEngineConfig = async function (provider) {
     const panel = document.getElementById('podcast-engine-inline-config');
     if (!panel) return;
     const payload = { 'podcast.podcast_tts_engines.default_provider': provider };
-    window.settingsData = window.settingsData || {};
-    window.settingsData.podcast = window.settingsData.podcast || {};
+    window.settingsData = window.settingsData || {}; window.settingsData.podcast = window.settingsData.podcast || {};
     window.settingsData.podcast.podcast_tts_engines = window.settingsData.podcast.podcast_tts_engines || { default_provider: provider };
     panel.querySelectorAll('input[data-tts-key]').forEach((inp) => {
         const k = inp.getAttribute('data-tts-key'), v = inp.value.trim();
-        payload[`podcast.podcast_tts_engines.${k}`] = v;
-        window.settingsData.podcast.podcast_tts_engines[k] = v;
+        payload[`podcast.podcast_tts_engines.${k}`] = v; window.settingsData.podcast.podcast_tts_engines[k] = v;
     });
     try {
         const r = await fetch('/api/config/update', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }, body: JSON.stringify(payload) });
