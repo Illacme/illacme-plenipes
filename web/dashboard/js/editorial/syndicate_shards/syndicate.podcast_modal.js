@@ -33,20 +33,12 @@
         if (_isProcessing) return;
         let confirmed = false;
         if (typeof window.confirmSovereignAction === 'function') {
-            confirmed = await window.confirmSovereignAction({
-                title: '✨ 开启 AI 深度智能编剧？',
-                text: '将调用当前算力中心模型对全文进行深度思辨与拟真剧本重构。<br><span style="color:#c084fc;font-size:0.82rem;">⏱️ 预计耗时约 3~8 秒 · 消耗模型上下文 Token</span>',
-                confirmText: '🚀 确认开始编剧', confirmColor: '#a855f7', cancelText: '取消'
-            });
-        } else {
-            confirmed = window.confirm('将调用算力中心大模型深度重构播客剧本 (预计耗时 3~8 秒)，是否确认开始？');
-        }
+            confirmed = await window.confirmSovereignAction({ title: '✨ 开启 AI 深度智能编剧？', text: '将调用当前算力中心模型对全文进行深度思辨与拟真剧本重构。<br><span style="color:#c084fc;font-size:0.82rem;">⏱️ 预计耗时约 3~8 秒 · 消耗模型上下文 Token</span>', confirmText: '🚀 确认开始编剧', confirmColor: '#a855f7', cancelText: '取消' });
+        } else confirmed = window.confirm('将调用算力中心大模型深度重构播客剧本 (预计耗时 3~8 秒)，是否确认开始？');
         if (!confirmed) return;
-
         const stopProgress = _renderAiProgress();
         try {
-            await _extractScript(true);
-            stopProgress();
+            await _extractScript(true); stopProgress();
             if (typeof window.showToast === 'function') window.showToast('✨ 大模型已成功深度重构播客剧本！', 'success');
         } catch (err) {
             stopProgress();
@@ -69,14 +61,8 @@
         try {
             const token = localStorage.getItem('token') || '';
             const resp = await fetch('/api/podcast/synthesize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    rel_path: _currentRelPath, title: _currentScript.title || '技术对谈播客',
-                    turns: _currentScript.turns, lang: _selectedLang, style: _selectedStyle,
-                    bgm_style: _selectedBgm, pause_ms: 380,
-                    tts_provider: (document.getElementById('podcast-tts-provider') || {}).value || 'edge'
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ rel_path: _currentRelPath, title: _currentScript.title || '技术对谈播客', turns: _currentScript.turns, lang: _selectedLang, style: _selectedStyle, bgm_style: _selectedBgm, pause_ms: 380, tts_provider: (document.getElementById('podcast-tts-provider') || {}).value || 'edge' })
             });
             const data = await resp.json();
             if (!resp.ok || data.status !== 'success') throw new Error(data.detail || '音频合成失败');
@@ -104,8 +90,7 @@
         try {
             const token = localStorage.getItem('token') || '';
             const resp = await fetch('/api/podcast/storage/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ filename: _currentAudioInfo.filename, rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle })
             });
             const data = await resp.json();
@@ -160,15 +145,7 @@
     function _renderAiProgress() {
         const bodyEl = document.getElementById('podcast-modal-body');
         if (!bodyEl) return () => {};
-        bodyEl.innerHTML = `<div style="text-align:center;padding:56px 20px;">
-            <div style="font-size:2.4rem;margin-bottom:12px;display:inline-block;animation:spin 3s linear infinite;">✨</div>
-            <div style="font-size:1.05rem;color:#f8fafc;font-weight:600;margin-bottom:6px;">AI 深度智能编剧构思中</div>
-            <div id="podcast-progress-msg" style="color:#94a3b8;font-size:0.85rem;min-height:22px;">🔍 深入解析原稿核心架构与逻辑断点...</div>
-            <div style="width:100%;max-width:440px;height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin:18px auto;border:1px solid rgba(255,255,255,0.08);">
-                <div id="podcast-progress-bar" style="height:100%;width:15%;background:linear-gradient(90deg,#a855f7,#38bdf8);border-radius:99px;transition:width 0.4s ease;box-shadow:0 0 12px rgba(168,85,247,0.5);"></div>
-            </div>
-            <div id="podcast-progress-pct" style="font-size:0.82rem;color:#c084fc;font-weight:600;">15%</div>
-        </div>`;
+        bodyEl.innerHTML = `<div style="text-align:center;padding:56px 20px;"><div style="font-size:2.4rem;margin-bottom:12px;display:inline-block;animation:spin 3s linear infinite;">✨</div><div class="podcast-title" style="font-size:1.05rem;font-weight:600;margin-bottom:6px;">AI 深度智能编剧构思中</div><div id="podcast-progress-msg" class="podcast-sub" style="font-size:0.85rem;min-height:22px;">🔍 深入解析原稿核心架构与逻辑断点...</div><div style="width:100%;max-width:440px;height:8px;background:rgba(148,163,184,0.2);border-radius:99px;overflow:hidden;margin:18px auto;border:1px solid rgba(148,163,184,0.2);"><div id="podcast-progress-bar" style="height:100%;width:15%;background:linear-gradient(90deg,#a855f7,#38bdf8);border-radius:99px;transition:width 0.4s ease;box-shadow:0 0 12px rgba(168,85,247,0.5);"></div></div><div id="podcast-progress-pct" style="font-size:0.82rem;color:#c084fc;font-weight:600;">15%</div></div>`;
         const stages = [[32, '🔍 深入解析原稿核心架构与逻辑断点...'], [58, '🧠 算力大模型构思双人辩证与交替对白...'], [82, '🎙️ 注入拟人自然口语化修辞与过渡设问...'], [95, '⚡ 格式校验闭环，正在装配提词器...']];
         let idx = 0;
         const timer = setInterval(() => {
@@ -186,36 +163,33 @@
         if (!bodyEl || !_currentScript) return;
 
         const turnsHtml = (_currentScript.turns || []).map((t, idx) => {
-            const isA = t.speaker === 'host_a', col = isA ? '#38bdf8' : '#c084fc', alpha = isA ? '56,189,248' : '168,85,247';
-            return `<div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
-                <div style="flex-shrink:0;width:80px;text-align:right;">
-                    <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:600;background:rgba(${alpha},0.2);color:${col};border:1px solid rgba(${alpha},0.4);">${_esc(t.speaker_name)}</span>
-                    <div style="font-size:0.65rem;color:#64748b;margin-top:2px;">${isA ? '主讲人' : '搭档'}</div>
+            const isA = t.speaker === 'host_a', col = isA ? '#0ea5e9' : '#9333ea', alpha = isA ? '14,165,233' : '147,51,234';
+            return `<div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start;">
+                <div style="flex-shrink:0;width:74px;text-align:right;">
+                    <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.74rem;font-weight:600;background:rgba(${alpha},0.14);color:${col};border:1px solid rgba(${alpha},0.35);">${_esc(t.speaker_name)}</span>
+                    <div class="podcast-sub" style="font-size:0.65rem;margin-top:2px;">${isA ? '主讲人' : '搭档'}</div>
                 </div>
-                <div contenteditable="true" onblur="window.updatePodcastTurnText(${idx}, this.innerText)" style="flex:1;background:rgba(${alpha},0.06);border:1px solid rgba(${alpha},0.4);border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:0.88rem;line-height:1.5;outline:none;" title="点击可直接编辑修改台词">${_esc(t.text)}</div>
+                <div class="podcast-turn-bubble" contenteditable="true" onblur="window.updatePodcastTurnText(${idx}, this.innerText)" style="flex:1;background:rgba(${alpha},0.06);border:1px solid rgba(${alpha},0.32);border-radius:8px;padding:9px 13px;font-size:0.86rem;line-height:1.5;outline:none;" title="点击可直接编辑修改台词">${_esc(t.text)}</div>
             </div>`;
         }).join('');
 
         const durMin = Math.floor((_currentScript.estimated_duration_sec || 60) / 60), durSec = (_currentScript.estimated_duration_sec || 60) % 60;
         const isAi = !!_currentScript.is_ai_generated;
-        const aiBadge = isAi ? '<span style="font-size:0.7rem;background:rgba(168,85,247,0.25);color:#c084fc;padding:2px 8px;border-radius:4px;border:1px solid rgba(168,85,247,0.4);margin-left:8px;">✨ AI 深度编剧</span>' : '';
+        const aiBadge = isAi ? '<span style="font-size:0.7rem;background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 8px;border-radius:4px;border:1px solid rgba(168,85,247,0.4);margin-left:8px;">✨ AI 深度编剧</span>' : '';
         const aiActionBtn = isAi
-            ? `<button type="button" class="mini-btn glow-btn" onclick="window.triggerPodcastAiRewrite()" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;">✨ 再次 AI 编剧</button><button type="button" class="mini-btn" onclick="window.extractScriptRule()" style="background:rgba(255,255,255,0.06);margin-left:4px;">⚡ 还原规则提取</button>`
+            ? `<button type="button" class="mini-btn glow-btn" onclick="window.triggerPodcastAiRewrite()" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;">✨ 再次 AI 编剧</button><button type="button" class="mini-btn" onclick="window.extractScriptRule()" style="margin-left:4px;">⚡ 还原规则提取</button>`
             : `<button id="podcast-ai-rewrite-btn" type="button" class="mini-btn glow-btn" onclick="window.triggerPodcastAiRewrite()" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;">✨ AI 深度编剧</button>`;
 
         bodyEl.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle,rgba(148,163,184,0.2));flex-wrap:wrap;gap:8px;flex-shrink:0;">
                 <div>
-                    <h3 style="margin:0;font-size:1.05rem;color:#f8fafc;font-weight:600;display:flex;align-items:center;">《${_esc(_currentScript.title)}》 ${aiBadge}</h3>
-                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">话题：${_esc(_currentScript.topic)} · 预计时长：${durMin}分${durSec}秒 · 共 ${_currentScript.turns?.length || 0} 轮交替对谈 · <span style="color:#c084fc;">💡 点击台词可直接微调修改</span></div>
+                    <h3 class="podcast-title" style="margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;">《${_esc(_currentScript.title)}》 ${aiBadge}</h3>
+                    <div class="podcast-sub" style="font-size:0.74rem;margin-top:2px;">话题：${_esc(_currentScript.topic)} · 预计时长：${durMin}分${durSec}秒 · 共 ${_currentScript.turns?.length || 0} 轮对谈 · <span style="color:#9333ea;">💡 点击台词可直接微调修改</span></div>
                 </div>
-                <div style="display:flex;gap:6px;align-items:center;">
-                    ${aiActionBtn}
-                    <button type="button" class="mini-btn" onclick="window.copyPodcastRssFeed()" title="复制标准 Podcast RSS 链接">📻 复制 RSS</button>
-                </div>
+                <div style="display:flex;gap:6px;align-items:center;">${aiActionBtn}<button type="button" class="mini-btn" onclick="window.copyPodcastRssFeed()" title="复制标准 Podcast RSS 链接">📻 复制 RSS</button></div>
             </div>
-            <div style="max-height:360px;overflow-y:auto;padding-right:6px;margin-bottom:16px;">${turnsHtml}</div>
-            <div id="podcast-player-container"></div>`;
+            <div style="flex:1;min-height:140px;overflow-y:auto;padding-right:6px;margin-bottom:12px;">${turnsHtml}</div>
+            <div id="podcast-player-container" style="flex-shrink:0;"></div>`;
         _renderPlayerArea();
     }
 
@@ -235,16 +209,16 @@
             const chaps = _currentAudioInfo.chapters || (_currentScript ? _currentScript.chapters : null);
             const notes = _currentAudioInfo.shownotes_formatted || (_currentScript ? _currentScript.shownotes_formatted : '');
             const chapsHtml = window.renderPodcastChaptersHtml ? window.renderPodcastChaptersHtml(chaps, notes) : '';
-            container.innerHTML = `<div style="background:rgba(15,23,42,0.7);border:1px solid rgba(168,85,247,0.3);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;">
-                <span style="font-size:1.8rem;">🎧</span>
-                <div style="flex:1;">
-                    <div style="font-size:0.85rem;color:#f8fafc;font-weight:500;">单轨技术播客已就绪 · ${label} (${kbSize} KB) ${cdnBadge}</div>
+            container.innerHTML = `<div class="podcast-player-card" style="border:1px solid rgba(168,85,247,0.3);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.6rem;">🎧</span>
+                <div style="flex:1;min-width:0;">
+                    <div class="podcast-title" style="font-size:0.83rem;font-weight:500;">单轨技术播客已就绪 · ${label} (${kbSize} KB) ${cdnBadge}</div>
                     <audio id="podcast-player-audio" controls src="${audioSrc}" style="width:100%;height:32px;margin-top:6px;outline:none;"></audio>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:6px;flex-shrink:0;">
                     ${cdnBtn}${_currentAudioInfo.transcript_url ? `<a href="${_esc(_currentAudioInfo.transcript_url)}" download class="mini-btn" style="text-decoration:none;display:inline-flex;align-items:center;" title="下载 WebVTT 同步字幕">📝 字幕</a>` : ''}
                     <a href="${audioSrc}" download="${_esc(_currentAudioInfo.filename || 'podcast.mp3')}" class="mini-btn glow-btn" style="background:#8b5cf6;color:#fff;text-decoration:none;display:inline-flex;align-items:center;">⬇️ 下载</a>
-                    <button type="button" class="mini-btn" onclick="window.triggerPodcastSynthesis()" style="background:rgba(255,255,255,0.08);">🔄 重置</button>
+                    <button type="button" class="mini-btn" onclick="window.triggerPodcastSynthesis()">🔄 重置</button>
                 </div>
             </div>${chapsHtml}`;
         } else {
@@ -273,25 +247,46 @@
         const lPills = [['zh','中文 (晓晓/云希)'],['en','English (Jenny/Guy)'],['ja','日本語 (七海/圭太)']].map(([v,l]) => `<button type="button" class="podcast-pill-btn ${v==='zh'?'active':''}" data-val="${v}" onclick="window.switchPodcastLang('${v}')">${l}</button>`).join('');
         const sPills = [['tech_deep','深度剖析'],['casual_brief','通俗快讯'],['debate','观点交锋'],['solo_read','单人伴读']].map(([v,l]) => `<button type="button" class="podcast-pill-btn ${v==='tech_deep'?'active':''}" data-val="${v}" onclick="window.switchPodcastStyle('${v}')">${l}</button>`).join('');
         const bPills = [['cyber_ambient','🌌 科技未来'],['lofi_chill','☕ Lo-Fi 温暖'],['white_noise','🍃 沉浸微风'],['none','🎙️ 纯净干音']].map(([v,l]) => `<button type="button" class="podcast-pill-btn ${v==='cyber_ambient'?'active':''}" data-val="${v}" onclick="window.switchPodcastBgm('${v}')">${l}</button>`).join('');
-        const html = `<div id="syndicate-podcast-modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px;">
+        const html = `<div id="syndicate-podcast-modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px;">
             <style>
+                .podcast-modal-card{background:#0b1020;color:#e2e8f0;border:1px solid rgba(168,85,247,0.3);box-shadow:0 25px 50px -12px rgba(0,0,0,0.65);}
+                .podcast-modal-header{background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);}
+                .podcast-modal-toolbar{background:rgba(15,23,42,0.45);border-bottom:1px solid rgba(255,255,255,0.06);}
+                .podcast-title{color:#f8fafc;} .podcast-sub{color:#94a3b8;} .podcast-turn-bubble{color:#e2e8f0;}
+                .podcast-player-card,.podcast-inline-cfg{background:rgba(15,23,42,0.72);}
+                .podcast-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:5px 9px;color:#e2e8f0;font-size:0.76rem;}
                 .podcast-pill-btn{background:rgba(255,255,255,0.06);color:#cbd5e1;border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:4px 10px;font-size:0.76rem;cursor:pointer;transition:all .2s ease;}
-                .podcast-pill-btn:hover{color:#fff;background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);}
-                .podcast-pill-btn.active{background:rgba(168,85,247,0.25);color:#f3e8ff;font-weight:600;border:1px solid rgba(168,85,247,0.65);box-shadow:0 0 10px rgba(168,85,247,0.25);}
+                .podcast-pill-btn:hover{color:#fff;background:rgba(255,255,255,0.12);}
+                .podcast-pill-btn.active{background:rgba(168,85,247,0.22);color:#f3e8ff;font-weight:600;border-color:rgba(168,85,247,0.65);}
+                [data-theme="light"] .podcast-modal-card{background:#ffffff;color:#1e293b;border-color:#e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,0.18);}
+                [data-theme="light"] .podcast-modal-header{background:#f8fafc;border-bottom-color:#e2e8f0;}
+                [data-theme="light"] .podcast-modal-toolbar{background:#f1f5f9;border-bottom-color:#e2e8f0;}
+                [data-theme="light"] .podcast-title{color:#0f172a;} [data-theme="light"] .podcast-sub{color:#64748b;} [data-theme="light"] .podcast-turn-bubble{color:#1e293b;}
+                [data-theme="light"] .podcast-player-card,[data-theme="light"] .podcast-inline-cfg{background:#f8fafc;border-color:#cbd5e1 !important;}
+                [data-theme="light"] .podcast-input{background:#ffffff;border-color:#cbd5e1;color:#0f172a;}
+                [data-theme="light"] .podcast-pill-btn{background:#ffffff;color:#475569;border-color:#cbd5e1;}
+                [data-theme="light"] .podcast-pill-btn:hover{color:#0f172a;background:#f8fafc;}
+                [data-theme="light"] .podcast-pill-btn.active{background:rgba(147,51,234,0.1);color:#7e22ce;border-color:#9333ea;}
             </style>
-            <div style="background:#090d16;border:1px solid rgba(168,85,247,0.3);box-shadow:0 25px 50px -12px rgba(0,0,0,0.7);width:100%;max-width:860px;border-radius:16px;display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(15,23,42,0.85);">
-                    <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🎙️</span><div><div style="font-size:1rem;font-weight:600;color:#f8fafc;">双人对话式技术播客工坊 (Podcast Studio)</div><div style="font-size:0.75rem;color:#94a3b8;">智能提炼双人剧本 · 商业级氛围垫乐与自适应闪避 · 128k MP3 单轨缝合与 RSS 分发</div></div></div>
-                    <button type="button" onclick="window.closePodcastStudioModal()" style="background:none;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer;padding:4px 8px;">✕</button>
+            <div class="podcast-modal-card" style="width:100%;max-width:880px;border-radius:16px;display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">
+                <div class="podcast-modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-shrink:0;">
+                    <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🎙️</span><div><div class="podcast-title" style="font-size:1rem;font-weight:600;">双人对话式技术播客工坊 (Podcast Studio)</div><div class="podcast-sub" style="font-size:0.75rem;">智能提炼双人剧本 · 商业级氛围垫乐与自适应闪避 · 128k MP3 单轨缝合与 RSS 分发</div></div></div>
+                    <button type="button" class="podcast-sub" onclick="window.closePodcastStudioModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px 8px;">✕</button>
                 </div>
-                <div style="padding:10px 20px;background:rgba(15,23,42,0.4);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                    <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">语种:</span><div id="podcast-lang-pills" style="display:flex;gap:4px;">${lPills}</div></div>
-                    <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">风格:</span><div id="podcast-style-pills" style="display:flex;gap:4px;">${sPills}</div></div>
-                    <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">垫乐:</span><div id="podcast-bgm-pills" style="display:flex;gap:4px;">${bPills}</div></div>
-                    <div style="display:flex;align-items:center;gap:8px;width:100%;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);"><span style="font-size:0.74rem;color:#94a3b8;white-space:nowrap;">🎯 聚焦引导:</span><input id="podcast-focus-input" type="text" placeholder="可选：如“面向初学者科普”或“重点辩论架构取舍”..." style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:0.75rem;"><span style="font-size:0.74rem;color:#94a3b8;white-space:nowrap;">🎙️ 引擎:</span><select id="podcast-tts-provider" onchange="if(window.refreshPodcastInlineEngineConfig) window.refreshPodcastInlineEngineConfig(this.value)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:0.75rem;"><option value="edge">Edge TTS (免费免配)</option><option value="openai">OpenAI TTS</option><option value="elevenlabs">ElevenLabs</option><option value="fish_audio">Fish Audio</option><option value="cosyvoice">本地 CosyVoice</option></select><button type="button" class="mini-btn" onclick="if(window.togglePodcastInlineEngineConfig) window.togglePodcastInlineEngineConfig();" title="原地展开当前所选语音引擎的配置面板" style="padding:4px 8px;font-size:0.74rem;">⚙️ 配置引擎</button></div>
-                    <div id="podcast-engine-inline-config" style="display:none;width:100%;padding:8px 10px;border-radius:8px;background:rgba(15,23,42,0.75);border:1px solid rgba(168,85,247,0.35);"></div>
+                <div class="podcast-modal-toolbar" style="padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+                    <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">语种:</span><div id="podcast-lang-pills" style="display:flex;gap:4px;">${lPills}</div></div>
+                    <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">风格:</span><div id="podcast-style-pills" style="display:flex;gap:4px;">${sPills}</div></div>
+                    <div style="display:flex;align-items:center;gap:6px;"><span class="podcast-sub" style="font-size:0.75rem;">垫乐:</span><div id="podcast-bgm-pills" style="display:flex;gap:4px;">${bPills}</div></div>
+                    <div style="display:flex;align-items:center;gap:8px;width:100%;padding-top:6px;border-top:1px dashed var(--border-subtle,rgba(148,163,184,0.25));flex-wrap:nowrap;">
+                        <span class="podcast-sub" style="font-size:0.74rem;white-space:nowrap;flex-shrink:0;">🎯 聚焦引导:</span>
+                        <input id="podcast-focus-input" class="podcast-input" type="text" placeholder="可选：如“面向初学者科普”或“重点辩论架构取舍”..." style="flex:1 1 240px;min-width:180px;">
+                        <span class="podcast-sub" style="font-size:0.74rem;white-space:nowrap;flex-shrink:0;">🎙️ 引擎:</span>
+                        <select id="podcast-tts-provider" class="podcast-input" onchange="if(window.refreshPodcastInlineEngineConfig) window.refreshPodcastInlineEngineConfig(this.value)" style="width:auto;max-width:170px;flex-shrink:0;"><option value="edge">Edge TTS (免费免配)</option><option value="openai">OpenAI TTS</option><option value="elevenlabs">ElevenLabs</option><option value="fish_audio">Fish Audio</option><option value="cosyvoice">本地 CosyVoice</option></select>
+                        <button type="button" class="mini-btn" onclick="if(window.togglePodcastInlineEngineConfig) window.togglePodcastInlineEngineConfig();" title="原地展开当前所选语音引擎的配置面板" style="padding:5px 10px;font-size:0.74rem;white-space:nowrap;flex-shrink:0;">⚙️ 配置引擎</button>
+                    </div>
+                    <div id="podcast-engine-inline-config" class="podcast-inline-cfg" style="display:none;width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(168,85,247,0.35);"></div>
                 </div>
-                <div id="podcast-modal-body" style="padding:18px 20px;flex:1;overflow-y:auto;"></div>
+                <div id="podcast-modal-body" style="padding:14px 20px;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;"></div>
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', html);

@@ -262,11 +262,11 @@ window.refreshPodcastInlineEngineConfig = function (provider) {
     const fields = _TTS_ENGINE_FIELDS[p];
     const tCfg = (((window.settingsData || {}).podcast || {}).podcast_tts_engines) || {};
     if (!fields) {
-        panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:0.78rem;color:#94a3b8;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;">收起</button></div>`;
+        panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="podcast-sub" style="font-size:0.78rem;">✅ <b>Edge TTS</b> 为免费免配神经语音引擎，无需填写密钥，开箱即用。</span><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="font-size:0.74rem;white-space:nowrap;">收起</button></div>`;
         return;
     }
-    const inputs = fields.map(([k, lbl, tp, ph]) => `<label style="display:flex;flex-direction:column;gap:3px;min-width:170px;flex:1;"><span style="font-size:0.7rem;color:#94a3b8;">${lbl}</span><input data-tts-key="${k}" type="${tp}" value="${String(tCfg[k] || '').replace(/"/g, '&quot;')}" placeholder="${ph || ''}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:5px 8px;color:#f8fafc;font-size:0.76rem;"></label>`).join('');
-    panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}<button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;">收起</button></div>`;
+    const inputs = fields.map(([k, lbl, tp, ph]) => `<label style="display:flex;flex-direction:column;gap:3px;min-width:170px;flex:1;"><span class="podcast-sub" style="font-size:0.7rem;">${lbl}</span><input class="podcast-input" data-tts-key="${k}" type="${tp}" value="${String(tCfg[k] || '').replace(/"/g, '&quot;')}" placeholder="${ph || ''}"></label>`).join('');
+    panel.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">${inputs}<button type="button" class="mini-btn glow-btn" onclick="window.savePodcastInlineEngineConfig('${p}')" style="background:#8b5cf6;color:#fff;padding:5px 12px;font-size:0.75rem;white-space:nowrap;">💾 保存配置</button><button type="button" class="mini-btn" onclick="window.togglePodcastInlineEngineConfig()" style="padding:5px 10px;font-size:0.75rem;white-space:nowrap;">收起</button></div>`;
 };
 
 window.togglePodcastInlineEngineConfig = function () {
