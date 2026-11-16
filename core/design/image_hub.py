@@ -35,12 +35,27 @@ class ImageHub:
         brand_name: str = "ILLACME SOVEREIGN",
         strategy: str = "auto",
         aspect_ratio: str = "16:9",
-        offset: int = 0
+        offset: int = 0,
+        vault_root: Optional[str] = None,
     ) -> Tuple[str, bytes, str]:
         """
-        为文档即时生成封面，并写入缓存目录。
+        为文档即时生成封面，并写入当前品牌文库的缓存目录。
         返回元组: (本地相对缓存路径, 图片二进制流, 实际生效的策略名)
         """
+        eff_vault = vault_root
+        if not eff_vault:
+            try:
+                from core.runtime.engine_singleton import get_global_engine
+                eng = get_global_engine()
+                eng_vr = getattr(eng, "vault_root", None) if eng else None
+                if isinstance(eng_vr, str) and eng_vr:
+                    eff_vault = eng_vr
+            except Exception:
+                pass
+        eff_vault = eff_vault or self.vault_root
+        eff_cache_dir = self.cache_dir if (eff_vault == self.vault_root and self.cache_dir) else os.path.join(eff_vault, ".plenipes", "cache", "covers")
+        os.makedirs(eff_cache_dir, exist_ok=True)
+
         clean_slug = slug or os.path.splitext(os.path.basename(doc_id))[0]
         img_bytes, used_strat = CoverResolver.resolve_cover(
             title=title,
@@ -53,14 +68,14 @@ class ImageHub:
             aspect_ratio=aspect_ratio,
             offset=offset,
             doc_id=doc_id,
-            vault_root=self.vault_root
+            vault_root=eff_vault
         )
 
         # 基于文档内容、语种标题与策略计算稳定指纹
         hash_seed = f"{doc_id}_{clean_slug}_{used_strat}_{offset}_{aspect_ratio}_{title}"
         file_hash = hashlib.md5(hash_seed.encode("utf-8")).hexdigest()[:12]
         filename = f"cover_{file_hash}.jpg"
-        save_path = os.path.join(self.cache_dir, filename)
+        save_path = os.path.join(eff_cache_dir, filename)
 
         try:
             with open(save_path, "wb") as f:

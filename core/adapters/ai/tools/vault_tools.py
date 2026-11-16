@@ -276,7 +276,8 @@ class GenerateArticleCoverTool(IllacmeTool):
 
             rel_url, _, used_strat = image_hub.generate_cover_for_document(
                 doc_id=resolved_rel, title=title, brand_id=brand_id,
-                strategy=strategy or "og_card", aspect_ratio=aspect_ratio or "16:9"
+                strategy=strategy or "og_card", aspect_ratio=aspect_ratio or "16:9",
+                vault_root=vault_path,
             )
             if engine and hasattr(engine, "meta"):
                 image_hub.record_visual_asset(engine.meta, resolved_rel, "cover", used_strat, source_url=rel_url)
