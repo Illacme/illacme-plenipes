@@ -81,4 +81,64 @@ def get_universal_client_js() -> str:
                 });
             });
         });
+
+        // 🎧 伴读播客播放器交互控制
+        document.addEventListener('DOMContentLoaded', function() {
+            var players = document.querySelectorAll('.universal-audio-player, .sovereign-audio-player');
+            var fmtTime = function(sec) {
+                if (!sec || isNaN(sec)) return '0:00';
+                var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+                return m + ':' + (s < 10 ? '0' : '') + s;
+            };
+            players.forEach(function(wrap) {
+                var audio = wrap.querySelector('.audio-native');
+                var playBtn = wrap.querySelector('.audio-play-btn');
+                var scrub = wrap.querySelector('.audio-scrub');
+                var curTime = wrap.querySelector('.audio-cur-time');
+                var totTime = wrap.querySelector('.audio-total-time');
+                var speedBtn = wrap.querySelector('.audio-speed-btn');
+                var muteBtn = wrap.querySelector('.audio-mute-btn');
+                var pills = wrap.querySelectorAll('.chapter-pill');
+                if (!audio || !playBtn) return;
+                playBtn.addEventListener('click', function() {
+                    if (audio.paused) { audio.play(); playBtn.textContent = '⏸'; }
+                    else { audio.pause(); playBtn.textContent = '▶'; }
+                });
+                audio.addEventListener('loadedmetadata', function() {
+                    if (totTime) totTime.textContent = fmtTime(audio.duration);
+                });
+                audio.addEventListener('timeupdate', function() {
+                    if (curTime) curTime.textContent = fmtTime(audio.currentTime);
+                    if (scrub && audio.duration) scrub.value = ((audio.currentTime / audio.duration) * 100).toFixed(1);
+                });
+                audio.addEventListener('ended', function() { playBtn.textContent = '▶'; });
+                if (scrub) {
+                    scrub.addEventListener('input', function() {
+                        if (audio.duration) audio.currentTime = ( parseFloat(scrub.value) / 100 ) * audio.duration;
+                    });
+                }
+                if (speedBtn) {
+                    var speeds = [1.0, 1.25, 1.5, 2.0], idx = 0;
+                    speedBtn.addEventListener('click', function() {
+                        idx = (idx + 1) % speeds.length;
+                        audio.playbackRate = speeds[idx];
+                        speedBtn.textContent = speeds[idx] + 'x';
+                    });
+                }
+                if (muteBtn) {
+                    muteBtn.addEventListener('click', function() {
+                        audio.muted = !audio.muted;
+                        muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+                    });
+                }
+                pills.forEach(function(pill) {
+                    pill.addEventListener('click', function() {
+                        var t = parseFloat(pill.getAttribute('data-time') || '0');
+                        audio.currentTime = t;
+                        audio.play();
+                        playBtn.textContent = '⏸';
+                    });
+                });
+            });
+        });
     """

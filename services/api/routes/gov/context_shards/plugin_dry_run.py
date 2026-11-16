@@ -84,7 +84,7 @@ async def dry_run_plugin_impl(payload: dict) -> dict:
     ]
     hosting_plugins = ["cloudflare_pages", "github_pages", "gitee_pages", "gitlab_pages", "netlify", "vercel", "zeabur", "firebase", "render", "railway"]
     notification_plugins = ["feishu", "dingtalk", "wecom", "telegram", "discord", "generic_webhook", "generic", "webhook_dispatch", "email", "sms", "app_push"]
-    podcast_plugins = ["podcast_hub", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify", "podcast_r2_storage"]
+    podcast_plugins = ["podcast_hub", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify", "podcast_youtube", "podcast_netease", "podcast_ximalaya", "podcast_r2_storage"]
 
     # 🧠 [AI Protocol] AI 算力协议独立物理探测与模型资产感应
     if plugin_id in ai_protocols:

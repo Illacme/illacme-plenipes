@@ -5,6 +5,7 @@ Illacme Plenipes - Base EBook Adapter & Registry (电子书出口插件契约)
 🛡️ [SOP-01 规范]：单文件严格 ≤ 300 行。
 """
 
+import os
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Type, Optional
@@ -29,6 +30,69 @@ class BaseEBookAdapter(ABC):
     def __init__(self, config: Optional[Dict[str, Any]] = None, engine: Any = None):
         self.config = config or {}
         self.engine = engine
+
+    def resolve_chapter_podcast_audio(self, ch: Dict[str, Any], target_lang: str = "zh") -> Optional[Dict[str, Any]]:
+        """🎧 解析章节关联的伴读播客音频文件 (.mp3) 与元数据，供 WebBook / EPUB 3 内嵌装订"""
+        if not isinstance(ch, dict):
+            return None
+        if ch.get("podcast") is False or (ch.get("frontmatter") or {}).get("podcast") is False:
+            return None
+        raw_slug = ch.get("slug") or ""
+        fp = ch.get("file_path") or ch.get("rel_path") or ""
+        file_slug = ch.get("file_slug") or (os.path.splitext(os.path.basename(fp))[0] if fp else "")
+        vault_dir = (getattr(self.engine, "vault_root", None) or getattr(self.engine, "vault_dir", None) or "vault") if self.engine else "vault"
+        from core.podcast.podcast_models import get_podcast_candidate_slugs
+        cand_slugs = get_podcast_candidate_slugs(rel_path=fp, explicit_slug=raw_slug, file_slug=file_slug, vault_dir=vault_dir)
+        if not cand_slugs:
+            return None
+
+        imprint_id = getattr(self.engine, "imprint_id", "default") or "default" if self.engine else "default"
+        base_cache = getattr(self.engine, "cache_dir", None) or os.path.join(os.getcwd(), ".plenipes", "cache")
+        cache_dir = os.path.join(base_cache, "podcasts", imprint_id)
+        if not os.path.isdir(cache_dir):
+            return None
+
+        matched_file, detected_style = None, "tech_deep"
+        lang_code = (target_lang or "zh").split("-")[0].lower()
+        for s in cand_slugs:
+            for st in ("tech_deep", "casual_brief", "debate", "solo_read"):
+                cand = f"{s}_{lang_code}_{st}.mp3"
+                if os.path.isfile(os.path.join(cache_dir, cand)):
+                    matched_file, detected_style = cand, st
+                    break
+            if matched_file:
+                break
+            cand_legacy = f"{s}_{lang_code}.mp3"
+            if os.path.isfile(os.path.join(cache_dir, cand_legacy)):
+                matched_file = cand_legacy
+                break
+            for f in os.listdir(cache_dir):
+                if f.startswith(f"{s}_") and f.endswith(".mp3"):
+                    matched_file = f
+                    break
+            if matched_file:
+                break
+
+        if not matched_file:
+            return None
+
+        abs_path = os.path.join(cache_dir, matched_file)
+        style_names = {"tech_deep": "深度剖析", "casual_brief": "通俗快讯", "debate": "观点交锋", "solo_read": "单人沉浸伴读"}
+        cdn_url = ""
+        try:
+            from core.podcast.podcast_storage_engine import PodcastStorageEngine
+            resolved = PodcastStorageEngine.get_audio_public_url(matched_file, "", self.engine)
+            if resolved and resolved.startswith(("http://", "https://")):
+                cdn_url = resolved
+        except Exception:
+            pass
+        return {
+            "filename": matched_file,
+            "abs_path": abs_path,
+            "style": detected_style,
+            "style_label": style_names.get(detected_style, "技术播客"),
+            "cdn_url": cdn_url,
+        }
 
     @abstractmethod
     def bind_book(

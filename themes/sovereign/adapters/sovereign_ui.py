@@ -77,9 +77,11 @@ def build_audio_player_widget(adapter: Any, fm: Dict[str, Any], lang: str, root_
     imprint_id = getattr(engine, 'imprint_id', 'default') or 'default' if engine else 'default'
     custom_audio = fm.get('podcast_audio') or fm.get('podcast_url') or (fm.get('audio') if isinstance(fm.get('audio'), str) else None)
     raw_slug = fm.get('slug') or ''
-    rel_p = fm.get('rel_path') or ''
+    rel_p = (fm.get('rel_path') or '').replace('\\', '/').strip('/')
     file_slug = fm.get('file_slug') or (os.path.splitext(os.path.basename(rel_p))[0] if rel_p else '')
-    cand_slugs = [s for s in (raw_slug, file_slug) if s]
+    path_slug = os.path.splitext(rel_p)[0].lower().replace('/', '__') if rel_p else ''
+    is_sub_idx = bool(os.path.dirname(rel_p)) and file_slug.lower() in ('index', 'readme')
+    cand_slugs = [s for s in ([path_slug, raw_slug] if is_sub_idx else [path_slug, raw_slug, file_slug]) if s and not (is_sub_idx and s.lower() in ('index', 'readme'))]
 
     if raw_slug and engine and hasattr(engine, 'meta') and hasattr(engine.meta, 'get_documents_snapshot'):
         try:

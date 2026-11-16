@@ -7,7 +7,65 @@
 
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
+import os
 from pydantic import BaseModel
+
+
+def resolve_podcast_slug(
+    rel_path: str,
+    explicit_slug: str = "",
+    engine: Any = None,
+    snapshot: Optional[Dict[str, Any]] = None,
+) -> str:
+    """生成无冲突的播客物理文件名前缀：子目录 index/readme 或跨目录同名原稿采用 docs__index 消歧"""
+    clean_rel = (rel_path or "").replace("\\", "/").strip("/")
+    base = os.path.splitext(os.path.basename(clean_rel))[0]
+    rel_no_ext = os.path.splitext(clean_rel)[0]
+    if "/" in rel_no_ext:
+        if base.lower() in ("index", "readme"):
+            return rel_no_ext.replace("/", "__")
+        snap = snapshot
+        if not isinstance(snap, dict) and engine and hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot"):
+            try:
+                snap = engine.meta.get_documents_snapshot()
+            except Exception:
+                snap = {}
+        if isinstance(snap, dict):
+            same_stem = [
+                rp for rp in snap.keys()
+                if os.path.splitext(os.path.basename(rp))[0].lower() == base.lower()
+            ]
+            if len(same_stem) > 1:
+                return rel_no_ext.replace("/", "__")
+    return explicit_slug or base or "episode"
+
+
+def get_podcast_candidate_slugs(
+    rel_path: str = "",
+    explicit_slug: str = "",
+    file_slug: str = "",
+    vault_dir: str = "",
+) -> List[str]:
+    """构建播客音频匹配候选前缀列表：对子目录 index/readme 优先匹配路径限定名 (如 docs__index)"""
+    clean_rel = (rel_path or "").replace("\\", "/")
+    if os.path.isabs(clean_rel) and vault_dir:
+        try:
+            clean_rel = os.path.relpath(clean_rel, os.path.abspath(vault_dir)).replace("\\", "/")
+        except Exception:
+            pass
+    clean_rel = clean_rel.strip("/")
+    base = os.path.splitext(os.path.basename(clean_rel))[0] if clean_rel else file_slug
+    rel_no_ext = os.path.splitext(clean_rel)[0] if clean_rel else ""
+    rel_slug = rel_no_ext.replace("/", "__") if "/" in rel_no_ext else ""
+    if base and base.lower() in ("index", "readme") and rel_slug:
+        raw_list = [rel_slug, explicit_slug]
+    else:
+        raw_list = [rel_slug, explicit_slug, file_slug, base]
+    cands: List[str] = []
+    for s in raw_list:
+        if s and s not in cands:
+            cands.append(s)
+    return cands
 
 
 @dataclass

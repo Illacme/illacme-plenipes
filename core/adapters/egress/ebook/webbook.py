@@ -93,6 +93,25 @@ class WebBookAdapter(BaseEBookAdapter):
                 sub_titles_html = ch.get("sub_titles_html", "")
                 sub_title_block = f'<div class="wb-poly-subtitles">{sub_titles_html}</div>' if sub_titles_html else ""
 
+                # 🎧 章节伴读播客内嵌 (优先 CDN，离线退化为 Base64 Data URI)
+                audio_block = ""
+                pod_info = self.resolve_chapter_podcast_audio(ch, target_lang)
+                if pod_info:
+                    audio_src = pod_info.get("cdn_url") or ""
+                    if not audio_src and os.path.isfile(pod_info["abs_path"]) and os.path.getsize(pod_info["abs_path"]) <= 15 * 1024 * 1024:
+                        try:
+                            with open(pod_info["abs_path"], "rb") as mpf:
+                                audio_src = f"data:audio/mpeg;base64,{base64.b64encode(mpf.read()).decode('utf-8')}"
+                        except Exception:
+                            pass
+                    if audio_src:
+                        audio_block = (
+                            f'<div class="wb-chapter-audio">'
+                            f'<span class="wb-audio-badge">🎧 AI 伴读播客 · <b>{escape(pod_info["style_label"])}</b></span>'
+                            f'<audio controls preload="metadata" src="{audio_src}" class="wb-audio-el"></audio>'
+                            f'</div>'
+                        )
+
                 titles_by_lang = ch.get("titles_by_lang", {})
                 data_attrs = "".join([f' data-title-{l}="{escape(t)}"' for l, t in titles_by_lang.items()])
 
@@ -126,6 +145,7 @@ class WebBookAdapter(BaseEBookAdapter):
                         <span class="wb-chapter-badge">Chapter {idx + 1}</span>
                         <h2 class="wb-chapter-title"{data_attrs}>{ch_title}</h2>
                         {sub_title_block}
+                        {audio_block}
                     </header>
                     <div class="wb-chapter-body">{healed_body}</div>
                     {footer_html}

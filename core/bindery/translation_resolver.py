@@ -26,18 +26,19 @@ class TranslationResolver:
         cls._stem_cache.clear()
 
     @classmethod
-    def warm_up(cls, target_lang: str, base_dir: str = "imprints"):
-        """预热并建立目标语种物理 Markdown 文件的全相对路径与无歧义 stem 索引"""
+    def warm_up(cls, target_lang: str, base_dir: str = "imprints", source_lang: str = "zh"):
+        """预热并建立目标语种物理 Markdown 文件的全相对路径与无歧义 stem 索引（按 base_dir 品牌物理隔离）"""
         t_lang = (target_lang or "").strip().lower()
-        if t_lang in ("zh", "zh-hans", "zh-cn", ""):
+        s_lang = (source_lang or "zh").split("-")[0].strip().lower()
+        if not t_lang or t_lang.split("-")[0] == s_lang:
             return
 
-        if t_lang in cls._path_cache:
+        cache_key = f"{os.path.abspath(base_dir)}::{t_lang}"
+        if cache_key in cls._path_cache:
             return
 
         path_map: Dict[str, str] = {}
         stem_map: Dict[str, str] = {}
-        ambiguous_stems = set()
 
         if os.path.exists(base_dir):
             for root, dirs, files in os.walk(base_dir):
@@ -60,7 +61,6 @@ class TranslationResolver:
                             path_map[rel_p] = fp
                             path_map[rel_no_ext] = fp
 
-                            # 允许只带末级子目录匹配 (如 docs/index.md)
                             if len(sub_dirs) > 1:
                                 last_rel_p = f"{sub_dirs[-1]}/{f.lower()}"
                                 last_rel_no_ext = f"{sub_dirs[-1]}/{stem}"
@@ -70,6 +70,8 @@ class TranslationResolver:
                             if stem not in ("index", "readme"):
                                 stem_map.setdefault(stem, fp)
 
+        cls._path_cache[cache_key] = path_map
+        cls._stem_cache[cache_key] = stem_map
         cls._path_cache[t_lang] = path_map
         cls._stem_cache[t_lang] = stem_map
 
@@ -82,18 +84,16 @@ class TranslationResolver:
         fallback_body: str,
         vault_dir: str = "vault",
         is_parallel: bool = False,
-        base_dir: str = "imprints"
+        base_dir: str = "imprints",
+        source_lang: str = "zh",
+        imprint_id: str = "",
     ) -> Tuple[str, Optional[str]]:
         """
         根据原稿相对路径与目标语种，高保真解析目标语言标题与正文。
-        优先级：
-        1. 人工校对表 translation_reviews (reviewed_title, reviewed_body)
-        2. 全相对路径 (docs/index.md, showcase/ast.md) 精准寻址物理 Markdown
-        3. 元数据账本 i18n_seo 中的目标语种标题
-        4. 回退至母语兜底
         """
         t_lang = (target_lang or "").strip().lower()
-        if t_lang in ("zh", "zh-hans", "zh-cn", ""):
+        s_lang = (source_lang or "zh").split("-")[0].strip().lower()
+        if not t_lang or t_lang.split("-")[0] == s_lang:
             return fallback_title, fallback_body
 
         if os.path.isabs(file_path):
@@ -114,20 +114,24 @@ class TranslationResolver:
         clean_rel_no_ext = re.sub(r'^\d+[-_]', '', rel_no_ext)
 
         # 1. 优先检查创作者人工校对锁定表
-        rev_title, rev_body = cls._get_from_review_table(vault_dir, rel_p, t_lang)
+        rev_title, rev_body = cls._get_from_review_table(vault_dir, rel_p, t_lang, imprint_id=imprint_id)
         if rev_body: return (rev_title or fallback_title), rev_body
 
         # 1.5 检查 translations 自动化多语言记录表
-        trans_title, trans_body = cls._get_from_translations_table(vault_dir, rel_p, t_lang)
+        trans_title, trans_body = cls._get_from_translations_table(vault_dir, rel_p, t_lang, imprint_id=imprint_id)
         if trans_body: return (trans_title or fallback_title), trans_body
 
-        # 2. 预热目标语种文件索引
-        cls.warm_up(t_lang, base_dir=base_dir)
-        path_map = cls._path_cache.get(t_lang, {})
-        stem_map = cls._stem_cache.get(t_lang, {})
+        # 2. 预热目标语种文件索引（限定当前品牌目录）
+        eff_base_dir = base_dir
+        if base_dir == "imprints" and imprint_id and os.path.isdir(os.path.join("imprints", imprint_id)):
+            eff_base_dir = os.path.join("imprints", imprint_id)
+        cls.warm_up(t_lang, base_dir=eff_base_dir, source_lang=s_lang)
+        cache_key = f"{os.path.abspath(eff_base_dir)}::{t_lang}"
+        path_map = cls._path_cache.get(cache_key) or cls._path_cache.get(t_lang, {})
+        stem_map = cls._stem_cache.get(cache_key) or cls._stem_cache.get(t_lang, {})
 
         # 提取原稿在 documents 表中记录的 slug 与 i18n_seo 标题
-        doc_slug, i18n_title = cls._get_doc_metadata(vault_dir, rel_p, t_lang)
+        doc_slug, i18n_title = cls._get_doc_metadata(vault_dir, rel_p, t_lang, imprint_id=imprint_id)
 
         doc_dir = os.path.dirname(rel_p)
         slug_cands = []
@@ -169,17 +173,24 @@ class TranslationResolver:
         return final_title, fallback_body
 
     @classmethod
-    def _get_from_review_table(cls, vault_dir: str, rel_path: str, lang: str) -> Tuple[Optional[str], Optional[str]]:
+    def _table_has_imprint(cls, conn: sqlite3.Connection, table: str) -> bool:
+        try:
+            return any(r[1] == "imprint_id" for r in conn.execute(f"PRAGMA table_info({table})").fetchall())
+        except Exception:
+            return False
+
+    @classmethod
+    def _get_from_review_table(cls, vault_dir: str, rel_path: str, lang: str, imprint_id: str = "") -> Tuple[Optional[str], Optional[str]]:
         """从 SQLite translation_reviews 提取人工校对文本"""
         try:
             db_path = os.path.join(vault_dir, ".plenipes/cache/ledger.db")
             if not os.path.exists(db_path):
                 return None, None
             with sqlite3.connect(db_path) as conn:
-                row = conn.execute(
-                    "SELECT reviewed_title, reviewed_body FROM translation_reviews WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE",
-                    (rel_path, lang)
-                ).fetchone()
+                if imprint_id and cls._table_has_imprint(conn, "translation_reviews"):
+                    row = conn.execute("SELECT reviewed_title, reviewed_body FROM translation_reviews WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE AND imprint_id = ?", (rel_path, lang, imprint_id)).fetchone()
+                else:
+                    row = conn.execute("SELECT reviewed_title, reviewed_body FROM translation_reviews WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE", (rel_path, lang)).fetchone()
                 if row and row[1]:
                     return row[0], row[1]
         except Exception:
@@ -187,16 +198,16 @@ class TranslationResolver:
         return None, None
 
     @classmethod
-    def _get_from_translations_table(cls, vault_dir: str, rel_path: str, lang: str) -> Tuple[Optional[str], Optional[str]]:
+    def _get_from_translations_table(cls, vault_dir: str, rel_path: str, lang: str, imprint_id: str = "") -> Tuple[Optional[str], Optional[str]]:
         """从 SQLite translations 提取自动化翻译结果"""
         try:
             db_path = os.path.join(vault_dir, ".plenipes/cache/ledger.db")
             if not os.path.exists(db_path): return None, None
             with sqlite3.connect(db_path) as conn:
-                row = conn.execute(
-                    "SELECT result_json FROM translations WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE AND status = 'DONE'",
-                    (rel_path, lang)
-                ).fetchone()
+                if imprint_id and cls._table_has_imprint(conn, "translations"):
+                    row = conn.execute("SELECT result_json FROM translations WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE AND status = 'DONE' AND imprint_id = ?", (rel_path, lang, imprint_id)).fetchone()
+                else:
+                    row = conn.execute("SELECT result_json FROM translations WHERE rel_path = ? COLLATE NOCASE AND lang_code = ? COLLATE NOCASE AND status = 'DONE'", (rel_path, lang)).fetchone()
                 if row and row[0]:
                     data = json.loads(row[0])
                     t = data.get("title")
@@ -206,17 +217,17 @@ class TranslationResolver:
         return None, None
 
     @classmethod
-    def _get_doc_metadata(cls, vault_dir: str, rel_path: str, lang: str) -> Tuple[Optional[str], Optional[str]]:
+    def _get_doc_metadata(cls, vault_dir: str, rel_path: str, lang: str, imprint_id: str = "") -> Tuple[Optional[str], Optional[str]]:
         """从 documents 表获取 slug 与多语言 SEO 翻译标题"""
         try:
             db_path = os.path.join(vault_dir, ".plenipes/cache/ledger.db")
             if not os.path.exists(db_path):
                 return None, None
             with sqlite3.connect(db_path) as conn:
-                row = conn.execute(
-                    "SELECT slug, metadata_json FROM documents WHERE rel_path = ? COLLATE NOCASE",
-                    (rel_path,)
-                ).fetchone()
+                if imprint_id and cls._table_has_imprint(conn, "documents"):
+                    row = conn.execute("SELECT slug, metadata_json FROM documents WHERE rel_path = ? COLLATE NOCASE AND imprint_id = ?", (rel_path, imprint_id)).fetchone()
+                else:
+                    row = conn.execute("SELECT slug, metadata_json FROM documents WHERE rel_path = ? COLLATE NOCASE", (rel_path,)).fetchone()
                 slug = row[0] if row else None
                 i18n_title = None
                 if row and row[1]:

@@ -186,3 +186,102 @@ def test_api_storage_status_and_diagnostics():
         assert "episodes" in ov
         assert len(ov["platforms"]) >= 6
 
+
+def test_universal_audio_player_and_asset_sync(tmp_path):
+    """验证 Universal 等多主题伴读音频播放条渲染与静态资产同步"""
+    from core.podcast import build_universal_audio_player_html, sync_podcast_assets_to_dist
+    from core.adapters.egress.ssg.generic_shards.page_renderer import render_html_page
+
+    cache_root = tmp_path / "cache"
+    pod_dir = cache_root / "podcasts" / "default"
+    pod_dir.mkdir(parents=True, exist_ok=True)
+    (pod_dir / "my-post_zh_tech_deep.mp3").write_bytes(b"ID3_FAKE_AUDIO")
+    (pod_dir / "my-post_zh_tech_deep.chapters.json").write_text(
+        '{"chapters": [{"start_seconds": 0, "start_time": "00:00", "title": "开场导读"}]}',
+        encoding="utf-8",
+    )
+
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir(parents=True, exist_ok=True)
+
+    mock_engine = MagicMock()
+    mock_engine.imprint_id = "default"
+    mock_engine.cache_dir = str(cache_root)
+    mock_engine.paths = {"site_dir": str(dist_dir)}
+    mock_engine.config.podcast = {"podcast_hub": {"title": "极客主权电台", "email": "host@press.io", "cover_url": "https://press.io/cover.jpg"}}
+    mock_engine.config.imprint.site_name = "Test Press"
+    mock_engine.config.imprint.tagline = "Tagline"
+    mock_engine.config.imprint.author = "Author"
+    mock_engine.config.compliance.site_url = "http://localhost:43213"
+    mock_engine.meta.get_documents_snapshot.return_value = {"Blog/my-post.md": {"title": "段落级影子缓存", "slug": "my-post", "url": "blog/my-post.html"}}
+
+    fm = {"title": "测试播客文章", "slug": "my-post", "podcast": True, "layout": "blog"}
+    widget_html = build_universal_audio_player_html(mock_engine, fm, "zh", root_path="../")
+    assert "universal-audio-player" in widget_html
+    assert "../podcasts/my-post_zh_tech_deep.mp3" in widget_html
+    assert "开场导读" in widget_html
+
+    full_page = render_html_page("<h1>测试播客文章</h1><p>正文</p>", fm, "zh", "blog/my-post.html", "../", engine=mock_engine)
+    assert "universal-audio-player" in full_page
+
+    copied = sync_podcast_assets_to_dist(mock_engine, str(dist_dir))
+    assert copied == 1
+    assert (dist_dir / "podcasts" / "my-post_zh_tech_deep.mp3").exists()
+    rss_text = (dist_dir / "podcast-feed.xml").read_text(encoding="utf-8")
+    assert "极客主权电台" in rss_text and "段落级影子缓存" in rss_text and "host@press.io" in rss_text
+
+    # 验证 WebBook 与 EPUB 3 电子出版物伴读音频自动内嵌
+    import zipfile
+    from core.adapters.egress.ebook.webbook import WebBookAdapter
+    from core.adapters.egress.ebook.epub import EpubAdapter
+
+    chapters = [{"order": 1, "title": "测试播客文章", "slug": "my-post", "html_body": "<p>正文内容</p>", "assets": [], "headings": []}]
+    book_meta = {"title": "伴读典籍", "author": "Author", "publisher": "Press", "is_single_article": True}
+
+    wb_out = tmp_path / "book.html"
+    assert WebBookAdapter(engine=mock_engine).bind_book(chapters, dict(book_meta), target_lang="zh", output_file_path=str(wb_out)) is True
+    wb_html = wb_out.read_text(encoding="utf-8")
+    assert "wb-chapter-audio" in wb_html and "data:audio/mpeg;base64," in wb_html
+
+    epub_out = tmp_path / "book.epub"
+    assert EpubAdapter(engine=mock_engine).bind_book(chapters, dict(book_meta), target_lang="zh", output_file_path=str(epub_out)) is True
+    with zipfile.ZipFile(epub_out, "r") as zf:
+        assert "OEBPS/audio/my-post_zh_tech_deep.mp3" in zf.namelist()
+        assert 'media-type="audio/mpeg"' in zf.read("OEBPS/content.opf").decode("utf-8")
+        assert "epub-audio-box" in zf.read("OEBPS/text/ch_1.xhtml").decode("utf-8")
+
+
+def test_ai_compute_tracker_and_emergency_abort():
+    """验证实时 AI 算力任务追踪器与紧急熔断协议"""
+    import pytest
+    from core.adapters.ai.network_mixin import (
+        register_ai_call,
+        unregister_ai_call,
+        get_active_ai_status,
+        abort_all_ai_calls,
+        check_ai_abort_or_raise,
+    )
+
+    dummy_adapter = MagicMock()
+    dummy_adapter.node_name = "lmstudio_local"
+    orig_session = MagicMock()
+    dummy_adapter._session = orig_session
+
+    call_id = register_ai_call(dummy_adapter, {"model": "qwen2.5-7b"})
+    try:
+        status = get_active_ai_status()
+        assert status["active_count"] >= 1
+        assert any(t["call_id"] == call_id and t["node"] == "lmstudio_local" for t in status["tasks"])
+
+        aborted = abort_all_ai_calls()
+        assert aborted >= 1
+        orig_session.close.assert_called_once()
+
+        with pytest.raises(RuntimeError, match="AI_ABORTED_BY_USER"):
+            check_ai_abort_or_raise(call_id=call_id)
+    finally:
+        unregister_ai_call(call_id)
+        import core.adapters.ai.network_mixin as nm
+        nm._AI_ABORT_UNTIL = 0.0
+
+

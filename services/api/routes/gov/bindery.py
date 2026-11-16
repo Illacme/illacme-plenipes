@@ -52,6 +52,10 @@ async def get_bindery_scopes() -> Dict[str, Any]:
     presets: Dict[str, Any] = {}
     if engine and hasattr(engine, "config"):
         site_name = getattr(engine.config, "site_name", site_name)
+        src_obj = getattr(getattr(engine.config, "i18n_settings", None), "source", None)
+        raw_src = getattr(src_obj, "lang_code", None) if src_obj else None
+        if isinstance(raw_src, str) and raw_src.strip() and raw_src.strip() != "auto":
+            default_lang = raw_src.strip().split("-")[0].lower()
         author_cfg = getattr(engine.config, "author", None)
         if isinstance(author_cfg, dict): default_author = author_cfg.get("name") or default_author
         elif isinstance(author_cfg, str) and author_cfg: default_author = author_cfg
@@ -64,7 +68,9 @@ async def get_bindery_scopes() -> Dict[str, Any]:
     styles_list = [{"id": k, "name": v["name"], "accent": v["accent"]} for k, v in COVER_STYLES.items()]
 
     # 5. 勘测多语言资产覆盖矩阵
-    avail_langs = [{"code": default_lang, "name": "简体中文", "icon": "🇨🇳", "count": 0, "is_source": True}]
+    L_META = {"zh": ("简体中文", "🇨🇳"), "en": ("English", "🇬🇧"), "ja": ("日本語", "🇯🇵"), "fr": ("Français", "🇫🇷"), "de": ("Deutsch", "🇩🇪"), "es": ("Español", "🇪🇸"), "ru": ("Русский", "🇷🇺"), "ko": ("한국어", "🇰🇷")}
+    src_name, src_icon = L_META.get(default_lang, (default_lang.upper(), "🌐"))
+    avail_langs = [{"code": default_lang, "name": src_name, "icon": src_icon, "count": 0, "is_source": True}]
     if os.path.exists(vault_abs):
         c_cnt = 0
         for _, ds, fs in os.walk(vault_abs):
@@ -72,28 +78,26 @@ async def get_bindery_scopes() -> Dict[str, Any]:
             c_cnt += sum(1 for f in fs if f.endswith('.md') and not f.startswith('.'))
         avail_langs[0]["count"] = c_cnt
     db_p = os.path.join(vault_abs, ".plenipes/cache/ledger.db")
-    L_META = {"en": ("English", "🇬🇧"), "ja": ("日本語", "🇯🇵"), "fr": ("Français", "🇫🇷"), "de": ("Deutsch", "🇩🇪"), "es": ("Español", "🇪🇸"), "ru": ("Русский", "🇷🇺"), "ko": ("한국어", "🇰🇷")}
+    imprint_id = getattr(engine, "imprint_id", "default") or "default" if engine else ""
     if os.path.exists(db_p):
         try:
             import sqlite3
             with sqlite3.connect(db_p) as c:
-                for lc, cnt in c.execute("SELECT lang_code, count(*) FROM translations WHERE status = 'DONE' GROUP BY lang_code"):
+                cols = {r[1] for r in c.execute("PRAGMA table_info(translations)").fetchall()}
+                if "imprint_id" in cols and imprint_id:
+                    rows = c.execute("SELECT lang_code, count(*) FROM translations WHERE status = 'DONE' AND imprint_id = ? GROUP BY lang_code", (imprint_id,)).fetchall()
+                else:
+                    rows = c.execute("SELECT lang_code, count(*) FROM translations WHERE status = 'DONE' GROUP BY lang_code").fetchall()
+                for lc, cnt in rows:
                     if lc != default_lang:
                         nm, ic = L_META.get(lc, (lc.upper(), "🌐"))
                         avail_langs.append({"code": lc, "name": nm, "icon": ic, "count": cnt, "is_source": False})
         except Exception: pass
 
     return {
-        "success": True,
-        "site_name": site_name,
-        "default_author": default_author,
-        "default_lang": default_lang,
-        "available_languages": avail_langs,
-        "has_native_cover": has_native_cover,
-        "cover_styles": styles_list,
-        "categories": categories,
-        "formats": formats,
-        "presets": presets
+        "success": True, "site_name": site_name, "default_author": default_author, "default_lang": default_lang,
+        "available_languages": avail_langs, "has_native_cover": has_native_cover, "cover_styles": styles_list,
+        "categories": categories, "formats": formats, "presets": presets
     }
 
 

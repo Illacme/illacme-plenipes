@@ -145,6 +145,23 @@ class EpubAdapter(BaseEBookAdapter):
                     clean_body = self._normalize_xhtml(raw_html)
                     m_prop = ' properties="mathml"' if '<math' in clean_body else ''
 
+                    # 🎧 打包章节伴读播客音频 (.mp3) 至 EPUB 3 Media Manifest
+                    epub_audio_block = ""
+                    pod_info = self.resolve_chapter_podcast_audio(ch, target_lang)
+                    if pod_info and os.path.isfile(pod_info["abs_path"]):
+                        aud_name = pod_info["filename"]
+                        if aud_name not in packaged_assets:
+                            with open(pod_info["abs_path"], "rb") as mpf:
+                                zf.writestr(f"OEBPS/audio/{aud_name}", mpf.read())
+                            manifest_items.append(f'<item id="aud_{idx + 1}" href="audio/{aud_name}" media-type="audio/mpeg"/>')
+                            packaged_assets.add(aud_name)
+                        epub_audio_block = (
+                            f'<div class="epub-audio-box">'
+                            f'<p class="epub-audio-label">🎧 AI 伴读播客 · {escape(pod_info["style_label"])}</p>'
+                            f'<audio controls="controls" src="../audio/{aud_name}">您的阅读器不支持内嵌音频播放</audio>'
+                            f'</div>'
+                        )
+
                     ch_xhtml = f"""<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="{iso_lang}">
@@ -152,6 +169,7 @@ class EpubAdapter(BaseEBookAdapter):
 <body>
   <div id="{ch_id}" class="chapter-container">
     <h1 id="{ch_id}_title">{ch_title}</h1>
+    {epub_audio_block}
     {clean_body}
   </div>
 </body>

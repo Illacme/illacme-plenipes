@@ -189,6 +189,53 @@ def get_universal_views_css() -> str:
             padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; text-align: center;
         }
 
+        /* 🎧 伴读播客播放条 (Universal Reader Audio Player) */
+        .universal-audio-player {
+            background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px;
+            padding: 14px 18px; margin: 1.25rem 0 1.75rem 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+        .universal-audio-player .audio-player-top {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+        }
+        .universal-audio-player .audio-badge {
+            display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-primary);
+        }
+        .universal-audio-player .audio-pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent);
+        }
+        .universal-audio-player .audio-actions { display: flex; gap: 8px; }
+        .universal-audio-player .audio-chip {
+            font-size: 0.76rem; padding: 3px 10px; border-radius: 16px; background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle); color: var(--text-secondary); text-decoration: none;
+        }
+        .universal-audio-player .audio-chip:hover { border-color: var(--accent); color: var(--accent); }
+        .universal-audio-player .audio-controls-row {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .universal-audio-player .audio-play-btn {
+            width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--accent);
+            color: var(--bg-base); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .universal-audio-player .audio-cur-time, .universal-audio-player .audio-total-time {
+            font-size: 0.78rem; color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 38px;
+        }
+        .universal-audio-player .audio-slider-wrap { flex: 1; display: flex; align-items: center; }
+        .universal-audio-player .audio-scrub { width: 100%; cursor: pointer; accent-color: var(--accent); }
+        .universal-audio-player .audio-speed-btn, .universal-audio-player .audio-mute-btn {
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-secondary);
+            border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer;
+        }
+        .universal-audio-player .audio-chapters-scroll {
+            display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-subtle);
+        }
+        .universal-audio-player .chapter-pill {
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-secondary);
+            border-radius: 14px; padding: 3px 10px; font-size: 0.75rem; white-space: nowrap; cursor: pointer;
+        }
+        .universal-audio-player .chapter-pill.active, .universal-audio-player .chapter-pill:hover {
+            border-color: var(--accent); color: var(--accent);
+        }
+
         /* 底部版权 */
         .universal-footer {
             border-top: 1px solid var(--border-subtle); padding: 2rem 1.5rem; text-align: center;

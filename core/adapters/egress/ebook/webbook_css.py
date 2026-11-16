@@ -172,6 +172,9 @@ body.wb-concordance .wb-poly-header { position: sticky; top: 48px; z-index: 15; 
 body.wb-concordance .wb-lang-badge { display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--accent); background: rgba(16,185,129,0.14); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
 body.wb-concordance .wb-poly-content { flex: 1; min-width: 0; word-break: break-word; line-height: 1.85; font-size: var(--font-size); color: var(--text-main); }
 .wb-poly-hidden { display: none !important; }
+.wb-chapter-audio { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 14px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+.wb-audio-badge { font-size: 0.82rem; color: var(--text-title); display: inline-flex; align-items: center; gap: 6px; }
+.wb-audio-el { height: 32px; flex: 1; min-width: 220px; max-width: 420px; outline: none; }
 @media (max-width: 900px) {
   html { overflow-x: hidden !important; max-width: 100vw !important; }
   body { overflow-x: hidden !important; max-width: 100vw !important; width: 100vw !important; }

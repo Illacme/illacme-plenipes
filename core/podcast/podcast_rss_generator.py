@@ -65,7 +65,8 @@ class PodcastRSSGenerator:
         lang: str = "zh-cn",
         cover_image_url: str = "",
         category: str = "Technology",
-        sub_category: str = "Tech News"
+        sub_category: str = "Tech News",
+        owner_email: str = ""
     ) -> str:
         """构建合规的 RSS 2.0 + iTunes Podcast XML 字符串"""
         rss = ET.Element("rss", {
@@ -86,6 +87,10 @@ class PodcastRSSGenerator:
         ET.SubElement(channel, "itunes:author").text = author
         ET.SubElement(channel, "itunes:summary").text = channel_desc
         ET.SubElement(channel, "itunes:explicit").text = "no"
+        if owner_email:
+            owner_node = ET.SubElement(channel, "itunes:owner")
+            ET.SubElement(owner_node, "itunes:name").text = author
+            ET.SubElement(owner_node, "itunes:email").text = owner_email
 
         # 播客封面图
         if cover_image_url:
@@ -161,9 +166,10 @@ def generate_podcast_rss(
     base_url: str = "http://localhost:43213",
     lang: str = "zh",
     podcast_dir: Optional[str] = None,
-    engine: Any = None
+    engine: Any = None,
+    use_api_audio_route: bool = False
 ) -> str:
-    """生成并提供指定 Imprint 的标准 Podcast RSS 2.0 XML 订阅源"""
+    """生成并提供指定 Imprint 的标准 Podcast RSS 2.0 XML 订阅源（联动原稿元数据与播客主控台配置）"""
     if not lang or lang == "auto":
         lang = "zh"
 
@@ -171,54 +177,115 @@ def generate_podcast_rss(
         base_cache = getattr(engine, "cache_dir", None) or os.path.join(os.getcwd(), ".plenipes", "cache") if engine else os.path.join(os.getcwd(), ".plenipes", "cache")
         podcast_dir = os.path.join(base_cache, "podcasts", imprint_id)
 
+    # 构建文库原稿 Slug -> 元数据映射表
+    slug_doc_map: Dict[str, Dict[str, Any]] = {}
+    if engine and hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot"):
+        try:
+            snap = engine.meta.get_documents_snapshot()
+            if isinstance(snap, dict):
+                for rel_p, d in snap.items():
+                    if isinstance(d, dict):
+                        clean_rel = rel_p.replace("\\", "/").strip("/")
+                        stem = os.path.splitext(os.path.basename(clean_rel))[0]
+                        rel_no_ext = os.path.splitext(clean_rel)[0]
+                        rel_slug = rel_no_ext.replace("/", "__") if "/" in rel_no_ext else ""
+                        doc_slug = str(d.get("slug") or stem)
+                        info = {
+                            "title": str(d.get("title") or stem),
+                            "desc": str(d.get("description") or d.get("summary") or ""),
+                            "url": f"{base_url.rstrip('/')}/{str(d.get('url') or d.get('route') or f'blog/{doc_slug}.html').lstrip('/')}"
+                        }
+                        if rel_slug:
+                            slug_doc_map[rel_slug] = info
+                        if stem.lower() not in ("index", "readme") or not rel_slug:
+                            slug_doc_map[stem] = info
+                            slug_doc_map[doc_slug] = info
+                        else:
+                            slug_doc_map.setdefault(stem, info)
+        except Exception:
+            pass
+
     episodes: List[PodcastEpisode] = []
     if os.path.isdir(podcast_dir):
         from .podcast_storage_engine import PodcastStorageEngine
-        for f in sorted(os.listdir(podcast_dir)):
-            if f.endswith(".mp3") and (f.endswith(f"_{lang}.mp3") or f"_{lang}_" in f or lang == "all"):
-                f_path = os.path.join(podcast_dir, f)
-                size = os.path.getsize(f_path)
-                mtime = os.path.getmtime(f_path)
-                pub_dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                clean_name = f.replace(".mp3", "").replace(f"_{lang}", "").replace("-", " ").replace("_", " ").title()
-                local_url = f"{base_url.rstrip('/')}/podcasts/{f}"
-                audio_url = PodcastStorageEngine.get_audio_public_url(f, local_url, engine)
+        files = [
+            f for f in sorted(os.listdir(podcast_dir))
+            if f.endswith(".mp3") and (f.endswith(f"_{lang}.mp3") or f"_{lang}_" in f or lang == "all")
+        ]
+        for idx, f in enumerate(files):
+            f_path = os.path.join(podcast_dir, f)
+            size, mtime = os.path.getsize(f_path), os.path.getmtime(f_path)
+            pub_dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
+            stem_raw = f[:-4]
+            for suf in ("_tech_deep", "_casual_brief", "_debate", "_solo_read"):
+                if stem_raw.endswith(suf):
+                    stem_raw = stem_raw[:-len(suf)]
+                    break
+            for lg_suf in (f"_{lang}", "_zh", "_en", "_ja"):
+                if stem_raw.endswith(lg_suf):
+                    stem_raw = stem_raw[:-len(lg_suf)]
+                    break
 
-                chapters, shownotes = [], ""
-                sc_f = os.path.splitext(f_path)[0] + ".chapters.json"
-                if os.path.isfile(sc_f):
-                    try:
-                        with open(sc_f, "r", encoding="utf-8") as sf:
-                            sc_d = json.load(sf)
-                            chapters = sc_d.get("chapters", [])
-                            shownotes = sc_d.get("shownotes", "")
-                    except Exception:
-                        pass
+            doc_meta = slug_doc_map.get(stem_raw) or {}
+            ep_title = doc_meta.get("title") or stem_raw.replace("-", " ").replace("_", " ").title()
+            ep_desc = doc_meta.get("desc") or f"《{ep_title}》双人技术深度对谈与伴读播客"
+            ep_link = doc_meta.get("url") or base_url
+            local_url = f"{base_url.rstrip('/')}/api/podcast/audio/{imprint_id}/{f}" if use_api_audio_route else f"{base_url.rstrip('/')}/podcasts/{f}"
+            audio_url = PodcastStorageEngine.get_audio_public_url(f, local_url, engine)
 
-                episodes.append(PodcastEpisode(
-                    title=f"【伴读】{clean_name}",
-                    audio_url=audio_url,
-                    audio_size_bytes=size,
-                    duration_sec=max(30, int(size / 16000)),
-                    pub_date=pub_dt,
-                    description=f"{clean_name} 伴读播客对谈",
-                    chapters=chapters,
-                    shownotes=shownotes
-                ))
+            chapters, shownotes = [], ""
+            sc_f = os.path.splitext(f_path)[0] + ".chapters.json"
+            if os.path.isfile(sc_f):
+                try:
+                    with open(sc_f, "r", encoding="utf-8") as sf:
+                        sc_d = json.load(sf)
+                        chapters = sc_d.get("chapters", [])
+                        shownotes = sc_d.get("shownotes", "")
+                except Exception:
+                    pass
+
+            episodes.append(PodcastEpisode(
+                title=f"【伴读】{ep_title}",
+                audio_url=audio_url,
+                audio_size_bytes=size,
+                duration_sec=max(30, int(size / 16000)),
+                pub_date=pub_dt,
+                description=ep_desc,
+                link=ep_link,
+                episode_num=idx + 1,
+                chapters=chapters,
+                shownotes=shownotes
+            ))
 
     site_name = ""
+    hub_cfg: Dict[str, Any] = {}
     if engine and hasattr(engine, "config") and engine.config:
-        site_name = getattr(engine.config, "site_name", None) or getattr(engine.config, "imprint_name", None) or ""
+        raw_sn = getattr(engine.config, "site_name", None) or getattr(getattr(engine.config, "imprint", None), "site_name", None)
+        if isinstance(raw_sn, str):
+            site_name = raw_sn
+        p_cfg = getattr(engine.config, "podcast", None)
+        if isinstance(p_cfg, dict) and isinstance(p_cfg.get("podcast_hub"), dict):
+            hub_cfg = p_cfg["podcast_hub"]
     if not site_name:
         site_name = imprint_id.title()
 
+    ch_title = str(hub_cfg.get("title") or "").strip() or f"{site_name} 伴读播客"
+    ch_author = str(hub_cfg.get("author") or "").strip() or site_name or "创作者指南"
+    ch_email = str(hub_cfg.get("email") or "").strip()
+    ch_cover = str(hub_cfg.get("cover_url") or "").strip()
+    ch_cat = str(hub_cfg.get("category") or "").strip() or "Technology"
+    ch_desc = str(hub_cfg.get("description") or "").strip() or f"{site_name} 旗下由出版发行工作台自动衍生的多语种双人技术对谈与伴读播客。"
+
     return PodcastRSSGenerator.generate_feed_xml(
-        channel_title=f"{site_name} 伴读播客",
+        channel_title=ch_title,
         channel_link=base_url,
-        channel_desc=f"{site_name} 旗下由出版发行工作台自动衍生的多语种双人技术对谈与伴读播客。",
+        channel_desc=ch_desc,
         episodes=episodes,
-        author="创作者指南",
-        lang=f"{lang}-cn" if lang == "zh" else lang
+        author=ch_author,
+        lang=f"{lang}-cn" if lang == "zh" else lang,
+        cover_image_url=ch_cover,
+        category=ch_cat,
+        owner_email=ch_email
     )
 
 

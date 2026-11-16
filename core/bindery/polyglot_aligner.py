@@ -161,9 +161,18 @@ class PolyglotAligner:
     ) -> List[Dict[str, Any]]:
         """调度收集多个语种章节并逐章通过全局绝对文件路径精准对齐，彻底消除 slug 冲突"""
         from .translation_resolver import TranslationResolver
+        import os
+
+        eng = getattr(assembler, "engine", None)
+        imprint_id = getattr(eng, "imprint_id", "default") or "default" if eng else ""
+        src_obj = getattr(getattr(getattr(eng, "config", None), "i18n_settings", None), "source", None) if eng else None
+        raw_src = getattr(src_obj, "lang_code", None) if src_obj else None
+        source_lang = raw_src if isinstance(raw_src, str) and raw_src and raw_src != "auto" else "zh"
+        imp_base = os.path.join("imprints", imprint_id) if imprint_id and os.path.isdir(os.path.join("imprints", imprint_id)) else "imprints"
 
         for l in polyglot_langs:
-            if l != "zh": TranslationResolver.warm_up(l)
+            if l != source_lang:
+                TranslationResolver.warm_up(l, base_dir=imp_base, source_lang=source_lang)
 
         lang_chapter_maps: Dict[str, Dict[str, Dict[str, Any]]] = {}
         primary_lang = polyglot_langs[0]

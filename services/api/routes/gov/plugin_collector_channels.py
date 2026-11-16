@@ -46,7 +46,7 @@ def is_plugin_config_ready(category: str, p_id: str, cfg: Dict[str, Any]) -> boo
             return True
         if p_id == "podcast_r2_storage":
             return any(_val(k) for k in ["bucket"]) and any(_val(k) for k in ["access_key_id", "access_key"])
-        return any(_val(k) for k in ["token", "cookie", "auth_token", "podcast_id", "apple_id", "show_id"])
+        return any(_val(k) for k in ["token", "cookie", "auth_token", "podcast_id", "apple_id", "show_id", "playlist_id", "radio_id", "album_id", "podcast_url", "show_url"])
     return True
 
 
@@ -258,6 +258,9 @@ def collect_podcast_plugins(engine, disabled: set, system_track: str) -> List[Di
         ("podcast_xiaoyuzhou", "小宇宙 (Xiaoyuzhou)", "主流中文播客平台，支持绑定托管 RSS、同步单集节目 Show Notes 与分段收听直达。", False),
         ("podcast_apple", "Apple Podcasts", "全球主流播客分发目录，通过 Apple Podcasts Connect 提交 RSS 源，触达 iOS/macOS 听众。", False),
         ("podcast_spotify", "Spotify for Podcasters", "通过 Spotify for Podcasters 认领与同步 RSS 节目单，覆盖 Spotify 全球多端音频受众。", False),
+        ("podcast_youtube", "YouTube Podcasts", "Google 官方主力播客平台，支持在 YouTube Studio 绑定 RSS 自动生成播放列表与单集。", False),
+        ("podcast_netease", "网易云音乐播客", "国内年轻与技术人文核心流媒体，支持在创作者中心认领 RSS 电台并自动同步单集。", False),
+        ("podcast_ximalaya", "喜马拉雅 (Ximalaya)", "国内综合体量最大的音频流媒体网络，支持主播工作台有声专辑接入与单集同步。", False),
         ("podcast_r2_storage", "音频 CDN 托管 (Audio Storage)", "为大体积播客 MP3 提供专用对象存储与 CDN 边缘加速（支持 Cloudflare R2、AWS S3、COS、OSS 等），免除源站带宽压力并享 0 出口流量费。", False),
     ]
     plugins = []

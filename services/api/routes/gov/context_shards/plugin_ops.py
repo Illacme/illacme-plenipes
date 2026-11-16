@@ -188,31 +188,18 @@ async def probe_plugin_impl(payload: dict) -> dict:
             return adapter_instance.probe()
 
     # 4f. 探测播客平台 (Podcast Platforms)
-    if category == "podcast" or plugin_id in ("podcast_hub", "podcast_xiaoyuzhou", "podcast_apple", "podcast_spotify"):
-        if plugin_id == "podcast_hub":
-            return {
-                "success": True,
-                "healthy": True,
-                "message": "🎙️ 播客全网发行枢纽物理就绪，标准 RSS 2.0 聚合流生成器与 iTunes 命名空间协议已挂载。"
-            }
-        elif plugin_id == "podcast_xiaoyuzhou":
-            return {
-                "success": True,
-                "healthy": True,
-                "message": "🪐 小宇宙 (Xiaoyuzhou) 分发通道就绪，已对齐音频与 Show Notes 同步协议。"
-            }
-        elif plugin_id == "podcast_apple":
-            return {
-                "success": True,
-                "healthy": True,
-                "message": "🍏 Apple Podcasts 目录提交流水线就绪，支持通过 Apple Podcasts Connect 快速接入。"
-            }
-        elif plugin_id == "podcast_spotify":
-            return {
-                "success": True,
-                "healthy": True,
-                "message": "🟢 Spotify for Podcasters 节目单分发通道就绪，支持全网 RSS 自动同步。"
-            }
+    podcast_msg_map = {
+        "podcast_hub": "🎙️ 播客全网发行枢纽物理就绪，标准 RSS 2.0 聚合流生成器与 iTunes 命名空间协议已挂载。",
+        "podcast_xiaoyuzhou": "🪐 小宇宙 (Xiaoyuzhou) 分发通道就绪，已对齐音频与 Show Notes 同步协议。",
+        "podcast_apple": "🍏 Apple Podcasts 目录提交流水线就绪，支持通过 Apple Podcasts Connect 快速接入。",
+        "podcast_spotify": "🟢 Spotify for Podcasters 节目单分发通道就绪，支持全网 RSS 自动同步。",
+        "podcast_youtube": "▶️ YouTube Podcasts 频道分发链路就绪，支持在 YouTube Studio 接入 RSS 自动生成播客单集。",
+        "podcast_netease": "🎵 网易云音乐播客电台分发通道就绪，支持创作者中心 RSS 托管与单集同步。",
+        "podcast_ximalaya": "📻 喜马拉雅主播工作台分发通道就绪，支持有声专辑与音频专栏同步。",
+    }
+    if category == "podcast" or plugin_id in podcast_msg_map or plugin_id == "podcast_r2_storage":
+        if plugin_id in podcast_msg_map:
+            return {"success": True, "healthy": True, "message": podcast_msg_map[plugin_id]}
         elif plugin_id == "podcast_r2_storage":
             from core.podcast.podcast_storage_engine import PodcastStorageEngine
             return PodcastStorageEngine.probe_storage_connectivity(engine)

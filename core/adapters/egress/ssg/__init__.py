@@ -139,8 +139,27 @@ class SSGAdapter:
         return self.active_renderer.supports_frontmatter(ext)
 
     def render(self, body: str, fm: dict, seo_data: dict = None, target_lang: str = "en", sub_path: str = ""):
-        """🚀 [V10.3] 委托底层渲染器执行深度渲染任务"""
-        return self.active_renderer.render(body, fm, seo_data=seo_data, target_lang=target_lang, sub_path=sub_path)
+        """🚀 [V10.3] 委托底层渲染器执行深度渲染任务（框架主题自动注入 MDX 兼容伴读播客条）"""
+        res = self.active_renderer.render(body, fm, seo_data=seo_data, target_lang=target_lang, sub_path=sub_path)
+        if self.is_framework_engine() and isinstance(res, tuple) and len(res) == 2 and isinstance(fm, dict):
+            rendered_body, adapted_fm = res
+            if fm.get("podcast") is not False and "<audio" not in (rendered_body or ""):
+                try:
+                    from core.podcast import build_universal_audio_player_html
+                    import re
+                    raw_widget = build_universal_audio_player_html(self.engine, fm, target_lang, root_path="/")
+                    m_src = re.search(r'data-audio-src="([^"]+)"', raw_widget or "")
+                    if m_src:
+                        a_src = m_src.group(1)
+                        mdx_audio = (
+                            f'> 🎧 **AI 伴读播客 (Audio Edition)** — [📻 RSS 订阅](/podcast-feed.xml) · [⬇️ 下载 MP3]({a_src})\n>\n'
+                            f'> <audio controls preload="metadata" src="{a_src}"></audio>\n\n'
+                        )
+                        rendered_body = mdx_audio + (rendered_body or "")
+                        return rendered_body, adapted_fm
+                except Exception:
+                    pass
+        return res
 
     def render_single_callout(self, g_type: str, title: str, body: str) -> str:
         return self.active_renderer.render_callout(g_type, title, body)

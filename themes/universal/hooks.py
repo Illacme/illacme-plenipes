@@ -25,6 +25,8 @@ def on_post_sync(engine):
     try:
         from core.adapters.egress.ssg.generic_shards.blog_archiver import generate_dynamic_blog_archive
         generate_dynamic_blog_archive(engine)
+        from core.podcast import sync_podcast_assets_to_dist
+        sync_podcast_assets_to_dist(engine)
         tlog.success("✅ [Universal 钩子] 多语种博客中心归档合成完毕。")
     except Exception as e:
         tlog.error(f"❌ [Universal 钩子] 博客归档合成异常: {e}")

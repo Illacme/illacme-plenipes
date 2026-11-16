@@ -31,6 +31,14 @@ class BookAssembler:
         self.engine = engine
         self.vault_dir = vault_dir
 
+    def _get_imprint_source_ctx(self):
+        imp_id = getattr(self.engine, "imprint_id", "default") or "default" if self.engine else ""
+        src_obj = getattr(getattr(getattr(self.engine, "config", None), "i18n_settings", None), "source", None) if self.engine else None
+        raw_src = getattr(src_obj, "lang_code", None) if src_obj else None
+        src_lang = raw_src if isinstance(raw_src, str) and raw_src and raw_src != "auto" else "zh"
+        imp_base = os.path.join("imprints", imp_id) if imp_id and os.path.isdir(os.path.join("imprints", imp_id)) else "imprints"
+        return imp_id, src_lang, imp_base
+
     def assemble_and_bind(
         self, category: str = "Docs", format_type: str = "epub", target_lang: str = "zh",
         custom_title: Optional[str] = None, custom_author: Optional[str] = None,
@@ -45,10 +53,11 @@ class BookAssembler:
             return None
 
         is_polyglot = bool(polyglot_langs and len(polyglot_langs) >= 2)
+        _, source_lang, imp_base = self._get_imprint_source_ctx()
         if is_polyglot:
             chapters = PolyglotAligner.build_polyglot_chapters(self, category, polyglot_langs, single_file=single_file)
         else:
-            TranslationResolver.warm_up(target_lang)
+            TranslationResolver.warm_up(target_lang, base_dir=imp_base, source_lang=source_lang)
             chapters = self._collect_chapters(category=category, target_lang=target_lang, single_file=single_file)
         if not chapters:
             tlog.warning(f"⚠️ [数字装订] 栏目 '{category}' 下无可用 Markdown 章节稿件。")
@@ -65,10 +74,7 @@ class BookAssembler:
             lang_tags = "-".join([l.upper() for l in polyglot_langs])
             book_title = f"{site_name} · 多语对照典籍 ({lang_tags} Polyglot Edition)" if is_default_title else custom_title
             if custom_title:
-                titles_by_lang = {
-                    l: TranslationResolver.resolve_book_title(custom_title, l, self.engine)
-                    for l in polyglot_langs
-                }
+                titles_by_lang = {l: TranslationResolver.resolve_book_title(custom_title, l, self.engine) for l in polyglot_langs}
             elif single_file and chapters and chapters[0].get("titles_by_lang"):
                 titles_by_lang = dict(chapters[0]["titles_by_lang"])
             else:
@@ -161,6 +167,7 @@ class BookAssembler:
 
         doc_entries.sort(key=sort_key)
 
+        imprint_id, source_lang, _ = self._get_imprint_source_ctx()
         chapters, parsed_docs, route_map = [], [], {}
         for idx, p in enumerate(doc_entries):
             ch_id = f"ch_{idx + 1}"
@@ -171,12 +178,11 @@ class BookAssembler:
             title = fm.get("title") or stem.replace('-', ' ').title()
             slug, rel_p = fm.get("slug") or stem, os.path.relpath(p, target_dir).replace('\\', '/')
             rel_no_ext = os.path.splitext(rel_p)[0]
-            # 🌐 目标语种标题与正文高保真解析
             ch_title, ch_body = TranslationResolver.resolve_chapter(
                 file_path=p, target_lang=target_lang, fallback_title=str(title),
-                fallback_body=body, vault_dir=self.vault_dir
+                fallback_body=body, vault_dir=self.vault_dir, source_lang=source_lang, imprint_id=imprint_id
             )
-            parsed_docs.append({"ch_id": ch_id, "title": str(ch_title), "slug": str(slug), "file_path": p, "raw_body": ch_body})
+            parsed_docs.append({"ch_id": ch_id, "title": str(ch_title), "slug": str(slug), "file_path": p, "raw_body": ch_body, "podcast": fm.get("podcast")})
             for key in (stem.lower(), stem, slug.lower(), slug, str(title).lower(), str(title), str(ch_title).lower(), str(ch_title), rel_p.lower(), rel_no_ext.lower()):
                 if key and key not in route_map: route_map[key] = ch_id
             for raw_k in (stem, str(title), str(ch_title), slug, rel_no_ext):
@@ -193,13 +199,10 @@ class BookAssembler:
                     if ms and mp: route_map[f"{mp}/{ms}".lower()] = ch_id
                 except Exception: pass
 
-        # 第二阶段：编译内容与重写内链锚点
+        # 2. 第二阶段：编译内容与重写内链锚点
         import markdown
         from markdown.extensions.toc import slugify_unicode
-        md_converter = markdown.Markdown(
-            extensions=['extra', 'codehilite', 'tables', 'toc'],
-            extension_configs={'toc': {'slugify': slugify_unicode}}
-        )
+        md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'tables', 'toc'], extension_configs={'toc': {'slugify': slugify_unicode}})
 
         chapters = []
         for entry in parsed_docs:
@@ -225,14 +228,9 @@ class BookAssembler:
             )
 
             chapters.append({
-                "order": int(ch_id.split('_')[1]),
-                "title": entry["title"],
-                "slug": entry["slug"],
-                "raw_body": clean_raw_body,
-                "html_body": html_content,
-                "file_path": p,
-                "assets": assets,
-                "headings": headings
+                "order": int(ch_id.split('_')[1]), "title": entry["title"], "slug": entry["slug"],
+                "raw_body": clean_raw_body, "html_body": html_content, "file_path": p,
+                "assets": assets, "headings": headings, "podcast": entry.get("podcast")
             })
 
         return chapters

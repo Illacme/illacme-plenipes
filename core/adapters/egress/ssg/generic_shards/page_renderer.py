@@ -122,6 +122,21 @@ def render_html_page(
         }}
     </script>""" if has_mermaid else ""
 
+    # 🎧 读者消费闭环：注入多主题伴读音频播放条
+    if (is_blog or is_docs) and not is_home and doc_slug not in ("index", "home"):
+        try:
+            from core.podcast import build_universal_audio_player_html
+            audio_html = build_universal_audio_player_html(
+                engine, fm if isinstance(fm, dict) else {}, target_lang, root_path=root_path
+            )
+            if audio_html:
+                if "</h1>" in html_content:
+                    html_content = html_content.replace("</h1>", f"</h1>\n{audio_html}", 1)
+                else:
+                    html_content = f"{audio_html}\n{html_content}"
+        except Exception:
+            pass
+
     return f"""<!DOCTYPE html>
 <html lang="{target_lang}" data-theme="dark">
 <head>

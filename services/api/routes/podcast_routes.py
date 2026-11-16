@@ -7,8 +7,7 @@
 
 import os
 import json
-from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse, Response
 
@@ -22,8 +21,6 @@ from core.podcast import (
     PodcastChapter,
     PodcastTTSEngine,
     DEFAULT_VOICE_MAP,
-    PodcastRSSGenerator,
-    PodcastEpisode,
     ScriptExtractRequest,
     PodcastSynthesizeRequest
 )
@@ -46,30 +43,61 @@ def _load_sidecar_info(target_path: str):
     return [], ""
 
 
-def _get_audio_cache_dir(engine) -> str:
-    """获取播客音频缓存物理目录"""
-    imprint_id = getattr(engine, "imprint_id", "default") if engine else "default"
+def _get_audio_cache_dir(engine, imprint_id: str = "") -> str:
+    """获取播客音频缓存物理目录（优先尊重路由显式传入的 imprint_id）"""
+    imp = (imprint_id or getattr(engine, "imprint_id", "default") or "default") if engine or imprint_id else "default"
     base_dir = getattr(engine, "cache_dir", os.path.join(os.getcwd(), ".plenipes", "cache")) if engine else os.path.join(os.getcwd(), ".plenipes", "cache")
-    p_dir = os.path.join(base_dir, "podcasts", imprint_id)
+    p_dir = os.path.join(base_dir, "podcasts", imp)
     os.makedirs(p_dir, exist_ok=True)
     return p_dir
 
 
-def _resolve_localized_content(engine, rel_path: str, target_lang: str):
-    """解析指定目标语种的本地化译文快照"""
+def _resolve_podcast_slug(rel_path: str, engine=None) -> str:
+    """解析防跨目录冲突的播客文件前缀（对子目录 index/readme 或同名文件自动附加目录前缀）"""
+    clean_rel = os.path.splitext((rel_path or "").replace("\\", "/").strip("/"))[0]
+    base_stem = os.path.basename(clean_rel)
+    sub_dir = os.path.dirname(clean_rel)
+    if not sub_dir:
+        return base_stem
+    if base_stem.lower() in ("index", "readme"):
+        return clean_rel.lower().replace("/", "__")
+    if engine and hasattr(engine, "meta") and hasattr(engine.meta, "get_documents_snapshot"):
+        try:
+            snap = engine.meta.get_documents_snapshot() or {}
+            same_stem = [k for k in snap.keys() if os.path.splitext(os.path.basename(k))[0].lower() == base_stem.lower()]
+            if len(same_stem) > 1:
+                return clean_rel.lower().replace("/", "__")
+        except Exception:
+            pass
+    return base_stem
+
+
+def _resolve_localized_content(engine, rel_path: str, target_lang: str, safe_path: str = "", fallback_title: str = ""):
+    """解析指定目标语种的本地化译文快照（优先多语种缓存，回退至 TranslationResolver）"""
     if not engine or not rel_path or not target_lang or target_lang.startswith("zh"):
         return None, None, None
     try:
         from services.api.routes.gov.context_shards.review_ops import get_translation_snapshot_impl
         snap = get_translation_snapshot_impl(engine, rel_path)
         lang_data = snap.get("langs", {}).get(target_lang)
-        if not lang_data or lang_data.get("is_missing"):
-            return None, None, None
-        paras = [p.get("text", "") for p in lang_data.get("paragraphs", []) if p.get("type") != "spacer" and p.get("text")]
-        return ("\n\n".join(paras), lang_data.get("title"), lang_data.get("desc")) if paras else (None, None, None)
+        if lang_data and not lang_data.get("is_missing"):
+            paras = [p.get("text", "") for p in lang_data.get("paragraphs", []) if p.get("type") != "spacer" and p.get("text")]
+            if paras:
+                return "\n\n".join(paras), lang_data.get("title"), lang_data.get("desc")
     except Exception as e:
         tlog.warning(f"Failed to resolve localized podcast content for {rel_path} ({target_lang}): {e}")
-        return None, None, None
+    if safe_path and os.path.isfile(safe_path):
+        try:
+            from core.bindery.translation_resolver import TranslationResolver
+            vault_dir = getattr(engine, "vault_dir", "vault")
+            res_title, res_body = TranslationResolver.resolve_chapter(
+                file_path=safe_path, target_lang=target_lang, fallback_title=fallback_title, fallback_body="", vault_dir=vault_dir
+            )
+            if res_body and res_body.strip():
+                return res_body, res_title, None
+        except Exception:
+            pass
+    return None, None, None
 
 
 @router.get("/api/podcast/voices")
@@ -95,22 +123,17 @@ async def extract_podcast_script(req: ScriptExtractRequest) -> Dict[str, Any]:
             raw_content = body
             metadata = fm_dict
 
-        # 多语言自动对接：若非中文广播，优先提取对应语种的本地化译文
+        # 多语言自动对接：若非中文广播，优先提取对应语种的本地化译文，无缓存时允许跨语种自动衍生
         if not target_lang.startswith("zh") and engine:
-            loc_body, loc_title, loc_desc = _resolve_localized_content(engine, req.rel_path, target_lang)
+            loc_body, loc_title, loc_desc = _resolve_localized_content(
+                engine, req.rel_path, target_lang, safe_path=safe_path or "", fallback_title=str(metadata.get("title") or "")
+            )
             if loc_body:
                 raw_content = loc_body
                 if loc_title:
                     metadata["title"] = loc_title
                 if loc_desc:
                     metadata["description"] = loc_desc
-            elif any('\u4e00' <= c <= '\u9fff' for c in raw_content):
-                lang_names = {"en": "English", "ja": "日本語"}
-                name_disp = lang_names.get(target_lang, target_lang.upper())
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"未找到该文档的 {name_disp} 译文。请先在「多语种译文校对」中生成翻译，或选择中文母语广播。"
-                )
 
     if not raw_content.strip():
         raise HTTPException(status_code=400, detail="未提供有效的稿件文本内容以提炼剧本")
@@ -150,9 +173,9 @@ async def synthesize_podcast(req: PodcastSynthesizeRequest) -> Dict[str, Any]:
     """执行双人对谈语音合成，缝合生成单轨 MP3 音频"""
     engine = get_global_engine()
     imprint_id = getattr(engine, "imprint_id", "default") if engine else "default"
-    cache_dir = _get_audio_cache_dir(engine)
+    cache_dir = _get_audio_cache_dir(engine, imprint_id)
 
-    slug = os.path.splitext(os.path.basename(req.rel_path))[0]
+    slug = _resolve_podcast_slug(req.rel_path, engine)
     style_key = req.style or "tech_deep"
     filename = f"{slug}_{req.lang}_{style_key}.mp3"
     target_path = os.path.join(cache_dir, filename)
@@ -191,10 +214,27 @@ async def synthesize_podcast(req: PodcastSynthesizeRequest) -> Dict[str, Any]:
 async def serve_podcast_audio(imprint_id: str, filename: str):
     """安全流式返回播客 MP3 音频文件（支持拖拽进度条）"""
     engine = get_global_engine()
-    audio_path = os.path.join(_get_audio_cache_dir(engine), filename)
+    safe_name = os.path.basename(filename)
+    audio_path = os.path.join(_get_audio_cache_dir(engine, imprint_id), safe_name)
     if not os.path.isfile(audio_path):
         raise HTTPException(status_code=404, detail="未找到对应的播客音频文件")
-    return FileResponse(path=audio_path, media_type="audio/mpeg", filename=filename)
+    return FileResponse(path=audio_path, media_type="audio/mpeg", filename=safe_name)
+
+
+@router.delete("/api/podcast/audio/{imprint_id}/{filename}", dependencies=[Depends(verify_token)])
+async def delete_podcast_audio(imprint_id: str, filename: str) -> Dict[str, Any]:
+    """物理清理指定播客单集 MP3 与章节 Sidecar 缓存文件"""
+    engine = get_global_engine()
+    safe_name = os.path.basename(filename)
+    cache_dir = _get_audio_cache_dir(engine, imprint_id)
+    audio_path = os.path.join(cache_dir, safe_name)
+    if not os.path.isfile(audio_path):
+        raise HTTPException(status_code=404, detail="未找到对应的播客音频文件")
+    os.remove(audio_path)
+    sc_path = os.path.splitext(audio_path)[0] + ".chapters.json"
+    if os.path.isfile(sc_path):
+        os.remove(sc_path)
+    return {"status": "success", "deleted": safe_name}
 
 
 @router.get("/api/podcast/info")
@@ -202,11 +242,17 @@ async def get_podcast_info(rel_path: str, lang: str = "zh", style: str = "tech_d
     """查询指定稿件是否已生成就绪的播客音频"""
     engine = get_global_engine()
     imprint_id = getattr(engine, "imprint_id", "default") if engine else "default"
-    slug = os.path.splitext(os.path.basename(rel_path))[0]
-    cache_dir = _get_audio_cache_dir(engine)
+    slug = _resolve_podcast_slug(rel_path, engine)
+    base_stem = os.path.splitext(os.path.basename(rel_path))[0]
+    cache_dir = _get_audio_cache_dir(engine, imprint_id)
     style_key = style or "tech_deep"
     filename = f"{slug}_{lang}_{style_key}.mp3"
     target_path = os.path.join(cache_dir, filename)
+
+    if not os.path.isfile(target_path) and slug != base_stem and base_stem.lower() not in ("index", "readme"):
+        alt_name = f"{base_stem}_{lang}_{style_key}.mp3"
+        if os.path.isfile(os.path.join(cache_dir, alt_name)):
+            filename, target_path = alt_name, os.path.join(cache_dir, alt_name)
 
     if not os.path.isfile(target_path) and style_key == "tech_deep":
         legacy_name = f"{slug}_{lang}.mp3"
@@ -236,39 +282,17 @@ async def get_podcast_bgm_options() -> Dict[str, Any]:
 
 @router.get("/api/podcast/feed/{imprint_id}")
 async def get_podcast_rss_feed(request: Request, imprint_id: str, lang: str = "zh") -> Response:
-    """生成并提供标准 Podcast RSS 2.0 XML 订阅源"""
+    """生成并提供标准 Podcast RSS 2.0 XML 订阅源（联动原稿元数据与播客主控台配置）"""
+    from core.podcast.podcast_rss_generator import generate_podcast_rss
     engine = get_global_engine()
-    podcast_dir = _get_audio_cache_dir(engine)
+    podcast_dir = _get_audio_cache_dir(engine, imprint_id)
     base_url = str(request.base_url).rstrip("/")
-
-    episodes: List[PodcastEpisode] = []
-    if os.path.isdir(podcast_dir):
-        from core.podcast.podcast_storage_engine import PodcastStorageEngine
-        for f in os.listdir(podcast_dir):
-            if f.endswith(".mp3") and (f.endswith(f"_{lang}.mp3") or f"_{lang}_" in f):
-                f_path = os.path.join(podcast_dir, f)
-                size, mtime = os.path.getsize(f_path), os.path.getmtime(f_path)
-                pub_dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                title = f.replace(".mp3", "").replace(f"_{lang}", "").replace("-", " ").replace("_", " ").title()
-                local_url = f"{base_url}/api/podcast/audio/{imprint_id}/{f}"
-                audio_url = PodcastStorageEngine.get_audio_public_url(f, local_url, engine)
-                sc_chaps, sc_notes = _load_sidecar_info(f_path)
-                episodes.append(PodcastEpisode(
-                    title=f"【技术对谈】{title}", audio_url=audio_url, audio_size_bytes=size,
-                    duration_sec=max(30, int(size / 16000)), pub_date=pub_dt,
-                    description=f"{title} 的双人技术深度播客", chapters=sc_chaps, shownotes=sc_notes
-                ))
-
-    channel_title = f"{imprint_id.title()} 技术前沿播客"
-    channel_link = base_url
-    channel_desc = f"{imprint_id} 旗下由出版发行工作台自动衍生的多语种双人技术对谈播客。"
-
-    xml_str = PodcastRSSGenerator.generate_feed_xml(
-        channel_title=channel_title,
-        channel_link=channel_link,
-        channel_desc=channel_desc,
-        episodes=episodes,
-        author="创作者指南",
-        lang=f"{lang}-cn" if lang == "zh" else lang
+    xml_str = generate_podcast_rss(
+        imprint_id=imprint_id,
+        base_url=base_url,
+        lang=lang,
+        podcast_dir=podcast_dir,
+        engine=engine,
+        use_api_audio_route=True
     )
     return Response(content=xml_str, media_type="application/xml")

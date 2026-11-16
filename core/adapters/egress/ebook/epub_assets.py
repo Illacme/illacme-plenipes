@@ -60,6 +60,9 @@ nav a { text-decoration: none; color: #0366d6; }
 .wb-lang-badge { font-size: 0.72em; font-weight: 700; color: #fff; background: #0284c7; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
 .wb-poly-lang-name { font-size: 0.85em; font-weight: 600; color: #333; }
 .wb-poly-pending { background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 6px; padding: 6px 10px; font-size: 0.8em; color: #b45309; margin-bottom: 8px; }
+.epub-audio-box { margin: 0.8em 0 1.2em 0; padding: 0.6em 1em; border: 1px solid #e1e4e8; border-radius: 8px; background: #f8fafc; }
+.epub-audio-label { margin: 0 0 0.4em 0; font-size: 0.85em; font-weight: 600; color: #0284c7; }
+.epub-audio-box audio { width: 100%; }
 @media (max-width: 600px) { .wb-polyglot-block { flex-direction: column; gap: 10px; } }
 @media (prefers-color-scheme: dark) {
     body { background-color: #121212; color: #e0e0e0; } a { color: #38bdf8; text-decoration-color: rgba(56, 189, 248, 0.4); }
