@@ -31,7 +31,10 @@ class PodcastAIWriter:
         metadata: Optional[Dict[str, Any]] = None,
         lang: str = "zh",
         style: str = "tech_deep",
-        max_turns: int = 10
+        max_turns: int = 10,
+        focus_prompt: Optional[str] = None,
+        host_a_name: Optional[str] = None,
+        host_b_name: Optional[str] = None,
     ) -> PodcastScript:
         """主入口：调用大模型推理生成结构化播客剧本"""
         meta = metadata or {}
@@ -50,11 +53,15 @@ class PodcastAIWriter:
         if not adapter:
             raise ValueError("算力中心未检测到可用的主模型节点，请先在「算力中心」激活模型。")
 
-        names = cls.DEFAULT_NAMES.get(lang_code, cls.DEFAULT_NAMES["zh"])
+        names = dict(cls.DEFAULT_NAMES.get(lang_code, cls.DEFAULT_NAMES["zh"]))
+        if host_a_name and host_a_name.strip():
+            names["host_a"] = host_a_name.strip()
+        if host_b_name and host_b_name.strip():
+            names["host_b"] = host_b_name.strip()
         title = meta.get("title") or "技术对谈"
 
         system_prompt = cls._build_system_prompt(lang_code, style, names, max_turns)
-        user_prompt = cls._build_user_prompt(title, content, lang_code, style)
+        user_prompt = cls._build_user_prompt(title, content, lang_code, style, focus_prompt=focus_prompt)
 
         tlog.info(f"🎙️ 正在调用大模型 ({getattr(adapter, 'node_name', 'LLM')}) 深度重写播客剧本: {title} ({lang_code}/{style})")
 
@@ -131,13 +138,14 @@ class PodcastAIWriter:
         )
 
     @classmethod
-    def _build_user_prompt(cls, title: str, content: str, lang: str, style: str) -> str:
+    def _build_user_prompt(cls, title: str, content: str, lang: str, style: str, focus_prompt: Optional[str] = None) -> str:
         clipped = content[:4500] if len(content) > 4500 else content
+        focus_block = f"\n【创作者特别聚焦指令】：{focus_prompt.strip()}\n" if focus_prompt and focus_prompt.strip() else ""
         return (
             f"请将以下技术稿件深度编排为双人对话播客剧本：\n"
             f"【文章标题】：{title}\n"
             f"【目标风格】：{style}\n"
-            f"【目标语种】：{lang}\n"
+            f"【目标语种】：{lang}{focus_block}\n"
             f"【文章正文摘要与核心】：\n"
             f"{clipped}\n\n"
             f"请以符合该风格和语种的 JSON 格式输出完整剧本。"

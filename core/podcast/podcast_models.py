@@ -94,6 +94,15 @@ class PodcastChapter:
         }
 
     @staticmethod
+    def format_vtt_timestamp(ms: int) -> str:
+        """毫秒转 WebVTT 标准 HH:MM:SS.mmm 格式"""
+        total_ms = max(0, int(ms))
+        h, rem = divmod(total_ms, 3600000)
+        m, rem = divmod(rem, 60000)
+        s, millis = divmod(rem, 1000)
+        return f"{h:02d}:{m:02d}:{s:02d}.{millis:03d}"
+
+    @staticmethod
     def format_timestamp(seconds: int) -> str:
         """秒数转标准 mm:ss 格式"""
         sec = max(0, int(seconds))
@@ -134,6 +143,9 @@ class ScriptExtractRequest(BaseModel):
     style: Optional[str] = "tech_deep"
     max_turns: Optional[int] = 10
     use_ai: Optional[bool] = False
+    focus_prompt: Optional[str] = None
+    host_a_name: Optional[str] = None
+    host_b_name: Optional[str] = None
 
 
 class TurnPayload(BaseModel):
@@ -155,3 +167,4 @@ class PodcastSynthesizeRequest(BaseModel):
     rate: Optional[str] = "+0%"
     pitch: Optional[str] = "+0Hz"
     bgm_style: Optional[str] = "cyber_ambient"
+    tts_provider: Optional[str] = "edge"

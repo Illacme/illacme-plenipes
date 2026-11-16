@@ -57,7 +57,10 @@ class PodcastScriptEngine:
         style: str = "tech_deep",
         max_turns: int = 12,
         use_ai: bool = False,
-        engine: Any = None
+        engine: Any = None,
+        focus_prompt: Optional[str] = None,
+        host_a_name: Optional[str] = None,
+        host_b_name: Optional[str] = None,
     ) -> PodcastScript:
         """主入口：从 Markdown 提取双人对话剧本（支持极速规则或大模型深度编剧）"""
         meta = metadata or {}
@@ -68,15 +71,15 @@ class PodcastScriptEngine:
         if use_ai and engine:
             from .podcast_ai_writer import PodcastAIWriter
             return PodcastAIWriter.generate_script(
-                engine=engine,
-                content=content,
-                metadata=meta,
-                lang=lang_code,
-                style=style,
-                max_turns=max_turns
+                engine=engine, content=content, metadata=meta, lang=lang_code, style=style,
+                max_turns=max_turns, focus_prompt=focus_prompt, host_a_name=host_a_name, host_b_name=host_b_name
             )
 
-        names = cls.DEFAULT_NAMES.get(lang_code, cls.DEFAULT_NAMES["en"])
+        names = dict(cls.DEFAULT_NAMES.get(lang_code, cls.DEFAULT_NAMES["en"]))
+        if host_a_name and host_a_name.strip():
+            names["host_a"] = host_a_name.strip()
+        if host_b_name and host_b_name.strip():
+            names["host_b"] = host_b_name.strip()
         title = meta.get("title") or cls._extract_title(content) or ("技术前沿探索" if lang_code == "zh" else "Tech Insights")
         summary = meta.get("description") or meta.get("summary") or ""
 
@@ -86,6 +89,9 @@ class PodcastScriptEngine:
 
         # 1. 开场白 (Intro)
         turns.extend(cls._build_intro(title, summary, lang_code, style, names))
+        if focus_prompt and focus_prompt.strip() and turns:
+            focus_note = f" 本期我们特别聚焦：{focus_prompt.strip()}。" if lang_code == "zh" else f" Today we focus on: {focus_prompt.strip()}."
+            turns[0].text = turns[0].text.rstrip() + focus_note
 
         # 2. 章节交替深度探讨 (Discussion turns)
         turns.extend(cls._build_discussion(sections, lang_code, style, names, max_turns - 4))

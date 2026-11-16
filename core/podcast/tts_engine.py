@@ -80,9 +80,28 @@ class PodcastTTSEngine:
         voice: str,
         rate: str = "+0%",
         pitch: str = "+0Hz",
-        proxy: Optional[str] = None
+        proxy: Optional[str] = None,
+        tts_provider: str = "edge",
     ) -> bytes:
-        """单个台词回合的语音合成"""
+        """单个台词回合的语音合成（支持 edge-tts 与 OpenAI 兼容 /audio/speech 路由）"""
+        if (tts_provider or "edge").lower() == "openai":
+            api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+            if api_key:
+                try:
+                    import httpx
+                    base_url = (os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
+                    oa_voice = "nova" if any(k in (voice or "").lower() for k in ("xiaoxiao", "jenny", "nanami", "nova", "shimmer")) else "onyx"
+                    async with httpx.AsyncClient(timeout=45.0) as client:
+                        resp = await client.post(
+                            f"{base_url}/audio/speech",
+                            headers={"Authorization": f"Bearer {api_key}"},
+                            json={"model": os.environ.get("OPENAI_TTS_MODEL", "tts-1"), "input": text, "voice": oa_voice, "response_format": "mp3"},
+                        )
+                        if resp.status_code == 200 and resp.content:
+                            return resp.content
+                except Exception as oa_err:
+                    tlog.warning(f"⚠️ [OpenAI TTS 降级] 回退至 edge-tts: {oa_err}")
+
         import edge_tts
         proxy_url = proxy or os.environ.get("https_proxy") or os.environ.get("http_proxy")
         comm = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, proxy=proxy_url)
@@ -104,28 +123,29 @@ class PodcastTTSEngine:
         pitch: str = "+0Hz",
         proxy: Optional[str] = None,
         imprint_name: str = "SOVEREIGN PRESS",
-        bgm_style: Optional[str] = "cyber_ambient"
+        bgm_style: Optional[str] = "cyber_ambient",
+        tts_provider: str = "edge",
     ) -> AudioResult:
-        """将完整剧本合成为单轨播客 MP3 音频"""
+        """将完整剧本并发合成为单轨播客 MP3 音频，并同步导出章节与逐句字幕 Sidecar"""
         os.makedirs(os.path.dirname(os.path.abspath(output_file_path)), exist_ok=True)
         v_a = cls.get_voice_for_role(script.lang, "host_a", voice_a)
         v_b = cls.get_voice_for_role(script.lang, "host_b", voice_b)
 
-        tlog.info(f"🎙️ [播客合成] 开始合成《{script.title}》共 {len(script.turns)} 轮对话 | 垫乐: {bgm_style} | 声线: A={v_a}, B={v_b}")
+        tlog.info(f"🎙️ [播客合成] 并发合成《{script.title}》共 {len(script.turns)} 轮 | 引擎: {tts_provider} | 垫乐: {bgm_style}")
 
-        # 1. 并发/顺序合成各回合音频片段
-        turn_audios: List[bytes] = []
-        for idx, turn in enumerate(script.turns):
+        # 1. 信号量并发合成各回合音频片段并保持顺序
+        sem = asyncio.Semaphore(4)
+        async def _synth_one(idx: int, turn: DialogueTurn) -> bytes:
             voice = v_a if turn.speaker == "host_a" else v_b
-            try:
-                turn_bytes = await cls.synthesize_turn_audio(
-                    text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy
-                )
-                if turn_bytes:
-                    turn_audios.append(turn_bytes)
-            except Exception as e:
-                tlog.error(f"🚨 [播客合成] 第 {idx + 1} 轮合成失败 ({voice}): {e}")
-                raise
+            async with sem:
+                try:
+                    return await cls.synthesize_turn_audio(text=turn.text, voice=voice, rate=rate, pitch=pitch, proxy=proxy, tts_provider=tts_provider)
+                except Exception as e:
+                    tlog.error(f"🚨 [播客合成] 第 {idx + 1} 轮合成失败 ({voice}): {e}")
+                    raise
+
+        raw_results = await asyncio.gather(*[_synth_one(i, t) for i, t in enumerate(script.turns)])
+        turn_audios: List[bytes] = [b for b in raw_results if b]
 
         if not turn_audios:
             raise RuntimeError("播客音频合成失败：未能产出有效的音频数据片段")
@@ -167,6 +187,9 @@ class PodcastTTSEngine:
         except Exception as sc_err:
             tlog.warning(f"⚠️ [章节元数据] 写入 Sidecar 失败: {sc_err}")
 
+        # 3.5 导出逐句对齐字幕 Sidecar (.transcript.json & .vtt)
+        cls._write_transcript_sidecars(output_file_path, script.turns, turn_durations_ms, pause_ms, bgm_style)
+
         file_size = os.path.getsize(output_file_path)
         tlog.info(f"🎙️ [播客合成完毕] {output_file_path} | 体积: {file_size} 字节 | 时长: {duration_ms}ms")
 
@@ -204,10 +227,14 @@ class PodcastTTSEngine:
                 if i < len(turn_audios) - 1:
                     combined += pause
 
-            # 🎵 听觉质感升华：混入商业级氛围垫乐与自适应闪避
+            # 🎵 听觉质感升华：混入商业级氛围垫乐与自适应闪避 + -16 dBFS 广播响度均衡
             if bgm_style and bgm_style != "none":
                 from .podcast_bgm_mixer import PodcastBGMMixer
                 combined = PodcastBGMMixer.mix_with_smart_ducking(combined, style=bgm_style)
+            if len(combined) > 0 and getattr(combined, "dBFS", float("-inf")) > -60.0:
+                gain = max(-12.0, min(12.0, -16.0 - float(combined.dBFS)))
+                if abs(gain) >= 0.5:
+                    combined = combined.apply_gain(gain)
 
             # 导出为标准 MP3
             tags = {
@@ -227,6 +254,30 @@ class PodcastTTSEngine:
                     f_out.write(b)
             # 粗略估算时长 (按 128kbps = 16000 字节/秒)
             return int(os.path.getsize(output_path) / 16 * 1000), turn_durations_ms
+
+    @classmethod
+    def _write_transcript_sidecars(
+        cls, output_file_path: str, turns: List[DialogueTurn], turn_durations_ms: List[int], pause_ms: int, bgm_style: Optional[str]
+    ) -> None:
+        """写入逐句毫秒级对齐字幕 (.transcript.json 与 WebVTT .vtt)"""
+        try:
+            from .podcast_models import PodcastChapter
+            cursor_ms = 1800 if (bgm_style and bgm_style != "none") else 0
+            entries, vtt_lines = [], ["WEBVTT", ""]
+            for i, turn in enumerate(turns):
+                dur = turn_durations_ms[i] if i < len(turn_durations_ms) else 2500
+                start_ms, end_ms = cursor_ms, cursor_ms + dur
+                entries.append({"index": i + 1, "speaker": turn.speaker, "speaker_name": turn.speaker_name, "text": turn.text, "start_ms": start_ms, "end_ms": end_ms})
+                vtt_lines.append(f"{PodcastChapter.format_vtt_timestamp(start_ms)} --> {PodcastChapter.format_vtt_timestamp(end_ms)}")
+                vtt_lines.append(f"{turn.speaker_name}: {turn.text}\n")
+                cursor_ms = end_ms + pause_ms
+            base = os.path.splitext(output_file_path)[0]
+            with open(base + ".transcript.json", "w", encoding="utf-8") as jf:
+                json.dump({"turns": entries}, jf, ensure_ascii=False, indent=2)
+            with open(base + ".vtt", "w", encoding="utf-8") as vf:
+                vf.write("\n".join(vtt_lines))
+        except Exception as e:
+            tlog.warning(f"⚠️ [字幕 Sidecar] 写入失败: {e}")
 
     @classmethod
     def synthesize_script_sync(

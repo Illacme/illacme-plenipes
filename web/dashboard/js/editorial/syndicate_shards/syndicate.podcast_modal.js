@@ -74,7 +74,8 @@
                 body: JSON.stringify({
                     rel_path: _currentRelPath, title: _currentScript.title || '技术对谈播客',
                     turns: _currentScript.turns, lang: _selectedLang, style: _selectedStyle,
-                    bgm_style: _selectedBgm, pause_ms: 380
+                    bgm_style: _selectedBgm, pause_ms: 380,
+                    tts_provider: (document.getElementById('podcast-tts-provider') || {}).value || 'edge'
                 })
             });
             const data = await resp.json();
@@ -127,10 +128,11 @@
         if (!useAi) { _renderLoading('正在智能提炼双人对谈剧本并检索音频...'); _currentAudioInfo = null; }
         try {
             const token = localStorage.getItem('token') || '';
+            const focusVal = ((document.getElementById('podcast-focus-input') || {}).value || '').trim();
             const scriptReq = fetch('/api/podcast/script/extract', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle, max_turns: 10, use_ai: !!useAi })
+                body: JSON.stringify({ rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle, max_turns: 10, use_ai: !!useAi, focus_prompt: focusVal || null })
             });
             const audioReq = useAi ? Promise.resolve(null) : fetch(`/api/podcast/info?rel_path=${encodeURIComponent(_currentRelPath)}&lang=${_selectedLang}&style=${_selectedStyle}`).then((r) => r.json()).catch(() => null);
 
@@ -242,7 +244,7 @@
                     <audio id="podcast-player-audio" controls src="${audioSrc}" style="width:100%;height:32px;margin-top:6px;outline:none;"></audio>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    ${cdnBtn}
+                    ${cdnBtn}${_currentAudioInfo.transcript_url ? `<a href="${_esc(_currentAudioInfo.transcript_url)}" download class="mini-btn" style="text-decoration:none;display:inline-flex;align-items:center;" title="下载 WebVTT 同步字幕">📝 字幕</a>` : ''}
                     <a href="${audioSrc}" download="${_esc(_currentAudioInfo.filename || 'podcast.mp3')}" class="mini-btn glow-btn" style="background:#8b5cf6;color:#fff;text-decoration:none;display:inline-flex;align-items:center;">⬇️ 下载</a>
                     <button type="button" class="mini-btn" onclick="window.triggerPodcastSynthesis()" style="background:rgba(255,255,255,0.08);">🔄 重置</button>
                 </div>
@@ -288,6 +290,7 @@
                     <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">语种:</span><div id="podcast-lang-pills" style="display:flex;gap:4px;">${lPills}</div></div>
                     <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">风格:</span><div id="podcast-style-pills" style="display:flex;gap:4px;">${sPills}</div></div>
                     <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.75rem;color:#94a3b8;">垫乐:</span><div id="podcast-bgm-pills" style="display:flex;gap:4px;">${bPills}</div></div>
+                    <div style="display:flex;align-items:center;gap:8px;width:100%;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);"><span style="font-size:0.74rem;color:#94a3b8;white-space:nowrap;">🎯 聚焦引导:</span><input id="podcast-focus-input" type="text" placeholder="可选：如“面向初学者科普”或“重点辩论架构取舍”..." style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:0.75rem;"><span style="font-size:0.74rem;color:#94a3b8;white-space:nowrap;">🎙️ 引擎:</span><select id="podcast-tts-provider" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:0.75rem;"><option value="edge">Edge TTS (免费)</option><option value="openai">OpenAI TTS</option></select></div>
                 </div>
                 <div id="podcast-modal-body" style="padding:18px 20px;flex:1;overflow-y:auto;"></div>
             </div>
