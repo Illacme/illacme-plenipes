@@ -33,7 +33,7 @@ jobs:
             os-name: Windows (x64)
             asset-suffix: Windows-x64
             target-arch: ''
-          - os: macos-14
+          - os: macos-latest
             os-name: macOS (Apple Silicon)
             asset-suffix: macOS
             target-arch: ''
